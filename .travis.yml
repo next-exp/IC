@@ -1,0 +1,27 @@
+sudo: false
+language: python
+
+python:
+- 2.7
+
+install:
+  # Install conda
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - export ICDIR=`pwd`
+  - export PYTHONPATH=$ICDIR:$PYTHONPATH
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update conda
+
+  # Install dependencies
+  - conda create -n icenv python=2.7 numpy scipy pandas cython pytest pytest-cov pytables mysql-python
+  - source activate icenv
+  - pip install coveralls
+
+script:
+    - pytest --cov
+
+after_success:
+  - coveralls
+
