@@ -101,6 +101,36 @@ class DECONV_PARAM(tb.IsDescription):
     ACUM_COMPRESS = tb.Float32Col(pos=4)
 
 
+class S12(tb.IsDescription):
+    """
+    Store for a S1/S2
+    The table maps a S12:
+    peak is the index of the S12 dictionary, running over the number of peaks found
+    time and energy of the peak
+    """
+    event = tb.Int32Col(pos=0)
+    evtDaq = tb.Int32Col(pos=1)
+    peak = tb.UInt8Col(pos=2)  # peak number
+    time = tb.Float32Col(pos=3) # time in ns
+    ene = tb.Float32Col(pos=4) # energy in pes
+
+
+class S2Si(tb.IsDescription):
+    """
+    Store for a S2Si
+    The table maps a S2Si
+    peak is the same than the S2 peak
+    nsipm gives the SiPM number
+    only energies are stored (times are defined in S2)
+    """
+    event = tb.Int32Col(pos=0)
+    evtDaq = tb.Int32Col(pos=1)
+    peak = tb.UInt8Col(pos=2)  # peak number
+    nsipm = tb.Int16Col(pos=3)  # sipm number
+    nsample = tb.Int16Col(pos=4) # sample number
+    ene = tb.Float32Col(pos=5) # energy in pes
+
+
 class PMAP(tb.IsDescription):
     """
     Store for a PMap
