@@ -109,7 +109,7 @@ def simulate_pmt_response(event, pmtrd):
     NPMT = pmtrd.shape[1]
     RWF = []
     BLRX = []
-    DataPMT = DB.DataPMT()
+    DataPMT = DB.DataPMT(0)  # run_number = 0 describes MC data
     adc_to_pes = np.abs(DataPMT.adc_to_pes.values)
     for pmt in range(NPMT):
         # signal_i in current units
@@ -166,7 +166,7 @@ def DIOMIRA(argv=sys.argv):
 
         # access the geometry and the sensors metadata info
         mctrk_t = h5in.root.MC.MCTracks
-        sipmdf = DB.DataSiPM()
+        sipmdf = DB.DataSiPM(0)  # run_number = 0 for MC info
 
         # Create instance of the noise sampler
         noise_sampler_ = SiPMsNoiseSampler(SIPMWL, True)
