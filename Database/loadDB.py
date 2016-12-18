@@ -3,8 +3,13 @@ import numpy as np
 import pandas as pd
 import os
 
+# Run to take always the same calibration constant, etc for MC files
+# 3012 was the first SiPM calibration after remapping.
+runNumberForMC = 3012
 
 def DataPMT(run_number=1e5):
+    if run_number == 0:
+        run_number = runNumberForMC
     dbfile = os.environ['ICDIR'] + '/Database/localdb.sqlite3'
     conn = sqlite3.connect(dbfile)
     sql = '''select map.SensorID,map.ChannelID,pos.PmtID,msk.Active,pos.X,
@@ -27,6 +32,8 @@ order by map.SensorID;'''.format(run_number)
     return data
 
 def DataSiPM(run_number=1e5):
+    if run_number == 0:
+        run_number = runNumberForMC
     dbfile = os.environ['ICDIR'] + '/Database/localdb.sqlite3'
     conn = sqlite3.connect(dbfile)
     sql = '''select map.SensorID,map.ChannelID,msk.Active,pos.X,pos.Y,gain.adc_to_pes
@@ -51,6 +58,8 @@ def DetectorGeo():
     return data
 
 def SiPMNoise(run_number=1e5):
+    if run_number == 0:
+        run_number = runNumberForMC
     dbfile = os.environ['ICDIR'] + '/Database/localdb.sqlite3'
     conn = sqlite3.connect(dbfile)
     cursor = conn.cursor()
