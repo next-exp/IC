@@ -7,7 +7,7 @@ import sys
 from glob import glob
 
 from Core.Nh5 import RunInfo, EventInfo
-
+from Core.Nh5 import S12, S2Si
 import tables as tb
 import numpy as np
 import Core.mplFunctions as mpl
@@ -22,36 +22,9 @@ from ICython.Core.system_of_units import SystemOfUnits
 from Core.LogConfig import logger
 from Core.Configure import configure, define_event_loop, print_configuration
 import Core.tblFunctions as tbl
+import matplotlib.pyplot as plt
 
 units = SystemOfUnits()
-
-class S12(tb.IsDescription):
-    """
-    Store for a S1/S2
-    The table maps a S12:
-    peak is the index of the S12 dictionary, running over the number of peaks found
-    time and energy of the peak
-    """
-    event = tb.Int32Col(pos=0)
-    evtDaq = tb.Int32Col(pos=1)
-    peak = tb.UInt8Col(pos=2)  # peak number
-    time = tb.Float32Col(pos=3) # time in ns
-    ene = tb.Float32Col(pos=4) # energy in pes
-
-class S2Si(tb.IsDescription):
-    """
-    Store for a S2Si
-    The table maps a S2Si
-    peak is the same than the S2 peak
-    nsipm gives the SiPM number
-    only energies are stored (times are defined in S2)
-    """
-    event = tb.Int32Col(pos=0)
-    evtDaq = tb.Int32Col(pos=1)
-    peak = tb.UInt8Col(pos=2)  # peak number
-    nsipm = tb.Int16Col(pos=3)  # sipm number
-    nsample = tb.Int16Col(pos=4) # sample number
-    ene = tb.Float32Col(pos=5) # energy in pes
 
 
 class Irene:
@@ -62,7 +35,7 @@ class Irene:
     for fast processing of data
 
     """
-    def __init__(self, run_number):
+    def __init__(self, run_number=0):
         """
         Inits the machine with the run number
         loads the data base to access calibration and geometry
@@ -98,6 +71,7 @@ class Irene:
         self.setSiPM = False
 
         self.plot_csum = False
+        self.plot_csum_S1 = False
         self.plot_s1 = False
         self.plot_s2 = False
         self.plot_sipm = False
@@ -105,20 +79,37 @@ class Irene:
         self.plot_simap = False
 
         self.nprint = 1000000
+        self.signal_start=0
+        self.signal_end=1200
+        self.ymax = 200
+        self.S1_start=100
+        self.S1_end=100.5
+        self.S1_ymax = 5
 
 
-    def set_plot(self, plot_csum=False, plot_s1=False, plot_s2=False,
-                 plot_sipm=False, plot_sipmzs=False, plot_simap=False):
+    def set_plot(self, plot_csum=False, plot_csum_S1=False,
+                 plot_s1=False, plot_s2=False,
+                 plot_sipm=False, plot_sipmzs=False, plot_simap=False,
+                 signal_start=0, signal_end=1200, ymax = 200,
+                 S1_start=100, S1_end=100.5, S1_ymax=5):
         """
         decides what to plot
         """
 
         self.plot_csum = plot_csum
+        self.plot_csum_S1 = plot_csum_S1
         self.plot_s1 = plot_s1
         self.plot_s2 = plot_s2
         self.plot_sipm = plot_sipm
         self.plot_sipmzs = plot_sipmzs
         self.plot_simap = plot_simap
+        self.signal_start = signal_start
+        self.signal_end = signal_end
+        self.ymax = ymax
+        self.S1_start = S1_start
+        self.S1_end = S1_end
+        self.S1_ymax = S1_ymax
+
 
     def set_print(self, nprint=10):
         """
@@ -126,12 +117,14 @@ class Irene:
         """
         self.nprint = nprint
 
+
     def set_input_files(self, input_files):
         """
         Sets the input files
         """
         self.input_files = input_files
         self.setFiles = True
+
 
     def set_pmap_store(self, pmap_file, compression='ZLIB4'):
         """
@@ -164,12 +157,13 @@ class Irene:
         self.s2sit.cols.event.create_index()
 
         # Create group for run info
-        rungroup = self.pmapFile.create_group(self.pmapFile.root, "Run")
+        if self.run_number >0:
+            rungroup = self.pmapFile.create_group(self.pmapFile.root, "Run")
 
-        self.runInfot = self.pmapFile.create_table(rungroup,"runInfo",
+            self.runInfot = self.pmapFile.create_table(rungroup,"runInfo",
                                                    RunInfo, "runInfo",
                                                    tbl.filters(compression))
-        self.evtInfot= self.pmapFile.create_table(rungroup, "events",
+            self.evtInfot= self.pmapFile.create_table(rungroup, "events",
                                                   EventInfo, "events",
                                                   tbl.filters(compression))
 
@@ -219,6 +213,7 @@ class Irene:
         self.lmax_s2 = lmax
         self.setS2 = True
 
+
     def set_SiPM(self, thr_zs=5*units.pes, thr_sipm_s2=50*units.pes):
         """
         Parameters for SiPM analysis
@@ -228,40 +223,19 @@ class Irene:
         self.setSiPM = True
 
 
-    def plot_ene_sipm(self,S2Si, radius=3):
-        """
-        plots the reconstructed energy of the SiPMs
-        input: sipm dictionary
-        """
-
-        r = np.ones(len(self.xs)) * radius
-        col = np.zeros(len(self.xs))
-        for i in S2Si.keys():
-            sipml = S2Si[i]
-            for sipm in sipml:
-                sipm_n = sipm[0]
-                sipm_wf = sipm[1]
-                sipm_e = np.sum(sipm_wf)
-                col[sipm_n] = sipm_e
-
-        plt.figure(figsize=(10, 10))
-        plt.subplot(aspect="equal")
-        mpl.circles(self.xs, self.ys, r, c=col, alpha=0.5, ec="none")
-        plt.colorbar()
-
-        plt.xlim(-198, 198)
-        plt.ylim(-198, 198)
-
-    def store_pmaps(self, event, evtInfo, S1, S2, S2Si):
+    def store_pmaps(self, event, evt, S1, S2, S2Si):
         """
         Store PMAPS
         """
-        # Event info
-        row = self.evtInfot.row
-        row['evt_number'] = evtInfo[0]
-        row['timestamp'] = evtInfo[1]
-        row.append()
-        self.evtInfot.flush()
+        if self.run_number >0:
+            # Event info
+            row = self.evtInfot.row
+            evtInfo = self.eventsInfo[evt]
+
+            row['evt_number'] = evtInfo[0]
+            row['timestamp'] = evtInfo[1]
+            row.append()
+            self.evtInfot.flush()
 
         #S1
         row = self.s1t.row
@@ -272,7 +246,11 @@ class Irene:
             assert(len(time) == len(ene))
             for j in range(len(time)):
                 row["event"] = event
-                row["evtDaq"] = evtInfo[0]
+                if self.run_number >0:
+                    evtInfo = self.eventsInfo[evt]
+                    row["evtDaq"] = evtInfo[0]
+                else:
+                    row["evtDaq"] = event
                 row["peak"] = i
                 row["time"] = time[j]
                 row["ene"] = ene[j]
@@ -289,7 +267,11 @@ class Irene:
             assert(len(time) == len(ene))
             for j in range(len(time)):
                 row["event"] = event
-                row["evtDaq"] = evtInfo[0]
+                if self.run_number >0:
+                    evtInfo = self.eventsInfo[evt]
+                    row["evtDaq"] = evtInfo[0]
+                else:
+                    row["evtDaq"] = event
                 row["peak"] = i
                 row["time"] = time[j]
                 row["ene"] = ene[j]
@@ -308,7 +290,11 @@ class Irene:
                 for j in range(len(ene)):
                     if ene[j] > 0:
                         row["event"] = event
-                        row["evtDaq"] = evtInfo[0]
+                        if self.run_number >0:
+                            evtInfo = self.eventsInfo[evt]
+                            row["evtDaq"] = evtInfo[0]
+                        else:
+                            row["evtDaq"] = event
                         row["peak"] = i
                         row["nsipm"] = nsipm
                         row["nsample"] = j
@@ -317,6 +303,29 @@ class Irene:
 
         self.s2t.flush()
 
+
+    def plot_ene_sipm(self, S2Si, radius=3):
+        """
+        plots the reconstructed energy of the SiPMs
+        input: sipm dictionary
+        """
+
+        r = np.ones(len(self.xs)) * radius
+        col = np.zeros(len(self.xs))
+        for i in S2Si.keys():
+            sipml = S2Si[i]
+            for sipm in sipml:
+                sipm_n = sipm[0]
+                sipm_wf = sipm[1]
+                col[sipm_n] = np.sum(sipm_wf)
+
+        plt.figure(figsize=(10, 10))
+        plt.subplot(aspect="equal")
+        mpl.circles(self.xs, self.ys, r, c=col, alpha=0.5, ec="none")
+        plt.colorbar()
+
+        plt.xlim(-198, 198)
+        plt.ylim(-198, 198)
 
     def run(self, nmax, store_pmaps=False):
         """
@@ -382,7 +391,9 @@ class Irene:
                 with tb.open_file(filename, "r+") as h5in:
                     pmtrwf = h5in.root.RD.pmtrwf
                     sipmrwf = h5in.root.RD.sipmrwf
-                    eventsInfo = h5in.root.Run.events
+
+                    if self.run_number > 0:
+                        self.eventsInfo = h5in.root.Run.events
 
                     if first == False:
 
@@ -416,13 +427,21 @@ class Irene:
                         if self.plot_csum:
                             mpl.plot_signal(self.signal_t/units.mus,
                                             csum, title="calibrated sum, ZS",
-                                            signal_start=0, signal_end=1200,
-                                            ymax = 200,
+                                            signal_start=self.signal_start,
+                                            signal_end=self.signal_end,
+                                            ymax = self.ymax,
+                                            t_units='mus', units="pes")
+
+                        if self.plot_csum_S1:
+                            mpl.plot_signal(self.signal_t/units.mus,
+                                            csum, title="calibrated sum, S1",
+                                            signal_start=self.S1_start,
+                                            signal_end=self.S1_end,
+                                            ymax = self.S1_ymax,
                                             t_units='mus', units="pes")
 
                             plt.show()
                             raw_input('->')
-
 
                         # Supress samples below threshold (in pes)
                         wfzs_ene, wfzs_indx = cpf.wfzs(csum,
@@ -471,11 +490,11 @@ class Irene:
                         if store_pmaps == True:
                             if self.setPmapStore == False:
                                 raise IOError('must set PMAPS before storing')
-                            self.store_pmaps(n_events_tot, eventsInfo[evt],
+                            self.store_pmaps(n_events_tot, evt,
                                              S1, S2, S2Si)
 
                         if self.plot_simap:
-                            self.plot_ene_sipm(sipmd)
+                            self.plot_ene_sipm(S2Si)
                             plt.show()
                             raw_input('->')
 
@@ -494,10 +513,11 @@ class Irene:
                 raise
 
         if store_pmaps == True:
-            row = self.runInfot.row
-            row['run_number'] = self.run_number
-            row.append()
-            self.runInfot.flush()
+            if self.run_number > 0:
+                row = self.runInfot.row
+                row['run_number'] = self.run_number
+                row.append()
+                self.runInfot.flush()
             self.pmapFile.close()
         return n_events_tot
 
