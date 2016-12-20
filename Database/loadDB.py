@@ -3,6 +3,14 @@ import numpy as np
 import pandas as pd
 import os
 
+import sys
+if sys.version_info < (3,):
+    from future_builtins import map
+
+
+def tmap(*args):
+    return tuple(map(*args))
+
 # Run to take always the same calibration constant, etc for MC files
 # 3012 was the first SiPM calibration after remapping.
 runNumberForMC = 3012
@@ -69,21 +77,21 @@ where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
 order by SensorID;'''.format(run_number)
     cursor.execute(sqlbaseline)
     data = cursor.fetchall()
-    baselines = np.array(map(lambda s: s[0], data))
+    baselines = np.array(tmap(lambda s: s[0], data))
 
     sqlnoisebins = '''select Energy from SipmNoiseBins
 where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
 order by Bin;'''.format(run_number)
     cursor.execute(sqlnoisebins)
     data = cursor.fetchall()
-    noise_bins = np.array(map(lambda s: s[0], data))
+    noise_bins = np.array(tmap(lambda s: s[0], data))
 
     sqlnoise = '''select * from SipmNoise
 where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
 order by SensorID;'''.format(run_number)
     cursor.execute(sqlnoise)
     data = cursor.fetchall()
-    data = map(lambda l: l[3:], data)
+    data = tmap(lambda l: l[3:], data)
     noise = np.array(data).reshape(1792, 300)
 
     return noise, noise_bins, baselines
