@@ -1,5 +1,4 @@
-"""
-Waveform Functions
+"""Waveform Functions
 JJGC, September-October 2016
 
 ChangeLog
@@ -12,8 +11,7 @@ import numpy as np
 
 
 def to_adc(wfs, sensdf):
-    """
-    Convert waveform in pes to adc.
+    """Convert waveform in pes to adc.
 
     Parameters
     ----------
@@ -31,8 +29,7 @@ def to_adc(wfs, sensdf):
 
 
 def to_pes(wfs, sensdf):
-    """
-    Convert waveform in adc to pes.
+    """Convert waveform in adc to pes.
 
     Parameters
     ----------
@@ -50,8 +47,7 @@ def to_pes(wfs, sensdf):
 
 
 def get_waveforms(pmtea, event_number=0):
-    """
-    Produce a DataFrame with the waveforms in an array.
+    """Produce a DataFrame with the waveforms in an array.
 
     Parameters
     ----------
@@ -71,8 +67,7 @@ def get_waveforms(pmtea, event_number=0):
 
 
 def get_waveforms_and_energy(pmtea, event_number=0):
-    """
-    Produce a DataFrame with the waveforms in an array and their energy.
+    """Produce a DataFrame with the waveforms in an array and their energy.
 
     Parameters
     ----------
@@ -101,8 +96,7 @@ def get_waveforms_and_energy(pmtea, event_number=0):
 
 
 def get_energy(pmtea, event_list=[0]):
-    """
-    Compute the sum of the waveforms for some events.
+    """Compute the sum of the waveforms for some events.
 
     Parameters
     ----------
@@ -128,8 +122,8 @@ def get_energy(pmtea, event_list=[0]):
     return pd.DataFrame(EPMT)
 
 def wfdf(time,energy_pes):
-    """
-    takes two vectors (time, energy) and returns a data frame representing a waveform
+    """Take two vectors (time, energy) and returns a data frame
+    representing a waveform.
     """
     swf = {}
     swf['time_mus'] = time/units.mus
@@ -161,8 +155,7 @@ def wfdf(time,energy_pes):
 #
 
 def wf2df(time_mus, energy_pes, dropnan=False):
-    """
-    Produce a DataFrame from input values.
+    """Produce a DataFrame from input values.
 
     Parameters
     ----------
@@ -184,8 +177,7 @@ def wf2df(time_mus, energy_pes, dropnan=False):
 
 
 def df2wf(df):
-    """
-    Retrieves the np arrays contained in the data frame.
+    """Retrieves the np arrays contained in the data frame.
 
     Parameters
     ----------
@@ -203,8 +195,7 @@ def df2wf(df):
 
 
 def add_cwf(cwfdf, pmtdf):
-    """
-    Sums all PMTs for each time sample in pes.
+    """Sum all PMTs for each time sample in pes.
 
     Parameters
     ----------
@@ -224,8 +215,7 @@ def add_cwf(cwfdf, pmtdf):
 
 
 def rebin_wf(t, e, stride=40):
-    """
-    Rebin arrays according to some stride.
+    """Rebin arrays according to some stride.
 
     Parameters
     ----------
@@ -257,8 +247,7 @@ def rebin_wf(t, e, stride=40):
 
 
 def rebin_df(df, stride=40):
-    """
-    Applies rebin_wf to a dataframe.
+    """Applies rebin_wf to a dataframe.
 
     Parameters
     ----------
@@ -276,8 +265,7 @@ def rebin_df(df, stride=40):
 
 
 def wf_thr(df, threshold=1):
-    """
-    Get the values of a waveform above threshold.
+    """Get the values of a waveform above threshold.
 
     Parameters
     ----------
@@ -295,8 +283,7 @@ def wf_thr(df, threshold=1):
 
 
 def zs_wf(waveform, threshold, to_mus=None):
-    """
-    Remove waveform values below threshold.
+    """Remove waveform values below threshold.
 
     Parameters
     ----------
@@ -321,8 +308,7 @@ def zs_wf(waveform, threshold, to_mus=None):
 
 
 def zero_suppression(waveforms, thresholds, to_mus=None):
-    """
-    Remove waveforms values below threshold.
+    """Remove waveforms values below threshold.
 
     Parameters
     ----------
@@ -348,8 +334,7 @@ def zero_suppression(waveforms, thresholds, to_mus=None):
 
 
 def suppress_wf(waveform, threshold):
-    """
-    Put zeros where the waveform is below some threshold.
+    """Put zeros where the waveform is below some threshold.
 
     Parameters
     ----------
@@ -369,8 +354,7 @@ def suppress_wf(waveform, threshold):
 
 
 def noise_suppression(waveforms, thresholds):
-    """
-    Put zeros where the waveform is below some threshold.
+    """Put zeros where the waveform is below some threshold.
 
     Parameters
     ----------
@@ -391,8 +375,7 @@ def noise_suppression(waveforms, thresholds):
 
 
 def find_baseline(waveform, n_samples=500, check_no_signal=True):
-    """
-    Finds baseline in waveform.
+    """Find baseline in waveform.
 
     Parameters
     ----------
@@ -422,8 +405,7 @@ def find_baseline(waveform, n_samples=500, check_no_signal=True):
 
 
 def subtract_baseline(waveforms, n_samples=500, check_no_signal=True):
-    """
-    Computes the baseline for each sensor in the event and subtracts it.
+    """Compute the baseline for each sensor in the event and subtract it.
 
     Parameters
     ----------
