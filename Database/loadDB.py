@@ -2,6 +2,7 @@ import sqlite3
 import numpy as np
 import pandas as pd
 import os
+from operator import itemgetter
 
 import sys
 if sys.version_info < (3,):
@@ -76,22 +77,19 @@ def SiPMNoise(run_number=1e5):
 where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
 order by SensorID;'''.format(run_number)
     cursor.execute(sqlbaseline)
-    data = cursor.fetchall()
-    baselines = np.array(tmap(lambda s: s[0], data))
+    baselines = np.array(tmap(itemgetter(0), cursor.fetchall()))
 
     sqlnoisebins = '''select Energy from SipmNoiseBins
 where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
 order by Bin;'''.format(run_number)
     cursor.execute(sqlnoisebins)
-    data = cursor.fetchall()
-    noise_bins = np.array(tmap(lambda s: s[0], data))
+    noise_bins = np.array(tmap(itemgetter(0), cursor.fetchall()))
 
     sqlnoise = '''select * from SipmNoise
 where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
 order by SensorID;'''.format(run_number)
     cursor.execute(sqlnoise)
-    data = cursor.fetchall()
-    data = tmap(lambda l: l[3:], data)
+    data = tmap(itemgetter(slice(3,None)), cursor.fetchall())
     noise = np.array(data).reshape(1792, 300)
 
     return noise, noise_bins, baselines
