@@ -85,9 +85,7 @@ from FEE table. PRE-RELEASE
 
 
 def simulate_sipm_response(event_number, sipmrd_, sipms_noise_sampler):
-    """
-    Add noise with the NoiseSampler class and return the noisy waveform.
-    """
+    """Add noise with the NoiseSampler class and return the noisy waveform."""
     return sipmrd_[event_number] + sipms_noise_sampler.Sample()
 
 
@@ -131,9 +129,7 @@ def simulate_pmt_response(event, pmtrd):
 
 
 def DIOMIRA(argv=sys.argv):
-    """
-    Diomira driver
-    """
+    """Diomira driver."""
     CFP = configure(argv)
 
     if CFP["INFO"]:

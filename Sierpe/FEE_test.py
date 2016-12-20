@@ -28,9 +28,7 @@ def test_sqrt():
 #     assert min(lst) <= mean_list(lst) <= max(lst)
 
 def signal_i_th():
-    """
-    generates a "theoretical" current signal (signal_i)
-    """
+    """Generates a "theoretical" current signal (signal_i)"""
     return np.concatenate((np.zeros(1000),
                            np.linspace(0,0.5,2000),
                            np.linspace(0.5,0,1000),
@@ -39,10 +37,8 @@ def signal_i_th():
                            np.zeros(20000)),axis=0)*units.mA
 
 def deconv_simple(signal,coef):
-    """
-    Deconvolution of the fine-grained fee signal (no DAQ)
-    no noise
-    using true start and end of signals
+    """Deconvolution of the fine-grained fee signal (no DAQ) no noise
+    using true start and end of signals.
     """
 
     acum = np.zeros(len(signal))
@@ -57,8 +53,8 @@ def deconv_simple(signal,coef):
 
 
 def test_fee_params():
-    """
-    Checks the values of the FEE params
+    """Check the values of the FEE params.
+
     These are parameters of the simulation. They can be changed but the test
     gurantess that changes must be propagated to test (e.g, changes
     are checked)
@@ -82,10 +78,7 @@ def test_fee_params():
     assert FE.OFFSET == 2500   # offset adc
 
 def test_spe_to_adc():
-    """
-    Conversion of SPE to adc values with the current FEE Parameters
-    must be
-    """
+    """Convert SPE to adc values with the current FEE Parameters must be."""
     ipmt = 0
     spe = FE.SPE()
     fee = FE.FEE(noise_FEEPMB_rms=0*units.mA, noise_DAQ_rms=0)
