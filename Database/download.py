@@ -1,5 +1,7 @@
 import sqlite3
-import MySQLdb
+import pymysql
+import pymysql as MySQLdb
+pymysql.install_as_MySQLdb()
 import os
 from base64 import b64decode as dec
 
