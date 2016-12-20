@@ -1,5 +1,4 @@
-"""
-Classes and functions describing the electronics of the
+"""Classes and functions describing the electronics of the
 PMT plane FEE.
 (full model)
 VH, JJGC, November, 2016
@@ -37,30 +36,22 @@ CEILING = 4096  # ceiling of adc
 
 
 def i_to_adc():
-    """
-    current to adc counts
-    """
+    """Current to adc counts."""
     return FEE_GAIN/LSB
 
 
 def i_to_v():
-    """
-    current to voltage
-    """
+    """Current to voltage."""
     return FEE_GAIN
 
 
 def v_to_adc():
-    """
-    voltage to adc
-    """
+    """Voltage to adc."""
     return 1./LSB
 
 
 class SPE:
-    """
-    Represents a single photo-electron in the PMT
-    """
+    """Represent a single photo-electron in the PMT."""
 
     def __init__(self, pmt_gain=PMT_GAIN, x_slope=5.*units.ns,
                  x_flat=1.*units.ns):
@@ -84,9 +75,6 @@ class SPE:
         self.spe = np.concatenate((rise, flat, fall))
 
     def __str__(self):
-        """
-        output the class to string
-        """
         s = """
         (PMT gain = {0:5.2g}, amplitude = {1:5.2g} muA
          slope = {2:5.2f} ns, flat = {3:5.2f} ns)
@@ -96,9 +84,6 @@ class SPE:
         return s
 
     def __repr__(self):
-        """
-        class representation
-        """
         return self.__str__()
 
 
@@ -155,9 +140,7 @@ def spe_pulse_from_vector(spe, cnt):
 
 
 class FEE:
-    """
-    Complete model of Front-end electronics.
-    """
+    """Complete model of Front-end electronics."""
 
     def __init__(self, gain=FEE_GAIN,
                  c2=C2, c1=C1, r1=R1, zin=Zin, fsample=f_sample,
@@ -206,9 +189,6 @@ class FEE:
         self.DAQnoise_rms = noise_DAQ_rms
 
     def __str__(self):
-        """
-        output the class to string
-        """
         s = """
         (C1 = {0:7.1f} nf,
          C2 = {1:7.1f} nf,
@@ -268,16 +248,13 @@ class FEE:
         return s
 
     def __repr__(self):
-        """
-        class representation
-        """
         return self.__str__()
 
 
 def noise_adc(fee, signal_in_adc):
-    """
-    Equivalent Noise of the DAQ added at the output
-    of the system
+    """Equivalent Noise of the DAQ added at the output
+    of the system.
+
     input: a signal (in units of adc counts)
            an instance of FEE class
     output: a signal with DAQ noise added
@@ -350,9 +327,7 @@ def filter_fee(feep, ipmt):
 
 
 def filter_cleaner(feep, ipmt):
-    """
-    cleans the input signal
-    """
+    """Clean the input signal."""
     coef = feep.coeff_c_pmt[ipmt]
     if ipmt == -1:
         coef = feep.coeff_c
@@ -415,8 +390,7 @@ def signal_clean(feep, signal_fee, ipmt):
 
 
 def daq_decimator(f_sample1, f_sample2, signal_in):
-    """
-    downscales the signal vector according to the
+    """Downscale the signal vector according to the
     scale defined by f_sample1 (1 GHZ) and
     f_sample2 (40 Mhz).
     Includes anti-aliasing filter
