@@ -10,8 +10,7 @@ from Core.LogConfig import logger
 
 
 def print_configuration(options):
-    """
-    Print configuration.
+    """Print configuration.
 
     Parameters
     ----------
@@ -24,8 +23,7 @@ def print_configuration(options):
 
 
 def configure(input_options=sys.argv):
-    """
-    Translate command line options to a meaningfull dictionary.
+    """Translate command line options to a meaningfull dictionary.
 
     Parameters
     ----------
@@ -87,8 +85,7 @@ def configure(input_options=sys.argv):
 
 
 def define_event_loop(options, n_evt):
-    """
-    Produce an iterator over the event numbers.
+    """Produce an iterator over the event numbers.
 
     Parameters
     ----------
@@ -114,8 +111,7 @@ def define_event_loop(options, n_evt):
 
 
 def cast(value):
-    """
-    Cast value from string to a python type.
+    """Cast value from string to a python type.
 
     Parameters
     ----------
@@ -141,8 +137,7 @@ def cast(value):
 
 
 def read_config_file(cfile):
-    """
-    Read a configuration file of the form PARAMETER VALUE.
+    """Read a configuration file of the form PARAMETER VALUE.
 
     Parameters
     ----------
@@ -174,9 +169,8 @@ def read_config_file(cfile):
 
 
 def filter_options(options, name):
-    """
-    Construct a new option dictionary with the parameters relevant to some
-    module.
+    """Construct a new option dictionary with the parameters relevant to
+    some module.
 
     Parameters
     ----------
@@ -189,6 +183,7 @@ def filter_options(options, name):
     -------
     out : dictionary
         Filtered dictionary.
+
     """
     out = {}
     for key, value in options.items():

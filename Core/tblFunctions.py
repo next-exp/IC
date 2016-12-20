@@ -1,5 +1,4 @@
-"""
-Table Functions
+"""Table Functions
 GML, October 2016
 
 ChangeLog
@@ -23,8 +22,7 @@ import Sierpe.FEE as FE
 
 
 def filters(name):
-    """
-    Returns the filter corresponding to a given key.
+    """Return the filter corresponding to a given key.
 
     Parameters
     ----------
@@ -58,9 +56,7 @@ def filters(name):
 
 
 def store_FEE_table(fee_table):
-    """
-    Stores the parameters of the EP FEE simulation
-    """
+    """Store the parameters of the EP FEE simulation."""
     DataPMT = DB.DataPMT()
     row = fee_table.row
     row["OFFSET"] = FE.OFFSET
@@ -90,9 +86,9 @@ def store_FEE_table(fee_table):
 
 
 def read_FEE_table(fee_t):
-    """
-    Reads the FEE table en returns a PD Series for the simulation parameters
-    and a PD series for the values of the capacitors used in the simulation
+    """Read the FEE table and return a PD Series for the simulation
+    parameters and a PD series for the values of the capacitors used
+    in the simulation.
     """
 
     fa = fee_t.read()
@@ -130,8 +126,7 @@ def read_deconv_table(table):
 
 
 def get_vectors(h5f):
-    """
-    Return the most relevant fields stored in a raw data file.
+    """Return the most relevant fields stored in a raw data file.
 
     Parameters
     ----------
@@ -160,8 +155,7 @@ def get_vectors(h5f):
 
 
 def get_pmt_vectors(h5f):
-    """
-    Return the most relevant fields stored in a raw data file.
+    """Return the most relevant fields stored in a raw data file.
 
     Parameters
     ----------
@@ -184,8 +178,7 @@ def get_pmt_vectors(h5f):
 
 
 def store_wf_table(event, table, wfdic, flush=True):
-    """
-    Stores a set of waveforms in a table.
+    """Store a set of waveforms in a table.
 
     Parameters
     ----------
@@ -211,8 +204,7 @@ def store_wf_table(event, table, wfdic, flush=True):
 
 
 def read_sensor_wf(table, evt, isens):
-    """
-    Reads back a particular waveform from a table.
+    """Read back a particular waveform from a table.
 
     Parameters
     ----------
@@ -237,8 +229,7 @@ def read_sensor_wf(table, evt, isens):
 
 
 def read_wf_table(table, event_number):
-    """
-    Reads back a set of waveforms from a table.
+    """Read back a set of waveforms from a table.
 
     Parameters
     ----------
@@ -262,8 +253,7 @@ def read_wf_table(table, event_number):
 
 
 def store_pmap(pmap, table, evt, flush=True):
-    """
-    Stores a pmap in a table.
+    """Store a pmap in a table.
 
     Parameters
     ----------
@@ -292,9 +282,8 @@ def store_pmap(pmap, table, evt, flush=True):
 
 
 def get_nofevents(table, column_name="evt_number"):
-    """
-    Find number of events in table by asking number of different values in
-    column.
+    """Find number of events in table by asking number of different values
+    in column.
 
     Parameters
     ----------
@@ -307,5 +296,6 @@ def get_nofevents(table, column_name="evt_number"):
     -------
     nevt : int
         Number of events in table.
+
     """
     return len(set(table.read(field=column_name)))

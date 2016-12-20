@@ -1,7 +1,5 @@
-"""
-Functions to find peaks, S12 selection etc.
+"""Functions to find peaks, S12 selection etc.
 JJGC and GML December 2016
-
 """
 from __future__ import print_function
 
@@ -36,9 +34,8 @@ def pmt_sum(CWF, adc_to_pes):
 
 
 def wfdf(time,energy_pes):
-    """
-    takes two vectors (time, energy) and returns a data frame representing a waveform
-    """
+    """Take two vectors (time, energy) and return a data frame
+    representing a waveform."""
     swf = {}
     swf['time_ns'] = time/units.ns
     swf['ene_pes'] = energy_pes
@@ -46,16 +43,16 @@ def wfdf(time,energy_pes):
 
 
 def wf_thr(wf, threshold=0):
-    """
-    return a zero supressed waveform (more generally, the vaules of wf above threshold)
+    """Return a zero supressed waveform (more generally, the vaules of wf
+    above threshold).
     """
     return wf.loc[lambda df: df.ene_pes.values >threshold, :]
 
 
 def find_peaks(wfzs, stride=4, lmin=8):
-    """
-    Find peaks.
-    do not interrupt the peak if next sample comes within stride
+    """Find peaks.
+
+    Do not interrupt the peak if next sample comes within stride
     accept the peak only if larger than lmin samples
     """
     T = wfzs['time_mus'].values
@@ -86,8 +83,8 @@ def find_peaks(wfzs, stride=4, lmin=8):
 
 def find_S12(wfzs, tmin=0*units.mus, tmax=1200*units.mus,
              stride=4, lmin=8, lmax=1e+6):
-    """
-    Find S1/S2 peaks.
+    """Find S1/S2 peaks.
+
     input: a zero supressed wf
     returns a list of waveform data frames
     do not interrupt the peak if next sample comes within stride
@@ -127,10 +124,9 @@ def find_S12(wfzs, tmin=0*units.mus, tmax=1200*units.mus,
     return S12L
 
 def sipm_S2(dSIPM,S2, thr=5*units.pes):
-    """
-    Given a vector with SIPMs (energies above threshold), returns
-    a list of np arrays. Each element of the list is the S2 window
-    in the SiPM (if not zero)
+    """Given a vector with SIPMs (energies above threshold), return a list
+    of np arrays. Each element of the list is the S2 window in the
+    SiPM (if not zero).
     """
 
     i0,i1 = index_from_S2(S2)
@@ -147,9 +143,7 @@ def sipm_S2(dSIPM,S2, thr=5*units.pes):
 
 
 def dict_to_df_S12(S12):
-    """
-    Takes an S12 dictionary and returns a list of DF
-    """
+    """Take an S12 dictionary and return a list of DF."""
     S12L = []
     print('number of peaks = {}'.format(len(S12)))
     for i in S12.keys():
@@ -160,8 +154,8 @@ def dict_to_df_S12(S12):
     return S12L
 
 def scan_S12(S12):
-    """
-    prints and plots the peaks of input S12
+    """Print and plot the peaks of input S12.
+
     S12 is a dictionary
     S12[i] for i in keys() are the S12 peaks
     """
@@ -175,9 +169,7 @@ def scan_S12(S12):
 
 
 def index_from_S2(S2):
-    """
-    return the indexes defining the vector
-    """
+    """Return the indexes defining the vector."""
     T = S2[0]/units.mus
     #print(T[0], T[-1])
     return int(T[0]), int(T[-1])
@@ -185,12 +177,11 @@ def index_from_S2(S2):
 
 
 def sipm_S2_dict(SIPM, S2d, thr=5*units.pes):
-    """
-    Given a vector with SIPMs (energies above threshold), and a
-    dictionary of S2s, S2d, returns a dictionary of SiPMs-S2.
-    Each index of the dictionary correspond to one S2 and is
-    a list of np arrays. Each element of the list is the S2 window
-    in the SiPM (if not zero)
+    """Given a vector with SIPMs (energies above threshold), and a
+    dictionary of S2s, S2d, returns a dictionary of SiPMs-S2.  Each
+    index of the dictionary correspond to one S2 and is a list of np
+    arrays. Each element of the list is the S2 window in the SiPM (if
+    not zero)
     """
     SiPMd = {}
     for i in S2d.keys():
@@ -199,9 +190,8 @@ def sipm_S2_dict(SIPM, S2d, thr=5*units.pes):
     return SiPMd
 
 def scan_S12L(S12L):
-    """
-    prints and plots the peaks of input list S12L
-    S12L is a list of data frames
+    """Print and plot the peaks of input list S12L S12L is a list of data
+    frames.
     """
     print('number of peaks = {}'.format(len(S12L)))
     for i, s12df in enumerate(S12L):
@@ -213,10 +203,7 @@ def scan_S12L(S12L):
 
 
 class S12Finder:
-    """
-    Driver class to find S12
-
-    """
+    """Driver class to find S12."""
     def __init__(self, run_number, n_baseline=28000, n_MAU=200,
                  thr_trigger=5, wfm_length=48000, tstep = 25):
         """
@@ -257,9 +244,7 @@ class S12Finder:
         self.nprint = nprint
 
     def set_files(self,path, input_files):
-        """
-        Sets the input files
-        """
+        """Set the input files."""
         self.path = path
         self.input_files = input_files
         self.setFiles = True
@@ -295,10 +280,7 @@ class S12Finder:
             return self.dS2
 
     def find_s12(self, nmax, thr_s12=1.0*units.pes):
-        """
-        Run the machine
-
-        """
+        """Run the machine."""
         n_events_tot = 0
 
         if self.setFiles == False:
