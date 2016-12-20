@@ -1,5 +1,4 @@
-"""
-Defines a logger (works also in the NB)
+"""Defines a logger (works also in the NB)
 JJGC August 2016
 """
 import logging

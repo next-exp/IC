@@ -1,6 +1,5 @@
-"""
-Defines a class for random sampling.
-"""
+"""Defines a class for random sampling."""
+
 from __future__ import print_function
 
 import numpy as np
@@ -10,8 +9,7 @@ import Database.loadDB as DB
 
 class NoiseSampler:
     def __init__(self, sample_size=1, smear=True):
-        """
-        Samples a histogram as if it was a PDF.
+        """Sample a histogram as if it was a PDF.
 
         Parameters
         ----------
@@ -58,15 +56,12 @@ class NoiseSampler:
         self._sampler = _continuous_sampler if smear else _discrete_sampler
 
     def Sample(self):
-        """
-        Return a sample of each distribution.
-        """
+        """Return a sample of each distribution."""
         return self._sampler() + self.baselines
 
     def ComputeThresholds(self, noise_cut=0.99, pes_to_adc=None):
-        """
-        Find the number of pes at which each noise distribution leaves behind
-        the a given fraction of its population.
+        """Find the number of pes at which each noise distribution leaves
+        behind the a given fraction of its population.
 
         Parameters
         ----------
@@ -80,6 +75,7 @@ class NoiseSampler:
         -------
         cuts: array of floats
             Cuts in adc or pes.
+
         """
         def findcut(probs):
             if not probs.any():

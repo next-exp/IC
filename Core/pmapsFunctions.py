@@ -1,5 +1,4 @@
-"""
-PMAPS functions
+"""PMAPS functions.
 JJGC December 2016
 
 """
@@ -15,9 +14,7 @@ import matplotlib.pyplot as plt
 
 
 def read_PMAPS(path, pmap_file):
-    """
-    Returns the PMAPS as PD DataFrames
-    """
+    """Return the PMAPS as PD DataFrames."""
 
     h5f = tb.open_file(path+pmap_file,'r+')
     s1t = h5f.root.PMAPS.S1
@@ -30,23 +27,17 @@ def read_PMAPS(path, pmap_file):
 
 
 def S12_select_event(S12df, event):
-    """
-    Return a copy of the DF for event
-    """
+    """Return a copy of the DF for event."""
     return S12df.loc[lambda df: df.event.values ==event, :]
 
 
 def S12_select_peak(S12df, peak):
-    """
-    Return a copy of the DF for peak
-    """
+    """Return a copy of the DF for peak."""
     return S12df.loc[lambda df: S12df.peak.values ==peak, :]
 
 
 def S12_get_wvfm(S12df, event, peak):
-    """
-    Returns the waveform for event, peak
-    """
+    """Return the waveform for event, peak."""
     s12t = S12_select_event(S12df, event)
     s12p = S12_select_peak(s12t, peak=peak)
     return s12p.time.values, s12p.ene.values
@@ -65,9 +56,7 @@ def S12df_to_dict(s12df, evt_max=10):
 
 
 def plot_S12df_waveforms(S12df, nmin=0, nmax=16, x=4, y=4):
-    """
-    Takes as input a S1df PMAPS and plot waveforms
-    """
+    """Take as input a S1df PMAPS and plot waveforms."""
     plt.figure(figsize=(12, 12))
 
     for i in range(nmin, nmax):
