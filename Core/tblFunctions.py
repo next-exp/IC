@@ -18,7 +18,6 @@ import tables as tb
 import pandas as pd
 
 import Core.wfmFunctions as wfm
-import Core.Bridges as bdg
 import Database.loadDB as DB
 import Sierpe.FEE as FE
 
@@ -290,36 +289,6 @@ def store_pmap(pmap, table, evt, flush=True):
             row.append()
     if flush:
         table.flush()
-
-
-def read_pmap(table, evt):
-    """
-    Reads back the pmap stored in table.
-
-    Parameters
-    ----------
-    table : tb.Table
-        Table in which the pmap is stored.
-    evt : int
-        Event number
-
-    Returns
-    -------
-    pmap : Bridges.PMap
-        Full PMap instance with data from table.
-    """
-    pmap = bdg.PMap()
-    peaks = set(table.read_where("event=={}".format(evt), field="peak"))
-    for peak in peaks:
-        coords = table.get_where_list("(event == {}) & "
-                                      "(peak == {})".format(evt, peak))
-        signal = table[coords[0]]["signal"]
-        times = table.read_coordinates(coords, "time")
-        ToT = table.read_coordinates(coords, "ToT")
-        cathode = table.read_coordinates(coords, "cathode")
-        anode = table.read_coordinates(coords, "anode")
-        pmap.peaks.append(bdg.Peak(times, cathode, anode, ToT, signal))
-    return pmap
 
 
 def get_nofevents(table, column_name="evt_number"):
