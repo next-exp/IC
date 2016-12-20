@@ -1,6 +1,4 @@
-"""
-Tables defining the DM
-"""
+"""Tables defining the DM."""
 import tables as tb
 
 
@@ -14,9 +12,7 @@ class EventInfo(tb.IsDescription):
 
 
 class DetectorGeometry(tb.IsDescription):
-    """
-    Stores geometry information for the detector
-    """
+    """Store geometry information for the detector."""
     x_det = tb.Float32Col(shape=2, pos=1)  # xmin, xmax
     y_det = tb.Float32Col(shape=2, pos=2)  # ymin, ymax
     z_det = tb.Float32Col(shape=2, pos=3)  # zmin, zmax
@@ -24,9 +20,8 @@ class DetectorGeometry(tb.IsDescription):
 
 
 class DataSensor(tb.IsDescription):
-    """
-    Stores metadata information for the SiPMs
-    (position, gain, calibration-constant, mask)
+    """Store metadata information for the SiPMs (position, gain,
+    calibration-constant, mask).
     """
     channel = tb.Int32Col(pos=0)  # electronic channel
     position = tb.Float32Col(shape=3, pos=1)
@@ -36,9 +31,8 @@ class DataSensor(tb.IsDescription):
 
 
 class MCTrack(tb.IsDescription):
-    """
-    Stores the parameters used by the simulation as metadata
-    using Pytables
+    """Stores. the parameters used by the simulation as metadata using
+    Pytables.
     """
     event_indx = tb.Int16Col(pos=1)
     mctrk_indx = tb.Int16Col(pos=2)
@@ -56,9 +50,7 @@ class MCTrack(tb.IsDescription):
 
 
 class SENSOR_WF(tb.IsDescription):
-    """
-    Describes a true waveform (zero supressed)
-    """
+    """Describe a true waveform (zero supressed)."""
     event = tb.UInt32Col(pos=0)
     ID = tb.UInt32Col(pos=1)
     time_mus = tb.Float32Col(pos=2)
@@ -66,9 +58,7 @@ class SENSOR_WF(tb.IsDescription):
 
 
 class FEE(tb.IsDescription):
-    """
-    Stores the parameters used by the EP simulation as metadata
-    """
+    """Store the parameters used by the EP simulation as metadata."""
     OFFSET = tb.Int16Col(pos=1)  # displaces the baseline (e.g, 700)
     CEILING = tb.Int16Col(pos=2)  # adc top count (4096)
     PMT_GAIN = tb.Float32Col(pos=3)  # Gain of PMT (4.5e6)
@@ -102,11 +92,10 @@ class DECONV_PARAM(tb.IsDescription):
 
 
 class S12(tb.IsDescription):
-    """
-    Store for a S1/S2
+    """Store for a S1/S2
     The table maps a S12:
     peak is the index of the S12 dictionary, running over the number of peaks found
-    time and energy of the peak
+    time and energy of the peak.
     """
     event = tb.Int32Col(pos=0)
     evtDaq = tb.Int32Col(pos=1)
@@ -116,8 +105,7 @@ class S12(tb.IsDescription):
 
 
 class S2Si(tb.IsDescription):
-    """
-    Store for a S2Si
+    """Store for a S2Si
     The table maps a S2Si
     peak is the same than the S2 peak
     nsipm gives the SiPM number
@@ -132,9 +120,7 @@ class S2Si(tb.IsDescription):
 
 
 class PMAP(tb.IsDescription):
-    """
-    Store for a PMap
-    """
+    """Store for a PMap."""
     event = tb.Int32Col(pos=0)
     peak = tb.UInt8Col(pos=1)
     signal = tb.StringCol(2, pos=2)
