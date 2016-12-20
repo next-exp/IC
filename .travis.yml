@@ -18,6 +18,7 @@ install:
   - conda create -n icenv python=2.7 numpy scipy pandas cython pytest pytest-cov pytables mysql-python
   - source activate icenv
   - pip install coveralls hypothesis-numpy
+  - python $ICDIR/Database/download.py
 
 script:
     - pytest --cov
