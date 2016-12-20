@@ -93,29 +93,6 @@ def wfdf(time,energy_pes):
     swf['ene_pes'] = energy_pes
     return pd.DataFrame(swf)
 
-# def wfdf(time_mus, energy_pes, indx):
-#     """
-#     Produce a DataFrame from input values.
-#
-#     Parameters
-#     ----------
-#     time_mus : 1-dim np.ndarray
-#         Waveform time values.
-#     energy_pes : 1-dim np.ndarray
-#         Waveform amplitudes.
-#     indx : 1-dim np.ndarray
-#         Samples indices.
-#
-#     Returns
-#     -------
-#     df : pd.DataFrame
-#         A data frame with three fields (time_mus, ene_pes and indx) and one
-#         entry per sample.
-#     """
-#     return pd.DataFrame({"time_mus": time_mus,
-#                          "ene_pes": energy_pes,
-#                          "indx": indx})
-#
 
 def wf2df(time_mus, energy_pes, dropnan=False):
     """Produce a DataFrame from input values.
