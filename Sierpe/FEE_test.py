@@ -122,4 +122,4 @@ def test_FEE():
     energy_in = np.sum(signal_i[0:11000] * FE.i_to_adc())
     diff = 1000 * abs((energy_in - energy_mea)/energy_in)
 
-    assert diff < 0.05
+    assert diff < 0.75
