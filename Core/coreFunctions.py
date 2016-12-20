@@ -6,15 +6,12 @@ import pandas as pd
 
 
 def wait():
-    """
-    A simple convenience name for raw_input
-    """
+    """A simple convenience name for raw_input."""
     raw_input("Press a key...")
 
 
 def dict_map(func, dic):
-    """
-    Apply map to dictionary values maintaining correspondence.
+    """Apply map to dictionary values maintaining correspondence.
 
     Parameters
     ----------
@@ -32,8 +29,7 @@ def dict_map(func, dic):
 
 
 def df_map(func, df, field):
-    """
-    Apply map to some data frame field.
+    """Apply map to some data frame field.
 
     Parameters
     ----------
@@ -56,8 +52,7 @@ def df_map(func, df, field):
 
 
 def dict_filter(cond, dic):
-    """
-    Apply filter to dictionary values maintaining correspondence.
+    """Apply filter to dictionary values maintaining correspondence.
 
     Parameters
     ----------
@@ -75,8 +70,7 @@ def dict_filter(cond, dic):
 
 
 def farray_from_string(sfl):
-    """
-    Converts a string of space-separated floats to a np array.
+    """Convert a string of space-separated floats to a np array.
 
     Parameters
     ----------
@@ -92,8 +86,7 @@ def farray_from_string(sfl):
 
 
 def rebin_array(arr, stride):
-    """
-    Rebins an array according to some stride.
+    """Rebins an array according to some stride.
 
     Parameters
     ----------
