@@ -117,27 +117,6 @@ def wfdf(time,energy_pes):
 #                          "indx": indx})
 #
 
-def wf2df(time_mus, energy_pes, dropnan=False):
-    """Produce a DataFrame from input values.
-
-    Parameters
-    ----------
-    time_mus : 1-dim np.ndarray
-        Waveform time values.
-    energy_pes : 1-dim np.ndarray
-        Waveform amplitudes.
-    dropnan : bool, optional
-        Flag to decide whether to drop nan values. Defaults to False.
-
-    Returns
-    -------
-    df : pd.DataFrame
-        A data frame with two fields (time_mus and ene_pes) and one entry
-        per sample. Nan are dropped if dropnan is True.
-    """
-    df = pd.DataFrame({"time_mus": time_mus, "ene_pes": energy_pes})
-    return df.dropna() if dropnan else df
-
 
 def df2wf(df):
     """Retrieves the np arrays contained in the data frame.
