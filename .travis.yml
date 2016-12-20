@@ -3,6 +3,7 @@ language: python
 
 python:
 - 2.7
+- 3.5
 
 install:
   # Install conda
@@ -15,7 +16,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n icenv python=2.7 numpy scipy pandas cython pytest pytest-cov pytables pymysql
+  - conda create -n icenv python=$TRAVIS_PYTHON_VERSION numpy scipy pandas cython pytest pytest-cov pytables pymysql
   - source activate icenv
   - pip install coveralls hypothesis-numpy flaky
   - python $ICDIR/Database/download.py
