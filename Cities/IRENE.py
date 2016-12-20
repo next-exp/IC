@@ -92,9 +92,7 @@ class Irene:
                  plot_sipm=False, plot_sipmzs=False, plot_simap=False,
                  signal_start=0, signal_end=1200, ymax = 200,
                  S1_start=100, S1_end=100.5, S1_ymax=5):
-        """
-        decides what to plot
-        """
+        """Decide what to plot."""
 
         self.plot_csum = plot_csum
         self.plot_csum_S1 = plot_csum_S1
@@ -112,24 +110,18 @@ class Irene:
 
 
     def set_print(self, nprint=10):
-        """
-        print frequency
-        """
+        """Print frequency."""
         self.nprint = nprint
 
 
     def set_input_files(self, input_files):
-        """
-        Sets the input files
-        """
+        """Set the input files."""
         self.input_files = input_files
         self.setFiles = True
 
 
     def set_pmap_store(self, pmap_file, compression='ZLIB4'):
-        """
-        Sets the input files
-        """
+        """Set the input files."""
         filename = pmap_file
         self.pmapFile = tb.open_file(filename, "w",
                           filters=tbl.filters(compression))
@@ -170,30 +162,22 @@ class Irene:
         self.setPmapStore = True
 
     def set_BLR(self, n_baseline=38000, thr_trigger=5*units.adc):
-        """
-        Parameters of the BLR
-        """
+        """Parameters of the BLR."""
         self.n_baseline = n_baseline
         self.thr_trigger = thr_trigger
 
     def set_MAU(self, n_MAU=100, thr_MAU=3*units.adc):
-        """
-        Parameters of the MAU used to remove low frequency noise
-        """
+        """Parameters of the MAU used to remove low frequency noise."""
         self.n_MAU =  n_MAU
         self.thr_MAU = thr_MAU
 
     def set_CSUM(self, thr_csum=1*units.pes):
-        """
-        Parameter for ZS in the calibrated sum
-        """
+        """Parameter for ZS in the calibrated sum."""
         self.thr_csum= thr_csum
 
     def set_S1(self, tmin=0*units.mus, tmax=590*units.mus,
                stride=4, lmin=4, lmax=20):
-        """
-        Parameters for S1 search
-        """
+        """Parameters for S1 search."""
         self.tmin_s1 = tmin
         self.tmax_s1 = tmax
         self.stride_s1 = stride
@@ -203,9 +187,7 @@ class Irene:
 
     def set_S2(self, tmin=590*units.mus, tmax=620*units.mus,
                stride=40, lmin=100, lmax=1000000):
-        """
-        Parameters for S2 search
-        """
+        """Parameters for S2 search."""
         self.tmin_s2 = tmin
         self.tmax_s2 = tmax
         self.stride_s2 = stride
@@ -215,18 +197,14 @@ class Irene:
 
 
     def set_SiPM(self, thr_zs=5*units.pes, thr_sipm_s2=50*units.pes):
-        """
-        Parameters for SiPM analysis
-        """
+        """Parameters for SiPM analysis."""
         self.thr_zs = thr_zs
         self.thr_sipm_s2 = thr_sipm_s2
         self.setSiPM = True
 
 
     def store_pmaps(self, event, evt, S1, S2, S2Si):
-        """
-        Store PMAPS
-        """
+        """Store PMAPS."""
         if self.run_number >0:
             # Event info
             row = self.evtInfot.row
@@ -523,9 +501,7 @@ class Irene:
 
 
 def IRENE(argv=sys.argv):
-    """
-    IRENE DRIVER
-    """
+    """IRENE DRIVER"""
     CFP = configure(argv)
 
     fpp = Irene(run_number=CFP['RUN_NUMBER'])
