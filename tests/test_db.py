@@ -6,13 +6,8 @@ import os
 
 from pytest import fixture, mark
 
-@fixture
-def loadDB():
-    download.loadDB()
-    return os.environ['ICDIR'] + '/Database/localdb.h5'
-
 @mark.slow
-def test_numberOfPMTs(loadDB):
+def test_numberOfPMTs():
     """
     Check that we retrieve the correct number of PMTs
     """
@@ -20,7 +15,7 @@ def test_numberOfPMTs(loadDB):
     assert pmts.shape[0] == 12
 
 @mark.slow
-def test_numberOfSiPMs(loadDB):
+def test_numberOfSiPMs():
     """
     Check that we retrieve the correct number of SiPMs
     """
@@ -28,7 +23,7 @@ def test_numberOfSiPMs(loadDB):
     assert sipms.shape[0] == 1792
 
 @mark.slow
-def test_SiPMNoise(loadDB):
+def test_SiPMNoise():
     """
     Check we have noise for all SiPMs and energy of each bin
     """
@@ -38,7 +33,7 @@ def test_SiPMNoise(loadDB):
     assert noise.shape[1] == energy.shape[0]
 
 @mark.slow
-def test_DetectorGeometry(loadDB):
+def test_DetectorGeometry():
     """
     Check Detector Geometry
     """
