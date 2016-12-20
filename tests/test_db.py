@@ -8,25 +8,19 @@ from pytest import fixture, mark
 
 @mark.slow
 def test_numberOfPMTs():
-    """
-    Check that we retrieve the correct number of PMTs
-    """
+    """Check that we retrieve the correct number of PMTs."""
     pmts = DB.DataPMT()
     assert pmts.shape[0] == 12
 
 @mark.slow
 def test_numberOfSiPMs():
-    """
-    Check that we retrieve the correct number of SiPMs
-    """
+    """Check that we retrieve the correct number of SiPMs."""
     sipms = DB.DataSiPM()
     assert sipms.shape[0] == 1792
 
 @mark.slow
 def test_SiPMNoise():
-    """
-    Check we have noise for all SiPMs and energy of each bin
-    """
+    """Check we have noise for all SiPMs and energy of each bin."""
     noise, energy, baseline = DB.SiPMNoise()
     assert noise.shape[0] == baseline.shape[0]
     assert noise.shape[0] == 1792
@@ -34,9 +28,7 @@ def test_SiPMNoise():
 
 @mark.slow
 def test_DetectorGeometry():
-    """
-    Check Detector Geometry
-    """
+    """Check Detector Geometry."""
     geo = DB.DetectorGeo()
     assert geo['XMIN'][0] == -198
     assert geo['XMAX'][0] ==  198

@@ -1,6 +1,4 @@
-"""
-A utility module for plots with matplotlib
-"""
+"""A utility module for plots with matplotlib"""
 from __future__ import print_function
 
 import math
@@ -23,8 +21,7 @@ matplotlib.rc('animation', html='html5')
 
 # histograms, signals and shortcuts
 def hbins(x, nsigma=5, nbins=10):
-    """
-    Given an array x, hbins returns the number of bins
+    """Given an array x, hbins returns the number of bins
     in an interval of  [<x> - nsigma*std(x), <x> + nsigma*std(x)]
     """
     xmin = np.average(x) - nsigma*np.std(x)
@@ -34,9 +31,7 @@ def hbins(x, nsigma=5, nbins=10):
 
 
 def histo(x, nbins, title="hsimple", xlabel="", ylabel="Frequency"):
-    """
-    histograms
-    """
+    """histograms"""
 
     plt.hist(x, nbins, histtype="bar", alpha=0.75)
     plt.title(title)
@@ -46,9 +41,7 @@ def histo(x, nbins, title="hsimple", xlabel="", ylabel="Frequency"):
 
 def HSimple1(x, nbins, title="hsimple", xlabel="", ylabel="Frequency",
              save=False, filename="hsimple.png", filepath="./"):
-    """
-    an interface for plt.hist with some decorations and default options
-    """
+    """an interface for plt.hist with some decorations and default options"""
 
     plt.hist(x, nbins, histtype="bar", alpha=0.75)
     plt.title(title)
@@ -65,9 +58,7 @@ def HSimple1(x, nbins, title="hsimple", xlabel="", ylabel="Frequency",
 
 
 def plts(signal, signal_start=0, signal_end=1e+4, offset=5):
-    """
-    plots a signal in a give interval, control offset by hand
-    """
+    """Plot a signal in a give interval, control offset by hand."""
     ax1 = plt.subplot(1, 1, 1)
     ymin = np.amin(signal[signal_start:signal_end]) - offset
     ymax = np.amax(signal[signal_start:signal_end]) + offset
@@ -79,9 +70,7 @@ def plts(signal, signal_start=0, signal_end=1e+4, offset=5):
 def plot_signal(signal_t, signal, title="signal",
                 signal_start=0, signal_end=1e+4,
                 ymax = 200, t_units="", units=""):
-    """
-    Given a series signal (t, signal), plot the signal
-    """
+    """Given a series signal (t, signal), plot the signal."""
 
     ax1 = plt.subplot(1, 1, 1)
     ax1.set_xlim([signal_start, signal_end])
@@ -94,9 +83,7 @@ def plot_signal(signal_t, signal, title="signal",
 
 
 def SetPlotLabels(xlabel="", ylabel="", grid=True):
-    """
-    Short cut to set labels in plots
-    """
+    """Short cut to set labels in plots."""
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     if grid is True:
@@ -105,9 +92,9 @@ def SetPlotLabels(xlabel="", ylabel="", grid=True):
 
 # Circles!
 def circles(x, y, s, c="b", vmin=None, vmax=None, **kwargs):
-    """
-    Make a scatter of circles plot of x vs y, where x and y are sequence
-    like objects of the same lengths. The size of circles are in data scale.
+    """Make a scatter of circles plot of x vs y, where x and y are
+    sequence like objects of the same lengths. The size of circles are
+    in data scale.
 
     Parameters
     ----------
@@ -145,6 +132,7 @@ def circles(x, y, s, c="b", vmin=None, vmax=None, **kwargs):
     --------
     This code is under [The BSD 3-Clause License]
     (http://opensource.org/licenses/BSD-3-Clause)
+
     """
 
     if np.isscalar(c):
@@ -174,9 +162,7 @@ def circles(x, y, s, c="b", vmin=None, vmax=None, **kwargs):
 
 
 def plot_waveforms(pmtwfdf, maxlen=0, zoom=False, window_size=800):
-    """
-    Takes as input a df storing the PMT wf and plots the 12 PMT WF
-    """
+    """Take as input a df storing the PMT wf and plot the 12 PMT WF."""
     plt.figure(figsize=(12, 12))
     for i in range(12):
         first, last = 0, len(pmtwfdf[i])
@@ -191,26 +177,20 @@ def plot_waveforms(pmtwfdf, maxlen=0, zoom=False, window_size=800):
 
 
 def scan_waveforms(pmtea, list_of_events=[0]):
-    """
-    Takes the earray pmtea and a list of events and scan the waveforms
-    """
+    """Takes the earray pmtea and a list of events and scan the waveforms."""
     for event in list_of_events:
         plot_waveforms(wfm.get_waveforms(pmtea, event_number=event))
         cf.wait()
 
 
 def define_window(wf, window_size):
-    """
-    Define a window based on a peak. Takes max plus/minus *window_size*.
-    """
+    """Define a window based on a peak. Takes max plus/minus *window_size*."""
     peak = np.argmax(abs(wf - np.mean(wf)))
     return max(0, peak - window_size), min(len(wf), peak + window_size)
 
 
 def overlap_waveforms(wfset, event, zoom=True, window_size=800):
-    """
-    Draw all waveforms together. If zoom is True, plot is zoomed around peak.
-    """
+    """Draw all waveforms together. If zoom is True, plot is zoomed around peak."""
     wfs = wfset[event]
     first, last = 0, wfs.shape[1]
     if zoom:
@@ -220,9 +200,9 @@ def overlap_waveforms(wfset, event, zoom=True, window_size=800):
 
 
 def compare_raw_blr(pmtrwf, pmtblr, evt=0, zoom=True, window_size=800):
-    """
-    Compare PMT RWF and BLR WF. Option zoom takes a window around the peak
-    of size window_size.
+    """Compare PMT RWF and BLR WF. Option zoom takes a window around the
+    peak of size window_size.
+
     """
     plt.figure(figsize=(12, 12))
     for i, (raw, blr) in enumerate(zip(pmtrwf[evt], pmtblr[evt])):
@@ -235,9 +215,8 @@ def compare_raw_blr(pmtrwf, pmtblr, evt=0, zoom=True, window_size=800):
 
 
 def compare_corr_raw(pmtcwf, pmtblr, evt=0, zoom=True, window_size=800):
-    """
-    Compare PMT CWF and RWF (or BLR). Option zoom takes a window
-    around the peak of size *window_size*.
+    """Compare PMT CWF and RWF (or BLR). Option zoom takes a window around
+    the peak of size *window_size*.
     """
     pmtblr = map(lambda wf: 2500 - wf, pmtblr)
     plt.figure(figsize=(12, 12))
@@ -250,9 +229,7 @@ def compare_corr_raw(pmtcwf, pmtblr, evt=0, zoom=True, window_size=800):
 
 
 def plot_pmtwf(PMTWF):
-    """
-    Plots pmtwf
-    """
+    """Plot pmtwf."""
     pmtwf = PMTWF[0]
     plt.plot(pmtwf["time_mus"]/units.mus, pmtwf["ene_pes"])
     ene = pmtwf["ene_pes"].values/12.
@@ -271,9 +248,7 @@ def plot_pmtwf(PMTWF):
 
 
 def plot_sensor(geom_df, sensor_df, energy_df, event=0, radius=10):
-    """
-    plots the energy of the sensors
-    """
+    """Plot the energy of the sensors."""
     x = sensor_df["x"].values
     y = sensor_df["y"].values
     r = np.ones(len(sensor_df["x"].values)) * radius
@@ -294,10 +269,8 @@ def plot_sensor(geom_df, sensor_df, energy_df, event=0, radius=10):
 
 
 def plot_ene_pmt(geom_df, sensor_df, epmt, event_number=0, radius=10):
-    """
-    plots the reconstructed energy of the PMTs
-    energy_se is a series describing the reconstructed energy
-    in each PMT
+    """Plots the reconstructed energy of the PMTs energy_se is a series
+    describing the reconstructed energy in each PMT.
     """
     x = sensor_df["x"].values
     y = sensor_df["y"].values
@@ -316,9 +289,7 @@ def plot_ene_pmt(geom_df, sensor_df, epmt, event_number=0, radius=10):
 
 
 def plot_sipm(sipm, nmin=0, nmax=16, x=4, y=4):
-    """
-    Takes as input a wf storing the SiPMs and plot nsipm
-    """
+    """Take as input a wf storing the SiPMs and plot nsipm."""
     plt.figure(figsize=(12, 12))
 
     for i in range(nmin, nmax):
@@ -330,8 +301,7 @@ def plot_sipm(sipm, nmin=0, nmax=16, x=4, y=4):
     plt.show()
 
 def plot_best(sipmrwf, sipmtwf, sipmdf, evt=0):
-    """
-    Plot the noisy waveform of the SiPM with greatest charge and
+    """Plot the noisy waveform of the SiPM with greatest charge and
     superimpose the true waveform.
     """
     plt.figure(figsize=(10, 8))
@@ -349,9 +319,8 @@ def plot_best(sipmrwf, sipmtwf, sipmdf, evt=0):
 
 
 def plot_best_group(sipmrwf, sipmtwf, sipmdf, evt=0, nsipms=9, ncols=3):
-    """
-    Plot the noisy (red) and true (blue) waveforms of the *nsipms* SiPMs
-    with greatest charge.
+    """Plot the noisy (red) and true (blue) waveforms of the *nsipms*
+    SiPMs with greatest charge.
     """
     plt.figure(figsize=(10, 8))
     # Find SiPM with greatest peak
@@ -385,8 +354,7 @@ def plot_pmap(pmap, legend=True, style="*-"):
 
 
 def plot_anode_slice(slice, sipmdf, threshold=0.1, cut_type="RELATIVE"):
-    """
-    Plots the anode for a single slice as a colored 2D plot.
+    """Plot the anode for a single slice as a colored 2D plot.
 
     Parameters
     ----------
@@ -429,8 +397,7 @@ def plot_anode_slice(slice, sipmdf, threshold=0.1, cut_type="RELATIVE"):
 
 
 def plot_anode_sum(pmap, sipmdf, threshold=0.1, cut_type="RELATIVE"):
-    """
-    Shortcut for plotting a pmap as a z-collapsed slice.
+    """Shortcut for plotting a pmap as a z-collapsed slice.
 
     Parameters
     ----------
@@ -444,11 +411,11 @@ def plot_anode_sum(pmap, sipmdf, threshold=0.1, cut_type="RELATIVE"):
 
 
 def plot_track(geom_df, mchits_df, vox_size=10, zoom=False):
-    """
-    plot the hits of a mctrk. Adapted from JR plotting functions
-    notice that geom_df and mchits_df are pandas objects defined above
-    if zoom = True, the track is zoomed in (min/max dimensions are
-    taken from track). If zoom = False, detector dimensions are used
+    """Plot the hits of a mctrk. Adapted from JR plotting functions notice
+    that geom_df and mchits_df are pandas objects defined above if
+    zoom = True, the track is zoomed in (min/max dimensions are taken
+    from track). If zoom = False, detector dimensions are used
+
     """
     grdcol = 0.99
 
@@ -524,14 +491,13 @@ def plot_track(geom_df, mchits_df, vox_size=10, zoom=False):
 
 
 def plot_track_projections(geom_df, mchits_df, vox_size=10, zoom=False):
-    """
-    plot the projections of an MC track. Adapted from function plot_track above
-    notice that geom_df and mchits_df are pandas objects defined above
-    if zoom = True, the track is zoomed in (min/max dimensions
-    are taken from track). If zoom = False, detector dimensions are used
+    """Plot the projections of an MC track. Adapted from function
+    plot_track above notice that geom_df and mchits_df are pandas
+    objects defined above if zoom = True, the track is zoomed in
+    (min/max dimensions are taken from track). If zoom = False,
+    detector dimensions are used.
 
     For now, it is assumed that vox_sizeX = vox_sizeY = vox_sizeZ
-
     """
     vox_sizeX = vox_size
     vox_sizeY = vox_size
@@ -617,9 +583,8 @@ def plot_track_projections(geom_df, mchits_df, vox_size=10, zoom=False):
 
 
 def make_movie(slices, sipmdf, thrs=0.1):
-    """
-    Create a video made of consecutive frames showing the response of the
-    tracking plane.
+    """Create a video made of consecutive frames showing the response of
+    the tracking plane.
 
     Parameters
     ----------
@@ -676,9 +641,8 @@ def make_movie(slices, sipmdf, thrs=0.1):
 
 
 def plot_event_3D(pmap, sipmdf, outputfile=None, thrs=0.):
-    """
-    Create a 3D+1 representation of the event based on the SiPMs signal for
-    each slice.
+    """Create a 3D+1 representation of the event based on the SiPMs signal
+    for each slice.
 
     Parameters
     ----------
@@ -691,6 +655,7 @@ def plot_event_3D(pmap, sipmdf, outputfile=None, thrs=0.):
         It is not saved by default.
     thrs : float, optional
         Relative cut to be applied per slice. Defaults to 0.
+
     """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
