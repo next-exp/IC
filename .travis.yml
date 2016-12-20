@@ -17,7 +17,7 @@ install:
   # Install dependencies
   - conda create -n icenv python=2.7 numpy scipy pandas cython pytest pytest-cov pytables mysql-python
   - source activate icenv
-  - pip install coveralls hypothesis-numpy
+  - pip install coveralls hypothesis-numpy flaky
   - python $ICDIR/Database/download.py
 
 script:
@@ -25,4 +25,3 @@ script:
 
 after_success:
   - coveralls
-
