@@ -1,5 +1,5 @@
 """A utility module for plots with matplotlib"""
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
 
 import math
 import numpy as np
@@ -69,7 +69,7 @@ def plts(signal, signal_start=0, signal_end=1e+4, offset=5):
 
 def plot_signal(signal_t, signal, title="signal",
                 signal_start=0, signal_end=1e+4,
-                ymax = 200, t_units="", units=""):
+                ymax=200, t_units="", units=""):
     """Given a series signal (t, signal), plot the signal."""
 
     ax1 = plt.subplot(1, 1, 1)
@@ -176,7 +176,7 @@ def plot_waveforms(pmtwfdf, maxlen=0, zoom=False, window_size=800):
     plt.show()
 
 
-def scan_waveforms(pmtea, list_of_events=[0]):
+def scan_waveforms(pmtea, list_of_events=(0,)):
     """Takes the earray pmtea and a list of events and scan the waveforms."""
     for event in list_of_events:
         plot_waveforms(wfm.get_waveforms(pmtea, event_number=event))
@@ -231,9 +231,9 @@ def compare_corr_raw(pmtcwf, pmtblr, evt=0, zoom=True, window_size=800):
 def plot_pmtwf(PMTWF):
     """Plot pmtwf."""
     pmtwf = PMTWF[0]
-    plt.plot(pmtwf["time_mus"]/units.mus, pmtwf["ene_pes"])
-    ene = pmtwf["ene_pes"].values/12.
-    time = pmtwf["time_mus"].values/units.mus
+    plt.plot(pmtwf["time_mus"] / units.mus, pmtwf["ene_pes"])
+    ene = pmtwf["ene_pes"].values / 12
+    time = pmtwf["time_mus"].values / units.mus
     plt.xlabel("t ($\mu$s)")
     plt.ylabel("E (pes)")
     plt.show()
@@ -241,7 +241,7 @@ def plot_pmtwf(PMTWF):
     for i in range(1, len(PMTWF)):
         plt.subplot(3, 4, i)
         pmtwf = PMTWF[i]
-        plt.plot(pmtwf["time_mus"]/units.mus, pmtwf["ene_pes"])
+        plt.plot(pmtwf["time_mus"] / units.mus, pmtwf["ene_pes"])
         plt.plot(time, ene)
 
     plt.show()
@@ -327,7 +327,7 @@ def plot_best_group(sipmrwf, sipmtwf, sipmdf, evt=0, nsipms=9, ncols=3):
     sipms = enumerate(sipmrwf[evt])
     sipms = sorted(sipms, key=lambda x: max(x[1]), reverse=True)[:nsipms]
 
-    nrows = int(math.ceil(nsipms * 1.0/ncols))
+    nrows = int(math.ceil(nsipms * 1 / ncols))
     for i, (sipm_index, sipm_wf) in enumerate(sipms):
         true_times, true_amps = tbl.read_sensor_wf(sipmtwf, evt, sipm_index)
         if len(true_amps) == 0:
@@ -422,7 +422,7 @@ def plot_track(geom_df, mchits_df, vox_size=10, zoom=False):
     varr_x = mchits_df["x"].values * vox_size
     varr_y = mchits_df["y"].values * vox_size
     varr_z = mchits_df["z"].values * vox_size
-    varr_c = mchits_df["energy"].values/units.keV
+    varr_c = mchits_df["energy"].values / units.keV
 
     min_x = geom_df["xdet_min"] * vox_size
     max_x = geom_df["xdet_max"] * vox_size
@@ -440,12 +440,12 @@ def plot_track(geom_df, mchits_df, vox_size=10, zoom=False):
         max_y = np.max(varr_y)
         min_z = np.min(varr_z)
         max_z = np.max(varr_z)
-        emin = np.min(varr_c)
+        emin  = np.min(varr_c)
 
     # Plot the 3D voxelized track.
     fig = plt.figure(1)
-    fig.set_figheight(6.)
-    fig.set_figwidth(8.)
+    fig.set_figheight(6)
+    fig.set_figwidth(8)
 
     ax1 = fig.add_subplot(111, projection="3d")
     s1 = ax1.scatter(varr_x, varr_y, varr_z, marker="s", linewidth=0.5,
@@ -532,10 +532,10 @@ def plot_track_projections(geom_df, mchits_df, vox_size=10, zoom=False):
     ax1 = fig.add_subplot(131)
     hxy, xxy, yxy = np.histogram2d(varr_y, varr_x,
                                    weights=varr_c, normed=False,
-                                   bins=((1.05*max_y - 0.95*min_y)/vox_sizeY,
-                                         (1.05*max_x - 0.95*min_x)/vox_sizeX),
-                                   range=([0.95*min_y, 1.05*max_y],
-                                          [0.95*min_x, 1.05*max_x]))
+                                   bins= ((1.05 * max_y - 0.95 * min_y) / vox_sizeY,
+                                          (1.05 * max_x - 0.95 * min_x) / vox_sizeX),
+                                   range=([0.95 * min_y,  1.05 * max_y],
+                                          [0.95 * min_x,  1.05 * max_x]))
 
     extent1 = [yxy[0], yxy[-1], xxy[0], xxy[-1]]
     sp1 = ax1.imshow(hxy, extent=extent1, interpolation="none",
@@ -549,10 +549,10 @@ def plot_track_projections(geom_df, mchits_df, vox_size=10, zoom=False):
     ax2 = fig.add_subplot(132)
     hyz, xyz, yyz = np.histogram2d(varr_z, varr_y,
                                    weights=varr_c, normed=False,
-                                   bins=((1.05*max_z - 0.95*min_z)/vox_sizeZ,
-                                         (1.05*max_y - 0.95*min_y)/vox_sizeY),
-                                   range=([0.95*min_z, 1.05*max_z],
-                                          [0.95*min_y, 1.05*max_y]))
+                                   bins= ((1.05 * max_z - 0.95 * min_z) / vox_sizeZ,
+                                          (1.05 * max_y - 0.95 * min_y) / vox_sizeY),
+                                   range=([0.95 * min_z,  1.05 * max_z],
+                                          [0.95 * min_y,  1.05 * max_y]))
 
     extent2 = [yyz[0], yyz[-1], xyz[0], xyz[-1]]
     sp2 = ax2.imshow(hyz, extent=extent2, interpolation="none",
@@ -566,10 +566,10 @@ def plot_track_projections(geom_df, mchits_df, vox_size=10, zoom=False):
     ax3 = fig.add_subplot(133)
     hxz, xxz, yxz = np.histogram2d(varr_z, varr_x,
                                    weights=varr_c, normed=False,
-                                   bins=((1.05*max_z - 0.95*min_z)/vox_sizeZ,
-                                         (1.05*max_x - 0.95*min_x)/vox_sizeX),
-                                   range=([0.95*min_z, 1.05*max_z],
-                                          [0.95*min_x, 1.05*max_x]))
+                                   bins= ((1.05 * max_z - 0.95 * min_z) / vox_sizeZ,
+                                          (1.05 * max_x - 0.95 * min_x) / vox_sizeX),
+                                   range=([0.95 * min_z,  1.05 * max_z],
+                                          [0.95 * min_x,  1.05 * max_x]))
 
     extent3 = [yxz[0], yxz[-1], xxz[0], xxz[-1]]
     sp3 = ax3.imshow(hxz, extent=extent3, interpolation="none",
@@ -630,7 +630,7 @@ def make_movie(slices, sipmdf, thrs=0.1):
         ax.set_xlim((xmin, xmax))
         ax.set_ylim((ymin, ymax))
         scplot = ax.scatter(x, y, c=q, marker="s", vmin=0, vmax=np.nanmax(slices))
-        cbar = fig.colorbar(scplot, ax=ax, boundaries=np.linspace(0,np.nanmax(slices),100))
+        cbar = fig.colorbar(scplot, ax=ax, boundaries=np.linspace(0, np.nanmax(slices), 100))
         cbar.set_label("Charge (pes)")
         return (scplot,)
 
@@ -666,7 +666,7 @@ def plot_event_3D(pmap, sipmdf, outputfile=None, thrs=0.):
             selection = sl > thrs * np.nanmax(sl)
             x.extend(sipmdf["X"].values[selection])
             y.extend(sipmdf["Y"].values[selection])
-            z.extend(np.ones_like(sl[selection])*time)
+            z.extend(np.ones_like(sl[selection]) * time)
             q.extend(sl[selection])
 
     ax.scatter(x, z, y, c=q, s=[2*qi for qi in q], alpha=0.3)

@@ -1,3 +1,4 @@
+from future import division
 import numpy as np
 cimport numpy as np
 from scipy import signal as SGN
@@ -27,10 +28,10 @@ cpdef deconvolve_signal(double [:] signal_daq,
     cdef int len_signal_daq = len(signal_daq)
 
     cdef double [:] signal_r = np.zeros(len_signal_daq, dtype=np.double)
-    cdef double [:] acum = np.zeros(len_signal_daq, dtype=np.double)
+    cdef double [:] acum     = np.zeros(len_signal_daq, dtype=np.double)
 
     cdef int j
-    cdef double baseline = 0.
+    cdef double baseline = 0
 
     for j in range(0,nm):
         baseline += signal_daq[j]
@@ -41,10 +42,10 @@ cpdef deconvolve_signal(double [:] signal_daq,
         signal_daq[j] = baseline - signal_daq[j]
 
     # compute noise
-    cdef double noise =  0.
+    cdef double noise =  0
     cdef int nn = 400 # fixed at 10 mus
 
-    for j in range(0,nn):
+    for j in range(nn):
         noise += signal_daq[j] * signal_daq[j]
     noise /= nn
     cdef double noise_rms = np.sqrt(noise)
@@ -62,10 +63,10 @@ cpdef deconvolve_signal(double [:] signal_daq,
     cdef int k
     j=0
     signal_r[0] = signal_daq[0]
-    for k in range(1,len_signal_daq):
+    for k in range(1, len_signal_daq):
 
         # always update signal and accumulator
-        signal_r[k] = signal_daq[k] + signal_daq[k]*(coef/2.0) +\
+        signal_r[k] = signal_daq[k] + signal_daq[k]*(coef / 2) +\
                       coef * acum[k-1]
 
         acum[k] = acum[k-1] + signal_daq[k]
@@ -80,8 +81,8 @@ cpdef deconvolve_signal(double [:] signal_daq,
                 else:
                     j = acum_discharge_length - 1
             else:
-                acum[k]=0
-                j=0
+                acum[k] = 0
+                j = 0
     # return recovered signal
     return np.asarray(signal_r)
 

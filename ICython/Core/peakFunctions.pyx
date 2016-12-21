@@ -2,6 +2,8 @@
 Cython version of some peak functions
 JJGC December, 2016
 """
+from __future__ import divisor
+
 cimport numpy as np
 import numpy as np
 from scipy import signal
@@ -25,7 +27,7 @@ cpdef calibrated_pmt_sum(double [:, :] CWF,
     cdef int NPMT = CWF.shape[0]
     cdef int NWF = CWF.shape[1]
     cdef double [:] MAU = np.array(np.ones(n_MAU),
-                                   dtype=np.double)*(1./float(n_MAU))
+                                   dtype=np.double)*(1 / n_MAU)
 
 
     # CWF if above MAU threshold
@@ -35,7 +37,7 @@ cpdef calibrated_pmt_sum(double [:, :] CWF,
 
     for j in range(NPMT):
         # MAU for each of the PMTs, following the waveform
-        MAU_pmt = signal.lfilter(MAU,1,CWF[j,:])
+        MAU_pmt = signal.lfilter(MAU, 1, CWF[j,:])
 
         for k in range(NWF):
             if CWF[j,k] > MAU_pmt[k] + thr_MAU:
@@ -132,7 +134,7 @@ cpdef find_S12(double [:] wfzs, int [:] index,
     S12[0].append([T[0],P[0]])
 
     j=0
-    for i in range(1,len(wfzs)) :
+    for i in range(1, len(wfzs)) :
 
         if T[i] > tmax:
             break
@@ -144,18 +146,18 @@ cpdef find_S12(double [:] wfzs, int [:] index,
             j += 1
             s12 = []
             S12[j] = s12
-            S12[j].append([T[i],P[i]])
+            S12[j].append([T[i], P[i]])
         else:
-            S12[j].append([T[i],P[i]])
+            S12[j].append([T[i], P[i]])
 
 
     # re-arrange and rebin
     j=0
 
-    for i in S12.keys():
+    for i in S12:
         ls = len(S12[i])
 
-        if ls < lmin or ls >= lmax:
+        if not (lmin <= ls < lmax)
             continue
 
         t = np.zeros(ls, dtype=np.double)
@@ -167,9 +169,9 @@ cpdef find_S12(double [:] wfzs, int [:] index,
 
         if rebin == True:
             TR, ER = rebin_waveform(t, e, stride = rebin_stride)
-            S12L[j] = [TR,ER]
+            S12L[j] = [TR, ER]
         else:
-            S12L[j] = [t,e]
+            S12L[j] = [t, e]
         j+=1
 
     return S12L
@@ -185,8 +187,8 @@ cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
 
     assert(len(t) == len(e))
 
-    cdef int n = len(t)/stride
-    cdef int r = len(t)%stride
+    cdef int n = len(t) / stride
+    cdef int r = len(t) % stride
 
     lenb = n
     if r > 0:
@@ -202,21 +204,21 @@ cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
         esum = 0
         tmean = 0
         for k in range(j, j + stride):
-            esum += e[k]
+            esum  += e[k]
             tmean += t[k]
 
-        tmean /= float(stride)
+        tmean /= stride
         E[i] = esum
         T[i] = tmean
-        j+= stride
+        j += stride
 
     if r > 0:
         esum = 0
         tmean = 0
         for k in range(j, len(t)):
-            esum += e[k]
+            esum  += e[k]
             tmean += t[k]
-        tmean /= float(len(t) - j)
+        tmean /= (len(t) - j)
         E[n] = esum
         T[n] = tmean
 
@@ -238,7 +240,7 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
     cdef int NSiPM = SiWF.shape[0]
     cdef int NSiWF = SiWF.shape[1]
     cdef double [:] MAU = np.array(np.ones(n_MAU),
-                                   dtype=np.double)*(1./float(n_MAU))
+                                   dtype=np.double)*(1 / n_MAU)
 
 
     cdef double [:, :] siwf = np.zeros((NSiPM,NSiWF), dtype=np.double)
@@ -262,12 +264,12 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
             SiWF[j,k] = SiWF[j,k] - pmean
 
         # MAU for each of the SiPMs, following the ZS waveform
-        MAU_ = signal.lfilter(MAU,1,SiWF[j,:])
+        MAU_ = signal.lfilter(MAU, 1, SiWF[j,:])
 
         # threshold using the MAU
         for k in range(NSiWF):
             if SiWF[j,k]  > MAU_[k] + thr * adc_to_pes[j]:
-                siwf[j,k] = SiWF[j,k]/adc_to_pes[j]
+                siwf[j,k] = SiWF[j,k] / adc_to_pes[j]
 
     return np.asarray(siwf)
 
@@ -290,5 +292,5 @@ cpdef select_sipm(double [:, :] sipmzs):
             psum += sipmzs[i,k]
         if psum > 0:
             SIPM[j] = [i,np.asarray(sipmzs[i])]
-            j+=1
+            j += 1
     return SIPM
