@@ -25,7 +25,7 @@ def dict_map(func, dic):
     mapdic : dictionary
         Contains key: func(value) for each key, value pair in dic.
     """
-    return {key: func(val) for key, val in dic.iteritems()}
+    return {key: func(val) for key, val in dic.items()}
 
 
 def df_map(func, df, field):
@@ -66,7 +66,7 @@ def dict_filter(cond, dic):
     filterdic : dictionary
         Contains the key, value pairs in dic satisfying cond.
     """
-    return {key: val for key, val in dic.iteritems() if cond(val)}
+    return {key: val for key, val in dic.items() if cond(val)}
 
 
 def farray_from_string(sfl):
@@ -82,7 +82,7 @@ def farray_from_string(sfl):
     arr : np.ndarray
         Contains the casted floats.
     """
-    return np.array(map(float, sfl.split(" ")))
+    return np.array(map(float, sfl.split()))
 
 
 def rebin_array(arr, stride):
@@ -100,7 +100,7 @@ def rebin_array(arr, stride):
     rebinned : np.ndarray
         Rebinned array
     """
-    lenb = len(arr)/int(stride)
+    lenb = len(arr) / int(stride)
     rebinned = np.empty(lenb)
     for i in range(lenb):
         low = i * stride
