@@ -37,19 +37,12 @@ def signal_i_th():
                            np.linspace(0,1,2000),np.linspace(1,0,2000),
                            np.zeros(20000)),axis=0)*units.mA
 
-def deconv_simple(signal,coef):
+def deconv_simple(signal, coef):
     """Deconvolution of the fine-grained fee signal (no DAQ) no noise
     using true start and end of signals.
     """
-
-    acum = np.zeros(len(signal))
-
-    acum[0]=coef*signal[0]
-    for n in np.arange(1,len(signal)):
-        acum[n] = acum[n-1] + signal[n]
-
-    signal_r = signal + coef*acum
-
+    acum = np.cumsum(signal)
+    signal_r = signal + coef * acum
     return signal_r, acum
 
 
