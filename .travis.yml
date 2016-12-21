@@ -14,9 +14,14 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda env create -f environment.yml
+  #- conda env create -f environment.yml
+  - conda create -n IC python=$TRAVIS_PYTHON_VERSION numpy scipy pandas cython pytest pytables pymysql
   - source activate IC
+  - pip install hypothesis-numpy
+  - pip install flaky
   - source env.sh
 
 script:
+    - python icompile.py build_ext --inplace
     - pytest
+

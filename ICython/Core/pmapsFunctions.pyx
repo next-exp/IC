@@ -2,7 +2,7 @@
 Cython version of PMAPS
 JJGC December, 2016
 """
-from future import division 
+
 cimport numpy as np
 import numpy as np
 
