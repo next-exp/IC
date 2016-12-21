@@ -9,6 +9,44 @@ import math
 import pandas as pd
 import numpy as np
 
+def to_adc(wfs, sensdf):
+    """
+    Convert waveform in pes to adc.
+
+    Parameters
+    ----------
+    wfs : 2-dim np.ndarray
+        The waveform (axis 1) for each sensor (axis 0).
+    sensdf : pd.DataFrame
+        Contains the sensor-related information.
+
+    Returns
+    -------
+    adc_wfs : 2-dim np.ndarray
+        The input wfs scaled to adc.
+    """
+    return wfs * sensdf["adc_to_pes"].reshape(wfs.shape[0], 1)
+
+
+def to_pes(wfs, sensdf):
+    """
+    Convert waveform in adc to pes.
+
+    Parameters
+    ----------
+    wfs : 2-dim np.ndarray
+        The waveform (axis 1) for each sensor (axis 0).
+    sensdf : pd.DataFrame
+        Contains the sensor-related information.
+
+    Returns
+    -------
+    pes_wfs : 2-dim np.ndarray
+        The input wfs scaled to pes.
+    """
+    return wfs / sensdf["adc_to_pes"].reshape(wfs.shape[0], 1)
+
+
 def get_waveforms(pmtea, event_number=0):
     """Produce a DataFrame with the waveforms in an array.
 
@@ -151,6 +189,8 @@ def rebin_wf(t, e, stride=40):
         Rebinned array of times.
     rebinned_e : np.ndarray
         Rebinned array of amplitudes.
+
+    NB: SLOW, see coreFunctions_perf.py in this directory
     """
     n = int(math.ceil(len(t) / float(stride)))
     T = np.empty(n, dtype=np.float32)
@@ -163,6 +203,67 @@ def rebin_wf(t, e, stride=40):
         T[i] = np.mean(t[low:upp])
 
     return T, E
+
+
+def rebin_waveform(t, e, stride = 40):
+    """Rebin waveforms t and e according to stride.
+
+    Parameters
+    ----------
+    waveforms t,e : 1-dim np.ndarrays representing time and energy vectors
+
+    Returns
+    -------
+    rebinned waveforms : 1-dim np.ndarrays rebinned according to stride
+        A copy of the input waveform with values below threshold set to zero.
+
+    NB
+    ---
+    Rebin function uses loops, which makes it very slow, but straight forward
+    extensible to the cython version.
+
+    10 times faster than rebin_wf
+    """
+
+    assert(len(t) == len(e))
+
+    n = len(t) // stride
+    r = len(t) %  stride
+
+    lenb = n
+    if r > 0:
+        lenb = n+1
+
+    T = np.zeros(lenb, dtype=np.double)
+    E = np.zeros(lenb, dtype=np.double)
+
+    j = 0
+    for i in range(n):
+        esum = 0
+        tmean = 0
+        for k in range(j, j + stride):
+            esum  += e[k]
+            tmean += t[k]
+
+        tmean /= stride
+        E[i] = esum
+        T[i] = tmean
+        j += stride
+
+    if r > 0:
+        esum = 0
+        tmean = 0
+        for k in range(j, len(t)):
+            esum  += e[k]
+            tmean += t[k]
+        tmean /= (len(t) - j)
+        E[n] = esum
+        T[n] = tmean
+
+
+    return T, E
+
+
 
 
 def rebin_df(df, stride=40):
@@ -291,57 +392,3 @@ def noise_suppression(waveforms, thresholds):
         thresholds = np.ones(waveforms.shape[0]) * thresholds
     suppressed_wfs = map(suppress_wf, waveforms, thresholds)
     return np.array(suppressed_wfs)
-
-
-def find_baseline(waveform, n_samples=500, check_no_signal=True):
-    """Find baseline in waveform.
-
-    Parameters
-    ----------
-    waveform : 1-dim np.ndarray
-        Any sensor's waveform.
-
-    n_samples : int, optional
-        Number of samples to measure baseline. Default is 500.
-
-    check_no_signal : bool, optional
-        Check RMS in waveform subsample to ensure there is no signal present
-        in it. Default is True.
-
-    Returns
-    -------
-    baseline : int or float
-        Waveform's baseline.
-    """
-    if check_no_signal:
-        for i in range(waveform.size//n_samples):
-            low = i * n_samples
-            upp = low + n_samples
-            subsample = waveform[low:upp]
-            if np.std(subsample) < 3:
-                return np.mean(subsample)
-    return np.mean(waveform[:n_samples])
-
-
-def subtract_baseline(waveforms, n_samples=500, check_no_signal=True):
-    """Compute the baseline for each sensor in the event and subtract it.
-
-    Parameters
-    ----------
-    waveforms : 2-dim np.ndarray
-        The waveform amplitudes (axis 1) for each sensor (axis 0)
-    n_samples : int
-        Number of samples to measure baseline. Default is 500.
-    check_no_signal : bool, optional
-        Check RMS in waveform subsample to ensure there is no signal present
-        in it. Default is True.
-
-    Returns
-    -------
-    blr_wfs : 2-dim np.array
-        The input waveform with the baseline subtracted.
-    """
-    bls = np.apply_along_axis(lambda wf: find_baseline(wf, n_samples,
-                                                       check_no_signal),
-                              1, waveforms)
-    return waveforms - bls.reshape(waveforms.shape[0], 1)
