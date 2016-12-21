@@ -1,7 +1,7 @@
 """Functions to find peaks, S12 selection etc.
 JJGC and GML December 2016
 """
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
 
 import math
 import numpy as np
@@ -29,7 +29,7 @@ def pmt_sum(CWF, adc_to_pes):
 
     csum = np.zeros(NWF, dtype=np.double)
     for j in range(NPMT):
-        csum += CWF[j]*1./adc_to_pes[j]
+        csum += CWF[j] * 1 / adc_to_pes[j]
     return csum
 
 
@@ -37,7 +37,7 @@ def wfdf(time,energy_pes):
     """Take two vectors (time, energy) and return a data frame
     representing a waveform."""
     swf = {}
-    swf['time_ns'] = time/units.ns
+    swf['time_ns'] = time / units.ns
     swf['ene_pes'] = energy_pes
     return pd.DataFrame(swf)
 
@@ -46,7 +46,7 @@ def wf_thr(wf, threshold=0):
     """Return a zero supressed waveform (more generally, the vaules of wf
     above threshold).
     """
-    return wf.loc[lambda df: df.ene_pes.values >threshold, :]
+    return wf.loc[lambda df: df.ene_pes.values > threshold, :]
 
 
 def find_peaks(wfzs, stride=4, lmin=8):
@@ -64,15 +64,15 @@ def find_peaks(wfzs, stride=4, lmin=8):
     j=0
 
     S12[0] = []
-    S12[0].append([T[0],P[0],I[0]])
+    S12[0].append([T[0], P[0], I[0]])
 
-    for i in range(1,len(wfzs)) :
+    for i in range(1, len(wfzs)) :
         if wfzs.index[i]-stride > wfzs.index[i-1]:  #new s12
             j+=1
             S12[j] = []
-            S12[j].append([T[i],P[i],I[i]])
+            S12[j].append([T[i], P[i], I[i]])
         else:
-            S12[j].append([T[i],P[i],I[i]])
+            S12[j].append([T[i], P[i], I[i]])
 
     S12L=[]
     for i in S12.keys():
@@ -102,7 +102,7 @@ def find_S12(wfzs, tmin=0*units.mus, tmax=1200*units.mus,
     S12[0] = []
     S12[0].append([T[0],P[0]])
 
-    for i in range(1,len(wfzs)) :
+    for i in range(1, len(wfzs)):
 
         if T[i] > tmax:
             break
@@ -111,11 +111,11 @@ def find_S12(wfzs, tmin=0*units.mus, tmax=1200*units.mus,
             continue
 
         if wfzs.index[i] - stride > wfzs.index[i-1]:  #new s12
-            j+=1
+            j += 1
             S12[j] = []
-            S12[j].append([T[i],P[i]])
+            S12[j].append([T[i], P[i]])
         else:
-            S12[j].append([T[i],P[i]])
+            S12[j].append([T[i], P[i]])
 
     S12L=[]
     for i in S12.keys():
@@ -138,7 +138,7 @@ def sipm_S2(dSIPM,S2, thr=5*units.pes):
         if psum > thr:
             e = np.zeros(dim, dtype=np.double)
             e[:] = sipm[i0:i1]
-            SIPML.append([dSIPM[i][0],e])
+            SIPML.append([dSIPM[i][0], e])
     return SIPML
 
 
@@ -147,7 +147,7 @@ def dict_to_df_S12(S12):
     S12L = []
     print('number of peaks = {}'.format(len(S12)))
     for i in S12.keys():
-        s12df = pd.DataFrame(S12[i],columns=['time_ns','ene_pes'])
+        s12df = pd.DataFrame(S12[i], columns=['time_ns','ene_pes'])
         print('S12 number = {}, samples = {} sum in pes ={}'.\
           format(i, len(s12df), np.sum(s12df.ene_pes.values)))
         S12L.append(s12df)
@@ -163,20 +163,20 @@ def scan_S12(S12):
     for i in S12.keys():
         print('S12 number = {}, samples = {} sum in pes ={}'.\
           format(i, len(S12[i][0]), np.sum(S12[i][1])))
-        plt.plot(S12[i][0],S12[i][1])
+        plt.plot(S12[i][0], S12[i][1])
         plt.show()
         raw_input('hit return')
 
 
 def index_from_S2(S2):
     """Return the indexes defining the vector."""
-    T = S2[0]/units.mus
+    T = S2[0] / units.mus
     #print(T[0], T[-1])
     return int(T[0]), int(T[-1])
 
 
 
-def sipm_S2_dict(SIPM, S2d, thr=5*units.pes):
+def sipm_S2_dict(SIPM, S2d, thr=5 * units.pes):
     """Given a vector with SIPMs (energies above threshold), and a
     dictionary of S2s, S2d, returns a dictionary of SiPMs-S2.  Each
     index of the dictionary correspond to one S2 and is a list of np
@@ -186,7 +186,7 @@ def sipm_S2_dict(SIPM, S2d, thr=5*units.pes):
     SiPMd = {}
     for i in S2d.keys():
         S2 = S2d[i]
-        SiPMd[i] = sipm_S2(SIPM,S2, thr=thr)
+        SiPMd[i] = sipm_S2(SIPM, S2, thr=thr)
     return SiPMd
 
 def scan_S12L(S12L):
@@ -197,7 +197,7 @@ def scan_S12L(S12L):
     for i, s12df in enumerate(S12L):
         print('S12 number = {}, samples = {} sum in pes ={}'.\
           format(i, len(s12df), np.sum(s12df.ene_pes.values)))
-        plt.plot(s12df.time_ns.values,s12df.ene_pes)
+        plt.plot(s12df.time_ns.values, s12df.ene_pes)
         plt.show()
         raw_input('hit return')
 
@@ -217,7 +217,7 @@ class S12Finder:
         self.n_MAU = n_MAU
         self.n_baseline = n_baseline
         self.thr_trigger = thr_trigger
-        self.signal_t = np.arange(0., wfm_length * tstep, tstep)
+        self.signal_t = np.arange(0, wfm_length * tstep, tstep)
 
         self.setFiles = False
         self.setS1 = False
@@ -312,13 +312,13 @@ class S12Finder:
                     for evt in range(NEVT):
                         # deconvolve
                         CWF = blr.deconv_pmt(pmtrwf[evt], self.coeff_c, self.coeff_blr,
-                                         n_baseline=self.n_baseline,
-                                         thr_trigger=self.thr_trigger)
+                                             n_baseline=self.n_baseline,
+                                             thr_trigger=self.thr_trigger)
 
                         # calibrated PMT sum
                         csum = pf.calibrated_pmt_sum(CWF, self.adc_to_pes,
-                                                  n_MAU=self.n_MAU,
-                                                  thr_MAU=self.thr_trigger)
+                                                     n_MAU=self.n_MAU,
+                                                     thr_MAU=self.thr_trigger)
                         if self.plot_csum:
                             plt.plot(csum)
                             plt.show()

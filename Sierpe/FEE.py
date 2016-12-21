@@ -4,7 +4,7 @@ PMT plane FEE.
 VH, JJGC, November, 2016
 """
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 import numpy as np
 from scipy import signal
@@ -13,31 +13,31 @@ import Database.loadDB as DB
 
 # globals describing FEE
 PMT_GAIN = 1.7e6
-FEE_GAIN = 582.237*units.ohm
+FEE_GAIN = 582.237 * units.ohm
 DAQ_GAIN = 1.25
 NBITS = 12
-LSB = 2.0*units.V/2**NBITS/DAQ_GAIN
-NOISE_I = LSB/(FEE_GAIN*DAQ_GAIN)
-NOISE_DAQ = 0.313*units.mV
+LSB = 2 * units.V / 2 ** NBITS / DAQ_GAIN
+NOISE_I = LSB / (FEE_GAIN * DAQ_GAIN)
+NOISE_DAQ = 0.313 * units.mV
 
-C2 = 8*units.nF
-C1 = 2714*units.nF
-R1 = 1567*units.ohm
-Zin = 62*units.ohm
-t_sample = 25*units.ns
-f_sample = 1./t_sample
-f_mc = 1./(1*units.ns)
-f_LPF1 = 3*units.MHZ
-f_LPF2 = 10*units.MHZ
+C2 =    8 * units.nF
+C1 = 2714 * units.nF
+R1 = 1567 * units.ohm
+Zin =  62 * units.ohm
+t_sample = 25 * units.ns
+f_sample = 1 / t_sample
+f_mc = 1 / (1 * units.ns)
+f_LPF1 =  3 * units.MHZ
+f_LPF2 = 10 * units.MHZ
 ADC_TO_PES_LPF = 24.1  # After LPF, comes out from spe area
-ADC_TO_PES = 23.1
+ADC_TO_PES     = 23.1
 OFFSET = 2500  # offset adc
 CEILING = 4096  # ceiling of adc
 
 
 def i_to_adc():
     """Current to adc counts."""
-    return FEE_GAIN/LSB
+    return FEE_GAIN / LSB
 
 
 def i_to_v():
@@ -47,28 +47,28 @@ def i_to_v():
 
 def v_to_adc():
     """Voltage to adc."""
-    return 1./LSB
+    return 1 / LSB
 
 
 class SPE:
     """Represent a single photo-electron in the PMT."""
 
-    def __init__(self, pmt_gain=PMT_GAIN, x_slope=5.*units.ns,
-                 x_flat=1.*units.ns):
+    def __init__(self, pmt_gain=PMT_GAIN, x_slope=5 * units.ns,
+                 x_flat=1 * units.ns):
 
         self.pmt_gain = pmt_gain
         self.x_slope = x_slope
         self.x_flat = x_flat
-        self.spe_base = self.x_slope + self.x_flat
-        self.spe_length = 2*self.x_slope + self.x_flat
+        self.spe_base =       self.x_slope + self.x_flat
+        self.spe_length = 2 * self.x_slope + self.x_flat
 
         # current
-        self.A = self.pmt_gain*units.eplus/self.spe_base
+        self.A = self.pmt_gain*units.eplus / self.spe_base
 
         time_step = 1.*units.ns
         self.t = np.arange(0, self.spe_length, time_step)
-        nns = int(self.x_slope/time_step)
-        nnf = int(self.x_flat/time_step)
+        nns = int(self.x_slope / time_step)
+        nnf = int(self.x_flat  / time_step)
         rise = np.linspace(0, self.A, num=nns)
         fall = np.linspace(self.A, 0, num=nns)
         flat = self.A*np.ones(nnf)
@@ -78,25 +78,25 @@ class SPE:
         s = """
         (PMT gain = {0:5.2g}, amplitude = {1:5.2g} muA
          slope = {2:5.2f} ns, flat = {3:5.2f} ns)
-        """.format(self.pmt_gain, self.A/units.muA,
-                   self.x_slope/units.ns,
-                   self.x_flat/units.ns)
+        """.format(self.pmt_gain, self.A / units.muA,
+                   self.x_slope / units.ns,
+                   self.x_flat  / units.ns)
         return s
 
     def __repr__(self):
         return self.__str__()
 
 
-def spe_pulse(spe, t0=100*units.ns, tmax=200*units.ns,
-              time_step=1*units.ns):
+def spe_pulse(spe, t0=100 * units.ns, tmax=200 * units.ns,
+              time_step=1 * units.ns):
     """
     input: an instance of class SPE
     Returns a SPE pulse at time t0
     with baseline extending in steps of time_step from 0 to tmax
     determined by DELTA_L
     """
-    n = int(t0/time_step)
-    nmax = int(tmax/time_step)
+    n = int(t0 / time_step)
+    nmax = int(tmax / time_step)
 
     DELTA = np.zeros(nmax)   # Dirac delta of size DELTA_L
     DELTA[n] = 1
@@ -108,18 +108,19 @@ def spe_pulse(spe, t0=100*units.ns, tmax=200*units.ns,
 
 
 def spe_pulse_train(spe,
-                    signal_start=2000*units.ns,
-                    signal_length=5000*units.ns, daq_window=20*units.mus,
-                    time_step=1*units.ns):
+                    signal_start  = 2000 * units.ns,
+                    signal_length = 5000 * units.ns,
+                    daq_window    =   20 * units.mus,
+                    time_step     =    1 * units.ns):
     """
     Input: an instance of class SPE
     Returns a train of SPE pulses between signal_start
     and start+length in daq_window separated by tstep
     """
-    nmin = int(signal_start/time_step)
-    nmax = int((signal_start + signal_length)/time_step)
-    NMAX = int(daq_window/time_step)
-    # step = time_step/units.ns
+    nmin = int(signal_start / time_step)
+    nmax = int((signal_start + signal_length) / time_step)
+    NMAX = int(daq_window / time_step)
+    # step = time_step / units.ns
 
     DELTA = np.zeros(NMAX)
     DELTA[nmin:nmax+1] = 1
@@ -153,39 +154,39 @@ class FEE:
         self.C1 = c1
         self.GAIN = gain
         self.A1 = self.R1 * self.Zin/(self.R1 + self.Zin)  # ohms
-        self.A2 = gain/self.A1  # ohms/ohms = []
+        self.A2 = gain / self.A1  # ohms/ohms = []
         self.R = self.R1 + self.Zin
-        self.Cr = 1. + self.C1/self.C2
-        self.C = self.C1/self.Cr
-        self.ZC = self.Zin/self.Cr
+        self.Cr = 1. + self.C1 / self.C2
+        self.C = self.C1 / self.Cr
+        self.ZC = self.Zin / self.Cr
 
         self.f_sample = fsample
-        self.freq_LHPF = 1./(self.R * self.C)
-        self.freq_LPF1 = flpf1*2*np.pi
-        self.freq_LPF2 = flpf2*2*np.pi
+        self.freq_LHPF = 1 / (self.R * self.C)
+        self.freq_LPF1 = flpf1 * 2 * np.pi
+        self.freq_LPF2 = flpf2 * 2 * np.pi
 
-        self.freq_LHPFd = self.freq_LHPF/(self.f_sample*np.pi)
-        self.freq_LPF1d = self.freq_LPF1/(self.f_sample*np.pi)
-        self.freq_LPF2d = self.freq_LPF2/(self.f_sample*np.pi)
-        self.coeff_blr = self.freq_LHPFd*np.pi
+        self.freq_LHPFd = self.freq_LHPF / (self.f_sample * np.pi)
+        self.freq_LPF1d = self.freq_LPF1 / (self.f_sample * np.pi)
+        self.freq_LPF2d = self.freq_LPF2 / (self.f_sample * np.pi)
+        self.coeff_blr  = self.freq_LHPFd * np.pi
 
-        self.freq_zero = 1./(self.R1*self.C1)
-        self.coeff_c = self.freq_zero/(self.f_sample*np.pi)
+        self.freq_zero = 1 / (self.R1 * self.C1)
+        self.coeff_c = self.freq_zero / (self.f_sample * np.pi)
 
         DataPMT = DB.DataPMT()
 
         self.coeff_blr_pmt = DataPMT.coeff_blr.values
-        self.freq_LHPFd_pmt = self.coeff_blr_pmt/np.pi
+        self.freq_LHPFd_pmt = self.coeff_blr_pmt / np.pi
         self.coeff_c_pmt = DataPMT.coeff_c.values
-        self.C1_pmt = (self.coeff_blr_pmt/self.coeff_c_pmt)*(self.C2/np.pi)
-        self.R1_pmt = 1./(self.coeff_c_pmt*self.C1_pmt*self.f_sample*np.pi)
-        self.A1_pmt = self.R1_pmt * self.Zin/(self.R1_pmt + self.Zin)  # ohms
-        self.A2_pmt = gain/self.A1_pmt  # ohms/ohms = []
-        self.Cr_pmt = 1. + self.C1_pmt/self.C2
-        self.ZC_pmt = self.Zin/self.Cr_pmt
+        self.C1_pmt = (self.coeff_blr_pmt / self.coeff_c_pmt) * (self.C2 / np.pi)
+        self.R1_pmt = 1 / (self.coeff_c_pmt * self.C1_pmt * self.f_sample * np.pi)
+        self.A1_pmt = self.R1_pmt * self.Zin / (self.R1_pmt + self.Zin)  # ohms
+        self.A2_pmt = gain / self.A1_pmt  # ohms/ohms = []
+        self.Cr_pmt = 1 + self.C1_pmt / self.C2
+        self.ZC_pmt = self.Zin / self.Cr_pmt
         self.noise_FEEPMB_rms = noise_FEEPMB_rms
         self.LSB = lsb
-        self.voltsToAdc = self.LSB/units.volt
+        self.voltsToAdc = self.LSB / units.volt
         self.DAQnoise_rms = noise_DAQ_rms
 
     def __str__(self):
@@ -218,32 +219,32 @@ class FEE:
          A1 (PMTs)= {25:s} ohm,
          A2 (PMTs)= {26:s}
         )
-        """.format(self.C1/units.nF,
-                   self.C2/units.nF,
-                   self.R1/units.ohm,
-                   self.Zin/units.ohm,
-                   self.GAIN/units.ohm,
-                   self.A1/units.ohm,
+        """.format(self.C1               / units.nF,
+                   self.C2               / units.nF,
+                   self.R1               / units.ohm,
+                   self.Zin              / units.ohm,
+                   self.GAIN             / units.ohm,
+                   self.A1               / units.ohm,
                    self.A2,
-                   self.f_sample/units.MHZ,
-                   self.freq_LHPF/(units.kHz*2*np.pi),
-                   self.freq_LPF1/(units.MHZ*2*np.pi),
-                   self.freq_LPF2/(units.MHZ*2*np.pi),
+                   self.f_sample         /  units.MHZ,
+                   self.freq_LHPF        / (units.kHz * 2 * np.pi),
+                   self.freq_LPF1        / (units.MHZ * 2 * np.pi),
+                   self.freq_LPF2        / (units.MHZ * 2 * np.pi),
                    self.freq_LHPFd,
                    self.coeff_blr,
                    self.freq_LPF1d,
                    self.freq_LPF2d,
-                   self.noise_FEEPMB_rms/units.muA,
-                   self.LSB/units.mV,
+                   self.noise_FEEPMB_rms / units.muA,
+                   self.LSB              / units.mV,
                    self.voltsToAdc,
-                   self.DAQnoise_rms/units.mV,
+                   self.DAQnoise_rms     / units.mV,
                    self.freq_LHPFd_pmt,
                    self.coeff_blr_pmt,
                    self.freq_zero,
                    self.coeff_c,
                    self.coeff_c_pmt,
-                   self.R1_pmt/units.ohm,
-                   self.A1_pmt/units.ohm,
+                   self.R1_pmt           / units.ohm,
+                   self.A1_pmt           / units.ohm,
                    self.A2_pmt)
         return s
 
@@ -277,7 +278,7 @@ def filter_sfee_lpf(sfe):
     # convolve LPF1, LPF2
     a = np.convolve(a1, a2, mode='full')
     b_aux = np.convolve(b1, b2, mode='full')
-    b = sfe.GAIN*b_aux
+    b = sfe.GAIN * b_aux
     return b, a
 
 
@@ -321,7 +322,7 @@ def filter_fee(feep, ipmt):
     # convolve HPF+LPF1, LPF2
     a = np.convolve(a_aux, a2l, mode='full')
     b_aux2 = np.convolve(b_aux, b2l, mode='full')
-    b = A2*b_aux2  # in ohms
+    b = A2 * b_aux2  # in ohms
 
     return b, a
 
@@ -350,7 +351,7 @@ def signal_v_fee(feep, signal_i, ipmt):
     ++++++++++++++++++++++++++++++++++++++++++++++++
 
     """
-    if (feep.noise_FEEPMB_rms == 0.0):
+    if (feep.noise_FEEPMB_rms == 0):
         noise_FEEin = np.zeros(len(signal_i))
     else:
         noise_FEEin = np.random.normal(0,
@@ -396,5 +397,6 @@ def daq_decimator(f_sample1, f_sample2, signal_in):
     Includes anti-aliasing filter
     """
 
-    scale = int(f_sample1/f_sample2)
+    scale = int(f_sample1 / f_sample2)
     return signal.decimate(signal_in, scale, ftype='fir', zero_phase=False)
+
