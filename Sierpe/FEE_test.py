@@ -10,24 +10,6 @@ import Sierpe.FEE as FE
 import Core.system_of_units as units
 import numpy as np
 
-@mark.parametrize('a b'.split(),
-                 ((1,1),(2,2),(4,4)))
-def test_f(a,b):
-    assert a==b
-
-def test_sqrt():
-    with raises (ValueError):
-        sqrt(-1)
-
-# def mean_list(lst):
-#     return sum(lst)/len(lst)
-#
-# # @mark.parametrize('lst'.split(),
-# #                  ((range(10),),([0,1,3,5],),([-3,-5],)))
-# @given(lists(floats(allow_nan=False, allow_infinity=False), min_size=1))
-# def test_mean(lst):
-#     assert min(lst) <= mean_list(lst) <= max(lst)
-
 def signal_i_th():
     """Generates a "theoretical" current signal (signal_i)"""
     return np.concatenate((np.zeros(1000),
