@@ -1,5 +1,4 @@
-"""
-Configure running options for the cities
+"""Configure running options for the cities
 JJGC August 2016
 """
 import argparse
@@ -102,7 +101,7 @@ def define_event_loop(options, n_evt):
     nevt = options.get("NEVENTS", 0)
     max_evt = n_evt if options["RUN_ALL"] or nevt > n_evt else nevt
     start = options["SKIP"]
-    print_mod = options.get("PRINT_MOD", max(1, (max_evt-start)//20))
+    print_mod = options.get("PRINT_MOD", max(1, (max_evt-start) // 20))
 
     for i in range(start, max_evt):
         if not i % print_mod:
@@ -153,7 +152,7 @@ def read_config_file(cfile):
     for line in open(cfile, "r"):
         if line == "\n" or line[0] == "#":
             continue
-        tokens = filter(lambda x: x != "", line.rstrip().split(" "))
+        tokens = filter(None, line.rstrip().split(" "))
         key = tokens[0]
 
         value = map(cast, tokens[1:])

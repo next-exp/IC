@@ -205,7 +205,7 @@ newton = joule/meter  # newton = 6.24150 e+9 * MeV/mm
 #
 
 
-hep_pascal = newton/m2  # pascal = 6.24150 e+3 * MeV/mm3
+hep_pascal = newton / m2  # pascal = 6.24150 e+3 * MeV/mm3
 pascal = hep_pascal
 Pa = pascal
 kPa = 1000 * Pa
@@ -230,7 +230,7 @@ nA = nanoampere
 #
 # Electric potential [E][Q^-1]
 #
-megavolt = megaelectronvolt/eplus
+megavolt = megaelectronvolt / eplus
 kilovolt = 1.e-3 * megavolt
 volt = 1.e-6 * megavolt
 millivolt = 1.e-3 * volt
@@ -244,12 +244,12 @@ MV = megavolt
 #
 # Electric resistance [E][T][Q^-2]
 #
-ohm = volt/ampere  # ohm = 1.60217e-16*(MeV/eplus)/(eplus/ns)
+ohm = volt / ampere  # ohm = 1.60217e-16*(MeV/eplus)/(eplus/ns)
 
 #
 # Electric capacitance [Q^2][E^-1]
 #
-farad = coulomb/volt  # farad = 6.24150e+24 * eplus/Megavolt
+farad = coulomb / volt  # farad = 6.24150e+24 * eplus/Megavolt
 millifarad = 1.e-3 * farad
 microfarad = 1.e-6 * farad
 nanofarad = 1.e-9 * farad
@@ -267,7 +267,7 @@ weber = volt * second  # weber = 1000*megavolt*ns
 #
 # Magnetic Field [T][E][Q^-1][L^-2]
 #
-tesla = volt*second/meter2  # tesla = 0.001*megavolt*ns/mm2
+tesla = volt*second / meter2  # tesla = 0.001*megavolt*ns/mm2
 
 gauss = 1.e-4 * tesla
 kilogauss = 1.e-1 * tesla
@@ -275,17 +275,17 @@ kilogauss = 1.e-1 * tesla
 #
 # Inductance [T^2][E][Q^-2]
 #
-henry = weber/ampere  # henry = 1.60217e-7*MeV*(ns/eplus)**2
+henry = weber / ampere  # henry = 1.60217e-7*MeV*(ns/eplus)**2
 
 #
 # Temperature
 #
-kelvin = 1.
+kelvin = 1
 
 #
 # Amount of substance
 #
-mole = 1.
+mole = 1
 mol = mole
 
 #
@@ -293,7 +293,7 @@ mol = mole
 #
 
 
-becquerel = 1./second
+becquerel = 1 / second
 
 curie = 3.7e+10 * becquerel
 
@@ -303,17 +303,17 @@ muBq = 1e-6 * becquerel
 kBq =  1e+3 * becquerel
 MBq =  1e+6 * becquerel
 cks = Bq/keV
-U238ppb = Bq / 81.
-Th232ppb = Bq / 246.
+U238ppb = Bq / 81
+Th232ppb = Bq / 246
 #
 # Absorbed dose [L^2][T^-2]
 #
-gray = joule/kilogram
+gray = joule / kilogram
 
 #
 # Luminous intensity [I]
 #
-candela = 1.
+candela = 1
 
 #
 # Luminous flux [I]
@@ -323,7 +323,7 @@ lumen = candela * steradian
 #
 # Illuminance [I][L^-2]
 #
-lux = lumen/meter2
+lux = lumen / meter2
 
 #
 # Miscellaneous
@@ -332,7 +332,7 @@ perCent = 1e-2
 perThousand = 1e-3
 perMillion = 1e-6
 
-pes = 1.
+pes = 1
 adc = 1
 
 

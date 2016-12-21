@@ -1,6 +1,6 @@
 """Defines a class for random sampling."""
 
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
 
 import numpy as np
 
@@ -32,7 +32,7 @@ class NoiseSampler:
             Number of samples per sensor taken at each call.
         """
         def norm(ps):
-            return ps/np.sum(ps) if ps.any() else ps
+            return ps / np.sum(ps) if ps.any() else ps
 
         self.nsamples = sample_size
         self.probs, self.xbins, self.baselines = DB.SiPMNoise()
