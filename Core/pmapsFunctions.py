@@ -2,7 +2,7 @@
 JJGC December 2016
 
 """
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
 
 import math
 import numpy as np
@@ -28,12 +28,12 @@ def read_PMAPS(path, pmap_file):
 
 def S12_select_event(S12df, event):
     """Return a copy of the DF for event."""
-    return S12df.loc[lambda df: df.event.values ==event, :]
+    return S12df.loc[lambda df: df.event.values == event, :]
 
 
 def S12_select_peak(S12df, peak):
     """Return a copy of the DF for peak."""
-    return S12df.loc[lambda df: S12df.peak.values ==peak, :]
+    return S12df.loc[lambda df: S12df.peak.values == peak, :]
 
 
 def S12_get_wvfm(S12df, event, peak):
@@ -75,14 +75,12 @@ class S12F:
     4) ratio peak/total energy
     """
 
-    def __init__(self,length):
-        """
-        """
-        self.w = np.zeros(length, dtype=np.double)
+    def __init__(self, length):
+        self.w    = np.zeros(length, dtype=np.double)
         self.tmax = np.zeros(length, dtype=np.double)
         self.emax = np.zeros(length, dtype=np.double)
         self.etot = np.zeros(length, dtype=np.double)
-        self.er = np.zeros(length, dtype=np.double)
+        self.er   = np.zeros(length, dtype=np.double)
 
 
 def s12_features(S12L, peak=0, max_events=100):
@@ -117,7 +115,7 @@ def s12_features(S12L, peak=0, max_events=100):
         s1f.etot[i] = np.sum(E)
 
         if s1f.etot[i] > 0:
-            s1f.er[i] = s1f.emax[i]/s1f.etot[i]
+            s1f.er[i] = s1f.emax[i] / s1f.etot[i]
         else:
             s1f.er[i] = 0
 

@@ -2,6 +2,7 @@
 Cython version of PMAPS
 JJGC December, 2016
 """
+from future import division 
 cimport numpy as np
 import numpy as np
 
@@ -35,7 +36,7 @@ cpdef cdf_to_dict(int df_index, int evt_max,
                 s12l[1].append(df_ene[i])
             else:
                 pk = df_peak[i]
-                S12[pk] = [[df_time[i]],[df_ene[i]]]
+                S12[pk] = [[df_time[i]], [df_ene[i]]]
         else:
 
             S12 = S12L[evt]
@@ -52,7 +53,7 @@ cpdef cdf_to_dict(int df_index, int evt_max,
 
             pk = df_peak[i]
             S12 = {}
-            S12[pk] = [[df_time[i]],[df_ene[i]]]
+            S12[pk] = [[df_time[i]], [df_ene[i]]]
             S12L[evt] = S12
 
     return S12L

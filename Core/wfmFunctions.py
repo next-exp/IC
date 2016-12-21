@@ -89,7 +89,7 @@ def wfdf(time,energy_pes):
     representing a waveform.
     """
     swf = {}
-    swf['time_mus'] = time/units.mus
+    swf['time_mus'] = time / units.mus
     swf['ene_pes'] = energy_pes
     return pd.DataFrame(swf)
 
@@ -130,7 +130,7 @@ def add_cwf(cwfdf, pmtdf):
     """
     summed = np.sum(to_pes(cwfdf.values.T, pmtdf), axis=1)
     idxs = np.arange(summed.size)
-    return wf2df(idxs * 1.0, summed, idxs)
+    return wf2df(idxs * 1, summed, idxs)
 
 
 def rebin_wf(t, e, stride=40):
