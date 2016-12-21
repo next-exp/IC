@@ -2,7 +2,7 @@
 Cython version of some peak functions
 JJGC December, 2016
 """
-from __future__ import divisor
+# from __future__ import divisor
 
 cimport numpy as np
 import numpy as np
@@ -157,7 +157,7 @@ cpdef find_S12(double [:] wfzs, int [:] index,
     for i in S12:
         ls = len(S12[i])
 
-        if not (lmin <= ls < lmax)
+        if not (lmin <= ls < lmax):
             continue
 
         t = np.zeros(ls, dtype=np.double)
