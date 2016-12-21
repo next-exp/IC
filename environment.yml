@@ -1,0 +1,14 @@
+name: IC
+dependencies:
+- cython
+- numpy
+- pandas
+- pymysql
+- pytables
+- pytest
+- scipy
+- pip:
+  - hypothesis-numpy
+  - flaky
+
+
