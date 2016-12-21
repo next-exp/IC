@@ -397,4 +397,4 @@ def daq_decimator(f_sample1, f_sample2, signal_in):
     """
 
     scale = int(f_sample1/f_sample2)
-    return signal.decimate(signal_in, scale, ftype='fir')
+    return signal.decimate(signal_in, scale, ftype='fir', zero_phase=False)
