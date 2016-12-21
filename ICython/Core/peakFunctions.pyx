@@ -2,7 +2,7 @@
 Cython version of some peak functions
 JJGC December, 2016
 """
-from __future__ import divisor
+from __future__ import division
 
 cimport numpy as np
 import numpy as np
@@ -157,7 +157,7 @@ cpdef find_S12(double [:] wfzs, int [:] index,
     for i in S12:
         ls = len(S12[i])
 
-        if not (lmin <= ls < lmax)
+        if not (lmin <= ls < lmax):
             continue
 
         t = np.zeros(ls, dtype=np.double)
@@ -187,8 +187,8 @@ cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
 
     assert(len(t) == len(e))
 
-    cdef int n = len(t) / stride
-    cdef int r = len(t) % stride
+    cdef int n = len(t) // stride
+    cdef int r = len(t) %  stride
 
     lenb = n
     if r > 0:
