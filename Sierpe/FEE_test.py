@@ -73,7 +73,7 @@ def test_spe_to_adc():
     assert 23 < adc_to_pes     < 23.1
     assert 24 < adc_to_pes_lpf < 24.1
 
-@flaky(max_runs=10, min_passes=5)
+@flaky(max_runs=3, min_passes=1)
 @pytest.mark.feetest
 def test_FEE():
     """
@@ -98,4 +98,4 @@ def test_FEE():
     energy_in  = np.sum(signal_i[0:11000] * FE.i_to_adc())
     diff = 1000 * abs((energy_in - energy_mea) / energy_in)
 
-    assert diff < 0.5
+    assert diff < 0.2
