@@ -1,13 +1,21 @@
-sudo: false
-language: python
+language: generic
+sudo:     false
 
-python:
-- 2.7
-- 3.5
+env:
+  - IC_PYTHON_VERSION=2.7
+  - IC_PYTHON_VERSION=3.5
+
+os:
+  - linux
+  - osx
+
+
+before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CONDA_OS=MacOSX; else export CONDA_OS=Linux; fi
 
 install:
   # Install conda
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda config --set always_yes yes --set changeps1 no
@@ -15,7 +23,7 @@ install:
 
   # Install dependencies
   #- conda env create -f environment.yml
-  - conda create -n IC python=$TRAVIS_PYTHON_VERSION numpy scipy pandas cython pytest pytables pymysql
+  - conda create -n IC python=$IC_PYTHON_VERSION numpy scipy pandas cython pytest pytables pymysql
   - source activate IC
   - pip install hypothesis-numpy
   - pip install flaky
