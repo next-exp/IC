@@ -189,20 +189,20 @@ def DIOMIRA(argv=sys.argv):
                                            "EP-FEE parameters",
                                            tbl.filters("NOCOMPR"))
 
-            # create a group to store True waveform data
-            twfgroup = h5out.create_group(h5out.root, "TWF")
-            # create a table to store true waveform (zs, rebinned)
-            pmt_twf_table = h5out.create_table(twfgroup, "PMT", SENSOR_WF,
-                                               "Store for PMTs TWF",
-                                               tbl.filters(COMPRESSION))
-
-            sipm_twf_table = h5out.create_table(twfgroup, "SiPM", SENSOR_WF,
-                                                "Store for SiPM TWF",
-                                                tbl.filters(COMPRESSION))
-
-            # and index in event column
-            pmt_twf_table.cols.event.create_index()
-            sipm_twf_table.cols.event.create_index()
+            # # create a group to store True waveform data
+            # twfgroup = h5out.create_group(h5out.root, "TWF")
+            # # create a table to store true waveform (zs, rebinned)
+            # pmt_twf_table = h5out.create_table(twfgroup, "PMT", SENSOR_WF,
+            #                                    "Store for PMTs TWF",
+            #                                    tbl.filters(COMPRESSION))
+            #
+            # sipm_twf_table = h5out.create_table(twfgroup, "SiPM", SENSOR_WF,
+            #                                     "Store for SiPM TWF",
+            #                                     tbl.filters(COMPRESSION))
+            #
+            # # and index in event column
+            # pmt_twf_table.cols.event.create_index()
+            # sipm_twf_table.cols.event.create_index()
 
             # fill FEE table
             tbl.store_FEE_table(fee_table)
@@ -234,16 +234,16 @@ def DIOMIRA(argv=sys.argv):
                 # supress zeros in MCRD and rebin the ZS function in 1 mus bins
                 rebin = int(units.mus/units.ns)
 
-                trueSiPM = wfm.zero_suppression(sipmrd_[i], 0.)
-
-                # dict_map applies a function to the dictionary values
-                truePMT = cf.dict_map(lambda df: wfm.rebin_df(df, rebin),
-                                      wfm.zero_suppression(pmtrd_[i],
-                                      0., to_mus=int(units.ns/units.ms)))
-
-                # store in table
-                tbl.store_wf_table(i, pmt_twf_table, truePMT)
-                tbl.store_wf_table(i, sipm_twf_table, trueSiPM)
+                # trueSiPM = wfm.zero_suppression(sipmrd_[i], 0.)
+                #
+                # # dict_map applies a function to the dictionary values
+                # truePMT = cf.dict_map(lambda df: wfm.rebin_df(df, rebin),
+                #                       wfm.zero_suppression(pmtrd_[i],
+                #                       0., to_mus=int(units.ns/units.ms)))
+                #
+                # # store in table
+                # tbl.store_wf_table(i, pmt_twf_table, truePMT)
+                # tbl.store_wf_table(i, sipm_twf_table, trueSiPM)
 
                 # simulate PMT response and return an array with RWF;BLR
                 # convert to float, append to EVector
