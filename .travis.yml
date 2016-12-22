@@ -23,4 +23,6 @@ install:
   - source env.sh
 
 script:
+    - python icompile.py build_ext --inplace
     - pytest
+
