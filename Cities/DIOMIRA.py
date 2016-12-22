@@ -272,6 +272,6 @@ def DIOMIRA(argv=sys.argv):
 
 
 if __name__ == "__main__":
-    from cities import diomira
-    print(diomira)
+    # from cities import diomira
+    # print(diomira)
     DIOMIRA(sys.argv)
