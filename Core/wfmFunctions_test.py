@@ -38,4 +38,5 @@ def test_rebin_wf2(t):
     T, E   = wfm.rebin_waveform(t, e, stride=10)
     np.testing.assert_allclose(T, T2, rtol=1e-5, atol=1e-5)
     np.testing.assert_allclose(T, T3, rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(E, E2, rtol=1e-5, atol=1e-5)
     np.testing.assert_allclose(np.sum(e), np.sum(E), rtol=1e-5, atol=1e-5)
