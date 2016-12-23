@@ -9,6 +9,8 @@ if sys.version_info < (3,):
     from future_builtins import map
 
 
+DATABASE_LOCATION = '/invisible_cities/Database/localdb.sqlite3'
+    
 def tmap(*args):
     return tuple(map(*args))
 
@@ -19,7 +21,7 @@ runNumberForMC = 3012
 def DataPMT(run_number=1e5):
     if run_number == 0:
         run_number = runNumberForMC
-    dbfile = os.environ['ICDIR'] + '/Database/localdb.sqlite3'
+    dbfile = os.environ['ICDIR'] + DATABASE_LOCATION
     conn = sqlite3.connect(dbfile)
     sql = '''select map.SensorID,map.ChannelID,pos.PmtID,msk.Active,pos.X,
 pos.Y,blr.coeff_c,blr.coeff_blr,gain.adc_to_pes,noise.noise_rms,sigma.sigma
@@ -43,7 +45,7 @@ order by map.SensorID;'''.format(run_number)
 def DataSiPM(run_number=1e5):
     if run_number == 0:
         run_number = runNumberForMC
-    dbfile = os.environ['ICDIR'] + '/Database/localdb.sqlite3'
+    dbfile = os.environ['ICDIR'] + DATABASE_LOCATION
     conn = sqlite3.connect(dbfile)
     sql = '''select map.SensorID,map.ChannelID,msk.Active,pos.X,pos.Y,gain.adc_to_pes
 from SipmMapping as map, SipmPosition as pos, SipmMask as msk, SipmGain as gain
@@ -59,7 +61,7 @@ order by map.SensorID;'''.format(run_number)
     return data
 
 def DetectorGeo():
-    dbfile = os.environ['ICDIR'] + '/Database/localdb.sqlite3'
+    dbfile = os.environ['ICDIR'] + DATABASE_LOCATION
     conn = sqlite3.connect(dbfile)
     sql = 'select * from DetectorGeo'
     data = pd.read_sql_query(sql, conn)
@@ -69,7 +71,7 @@ def DetectorGeo():
 def SiPMNoise(run_number=1e5):
     if run_number == 0:
         run_number = runNumberForMC
-    dbfile = os.environ['ICDIR'] + '/Database/localdb.sqlite3'
+    dbfile = os.environ['ICDIR'] + DATABASE_LOCATION
     conn = sqlite3.connect(dbfile)
     cursor = conn.cursor()
 

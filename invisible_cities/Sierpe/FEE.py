@@ -8,8 +8,8 @@ from __future__ import print_function, division
 
 import numpy as np
 from scipy import signal
-import Core.system_of_units as units
-import Database.loadDB as DB
+import invisible_cities.Core.system_of_units as units
+import invisible_cities.Database.loadDB as DB
 
 # globals describing FEE
 PMT_GAIN = 1.7e6

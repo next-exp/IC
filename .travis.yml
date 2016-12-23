@@ -30,6 +30,6 @@ install:
   - source env.sh
 
 script:
-    - python icompile.py build_ext --inplace
+    - python setup.py develop
     - pytest
 
