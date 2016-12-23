@@ -7,8 +7,8 @@ from hypothesis import given
 from hypothesis.strategies import lists, floats
 from flaky import flaky
 
-import Sierpe.FEE as FE
-import Core.system_of_units as units
+import invisible_cities.Sierpe.FEE as FE
+import invisible_cities.Core.system_of_units as units
 import numpy as np
 
 def signal_i_th():
