@@ -1,12 +1,8 @@
 
 *.pyc
-
 *.o
-
 *.so
-
 *.c
-
 .cache
-
+*.egg-info
 Database/localdb.sqlite3
