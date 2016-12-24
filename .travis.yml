@@ -16,26 +16,8 @@ os:
   - linux
   - osx
 
-
-before_install:
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CONDA_OS=MacOSX; else export CONDA_OS=Linux; fi
-
 install:
-  # Install conda
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update conda
-
-  # Install dependencies
-  #- conda env create -f environment.yml
-  - conda create -n IC python=$IC_PYTHON_VERSION numpy scipy pandas matplotlib cython pytest pytables pymysql
-  - source activate IC
-  - pip install hypothesis-numpy
-  - pip install flaky
-  - source env.sh 1
+  - source manage.sh install ${IC_PYTHON_VERSION}
 
 script:
-    - python setup.py develop
-    - pytest
+  - bash manage.sh run_tests
