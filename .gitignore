@@ -8,3 +8,5 @@
 *.c
 
 .cache
+
+Database/localdb.sqlite3
