@@ -87,15 +87,13 @@ def test_FEE():
     """
     signal_i = signal_i_th()
 
-    fee = FE.FEE(noise_FEEPMB_rms = 1 * FE.NOISE_I, noise_DAQ_rms=FE.NOISE_DAQ)
-    signal_out  = FE.signal_v_fee(fee, signal_i, -1)
-    signal_outn = FE.noise_adc(fee, signal_out * FE.v_to_adc())
-    signal_out_cf = FE.signal_clean(fee, signal_outn, -1)
-    signal_r, acum = deconv_simple(signal_out_cf,
-                                   coef=fee.freq_LHPFd * np.pi)
+    fee = FE.FEE(noise_FEEPMB_rms=0*units.mA, noise_DAQ_rms=0)
+    signal_out = FE.signal_v_fee(fee, signal_i, -1)
+    signal_out_cf = FE.signal_clean(fee, signal_out, -1)
+    signal_r2, acum = deconv_simple(signal_out_cf*FE.v_to_adc(),
+                                coef=fee.freq_LHPFd*np.pi)
+    energy_mea2=np.sum(signal_r2[1000:11000])
+    energy_in2=np.sum(signal_i*FE.i_to_adc())
+    diff = np.abs(100.*((energy_in2-energy_mea2)/energy_in2))
 
-    energy_mea = np.sum(signal_r[0:11000])
-    energy_in  = np.sum(signal_i[0:11000] * FE.i_to_adc())
-    diff = 1000 * abs((energy_in - energy_mea) / energy_in)
-
-    assert diff < 0.2
+    
