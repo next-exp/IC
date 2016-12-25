@@ -30,8 +30,9 @@ def test_rebin_wf():
     np.testing.assert_allclose(np.sum(e), np.sum(E), rtol=1e-5, atol=0)
 
 
-@given(t = ndarrays_of_shape(shape=(1), lo=-1000.0, hi=1000.0))
+@given(t = ndarrays_of_shape(shape=(1), lo=0.1, hi=1000.0))
 def test_rebin_wf2(t):
+    """ test using automatic array generation"""
     # First, consider a simple test function
 
     e = np.exp(-t/t**2)
