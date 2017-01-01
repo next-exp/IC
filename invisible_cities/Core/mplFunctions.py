@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 from matplotlib.patches import Circle
 from matplotlib.collections import PatchCollection
-from mpl_toolkits.mplot3d import Axes3D
-from IPython.display import HTML
+# from mpl_toolkits.mplot3d import Axes3D
+# from IPython.display import HTML
 
-import Core.coreFunctions as cf
-import Core.system_of_units as units
-import Core.wfmFunctions as wfm
-import Core.tblFunctions as tbl
+import invisible_cities.Core.coreFunctions as cf
+import invisible_cities.Core.system_of_units as units
+import invisible_cities.Core.wfmFunctions as wfm
+import invisible_cities.Core.tblFunctions as tbl
 
 
 # matplotlib.style.use("ggplot")

@@ -5,7 +5,7 @@ import argparse
 import sys
 import os
 
-from Core.LogConfig import logger
+from invisible_cities.Core.LogConfig import logger
 
 
 def print_configuration(options):
@@ -152,10 +152,14 @@ def read_config_file(cfile):
     for line in open(cfile, "r"):
         if line == "\n" or line[0] == "#":
             continue
-        tokens = filter(None, line.rstrip().split(" "))
+        # python-2 & python-3
+        #tokens = [i for i in line.rstrip().split(" ") if i]
+        # python-2 only. In python-2 filter returns a list in
+        # python-3 filter retuns an iterator
+        tokens = list(filter(None, line.rstrip().split(" ")))
         key = tokens[0]
 
-        value = map(cast, tokens[1:])
+        value = list(map(cast, tokens[1:]))  # python-2 & python-3
         d[key] = value[0] if len(value) == 1 else value
 
     if "PATH_IN" in d and "FILE_IN" in d:

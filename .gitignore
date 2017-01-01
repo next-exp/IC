@@ -5,4 +5,5 @@
 *.c
 .cache
 *.egg-info
-Database/localdb.sqlite3
+*.sqlite3
+invisible_cities/tests/electrons_40keV_z250_RWF.h5
