@@ -9,7 +9,7 @@ import math
 import pandas as pd
 import numpy as np
 
-def to_adc(wfs, sensdf):
+def to_adc(wfs, adc_to_pes):
     """
     Convert waveform in pes to adc.
 
@@ -17,7 +17,7 @@ def to_adc(wfs, sensdf):
     ----------
     wfs : 2-dim np.ndarray
         The waveform (axis 1) for each sensor (axis 0).
-    sensdf : pd.DataFrame
+    sensdf : a vector of constants
         Contains the sensor-related information.
 
     Returns
@@ -25,10 +25,10 @@ def to_adc(wfs, sensdf):
     adc_wfs : 2-dim np.ndarray
         The input wfs scaled to adc.
     """
-    return wfs * sensdf["adc_to_pes"].reshape(wfs.shape[0], 1)
+    return wfs * adc_to_pes.reshape(wfs.shape[0], 1)
 
 
-def to_pes(wfs, sensdf):
+def to_pes(wfs, adc_to_pes):
     """
     Convert waveform in adc to pes.
 
@@ -36,7 +36,7 @@ def to_pes(wfs, sensdf):
     ----------
     wfs : 2-dim np.ndarray
         The waveform (axis 1) for each sensor (axis 0).
-    sensdf : pd.DataFrame
+    sensdf : a vector of constants
         Contains the sensor-related information.
 
     Returns
@@ -44,7 +44,7 @@ def to_pes(wfs, sensdf):
     pes_wfs : 2-dim np.ndarray
         The input wfs scaled to pes.
     """
-    return wfs / sensdf["adc_to_pes"].reshape(wfs.shape[0], 1)
+    return wfs / adc_to_pes.reshape(wfs.shape[0], 1)
 
 
 def get_waveforms(pmtea, event_number=0):
@@ -390,5 +390,5 @@ def noise_suppression(waveforms, thresholds):
     """
     if not hasattr(thresholds, "__iter__"):
         thresholds = np.ones(waveforms.shape[0]) * thresholds
-    suppressed_wfs = map(suppress_wf, waveforms, thresholds)
+    suppressed_wfs = list(map(suppress_wf, waveforms, thresholds))
     return np.array(suppressed_wfs)
