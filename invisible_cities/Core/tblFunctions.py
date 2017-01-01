@@ -16,9 +16,9 @@ import numpy as np
 import tables as tb
 import pandas as pd
 
-import Core.wfmFunctions as wfm
-import Database.loadDB as DB
-import Sierpe.FEE as FE
+import invisible_cities.Core.wfmFunctions as wfm
+import invisible_cities.Database.loadDB as DB
+import invisible_cities.Sierpe.FEE as FE
 
 
 def filters(name):
@@ -55,34 +55,6 @@ def filters(name):
     raise ValueError("Compression option {} not found.".format(name))
 
 
-def store_FEE_table(fee_table):
-    """Store the parameters of the EP FEE simulation."""
-    DataPMT = DB.DataPMT()
-    row = fee_table.row
-    row["OFFSET"] = FE.OFFSET
-    row["CEILING"] = FE.CEILING
-    row["PMT_GAIN"] = FE.PMT_GAIN
-    row["FEE_GAIN"] = FE.FEE_GAIN
-    row["R1"] = FE.R1
-    row["C1"] = FE.C1
-    row["C2"] = FE.C2
-    row["ZIN"] = FE.Zin
-    row["DAQ_GAIN"] = FE.DAQ_GAIN
-    row["NBITS"] = FE.NBITS
-    row["LSB"] = FE.LSB
-    row["NOISE_I"] = FE.NOISE_I
-    row["NOISE_DAQ"] = FE.NOISE_DAQ
-    row["t_sample"] = FE.t_sample
-    row["f_sample"] = FE.f_sample
-    row["f_mc"] = FE.f_mc
-    row["f_LPF1"] = FE.f_LPF1
-    row["f_LPF2"] = FE.f_LPF2
-    row["coeff_c"] = DataPMT.coeff_c.values
-    row["coeff_blr"] = DataPMT.coeff_blr.values
-    row["adc_to_pes"] = DataPMT.adc_to_pes.values
-    row["pmt_noise_rms"] = DataPMT.noise_rms
-    row.append()
-    fee_table.flush()
 
 
 def read_FEE_table(fee_t):
