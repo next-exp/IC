@@ -27,7 +27,7 @@ install:
 
   # Install dependencies
   #- conda env create -f environment.yml
-  - conda create -n IC python=$IC_PYTHON_VERSION numpy scipy pandas cython pytest pytables pymysql
+  - conda create -n IC python=$IC_PYTHON_VERSION numpy scipy pandas matplotlib cython pytest pytables pymysql
   - source activate IC
   - pip install hypothesis-numpy
   - pip install flaky
