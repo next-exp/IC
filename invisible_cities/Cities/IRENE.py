@@ -1,28 +1,26 @@
 
 from __future__ import print_function
-import numpy as np
-import tables
-from time import time
 import sys
+
 from glob import glob
+from time import time
+import numpy as np
+import tables as tb
+import matplotlib.pyplot as plt
 
 from Core.Nh5 import RunInfo, EventInfo
 from Core.Nh5 import S12, S2Si
-import tables as tb
-import numpy as np
 import Core.mplFunctions as mpl
 import Core.wfmFunctions as wfm
-from Database import loadDB
+import Core.peakFunctions as pf
+import Core.tblFunctions as tbl
+from Core.Configure import configure, define_event_loop, print_configuration
+
 import ICython.Sierpe.BLR as blr
 import ICython.Core.peakFunctions as cpf
-import Core.peakFunctions as pf
 from ICython.Core.system_of_units import SystemOfUnits
 
-#import Core.system_of_units as units
-from Core.LogConfig import logger
-from Core.Configure import configure, define_event_loop, print_configuration
-import Core.tblFunctions as tbl
-import matplotlib.pyplot as plt
+from Database import loadDB
 
 units = SystemOfUnits()
 
@@ -373,24 +371,22 @@ class Irene:
                     if self.run_number > 0:
                         self.eventsInfo = h5in.root.Run.events
 
+                    NEVT, NPMT, PMTWL = pmtrwf.shape
+                    NEVT, NSIPM, SIPMWL = sipmrwf.shape
+
+                    print("Events in file = {}".format(NEVT))
+
                     if first == False:
 
-                        self.NEVT, self.NPMT, self.PMTWL = pmtrwf.shape
-                        NEVT, self.NSIPM, self.SIPMWL = sipmrwf.shape
+                        print_configuration({"# PMT": NPMT,
+                                             "PMT WL": PMTWL,
+                                             "# SiPM": NSIPM,
+                                             "SIPM WL": SIPMWL})
 
-                        print("""
-                        Number of events in file = {}
-                        Number of PMTs = {}
-                        PMTWL = {}
-                        Number of SiPMs = {}
-                        SiPMWL = {}
-                          """.format(self.NEVT, self.NPMT, self.PMTWL,
-                                     self.NSIPM, self.SIPMWL))
-
-                        self.signal_t = np.arange(0., self.PMTWL * 25, 25)
+                        self.signal_t = np.arange(0., PMTWL * 25, 25)
                         first = True
 
-                    for evt in range(self.NEVT):
+                    for evt in range(NEVT):
                         # deconvolve
                         CWF = blr.deconv_pmt(pmtrwf[evt],
                                              self.coeff_c, self.coeff_blr,
