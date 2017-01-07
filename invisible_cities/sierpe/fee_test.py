@@ -7,8 +7,8 @@ from hypothesis import given
 from hypothesis.strategies import lists, floats
 from flaky import flaky
 
-import invisible_cities.Sierpe.FEE as FE
-import invisible_cities.Core.system_of_units as units
+import invisible_cities.sierpe.fee as FE
+import invisible_cities.core.system_of_units as units
 import numpy as np
 
 def signal_i_th():
@@ -95,5 +95,3 @@ def test_FEE():
     energy_mea2=np.sum(signal_r2[1000:11000])
     energy_in2=np.sum(signal_i*FE.i_to_adc())
     diff = np.abs(100.*((energy_in2-energy_mea2)/energy_in2))
-
-    

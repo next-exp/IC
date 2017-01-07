@@ -31,9 +31,8 @@ install:
   - source activate IC
   - pip install hypothesis-numpy
   - pip install flaky
-  - source env.sh
+  - source env.sh 1
 
 script:
     - python setup.py develop
     - pytest
-
