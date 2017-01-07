@@ -264,8 +264,6 @@ def rebin_waveform(t, e, stride = 40):
     return T, E
 
 
-
-
 def rebin_df(df, stride=40):
     """Applies rebin_wf to a dataframe.
 
