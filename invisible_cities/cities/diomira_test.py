@@ -1,28 +1,28 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 from glob import glob
 import tables as tb
 import numpy as np
 
-from invisible_cities.Core.Configure import configure
-import invisible_cities.Core.tblFunctions as tbl
-import invisible_cities.Core.system_of_units as units
-from invisible_cities.Sierpe import FEE
-import invisible_cities.ICython.Sierpe.BLR as blr
-from invisible_cities.Database import loadDB
-from invisible_cities.Cities.diomira_ms import Diomira
-import os
+from invisible_cities.core.configure import configure
+import invisible_cities.core.tbl_functions as tbl
+import invisible_cities.core.system_of_units as units
+from invisible_cities.sierpe import fee as FEE
+import invisible_cities.cython.sierpe.BLR as blr
+from invisible_cities.database import loadDB
+from invisible_cities.cities.diomira import Diomira
 
 def test_diomira_run():
     """ Tests that DIOMIRA runs on default config parameters """
-    ffile = os.environ['ICDIR'] + '/invisible_cities/tests/electrons_40keV_z250_RWF.h5'
+    ffile = os.environ['ICTDIR'] + '/tests/electrons_40keV_z250_RWF.h5'
     try:
         os.system("rm -f {}".format(ffile))
     except(IOError):
         pass
 
-    ffile = os.environ['ICDIR'] + '/invisible_cities/Config/diomira_ms.conf'
+    ffile = os.environ['ICTDIR'] + '/config/diomira.conf'
     CFP = configure(['DIOMIRA','-c',ffile])
     fpp = Diomira()
     files_in = glob(CFP['FILE_IN'])
@@ -41,7 +41,7 @@ def test_diomira_run():
 
 def test_diomira_fee_table():
     """ tests that FEE table reads back correctly with expected values"""
-    path = os.environ['ICDIR'] + '/invisible_cities/tests/'
+    path = os.environ['ICTDIR'] + '/tests/'
 
     ffile ='electrons_40keV_z250_RWF.h5'
     e40rwf= tb.open_file(path+ffile,'r+')
@@ -76,7 +76,7 @@ def test_diomira_cwf_blr():
        the BLR within 1 %.
     """
     eps = 1.
-    path = os.environ['ICDIR'] + '/invisible_cities/tests/'
+    path = os.environ['ICTDIR'] + '/tests/'
     ffile ='electrons_40keV_z250_RWF.h5'
     e40rwf= tb.open_file(path+ffile,'r+')
     pmtrwf = e40rwf.root.RD.pmtrwf
