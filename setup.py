@@ -14,6 +14,6 @@ setup(name         = 'invisible cities',
       author_email = 'nextic@TODO.org',
       license      = 'TODO',
       packages     = ['invisible_cities'],
-      ext_modules  = cythonize('invisible_cities/ICython**/*.pyx'),
+      ext_modules  = cythonize('invisible_cities/cython**/*.pyx'),
       include_dirs = [numpy_include],
 )

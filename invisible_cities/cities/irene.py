@@ -8,19 +8,20 @@ import numpy as np
 import tables as tb
 import matplotlib.pyplot as plt
 
-from Core.Nh5 import RunInfo, EventInfo
-from Core.Nh5 import S12, S2Si
-import Core.mplFunctions as mpl
-import Core.wfmFunctions as wfm
-import Core.peakFunctions as pf
-import Core.tblFunctions as tbl
-from Core.Configure import configure, define_event_loop, print_configuration
+from invisible_cities.core.nh5 import RunInfo, EventInfo
+from invisible_cities.core.Nh5 import S12, S2Si
+import invisible_cities.core.mpl_functions as mpl
+import invisible_cities.core.wfm_functions as wfm
+import invisible_cities.core.peak_functions as pf
+import invisible_cities.core.tbl_functions as tbl
+from invisible_cities.core.configure\
+ import configure, define_event_loop, print_configuration
 
-import ICython.Sierpe.BLR as blr
-import ICython.Core.peakFunctions as cpf
-from ICython.Core.system_of_units import SystemOfUnits
+import invisible_cities.cython.sierpe.BLR as blr
+import invisible_cities.cython.core.peak_functions as cpf
+from invisible_cities.cython.core.system_of_units import SystemOfUnits
 
-from Database import loadDB
+from invisible_cities.database import loadDB
 
 units = SystemOfUnits()
 

@@ -8,8 +8,8 @@ from __future__ import print_function, division
 
 import numpy as np
 from scipy import signal
-import invisible_cities.Core.system_of_units as units
-import invisible_cities.Database.loadDB as DB
+import invisible_cities.core.system_of_units as units
+import invisible_cities.database.loadDB as DB
 
 # globals describing FEE
 PMT_GAIN = 1.7e6
@@ -399,4 +399,3 @@ def daq_decimator(f_sample1, f_sample2, signal_in):
 
     scale = int(f_sample1 / f_sample2)
     return signal.decimate(signal_in, scale, ftype='fir', zero_phase=False)
-

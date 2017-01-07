@@ -8,9 +8,9 @@ import math
 import numpy as np
 import pandas as pd
 import tables as tb
-import Core.system_of_units as units
-import ICython.Core.pmapsFunctions as cpm
 import matplotlib.pyplot as plt
+import invisible_cities.core.system_of_units as units
+import invisible_cities.cython.core.pmaps_functions as cpm
 
 
 def read_PMAPS(path, pmap_file):

@@ -4,8 +4,8 @@ from hypothesis import given, assume
 from hypothesis.strategies import lists, integers, floats
 from hypothesis.extra.numpy import arrays
 
-from . import wfmFunctions as wfm
-import invisible_cities.ICython.Core.peakFunctions as cpf
+from . import wfm_functions as wfm
+import invisible_cities.cython.core.peak_functions as cpf
 import numpy as np
 
 
