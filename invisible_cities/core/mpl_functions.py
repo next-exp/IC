@@ -10,10 +10,10 @@ from matplotlib.collections import PatchCollection
 # from mpl_toolkits.mplot3d import Axes3D
 # from IPython.display import HTML
 
-import invisible_cities.Core.coreFunctions as cf
-import invisible_cities.Core.system_of_units as units
-import invisible_cities.Core.wfmFunctions as wfm
-import invisible_cities.Core.tblFunctions as tbl
+import invisible_cities.core.core_functions as cf
+import invisible_cities.core.system_of_units as units
+import invisible_cities.core.wfm_functions as wfm
+import invisible_cities.core.tbl_functions as tbl
 
 
 # matplotlib.style.use("ggplot")
@@ -39,24 +39,6 @@ def histo(x, nbins, title="hsimple", xlabel="", ylabel="Frequency"):
     plt.ylabel(ylabel)
 
 
-def HSimple1(x, nbins, title="hsimple", xlabel="", ylabel="Frequency",
-             save=False, filename="hsimple.png", filepath="./"):
-    """an interface for plt.hist with some decorations and default options"""
-
-    plt.hist(x, nbins, histtype="bar", alpha=0.75)
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-
-    if save:
-        pathfile = filepath+filename
-        print("saving histogram %s in %s" % (filename, pathfile))
-        plt.savefig(pathfile, bbox_inches="tight")
-        plt.close()
-    else:
-        plt.figure()
-
-
 def plts(signal, signal_start=0, signal_end=1e+4, offset=5):
     """Plot a signal in a give interval, control offset by hand."""
     ax1 = plt.subplot(1, 1, 1)
@@ -75,14 +57,14 @@ def plot_signal(signal_t, signal, title="signal",
     ax1 = plt.subplot(1, 1, 1)
     ax1.set_xlim([signal_start, signal_end])
     ax1.set_ylim([0, ymax])
-    SetPlotLabels(xlabel="t ({})".format(t_units),
+    set_plot_labels(xlabel="t ({})".format(t_units),
                   ylabel="signal ({})".format(units))
     plt.title(title)
     plt.plot(signal_t, signal)
     plt.show()
 
 
-def SetPlotLabels(xlabel="", ylabel="", grid=True):
+def set_plot_labels(xlabel="", ylabel="", grid=True):
     """Short cut to set labels in plots."""
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)

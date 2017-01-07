@@ -16,9 +16,9 @@ import numpy as np
 import tables as tb
 import pandas as pd
 
-import invisible_cities.Core.wfmFunctions as wfm
-import invisible_cities.Database.loadDB as DB
-import invisible_cities.Sierpe.FEE as FE
+import invisible_cities.core.wfm_functions as wfm
+import invisible_cities.database.loadDB as DB
+import invisible_cities.sierpe.fee as FE
 
 
 def filters(name):

@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 import sys
 from glob import glob
 from time import time
@@ -6,14 +7,15 @@ from time import time
 import numpy as np
 import tables as tb
 
-import invisible_cities.Core.tblFunctions as tbl
-from invisible_cities.Core.Configure import configure, print_configuration
-from invisible_cities.Core.Nh5 import FEE
-import invisible_cities.Core.mplFunctions as mpl
-import invisible_cities.Core.wfmFunctions as wfm
-from invisible_cities.Core.RandomSampling import NoiseSampler as SiPMsNoiseSampler
-from invisible_cities.Database import loadDB
-import invisible_cities.Sierpe.FEE as FE
+import invisible_cities.core.tbl_functions as tbl
+from invisible_cities.core.configure import configure, print_configuration
+from invisible_cities.core.nh5 import FEE
+import invisible_cities.core.mpl_functions as mpl
+import invisible_cities.core.wfm_functions as wfm
+from invisible_cities.core.random_sampling\
+     import NoiseSampler as SiPMsNoiseSampler
+from invisible_cities.database import loadDB
+import invisible_cities.sierpe.fee as FE
 
 
 class Diomira:

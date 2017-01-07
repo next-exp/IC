@@ -9,8 +9,8 @@ if sys.version_info < (3,):
     from future_builtins import map
 
 
-DATABASE_LOCATION = '/invisible_cities/Database/localdb.sqlite3'
-    
+DATABASE_LOCATION = '/invisible_cities/database/localdb.sqlite3'
+
 def tmap(*args):
     return tuple(map(*args))
 

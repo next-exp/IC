@@ -6,14 +6,14 @@ from __future__ import print_function, division, absolute_import
 import math
 import numpy as np
 import pandas as pd
-import Core.system_of_units as units
-import ICython.Sierpe.BLR as blr
-import ICython.Core.peakFunctions as pf
-from Database import loadDB
-import matplotlib.pyplot as plt
 from time import time
 import tables as tb
+import matplotlib.pyplot as plt
 
+import invisible_cities.core.system_of_units as units
+import invisible_cities.cython.sierpe.BLR as blr
+import invisible_cities.cython.core.peak_functions as pf
+from invisible_cities.database import loadDB
 
 
 def pmt_sum(CWF, adc_to_pes):
