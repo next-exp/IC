@@ -5,16 +5,16 @@ from glob import glob
 import os
 from time import time
 
-from Core.Configure import configure
-from Cities.diomira_ms import Diomira
+from invisible_cities.core.configure import configure
+from invisible_cities.cities.diomira import Diomira
 
-ffile = os.environ['ICDIR'] + '/tests/electrons_40keV_z250_RWF.h5'
+ffile = os.environ['ICTDIR'] + '/tests/electrons_40keV_z250_RWF.h5'
 try:
     os.system("rm -f {}".format(ffile))
 except(IOError):
     pass
 
-ffile = os.environ['ICDIR'] + '/Config/diomira_ms.conf'
+ffile = os.environ['ICTDIR'] + '/config/diomira.conf'
 CFP = configure(['DIOMIRA','-c',ffile])
 fpp = Diomira()
 files_in = glob(CFP['FILE_IN'])
