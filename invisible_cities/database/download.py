@@ -7,7 +7,7 @@ from base64 import b64decode as dec
 
 
 def loadDB():
-    dbfile = os.environ['ICTDIR'] + '/database/localdb.sqlite3'
+    dbfile = os.environ['ICDIR'] + '/database/localdb.sqlite3'
     try:
         os.remove(dbfile)
     except:
