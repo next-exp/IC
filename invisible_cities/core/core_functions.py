@@ -4,6 +4,15 @@ Core functions
 import numpy as np
 import pandas as pd
 
+def lrange(*args):
+    """Create a list specified as a range."""
+    return list(range(args))
+
+
+def trange(*args):
+    """Create a tuple specified as a range."""
+    return tuple(range(args))
+
 
 def wait():
     """A simple convenience name for raw_input."""
