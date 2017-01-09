@@ -55,30 +55,30 @@ def test_diomira_fee_table():
     path = os.environ['ICTDIR'] + '/tests/'
 
     ffile ='electrons_40keV_z250_RWF.h5'
-    e40rwf= tb.open_file(path+ffile,'r+')
-    fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
-    feep = fee['fee_param']
-    eps = 1e-04
-    assert len(fee['adc_to_pes']) == e40rwf.root.RD.pmtrwf.shape[1]
-    assert len(fee['coeff_blr']) == e40rwf.root.RD.pmtrwf.shape[1]
-    assert len(fee['coeff_c']) == e40rwf.root.RD.pmtrwf.shape[1]
-    assert len(fee['pmt_noise_rms']) == e40rwf.root.RD.pmtrwf.shape[1]
-    assert abs(feep.FEE_GAIN - FEE.FEE_GAIN) < eps
-    assert feep.NBITS == FEE.NBITS
-    assert abs(feep.LSB - FEE.LSB) < eps
-    assert abs(feep.NOISE_I - FEE.NOISE_I) < eps
-    assert abs(feep.NOISE_DAQ - FEE.NOISE_DAQ) < eps
-    assert abs(feep.C2/units.nF - FEE.C2/units.nF) < eps
-    assert abs(feep.C1/units.nF - FEE.C1/units.nF) < eps
-    assert  abs(feep.R1/units.ohm - FEE.R1/units.ohm) < eps
-    assert  abs(feep.ZIN/units.ohm - FEE.Zin/units.ohm) < eps
-    assert  abs(feep.t_sample - FEE.t_sample) < eps
-    assert  abs(feep.f_sample - FEE.f_sample) < eps
-    assert  abs(feep.f_mc - FEE.f_mc) < eps
-    assert  abs(feep.f_LPF1 - FEE.f_LPF1) < eps
-    assert  abs(feep.f_LPF2 - FEE.f_LPF2) < eps
-    assert  abs(feep.OFFSET - FEE.OFFSET) < eps
-    assert  abs(feep.CEILING - FEE.CEILING) < eps
+    with tb.open_file(path+ffile,'r+') as e40rwf:
+        fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
+        feep = fee['fee_param']
+        eps = 1e-04
+        assert len(fee['adc_to_pes']) == e40rwf.root.RD.pmtrwf.shape[1]
+        assert len(fee['coeff_blr']) == e40rwf.root.RD.pmtrwf.shape[1]
+        assert len(fee['coeff_c']) == e40rwf.root.RD.pmtrwf.shape[1]
+        assert len(fee['pmt_noise_rms']) == e40rwf.root.RD.pmtrwf.shape[1]
+        assert abs(feep.FEE_GAIN - FEE.FEE_GAIN) < eps
+        assert feep.NBITS == FEE.NBITS
+        assert abs(feep.LSB - FEE.LSB) < eps
+        assert abs(feep.NOISE_I - FEE.NOISE_I) < eps
+        assert abs(feep.NOISE_DAQ - FEE.NOISE_DAQ) < eps
+        assert abs(feep.C2/units.nF - FEE.C2/units.nF) < eps
+        assert abs(feep.C1/units.nF - FEE.C1/units.nF) < eps
+        assert  abs(feep.R1/units.ohm - FEE.R1/units.ohm) < eps
+        assert  abs(feep.ZIN/units.ohm - FEE.Zin/units.ohm) < eps
+        assert  abs(feep.t_sample - FEE.t_sample) < eps
+        assert  abs(feep.f_sample - FEE.f_sample) < eps
+        assert  abs(feep.f_mc - FEE.f_mc) < eps
+        assert  abs(feep.f_LPF1 - FEE.f_LPF1) < eps
+        assert  abs(feep.f_LPF2 - FEE.f_LPF2) < eps
+        assert  abs(feep.OFFSET - FEE.OFFSET) < eps
+        assert  abs(feep.CEILING - FEE.CEILING) < eps
 
 def test_diomira_cwf_blr():
     """This is the most rigurous test of the suite. It reads back the
@@ -89,22 +89,26 @@ def test_diomira_cwf_blr():
     eps = 1.
     path = os.environ['ICTDIR'] + '/tests/'
     ffile ='electrons_40keV_z250_RWF.h5'
-    e40rwf= tb.open_file(path+ffile,'r+')
-    pmtrwf = e40rwf.root.RD.pmtrwf
-    pmtblr = e40rwf.root.RD.pmtblr
-    DataPMT = loadDB.DataPMT(0)
-    coeff_c = DataPMT.coeff_c.values.astype(np.double)
-    coeff_blr = DataPMT.coeff_blr.values.astype(np.double)
+    with tb.open_file(path+ffile,'r+') as e40rwf:
 
-    for event in range(10):
-        BLR = pmtblr[event]
-        CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr,
-                     n_baseline=28000, thr_trigger=5)
+        pmtrwf = e40rwf.root.RD.pmtrwf
+        pmtblr = e40rwf.root.RD.pmtblr
+        DataPMT = loadDB.DataPMT(0)
+        coeff_c = DataPMT.coeff_c.values.astype(np.double)
+        coeff_blr = DataPMT.coeff_blr.values.astype(np.double)
 
-        for i in range(len(CWF)):
-            diff = abs(np.sum(BLR[i][5000:5100]) - np.sum(CWF[i][5000:5100]))
-            diff = 100. * diff/np.sum(BLR[i])
-            assert diff < eps
+        for event in range(10):
+            BLR = pmtblr[event]
+            CWF = blr.deconv_pmt(pmtrwf[event],
+                                 coeff_c,
+                                 coeff_blr,
+                                 n_baseline=28000,
+                                 thr_trigger=5)
+
+            for i in range(len(CWF)):
+                diff = abs(np.sum(BLR[i][5000:5100]) - np.sum(CWF[i][5000:5100]))
+                diff = 100. * diff/np.sum(BLR[i])
+                assert diff < eps
 
 def test_diomira_sipm():
     """This test checks that the number of SiPms surviving a hard energy
@@ -118,32 +122,33 @@ def test_diomira_sipm():
     max_sipm_with_signal = 10
     path = os.environ['ICTDIR'] + '/tests/'
     ffile ='electrons_40keV_z250_MCRD.h5'
-    e40rd = tb.open_file(path+ffile,'r+')
-    NEVENTS_DST, NSIPM, SIPMWL = e40rd.root.sipmrd.shape
+    with tb.open_file(path+ffile,'r+') as e40rd:
 
-    assert NSIPM == 1792
-    assert SIPMWL == 800
+        NEVENTS_DST, NSIPM, SIPMWL = e40rd.root.sipmrd.shape
 
-    DataSiPM = loadDB.DataSiPM(0)
-    sipm_adc_to_pes = DataSiPM.adc_to_pes.values.astype(np.double)
+        assert NSIPM == 1792
+        assert SIPMWL == 800
 
-    # check that the mean of (non zero) SiPMs is within reasonable values
-    # NB: this tests could fail if the average calibration constants in the
-    # data change dramatically, but in this case is interesting to check and
-    # redefine boundaries
-    assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) > cal_min
-    assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) < cal_max
+        DataSiPM = loadDB.DataSiPM(0)
+        sipm_adc_to_pes = DataSiPM.adc_to_pes.values.astype(np.double)
 
-    sipms_thresholds = sipm_noise_cut *  sipm_adc_to_pes
+        # check that the mean of (non zero) SiPMs is within reasonable values
+        # NB: this tests could fail if the average calibration constants in the
+        # data change dramatically, but in this case is interesting to check and
+        # redefine boundaries
+        assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) > cal_min
+        assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) < cal_max
 
-    noise_sampler = SiPMsNoiseSampler(SIPMWL, True)
-    for event in range(10):
-        # signal in sipm with noise
-        sipmrwf = e40rd.root.sipmrd[event] + noise_sampler.Sample()
-        # zs waveform
-        sipmzs = wfm.noise_suppression(sipmrwf, sipms_thresholds)
-        n_sipm = 0
-        for j in range(sipmzs.shape[0]):
-            if np.sum(sipmzs[j] >0):
-                n_sipm+=1
-        assert n_sipm < max_sipm_with_signal
+        sipms_thresholds = sipm_noise_cut *  sipm_adc_to_pes
+
+        noise_sampler = SiPMsNoiseSampler(SIPMWL, True)
+        for event in range(10):
+            # signal in sipm with noise
+            sipmrwf = e40rd.root.sipmrd[event] + noise_sampler.Sample()
+            # zs waveform
+            sipmzs = wfm.noise_suppression(sipmrwf, sipms_thresholds)
+            n_sipm = 0
+            for j in range(sipmzs.shape[0]):
+                if np.sum(sipmzs[j] >0):
+                    n_sipm+=1
+            assert n_sipm < max_sipm_with_signal
