@@ -5,9 +5,12 @@ matrix:
   fast_finish: true
   allow_failures:
   - os: osx
+  - env: IC_PYTHON_VERSION=3.6
+
 env:
   - IC_PYTHON_VERSION=2.7
   - IC_PYTHON_VERSION=3.5
+  - IC_PYTHON_VERSION=3.6
 
 os:
   - linux
