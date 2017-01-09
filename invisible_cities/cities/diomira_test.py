@@ -27,13 +27,13 @@ from invisible_cities.core.random_sampling\
 
 def test_diomira_run():
     """ Tests that DIOMIRA runs on default config parameters """
-    ffile = os.environ['ICTDIR'] + '/tests/electrons_40keV_z250_RWF.h5'
+    ffile = os.environ['ICDIR'] + '/tests/electrons_40keV_z250_RWF.h5'
     try:
         os.system("rm -f {}".format(ffile))
     except(IOError):
         pass
 
-    ffile = os.environ['ICTDIR'] + '/config/diomira.conf'
+    ffile = os.environ['ICDIR'] + '/config/diomira.conf'
     CFP = configure(['DIOMIRA','-c',ffile])
     fpp = Diomira()
     files_in = glob(CFP['FILE_IN'])
@@ -52,7 +52,7 @@ def test_diomira_run():
 
 def test_diomira_fee_table():
     """ tests that FEE table reads back correctly with expected values"""
-    path = os.environ['ICTDIR'] + '/tests/'
+    path = os.environ['ICDIR'] + '/tests/'
 
     ffile ='electrons_40keV_z250_RWF.h5'
     with tb.open_file(path+ffile,'r+') as e40rwf:
@@ -87,7 +87,7 @@ def test_diomira_cwf_blr():
        the BLR within 1 %.
     """
     eps = 1.
-    path = os.environ['ICTDIR'] + '/tests/'
+    path = os.environ['ICDIR'] + '/tests/'
     ffile ='electrons_40keV_z250_RWF.h5'
     with tb.open_file(path+ffile,'r+') as e40rwf:
 
@@ -120,7 +120,7 @@ def test_diomira_sipm():
     sipm_noise_cut = 20 # in pes. Should kill essentially all background
 
     max_sipm_with_signal = 10
-    path = os.environ['ICTDIR'] + '/tests/'
+    path = os.environ['ICDIR'] + '/tests/'
     ffile ='electrons_40keV_z250_MCRD.h5'
     with tb.open_file(path+ffile,'r+') as e40rd:
 
