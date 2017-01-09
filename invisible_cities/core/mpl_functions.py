@@ -152,7 +152,7 @@ def plot_waveforms(pmtwfdf, maxlen=0, zoom=False, window_size=800):
             first, last = define_window(pmtwfdf[i], window_size)
         plt.subplot(3, 4, i+1)
         # ax1.set_xlim([0, len_pmt])
-        SetPlotLabels(xlabel="samples", ylabel="adc")
+        set_plot_labels(xlabel="samples", ylabel="adc")
         plt.plot(pmtwfdf[i][first:last])
 
     plt.show()
@@ -195,6 +195,20 @@ def compare_raw_blr(pmtrwf, pmtblr, evt=0, zoom=True, window_size=800):
         plt.plot(raw[first:last])
         plt.plot(blr[first:last])
 
+def plot_blr_cwf(pmtblr, cwf, maxlen=0, zoom=False, window_size=800):
+    """Take as input a df storing the PMT wf and plot the 12 PMT WF."""
+    plt.figure(figsize=(12, 12))
+    for i in range(12):
+        first, last = 0, len(pmtblr[i])
+        if zoom:
+            first, last = define_window(pmtblr[i], window_size)
+        plt.subplot(3, 4, i+1)
+        # ax1.set_xlim([0, len_pmt])
+        set_plot_labels(xlabel="samples", ylabel="adc")
+        plt.plot(pmtblr[i][first:last])
+        plt.plot(cwf[i][first:last])
+
+    plt.show()
 
 def compare_corr_raw(pmtcwf, pmtblr, evt=0, zoom=True, window_size=800):
     """Compare PMT CWF and RWF (or BLR). Option zoom takes a window around
@@ -276,8 +290,6 @@ def plot_sipm(sipm, nmin=0, nmax=16, x=4, y=4):
 
     for i in range(nmin, nmax):
         plt.subplot(y, y, i+1)
-        # ax1.set_xlim([0, len_pmt])
-        #mpl.SetPlotLabels(xlabel="samples", ylabel="adc")
         plt.plot(sipm[i])
 
     plt.show()

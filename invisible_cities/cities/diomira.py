@@ -1,3 +1,12 @@
+"""
+code: diomira.py
+description: simulation of the response of the energy and tracking planes
+for the NEXT detector.
+author: J.J. Gomez-Cadenas
+IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch 
+package: invisible cities. See release notes and licence
+last changed: 09-11-2017
+"""
 from __future__ import print_function
 
 import sys
@@ -30,37 +39,33 @@ class Diomira:
         -2. Loads the data base to access calibration data
         -3. Sets all switches to default value
         """
-
+        #access data base
         DataPMT = loadDB.DataPMT(0)  # argument = 0 implies MC
         DataSiPM = loadDB.DataSiPM(0)
-
+        # number of adc counts per PES
         self.adc_to_pes = abs(DataPMT.adc_to_pes.values).astype(np.double)
         self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values.astype(np.double)
+        # deconvolution coefficientes
         self.coeff_c = DataPMT.coeff_c.values.astype(np.double)
         self.coeff_blr = DataPMT.coeff_blr.values.astype(np.double)
+        # PMT noise rms
         self.noise_rms = DataPMT.noise_rms.values.astype(np.double)
-
+        # Set the machine default state
         self.set_input_files_    = False
         self.set_output_file_    = False
         self.set_sipm_noise_cut_ = False
-
         self.plot_raw = False
         self.plot_blr = False
         self.plot_rwf = False
-
-        self.nprint = 1000000
-        self.signal_start=0
-        self.signal_end=1200
-        self.ymax = 200
-
 
     def simulate_sipm_response(self, event, sipmrd,
                                sipms_noise_sampler):
         """Add noise with the NoiseSampler class and return
         the noisy waveform (in pes)."""
-
-        return sipmrd[event] + sipms_noise_sampler.Sample()
-
+        # add noise (in PES) to true waveform
+        dataSiPM = sipmrd[event] + sipms_noise_sampler.Sample()
+        # return total signal in adc counts
+        return wfm.to_adc(dataSiPM, self.sipm_adc_to_pes)
 
     def simulate_pmt_response(self, event, pmtrd):
         """ Full simulation of the energy plane response
@@ -73,8 +78,8 @@ class Diomira:
         front end electronics (LPF, HPF filters)
         array of BLR waveforms (only decimation)
         """
-
-        spe = FE.SPE()  # spe
+        # Single Photoelectron class
+        spe = FE.SPE()
         # FEE, with noise PMT
         fee = FE.FEE(noise_FEEPMB_rms=FE.NOISE_I, noise_DAQ_rms=FE.NOISE_DAQ)
         NPMT = pmtrd.shape[1]
@@ -103,43 +108,35 @@ class Diomira:
     def set_plot(self, plot_raw=False, plot_blr=False,
                  plot_rwf=False, w_size=800):
         """Decide what to plot."""
-
         self.plot_raw     = plot_raw
         self.plot_blr     = plot_blr
         self.plot_rwf     = plot_rwf
         self.w_size       = w_size
 
-
     def set_print(self, nprint=10):
         """Print frequency."""
         self.nprint = nprint
-
 
     def set_input_files(self, input_files):
         """Set the input files."""
         self.input_files = input_files
         self.set_input_files_ = True
 
-
     def set_output_file(self, output_file, compression='ZLIB4'):
         """Set the output file."""
-
         filename = output_file
         self.compression = compression
         self.h5out = tb.open_file(filename, "w",
                           filters=tbl.filters(compression))
-
         self.set_output_file_ = True
 
-
-    def set_sipm_noise_cut(self, noise_cut=0.995):
+    def set_sipm_noise_cut(self, noise_cut=3.0):
+        """Sets the SiPM noise cut (in PES)"""
         self.sipm_noise_cut = noise_cut
         self.set_sipm_noise_cut_ = True
 
-
     def store_FEE_table(self):
         """Store the parameters of the EP FEE simulation."""
-
         row = self.fee_table.row
         row["OFFSET"] = FE.OFFSET
         row["CEILING"] = FE.CEILING
@@ -166,15 +163,13 @@ class Diomira:
         row.append()
         self.fee_table.flush()
 
-
     def run(self, nmax):
         """
         Run the machine
         nmax is the max number of events to run
         """
-
         n_events_tot = 0
-
+        # run the machine only if in a legal state
         if self.set_input_files_    == False:
             raise IOError('must set input files before running')
         if len(self.input_files)    == 0:
@@ -183,7 +178,6 @@ class Diomira:
             raise IOError('must set output file before running')
         if self.set_sipm_noise_cut_ == False:
             raise IOError('must set sipm_noise_cut before running')
-
 
         print("""
                  DIOMIRA will run a max of {} events
@@ -199,7 +193,6 @@ class Diomira:
 
             print("Opening file {}".format(ffile))
             filename = ffile
-
             try:
                 with tb.open_file(filename, "r+") as h5in:
                     pmtrd  = h5in.root.pmtrd
@@ -214,14 +207,12 @@ class Diomira:
                     if first == False:
                         # print configuration, create vectors
                         # init SiPM noiser, store FEE table
-
                         print_configuration({"# PMT": NPMT, "PMT WL": PMTWL,
                                              "PMT WL (FEE)": PMTWL_FEE,
                                              "# SiPM": NSIPM,
                                              "SIPM WL": SIPMWL})
                         # RD group
                         RD = self.h5out.create_group(self.h5out.root, "RD")
-
                         # MC group
                         MC = self.h5out.create_group(self.h5out.root, "MC")
                         # create a table to store Energy plane FEE
@@ -229,37 +220,37 @@ class Diomira:
                              create_table(MC, "FEE", FEE,
                                           "EP-FEE parameters",
                                           tbl.filters("NOCOMPR"))
-
                         # create vectors
-                        self.pmtrwf = self.h5out.\
-                            create_earray(RD,
-                                          "pmtrwf",
-                                          atom=tb.Int16Atom(),
-                                          shape=(0, NPMT, PMTWL_FEE),
-                                          expectedrows=nmax,
-                                          filters=tbl.filters(self.compression))
+                        self.pmtrwf = self.h5out.create_earray(
+                                    RD,
+                                    "pmtrwf",
+                                    atom=tb.Int16Atom(),
+                                    shape=(0, NPMT, PMTWL_FEE),
+                                    expectedrows=nmax,
+                                    filters=tbl.filters(self.compression))
 
-                        self.pmtblr = self.h5out.\
-                            create_earray(RD,
-                                          "pmtblr",
-                                          atom=tb.Int16Atom(),
-                                          shape=(0, NPMT, PMTWL_FEE),
-                                          expectedrows=nmax,
-                                          filters=tbl.filters(self.compression))
+                        self.pmtblr = self.h5out.create_earray(
+                                    RD,
+                                    "pmtblr",
+                                    atom=tb.Int16Atom(),
+                                    shape=(0, NPMT, PMTWL_FEE),
+                                    expectedrows=nmax,
+                                    filters=tbl.filters(self.compression))
 
-                        self.sipmrwf = self.h5out.\
-                            create_earray(RD,
-                                          "sipmrwf",
-                                          atom=tb.Int16Atom(),
-                                          shape=(0, NSIPM, SIPMWL),
-                                          expectedrows=nmax,
-                                          filters=tbl.filters(self.compression))
+                        self.sipmrwf = self.h5out.create_earray(
+                                    RD,
+                                    "sipmrwf",
+                                    atom=tb.Int16Atom(),
+                                    shape=(0, NSIPM, SIPMWL),
+                                    expectedrows=nmax,
+                                    filters=tbl.filters(self.compression))
 
                         # Create instance of the noise sampler
                         self.noise_sampler = SiPMsNoiseSampler(SIPMWL, True)
-                        self.sipms_thresholds = self.\
-                            sipm_noise_cut * self.sipm_adc_to_pes
-
+                        # thresholds in adc counts
+                        self.sipms_thresholds = (self.sipm_noise_cut
+                                              *  self.sipm_adc_to_pes)
+                        # store FEE parameters in table
                         self.store_FEE_table()
 
                         first = True
@@ -267,30 +258,25 @@ class Diomira:
                     # loop over events in the file. Break when nmax is reached
                     for evt in range(NEVT):
                         # simulate PMT and SiPM response
+                        # RWF and BLR
+                        dataPMT, blrPMT = self.simulate_pmt_response(
+                                        evt, pmtrd)
+                        # append the data to pytable vectors
+                        self.pmtrwf.append(
+                            dataPMT.astype(int).reshape(1, NPMT, PMTWL_FEE))
+                        self.pmtblr.append(
+                            blrPMT.astype(int).reshape(1, NPMT, PMTWL_FEE))
+                        # SiPMs
+                        dataSiPM = self.simulate_sipm_response(
+                                    evt, sipmrd, self.noise_sampler)
+                        # return a noise-supressed waveform
+                        dataSiPM = wfm.noise_suppression(
+                                    dataSiPM, self.sipms_thresholds)
 
-                        dataPMT, blrPMT = self.simulate_pmt_response(evt,
-                                                                     pmtrd)
-                        self.pmtrwf.\
-                            append(dataPMT.astype(int).reshape(1, NPMT,
-                                                               PMTWL_FEE))
-                        self.pmtblr.\
-                            append(blrPMT.astype(int).reshape(1, NPMT,
-                                                              PMTWL_FEE))
-                        # in PES
-                        dataSiPM = self.\
-                        simulate_sipm_response(evt,
-                                               sipmrd,
-                                               self.noise_sampler)
-                        # in adc counts
-                        dataSiPM = wfm.to_adc(dataSiPM, self.sipm_adc_to_pes)
-                        dataSiPM = wfm.noise_suppression(dataSiPM,
-                                                         self.sipms_thresholds)
+                        self.sipmrwf.append(
+                            dataSiPM.astype(int).reshape(1, NSIPM, SIPMWL))
 
-                        self.sipmrwf.\
-                            append(dataSiPM.astype(int).reshape(1, NSIPM,
-                                                                SIPMWL))
-
-
+                        # optional plotting of data
                         if self.plot_raw:
                             print('plot raw')
                             mpl.plot_waveforms(pmtrd[evt], maxlen=0, zoom=True,
