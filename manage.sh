@@ -107,18 +107,18 @@ function run_tests {
 
 function ic_env {
     echo setting ICDIR
-    export ICDIR=`pwd`
+    export ICTDIR=`pwd`
 
     echo setting ICTDIR
-    export ICTDIR=$ICDIR/invisible_cities/
+    export ICDIR=$ICTDIR/invisible_cities/
 
     echo setting PYTHONPATH
-    export PYTHONPATH=$ICDIR:$PYTHONPATH
+    export PYTHONPATH=$ICTDIR:$PYTHONPATH
 }
 
 function download_test_db {
     echo Downloading database
-    python $ICTDIR/database/download.py
+    python $ICDIR/database/download.py
 }
 
 function compile_cython_components {
