@@ -1,3 +1,11 @@
+"""
+code: diomira_test.py
+description: test suite for diomira
+author: J.J. Gomez-Cadenas
+IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
+package: invisible cities. See release notes and licence
+last changed: 09-11-2017
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -8,11 +16,14 @@ import numpy as np
 
 from invisible_cities.core.configure import configure
 import invisible_cities.core.tbl_functions as tbl
+import invisible_cities.core.wfm_functions as wfm
 import invisible_cities.core.system_of_units as units
 from invisible_cities.sierpe import fee as FEE
 import invisible_cities.cython.sierpe.BLR as blr
 from invisible_cities.database import loadDB
 from invisible_cities.cities.diomira import Diomira
+from invisible_cities.core.random_sampling\
+     import NoiseSampler as SiPMsNoiseSampler
 
 def test_diomira_run():
     """ Tests that DIOMIRA runs on default config parameters """
@@ -94,3 +105,45 @@ def test_diomira_cwf_blr():
             diff = abs(np.sum(BLR[i][5000:5100]) - np.sum(CWF[i][5000:5100]))
             diff = 100. * diff/np.sum(BLR[i])
             assert diff < eps
+
+def test_diomira_sipm():
+    """This test checks that the number of SiPms surviving a hard energy
+    cut (50 pes) is always small (<10). The test exercises the full construction of the SiPM vectors as well as the noise suppression.
+    """
+    cal_min = 13
+    cal_max = 19
+    # the average calibration constant is 16 see diomira_nb in Docs
+    sipm_noise_cut = 20 # in pes. Should kill essentially all background
+
+    max_sipm_with_signal = 10
+    path = os.environ['ICTDIR'] + '/tests/'
+    ffile ='electrons_40keV_z250_MCRD.h5'
+    e40rd = tb.open_file(path+ffile,'r+')
+    NEVENTS_DST, NSIPM, SIPMWL = e40rd.root.sipmrd.shape
+
+    assert NSIPM == 1792
+    assert SIPMWL == 800
+
+    DataSiPM = loadDB.DataSiPM(0)
+    sipm_adc_to_pes = DataSiPM.adc_to_pes.values.astype(np.double)
+
+    # check that the mean of (non zero) SiPMs is within reasonable values
+    # NB: this tests could fail if the average calibration constants in the
+    # data change dramatically, but in this case is interesting to check and
+    # redefine boundaries
+    assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) > cal_min
+    assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) < cal_max
+
+    sipms_thresholds = sipm_noise_cut *  sipm_adc_to_pes
+
+    noise_sampler = SiPMsNoiseSampler(SIPMWL, True)
+    for event in range(10):
+        # signal in sipm with noise
+        sipmrwf = e40rd.root.sipmrd[event] + noise_sampler.Sample()
+        # zs waveform
+        sipmzs = wfm.noise_suppression(sipmrwf, sipms_thresholds)
+        n_sipm = 0
+        for j in range(sipmzs.shape[0]):
+            if np.sum(sipmzs[j] >0):
+                n_sipm+=1
+        assert n_sipm < max_sipm_with_signal

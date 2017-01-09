@@ -4,5 +4,3 @@
 export ICDIR=`pwd`
 export ICTDIR=$ICDIR/invisible_cities/
 export PYTHONPATH=$ICDIR:$PYTHONPATH
-
-python $ICDIR/invisible_cities/database/download.py
