@@ -14,27 +14,30 @@ from glob import glob
 import tables as tb
 import numpy as np
 
-from invisible_cities.core.configure import configure
+import pytest
+
+from   invisible_cities.core.configure import configure
 import invisible_cities.core.tbl_functions as tbl
 import invisible_cities.core.wfm_functions as wfm
 import invisible_cities.core.system_of_units as units
-from invisible_cities.sierpe import fee as FEE
+from   invisible_cities.sierpe import fee as FEE
 import invisible_cities.cython.sierpe.BLR as blr
-from invisible_cities.database import load_db
-from invisible_cities.cities.diomira import Diomira
-from invisible_cities.core.random_sampling\
+from   invisible_cities.database import load_db
+from   invisible_cities.cities.diomira import Diomira
+from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
-def test_diomira_run():
-    """ Tests that DIOMIRA runs on default config parameters """
-    ffile = os.environ['ICDIR'] + '/database/test_data/electrons_40keV_z250_RWF.h5'
-    try:
-        os.system("rm -f {}".format(ffile))
-    except(IOError):
-        pass
+@pytest.fixture(scope='session')
+def electrons_40keV_z250_RWF_h5(tmpdir_factory):
+    return (str(tmpdir_factory
+                .mktemp('diomira_tests')
+                .join('electrons_40keV_z250_RWF.h5')))
 
-    ffile = os.environ['ICDIR'] + '/config/diomira.conf'
-    CFP = configure(['DIOMIRA','-c',ffile])
+def test_diomira_run(electrons_40keV_z250_RWF_h5):
+    """Test that DIOMIRA runs on default config parameters."""
+
+    conf_file = os.environ['ICDIR'] + '/config/diomira.conf'
+    CFP = configure(['DIOMIRA','-c', conf_file, '-o', electrons_40keV_z250_RWF_h5])
     fpp = Diomira()
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
@@ -50,46 +53,44 @@ def test_diomira_run():
 
     assert nevt == nevts
 
-def test_diomira_fee_table():
-    """ tests that FEE table reads back correctly with expected values"""
-    path = os.environ['ICDIR'] + '/database/test_data/'
+def test_diomira_fee_table(electrons_40keV_z250_RWF_h5):
+    """Test that FEE table reads back correctly with expected values."""
 
-    ffile ='electrons_40keV_z250_RWF.h5'
-    with tb.open_file(path+ffile,'r+') as e40rwf:
+    with tb.open_file(electrons_40keV_z250_RWF_h5, 'r+') as e40rwf:
         fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
         feep = fee['fee_param']
         eps = 1e-04
-        assert len(fee['adc_to_pes']) == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee['coeff_blr']) == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee['coeff_c']) == e40rwf.root.RD.pmtrwf.shape[1]
+        # Ignoring PEP8 to imrpove readability by making symmetry explicit.
+        assert len(fee['adc_to_pes'])    == e40rwf.root.RD.pmtrwf.shape[1]
+        assert len(fee['coeff_blr'])     == e40rwf.root.RD.pmtrwf.shape[1]
+        assert len(fee['coeff_c'])       == e40rwf.root.RD.pmtrwf.shape[1]
         assert len(fee['pmt_noise_rms']) == e40rwf.root.RD.pmtrwf.shape[1]
-        assert abs(feep.FEE_GAIN - FEE.FEE_GAIN) < eps
         assert feep.NBITS == FEE.NBITS
-        assert abs(feep.LSB - FEE.LSB) < eps
-        assert abs(feep.NOISE_I - FEE.NOISE_I) < eps
-        assert abs(feep.NOISE_DAQ - FEE.NOISE_DAQ) < eps
-        assert abs(feep.C2/units.nF - FEE.C2/units.nF) < eps
-        assert abs(feep.C1/units.nF - FEE.C1/units.nF) < eps
-        assert  abs(feep.R1/units.ohm - FEE.R1/units.ohm) < eps
-        assert  abs(feep.ZIN/units.ohm - FEE.Zin/units.ohm) < eps
-        assert  abs(feep.t_sample - FEE.t_sample) < eps
-        assert  abs(feep.f_sample - FEE.f_sample) < eps
-        assert  abs(feep.f_mc - FEE.f_mc) < eps
-        assert  abs(feep.f_LPF1 - FEE.f_LPF1) < eps
-        assert  abs(feep.f_LPF2 - FEE.f_LPF2) < eps
-        assert  abs(feep.OFFSET - FEE.OFFSET) < eps
-        assert  abs(feep.CEILING - FEE.CEILING) < eps
+        assert abs(feep.FEE_GAIN - FEE.FEE_GAIN)           < eps
+        assert abs(feep.LSB - FEE.LSB)                     < eps
+        assert abs(feep.NOISE_I - FEE.NOISE_I)             < eps
+        assert abs(feep.NOISE_DAQ - FEE.NOISE_DAQ)         < eps
+        assert abs(feep.C2/units.nF - FEE.C2/units.nF)     < eps
+        assert abs(feep.C1/units.nF - FEE.C1/units.nF)     < eps
+        assert abs(feep.R1/units.ohm - FEE.R1/units.ohm)   < eps
+        assert abs(feep.ZIN/units.ohm - FEE.Zin/units.ohm) < eps
+        assert abs(feep.t_sample - FEE.t_sample)           < eps
+        assert abs(feep.f_sample - FEE.f_sample)           < eps
+        assert abs(feep.f_mc - FEE.f_mc)                   < eps
+        assert abs(feep.f_LPF1 - FEE.f_LPF1)               < eps
+        assert abs(feep.f_LPF2 - FEE.f_LPF2)               < eps
+        assert abs(feep.OFFSET - FEE.OFFSET)               < eps
+        assert abs(feep.CEILING - FEE.CEILING)             < eps
 
-def test_diomira_cwf_blr():
+
+def test_diomira_cwf_blr(electrons_40keV_z250_RWF_h5):
     """This is the most rigurous test of the suite. It reads back the
        RWF and BLR waveforms written to disk by DIOMIRA, and computes
        CWF (using deconvoution algorithm), then checks that the CWF match
        the BLR within 1 %.
     """
-    eps = 1.
-    path = os.environ['ICDIR'] + '/database/test_data/'
-    ffile ='electrons_40keV_z250_RWF.h5'
-    with tb.open_file(path+ffile,'r+') as e40rwf:
+    eps = 1
+    with tb.open_file(electrons_40keV_z250_RWF_h5, 'r+') as e40rwf:
 
         pmtrwf = e40rwf.root.RD.pmtrwf
         pmtblr = e40rwf.root.RD.pmtblr
@@ -110,9 +111,11 @@ def test_diomira_cwf_blr():
                 diff = 100. * diff/np.sum(BLR[i])
                 assert diff < eps
 
-def test_diomira_sipm():
+
+def test_diomira_sipm(electrons_40keV_z250_RWF_h5):
     """This test checks that the number of SiPms surviving a hard energy
-    cut (50 pes) is always small (<10). The test exercises the full construction of the SiPM vectors as well as the noise suppression.
+        cut (50 pes) is always small (<10). The test exercises the full
+       construction of the SiPM vectors as well as the noise suppression.
     """
     cal_min = 13
     cal_max = 19
@@ -120,9 +123,8 @@ def test_diomira_sipm():
     sipm_noise_cut = 20 # in pes. Should kill essentially all background
 
     max_sipm_with_signal = 10
-    path = os.environ['ICDIR'] + '/database/test_data/'
-    ffile ='electrons_40keV_z250_MCRD.h5'
-    with tb.open_file(path+ffile,'r+') as e40rd:
+    infile = os.environ['ICDIR'] + '/database/test_data/electrons_40keV_z250_MCRD.h5'
+    with tb.open_file(infile, 'r+') as e40rd:
 
         NEVENTS_DST, NSIPM, SIPMWL = e40rd.root.sipmrd.shape
 
