@@ -11,8 +11,8 @@ import tables as tb
 import matplotlib.pyplot as plt
 
 import invisible_cities.core.system_of_units as units
-import invisible_cities.cython.sierpe.BLR as blr
-import invisible_cities.cython.core.peak_functions as pf
+import invisible_cities.sierpe.BLR as blr
+import invisible_cities.core.peak_functions_c as pf
 from invisible_cities.database import load_db
 
 
