@@ -19,7 +19,7 @@ import invisible_cities.core.tbl_functions as tbl
 import invisible_cities.core.wfm_functions as wfm
 import invisible_cities.core.system_of_units as units
 from invisible_cities.sierpe import fee as FEE
-import invisible_cities.cython.sierpe.BLR as blr
+import invisible_cities.sierpe.BLR as blr
 from invisible_cities.database import loadDB
 from invisible_cities.cities.diomira import Diomira
 from invisible_cities.core.random_sampling\

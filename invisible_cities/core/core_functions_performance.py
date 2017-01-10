@@ -6,7 +6,7 @@ Performance of some coreFunctions
 from time import time
 import numpy as np
 import invisible_cities.core.wfm_functions as wfm
-import invisible_cities.cython.core.peak_functions as cpf
+import invisible_cities.core.peak_functions_c as cpf
 
 
 t = np.arange(1.,100., 0.1, dtype=np.double)
