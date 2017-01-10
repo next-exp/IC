@@ -17,9 +17,9 @@ import invisible_cities.core.tbl_functions as tbl
 from invisible_cities.core.configure\
  import configure, define_event_loop, print_configuration
 
-import invisible_cities.cython.sierpe.BLR as blr
-import invisible_cities.cython.core.peak_functions as cpf
-from invisible_cities.cython.core.system_of_units import SystemOfUnits
+import invisible_cities.sierpe.BLR as blr
+import invisible_cities.core.peak_functions_c as cpf
+from invisible_cities.core.system_of_units_c import SystemOfUnits
 
 from invisible_cities.database import load_db
 

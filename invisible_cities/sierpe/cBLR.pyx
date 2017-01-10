@@ -3,9 +3,6 @@ import numpy as np
 cimport numpy as np
 from scipy import signal as SGN
 
-cpdef test():
-    print('hello')
-
 cpdef BLR(np.ndarray[np.int16_t, ndim=1] signal_daq, float coef,
            int nm, float thr1, float thr2, float thr3):
     """
