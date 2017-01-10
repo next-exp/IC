@@ -1,6 +1,6 @@
 import tables
 from invisible_cities.database import download
-import invisible_cities.database.loadDB as DB
+import invisible_cities.database.load_db as DB
 import os
 
 
