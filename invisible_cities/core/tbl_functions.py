@@ -17,7 +17,7 @@ import tables as tb
 import pandas as pd
 
 import invisible_cities.core.wfm_functions as wfm
-import invisible_cities.database.loadDB as DB
+import invisible_cities.database.load_db as DB
 import invisible_cities.sierpe.fee as FE
 
 

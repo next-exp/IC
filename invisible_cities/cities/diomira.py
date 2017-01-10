@@ -23,7 +23,7 @@ import invisible_cities.core.mpl_functions as mpl
 import invisible_cities.core.wfm_functions as wfm
 from invisible_cities.core.random_sampling\
      import NoiseSampler as SiPMsNoiseSampler
-from invisible_cities.database import loadDB
+from invisible_cities.database import load_db
 import invisible_cities.sierpe.fee as FE
 
 
@@ -40,8 +40,8 @@ class Diomira:
         -3. Sets all switches to default value
         """
         #access data base
-        DataPMT = loadDB.DataPMT(0)  # argument = 0 implies MC
-        DataSiPM = loadDB.DataSiPM(0)
+        DataPMT = load_db.DataPMT(0)  # argument = 0 implies MC
+        DataSiPM = load_db.DataSiPM(0)
         # number of adc counts per PES
         self.adc_to_pes = abs(DataPMT.adc_to_pes.values).astype(np.double)
         self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values.astype(np.double)
