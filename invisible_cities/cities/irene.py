@@ -21,7 +21,7 @@ import invisible_cities.cython.sierpe.BLR as blr
 import invisible_cities.cython.core.peak_functions as cpf
 from invisible_cities.cython.core.system_of_units import SystemOfUnits
 
-from invisible_cities.database import loadDB
+from invisible_cities.database import load_db
 
 units = SystemOfUnits()
 
@@ -41,8 +41,8 @@ class Irene:
         sets all switches to default value (False most of the time)
         """
         self.run_number = run_number
-        DataPMT = loadDB.DataPMT(run_number)
-        DataSiPM = loadDB.DataSiPM(run_number)
+        DataPMT = load_db.DataPMT(run_number)
+        DataSiPM = load_db.DataSiPM(run_number)
 
         self.adc_to_pes = abs(DataPMT.adc_to_pes.values).astype(np.double)
         self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values.astype(np.double)
