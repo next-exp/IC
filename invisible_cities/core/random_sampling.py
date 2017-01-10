@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 
 import numpy as np
 
-import invisible_cities.database.loadDB as DB
+import invisible_cities.database.load_db as DB
 
 
 class NoiseSampler:
