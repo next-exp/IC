@@ -20,7 +20,7 @@ import invisible_cities.core.wfm_functions as wfm
 import invisible_cities.core.system_of_units as units
 from invisible_cities.sierpe import fee as FEE
 import invisible_cities.cython.sierpe.BLR as blr
-from invisible_cities.database import loadDB
+from invisible_cities.database import load_db
 from invisible_cities.cities.diomira import Diomira
 from invisible_cities.core.random_sampling\
      import NoiseSampler as SiPMsNoiseSampler
@@ -93,7 +93,7 @@ def test_diomira_cwf_blr():
 
         pmtrwf = e40rwf.root.RD.pmtrwf
         pmtblr = e40rwf.root.RD.pmtblr
-        DataPMT = loadDB.DataPMT(0)
+        DataPMT = load_db.DataPMT(0)
         coeff_c = DataPMT.coeff_c.values.astype(np.double)
         coeff_blr = DataPMT.coeff_blr.values.astype(np.double)
 
@@ -129,7 +129,7 @@ def test_diomira_sipm():
         assert NSIPM == 1792
         assert SIPMWL == 800
 
-        DataSiPM = loadDB.DataSiPM(0)
+        DataSiPM = load_db.DataSiPM(0)
         sipm_adc_to_pes = DataSiPM.adc_to_pes.values.astype(np.double)
 
         # check that the mean of (non zero) SiPMs is within reasonable values
