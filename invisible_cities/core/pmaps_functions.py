@@ -10,7 +10,7 @@ import pandas as pd
 import tables as tb
 import matplotlib.pyplot as plt
 import invisible_cities.core.system_of_units as units
-import invisible_cities.cython.core.pmaps_functions as cpm
+import invisible_cities.core.pmaps_functions_c as cpm
 
 
 def read_PMAPS(path, pmap_file):

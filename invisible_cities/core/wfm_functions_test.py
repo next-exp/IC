@@ -5,7 +5,7 @@ from hypothesis.strategies import lists, integers, floats
 from hypothesis.extra.numpy import arrays
 
 from . import wfm_functions as wfm
-import invisible_cities.cython.core.peak_functions as cpf
+import invisible_cities.core.peak_functions_c as cpf
 import numpy as np
 
 
