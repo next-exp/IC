@@ -1,6 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+class NoAdequateTests(Exception):
+    pass
+
+raise NoAdequateTests("Please write some tests for this code!")
+
 from glob import glob
 import os
 from time import time
@@ -8,13 +13,13 @@ from time import time
 from invisible_cities.core.configure import configure
 from invisible_cities.cities.diomira import Diomira
 
-ffile = os.environ['ICTDIR'] + '/tests/electrons_40keV_z250_RWF.h5'
+ffile = os.environ['ICDIR'] + '/database/test_data/electrons_40keV_z250_RWF.h5'
 try:
     os.system("rm -f {}".format(ffile))
 except(IOError):
     pass
 
-ffile = os.environ['ICTDIR'] + '/config/diomira.conf'
+ffile = os.environ['ICDIR'] + '/config/diomira.conf'
 CFP = configure(['DIOMIRA','-c',ffile])
 fpp = Diomira()
 files_in = glob(CFP['FILE_IN'])
