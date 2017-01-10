@@ -110,9 +110,15 @@ def test_diomira_cwf_blr():
                 diff = 100. * diff/np.sum(BLR[i])
                 assert diff < eps
 
+    try:
+        os.system("rm -f {}".format(path+ffile))
+    except(IOError):
+        pass
+
 def test_diomira_sipm():
     """This test checks that the number of SiPms surviving a hard energy
-    cut (50 pes) is always small (<10). The test exercises the full construction of the SiPM vectors as well as the noise suppression.
+        cut (50 pes) is always small (<10). The test exercises the full 
+       construction of the SiPM vectors as well as the noise suppression.
     """
     cal_min = 13
     cal_max = 19
