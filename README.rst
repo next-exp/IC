@@ -57,6 +57,8 @@ with
 If the test database changes, you will need to download the most
 recent version:
 
+.. code-block::
+
    bash manage.sh download_test_db
    
 
