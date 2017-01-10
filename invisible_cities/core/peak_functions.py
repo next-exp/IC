@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import invisible_cities.core.system_of_units as units
 import invisible_cities.cython.sierpe.BLR as blr
 import invisible_cities.cython.core.peak_functions as pf
-from invisible_cities.database import loadDB
+from invisible_cities.database import load_db
 
 
 def pmt_sum(CWF, adc_to_pes):
