@@ -130,6 +130,11 @@ function compile_and_test {
     run_tests
 }
 
+function clean {
+    find . -name '*.c'  -exec rm {} +
+    find . -name '*.so' -exec rm {} +
+}
+
 ## Main command dispatcher
 
 case $COMMAND in
@@ -140,7 +145,8 @@ case $COMMAND in
     run_tests)              run_tests ;;
     compile_and_test)       compile_and_test ;;
     download_test_db)       download_test_db ;;
-
+    clean)                  clean ;;
+    
     *) echo Unrecognized command: ${COMMAND}
        echo
        echo Usage:
@@ -152,6 +158,7 @@ case $COMMAND in
        echo bash $0 run_tests
        echo bash $0 compile_and_test
        echo bash $0 download_test_db
+       echo bash $0 clean
        exit 1
        ;;
 esac
