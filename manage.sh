@@ -131,8 +131,21 @@ function compile_and_test {
 }
 
 function clean {
-    find . -name '*.c'  -exec rm {} +
-    find . -name '*.so' -exec rm {} +
+    echo "Cleaning IC generated files:"
+    C_FILES=`find . -name '*.c'`
+    SOFILES=`find . -name '*.so'`
+    REMOVE="$C_FILES $SOFILES"
+    if [ ! -z "${REMOVE// }" ]
+    then
+        for FILE in $REMOVE
+        do
+            COMMAND="rm $FILE"
+            echo $COMMAND
+            $COMMAND
+        done
+    else
+        echo Nothing found to clean
+    fi
 }
 
 ## Main command dispatcher
