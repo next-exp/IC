@@ -16,6 +16,10 @@ os:
   - linux
   - osx
 
+branches:
+  except:
+    - /^docs\..*$/
+
 install:
   - source manage.sh install ${IC_PYTHON_VERSION}
 
