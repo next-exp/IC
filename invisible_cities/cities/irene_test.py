@@ -30,10 +30,15 @@ from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
 
-def test_diomira_and_irene_run():
+def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
     """Test that Diomira & Irene runs on default config parameters."""
+    RWF_file = str(irene_diomira_chain_tmpdir.join(
+                   'electrons_40keV_z250_RWF.h5'))
     conf_file = os.environ['ICDIR'] + '/config/diomira.conf'
-    CFP = configure(['DIOMIRA','-c', conf_file])
+    CFP = configure(['DIOMIRA',
+                     '-c', conf_file,
+                     '-o', RWF_file,
+                     '-n', '5'])
     fpp = Diomira()
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
@@ -49,7 +54,13 @@ def test_diomira_and_irene_run():
 
     # Irene
     conf_file = os.environ['ICDIR'] + '/config/irene.conf'
-    CFP = configure(['IRENE', '-c', conf_file])
+    PMP_file = str(irene_diomira_chain_tmpdir.join(
+                   'electrons_40keV_z250_PMP.h5'))
+    CFP = configure(['IRENE',
+                     '-c', conf_file,
+                     '-i', RWF_file,
+                     '-o', PMP_file,
+                     '-n', '5'])
 
     fpp = Irene(run_number=CFP['RUN_NUMBER'])
 
@@ -86,7 +97,3 @@ def test_diomira_and_irene_run():
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
     nevt = fpp.run(nmax=nevts, store_pmaps=True)
     assert nevt == nevts
-
-    # This leads to the dark side !
-    os.system('rm $ICDIR/database/test_data/electrons_40keV_z250_RWF.h5')
-    os.system('rm $ICDIR/database/test_data/electrons_40keV_z250_PMP.h5')
