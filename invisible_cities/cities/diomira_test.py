@@ -2,9 +2,10 @@
 code: diomira_test.py
 description: test suite for diomira
 author: J.J. Gomez-Cadenas
-IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
+IC core team: Jacek Generowicz, JJGC,
+G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
-last changed: 09-11-2017
+last changed: 01-12-2017
 """
 from __future__ import print_function
 from __future__ import absolute_import
