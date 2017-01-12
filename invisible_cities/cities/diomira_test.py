@@ -29,7 +29,8 @@ from   invisible_cities.core.random_sampling \
 
 def test_diomira_run(irene_diomira_chain_tmpdir):
     """Test that DIOMIRA runs on default config parameters."""
-    RWF_file = str(irene_diomira_chain_tmpdir.join('electrons_40keV_z250_RWF.h5'))
+    RWF_file = str(irene_diomira_chain_tmpdir.join(
+                   'electrons_40keV_z250_RWF.h5'))
     conf_file = os.environ['ICDIR'] + '/config/diomira.conf'
     CFP = configure(['DIOMIRA','-c', conf_file, '-o', RWF_file])
     fpp = Diomira()
@@ -49,7 +50,8 @@ def test_diomira_run(irene_diomira_chain_tmpdir):
 
 def test_diomira_fee_table(irene_diomira_chain_tmpdir):
     """Test that FEE table reads back correctly with expected values."""
-    RWF_file = str(irene_diomira_chain_tmpdir.join('electrons_40keV_z250_RWF.h5'))
+    RWF_file = str(irene_diomira_chain_tmpdir.join(
+                   'electrons_40keV_z250_RWF.h5'))
     with tb.open_file(RWF_file, 'r+') as e40rwf:
         fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
         feep = fee['fee_param']
@@ -84,7 +86,8 @@ def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
        the BLR within 1 %.
     """
     eps = 1
-    RWF_file = str(irene_diomira_chain_tmpdir.join('electrons_40keV_z250_RWF.h5'))
+    RWF_file = str(irene_diomira_chain_tmpdir.join(
+                   'electrons_40keV_z250_RWF.h5'))
     with tb.open_file(RWF_file, 'r+') as e40rwf:
 
         pmtrwf = e40rwf.root.RD.pmtrwf
@@ -118,7 +121,8 @@ def test_diomira_sipm(irene_diomira_chain_tmpdir):
     sipm_noise_cut = 20 # in pes. Should kill essentially all background
 
     max_sipm_with_signal = 10
-    infile = os.environ['ICDIR'] + '/database/test_data/electrons_40keV_z250_MCRD.h5'
+    infile = (os.environ['ICDIR']
+     + '/database/test_data/electrons_40keV_z250_MCRD.h5')
     with tb.open_file(infile, 'r+') as e40rd:
 
         NEVENTS_DST, NSIPM, SIPMWL = e40rd.root.sipmrd.shape
