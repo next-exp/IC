@@ -172,6 +172,5 @@ case $COMMAND in
        echo bash $0 compile_and_test
        echo bash $0 download_test_db
        echo bash $0 clean
-       exit 1
        ;;
 esac
