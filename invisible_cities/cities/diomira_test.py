@@ -2,9 +2,10 @@
 code: diomira_test.py
 description: test suite for diomira
 author: J.J. Gomez-Cadenas
-IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
+IC core team: Jacek Generowicz, JJGC,
+G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
-last changed: 09-11-2017
+last changed: 01-12-2017
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -13,8 +14,6 @@ import os
 from glob import glob
 import tables as tb
 import numpy as np
-
-import pytest
 
 from   invisible_cities.core.configure import configure
 import invisible_cities.core.tbl_functions as tbl
@@ -27,17 +26,12 @@ from   invisible_cities.cities.diomira import Diomira
 from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
-@pytest.fixture(scope='session')
-def electrons_40keV_z250_RWF_h5(tmpdir_factory):
-    return (str(tmpdir_factory
-                .mktemp('diomira_tests')
-                .join('electrons_40keV_z250_RWF.h5')))
 
-def test_diomira_run(electrons_40keV_z250_RWF_h5):
+def test_diomira_run(irene_diomira_chain_tmpdir):
     """Test that DIOMIRA runs on default config parameters."""
-
+    RWF_file = str(irene_diomira_chain_tmpdir.join('electrons_40keV_z250_RWF.h5'))
     conf_file = os.environ['ICDIR'] + '/config/diomira.conf'
-    CFP = configure(['DIOMIRA','-c', conf_file, '-o', electrons_40keV_z250_RWF_h5])
+    CFP = configure(['DIOMIRA','-c', conf_file, '-o', RWF_file])
     fpp = Diomira()
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
@@ -53,10 +47,10 @@ def test_diomira_run(electrons_40keV_z250_RWF_h5):
 
     assert nevt == nevts
 
-def test_diomira_fee_table(electrons_40keV_z250_RWF_h5):
+def test_diomira_fee_table(irene_diomira_chain_tmpdir):
     """Test that FEE table reads back correctly with expected values."""
-
-    with tb.open_file(electrons_40keV_z250_RWF_h5, 'r+') as e40rwf:
+    RWF_file = str(irene_diomira_chain_tmpdir.join('electrons_40keV_z250_RWF.h5'))
+    with tb.open_file(RWF_file, 'r+') as e40rwf:
         fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
         feep = fee['fee_param']
         eps = 1e-04
@@ -83,14 +77,15 @@ def test_diomira_fee_table(electrons_40keV_z250_RWF_h5):
         assert abs(feep.CEILING - FEE.CEILING)             < eps
 
 
-def test_diomira_cwf_blr(electrons_40keV_z250_RWF_h5):
+def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
     """This is the most rigurous test of the suite. It reads back the
        RWF and BLR waveforms written to disk by DIOMIRA, and computes
        CWF (using deconvoution algorithm), then checks that the CWF match
        the BLR within 1 %.
     """
     eps = 1
-    with tb.open_file(electrons_40keV_z250_RWF_h5, 'r+') as e40rwf:
+    RWF_file = str(irene_diomira_chain_tmpdir.join('electrons_40keV_z250_RWF.h5'))
+    with tb.open_file(RWF_file, 'r+') as e40rwf:
 
         pmtrwf = e40rwf.root.RD.pmtrwf
         pmtblr = e40rwf.root.RD.pmtblr
@@ -112,7 +107,7 @@ def test_diomira_cwf_blr(electrons_40keV_z250_RWF_h5):
                 assert diff < eps
 
 
-def test_diomira_sipm(electrons_40keV_z250_RWF_h5):
+def test_diomira_sipm(irene_diomira_chain_tmpdir):
     """This test checks that the number of SiPms surviving a hard energy
         cut (50 pes) is always small (<10). The test exercises the full
        construction of the SiPM vectors as well as the noise suppression.
