@@ -74,6 +74,7 @@ dependencies:
 - pytest
 - scipy
 - matplotlib
+- jupyter
 - pip:
   - hypothesis-numpy
   - flaky
