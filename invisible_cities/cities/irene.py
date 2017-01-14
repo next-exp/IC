@@ -42,19 +42,19 @@ class Irene:
         self.run_number = run_number
 
         # calibration an geometry constants from DB
-        DataPMT         = load_db.DataPMT(run_number)
-        DataSiPM        = load_db.DataSiPM(run_number)
+        # PEP-8
+        DataPMT = load_db.DataPMT(run_number)
+        DataSiPM = load_db.DataSiPM(run_number)
 
+        # This is JCK-1: text reveals symmetry!
         self.xs              = DataSiPM.X.values
         self.ys              = DataSiPM.Y.values
-        self.adc_to_pes      = (
-            abs(DataPMT.adc_to_pes.values).astype(np.double))
-        self.sipm_adc_to_pes = (
-            DataSiPM.adc_to_pes.values.astype(np.double))
-        self.coeff_c         = (
-            DataPMT.coeff_c.values.astype(np.double))
-        self.coeff_blr       = (
-            DataPMT.coeff_blr.values.astype(np.double))
+        self.adc_to_pes      = abs(DataPMT.adc_to_pes.values).astype(np.double)
+        self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
+        self.coeff_c         = DataPMT.coeff_c.values        .astype(np.double)
+        self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
+        self.xs              = DataSiPM.X.values
+        self.ys              = DataSiPM.Y.values
 
         # BLR default values (override with set_BLR)
         self.n_baseline   = 28000
@@ -178,7 +178,7 @@ class Irene:
 
     def set_MAU(self, n_MAU=100, thr_MAU=3 * units.adc):
         """Parameters of the MAU used to remove low frequency noise."""
-        self.n_MAU   =   n_MAU
+        self.n_MAU   = n_MAU
         self.thr_MAU = thr_MAU
 
     def set_CSUM(self, thr_csum=1 * units.pes):
