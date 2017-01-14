@@ -150,6 +150,8 @@ function clean {
 
 ## Main command dispatcher
 
+THIS=manage.sh
+
 case $COMMAND in
     install_and_check)      install_and_check ;;
     install)                install ;;
@@ -164,13 +166,13 @@ case $COMMAND in
        echo
        echo Usage:
        echo
-       echo source $0 install_and_check X.Y
-       echo soruce $0 install X.Y
-       echo source $0 work_in_python_version X.Y
-       echo bash $0 make_environment X.Y
-       echo bash $0 run_tests
-       echo bash $0 compile_and_test
-       echo bash $0 download_test_db
-       echo bash $0 clean
+       echo "source $THIS install_and_check X.Y"
+       echo "source $THIS install X.Y"
+       echo "source $THIS work_in_python_version X.Y"
+       echo "bash   $THIS make_environment X.Y"
+       echo "bash   $THIS run_tests"
+       echo "bash   $THIS compile_and_test"
+       echo "bash   $THIS download_test_db"
+       echo "bash   $THIS clean"
        ;;
 esac
