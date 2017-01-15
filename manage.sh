@@ -75,6 +75,7 @@ dependencies:
 - scipy
 - matplotlib
 - jupyter
+- notebook 
 - pip:
   - hypothesis-numpy
   - flaky
@@ -107,14 +108,22 @@ function run_tests {
 }
 
 function ic_env {
-    echo setting ICDIR
     export ICTDIR=`pwd`
+    echo ICDIR set to $ICTDIR
 
-    echo setting ICTDIR
     export ICDIR=$ICTDIR/invisible_cities/
+    echo ICDIR set to $ ICDIR
 
-    echo setting PYTHONPATH
-    export PYTHONPATH=$ICTDIR:$PYTHONPATH
+    export PYTHONPATH=$ICTDIR
+    echo PYTHONPATH set to $PYTHONPATH
+}
+
+function show_ic_env {
+    conda-env list
+    
+    echo ICDIR set to $ICTDIR
+    echo ICDIR set to $ ICDIR
+    echo PYTHONPATH set to $PYTHONPATH
 }
 
 function download_test_db {
@@ -162,6 +171,7 @@ case $COMMAND in
     compile_and_test)       compile_and_test ;;
     download_test_db)       download_test_db ;;
     clean)                  clean ;;
+    show_ic_env)            show_ic_env ;;
     
     *) echo Unrecognized command: ${COMMAND}
        echo
