@@ -7,20 +7,19 @@ import numpy as np
 import tables as tb
 import matplotlib.pyplot as plt
 
-from invisible_cities.core.nh5 import RunInfo, EventInfo
-from invisible_cities.core.nh5 import S12, S2Si
+from   invisible_cities.core.nh5 import RunInfo, EventInfo
+from   invisible_cities.core.nh5 import S12, S2Si
 import invisible_cities.core.mpl_functions as mpl
 import invisible_cities.core.wfm_functions as wfm
 import invisible_cities.core.peak_functions as pf
 import invisible_cities.core.tbl_functions as tbl
-from invisible_cities.core.configure\
- import configure, define_event_loop, print_configuration
+from   invisible_cities.core.configure \
+       import configure, define_event_loop, print_configuration
 
 import invisible_cities.sierpe.blr as blr
 import invisible_cities.core.peak_functions_c as cpf
-from invisible_cities.core.system_of_units_c import SystemOfUnits
-
-from invisible_cities.database import load_db
+from   invisible_cities.core.system_of_units_c import SystemOfUnits
+from   invisible_cities.database import load_db
 
 units = SystemOfUnits()
 
@@ -83,12 +82,12 @@ class Irene:
 
         # defaul parameters
         self.nprint       = 1000000
-        self.signal_start = 0
-        self.signal_end   = 1200
-        self.ymax         = 200
-        self.S1_start     = 100
-        self.S1_end       = 100.5
-        self.S1_ymax      = 5
+        self.signal_start =       0
+        self.signal_end   =    1200
+        self.ymax         =     200
+        self.S1_start     =     100
+        self.S1_end       =     100.5
+        self.S1_ymax      =       5
 
     def set_plot(self,
                  plot_csum    = False,
@@ -178,7 +177,7 @@ class Irene:
 
     def set_MAU(self, n_MAU=100, thr_MAU=3 * units.adc):
         """Parameters of the MAU used to remove low frequency noise."""
-        self.n_MAU   = n_MAU
+        self.  n_MAU =   n_MAU
         self.thr_MAU = thr_MAU
 
     def set_CSUM(self, thr_csum=1 * units.pes):
@@ -188,21 +187,21 @@ class Irene:
     def set_S1(self, tmin=0 * units.mus, tmax=590 * units.mus,
                stride=4, lmin=4, lmax=20):
         """Parameters for S1 search."""
-        self.tmin_s1   = tmin
-        self.tmax_s1   = tmax
+        self.  tmin_s1 = tmin
+        self.  tmax_s1 = tmax
         self.stride_s1 = stride
-        self.lmin_s1   = lmin
-        self.lmax_s1   = lmax
+        self.  lmin_s1 = lmin
+        self.  lmax_s1 = lmax
         self.setS1     = True
 
     def set_S2(self, tmin=590 * units.mus, tmax=620 * units.mus,
                stride=40, lmin=100, lmax=1000000):
         """Parameters for S2 search."""
-        self.tmin_s2   = tmin
-        self.tmax_s2   = tmax
+        self.  tmin_s2 = tmin
+        self.  tmax_s2 = tmax
         self.stride_s2 = stride
-        self.lmin_s2   = lmin
-        self.lmax_s2   = lmax
+        self.  lmin_s2 = lmin
+        self.  lmax_s2 = lmax
         self.setS2     = True
 
     def set_SiPM(self, thr_zs=5 * units.pes, thr_sipm_s2=50 * units.pes):
@@ -213,7 +212,7 @@ class Irene:
 
     def store_pmaps(self, event, evt, S1, S2, S2Si):
         """Store PMAPS."""
-        if self.run_number >0:
+        if self.run_number > 0:
             # Event info
             row     = self.evtInfot.row
             evtInfo = self.eventsInfo[evt]
@@ -228,17 +227,17 @@ class Irene:
         for i in S1:
             time = S1[i][0]
             ene  = S1[i][1]
-            assert(len(time) == len(ene))
+            assert len(time) == len(ene)
             for j in range(len(time)):
                 row["event"] = event
-                if self.run_number >0:
+                if self.run_number > 0:
                     evtInfo = self.eventsInfo[evt]
                     row["evtDaq"] = evtInfo[0]
                 else:
                     row["evtDaq"] = event
                 row["peak"] = i
                 row["time"] = time[j]
-                row["ene"]  = ene[j]
+                row["ene"]  =  ene[j]
                 row.append()
         self.s1t.flush()
 
@@ -247,17 +246,17 @@ class Irene:
         for i in S2.keys():
             time = S2[i][0]
             ene  = S2[i][1]
-            assert(len(time) == len(ene))
+            assert len(time) == len(ene)
             for j in range(len(time)):
                 row["event"] = event
-                if self.run_number >0:
+                if self.run_number > 0:
                     evtInfo = self.eventsInfo[evt]
                     row["evtDaq"] = evtInfo[0]
                 else:
                     row["evtDaq"] = event
-                row["peak"] = i
+                row["peak"] =      i
                 row["time"] = time[j]
-                row["ene"]  = ene[j]
+                row["ene"]  =  ene[j]
                 row.append()
         self.s2t.flush()
 
@@ -293,7 +292,7 @@ class Irene:
         for i in S2Si.keys():
             sipml = S2Si[i]
             for sipm in sipml:
-                sipm_n = sipm[0]
+                sipm_n  = sipm[0]
                 sipm_wf = sipm[1]
                 col[sipm_n] = np.sum(sipm_wf)
 
@@ -312,16 +311,16 @@ class Irene:
         """
         n_events_tot = 0
         # check the state of the machine
-        if len(self.input_files) == 0:
+        if not self.input_files:
             raise IOError('input file list is empty')
 
-        if self.setFiles == False:
+        if not self.setFiles:
             raise IOError('must set files before running')
-        if self.setS1    == False:
+        if not self.setS1:
             raise IOError('must set S1 parameters before running')
-        if self.setS2    == False:
+        if not self.setS2:
             raise IOError('must set S2 parameters before running')
-        if self.setSiPM  == False:
+        if not self.setSiPM:
             raise IOError('must set Sipm parameters before running')
 
         print("""
@@ -334,20 +333,20 @@ class Irene:
                  S1 parameters
                  tmin = {} mus tmax = {} mus stride = {}
                  lmin = {} lmax = {}
-                          """.format(self.tmin_s1 / units.mus,
-                                     self.tmax_s1 / units.mus,
+                          """.format(self.  tmin_s1 / units.mus,
+                                     self.  tmax_s1 / units.mus,
                                      self.stride_s1,
-                                     self.lmin_s1,
-                                     self.lmax_s1))
+                                     self.  lmin_s1,
+                                     self.  lmax_s1))
         print("""
                  S2 parameters
                  tmin = {} mus tmax = {} mus stride = {}
                  lmin = {} lmax = {}
-                          """.format(self.tmin_s2 / units.mus,
-                                     self.tmax_s2 / units.mus,
+                          """.format(self.  tmin_s2 / units.mus,
+                                     self.  tmax_s2 / units.mus,
                                      self.stride_s2,
-                                     self.lmin_s2,
-                                     self.lmax_s2))
+                                     self.  lmin_s2,
+                                     self.  lmax_s2))
         print("""
                  S2Si parameters
                  threshold min charge per SiPM = {s.thr_zs} pes
@@ -373,9 +372,9 @@ class Irene:
                     print("Events in file = {}".format(NEVT))
 
                     if first == False:
-                        print_configuration({"# PMT": NPMT,
-                                             "PMT WL": PMTWL,
-                                             "# SiPM": NSIPM,
+                        print_configuration({"# PMT"  : NPMT,
+                                             "PMT WL" : PMTWL,
+                                             "# SiPM" : NSIPM,
                                              "SIPM WL": SIPMWL})
 
                         self.signal_t = np.arange(0., PMTWL * 25, 25)
@@ -393,12 +392,12 @@ class Irene:
                         csum = cpf.calibrated_pmt_sum(
                           CWF,
                           self.adc_to_pes,
-                          n_MAU   = self.n_MAU,
+                            n_MAU = self.  n_MAU,
                           thr_MAU = self.thr_MAU)
                         # plots
                         if self.plot_csum:
                             mpl.plot_signal(
-                                self.signal_t/units.mus,
+                                self.signal_t / units.mus,
                                 csum,
                                 title        = "calibrated sum, ZS",
                                 signal_start = self.signal_start,
@@ -426,34 +425,32 @@ class Irene:
                         # find S1
                         S1 = cpf.find_S12(wfzs_ene,
                                           wfzs_indx,
-                                          tmin   = self.tmin_s1,
-                                          tmax   = self.tmax_s1,
-                                          lmin   = self.lmin_s1,
-                                          lmax   = self.lmax_s1,
+                                          tmin   = self.  tmin_s1,
+                                          tmax   = self.  tmax_s1,
+                                          lmin   = self.  lmin_s1,
+                                          lmax   = self.  lmax_s1,
                                           stride = self.stride_s1,
                                           rebin  = False)
                         # find S2
                         S2 = cpf.find_S12(wfzs_ene,
                                           wfzs_indx,
-                                          tmin         = self.tmin_s2,
-                                          tmax         = self.tmax_s2,
-                                          lmin         = self.lmin_s2,
-                                          lmax         = self.lmax_s2,
+                                          tmin         = self.  tmin_s2,
+                                          tmax         = self.  tmax_s2,
+                                          lmin         = self.  lmin_s2,
+                                          lmax         = self.  lmax_s2,
                                           stride       = self.stride_s2,
                                           rebin        = True,
                                           rebin_stride = self.stride_s2)
                         #plot S1 & S2
-                        if self.plot_s1:
-                            pf.scan_S12(S1)
-                        if self.plot_s2:
-                            pf.scan_S12(S2)
+                        if self.plot_s1: pf.scan_S12(S1)
+                        if self.plot_s2: pf.scan_S12(S2)
                         # plot sipms
                         if self.plot_sipm:
                             mpl.plot_sipm(sipmrwf[evt],
                                           nmin = 0,
                                           nmax = 16,
-                                          x=4,
-                                          y=4)
+                                          x = 4,
+                                          y = 4)
                             plt.show()
                             raw_input('->')
                         # SiPMs zero suppression
@@ -467,8 +464,8 @@ class Irene:
                             mpl.plot_sipm(sipmzs,
                                           nmin = 0,
                                           nmax = 16,
-                                          x=4,
-                                          y=4)
+                                          x = 4,
+                                          y = 4)
                             plt.show()
                             raw_input('->')
                         # select SIPM ZS and create S2Si
@@ -490,8 +487,8 @@ class Irene:
 
                         n_events_tot +=1
                         if n_events_tot%self.nprint == 0:
-                            print('event in file = {}, total = {}'.\
-                              format(evt, n_events_tot))
+                            print('event in file = {}, total = {}'
+                                  .format(evt, n_events_tot))
 
                         if n_events_tot >= nmax and nmax > -1:
                             print('reached max nof of events (={})'
@@ -499,7 +496,7 @@ class Irene:
                             break
 
 
-            except:
+            except Exception:
                 print('error')
                 raise
 
@@ -538,7 +535,8 @@ def IRENE(argv = sys.argv):
                stride = CFP['S1_STRIDE'])
     fpp.set_S2(tmin   = CFP['S2_TMIN'] * units.mus,
                tmax   = CFP['S2_TMAX'] * units.mus,
-               stride = CFP['S2_STRIDE'], lmin=CFP['S2_LMIN'],
+               stride = CFP['S2_STRIDE'],
+               lmin   = CFP['S2_LMIN'],
                lmax   = CFP['S2_LMAX'])
     fpp.set_SiPM(thr_zs      = CFP['THR_ZS']      * units.pes,
                  thr_sipm_s2 = CFP['THR_SIPM_S2'] * units.pes)
