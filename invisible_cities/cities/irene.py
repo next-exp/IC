@@ -238,7 +238,7 @@ class Irene:
                     row["evtDaq"] = event
                 row["peak"] = i
                 row["time"] = time[j]
-                row["ene"]  =  ene[j]
+                row["ene"]  = ene[j]
                 row.append()
         self.s1t.flush()
 
@@ -384,18 +384,22 @@ class Irene:
                     for evt in range(NEVT):
                         # deconvolve
                         CWF = blr.deconv_pmt(
-                          pmtrwf[evt], self.coeff_c, self.coeff_blr,
-                          n_baseline=self.n_baseline,
-                          thr_trigger=self.thr_trigger)
+                          pmtrwf[evt],
+                          self.coeff_c,
+                          self.coeff_blr,
+                          n_baseline  = self.n_baseline,
+                          thr_trigger = self.thr_trigger)
                         # calibrated PMT sum
                         csum = cpf.calibrated_pmt_sum(
-                          CWF, self.adc_to_pes,
-                          n_MAU=self.n_MAU,
-                          thr_MAU=self.thr_MAU)
+                          CWF,
+                          self.adc_to_pes,
+                          n_MAU   = self.n_MAU,
+                          thr_MAU = self.thr_MAU)
                         # plots
                         if self.plot_csum:
                             mpl.plot_signal(
-                                self.signal_t/units.mus, csum,
+                                self.signal_t/units.mus,
+                                csum,
                                 title        = "calibrated sum, ZS",
                                 signal_start = self.signal_start,
                                 signal_end   = self.signal_end,
@@ -405,7 +409,8 @@ class Irene:
 
                         if self.plot_csum_S1:
                             mpl.plot_signal(
-                                self.signal_t / units.mus, csum,
+                                self.signal_t / units.mus,
+                                csum,
                                 title        = "calibrated sum, S1",
                                 signal_start = self.S1_start,
                                 signal_end   = self.S1_end,
@@ -447,12 +452,14 @@ class Irene:
                             mpl.plot_sipm(sipmrwf[evt],
                                           nmin = 0,
                                           nmax = 16,
-                                          x=4, y=4)
+                                          x=4,
+                                          y=4)
                             plt.show()
                             raw_input('->')
                         # SiPMs zero suppression
                         sipmzs = cpf.signal_sipm(
-                            sipmrwf[evt], self.sipm_adc_to_pes,
+                            sipmrwf[evt],
+                            self.sipm_adc_to_pes,
                             thr   = self.thr_zs,
                             n_MAU = self.n_MAU)
                         # plot
@@ -460,7 +467,8 @@ class Irene:
                             mpl.plot_sipm(sipmzs,
                                           nmin = 0,
                                           nmax = 16,
-                                          x=4, y=4)
+                                          x=4,
+                                          y=4)
                             plt.show()
                             raw_input('->')
                         # select SIPM ZS and create S2Si
