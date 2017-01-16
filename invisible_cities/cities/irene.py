@@ -42,19 +42,19 @@ class Irene:
         self.run_number = run_number
 
         # calibration an geometry constants from DB
-        DataPMT         = load_db.DataPMT(run_number)
-        DataSiPM        = load_db.DataSiPM(run_number)
+        # PEP-8
+        DataPMT = load_db.DataPMT(run_number)
+        DataSiPM = load_db.DataSiPM(run_number)
 
+        # This is JCK-1: text reveals symmetry!
         self.xs              = DataSiPM.X.values
         self.ys              = DataSiPM.Y.values
-        self.adc_to_pes      = (
-            abs(DataPMT.adc_to_pes.values).astype(np.double))
-        self.sipm_adc_to_pes = (
-            DataSiPM.adc_to_pes.values.astype(np.double))
-        self.coeff_c         = (
-            DataPMT.coeff_c.values.astype(np.double))
-        self.coeff_blr       = (
-            DataPMT.coeff_blr.values.astype(np.double))
+        self.adc_to_pes      = abs(DataPMT.adc_to_pes.values).astype(np.double)
+        self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
+        self.coeff_c         = DataPMT.coeff_c.values        .astype(np.double)
+        self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
+        self.xs              = DataSiPM.X.values
+        self.ys              = DataSiPM.Y.values
 
         # BLR default values (override with set_BLR)
         self.n_baseline   = 28000
@@ -178,7 +178,7 @@ class Irene:
 
     def set_MAU(self, n_MAU=100, thr_MAU=3 * units.adc):
         """Parameters of the MAU used to remove low frequency noise."""
-        self.n_MAU   =   n_MAU
+        self.n_MAU   = n_MAU
         self.thr_MAU = thr_MAU
 
     def set_CSUM(self, thr_csum=1 * units.pes):
@@ -238,7 +238,7 @@ class Irene:
                     row["evtDaq"] = event
                 row["peak"] = i
                 row["time"] = time[j]
-                row["ene"]  =  ene[j]
+                row["ene"]  = ene[j]
                 row.append()
         self.s1t.flush()
 
@@ -384,18 +384,22 @@ class Irene:
                     for evt in range(NEVT):
                         # deconvolve
                         CWF = blr.deconv_pmt(
-                          pmtrwf[evt], self.coeff_c, self.coeff_blr,
-                          n_baseline=self.n_baseline,
-                          thr_trigger=self.thr_trigger)
+                          pmtrwf[evt],
+                          self.coeff_c,
+                          self.coeff_blr,
+                          n_baseline  = self.n_baseline,
+                          thr_trigger = self.thr_trigger)
                         # calibrated PMT sum
                         csum = cpf.calibrated_pmt_sum(
-                          CWF, self.adc_to_pes,
-                          n_MAU=self.n_MAU,
-                          thr_MAU=self.thr_MAU)
+                          CWF,
+                          self.adc_to_pes,
+                          n_MAU   = self.n_MAU,
+                          thr_MAU = self.thr_MAU)
                         # plots
                         if self.plot_csum:
                             mpl.plot_signal(
-                                self.signal_t/units.mus, csum,
+                                self.signal_t/units.mus,
+                                csum,
                                 title        = "calibrated sum, ZS",
                                 signal_start = self.signal_start,
                                 signal_end   = self.signal_end,
@@ -405,7 +409,8 @@ class Irene:
 
                         if self.plot_csum_S1:
                             mpl.plot_signal(
-                                self.signal_t / units.mus, csum,
+                                self.signal_t / units.mus,
+                                csum,
                                 title        = "calibrated sum, S1",
                                 signal_start = self.S1_start,
                                 signal_end   = self.S1_end,
@@ -447,12 +452,14 @@ class Irene:
                             mpl.plot_sipm(sipmrwf[evt],
                                           nmin = 0,
                                           nmax = 16,
-                                          x=4, y=4)
+                                          x=4,
+                                          y=4)
                             plt.show()
                             raw_input('->')
                         # SiPMs zero suppression
                         sipmzs = cpf.signal_sipm(
-                            sipmrwf[evt], self.sipm_adc_to_pes,
+                            sipmrwf[evt],
+                            self.sipm_adc_to_pes,
                             thr   = self.thr_zs,
                             n_MAU = self.n_MAU)
                         # plot
@@ -460,7 +467,8 @@ class Irene:
                             mpl.plot_sipm(sipmzs,
                                           nmin = 0,
                                           nmax = 16,
-                                          x=4, y=4)
+                                          x=4,
+                                          y=4)
                             plt.show()
                             raw_input('->')
                         # select SIPM ZS and create S2Si
