@@ -76,6 +76,7 @@ dependencies:
 - matplotlib
 - jupyter
 - notebook 
+- sphinx
 - pip:
   - hypothesis-numpy
   - flaky
