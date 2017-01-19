@@ -47,7 +47,7 @@ function install_conda {
         echo Conda already installed. Skipping conda installation.
     else
         echo Installing conda for $CONDA_OS
-        wget http://repo.continuum.io/miniconda/Miniconda-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh
+        wget http://repo.continuum.io/miniconda/Miniconda3-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh
         bash miniconda.sh -b -p $HOME/miniconda
         export PATH="$HOME/miniconda/bin:$PATH"
         echo Prepended $HOME/miniconda/bin to your PATH. Please add it to your shell profile for future sessions.
