@@ -79,6 +79,7 @@ dependencies:
 - pip:
   - hypothesis-numpy
   - flaky
+  - pytest-xdist
 EOF
 
     conda env create -f ${YML_FILENAME}
@@ -105,6 +106,17 @@ function run_tests {
 
     # Run the test suite
     pytest -v
+}
+
+function run_tests_par {
+    # Ensure that the test database is present
+    if [ ! -f invisible_cities/database/localdb.sqlite3 ]; then
+        download_test_db
+    fi
+
+    # Run the test suite
+    pytest -v -n auto -m "not serial"
+    pytest -v         -m      serial
 }
 
 function ic_env {
@@ -168,7 +180,9 @@ case $COMMAND in
     work_in_python_version) work_in_python_version ;;
     make_environment)       make_environment ;;
     run_tests)              run_tests ;;
+    run_tests_par)          run_tests_par ;;
     compile_and_test)       compile_and_test ;;
+    compile_and_test_par)   compile_and_test_par ;;
     download_test_db)       download_test_db ;;
     clean)                  clean ;;
     show_ic_env)            show_ic_env ;;
@@ -182,7 +196,9 @@ case $COMMAND in
        echo "source $THIS work_in_python_version X.Y"
        echo "bash   $THIS make_environment X.Y"
        echo "bash   $THIS run_tests"
+       echo "bash   $THIS run_tests_par"
        echo "bash   $THIS compile_and_test"
+       echo "bash   $THIS compile_and_test_par"
        echo "bash   $THIS download_test_db"
        echo "bash   $THIS clean"
        ;;
