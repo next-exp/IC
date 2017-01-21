@@ -9,8 +9,13 @@ manage.sh()
 
     case "${prev}" in
         manage.sh)
-                        local opts="make_environment run_tests compile_and_test\
-                                download_test_db clean"
+                        local opts="make_environment\
+                                    run_tests\
+                                    run_tests_par\
+                                    compile_and_test\
+                                    compile_and_test_par\
+                                    download_test_db\
+                                    clean"
             COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
             return 0
             ;;
@@ -45,8 +50,16 @@ source_manage.sh()
 
     case "${prev}" in
         manage.sh)
-                        local opts="install_and_check install work_in_python_version \
-                                make_environment run_tests compile_and_test download_test_db clean"
+                        local opts="install_and_check\
+                                    install\
+                                    work_in_python_version\
+                                    make_environment\
+                                    run_tests\
+                                    run_tests_par\
+                                    compile_and_test\
+                                    compile_and_test_par\
+                                    download_test_db\
+                                    clean"
             COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
             return 0
             ;;
