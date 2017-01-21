@@ -1,22 +1,24 @@
 """
 Core functions
+This module includes utility functions.
 """
 import numpy as np
 import pandas as pd
+import math
 
 def lrange(*args):
     """Create a list specified as a range."""
-    return list(range(args))
+    return list(range(*args))
 
 
 def trange(*args):
     """Create a tuple specified as a range."""
-    return tuple(range(args))
+    return tuple(range(*args))
 
 
-def wait():
-    """A simple convenience name for raw_input."""
-    raw_input("Press a key...")
+def loc_elem_1d(np1d, elem):
+    """Given a 1d numpy array, return the location of element elem."""
+    return np.where(np1d==elem)[0][0]
 
 
 def dict_map(func, dic):
@@ -55,8 +57,8 @@ def df_map(func, df, field):
         Copy of df with the column *field* modified to contain the output of
         func.
     """
-    out = pd.DataFrame(df)
-    out[field] = map(func, out[field])
+    out = df.copy()
+    out[field] = list(map(func, out[field]))
     return out
 
 
@@ -91,7 +93,7 @@ def farray_from_string(sfl):
     arr : np.ndarray
         Contains the casted floats.
     """
-    return np.array(map(float, sfl.split()))
+    return np.array(list(map(float, sfl.split())))
 
 
 def rebin_array(arr, stride):
@@ -109,10 +111,17 @@ def rebin_array(arr, stride):
     rebinned : np.ndarray
         Rebinned array
     """
-    lenb = len(arr) / int(stride)
+    #n = int(math.ceil(len(t) / float(stride)))
+    lenb = int(len(arr) / int(stride))
     rebinned = np.empty(lenb)
     for i in range(lenb):
         low = i * stride
         upp = low + stride
         rebinned[i] = np.sum(arr[low:upp])
     return rebinned
+
+
+def define_window(wf, window_size):
+    """Define a window based on a peak. Takes max plus/minus *window_size*."""
+    peak = np.argmax(abs(wf - np.mean(wf)))
+    return max(0, peak - window_size), min(len(wf), peak + window_size)
