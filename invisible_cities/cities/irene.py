@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from   invisible_cities.core.nh5 import RunInfo, EventInfo
 from   invisible_cities.core.nh5 import S12, S2Si
 import invisible_cities.core.mpl_functions as mpl
-import invisible_cities.core.wfm_functions as wfm
 import invisible_cities.core.peak_functions as pf
 import invisible_cities.core.tbl_functions as tbl
 from   invisible_cities.core.configure \
