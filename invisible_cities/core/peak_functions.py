@@ -16,70 +16,6 @@ import invisible_cities.core.peak_functions_c as pf
 from invisible_cities.database import load_db
 
 
-def pmt_sum(CWF, adc_to_pes):
-    """
-    input: A CWF list or array
-           a vector with the adc_to_pes values (must be positive)
-    returns: the sum of CWF, in pes
-
-    """
-
-    NPMT = len(CWF)
-    NWF = len(CWF[0])
-
-    csum = np.zeros(NWF, dtype=np.double)
-    for j in range(NPMT):
-        csum += CWF[j] * 1 / adc_to_pes[j]
-    return csum
-
-
-def wfdf(time,energy_pes):
-    """Take two vectors (time, energy) and return a data frame
-    representing a waveform."""
-    swf = {}
-    swf['time_ns'] = time / units.ns
-    swf['ene_pes'] = energy_pes
-    return pd.DataFrame(swf)
-
-
-def wf_thr(wf, threshold=0):
-    """Return a zero supressed waveform (more generally, the vaules of wf
-    above threshold).
-    """
-    return wf.loc[lambda df: df.ene_pes.values > threshold, :]
-
-
-def find_peaks(wfzs, stride=4, lmin=8):
-    """Find peaks.
-
-    Do not interrupt the peak if next sample comes within stride
-    accept the peak only if larger than lmin samples
-    """
-    T = wfzs['time_mus'].values
-    P = wfzs['ene_pes'].values
-    I = wfzs.index.values
-
-    S12 = {}
-    pulse_on = 1
-    j=0
-
-    S12[0] = []
-    S12[0].append([T[0], P[0], I[0]])
-
-    for i in range(1, len(wfzs)) :
-        if wfzs.index[i]-stride > wfzs.index[i-1]:  #new s12
-            j+=1
-            S12[j] = []
-            S12[j].append([T[i], P[i], I[i]])
-        else:
-            S12[j].append([T[i], P[i], I[i]])
-
-    S12L=[]
-    for i in S12.keys():
-        if len(S12[i]) > lmin:
-            S12L.append(pd.DataFrame(S12[i], columns=['time_mus','ene_pes','index']))
-    return S12L
-
 
 def find_S12(wfzs, tmin=0*units.mus, tmax=1200*units.mus,
              stride=4, lmin=8, lmax=1e+6):
@@ -153,6 +89,7 @@ def dict_to_df_S12(S12):
         S12L.append(s12df)
     return S12L
 
+
 def scan_S12(S12):
     """Print and plot the peaks of input S12.
 
@@ -164,8 +101,6 @@ def scan_S12(S12):
         print('S12 number = {}, samples = {} sum in pes ={}'.\
           format(i, len(S12[i][0]), np.sum(S12[i][1])))
         plt.plot(S12[i][0], S12[i][1])
-        plt.show()
-        raw_input('hit return')
 
 
 def index_from_S2(S2):
@@ -173,7 +108,6 @@ def index_from_S2(S2):
     T = S2[0] / units.mus
     #print(T[0], T[-1])
     return int(T[0]), int(T[-1])
-
 
 
 def sipm_S2_dict(SIPM, S2d, thr=5 * units.pes):
