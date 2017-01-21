@@ -19,7 +19,6 @@ import pytest
 
 from   invisible_cities.core.configure import configure
 import invisible_cities.core.tbl_functions as tbl
-import invisible_cities.core.wfm_functions as wfm
 import invisible_cities.core.system_of_units as units
 from   invisible_cities.sierpe import fee as FEE
 import invisible_cities.sierpe.blr as blr
