@@ -1,13 +1,14 @@
 """Waveform Functions
-JJGC, September-October 2016
-
-ChangeLog
-12/10: change from time_ns to time_mus
+This module includes functions to manipulate waveforms.
+authors: J.J. Gomez-Cadenas, G. Martinez
 """
 
 import math
-import pandas as pd
 import numpy as np
+import tables as tb
+import invisible_cities.core.mpl_functions as mpl
+import matplotlib.pyplot as plt
+from invisible_cities.core.core_functions import define_window
 
 def to_adc(wfs, adc_to_pes):
     """
@@ -45,130 +46,6 @@ def to_pes(wfs, adc_to_pes):
         The input wfs scaled to pes.
     """
     return wfs / adc_to_pes.reshape(wfs.shape[0], 1)
-
-
-def get_waveforms(pmtea, event_number=0):
-    """Produce a DataFrame with the waveforms in an array.
-
-    Parameters
-    ----------
-    pmtea : tb.EArray
-        The waveform (axis 2) for each sensor (axis 1) and event (axis 0).
-    event_number : int
-        Event number.
-
-    Returns
-    -------
-    wfdf : pd.DataFrame
-        Contains the waveform for each sensor indexed by ID.
-    """
-    NPMT = pmtea.shape[1]
-    dic = {j: pmtea[event_number, j] for j in range(NPMT)}
-    return pd.DataFrame(dic)
-
-
-def get_waveforms_and_energy(pmtea, event_number=0):
-    """Produce a DataFrame with the waveforms in an array and their energy.
-
-    Parameters
-    ----------
-    pmtea : tb.EArray
-        The waveform (axis 2) for each sensor (axis 1) and event (axis 0).
-    event_number : int
-        Event number.
-
-    Returns
-    -------
-    wfdf : pd.DataFrame
-        Contains the waveform for each sensor indexed by ID.
-    wfe : pd.Series
-        Contains the sum of the waveform for each sensor.
-    """
-    PMTWF = {}
-    EPMT = []
-    NPMT = pmtea.shape[1]
-
-    for j in range(NPMT):
-        # waveform for event event_number, PMT j
-        PMTWF[j] = pmtea[event_number, j]
-        epmt = np.sum(PMTWF[j])
-        EPMT.append(epmt)
-    return pd.DataFrame(PMTWF), pd.Series(EPMT)
-
-
-def get_energy(pmtea, event_list=[0]):
-    """Compute the sum of the waveforms for some events.
-
-    Parameters
-    ----------
-    pmtea : tb.EArray
-        The waveform (axis 2) for each sensor (axis 1) and event (axis 0).
-    event_list : sequence of ints
-        Event numbers.
-
-    Returns
-    -------
-    wfes : pd.DataFrame
-        Contains the sum of the waveform for each sensor indexed by ID.
-    """
-    NPMT = pmtea.shape[1]
-    EPMT = []
-
-    for i in event_list:
-        epmt = np.zeros(NPMT)
-        for j in range(NPMT):
-            epmt[j] = np.sum(pmtea[i, j])
-        EPMT.append(epmt)
-
-    return pd.DataFrame(EPMT)
-
-def wfdf(time,energy_pes):
-    """Take two vectors (time, energy) and returns a data frame
-    representing a waveform.
-    """
-    swf = {}
-    swf['time_mus'] = time / units.mus
-    swf['ene_pes'] = energy_pes
-    return pd.DataFrame(swf)
-
-
-
-def df2wf(df):
-    """Retrieves the np arrays contained in the data frame.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Waveform data frame.
-
-    Returns
-    -------
-    time_mus : 1-dim np.ndarray
-        Waveform times.
-    ene_pes : 1-dim np.ndarray
-        Waveform amplitudes.
-    """
-    return df["time_mus"], df["ene_pes"]
-
-
-def add_cwf(cwfdf, pmtdf):
-    """Sum all PMTs for each time sample in pes.
-
-    Parameters
-    ----------
-    cwfdf : pd.DataFrame
-        A NPMT-column data frame holding the waveforms.
-    pmtdf : pd.DataFrame
-        Contains the sensors information.
-
-    Returns
-    -------
-    swf : pd.DataFrame
-        A data frame with the summed waveform.
-    """
-    summed = np.sum(to_pes(cwfdf.values.T, pmtdf), axis=1)
-    idxs = np.arange(summed.size)
-    return wf2df(idxs * 1, summed, idxs)
 
 
 def rebin_wf(t, e, stride=40):
@@ -264,93 +141,6 @@ def rebin_waveform(t, e, stride = 40):
     return T, E
 
 
-def rebin_df(df, stride=40):
-    """Applies rebin_wf to a dataframe.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Data frame holding the waveform data.
-    stride : int
-        Integration step.
-
-    Returns
-    -------
-    rebinned_df : pd.DataFrame
-        Rebinned data frame.
-    """
-    return wf2df(*rebin_wf(*df2wf(df), stride=stride))
-
-
-def wf_thr(df, threshold=1):
-    """Get the values of a waveform above threshold.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Data frame holding the waveform.
-    threshold : int or float
-        Value from which values are ignored.
-
-    Returns
-    -------
-    cutdf : pd.DataFrame
-        Data frame holding the values surviving the cut.
-    """
-    return df[df.ene_pes > threshold]
-
-
-def zs_wf(waveform, threshold, to_mus=None):
-    """Remove waveform values below threshold.
-
-    Parameters
-    ----------
-    waveform : 1-dim np.ndarray
-        Waveform amplitudes.
-    threshold : int or float
-        Cut value.
-    to_mus : int or float, optional
-        Scale factor for converting times to microseconds. Default is None,
-        meaning no conversion.
-
-    Returns
-    -------
-    df : pd.DataFrame
-        A two-field (time_mus and ene_pes) data frame holding the data
-        surviving the cut.
-    """
-    t = np.argwhere(waveform > threshold).flatten()
-    if not t.size:
-        return None
-    return wf2df(t if to_mus is None else t * to_mus, waveform[t])
-
-
-def zero_suppression(waveforms, thresholds, to_mus=None):
-    """Remove waveforms values below threshold.
-
-    Parameters
-    ----------
-    waveforms : 2-dim np.ndarray
-        Waveform amplitudes (axis 1) for each sensor (axis 0).
-    thresholds : int, float or sequence of ints or floats
-        Cut value for each sensors (sequence) or for all (single number).
-    to_mus : int or float, optional
-        Scale factor for converting times to microseconds. Default is None,
-        meaning no conversion.
-
-    Returns
-    -------
-    dfs : dictionary
-        A dictionary holding two-field (time_mus and ene_pes) data frames
-        containing the data surviving the cut. Keys are sensor IDs.
-    """
-    # If threshold is a single value, transform it into an array
-    if not hasattr(thresholds, "__iter__"):
-        thresholds = np.ones(waveforms.shape[0]) * thresholds
-    zsdata = map(zs_wf, waveforms, thresholds)
-    return {i: df for i, df in enumerate(zsdata) if df is not None}
-
-
 def suppress_wf(waveform, threshold):
     """Put zeros where the waveform is below some threshold.
 
@@ -390,3 +180,43 @@ def noise_suppression(waveforms, thresholds):
         thresholds = np.ones(waveforms.shape[0]) * thresholds
     suppressed_wfs = list(map(suppress_wf, waveforms, thresholds))
     return np.array(suppressed_wfs)
+
+
+def plot_pmt_waveforms(pmtwfdf, zoom=False, window_size=800):
+    """Take as input a vector storing the PMT wf and plot the waveforms"""
+    plt.figure(figsize=(12, 12))
+    for i in range(len(pmtwfdf)):
+        first, last = 0, len(pmtwfdf[i])
+        if zoom:
+            first, last = define_window(pmtwfdf[i], window_size)
+        plt.subplot(3, 4, i+1)
+        # ax1.set_xlim([0, len_pmt])
+        mpl.set_plot_labels(xlabel="samples", ylabel="adc")
+        plt.plot(pmtwfdf[i][first:last])
+
+
+def plot_waveforms_overlap(wfs, zoom=False, window_size=800):
+    """Draw all waveforms together. If zoom is True, plot is zoomed
+    around peak.
+    """
+    first, last = 0, wfs.shape[1]
+    if zoom:
+        first, last = define_window(wfs[0], window_size)
+    for wf in wfs:
+        plt.plot(wf[first:last])
+
+
+def plot_wfa_wfb(wfa, wfb, zoom=False, window_size=800):
+    """Plot together wfa and wfb, where wfa and wfb can be
+    RWF, CWF, BLR.
+    """
+    plt.figure(figsize=(12, 12))
+    for i in range(len(wfa)):
+        first, last = 0, len(wfa[i])
+        if zoom:
+            first, last = define_window(wfa[i], window_size)
+        plt.subplot(3, 4, i+1)
+        # ax1.set_xlim([0, len_pmt])
+        set_plot_labels(xlabel="samples", ylabel="adc")
+        plt.plot(wfa[i][first:last])
+        plt.plot(wfb[i][first:last])

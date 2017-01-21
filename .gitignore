@@ -6,5 +6,6 @@
 .cache
 *.egg-info
 *.sqlite3
+*.*~
 invisible_cities/tests/electrons_40keV_z250_RWF.h5
 environment?.?.yml
