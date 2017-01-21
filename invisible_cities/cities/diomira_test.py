@@ -15,6 +15,8 @@ from glob import glob
 import tables as tb
 import numpy as np
 
+from pytest import mark
+
 from   invisible_cities.core.configure import configure
 import invisible_cities.core.tbl_functions as tbl
 import invisible_cities.core.wfm_functions as wfm
@@ -27,6 +29,7 @@ from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
 
+@mark.serial
 def test_diomira_run(irene_diomira_chain_tmpdir):
     """Test that DIOMIRA runs on default config parameters."""
     RWF_file = str(irene_diomira_chain_tmpdir.join(
@@ -48,6 +51,7 @@ def test_diomira_run(irene_diomira_chain_tmpdir):
 
     assert nevt == nevts
 
+@mark.serial
 def test_diomira_fee_table(irene_diomira_chain_tmpdir):
     """Test that FEE table reads back correctly with expected values."""
     RWF_file = str(irene_diomira_chain_tmpdir.join(
@@ -79,6 +83,7 @@ def test_diomira_fee_table(irene_diomira_chain_tmpdir):
         assert abs(feep.CEILING - FEE.CEILING)             < eps
 
 
+@mark.serial
 def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
     """This is the most rigurous test of the suite. It reads back the
        RWF and BLR waveforms written to disk by DIOMIRA, and computes
