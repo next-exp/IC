@@ -16,10 +16,6 @@ import numpy as np
 import tables as tb
 import pandas as pd
 
-import invisible_cities.core.wfm_functions as wfm
-import invisible_cities.database.load_db as DB
-import invisible_cities.sierpe.fee as FE
-
 
 def filters(name):
     """Return the filter corresponding to a given key.
@@ -55,8 +51,6 @@ def filters(name):
     raise ValueError("Compression option {} not found.".format(name))
 
 
-
-
 def read_FEE_table(fee_t):
     """Read the FEE table and return a PD Series for the simulation
     parameters and a PD series for the values of the capacitors used
@@ -82,7 +76,7 @@ def read_FEE_table(fee_t):
     return FEE
 
 
-def store_deconv_table(table, params):
+def table_from_params(table, params):
     row = table.row
     for param in table.colnames:
         row[param] = params[param]
@@ -90,7 +84,7 @@ def store_deconv_table(table, params):
     table.flush()
 
 
-def read_deconv_table(table):
+def table_to_params(table):
     params = {}
     for param in table.colnames:
         params[param] = table[0][param]
@@ -107,10 +101,7 @@ def get_vectors(h5f):
 
     Returns
     -------
-    pmttwf : tb.Table
-        TWF table for PMTs
-    sipmtwf : tb.Table
-        TWF table for SiPMs
+
     pmtrwf : tb.EArray
         RWF array for PMTs
     pmtblr : tb.EArray
@@ -118,142 +109,14 @@ def get_vectors(h5f):
     sipmrwf : tb.EArray
         RWF array for PMTs
     """
-    pmttwf = h5f.root.TWF.PMT
-    sipmtwf = h5f.root.TWF.SiPM
+
     pmtrwf = h5f.root.RD.pmtrwf
     pmtblr = h5f.root.RD.pmtblr
     sipmrwf = h5f.root.RD.sipmrwf
-    return pmttwf, sipmtwf, pmtrwf, pmtblr, sipmrwf
+    return pmtrwf, pmtblr, sipmrwf
 
 
-def get_pmt_vectors(h5f):
-    """Return the most relevant fields stored in a raw data file.
-
-    Parameters
-    ----------
-    h5f : tb.File
-        (Open) hdf5 file.
-
-    Returns
-    -------
-    pmttwf : tb.Table
-        TWF table for PMTs
-    pmtrwf : tb.EArray
-        RWF array for PMTs
-    pmtblr : tb.EArray
-        BLR array for PMTs
-    """
-    pmttwf = h5f.root.TWF.PMT
-    pmtrwf = h5f.root.RD.pmtrwf
-    pmtblr = h5f.root.RD.pmtblr
-    return pmttwf, pmtrwf, pmtblr
-
-
-def store_wf_table(event, table, wfdic, flush=True):
-    """Store a set of waveforms in a table.
-
-    Parameters
-    ----------
-    event : int
-        Event number
-    table : tb.Table
-        Table instance where the wf must be stored.
-    wfdic : dictionary or pd.Panel
-        Contains a pd.DataFrame for each sensor. Keys are sensor IDs.
-    flush : bool
-        Whether to flush the table or not.
-    """
-    row = table.row
-    for isens, wf in wfdic.iteritems():
-        for t, e in zip(wf.time_mus, wf.ene_pes):
-            row["event"] = event
-            row["ID"] = isens
-            row["time_mus"] = t
-            row["ene_pes"] = e
-            row.append()
-    if flush:
-        table.flush()
-
-
-def read_sensor_wf(table, evt, isens):
-    """Read back a particular waveform from a table.
-
-    Parameters
-    ----------
-    table : tb.Table
-        Table in which waveforms are stored.
-    evt : int
-        Event number
-    isens : int
-        Sensor number
-
-    Returns
-    -------
-    time_mus : 1-dim np.ndarray
-        Time samples of the waveform
-    ene_pes : 1-dim np.ndarray
-        Amplitudes of the waveform
-    """
-    return (table.read_where("(event=={}) & (ID=={})".format(evt, isens),
-                             field="time_mus"),
-            table.read_where("(event=={}) & (ID=={})".format(evt, isens),
-                             field="ene_pes"))
-
-
-def read_wf_table(table, event_number):
-    """Read back a set of waveforms from a table.
-
-    Parameters
-    ----------
-    table : tb.Table
-        Table in which waveforms are stored.
-    event_number : int
-        Event number
-
-    Returns
-    -------
-    wf_panel : pd.Panel
-        pd.Panel with a pd.DataFrame for each sensor.
-    """
-    sensor_list = set(table.read_where("event == {}".format(event_number),
-                      field="ID"))
-
-    def get_df(isens):
-        return wfm.wf2df(*read_sensor_wf(table, event_number, isens))
-
-    return pd.Panel({isens: get_df(isens) for isens in sensor_list})
-
-
-def store_pmap(pmap, table, evt, flush=True):
-    """Store a pmap in a table.
-
-    Parameters
-    ----------
-    pmap : Bridges.PMap
-        PMap instance to be saved.
-    table : tb.Table
-        Table in which pmap will be stored.
-    evt : int
-        Event number
-    flush : bool
-        Whether to flush the table or not.
-    """
-    row = table.row
-    for i, peak in enumerate(pmap.peaks):
-        for time, ToT, e, qs in peak:
-            row["event"] = evt
-            row["peak"] = i
-            row["signal"] = peak.signal
-            row["time"] = time
-            row["ToT"] = ToT
-            row["cathode"] = e
-            row["anode"] = qs
-            row.append()
-    if flush:
-        table.flush()
-
-
-def get_nofevents(table, column_name="evt_number"):
+def get_nof_events(table, column_name="evt_number"):
     """Find number of events in table by asking number of different values
     in column.
 
