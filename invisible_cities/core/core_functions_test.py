@@ -6,15 +6,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def test_simple():
-    # First, consider a simple test function
+def test_lrange():
     assert core.lrange(10) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    assert core.trange(10) == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-    assert core.loc_elem_1d(np.array(core.lrange(10)), 5) == 5
-    assert core.dict_map(lambda x: x**2,
-    {'a':1,'b':2,'c':3,'d':4}) == {'a': 1,
-                                   'b': 4, 'c': 9, 'd': 16}
 
+def test_trange():
+    assert core.trange(10) == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+def test_loc_elem_1d():
+    assert core.loc_elem_1d(np.array(core.lrange(10)), 5) == 5
+
+def test_dict_map():
+    assert (core.dict_map(lambda x: x**2, {'a': 1, 'b': 2, 'c': 3, 'd':  4})
+            ==                       {'a': 1, 'b': 4, 'c': 9, 'd': 16})
+
+def test_df_map():
     d = {'q' : [-1, +1, -1],
          'mass' : [0.511, 105., 1776.],
          'spin' :[0.5, 0.5, 0.5]}
@@ -23,13 +28,17 @@ def test_simple():
     l2 = core.df_map(lambda x: x*1000, leptons, 'mass')
     assert l2.mass.values[0] == 511
 
+def test_dict_filter():
     core.dict_filter(lambda x: x>5,
       {'a':1,'b':20,'c':3,'d':40}) == {'b': 20, 'd': 40}
 
-    core.farray_from_string('1 10 100')[2] == 100.
+def test_farray_from_string():
+    core.farray_from_string('1 10 100')[2] == 100
 
+def test_rebin_array():
     core.rebin_array(core.lrange(100), 5)[0] == 10
 
+def test_define_window():
     mu, sigma = 100, 0.2 # mean and standard deviation
     sgn = np.random.normal(mu, sigma, 10000)
     n, bins, patches = plt.hist(sgn, 50)
