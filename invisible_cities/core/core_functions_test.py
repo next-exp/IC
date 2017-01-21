@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 
+from pytest import mark
+import sys, os
+
 from . import core_functions as core
 import pandas as pd
 import numpy as np
@@ -38,6 +41,8 @@ def test_farray_from_string():
 def test_rebin_array():
     core.rebin_array(core.lrange(100), 5)[0] == 10
 
+@mark.skipif(sys.platform.startswith('linux') and os.getenv('TRAVIS') == 'true',
+             reason = "Core dumps on Travis linux")
 def test_define_window():
     mu, sigma = 100, 0.2 # mean and standard deviation
     sgn = np.random.normal(mu, sigma, 10000)

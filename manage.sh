@@ -104,7 +104,7 @@ function run_tests {
     fi
 
     # Run the test suite
-    pytest
+    pytest -v
 }
 
 function ic_env {
