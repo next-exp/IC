@@ -117,14 +117,3 @@ class S2Si(tb.IsDescription):
     nsipm   = tb.Int16Col(pos=3)  # sipm number
     nsample = tb.Int16Col(pos=4) # sample number
     ene     = tb.Float32Col(pos=5) # energy in pes
-
-
-class PMAP(tb.IsDescription):
-    """Store for a PMap."""
-    event   = tb.Int32Col(pos=0)
-    peak    = tb.UInt8Col(pos=1)
-    signal  = tb.StringCol(2, pos=2)
-    time    = tb.Float32Col(pos=3)
-    ToT     = tb.UInt16Col(pos=4)
-    cathode = tb.Float32Col(pos=5)
-    anode   = tb.Float32Col(pos=6, shape=(1792,))
