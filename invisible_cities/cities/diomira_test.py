@@ -83,7 +83,6 @@ def test_diomira_fee_table(irene_diomira_chain_tmpdir):
         assert abs(feep.CEILING - FEE.CEILING)             < eps
 
 
-@mark.serial
 def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
     """This is the most rigurous test of the suite. It reads back the
        RWF and BLR waveforms written to disk by DIOMIRA, and computes
@@ -158,3 +157,25 @@ def test_diomira_sipm(irene_diomira_chain_tmpdir):
                 if np.sum(sipmzs[j] >0):
                     n_sipm+=1
             assert n_sipm < max_sipm_with_signal
+
+def test_diomira_identify_bug():
+    """Read a one-event file in which the energy of PMTs is equal to zero and
+    asset it must be son. This test would fail for a normal file where there
+    is always some energy in the PMTs. It's purpose is to provide an automaic
+    documentation of a problem (not really a bug but a feature of the
+    simulation) that can cause a crash in some events. NEXUS simulation
+    can produce eventually events where none of the PMTs of the EP record
+    energy. This test simply ensures that the event read in the example file
+    in indeed of this type.
+
+    The same event is later processed with Irene (where a protection
+    that skips empty events has been added) to ensure that no crash occur."""
+
+    infile = (os.environ['ICDIR']
+     + '/database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
+    with tb.open_file(infile, 'r+') as h5in:
+
+        pmtrd  = h5in.root.pmtrd
+        pmtwf = pmtrd[0]
+        for i in range(pmtrd.shape[1]):
+            assert np.sum(pmtwf[i]) == 0
