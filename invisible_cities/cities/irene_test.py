@@ -31,11 +31,16 @@ from   invisible_cities.core.random_sampling \
 
 def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
     """Test that Diomira & Irene runs on default config parameters."""
+
+    MCRD_file = (os.environ['ICDIR']
+     + '/database/test_data/electrons_40keV_z250_MCRD.h5')
+
     RWF_file = str(irene_diomira_chain_tmpdir.join(
                    'electrons_40keV_z250_RWF.h5'))
     conf_file = os.environ['ICDIR'] + '/config/diomira.conf'
     CFP = configure(['DIOMIRA',
                      '-c', conf_file,
+                     '-i', MCRD_file,
                      '-o', RWF_file,
                      '-n', '5'])
     fpp = Diomira()
@@ -96,3 +101,57 @@ def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
     nevt = fpp.run(nmax=nevts, store_pmaps=True)
     assert nevt == nevts
+
+def test_empty_events(irene_diomira_chain_tmpdir):
+    """Test Irene on a file containing an empty event."""
+
+    RWF_file = (os.environ['ICDIR']
+               + '/database/test_data/irene_bug_Kr_ACTIVE_7bar_RWF.h5')
+    conf_file = os.environ['ICDIR'] + '/config/irene.conf'
+
+    PMP_file = str(irene_diomira_chain_tmpdir.join(
+                  'electrons_40keV_z250_PMP.h5'))
+
+    CFP = configure(['IRENE',
+                             '-c', conf_file,
+                             '-i', RWF_file,
+                             '-o', PMP_file,
+                             '-n', '5'])
+
+    fpp = Irene(run_number=CFP['RUN_NUMBER'])
+
+    files_in = glob(CFP['FILE_IN'])
+    files_in.sort()
+    fpp.set_input_files(files_in)
+    fpp.set_pmap_store(CFP['FILE_OUT'],
+                               compression = CFP['COMPRESSION'])
+    fpp.set_print(nprint=CFP['NPRINT'],
+                  print_empty_events=CFP['PRINT_EMPTY_EVENTS'])
+
+    fpp.set_BLR(n_baseline  = CFP['NBASELINE'],
+                        thr_trigger = CFP['THR_TRIGGER'] * units.adc)
+
+    fpp.set_MAU(  n_MAU = CFP['NMAU'],
+                        thr_MAU = CFP['THR_MAU'] * units.adc)
+
+    fpp.set_CSUM(thr_csum=CFP['THR_CSUM'] * units.pes)
+
+    fpp.set_S1(tmin   = CFP['S1_TMIN'] * units.mus,
+               tmax   = CFP['S1_TMAX'] * units.mus,
+               stride = CFP['S1_STRIDE'],
+               lmin   = CFP['S1_LMIN'],
+               lmax   = CFP['S1_LMAX'])
+
+    fpp.set_S2(tmin   = CFP['S2_TMIN'] * units.mus,
+               tmax   = CFP['S2_TMAX'] * units.mus,
+               stride = CFP['S2_STRIDE'],
+               lmin   = CFP['S2_LMIN'],
+               lmax   = CFP['S2_LMAX'])
+
+    fpp.set_SiPM(thr_zs=CFP['THR_ZS'] * units.pes,
+                 thr_sipm_s2=CFP['THR_SIPM_S2'] * units.pes)
+
+    nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
+    nevt = fpp.run(nmax=nevts, store_pmaps=True)
+    assert fpp.empty_events == 1 # found one empty event
+    assert nevt == 0 # event did not process
