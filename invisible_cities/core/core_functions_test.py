@@ -6,8 +6,6 @@ import sys, os
 from . import core_functions as core
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-
 
 def test_lrange():
     assert core.lrange(10) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -41,12 +39,10 @@ def test_farray_from_string():
 def test_rebin_array():
     core.rebin_array(core.lrange(100), 5)[0] == 10
 
-@mark.skipif(os.getenv('DISPLAY') is None,
-             reason = "Core dumps in headless environment")
 def test_define_window():
     mu, sigma = 100, 0.2 # mean and standard deviation
     sgn = np.random.normal(mu, sigma, 10000)
-    n, bins, patches = plt.hist(sgn, 50)
+    n, _ = np.histogram(sgn, 50)
     n0, n1 = core.define_window(n, window_size=10)
     peak = core.loc_elem_1d(n, np.max(n))
     assert n0 == peak - 10
