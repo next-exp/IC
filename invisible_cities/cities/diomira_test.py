@@ -83,6 +83,7 @@ def test_diomira_fee_table(irene_diomira_chain_tmpdir):
         assert abs(feep.CEILING - FEE.CEILING)             < eps
 
 
+@mark.serial
 def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
     """This is the most rigurous test of the suite. It reads back the
        RWF and BLR waveforms written to disk by DIOMIRA, and computes
