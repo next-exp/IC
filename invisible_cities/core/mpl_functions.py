@@ -139,24 +139,3 @@ def circles(x, y, s, c="b", vmin=None, vmax=None, **kwargs):
     if c is not None:
         plt.sci(collection)
     return collection
-
-
-def plot_ene_pmt(geom_df, sensor_df, epmt, event_number=0, radius=10):
-    """Plots the reconstructed energy of the PMTs energy_se is a series
-    describing the reconstructed energy in each PMT.
-    """
-    x = sensor_df["x"].values
-    y = sensor_df["y"].values
-    r = np.ones(len(sensor_df["x"].values)) * radius
-    col = epmt[event_number]
-
-    plt.figure(figsize=(10, 10))
-    plt.subplot(aspect="equal")
-    circles(x, y, r, c=col, alpha=0.5, ec="none")
-    plt.colorbar()
-    # xlim(-198,198)  #one should use geom info
-    # ylim(-198,198)
-    plt.xlim(geom_df["xdet_min"], geom_df["xdet_max"])
-    plt.ylim(geom_df["ydet_min"], geom_df["ydet_max"])
-    return col
-

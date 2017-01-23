@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from   invisible_cities.core.nh5 import RunInfo, EventInfo
 from   invisible_cities.core.nh5 import S12, S2Si
 import invisible_cities.core.mpl_functions as mpl
-import invisible_cities.core.peak_functions as pf
+import invisible_cities.core.pmaps_functions as pmp
 import invisible_cities.core.tbl_functions as tbl
 from   invisible_cities.core.configure \
        import configure, define_event_loop, print_configuration
@@ -454,8 +454,8 @@ class Irene:
                                           rebin        = True,
                                           rebin_stride = self.stride_s2)
                         #plot S1 & S2
-                        if self.plot_s1: pf.scan_S12(S1)
-                        if self.plot_s2: pf.scan_S12(S2)
+                        if self.plot_s1: pmp.scan_s12(S1)
+                        if self.plot_s2: pmp.scan_s12(S2)
                         # plot sipms
                         if self.plot_sipm:
                             mpl.plot_sipm(sipmrwf[evt],
@@ -482,9 +482,9 @@ class Irene:
                             raw_input('->')
                         # select SIPM ZS and create S2Si
                         SIPM = cpf.select_sipm(sipmzs)
-                        S2Si = pf.sipm_S2_dict(SIPM,
-                                               S2,
-                                               thr = self.thr_sipm_s2)
+                        S2Si = pmp.sipm_s2_dict(SIPM,
+                                                S2,
+                                                thr = self.thr_sipm_s2)
 
                         if store_pmaps == True:
                             if self.setPmapStore == False:
