@@ -88,6 +88,10 @@ class Irene:
         self.S1_end       =     100.5
         self.S1_ymax      =       5
 
+        # counters
+        self.empty_events = 0 # counts empty events in the energy plane
+        self.print_empty = False
+
     def set_plot(self,
                  plot_csum    = False,
                  plot_csum_S1 = False,
@@ -118,9 +122,10 @@ class Irene:
         self.S1_end       = S1_end
         self.S1_ymax      = S1_ymax
 
-    def set_print(self, nprint=10):
+    def set_print(self, nprint=10, print_empty_events=False):
         """Print frequency."""
         self.nprint = nprint
+        self.print_empty = print_empty_events
 
     def set_input_files(self, input_files):
         """Set the input files."""
@@ -421,6 +426,14 @@ class Irene:
                         # Supress samples below threshold (in pes)
                         wfzs_ene, wfzs_indx = cpf.wfzs(
                             csum, threshold=self.thr_csum)
+
+                        # In a few rare cases wfzs_ene is empty
+                        # this is due to empty energy plane events
+                        # a protection is set to avoid a crash
+
+                        if np.sum(wfzs_ene) == 0:
+                            self.empty_events +=1
+                            continue
                         # find S1
                         S1 = cpf.find_S12(wfzs_ene,
                                           wfzs_indx,
@@ -506,7 +519,12 @@ class Irene:
                 row.append()
                 self.runInfot.flush()
             self.pmapFile.close()
+        
+        if self.print_empty:
+            print('Energy plane empty events (skipped) = {}'.format(
+                   self.empty_events))
         return n_events_tot
+
 
 
 def IRENE(argv = sys.argv):
@@ -520,7 +538,8 @@ def IRENE(argv = sys.argv):
     fpp.set_input_files(files_in)
     fpp.set_pmap_store(CFP['FILE_OUT'],
                        compression = CFP['COMPRESSION'])
-    fpp.set_print(nprint = CFP['NPRINT'])
+    fpp.set_print(nprint = CFP['NPRINT'],
+                  print_empty_events=CFP['PRINT_EMPTY_EVENTS'])
 
     fpp.set_BLR(n_baseline  = CFP['NBASELINE'],
                 thr_trigger = CFP['THR_TRIGGER'] * units.adc)
