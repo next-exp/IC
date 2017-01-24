@@ -12,3 +12,4 @@ environment?.?.yml
 .DS_Store
 doc/.DS_Store
 doc/build
+invisible_cities/cities/.ipynb_checkpoints
