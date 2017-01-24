@@ -1,0 +1,2 @@
+[filter "clean_ipynb"]
+	clean = `git rev-parse --show-toplevel`/ipynb_drop_output
