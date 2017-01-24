@@ -4,11 +4,11 @@ JJGC December, 2016
 """
 
 cimport numpy as np
-import numpy as np
+import  numpy as np
 
 
 cpdef cdf_to_dict(int df_index, int evt_max,
-                  int [:] df_event, int [:] df_peak,
+                  int   [:] df_event,  int [:] df_peak,
                   float [:] df_time, float [:] df_ene):
 
     """
@@ -16,11 +16,11 @@ cpdef cdf_to_dict(int df_index, int evt_max,
     into PMAPS in dictionary format
     """
     cdef int evt = 0
-    cdef int pk = 0
+    cdef int pk  = 0
 
     cdef dict S12L = {}
-    cdef dict S12 = {}
-    S12[0] = [[],[]]
+    cdef dict S12  = {}
+    S12 [0] = [[],[]]
     S12L[0] = S12
 
     cdef int i,
@@ -33,10 +33,10 @@ cpdef cdf_to_dict(int df_index, int evt_max,
 
                 s12l = S12[pk]
                 s12l[0].append(df_time[i])
-                s12l[1].append(df_ene[i])
+                s12l[1].append(df_ene [i])
             else:
                 pk = df_peak[i]
-                S12[pk] = [[df_time[i]], [df_ene[i]]]
+                S12[pk] = ([df_time[i]], [df_ene[i]])
         else:
 
             S12 = S12L[evt]
@@ -53,7 +53,7 @@ cpdef cdf_to_dict(int df_index, int evt_max,
 
             pk = df_peak[i]
             S12 = {}
-            S12[pk] = [[df_time[i]], [df_ene[i]]]
+            S12[pk] = ([df_time[i]], [df_ene[i]])
             S12L[evt] = S12
 
     return S12L
