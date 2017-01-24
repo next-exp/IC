@@ -5,7 +5,6 @@ author: J.J. Gomez-Cadenas
 IC core team: Jacek Generowicz, JJGC,
 G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
-last changed: 01-12-2017
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -111,7 +110,7 @@ def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
 
             for i in range(len(CWF)):
                 diff = abs(np.sum(BLR[i][5000:5100]) - np.sum(CWF[i][5000:5100]))
-                diff = 100. * diff/np.sum(BLR[i])
+                diff = 100. * diff / np.sum(BLR[i])
                 assert diff < eps
 
 
