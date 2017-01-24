@@ -5,13 +5,13 @@ JJGC December, 2016
 from __future__ import division
 
 cimport numpy as np
-import numpy as np
+import  numpy as np
 from scipy import signal
 
 cpdef calibrated_pmt_sum(double [:, :] CWF,
                          double [:] adc_to_pes,
-                         int n_MAU=200,
-                         double thr_MAU=5):
+                         int      n_MAU = 200,
+                         double thr_MAU =   5):
     """
     Computes the ZS calibrated sum of the PMTs
     after correcting the baseline with a MAU to suppress low frequency noise.
@@ -25,15 +25,15 @@ cpdef calibrated_pmt_sum(double [:, :] CWF,
 
     cdef int j, k
     cdef int NPMT = CWF.shape[0]
-    cdef int NWF = CWF.shape[1]
+    cdef int NWF  = CWF.shape[1]
     cdef double [:] MAU = np.array(np.ones(n_MAU),
-                                   dtype=np.double)*(1 / n_MAU)
+                                   dtype = np.double) * (1 / n_MAU)
 
 
     # CWF if above MAU threshold
     cdef double [:, :] pmt_thr = np.zeros((NPMT,NWF), dtype=np.double)
-    cdef double [:] csum = np.zeros(NWF, dtype=np.double)
-    cdef double [:] MAU_pmt = np.zeros(NWF, dtype=np.double)
+    cdef double [:]       csum = np.zeros(      NWF , dtype=np.double)
+    cdef double [:]    MAU_pmt = np.zeros(      NWF , dtype=np.double)
 
     for j in range(NPMT):
         # MAU for each of the PMTs, following the waveform
@@ -45,7 +45,7 @@ cpdef calibrated_pmt_sum(double [:, :] CWF,
 
     for j in range(NPMT):
         for k in range(NWF):
-            csum[k] += pmt_thr[j, k]*1./adc_to_pes[j]
+            csum[k] += pmt_thr[j, k] * 1 / adc_to_pes[j]
     return np.asarray(csum)
 
 
@@ -67,21 +67,21 @@ cpdef wfzs(double [:] wf, double threshold=0):
     """
     cdef int len_wf = wf.shape[0]
     cdef double [:] wfzs_e = np.zeros(len_wf, dtype=np.double)
-    cdef int [:] wfzs_i = np.zeros(len_wf, dtype=np.int32)
+    cdef int    [:] wfzs_i = np.zeros(len_wf, dtype=np.int32)
 
     cdef int i,j
-    j=0
+    j = 0
     for i in range(len_wf):
         if wf[i] > threshold:
             wfzs_e[j] = wf[i]
-            wfzs_i[j] = i
-            j+=1
+            wfzs_i[j] =    i
+            j += 1
 
-    cdef double [:] wfzs_ene = np.zeros(j, dtype=np.double)
-    cdef int [:] wfzs_indx = np.zeros(j, dtype=np.int32)
+    cdef double [:] wfzs_ene  = np.zeros(j, dtype=np.double)
+    cdef int    [:] wfzs_indx = np.zeros(j, dtype=np.int32)
 
     for i in range(j):
-        wfzs_ene[i] =  wfzs_e[i]
+        wfzs_ene [i] = wfzs_e[i]
         wfzs_indx[i] = wfzs_i[i]
 
     return np.asarray(wfzs_ene), np.asarray(wfzs_indx)
@@ -102,9 +102,9 @@ cpdef time_from_index(int [:] indx):
     return np.asarray(tzs)
 
 
-cpdef find_S12(double [:] wfzs, int [:] index,
-               double tmin=0, double tmax=1e+6,
-               int lmin=8, int lmax=1000000,
+cpdef find_S12(double [:] wfzs,  int [:] index,
+               double tmin = 0,  double tmax = 1e+6,
+               int    lmin = 8,  int    lmax = 1000000,
                int stride=4, rebin=False, rebin_stride=40):
     """
     Find S1/S2 peaks.
@@ -122,18 +122,18 @@ cpdef find_S12(double [:] wfzs, int [:] index,
     cdef double [:] P = wfzs
     cdef double [:] T = time_from_index(index)
 
-    assert(len(wfzs) == len(index))
+    assert len(wfzs) == len(index)
 
-    cdef dict S12 = {}
+    cdef dict S12  = {}
     cdef dict S12L = {}
     cdef int i, j, k, ls
 
     cdef list s12 = []
 
     S12[0] = s12
-    S12[0].append([T[0],P[0]])
+    S12[0].append([T[0], P[0]])
 
-    j=0
+    j = 0
     for i in range(1, len(wfzs)) :
 
         if T[i] > tmax:
@@ -146,13 +146,11 @@ cpdef find_S12(double [:] wfzs, int [:] index,
             j += 1
             s12 = []
             S12[j] = s12
-            S12[j].append([T[i], P[i]])
-        else:
-            S12[j].append([T[i], P[i]])
+        S12[j].append([T[i], P[i]])
 
 
     # re-arrange and rebin
-    j=0
+    j = 0
 
     for i in S12:
         ls = len(S12[i])
@@ -172,7 +170,7 @@ cpdef find_S12(double [:] wfzs, int [:] index,
             S12L[j] = [TR, ER]
         else:
             S12L[j] = [t, e]
-        j+=1
+        j += 1
 
     return S12L
 
@@ -185,7 +183,7 @@ cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
     The function returns a DataFrame. The time bins and energy are rebinned according to stride
     """
 
-    assert(len(t) == len(e))
+    assert len(t) == len(e)
 
     cdef int n = len(t) // stride
     cdef int r = len(t) %  stride
@@ -197,7 +195,7 @@ cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
     cdef double [:] T = np.zeros(lenb, dtype=np.double)
     cdef double [:] E = np.zeros(lenb, dtype=np.double)
 
-    cdef int j=0
+    cdef int j = 0
     cdef int i, k
     cdef double esum, tmean
     for i in range(n):
@@ -213,7 +211,7 @@ cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
         j += stride
 
     if r > 0:
-        esum = 0
+        esum  = 0
         tmean = 0
         for k in range(j, len(t)):
             esum  += e[k]
@@ -221,7 +219,6 @@ cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
         tmean /= (len(t) - j)
         E[n] = esum
         T[n] = tmean
-
 
     return np.asarray(T), np.asarray(E)
 
@@ -240,11 +237,11 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
     cdef int NSiPM = SiWF.shape[0]
     cdef int NSiWF = SiWF.shape[1]
     cdef double [:] MAU = np.array(np.ones(n_MAU),
-                                   dtype=np.double)*(1 / n_MAU)
+                                   dtype = np.double) * (1 / n_MAU)
 
 
-    cdef double [:, :] siwf = np.zeros((NSiPM,NSiWF), dtype=np.double)
-    cdef double [:] MAU_ = np.zeros(NSiWF, dtype=np.double)
+    cdef double [:, :] siwf = np.zeros((NSiPM, NSiWF), dtype=np.double)
+    cdef double [:]    MAU_ = np.zeros(        NSiWF , dtype=np.double)
     cdef double pmean
 
     # loop over all SiPMs. Skip any SiPM with adc_to_pes constant = 0
@@ -285,7 +282,7 @@ cpdef select_sipm(double [:, :] sipmzs):
     cdef int i, j, k
     cdef double psum
 
-    j=0
+    j = 0
     for i in range(NSIPM):
         psum = 0
         for k in range(NWFM):
