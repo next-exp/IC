@@ -1,5 +1,5 @@
-from future import division
-import numpy as np
+from __future__ import division
+import  numpy as np
 cimport numpy as np
 from scipy import signal as SGN
 
@@ -19,7 +19,7 @@ cpdef BLR(np.ndarray[np.int16_t, ndim=1] signal_daq, float coef,
     cdef np.ndarray[np.float64_t, ndim=1] pulse_   = np.zeros(len_signal_daq, dtype=np.float64)
     cdef np.ndarray[np.float64_t, ndim=1] wait_    = np.zeros(len_signal_daq, dtype=np.float64)
 
-    cdef float BASELINE,upper,lower
+    cdef float BASELINE, upper, lower
 
     MAU[0:nm] = SGN.lfilter(B_MAU, 1, signal_daq[0:nm])
 
@@ -39,14 +39,14 @@ cpdef BLR(np.ndarray[np.int16_t, ndim=1] signal_daq, float coef,
     cdef float trigger_line, pulse_on, wait_over, offset
     cdef float part_sum
 
-    pulse_on=0
-    wait_over=0
-    offset = 0
+    pulse_on  = 0
+    wait_over = 0
+    offset    = 0
 
-    for k in range(nm,len_signal_daq):
+    for k in range(nm, len_signal_daq):
         trigger_line = MAU[k-1] + thr1
         pulse_[k] = pulse_on
-        wait_[k] = wait_over
+        wait_ [k] = wait_over
 
         # condition: raw signal raises above trigger line and
         # we are not in the tail
@@ -64,13 +64,12 @@ cpdef BLR(np.ndarray[np.int16_t, ndim=1] signal_daq, float coef,
                 pulse_on = 1
 
             #Pulse is on: Freeze the MAU
-            MAU[k] = MAU[k-1]
-            signal_i[k] = MAU[k-1]  #signal_i follows the MAU
+            MAU[k] = signal_i[k] = MAU[k-1]  #signal_i follows the MAU
 
             #update recovered signal, correcting by offset
 
             acum[k] = acum[k-1] + signal_daq[k] - offset;
-            signal_r[k] = signal_daq[k] + coef*acum[k]
+            signal_r[k] = signal_daq[k] + coef * acum[k]
 
             #signal_r[k] = signal_daq[k] + signal_daq[k]*(coef/2) + coef*acum[k-1]
             #acum[k] = acum[k-1] + signal_daq[k] - offset
@@ -85,8 +84,7 @@ cpdef BLR(np.ndarray[np.int16_t, ndim=1] signal_daq, float coef,
                 # lide the MAU, still frozen.
                 # keep recovering signal
 
-                MAU[k] = MAU[k-1]
-                signal_i[k] = MAU[k-1]
+                MAU[k] = signal_i[k] = MAU[k-1]
 
                 acum[k] = acum[k-1] + signal_daq[k] - offset;
                 signal_r[k] = signal_daq[k] + coef * acum[k]
@@ -120,7 +118,7 @@ cpdef BLR(np.ndarray[np.int16_t, ndim=1] signal_daq, float coef,
                             # we are near offset, activate MAU.
 
                             signal_i[k] = signal_r[k-1]
-                            part_sum = 0.
+                            part_sum = 0
                             for j in range(k-nm, k):
                                 part_sum += signal_i[j] / nm
                             MAU[k] = part_sum
@@ -129,11 +127,10 @@ cpdef BLR(np.ndarray[np.int16_t, ndim=1] signal_daq, float coef,
 
                         else:
                             # rec signal not near offset MAU frozen
-                            MAU[k]      = MAU[k-1]
-                            signal_i[k] = MAU[k-1]
+                            MAU[k] = signal_i[k] = MAU[k-1]
 
                         # keep adding recovered signal
-                        acum[k] = acum[k-1] + signal_daq[k] - offset;
+                        acum    [k] = signal_daq[k] + acum[k-1]  - offset;
                         signal_r[k] = signal_daq[k] + coef*acum[k]
                         #signal_r[k] = signal_daq[k] + signal_daq[k]*(coef/2) + coef*acum[k-1]
                         #acum[k] = acum[k-1] + signal_daq[k] - offset
@@ -141,10 +138,10 @@ cpdef BLR(np.ndarray[np.int16_t, ndim=1] signal_daq, float coef,
                     else:  # raw signal above recovered signal: we are done
 
                         wait_over = 0
-                        acum[k] = MAU[k-1]
+                        acum    [k] = MAU       [k-1]
                         signal_r[k] = signal_daq[k]
-                        signal_i[k] = signal_r[k]
-                        part_sum = 0.
+                        signal_i[k] = signal_r  [k]
+                        part_sum = 0
                         for j in range(k-nm, k):
                             part_sum += signal_i[j] / nm
                         MAU[k] = part_sum
@@ -153,7 +150,7 @@ cpdef BLR(np.ndarray[np.int16_t, ndim=1] signal_daq, float coef,
                 else: #signal still not found
 
                     #update MAU and signals
-                    part_sum = 0.
+                    part_sum = 0
                     for j in range(k-nm, k):
                         part_sum += signal_i[j] / nm
                     MAU[k] = part_sum
@@ -169,12 +166,13 @@ cpdef BLR(np.ndarray[np.int16_t, ndim=1] signal_daq, float coef,
     return  signal_r.astype(int), MAU, pulse_, wait_
 
 cpdef deconvolve_signal_acum_simple(np.ndarray[np.int16_t, ndim=1] signal_i,
-                             int n_baseline=500,
-                             float coef_clean=2.905447E-06,
-                             float coef_blr=1.632411E-03,
-                             float noise_rms = 0.9,
-                             float thr_trigger=5, float thr_acum=800,
-                             float coeff_acum = 0.9995):
+                                    int   n_baseline  = 500,
+                                    float coef_clean  = 2.905447E-06,
+                                    float coef_blr    = 1.632411E-03,
+                                    float noise_rms   =   0.9,
+                                    float thr_trigger =   5,
+                                    float thr_acum    = 800,
+                                    float coeff_acum  =   0.9995):
 
     """
     The accumulator approach by Master VHB
@@ -186,9 +184,9 @@ cpdef deconvolve_signal_acum_simple(np.ndarray[np.int16_t, ndim=1] signal_i,
 
     cdef int len_signal_daq = len(signal_i)
     cdef np.ndarray[np.float64_t, ndim=1] signal_r = np.zeros(len_signal_daq,
-                                                              dtype=np.float64)
-    cdef np.ndarray[np.float64_t, ndim=1] acum = np.zeros(len_signal_daq,
-                                                          dtype=np.double)
+                                                              dtype = np.float64)
+    cdef np.ndarray[np.float64_t, ndim=1] acum     = np.zeros(len_signal_daq,
+                                                              dtype = np.double)
 
     cdef np.ndarray[np.float64_t, ndim=1] signal_daq = signal_i.astype(float)
     cdef int j
@@ -197,7 +195,7 @@ cpdef deconvolve_signal_acum_simple(np.ndarray[np.int16_t, ndim=1] signal_i,
         baseline += signal_daq[j]
     baseline /= nm
     cdef float trigger_line
-    trigger_line = thr_trigger*noise_rms
+    trigger_line = thr_trigger * noise_rms
 
     signal_daq =  baseline - signal_daq
 
@@ -211,7 +209,7 @@ cpdef deconvolve_signal_acum_simple(np.ndarray[np.int16_t, ndim=1] signal_i,
         # condition: raw signal raises above trigger line
         if (signal_daq[k] > trigger_line) or (acum[k-1] > thr_acum):
 
-            signal_r[k] = signal_daq[k] + signal_daq[k]*(coef / 2) + coef * acum[k-1]
+            signal_r[k] = signal_daq[k] + signal_daq[k] * (coef / 2) + coef * acum[k-1]
             acum[k] = acum[k-1] + signal_daq[k]
 
         else:
@@ -224,14 +222,14 @@ cpdef deconvolve_signal_acum_simple(np.ndarray[np.int16_t, ndim=1] signal_i,
 
 
 cpdef deconvolve_signal_acum_v1(np.ndarray[np.int16_t, ndim=1] signal_i,
-                            int n_baseline=500,
-                            float coef_clean=2.905447E-06,
-                            float coef_blr=1.632411E-03,
-                            float thr_trigger=5,
-                            float thr_acum=1000,
-                            int acum_discharge_length = 5000,
-                            float acum_tau=2500,
-                            float acum_compress=0.0025):
+                            int   n_baseline            =  500,
+                            float coef_clean            = 2.905447E-06,
+                            float coef_blr              = 1.632411E-03,
+                            float thr_trigger           =    5,
+                            float thr_acum              = 1000,
+                            int   acum_discharge_length = 5000,
+                            float acum_tau              = 2500,
+                            float acum_compress         =    0.0025):
 
     """
     The accumulator approach by Master VHB
@@ -243,9 +241,9 @@ cpdef deconvolve_signal_acum_v1(np.ndarray[np.int16_t, ndim=1] signal_i,
     cdef int len_signal_daq = len(signal_i)
 
     cdef np.ndarray[np.float64_t, ndim=1] signal_r = np.zeros(len_signal_daq,
-                                                              dtype=np.double)
-    cdef np.ndarray[np.float64_t, ndim=1] acum = np.zeros(len_signal_daq,
-                                                          dtype=np.double)
+                                                              dtype = np.double)
+    cdef np.ndarray[np.float64_t, ndim=1] acum     = np.zeros(len_signal_daq,
+                                                              dtype = np.double)
     # signal_daq in floats
     cdef np.ndarray[np.float64_t, ndim=1] signal_daq = signal_i.astype(float)
 
@@ -303,8 +301,8 @@ cpdef deconvolve_signal_acum_v1(np.ndarray[np.int16_t, ndim=1] signal_i,
     for k in range(nm, len_signal_daq):
 
         # update recovered signal
-        signal_r[k] = signal_daq[k] + signal_daq[k] * (coef / 2) +\
-                      coef_blr * acum[k-1]
+        signal_r[k] = (signal_daq[k] + signal_daq[k] * (coef / 2) +
+                       coef_blr * acum[k-1])
 
         # condition: raw signal raises above trigger line
         # once signal raises above trigger line condition is on until
@@ -316,7 +314,7 @@ cpdef deconvolve_signal_acum_v1(np.ndarray[np.int16_t, ndim=1] signal_i,
         else:
             j = 0
             # discharge acumulator
-            if acum[k-1]>1:
+            if acum[k-1] > 1:
                 acum[k] = acum[k-1] * discharge_curve[j]
                 if j < acum_discharge_length - 1:
                     j = j + 1
@@ -330,13 +328,13 @@ cpdef deconvolve_signal_acum_v1(np.ndarray[np.int16_t, ndim=1] signal_i,
 
 
 cpdef deconvolve_signal_acum_v2(np.ndarray[np.int16_t, ndim=1] signal_i,
-                            int n_baseline=500,
-                            float coef_clean=2.905447E-06,
-                            float coef_blr=1.632411E-03,
-                            float thr_trigger=5,
-                            int acum_discharge_length = 5000,
-                            float acum_tau=2500,
-                            float acum_compress=0.01):
+                            int   n_baseline            =  500,
+                            float coef_clean            = 2.905447E-06,
+                            float coef_blr              = 1.632411E-03,
+                            float thr_trigger           =    5,
+                            int   acum_discharge_length = 5000,
+                            float acum_tau              = 2500,
+                            float acum_compress         =    0.01):
 
     """
     The accumulator approach by Master VHB
@@ -351,16 +349,16 @@ cpdef deconvolve_signal_acum_v2(np.ndarray[np.int16_t, ndim=1] signal_i,
     cdef int len_signal_daq = len(signal_i)
 
     cdef np.ndarray[np.float64_t, ndim=1] signal_r = np.zeros(len_signal_daq,
-                                                              dtype=np.double)
-    cdef np.ndarray[np.float64_t, ndim=1] acum = np.zeros(len_signal_daq,
-                                                          dtype=np.double)
+                                                              dtype = np.double)
+    cdef np.ndarray[np.float64_t, ndim=1] acum     = np.zeros(len_signal_daq,
+                                                              dtype = np.double)
     # signal_daq in floats
     cdef np.ndarray[np.float64_t, ndim=1] signal_daq = signal_i.astype(float)
 
     # compute baseline and noise
 
     cdef int j
-    cdef float baseline = 0
+    cdef float baseline     = 0
     cdef float baseline_end = 0
 
     for j in range(0,len_signal_daq):
@@ -417,8 +415,8 @@ cpdef deconvolve_signal_acum_v2(np.ndarray[np.int16_t, ndim=1] signal_i,
     for k in range(nm, len_signal_daq):
 
         # update recovered signal
-        signal_r[k] = signal_daq[k] + signal_daq[k] * (coef / 2) +\
-                      coef_blr * acum[k-1]
+        signal_r[k] = (signal_daq[k] + signal_daq[k] * (coef / 2) +
+                       coef_blr * acum[k-1])
 
         # condition: raw signal raises above trigger line
         # once signal raises above trigger line condition is on until
@@ -443,11 +441,11 @@ cpdef deconvolve_signal_acum_v2(np.ndarray[np.int16_t, ndim=1] signal_i,
     return signal_r.astype(int), acum.astype(int), baseline, baseline_end, noise_rms
 
 cpdef deconvolve_signal_acum(np.ndarray[np.int16_t, ndim=1] signal_i,
-                            int n_baseline=28000,
-                            float coef_clean=2.905447E-06,
-                            float coef_blr=1.632411E-03,
-                            float thr_trigger=5,
-                            int acum_discharge_length = 5000):
+                            int   n_baseline            = 28000,
+                            float coef_clean            = 2.905447E-06,
+                            float coef_blr              = 1.632411E-03,
+                            float thr_trigger           =     5,
+                            int   acum_discharge_length =  5000):
 
     """
     The accumulator approach by Master VHB
@@ -468,16 +466,16 @@ cpdef deconvolve_signal_acum(np.ndarray[np.int16_t, ndim=1] signal_i,
     cdef int len_signal_daq = len(signal_i)
 
     cdef np.ndarray[np.float64_t, ndim=1] signal_r = np.zeros(len_signal_daq,
-                                                              dtype=np.double)
-    cdef np.ndarray[np.float64_t, ndim=1] acum = np.zeros(len_signal_daq,
-                                                          dtype=np.double)
+                                                              dtype = np.double)
+    cdef np.ndarray[np.float64_t, ndim=1] acum     = np.zeros(len_signal_daq,
+                                                              dtype = np.double)
     # signal_daq in floats
     cdef np.ndarray[np.float64_t, ndim=1] signal_daq = signal_i.astype(float)
 
     # compute baseline and noise
 
     cdef int j
-    cdef float baseline = 0
+    cdef float baseline     = 0
     cdef float baseline_end = 0
 
     for j in range(0,nm):
@@ -491,13 +489,13 @@ cpdef deconvolve_signal_acum(np.ndarray[np.int16_t, ndim=1] signal_i,
     baseline_end /= nf
 
     # reverse sign of signal and subtract baseline
-    signal_daq =  baseline - signal_daq
+    signal_daq = baseline - signal_daq
 
     # compute noise
     cdef float noise = 0
     cdef nn = 400 # fixed at 100 mud
-    for j in range(0,nn):
-        noise += signal_daq[j]*signal_daq[j]
+    for j in range(0, nn):
+        noise += signal_daq[j] * signal_daq[j]
     noise /= nn
     cdef float noise_rms = np.sqrt(noise)
 
@@ -511,16 +509,16 @@ cpdef deconvolve_signal_acum(np.ndarray[np.int16_t, ndim=1] signal_i,
     cdef np.ndarray[np.float64_t, ndim=1] a_cf
 
     b_cf, a_cf = SGN.butter(1, coef_clean, 'high', analog=False);
-    signal_daq = SGN.lfilter(b_cf,a_cf,signal_daq)
+    signal_daq = SGN.lfilter(b_cf, a_cf, signal_daq)
 
     cdef int k
     j = 0
     signal_r[0] = signal_daq[0]
-    for k in range(1,len_signal_daq):
+    for k in range(1, len_signal_daq):
 
         # always update signal and accumulator
-        signal_r[k] = signal_daq[k] + signal_daq[k] * (coef / 2) +\
-                      coef * acum[k-1]
+        signal_r[k] = (signal_daq[k] + signal_daq[k] * (coef / 2) +
+                       coef * acum[k-1])
 
         acum[k] = acum[k-1] + signal_daq[k]
 
