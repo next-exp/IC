@@ -3,7 +3,7 @@ code: diomira.py
 description: simulation of the response of the energy and tracking planes
 for the NEXT detector.
 author: J.J. Gomez-Cadenas
-IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch 
+IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
 last changed: 09-11-2017
 """

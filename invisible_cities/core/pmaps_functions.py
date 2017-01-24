@@ -11,6 +11,9 @@ import tables as tb
 import matplotlib.pyplot as plt
 import invisible_cities.core.system_of_units as units
 import invisible_cities.core.pmaps_functions_c as cpm
+from   invisible_cities.database import load_db
+from   invisible_cities.core.mpl_functions import circles
+
 
 
 def read_pmaps(path, pmap_file):
@@ -138,6 +141,42 @@ def scan_s12l(S12L):
         plt.plot(s12df.time_ns.values, s12df.ene_pes)
         plt.show()
         raw_input('hit return')
+
+
+def plot_s2si_map(S2Si):
+        """Plot a map of the energies of S2Si objects."""
+
+        DataSensor = load_db.DataSiPM(0)
+        radius = 2
+        xs = DataSensor.X.values
+        ys = DataSensor.Y.values
+        r = np.ones(len(xs)) * radius
+        col = np.zeros(len(xs))
+        for k in S2Si:
+            s2si = S2Si[k]
+            for e in s2si:
+                indx = e[0]
+                ene = np.sum(e[1])
+                col[indx] = ene
+        plt.figure(figsize=(8, 8))
+        plt.subplot(aspect="equal")
+        circles(xs, ys, r, c=col, alpha=0.5, ec="none")
+        plt.colorbar()
+
+        plt.xlim(-198, 198)
+        plt.ylim(-198, 198)
+
+
+def scan_s2si_map(S2Si):
+        """Scan the S2Si objects."""
+
+        for k in S2Si:
+            s2si = S2Si[k]
+            for e in s2si:
+                indx = e[0]
+                ene = np.sum(e[1])
+                print('SiPM number = {}, total energy = {}'.format(indx, ene))
+
 
 class S12F:
     """
