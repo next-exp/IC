@@ -129,6 +129,12 @@ function ic_env {
 
     export PYTHONPATH=$ICTDIR
     echo PYTHONPATH set to $PYTHONPATH
+
+    export NBDIR=`pwd`
+    echo NBDIR set to $NBDIR
+
+    export IC_NOTEBOOK_DIR=$NBDIR/invisible_cities/
+    echo IC_NOTEBOOK_DIR set to $ IC_NOTEBOOK_DIR
 }
 
 function show_ic_env {
