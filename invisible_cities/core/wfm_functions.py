@@ -9,6 +9,8 @@ import tables as tb
 import invisible_cities.core.mpl_functions as mpl
 import matplotlib.pyplot as plt
 from invisible_cities.core.core_functions import define_window
+from invisible_cities.database import load_db
+import invisible_cities.sierpe.blr as blr
 
 def to_adc(wfs, adc_to_pes):
     """
@@ -182,6 +184,38 @@ def noise_suppression(waveforms, thresholds):
     return np.array(suppressed_wfs)
 
 
+def cwf_from_rwf(pmtrwf, event_list, run_number=0,
+                 n_baseline=28000, thr_trigger=5):
+    """Compute CWF from RWF for a given list of events."""
+    DataPMT = load_db.DataPMT(run_number)
+    coeff_c = DataPMT.coeff_c.values.astype(np.double)
+    coeff_blr = DataPMT.coeff_blr.values.astype(np.double)
+
+    CWF=[]
+    for event in event_list:
+        CWF.append(blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr,
+                             n_baseline=n_baseline,
+                             thr_trigger=thr_trigger))
+    return CWF
+
+
+def compare_cwf_blr(cwf, pmtblr, event_list, window_size=500):
+    """ Return differences between the area of the CWF and the
+    in a given window, for a list of events.
+    """
+    DIFF = []
+    for event in event_list:
+        CWF = cwf[event]
+        BLR = pmtblr[event]
+
+        for i in range(len(BLR)):
+            t0, t1 = define_window(BLR[i], window_size)
+            diff = abs(np.sum(BLR[i][t0:t1]) - np.sum(CWF[i][t0:t1]))
+            diff = 100. * diff / np.sum(BLR)
+            DIFF.append(diff)
+
+    return np.array(DIFF)
+
 def plot_pmt_waveforms(pmtwfdf, zoom=False, window_size=800):
     """Take as input a vector storing the PMT wf and plot the waveforms"""
     plt.figure(figsize=(12, 12))
@@ -217,6 +251,10 @@ def plot_wfa_wfb(wfa, wfb, zoom=False, window_size=800):
             first, last = define_window(wfa[i], window_size)
         plt.subplot(3, 4, i+1)
         # ax1.set_xlim([0, len_pmt])
-        set_plot_labels(xlabel="samples", ylabel="adc")
-        plt.plot(wfa[i][first:last])
-        plt.plot(wfb[i][first:last])
+        mpl.set_plot_labels(xlabel="samples", ylabel="adc")
+        plt.plot(wfa[i][first:last], label= 'WFA')
+        plt.plot(wfb[i][first:last], label= 'WFB')
+        legend = plt.legend(loc='upper right')
+        for label in legend.get_texts():
+            label.set_fontsize('small')
+# end
