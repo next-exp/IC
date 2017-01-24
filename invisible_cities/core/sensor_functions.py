@@ -9,7 +9,7 @@ import matplotlib.animation
 
 from   invisible_cities.database import load_db
 import invisible_cities.core.system_of_units as units
-from invisible_cities.core.mpl_functions import circles
+from   invisible_cities.core.mpl_functions import circles
 
 
 def weighted_sum(CWF, w_vector):
