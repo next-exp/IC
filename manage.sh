@@ -84,6 +84,7 @@ dependencies:
   - flaky==3.4.0
   - hypothesis==3.32.0
   - pytest-xdist==1.20.0
+  - pytest-mpl
 EOF
 
     conda env create -f ${YML_FILENAME}
@@ -109,7 +110,7 @@ function run_tests {
     fi
 
     # Run the test suite
-    pytest -v --no-success-flaky-report
+    pytest -v --no-success-flaky-report --mpl
 }
 
 function run_tests_par {
@@ -120,8 +121,8 @@ function run_tests_par {
 
     # Run the test suite
     EXIT=0
-    pytest -v -n ${N_PROC} -m "not serial" --no-success-flaky-report || EXIT=$?
-    pytest -v              -m      serial  --no-success-flaky-report || EXIT=$?
+    pytest -v -n ${N_PROC} -m "not serial" --no-success-flaky-report --mpl || EXIT=$?
+    pytest -v              -m      serial  --no-success-flaky-report --mpl || EXIT=$?
     exit $EXIT
 }
 
