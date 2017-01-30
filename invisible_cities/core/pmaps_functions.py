@@ -143,7 +143,7 @@ def scan_s12l(S12L):
         raw_input('hit return')
 
 
-def plot_s2si_map(S2Si):
+def plot_s2si_map(S2Si, cmap='Blues'):
         """Plot a map of the energies of S2Si objects."""
 
         DataSensor = load_db.DataSiPM(0)
@@ -160,7 +160,7 @@ def plot_s2si_map(S2Si):
                 col[indx] = ene
         plt.figure(figsize=(8, 8))
         plt.subplot(aspect="equal")
-        circles(xs, ys, r, c=col, alpha=0.5, ec="none")
+        circles(xs, ys, r, c=col, alpha=0.5, ec="none", cmap=cmap)
         plt.colorbar()
 
         plt.xlim(-198, 198)
