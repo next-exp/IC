@@ -44,7 +44,7 @@ def plot_sipm_list(sipmrwf, sipm_list, x=4):
         plt.plot(sipmrwf[sipm_list[i]])
 
 
-def plot_sensor_list_ene_map(swf, slist, stype='PMT'):
+def plot_sensor_list_ene_map(swf, slist, stype='PMT', cmap='Blues'):
         """Plot a map of the energies of sensors in list."""
         DataSensor = load_db.DataPMT(0)
         radius = 10
@@ -60,7 +60,7 @@ def plot_sensor_list_ene_map(swf, slist, stype='PMT'):
 
         plt.figure(figsize=(8, 8))
         plt.subplot(aspect="equal")
-        circles(xs, ys, r, c=col, alpha=0.5, ec="none")
+        circles(xs, ys, r, c=col, alpha=0.5, ec="none", cmap=cmap)
         plt.colorbar()
 
         plt.xlim(-198, 198)
