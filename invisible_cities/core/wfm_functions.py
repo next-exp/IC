@@ -216,6 +216,17 @@ def compare_cwf_blr(cwf, pmtblr, event_list, window_size=500):
 
     return np.array(DIFF)
 
+def plot_waveform(pmtwf, zoom=False, window_size=800):
+    """Take as input a vector a single waveform and plot it"""
+
+    first, last = 0, len(pmtwf)
+    if zoom:
+        first, last = define_window(pmtwf, window_size)
+
+    mpl.set_plot_labels(xlabel="samples", ylabel="adc")
+    plt.plot(pmtwf[first:last])
+
+
 def plot_pmt_waveforms(pmtwfdf, zoom=False, window_size=800):
     """Take as input a vector storing the PMT wf and plot the waveforms"""
     plt.figure(figsize=(12, 12))
@@ -257,4 +268,3 @@ def plot_wfa_wfb(wfa, wfb, zoom=False, window_size=800):
         legend = plt.legend(loc='upper right')
         for label in legend.get_texts():
             label.set_fontsize('small')
-# end
