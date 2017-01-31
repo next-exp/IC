@@ -167,3 +167,43 @@ def zero_suppression(waveforms, thresholds, to_mus=None):
         thresholds = np.ones(waveforms.shape[0]) * thresholds
     zsdata = map(zs_wf, waveforms, thresholds)
     return {i: df for i, df in enumerate(zsdata) if df is not None}
+
+def find_S12(wfzs, tmin=0*units.mus, tmax=1200*units.mus,
+             stride=4, lmin=8, lmax=1e+6):
+    """Find S1/S2 peaks.
+
+    input: a zero supressed wf
+    returns a list of waveform data frames
+    do not interrupt the peak if next sample comes within stride
+    accept the peak only if within [lmin, lmax)
+    accept the peak only if within [tmin, tmax)
+    """
+
+    T = wfzs['time_ns'].values
+    P = wfzs['ene_pes'].values
+
+    S12 = {}
+    pulse_on = 1
+    j = 0
+
+    S12[0] = [(T[0], P[0])]
+
+    for i in range(1, len(wfzs)):
+
+        if T[i] > tmax:
+            break
+
+        if T[i] < tmin:
+            continue
+
+        if wfzs.index[i] - stride > wfzs.index[i-1]:  #new s12
+            j += 1
+            S12[j] = [(T[i], P[i])]
+        else:
+            S12[j].append((T[i], P[i])
+
+    S12L = []
+    for s in S12:
+        if lmin <= and len(s) < lmax:
+            S12L.append(pd.DataFrame(s, columns=['time_ns','ene_pes']))
+    return S12L
