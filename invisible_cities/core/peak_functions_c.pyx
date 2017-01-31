@@ -40,7 +40,7 @@ cpdef calibrated_pmt_sum(double [:, :] CWF,
         MAU_pmt = signal.lfilter(MAU, 1, CWF[j,:])
 
         for k in range(NWF):
-            if CWF[j,k] > MAU_pmt[k] + thr_MAU:
+            if CWF[j,k] >= MAU_pmt[k] + thr_MAU: # >= not >: found testing!
                 pmt_thr[j,k] = CWF[j,k]
 
     for j in range(NPMT):
@@ -177,10 +177,10 @@ cpdef find_S12(double [:] wfzs,  int [:] index,
 
 cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
     """
-    rebins the a waveform according to stride
+    Rebin a waveform according to stride
     The input waveform is a vector such that the index expresses time bin and the
     contents expresses energy (e.g, in pes)
-    The function returns a DataFrame. The time bins and energy are rebinned according to stride
+    The function returns the rebinned T& E vectors.
     """
 
     assert len(t) == len(e)
