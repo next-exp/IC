@@ -37,41 +37,28 @@ def configure(input_options=sys.argv):
     """
     program, args = input_options[0], input_options[1:]
     parser = argparse.ArgumentParser(program)
-    parser.add_argument("-c", metavar="cfile", type=str,
-                        help="configuration file", required=True)
-    parser.add_argument("-i", metavar="ifile", type=str,
-                        help="input file")
-    parser.add_argument("-o", metavar="ofile", type=str,
-                        help="output file")
-    parser.add_argument("-n", metavar="nevt", type=int,
-                        help="number of events to be processed")
-    parser.add_argument("-s", metavar="skip", type=int, default=0,
-                        help="number of events to be skipped")
-    parser.add_argument("-p", metavar="print_mod", type=int,
-                        help="print every this number of events")
-    parser.add_argument("--runall", action="store_true",
-                        help="number of events to be skipped")
-    parser.add_argument("-I", action="store_true", help="print info")
-    parser.add_argument("-v", action="count", help="verbosity level")
+    parser.add_argument("-c", metavar="cfile",     type=str, help="configuration file",             required=True)
+    parser.add_argument("-i", metavar="ifile",     type=str, help="input file")
+    parser.add_argument("-o", metavar="ofile",     type=str, help="output file")
+    parser.add_argument("-n", metavar="nevt",      type=int, help="number of events to be processed")
+    parser.add_argument("-s", metavar="skip",      type=int, help="number of events to be skipped", default=0)
+    parser.add_argument("-p", metavar="print_mod", type=int, help="print every this number of events")
+    parser.add_argument("-I", action="store_true",           help="print info")
+    parser.add_argument("-v", action="count",                help="verbosity level")
+    parser.add_argument("--runall", action="store_true",     help="number of events to be skipped")
 
     flags, extras = parser.parse_known_args(args)
     options = read_config_file(flags.c) if flags.c else {}
 
-    if flags.i is not None:
-        options["FILE_IN"] = flags.i
-    if flags.o is not None:
-        options["FILE_OUT"] = flags.o
-    if flags.n is not None:
-        options["NEVENTS"] = flags.n
-    if flags.s is not None:
-        options["SKIP"] = flags.s
-    if flags.p is not None:
-        options["PRINT_MOD"] = flags.p
+    if flags.i is not None: options["FILE_IN"]   = flags.i
+    if flags.o is not None: options["FILE_OUT"]  = flags.o
+    if flags.n is not None: options["NEVENTS"]   = flags.n
+    if flags.s is not None: options["SKIP"]      = flags.s
+    if flags.p is not None: options["PRINT_MOD"] = flags.p
+    if flags.v is not None: options["VERBOSITY"] = 50 - min(flags.v, 4) * 10
     if flags.runall:
         options["RUN_ALL"] = flags.runall
     options["INFO"] = flags.I
-    if flags.v is not None:
-        options["VERBOSITY"] = 50 - min(flags.v, 4)*10
 
     if extras:
         logger.warning("WARNING: the following parameters have not been "
@@ -163,11 +150,9 @@ def read_config_file(cfile):
         d[key] = value[0] if len(value) == 1 else value
 
     if "PATH_IN" in d and "FILE_IN" in d:
-        d["FILE_IN"] = d["PATH_IN"] + "/" + d["FILE_IN"]
-        del d["PATH_IN"]
+        d["FILE_IN"] = os.path.join(d["PATH_IN"], d["FILE_IN"])
     if "PATH_OUT" in d and "FILE_OUT" in d:
-        d["FILE_OUT"] = d["PATH_OUT"] + "/" + d["FILE_OUT"]
-        del d["PATH_OUT"]
+        d["FILE_OUT"] = os.path.join(d["PATH_OUT"], d["FILE_OUT"])
     return d
 
 
