@@ -55,7 +55,7 @@ def test_diomira_fee_table(irene_diomira_chain_tmpdir):
     """Test that FEE table reads back correctly with expected values."""
     RWF_file = str(irene_diomira_chain_tmpdir.join(
                    'electrons_40keV_z250_RWF.h5'))
-    with tb.open_file(RWF_file, 'r+') as e40rwf:
+    with tb.open_file(RWF_file, 'r') as e40rwf:
         fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
         feep = fee['fee_param']
         eps = 1e-04
@@ -92,7 +92,7 @@ def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
     eps = 1
     RWF_file = str(irene_diomira_chain_tmpdir.join(
                    'electrons_40keV_z250_RWF.h5'))
-    with tb.open_file(RWF_file, 'r+') as e40rwf:
+    with tb.open_file(RWF_file, 'r') as e40rwf:
 
         pmtrwf = e40rwf.root.RD.pmtrwf
         pmtblr = e40rwf.root.RD.pmtblr
@@ -127,7 +127,7 @@ def test_diomira_sipm(irene_diomira_chain_tmpdir):
     max_sipm_with_signal = 10
     infile = (os.environ['ICDIR']
      + '/database/test_data/electrons_40keV_z250_MCRD.h5')
-    with tb.open_file(infile, 'r+') as e40rd:
+    with tb.open_file(infile, 'r') as e40rd:
 
         NEVENTS_DST, NSIPM, SIPMWL = e40rd.root.sipmrd.shape
 
@@ -173,7 +173,7 @@ def test_diomira_identify_bug():
 
     infile = (os.environ['ICDIR']
      + '/database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
-    with tb.open_file(infile, 'r+') as h5in:
+    with tb.open_file(infile, 'r') as h5in:
 
         pmtrd  = h5in.root.pmtrd
         pmtwf = pmtrd[0]
