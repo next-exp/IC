@@ -21,6 +21,23 @@ def loc_elem_1d(np1d, elem):
     return np.where(np1d==elem)[0][0]
 
 
+def np_range(start, end, stride):
+    """Syntactic sugar for np.arange() (included for consistency with
+    np_reverse_range).
+    """
+    return np.arange(start, end, stride)
+
+
+def np_reverse_range(start, end, stride):
+    """Reverse range."""
+    return np.arange(start, end, stride)[::-1]
+
+
+def np_constant(dim, value):
+    """Returns a np array of dimension dim with all elements == value."""
+    return np.ones(dim) * value
+
+
 def dict_map(func, dic):
     """Apply map to dictionary values maintaining correspondence.
 

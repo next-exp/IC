@@ -1,11 +1,19 @@
+from __future__ import print_function
 from __future__ import absolute_import
 
-from pytest import mark
 import sys, os
+from functools import partial
+
+import pandas as pd
+import numpy  as np
+import numpy.testing as npt
+
+from pytest import mark
+from hypothesis import given
+from hypothesis.strategies import integers, floats, sampled_from, composite
+sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 
 from . import core_functions as core
-import pandas as pd
-import numpy as np
 
 def test_lrange():
     assert core.lrange(10) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -15,6 +23,50 @@ def test_trange():
 
 def test_loc_elem_1d():
     assert core.loc_elem_1d(np.array(core.lrange(10)), 5) == 5
+
+@composite
+def nonzero_floats(draw, min_value=None, max_value=None):
+    sign      = draw(sampled_from((-1, +1)))
+    magnitude = draw(floats(min_value=min_value, max_value=max_value))
+    return sign * magnitude
+
+# Need to make sure that the step size is not to small compared to the
+# range, otherwise the array that needs to be generated may contain so
+# many values that we run out of memory. Do this by bounding the
+# range's absolute size from above and the step's absolute size from
+# below.
+np_range_strategies = dict(
+    start =         floats(min_value=-100,   max_value=+100),
+    stop  =         floats(min_value=-100,   max_value=+100),
+    step  = nonzero_floats(min_value=   0.1, max_value=  10))
+
+# Check that the difference between adjacent elements is constant, and
+# compare to the behaviour of the real np.arange.
+@given(**np_range_strategies)
+def test_np_range(start, stop, step):
+    x = core.np_range(start, stop, step)
+    y = x[1:  ]
+    z = x[ :-1]
+    steps = y - z
+    npt.assert_almost_equal(steps, step)
+    npt.assert_array_equal(x, np.arange(start, stop, step))
+
+# Check that the sum of the forward and reverse ranges is the same
+# everywhere.
+@given(**np_range_strategies)
+def test_np_reverse_range(start, stop, step):
+    forward = core.        np_range(start, stop, step)
+    reverse = core.np_reverse_range(start, stop, step)
+    summed = forward + reverse
+    if len(summed):
+        npt.assert_almost_equal(summed, summed[0])
+
+@given(integers(min_value=0, max_value=99), sane_floats())
+def test_np_constant(N, k):
+    array = core.np_constant(N,k)
+    assert len(array) == N
+    assert all(array == k)
+
 
 def test_dict_map():
     assert (core.dict_map(lambda x: x**2, {'a': 1, 'b': 2, 'c': 3, 'd':  4})
