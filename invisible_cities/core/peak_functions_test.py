@@ -98,12 +98,9 @@ def toy_pmt_signal():
     return pmt
 
 
-def toy_pmt_sum(v, npmt = 10):
-    """Return the sum of npmt waveforms"""
-    vsum = np.zeros(v.shape[0])
-    for i in range(npmt):
-        vsum = np.add(vsum, v)
-    return vsum
+def toy_pmt_scale(v, npmt = 10):
+    """Scale v by pmt"""
+    return npmt * v
 
 
 def toy_cwf_and_adc(v, npmt=10):
@@ -128,7 +125,7 @@ def test_csum_zs_s12():
     5) test that find_S12 is the same in python and cython functions.
     """
     v = toy_pmt_signal()
-    vsum = toy_pmt_sum(v, npmt=10)
+    vsum = toy_pmt_scale(v, npmt=10)
     CWF, adc_to_pes = toy_cwf_and_adc(v, npmt=10)
     csum = cpf.calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=1, thr_MAU=0)
     npt.assert_allclose(vsum, csum)
