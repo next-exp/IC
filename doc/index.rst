@@ -13,6 +13,7 @@ Contents:
 
    contributing
    notebooks
+   core
 
 
 
