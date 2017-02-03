@@ -68,18 +68,13 @@ def test_csum_python_cython():
     with tb.open_file(RWF_file, 'r') as h5rwf:
         pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
         for event in range(10):
-            csum_blr = cpf.calibrated_pmt_sum(pmtblr[event].astype(np.float64),
-                                              adc_to_pes,
-                                              n_MAU=100, thr_MAU=3)
-
-            csum_blr_py = pf.calibrated_pmt_sum(pmtblr[event],
-                                                adc_to_pes,
-                                                n_MAU=100, thr_MAU=3)
+            csum_blr    = cpf.calibrated_pmt_sum(pmtblr[event].astype(np.float64), adc_to_pes, n_MAU=100, thr_MAU=3)
+            csum_blr_py =  pf.calibrated_pmt_sum(pmtblr[event].astype(np.float64), adc_to_pes, n_MAU=100, thr_MAU=3)
 
             assert abs(np.sum(csum_blr) - np.sum(csum_blr_py)) < 1e-4
 
-            wfzs_ene, wfzs_indx = cpf.wfzs(csum_blr, threshold=0.5)
-            wfzs_ene_py, wfzs_indx_py = pf.wfzs(csum_blr_py, threshold=0.5)
+            wfzs_ene,    wfzs_indx    = cpf.wfzs(csum_blr,    threshold=0.5)
+            wfzs_ene_py, wfzs_indx_py =  pf.wfzs(csum_blr_py, threshold=0.5)
 
             assert abs(np.sum(wfzs_ene) - np.sum(wfzs_ene_py)) < 1e-4
             assert abs(np.sum(wfzs_ene) - np.sum(wfzs_ene_py)) < 1e-4
