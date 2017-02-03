@@ -15,7 +15,7 @@ from glob import glob
 import tables as tb
 import numpy as np
 
-import pytest
+from pytest import mark
 
 from   invisible_cities.core.configure import configure
 import invisible_cities.core.tbl_functions as tbl
@@ -29,6 +29,7 @@ from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
 
+@mark.slow
 def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
     """Test that Diomira & Irene runs on default config parameters."""
 
