@@ -200,10 +200,10 @@ def find_S12(wfzs, tmin=0*units.mus, tmax=1200*units.mus,
             j += 1
             S12[j] = [(T[i], P[i])]
         else:
-            S12[j].append((T[i], P[i])
+            S12[j].append((T[i], P[i]))
 
     S12L = []
     for s in S12:
-        if lmin <= and len(s) < lmax:
+        if lmin <= len(s) < lmax:
             S12L.append(pd.DataFrame(s, columns=['time_ns','ene_pes']))
     return S12L
