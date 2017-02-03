@@ -1,13 +1,14 @@
 from setuptools import setup
 from Cython.Build import cythonize
 from os import path
+from subprocess import check_output
 import numpy
 numpy_include = path.join(path.dirname(numpy.__file__), 'core/include')
 
 
 
 setup(name         = 'invisible cities',
-      version      = 'TODO: automate this! Try setuptools-git-version',
+      version      = check_output('git describe --tags --always'.split()).decode(),
       description  = 'NEXT blah blah',
       url          = 'https://github.com/nextic/IC',
       author       = 'NEXT collaboration',
