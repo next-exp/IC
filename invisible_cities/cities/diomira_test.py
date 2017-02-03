@@ -29,6 +29,7 @@ from   invisible_cities.core.random_sampling \
 
 
 @mark.serial
+@mark.slow
 def test_diomira_run(irene_diomira_chain_tmpdir):
     """Test that DIOMIRA runs on default config parameters."""
     RWF_file = str(irene_diomira_chain_tmpdir.join(
@@ -51,6 +52,7 @@ def test_diomira_run(irene_diomira_chain_tmpdir):
     assert nevt == nevts
 
 @mark.serial
+@mark.slow # not slow in itself, but in series with test_diomira_run
 def test_diomira_fee_table(irene_diomira_chain_tmpdir):
     """Test that FEE table reads back correctly with expected values."""
     RWF_file = str(irene_diomira_chain_tmpdir.join(
@@ -83,6 +85,7 @@ def test_diomira_fee_table(irene_diomira_chain_tmpdir):
 
 
 @mark.serial
+@mark.slow # not slow in itself, but in series with test_diomira_run
 def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
     """This is the most rigurous test of the suite. It reads back the
        RWF and BLR waveforms written to disk by DIOMIRA, and computes
@@ -114,6 +117,7 @@ def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
                 assert diff < eps
 
 
+@mark.slow
 def test_diomira_sipm(irene_diomira_chain_tmpdir):
     """This test checks that the number of SiPms surviving a hard energy
         cut (50 pes) is always small (<10). The test exercises the full
