@@ -46,7 +46,7 @@ def test_rebin_wf2(t):
     np.testing.assert_allclose(np.sum(e), np.sum(E), rtol=1e-5, atol=1e-5)
 
 
-def compare_cwf_blr_test():
+def test_compare_cwf_blr():
     """Test functions cwf_from_rwf() and compare_cwf_blr().
     The test:
     1) Computes CWF from RWF (function cwf_from_rwf())
