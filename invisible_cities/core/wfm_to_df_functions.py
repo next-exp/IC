@@ -48,7 +48,7 @@ def get_energy_of_waveform_for_event_list_as_df(pmtea, event_list=[0]):
     for i in event_list:
         epmt = np.zeros(NPMT)
         for j in range(NPMT):
-            epmt[j] = np.sum(pmtea[i, j])
+            epmt[j] = 2 # np.sum(pmtea[i, j])
         EPMT.append(epmt)
 
     return pd.DataFrame(EPMT)
