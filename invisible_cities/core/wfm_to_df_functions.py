@@ -189,12 +189,8 @@ def find_S12(wfzs, tmin=0*units.mus, tmax=1200*units.mus,
     S12[0] = [(T[0], P[0])]
 
     for i in range(1, len(wfzs)):
-
-        if T[i] > tmax:
-            break
-
-        if T[i] < tmin:
-            continue
+        if T[i] > tmax: break
+        if T[i] < tmin: continue
 
         if wfzs.index[i] - stride > wfzs.index[i-1]:  #new s12
             j += 1
