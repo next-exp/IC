@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 from os import getenv, path
 from pytest import mark
+from hypothesis import given, example
+from hypothesis.strategies import integers, floats, one_of, none
 
 import invisible_cities.core.configure as conf
 
@@ -194,3 +196,26 @@ def test_configure(config_tmpdir, spec):
     # Check that all options have the expected values
     for option in this_configuration:
         assert CFP[option] == this_configuration[option], 'option = ' + option
+
+
+
+@given(one_of(integers(),
+              floats(allow_nan=False, allow_infinity=False)),
+       none())
+@example(True,  True)
+@example(False, False)
+@example(    '$PWD',          getenv('PWD'))
+@example('xxx/$PWD', 'xxx/' + getenv('PWD'))
+@example('astring', 'astring')
+@example('spa ace', 'spa ace')
+def test_cast(i,o):
+    # `given` generates integers or floats as input: their string
+    # representation needs to be seen by `cast`.
+    input  = str(i)
+    # `given` generates `None` as the correct answer, signalling to
+    # the test that the answer should be obtained by evaluating the
+    # input; `example` passes in the exact correct answer, signalling
+    # that that is the value we should use in the assertion.
+    output = eval(input) if o is None else o
+
+    assert conf.cast(input) == output
