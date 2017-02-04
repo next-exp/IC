@@ -102,24 +102,18 @@ def cast(value):
     Parameters
     ----------
     value : string
-        Token to be casted.
+        Token to be cast.
 
     Returns
     -------
-    casted_value : variable
-        Python variable of the guessed type.
+    cast_value : object
+        Python object of the guessed type.
     """
-    if value == "True":
-        return True
-    if value == "False":
-        return False
-    if value.isdigit():
-        return int(value)
-    if value.replace(".", "").isdigit():
-        return float(value)
-    if "$" in value:
-        value = os.path.expandvars(value)
-    return value
+    if value in ('True', 'False'): return eval(value)
+    for parse in (int, float):
+        try:                       return parse(value)
+        except ValueError: pass
+    else:                          return os.path.expandvars(value)
 
 
 def read_config_file(cfile):
