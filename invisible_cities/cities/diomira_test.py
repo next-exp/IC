@@ -10,6 +10,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import os
+from os import path
 from glob import glob
 import tables as tb
 import numpy as np
@@ -34,7 +35,7 @@ def test_diomira_run(irene_diomira_chain_tmpdir):
     """Test that DIOMIRA runs on default config parameters."""
     RWF_file = str(irene_diomira_chain_tmpdir.join(
                    'electrons_40keV_z250_RWF.h5'))
-    conf_file = os.environ['ICDIR'] + '/config/diomira.conf'
+    conf_file = path.join(os.environ['ICDIR'], 'config/diomira.conf')
     CFP = configure(['DIOMIRA','-c', conf_file, '-o', RWF_file])
     fpp = Diomira()
     files_in = glob(CFP['FILE_IN'])
@@ -129,8 +130,8 @@ def test_diomira_sipm(irene_diomira_chain_tmpdir):
     sipm_noise_cut = 20 # in pes. Should kill essentially all background
 
     max_sipm_with_signal = 10
-    infile = (os.environ['ICDIR']
-     + '/database/test_data/electrons_40keV_z250_MCRD.h5')
+    infile = os.path.join(os.environ['ICDIR'],
+                          'database/test_data/electrons_40keV_z250_MCRD.h5')
     with tb.open_file(infile, 'r') as e40rd:
 
         NEVENTS_DST, NSIPM, SIPMWL = e40rd.root.sipmrd.shape
@@ -175,8 +176,8 @@ def test_diomira_identify_bug():
     The same event is later processed with Irene (where a protection
     that skips empty events has been added) to ensure that no crash occur."""
 
-    infile = (os.environ['ICDIR']
-     + '/database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
+    infile = path.join(os.environ['ICDIR'],
+                       'database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
     with tb.open_file(infile, 'r') as h5in:
 
         pmtrd  = h5in.root.pmtrd
