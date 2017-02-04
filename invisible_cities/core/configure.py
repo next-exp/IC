@@ -43,11 +43,11 @@ def configure(input_options=sys.argv):
                         help="input file")
     parser.add_argument("-o", metavar="ofile", type=str,
                         help="output file")
-    parser.add_argument("-n", metavar="nevt", type=int,
+    parser.add_argument("-n", metavar="nevt", type=str,
                         help="number of events to be processed")
-    parser.add_argument("-s", metavar="skip", type=int, default=0,
+    parser.add_argument("-s", metavar="skip", type=str, default=0,
                         help="number of events to be skipped")
-    parser.add_argument("-p", metavar="print_mod", type=int,
+    parser.add_argument("-p", metavar="print_mod", type=str,
                         help="print every this number of events")
     parser.add_argument("--runall", action="store_true",
                         help="number of events to be skipped")
@@ -62,11 +62,11 @@ def configure(input_options=sys.argv):
     if flags.o is not None:
         options["FILE_OUT"] = flags.o
     if flags.n is not None:
-        options["NEVENTS"] = flags.n
+        options["NEVENTS"] = int(flags.n)
     if flags.s is not None:
-        options["SKIP"] = flags.s
+        options["SKIP"] = int(flags.s)
     if flags.p is not None:
-        options["PRINT_MOD"] = flags.p
+        options["PRINT_MOD"] = int(flags.p)
     if flags.runall:
         options["RUN_ALL"] = flags.runall
     options["INFO"] = flags.I
