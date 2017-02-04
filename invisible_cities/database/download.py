@@ -3,11 +3,12 @@ import pymysql
 import pymysql as MySQLdb
 pymysql.install_as_MySQLdb()
 import os
+from os import path
 from base64 import b64decode as dec
 
 
 def loadDB():
-    dbfile = os.environ['ICDIR'] + '/database/localdb.sqlite3'
+    dbfile = path.join(os.environ['ICDIR'], 'database/localdb.sqlite3')
     try:
         os.remove(dbfile)
     except:

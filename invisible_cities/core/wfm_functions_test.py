@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import os
+from os import path
 from hypothesis import given, assume
 from hypothesis.strategies import lists, integers, floats
 from hypothesis.extra.numpy import arrays
@@ -56,8 +57,8 @@ def test_compare_cwf_blr():
     Input file (needed in repository): electrons_40keV_z250_RWF.h5
     """
 
-    RWF_file = (os.environ['ICDIR']
-             + '/database/test_data/electrons_40keV_z250_RWF.h5')
+    RWF_file = path.join(os.environ['ICDIR'],
+                         'database/test_data/electrons_40keV_z250_RWF.h5')
     h5rwf = tb.open_file(RWF_file,'r')
     pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
     NEVT, NPMT, PMTWL = pmtrwf.shape
