@@ -11,6 +11,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import os
+from os import path
 from glob import glob
 import tables as tb
 import numpy as np
@@ -33,12 +34,12 @@ from   invisible_cities.core.random_sampling \
 def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
     """Test that Diomira & Irene runs on default config parameters."""
 
-    MCRD_file = (os.environ['ICDIR']
-     + '/database/test_data/electrons_40keV_z250_MCRD.h5')
+    MCRD_file = path.join(os.environ['ICDIR'],
+                          'database/test_data/electrons_40keV_z250_MCRD.h5')
 
     RWF_file = str(irene_diomira_chain_tmpdir.join(
                    'electrons_40keV_z250_RWF.h5'))
-    conf_file = os.environ['ICDIR'] + '/config/diomira.conf'
+    conf_file = path.join(os.environ['ICDIR'], 'config/diomira.conf')
     CFP = configure(['DIOMIRA',
                      '-c', conf_file,
                      '-i', MCRD_file,
@@ -58,7 +59,7 @@ def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
     assert nevt == nevts
 
     # Irene
-    conf_file = os.environ['ICDIR'] + '/config/irene.conf'
+    conf_file = path.join(os.environ['ICDIR'], 'config/irene.conf')
     PMP_file = str(irene_diomira_chain_tmpdir.join(
                    'electrons_40keV_z250_PMP.h5'))
     CFP = configure(['IRENE',
@@ -106,9 +107,9 @@ def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
 def test_empty_events(irene_diomira_chain_tmpdir):
     """Test Irene on a file containing an empty event."""
 
-    RWF_file = (os.environ['ICDIR']
-               + '/database/test_data/irene_bug_Kr_ACTIVE_7bar_RWF.h5')
-    conf_file = os.environ['ICDIR'] + '/config/irene.conf'
+    RWF_file = path.join(os.environ['ICDIR'],
+                         'database/test_data/irene_bug_Kr_ACTIVE_7bar_RWF.h5')
+    conf_file = path.join(os.environ['ICDIR'], 'config/irene.conf')
 
     PMP_file = str(irene_diomira_chain_tmpdir.join(
                   'electrons_40keV_z250_PMP.h5'))
