@@ -39,20 +39,20 @@ def calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=200, thr_MAU=5):
 
     pmt_thr = np.zeros((NPMT, NWF), dtype=np.double)
     csum    = np.zeros(       NWF,  dtype=np.double)
+    csum_mau    = np.zeros(   NWF,  dtype=np.double)
     MAU_pmt = np.zeros(       NWF,  dtype=np.double)
 
+    MAUL=[]
     for j in range(NPMT):
         # MAU for each of the PMTs, following the waveform
         MAU_pmt = signal.lfilter(MAU, 1, CWF[j,:])
-
+        MAUL.append(MAU_pmt)
+        csum += CWF[j] * 1 / adc_to_pes[j]
         for k in range(NWF):
             if CWF[j,k] >= MAU_pmt[k] + thr_MAU: # >= not >. Found testing
                 pmt_thr[j,k] = CWF[j,k]
-
-    for j in range(NPMT):
-        for k in range(NWF):
-            csum[k] += pmt_thr[j, k] * 1 / adc_to_pes[j]
-    return csum
+        csum_mau += pmt_thr[j] * 1 / adc_to_pes[j]
+    return csum, csum_mau, np.array(MAUL)
 
 
 def wfzs(wf, threshold=0):
