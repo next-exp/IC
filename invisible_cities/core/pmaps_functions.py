@@ -16,17 +16,16 @@ from   invisible_cities.core.mpl_functions import circles
 
 
 
-def read_pmaps(path, pmap_file):
+def read_pmaps(PMP_file):
     """Return the PMAPS as PD DataFrames."""
+    with tb.open_file(PMP_file, 'r') as h5f:
+        s1t = h5f.root.PMAPS.S1
+        s2t = h5f.root.PMAPS.S2
+        s2sit = h5f.root.PMAPS.S2Si
 
-    h5f = tb.open_file(path + pmap_file, 'r+')
-    s1t = h5f.root.PMAPS.S1
-    s2t = h5f.root.PMAPS.S2
-    s2sit = h5f.root.PMAPS.S2Si
-
-    return (pd.DataFrame.from_records(s1t  .read()),
-            pd.DataFrame.from_records(s2t  .read()),
-            pd.DataFrame.from_records(s2sit.read()))
+        return (pd.DataFrame.from_records(s1t  .read()),
+                pd.DataFrame.from_records(s2t  .read()),
+                pd.DataFrame.from_records(s2sit.read()))
 
 
 def s12df_to_s12l(s12df, evt_max=10):
