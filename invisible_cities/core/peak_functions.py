@@ -37,12 +37,12 @@ def calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=200, thr_MAU=5):
     NWF  = CWF.shape[1]
     MAU  = np.array(np.ones(n_MAU), dtype=np.double) * (1 / n_MAU)
 
-    pmt_thr = np.zeros((NPMT, NWF), dtype=np.double)
-    csum    = np.zeros(       NWF,  dtype=np.double)
-    csum_mau    = np.zeros(   NWF,  dtype=np.double)
-    MAU_pmt = np.zeros(       NWF,  dtype=np.double)
+    pmt_thr  = np.zeros((NPMT, NWF), dtype=np.double)
+    csum     = np.zeros(       NWF,  dtype=np.double)
+    csum_mau = np.zeros(       NWF,  dtype=np.double)
+    MAU_pmt  = np.zeros(       NWF,  dtype=np.double)
 
-    MAUL=[]
+    MAUL = []
     for j in range(NPMT):
         # MAU for each of the PMTs, following the waveform
         MAU_pmt = signal.lfilter(MAU, 1, CWF[j,:])
