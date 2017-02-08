@@ -32,7 +32,8 @@ cpdef calibrated_pmt_sum(double [:, :] CWF,
 
     # CWF if above MAU threshold
     cdef double [:, :] pmt_thr = np.zeros((NPMT,NWF), dtype=np.double)
-    cdef double [:]       csum = np.zeros(      NWF , dtype=np.double)
+    cdef double [:]    csum = np.zeros(         NWF , dtype=np.double)
+    cdef double [:]    csum_mau = np.zeros(     NWF , dtype=np.double)
     cdef double [:]    MAU_pmt = np.zeros(      NWF , dtype=np.double)
 
     for j in range(NPMT):
@@ -45,8 +46,10 @@ cpdef calibrated_pmt_sum(double [:, :] CWF,
 
     for j in range(NPMT):
         for k in range(NWF):
-            csum[k] += pmt_thr[j, k] * 1 / adc_to_pes[j]
-    return np.asarray(csum)
+            csum_mau[k] += pmt_thr[j, k] * 1 / adc_to_pes[j]
+            csum[k] += CWF[j, k] * 1 / adc_to_pes[j]
+
+    return np.asarray(csum), np.asarray(csum_mau)
 
 
 cpdef wfzs(double [:] wf, double threshold=0):
