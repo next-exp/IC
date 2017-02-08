@@ -63,10 +63,10 @@ def plot_signal(signal_t, signal, title="signal",
 
 
 def plot_signal_vs_time_mus(signal,
-                            t_min=0,
-                            t_max=1200,
-                            signal_min=0,
-                            signal_max=200):
+                            t_min      =    0,
+                            t_max      = 1200,
+                            signal_min =    0,
+                            signal_max =  200):
     """Plot signal versus time in mus (tmin, tmax in mus). """
     tstep = 25 # in ns
     PMTWL = signal.shape[0]
@@ -74,16 +74,16 @@ def plot_signal_vs_time_mus(signal,
     ax1 = plt.subplot(1, 1, 1)
     ax1.set_xlim([t_min, t_max])
     ax1.set_ylim([signal_min, signal_max])
-    set_plot_labels(xlabel="t (mus)",
-                    ylabel="signal (pes/adc)")
+    set_plot_labels(xlabel = "t (mus)",
+                    ylabel = "signal (pes/adc)")
     plt.plot(signal_t, signal)
 
 
 def plot_pmt_signals_vs_time_mus(pmt_signals,
-                                 t_min=0,
-                                 t_max=1200,
-                                 signal_min=0,
-                                 signal_max=200):
+                                 t_min      =    0,
+                                 t_max      = 1200,
+                                 signal_min =    0,
+                                 signal_max =  200):
     """Plot all the PMT signals versus time in mus (tmin, tmax in mus)."""
 
     tstep = 25
@@ -94,8 +94,8 @@ def plot_pmt_signals_vs_time_mus(pmt_signals,
         ax1 = plt.subplot(3, 4, i+1)
         ax1.set_xlim([t_min, t_max])
         ax1.set_ylim([signal_min, signal_max])
-        set_plot_labels(xlabel="t (mus)",
-                        ylabel="signal (pes/adc)")
+        set_plot_labels(xlabel = "t (mus)",
+                        ylabel = "signal (pes/adc)")
 
         plt.plot(signal_t, pmt_signals[i])
 
