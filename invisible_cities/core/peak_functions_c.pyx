@@ -31,10 +31,10 @@ cpdef calibrated_pmt_sum(double [:, :] CWF,
 
 
     # CWF if above MAU threshold
-    cdef double [:, :] pmt_thr = np.zeros((NPMT,NWF), dtype=np.double)
-    cdef double [:]    csum = np.zeros(         NWF , dtype=np.double)
-    cdef double [:]    csum_mau = np.zeros(     NWF , dtype=np.double)
-    cdef double [:]    MAU_pmt = np.zeros(      NWF , dtype=np.double)
+    cdef double [:, :] pmt_thr  = np.zeros((NPMT,NWF), dtype=np.double)
+    cdef double [:]    csum     = np.zeros(      NWF , dtype=np.double)
+    cdef double [:]    csum_mau = np.zeros(      NWF , dtype=np.double)
+    cdef double [:]    MAU_pmt  = np.zeros(      NWF , dtype=np.double)
 
     for j in range(NPMT):
         # MAU for each of the PMTs, following the waveform
