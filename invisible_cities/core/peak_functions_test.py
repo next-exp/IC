@@ -37,11 +37,15 @@ def test_csum_zs_blr_cwf():
 
         for event in range(10):
             CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr)
-            csum_cwf = cpf.calibrated_pmt_sum(CWF, adc_to_pes,
-                                              n_MAU=100, thr_MAU=3)
-            csum_blr = cpf.calibrated_pmt_sum(pmtblr[event].astype(np.float64),
-                                              adc_to_pes,
-                                              n_MAU=100, thr_MAU=3)
+            csum_cwf, _ = cpf.calibrated_pmt_sum(
+                             CWF,
+                             adc_to_pes,
+                             n_MAU=100, thr_MAU=3)
+
+            csum_blr, _ = cpf.calibrated_pmt_sum(
+                             pmtblr[event].astype(np.float64),
+                             adc_to_pes,
+                             n_MAU=100, thr_MAU=3)
 
             diff = csum_cwf - csum_blr
             norm = np.sum(csum_blr)
@@ -68,8 +72,14 @@ def test_csum_python_cython():
     with tb.open_file(RWF_file, 'r') as h5rwf:
         pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
         for event in range(10):
-            csum_blr    = cpf.calibrated_pmt_sum(pmtblr[event].astype(np.float64), adc_to_pes, n_MAU=100, thr_MAU=3)
-            csum_blr_py =  pf.calibrated_pmt_sum(pmtblr[event].astype(np.float64), adc_to_pes, n_MAU=100, thr_MAU=3)
+            csum_blr, _  =      cpf.calibrated_pmt_sum(
+                                   pmtblr[event].astype(np.float64),
+                                   adc_to_pes,
+                                   n_MAU=100, thr_MAU=3)
+            csum_blr_py, _, _ = pf.calibrated_pmt_sum(
+                                   pmtblr[event].astype(np.float64),
+                                   adc_to_pes,
+                                   n_MAU=100, thr_MAU=3)
 
             assert abs(np.sum(csum_blr) - np.sum(csum_blr_py)) < 1e-4
 
@@ -118,7 +128,7 @@ def test_csum_zs_s12():
     npmt = 10
     vsum = v * npmt
     CWF, adc_to_pes = toy_cwf_and_adc(v, npmt=npmt)
-    csum = cpf.calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=1, thr_MAU=0)
+    csum, _ = cpf.calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=1, thr_MAU=0)
     npt.assert_allclose(vsum, csum)
 
     vsum_zs = vsum_zsum(vsum, threshold=10)
@@ -145,7 +155,7 @@ def test_csum_zs_s12():
              tmin = 0, tmax = 1e+6,
              lmin = 0, lmax = 1000000,
              stride=4, rebin=False, rebin_stride=40)
-    
+
     for i in S12L1:
         t1 = S12L1[i][0]
         e1 = S12L1[i][1]
