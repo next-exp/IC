@@ -1,6 +1,6 @@
 """
-code: maurilla_test.py
-description: test suite for maurilla
+code: maurilia_test.py
+description: test suite for maurilia
 author: Josh Renner
 IC core team: Jacek Generowicz, JJGC,
 G. Martinez, J.A. Hernando, J.M Benlloch
@@ -24,7 +24,7 @@ import invisible_cities.core.system_of_units as units
 from   invisible_cities.sierpe import fee as FEE
 import invisible_cities.sierpe.blr as blr
 from   invisible_cities.database import load_db
-from   invisible_cities.cities.maurilla import Maurilla
+from   invisible_cities.cities.maurilia import Maurilia
 from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
@@ -50,16 +50,16 @@ config_file_contents = config_file_format.format(**config_file_spec)
 
 @mark.serial
 @mark.slow
-def test_maurilla_run(config_tmpdir):
+def test_maurilia_run(config_tmpdir):
     """Test that MAURILLA runs on default config parameters."""
 
-    conf_file_name = str(config_tmpdir.join('maurilla_test.conf'))
+    conf_file_name = str(config_tmpdir.join('maurilia_test.conf'))
     with open(conf_file_name, 'w') as conf_file:
         conf_file.write(config_file_contents)
 
-    conf_file = path.join(os.environ['ICDIR'], 'config/maurilla.conf')
+    conf_file = path.join(os.environ['ICDIR'], 'config/maurilia.conf')
     CFP = configure(['MAURILLA','-c', conf_file])
-    fpp = Maurilla()
+    fpp = Maurilia()
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
     fpp.set_input_files(files_in)

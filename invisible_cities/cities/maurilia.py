@@ -1,5 +1,5 @@
 """
-code: maurilla.py
+code: maurilia.py
 description: extracts MC truth information from HDF5 file (writes
  to a separate file)
 author: Josh Renner
@@ -26,9 +26,9 @@ from invisible_cities.database import load_db
 import invisible_cities.sierpe.fee as FE
 
 
-class Maurilla:
+class Maurilia:
     """
-    The city of MAURILLA extracts MC truth PyTable from HDF5 files.
+    The city of MAURILIA extracts MC truth PyTable from HDF5 files.
     """
     def __init__(self):
         """
@@ -65,7 +65,7 @@ class Maurilla:
             raise IOError('must set output file before running')
 
         print("""
-                 MAURILLA will run
+                 MAURILIA will run
                  Input Files = {}
                  Output File = {}
                           """.format(self.input_files,
@@ -100,11 +100,11 @@ class Maurilla:
         self.h5out.close()
 
 
-def MAURILLA(argv=sys.argv):
-    """MAURILLA DRIVER"""
+def MAURILIA(argv=sys.argv):
+    """MAURILIA DRIVER"""
 
     CFP = configure(argv)
-    fpp = Maurilla()
+    fpp = Maurilia()
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
     fpp.set_input_files(files_in)
@@ -120,4 +120,4 @@ def MAURILLA(argv=sys.argv):
 
 
 if __name__ == "__main__":
-    MAURILLA(sys.argv)
+    MAURILIA(sys.argv)
