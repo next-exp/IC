@@ -110,12 +110,8 @@ def test_isidora_run(config_tmpdir):
     with tb.open_file(RWF_file, 'r') as h5in, tb.open_file(CWF_file, 'r') as h5out:
         pmtblr = h5in. root.RD. pmtblr
         pmtcwf = h5out.root.BLR.pmtcwf
-        for event in range(nevt):
-            BLR = pmtblr[event]
-            CWF = pmtcwf[event]
-            for pmt in range(len(BLR)):
-                diff = abs(np.sum(BLR[pmt][peak_start:peak_end]) -
-                           np.sum(CWF[pmt][peak_start:peak_end]))
-                diff = 100 * diff / np.sum(pmtblr[event][pmt])
-                assert diff < eps
-
+        pmtblr_roi = pmtblr[ :nevt, : , peak_start:peak_end]
+        pmtcwf_roi = pmtcwf[ :nevt, : , peak_start:peak_end]
+        pmtblr_sum = np.sum(pmtblr_roi, axis=2)
+        pmtcwf_sum = np.sum(pmtcwf_roi, axis=2)
+        np.testing.assert_allclose(pmtcwf_sum, pmtblr_sum, rtol=0.01, atol=0)
