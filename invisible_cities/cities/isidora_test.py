@@ -16,9 +16,10 @@ from glob import glob
 import tables as tb
 import numpy as np
 
-from pytest import mark
+from pytest import mark, raises
 
 from   invisible_cities.core.configure import configure
+from   invisible_cities.core.exceptions import NoInputFiles
 import invisible_cities.core.tbl_functions as tbl
 import invisible_cities.core.system_of_units as units
 from   invisible_cities.sierpe import fee as FEE
@@ -115,3 +116,12 @@ def test_isidora_run(config_tmpdir):
         pmtblr_sum = np.sum(pmtblr_roi, axis=2)
         pmtcwf_sum = np.sum(pmtcwf_roi, axis=2)
         np.testing.assert_allclose(pmtcwf_sum, pmtblr_sum, rtol=0.01, atol=0)
+
+
+def test_isidora_no_input():
+    """Test that Isidora throws NoInputFiles exceptions if no input files
+       are defined. """
+
+    with raises(NoInputFiles):
+        fpp = Isidora(run_number = 0)
+        fpp.run(nmax=1)

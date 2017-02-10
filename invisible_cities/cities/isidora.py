@@ -18,6 +18,7 @@ import invisible_cities.sierpe.blr as blr
 import invisible_cities.core.peak_functions_c as cpf
 from   invisible_cities.core.system_of_units_c import SystemOfUnits
 from   invisible_cities.database import load_db
+from   invisible_cities.core.exceptions import NoInputFiles
 
 units = SystemOfUnits()
 
@@ -117,11 +118,8 @@ class Isidora:
         """
         n_events_tot = 0
         # check the state of the machine
-        if not self.input_files:
-            raise IOError('input file list is empty')
-
         if not self.setFiles:
-            raise IOError('must set files before running')
+            raise NoInputFiles('Input file list is empty, set it before running')
 
         print("""
                  ISIDORA will run a max of {} events
