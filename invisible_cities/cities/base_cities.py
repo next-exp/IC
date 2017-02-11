@@ -8,7 +8,7 @@ units = SystemOfUnits()
 
 class City:
 
-    def __init__(self, run_number=0, files_in = None):
+    def __init__(self, run_number=0, files_in=None):
 
         self.run_number = run_number
         self.files_in   = files_in
@@ -23,11 +23,10 @@ class City:
         self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
         self.coeff_c         = DataPMT.coeff_c.values        .astype(np.double)
         self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
+        self.noise_rms       = DataPMT.noise_rms.values      .astype(np.double)
 
         # default parameters
         self.nprint       = 1000000
-        self.signal_start =       0 # microseconds
-        self.signal_end   =    1200 # microseconds
 
         self.input_files = files_in
 

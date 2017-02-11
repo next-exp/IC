@@ -201,11 +201,14 @@ class Irene(DeconvolutionCity):
 
         # TODO replace IOError with IC Exceptions
 
+        # TODO checks like the ones in the following block are
+        # repeated in the run method of all cities. See whether this
+        # can be abstracted.
+
         n_events_tot = 0
         # check the state of the machine
         if not self.input_files:
             raise IOError('input file list is empty')
-
         if not self.input_files:
             raise IOError('must set files before running')
         if (not self.s1_params) or (not self.s2_params):
