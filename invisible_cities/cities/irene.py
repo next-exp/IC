@@ -28,6 +28,7 @@ units = SystemOfUnits()
 
 
 S12Params = namedtuple('S12Params', 'tmin tmax stride lmin lmax')
+S12P = S12Params
 
 class Irene(DeconvolutionCity):
     """
@@ -134,7 +135,7 @@ class Irene(DeconvolutionCity):
         self.thr_zs      = thr_zs
         self.thr_sipm_s2 = thr_sipm_s2
 
-    def _store_s12(self, S12, s12_table):
+    def _store_s12(self, S12, s12_table, event):
         row = s12_table.row
         for i in S12:
             time = S12[i][0]
@@ -153,7 +154,7 @@ class Irene(DeconvolutionCity):
                 row.append()
         s12_table.flush()
 
-    def _store_s2si(self, S2Si):
+    def _store_s2si(self, S2Si, event):
         row = self.s2sit.row
         for i in S2Si:
             sipml = S2Si[i]
@@ -175,7 +176,6 @@ class Irene(DeconvolutionCity):
                         row.append()
         self.s2t.flush()
 
-
     def store_pmaps(self, event, evt, S1, S2, S2Si):
         """Store PMAPS."""
         if self.run_number > 0:
@@ -188,9 +188,9 @@ class Irene(DeconvolutionCity):
             row.append()
             self.evtInfot.flush()
         
-        self._store_s12(S1, self.s1t)
-        self._store_s12(S2, self.s2t)
-        self._store_s2si(S2Si)
+        self._store_s12(S1, self.s1t, event)
+        self._store_s12(S2, self.s2t, event)
+        self._store_s2si(S2Si, event)
 
     def run(self, nmax, print_empty=True):
         """
@@ -339,36 +339,40 @@ def IRENE(argv = sys.argv):
     """IRENE DRIVER"""
     CFP = configure(argv)
 
-    fpp = Irene(run_number = CFP['RUN_NUMBER'])
+    fpp = Irene(run_number=CFP['RUN_NUMBER'])
 
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
     fpp.set_input_files(files_in)
     fpp.set_pmap_store(CFP['FILE_OUT'],
                        compression = CFP['COMPRESSION'])
-    fpp.set_print(nprint = CFP['NPRINT'])
+    fpp.set_print(nprint=CFP['NPRINT'])
 
     fpp.set_BLR(n_baseline  = CFP['NBASELINE'],
                 thr_trigger = CFP['THR_TRIGGER'] * units.adc)
+
     fpp.set_MAU(  n_MAU = CFP['NMAU'],
                 thr_MAU = CFP['THR_MAU'] * units.adc)
+
     fpp.set_CSUM(thr_csum = CFP['THR_CSUM'] * units.pes)
-    fpp.set_S1(tmin   = CFP['S1_TMIN'] * units.mus,
-               tmax   = CFP['S1_TMAX'] * units.mus,
-               lmax   = CFP['S1_LMAX'],
-               lmin   = CFP['S1_LMIN'],
-               stride = CFP['S1_STRIDE'])
-    fpp.set_S2(tmin   = CFP['S2_TMIN'] * units.mus,
-               tmax   = CFP['S2_TMAX'] * units.mus,
-               stride = CFP['S2_STRIDE'],
-               lmin   = CFP['S2_LMIN'],
-               lmax   = CFP['S2_LMAX'])
-    fpp.set_sipm(thr_zs      = CFP['THR_ZS']      * units.pes,
-                 thr_sipm_s2 = CFP['THR_SIPM_S2'] * units.pes)
+
+    fpp.set_s12(s1 = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
+                          tmax   = CFP['S1_TMAX'] * units.mus,
+                          stride = CFP['S1_STRIDE'],
+                          lmin   = CFP['S1_LMIN'],
+                          lmax   = CFP['S1_LMAX']),
+                s2 = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
+                          tmax   = CFP['S2_TMAX'] * units.mus,
+                          stride = CFP['S2_STRIDE'],
+                          lmin   = CFP['S2_LMIN'],
+                          lmax   = CFP['S2_LMAX']))
+
+    fpp.set_sipm(thr_zs=CFP['THR_ZS'] * units.pes,
+                 thr_sipm_s2=CFP['THR_SIPM_S2'] * units.pes)
 
     t0 = time()
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
-    nevt = fpp.run(nmax=nevts, print_empty_events=CFP['PRINT_EMPTY_EVENTS'])
+    nevt = fpp.run(nmax=nevts, print_empty=CFP['PRINT_EMPTY_EVENTS'])
     t1 = time()
     dt = t1 - t0
 
