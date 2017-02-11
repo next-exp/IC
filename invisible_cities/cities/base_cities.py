@@ -29,7 +29,7 @@ class City:
         self.signal_start =       0 # microseconds
         self.signal_end   =    1200 # microseconds
 
-        self.input_files = None
+        self.input_files = files_in
 
     def set_print(self, nprint=10):
         """Print frequency."""
@@ -42,13 +42,14 @@ class City:
 class DeconvolutionCity(City):
 
     def __init__(self,
-                 run_number,
+                 run_number  = 0,
+                 files_in    = None,
                  n_baseline  = 28000,
                  thr_trigger = 5 * units.adc,
                  n_MAU       =   100,
                  thr_MAU     = 3 * units.adc):
 
-        City.__init__(self, run_number=0)
+        City.__init__(self, run_number=run_number, files_in=files_in)
 
         # BLR parameters
         self.n_baseline  = n_baseline

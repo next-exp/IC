@@ -44,14 +44,9 @@ class Isidora(DeconvolutionCity):
         Sets all switches to default value.
         """
 
-        DeconvolutionCity.__init__(self, run_number, n_baseline,
-                                   thr_trigger, n_MAU, thr_MAU)
-
-        self.input_files = files_in
-
-        # # TODO these need to be removed everywhere.
-        # # set switches
-        # self.setSiPM      = False
+        DeconvolutionCity.__init__(self, run_number, files_in,
+                                   n_baseline, thr_trigger, n_MAU,
+                                   thr_MAU)
 
     def set_cwf_store(self, cwf_file, compression='ZLIB4'):
         """Set the output files."""
