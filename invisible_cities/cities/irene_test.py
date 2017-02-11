@@ -240,10 +240,10 @@ def config_file_spec_with_tmpdir(tmpdir):
                 THR_ZS             =     10,
                 THR_SIPM_S2        =     30,
                 PRINT_EMPTY_EVENTS = True,
-                NEVENTS            =      5,                
+                NEVENTS            =      5,
                 RUN_ALL            = False)
 
-    
+
 # TODO refactor to factor out config file creation: most of this test
 # is noise; duplication of something that also happens in the above
 # test
@@ -257,4 +257,3 @@ def test_command_line_irene(config_tmpdir):
         conf_file.write(config_file_contents)
 
     IRENE(['IRENE', '-c', conf_file_name])
-
