@@ -300,13 +300,13 @@ class Irene(DeconvolutionCity):
                     # find S1
                     S1 = cpf.find_S12(wfzs_ene,
                                       wfzs_indx,
-                                      **self.s1_params._asdict(),
-                                      rebin = False)
+                                      rebin = False,
+                                      **self.s1_params._asdict())
                     # find S2
                     S2 = cpf.find_S12(wfzs_ene,
                                       wfzs_indx,
-                                      **self.s2_params._asdict(),
-                                      rebin = True)
+                                      rebin = True,
+                                      **self.s2_params._asdict())
                     # SiPMs zero suppression
                     sipmzs = cpf.signal_sipm(
                         sipmrwf[evt],
