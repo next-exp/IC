@@ -20,83 +20,42 @@ from   invisible_cities.core.system_of_units_c import SystemOfUnits
 from   invisible_cities.database import load_db
 from   invisible_cities.core.exceptions import NoInputFiles
 
+from   invisible_cities.cities.base_cities import DeconvolutionCity
+
 units = SystemOfUnits()
 
-
-class Isidora:
+class Isidora(DeconvolutionCity):
     """
     The city of ISIDORA performs a fast processing from raw data
     (pmtrwf and sipmrwf) to BLR wavefunctions.
     It is optimized for speed (use of CYTHON functions) and intended
     for fast processing of data.
     """
-    def __init__(self, run_number=0):
+    def __init__(self,
+                 run_number  = 0,
+                 files_in    = None,
+                 n_baseline  = 28000,
+                 thr_trigger = 5 * units.adc,
+                 n_MAU       =   100,
+                 thr_MAU     = 3 * units.adc):
         """
         Init the machine with the run number.
         Load the data base to access calibration and geometry.
         Sets all switches to default value.
         """
-        # NB: following JCK-1 convention
-        self.run_number = run_number
 
-        DataPMT  = load_db.DataPMT (run_number)
-        DataSiPM = load_db.DataSiPM(run_number)
-
-        # This is JCK-1: text reveals symmetry!
-        self.xs              = DataSiPM.X.values
-        self.ys              = DataSiPM.Y.values
-        self.adc_to_pes      = abs(DataPMT.adc_to_pes.values).astype(np.double)
-        self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
-        self.coeff_c         = DataPMT.coeff_c.values        .astype(np.double)
-        self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
-
-        # BLR default values (override with set_BLR)
-        self.n_baseline   = 28000
-        self.thr_trigger  = 5 * units.adc
-
-        # MAU default values (override with set_MAU)
-        self.  n_MAU      = 100
-        self.thr_MAU      = thr_MAU = 3 * units.adc
-
-        # set switches
-        self.setFiles     = False
-        self.setSiPM      = False
-        self.setCwfStore  = False
-
-        # defaul parameters
-        self.nprint       = 1000000
-        self.signal_start =       0
-        self.signal_end   =    1200
-
-    def set_print(self, nprint=10):
-        """Print frequency."""
-        self.nprint = nprint
-
-    def set_input_files(self, input_files):
-        """Set the input files."""
-        self.input_files = input_files
-        self.setFiles    = True
-
-    def set_BLR(self, n_baseline=38000, thr_trigger=5 * units.adc):
-        """Parameters of the BLR."""
-        self.n_baseline  = n_baseline
-        self.thr_trigger = thr_trigger
-
-    def set_MAU(self, n_MAU=100, thr_MAU=3 * units.adc):
-        """Parameters of the MAU used to remove low frequency noise."""
-        self.  n_MAU =   n_MAU
-        self.thr_MAU = thr_MAU
+        DeconvolutionCity.__init__(self, run_number, files_in,
+                                   n_baseline, thr_trigger, n_MAU,
+                                   thr_MAU)
 
     def set_cwf_store(self, cwf_file, compression='ZLIB4'):
-        """Set the input files."""
-        # open cwf store
+        """Set the output files."""
         self.cwfFile = tb.open_file(
             cwf_file, "w", filters=tbl.filters(compression))
 
         # create a group
         self.cwf_group = self.cwfFile.create_group(self.cwfFile.root, "BLR")
 
-        self.setCwfStore = True
         self.compression = compression
 
     def store_cwf(self, cwf):
@@ -118,7 +77,7 @@ class Isidora:
         """
         n_events_tot = 0
         # check the state of the machine
-        if not self.setFiles:
+        if not self.input_files:
             raise NoInputFiles('Input file list is empty, set it before running')
 
         print("""
@@ -137,7 +96,7 @@ class Isidora:
                 sipmrwf = h5in.root.RD.sipmrwf
 
                 # Copy sensor table if exists (needed for GATE)
-                if self.setCwfStore:
+                if hasattr(self, 'cwfFile'):
                     if 'Sensors' in h5in.root:
                         self.sensors_group = self.cwfFile.create_group(
                             self.cwfFile.root, "Sensors")
@@ -147,7 +106,7 @@ class Isidora:
                 if self.run_number > 0:
                     self.eventsInfo = h5in.root.Run.events
 
-                NEVT, NPMT, PMTWL   = pmtrwf.shape
+                NEVT, NPMT,   PMTWL = pmtrwf .shape
                 NEVT, NSIPM, SIPMWL = sipmrwf.shape
                 print("Events in file = {}".format(NEVT))
 
@@ -169,7 +128,7 @@ class Isidora:
                       n_baseline  = self.n_baseline,
                       thr_trigger = self.thr_trigger)
 
-                    if self.setCwfStore:
+                    if hasattr(self, 'cwfFile'):
                         self.store_cwf(CWF)
 
                     n_events_tot += 1
@@ -182,7 +141,7 @@ class Isidora:
                               .format(nmax))
                         break
 
-        if self.setCwfStore:
+        if hasattr(self, 'cwfFile'):
             self.cwfFile.close()
 
         return n_events_tot
@@ -192,19 +151,21 @@ def ISIDORA(argv = sys.argv):
     """ISIDORA DRIVER"""
     CFP = configure(argv)
 
-    fpp = Isidora(run_number = CFP['RUN_NUMBER'])
-
-    files_in = glob(CFP['FILE_IN'])
+    files_in    = glob(CFP['FILE_IN'])
     files_in.sort()
-    fpp.set_input_files(files_in)
+    #fpp.set_input_files(files_in)
+
+    fpp = Isidora(run_number  = CFP['RUN_NUMBER'],
+                  n_baseline  = CFP['NBASELINE'],
+                  thr_trigger = CFP['THR_TRIGGER'] * units.adc,
+                    n_MAU     = CFP['NMAU'],
+                  thr_MAU     = CFP['THR_MAU'] * units.adc,
+                  files_in    = files_in)
+
     fpp.set_cwf_store(CFP['FILE_OUT'],
                        compression = CFP['COMPRESSION'])
     fpp.set_print(nprint = CFP['NPRINT'])
 
-    fpp.set_BLR(n_baseline  = CFP['NBASELINE'],
-                thr_trigger = CFP['THR_TRIGGER'] * units.adc)
-    fpp.set_MAU(  n_MAU = CFP['NMAU'],
-                thr_MAU = CFP['THR_MAU'] * units.adc)
 
     t0 = time()
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
