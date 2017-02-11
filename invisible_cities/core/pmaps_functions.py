@@ -11,6 +11,7 @@ import tables as tb
 import matplotlib.pyplot as plt
 import invisible_cities.core.system_of_units as units
 import invisible_cities.core.pmaps_functions_c as cpm
+import invisible_cities.core.core_functions as cf
 from   invisible_cities.database import load_db
 from   invisible_cities.core.mpl_functions import circles
 
@@ -44,15 +45,15 @@ def s12df_select_event(S12df, event):
     return S12df.loc[lambda df: df.event.values == event, :]
 
 
-def S12df_to_dict_select_peak(S12df, peak):
+def s12df_select_peak(S12df, peak):
     """Return a copy of the s12df for peak."""
     return S12df.loc[lambda df: S12df.peak.values == peak, :]
 
 
 def s12df_get_wvfm(S12df, event, peak):
     """Return the waveform for event, peak."""
-    s12t = S12_select_event(S12df, event)
-    s12p = S12_select_peak(s12t, peak=peak)
+    s12t = s12df_select_event(S12df, event)
+    s12p = s12df_select_peak(s12t, peak)
     return s12p.time.values, s12p.ene.values
 
 
@@ -62,9 +63,8 @@ def s12df_plot_waveforms(S12df, nmin=0, nmax=16, x=4, y=4):
 
     for i in range(nmin, nmax):
         plt.subplot(y, y, i+1)
-        T, E = S12_get_wvfm(S12df, event=i, peak=0)
+        T, E = s12df_get_wvfm(S12df, event=i, peak=0)
         plt.plot(T, E)
-    plt.show()
 
 def sipm_s2(dSIPM, S2, thr=5*units.pes):
     """Given a vector with SIPMs (energies above threshold), return a list
@@ -199,8 +199,11 @@ def s12_features(S12L, peak=0, max_events=100):
     input: S1L
     returns a S1F object for specific peak
     """
-    nk = np.array(S12L.keys())
-    evt_max = np.max(nk)  # max event: but notice that some events may be missing
+    nk = np.array(list(S12L.keys()))
+
+    # max event: but notice that some events may be missing
+    evt_max = np.max(nk)
+
     n = min(evt_max+1, max_events)
     print('required {} events; found in dict {} events'
           .format(max_events, evt_max+1))
@@ -220,7 +223,7 @@ def s12_features(S12L, peak=0, max_events=100):
 
         s1f.w[i] = T[-1] - T[0]
         s1f.emax[i] = np.max(E)
-        i_t = npf.np_loc1d(E, s1f.emax[i])
+        i_t = cf.loc_elem_1d(E, s1f.emax[i])
         s1f.tmax[i] = T[i_t]
         s1f.etot[i] = np.sum(E)
 
