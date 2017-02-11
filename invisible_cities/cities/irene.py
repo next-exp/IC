@@ -134,23 +134,11 @@ class Irene(DeconvolutionCity):
         self.thr_zs      = thr_zs
         self.thr_sipm_s2 = thr_sipm_s2
 
-    def store_pmaps(self, event, evt, S1, S2, S2Si):
-        """Store PMAPS."""
-        if self.run_number > 0:
-            # Event info
-            row     = self.evtInfot.row
-            evtInfo = self.eventsInfo[evt]
-
-            row['evt_number'] = evtInfo[0]
-            row['timestamp']  = evtInfo[1]
-            row.append()
-            self.evtInfot.flush()
-
-        #S1
-        row = self.s1t.row
-        for i in S1:
-            time = S1[i][0]
-            ene  = S1[i][1]
+    def _store_s12(self, S12, s12_table):
+        row = s12_table.row
+        for i in S12:
+            time = S12[i][0]
+            ene  = S12[i][1]
             assert len(time) == len(ene)
             for j in range(len(time)):
                 row["event"] = event
@@ -163,38 +151,19 @@ class Irene(DeconvolutionCity):
                 row["time"] = time[j]
                 row["ene"]  =  ene[j]
                 row.append()
-        self.s1t.flush()
+        s12_table.flush()
 
-        #S2
-        row = self.s2t.row
-        for i in S2.keys():
-            time = S2[i][0]
-            ene  = S2[i][1]
-            assert len(time) == len(ene)
-            for j in range(len(time)):
-                row["event"] = event
-                if self.run_number > 0:
-                    evtInfo = self.eventsInfo[evt]
-                    row["evtDaq"] = evtInfo[0]
-                else:
-                    row["evtDaq"] = event
-                row["peak"] =      i
-                row["time"] = time[j]
-                row["ene"]  =  ene[j]
-                row.append()
-        self.s2t.flush()
-
-        # S2Si
+    def _store_s2si(self, S2Si):
         row = self.s2sit.row
-        for i in S2Si.keys():
+        for i in S2Si:
             sipml = S2Si[i]
             for sipm in sipml:
                 nsipm = sipm[0]
                 ene   = sipm[1]
-                for j in range(len(ene)):
-                    if ene[j] > 0:
+                for j, E in enumerate(ene):
+                    if E > 0:
                         row["event"] = event
-                        if self.run_number >0:
+                        if self.run_number > 0:
                             evtInfo = self.eventsInfo[evt]
                             row["evtDaq"] = evtInfo[0]
                         else:
@@ -202,9 +171,26 @@ class Irene(DeconvolutionCity):
                         row["peak"]    = i
                         row["nsipm"]   = nsipm
                         row["nsample"] = j
-                        row["ene"]     = ene[j]
+                        row["ene"]     = E
                         row.append()
         self.s2t.flush()
+
+
+    def store_pmaps(self, event, evt, S1, S2, S2Si):
+        """Store PMAPS."""
+        if self.run_number > 0:
+            # Event info
+            row     = self.evtInfot.row
+            evtInfo = self.eventsInfo[evt]
+
+            row['evt_number'] = evtInfo[0]
+            row['timestamp']  = evtInfo[1]
+            row.append()
+            self.evtInfot.flush()
+        
+        self._store_s12(S1, self.s1t)
+        self._store_s12(S2, self.s2t)
+        self._store_s2si(S2Si)
 
     def run(self, nmax, print_empty=True):
         """
