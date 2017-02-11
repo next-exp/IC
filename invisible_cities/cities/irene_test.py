@@ -25,7 +25,7 @@ from   invisible_cities.sierpe import fee as FEE
 import invisible_cities.sierpe.blr as blr
 from   invisible_cities.database import load_db
 from   invisible_cities.cities.diomira import Diomira
-from   invisible_cities.cities.irene import Irene
+from   invisible_cities.cities.irene import Irene, S12Params as S12P
 from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
@@ -85,23 +85,22 @@ def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
 
     fpp.set_CSUM(thr_csum=CFP['THR_CSUM'] * units.pes)
 
-    fpp.set_S1(tmin   = CFP['S1_TMIN'] * units.mus,
-               tmax   = CFP['S1_TMAX'] * units.mus,
-               stride = CFP['S1_STRIDE'],
-               lmin   = CFP['S1_LMIN'],
-               lmax   = CFP['S1_LMAX'])
+    fpp.set_s12(s1 = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
+                          tmax   = CFP['S1_TMAX'] * units.mus,
+                          stride = CFP['S1_STRIDE'],
+                          lmin   = CFP['S1_LMIN'],
+                          lmax   = CFP['S1_LMAX']),
+                s2 = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
+                          tmax   = CFP['S2_TMAX'] * units.mus,
+                          stride = CFP['S2_STRIDE'],
+                          lmin   = CFP['S2_LMIN'],
+                          lmax   = CFP['S2_LMAX']))
 
-    fpp.set_S2(tmin   = CFP['S2_TMIN'] * units.mus,
-               tmax   = CFP['S2_TMAX'] * units.mus,
-               stride = CFP['S2_STRIDE'],
-               lmin   = CFP['S2_LMIN'],
-               lmax   = CFP['S2_LMAX'])
-
-    fpp.set_SiPM(thr_zs=CFP['THR_ZS'] * units.pes,
+    fpp.set_sipm(thr_zs=CFP['THR_ZS'] * units.pes,
                  thr_sipm_s2=CFP['THR_SIPM_S2'] * units.pes)
 
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
-    nevt = fpp.run(nmax=nevts, store_pmaps=True)
+    nevt = fpp.run(nmax=nevts)
     assert nevt == nevts
 
 def test_empty_events(irene_diomira_chain_tmpdir):
@@ -120,15 +119,14 @@ def test_empty_events(irene_diomira_chain_tmpdir):
                              '-o', PMP_file,
                              '-n', '5'])
 
-    fpp = Irene(run_number=CFP['RUN_NUMBER'])
+    fpp = Irene(run_number = CFP['RUN_NUMBER'])
 
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
     fpp.set_input_files(files_in)
     fpp.set_pmap_store(CFP['FILE_OUT'],
-                               compression = CFP['COMPRESSION'])
-    fpp.set_print(nprint=CFP['NPRINT'],
-                  print_empty_events=CFP['PRINT_EMPTY_EVENTS'])
+                       compression = CFP['COMPRESSION'])
+    fpp.set_print(nprint=CFP['NPRINT'])
 
     fpp.set_BLR(n_baseline  = CFP['NBASELINE'],
                         thr_trigger = CFP['THR_TRIGGER'] * units.adc)
@@ -138,22 +136,22 @@ def test_empty_events(irene_diomira_chain_tmpdir):
 
     fpp.set_CSUM(thr_csum=CFP['THR_CSUM'] * units.pes)
 
-    fpp.set_S1(tmin   = CFP['S1_TMIN'] * units.mus,
-               tmax   = CFP['S1_TMAX'] * units.mus,
-               stride = CFP['S1_STRIDE'],
-               lmin   = CFP['S1_LMIN'],
-               lmax   = CFP['S1_LMAX'])
+    fpp.set_s12(s1 = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
+                          tmax   = CFP['S1_TMAX'] * units.mus,
+                          stride = CFP['S1_STRIDE'],
+                          lmin   = CFP['S1_LMIN'],
+                          lmax   = CFP['S1_LMAX']),
+                s2 = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
+                          tmax   = CFP['S2_TMAX'] * units.mus,
+                          stride = CFP['S2_STRIDE'],
+                          lmin   = CFP['S2_LMIN'],
+                          lmax   = CFP['S2_LMAX']))
 
-    fpp.set_S2(tmin   = CFP['S2_TMIN'] * units.mus,
-               tmax   = CFP['S2_TMAX'] * units.mus,
-               stride = CFP['S2_STRIDE'],
-               lmin   = CFP['S2_LMIN'],
-               lmax   = CFP['S2_LMAX'])
-
-    fpp.set_SiPM(thr_zs=CFP['THR_ZS'] * units.pes,
-                 thr_sipm_s2=CFP['THR_SIPM_S2'] * units.pes)
+    fpp.set_sipm(thr_zs      = CFP['THR_ZS']      * units.pes,
+                 thr_sipm_s2 = CFP['THR_SIPM_S2'] * units.pes)
 
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
-    nevt = fpp.run(nmax=nevts, store_pmaps=True)
+    nevt = fpp.run(nmax=nevts)
     assert fpp.empty_events == 1 # found one empty event
     assert nevt == 0 # event did not process
+

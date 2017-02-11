@@ -48,13 +48,13 @@ class Isidora(DeconvolutionCity):
                                    n_baseline, thr_trigger, n_MAU,
                                    thr_MAU)
 
-    def set_cwf_store(self, cwf_file, compression='ZLIB4'):
+    def set_cwf_store(self, cwf_file_name, compression='ZLIB4'):
         """Set the output files."""
-        self.cwfFile = tb.open_file(
-            cwf_file, "w", filters=tbl.filters(compression))
+        self.cwf_file = tb.open_file(cwf_file_name, "w",
+                                     filters = tbl.filters(compression))
 
         # create a group
-        self.cwf_group = self.cwfFile.create_group(self.cwfFile.root, "BLR")
+        self.cwf_group = self.cwf_file.create_group(self.cwf_file.root, "BLR")
 
         self.compression = compression
 
@@ -63,10 +63,10 @@ class Isidora(DeconvolutionCity):
         NPMT, PMTWL = cwf.shape
         if "pmtcwf" not in self.cwf_group:
             # create earray to store cwf
-            self.pmtcwf = self.cwfFile.create_earray(self.cwf_group, "pmtcwf",
-                                                atom    = tb.Float32Atom(),
-                                                shape   = (0, NPMT, PMTWL),
-                                                filters = tbl.filters(self.compression))
+            self.pmtcwf = self.cwf_file.create_earray(self.cwf_group, "pmtcwf",
+                                                      atom    = tb.Float32Atom(),
+                                                      shape   = (0, NPMT, PMTWL),
+                                                      filters = tbl.filters(self.compression))
         self.pmtcwf.append(cwf.reshape(1, NPMT, PMTWL))
 
 
@@ -96,10 +96,10 @@ class Isidora(DeconvolutionCity):
                 sipmrwf = h5in.root.RD.sipmrwf
 
                 # Copy sensor table if exists (needed for GATE)
-                if hasattr(self, 'cwfFile'):
+                if self.cwf_file:
                     if 'Sensors' in h5in.root:
-                        self.sensors_group = self.cwfFile.create_group(
-                            self.cwfFile.root, "Sensors")
+                        self.sensors_group = self.cwf_file.create_group(
+                            self.cwf_file.root, "Sensors")
                         datapmt = h5in.root.Sensors.DataPMT
                         datapmt.copy(newparent=self.sensors_group)
 
@@ -128,7 +128,7 @@ class Isidora(DeconvolutionCity):
                       n_baseline  = self.n_baseline,
                       thr_trigger = self.thr_trigger)
 
-                    if hasattr(self, 'cwfFile'):
+                    if self.cwf_file:
                         self.store_cwf(CWF)
 
                     n_events_tot += 1
@@ -141,8 +141,8 @@ class Isidora(DeconvolutionCity):
                               .format(nmax))
                         break
 
-        if hasattr(self, 'cwfFile'):
-            self.cwfFile.close()
+        if self.cwf_file:
+            self.cwf_file.close()
 
         return n_events_tot
 
