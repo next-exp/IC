@@ -92,9 +92,7 @@ def test_isidora_run(config_tmpdir):
 
     fpp = Isidora(run_number  = CFP['RUN_NUMBER'],
                   n_baseline  = CFP['NBASELINE'],
-                  thr_trigger = CFP['THR_TRIGGER'] * units.adc,
-                  n_MAU       = CFP['NMAU'],
-                  thr_MAU     = CFP['THR_MAU'] * units.adc)
+                  thr_trigger = CFP['THR_TRIGGER'] * units.adc)
 
     files_in = glob(RWF_file)
     files_in.sort()

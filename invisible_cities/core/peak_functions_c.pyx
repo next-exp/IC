@@ -242,7 +242,6 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
     cdef double [:] MAU = np.array(np.ones(n_MAU),
                                    dtype = np.double) * (1 / n_MAU)
 
-
     cdef double [:, :] siwf = np.zeros((NSiPM, NSiWF), dtype=np.double)
     cdef double [:]    MAU_ = np.zeros(        NSiWF , dtype=np.double)
     cdef double pmean
