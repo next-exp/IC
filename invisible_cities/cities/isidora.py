@@ -31,22 +31,25 @@ class Isidora(DeconvolutionCity):
     It is optimized for speed (use of CYTHON functions) and intended
     for fast processing of data.
     """
+
     def __init__(self,
                  run_number  = 0,
                  files_in    = None,
+                 nprint      = 10000,
                  n_baseline  = 28000,
-                 thr_trigger = 5 * units.adc,
-                 n_MAU       =   100,
-                 thr_MAU     = 3 * units.adc):
+                 thr_trigger = 5 * units.adc):
         """
         Init the machine with the run number.
         Load the data base to access calibration and geometry.
         Sets all switches to default value.
         """
-
-        DeconvolutionCity.__init__(self, run_number, files_in,
-                                   n_baseline, thr_trigger, n_MAU,
-                                   thr_MAU)
+        
+        DeconvolutionCity.__init__(self,
+                                   run_number  = run_number,
+                                   files_in    = files_in,
+                                   nprint      = nprint,
+                                   n_baseline  = n_baseline,
+                                   thr_trigger = thr_trigger)
 
     def set_cwf_store(self, cwf_file_name, compression='ZLIB4'):
         """Set the output files."""
@@ -153,19 +156,17 @@ def ISIDORA(argv = sys.argv):
 
     files_in    = glob(CFP['FILE_IN'])
     files_in.sort()
-    #fpp.set_input_files(files_in)
+
 
     fpp = Isidora(run_number  = CFP['RUN_NUMBER'],
+                  files_in    = files_in,
                   n_baseline  = CFP['NBASELINE'],
-                  thr_trigger = CFP['THR_TRIGGER'] * units.adc,
-                    n_MAU     = CFP['NMAU'],
-                  thr_MAU     = CFP['THR_MAU'] * units.adc,
-                  files_in    = files_in)
+                  thr_trigger = CFP['THR_TRIGGER'] * units.adc)
 
+    #fpp.set_input_files(files_in)
     fpp.set_cwf_store(CFP['FILE_OUT'],
                        compression = CFP['COMPRESSION'])
     fpp.set_print(nprint = CFP['NPRINT'])
-
 
     t0 = time()
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
