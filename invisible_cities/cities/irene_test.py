@@ -25,7 +25,8 @@ from   invisible_cities.sierpe import fee as FEE
 import invisible_cities.sierpe.blr as blr
 from   invisible_cities.database import load_db
 from   invisible_cities.cities.diomira import Diomira
-from   invisible_cities.cities.irene import Irene, S12Params as S12P, IRENE
+from   invisible_cities.cities.irene import Irene, IRENE
+from   invisible_cities.cities.base_cities import S12Params as S12P
 from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
@@ -62,45 +63,63 @@ def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
     conf_file = path.join(os.environ['ICDIR'], 'config/irene.conf')
     PMP_file = str(irene_diomira_chain_tmpdir.join(
                    'electrons_40keV_z250_PMP.h5'))
+
     CFP = configure(['IRENE',
                      '-c', conf_file,
                      '-i', RWF_file,
                      '-o', PMP_file,
                      '-n', '5'])
 
-    fpp = Irene(run_number=CFP['RUN_NUMBER'])
+    s1par = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
+                 tmax   = CFP['S1_TMAX'] * units.mus,
+                 stride = CFP['S1_STRIDE'],
+                 lmin   = CFP['S1_LMIN'],
+                 lmax   = CFP['S1_LMAX'],
+                 rebin  = False)
 
+    # parameters for s2 searches
+    s2par = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
+                 tmax   = CFP['S2_TMAX'] * units.mus,
+                 stride = CFP['S2_STRIDE'],
+                 lmin   = CFP['S2_LMIN'],
+                 lmax   = CFP['S2_LMAX'],
+                 rebin  = True)
+
+    #class instance
+    irene = Irene(run_number=CFP['RUN_NUMBER'])
+
+    # input files
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
-    fpp.set_input_files(files_in)
-    fpp.set_pmap_store(CFP['FILE_OUT'],
-                       compression = CFP['COMPRESSION'])
-    fpp.set_print(nprint=CFP['NPRINT'])
+    irene.set_input_files(files_in)
 
-    fpp.set_BLR(n_baseline  = CFP['NBASELINE'],
-                thr_trigger = CFP['THR_TRIGGER'] * units.adc)
+    # output file
+    irene.set_pmap_store(CFP['FILE_OUT'],
+                         compression = CFP['COMPRESSION'])
+    # print frequency
+    irene.set_print(nprint=CFP['NPRINT'])
 
-    fpp.set_MAU(  n_MAU = CFP['NMAU'],
-                thr_MAU = CFP['THR_MAU'] * units.adc)
+    # parameters of BLR
+    irene.set_blr(n_baseline  = CFP['NBASELINE'],
+                  thr_trigger = CFP['THR_TRIGGER'] * units.adc)
 
-    fpp.set_CSUM(thr_csum=CFP['THR_CSUM'] * units.pes)
+    # parameters of calibrated sums
+    irene.set_csum(n_MAU = CFP['NMAU'],
+                   thr_MAU = CFP['THR_MAU'] * units.adc,
+                   thr_csum_s1 =CFP['THR_CSUM_S1'] * units.pes,
+                   thr_csum_s2 =CFP['THR_CSUM_S2'] * units.pes)
 
-    fpp.set_s12(s1 = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
-                          tmax   = CFP['S1_TMAX'] * units.mus,
-                          stride = CFP['S1_STRIDE'],
-                          lmin   = CFP['S1_LMIN'],
-                          lmax   = CFP['S1_LMAX']),
-                s2 = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
-                          tmax   = CFP['S2_TMAX'] * units.mus,
-                          stride = CFP['S2_STRIDE'],
-                          lmin   = CFP['S2_LMIN'],
-                          lmax   = CFP['S2_LMAX']))
+    # MAU and thresholds for SiPms
+    irene.set_sipm(n_MAU_sipm= CFP['NMAU_SIPM'],
+                   thr_sipm=CFP['THR_SIPM'])
 
-    fpp.set_sipm(thr_zs=CFP['THR_ZS'] * units.pes,
-                 thr_sipm_s2=CFP['THR_SIPM_S2'] * units.pes)
+    # parameters for PMAP searches
+    irene.set_pmap_params(s1_params   = s1par,
+                          s2_params   = s2par,
+                          thr_sipm_s2 = CFP['THR_SIPM_S2'])
 
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
-    nevt = fpp.run(nmax=nevts)
+    nevt = irene.run(nmax=nevts)
     assert nevt == nevts
 
 def test_empty_events(irene_diomira_chain_tmpdir):
@@ -114,48 +133,63 @@ def test_empty_events(irene_diomira_chain_tmpdir):
                   'electrons_40keV_z250_PMP.h5'))
 
     CFP = configure(['IRENE',
-                             '-c', conf_file,
-                             '-i', RWF_file,
-                             '-o', PMP_file,
-                             '-n', '5'])
+                     '-c', conf_file,
+                     '-i', RWF_file,
+                     '-o', PMP_file,
+                     '-n', '5'])
 
-    fpp = Irene(run_number = CFP['RUN_NUMBER'])
+    s1par = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
+                 tmax   = CFP['S1_TMAX'] * units.mus,
+                 stride = CFP['S1_STRIDE'],
+                 lmin   = CFP['S1_LMIN'],
+                 lmax   = CFP['S1_LMAX'],
+                 rebin  = False)
 
+    # parameters for s2 searches
+    s2par = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
+                 tmax   = CFP['S2_TMAX'] * units.mus,
+                 stride = CFP['S2_STRIDE'],
+                 lmin   = CFP['S2_LMIN'],
+                 lmax   = CFP['S2_LMAX'],
+                 rebin  = True)
+
+    #class instance
+    irene = Irene(run_number=CFP['RUN_NUMBER'])
+
+    # input files
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
-    fpp.set_input_files(files_in)
-    fpp.set_pmap_store(CFP['FILE_OUT'],
-                       compression = CFP['COMPRESSION'])
-    fpp.set_print(nprint=CFP['NPRINT'])
+    irene.set_input_files(files_in)
 
-    fpp.set_BLR(n_baseline  = CFP['NBASELINE'],
-                        thr_trigger = CFP['THR_TRIGGER'] * units.adc)
+    # output file
+    irene.set_pmap_store(CFP['FILE_OUT'],
+                         compression = CFP['COMPRESSION'])
+    # print frequency
+    irene.set_print(nprint=CFP['NPRINT'])
 
-    fpp.set_MAU(  n_MAU = CFP['NMAU'],
-                        thr_MAU = CFP['THR_MAU'] * units.adc)
+    # parameters of BLR
+    irene.set_blr(n_baseline  = CFP['NBASELINE'],
+                  thr_trigger = CFP['THR_TRIGGER'] * units.adc)
 
-    fpp.set_CSUM(thr_csum=CFP['THR_CSUM'] * units.pes)
+    # parameters of calibrated sums
+    irene.set_csum(n_MAU = CFP['NMAU'],
+                   thr_MAU = CFP['THR_MAU'] * units.adc,
+                   thr_csum_s1 =CFP['THR_CSUM_S1'] * units.pes,
+                   thr_csum_s2 =CFP['THR_CSUM_S2'] * units.pes)
 
-    fpp.set_s12(s1 = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
-                          tmax   = CFP['S1_TMAX'] * units.mus,
-                          stride = CFP['S1_STRIDE'],
-                          lmin   = CFP['S1_LMIN'],
-                          lmax   = CFP['S1_LMAX']),
-                s2 = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
-                          tmax   = CFP['S2_TMAX'] * units.mus,
-                          stride = CFP['S2_STRIDE'],
-                          lmin   = CFP['S2_LMIN'],
-                          lmax   = CFP['S2_LMAX']))
+    # MAU and thresholds for SiPms
+    irene.set_sipm(n_MAU_sipm= CFP['NMAU_SIPM'],
+                   thr_sipm=CFP['THR_SIPM'])
 
-    fpp.set_sipm(thr_zs      = CFP['THR_ZS']      * units.pes,
-                 thr_sipm_s2 = CFP['THR_SIPM_S2'] * units.pes)
+    # parameters for PMAP searches
+    irene.set_pmap_params(s1_params   = s1par,
+                          s2_params   = s2par,
+                          thr_sipm_s2 = CFP['THR_SIPM_S2'])
 
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
-    nevt = fpp.run(nmax=nevts)
-    assert fpp.empty_events == 1 # found one empty event
+    nevt = irene.run(nmax=nevts)
+    assert irene.empty_events == 1 # found one empty event
     assert nevt == 0 # event did not process
-
-
 
 
 # TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
@@ -188,7 +222,11 @@ NMAU {NMAU}
 THR_MAU {THR_MAU}
 
 # set_csum
-THR_CSUM 1
+THR_CSUM_S1 {THR_CSUM_S1}
+THR_CSUM_S2 {THR_CSUM_S2}
+
+NMAU_SIPM {NMAU_SIPM}
+THR_SIPM  {NMAU_SIPM}
 
 # set_s1
 S1_TMIN {S1_TMIN}
@@ -205,7 +243,6 @@ S2_LMIN {S2_LMIN}
 S2_LMAX {S2_LMAX}
 
 # set_sipm
-THR_ZS {THR_ZS}
 THR_SIPM_S2 {THR_SIPM_S2}
 
 # run
@@ -226,18 +263,20 @@ def config_file_spec_with_tmpdir(tmpdir):
                 THR_TRIGGER        =      5,
                 NMAU               =    100,
                 THR_MAU            =      3,
-                THR_CSUM           =      0.5,
-                S1_TMIN            =     10,
-                S1_TMAX            =    590,
+                THR_CSUM_S1        =      0.2,
+                THR_CSUM_S2        =      1,
+                NMAU_SIPM          =     100,
+                THR_SIPM           =      5,
+                S1_TMIN            =     99,
+                S1_TMAX            =    101,
                 S1_STRIDE          =      4,
-                S1_LMIN            =     10,
+                S1_LMIN            =     6,
                 S1_LMAX            =     16,
-                S2_TMIN            =    110,
-                S2_TMAX            =   1190,
+                S2_TMIN            =    101,
+                S2_TMAX            =   1199,
                 S2_STRIDE          =     40,
                 S2_LMIN            =    100,
                 S2_LMAX            = 100000,
-                THR_ZS             =     10,
                 THR_SIPM_S2        =     30,
                 PRINT_EMPTY_EVENTS = True,
                 NEVENTS            =      5,
