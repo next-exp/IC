@@ -25,7 +25,7 @@ import invisible_cities.core.system_of_units as units
 from   invisible_cities.sierpe import fee as FEE
 import invisible_cities.sierpe.blr as blr
 from   invisible_cities.database import load_db
-from   invisible_cities.cities.isidora import Isidora
+from   invisible_cities.cities.isidora import Isidora, ISIDORA
 from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
@@ -39,7 +39,6 @@ PATH_OUT {PATH_OUT}
 FILE_OUT {FILE_OUT}
 COMPRESSION {COMPRESSION}
 
-# irene
 RUN_NUMBER {RUN_NUMBER}
 
 # set_print
@@ -59,25 +58,27 @@ RUN_ALL {RUN_ALL}
 """
 
 
+def config_file_spec_with_tmpdir(tmpdir):
+    return dict(PATH_IN  = '$ICDIR/database/test_data/',
+                FILE_IN  = 'electrons_40keV_z250_RWF.h5',
+                PATH_OUT = str(tmpdir),
+                FILE_OUT = 'electrons_40keV_z250_CWF.h5',
+                COMPRESSION = 'ZLIB4',
+                RUN_NUMBER  =     0,
+                NPRINT      =     1,
+                NBASELINE   = 28000,
+                THR_TRIGGER =     5,
+                NMAU        =   100,
+                THR_MAU     =     3,
+                NEVENTS     =     5,
+                RUN_ALL     = False)
+
 @mark.slow
 def test_isidora_run(config_tmpdir):
     """Test that Isidora runs on default config parameters.
        Check that CWF waveforms math BLR within 1%. """
 
-    # Create config file for Isidora.
-    config_file_spec = dict(PATH_IN  = '$ICDIR/database/test_data/',
-                            FILE_IN  = 'electrons_40keV_z250_RWF.h5',
-                            PATH_OUT = str(config_tmpdir),
-                            FILE_OUT = 'electrons_40keV_z250_CWF.h5',
-                            COMPRESSION = 'ZLIB4',
-                            RUN_NUMBER  =     0,
-                            NPRINT      =     1,
-                            NBASELINE   = 28000,
-                            THR_TRIGGER =     5,
-                            NMAU        =   100,
-                            THR_MAU     =     3,
-                            NEVENTS     =     5,
-                            RUN_ALL     = False)
+    config_file_spec = config_file_spec_with_tmpdir(config_tmpdir)
 
     config_file_contents = config_file_format.format(**config_file_spec)
     conf_file_name = str(config_tmpdir.join('test.conf'))
@@ -89,16 +90,17 @@ def test_isidora_run(config_tmpdir):
     RWF_file = CFP['FILE_IN']
     CWF_file = CFP['FILE_OUT']
 
-    fpp = Isidora(run_number=CFP['RUN_NUMBER'])
+    fpp = Isidora(run_number  = CFP['RUN_NUMBER'],
+                  n_baseline  = CFP['NBASELINE'],
+                  thr_trigger = CFP['THR_TRIGGER'] * units.adc,
+                  n_MAU       = CFP['NMAU'],
+                  thr_MAU     = CFP['THR_MAU'] * units.adc)
+
     files_in = glob(RWF_file)
     files_in.sort()
     fpp.set_input_files(files_in)
     fpp.set_cwf_store(CWF_file, compression = CFP['COMPRESSION'])
     fpp.set_print(nprint = CFP['NPRINT'])
-    fpp.set_BLR(n_baseline  = CFP['NBASELINE'],
-                thr_trigger = CFP['THR_TRIGGER'] * units.adc)
-    fpp.set_MAU(  n_MAU = CFP['NMAU'],
-                thr_MAU = CFP['THR_MAU'] * units.adc)
 
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
     nevt = fpp.run(nmax=nevts)
@@ -125,3 +127,17 @@ def test_isidora_no_input():
     with raises(NoInputFiles):
         fpp = Isidora(run_number = 0)
         fpp.run(nmax=1)
+
+# TODO refactor to factor out config file creation: most of this test
+# is noise; duplication of something that also happens in the above
+# test
+def test_command_line_isidora(config_tmpdir):
+
+    config_file_spec = config_file_spec_with_tmpdir(config_tmpdir)
+
+    config_file_contents = config_file_format.format(**config_file_spec)
+    conf_file_name = str(config_tmpdir.join('test-2.conf'))
+    with open(conf_file_name, 'w') as conf_file:
+        conf_file.write(config_file_contents)
+
+    ISIDORA(['ISIDORA', '-c', conf_file_name])

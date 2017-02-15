@@ -24,7 +24,7 @@ import invisible_cities.core.system_of_units as units
 from   invisible_cities.sierpe import fee as FEE
 import invisible_cities.sierpe.blr as blr
 from   invisible_cities.database import load_db
-from   invisible_cities.cities.diomira import Diomira
+from   invisible_cities.cities.diomira import Diomira, DIOMIRA
 from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
@@ -41,8 +41,7 @@ def test_diomira_run(irene_diomira_chain_tmpdir):
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
     fpp.set_input_files(files_in)
-    fpp.set_output_file(CFP['FILE_OUT'],
-                        compression=CFP['COMPRESSION'])
+    fpp.set_output_file(CFP['FILE_OUT'], compression=CFP['COMPRESSION'])
     fpp.set_print(nprint=CFP['NPRINT'])
 
     fpp.set_sipm_noise_cut(noise_cut=CFP["NOISE_CUT"])
@@ -184,3 +183,53 @@ def test_diomira_identify_bug():
         pmtwf = pmtrd[0]
         for i in range(pmtrd.shape[1]):
             assert np.sum(pmtwf[i]) == 0
+
+
+
+config_file_format = """
+# set_input_files
+PATH_IN {PATH_IN}
+FILE_IN {FILE_IN}
+
+# set_cwf_store
+PATH_OUT {PATH_OUT}
+FILE_OUT {FILE_OUT}
+COMPRESSION {COMPRESSION}
+
+# set_print
+NPRINT {NPRINT}
+
+# run
+NEVENTS {NEVENTS}
+RUN_ALL {RUN_ALL}
+
+NOISE_CUT {NOISE_CUT}
+"""
+
+
+def config_file_spec_with_tmpdir(tmpdir):
+    return dict(PATH_IN  = '$ICDIR/database/test_data/',
+                FILE_IN  = 'electrons_40keV_z250_MCRD.h5',
+                PATH_OUT = str(tmpdir),
+                FILE_OUT = 'electrons_40keV_z250_CWF.h5',
+                COMPRESSION = 'ZLIB4',
+                NPRINT      =     1,
+                NEVENTS     =     5,
+                NOISE_CUT   =     3,
+                RUN_ALL     = False)
+
+
+
+# TODO refactor to factor out config file creation: most of this test
+# is noise; duplication of something that also happens in the above
+# test
+def test_command_line_diomira(config_tmpdir):
+
+    config_file_spec = config_file_spec_with_tmpdir(config_tmpdir)
+
+    config_file_contents = config_file_format.format(**config_file_spec)
+    conf_file_name = str(config_tmpdir.join('test-4.conf'))
+    with open(conf_file_name, 'w') as conf_file:
+        conf_file.write(config_file_contents)
+
+    DIOMIRA(['DIOMIRA', '-c', conf_file_name])
