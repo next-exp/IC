@@ -46,6 +46,8 @@ class Irene(PmapCity):
     def __init__(self,
                  run_number  = 0,
                  files_in    = None,
+                 file_out    = None,
+                 compression = 'ZLIB4',
                  nprint      = 10000,
                  n_baseline  = 28000,
                  thr_trigger = 5.0 * units.adc,
@@ -61,7 +63,9 @@ class Irene(PmapCity):
 
         PmapCity.__init__(self,
                           run_number  = run_number,
-                          files_in    = None,
+                          files_in    = files_in,
+                          file_out    = file_out,
+                          compression = compression,
                           nprint      = nprint,
                           n_baseline  = n_baseline,
                           thr_trigger = thr_trigger,
@@ -78,33 +82,34 @@ class Irene(PmapCity):
         # counter for empty events
         self.empty_events = 0 # counts empty events in the energy plane
 
-    def set_pmap_store(self, pmap_file_name, compression='ZLIB4'):
+    #def set_pmap_store(self, pmap_file_name, compression='ZLIB4'):
+    def _set_pmap_store(self, pmap_file):
         """Set the output file."""
         # open pmap store
         #super().set_output_file(pmap_file_name, compression=compression)
-        #self.pmap_file = self.h5out
+        #pmap_file = self.h5out
 
-        self.compression = compression
-        self.pmap_file = tb.open_file(pmap_file_name, "w",
-                                  filters = tbl.filters(compression))
+        # self.compression = compression
+        # pmap_file = tb.open_file(pmap_file_name, "w",
+        #                           filters = tbl.filters(compression))
 
 
         # create a group
-        pmapsgroup = self.pmap_file.create_group(
-            self.pmap_file.root, "PMAPS")
+        pmapsgroup = pmap_file.create_group(
+            pmap_file.root, "PMAPS")
 
         # create tables to store pmaps
-        self.s1t  = self.pmap_file.create_table(
+        self.s1t  = pmap_file.create_table(
             pmapsgroup, "S1", S12, "S1 Table",
-            tbl.filters(compression))
+            tbl.filters(self.compression))
 
-        self.s2t  = self.pmap_file.create_table(
+        self.s2t  = pmap_file.create_table(
             pmapsgroup, "S2", S12, "S2 Table",
-            tbl.filters(compression))
+            tbl.filters(self.compression))
 
-        self.s2sit = self.pmap_file.create_table(
+        self.s2sit = pmap_file.create_table(
             pmapsgroup, "S2Si", S2Si, "S2Si Table",
-            tbl.filters(compression))
+            tbl.filters(self.compression))
 
         self.s1t  .cols.event.create_index()
         self.s2t  .cols.event.create_index()
@@ -112,16 +117,17 @@ class Irene(PmapCity):
 
         # Create group for run info
         if self.run_number >0:
-            rungroup     = self.pmap_file.create_group(
-               self.pmap_file.root, "Run")
+            rungroup     = pmap_file.create_group(
+               pmap_file.root, "Run")
 
-            self.runInfo = self.pmap_file.create_table(
+            self.runInfo = pmap_file.create_table(
                 rungroup, "runInfo", RunInfo, "runInfo",
-                tbl.filters(compression))
+                tbl.filters(self.compression))
 
-            self.evtInfot = self.pmap_file.create_table(
+            self.evtInfot = pmap_file.create_table(
                 rungroup, "events", EventInfo, "events",
-                tbl.filters(compression))
+                tbl.filters(self.compression))
+
 
     def _store_s12(self, S12, s12_table, event):
         row = s12_table.row
@@ -164,7 +170,7 @@ class Irene(PmapCity):
                         row.append()
         self.s2t.flush()
 
-    def store_pmaps(self, event, evt, S1, S2, S2Si):
+    def _store_pmaps(self, event, evt, S1, S2, S2Si):
         """Store PMAPS."""
         if self.run_number > 0:
             # Event info
@@ -197,8 +203,8 @@ class Irene(PmapCity):
 
         # check that input/output files are defined
         if not self.input_files:
-            raise IOError('input file list is empty')
-        if not self.pmap_file.isopen:
+            raise IOError('input file list is empty, must set before running')
+        if not self.output_file:
             raise IOError('must set output file before running')
 
         # check that S1 and S2 params are defined
@@ -209,7 +215,7 @@ class Irene(PmapCity):
                  IRENE will run a max of {} events
                  Storing PMAPS in {}
                  Input Files = {}"""
-              .format(nmax, self.pmap_file.filename, self.input_files))
+              .format(nmax, self.output_file, self.input_files))
 
         print("""
                  S1 parameters {}""" .format(self.s1_params))
@@ -225,76 +231,84 @@ class Irene(PmapCity):
 
         # loop over input files
         first = False
-        for ffile in self.input_files:
-            print("Opening", ffile, end="... ")
-            filename = ffile
-            with tb.open_file(filename, "r") as h5in:
-                # access RWF
-                pmtrwf  = h5in.root.RD.pmtrwf
-                sipmrwf = h5in.root.RD.sipmrwf
+        with tb.open_file(self.output_file, "w",
+                          filters=tbl.filters(self.compression)) as\
+                          pmap_file:
 
-                if self.run_number > 0:
-                    self.eventsInfo = h5in.root.Run.events
+            self._set_pmap_store(pmap_file) # prepare the pmap store
 
-                NEVT, NPMT, PMTWL   = pmtrwf.shape
-                NEVT, NSIPM, SIPMWL = sipmrwf.shape
-                print("Events in file = {}".format(NEVT))
+            for ffile in self.input_files:
+                print("Opening", ffile, end="... ")
+                filename = ffile
+                with tb.open_file(filename, "r") as h5in:
+                    # access RWF
+                    pmtrwf  = h5in.root.RD.pmtrwf
+                    sipmrwf = h5in.root.RD.sipmrwf
 
-                if first == False:
-                    print_configuration({"# PMT"  : NPMT,
-                                         "PMT WL" : PMTWL,
-                                         "# SiPM" : NSIPM,
-                                         "SIPM WL": SIPMWL})
+                    if self.run_number > 0:
+                        self.eventsInfo = h5in.root.Run.events
 
-                    first = True
+                    NEVT, NPMT, PMTWL   = pmtrwf.shape
+                    NEVT, NSIPM, SIPMWL = sipmrwf.shape
+                    print("Events in file = {}".format(NEVT))
 
-                # loop over all events in file unless reach nmax
-                for evt in range(NEVT):
-                    # deconvolve
-                    CWF = self.deconv_pmt(pmtrwf[evt])
-                    # calibrated PMT sum
-                    csum, csum_mau = self.calibrated_pmt_sum(CWF)
-                    #ZS sum for S1 and S2
-                    s2_ene, s2_indx = self.csum_zs(csum,
-                                                   threshold=self.thr_csum_s2)
-                    s1_ene, s1_indx = self.csum_zs(csum_mau,
-                                                   threshold=self.thr_csum_s1)
+                    if first == False:
+                        print_configuration({"# PMT"  : NPMT,
+                                             "PMT WL" : PMTWL,
+                                             "# SiPM" : NSIPM,
+                                             "SIPM WL": SIPMWL})
 
-                    # In a few rare cases s2_ene is empty
-                    # this is due to empty energy plane events
-                    # a protection is set to avoid a crash
-                    if np.sum(s2_ene) == 0:
-                        self.empty_events +=1
-                        continue
+                        first = True
 
-                    # SiPMs signals
-                    sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
+                        # loop over all events in file unless reach nmax
+                    for evt in range(NEVT):
+                        # deconvolve
+                        CWF = self.deconv_pmt(pmtrwf[evt])
+                        # calibrated PMT sum
+                        csum, csum_mau = self.calibrated_pmt_sum(CWF)
+                        #ZS sum for S1 and S2
+                        s2_ene, s2_indx = self.csum_zs(csum,
+                                              threshold=self.thr_csum_s2)
+                        s1_ene, s1_indx = self.csum_zs(csum_mau,
+                                              threshold=self.thr_csum_s1)
 
-                    # PMAPS
-                    S1, S2 = self.find_S12(s1_ene, s1_indx, s2_ene, s2_indx)
-                    S2Si = self.find_S2Si(S2, sipmzs)
+                        # In a few rare cases s2_ene is empty
+                        # this is due to empty energy plane events
+                        # a protection is set to avoid a crash
+                        if np.sum(s2_ene) == 0:
+                            self.empty_events +=1
+                            continue
 
-                    # store PMAPS
-                    self.store_pmaps(n_events_tot, evt, S1, S2, S2Si)
+                        # SiPMs signals
+                        sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
+                        # PMAPS
+                        S1, S2 = self.find_S12(s1_ene,
+                                               s1_indx,
+                                               s2_ene,
+                                               s2_indx)
+                        S2Si = self.find_S2Si(S2, sipmzs)
 
-                    n_events_tot += 1
-                    if n_events_tot%self.nprint == 0:
-                        print('event in file = {}, total = {}'
-                              .format(evt, n_events_tot))
+                        # store PMAPS
+                        self._store_pmaps(n_events_tot, evt, S1, S2, S2Si)
 
-                    if n_events_tot >= nmax and nmax > -1:
-                        print('reached max nof of events (={})'
-                              .format(nmax))
-                        break
+                        n_events_tot += 1
+                        if n_events_tot%self.nprint == 0:
+                            print('event in file = {}, total = {}'
+                                  .format(evt, n_events_tot))
+
+                        if n_events_tot >= nmax and nmax > -1:
+                            print('reached max nof of events (={})'
+                                  .format(nmax))
+                            break
 
 
-        if self.pmap_file:
+        #if pmap_file:
             if self.run_number > 0:
                 row = self.runInfot.row
                 row['run_number'] = self.run_number
                 row.append()
                 self.runInfot.flush()
-            self.pmap_file.close()
+            #pmap_file.close()
 
         if print_empty:
             print('Energy plane empty events (skipped) = {}'.format(
@@ -333,8 +347,8 @@ def IRENE(argv = sys.argv):
     irene.set_input_files(files_in)
 
     # output file
-    irene.set_pmap_store(CFP['FILE_OUT'],
-                         compression = CFP['COMPRESSION'])
+    irene.set_output_file(CFP['FILE_OUT'])
+    irene.set_compression(CFP['COMPRESSION'])
     # print frequency
     irene.set_print(nprint=CFP['NPRINT'])
 
