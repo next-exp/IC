@@ -36,11 +36,15 @@ class City:
     def __init__(self,
                  run_number  = 0,
                  files_in    = None,
+                 file_out    = None,
+                 compression = 'ZLIB4',
                  nprint      = 10000):
 
         self.run_number     = run_number
         self.nprint         = nprint  # default print frequency
         self.input_files    = files_in
+        self.output_file    = file_out
+        self.compression    = compression
         # access data base
         DataPMT             = load_db.DataPMT (run_number)
         DataSiPM            = load_db.DataSiPM(run_number)
@@ -63,6 +67,13 @@ class City:
         """Set the input files."""
         self.input_files = input_files
 
+    def set_output_file(self, output_file):
+        """Set the input files."""
+        self.output_file = output_file
+
+    def set_compression(self, compression):
+        """Set the input files."""
+        self.compression = compression
 
 
 class DeconvolutionCity(City):
@@ -76,6 +87,8 @@ class DeconvolutionCity(City):
     def __init__(self,
                  run_number  = 0,
                  files_in    = None,
+                 file_out    = None,
+                 compression = 'ZLIB4',
                  nprint      = 10000,
                  n_baseline  = 28000,
                  thr_trigger = 5 * units.adc):
@@ -83,6 +96,8 @@ class DeconvolutionCity(City):
         City.__init__(self,
                       run_number  = run_number,
                       files_in    = files_in,
+                      file_out    = file_out,
+                      compression = compression,
                       nprint      = nprint)
         # BLR parameters
         self.n_baseline  = n_baseline
@@ -119,6 +134,8 @@ class CalibratedCity(DeconvolutionCity):
     def __init__(self,
                  run_number  = 0,
                  files_in    = None,
+                 file_out    = None,
+                 compression = 'ZLIB4',
                  nprint      = 10000,
                  n_baseline  = 28000,
                  thr_trigger = 5 * units.adc,
@@ -131,7 +148,9 @@ class CalibratedCity(DeconvolutionCity):
 
         DeconvolutionCity.__init__(self,
                                    run_number  = run_number,
-                                   files_in    = None,
+                                   files_in    = files_in,
+                                   file_out    = file_out,
+                                   compression = compression,
                                    nprint      = nprint,
                                    n_baseline  = n_baseline,
                                    thr_trigger = thr_trigger)
@@ -186,6 +205,8 @@ class PmapCity(CalibratedCity):
     def __init__(self,
                  run_number  = 0,
                  files_in    = None,
+                 file_out    = None,
+                 compression = 'ZLIB4',
                  nprint      = 10000,
                  n_baseline  = 28000,
                  thr_trigger = 5 * units.adc,
@@ -201,7 +222,9 @@ class PmapCity(CalibratedCity):
 
         CalibratedCity.__init__(self,
                                 run_number  = run_number,
-                                files_in    = None,
+                                files_in    = files_in,
+                                file_out    = file_out,
+                                compression = compression,
                                 nprint      = nprint,
                                 n_baseline  = n_baseline,
                                 thr_trigger = thr_trigger,
