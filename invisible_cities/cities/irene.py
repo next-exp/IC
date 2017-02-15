@@ -22,15 +22,21 @@ import invisible_cities.core.peak_functions_c as cpf
 from   invisible_cities.core.system_of_units_c import SystemOfUnits
 from   invisible_cities.database import load_db
 
-from   invisible_cities.cities.base_cities import DeconvolutionCity
+from   invisible_cities.cities.base_cities import PmapCity
+from   invisible_cities.cities.base_cities import S12Params as S12P
 
 units = SystemOfUnits()
 
 
-S12Params = namedtuple('S12Params', 'tmin tmax stride lmin lmax')
-S12P = S12Params
+# Parameters for S1/S2 searches
+# tmin and tmax define the time interval of the searches
+# lmin and lmax define the minimum and maximum width of the signal
+# stride define the tolerable size of the "hole" between to samples above
+# threshold when performing the search
+# S12Params = namedtuple('S12Params', 'tmin tmax stride lmin lmax')
+# S12P = S12Params
 
-class Irene(DeconvolutionCity):
+class Irene(PmapCity):
     """
     The city of IRENE performs a fast processing directly
     from raw data (pmtrwf and sipmrwf) to PMAPS.
@@ -40,42 +46,48 @@ class Irene(DeconvolutionCity):
     def __init__(self,
                  run_number  = 0,
                  files_in    = None,
+                 nprint      = 10000,
                  n_baseline  = 28000,
-                 thr_trigger = 5 * units.adc,
-                 n_MAU       =   100,
-                 thr_MAU     = 3 * units.adc):
-        """
-        Init the machine with the run number.
-        Load the data base to access calibration and geometry.
-        Sets all switches to default value.
-        """
+                 thr_trigger = 5.0 * units.adc,
+                 n_MAU       = 100,
+                 thr_MAU     = 3.0 * units.adc,
+                 thr_csum_s1 = 0.2 * units.adc,
+                 thr_csum_s2 = 1.0 * units.adc,
+                 n_MAU_sipm  = 100,
+                 thr_sipm    = 5.0 * units.pes,
+                 s1_params   = None,
+                 s2_params   = None,
+                 thr_sipm_s2 = 30. * units.pes):
 
-        DeconvolutionCity.__init__(self, run_number, files_in,
-                                   n_baseline, thr_trigger, n_MAU,
-                                   thr_MAU)
+        PmapCity.__init__(self,
+                          run_number  = run_number,
+                          files_in    = None,
+                          nprint      = nprint,
+                          n_baseline  = n_baseline,
+                          thr_trigger = thr_trigger,
+                          n_MAU       = n_MAU,
+                          thr_MAU     = thr_MAU,
+                          thr_csum_s1 = thr_csum_s1,
+                          thr_csum_s2 = thr_csum_s2,
+                          n_MAU_sipm  = n_MAU_sipm,
+                          thr_sipm    = thr_sipm,
+                          s1_params   = s1_params,
+                          s2_params   = s2_params,
+                          thr_sipm_s2 = thr_sipm_s2)
 
-        # CSUM default values (override with set_CSUM)
-        self.thr_csum     = 1 * units.pes
-
-        # default parameters
-        self.ymax         =     200
-        self.S1_start     =     100
-        self.S1_end       =     100.5
-        self.S1_ymax      =       5
-
-        self.s1_params   = None
-        self.s2_params   = None
-        self.thr_zs      = None
-        self.thr_sipm_s2 = None
-
-        # counters
+        # counter for empty events
         self.empty_events = 0 # counts empty events in the energy plane
 
     def set_pmap_store(self, pmap_file_name, compression='ZLIB4'):
-        """Set the input files."""
+        """Set the output file."""
         # open pmap store
-        self.pmap_file = tb.open_file(
-            pmap_file_name, "w", filters=tbl.filters(compression))
+        #super().set_output_file(pmap_file_name, compression=compression)
+        #self.pmap_file = self.h5out
+
+        self.compression = compression
+        self.pmap_file = tb.open_file(pmap_file_name, "w",
+                                  filters = tbl.filters(compression))
+
 
         # create a group
         pmapsgroup = self.pmap_file.create_group(
@@ -110,30 +122,6 @@ class Irene(DeconvolutionCity):
             self.evtInfot = self.pmap_file.create_table(
                 rungroup, "events", EventInfo, "events",
                 tbl.filters(compression))
-
-    def set_BLR(self, n_baseline=38000, thr_trigger=5 * units.adc):
-        """Parameters of the BLR."""
-        self.n_baseline  = n_baseline
-        self.thr_trigger = thr_trigger
-
-    def set_MAU(self, n_MAU=100, thr_MAU=3 * units.adc):
-        """Parameters of the MAU used to remove low frequency noise."""
-        self.  n_MAU =   n_MAU
-        self.thr_MAU = thr_MAU
-
-    def set_CSUM(self, thr_csum=1 * units.pes):
-        """Parameter for ZS in the calibrated sum."""
-        self.thr_csum = thr_csum
-
-    def set_s12(self, s1, s2):
-        """Parameters for S1 search."""
-        self.s1_params = s1
-        self.s2_params = s2
-
-    def set_sipm(self, thr_zs=5 * units.pes, thr_sipm_s2=50 * units.pes):
-        """Parameters for SiPM analysis."""
-        self.thr_zs      = thr_zs
-        self.thr_sipm_s2 = thr_sipm_s2
 
     def _store_s12(self, S12, s12_table, event):
         row = s12_table.row
@@ -187,16 +175,16 @@ class Irene(DeconvolutionCity):
             row['timestamp']  = evtInfo[1]
             row.append()
             self.evtInfot.flush()
-        
+
         self._store_s12(S1, self.s1t, event)
         self._store_s12(S2, self.s2t, event)
         self._store_s2si(S2Si, event)
 
     def run(self, nmax, print_empty=True):
         """
-        Run the machine
+        Run Irene
         nmax is the max number of events to run
-        store_pmaps decides whether to store pmaps or not
+        if print_empty = True, count the number of empty events
         """
 
         # TODO replace IOError with IC Exceptions
@@ -206,15 +194,16 @@ class Irene(DeconvolutionCity):
         # can be abstracted.
 
         n_events_tot = 0
-        # check the state of the machine
+
+        # check that input/output files are defined
         if not self.input_files:
             raise IOError('input file list is empty')
-        if not self.input_files:
-            raise IOError('must set files before running')
+        if not self.pmap_file.isopen:
+            raise IOError('must set output file before running')
+
+        # check that S1 and S2 params are defined
         if (not self.s1_params) or (not self.s2_params):
             raise IOError('must set S1/S2 parameters before running')
-        if not self.thr_zs:
-            raise IOError('must set Sipm parameters before running')
 
         print("""
                  IRENE will run a max of {} events
@@ -230,7 +219,7 @@ class Irene(DeconvolutionCity):
 
         print("""
                  S2Si parameters
-                 threshold min charge per SiPM = {s.thr_zs} pes
+                 threshold min charge per SiPM = {s.thr_sipm} pes
                  threshold min charge in  S2   = {s.thr_sipm_s2} pes
                           """.format(s=self))
 
@@ -239,7 +228,7 @@ class Irene(DeconvolutionCity):
         for ffile in self.input_files:
             print("Opening", ffile, end="... ")
             filename = ffile
-            with tb.open_file(filename, "r+") as h5in:
+            with tb.open_file(filename, "r") as h5in:
                 # access RWF
                 pmtrwf  = h5in.root.RD.pmtrwf
                 sipmrwf = h5in.root.RD.sipmrwf
@@ -257,59 +246,35 @@ class Irene(DeconvolutionCity):
                                          "# SiPM" : NSIPM,
                                          "SIPM WL": SIPMWL})
 
-                    self.signal_t = np.arange(0., PMTWL * 25, 25)
                     first = True
+
                 # loop over all events in file unless reach nmax
                 for evt in range(NEVT):
                     # deconvolve
-                    CWF = blr.deconv_pmt(
-                      pmtrwf[evt],
-                      self.coeff_c,
-                      self.coeff_blr,
-                      n_baseline  = self.n_baseline,
-                      thr_trigger = self.thr_trigger)
+                    CWF = self.deconv_pmt(pmtrwf[evt])
                     # calibrated PMT sum
-                    csum, _ = cpf.calibrated_pmt_sum(
-                      CWF,
-                      self.adc_to_pes,
-                        n_MAU = self.  n_MAU,
-                      thr_MAU = self.thr_MAU)
-                    # SiPMs
-                    # Supress samples below threshold (in pes)
-                    wfzs_ene, wfzs_indx = cpf.wfzs(
-                        csum, threshold=self.thr_csum)
+                    csum, csum_mau = self.calibrated_pmt_sum(CWF)
+                    #ZS sum for S1 and S2
+                    s2_ene, s2_indx = self.csum_zs(csum,
+                                                   threshold=self.thr_csum_s2)
+                    s1_ene, s1_indx = self.csum_zs(csum_mau,
+                                                   threshold=self.thr_csum_s1)
 
-                    # In a few rare cases wfzs_ene is empty
+                    # In a few rare cases s2_ene is empty
                     # this is due to empty energy plane events
                     # a protection is set to avoid a crash
-
-                    if np.sum(wfzs_ene) == 0:
+                    if np.sum(s2_ene) == 0:
                         self.empty_events +=1
                         continue
-                    # find S1
-                    S1 = cpf.find_S12(wfzs_ene,
-                                      wfzs_indx,
-                                      rebin = False,
-                                      **self.s1_params._asdict())
-                    # find S2
-                    S2 = cpf.find_S12(wfzs_ene,
-                                      wfzs_indx,
-                                      rebin = True,
-                                      **self.s2_params._asdict())
-                    # SiPMs zero suppression
-                    sipmzs = cpf.signal_sipm(
-                        sipmrwf[evt],
-                        self.sipm_adc_to_pes,
-                        thr   = self.thr_zs,
-                        n_MAU = self.n_MAU)
-                    # select SIPM ZS and create S2Si
-                    SIPM = cpf.select_sipm(sipmzs)
-                    S2Si = pmp.sipm_s2_dict(SIPM,
-                                            S2,
-                                            thr = self.thr_sipm_s2)
 
-                    if not self.pmap_file:
-                        raise IOError('must set PMAPS before storing')
+                    # SiPMs signals
+                    sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
+
+                    # PMAPS
+                    S1, S2 = self.find_S12(s1_ene, s1_indx, s2_ene, s2_indx)
+                    S2Si = self.find_S2Si(S2, sipmzs)
+
+                    # store PMAPS
                     self.store_pmaps(n_events_tot, evt, S1, S2, S2Si)
 
                     n_events_tot += 1
@@ -337,45 +302,66 @@ class Irene(DeconvolutionCity):
         return n_events_tot
 
 
-
 def IRENE(argv = sys.argv):
     """IRENE DRIVER"""
+
+    # get parameters dictionary
     CFP = configure(argv)
 
-    fpp = Irene(run_number=CFP['RUN_NUMBER'])
+    # parameters for s1 searches
+    s1par = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
+                 tmax   = CFP['S1_TMAX'] * units.mus,
+                 stride = CFP['S1_STRIDE'],
+                 lmin   = CFP['S1_LMIN'],
+                 lmax   = CFP['S1_LMAX'],
+                 rebin  = False)
 
+    # parameters for s2 searches
+    s2par = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
+                 tmax   = CFP['S2_TMAX'] * units.mus,
+                 stride = CFP['S2_STRIDE'],
+                 lmin   = CFP['S2_LMIN'],
+                 lmax   = CFP['S2_LMAX'],
+                 rebin  = True)
+
+    #class instance
+    irene = Irene(run_number=CFP['RUN_NUMBER'])
+
+    # input files
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
-    fpp.set_input_files(files_in)
-    fpp.set_pmap_store(CFP['FILE_OUT'],
-                       compression = CFP['COMPRESSION'])
-    fpp.set_print(nprint=CFP['NPRINT'])
+    irene.set_input_files(files_in)
 
-    fpp.set_BLR(n_baseline  = CFP['NBASELINE'],
-                thr_trigger = CFP['THR_TRIGGER'] * units.adc)
+    # output file
+    irene.set_pmap_store(CFP['FILE_OUT'],
+                         compression = CFP['COMPRESSION'])
+    # print frequency
+    irene.set_print(nprint=CFP['NPRINT'])
 
-    fpp.set_MAU(  n_MAU = CFP['NMAU'],
-                thr_MAU = CFP['THR_MAU'] * units.adc)
+    # parameters of BLR
+    irene.set_blr(n_baseline  = CFP['NBASELINE'],
+                  thr_trigger = CFP['THR_TRIGGER'] * units.adc)
 
-    fpp.set_CSUM(thr_csum = CFP['THR_CSUM'] * units.pes)
+    # parameters of calibrated sums
+    irene.set_csum(n_MAU = CFP['NMAU'],
+                   thr_MAU = CFP['THR_MAU'] * units.adc,
+                   thr_csum_s1 =CFP['THR_CSUM_S1'] * units.pes,
+                   thr_csum_s2 =CFP['THR_CSUM_S2'] * units.pes)
 
-    fpp.set_s12(s1 = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
-                          tmax   = CFP['S1_TMAX'] * units.mus,
-                          stride = CFP['S1_STRIDE'],
-                          lmin   = CFP['S1_LMIN'],
-                          lmax   = CFP['S1_LMAX']),
-                s2 = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
-                          tmax   = CFP['S2_TMAX'] * units.mus,
-                          stride = CFP['S2_STRIDE'],
-                          lmin   = CFP['S2_LMIN'],
-                          lmax   = CFP['S2_LMAX']))
+    # MAU and thresholds for SiPms
+    irene.set_sipm(n_MAU_sipm= CFP['NMAU_SIPM'],
+                   thr_sipm=CFP['THR_SIPM'])
 
-    fpp.set_sipm(thr_zs=CFP['THR_ZS'] * units.pes,
-                 thr_sipm_s2=CFP['THR_SIPM_S2'] * units.pes)
+    # parameters for PMAP searches
+    irene.set_pmap_params(s1_params   = s1par,
+                          s2_params   = s2par,
+                          thr_sipm_s2 = CFP['THR_SIPM_S2'])
+
 
     t0 = time()
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
-    nevt = fpp.run(nmax=nevts, print_empty=CFP['PRINT_EMPTY_EVENTS'])
+    # run
+    nevt = irene.run(nmax=nevts, print_empty=CFP['PRINT_EMPTY_EVENTS'])
     t1 = time()
     dt = t1 - t0
 
