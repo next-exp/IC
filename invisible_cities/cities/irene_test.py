@@ -94,8 +94,9 @@ def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
     irene.set_input_files(files_in)
 
     # output file
-    irene.set_pmap_store(CFP['FILE_OUT'],
-                         compression = CFP['COMPRESSION'])
+    irene.set_output_file(CFP['FILE_OUT'])
+    irene.set_compression(CFP['COMPRESSION'])
+
     # print frequency
     irene.set_print(nprint=CFP['NPRINT'])
 
@@ -162,8 +163,9 @@ def test_empty_events(irene_diomira_chain_tmpdir):
     irene.set_input_files(files_in)
 
     # output file
-    irene.set_pmap_store(CFP['FILE_OUT'],
-                         compression = CFP['COMPRESSION'])
+    irene.set_output_file(CFP['FILE_OUT'])
+    irene.set_compression(CFP['COMPRESSION'])
+    
     # print frequency
     irene.set_print(nprint=CFP['NPRINT'])
 
