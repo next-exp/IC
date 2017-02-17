@@ -31,22 +31,25 @@ cpdef calibrated_pmt_sum(double [:, :] CWF,
 
 
     # CWF if above MAU threshold
-    cdef double [:, :] pmt_thr = np.zeros((NPMT,NWF), dtype=np.double)
-    cdef double [:]       csum = np.zeros(      NWF , dtype=np.double)
-    cdef double [:]    MAU_pmt = np.zeros(      NWF , dtype=np.double)
+    cdef double [:, :] pmt_thr  = np.zeros((NPMT,NWF), dtype=np.double)
+    cdef double [:]    csum     = np.zeros(      NWF , dtype=np.double)
+    cdef double [:]    csum_mau = np.zeros(      NWF , dtype=np.double)
+    cdef double [:]    MAU_pmt  = np.zeros(      NWF , dtype=np.double)
 
     for j in range(NPMT):
         # MAU for each of the PMTs, following the waveform
         MAU_pmt = signal.lfilter(MAU, 1, CWF[j,:])
 
         for k in range(NWF):
-            if CWF[j,k] > MAU_pmt[k] + thr_MAU:
+            if CWF[j,k] >= MAU_pmt[k] + thr_MAU: # >= not >: found testing!
                 pmt_thr[j,k] = CWF[j,k]
 
     for j in range(NPMT):
         for k in range(NWF):
-            csum[k] += pmt_thr[j, k] * 1 / adc_to_pes[j]
-    return np.asarray(csum)
+            csum_mau[k] += pmt_thr[j, k] * 1 / adc_to_pes[j]
+            csum[k] += CWF[j, k] * 1 / adc_to_pes[j]
+
+    return np.asarray(csum), np.asarray(csum_mau)
 
 
 cpdef wfzs(double [:] wf, double threshold=0):
@@ -177,10 +180,10 @@ cpdef find_S12(double [:] wfzs,  int [:] index,
 
 cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
     """
-    rebins the a waveform according to stride
+    Rebin a waveform according to stride
     The input waveform is a vector such that the index expresses time bin and the
     contents expresses energy (e.g, in pes)
-    The function returns a DataFrame. The time bins and energy are rebinned according to stride
+    The function returns the rebinned T& E vectors.
     """
 
     assert len(t) == len(e)

@@ -393,7 +393,7 @@ class Irene:
                           n_baseline  = self.n_baseline,
                           thr_trigger = self.thr_trigger)
                         # calibrated PMT sum
-                        csum = cpf.calibrated_pmt_sum(
+                        csum, _ = cpf.calibrated_pmt_sum(
                           CWF,
                           self.adc_to_pes,
                             n_MAU = self.  n_MAU,
@@ -519,7 +519,7 @@ class Irene:
                 row.append()
                 self.runInfot.flush()
             self.pmapFile.close()
-        
+
         if self.print_empty:
             print('Energy plane empty events (skipped) = {}'.format(
                    self.empty_events))
