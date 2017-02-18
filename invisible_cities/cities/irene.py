@@ -111,6 +111,7 @@ class Irene(PmapCity):
         if self.run_number >0:
             rungroup     = pmap_file.create_group(
                pmap_file.root, "Run")
+        if not self.monte_carlo:
 
             self.runInfo = pmap_file.create_table(
                 rungroup, "runInfo", RunInfo, "runInfo",
@@ -129,7 +130,7 @@ class Irene(PmapCity):
             assert len(time) == len(ene)
             for j in range(len(time)):
                 row["event"] = event
-                if self.run_number > 0:
+                if not self.monte_carlo:
                     evtInfo = self.eventsInfo[evt]
                     row["evtDaq"] = evtInfo[0]
                 else:
@@ -150,7 +151,7 @@ class Irene(PmapCity):
                 for j, E in enumerate(ene):
                     if E > 0:
                         row["event"] = event
-                        if self.run_number > 0:
+                        if not self.monte_carlo:
                             evtInfo = self.eventsInfo[evt]
                             row["evtDaq"] = evtInfo[0]
                         else:
@@ -164,7 +165,7 @@ class Irene(PmapCity):
 
     def _store_pmaps(self, event, evt, S1, S2, S2Si):
         """Store PMAPS."""
-        if self.run_number > 0:
+        if not self.monte_carlo:
             # Event info
             row     = self.evtInfot.row
             evtInfo = self.eventsInfo[evt]
@@ -237,7 +238,7 @@ class Irene(PmapCity):
                     pmtrwf  = h5in.root.RD.pmtrwf
                     sipmrwf = h5in.root.RD.sipmrwf
 
-                    if self.run_number > 0:
+                    if not self.monte_carlo:
                         self.eventsInfo = h5in.root.Run.events
 
                     NEVT, NPMT, PMTWL   = pmtrwf.shape
@@ -295,7 +296,7 @@ class Irene(PmapCity):
 
 
         #if pmap_file:
-            if self.run_number > 0:
+            if not self.monte_carlo:
                 row = self.runInfot.row
                 row['run_number'] = self.run_number
                 row.append()
