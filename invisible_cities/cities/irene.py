@@ -4,23 +4,15 @@ import sys
 from glob import glob
 from time import time
 
-from collections import namedtuple
-
 import numpy as np
 import tables as tb
 
-from   invisible_cities.core.nh5 import RunInfo, EventInfo
 from   invisible_cities.core.nh5 import S12, S2Si
-import invisible_cities.core.mpl_functions as mpl
-import invisible_cities.core.pmaps_functions as pmp
 import invisible_cities.core.tbl_functions as tbl
 from   invisible_cities.core.configure \
        import configure, define_event_loop, print_configuration
 
-import invisible_cities.sierpe.blr as blr
-import invisible_cities.core.peak_functions_c as cpf
 from   invisible_cities.core.system_of_units_c import SystemOfUnits
-from   invisible_cities.database import load_db
 
 from   invisible_cities.cities.base_cities import PmapCity
 from   invisible_cities.cities.base_cities import S12Params as S12P
