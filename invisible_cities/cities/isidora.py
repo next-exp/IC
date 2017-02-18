@@ -106,7 +106,7 @@ class Isidora(DeconvolutionCity):
                         datapmt = h5in.root.Sensors.DataPMT
                         datapmt.copy(newparent=self.sensors_group)
 
-                if self.run_number > 0:
+                if not self.monte_carlo:
                     self.eventsInfo = h5in.root.Run.events
 
                 NEVT, NPMT,   PMTWL = pmtrwf .shape
