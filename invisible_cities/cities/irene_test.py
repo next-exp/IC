@@ -165,7 +165,7 @@ def test_empty_events(irene_diomira_chain_tmpdir):
     # output file
     irene.set_output_file(CFP['FILE_OUT'])
     irene.set_compression(CFP['COMPRESSION'])
-    
+
     # print frequency
     irene.set_print(nprint=CFP['NPRINT'])
 
@@ -174,14 +174,14 @@ def test_empty_events(irene_diomira_chain_tmpdir):
                   thr_trigger = CFP['THR_TRIGGER'] * units.adc)
 
     # parameters of calibrated sums
-    irene.set_csum(n_MAU = CFP['NMAU'],
-                   thr_MAU = CFP['THR_MAU'] * units.adc,
-                   thr_csum_s1 =CFP['THR_CSUM_S1'] * units.pes,
-                   thr_csum_s2 =CFP['THR_CSUM_S2'] * units.pes)
+    irene.set_csum(n_MAU       = CFP['NMAU'],
+                   thr_MAU     = CFP['THR_MAU'] * units.adc,
+                   thr_csum_s1 = CFP['THR_CSUM_S1'] * units.pes,
+                   thr_csum_s2 = CFP['THR_CSUM_S2'] * units.pes)
 
     # MAU and thresholds for SiPms
-    irene.set_sipm(n_MAU_sipm= CFP['NMAU_SIPM'],
-                   thr_sipm=CFP['THR_SIPM'])
+    irene.set_sipm(n_MAU_sipm = CFP['NMAU_SIPM'],
+                   thr_sipm   = CFP['THR_SIPM'])
 
     # parameters for PMAP searches
     irene.set_pmap_params(s1_params   = s1par,
@@ -298,3 +298,71 @@ def test_command_line_irene(config_tmpdir):
         conf_file.write(config_file_contents)
 
     IRENE(['IRENE', '-c', conf_file_name])
+
+def test_read_data(irene_diomira_chain_tmpdir):
+    """Test Irene on a file containing an empty event."""
+
+    RWF_file = path.join(os.environ['ICDIR'],
+                         'database/test_data/run_2983.h5')
+    conf_file = path.join(os.environ['ICDIR'], 'config/irene.conf')
+
+    PMP_file = str(irene_diomira_chain_tmpdir.join('run_2983_9999_krypton_PMP.h5'))
+
+    CFP = configure(['IRENE',
+                     '-c', conf_file,
+                     '-i', RWF_file,
+                     '-o', PMP_file,
+                     '-n', '5'])
+
+    s1par = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
+                 tmax   = CFP['S1_TMAX'] * units.mus,
+                 stride = CFP['S1_STRIDE'],
+                 lmin   = CFP['S1_LMIN'],
+                 lmax   = CFP['S1_LMAX'],
+                 rebin  = False)
+
+    # parameters for s2 searches
+    s2par = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
+                 tmax   = CFP['S2_TMAX'] * units.mus,
+                 stride = CFP['S2_STRIDE'],
+                 lmin   = CFP['S2_LMIN'],
+                 lmax   = CFP['S2_LMAX'],
+                 rebin  = True)
+
+    #class instance
+    irene = Irene(run_number=2983)
+
+    # input files
+    files_in = glob(CFP['FILE_IN'])
+    files_in.sort()
+    irene.set_input_files(files_in)
+
+    # output file
+    irene.set_output_file(CFP['FILE_OUT'])
+    irene.set_compression(CFP['COMPRESSION'])
+
+    # print frequency
+    irene.set_print(nprint=CFP['NPRINT'])
+
+    # parameters of BLR
+    irene.set_blr(n_baseline  = CFP['NBASELINE'],
+                  thr_trigger = CFP['THR_TRIGGER'] * units.adc)
+
+    # parameters of calibrated sums
+    irene.set_csum(n_MAU       = CFP['NMAU'],
+                   thr_MAU     = CFP['THR_MAU'] * units.adc,
+                   thr_csum_s1 = CFP['THR_CSUM_S1'] * units.pes,
+                   thr_csum_s2 = CFP['THR_CSUM_S2'] * units.pes)
+
+    # MAU and thresholds for SiPms
+    irene.set_sipm(n_MAU_sipm= CFP['NMAU_SIPM'],
+                   thr_sipm=CFP['THR_SIPM'])
+
+    # parameters for PMAP searches
+    irene.set_pmap_params(s1_params   = s1par,
+                          s2_params   = s2par,
+                          thr_sipm_s2 = CFP['THR_SIPM_S2'])
+
+    nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
+    nevt = irene.run(nmax=nevts)
+    assert nevt == 5 # event did not process
