@@ -58,6 +58,9 @@ class City:
         self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
         self.noise_rms       = DataPMT.noise_rms.values      .astype(np.double)
 
+    @property
+    def monte_carlo(self):
+        return self.run_number <= 0
 
     def set_print(self, nprint=1000):
         """Print frequency."""
