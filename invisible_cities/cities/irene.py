@@ -7,7 +7,7 @@ from time import time
 import numpy as np
 import tables as tb
 
-from   invisible_cities.core.nh5 import S12, S2Si
+from   invisible_cities.core.nh5 import S12, S2Si, EventInfo, RunInfo
 import invisible_cities.core.tbl_functions as tbl
 from   invisible_cities.core.configure \
        import configure, define_event_loop, print_configuration
@@ -110,16 +110,16 @@ class Irene(PmapCity):
         if not self.monte_carlo:
             rungroup     = pmap_file.create_group(pmap_file.root, "Run")
 
-            # self.runInfo = pmap_file.create_table(
-            #     rungroup, "runInfo", RunInfo, "runInfo",
-            #     tbl.filters(self.compression))
+            self.runInfot = pmap_file.create_table(
+                rungroup, "runInfo", RunInfo, "runInfo",
+                tbl.filters(self.compression))
 
             self.evtInfot = pmap_file.create_table(
                 rungroup, "events", EventInfo, "events",
                 tbl.filters(self.compression))
 
 
-    def _store_s12(self, S12, event):
+    def _store_s12(self, S12, event, evt):
         row = self.s1t.row
         for i in S12:
             time = S12[i][0]
@@ -138,7 +138,7 @@ class Irene(PmapCity):
                 row.append()
         self.s1t.flush()
 
-    def _store_s2si(self, S2Si, event):
+    def _store_s2si(self, S2Si, event, evt):
         row = self.s2sit.row
         for i in S2Si:
             sipml = S2Si[i]
@@ -172,9 +172,9 @@ class Irene(PmapCity):
             row.append()
             self.evtInfot.flush()
 
-        self._store_s12(S1, event)
-        self._store_s12(S2, event)
-        self._store_s2si(S2Si, event)
+        self._store_s12 (S1,   event, evt)
+        self._store_s12 (S2,   event, evt)
+        self._store_s2si(S2Si, event, evt)
 
     def run(self, nmax, print_empty=True):
         """
