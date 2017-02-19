@@ -18,18 +18,18 @@ import tables as tb
 
 import invisible_cities.core.tbl_functions as tbl
 from   invisible_cities.core.configure import configure, print_configuration
+from   invisible_cities.cities.base_cities import SensorResponseCity
 from   invisible_cities.core.nh5 import FEE
-import invisible_cities.core.mpl_functions as mpl
-import invisible_cities.core.wfm_functions as wfm
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
-from invisible_cities.database import load_db
-import invisible_cities.sierpe.fee as FE
+import invisible_cities.core.wfm_functions as wfm
+from   invisible_cities.core.system_of_units_c import SystemOfUnits
+units = SystemOfUnits()
 
-from   invisible_cities.cities.base_cities import City
 
 
-class Diomira(City):
+
+class Diomira(SensorResponseCity):
     """
     The city of DIOMIRA simulates the response of the energy and
     traking plane sensors.
@@ -39,98 +39,18 @@ class Diomira(City):
                  run_number     = 0,
                  files_in       = None,
                  file_out       = None,
-                 sipm_noise_cut = 3):
+                 sipm_noise_cut = 3 * units.pes):
         """
         -1. Inits the machine
         -2. Loads the data base to access calibration data
         -3. Sets all switches to default value
         """
 
-        City.__init__(self,
-                      run_number = run_number,
-                      files_in   = files_in,
-                      file_out   = file_out)
-
-        self.sipm_noise_cut = sipm_noise_cut
-
-    def simulate_sipm_response(self, event, sipmrd,
-                               sipms_noise_sampler):
-        """Add noise with the NoiseSampler class and return
-        the noisy waveform (in pes)."""
-        # add noise (in PES) to true waveform
-        dataSiPM = sipmrd[event] + sipms_noise_sampler.Sample()
-        # return total signal in adc counts
-        return wfm.to_adc(dataSiPM, self.sipm_adc_to_pes)
-
-    def simulate_pmt_response(self, event, pmtrd):
-        """ Full simulation of the energy plane response
-        Input:
-         1) extensible array pmtrd
-         2) event_number
-
-        returns:
-        array of raw waveforms (RWF) obtained by convoluting pmtrd with the PMT
-        front end electronics (LPF, HPF filters)
-        array of BLR waveforms (only decimation)
-        """
-        # Single Photoelectron class
-        spe = FE.SPE()
-        # FEE, with noise PMT
-        fee  = FE.FEE(noise_FEEPMB_rms=FE.NOISE_I, noise_DAQ_rms=FE.NOISE_DAQ)
-        NPMT = pmtrd.shape[1]
-        RWF  = []
-        BLRX = []
-
-        for pmt in range(NPMT):
-            # normalize calibration constants from DB to MC value
-            cc = self.adc_to_pes[pmt] / FE.ADC_TO_PES
-            # signal_i in current units
-            signal_i = FE.spe_pulse_from_vector(spe, pmtrd[event, pmt])
-            # Decimate (DAQ decimation)
-            signal_d = FE.daq_decimator(FE.f_mc, FE.f_sample, signal_i)
-            # Effect of FEE and transform to adc counts
-            signal_fee = FE.signal_v_fee(fee, signal_d, pmt) * FE.v_to_adc()
-            # add noise daq
-            signal_daq = cc * FE.noise_adc(fee, signal_fee)
-            # signal blr is just pure MC decimated by adc in adc counts
-            signal_blr = cc * FE.signal_v_lpf(fee, signal_d)*FE.v_to_adc()
-            # raw waveform stored with negative sign and offset
-            RWF.append(FE.OFFSET - signal_daq)
-            # blr waveform stored with positive sign and no offset
-            BLRX.append(signal_blr)
-        return np.array(RWF), np.array(BLRX)
-
-    def set_sipm_noise_cut(self, noise_cut=3.0):
-        """Sets the SiPM noise cut (in PES)"""
-        self.sipm_noise_cut = noise_cut
-
-    def store_FEE_table(self):
-        """Store the parameters of the EP FEE simulation."""
-        row = self.fee_table.row
-        row["OFFSET"]        = FE.OFFSET
-        row["CEILING"]       = FE.CEILING
-        row["PMT_GAIN"]      = FE.PMT_GAIN
-        row["FEE_GAIN"]      = FE.FEE_GAIN
-        row["R1"]            = FE.R1
-        row["C1"]            = FE.C1
-        row["C2"]            = FE.C2
-        row["ZIN"]           = FE.Zin
-        row["DAQ_GAIN"]      = FE.DAQ_GAIN
-        row["NBITS"]         = FE.NBITS
-        row["LSB"]           = FE.LSB
-        row["NOISE_I"]       = FE.NOISE_I
-        row["NOISE_DAQ"]     = FE.NOISE_DAQ
-        row["t_sample"]      = FE.t_sample
-        row["f_sample"]      = FE.f_sample
-        row["f_mc"]          = FE.f_mc
-        row["f_LPF1"]        = FE.f_LPF1
-        row["f_LPF2"]        = FE.f_LPF2
-        row["coeff_c"]       = self.coeff_c
-        row["coeff_blr"]     = self.coeff_blr
-        row["adc_to_pes"]    = self.adc_to_pes
-        row["pmt_noise_rms"] = self.noise_rms
-        row.append()
-        self.fee_table.flush()
+        SensorResponseCity.__init__(self,
+                                    run_number     = run_number,
+                                    files_in       = files_in,
+                                    file_out       = file_out,
+                                    sipm_noise_cut = sipm_noise_cut)
 
     def run(self, nmax):
         """
@@ -168,7 +88,7 @@ class Diomira(City):
                     sipmrd = h5in.root.sipmrd
 
                     NEVT, NPMT, PMTWL = pmtrd.shape
-                    PMTWL_FEE = int(PMTWL / FE.t_sample)
+                    PMTWL_FEE = int(PMTWL / self.FE_t_sample)
                     NEVENTS_DST, NSIPM, SIPMWL = sipmrd.shape
 
                     print("Events in file = {}".format(NEVENTS_DST))
