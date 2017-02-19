@@ -178,7 +178,7 @@ class Diomira(City):
 
                 print("Events in file = {}".format(NEVENTS_DST))
 
-                if first == False:
+                if not first:
                     # print configuration, create vectors
                     # init SiPM noiser, store FEE table
                     print_configuration({"# PMT"        : NPMT,
