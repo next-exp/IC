@@ -79,9 +79,8 @@ class Isidora(DeconvolutionCity):
         nmax is the max number of events to run
         """
         n_events_tot = 0
-        # check the state of the machine
-        if not self.input_files:
-            raise NoInputFiles('Input file list is empty, set it before running')
+
+        self.check_files()
 
         print("""
                  ISIDORA will run a max of {} events
