@@ -24,7 +24,7 @@ import invisible_cities.core.system_of_units as units
 from   invisible_cities.sierpe import fee as FEE
 import invisible_cities.sierpe.blr as blr
 from   invisible_cities.database import load_db
-from   invisible_cities.cities.maurilia import Maurilia
+from   invisible_cities.cities.maurilia import Maurilia, MAURILIA
 from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
@@ -74,3 +74,14 @@ def config_file_spec_with_tmpdir(tmpdir):
                 PATH_OUT = str(tmpdir),
                 FILE_OUT = 'NEW_se_mc_1evt.h5',
                 COMPRESSION = 'ZLIB4')
+
+def test_command_line_maurilia(config_tmpdir):
+
+    config_file_spec = config_file_spec_with_tmpdir(config_tmpdir)
+
+    config_file_contents = config_file_format.format(**config_file_spec)
+    conf_file_name = str(config_tmpdir.join('test-5.conf'))
+    with open(conf_file_name, 'w') as conf_file:
+        conf_file.write(config_file_contents)
+
+    MAURILIA(['MAURILIA', '-c', conf_file_name])
