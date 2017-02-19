@@ -90,7 +90,6 @@ class Isidora(DeconvolutionCity):
 
                     NEVT, NPMT,   PMTWL = pmtrwf .shape
                     NEVT, NSIPM, SIPMWL = sipmrwf.shape
-                    print("Events in file = {}".format(NEVT))
                     sensor_param = SensorParam(NPMT   = NPMT,
                                                PMTWL  = PMTWL,
                                                NSIPM  = NSIPM,
@@ -106,13 +105,7 @@ class Isidora(DeconvolutionCity):
                     # loop over all events in file unless reach nmax
                     for evt in range(NEVT):
                         # deconvolve
-                        CWF = blr.deconv_pmt(
-                            pmtrwf[evt],
-                            self.coeff_c,
-                            self.coeff_blr,
-                            n_baseline  = self.n_baseline,
-                            thr_trigger = self.thr_trigger)
-
+                        CWF = self.deconv_pmt(pmtrwf[evt])
                         self._store_cwf(CWF, cwf_file, cwf_group)
 
                         n_events_tot += 1
