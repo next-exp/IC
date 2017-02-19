@@ -97,7 +97,8 @@ def test_isidora_run(config_tmpdir):
     files_in = glob(RWF_file)
     files_in.sort()
     fpp.set_input_files(files_in)
-    fpp.set_cwf_store(CWF_file, compression = CFP['COMPRESSION'])
+    fpp.set_output_file(CWF_file)
+    fpp.set_compression(CFP['COMPRESSION'])
     fpp.set_print(nprint = CFP['NPRINT'])
 
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
