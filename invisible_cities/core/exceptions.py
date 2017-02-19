@@ -9,3 +9,6 @@ class ICException(Exception):
 class NoInputFiles(ICException):
     """ Input files list is not defined """
     pass
+
+class NoOutputFile(ICException):
+    pass
