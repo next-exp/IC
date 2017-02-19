@@ -29,9 +29,9 @@ units = SystemOfUnits()
 # S12P = S12Params
 
 class Irene(PmapCity):
-    """
-    The city of IRENE performs a fast processing directly
-    from raw data (pmtrwf and sipmrwf) to PMAPS.
+    """Perform fast processing from raw data to pmaps.
+
+    Raw data pmtrwf and sipmrwf.
     It is optimized for speed (use of CYTHON functions) and intended
     for fast processing of data.
     """
@@ -74,7 +74,6 @@ class Irene(PmapCity):
         # counter for empty events
         self.empty_events = 0 # counts empty events in the energy plane
 
-    #def set_pmap_store(self, pmap_file_name, compression='ZLIB4'):
     def _set_pmap_store(self, pmap_file):
         """Set the output file."""
         # open pmap store
@@ -108,22 +107,20 @@ class Irene(PmapCity):
         self.s2sit.cols.event.create_index()
 
         # Create group for run info
-        if self.run_number >0:
-            rungroup     = pmap_file.create_group(
-               pmap_file.root, "Run")
         if not self.monte_carlo:
+            rungroup     = pmap_file.create_group(pmap_file.root, "Run")
 
-            self.runInfo = pmap_file.create_table(
-                rungroup, "runInfo", RunInfo, "runInfo",
-                tbl.filters(self.compression))
+            # self.runInfo = pmap_file.create_table(
+            #     rungroup, "runInfo", RunInfo, "runInfo",
+            #     tbl.filters(self.compression))
 
             self.evtInfot = pmap_file.create_table(
                 rungroup, "events", EventInfo, "events",
                 tbl.filters(self.compression))
 
 
-    def _store_s12(self, S12, s12_table, event):
-        row = s12_table.row
+    def _store_s12(self, S12, event):
+        row = self.s1t.row
         for i in S12:
             time = S12[i][0]
             ene  = S12[i][1]
@@ -139,7 +136,7 @@ class Irene(PmapCity):
                 row["time"] = time[j]
                 row["ene"]  =  ene[j]
                 row.append()
-        s12_table.flush()
+        self.s1t.flush()
 
     def _store_s2si(self, S2Si, event):
         row = self.s2sit.row
@@ -175,8 +172,8 @@ class Irene(PmapCity):
             row.append()
             self.evtInfot.flush()
 
-        self._store_s12(S1, self.s1t, event)
-        self._store_s12(S2, self.s2t, event)
+        self._store_s12(S1, event)
+        self._store_s12(S2, event)
         self._store_s2si(S2Si, event)
 
     def run(self, nmax, print_empty=True):
@@ -225,8 +222,7 @@ class Irene(PmapCity):
         # loop over input files
         first = False
         with tb.open_file(self.output_file, "w",
-                          filters=tbl.filters(self.compression)) as\
-                          pmap_file:
+                          filters = tbl.filters(self.compression)) as pmap_file:
 
             self._set_pmap_store(pmap_file) # prepare the pmap store
 
@@ -235,73 +231,66 @@ class Irene(PmapCity):
                 filename = ffile
                 with tb.open_file(filename, "r") as h5in:
                     # access RWF
-                    pmtrwf  = h5in.root.RD.pmtrwf
+                    pmtrwf  = h5in.root.RD. pmtrwf
                     sipmrwf = h5in.root.RD.sipmrwf
 
                     if not self.monte_carlo:
                         self.eventsInfo = h5in.root.Run.events
 
-                    NEVT, NPMT, PMTWL   = pmtrwf.shape
+                    NEVT, NPMT,   PMTWL =  pmtrwf.shape
                     NEVT, NSIPM, SIPMWL = sipmrwf.shape
                     print("Events in file = {}".format(NEVT))
 
-                    if first == False:
+                    if not first:
                         print_configuration({"# PMT"  : NPMT,
                                              "PMT WL" : PMTWL,
                                              "# SiPM" : NSIPM,
                                              "SIPM WL": SIPMWL})
-
                         first = True
 
                         # loop over all events in file unless reach nmax
                     for evt in range(NEVT):
                         # deconvolve
+                        # import pdb; pdb.set_trace() # This is how to enter debugger
                         CWF = self.deconv_pmt(pmtrwf[evt])
                         # calibrated PMT sum
                         csum, csum_mau = self.calibrated_pmt_sum(CWF)
                         #ZS sum for S1 and S2
-                        s2_ene, s2_indx = self.csum_zs(csum,
-                                              threshold=self.thr_csum_s2)
-                        s1_ene, s1_indx = self.csum_zs(csum_mau,
-                                              threshold=self.thr_csum_s1)
+                        s1_ene, s1_indx = self.csum_zs(csum_mau, threshold = self.thr_csum_s1)
+                        s2_ene, s2_indx = self.csum_zs(csum,     threshold = self.thr_csum_s2)
 
                         # In a few rare cases s2_ene is empty
                         # this is due to empty energy plane events
                         # a protection is set to avoid a crash
                         if np.sum(s2_ene) == 0:
-                            self.empty_events +=1
+                            self.empty_events += 1
                             continue
 
                         # SiPMs signals
                         sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
                         # PMAPS
-                        S1, S2 = self.find_S12(s1_ene,
-                                               s1_indx,
-                                               s2_ene,
-                                               s2_indx)
+                        S1, S2 = self.find_S12(s1_ene, s1_indx,
+                                               s2_ene, s2_indx)
                         S2Si = self.find_S2Si(S2, sipmzs)
 
                         # store PMAPS
                         self._store_pmaps(n_events_tot, evt, S1, S2, S2Si)
 
                         n_events_tot += 1
-                        if n_events_tot%self.nprint == 0:
+                        if n_events_tot % self.nprint == 0:
                             print('event in file = {}, total = {}'
                                   .format(evt, n_events_tot))
 
-                        if n_events_tot >= nmax and nmax > -1:
+                        if n_events_tot >= nmax > -1:
                             print('reached max nof of events (={})'
                                   .format(nmax))
                             break
 
-
-        #if pmap_file:
             if not self.monte_carlo:
                 row = self.runInfot.row
                 row['run_number'] = self.run_number
                 row.append()
                 self.runInfot.flush()
-            #pmap_file.close()
 
         if print_empty:
             print('Energy plane empty events (skipped) = {}'.format(
