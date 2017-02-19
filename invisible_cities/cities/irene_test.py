@@ -50,8 +50,8 @@ def test_diomira_and_irene_run(irene_diomira_chain_tmpdir):
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
     fpp.set_input_files(files_in)
-    fpp.set_output_file(CFP['FILE_OUT'],
-                        compression = CFP['COMPRESSION'])
+    fpp.set_output_file(CFP['FILE_OUT'])
+    fpp.set_compression(CFP['COMPRESSION'])
     fpp.set_print(nprint = CFP['NPRINT'])
     fpp.set_sipm_noise_cut(noise_cut = CFP["NOISE_CUT"])
 
