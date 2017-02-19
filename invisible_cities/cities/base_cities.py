@@ -93,6 +93,7 @@ class DeconvolutionCity(City):
                  file_out    = None,
                  compression = 'ZLIB4',
                  nprint      = 10000,
+                 # Parameters added at this level
                  n_baseline  = 28000,
                  thr_trigger = 5 * units.adc):
 
@@ -126,8 +127,8 @@ class CalibratedCity(DeconvolutionCity):
           a) csum: PMTs waveforms are equalized to photoelectrons (pes) and
              added
           b) csum_mau: waveforms are equalized to photoelectrons;
-              compute a MAU that follows baseline and add PMT samples above
-              MAU + threshold
+             compute a MAU that follows baseline and add PMT samples above
+             MAU + threshold
        2. Compute the calibrated signal in the SiPMs:
           a) equalize to pes;
           b) compute a MAU that follows baseline and keep samples above
@@ -142,12 +143,13 @@ class CalibratedCity(DeconvolutionCity):
                  nprint      = 10000,
                  n_baseline  = 28000,
                  thr_trigger = 5 * units.adc,
+                 # Parameters added at this level
                  n_MAU       = 100,
-                 thr_MAU     = 3.0*units.adc,
-                 thr_csum_s1 = 0.2*units.adc,
-                 thr_csum_s2 = 1.0*units.adc,
+                 thr_MAU     = 3.0 * units.adc,
+                 thr_csum_s1 = 0.2 * units.pes,
+                 thr_csum_s2 = 1.0 * units.pes,
                  n_MAU_sipm  = 100,
-                 thr_sipm    = 5.0*units.pes):
+                   thr_sipm  = 5.0 * units.pes):
 
         DeconvolutionCity.__init__(self,
                                    run_number  = run_number,
@@ -165,26 +167,30 @@ class CalibratedCity(DeconvolutionCity):
         self.thr_csum_s2 = thr_csum_s2
 
         # Parameters of the SiPM signal
-        self.n_MAU_sipm   = n_MAU_sipm
-        self.thr_sipm = thr_sipm
+        self.n_MAU_sipm = n_MAU_sipm
+        self.  thr_sipm =   thr_sipm
 
-    def set_csum(self, n_MAU, thr_MAU, thr_csum_s1, thr_csum_s2):
-        """Set CSUM parameters"""
-        self.n_MAU       = n_MAU
+    def set_csum(self,
+                   n_MAU     = 100,
+                 thr_MAU     = 3   * units.adc,
+                 thr_csum_s1 = 0.2 * units.pes,
+                 thr_csum_s2 = 1.0 * units.pes):
+        """Set CSUM parameters."""
+        self.  n_MAU     =   n_MAU
         self.thr_MAU     = thr_MAU
         self.thr_csum_s1 = thr_csum_s1
         self.thr_csum_s2 = thr_csum_s2
 
-    def set_sipm(self, n_MAU_sipm=100, thr_sipm=5 * units.pes):
+    def set_sipm(self, n_MAU_sipm=100, thr_sipm=5*units.pes):
         """Cutoff for SiPMs."""
-        self.thr_sipm = thr_sipm
-        self.n_MAU_sipm   = n_MAU_sipm
+        self.  thr_sipm =   thr_sipm
+        self.n_MAU_sipm = n_MAU_sipm
 
     def calibrated_pmt_sum(self, CWF):
-        """Return the csum and csum_mau calibrated sums"""
+        """Return the csum and csum_mau calibrated sums."""
         return cpf.calibrated_pmt_sum(CWF,
                                       self.adc_to_pes,
-                                      n_MAU =   self.n_MAU,
+                                        n_MAU =   self.n_MAU,
                                       thr_MAU = self.thr_MAU)
 
     def csum_zs(self, csum, threshold):
@@ -195,7 +201,7 @@ class CalibratedCity(DeconvolutionCity):
         """Return the calibrated signal in the SiPMs."""
         return cpf.signal_sipm(SiRWF,
                                self.sipm_adc_to_pes,
-                               thr =   self.thr_sipm,
+                               thr   = self.  thr_sipm,
                                n_MAU = self.n_MAU_sipm)
 
 
@@ -214,14 +220,15 @@ class PmapCity(CalibratedCity):
                  n_baseline  = 28000,
                  thr_trigger = 5 * units.adc,
                  n_MAU       = 100,
-                 thr_MAU     = 3.0*units.adc,
-                 thr_csum_s1 = 0.2*units.adc,
-                 thr_csum_s2 = 1.0*units.adc,
+                 thr_MAU     = 3.0 * units.adc,
+                 thr_csum_s1 = 0.2 * units.adc,
+                 thr_csum_s2 = 1.0 * units.adc,
                  n_MAU_sipm  = 100,
-                 thr_sipm    = 5.0*units.pes,
+                 thr_sipm    = 5.0 * units.pes,
+                 # Parameters added at this level
                  s1_params   = None,
                  s2_params   = None,
-                 thr_sipm_s2 = 30*units.pes):
+                 thr_sipm_s2 = 30 * units.pes):
 
         CalibratedCity.__init__(self,
                                 run_number  = run_number,
@@ -236,7 +243,7 @@ class PmapCity(CalibratedCity):
                                 thr_csum_s1 = thr_csum_s1,
                                 thr_csum_s2 = thr_csum_s2,
                                 n_MAU_sipm  = n_MAU_sipm,
-                                thr_sipm    = thr_sipm)
+                                  thr_sipm  =   thr_sipm)
 
         self.s1_params   = s1_params
         self.s2_params   = s2_params
@@ -245,14 +252,14 @@ class PmapCity(CalibratedCity):
     def set_pmap_params(self,
                         s1_params,
                         s2_params,
-                        thr_sipm_s2 = 30*units.pes):
+                        thr_sipm_s2 = 30 * units.pes):
         """Parameters for PMAP searches."""
         self.s1_params = s1_params
         self.s2_params = s2_params
         self.thr_sipm_s2 = thr_sipm_s2
 
     def find_S12(self, s1_ene, s1_indx, s2_ene, s2_indx):
-        """Return S1 and S2"""
+        """Return S1 and S2."""
         S1 = cpf.find_S12(s1_ene,
                           s1_indx,
                           **self.s1_params._asdict())
@@ -263,8 +270,7 @@ class PmapCity(CalibratedCity):
         return S1, S2
 
     def find_S2Si(self, S2, sipmzs):
-        """Return S2Si"""
-
+        """Return S2Si."""
         SIPM = cpf.select_sipm(sipmzs)
         S2Si = pmp.sipm_s2_dict(SIPM, S2, thr = self.thr_sipm_s2)
         return S2Si
