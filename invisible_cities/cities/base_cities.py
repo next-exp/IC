@@ -24,6 +24,7 @@ import invisible_cities.sierpe.fee as FE
 import invisible_cities.core.wfm_functions as wfm
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
+from   invisible_cities.core.configure import print_configuration
 
 units = SystemOfUnits()
 
@@ -98,6 +99,12 @@ class City:
                  Output File = {}
                           """.format(self.__class__.__name__,
                                      nmax, self.input_files, self.output_file))
+
+    def print_configuration(self, sp):
+        print_configuration({"# PMT"        : sp.NPMT,
+                             "PMT WL"       : sp.PMTWL,
+                             "# SiPM"       : sp.NSIPM,
+                             "SIPM WL"      : sp.SIPMWL})
 
 
 class SensorResponseCity(City):
