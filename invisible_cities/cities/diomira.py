@@ -35,14 +35,21 @@ class Diomira(City):
     traking plane sensors.
 
     """
-    def __init__(self, run_number=0, files_in=None, sipm_noise_cut=3):
+    def __init__(self,
+                 run_number     = 0,
+                 files_in       = None,
+                 file_out       = None,
+                 sipm_noise_cut = 3):
         """
         -1. Inits the machine
         -2. Loads the data base to access calibration data
         -3. Sets all switches to default value
         """
 
-        City.__init__(self, run_number=run_number, files_in=files_in)
+        City.__init__(self,
+                      run_number = run_number,
+                      files_in   = files_in,
+                      file_out   = file_out)
 
         self.sipm_noise_cut = sipm_noise_cut
 
