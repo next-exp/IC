@@ -20,6 +20,7 @@ from   invisible_cities.core.system_of_units_c import SystemOfUnits
 from   invisible_cities.database import load_db
 
 from   invisible_cities.cities.base_cities import DeconvolutionCity
+from   invisible_cities.cities.base_cities import DeconvolutionCity, SensorParam
 
 units = SystemOfUnits()
 
@@ -100,6 +101,10 @@ class Isidora(DeconvolutionCity):
                     NEVT, NPMT,   PMTWL = pmtrwf .shape
                     NEVT, NSIPM, SIPMWL = sipmrwf.shape
                     print("Events in file = {}".format(NEVT))
+                    sensor_param = SensorParam(NPMT   = NPMT,
+                                               PMTWL  = PMTWL,
+                                               NSIPM  = NSIPM,
+                                               SIPMWL = SIPMWL)
 
                     if first == False:
                         print_configuration({"# PMT"  : NPMT,
