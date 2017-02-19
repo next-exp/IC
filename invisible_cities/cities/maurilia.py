@@ -33,12 +33,21 @@ class Maurilia(City):
     """
     def __init__(self, run_number=0, files_in=None, file_out=None):
         """
-        Initialize with the specified run number and input filess 
+        Initialize with the specified run number and input filess
         """
         City.__init__(self,
                       run_number = run_number,
                       files_in   = files_in,
                       file_out   = file_out)
+
+
+    def display_IO_info(self):
+        print("""
+                 {} will run with
+                 Input Files = {}
+                 Output File = {}
+                          """.format(self.__class__.__name__,
+                                     self.input_files, self.output_file))
 
     def run(self):
         """
@@ -46,15 +55,9 @@ class Maurilia(City):
         """
         n_events_tot = 0
 
-        self.check_files()
 
-        # TODO lift this print up to base class
-        print("""
-                 MAURILIA will run
-                 Input Files = {}
-                 Output File = {}
-                          """.format(self.input_files,
-                                     self.output_file))
+        self.check_files()
+        self.display_IO_info()
 
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
@@ -74,7 +77,7 @@ class Maurilia(City):
                 with tb.open_file(filename, "r") as h5in:
                     mctbl  = h5in.root.MC.MCTracks
 
-                    # add all the rows to the main table 
+                    # add all the rows to the main table
                     for r in mctbl.iterrows():
                         self.mc_table.append([r[:]])
 
