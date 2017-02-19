@@ -191,11 +191,7 @@ class Irene(PmapCity):
 
         n_events_tot = 0
 
-        # check that input/output files are defined
-        if not self.input_files:
-            raise IOError('input file list is empty, must set before running')
-        if not self.output_file:
-            raise IOError('must set output file before running')
+        self.check_files()
 
         # check that S1 and S2 params are defined
         if (not self.s1_params) or (not self.s2_params):
