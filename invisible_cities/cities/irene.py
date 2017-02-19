@@ -238,10 +238,7 @@ class Irene(PmapCity):
                     print("Events in file = {}".format(NEVT))
 
                     if not first:
-                        print_configuration({"# PMT"  : NPMT,
-                                             "PMT WL" : PMTWL,
-                                             "# SiPM" : NSIPM,
-                                             "SIPM WL": SIPMWL})
+                        self.print_configuration(sensor_param)
                         first = True
 
                         # loop over all events in file unless reach nmax
