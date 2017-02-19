@@ -12,19 +12,12 @@ import sys
 from glob import glob
 from time import time
 
-import numpy as np
+import numpy  as np
 import tables as tb
 
 import invisible_cities.core.tbl_functions as tbl
 from   invisible_cities.core.configure import configure, print_configuration
-from   invisible_cities.core.nh5 import FEE, MCTrack
-import invisible_cities.core.mpl_functions as mpl
-import invisible_cities.core.wfm_functions as wfm
-from   invisible_cities.core.random_sampling \
-     import NoiseSampler as SiPMsNoiseSampler
-from   invisible_cities.database import load_db
-import invisible_cities.sierpe.fee as FE
-
+from   invisible_cities.core.nh5 import MCTrack
 from   invisible_cities.cities.base_cities import City
 
 class Maurilia(City):
