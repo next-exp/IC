@@ -28,7 +28,6 @@ units = SystemOfUnits()
 
 
 
-
 class Diomira(SensorResponseCity):
     """
     The city of DIOMIRA simulates the response of the energy and
@@ -62,12 +61,7 @@ class Diomira(SensorResponseCity):
 
         n_events_tot = 0
         # run the machine only if in a legal state
-        if not self.input_files:
-            raise IOError('must set input files before running')
-        if len(self.input_files)    == 0:
-            raise IOError('input file list is empty')
-        if not self.output_file:
-            raise IOError('must set output file before running')
+        self.check_files()
         if not self.sipm_noise_cut:
             raise IOError('must set sipm_noise_cut before running')
 
@@ -100,43 +94,8 @@ class Diomira(SensorResponseCity):
                     if not first:
                         # print configuration, create vectors
                         # init SiPM noiser, store FEE table
-                        print_configuration({"# PMT"        : NPMT,
-                                             "PMT WL"       : PMTWL,
-                                             "PMT WL (FEE)" : PMTWL_FEE,
-                                             "# SiPM"       : NSIPM,
-                                             "SIPM WL"      : SIPMWL})
-                        # RD group
-                        RD = h5out.create_group(h5out.root, "RD")
-                        # MC group
-                        MC = h5out.create_group(h5out.root, "MC")
-                        # create a table to store Energy plane FEE
-                        self.fee_table = h5out.create_table(MC, "FEE", FEE,
-                                          "EP-FEE parameters",
-                                          tbl.filters("NOCOMPR"))
-                        # create vectors
-                        self.pmtrwf = h5out.create_earray(
-                                    RD,
-                                    "pmtrwf",
-                                    atom = tb.Int16Atom(),
-                                    shape = (0, NPMT, PMTWL_FEE),
-                                    expectedrows = nmax,
-                                    filters = tbl.filters(self.compression))
-
-                        self.pmtblr = h5out.create_earray(
-                                    RD,
-                                    "pmtblr",
-                                    atom = tb.Int16Atom(),
-                                    shape = (0, NPMT, PMTWL_FEE),
-                                    expectedrows = nmax,
-                                    filters = tbl.filters(self.compression))
-
-                        self.sipmrwf = h5out.create_earray(
-                                    RD,
-                                    "sipmrwf",
-                                    atom = tb.Int16Atom(),
-                                    shape = (0, NSIPM, SIPMWL),
-                                    expectedrows = nmax,
-                                    filters = tbl.filters(self.compression))
+                        self.print_configuration(sensor_param, PMTWL)
+                        self.set_output_store(h5out, nmax, sensor_param)
 
                         # Create instance of the noise sampler
                         self.noise_sampler = SiPMsNoiseSampler(SIPMWL, True)
@@ -185,6 +144,49 @@ class Diomira(SensorResponseCity):
 
 
         return n_events_tot
+
+    def set_output_store(self, h5out, nmax, sp):
+
+        # RD group
+        RD = h5out.create_group(h5out.root, "RD")
+        # MC group
+        MC = h5out.create_group(h5out.root, "MC")
+        # create a table to store Energy plane FEE
+        self.fee_table = h5out.create_table(MC, "FEE", FEE,
+                          "EP-FEE parameters",
+                          tbl.filters("NOCOMPR"))
+        # create vectors
+        self.pmtrwf = h5out.create_earray(
+                    RD,
+                    "pmtrwf",
+                    atom = tb.Int16Atom(),
+                    shape = (0, sp.NPMT, sp.PMTWL),
+                    expectedrows = nmax,
+                    filters = tbl.filters(self.compression))
+
+        self.pmtblr = h5out.create_earray(
+                    RD,
+                    "pmtblr",
+                    atom = tb.Int16Atom(),
+                    shape = (0, sp.NPMT, sp.PMTWL),
+                    expectedrows = nmax,
+                    filters = tbl.filters(self.compression))
+
+        self.sipmrwf = h5out.create_earray(
+                    RD,
+                    "sipmrwf",
+                    atom = tb.Int16Atom(),
+                    shape = (0, sp.NSIPM, sp.SIPMWL),
+                    expectedrows = nmax,
+                    filters = tbl.filters(self.compression))
+
+    def print_configuration(self, sp, PMTWL):
+        print_configuration({"# PMT"        : sp.NPMT,
+                             "PMT WL"       : PMTWL,
+                             "PMT WL (FEE)" : sp.PMTWL,
+                             "# SiPM"       : sp.NSIPM,
+                             "SIPM WL"      : sp.SIPMWL})
+
 
 
 def DIOMIRA(argv=sys.argv):
