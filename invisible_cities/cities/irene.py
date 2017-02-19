@@ -170,7 +170,7 @@ class Irene(PmapCity):
             row     = self.evtInfot.row
             evtInfo = self.eventsInfo[evt]
 
-            row['evt_number'] = evtInfo[0]
+            row['evt_number'] = evtInfo[1]#.evt_number # TODO Write test !!!!!
             row['timestamp']  = evtInfo[1]
             row.append()
             self.evtInfot.flush()
