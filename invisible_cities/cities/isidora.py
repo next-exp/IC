@@ -106,12 +106,11 @@ class Isidora(DeconvolutionCity):
                                                NSIPM  = NSIPM,
                                                SIPMWL = SIPMWL)
 
-                    if first == False:
-                        print_configuration({"# PMT"  : NPMT,
-                                             "PMT WL" : PMTWL,
-                                             "# SiPM" : NSIPM,
-                                             "SIPM WL": SIPMWL})
 
+                    print("Events in file = {}".format(NEVT))
+
+                    if not first:
+                        self.print_configuration(sensor_param)
                         self.signal_t = np.arange(0, PMTWL * 25, 25)
                         first = True
                     # loop over all events in file unless reach nmax
