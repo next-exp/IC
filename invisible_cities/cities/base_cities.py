@@ -85,6 +85,14 @@ class City:
         """Set the input files."""
         self.compression = compression
 
+    def display_IO_info(self, nmax):
+        print("""
+                 {} will run a max of {} events
+                 Input Files = {}
+                 Output File = {}
+                          """.format(self.__class__.__name__,
+                                     nmax, self.input_files, self.output_file))
+
 
 class DeconvolutionCity(City):
     """A Deconvolution city extends the City base class adding the

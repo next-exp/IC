@@ -197,11 +197,7 @@ class Irene(PmapCity):
         if (not self.s1_params) or (not self.s2_params):
             raise IOError('must set S1/S2 parameters before running')
 
-        print("""
-                 IRENE will run a max of {} events
-                 Storing PMAPS in {}
-                 Input Files = {}"""
-              .format(nmax, self.output_file, self.input_files))
+        self.display_IO_info(nmax)
 
         print("""
                  S1 parameters {}""" .format(self.s1_params))

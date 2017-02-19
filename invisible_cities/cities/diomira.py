@@ -151,11 +151,7 @@ class Diomira(City):
         if not self.sipm_noise_cut:
             raise IOError('must set sipm_noise_cut before running')
 
-        print("""
-                 DIOMIRA will run a max of {} events
-                 Input Files = {}
-                 Output File = {}
-                          """.format(nmax, self.input_files, self.output_file))
+        self.display_IO_info(nmax)
 
         # loop over input files
         first = False
