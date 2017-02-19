@@ -14,7 +14,7 @@ from   invisible_cities.core.configure \
 
 from   invisible_cities.core.system_of_units_c import SystemOfUnits
 
-from   invisible_cities.cities.base_cities import PmapCity
+from   invisible_cities.cities.base_cities import PmapCity, SensorParam
 from   invisible_cities.cities.base_cities import S12Params as S12P
 
 units = SystemOfUnits()
@@ -231,6 +231,10 @@ class Irene(PmapCity):
 
                     NEVT, NPMT,   PMTWL =  pmtrwf.shape
                     NEVT, NSIPM, SIPMWL = sipmrwf.shape
+                    sensor_param = SensorParam(NPMT   = NPMT,
+                                               PMTWL  = PMTWL,
+                                               NSIPM  = NSIPM,
+                                               SIPMWL = SIPMWL)
                     print("Events in file = {}".format(NEVT))
 
                     if not first:
