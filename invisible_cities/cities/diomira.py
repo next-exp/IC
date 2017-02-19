@@ -90,6 +90,10 @@ class Diomira(SensorResponseCity):
                     NEVT, NPMT, PMTWL = pmtrd.shape
                     PMTWL_FEE = int(PMTWL / self.FE_t_sample)
                     NEVENTS_DST, NSIPM, SIPMWL = sipmrd.shape
+                    sensor_param = SensorParam(NPMT   = NPMT,
+                                               PMTWL  = PMTWL_FEE,
+                                               NSIPM  = NSIPM,
+                                               SIPMWL = SIPMWL)
 
                     print("Events in file = {}".format(NEVENTS_DST))
 

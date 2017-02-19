@@ -26,7 +26,9 @@ from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
 
 units = SystemOfUnits()
-S12Params = namedtuple('S12Params', 'tmin tmax stride lmin lmax rebin')
+
+S12Params   = namedtuple('S12Params', 'tmin tmax stride lmin lmax rebin')
+SensorParam = namedtuple('SensorParam', 'NPMT PMTWL NSIPM SIPMWL')
 
 
 class City:
