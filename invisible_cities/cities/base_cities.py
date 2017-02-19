@@ -19,6 +19,7 @@ from   invisible_cities.core.system_of_units_c import SystemOfUnits
 import invisible_cities.sierpe.blr as blr
 import invisible_cities.core.peak_functions_c as cpf
 import invisible_cities.core.pmaps_functions as pmp
+from   invisible_cities.core.exceptions import NoInputFiles, NoOutputFile
 
 units = SystemOfUnits()
 S12Params = namedtuple('S12Params', 'tmin tmax stride lmin lmax rebin')
@@ -61,6 +62,12 @@ class City:
     @property
     def monte_carlo(self):
         return self.run_number <= 0
+
+    def check_files(self):
+        if not self.input_files:
+            raise NoInputFiles('input file list is empty, must set before running')
+        if not self.output_file:
+            raise NoOutputFile('must set output file before running')
 
     def set_print(self, nprint=1000):
         """Print frequency."""
