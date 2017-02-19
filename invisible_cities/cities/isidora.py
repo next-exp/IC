@@ -35,6 +35,7 @@ class Isidora(DeconvolutionCity):
     def __init__(self,
                  run_number  = 0,
                  files_in    = None,
+                 file_out    = None,
                  nprint      = 10000,
                  n_baseline  = 28000,
                  thr_trigger = 5 * units.adc):
@@ -47,6 +48,7 @@ class Isidora(DeconvolutionCity):
         DeconvolutionCity.__init__(self,
                                    run_number  = run_number,
                                    files_in    = files_in,
+                                   file_out    = file_out,
                                    nprint      = nprint,
                                    n_baseline  = n_baseline,
                                    thr_trigger = thr_trigger)
