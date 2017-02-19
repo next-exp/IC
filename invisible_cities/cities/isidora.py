@@ -72,11 +72,7 @@ class Isidora(DeconvolutionCity):
         n_events_tot = 0
 
         self.check_files()
-
-        print("""
-                 ISIDORA will run a max of {} events
-                 Input Files ={}
-                          """.format(nmax, self.input_files))
+        self.display_IO_info(nmax)
 
         # loop over input files
         with tb.open_file(self.output_file, "w",
