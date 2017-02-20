@@ -11,7 +11,6 @@ Authors: J.J. Gomez-Cadenas and J. Generowicz.
 Feburary, 2017.
 """
 
-from collections import namedtuple
 import numpy as np
 
 from   invisible_cities.database import load_db
@@ -25,11 +24,9 @@ import invisible_cities.core.wfm_functions as wfm
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
 from   invisible_cities.core.configure import print_configuration
+from   invisible_cities.core.params import S12Params, SensorParams
 
 units = SystemOfUnits()
-
-S12Params   = namedtuple('S12Params', 'tmin tmax stride lmin lmax rebin')
-SensorParam = namedtuple('SensorParam', 'NPMT PMTWL NSIPM SIPMWL')
 
 
 class City:
