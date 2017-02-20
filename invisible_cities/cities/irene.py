@@ -12,12 +12,9 @@ import invisible_cities.core.tbl_functions as tbl
 from   invisible_cities.core.configure \
        import configure, define_event_loop, print_configuration
 
-from   invisible_cities.core.system_of_units_c import SystemOfUnits
-
+from   invisible_cities.core.system_of_units_c import units
 from   invisible_cities.cities.base_cities import PmapCity, SensorParams
 from   invisible_cities.cities.base_cities import S12Params as S12P
-
-units = SystemOfUnits()
 
 
 # Parameters for S1/S2 searches
