@@ -66,24 +66,6 @@ def s12df_plot_waveforms(S12df, nmin=0, nmax=16, x=4, y=4):
         T, E = s12df_get_wvfm(S12df, event=i, peak=0)
         plt.plot(T, E)
 
-def sipm_s2(dSIPM, S2, thr=5*units.pes):
-    """Given a vector with SIPMs (energies above threshold), return a list
-    of np arrays. Each element of the list is the S2 window in the
-    SiPM (if not zero).
-    """
-
-    i0, i1 = index_from_s2(S2)
-    dim = int(i1 - i0)
-    SIPML = []
-    for i in dSIPM.keys():
-        sipm = dSIPM[i][1]
-        psum = np.sum(sipm[i0:i1])
-        if psum > thr:
-            e = np.zeros(dim, dtype=np.double)
-            e[:] = sipm[i0:i1]
-            SIPML.append([dSIPM[i][0], e])
-    return SIPML
-
 
 def s12_to_wvfm_list(S12):
     """Take an S12 dictionary and return a list of DF."""
@@ -109,25 +91,6 @@ def scan_s12(S12):
               .format(i, len(S12[i][0]), np.sum(S12[i][1])))
         plt.plot(            S12[i][0],         S12[i][1])
 
-
-def index_from_s2(S2):
-    """Return the indexes defining the vector."""
-    T = S2[0] / units.mus
-    return int(T[0]), int(T[-1])
-
-
-def sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
-    """Given a vector with SIPMs (energies above threshold), and a
-    dictionary of S2s, S2d, returns a dictionary of SiPMs-S2.  Each
-    index of the dictionary correspond to one S2 and is a list of np
-    arrays. Each element of the list is the S2 window in the SiPM (if
-    not zero)
-    """
-    SiPMd = {}
-    for i in S2d.keys():
-        S2 = S2d[i]
-        SiPMd[i] = sipm_s2(SIPM, S2, thr=thr)
-    return SiPMd
 
 def scan_s12l(S12L):
     """Print and plot the peaks of input list S12L S12L is a list of data
