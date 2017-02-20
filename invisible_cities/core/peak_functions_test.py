@@ -16,7 +16,7 @@ import invisible_cities.core.peak_functions as pf
 import invisible_cities.core.sensor_functions as sf
 import invisible_cities.core.core_functions as cf
 
-
+@mark.slow
 def test_csum_zs_blr_cwf():
     """Test that:
      1) the calibrated sum (csum) of the BLR and the CWF is the same
