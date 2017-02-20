@@ -10,7 +10,8 @@ from   invisible_cities.core.nh5 import RunInfo, EventInfo
 import invisible_cities.core.tbl_functions as tbl
 from   invisible_cities.core.configure import configure
 from   invisible_cities.core.system_of_units_c import SystemOfUnits
-from   invisible_cities.cities.base_cities import DeconvolutionCity, SensorParam
+from   invisible_cities.cities.base_cities import (DeconvolutionCity,
+                                                   SensorParams)
 
 units = SystemOfUnits()
 
@@ -90,11 +91,10 @@ class Isidora(DeconvolutionCity):
 
                     NEVT, NPMT,   PMTWL = pmtrwf .shape
                     NEVT, NSIPM, SIPMWL = sipmrwf.shape
-                    sensor_param = SensorParam(NPMT   = NPMT,
-                                               PMTWL  = PMTWL,
-                                               NSIPM  = NSIPM,
-                                               SIPMWL = SIPMWL)
-
+                    sensor_param = SensorParams(NPMT   = NPMT,
+                                                PMTWL  = PMTWL,
+                                                NSIPM  = NSIPM,
+                                                SIPMWL = SIPMWL)
 
                     print("Events in file = {}".format(NEVT))
 
