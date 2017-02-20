@@ -15,6 +15,7 @@ import invisible_cities.core.peak_functions_c as cpf
 import invisible_cities.core.peak_functions as pf
 import invisible_cities.core.sensor_functions as sf
 import invisible_cities.core.core_functions as cf
+from   invisible_cities.core.system_of_units_c import units
 
 @mark.slow
 def test_csum_zs_blr_cwf():
