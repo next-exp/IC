@@ -18,7 +18,8 @@ import tables as tb
 
 import invisible_cities.core.tbl_functions as tbl
 from   invisible_cities.core.configure import configure, print_configuration
-from   invisible_cities.cities.base_cities import SensorResponseCity, SensorParam
+from   invisible_cities.cities.base_cities import (SensorResponseCity,
+                                                   SensorParams)
 from   invisible_cities.core.nh5 import FEE
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
@@ -84,10 +85,10 @@ class Diomira(SensorResponseCity):
                     NEVT, NPMT, PMTWL = pmtrd.shape
                     PMTWL_FEE = int(PMTWL / self.FE_t_sample)
                     NEVENTS_DST, NSIPM, SIPMWL = sipmrd.shape
-                    sensor_param = SensorParam(NPMT   = NPMT,
-                                               PMTWL  = PMTWL_FEE,
-                                               NSIPM  = NSIPM,
-                                               SIPMWL = SIPMWL)
+                    sensor_param = SensorParams(NPMT   = NPMT,
+                                                PMTWL  = PMTWL_FEE,
+                                                NSIPM  = NSIPM,
+                                                SIPMWL = SIPMWL)
 
                     print("Events in file = {}".format(NEVENTS_DST))
 
