@@ -4,6 +4,7 @@ from os import path
 from hypothesis import given, assume
 from hypothesis.strategies import lists, integers, floats
 from hypothesis.extra.numpy import arrays
+from pytest import mark
 
 from . import wfm_functions as wfm
 import invisible_cities.core.peak_functions_c as cpf
@@ -47,6 +48,7 @@ def test_rebin_wf2(t):
     np.testing.assert_allclose(np.sum(e), np.sum(E), rtol=1e-5, atol=1e-5)
 
 
+@mark.slow
 def test_compare_cwf_blr():
     """Test functions cwf_from_rwf() and compare_cwf_blr().
     The test:
