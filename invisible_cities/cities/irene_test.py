@@ -288,6 +288,7 @@ def config_file_spec_with_tmpdir(tmpdir):
 # TODO refactor to factor out config file creation: most of this test
 # is noise; duplication of something that also happens in the above
 # test
+@mark.slow
 def test_command_line_irene(config_tmpdir):
 
     config_file_spec = config_file_spec_with_tmpdir(config_tmpdir)
@@ -299,6 +300,8 @@ def test_command_line_irene(config_tmpdir):
 
     IRENE(['IRENE', '-c', conf_file_name])
 
+    
+@mark.slow
 def test_read_data(irene_diomira_chain_tmpdir):
     """Test Irene on a file containing an empty event."""
 
