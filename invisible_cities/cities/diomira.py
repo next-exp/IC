@@ -24,8 +24,7 @@ from   invisible_cities.core.nh5 import FEE
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
 import invisible_cities.core.wfm_functions as wfm
-from   invisible_cities.core.system_of_units_c import SystemOfUnits
-units = SystemOfUnits()
+from   invisible_cities.core.system_of_units_c import units
 
 
 
