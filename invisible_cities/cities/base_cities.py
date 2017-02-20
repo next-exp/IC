@@ -6,6 +6,7 @@ CalibratedCity: A DeconvolutionCity that perform the calibrated sum of the
                 PMTs and computes the calibrated signals in the SiPM plane.
 PmapCity: A CalibratedCity that computes S1, S2 and S2Si that togehter
           constitute a PMAP.
+SensorResponseCity: A city that describes sensor response
 
 Authors: J.J. Gomez-Cadenas and J. Generowicz.
 Feburary, 2017.
@@ -17,6 +18,7 @@ from   invisible_cities.database import load_db
 from   invisible_cities.core.system_of_units_c import units
 import invisible_cities.sierpe.blr as blr
 import invisible_cities.core.peak_functions_c as cpf
+import invisible_cities.core.peak_functions as pf
 import invisible_cities.core.pmaps_functions as pmp
 from   invisible_cities.core.exceptions import NoInputFiles, NoOutputFile
 import invisible_cities.sierpe.fee as FE
@@ -403,5 +405,5 @@ class PmapCity(CalibratedCity):
     def find_S2Si(self, S2, sipmzs):
         """Return S2Si."""
         SIPM = cpf.select_sipm(sipmzs)
-        S2Si = pmp.sipm_s2_dict(SIPM, S2, thr = self.thr_sipm_s2)
+        S2Si = pf.sipm_s2_dict(SIPM, S2, thr = self.thr_sipm_s2)
         return S2Si
