@@ -267,3 +267,6 @@ cdef class SystemOfUnits:
 #
 cpdef double celsius(double tKelvin):
     return tKelvin - 273.15
+
+
+units = SystemOfUnits()
