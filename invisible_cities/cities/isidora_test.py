@@ -130,6 +130,8 @@ def test_isidora_no_input():
 # TODO refactor to factor out config file creation: most of this test
 # is noise; duplication of something that also happens in the above
 # test
+
+@mark.slow
 def test_command_line_isidora(config_tmpdir):
 
     config_file_spec = config_file_spec_with_tmpdir(config_tmpdir)
