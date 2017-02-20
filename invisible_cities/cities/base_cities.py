@@ -14,7 +14,7 @@ Feburary, 2017.
 import numpy as np
 
 from   invisible_cities.database import load_db
-from   invisible_cities.core.system_of_units_c import SystemOfUnits
+from   invisible_cities.core.system_of_units_c import units
 import invisible_cities.sierpe.blr as blr
 import invisible_cities.core.peak_functions_c as cpf
 import invisible_cities.core.pmaps_functions as pmp
@@ -25,8 +25,6 @@ from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
 from   invisible_cities.core.configure import print_configuration
 from   invisible_cities.core.params import S12Params, SensorParams
-
-units = SystemOfUnits()
 
 
 class City:
