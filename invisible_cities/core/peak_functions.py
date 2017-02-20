@@ -239,3 +239,39 @@ def find_S12(wfzs, index,
         j += 1
 
     return S12L
+
+
+def sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
+    """Given a vector with SIPMs (energies above threshold), and a
+    dictionary of S2s, S2d, returns a dictionary of SiPMs-S2.  Each
+    index of the dictionary correspond to one S2 and is a list of np
+    arrays. Each element of the list is the S2 window in the SiPM (if
+    not zero)
+    """
+    return {i: sipm_s2(SIPM, S2, thr=thr) for i, S2 in S2d.items()}
+
+
+def index_from_s2(S2):
+    """Return the indexes defining the vector."""
+    T = S2[0] // units.mus
+    return int(T[0]), int(T[-1]) + 1
+
+
+def sipm_s2(dSIPM, S2, thr=5*units.pes):
+    """Given a vector with SIPMs (energies above threshold), return a list
+    of np arrays. Each element of the list is the S2 window in the
+    SiPM (if not zero).
+    """
+    #import pdb; pdb.set_trace()
+
+    i0, i1 = index_from_s2(S2)
+    dim = (i1 - i0)
+    SIPML = []
+    for i in dSIPM.keys():
+        sipm = dSIPM[i][1]
+        psum = np.sum(sipm[i0:i1])
+        if psum > thr:
+            e = np.zeros(dim, dtype=np.double)
+            e[:] = sipm[i0:i1]
+            SIPML.append([dSIPM[i][0], e])
+    return SIPML
