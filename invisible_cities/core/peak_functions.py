@@ -14,9 +14,12 @@ from scipy import signal
 
 import invisible_cities.core.system_of_units as units
 import invisible_cities.sierpe.blr as blr
-import invisible_cities.core.peak_functions_c as pf
+import invisible_cities.core.peak_functions_c as cpf
 from invisible_cities.database import load_db
-from invisible_cities.core.params import S12Params, ThresholdParams
+from invisible_cities.core.params import (S12Params,
+                                          ThresholdParams,
+                                          CalibratedSum,
+                                          PMaps)
 
 def calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=200, thr_MAU=5):
     """Compute the ZS calibrated sum of the PMTs
@@ -183,6 +186,39 @@ def find_S12(wfzs, index,
     accept the peak only if within [tmin, tmax)
     returns a dictionary of S12
 
+    NB: This function is a wrapper around the cython function. It returns
+    a dictionary of namedtuples (Waveform(t = [t], E = [E])), where
+    [t] and [E] are np arrays.
+    """
+
+    from collections import namedtuple
+
+    Waveform = namedtuple('Waveform', 't E')
+
+    S12 = cpf.find_S12(wfzs, index,
+                      tmin, tmax,
+                      lmin, lmax,
+                      stride,
+                      rebin, rebin_stride)
+
+    return {i: Waveform(t, E) for i, (t,E) in S12.items()}
+
+def find_S12_py(wfzs, index,
+             tmin = 0, tmax = 1e+6,
+             lmin = 8, lmax = 1000000,
+             stride=4, rebin=False, rebin_stride=40):
+    """
+    Find S1/S2 peaks.
+    input:
+    wfzs:   a vector containining the zero supressed wf
+    indx:   a vector of indexes
+    returns a dictionary
+
+    do not interrupt the peak if next sample comes within stride
+    accept the peak only if within [lmin, lmax)
+    accept the peak only if within [tmin, tmax)
+    returns a dictionary of S12
+
     NB: This function is used mainly for testing purposed. It is programmed "c-style", which is not necesarily optimal
     in python, but follows the same logic that the corresponding cython
     function (in peak_functions_c), which runs faster and should be used
@@ -275,3 +311,50 @@ def sipm_s2(dSIPM, S2, thr=5*units.pes):
             e[:] = sipm[i0:i1]
             SIPML.append([dSIPM[i][0], e])
     return SIPML
+
+
+def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds, event):
+    """Compute calibrated sum and PMAPS.
+
+    :param pmtrwf: PMTs RWF
+    :param sipmrwf: SiPMs RWF
+    :param s1par: parameters for S1 search (S12Params namedtuple)
+    :param s2par: parameters for S2 search (S12Params namedtuple)
+    :param thresholds: thresholds for searches (ThresholdParams namedtuple)
+    :param event: event number
+
+    :returns: a nametuple of calibrated sum and a namedtuple of PMAPS
+    """
+
+    s1_params = s1par
+    s2_params = s2par
+    thr = thresholds
+
+    # data base
+    DataPMT = load_db.DataPMT()
+    adc_to_pes = abs(DataPMT.adc_to_pes.values)
+    coeff_c    = abs(DataPMT.coeff_c   .values)
+    coeff_blr  = abs(DataPMT.coeff_blr .values)
+    DataSiPM   = load_db.DataSiPM()
+    adc_to_pes_sipm = DataSiPM.adc_to_pes.values
+
+    # deconv
+    CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr)
+
+    # calibrated sum
+    csum, csum_mau = cpf.calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=100, thr_MAU=thr.thr_MAU)
+
+    # zs sum
+    s2_ene, s2_indx = cpf.wfzs(csum, threshold=thr.thr_s2)
+    s1_ene, s1_indx = cpf.wfzs(csum_mau, threshold=thr.thr_s1)
+
+    # S1 and S2
+    S1 = cpf.find_S12(s1_ene, s1_indx, **s1_params._asdict())
+    S2 = cpf.find_S12(s2_ene, s2_indx, **s2_params._asdict())
+
+    #S2Si
+    sipm = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm, thr=thr.thr_sipm, n_MAU=100)
+    SIPM = cpf.select_sipm(sipm)
+    S2Si = sipm_s2_dict(SIPM, S2, thr=thr.thr_SIPM)
+    return (CalibratedSum(csum=csum, csum_mau=csum_mau),
+            PMaps(S1=S1, S2=S2, S2Si=S2Si))
