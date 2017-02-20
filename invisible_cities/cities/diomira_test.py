@@ -224,6 +224,7 @@ def config_file_spec_with_tmpdir(tmpdir):
 # TODO refactor to factor out config file creation: most of this test
 # is noise; duplication of something that also happens in the above
 # test
+@mark.slow
 def test_command_line_diomira(config_tmpdir):
 
     config_file_spec = config_file_spec_with_tmpdir(config_tmpdir)
