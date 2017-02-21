@@ -314,6 +314,7 @@ def IRENE(argv = sys.argv):
     irene = Irene(run_number=CFP['RUN_NUMBER'])
 
     # input files
+    # TODO detect non existing files and raise sensible message
     files_in = glob(CFP['FILE_IN'])
     files_in.sort()
     irene.set_input_files(files_in)
@@ -351,8 +352,10 @@ def IRENE(argv = sys.argv):
     t1 = time()
     dt = t1 - t0
 
-    print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
+    if nevt > 0:
+        print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
 
+    return nevts, nevt, irene.empty_events
 
 if __name__ == "__main__":
     IRENE(sys.argv)
