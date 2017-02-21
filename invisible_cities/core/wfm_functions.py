@@ -200,8 +200,8 @@ def cwf_from_rwf(pmtrwf, event_list, run_number=0,
 
 
 def compare_cwf_blr(cwf, pmtblr, event_list, window_size=500):
-    """ Return differences between the area of the CWF and the
-    in a given window, for a list of events.
+    """Return differences between the area of the CWF and the in a given
+    window, for a list of events, expressed as a percentage.
     """
     DIFF = []
     for event in event_list:
