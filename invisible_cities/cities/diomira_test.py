@@ -93,7 +93,6 @@ def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
        CWF (using deconvoution algorithm), then checks that the CWF match
        the BLR within 1 %.
     """
-    eps = 1
     RWF_file = str(irene_diomira_chain_tmpdir.join(
                    'electrons_40keV_z250_RWF.h5'))
     with tb.open_file(RWF_file, 'r') as e40rwf:
@@ -112,10 +111,10 @@ def test_diomira_cwf_blr(irene_diomira_chain_tmpdir):
                                  n_baseline=28000,
                                  thr_trigger=5)
 
+
             for i in range(len(CWF)):
-                diff = abs(np.sum(BLR[i][5000:5100]) - np.sum(CWF[i][5000:5100]))
-                diff = 100. * diff / np.sum(BLR[i])
-                assert diff < eps
+                assert np.isclose(np.sum(BLR[i][5000:5100]),
+                                  np.sum(CWF[i][5000:5100]), rtol=0.01)
 
 
 @mark.slow
