@@ -92,6 +92,7 @@ def test_FEE():
     signal_out_cf = FE.signal_clean(fee, signal_out, -1)
     signal_r2, acum = deconv_simple(signal_out_cf*FE.v_to_adc(),
                                 coef=fee.freq_LHPFd*np.pi)
-    energy_mea2=np.sum(signal_r2[1000:11000])
-    energy_in2=np.sum(signal_i*FE.i_to_adc())
-    diff = np.abs(100.*((energy_in2-energy_mea2)/energy_in2))
+    energy_mea2 = np.sum(signal_r2[1000:11000])
+    energy_in2  = np.sum(signal_i*FE.i_to_adc())
+    assert np.isclose(energy_in2, energy_mea2, rtol=5e-5)
+
