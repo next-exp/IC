@@ -42,12 +42,12 @@ class Maurilia(City):
                           """.format(self.__class__.__name__,
                                      self.input_files, self.output_file))
 
+    # TODO: add nmax
     def run(self):
         """
         Run the machine
         """
         n_events_tot = 0
-
 
         self.check_files()
         self.display_IO_info()
@@ -78,7 +78,6 @@ class Maurilia(City):
 
 
 
-# TODO add comand line test exercising this function
 def MAURILIA(argv=sys.argv):
     """MAURILIA DRIVER"""
 
