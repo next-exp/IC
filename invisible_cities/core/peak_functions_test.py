@@ -19,13 +19,8 @@ import invisible_cities.core.core_functions as cf
 from invisible_cities.core.params import S12Params, ThresholdParams
 from   invisible_cities.core.system_of_units_c import units
 
-electron_files = ['electrons_40keV_z250_RWF.h5',
-                  'electrons_511keV_z250_RWF.h5',
-                  'electrons_1250keV_z250_RWF.h5',
-                  'electrons_2500keV_z250_RWF.h5']
-
-@fixture(scope='module', params=electron_files)
-def csum_zs_blr_cwf(request):
+@fixture(scope='module')
+def csum_zs_blr_cwf(electron_RWF_file):
     """Test that:
      1) the calibrated sum (csum) of the BLR and the CWF is the same
     within tolerance.
@@ -33,18 +28,12 @@ def csum_zs_blr_cwf(request):
     within tolerance
     """
 
-    RWF_file = path.join(os.environ['ICDIR'],
-                         'database/test_data',
-                         request.param)
-
-    with tb.open_file(RWF_file, 'r') as h5rwf:
+    with tb.open_file(electron_RWF_file, 'r') as h5rwf:
         pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
         DataPMT = load_db.DataPMT()
         coeff_c    = abs(DataPMT.coeff_c.values)
         coeff_blr  = abs(DataPMT.coeff_blr.values)
         adc_to_pes = abs(DataPMT.adc_to_pes.values)
-
-        #for event in range(10):
 
         event = 0
         CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr)
@@ -65,10 +54,6 @@ def csum_zs_blr_cwf(request):
 
         wfzs_ene,    wfzs_indx    = cpf.wfzs(csum_blr,    threshold=0.5)
         wfzs_ene_py, wfzs_indx_py =  pf.wfzs(csum_blr_py, threshold=0.5)
-
-        # TODO: check that BLR/CWF OK
-        # wfzs_ene,    wfzs_indx    = cpf.wfzs(csum_cwf,    threshold=0.5)
-        # wfzs_ene_py, wfzs_indx_py =  pf.wfzs(csum_blr_py, threshold=0.5)
 
         from collections import namedtuple
 
@@ -105,14 +90,11 @@ def test_wfzs_indx_close_to_wfzs_indx_py(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
     npt.assert_array_equal(p.wfzs_indx, p.wfzs_indx_py)
 
-@fixture(scope='module', params=electron_files)
-def pmaps_electrons(request):
+@fixture(scope='module')
+def pmaps_electrons(electron_RWF_file):
     """Compute PMAPS for ele of 40 keV. Check that results are consistent."""
 
     event = 0
-    RWF_file = path.join(os.environ['ICDIR'],
-                         'database/test_data',
-                         request.param)
 
     s1par = S12Params(tmin   =  99 * units.mus,
                       tmax   = 101 * units.mus,
@@ -134,7 +116,7 @@ def pmaps_electrons(request):
                           thr_sipm =  5   * units.pes,
                           thr_SIPM = 30   * units.pes )
 
-    with tb.open_file(RWF_file,'r') as h5rwf:
+    with tb.open_file(electron_RWF_file,'r') as h5rwf:
         pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
 
         csum, pmp = pf.compute_csum_and_pmaps(pmtrwf,
@@ -222,7 +204,7 @@ def test_csum_zs_s12():
     wfzs_ene, wfzs_indx = cpf.wfzs(csum, threshold=10)
     npt.assert_allclose(vsum_zs, wfzs_ene)
 
-    t1 = pf.time_from_index(wfzs_indx)
+    t1 =  pf.time_from_index(wfzs_indx)
     t2 = cpf.time_from_index(wfzs_indx)
     npt.assert_allclose(t1, t2)
 
