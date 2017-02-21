@@ -12,6 +12,9 @@ Authors: J.J. Gomez-Cadenas and J. Generowicz.
 Feburary, 2017.
 """
 
+import sys
+from textwrap import dedent
+
 import numpy as np
 
 from   invisible_cities.database import load_db
@@ -27,6 +30,17 @@ from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
 from   invisible_cities.core.configure import print_configuration
 from   invisible_cities.core.params import S12Params, SensorParams
+
+
+if sys.version_info >= (3,5):
+    # Exec to avoid syntax errors in older Pythons
+    exec("""def merge_two_dicts(a,b):
+               return {**a, **b}""")
+else:
+    def merge_two_dicts(a,b):
+        c = a.copy()
+        c.update(b)
+        return c
 
 
 class City:
@@ -102,6 +116,32 @@ class City:
                              "PMT WL"       : sp.PMTWL,
                              "# SiPM"       : sp.NSIPM,
                              "SIPM WL"      : sp.SIPMWL})
+
+    config_file_format = """
+    # set_input_files
+    PATH_IN {PATH_IN}
+    FILE_IN {FILE_IN}
+
+    # set_cwf_store
+    PATH_OUT {PATH_OUT}
+    FILE_OUT {FILE_OUT}
+    COMPRESSION {COMPRESSION}"""
+    config_file_format = dedent(config_file_format)
+
+    default_config = dict(PATH_IN  = '$ICDIR/database/test_data/',
+                          FILE_IN  = 'electrons_40keV_z250_RWF.h5',
+                          FILE_OUT = 'electrons_40keV_z250_CWF.h5',
+                          COMPRESSION = 'ZLIB4')
+
+    @classmethod
+    def config_file_contents(cls, **options):
+        config = merge_two_dicts(cls.default_config, options)
+        return cls.config_file_format.format(**config)
+
+    @classmethod
+    def write_config_file(cls, filename, **options):
+        with open(filename, 'w') as conf_file:
+            conf_file.write(cls.config_file_contents(**options))
 
 
 class SensorResponseCity(City):
@@ -212,6 +252,27 @@ class SensorResponseCity(City):
     def FE_t_sample(self):
         return FE.t_sample
 
+    config_file_format = City.config_file_format + """
+    # set_print
+    NPRINT {NPRINT}
+
+    # run
+    NEVENTS {NEVENTS}
+    RUN_ALL {RUN_ALL}
+
+    NOISE_CUT {NOISE_CUT}"""
+    config_file_format = dedent(config_file_format)
+
+    default_config = merge_two_dicts(
+        City.default_config,
+        dict(FILE_IN  = 'electrons_40keV_z250_MCRD.h5',
+             COMPRESSION = 'ZLIB4',
+             NPRINT      =     1,
+             NEVENTS     =     3,
+             NOISE_CUT   =     3,
+             RUN_ALL     = False))
+
+
 class DeconvolutionCity(City):
     """A Deconvolution city extends the City base class adding the
        deconvolution step, which transforms RWF into CWF.
@@ -253,6 +314,37 @@ class DeconvolutionCity(City):
                               n_baseline  = self.n_baseline,
                               thr_trigger = self.thr_trigger)
 
+    config_file_format = City.config_file_format + """
+
+    RUN_NUMBER {RUN_NUMBER}
+
+    # set_print
+    NPRINT {NPRINT}
+
+    # set_blr
+    NBASELINE {NBASELINE}
+    THR_TRIGGER {THR_TRIGGER}
+
+    # set_mau
+    NMAU {NMAU}
+    THR_MAU {THR_MAU}
+
+    # run
+    NEVENTS {NEVENTS}
+    RUN_ALL {RUN_ALL}"""
+
+    config_file_format = dedent(config_file_format)
+
+    default_config = merge_two_dicts(
+        City.default_config,
+        dict(RUN_NUMBER  =     0,
+             NPRINT      =     1,
+             NBASELINE   = 28000,
+             THR_TRIGGER =     5,
+             NMAU        =   100,
+             THR_MAU     =     3,
+             NEVENTS     =     3,
+             RUN_ALL     = False))
 
 class CalibratedCity(DeconvolutionCity):
     """A calibrated city extends a DeconvCity, performing two actions.
@@ -407,3 +499,55 @@ class PmapCity(CalibratedCity):
         SIPM = cpf.select_sipm(sipmzs)
         S2Si = pf.sipm_s2_dict(SIPM, S2, thr = self.thr_sipm_s2)
         return S2Si
+
+
+    config_file_format = CalibratedCity.config_file_format + """
+
+    # set_csum
+    THR_CSUM_S1 {THR_CSUM_S1}
+    THR_CSUM_S2 {THR_CSUM_S2}
+
+    NMAU_SIPM {NMAU_SIPM}
+    THR_SIPM  {NMAU_SIPM}
+
+    # set_s1
+    S1_TMIN {S1_TMIN}
+    S1_TMAX {S1_TMAX}
+    S1_STRIDE {S1_STRIDE}
+    S1_LMIN {S1_LMIN}
+    S1_LMAX {S1_LMAX}
+
+    # set_s2
+    S2_TMIN {S2_TMIN}
+    S2_TMAX {S2_TMAX}
+    S2_STRIDE {S2_STRIDE}
+    S2_LMIN {S2_LMIN}
+    S2_LMAX {S2_LMAX}
+
+    # set_sipm
+    THR_SIPM_S2 {THR_SIPM_S2}
+
+    PRINT_EMPTY_EVENTS {PRINT_EMPTY_EVENTS}"""
+
+    config_file_format = dedent(config_file_format)
+
+    default_config = merge_two_dicts(
+        CalibratedCity.default_config,
+        dict(RUN_NUMBER         =      0,
+             NPRINT             =      1,
+             THR_CSUM_S1        =      0.2,
+             THR_CSUM_S2        =      1,
+             NMAU_SIPM          =     100,
+             THR_SIPM           =      5,
+             S1_TMIN            =     99,
+             S1_TMAX            =    101,
+             S1_STRIDE          =      4,
+             S1_LMIN            =      6,
+             S1_LMAX            =     16,
+             S2_TMIN            =    101,
+             S2_TMAX            =   1199,
+             S2_STRIDE          =     40,
+             S2_LMIN            =    100,
+             S2_LMAX            = 100000,
+             THR_SIPM_S2        =     30,
+             PRINT_EMPTY_EVENTS = True))
