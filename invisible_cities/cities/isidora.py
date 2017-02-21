@@ -34,6 +34,7 @@ class Isidora(DeconvolutionCity):
         Sets all switches to default value.
         """
 
+        self.wf_tables = {}
         DeconvolutionCity.__init__(self,
                                    run_number  = run_number,
                                    files_in    = files_in,
@@ -42,16 +43,17 @@ class Isidora(DeconvolutionCity):
                                    n_baseline  = n_baseline,
                                    thr_trigger = thr_trigger)
 
-    def _store_cwf(self, cwf, cwf_file, cwf_group):
-        """Store CWF."""
-        NPMT, PMTWL = cwf.shape
-        if "pmtcwf" not in cwf_group:
+
+    def _store_wf(self, wf, wf_table, wf_file, wf_group):
+        """Store WF."""
+        n_sensors, wl = wf.shape
+        if wf_table not in wf_group:
             # create earray to store cwf
-            self.pmtcwf = cwf_file.create_earray(cwf_group, "pmtcwf",
+            self.wf_tables[wf_table] = wf_file.create_earray(wf_group, wf_table,
                                                  atom    = tb.Float32Atom(),
-                                                 shape   = (0, NPMT, PMTWL),
+                                                 shape   = (0, n_sensors, wl),
                                                  filters = tbl.filters(self.compression))
-        self.pmtcwf.append(cwf.reshape(1, NPMT, PMTWL))
+        self.wf_tables[wf_table].append(wf.reshape(1, n_sensors, wl))
 
 
     def run(self, nmax):
@@ -83,6 +85,8 @@ class Isidora(DeconvolutionCity):
                             cwf_file.root, "Sensors")
                         datapmt = h5in.root.Sensors.DataPMT
                         datapmt.copy(newparent=self.sensors_group)
+                        datasipm = h5in.root.Sensors.DataSiPM
+                        datasipm.copy(newparent=self.sensors_group)
 
                     if not self.monte_carlo:
                         self.eventsInfo = h5in.root.Run.events
@@ -104,7 +108,9 @@ class Isidora(DeconvolutionCity):
                     for evt in range(NEVT):
                         # deconvolve
                         CWF = self.deconv_pmt(pmtrwf[evt])
-                        self._store_cwf(CWF, cwf_file, cwf_group)
+                        self._store_wf(CWF, 'pmtcwf', cwf_file, cwf_group)
+                        #Copy sipm waveform
+                        self._store_wf(sipmrwf[evt], 'sipmrwf', cwf_file, cwf_group)
 
                         n_events_tot += 1
                         if n_events_tot % self.nprint == 0:
