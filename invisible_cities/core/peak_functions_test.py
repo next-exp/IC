@@ -48,16 +48,11 @@ def test_csum_zs_blr_cwf():
                              adc_to_pes,
                              n_MAU=100, thr_MAU=3)
 
-            diff = csum_cwf - csum_blr
-            norm = np.sum(csum_blr)
-            DIFF = np.sum(diff) / norm
-            assert DIFF < 0.1
-
             wfzs_ene, wfzs_indx = cpf.wfzs(csum_cwf, threshold=0.5)
-            dff = abs(np.sum(csum_cwf) - np.sum(wfzs_ene))
-            norm = np.sum(csum_cwf)
-            DIFF = dff / norm
-            assert DIFF < 0.1
+
+            assert np.isclose(np.sum(csum_cwf), np.sum(csum_blr), rtol=0.01)
+            assert np.isclose(np.sum(csum_cwf), np.sum(wfzs_ene), rtol=0.1)
+
 
 @mark.slow
 def test_csum_python_cython():
