@@ -16,7 +16,7 @@ from   invisible_cities.cities.isidora import Isidora, ISIDORA
 
 @fixture
 def conf_file_name(config_tmpdir):
-    conf_file_name = str(config_tmpdir.join('maurilia.conf'))
+    conf_file_name = str(config_tmpdir.join('isidora.conf'))
     Isidora.write_config_file(conf_file_name,
                               PATH_OUT = str(config_tmpdir))
     return conf_file_name
