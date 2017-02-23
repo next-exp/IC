@@ -47,7 +47,11 @@ function install_conda {
         echo Conda already installed. Skipping conda installation.
     else
         echo Installing conda for $CONDA_OS
-        wget http://repo.continuum.io/miniconda/Miniconda3-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh
+        if which wget; then
+            wget https://repo.continuum.io/miniconda/Miniconda3-latest-${CONDA_OS}-x86_64.sh -O miniconda.sh
+        else
+            curl https://repo.continuum.io/miniconda/Miniconda3-latest-${CONDA_OS}-x86_64.sh -o miniconda.sh
+        fi
         bash miniconda.sh -b -p $HOME/miniconda
         export PATH="$HOME/miniconda/bin:$PATH"
         echo Prepended $HOME/miniconda/bin to your PATH. Please add it to your shell profile for future sessions.
@@ -75,7 +79,7 @@ dependencies:
 - scipy
 - matplotlib
 - jupyter
-- notebook 
+- notebook
 - sphinx
 - pip:
   - hypothesis-numpy
@@ -139,7 +143,7 @@ function ic_env {
 
 function show_ic_env {
     conda-env list
-    
+
     echo ICDIR set to $ICTDIR
     echo ICDIR set to $ ICDIR
     echo PYTHONPATH set to $PYTHONPATH
@@ -193,7 +197,7 @@ case $COMMAND in
     download_test_db)       download_test_db ;;
     clean)                  clean ;;
     show_ic_env)            show_ic_env ;;
-    
+
     *) echo Unrecognized command: ${COMMAND}
        echo
        echo Usage:
