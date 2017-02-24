@@ -14,7 +14,7 @@ the command
   source manage.sh install_and_check 3.5
 
 Where the 3.5 can be replaced with any sensible Python version you
-like. (On 2017-01-09 we actively support Python 3.5 and 2.7.)
+like. (On 2017-02-24 we actively support Python 3.6, 3.5 and 2.7.)
    
 If you have already done the above procedure once, then you should
 already have an `IC3.5` conda environment available, as long as
