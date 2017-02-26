@@ -29,13 +29,14 @@ def read_pmaps(PMP_file):
                 pd.DataFrame.from_records(s2sit.read()))
 
 
-def s12df_to_s12l(s12df, evt_max=10):
+def s12df_to_s12l(s12df, evt_max=None):
     """
     Accept a S12df object (a S12 pytable readout as a PD dataframe)
     and return a S12L dictionary
     """
     peak = s12df.peak.values.astype(np.int32)
-
+    if evt_max is None:
+        evt_max = -1
     return cpm.cdf_to_dict(len(s12df.index), evt_max, s12df.event.values,
                            peak, s12df.time.values,   s12df.ene  .values)
 
