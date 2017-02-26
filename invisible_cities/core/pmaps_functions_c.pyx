@@ -7,7 +7,7 @@ cimport numpy as np
 import  numpy as np
 
 
-cpdef cdf_to_dict(int df_index, int evt_max,
+cpdef cdf_to_dict(int df_index, long int evt_max,
                   int   [:] df_event,  int [:] df_peak,
                   float [:] df_time, float [:] df_ene):
 
@@ -24,8 +24,11 @@ cpdef cdf_to_dict(int df_index, int evt_max,
     S12L[0] = S12
 
     cdef int i,
+    if evt_max < 0:
+      evt_max = np.iinfo(np.int32).max
+
     for i in range(df_index):
-        if evt == evt_max:
+        if evt >= evt_max:
             break
         if df_event[i] == evt:
             S12 = S12L[evt]
@@ -48,7 +51,7 @@ cpdef cdf_to_dict(int df_index, int evt_max,
             S12L[evt] = S12
 
             evt = df_event[i]
-            if evt == evt_max:
+            if evt >= evt_max:
                 break
 
             pk = df_peak[i]
