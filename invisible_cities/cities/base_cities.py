@@ -129,8 +129,8 @@ class City:
     config_file_format = dedent(config_file_format)
 
     default_config = dict(PATH_IN  = '$ICDIR/database/test_data/',
-                          FILE_IN  = 'electrons_40keV_z250_RWF.h5',
-                          FILE_OUT = 'electrons_40keV_z250_CWF.h5',
+                          FILE_IN  = None,
+                          FILE_OUT = None,
                           COMPRESSION = 'ZLIB4')
 
     @classmethod
