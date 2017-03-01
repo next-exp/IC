@@ -61,6 +61,13 @@ def test_command_line_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, IC
     if nrequired > 0:
         assert nrequired == nactual
 
+    with tb.open_file(PATH_IN,  mode='r') as h5in, \
+         tb.open_file(PATH_OUT, mode='r') as h5out:
+            mctracks_in  = h5in .root.MC.MCTracks[0]
+            mctracks_out = h5out.root.MC.MCTracks[0]
+            np.testing.assert_array_equal(mctracks_in, mctracks_out)
+
+
 @mark.slow
 def test_command_line_irene_run_2983(conf_file_name_data, config_tmpdir, ICDIR):
     PATH_IN = os.path.join(ICDIR,

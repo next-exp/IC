@@ -15,6 +15,7 @@ from   invisible_cities.core.configure \
 from   invisible_cities.core.system_of_units_c import units
 from   invisible_cities.cities.base_cities import PmapCity, SensorParams
 from   invisible_cities.cities.base_cities import S12Params as S12P
+from   invisible_cities.core.mctrk_functions import MCTrackWriter
 
 
 # Parameters for S1/S2 searches
@@ -115,7 +116,6 @@ class Irene(PmapCity):
                 rungroup, "events", EventInfo, "events",
                 tbl.filters(self.compression))
 
-
     def _store_s12(self, S12, st, event, evt):
         row = st.row
         for i in S12:
@@ -206,17 +206,23 @@ class Irene(PmapCity):
                           filters = tbl.filters(self.compression)) as pmap_file:
 
             self._set_pmap_store(pmap_file) # prepare the pmap store
+            if self.monte_carlo:
+                mctrack_writer = MCTrackWriter(pmap_file)
 
             for ffile in self.input_files:
                 print("Opening", ffile, end="... ")
                 filename = ffile
                 with tb.open_file(filename, "r") as h5in:
+
                     # access RWF
                     pmtrwf  = h5in.root.RD. pmtrwf
                     sipmrwf = h5in.root.RD.sipmrwf
 
                     if not self.monte_carlo:
                         self.eventsInfo = h5in.root.Run.events
+                    else:
+                        # last row copied from MCTracks table
+                        mctrack_row = 0
 
                     NEVT, NPMT,   PMTWL =  pmtrwf.shape
                     NEVT, NSIPM, SIPMWL = sipmrwf.shape
@@ -232,6 +238,12 @@ class Irene(PmapCity):
 
                         # loop over all events in file unless reach nmax
                     for evt in range(NEVT):
+                        if self.monte_carlo:
+                            # copy corresponding MCTracks to output MCTracks table
+                            mctrack_writer.copy_mctracks(h5in.root.MC.MCTracks,
+                                          n_events_tot)
+
+
                         # deconvolve
                         #import pdb; pdb.set_trace() # This is how to enter debugger
                         CWF = self.deconv_pmt(pmtrwf[evt])
