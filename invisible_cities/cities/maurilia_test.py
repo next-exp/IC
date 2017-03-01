@@ -13,7 +13,7 @@ from pytest import mark, fixture
 from   invisible_cities.cities.maurilia import Maurilia, MAURILIA
 
 
-@fixture
+@fixture(scope='module')
 def conf_file_name(config_tmpdir):
     conf_file_name = str(config_tmpdir.join('maurilia.conf'))
     Maurilia.write_config_file(conf_file_name,
