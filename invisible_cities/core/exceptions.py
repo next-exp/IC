@@ -12,3 +12,6 @@ class NoInputFiles(ICException):
 
 class NoOutputFile(ICException):
     pass
+
+class ParameterNotSet(ICException):
+    pass

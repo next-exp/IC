@@ -177,9 +177,18 @@ def test_command_line_diomira(conf_file_name, config_tmpdir):
                                   '-o', PATH_OUT,
                                   '-f', str(start_evt),
                                   '-r', str(run_number)])
+
     if nrequired > 0:
         assert nrequired == nactual
 
-    with tb.open_file(PATH_OUT, mode='r') as h5out:
+    with tb.open_file(PATH_IN,  mode='r') as h5in, \
+         tb.open_file(PATH_OUT, mode='r') as h5out:
+            # check event & run number
             assert h5out.root.Run.RunInfo[0]['run_number'] == run_number
             assert h5out.root.Run.events[0]['evt_number'] == start_evt
+
+            # check mctracks
+            mctracks_in  = h5in .root.MC.MCTracks[0]
+            mctracks_out = h5out.root.MC.MCTracks[0]
+            for e in zip(mctracks_in, mctracks_out):
+                np.testing.assert_array_equal(e[0],e[1])
