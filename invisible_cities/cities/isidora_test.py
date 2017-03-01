@@ -8,7 +8,8 @@ package: invisible cities. See release notes and licence
 last changed: 01-12-2017
 """
 
-from pytest import mark, raises, fixture
+import os
+from   pytest import mark, raises, fixture
 
 from   invisible_cities.core.exceptions import NoInputFiles
 from   invisible_cities.cities.isidora import Isidora, ISIDORA
@@ -31,7 +32,17 @@ def test_isidora_no_input():
 
 
 @mark.slow
-def test_command_line_isidora(conf_file_name):
-    nrequired, nactual = ISIDORA(['ISIDORA', '-c', conf_file_name])
+def test_command_line_isidora(conf_file_name, config_tmpdir):
+    PATH_IN = os.path.join(os.environ['ICDIR'],
+           'database/test_data/',
+           'electrons_40keV_z250_RWF.h5')
+    PATH_OUT = os.path.join(str(config_tmpdir),
+              'electrons_40keV_z250_CWF.h5')
+
+    nrequired, nactual = ISIDORA(['ISIDORA', '-c', conf_file_name,
+                                  '-c', conf_file_name,
+                                  '-i', PATH_IN,
+                                  '-o', PATH_OUT,
+                                  '-r', '0'])
     if nrequired > 0:
         assert nrequired == nactual
