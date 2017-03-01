@@ -12,7 +12,7 @@ from pytest import mark, fixture
 
 from   invisible_cities.cities.irene import Irene, IRENE
 
-@fixture
+@fixture(scope='module')
 def conf_file_name(config_tmpdir):
     conf_file_name = str(config_tmpdir.join('irene.conf'))
     Irene.write_config_file(conf_file_name,
