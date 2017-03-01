@@ -1,7 +1,6 @@
 """
 code: trigger.py
-description: simulation of pile-up (optional) and trigger
-for the NEXT detector.
+description: simulation of trigger for the NEXT detector.
 author: P. Ferrario
 IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch, P. Ferrario
 package: invisible cities. See release notes and licence
@@ -22,7 +21,7 @@ import invisible_cities.core.tbl_functions as tbl
 
 class Trigger:
     """
-    The city of TRIGGER simulates the trigger and pile-up (optional).
+    The city of TRIGGER simulates the trigger.
 
     """
     def __init__(self):
@@ -47,7 +46,7 @@ class Trigger:
                           filters=tbl.filters(compression))
         self.set_output_file_ = True
         
-    def run(self, nmax):
+    def run(self, nmax, tr_type):
         """
         Run the machine
         nmax is the max number of events to run
@@ -70,19 +69,19 @@ class Trigger:
                 with tb.open_file(cfile, "r+") as h5in:
                     pmtrd  = h5in.root.pmtrd
                     nevts_pmt, npmts, pmt_wndw_length = pmtrd.shape
-                    nevts_sipm, nsipm, sipm_wndw_length = sipmrd.shape
+                    nevts_sipm, nsipms, sipm_wndw_length = sipmrd.shape
 
                     if first == False:                       
                         # create vectors
                         self.pmtrwf = self.h5out.create_earray(
-                                    h5out.root,
+                                    self.h5out.root,
                                     "pmttrigwf",
                                     atom=tb.Int16Atom(),
                                     shape=(0, npmts, pmt_wndw_length),
                                     expectedrows=nmax,
                                     filters=tbl.filters(self.compression))
                         self.sipmrwf = self.h5out.create_earray(
-                                    h5out.root,
+                                    self.h5out.root,
                                     "sipmtrigwf",
                                     atom=tb.Int16Atom(),
                                     shape=(0, nsipms, sipm_wndw_length),
@@ -109,7 +108,7 @@ def TRIGGER(argv=sys.argv):
 
     nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
     t0 = time()
-    nevt = fpp.run(nmax=nevts)
+    nevt = fpp.run(nmax=nevts, tr_type=trigger_type)
     t1 = time()
     dt = t1 - t0
 

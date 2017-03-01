@@ -79,18 +79,22 @@ class Mixer:
                     nevts_pmt, npmts, pmt_wndw_length = pmtrd.shape
                     nevts_sipm, nsipms, sipm_wndw_length = sipmrd.shape
 
-                    if first == False:                       
+                    if first == False:
+                        
+                        # RD group
+                        RD = self.h5out.create_group(self.h5out.root, "RD")
+                                        
                         # create vectors
                         self.pmtmwf = self.h5out.create_earray(
-                                    self.h5out.root,
-                                    "pmtmixedwf",
+                                    RD,
+                                    "pmtmwf",
                                     atom=tb.Int16Atom(),
                                     shape=(0, npmts, pmt_wndw_length),
                                     expectedrows=nmax,
                                     filters=tbl.filters(self.compression))
                         self.sipmmwf = self.h5out.create_earray(
-                                    self.h5out.root,
-                                    "sipmmixedwf",
+                                    RD,
+                                    "sipmwf",
                                     atom=tb.Int16Atom(),
                                     shape=(0, nsipms, sipm_wndw_length),
                                     expectedrows=nmax,
