@@ -14,7 +14,7 @@ from   invisible_cities.core.exceptions import NoInputFiles
 from   invisible_cities.cities.isidora import Isidora, ISIDORA
 
 
-@fixture
+@fixture(scope='module')
 def conf_file_name(config_tmpdir):
     conf_file_name = str(config_tmpdir.join('isidora.conf'))
     Isidora.write_config_file(conf_file_name,

@@ -23,7 +23,7 @@ from   invisible_cities.core.random_sampling \
      import NoiseSampler as SiPMsNoiseSampler
 
 
-@fixture
+@fixture(scope='module')
 def conf_file_name(config_tmpdir):
     conf_file_name = str(config_tmpdir.join('diomira.conf'))
     Diomira.write_config_file(conf_file_name,
