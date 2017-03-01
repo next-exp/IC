@@ -20,11 +20,13 @@ import invisible_cities.reco.tbl_functions as tbl
 from   invisible_cities.core.configure import configure, print_configuration
 from   invisible_cities.cities.base_cities import (SensorResponseCity,
                                                    SensorParams)
-from   invisible_cities.reco.nh5 import FEE, RunInfo, EventInfo
+from   invisible_cities.reco.nh5 import FEE, RunInfo, EventInfo, MCTrack
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
 import invisible_cities.reco.wfm_functions as wfm
 from   invisible_cities.core.system_of_units_c import units
+from   invisible_cities.core.mctrk_functions import MCTrackWriter
+from   invisible_cities.core.exceptions import ParameterNotSet
 
 
 
@@ -59,13 +61,11 @@ class Diomira(SensorResponseCity):
         nmax is the max number of events to run
         """
 
-        # TODO replace IOError with IC Exceptions
-
         n_events_tot = 0
         # run the machine only if in a legal state
         self.check_files()
         if not self.sipm_noise_cut:
-            raise IOError('must set sipm_noise_cut before running')
+            raise ParameterNotSet('must set sipm_noise_cut before running')
 
         self.display_IO_info(nmax)
 
@@ -74,6 +74,7 @@ class Diomira(SensorResponseCity):
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
 
+            mctracks_writer = MCTrackWriter(h5out)
 
             for ffile in self.input_files:
 
@@ -91,6 +92,9 @@ class Diomira(SensorResponseCity):
                                                 PMTWL  = PMTWL_FEE,
                                                 NSIPM  = NSIPM,
                                                 SIPMWL = SIPMWL)
+
+                    # last row copied from MCTracks table
+                    mctrack_row = 0
 
                     print("Events in file = {}".format(NEVENTS_DST))
 
@@ -117,6 +121,10 @@ class Diomira(SensorResponseCity):
 
                     # loop over events in the file. Break when nmax is reached
                     for evt in range(NEVT):
+                        # copy corresponding MCTracks to output MCTracks table
+                        mctracks_writer.copy_mctracks(h5in.root.MC.MCTracks,
+                                          n_events_tot)
+
                         # simulate PMT and SiPM response
                         # RWF and BLR
                         dataPMT, blrPMT = self.simulate_pmt_response(
@@ -167,7 +175,7 @@ class Diomira(SensorResponseCity):
         # RD group
         RD = h5out.create_group(h5out.root, "RD")
         # MC group
-        MC = h5out.create_group(h5out.root, "MC")
+        MC = h5out.root.MC
         # create a table to store Energy plane FEE
         self.fee_table = h5out.create_table(MC, "FEE", FEE,
                           "EP-FEE parameters",
