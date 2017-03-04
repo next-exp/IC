@@ -116,8 +116,8 @@ class Irene(PmapCity):
                 tbl.filters(self.compression))
 
 
-    def _store_s12(self, S12, event, evt):
-        row = self.s1t.row
+    def _store_s12(self, S12, st, event, evt):
+        row = st.row
         for i in S12:
             time = S12[i][0]
             ene  = S12[i][1]
@@ -133,10 +133,10 @@ class Irene(PmapCity):
                 row["time"] = time[j]
                 row["ene"]  =  ene[j]
                 row.append()
-        self.s1t.flush()
+        #st.flush()
 
-    def _store_s2si(self, S2Si, event, evt):
-        row = self.s2sit.row
+    def _store_s2si(self, S2Si, st, event, evt):
+        row = st.row
         for i in S2Si:
             sipml = S2Si[i]
             for sipm in sipml:
@@ -155,7 +155,7 @@ class Irene(PmapCity):
                         row["nsample"] = j
                         row["ene"]     = E
                         row.append()
-        self.s2t.flush()
+        #st.flush()
 
     def _store_pmaps(self, event, evt, S1, S2, S2Si):
         """Store PMAPS."""
@@ -167,11 +167,11 @@ class Irene(PmapCity):
             row['evt_number'] = evtInfo[0]
             row['timestamp']  = evtInfo[1]
             row.append()
-            self.evtInfot.flush()
+            #self.evtInfot.flush()
 
-        self._store_s12 (S1,   event, evt)
-        self._store_s12 (S2,   event, evt)
-        self._store_s2si(S2Si, event, evt)
+        self._store_s12 (S1, self.s1t,  event, evt)
+        self._store_s12 (S2, self.s2t,  event, evt)
+        self._store_s2si(S2Si, self.s2sit, event, evt)
 
     def run(self, nmax, print_empty=True):
         """
@@ -241,13 +241,17 @@ class Irene(PmapCity):
                         # loop over all events in file unless reach nmax
                     for evt in range(NEVT):
                         # deconvolve
-                        # import pdb; pdb.set_trace() # This is how to enter debugger
+                        #import pdb; pdb.set_trace() # This is how to enter debugger
                         CWF = self.deconv_pmt(pmtrwf[evt])
                         # calibrated PMT sum
                         csum, csum_mau = self.calibrated_pmt_sum(CWF)
                         #ZS sum for S1 and S2
-                        s1_ene, s1_indx = self.csum_zs(csum_mau, threshold = self.thr_csum_s1)
-                        s2_ene, s2_indx = self.csum_zs(csum,     threshold = self.thr_csum_s2)
+                        s1_ene, s1_indx = self.csum_zs(
+                                          csum_mau,
+                                          threshold = self.thr_csum_s1)
+                        s2_ene, s2_indx = self.csum_zs(
+                                          csum,
+                                          threshold = self.thr_csum_s2)
 
                         # In a few rare cases s2_ene is empty
                         # this is due to empty energy plane events
@@ -280,7 +284,14 @@ class Irene(PmapCity):
                 row = self.runInfot.row
                 row['run_number'] = self.run_number
                 row.append()
+                #self.runInfot.flush()
+        # flush the table
+            if not self.monte_carlo:
                 self.runInfot.flush()
+                self.evtInfot.flush()
+            self.s1t.flush()
+            self.s2t.flush()
+            self.s2sit.flush()
 
         if print_empty:
             print('Energy plane empty events (skipped) = {}'.format(
