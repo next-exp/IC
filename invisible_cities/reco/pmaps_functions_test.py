@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import os
 from pytest import fixture
 
-import invisible_cities.core.pmaps_functions as pmapf
+import invisible_cities.reco.pmaps_functions as pmapf
 
 @fixture(scope='module')
 def KrMC_pmaps():

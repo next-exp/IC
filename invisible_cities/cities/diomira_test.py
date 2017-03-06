@@ -12,8 +12,8 @@ import numpy as np
 
 from pytest import mark, fixture
 
-import invisible_cities.core.tbl_functions as tbl
-import invisible_cities.core.wfm_functions as wfm
+import invisible_cities.reco.tbl_functions as tbl
+import invisible_cities.reco.wfm_functions as wfm
 import invisible_cities.core.system_of_units as units
 from   invisible_cities.sierpe import fee as FEE
 import invisible_cities.sierpe.blr as blr
