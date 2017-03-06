@@ -15,7 +15,7 @@ from __future__ import print_function, division, absolute_import
 import numpy as np
 import tables as tb
 import pandas as pd
-
+from argparse import Namespace
 
 def filters(name):
     """Return the filter corresponding to a given key.
@@ -67,12 +67,12 @@ def read_FEE_table(fee_t):
                          "C1", "C2", "ZIN", "DAQ_GAIN", "NBITS", "LSB",
                          "NOISE_I", "NOISE_DAQ", "t_sample", "f_sample",
                          "f_mc", "f_LPF1", "f_LPF2"])
-    FEE = {}
-    FEE["fee_param"] = F
-    FEE["coeff_c"]       = np.array(fa[0][18], dtype=np.double)
-    FEE["coeff_blr"]     = np.array(fa[0][19], dtype=np.double)
-    FEE["adc_to_pes"]    = np.array(fa[0][20], dtype=np.double)
-    FEE["pmt_noise_rms"] = np.array(fa[0][21], dtype=np.double)
+    FEE = Namespace()
+    FEE.fee_param     = F
+    FEE.coeff_c       = np.array(fa[0][18], dtype=np.double)
+    FEE.coeff_blr     = np.array(fa[0][19], dtype=np.double)
+    FEE.adc_to_pes    = np.array(fa[0][20], dtype=np.double)
+    FEE.pmt_noise_rms = np.array(fa[0][21], dtype=np.double)
     return FEE
 
 
