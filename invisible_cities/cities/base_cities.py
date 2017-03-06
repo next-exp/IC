@@ -20,16 +20,16 @@ import numpy as np
 from   invisible_cities.database import load_db
 from   invisible_cities.core.system_of_units_c import units
 import invisible_cities.sierpe.blr as blr
-import invisible_cities.core.peak_functions_c as cpf
-import invisible_cities.core.peak_functions as pf
-import invisible_cities.core.pmaps_functions as pmp
+import invisible_cities.reco.peak_functions_c as cpf
+import invisible_cities.reco.peak_functions as pf
+import invisible_cities.reco.pmaps_functions as pmp
 from   invisible_cities.core.exceptions import NoInputFiles, NoOutputFile
 import invisible_cities.sierpe.fee as FE
-import invisible_cities.core.wfm_functions as wfm
+import invisible_cities.reco.wfm_functions as wfm
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
 from   invisible_cities.core.configure import print_configuration
-from   invisible_cities.core.params import S12Params, SensorParams
+from   invisible_cities.reco.params import S12Params, SensorParams
 
 
 if sys.version_info >= (3,5):

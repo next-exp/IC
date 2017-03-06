@@ -11,7 +11,7 @@ from matplotlib.collections import PatchCollection
 
 import invisible_cities.core.core_functions as cf
 import invisible_cities.core.system_of_units as units
-import invisible_cities.core.tbl_functions as tbl
+import invisible_cities.reco.tbl_functions as tbl
 
 
 # matplotlib.style.use("ggplot")

@@ -10,7 +10,7 @@ import pandas as pd
 import tables as tb
 import matplotlib.pyplot as plt
 import invisible_cities.core.system_of_units as units
-import invisible_cities.core.pmaps_functions_c as cpm
+import invisible_cities.reco.pmaps_functions_c as cpm
 import invisible_cities.core.core_functions as cf
 from   invisible_cities.database import load_db
 from   invisible_cities.core.mpl_functions import circles
