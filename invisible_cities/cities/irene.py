@@ -7,8 +7,8 @@ from time import time
 import numpy as np
 import tables as tb
 
-from   invisible_cities.core.nh5 import S12, S2Si, EventInfo, RunInfo
-import invisible_cities.core.tbl_functions as tbl
+from   invisible_cities.reco.nh5 import S12, S2Si, EventInfo, RunInfo
+import invisible_cities.reco.tbl_functions as tbl
 from   invisible_cities.core.configure \
        import configure, define_event_loop, print_configuration
 

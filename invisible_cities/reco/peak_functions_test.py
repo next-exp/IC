@@ -11,12 +11,12 @@ import tables as tb
 
 from   invisible_cities.database import load_db
 import invisible_cities.sierpe.blr as blr
-import invisible_cities.core.tbl_functions as tbl
-import invisible_cities.core.peak_functions_c as cpf
-import invisible_cities.core.peak_functions as pf
+import invisible_cities.reco.tbl_functions as tbl
+import invisible_cities.reco.peak_functions_c as cpf
+import invisible_cities.reco.peak_functions as pf
 import invisible_cities.core.sensor_functions as sf
 import invisible_cities.core.core_functions as cf
-from invisible_cities.core.params import S12Params, ThresholdParams
+from   invisible_cities.reco.params import S12Params, ThresholdParams
 from   invisible_cities.core.system_of_units_c import units
 
 @fixture(scope='module')
