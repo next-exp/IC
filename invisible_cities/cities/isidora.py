@@ -129,22 +129,22 @@ def ISIDORA(argv = sys.argv):
     """ISIDORA DRIVER"""
     CFP = configure(argv)
 
-    files_in    = glob(CFP['FILE_IN'])
+    files_in    = glob(CFP.FILE_IN)
     files_in.sort()
 
 
-    fpp = Isidora(run_number  = CFP['RUN_NUMBER'],
+    fpp = Isidora(run_number  = CFP.RUN_NUMBER,
                   files_in    = files_in,
-                  n_baseline  = CFP['NBASELINE'],
-                  thr_trigger = CFP['THR_TRIGGER'] * units.adc)
+                  n_baseline  = CFP.NBASELINE,
+                  thr_trigger = CFP.THR_TRIGGER * units.adc)
 
     #fpp.set_input_files(files_in)
-    fpp.set_output_file(CFP['FILE_OUT'])
-    fpp.set_compression(CFP['COMPRESSION'])
-    fpp.set_print(nprint = CFP['NPRINT'])
+    fpp.set_output_file(CFP.FILE_OUT)
+    fpp.set_compression(CFP.COMPRESSION)
+    fpp.set_print(nprint = CFP.NPRINT)
 
     t0 = time()
-    nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
+    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     nevt = fpp.run(nmax=nevts)
     t1 = time()
     dt = t1 - t0

@@ -83,11 +83,11 @@ def MAURILIA(argv=sys.argv):
 
     CFP = configure(argv)
     fpp = Maurilia()
-    files_in = glob(CFP['FILE_IN'])
+    files_in = glob(CFP.FILE_IN)
     files_in.sort()
     fpp.set_input_files(files_in)
-    fpp.set_output_file(CFP['FILE_OUT'])
-    fpp.set_compression(CFP['COMPRESSION'])
+    fpp.set_output_file(CFP.FILE_OUT)
+    fpp.set_compression(CFP.COMPRESSION)
 
     t0 = time()
     fpp.run()
