@@ -16,14 +16,14 @@ from time import time
 import numpy as np
 import tables as tb
 
-import invisible_cities.core.tbl_functions as tbl
+import invisible_cities.reco.tbl_functions as tbl
 from   invisible_cities.core.configure import configure, print_configuration
 from   invisible_cities.cities.base_cities import (SensorResponseCity,
                                                    SensorParams)
-from   invisible_cities.core.nh5 import FEE
+from   invisible_cities.reco.nh5 import FEE
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
-import invisible_cities.core.wfm_functions as wfm
+import invisible_cities.reco.wfm_functions as wfm
 from   invisible_cities.core.system_of_units_c import units
 
 

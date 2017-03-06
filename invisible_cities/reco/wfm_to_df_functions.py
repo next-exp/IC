@@ -4,7 +4,7 @@ in data frames
 authors: J.J. Gomez-Cadenas, G. Martinez
 """
 
-import invisible_cities.core.wfm_functions as wfm
+import invisible_cities.reco.wfm_functions as wfm
 import pandas as pd
 
 def get_waveforms_as_df(pmtea, event_number=0):
