@@ -194,16 +194,16 @@ def DIOMIRA(argv=sys.argv):
 
     CFP = configure(argv)
     fpp = Diomira()
-    files_in = glob(CFP['FILE_IN'])
+    files_in = glob(CFP.FILE_IN)
     files_in.sort()
     fpp.set_input_files(files_in)
-    fpp.set_output_file(CFP['FILE_OUT'])
-    fpp.set_compression(compression=CFP['COMPRESSION'])
-    fpp.set_print(nprint=CFP['NPRINT'])
+    fpp.set_output_file(CFP.FILE_OUT)
+    fpp.set_compression(compression=CFP.COMPRESSION)
+    fpp.set_print(nprint=CFP.NPRINT)
 
-    fpp.set_sipm_noise_cut(noise_cut = CFP["NOISE_CUT"])
+    fpp.set_sipm_noise_cut(noise_cut = CFP.NOISE_CUT)
 
-    nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
+    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     t0 = time()
     nevt = fpp.run(nmax=nevts)
     t1 = time()

@@ -298,60 +298,60 @@ def IRENE(argv = sys.argv):
     CFP = configure(argv)
 
     # parameters for s1 searches
-    s1par = S12P(tmin   = CFP['S1_TMIN'] * units.mus,
-                 tmax   = CFP['S1_TMAX'] * units.mus,
-                 stride = CFP['S1_STRIDE'],
-                 lmin   = CFP['S1_LMIN'],
-                 lmax   = CFP['S1_LMAX'],
+    s1par = S12P(tmin   = CFP.S1_TMIN * units.mus,
+                 tmax   = CFP.S1_TMAX * units.mus,
+                 stride = CFP.S1_STRIDE,
+                 lmin   = CFP.S1_LMIN,
+                 lmax   = CFP.S1_LMAX,
                  rebin  = False)
 
     # parameters for s2 searches
-    s2par = S12P(tmin   = CFP['S2_TMIN'] * units.mus,
-                 tmax   = CFP['S2_TMAX'] * units.mus,
-                 stride = CFP['S2_STRIDE'],
-                 lmin   = CFP['S2_LMIN'],
-                 lmax   = CFP['S2_LMAX'],
+    s2par = S12P(tmin   = CFP.S2_TMIN * units.mus,
+                 tmax   = CFP.S2_TMAX * units.mus,
+                 stride = CFP.S2_STRIDE,
+                 lmin   = CFP.S2_LMIN,
+                 lmax   = CFP.S2_LMAX,
                  rebin  = True)
 
     #class instance
-    irene = Irene(run_number=CFP['RUN_NUMBER'])
+    irene = Irene(run_number=CFP.RUN_NUMBER)
 
     # input files
     # TODO detect non existing files and raise sensible message
-    files_in = glob(CFP['FILE_IN'])
+    files_in = glob(CFP.FILE_IN)
     files_in.sort()
     irene.set_input_files(files_in)
 
     # output file
-    irene.set_output_file(CFP['FILE_OUT'])
-    irene.set_compression(CFP['COMPRESSION'])
+    irene.set_output_file(CFP.FILE_OUT)
+    irene.set_compression(CFP.COMPRESSION)
     # print frequency
-    irene.set_print(nprint=CFP['NPRINT'])
+    irene.set_print(nprint=CFP.NPRINT)
 
     # parameters of BLR
-    irene.set_blr(n_baseline  = CFP['NBASELINE'],
-                  thr_trigger = CFP['THR_TRIGGER'] * units.adc)
+    irene.set_blr(n_baseline  = CFP.NBASELINE,
+                  thr_trigger = CFP.THR_TRIGGER * units.adc)
 
     # parameters of calibrated sums
-    irene.set_csum(n_MAU = CFP['NMAU'],
-                   thr_MAU = CFP['THR_MAU'] * units.adc,
-                   thr_csum_s1 =CFP['THR_CSUM_S1'] * units.pes,
-                   thr_csum_s2 =CFP['THR_CSUM_S2'] * units.pes)
+    irene.set_csum(n_MAU = CFP.NMAU,
+                   thr_MAU = CFP.THR_MAU * units.adc,
+                   thr_csum_s1 =CFP.THR_CSUM_S1 * units.pes,
+                   thr_csum_s2 =CFP.THR_CSUM_S2 * units.pes)
 
     # MAU and thresholds for SiPms
-    irene.set_sipm(n_MAU_sipm= CFP['NMAU_SIPM'],
-                   thr_sipm=CFP['THR_SIPM'])
+    irene.set_sipm(n_MAU_sipm= CFP.NMAU_SIPM,
+                   thr_sipm=CFP.THR_SIPM)
 
     # parameters for PMAP searches
     irene.set_pmap_params(s1_params   = s1par,
                           s2_params   = s2par,
-                          thr_sipm_s2 = CFP['THR_SIPM_S2'])
+                          thr_sipm_s2 = CFP.THR_SIPM_S2)
 
 
     t0 = time()
-    nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
+    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     # run
-    nevt = irene.run(nmax=nevts, print_empty=CFP['PRINT_EMPTY_EVENTS'])
+    nevt = irene.run(nmax=nevts, print_empty=CFP.PRINT_EMPTY_EVENTS)
     t1 = time()
     dt = t1 - t0
 

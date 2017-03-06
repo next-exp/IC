@@ -195,7 +195,7 @@ def test_configure(config_tmpdir, spec):
 
     # Check that all options have the expected values
     for option in this_configuration:
-        assert CFP[option] == this_configuration[option], 'option = ' + option
+        assert getattr(CFP, option) == this_configuration[option], 'option = ' + option
 
 
 
