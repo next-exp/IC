@@ -7,8 +7,8 @@ from hypothesis.extra.numpy import arrays
 from pytest import mark
 
 from . import wfm_functions as wfm
-import invisible_cities.core.peak_functions_c as cpf
-import invisible_cities.core.tbl_functions as tbl
+import invisible_cities.reco.peak_functions_c as cpf
+import invisible_cities.reco.tbl_functions as tbl
 import numpy as np
 import tables as tb
 
