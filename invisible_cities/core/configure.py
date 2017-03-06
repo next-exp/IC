@@ -98,17 +98,17 @@ def define_event_loop(options, n_evt):
         yield i
 
 
-def cast(value):
-    """Cast value from string to a python type.
+def parse_value(value):
+    """Parse booleans, ints on strings.
 
     Parameters
     ----------
     value : string
-        Token to be cast.
+        Token to be converted.
 
     Returns
     -------
-    cast_value : object
+    converted_value : object
         Python object of the guessed type.
     """
     if value in ('True', 'False'): return eval(value)
@@ -142,7 +142,7 @@ def read_config_file(cfile):
         tokens = list(filter(None, line.rstrip().split(" ")))
         key = tokens[0]
 
-        value = list(map(cast, tokens[1:]))  # python-2 & python-3
+        value = list(map(parse_value, tokens[1:]))  # python-2 & python-3
         d[key] = value[0] if len(value) == 1 else value
 
     if "PATH_IN" in d and "FILE_IN" in d:

@@ -208,9 +208,9 @@ def test_configure(config_tmpdir, spec):
 @example('xxx/$PWD', 'xxx/' + getenv('PWD'))
 @example('astring', 'astring')
 @example('spa ace', 'spa ace')
-def test_cast(i,o):
+def test_parse_value(i,o):
     # `given` generates integers or floats as input: their string
-    # representation needs to be seen by `cast`.
+    # representation needs to be seen by `parse_value`.
     input  = str(i)
     # `given` generates `None` as the correct answer, signalling to
     # the test that the answer should be obtained by evaluating the
@@ -218,4 +218,4 @@ def test_cast(i,o):
     # that that is the value we should use in the assertion.
     output = eval(input) if o is None else o
 
-    assert conf.cast(input) == output
+    assert conf.parse_value(input) == output
