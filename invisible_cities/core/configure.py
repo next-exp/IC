@@ -13,16 +13,22 @@ def print_configuration(options):
 
     Parameters
     ----------
-    options : dictionary
-        Contains key-value pairs of options.
+    options : namespace
+        Contains attributes specifying the options
     """
+
+    # Deal with namespcases as well as mappings.
+    try:
+        options = vars(options)
+    except TypeError:
+        pass
 
     for key, value in sorted(options.items()):
         print("{0: <22} => {1}".format(key, value))
 
 
 def configure(input_options=sys.argv):
-    """Translate command line options to a meaningfull dictionary.
+    """Translate command line options to a meaningful namespace.
 
     Parameters
     ----------
@@ -32,8 +38,8 @@ def configure(input_options=sys.argv):
 
     Returns
     -------
-    output_options : dictionary
-        Options as key-value pairs.
+    output_options : namespace
+        Options as attributes of a namespace.
     """
     program, args = input_options[0], input_options[1:]
     parser = argparse.ArgumentParser(program)
@@ -49,24 +55,24 @@ def configure(input_options=sys.argv):
     parser.add_argument("--runall", action="store_true",     help="number of events to be skipped")
 
     flags, extras = parser.parse_known_args(args)
-    options = read_config_file(flags.c) if flags.c else {}
+    options = read_config_file(flags.c) if flags.c else argparse.Namespace()
 
-    if flags.i is not None: options["FILE_IN"]      = flags.i
-    if flags.r is not None: options["RUN_NUMBER"]   = flags.r
-    if flags.o is not None: options["FILE_OUT"]     = flags.o
-    if flags.n is not None: options["NEVENTS"]      = flags.n
-    if flags.s is not None: options["SKIP"]         = flags.s
-    if flags.p is not None: options["PRINT_MOD"]    = flags.p
-    if flags.v is not None: options["VERBOSITY"]    = 50 - min(flags.v, 4) * 10
+    if flags.i is not None: options.FILE_IN      = flags.i
+    if flags.r is not None: options.RUN_NUMBER   = flags.r
+    if flags.o is not None: options.FILE_OUT     = flags.o
+    if flags.n is not None: options.NEVENTS      = flags.n
+    if flags.s is not None: options.SKIP         = flags.s
+    if flags.p is not None: options.PRINT_MOD    = flags.p
+    if flags.v is not None: options.VERBOSITY    = 50 - min(flags.v, 4) * 10
     if flags.runall:
-        options["RUN_ALL"] = flags.runall
-    options["INFO"] = flags.I
+        options.RUN_ALL = flags.runall
+    options.INFO = flags.I
 
     if extras:
         logger.warning("WARNING: the following parameters have not been "
                        "identified!\n{}".format(" ".join(map(str, extras))))
 
-    logger.setLevel(options.get("VERBOSITY", "INFO"))
+    logger.setLevel(vars(options).get("VERBOSITY", "INFO"))
 
     print_configuration(options)
     return options
@@ -128,10 +134,10 @@ def read_config_file(cfile):
 
     Returns
     -------
-    d : dictionary
+    n : namespace
         Contains the parameters specified in cfile.
     """
-    d = {"VERBOSITY": 20, "RUN_ALL": False, "COMPRESSION": "ZLIB4"}
+    n = argparse.Namespace(VERBOSITY=20, RUN_ALL=False, COMPRESSION="ZLIB4")
     for line in open(cfile, "r"):
         if line == "\n" or line[0] == "#":
             continue
@@ -143,13 +149,13 @@ def read_config_file(cfile):
         key = tokens[0]
 
         value = list(map(parse_value, tokens[1:]))  # python-2 & python-3
-        d[key] = value[0] if len(value) == 1 else value
+        vars(n)[key] = value[0] if len(value) == 1 else value
 
-    if "PATH_IN" in d and "FILE_IN" in d:
-        d["FILE_IN"] = os.path.join(d["PATH_IN"], d["FILE_IN"])
-    if "PATH_OUT" in d and "FILE_OUT" in d:
-        d["FILE_OUT"] = os.path.join(d["PATH_OUT"], d["FILE_OUT"])
-    return d
+    if hasattr(n, "PATH_IN") and hasattr(n, "FILE_IN"):
+        n.FILE_IN = os.path.join(n.PATH_IN, n.FILE_IN)
+    if hasattr(n, "PATH_OUT") and hasattr(n, "FILE_OUT"):
+        n.FILE_OUT = os.path.join(n.PATH_OUT, n.FILE_OUT)
+    return n
 
 
 def filter_options(options, name):
