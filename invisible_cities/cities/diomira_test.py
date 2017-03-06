@@ -38,13 +38,13 @@ def test_diomira_fee_table():
 
     with tb.open_file(RWF_file, 'r') as e40rwf:
         fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
-        feep = fee['fee_param']
+        feep = fee.fee_param
         eps = 1e-04
         # Ignoring PEP8 to imrpove readability by making symmetry explicit.
-        assert len(fee['adc_to_pes'])    == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee['coeff_blr'])     == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee['coeff_c'])       == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee['pmt_noise_rms']) == e40rwf.root.RD.pmtrwf.shape[1]
+        assert len(fee.adc_to_pes)    == e40rwf.root.RD.pmtrwf.shape[1]
+        assert len(fee.coeff_blr)     == e40rwf.root.RD.pmtrwf.shape[1]
+        assert len(fee.coeff_c)       == e40rwf.root.RD.pmtrwf.shape[1]
+        assert len(fee.pmt_noise_rms) == e40rwf.root.RD.pmtrwf.shape[1]
         assert feep.NBITS == FEE.NBITS
         assert abs(feep.FEE_GAIN - FEE.FEE_GAIN)           < eps
         assert abs(feep.LSB - FEE.LSB)                     < eps
