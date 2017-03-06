@@ -165,20 +165,21 @@ function compile_and_test {
 
 function clean {
     echo "Cleaning IC generated files:"
-    C_FILES=`find . -name '*.c'`
-    SOFILES=`find . -name '*.so'`
-    REMOVE="$C_FILES $SOFILES"
-    if [ ! -z "${REMOVE// }" ]
-    then
-        for FILE in $REMOVE
-        do
-            COMMAND="rm $FILE"
-            echo $COMMAND
-            $COMMAND
-        done
-    else
-        echo Nothing found to clean
-    fi
+    FILETYPES='*.c *.so *.pyc __pycache__'
+    for TYPE in $FILETYPES
+    do
+		echo Cleaning $TYPE files
+        REMOVE=`find . -name $TYPE`
+        if [ ! -z "${REMOVE// }" ]
+        then
+            for FILE in $REMOVE
+            do
+               rm -rf $FILE
+            done
+        else
+            echo Nothing found to clean in $TYPE
+        fi
+    done
 }
 
 ## Main command dispatcher
