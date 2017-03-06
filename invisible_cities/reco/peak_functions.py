@@ -14,12 +14,12 @@ from scipy import signal
 
 import invisible_cities.core.system_of_units as units
 import invisible_cities.sierpe.blr as blr
-import invisible_cities.core.peak_functions_c as cpf
-from invisible_cities.database import load_db
-from invisible_cities.core.params import (S12Params,
-                                          ThresholdParams,
-                                          CalibratedSum,
-                                          PMaps)
+import invisible_cities.reco.peak_functions_c as cpf
+from   invisible_cities.database import load_db
+from   invisible_cities.reco.params import (S12Params,
+                                            ThresholdParams,
+                                            CalibratedSum,
+                                            PMaps)
 
 def calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=200, thr_MAU=5):
     """Compute the ZS calibrated sum of the PMTs
