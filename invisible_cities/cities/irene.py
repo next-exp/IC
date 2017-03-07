@@ -143,18 +143,17 @@ class Irene(PmapCity):
                 nsipm = sipm[0]
                 ene   = sipm[1]
                 for j, E in enumerate(ene):
-                    if E > 0:
-                        row["event"] = event
-                        if not self.monte_carlo:
-                            evtInfo = self.eventsInfo[evt]
-                            row["evtDaq"] = evtInfo[0]
-                        else:
-                            row["evtDaq"] = event
-                        row["peak"]    = i
-                        row["nsipm"]   = nsipm
-                        row["nsample"] = j
-                        row["ene"]     = E
-                        row.append()
+                    row["event"] = event
+                    if not self.monte_carlo:
+                        evtInfo = self.eventsInfo[evt]
+                        row["evtDaq"] = evtInfo[0]
+                    else:
+                        row["evtDaq"] = event
+                    row["peak"]    = i
+                    row["nsipm"]   = nsipm
+                    row["nsample"] = j
+                    row["ene"]     = E
+                    row.append()
         #st.flush()
 
     def _store_pmaps(self, event, evt, S1, S2, S2Si):
@@ -180,14 +179,7 @@ class Irene(PmapCity):
         if print_empty = True, count the number of empty events
         """
 
-        # TODO replace IOError with IC Exceptions
-
-        # TODO checks like the ones in the following block are
-        # repeated in the run method of all cities. See whether this
-        # can be abstracted.
-
         n_events_tot = 0
-
         self.check_files()
 
         # check that S1 and S2 params are defined
