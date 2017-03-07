@@ -7,6 +7,7 @@ CalibratedCity: A DeconvolutionCity that perform the calibrated sum of the
 PmapCity: A CalibratedCity that computes S1, S2 and S2Si that togehter
           constitute a PMAP.
 SensorResponseCity: A city that describes sensor response
+DNNCity: A city equipped to construct and train and/or evaluate a DNN
 
 Authors: J.J. Gomez-Cadenas and J. Generowicz.
 Feburary, 2017.
@@ -16,6 +17,8 @@ import sys
 from textwrap import dedent
 
 import numpy as np
+import keras
+import tables as tb
 
 from .. core.configure         import print_configuration
 from .. core.exceptions        import NoInputFiles
@@ -782,8 +785,6 @@ class MapCity(City):
     DST_NODE    {DST_NODE}
     """
 
-    config_file_format = dedent(config_file_format)
-
     default_config = merge_two_dicts(
         City.default_config,
         dict(LIFETIME    =   1e6,
@@ -800,3 +801,180 @@ class MapCity(City):
 
              DST_GROUP   = "DST",
              DST_NODE    = "Events"))
+
+class DNNCity(City):
+    """A DNN city extends the City base class, adding functionality
+        common to all cities that will perform DNN-based analysis.
+        lrate     - the learning rate
+        sch_decay - the decay per iteration
+        model     - the Keras model describing the network
+        opt       - the optimizer type to be used in training
+    """
+
+    def __init__(self,
+                 run_number  = 0,
+                 files_in    = None,
+                 file_out    = None,
+                 temp_dir     = 'database/test_data',
+                 compression = 'ZLIB4',
+                 nprint      = 10000,
+                 # Parameters added at this level
+                 weights_file = '',
+                 dnn_datafile = '',
+                 lrate       = 0.01,
+                 sch_decay   = 0.001,
+                 loss_type   = 'mse',
+                 opt         = 'nadam',
+                 mode        = 'eval'):
+
+        City.__init__(self,
+                      run_number  = run_number,
+                      files_in    = files_in,
+                      file_out    = file_out,
+                      compression = compression,
+                      nprint      = nprint)
+
+        self.temp_dir     = temp_dir
+        self.weights_file = weights_file
+        self.dnn_datafile = dnn_datafile
+        self.lrate        = lrate
+        self.sch_decay    = sch_decay
+        self.loss_type    = loss_type
+        self.mode         = mode
+        self.opt          = opt
+
+        self.model        = None
+
+        # load the SiPM (x,y) values
+        DataSensor = load_db.DataSiPM(0)
+        xs = DataSensor.X.values
+        ys = DataSensor.Y.values
+
+        self.id_to_coords = {}
+        for ID, x, y in zip(range(1792), xs, ys):
+            self.id_to_coords[np.int32(ID)] = np.array([x, y])
+
+    def build_XY(self):
+        """Builds the arrays X_in and Y_in. To be implemented in a subclass."""
+        raise NotImplementedError
+
+    def build_model(self):
+        """Builds the Keras model. To be implemented in a subclass."""
+        raise NotImplementedError
+
+    def train(self,nepochs=10,nbatch=64,fval=0.05):
+        """Run the training step for the model that was setup"""
+        raise NotImplementedError
+
+    def evaluate(self):
+        """Evaluates the input data using the trained DNN"""
+        raise NotImplementedError
+
+    config_file_format = City.config_file_format + """
+    # paths and input/output
+    TEMP_DIR {TEMP_DIR}
+    WEIGHTS_FILE {WEIGHTS_FILE}
+    DNN_DATAFILE {DNN_DATAFILE}
+
+    # DNNCity
+    RUN_NUMBER {RUN_NUMBER}
+    MODE {MODE}
+    OPT {OPT}
+    LRATE {LRATE}
+    DECAY {DECAY}
+    LOSS {LOSS}
+
+    # run
+    NEVENTS {NEVENTS}
+    RUN_ALL {RUN_ALL}"""
+
+    config_file_format = dedent(config_file_format)
+
+    default_config = merge_two_dicts(
+        City.default_config,
+        dict(RUN_NUMBER   = 0,
+             TEMP_DIR     = '$ICDIR/database/test_data',
+             WEIGHTS_FILE = None,
+             DNN_DATAFILE = None,
+             MODE         = 'test',
+             OPT          = 'nadam',
+             LRATE        = 0.001,
+             DECAY        = 0.001,
+             LOSS         = 'mse',
+             NEVENTS      = 5,
+             RUN_ALL      = False))
+
+
+class KerasDNNCity(DNNCity):
+    """A KerasDNNCity extends the DNNCity base class and implements key
+       functions using the Keras interface.
+    """
+    def __init__(self,
+                 run_number  = 0,
+                 files_in    = None,
+                 file_out    = None,
+                 temp_dir     = 'database/test_data',
+                 compression = 'ZLIB4',
+                 nprint      = 10000,
+                 weights_file = '',
+                 dnn_datafile = '',
+                 lrate       = 0.01,
+                 sch_decay   = 0.001,
+                 loss_type   = 'mse',
+                 opt         = 'nadam',
+                 mode        = 'eval'):
+
+        DNNCity.__init__(self,
+                      run_number      = run_number,
+                      files_in        = files_in,
+                      file_out        = file_out,
+                      temp_dir        = temp_dir,
+                      compression     = compression,
+                      nprint          = nprint,
+                      weights_file    = weights_file,
+                      dnn_datafile    = dnn_datafile,
+                      lrate           = lrate,
+                      sch_decay       = sch_decay,
+                      loss_type       = loss_type,
+                      opt             = opt,
+                      mode            = mode)
+
+        if(opt == 'nadam'):
+            self.optimizer = keras.optimizers.Nadam(lr=self.lrate, beta_1=0.9,
+                                              beta_2=0.999, epsilon=1e-08,
+                                              schedule_decay=self.sch_decay)
+        else:
+            print("Setting SGD opt")
+            self.optimizer = keras.optimizers.SGD(lr=self.lrate,
+                                            decay=self.sch_decay)
+
+    def build_XY(self):
+        """Builds the arrays X_in and Y_in. To be implemented in a subclass."""
+        raise NotImplementedError
+
+    def build_model(self):
+        """Builds the Keras model. To be implemented in a subclass."""
+        raise NotImplementedError
+
+    def train(self,nepochs=10,nbatch=64,fval=0.05):
+        """Run the training step for the model that was setup"""
+
+        # set up the callbacks
+        file_lbl = "{epoch:02d}-{loss:.4f}"
+        filepath="{0}/weights-{1}.h5".format(self.temp_dir,file_lbl)
+        checkpoint = keras.callbacks.ModelCheckpoint(filepath, monitor='loss', verbose=0, save_best_only=True, mode='min')
+        callbacks_list = [checkpoint]
+
+        # train the model
+        self.model.fit(self.X_in, self.Y_in, nb_epoch=nepochs, batch_size=nbatch, callbacks=callbacks_list, validation_split=fval, shuffle=True)
+
+    def evaluate(self):
+        """Evaluates the input data using the trained DNN"""
+
+        prediction = self.model.predict(self.X_in,verbose=2)
+
+        # print test results if true information is given
+        if(len(self.Y_in) == len(self.X_in)):
+            loss_and_metrics = self.model.evaluate(self.X_in, self.Y_in)
+
+        return prediction

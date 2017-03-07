@@ -81,10 +81,13 @@ dependencies:
 - notebook
 - sphinx
 - networkx
+- h5py
 - pip:
   - hypothesis
   - flaky
   - pytest-xdist
+  - keras
+  - tensorflow
 EOF
 
     conda env create -f ${YML_FILENAME}
