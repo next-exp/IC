@@ -181,4 +181,5 @@ def test_pmaps_store_issue_151(config_tmpdir):
 
              assert irene.s1t.shape[0] == len(S1[0][0])
              assert irene.s2t.shape[0] == len(S2[0][0])
-             assert irene.s2sit.shape[0] > 0
+             assert irene.s2sit.shape[0] == sum(
+                    [len(S2Si[0][i][1]) for i in range(len(S2Si[0]))])
