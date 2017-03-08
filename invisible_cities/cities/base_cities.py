@@ -31,6 +31,7 @@ from   invisible_cities.core.random_sampling \
 from   invisible_cities.core.configure import print_configuration
 from   invisible_cities.reco.params import S12Params, SensorParams
 
+import invisible_cities.reco.pmap_io as pio
 
 if sys.version_info >= (3,5):
     # Exec to avoid syntax errors in older Pythons
@@ -102,6 +103,11 @@ class City:
     def set_compression(self, compression):
         """Set the input files."""
         self.compression = compression
+
+    def conditional_print(self, evt, n_events_tot):
+        if n_events_tot % self.nprint == 0:
+            print('event in file = {}, total = {}'
+                  .format(evt, n_events_tot))
 
     def display_IO_info(self, nmax):
         print("""
@@ -502,7 +508,7 @@ class PmapCity(CalibratedCity):
         """Return S2Si."""
         SIPM = cpf.select_sipm(sipmzs)
         S2Si = pf.sipm_s2_dict(SIPM, S2, thr = self.thr_sipm_s2)
-        return S2Si
+        return pio.S2Si(S2Si)
 
 
     config_file_format = CalibratedCity.config_file_format + """
