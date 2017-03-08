@@ -4,27 +4,19 @@ import sys
 from glob import glob
 from time import time
 
-import numpy as np
+import numpy  as np
 import tables as tb
 
-from   invisible_cities.reco.nh5 import S12, S2Si, EventInfo, RunInfo
-import invisible_cities.reco.tbl_functions as tbl
-from   invisible_cities.core.configure \
-       import configure, define_event_loop, print_configuration
 
-from   invisible_cities.core.system_of_units_c import units
-from   invisible_cities.cities.base_cities import PmapCity, SensorParams
-from   invisible_cities.cities.base_cities import S12Params as S12P
-from   invisible_cities.core.mctrk_functions import MCTrackWriter
+from invisible_cities.core.configure import configure, print_configuration
+from invisible_cities.core.system_of_units_c import units
 
+from invisible_cities.reco.pmap_io import pmap_writer, S12, S2Si
+from invisible_cities.core.system_of_units_c import units
+from invisible_cities.cities.base_cities import PmapCity, SensorParams
+from invisible_cities.cities.base_cities import S12Params as S12P
+from invisible_cities.core.mctrk_functions import MCTrackWriter
 
-# Parameters for S1/S2 searches
-# tmin and tmax define the time interval of the searches
-# lmin and lmax define the minimum and maximum width of the signal
-# stride define the tolerable size of the "hole" between to samples above
-# threshold when performing the search
-# S12Params = namedtuple('S12Params', 'tmin tmax stride lmin lmax')
-# S12P = S12Params
 
 class Irene(PmapCity):
     """Perform fast processing from raw data to pmaps.
@@ -72,106 +64,6 @@ class Irene(PmapCity):
         # counter for empty events
         self.empty_events = 0 # counts empty events in the energy plane
 
-    def _set_pmap_store(self, pmap_file):
-        """Set the output file."""
-        # open pmap store
-        #super().set_output_file(pmap_file_name, compression=compression)
-        #pmap_file = self.h5out
-
-        # self.compression = compression
-        # pmap_file = tb.open_file(pmap_file_name, "w",
-        #                           filters = tbl.filters(compression))
-
-
-        # create a group
-        pmapsgroup = pmap_file.create_group(
-            pmap_file.root, "PMAPS")
-
-        # create tables to store pmaps
-        self.s1t  = pmap_file.create_table(
-            pmapsgroup, "S1", S12, "S1 Table",
-            tbl.filters(self.compression))
-
-        self.s2t  = pmap_file.create_table(
-            pmapsgroup, "S2", S12, "S2 Table",
-            tbl.filters(self.compression))
-
-        self.s2sit = pmap_file.create_table(
-            pmapsgroup, "S2Si", S2Si, "S2Si Table",
-            tbl.filters(self.compression))
-
-        self.s1t  .cols.event.create_index()
-        self.s2t  .cols.event.create_index()
-        self.s2sit.cols.event.create_index()
-
-        # Create group for run info
-        if not self.monte_carlo:
-            rungroup     = pmap_file.create_group(pmap_file.root, "Run")
-
-            self.runInfot = pmap_file.create_table(
-                rungroup, "runInfo", RunInfo, "runInfo",
-                tbl.filters(self.compression))
-
-            self.evtInfot = pmap_file.create_table(
-                rungroup, "events", EventInfo, "events",
-                tbl.filters(self.compression))
-
-    def _store_s12(self, S12, st, event, evt):
-        row = st.row
-        for i in S12:
-            time = S12[i][0]
-            ene  = S12[i][1]
-            assert len(time) == len(ene)
-            for j in range(len(time)):
-                row["event"] = event
-                if not self.monte_carlo:
-                    evtInfo = self.eventsInfo[evt]
-                    row["evtDaq"] = evtInfo[0]
-                else:
-                    row["evtDaq"] = event
-                row["peak"] = i
-                row["time"] = time[j]
-                row["ene"]  =  ene[j]
-                row.append()
-        #st.flush()
-
-    def _store_s2si(self, S2Si, st, event, evt):
-        row = st.row
-        for i in S2Si:
-            sipml = S2Si[i]
-            for sipm in sipml:
-                nsipm = sipm[0]
-                ene   = sipm[1]
-                for j, E in enumerate(ene):
-                    row["event"] = event
-                    if not self.monte_carlo:
-                        evtInfo = self.eventsInfo[evt]
-                        row["evtDaq"] = evtInfo[0]
-                    else:
-                        row["evtDaq"] = event
-                    row["peak"]    = i
-                    row["nsipm"]   = nsipm
-                    row["nsample"] = j
-                    row["ene"]     = E
-                    row.append()
-        #st.flush()
-
-    def _store_pmaps(self, event, evt, S1, S2, S2Si):
-        """Store PMAPS."""
-        if not self.monte_carlo:
-            # Event info
-            row     = self.evtInfot.row
-            evtInfo = self.eventsInfo[evt]
-
-            row['evt_number'] = evtInfo[0]
-            row['timestamp']  = evtInfo[1]
-            row.append()
-            #self.evtInfot.flush()
-
-        self._store_s12 (S1, self.s1t,  event, evt)
-        self._store_s12 (S2, self.s2t,  event, evt)
-        self._store_s2si(S2Si, self.s2sit, event, evt)
-
     def run(self, nmax, print_empty=True):
         """
         Run Irene
@@ -188,27 +80,11 @@ class Irene(PmapCity):
 
         self.display_IO_info(nmax)
 
-        print("""
-                 S1 parameters {}""" .format(self.s1_params))
-
-        print("""
-                 S2 parameters {}""" .format(self.s2_params))
-
-        print("""
-                 S2Si parameters
-                 threshold min charge per SiPM = {s.thr_sipm} pes
-                 threshold min charge in  S2   = {s.thr_sipm_s2} pes
-                          """.format(s=self))
-
-        # loop over input files
         first = False
-        with tb.open_file(self.output_file, "w",
-                          filters = tbl.filters(self.compression)) as pmap_file:
-
-            self._set_pmap_store(pmap_file) # prepare the pmap store
+        with pmap_writer(self.output_file, self.compression) as write:
             if self.monte_carlo:
-                mctrack_writer = MCTrackWriter(pmap_file)
-
+                mctrack_writer = MCTrackWriter(write.file)
+            # loop over input files
             for ffile in self.input_files:
                 print("Opening", ffile, end="... ")
                 filename = ffile
@@ -235,8 +111,7 @@ class Irene(PmapCity):
                     if not first:
                         self.print_configuration(sensor_param)
                         first = True
-
-                        # loop over all events in file unless reach nmax
+                    # loop over all events in file unless reach nmax
                     for evt in range(NEVT):
                         if self.monte_carlo:
                             # copy corresponding MCTracks to output MCTracks table
@@ -245,7 +120,6 @@ class Irene(PmapCity):
 
 
                         # deconvolve
-                        #import pdb; pdb.set_trace() # This is how to enter debugger
                         CWF = self.deconv_pmt(pmtrwf[evt])
                         # calibrated PMT sum
                         csum, csum_mau = self.calibrated_pmt_sum(CWF)
@@ -267,40 +141,47 @@ class Irene(PmapCity):
                         # SiPMs signals
                         sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
                         # PMAPS
-                        S1, S2 = self.find_S12(s1_ene, s1_indx,
-                                               s2_ene, s2_indx)
-                        S2Si = self.find_S2Si(S2, sipmzs)
+                        S1, S2 = self.find_S12(s1_ene, s1_indx,   s2_ene, s2_indx)
+                        Si     = self.find_S2Si(S2, sipmzs)
 
-                        # store PMAPS
-                        self._store_pmaps(n_events_tot, evt, S1, S2, S2Si)
+                        event, timestamp = self.event_and_timestamp(evt,
+                                                n_events_tot)
+                        # write to file
+                        write(self.run_number, event, timestamp, S1, S2, Si)
 
                         n_events_tot += 1
-                        if n_events_tot % self.nprint == 0:
-                            print('event in file = {}, total = {}'
-                                  .format(evt, n_events_tot))
+                        self.conditional_print(evt, n_events_tot)
 
                         if n_events_tot >= nmax > -1:
                             print('reached max nof of events (={})'
                                   .format(nmax))
                             break
 
-            if not self.monte_carlo:
-                row = self.runInfot.row
-                row['run_number'] = self.run_number
-                row.append()
-                #self.runInfot.flush()
-        # flush the table
-            if not self.monte_carlo:
-                self.runInfot.flush()
-                self.evtInfot.flush()
-            self.s1t.flush()
-            self.s2t.flush()
-            self.s2sit.flush()
-
         if print_empty:
             print('Energy plane empty events (skipped) = {}'.format(
                    self.empty_events))
         return n_events_tot
+
+    def display_IO_info(self, nmax):
+        PmapCity.display_IO_info(self, nmax)
+        print("""
+                 S1 parameters {}""" .format(self.s1_params))
+        print("""
+                 S2 parameters {}""" .format(self.s2_params))
+        print("""
+                 S2Si parameters
+                 threshold min charge per SiPM = {s.thr_sipm} pes
+                 threshold min charge in  S2   = {s.thr_sipm_s2} pes
+                          """.format(s=self))
+
+    def event_and_timestamp(self, evt, n_events_tot):
+        event = n_events_tot   # TODO fixed in new version of DIOMIRA
+        timestamp = int(time()) # TODO fixed in new verison of DIOMIRA
+        if not self.monte_carlo:
+            evtInfo = self.eventsInfo[evt]
+            event = evtInfo[0]
+            timestamp = evtInfo[1]
+        return event, timestamp
 
 
 def IRENE(argv = sys.argv):

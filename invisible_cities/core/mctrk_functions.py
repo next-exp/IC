@@ -6,19 +6,17 @@ from   invisible_cities.reco.nh5 import MCTrack
 import invisible_cities.reco.tbl_functions as tbl
 
 class MCTrackWriter:
-    """Write MCTracks to file. """
-    def __init__(self,
-                 h5file,
-                 compression     = 'ZLIB4'):
+    """Write MCTracks to file."""
+    def __init__(self, h5file, compression = 'ZLIB4'):
 
-        self.h5file   =  h5file
-        self.compression =  compression
+        self.h5file      = h5file
+        self.compression = compression
         self._create_mctracks_table()
         # last visited row
         self.last_row = 0
 
     def _create_mctracks_table(self):
-        """ Create MCTracks table in MC group in file h5file """
+        """Create MCTracks table in MC group in file h5file."""
         if '/MC' in self.h5file:
             MC = self.h5file.root.MC
         else:

@@ -8,12 +8,11 @@ from pytest import fixture, mark
 
 parametrize = mark.parametrize
 
+import invisible_cities.reco.pmaps_functions as pmapf
+from invisible_cities.reco.pmaps_functions import df_to_pmaps_dict, df_to_s2si_dict
 
-import invisible_cities.reco.pmaps_functions   as pmapf
-from   invisible_cities.reco.pmaps_functions import df_to_pmaps_dict, df_to_s2si_dict
 
-
-@fixture(scope='module')
+@fixture(scope='session')
 def KrMC_pmaps():
     # Input file was produced to contain exactly 15 S1 and 50 S2.
     test_file = os.path.expandvars("$ICDIR/database/test_data/KrMC_pmaps.h5")
@@ -62,21 +61,6 @@ def test_df_to_pmaps_dict_negative_limit_takes_all_events(KrMC_pmaps):
     assert sorted(list(s1dict.keys())) == S1_evts
     assert sorted(list(s2dict.keys())) == S2_evts
 
-
-@fixture(scope='module')
-def s12_dataframe_converted(request):
-    evs  = [   0,     0,     0,     0,     0,      3,     3]
-    peak = [   0,     0,     1,     1,     1,      0,     0]
-    time = [1000., 1025., 2050., 2075., 2100., 5000., 5025.]
-    ene  = [123.4, 140.8, 730.0, 734.2, 732.7, 400.0, 420.3]
-    df = DF.from_dict(dict(
-        event  = Series(evs , dtype=np.int32),
-        evtDaq = evs,
-        peak   = Series(peak, dtype=np.int8),
-        time   = Series(time, dtype=np.float32),
-        ene    = Series(ene , dtype=np.float32),
-    ))
-    return df_to_pmaps_dict(df), df
 
 
 def test_df_to_pmaps_dict_one_entry_per_event(s12_dataframe_converted):
@@ -158,23 +142,6 @@ def test_df_to_s2si_dict_negative_limit_takes_all_events(KrMC_pmaps):
     S2Sidict = df_to_s2si_dict(s2sis, negative_max_events)
     assert sorted(S2Sidict.keys()) == S2Si_evts
 
-
-@fixture(scope='module')
-def s2si_dataframe_converted(request):
-    evs  = [    0,     0,     0,     0,     0,     3,     3]
-    peak = [    0,     0,     1,     1,     1,     0,     0]
-    sipm = [    1,     2,     3,     4,     5,     5,     6]
-    samp = [    0,     2,     0,     1,     2,     3,     4]
-    ene  = [123.4, 140.8, 730.0, 734.2, 732.7, 400.0, 420.3]
-    df = DF.from_dict(dict(
-        event   = Series(evs , dtype=np.int32),
-        evtDaq  = evs,
-        peak    = Series(peak, dtype=np.int8),
-        nsipm   = Series(sipm, dtype=np.int16),
-        nsample = Series(samp, dtype=np.int16),
-        ene     = Series(ene , dtype=np.float32),
-    ))
-    return df_to_s2si_dict(df), df
 
 
 def test_df_to_s2si_dict_one_entry_per_event(s2si_dataframe_converted):
