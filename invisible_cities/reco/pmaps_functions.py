@@ -10,7 +10,7 @@ import pandas as pd
 import tables as tb
 import matplotlib.pyplot as plt
 import invisible_cities.core.system_of_units as units
-import invisible_cities.reco.pmaps_functions_c as cpm
+from   invisible_cities.reco.pmaps_functions_c import df_to_pmaps_dict
 import invisible_cities.core.core_functions as cf
 from   invisible_cities.database import load_db
 from   invisible_cities.core.mpl_functions import circles
@@ -20,26 +20,13 @@ from   invisible_cities.core.mpl_functions import circles
 def read_pmaps(PMP_file):
     """Return the PMAPS as PD DataFrames."""
     with tb.open_file(PMP_file, 'r') as h5f:
-        s1t = h5f.root.PMAPS.S1
-        s2t = h5f.root.PMAPS.S2
+        s1t   = h5f.root.PMAPS.S1
+        s2t   = h5f.root.PMAPS.S2
         s2sit = h5f.root.PMAPS.S2Si
 
         return (pd.DataFrame.from_records(s1t  .read()),
                 pd.DataFrame.from_records(s2t  .read()),
                 pd.DataFrame.from_records(s2sit.read()))
-
-
-def s12df_to_s12l(s12df, evt_max=None):
-    """
-    Accept a S12df object (a S12 pytable readout as a PD dataframe)
-    and return a S12L dictionary
-    """
-    peak = s12df.peak.values.astype(np.int32)
-    if evt_max is None:
-        evt_max = -1
-    return cpm.cdf_to_dict(len(s12df.index), evt_max, s12df.event.values,
-                           peak, s12df.time.values,   s12df.ene  .values)
-
 
 def s12df_select_event(S12df, event):
     """Return a copy of the s12df for event."""

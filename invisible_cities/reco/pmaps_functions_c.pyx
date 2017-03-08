@@ -6,57 +6,47 @@ JJGC December, 2016
 cimport numpy as np
 import  numpy as np
 
+from invisible_cities.reco.params import Peak
 
-cpdef cdf_to_dict(int df_index, long int evt_max,
-                  int   [:] df_event,  int [:] df_peak,
-                  float [:] df_time, float [:] df_ene):
+cpdef df_to_pmaps_dict(df, max_events=None):
+    cdef dict all_events = {}
 
-    """
-    Auxiliary (fast) function to transform PMAPS in in pytables-DF format
-    into PMAPS in dictionary format
-    """
-    cdef int evt = 0
-    cdef int pk  = 0
+    cdef int   [:] event = df.event.values
+    cdef char  [:] peak  = df.peak .values
+    cdef float [:] time  = df.time .values
+    cdef float [:] ene   = df.ene  .values
 
-    cdef dict S12L = {}
-    cdef dict S12  = {}
-    S12 [0] = [[],[]]
-    S12L[0] = S12
+    cdef int df_size = len(df.index)
+    cdef int current_event = -2
+    cdef int current_peak  = -1
+    cdef int i
+    cdef long limit = np.iinfo(int).max if max_events is None or max_events < 0 else max_events
+    cdef bint event_boundary = True
+    cdef bint  peak_boundary = True
 
-    cdef int i,
-    if evt_max < 0:
-      evt_max = np.iinfo(np.int32).max
+    for i in range(df_size):
 
-    for i in range(df_index):
-        if evt >= evt_max:
-            break
-        if df_event[i] == evt:
-            S12 = S12L[evt]
-            if df_peak[i] == pk:
+        if event_boundary: # Start new event
+            current_event = event[i]
+            if current_event >= limit: break
+            event_data = {}
 
-                s12l = S12[pk]
-                s12l[0].append(df_time[i])
-                s12l[1].append(df_ene [i])
-            else:
-                pk = df_peak[i]
-                S12[pk] = ([df_time[i]], [df_ene[i]])
-        else:
+        if peak_boundary:  # Start new peak
+            current_peak = peak[i]
+            energies, times = [], []
 
-            S12 = S12L[evt]
-            for j in S12.keys():
-                s12l = S12[j]
-                t = np.array(s12l[0])
-                e = np.array(s12l[1])
-                S12[j] = [t,e]
-            S12L[evt] = S12
+        # Add energy and time to current peak's data
+        energies.append(ene [i])
+        times   .append(time[i])
 
-            evt = df_event[i]
-            if evt >= evt_max:
-                break
+        event_boundary = i+1 == df_size or event[i+1] != current_event
+        peak_boundary  = event_boundary or peak [i+1] != current_peak
 
-            pk = df_peak[i]
-            S12 = {}
-            S12[pk] = ([df_time[i]], [df_ene[i]])
-            S12L[evt] = S12
+        if peak_boundary:  # End of peak: add it to this event
+            event_data[current_peak] = Peak(np.array(times),
+                                            np.array(energies))
 
-    return S12L
+        if event_boundary: # End of event: add it in the collection of events
+            all_events[current_event] = event_data
+
+    return all_events
