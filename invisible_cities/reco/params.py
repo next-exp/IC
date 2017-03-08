@@ -12,7 +12,8 @@ for name, attrs in (
         ('SensorParams'   , 'NPMT PMTWL NSIPM SIPMWL'),
         ('ThresholdParams', 'thr_s1 thr_s2 thr_MAU thr_sipm thr_SIPM'),
         ('CalibratedSum'  , 'csum csum_mau'),
-        ('PMaps'          , 'S1 S2 S2Si')):
+        ('PMaps'          , 'S1 S2 S2Si'),
+        ('Peak'           , 't E')):
     _add_namedtuple_in_this_module(name, attrs)
 
 # Leave nothing but the namedtuple types in the namespace of this module
