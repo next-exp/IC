@@ -14,9 +14,9 @@ from   invisible_cities.database import load_db
 from   invisible_cities.core.mpl_functions import circles
 
 
-def read_pmaps(PMP_file):
+def read_pmaps(PMP_file_name):
     """Return the PMAPS as PD DataFrames."""
-    with tb.open_file(PMP_file, 'r') as h5f:
+    with tb.open_file(PMP_file_name, 'r') as h5f:
         s1t   = h5f.root.PMAPS.S1
         s2t   = h5f.root.PMAPS.S2
         s2sit = h5f.root.PMAPS.S2Si
@@ -25,44 +25,14 @@ def read_pmaps(PMP_file):
                 pd.DataFrame.from_records(s2t  .read()),
                 pd.DataFrame.from_records(s2sit.read()))
 
+def read_run_and_event_from_pmaps_file(PMP_file_name):
+    """Return the PMAPS as PD DataFrames."""
+    with tb.open_file(PMP_file_name, 'r') as h5f:
+        event_t   = h5f.root.RunEvtInfo.eventInfo
+        run_t   = h5f.root.RunEvtInfo.runInfo
 
-def s12df_select_event(S12df, event):
-    """Return a copy of the s12df for event."""
-    return S12df.loc[lambda df: df.event.values == event, :]
-
-
-def s12df_select_peak(S12df, peak):
-    """Return a copy of the s12df for peak."""
-    return S12df.loc[lambda df: S12df.peak.values == peak, :]
-
-
-def s12df_get_wvfm(S12df, event, peak):
-    """Return the waveform for event, peak."""
-    s12t = s12df_select_event(S12df, event)
-    s12p = s12df_select_peak(s12t, peak)
-    return s12p.time.values, s12p.ene.values
-
-
-def s12df_plot_waveforms(S12df, nmin=0, nmax=16, x=4, y=4):
-    """Take as input a S1df PMAPS and plot waveforms."""
-    plt.figure(figsize=(12, 12))
-
-    for i in range(nmin, nmax):
-        plt.subplot(y, y, i+1)
-        T, E = s12df_get_wvfm(S12df, event=i, peak=0)
-        plt.plot(T, E)
-
-
-def s12_to_wvfm_list(S12):
-    """Take an S12 dictionary and return a list of DF."""
-    S12L = []
-    print('number of peaks = {}'.format(len(S12)))
-    for i in S12.keys():
-        s12df = pd.DataFrame(S12[i], columns=['time_ns','ene_pes'])
-        print('S12 number = {}, samples = {} sum in pes ={}'
-              .format(i, len(s12df), np.sum(s12df.ene_pes.values)))
-        S12L.append(s12df)
-    return S12L
+        return (pd.DataFrame.from_records(run_t  .read()),
+                pd.DataFrame.from_records(event_t.read()))
 
 
 def scan_s12(S12):
@@ -78,19 +48,6 @@ def scan_s12(S12):
         plt.plot(            S12[i][0],         S12[i][1])
 
 
-def scan_s12l(S12L):
-    """Print and plot the peaks of input list S12L S12L is a list of data
-    frames.
-    """
-    print('number of peaks = {}'.format(len(S12L)))
-    for i, s12df in enumerate(S12L):
-        print('S12 number = {}, samples = {} sum in pes ={}'
-              .format(i, len(s12df), np.sum(s12df.ene_pes.values)))
-        plt.plot(s12df.time_ns.values, s12df.ene_pes)
-        plt.show()
-        raw_input('hit return')
-
-
 def plot_s2si_map(S2Si, cmap='Blues'):
         """Plot a map of the energies of S2Si objects."""
 
@@ -100,12 +57,10 @@ def plot_s2si_map(S2Si, cmap='Blues'):
         ys = DataSensor.Y.values
         r = np.ones(len(xs)) * radius
         col = np.zeros(len(xs))
-        for k in S2Si:
-            s2si = S2Si[k]
-            for e in s2si:
-                indx = e[0]
-                ene = np.sum(e[1])
-                col[indx] = ene
+        for sipm in S2Si.values():
+            for nsipm, E in sipm.items():
+                ene = np.sum(E)
+                col[nsipm] = ene
         plt.figure(figsize=(8, 8))
         plt.subplot(aspect="equal")
         circles(xs, ys, r, c=col, alpha=0.5, ec="none", cmap=cmap)
@@ -114,16 +69,12 @@ def plot_s2si_map(S2Si, cmap='Blues'):
         plt.xlim(-198, 198)
         plt.ylim(-198, 198)
 
-
 def scan_s2si_map(S2Si):
-        """Scan the S2Si objects."""
-
-        for k in S2Si:
-            s2si = S2Si[k]
-            for e in s2si:
-                indx = e[0]
-                ene = np.sum(e[1])
-                print('SiPM number = {}, total energy = {}'.format(indx, ene))
+    """Scan the S2Si objects."""
+    for sipm in S2Si.values():
+        for nsipm, E in sipm.items():
+            ene = np.sum(E)
+            print('SiPM number = {}, total energy = {}'.format(nsipm, ene))
 
 
 class S12F:
