@@ -294,23 +294,41 @@ def index_from_s2(S2):
 
 
 def sipm_s2(dSIPM, S2, thr=5*units.pes):
-    """Given a vector with SIPMs (energies above threshold), return a list
-    of np arrays. Each element of the list is the S2 window in the
-    SiPM (if not zero).
+    """Given a vector with SIPMs (energies above threshold), return a dict
+    of np arrays, where the key is the sipm with signal.
     """
     #import pdb; pdb.set_trace()
 
     i0, i1 = index_from_s2(S2)
     dim = (i1 - i0)
-    SIPML = []
+    SIPML = {}
     for i in dSIPM.keys():
         sipm = dSIPM[i][1]
         psum = np.sum(sipm[i0:i1])
         if psum > thr:
             e = np.zeros(dim, dtype=np.double)
             e[:] = sipm[i0:i1]
-            SIPML.append([dSIPM[i][0], e])
+            SIPML[dSIPM[i][0]] = e
     return SIPML
+
+# def sipm_s2(dSIPM, S2, thr=5*units.pes):
+#     """Given a vector with SIPMs (energies above threshold), return a list
+#     of np arrays. Each element of the list is the S2 window in the
+#     SiPM (if not zero).
+#     """
+#     #import pdb; pdb.set_trace()
+#
+#     i0, i1 = index_from_s2(S2)
+#     dim = (i1 - i0)
+#     SIPML = []
+#     for i in dSIPM.keys():
+#         sipm = dSIPM[i][1]
+#         psum = np.sum(sipm[i0:i1])
+#         if psum > thr:
+#             e = np.zeros(dim, dtype=np.double)
+#             e[:] = sipm[i0:i1]
+#             SIPML.append([dSIPM[i][0], e])
+#     return SIPML
 
 
 def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds, event):

@@ -7,8 +7,11 @@ cimport numpy as np
 import  numpy as np
 
 from invisible_cities.reco.params import Peak
+from invisible_cities.reco.pmap_io import S12, S2Si
+
 
 cpdef df_to_pmaps_dict(df, max_events=None):
+    """Transform S1/S2 from DF format to dict format."""
     cdef dict all_events = {}
     cdef dict current_event
     cdef tuple current_peak
@@ -37,33 +40,32 @@ cpdef df_to_pmaps_dict(df, max_events=None):
         for peak_number, (t, E) in current_event.items():
             current_event[peak_number] = Peak(np.array(t), np.array(E))
 
-    return all_events
+    return S12(all_events)
 
 
-cpdef dict df_to_s2si_dict(df, max_events=None):
-    cdef dict  all_events = {}
-    cdef dict  current_event
-    cdef dict  current_peak
-    cdef tuple current_sipm
+cpdef df_to_s2si_dict(df, max_events=None):
+    """ Transform S2Si from DF format to dict format."""
+    cdef dict all_events = {}
+    cdef dict current_event
+    cdef dict current_peak
+    cdef list current_sipm
 
-    cdef int   [:] event   = df.event  .values
-    cdef char  [:] peak    = df.peak   .values
-    cdef short [:] nsipm   = df.nsipm  .values
-    cdef short [:] nsample = df.nsample.values
-    cdef float [:] ene     = df.ene    .values
+    cdef int   [:] event = df.event.values
+    cdef char  [:] peak  = df.peak .values
+    cdef short [:] nsipm = df.nsipm.values
+    cdef float [:] ene   = df.ene  .values
 
-    cdef int  df_size = len(df.index)
+    cdef int df_size = len(df.index)
     cdef long limit = np.iinfo(int).max if max_events is None or max_events < 0 else max_events
 
     cdef int i
     for i in range(df_size):
         if event[i] >= limit: break
 
-        current_event = all_events   .setdefault(event[i],  {}     )
-        current_peak  = current_event.setdefault( peak[i],  {}     )
-        current_sipm  = current_peak .setdefault(nsipm[i], ([], []))
-        current_sipm[0].append(nsample[i])
-        current_sipm[1].append(    ene[i])
+        current_event = all_events   .setdefault(event[i], {} )
+        current_peak  = current_event.setdefault( peak[i], {} )
+        current_sipm  = current_peak .setdefault(nsipm[i], [] )
+        current_sipm.append(ene[i])
 
     cdef int  ID
     cdef list sample
@@ -72,9 +74,7 @@ cpdef dict df_to_s2si_dict(df, max_events=None):
     # empty slices with zeros
     for current_event in all_events.values():
         for current_peak in current_event.values():
-            for ID, (sample, energy) in current_peak.items():
-                maxsample                = np.max(sample) + 1
-                current_peak[ID]         = np.zeros(maxsample)
-                current_peak[ID][sample] = energy
+            for ID, energy in current_peak.items():
+                current_peak[ID] = np.array(energy)
 
-    return all_events
+    return S2Si(all_events)

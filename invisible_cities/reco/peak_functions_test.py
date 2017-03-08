@@ -157,8 +157,8 @@ def test_length_of_S2_time_array_and_length_of_S2Si_energy_array_must_be_the_sam
     pmp, _, _ = pmaps_electrons
 
     if pmp.S2 and pmp.S2Si:
-        for _, Es in pmp.S2Si[0]:
-            assert len(pmp.S2[0][0]) == len(Es)
+        for nsipm in pmp.S2Si[0]:
+            assert len(pmp.S2Si[0][nsipm]) == len(pmp.S2[0][0])
 
 def toy_pmt_signal():
     """ Mimick a PMT waveform."""
