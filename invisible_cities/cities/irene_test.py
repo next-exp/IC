@@ -12,10 +12,10 @@ import tables as tb
 import numpy  as np
 from pytest import mark, fixture
 
-from invisible_cities.cities.irene import Irene, IRENE
+from   invisible_cities.cities.irene import Irene, IRENE
+from   invisible_cities.core.system_of_units_c import units
 from   invisible_cities.reco.params import S12Params as S12P
 from   invisible_cities.reco.params import SensorParams
-from invisible_cities.core.system_of_units_c import units
 import invisible_cities.reco.tbl_functions as tbl
 
 @fixture(scope='module')
