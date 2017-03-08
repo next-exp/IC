@@ -8,6 +8,8 @@ cimport numpy as np
 import  numpy as np
 from scipy import signal
 
+import invisible_cities.reco.pmap_io as pio
+
 cpdef calibrated_pmt_sum(double [:, :] CWF,
                          double [:] adc_to_pes,
                          int      n_MAU = 200,
@@ -137,7 +139,7 @@ cpdef find_S12(double [:] wfzs,  int [:] index,
     S12[0].append([T[0], P[0]])
 
     j = 0
-    for i in range(1, len(wfzs)) :
+    for i in range(1, len(wfzs)):
 
         if T[i] > tmax:
             break
@@ -175,7 +177,7 @@ cpdef find_S12(double [:] wfzs,  int [:] index,
             S12L[j] = [t, e]
         j += 1
 
-    return S12L
+    return pio.S12(S12L)
 
 
 cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):

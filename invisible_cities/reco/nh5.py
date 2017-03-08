@@ -7,15 +7,15 @@ class RunInfo(tb.IsDescription):
 
 
 class EventInfo(tb.IsDescription):
-    evt_number = tb.Int32Col(shape=(), pos=0)
-    timestamp = tb.UInt64Col(shape=(), pos=1)
+    evt_number = tb. Int32Col(shape=(), pos=0)
+    timestamp  = tb.UInt64Col(shape=(), pos=1)
 
 
 class DetectorGeometry(tb.IsDescription):
     """Store geometry information for the detector."""
-    x_det = tb.Float32Col(shape=2, pos=1)  # xmin, xmax
-    y_det = tb.Float32Col(shape=2, pos=2)  # ymin, ymax
-    z_det = tb.Float32Col(shape=2, pos=3)  # zmin, zmax
+    x_det = tb.Float32Col(pos=1, shape=2)  # xmin, xmax
+    y_det = tb.Float32Col(pos=2, shape=2)  # ymin, ymax
+    z_det = tb.Float32Col(pos=3, shape=2)  # zmin, zmax
     r_det = tb.Float32Col(pos=4)  # radius
 
 
@@ -23,8 +23,8 @@ class DataSensor(tb.IsDescription):
     """Store metadata information for the SiPMs (position, gain,
     calibration-constant, mask).
     """
-    channel    = tb.Int32Col(pos=0)  # electronic channel
-    position   = tb.Float32Col(shape=3, pos=1)
+    channel    = tb.  Int32Col(pos=0) # electronic channel
+    position   = tb.Float32Col(pos=1, shape=3)
     coeff      = tb.Float64Col(pos=2)
     adc_to_pes = tb.Float32Col(pos=3)
     noise_rms  = tb.Float32Col(pos=4)
@@ -34,19 +34,19 @@ class MCTrack(tb.IsDescription):
     """Stores. the parameters used by the simulation as metadata using
     Pytables.
     """
-    event_indx     = tb.Int16Col(pos=1)
-    mctrk_indx     = tb.Int16Col(pos=2)
-    particle_name  = tb.StringCol(10, pos=3)
-    pdg_code       = tb.Int16Col(pos=4)
-    initial_vertex = tb.Float32Col(shape=3, pos=5)
-    final_vertex   = tb.Float32Col(shape=3, pos=6)
-    momentum       = tb.Float32Col(shape=3, pos=7)
-    energy         = tb.Float32Col(pos=8)
-    nof_hits       = tb.Int16Col(pos=9)
-    hit_indx       = tb.Int16Col(pos=10)
-    hit_position   = tb.Float32Col(shape=3, pos=11)
-    hit_time       = tb.Float32Col(pos=12)
-    hit_energy     = tb.Float32Col(pos=13)
+    event_indx     = tb.  Int16Col(    pos= 1)
+    mctrk_indx     = tb.  Int16Col(    pos= 2)
+    particle_name  = tb. StringCol(10, pos= 3)
+    pdg_code       = tb.  Int16Col(    pos= 4)
+    initial_vertex = tb.Float32Col(    pos= 5, shape=3)
+    final_vertex   = tb.Float32Col(    pos= 6, shape=3)
+    momentum       = tb.Float32Col(    pos= 7, shape=3)
+    energy         = tb.Float32Col(    pos= 8)
+    nof_hits       = tb.  Int16Col(    pos= 9)
+    hit_indx       = tb.  Int16Col(    pos=10)
+    hit_position   = tb.Float32Col(    pos=11, shape=3)
+    hit_time       = tb.Float32Col(    pos=12)
+    hit_energy     = tb.Float32Col(    pos=13)
 
 
 class SENSOR_WF(tb.IsDescription):
@@ -59,15 +59,15 @@ class SENSOR_WF(tb.IsDescription):
 
 class FEE(tb.IsDescription):
     """Store the parameters used by the EP simulation as metadata."""
-    OFFSET        = tb.Int16Col(pos=1)  # displaces the baseline (e.g, 700)
-    CEILING       = tb.Int16Col(pos=2)  # adc top count (4096)
-    PMT_GAIN      = tb.Float32Col(pos=3)  # Gain of PMT (4.5e6)
-    FEE_GAIN      = tb.Float32Col(pos=4)  # FE gain (250*ohm)
-    R1            = tb.Float32Col(pos=5)  # resistor in Ohms (2350*ohm)
-    C1            = tb.Float32Col(pos=6)  # Capacitor C1 in nF
-    C2            = tb.Float32Col(pos=7)  # Capacitor C2 in nF
-    ZIN           = tb.Float32Col(pos=8)  # equivalent impedence
-    DAQ_GAIN      = tb.Float32Col(pos=9)
+    OFFSET        = tb.  Int16Col(pos= 1)  # displaces the baseline (e.g, 700)
+    CEILING       = tb.  Int16Col(pos= 2)  # adc top count (4096)
+    PMT_GAIN      = tb.Float32Col(pos= 3)  # Gain of PMT (4.5e6)
+    FEE_GAIN      = tb.Float32Col(pos= 4)  # FE gain (250*ohm)
+    R1            = tb.Float32Col(pos= 5)  # resistor in Ohms (2350*ohm)
+    C1            = tb.Float32Col(pos= 6)  # Capacitor C1 in nF
+    C2            = tb.Float32Col(pos= 7)  # Capacitor C2 in nF
+    ZIN           = tb.Float32Col(pos= 8)  # equivalent impedence
+    DAQ_GAIN      = tb.Float32Col(pos= 9)
     NBITS         = tb.Float32Col(pos=10)  # number of bits ADC
     LSB           = tb.Float32Col(pos=11)  # LSB (adc count)
     NOISE_I       = tb.Float32Col(pos=12)  # Noise at the input
@@ -77,10 +77,10 @@ class FEE(tb.IsDescription):
     f_mc          = tb.Float32Col(pos=16)  # sampling frequency in MC (1ns)
     f_LPF1        = tb.Float32Col(pos=17)  # LPF
     f_LPF2        = tb.Float32Col(pos=18)  # LPF
-    coeff_c       = tb.Float64Col(shape=12, pos=19)  # cleaning coeff
-    coeff_blr     = tb.Float64Col(shape=12, pos=20)  # COEFF BLR
-    adc_to_pes    = tb.Float32Col(shape=12, pos=21)  # CALIB CONST
-    pmt_noise_rms = tb.Float32Col(shape=12, pos=22)  # rms noise
+    coeff_c       = tb.Float64Col(pos=19, shape=12)  # cleaning coeff
+    coeff_blr     = tb.Float64Col(pos=20, shape=12)  # COEFF BLR
+    adc_to_pes    = tb.Float32Col(pos=21, shape=12)  # CALIB CONST
+    pmt_noise_rms = tb.Float32Col(pos=22, shape=12)  # rms noise
 
 
 class DECONV_PARAM(tb.IsDescription):
@@ -97,9 +97,8 @@ class S12(tb.IsDescription):
     peak is the index of the S12 dictionary, running over the number of peaks found
     time and energy of the peak.
     """
-    event  = tb.Int32Col(pos=0)
-    evtDaq = tb.Int32Col(pos=1)
-    peak   = tb.UInt8Col(pos=2)  # peak number
+    event  = tb.  Int32Col(pos=0)
+    peak   = tb.  UInt8Col(pos=2) # peak number
     time   = tb.Float32Col(pos=3) # time in ns
     ene    = tb.Float32Col(pos=4) # energy in pes
 
@@ -111,9 +110,7 @@ class S2Si(tb.IsDescription):
     nsipm gives the SiPM number
     only energies are stored (times are defined in S2)
     """
-    event   = tb.Int32Col(pos=0)
-    evtDaq  = tb.Int32Col(pos=1)
-    peak    = tb.UInt8Col(pos=2)  # peak number
-    nsipm   = tb.Int16Col(pos=3)  # sipm number
-    nsample = tb.Int16Col(pos=4) # sample number
-    ene     = tb.Float32Col(pos=5) # energy in pes
+    event = tb.  Int32Col(pos=0)
+    peak  = tb.  UInt8Col(pos=2) # peak number
+    nsipm = tb.  Int16Col(pos=3) # sipm number
+    ene   = tb.Float32Col(pos=5) # energy in pes
