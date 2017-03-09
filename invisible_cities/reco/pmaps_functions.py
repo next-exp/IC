@@ -4,17 +4,14 @@ JJGC December 2016
 """
 from __future__ import print_function, division, absolute_import
 
-import math
 import numpy as np
 import pandas as pd
 import tables as tb
 import matplotlib.pyplot as plt
-import invisible_cities.core.system_of_units as units
-from   invisible_cities.reco.pmaps_functions_c import df_to_pmaps_dict
+from   invisible_cities.reco.pmaps_functions_c import df_to_pmaps_dict, df_to_s2si_dict
 import invisible_cities.core.core_functions as cf
 from   invisible_cities.database import load_db
 from   invisible_cities.core.mpl_functions import circles
-
 
 
 def read_pmaps(PMP_file):
@@ -27,6 +24,7 @@ def read_pmaps(PMP_file):
         return (pd.DataFrame.from_records(s1t  .read()),
                 pd.DataFrame.from_records(s2t  .read()),
                 pd.DataFrame.from_records(s2sit.read()))
+
 
 def s12df_select_event(S12df, event):
     """Return a copy of the s12df for event."""
