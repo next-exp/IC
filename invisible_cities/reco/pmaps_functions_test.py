@@ -90,6 +90,9 @@ def test_df_to_pmaps_dict_structure(s12_dataframe_converted):
         for peak_no, peak_data in subdict.items():
             assert hasattr(peak_data, 't')
             assert hasattr(peak_data, 'E')
+            for element in peak_data:
+                assert type(element) is np.ndarray
+
 
 def test_df_to_pmaps_dict_events_contain_peaks(s12_dataframe_converted):
     converted, _ = s12_dataframe_converted
