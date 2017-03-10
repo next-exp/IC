@@ -20,7 +20,7 @@ class PMapWriter:
 
         # create a group
         pmapsgroup = self.pmap_file.create_group(
-            pmap_file.root, "PMAPS")
+            self.pmap_file.root, "PMAPS")
 
         # create tables to store pmaps
         self.s1t  = self.pmap_file.create_table(
