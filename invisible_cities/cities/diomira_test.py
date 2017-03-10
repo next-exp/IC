@@ -162,7 +162,24 @@ def test_diomira_identify_bug(ICDIR):
 
 
 @mark.slow
-def test_command_line_diomira(conf_file_name):
-    nrequired, nactual = DIOMIRA(['DIOMIRA', '-c', conf_file_name])
+def test_command_line_diomira(conf_file_name, config_tmpdir):
+    PATH_IN = os.path.join(os.environ['ICDIR'],
+              'database/test_data/',
+              'electrons_40keV_z250_MCRD.h5')
+    PATH_OUT = os.path.join(str(config_tmpdir),
+              'electrons_40keV_z250_RWF.h5')
+    start_evt = 10000
+    run_number = 0
+
+    nrequired, nactual = DIOMIRA(['DIOMIRA',
+                                  '-c', conf_file_name,
+                                  '-i', PATH_IN,
+                                  '-o', PATH_OUT,
+                                  '-f', str(start_evt),
+                                  '-r', str(run_number)])
     if nrequired > 0:
         assert nrequired == nactual
+
+    with tb.open_file(PATH_OUT, mode='r') as h5out:
+            assert h5out.root.Run.RunInfo[0]['run_number'] == run_number
+            assert h5out.root.Run.events[0]['evt_number'] == start_evt

@@ -47,6 +47,7 @@ def configure(input_options=sys.argv):
     parser.add_argument("-i", metavar="ifile",     type=str, help="input file")
     parser.add_argument("-o", metavar="ofile",     type=str, help="output file")
     parser.add_argument("-n", metavar="nevt",      type=int, help="number of events to be processed")
+    parser.add_argument("-f", metavar="firstevt",  type=int, help="event number for first event")
     parser.add_argument("-r", metavar="rnumber",   type=int, help="run number")
     parser.add_argument("-s", metavar="skip",      type=int, help="number of events to be skipped", default=0)
     parser.add_argument("-p", metavar="print_mod", type=int, help="print every this number of events")
@@ -61,6 +62,7 @@ def configure(input_options=sys.argv):
     if flags.r is not None: options.RUN_NUMBER   = flags.r
     if flags.o is not None: options.FILE_OUT     = flags.o
     if flags.n is not None: options.NEVENTS      = flags.n
+    if flags.f is not None: options.FIRST_EVT    = flags.f
     if flags.s is not None: options.SKIP         = flags.s
     if flags.p is not None: options.PRINT_MOD    = flags.p
     if flags.v is not None: options.VERBOSITY    = 50 - min(flags.v, 4) * 10
