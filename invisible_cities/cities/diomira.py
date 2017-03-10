@@ -20,7 +20,7 @@ import invisible_cities.reco.tbl_functions as tbl
 from   invisible_cities.core.configure import configure, print_configuration
 from   invisible_cities.cities.base_cities import (SensorResponseCity,
                                                    SensorParams)
-from   invisible_cities.reco.nh5 import FEE
+from   invisible_cities.reco.nh5 import FEE, RunInfo, EventInfo
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
 import invisible_cities.reco.wfm_functions as wfm
@@ -38,7 +38,8 @@ class Diomira(SensorResponseCity):
                  run_number     = 0,
                  files_in       = None,
                  file_out       = None,
-                 sipm_noise_cut = 3 * units.pes):
+                 sipm_noise_cut = 3 * units.pes,
+                 first_evt      = 0):
         """
         -1. Inits the machine
         -2. Loads the data base to access calibration data
@@ -49,7 +50,8 @@ class Diomira(SensorResponseCity):
                                     run_number     = run_number,
                                     files_in       = files_in,
                                     file_out       = file_out,
-                                    sipm_noise_cut = sipm_noise_cut)
+                                    sipm_noise_cut = sipm_noise_cut,
+                                    first_evt      = first_evt)
 
     def run(self, nmax):
         """
@@ -71,6 +73,7 @@ class Diomira(SensorResponseCity):
         first = False
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
+
 
             for ffile in self.input_files:
 
@@ -96,6 +99,11 @@ class Diomira(SensorResponseCity):
                         # init SiPM noiser, store FEE table
                         self.print_configuration(sensor_param, PMTWL)
                         self.set_output_store(h5out, nmax, sensor_param)
+
+                        # add run number
+                        run = self.runInfot.row
+                        run['run_number'] = self.run_number
+                        run.append()
 
                         # Create instance of the noise sampler
                         self.noise_sampler = SiPMsNoiseSampler(SIPMWL, True)
@@ -128,6 +136,9 @@ class Diomira(SensorResponseCity):
                         self.sipmrwf.append(
                             dataSiPM.astype(int).reshape(1, NSIPM, SIPMWL))
 
+                        # add evt number
+                        self.write_evt_number(evt)
+
                         n_events_tot +=1
                         if n_events_tot % self.nprint == 0:
                             print('event in file = {}, total = {}'
@@ -142,8 +153,14 @@ class Diomira(SensorResponseCity):
         self.sipmrwf.flush()
         self.pmtblr.flush()
 
-
         return n_events_tot
+
+    def write_evt_number(self, evt):
+        evt_row = self.evtsInfot.row
+        evt_row['evt_number'] = evt + self.first_evt
+        evt_row['timestamp'] = 0
+        evt_row.append()
+
 
     def set_output_store(self, h5out, nmax, sp):
 
@@ -180,6 +197,15 @@ class Diomira(SensorResponseCity):
                     expectedrows = nmax,
                     filters = tbl.filters(self.compression))
 
+        # run group
+        RUN = h5out.create_group(h5out.root, "Run")
+        self.runInfot = h5out.create_table(RUN, "RunInfo", RunInfo,
+                          "Run info",
+                          tbl.filters("NOCOMPR"))
+        self.evtsInfot = h5out.create_table(RUN, "events", EventInfo,
+                          "Events info",
+                          tbl.filters("NOCOMPR"))
+
     def print_configuration(self, sp, PMTWL):
         print_configuration({"# PMT"        : sp.NPMT,
                              "PMT WL"       : PMTWL,
@@ -193,7 +219,7 @@ def DIOMIRA(argv=sys.argv):
     """DIOMIRA DRIVER"""
 
     CFP = configure(argv)
-    fpp = Diomira()
+    fpp = Diomira(first_evt=CFP.FIRST_EVT)
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
     fpp.set_input_files(files_in)

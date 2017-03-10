@@ -157,7 +157,8 @@ class SensorResponseCity(City):
                  compression = 'ZLIB4',
                  nprint      = 10000,
                  # Parameters added at this level
-                 sipm_noise_cut = 3 * units.pes):
+                 sipm_noise_cut = 3 * units.pes,
+                 first_evt = 0):
 
         City.__init__(self,
                       run_number  = run_number,
@@ -167,6 +168,7 @@ class SensorResponseCity(City):
                       nprint      = nprint)
 
         self.sipm_noise_cut = sipm_noise_cut
+        self.first_evt      = first_evt
 
     def set_sipm_noise_cut(self, noise_cut=3.0):
         """Sets the SiPM noise cut (in PES)"""
@@ -258,6 +260,7 @@ class SensorResponseCity(City):
 
     # run
     NEVENTS {NEVENTS}
+    FIRST_EVT {FIRST_EVT}
     RUN_ALL {RUN_ALL}
 
     NOISE_CUT {NOISE_CUT}"""
@@ -269,6 +272,7 @@ class SensorResponseCity(City):
              COMPRESSION = 'ZLIB4',
              NPRINT      =     1,
              NEVENTS     =     3,
+             FIRST_EVT   =     0,
              NOISE_CUT   =     3,
              RUN_ALL     = False))
 
