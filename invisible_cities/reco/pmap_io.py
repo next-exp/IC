@@ -4,14 +4,14 @@ import invisible_cities.reco.tbl_functions as tbl
 class PMapWriter:
     """Write PMAPS to file. """
     def __init__(self,
-                 pmap_file       = None,
-                 compression     = 'ZLIB4'):
+                 pmap_file   = None,
+                 compression = 'ZLIB4'):
 
         if not pmap_file:
             raise NoOutputFile('pmap file cannot be Null')
 
-        self.pmap_file   =  pmap_file
-        self.compression =  compression
+        self.pmap_file   = pmap_file
+        self.compression = compression
 
         self._set_pmap_tables()
 
@@ -60,7 +60,7 @@ class PMapWriter:
                 nsipm = sipm[0]
                 ene   = sipm[1]
                 for j, E in enumerate(ene):
-                    row["event"] = event
+                    row["event"]   = event
                     row["peak"]    = i
                     row["nsipm"]   = nsipm
                     row["nsample"] = j
@@ -70,12 +70,12 @@ class PMapWriter:
     def store_pmaps(self, event, S1, S2, S2Si):
         """Store PMAPS."""
 
-        self._store_s12 (S1, self.s1t,  event)
-        self._store_s12 (S2, self.s2t,  event)
+        self._store_s12 (S1,   self.s1t,   event)
+        self._store_s12 (S2,   self.s2t,   event)
         self._store_s2si(S2Si, self.s2sit, event)
 
     def flush(self):
         """Flush all tables"""
-        self.s1t.flush()
-        self.s2t.flush()
+        self.s1t  .flush()
+        self.s2t  .flush()
         self.s2sit.flush()
