@@ -10,7 +10,7 @@ import invisible_cities.reco.tbl_functions as tbl
 def pmap_writer(filename, compression = 'ZLIB4'):
     with tb.open_file(filename, 'w') as hdf5_file:
         tables = _make_tables(hdf5_file, compression)
-        yield _writer(tables)
+        yield _WRITER(tables)
 
 
 def _make_tables(hdf5_file, compression):
@@ -63,3 +63,16 @@ def _store_s2si(event, table, event_number):
                 row["nsample"] = nsample
                 row["ene"]     = E
                 row.append()
+
+
+
+
+class _WRITER:
+
+    def __init__(self, tables):
+        self._tables = tables
+
+    def __call__(self, event_number, s1, s2, s2si):
+        _store_s12 (s1,   self._tables[0], event_number)
+        _store_s12 (s1,   self._tables[1], event_number)
+        _store_s2si(s2si, self._tables[2], event_number)
