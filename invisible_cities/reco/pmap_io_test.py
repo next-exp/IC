@@ -23,8 +23,14 @@ def test_pmap_writer_mc(config_tmpdir):
                (2, np.random.rand(5)),
                (3, np.random.rand(5))]}
 
+    # Automatic closing example
     with pmap_writer(PMP_file_name) as write:
         write(0, S1, S2, S2Si)
+
+    # Manual closing example
+    write = pmap_writer(PMP_file_name)
+    write(0, S1, S2, S2Si)
+    write.close()
 
     s1df, s2df, s2sidf = read_pmaps(PMP_file_name)
     np.testing.assert_allclose(s1df.time.values, S1[0][0])

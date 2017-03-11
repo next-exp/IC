@@ -1,16 +1,28 @@
-from contextlib import contextmanager
-
 import tables as tb
 
 from   invisible_cities.reco.nh5 import S12, S2Si
 import invisible_cities.reco.tbl_functions as tbl
 
 
-@contextmanager
-def pmap_writer(filename, compression = 'ZLIB4'):
-    with tb.open_file(filename, 'w') as hdf5_file:
-        tables = _make_tables(hdf5_file, compression)
-        yield _WRITER(tables)
+class pmap_writer:
+
+    def __init__(self, filename, compression = 'ZLIB4'):
+        self._hdf5_file = tb.open_file(filename, 'w')
+        self._tables = _make_tables(self._hdf5_file, compression)
+
+    def __call__(self, event_number, s1, s2, s2si):
+        _store_s12 (s1,   self._tables[0], event_number)
+        _store_s12 (s2,   self._tables[1], event_number)
+        _store_s2si(s2si, self._tables[2], event_number)
+
+    def close(self):
+        self._hdf5_file.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
 
 def _make_tables(hdf5_file, compression):
@@ -29,15 +41,6 @@ def _make_tables(hdf5_file, compression):
         table.cols.event.create_index()
 
     return all_tables
-
-
-def _writer(tables):
-    s1_table, s2_table, s2si_table = tables
-    def write(event_number, s1, s2, s2si):
-        _store_s12 (s1,     s1_table, event_number)
-        _store_s12 (s2,     s2_table, event_number)
-        _store_s2si(s2si, s2si_table, event_number)
-    return write
 
 
 def _store_s12(event, table, event_number):
@@ -63,16 +66,3 @@ def _store_s2si(event, table, event_number):
                 row["nsample"] = nsample
                 row["ene"]     = E
                 row.append()
-
-
-
-
-class _WRITER:
-
-    def __init__(self, tables):
-        self._tables = tables
-
-    def __call__(self, event_number, s1, s2, s2si):
-        _store_s12 (s1,   self._tables[0], event_number)
-        _store_s12 (s1,   self._tables[1], event_number)
-        _store_s2si(s2si, self._tables[2], event_number)
