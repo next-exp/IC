@@ -34,8 +34,8 @@ def test_pmap_writer_mc(config_tmpdir):
     write.close()
 
     s1df, s2df, s2sidf = read_pmaps(PMP_file_name)
-    np.testing.assert_allclose(s1df.time.values, S1._data[0][0])
-    np.testing.assert_allclose(s2df.time.values, S2._data[0][0])
-    dim = len(Si._data[0][0][1])
-    assert len(s2sidf) == len(Si._data[0]) * dim
-    np.testing.assert_allclose(s2sidf.ene.values[0:dim], Si._data[0][0][1])
+    np.testing.assert_allclose(s1df.time.values, S1[0][0])
+    np.testing.assert_allclose(s2df.time.values, S2[0][0])
+    dim = len(Si[0][0][1])
+    assert len(s2sidf) == len(Si[0]) * dim
+    np.testing.assert_allclose(s2sidf.ene.values[0:dim], Si[0][0][1])

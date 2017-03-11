@@ -43,24 +43,13 @@ def _make_tables(hdf5_file, compression):
     return all_tables
 
 
-# I think that an event is made up of a collection of S1s, S2s. The 
-
-# I think that this is something like the (integrated) set of data
-# recorded by the PMTs in single event ... with two instances per
-# event: one for the S1s, one for the S2s
-class S12: # Need a better name
-
-    def __init__(self, data):
-        # Temporary solution, can do better
-        self._data = data
-
-    # Other S12 utilities go here, for example statistical functions
+class S12(dict):
 
     table_format = table_formats.S12
 
     def store(self, table, event_number):
         row = table.row
-        for peak_number, (ts, Es) in self._data.items():
+        for peak_number, (ts, Es) in self.items():
             assert len(ts) == len(Es)
             for t, E in zip(ts, Es):
                 row["event"] = event_number
@@ -69,21 +58,13 @@ class S12: # Need a better name
                 row["ene"]   = E
                 row.append()
 
-# I think that tis is something like the set of data recorded by the
-# SiPMs during a single event ... only used for S2s
-class S2Si: # Need a better name
-
-    def __init__(self, data):
-        # Temporary solution, can do better
-        self._data = data
-
-    # Other S2si utilities go here, for example statistical functions
+class S2Si(dict):
 
     table_format = table_formats.S2Si
 
     def store(self, table, event_number):
         row = table.row
-        for peak_number, sipms in self._data.items():
+        for peak_number, sipms in self.items():
             for nsipm, Es in sipms:
                 for nsample, E in enumerate(Es):
                     row["event"]   = event_number
