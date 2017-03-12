@@ -21,7 +21,10 @@ from   invisible_cities.reco.params import (S12Params,
                                             CalibratedSum,
                                             PMaps)
 
-def calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=200, thr_MAU=5):
+def calibrated_pmt_sum(CWF, adc_to_pes,
+                       active_pmt_index = [],
+                       n_MAU=200,
+                       thr_MAU=5):
     """Compute the ZS calibrated sum of the PMTs
     after correcting the baseline with a MAU to suppress low frequency noise.
     input:
@@ -47,7 +50,11 @@ def calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=200, thr_MAU=5):
     MAU_pmt  = np.zeros(       NWF,  dtype=np.double)
 
     MAUL = []
-    for j in range(NPMT):
+    PMT = active_pmt_index
+    if len(PMT) == 0:
+        PMT = list(range(NPMT))
+
+    for j in PMT:
         # MAU for each of the PMTs, following the waveform
         MAU_pmt = signal.lfilter(MAU, 1, CWF[j,:])
         MAUL.append(MAU_pmt)
