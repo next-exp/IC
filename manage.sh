@@ -90,6 +90,12 @@ EOF
     conda env create -f ${YML_FILENAME}
 }
 
+function update_environment {
+	source activate IC${PYTHON_VERSION}
+	conda update --all
+	source deactivate
+}
+
 function python_version_env {
     # Activate the relevant conda env
     source activate IC${PYTHON_VERSION}
@@ -209,6 +215,7 @@ case $COMMAND in
     install)                install ;;
     work_in_python_version) work_in_python_version ;;
     make_environment)       make_environment ;;
+    update_environment)     update_environment ;;
     run_tests)              run_tests ;;
     run_tests_par)          run_tests_par ;;
     compile_and_test)       compile_and_test ;;
@@ -226,6 +233,7 @@ case $COMMAND in
        echo "source $THIS install X.Y"
        echo "source $THIS work_in_python_version X.Y"
        echo "bash   $THIS make_environment X.Y"
+       echo "bash   $THIS update_environment X.Y"
        echo "bash   $THIS run_tests"
        echo "bash   $THIS run_tests_par"
        echo "bash   $THIS compile_and_test"

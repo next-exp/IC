@@ -10,6 +10,7 @@ manage.sh()
     case "${prev}" in
         manage.sh)
                         local opts="make_environment\
+                                    update_environment\
                                     run_tests\
                                     run_tests_par\
                                     compile_and_test\
@@ -55,6 +56,7 @@ source_manage.sh()
                                     install\
                                     work_in_python_version\
                                     make_environment\
+                                    update_environment\
                                     run_tests\
                                     run_tests_par\
                                     compile_and_test\
