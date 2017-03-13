@@ -34,21 +34,18 @@ def filters(name):
     filt : tb.filters.Filter
         Filter mode instance.
     """
-    if name == "NOCOMPR":
-        return tb.Filters(complevel=0)  # no compression
-    if name == "ZLIB1":
-        return tb.Filters(complevel=1, complib="zlib")
-    if name == "ZLIB4":
-        return tb.Filters(complevel=4, complib="zlib")
-    if name == "ZLIB5":
-        return tb.Filters(complevel=5, complib="zlib")
-    if name == "ZLIB9":
-        return tb.Filters(complevel=9, complib="zlib")
-    if name == "BLOSC5":
-        return tb.Filters(complevel=5, complib="blosc")
-    if name == "BLZ4HC5":
-        return tb.Filters(complevel=5, complib="blosc:lz4hc")
-    raise ValueError("Compression option {} not found.".format(name))
+    try:
+        level, lib = {"NOCOMPR": (0,  None)        ,
+                      "ZLIB1"  : (1, 'zlib')       ,
+                      "ZLIB4"  : (4, 'zlib')       ,
+                      "ZLIB5"  : (5, 'zlib')       ,
+                      "ZLIB9"  : (9, 'zlib')       ,
+                      "BLOSC5" : (5, 'blosc')      ,
+                      "BLZ4HC5": (5, 'blosc:lz4hc'),
+                      }[name]
+        return tb.Filters(complevel=level, complib=lib)
+    except KeyError:
+        raise ValueError("Compression option {} not found.".format(name))
 
 
 def read_FEE_table(fee_t):
