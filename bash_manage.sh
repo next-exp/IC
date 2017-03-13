@@ -11,6 +11,7 @@ manage.sh()
         manage.sh)
                         local opts="make_environment\
                                     update_environment\
+                                    update_all\
                                     run_tests\
                                     run_tests_par\
                                     compile_and_test\
@@ -27,7 +28,7 @@ manage.sh()
 
     if [[ ${prev2} == "manage.sh" ]] ; then
             case "${prev}" in
-                        install_and_check|install|work_in_python_version|make_environment)
+                        install_and_check|install|work_in_python_version|make_environment|update_environment)
                         local versions="3.6"
                     COMPREPLY=( $(compgen -W "${versions}" -- ${cur}) )
                     return 0
@@ -57,6 +58,7 @@ source_manage.sh()
                                     work_in_python_version\
                                     make_environment\
                                     update_environment\
+                                    update_all\
                                     run_tests\
                                     run_tests_par\
                                     compile_and_test\
