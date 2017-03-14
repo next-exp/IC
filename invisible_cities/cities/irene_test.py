@@ -42,12 +42,12 @@ def conf_file_name_data(config_tmpdir):
 
 
 @mark.slow
-def test_command_line_irene_electrons_40keV(conf_file_name_mc, config_tmpdir):
+def test_command_line_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, ICDIR):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
 
-    PATH_IN = os.path.join(os.environ['ICDIR'],
+    PATH_IN = os.path.join(ICDIR,
               'database/test_data/',
               'electrons_40keV_z250_RWF.h5')
     PATH_OUT = os.path.join(str(config_tmpdir),
@@ -62,8 +62,8 @@ def test_command_line_irene_electrons_40keV(conf_file_name_mc, config_tmpdir):
         assert nrequired == nactual
 
 @mark.slow
-def test_command_line_irene_run_2983(conf_file_name_data, config_tmpdir):
-    PATH_IN = os.path.join(os.environ['ICDIR'],
+def test_command_line_irene_run_2983(conf_file_name_data, config_tmpdir, ICDIR):
+    PATH_IN = os.path.join(ICDIR,
               'database/test_data/',
               'run_2983.h5')
     PATH_OUT = os.path.join(str(config_tmpdir),
@@ -78,9 +78,9 @@ def test_command_line_irene_run_2983(conf_file_name_data, config_tmpdir):
         assert nrequired == nactual
 
 @mark.serial
-def test_command_line_irene_runinfo_run_2983(config_tmpdir):
+def test_command_line_irene_runinfo_run_2983(config_tmpdir, ICDIR):
     # Check events numbers & timestamp are copied properly
-    PATH_IN = os.path.join(os.environ['ICDIR'],
+    PATH_IN = os.path.join(ICDIR,
               'database/test_data/',
               'run_2983.h5')
     PATH_OUT = os.path.join(str(config_tmpdir),
@@ -96,9 +96,9 @@ def test_command_line_irene_runinfo_run_2983(config_tmpdir):
             assert h5in .root.Run.runInfo[0] == h5out.root.Run.runInfo[0]
 
 
-def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir):
+def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir, ICDIR):
     # NB: explicit PATH_OUT
-    PATH_IN = os.path.join(os.environ['ICDIR'],
+    PATH_IN = os.path.join(ICDIR,
            'database/test_data/',
            'irene_bug_Kr_ACTIVE_7bar_RWF.h5')
     PATH_OUT = os.path.join(str(config_tmpdir),
@@ -113,9 +113,9 @@ def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir):
     assert empty == 1
 
 @mark.slow
-def test_pmaps_store_issue_151(config_tmpdir):
+def test_pmaps_store_issue_151(config_tmpdir, ICDIR):
     # Check that PMAPS tables are written correctly
-    PATH_IN = os.path.join(os.environ['ICDIR'],
+    PATH_IN = os.path.join(ICDIR,
               'database/test_data/',
               'run_2983.h5')
     PATH_OUT = os.path.join(str(config_tmpdir),

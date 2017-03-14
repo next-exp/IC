@@ -31,9 +31,9 @@ def conf_file_name(config_tmpdir):
     return conf_file_name
 
 
-def test_diomira_fee_table():
+def test_diomira_fee_table(ICDIR):
     """Test that FEE table reads back correctly with expected values."""
-    RWF_file = os.path.join(os.environ['ICDIR'],
+    RWF_file = os.path.join(ICDIR,
                             'database/test_data/electrons_40keV_z250_RWF.h5')
 
     with tb.open_file(RWF_file, 'r') as e40rwf:
@@ -93,7 +93,7 @@ def test_diomira_cwf_blr(electron_RWF_file):
 
 
 @mark.slow
-def test_diomira_sipm(irene_diomira_chain_tmpdir):
+def test_diomira_sipm(irene_diomira_chain_tmpdir, ICDIR):
     """This test checks that the number of SiPms surviving a hard energy
         cut (50 pes) is always small (<10). The test exercises the full
        construction of the SiPM vectors as well as the noise suppression.
@@ -104,7 +104,7 @@ def test_diomira_sipm(irene_diomira_chain_tmpdir):
     sipm_noise_cut = 20 # in pes. Should kill essentially all background
 
     max_sipm_with_signal = 10
-    infile = os.path.join(os.environ['ICDIR'],
+    infile = os.path.join(ICDIR,
                           'database/test_data/electrons_40keV_z250_MCRD.h5')
     with tb.open_file(infile, 'r') as e40rd:
 
@@ -138,7 +138,7 @@ def test_diomira_sipm(irene_diomira_chain_tmpdir):
             assert n_sipm < max_sipm_with_signal
 
 
-def test_diomira_identify_bug():
+def test_diomira_identify_bug(ICDIR):
     """Read a one-event file in which the energy of PMTs is equal to zero and
     asset it must be son. This test would fail for a normal file where there
     is always some energy in the PMTs. It's purpose is to provide an automaic
@@ -151,7 +151,7 @@ def test_diomira_identify_bug():
     The same event is later processed with Irene (where a protection
     that skips empty events has been added) to ensure that no crash occur."""
 
-    infile = os.path.join(os.environ['ICDIR'],
+    infile = os.path.join(ICDIR,
                           'database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
     with tb.open_file(infile, 'r') as h5in:
 
