@@ -7,17 +7,21 @@ import os
 from pytest import fixture, mark
 
 
-def test_numberOfPMTs():
+def test_pmts_pd():
     """Check that we retrieve the correct number of PMTs."""
     pmts = DB.DataPMT()
+    columns =['SensorID', 'ChannelID', 'PmtID', 'Active', 'X', 'Y',
+              'coeff_blr', 'coeff_c', 'adc_to_pes', 'noise_rms', 'Sigma']
+    assert columns == list(pmts)
     assert pmts.shape[0] == 12
 
 
-def test_numberOfSiPMs():
+def test_sipm_pd():
     """Check that we retrieve the correct number of SiPMs."""
     sipms = DB.DataSiPM()
+    columns = ['SensorID', 'ChannelID', 'Active', 'X', 'Y', 'adc_to_pes']
+    assert columns == list(sipms)
     assert sipms.shape[0] == 1792
-
 
 def test_SiPMNoise():
     """Check we have noise for all SiPMs and energy of each bin."""
