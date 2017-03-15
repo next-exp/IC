@@ -21,12 +21,7 @@ from   invisible_cities.core.system_of_units_c import units
 
 @fixture(scope='module')
 def csum_zs_blr_cwf(electron_RWF_file):
-    """Test that:
-     1) the calibrated sum (csum) of the BLR and the CWF is the same
-    within tolerance.
-     2) csum and zeros-supressed sum (zs) are the same
-    within tolerance
-    """
+    """Return several sums needed for test."""
 
     with tb.open_file(electron_RWF_file, 'r') as h5rwf:
         pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
@@ -55,24 +50,47 @@ def csum_zs_blr_cwf(electron_RWF_file):
         wfzs_ene,    wfzs_indx    = cpf.wfzs(csum_blr,    threshold=0.5)
         wfzs_ene_py, wfzs_indx_py =  pf.wfzs(csum_blr_py, threshold=0.5)
 
+        # one can also pass the list of active PMTs by index (o to 11)
+        csum_cwf2, _ =       cpf.calibrated_pmt_sum(CWF,
+                                                    adc_to_pes,
+                                                    list(range(12)),
+                                                    n_MAU = 100,
+                                                    thr_MAU =   3)
+        csum_cwf2_py, _, _ =  pf.calibrated_pmt_sum(CWF,
+                                                    adc_to_pes,
+                                                    list(range(12)),
+                                                    n_MAU = 100,
+                                                    thr_MAU =   3)
+
         from collections import namedtuple
 
         return (namedtuple('Csum',
                         """csum_cwf csum_blr csum_blr_py
                            wfzs_ene wfzs_ene_py
-                           wfzs_indx wfzs_indx_py""")
-        (csum_cwf     = csum_cwf,
-         csum_blr     = csum_blr,
-         wfzs_ene     = wfzs_ene,
-         csum_blr_py  = csum_blr_py,
-         wfzs_ene_py  = wfzs_ene_py,
-         wfzs_indx    = wfzs_indx,
-         wfzs_indx_py = wfzs_indx_py))
+                           wfzs_indx wfzs_indx_py
+                           csum_cwf2 csum_cwf2_py""")
+        (csum_cwf      = csum_cwf,
+         csum_cwf2     = csum_cwf2,
+         csum_cwf2_py  = csum_cwf2_py,
+         csum_blr      = csum_blr,
+         wfzs_ene      = wfzs_ene,
+         csum_blr_py   = csum_blr_py,
+         wfzs_ene_py   = wfzs_ene_py,
+         wfzs_indx     = wfzs_indx,
+         wfzs_indx_py  = wfzs_indx_py))
 
 
 def test_csum_cwf_close_to_csum_blr(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
     assert np.isclose(np.sum(p.csum_cwf), np.sum(p.csum_blr), rtol=0.01)
+
+def test_csum_cwf_close_to_csum_cwf_py_index_case(csum_zs_blr_cwf):
+    p = csum_zs_blr_cwf
+    assert np.isclose(np.sum(p.csum_cwf2), np.sum(p.csum_cwf2_py), rtol=0.01)
+
+def test_csum_cwf_close_to_csum_cwf_index_case(csum_zs_blr_cwf):
+    p = csum_zs_blr_cwf
+    assert np.isclose(np.sum(p.csum_cwf2), np.sum(p.csum_cwf), rtol=0.01)
 
 def test_csum_cwf_close_to_wfzs_ene(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf

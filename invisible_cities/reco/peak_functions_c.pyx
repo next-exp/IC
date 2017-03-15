@@ -9,9 +9,10 @@ import  numpy as np
 from scipy import signal
 
 cpdef calibrated_pmt_sum(double [:, :] CWF,
-                         double [:] adc_to_pes,
-                         int      n_MAU = 200,
-                         double thr_MAU =   5):
+                         double [:]    adc_to_pes,
+                         list          active_pmt_index = [],
+                         int           n_MAU = 200,
+                         double        thr_MAU =   5):
     """
     Computes the ZS calibrated sum of the PMTs
     after correcting the baseline with a MAU to suppress low frequency noise.
@@ -36,7 +37,11 @@ cpdef calibrated_pmt_sum(double [:, :] CWF,
     cdef double [:]    csum_mau = np.zeros(      NWF , dtype=np.double)
     cdef double [:]    MAU_pmt  = np.zeros(      NWF , dtype=np.double)
 
-    for j in range(NPMT):
+    cdef list PMT = active_pmt_index
+    if len(PMT) == 0:
+        PMT = list(range(NPMT))
+
+    for j in PMT:
         # MAU for each of the PMTs, following the waveform
         MAU_pmt = signal.lfilter(MAU, 1, CWF[j,:])
 

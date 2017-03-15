@@ -17,9 +17,10 @@ n_MAU:  length of the MAU window
 thr_MAU: treshold above MAU to select sample
 """
 cpdef calibrated_pmt_sum(double [:, :] CWF,
-                         double [:] adc_to_pes,
-                         int n_MAU=*,
-                         double thr_MAU=*)
+                         double [:]    adc_to_pes,
+                         list          active_pmt_index = *,
+                         int           n_MAU = *,
+                         double        thr_MAU = *)
 
 
 """
