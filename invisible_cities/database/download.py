@@ -17,6 +17,7 @@ def loadDB():
     connSql3 = sqlite3.connect(dbfile)
     cursorSql3 = connSql3.cursor()
 
+
     connMySql = MySQLdb.connect(host="neutrinos1.ific.uv.es", user=dec('am1iZW5sbG9jaA=='),
                                 passwd=eval(dec('Jycuam9pbihtYXAobGFtYmRhIGM6IGNocihjLTUpLCBbNzIsIDEwMiwgMTE1LCAxMDcsIDExOSwgMTAyLCAxMTUsIDEwNF0pKQ==')),
                                 db="ICNEWDB")
@@ -33,40 +34,45 @@ def loadDB():
 ,  `RMAX` float NOT NULL
 );''')
 
+    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `ChannelGain` (
+  `MinRun` integer NOT NULL
+,  `MaxRun` integer NOT NULL
+,  `SensorID` integer NOT NULL
+,  `Centroid` float NOT NULL
+,  `ErrorCentroid` float NOT NULL
+,  `Sigma` float NOT NULL
+,  `ErrorSigma` float NOT NULL
+);''')
+
+    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `ChannelMask` (
+  `MinRun` integer NOT NULL
+,  `MaxRun` integer NOT NULL
+,  `SensorID` integer NOT NULL
+);''')
+
+    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `ChannelMapping` (
+  `MinRun` integer NOT NULL
+,  `MaxRun` integer NOT NULL
+,  `ElecID` integer NOT NULL
+,  `SensorID` integer NOT NULL
+);''')
+
+    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `ChannelPosition` (
+  `MinRun` integer NOT NULL
+,  `MaxRun` integer NOT NULL
+,  `SensorID` integer NOT NULL
+,  `Label` varchar(20) NOT NULL
+,  `Type` varchar(20) NOT NULL
+,  `X` float NOT NULL
+,  `Y` float NOT NULL
+);''')
+
     cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `PmtBlr` (
   `MinRun` integer NOT NULL
 ,  `MaxRun` integer DEFAULT NULL
 ,  `SensorID` integer NOT NULL
 ,  `coeff_c` double NOT NULL
 ,  `coeff_blr` double NOT NULL
-);''')
-
-    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `PmtGain` (
-  `MinRun` integer NOT NULL
-,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
-,  `adc_to_pes` float NOT NULL
-);''')
-
-    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `PmtSigma` (
-  `MinRun` integer NOT NULL
-,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
-,  `sigma` float NOT NULL
-);''')
-
-    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `PmtMapping` (
-  `MinRun` integer NOT NULL
-,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
-,  `ChannelID` integer NOT NULL
-);''')
-
-    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `PmtMask` (
-  `MinRun` integer NOT NULL
-,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
-,  `Active` integer NOT NULL
 );''')
 
     cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `PmtNoiseRms` (
@@ -76,41 +82,12 @@ def loadDB():
 ,  `noise_rms` double NOT NULL
 );''')
 
-    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `PmtPosition` (
-  `MinRun` integer NOT NULL
-,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
-,  `PmtID` varchar(5) NOT NULL
-,  `X` float NOT NULL
-,  `Y` float NOT NULL
-);''')
 
     cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `SipmBaseline` (
   `MinRun` integer NOT NULL
 ,  `MaxRun` integer DEFAULT NULL
 ,  `SensorID` integer NOT NULL
 ,  `Energy` float NOT NULL
-);''')
-
-    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `SipmGain` (
-  `MinRun` integer NOT NULL
-,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
-,  `adc_to_pes` float NOT NULL
-);''')
-
-    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `SipmMapping` (
-  `MinRun` integer NOT NULL
-,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
-,  `ChannelID` integer NOT NULL
-);''')
-
-    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `SipmMask` (
-  `MinRun` integer NOT NULL
-,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
-,  `Active` integer NOT NULL
 );''')
 
     cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `SipmNoise` (
@@ -426,17 +403,8 @@ def loadDB():
 ,  `Energy` float NOT NULL
 );''')
 
-    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `SipmPosition` (
-  `MinRun` integer NOT NULL
-,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
-,  `X` float NOT NULL
-,  `Y` float NOT NULL
-);''')
-
-    tables = ['DetectorGeo','PmtBlr','PmtGain','PmtMapping','PmtMask',
-          'PmtNoiseRms','PmtPosition','PmtSigma','SipmBaseline','SipmGain',
-          'SipmMapping','SipmMask','SipmNoise','SipmNoiseBins','SipmPosition']
+    tables = ['DetectorGeo','PmtBlr','ChannelGain','ChannelMapping','ChannelMask',
+          'PmtNoiseRms','ChannelPosition','SipmBaseline','SipmNoise','SipmNoiseBins']
 
 
     # Copy all tables
