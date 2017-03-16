@@ -66,9 +66,16 @@ def test_command_line_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, IC
 
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
-            mctracks_in  = h5in .root.MC.MCTracks[0]
-            mctracks_out = h5out.root.MC.MCTracks[0]
+            nrow = 0
+            mctracks_in  = h5in .root.MC.MCTracks[nrow]
+            mctracks_out = h5out.root.MC.MCTracks[nrow]
             np.testing.assert_array_equal(mctracks_in, mctracks_out)
+
+            # check events numbers & timestamps
+            evts_in  = h5in .root.Run.events[:nactual]
+            evts_out = h5out.root.Run.events[:nactual]
+            np.testing.assert_array_equal(evts_in, evts_out)
+
 
 
 @mark.slow
