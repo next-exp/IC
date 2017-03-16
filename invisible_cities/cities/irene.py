@@ -94,10 +94,9 @@ class Irene(PmapCity):
                     pmtrwf  = h5in.root.RD. pmtrwf
                     sipmrwf = h5in.root.RD.sipmrwf
 
-                    if not self.monte_carlo:
-                        self.eventsInfo = h5in.root.Run.events
-                    else:
-                        # last row copied from MCTracks table
+                    self.eventsInfo = h5in.root.Run.events
+                    # last row copied from MCTracks table
+                    if self.monte_carlo:
                         mctrack_row = 0
 
                     NEVT, NPMT,   PMTWL =  pmtrwf.shape
@@ -175,12 +174,9 @@ class Irene(PmapCity):
                           """.format(s=self))
 
     def event_and_timestamp(self, evt, n_events_tot):
-        event = n_events_tot   # TODO fixed in new version of DIOMIRA
-        timestamp = int(time()) # TODO fixed in new verison of DIOMIRA
-        if not self.monte_carlo:
-            evtInfo = self.eventsInfo[evt]
-            event = evtInfo[0]
-            timestamp = evtInfo[1]
+        evtInfo = self.eventsInfo[evt]
+        event     = evtInfo[0]
+        timestamp = evtInfo[1]
         return event, timestamp
 
 

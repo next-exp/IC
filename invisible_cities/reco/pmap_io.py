@@ -37,7 +37,7 @@ def _make_tables(hdf5_file, compression):
     c = tbl.filters(compression)
 
     pmaps_group  = hdf5_file.create_group(hdf5_file.root, 'PMAPS')
-    rungroup     = hdf5_file.create_group(hdf5_file.root, "RunEvtInfo")
+    rungroup     = hdf5_file.create_group(hdf5_file.root, "Run")
 
     RunInfo, EventInfo = table_formats.RunInfo, table_formats.EventInfo
     MKT = hdf5_file.create_table
@@ -45,8 +45,8 @@ def _make_tables(hdf5_file, compression):
     s2         = MKT(pmaps_group, 'S2'  , S12 .table_format,   "S2 Table", c)
     s2si       = MKT(pmaps_group, 'S2Si', S2Si.table_format, "S2Si Table", c)
 
-    run_info   = MKT(rungroup,   "runInfo",   RunInfo,   "run info table", c)
-    event_info = MKT(rungroup, "eventInfo", EventInfo, "event info table", c)
+    run_info   = MKT(rungroup, "runInfo",   RunInfo,   "run info table", c)
+    event_info = MKT(rungroup,  "events", EventInfo, "event info table", c)
 
     pmp_tables = (s1, s2, s2si)
     run_tables = (run_info, event_info)
