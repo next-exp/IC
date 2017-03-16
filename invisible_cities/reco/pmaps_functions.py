@@ -28,8 +28,8 @@ def read_pmaps(PMP_file_name):
 def read_run_and_event_from_pmaps_file(PMP_file_name):
     """Return the PMAPS as PD DataFrames."""
     with tb.open_file(PMP_file_name, 'r') as h5f:
-        event_t   = h5f.root.RunEvtInfo.eventInfo
-        run_t   = h5f.root.RunEvtInfo.runInfo
+        event_t = h5f.root.Run.events
+        run_t   = h5f.root.Run.runInfo
 
         return (pd.DataFrame.from_records(run_t  .read()),
                 pd.DataFrame.from_records(event_t.read()))
