@@ -91,10 +91,21 @@ cpdef deconvolve_signal(double [:] signal_daq,
 cpdef deconv_pmt(np.ndarray[np.int16_t, ndim=2] pmtrwf,
                  double [:] coeff_c,
                  double [:] coeff_blr,
-                 int    n_baseline  = 28000,
-                 double thr_trigger =     5):
+                 list       pmt_active   =    [],
+                 int        n_baseline   = 28000,
+                 double     thr_trigger  =     5):
     """
-    Deconvolution of all the PMTs in the event cython function
+    Deconvolve all the PMTs in the event.
+    :param pmtrwf: array of PMTs holding the raw waveform
+    :param coeff_c:     cleaning coefficient
+    :param coeff_blr:   deconvolution coefficient
+    :param pmt_active:  list of active PMTs (by id number). An empt list
+                        implies that all PMTs are active
+    :param n_baseline:  number of samples taken to compute baseline
+    :param thr_trigger: threshold to start the BLR process
+    
+    :returns: an array with deconvoluted PMTs. If PMT is not active
+              the array is filled with zeros.
     """
 
     cdef int NPMT = pmtrwf.shape[0]
@@ -103,8 +114,12 @@ cpdef deconv_pmt(np.ndarray[np.int16_t, ndim=2] pmtrwf,
     cdef double [:]    signal_r = np.zeros(NWF, dtype=np.double)
     CWF = []
 
+    cdef list PMT = list(range(NPMT))
+    if len(pmt_active) > 0:
+        PMT = pmt_active
+
     cdef int pmt
-    for pmt in range(NPMT):
+    for pmt in PMT:
         signal_r = deconvolve_signal(signal_i[pmt],
                                      n_baseline  = n_baseline,
                                      coef_clean  = coeff_c[pmt],
