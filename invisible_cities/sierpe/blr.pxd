@@ -29,12 +29,15 @@ import numpy as np
 cimport numpy as np
 
 cpdef deconvolve_signal(double [:] signal_daq,
-                        int n_baseline=*,
-                        double coef_clean=*,
-                        double coef_blr=*,
-                        double thr_trigger=*,
-                        int acum_discharge_length=*)
+                        int        n_baseline     = *,
+                        double     coef_clean     = *,
+                        double     coef_blr       = *,
+                        double     thr_trigger    = *,
+                        int acum_discharge_length = *)
 
 cpdef deconv_pmt(np.ndarray[np.int16_t, ndim=2] pmtrwf,
-                 double [:] coeff_c, double [:] coeff_blr,
-                 int n_baseline=*, double thr_trigger=*)
+                 double [:]                     coeff_c,
+                 double [:]                     coeff_blr,
+                 list                           pmt_active  = *,
+                 int                            n_baseline  = *,
+                 double                         thr_trigger = *)
