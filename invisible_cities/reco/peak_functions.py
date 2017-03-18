@@ -21,7 +21,7 @@ from   invisible_cities.reco.params import (S12Params,
                                             CalibratedSum,
                                             PMaps)
 
-def calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=200, thr_MAU=5):
+def calibrated_pmt_sum(CWF, adc_to_pes, pmt_active = [], n_MAU=200, thr_MAU=5):
     """Compute the ZS calibrated sum of the PMTs
     after correcting the baseline with a MAU to suppress low frequency noise.
     input:
@@ -47,7 +47,11 @@ def calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=200, thr_MAU=5):
     MAU_pmt  = np.zeros(       NWF,  dtype=np.double)
 
     MAUL = []
-    for j in range(NPMT):
+    PMT = list(range(NPMT))
+    if len(pmt_active) > 0:
+        PMT = pmt_active
+
+    for j in PMT:
         # MAU for each of the PMTs, following the waveform
         MAU_pmt = signal.lfilter(MAU, 1, CWF[j,:])
         MAUL.append(MAU_pmt)
@@ -125,7 +129,8 @@ def rebin_waveform(t, e, stride=40):
     contents expresses energy (e.g, in pes)
     The function returns the rebinned T and E vectors
 
-    NB: This function is used mainly for testing purposed. It is programmed "c-style", which is not necesarily optimal
+    NB: This function is used mainly for testing purposed. It is
+     programmed "c-style", which is not necesarily optimal
     in python, but follows the same logic that the corresponding cython
     function (in peak_functions_c), which runs faster and should be used
     instead of this one for nornal calculations.
@@ -219,7 +224,8 @@ def find_S12_py(wfzs, index,
     accept the peak only if within [tmin, tmax)
     returns a dictionary of S12
 
-    NB: This function is used mainly for testing purposed. It is programmed "c-style", which is not necesarily optimal
+    NB: This function is used mainly for testing purposed. It is programmed
+     "c-style", which is not necesarily optimal
     in python, but follows the same logic that the corresponding cython
     function (in peak_functions_c), which runs faster and should be used
     instead of this one for nornal calculations.
@@ -309,7 +315,11 @@ def sipm_s2(dSIPM, S2, thr=5*units.pes):
     return SIPML
 
 
-def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds, event):
+def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds,
+                           event,
+                           pmt_active          =[],
+                           deconv_n_baseline   = 28000,
+                           deconv_thr_trigger  =     5):
     """Compute calibrated sum and PMAPS.
 
     :param pmtrwf: PMTs RWF
@@ -317,6 +327,12 @@ def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds, event):
     :param s1par: parameters for S1 search (S12Params namedtuple)
     :param s2par: parameters for S2 search (S12Params namedtuple)
     :param thresholds: thresholds for searches (ThresholdParams namedtuple)
+                       ('ThresholdParams',
+                        'thr_s1 thr_s2 thr_MAU thr_sipm thr_SIPM')
+    :param pmt_active: a list specifying the active (not dead) pmts
+                       in the event. An empty list implies all active.
+    :param n_baseline:  number of samples taken to compute baseline
+    :param thr_trigger: threshold to start the BLR process
     :param event: event number
 
     :returns: a nametuple of calibrated sum and a namedtuple of PMAPS
@@ -335,10 +351,17 @@ def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds, event):
     adc_to_pes_sipm = DataSiPM.adc_to_pes.values
 
     # deconv
-    CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr)
+    CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr,
+                         pmt_active  = pmt_active,
+                         n_baseline  = deconv_n_baseline,
+                         thr_trigger = deconv_thr_trigger)
 
     # calibrated sum
-    csum, csum_mau = cpf.calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=100, thr_MAU=thr.thr_MAU)
+    csum, csum_mau = cpf.calibrated_pmt_sum(CWF,
+                                            adc_to_pes,
+                                            pmt_active  = pmt_active,
+                                            n_MAU       = 100,
+                                            thr_MAU     = thr.thr_MAU)
 
     # zs sum
     s2_ene, s2_indx = cpf.wfzs(csum, threshold=thr.thr_s2)
@@ -349,7 +372,8 @@ def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds, event):
     S2 = cpf.find_S12(s2_ene, s2_indx, **s2_params._asdict())
 
     #S2Si
-    sipm = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm, thr=thr.thr_sipm, n_MAU=100)
+    sipm = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
+                           thr=thr.thr_sipm, n_MAU=100)
     SIPM = cpf.select_sipm(sipm)
     S2Si = sipm_s2_dict(SIPM, S2, thr=thr.thr_SIPM)
     return (CalibratedSum(csum=csum, csum_mau=csum_mau),
