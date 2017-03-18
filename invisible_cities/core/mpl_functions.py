@@ -66,7 +66,8 @@ def plot_signal_vs_time_mus(signal,
                             t_min      =    0,
                             t_max      = 1200,
                             signal_min =    0,
-                            signal_max =  200):
+                            signal_max =  200,
+                            label=''):
     """Plot signal versus time in mus (tmin, tmax in mus). """
     tstep = 25 # in ns
     PMTWL = signal.shape[0]
@@ -76,10 +77,14 @@ def plot_signal_vs_time_mus(signal,
     ax1.set_ylim([signal_min, signal_max])
     set_plot_labels(xlabel = "t (mus)",
                     ylabel = "signal (pes/adc)")
-    plt.plot(signal_t, signal)
+    plt.plot(signal_t, signal, label=label)
+    legend = plt.legend(loc='upper right')
+    for label in legend.get_texts():
+        label.set_fontsize('small')
 
 
 def plot_pmt_signals_vs_time_mus(pmt_signals,
+                                 pmt_active,
                                  t_min      =    0,
                                  t_max      = 1200,
                                  signal_min =    0,
@@ -89,15 +94,35 @@ def plot_pmt_signals_vs_time_mus(pmt_signals,
     tstep = 25
     PMTWL = pmt_signals[0].shape[0]
     signal_t = np.arange(0., PMTWL * tstep, tstep)/units.mus
-    plt.figure(figsize=(12, 12))
-    for i in range(len(pmt_signals)):
-        ax1 = plt.subplot(3, 4, i+1)
+    plt.figure(figsize=(10, 10))
+    j=0
+    for i in pmt_active:
+        ax1 = plt.subplot(4, 3, j+1)
         ax1.set_xlim([t_min, t_max])
         ax1.set_ylim([signal_min, signal_max])
         set_plot_labels(xlabel = "t (mus)",
                         ylabel = "signal (pes/adc)")
 
         plt.plot(signal_t, pmt_signals[i])
+        j+=1
+
+
+def plot_calibrated_sum_in_mus(CSUM,
+                               tmin=0, tmax=1200,
+                               signal_min=-5, signal_max=200,
+                               csum=True, csum_mau=False):
+    """Plots calibrated sums in mus (notice units)"""
+
+    if csum:
+        plot_signal_vs_time_mus(CSUM.csum,
+                                t_min=tmin, t_max=tmax,
+                                signal_min=signal_min, signal_max=signal_max,
+                                label='CSUM')
+    if csum_mau:
+        plot_signal_vs_time_mus(CSUM.csum_mau,
+                                t_min=tmin, t_max=tmax,
+                                signal_min=signal_min, signal_max=signal_max,
+                                label='CSUM_MAU')
 
 
 def set_plot_labels(xlabel="", ylabel="", grid=True):
