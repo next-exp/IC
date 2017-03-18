@@ -13,13 +13,32 @@ after correcting the baseline with a MAU to suppress low frequency noise.
 input:
 CWF:    Corrected waveform (passed by BLR)
 adc_to_pes: a vector with calibration constants
+pmt_active: a list of active PMTs
 n_MAU:  length of the MAU window
 thr_MAU: treshold above MAU to select sample
 """
 cpdef calibrated_pmt_sum(double [:, :] CWF,
                          double [:] adc_to_pes,
-                         int n_MAU=*,
-                         double thr_MAU=*)
+                         list       pmt_active = *,
+                         int        n_MAU      = *,
+                         double thr_MAU        = *)
+
+
+"""
+Return a vector of calibrated PMTs
+after correcting the baseline with a MAU to suppress low frequency noise.
+input:
+CWF:    Corrected waveform (passed by BLR)
+adc_to_pes: a vector with calibration constants
+pmt_active: a list of active PMTs
+n_MAU:  length of the MAU window
+thr_MAU: treshold above MAU to select sample
+"""
+cpdef calibrated_pmt_mau(double [:, :]  CWF,
+                         double [:] adc_to_pes,
+                         list       pmt_active = *,
+                         int        n_MAU      = *,
+                         double     thr_MAU    = *)
 
 
 """

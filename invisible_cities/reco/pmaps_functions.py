@@ -80,56 +80,42 @@ def scan_s2si_map(S2Si):
 class S12F:
     """
     Defines the global features of an S12 peak, namely:
-    1) peak width
+    1) peak start (tmin), end (tmax) and width
     2) peak maximum (both energy and time)
     3) energy total
     4) ratio peak/total energy
     """
 
-    def __init__(self, length):
-        self.w    = np.zeros(length, dtype=np.double)
-        self.tmax = np.zeros(length, dtype=np.double)
-        self.emax = np.zeros(length, dtype=np.double)
-        self.etot = np.zeros(length, dtype=np.double)
-        self.er   = np.zeros(length, dtype=np.double)
+    def __init__(self):
+        self.peak = []
+        self.w    = []
+        self.tmin = []
+        self.tmax = []
+        self.tpeak = []
+        self.emax = []
+        self.etot = []
+        self.er   = []
 
+    def add_features(self, S12, peak_number=0):
+        t = S12[peak_number][0]
+        E = S12[peak_number][1]
 
-def s12_features(S12L, peak=0, max_events=100):
-    """
-    input: S1L
-    returns a S1F object for specific peak
-    """
-    nk = np.array(list(S12L.keys()))
+        tmin = t[0]
+        tmax = t[-1]
+        i_t = loc_elem_1d(E, emax)
+        tpeak = t[i_t]
 
-    # max event: but notice that some events may be missing
-    evt_max = np.max(nk)
+        emax = np.max(E)
+        etot = np.sum(E)
+        er = 9e+9
+        if etot > 0:
+            er = emax/etot
 
-    n = min(evt_max+1, max_events)
-    print('required {} events; found in dict {} events'
-          .format(max_events, evt_max+1))
-    s1f = S12F(n)
-
-    for i in nk:
-        if i >= n:
-            break
-
-        S1 = S12L[i]
-        try:
-            T = S1[peak][0]
-            E = S1[peak][1]
-        except KeyError:
-            print('peak number {} does not exit in S12L'.format(peak))
-            return 0
-
-        s1f.w[i] = T[-1] - T[0]
-        s1f.emax[i] = np.max(E)
-        i_t = cf.loc_elem_1d(E, s1f.emax[i])
-        s1f.tmax[i] = T[i_t]
-        s1f.etot[i] = np.sum(E)
-
-        if s1f.etot[i] > 0:
-            s1f.er[i] = s1f.emax[i] / s1f.etot[i]
-        else:
-            s1f.er[i] = 0
-
-    return s1f
+        self.w.append(tmax - tmin)
+        self.tmin.append(tmin)
+        self.tmax.append(tmax)
+        self.tpeak.append(tpeak)
+        self.emax.append(emax)
+        self.etot.append(etot)
+        self.etot.append(er)
+        self.peak.append(peak_number)
