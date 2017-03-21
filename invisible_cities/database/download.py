@@ -4,7 +4,6 @@ import pymysql as MySQLdb
 pymysql.install_as_MySQLdb()
 import os
 from os import path
-from base64 import b64decode as dec
 
 
 def loadDB():
@@ -18,9 +17,7 @@ def loadDB():
     cursorSql3 = connSql3.cursor()
 
 
-    connMySql = MySQLdb.connect(host="neutrinos1.ific.uv.es", user=dec('am1iZW5sbG9jaA=='),
-                                passwd=eval(dec('Jycuam9pbihtYXAobGFtYmRhIGM6IGNocihjLTUpLCBbNzIsIDEwMiwgMTE1LCAxMDcsIDExOSwgMTAyLCAxMTUsIDEwNF0pKQ==')),
-                                db="ICNEWDB")
+    connMySql = MySQLdb.connect(host="neutrinos1.ific.uv.es", user='nextreader',passwd='readonly', db="NEWDB")
     cursorMySql = connMySql.cursor()
 
     # Create tables
@@ -70,7 +67,7 @@ def loadDB():
     cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `PmtBlr` (
   `MinRun` integer NOT NULL
 ,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
+,  `ElecID` integer NOT NULL
 ,  `coeff_c` double NOT NULL
 ,  `coeff_blr` double NOT NULL
 );''')
@@ -78,7 +75,7 @@ def loadDB():
     cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `PmtNoiseRms` (
   `MinRun` integer NOT NULL
 ,  `MaxRun` integer DEFAULT NULL
-,  `SensorID` integer NOT NULL
+,  `ElecID` integer NOT NULL
 ,  `noise_rms` double NOT NULL
 );''')
 
