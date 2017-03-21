@@ -316,10 +316,7 @@ def sipm_s2(dSIPM, S2, thr=5*units.pes):
 
 
 def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds,
-                           event,
-                           pmt_active          =[],
-                           deconv_n_baseline   = 28000,
-                           deconv_thr_trigger  =     5):
+                           event, calib_vectors, deconv_params):
     """Compute calibrated sum and PMAPS.
 
     :param pmtrwf: PMTs RWF
@@ -337,24 +334,21 @@ def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds,
 
     :returns: a nametuple of calibrated sum and a namedtuple of PMAPS
     """
-
     s1_params = s1par
     s2_params = s2par
     thr = thresholds
 
-    # data base
-    DataPMT = load_db.DataPMT()
-    adc_to_pes = abs(DataPMT.adc_to_pes.values)
-    coeff_c    = abs(DataPMT.coeff_c   .values)
-    coeff_blr  = abs(DataPMT.coeff_blr .values)
-    DataSiPM   = load_db.DataSiPM()
-    adc_to_pes_sipm = DataSiPM.adc_to_pes.values
+    adc_to_pes = calib_vectors.adc_to_pes
+    coeff_c    = calib_vectors.coeff_c
+    coeff_blr  = calib_vectors.coeff_blr
+    adc_to_pes_sipm = calib_vectors.adc_to_pes_sipm
+    pmt_active = calib_vectors.pmt_active
 
     # deconv
     CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr,
                          pmt_active  = pmt_active,
-                         n_baseline  = deconv_n_baseline,
-                         thr_trigger = deconv_thr_trigger)
+                         n_baseline  = deconv_params.n_baseline,
+                         thr_trigger = deconv_params.thr_trigger)
 
     # calibrated sum
     csum, csum_mau = cpf.calibrated_pmt_sum(CWF,

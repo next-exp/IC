@@ -184,18 +184,15 @@ def noise_suppression(waveforms, thresholds):
     return np.array(suppressed_wfs)
 
 
-def cwf_from_rwf(pmtrwf, event_list, run_number=0,
-                 n_baseline=28000, thr_trigger=5):
+def cwf_from_rwf(pmtrwf, event_list, calib_vectors, deconv_params):
     """Compute CWF from RWF for a given list of events."""
-    DataPMT = load_db.DataPMT(run_number)
-    coeff_c = DataPMT.coeff_c.values.astype(np.double)
-    coeff_blr = DataPMT.coeff_blr.values.astype(np.double)
 
     CWF=[]
     for event in event_list:
-        CWF.append(blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr,
-                             n_baseline=n_baseline,
-                             thr_trigger=thr_trigger))
+        CWF.append(blr.deconv_pmt(pmtrwf[event], calib_vectors.coeff_c,
+                             calib_vectors.coeff_blr,
+                             n_baseline=deconv_params.n_baseline,
+                             thr_trigger=deconv_params.thr_trigger))
     return CWF
 
 

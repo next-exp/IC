@@ -173,7 +173,8 @@ class FEE:
         self.freq_zero = 1 / (self.R1 * self.C1)
         self.coeff_c = self.freq_zero / (self.f_sample * np.pi)
 
-        DataPMT = DB.DataPMT()
+        run_number = 0 # until we decide something else, MC is run 0
+        DataPMT = DB.DataPMT(run_number)
 
         self.coeff_blr_pmt = DataPMT.coeff_blr.values
         self.freq_LHPFd_pmt = self.coeff_blr_pmt / np.pi
