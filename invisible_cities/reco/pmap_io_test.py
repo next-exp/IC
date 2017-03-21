@@ -148,7 +148,8 @@ def test_pmap_electrons_40keV(config_tmpdir):
             pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
 
             # data base
-            DataPMT = load_db.DataPMT()
+            DataPMT = load_db.DataPMT(run_number)
+            pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist()
             adc_to_pes = abs(DataPMT.adc_to_pes.values)
             coeff_c = abs(DataPMT.coeff_c.values)
             coeff_blr = abs(DataPMT.coeff_blr.values)
@@ -165,10 +166,11 @@ def test_pmap_electrons_40keV(config_tmpdir):
             XS2SiL = []
             for event in range(NTEST):
                 # deconv
-                CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr)
+                CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr, pmt_active)
                 # calibrated sum
                 csum, csum_mau = cpf.calibrated_pmt_sum(CWF,
                                                     adc_to_pes,
+                                                    pmt_active = pmt_active,
                                                     n_MAU=100,
                                                     thr_MAU=thr.thr_MAU)
                 # zs sum
