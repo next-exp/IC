@@ -9,6 +9,8 @@ from pytest import mark
 from . import wfm_functions as wfm
 import invisible_cities.reco.peak_functions_c as cpf
 import invisible_cities.reco.tbl_functions as tbl
+from   invisible_cities.reco.params import DeconvParams, CalibVectors
+from   invisible_cities.database import load_db
 import numpy as np
 import tables as tb
 
@@ -65,7 +67,22 @@ def test_compare_cwf_blr():
     pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
     NEVT, NPMT, PMTWL = pmtrwf.shape
 
-    CWF = wfm.cwf_from_rwf(pmtrwf, event_list=range(NEVT))
+
+    deconv = DeconvParams(n_baseline  = 28000,
+                          thr_trigger =     5)
+
+    run_number = 0
+    DataPMT = load_db.DataPMT(run_number)
+    DataSiPM = load_db.DataSiPM(run_number)
+
+    calib = CalibVectors(channel_id = DataPMT.ChannelID.values,
+                         coeff_blr = abs(DataPMT.coeff_blr   .values),
+                         coeff_c = abs(DataPMT.coeff_c   .values),
+                         adc_to_pes = DataPMT.adc_to_pes.values,
+                         adc_to_pes_sipm = DataSiPM.adc_to_pes.values,
+                         pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist())
+
+    CWF = wfm.cwf_from_rwf(pmtrwf, range(NEVT), calib, deconv)
     diff = wfm.compare_cwf_blr(CWF, pmtblr,
                                event_list=range(NEVT), window_size=200)
 
