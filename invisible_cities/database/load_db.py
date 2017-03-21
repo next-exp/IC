@@ -56,21 +56,22 @@ def DataPMT(run_number=1e5):
 
     sql = '''select pos.SensorID, map.ElecID "ChannelID", Label "PmtID",
 case when msk.SensorID is NULL then 1 else 0 end "Active",
-X, Y, coeff_blr, coeff_c, Centroid "adc_to_pes", noise_rms, Sigma
-from ChannelPosition as pos INNER JOIN ChannelGain as gain
-ON pos.SensorID = gain.SensorID INNER JOIN ChannelMapping as map
-ON pos.SensorID = map.SensorID INNER JOIN PmtBlr as blr
-ON pos.SensorID = blr.SensorID INNER JOIN PmtNoiseRms as noise
-on pos.SensorID = noise.SensorID LEFT JOIN
-(select * from ChannelMask where MinRun < {3} and {3} < MaxRun) as msk
-ON pos.SensorID = msk.SensorID
-where pos.SensorID < 100 and pos.MinRun={0} and gain.MinRun={1}
-and map.MinRun={2}
-and blr.MinRun < {3} and (blr.MaxRun >= {0} or blr.MaxRun is NULL)
-and noise.MinRun < {3} and (noise.MaxRun >= {0} or noise.MaxRun is NULL)
-order by pos.SensorID'''\
+X, Y, coeff_blr, coeff_c, abs(Centroid) "adc_to_pes", noise_rms, Sigma
+from ChannelPosition as pos INNER JOIN ChannelMapping
+as map ON pos.SensorID = map.SensorID LEFT JOIN
+(select * from PmtNoiseRms where MinRun < {3} and (MaxRun >= {3} or MaxRun is NULL))
+as noise on map.ElecID = noise.ElecID LEFT JOIN
+(select * from ChannelMask where MinRun < {3} and {3} < MaxRun)
+as msk ON pos.SensorID = msk.SensorID LEFT JOIN
+(select * from ChannelGain where MinRun={1})
+as gain ON pos.SensorID = gain.SensorID LEFT JOIN
+(select * from PmtBlr where MinRun < {3} and (MaxRun >= {3} or MaxRun is NULL))
+as blr ON map.ElecID = blr.ElecID
+where pos.SensorID < 100 and pos.MinRun={0} and map.MinRun={2}
+order by Active desc, pos.SensorID'''\
     .format(minrun_position, minrun_gain, minrun_map, run_number)
     data = pd.read_sql_query(sql, conn)
+    data.fillna(0, inplace=True)
     conn.close()
     return data
 
