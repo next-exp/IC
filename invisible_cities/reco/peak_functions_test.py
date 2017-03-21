@@ -16,9 +16,12 @@ import invisible_cities.reco.peak_functions_c as cpf
 import invisible_cities.reco.peak_functions as pf
 import invisible_cities.core.sensor_functions as sf
 import invisible_cities.core.core_functions as cf
-from   invisible_cities.reco.params import S12Params, ThresholdParams
+from   invisible_cities.reco.params import S12Params, ThresholdParams,\
+        DeconvParams, CalibVectors
 from   invisible_cities.core.system_of_units_c import units
+from collections import namedtuple
 
+# TODO: rethink this test (list(6) could stop working anytime if DataPMT is changed)
 @fixture(scope='module')
 def csum_zs_blr_cwf(electron_RWF_file):
     """Test that:
@@ -28,30 +31,36 @@ def csum_zs_blr_cwf(electron_RWF_file):
     within tolerance
     """
 
+    run_number = 0
+
     with tb.open_file(electron_RWF_file, 'r') as h5rwf:
         pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
-        DataPMT = load_db.DataPMT()
+        DataPMT = load_db.DataPMT(run_number)
+        pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist()
         coeff_c    = abs(DataPMT.coeff_c.values)
         coeff_blr  = abs(DataPMT.coeff_blr.values)
         adc_to_pes = abs(DataPMT.adc_to_pes.values)
 
         event = 0
-        CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr)
+        CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr, pmt_active)
         csum_cwf, _ =      cpf.calibrated_pmt_sum(
                                CWF,
                                adc_to_pes,
+                               pmt_active = pmt_active,
                                n_MAU = 100,
                                thr_MAU =   3)
 
         csum_blr, _ =      cpf.calibrated_pmt_sum(
                                pmtblr[event].astype(np.float64),
                                adc_to_pes,
+                               pmt_active = pmt_active,
                                n_MAU = 100,
                                thr_MAU =   3)
 
         csum_blr_py, _, _ = pf.calibrated_pmt_sum(
                                pmtblr[event].astype(np.float64),
                                adc_to_pes,
+                               pmt_active = pmt_active,
                                n_MAU=100, thr_MAU=3)
 
         csum_cwf_pmt6, _ = cpf.calibrated_pmt_sum(
@@ -77,7 +86,7 @@ def csum_zs_blr_cwf(electron_RWF_file):
         CAL_PMT, CAL_PMT_MAU  =  cpf.calibrated_pmt_mau(
                                      CWF,
                                      adc_to_pes,
-                                     pmt_active = list(range(12)),
+                                     pmt_active = pmt_active,
                                      n_MAU = 100,
                                      thr_MAU =   3)
 
@@ -150,6 +159,7 @@ def pmaps_electrons(electron_RWF_file):
     """Compute PMAPS for ele of 40 keV. Check that results are consistent."""
 
     event = 0
+    run_number = 0
 
     s1par = S12Params(tmin   =  99 * units.mus,
                       tmax   = 101 * units.mus,
@@ -177,22 +187,39 @@ def pmaps_electrons(electron_RWF_file):
                           thr_sipm =  5   * units.pes,
                           thr_SIPM = 30   * units.pes )
 
+
     with tb.open_file(electron_RWF_file,'r') as h5rwf:
         pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
+        DataPMT = load_db.DataPMT(run_number)
+        DataSiPM = load_db.DataSiPM(run_number)
+
+        calib = CalibVectors(channel_id = DataPMT.ChannelID.values,
+                             coeff_blr = abs(DataPMT.coeff_blr   .values),
+                             coeff_c = abs(DataPMT.coeff_c   .values),
+                             adc_to_pes = DataPMT.adc_to_pes.values,
+                             adc_to_pes_sipm = DataSiPM.adc_to_pes.values,
+                             pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist())
+
+        deconv = DeconvParams(n_baseline = 28000,
+                              thr_trigger = 5)
 
         csum, pmp = pf.compute_csum_and_pmaps(pmtrwf,
                                               sipmrwf,
                                               s1par,
                                               s2par,
                                               thr,
-                                              event)
+                                              event,
+                                              calib,
+                                              deconv)
 
         _, pmp2 = pf.compute_csum_and_pmaps(pmtrwf,
                                             sipmrwf,
                                             s1par,
                                             s2par._replace(rebin=False),
                                             thr,
-                                            event)
+                                            event,
+                                            calib,
+                                            deconv)
 
     return pmp, pmp2, csum
 
