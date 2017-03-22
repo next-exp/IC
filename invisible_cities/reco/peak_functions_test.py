@@ -42,7 +42,8 @@ def csum_zs_blr_cwf(electron_RWF_file):
         adc_to_pes = abs(DataPMT.adc_to_pes.values)
 
         event = 0
-        CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr, pmt_active)
+        CWF  = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr, pmt_active)
+        CWF6 = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr, list(range(6)))
         csum_cwf, _ =      cpf.calibrated_pmt_sum(
                                CWF,
                                adc_to_pes,
@@ -97,12 +98,15 @@ def csum_zs_blr_cwf(electron_RWF_file):
         from collections import namedtuple
 
         return (namedtuple('Csum',
-                        """csum_cwf csum_blr csum_blr_py
+                        """cwf cwf6
+                           csum_cwf csum_blr csum_blr_py
                            csum_cwf_pmt6 csum_blr_pmt6 csum_blr_py_pmt6
                            CAL_PMT, CAL_PMT_MAU,
                            wfzs_ene wfzs_ene_py
                            wfzs_indx wfzs_indx_py""")
-        (csum_cwf          = csum_cwf,
+        (cwf               = CWF,
+         cwf6              = CWF6,
+         csum_cwf          = csum_cwf,
          csum_blr          = csum_blr,
          csum_blr_py       = csum_blr_py,
          csum_cwf_pmt6     = csum_cwf_pmt6,
@@ -340,3 +344,7 @@ def test_csum_zs_s12():
     for i in S12L2.keys():
         e = S12L2[i][1]
         npt.assert_allclose(e, E)
+
+
+def test_cwf_are_empty_for_masked_pmts(csum_zs_blr_cwf):
+    assert np.all(csum_zs_blr_cwf.cwf6[6:] == 0.)

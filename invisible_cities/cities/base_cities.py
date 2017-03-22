@@ -72,6 +72,7 @@ class City:
         # This is JCK-1: text reveals symmetry!
         self.xs              = DataSiPM.X.values
         self.ys              = DataSiPM.Y.values
+        self.pmt_active      = np.nonzero(DataPMT.Active.values)[0].tolist()
         self.adc_to_pes      = abs(DataPMT.adc_to_pes.values).astype(np.double)
         self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
         self.coeff_c         = DataPMT.coeff_c.values        .astype(np.double)
@@ -321,6 +322,7 @@ class DeconvolutionCity(City):
         return blr.deconv_pmt(RWF,
                               self.coeff_c,
                               self.coeff_blr,
+                              pmt_active  = self.pmt_active,
                               n_baseline  = self.n_baseline,
                               thr_trigger = self.thr_trigger)
 
@@ -425,8 +427,9 @@ class CalibratedCity(DeconvolutionCity):
         """Return the csum and csum_mau calibrated sums."""
         return cpf.calibrated_pmt_sum(CWF,
                                       self.adc_to_pes,
-                                        n_MAU =   self.n_MAU,
-                                      thr_MAU = self.thr_MAU)
+                                      pmt_active = self.pmt_active,
+                                           n_MAU = self.  n_MAU   ,
+                                         thr_MAU = self.thr_MAU   )
 
     def csum_zs(self, csum, threshold):
         """Zero Suppression over csum"""
