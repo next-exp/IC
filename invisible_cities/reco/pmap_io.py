@@ -8,7 +8,9 @@ class pmap_writer:
 
     def __init__(self, filename, compression = 'ZLIB4'):
         self._hdf5_file = tb.open_file(filename, 'w')
-        self._pmp_tables, self._run_tables = _make_tables(self._hdf5_file,
+        self._run_tables = _make_run_event_tables(self._hdf5_file,
+                                                          compression)
+        self._pmp_tables = _make_pmp_tables(      self._hdf5_file,
                                                           compression)
 
     def __call__(self, run_number, event_number, timestamp, s1, s2, s2si):
@@ -32,29 +34,35 @@ class pmap_writer:
         self.close()
 
 
-def _make_tables(hdf5_file, compression):
+def _make_run_event_tables(hdf5_file, compression):
 
     c = tbl.filters(compression)
-
-    pmaps_group  = hdf5_file.create_group(hdf5_file.root, 'PMAPS')
     rungroup     = hdf5_file.create_group(hdf5_file.root, "Run")
 
     RunInfo, EventInfo = table_formats.RunInfo, table_formats.EventInfo
+    MKT = hdf5_file.create_table
+
+    run_info   = MKT(rungroup, "runInfo",   RunInfo,   "run info table", c)
+    event_info = MKT(rungroup,  "events", EventInfo, "event info table", c)
+    run_tables = (run_info, event_info)
+
+    return run_tables
+
+def _make_pmp_tables(hdf5_file, compression):
+
+    c = tbl.filters(compression)
+    pmaps_group  = hdf5_file.create_group(hdf5_file.root, 'PMAPS')
     MKT = hdf5_file.create_table
     s1         = MKT(pmaps_group, 'S1'  , S12 .table_format,   "S1 Table", c)
     s2         = MKT(pmaps_group, 'S2'  , S12 .table_format,   "S2 Table", c)
     s2si       = MKT(pmaps_group, 'S2Si', S2Si.table_format, "S2Si Table", c)
 
-    run_info   = MKT(rungroup, "runInfo",   RunInfo,   "run info table", c)
-    event_info = MKT(rungroup,  "events", EventInfo, "event info table", c)
-
     pmp_tables = (s1, s2, s2si)
-    run_tables = (run_info, event_info)
 
     for table in pmp_tables:
         table.cols.event.create_index()
 
-    return pmp_tables, run_tables
+    return pmp_tables
 
 
 def run_writer(table, run_number):
@@ -100,16 +108,3 @@ class S2Si(dict):
                     #row["nsample"] = nsample
                     row["ene"]     = E
                     row.append()
-
-    #
-    # def store(self, table, event_number):
-    #     row = table.row
-    #     for peak_number, sipms in self.items():
-    #         for nsipm, Es in sipms:
-    #             for nsample, E in enumerate(Es):
-    #                 row["event"]   = event_number
-    #                 row["peak"]    =  peak_number
-    #                 row["nsipm"]   = nsipm
-    #                 #row["nsample"] = nsample
-    #                 row["ene"]     = E
-    #                 row.append()
