@@ -143,8 +143,7 @@ class Irene(PmapCity):
                         S1, S2 = self.find_S12(s1_ene, s1_indx,   s2_ene, s2_indx)
                         Si     = self.find_S2Si(S2, sipmzs)
 
-                        event, timestamp = self.event_and_timestamp(evt,
-                                                n_events_tot)
+                        event, timestamp = self.event_and_timestamp(evt)
                         # write to file
                         write(self.run_number, event, timestamp, S1, S2, Si)
 
@@ -173,7 +172,7 @@ class Irene(PmapCity):
                  threshold min charge in  S2   = {s.thr_sipm_s2} pes
                           """.format(s=self))
 
-    def event_and_timestamp(self, evt, n_events_tot):
+    def event_and_timestamp(self, evt):
         evtInfo = self.eventsInfo[evt]
         event     = evtInfo[0]
         timestamp = evtInfo[1]
