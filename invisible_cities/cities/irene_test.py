@@ -1,4 +1,4 @@
-a"""
+"""
 code: irene_test.py
 description: test suite for irene
 author: J.J. Gomez-Cadenas
@@ -15,7 +15,6 @@ from collections import namedtuple
 
 from   invisible_cities.cities.irene import Irene, IRENE
 from   invisible_cities.reco.pmaps_functions import read_run_and_event_from_pmaps_file
-
 
 @fixture(scope='module')
 def conf_file_name_mc(config_tmpdir):
