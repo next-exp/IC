@@ -11,6 +11,7 @@ import os
 import tables as tb
 import numpy  as np
 from pytest import mark, fixture
+from collections import namedtuple
 
 from   invisible_cities.cities.irene import Irene, IRENE
 from   invisible_cities.core.system_of_units_c import units
@@ -41,6 +42,28 @@ def conf_file_name_data(config_tmpdir):
                             PATH_OUT = str(config_tmpdir),
                             NEVENTS  = 1)
     return conf_file_name
+
+
+@fixture(scope='module')
+def job_info_missing_pmts(config_tmpdir, ICDIR):
+    # Specifies a name for a data configuration file. Also, default number
+    # of events set to 1.
+    job_info = namedtuple("job_info",
+                          "run_number pmt_missing pmt_active input_filename output_filename")
+
+    run_number  = 3366
+    pmt_missing = [11]
+    pmt_active  = list(filter(lambda x: x not in pmt_missing, range(12)))
+
+
+    ifilename   = os.path.join(ICDIR,
+                                'database/test_data/',
+                                'electrons_40keV_z250_RWF.h5.h5')
+
+    ofilename   = os.path.join(str(config_tmpdir),
+                                'electron_40keV_z250_pmaps_missing_PMT.h5')
+
+    return job_info(run_number, pmt_missing, pmt_active, ifilename, ofilename)
 
 
 @mark.slow
@@ -151,3 +174,30 @@ def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir, ICDIR):
                                    '-r', '0'])
     assert nactual == 0
     assert empty   == 1
+
+
+#@mark.slow
+def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR):
+    """Run Irene. Write an output file."""
+
+    IRENE = Irene(run_number =  job_info_missing_pmts.run_number,
+                  files_in   = [job_info_missing_pmts. input_filename],
+                  file_out   =  job_info_missing_pmts.output_filename)
+
+    assert IRENE.pmt_active == job_info_missing_pmts.pmt_active
+
+
+"""
+def test_irene_electrons_40keV_cwf_contain_zeros_for_missing_pmts(job_info_missing_pmts, config_tmpdir, ICDIR):
+
+    info = job_info_missing_pmts
+    IRENE = Irene(run_number =  info.run_number,
+                  files_in   = [info. input_filename],
+                  files_out  = [info.output_filename])
+
+    _, _, empty = IRENE.run(1)
+    if not empty:
+        with tb.open_file(info.outputfilename) as h5in:
+            cwf = h5in.root.
+        assert not np.any(cwf[:, info.pmt_missing, :])
+"""
