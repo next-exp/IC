@@ -176,7 +176,7 @@ def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir, ICDIR):
     assert empty   == 1
 
 
-#@mark.slow
+@mark.slow
 def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR):
     """Run Irene. Write an output file."""
 
@@ -186,18 +186,3 @@ def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts
 
     assert IRENE.pmt_active == job_info_missing_pmts.pmt_active
 
-
-"""
-def test_irene_electrons_40keV_cwf_contain_zeros_for_missing_pmts(job_info_missing_pmts, config_tmpdir, ICDIR):
-
-    info = job_info_missing_pmts
-    IRENE = Irene(run_number =  info.run_number,
-                  files_in   = [info. input_filename],
-                  files_out  = [info.output_filename])
-
-    _, _, empty = IRENE.run(1)
-    if not empty:
-        with tb.open_file(info.outputfilename) as h5in:
-            cwf = h5in.root.
-        assert not np.any(cwf[:, info.pmt_missing, :])
-"""
