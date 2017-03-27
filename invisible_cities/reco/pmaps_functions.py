@@ -13,7 +13,15 @@ import invisible_cities.core.core_functions as cf
 from   invisible_cities.database import load_db
 from   invisible_cities.core.mpl_functions import circles
 
+def load_pmaps(PMP_file_name):
+    """Read the PMAP file and return transient PMAP rep."""
 
+    s1t, s2t, s2sit = read_pmaps(PMP_file_name)
+    S1              = df_to_pmaps_dict(s1t)
+    S2              = df_to_pmaps_dict(s2t)
+    S2Si            = df_to_s2si_dict(s2sit)
+    return S1, S2, S2Si
+    
 def read_pmaps(PMP_file_name):
     """Return the PMAPS as PD DataFrames."""
     with tb.open_file(PMP_file_name, 'r') as h5f:
