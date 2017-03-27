@@ -14,12 +14,6 @@ from pytest import mark, fixture
 from collections import namedtuple
 
 from   invisible_cities.cities.irene import Irene, IRENE
-from   invisible_cities.core.system_of_units_c import units
-from   invisible_cities.reco.params import S12Params as S12P
-from   invisible_cities.reco.params import SensorParams
-import invisible_cities.reco.tbl_functions as tbl
-from   invisible_cities.reco.pmaps_functions import (
-    read_pmaps, read_run_and_event_from_pmaps_file)
 
 @fixture(scope='module')
 def conf_file_name_mc(config_tmpdir):
