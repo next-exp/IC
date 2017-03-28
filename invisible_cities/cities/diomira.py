@@ -123,7 +123,7 @@ class Diomira(SensorResponseCity):
                     for evt in range(NEVT):
                         # copy corresponding MCTracks to output MCTracks table
                         mctracks_writer.copy_mctracks(h5in.root.MC.MCTracks,
-                                          n_events_tot)
+                                          n_events_tot, self.first_evt)
 
                         # simulate PMT and SiPM response
                         # RWF and BLR
