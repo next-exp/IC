@@ -188,7 +188,12 @@ def test_command_line_diomira(conf_file_name, config_tmpdir):
             assert h5out.root.Run.events[0]['evt_number'] == start_evt
 
             # check mctracks
-            mctracks_in  = h5in .root.MC.MCTracks[0]
-            mctracks_out = h5out.root.MC.MCTracks[0]
-            for e in zip(mctracks_in, mctracks_out):
+            # we have to convert manually into a tuple because MCTracks[0]
+            # returns an object of type numpy.void where we cannot index
+            # using ranges like mctracks_in[1:]
+            mctracks_in  = tuple(h5in .root.MC.MCTracks[0])
+            mctracks_out = tuple(h5out.root.MC.MCTracks[0])
+            #evt number is not equal if we redefine first event number
+            assert mctracks_out[0] == start_evt
+            for e in zip(mctracks_in[1:], mctracks_out[1:]):
                 np.testing.assert_array_equal(e[0],e[1])
