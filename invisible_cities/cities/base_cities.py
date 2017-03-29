@@ -507,6 +507,9 @@ class PmapCity(CalibratedCity):
                           **self.s2_params._asdict())
         return S1, S2
 
+    def correct_S1_ene(self, S1, csum):
+        return cpf.correct_S1_ene(S1, csum)
+
     def find_S2Si(self, S2, sipmzs):
         """Return S2Si."""
         SIPM = cpf.select_sipm(sipmzs)
