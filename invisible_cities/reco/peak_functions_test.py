@@ -119,6 +119,18 @@ def csum_zs_blr_cwf(electron_RWF_file):
          wfzs_indx         = wfzs_indx,
          wfzs_indx_py      = wfzs_indx_py))
 
+
+@fixture(scope="module")
+def toy_S1_wf():
+    s1      = {}
+    indices = [np.arange(125, 130), np.arange(412, 417), np.arange(113, 115)]
+    for i, index in enumerate(indices):
+        s1[i] = index * 25., np.random.rand(index.size)
+
+    wf = np.random.rand(1000)
+    return s1, wf, indices
+
+
 def test_csum_cwf_close_to_csum_of_calibrated_pmts(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
 
@@ -348,3 +360,10 @@ def test_csum_zs_s12():
 
 def test_cwf_are_empty_for_masked_pmts(csum_zs_blr_cwf):
     assert np.all(csum_zs_blr_cwf.cwf6[6:] == 0.)
+
+
+def test_correct_S1_ene_returns_correct_energies(toy_S1_wf):
+    S1, wf, indices = toy_S1_wf
+    corrS1 = cpf.correct_S1_ene(S1, wf)
+    for peak_no, (t, E) in corrS1.items():
+        assert np.all(E == wf[indices[peak_no]])
