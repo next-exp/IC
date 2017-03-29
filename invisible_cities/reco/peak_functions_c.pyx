@@ -230,6 +230,14 @@ cpdef find_S12(double [:] wfzs,  int [:] index,
     return pio.S12(S12L)
 
 
+cpdef correct_S1_ene(S1, np.ndarray csum):
+    cdef dict S1_corr = {}
+    for peak_no, (t, _) in S1.items():
+        indices          = (t // 25).astype(int)
+        S1_corr[peak_no] = t, csum[indices]
+    return pio.S12(S1_corr)
+
+
 cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
     """
     Rebin a waveform according to stride
