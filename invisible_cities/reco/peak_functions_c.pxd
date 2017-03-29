@@ -86,6 +86,9 @@ The input waveform is a vector such that the index expresses time bin and the
 contents expresses energy (e.g, in pes)
 The function returns a rebinned vector of T and E.
 """
+
+cpdef correct_S1_ene(S1, np.ndarray csum)
+
 cpdef rebin_waveform(double [:] t, double[:] e, int stride=*)
 
 
