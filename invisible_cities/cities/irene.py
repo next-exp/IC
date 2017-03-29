@@ -141,6 +141,7 @@ class Irene(PmapCity):
                         sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
                         # PMAPS
                         S1, S2 = self.find_S12(s1_ene, s1_indx,   s2_ene, s2_indx)
+                        S1     = self.correct_S1_ene(S1, csum)
                         Si     = self.find_S2Si(S2, sipmzs)
 
                         event, timestamp = self.event_and_timestamp(evt)
