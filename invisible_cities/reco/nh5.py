@@ -34,7 +34,7 @@ class MCTrack(tb.IsDescription):
     """Stores. the parameters used by the simulation as metadata using
     Pytables.
     """
-    event_indx     = tb.  Int16Col(    pos= 1)
+    event_indx     = tb.  Int32Col(    pos= 1)
     mctrk_indx     = tb.  Int16Col(    pos= 2)
     particle_name  = tb. StringCol(10, pos= 3)
     pdg_code       = tb.  Int16Col(    pos= 4)
