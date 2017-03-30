@@ -89,11 +89,12 @@ cpdef deconvolve_signal(double [:] signal_daq,
 
 
 cpdef deconv_pmt(np.ndarray[np.int16_t, ndim=2] pmtrwf,
-                 double [:] coeff_c,
-                 double [:] coeff_blr,
-                 list       pmt_active   =    [],
-                 int        n_baseline   = 28000,
-                 double     thr_trigger  =     5):
+                 double [:]                     coeff_c,
+                 double [:]                     coeff_blr,
+                 list                           pmt_active            =    [],
+                 int                            n_baseline            = 28000,
+                 double                         thr_trigger           =     5,
+                 int                            acum_discharge_length =  5000):
     """
     Deconvolve all the PMTs in the event.
     :param pmtrwf: array of PMTs holding the raw waveform
@@ -121,10 +122,11 @@ cpdef deconv_pmt(np.ndarray[np.int16_t, ndim=2] pmtrwf,
     cdef int pmt
     for pmt in PMT:
         signal_r = deconvolve_signal(signal_i[pmt],
-                                     n_baseline  = n_baseline,
-                                     coef_clean  = coeff_c[pmt],
-                                     coef_blr    = coeff_blr[pmt],
-                                     thr_trigger = thr_trigger)
+                                     n_baseline            = n_baseline,
+                                     coef_clean            = coeff_c[pmt],
+                                     coef_blr              = coeff_blr[pmt],
+                                     thr_trigger           = thr_trigger,
+                                     acum_discharge_length = acum_discharge_length)
 
         CWF.append(signal_r)
 
