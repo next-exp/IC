@@ -84,7 +84,7 @@ class FEE(tb.IsDescription):
 
 
 class DECONV_PARAM(tb.IsDescription):
-    N_BASELINE            = tb.Int16Col(pos=0)
+    N_BASELINE            = tb.Int32Col(pos=0)
     THR_TRIGGER           = tb.Int16Col(pos=1)
     ACUM_DISCHARGE_LENGTH = tb.Int16Col(pos=2)
     ACUM_TAU              = tb.Int16Col(pos=3)
