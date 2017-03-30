@@ -38,6 +38,7 @@ cpdef deconvolve_signal(double [:] signal_daq,
 cpdef deconv_pmt(np.ndarray[np.int16_t, ndim=2] pmtrwf,
                  double [:]                     coeff_c,
                  double [:]                     coeff_blr,
-                 list                           pmt_active  = *,
-                 int                            n_baseline  = *,
-                 double                         thr_trigger = *)
+                 list                           pmt_active            = *,
+                 int                            n_baseline            = *,
+                 double                         thr_trigger           = *,
+                 int                            acum_discharge_length = *)

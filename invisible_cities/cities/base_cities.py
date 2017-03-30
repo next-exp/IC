@@ -25,12 +25,14 @@ import invisible_cities.reco.peak_functions as pf
 import invisible_cities.reco.pmaps_functions as pmp
 from   invisible_cities.core.exceptions import NoInputFiles, NoOutputFile
 import invisible_cities.sierpe.fee as FE
+import invisible_cities.reco.tbl_functions as tbf
 import invisible_cities.reco.wfm_functions as wfm
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
 from   invisible_cities.core.configure import print_configuration
 from   invisible_cities.reco.params import S12Params, SensorParams
 
+from   invisible_cities.reco.nh5 import DECONV_PARAM
 import invisible_cities.reco.pmap_io as pio
 
 if sys.version_info >= (3,5):
@@ -293,14 +295,15 @@ class DeconvolutionCity(City):
     """
 
     def __init__(self,
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = 'ZLIB4',
-                 nprint      = 10000,
+                 run_number            = 0,
+                 files_in              = None,
+                 file_out              = None,
+                 compression           = 'ZLIB4',
+                 nprint                = 10000,
                  # Parameters added at this level
-                 n_baseline  = 28000,
-                 thr_trigger = 5 * units.adc):
+                 n_baseline            = 28000,
+                 thr_trigger           = 5 * units.adc,
+                 acum_discharge_length = 5000):
 
         City.__init__(self,
                       run_number  = run_number,
@@ -308,9 +311,26 @@ class DeconvolutionCity(City):
                       file_out    = file_out,
                       compression = compression,
                       nprint      = nprint)
+
         # BLR parameters
-        self.n_baseline  = n_baseline
-        self.thr_trigger = thr_trigger
+        self.n_baseline            = n_baseline
+        self.thr_trigger           = thr_trigger
+        self.acum_discharge_length = acum_discharge_length
+
+    def write_deconv_params(self, ofile):
+        group = ofile.create_group(ofile.root, "DeconvParams")
+
+        table = ofile.create_table(group,
+                                   "DeconvParams",
+                                   DECONV_PARAM,
+                                   "deconvolution parameters",
+                                   tbf.filters(self.compression))
+
+        row = table.row
+        row["N_BASELINE"]            = self.n_baseline
+        row["THR_TRIGGER"]           = self.thr_trigger
+        row["ACUM_DISCHARGE_LENGTH"] = self.acum_discharge_length
+        table.flush()
 
     def set_blr(self, n_baseline, thr_trigger):
         """Set the parameters of the Base Line Restoration (BLR)"""
@@ -322,9 +342,10 @@ class DeconvolutionCity(City):
         return blr.deconv_pmt(RWF,
                               self.coeff_c,
                               self.coeff_blr,
-                              pmt_active  = self.pmt_active,
-                              n_baseline  = self.n_baseline,
-                              thr_trigger = self.thr_trigger)
+                              pmt_active            = self.pmt_active,
+                              n_baseline            = self.n_baseline,
+                              thr_trigger           = self.thr_trigger,
+                              acum_discharge_length = self.acum_discharge_length)
 
     config_file_format = City.config_file_format + """
 
@@ -336,6 +357,7 @@ class DeconvolutionCity(City):
     # set_blr
     NBASELINE {NBASELINE}
     THR_TRIGGER {THR_TRIGGER}
+    ACUM_DISCHARGE_LENGTH {ACUM_DISCHARGE_LENGTH}
 
     # set_mau
     NMAU {NMAU}
@@ -349,14 +371,15 @@ class DeconvolutionCity(City):
 
     default_config = merge_two_dicts(
         City.default_config,
-        dict(RUN_NUMBER  =     0,
-             NPRINT      =     1,
-             NBASELINE   = 28000,
-             THR_TRIGGER =     5,
-             NMAU        =   100,
-             THR_MAU     =     3,
-             NEVENTS     =     3,
-             RUN_ALL     = False))
+        dict(RUN_NUMBER            =     0,
+             NPRINT                =     1,
+             NBASELINE             = 28000,
+             THR_TRIGGER           =     5,
+             ACUM_DISCHARGE_LENGTH =  5000,
+             NMAU                  =   100,
+             THR_MAU               =     3,
+             NEVENTS               =     3,
+             RUN_ALL               = False))
 
 class CalibratedCity(DeconvolutionCity):
     """A calibrated city extends a DeconvCity, performing two actions.
@@ -373,29 +396,31 @@ class CalibratedCity(DeconvolutionCity):
        """
 
     def __init__(self,
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = 'ZLIB4',
-                 nprint      = 10000,
-                 n_baseline  = 28000,
-                 thr_trigger = 5 * units.adc,
+                 run_number            = 0,
+                 files_in              = None,
+                 file_out              = None,
+                 compression           = 'ZLIB4',
+                 nprint                = 10000,
+                 n_baseline            = 28000,
+                 thr_trigger           = 5 * units.adc,
+                 acum_discharge_length = 5000,
                  # Parameters added at this level
-                 n_MAU       = 100,
-                 thr_MAU     = 3.0 * units.adc,
-                 thr_csum_s1 = 0.2 * units.pes,
-                 thr_csum_s2 = 1.0 * units.pes,
-                 n_MAU_sipm  = 100,
-                   thr_sipm  = 5.0 * units.pes):
+                 n_MAU                 = 100,
+                 thr_MAU               = 3.0 * units.adc,
+                 thr_csum_s1           = 0.2 * units.pes,
+                 thr_csum_s2           = 1.0 * units.pes,
+                 n_MAU_sipm            = 100,
+                   thr_sipm            = 5.0 * units.pes):
 
         DeconvolutionCity.__init__(self,
-                                   run_number  = run_number,
-                                   files_in    = files_in,
-                                   file_out    = file_out,
-                                   compression = compression,
-                                   nprint      = nprint,
-                                   n_baseline  = n_baseline,
-                                   thr_trigger = thr_trigger)
+                                   run_number            = run_number,
+                                   files_in              = files_in,
+                                   file_out              = file_out,
+                                   compression           = compression,
+                                   nprint                = nprint,
+                                   n_baseline            = n_baseline,
+                                   thr_trigger           = thr_trigger,
+                                   acum_discharge_length = acum_discharge_length)
 
         # Parameters of the PMT csum.
         self.n_MAU       = n_MAU
@@ -450,38 +475,40 @@ class PmapCity(CalibratedCity):
     """
 
     def __init__(self,
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = 'ZLIB4',
-                 nprint      = 10000,
-                 n_baseline  = 28000,
-                 thr_trigger = 5 * units.adc,
-                 n_MAU       = 100,
-                 thr_MAU     = 3.0 * units.adc,
-                 thr_csum_s1 = 0.2 * units.adc,
-                 thr_csum_s2 = 1.0 * units.adc,
-                 n_MAU_sipm  = 100,
-                 thr_sipm    = 5.0 * units.pes,
+                 run_number            = 0,
+                 files_in              = None,
+                 file_out              = None,
+                 compression           = 'ZLIB4',
+                 nprint                = 10000,
+                 n_baseline            = 28000,
+                 thr_trigger           = 5 * units.adc,
+                 acum_discharge_length = 5000,
+                 n_MAU                 = 100,
+                 thr_MAU               = 3.0 * units.adc,
+                 thr_csum_s1           = 0.2 * units.adc,
+                 thr_csum_s2           = 1.0 * units.adc,
+                 n_MAU_sipm            = 100,
+                 thr_sipm              = 5.0 * units.pes,
                  # Parameters added at this level
-                 s1_params   = None,
-                 s2_params   = None,
-                 thr_sipm_s2 = 30 * units.pes):
+                 s1_params             = None,
+                 s2_params             = None,
+                 thr_sipm_s2           = 30 * units.pes):
 
         CalibratedCity.__init__(self,
-                                run_number  = run_number,
-                                files_in    = files_in,
-                                file_out    = file_out,
-                                compression = compression,
-                                nprint      = nprint,
-                                n_baseline  = n_baseline,
-                                thr_trigger = thr_trigger,
-                                n_MAU       = n_MAU,
-                                thr_MAU     = thr_MAU,
-                                thr_csum_s1 = thr_csum_s1,
-                                thr_csum_s2 = thr_csum_s2,
-                                n_MAU_sipm  = n_MAU_sipm,
-                                  thr_sipm  =   thr_sipm)
+                                run_number            = run_number,
+                                files_in              = files_in,
+                                file_out              = file_out,
+                                compression           = compression,
+                                nprint                = nprint,
+                                n_baseline            = n_baseline,
+                                thr_trigger           = thr_trigger,
+                                acum_discharge_length = acum_discharge_length,
+                                n_MAU                 = n_MAU,
+                                thr_MAU               = thr_MAU,
+                                thr_csum_s1           = thr_csum_s1,
+                                thr_csum_s2           = thr_csum_s2,
+                                n_MAU_sipm            = n_MAU_sipm,
+                                  thr_sipm            =   thr_sipm)
 
         self.s1_params   = s1_params
         self.s2_params   = s2_params
