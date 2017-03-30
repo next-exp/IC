@@ -154,6 +154,32 @@ def test_command_line_irene_runinfo_run_2983(config_tmpdir, ICDIR):
         assert rin == rout
 
 
+def test_irene_output_file_structure(conf_file_name_data, config_tmpdir, ICDIR):
+    PATH_IN = os.path.join(ICDIR,
+                           'database/test_data/',
+                           'run_2983.h5')
+    PATH_OUT = os.path.join(str(config_tmpdir),
+                            'run_2983_pmaps.h5')
+
+    nrequired, nactual, _ = IRENE(['IRENE',
+                                   '-c', conf_file_name_data,
+                                   '-i', PATH_IN,
+                                   '-o', PATH_OUT,
+                                   '-n', '3',
+                                   '-r', '2983'])
+
+    with tb.open_file(PATH_OUT) as h5out:
+        assert "PMAPS"        in h5out.root
+        assert "Run"          in h5out.root
+        assert "DeconvParams" in h5out.root
+        assert "S1"           in h5out.root.PMAPS
+        assert "S2"           in h5out.root.PMAPS
+        assert "S2Si"         in h5out.root.PMAPS
+        assert "events"       in h5out.root.Run
+        assert "runInfo"      in h5out.root.Run
+
+
+
 def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir, ICDIR):
     # NB: explicit PATH_OUT
     PATH_IN = os.path.join(ICDIR,
