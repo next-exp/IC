@@ -168,7 +168,7 @@ def test_command_line_diomira(conf_file_name, config_tmpdir):
               'electrons_40keV_z250_MCRD.h5')
     PATH_OUT = os.path.join(str(config_tmpdir),
               'electrons_40keV_z250_RWF.h5')
-    start_evt = 10000
+    start_evt = 100000
     run_number = 0
 
     nrequired, nactual = DIOMIRA(['DIOMIRA',
