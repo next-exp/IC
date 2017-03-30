@@ -26,40 +26,42 @@ class Irene(PmapCity):
     for fast processing of data.
     """
     def __init__(self,
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = 'ZLIB4',
-                 nprint      = 10000,
-                 n_baseline  = 28000,
-                 thr_trigger = 5.0 * units.adc,
-                 n_MAU       = 100,
-                 thr_MAU     = 3.0 * units.adc,
-                 thr_csum_s1 = 0.2 * units.adc,
-                 thr_csum_s2 = 1.0 * units.adc,
-                 n_MAU_sipm  = 100,
-                 thr_sipm    = 5.0 * units.pes,
-                 s1_params   = None,
-                 s2_params   = None,
-                 thr_sipm_s2 = 30. * units.pes):
+                 run_number            = 0,
+                 files_in              = None,
+                 file_out              = None,
+                 compression           = 'ZLIB4',
+                 nprint                = 10000,
+                 n_baseline            = 28000,
+                 thr_trigger           = 5.0 * units.adc,
+                 acum_discharge_length = 5000,
+                 n_MAU                 = 100,
+                 thr_MAU               = 3.0 * units.adc,
+                 thr_csum_s1           = 0.2 * units.adc,
+                 thr_csum_s2           = 1.0 * units.adc,
+                 n_MAU_sipm            = 100,
+                 thr_sipm              = 5.0 * units.pes,
+                 s1_params             = None,
+                 s2_params             = None,
+                 thr_sipm_s2           = 30. * units.pes):
 
         PmapCity.__init__(self,
-                          run_number  = run_number,
-                          files_in    = files_in,
-                          file_out    = file_out,
-                          compression = compression,
-                          nprint      = nprint,
-                          n_baseline  = n_baseline,
-                          thr_trigger = thr_trigger,
-                          n_MAU       = n_MAU,
-                          thr_MAU     = thr_MAU,
-                          thr_csum_s1 = thr_csum_s1,
-                          thr_csum_s2 = thr_csum_s2,
-                          n_MAU_sipm  = n_MAU_sipm,
-                          thr_sipm    = thr_sipm,
-                          s1_params   = s1_params,
-                          s2_params   = s2_params,
-                          thr_sipm_s2 = thr_sipm_s2)
+                          run_number            = run_number,
+                          files_in              = files_in,
+                          file_out              = file_out,
+                          compression           = compression,
+                          nprint                = nprint,
+                          n_baseline            = n_baseline,
+                          thr_trigger           = thr_trigger,
+                          acum_discharge_length = acum_discharge_length,
+                          n_MAU                 = n_MAU,
+                          thr_MAU               = thr_MAU,
+                          thr_csum_s1           = thr_csum_s1,
+                          thr_csum_s2           = thr_csum_s2,
+                          n_MAU_sipm            = n_MAU_sipm,
+                          thr_sipm              = thr_sipm,
+                          s1_params             = s1_params,
+                          s2_params             = s2_params,
+                          thr_sipm_s2           = thr_sipm_s2)
 
         # counter for empty events
         self.empty_events = 0 # counts empty events in the energy plane
@@ -84,6 +86,8 @@ class Irene(PmapCity):
         with pmap_writer(self.output_file, self.compression) as write:
             if self.monte_carlo:
                 mctrack_writer = MCTrackWriter(write.file)
+
+            self.write_deconv_params(write.file)
             # loop over input files
             for ffile in self.input_files:
                 print("Opening", ffile, end="... ")
