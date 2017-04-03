@@ -18,8 +18,12 @@ import tables as tb
 
 from invisible_cities.core.configure import configure, print_configuration
 import invisible_cities.reco.tbl_functions as tbl
+from invisible_cities.database import load_db
+import invisible_cities.reco.peak_functions_c as cpf
+from invisible_cities.cities.base_cities import City
+import invisible_cities.database.load_db as db
 
-class Trigger:
+class Trigger(City):
     """
     The city of TRIGGER simulates the trigger.
 
@@ -29,69 +33,105 @@ class Trigger:
         - Sets default values for state attributes
         """
     # Set the machine default state
-        self.set_input_files_    = False
-        self.set_output_file_    = False
+        self.event_in = 0
+        self.event_out = 0
 
-
-    def set_input_files(self, input_files):
-        """Set the input files."""
-        self.input_files = input_files
-        self.set_input_files_ = True
-
-    def set_output_file(self, output_file, compression='ZLIB4'):
-        """Set the output file."""
- #       filename = output_file
-        self.compression = compression
-        self.h5out = tb.open_file(output_file, "w",
-                          filters=tbl.filters(compression))
-        self.set_output_file_ = True
+    def set_trigger_conf(self, number, tr_channels, minH, maxH, minQ, maxQ, minW, maxW, dataMC):
+        """Set the parameters of the trigger configuration."""
+        self.min_trigger_channels = number
+        self.trigger_channels = tr_channels
+        self.min_height = minH*dataMC
+        self.max_height = maxH*dataMC
+        self.min_charge = minQ*dataMC
+        self.max_charge = maxQ*dataMC
+        self.min_width = minW
+        self.max_width = maxW
         
-    def run(self, nmax, tr_type):
+    def run(self, nmax, run_number):
         """
         Run the machine
         nmax is the max number of events to run
         """
         n_events_tot = 0
         # run the machine only if in a legal state
-        if self.set_input_files_    == False:
-            raise IOError('must set input files before running')
-        if len(self.input_files)    == 0:
-            raise IOError('input file list is empty')
-        if self.set_output_file_    == False:
-            raise IOError('must set output file before running')
+        self.check_files()
 
-        first=False
-        for cfile in self.input_files:
+        with tb.open_file(self.output_file, "w",
+                          filters = tbl.filters(self.compression)) as h5out:
+            first=False
+            for cfile in self.input_files:
 
-            print("Opening file {}".format(cfile))
- #           filename = cfile
-            try:
-                with tb.open_file(cfile, "r+") as h5in:
-                    pmtrd  = h5in.root.pmtrd
-                    nevts_pmt, npmts, pmt_wndw_length = pmtrd.shape
-                    nevts_sipm, nsipms, sipm_wndw_length = sipmrd.shape
+                print("Opening file {}".format(cfile))
+                try:
+                    with tb.open_file(cfile, "r+") as h5in:
+                        pmtcwf  = h5in.root.BLR.pmtcwf
+                        sipmrwf = h5in.root.BLR.sipmrwf
+                        nevts_pmt, npmts, pmt_wndw_length = pmtcwf.shape
+                        nevts_sipm, nsipms, sipm_wndw_length = sipmrwf.shape
 
-                    if first == False:                       
-                        # create vectors
-                        self.pmtrwf = self.h5out.create_earray(
-                                    self.h5out.root,
-                                    "pmttrigwf",
-                                    atom=tb.Int16Atom(),
-                                    shape=(0, npmts, pmt_wndw_length),
-                                    expectedrows=nmax,
-                                    filters=tbl.filters(self.compression))
-                        self.sipmrwf = self.h5out.create_earray(
-                                    self.h5out.root,
-                                    "sipmtrigwf",
-                                    atom=tb.Int16Atom(),
-                                    shape=(0, nsipms, sipm_wndw_length),
-                                    expectedrows=nmax,
-                                    filters=tbl.filters(self.compression))
-                        first = True
+                        if first == False:                       
+                            # create vectors                        
+                            self.pmttrigwf = h5out.create_earray(
+                                        h5out.root,
+                                        "pmttrigwf",
+                                        atom=tb.Int16Atom(),
+                                        shape=(0, npmts, pmt_wndw_length),
+                                        expectedrows=nmax,
+                                        filters=tbl.filters(self.compression))
+                            self.sipmtrigwf = h5out.create_earray(
+                                        h5out.root,
+                                        "sipmtrigwf",
+                                        atom=tb.Int16Atom(),
+                                        shape=(0, nsipms, sipm_wndw_length),
+                                        expectedrows=nmax,
+                                        filters=tbl.filters(self.compression))
+                            first = True
                         
-                    evt = 0
-                    while evt < nevts_pmt:
+                        dataPMT = db.DataPMT(run_number)
+                    
+                        evt = 0
+     #                   while evt < nmax: 
+                        for evt in range(nevts_pmt):
+                            self.event_in += 1
+                            ok_channels = 0
+                            for pmt in range(npmts):
+     #                           print('PMT %s'%(pmt))
+                                found = False
+                                if (dataPMT.SensorID[pmt] in self.trigger_channels):
+                                    pk_content, pk_indx = cpf.wfzs(pmtcwf[evt, pmt].astype(np.double), threshold=minH)
+                                    pks = cpf.find_S12(pk_content, pk_indx)
+      #                              print(len(pks))
+                                    for value in pks.values():
+                                        width = value[0][-1]-value[0][0]
+                                        charge = np.sum(value[1])
+                                        height = np.amax(value[1])
+                                        if width > self.min_width and width < self.max_width:
+                                            if charge > self.min_charge and charge < self.max_charge:
+                                                if height > self.min_height and height < self.max_height:
+                                                    found = True
+                                    if found:
+                                        ok_channels += 1
+                            if ok_channels >= self.min_trigger_channels:
+                                self.pmttrigwf.append(np.array(pmtcwf[evt]).astype(np.double).reshape(1, npmts, pmt_wndw_length))
+                                self.sipmtrigwf = sipmrwf.append(np.array(sipmrwf[evt]).astype(np.double).reshape(1, nsipms, sipm_wndw_length))
+                                self.event_out += 1
+                            evt+=1
+                            n_events_tot +=1
+                            if evt%self.nprint == 0:
+                                print('event number = {}, total = {}'.\
+                                  format(evt, n_events_tot))
+                            if n_events_tot >= nmax and nmax > -1:
+                                print('reached maximum number of events (={})'.\
+                                      format(nmax))
+                                break
+                                    
+                    
+                except:
+                    print('Error: input file cannot be opened')
+                    raise
 
+       
+                        
         return n_events_tot
 
 
@@ -100,18 +140,32 @@ def TRIGGER(argv=sys.argv):
 
     CFP = configure(argv)
     fpp = Trigger()
-    files_in = glob(CFP['FILE_IN'])
+    #files_in = glob(CFP['FILE_IN'])
+    files_in = glob(CFP.FILE_IN)
     files_in.sort()
     fpp.set_input_files(files_in)
-    fpp.set_output_file(CFP['FILE_OUT'],
-                        compression=CFP['COMPRESSION'])
-    fpp.set_print(nprint=CFP['NPRINT'])
+    fpp.set_output_file(CFP.FILE_OUT)
+    fpp.set_compression(CFP.COMPRESSION)
+    fpp.set_print(nprint=CFP.NPRINT)
 
-    trigger_type = CFP['TRIGGER']
+    ## Trigger configuration parameters
+    tr_ch = CFP.TR_CHANNELS
+    number = CFP.MIN_NUMB_CHANNELS
+    minH = CFP.MIN_HEIGHT
+    maxH = CFP.MAX_HEIGHT
+    minQ = CFP.MIN_CHARGE
+    maxQ = CFP.MAX_CHARGE
+    minW = CFP.MIN_WIDTH
+    maxW = CFP.MAX_WIDTH
+    dataMC = CFP.DATA_MC_RATIO
+        
+ #   trigger_type = CFP.TRIGGER
+    
+    fpp.set_trigger_conf(number, tr_ch, minH, maxH, minQ, maxQ, minW, maxW, dataMC)
 
-    nevts = CFP['NEVENTS'] if not CFP['RUN_ALL'] else -1
+    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     t0 = time()
-    nevt = fpp.run(nmax=nevts, tr_type=trigger_type)
+    nevt = fpp.run(nmax=nevts, run_number=0)
     t1 = time()
     dt = t1 - t0
 
