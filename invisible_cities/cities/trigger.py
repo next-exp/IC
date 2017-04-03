@@ -98,7 +98,7 @@ class Trigger(City):
      #                           print('PMT %s'%(pmt))
                                 found = False
                                 if (dataPMT.SensorID[pmt] in self.trigger_channels):
-                                    pk_content, pk_indx = cpf.wfzs(pmtcwf[evt, pmt].astype(np.double), threshold=minH)
+                                    pk_content, pk_indx = cpf.wfzs(pmtcwf[evt, pmt].astype(np.double), threshold=self.min_height)
                                     pks = cpf.find_S12(pk_content, pk_indx)
       #                              print(len(pks))
                                     for value in pks.values():
