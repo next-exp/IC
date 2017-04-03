@@ -17,7 +17,7 @@ import numpy as np
 import tables as tb
 
 from invisible_cities.core.configure import configure, print_configuration
-import invisible_cities.core.tbl_functions as tbl
+import invisible_cities.reco.tbl_functions as tbl
 
 class Trigger:
     """
@@ -88,6 +88,9 @@ class Trigger:
                                     expectedrows=nmax,
                                     filters=tbl.filters(self.compression))
                         first = True
+                        
+                    evt = 0
+                    while evt < nevts_pmt:
 
         return n_events_tot
 
