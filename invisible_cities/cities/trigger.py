@@ -22,6 +22,7 @@ from invisible_cities.database import load_db
 import invisible_cities.reco.peak_functions_c as cpf
 from invisible_cities.cities.base_cities import City
 import invisible_cities.database.load_db as db
+from invisible_cities.reco.nh5 import RunInfo, EventInfo
 
 class Trigger(City):
     """
@@ -47,7 +48,7 @@ class Trigger(City):
         self.min_width = minW
         self.max_width = maxW
         
-    def run(self, nmax, run_number):
+    def run(self, nmax, first_evt, run_number):
         """
         Run the machine
         nmax is the max number of events to run
@@ -68,6 +69,7 @@ class Trigger(City):
                         sipmrwf = h5in.root.BLR.sipmrwf
                         nevts_pmt, npmts, pmt_wndw_length = pmtcwf.shape
                         nevts_sipm, nsipms, sipm_wndw_length = sipmrwf.shape
+ #                       print(nevts_pmt, nevts_sipm)
 
                         if first == False:                       
                             # create vectors                        
@@ -85,6 +87,19 @@ class Trigger(City):
                                         shape=(0, nsipms, sipm_wndw_length),
                                         expectedrows=nmax,
                                         filters=tbl.filters(self.compression))
+                            run_g = h5out.create_group(h5out.root, 'Run')
+                            self.eventInfo = h5out.create_table(
+                                        run_g,
+                                        "events",
+                                        EventInfo,
+                                        "Events info",
+                                        tbl.filters("NOCOMPR"))
+                            self.runInfo = h5out.create_table(
+                                        run_g,
+                                        "run",
+                                        RunInfo,
+                                        "Run info",
+                                        tbl.filters("NOCOMPR"))
                             first = True
                         
                         dataPMT = db.DataPMT(run_number)
@@ -114,6 +129,10 @@ class Trigger(City):
                             if ok_channels >= self.min_trigger_channels:
                                 self.pmttrigwf.append(np.array(pmtcwf[evt]).astype(np.double).reshape(1, npmts, pmt_wndw_length))
                                 self.sipmtrigwf.append(np.array(sipmrwf[evt]).astype(np.double).reshape(1, nsipms, sipm_wndw_length))
+                                evt_row = self.eventInfo.row
+                                evt_row['evt_number'] = evt + first_evt
+                                evt_row['timestamp'] = 0
+                                evt_row.append()
                                 self.event_out += 1
                             evt+=1
                             n_events_tot +=1
@@ -121,17 +140,19 @@ class Trigger(City):
                                 print('event number = {}, total = {}'.\
                                   format(evt, n_events_tot))
                             if n_events_tot >= nmax and nmax > -1:
-                                print('reached maximum number of events (={})'.\
+                                print('maximum number of events reached (={})'.\
                                       format(nmax))
                                 break
-                                    
+  #                          print(len(self.pmttrigwf), len(self.sipmtrigwf))
+                        
                     
                 except:
                     print('Error: input file cannot be opened')
                     raise
 
        
-                        
+        print('Trigger city: events in = {}'.format(self.event_in))
+        print('Trigger city: events out = {}'.format(self.event_out))             
         return n_events_tot
 
 
@@ -164,7 +185,7 @@ def TRIGGER(argv=sys.argv):
 
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     t0 = time()
-    nevt = fpp.run(nmax=nevts, run_number=0)
+    nevt = fpp.run(nmax=nevts, first_evt=CFP.FIRST_EVT, run_number=0)
     t1 = time()
     dt = t1 - t0
 
