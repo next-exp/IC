@@ -21,7 +21,8 @@ def load_pmaps(PMP_file_name):
     S2              = df_to_pmaps_dict(s2t)
     S2Si            = df_to_s2si_dict(s2sit)
     return S1, S2, S2Si
-    
+
+
 def read_pmaps(PMP_file_name):
     """Return the PMAPS as PD DataFrames."""
     with tb.open_file(PMP_file_name, 'r') as h5f:
@@ -32,6 +33,7 @@ def read_pmaps(PMP_file_name):
         return (pd.DataFrame.from_records(s1t  .read()),
                 pd.DataFrame.from_records(s2t  .read()),
                 pd.DataFrame.from_records(s2sit.read()))
+
 
 def read_run_and_event_from_pmaps_file(PMP_file_name):
     """Return the PMAPS as PD DataFrames."""
@@ -77,53 +79,10 @@ def plot_s2si_map(S2Si, cmap='Blues'):
         plt.xlim(-198, 198)
         plt.ylim(-198, 198)
 
+
 def scan_s2si_map(S2Si):
     """Scan the S2Si objects."""
     for sipm in S2Si.values():
         for nsipm, E in sipm.items():
             ene = np.sum(E)
             print('SiPM number = {}, total energy = {}'.format(nsipm, ene))
-
-
-class S12F:
-    """
-    Defines the global features of an S12 peak, namely:
-    1) peak start (tmin), end (tmax) and width
-    2) peak maximum (both energy and time)
-    3) energy total
-    4) ratio peak/total energy
-    """
-
-    def __init__(self):
-        self.peak = []
-        self.w    = []
-        self.tmin = []
-        self.tmax = []
-        self.tpeak = []
-        self.emax = []
-        self.etot = []
-        self.er   = []
-
-    def add_features(self, S12, peak_number=0):
-        t = S12[peak_number][0]
-        E = S12[peak_number][1]
-
-        tmin = t[0]
-        tmax = t[-1]
-        i_t = loc_elem_1d(E, emax)
-        tpeak = t[i_t]
-
-        emax = np.max(E)
-        etot = np.sum(E)
-        er = 9e+9
-        if etot > 0:
-            er = emax/etot
-
-        self.w.append(tmax - tmin)
-        self.tmin.append(tmin)
-        self.tmax.append(tmax)
-        self.tpeak.append(tpeak)
-        self.emax.append(emax)
-        self.etot.append(etot)
-        self.etot.append(er)
-        self.peak.append(peak_number)
