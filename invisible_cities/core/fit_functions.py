@@ -72,7 +72,7 @@ def power(x, const, pow_):
 
 # ###########################################################
 # Tools
-def fit(func, x, y, seed=(), **kwargs):
+def fit(func, x, y, seed=(), fit_range=None, **kwargs):
     """
     Fit x, y data to a generic relation of already defined
     python functions.
@@ -88,7 +88,8 @@ def fit(func, x, y, seed=(), **kwargs):
     seed : sequence
         Initial estimation of the fit parameters. Either all or none of them
         must be given.
-
+    fit_range : tuple
+        Range of x in which the fit is performed.
     Notes
     -----
     - Functions must be vectorized.
@@ -108,6 +109,9 @@ def fit(func, x, y, seed=(), **kwargs):
     >>> print(f.values)
     [ 1.77245385  1.          0.70710678]
     """
+    if fit_range is not None:
+        sel  = in_range(x, *fit_range)
+        x, y = x[sel], y[sel]
 
     vals, cov = scipy.optimize.curve_fit(func,
                                          x, y,
