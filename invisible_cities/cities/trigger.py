@@ -113,7 +113,7 @@ class Trigger(City):
                                         ok_channels += 1
                             if ok_channels >= self.min_trigger_channels:
                                 self.pmttrigwf.append(np.array(pmtcwf[evt]).astype(np.double).reshape(1, npmts, pmt_wndw_length))
-                                self.sipmtrigwf = sipmrwf.append(np.array(sipmrwf[evt]).astype(np.double).reshape(1, nsipms, sipm_wndw_length))
+                                self.sipmtrigwf.append(np.array(sipmrwf[evt]).astype(np.double).reshape(1, nsipms, sipm_wndw_length))
                                 self.event_out += 1
                             evt+=1
                             n_events_tot +=1
@@ -140,7 +140,6 @@ def TRIGGER(argv=sys.argv):
 
     CFP = configure(argv)
     fpp = Trigger()
-    #files_in = glob(CFP['FILE_IN'])
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
     fpp.set_input_files(files_in)
