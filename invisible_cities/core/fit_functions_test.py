@@ -182,6 +182,16 @@ def test_fit(fn, pars):
     assert_allclose(f.values, pars)
 
 
+def test_fit_reduced_range():
+    pars = np.array([1, 20, 5])
+    x = np.linspace(0, 50, 100)
+    y = fit.gauss(x, *pars)
+
+    f1 = fit.fit(fit.gauss, x, y, pars * 1.5)
+    f2 = fit.fit(fit.gauss, x, y, pars * 1.5, fit_range=(10, 30))
+    assert_allclose(f1.values, f2.values)
+
+
 @mark.slow
 @mark.parametrize(["func"],
                   ((fit.profileX,),
