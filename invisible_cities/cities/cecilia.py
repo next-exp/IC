@@ -1,6 +1,6 @@
 """
-code: trigger.py
-description: simulation of trigger for the NEXT detector.
+code: cecilia.py
+description: simulation of cecilia for the NEXT detector.
 author: P. Ferrario
 IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
@@ -35,9 +35,9 @@ else:
         c.update(b)
         return c
 
-class Trigger(City):
+class Cecilia(City):
     """
-    The city of TRIGGER simulates the trigger.
+    The city of CECILIA simulates the trigger.
 
     """
     def __init__(self):
@@ -209,11 +209,11 @@ class Trigger(City):
              DATA_MC_RATIO = 0.8))
 
 
-def TRIGGER(argv=sys.argv):
-    """TRIGGER DRIVER"""
+def CECILIA(argv=sys.argv):
+    """CECILIA DRIVER"""
 
     CFP = configure(argv)
-    tr = Trigger()
+    tr = Cecilia()
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
     tr.set_input_files(files_in)
@@ -248,4 +248,4 @@ def TRIGGER(argv=sys.argv):
 
 
 if __name__ == "__main__":
-    TRIGGER(sys.argv)
+    CECILIA(sys.argv)
