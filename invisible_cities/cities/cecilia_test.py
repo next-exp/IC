@@ -97,7 +97,6 @@ def test_filtering_krypton(conf_file_name, config_tmpdir, ICDIR):
                 elif ll[0] == 'MIN_NUMB_CHANNELS':
                     min_n_pmt = float(ll[1])
                 elif ll[0] == 'TR_CHANNELS':
-                    print(ll[0])
                     for i in range(1,len(ll)):
                         tr_channels.append(int(ll[i]))
     
@@ -115,14 +114,13 @@ def test_filtering_krypton(conf_file_name, config_tmpdir, ICDIR):
                 
                             for value in pks.values():
                                 charge = np.sum(value[1])
-                                print(charge)
                                 if charge > min_charge and charge < max_charge:
                                     found = True
                                     
                             if found:
                                 n_correct += 1
-                                break                               
-       
+                                break
+                            
         assert n_correct ==  nevts      
                         
     except:
