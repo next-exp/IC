@@ -13,6 +13,8 @@ import numpy as np
 from pytest import mark, fixture
 
 from invisible_cities.cities.cecilia import Cecilia, CECILIA
+import invisible_cities.reco.peak_functions_c as cpf
+import invisible_cities.database.load_db as db
 
 @fixture(scope='module')
 def conf_file_name(config_tmpdir):
@@ -23,7 +25,6 @@ def conf_file_name(config_tmpdir):
     Cecilia.write_config_file(conf_file_name,
                               PATH_OUT = str(config_tmpdir),
                               COMPRESSION = "ZLIB4",
-                              NEVENTS = 130,
                               FIRST_EVT = 0,
                               TR_CHANNELS = "0 1 2 3 4 5 6 7 8 9 10 11",
                               MIN_NUMB_CHANNELS = 5,
@@ -51,8 +52,81 @@ def test_command_line_trigger_krypton(conf_file_name, config_tmpdir, ICDIR):
                                  '-c', conf_file_name,
                                  '-i', PATH_IN,
                                  '-o', PATH_OUT,
-                                 '-n', '20',
+                                 '-n', '4',
                                  '-r', '0'])
     if nevts != -1:
         assert nevts == n_evts_run
+
+def test_filtering_krypton(conf_file_name, config_tmpdir, ICDIR):
+    # This test checks that the events that pass the filter have
+    # at least 1 PMT among those used for trigger with the correct
+    # values for charge
+    
+    PATH_IN = os.path.join(ICDIR,
+                           'database/test_data/',
+                           'kr_cwf.root.h5')
+    PATH_OUT = os.path.join(str(config_tmpdir),
+                            'kr_trigwf.h5')
+
+    nevts, n_evts_run = CECILIA(['CECILIA',
+                                 '-c', conf_file_name,
+                                 '-i', PATH_IN,
+                                 '-o', PATH_OUT,
+                                 '-n', '4',
+                                 '-r', '0'])
+
+    config_path = os.path.join(str(config_tmpdir),
+                                conf_file_name)
+    min_charge = 0.
+    max_charge = 0.
+    min_height = 0.
+    min_n_pmt = 0
+    tr_channels = []
+
+    with open (config_path, "r") as conf_file:
+        param = conf_file.readlines()
+        for l in param:
+            ll=l.split(" ")
+            if len(ll)>1:
+                if ll[0] == 'MIN_CHARGE':
+                    min_charge = float(ll[1])
+                elif ll[0] =='MAX_CHARGE':
+                    max_charge = float(ll[1])
+                elif ll[0] == 'MIN_HEIGHT':
+                    min_height = float(ll[1])
+                elif ll[0] == 'MIN_NUMB_CHANNELS':
+                    min_n_pmt = float(ll[1])
+                elif ll[0] == 'TR_CHANNELS':
+                    print(ll[0])
+                    for i in range(1,len(ll)):
+                        tr_channels.append(int(ll[i]))
+    
+    try:
+        with tb.open_file(PATH_OUT, "r+") as h5in:
+                pmttrigwf  = h5in.root.pmttrigwf
+                nevts, npmts, pmt_wndw_length = pmttrigwf.shape
+                n_correct = 0              
+                for evt in range(nevts):
+                    for pmt in range(npmts):
+                        if (pmt in tr_channels):                          
+                            found = False
+                            pk_content,pk_indx=cpf.wfzs(pmttrigwf[evt, pmt].astype(np.double), threshold=min_height)
+                            pks = cpf.find_S12(pk_content, pk_indx)
+                
+                            for value in pks.values():
+                                charge = np.sum(value[1])
+                                print(charge)
+                                if charge > min_charge and charge < max_charge:
+                                    found = True
+                                    
+                            if found:
+                                n_correct += 1
+                                break                               
+       
+        assert n_correct ==  nevts      
+                        
+    except:
+        print('error')
+        raise
+        
         
