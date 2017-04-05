@@ -46,7 +46,7 @@ def read_run_and_event_from_pmaps_file(PMP_file_name):
 
 
 def scan_s12(S12):
-    """Print and plot the peaks of input S12.
+    """Print  the peaks of input S12.
 
     S12 is a dictionary
     S12[i] for i in keys() are the S12 peaks
@@ -55,7 +55,34 @@ def scan_s12(S12):
     for i in S12.keys():
         print('S12 number = {}, samples = {} sum in pes ={}'
               .format(i, len(S12[i][0]), np.sum(S12[i][1])))
-        plt.plot(            S12[i][0],         S12[i][1])
+        
+
+def plot_s12(S12, figsize=(6,6)):
+    """Plot the peaks of input S12.
+
+    S12 is a dictionary
+    S12[i] for i in keys() are the S12 peaks
+    """
+    plt.figure(figsize=figsize)
+
+    set_plot_labels(xlabel = "t (mus)",
+                    ylabel = "S12 (pes)")
+    xy = len(S12)
+    if xy == 1:
+        t = S12[0][0]
+        E = S12[0][1]
+        ax1 = plt.subplot(1, 1, 1)
+        ax1.plot(t, E)
+    else:
+        x = 3
+        y = xy/x
+        if y % xy != 0:
+            y = int(xy/x) + 1
+        for i in S12.keys():
+            ax1 = plt.subplot(x, y, i+1)
+            t = S12[i][0]
+            E = S12[i][1]
+            plt.plot(t, E)
 
 
 def plot_s2si_map(S2Si, cmap='Blues'):
