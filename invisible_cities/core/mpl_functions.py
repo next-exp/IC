@@ -47,6 +47,28 @@ def plts(signal, signal_start=0, signal_end=1e+4, offset=5):
     plt.plot(signal)
 
 
+def plot_vector(v, figsize=(10,10)):
+    """Plot vector v and return figure """
+    plt.figure(figsize=(10, 10))
+    ax1 = plt.subplot(1, 1, 1)
+    plt.plot(v)
+
+
+def fplot_xy(x, y, figsize=(10,10)):
+    """Plot y vs x and return figure"""
+    fig = Figure(figsize=figsize)
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.plot(x,y)
+    return fig
+
+
+def plot_xy(x, y, figsize=(10,10)):
+    """Plot y vs x and return figure"""
+    plt.figure(figsize=figsize)
+    ax1 = plt.subplot(1, 1, 1)
+    plt.plot(x,y)
+
+
 def plot_signal(signal_t, signal, title="signal",
                 signal_start=0, signal_end=1e+4,
                 ymax=200, t_units="", units=""):
@@ -67,8 +89,9 @@ def plot_signal_vs_time_mus(signal,
                             t_max      = 1200,
                             signal_min =    0,
                             signal_max =  200,
-                            label=''):
+                            figsize=(6,6)):
     """Plot signal versus time in mus (tmin, tmax in mus). """
+    plt.figure(figsize=figsize)
     tstep = 25 # in ns
     PMTWL = signal.shape[0]
     signal_t = np.arange(0., PMTWL * tstep, tstep)/units.mus
@@ -77,10 +100,20 @@ def plot_signal_vs_time_mus(signal,
     ax1.set_ylim([signal_min, signal_max])
     set_plot_labels(xlabel = "t (mus)",
                     ylabel = "signal (pes/adc)")
-    plt.plot(signal_t, signal, label=label)
-    legend = plt.legend(loc='upper right')
-    for label in legend.get_texts():
-        label.set_fontsize('small')
+    plt.plot(signal_t, signal)
+
+
+def plot_pmt_waveforms(pmtwfdf, zoom=False, window_size=800, figsize=(10,10)):
+    """plot PMT wf and return figure"""
+    plt.figure(figsize=figsize)
+    for i in range(len(pmtwfdf)):
+        first, last = 0, len(pmtwfdf[i])
+        if zoom:
+            first, last = define_window(pmtwfdf[i], window_size)
+
+        ax = plt.subplot(3, 4, i+1)
+        set_plot_labels(xlabel="samples", ylabel="adc")
+        plt.plot(pmtwfdf[i][first:last])
 
 
 def plot_pmt_signals_vs_time_mus(pmt_signals,
@@ -88,23 +121,23 @@ def plot_pmt_signals_vs_time_mus(pmt_signals,
                                  t_min      =    0,
                                  t_max      = 1200,
                                  signal_min =    0,
-                                 signal_max =  200):
-    """Plot all the PMT signals versus time in mus (tmin, tmax in mus)."""
+                                 signal_max =  200,
+                                 figsize=(10,10)):
+    """Plot PMT signals versus time in mus  and return figure."""
 
     tstep = 25
     PMTWL = pmt_signals[0].shape[0]
     signal_t = np.arange(0., PMTWL * tstep, tstep)/units.mus
-    plt.figure(figsize=(10, 10))
-    j=0
-    for i in pmt_active:
-        ax1 = plt.subplot(4, 3, j+1)
+    plt.figure(figsize=figsize)
+
+    for j, i in enumerate(pmt_active):
+        ax1 = plt.subplot(3, 4, j+1)
         ax1.set_xlim([t_min, t_max])
         ax1.set_ylim([signal_min, signal_max])
         set_plot_labels(xlabel = "t (mus)",
                         ylabel = "signal (pes/adc)")
 
         plt.plot(signal_t, pmt_signals[i])
-        j+=1
 
 
 def plot_calibrated_sum_in_mus(CSUM,
