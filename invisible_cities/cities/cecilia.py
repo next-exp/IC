@@ -1,6 +1,6 @@
 """
 code: cecilia.py
-description: simulation of cecilia for the NEXT detector.
+description: simulation of trigger for the NEXT detector.
 author: P. Ferrario
 IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
