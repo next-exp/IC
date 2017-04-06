@@ -8,7 +8,26 @@ from pytest import fixture, mark
 parametrize = mark.parametrize
 
 import invisible_cities.reco.pmaps_functions as pmapf
+import invisible_cities.core.system_of_units as units
 from invisible_cities.reco.pmaps_functions import df_to_pmaps_dict, df_to_s2si_dict
+
+
+def test_integrate_charge():
+    sipms = {1000: range(5),
+             1001: range(10)}
+    charges = np.array([[1000,1001],[10,45]])
+    charges_test = pmapf.integrate_charge(sipms)
+    np.testing.assert_array_equal(charges, charges_test)
+
+
+def test_width():
+    initial_time = 10000
+    width = 1000
+    times = range(10000,initial_time + width+1)
+    # Convert times to ns
+    times = list(map(lambda t: t * units.ns, times))
+    assert width == pmapf.width(times)
+    assert width * units.ns / units.mus == pmapf.width(times, to_mus=True)
 
 
 @fixture(scope='session')
