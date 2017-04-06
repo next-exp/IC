@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 from   invisible_cities.reco.pmaps_functions_c import df_to_pmaps_dict, df_to_s2si_dict
 import invisible_cities.core.core_functions as cf
 from   invisible_cities.database import load_db
-from   invisible_cities.core.mpl_functions import circles
+from   invisible_cities.core.mpl_functions import circles, set_plot_labels
+from   invisible_cities.core.system_of_units_c import units
 
 def load_pmaps(PMP_file_name):
     """Read the PMAP file and return transient PMAP rep."""
@@ -55,7 +56,7 @@ def scan_s12(S12):
     for i in S12.keys():
         print('S12 number = {}, samples = {} sum in pes ={}'
               .format(i, len(S12[i][0]), np.sum(S12[i][1])))
-        
+
 
 def plot_s12(S12, figsize=(6,6)):
     """Plot the peaks of input S12.
@@ -72,7 +73,7 @@ def plot_s12(S12, figsize=(6,6)):
         t = S12[0][0]
         E = S12[0][1]
         ax1 = plt.subplot(1, 1, 1)
-        ax1.plot(t, E)
+        ax1.plot(t/units.mus, E)
     else:
         x = 3
         y = xy/x
@@ -82,7 +83,7 @@ def plot_s12(S12, figsize=(6,6)):
             ax1 = plt.subplot(x, y, i+1)
             t = S12[i][0]
             E = S12[i][1]
-            plt.plot(t, E)
+            plt.plot(t/units.mus, E)
 
 
 def plot_s2si_map(S2Si, cmap='Blues'):
@@ -113,3 +114,20 @@ def scan_s2si_map(S2Si):
         for nsipm, E in sipm.items():
             ene = np.sum(E)
             print('SiPM number = {}, total energy = {}'.format(nsipm, ene))
+
+
+def width(times, to_mus=False):
+    """
+    Compute peak width. Times has to be ordered.
+    """
+
+    w = times[-1] - times[0] if len(times) > 0 else 0
+    return w * units.ns/units.mus if to_mus else w
+
+
+def integrate_charge(d):
+    """
+    Integrate charge from a SiPM dictionary.
+    """
+    newd = dict((key, np.sum(value)) for key, value in d.items())
+    return list(map(np.array, list(zip(*newd.items()))))
