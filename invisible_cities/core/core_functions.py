@@ -5,6 +5,27 @@ This module includes utility functions.
 import numpy as np
 import pandas as pd
 import math
+import time
+
+
+def timefunc(f):
+    """
+    Decorator for function timing.
+    """
+    def time_f(*args, **kwargs):
+        t0 = time.time()
+        output = f(*args, **kwargs)
+        print("Time spent in {}: {} s".format(f.__name__,
+                                              time.time() - t0))
+        return output
+    return time_f
+
+
+def flat(nested_list):
+    while hasattr(nested_list[0], "__iter__"):
+        nested_list = [item for inner_list in nested_list for item in inner_list]
+    return np.array(nested_list)
+
 
 def lrange(*args):
     """Create a list specified as a range."""

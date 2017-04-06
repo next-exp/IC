@@ -14,6 +14,27 @@ from hypothesis.strategies import integers, floats, sampled_from, composite
 sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 
 from . import core_functions as core
+import re
+from time import sleep
+
+def test_timefunc(capfd):
+    # We run a function with a defined time duration (sleep) and we check
+    # the decorator prints a correct measurement.
+    time = 1
+    result = core.timefunc(sleep)(time)
+    out, err = capfd.readouterr()
+    time_measured = re.search('\d+\.\d+', out).group(0)
+    time_measured = float(time_measured)
+    np.isclose(time, time_measured)
+
+def test_flat():
+    inner_len = 12
+    outer_len =  5
+    nested_list = [[n for n in range(inner_len)] for i in range(outer_len)]
+    flattened = core.flat(nested_list)
+    for i in range(outer_len):
+        for j in range(inner_len):
+            assert flattened[j + i * inner_len] == nested_list[i][j]
 
 def test_lrange():
     assert core.lrange(10) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
