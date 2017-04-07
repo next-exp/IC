@@ -18,8 +18,8 @@ import tables as tb
 
 import invisible_cities.reco.tbl_functions as tbl
 from   invisible_cities.core.configure import configure, print_configuration
-from   invisible_cities.cities.base_cities import (SensorResponseCity,
-                                                   SensorParams)
+from   invisible_cities.cities.base_cities import SensorResponseCity
+from   invisible_cities.reco.params import SensorParams
 from   invisible_cities.reco.nh5 import FEE, RunInfo, EventInfo, MCTrack
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
