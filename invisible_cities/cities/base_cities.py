@@ -12,7 +12,9 @@ Authors: J.J. Gomez-Cadenas and J. Generowicz.
 Feburary, 2017.
 """
 
+import abc
 import sys
+import copy
 from textwrap import dedent
 
 import numpy as np
@@ -26,11 +28,12 @@ import invisible_cities.reco.pmaps_functions as pmp
 from   invisible_cities.core.exceptions import NoInputFiles, NoOutputFile
 import invisible_cities.sierpe.fee as FE
 import invisible_cities.reco.tbl_functions as tbf
+import invisible_cities.core.fit_functions as fitf
 import invisible_cities.reco.wfm_functions as wfm
 from   invisible_cities.core.random_sampling \
          import NoiseSampler as SiPMsNoiseSampler
 from   invisible_cities.core.configure import print_configuration
-from   invisible_cities.reco.params import S12Params, SensorParams
+from   invisible_cities.reco.dst_io import PointLikeEvent
 
 from   invisible_cities.reco.nh5 import DECONV_PARAM
 import invisible_cities.reco.pmap_io as pio
@@ -594,3 +597,140 @@ class PmapCity(CalibratedCity):
              S2_LMAX            = 100000,
              THR_SIPM_S2        =     30,
              PRINT_EMPTY_EVENTS = True))
+
+
+class S12SelectorCity:
+    def __init__(self,
+                 drift_v     = 1 * units.mm/units.mus,
+
+                 S1_Nmin     = 0,
+                 S1_Nmax     = 1000,
+                 S1_Emin     = 0,
+                 S1_Emax     = np.inf,
+                 S1_Lmin     = 0,
+                 S1_Lmax     = np.inf,
+                 S1_Hmin     = 0,
+                 S1_Hmax     = np.inf,
+                 S1_Ethr     = 0,
+
+                 S2_Nmin     = 0,
+                 S2_Nmax     = 1000,
+                 S2_Emin     = 0,
+                 S2_Emax     = np.inf,
+                 S2_Lmin     = 0,
+                 S2_Lmax     = np.inf,
+                 S2_Hmin     = 0,
+                 S2_Hmax     = np.inf,
+                 S2_NSIPMmin = 1,
+                 S2_NSIPMmax = np.inf,
+                 S2_Ethr     = 0):
+
+        self.drift_v     = drift_v
+
+        self.S1_Nmin     = S1_Nmin
+        self.S1_Nmax     = S1_Nmax
+        self.S1_Emin     = S1_Emin
+        self.S1_Emax     = S1_Emax
+        self.S1_Lmin     = S1_Lmin
+        self.S1_Lmax     = S1_Lmax
+        self.S1_Hmin     = S1_Hmin
+        self.S1_Hmax     = S1_Hmax
+        self.S1_Ethr     = S1_Ethr
+
+        self.S2_Nmin     = S2_Nmin
+        self.S2_Nmax     = S2_Nmax
+        self.S2_Emin     = S2_Emin
+        self.S2_Emax     = S2_Emax
+        self.S2_Lmin     = S2_Lmin
+        self.S2_Lmax     = S2_Lmax
+        self.S2_Hmin     = S2_Hmin
+        self.S2_Hmax     = S2_Hmax
+        self.S2_NSIPMmin = S2_NSIPMmin
+        self.S2_NSIPMmax = S2_NSIPMmax
+        self.S2_Ethr     = S2_Ethr
+
+    def select_S1(self, s1s):
+        return pf.select_peaks(s1s,
+                               self.S1_Emin, self.S1_Emax,
+                               self.S1_Lmin, self.S1_Lmax,
+                               self.S1_Hmin, self.S1_Hmax,
+                               self.S1_Ethr)
+
+    def select_S2(self, s2s, sis):
+        s2s = pf.select_peaks(s2s,
+                              self.S2_Emin, self.S2_Emax,
+                              self.S2_Lmin, self.S2_Lmax,
+                              self.S2_Hmin, self.S2_Hmax,
+                              self.S2_Ethr)
+        sis = pf.select_Si(sis,
+                           self.S2_NSIPMmin, self.S2_NSIPMmax)
+
+        valid_peaks = set(s2s) & set(sis)
+        s2s = {peak_no: peak for peak_no, peak in s2s.items() if peak_no in valid_peaks}
+        sis = {peak_no: peak for peak_no, peak in sis.items() if peak_no in valid_peaks}
+        return s2s, sis
+
+    def integrate_charge(self, sipms):
+        intq = ( (key, np.sum(value))
+                 for key, value in sipms.items())
+        return map(np.array, list(zip(*intq)))
+
+    def width(self, t, to_mus=False):
+        w = np.max(t) - np.min(t)
+        return w * units.ns / units.mus if to_mus else w
+
+    def select_event(self, evt_number, evt_time, S1, S2, Si):
+        evt       = PointLikeEvent()
+        evt.event = evt_number
+        evt.time  = evt_time * 1e-3 # s
+
+        S1     = self.select_S1(S1)
+        S2, Si = self.select_S2(S2, Si)
+
+        if (not self.S1_Nmin <= len(S1) <= self.S1_Nmax or
+            not self.S2_Nmin <= len(S2) <= self.S2_Nmax):
+            return None
+
+        evt.nS1 = len(S1)
+        for peak_no, (t, e) in sorted(S1.items()):
+            evt.S1w.append(self.width(t))
+            evt.S1h.append(np.max(e))
+            evt.S1e.append(np.sum(e))
+            evt.S1t.append(t[np.argmax(e)])
+
+        evt.nS2 = len(S2)
+        for peak_no, (t, e) in sorted(S2.items()):
+            s2time  = t[np.argmax(e)]
+
+            evt.S2w.append(self.width(t, to_mus=True))
+            evt.S2h.append(np.max(e))
+            evt.S2e.append(np.sum(e))
+            evt.S2t.append(s2time)
+
+            IDs, Qs = self.integrate_charge(Si[peak_no])
+            xsipms  = self.xs[IDs]
+            ysipms  = self.ys[IDs]
+            x       = np.average(xsipms, weights=Qs)
+            y       = np.average(ysipms, weights=Qs)
+            q       = np.sum    (Qs)
+
+            evt.Nsipm.append(len(IDs))
+            evt.S2q  .append(q)
+
+            evt.X    .append(x)
+            evt.Y    .append(y)
+
+            evt.Xrms .append((np.sum(Qs * (xsipms-x)**2) / (q - 1))**0.5)
+            evt.Yrms .append((np.sum(Qs * (ysipms-y)**2) / (q - 1))**0.5)
+
+            evt.R    .append((x**2 + y**2)**0.5)
+            evt.Phi  .append(np.arctan2(y, x))
+
+            dt  = s2time - evt.S1t[0] if len(evt.S1t) > 0 else -1e3
+            dt *= units.ns  / units.mus
+            evt.DT   .append(dt)
+            evt.Z    .append(dt * self.drift_v)
+
+        return evt
+
+
