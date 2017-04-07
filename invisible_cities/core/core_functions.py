@@ -37,6 +37,28 @@ def trange(*args):
     return tuple(range(*args))
 
 
+def in_range(data, minval=-np.inf, maxval=np.inf):
+    """
+    Find values in range [minval, maxval).
+
+    Parameters
+    ---------
+    data : np.ndarray
+        Data set of arbitrary dimension.
+    minval : int or float, optional
+        Range minimum. Defaults to -inf.
+    maxval : int or float, optional
+        Range maximum. Defaults to +inf.
+
+    Returns
+    -------
+    selection : np.ndarray
+        Boolean array with the same dimension as the input. Contains True
+        for those values of data in the input range and False for the others.
+    """
+    return (minval <= data) & (data < maxval)
+
+
 def loc_elem_1d(np1d, elem):
     """Given a 1d numpy array, return the location of element elem."""
     return np.where(np1d==elem)[0][0]

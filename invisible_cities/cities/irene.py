@@ -13,8 +13,8 @@ from invisible_cities.core.system_of_units_c import units
 
 from invisible_cities.reco.pmap_io import pmap_writer, S12, S2Si
 from invisible_cities.core.system_of_units_c import units
-from invisible_cities.cities.base_cities import PmapCity, SensorParams
-from invisible_cities.cities.base_cities import S12Params as S12P
+from invisible_cities.cities.base_cities import PmapCity
+from invisible_cities.reco.params import SensorParams, S12Params as S12P
 from invisible_cities.core.mctrk_functions import MCTrackWriter
 
 
