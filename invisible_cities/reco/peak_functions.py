@@ -372,3 +372,22 @@ def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds,
     S2Si = sipm_s2_dict(SIPM, S2, thr=thr.thr_SIPM)
     return (CalibratedSum(csum=csum, csum_mau=csum_mau),
             PMaps(S1=S1, S2=S2, S2Si=S2Si))
+
+
+def select_peaks(self, peaks,
+                 Emin, Emax,
+                 Lmin, Lmax,
+                 Hmin, Hmax,
+                 Ethr = -1):
+
+    is_valid = lambda E: (Lmin <= np.size(E) < Lmax and
+                          Hmin <= np.max (E) < Hmax and
+                          Emin <= np.sum (E) < Emax)
+
+    return {peak_no: (t, E) for peak_no, (t, E) in peaks.items() if is_valid(E[E > Ethr])}
+
+
+def select_Si(self, peaks,
+              Nmin, Nmax):
+    is_valid = lambda sipms: Nmin <= len(sipms) < Nmax
+    return {peak_no: sipms for peak_no, sipms in peaks.items() if is_valid(sipms)}
