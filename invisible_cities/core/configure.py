@@ -141,8 +141,11 @@ def read_config_file(cfile):
     """
     n = argparse.Namespace(VERBOSITY=20, RUN_ALL=False, COMPRESSION="ZLIB4")
     for line in open(cfile, "r"):
-        if line == "\n" or line[0] == "#":
+        line = line.split("#", 1)[0]
+
+        if line.isspace() or line == "":
             continue
+
         # python-2 & python-3
         #tokens = [i for i in line.rstrip().split(" ") if i]
         # python-2 only. In python-2 filter returns a list in
