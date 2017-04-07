@@ -10,8 +10,8 @@ from   invisible_cities.reco.nh5 import RunInfo, EventInfo
 import invisible_cities.reco.tbl_functions as tbl
 from   invisible_cities.core.configure import configure
 from   invisible_cities.core.system_of_units_c import units
-from   invisible_cities.cities.base_cities import (DeconvolutionCity,
-                                                   SensorParams)
+from   invisible_cities.cities.base_cities import DeconvolutionCity
+from   invisible_cities.reco.params import SensorParams
 
 class Isidora(DeconvolutionCity):
     """
