@@ -9,7 +9,7 @@ import invisible_cities.core.configure as conf
 
 config_file_format = """
 # set_input_files
-PATH_IN {PATH_IN}
+PATH_IN {PATH_IN} # comment to be ignored 1
 FILE_IN {FILE_IN}
 
 # set_pmap_store
