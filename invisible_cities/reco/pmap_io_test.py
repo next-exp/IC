@@ -21,8 +21,7 @@ from invisible_cities.reco.pmaps_functions_c import (
     df_to_pmaps_dict, df_to_s2si_dict)
 
 from invisible_cities.reco.params import (
-    S12Params, ThresholdParams, CalibratedSum, PMaps)
-from invisible_cities.cities.base_cities import S12Params as S12P
+    S12Params as S12P, ThresholdParams, CalibratedSum, PMaps)
 
 from pytest import mark, fixture
 

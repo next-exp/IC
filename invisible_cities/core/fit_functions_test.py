@@ -7,63 +7,11 @@ from pytest import mark
 from numpy.testing import assert_array_equal, assert_allclose
 from hypothesis import given
 from hypothesis.strategies import integers, floats
-from hypothesis.extra.numpy import arrays
 
-import invisible_cities.core.fit_functions as fit
-
-
-# TODO: Move to a different module {
-def float_arrays(size       =   100,
-                 min_value  = -1e20,
-                 max_value  = +1e20,
-                 mask       =  None,
-                 **kwargs          ):
-    elements = floats(min_value,
-                      max_value,
-                      **kwargs)
-    if mask is not None:
-        elements = elements.filter(mask)
-    return arrays(dtype    = np.float32,
-                  shape    =       size,
-                  elements =   elements)
-
-
-def FLOAT_ARRAY(*args, **kwargs):
-    return float_arrays(*args, **kwargs).example()
-
-
-def random_length_float_arrays(min_length =     0,
-                               max_length =   100,
-                               **kwargs          ):
-    lengths = integers(min_length,
-                       max_length)
-
-    return lengths.flatmap(lambda n: float_arrays(       n,
-                                                  **kwargs))
-# }
-
-@mark.slow
-@given(random_length_float_arrays())
-def test_in_range_infinite(data):
-    assert fit.in_range(data).all()
-
-
-@mark.slow
-@given(random_length_float_arrays(mask = lambda x: ((x<-10) or
-                                                    (x>+10) )))
-def test_in_range_with_hole(data):
-    assert not fit.in_range(data, -10, 10).any()
-
-
-def test_in_range_positives():
-    data = np.linspace(-10., 10., 1001)
-    assert np.count_nonzero(fit.in_range(data, 0, 10)) == 500
-
-
-@mark.slow
-@given(random_length_float_arrays(max_length = 1000))
-def test_in_range_right_shape(data):
-    assert fit.in_range(data, -1., 1.).shape == data.shape
+from   invisible_cities.core.test_utils    import float_arrays, FLOAT_ARRAY, \
+                                                  random_length_float_arrays
+import invisible_cities.core.core_functions as core
+import invisible_cities.core.fit_functions  as fit
 
 
 def test_get_errors():
@@ -219,7 +167,7 @@ def test_profile1D_custom_range(func, xdata, ydata):
     kw         = "yrange" if func.__name__.endswith("Y") else "xrange"
     d          = {kw: xrange}
     xp, yp, ye = func(xdata, ydata, **d)
-    assert np.all(fit.in_range(xp, *xrange))
+    assert np.all(core.in_range(xp, *xrange))
 
 
 @mark.parametrize("func xdata ydata xrange".split(),
@@ -233,7 +181,7 @@ def test_profile1D_custom_range(func, xdata, ydata):
                     (-500, 0))))
 def test_profile1D_full_range_x(func, xdata, ydata, xrange):
     xp, yp, ye = func(xdata, ydata)
-    assert np.all(fit.in_range(xp, *xrange))
+    assert np.all(core.in_range(xp, *xrange))
 
 @mark.skip(reason="Hypothesis can't handle sequences longer than 2**10")
 #@mark.parametrize("func xdata ydata".split(),
@@ -244,7 +192,7 @@ def test_profile1D_full_range_x(func, xdata, ydata, xrange):
 #                    FLOAT_ARRAY(10000, -100, 100),
 #                    FLOAT_ARRAY(10000, -500,   0))))
 def test_profile1D_one_bin_missing_x(func, xdata, ydata):
-    xdata[fit.in_range(xdata, -2, 0)] += 5
+    xdata[core.in_range(xdata, -2, 0)] += 5
     xp, yp, ye = func(xdata, ydata)
     assert xp.size == 99
 

@@ -8,11 +8,11 @@ import pandas as pd
 import numpy  as np
 import numpy.testing as npt
 
-from pytest import mark
 from hypothesis import given
 from hypothesis.strategies import integers, floats, sampled_from, composite
 sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 
+from invisible_cities.core.test_utils import random_length_float_arrays
 from . import core_functions as core
 import re
 from time import sleep
@@ -41,6 +41,27 @@ def test_lrange():
 
 def test_trange():
     assert core.trange(10) == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+@given(random_length_float_arrays())
+def test_in_range_infinite(data):
+    assert core.in_range(data).all()
+
+
+@given(random_length_float_arrays(mask = lambda x: ((x<-10) or
+                                                    (x>+10) )))
+def test_in_range_with_hole(data):
+    assert not core.in_range(data, -10, 10).any()
+
+
+def test_in_range_positives():
+    data = np.linspace(-10., 10., 1001)
+    assert np.count_nonzero(core.in_range(data, 0, 10)) == 500
+
+
+@given(random_length_float_arrays(max_length = 1000))
+def test_in_range_right_shape(data):
+    assert core.in_range(data, -1., 1.).shape == data.shape
+
 
 def test_loc_elem_1d():
     assert core.loc_elem_1d(np.array(core.lrange(10)), 5) == 5
