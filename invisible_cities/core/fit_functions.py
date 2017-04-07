@@ -9,29 +9,8 @@ from __future__ import absolute_import, division
 import numpy as np
 import scipy.optimize
 
-from invisible_cities.reco.params import FitFunction
-
-def in_range(data, minval=-np.inf, maxval=np.inf):
-    """
-    Find values in range [minval, maxval).
-
-    Parameters
-    ---------
-    data : np.ndarray
-        Data set of arbitrary dimension.
-    minval : int or float, optional
-        Range minimum. Defaults to -inf.
-    maxval : int or float, optional
-        Range maximum. Defaults to +inf.
-
-    Returns
-    -------
-    selection : np.ndarray
-        Boolean array with the same dimension as the input. Contains True
-        for those values of data in the input range and False for the others.
-    """
-    return (minval <= data) & (data < maxval)
-
+from invisible_cities.core.core_functions import in_range
+from invisible_cities.reco.params         import FitFunction
 
 def get_errors(cov):
     """
