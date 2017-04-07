@@ -112,3 +112,31 @@ class S2Si(tb.IsDescription):
     peak  = tb.  UInt8Col(pos=2) # peak number
     nsipm = tb.  Int16Col(pos=3) # sipm number
     ene   = tb.Float32Col(pos=5) # energy in pes
+
+
+class KrTable(tb.IsDescription):
+    event = tb.  Int32Col(pos= 0)
+    time  = tb.Float64Col(pos= 1)
+    peak  = tb. UInt16Col(pos= 2)
+    nS2   = tb. UInt16Col(pos= 3)
+
+    S1w   = tb.Float64Col(pos= 4)
+    S1h   = tb.Float64Col(pos= 5)
+    S1e   = tb.Float64Col(pos= 6)
+    S1t   = tb.Float64Col(pos= 7)
+
+    S2w   = tb.Float64Col(pos= 8)
+    S2h   = tb.Float64Col(pos= 9)
+    S2e   = tb.Float64Col(pos=10)
+    S2q   = tb.Float64Col(pos=11)
+    S2t   = tb.Float64Col(pos=12)
+
+    Nsipm = tb.Float64Col(pos=13)
+    DT    = tb.Float64Col(pos=14)
+    Z     = tb.Float64Col(pos=15)
+    X     = tb.Float64Col(pos=16)
+    Y     = tb.Float64Col(pos=17)
+    R     = tb.Float64Col(pos=18)
+    Phi   = tb.Float64Col(pos=19)
+    Xrms  = tb.Float64Col(pos=20)
+    Yrms  = tb.Float64Col(pos=21)
