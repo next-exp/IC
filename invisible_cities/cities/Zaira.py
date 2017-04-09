@@ -7,11 +7,14 @@ from invisible_cities.reco  .dst_io        import Corr_writer
 
 class Zaira(City, MapCity):
     def __init__(self, 
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = 'ZLIB4',
-                 nprint      = 10000,
+                 run_number   = 0,
+                 files_in     = None,
+                 file_out     = None,
+                 compression  = 'ZLIB4',
+                 nprint       = 10000,
+
+                 dst_group    = "DST",
+                 dst_node     = "KrEvents",
 
                  xbins        =  100,
                  xmin         = -215,
@@ -59,9 +62,12 @@ class Zaira(City, MapCity):
                          tmin         = tmin,
                          tmax         = tmax)
 
+        self.dst_group = dst_group
+        self.dst_node  = dst_node
+
 
     def run(self, max_evt=-1):
-        dst = load_dsts(self.input_files)
+        dst = load_dsts(self.input_files, self.dst_group, self.dst_node)
         assert len(set(dst.peak)) == 1
 
         fid      = dst[dst.R < self.fiducial_cut]
