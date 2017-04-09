@@ -35,34 +35,43 @@ del name, namedtuple, sys, this_module, _add_namedtuple_in_this_module
 
 
 class Correction:
-    def __init__(self, xs, es, ss, norm_opt = "max"):
+    def __init__(self, xs, fs, us, norm = False):
         self.xs = np.array(xs, dtype=float, ndmin=2).T
-        self.es = np.array(es, dtype=float)
-        self.ss = np.array(es, dtype=float)
+        self.fs = np.array(fs, dtype=float)
+        self.us = np.array(us, dtype=float)
 
-        self.e_norm, self.s_norm = \
-        self._find_norm_values(norm_opt)
+        self._normalize(norm)
 
-        self.s0 = (self.s_norm/self.e_norm)**2
-
-    def _find_norm_values(self, norm_opt):
-        if   norm_opt == "max": # normalize to max energy
+    def _normalize(self, norm):
+        """
+        Normalize. Options:
+            - False:    Do not normalize.
+            - "max":    Normalize to maximum energy encountered.
+            - "center": Normalize to the energy placed at the center of the array.
+        """
+        if not norm:
+            return
+        elif norm == "max":
             index  = np.argmax(self.es)
-        elif norm_opt == "center":
+        elif norm == "center":
             index  = [i//2 for i in self.es.shape]
         else:
-            raise ValueError("Normalization option not recognized: {}".format(norm_opt))
-        return self.es[index], self.ss[index]
+            raise ValueError("Normalization option not recognized: {}".format(norm))
+
+        f_norm  = self.fs[index]
+        u_norm  = self.us[index]
+
+        fs_norm = self.fs[index]/self.fs
+        self.us = fs_norm * ((u_norm / f_norm)**2 +
+                             (self.us/self.fs)**2 )**0.5
+        self.fs = fs_norm
 
     def _find_closest(self, x):
         return np.apply_along_axis(np.argmin, 0, abs(x-self.xs))
 
     def __call__(self, *x):
-        x_closest   = np.apply_along_axis(self._find_closest, 1, np.array(x, ndmin=2))
-        e_closest   = self.es[x_closest]
-        s_closest   = self.ss[x_closest]
-        correction  = self.e_norm/e_closest
-        uncertainty = correction * (self.s0 + (s_closest/e_closest)**2)**0.5
-        return correction, uncertainty
+        x_closest = np.apply_along_axis(self._find_closest, 1,
+                                        np.array(x, ndmin=2))
+        return self.fs[x_closest], self.us[x_closest]
 
 
