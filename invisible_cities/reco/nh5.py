@@ -131,7 +131,7 @@ class KrTable(tb.IsDescription):
     S2q   = tb.Float64Col(pos=11)
     S2t   = tb.Float64Col(pos=12)
 
-    Nsipm = tb.Float64Col(pos=13)
+    Nsipm = tb. UInt16Col(pos=13)
     DT    = tb.Float64Col(pos=14)
     Z     = tb.Float64Col(pos=15)
     X     = tb.Float64Col(pos=16)
