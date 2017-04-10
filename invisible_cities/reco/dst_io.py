@@ -112,6 +112,12 @@ class PointLikeEvent:
         self.Xrms  = []
         self.Yrms  = []
 
+    def __str__(self):
+        s = "{0}Event\n{0}".format("#"*20 + "\n")
+        for attr in self.__dict__:
+            s += "{}: {}\n".format(attr, getattr(self, attr))
+        return s
+
     def copy(self, other):
         assert isinstance(other, PointLikeEvent)
         for attr in other.__dict__:
@@ -124,7 +130,7 @@ class PointLikeEvent:
 
 class KrEvent(PointLikeEvent):
     def store(self, row):
-        for i in range(self.nS2):
+        for i in range(int(self.nS2)):
             row["event"] = self.event
             row["time" ] = self.time
             row["peak" ] = i
@@ -151,3 +157,20 @@ class KrEvent(PointLikeEvent):
             row["Xrms" ] = self.Xrms [i]
             row["Yrms" ] = self.Yrms [i]
             row.append()
+
+
+def write_test_dst(df, filename, group, node):
+    with tb.open_file(filename, "w") as h5in:
+        group = h5in.create_group(h5in.root, group)
+        table = h5in.create_table(group,
+                                  "data",
+                                  table_formats.KrTable,
+                                  "Test data",
+                                  tbf.filters("ZLIB4"))
+
+        tablerow = table.row
+        for index, row in df.iterrows():
+            for name, value in row.items():
+                tablerow[name] = value
+            tablerow.append()
+        table.flush()

@@ -374,7 +374,7 @@ def compute_csum_and_pmaps(pmtrwf, sipmrwf, s1par, s2par, thresholds,
             PMaps(S1=S1, S2=S2, S2Si=S2Si))
 
 
-def select_peaks(self, peaks,
+def select_peaks(peaks,
                  Emin, Emax,
                  Lmin, Lmax,
                  Hmin, Hmax,
@@ -387,7 +387,7 @@ def select_peaks(self, peaks,
     return {peak_no: (t, E) for peak_no, (t, E) in peaks.items() if is_valid(E[E > Ethr])}
 
 
-def select_Si(self, peaks,
+def select_Si(peaks,
               Nmin, Nmax):
     is_valid = lambda sipms: Nmin <= len(sipms) < Nmax
     return {peak_no: sipms for peak_no, sipms in peaks.items() if is_valid(sipms)}
