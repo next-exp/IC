@@ -670,15 +670,6 @@ class S12SelectorCity:
         sis = {peak_no: peak for peak_no, peak in sis.items() if peak_no in valid_peaks}
         return s2s, sis
 
-    def integrate_charge(self, sipms):
-        intq = ( (key, np.sum(value))
-                 for key, value in sipms.items())
-        return map(np.array, list(zip(*intq)))
-
-    def width(self, t, to_mus=False):
-        w = np.max(t) - np.min(t)
-        return w * units.ns / units.mus if to_mus else w
-
     def select_event(self, evt_number, evt_time, S1, S2, Si):
         evt       = PointLikeEvent()
         evt.event = evt_number
@@ -693,7 +684,7 @@ class S12SelectorCity:
 
         evt.nS1 = len(S1)
         for peak_no, (t, e) in sorted(S1.items()):
-            evt.S1w.append(self.width(t))
+            evt.S1w.append(pmp.width(t))
             evt.S1h.append(np.max(e))
             evt.S1e.append(np.sum(e))
             evt.S1t.append(t[np.argmax(e)])
@@ -702,12 +693,12 @@ class S12SelectorCity:
         for peak_no, (t, e) in sorted(S2.items()):
             s2time  = t[np.argmax(e)]
 
-            evt.S2w.append(self.width(t, to_mus=True))
+            evt.S2w.append(pmp.width(t, to_mus=True))
             evt.S2h.append(np.max(e))
             evt.S2e.append(np.sum(e))
             evt.S2t.append(s2time)
 
-            IDs, Qs = self.integrate_charge(Si[peak_no])
+            IDs, Qs = pmp.integrate_charge(Si[peak_no])
             xsipms  = self.xs[IDs]
             ysipms  = self.ys[IDs]
             x       = np.average(xsipms, weights=Qs)
@@ -729,8 +720,6 @@ class S12SelectorCity:
             dt  = s2time - evt.S1t[0] if len(evt.S1t) > 0 else -1e3
             dt *= units.ns  / units.mus
             evt.DT   .append(dt)
-            evt.Z    .append(dt * self.drift_v)
+            evt.Z    .append(dt * units.mus * self.drift_v)
 
         return evt
-
-
