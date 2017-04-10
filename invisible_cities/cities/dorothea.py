@@ -6,11 +6,12 @@ import time
 import textwrap
 
 import numpy  as np
+import tables as tb
 
 from invisible_cities.core.configure         import configure
 from invisible_cities.core.system_of_units_c import units
 from invisible_cities.reco.dst_io            import Kr_writer
-from invisible_cities.cities.base_cities     import City, S12SelectorCity
+from invisible_cities.cities.base_cities     import City, S12SelectorCity, merge_two_dicts, dedent
 from invisible_cities.reco.tbl_functions     import get_event_numbers_and_timestamps
 from invisible_cities.reco.pmaps_functions   import load_pmaps
 
@@ -76,11 +77,76 @@ class Dorothea(City, S12SelectorCity):
                                  S2_NSIPMmax = S2_NSIPMmax,
                                  S2_Ethr     = S2_Ethr)
 
+    config_file_format = City.config_file_format + """
+
+    RUN_NUMBER  {RUN_NUMBER}
+
+    # set_print
+    NPRINT      {NPRINT}
+
+    DRIFT_V     {DRIFT_V}
+
+    S1_EMIN     {S1_EMIN}
+    S1_EMAX     {S1_EMAX}
+    S1_LMIN     {S1_LMIN}
+    S1_LMAX     {S1_LMAX}
+    S1_HMIN     {S1_HMIN}
+    S1_HMAX     {S1_HMAX}
+    S1_ETHR     {S1_ETHR}
+
+    S2_NMAX     {S2_NMAX}
+    S2_EMIN     {S2_EMIN}
+    S2_EMAX     {S2_EMAX}
+    S2_LMIN     {S2_LMIN}
+    S2_LMAX     {S2_LMAX}
+    S2_HMIN     {S2_HMIN}
+    S2_HMAX     {S2_HMAX}
+    S2_ETHR     {S2_ETHR}
+    S2_NSIPMMIN {S2_NSIPMMIN}
+    S2_NSIPMMAX {S2_NSIPMMAX}
+
+    # run
+    NEVENTS     {NEVENTS}
+    RUN_ALL     {RUN_ALL}
+    """
+
+    config_file_format = dedent(config_file_format)
+
+    default_config = merge_two_dicts(
+        City.default_config,
+        dict(RUN_NUMBER  =     0,
+             NPRINT      =     1,
+
+             DRIFT_V     =   1.0,
+
+             S1_EMIN     =     0,
+             S1_EMAX     =    30,
+             S1_LMIN     =     4,
+             S1_LMAX     =    20,
+             S1_HMIN     =   0.5,
+             S1_HMAX     =    10,
+             S1_ETHR     =   0.5,
+
+             S2_NMAX     =     1,
+             S2_EMIN     =   1e3,
+             S2_EMAX     =   1e8,
+             S2_LMIN     =     1,
+             S2_LMAX     =    20,
+             S2_HMIN     =   500,
+             S2_HMAX     =   1e5,
+             S2_ETHR     =     1,
+             S2_NSIPMMIN =     2,
+             S2_NSIPMMAX =  1000,
+
+             NEVENTS     =     3,
+             RUN_ALL     = False))
+
+
     def run(self, max_evt=-1):
         nevt_in = nevt_out = 0
 
         with Kr_writer(self.output_file, "DST", "w",
-                       self.compression, "KrEvents") as write:
+                       self.compression, "Events") as write:
 
             exit_file_loop = False
             for filename in self.input_files:
@@ -88,7 +154,7 @@ class Dorothea(City, S12SelectorCity):
 
                 try:
                     S1s, S2s, S2Sis = load_pmaps(filename)
-                except ValueError:
+                except (ValueError, tb.exceptions.NoSuchNodeError):
                     print("Empty file. Skipping.")
                     continue
 
@@ -139,26 +205,26 @@ def DOROTHEA(argv = sys.argv):
                         compression = CFP.COMPRESSION,
                         nprint      = CFP.NPRINT,
 
-                        drift_v     = CFP.DRIFT_V,
+                        drift_v     = CFP.DRIFT_V * units.mm/units.mus,
 
-                        S1_Emin     = CFP.S1_EMIN,
-                        S1_Emax     = CFP.S1_EMAX,
+                        S1_Emin     = CFP.S1_EMIN * units.pes,
+                        S1_Emax     = CFP.S1_EMAX * units.pes,
                         S1_Lmin     = CFP.S1_LMIN,
                         S1_Lmax     = CFP.S1_LMAX,
-                        S1_Hmin     = CFP.S1_HMIN,
-                        S1_Hmax     = CFP.S1_HMAX,
-                        S1_Ethr     = CFP.S1_ETHR,
+                        S1_Hmin     = CFP.S1_HMIN * units.pes,
+                        S1_Hmax     = CFP.S1_HMAX * units.pes,
+                        S1_Ethr     = CFP.S1_ETHR * units.pes,
 
                         S2_Nmax     = CFP.S2_NMAX,
-                        S2_Emin     = CFP.S2_EMIN,
-                        S2_Emax     = CFP.S2_EMAX,
+                        S2_Emin     = CFP.S2_EMIN * units.pes,
+                        S2_Emax     = CFP.S2_EMAX * units.pes,
                         S2_Lmin     = CFP.S2_LMIN,
                         S2_Lmax     = CFP.S2_LMAX,
-                        S2_Hmin     = CFP.S2_HMIN,
-                        S2_Hmax     = CFP.S2_HMAX,
+                        S2_Hmin     = CFP.S2_HMIN * units.pes,
+                        S2_Hmax     = CFP.S2_HMAX * units.pes,
                         S2_NSIPMmin = CFP.S2_NSIPMMIN,
                         S2_NSIPMmax = CFP.S2_NSIPMMAX,
-                        S2_Ethr     = CFP.S2_ETHR)
+                        S2_Ethr     = CFP.S2_ETHR * units.pes)
 
     t0 = time.time()
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
