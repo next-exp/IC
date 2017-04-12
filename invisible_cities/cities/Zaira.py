@@ -68,6 +68,7 @@ class Zaira(City, MapCity):
 
     def run(self, max_evt=-1):
         dst = load_dsts(self.input_files, self.dst_group, self.dst_node)
+        dst = dst[dst.nS2 == 1]
 
         fid      = dst[dst.R < self.fiducial_cut]
         zcorr    = self. z_correction(fid.Z, fid.S2e)
