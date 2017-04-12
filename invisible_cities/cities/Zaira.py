@@ -17,23 +17,23 @@ class Zaira(City, MapCity):
                  dst_node     = "KrEvents",
 
                  xbins        =  100,
-                 xmin         = -215,
-                 xmax         = +215,
+                 xmin         = None,
+                 xmax         = None,
 
                  ybins        =  100,
-                 ymin         = -215,
-                 ymax         = +215,
+                 ymin         = None,
+                 ymax         = None,
 
                  zbins        =  100,
-                 zmin         =    0,
-                 zmax         =  600,
+                 zmin         = None,
+                 zmax         = None,
 
                  z_sampling   = 1000,
                  fiducial_cut =  100,
 
                  tbins        =  100,
-                 tmin         =    0,
-                 tmax         = 1000):
+                 tmin         = None,
+                 tmax         = None):
 
         City.__init__(self,
                       run_number  = run_number,
