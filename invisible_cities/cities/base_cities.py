@@ -782,7 +782,7 @@ class MapCity:
         E0 ,  LT = LT_f.values
         sE0, sLT = LT_f.errors
 
-        zs = np.linspace(self.det_geo.ZMIN, self.det_geo.ZMAX, self.z_sampling)
+        zs = np.linspace(self.det_geo.ZMIN[0], self.det_geo.ZMAX[0], self.z_sampling)
         es = zfun(zs)
         ss = es * ((sE0/E0)**2 + (x*sLT/LT**2)**2)**0.5
 
