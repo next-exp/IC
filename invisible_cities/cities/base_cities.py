@@ -727,30 +727,38 @@ class S12SelectorCity:
 
 class MapCity:
     def __init__(self,
-                 # TODO: use None for min/max and load them from DB
                  xbins        =  100,
-                 xmin         = -215,
-                 xmax         = +215,
+                 xmin         = None,
+                 xmax         = None,
 
                  ybins        =  100,
-                 ymin         = -215,
-                 ymax         = +215,
+                 ymin         = None,
+                 ymax         = None,
 
                  zbins        =  100,
-                 zmin         =    0,
-                 zmax         =  600,
+                 zmin         = None,
+                 zmax         = None,
 
                  z_sampling   = 1000,
                  fiducial_cut =  100,
 
                  tbins        =  100,
-                 tmin         =    0,
-                 tmax         = 1000):
-
+                 tmin         = None,
+                 tmax         = None):
+        self.det_geo = load_db.DetectorGeo()
 
         self.xybins = xbins, ybins
         self. zbins = zbins
         self. tbins = tbins
+
+        xmin = self.det_geo.XMIN[0] if xmin is None else xmin
+        xmax = self.det_geo.XMAX[0] if xmax is None else xmax
+
+        ymin = self.det_geo.YMIN[0] if ymin is None else ymin
+        ymax = self.det_geo.YMAX[0] if ymax is None else ymax
+
+        zmin = self.det_geo.ZMIN[0] if zmin is None else zmin
+        zmax = self.det_geo.ZMAX[0] if zmax is None else zmax
 
         self.xrange = xmin, xmax
         self.yrange = ymin, ymax
@@ -760,7 +768,6 @@ class MapCity:
         self.z_sampling   = z_sampling
         self.fiducial_cut = fiducial_cut
 
-        self.det_geo = load_db.DetectorGeo()
 
     def z_correction(self, Z, E):
         x, y, _ = \
