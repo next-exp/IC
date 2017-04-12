@@ -1,6 +1,10 @@
 from __future__ import print_function
 
+import sys
+import time
+
 from invisible_cities.cities.base_cities   import City, MapCity
+from invisible_cities.core  .configure     import configure
 from invisible_cities.reco  .dst_functions import load_dsts
 from invisible_cities.reco  .dst_io        import Corr_writer
 
@@ -85,3 +89,58 @@ class Zaira(City, MapCity):
             writer.write_z_corr (zcorr.xs, zcorr.fs, zcorr.us)
             writer.write_xy_corr(*xycorr.xs.T, xycorr.fs, xycorr.us, nevt)
             writer.write_t_corr (tcorr.xs, tcorr.fs, tcorr.us)
+
+        return len(dst), zcorr.LT, zcorr.sLT
+
+
+def ZAIRA(argv = sys.argv):
+    """ZAIRA DRIVER"""
+
+    # get parameters dictionary
+    CFP = configure(argv)
+
+    #class instance
+    zaira = Zaira(run_number   = CFP.RUN_NUMBER,
+                  files_in     = CFP.FILE_IN,
+                  file_out     = CFP.FILE_OUT,
+                  compression  = CFP.COMPRESSION,
+                  nprint       = CFP.NPRINT,
+
+
+                  dst_group    = CFP.DST_GROUP,
+                  dst_node     = CFP.DST_NODE,
+
+                  xbins        = CFP.XBINS,
+                  xmin         = CFP.XMIN if "XMIN" in CFP else None,
+                  xmax         = CFP.XMAX if "XMAX" in CFP else None,
+
+                  ybins        = CFP.YBINS,
+                  ymin         = CFP.YMIN if "YMIN" in CFP else None,
+                  ymax         = CFP.YMAX if "YMAX" in CFP else None,
+
+                  zbins        = CFP.ZBINS,
+                  zmin         = CFP.ZMIN if "ZMIN" in CFP else None,
+                  zmax         = CFP.ZMAX if "ZMAX" in CFP else None,
+
+                  z_sampling   = CFP.Z_SAMPLING,
+                  fiducial_cut = CFP.FIDUCIAL_CUT,
+
+                  tbins        = CFP.TBINS,
+                  tmin         = CFP.TMIN if "TMIN" in CFP else None,
+                  tmax         = CFP.TMAX if "TMAX" in CFP else None)
+
+    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
+
+    t0    = time.time()
+    nevt, LT, sLT  = zaira.run(nmax=nevts, print_empty=CFP.PRINT_EMPTY_EVENTS)
+    t1    = time.time()
+    dt    = t1 - t0
+
+    if nevt > 0:
+        print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
+        print("LIFETIME = {} +- {}".format(LT, sLT))
+
+    return nevts, nevt, LT, sLT
+
+if __name__ == "__main__":
+    ZAIRA(sys.argv)
