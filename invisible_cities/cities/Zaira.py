@@ -14,7 +14,7 @@ class Zaira(City, MapCity):
                  nprint       = 10000,
 
                  dst_group    = "DST",
-                 dst_node     = "KrEvents",
+                 dst_node     = "Events",
 
                  xbins        =  100,
                  xmin         = None,
@@ -68,7 +68,6 @@ class Zaira(City, MapCity):
 
     def run(self, max_evt=-1):
         dst = load_dsts(self.input_files, self.dst_group, self.dst_node)
-        assert len(set(dst.peak)) == 1
 
         fid      = dst[dst.R < self.fiducial_cut]
         zcorr    = self. z_correction(fid.Z, fid.S2e)
