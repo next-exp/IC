@@ -39,7 +39,7 @@ class Kr_writer(DST_writer):
     def __init__(self,
                  filename,
                  group = "DST",
-                 mode = "w",
+                 mode  = "w",
                  compression = "ZLIB4",
 
                  table_name = "Events",
@@ -68,10 +68,70 @@ class Kr_writer(DST_writer):
         KrEvent(evt).store(self.row)
 
 
-def _make_table(hdf5_file, group, name, format, compression, description):
+class Corr_writer(DST_writer):
+    def __init__(self,
+                 filename,
+                 group = "Corrections",
+                 mode  = "w",
+                 compression = "ZLIB4"):
+        DST_writer.__init__(self,
+                            filename,
+                            group,
+                            mode,
+                            compression)
 
-    dst_group  = hdf5_file.create_group(hdf5_file.root, group) 
-    table = hdf5_file.create_table(dst_group,
+        self.z_table, self.xy_table, self.t_table = \
+        self._make_tables()
+
+    def _make_tables(self):
+        z_table  = _make_table(self.file,
+                               self.group,
+                               "Zcorrections",
+                               table_formats.Zfactors,
+                               self.compression,
+                               "Correction in the Z coordinate")
+        xy_table = _make_table(self.file,
+                               self.group,
+                               "XYcorrections",
+                               table_formats.XYfactors,
+                               self.compression,
+                               "Correction in the x,y coordinates")
+        t_table  = _make_table(self.file,
+                               self.group,
+                               "Tcorrections",
+                               table_formats.Tfactors,
+                               self.compression,
+                               "Correction in time")
+        return z_table, xy_table, t_table
+
+    def write_z_corr (self, zs, fs, us):
+        row = self.z_table.row
+        for z, f, u in zip(zs, fs, us):
+            row["z"]           = z
+            row["factor"]      = f
+            row["uncertainty"] = u
+
+    def write_xy_corr(self, xs, ys, fs, us, ns):
+        row = self.xy_table.row
+        for x, y, f, u, n in zip(xs, ys, fs, us, ns):
+            row["x"]           = x
+            row["y"]           = y
+            row["factor"]      = f
+            row["uncertainty"] = u
+            row["nevt"]        = n
+
+    def write_t_corr (self, ts, fs, us):
+        row = self.z_table.row
+        for t, f, u in zip(ts, fs, us):
+            row["t"]           = t
+            row["factor"]      = f
+            row["uncertainty"] = u
+
+
+def _make_table(hdf5_file, group, name, format, compression, description):
+    if group not in hdf5_file.root:
+        hdf5_file.create_group(hdf5_file.root, group)
+    table = hdf5_file.create_table(getattr(hdf5_file.root, group),
                                    name,
                                    format,
                                    description,
@@ -157,7 +217,6 @@ class KrEvent(PointLikeEvent):
             row["Xrms" ] = self.Xrms [i]
             row["Yrms" ] = self.Yrms [i]
             row.append()
-
 
 def write_test_dst(df, filename, group, node):
     with tb.open_file(filename, "w") as h5in:
