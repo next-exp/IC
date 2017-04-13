@@ -113,6 +113,7 @@ class Corr_writer(DST_writer):
             row["z"]           = z
             row["factor"]      = f
             row["uncertainty"] = u
+            row.append()
 
     def write_xy_corr(self, xs, ys, fs, us, ns):
         row = self.xy_table.row
@@ -127,6 +128,7 @@ class Corr_writer(DST_writer):
             row["factor"]      = f
             row["uncertainty"] = u
             row["nevt"]        = n
+            row.append()
 
     def write_t_corr (self, ts, fs, us):
         row = self.t_table.row
@@ -134,7 +136,7 @@ class Corr_writer(DST_writer):
             row["t"]           = t
             row["factor"]      = f
             row["uncertainty"] = u
-
+            row.append()
 
 def _make_table(hdf5_file, group, name, format, compression, description):
     if group not in hdf5_file.root:
