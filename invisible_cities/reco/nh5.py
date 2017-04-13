@@ -142,21 +142,21 @@ class KrTable(tb.IsDescription):
     Yrms  = tb.Float64Col(pos=21)
 
 
-class XYMap(tb.IsDescription):
-    x      = tb.Float32Col(pos=0)
-    y      = tb.Float32Col(pos=1)
-    factor = tb.Float32Col(pos=2)
-    error  = tb.Float32Col(pos=3)
-    nevt   = tb. UInt32Col(pos=4)
+class XYfactors(tb.IsDescription):
+    x            = tb.Float32Col(pos=0)
+    y            = tb.Float32Col(pos=1)
+    factor       = tb.Float32Col(pos=2)
+    uncertainty  = tb.Float32Col(pos=3)
+    nevt         = tb. UInt32Col(pos=4)
 
 
-class ZMap(tb.IsDescription):
-    z      = tb.Float32Col(pos=0)
-    factor = tb.Float32Col(pos=1)
-    error  = tb.Float32Col(pos=2)
+class Zfactors(tb.IsDescription):
+    z            = tb.Float32Col(pos=0)
+    factor       = tb.Float32Col(pos=1)
+    uncertainty  = tb.Float32Col(pos=2)
 
 
-class TMap(tb.IsDescription):
-    t      = tb.Float32Col(pos=0)
-    factor = tb.Float32Col(pos=1)
-    error  = tb.Float32Col(pos=2)
+class Tfactors(tb.IsDescription):
+    t            = tb.Float32Col(pos=0)
+    factor       = tb.Float32Col(pos=1)
+    uncertainty  = tb.Float32Col(pos=2)
