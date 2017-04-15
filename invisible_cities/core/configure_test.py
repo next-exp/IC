@@ -65,7 +65,7 @@ config_file_spec = dict(PATH_IN  = '$ICDIR/database/test_data/',
                         FILE_IN  = 'electrons_40keV_z250_RWF.h5',
                         PATH_OUT = '$ICDIR/database/test_data/',
                         FILE_OUT = 'electrons_40keV_z250_PMP.h5',
-                        COMPRESSION        = 'ZLIB4',
+                        COMPRESSION        = None,
                         RUN_NUMBER         = 23,
                         NPRINT             = 24,
                         PRINT_EMPTY_EVENTS = 25,
@@ -204,6 +204,7 @@ def test_configure(config_tmpdir, spec):
        none())
 @example(True,  True)
 @example(False, False)
+@example(None, None)
 @example(    '$PWD',          getenv('PWD'))
 @example('xxx/$PWD', 'xxx/' + getenv('PWD'))
 @example('astring', 'astring')
