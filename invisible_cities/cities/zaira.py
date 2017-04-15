@@ -40,7 +40,7 @@ class Zaira(City, MapCity):
                  tmax         = None,
 
                  z_sampling   = 1000,
-                 fiducial_r   =  100,
+                 fiducial_r   = None,
                  fiducial_z   = None,
                  fiducial_e   = None):
 
@@ -70,7 +70,7 @@ class Zaira(City, MapCity):
 
                          z_sampling   = z_sampling)
 
-        self.fiducial_r = fiducial_r
+        self.fiducial_r = self.det_geo.RMAX[0] if fiducial_r is not None else fiducial_r
         self.fiducial_z = (self.det_geo.ZMIN[0], self.det_geo.ZMIN[1]) if fiducial_z is None else fiducial_z
         self.fiducial_e = (0, np.inf) if fiducial_e is None else fiducial_e
 
@@ -145,9 +145,9 @@ def ZAIRA(argv = sys.argv):
                   tmax         = CFP.TMAX if "TMAX" in CFP else None,
 
                   z_sampling   = CFP.Z_SAMPLING,
-                  fiducial_r   = CFP.FIDUCIAL_R,
-                  fiducial_z   = CFP.FIDUCIAL_Z,
-                  fiducial_e   = CFP.FIDUCIAL_E)
+                  fiducial_r   = CFP.FIDUCIAL_R if "FIDUCIAL_R" in CFP else None,
+                  fiducial_z   = CFP.FIDUCIAL_Z if "FIDUCIAL_Z" in CFP else None,
+                  fiducial_e   = CFP.FIDUCIAL_E if "FIDUCIAL_E" in CFP else None)
 
     t0    = time.time()
     nevt, LT, sLT  = zaira.run()
