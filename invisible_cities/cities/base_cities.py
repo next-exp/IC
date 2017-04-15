@@ -767,14 +767,14 @@ class MapCity:
 
         self.z_sampling   = z_sampling
 
-    def z_correction(self, Z, E):
+    def z_correction(self, Z, E, z_norm=0):
         x, y, _ = \
         fitf.profileX(Z, E, self.zbins, xrange=self.zrange)
 
-        seed = np.max(E), -1e3
+        seed = np.max(E), (np.min(E) - np.max(E))/(np.max(Z) - np.min(Z))
         LT_f = fitf.fit(fitf.expo, x, y, seed, fit_range=self.zrange)
 
-        norm = LT_f.fn(0)
+        norm = LT_f.fn(z_norm)
         zfun = lambda z: norm/LT_f.fn(z)
 
         E0 ,  LT = LT_f.values
@@ -784,7 +784,7 @@ class MapCity:
         es = zfun(zs)
         ss = es * ((sE0/E0)**2 + (zs*sLT/LT**2)**2)**0.5
 
-        z_corr     = Correction(zs, es, ss, norm = "max")
+        z_corr     = Correction(zs, es, ss, norm = False)
         z_corr. fn = zfun
         z_corr. LT = -LT
         z_corr.sLT = sLT
