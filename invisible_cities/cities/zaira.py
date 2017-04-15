@@ -3,6 +3,8 @@ from __future__ import print_function
 import sys
 import time
 
+import numpy as np
+
 from invisible_cities.cities.base_cities    import City, MapCity
 from invisible_cities.core  .fit_functions  import in_range
 from invisible_cities.core  .configure      import configure
@@ -38,7 +40,9 @@ class Zaira(City, MapCity):
                  tmax         = None,
 
                  z_sampling   = 1000,
-                 fiducial_r   =  100):
+                 fiducial_r   =  100,
+                 fiducial_z   = None,
+                 fiducial_e   = None):
 
         City.__init__(self,
                       run_number  = run_number,
@@ -67,6 +71,8 @@ class Zaira(City, MapCity):
                          z_sampling   = z_sampling)
 
         self.fiducial_r = fiducial_r
+        self.fiducial_z = (self.det_geo.ZMIN[0], self.det_geo.ZMIN[1]) if fiducial_z is None else fiducial_z
+        self.fiducial_e = (0, np.inf) if fiducial_e is None else fiducial_e
 
         self.dst_group  = dst_group
         self.dst_node   = dst_node
@@ -74,14 +80,16 @@ class Zaira(City, MapCity):
 
     def run(self):
         dst = load_dsts(self.input_files, self.dst_group, self.dst_node)
-        dst = dst[dst.nS2 == 1]
-        dst = dst[in_range(dst.Z, *self.zrange)]
-        dst = dst[in_range(dst.X, *self.xrange)]
-        dst = dst[in_range(dst.Y, *self.yrange)]
+        dst = dst[dst.nS2.values == 1]
+
+        dst = dst[in_range(dst.S2e.values, *self.fiducial_e)]
+        dst = dst[in_range(dst.Z.values  , *self.fiducial_z)]
+        dst = dst[in_range(dst.X.values  , *self.xrange    )]
+        dst = dst[in_range(dst.Y.values  , *self.yrange    )]
 
         print("Correcting in Z")
-        fid      = dst[dst.R < self.fiducial_r]
-        zcorr    = self. z_correction(fid.Z.values, fid.S2e.values)
+        fid      = dst[in_range(dst.R.values, 0, self.fiducial_r)]
+        zcorr    = self. z_correction(fid.Z.values, fid.S2e.values, self.zrange[0])
 
         print("Correcting in XY")
         dst.S2e *= zcorr.fn(dst.Z.values)
@@ -137,7 +145,9 @@ def ZAIRA(argv = sys.argv):
                   tmax         = CFP.TMAX if "TMAX" in CFP else None,
 
                   z_sampling   = CFP.Z_SAMPLING,
-                  fiducial_r  = CFP.FIDUCIAL_R)
+                  fiducial_r   = CFP.FIDUCIAL_R,
+                  fiducial_z   = CFP.FIDUCIAL_Z,
+                  fiducial_e   = CFP.FIDUCIAL_E)
 
     t0    = time.time()
     nevt, LT, sLT  = zaira.run()
