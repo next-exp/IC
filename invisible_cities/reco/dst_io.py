@@ -256,19 +256,10 @@ class Track(list, Event):
         list .__init__(self)
         Event.__init__(self)
 
-        self.S1w = -1
-        self.S1h = -1
-        self.S1e = -1
-        self.S1t = -1
-
     def store(self, row):
         for hit in self:
             row["event"] = self.evt
             row["time" ] = self.time
-            row["S1w"  ] = self.S1w
-            row["S1h"  ] = self.S1h
-            row["S1e"  ] = self.S1e
-            row["S1t"  ] = self.S1t
 
             row["npeak"] = hit.npeak
             row["X"    ] = hit.X
@@ -277,6 +268,10 @@ class Track(list, Event):
             row["R"    ] = hit.R
             row["Phi"  ] = hit.Phi
             row["Nsipm"] = hit.Nsipm
+            row["Q"    ] = hit.Q
+            row["E"    ] = hit.E
+            row["Ecorr"] = hit.Ecorr
+
             row.append()
 
 
