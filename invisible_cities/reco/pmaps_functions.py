@@ -134,3 +134,7 @@ def integrate_charge(d):
     """
     newd = dict((key, np.sum(value)) for key, value in d.items())
     return list(map(np.array, list(zip(*newd.items()))))
+
+
+def select_si_slice(si, slice_no):
+    return {sipm_no: sipm[slice_no] for sipm_no, sipm in si.items()}
