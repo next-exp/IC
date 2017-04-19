@@ -91,6 +91,7 @@ class Zaira(City, MapCity):
 
         print("Correcting in XY")
         dst.S2e *= zcorr.fn(dst.Z.values)
+        dst      = dst[in_range(dst.S2e.values, *self.fiducial_e)]
         xycorr   = self.xy_correction(dst.X.values, dst.Y.values, dst.S2e.values)
 
         print("Correcting in T")
