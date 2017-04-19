@@ -80,8 +80,6 @@ class Zaira(City, MapCity):
 
     def run(self):
         dst = load_dsts(self.input_files, self.dst_group, self.dst_node)
-        dst = dst[dst.nS2.values == 1]
-
         dst = dst[in_range(dst.S2e.values, *self.fiducial_e)]
         dst = dst[in_range(dst.Z.values  , *self.fiducial_z)]
         dst = dst[in_range(dst.X.values  , *self.xrange    )]
