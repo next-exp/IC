@@ -864,11 +864,16 @@ class HitCollectionCity(S12SelectorCity):
         self.reco_algorithm = reco_algorithm
 
     def split_energy(self, e, clusters):
+        if len(clusters) == 1:
+            return [e]
         qs = np.array([c.Q for c in clusters])
         return e * qs / np.sum(qs)
 
     def correct_energy(self, e, x, y, z):
-        return e * self.z_corr(z)[0][0] * self.xy_corr([x], [y])[0][0]
+        ecorr = e * self.z_corr(z)[0][0]
+        if not np.isnan([x, y]).any():
+            ecorr *= self.xy_corr([x], [y])[0][0]
+        return ecorr
 
     def compute_xy_position(self, si, slice_no):
         si      = pmp.select_si_slice(si, slice_no)
