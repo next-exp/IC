@@ -34,7 +34,8 @@ class Penthesilea(City, HitCollectionCity):
                  S1_Hmax          = np.inf,
                  S1_Ethr          = 0,
 
-                 S2_Nmax          = 1,
+                 S2_Nmin          = 1,
+                 S2_Nmax          = 1000,
                  S2_Emin          = 0,
                  S2_Emax          = np.inf,
                  S2_Lmin          = 0,
@@ -68,6 +69,7 @@ class Penthesilea(City, HitCollectionCity):
                                    S1_Hmax          = S1_Hmax,
                                    S1_Ethr          = S1_Ethr,
 
+                                   S2_Nmin          = S2_Nmin,
                                    S2_Nmax          = S2_Nmax,
                                    S2_Emin          = S2_Emin,
                                    S2_Emax          = S2_Emax,
@@ -100,6 +102,7 @@ class Penthesilea(City, HitCollectionCity):
     S1_HMAX          {S1_HMAX}
     S1_ETHR          {S1_ETHR}
 
+    S2_NMIN          {S2_NMIN}
     S2_NMAX          {S2_NMAX}
     S2_EMIN          {S2_EMIN}
     S2_EMAX          {S2_EMAX}
@@ -137,7 +140,8 @@ class Penthesilea(City, HitCollectionCity):
              S1_HMAX           =    10,
              S1_ETHR           =   0.5,
 
-             S2_NMAX           =     1,
+             S2_NMIN           =     1,
+             S2_NMAX           =     5,
              S2_EMIN           =   1e3,
              S2_EMAX           =   1e8,
              S2_LMIN           =     1,
@@ -228,6 +232,7 @@ def PENTHESILEA(argv = sys.argv):
                               S1_Hmax          = CFP.S1_HMAX * units.pes,
                               S1_Ethr          = CFP.S1_ETHR * units.pes,
 
+                              S2_Nmin          = CFP.S2_NMIN,
                               S2_Nmax          = CFP.S2_NMAX,
                               S2_Emin          = CFP.S2_EMIN * units.pes,
                               S2_Emax          = CFP.S2_EMAX * units.pes,
