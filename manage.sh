@@ -68,6 +68,8 @@ function make_environment {
 
     cat <<EOF > ${YML_FILENAME}
 name: IC${PYTHON_VERSION}
+channels:
+- conda-forge
 dependencies:
 - python=${PYTHON_VERSION}
 - cython
@@ -81,6 +83,7 @@ dependencies:
 - jupyter
 - notebook
 - sphinx
+- git-lfs
 - pip:
   - hypothesis-numpy
   - flaky
