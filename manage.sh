@@ -15,6 +15,7 @@ function install {
     make_environment
     python_version_env
     compile_cython_components
+    git lfs pull
 }
 
 function install_conda {
