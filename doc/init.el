@@ -38,6 +38,7 @@
                    (helm-mode 1)
                    (helm-autoresize-mode t)
                    (setq helm-M-x-fuzzy-match t)
+                   (magit-define-popup-switch 'magit-log-popup ?p "first parent" "--first-parent")
                    ;; the default is dangerously close to C-x C-c which kills emacs
                    ;; (global-unset-key (kbd "C-x c")) ; done in custom
                    (global-set-key (kbd "C-x C-f") 'helm-find-files)
