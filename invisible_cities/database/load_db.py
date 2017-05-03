@@ -67,7 +67,7 @@ as msk ON pos.SensorID = msk.SensorID LEFT JOIN
 as gain ON pos.SensorID = gain.SensorID LEFT JOIN
 (select * from PmtBlr where MinRun < {3} and (MaxRun >= {3} or MaxRun is NULL))
 as blr ON map.ElecID = blr.ElecID
-where pos.SensorID < 100 and pos.MinRun={0} and map.MinRun={2}
+where pos.SensorID < 100 and pos.MinRun={0} and map.MinRun={2} and pos.Label LIKE 'PMT%'
 order by Active desc, pos.SensorID'''\
     .format(minrun_position, minrun_gain, minrun_map, run_number)
     data = pd.read_sql_query(sql, conn)
