@@ -1,6 +1,9 @@
 import sys
 from collections import namedtuple
 
+import numpy as np
+
+
 this_module = sys.modules[__name__]
 
 def _add_namedtuple_in_this_module(name, attribute_names):
@@ -27,3 +30,59 @@ for name, attrs in (
 
 # Leave nothing but the namedtuple types in the namespace of this module
 del name, namedtuple, sys, this_module, _add_namedtuple_in_this_module
+
+
+class Correction:
+    """
+    Interface for accessing any kind of corrections.
+
+    Parameters
+    ----------
+    xs : np.ndarray
+        Array of coordinates corresponding to each correction.
+    fs : np.ndarray
+        Array of corrections or the values used for computing them.
+    us : np.ndarray
+        Array of uncertainties or the values used for computing them.
+    norm : False or string
+        Flag to set the normalization option. Options:
+        - False:    Do not normalize.
+        - "max":    Normalize to maximum energy encountered.
+        - "center": Normalize to the energy placed at the center of the array.
+    """
+    def __init__(self, xs, fs, us, norm = False):
+        self.xs = np.array(xs, dtype=float, ndmin=2).T
+        self.fs = np.array(fs, dtype=float)
+        self.us = np.array(us, dtype=float)
+
+        self._normalize(norm)
+
+    def _normalize(self, norm):
+        if not norm:
+            return
+        elif norm == "max":
+            index  = np.argmax(self.fs)
+        elif norm == "center":
+            index  = tuple(i//2 for i in self.fs.shape)
+        else:
+            raise ValueError("Normalization option not recognized: {}".format(norm))
+
+        f_norm  = self.fs[index]
+        u_norm  = self.us[index]
+
+        fs_norm = self.fs[index]/self.fs
+        fs_norm[self.fs == 0] = 1
+        self.us = fs_norm * ((u_norm / f_norm)**2 +
+                             (self.us/self.fs)**2 )**0.5
+        self.fs = fs_norm
+
+    def _find_closest(self, x):
+        return np.apply_along_axis(np.argmin, 0, abs(x-self.xs))
+
+    def __call__(self, *x):
+        x_closest = np.apply_along_axis(self._find_closest, 0,
+                                        np.array(x, ndmin=2))
+        x_closest = list(map(tuple, x_closest))
+        return self.fs[x_closest], self.us[x_closest]
+
+
