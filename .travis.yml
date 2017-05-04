@@ -23,4 +23,4 @@ install:
   - source manage.sh install ${IC_PYTHON_VERSION}
 
 script:
-  - bash manage.sh run_tests
+  - bash manage.sh run_tests_par
