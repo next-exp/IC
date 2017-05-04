@@ -97,6 +97,7 @@ def test_command_line_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, IC
 
 
 @mark.slow
+@mark.serial
 def test_command_line_irene_run_2983(conf_file_name_data, config_tmpdir, ICDIR):
     """Run Irene. Write an output file."""
 
