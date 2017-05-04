@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from time import time
 import tables as tb
-import matplotlib.pyplot as plt
 
 from scipy import signal
 
