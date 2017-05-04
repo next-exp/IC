@@ -63,10 +63,7 @@ recent version:
    
 
 :Travis CI: |travis|
-:Coveralls: |coveralls|
 
 .. |travis| image:: https://img.shields.io/travis/nextic/IC.png
         :target: https://travis-ci.org/nextic/IC
 
-.. |coveralls| image:: https://coveralls.io/repos/nextic/IC/badge.png
-        :target: https://coveralls.io/r/nextic/IC
