@@ -63,25 +63,51 @@ class Correction:
         elif norm == "max":
             index  = np.argmax(self.fs)
         elif norm == "center":
+            # Take the index at the "center" of the array
             index  = tuple(i//2 for i in self.fs.shape)
         else:
             raise ValueError("Normalization option not recognized: {}".format(norm))
 
+        # reference values
         f_norm  = self.fs[index]
         u_norm  = self.us[index]
 
+        # Normalization is used only when the input is energy, which is used
+        # to compute the correction factors.
+        # These are meant to be used as multiplicative factors, so the
+        # correction factor is reference energy/measured energy.
         fs_norm = self.fs[index]/self.fs
+
+        # If the measured energy is zero, apply no correction at all.
         fs_norm[self.fs == 0] = 1
+
+        # Propagate uncertainties
         self.us = fs_norm * ((u_norm / f_norm)**2 +
                              (self.us/self.fs)**2 )**0.5
         self.fs = fs_norm
 
     def _find_closest(self, x):
+        # For each value in x, find the closest value in the bunch of coordinates
         return np.apply_along_axis(np.argmin, 0, abs(x-self.xs))
 
     def __call__(self, *x):
+        """
+        Compute the correction factor.
+        
+        Parameters
+        ----------
+        *x: Sequence of nd.arrays
+             Each array is one coordinate. The number of coordinates must match
+             that of the `xs` array in the init method.
+        """
+        # For each "event" in the input, find the closest point
         x_closest = np.apply_along_axis(self._find_closest, 0,
                                         np.array(x, ndmin=2))
+
+        # List of tuples:
+        # - tuple-index acts as a multiindex, i.e. one tuple = one element
+        # - array-index acts as a multiindexer, i.e., one array = multiple elements
+        #   which imay be confusing for multidimensional arrays.
         x_closest = list(map(tuple, x_closest))
         return self.fs[x_closest], self.us[x_closest]
 
