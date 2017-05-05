@@ -107,7 +107,7 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
     return FitFunction(fitf,
                        vals,
                        get_errors(cov),
-                       chi2,
+                       chi2 / (len(x) - 1 - len(vals)),
                        pval)
 
 
