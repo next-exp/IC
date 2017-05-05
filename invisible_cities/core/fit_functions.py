@@ -92,6 +92,8 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
     if fit_range is not None:
         sel  = in_range(x, *fit_range)
         x, y = x[sel], y[sel]
+        if "sigma" in kwargs:
+            kwargs["sigma"] = kwargs["sigma"][sel]
 
     vals, cov = scipy.optimize.curve_fit(func,
                                          x, y,
