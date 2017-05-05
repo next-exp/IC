@@ -120,8 +120,10 @@ function run_tests_par {
     fi
 
     # Run the test suite
-    pytest -v -n auto -m "not serial"
-    pytest -v         -m      serial
+    EXIT=0
+    pytest -v -n auto -m "not serial" || EXIT=$?
+    pytest -v         -m      serial  || EXIT=$?
+    exit $EXIT
 }
 
 function ic_env {
