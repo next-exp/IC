@@ -140,6 +140,20 @@ def test_fit_reduced_range():
     assert_allclose(f1.values, f2.values)
 
 
+@mark.parametrize("reduced".split(),
+                  ((True ,),
+                   (False,)))
+def test_fit_with_errors(reduced):
+    pars = np.array([1e3, 1e2, 1e1])
+    x = np.linspace(100, 300, 100)
+    y = fit.gauss(x, *pars)
+    e = 0.1 * y
+
+    fit_range = (50, 150) if reduced else None
+    f = fit.fit(fit.gauss, x, y, pars * 1.2, fit_range=fit_range, sigma=e, maxfev=10000)
+    assert_allclose(f.values, pars)
+
+
 @mark.slow
 @mark.parametrize(["func"],
                   ((fit.profileX,),
