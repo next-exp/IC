@@ -21,7 +21,7 @@ for name, attrs in (
         ('S1PMaps'        , 'S1 S1_PMT S1p S1p_PMT'),
         ('PMaps'          , 'S1 S2 S2Si'),
         ('Peak'           , 't E'),
-        ('FitFunction'    , 'fn values errors chi2')):
+        ('FitFunction'    , 'fn values errors chi2 pvalue')):
     _add_namedtuple_in_this_module(name, attrs)
 
 # Leave nothing but the namedtuple types in the namespace of this module
