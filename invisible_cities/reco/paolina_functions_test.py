@@ -1,0 +1,88 @@
+from collections import namedtuple
+
+import numpy as np
+
+from . dst_io            import Hit, HitCollection
+from . paolina_functions import build_voxels
+from . paolina_functions import calc_adj_matrix
+from . paolina_functions import construct_tracks
+from . paolina_functions import calc_dist_mat
+from . paolina_functions import construct_blobs
+
+def test_paolina():
+    vol_min  = np.array([-250, -250, -100], dtype=np.int16) # volume minimum (x,y,z)
+    vol_max  = np.array([ 250,  250, 1100], dtype=np.int16) # volume maximum (x,y,z)
+    vox_size = np.array([  10,   10,   10], dtype=np.int16) # voxel size
+
+    blob_radius = 15.
+
+    # create a test track
+    hitc = HitCollection()
+    hitc.evt   = 0
+    hitc.time  = 0
+
+    ttrk_x = [-45, -35, -25, -15, -5,  5, 15, 25, 35, 45, 80]
+    ttrk_y = [  0,   0,   0,   0,  0,  0,  0,  0,  0,  0, 30]
+    ttrk_z = [-45, -35, -25, -15, -5,  5, 15, 25, 35, 45, 80]
+    ttrk_q = [ 10,  10,  10,  10, 10, 10, 10, 10, 10, 10, 20]
+
+    for xx, yy, zz, qq in zip(ttrk_x, ttrk_y, ttrk_z, ttrk_q):
+        hit       = Hit()
+        hit.Npeak = 0
+        hit.X     = xx
+        hit.Y     = yy
+        hit.R     = (xx**2 + yy**2) ** 0.5
+        hit.Phi   = np.arctan2(yy, xx)
+        hit.Z     = zz
+        hit.Q     = qq
+        hit.E     = qq
+        hit.Ecorr = qq
+        hit.Nsipm = 10
+        hitc.append(hit)
+
+    # perform the reconstruction
+    voxelc          = build_voxels(hitc, vol_min, vol_max, vox_size)
+    adj_mat         = calc_adj_matrix (voxelc)
+    itmax, trks     = construct_tracks(voxelc, adj_mat)
+    dist_mat, spath = calc_dist_mat  (trks[itmax])
+    Eblob1, Eblob2  = construct_blobs(trks[itmax], dist_mat, spath, blob_radius)
+
+    # check number of voxels and tracks
+    assert len(voxelc) == 11
+    assert len(trks)   ==  2
+
+    # check the adjacency matrix: should have all -1's on diagonal and the
+    #  neighbors should all be 10*sqrt(2) apart
+    for ii in range(len(adj_mat)): assert adj_mat[ii][ii] == -1
+    assert abs(adj_mat[0][1] - 14.142135) < 1.0e-3
+    assert (adj_mat[0][1] == adj_mat[1][0] == adj_mat[1][2] == adj_mat[2][1] ==
+            adj_mat[2][3] == adj_mat[3][2] == adj_mat[3][4] == adj_mat[4][3] ==
+            adj_mat[4][5] == adj_mat[5][4] == adj_mat[5][6] == adj_mat[6][5] ==
+            adj_mat[6][7] == adj_mat[7][6] == adj_mat[7][8] == adj_mat[8][7] ==
+            adj_mat[8][9] == adj_mat[9][8])
+
+    # check the track lengths
+    itmin = 0;
+    if itmin == itmax: itmin = 1
+    assert len(trks[itmax]) == 10
+    assert len(trks[itmin]) == 1
+
+    # check the blob energies and extreme locations
+    e1 = 0; e2 = -1
+    if spath[e1].X > spath[e2].X:
+        e1 = -1; e2 = 0
+    x1 = spath[e1].X; x2 = spath[e2].X
+    y1 = spath[e1].Y; y2 = spath[e2].Y
+    z1 = spath[e1].Z; z2 = spath[e2].Z
+    assert x1 == -50
+    assert x2 == 40
+    assert y1 == 0
+    assert y2 == 0
+    assert z1 == -50
+    assert z2 == 40
+    assert Eblob1 == 20
+    assert Eblob2 == 20
+
+    # check several properties of the distance matrix
+    for ii in range(len(dist_mat)): assert dist_mat[ii][ii] == 0
+    assert abs(np.max(dist_mat) - 127.27922061) < 1-0e-3
