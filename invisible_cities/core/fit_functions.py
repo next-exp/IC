@@ -8,6 +8,7 @@ from __future__ import absolute_import, division
 
 import numpy as np
 import scipy.optimize
+import scipy.stats
 
 from invisible_cities.core.core_functions import in_range
 from invisible_cities.reco.params         import FitFunction
@@ -99,12 +100,13 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
 
     fitf = lambda x: func(x, *vals)
     fitx = fitf(x)
-    chi2 = np.sum(np.ma.masked_invalid((fitx - y)**2/y))
+    chi2, pval = scipy.stats.chisquare(y, fitx, len(x))
 
     return FitFunction(fitf,
                        vals,
                        get_errors(cov),
-                       chi2 / (len(x) - len(vals)))
+                       chi2,
+                       pval)
 
 
 def profileX(xdata, ydata, nbins=100,
