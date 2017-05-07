@@ -81,6 +81,7 @@ dependencies:
 - jupyter
 - notebook
 - sphinx
+- networkx
 - pip:
   - hypothesis-numpy
   - flaky
