@@ -75,8 +75,8 @@ def blobs(tracks, c_dist_mat, data):
 
 ##### Tests ####################################################################
 
-def test_number_of_voxels(voxelc):
-    assert len(voxelc) == 11
+def test_number_of_voxels(voxelc, data):
+    assert len(voxelc) == len(data.hitc)
 
 def test_number_of_tracks(tracks):
     itmax, trks = tracks
@@ -97,7 +97,7 @@ def test_adjacency_matrix_off_diagonal(adj_mat):
 
 def test_track_lengths(tracks):
     itmax, trks = tracks
-    itmin = 0;
+    itmin = 0
     if itmin == itmax: itmin =  1
     assert len(trks[itmax]) == 10
     assert len(trks[itmin]) ==  1
@@ -110,9 +110,11 @@ def test_blob_energies(blobs):
 def test_blob_extreme_locations(c_dist_mat):
     dist_mat, spath = c_dist_mat
 
-    e1 = 0; e2 = -1
+    e1 =  0
+    e2 = -1
     if spath[e1].X > spath[e2].X:
-        e1 = -1; e2 = 0
+        e1 = -1
+        e2 =  0
     x1 = spath[e1].X; x2 = spath[e2].X
     y1 = spath[e1].Y; y2 = spath[e2].Y
     z1 = spath[e1].Z; z2 = spath[e2].Z

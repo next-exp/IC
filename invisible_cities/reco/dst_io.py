@@ -215,13 +215,13 @@ class Hit:
         self.Nsipm = -1
 
 
-class HitCollection(list, Event):
+class HitCollection(Event):
     def __init__(self):
-        list .__init__(self)
         Event.__init__(self)
+        self._data = []
 
     def store(self, row):
-        for hit in self:
+        for hit in self._data:
             row["event"] = self.evt
             row["time" ] = self.time
 
@@ -237,6 +237,15 @@ class HitCollection(list, Event):
             row["Ecorr"] = hit.Ecorr
 
             row.append()
+
+    def append(self, item):
+        self._data.append(item)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
 
 def write_test_dst(df, filename, group, node):
     with tb.open_file(filename, "w") as h5in:
