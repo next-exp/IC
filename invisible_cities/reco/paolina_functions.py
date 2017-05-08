@@ -13,10 +13,10 @@ import networkx as nx
 
 # voxel object
 class Voxel:
-    def __init__(self, ID, X, Y, Z, E, ix, iy, iz, tID):
+    def __init__(self, ID, pos, E, ix, tID):
         self.ID   = ID
-        self.pos  = np.array([     X,      Y,      Z])
-        self.ix   = np.array([    ix,     iy,     iz])
+        self.pos  = pos
+        self.ix   = ix
         self.E    = E
         self.tID  = tID
 
@@ -47,12 +47,10 @@ def build_voxels(hitc, vol_min, vol_max, vox_size):
 
     vid = count()
     return [ Voxel(next(vid),
-                   vol_min[0] + ix * vox_size[0],
-                   vol_min[1] + iy * vox_size[1],
-                   vol_min[2] + iz * vox_size[2],
-                   ee, ix, iy, iz,
+                   vol_min + np.array(ix) * vox_size,
+                   E,        np.array(ix),
                    -1)
-             for ix,iy,iz,ee in zip(nzx,nzy,nzz,nze) ]
+             for *ix, E in zip(nzx,nzy,nzz,nze) ]
 
 def distance(v1, v2):
     return np.linalg.norm(v1.pos - v2.pos)
