@@ -114,18 +114,11 @@ def test_blob_extreme_locations(c_dist_mat):
 
     e1 =  0
     e2 = -1
-    if spath[e1].X > spath[e2].X:
+    if spath[e1].pos[0] > spath[e2].pos[0]:
         e1 = -1
         e2 =  0
-    x1 = spath[e1].X; x2 = spath[e2].X
-    y1 = spath[e1].Y; y2 = spath[e2].Y
-    z1 = spath[e1].Z; z2 = spath[e2].Z
-    assert x1 == -50
-    assert x2 == 40
-    assert y1 == 0
-    assert y2 == 0
-    assert z1 == -50
-    assert z2 == 40
+    assert (np.array([-50, 0, -50]) == spath[e1].pos).all()
+    assert (np.array([ 40, 0,  40]) == spath[e2].pos).all()
 
 def test_dist_mat_properties(c_dist_mat):
     dist_mat, spath = c_dist_mat
