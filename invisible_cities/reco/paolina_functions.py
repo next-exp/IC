@@ -43,9 +43,9 @@ def build_voxels(hitc, vol_min, vol_max, vox_size):
         jvox = int((hh.Y - vol_min[1]) / vox_size[1])
         kvox = int((hh.Z - vol_min[2]) / vox_size[2])
 
-        ivox = min(ivox,vdim[0]-1); ivox = max(ivox,0)
-        jvox = min(jvox,vdim[1]-1); jvox = max(jvox,0)
-        kvox = min(kvox,vdim[2]-1); kvox = max(kvox,0)
+        ivox = np.clip(ivox, 0, vdim[0] - 1)
+        jvox = np.clip(jvox, 0, vdim[1] - 1)
+        kvox = np.clip(kvox, 0, vdim[2] - 1)
 
         varr[ivox][jvox][kvox] += hh.E
 
