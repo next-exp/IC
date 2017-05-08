@@ -84,7 +84,9 @@ def calc_adj_matrix(voxelc):
             elif ((vv1.ix == vv2.ix+1 or vv1.ix == vv2.ix-1 or vv1.ix == vv2.ix) and
                   (vv1.iy == vv2.iy+1 or vv1.iy == vv2.iy-1 or vv1.iy == vv2.iy) and
                   (vv1.iz == vv2.iz+1 or vv1.iz == vv2.iz-1 or vv1.iz == vv2.iz)):
-                adj_mat[vv1.ID][vv2.ID] = np.sqrt((vv2.X-vv1.X)**2 + (vv2.Y-vv1.Y)**2 + (vv2.Z-vv1.Z)**2)
+                adj_mat[vv1.ID][vv2.ID] = (np.sqrt((vv2.X - vv1.X) ** 2 +
+                                                   (vv2.Y - vv1.Y) ** 2 +
+                                                   (vv2.Z - vv1.Z) ** 2 ))
 
     return adj_mat
 
@@ -112,7 +114,9 @@ def construct_tracks(voxelc, adj_mat):
     while pgraph.number_of_nodes() > 0:
 
         # add all nodes with a path from node 0 to a single track
-        tnodes = []; tid = 0; gnodes = pgraph.nodes()
+        tnodes = []
+        tid    = 0
+        gnodes = pgraph.nodes()
         for nn in gnodes:
             if nx.has_path(pgraph, gnodes[0], nn):
                 nn.tID = tid
@@ -144,7 +148,9 @@ def calc_dist_mat(tgraph):
     # initialize the distance matrix
     tvoxelc = tgraph.nodes()
     dist_mat = np.zeros([len(tvoxelc), len(tvoxelc)])
-    dmax = -1; v1max = None; v2max = None
+    dmax  = -1
+    v1max = None
+    v2max = None
 
     # compute the matrix, using only nodes in the specified track
     for n1,vv1 in enumerate(tvoxelc):
@@ -155,8 +161,9 @@ def calc_dist_mat(tgraph):
             #print("--- Adding dist of {0}".format(dist))
             dist_mat[vv1.tID][vv2.tID] = dist_mat[vv2.tID][vv1.tID] = dist
             if dist > dmax or dmax < 0:
-                dmax = dist; v1max = vv1; v2max = vv2
-
+                dmax  = dist
+                v1max = vv1
+                v2max = vv2
 
     # compute one longest shortest path
     #print("Longest shortest path is of length {0}".format(dist_mat[v1max.tID][v2max.tID]))
@@ -170,7 +177,8 @@ def construct_blobs(tgraph, dist_mat, spath, blob_radius):
 
     tvoxelc = tgraph.nodes()
     Eblob1 = Eblob2 = 0
-    ext1 = spath[0]; ext2 = spath[-1]
+    ext1 = spath[ 0]
+    ext2 = spath[-1]
     #print("found ext1 {0} and ext2 {1}".format(ext1,ext2))
 
     # add the energies of voxels within 1 blob radius of each extreme
