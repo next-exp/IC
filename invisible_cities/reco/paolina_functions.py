@@ -1,6 +1,8 @@
 """Functions for Paolina analysis
 JR April 2017
 """
+from itertools import count
+
 import numpy as np
 import networkx as nx
 
@@ -53,20 +55,15 @@ def build_voxels(hitc, vol_min, vol_max, vox_size):
     nzx,nzy,nzz = np.nonzero(varr)
     nze = varr[np.nonzero(varr)]
 
-    # create voxel objects
-    voxelc = []; vid = 0
-    for ix,iy,iz,ee in zip(nzx,nzy,nzz,nze):
-        voxelc.append(Voxel(vid,
-                            vol_min[0] + ix*vox_size[0],
-                            vol_min[1] + iy*vox_size[1],
-                            vol_min[2] + iz*vox_size[2],
-                            ee, ix, iy, iz,
-                            vox_size[0],vox_size[1],vox_size[2],
-                            -1))
-        #print("Added voxel {0},{1},{2} with {3}".format(ix,iy,iz,ee))
-        vid += 1
-
-    return voxelc
+    vid = count()
+    return [ Voxel(next(vid),
+                   vol_min[0] + ix * vox_size[0],
+                   vol_min[1] + iy * vox_size[1],
+                   vol_min[2] + iz * vox_size[2],
+                   ee, ix, iy, iz,
+                   vox_size[0], vox_size[1], vox_size[2],
+                   -1)
+             for ix,iy,iz,ee in zip(nzx,nzy,nzz,nze) ]
 
 def calc_adj_matrix(voxelc):
     """Creates the adjacency matrix.
