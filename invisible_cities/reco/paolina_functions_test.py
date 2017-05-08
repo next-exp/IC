@@ -1,5 +1,4 @@
 from collections import namedtuple
-
 import numpy as np
 
 from pytest import fixture
@@ -12,8 +11,11 @@ from . paolina_functions import calc_dist_mat
 from . paolina_functions import construct_blobs
 
 
+Data = namedtuple('TestData',
+                  'vol_min, vol_max, vox_size, blob_radius, hitc')
+
 @fixture(scope='session')
-def paolina():
+def data():
     vol_min  = np.array([-250, -250, -100], dtype=np.int16) # volume minimum (x,y,z)
     vol_max  = np.array([ 250,  250, 1100], dtype=np.int16) # volume maximum (x,y,z)
     vox_size = np.array([  10,   10,   10], dtype=np.int16) # voxel size
@@ -43,14 +45,14 @@ def paolina():
         hit.Nsipm = 10
         hitc.append(hit)
 
-    return vol_min, vol_max, vox_size, blob_radius, hitc
+    return Data(vol_min, vol_max, vox_size, blob_radius, hitc)
 
 ####### Fixtures corresponding to function outputs #############################
 
 @fixture(scope='session')
-def voxelc(paolina):
-    vol_min, vol_max, vox_size, _, hitc = paolina
-    return build_voxels(hitc, vol_min, vol_max, vox_size)
+def voxelc(data):
+    d = data
+    return build_voxels(d.hitc, d.vol_min, d.vol_max, d.vox_size)
 
 @fixture(scope='session')
 def adj_mat(voxelc):
@@ -66,11 +68,10 @@ def c_dist_mat(tracks):
     return calc_dist_mat(trks[itmax])
 
 @fixture(scope='session')
-def blobs(tracks, c_dist_mat, paolina):
-    _, _, _, blob_radius, _ = paolina
+def blobs(tracks, c_dist_mat, data):
     itmax, trks     = tracks
     dist_mat, spath = c_dist_mat
-    return construct_blobs(trks[itmax], dist_mat, spath, blob_radius)
+    return construct_blobs(trks[itmax], dist_mat, spath, data.blob_radius)
 
 ##### Tests ####################################################################
 
