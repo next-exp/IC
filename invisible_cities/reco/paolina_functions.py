@@ -83,12 +83,11 @@ def calc_adj_matrix(voxelc):
     # iterate through all voxels, and for each one find the neighboring voxels
     for vv1 in voxelc:
         for vv2 in voxelc:
-            if(vv1.ix == vv2.ix and vv1.iy == vv2.iy and vv1.iz == vv2.iz):
-                adj_mat[vv1.ID][vv2.ID] = -1
-            elif ((vv1.ix == vv2.ix+1 or vv1.ix == vv2.ix-1 or vv1.ix == vv2.ix) and
-                  (vv1.iy == vv2.iy+1 or vv1.iy == vv2.iy-1 or vv1.iy == vv2.iy) and
-                  (vv1.iz == vv2.iz+1 or vv1.iz == vv2.iz-1 or vv1.iz == vv2.iz)):
-                adj_mat[vv1.ID][vv2.ID] = distance(vv1, vv2)
+            a = np.array([vv1.ix, vv1.iy, vv1.iz])
+            b = np.array([vv2.ix, vv2.iy, vv2.iz])
+            maxdelta = max(abs(a - b))
+            if   maxdelta == 0: adj_mat[vv1.ID][vv2.ID] = -1
+            elif maxdelta == 1: adj_mat[vv1.ID][vv2.ID] = distance(vv1, vv2)
 
     return adj_mat
 
