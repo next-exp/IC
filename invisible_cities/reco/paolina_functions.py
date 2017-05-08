@@ -133,7 +133,7 @@ def construct_tracks(voxelc, adj_mat):
     # find the largest independent track
     etrk = np.zeros(len(trks))
     for itk,trk in enumerate(trks):
-        ee = np.sum([vv.E for vv in trk])
+        ee = sum(vv.E for vv in trk)
         etrk[itk] = ee
     itmax = np.argmax(etrk)
     #itmax = np.argmax([trk.number_of_nodes() for trk in trks])
