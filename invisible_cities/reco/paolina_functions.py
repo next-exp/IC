@@ -34,15 +34,12 @@ def build_voxels(hitc, vol_min, vol_max, vox_size):
 
     # add the energy of all hits to the voxels
     for hh in hitc:
-        ivox = int((hh.X - vol_min[0]) / vox_size[0])
-        jvox = int((hh.Y - vol_min[1]) / vox_size[1])
-        kvox = int((hh.Z - vol_min[2]) / vox_size[2])
+        dimensions = np.array([hh.X, hh.Y, hh.Z])
+        i,j,k = np.clip((dimensions - vol_min) / vox_size,
+                        0,
+                        vdim - 1).astype(int)
 
-        ivox = np.clip(ivox, 0, vdim[0] - 1)
-        jvox = np.clip(jvox, 0, vdim[1] - 1)
-        kvox = np.clip(kvox, 0, vdim[2] - 1)
-
-        varr[ivox][jvox][kvox] += hh.E
+        varr[i][j][k] += hh.E
 
     # get lists of the nonzero x,y,z indices and E values
     nzx,nzy,nzz = np.nonzero(varr)
