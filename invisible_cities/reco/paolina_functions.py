@@ -13,19 +13,12 @@ import networkx as nx
 
 # voxel object
 class Voxel:
-    def __init__(self, ID, X, Y, Z, E, ix, iy, iz, size_x, size_y, size_z, tID):
-        self.ID     = ID
-        self.X      = X
-        self.Y      = Y
-        self.Z      = Z
-        self.E      = E
-        self.ix     = ix
-        self.iy     = iy
-        self.iz     = iz
-        self.size_x = size_x
-        self.size_y = size_y
-        self.size_z = size_z
-        self.tID    = tID
+    def __init__(self, ID, X, Y, Z, E, ix, iy, iz, tID):
+        self.ID   = ID
+        self.pos  = np.array([     X,      Y,      Z])
+        self.ix   = np.array([    ix,     iy,     iz])
+        self.E    = E
+        self.tID  = tID
 
 
 def build_voxels(hitc, vol_min, vol_max, vox_size):
@@ -61,13 +54,11 @@ def build_voxels(hitc, vol_min, vol_max, vox_size):
                    vol_min[1] + iy * vox_size[1],
                    vol_min[2] + iz * vox_size[2],
                    ee, ix, iy, iz,
-                   vox_size[0], vox_size[1], vox_size[2],
                    -1)
              for ix,iy,iz,ee in zip(nzx,nzy,nzz,nze) ]
 
 def distance(v1, v2):
-    return np.linalg.norm(np.array([v1.X, v1.Y, v1.Z]) -
-                          np.array([v2.X, v2.Y, v2.Z]) )
+    return np.linalg.norm(v1.pos - v2.pos)
 
 def calc_adj_matrix(voxelc):
     """Creates the adjacency matrix.
@@ -83,9 +74,7 @@ def calc_adj_matrix(voxelc):
     # iterate through all voxels, and for each one find the neighboring voxels
     for vv1 in voxelc:
         for vv2 in voxelc:
-            a = np.array([vv1.ix, vv1.iy, vv1.iz])
-            b = np.array([vv2.ix, vv2.iy, vv2.iz])
-            maxdelta = max(abs(a - b))
+            maxdelta = max(abs(vv1.ix - vv2.ix))
             if   maxdelta == 0: adj_mat[vv1.ID][vv2.ID] = -1
             elif maxdelta == 1: adj_mat[vv1.ID][vv2.ID] = distance(vv1, vv2)
 
