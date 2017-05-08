@@ -2,6 +2,8 @@ from collections import namedtuple
 
 import numpy as np
 
+from pytest import fixture
+
 from . dst_io            import Hit, HitCollection
 from . paolina_functions import build_voxels
 from . paolina_functions import calc_adj_matrix
@@ -9,12 +11,13 @@ from . paolina_functions import construct_tracks
 from . paolina_functions import calc_dist_mat
 from . paolina_functions import construct_blobs
 
-def test_paolina():
+
+@fixture(scope='session')
+def paolina():
     vol_min  = np.array([-250, -250, -100], dtype=np.int16) # volume minimum (x,y,z)
     vol_max  = np.array([ 250,  250, 1100], dtype=np.int16) # volume maximum (x,y,z)
     vox_size = np.array([  10,   10,   10], dtype=np.int16) # voxel size
-
-    blob_radius = 15.
+    blob_radius = 15
 
     # create a test track
     hitc = HitCollection()
@@ -40,20 +43,50 @@ def test_paolina():
         hit.Nsipm = 10
         hitc.append(hit)
 
-    # perform the reconstruction
-    voxelc          = build_voxels(hitc, vol_min, vol_max, vox_size)
-    adj_mat         = calc_adj_matrix (voxelc)
-    itmax, trks     = construct_tracks(voxelc, adj_mat)
-    dist_mat, spath = calc_dist_mat  (trks[itmax])
-    Eblob1, Eblob2  = construct_blobs(trks[itmax], dist_mat, spath, blob_radius)
+    return vol_min, vol_max, vox_size, blob_radius, hitc
 
-    # check number of voxels and tracks
+####### Fixtures corresponding to function outputs #############################
+
+@fixture(scope='session')
+def voxelc(paolina):
+    vol_min, vol_max, vox_size, _, hitc = paolina
+    return build_voxels(hitc, vol_min, vol_max, vox_size)
+
+@fixture(scope='session')
+def adj_mat(voxelc):
+    return calc_adj_matrix(voxelc)
+
+@fixture(scope='session')
+def tracks(voxelc, adj_mat):
+    return construct_tracks(voxelc, adj_mat)
+
+@fixture(scope='session')
+def c_dist_mat(tracks):
+    itmax, trks = tracks
+    return calc_dist_mat(trks[itmax])
+
+@fixture(scope='session')
+def blobs(tracks, c_dist_mat, paolina):
+    _, _, _, blob_radius, _ = paolina
+    itmax, trks     = tracks
+    dist_mat, spath = c_dist_mat
+    return construct_blobs(trks[itmax], dist_mat, spath, blob_radius)
+
+##### Tests ####################################################################
+
+def test_number_of_voxels(voxelc):
     assert len(voxelc) == 11
-    assert len(trks)   ==  2
 
-    # check the adjacency matrix: should have all -1's on diagonal and the
-    #  neighbors should all be 10*sqrt(2) apart
+def test_number_of_tracks(tracks):
+    itmax, trks = tracks
+    assert len(trks) == 2
+
+def test_adjacency_matrix_diagonal(adj_mat):
+    # should have all -1's on diagonal and the
     for ii in range(len(adj_mat)): assert adj_mat[ii][ii] == -1
+
+def test_adjacency_matrix_off_diagonal(adj_mat):
+    # neighbors should all be 10*sqrt(2) apart
     assert abs(adj_mat[0][1] - 14.142135) < 1.0e-3
     assert (adj_mat[0][1] == adj_mat[1][0] == adj_mat[1][2] == adj_mat[2][1] ==
             adj_mat[2][3] == adj_mat[3][2] == adj_mat[3][4] == adj_mat[4][3] ==
@@ -61,13 +94,21 @@ def test_paolina():
             adj_mat[6][7] == adj_mat[7][6] == adj_mat[7][8] == adj_mat[8][7] ==
             adj_mat[8][9] == adj_mat[9][8])
 
-    # check the track lengths
+def test_track_lengths(tracks):
+    itmax, trks = tracks
     itmin = 0;
-    if itmin == itmax: itmin = 1
+    if itmin == itmax: itmin =  1
     assert len(trks[itmax]) == 10
-    assert len(trks[itmin]) == 1
+    assert len(trks[itmin]) ==  1
 
-    # check the blob energies and extreme locations
+def test_blob_energies(blobs):
+    Eblob1, Eblob2 = blobs
+    assert Eblob1 == 20
+    assert Eblob2 == 20
+
+def test_blob_extreme_locations(c_dist_mat):
+    dist_mat, spath = c_dist_mat
+
     e1 = 0; e2 = -1
     if spath[e1].X > spath[e2].X:
         e1 = -1; e2 = 0
@@ -80,9 +121,10 @@ def test_paolina():
     assert y2 == 0
     assert z1 == -50
     assert z2 == 40
-    assert Eblob1 == 20
-    assert Eblob2 == 20
 
-    # check several properties of the distance matrix
-    for ii in range(len(dist_mat)): assert dist_mat[ii][ii] == 0
+def test_dist_mat_properties(c_dist_mat):
+    dist_mat, spath = c_dist_mat
+
+    for ii in range(len(dist_mat)):
+        assert dist_mat[ii][ii] == 0
     assert abs(np.max(dist_mat) - 127.27922061) < 1-0e-3
