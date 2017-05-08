@@ -65,6 +65,10 @@ def build_voxels(hitc, vol_min, vol_max, vox_size):
                    -1)
              for ix,iy,iz,ee in zip(nzx,nzy,nzz,nze) ]
 
+def distance(v1, v2):
+    return np.linalg.norm(np.array([v1.X, v1.Y, v1.Z]) -
+                          np.array([v2.X, v2.Y, v2.Z]) )
+
 def calc_adj_matrix(voxelc):
     """Creates the adjacency matrix.
         -1         --> self
@@ -84,9 +88,7 @@ def calc_adj_matrix(voxelc):
             elif ((vv1.ix == vv2.ix+1 or vv1.ix == vv2.ix-1 or vv1.ix == vv2.ix) and
                   (vv1.iy == vv2.iy+1 or vv1.iy == vv2.iy-1 or vv1.iy == vv2.iy) and
                   (vv1.iz == vv2.iz+1 or vv1.iz == vv2.iz-1 or vv1.iz == vv2.iz)):
-                adj_mat[vv1.ID][vv2.ID] = (np.sqrt((vv2.X - vv1.X) ** 2 +
-                                                   (vv2.Y - vv1.Y) ** 2 +
-                                                   (vv2.Z - vv1.Z) ** 2 ))
+                adj_mat[vv1.ID][vv2.ID] = distance(vv1, vv2)
 
     return adj_mat
 
