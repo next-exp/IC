@@ -30,7 +30,7 @@ def build_voxels(hitc, vol_min, vol_max, vox_size):
     vdim = ((vol_max - vol_min) / vox_size).astype(np.int16)
 
     # create the voxel array
-    varr = np.zeros(vdim)
+    voxel_energy = np.zeros(vdim)
 
     # add the energy of all hits to the voxels
     for hh in hitc:
@@ -39,11 +39,11 @@ def build_voxels(hitc, vol_min, vol_max, vox_size):
                         0,
                         vdim - 1).astype(int)
 
-        varr[i][j][k] += hh.E
+        voxel_energy[i][j][k] += hh.E
 
     # get lists of the nonzero x,y,z indices and E values
-    nzx,nzy,nzz = np.nonzero(varr)
-    nze = varr[np.nonzero(varr)]
+    nzx, nzy, nzz =      np.nonzero(voxel_energy)
+    nze =   voxel_energy[np.nonzero(voxel_energy)]
 
     vid = count()
     return [ Voxel(next(vid),
