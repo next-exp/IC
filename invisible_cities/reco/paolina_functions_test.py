@@ -88,11 +88,14 @@ def test_adjacency_matrix_diagonal(adj_mat):
 def test_adjacency_matrix_off_diagonal(adj_mat):
     # neighbors should all be 10*sqrt(2) apart
     assert abs(adj_mat[0][1] - 14.142135) < 1.0e-3
-    assert (adj_mat[0][1] == adj_mat[1][0] == adj_mat[1][2] == adj_mat[2][1] ==
-            adj_mat[2][3] == adj_mat[3][2] == adj_mat[3][4] == adj_mat[4][3] ==
-            adj_mat[4][5] == adj_mat[5][4] == adj_mat[5][6] == adj_mat[6][5] ==
-            adj_mat[6][7] == adj_mat[7][6] == adj_mat[7][8] == adj_mat[8][7] ==
-            adj_mat[8][9] == adj_mat[9][8])
+    assert (adj_mat[0][1] == adj_mat[1][2] ==
+            adj_mat[2][3] == adj_mat[3][4] ==
+            adj_mat[4][5] == adj_mat[5][6] ==
+            adj_mat[6][7] == adj_mat[7][8] ==
+            adj_mat[8][9] )
+
+def test_adjacency_matrix_is_symmetric(adj_mat):
+    assert (adj_mat == adj_mat.T).all()
 
 def test_track_lengths(tracks):
     itmax, trks = tracks
