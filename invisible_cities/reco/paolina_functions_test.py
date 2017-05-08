@@ -83,8 +83,7 @@ def test_number_of_tracks(tracks):
     assert len(trks) == 2
 
 def test_adjacency_matrix_diagonal(adj_mat):
-    # should have all -1's on diagonal and the
-    for ii in range(len(adj_mat)): assert adj_mat[ii][ii] == -1
+    assert (np.diagonal(adj_mat) == -1).all()
 
 def test_adjacency_matrix_off_diagonal(adj_mat):
     # neighbors should all be 10*sqrt(2) apart
