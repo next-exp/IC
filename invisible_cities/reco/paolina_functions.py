@@ -35,7 +35,7 @@ def build_voxels(hitc, vol_min, vol_max, vox_size):
     vdim = ((vol_max - vol_min) / vox_size).astype(np.int16)
 
     # create the voxel array
-    varr = np.zeros([vdim[0],vdim[1],vdim[2]])
+    varr = np.zeros(vdim)
 
     # add the energy of all hits to the voxels
     for hh in hitc:
