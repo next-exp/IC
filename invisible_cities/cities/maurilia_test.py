@@ -6,9 +6,6 @@ IC core team: Jacek Generowicz, JJGC,
 G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
 """
-from __future__ import print_function
-from __future__ import absolute_import
-
 from pytest import mark, fixture
 from   invisible_cities.cities.maurilia import Maurilia, MAURILIA
 

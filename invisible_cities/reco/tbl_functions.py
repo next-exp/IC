@@ -10,8 +10,6 @@ functions in sensorFunctions for now, give functions here more coherente names
 now returns also calibration constants for RWF and BLR (MC version)
 """
 
-from __future__ import print_function, division, absolute_import
-
 import numpy as np
 import tables as tb
 import pandas as pd
