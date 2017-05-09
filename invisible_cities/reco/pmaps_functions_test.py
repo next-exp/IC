@@ -1,12 +1,16 @@
 from operator import itemgetter
-import numpy as np
-from pytest import mark
 
+import numpy as np
+
+
+from pytest import mark
 parametrize = mark.parametrize
 
-import invisible_cities.reco.pmaps_functions as pmapf
-import invisible_cities.core.system_of_units as units
-from invisible_cities.reco.pmaps_functions import df_to_pmaps_dict, df_to_s2si_dict
+from .. core           import system_of_units as units
+
+from .                 import pmaps_functions as pmapf
+from . pmaps_functions import df_to_pmaps_dict
+from . pmaps_functions import df_to_s2si_dict
 
 
 def test_integrate_charge():
