@@ -1,10 +1,10 @@
 import os
 
-from invisible_cities.core.test_utils    import assert_dataframes_equal
-from invisible_cities.reco.dst_io        import Kr_writer, PointLikeEvent
-from invisible_cities.reco.dst_functions import load_dst
-
 from pytest import mark
+
+from .. core.test_utils    import assert_dataframes_equal
+from .. reco.dst_io        import Kr_writer, PointLikeEvent
+from .. reco.dst_functions import load_dst
 
 
 @mark.parametrize(  'filename,          with_',

@@ -5,7 +5,7 @@ import argparse
 import sys
 import os
 
-from invisible_cities.core.log_config import logger
+from . log_config import logger
 
 
 def print_configuration(options):

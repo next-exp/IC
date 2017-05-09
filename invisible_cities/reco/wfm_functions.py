@@ -4,12 +4,13 @@ authors: J.J. Gomez-Cadenas, G. Martinez
 """
 
 import math
+
 import numpy as np
-import tables as tb
+
 import matplotlib.pyplot as plt
-from invisible_cities.core.core_functions import define_window
-from invisible_cities.database import load_db
-import invisible_cities.sierpe.blr as blr
+
+from .. core.core_functions import define_window
+from .. sierpe              import blr
 
 def to_adc(wfs, adc_to_pes):
     """

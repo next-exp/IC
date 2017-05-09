@@ -1,10 +1,4 @@
-import tables
-from invisible_cities.database import download
-import invisible_cities.database.load_db as DB
-import os
-
-
-from pytest import fixture, mark
+from . import load_db as DB
 
 
 def test_pmts_pd():
