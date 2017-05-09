@@ -1,6 +1,5 @@
 """A utility module for plots with matplotlib"""
 
-import math
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
@@ -8,10 +7,7 @@ from matplotlib.collections import PatchCollection
 # from mpl_toolkits.mplot3d import Axes3D
 # from IPython.display import HTML
 
-import invisible_cities.core.core_functions as cf
-import invisible_cities.core.system_of_units as units
-import invisible_cities.reco.tbl_functions as tbl
-
+from .      import system_of_units as units
 
 # matplotlib.style.use("ggplot")
 #matplotlib.rc('animation', html='html5')
