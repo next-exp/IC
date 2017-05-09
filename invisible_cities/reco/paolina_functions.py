@@ -80,19 +80,9 @@ def construct_tracks(voxelc, adj_mat):
         Note: assumes the rows and columns of the adjacency matrix correspond
             to the voxels in the order that they are placed in voxelc
     """
-    #print("Constructing tracks...")
-
-    # add all voxels as nodes to a Graph
-    pgraph = nx.Graph()
-    pgraph.add_nodes_from(voxelc)
-
-    # add edges connecting each node to its neighbor nodes based on the values in the adjacency matrix
-    for nA in voxelc:
-        for nB in voxelc:
-            ndist = adj_mat[nA.ID][nB.ID]
-            if ndist > 0:
-                #print("-- Adding edge from {0} to {1} with weighting of {2}".format(nA.ID,nB.ID,ndist))
-                pgraph.add_edge(nA, nB, weight=ndist)
+    int_to_voxel = dict(zip(count(), voxelc))
+    int_graph = nx.from_numpy_matrix(np.clip(adj_mat, 0, None))
+    pgraph = nx.relabel_nodes(int_graph, int_to_voxel)
 
     # find all independent tracks
     trks = []
