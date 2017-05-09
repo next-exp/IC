@@ -20,6 +20,9 @@ class Voxel:
         self.E    = E
         self.tID  = tID
 
+    def __repr__(self):
+        return '<{} {}>'.format(self.__class__.__name__, self.ix.tolist())
+    __str__ = __repr__
 
 def build_voxels(hitc, vol_min, vol_max, vox_size):
     """Builds a list of voxels from the specified hit collection.
@@ -82,28 +85,28 @@ def construct_tracks(voxelc, adj_mat):
     """
     int_to_voxel = dict(zip(count(), voxelc))
     int_graph = nx.from_numpy_matrix(np.clip(adj_mat, 0, None))
-    pgraph = nx.relabel_nodes(int_graph, int_to_voxel)
+    vox_graph = nx.relabel_nodes(int_graph, int_to_voxel)
 
     # find all independent tracks
     trks = []
-    while pgraph.number_of_nodes() > 0:
+    while vox_graph:
 
         # add all nodes with a path from node 0 to a single track
         tnodes = []
         tid    = 0
-        gnodes = pgraph.nodes()
+        gnodes = vox_graph.nodes()
         for nn in gnodes:
-            if nx.has_path(pgraph, gnodes[0], nn):
+            if nx.has_path(vox_graph, gnodes[0], nn):
                 nn.tID = tid
                 tnodes.append(nn)
                 tid += 1
         tgraph = nx.Graph()
         tgraph.add_nodes_from(tnodes)
-        tgraph.add_weighted_edges_from(pgraph.edges(tnodes, data='weight'))
+        tgraph.add_weighted_edges_from(vox_graph.edges(tnodes, data='weight'))
         trks.append(tgraph)
 
         # remove these nodes from the original graph and start again
-        pgraph.remove_nodes_from(tnodes)
+        vox_graph.remove_nodes_from(tnodes)
 
     # find the largest independent track
     etrk = np.zeros(len(trks))
