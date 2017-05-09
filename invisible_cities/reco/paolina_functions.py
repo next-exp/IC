@@ -86,27 +86,13 @@ def construct_tracks(voxelc, adj_mat):
     int_to_voxel = dict(zip(count(), voxelc))
     int_graph = nx.from_numpy_matrix(np.clip(adj_mat, 0, None))
     vox_graph = nx.relabel_nodes(int_graph, int_to_voxel)
+    tracks = tuple(nx.connected_component_subgraphs(vox_graph))
 
-    # find all independent tracks
-    trks = []
-    while vox_graph:
+    for track in tracks:
+        for id_within_this_track, voxel in enumerate(track.nodes_iter()):
+            voxel.tID = id_within_this_track
 
-        # add all nodes with a path from node 0 to a single track
-        tnodes = []
-        tid    = 0
-        gnodes = vox_graph.nodes()
-        for nn in gnodes:
-            if nx.has_path(vox_graph, gnodes[0], nn):
-                nn.tID = tid
-                tnodes.append(nn)
-                tid += 1
-        tgraph = nx.Graph()
-        tgraph.add_nodes_from(tnodes)
-        tgraph.add_weighted_edges_from(vox_graph.edges(tnodes, data='weight'))
-        trks.append(tgraph)
-
-        # remove these nodes from the original graph and start again
-        vox_graph.remove_nodes_from(tnodes)
+    trks = tracks
 
     # find the largest independent track
     etrk = np.zeros(len(trks))
@@ -114,8 +100,6 @@ def construct_tracks(voxelc, adj_mat):
         ee = sum(vv.E for vv in trk)
         etrk[itk] = ee
     itmax = np.argmax(etrk)
-    #itmax = np.argmax([trk.number_of_nodes() for trk in trks])
-    #print("Found {0} tracks with max having {1} nodes".format(len(trks),trks[itmax].number_of_nodes()))
 
     return itmax, trks
 
