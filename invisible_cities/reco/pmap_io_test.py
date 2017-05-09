@@ -2,28 +2,33 @@
 code: pmap_io_test.py
 """
 import os
-import tables as tb
-import numpy  as np
 import time
 
-from invisible_cities.database import load_db
-import invisible_cities.reco.tbl_functions as tbl
-import invisible_cities.sierpe.blr as blr
-import invisible_cities.reco.peak_functions_c as cpf
-import invisible_cities.reco.peak_functions as pf
-import invisible_cities.reco.pmaps_functions as pmf
+import tables as tb
+import numpy  as np
 
-from invisible_cities.reco.pmap_io           import pmap_writer, S12, S2Si
-from invisible_cities.core.system_of_units_c import units
-from invisible_cities.reco.pmaps_functions   import read_pmaps, read_run_and_event_from_pmaps_file
+from pytest import mark
 
-from invisible_cities.reco.pmaps_functions_c import (
-    df_to_pmaps_dict, df_to_s2si_dict)
+from .. core.system_of_units_c import units
+from .. database               import load_db
+from .. sierpe                 import blr
 
-from invisible_cities.reco.params import (
-    S12Params as S12P, ThresholdParams, CalibratedSum, PMaps)
+from .                         import tbl_functions    as tbl
+from .                         import peak_functions   as pf
+from .                         import peak_functions_c as cpf
 
-from pytest import mark, fixture
+from . params                  import S12Params        as S12P
+from . params                  import ThresholdParams
+from . params                  import PMaps
+
+from . pmap_io                 import pmap_writer
+from . pmap_io                 import S12
+from . pmap_io                 import S2Si
+
+from . pmaps_functions         import read_pmaps
+from . pmaps_functions         import read_run_and_event_from_pmaps_file
+from . pmaps_functions_c       import df_to_pmaps_dict
+from . pmaps_functions_c       import df_to_s2si_dict
 
 
 @mark.parametrize(  'filename,            with_',

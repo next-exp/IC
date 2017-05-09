@@ -1,11 +1,14 @@
 import os
 
-from pytest import mark, fixture
+from pytest import mark
+from pytest import fixture
 from pandas import DataFrame
 
-from invisible_cities.cities.dorothea      import Dorothea, DOROTHEA
-from invisible_cities.reco  .dst_functions import load_dst
-from invisible_cities.core  .test_utils    import assert_dataframes_close
+from . dorothea import Dorothea
+from . dorothea import DOROTHEA
+
+from .. reco.dst_functions import load_dst
+from .. core.test_utils    import assert_dataframes_close
 
 @fixture(scope='module')
 def conf_file_name_mc(config_tmpdir):

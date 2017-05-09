@@ -4,14 +4,20 @@ Tests for fit_functions
 
 import numpy as np
 from pytest import mark
-from numpy.testing import assert_array_equal, assert_allclose
-from hypothesis import given
-from hypothesis.strategies import integers, floats
 
-from   invisible_cities.core.test_utils    import float_arrays, FLOAT_ARRAY, \
-                                                  random_length_float_arrays
-import invisible_cities.core.core_functions as core
-import invisible_cities.core.fit_functions  as fit
+from numpy.testing import assert_array_equal
+from numpy.testing import assert_allclose
+
+from hypothesis            import given
+from hypothesis.strategies import integers
+from hypothesis.strategies import floats
+
+from .test_utils import float_arrays
+from .test_utils import FLOAT_ARRAY
+from .test_utils import random_length_float_arrays
+
+from . import core_functions as core
+from . import  fit_functions as fit
 
 
 def test_get_errors():

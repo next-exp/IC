@@ -7,12 +7,15 @@ G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
 last changed: 01-12-2017
 """
-
 import os
-from   pytest import mark, raises, fixture
 
-from   invisible_cities.core.exceptions import NoInputFiles
-from   invisible_cities.cities.isidora import Isidora, ISIDORA
+from   pytest import mark
+from   pytest import raises
+from   pytest import fixture
+
+from .. core.exceptions import NoInputFiles
+from .  isidora import Isidora
+from .  isidora import ISIDORA
 
 
 @fixture(scope='module')

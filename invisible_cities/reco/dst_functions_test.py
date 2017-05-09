@@ -1,6 +1,9 @@
 import pandas as pd
-from invisible_cities.core.test_utils    import assert_dataframes_equal
-from invisible_cities.reco.dst_functions import load_dst, load_dsts
+
+from .. core.test_utils    import assert_dataframes_equal
+
+from .  dst_functions      import load_dst
+from .  dst_functions      import load_dsts
 
 
 def test_load_dst(Kr_dst_data):
