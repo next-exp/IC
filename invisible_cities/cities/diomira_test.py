@@ -8,19 +8,22 @@ package: invisible cities. See release notes and licence
 """
 import os
 import tables as tb
-import numpy as np
+import numpy  as np
 
-from pytest import mark, fixture
+from pytest import mark
+from pytest import fixture
 
-import invisible_cities.reco.tbl_functions as tbl
-import invisible_cities.reco.wfm_functions as wfm
-import invisible_cities.core.system_of_units as units
-from   invisible_cities.sierpe import fee as FEE
-import invisible_cities.sierpe.blr as blr
-from   invisible_cities.database import load_db
-from   invisible_cities.cities.diomira import Diomira, DIOMIRA
-from   invisible_cities.core.random_sampling \
-     import NoiseSampler as SiPMsNoiseSampler
+from .. core import system_of_units as units
+from .. core.random_sampling import NoiseSampler as SiPMsNoiseSampler
+
+from .. reco     import tbl_functions as tbl
+from .. reco     import wfm_functions as wfm
+from .. sierpe   import fee as FEE
+from .. sierpe   import blr
+from .. database import load_db
+
+from .  diomira  import Diomira
+from .  diomira  import DIOMIRA
 
 
 @fixture(scope='module')

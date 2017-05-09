@@ -5,8 +5,9 @@ Performance of some coreFunctions
 
 from time import time
 import numpy as np
-import invisible_cities.reco.wfm_functions as wfm
-import invisible_cities.reco.peak_functions_c as cpf
+
+from .. reco import  wfm_functions   as wfm
+from .. reco import peak_functions_c as cpf
 
 
 t = np.arange(1.,100., 0.1, dtype=np.double)
