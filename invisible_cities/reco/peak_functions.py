@@ -1,8 +1,6 @@
 """Functions to find peaks, S12 selection etc.
 JJGC and GML December 2016
 """
-from __future__ import print_function, division, absolute_import
-
 import math
 import numpy as np
 import pandas as pd
