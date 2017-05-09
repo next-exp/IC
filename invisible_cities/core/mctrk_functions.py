@@ -2,8 +2,8 @@
 Monte Carlo tracks functions
 """
 import matplotlib.pyplot as plt
-from   invisible_cities.reco.nh5 import MCTrack
-import invisible_cities.reco.tbl_functions as tbl
+from ..reco.nh5 import MCTrack
+from ..reco     import tbl_functions as tbl
 
 class MCTrackWriter:
     """Write MCTracks to file."""

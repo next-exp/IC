@@ -12,31 +12,29 @@ Authors: J.J. Gomez-Cadenas and J. Generowicz.
 Feburary, 2017.
 """
 
-import abc
 import sys
-import copy
 from textwrap import dedent
 
 import numpy as np
 
-from   invisible_cities.database import load_db
-from   invisible_cities.core.system_of_units_c import units
-import invisible_cities.sierpe.blr as blr
-import invisible_cities.reco.peak_functions_c as cpf
-import invisible_cities.reco.peak_functions as pf
-import invisible_cities.reco.pmaps_functions as pmp
-from   invisible_cities.core.exceptions import NoInputFiles, NoOutputFile
-import invisible_cities.sierpe.fee as FE
-import invisible_cities.reco.tbl_functions as tbf
-import invisible_cities.core.fit_functions as fitf
-import invisible_cities.reco.wfm_functions as wfm
-from   invisible_cities.core.random_sampling \
-         import NoiseSampler as SiPMsNoiseSampler
-from   invisible_cities.core.configure import print_configuration
-from   invisible_cities.reco.dst_io import PointLikeEvent
+from .. core.configure         import print_configuration
+from .. core.exceptions        import NoInputFiles
+from .. core.exceptions        import NoOutputFile
+from .. core.system_of_units_c import units
 
-from   invisible_cities.reco.nh5 import DECONV_PARAM
-import invisible_cities.reco.pmap_io as pio
+from .. database import load_db
+
+from ..reco        import peak_functions_c as cpf
+from ..reco        import peak_functions   as pf
+from ..reco        import pmaps_functions  as pmp
+from ..reco        import pmap_io          as pio
+from ..reco        import tbl_functions    as tbf
+from ..reco        import wfm_functions    as wfm
+from ..reco.dst_io import PointLikeEvent
+from ..reco.nh5    import DECONV_PARAM
+
+from ..sierpe import blr
+from ..sierpe import fee as FE
 
 if sys.version_info >= (3,5):
     # Exec to avoid syntax errors in older Pythons

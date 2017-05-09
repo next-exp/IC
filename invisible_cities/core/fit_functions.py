@@ -8,8 +8,8 @@ import numpy as np
 import scipy.optimize
 import scipy.stats
 
-from invisible_cities.core.core_functions import in_range
-from invisible_cities.reco.params         import FitFunction
+from .  core_functions import in_range
+from .. reco.params    import FitFunction
 
 def get_errors(cov):
     """

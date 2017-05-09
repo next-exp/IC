@@ -23,10 +23,10 @@ def electron_RWF_file(request, ICDIR):
                         'database/test_data',
                         request.param)
 
-from invisible_cities.reco.pmaps_functions import (df_to_pmaps_dict,
-                                                   df_to_s2si_dict,
-                                                   read_pmaps,
-                                                   load_pmaps)
+from .reco.pmaps_functions import (df_to_pmaps_dict,
+                                   df_to_s2si_dict,
+                                   read_pmaps,
+                                   load_pmaps)
 from pandas import DataFrame, Series
 import numpy as np
 

@@ -1,4 +1,5 @@
-import sys, os
+import re
+from time      import sleep
 from functools import partial
 
 import pandas as pd
@@ -9,10 +10,8 @@ from hypothesis import given
 from hypothesis.strategies import integers, floats, sampled_from, composite
 sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 
-from invisible_cities.core.test_utils import random_length_float_arrays
-from . import core_functions as core
-import re
-from time import sleep
+from .test_utils import random_length_float_arrays
+from .           import core_functions as core
 
 def test_timefunc(capfd):
     # We run a function with a defined time duration (sleep) and we check

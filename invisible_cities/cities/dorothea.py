@@ -6,12 +6,17 @@ import textwrap
 import numpy  as np
 import tables as tb
 
-from invisible_cities.core.configure         import configure
-from invisible_cities.core.system_of_units_c import units
-from invisible_cities.reco.dst_io            import Kr_writer
-from invisible_cities.cities.base_cities     import City, S12SelectorCity, merge_two_dicts, dedent
-from invisible_cities.reco.tbl_functions     import get_event_numbers_and_timestamps
-from invisible_cities.reco.pmaps_functions   import load_pmaps
+from .. core.configure         import configure
+from .. core.system_of_units_c import units
+
+from .. reco.dst_io            import Kr_writer
+from .. reco.pmaps_functions   import load_pmaps
+from .. reco.tbl_functions     import get_event_numbers_and_timestamps
+
+from .  base_cities            import City
+from .  base_cities            import S12SelectorCity
+from .  base_cities            import merge_two_dicts
+from .  base_cities            import dedent
 
 
 class Dorothea(City, S12SelectorCity):
