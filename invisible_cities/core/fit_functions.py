@@ -4,8 +4,6 @@ A set of functions for data fitting.
 GML November 2016
 """
 
-from __future__ import absolute_import, division
-
 import numpy as np
 import scipy.optimize
 import scipy.stats
