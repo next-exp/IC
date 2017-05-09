@@ -1,8 +1,8 @@
 import abc
 import tables as tb
 
-import invisible_cities.reco.nh5 as table_formats
-import invisible_cities.reco.tbl_functions as tbf
+from . import nh5           as table_formats
+from . import tbl_functions as tbf
 
 
 class DST_writer:

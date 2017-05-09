@@ -1,23 +1,26 @@
-from pytest import mark, fixture
-import sys, os
-from os import path
-
-import pandas as pd
-import numpy as np
-import numpy.testing as npt
-import tables as tb
-
-from   invisible_cities.database import load_db
-import invisible_cities.sierpe.blr as blr
-import invisible_cities.reco.tbl_functions as tbl
-import invisible_cities.reco.peak_functions_c as cpf
-import invisible_cities.reco.peak_functions as pf
-import invisible_cities.core.sensor_functions as sf
-import invisible_cities.core.core_functions as cf
-from   invisible_cities.reco.params import S12Params, ThresholdParams,\
-        DeconvParams, CalibVectors
-from   invisible_cities.core.system_of_units_c import units
 from collections import namedtuple
+
+import tables        as tb
+import numpy         as np
+import numpy.testing as npt
+
+from pytest import fixture
+
+from .. core                   import core_functions   as cf
+from .. core.system_of_units_c import units
+
+from .. database               import load_db
+
+from .. sierpe                 import blr
+
+from .                         import peak_functions   as pf
+from .                         import peak_functions_c as cpf
+from .                         import tbl_functions    as tbl
+from . params                  import S12Params
+from . params                  import ThresholdParams
+from . params                  import DeconvParams
+from . params                  import CalibVectors
+
 
 # TODO: rethink this test (list(6) could stop working anytime if DataPMT is changed)
 @fixture(scope='module')
@@ -92,8 +95,6 @@ def csum_zs_blr_cwf(electron_RWF_file):
 
         wfzs_ene,    wfzs_indx    = cpf.wfzs(csum_blr,    threshold=0.5)
         wfzs_ene_py, wfzs_indx_py =  pf.wfzs(csum_blr_py, threshold=0.5)
-
-        from collections import namedtuple
 
         return (namedtuple('Csum',
                         """cwf cwf6
