@@ -4,10 +4,6 @@ import pandas as pd
 import os
 from operator import itemgetter
 
-import sys
-if sys.version_info < (3,):
-    from future_builtins import map
-
 
 DATABASE_LOCATION = '/invisible_cities/database/localdb.sqlite3'
 

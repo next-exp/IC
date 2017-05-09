@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from os import getenv, path
 from pytest import mark
 from hypothesis import given, example
