@@ -298,12 +298,16 @@ cpdef rebin_S2(double [:] t, double [:] e, dict sipms, int nrebin):
     cdef int i0 = 0
     cdef int i1 = 0
 
+    cdef double [:] e_slice
+
     for i in range(n_slices):
         i0 = i  * nrebin
         i1 = i0 + nrebin
-        t_rebin[i] = np.average(t_rebin[i0:i1], weights = e_rebin[i0:i1])
-        e_rebin[i] = np.sum(e_rebin[i0:i1])
-        for sipm, qs in sipms_rebin.items():
+
+        e_slice = e[i0:i1]
+        t_rebin[i] = np.average(t[i0:i1], weights = e_slice if np.any(e_slice) else None)
+        e_rebin[i] = np.sum(e_slice)
+        for sipm, qs in sipms.items():
             sipms_rebin[sipm][i] = np.sum(qs[i0:i1])
 
     return np.asarray(t_rebin), np.asarray(e_rebin), sipms_rebin
