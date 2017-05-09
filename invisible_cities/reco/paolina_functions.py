@@ -2,6 +2,7 @@
 JR April 2017
 """
 from itertools import count
+from operator  import itemgetter
 
 import numpy as np
 import networkx as nx
@@ -86,22 +87,16 @@ def construct_tracks(voxelc, adj_mat):
     int_to_voxel = dict(zip(count(), voxelc))
     int_graph = nx.from_numpy_matrix(np.clip(adj_mat, 0, None))
     vox_graph = nx.relabel_nodes(int_graph, int_to_voxel)
-    tracks = tuple(nx.connected_component_subgraphs(vox_graph))
+    all_tracks = tuple(nx.connected_component_subgraphs(vox_graph))
 
-    for track in tracks:
+    for track in all_tracks:
         for id_within_this_track, voxel in enumerate(track.nodes_iter()):
             voxel.tID = id_within_this_track
 
-    trks = tracks
+    track_total_Es = (sum(voxel.E for voxel in track) for track in all_tracks)
+    max_E_track = np.argmax(track_total_Es)
+    return max_E_track, all_tracks
 
-    # find the largest independent track
-    etrk = np.zeros(len(trks))
-    for itk,trk in enumerate(trks):
-        ee = sum(vv.E for vv in trk)
-        etrk[itk] = ee
-    itmax = np.argmax(etrk)
-
-    return itmax, trks
 
 def calc_dist_mat(tgraph):
     """Calculates the distance matrix and longest shortest path.
@@ -111,8 +106,6 @@ def calc_dist_mat(tgraph):
     tvoxelc = tgraph.nodes()
     dist_mat = np.zeros([len(tvoxelc), len(tvoxelc)])
     dmax  = -1
-    v1max = None
-    v2max = None
 
     # compute the matrix, using only nodes in the specified track
     for n1,vv1 in enumerate(tvoxelc):
@@ -122,7 +115,7 @@ def calc_dist_mat(tgraph):
             dist = nx.astar_path_length(tgraph, vv1, vv2)
             #print("--- Adding dist of {0}".format(dist))
             dist_mat[vv1.tID][vv2.tID] = dist_mat[vv2.tID][vv1.tID] = dist
-            if dist > dmax or dmax < 0:
+            if dist > dmax:
                 dmax  = dist
                 v1max = vv1
                 v2max = vv2
@@ -133,8 +126,6 @@ def calc_dist_mat(tgraph):
     return dist_mat, spath
 
 def construct_blobs(tgraph, dist_mat, spath, blob_radius):
-    """Construct the blobs.
-    """
     #print("Constructing blobs...")
 
     tvoxelc = tgraph.nodes()
