@@ -7,8 +7,6 @@ IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
 last changed: 09-11-2017
 """
-from __future__ import print_function
-
 import sys
 from glob import glob
 from time import time

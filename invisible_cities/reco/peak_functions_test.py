@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from pytest import mark, fixture
 import sys, os
 from os import path
