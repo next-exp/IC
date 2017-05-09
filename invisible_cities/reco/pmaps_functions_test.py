@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from operator import itemgetter
 import numpy as np
 from pytest import mark

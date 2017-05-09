@@ -4,8 +4,6 @@ PMT plane FEE.
 VH, JJGC, November, 2016
 """
 
-from __future__ import print_function, division
-
 import numpy as np
 from scipy import signal
 import invisible_cities.core.system_of_units as units

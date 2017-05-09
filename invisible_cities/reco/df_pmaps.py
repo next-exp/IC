@@ -5,8 +5,6 @@ Not used in main stream analysis. Not tested.
 Kept in repository for future use.
 
 """
-from __future__ import print_function, division, absolute_import
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
