@@ -1,5 +1,7 @@
 import abc
+
 import tables as tb
+import numpy  as np
 
 from . import nh5           as table_formats
 from . import tbl_functions as tbf
@@ -53,6 +55,7 @@ class Kr_writer(DST_writer):
         self.table_name = table_name
         self.table_doc  = table_name if table_doc is None else table_doc
         self.table      = self._make_table()
+        self.table.cols.event.create_index()
         self.row        = self.table.row
 
 
@@ -113,6 +116,11 @@ class Corr_writer(DST_writer):
 
     def write_xy_corr(self, xs, ys, fs, us, ns):
         row = self.xy_table.row
+        xs  = np.repeat(xs, xs.size)
+        ys  = np.tile  (ys, ys.size)
+        fs  = fs.flatten()
+        us  = us.flatten()
+        ns  = ns.flatten()
         for x, y, f, u, n in zip(xs, ys, fs, us, ns):
             row["x"]           = x
             row["y"]           = y
@@ -121,7 +129,7 @@ class Corr_writer(DST_writer):
             row["nevt"]        = n
 
     def write_t_corr (self, ts, fs, us):
-        row = self.z_table.row
+        row = self.t_table.row
         for t, f, u in zip(ts, fs, us):
             row["t"]           = t
             row["factor"]      = f
@@ -136,8 +144,6 @@ def _make_table(hdf5_file, group, name, format, compression, description):
                                    format,
                                    description,
                                    tbf.filters(compression))
-    table.cols.event.create_index()
-
     return table
 
 
