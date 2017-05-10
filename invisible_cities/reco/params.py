@@ -52,9 +52,9 @@ class Correction:
         if not norm:
             return
         elif norm == "max":
-            index  = np.argmax(self.es)
+            index  = np.argmax(self.fs)
         elif norm == "center":
-            index  = [i//2 for i in self.es.shape]
+            index  = tuple(i//2 for i in self.fs.shape)
         else:
             raise ValueError("Normalization option not recognized: {}".format(norm))
 
@@ -62,6 +62,7 @@ class Correction:
         u_norm  = self.us[index]
 
         fs_norm = self.fs[index]/self.fs
+        fs_norm[self.fs == 0] = 1
         self.us = fs_norm * ((u_norm / f_norm)**2 +
                              (self.us/self.fs)**2 )**0.5
         self.fs = fs_norm
@@ -70,8 +71,10 @@ class Correction:
         return np.apply_along_axis(np.argmin, 0, abs(x-self.xs))
 
     def __call__(self, *x):
-        x_closest = np.apply_along_axis(self._find_closest, 1,
+        x_closest = np.apply_along_axis(self._find_closest, 0,
                                         np.array(x, ndmin=2))
+
+        x_closest = list(map(tuple, x_closest))
         return self.fs[x_closest], self.us[x_closest]
 
 

@@ -739,17 +739,17 @@ class MapCity:
                  zmin         = None,
                  zmax         = None,
 
-                 z_sampling   = 1000,
-                 fiducial_cut =  100,
-
                  tbins        =  100,
                  tmin         = None,
-                 tmax         = None):
+                 tmax         = None,
+
+                 z_sampling   = 1000):
         self.det_geo = load_db.DetectorGeo()
 
-        self.xybins = xbins, ybins
-        self. zbins = zbins
-        self. tbins = tbins
+        self.xbins = xbins
+        self.ybins = ybins
+        self.zbins = zbins
+        self.tbins = tbins
 
         xmin = self.det_geo.XMIN[0] if xmin is None else xmin
         xmax = self.det_geo.XMAX[0] if xmax is None else xmax
@@ -766,8 +766,6 @@ class MapCity:
         self.trange = tmin, tmax
 
         self.z_sampling   = z_sampling
-        self.fiducial_cut = fiducial_cut
-
 
     def z_correction(self, Z, E):
         x, y, _ = \
@@ -776,17 +774,17 @@ class MapCity:
         seed = np.max(E), -1e3
         LT_f = fitf.fit(fitf.expo, x, y, seed, fit_range=self.zrange)
 
-        norm = LT_f(0)
-        zfun = lambda z: norm/LT_f(z)
+        norm = LT_f.fn(0)
+        zfun = lambda z: norm/LT_f.fn(z)
 
         E0 ,  LT = LT_f.values
         sE0, sLT = LT_f.errors
 
         zs = np.linspace(self.det_geo.ZMIN[0], self.det_geo.ZMAX[0], self.z_sampling)
         es = zfun(zs)
-        ss = es * ((sE0/E0)**2 + (x*sLT/LT**2)**2)**0.5
+        ss = es * ((sE0/E0)**2 + (zs*sLT/LT**2)**2)**0.5
 
-        z_corr     = Correction(zs, es, ss, norm_opt = "max")
+        z_corr     = Correction(zs, es, ss, norm = "max")
         z_corr. fn = zfun
         z_corr. LT = -LT
         z_corr.sLT = sLT
@@ -794,13 +792,17 @@ class MapCity:
 
     def xy_correction(self, X, Y, E):
         xs, ys, es, ss = \
-        fitf.profileXY(X, Y, E, self.xybins, (self.xrange, self.yrange))
-        return Correction((xs, ys), es, ss, norm_opt = "center")
+        fitf.profileXY(X, Y, E, self.xbins, self.ybins, self.xrange, self.yrange)
+        return Correction((xs, ys), es, ss, norm = "center")
 
     def t_correction(self, T, E):
+        tmin = np.min(T) if self.trange[0] is None else self.trange[0]
+        tmax = np.max(T) if self.trange[1] is None else self.trange[1]
+        self.trange = tmin, tmax
+
         ts, es, ss = \
         fitf.profileX(T, E, self.tbins, self.trange)
-        return Correction(ts, es, ss, norm_opt = "max")
+        return Correction(ts, es, ss, norm = "max")
 
     def xy_statistics(self, X, Y):
-        return np.histogram2d(X, Y, self.xybins, (self.xrange, self.yrange))
+        return np.histogram2d(X, Y, (self.xbins, self.ybins), (self.xrange, self.yrange))
