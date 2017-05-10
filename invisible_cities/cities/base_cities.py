@@ -30,8 +30,10 @@ from ..reco        import pmaps_functions  as pmp
 from ..reco        import pmap_io          as pio
 from ..reco        import tbl_functions    as tbf
 from ..reco        import wfm_functions    as wfm
+from ..reco        import fit_functions    as fitf
 from ..reco.dst_io import PointLikeEvent
 from ..reco.nh5    import DECONV_PARAM
+from ..reco.params import Correction
 
 from ..sierpe import blr
 from ..sierpe import fee as FE
@@ -721,3 +723,77 @@ class S12SelectorCity:
             evt.Z    .append(dt * units.mus * self.drift_v)
 
         return evt
+
+
+class MapCity:
+    def __init__(self,
+                 # TODO: use None for min/max and load them from DB
+                 xbins        =  100,
+                 xmin         = -215,
+                 xmax         = +215,
+
+                 ybins        =  100,
+                 ymin         = -215,
+                 ymax         = +215,
+
+                 zbins        =  100,
+                 zmin         =    0,
+                 zmax         =  600,
+
+                 z_sampling   = 1000,
+                 fiducial_cut =  100,
+
+                 tbins        =  100,
+                 tmin         =    0,
+                 tmax         = 1000):
+
+
+        self.xybins = xbins, ybins
+        self. zbins = zbins
+        self. tbins = tbins
+
+        self.xrange = xmin, xmax
+        self.yrange = ymin, ymax
+        self.zrange = zmin, zmax
+        self.trange = tmin, tmax
+
+        self.z_sampling   = z_sampling
+        self.fiducial_cut = fiducial_cut
+
+        self.det_geo = load_db.DetectorGeo()
+
+    def z_correction(self, Z, E):
+        x, y, _ = \
+        fitf.profileX(Z, E, self.zbins, xrange=self.zrange)
+
+        seed = np.max(E), -1e3
+        LT_f = fitf.fit(fitf.expo, x, y, seed, fit_range=self.zrange)
+
+        norm = LT_f(0)
+        zfun = lambda z: norm/LT_f(z)
+
+        E0 ,  LT = LT_f.values
+        sE0, sLT = LT_f.errors
+
+        zs = np.linspace(self.det_geo.ZMIN, self.det_geo.ZMAX, self.z_sampling)
+        es = zfun(zs)
+        ss = es * ((sE0/E0)**2 + (x*sLT/LT**2)**2)**0.5
+
+        z_corr     = Correction(zs, es, ss, norm_opt = "max")
+        z_corr. fn = zfun
+        z_corr. LT = -LT
+        z_corr.sLT = sLT
+        return z_corr
+
+    def xy_correction(self, X, Y, E):
+        xs, ys, es, ss = \
+        fitf.profileXY(X, Y, E, self.xybins, (self.xrange, self.yrange))
+        return Correction((xs, ys), es, ss, norm_opt = "center")
+
+    def t_correction(self, T, E):
+        ts, es, ss = \
+        fitf.profileX(T, E, self.tbins, self.trange)
+        return Correction(ts, es, ss, norm_opt = "max")
+
+    def xy_statistics(self, X, Y):
+        return np.histogram2d(X, Y, self.xybins, (self.xrange, self.yrange))
