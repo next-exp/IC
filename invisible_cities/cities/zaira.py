@@ -3,10 +3,11 @@ from __future__ import print_function
 import sys
 import time
 
-from invisible_cities.cities.base_cities   import City, MapCity
-from invisible_cities.core  .configure     import configure
-from invisible_cities.reco  .dst_functions import load_dsts
-from invisible_cities.reco  .dst_io        import Corr_writer
+from invisible_cities.cities.base_cities    import City, MapCity
+from invisible_cities.core  .fit_functions  import in_range
+from invisible_cities.core  .configure      import configure
+from invisible_cities.reco  .dst_functions  import load_dsts
+from invisible_cities.reco  .dst_io         import Corr_writer
 
 
 class Zaira(City, MapCity):
@@ -32,12 +33,12 @@ class Zaira(City, MapCity):
                  zmin         = None,
                  zmax         = None,
 
-                 z_sampling   = 1000,
-                 fiducial_cut =  100,
-
                  tbins        =  100,
                  tmin         = None,
-                 tmax         = None):
+                 tmax         = None,
+
+                 z_sampling   = 1000,
+                 fiducial_r   =  100):
 
         City.__init__(self,
                       run_number  = run_number,
@@ -59,32 +60,41 @@ class Zaira(City, MapCity):
                          zmin         = zmin,
                          zmax         = zmax,
 
-                         z_sampling   = z_sampling,
-                         fiducial_cut = fiducial_cut,
-
                          tbins        = tbins,
                          tmin         = tmin,
-                         tmax         = tmax)
+                         tmax         = tmax,
 
-        self.dst_group = dst_group
-        self.dst_node  = dst_node
+                         z_sampling   = z_sampling)
+
+        self.fiducial_r = fiducial_r
+
+        self.dst_group  = dst_group
+        self.dst_node   = dst_node
 
 
-    def run(self, max_evt=-1):
+    def run(self):
         dst = load_dsts(self.input_files, self.dst_group, self.dst_node)
         dst = dst[dst.nS2 == 1]
+        dst = dst[in_range(dst.Z, *self.zrange)]
+        dst = dst[in_range(dst.X, *self.xrange)]
+        dst = dst[in_range(dst.Y, *self.yrange)]
 
-        fid      = dst[dst.R < self.fiducial_cut]
-        zcorr    = self. z_correction(fid.Z, fid.S2e)
+        print("Correcting in Z")
+        fid      = dst[dst.R < self.fiducial_r]
+        zcorr    = self. z_correction(fid.Z.values, fid.S2e.values)
 
-        dst.S2e *= zcorr.fn(dst.Z)
-        xycorr   = self.xy_correction(dst.X, dst.Y, dst.S2e)
+        print("Correcting in XY")
+        dst.S2e *= zcorr.fn(dst.Z.values)
+        xycorr   = self.xy_correction(dst.X.values, dst.Y.values, dst.S2e.values)
 
-        dst.S2e *= xycorr(dst.X.values, dst.Y.values)
-        tcorr    = self. t_correction(dst.time, dst.S2e)
+        print("Correcting in T")
+        dst.S2e *= xycorr(dst.X.values, dst.Y.values)[0]
+        tcorr    = self. t_correction(dst.time.values, dst.S2e.values)
 
-        nevt     = self.xy_statistics(dst.X, dst.Y, self.xybins, (self.xrange, self.yrange))
+        print("Computing stats")
+        nevt     = self.xy_statistics(dst.X.values, dst.Y.values)[0]
 
+        print("Saving to file")
         with Corr_writer(self.output_file) as writer:
             writer.write_z_corr (zcorr.xs, zcorr.fs, zcorr.us)
             writer.write_xy_corr(*xycorr.xs.T, xycorr.fs, xycorr.us, nevt)
@@ -101,7 +111,7 @@ def ZAIRA(argv = sys.argv):
 
     #class instance
     zaira = Zaira(run_number   = CFP.RUN_NUMBER,
-                  files_in     = CFP.FILE_IN,
+                  files_in     = [CFP.FILE_IN],
                   file_out     = CFP.FILE_OUT,
                   compression  = CFP.COMPRESSION,
                   nprint       = CFP.NPRINT,
@@ -122,17 +132,15 @@ def ZAIRA(argv = sys.argv):
                   zmin         = CFP.ZMIN if "ZMIN" in CFP else None,
                   zmax         = CFP.ZMAX if "ZMAX" in CFP else None,
 
-                  z_sampling   = CFP.Z_SAMPLING,
-                  fiducial_cut = CFP.FIDUCIAL_CUT,
-
                   tbins        = CFP.TBINS,
                   tmin         = CFP.TMIN if "TMIN" in CFP else None,
-                  tmax         = CFP.TMAX if "TMAX" in CFP else None)
+                  tmax         = CFP.TMAX if "TMAX" in CFP else None,
 
-    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
+                  z_sampling   = CFP.Z_SAMPLING,
+                  fiducial_r  = CFP.FIDUCIAL_R)
 
     t0    = time.time()
-    nevt, LT, sLT  = zaira.run(nmax=nevts, print_empty=CFP.PRINT_EMPTY_EVENTS)
+    nevt, LT, sLT  = zaira.run()
     t1    = time.time()
     dt    = t1 - t0
 
@@ -140,7 +148,7 @@ def ZAIRA(argv = sys.argv):
         print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
         print("LIFETIME = {} +- {}".format(LT, sLT))
 
-    return nevts, nevt, LT, sLT
+    return nevt, LT, sLT
 
 if __name__ == "__main__":
     ZAIRA(sys.argv)
