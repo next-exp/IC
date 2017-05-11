@@ -12,22 +12,25 @@ from . paolina import Voxel
 from . paolina import bounding_box
 from . paolina import voxelize_hits
 
-posn = floats(min_value=0, max_value=100)
+
+def big_enough(hits):
+    lo, hi = bounding_box(hits)
+    bbsize = abs(hi-lo)
+    return (bbsize > 0.1).all()
+
+posn = floats(min_value=10, max_value=100)
 ener = posn
-
 bunch_of_hits = lists(builds(Hit, posn, posn, posn, ener),
-                      min_size = 0,
-                      max_size = 30)
+                      min_size =  0,
+                      max_size = 30).filter(big_enough)
 
 
-@given(bunch_of_hits)
-def test_voxelize_hits_does_not_lose_energy(hits):
-    voxels = voxelize_hits(hits, None)
+box_dimension = floats(min_value = 1,
+                       max_value = 5)
+box_sizes = builds(np.array, lists(box_dimension,
+                                   min_size = 3,
+                                   max_size = 3))
 
-    def sum_energy(seq):
-        return sum(e.E for e in seq)
-
-    assert sum_energy(hits) == sum_energy(voxels)
 
 @given(bunch_of_hits)
 def test_bounding_box(hits):
@@ -51,3 +54,30 @@ def test_bounding_box(hits):
     for d in range(3):
         assert_almost_equal(mins[d], lo[d])
         assert_almost_equal(maxs[d], hi[d])
+
+
+@given(bunch_of_hits, box_sizes)
+def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
+    voxels = voxelize_hits(hits, voxel_dimensions)
+
+    if not hits:
+        assert voxels == []
+
+    def sum_energy(seq):
+        return sum(e.E for e in seq)
+
+    assert_almost_equal(sum_energy(hits), sum_energy(voxels))
+
+
+@given(bunch_of_hits, box_sizes)
+def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
+    voxels = voxelize_hits(hits, voxel_dimensions)
+
+    hlo, hhi = bounding_box(hits)
+    vlo, vhi = bounding_box(voxels)
+
+    vlo -= 0.5 * voxel_dimensions
+    vhi += 0.5 * voxel_dimensions
+
+    assert (vlo <= hlo).all()
+    assert (vhi >= hhi).all()
