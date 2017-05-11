@@ -1,6 +1,6 @@
-from functools import reduce
-from itertools import combinations
-
+from functools   import reduce
+from itertools   import combinations
+from operator    import itemgetter
 from collections import namedtuple
 
 import numpy    as np
@@ -75,3 +75,13 @@ def make_track_graphs(voxels, voxel_dimensions):
                                  distance = np.linalg.norm(va.pos - vb.pos))
 
     return tuple(nx.connected_component_subgraphs(voxel_graph))
+
+
+def find_extrema(graph):
+    distance = nx.all_pairs_dijkstra_path_length(graph)
+    first, last, max_distance = None, None, 0
+    for source, target in combinations(graph.nodes_iter(), 2):
+        d = distance[source][target]
+        if d > max_distance:
+            first, last, max_distance = source, target, d
+    return set((first, last))
