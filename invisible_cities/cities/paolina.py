@@ -91,3 +91,15 @@ def find_extrema(distance : 'dict of dicts'):
         if d > max_distance:
             first, last, max_distance = source, target, d
     return set((first, last))
+
+
+def energy_within_radius(distances, radius):
+    return sum(v.E for (v, d) in distances.items() if d < radius)
+
+
+def blob_energies(track_graph, radius):
+    distances = shortest_paths(track_graph)
+    a,b = find_extrema(distances)
+    Ea = energy_within_radius(distances[a], radius)
+    Eb = energy_within_radius(distances[b], radius)
+    return set((Ea, Eb))
