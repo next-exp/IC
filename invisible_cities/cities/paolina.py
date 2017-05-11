@@ -1,8 +1,10 @@
 from functools import reduce
+from itertools import combinations
 
 from collections import namedtuple
 
-import numpy as np
+import numpy    as np
+import networkx as nx
 
 
 class Hit:
@@ -54,3 +56,16 @@ def voxelize_hits(hits, voxel_dimensions):
 
     return [Voxel(cx[x], cy[y], cz[z], E[x,y,z])
             for (x,y,z) in np.stack(nz).T]
+
+def make_voxel_graph(voxels, voxel_dimensions):
+
+    def neighbours(va, vb):
+        return ((abs(va.pos - vb.pos) / voxel_dimensions) < 1.5).all()
+
+    voxel_graph = nx.Graph()
+    voxel_graph.add_nodes_from(voxels)
+    for va, vb in combinations(voxels, 2):
+        if neighbours(va, vb):
+            voxel_graph.add_edge(va, vb,
+                                 distance = np.linalg.norm(va.pos - vb.pos))
+    return voxel_graph
