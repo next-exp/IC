@@ -1,4 +1,5 @@
 from functools   import reduce
+from functools   import partial
 from itertools   import combinations
 from operator    import itemgetter
 from collections import namedtuple
@@ -77,10 +78,12 @@ def make_track_graphs(voxels, voxel_dimensions):
     return tuple(nx.connected_component_subgraphs(voxel_graph))
 
 
-def find_extrema(graph):
-    distance = nx.all_pairs_dijkstra_path_length(graph, weight='distance')
+shortest_paths = partial(nx.all_pairs_dijkstra_path_length, weight='distance')
+
+
+def find_extrema(distance : 'dict of dicts'):
     first, last, max_distance = None, None, 0
-    for source, target in combinations(graph.nodes_iter(), 2):
+    for source, target in combinations(distance, 2):
         d = distance[source][target]
         if d > max_distance:
             first, last, max_distance = source, target, d
