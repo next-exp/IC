@@ -104,7 +104,11 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
               ([( 1 , 2 , 3),
                 ( 1 , 3 , 1),
                 ( 1 , 4 , 2),
-                ( 1 , 5 , 1)], ( 2 , 4 )),))
+                ( 1 , 5 , 1)], ( 2 , 4 )),
+              ([( 1 , 2 , 1),
+                ( 1 , 3 , 1),
+                ( 1 , 4 , 2),
+                ( 1 , 5 , 2)], ( 4 , 5 )),))
 def test_find_extrema(spec, extrema):
     weighted_graph = nx.Graph([(a,b, dict(distance=d)) for (a,b,d) in spec])
     assert find_extrema(weighted_graph) == set(extrema)
