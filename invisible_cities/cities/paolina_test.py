@@ -11,7 +11,7 @@ from . paolina import Hit
 from . paolina import Voxel
 from . paolina import bounding_box
 from . paolina import voxelize_hits
-from . paolina import make_voxel_graph
+from . paolina import make_track_graphs
 
 
 def big_enough(hits):
@@ -85,6 +85,7 @@ def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
 
 @given(bunch_of_hits, box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
-    voxels      = voxelize_hits   (hits  , voxel_dimensions)
-    voxel_graph = make_voxel_graph(voxels, voxel_dimensions)
-    assert set(voxels) == set(voxel_graph.nodes_iter())
+    voxels = voxelize_hits    (hits  , voxel_dimensions)
+    tracks = make_track_graphs(voxels, voxel_dimensions)
+    voxels_in_tracks = set().union(*(set(t.nodes_iter()) for t in tracks))
+    assert set(voxels) == voxels_in_tracks
