@@ -78,7 +78,7 @@ def make_track_graphs(voxels, voxel_dimensions):
 
 
 def find_extrema(graph):
-    distance = nx.all_pairs_dijkstra_path_length(graph)
+    distance = nx.all_pairs_dijkstra_path_length(graph, weight='distance')
     first, last, max_distance = None, None, 0
     for source, target in combinations(graph.nodes_iter(), 2):
         d = distance[source][target]
