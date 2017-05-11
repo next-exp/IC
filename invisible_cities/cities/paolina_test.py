@@ -1,6 +1,10 @@
-import numpy as np
+import numpy    as np
+import networkx as nx
 
 from numpy.testing import assert_almost_equal
+
+from pytest import mark
+parametrize = mark.parametrize
 
 from hypothesis            import given
 from hypothesis.strategies import lists
@@ -10,6 +14,7 @@ from hypothesis.strategies import builds
 from . paolina import Hit
 from . paolina import Voxel
 from . paolina import bounding_box
+from . paolina import find_extrema
 from . paolina import voxelize_hits
 from . paolina import make_track_graphs
 
@@ -89,3 +94,17 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     tracks = make_track_graphs(voxels, voxel_dimensions)
     voxels_in_tracks = set().union(*(set(t.nodes_iter()) for t in tracks))
     assert set(voxels) == voxels_in_tracks
+
+
+@parametrize(' spec,           extrema',
+             (([( 1 , 2 , 3)], ( 1 , 2 )),
+              ([('a','b', 4)], ('a','b')),
+              ([( 1 , 2 , 3),
+                ( 2 , 3 , 1)], ( 1 , 3 )),
+              ([( 1 , 2 , 3),
+                ( 1 , 3 , 1),
+                ( 1 , 4 , 2),
+                ( 1 , 5 , 1)], ( 2 , 4 )),))
+def test_find_extrema(spec, extrema):
+    weighted_graph = nx.Graph([(a,b, dict(weight=d)) for (a,b,d) in spec])
+    assert find_extrema(weighted_graph) == set(extrema)
