@@ -38,6 +38,7 @@ class Voxel:
     def __hash__(self):
         return hash((self.E, tuple(self.pos)))
 
+
 MAX3D = np.array([float(' inf')] * 3)
 MIN3D = np.array([float('-inf')] * 3)
 
@@ -65,6 +66,7 @@ def voxelize_hits(hits, voxel_dimensions):
 
     return [Voxel(cx[x], cy[y], cz[z], E[x,y,z])
             for (x,y,z) in np.stack(nz).T]
+
 
 def make_track_graphs(voxels, voxel_dimensions):
 
