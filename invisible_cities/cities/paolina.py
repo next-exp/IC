@@ -28,6 +28,11 @@ class Voxel:
     __str__  = Hit.__str__
     __repr__ =     __str__
 
+    def __eq__(self, other):
+        return np.array_equal(self.pos, other.pos) and self.E == other.E
+
+    def __hash__(self):
+        return hash((self.E, tuple(self.pos)))
 
 MAX3D = np.array([float(' inf')] * 3)
 MIN3D = np.array([float('-inf')] * 3)
@@ -57,7 +62,7 @@ def voxelize_hits(hits, voxel_dimensions):
     return [Voxel(cx[x], cy[y], cz[z], E[x,y,z])
             for (x,y,z) in np.stack(nz).T]
 
-def make_voxel_graph(voxels, voxel_dimensions):
+def make_track_graphs(voxels, voxel_dimensions):
 
     def neighbours(va, vb):
         return ((abs(va.pos - vb.pos) / voxel_dimensions) < 1.5).all()
@@ -68,4 +73,5 @@ def make_voxel_graph(voxels, voxel_dimensions):
         if neighbours(va, vb):
             voxel_graph.add_edge(va, vb,
                                  distance = np.linalg.norm(va.pos - vb.pos))
-    return voxel_graph
+
+    return tuple(nx.connected_component_subgraphs(voxel_graph))
