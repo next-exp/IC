@@ -30,7 +30,10 @@ class Voxel:
     __repr__ =     __str__
 
     def __eq__(self, other):
-        return np.array_equal(self.pos, other.pos) and self.E == other.E
+        try:
+            return np.array_equal(self.pos, other.pos) and self.E == other.E
+        except AttributeError:
+            return False
 
     def __hash__(self):
         return hash((self.E, tuple(self.pos)))
