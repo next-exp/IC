@@ -16,6 +16,7 @@ from . paolina import Voxel
 from . paolina import bounding_box
 from . paolina import find_extrema
 from . paolina import voxelize_hits
+from . paolina import shortest_paths
 from . paolina import make_track_graphs
 
 
@@ -111,4 +112,4 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
                 ( 1 , 5 , 2)], ( 4 , 5 )),))
 def test_find_extrema(spec, extrema):
     weighted_graph = nx.Graph([(a,b, dict(distance=d)) for (a,b,d) in spec])
-    assert find_extrema(weighted_graph) == set(extrema)
+    assert find_extrema(shortest_paths(weighted_graph)) == set(extrema)
