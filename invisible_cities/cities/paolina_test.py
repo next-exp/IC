@@ -3,6 +3,7 @@ import networkx as nx
 
 from numpy.testing import assert_almost_equal
 
+from pytest import fixture
 from pytest import mark
 parametrize = mark.parametrize
 
@@ -15,6 +16,7 @@ from . paolina import Hit
 from . paolina import Voxel
 from . paolina import bounding_box
 from . paolina import find_extrema
+from . paolina import blob_energies
 from . paolina import voxelize_hits
 from . paolina import shortest_paths
 from . paolina import make_track_graphs
@@ -113,3 +115,56 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
 def test_find_extrema(spec, extrema):
     weighted_graph = nx.Graph([(a,b, dict(distance=d)) for (a,b,d) in spec])
     assert find_extrema(shortest_paths(weighted_graph)) == set(extrema)
+
+
+@fixture(scope='module')
+def track_extrema():
+    voxel_spec = ((10,10,10,  1000),
+                  (10,10,11,     1),
+                  (10,10,12,     2),
+                  (10,10,13,     4),
+                  (10,10,14,     8),
+                  (10,10,15,    16),
+                  (10,11,15,    32),
+                  (10,12,15,    64),
+                  (10,13,15,   128),
+                  (10,14,15,   265),
+                  (10,15,15,   512),
+                  (11,15,15,   256),
+                  (12,15,15,   128),
+                  (13,15,15,    64),
+                  (14,15,15,    32),
+                  (15,15,15,    16),
+                  (16,16,16,     8),
+                  (17,17,17,     4),
+                  (18,18,18,     2),
+                  (19,19,19,     1),
+                  (20,20,20,  2000),
+    )
+    voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
+    track, = make_track_graphs(voxels, np.array([1,1,1]))
+    distances = shortest_paths(track)
+    extrema = find_extrema(distances)
+
+    assert voxels[ 0] in extrema
+    assert voxels[-1] in extrema
+
+    return track, extrema
+
+
+@parametrize('radius, expected',
+             ((0.5, (1000, 2000)), # Nothing but the endpoints
+              (1.5, (1001, 2000)), # 10 10 10 is 1   away
+              (1.9, (1001, 2001)), # 19 19 19 is 1.7 away
+              (2.1, (1003, 2001)), # 10 10 12 is 2   away
+              (3.1, (1007, 2001)), # 10 10 13 is 3   away
+              (3.5, (1007, 2003)), # 18 18 18 is 3.4 away
+              (4.5, (1015, 2003)), # 10 10 14 is 4   away
+))
+def test_blobs(track_extrema, radius, expected):
+    track, extrema = track_extrema
+    Ea, Eb = expected
+
+    Es = blob_energies(track, radius)
+    assert Ea in Es
+    assert Eb in Es
