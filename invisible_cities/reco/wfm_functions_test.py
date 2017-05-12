@@ -1,18 +1,22 @@
-from __future__ import absolute_import
 import os
-from os import path
-from hypothesis import given, assume
-from hypothesis.strategies import lists, integers, floats
-from hypothesis.extra.numpy import arrays
+from   os import path
+
+import numpy  as np
+import tables as tb
+
 from pytest import mark
 
-from . import wfm_functions as wfm
-import invisible_cities.reco.peak_functions_c as cpf
-import invisible_cities.reco.tbl_functions as tbl
-from   invisible_cities.reco.params import DeconvParams, CalibVectors
-from   invisible_cities.database import load_db
-import numpy as np
-import tables as tb
+from hypothesis             import given
+from hypothesis.strategies  import floats
+from hypothesis.extra.numpy import arrays
+
+from .. database import load_db
+
+from .        import peak_functions_c as cpf
+from .        import tbl_functions    as tbl
+from .        import wfm_functions    as wfm
+from . params import CalibVectors
+from . params import DeconvParams
 
 
 def ndarrays_of_shape(shape, lo=-1000.0, hi=1000.0):

@@ -7,27 +7,27 @@ IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
 last changed: 09-11-2017
 """
-from __future__ import print_function
-
 import sys
 from glob import glob
 from time import time
 
-import numpy as np
 import tables as tb
 
-import invisible_cities.reco.tbl_functions as tbl
-from   invisible_cities.core.configure import configure, print_configuration
-from   invisible_cities.cities.base_cities import SensorResponseCity
-from   invisible_cities.reco.params import SensorParams
-from   invisible_cities.reco.nh5 import FEE, RunInfo, EventInfo, MCTrack
-from   invisible_cities.core.random_sampling \
-         import NoiseSampler as SiPMsNoiseSampler
-import invisible_cities.reco.wfm_functions as wfm
-from   invisible_cities.core.system_of_units_c import units
-from   invisible_cities.core.mctrk_functions import MCTrackWriter
-from   invisible_cities.core.exceptions import ParameterNotSet
+from .. core.configure         import configure
+from .. core.configure         import print_configuration
+from .. core.random_sampling   import NoiseSampler as SiPMsNoiseSampler
+from .. core.system_of_units_c import units
+from .. core.mctrk_functions   import MCTrackWriter
+from .. core.exceptions        import ParameterNotSet
 
+from .. reco        import wfm_functions as wfm
+from .. reco        import tbl_functions as tbl
+from .. reco.params import SensorParams
+from .. reco.nh5    import FEE
+from .. reco.nh5    import RunInfo
+from .. reco.nh5    import EventInfo
+
+from .  base_cities import SensorResponseCity
 
 
 class Diomira(SensorResponseCity):

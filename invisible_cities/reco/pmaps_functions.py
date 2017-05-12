@@ -2,17 +2,20 @@
 JJGC December 2016
 
 """
-from __future__ import print_function, division, absolute_import
-
-import numpy as np
+import numpy  as np
 import pandas as pd
 import tables as tb
 import matplotlib.pyplot as plt
-from   invisible_cities.reco.pmaps_functions_c import df_to_pmaps_dict, df_to_s2si_dict
-import invisible_cities.core.core_functions as cf
-from   invisible_cities.database import load_db
-from   invisible_cities.core.mpl_functions import circles, set_plot_labels
-from   invisible_cities.core.system_of_units_c import units
+
+from .. core.mpl_functions     import circles
+from .. core.mpl_functions     import set_plot_labels
+from .. core.system_of_units_c import units
+
+from .. database               import load_db
+
+from .  pmaps_functions_c      import df_to_pmaps_dict
+from .  pmaps_functions_c      import df_to_s2si_dict
+
 
 def load_pmaps(PMP_file_name):
     """Read the PMAP file and return transient PMAP rep."""

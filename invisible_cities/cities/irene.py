@@ -1,4 +1,3 @@
-from __future__ import print_function
 import sys
 
 from glob import glob
@@ -7,15 +6,15 @@ from time import time
 import numpy  as np
 import tables as tb
 
+from .. core.configure         import configure
+from .. core.system_of_units_c import units
+from .. core.mctrk_functions   import MCTrackWriter
 
-from invisible_cities.core.configure import configure, print_configuration
-from invisible_cities.core.system_of_units_c import units
+from .. reco.pmap_io import pmap_writer
+from .. reco.params  import SensorParams
+from .. reco.params  import S12Params as S12P
 
-from invisible_cities.reco.pmap_io import pmap_writer, S12, S2Si
-from invisible_cities.core.system_of_units_c import units
-from invisible_cities.cities.base_cities import PmapCity
-from invisible_cities.reco.params import SensorParams, S12Params as S12P
-from invisible_cities.core.mctrk_functions import MCTrackWriter
+from .  base_cities  import PmapCity
 
 
 class Irene(PmapCity):

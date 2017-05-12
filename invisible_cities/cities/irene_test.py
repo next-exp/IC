@@ -8,13 +8,17 @@ package: invisible cities. See release notes and licence
 last changed: 01-12-2017
 """
 import os
-import tables as tb
-import numpy  as np
-from pytest import mark, fixture
 from collections import namedtuple
 
-from   invisible_cities.cities.irene import Irene, IRENE
-from   invisible_cities.reco.pmaps_functions import read_run_and_event_from_pmaps_file
+import tables as tb
+import numpy  as np
+
+from pytest import mark
+from pytest import fixture
+
+from .  irene import Irene
+from .  irene import IRENE
+from .. reco.pmaps_functions import read_run_and_event_from_pmaps_file
 
 @fixture(scope='module')
 def conf_file_name_mc(config_tmpdir):

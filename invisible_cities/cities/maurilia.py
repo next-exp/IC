@@ -6,19 +6,17 @@ author: Josh Renner
 IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
 """
-from __future__ import print_function
 
 import sys
 from glob import glob
 from time import time
 
-import numpy  as np
 import tables as tb
 
-import invisible_cities.reco.tbl_functions as tbl
-from   invisible_cities.core.configure import configure, print_configuration
-from   invisible_cities.reco.nh5 import MCTrack
-from   invisible_cities.cities.base_cities import City
+from .. core.configure import configure
+from .. reco.nh5       import MCTrack
+from .. reco           import tbl_functions as tbl
+from .  base_cities import City
 
 class Maurilia(City):
     """

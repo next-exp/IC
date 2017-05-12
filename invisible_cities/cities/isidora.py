@@ -1,17 +1,18 @@
-from __future__ import print_function
 import sys
 
 from glob import glob
 from time import time
-import numpy as np
+
+import numpy  as np
 import tables as tb
 
-from   invisible_cities.reco.nh5 import RunInfo, EventInfo
-import invisible_cities.reco.tbl_functions as tbl
-from   invisible_cities.core.configure import configure
-from   invisible_cities.core.system_of_units_c import units
-from   invisible_cities.cities.base_cities import DeconvolutionCity
-from   invisible_cities.reco.params import SensorParams
+from .. core.configure         import configure
+from .. core.system_of_units_c import units
+
+from .. reco        import tbl_functions as tbl
+from .. reco.params import SensorParams
+
+from .  base_cities import DeconvolutionCity
 
 class Isidora(DeconvolutionCity):
     """

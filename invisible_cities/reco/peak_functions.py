@@ -1,24 +1,18 @@
 """Functions to find peaks, S12 selection etc.
 JJGC and GML December 2016
 """
-from __future__ import print_function, division, absolute_import
 
-import math
-import numpy as np
-import pandas as pd
-from time import time
-import tables as tb
+
+import numpy  as np
 
 from scipy import signal
 
-import invisible_cities.core.system_of_units as units
-import invisible_cities.sierpe.blr as blr
-import invisible_cities.reco.peak_functions_c as cpf
-from   invisible_cities.database import load_db
-from   invisible_cities.reco.params import (S12Params,
-                                            ThresholdParams,
-                                            CalibratedSum,
-                                            PMaps)
+from .. core   import system_of_units as units
+from .. sierpe import blr
+
+from .         import peak_functions_c as cpf
+from .  params import CalibratedSum
+from .  params import PMaps
 
 def calibrated_pmt_sum(CWF, adc_to_pes, pmt_active = [], n_MAU=200, thr_MAU=5):
     """Compute the ZS calibrated sum of the PMTs

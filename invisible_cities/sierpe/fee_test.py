@@ -1,15 +1,11 @@
-from __future__ import division
+import numpy as np
 
-from math import sqrt
 import pytest
-from pytest import raises, mark
-from hypothesis import given
-from hypothesis.strategies import lists, floats
+
 from flaky import flaky
 
-import invisible_cities.sierpe.fee as FE
-import invisible_cities.core.system_of_units as units
-import numpy as np
+from .. core import system_of_units as units
+from .       import fee             as FE
 
 def signal_i_th():
     """Generates a "theoretical" current signal (signal_i)"""

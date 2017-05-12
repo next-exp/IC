@@ -1,11 +1,9 @@
-from __future__ import absolute_import
-
 from os import getenv, path
 from pytest import mark
 from hypothesis import given, example
 from hypothesis.strategies import integers, floats, one_of, none
 
-import invisible_cities.core.configure as conf
+from . import configure as conf
 
 config_file_format = """
 # set_input_files

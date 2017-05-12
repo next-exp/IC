@@ -2,13 +2,11 @@
 Cython version of some peak functions
 JJGC December, 2016
 """
-from __future__ import division
-
 cimport numpy as np
 import  numpy as np
 from scipy import signal
 
-import invisible_cities.reco.pmap_io as pio
+from . import pmap_io as pio
 
 cpdef calibrated_pmt_sum(double [:, :]  CWF,
                          double [:]     adc_to_pes,
