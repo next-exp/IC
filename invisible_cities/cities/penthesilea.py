@@ -48,6 +48,7 @@ class Penthesilea(City, HitCollectionCity):
 
                   z_corr_filename = None,
                  xy_corr_filename = None,
+                 lifetime         = None,
                  reco_algorithm   = barycenter):
 
 
@@ -83,6 +84,7 @@ class Penthesilea(City, HitCollectionCity):
 
                                     z_corr_filename =  z_corr_filename,
                                    xy_corr_filename = xy_corr_filename,
+                                   lifetime         = lifetime,
                                    reco_algorithm   = reco_algorithm)
 
     config_file_format = City.config_file_format + """
@@ -244,8 +246,9 @@ def PENTHESILEA(argv = sys.argv):
                               S2_NSIPMmax      = CFP.S2_NSIPMMAX,
                               S2_Ethr          = CFP.S2_ETHR * units.pes,
 
-                               z_corr_filename = CFP. Z_CORR_FILENAME,
+                               z_corr_filename = CFP. Z_CORR_FILENAME if "Z_CORR_FILENAME" in CFP else None,
                               xy_corr_filename = CFP.XY_CORR_FILENAME,
+                              lifetime         = CFP.LIFETIME if "LIFETIME" in CFP else None,
                               reco_algorithm   = find_algorithm(CFP.RECO_ALGORITHM))
 
     t0 = time.time()
