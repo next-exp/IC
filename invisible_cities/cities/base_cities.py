@@ -668,6 +668,7 @@ class HitCollectionCity(S12SelectorCity):
 
                   z_corr_filename = None,
                  xy_corr_filename = None,
+                 lifetime         = None,
                  reco_algorithm   = barycenter):
 
         S12SelectorCity.__init__(self,
@@ -695,9 +696,13 @@ class HitCollectionCity(S12SelectorCity):
                                  S2_NSIPMmax = S2_NSIPMmax,
                                  S2_Ethr     = S2_Ethr)
 
-        self. z_corr        = dstf.load_z_corrections ( z_corr_filename)
+        self. z_corr        = dstf.load_z_corrections (z_corr_filename) \
+                              if lifetime is None \
+                              else lambda z: (np.exp(np.array(z)/lifetime), 1)
+
         self.xy_corr        = dstf.load_xy_corrections(xy_corr_filename)
         self.reco_algorithm = reco_algorithm
+
 
     def split_energy(self, e, clusters):
         if len(clusters) == 1:
@@ -706,7 +711,7 @@ class HitCollectionCity(S12SelectorCity):
         return e * qs / np.sum(qs)
 
     def correct_energy(self, e, x, y, z):
-        ecorr = e * self.z_corr(z)[0][0]
+        ecorr = e * self.z_corr([z])[0][0]
         if not np.isnan([x, y]).any():
             ecorr *= self.xy_corr([x], [y])[0][0]
         return ecorr
