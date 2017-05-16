@@ -41,6 +41,7 @@ box_sizes = builds(np.array, lists(box_dimension,
                                    max_size = 3))
 
 
+@mark.slow
 @given(bunch_of_hits)
 def test_bounding_box(hits):
     if not len(hits): # TODO: deal with empty sequences
@@ -65,6 +66,7 @@ def test_bounding_box(hits):
         assert_almost_equal(maxs[d], hi[d])
 
 
+@mark.slow
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
     voxels = voxelize_hits(hits, voxel_dimensions)
@@ -78,6 +80,7 @@ def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
     assert_almost_equal(sum_energy(hits), sum_energy(voxels))
 
 
+@mark.slow
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
     voxels = voxelize_hits(hits, voxel_dimensions)
@@ -91,6 +94,7 @@ def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
     assert (vlo <= hlo).all()
     assert (vhi >= hhi).all()
 
+@mark.given
 @given(bunch_of_hits, box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
