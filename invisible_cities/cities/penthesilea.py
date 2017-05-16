@@ -46,6 +46,7 @@ class Penthesilea(City, HitCollectionCity):
                  S2_NSIPMmax      = np.inf,
                  S2_Ethr          = 0,
 
+                 rebin            = 1,
                   z_corr_filename = None,
                  xy_corr_filename = None,
                  lifetime         = None,
@@ -82,6 +83,7 @@ class Penthesilea(City, HitCollectionCity):
                                    S2_NSIPMmax      = S2_NSIPMmax,
                                    S2_Ethr          = S2_Ethr,
 
+                                   rebin            = rebin,
                                     z_corr_filename =  z_corr_filename,
                                    xy_corr_filename = xy_corr_filename,
                                    lifetime         = lifetime,
@@ -116,6 +118,7 @@ class Penthesilea(City, HitCollectionCity):
     S2_NSIPMMIN      {S2_NSIPMMIN}
     S2_NSIPMMAX      {S2_NSIPMMAX}
 
+    REBIN            {REBIN}
     Z_CORR_FILENAME  {Z_CORR_FILENAME}
     XY_CORR_FILENAME {XY_CORR_FILENAME}
     RECO_ALGORITHM   {RECO_ALGORITHM}
@@ -154,6 +157,7 @@ class Penthesilea(City, HitCollectionCity):
              S2_NSIPMMIN       =     2,
              S2_NSIPMMAX       =  1000,
 
+             REBIN             = 1,
              Z_CORR_FILENAME   = "",
              XY_CORR_FILENAME  = "",
              RECO_ALGORITHM    = "barycenter",
@@ -246,6 +250,7 @@ def PENTHESILEA(argv = sys.argv):
                               S2_NSIPMmax      = CFP.S2_NSIPMMAX,
                               S2_Ethr          = CFP.S2_ETHR * units.pes,
 
+                              rebin            = CFP.REBIN if "REBIN" in CFP else 1,
                                z_corr_filename = CFP. Z_CORR_FILENAME if "Z_CORR_FILENAME" in CFP else None,
                               xy_corr_filename = CFP.XY_CORR_FILENAME,
                               lifetime         = CFP.LIFETIME if "LIFETIME" in CFP else None,

@@ -37,6 +37,7 @@ from ..reco.dst_io        import PointLikeEvent
 from ..reco.dst_io        import Hit
 from ..reco.dst_io        import HitCollection
 from ..reco.nh5           import DECONV_PARAM
+from ..reco.params        import Peak
 from ..reco.xy_algorithms import find_algorithm
 from ..reco.xy_algorithms import barycenter
 
@@ -831,6 +832,7 @@ class HitCollectionCity(S12SelectorCity):
                  S2_NSIPMmax      = np.inf,
                  S2_Ethr          = 0,
 
+                 rebin            = 1,
                   z_corr_filename = None,
                  xy_corr_filename = None,
                  lifetime         = None,
@@ -861,6 +863,7 @@ class HitCollectionCity(S12SelectorCity):
                                  S2_NSIPMmax = S2_NSIPMmax,
                                  S2_Ethr     = S2_Ethr)
 
+        self.rebin          = rebin
         self. z_corr        = dstf.load_z_corrections (z_corr_filename) \
                               if lifetime is None \
                               else lambda z: (np.exp(np.array(z)/lifetime), 1)
@@ -868,6 +871,17 @@ class HitCollectionCity(S12SelectorCity):
         self.xy_corr        = dstf.load_xy_corrections(xy_corr_filename)
         self.reco_algorithm = reco_algorithm
 
+    def rebin_s2(self, S2, Si):
+        if self.rebin <= 1:
+            return S2, Si
+
+        S2_rebin = {}
+        Si_rebin = {}
+        for peak in S2:
+            t, e, sipms = cpf.rebin_S2(S2[peak][0], S2[peak][1], Si[peak], self.rebin)
+            S2_rebin[peak] = Peak(t, e)
+            Si_rebin[peak] = sipms
+        return S2_rebin, Si_rebin
 
     def split_energy(self, e, clusters):
         if len(clusters) == 1:
@@ -901,6 +915,8 @@ class HitCollectionCity(S12SelectorCity):
 
         t, e = next(iter(S1.values()))
         S1t  = t[np.argmax(e)]
+
+        S2, Si = self.rebin_s2(S2, Si)
 
         npeak = 0
         for peak_no, (t_peak, e_peak) in sorted(S2.items()):
