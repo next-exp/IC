@@ -21,6 +21,7 @@ from .. core.configure         import print_configuration
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
 from .. core.system_of_units_c import units
+from .. core                   import fit_functions        as fitf
 
 from .. database import load_db
 
@@ -30,7 +31,6 @@ from ..reco        import pmaps_functions  as pmp
 from ..reco        import pmap_io          as pio
 from ..reco        import tbl_functions    as tbf
 from ..reco        import wfm_functions    as wfm
-from ..reco        import fit_functions    as fitf
 from ..reco.dst_io import PointLikeEvent
 from ..reco.nh5    import DECONV_PARAM
 from ..reco.params import Correction
