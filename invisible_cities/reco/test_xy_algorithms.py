@@ -44,8 +44,8 @@ def test_barycenter(p_q):
 
 @fixture
 def toy_sipm_signal():
-    xs = np.array([65, -65]) * units.mm
-    ys = np.array([65, -65]) * units.mm
+    xs = np.array([65, -64]) * units.mm
+    ys = np.array([63, -62]) * units.mm
     qs = np.ones (2        ) * units.pes * 5
     pos = np.stack((xs, ys), axis=1)
     return pos, qs
