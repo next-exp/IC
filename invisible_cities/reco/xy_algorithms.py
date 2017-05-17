@@ -6,14 +6,15 @@ from invisible_cities.core.system_of_units_c import units
 
 def barycenter(xs, ys, qs, default=np.nan):
     q    = np.sum(qs)
-    n    = len(qs)
-    x    = np.average(xs, weights=qs)         if n and q>0 else default
-    y    = np.average(ys, weights=qs)         if n and q>0 else default
-    xvar = np.sum(qs * (xs - x)**2) / (q - 1) if n and q>0 else default
-    yvar = np.sum(qs * (ys - y)**2) / (q - 1) if n and q>0 else default
-
-    c    = Cluster(q, x, y, xvar**0.5, yvar**0.5, n)
-    return [c]
+    n    =    len(qs)
+    if n and q > 0:
+        x    = np.average(xs, weights=qs)
+        y    = np.average(ys, weights=qs)
+        xvar = np.sum(qs * (xs - x)**2) / (q - 1)
+        yvar = np.sum(qs * (ys - y)**2) / (q - 1)
+    else:
+        x, y, xvar, yvar = [default] * 4
+    return [Cluster(q, x, y, xvar**0.5, yvar**0.5, n)]
 
 def select_sipms(sis, xs, ys, qs):
     return xs[sis], ys[sis], qs[sis]
