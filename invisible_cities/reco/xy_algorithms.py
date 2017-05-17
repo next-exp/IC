@@ -27,9 +27,8 @@ def discard_sipms(sis, pos, qs):
 
 def get_nearby_sipm_inds(cs, d, pos, qs):
     """return indices of sipms less than d from (xc,yc)"""
-    xs, ys = pos.T
-    xc, yc = cs .T
-    return np.where(np.sqrt((xs - xc)**2 + (ys - yc)**2) <= d)[0]
+    return np.where(np.linalg.norm(pos - cs, axis=1) <= d)[0]
+
 
 def corona(pos, qs, Qthr  =  0*units.pes,
            Qlm   =  5*units.pes,
