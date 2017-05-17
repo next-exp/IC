@@ -5,14 +5,9 @@ from .. core.system_of_units_c import units
 from .       params            import Cluster
 
 def barycenter(pos, qs, default=np.nan):
-    q    = np.sum(qs)
-    n    =    len(qs)
-    if n and q > 0:
-        mu  = np.average( pos           , weights=qs, axis=0)
-        std = np.average((pos - mu) ** 2, weights=qs, axis=0)
-    else:
-        x, y, xvar, yvar = [default] * 4
-    return Cluster(q, mu, std, n)
+    mu  = np.average( pos           , weights=qs, axis=0)
+    std = np.average((pos - mu) ** 2, weights=qs, axis=0)
+    return Cluster(sum(qs), mu, std, len(qs))
 
 def select_sipms(sis, pos, qs):
     return pos[sis], qs[sis]
