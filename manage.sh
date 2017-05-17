@@ -82,7 +82,7 @@ dependencies:
 - sphinx
 - networkx
 - pip:
-  - hypothesis-numpy
+  - hypothesis
   - flaky
   - pytest-xdist
 EOF
