@@ -14,7 +14,7 @@ def barycenter(xs, ys, qs, default=np.nan):
         yvar = np.sum(qs * (ys - y)**2) / (q - 1)
     else:
         x, y, xvar, yvar = [default] * 4
-    return [Cluster(q, x, y, xvar**0.5, yvar**0.5, n)]
+    return Cluster(q, x, y, xvar**0.5, yvar**0.5, n)
 
 def select_sipms(sis, xs, ys, qs):
     return xs[sis], ys[sis], qs[sis]
@@ -61,14 +61,14 @@ def corona(xs, ys, qs, Qthr  =  0*units.pes,
 
         # find locmax (the baryc of charge in SiPMs less than slm from mx)
         sis = get_nearby_sipm_inds(xs[mx], ys[mx], slm, xs, ys, qs)
-        lm  = barycenter(*select_sipms(sis, xs, ys, qs))[0]
+        lm  = barycenter(*select_sipms(sis, xs, ys, qs))
 
         # rsis is an array of the responsive sipms less than rmax from locmax
         rsis = get_nearby_sipm_inds(lm.X, lm.Y, rmax, xs, ys, qs)
 
         # if rsis have at least msipms, get the barycenter
         if len(rsis) >= msipm:
-            c.append(*barycenter(*select_sipms(rsis, xs, ys, qs)))
+            c.append(barycenter(*select_sipms(rsis, xs, ys, qs)))
 
         # delete the SiPMs contributing to this cluster
         xs, ys, qs = discard_sipms(rsis, xs, ys, qs)
