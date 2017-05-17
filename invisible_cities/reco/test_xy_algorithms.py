@@ -21,7 +21,6 @@ def test_barycenter_with_many_toy_signals():
         assert np.allclose(B.pos, np.average(pos, weights=qs, axis=0))
         assert np. isclose(B.Q  , qs.sum())
         assert B.Nsipm == size
-    return
 
 @fixture
 def toy_sipm_signal():
