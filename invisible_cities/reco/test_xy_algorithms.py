@@ -13,7 +13,7 @@ def test_barycenter_with_many_toy_signals():
         xs = np.random.uniform(size=size)
         ys = np.random.uniform(size=size)
         qs = np.random.uniform(size=size)
-        B  = barycenter(xs,ys,qs)[0]
+        B  = barycenter(xs,ys,qs)
         assert np.isclose(B.X, (xs * qs).sum() / qs.sum())
         assert np.isclose(B.Y, (ys * qs).sum() / qs.sum())
         assert np.isclose(B.Q, qs.sum())
@@ -31,9 +31,8 @@ def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
     xs, ys, qs = toy_sipm_signal
     c_clusters = corona(xs,ys,qs, rmax = 10 *units.m  , msipm = 1,
                                   Qlm  = 4.9*units.pes, Qthr  = 0)
-    b_clusters = barycenter(xs,ys,qs)
     c_cluster = c_clusters[0]
-    b_cluster = b_clusters[0]
+    b_cluster = barycenter(xs,ys,qs)
 
     assert len(c_cluster)  == len(b_cluster)
     assert c_cluster.X     == b_cluster.X
