@@ -1,9 +1,8 @@
 #!/usrbin/env bash
 
 COMMAND=$1
-PYTHON_VERSION=$2
+ARGUMENT=$2
 
-echo ${PYTHON_VERSION}
 
 function install_and_check {
     install
@@ -122,8 +121,8 @@ function run_tests_par {
 
     # Run the test suite
     EXIT=0
-    pytest -v -n auto -m "not serial" || EXIT=$?
-    pytest -v         -m      serial  || EXIT=$?
+    pytest -v -n ${N_PROC} -m "not serial" || EXIT=$?
+    pytest -v              -m      serial  || EXIT=$?
     exit $EXIT
 }
 
@@ -185,9 +184,17 @@ function clean {
     done
 }
 
-## Main command dispatcher
-
 THIS=manage.sh
+
+## Interpret meaning of command line argument depending on which
+## function will receive it.
+
+case $COMMAND in
+    run_tests_par | compile_and_test_par)     N_PROC=${ARGUMENT:-auto} ;;
+    *)                                PYTHON_VERSION=${ARGUMENT}       ;;
+esac
+
+## Main command dispatcher
 
 case $COMMAND in
     install_and_check)      install_and_check ;;
