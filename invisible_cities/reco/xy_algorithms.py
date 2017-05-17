@@ -4,7 +4,8 @@ import numpy as np
 from .. core.system_of_units_c import units
 from .       params            import Cluster
 
-def barycenter(xs, ys, qs, default=np.nan):
+def barycenter(pos, qs, default=np.nan):
+    xs, ys = pos.T
     q    = np.sum(qs)
     n    =    len(qs)
     if n and q > 0:
@@ -14,23 +15,27 @@ def barycenter(xs, ys, qs, default=np.nan):
         yvar = np.sum(qs * (ys - y)**2) / (q - 1)
     else:
         x, y, xvar, yvar = [default] * 4
-    return Cluster(q, x, y, xvar**0.5, yvar**0.5, n)
+    pos = np.array((x        , y))
+    rms = np.array((xvar**0.5, yvar**0.5))
+    return Cluster(q, pos, rms, n)
 
-def select_sipms(sis, xs, ys, qs):
-    return xs[sis], ys[sis], qs[sis]
+def select_sipms(sis, pos, qs):
+    return pos[sis], qs[sis]
 
-def discard_sipms(sis, xs, ys, qs):
-    return np.delete(xs, sis), np.delete(ys, sis), np.delete(qs, sis)
+def discard_sipms(sis, pos, qs):
+    return np.delete(pos, sis, axis=0), np.delete(qs, sis)
 
-def get_nearby_sipm_inds(xc, yc, d, xs, ys, qs):
+def get_nearby_sipm_inds(cs, d, pos, qs):
     """return indices of sipms less than d from (xc,yc)"""
+    xs, ys = pos.T
+    xc, yc = cs .T
     return np.where(np.sqrt((xs - xc)**2 + (ys - yc)**2) <= d)[0]
 
-def corona(xs, ys, qs, Qthr  =  0*units.pes,
-                       Qlm   =  5*units.pes,
-                       slm   = 15*units.mm ,
-                       rmax  = 25*units.mm ,
-                       msipm =  3          ):
+def corona(pos, qs, Qthr  =  0*units.pes,
+           Qlm   =  5*units.pes,
+           slm   = 15*units.mm ,
+           rmax  = 25*units.mm ,
+           msipm =  3          ):
     """
     corona creates a list of Clusters by
     first , identifying a loc max (gonz wanted more precise than just max sipm)
@@ -52,25 +57,24 @@ def corona(xs, ys, qs, Qthr  =  0*units.pes,
     """
     c  = []
     # Keep SiPMs with at least Qthr pes
-    xs, ys, qs = select_sipms(np.where(qs >= Qthr)[0], xs, ys, qs)
-
+    pos, qs = select_sipms(np.where(qs >= Qthr)[0], pos, qs)
     # While there are more local maxima
     while len(qs) > 0:
         mx = np.argmax(qs)       # SiPM with largest Q
         if qs[mx] < Qlm: break   # largest Q remaining is negligible
 
         # find locmax (the baryc of charge in SiPMs less than slm from mx)
-        sis = get_nearby_sipm_inds(xs[mx], ys[mx], slm, xs, ys, qs)
-        lm  = barycenter(*select_sipms(sis, xs, ys, qs))
+        sis = get_nearby_sipm_inds(pos[mx], slm, pos, qs)
+        lm  = barycenter(*select_sipms(sis, pos, qs))
 
         # rsis is an array of the responsive sipms less than rmax from locmax
-        rsis = get_nearby_sipm_inds(lm.X, lm.Y, rmax, xs, ys, qs)
+        rsis = get_nearby_sipm_inds(lm.pos, rmax, pos, qs)
 
         # if rsis have at least msipms, get the barycenter
         if len(rsis) >= msipm:
-            c.append(barycenter(*select_sipms(rsis, xs, ys, qs)))
+            c.append(barycenter(*select_sipms(rsis, pos, qs)))
 
         # delete the SiPMs contributing to this cluster
-        xs, ys, qs = discard_sipms(rsis, xs, ys, qs)
+        pos, qs = discard_sipms(rsis, pos, qs)
 
     return c
