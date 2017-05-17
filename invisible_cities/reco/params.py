@@ -22,7 +22,7 @@ for name, attrs in (
         ('PMaps'          , 'S1 S2 S2Si'),
         ('Peak'           , 't E'),
         ('FitFunction'    , 'fn values errors chi2 pvalue'),
-        ('Cluster'        , 'Q X Y Xrms Yrms Nsipm')):
+        ('Cluster'        , 'Q pos rms Nsipm')):
     _add_namedtuple_in_this_module(name, attrs)
 
 # Leave nothing but the namedtuple types in the namespace of this module
