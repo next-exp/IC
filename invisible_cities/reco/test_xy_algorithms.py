@@ -1,11 +1,14 @@
 import numpy as np
 from pytest import fixture
 
-from invisible_cities.reco.params            import Cluster
-from invisible_cities.core.system_of_units_c import units
-from invisible_cities.reco.xy_algorithms     import corona, barycenter, \
-                                                select_sipms, discard_sipms, \
-                                                get_nearby_sipm_inds
+from .. core.system_of_units_c import units
+
+from .       params            import Cluster
+from .       xy_algorithms     import corona
+from .       xy_algorithms     import barycenter
+from .       xy_algorithms     import select_sipms
+from .       xy_algorithms     import discard_sipms
+from .       xy_algorithms     import get_nearby_sipm_inds
 
 def test_barycenter_with_many_toy_signals():
     size=100
