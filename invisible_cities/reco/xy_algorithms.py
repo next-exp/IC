@@ -1,8 +1,8 @@
 import sys
 import numpy as np
 
-from invisible_cities.reco.params import Cluster
-from invisible_cities.core.system_of_units_c import units
+from .. core.system_of_units_c import units
+from .       params            import Cluster
 
 def barycenter(xs, ys, qs, default=np.nan):
     q    = np.sum(qs)
