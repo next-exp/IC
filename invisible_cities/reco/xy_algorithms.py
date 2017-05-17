@@ -21,10 +21,10 @@ def get_nearby_sipm_inds(cs, d, pos, qs):
 
 
 def corona(pos, qs, Qthr  =  0*units.pes,
-           Qlm   =  5*units.pes,
-           slm   = 15*units.mm ,
-           rmax  = 25*units.mm ,
-           msipm =  3          ):
+                    Qlm   =  5*units.pes,
+                    slm   = 15*units.mm ,
+                    rmax  = 25*units.mm ,
+                    msipm =  3          ):
     """
     corona creates a list of Clusters by
     first , identifying a loc max (gonz wanted more precise than just max sipm)
@@ -54,7 +54,7 @@ def corona(pos, qs, Qthr  =  0*units.pes,
 
         # find locmax (the baryc of charge in SiPMs less than slm from mx)
         sis = get_nearby_sipm_inds(pos[mx], slm, pos, qs)
-        lm  = barycenter(*select_sipms(sis, pos, qs))
+        lm  = barycenter(*select_sipms(     sis, pos, qs))
 
         # rsis is an array of the responsive sipms less than rmax from locmax
         rsis = get_nearby_sipm_inds(lm.pos, rmax, pos, qs)
