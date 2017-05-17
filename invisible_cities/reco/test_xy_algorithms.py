@@ -1,5 +1,13 @@
 import numpy as np
+
 from pytest import fixture
+from pytest import mark
+
+from hypothesis             import given
+from hypothesis.strategies  import floats
+from hypothesis.strategies  import integers
+from hypothesis.strategies  import composite
+from hypothesis.extra.numpy import arrays
 
 from .. core.system_of_units_c import units
 
@@ -10,17 +18,29 @@ from .       xy_algorithms     import select_sipms
 from .       xy_algorithms     import discard_sipms
 from .       xy_algorithms     import get_nearby_sipm_inds
 
-def test_barycenter_with_many_toy_signals():
-    size = 100
-    for i in range(1000):
-        xs = np.random.uniform(size=size)
-        ys = np.random.uniform(size=size)
-        pos = np.stack((xs, ys), axis=1)
-        qs = np.random.uniform(size=size)
-        B  = barycenter(pos, qs)
-        assert np.allclose(B.pos, np.average(pos, weights=qs, axis=0))
-        assert np. isclose(B.Q  , qs.sum())
-        assert B.Nsipm == size
+
+@composite
+def positions_and_qs(draw, min_value=0, max_value=100):
+    size = draw(integers(min_value, max_value))
+    pos  = draw(arrays(float, (size, 2), floats(0.1,1)))
+    qs   = draw(arrays(float, (size,  ), floats(0.1,1)))
+    return pos, qs
+
+# TODO: at the moment we are explicitly ensuring that in the generated
+# test data:
+#
+#   + pos and qs have length greater than zero
+#   + all the elements are nonzero.
+#
+# Need to handle these situations.
+@mark.slow
+@given(positions_and_qs(1))
+def test_barycenter(p_q):
+    pos, qs = p_q
+    B  = barycenter(pos, qs)
+    assert np.allclose(B.pos, np.average(pos, weights=qs, axis=0))
+    assert np. isclose(B.Q  , qs.sum())
+    assert B.Nsipm == len(qs)
 
 @fixture
 def toy_sipm_signal():
