@@ -1,7 +1,7 @@
 import pandas as pd
 import tables as tb
 
-from params import Correction
+from . params import Correction
 
 def load_dst(filename, group, node):
     with tb.open_file(filename) as h5in:
