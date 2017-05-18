@@ -2,10 +2,11 @@ from __future__ import print_function
 
 import sys
 import time
+import textwrap
 
 import numpy as np
 
-from invisible_cities.cities.base_cities    import City, MapCity
+from invisible_cities.cities.base_cities    import merge_two_dicts, City, MapCity
 from invisible_cities.core  .fit_functions  import in_range
 from invisible_cities.core  .configure      import configure
 from invisible_cities.reco  .dst_functions  import load_dsts
@@ -70,13 +71,70 @@ class Zaira(City, MapCity):
 
                          z_sampling   = z_sampling)
 
-        self.fiducial_r = self.det_geo.RMAX[0] if fiducial_r is not None else fiducial_r
-        self.fiducial_z = (self.det_geo.ZMIN[0], self.det_geo.ZMIN[1]) if fiducial_z is None else fiducial_z
+        self.fiducial_r = self.det_geo.RMAX[0] if fiducial_r is None else fiducial_r
+        self.fiducial_z = (self.det_geo.ZMIN[0], self.det_geo.ZMAX[0]) if fiducial_z is None else fiducial_z
         self.fiducial_e = (0, np.inf) if fiducial_e is None else fiducial_e
 
         self.dst_group  = dst_group
         self.dst_node   = dst_node
 
+
+    config_file_format = City.config_file_format + """
+
+    RUN_NUMBER  {RUN_NUMBER}
+
+    # set_print
+    NPRINT      {NPRINT}
+
+    XBINS    {XBINS}
+    XMIN     {XMIN}
+    XMAX     {XMAX}
+
+    YBINS    {YBINS}
+    YMIN     {YMIN}
+    YMAX     {YMAX}
+
+    ZBINS    {ZBINS}
+    ZMIN     {ZMIN}
+    ZMAX     {ZMAX}
+
+    TBINS    {TBINS}
+
+    Z_SAMPLING {Z_SAMPLING}
+
+    FIDUCIAL_R {FIDUCIAL_R}
+
+    DST_GROUP {DST_GROUP}
+    DST_NODE  {DST_NODE}
+    """
+
+    config_file_format = textwrap.dedent(config_file_format)
+
+    default_config = merge_two_dicts(
+        City.default_config,
+        dict(RUN_NUMBER  =     0,
+             NPRINT      =     1,
+
+             XBINS       =    10,
+             XMIN        =  -200,
+             XMAX        =  +200,
+
+             YBINS       =    10,
+             YMIN        =  -200,
+             YMAX        =  +200,
+
+             ZBINS       =    10,
+             ZMIN        =     0,
+             ZMAX        =  +500,
+
+             TBINS       =    10,
+
+             Z_SAMPLING  = 10000,
+
+             FIDUCIAL_R  =   100,
+
+             DST_GROUP   = "DST",
+             DST_NODE    = "Events"))
 
     def run(self):
         dst = load_dsts(self.input_files, self.dst_group, self.dst_node)
