@@ -1,3 +1,4 @@
+import numpy  as np
 import pandas as pd
 import tables as tb
 
@@ -16,9 +17,11 @@ def load_dsts(dst_list, group, node):
 
 def load_z_corrections(filename):
     dst = load_dst(filename, "Corrections", "Zcorrections")
-    return Correction(dst.z, dst.factor, dst.uncertainty)
+    return Correction(dst.z.values, dst.factor.values, dst.uncertainty.values)
 
 
 def load_xy_corrections(filename):
-    dst = load_dst(filename, "Corrections", "XYcorrections")
-    return Correction((dst.x, dst.y), dst.factor, dst.uncertainty)
+    dst  = load_dst(filename, "Corrections", "XYcorrections")
+    x, y = np.unique(dst.x.values), np.unique(dst.y.values)
+    f, u = dst.factor.values, dst.uncertainty.values
+    return Correction((x, y), f.reshape(x.size, y.size), u.reshape(x.size, y.size))

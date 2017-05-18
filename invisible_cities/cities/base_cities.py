@@ -859,21 +859,21 @@ class HitCollectionCity(S12SelectorCity):
                                  S2_NSIPMmax = S2_NSIPMmax,
                                  S2_Ethr     = S2_Ethr)
 
-        self. z_corr = dstf.load_z_corrections ( z_corr_filename)
-        self.xy_corr = dstf.load_xy_corrections(xy_corr_filename)
-        self.reco    = find_algorithm(reco_algorithm)
+        self. z_corr        = dstf.load_z_corrections ( z_corr_filename)
+        self.xy_corr        = dstf.load_xy_corrections(xy_corr_filename)
+        self.reco_algorithm = reco_algorithm
 
     def split_energy(self, e, clusters):
         qs = np.array([c.Q for c in clusters])
         return e * qs / np.sum(qs)
 
     def correct_energy(self, e, x, y, z):
-        return e * self.z_corr(z) * self.xy_corr(x, y)
+        return e * self.z_corr(z)[0][0] * self.xy_corr([x], [y])[0][0]
 
     def compute_xy_position(self, si, slice_no):
         si      = pmp.select_si_slice(si, slice_no)
-        IDs, Qs = list(zip(*si.items()))
-        xs, ys  = self.DataSiPM.X.values[IDs], self.DataSiPM.Y.values[IDs]
+        IDs, Qs = map(list, zip(*si.items()))
+        xs, ys  = self.xs[IDs], self.ys[IDs]
         return self.reco_algorithm(xs, ys, Qs)
 
     def select_event(self, evt_number, evt_time, S1, S2, Si):
