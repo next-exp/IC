@@ -3,11 +3,26 @@ import numpy as np
 from ..core        import fit_functions as fitf
 from ..reco.params import Correction
 
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_allclose
 from pytest        import fixture, mark
 
 
-@fixture
+@fixture(scope='session')
+def toy_data_1d():
+    z = np.linspace(  0, 100,     10)
+    E = np.linspace(1e3, 2e3, z.size)
+    return z, E
+
+
+@fixture(scope='session')
+def toy_data_2d():
+    x    = np.linspace(  0, 100, 10)
+    y    = np.linspace(  0, 100, 10)
+    E    = np.linspace(1e3, 2e3, x.size*y.size).reshape(x.size, y.size)
+    return x, y, E
+
+
+@fixture(scope='session')
 def gauss_data_1d():
     mean = lambda z: 1e4 * np.exp(-z/300)
     Nevt = 100000
@@ -17,7 +32,7 @@ def gauss_data_1d():
     return zevt, Eevt, prof
 
 
-@fixture
+@fixture(scope='session')
 def gauss_data_2d():
     mean = lambda x, y: 1e4 * np.exp(-(x**2 + y**2)/400**2)
     Nevt = 100000
@@ -46,7 +61,24 @@ def test_correction_unnormalized():
     assert_equal(c.fs, np.arange(100))
 
 
-@mark.slow
+def test_corrections_toy_1d(toy_data_1d):
+    z, E = toy_data_1d
+    Emax = np.max(E)
+    zcorr = Correction(z, E, np.ones_like(E), "max")
+    E *= zcorr(z)[0]
+    assert_allclose(E, Emax)
+
+
+def test_corrections_toy_2d(toy_data_2d):
+    x, y, E = toy_data_2d
+    xycorr  = Correction((x, y), E, np.ones_like(E), "center")
+    y, x    = map(np.ndarray.flatten, np.meshgrid(x, y))
+    E       = E.flatten()
+    E      *= xycorr(x, y)[0]
+    assert_allclose(E, np.mean(E))
+
+
+@mark.skip
 def test_corrections_1d(gauss_data_1d):
     zevt, Eevt, (z, E, Ee) = gauss_data_1d
     zcorr = Correction(z, E, Ee, "max")
@@ -58,7 +90,7 @@ def test_corrections_1d(gauss_data_1d):
     assert f.chi2 < 3
 
 
-@mark.slow
+@mark.skip
 def test_corrections_2d(gauss_data_2d):
     xevt, yevt, Eevt, (x, y, E, Ee) = gauss_data_2d
     xycorr = Correction((x, y), E, Ee, "center")
