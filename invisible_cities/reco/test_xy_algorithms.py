@@ -3,6 +3,7 @@ import numpy as np
 from pytest import fixture
 from pytest import mark
 from pytest import raises
+parametrize = mark.parametrize
 
 from hypothesis             import given
 from hypothesis.strategies  import floats
@@ -102,24 +103,16 @@ def test_corona_msipm(toy_sipm_signal):
     pos, qs = toy_sipm_signal
     assert len(corona(pos, qs, msipm=2)) == 0
 
-def test_corona_threshold_for_local_max(toy_sipm_signal):
+@parametrize(' Qlm,    rmax, nclusters',
+             ((5.1,      15, 0),
+              (4.9,      15, 2),
+              (4.9, 1000000, 1)))
+def test_corona_simple_examples(toy_sipm_signal, Qlm, rmax, nclusters):
     pos, qs = toy_sipm_signal
     assert len(corona(pos, qs,
                       msipm =  1,
-                      Qlm   =  5.1*units.pes,
-                      rmax  = 15  *units.mm )) == 0
-
-def test_corona_rmax(toy_sipm_signal):
-    pos, qs = toy_sipm_signal
-    assert len(corona(pos, qs,
-                      msipm =  1,
-                      Qlm     =   4.9*units.pes,
-                      rmax  =  15  *units.mm)) == 2
-
-    assert len(corona(pos, qs,
-                      msipm = 1,
-                      Qlm     = 4.9    *units.pes,
-                      rmax  = 1000000*units.m)) == 1
+                      Qlm   =  Qlm * units.pes,
+                      rmax  = rmax * units.mm )) == nclusters
 
 @fixture
 def toy_sipm_signal_and_inds():
