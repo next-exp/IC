@@ -2,9 +2,13 @@ import sys
 import numpy as np
 
 from .. core.system_of_units_c import units
+from .. core.exceptions        import SipmEmptyList
+from .. core.exceptions        import SipmZeroCharge
 from .       params            import Cluster
 
-def barycenter(pos, qs, default=np.nan):
+def barycenter(pos, qs):
+    if not len(pos): raise SipmEmptyList
+    if sum(qs) == 0: raise SipmZeroCharge
     mu  = np.average( pos           , weights=qs, axis=0)
     std = np.average((pos - mu) ** 2, weights=qs, axis=0)
     return Cluster(sum(qs), mu, std, len(qs))
