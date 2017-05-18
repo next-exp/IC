@@ -6,6 +6,14 @@ from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmZeroCharge
 from .       params            import Cluster
 
+
+def find_algorithm(algoname):
+    if algoname in sys.modules[__name__].__dict__:
+        return getattr(sys.modules[__name__], algoname)
+    else:
+        raise ValueError("The algorithm <{}> does not exist".format(algoname))
+
+
 def barycenter(pos, qs):
     if not len(pos): raise SipmEmptyList
     if sum(qs) == 0: raise SipmZeroCharge
@@ -13,8 +21,10 @@ def barycenter(pos, qs):
     std = np.average((pos - mu) ** 2, weights=qs, axis=0)
     return Cluster(sum(qs), mu, std, len(qs))
 
+
 def discard_sipms(sis, pos, qs):
     return np.delete(pos, sis, axis=0), np.delete(qs, sis)
+
 
 def get_nearby_sipm_inds(cs, d, pos, qs):
     """return indices of sipms less than d from (xc,yc)"""
