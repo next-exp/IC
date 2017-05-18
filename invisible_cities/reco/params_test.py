@@ -1,10 +1,10 @@
 import numpy as np
 
-import invisible_cities.core.fit_functions as     fitf
-from   invisible_cities.reco.params        import Correction
+from ..core        import fit_functions as fitf
+from ..reco.params import Correction
 
 from numpy.testing import assert_equal
-from pytest import fixture, mark
+from pytest        import fixture, mark
 
 
 @fixture
