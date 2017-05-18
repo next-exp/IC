@@ -59,7 +59,7 @@ def test_barycenter_raises_sipm_zero_charge():
 def toy_sipm_signal():
     xs = np.array([65, -64]) * units.mm
     ys = np.array([63, -62]) * units.mm
-    qs = np.ones (2        ) * units.pes * 5
+    qs = np.array([ 6,   5]) * units.pes
     pos = np.stack((xs, ys), axis=1)
     return pos, qs
 
@@ -104,7 +104,7 @@ def test_corona_msipm(toy_sipm_signal):
     assert len(corona(pos, qs, msipm=2)) == 0
 
 @parametrize(' Qlm,    rmax, nclusters',
-             ((5.1,      15, 0),
+             ((6.1,      15, 0),
               (4.9,      15, 2),
               (4.9, 1000000, 1)))
 def test_corona_simple_examples(toy_sipm_signal, Qlm, rmax, nclusters):
