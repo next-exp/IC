@@ -15,3 +15,10 @@ class NoOutputFile(ICException):
 
 class ParameterNotSet(ICException):
     pass
+
+class SipmEmptyList(ICException):
+    pass
+
+class SipmZeroCharge(ICException):
+    pass
+
