@@ -50,35 +50,38 @@ class Penthesilea(City, HitCollectionCity):
                  reco_algorithm   = barycenter):
 
 
-        City     .__init__(self,
-                           run_number ,
-                           files_in   ,
-                           file_out   ,
-                           compression,
-                           nprint     )
+        City             .__init__(self,
+                                   run_number ,
+                                   files_in   ,
+                                   file_out   ,
+                                   compression,
+                                   nprint     )
 
         HitCollectionCity.__init__(self,
-                                   drift_v     = drift_v,
+                                   drift_v          = drift_v,
 
-                                   S1_Emin     = S1_Emin,
-                                   S1_Emax     = S1_Emax,
-                                   S1_Lmin     = S1_Lmin,
-                                   S1_Lmax     = S1_Lmax,
-                                   S1_Hmin     = S1_Hmin,
-                                   S1_Hmax     = S1_Hmax,
-                                   S1_Ethr     = S1_Ethr,
+                                   S1_Emin          = S1_Emin,
+                                   S1_Emax          = S1_Emax,
+                                   S1_Lmin          = S1_Lmin,
+                                   S1_Lmax          = S1_Lmax,
+                                   S1_Hmin          = S1_Hmin,
+                                   S1_Hmax          = S1_Hmax,
+                                   S1_Ethr          = S1_Ethr,
 
-                                   S2_Nmin     = 1,
-                                   S2_Nmax     = S2_Nmax,
-                                   S2_Emin     = S2_Emin,
-                                   S2_Emax     = S2_Emax,
-                                   S2_Lmin     = S2_Lmin,
-                                   S2_Lmax     = S2_Lmax,
-                                   S2_Hmin     = S2_Hmin,
-                                   S2_Hmax     = S2_Hmax,
-                                   S2_NSIPMmin = S2_NSIPMmin,
-                                   S2_NSIPMmax = S2_NSIPMmax,
-                                   S2_Ethr     = S2_Ethr)
+                                   S2_Nmax          = S2_Nmax,
+                                   S2_Emin          = S2_Emin,
+                                   S2_Emax          = S2_Emax,
+                                   S2_Lmin          = S2_Lmin,
+                                   S2_Lmax          = S2_Lmax,
+                                   S2_Hmin          = S2_Hmin,
+                                   S2_Hmax          = S2_Hmax,
+                                   S2_NSIPMmin      = S2_NSIPMmin,
+                                   S2_NSIPMmax      = S2_NSIPMmax,
+                                   S2_Ethr          = S2_Ethr,
+
+                                    z_corr_filename =  z_corr_filename,
+                                   xy_corr_filename = xy_corr_filename,
+                                   reco_algorithm   = reco_algorithm)
 
     config_file_format = City.config_file_format + """
 

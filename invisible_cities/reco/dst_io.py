@@ -261,7 +261,7 @@ class HitCollection(list, Event):
             row["event"] = self.evt
             row["time" ] = self.time
 
-            row["npeak"] = hit.npeak
+            row["npeak"] = hit.Npeak
             row["X"    ] = hit.X
             row["Y"    ] = hit.Y
             row["Z"    ] = hit.Z
