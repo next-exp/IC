@@ -698,8 +698,9 @@ class HitCollectionCity(S12SelectorCity):
         self.xy_corr = dstf.load_xy_corrections(xy_corr_filename)
         self.reco    = find_algorithm(reco_algorithm)
 
-    def split_energy(self, e, q):
-        return e * q / np.sum(q)
+    def split_energy(self, e, clusters):
+        qs = np.array([c.Q for c in clusters])
+        return e * qs / np.sum(qs)
 
     def correct_energy(self, e, x, y, z):
         return e * self.z_corr(z) * self.xy_corr(x, y)
@@ -729,21 +730,21 @@ class HitCollectionCity(S12SelectorCity):
         for peak_no, (t_peak, e_peak) in sorted(S2.items()):
             si = Si[peak_no]
             for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
-                xs, ys, qs, ns = self.compute_xy_position(si, slice_no)
-                es             = self.split_energy(e_slice, qs)
-                z              = (t_slice - S1t) * units.ns * self.drift_v
-                for x, y, e, q, n in zip(xs, ys, es, qs, ns):
+                clusters = self.compute_xy_position(si, slice_no)
+                es       = self.split_energy(e_slice, clusters)
+                z        = (t_slice - S1t) * units.ns * self.drift_v
+                for c, e in zip(clusters, es):
                     hit       = Hit()
                     hit.Npeak = npeak
-                    hit.X     = x
-                    hit.Y     = y
-                    hit.R     = (x**2 + y**2)**0.5
-                    hit.Phi   = np.arctan2(y, x)
+                    hit.X     = c.X
+                    hit.Y     = c.Y
+                    hit.R     = (c.X**2 + c.Y**2)**0.5
+                    hit.Phi   = np.arctan2(c.Y, c.X)
                     hit.Z     = z
-                    hit.Q     = q
+                    hit.Q     = c.Q
                     hit.E     = e
-                    hit.Ecorr = self.correct_energy(e, x, y, z)
-                    hit.Nsipm = n
+                    hit.Ecorr = self.correct_energy(e, c.X, c.Y, z)
+                    hit.Nsipm = c.Nsipm
                     hitc.append(hit)
             npeak += 1
 
