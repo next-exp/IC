@@ -83,25 +83,29 @@ def test_corrections_toy_2d(toy_data_2d):
     assert_allclose(E, np.mean(E))
 
 
-@mark.skip
+@mark.slow
 def test_corrections_1d(gauss_data_1d):
     zevt, Eevt, (z, E, Ee) = gauss_data_1d
     zcorr = Correction(z, E, Ee, "max")
     Eevt *= zcorr(zevt)[0]
 
-    y, x = np.histogram(Eevt, np.linspace(7e3, 13e3, 100))
+    mean = np.std(Eevt)
+    std  = np.std(Eevt)
+    y, x = np.histogram(Eevt, np.linspace(mean - 3 * std, mean + 3 * std, 100))
     x = x[:-1] + np.diff(x) * 0.5
-    f = fitf.fit(fitf.gauss, x, y, (1e5, 1e4, 1e2))
+    f = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
     assert f.chi2 < 3
 
 
-@mark.skip
+@mark.slow
 def test_corrections_2d(gauss_data_2d):
     xevt, yevt, Eevt, (x, y, E, Ee) = gauss_data_2d
     xycorr = Correction((x, y), E, Ee, "center")
     Eevt  *= xycorr(xevt, yevt)[0]
 
-    y, x = np.histogram(Eevt, np.linspace(7e3, 13e3, 100))
+    mean = np.std(Eevt)
+    std  = np.std(Eevt)
+    y, x = np.histogram(Eevt, np.linspace(mean - 3 * std, mean + 3 * std, 100))
     x = x[:-1] + np.diff(x) * 0.5
-    f = fitf.fit(fitf.gauss, x, y, (1e5, 1e4, 1e2))
+    f = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
     assert f.chi2 < 3
