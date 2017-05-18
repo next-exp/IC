@@ -2,6 +2,7 @@ import numpy as np
 
 from pytest import fixture
 from pytest import mark
+from pytest import raises
 
 from hypothesis             import given
 from hypothesis.strategies  import floats
@@ -10,6 +11,9 @@ from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
 from .. core.system_of_units_c import units
+from .. core.exceptions        import SipmEmptyList
+from .. core.exceptions        import SipmZeroCharge
+
 
 from .       params            import Cluster
 from .       xy_algorithms     import corona
@@ -41,6 +45,14 @@ def test_barycenter(p_q):
     assert np.allclose(B.pos, np.average(pos, weights=qs, axis=0))
     assert np. isclose(B.Q  , qs.sum())
     assert B.Nsipm == len(qs)
+
+def test_barycenter_raises_sipm_empty_list():
+    with raises(SipmEmptyList):
+        barycenter(np.array([]), None)
+
+def test_barycenter_raises_sipm_zero_charge():
+    with raises(SipmZeroCharge):
+        barycenter(np.array([1,2]), np.array([0,0]))
 
 @fixture
 def toy_sipm_signal():
