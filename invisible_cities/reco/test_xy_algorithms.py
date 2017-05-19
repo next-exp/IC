@@ -30,6 +30,7 @@ def positions_and_qs(draw, min_value=0, max_value=100):
     qs   = draw(arrays(float, (size,  ), floats(0.1,1)))
     return pos, qs
 
+
 @given(positions_and_qs(1))
 def test_barycenter(p_q):
     pos, qs = p_q
