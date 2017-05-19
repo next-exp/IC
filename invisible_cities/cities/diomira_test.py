@@ -177,6 +177,7 @@ def test_command_line_diomira(conf_file_name, config_tmpdir):
     nrequired, nactual = DIOMIRA(['DIOMIRA',
                                   '-c', conf_file_name,
                                   '-i', PATH_IN,
+                                  '-n', '2',
                                   '-o', PATH_OUT,
                                   '-f', str(start_evt),
                                   '-r', str(run_number)])
