@@ -1,15 +1,16 @@
 import numpy as np
 
-def Correction(xs, ys, E, _, strategy):
-    N = E / E.max() if strategy else np.ones_like(E)
-    norm = { (x,y) : N[i,j]
-             for i, x in enumerate(xs)
-             for j, y in enumerate(ys) }
 
-    def correct_E(x, y):
-        return norm[(x,y)]
+class Correction:
 
-    def correct_U(x, y):
-        return norm[(x,y)]
+    def __init__(self, xs, ys, E, _, strategy):
+        N = E / E.max() if strategy else np.ones_like(E)
+        self._norm = { (x,y) : N[i,j]
+                       for i, x in enumerate(xs)
+                       for j, y in enumerate(ys) }
 
-    return correct_E, correct_U
+    def E(self, x, y):
+        return self._norm[(x,y)]
+
+    def U(self, x, y):
+        return self._norm[(x,y)]

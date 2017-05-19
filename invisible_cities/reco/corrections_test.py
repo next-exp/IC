@@ -42,20 +42,20 @@ def toy_energy_map():
 
 def test_energy_correction_max(toy_energy_map):
     m = toy_energy_map
-    correct_energy, _ = Correction(m.x, m.y, m.E, m.U, 'max')
+    correct = Correction(m.x, m.y, m.E, m.U, 'max')
     CORRECTION = m.E_00 / m.E_max
-    assert_allclose(correct_energy(m.x_0, m.y_0), CORRECTION)
+    assert_allclose(correct.E(m.x_0, m.y_0), CORRECTION)
 
 
 def test_energy_correction_None(toy_energy_map):
     m = toy_energy_map
-    correct_energy, _ = Correction(m.x, m.y, m.E, m.U, None)
+    correct = Correction(m.x, m.y, m.E, m.U, None)
     NO_CORRECTION = 1
-    assert_allclose(correct_energy(m.x_0, m.y_0), NO_CORRECTION)
+    assert_allclose(correct.E(m.x_0, m.y_0), NO_CORRECTION)
 
 
 def test_energy_uncertainty_correction_None(toy_energy_map):
     m = toy_energy_map
-    _, correct_uncertainty = Correction(m.x, m.y, m.E, m.U, None)
+    correct = Correction(m.x, m.y, m.E, m.U, None)
     NO_CORRECTION = 1
-    assert_allclose(correct_uncertainty(m.x_0, m.y_1), NO_CORRECTION)
+    assert_allclose(correct.U(m.x_0, m.y_1), NO_CORRECTION)
