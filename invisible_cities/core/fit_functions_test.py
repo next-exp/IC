@@ -30,7 +30,7 @@ def test_get_errors():
 @given(float_arrays(min_value=-10,
                     max_value=10))
 def test_gauss_symmetry(data):
-    assert_allclose(fit.gauss(data, 1., 0., 1.),
+    assert_allclose(fit.gauss( data, 1., 0., 1.),
                     fit.gauss(-data, 1., 0., 1.))
 
 
@@ -160,7 +160,6 @@ def test_fit_with_errors(reduced):
     assert_allclose(f.values, pars)
 
 
-@mark.slow
 @mark.parametrize(["func"],
                   ((fit.profileX,),
                    (fit.profileY,)))
