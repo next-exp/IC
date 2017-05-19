@@ -7,7 +7,6 @@ import numpy  as np
 import numpy.testing as npt
 
 from hypothesis            import given
-from hypothesis            import settings
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
 from hypothesis.strategies import sampled_from
@@ -50,7 +49,6 @@ def test_in_range_infinite(data):
 
 @given(random_length_float_arrays(mask = lambda x: ((x<-10) or
                                                (x>+10) )))
-@settings(max_examples=20)
 def test_in_range_with_hole(data):
     assert not core.in_range(data, -10, 10).any()
 
@@ -61,7 +59,6 @@ def test_in_range_positives():
 
 
 @given(random_length_float_arrays(max_length = 1000))
-@settings(max_examples=20)
 def test_in_range_right_shape(data):
     assert core.in_range(data, -1., 1.).shape == data.shape
 
