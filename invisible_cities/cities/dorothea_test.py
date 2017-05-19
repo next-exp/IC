@@ -22,7 +22,6 @@ def conf_file_name_mc(config_tmpdir):
     return conf_file_name
 
 
-@mark.slow
 def test_command_line_dorothea_KrMC(conf_file_name_mc, config_tmpdir, KrMC_pmaps):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
