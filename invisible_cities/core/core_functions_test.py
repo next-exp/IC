@@ -6,8 +6,12 @@ import pandas as pd
 import numpy  as np
 import numpy.testing as npt
 
-from hypothesis import given
-from hypothesis.strategies import integers, floats, sampled_from, composite
+from hypothesis            import given
+from hypothesis.strategies import integers
+from hypothesis.strategies import floats
+from hypothesis.strategies import sampled_from
+from hypothesis.strategies import composite
+
 sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 
 from .test_utils import random_length_float_arrays
