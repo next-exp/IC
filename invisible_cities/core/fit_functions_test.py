@@ -9,7 +9,6 @@ from numpy.testing import assert_array_equal
 from numpy.testing import assert_allclose
 
 from hypothesis            import given
-from hypothesis            import settings
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
 
@@ -30,7 +29,6 @@ def test_get_errors():
 
 @given(float_arrays(min_value=-10,
                     max_value=10))
-@settings(max_examples=20)
 def test_gauss_symmetry(data):
     assert_allclose(fit.gauss( data, 1., 0., 1.),
                     fit.gauss(-data, 1., 0., 1.))
