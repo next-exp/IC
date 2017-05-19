@@ -124,6 +124,7 @@ def test_command_line_irene_run_2983(conf_file_name_data, config_tmpdir, ICDIR):
     if nrequired > 0:
         assert nrequired == nactual
 
+@mark.slow # not slow itself, but depends on a slow test
 @mark.serial
 def test_command_line_irene_runinfo_run_2983(config_tmpdir, ICDIR):
     """Read back the file written by previous test. Check runinfo."""
@@ -159,6 +160,7 @@ def test_command_line_irene_runinfo_run_2983(config_tmpdir, ICDIR):
         assert rin == rout
 
 
+@mark.slow
 def test_irene_output_file_structure(conf_file_name_data, config_tmpdir, ICDIR):
     PATH_IN = os.path.join(ICDIR,
                            'database/test_data/',
@@ -202,7 +204,6 @@ def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir, ICDIR):
     assert empty   == 1
 
 
-@mark.slow
 def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR):
     """Run Irene. Write an output file."""
 
