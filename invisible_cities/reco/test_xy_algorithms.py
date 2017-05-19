@@ -6,7 +6,6 @@ from pytest import raises
 parametrize = mark.parametrize
 
 from hypothesis             import given
-from hypothesis             import settings
 from hypothesis.strategies  import floats
 from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
@@ -33,7 +32,6 @@ def positions_and_qs(draw, min_value=0, max_value=100):
 
 
 @given(positions_and_qs(1))
-@settings(max_examples=20)
 def test_barycenter(p_q):
     pos, qs = p_q
     B  = barycenter(pos, qs)

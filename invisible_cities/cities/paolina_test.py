@@ -8,7 +8,6 @@ from pytest import mark
 parametrize = mark.parametrize
 
 from hypothesis            import given
-from hypothesis            import settings
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
@@ -43,7 +42,6 @@ box_sizes = builds(np.array, lists(box_dimension,
 
 
 @given(bunch_of_hits)
-@settings(max_examples=40)
 def test_bounding_box(hits):
     if not len(hits): # TODO: deal with empty sequences
         return
@@ -68,7 +66,6 @@ def test_bounding_box(hits):
 
 
 @given(bunch_of_hits, box_sizes)
-@settings(max_examples=20)
 def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
     voxels = voxelize_hits(hits, voxel_dimensions)
 
@@ -82,7 +79,6 @@ def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
 
 
 @given(bunch_of_hits, box_sizes)
-@settings(max_examples=20)
 def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
     voxels = voxelize_hits(hits, voxel_dimensions)
 
@@ -95,7 +91,6 @@ def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
     assert (vlo <= hlo).all()
     assert (vhi >= hhi).all()
 
-@settings(max_examples=20)
 @given(bunch_of_hits, box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
