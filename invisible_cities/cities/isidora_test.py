@@ -46,6 +46,7 @@ def test_command_line_isidora(conf_file_name, config_tmpdir):
                                   '-c', conf_file_name,
                                   '-i', PATH_IN,
                                   '-o', PATH_OUT,
+                                  '-n', '2',
                                   '-r', '0'])
     if nrequired > 0:
         assert nrequired == nactual
