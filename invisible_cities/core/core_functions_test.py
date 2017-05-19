@@ -20,7 +20,7 @@ from .           import core_functions as core
 def test_timefunc(capfd):
     # We run a function with a defined time duration (sleep) and we check
     # the decorator prints a correct measurement.
-    time = 1
+    time = 0.12
     result = core.timefunc(sleep)(time)
     out, err = capfd.readouterr()
     time_measured = re.search('\d+\.\d+', out).group(0)
@@ -48,7 +48,7 @@ def test_in_range_infinite(data):
 
 
 @given(random_length_float_arrays(mask = lambda x: ((x<-10) or
-                                                    (x>+10) )))
+                                               (x>+10) )))
 def test_in_range_with_hole(data):
     assert not core.in_range(data, -10, 10).any()
 

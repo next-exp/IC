@@ -1,5 +1,6 @@
-import pytest
 import os
+import pytest
+
 
 @pytest.fixture(scope = 'session')
 def ICDIR():
@@ -114,5 +115,3 @@ def Kr_dst_data(ICDIR):
     df = DataFrame(data, columns = cols)
 
     return (ICDIR + "/database/test_data/Kr_dst.h5", "DST", "data"), df
-
-
