@@ -81,7 +81,7 @@ def test_command_line_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, IC
                                    '-c', conf_file_name_mc,
                                    '-i', PATH_IN,
                                    '-o', PATH_OUT,
-                                   '-n', '3',
+                                   '-n', '2',
                                    '-r', '0'])
     if nrequired > 0:
         assert nrequired == nactual
@@ -172,7 +172,7 @@ def test_irene_output_file_structure(conf_file_name_data, config_tmpdir, ICDIR):
                                    '-c', conf_file_name_data,
                                    '-i', PATH_IN,
                                    '-o', PATH_OUT,
-                                   '-n', '3',
+                                   '-n', '2',
                                    '-r', '2983'])
 
     with tb.open_file(PATH_OUT) as h5out:
