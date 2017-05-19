@@ -20,7 +20,7 @@ from .           import core_functions as core
 def test_timefunc(capfd):
     # We run a function with a defined time duration (sleep) and we check
     # the decorator prints a correct measurement.
-    time = 1
+    time = 0.12
     result = core.timefunc(sleep)(time)
     out, err = capfd.readouterr()
     time_measured = re.search('\d+\.\d+', out).group(0)
