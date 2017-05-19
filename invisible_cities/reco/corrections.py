@@ -6,7 +6,10 @@ def Correction(xs, ys, E, _, strategy):
              for i, x in enumerate(xs)
              for j, y in enumerate(ys) }
 
-    def correct(x, y):
+    def correct_E(x, y):
         return norm[(x,y)]
 
-    return correct
+    def correct_U(x, y):
+        return norm[(x,y)]
+
+    return correct_E, correct_U
