@@ -162,7 +162,6 @@ def test_fit_with_errors(reduced):
     assert_allclose(f.values, pars)
 
 
-@mark.slow
 @mark.parametrize(["func"],
                   ((fit.profileX,),
                    (fit.profileY,)))
