@@ -30,14 +30,6 @@ def positions_and_qs(draw, min_value=0, max_value=100):
     qs   = draw(arrays(float, (size,  ), floats(0.1,1)))
     return pos, qs
 
-# TODO: at the moment we are explicitly ensuring that in the generated
-# test data:
-#
-#   + pos and qs have length greater than zero
-#   + all the elements are nonzero.
-#
-# Need to handle these situations.
-@mark.slow
 @given(positions_and_qs(1))
 def test_barycenter(p_q):
     pos, qs = p_q
