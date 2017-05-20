@@ -49,12 +49,15 @@ class Correction:
         - False:    Do not normalize.
         - "max":    Normalize to maximum energy encountered.
         - "center": Normalize to the energy placed at the center of the array.
+    default : float
+        Default value for missing values (where fs = 0).
     """
-    def __init__(self, xs, fs, us, norm_strategy=False):
+    def __init__(self, xs, fs, us, norm_strategy=False, default_value=1):
         self.xs = np.array(xs, dtype=float, ndmin=2)
         self.fs = np.array(fs, dtype=float)
         self.us = np.array(us, dtype=float)
 
+        self.default = default_value 
         self._normalize(norm_strategy)
 
     def _normalize(self, norm):
@@ -79,7 +82,7 @@ class Correction:
         fs_norm = self.fs[index]/self.fs
 
         # If the measured energy is zero, apply no correction at all.
-        fs_norm[self.fs == 0] = 1
+        fs_norm[self.fs == 0] = self.default
 
         # Propagate uncertainties
         self.us = fs_norm * ((u_norm / f_norm)**2 +
