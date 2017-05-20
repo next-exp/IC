@@ -51,7 +51,7 @@ class Correction:
         - "center": Normalize to the energy placed at the center of the array.
     """
     def __init__(self, xs, fs, us, norm = False):
-        self.xs = np.array(xs, dtype=float, ndmin=2).T
+        self.xs = np.array(xs, dtype=float, ndmin=2)
         self.fs = np.array(fs, dtype=float)
         self.us = np.array(us, dtype=float)
 
@@ -86,9 +86,8 @@ class Correction:
                              (self.us/self.fs)**2 )**0.5
         self.fs = fs_norm
 
-    def _find_closest(self, x):
-        # For each value in x, find the closest value in the bunch of coordinates
-        return np.apply_along_axis(np.argmin, 0, abs(x-self.xs))
+    def _find_closest_index(self, x, y):
+        return np.argmin(abs(x-y[:, np.newaxis]), axis=0)
 
     def __call__(self, *x):
         """
@@ -100,15 +99,9 @@ class Correction:
              Each array is one coordinate. The number of coordinates must match
              that of the `xs` array in the init method.
         """
-        # For each "event" in the input, find the closest point
-        x_closest = np.apply_along_axis(self._find_closest, 0,
-                                        np.array(x, ndmin=2))
+        # Find the index of the closest value in each axis
+        x_closest = list(map(self._find_closest_index, x, self.xs))
 
-        # List of tuples:
-        # - tuple-index acts as a multiindex, i.e. one tuple = one element
-        # - array-index acts as a multiindexer, i.e., one array = multiple elements
-        #   which imay be confusing for multidimensional arrays.
-        x_closest = list(map(tuple, x_closest))
         return self.fs[x_closest], self.us[x_closest]
 
 
