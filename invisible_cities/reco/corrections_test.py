@@ -14,7 +14,7 @@ from hypothesis.extra.numpy import arrays
 
 from . corrections import XYCorrection
 
-EField = namedtuple('EField', 'i,j, x,y, E, U')
+EField = namedtuple('EField', 'i,j, x,y, E, U, ni,nj')
 
 @composite
 def energy_field(draw):
@@ -34,11 +34,15 @@ def energy_field(draw):
     i = draw(integers(min_value=0, max_value=x_size-1))
     j = draw(integers(min_value=0, max_value=y_size-1))
 
-    return EField(i,j, x,y, E, U)
+    ni = draw(integers(min_value=0, max_value=x_size-1))
+    nj = draw(integers(min_value=0, max_value=y_size-1))
+
+    return EField(i,j, x,y, E, U, ni,nj)
+
 
 @given(energy_field())
 def test_energy_correction_max(data):
-    i,j, x,y, E, U = data
+    i,j, x,y, E, U, *_ = data
     correct = XYCorrection(x, y, E, U, 'max')
     E_CORRECTION = E[i,j] / E.max()
     assert_allclose(correct.E(x[i], y[j]), E_CORRECTION)
@@ -46,7 +50,7 @@ def test_energy_correction_max(data):
 
 @given(energy_field())
 def test_energy_uncertainty_correction_max(data):
-    i,j, x,y, E, U = data
+    i,j, x,y, E, U, *_ = data
     correct = XYCorrection(x, y, E, U, 'max')
     E_max = E.max()
     U_CORRECTION = U[i,j] / E_max
@@ -54,8 +58,25 @@ def test_energy_uncertainty_correction_max(data):
 
 
 @given(energy_field())
+def test_energy_correction_index(data):
+    i,j, x,y, E, U, ni, nj = data
+    correct = XYCorrection(x, y, E, U, 'index', ni, nj)
+    E_CORRECTION = E[i,j] / E[ni,nj]
+    assert_allclose(correct.E(x[i], y[j]), E_CORRECTION)
+
+
+@given(energy_field())
+def test_energy_uncertainty_correction_index(data):
+    i,j, x,y, E, U, ni, nj = data
+    correct = XYCorrection(x, y, E, U, 'index', ni, nj)
+    E_max = E.max()
+    U_CORRECTION = U[i,j] / E[ni,nj]
+    assert_allclose(correct.U(x[i], y[j]), U_CORRECTION)
+
+
+@given(energy_field())
 def test_energy_correction_None(data):
-    i,j, x,y, E, U = data
+    i,j, x,y, E, U, *_ = data
     correct = XYCorrection(x, y, E, U, None)
     NO_CORRECTION = 1
     assert_allclose(correct.E(x[i], y[j]), NO_CORRECTION)
@@ -63,7 +84,7 @@ def test_energy_correction_None(data):
 
 @given(energy_field())
 def test_energy_uncertainty_correction_None(data):
-    i,j, x,y, E, U = data
+    i,j, x,y, E, U, *_ = data
     correct = XYCorrection(x, y, E, U, None)
     NO_CORRECTION = 1
     assert_allclose(correct.U(x[i], y[j]), NO_CORRECTION)
