@@ -50,12 +50,12 @@ class Correction:
         - "max":    Normalize to maximum energy encountered.
         - "center": Normalize to the energy placed at the center of the array.
     """
-    def __init__(self, xs, fs, us, norm = False):
+    def __init__(self, xs, fs, us, norm_strategy=False):
         self.xs = np.array(xs, dtype=float, ndmin=2)
         self.fs = np.array(fs, dtype=float)
         self.us = np.array(us, dtype=float)
 
-        self._normalize(norm)
+        self._normalize(norm_strategy)
 
     def _normalize(self, norm):
         if not norm:
