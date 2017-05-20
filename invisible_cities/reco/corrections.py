@@ -1,16 +1,21 @@
 import numpy as np
 
 
-class Correction:
+class XYCorrection:
 
-    def __init__(self, xs, ys, E, _, strategy):
-        N = E / E.max() if strategy else np.ones_like(E)
-        self._norm = { (x,y) : N[i,j]
-                       for i, x in enumerate(xs)
-                       for j, y in enumerate(ys) }
+    def __init__(self, xs, ys, E, U, strategy):
+        E_max = E.max()
+        dE = E / E_max if strategy else np.ones_like(E)
+        dN = U / E_max
+        self._Enorm = { (x,y) : dE[i,j]
+                        for i, x in enumerate(xs)
+                        for j, y in enumerate(ys) }
 
-    def E(self, x, y):
-        return self._norm[(x,y)]
+        self._Unorm = ({ (x,y) : dN[i,j]
+                         for i, x in enumerate(xs)
+                         for j, y in enumerate(ys) }
 
-    def U(self, x, y):
-        return self._norm[(x,y)]
+                       if strategy else self._Enorm)
+
+    def E(self, x, y): return self._Enorm[(x,y)]
+    def U(self, x, y): return self._Unorm[(x,y)]

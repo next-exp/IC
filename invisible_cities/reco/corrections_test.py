@@ -6,56 +6,64 @@ from numpy.testing import assert_allclose
 
 from pytest import fixture
 
-from . corrections import Correction
+from hypothesis             import given
+from hypothesis.strategies  import floats
+from hypothesis.strategies  import integers
+from hypothesis.strategies  import composite
+from hypothesis.extra.numpy import arrays
 
-EnergyMap = namedtuple('EnergyMap',
-                       'E, U, E_max, U_max, E_00, U_01, x_0, y_0, y_1, x, y')
+from . corrections import XYCorrection
 
-@fixture(scope='session')
-def toy_energy_map():
-    E_max = 120
-    U_max =   6
-    E_00  =  30
-    U_01  =   5
-    x_0   =  10.1
-    y_0   =  20.3
-    y_1   =  10.2
-    x = np.array([x_0, 20.7])
-    y = np.array([y_0, y_1, 10.3])
-    E = np.array([[E_00,  40,  60],
-                  [  80,  90, E_max]])
-    U = np.array([[   3 ,U_01,  12],
-                  [   4,   9, U_max]])
+EField = namedtuple('EField', 'i,j, x,y, E, U')
 
-    return EnergyMap(E      = E,
-                     U      = U,
-                     E_max  = E_max,
-                     U_max  = U_max,
-                     E_00   = E_00,
-                     U_01   = U_01,
-                     x_0    = x_0,
-                     y_0    = y_0,
-                     y_1    = y_1,
-                     x      = x,
-                     y      = y)
+@composite
+def energy_field(draw):
+    x_size = draw(integers(min_value=2, max_value=10))
+    y_size = draw(integers(min_value=2, max_value=20))
+    dx     = draw(floats(min_value=0.1, max_value=0.7))
+    dy     = draw(floats(min_value=0.1, max_value=0.7))
+    x0     = draw(floats(min_value=-10, max_value=10))
+    y0     = draw(floats(min_value=-10, max_value=10))
+    E      = draw(arrays(float, (x_size, y_size), floats(min_value =   0.1,
+                                                         max_value = 100)))
+    U_rel  = draw(arrays(float, (x_size, y_size), floats(min_value =   0.01,
+                                                         max_value =   0.1 )))
+    U = E * U_rel
+    x = np.arange(x_size) * dx + x0
+    y = np.arange(y_size) * dy + y0
+    i = draw(integers(min_value=0, max_value=x_size-1))
+    j = draw(integers(min_value=0, max_value=y_size-1))
 
+    return EField(i,j, x,y, E, U)
 
-def test_energy_correction_max(toy_energy_map):
-    m = toy_energy_map
-    correct = Correction(m.x, m.y, m.E, m.U, 'max')
-    CORRECTION = m.E_00 / m.E_max
-    assert_allclose(correct.E(m.x_0, m.y_0), CORRECTION)
+@given(energy_field())
+def test_energy_correction_max(data):
+    i,j, x,y, E, U = data
+    correct = XYCorrection(x, y, E, U, 'max')
+    E_CORRECTION = E[i,j] / E.max()
+    assert_allclose(correct.E(x[i], y[j]), E_CORRECTION)
 
 
-def test_energy_correction_None(toy_energy_map):
-    m = toy_energy_map
-    correct = Correction(m.x, m.y, m.E, m.U, None)
+@given(energy_field())
+def test_energy_uncertainty_correction_max(data):
+    i,j, x,y, E, U = data
+    correct = XYCorrection(x, y, E, U, 'max')
+    E_max = E.max()
+    U_CORRECTION = U[i,j] / E_max
+    assert_allclose(correct.U(x[i], y[j]), U_CORRECTION)
+
+
+@given(energy_field())
+def test_energy_correction_None(data):
+    i,j, x,y, E, U = data
+    correct = XYCorrection(x, y, E, U, None)
     NO_CORRECTION = 1
-    assert_allclose(correct.E(m.x_0, m.y_0), NO_CORRECTION)
+    assert_allclose(correct.E(x[i], y[j]), NO_CORRECTION)
 
 
-def test_energy_uncertainty_correction_None(toy_energy_map):
-    m = toy_energy_map
-    correct = Correction(m.x, m.y, m.E, m.U, None)
+@given(energy_field())
+def test_energy_uncertainty_correction_None(data):
+    i,j, x,y, E, U = data
+    correct = XYCorrection(x, y, E, U, None)
     NO_CORRECTION = 1
-    assert_allclose(correct.U(m.x_0, m.y_1), NO_CORRECTION)
+    assert_allclose(correct.U(x[i], y[j]), NO_CORRECTION)
