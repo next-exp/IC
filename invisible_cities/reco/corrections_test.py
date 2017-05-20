@@ -13,6 +13,7 @@ from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
 from . corrections import XYCorrection
+from . corrections import  FCorrection
 
 EField = namedtuple('EField', 'i,j, x,y, E, U, ni,nj')
 
@@ -88,3 +89,11 @@ def test_energy_uncertainty_correction_None(data):
     correct = XYCorrection(x, y, E, U, None)
     NO_CORRECTION = 1
     assert_allclose(correct.U(x[i], y[j]), NO_CORRECTION)
+
+
+@given(z  = floats(min_value=500, max_value= 2000),
+       mu = floats(min_value=100, max_value=10000),
+       E  = floats(min_value= 40, max_value= 2500))
+def test_z_correction(z, mu, E):
+    corrected_E = FCorrection(E, z, lambda z,mu:np.exp(-z/mu), mu)
+    assert corrected_E == E * np.exp(-z/mu)

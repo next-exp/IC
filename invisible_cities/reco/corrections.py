@@ -22,3 +22,7 @@ class XYCorrection:
 
     def E(self, x, y): return self._Enorm[(x,y)]
     def U(self, x, y): return self._Unorm[(x,y)]
+
+
+def FCorrection(E, z, fn, *args):
+    return E * fn(z, *args)
