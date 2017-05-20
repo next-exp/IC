@@ -97,3 +97,25 @@ def test_energy_uncertainty_correction_None(data):
 def test_z_correction(z, mu, E):
     corrected_E = FCorrection(E, z, lambda z,mu:np.exp(-z/mu), mu)
     assert corrected_E == E * np.exp(-z/mu)
+
+
+def test_interpolation():
+    x = np.array([0.1, 0.2])
+    y = np.array([0.1, 0.2])
+    E = np.array([[12,   8],
+                  [ 6,   4]])
+    correct = XYCorrection(x, y, E, E, 'max')
+    av = np.average
+    # On the points in E
+    assert_allclose(correct.E(0.1 , 0.1 ),       12     / 12)
+    assert_allclose(correct.E(0.2 , 0.1 ),        6     / 12)
+    assert_allclose(correct.E(0.1 , 0.2 ),        8     / 12)
+    assert_allclose(correct.E(0.2 , 0.2 ),        4     / 12)
+    # Interpolation between the points in E
+    assert_allclose(correct.E(0.15, 0.1 ),  av([12, 6]) / 12)
+    assert_allclose(correct.E(0.1 , 0.15),  av([12, 8]) / 12)
+    assert_allclose(correct.E(0.15, 0.2 ),  av([ 8, 4]) / 12)
+    assert_allclose(correct.E(0.2 , 0.15),  av([ 6, 4]) / 12)
+
+    assert_allclose(correct.E(0.15, 0.15),  av([12,  8,
+                                                 6, 4]) / 12)
