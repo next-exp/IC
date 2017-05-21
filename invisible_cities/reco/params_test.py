@@ -14,11 +14,74 @@ data_2d = namedtuple("data_2d", "x y E prof")
 
 @fixture(scope='session')
 def toy_data_1d():
-    z = np.linspace(  0, 100,     10)
-    E = np.linspace(1e3, 2e3, z.size)
-    return data_1d(z, E, None)
+    nx = 10
+    X  = np.linspace      (  0, 100, nx)
+    E  = np.random.uniform(1e3, 2e3, nx)
+    Eu = np.random.uniform(1e2, 2e2, nx)
+
+    i_max = np.argmax(E)
+    e_max = E [i_max]
+    u_max = Eu[i_max]
+
+    F  = E.max()/E
+    Fu = F * (Eu**2/E**2 + u_max**2/e_max**2)**0.5
+    C  = Correction((X,), E, Eu, "max")
+    return X, E, Eu, F, Fu, C
 
 
+@fixture(scope='session')
+def toy_data_2d():
+    nx = 10
+    ny = 20
+    X  = np.linspace      (  0, 100,  nx     )
+    Y  = np.linspace      (100, 200,      ny )
+    E  = np.random.uniform(1e3, 2e3, (nx, ny))
+    Eu = np.random.uniform(1e2, 2e2, (nx, ny))
+
+    i_max = nx//2, ny//2
+    e_max = E [i_max]
+    u_max = Eu[i_max]
+    print(i_max, e_max, u_max)
+    F  = e_max/E
+    Fu = F * (Eu**2/E**2 + u_max**2/e_max**2)**0.5
+    C  = Correction((X, Y), E, Eu, "index", index=i_max)
+    return X, Y, E, Eu, F, Fu, C
+
+
+def test_correction_attributes_1d(toy_data_1d):
+    X, E, Eu, F, Fu, correct = toy_data_1d
+    assert_allclose(correct.xs[0], X ) # correct.xs is a list of axis
+    assert_allclose(correct.fs   , F )
+    assert_allclose(correct.us   , Fu)
+
+
+def test_correction_call_1d(toy_data_1d):
+    X, E, Eu, F, Fu, correct = toy_data_1d
+
+    X_test = X
+    F_test, U_test = correct(X_test)
+    assert_allclose(F_test, F )
+    assert_allclose(U_test, Fu)
+
+def test_correction_attributes_2d(toy_data_2d):
+    X, Y, E, Eu, F, Fu, correct = toy_data_2d
+    assert_allclose(correct.fs, F )
+    assert_allclose(correct.us, Fu)
+
+
+def test_correction_call_2d(toy_data_2d):
+    X, Y, E, Eu, F, Fu, correct = toy_data_2d
+
+    # Combine x and y so they are paired
+    X_test = np.repeat(X, Y.size)
+    Y_test = np.tile  (Y, X.size)
+    F_test, U_test = correct(X_test, Y_test)
+    assert_allclose(F_test, F .flatten())
+    assert_allclose(U_test, Fu.flatten())
+
+
+
+"""
 @fixture(scope='session')
 def toy_data_2d():
     x    = np.linspace(  0, 100, 10)
@@ -109,3 +172,4 @@ def test_corrections_2d(gauss_data_2d):
     x = x[:-1] + np.diff(x) * 0.5
     f = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
     assert f.chi2 < 3
+"""
