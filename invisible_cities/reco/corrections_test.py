@@ -1,7 +1,7 @@
 import numpy as np
 
-from ..core        import fit_functions as fitf
-from ..reco.params import Correction
+from ..core             import fit_functions as fitf
+from ..reco.corrections import Correction
 
 from numpy.testing import assert_equal, assert_allclose
 from pytest        import fixture, mark
