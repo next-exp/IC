@@ -50,46 +50,44 @@ class Correction:
         - "max":    Normalize to maximum energy encountered.
         - "center": Normalize to the energy placed at the center of the array.
     default : float
-        Default value for missing values (where fs = 0).
+        Default correction for missing values (where fs = 0).
     """
-    def __init__(self, xs, fs, us, norm_strategy=False, default_value=1):
-        self.xs = np.array(xs, dtype=float, ndmin=2)
-        self.fs = np.array(fs, dtype=float)
-        self.us = np.array(us, dtype=float)
+    def __init__(self,
+                 xs, fs, us,
+                 norm_strategy=False, index=None,
+                 default_f=0, default_u=0):
+        self.xs = [np.array( x, dtype=float) for x in xs]
+        self.fs =  np.array(fs, dtype=float)
+        self.us =  np.array(us, dtype=float)
 
-        self.default = default_value 
-        self._normalize(norm_strategy)
+        self.default_f = default_f
+        self.default_u = default_u
+        self._normalize(norm_strategy, index)
 
-    def _normalize(self, norm):
-        if not norm:
-            return
-        elif norm == "max":
-            index  = np.argmax(self.fs)
-        elif norm == "center":
-            # Take the index at the "center" of the array
-            index  = tuple(i//2 for i in self.fs.shape)
-        else:
-            raise ValueError("Normalization option not recognized: {}".format(norm))
+    def _normalize(self, opt, index):
+        if not opt           : return
+        elif   opt == "max"  : index = np.argmax(self.fs)
+        elif   opt == "index": index = tuple(index)
+        else: raise ValueError("Normalization option not recognized: {}".format(opt))
 
-        # reference values
-        f_norm  = self.fs[index]
-        u_norm  = self.us[index]
+        f_ref = self.fs[index]
+        u_ref = self.us[index]
 
-        # Normalization is used only when the input is energy, which is used
-        # to compute the correction factors.
-        # These are meant to be used as multiplicative factors, so the
-        # correction factor is reference energy/measured energy.
-        fs_norm = self.fs[index]/self.fs
+        valid_fs = self.fs > 0
+        input_fs = self.fs.copy()
 
-        # If the measured energy is zero, apply no correction at all.
-        fs_norm[self.fs == 0] = self.default
+        # Redefine and propagate uncertainties as:
+        # u(F) = F sqrt(u(F)**2/F**2 + u(Fref)**2/Fref**2)
+        self.fs           = f_ref / self.fs
+        self.us           = self.fs * np.sqrt((self.us/input_fs)**2 +
+                                              (  u_ref/f_ref   )**2 )
 
-        # Propagate uncertainties
-        self.us = fs_norm * ((u_norm / f_norm)**2 +
-                             (self.us/self.fs)**2 )**0.5
-        self.fs = fs_norm
+        # Set invalid to defaults
+        self.fs[~valid_fs] = self.default_f
+        self.us[~valid_fs] = self.default_u
 
-    def _find_closest_index(self, x, y):
+    def _find_closest_indices(self, x, y):
+        # Find the index of the closest value in y for each value in x.
         return np.argmin(abs(x-y[:, np.newaxis]), axis=0)
 
     def __call__(self, *x):
@@ -102,8 +100,8 @@ class Correction:
              Each array is one coordinate. The number of coordinates must match
              that of the `xs` array in the init method.
         """
-        # Find the index of the closest value in each axis
-        x_closest = list(map(self._find_closest_index, x, self.xs))
+        # Find the index of the closest value for each axis
+        x_closest = list(map(self._find_closest_indices, x, self.xs))
 
         return self.fs[x_closest], self.us[x_closest]
 
