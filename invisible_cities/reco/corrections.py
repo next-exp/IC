@@ -1,6 +1,7 @@
 import numpy as np
 import scipy as sc
 
+from . params import Measurement
 
 class Correction:
     """
@@ -96,5 +97,5 @@ class Correction:
              Each array is one coordinate. The number of coordinates must match
              that of the `xs` array in the init method.
         """
-        return self.get_correction(*x)
+        return Measurement(*self.get_correction(*x))
 
