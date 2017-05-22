@@ -33,6 +33,7 @@ class Correction:
                    norm_strategy = False, index = None,
                  interp_strategy = "nearest",
                  default_f = 0, default_u = 0):
+
         self.xs = [np.array( x, dtype=float) for x in xs]
         self.fs =  np.array(fs, dtype=float)
         self.us =  np.array(us, dtype=float)
@@ -41,14 +42,16 @@ class Correction:
 
         self.default_f = default_f
         self.default_u = default_u
+
         self._normalize(norm_strategy, index)
+        self.get_correction = self._define_interpolation(interp_strategy)
 
-        if   interp_strategy == "nearest"  : corr = self._nearest_neighbor
-        elif interp_strategy == "bivariate": corr = self._bivariate()
-        else: raise ValueError("Interpolation option not recognized: {}".format(interp_strategy))
 
-        self.get_correction = corr
-
+    def _define_interpolation(self, opt):
+        if   opt == "nearest"  : corr = self._nearest_neighbor
+        elif opt == "bivariate": corr = self._bivariate()
+        else: raise ValueError("Interpolation option not recognized: {}".format(opt))
+        return corr
 
     def _normalize(self, opt, index):
         if not opt           : return
