@@ -1,7 +1,7 @@
 import numpy as np
 
 from ..core             import fit_functions as fitf
-from ..reco.corrections import Correction
+from ..reco.corrections import Correction, Fcorrection
 
 from numpy.testing import assert_equal, assert_allclose
 from pytest        import fixture, mark
@@ -48,46 +48,16 @@ def toy_data_2d():
     return X, Y, E, Eu, F, Fu, C
 
 
-def test_correction_attributes_1d(toy_data_1d):
-    X, E, Eu, F, Fu, correct = toy_data_1d
-    assert_allclose(correct.xs[0], X ) # correct.xs is a list of axis
-    assert_allclose(correct.fs   , F )
-    assert_allclose(correct.us   , Fu)
-
-
-def test_correction_call_1d(toy_data_1d):
-    X, E, Eu, F, Fu, correct = toy_data_1d
-
-    X_test = X
-    F_test, U_test = correct(X_test)
-    assert_allclose(F_test, F )
-    assert_allclose(U_test, Fu)
-
-def test_correction_attributes_2d(toy_data_2d):
-    X, Y, E, Eu, F, Fu, correct = toy_data_2d
-    assert_allclose(correct.fs, F )
-    assert_allclose(correct.us, Fu)
-
-
-def test_correction_call_2d(toy_data_2d):
-    X, Y, E, Eu, F, Fu, correct = toy_data_2d
-
-    # Combine x and y so they are paired
-    X_test = np.repeat(X, Y.size)
-    Y_test = np.tile  (Y, X.size)
-    F_test, U_test = correct(X_test, Y_test)
-    assert_allclose(F_test, F .flatten())
-    assert_allclose(U_test, Fu.flatten())
-
-
-
-"""
 @fixture(scope='session')
-def toy_data_2d():
-    x    = np.linspace(  0, 100, 10)
-    y    = np.linspace(  0, 100, 10)
-    E    = np.linspace(1e3, 2e3, x.size*y.size).reshape(x.size, y.size)
-    return data_2d(x, y, E, None)
+def toy_f_data():
+    fun   = lambda x, LT: fitf.expo(x, 1, -LT)
+    u_fun = lambda u, LT: u/LT**2 * fun(u, LT)
+    LT    = 100
+    Z     = np.linspace(0, 600, 100)
+    u_Z   = np.random.uniform(0.1, 0.2, 100) * Z
+    F     =   fun(  Z, LT)
+    u_F   = u_fun(u_Z, LT)
+    return Z, u_Z, F, u_F, fun, u_fun, LT
 
 
 @fixture(scope='session')
@@ -111,41 +81,60 @@ def gauss_data_2d():
     return data_2d(xevt, yevt, Eevt, prof)
 
 
-def test_correction_normalize_max(gauss_data_1d):
-    x, y, ye = gauss_data_1d.prof
-    c = Correction(x, y, ye, "max")
-    assert np.min(c.fs) == 1
-    assert np.argmin(c.fs) == 0
+def test_correction_attributes_1d(toy_data_1d):
+    X, E, Eu, F, Fu, correct = toy_data_1d
+    assert_allclose(correct.xs[0], X ) # correct.xs is a list of axis
+    assert_allclose(correct.fs   , F )
+    assert_allclose(correct.us   , Fu)
 
 
-def test_correction_normalize_center(gauss_data_2d):
-    x, y, z, ze = gauss_data_2d.prof
-    c = Correction((x, y), z, ze, "center")
-    assert_equal(np.argwhere(c.fs==1)[0], np.array(z.shape)//2)
+def test_correction_attributes_1d_unnormalized(toy_data_1d):
+    X, E, Eu, F, Fu, correct = toy_data_1d
+    c = Correction((X,), F, Fu, False)
+    assert_equal(c.fs, F )
+    assert_equal(c.us, Fu)
 
 
-def test_correction_unnormalized():
-    c = Correction(np.linspace(0, 50, 100), np.arange(100), np.ones(100))
-    assert_equal(c.fs, np.arange(100))
+def test_correction_call_1d(toy_data_1d):
+    X, E, Eu, F, Fu, correct = toy_data_1d
+
+    X_test = X
+    F_test, U_test = correct(X_test)
+    assert_allclose(F_test, F )
+    assert_allclose(U_test, Fu)
 
 
-def test_corrections_toy_1d(toy_data_1d):
-    z, E, _ = toy_data_1d
-    Emax = np.max(E)
-    zcorr = Correction(z, E, np.ones_like(E), "max")
-    E *= zcorr(z)[0]
-    assert_allclose(E, Emax)
+def test_correction_attributes_2d(toy_data_2d):
+    X, Y, E, Eu, F, Fu, correct = toy_data_2d
+    assert_allclose(correct.fs, F )
+    assert_allclose(correct.us, Fu)
 
 
-def test_corrections_toy_2d(toy_data_2d):
-    x, y, E, _  = toy_data_2d
-    xycorr      = Correction((x, y), E, np.ones_like(E), "center")
-    y, x        = map(np.ndarray.flatten, np.meshgrid(x, y))
-    E           = E.flatten()
-    E          *= xycorr(x, y)[0]
-    assert_allclose(E, np.mean(E))
+def test_correction_call_2d(toy_data_2d):
+    X, Y, E, Eu, F, Fu, correct = toy_data_2d
+
+    # Combine x and y so they are paired
+    X_test = np.repeat(X, Y.size)
+    Y_test = np.tile  (Y, X.size)
+    F_test, U_test = correct(X_test, Y_test)
+    assert_allclose(F_test, F .flatten())
+    assert_allclose(U_test, Fu.flatten())
 
 
+def test_fcorrection(toy_f_data):
+    Z, u_Z, F, u_F, fun, u_fun, LT = toy_f_data
+
+    Z_test =   Z
+    U_test = u_Z
+
+    fcorr          = Fcorrection(fun, u_fun, (LT,), (LT,))
+    f_test, u_test = fcorr(Z_test, U_test)
+
+    assert_allclose(  F, f_test)
+    assert_allclose(u_F, u_test)
+    
+
+"""
 @mark.slow
 def test_corrections_1d(gauss_data_1d):
     zevt, Eevt, (z, E, Ee) = gauss_data_1d
