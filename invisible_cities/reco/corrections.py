@@ -3,6 +3,7 @@ import scipy as sc
 
 from . params import Measurement
 
+
 class Correction:
     """
     Interface for accessing any kind of corrections.
@@ -102,3 +103,11 @@ class Correction:
         """
         return Measurement(*self.get_correction(*x))
 
+
+class Fcorrection:
+    def __init__(self, f, u_f, pars, u_pars):
+        self.f   = lambda x:   f(x, *  pars)
+        self.u_f = lambda x: u_f(x, *u_pars)
+
+    def __call__(self, x, u):
+        return Measurement(self.f(x), self.u_f(u))
