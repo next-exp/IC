@@ -21,7 +21,7 @@ class Correction:
         Flag to set the normalization option. Accepted values:
         - False:    Do not normalize.
         - "max":    Normalize to maximum energy encountered.
-        - "center": Normalize to the energy placed at the center of the array.
+        - "index":  Normalize to the energy placed to index (i,j).
     interp_strategy : string
         Flag to set the interpolation option. Accepted values:
         - "nearest"  : Take correction from the closest node
@@ -66,11 +66,11 @@ class Correction:
         else: raise ValueError("Interpolation option not recognized: {}".format(opt))
         return corr
 
-    def _normalize(self, opt, index):
-        if not opt           : return
-        elif   opt == "max"  : index = np.argmax(self._fs)
-        elif   opt == "index": index = tuple(index)
-        else: raise ValueError("Normalization option not recognized: {}".format(opt))
+    def _normalize(self, strategy, index):
+        if not strategy           : return
+        elif   strategy == "max"  : index = np.argmax(self._fs)
+        elif   strategy == "index": index = index
+        else: raise ValueError("Normalization option not recognized: {}".format(strategy))
 
         f_ref = self._fs[index]
         u_ref = self._us[index]
@@ -94,15 +94,13 @@ class Correction:
 
     def _nearest_neighbor(self, *x):
         # Find the index of the closest value for each axis
-        x_closest = list(map(self._find_closest_indices, x, self._xs))
-
+        x_closest = tuple(map(self._find_closest_indices, x, self._xs))
         return self._fs[x_closest], self._us[x_closest]
 
     def _bivariate(self):
         f_interp = sc.interpolate.RectBivariateSpline(*self._xs, self._fs)
         u_interp = sc.interpolate.RectBivariateSpline(*self._xs, self._us)
         return lambda x, y: (f_interp(x, y), u_interp(x, y))
-
 
 
 class Fcorrection:
