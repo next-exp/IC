@@ -1,6 +1,7 @@
 import sys
 from collections import namedtuple
 
+
 this_module = sys.modules[__name__]
 
 def _add_namedtuple_in_this_module(name, attribute_names):
@@ -22,7 +23,8 @@ for name, attrs in (
         ('PMaps'          , 'S1 S2 S2Si'),
         ('Peak'           , 't E'),
         ('FitFunction'    , 'fn values errors chi2 pvalue'),
-        ('Cluster'        , 'Q pos rms Nsipm')):
+        ('Cluster'        , 'Q pos rms Nsipm'),
+        ('Measurement'    , 'value uncertainty')):
     _add_namedtuple_in_this_module(name, attrs)
 
 # Leave nothing but the namedtuple types in the namespace of this module
