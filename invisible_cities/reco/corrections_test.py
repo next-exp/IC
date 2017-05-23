@@ -14,12 +14,13 @@ from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
 
-data_1d = namedtuple("data_1d",   "z E prof")
-data_2d = namedtuple("data_2d", "x y E prof")
+data_1d = namedtuple("data_1d",   "X   E Eu Xdata       Edata")
+data_2d = namedtuple("data_2d",   "X Y E Eu Xdata Ydata Edata")
 
 FField_1d = namedtuple("Ffield"  , "X   P Pu F Fu fun u_fun correct")
 EField_1d = namedtuple("Efield1d", "X   E Eu F Fu imax correct")
 EField_2d = namedtuple("Efield2d", "X Y E Eu F Fu imax jmax correct")
+
 
 
 @composite
@@ -88,21 +89,21 @@ def uniform_energy_fun_data_1d(draw):
 def gauss_data_1d():
     mean = lambda z: 1e4 * np.exp(-z/300)
     Nevt = 100000
-    zevt = np.random.uniform(0, 500, size=Nevt)
-    Eevt = np.random.normal(mean(zevt), mean(zevt)**0.5)
-    prof = fitf.profileX(zevt, Eevt, 50, (0, 500))
-    return data_1d(zevt, Eevt, prof)
+    Zevt = np.random.uniform(0, 500, size=Nevt)
+    Eevt = np.random.normal(mean(Zevt), mean(Zevt)**0.5)
+    prof = fitf.profileX(Zevt, Eevt, 50, (0, 500))
+    return data_1d(*prof, Zevt, Eevt)
 
 
 @fixture(scope='session')
 def gauss_data_2d():
     mean = lambda x, y: 1e4 * np.exp(-(x**2 + y**2)/400**2)
     Nevt = 100000
-    xevt = np.random.uniform(-200, 200, size=Nevt)
-    yevt = np.random.uniform(-200, 200, size=Nevt)
-    Eevt = np.random.normal(mean(xevt, yevt), mean(xevt, yevt)**0.5)
-    prof = fitf.profileXY(xevt, yevt, Eevt, 50, 50, (-200, 200), (-200, 200))
-    return data_2d(xevt, yevt, Eevt, prof)
+    Xevt = np.random.uniform(-200, 200, size=Nevt)
+    Yevt = np.random.uniform(-200, 200, size=Nevt)
+    Eevt = np.random.normal(mean(Xevt, Yevt), mean(Xevt, Yevt)**0.5)
+    prof = fitf.profileXY(Xevt, Yevt, Eevt, 50, 50, (-200, 200), (-200, 200))
+    return data_2d(*prof, Xevt, Yevt, Eevt)
 
 
 #--------------------------------------------------------
@@ -183,33 +184,35 @@ def test_fcorrection(toy_f_data):
 
     assert_allclose(  F, f_test)
     assert_allclose(u_F, u_test)
-    
 
-"""
+
+
 @mark.slow
 def test_corrections_1d(gauss_data_1d):
-    zevt, Eevt, (z, E, Ee) = gauss_data_1d
-    zcorr = Correction((z,), E, Ee, "max")
-    Eevt *= zcorr(zevt)[0]
+    Z, E, Eu, Zevt, Eevt = gauss_data_1d
 
-    mean = np.std(Eevt)
-    std  = np.std(Eevt)
+    correct = Correction((Z,), E, Eu, "max")
+    Eevt   *= correct(Zevt).value
+
+    mean = np.mean(Eevt)
+    std  = np.std (Eevt)
+
     y, x = np.histogram(Eevt, np.linspace(mean - 3 * std, mean + 3 * std, 100))
-    x = x[:-1] + np.diff(x) * 0.5
-    f = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
+    x    = x[:-1] + np.diff(x) * 0.5
+    f    = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
     assert f.chi2 < 3
 
 
 @mark.slow
 def test_corrections_2d(gauss_data_2d):
-    xevt, yevt, Eevt, (x, y, E, Ee) = gauss_data_2d
-    xycorr = Correction((x, y), E, Ee, "index", index=(25,25))
-    Eevt  *= xycorr(xevt, yevt)[0]
+    X, Y, E, Eu, Xevt, Yevt, Eevt = gauss_data_2d
+    correct = Correction((X, Y), E, Eu, "index", index=(25,25))
+    Eevt   *= correct(Xevt, Yevt)[0]
 
-    mean = np.std(Eevt)
-    std  = np.std(Eevt)
+    mean = np.mean(Eevt)
+    std  = np.std (Eevt)
+
     y, x = np.histogram(Eevt, np.linspace(mean - 3 * std, mean + 3 * std, 100))
-    x = x[:-1] + np.diff(x) * 0.5
-    f = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
+    x    = x[:-1] + np.diff(x) * 0.5
+    f    = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
     assert f.chi2 < 3
-"""
