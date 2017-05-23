@@ -41,11 +41,11 @@ def toy_data_2d():
     i_max = nx//2, ny//2
     e_max = E [i_max]
     u_max = Eu[i_max]
-    print(i_max, e_max, u_max)
+
     F  = e_max/E
     Fu = F * (Eu**2/E**2 + u_max**2/e_max**2)**0.5
     C  = Correction((X, Y), E, Eu, "index", index=i_max)
-    return X, Y, E, Eu, F, Fu, C
+    return X, Y, E, Eu, F.flatten(), Fu.flatten(), C
 
 
 @fixture(scope='session')
@@ -106,8 +106,10 @@ def test_correction_call_1d(toy_data_1d):
 
 def test_correction_attributes_2d(toy_data_2d):
     X, Y, E, Eu, F, Fu, correct = toy_data_2d
-    assert_allclose(correct.fs, F )
-    assert_allclose(correct.us, Fu)
+    # attributes of correct are 2d arrays,
+    # so they must be flatten for comparison
+    assert_allclose(correct.fs.flatten(), F )
+    assert_allclose(correct.us.flatten(), Fu)
 
 
 def test_correction_call_2d(toy_data_2d):
@@ -117,8 +119,8 @@ def test_correction_call_2d(toy_data_2d):
     X_test = np.repeat(X, Y.size)
     Y_test = np.tile  (Y, X.size)
     F_test, U_test = correct(X_test, Y_test)
-    assert_allclose(F_test, F .flatten())
-    assert_allclose(U_test, Fu.flatten())
+    assert_allclose(F_test, F )
+    assert_allclose(U_test, Fu)
 
 
 def test_fcorrection(toy_f_data):
@@ -134,11 +136,11 @@ def test_fcorrection(toy_f_data):
     assert_allclose(u_F, u_test)
     
 
-"""
+
 @mark.slow
 def test_corrections_1d(gauss_data_1d):
     zevt, Eevt, (z, E, Ee) = gauss_data_1d
-    zcorr = Correction(z, E, Ee, "max")
+    zcorr = Correction((z,), E, Ee, "max")
     Eevt *= zcorr(zevt)[0]
 
     mean = np.std(Eevt)
@@ -152,7 +154,7 @@ def test_corrections_1d(gauss_data_1d):
 @mark.slow
 def test_corrections_2d(gauss_data_2d):
     xevt, yevt, Eevt, (x, y, E, Ee) = gauss_data_2d
-    xycorr = Correction((x, y), E, Ee, "center")
+    xycorr = Correction((x, y), E, Ee, "index", index=(25,25))
     Eevt  *= xycorr(xevt, yevt)[0]
 
     mean = np.std(Eevt)
@@ -161,4 +163,3 @@ def test_corrections_2d(gauss_data_2d):
     x = x[:-1] + np.diff(x) * 0.5
     f = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
     assert f.chi2 < 3
-"""
