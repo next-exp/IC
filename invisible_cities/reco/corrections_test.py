@@ -17,9 +17,9 @@ from hypothesis.extra.numpy import arrays
 data_1d = namedtuple("data_1d",   "X   E Eu Xdata       Edata")
 data_2d = namedtuple("data_2d",   "X Y E Eu Xdata Ydata Edata")
 
-FField_1d = namedtuple("Ffield"  , "X   P    F Fu fun u_fun correct")
-EField_1d = namedtuple("Efield1d", "X   E Eu F Fu imax correct")
-EField_2d = namedtuple("Efield2d", "X Y E Eu F Fu imax jmax correct")
+FField_1d = namedtuple("Ffield"  , "X   P    F Fu fun u_fun")
+EField_1d = namedtuple("Efield1d", "X   E Eu F Fu imax")
+EField_2d = namedtuple("Efield2d", "X Y E Eu F Fu imax jmax")
 
 
 
@@ -38,10 +38,9 @@ def uniform_energy_1d(draw):
     u_max = Eu[i_max]
 
     F     = E.max()/E
-    Fu    = F * (Eu**2/E**2 + u_max**2/e_max**2)**0.5
+    Fu    = F * (Eu**2 / E**2 + u_max**2 / e_max**2)**0.5
 
-    corr  = Correction((X,), E, Eu, "max")
-    return EField_1d(X, E, Eu, F, Fu, i_max, corr)
+    return EField_1d(X, E, Eu, F, Fu, i_max)
 
 
 @composite
@@ -66,10 +65,7 @@ def uniform_energy_2d(draw, interp_strategy="nearest"):
     F     = e_max/E
     Fu    = F * (Eu**2/E**2 + u_max**2/e_max**2)**0.5
 
-    corr  = Correction((X,Y), E, Eu,
-                         norm_strategy = "index", index = (i_max, j_max),
-                       interp_strategy = interp_strategy)
-    return EField_2d(X, Y, E, Eu, F.flatten(), Fu.flatten(), i_max, j_max, corr)
+    return EField_2d(X, Y, E, Eu, F.flatten(), Fu.flatten(), i_max, j_max)
 
 
 @composite
@@ -80,8 +76,7 @@ def uniform_energy_fun_data_1d(draw):
     X     = np.linspace(0, 600, 100)
     F     =   fun(X, LT)
     u_F   = u_fun(X, LT)
-    corr  = Fcorrection(fun, u_fun, (LT,))
-    return FField_1d(X, LT, F, u_F, fun, u_fun, corr)
+    return FField_1d(X, LT, F, u_F, fun, u_fun)
 
 
 @fixture(scope='session')
@@ -110,7 +105,8 @@ def gauss_data_2d():
 
 @given(uniform_energy_1d())
 def test_correction_attributes_1d(toy_data_1d):
-    X, _, _, F, Fu, _, correct = toy_data_1d
+    X, E, Eu, F, Fu, _ = toy_data_1d
+    correct  = Correction((X,), E, Eu, "max")
     assert_allclose(correct._xs[0], X ) # correct.xs is a list of axis
     assert_allclose(correct._fs   , F )
     assert_allclose(correct._us   , Fu)
@@ -118,7 +114,7 @@ def test_correction_attributes_1d(toy_data_1d):
 
 @given(uniform_energy_1d())
 def test_correction_attributes_1d_unnormalized(toy_data_1d):
-    X, _, _, F, Fu, _, correct = toy_data_1d
+    X, _, _, F, Fu, _ = toy_data_1d
     c = Correction((X,), F, Fu, False)
     assert_allclose(c._fs, F )
     assert_allclose(c._us, Fu)
@@ -126,17 +122,17 @@ def test_correction_attributes_1d_unnormalized(toy_data_1d):
 
 @given(uniform_energy_1d())
 def test_correction_call_1d(toy_data_1d):
-    X, E, Eu, F, Fu, _, correct = toy_data_1d
-
-    X_test = X
-    F_test, U_test = correct(X_test)
-    assert_allclose(F_test, F )
-    assert_allclose(U_test, Fu)
+    X, E, Eu, F, Fu, _ = toy_data_1d
+    correct  = Correction((X,), E, Eu, "max")
+    F_corrected, U_corrected = correct(X)
+    assert_allclose(F_corrected, F )
+    assert_allclose(U_corrected, Fu)
 
 
 @given(uniform_energy_1d())
 def test_correction_normalization(toy_data_1d):
-    X, *_, i_max, correct = toy_data_1d
+    X, E, Eu, *_, i_max = toy_data_1d
+    correct  = Correction((X,), E, Eu, "max")
     X_test  = X[i_max]
     assert_allclose(correct(X_test).value, 1) # correct.xs is a list of axis
 
@@ -145,7 +141,12 @@ def test_correction_normalization(toy_data_1d):
 
 @given(uniform_energy_2d())
 def test_correction_attributes_2d(toy_data_2d):
-    *_, F, Fu, _, _, correct = toy_data_2d
+    X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
+    interp_strategy="nearest"
+    correct = Correction((X,Y), E, Eu,
+                           norm_strategy = "index", index = (i_max, j_max),
+                         interp_strategy = interp_strategy)
+
     # attributes of the Correction class are 2d arrays,
     # so they must be flatten for comparison
     assert_allclose(correct._fs.flatten(), F )
@@ -154,7 +155,7 @@ def test_correction_attributes_2d(toy_data_2d):
 
 @given(uniform_energy_2d())
 def test_correction_attributes_2d_unnormalized(toy_data_2d):
-    X, Y, _, _, F, Fu, _, _, correct = toy_data_2d
+    X, Y, _, _, F, Fu, _, _ = toy_data_2d
     c = Correction((X,Y), F, Fu, False)
     assert_allclose(c._fs, F )
     assert_allclose(c._us, Fu)
@@ -162,27 +163,32 @@ def test_correction_attributes_2d_unnormalized(toy_data_2d):
 
 @given(uniform_energy_2d())
 def test_correction_call_2d(toy_data_2d):
-    X, Y, _, _, F, Fu, _, _, correct = toy_data_2d
+    X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
+    interp_strategy="nearest"
+    correct = Correction((X,Y), E, Eu,
+                           norm_strategy = "index", index = (i_max, j_max),
+                         interp_strategy = interp_strategy)
 
-    # Combine x and y so they are paired
-    X_test = np.repeat(X, Y.size)
-    Y_test = np.tile  (Y, X.size)
-    F_test, U_test = correct(X_test, Y_test)
-    assert_allclose(F_test, F )
-    assert_allclose(U_test, Fu)
+    # create a collection of (x,y) point such that the
+    # x coordinates are stored in X_sample and the y coordinates in Y_sample
+    X_sample = np.array([x for x in X for _ in Y])
+    Y_sample = np.array([y for _ in X for y in Y])
+
+    F_corrected, U_corrected = correct(X_sample, Y_sample)
+    assert_allclose(F_corrected, F )
+    assert_allclose(U_corrected, Fu)
 
 
 #--------------------------------------------------------
 
 @given(uniform_energy_fun_data_1d())
 def test_fcorrection(toy_f_data):
-    Z, LT, u_LT, F, u_F, fun, u_fun, correct = toy_f_data
+    Z, LT, F, u_F, fun, u_fun = toy_f_data
+    correct = Fcorrection(fun, u_fun, (LT,))
+    f_corrected, u_corrected = correct(Z)
 
-    Z_test         = Z
-    f_test, u_test = correct(Z_test)
-
-    assert_allclose(  F, f_test)
-    assert_allclose(u_F, u_test)
+    assert_allclose(  F, f_corrected)
+    assert_allclose(u_F, u_corrected)
 
 
 @mark.slow
