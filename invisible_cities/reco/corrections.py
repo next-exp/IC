@@ -69,7 +69,7 @@ class Correction:
     def _normalize(self, strategy, index):
         if not strategy           : return
         elif   strategy == "max"  : index = np.argmax(self._fs)
-        elif   strategy == "index": index = index
+        elif   strategy == "index": pass#index = index
         else: raise ValueError("Normalization option not recognized: {}".format(strategy))
 
         f_ref = self._fs[index]
