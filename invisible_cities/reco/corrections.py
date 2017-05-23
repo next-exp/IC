@@ -48,6 +48,17 @@ class Correction:
         self._normalize(norm_strategy, index)
         self._get_correction = self._define_interpolation(interp_strategy)
 
+    def __call__(self, *x):
+        """
+        Compute the correction factor.
+
+        Parameters
+        ----------
+        *x: Sequence of nd.arrays
+             Each array is one coordinate. The number of coordinates must match
+             that of the `xs` array in the init method.
+        """
+        return Measurement(*self._get_correction(*x))
 
     def _define_interpolation(self, opt):
         if   opt == "nearest"  : corr = self._nearest_neighbor
@@ -92,17 +103,6 @@ class Correction:
         u_interp = sc.interpolate.RectBivariateSpline(*self._xs, self._us)
         return lambda x, y: (f_interp(x, y), u_interp(x, y))
 
-    def __call__(self, *x):
-        """
-        Compute the correction factor.
-
-        Parameters
-        ----------
-        *x: Sequence of nd.arrays
-             Each array is one coordinate. The number of coordinates must match
-             that of the `xs` array in the init method.
-        """
-        return Measurement(*self._get_correction(*x))
 
 
 class Fcorrection:
