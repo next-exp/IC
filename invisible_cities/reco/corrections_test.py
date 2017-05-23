@@ -1,3 +1,4 @@
+from collections   import namedtuple
 import numpy as np
 
 from ..core             import fit_functions as fitf
@@ -5,7 +6,8 @@ from ..reco.corrections import Correction, Fcorrection
 
 from numpy.testing import assert_equal, assert_allclose
 from pytest        import fixture, mark
-from collections   import namedtuple
+
+from flaky import flaky
 
 from hypothesis             import given
 from hypothesis.strategies  import floats
@@ -192,6 +194,7 @@ def test_fcorrection(toy_f_data):
 
 
 @mark.slow
+@flaky
 def test_corrections_1d(gauss_data_1d):
     Z, E, Eu, Zevt, Eevt = gauss_data_1d
 
