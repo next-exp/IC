@@ -17,7 +17,7 @@ from hypothesis.extra.numpy import arrays
 data_1d = namedtuple("data_1d",   "X   E Eu Xdata       Edata")
 data_2d = namedtuple("data_2d",   "X Y E Eu Xdata Ydata Edata")
 
-FField_1d = namedtuple("Ffield"  , "X   P Pu F Fu fun u_fun correct")
+FField_1d = namedtuple("Ffield"  , "X   P    F Fu fun u_fun correct")
 EField_1d = namedtuple("Efield1d", "X   E Eu F Fu imax correct")
 EField_2d = namedtuple("Efield2d", "X Y E Eu F Fu imax jmax correct")
 
@@ -75,14 +75,13 @@ def uniform_energy_2d(draw, interp_strategy="nearest"):
 @composite
 def uniform_energy_fun_data_1d(draw):
     fun   = lambda x, LT: fitf.expo(x, 1, -LT)
-    u_fun = lambda x, LT: x/LT**2 * fun(x, LT)
-    LT    = draw(floats(min_value=1e2, max_value=1e3))
-    u_LT  = draw(floats(min_value=1e-2, max_value=1e-1)) * LT
+    u_fun = lambda x, LT: x / LT**2 * fun(x, LT)
+    LT    = draw(floats(min_value=1e+2, max_value=1e+3))
     X     = np.linspace(0, 600, 100)
     F     =   fun(X, LT)
     u_F   = u_fun(X, LT)
-    corr  = Fcorrection(fun, u_fun, (LT,), (LT,))
-    return FField_1d(X, LT, u_LT, F, u_F, fun, u_fun, corr)
+    corr  = Fcorrection(fun, u_fun, (LT,))
+    return FField_1d(X, LT, F, u_F, fun, u_fun, corr)
 
 
 @fixture(scope='session')
