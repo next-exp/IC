@@ -112,17 +112,17 @@ def gauss_data_2d():
 @given(uniform_energy_1d())
 def test_correction_attributes_1d(toy_data_1d):
     X, _, _, F, Fu, _, correct = toy_data_1d
-    assert_allclose(correct.xs[0], X ) # correct.xs is a list of axis
-    assert_allclose(correct.fs   , F )
-    assert_allclose(correct.us   , Fu)
+    assert_allclose(correct._xs[0], X ) # correct.xs is a list of axis
+    assert_allclose(correct._fs   , F )
+    assert_allclose(correct._us   , Fu)
 
 
 @given(uniform_energy_1d())
 def test_correction_attributes_1d_unnormalized(toy_data_1d):
     X, _, _, F, Fu, _, correct = toy_data_1d
     c = Correction((X,), F, Fu, False)
-    assert_allclose(c.fs, F )
-    assert_allclose(c.us, Fu)
+    assert_allclose(c._fs, F )
+    assert_allclose(c._us, Fu)
 
 
 @given(uniform_energy_1d())
@@ -149,16 +149,16 @@ def test_correction_attributes_2d(toy_data_2d):
     *_, F, Fu, _, _, correct = toy_data_2d
     # attributes of the Correction class are 2d arrays,
     # so they must be flatten for comparison
-    assert_allclose(correct.fs.flatten(), F )
-    assert_allclose(correct.us.flatten(), Fu)
+    assert_allclose(correct._fs.flatten(), F )
+    assert_allclose(correct._us.flatten(), Fu)
 
 
 @given(uniform_energy_2d())
 def test_correction_attributes_2d_unnormalized(toy_data_2d):
     X, Y, _, _, F, Fu, _, _, correct = toy_data_2d
     c = Correction((X,Y), F, Fu, False)
-    assert_allclose(c.fs, F )
-    assert_allclose(c.us, Fu)
+    assert_allclose(c._fs, F )
+    assert_allclose(c._us, Fu)
 
 
 @given(uniform_energy_2d())
@@ -184,7 +184,6 @@ def test_fcorrection(toy_f_data):
 
     assert_allclose(  F, f_test)
     assert_allclose(u_F, u_test)
-
 
 
 @mark.slow

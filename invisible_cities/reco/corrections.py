@@ -4,6 +4,7 @@ import scipy as sc
 from . params import Measurement
 
 
+
 class Correction:
     """
     Interface for accessing any kind of corrections.
@@ -35,17 +36,17 @@ class Correction:
                  interp_strategy = "nearest",
                  default_f = 0, default_u = 0):
 
-        self.xs = [np.array( x, dtype=float) for x in xs]
-        self.fs =  np.array(fs, dtype=float)
-        self.us =  np.array(us, dtype=float)
+        self._xs = [np.array( x, dtype=float) for x in xs]
+        self._fs =  np.array(fs, dtype=float)
+        self._us =  np.array(us, dtype=float)
 
-        self.interp_strategy = interp_strategy
+        self._interp_strategy = interp_strategy
 
-        self.default_f = default_f
-        self.default_u = default_u
+        self._default_f = default_f
+        self._default_u = default_u
 
         self._normalize(norm_strategy, index)
-        self.get_correction = self._define_interpolation(interp_strategy)
+        self._get_correction = self._define_interpolation(interp_strategy)
 
 
     def _define_interpolation(self, opt):
@@ -56,25 +57,25 @@ class Correction:
 
     def _normalize(self, opt, index):
         if not opt           : return
-        elif   opt == "max"  : index = np.argmax(self.fs)
+        elif   opt == "max"  : index = np.argmax(self._fs)
         elif   opt == "index": index = tuple(index)
         else: raise ValueError("Normalization option not recognized: {}".format(opt))
 
-        f_ref = self.fs[index]
-        u_ref = self.us[index]
+        f_ref = self._fs[index]
+        u_ref = self._us[index]
 
-        valid_fs = self.fs > 0
-        input_fs = self.fs.copy()
+        valid_fs = self._fs > 0
+        input_fs = self._fs.copy()
 
         # Redefine and propagate uncertainties as:
         # u(F) = F sqrt(u(F)**2/F**2 + u(Fref)**2/Fref**2)
-        self.fs = f_ref / self.fs
-        self.us = self.fs * np.sqrt((self.us/input_fs)**2 +
-                                    (  u_ref/f_ref   )**2 )
+        self._fs = f_ref / self._fs
+        self._us = self._fs * np.sqrt((self._us / input_fs)**2 +
+                                      (   u_ref / f_ref   )**2 )
 
         # Set invalid to defaults
-        self.fs[~valid_fs] = self.default_f
-        self.us[~valid_fs] = self.default_u
+        self._fs[~valid_fs] = self._default_f
+        self._us[~valid_fs] = self._default_u
 
     def _find_closest_indices(self, x, y):
         # Find the index of the closest value in y for each value in x.
@@ -82,32 +83,32 @@ class Correction:
 
     def _nearest_neighbor(self, *x):
         # Find the index of the closest value for each axis
-        x_closest = list(map(self._find_closest_indices, x, self.xs))
+        x_closest = list(map(self._find_closest_indices, x, self._xs))
 
-        return self.fs[x_closest], self.us[x_closest]
+        return self._fs[x_closest], self._us[x_closest]
 
     def _bivariate(self):
-        f_interp = sc.interpolate.RectBivariateSpline(*self.xs, self.fs)
-        u_interp = sc.interpolate.RectBivariateSpline(*self.xs, self.us)
+        f_interp = sc.interpolate.RectBivariateSpline(*self._xs, self._fs)
+        u_interp = sc.interpolate.RectBivariateSpline(*self._xs, self._us)
         return lambda x, y: (f_interp(x, y), u_interp(x, y))
 
     def __call__(self, *x):
         """
         Compute the correction factor.
-        
+
         Parameters
         ----------
         *x: Sequence of nd.arrays
              Each array is one coordinate. The number of coordinates must match
              that of the `xs` array in the init method.
         """
-        return Measurement(*self.get_correction(*x))
+        return Measurement(*self._get_correction(*x))
 
 
 class Fcorrection:
     def __init__(self, f, u_f, pars, u_pars):
-        self.f   = lambda x:   f(x, *  pars)
-        self.u_f = lambda x: u_f(x, *u_pars)
+        self._f   = lambda x:   f(x, *  pars)
+        self._u_f = lambda x: u_f(x, *u_pars)
 
     def __call__(self, x):
-        return Measurement(self.f(x), self.u_f(x))
+        return Measurement(self._f(x), self._u_f(x))
