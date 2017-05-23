@@ -109,5 +109,5 @@ class Fcorrection:
         self.f   = lambda x:   f(x, *  pars)
         self.u_f = lambda x: u_f(x, *u_pars)
 
-    def __call__(self, x, u):
-        return Measurement(self.f(x), self.u_f(u))
+    def __call__(self, x):
+        return Measurement(self.f(x), self.u_f(x))
