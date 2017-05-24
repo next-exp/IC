@@ -1,17 +1,16 @@
-from __future__ import print_function
-
 import sys
 import time
-import textwrap
 
 import numpy  as np
 import pandas as pd
 
-from invisible_cities.cities.base_cities    import merge_two_dicts, City, MapCity
-from invisible_cities.core  .fit_functions  import in_range
-from invisible_cities.core  .configure      import configure
-from invisible_cities.reco  .dst_functions  import load_dst
-from invisible_cities.reco  .dst_io         import Corr_writer
+from .  base_cities         import merge_two_dicts
+from .  base_cities         import City
+from .  base_cities         import MapCity
+from .. core.fit_functions  import in_range
+from .. core.configure      import configure
+from .. reco.dst_functions  import load_dst
+from .. reco.dst_io         import Corr_writer
 
 
 class Zaira(MapCity):
