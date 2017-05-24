@@ -74,9 +74,9 @@ class Zaira(MapCity):
         # Join datasets
         dst = pd.concat(dsts)
         dst = dst[in_range(dst.S2e.values, *self.fiducial_e)]
-        dst = dst[in_range(dst.Z.values  , *self.fiducial_z)]
-        dst = dst[in_range(dst.X.values  , *self._xrange   )]
-        dst = dst[in_range(dst.Y.values  , *self._yrange   )]
+        dst = dst[in_range(dst.Z  .values, *self.fiducial_z)]
+        dst = dst[in_range(dst.X  .values, *self._xrange   )]
+        dst = dst[in_range(dst.Y  .values, *self._yrange   )]
 
         # Compute corrections and stats
         xycorr = self.xy_correction(dst.X.values, dst.Y.values, dst.S2e.values)
