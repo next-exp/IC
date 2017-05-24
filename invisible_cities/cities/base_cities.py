@@ -73,6 +73,7 @@ class City:
         # access data base
         DataPMT             = load_db.DataPMT (run_number)
         DataSiPM            = load_db.DataSiPM(run_number)
+        self.det_geo        = load_db.DetectorGeo()
 
         # This is JCK-1: text reveals symmetry!
         self.xs              = DataSiPM.X.values
@@ -725,9 +726,10 @@ class S12SelectorCity:
         return evt
 
 
-class MapCity:
+class MapCity(City):
     def __init__(self,
                  lifetime           ,
+
                  xbins        =  100,
                  xmin         = None,
                  xmax         = None,
@@ -736,7 +738,6 @@ class MapCity:
                  ymin         = None,
                  ymax         = None):
 
-        self.det_geo  = load_db.DetectorGeo()
         self.lifetimes = [lifetime] if not np.shape(lifetime) else lifetime
         self.lifetime_corrections = tuple(map(self._create_fcorrection, self.lifetimes))
 
