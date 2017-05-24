@@ -745,20 +745,20 @@ class MapCity:
         ymin = self.det_geo.YMIN[0] if ymin is None else ymin
         ymax = self.det_geo.YMAX[0] if ymax is None else ymax
 
-        self.xbins  = xbins
-        self.ybins  = ybins
-        self.xrange = xmin, xmax
-        self.yrange = ymin, ymax
+        self._xbins  = xbins
+        self._ybins  = ybins
+        self._xrange = xmin, xmax
+        self._yrange = ymin, ymax
 
     def xy_correction(self, X, Y, E):
-        fitf.profileXY(X, Y, E, self.xbins, self.ybins, self.xrange, self.yrange)
         xs, ys, es, us = \
+        fitf.profileXY(X, Y, E, self._xbins, self._ybins, self._xrange, self._yrange)
 
         norm_index = xs.size//2, ys.size//2
         return Correction((xs, ys), es, us, norm_strategy="index", index=norm_index)
 
     def xy_statistics(self, X, Y):
-        return np.histogram2d(X, Y, (self.xbins, self.ybins), (self.xrange, self.yrange))
+        return np.histogram2d(X, Y, (self._xbins, self._ybins), (self._xrange, self._yrange))
 
     def _create_fcorrection(self, LT):
         return Fcorrection(lambda x, lt: fitf.expo(x, 1, -lt),
