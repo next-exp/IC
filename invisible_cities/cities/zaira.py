@@ -14,7 +14,7 @@ from invisible_cities.reco  .dst_functions  import load_dst
 from invisible_cities.reco  .dst_io         import Corr_writer
 
 
-class Zaira(City, MapCity):
+class Zaira(MapCity):
     def __init__(self,
                  lifetime,
 
