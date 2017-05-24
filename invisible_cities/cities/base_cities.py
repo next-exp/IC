@@ -131,19 +131,25 @@ class City:
                              "SIPM WL"      : sp.SIPMWL})
 
     config_file_format = """
+    # ncse (no corresponding setter exits)
+    RUN_NUMBER {RUN_NUMBER}
+    # set_print
+    NPRINT {NPRINT}
     # set_input_files
     PATH_IN {PATH_IN}
     FILE_IN {FILE_IN}
-
-    # set_cwf_store
+    # set_output_file
     PATH_OUT {PATH_OUT}
     FILE_OUT {FILE_OUT}
+    # set_compression
     COMPRESSION {COMPRESSION}"""
     config_file_format = dedent(config_file_format)
 
-    default_config = dict(PATH_IN  = '$ICDIR/database/test_data/',
-                          FILE_IN  = None,
-                          FILE_OUT = None,
+    default_config = dict(RUN_NUMBER  = 0,
+                          NPRINT      = 0,
+                          PATH_IN     = '$ICDIR/database/test_data/',
+                          FILE_IN     = None,
+                          FILE_OUT    = None,
                           COMPRESSION = 'ZLIB4')
 
     @classmethod
@@ -352,12 +358,6 @@ class DeconvolutionCity(City):
                               acum_discharge_length = self.acum_discharge_length)
 
     config_file_format = City.config_file_format + """
-
-    RUN_NUMBER {RUN_NUMBER}
-
-    # set_print
-    NPRINT {NPRINT}
-
     # set_blr
     NBASELINE {NBASELINE}
     THR_TRIGGER {THR_TRIGGER}
