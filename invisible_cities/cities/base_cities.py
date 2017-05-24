@@ -763,7 +763,7 @@ class MapCity(City):
         return np.histogram2d(X, Y, (self._xbins, self._ybins), (self._xrange, self._yrange))
 
     def _create_fcorrection(self, LT):
-        return Fcorrection(lambda x, lt: fitf.expo(x, 1, -lt),
+        return Fcorrection(lambda x, lt:             fitf.expo(x, 1, -lt),
                            lambda x, lt: x / LT**2 * fitf.expo(x, 1, -lt),
                            (LT,))
 
