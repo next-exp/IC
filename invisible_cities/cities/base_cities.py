@@ -737,8 +737,8 @@ class MapCity:
                  ymax         = None):
 
         self.det_geo  = load_db.DetectorGeo()
-        self.lifetime = [lifetime] if not np.shape(lifetime) else lifetime
-        self.lifetime_correction = list(map(self._create_fcorrection, self.lifetime))
+        self.lifetimes = [lifetime] if not np.shape(lifetime) else lifetime
+        self.lifetime_corrections = tuple(map(self._create_fcorrection, self.lifetimes))
 
         xmin = self.det_geo.XMIN[0] if xmin is None else xmin
         xmax = self.det_geo.XMAX[0] if xmax is None else xmax
@@ -751,11 +751,11 @@ class MapCity:
         self.yrange = ymin, ymax
 
     def xy_correction(self, X, Y, E):
-        xs, ys, es, ss = \
         fitf.profileXY(X, Y, E, self.xbins, self.ybins, self.xrange, self.yrange)
+        xs, ys, es, us = \
 
         norm_index = xs.size//2, ys.size//2
-        return Correction((xs, ys), es, ss, norm_strategy="index", index=norm_index)
+        return Correction((xs, ys), es, us, norm_strategy="index", index=norm_index)
 
     def xy_statistics(self, X, Y):
         return np.histogram2d(X, Y, (self.xbins, self.ybins), (self.xrange, self.yrange))
