@@ -55,28 +55,28 @@ class Zaira(MapCity):
                          ymin         = ymin,
                          ymax         = ymax)
 
-        self.fiducial_z = ((self.det_geo.ZMIN[0], self.det_geo.ZMAX[0])
-                            if fiducial_z is None
-                            else fiducial_z)
-        self.fiducial_e = (0, np.inf) if fiducial_e is None else fiducial_e
+        self._fiducial_z = ((self.det_geo.ZMIN[0], self.det_geo.ZMAX[0])
+                             if fiducial_z is None
+                             else fiducial_z)
+        self._fiducial_e = (0, np.inf) if fiducial_e is None else fiducial_e
 
-        self.dst_group  = dst_group
-        self.dst_node   = dst_node
+        self._dst_group  = dst_group
+        self._dst_node   = dst_node
 
     def run(self):
-        dsts = [load_dst(input_file, self.dst_group, self.dst_node)
+        dsts = [load_dst(input_file, self._dst_group, self._dst_node)
                 for input_file in self.input_files]
 
         # Correct each dataset with the corresponding lifetime
-        for dst, correct in zip(dsts, self.lifetime_corrections):
+        for dst, correct in zip(dsts, self._lifetime_corrections):
             dst.S2e *= correct(dst.Z.values).value
 
         # Join datasets
         dst = pd.concat(dsts)
-        dst = dst[in_range(dst.S2e.values, *self.fiducial_e)]
-        dst = dst[in_range(dst.Z  .values, *self.fiducial_z)]
-        dst = dst[in_range(dst.X  .values, *self._xrange   )]
-        dst = dst[in_range(dst.Y  .values, *self._yrange   )]
+        dst = dst[in_range(dst.S2e.values, *self._fiducial_e)]
+        dst = dst[in_range(dst.Z  .values, *self._fiducial_z)]
+        dst = dst[in_range(dst.X  .values, *self._xrange    )]
+        dst = dst[in_range(dst.Y  .values, *self._yrange    )]
 
         # Compute corrections and stats
         xycorr = self.xy_correction(dst.X.values, dst.Y.values, dst.S2e.values)
