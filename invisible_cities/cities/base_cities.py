@@ -21,17 +21,20 @@ from .. core.configure         import print_configuration
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
 from .. core.system_of_units_c import units
+from .. core                   import fit_functions        as fitf
 
 from .. database import load_db
 
-from ..reco        import peak_functions_c as cpf
-from ..reco        import peak_functions   as pf
-from ..reco        import pmaps_functions  as pmp
-from ..reco        import pmap_io          as pio
-from ..reco        import tbl_functions    as tbf
-from ..reco        import wfm_functions    as wfm
-from ..reco.dst_io import PointLikeEvent
-from ..reco.nh5    import DECONV_PARAM
+from ..reco             import peak_functions_c as cpf
+from ..reco             import peak_functions   as pf
+from ..reco             import pmaps_functions  as pmp
+from ..reco             import pmap_io          as pio
+from ..reco             import tbl_functions    as tbf
+from ..reco             import wfm_functions    as wfm
+from ..reco.dst_io      import PointLikeEvent
+from ..reco.nh5         import DECONV_PARAM
+from ..reco.corrections import Correction
+from ..reco.corrections import Fcorrection
 
 from ..sierpe import blr
 from ..sierpe import fee as FE
@@ -71,6 +74,7 @@ class City:
         # access data base
         DataPMT             = load_db.DataPMT (run_number)
         DataSiPM            = load_db.DataSiPM(run_number)
+        self.det_geo        = load_db.DetectorGeo()
 
         # This is JCK-1: text reveals symmetry!
         self.xs              = DataSiPM.X.values
@@ -128,19 +132,25 @@ class City:
                              "SIPM WL"      : sp.SIPMWL})
 
     config_file_format = """
+    # ncse (no corresponding setter exits)
+    RUN_NUMBER {RUN_NUMBER}
+    # set_print
+    NPRINT {NPRINT}
     # set_input_files
     PATH_IN {PATH_IN}
     FILE_IN {FILE_IN}
-
-    # set_cwf_store
+    # set_output_file
     PATH_OUT {PATH_OUT}
     FILE_OUT {FILE_OUT}
+    # set_compression
     COMPRESSION {COMPRESSION}"""
     config_file_format = dedent(config_file_format)
 
-    default_config = dict(PATH_IN  = '$ICDIR/database/test_data/',
-                          FILE_IN  = None,
-                          FILE_OUT = None,
+    default_config = dict(RUN_NUMBER  = 0,
+                          NPRINT      = 0,
+                          PATH_IN     = '$ICDIR/database/test_data/',
+                          FILE_IN     = None,
+                          FILE_OUT    = None,
                           COMPRESSION = 'ZLIB4')
 
     @classmethod
@@ -349,12 +359,6 @@ class DeconvolutionCity(City):
                               acum_discharge_length = self.acum_discharge_length)
 
     config_file_format = City.config_file_format + """
-
-    RUN_NUMBER {RUN_NUMBER}
-
-    # set_print
-    NPRINT {NPRINT}
-
     # set_blr
     NBASELINE {NBASELINE}
     THR_TRIGGER {THR_TRIGGER}
@@ -721,3 +725,78 @@ class S12SelectorCity:
             evt.Z    .append(dt * units.mus * self.drift_v)
 
         return evt
+
+
+class MapCity(City):
+    def __init__(self,
+                 lifetime           ,
+
+                 xbins        =  100,
+                 xmin         = None,
+                 xmax         = None,
+
+                 ybins        =  100,
+                 ymin         = None,
+                 ymax         = None):
+
+        self._lifetimes = [lifetime] if not np.shape(lifetime) else lifetime
+        self._lifetime_corrections = tuple(map(self._create_fcorrection, self._lifetimes))
+
+        xmin = self.det_geo.XMIN[0] if xmin is None else xmin
+        xmax = self.det_geo.XMAX[0] if xmax is None else xmax
+        ymin = self.det_geo.YMIN[0] if ymin is None else ymin
+        ymax = self.det_geo.YMAX[0] if ymax is None else ymax
+
+        self._xbins  = xbins
+        self._ybins  = ybins
+        self._xrange = xmin, xmax
+        self._yrange = ymin, ymax
+
+    def xy_correction(self, X, Y, E):
+        xs, ys, es, us = \
+        fitf.profileXY(X, Y, E, self._xbins, self._ybins, self._xrange, self._yrange)
+
+        norm_index = xs.size//2, ys.size//2
+        return Correction((xs, ys), es, us, norm_strategy="index", index=norm_index)
+
+    def xy_statistics(self, X, Y):
+        return np.histogram2d(X, Y, (self._xbins, self._ybins), (self._xrange, self._yrange))
+
+    def _create_fcorrection(self, LT):
+        return Fcorrection(lambda x, lt:             fitf.expo(x, 1, -lt),
+                           lambda x, lt: x / LT**2 * fitf.expo(x, 1, -lt),
+                           (LT,))
+
+    config_file_format = City.config_file_format + """
+    LIFETIME    {LIFETIME}
+
+    XBINS       {XBINS}
+    XMIN        {XMIN}
+    XMAX        {XMAX}
+
+    YBINS       {YBINS}
+    YMIN        {YMIN}
+    YMAX        {YMAX}
+
+    DST_GROUP   {DST_GROUP}
+    DST_NODE    {DST_NODE}
+    """
+
+    config_file_format = dedent(config_file_format)
+
+    default_config = merge_two_dicts(
+        City.default_config,
+        dict(LIFETIME    =   1e6,
+             RUN_NUMBER  =     0,
+             NPRINT      =     1,
+
+             XBINS       =    10,
+             XMIN        =  -200,
+             XMAX        =  +200,
+
+             YBINS       =    10,
+             YMIN        =  -200,
+             YMAX        =  +200,
+
+             DST_GROUP   = "DST",
+             DST_NODE    = "Events"))
