@@ -4,17 +4,20 @@ import sys
 import time
 import textwrap
 
-import numpy as np
+import numpy  as np
+import pandas as pd
 
 from invisible_cities.cities.base_cities    import merge_two_dicts, City, MapCity
 from invisible_cities.core  .fit_functions  import in_range
 from invisible_cities.core  .configure      import configure
-from invisible_cities.reco  .dst_functions  import load_dsts
+from invisible_cities.reco  .dst_functions  import load_dst
 from invisible_cities.reco  .dst_io         import Corr_writer
 
 
 class Zaira(City, MapCity):
     def __init__(self, 
+                 lifetime,
+
                  run_number   = 0,
                  files_in     = None,
                  file_out     = None,
@@ -32,16 +35,6 @@ class Zaira(City, MapCity):
                  ymin         = None,
                  ymax         = None,
 
-                 zbins        =  100,
-                 zmin         = None,
-                 zmax         = None,
-
-                 tbins        =  100,
-                 tmin         = None,
-                 tmax         = None,
-
-                 z_sampling   = 1000,
-                 fiducial_r   = None,
                  fiducial_z   = None,
                  fiducial_e   = None):
 
@@ -53,25 +46,16 @@ class Zaira(City, MapCity):
                       nprint      = nprint)
 
         MapCity.__init__(self,
+                         lifetime,
+
                          xbins        = xbins,
                          xmin         = xmin,
                          xmax         = xmax,
 
                          ybins        = ybins,
                          ymin         = ymin,
-                         ymax         = ymax,
+                         ymax         = ymax)
 
-                         zbins        = zbins,
-                         zmin         = zmin,
-                         zmax         = zmax,
-
-                         tbins        = tbins,
-                         tmin         = tmin,
-                         tmax         = tmax,
-
-                         z_sampling   = z_sampling)
-
-        self.fiducial_r = self.det_geo.RMAX[0] if fiducial_r is None else fiducial_r
         self.fiducial_z = (self.det_geo.ZMIN[0], self.det_geo.ZMAX[0]) if fiducial_z is None else fiducial_z
         self.fiducial_e = (0, np.inf) if fiducial_e is None else fiducial_e
 
@@ -80,39 +64,30 @@ class Zaira(City, MapCity):
 
 
     config_file_format = City.config_file_format + """
-
+    LIFETIME    {LIFETIME}
     RUN_NUMBER  {RUN_NUMBER}
 
     # set_print
     NPRINT      {NPRINT}
 
-    XBINS    {XBINS}
-    XMIN     {XMIN}
-    XMAX     {XMAX}
+    XBINS       {XBINS}
+    XMIN        {XMIN}
+    XMAX        {XMAX}
 
-    YBINS    {YBINS}
-    YMIN     {YMIN}
-    YMAX     {YMAX}
+    YBINS       {YBINS}
+    YMIN        {YMIN}
+    YMAX        {YMAX}
 
-    ZBINS    {ZBINS}
-    ZMIN     {ZMIN}
-    ZMAX     {ZMAX}
-
-    TBINS    {TBINS}
-
-    Z_SAMPLING {Z_SAMPLING}
-
-    FIDUCIAL_R {FIDUCIAL_R}
-
-    DST_GROUP {DST_GROUP}
-    DST_NODE  {DST_NODE}
+    DST_GROUP   {DST_GROUP}
+    DST_NODE    {DST_NODE}
     """
 
     config_file_format = textwrap.dedent(config_file_format)
 
     default_config = merge_two_dicts(
         City.default_config,
-        dict(RUN_NUMBER  =     0,
+        dict(LIFETIME    =   1e6,
+             RUN_NUMBER  =     0,
              NPRINT      =     1,
 
              XBINS       =    10,
@@ -123,49 +98,33 @@ class Zaira(City, MapCity):
              YMIN        =  -200,
              YMAX        =  +200,
 
-             ZBINS       =    10,
-             ZMIN        =     0,
-             ZMAX        =  +500,
-
-             TBINS       =    10,
-
-             Z_SAMPLING  = 10000,
-
-             FIDUCIAL_R  =   100,
-
              DST_GROUP   = "DST",
              DST_NODE    = "Events"))
 
     def run(self):
-        dst = load_dsts(self.input_files, self.dst_group, self.dst_node)
+        dsts = [load_dst(input_file, self.dst_group, self.dst_node)
+                for input_file in self.input_files]
+
+        # Correct each dataset with the corresponding lifetime
+        for dst, correct in zip(dsts, self.lifetime_correction):
+            dst.S2e *= correct(dst.Z.values).value
+
+        # Join datasets
+        dst = pd.concat(dsts)
         dst = dst[in_range(dst.S2e.values, *self.fiducial_e)]
         dst = dst[in_range(dst.Z.values  , *self.fiducial_z)]
         dst = dst[in_range(dst.X.values  , *self.xrange    )]
         dst = dst[in_range(dst.Y.values  , *self.yrange    )]
 
-        print("Correcting in Z")
-        fid      = dst[in_range(dst.R.values, 0, self.fiducial_r)]
-        zcorr    = self. z_correction(fid.Z.values, fid.S2e.values, self.zrange[0])
+        # Compute corrections and stats
+        xycorr = self.xy_correction(dst.X.values, dst.Y.values, dst.S2e.values)
+        nevt   = self.xy_statistics(dst.X.values, dst.Y.values)[0]
 
-        print("Correcting in XY")
-        dst.S2e *= zcorr.fn(dst.Z.values)
-        dst      = dst[in_range(dst.S2e.values, *self.fiducial_e)]
-        xycorr   = self.xy_correction(dst.X.values, dst.Y.values, dst.S2e.values)
-
-        print("Correcting in T")
-        dst.S2e *= xycorr(dst.X.values, dst.Y.values)[0]
-        tcorr    = self. t_correction(dst.time.values, dst.S2e.values)
-
-        print("Computing stats")
-        nevt     = self.xy_statistics(dst.X.values, dst.Y.values)[0]
-
-        print("Saving to file")
+        # Dump to file
         with Corr_writer(self.output_file) as writer:
-            writer.write_z_corr (zcorr.xs, zcorr.fs, zcorr.us)
-            writer.write_xy_corr(*xycorr.xs.T, xycorr.fs, xycorr.us, nevt)
-            writer.write_t_corr (tcorr.xs, tcorr.fs, tcorr.us)
+            writer.write_xy_corr(*xycorr._xs, xycorr._fs, xycorr._us, nevt)
 
-        return len(dst), zcorr.LT, zcorr.sLT
+        return len(dst)
 
 
 def ZAIRA(argv = sys.argv):
@@ -181,10 +140,10 @@ def ZAIRA(argv = sys.argv):
                   compression  = CFP.COMPRESSION,
                   nprint       = CFP.NPRINT,
 
-
                   dst_group    = CFP.DST_GROUP,
                   dst_node     = CFP.DST_NODE,
 
+                  lifetime     = CFP.LIFETIME,
                   xbins        = CFP.XBINS,
                   xmin         = CFP.XMIN if "XMIN" in CFP else None,
                   xmax         = CFP.XMAX if "XMAX" in CFP else None,
@@ -193,29 +152,18 @@ def ZAIRA(argv = sys.argv):
                   ymin         = CFP.YMIN if "YMIN" in CFP else None,
                   ymax         = CFP.YMAX if "YMAX" in CFP else None,
 
-                  zbins        = CFP.ZBINS,
-                  zmin         = CFP.ZMIN if "ZMIN" in CFP else None,
-                  zmax         = CFP.ZMAX if "ZMAX" in CFP else None,
-
-                  tbins        = CFP.TBINS,
-                  tmin         = CFP.TMIN if "TMIN" in CFP else None,
-                  tmax         = CFP.TMAX if "TMAX" in CFP else None,
-
-                  z_sampling   = CFP.Z_SAMPLING,
-                  fiducial_r   = CFP.FIDUCIAL_R if "FIDUCIAL_R" in CFP else None,
                   fiducial_z   = CFP.FIDUCIAL_Z if "FIDUCIAL_Z" in CFP else None,
                   fiducial_e   = CFP.FIDUCIAL_E if "FIDUCIAL_E" in CFP else None)
 
-    t0    = time.time()
-    nevt, LT, sLT  = zaira.run()
-    t1    = time.time()
-    dt    = t1 - t0
+    t0   = time.time()
+    nevt = zaira.run()
+    t1   = time.time()
+    dt   = t1 - t0
 
     if nevt > 0:
         print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
-        print("LIFETIME = {} +- {}".format(LT, sLT))
 
-    return nevt, LT, sLT
+    return nevt
 
 if __name__ == "__main__":
     ZAIRA(sys.argv)
