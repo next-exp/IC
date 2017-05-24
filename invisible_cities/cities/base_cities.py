@@ -33,7 +33,8 @@ from ..reco             import tbl_functions    as tbf
 from ..reco             import wfm_functions    as wfm
 from ..reco.dst_io      import PointLikeEvent
 from ..reco.nh5         import DECONV_PARAM
-from ..reco.corrections import Correction, Fcorrection
+from ..reco.corrections import Correction
+from ..reco.corrections import Fcorrection
 
 from ..sierpe import blr
 from ..sierpe import fee as FE
