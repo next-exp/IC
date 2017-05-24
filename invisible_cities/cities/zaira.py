@@ -15,7 +15,7 @@ from invisible_cities.reco  .dst_io         import Corr_writer
 
 
 class Zaira(City, MapCity):
-    def __init__(self, 
+    def __init__(self,
                  lifetime,
 
                  run_number   = 0,
@@ -106,7 +106,7 @@ class Zaira(City, MapCity):
                 for input_file in self.input_files]
 
         # Correct each dataset with the corresponding lifetime
-        for dst, correct in zip(dsts, self.lifetime_correction):
+        for dst, correct in zip(dsts, self.lifetime_corrections):
             dst.S2e *= correct(dst.Z.values).value
 
         # Join datasets
