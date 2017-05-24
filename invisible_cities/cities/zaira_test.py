@@ -28,10 +28,10 @@ def test_command_line_zaira_KrMC(conf_file_name_mc, config_tmpdir, ICDIR):
                             'database/test_data', 'KrDST_MC.h5')
     PATH_OUT = os.path.join(str(config_tmpdir), 'KrCorr.h5')
 
-    nevt, *_ = ZAIRA(['Zaira',
-                      '-c', conf_file_name_mc,
-                      '-i', PATH_IN,
-                      '-o', PATH_OUT,
-                      '-r', '0'])
+    nevt = ZAIRA(['Zaira',
+                  '-c', conf_file_name_mc,
+                  '-i', PATH_IN,
+                  '-o', PATH_OUT,
+                  '-r', '0'])
 
     assert nevt > 0

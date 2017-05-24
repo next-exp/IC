@@ -33,7 +33,7 @@ from ..reco             import tbl_functions    as tbf
 from ..reco             import wfm_functions    as wfm
 from ..reco.dst_io      import PointLikeEvent
 from ..reco.nh5         import DECONV_PARAM
-from ..reco.corrections import Correction
+from ..reco.corrections import Correction, Fcorrection
 
 from ..sierpe import blr
 from ..sierpe import fee as FE
@@ -727,84 +727,40 @@ class S12SelectorCity:
 
 class MapCity:
     def __init__(self,
+                 lifetime           ,
                  xbins        =  100,
                  xmin         = None,
                  xmax         = None,
 
                  ybins        =  100,
                  ymin         = None,
-                 ymax         = None,
+                 ymax         = None):
 
-                 zbins        =  100,
-                 zmin         = None,
-                 zmax         = None,
-
-                 tbins        =  100,
-                 tmin         = None,
-                 tmax         = None,
-
-                 z_sampling   = 1000):
-        self.det_geo = load_db.DetectorGeo()
-
-        self.xbins = xbins
-        self.ybins = ybins
-        self.zbins = zbins
-        self.tbins = tbins
+        self.det_geo  = load_db.DetectorGeo()
+        self.lifetime = [lifetime] if not np.shape(lifetime) else lifetime
+        self.lifetime_correction = list(map(self._create_fcorrection, self.lifetime))
 
         xmin = self.det_geo.XMIN[0] if xmin is None else xmin
         xmax = self.det_geo.XMAX[0] if xmax is None else xmax
-
         ymin = self.det_geo.YMIN[0] if ymin is None else ymin
         ymax = self.det_geo.YMAX[0] if ymax is None else ymax
 
-        zmin = self.det_geo.ZMIN[0] if zmin is None else zmin
-        zmax = self.det_geo.ZMAX[0] if zmax is None else zmax
-
+        self.xbins  = xbins
+        self.ybins  = ybins
         self.xrange = xmin, xmax
         self.yrange = ymin, ymax
-        self.zrange = zmin, zmax
-        self.trange = tmin, tmax
-
-        self.z_sampling   = z_sampling
-
-    def z_correction(self, Z, E, z_norm=0):
-        x, y, _ = \
-        fitf.profileX(Z, E, self.zbins, xrange=self.zrange)
-
-        seed = np.max(E), (np.min(E) - np.max(E))/(np.max(Z) - np.min(Z))
-        LT_f = fitf.fit(fitf.expo, x, y, seed, fit_range=self.zrange)
-
-        norm = LT_f.fn(z_norm)
-        zfun = lambda z: norm/LT_f.fn(z)
-
-        E0 ,  LT = LT_f.values
-        sE0, sLT = LT_f.errors
-
-        zs = np.linspace(self.det_geo.ZMIN[0], self.det_geo.ZMAX[0], self.z_sampling)
-        es = zfun(zs)
-        ss = es * ((sE0/E0)**2 + (zs*sLT/LT**2)**2)**0.5
-
-        z_corr     = Correction((zs,), es, ss, norm=False)
-        z_corr. fn = zfun
-        z_corr. LT = -LT
-        z_corr.sLT = sLT
-        return z_corr
 
     def xy_correction(self, X, Y, E):
         xs, ys, es, ss = \
         fitf.profileXY(X, Y, E, self.xbins, self.ybins, self.xrange, self.yrange)
 
         norm_index = xs.size//2, ys.size//2
-        return Correction((xs, ys), es, ss, norm="index", index=norm_index)
-
-    def t_correction(self, T, E):
-        tmin = np.min(T) if self.trange[0] is None else self.trange[0]
-        tmax = np.max(T) if self.trange[1] is None else self.trange[1]
-        self.trange = tmin, tmax
-
-        ts, es, ss = \
-        fitf.profileX(T, E, self.tbins, self.trange)
-        return Correction((ts,), es, ss, norm="max")
+        return Correction((xs, ys), es, ss, norm_strategy="index", index=norm_index)
 
     def xy_statistics(self, X, Y):
         return np.histogram2d(X, Y, (self.xbins, self.ybins), (self.xrange, self.yrange))
+
+    def _create_fcorrection(self, LT):
+        return Fcorrection(lambda x, lt: fitf.expo(x, 1, -lt),
+                           lambda x, lt: x / LT**2 * fitf.expo(x, 1, -lt),
+                           (LT,))
