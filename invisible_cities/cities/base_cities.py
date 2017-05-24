@@ -25,15 +25,15 @@ from .. core                   import fit_functions        as fitf
 
 from .. database import load_db
 
-from ..reco        import peak_functions_c as cpf
-from ..reco        import peak_functions   as pf
-from ..reco        import pmaps_functions  as pmp
-from ..reco        import pmap_io          as pio
-from ..reco        import tbl_functions    as tbf
-from ..reco        import wfm_functions    as wfm
-from ..reco.dst_io import PointLikeEvent
-from ..reco.nh5    import DECONV_PARAM
-from ..reco.params import Correction
+from ..reco             import peak_functions_c as cpf
+from ..reco             import peak_functions   as pf
+from ..reco             import pmaps_functions  as pmp
+from ..reco             import pmap_io          as pio
+from ..reco             import tbl_functions    as tbf
+from ..reco             import wfm_functions    as wfm
+from ..reco.dst_io      import PointLikeEvent
+from ..reco.nh5         import DECONV_PARAM
+from ..reco.corrections import Correction
 
 from ..sierpe import blr
 from ..sierpe import fee as FE
@@ -784,7 +784,7 @@ class MapCity:
         es = zfun(zs)
         ss = es * ((sE0/E0)**2 + (zs*sLT/LT**2)**2)**0.5
 
-        z_corr     = Correction(zs, es, ss, norm = False)
+        z_corr     = Correction((zs,), es, ss, norm=False)
         z_corr. fn = zfun
         z_corr. LT = -LT
         z_corr.sLT = sLT
@@ -793,7 +793,9 @@ class MapCity:
     def xy_correction(self, X, Y, E):
         xs, ys, es, ss = \
         fitf.profileXY(X, Y, E, self.xbins, self.ybins, self.xrange, self.yrange)
-        return Correction((xs, ys), es, ss, norm = "center")
+
+        norm_index = xs.size//2, ys.size//2
+        return Correction((xs, ys), es, ss, norm="index", index=norm_index)
 
     def t_correction(self, T, E):
         tmin = np.min(T) if self.trange[0] is None else self.trange[0]
@@ -802,7 +804,7 @@ class MapCity:
 
         ts, es, ss = \
         fitf.profileX(T, E, self.tbins, self.trange)
-        return Correction(ts, es, ss, norm = "max")
+        return Correction((ts,), es, ss, norm="max")
 
     def xy_statistics(self, X, Y):
         return np.histogram2d(X, Y, (self.xbins, self.ybins), (self.xrange, self.yrange))
