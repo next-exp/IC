@@ -739,8 +739,8 @@ class MapCity(City):
                  ymin         = None,
                  ymax         = None):
 
-        self.lifetimes = [lifetime] if not np.shape(lifetime) else lifetime
-        self.lifetime_corrections = tuple(map(self._create_fcorrection, self.lifetimes))
+        self._lifetimes = [lifetime] if not np.shape(lifetime) else lifetime
+        self._lifetime_corrections = tuple(map(self._create_fcorrection, self._lifetimes))
 
         xmin = self.det_geo.XMIN[0] if xmin is None else xmin
         xmax = self.det_geo.XMAX[0] if xmax is None else xmax
