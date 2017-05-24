@@ -765,3 +765,37 @@ class MapCity(City):
         return Fcorrection(lambda x, lt: fitf.expo(x, 1, -lt),
                            lambda x, lt: x / LT**2 * fitf.expo(x, 1, -lt),
                            (LT,))
+
+    config_file_format = City.config_file_format + """
+    LIFETIME    {LIFETIME}
+
+    XBINS       {XBINS}
+    XMIN        {XMIN}
+    XMAX        {XMAX}
+
+    YBINS       {YBINS}
+    YMIN        {YMIN}
+    YMAX        {YMAX}
+
+    DST_GROUP   {DST_GROUP}
+    DST_NODE    {DST_NODE}
+    """
+
+    config_file_format = dedent(config_file_format)
+
+    default_config = merge_two_dicts(
+        City.default_config,
+        dict(LIFETIME    =   1e6,
+             RUN_NUMBER  =     0,
+             NPRINT      =     1,
+
+             XBINS       =    10,
+             XMIN        =  -200,
+             XMAX        =  +200,
+
+             YBINS       =    10,
+             YMIN        =  -200,
+             YMAX        =  +200,
+
+             DST_GROUP   = "DST",
+             DST_NODE    = "Events"))
