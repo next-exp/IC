@@ -56,7 +56,9 @@ class Zaira(MapCity):
                          ymin         = ymin,
                          ymax         = ymax)
 
-        self.fiducial_z = (self.det_geo.ZMIN[0], self.det_geo.ZMAX[0]) if fiducial_z is None else fiducial_z
+        self.fiducial_z = ((self.det_geo.ZMIN[0], self.det_geo.ZMAX[0])
+                            if fiducial_z is None
+                            else fiducial_z)
         self.fiducial_e = (0, np.inf) if fiducial_e is None else fiducial_e
 
         self.dst_group  = dst_group
@@ -65,10 +67,6 @@ class Zaira(MapCity):
 
     config_file_format = City.config_file_format + """
     LIFETIME    {LIFETIME}
-    RUN_NUMBER  {RUN_NUMBER}
-
-    # set_print
-    NPRINT      {NPRINT}
 
     XBINS       {XBINS}
     XMIN        {XMIN}
