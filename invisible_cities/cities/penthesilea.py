@@ -10,13 +10,13 @@ import tables as tb
 
 from invisible_cities.core.configure         import configure
 from invisible_cities.core.system_of_units_c import units
-from invisible_cities.reco.dst_io            import Track_writer
-from invisible_cities.cities.base_cities     import City, TrackCity, merge_two_dicts
+from invisible_cities.reco.dst_io            import HitCollection_writer
+from invisible_cities.cities.base_cities     import City, HitCollectionCity, merge_two_dicts
 from invisible_cities.reco.tbl_functions     import get_event_numbers_and_timestamps
 from invisible_cities.reco.pmaps_functions   import load_pmaps
-from invisible_cities.reco.xy_algorithms     import Barycenter, find_algorithm
+from invisible_cities.reco.xy_algorithms     import barycenter, find_algorithm
 
-class Penthesilea(City, TrackCity):
+class Penthesilea(City, HitCollectionCity):
     def __init__(self,
                  run_number       = 0,
                  files_in         = None,
@@ -47,7 +47,7 @@ class Penthesilea(City, TrackCity):
 
                   z_corr_filename = None,
                  xy_corr_filename = None,
-                 reco_algorithm   = Barycenter):
+                 reco_algorithm   = barycenter):
 
 
         City     .__init__(self,
@@ -57,28 +57,28 @@ class Penthesilea(City, TrackCity):
                            compression,
                            nprint     )
 
-        TrackCity.__init__(self,
-                           drift_v     = drift_v,
+        HitCollectionCity.__init__(self,
+                                   drift_v     = drift_v,
 
-                           S1_Emin     = S1_Emin,
-                           S1_Emax     = S1_Emax,
-                           S1_Lmin     = S1_Lmin,
-                           S1_Lmax     = S1_Lmax,
-                           S1_Hmin     = S1_Hmin,
-                           S1_Hmax     = S1_Hmax,
-                           S1_Ethr     = S1_Ethr,
+                                   S1_Emin     = S1_Emin,
+                                   S1_Emax     = S1_Emax,
+                                   S1_Lmin     = S1_Lmin,
+                                   S1_Lmax     = S1_Lmax,
+                                   S1_Hmin     = S1_Hmin,
+                                   S1_Hmax     = S1_Hmax,
+                                   S1_Ethr     = S1_Ethr,
 
-                           S2_Nmin     = 1,
-                           S2_Nmax     = S2_Nmax,
-                           S2_Emin     = S2_Emin,
-                           S2_Emax     = S2_Emax,
-                           S2_Lmin     = S2_Lmin,
-                           S2_Lmax     = S2_Lmax,
-                           S2_Hmin     = S2_Hmin,
-                           S2_Hmax     = S2_Hmax,
-                           S2_NSIPMmin = S2_NSIPMmin,
-                           S2_NSIPMmax = S2_NSIPMmax,
-                           S2_Ethr     = S2_Ethr)
+                                   S2_Nmin     = 1,
+                                   S2_Nmax     = S2_Nmax,
+                                   S2_Emin     = S2_Emin,
+                                   S2_Emax     = S2_Emax,
+                                   S2_Lmin     = S2_Lmin,
+                                   S2_Lmax     = S2_Lmax,
+                                   S2_Hmin     = S2_Hmin,
+                                   S2_Hmax     = S2_Hmax,
+                                   S2_NSIPMmin = S2_NSIPMmin,
+                                   S2_NSIPMmax = S2_NSIPMmax,
+                                   S2_Ethr     = S2_Ethr)
 
     config_file_format = City.config_file_format + """
 
@@ -147,7 +147,7 @@ class Penthesilea(City, TrackCity):
 
              Z_CORR_FILENAME   = "",
              XY_CORR_FILENAME  = "",
-             RECO_ALGORITHM    = "Barycenter",
+             RECO_ALGORITHM    = "barycenter",
 
              NEVENTS           =     3,
              RUN_ALL           = False))
@@ -155,8 +155,8 @@ class Penthesilea(City, TrackCity):
     def run(self, max_evt = -1):
         nevt_in = nevt_out = 0
 
-        with Track_writer(self.output_file, "DST", "w",
-                          self.compression, "Tracks") as write:
+        with HitCollection_writer(self.output_file, "DST", "w",
+                                  self.compression, "Tracks") as write:
 
             exit_file_loop = False
             for filename in self.input_files:
@@ -209,41 +209,41 @@ def PENTHESILEA(argv = sys.argv):
     CFP = configure(argv)
 
     #class instance
-    dorothea = Penthesilea(run_number       = CFP.RUN_NUMBER,
-                           files_in         = sorted(glob.glob(CFP.FILE_IN)),
-                           file_out         = CFP.FILE_OUT,
-                           compression      = CFP.COMPRESSION,
-                           nprint           = CFP.NPRINT,
+    penthesilea = Penthesilea(run_number       = CFP.RUN_NUMBER,
+                              files_in         = sorted(glob.glob(CFP.FILE_IN)),
+                              file_out         = CFP.FILE_OUT,
+                              compression      = CFP.COMPRESSION,
+                              nprint           = CFP.NPRINT,
 
-                           drift_v          = CFP.DRIFT_V * units.mm/units.mus,
+                              drift_v          = CFP.DRIFT_V * units.mm/units.mus,
 
-                           S1_Emin          = CFP.S1_EMIN * units.pes,
-                           S1_Emax          = CFP.S1_EMAX * units.pes,
-                           S1_Lmin          = CFP.S1_LMIN,
-                           S1_Lmax          = CFP.S1_LMAX,
-                           S1_Hmin          = CFP.S1_HMIN * units.pes,
-                           S1_Hmax          = CFP.S1_HMAX * units.pes,
-                           S1_Ethr          = CFP.S1_ETHR * units.pes,
+                              S1_Emin          = CFP.S1_EMIN * units.pes,
+                              S1_Emax          = CFP.S1_EMAX * units.pes,
+                              S1_Lmin          = CFP.S1_LMIN,
+                              S1_Lmax          = CFP.S1_LMAX,
+                              S1_Hmin          = CFP.S1_HMIN * units.pes,
+                              S1_Hmax          = CFP.S1_HMAX * units.pes,
+                              S1_Ethr          = CFP.S1_ETHR * units.pes,
 
-                           S2_Nmax          = CFP.S2_NMAX,
-                           S2_Emin          = CFP.S2_EMIN * units.pes,
-                           S2_Emax          = CFP.S2_EMAX * units.pes,
-                           S2_Lmin          = CFP.S2_LMIN,
-                           S2_Lmax          = CFP.S2_LMAX,
-                           S2_Hmin          = CFP.S2_HMIN * units.pes,
-                           S2_Hmax          = CFP.S2_HMAX * units.pes,
-                           S2_NSIPMmin      = CFP.S2_NSIPMMIN,
-                           S2_NSIPMmax      = CFP.S2_NSIPMMAX,
-                           S2_Ethr          = CFP.S2_ETHR * units.pes,
+                              S2_Nmax          = CFP.S2_NMAX,
+                              S2_Emin          = CFP.S2_EMIN * units.pes,
+                              S2_Emax          = CFP.S2_EMAX * units.pes,
+                              S2_Lmin          = CFP.S2_LMIN,
+                              S2_Lmax          = CFP.S2_LMAX,
+                              S2_Hmin          = CFP.S2_HMIN * units.pes,
+                              S2_Hmax          = CFP.S2_HMAX * units.pes,
+                              S2_NSIPMmin      = CFP.S2_NSIPMMIN,
+                              S2_NSIPMmax      = CFP.S2_NSIPMMAX,
+                              S2_Ethr          = CFP.S2_ETHR * units.pes,
 
-                            z_corr_filename = CFP. Z_CORR_FILENAME,
-                           xy_corr_filename = CFP.XY_CORR_FILENAME,
-                           reco_algorithm   = find_algorithm(CFP.RECO_ALGORITHM))
+                               z_corr_filename = CFP. Z_CORR_FILENAME,
+                              xy_corr_filename = CFP.XY_CORR_FILENAME,
+                              reco_algorithm   = find_algorithm(CFP.RECO_ALGORITHM))
 
     t0 = time.time()
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     # run
-    nevt_in, nevt_out, ratio = dorothea.run(max_evt = nevts)
+    nevt_in, nevt_out, ratio = penthesilea.run(max_evt = nevts)
     t1 = time.time()
     dt = t1 - t0
 

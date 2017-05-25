@@ -35,10 +35,10 @@ from ..reco               import wfm_functions    as wfm
 from ..reco.corrections   import Correction
 from ..reco.dst_io        import PointLikeEvent
 from ..reco.dst_io        import Hit
-from ..reco.dst_io        import Track
+from ..reco.dst_io        import HitCollection
 from ..reco.nh5           import DECONV_PARAM
 from ..reco.xy_algorithms import find_algorithm
-from ..reco.xy_algorithms import Barycenter
+from ..reco.xy_algorithms import barycenter
 
 from ..sierpe import blr
 from ..sierpe import fee as FE
@@ -807,7 +807,7 @@ class MapCity(City):
              DST_NODE    = "Events"))
 
 
-class TrackCity(S12SelectorCity):
+class HitCollectionCity(S12SelectorCity):
     def __init__(self,
                  drift_v          = 1 * units.mm/units.mus,
 
@@ -832,7 +832,7 @@ class TrackCity(S12SelectorCity):
 
                   z_corr_filename = None,
                  xy_corr_filename = None,
-                 reco_algorithm   = Barycenter):
+                 reco_algorithm   = barycenter):
 
         S12SelectorCity.__init__(self,
                                  drift_v     = 1 * units.mm/units.mus,
@@ -876,7 +876,7 @@ class TrackCity(S12SelectorCity):
         return self.reco_algorithm(xs, ys, Qs)
 
     def select_event(self, evt_number, evt_time, S1, S2, Si):
-        hitc = Track()
+        hitc = HitCollection()
 
         S1     = self.select_S1(S1)
         S2, Si = self.select_S2(S2, Si)
@@ -888,10 +888,7 @@ class TrackCity(S12SelectorCity):
         hitc.time  = evt_time * 1e-3 # s
 
         t, e = next(iter(S1.values()))
-        hitc.S1w = pmp.width(t)
-        hitc.S1h = np.max(e)
-        hitc.S1e = np.sum(e)
-        hitc.S1t = t[np.argmax(e)]
+        S1t  = t[np.argmax(e)]
 
         npeak = 0
         for peak_no, (t_peak, e_peak) in sorted(S2.items()):
@@ -899,7 +896,7 @@ class TrackCity(S12SelectorCity):
             for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
                 xs, ys, qs, ns = self.compute_xy_position(si, slice_no)
                 es             = self.split_energy(e_slice, qs)
-                z              = (t_slice - hitc.S1t) * units.ns * self.drift_v
+                z              = (t_slice - S1t) * units.ns * self.drift_v
                 for x, y, e, q, n in zip(xs, ys, es, qs, ns):
                     hit       = Hit()
                     hit.Npeak = npeak
@@ -908,8 +905,9 @@ class TrackCity(S12SelectorCity):
                     hit.R     = (x**2 + y**2)**0.5
                     hit.Phi   = np.arctan2(y, x)
                     hit.Z     = z
-                    hit.E     = self.correct_energy(e, x, y, z)
                     hit.Q     = q
+                    hit.E     = e
+                    hit.Ecorr = self.correct_energy(e, x, y, z)
                     hit.Nsipm = n
                     hitc.append(hit)
             npeak += 1
