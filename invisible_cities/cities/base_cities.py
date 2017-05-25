@@ -33,6 +33,7 @@ from ..reco               import pmap_io          as pio
 from ..reco               import tbl_functions    as tbf
 from ..reco               import wfm_functions    as wfm
 from ..reco.corrections   import Correction
+from ..reco.corrections   import Fcorrection
 from ..reco.dst_io        import PointLikeEvent
 from ..reco.dst_io        import Hit
 from ..reco.dst_io        import HitCollection
@@ -808,60 +809,13 @@ class MapCity(City):
              DST_NODE    = "Events"))
 
 
-class HitCollectionCity(S12SelectorCity):
+class HitCollectionCity(City, S12SelectorCity):
     def __init__(self,
-                 drift_v          = 1 * units.mm/units.mus,
-
-                 S1_Emin          = 0,
-                 S1_Emax          = np.inf,
-                 S1_Lmin          = 0,
-                 S1_Lmax          = np.inf,
-                 S1_Hmin          = 0,
-                 S1_Hmax          = np.inf,
-                 S1_Ethr          = 0,
-
-                 S2_Nmin          = 1,
-                 S2_Nmax          = 1000,
-                 S2_Emin          = 0,
-                 S2_Emax          = np.inf,
-                 S2_Lmin          = 0,
-                 S2_Lmax          = np.inf,
-                 S2_Hmin          = 0,
-                 S2_Hmax          = np.inf,
-                 S2_NSIPMmin      = 1,
-                 S2_NSIPMmax      = np.inf,
-                 S2_Ethr          = 0,
-
                  rebin            = 1,
                   z_corr_filename = None,
                  xy_corr_filename = None,
                  lifetime         = None,
                  reco_algorithm   = barycenter):
-
-        S12SelectorCity.__init__(self,
-                                 drift_v     = 1 * units.mm/units.mus,
-
-                                 S1_Nmin     = 1,
-                                 S1_Nmax     = 1,
-                                 S1_Emin     = S1_Emin,
-                                 S1_Emax     = S1_Emax,
-                                 S1_Lmin     = S1_Lmin,
-                                 S1_Lmax     = S1_Lmax,
-                                 S1_Hmin     = S1_Hmin,
-                                 S1_Hmax     = S1_Hmax,
-                                 S1_Ethr     = S1_Ethr,
-
-                                 S2_Nmin     = S2_Nmin,
-                                 S2_Nmax     = S2_Nmax,
-                                 S2_Emin     = S2_Emin,
-                                 S2_Emax     = S2_Emax,
-                                 S2_Lmin     = S2_Lmin,
-                                 S2_Lmax     = S2_Lmax,
-                                 S2_Hmin     = S2_Hmin,
-                                 S2_Hmax     = S2_Hmax,
-                                 S2_NSIPMmin = S2_NSIPMmin,
-                                 S2_NSIPMmax = S2_NSIPMmax,
-                                 S2_Ethr     = S2_Ethr)
 
         self.rebin          = rebin
         self. z_corr        = dstf.load_z_corrections (z_corr_filename) \
@@ -941,3 +895,79 @@ class HitCollectionCity(S12SelectorCity):
             npeak += 1
 
         return hitc
+
+    config_file_format = City.config_file_format + """
+
+    RUN_NUMBER       {RUN_NUMBER}
+
+    # set_print
+    NPRINT           {NPRINT}
+
+    DRIFT_V          {DRIFT_V}
+
+    S1_EMIN          {S1_EMIN}
+    S1_EMAX          {S1_EMAX}
+    S1_LMIN          {S1_LMIN}
+    S1_LMAX          {S1_LMAX}
+    S1_HMIN          {S1_HMIN}
+    S1_HMAX          {S1_HMAX}
+    S1_ETHR          {S1_ETHR}
+
+    S2_NMIN          {S2_NMIN}
+    S2_NMAX          {S2_NMAX}
+    S2_EMIN          {S2_EMIN}
+    S2_EMAX          {S2_EMAX}
+    S2_LMIN          {S2_LMIN}
+    S2_LMAX          {S2_LMAX}
+    S2_HMIN          {S2_HMIN}
+    S2_HMAX          {S2_HMAX}
+    S2_ETHR          {S2_ETHR}
+    S2_NSIPMMIN      {S2_NSIPMMIN}
+    S2_NSIPMMAX      {S2_NSIPMMAX}
+
+    REBIN            {REBIN}
+    Z_CORR_FILENAME  {Z_CORR_FILENAME}
+    XY_CORR_FILENAME {XY_CORR_FILENAME}
+    RECO_ALGORITHM   {RECO_ALGORITHM}
+
+    # run
+    NEVENTS          {NEVENTS}
+    RUN_ALL          {RUN_ALL}
+    """
+
+    config_file_format = dedent(config_file_format)
+
+    default_config = merge_two_dicts(
+        City.default_config,
+        dict(RUN_NUMBER        =     0,
+             NPRINT            =     1,
+
+             DRIFT_V           =   1.0,
+
+             S1_EMIN           =     0,
+             S1_EMAX           =    30,
+             S1_LMIN           =     4,
+             S1_LMAX           =    20,
+             S1_HMIN           =   0.5,
+             S1_HMAX           =    10,
+             S1_ETHR           =   0.5,
+
+             S2_NMIN           =     1,
+             S2_NMAX           =     5,
+             S2_EMIN           =   1e3,
+             S2_EMAX           =   1e8,
+             S2_LMIN           =     1,
+             S2_LMAX           =    20,
+             S2_HMIN           =   500,
+             S2_HMAX           =   1e5,
+             S2_ETHR           =     1,
+             S2_NSIPMMIN       =     2,
+             S2_NSIPMMAX       =  1000,
+
+             REBIN             =     1,
+             Z_CORR_FILENAME   =    "",
+             XY_CORR_FILENAME  =    "",
+             RECO_ALGORITHM    = "barycenter",
+
+             NEVENTS           =     3,
+             RUN_ALL           = False))
