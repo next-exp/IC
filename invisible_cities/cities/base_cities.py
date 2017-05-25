@@ -25,6 +25,7 @@ from .. core                   import fit_functions        as fitf
 
 from .. database import load_db
 
+<<<<<<< 09ce62ac836f62da88e77e3664ba036ce9eae33c
 from ..reco             import peak_functions_c as cpf
 from ..reco             import peak_functions   as pf
 from ..reco             import pmaps_functions  as pmp
@@ -35,9 +36,24 @@ from ..reco.dst_io      import PointLikeEvent
 from ..reco.nh5         import DECONV_PARAM
 from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection
+=======
+from ..reco               import peak_functions_c as cpf
+from ..reco               import peak_functions   as pf
+from ..reco               import pmaps_functions  as pmp
+from ..reco               import dst_functions    as dstf
+from ..reco               import pmap_io          as pio
+from ..reco               import tbl_functions    as tbf
+from ..reco               import wfm_functions    as wfm
+from ..reco.dst_io        import PointLikeEvent
+from ..reco.dst_io        import Hit
+from ..reco.dst_io        import HitCollection
+from ..reco.nh5           import DECONV_PARAM
+from ..reco.xy_algorithms import find_algorithm
+>>>>>>> Include TrackCity
 
 from ..sierpe import blr
 from ..sierpe import fee as FE
+
 
 if sys.version_info >= (3,5):
     # Exec to avoid syntax errors in older Pythons
@@ -800,3 +816,113 @@ class MapCity(City):
 
              DST_GROUP   = "DST",
              DST_NODE    = "Events"))
+
+
+class TrackCity(S12SelectorCity):
+    def __init__(self,
+                 drift_v          = 1 * units.mm/units.mus,
+
+                 S1_Emin          = 0,
+                 S1_Emax          = np.inf,
+                 S1_Lmin          = 0,
+                 S1_Lmax          = np.inf,
+                 S1_Hmin          = 0,
+                 S1_Hmax          = np.inf,
+                 S1_Ethr          = 0,
+
+                 S2_Nmax          = 1000,
+                 S2_Emin          = 0,
+                 S2_Emax          = np.inf,
+                 S2_Lmin          = 0,
+                 S2_Lmax          = np.inf,
+                 S2_Hmin          = 0,
+                 S2_Hmax          = np.inf,
+                 S2_NSIPMmin      = 1,
+                 S2_NSIPMmax      = np.inf,
+                 S2_Ethr          = 0,
+
+                  z_corr_filename = None,
+                 xy_corr_filename = None,
+                 reco_algorithm   = "Barycenter"):
+
+        S12SelectorCity.__init__(self,
+                                 drift_v     = 1 * units.mm/units.mus,
+
+                                 S1_Nmin     = 1,
+                                 S1_Nmax     = 1,
+                                 S1_Emin     = S1_Emin,
+                                 S1_Emax     = S1_Emax,
+                                 S1_Lmin     = S1_Lmin,
+                                 S1_Lmax     = S1_Lmax,
+                                 S1_Hmin     = S1_Hmin,
+                                 S1_Hmax     = S1_Hmax,
+                                 S1_Ethr     = S1_Ethr,
+
+                                 S2_Nmin     = 1,
+                                 S2_Nmax     = S2_Nmax,
+                                 S2_Emin     = S2_Emin,
+                                 S2_Emax     = S2_Emax,
+                                 S2_Lmin     = S2_Lmin,
+                                 S2_Lmax     = S2_Lmax,
+                                 S2_Hmin     = S2_Hmin,
+                                 S2_Hmax     = S2_Hmax,
+                                 S2_NSIPMmin = S2_NSIPMmin,
+                                 S2_NSIPMmax = S2_NSIPMmax,
+                                 S2_Ethr     = S2_Ethr)
+
+        self. z_corr = dstf.load_z_corrections ( z_corr_filename)
+        self.xy_corr = dstf.load_xy_corrections(xy_corr_filename)
+        self.reco    = find_algorithm(reco_algorithm)
+
+    def split_energy(self, e, q):
+        return e * q / np.sum(q)
+
+    def correct_energy(self, e, x, y, z):
+        return e * self.z_corr(z) * self.xy_corr(x, y)
+
+    def compute_xy_position(self, si, slice_no):
+        si      = pmp.select_si_slice(si, slice_no)
+        IDs, Qs = list(zip(*si.items()))
+        xs, ys  = self.DataSiPM.X.values[IDs], self.DataSiPM.Y.values[IDs]
+        return self.reco_algorithm(xs, ys, Qs)
+
+    def select_event(self, evt_number, evt_time, S1, S2, Si):
+        hitc = HitCollection()
+
+        S1     = self.select_S1(S1)
+        S2, Si = self.select_S2(S2, Si)
+
+        if len(S1) != 1 or not self.S2_Nmin <= len(S2) <= self.S2_Nmax:
+            return None
+
+        hitc.evt   = evt_number
+        hitc.time  = evt_time * 1e-3 # s
+
+        t, e = next(iter(S1.values()))
+        hitc.S1w = pmp.width(t)
+        hitc.S1h = np.max(e)
+        hitc.S1e = np.sum(e)
+        hitc.S1t = t[np.argmax(e)]
+
+        npeak = 0
+        for peak_no, (t_peak, e_peak) in sorted(S2.items()):
+            si = Si[peak_no]
+            for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
+                xs, ys, qs, ns = self.compute_xy_position(si, slice_no)
+                es             = self.split_energy(e_slice, qs)
+                z              = (t_slice - hitc.S1t) * units.ns * self.drift_v
+                for x, y, e, q, n in zip(xs, ys, es, qs, ns):
+                    hit       = Hit()
+                    hit.Npeak = npeak
+                    hit.X     = x
+                    hit.Y     = y
+                    hit.R     = (x**2 + y**2)**0.5
+                    hit.Phi   = np.arctan2(y, x)
+                    hit.Z     = z
+                    hit.E     = self.correct_energy(e, x, y, z)
+                    hit.Q     = q
+                    hit.Nsipm = n
+                    hitc.append(hit)
+            npeak += 1
+
+        return hitc
