@@ -137,4 +137,7 @@ def integrate_charge(d):
 
 
 def select_si_slice(si, slice_no):
-    return {sipm_no: sipm[slice_no] for sipm_no, sipm in si.items()}
+    # This is a temporary fix! The number of slices in the SiPM arrays
+    # must match that of the PMT PMaps.
+    return {sipm_no: (sipm[slice_no] if len(sipm) > slice_no else 0)
+                      for sipm_no, sipm in si.items()}
