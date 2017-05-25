@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import sys
 import glob
 import time
@@ -8,13 +6,16 @@ import textwrap
 import numpy  as np
 import tables as tb
 
-from invisible_cities.core.configure         import configure
-from invisible_cities.core.system_of_units_c import units
-from invisible_cities.reco.dst_io            import HitCollection_writer
-from invisible_cities.cities.base_cities     import City, S12SelectorCity, HitCollectionCity
-from invisible_cities.reco.tbl_functions     import get_event_numbers_and_timestamps
-from invisible_cities.reco.pmaps_functions   import load_pmaps
-from invisible_cities.reco.xy_algorithms     import barycenter, find_algorithm
+from ..core.configure         import configure
+from ..core.system_of_units_c import units
+from ..reco.dst_io            import HitCollection_writer
+from ..cities.base_cities     import City
+from ..cities.base_cities     import S12SelectorCity
+from ..cities.base_cities     import HitCollectionCity
+from ..reco.tbl_functions     import get_event_numbers_and_timestamps
+from ..reco.pmaps_functions   import load_pmaps
+from ..reco.xy_algorithms     import barycenter
+from ..reco.xy_algorithms     import find_algorithm
 
 class Penthesilea(HitCollectionCity):
     def __init__(self,
