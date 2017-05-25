@@ -2,7 +2,7 @@ import numpy  as np
 import pandas as pd
 import tables as tb
 
-from . params import Correction
+from .corrections import Correction
 
 def load_dst(filename, group, node):
     with tb.open_file(filename) as h5in:
@@ -17,7 +17,7 @@ def load_dsts(dst_list, group, node):
 
 def load_z_corrections(filename):
     dst = load_dst(filename, "Corrections", "Zcorrections")
-    return Correction(dst.z.values, dst.factor.values, dst.uncertainty.values)
+    return Correction((dst.z.values,), dst.factor.values, dst.uncertainty.values)
 
 
 def load_xy_corrections(filename):
