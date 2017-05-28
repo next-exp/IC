@@ -1,6 +1,8 @@
 import numpy as np
 import scipy as sc
 
+
+from ..core   import fit_functions as fitf
 from . params import Measurement
 
 
@@ -110,3 +112,9 @@ class Fcorrection:
 
     def __call__(self, x):
         return Measurement(self._f(x), self._u_f(x))
+
+
+def LifetimeCorrection(LT, u_LT):
+    fun   = lambda z, LT, u_LT=0: fitf.expo(z, 1, LT)
+    u_fun = lambda z, LT, u_LT  : z * u_LT / LT**2 * fun(z, LT)
+    return Fcorrection(fun, u_fun, (LT, u_LT))
