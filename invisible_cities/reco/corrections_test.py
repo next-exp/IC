@@ -2,7 +2,9 @@ from collections   import namedtuple
 import numpy as np
 
 from ..core             import fit_functions as fitf
-from ..reco.corrections import Correction, Fcorrection
+from ..reco.corrections import Correction
+from ..reco.corrections import Fcorrection
+from ..reco.corrections import LifetimeCorrection
 
 from numpy.testing import assert_equal, assert_allclose
 from pytest        import fixture, mark
@@ -19,7 +21,7 @@ from hypothesis.extra.numpy import arrays
 data_1d = namedtuple("data_1d",   "X   E Eu Xdata       Edata")
 data_2d = namedtuple("data_2d",   "X Y E Eu Xdata Ydata Edata")
 
-FField_1d = namedtuple("Ffield"  , "X   P    F Fu fun u_fun")
+FField_1d = namedtuple("Ffield"  , "X   P Pu F Fu fun u_fun")
 EField_1d = namedtuple("Efield1d", "X   E Eu F Fu imax")
 EField_2d = namedtuple("Efield2d", "X Y E Eu F Fu imax jmax")
 
@@ -72,13 +74,14 @@ def uniform_energy_2d(draw, interp_strategy="nearest"):
 
 @composite
 def uniform_energy_fun_data_1d(draw):
-    fun   = lambda x, LT: fitf.expo(x, 1, -LT)
-    u_fun = lambda x, LT: x / LT**2 * fun(x, LT)
+    fun   = lambda x, LT, u_LT: fitf.expo(x, 1, LT)
+    u_fun = lambda x, LT, u_LT: x * u_LT / LT**2 * fun(x, LT, u_LT)
     LT    = draw(floats(min_value=1e+2, max_value=1e+3))
+    u_LT  = draw(floats(min_value=1e+1, max_value=1e+1))
     X     = np.linspace(0, 600, 100)
-    F     =   fun(X, LT)
-    u_F   = u_fun(X, LT)
-    return FField_1d(X, LT, F, u_F, fun, u_fun)
+    F     =   fun(X, LT, u_LT)
+    u_F   = u_fun(X, LT, u_LT)
+    return FField_1d(X, LT, u_LT, F, u_F, fun, u_fun)
 
 
 @fixture(scope='session')
@@ -185,12 +188,25 @@ def test_correction_call_2d(toy_data_2d):
 
 @given(uniform_energy_fun_data_1d())
 def test_fcorrection(toy_f_data):
-    Z, LT, F, u_F, fun, u_fun = toy_f_data
-    correct = Fcorrection(fun, u_fun, (LT,))
+    Z, LT, u_LT, F, u_F, fun, u_fun = toy_f_data
+    correct = Fcorrection(fun, u_fun, (LT, u_LT))
     f_corrected, u_corrected = correct(Z)
 
     assert_allclose(  F, f_corrected)
     assert_allclose(u_F, u_corrected)
+
+
+@given(uniform_energy_fun_data_1d())
+def test_lifetimecorrection(toy_f_data):
+    Z, LT, u_LT, F, u_F, fun, u_fun = toy_f_data
+    correct = LifetimeCorrection(LT, u_LT)
+    f_corrected, u_corrected = correct(Z)
+
+    assert_allclose(  F, f_corrected)
+    assert_allclose(u_F, u_corrected)
+
+
+#--------------------------------------------------------
 
 
 @mark.slow
