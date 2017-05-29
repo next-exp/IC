@@ -69,12 +69,12 @@ class Isidora(DeconvolutionCity):
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as cwf_file:
             cwf_group = cwf_file.create_group(cwf_file.root, "BLR")
-            n_events_tot = self._main_event_loop(cwf_file, cwf_group, nmax)
+            n_events_tot = self._input_file_loop(cwf_file, cwf_group, nmax)
 
         return n_events_tot
 
 
-    def _main_event_loop(self, cwf_file, cwf_group, nmax):
+    def _input_file_loop(self, cwf_file, cwf_group, nmax):
         n_events_tot = 0
         first = False
         for ffile in self.input_files:
@@ -84,23 +84,27 @@ class Isidora(DeconvolutionCity):
                 # access RWF
                 first, NEVT, pmtrwf, sipmrwf = self._get_rwf_vectors(h5in, first)
                 # loop over all events in file unless reach nmax
-                for evt in range(NEVT):
-                    # deconvolve
-                    CWF = self.deconv_pmt(pmtrwf[evt])
-                    self._store_wf(CWF, 'pmtcwf', cwf_file, cwf_group)
-                    #Copy sipm waveform
-                    self._store_wf(sipmrwf[evt], 'sipmrwf', cwf_file, cwf_group)
+                n_events_tot = self._event_loop(NEVT, pmtrwf, sipmrwf, cwf_file, cwf_group, nmax, n_events_tot)
+        return n_events_tot
 
-                    n_events_tot += 1
-                    if n_events_tot % self.nprint == 0:
-                        print('event in file = {}, total = {}'
-                              .format(evt, n_events_tot))
 
-                    if n_events_tot >= nmax > -1:
-                        print('reached max nof of events (= {})'
-                              .format(nmax))
-                        break
+    def _event_loop(self, NEVT, pmtrwf, sipmrwf, cwf_file, cwf_group, nmax, n_events_tot):
+        for evt in range(NEVT):
+            # deconvolve
+            CWF = self.deconv_pmt(pmtrwf[evt])
+            self._store_wf(CWF, 'pmtcwf', cwf_file, cwf_group)
+            #Copy sipm waveform
+            self._store_wf(sipmrwf[evt], 'sipmrwf', cwf_file, cwf_group)
 
+            n_events_tot += 1
+            if n_events_tot % self.nprint == 0:
+                print('event in file = {}, total = {}'
+                      .format(evt, n_events_tot))
+
+            if n_events_tot >= nmax > -1:
+                print('reached max nof of events (= {})'
+                      .format(nmax))
+                break
         return n_events_tot
 
 
