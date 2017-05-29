@@ -45,75 +45,79 @@ class Isidora(DeconvolutionCity):
                                    thr_trigger = thr_trigger)
 
 
-    def _store_wf(self, wf, wf_table, wf_file, wf_group):
-        """Store WF."""
-        n_sensors, wl = wf.shape
-        if wf_table not in wf_group:
-            # create earray to store cwf
-            self.wf_tables[wf_table] = wf_file.create_earray(wf_group, wf_table,
-                                                 atom    = tb.Float32Atom(),
-                                                 shape   = (0, n_sensors, wl),
-                                                 filters = tbl.filters(self.compression))
-        self.wf_tables[wf_table].append(wf.reshape(1, n_sensors, wl))
 
-
-    def run(self, nmax):
-        """
-        Run the machine
-        nmax is the max number of events to run
-        """
+    def run(self, nmax : 'max number of events to run'):
         self.check_files()
         self.display_IO_info(nmax)
 
-        # loop over input files
+        sensor_params = self._get_sensor_params(self.input_files[0])
+
+        self.print_configuration(sensor_params)
+
         with tb.open_file(self.output_file, "w",
-                          filters = tbl.filters(self.compression)) as cwf_file:
-            cwf_group = cwf_file.create_group(cwf_file.root, "BLR")
-            n_events_tot = self._input_file_loop(cwf_file, cwf_group, nmax)
+                          filters = tbl.filters(self.compression)) as h5out:
+            pmt_writer  = rwf_writer(h5out,
+                                     group_name      = 'BLR',
+                                     table_name      = 'pmtcwf',
+                                     n_sensors       = sensor_params.NPMT,
+                                     waveform_length = sensor_params.PMTWL)
+            sipm_writer = rwf_writer(h5out,
+                                     group_name      = 'BLR',
+                                     table_name      = 'sipmrwf',
+                                     n_sensors       = sensor_params.NSIPM,
+                                     waveform_length = sensor_params.SIPMWL)
+
+            n_events_tot = self._main_loop(pmt_writer, sipm_writer, nmax)
 
         return n_events_tot
 
+    def _get_sensor_params(self, filename):
+        with tb.open_file(filename, "r") as h5in:
+            pmtrwf, sipmrwf = self._get_rwf(h5in)
+            _, NPMT,   PMTWL = pmtrwf .shape
+            _, NSIPM, SIPMWL = sipmrwf.shape
+        return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
 
-    def _input_file_loop(self, cwf_file, cwf_group, nmax):
+    def _main_loop(self, pmt_writer, sipm_writer, nmax):
         n_events_tot = 0
-        first = False
-        for ffile in self.input_files:
-            print("Opening", ffile, end="... ")
-            filename = ffile
+        for filename in self.input_files:
+            print("Opening", filename, end="... ")
             with tb.open_file(filename, "r") as h5in:
+
+                self._copy_sensor_table(h5in)
+
+                if not self.monte_carlo:
+                    self.eventsInfo = self._get_run_info(h5in)
+
                 # access RWF
-                first, NEVT, pmtrwf, sipmrwf = self._get_rwf_vectors(h5in, first)
+                NEVT, pmtrwf, sipmrwf = self._get_rwf_vectors(h5in)
                 # loop over all events in file unless reach nmax
-                n_events_tot = self._event_loop(NEVT, pmtrwf, sipmrwf, cwf_file, cwf_group, nmax, n_events_tot)
+                n_events_tot = self._event_loop(NEVT, pmtrwf, sipmrwf, pmt_writer, sipm_writer, nmax, n_events_tot)
+
         return n_events_tot
 
 
-    def _event_loop(self, NEVT, pmtrwf, sipmrwf, cwf_file, cwf_group, nmax, n_events_tot):
+    def _event_loop(self, NEVT, pmtrwf, sipmrwf, write_pmt, write_sipm, nmax, n_events_tot):
         for evt in range(NEVT):
-            # deconvolve
+            # Item 1: Deconvolve
             CWF = self.deconv_pmt(pmtrwf[evt])
-            self._store_wf(CWF, 'pmtcwf', cwf_file, cwf_group)
-            #Copy sipm waveform
-            self._store_wf(sipmrwf[evt], 'sipmrwf', cwf_file, cwf_group)
+            # Item 2: Store
+            write_pmt (CWF)
+            write_sipm(sipmrwf[evt])
+            #self._store_wf(CWF         , 'pmtcwf' , cwf_file, cwf_group)
+#            self._store_wf(sipmrwf[evt], 'sipmrwf', cwf_file, cwf_group)
 
             n_events_tot += 1
-            if n_events_tot % self.nprint == 0:
-                print('event in file = {}, total = {}'
-                      .format(evt, n_events_tot))
+            self.conditional_print(evt, n_events_tot)
 
-            if n_events_tot >= nmax > -1:
-                print('reached max nof of events (= {})'
-                      .format(nmax))
+            if self._max_events_reached(nmax, n_events_tot):
                 break
+
         return n_events_tot
 
 
-    def _get_rwf_vectors(self, h5in, first):
+    def _get_rwf_vectors(self, h5in):
         pmtrwf, sipmrwf = self._get_rwf(h5in)
-        self._copy_sensor_table(h5in)
-
-        if not self.monte_carlo:
-            self.eventsInfo = self._get_run_info(h5in)
 
         NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
         NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
@@ -126,11 +130,7 @@ class Isidora(DeconvolutionCity):
 
         print("Events in file = {}".format(NEVT))
 
-        if not first:
-            self.print_configuration(sensor_param)
-            # self.signal_t = np.arange(0, PMTWL * 25, 25)
-            first = True
-        return first, NEVT, pmtrwf, sipmrwf
+        return NEVT, pmtrwf, sipmrwf
 
     def _copy_sensor_table(self, h5in):
         # Copy sensor table if exists (needed for GATE)
@@ -171,6 +171,58 @@ def ISIDORA(argv = sys.argv):
     print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt / nevt))
 
     return nevts, nevt
+
+
+class rwf_writer:
+
+    def __init__(self,
+                 file,
+                 *,
+                 group_name      : 'options: RD, BLR',
+                 table_name      : 'options: pmtrwf, pmtcwf, sipmrwf',
+                 compression     = 'ZLIB4',
+                 n_sensors       : 'number of pmts or sipms',
+                 waveform_length : 'length of pmt or sipm waveform_length'):
+
+        #rwf_file = tb.open_file(filename, 'w', filters=tbl.filters(compression))
+        try:                       rwf_group = getattr          (file.root, group_name)
+        except tb.NoSuchNodeError: rwf_group = file.create_group(file.root, group_name)
+
+        self.rwf_table = file.create_earray(rwf_group,
+                                                table_name,
+                                                atom    = tb.Float32Atom(),
+                                                shape   = (0, n_sensors, waveform_length),
+                                                filters = tbl.filters(compression))
+        self._hdf5_file = file # for close
+        self._n_sensors = n_sensors
+        self._waveform_length = waveform_length
+
+    def __call__(self, waveform : 'np.array: RWF, CWF, SiPM'):
+        self.rwf_table.append(waveform.reshape(1, self._n_sensors, self._waveform_length))
+
+    def close(self):
+        self._hdf5_file.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+
+    # def _store_wf(self, wf, wf_table, wf_file, wf_group):
+    #     """Store WF."""
+    #     n_sensors, wl = wf.shape
+    #     if wf_table not in wf_group:
+    #         # create earray to store cwf
+    #         self.wf_tables[wf_table] = wf_file.create_earray(wf_group, wf_table,
+    #                                                          atom    = tb.Float32Atom(),
+    #                                                          shape   = (0, n_sensors, wl),
+    #                                                          filters = tbl.filters(self.compression))
+
+    #     self.wf_tables[wf_table].append(wf.reshape(1, n_sensors, wl))
+
+
 
 if __name__ == "__main__":
     ISIDORA(sys.argv)
