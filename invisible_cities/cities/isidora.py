@@ -69,12 +69,12 @@ class Isidora(DeconvolutionCity):
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as cwf_file:
             cwf_group = cwf_file.create_group(cwf_file.root, "BLR")
-            n_events_tot = self.FACTOR1(cwf_file, cwf_group, nmax)
+            n_events_tot = self._main_event_loop(cwf_file, cwf_group, nmax)
 
         return n_events_tot
 
 
-    def FACTOR1(self, cwf_file, cwf_group, nmax):
+    def _main_event_loop(self, cwf_file, cwf_group, nmax):
         n_events_tot = 0
         first = False
         for ffile in self.input_files:
@@ -82,7 +82,7 @@ class Isidora(DeconvolutionCity):
             filename = ffile
             with tb.open_file(filename, "r") as h5in:
                 # access RWF
-                first, NEVT, pmtrwf, sipmrwf = self.FACTOR2(h5in, first)
+                first, NEVT, pmtrwf, sipmrwf = self._get_rwf_vectors(h5in, first)
                 # loop over all events in file unless reach nmax
                 for evt in range(NEVT):
                     # deconvolve
@@ -103,7 +103,8 @@ class Isidora(DeconvolutionCity):
 
         return n_events_tot
 
-    def FACTOR2(self, h5in, first):
+
+    def _get_rwf_vectors(self, h5in, first):
         pmtrwf, sipmrwf = self._get_rwf(h5in)
         self._copy_sensor_table(h5in)
 
