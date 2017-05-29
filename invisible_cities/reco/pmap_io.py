@@ -8,10 +8,8 @@ class pmap_writer:
 
     def __init__(self, filename, compression = 'ZLIB4'):
         self._hdf5_file = tb.open_file(filename, 'w')
-        self._run_tables = _make_run_event_tables(self._hdf5_file,
-                                                          compression)
-        self._pmp_tables = _make_pmp_tables(      self._hdf5_file,
-                                                          compression)
+        self._run_tables = _make_run_event_tables(self._hdf5_file, compression)
+        self._pmp_tables = _make_pmp_tables(      self._hdf5_file, compression)
 
     def __call__(self, run_number, event_number, timestamp, s1, s2, s2si):
         s1  .store(self._pmp_tables[0], event_number)
