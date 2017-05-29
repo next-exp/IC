@@ -1,7 +1,6 @@
 import abc
 
 import tables as tb
-import numpy  as np
 
 from . import nh5           as table_formats
 from . import tbl_functions as tbf
@@ -71,7 +70,7 @@ class Kr_writer(DST_writer):
         KrEvent(evt).store(self.row)
 
 
-class Corr_writer(DST_writer):
+class XYcorr_writer(DST_writer):
     def __init__(self,
                  filename,
                  group = "Corrections",
@@ -83,60 +82,28 @@ class Corr_writer(DST_writer):
                             mode,
                             compression)
 
-        self.z_table, self.xy_table, self.t_table = \
-        self._make_tables()
+        self.table = self._make_table()
 
-    def _make_tables(self):
-        z_table  = _make_table(self.file,
-                               self.group,
-                               "Zcorrections",
-                               table_formats.Zfactors,
-                               self.compression,
-                               "Correction in the Z coordinate")
+    def _make_table(self):
         xy_table = _make_table(self.file,
                                self.group,
                                "XYcorrections",
                                table_formats.XYfactors,
                                self.compression,
                                "Correction in the x,y coordinates")
-        t_table  = _make_table(self.file,
-                               self.group,
-                               "Tcorrections",
-                               table_formats.Tfactors,
-                               self.compression,
-                               "Correction in time")
-        return z_table, xy_table, t_table
+        return xy_table
 
-    def write_z_corr (self, zs, fs, us):
-        row = self.z_table.row
-        for z, f, u in zip(zs, fs, us):
-            row["z"]           = z
-            row["factor"]      = f
-            row["uncertainty"] = u
-            row.append()
+    def __call__(self, xs, ys, fs, us, ns):
+        row = self.table.row
+        for i, x in enumerate(xs):
+            for j, y in enumerate(ys):
+                row["x"]           = x
+                row["y"]           = y
+                row["factor"]      = fs[i,j]
+                row["uncertainty"] = us[i,j]
+                row["nevt"]        = ns[i,j]
+                row.append()
 
-    def write_xy_corr(self, xs, ys, fs, us, ns):
-        row = self.xy_table.row
-        xs  = np.repeat(xs, xs.size)
-        ys  = np.tile  (ys, ys.size)
-        fs  = fs.flatten()
-        us  = us.flatten()
-        ns  = ns.flatten()
-        for x, y, f, u, n in zip(xs, ys, fs, us, ns):
-            row["x"]           = x
-            row["y"]           = y
-            row["factor"]      = f
-            row["uncertainty"] = u
-            row["nevt"]        = n
-            row.append()
-
-    def write_t_corr (self, ts, fs, us):
-        row = self.t_table.row
-        for t, f, u in zip(ts, fs, us):
-            row["t"]           = t
-            row["factor"]      = f
-            row["uncertainty"] = u
-            row.append()
 
 def _make_table(hdf5_file, group, name, format, compression, description):
     if group not in hdf5_file.root:
