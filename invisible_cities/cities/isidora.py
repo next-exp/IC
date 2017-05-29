@@ -88,8 +88,10 @@ class Isidora(DeconvolutionCity):
                 if not self.monte_carlo:
                     self.eventsInfo = self._get_run_info(h5in)
 
-                NEVT, NPMT,   PMTWL = pmtrwf .shape
-                NEVT, NSIPM, SIPMWL = sipmrwf.shape
+                NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
+                NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
+                assert NEVT_simp == NEVT_pmt
+                NEVT = NEVT_pmt
                 sensor_param = SensorParams(NPMT   = NPMT,
                                             PMTWL  = PMTWL,
                                             NSIPM  = NSIPM,
