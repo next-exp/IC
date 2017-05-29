@@ -131,6 +131,10 @@ class City:
                              "# SiPM"       : sp.NSIPM,
                              "SIPM WL"      : sp.SIPMWL})
 
+    def _get_rwf(self, h5in):
+        return (h5in.root.RD.pmtrwf,
+                h5in.root.RD.sipmrwf)
+
 
 class SensorResponseCity(City):
     """A SensorResponseCity city extends the City base class adding the
