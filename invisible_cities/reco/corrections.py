@@ -6,7 +6,6 @@ from ..core   import fit_functions as fitf
 from . params import Measurement
 
 
-
 class Correction:
     """
     Interface for accessing any kind of corrections.
