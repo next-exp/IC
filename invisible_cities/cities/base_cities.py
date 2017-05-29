@@ -135,6 +135,9 @@ class City:
         return (h5in.root.RD.pmtrwf,
                 h5in.root.RD.sipmrwf)
 
+    def _get_run_info(self, h5in):
+        return h5in.root.Run.events
+
 
 class SensorResponseCity(City):
     """A SensorResponseCity city extends the City base class adding the
