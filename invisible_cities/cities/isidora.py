@@ -82,8 +82,7 @@ class Isidora(DeconvolutionCity):
             filename = ffile
             with tb.open_file(filename, "r") as h5in:
                 # access RWF
-                pmtrwf  = h5in.root.RD.pmtrwf
-                sipmrwf = h5in.root.RD.sipmrwf
+                pmtrwf, sipmrwf = self._get_rwf(h5in)
 
                 # Copy sensor table if exists (needed for GATE)
                 if 'Sensors' in h5in.root:
