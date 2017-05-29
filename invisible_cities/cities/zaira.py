@@ -4,13 +4,12 @@ import time
 import numpy  as np
 import pandas as pd
 
-from .  base_cities         import merge_two_dicts
 from .  base_cities         import City
 from .  base_cities         import MapCity
 from .. core.fit_functions  import in_range
 from .. core.configure      import configure
 from .. reco.dst_functions  import load_dst
-from .. reco.dst_io         import Corr_writer
+from .. reco.dst_io         import XYcorr_writer
 
 
 class Zaira(MapCity):
@@ -83,8 +82,8 @@ class Zaira(MapCity):
         nevt   = self.xy_statistics(dst.X.values, dst.Y.values)[0]
 
         # Dump to file
-        with Corr_writer(self.output_file) as writer:
-            writer.write_xy_corr(*xycorr._xs, xycorr._fs, xycorr._us, nevt)
+        with XYcorr_writer(self.output_file) as write:
+            write(*xycorr._xs, xycorr._fs, xycorr._us, nevt)
 
         return len(dst)
 
