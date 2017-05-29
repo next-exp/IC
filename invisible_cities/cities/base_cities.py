@@ -33,13 +33,12 @@ from ..reco               import pmap_io          as pio
 from ..reco               import tbl_functions    as tbf
 from ..reco               import wfm_functions    as wfm
 from ..reco.corrections   import Correction
-from ..reco.corrections   import Fcorrection
+from ..reco.corrections   import LifetimeCorrection
 from ..reco.dst_io        import PointLikeEvent
 from ..reco.dst_io        import Hit
 from ..reco.dst_io        import HitCollection
 from ..reco.nh5           import DECONV_PARAM
 from ..reco.params        import Peak
-from ..reco.xy_algorithms import find_algorithm
 from ..reco.xy_algorithms import barycenter
 
 from ..sierpe import blr
@@ -737,6 +736,7 @@ class S12SelectorCity:
 class MapCity(City):
     def __init__(self,
                  lifetime           ,
+                 u_lifetime   =    1,
 
                  xbins        =  100,
                  xmin         = None,
@@ -746,8 +746,9 @@ class MapCity(City):
                  ymin         = None,
                  ymax         = None):
 
-        self._lifetimes = [lifetime] if not np.shape(lifetime) else lifetime
-        self._lifetime_corrections = tuple(map(self._create_fcorrection, self._lifetimes))
+        self.  _lifetimes = [lifetime]   if not np.shape(  lifetime) else   lifetime
+        self._u_lifetimes = [u_lifetime] if not np.shape(u_lifetime) else u_lifetime
+        self._lifetime_corrections = tuple(map(LifetimeCorrection, self._lifetimes, self._u_lifetimes))
 
         xmin = self.det_geo.XMIN[0] if xmin is None else xmin
         xmax = self.det_geo.XMAX[0] if xmax is None else xmax
@@ -769,10 +770,6 @@ class MapCity(City):
     def xy_statistics(self, X, Y):
         return np.histogram2d(X, Y, (self._xbins, self._ybins), (self._xrange, self._yrange))
 
-    def _create_fcorrection(self, LT):
-        return Fcorrection(lambda x, lt:             fitf.expo(x, 1, -lt),
-                           lambda x, lt: x / LT**2 * fitf.expo(x, 1, -lt),
-                           (LT,))
 
     config_file_format = City.config_file_format + """
     LIFETIME    {LIFETIME}
@@ -818,9 +815,9 @@ class HitCollectionCity(City, S12SelectorCity):
                  reco_algorithm   = barycenter):
 
         self.rebin          = rebin
-        self. z_corr        = dstf.load_z_corrections (z_corr_filename) \
-                              if lifetime is None \
-                              else lambda z: (np.exp(np.array(z)/lifetime), 1)
+        self. z_corr        = LifetimeCorrection(lifetime)\
+                              if lifetime else\
+                              dstf.load_z_corrections(z_corr_filename)
 
         self.xy_corr        = dstf.load_xy_corrections(xy_corr_filename)
         self.reco_algorithm = reco_algorithm
