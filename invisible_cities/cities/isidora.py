@@ -82,27 +82,7 @@ class Isidora(DeconvolutionCity):
             filename = ffile
             with tb.open_file(filename, "r") as h5in:
                 # access RWF
-                pmtrwf, sipmrwf = self._get_rwf(h5in)
-                self._copy_sensor_table(h5in)
-
-                if not self.monte_carlo:
-                    self.eventsInfo = self._get_run_info(h5in)
-
-                NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
-                NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
-                assert NEVT_simp == NEVT_pmt
-                NEVT = NEVT_pmt
-                sensor_param = SensorParams(NPMT   = NPMT,
-                                            PMTWL  = PMTWL,
-                                            NSIPM  = NSIPM,
-                                            SIPMWL = SIPMWL)
-
-                print("Events in file = {}".format(NEVT))
-
-                if not first:
-                    self.print_configuration(sensor_param)
-                    self.signal_t = np.arange(0, PMTWL * 25, 25)
-                    first = True
+                first, NEVT, pmtrwf, sipmrwf = self.FACTOR2(h5in, first)
                 # loop over all events in file unless reach nmax
                 for evt in range(NEVT):
                     # deconvolve
@@ -122,6 +102,30 @@ class Isidora(DeconvolutionCity):
                         break
 
         return n_events_tot
+
+    def FACTOR2(self, h5in, first):
+        pmtrwf, sipmrwf = self._get_rwf(h5in)
+        self._copy_sensor_table(h5in)
+
+        if not self.monte_carlo:
+            self.eventsInfo = self._get_run_info(h5in)
+
+        NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
+        NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
+        assert NEVT_simp == NEVT_pmt
+        NEVT = NEVT_pmt
+        sensor_param = SensorParams(NPMT   = NPMT,
+                                    PMTWL  = PMTWL,
+                                    NSIPM  = NSIPM,
+                                    SIPMWL = SIPMWL)
+
+        print("Events in file = {}".format(NEVT))
+
+        if not first:
+            self.print_configuration(sensor_param)
+            # self.signal_t = np.arange(0, PMTWL * 25, 25)
+            first = True
+        return first, NEVT, pmtrwf, sipmrwf
 
     def _copy_sensor_table(self, h5in):
         # Copy sensor table if exists (needed for GATE)
