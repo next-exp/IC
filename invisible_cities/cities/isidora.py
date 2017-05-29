@@ -62,8 +62,6 @@ class Isidora(DeconvolutionCity):
         Run the machine
         nmax is the max number of events to run
         """
-        n_events_tot = 0
-
         self.check_files()
         self.display_IO_info(nmax)
 
@@ -71,57 +69,64 @@ class Isidora(DeconvolutionCity):
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as cwf_file:
             cwf_group = cwf_file.create_group(cwf_file.root, "BLR")
-            first = False
-            for ffile in self.input_files:
-                print("Opening", ffile, end="... ")
-                filename = ffile
-                with tb.open_file(filename, "r") as h5in:
-                    # access RWF
-                    pmtrwf  = h5in.root.RD.pmtrwf
-                    sipmrwf = h5in.root.RD.sipmrwf
+            n_events_tot = self.FACTOR1(cwf_file, cwf_group, nmax)
 
-                    # Copy sensor table if exists (needed for GATE)
-                    if 'Sensors' in h5in.root:
-                        self.sensors_group = cwf_file.create_group(
-                            cwf_file.root, "Sensors")
-                        datapmt = h5in.root.Sensors.DataPMT
-                        datapmt.copy(newparent=self.sensors_group)
-                        datasipm = h5in.root.Sensors.DataSiPM
-                        datasipm.copy(newparent=self.sensors_group)
+        return n_events_tot
 
-                    if not self.monte_carlo:
-                        self.eventsInfo = h5in.root.Run.events
 
-                    NEVT, NPMT,   PMTWL = pmtrwf .shape
-                    NEVT, NSIPM, SIPMWL = sipmrwf.shape
-                    sensor_param = SensorParams(NPMT   = NPMT,
-                                                PMTWL  = PMTWL,
-                                                NSIPM  = NSIPM,
-                                                SIPMWL = SIPMWL)
+    def FACTOR1(self, cwf_file, cwf_group, nmax):
+        n_events_tot = 0
+        first = False
+        for ffile in self.input_files:
+            print("Opening", ffile, end="... ")
+            filename = ffile
+            with tb.open_file(filename, "r") as h5in:
+                # access RWF
+                pmtrwf  = h5in.root.RD.pmtrwf
+                sipmrwf = h5in.root.RD.sipmrwf
 
-                    print("Events in file = {}".format(NEVT))
+                # Copy sensor table if exists (needed for GATE)
+                if 'Sensors' in h5in.root:
+                    self.sensors_group = cwf_file.create_group(
+                        cwf_file.root, "Sensors")
+                    datapmt = h5in.root.Sensors.DataPMT
+                    datapmt.copy(newparent=self.sensors_group)
+                    datasipm = h5in.root.Sensors.DataSiPM
+                    datasipm.copy(newparent=self.sensors_group)
 
-                    if not first:
-                        self.print_configuration(sensor_param)
-                        self.signal_t = np.arange(0, PMTWL * 25, 25)
-                        first = True
-                    # loop over all events in file unless reach nmax
-                    for evt in range(NEVT):
-                        # deconvolve
-                        CWF = self.deconv_pmt(pmtrwf[evt])
-                        self._store_wf(CWF, 'pmtcwf', cwf_file, cwf_group)
-                        #Copy sipm waveform
-                        self._store_wf(sipmrwf[evt], 'sipmrwf', cwf_file, cwf_group)
+                if not self.monte_carlo:
+                    self.eventsInfo = h5in.root.Run.events
 
-                        n_events_tot += 1
-                        if n_events_tot % self.nprint == 0:
-                            print('event in file = {}, total = {}'
-                                  .format(evt, n_events_tot))
+                NEVT, NPMT,   PMTWL = pmtrwf .shape
+                NEVT, NSIPM, SIPMWL = sipmrwf.shape
+                sensor_param = SensorParams(NPMT   = NPMT,
+                                            PMTWL  = PMTWL,
+                                            NSIPM  = NSIPM,
+                                            SIPMWL = SIPMWL)
 
-                        if n_events_tot >= nmax > -1:
-                            print('reached max nof of events (= {})'
-                                  .format(nmax))
-                            break
+                print("Events in file = {}".format(NEVT))
+
+                if not first:
+                    self.print_configuration(sensor_param)
+                    self.signal_t = np.arange(0, PMTWL * 25, 25)
+                    first = True
+                # loop over all events in file unless reach nmax
+                for evt in range(NEVT):
+                    # deconvolve
+                    CWF = self.deconv_pmt(pmtrwf[evt])
+                    self._store_wf(CWF, 'pmtcwf', cwf_file, cwf_group)
+                    #Copy sipm waveform
+                    self._store_wf(sipmrwf[evt], 'sipmrwf', cwf_file, cwf_group)
+
+                    n_events_tot += 1
+                    if n_events_tot % self.nprint == 0:
+                        print('event in file = {}, total = {}'
+                              .format(evt, n_events_tot))
+
+                    if n_events_tot >= nmax > -1:
+                        print('reached max nof of events (= {})'
+                              .format(nmax))
+                        break
 
         return n_events_tot
 
