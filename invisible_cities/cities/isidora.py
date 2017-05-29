@@ -83,18 +83,10 @@ class Isidora(DeconvolutionCity):
             with tb.open_file(filename, "r") as h5in:
                 # access RWF
                 pmtrwf, sipmrwf = self._get_rwf(h5in)
-
-                # Copy sensor table if exists (needed for GATE)
-                if 'Sensors' in h5in.root:
-                    self.sensors_group = cwf_file.create_group(
-                        cwf_file.root, "Sensors")
-                    datapmt = h5in.root.Sensors.DataPMT
-                    datapmt.copy(newparent=self.sensors_group)
-                    datasipm = h5in.root.Sensors.DataSiPM
-                    datasipm.copy(newparent=self.sensors_group)
+                self._copy_sensor_table(h5in)
 
                 if not self.monte_carlo:
-                    self.eventsInfo = h5in.root.Run.events
+                    self.eventsInfo = self._get_run_info(h5in)
 
                 NEVT, NPMT,   PMTWL = pmtrwf .shape
                 NEVT, NSIPM, SIPMWL = sipmrwf.shape
@@ -128,6 +120,17 @@ class Isidora(DeconvolutionCity):
                         break
 
         return n_events_tot
+
+    def _copy_sensor_table(self, h5in):
+        # Copy sensor table if exists (needed for GATE)
+        if 'Sensors' in h5in.root:
+            self.sensors_group = cwf_file.create_group(
+                cwf_file.root, "Sensors")
+            datapmt = h5in.root.Sensors.DataPMT
+            datapmt.copy(newparent=self.sensors_group)
+            datasipm = h5in.root.Sensors.DataSiPM
+            datasipm.copy(newparent=self.sensors_group)
+
 
 
 def ISIDORA(argv = sys.argv):
