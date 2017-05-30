@@ -288,11 +288,6 @@ class DeconvolutionCity(City):
         row["ACUM_DISCHARGE_LENGTH"] = self.acum_discharge_length
         table.flush()
 
-    def set_blr(self, n_baseline, thr_trigger):
-        """Set the parameters of the Base Line Restoration (BLR)"""
-        self.n_baseline  = n_baseline
-        self.thr_trigger = thr_trigger
-
     def deconv_pmt(self, RWF):
         """Deconvolve the RWF of the PMTs"""
         return blr.deconv_pmt(RWF,
