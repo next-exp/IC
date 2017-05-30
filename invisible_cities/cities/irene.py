@@ -8,9 +8,11 @@ import tables as tb
 
 from .. core.configure         import configure
 from .. core.system_of_units_c import units
-from .. core.mctrk_functions   import MCTrackWriter
+from .. core.mctrk_functions   import mc_track_writer
 
+from .. reco         import tbl_functions as tbl
 from .. reco.pmap_io import pmap_writer
+from .. reco.pmap_io import run_and_event_writer
 from .. reco.params  import SensorParams
 from .. reco.params  import S12Params as S12P
 
@@ -62,107 +64,81 @@ class Irene(PmapCity):
                           s2_params             = s2_params,
                           thr_sipm_s2           = thr_sipm_s2)
 
-        # counter for empty events
-        self.empty_events = 0 # counts empty events in the energy plane
+        self.check_files()
+        self.check_s1s2_params()
+
 
     def run(self, nmax, print_empty=True):
-        """
-        Run Irene
-        nmax is the max number of events to run
-        if print_empty = True, count the number of empty events
-        """
-
-        n_events_tot = 0
-        self.check_files()
-
-        # check that S1 and S2 params are defined
-        if (not self.s1_params) or (not self.s2_params):
-            raise IOError('must set S1/S2 parameters before running')
-
         self.display_IO_info(nmax)
+        sensor_params = self.get_sensor_params(self.input_files[0])
+        self.print_configuration(sensor_params)
 
-        first = False
-        with pmap_writer(self.output_file, self.compression) as write:
-            if self.monte_carlo:
-                mctrack_writer = MCTrackWriter(write.file)
-
-            self.write_deconv_params(write.file)
-            # loop over input files
-            for ffile in self.input_files:
-                print("Opening", ffile, end="... ")
-                filename = ffile
-                with tb.open_file(filename, "r") as h5in:
-
-                    # access RWF
-                    pmtrwf  = h5in.root.RD. pmtrwf
-                    sipmrwf = h5in.root.RD.sipmrwf
-
-                    self.eventsInfo = h5in.root.Run.events
-                    # last row copied from MCTracks table
-                    if self.monte_carlo:
-                        mctrack_row = 0
-
-                    NEVT, NPMT,   PMTWL =  pmtrwf.shape
-                    NEVT, NSIPM, SIPMWL = sipmrwf.shape
-                    sensor_param = SensorParams(NPMT   = NPMT,
-                                                PMTWL  = PMTWL,
-                                                NSIPM  = NSIPM,
-                                                SIPMWL = SIPMWL)
-                    print("Events in file = {}".format(NEVT))
-
-                    if not first:
-                        self.print_configuration(sensor_param)
-                        first = True
-                    # loop over all events in file unless reach nmax
-                    for evt in range(NEVT):
-                        if self.monte_carlo:
-                            # copy corresponding MCTracks to output MCTracks table
-                            mctrack_writer.copy_mctracks(h5in.root.MC.MCTracks,
-                                          n_events_tot)
-
-
-                        # deconvolve
-                        CWF = self.deconv_pmt(pmtrwf[evt])
-                        # calibrated PMT sum
-                        csum, csum_mau = self.calibrated_pmt_sum(CWF)
-                        #ZS sum for S1 and S2
-                        s1_ene, s1_indx = self.csum_zs(
-                                          csum_mau,
-                                          threshold = self.thr_csum_s1)
-                        s2_ene, s2_indx = self.csum_zs(
-                                          csum,
-                                          threshold = self.thr_csum_s2)
-
-                        # In a few rare cases s2_ene is empty
-                        # this is due to empty energy plane events
-                        # a protection is set to avoid a crash
-                        if np.sum(s2_ene) == 0:
-                            self.empty_events += 1
-                            continue
-
-                        # SiPMs signals
-                        sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
-                        # PMAPS
-                        S1, S2 = self.find_S12(s1_ene, s1_indx,   s2_ene, s2_indx)
-                        S1     = self.correct_S1_ene(S1, csum)
-                        Si     = self.find_S2Si(S2, sipmzs)
-
-                        event, timestamp = self.event_and_timestamp(evt)
-                        # write to file
-                        write(self.run_number, event, timestamp, S1, S2, Si)
-
-                        n_events_tot += 1
-                        self.conditional_print(evt, n_events_tot)
-
-                        if n_events_tot >= nmax > -1:
-                            print('reached max nof of events (={})'
-                                  .format(nmax))
-                            break
+        with tb.open_file(self.output_file, "w",
+                          filters = tbl.filters(self.compression)) as h5out:
+            write_pmap          =          pmap_writer(h5out)
+            write_run_and_event = run_and_event_writer(h5out)
+            write_mc            =      mc_track_writer(h5out) if self.monte_carlo else None
+            self.write_deconv_params(h5out)
+            n_events_tot, n_empty_events = self._main_loop(write_pmap, write_run_and_event, write_mc, nmax)
 
         if print_empty:
             print('Energy plane empty events (skipped) = {}'.format(
-                   self.empty_events))
-        return n_events_tot
+                   n_empty_events))
+        return n_events_tot, n_empty_events
+
+    def _main_loop(self, write_pmap, write_run_and_event, write_mc, nmax):
+        n_events_tot, n_empty_events = 0, 0
+        for filename in self.input_files:
+            print("Opening", filename, end="... ")
+            with tb.open_file(filename, "r") as h5in:
+                # access RWF
+                NEVT, pmtrwf, sipmrwf = self.get_rwf_vectors(h5in)
+                events_info = self.get_run_and_event_info(h5in)
+                # loop over all events in file unless reach nmax
+                (n_events_tot,
+                 n_empty_events) = self._event_loop(NEVT, pmtrwf, sipmrwf, events_info,
+                                                    write_pmap, write_run_and_event, write_mc,
+                                                    nmax, n_events_tot, n_empty_events, h5in)
+        return n_events_tot, n_empty_events
+
+    def _event_loop(self, NEVT, pmtrwf, sipmrwf, events_info,
+                    write_pmap, write_run_and_event, write_mc,
+                    nmax, n_events_tot, n_empty_events, h5in):
+        for evt in range(NEVT):
+            if self.monte_carlo:
+                write_mc(h5in.root.MC.MCTracks, n_events_tot)
+
+            # deconvolve
+            CWF = self.deconv_pmt(pmtrwf[evt])
+            # calibrated PMT sum
+            csum, csum_mau = self.calibrated_pmt_sum(CWF)
+            #ZS sum for S1 and S2
+            s1_ene, s1_indx = self.csum_zs(csum_mau, threshold = self.thr_csum_s1)
+            s2_ene, s2_indx = self.csum_zs(csum,     threshold = self.thr_csum_s2)
+
+            # In a few rare cases s2_ene is empty
+            # this is due to empty energy plane events
+            # a protection is set to avoid a crash
+            if np.sum(s2_ene) == 0:
+                n_empty_events += 1
+                continue
+
+            # SiPMs signals
+            sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
+            # PMAPS
+            S1, S2 = self.find_S12(s1_ene, s1_indx,   s2_ene, s2_indx)
+            S1     = self.correct_S1_ene(S1, csum)
+            Si     = self.find_S2Si(S2, sipmzs)
+
+            event, timestamp = self.event_and_timestamp(evt, events_info)
+            # write to file
+            write_pmap         (event, S1, S2, Si)
+            write_run_and_event(self.run_number, event, timestamp)
+            n_events_tot += 1
+            self.conditional_print(evt, n_events_tot)
+            if self.max_events_reached(nmax, n_events_tot):
+                break
+        return n_events_tot, n_empty_events
 
     def display_IO_info(self, nmax):
         PmapCity.display_IO_info(self, nmax)
@@ -175,12 +151,6 @@ class Irene(PmapCity):
                  threshold min charge per SiPM = {s.thr_sipm} pes
                  threshold min charge in  S2   = {s.thr_sipm_s2} pes
                           """.format(s=self))
-
-    def event_and_timestamp(self, evt):
-        evtInfo = self.eventsInfo[evt]
-        event     = evtInfo[0]
-        timestamp = evtInfo[1]
-        return event, timestamp
 
 
 def IRENE(argv = sys.argv):
@@ -228,14 +198,14 @@ def IRENE(argv = sys.argv):
     t0 = time()
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     # run
-    nevt = irene.run(nmax=nevts, print_empty=CFP.PRINT_EMPTY_EVENTS)
+    nevt, n_empty_events = irene.run(nmax=nevts, print_empty=CFP.PRINT_EMPTY_EVENTS)
     t1 = time()
     dt = t1 - t0
 
     if nevt > 0:
         print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
 
-    return nevts, nevt, irene.empty_events
+    return nevts, nevt, n_empty_events
 
 if __name__ == "__main__":
     IRENE(sys.argv)
