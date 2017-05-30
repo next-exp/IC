@@ -22,7 +22,7 @@ from . params                  import ThresholdParams
 from . params                  import PMaps
 
 from . pmap_io                 import pmap_writer
-from . pmap_io                 import run_and_event_writer
+from .. reco.run_and_event_io  import run_and_event_writer
 from . pmap_io                 import S12
 from . pmap_io                 import S2Si
 
