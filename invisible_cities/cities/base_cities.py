@@ -157,10 +157,6 @@ class SensorResponseCity(City):
         self.sipm_noise_cut = sipm_noise_cut
         self.first_evt      = first_evt
 
-    def set_sipm_noise_cut(self, noise_cut=3.0):
-        """Sets the SiPM noise cut (in PES)"""
-        self.sipm_noise_cut = noise_cut
-
     def simulate_sipm_response(self, event, sipmrd,
                                sipms_noise_sampler):
         """Add noise with the NoiseSampler class and return
