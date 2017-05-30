@@ -205,20 +205,15 @@ def IRENE(argv = sys.argv):
                  lmax   = CFP.S2_LMAX,
                  rebin  = True)
 
-    #class instance
-    irene = Irene(run_number=CFP.RUN_NUMBER)
-
     # input files
     # TODO detect non existing files and raise sensible message
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
-    irene.set_input_files(files_in)
-
-    # output file
-    irene.set_output_file(CFP.FILE_OUT)
-    irene.set_compression(CFP.COMPRESSION)
-    # print frequency
-    irene.set_print(nprint=CFP.NPRINT)
+    irene = Irene(run_number  = CFP.RUN_NUMBER,
+                  nprint      = CFP.NPRINT,
+                  compression = CFP.COMPRESSION,
+                  files_in    = files_in,
+                  file_out    = CFP.FILE_OUT)
 
     # parameters of BLR
     irene.set_blr(n_baseline  = CFP.NBASELINE,
