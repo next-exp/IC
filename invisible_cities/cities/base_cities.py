@@ -31,6 +31,7 @@ from ..reco             import pmaps_functions  as pmp
 from ..reco             import pmap_io          as pio
 from ..reco             import tbl_functions    as tbf
 from ..reco             import wfm_functions    as wfm
+from ..reco.params      import SensorParams
 from ..reco.dst_io      import PointLikeEvent
 from ..reco.nh5         import DECONV_PARAM
 from ..reco.corrections import Correction
@@ -122,6 +123,20 @@ class City:
                              "PMT WL"       : sp.PMTWL,
                              "# SiPM"       : sp.NSIPM,
                              "SIPM WL"      : sp.SIPMWL})
+
+    def get_rwf_vectors(self, h5in):
+        pmtrwf, sipmrwf = self._get_rwf(h5in)
+
+        NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
+        NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
+        assert NEVT_simp == NEVT_pmt
+        NEVT = NEVT_pmt
+        sensor_param = SensorParams(NPMT   = NPMT,
+                                    PMTWL  = PMTWL,
+                                    NSIPM  = NSIPM,
+                                    SIPMWL = SIPMWL)
+
+        return NEVT, pmtrwf, sipmrwf
 
     def _get_rwf(self, h5in):
         return (h5in.root.RD.pmtrwf,
