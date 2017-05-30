@@ -72,12 +72,6 @@ class Isidora(DeconvolutionCity):
 
         return n_events_tot
 
-    def get_sensor_params(self, filename):
-        with tb.open_file(filename, "r") as h5in:
-            pmtrwf, sipmrwf = self._get_rwf(h5in)
-            _, NPMT,   PMTWL = pmtrwf .shape
-            _, NSIPM, SIPMWL = sipmrwf.shape
-        return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
 
     def _main_loop(self, pmt_writer, sipm_writer, nmax):
         n_events_tot = 0
