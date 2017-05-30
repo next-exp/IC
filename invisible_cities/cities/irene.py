@@ -215,17 +215,12 @@ def IRENE(argv = sys.argv):
                   files_in    = files_in,
                   file_out    = CFP.FILE_OUT,
                   n_baseline  = CFP.NBASELINE,
-                  thr_trigger = CFP.THR_TRIGGER * units.adc)
-
-    # parameters of calibrated sums
-    irene.set_csum(n_MAU = CFP.NMAU,
-                   thr_MAU = CFP.THR_MAU * units.adc,
-                   thr_csum_s1 =CFP.THR_CSUM_S1 * units.pes,
-                   thr_csum_s2 =CFP.THR_CSUM_S2 * units.pes)
-
-    # MAU and thresholds for SiPms
-    irene.set_sipm(n_MAU_sipm= CFP.NMAU_SIPM,
-                   thr_sipm=CFP.THR_SIPM)
+                  thr_trigger = CFP.THR_TRIGGER * units.adc,
+                  n_MAU       = CFP.NMAU,
+                  thr_MAU     = CFP.THR_MAU * units.adc,
+                  thr_csum_s1 = CFP.THR_CSUM_S1 * units.pes,
+                  thr_csum_s2 = CFP.THR_CSUM_S2 * units.pes,
+                  thr_sipm    = CFP.THR_SIPM)
 
     # parameters for PMAP searches
     irene.set_pmap_params(s1_params   = s1par,
