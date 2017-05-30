@@ -101,6 +101,23 @@ class Irene(PmapCity):
                                                     nmax, n_events_tot, n_empty_events, h5in)
         return n_events_tot, n_empty_events
 
+
+    def pmt_transformation(self, RWF):
+            # deconvolve
+            CWF = self.deconv_pmt(RWF)
+            # calibrated PMT sum
+            csum, csum_mau = self.calibrated_pmt_sum(CWF)
+            #ZS sum for S1 and S2
+            s1_ene, s1_indx = self.csum_zs(csum_mau, threshold = self.thr_csum_s1)
+            s2_ene, s2_indx = self.csum_zs(csum,     threshold = self.thr_csum_s2)
+            return s1_ene, s1_indx, s2_ene, s2_indx, csum
+
+    def pmaps(self, s1_ene, s1_indx, s2_ene, s2_indx, csum, sipmzs):
+        S1, S2 = self.find_S12(s1_ene, s1_indx,   s2_ene, s2_indx)
+        S1     = self.correct_S1_ene(S1, csum)
+        Si     = self.find_S2Si(S2, sipmzs)
+        return S1, S2, Si
+
     def _event_loop(self, NEVT, pmtrwf, sipmrwf, events_info,
                     write_pmap, write_run_and_event, write_mc,
                     nmax, n_events_tot, n_empty_events, h5in):
@@ -108,13 +125,7 @@ class Irene(PmapCity):
             if self.monte_carlo:
                 write_mc(h5in.root.MC.MCTracks, n_events_tot)
 
-            # deconvolve
-            CWF = self.deconv_pmt(pmtrwf[evt])
-            # calibrated PMT sum
-            csum, csum_mau = self.calibrated_pmt_sum(CWF)
-            #ZS sum for S1 and S2
-            s1_ene, s1_indx = self.csum_zs(csum_mau, threshold = self.thr_csum_s1)
-            s2_ene, s2_indx = self.csum_zs(csum,     threshold = self.thr_csum_s2)
+            s1_ene, s1_indx, s2_ene, s2_indx, csum = self.pmt_transformation(pmtrwf[evt])
 
             # In a few rare cases s2_ene is empty
             # this is due to empty energy plane events
@@ -123,12 +134,8 @@ class Irene(PmapCity):
                 n_empty_events += 1
                 continue
 
-            # SiPMs signals
             sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
-            # PMAPS
-            S1, S2 = self.find_S12(s1_ene, s1_indx,   s2_ene, s2_indx)
-            S1     = self.correct_S1_ene(S1, csum)
-            Si     = self.find_S2Si(S2, sipmzs)
+            S1, S2, Si = self.pmaps(s1_ene, s1_indx, s2_ene, s2_indx, csum, sipmzs)
 
             event, timestamp = self.event_and_timestamp(evt, events_info)
             # write to file
