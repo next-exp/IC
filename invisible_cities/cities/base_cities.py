@@ -146,12 +146,20 @@ class City:
             _, NSIPM, SIPMWL = sipmrwf.shape
         return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
 
+    @staticmethod
+    def get_run_and_event_info(h5in):
+        return h5in.root.Run.events
+
+    @staticmethod
+    def event_and_timestamp(evt, events_info):
+        return events_info[evt]
+
     def _get_rwf(self, h5in):
         return (h5in.root.RD.pmtrwf,
                 h5in.root.RD.sipmrwf)
 
-    def _get_run_info(self, h5in):
-        return h5in.root.Run.events
+    # def _get_run_info(self, h5in):
+    #     return h5in.root.Run.events
 
 
 class SensorResponseCity(City):
@@ -455,6 +463,9 @@ class PmapCity(CalibratedCity):
         S2Si = pf.sipm_s2_dict(SIPM, S2, thr = self.thr_sipm_s2)
         return pio.S2Si(S2Si)
 
+    def check_s1s2_params(self):
+        if (not self.s1_params) or (not self.s2_params):
+            raise IOError('must set S1/S2 parameters before running')
 
 class S12SelectorCity:
     def __init__(self,

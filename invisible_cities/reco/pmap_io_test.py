@@ -22,6 +22,7 @@ from . params                  import ThresholdParams
 from . params                  import PMaps
 
 from . pmap_io                 import pmap_writer
+from . pmap_io                 import run_and_event_writer
 from . pmap_io                 import S12
 from . pmap_io                 import S2Si
 
@@ -51,28 +52,21 @@ def test_pmap_writer(config_tmpdir, filename, with_,
 
     run_number = 632
 
-    # The actual pmap writing: the component whose functionality is
-    # being tested here.
-
-    # Two different ways of using pmap_writer (both tested by
-    # different parametrizations of this test)
-    if with_: # Close implicitly with context manager
-        with pmap_writer(PMP_file_name) as write:
-            for e in event_numbers:
-                timestamp = timestamps[e]
-                s1   = S12 (P.S1  .get(e, {}) )
-                s2   = S12 (P.S2  .get(e, {}) )
-                s2si = S2Si(P.S2Si.get(e, {}) )
-                write(run_number, e, timestamp, s1, s2, s2si)
-    else: # Close manually
-        write = pmap_writer(PMP_file_name)
+    with tb.open_file(PMP_file_name, 'w') as h5out:
+        # The actual pmap writing: the component whose functionality is
+        # being tested here.
+        write_pmap          =          pmap_writer(h5out)
+        write_run_and_event = run_and_event_writer(h5out)
         for e in event_numbers:
             timestamp = timestamps[e]
             s1   = S12 (P.S1  .get(e, {}) )
             s2   = S12 (P.S2  .get(e, {}) )
             s2si = S2Si(P.S2Si.get(e, {}) )
-            write(run_number, e, timestamp, s1, s2, s2si)
-        write.close()
+            write_pmap         (e, s1, s2, s2si)
+            write_run_and_event(run_number, e, timestamp)
+
+    # TODO remove the parametrization which tests the context manager
+    # behaviour of the writers. They are no longer context managers.
 
     # Read back the data we have just written
     s1df, s2df, s2sidf =                   read_pmaps(PMP_file_name)
@@ -146,8 +140,9 @@ def test_pmap_electrons_40keV(config_tmpdir):
     run_number = 0
 
     with tb.open_file(RWF_file_name,'r') as h5rwf:
-        with pmap_writer(PMAP_file_name) as write:
-
+        with tb.open_file(PMAP_file_name, 'w') as h5out:
+            write_pmap          =          pmap_writer(h5out)
+            write_run_and_event = run_and_event_writer(h5out)
             #waveforms
             pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
 
@@ -214,7 +209,9 @@ def test_pmap_electrons_40keV(config_tmpdir):
                 # produce a fake timestamp (in real like comes from data)
                 timestamp = int(time.time())
                 # write to file
-                write(run_number, event, timestamp, S1, S2, Si)
+                write_pmap         (event, S1, S2, Si)
+                write_run_and_event(run_number, event, timestamp)
+
     # Read back
     s1df, s2df, s2sidf = read_pmaps(PMAP_file_name)
     rundf, evtdf = read_run_and_event_from_pmaps_file(PMAP_file_name)
