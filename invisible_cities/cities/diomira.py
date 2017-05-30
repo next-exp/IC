@@ -17,7 +17,7 @@ from .. core.configure         import configure
 from .. core.configure         import print_configuration
 from .. core.random_sampling   import NoiseSampler as SiPMsNoiseSampler
 from .. core.system_of_units_c import units
-from .. core.mctrk_functions   import MCTrackWriter
+from .. core.mctrk_functions   import mc_track_writer
 from .. core.exceptions        import ParameterNotSet
 
 from .. reco        import wfm_functions as wfm
@@ -74,7 +74,7 @@ class Diomira(SensorResponseCity):
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
 
-            mctracks_writer = MCTrackWriter(h5out)
+            mctracks_writer = mc_track_writer(h5out)
 
             for ffile in self.input_files:
 
@@ -122,8 +122,8 @@ class Diomira(SensorResponseCity):
                     # loop over events in the file. Break when nmax is reached
                     for evt in range(NEVT):
                         # copy corresponding MCTracks to output MCTracks table
-                        mctracks_writer.copy_mctracks(h5in.root.MC.MCTracks,
-                                          n_events_tot, self.first_evt)
+                        mctracks_writer(h5in.root.MC.MCTracks,
+                                        n_events_tot, self.first_evt)
 
                         # simulate PMT and SiPM response
                         # RWF and BLR

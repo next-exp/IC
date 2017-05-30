@@ -50,9 +50,7 @@ class Isidora(DeconvolutionCity):
 
     def run(self, nmax : 'max number of events to run'):
         self.display_IO_info(nmax)
-
         sensor_params = self.get_sensor_params(self.input_files[0])
-
         self.print_configuration(sensor_params)
 
         with tb.open_file(self.output_file, "w",
@@ -80,9 +78,6 @@ class Isidora(DeconvolutionCity):
             with tb.open_file(filename, "r") as h5in:
 
                 self._copy_sensor_table(h5in)
-
-                if not self.monte_carlo:
-                    self.eventsInfo = self._get_run_info(h5in)
 
                 # access RWF
                 NEVT, pmtrwf, sipmrwf = self.get_rwf_vectors(h5in)
