@@ -51,7 +51,7 @@ class Isidora(DeconvolutionCity):
     def run(self, nmax : 'max number of events to run'):
         self.display_IO_info(nmax)
 
-        sensor_params = self._get_sensor_params(self.input_files[0])
+        sensor_params = self.get_sensor_params(self.input_files[0])
 
         self.print_configuration(sensor_params)
 
@@ -72,7 +72,7 @@ class Isidora(DeconvolutionCity):
 
         return n_events_tot
 
-    def _get_sensor_params(self, filename):
+    def get_sensor_params(self, filename):
         with tb.open_file(filename, "r") as h5in:
             pmtrwf, sipmrwf = self._get_rwf(h5in)
             _, NPMT,   PMTWL = pmtrwf .shape
@@ -91,7 +91,7 @@ class Isidora(DeconvolutionCity):
                     self.eventsInfo = self._get_run_info(h5in)
 
                 # access RWF
-                NEVT, pmtrwf, sipmrwf = self._get_rwf_vectors(h5in)
+                NEVT, pmtrwf, sipmrwf = self.get_rwf_vectors(h5in)
                 # loop over all events in file unless reach nmax
                 n_events_tot = self._event_loop(NEVT, pmtrwf, sipmrwf, pmt_writer, sipm_writer, nmax, n_events_tot)
 
@@ -105,8 +105,6 @@ class Isidora(DeconvolutionCity):
             # Item 2: Store
             write_pmt (CWF)
             write_sipm(sipmrwf[evt])
-            #self._store_wf(CWF         , 'pmtcwf' , cwf_file, cwf_group)
-#            self._store_wf(sipmrwf[evt], 'sipmrwf', cwf_file, cwf_group)
 
             n_events_tot += 1
             self.conditional_print(evt, n_events_tot)
@@ -116,22 +114,6 @@ class Isidora(DeconvolutionCity):
 
         return n_events_tot
 
-
-    def _get_rwf_vectors(self, h5in):
-        pmtrwf, sipmrwf = self._get_rwf(h5in)
-
-        NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
-        NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
-        assert NEVT_simp == NEVT_pmt
-        NEVT = NEVT_pmt
-        sensor_param = SensorParams(NPMT   = NPMT,
-                                    PMTWL  = PMTWL,
-                                    NSIPM  = NSIPM,
-                                    SIPMWL = SIPMWL)
-
-        print("Events in file = {}".format(NEVT))
-
-        return NEVT, pmtrwf, sipmrwf
 
     def _copy_sensor_table(self, h5in):
         # Copy sensor table if exists (needed for GATE)
