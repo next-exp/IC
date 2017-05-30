@@ -111,7 +111,7 @@ class Isidora(DeconvolutionCity):
             n_events_tot += 1
             self.conditional_print(evt, n_events_tot)
 
-            if self._max_events_reached(nmax, n_events_tot):
+            if self.max_events_reached(nmax, n_events_tot):
                 break
 
         return n_events_tot
