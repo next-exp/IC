@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from ..reco.nh5 import MCTrack
 from ..reco     import tbl_functions as tbl
 
-class MCTrackWriter:
+class mc_track_writer:
     """Write MCTracks to file."""
     def __init__(self, h5file, compression = 'ZLIB4'):
 
@@ -27,7 +27,7 @@ class MCTrackWriter:
                         title       = "MCTracks",
                         filters     = tbl.filters(self.compression))
 
-    def copy_mctracks(self, mctracks, evt_number, offset=0):
+    def __call__(self, mctracks, evt_number, offset=0):
         for r in mctracks.iterrows(start=self.last_row):
             if r['event_indx'] == evt_number:
                 self.last_row += 1
