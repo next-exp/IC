@@ -213,10 +213,8 @@ def IRENE(argv = sys.argv):
                   nprint      = CFP.NPRINT,
                   compression = CFP.COMPRESSION,
                   files_in    = files_in,
-                  file_out    = CFP.FILE_OUT)
-
-    # parameters of BLR
-    irene.set_blr(n_baseline  = CFP.NBASELINE,
+                  file_out    = CFP.FILE_OUT,
+                  n_baseline  = CFP.NBASELINE,
                   thr_trigger = CFP.THR_TRIGGER * units.adc)
 
     # parameters of calibrated sums
