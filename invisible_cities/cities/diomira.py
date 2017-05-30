@@ -230,11 +230,10 @@ def DIOMIRA(argv=sys.argv):
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
 
-    fpp = Diomira(first_evt = CFP.FIRST_EVT,
-                  files_in  = files_in,
-                  file_out  = CFP.FILE_OUT)
-
-    fpp.set_sipm_noise_cut(noise_cut = CFP.NOISE_CUT)
+    fpp = Diomira(first_evt      = CFP.FIRST_EVT,
+                  files_in       = files_in,
+                  file_out       = CFP.FILE_OUT,
+                  sipm_noise_cut = CFP.NOISE_CUT)
 
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     t0 = time()
