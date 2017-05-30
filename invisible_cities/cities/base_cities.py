@@ -15,7 +15,8 @@ Feburary, 2017.
 import sys
 from textwrap import dedent
 
-import numpy as np
+import numpy  as np
+import tables as tb
 
 from .. core.configure         import print_configuration
 from .. core.exceptions        import NoInputFiles
@@ -137,6 +138,13 @@ class City:
                                     SIPMWL = SIPMWL)
 
         return NEVT, pmtrwf, sipmrwf
+
+    def get_sensor_params(self, filename):
+        with tb.open_file(filename, "r") as h5in:
+            pmtrwf, sipmrwf = self._get_rwf(h5in)
+            _, NPMT,   PMTWL = pmtrwf .shape
+            _, NSIPM, SIPMWL = sipmrwf.shape
+        return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
 
     def _get_rwf(self, h5in):
         return (h5in.root.RD.pmtrwf,
