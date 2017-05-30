@@ -416,15 +416,6 @@ class PmapCity(CalibratedCity):
         self.s2_params   = s2_params
         self.thr_sipm_s2 = thr_sipm_s2
 
-    def set_pmap_params(self,
-                        s1_params,
-                        s2_params,
-                        thr_sipm_s2 = 30 * units.pes):
-        """Parameters for PMAP searches."""
-        self.s1_params = s1_params
-        self.s2_params = s2_params
-        self.thr_sipm_s2 = thr_sipm_s2
-
     def find_S12(self, s1_ene, s1_indx, s2_ene, s2_indx):
         """Return S1 and S2."""
         S1 = cpf.find_S12(s1_ene,
