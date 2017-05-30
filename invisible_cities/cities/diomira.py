@@ -227,13 +227,12 @@ def DIOMIRA(argv=sys.argv):
     """DIOMIRA DRIVER"""
 
     CFP = configure(argv)
-    fpp = Diomira(first_evt=CFP.FIRST_EVT)
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
-    fpp.set_input_files(files_in)
-    fpp.set_output_file(CFP.FILE_OUT)
-    fpp.set_compression(compression=CFP.COMPRESSION)
-    fpp.set_print(nprint=CFP.NPRINT)
+
+    fpp = Diomira(first_evt = CFP.FIRST_EVT,
+                  files_in  = files_in,
+                  file_out  = CFP.FILE_OUT)
 
     fpp.set_sipm_noise_cut(noise_cut = CFP.NOISE_CUT)
 
