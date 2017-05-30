@@ -101,7 +101,7 @@ class City:
             print('event in file = {}, total = {}'
                   .format(evt, n_events_tot))
 
-    def _max_events_reached(self, nmax, n_events_tot):
+    def max_events_reached(self, nmax, n_events_tot):
         if n_events_tot >= nmax > -1:
             print('reached max nof of events (= {})'
                   .format(nmax))
