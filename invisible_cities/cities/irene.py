@@ -220,13 +220,10 @@ def IRENE(argv = sys.argv):
                   thr_MAU     = CFP.THR_MAU * units.adc,
                   thr_csum_s1 = CFP.THR_CSUM_S1 * units.pes,
                   thr_csum_s2 = CFP.THR_CSUM_S2 * units.pes,
-                  thr_sipm    = CFP.THR_SIPM)
-
-    # parameters for PMAP searches
-    irene.set_pmap_params(s1_params   = s1par,
-                          s2_params   = s2par,
-                          thr_sipm_s2 = CFP.THR_SIPM_S2)
-
+                  thr_sipm    = CFP.THR_SIPM,
+                  s1_params   = s1par,
+                  s2_params   = s2par,
+                  thr_sipm_s2 = CFP.THR_SIPM_S2)
 
     t0 = time()
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
