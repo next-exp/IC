@@ -26,6 +26,7 @@ class Isidora(DeconvolutionCity):
                  run_number  = 0,
                  files_in    = None,
                  file_out    = None,
+                 compression = 'ZLIB4',
                  nprint      = 10000,
                  n_baseline  = 28000,
                  thr_trigger = 5 * units.adc):
@@ -35,19 +36,19 @@ class Isidora(DeconvolutionCity):
         Sets all switches to default value.
         """
 
-        self.wf_tables = {}
         DeconvolutionCity.__init__(self,
                                    run_number  = run_number,
                                    files_in    = files_in,
                                    file_out    = file_out,
+                                   compression = compression,
                                    nprint      = nprint,
                                    n_baseline  = n_baseline,
                                    thr_trigger = thr_trigger)
 
+        self.check_files()
 
 
     def run(self, nmax : 'max number of events to run'):
-        self.check_files()
         self.display_IO_info(nmax)
 
         sensor_params = self._get_sensor_params(self.input_files[0])
@@ -153,14 +154,12 @@ def ISIDORA(argv = sys.argv):
 
 
     fpp = Isidora(run_number  = CFP.RUN_NUMBER,
+                  nprint      = CFP.NPRINT,
+                  compression = CFP.COMPRESSION,
                   files_in    = files_in,
+                  file_out    = CFP.FILE_OUT,
                   n_baseline  = CFP.NBASELINE,
                   thr_trigger = CFP.THR_TRIGGER * units.adc)
-
-    #fpp.set_input_files(files_in)
-    fpp.set_output_file(CFP.FILE_OUT)
-    fpp.set_compression(CFP.COMPRESSION)
-    fpp.set_print(nprint = CFP.NPRINT)
 
     t0 = time()
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1

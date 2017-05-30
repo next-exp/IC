@@ -96,22 +96,6 @@ class City:
         if not self.output_file:
             raise NoOutputFile('must set output file before running')
 
-    def set_print(self, nprint=1000):
-        """Print frequency."""
-        self.nprint = nprint
-
-    def set_input_files(self, input_files):
-        """Set the input files."""
-        self.input_files = input_files
-
-    def set_output_file(self, output_file):
-        """Set the input files."""
-        self.output_file = output_file
-
-    def set_compression(self, compression):
-        """Set the input files."""
-        self.compression = compression
-
     def conditional_print(self, evt, n_events_tot):
         if n_events_tot % self.nprint == 0:
             print('event in file = {}, total = {}'
