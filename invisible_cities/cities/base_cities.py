@@ -350,22 +350,6 @@ class CalibratedCity(DeconvolutionCity):
         self.n_MAU_sipm = n_MAU_sipm
         self.  thr_sipm =   thr_sipm
 
-    def set_csum(self,
-                   n_MAU     = 100,
-                 thr_MAU     = 3   * units.adc,
-                 thr_csum_s1 = 0.2 * units.pes,
-                 thr_csum_s2 = 1.0 * units.pes):
-        """Set CSUM parameters."""
-        self.  n_MAU     =   n_MAU
-        self.thr_MAU     = thr_MAU
-        self.thr_csum_s1 = thr_csum_s1
-        self.thr_csum_s2 = thr_csum_s2
-
-    def set_sipm(self, n_MAU_sipm=100, thr_sipm=5*units.pes):
-        """Cutoff for SiPMs."""
-        self.  thr_sipm =   thr_sipm
-        self.n_MAU_sipm = n_MAU_sipm
-
     def calibrated_pmt_sum(self, CWF):
         """Return the csum and csum_mau calibrated sums."""
         return cpf.calibrated_pmt_sum(CWF,
