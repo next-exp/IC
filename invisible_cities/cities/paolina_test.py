@@ -5,12 +5,14 @@ from numpy.testing import assert_almost_equal
 
 from pytest import fixture
 from pytest import mark
+from pytest import raises
 parametrize = mark.parametrize
 
 from hypothesis            import given
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
+from hypothesis.strategies import integers
 
 from . paolina import Hit
 from . paolina import Voxel
@@ -21,6 +23,8 @@ from . paolina import voxelize_hits
 from . paolina import shortest_paths
 from . paolina import make_track_graphs
 
+from .. core.exceptions import NoHits
+from .. core.exceptions import NoVoxels
 
 def big_enough(hits):
     lo, hi = bounding_box(hits)
@@ -30,7 +34,7 @@ def big_enough(hits):
 posn = floats(min_value=10, max_value=100)
 ener = posn
 bunch_of_hits = lists(builds(Hit, posn, posn, posn, ener),
-                      min_size =  0,
+                      min_size =  1,
                       max_size = 30).filter(big_enough)
 
 
@@ -40,6 +44,10 @@ box_sizes = builds(np.array, lists(box_dimension,
                                    min_size = 3,
                                    max_size = 3))
 
+
+def test_voxelize_hits_should_detect_no_hits():
+    with raises(NoHits):
+        voxelize_hits([], None)
 
 @given(bunch_of_hits)
 def test_bounding_box(hits):
@@ -114,8 +122,20 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
                 ( 1 , 5 , 2)], ( 4 , 5 )),))
 def test_find_extrema(spec, extrema):
     weighted_graph = nx.Graph([(a,b, dict(distance=d)) for (a,b,d) in spec])
-    assert find_extrema(shortest_paths(weighted_graph)) == set(extrema)
+    found = find_extrema(shortest_paths(weighted_graph))
+    a, b = extrema
+    assert a in found
+    assert b in found
 
+@given(builds(Voxel, posn, posn, posn, ener))
+def test_find_extrema_single_voxel(voxel):
+    g = nx.Graph()
+    g.add_node(voxel)
+    assert find_extrema(shortest_paths(g)) == (voxel, voxel)
+
+def test_find_extrema_no_voxels():
+    with raises(NoVoxels):
+        find_extrema({})
 
 @fixture(scope='module')
 def track_extrema():
@@ -165,6 +185,4 @@ def test_blobs(track_extrema, radius, expected):
     track, extrema = track_extrema
     Ea, Eb = expected
 
-    Es = blob_energies(track, radius)
-    assert Ea in Es
-    assert Eb in Es
+    assert blob_energies(track, radius) == (Ea, Eb)

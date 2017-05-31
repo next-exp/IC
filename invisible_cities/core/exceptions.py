@@ -22,3 +22,8 @@ class SipmEmptyList(ICException):
 class SipmZeroCharge(ICException):
     pass
 
+class NoHits(ICException):
+    pass
+
+class NoVoxels(ICException):
+    pass
