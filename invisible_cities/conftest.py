@@ -115,3 +115,13 @@ def Kr_dst_data(ICDIR):
     df = DataFrame(data, columns = cols)
 
     return (ICDIR + "/database/test_data/Kr_dst.h5", "DST", "data"), df
+
+
+@pytest.fixture(scope='session')
+def corr_toy_data(ICDIR):
+    x = np.arange( 100, 200)
+    y = np.arange(-200,   0)
+    E = np.arange( 1e4, 1e4 + x.size*y.size).reshape(x.size, y.size)
+    U = np.arange( 1e2, 1e2 + x.size*y.size).reshape(x.size, y.size)
+    corr_filename = os.path.join(ICDIR, "database/test_data/toy_corr.h5")
+    return corr_filename, (x, y, E, U)
