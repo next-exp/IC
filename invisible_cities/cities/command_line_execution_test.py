@@ -1,6 +1,10 @@
 from os import getenv
 from os.path import join
-from subprocess import run
+
+from subprocess import check_output
+from subprocess import CalledProcessError
+from subprocess import STDOUT
+
 from pytest import mark
 
 @mark.slow
@@ -16,6 +20,10 @@ def test_command_line_run(city, tmpdir_factory):
     # The actual command that we want to test
     command = ('{city} -c {config_file_name} -o {out_file_name} -n 1'
                .format(**locals()))
-    r = run(command, shell = True)
-    assert r.returncode == 0
+    try:
+        check_output(command, shell = True, stderr=STDOUT)
+    except CalledProcessError as e:
+        # Ensure that stdout and stderr are visible when test fails
+        print(e.stdout.decode())
+        raise
 
