@@ -7,6 +7,7 @@ from collections import namedtuple
 import numpy    as np
 import networkx as nx
 
+from .. core.exceptions import NoHits
 
 class Hit:
 
@@ -50,7 +51,7 @@ def bounding_box(seq):
 
 def voxelize_hits(hits, voxel_dimensions):
     if not hits:
-        return []
+        raise NoHits
     hlo, hhi = bounding_box(hits)
     hranges = hhi - hlo
     bins = np.ceil(hranges / voxel_dimensions).astype(int)

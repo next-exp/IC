@@ -5,6 +5,7 @@ from numpy.testing import assert_almost_equal
 
 from pytest import fixture
 from pytest import mark
+from pytest import raises
 parametrize = mark.parametrize
 
 from hypothesis            import given
@@ -22,6 +23,8 @@ from . paolina import voxelize_hits
 from . paolina import shortest_paths
 from . paolina import make_track_graphs
 
+from .. core.exceptions import NoHits
+
 
 def big_enough(hits):
     lo, hi = bounding_box(hits)
@@ -31,7 +34,7 @@ def big_enough(hits):
 posn = floats(min_value=10, max_value=100)
 ener = posn
 bunch_of_hits = lists(builds(Hit, posn, posn, posn, ener),
-                      min_size =  0,
+                      min_size =  1,
                       max_size = 30).filter(big_enough)
 
 
@@ -41,6 +44,10 @@ box_sizes = builds(np.array, lists(box_dimension,
                                    min_size = 3,
                                    max_size = 3))
 
+
+def test_voxelize_hits_should_detect_no_hits():
+    with raises(NoHits):
+        voxelize_hits([], None)
 
 @given(bunch_of_hits)
 def test_bounding_box(hits):
