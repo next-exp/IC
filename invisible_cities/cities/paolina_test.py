@@ -11,6 +11,7 @@ from hypothesis            import given
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
+from hypothesis.strategies import integers
 
 from . paolina import Hit
 from . paolina import Voxel
@@ -114,7 +115,16 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
                 ( 1 , 5 , 2)], ( 4 , 5 )),))
 def test_find_extrema(spec, extrema):
     weighted_graph = nx.Graph([(a,b, dict(distance=d)) for (a,b,d) in spec])
-    assert find_extrema(shortest_paths(weighted_graph)) == set(extrema)
+    found = find_extrema(shortest_paths(weighted_graph))
+    a, b = extrema
+    assert a in found
+    assert b in found
+
+@given(builds(Voxel, posn, posn, posn, ener))
+def test_find_extrema_single_voxel(voxel):
+    g = nx.Graph()
+    g.add_node(voxel)
+    assert find_extrema(shortest_paths(g)) == (voxel, voxel)
 
 
 @fixture(scope='module')
@@ -165,6 +175,4 @@ def test_blobs(track_extrema, radius, expected):
     track, extrema = track_extrema
     Ea, Eb = expected
 
-    Es = blob_energies(track, radius)
-    assert Ea in Es
-    assert Eb in Es
+    assert blob_energies(track, radius) == (Ea, Eb)
