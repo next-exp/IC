@@ -24,3 +24,6 @@ class SipmZeroCharge(ICException):
 
 class NoHits(ICException):
     pass
+
+class NoVoxels(ICException):
+    pass

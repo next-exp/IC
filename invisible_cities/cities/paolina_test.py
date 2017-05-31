@@ -24,7 +24,7 @@ from . paolina import shortest_paths
 from . paolina import make_track_graphs
 
 from .. core.exceptions import NoHits
-
+from .. core.exceptions import NoVoxels
 
 def big_enough(hits):
     lo, hi = bounding_box(hits)
@@ -133,6 +133,9 @@ def test_find_extrema_single_voxel(voxel):
     g.add_node(voxel)
     assert find_extrema(shortest_paths(g)) == (voxel, voxel)
 
+def test_find_extrema_no_voxels():
+    with raises(NoVoxels):
+        find_extrema({})
 
 @fixture(scope='module')
 def track_extrema():
