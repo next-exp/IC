@@ -84,7 +84,7 @@ def uniform_energy_fun_data_1d(draw):
     return FField_1d(X, LT, u_LT, F, u_F, fun, u_fun)
 
 
-@fixture(scope='session')
+@fixture
 def gauss_data_1d():
     mean = lambda z: 1e4 * np.exp(-z/300)
     Nevt = 100000
@@ -94,7 +94,7 @@ def gauss_data_1d():
     return data_1d(*prof, Zevt, Eevt)
 
 
-@fixture(scope='session')
+@fixture
 def gauss_data_2d():
     mean = lambda x, y: 1e4 * np.exp(-(x**2 + y**2)/400**2)
     Nevt = 100000
@@ -210,7 +210,7 @@ def test_lifetimecorrection(toy_f_data):
 
 
 @mark.slow
-@flaky
+@flaky(max_runs=5, min_passes=1)
 def test_corrections_1d(gauss_data_1d):
     Z, E, Eu, Zevt, Eevt = gauss_data_1d
 
@@ -227,6 +227,7 @@ def test_corrections_1d(gauss_data_1d):
 
 
 @mark.slow
+@flaky(max_runs=5, min_passes=1)
 def test_corrections_2d(gauss_data_2d):
     X, Y, E, Eu, Xevt, Yevt, Eevt = gauss_data_2d
     correct = Correction((X, Y), E, Eu, "index", index=(25,25))
