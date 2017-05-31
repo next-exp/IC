@@ -98,6 +98,8 @@ Uses a MAU to set the signal threshold (thr, in PES)
 returns ZS waveforms for all SiPMs
 """
 
+cpdef rebin_S2(double [:] t, double [:] e, dict sipms, int nrebin)
+
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
                   double [:] adc_to_pes, double thr,
                   int n_MAU=*)

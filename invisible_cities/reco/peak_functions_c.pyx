@@ -5,6 +5,7 @@ JJGC December, 2016
 cimport numpy as np
 import  numpy as np
 from scipy import signal
+from math import ceil
 
 from . import pmap_io as pio
 
@@ -282,6 +283,35 @@ cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
         T[n] = tmean
 
     return np.asarray(T), np.asarray(E)
+
+
+cpdef rebin_S2(double [:] t, double [:] e, dict sipms, int nrebin):
+    """
+    Rebin the S2 signal by merging nrebin 1mus-slices.
+    """
+    cdef int        n_slices    = ceil(len(t)*1.0/nrebin)
+    cdef double [:] t_rebin     = np.zeros(n_slices, dtype=np.double)
+    cdef double [:] e_rebin     = np.zeros(n_slices, dtype=np.double)
+    cdef dict       sipms_rebin = {sipm: np.zeros(n_slices, dtype=np.double)
+                                   for sipm in sipms}
+
+    cdef int i0 = 0
+    cdef int i1 = 0
+
+    cdef double [:] e_slice
+
+    for i in range(n_slices):
+        i0 = i  * nrebin
+        i1 = i0 + nrebin
+
+        e_slice = e[i0:i1]
+        t_rebin[i] = np.average(t[i0:i1], weights = e_slice if np.any(e_slice) else None)
+        e_rebin[i] = np.sum(e_slice)
+        for sipm, qs in sipms.items():
+            sipms_rebin[sipm][i] = np.sum(qs[i0:i1])
+
+    return np.asarray(t_rebin), np.asarray(e_rebin), sipms_rebin
+
 
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
                   double [:] adc_to_pes, double thr,

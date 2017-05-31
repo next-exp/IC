@@ -6,8 +6,9 @@ from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection
 from ..reco.corrections import LifetimeCorrection
 
-from numpy.testing import assert_equal, assert_allclose
-from pytest        import fixture, mark
+from numpy.testing import assert_allclose
+from pytest        import fixture
+from pytest        import mark
 
 from flaky import flaky
 
@@ -189,7 +190,7 @@ def test_correction_call_2d(toy_data_2d):
 @given(uniform_energy_fun_data_1d())
 def test_fcorrection(toy_f_data):
     Z, LT, u_LT, F, u_F, fun, u_fun = toy_f_data
-    correct = Fcorrection(fun, u_fun, (LT, u_LT))
+    correct = Fcorrection(fun, u_fun, LT, u_LT)
     f_corrected, u_corrected = correct(Z)
 
     assert_allclose(  F, f_corrected)
@@ -207,7 +208,6 @@ def test_lifetimecorrection(toy_f_data):
 
 
 #--------------------------------------------------------
-
 
 @mark.slow
 @flaky

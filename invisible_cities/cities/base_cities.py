@@ -25,19 +25,25 @@ from .. core                   import fit_functions        as fitf
 
 from .. database import load_db
 
-from ..reco             import peak_functions_c as cpf
-from ..reco             import peak_functions   as pf
-from ..reco             import pmaps_functions  as pmp
-from ..reco             import pmap_io          as pio
-from ..reco             import tbl_functions    as tbf
-from ..reco             import wfm_functions    as wfm
-from ..reco.dst_io      import PointLikeEvent
-from ..reco.nh5         import DECONV_PARAM
-from ..reco.corrections import Correction
-from ..reco.corrections import Fcorrection
+from ..reco               import peak_functions_c as cpf
+from ..reco               import peak_functions   as pf
+from ..reco               import pmaps_functions  as pmp
+from ..reco               import dst_functions    as dstf
+from ..reco               import pmap_io          as pio
+from ..reco               import tbl_functions    as tbf
+from ..reco               import wfm_functions    as wfm
+from ..reco.corrections   import Correction
+from ..reco.corrections   import LifetimeCorrection
+from ..reco.dst_io        import PointLikeEvent
+from ..reco.dst_io        import Hit
+from ..reco.dst_io        import HitCollection
+from ..reco.nh5           import DECONV_PARAM
+from ..reco.params        import Peak
+from ..reco.xy_algorithms import barycenter
 
 from ..sierpe import blr
 from ..sierpe import fee as FE
+
 
 if sys.version_info >= (3,5):
     # Exec to avoid syntax errors in older Pythons
@@ -730,6 +736,7 @@ class S12SelectorCity:
 class MapCity(City):
     def __init__(self,
                  lifetime           ,
+                 u_lifetime   =    1,
 
                  xbins        =  100,
                  xmin         = None,
@@ -739,8 +746,9 @@ class MapCity(City):
                  ymin         = None,
                  ymax         = None):
 
-        self._lifetimes = [lifetime] if not np.shape(lifetime) else lifetime
-        self._lifetime_corrections = tuple(map(self._create_fcorrection, self._lifetimes))
+        self.  _lifetimes = [lifetime]   if not np.shape(  lifetime) else   lifetime
+        self._u_lifetimes = [u_lifetime] if not np.shape(u_lifetime) else u_lifetime
+        self._lifetime_corrections = tuple(map(LifetimeCorrection, self._lifetimes, self._u_lifetimes))
 
         xmin = self.det_geo.XMIN[0] if xmin is None else xmin
         xmax = self.det_geo.XMAX[0] if xmax is None else xmax
@@ -762,10 +770,6 @@ class MapCity(City):
     def xy_statistics(self, X, Y):
         return np.histogram2d(X, Y, (self._xbins, self._ybins), (self._xrange, self._yrange))
 
-    def _create_fcorrection(self, LT):
-        return Fcorrection(lambda x, lt:             fitf.expo(x, 1, -lt),
-                           lambda x, lt: x / LT**2 * fitf.expo(x, 1, -lt),
-                           (LT,))
 
     config_file_format = City.config_file_format + """
     LIFETIME    {LIFETIME}
@@ -800,3 +804,167 @@ class MapCity(City):
 
              DST_GROUP   = "DST",
              DST_NODE    = "Events"))
+
+
+class HitCollectionCity(City, S12SelectorCity):
+    def __init__(self,
+                 rebin            = 1,
+                  z_corr_filename = None,
+                 xy_corr_filename = None,
+                 lifetime         = None,
+                 reco_algorithm   = barycenter):
+
+        self.rebin          = rebin
+        self. z_corr        = LifetimeCorrection(lifetime)\
+                              if lifetime else\
+                              dstf.load_z_corrections(z_corr_filename)
+
+        self.xy_corr        = dstf.load_xy_corrections(xy_corr_filename)
+        self.reco_algorithm = reco_algorithm
+
+    def rebin_s2(self, S2, Si):
+        if self.rebin <= 1:
+            return S2, Si
+
+        S2_rebin = {}
+        Si_rebin = {}
+        for peak in S2:
+            t, e, sipms = cpf.rebin_S2(S2[peak][0], S2[peak][1], Si[peak], self.rebin)
+            S2_rebin[peak] = Peak(t, e)
+            Si_rebin[peak] = sipms
+        return S2_rebin, Si_rebin
+
+    def split_energy(self, e, clusters):
+        if len(clusters) == 1:
+            return [e]
+        qs = np.array([c.Q for c in clusters])
+        return e * qs / np.sum(qs)
+
+    def correct_energy(self, e, x, y, z):
+        ecorr = e * self.z_corr([z])[0][0]
+        if not np.isnan([x, y]).any():
+            ecorr *= self.xy_corr([x], [y])[0][0]
+        return ecorr
+
+    def compute_xy_position(self, si, slice_no):
+        si      = pmp.select_si_slice(si, slice_no)
+        IDs, Qs = map(list, zip(*si.items()))
+        xs, ys  = self.xs[IDs], self.ys[IDs]
+        return self.reco_algorithm(xs, ys, Qs)
+
+    def select_event(self, evt_number, evt_time, S1, S2, Si):
+        hitc = HitCollection()
+
+        S1     = self.select_S1(S1)
+        S2, Si = self.select_S2(S2, Si)
+
+        if len(S1) != 1 or not self.S2_Nmin <= len(S2) <= self.S2_Nmax:
+            return None
+
+        hitc.evt   = evt_number
+        hitc.time  = evt_time * 1e-3 # s
+
+        t, e = next(iter(S1.values()))
+        S1t  = t[np.argmax(e)]
+
+        S2, Si = self.rebin_s2(S2, Si)
+
+        npeak = 0
+        for peak_no, (t_peak, e_peak) in sorted(S2.items()):
+            si = Si[peak_no]
+            for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
+                clusters = self.compute_xy_position(si, slice_no)
+                es       = self.split_energy(e_slice, clusters)
+                z        = (t_slice - S1t) * units.ns * self.drift_v
+                for c, e in zip(clusters, es):
+                    hit       = Hit()
+                    hit.Npeak = npeak
+                    hit.X     = c.X
+                    hit.Y     = c.Y
+                    hit.R     = (c.X**2 + c.Y**2)**0.5
+                    hit.Phi   = np.arctan2(c.Y, c.X)
+                    hit.Z     = z
+                    hit.Q     = c.Q
+                    hit.E     = e
+                    hit.Ecorr = self.correct_energy(e, c.X, c.Y, z)
+                    hit.Nsipm = c.Nsipm
+                    hitc.append(hit)
+            npeak += 1
+
+        return hitc
+
+    config_file_format = City.config_file_format + """
+
+    RUN_NUMBER       {RUN_NUMBER}
+
+    # set_print
+    NPRINT           {NPRINT}
+
+    DRIFT_V          {DRIFT_V}
+
+    S1_EMIN          {S1_EMIN}
+    S1_EMAX          {S1_EMAX}
+    S1_LMIN          {S1_LMIN}
+    S1_LMAX          {S1_LMAX}
+    S1_HMIN          {S1_HMIN}
+    S1_HMAX          {S1_HMAX}
+    S1_ETHR          {S1_ETHR}
+
+    S2_NMIN          {S2_NMIN}
+    S2_NMAX          {S2_NMAX}
+    S2_EMIN          {S2_EMIN}
+    S2_EMAX          {S2_EMAX}
+    S2_LMIN          {S2_LMIN}
+    S2_LMAX          {S2_LMAX}
+    S2_HMIN          {S2_HMIN}
+    S2_HMAX          {S2_HMAX}
+    S2_ETHR          {S2_ETHR}
+    S2_NSIPMMIN      {S2_NSIPMMIN}
+    S2_NSIPMMAX      {S2_NSIPMMAX}
+
+    REBIN            {REBIN}
+    Z_CORR_FILENAME  {Z_CORR_FILENAME}
+    XY_CORR_FILENAME {XY_CORR_FILENAME}
+    RECO_ALGORITHM   {RECO_ALGORITHM}
+
+    # run
+    NEVENTS          {NEVENTS}
+    RUN_ALL          {RUN_ALL}
+    """
+
+    config_file_format = dedent(config_file_format)
+
+    default_config = merge_two_dicts(
+        City.default_config,
+        dict(RUN_NUMBER        =     0,
+             NPRINT            =     1,
+
+             DRIFT_V           =   1.0,
+
+             S1_EMIN           =     0,
+             S1_EMAX           =    30,
+             S1_LMIN           =     4,
+             S1_LMAX           =    20,
+             S1_HMIN           =   0.5,
+             S1_HMAX           =    10,
+             S1_ETHR           =   0.5,
+
+             S2_NMIN           =     1,
+             S2_NMAX           =     5,
+             S2_EMIN           =   1e3,
+             S2_EMAX           =   1e8,
+             S2_LMIN           =     1,
+             S2_LMAX           =    20,
+             S2_HMIN           =   500,
+             S2_HMAX           =   1e5,
+             S2_ETHR           =     1,
+             S2_NSIPMMIN       =     2,
+             S2_NSIPMMAX       =  1000,
+
+             REBIN             =     1,
+             Z_CORR_FILENAME   =    "",
+             XY_CORR_FILENAME  =    "",
+             RECO_ALGORITHM    = "barycenter",
+
+             NEVENTS           =     3,
+             RUN_ALL           = False))

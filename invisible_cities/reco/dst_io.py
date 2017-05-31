@@ -1,4 +1,5 @@
 import abc
+import copy
 
 import tables as tb
 
@@ -105,6 +106,40 @@ class XYcorr_writer(DST_writer):
                 row.append()
 
 
+
+class HitCollection_writer(DST_writer):
+    def __init__(self,
+                 filename,
+                 group = "DST",
+                 mode  = "w",
+                 compression = "ZLIB4",
+
+                 table_name = "Tracks",
+                 table_doc  = None):
+        DST_writer.__init__(self,
+                            filename,
+                            group,
+                            mode,
+                            compression)
+
+        self.table_name = table_name
+        self.table_doc  = table_name if table_doc is None else table_doc
+        self.table      = self._make_table()
+        self.row        = self.table.row
+
+
+    def _make_table(self):
+        return _make_table(self.file,
+                           self.group,
+                           self.table_name,
+                           table_formats.TrackTable,
+                           self.compression,
+                           self.table_doc)
+
+    def __call__(self, track):
+        track.store(self.row)
+
+
 def _make_table(hdf5_file, group, name, format, compression, description):
     if group not in hdf5_file.root:
         hdf5_file.create_group(hdf5_file.root, group)
@@ -116,13 +151,30 @@ def _make_table(hdf5_file, group, name, format, compression, description):
     return table
 
 
-class PointLikeEvent:
-    def __init__(self, other = None):
-        if other is not None:
-            self.copy(other)
-            return
-        self.evt   = -1
-        self.T     = -1
+class Event:
+    def __init__(self):
+        self.evt  = -1
+        self.time = -1
+
+    def __str__(self):
+        s = "{0}Event\n{0}".format("#"*20 + "\n")
+        for attr in self.__dict__:
+            s += "{}: {}\n".format(attr, getattr(self, attr))
+        return s
+
+    def copy(self, other):
+        assert isinstance(other, Event)
+        for attr in other.__dict__:
+            setattr(self, attr, copy.deepcopy(getattr(other, attr)))
+
+    @abc.abstractmethod
+    def store(self, *args, **kwargs):
+        pass
+
+
+class PointLikeEvent(Event):
+    def __init__(self):
+        Event.__init__(self)
 
         self.nS1   = -1
         self.S1w   = []
@@ -147,23 +199,15 @@ class PointLikeEvent:
         self.Xrms  = []
         self.Yrms  = []
 
-    def __str__(self):
-        s = "{0}Event\n{0}".format("#"*20 + "\n")
-        for attr in self.__dict__:
-            s += "{}: {}\n".format(attr, getattr(self, attr))
-        return s
-
-    def copy(self, other):
-        assert isinstance(other, PointLikeEvent)
-        for attr in other.__dict__:
-            setattr(self, attr, getattr(other, attr))
-
-    @abc.abstractmethod
-    def store(self, *args, **kwargs):
-        pass
 
 
 class KrEvent(PointLikeEvent):
+    def __init__(self, other = None):
+        if other is not None:
+            self.copy(other)
+            return
+        PointLikeEvent.__init__(self)
+
     def store(self, row):
         for i in range(int(self.nS2)):
             row["event"] = self.event
@@ -192,6 +236,44 @@ class KrEvent(PointLikeEvent):
             row["Xrms" ] = self.Xrms [i]
             row["Yrms" ] = self.Yrms [i]
             row.append()
+
+
+class Hit:
+    def __init__(self):
+        self.Npeak = -1
+        self.X     = -1e12
+        self.Y     = -1e12
+        self.R     = -1e12
+        self.Phi   = -1e12
+        self.Z     = -1
+        self.E     = -1
+        self.Q     = -1
+        self.Nsipm = -1
+
+
+class HitCollection(list, Event):
+    def __init__(self):
+        list .__init__(self)
+        Event.__init__(self)
+
+    def store(self, row):
+        for hit in self:
+            row["event"] = self.evt
+            row["time" ] = self.time
+
+            row["npeak"] = hit.Npeak
+            row["X"    ] = hit.X
+            row["Y"    ] = hit.Y
+            row["Z"    ] = hit.Z
+            row["R"    ] = hit.R
+            row["Phi"  ] = hit.Phi
+            row["Nsipm"] = hit.Nsipm
+            row["Q"    ] = hit.Q
+            row["E"    ] = hit.E
+            row["Ecorr"] = hit.Ecorr
+
+            row.append()
+
 
 def write_test_dst(df, filename, group, node):
     with tb.open_file(filename, "w") as h5in:
