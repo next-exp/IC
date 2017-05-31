@@ -20,11 +20,11 @@ from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import AveragePooling2D
 from keras.layers.core          import Flatten
 
-from   invisible_cities.core.log_config import logger
-from   invisible_cities.core.configure import configure
-from   invisible_cities.cities.base_cities import KerasDNNCity
-from   invisible_cities.core.dnn_functions import read_xyz_labels
-from   invisible_cities.core.dnn_functions import read_pmaps
+from   .. core.log_config import logger
+from   .. core.configure import configure
+from   .. core.dnn_functions import read_xyz_labels
+from   .. core.dnn_functions import read_pmaps
+from   .  base_cities import KerasDNNCity
 
 class Olinda(KerasDNNCity):
     """

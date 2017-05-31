@@ -10,8 +10,9 @@ package: invisible cities. See release notes and licence
 import os
 
 from pytest import mark, fixture
-from   invisible_cities.cities.olinda import Olinda
-from   invisible_cities.cities.olinda import OLINDA
+
+from   . olinda import Olinda
+from   . olinda import OLINDA
 
 @fixture(scope='module')
 def conf_file_name(config_tmpdir):
