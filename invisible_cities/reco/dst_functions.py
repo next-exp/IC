@@ -19,5 +19,8 @@ def load_xy_corrections(filename, interp_strategy="nearest"):
     dst  = load_dst(filename, "Corrections", "XYcorrections")
     x, y = np.unique(dst.x.values), np.unique(dst.y.values)
     f, u = dst.factor.values, dst.uncertainty.values
-    return Correction((x, y), f.reshape(x.size, y.size), u.reshape(x.size, y.size),
+
+    return Correction((x, y),
+                      f.reshape(x.size, y.size),
+                      u.reshape(x.size, y.size),
                       interp_strategy = interp_strategy)
