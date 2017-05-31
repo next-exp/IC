@@ -8,6 +8,7 @@ import numpy    as np
 import networkx as nx
 
 from .. core.exceptions import NoHits
+from .. core.exceptions import NoVoxels
 
 class Hit:
 
@@ -88,7 +89,9 @@ shortest_paths = partial(nx.all_pairs_dijkstra_path_length, weight='distance')
 
 
 def find_extrema(distance : 'dict of dicts'):
-    if len(distance) < 2:
+    if not distance:
+        raise NoVoxels
+    if len(distance) == 1:
         only_voxel = next(iter(distance))
         return (only_voxel, only_voxel)
     first, last, max_distance = None, None, 0
