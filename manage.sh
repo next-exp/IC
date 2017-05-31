@@ -146,8 +146,8 @@ function ic_env {
 function show_ic_env {
     conda-env list
 
-    echo ICDIR set to $ICTDIR
-    echo ICDIR set to $ ICDIR
+    echo "ICTDIR set to $ICTDIR"
+    echo "ICDIR  set to $ICDIR"
     echo PYTHONPATH set to $PYTHONPATH
 }
 
