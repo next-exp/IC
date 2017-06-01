@@ -7,19 +7,8 @@ from . zaira import Zaira
 from . zaira import ZAIRA
 
 
-@fixture(scope='module')
-def conf_file_name_mc(config_tmpdir):
-    # Specifies a name for a MC configuration file. Also, default number
-    # of events set to 1.
-
-    conf_file_name = str(config_tmpdir.join('zaira_mc.conf'))
-    Zaira.write_config_file(conf_file_name,
-                            PATH_OUT = str(config_tmpdir))
-    return conf_file_name
-
-
 @mark.slow
-def test_zaira_KrMC(conf_file_name_mc, config_tmpdir, ICDIR):
+def test_zaira_KrMC(config_tmpdir, ICDIR):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
