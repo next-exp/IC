@@ -104,6 +104,20 @@ class Correction:
         return lambda x, y: (f_interp(x, y), u_interp(x, y))
 
 
+    def __eq__(self, other):
+        for i, x in enumerate(self._xs):
+            if not np.allclose(x, other._xs[i]):
+                return False
+
+        if not np.allclose(self._fs, other._fs):
+            return False
+
+        if not np.allclose(self._us, other._us):
+            return False
+
+        return True
+
+
 class Fcorrection:
     def __init__(self, f, u_f, pars):
         self._f   = lambda x:   f(x, *pars)
