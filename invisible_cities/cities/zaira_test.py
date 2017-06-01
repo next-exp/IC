@@ -19,7 +19,7 @@ def conf_file_name_mc(config_tmpdir):
 
 
 @mark.slow
-def test_command_line_zaira_KrMC(conf_file_name_mc, config_tmpdir, ICDIR):
+def test_zaira_KrMC(conf_file_name_mc, config_tmpdir, ICDIR):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
@@ -28,10 +28,10 @@ def test_command_line_zaira_KrMC(conf_file_name_mc, config_tmpdir, ICDIR):
                             'database/test_data', 'KrDST_MC.h5')
     PATH_OUT = os.path.join(str(config_tmpdir), 'KrCorr.h5')
 
-    nevt = ZAIRA(['Zaira',
-                  '-c', conf_file_name_mc,
-                  '-i', PATH_IN,
-                  '-o', PATH_OUT,
-                  '-r', '0'])
+    zaira = Zaira(run_number = 0,
+                  files_in   = [PATH_IN],
+                  file_out   = PATH_OUT,
+                  lifetime   = 1e6)
+    dst_size = zaira.run()
 
-    assert nevt > 0
+    assert dst_size > 0
