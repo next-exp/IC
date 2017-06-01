@@ -17,8 +17,29 @@ from pytest import mark
 from pytest import fixture
 
 from .  irene import Irene
-from .  irene import IRENE
+from .  irene import IRENE # TODO remove !
+from .. core                 import system_of_units as units
 from .. reco.pmaps_functions import read_run_and_event_from_pmaps_file
+from .. reco.params          import S12Params
+
+
+@fixture(scope='module')
+def s12params():
+    s1par = S12Params(tmin   =  99 * units.mus,
+                      tmax   = 101 * units.mus,
+                      lmin   =   4,
+                      lmax   =  20,
+                      stride =   4,
+                      rebin  = False)
+
+    s2par = S12Params(tmin   =    101 * units.mus,
+                      tmax   =   1199 * units.mus,
+                      lmin   =     80,
+                      lmax   = 200000,
+                      stride =     40,
+                      rebin  = True)
+    return s1par, s2par
+
 
 @fixture(scope='module')
 def conf_file_name_mc(config_tmpdir):
@@ -66,7 +87,7 @@ def job_info_missing_pmts(config_tmpdir, ICDIR):
 
 
 @mark.slow
-def test_command_line_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, ICDIR):
+def test_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, ICDIR, s12params):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
@@ -77,12 +98,16 @@ def test_command_line_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, IC
     PATH_OUT = os.path.join(str(config_tmpdir),
                             'electrons_40keV_z250_CWF.h5')
 
-    nrequired, nactual, _ = IRENE(['IRENE',
-                                   '-c', conf_file_name_mc,
-                                   '-i', PATH_IN,
-                                   '-o', PATH_OUT,
-                                   '-n', '2',
-                                   '-r', '0'])
+    s1par, s2par = s12params
+    
+    irene = Irene(run_number = 0,
+                  files_in   = [PATH_IN],
+                  file_out   = PATH_OUT,
+                  s1_params  = s1par,
+                  s2_params  = s2par)
+
+    nrequired = 2
+    nactual = irene.run(nmax = nrequired)
     if nrequired > 0:
         assert nrequired == nactual
 
@@ -102,7 +127,7 @@ def test_command_line_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, IC
 
 @mark.slow
 @mark.serial
-def test_command_line_irene_run_2983(conf_file_name_data, config_tmpdir, ICDIR):
+def test_irene_run_2983(conf_file_name_data, config_tmpdir, ICDIR, s12params):
     """Run Irene. Write an output file."""
 
     # NB: the input file has 5 events. The maximum value for 'n'
@@ -115,18 +140,23 @@ def test_command_line_irene_run_2983(conf_file_name_data, config_tmpdir, ICDIR):
     PATH_OUT = os.path.join(str(config_tmpdir),
                             'run_2983_pmaps.h5')
 
-    nrequired, nactual, _ = IRENE(['IRENE',
-                                   '-c', conf_file_name_data,
-                                   '-i', PATH_IN,
-                                   '-o', PATH_OUT,
-                                   '-n','2',
-                                   '-r', '2983'])
+    s1par, s2par = s12params
+    
+    irene = Irene(run_number = 2983,
+                  files_in   = [PATH_IN],
+                  file_out   = PATH_OUT,
+                  s1_params  = s1par,
+                  s2_params  = s2par)
+
+    nrequired = 2
+    nactual = irene.run(nmax = nrequired)
     if nrequired > 0:
         assert nrequired == nactual
 
+
 @mark.slow # not slow itself, but depends on a slow test
 @mark.serial
-def test_command_line_irene_runinfo_run_2983(config_tmpdir, ICDIR):
+def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
     """Read back the file written by previous test. Check runinfo."""
 
     # NB: the input file has 5 events. The maximum value for 'n'
@@ -160,20 +190,10 @@ def test_command_line_irene_runinfo_run_2983(config_tmpdir, ICDIR):
         assert rin == rout
 
 
+@mark.serial
 @mark.slow
 def test_irene_output_file_structure(conf_file_name_data, config_tmpdir, ICDIR):
-    PATH_IN = os.path.join(ICDIR,
-                           'database/test_data/',
-                           'run_2983.h5')
-    PATH_OUT = os.path.join(str(config_tmpdir),
-                            'run_2983_pmaps.h5')
-
-    nrequired, nactual, _ = IRENE(['IRENE',
-                                   '-c', conf_file_name_data,
-                                   '-i', PATH_IN,
-                                   '-o', PATH_OUT,
-                                   '-n', '2',
-                                   '-r', '2983'])
+    PATH_OUT = os.path.join(str(config_tmpdir), 'run_2983_pmaps.h5')
 
     with tb.open_file(PATH_OUT) as h5out:
         assert "PMAPS"        in h5out.root
@@ -186,8 +206,7 @@ def test_irene_output_file_structure(conf_file_name_data, config_tmpdir, ICDIR):
         assert "runInfo"      in h5out.root.Run
 
 
-
-def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir, ICDIR):
+def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir, ICDIR, s12params):
     # NB: explicit PATH_OUT
     PATH_IN = os.path.join(ICDIR,
                            'database/test_data/',
@@ -195,21 +214,25 @@ def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir, ICDIR):
     PATH_OUT = os.path.join(str(config_tmpdir),
                             'irene_bug_Kr_ACTIVE_7bar_CWF.h5')
 
-    nrequired, nactual, empty = IRENE(['IRENE',
-                                   '-c', conf_file_name_mc,
-                                   '-i', PATH_IN,
-                                   '-o', PATH_OUT,
-                                   '-r', '0'])
-    assert nactual == 0
-    assert empty   == 1
+    s1par, s2par = s12params
+    
+    irene = Irene(run_number = 0,
+                  files_in   = [PATH_IN],
+                  file_out   = PATH_OUT,
+                  s1_params  = s1par,
+                  s2_params  = s2par)
+
+    nactual = irene.run(nmax = 10)
+
+    assert nactual              == 0
+    assert irene.empty_events   == 1
 
 
 def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR):
-    """Run Irene. Write an output file."""
-
-    IRENE = Irene(run_number =  job_info_missing_pmts.run_number,
+    "Check that PMT active correctly describes the PMT configuration of the detector"
+    irene = Irene(run_number =  job_info_missing_pmts.run_number,
                   files_in   = [job_info_missing_pmts. input_filename],
                   file_out   =  job_info_missing_pmts.output_filename)
 
-    assert IRENE.pmt_active == job_info_missing_pmts.pmt_active
+    assert irene.pmt_active == job_info_missing_pmts.pmt_active
 
