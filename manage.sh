@@ -141,13 +141,16 @@ function ic_env {
 
     export IC_NOTEBOOK_DIR=$NBDIR/invisible_cities/
     echo IC_NOTEBOOK_DIR set to $ IC_NOTEBOOK_DIR
+
+    export PATH=$ICTDIR/bin:$PATH
+    echo $ICTDIR/bin added to path
 }
 
 function show_ic_env {
     conda-env list
 
-    echo ICDIR set to $ICTDIR
-    echo ICDIR set to $ ICDIR
+    echo "ICTDIR set to $ICTDIR"
+    echo "ICDIR  set to $ICDIR"
     echo PYTHONPATH set to $PYTHONPATH
 }
 
