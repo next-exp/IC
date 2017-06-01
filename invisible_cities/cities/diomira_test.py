@@ -23,15 +23,6 @@ from .. sierpe   import blr
 from .. database import load_db
 
 from .  diomira  import Diomira
-from .  diomira  import DIOMIRA
-
-
-@fixture(scope='module')
-def conf_file_name(config_tmpdir):
-    conf_file_name = str(config_tmpdir.join('diomira.conf'))
-    Diomira.write_config_file(conf_file_name,
-                               PATH_OUT = str(config_tmpdir))
-    return conf_file_name
 
 
 def test_diomira_fee_table(ICDIR):
@@ -165,22 +156,22 @@ def test_diomira_identify_bug(ICDIR):
 
 
 @mark.slow
-def test_command_line_diomira(conf_file_name, config_tmpdir):
+def test_diomira_copy_mc_and_offset(config_tmpdir):
     PATH_IN = os.path.join(os.environ['ICDIR'],
               'database/test_data/',
               'electrons_40keV_z250_MCRD.h5')
     PATH_OUT = os.path.join(str(config_tmpdir),
               'electrons_40keV_z250_RWF.h5')
-    start_evt = 100000
+    start_evt  = 100000
     run_number = 0
 
-    nrequired, nactual = DIOMIRA(['DIOMIRA',
-                                  '-c', conf_file_name,
-                                  '-i', PATH_IN,
-                                  '-n', '2',
-                                  '-o', PATH_OUT,
-                                  '-f', str(start_evt),
-                                  '-r', str(run_number)])
+    diomira = Diomira(run_number = run_number,
+                      files_in   = [PATH_IN],
+                      file_out   = PATH_OUT,
+                      first_evt  = start_evt)
+
+    nrequired = 2
+    nactual = diomira.run(nmax=nrequired)
 
     if nrequired > 0:
         assert nrequired == nactual
@@ -189,7 +180,7 @@ def test_command_line_diomira(conf_file_name, config_tmpdir):
          tb.open_file(PATH_OUT, mode='r') as h5out:
             # check event & run number
             assert h5out.root.Run.RunInfo[0]['run_number'] == run_number
-            assert h5out.root.Run.events[0]['evt_number'] == start_evt
+            assert h5out.root.Run.events [0]['evt_number'] == start_evt
 
             # check mctracks
             # we have to convert manually into a tuple because MCTracks[0]
