@@ -25,14 +25,6 @@ from .. database import load_db
 from .  diomira  import Diomira
 
 
-@fixture(scope='module')
-def conf_file_name(config_tmpdir):
-    conf_file_name = str(config_tmpdir.join('diomira.conf'))
-    Diomira.write_config_file(conf_file_name,
-                               PATH_OUT = str(config_tmpdir))
-    return conf_file_name
-
-
 def test_diomira_fee_table(ICDIR):
     """Test that FEE table reads back correctly with expected values."""
     RWF_file = os.path.join(ICDIR,
@@ -164,7 +156,7 @@ def test_diomira_identify_bug(ICDIR):
 
 
 @mark.slow
-def test_diomira_copy_mc_and_offset(conf_file_name, config_tmpdir):
+def test_diomira_copy_mc_and_offset(config_tmpdir):
     PATH_IN = os.path.join(os.environ['ICDIR'],
               'database/test_data/',
               'electrons_40keV_z250_MCRD.h5')

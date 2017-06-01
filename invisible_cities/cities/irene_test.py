@@ -42,29 +42,6 @@ def s12params():
 
 
 @fixture(scope='module')
-def conf_file_name_mc(config_tmpdir):
-    # Specifies a name for a MC configuration file. Also, default number
-    # of events set to 1.
-
-    conf_file_name = str(config_tmpdir.join('irene_mc.conf'))
-    Irene.write_config_file(conf_file_name,
-                            PATH_OUT = str(config_tmpdir),
-                            NEVENTS  = 1)
-    return conf_file_name
-
-@fixture(scope='module')
-def conf_file_name_data(config_tmpdir):
-    # Specifies a name for a data configuration file. Also, default number
-    # of events set to 1.
-
-    conf_file_name = str(config_tmpdir.join('irene_data.conf'))
-    Irene.write_config_file(conf_file_name,
-                            PATH_OUT = str(config_tmpdir),
-                            NEVENTS  = 1)
-    return conf_file_name
-
-
-@fixture(scope='module')
 def job_info_missing_pmts(config_tmpdir, ICDIR):
     # Specifies a name for a data configuration file. Also, default number
     # of events set to 1.
@@ -87,7 +64,7 @@ def job_info_missing_pmts(config_tmpdir, ICDIR):
 
 
 @mark.slow
-def test_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, ICDIR, s12params):
+def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
@@ -127,7 +104,7 @@ def test_irene_electrons_40keV(conf_file_name_mc, config_tmpdir, ICDIR, s12param
 
 @mark.slow
 @mark.serial
-def test_irene_run_2983(conf_file_name_data, config_tmpdir, ICDIR, s12params):
+def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
     """Run Irene. Write an output file."""
 
     # NB: the input file has 5 events. The maximum value for 'n'
@@ -192,7 +169,7 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
 
 @mark.serial
 @mark.slow
-def test_irene_output_file_structure(conf_file_name_data, config_tmpdir, ICDIR):
+def test_irene_output_file_structure(config_tmpdir, ICDIR):
     PATH_OUT = os.path.join(str(config_tmpdir), 'run_2983_pmaps.h5')
 
     with tb.open_file(PATH_OUT) as h5out:
@@ -206,7 +183,7 @@ def test_irene_output_file_structure(conf_file_name_data, config_tmpdir, ICDIR):
         assert "runInfo"      in h5out.root.Run
 
 
-def test_empty_events_issue_81(conf_file_name_mc, config_tmpdir, ICDIR, s12params):
+def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
     # NB: explicit PATH_OUT
     PATH_IN = os.path.join(ICDIR,
                            'database/test_data/',
