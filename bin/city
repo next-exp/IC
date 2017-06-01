@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+
+from sys import argv
+from importlib import import_module
+
+_, city, *args = argv
+
+try:
+    command = getattr(import_module('invisible_cities.cities.'+city), city.upper())
+except ModuleNotFoundError:
+    print('available cities: <TODO look at contents of config directory>')
+    print('usage TODO: <get this from our config parser>')
+else:
+    command(['city {city}'.format(**locals())] + args)
