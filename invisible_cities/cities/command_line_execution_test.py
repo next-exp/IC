@@ -18,7 +18,7 @@ def test_command_line_run(city, tmpdir_factory):
     temp_dir = tmpdir_factory.mktemp('output_files')
     out_file_name = join(temp_dir, city+'.out')
     # The actual command that we want to test
-    command = ('{city} -c {config_file_name} -o {out_file_name}'
+    command = ('city {city} -c {config_file_name} -o {out_file_name}'
                .format(**locals()))
     try:
         check_output(command, shell = True, stderr=STDOUT)
