@@ -14,7 +14,7 @@ from invisible_cities.reco.dst_io            import Track_writer
 from invisible_cities.cities.base_cities     import City, TrackCity, merge_two_dicts
 from invisible_cities.reco.tbl_functions     import get_event_numbers_and_timestamps
 from invisible_cities.reco.pmaps_functions   import load_pmaps
-from invisible_cities.reco.xy_algorithms     import find_algorithm
+from invisible_cities.reco.xy_algorithms     import Barycenter, find_algorithm
 
 class Penthesilea(City, TrackCity):
     def __init__(self,
@@ -47,7 +47,7 @@ class Penthesilea(City, TrackCity):
 
                   z_corr_filename = None,
                  xy_corr_filename = None,
-                 reco_algorithm   = "Barycenter"):
+                 reco_algorithm   = Barycenter):
 
 
         City     .__init__(self,
@@ -238,7 +238,7 @@ def PENTHESILEA(argv = sys.argv):
 
                             z_corr_filename = CFP. Z_CORR_FILENAME,
                            xy_corr_filename = CFP.XY_CORR_FILENAME,
-                           reco_algorithm   = CFP.RECO_ALGORITHM)
+                           reco_algorithm   = find_algorithm(CFP.RECO_ALGORITHM))
 
     t0 = time.time()
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1

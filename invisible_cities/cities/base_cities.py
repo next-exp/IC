@@ -32,11 +32,13 @@ from ..reco               import dst_functions    as dstf
 from ..reco               import pmap_io          as pio
 from ..reco               import tbl_functions    as tbf
 from ..reco               import wfm_functions    as wfm
+from ..reco.corrections   import Correction
 from ..reco.dst_io        import PointLikeEvent
 from ..reco.dst_io        import Hit
-from ..reco.dst_io        import HitCollection
+from ..reco.dst_io        import Track
 from ..reco.nh5           import DECONV_PARAM
 from ..reco.xy_algorithms import find_algorithm
+from ..reco.xy_algorithms import Barycenter
 from ..reco.corrections   import Correction
 from ..reco.corrections   import Fcorrection
 
@@ -665,7 +667,7 @@ class TrackCity(S12SelectorCity):
 
                   z_corr_filename = None,
                  xy_corr_filename = None,
-                 reco_algorithm   = "Barycenter"):
+                 reco_algorithm   = Barycenter):
 
         S12SelectorCity.__init__(self,
                                  drift_v     = 1 * units.mm/units.mus,
@@ -709,7 +711,7 @@ class TrackCity(S12SelectorCity):
         return self.reco_algorithm(xs, ys, Qs)
 
     def select_event(self, evt_number, evt_time, S1, S2, Si):
-        hitc = HitCollection()
+        hitc = Track()
 
         S1     = self.select_S1(S1)
         S2, Si = self.select_S2(S2, Si)
