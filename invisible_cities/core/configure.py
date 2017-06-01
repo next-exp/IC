@@ -119,7 +119,7 @@ def parse_value(value):
     converted_value : object
         Python object of the guessed type.
     """
-    if value in ('True', 'False'): return eval(value)
+    if value in ('True', 'False', 'None'): return eval(value)
     for parse in (int, float):
         try:                       return parse(value)
         except ValueError: pass
@@ -156,9 +156,9 @@ def read_config_file(cfile):
         value = list(map(parse_value, tokens[1:]))  # python-2 & python-3
         vars(n)[key] = value[0] if len(value) == 1 else value
 
-    if hasattr(n, "PATH_IN") and hasattr(n, "FILE_IN"):
+    if hasattr(n, "PATH_IN") and hasattr(n, "FILE_IN") and n.FILE_IN is not None:
         n.FILE_IN = os.path.join(n.PATH_IN, n.FILE_IN)
-    if hasattr(n, "PATH_OUT") and hasattr(n, "FILE_OUT"):
+    if hasattr(n, "PATH_OUT") and hasattr(n, "FILE_OUT") and n.FILE_OUT is not None:
         n.FILE_OUT = os.path.join(n.PATH_OUT, n.FILE_OUT)
     return n
 
