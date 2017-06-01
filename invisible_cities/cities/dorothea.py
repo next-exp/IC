@@ -144,7 +144,9 @@ class Dorothea(City, S12SelectorCity):
              NEVENTS     =     3,
              RUN_ALL     = False))
 
-
+    # TODO: change max_evt to conform to the established convention:
+    # nmax. This needs to be done in the major refactoring branch
+    # which is being worked on right now.
     def run(self, max_evt=-1):
         nevt_in = nevt_out = 0
 
@@ -193,6 +195,7 @@ class Dorothea(City, S12SelectorCity):
                               Number of events out: {}
                               Ratio               : {}
                               """.format(nevt_in, nevt_out, nevt_out/nevt_in)))
+        # TODO remove the ZeroDivisionError
         return nevt_in, nevt_out, nevt_in/nevt_out
 
 def DOROTHEA(argv = sys.argv):
