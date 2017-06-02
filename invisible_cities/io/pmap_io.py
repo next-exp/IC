@@ -1,7 +1,7 @@
 import tables as tb
 
-from . import nh5           as table_formats
-from . import tbl_functions as tbl
+from .. reco import nh5           as table_formats
+from .. reco import tbl_functions as tbl
 
 
 def pmap_writer(file, *, compression='ZLIB4'):

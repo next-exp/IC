@@ -10,7 +10,7 @@ from .  base_cities         import MapCity
 from .. core.fit_functions  import in_range
 from .. core.configure      import configure
 from .. reco.dst_functions  import load_dst
-from .. reco.dst_io         import xy_writer
+from .. io.dst_io           import xy_writer
 
 
 class Zaira(MapCity):

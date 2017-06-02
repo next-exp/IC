@@ -13,23 +13,23 @@ from .. core.system_of_units_c import units
 from .. database               import load_db
 from .. sierpe                 import blr
 
-from .                         import tbl_functions    as tbl
-from .                         import peak_functions   as pf
-from .                         import peak_functions_c as cpf
+from .. reco                   import tbl_functions    as tbl
+from .. reco                   import peak_functions   as pf
+from .. reco                   import peak_functions_c as cpf
 
-from . params                  import S12Params        as S12P
-from . params                  import ThresholdParams
-from . params                  import PMaps
+from .. reco.params            import S12Params        as S12P
+from .. reco.params            import ThresholdParams
+from .. reco.params            import PMaps
 
 from . pmap_io                 import pmap_writer
-from .. reco.run_and_event_io  import run_and_event_writer
 from . pmap_io                 import S12
 from . pmap_io                 import S2Si
+from . run_and_event_io        import run_and_event_writer
 
-from . pmaps_functions         import read_pmaps
-from . pmaps_functions         import read_run_and_event_from_pmaps_file
-from . pmaps_functions_c       import df_to_pmaps_dict
-from . pmaps_functions_c       import df_to_s2si_dict
+from ..reco.pmaps_functions    import read_pmaps
+from ..reco.pmaps_functions    import read_run_and_event_from_pmaps_file
+from ..reco.pmaps_functions_c  import df_to_pmaps_dict
+from ..reco.pmaps_functions_c  import df_to_s2si_dict
 
 
 def test_pmap_writer(config_tmpdir, s12_dataframe_converted, s2si_dataframe_converted):
