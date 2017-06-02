@@ -32,12 +32,9 @@ from . pmaps_functions_c       import df_to_pmaps_dict
 from . pmaps_functions_c       import df_to_s2si_dict
 
 
-@mark.parametrize(  'filename,            with_',
-                  (('test_pmaps_auto.h5', True),
-                   ('test_pmaps_manu.h5', False)))
-def test_pmap_writer(config_tmpdir, filename, with_,
-                     s12_dataframe_converted,
-                     s2si_dataframe_converted):
+def test_pmap_writer(config_tmpdir, s12_dataframe_converted, s2si_dataframe_converted):
+
+    filename = 'test_pmaps_auto.h5'
 
     PMP_file_name = os.path.join(str(config_tmpdir), filename)
 
@@ -64,9 +61,6 @@ def test_pmap_writer(config_tmpdir, filename, with_,
             s2si = S2Si(P.S2Si.get(e, {}) )
             write_pmap         (e, s1, s2, s2si)
             write_run_and_event(run_number, e, timestamp)
-
-    # TODO remove the parametrization which tests the context manager
-    # behaviour of the writers. They are no longer context managers.
 
     # Read back the data we have just written
     s1df, s2df, s2sidf =                   read_pmaps(PMP_file_name)
