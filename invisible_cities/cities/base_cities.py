@@ -32,7 +32,7 @@ from ..reco             import pmap_io          as pio
 from ..reco             import tbl_functions    as tbf
 from ..reco             import wfm_functions    as wfm
 from ..reco.params      import SensorParams
-from ..reco.dst_io      import PointLikeEvent
+from ..reco.dst_io      import KrEvent
 from ..reco.nh5         import DECONV_PARAM
 from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection
@@ -145,6 +145,9 @@ class City:
     def get_run_and_event_info(h5in):
         return h5in.root.Run.events
 
+    # TODO Replace this with
+    # tbl_functions.get_event_numbers_and_timestamps_from_file_name,
+    # maybe
     @staticmethod
     def event_and_timestamp(evt, events_info):
         return events_info[evt]
@@ -153,6 +156,7 @@ class City:
         return (h5in.root.RD.pmtrwf,
                 h5in.root.RD.sipmrwf)
 
+    # TODO: remove
     # def _get_run_info(self, h5in):
     #     return h5in.root.Run.events
 
@@ -464,7 +468,7 @@ class PmapCity(CalibratedCity):
 
 class S12SelectorCity:
     def __init__(self,
-                 drift_v     = 1 * units.mm/units.mus,
+                 drift_v     = 1 * units.mm / units.mus,
 
                  S1_Nmin     = 0,
                  S1_Nmax     = 1000,
@@ -534,7 +538,7 @@ class S12SelectorCity:
         return s2s, sis
 
     def select_event(self, evt_number, evt_time, S1, S2, Si):
-        evt       = PointLikeEvent()
+        evt       = KrEvent()
         evt.event = evt_number
         evt.time  = evt_time * 1e-3 # s
 
@@ -581,7 +585,7 @@ class S12SelectorCity:
             evt.Phi  .append(np.arctan2(y, x))
 
             dt  = s2time - evt.S1t[0] if len(evt.S1t) > 0 else -1e3
-            dt *= units.ns  / units.mus
+            dt *= units.ns / units.mus
             evt.DT   .append(dt)
             evt.Z    .append(dt * units.mus * self.drift_v)
 

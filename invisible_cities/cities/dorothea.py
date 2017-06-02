@@ -9,9 +9,11 @@ import tables as tb
 from .. core.configure         import configure
 from .. core.system_of_units_c import units
 
+from .. reco                   import tbl_functions as tbl
+from .. reco.dst_io            import kr_writer
 from .. reco.dst_io            import Kr_writer
 from .. reco.pmaps_functions   import load_pmaps
-from .. reco.tbl_functions     import get_event_numbers_and_timestamps
+from .. reco.tbl_functions     import get_event_numbers_and_timestamps_from_file_name
 
 from .  base_cities            import City
 from .  base_cities            import S12SelectorCity
@@ -25,7 +27,7 @@ class Dorothea(City, S12SelectorCity):
                  compression = "ZLIB4",
                  nprint      = 10000,
 
-                 drift_v     = 1 * units.mm/units.mus,
+                 drift_v     = 1 * units.mm / units.mus,
 
                  S1_Emin     = 0,
                  S1_Emax     = np.inf,
@@ -78,59 +80,67 @@ class Dorothea(City, S12SelectorCity):
                                  S2_NSIPMmax = S2_NSIPMmax,
                                  S2_Ethr     = S2_Ethr)
 
-    # TODO: change max_evt to conform to the established convention:
-    # nmax. This needs to be done in the major refactoring branch
-    # which is being worked on right now.
-    def run(self, max_evt=-1):
-        nevt_in = nevt_out = 0
+    def run(self, nmax):
+        self.display_IO_info(nmax)
+        with tb.open_file(self.output_file, "w",
+                          filters = tbl.filters(self.compression)) as h5out:
 
-        with Kr_writer(self.output_file, "DST", "w",
-                       self.compression, "Events") as write:
+            write_kr = kr_writer(h5out)
 
-            exit_file_loop = False
-            for filename in self.input_files:
-                print("Reading {}".format(filename), end="... ")
-
-                try:
-                    S1s, S2s, S2Sis = load_pmaps(filename)
-                except (ValueError, tb.exceptions.NoSuchNodeError):
-                    print("Empty file. Skipping.")
-                    continue
-
-                event_numbers, timestamps = get_event_numbers_and_timestamps(filename)
-                for evt_number, evt_time in zip(event_numbers, timestamps):
-                    nevt_in +=1
-
-                    S1 = S1s  .get(evt_number, {})
-                    S2 = S2s  .get(evt_number, {})
-                    Si = S2Sis.get(evt_number, {})
-
-                    evt = self.select_event(evt_number, evt_time,
-                                            S1, S2, Si)
-
-                    if evt:
-                        nevt_out += 1
-                        write(evt)
-
-                    if not nevt_in % self.nprint:
-                        print("{} evts analyzed".format(nevt_in))
-
-                    if nevt_in >= max_evt:
-                        exit_file_loop = True
-                        break
-
-                print("OK")
-                if exit_file_loop:
-                    break
-
-
+            nevt_in, nevt_out = self._main_loop(write_kr, nmax)
         print(textwrap.dedent("""
                               Number of events in : {}
                               Number of events out: {}
                               Ratio               : {}
-                              """.format(nevt_in, nevt_out, nevt_out/nevt_in)))
-        # TODO remove the ZeroDivisionError
-        return nevt_in, nevt_out, nevt_in/nevt_out
+                              """.format(nevt_in, nevt_out, nevt_out / nevt_in)))
+        return nevt_in, nevt_out
+
+    def _main_loop(self, write_kr, nmax):
+        nevt_in = nevt_out = 0
+        for filename in self.input_files:
+            print("Opening {}".format(filename), end="... ")
+
+            try:
+                S1s, S2s, S2Sis = load_pmaps(filename)
+            except (ValueError, tb.exceptions.NoSuchNodeError):
+                print("Empty file. Skipping.")
+                continue
+
+            event_numbers, timestamps = get_event_numbers_and_timestamps_from_file_name(filename)
+
+            nevt_in, nevt_out, max_events_reached = (
+             self._event_loop(event_numbers, timestamps, nmax, nevt_in, nevt_out, write_kr, S1s, S2s, S2Sis))
+
+            if max_events_reached:
+                print('Max events reached')
+                break
+            else:
+                print("OK")
+
+        return nevt_in, nevt_out
+
+    def _event_loop(self, event_numbers, timestamps, nmax, nevt_in, nevt_out, write_kr, S1s, S2s, S2Sis):
+        max_events_reached = False
+        for evt_number, evt_time in zip(event_numbers, timestamps):
+            nevt_in +=1
+
+            S1 = S1s  .get(evt_number, {})
+            S2 = S2s  .get(evt_number, {})
+            Si = S2Sis.get(evt_number, {})
+
+            evt = self.select_event(evt_number, evt_time, S1, S2, Si)
+
+            if evt:
+                nevt_out += 1
+                write_kr(evt)
+
+            if not nevt_in % self.nprint:
+                print("{} evts analyzed".format(nevt_in))
+
+            if self.max_events_reached(nmax, nevt_in):
+                max_events_reached = True
+                break
+        return nevt_in, nevt_out, max_events_reached
 
 def DOROTHEA(argv = sys.argv):
     """Dorothea DRIVER"""
@@ -168,14 +178,14 @@ def DOROTHEA(argv = sys.argv):
 
     t0 = time.time()
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
-    # run
-    nevt_in, nevt_out, ratio = dorothea.run(max_evt = nevts)
+    nevt_in, nevt_out = dorothea.run(nmax = nevts)
     t1 = time.time()
     dt = t1 - t0
 
     print("run {} evts in {} s, time/event = {}".format(nevt_in, dt, dt/nevt_in))
 
-    return nevts, nevt_in, nevt_out
+    # TODO remove
+    # return nevts, nevt_in, nevt_out
 
 if __name__ == "__main__":
     DOROTHEA(sys.argv)
