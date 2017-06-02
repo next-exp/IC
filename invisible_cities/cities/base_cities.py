@@ -25,14 +25,15 @@ from .. core                   import fit_functions        as fitf
 
 from .. database import load_db
 
+from ..io               import pmap_io          as pio
+from ..io.dst_io        import KrEvent
+
 from ..reco             import peak_functions_c as cpf
 from ..reco             import peak_functions   as pf
 from ..reco             import pmaps_functions  as pmp
-from ..reco             import pmap_io          as pio
 from ..reco             import tbl_functions    as tbf
 from ..reco             import wfm_functions    as wfm
 from ..reco.params      import SensorParams
-from ..reco.dst_io      import KrEvent
 from ..reco.nh5         import DECONV_PARAM
 from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection

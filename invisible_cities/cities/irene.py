@@ -10,9 +10,9 @@ from .. core.configure         import configure
 from .. core.system_of_units_c import units
 from .. core.mctrk_functions   import mc_track_writer
 
+from .. io.pmap_io            import pmap_writer
+from .. io.run_and_event_io   import run_and_event_writer
 from .. reco                  import tbl_functions as tbl
-from .. reco.pmap_io          import pmap_writer
-from .. reco.run_and_event_io import run_and_event_writer
 from .. reco.params           import S12Params as S12P
 
 from .  base_cities  import PmapCity
