@@ -3,9 +3,7 @@ import abc
 import tables as tb
 
 from .. reco import tbl_functions as tbl
-
-from . import nh5           as table_formats
-from . import tbl_functions as tbf
+from .. reco import nh5           as table_formats
 
 
 def kr_writer(file, *, compression='ZLIB4'):
@@ -52,15 +50,12 @@ def _make_table(hdf5_file, group, name, format, compression, description):
                                    name,
                                    format,
                                    description,
-                                   tbf.filters(compression))
+                                   tbl.filters(compression))
     return table
 
 
 class PointLikeEvent:
-    def __init__(self, other = None):
-        if other is not None:
-            self.copy(other)
-            return
+    def __init__(self):
         self.evt   = -1
         self.T     = -1
 
@@ -94,11 +89,6 @@ class PointLikeEvent:
         for attr in self.__dict__:
             s += "{}: {}\n".format(attr, getattr(self, attr))
         return s
-
-    def copy(self, other):
-        assert isinstance(other, PointLikeEvent)
-        for attr in other.__dict__:
-            setattr(self, attr, getattr(other, attr))
 
 
 class KrEvent(PointLikeEvent):
@@ -139,7 +129,7 @@ def write_test_dst(df, filename, group, node):
                                   "data",
                                   table_formats.KrTable,
                                   "Test data",
-                                  tbf.filters("ZLIB4"))
+                                  tbl.filters("ZLIB4"))
 
         tablerow = table.row
         for index, row in df.iterrows():
