@@ -230,9 +230,3 @@ def DOROTHEA(argv = sys.argv):
     dt = t1 - t0
 
     print("run {} evts in {} s, time/event = {}".format(nevt_in, dt, dt/nevt_in))
-
-    # TODO remove
-    # return nevts, nevt_in, nevt_out
-
-if __name__ == "__main__":
-    DOROTHEA(sys.argv)
