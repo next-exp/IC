@@ -242,8 +242,3 @@ def DIOMIRA(argv=sys.argv):
     dt = t1 - t0
 
     print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
-
-    return nevts, nevt
-
-if __name__ == "__main__":
-    DIOMIRA(sys.argv)
