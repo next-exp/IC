@@ -17,7 +17,6 @@ from pytest import mark
 from pytest import fixture
 
 from .  irene import Irene
-from .  irene import IRENE # TODO remove !
 from .. core                 import system_of_units as units
 from .. reco.pmaps_functions import read_run_and_event_from_pmaps_file
 from .. reco.params          import S12Params as S12P
