@@ -1,11 +1,8 @@
 import os
 
 from pytest import mark
-from pytest import fixture
 
 from . zaira import Zaira
-from . zaira import ZAIRA
-
 
 @mark.slow
 def test_zaira_KrMC(config_tmpdir, ICDIR):
