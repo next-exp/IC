@@ -3,14 +3,12 @@ import sys
 from glob import glob
 from time import time
 
-import numpy  as np
 import tables as tb
 
 from .. core.configure         import configure
 from .. core.system_of_units_c import units
 
 from .. reco        import tbl_functions as tbl
-from .. reco.params import SensorParams
 
 from .  base_cities import DeconvolutionCity
 
@@ -103,17 +101,15 @@ class Isidora(DeconvolutionCity):
 
         return n_events_tot
 
-
     def _copy_sensor_table(self, h5in):
         # Copy sensor table if exists (needed for GATE)
         if 'Sensors' in h5in.root:
-            self.sensors_group = cwf_file.create_group(
-                cwf_file.root, "Sensors")
+            self.sensors_group = self.output_file.create_group(
+                self.output_file.root, "Sensors")
             datapmt = h5in.root.Sensors.DataPMT
             datapmt.copy(newparent=self.sensors_group)
             datasipm = h5in.root.Sensors.DataSiPM
             datasipm.copy(newparent=self.sensors_group)
-
 
 
 def ISIDORA(argv = sys.argv):
