@@ -9,7 +9,7 @@ from .. core.configure         import configure
 from .. core.system_of_units_c import units
 
 from .. reco        import tbl_functions as tbl
-
+from .. reco.rwf_io import rwf_writer
 from .  base_cities import DeconvolutionCity
 
 class Isidora(DeconvolutionCity):
@@ -137,41 +137,3 @@ def ISIDORA(argv = sys.argv):
     print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt / nevt))
 
     return nevts, nevt
-
-
-# TODO: why is this still here?
-class rwf_writer:
-
-    def __init__(self,
-                 file,
-                 *,
-                 group_name      : 'options: RD, BLR',
-                 table_name      : 'options: pmtrwf, pmtcwf, sipmrwf',
-                 compression     = 'ZLIB4',
-                 n_sensors       : 'number of pmts or sipms',
-                 waveform_length : 'length of pmt or sipm waveform_length'):
-
-        #rwf_file = tb.open_file(filename, 'w', filters=tbl.filters(compression))
-        try:                       rwf_group = getattr          (file.root, group_name)
-        except tb.NoSuchNodeError: rwf_group = file.create_group(file.root, group_name)
-
-        self.rwf_table = file.create_earray(rwf_group,
-                                                table_name,
-                                                atom    = tb.Float32Atom(),
-                                                shape   = (0, n_sensors, waveform_length),
-                                                filters = tbl.filters(compression))
-        self._hdf5_file = file # for close
-        self._n_sensors = n_sensors
-        self._waveform_length = waveform_length
-
-    def __call__(self, waveform : 'np.array: RWF, CWF, SiPM'):
-        self.rwf_table.append(waveform.reshape(1, self._n_sensors, self._waveform_length))
-
-    def close(self):
-        self._hdf5_file.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
