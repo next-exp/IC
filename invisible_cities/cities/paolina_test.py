@@ -12,7 +12,6 @@ from hypothesis            import given
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
-from hypothesis.strategies import integers
 
 from . paolina import Hit
 from . paolina import Voxel

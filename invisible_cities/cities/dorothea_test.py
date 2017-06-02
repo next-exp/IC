@@ -1,11 +1,8 @@
 import os
 
-from pytest import mark
-from pytest import fixture
 from pandas import DataFrame
 
 from . dorothea import Dorothea
-from . dorothea import DOROTHEA
 
 from .. reco.dst_functions import load_dst
 from .. core.test_utils    import assert_dataframes_close
