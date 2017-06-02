@@ -2,9 +2,27 @@ import abc
 
 import tables as tb
 
+from .. reco import tbl_functions as tbl
+
 from . import nh5           as table_formats
 from . import tbl_functions as tbf
 
+
+def kr_writer(file, *, compression='ZLIB4'):
+    kr_table = _make_kr_tables(file, compression)
+    def write_kr(kr_event):
+        kr_event.store(kr_table)
+    return write_kr
+
+def _make_kr_tables(hdf5_file, compression):
+    c = tbl.filters(compression)
+    dst_group = hdf5_file.create_group(hdf5_file.root, 'DST')
+    events_table = hdf5_file.create_table(
+        dst_group, 'Events', table_formats.KrTable, 'Events Table', c)
+    return events_table
+
+
+# TODO remove
 
 class DST_writer:
 
@@ -36,6 +54,7 @@ class DST_writer:
         self.close()
 
 
+# TODO: remove
 class Kr_writer(DST_writer):
     def __init__(self,
                  filename,
@@ -125,6 +144,8 @@ class PointLikeEvent:
         self.T     = -1
 
         self.nS1   = -1
+        # Consider replacing with a list of namedtuples or a
+        # structured array
         self.S1w   = []
         self.S1h   = []
         self.S1e   = []
@@ -164,7 +185,8 @@ class PointLikeEvent:
 
 
 class KrEvent(PointLikeEvent):
-    def store(self, row):
+    def store(self, table):
+        row = table.row
         for i in range(int(self.nS2)):
             row["event"] = self.event
             row["time" ] = self.time
