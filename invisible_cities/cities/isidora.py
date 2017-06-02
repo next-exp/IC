@@ -9,7 +9,7 @@ from .. core.configure         import configure
 from .. core.system_of_units_c import units
 
 from .. reco        import tbl_functions as tbl
-from .. reco.rwf_io import rwf_writer
+from .. io.rwf_io   import rwf_writer
 from .  base_cities import DeconvolutionCity
 
 class Isidora(DeconvolutionCity):
