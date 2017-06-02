@@ -10,7 +10,6 @@ from .  base_cities         import MapCity
 from .. core.fit_functions  import in_range
 from .. core.configure      import configure
 from .. reco.dst_functions  import load_dst
-from .. reco.dst_io         import XYcorr_writer # TODO: remove
 from .. reco.dst_io         import xy_writer
 
 
@@ -86,10 +85,6 @@ class Zaira(MapCity):
         with tb.open_file(self.output_file, 'w') as h5out:
             write_xy = xy_writer(h5out)
             write_xy(*xycorr._xs, xycorr._fs, xycorr._us, nevt)
-
-        # # Dump to file
-        # with XYcorr_writer(self.output_file) as write:
-        #     write(*xycorr._xs, xycorr._fs, xycorr._us, nevt)
 
         return len(dst)
 

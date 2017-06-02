@@ -11,7 +11,6 @@ from .. core.system_of_units_c import units
 
 from .. reco                   import tbl_functions as tbl
 from .. reco.dst_io            import kr_writer
-from .. reco.dst_io            import Kr_writer
 from .. reco.pmaps_functions   import load_pmaps
 from .. reco.tbl_functions     import get_event_numbers_and_timestamps_from_file_name
 
