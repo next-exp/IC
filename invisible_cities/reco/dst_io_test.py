@@ -1,24 +1,22 @@
 import os
 
+import tables as tb
+
 from pytest import mark
 
 from .. core.test_utils    import assert_dataframes_equal
-from .. reco.dst_io        import Kr_writer, PointLikeEvent
+from .. reco.dst_io        import kr_writer
+from .. reco.dst_io        import KrEvent
 from .. reco.dst_functions import load_dst
 
 
-@mark.parametrize(  'filename,          with_',
-                  (('test_dst_auto.h5', True ),
-                   ('test_dst_manu.h5', False)))
-def test_Kr_writer(config_tmpdir, filename, with_, Kr_dst_data):
-    filename = os.path.join(str(config_tmpdir), filename)
+def test_Kr_writer(config_tmpdir, Kr_dst_data):
+    filename = os.path.join(str(config_tmpdir), 'test_dst.h5')
     _, df    = Kr_dst_data
 
-    group = "DST"
-    table = "EVT"
     def dump_df(write, df):
         for evt_no in sorted(set(df.event)):
-            evt = PointLikeEvent()
+            evt = KrEvent()
             for row in df[df.event == evt_no].iterrows():
                 for col in df.columns:
                     value = row[1][col]
@@ -28,13 +26,9 @@ def test_Kr_writer(config_tmpdir, filename, with_, Kr_dst_data):
                         setattr(evt, col, value)
             write(evt)
 
-    if with_: # Close implicitly with context manager
-        with Kr_writer(filename, group, table_name=table) as write:
-            dump_df(write, df)
-    else: # Close manually
-        write = Kr_writer(filename, group, table_name=table)
+    with tb.open_file(str(filename), 'w') as h5out:
+        write = kr_writer(h5out)
         dump_df(write, df)
-        write.close()
 
-    dst = load_dst(filename, group, table)
+    dst = load_dst(filename, group = "DST", node = "Events")
     assert_dataframes_equal(dst, df, False)
