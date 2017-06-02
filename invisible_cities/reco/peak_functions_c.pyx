@@ -6,7 +6,7 @@ cimport numpy as np
 import  numpy as np
 from scipy import signal
 
-from . import pmap_io as pio
+from .. io import pmap_io as pio
 
 cpdef calibrated_pmt_sum(double [:, :]  CWF,
                          double [:]     adc_to_pes,
