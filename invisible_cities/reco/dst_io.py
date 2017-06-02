@@ -22,73 +22,6 @@ def _make_kr_tables(hdf5_file, compression):
     return events_table
 
 
-# TODO remove
-
-class DST_writer:
-
-    def __init__(self,
-                 filename,
-                 group       = "DST",
-                 mode        = "w",
-                 compression = "ZLIB4"):
-        self._hdf5_file  = tb.open_file(filename, mode)
-        self.group       = group
-        self.mode        = mode
-        self.compression = compression
-
-    @abc.abstractmethod
-    def __call__(self, *args):
-        pass
-
-    def close(self):
-        self._hdf5_file.close()
-
-    @property
-    def file(self):
-        return self._hdf5_file
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
-
-
-# TODO: remove
-class Kr_writer(DST_writer):
-    def __init__(self,
-                 filename,
-                 group = "DST",
-                 mode  = "w",
-                 compression = "ZLIB4",
-
-                 table_name = "Events",
-                 table_doc  = None):
-        DST_writer.__init__(self,
-                            filename,
-                            group,
-                            mode,
-                            compression)
-
-        self.table_name = table_name
-        self.table_doc  = table_name if table_doc is None else table_doc
-        self.table      = self._make_table()
-        self.table.cols.event.create_index()
-        self.row        = self.table.row
-
-
-    def _make_table(self):
-        return _make_table(self.file,
-                           self.group,
-                           self.table_name,
-                           table_formats.KrTable,
-                           self.compression,
-                           self.table_doc)
-
-    def __call__(self, evt):
-        KrEvent(evt).store(self.row)
-
-
 def xy_writer(file, *, compression='ZLIB4'):
     xy_table = _make_xy_tables(file, compression)
     def write_xy(xs, ys, fs, us, ns):
@@ -110,40 +43,6 @@ def _make_xy_tables(hdf5_file, compression):
         xy_group, 'XYcorrections', table_formats.XYfactors, 'Correction in the x,y coordinates', c)
     return xy_table
 
-
-class XYcorr_writer(DST_writer):
-    def __init__(self,
-                 filename,
-                 group = "Corrections",
-                 mode  = "w",
-                 compression = "ZLIB4"):
-        DST_writer.__init__(self,
-                            filename,
-                            group,
-                            mode,
-                            compression)
-
-        self.table = self._make_table()
-
-    def _make_table(self):
-        xy_table = _make_table(self.file,
-                               self.group,
-                               "XYcorrections",
-                               table_formats.XYfactors,
-                               self.compression,
-                               "Correction in the x,y coordinates")
-        return xy_table
-
-    def __call__(self, xs, ys, fs, us, ns):
-        row = self.table.row
-        for i, x in enumerate(xs):
-            for j, y in enumerate(ys):
-                row["x"]           = x
-                row["y"]           = y
-                row["factor"]      = fs[i,j]
-                row["uncertainty"] = us[i,j]
-                row["nevt"]        = ns[i,j]
-                row.append()
 
 
 def _make_table(hdf5_file, group, name, format, compression, description):
@@ -200,10 +99,6 @@ class PointLikeEvent:
         assert isinstance(other, PointLikeEvent)
         for attr in other.__dict__:
             setattr(self, attr, getattr(other, attr))
-
-    @abc.abstractmethod
-    def store(self, *args, **kwargs):
-        pass
 
 
 class KrEvent(PointLikeEvent):
