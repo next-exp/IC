@@ -15,8 +15,6 @@ from .. reco.tbl_functions     import get_event_numbers_and_timestamps
 
 from .  base_cities            import City
 from .  base_cities            import S12SelectorCity
-from .  base_cities            import merge_two_dicts
-from .  base_cities            import dedent
 
 
 class Dorothea(City, S12SelectorCity):

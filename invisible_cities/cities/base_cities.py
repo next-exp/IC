@@ -13,7 +13,6 @@ Feburary, 2017.
 """
 
 import sys
-from textwrap import dedent
 
 import numpy  as np
 import tables as tb
@@ -132,10 +131,6 @@ class City:
         NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
         assert NEVT_simp == NEVT_pmt
         NEVT = NEVT_pmt
-        sensor_param = SensorParams(NPMT   = NPMT,
-                                    PMTWL  = PMTWL,
-                                    NSIPM  = NSIPM,
-                                    SIPMWL = SIPMWL)
 
         return NEVT, pmtrwf, sipmrwf
 
