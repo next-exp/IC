@@ -89,6 +89,28 @@ class Kr_writer(DST_writer):
         KrEvent(evt).store(self.row)
 
 
+def xy_writer(file, *, compression='ZLIB4'):
+    xy_table = _make_xy_tables(file, compression)
+    def write_xy(xs, ys, fs, us, ns):
+        row = xy_table.row
+        for i, x in enumerate(xs):
+            for j, y in enumerate(ys):
+                row["x"]           = x
+                row["y"]           = y
+                row["factor"]      = fs[i,j]
+                row["uncertainty"] = us[i,j]
+                row["nevt"]        = ns[i,j]
+                row.append()
+    return write_xy
+
+def _make_xy_tables(hdf5_file, compression):
+    c = tbl.filters(compression)
+    xy_group = hdf5_file.create_group(hdf5_file.root, 'Corrections')
+    xy_table = hdf5_file.create_table(
+        xy_group, 'XYcorrections', table_formats.XYfactors, 'Correction in the x,y coordinates', c)
+    return xy_table
+
+
 class XYcorr_writer(DST_writer):
     def __init__(self,
                  filename,
