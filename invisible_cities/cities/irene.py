@@ -210,9 +210,3 @@ def IRENE(argv = sys.argv):
 
     if nevt > 0:
         print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
-
-    # TODO remove
-    # return nevts, nevt, n_empty_events
-
-if __name__ == "__main__":
-    IRENE(sys.argv)

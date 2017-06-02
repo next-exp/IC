@@ -139,6 +139,7 @@ def ISIDORA(argv = sys.argv):
     return nevts, nevt
 
 
+# TODO: why is this still here?
 class rwf_writer:
 
     def __init__(self,
@@ -174,21 +175,3 @@ class rwf_writer:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
-
-
-    # def _store_wf(self, wf, wf_table, wf_file, wf_group):
-    #     """Store WF."""
-    #     n_sensors, wl = wf.shape
-    #     if wf_table not in wf_group:
-    #         # create earray to store cwf
-    #         self.wf_tables[wf_table] = wf_file.create_earray(wf_group, wf_table,
-    #                                                          atom    = tb.Float32Atom(),
-    #                                                          shape   = (0, n_sensors, wl),
-    #                                                          filters = tbl.filters(self.compression))
-
-    #     self.wf_tables[wf_table].append(wf.reshape(1, n_sensors, wl))
-
-
-
-if __name__ == "__main__":
-    ISIDORA(sys.argv)
