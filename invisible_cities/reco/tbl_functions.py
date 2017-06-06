@@ -131,8 +131,11 @@ def get_nof_events(table, column_name="evt_number"):
     return len(set(table.read(field=column_name)))
 
 
-def get_event_numbers_and_timestamps(filename):
+def get_event_numbers_and_timestamps_from_file_name(filename):
     with tb.open_file(filename, "r") as h5in:
-        event_numbers = h5in.root.Run.events.cols.evt_number[:]
-        timestamps    = h5in.root.Run.events.cols.timestamp [:]
-        return event_numbers, timestamps
+        return get_event_numbers_and_timestamps_from_file(h5in)
+
+def get_event_numbers_and_timestamps_from_file(file):
+    event_numbers = file.root.Run.events.cols.evt_number[:]
+    timestamps    = file.root.Run.events.cols.timestamp [:]
+    return event_numbers, timestamps

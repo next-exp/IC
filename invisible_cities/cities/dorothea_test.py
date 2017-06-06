@@ -1,11 +1,8 @@
 import os
 
-from pytest import mark
-from pytest import fixture
 from pandas import DataFrame
 
 from . dorothea import Dorothea
-from . dorothea import DOROTHEA
 
 from .. reco.dst_functions import load_dst
 from .. core.test_utils    import assert_dataframes_close
@@ -44,11 +41,10 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
                         S2_NSIPMmax =   1000)
 
     nrequired = 10
-    nevt_in, nevt_out, in_out_ratio = dorothea.run(max_evt=nrequired)
+    nevt_in, nevt_out = dorothea.run(nmax=nrequired)
     if nrequired > 0:
         assert nrequired    == nevt_in
         assert nevt_out     <= nevt_in
-        assert in_out_ratio >= 1
 
     dst = load_dst(PATH_OUT, "DST", "Events")
     assert len(set(dst.event)) == nevt_out
