@@ -7,7 +7,6 @@ G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
 last changed: 01-12-2017
 """
-import os
 
 from   pytest import raises
 

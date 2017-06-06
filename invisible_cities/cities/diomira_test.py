@@ -11,7 +11,6 @@ import tables as tb
 import numpy  as np
 
 from pytest import mark
-from pytest import fixture
 
 from .. core import system_of_units as units
 from .. core.random_sampling import NoiseSampler as SiPMsNoiseSampler
