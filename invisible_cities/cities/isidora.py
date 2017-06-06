@@ -64,12 +64,12 @@ class Isidora(DeconvolutionCity):
                                      n_sensors       = sensor_params.NSIPM,
                                      waveform_length = sensor_params.SIPMWL)
 
-            n_events_tot = self._main_loop(pmt_writer, sipm_writer, nmax)
+            n_events_tot = self._file_loop(pmt_writer, sipm_writer, nmax)
 
         return n_events_tot
 
 
-    def _main_loop(self, pmt_writer, sipm_writer, nmax):
+    def _file_loop(self, pmt_writer, sipm_writer, nmax):
         n_events_tot = 0
         for filename in self.input_files:
             print("Opening", filename, end="... ")

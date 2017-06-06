@@ -80,14 +80,14 @@ class Irene(PmapCity):
             write_run_and_event = run_and_event_writer(h5out)
             write_mc            =      mc_track_writer(h5out) if self.monte_carlo else None
             self.write_deconv_params(h5out)
-            n_events_tot, n_empty_events = self._main_loop(write_pmap, write_run_and_event, write_mc, nmax)
+            n_events_tot, n_empty_events = self._file_loop(write_pmap, write_run_and_event, write_mc, nmax)
 
         if print_empty:
             print('Energy plane empty events (skipped) = {}'.format(
                    n_empty_events))
         return n_events_tot, n_empty_events
 
-    def _main_loop(self, write_pmap, write_run_and_event, write_mc, nmax):
+    def _file_loop(self, write_pmap, write_run_and_event, write_mc, nmax):
         n_events_tot, n_empty_events = 0, 0
         for filename in self.input_files:
             print("Opening", filename, end="... ")
