@@ -102,23 +102,6 @@ class Irene(PmapCity):
                                                     nmax, n_events_tot, n_empty_events, h5in)
         return n_events_tot, n_empty_events
 
-
-    def pmt_transformation(self, RWF):
-            # deconvolve
-            CWF = self.deconv_pmt(RWF)
-            # calibrated PMT sum
-            csum, csum_mau = self.calibrated_pmt_sum(CWF)
-            #ZS sum for S1 and S2
-            s1_ene, s1_indx = self.csum_zs(csum_mau, threshold = self.thr_csum_s1)
-            s2_ene, s2_indx = self.csum_zs(csum,     threshold = self.thr_csum_s2)
-            return s1_ene, s1_indx, s2_ene, s2_indx, csum
-
-    def pmaps(self, s1_ene, s1_indx, s2_ene, s2_indx, csum, sipmzs):
-        S1, S2 = self.find_S12(s1_ene, s1_indx,   s2_ene, s2_indx)
-        S1     = self.correct_S1_ene(S1, csum)
-        Si     = self.find_S2Si(S2, sipmzs)
-        return S1, S2, Si
-
     def _event_loop(self, NEVT, pmtrwf, sipmrwf, events_info,
                     write_pmap, write_run_and_event, write_mc,
                     nmax, n_events_tot, n_empty_events, h5in):
@@ -147,6 +130,22 @@ class Irene(PmapCity):
             if self.max_events_reached(nmax, n_events_tot):
                 break
         return n_events_tot, n_empty_events
+
+    def pmt_transformation(self, RWF):
+            # deconvolve
+            CWF = self.deconv_pmt(RWF)
+            # calibrated PMT sum
+            csum, csum_mau = self.calibrated_pmt_sum(CWF)
+            #ZS sum for S1 and S2
+            s1_ene, s1_indx = self.csum_zs(csum_mau, threshold = self.thr_csum_s1)
+            s2_ene, s2_indx = self.csum_zs(csum,     threshold = self.thr_csum_s2)
+            return s1_ene, s1_indx, s2_ene, s2_indx, csum
+
+    def pmaps(self, s1_ene, s1_indx, s2_ene, s2_indx, csum, sipmzs):
+        S1, S2 = self.find_S12(s1_ene, s1_indx,   s2_ene, s2_indx)
+        S1     = self.correct_S1_ene(S1, csum)
+        Si     = self.find_S2Si(S2, sipmzs)
+        return S1, S2, Si
 
     def display_IO_info(self, nmax):
         PmapCity.display_IO_info(self, nmax)

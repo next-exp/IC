@@ -128,6 +128,7 @@ class City:
                              "SIPM WL"      : sp.SIPMWL})
 
     def get_rwf_vectors(self, h5in):
+        "Return RWF vectors and sensor data."
         pmtrwf, sipmrwf = self._get_rwf(h5in)
 
         NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
@@ -136,6 +137,28 @@ class City:
         NEVT = NEVT_pmt
 
         return NEVT, pmtrwf, sipmrwf
+
+    def get_rd_vectors(self, h5in):
+        """Return MC RD vectors and sensor data.
+
+        PMTWL is the length of the RWF computed by divinging the
+        length of the MCRD for wavelength by sampling time. """
+
+        pmtrd, sipmrd = self._get_rd(h5in)
+
+        NEVT_pmt , NPMT,   PMTWL = pmtrd .shape
+        NEVT_simp, NSIPM, SIPMWL = sipmrd.shape
+        assert NEVT_simp == NEVT_pmt
+        NEVT = NEVT_pmt
+        return NEVT, pmtrd, sipmrd
+
+    def get_sensor_rd_params(self, filename):
+        with tb.open_file(filename, "r") as h5in:
+            pmtrd, sipmrd = self._get_rd(h5in)
+            _, NPMT,   PMTWL = pmtrd .shape
+            _, NSIPM, SIPMWL = sipmrd.shape
+            PMTWL_FEE = int(PMTWL // self.FE_t_sample)
+        return SensorParams(NPMT=NPMT, PMTWL=PMTWL_FEE, NSIPM=NSIPM, SIPMWL=SIPMWL)
 
     def get_sensor_params(self, filename):
         with tb.open_file(filename, "r") as h5in:
@@ -156,8 +179,14 @@ class City:
         return events_info[evt]
 
     def _get_rwf(self, h5in):
+        "Return raw waveforms for SIPM and PMT data"
         return (h5in.root.RD.pmtrwf,
                 h5in.root.RD.sipmrwf)
+
+    def _get_rd(self, h5in):
+        "Return (MC) raw data waveforms for SIPM and PMT data"
+        return (h5in.root.pmtrd,
+                h5in.root.sipmrd)
 
 
 class SensorResponseCity(City):
