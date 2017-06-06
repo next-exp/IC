@@ -17,9 +17,9 @@ from .. core.configure         import configure
 from .. core.configure         import print_configuration
 from .. core.random_sampling   import NoiseSampler as SiPMsNoiseSampler
 from .. core.system_of_units_c import units
-from .. core.mctrk_functions   import mc_track_writer
 from .. core.exceptions        import ParameterNotSet
 
+from .. io.mc_io    import mc_track_writer
 from .. reco        import wfm_functions as wfm
 from .. reco        import tbl_functions as tbl
 from .. reco.params import SensorParams
