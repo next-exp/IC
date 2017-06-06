@@ -1,7 +1,8 @@
 import sys
 
-from glob import glob
-from time import time
+from glob     import glob
+from time     import time
+from argparse import Namespace
 
 import numpy  as np
 import tables as tb
@@ -76,18 +77,19 @@ class Irene(PmapCity):
 
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
-            write_pmap          =          pmap_writer(h5out)
-            write_run_and_event = run_and_event_writer(h5out)
-            write_mc            =      mc_track_writer(h5out) if self.monte_carlo else None
+            writers = Namespace(
+                pmap          =          pmap_writer(h5out),
+                run_and_event = run_and_event_writer(h5out),
+                mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
+            )
             self.write_deconv_params(h5out)
-            n_events_tot, n_empty_events = self._file_loop(write_pmap, write_run_and_event, write_mc, nmax)
-
+            n_events_tot, n_empty_events = self._file_loop(writers, nmax)
         if print_empty:
             print('Energy plane empty events (skipped) = {}'.format(
                    n_empty_events))
         return n_events_tot, n_empty_events
 
-    def _file_loop(self, write_pmap, write_run_and_event, write_mc, nmax):
+    def _file_loop(self, writers, nmax):
         n_events_tot, n_empty_events = 0, 0
         for filename in self.input_files:
             print("Opening", filename, end="... ")
@@ -98,16 +100,16 @@ class Irene(PmapCity):
                 # loop over all events in file unless reach nmax
                 (n_events_tot,
                  n_empty_events) = self._event_loop(NEVT, pmtrwf, sipmrwf, events_info,
-                                                    write_pmap, write_run_and_event, write_mc,
+                                                    writers,
                                                     nmax, n_events_tot, n_empty_events, h5in)
         return n_events_tot, n_empty_events
 
     def _event_loop(self, NEVT, pmtrwf, sipmrwf, events_info,
-                    write_pmap, write_run_and_event, write_mc,
+                    write,
                     nmax, n_events_tot, n_empty_events, h5in):
         for evt in range(NEVT):
             if self.monte_carlo:
-                write_mc(h5in.root.MC.MCTracks, n_events_tot)
+                write.mc(h5in.root.MC.MCTracks, n_events_tot)
 
             s1_ene, s1_indx, s2_ene, s2_indx, csum = self.pmt_transformation(pmtrwf[evt])
 
@@ -123,8 +125,8 @@ class Irene(PmapCity):
 
             event, timestamp = self.event_and_timestamp(evt, events_info)
             # write to file
-            write_pmap         (event, S1, S2, Si)
-            write_run_and_event(self.run_number, event, timestamp)
+            write.pmap         (event, S1, S2, Si)
+            write.run_and_event(self.run_number, event, timestamp)
             n_events_tot += 1
             self.conditional_print(evt, n_events_tot)
             if self.max_events_reached(nmax, n_events_tot):

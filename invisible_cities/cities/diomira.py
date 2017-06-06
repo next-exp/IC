@@ -8,9 +8,11 @@ package: invisible cities. See release notes and licence
 last changed: 09-11-2017
 """
 import sys
-from glob import glob
-from time import time
+
+from glob      import glob
+from time      import time
 from functools import partial
+from argparse  import Namespace
 
 import tables as tb
 
@@ -79,24 +81,25 @@ class Diomira(SensorResponseCity):
                           filters = tbl.filters(self.compression)) as h5out:
 
             # Create writers
-            write_run_and_event = run_and_event_writer(h5out)
-            write_mc            =      mc_track_writer(h5out) if self.monte_carlo else None
-            RWF                 = partial(rwf_writer,  h5out,   group_name='RD')
-            # 3 variations on the  RWF writer theme
-            write_rwf  = RWF(table_name='pmtrwf' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL)
-            write_cwf  = RWF(table_name='pmtblr' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL)
-            write_sipm = RWF(table_name='sipmrwf', n_sensors=sp.NSIPM, waveform_length=sp.SIPMWL)
+            RWF = partial(rwf_writer,  h5out,   group_name='RD')
+            writers = Namespace(
+                run_and_event = run_and_event_writer(h5out),
+                mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
+                # 3 variations on the  RWF writer theme
+                rwf  = RWF(table_name='pmtrwf' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL),
+                cwf  = RWF(table_name='pmtblr' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL),
+                sipm = RWF(table_name='sipmrwf', n_sensors=sp.NSIPM, waveform_length=sp.SIPMWL),
+            )
 
             # Create and store Front-End Electronics parameters (for the PMTs)
             self._create_FEE_table(h5out)
             self.  store_FEE_table()
 
-            n_events_tot = self._file_loop(write_run_and_event,
-                                           write_mc, write_rwf, write_cwf, write_sipm, nmax)
+            n_events_tot = self._file_loop(writers, nmax)
         return n_events_tot
 
     # TODO pack writers into a sensible container
-    def _file_loop(self, write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm, nmax):
+    def _file_loop(self, writers, nmax):
         n_events_tot = 0
         for filename in self.input_files:
             first_event_no = self.event_number_from_input_file_name(filename)
@@ -106,27 +109,27 @@ class Diomira(SensorResponseCity):
                 NEVT, pmtrd, sipmrd = self.get_rd_vectors(h5in)
                 events_info = self.get_run_and_event_info(h5in)
                 n_events_tot = self._event_loop(NEVT, pmtrd, sipmrd, events_info,
-                                                write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm,
+                                                writers,
                                                 nmax, n_events_tot, h5in, first_event_no)
         return n_events_tot
 
     def _event_loop(self, NEVT, pmtrd, sipmrd, events_info,
-                    write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm,
+                    write,
                     nmax, n_events_tot, h5in, first_event_no):
 
         for evt in range(NEVT):
             event, timestamp = self.event_and_timestamp(evt, events_info)
             local_event_number = event + first_event_no
-            write_mc(h5in.root.MC.MCTracks, local_event_number)
-            write_run_and_event(self.run_number, local_event_number, timestamp)
+            write.mc(h5in.root.MC.MCTracks, local_event_number)
+            write.run_and_event(self.run_number, local_event_number, timestamp)
             # Simulate detector response
             dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd)
             dataSiPM_noisy = self.simulate_sipm_response(evt, sipmrd, self.noise_sampler)
             dataSiPM = wfm.noise_suppression(dataSiPM_noisy, self.sipms_thresholds)
-            # Append the data to pytable vectors
-            write_rwf(dataPMT.astype(int))
-            write_cwf( blrPMT.astype(int))
-            write_sipm(dataSiPM)
+            # append the data to pytable vectors
+            write.rwf(dataPMT.astype(int))
+            write.cwf( blrPMT.astype(int))
+            write.sipm(dataSiPM)
             n_events_tot += 1
             self.conditional_print(evt, n_events_tot)
             if self.max_events_reached(nmax, n_events_tot):
