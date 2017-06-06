@@ -161,7 +161,7 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
               'electrons_40keV_z250_MCRD.h5')
     PATH_OUT = os.path.join(str(config_tmpdir),
               'electrons_40keV_z250_RWF.h5')
-    start_evt  = 100000
+    start_evt  = 0
     run_number = 0
 
     diomira = Diomira(run_number = run_number,
@@ -178,7 +178,7 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
             # check event & run number
-            assert h5out.root.Run.RunInfo[0]['run_number'] == run_number
+            assert h5out.root.Run.runInfo[0]['run_number'] == run_number
             assert h5out.root.Run.events [0]['evt_number'] == start_evt
 
             # check mctracks
