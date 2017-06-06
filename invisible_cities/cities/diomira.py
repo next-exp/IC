@@ -17,9 +17,9 @@ from .. core.configure         import configure
 from .. core.configure         import print_configuration
 from .. core.random_sampling   import NoiseSampler as SiPMsNoiseSampler
 from .. core.system_of_units_c import units
-from .. core.mctrk_functions   import MCTrackWriter
 from .. core.exceptions        import ParameterNotSet
 
+from .. io.mc_io    import mc_track_writer
 from .. reco        import wfm_functions as wfm
 from .. reco        import tbl_functions as tbl
 from .. reco.params import SensorParams
@@ -74,7 +74,7 @@ class Diomira(SensorResponseCity):
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
 
-            mctracks_writer = MCTrackWriter(h5out)
+            mctracks_writer = mc_track_writer(h5out)
 
             for ffile in self.input_files:
 
@@ -122,8 +122,8 @@ class Diomira(SensorResponseCity):
                     # loop over events in the file. Break when nmax is reached
                     for evt in range(NEVT):
                         # copy corresponding MCTracks to output MCTracks table
-                        mctracks_writer.copy_mctracks(h5in.root.MC.MCTracks,
-                                          n_events_tot, self.first_evt)
+                        mctracks_writer(h5in.root.MC.MCTracks,
+                                        n_events_tot, self.first_evt)
 
                         # simulate PMT and SiPM response
                         # RWF and BLR
@@ -227,15 +227,13 @@ def DIOMIRA(argv=sys.argv):
     """DIOMIRA DRIVER"""
 
     CFP = configure(argv)
-    fpp = Diomira(first_evt=CFP.FIRST_EVT)
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
-    fpp.set_input_files(files_in)
-    fpp.set_output_file(CFP.FILE_OUT)
-    fpp.set_compression(compression=CFP.COMPRESSION)
-    fpp.set_print(nprint=CFP.NPRINT)
 
-    fpp.set_sipm_noise_cut(noise_cut = CFP.NOISE_CUT)
+    fpp = Diomira(first_evt      = CFP.FIRST_EVT,
+                  files_in       = files_in,
+                  file_out       = CFP.FILE_OUT,
+                  sipm_noise_cut = CFP.NOISE_CUT)
 
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     t0 = time()
@@ -244,8 +242,3 @@ def DIOMIRA(argv=sys.argv):
     dt = t1 - t0
 
     print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
-
-    return nevts, nevt
-
-if __name__ == "__main__":
-    DIOMIRA(sys.argv)
