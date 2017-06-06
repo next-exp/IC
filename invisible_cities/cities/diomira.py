@@ -19,7 +19,10 @@ from .. core.random_sampling   import NoiseSampler as SiPMsNoiseSampler
 from .. core.system_of_units_c import units
 from .. core.exceptions        import ParameterNotSet
 
-from .. io.mc_io    import mc_track_writer
+from .. io.mc_io            import mc_track_writer
+from .. io.run_and_event_io import run_and_event_writer
+from .. io.rwf_io           import rwf_writer
+
 from .. reco        import wfm_functions as wfm
 from .. reco        import tbl_functions as tbl
 from .. reco.params import SensorParams
@@ -54,173 +57,95 @@ class Diomira(SensorResponseCity):
                                     file_out       = file_out,
                                     sipm_noise_cut = sipm_noise_cut,
                                     first_evt      = first_evt)
+        self.check_files()
+
 
     def run(self, nmax):
-        """
-        Run the machine
-        nmax is the max number of events to run
-        """
-
-        n_events_tot = 0
-        # run the machine only if in a legal state
-        self.check_files()
-        if not self.sipm_noise_cut:
-            raise ParameterNotSet('must set sipm_noise_cut before running')
 
         self.display_IO_info(nmax)
+        sensor_params = self.get_sensor_rd_params(self.input_files[0])
+        self.print_configuration(sensor_params)
+
+        # Create instance of the noise sampler
+        self.noise_sampler = SiPMsNoiseSampler(sensor_params.SIPMWL, True)
+        # thresholds in adc counts
+        self.sipms_thresholds = (self.sipm_noise_cut
+                              *  self.sipm_adc_to_pes)
 
         # loop over input files
         first = False
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
 
-            mctracks_writer = mc_track_writer(h5out)
+            # Create writers
+            write_run_and_event = run_and_event_writer(h5out)
+            write_mc            =      mc_track_writer(h5out) if self.monte_carlo else None
+            write_rwf           =           rwf_writer(h5out,
+                                                       group_name      = 'RD',
+                                                       table_name      = 'pmtrwf',
+                                                       n_sensors       = sensor_params.NPMT,
+                                                       waveform_length = sensor_params.PMTWL)
+            write_cwf           =           rwf_writer(h5out,
+                                                       group_name      = 'RD',
+                                                       table_name      = 'pmtblr',
+                                                       n_sensors       = sensor_params.NPMT,
+                                                       waveform_length = sensor_params.PMTWL)
+            write_sipm          =           rwf_writer(h5out,
+                                                       group_name      = 'RD',
+                                                       table_name      = 'sipmrwf',
+                                                       n_sensors       = sensor_params.NSIPM,
+                                                       waveform_length = sensor_params.SIPMWL)
+            # Create and store Front-End Electronics parameters (for the PMTs)
+            self._create_FEE_table(h5out)
+            self.  store_FEE_table()
 
-            for ffile in self.input_files:
-
-                print("Opening file {}".format(ffile))
-                filename = ffile
-
-                with tb.open_file(filename, "r") as h5in:
-                    pmtrd  = h5in.root.pmtrd
-                    sipmrd = h5in.root.sipmrd
-
-                    NEVT, NPMT, PMTWL = pmtrd.shape
-                    PMTWL_FEE = int(PMTWL / self.FE_t_sample)
-                    NEVENTS_DST, NSIPM, SIPMWL = sipmrd.shape
-                    sensor_param = SensorParams(NPMT   = NPMT,
-                                                PMTWL  = PMTWL_FEE,
-                                                NSIPM  = NSIPM,
-                                                SIPMWL = SIPMWL)
-
-                    # last row copied from MCTracks table
-                    mctrack_row = 0
-
-                    print("Events in file = {}".format(NEVENTS_DST))
-
-                    if not first:
-                        # print configuration, create vectors
-                        # init SiPM noiser, store FEE table
-                        self.print_configuration(sensor_param, PMTWL)
-                        self.set_output_store(h5out, nmax, sensor_param)
-
-                        # add run number
-                        run = self.runInfot.row
-                        run['run_number'] = self.run_number
-                        run.append()
-
-                        # Create instance of the noise sampler
-                        self.noise_sampler = SiPMsNoiseSampler(SIPMWL, True)
-                        # thresholds in adc counts
-                        self.sipms_thresholds = (self.sipm_noise_cut
-                                              *  self.sipm_adc_to_pes)
-                        # store FEE parameters in table
-                        self.store_FEE_table()
-
-                        first = True
-
-                    # loop over events in the file. Break when nmax is reached
-                    for evt in range(NEVT):
-                        # copy corresponding MCTracks to output MCTracks table
-                        mctracks_writer(h5in.root.MC.MCTracks,
-                                        n_events_tot, self.first_evt)
-
-                        # simulate PMT and SiPM response
-                        # RWF and BLR
-                        dataPMT, blrPMT = self.simulate_pmt_response(
-                                        evt, pmtrd)
-                        # append the data to pytable vectors
-                        self.pmtrwf.append(
-                            dataPMT.astype(int).reshape(1, NPMT, PMTWL_FEE))
-                        self.pmtblr.append(
-                             blrPMT.astype(int).reshape(1, NPMT, PMTWL_FEE))
-                        # SiPMs
-                        dataSiPM = self.simulate_sipm_response(
-                                    evt, sipmrd, self.noise_sampler)
-                        # return a noise-supressed waveform
-                        dataSiPM = wfm.noise_suppression(
-                                    dataSiPM, self.sipms_thresholds)
-
-                        self.sipmrwf.append(
-                            dataSiPM.astype(int).reshape(1, NSIPM, SIPMWL))
-
-                        # add evt number
-                        self.write_evt_number(evt)
-
-                        n_events_tot +=1
-                        if n_events_tot % self.nprint == 0:
-                            print('event in file = {}, total = {}'
-                                  .format(evt, n_events_tot))
-
-                        if n_events_tot >= nmax and nmax > -1:
-                            print('reached maximum number of events (={})'
-                                  .format(nmax))
-                            break
-
-        self.pmtrwf.flush()
-        self.sipmrwf.flush()
-        self.pmtblr.flush()
-
+            n_events_tot = self._main_loop(write_run_and_event,
+                                           write_mc, write_rwf, write_cwf, write_sipm, nmax)
         return n_events_tot
 
-    def write_evt_number(self, evt):
-        evt_row = self.evtsInfot.row
-        evt_row['evt_number'] = evt + self.first_evt
-        evt_row['timestamp'] = 0
-        evt_row.append()
+    # TODO rename as file loop
+    # TODO pack writers into a sensible container
+    def _main_loop(self, write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm, nmax):
+        n_events_tot = 0
+        for filename in self.input_files:
+            print("Opening file {}".format(filename))
+            with tb.open_file(filename, "r") as h5in:
+                NEVT, pmtrd, sipmrd = self.get_rd_vectors(h5in)
+                events_info = self.get_run_and_event_info(h5in)
+                n_events_tot = self._event_loop(NEVT, pmtrd, sipmrd, events_info,
+                                                write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm,
+                                                nmax, n_events_tot, h5in)
+        return n_events_tot
 
+    def _event_loop(self, NEVT, pmtrd, sipmrd, events_info,
+                    write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm,
+                    nmax, n_events_tot, h5in):
 
-    def set_output_store(self, h5out, nmax, sp):
+        for evt in range(NEVT):
+            write_mc(h5in.root.MC.MCTracks, n_events_tot)
+            event, timestamp = self.event_and_timestamp(evt, events_info)
+            write_run_and_event(self.run_number, event, timestamp)
+            # simulate PMT and SiPM response
+            # RWF and BLR
+            dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd)
+            dataSiPM_noisy = self.simulate_sipm_response(evt, sipmrd, self.noise_sampler)
+            dataSiPM = wfm.noise_suppression(dataSiPM_noisy, self.sipms_thresholds)
+            # append the data to pytable vectors
+            write_rwf(dataPMT.astype(int))
+            write_cwf( blrPMT.astype(int))
+            write_sipm(dataSiPM)
+            n_events_tot += 1
+            self.conditional_print(evt, n_events_tot)
+            if self.max_events_reached(nmax, n_events_tot):
+                break
+        return n_events_tot
 
-        # RD group
-        RD = h5out.create_group(h5out.root, "RD")
-        # MC group
-        MC = h5out.root.MC
+    def _create_FEE_table(self, h5out):
         # create a table to store Energy plane FEE
-        self.fee_table = h5out.create_table(MC, "FEE", FEE,
+        FEE_group = h5out.create_group(h5out.root, "FEE")
+        self.fee_table = h5out.create_table(FEE_group, "FEE", FEE,
                           "EP-FEE parameters",
                           tbl.filters("NOCOMPR"))
-        # create vectors
-        self.pmtrwf = h5out.create_earray(
-                    RD,
-                    "pmtrwf",
-                    atom = tb.Int16Atom(),
-                    shape = (0, sp.NPMT, sp.PMTWL),
-                    expectedrows = nmax,
-                    filters = tbl.filters(self.compression))
-
-        self.pmtblr = h5out.create_earray(
-                    RD,
-                    "pmtblr",
-                    atom = tb.Int16Atom(),
-                    shape = (0, sp.NPMT, sp.PMTWL),
-                    expectedrows = nmax,
-                    filters = tbl.filters(self.compression))
-
-        self.sipmrwf = h5out.create_earray(
-                    RD,
-                    "sipmrwf",
-                    atom = tb.Int16Atom(),
-                    shape = (0, sp.NSIPM, sp.SIPMWL),
-                    expectedrows = nmax,
-                    filters = tbl.filters(self.compression))
-
-        # run group
-        RUN = h5out.create_group(h5out.root, "Run")
-        self.runInfot = h5out.create_table(RUN, "RunInfo", RunInfo,
-                          "Run info",
-                          tbl.filters("NOCOMPR"))
-        self.evtsInfot = h5out.create_table(RUN, "events", EventInfo,
-                          "Events info",
-                          tbl.filters("NOCOMPR"))
-
-    def print_configuration(self, sp, PMTWL):
-        print_configuration({"# PMT"        : sp.NPMT,
-                             "PMT WL"       : PMTWL,
-                             "PMT WL (FEE)" : sp.PMTWL,
-                             "# SiPM"       : sp.NSIPM,
-                             "SIPM WL"      : sp.SIPMWL})
-
 
 
 def DIOMIRA(argv=sys.argv):
@@ -230,15 +155,16 @@ def DIOMIRA(argv=sys.argv):
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
 
-    fpp = Diomira(first_evt      = CFP.FIRST_EVT,
-                  files_in       = files_in,
-                  file_out       = CFP.FILE_OUT,
-                  sipm_noise_cut = CFP.NOISE_CUT)
+    diomira = Diomira(first_evt      = CFP.FIRST_EVT,
+                      files_in       = files_in,
+                      file_out       = CFP.FILE_OUT,
+                      sipm_noise_cut = CFP.NOISE_CUT)
 
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     t0 = time()
-    nevt = fpp.run(nmax=nevts)
+    nevt = diomira.run(nmax=nevts)
     t1 = time()
     dt = t1 - t0
 
-    print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
+    if nevt > 0:
+        print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
