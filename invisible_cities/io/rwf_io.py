@@ -15,7 +15,7 @@ def rwf_writer(file,
 
     rwf_table = file.create_earray(rwf_group,
                                    table_name,
-                                   atom    = tb.Float32Atom(),
+                                   atom    = tb.Int16Atom(),
                                    shape   = (0, n_sensors, waveform_length),
                                    filters = tbl.filters(compression))
     def write_rwf(waveform : 'np.array: RWF, CWF, SiPM'):
