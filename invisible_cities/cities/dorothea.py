@@ -89,7 +89,7 @@ class Dorothea(City):
 
             write_kr = kr_writer(h5out)
 
-            nevt_in, nevt_out = self._main_loop(write_kr, nmax)
+            nevt_in, nevt_out = self._file_loop(write_kr, nmax)
         print(textwrap.dedent("""
                               Number of events in : {}
                               Number of events out: {}
@@ -97,7 +97,7 @@ class Dorothea(City):
                               """.format(nevt_in, nevt_out, nevt_out / nevt_in)))
         return nevt_in, nevt_out
 
-    def _main_loop(self, write_kr, nmax):
+    def _file_loop(self, write_kr, nmax):
         nevt_in = nevt_out = 0
         for filename in self.input_files:
             print("Opening {}".format(filename), end="... ")
