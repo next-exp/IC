@@ -91,13 +91,12 @@ class Diomira(SensorResponseCity):
             self._create_FEE_table(h5out)
             self.  store_FEE_table()
 
-            n_events_tot = self._main_loop(write_run_and_event,
+            n_events_tot = self._file_loop(write_run_and_event,
                                            write_mc, write_rwf, write_cwf, write_sipm, nmax)
         return n_events_tot
 
-    # TODO rename as file loop
     # TODO pack writers into a sensible container
-    def _main_loop(self, write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm, nmax):
+    def _file_loop(self, write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm, nmax):
         n_events_tot = 0
         for filename in self.input_files:
             first_event_no = self.event_number_from_input_file_name(filename)
