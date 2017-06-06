@@ -6,9 +6,9 @@ JJGC December, 2016
 cimport numpy as np
 import  numpy as np
 
-from . params  import Peak
-from . pmap_io import S12
-from . pmap_io import S2Si
+from .  params     import Peak
+from .. io.pmap_io import S12
+from .. io.pmap_io import S2Si
 
 
 cpdef df_to_pmaps_dict(df, max_events=None):

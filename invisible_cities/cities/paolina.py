@@ -1,8 +1,6 @@
 from functools   import reduce
 from functools   import partial
 from itertools   import combinations
-from operator    import itemgetter
-from collections import namedtuple
 
 import numpy    as np
 import networkx as nx

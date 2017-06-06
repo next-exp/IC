@@ -13,9 +13,9 @@ Feburary, 2017.
 """
 
 import sys
-from textwrap import dedent
 
-import numpy as np
+import numpy  as np
+import tables as tb
 
 from .. core.configure         import print_configuration
 from .. core.exceptions        import NoInputFiles
@@ -25,13 +25,15 @@ from .. core                   import fit_functions        as fitf
 
 from .. database import load_db
 
+from ..io               import pmap_io          as pio
+from ..io.dst_io        import KrEvent
+
 from ..reco             import peak_functions_c as cpf
 from ..reco             import peak_functions   as pf
 from ..reco             import pmaps_functions  as pmp
-from ..reco             import pmap_io          as pio
 from ..reco             import tbl_functions    as tbf
 from ..reco             import wfm_functions    as wfm
-from ..reco.dst_io      import PointLikeEvent
+from ..reco.params      import SensorParams
 from ..reco.nh5         import DECONV_PARAM
 from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection
@@ -96,26 +98,20 @@ class City:
         if not self.output_file:
             raise NoOutputFile('must set output file before running')
 
-    def set_print(self, nprint=1000):
-        """Print frequency."""
-        self.nprint = nprint
-
-    def set_input_files(self, input_files):
-        """Set the input files."""
-        self.input_files = input_files
-
-    def set_output_file(self, output_file):
-        """Set the input files."""
-        self.output_file = output_file
-
-    def set_compression(self, compression):
-        """Set the input files."""
-        self.compression = compression
-
     def conditional_print(self, evt, n_events_tot):
         if n_events_tot % self.nprint == 0:
             print('event in file = {}, total = {}'
                   .format(evt, n_events_tot))
+
+    def max_events_reached(self, nmax, n_events_in):
+        if nmax < 0:
+            return False
+        if n_events_in == nmax:
+            print('reached max nof of events (= {})'
+                  .format(nmax))
+            return True
+        return False
+
 
     def display_IO_info(self, nmax):
         print("""
@@ -130,6 +126,38 @@ class City:
                              "PMT WL"       : sp.PMTWL,
                              "# SiPM"       : sp.NSIPM,
                              "SIPM WL"      : sp.SIPMWL})
+
+    def get_rwf_vectors(self, h5in):
+        pmtrwf, sipmrwf = self._get_rwf(h5in)
+
+        NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
+        NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
+        assert NEVT_simp == NEVT_pmt
+        NEVT = NEVT_pmt
+
+        return NEVT, pmtrwf, sipmrwf
+
+    def get_sensor_params(self, filename):
+        with tb.open_file(filename, "r") as h5in:
+            pmtrwf, sipmrwf = self._get_rwf(h5in)
+            _, NPMT,   PMTWL = pmtrwf .shape
+            _, NSIPM, SIPMWL = sipmrwf.shape
+        return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
+
+    @staticmethod
+    def get_run_and_event_info(h5in):
+        return h5in.root.Run.events
+
+    # TODO Replace this with
+    # tbl_functions.get_event_numbers_and_timestamps_from_file_name,
+    # maybe
+    @staticmethod
+    def event_and_timestamp(evt, events_info):
+        return events_info[evt]
+
+    def _get_rwf(self, h5in):
+        return (h5in.root.RD.pmtrwf,
+                h5in.root.RD.sipmrwf)
 
 
 class SensorResponseCity(City):
@@ -157,10 +185,6 @@ class SensorResponseCity(City):
 
         self.sipm_noise_cut = sipm_noise_cut
         self.first_evt      = first_evt
-
-    def set_sipm_noise_cut(self, noise_cut=3.0):
-        """Sets the SiPM noise cut (in PES)"""
-        self.sipm_noise_cut = noise_cut
 
     def simulate_sipm_response(self, event, sipmrd,
                                sipms_noise_sampler):
@@ -289,11 +313,6 @@ class DeconvolutionCity(City):
         row["ACUM_DISCHARGE_LENGTH"] = self.acum_discharge_length
         table.flush()
 
-    def set_blr(self, n_baseline, thr_trigger):
-        """Set the parameters of the Base Line Restoration (BLR)"""
-        self.n_baseline  = n_baseline
-        self.thr_trigger = thr_trigger
-
     def deconv_pmt(self, RWF):
         """Deconvolve the RWF of the PMTs"""
         return blr.deconv_pmt(RWF,
@@ -355,22 +374,6 @@ class CalibratedCity(DeconvolutionCity):
         # Parameters of the SiPM signal
         self.n_MAU_sipm = n_MAU_sipm
         self.  thr_sipm =   thr_sipm
-
-    def set_csum(self,
-                   n_MAU     = 100,
-                 thr_MAU     = 3   * units.adc,
-                 thr_csum_s1 = 0.2 * units.pes,
-                 thr_csum_s2 = 1.0 * units.pes):
-        """Set CSUM parameters."""
-        self.  n_MAU     =   n_MAU
-        self.thr_MAU     = thr_MAU
-        self.thr_csum_s1 = thr_csum_s1
-        self.thr_csum_s2 = thr_csum_s2
-
-    def set_sipm(self, n_MAU_sipm=100, thr_sipm=5*units.pes):
-        """Cutoff for SiPMs."""
-        self.  thr_sipm =   thr_sipm
-        self.n_MAU_sipm = n_MAU_sipm
 
     def calibrated_pmt_sum(self, CWF):
         """Return the csum and csum_mau calibrated sums."""
@@ -438,15 +441,6 @@ class PmapCity(CalibratedCity):
         self.s2_params   = s2_params
         self.thr_sipm_s2 = thr_sipm_s2
 
-    def set_pmap_params(self,
-                        s1_params,
-                        s2_params,
-                        thr_sipm_s2 = 30 * units.pes):
-        """Parameters for PMAP searches."""
-        self.s1_params = s1_params
-        self.s2_params = s2_params
-        self.thr_sipm_s2 = thr_sipm_s2
-
     def find_S12(self, s1_ene, s1_indx, s2_ene, s2_indx):
         """Return S1 and S2."""
         S1 = cpf.find_S12(s1_ene,
@@ -467,89 +461,19 @@ class PmapCity(CalibratedCity):
         S2Si = pf.sipm_s2_dict(SIPM, S2, thr = self.thr_sipm_s2)
         return pio.S2Si(S2Si)
 
+    def check_s1s2_params(self):
+        if (not self.s1_params) or (not self.s2_params):
+            raise IOError('must set S1/S2 parameters before running')
 
-class S12SelectorCity:
-    def __init__(self,
-                 drift_v     = 1 * units.mm/units.mus,
-
-                 S1_Nmin     = 0,
-                 S1_Nmax     = 1000,
-                 S1_Emin     = 0,
-                 S1_Emax     = np.inf,
-                 S1_Lmin     = 0,
-                 S1_Lmax     = np.inf,
-                 S1_Hmin     = 0,
-                 S1_Hmax     = np.inf,
-                 S1_Ethr     = 0,
-
-                 S2_Nmin     = 0,
-                 S2_Nmax     = 1000,
-                 S2_Emin     = 0,
-                 S2_Emax     = np.inf,
-                 S2_Lmin     = 0,
-                 S2_Lmax     = np.inf,
-                 S2_Hmin     = 0,
-                 S2_Hmax     = np.inf,
-                 S2_NSIPMmin = 1,
-                 S2_NSIPMmax = np.inf,
-                 S2_Ethr     = 0):
-
-        self.drift_v     = drift_v
-
-        self.S1_Nmin     = S1_Nmin
-        self.S1_Nmax     = S1_Nmax
-        self.S1_Emin     = S1_Emin
-        self.S1_Emax     = S1_Emax
-        self.S1_Lmin     = S1_Lmin
-        self.S1_Lmax     = S1_Lmax
-        self.S1_Hmin     = S1_Hmin
-        self.S1_Hmax     = S1_Hmax
-        self.S1_Ethr     = S1_Ethr
-
-        self.S2_Nmin     = S2_Nmin
-        self.S2_Nmax     = S2_Nmax
-        self.S2_Emin     = S2_Emin
-        self.S2_Emax     = S2_Emax
-        self.S2_Lmin     = S2_Lmin
-        self.S2_Lmax     = S2_Lmax
-        self.S2_Hmin     = S2_Hmin
-        self.S2_Hmax     = S2_Hmax
-        self.S2_NSIPMmin = S2_NSIPMmin
-        self.S2_NSIPMmax = S2_NSIPMmax
-        self.S2_Ethr     = S2_Ethr
-
-    def select_S1(self, s1s):
-        return pf.select_peaks(s1s,
-                               self.S1_Emin, self.S1_Emax,
-                               self.S1_Lmin, self.S1_Lmax,
-                               self.S1_Hmin, self.S1_Hmax,
-                               self.S1_Ethr)
-
-    def select_S2(self, s2s, sis):
-        s2s = pf.select_peaks(s2s,
-                              self.S2_Emin, self.S2_Emax,
-                              self.S2_Lmin, self.S2_Lmax,
-                              self.S2_Hmin, self.S2_Hmax,
-                              self.S2_Ethr)
-        sis = pf.select_Si(sis,
-                           self.S2_NSIPMmin, self.S2_NSIPMmax)
-
-        valid_peaks = set(s2s) & set(sis)
-        s2s = {peak_no: peak for peak_no, peak in s2s.items() if peak_no in valid_peaks}
-        sis = {peak_no: peak for peak_no, peak in sis.items() if peak_no in valid_peaks}
-        return s2s, sis
 
     def select_event(self, evt_number, evt_time, S1, S2, Si):
-        evt       = PointLikeEvent()
+        evt       = KrEvent()
         evt.event = evt_number
         evt.time  = evt_time * 1e-3 # s
 
-        S1     = self.select_S1(S1)
-        S2, Si = self.select_S2(S2, Si)
-
-        if (not self.S1_Nmin <= len(S1) <= self.S1_Nmax or
-            not self.S2_Nmin <= len(S2) <= self.S2_Nmax):
-            return None
+        from .. filters.s1s2_filter import s1s2_filter
+        if not s1s2_filter(S1, S2, Si):
+            return
 
         evt.nS1 = len(S1)
         for peak_no, (t, e) in sorted(S1.items()):
@@ -587,7 +511,7 @@ class S12SelectorCity:
             evt.Phi  .append(np.arctan2(y, x))
 
             dt  = s2time - evt.S1t[0] if len(evt.S1t) > 0 else -1e3
-            dt *= units.ns  / units.mus
+            dt *= units.ns / units.mus
             evt.DT   .append(dt)
             evt.Z    .append(dt * units.mus * self.drift_v)
 

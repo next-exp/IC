@@ -17,27 +17,26 @@ from pytest import mark
 from pytest import fixture
 
 from .  irene import Irene
-from .  irene import IRENE # TODO remove !
 from .. core                 import system_of_units as units
 from .. reco.pmaps_functions import read_run_and_event_from_pmaps_file
-from .. reco.params          import S12Params
+from .. reco.params          import S12Params as S12P
 
 
 @fixture(scope='module')
 def s12params():
-    s1par = S12Params(tmin   =  99 * units.mus,
-                      tmax   = 101 * units.mus,
-                      lmin   =   4,
-                      lmax   =  20,
-                      stride =   4,
-                      rebin  = False)
+    s1par = S12P(tmin   =  99 * units.mus,
+                 tmax   = 101 * units.mus,
+                 lmin   =   4,
+                 lmax   =  20,
+                 stride =   4,
+                 rebin  = False)
 
-    s2par = S12Params(tmin   =    101 * units.mus,
-                      tmax   =   1199 * units.mus,
-                      lmin   =     80,
-                      lmax   = 200000,
-                      stride =     40,
-                      rebin  = True)
+    s2par = S12P(tmin   =    101 * units.mus,
+                 tmax   =   1199 * units.mus,
+                 lmin   =     80,
+                 lmax   = 200000,
+                 stride =     40,
+                 rebin  = True)
     return s1par, s2par
 
 
@@ -76,15 +75,15 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
                             'electrons_40keV_z250_CWF.h5')
 
     s1par, s2par = s12params
-    
+
     irene = Irene(run_number = 0,
                   files_in   = [PATH_IN],
                   file_out   = PATH_OUT,
                   s1_params  = s1par,
                   s2_params  = s2par)
 
-    nrequired = 2
-    nactual = irene.run(nmax = nrequired)
+    nrequired  = 2
+    nactual, _ = irene.run(nmax = nrequired)
     if nrequired > 0:
         assert nrequired == nactual
 
@@ -118,15 +117,15 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
                             'run_2983_pmaps.h5')
 
     s1par, s2par = s12params
-    
+
     irene = Irene(run_number = 2983,
                   files_in   = [PATH_IN],
                   file_out   = PATH_OUT,
                   s1_params  = s1par,
                   s2_params  = s2par)
 
-    nrequired = 2
-    nactual = irene.run(nmax = nrequired)
+    nrequired  = 2
+    nactual, _ = irene.run(nmax = nrequired)
     if nrequired > 0:
         assert nrequired == nactual
 
@@ -192,24 +191,25 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
                             'irene_bug_Kr_ACTIVE_7bar_CWF.h5')
 
     s1par, s2par = s12params
-    
+
     irene = Irene(run_number = 0,
                   files_in   = [PATH_IN],
                   file_out   = PATH_OUT,
                   s1_params  = s1par,
                   s2_params  = s2par)
 
-    nactual = irene.run(nmax = 10)
+    nactual, nempty = irene.run(nmax = 10)
 
-    assert nactual              == 0
-    assert irene.empty_events   == 1
+    assert nactual == 0
+    assert nempty  == 1
 
 
 def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR):
     "Check that PMT active correctly describes the PMT configuration of the detector"
     irene = Irene(run_number =  job_info_missing_pmts.run_number,
                   files_in   = [job_info_missing_pmts. input_filename],
-                  file_out   =  job_info_missing_pmts.output_filename)
+                  file_out   =  job_info_missing_pmts.output_filename,
+                  s1_params  = S12P('dummy','not','used','in','the','test'),
+                  s2_params  = S12P('dummy','not','used','in','the','test'))
 
     assert irene.pmt_active == job_info_missing_pmts.pmt_active
-
