@@ -10,6 +10,7 @@ last changed: 09-11-2017
 import sys
 from glob import glob
 from time import time
+from functools import partial
 
 import tables as tb
 
@@ -63,7 +64,7 @@ class Diomira(SensorResponseCity):
     def run(self, nmax):
 
         self.display_IO_info(nmax)
-        sensor_params = self.get_sensor_rd_params(self.input_files[0])
+        sp = sensor_params = self.get_sensor_rd_params(self.input_files[0])
         self.print_configuration(sensor_params)
 
         # Create instance of the noise sampler
@@ -80,21 +81,12 @@ class Diomira(SensorResponseCity):
             # Create writers
             write_run_and_event = run_and_event_writer(h5out)
             write_mc            =      mc_track_writer(h5out) if self.monte_carlo else None
-            write_rwf           =           rwf_writer(h5out,
-                                                       group_name      = 'RD',
-                                                       table_name      = 'pmtrwf',
-                                                       n_sensors       = sensor_params.NPMT,
-                                                       waveform_length = sensor_params.PMTWL)
-            write_cwf           =           rwf_writer(h5out,
-                                                       group_name      = 'RD',
-                                                       table_name      = 'pmtblr',
-                                                       n_sensors       = sensor_params.NPMT,
-                                                       waveform_length = sensor_params.PMTWL)
-            write_sipm          =           rwf_writer(h5out,
-                                                       group_name      = 'RD',
-                                                       table_name      = 'sipmrwf',
-                                                       n_sensors       = sensor_params.NSIPM,
-                                                       waveform_length = sensor_params.SIPMWL)
+            RWF                 = partial(rwf_writer,  h5out,   group_name='RD')
+            # 3 variations on the  RWF writer theme
+            write_rwf  = RWF(table_name='pmtrwf' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL)
+            write_cwf  = RWF(table_name='pmtblr' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL)
+            write_sipm = RWF(table_name='sipmrwf', n_sensors=sp.NSIPM, waveform_length=sp.SIPMWL)
+
             # Create and store Front-End Electronics parameters (for the PMTs)
             self._create_FEE_table(h5out)
             self.  store_FEE_table()
