@@ -161,7 +161,7 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
               'electrons_40keV_z250_MCRD.h5')
     PATH_OUT = os.path.join(str(config_tmpdir),
               'electrons_40keV_z250_RWF.h5')
-    start_evt  = 0
+    start_evt  = Diomira.event_number_from_input_file_name(str(PATH_IN))
     run_number = 0
 
     diomira = Diomira(run_number = run_number,
