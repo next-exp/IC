@@ -24,12 +24,9 @@ class mc_track_writer:
                         title       = "MCTracks",
                         filters     = tbl.filters(self.compression))
 
-    def __call__(self, mctracks, evt_number, offset=0):
+    def __call__(self, mctracks, evt_number):
         for r in mctracks.iterrows(start=self.last_row):
-            if r['event_indx'] == evt_number:
-                self.last_row += 1
-                evt = (r['event_indx']+ offset,)+ r[1:]
-                self.mc_table.append([evt])
-            else:
-                break
+            self.last_row += 1
+            evt = (evt_number,) + r[1:]
+            self.mc_table.append([evt])
         self.mc_table.flush()

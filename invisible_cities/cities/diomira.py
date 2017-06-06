@@ -108,29 +108,31 @@ class Diomira(SensorResponseCity):
     def _main_loop(self, write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm, nmax):
         n_events_tot = 0
         for filename in self.input_files:
-            print("Opening file {}".format(filename))
+            first_event_no = self.event_number_from_input_file_name(filename)
+            print("Opening file {filename} with first event no {first_event_no}"
+                  .format(**locals()))
             with tb.open_file(filename, "r") as h5in:
                 NEVT, pmtrd, sipmrd = self.get_rd_vectors(h5in)
                 events_info = self.get_run_and_event_info(h5in)
                 n_events_tot = self._event_loop(NEVT, pmtrd, sipmrd, events_info,
                                                 write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm,
-                                                nmax, n_events_tot, h5in)
+                                                nmax, n_events_tot, h5in, first_event_no)
         return n_events_tot
 
     def _event_loop(self, NEVT, pmtrd, sipmrd, events_info,
                     write_run_and_event, write_mc, write_rwf, write_cwf, write_sipm,
-                    nmax, n_events_tot, h5in):
+                    nmax, n_events_tot, h5in, first_event_no):
 
         for evt in range(NEVT):
-            write_mc(h5in.root.MC.MCTracks, n_events_tot)
             event, timestamp = self.event_and_timestamp(evt, events_info)
-            write_run_and_event(self.run_number, event, timestamp)
-            # simulate PMT and SiPM response
-            # RWF and BLR
+            local_event_number = event + first_event_no
+            write_mc(h5in.root.MC.MCTracks, local_event_number)
+            write_run_and_event(self.run_number, local_event_number, timestamp)
+            # Simulate detector response
             dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd)
             dataSiPM_noisy = self.simulate_sipm_response(evt, sipmrd, self.noise_sampler)
             dataSiPM = wfm.noise_suppression(dataSiPM_noisy, self.sipms_thresholds)
-            # append the data to pytable vectors
+            # Append the data to pytable vectors
             write_rwf(dataPMT.astype(int))
             write_cwf( blrPMT.astype(int))
             write_sipm(dataSiPM)
