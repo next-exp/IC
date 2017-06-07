@@ -25,6 +25,7 @@ from .. core.exceptions        import ParameterNotSet
 from .. io.mc_io            import mc_track_writer
 from .. io.run_and_event_io import run_and_event_writer
 from .. io.rwf_io           import rwf_writer
+from .. io.fee_io           import write_FEE_table
 
 from .. reco        import wfm_functions as wfm
 from .. reco        import tbl_functions as tbl
@@ -91,7 +92,7 @@ class Diomira(SensorResponseCity):
             )
 
             # Create and store Front-End Electronics parameters (for the PMTs)
-            self._write_FEE_table(h5out)
+            write_FEE_table(h5out)
 
             n_events_tot = self._file_loop(writers, nmax)
         return n_events_tot
