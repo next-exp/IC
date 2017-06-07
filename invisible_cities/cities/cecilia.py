@@ -8,240 +8,211 @@ last changed: 01-02-2017
 """
 
 import sys
-from glob import glob
-from time import time
-from textwrap import dedent
+import textwrap
+
+from glob      import glob
+from time      import time
+from functools import partial
+from argparse  import Namespace
 
 import numpy as np
 import tables as tb
 
-from .. core.configure import configure
-from .. core.configure import print_configuration
-from .. reco           import tbl_functions    as tbl
-from .. reco           import peak_functions_c as cpf
-from .. database       import load_db          as db
-from .. reco.nh5       import RunInfo
-from .. reco.nh5       import EventInfo
-from .  base_cities    import City
-from .  base_cities    import merge_two_dicts
+from .. core.configure          import configure
+from .. core.configure          import print_configuration
+from .. core.system_of_units_c  import units
+from .. core.sensor_functions   import convert_channel_id_to_IC_id
+from .. reco                    import tbl_functions    as tbl
+from .. reco                    import peak_functions_c as cpf
+from .. database                import load_db          as db
+from .. reco.nh5                import RunInfo
+from .. reco.nh5                import EventInfo
+from .. reco.params             import minmax
+from .. reco.params             import PeakData
+from .. reco.params             import TriggerParams
+from .  base_cities             import DeconvolutionCity
+from .. io.mc_io                import mc_track_writer
+from .. io.run_and_event_io     import run_and_event_writer
+from .. io.rwf_io               import rwf_writer
+from .. io.fee_io               import write_FEE_table
+from .. filters.trigger_filters import TriggerFilter
 
+class Cecilia(DeconvolutionCity):
+    "The city of CECILIA simulates the trigger."
+    def __init__(self,
+                 run_number            = 0,
+                 files_in              = None,
+                 file_out              = None,
+                 compression           = 'ZLIB4',
+                 nprint                = 10000,
+                 n_baseline            = 28000,
+                 thr_trigger           =     5 * units.adc,
+                 acum_discharge_length =  5000,
+                 # Parameters added at this level
+                 trigger_channels      = tuple(range(12)),
+                 min_number_channels   =     5,
+                 height = minmax(min   =    15,
+                                 max   =  1000),
+                 charge = minmax(min   =  3000,
+                                 max   = 20000),
+                 width  = minmax(min   =  4000,
+                                 max   = 12000),
+                 data_MC_ratio         =     0.8):
 
-class Cecilia(City):
-    """
-    The city of CECILIA simulates the trigger.
+        super().__init__(run_number            = run_number,
+                         files_in              = files_in,
+                         file_out              = file_out,
+                         compression           = compression,
+                         nprint                = nprint,
+                         n_baseline            = n_baseline,
+                         thr_trigger           = thr_trigger,
+                         acum_discharge_length = acum_discharge_length)
 
-    """
-    def __init__(self):
-        """
-        - Sets default values for state attributes
-        """
-    # Set the machine default state
+        self.trigger_params = TriggerParams(
+            trigger_channels    = trigger_channels,
+            min_number_channels = min_number_channels,
+            charge              = charge * data_MC_ratio,
+            height              = height * data_MC_ratio,
+            width               = width)
+
         self.event_in = 0
         self.event_out = 0
 
-    def set_trigger_conf(self, number, tr_channels, minH, maxH, minQ, maxQ, minW, maxW, dataMC):
-        """Set the parameters of the trigger configuration."""
-        self.min_trigger_channels = number
-        self.    trigger_channels = tr_channels
-        self.min_height = minH * dataMC
-        self.max_height = maxH * dataMC
-        self.min_charge = minQ * dataMC
-        self.max_charge = maxQ * dataMC
-        self.min_width = minW
-        self.max_width = maxW
+    def run(self, nmax):
+        self.display_IO_info(nmax)
+        sp = sensor_params = self.get_sensor_params(self.input_files[0])
+        self.print_configuration(sensor_params)
 
-    def run(self, nmax, first_evt, run_number):
-        """
-        Run the machine
-        nmax is the max number of events to run
-        """
-        def write_evt():
-            self. pmttrigwf.append(np.array( pmtcwf[evt]).astype(np.double).reshape(1,  npmts,  pmt_wndw_length))
-            self.sipmtrigwf.append(np.array(sipmrwf[evt]).astype(np.double).reshape(1, nsipms, sipm_wndw_length))
-            evt_row = self.eventInfo.row
-            evt_row['evt_number'] = evt + first_evt
-            evt_row['timestamp'] = 0
-            evt_row.append()
-            self.event_out += 1
-
-        n_events_tot = 0
-        # run the machine only if in a legal state
-        self.check_files()
-
+        # loop over input files
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
-            first=False
-            for cfile in self.input_files:
+            # Create writers
+            RWF = partial(rwf_writer,  h5out,   group_name='RD')
+            writers = Namespace(
+                run_and_event = run_and_event_writer(h5out),
+                mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
+                # 3 variations on the  RWF writer theme
+                rwf  = RWF(table_name='pmtrwf' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL),
+                cwf  = RWF(table_name='pmtblr' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL),
+                sipm = RWF(table_name='sipmrwf', n_sensors=sp.NSIPM, waveform_length=sp.SIPMWL),
+            )
 
-                print("Opening file {}".format(cfile))
+            # Create and store Front-End Electronics parameters (for the PMTs)
+            write_FEE_table(h5out)
 
-                with tb.open_file(cfile, "r+") as h5in:
-                    pmtcwf  = h5in.root.BLR.pmtcwf
-                    sipmrwf = h5in.root.BLR.sipmrwf
-                    nevts_pmt, npmts, pmt_wndw_length = pmtcwf.shape
-                    nevts_sipm, nsipms, sipm_wndw_length = sipmrwf.shape
- #                   print(nevts_pmt, nevts_sipm)
+            nevt_in, nevt_out = self._file_loop(writers, nmax)
+        print(textwrap.dedent("""
+                              Number of events in : {}
+                              Number of events out: {}
+                              Ratio               : {}
+                              """.format(nevt_in, nevt_out, nevt_out / nevt_in)))
+        return nevt_in, nevt_out
 
-                    if first == False:
-                        # create vectors
-                        self.pmttrigwf = h5out.create_earray(
-                                    h5out.root,
-                                    "pmttrigwf",
-                                    atom         = tb.Int16Atom(),
-                                    shape        = (0, npmts, pmt_wndw_length),
-                                    expectedrows = nmax,
-                                    filters      = tbl.filters(self.compression))
-                        self.sipmtrigwf = h5out.create_earray(
-                                    h5out.root,
-                                    "sipmtrigwf",
-                                    atom         = tb.Int16Atom(),
-                                    shape        = (0, nsipms, sipm_wndw_length),
-                                    expectedrows = nmax,
-                                    filters      = tbl.filters(self.compression))
-                        run_g = h5out.create_group(h5out.root, 'Run')
-                        self.eventInfo = h5out.create_table(
-                                    run_g,
-                                    "events",
-                                    EventInfo,
-                                    "Events info",
-                                    tbl.filters("NOCOMPR"))
-                        self.runInfo = h5out.create_table(
-                                    run_g,
-                                    "run",
-                                    RunInfo,
-                                    "Run info",
-                                    tbl.filters("NOCOMPR"))
-                        first = True
+    def _file_loop(self, writers, nmax):
+        nevt_in = nevt_out = 0
+        trigger_filter = TriggerFilter(self.trigger_params)
 
-                    dataPMT = db.DataPMT(run_number)
+        for filename in self.input_files:
+            print("Opening file {filename}".format(**locals()), end='... ')
 
+            with tb.open_file(filename, "r") as h5in:
+                NEVT, pmtrwf, sipmrwf, pmtblr = self.get_rwf_vectors(h5in)
+                events_info = self.get_run_and_event_info(h5in)
 
-                    evt = 0
-                    for evt in range(nevts_pmt):
-                        self.event_in += 1
-                        ok_channels = 0
-                        for pmt in range(npmts):
-     #                       print('PMT %s'%(pmt))
-                            if (dataPMT.SensorID[pmt] in self.trigger_channels):
-                                if self._pass_trigger(evt, pmtcwf, pmt):
-                                    ok_channels += 1
-                        if ok_channels >= self.min_trigger_channels:
-                            write_evt()
-                        n_events_tot += 1
-                        self.show_progress(evt, n_events_tot)
-                        if self.terminate(n_events_tot, nmax):
-                            break
-  #                      print(len(self.pmttrigwf), len(self.sipmtrigwf))
+                nevt_in, nevt_out, max_events_reached = self._event_loop(
+                    NEVT, pmtrwf, sipmrwf, pmtblr, events_info,
+                    writers,
+                    nmax, nevt_in, nevt_out, h5in, trigger_filter)
 
-        print('Trigger city: events in = {}'.format(self.event_in))
-        print('Trigger city: events out = {}'.format(self.event_out))
-        return n_events_tot
+            if max_events_reached:
+                print('Max events reached')
+                break
+            else:
+                print("OK")
 
-    config_file_format = City.config_file_format + """
+        return nevt_in, nevt_out
 
-# run
-NEVENTS {NEVENTS}
-RUN_ALL {RUN_ALL}
-FIRST_EVT {FIRST_EVT}
-RUN_NUMBER {RUN_NUMBER}
+    def _event_loop(self, NEVT, pmtrwf, sipmrwf, pmtblr, events_info,
+                    write,
+                    nmax, nevt_in, nevt_out, h5in, trigger_pass):
+        max_events_reached = False
+        for evt in range(NEVT):
+            nevt_in += 1
+            if self.max_events_reached(nmax, nevt_in):
+                max_events_reached = True
+                break
+            event_number, timestamp = self.event_and_timestamp(evt, events_info)
+            peak_data = self._emulate_trigger(pmtrwf[evt])
 
-# set_print
-NPRINT {NPRINT}
+            if not trigger_pass(peak_data):
+                continue
+            nevt_out += 1
 
-##specific
-TR_CHANNELS {TR_CHANNELS}
-MIN_NUMB_CHANNELS {MIN_NUMB_CHANNELS}
-MIN_HEIGHT {MIN_HEIGHT}
-MAX_HEIGHT {MAX_HEIGHT}
-MIN_CHARGE {MIN_CHARGE}
-MAX_CHARGE {MAX_CHARGE}
-MIN_WIDTH {MIN_WIDTH}
-MAX_WIDTH {MAX_WIDTH}
-DATA_MC_RATIO {DATA_MC_RATIO}"""
+            write.mc(h5in.root.MC.MCTracks, event_number)
+            write.run_and_event(self.run_number, event_number, timestamp)
+            write.rwf (pmtrwf [evt])
+            write.cwf (pmtblr [evt])
+            write.sipm(sipmrwf[evt])
 
-    config_file_format = dedent(config_file_format)
+            self.conditional_print(evt, nevt_in)
+        return nevt_in, nevt_out, max_events_reached
 
-    default_config = merge_two_dicts(
-        City.default_config,
-        dict(FILE_IN  = None,
-             COMPRESSION = 'ZLIB4',
-             NEVENTS = -1,
-             RUN_ALL = False,
-             FIRST_EVT = 0,
-             RUN_NUMBER = 0,
-             NPRINT = 10,
-             TR_CHANNELS = '0 1 2 3 4 5 6 7 8 9 10 11',
-             MIN_NUMB_CHANNELS = 5,
-             MIN_HEIGHT = 15,
-             MAX_HEIGHT = 1000,
-             MIN_CHARGE = 3000,
-             MAX_CHARGE = 20000,
-             MIN_WIDTH = 4000,
-             MAX_WIDTH = 12000,
-             DATA_MC_RATIO = 0.8))
+    def _emulate_trigger(self, RWF):
+        # Emulate deconvolution in the FPGA
+        CWF = self.deconv_pmt(RWF)
+        # Emulate FPGA
+        return self._peak_computation_in_FPGA(CWF, self.trigger_params.trigger_channels)
 
-    def _pass_trigger(self, evt, pmtcwf, pmt):
-        found = False
-        pk_content, pk_indx = cpf.wfzs(pmtcwf[evt, pmt].astype(np.double), threshold=self.min_height)
-        pks = cpf.find_S12(pk_content, pk_indx)
-    #                              print(len(pks))
-        for value in pks.values():
-            width = value[0][-1] - value[0][0]
-            charge = np.sum(value[1])
-            height = np.max(value[1])
-            if self.min_width < width < self.max_width:
-                if self.min_charge < charge < self.max_charge:
-                    if self.min_height < height < self.max_height:
-                        found = True
-        return found
+    def _peak_computation_in_FPGA(self, CWF, channel_id_selection):
+        # Translate electroninc channel id to IC index
+        IC_ids_selection = convert_channel_id_to_IC_id(self.DataPMT, channel_id_selection)
+        # Emulate zero suppression in the FPGA
+        wfzs = [cpf.wfzs(CWF[pmt_id].astype(np.double),
+                         threshold = self.trigger_params.height.min)
+                for pmt_id in IC_ids_selection]
+        # Emulate peak search in the FPGA
+        s12s =  [cpf.find_S12(content, index) for content, index in wfzs]
 
-    def show_progress(self, evt, n_events_tot):
-        if evt % self.nprint == 0:
-            print('event number = {evt}, total = {n_events_tot}'.format(**locals()))
+        peak_data = {}
+        for s12, channel_no in zip(s12s, IC_pmt_ids_selection):
+            pd = {}
+            for peak_no, peak in s12.items():
+                pd[peak_no] = PeakData(width  = peak.t[-1] - peak.t[0],
+                                       charge = np.sum(peak.E),
+                                       height = np.max(peak.E))
+            peak_data[channel_no] = pd
 
-    def terminate(self, n_events_tot, nmax):
-        if n_events_tot >= nmax and nmax > -1:
-            print('maximum number of events reached (={})'.format(nmax))
-            return True
-        return False
+        return peak_data
 
 
 def CECILIA(argv=sys.argv):
-    """CECILIA DRIVER"""
-
     CFP = configure(argv)
-    tr = Cecilia()
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
-    tr.set_input_files(files_in)
-    tr.set_output_file(CFP.FILE_OUT)
-    tr.set_compression(CFP.COMPRESSION)
-    tr.set_print(nprint=CFP.NPRINT)
+    cecilia = Cecilia(files_in            = files_in,
+                      file_out            = CFP.FILE_OUT,
+                      trigger_channels    = CFP.TR_CHANNELS,
+                      min_number_channels = CFP.MIN_NUMBER_CHANNELS,
+                      height = minmax(min = CFP.MIN_HEIGHT,
+                                      max = CFP.MAX_HEIGHT),
+                      charge = minmax(min = CFP.MIN_CHARGE,
+                                      max = CFP.MAX_CHARGE),
+                      width  = minmax(min = CFP.MIN_WIDTH,
+                                      max = CFP.MAX_WIDTH),
+                      data_MC_ratio       = CFP.DATA_MC_RATIO
+    )
 
-    ## Trigger configuration parameters
-    tr_ch = CFP.TR_CHANNELS
-    number = CFP.MIN_NUMB_CHANNELS
-    minH = CFP.MIN_HEIGHT
-    maxH = CFP.MAX_HEIGHT
-    minQ = CFP.MIN_CHARGE
-    maxQ = CFP.MAX_CHARGE
-    minW = CFP.MIN_WIDTH
-    maxW = CFP.MAX_WIDTH
-    dataMC = CFP.DATA_MC_RATIO
+    # TODO
+    # trigger_type = CFP.TRIGGER
 
- #   trigger_type = CFP.TRIGGER
-
-    tr.set_trigger_conf(number, tr_ch, minH, maxH, minQ, maxQ, minW, maxW, dataMC)
 
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
     t0 = time()
-    n_evts_run = tr.run(nmax=nevts, first_evt=CFP.FIRST_EVT, run_number=CFP.RUN_NUMBER)
+    nevt_in, nevt_out = cecilia.run(nmax=nevts)
     t1 = time()
     dt = t1 - t0
 
-    print("run {} evts in {} s, time/event = {}".format(n_evts_run, dt, dt/n_evts_run))
-
-    return nevts, n_evts_run
+    print("run {} evts in {} s, time/event = {}".format(nevt_in, dt, dt/nevt_in))
 
 
 if __name__ == "__main__":
