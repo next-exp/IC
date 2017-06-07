@@ -97,7 +97,6 @@ class Diomira(SensorResponseCity):
             n_events_tot = self._file_loop(writers, nmax)
         return n_events_tot
 
-    # TODO pack writers into a sensible container
     def _file_loop(self, writers, nmax):
         n_events_tot = 0
         for filename in self.input_files:
@@ -112,6 +111,7 @@ class Diomira(SensorResponseCity):
                                                 nmax, n_events_tot, h5in, first_event_no)
         return n_events_tot
 
+
     def _event_loop(self, NEVT, pmtrd, sipmrd, events_info,
                     write,
                     nmax, n_events_tot, h5in, first_event_no):
@@ -122,8 +122,8 @@ class Diomira(SensorResponseCity):
             dataSiPM_noisy = self.simulate_sipm_response(evt, sipmrd, self.noise_sampler)
             dataSiPM = wfm.noise_suppression(dataSiPM_noisy, self.sipms_thresholds)
 
-            event, timestamp = self.event_and_timestamp(evt, events_info)
-            local_event_number = event + first_event_no
+            event_number, timestamp = self.event_and_timestamp(evt, events_info)
+            local_event_number = event_number + first_event_no
 
             write.mc(h5in.root.MC.MCTracks, local_event_number)
             write.run_and_event(self.run_number, local_event_number, timestamp)
@@ -145,6 +145,7 @@ def DIOMIRA(argv=sys.argv):
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
 
+    # TODO: remove first_event now that we use the hash
     diomira = Diomira(first_evt      = CFP.FIRST_EVT,
                       files_in       = files_in,
                       file_out       = CFP.FILE_OUT,

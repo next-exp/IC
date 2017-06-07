@@ -99,8 +99,9 @@ class Dorothea(City):
 
     def _file_loop(self, write_kr, nmax):
         nevt_in = nevt_out = 0
+
         for filename in self.input_files:
-            print("Opening {}".format(filename), end="... ")
+            print("Opening {filename}".format(**locals()), end="... ")
 
             try:
                 S1s, S2s, S2Sis = load_pmaps(filename)
@@ -124,7 +125,7 @@ class Dorothea(City):
     def _event_loop(self, event_numbers, timestamps, nmax, nevt_in, nevt_out, write_kr, S1s, S2s, S2Sis):
         max_events_reached = False
         for evt_number, evt_time in zip(event_numbers, timestamps):
-            nevt_in +=1
+            nevt_in += 1
             if self.max_events_reached(nmax, nevt_in):
                 max_events_reached = True
                 break
@@ -135,11 +136,11 @@ class Dorothea(City):
             if not s1s2_filter(self._s1s2_selector, S1, S2, Si):
                 continue
             nevt_out += 1
+
             evt = self._create_kr_event(evt_number, evt_time, S1, S2, Si)
             write_kr(evt)
 
-            if not nevt_in % self.nprint:
-                print("{} evts analyzed".format(nevt_in))
+            self.conditional_print(evt, nevt_in)
 
         return nevt_in, nevt_out, max_events_reached
 
