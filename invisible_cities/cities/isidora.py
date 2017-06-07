@@ -78,7 +78,7 @@ class Isidora(DeconvolutionCity):
                 self._copy_sensor_table(h5in)
 
                 # access RWF
-                NEVT, pmtrwf, sipmrwf = self.get_rwf_vectors(h5in)
+                NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
                 # loop over all events in file unless reach nmax
                 n_events_tot = self._event_loop(NEVT, pmtrwf, sipmrwf, pmt_writer, sipm_writer, nmax, n_events_tot)
 

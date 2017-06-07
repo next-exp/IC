@@ -25,6 +25,7 @@ from .. core.exceptions        import ParameterNotSet
 from .. io.mc_io            import mc_track_writer
 from .. io.run_and_event_io import run_and_event_writer
 from .. io.rwf_io           import rwf_writer
+from .. io.fee_io           import write_FEE_table
 
 from .. reco        import wfm_functions as wfm
 from .. reco        import tbl_functions as tbl
@@ -76,7 +77,6 @@ class Diomira(SensorResponseCity):
                               *  self.sipm_adc_to_pes)
 
         # loop over input files
-        first = False
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
 
@@ -92,13 +92,11 @@ class Diomira(SensorResponseCity):
             )
 
             # Create and store Front-End Electronics parameters (for the PMTs)
-            self._create_FEE_table(h5out)
-            self.  store_FEE_table()
+            write_FEE_table(h5out)
 
             n_events_tot = self._file_loop(writers, nmax)
         return n_events_tot
 
-    # TODO pack writers into a sensible container
     def _file_loop(self, writers, nmax):
         n_events_tot = 0
         for filename in self.input_files:
@@ -113,6 +111,7 @@ class Diomira(SensorResponseCity):
                                                 nmax, n_events_tot, h5in, first_event_no)
         return n_events_tot
 
+
     def _event_loop(self, NEVT, pmtrd, sipmrd, events_info,
                     write,
                     nmax, n_events_tot, h5in, first_event_no):
@@ -123,8 +122,8 @@ class Diomira(SensorResponseCity):
             dataSiPM_noisy = self.simulate_sipm_response(evt, sipmrd, self.noise_sampler)
             dataSiPM = wfm.noise_suppression(dataSiPM_noisy, self.sipms_thresholds)
 
-            event, timestamp = self.event_and_timestamp(evt, events_info)
-            local_event_number = event + first_event_no
+            event_number, timestamp = self.event_and_timestamp(evt, events_info)
+            local_event_number = event_number + first_event_no
 
             write.mc(h5in.root.MC.MCTracks, local_event_number)
             write.run_and_event(self.run_number, local_event_number, timestamp)
@@ -138,13 +137,6 @@ class Diomira(SensorResponseCity):
                 break
         return n_events_tot
 
-    def _create_FEE_table(self, h5out):
-        # create a table to store Energy plane FEE
-        FEE_group = h5out.create_group(h5out.root, "FEE")
-        self.fee_table = h5out.create_table(FEE_group, "FEE", FEE,
-                          "EP-FEE parameters",
-                          tbl.filters("NOCOMPR"))
-
 
 def DIOMIRA(argv=sys.argv):
     """DIOMIRA DRIVER"""
@@ -153,6 +145,7 @@ def DIOMIRA(argv=sys.argv):
     files_in = glob(CFP.FILE_IN)
     files_in.sort()
 
+    # TODO: remove first_event now that we use the hash
     diomira = Diomira(first_evt      = CFP.FIRST_EVT,
                       files_in       = files_in,
                       file_out       = CFP.FILE_OUT,

@@ -77,10 +77,6 @@ class FEE(tb.IsDescription):
     f_mc          = tb.Float32Col(pos=16)  # sampling frequency in MC (1ns)
     f_LPF1        = tb.Float32Col(pos=17)  # LPF
     f_LPF2        = tb.Float32Col(pos=18)  # LPF
-    coeff_c       = tb.Float64Col(pos=19, shape=12)  # cleaning coeff
-    coeff_blr     = tb.Float64Col(pos=20, shape=12)  # COEFF BLR
-    adc_to_pes    = tb.Float32Col(pos=21, shape=12)  # CALIB CONST
-    pmt_noise_rms = tb.Float32Col(pos=22, shape=12)  # rms noise
 
 
 class DECONV_PARAM(tb.IsDescription):
