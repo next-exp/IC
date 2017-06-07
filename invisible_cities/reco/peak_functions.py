@@ -13,6 +13,7 @@ from .. sierpe import blr
 from .         import peak_functions_c as cpf
 from .  params import CalibratedSum
 from .  params import PMaps
+from .  params import minmax
 
 def calibrated_pmt_sum(CWF, adc_to_pes, pmt_active = [], n_MAU=200, thr_MAU=5):
     """Compute the ZS calibrated sum of the PMTs
@@ -169,8 +170,8 @@ def rebin_waveform(t, e, stride=40):
 
 
 def find_S12(wfzs, index,
-             tmin = 0, tmax = 1e+6,
-             lmin = 8, lmax = 1000000,
+             time   = minmax(0, 1e+6),
+             length = minmax(8, 1000000),
              stride=4, rebin=False, rebin_stride=40):
     """
     Find S1/S2 peaks.
@@ -194,16 +195,15 @@ def find_S12(wfzs, index,
     Waveform = namedtuple('Waveform', 't E')
 
     S12 = cpf.find_S12(wfzs, index,
-                      tmin, tmax,
-                      lmin, lmax,
+                       *t, *l,
                       stride,
                       rebin, rebin_stride)
 
     return {i: Waveform(t, E) for i, (t,E) in S12.items()}
 
 def find_S12_py(wfzs, index,
-             tmin = 0, tmax = 1e+6,
-             lmin = 8, lmax = 1000000,
+             time   = minmax(0, 1e+6),
+             length = minmax(8, 1000000),
              stride=4, rebin=False, rebin_stride=40):
     """
     Find S1/S2 peaks.
@@ -239,10 +239,10 @@ def find_S12_py(wfzs, index,
     j = 0
     for i in range(1, len(wfzs)) :
 
-        if T[i] > tmax:
+        if T[i] > time.max:
             break
 
-        if T[i] < tmin:
+        if T[i] < time.min:
             continue
 
         if index[i] - stride > index[i-1]:  #new s12
@@ -256,7 +256,7 @@ def find_S12_py(wfzs, index,
     for i in S12:
         ls = len(S12[i])
 
-        if not (lmin <= ls < lmax):
+        if not (length.min <= ls < length.max):
             continue
 
         t = np.zeros(ls, dtype=np.double)
