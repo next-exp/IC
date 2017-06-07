@@ -37,6 +37,7 @@ from .  base_cities import SensorResponseCity
 
 
 class Diomira(SensorResponseCity):
+
     """
     The city of DIOMIRA simulates the response of the energy and
     traking plane sensors.
