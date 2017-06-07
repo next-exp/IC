@@ -76,7 +76,6 @@ class Diomira(SensorResponseCity):
                               *  self.sipm_adc_to_pes)
 
         # loop over input files
-        first = False
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
 
@@ -92,8 +91,7 @@ class Diomira(SensorResponseCity):
             )
 
             # Create and store Front-End Electronics parameters (for the PMTs)
-            self._create_FEE_table(h5out)
-            self.  store_FEE_table()
+            self._write_FEE_table(h5out)
 
             n_events_tot = self._file_loop(writers, nmax)
         return n_events_tot
@@ -137,13 +135,6 @@ class Diomira(SensorResponseCity):
             if self.max_events_reached(nmax, n_events_tot):
                 break
         return n_events_tot
-
-    def _create_FEE_table(self, h5out):
-        # create a table to store Energy plane FEE
-        FEE_group = h5out.create_group(h5out.root, "FEE")
-        self.fee_table = h5out.create_table(FEE_group, "FEE", FEE,
-                          "EP-FEE parameters",
-                          tbl.filters("NOCOMPR"))
 
 
 def DIOMIRA(argv=sys.argv):
