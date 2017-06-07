@@ -35,6 +35,7 @@ from ..reco             import tbl_functions    as tbf
 from ..reco             import wfm_functions    as wfm
 from ..reco.params      import SensorParams
 from ..reco.nh5         import DECONV_PARAM
+from ..reco.nh5         import FEE
 from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection
 
@@ -272,6 +273,16 @@ class SensorResponseCity(City):
             BLRX.append(signal_blr)
         return np.array(RWF), np.array(BLRX)
 
+    def _write_FEE_table(self, h5out):
+        self.create_FEE_table(h5out)
+        self. store_FEE_table()
+
+    def create_FEE_table(self, h5out):
+        # create a table to store Energy plane FEE
+        FEE_group = h5out.create_group(h5out.root, "FEE")
+        self.fee_table = h5out.create_table(FEE_group, "FEE", FEE,
+                          "EP-FEE parameters",
+                          tbf.filters("NOCOMPR"))
 
     def store_FEE_table(self):
         """Store the parameters of the EP FEE simulation."""
