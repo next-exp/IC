@@ -156,8 +156,7 @@ cpdef time_from_index(int [:] indx):
 
 
 cpdef find_S12(double [:] wfzs,  int [:] index,
-               double tmin = 0,  double tmax = 1e+6,
-               int    lmin = 8,  int    lmax = 1000000,
+               time=(), length=(),
                int stride=4, rebin=False, rebin_stride=40):
     """
     Find S1/S2 peaks.
@@ -172,6 +171,9 @@ cpdef find_S12(double [:] wfzs,  int [:] index,
     returns a dictionary of S12
     """
 
+    cdef double tmin, tmax
+    cdef int    limn, lmax
+
     cdef double [:] P = wfzs
     cdef double [:] T = time_from_index(index)
 
@@ -182,6 +184,9 @@ cpdef find_S12(double [:] wfzs,  int [:] index,
     cdef int i, j, k, ls
 
     cdef list s12 = []
+
+    tmin, tmax = time
+    lmin, lmax = length
 
     S12[0] = s12
     S12[0].append([T[0], P[0]])
