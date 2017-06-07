@@ -95,10 +95,13 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
             np.testing.assert_array_equal(mctracks_in, mctracks_out)
 
             # check events numbers & timestamps
-            evts_in  = h5in .root.Run.events[:nactual]
-            evts_out = h5out.root.Run.events[:nactual]
-            np.testing.assert_array_equal(evts_in, evts_out)
-
+            evts_in     = h5in .root.Run.events[:nactual]
+            evts_out_u8 = h5out.root.Run.events[:nactual]
+            # The old format used <i4 for th event number; the new one
+            # uses <u8. Casting the latter to the former allows us to
+            # re-use the old test data files.
+            evts_out_i4 = evts_out_u8.astype([('evt_number', '<i4'), ('timestamp', '<u8')])
+            np.testing.assert_array_equal(evts_in, evts_out_i4)
 
 
 @mark.slow
