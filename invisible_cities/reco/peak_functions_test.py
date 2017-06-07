@@ -20,6 +20,7 @@ from . params                  import S12Params
 from . params                  import ThresholdParams
 from . params                  import DeconvParams
 from . params                  import CalibVectors
+from . params                  import minmax
 
 
 # TODO: rethink this test (list(6) could stop working anytime if DataPMT is changed)
@@ -176,25 +177,19 @@ def pmaps_electrons(electron_RWF_file):
     event = 0
     run_number = 0
 
-    s1par = S12Params(tmin   =  99 * units.mus,
-                      tmax   = 101 * units.mus,
-                      lmin   =   4,
-                      lmax   =  20,
-                      stride =   4,
-                      rebin  = False)
-    # s1par_PMT = S12P( tmin   =  99*units.mus,
-    #                   tmax   =  101*units.mus,
-    #                   lmin   =    3,
-    #                   lmax   =   20,
-    #                   stride =    4,
-    #                   rebin  = False)
+    s1par = S12Params(time = minmax(min   =  99 * units.mus,
+                                    max   = 101 * units.mus),
+                      length = minmax(min =   4,
+                                      max =  20),
+                      stride              =   4,
+                      rebin               = False)
 
-    s2par = S12Params(tmin   =    101 * units.mus,
-                      tmax   =   1199 * units.mus,
-                      lmin   =     80,
-                      lmax   = 200000,
-                      stride =     40,
-                      rebin  = True)
+    s2par = S12Params(time = minmax(min   =    101 * units.mus,
+                                    max   =   1199 * units.mus),
+                      length = minmax(min =     80,
+                                      max = 200000),
+                      stride              =     40,
+                      rebin               = True)
 
     thr = ThresholdParams(thr_s1   =  0.2 * units.pes,
                           thr_s2   =  1   * units.pes,
@@ -319,13 +314,13 @@ def test_csum_zs_s12():
     npt.assert_allclose(e1, e2)
 
     S12L1 = pf.find_S12_py(wfzs_ene, wfzs_indx,
-             tmin = 0, tmax = 1e+6,
-             lmin = 0, lmax = 1000000,
+             time   = minmax(0, 1e+6),
+             length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
 
     S12L2 = cpf.find_S12(wfzs_ene, wfzs_indx,
-             tmin = 0, tmax = 1e+6,
-             lmin = 0, lmax = 1000000,
+             time   = minmax(0, 1e+6),
+             length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
 
     for i in S12L1:
@@ -346,8 +341,8 @@ def test_csum_zs_s12():
 
     # rebin
     S12L2 = cpf.find_S12(wfzs_ene, wfzs_indx,
-             tmin = 0, tmax = 1e+6,
-             lmin = 0, lmax = 1000000,
+             time   = minmax(0, 1e+6),
+             length = minmax(0, 1000000),
              stride=10, rebin=True, rebin_stride=10)
 
     E = np.array([155,  200,  155])
