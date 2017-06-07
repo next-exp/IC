@@ -88,6 +88,9 @@ class City:
         self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
         self.noise_rms       = DataPMT.noise_rms.values      .astype(np.double)
 
+        self.DataPMT  = DataPMT
+        self.DataSiPM = DataSiPM
+
     @property
     def monte_carlo(self):
         return self.run_number <= 0
@@ -129,14 +132,13 @@ class City:
 
     def get_rwf_vectors(self, h5in):
         "Return RWF vectors and sensor data."
-        pmtrwf, sipmrwf = self._get_rwf(h5in)
-
+        pmtrwf, sipmrwf, pmtblr  = self._get_rwf(h5in)
         NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
         NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
         assert NEVT_simp == NEVT_pmt
         NEVT = NEVT_pmt
 
-        return NEVT, pmtrwf, sipmrwf
+        return NEVT, pmtrwf, sipmrwf, pmtblr
 
     def get_rd_vectors(self, h5in):
         """Return MC RD vectors and sensor data.
@@ -162,9 +164,9 @@ class City:
 
     def get_sensor_params(self, filename):
         with tb.open_file(filename, "r") as h5in:
-            pmtrwf, sipmrwf = self._get_rwf(h5in)
-            _, NPMT,   PMTWL = pmtrwf .shape
-            _, NSIPM, SIPMWL = sipmrwf.shape
+            pmtrwf, sipmrwf, _ = self._get_rwf(h5in)
+            _, NPMT,   PMTWL   = pmtrwf .shape
+            _, NSIPM, SIPMWL   = sipmrwf.shape
         return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
 
     @staticmethod
@@ -191,7 +193,8 @@ class City:
     def _get_rwf(self, h5in):
         "Return raw waveforms for SIPM and PMT data"
         return (h5in.root.RD.pmtrwf,
-                h5in.root.RD.sipmrwf)
+                h5in.root.RD.sipmrwf,
+                h5in.root.RD.pmtblr)
 
     def _get_rd(self, h5in):
         "Return (MC) raw data waveforms for SIPM and PMT data"
@@ -271,35 +274,6 @@ class SensorResponseCity(City):
             # blr waveform stored with positive sign and no offset
             BLRX.append(signal_blr)
         return np.array(RWF), np.array(BLRX)
-
-
-    def store_FEE_table(self):
-        """Store the parameters of the EP FEE simulation."""
-        row = self.fee_table.row
-        row["OFFSET"]        = FE.OFFSET
-        row["CEILING"]       = FE.CEILING
-        row["PMT_GAIN"]      = FE.PMT_GAIN
-        row["FEE_GAIN"]      = FE.FEE_GAIN
-        row["R1"]            = FE.R1
-        row["C1"]            = FE.C1
-        row["C2"]            = FE.C2
-        row["ZIN"]           = FE.Zin
-        row["DAQ_GAIN"]      = FE.DAQ_GAIN
-        row["NBITS"]         = FE.NBITS
-        row["LSB"]           = FE.LSB
-        row["NOISE_I"]       = FE.NOISE_I
-        row["NOISE_DAQ"]     = FE.NOISE_DAQ
-        row["t_sample"]      = FE.t_sample
-        row["f_sample"]      = FE.f_sample
-        row["f_mc"]          = FE.f_mc
-        row["f_LPF1"]        = FE.f_LPF1
-        row["f_LPF2"]        = FE.f_LPF2
-        row["coeff_c"]       = self.coeff_c
-        row["coeff_blr"]     = self.coeff_blr
-        row["adc_to_pes"]    = self.adc_to_pes
-        row["pmt_noise_rms"] = self.noise_rms
-        row.append()
-        self.fee_table.flush()
 
     @property
     def FE_t_sample(self):

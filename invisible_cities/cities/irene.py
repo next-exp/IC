@@ -96,7 +96,7 @@ class Irene(PmapCity):
             print("Opening", filename, end="... ")
             with tb.open_file(filename, "r") as h5in:
                 # access RWF
-                NEVT, pmtrwf, sipmrwf = self.get_rwf_vectors(h5in)
+                NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
                 events_info = self.get_run_and_event_info(h5in)
                 # loop over all events in file unless reach nmax
                 (n_events_tot,
