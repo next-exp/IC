@@ -1,7 +1,9 @@
 """Functions manipulating sensors (PMTs and SiPMs)
 JJGC January 2017
 """
-import numpy as np
+import numpy  as np
+import pandas as pd
+
 import matplotlib.pyplot as plt
 import matplotlib.animation
 
@@ -123,6 +125,10 @@ def make_tracking_plane_movie(slices, thrs=0.1):
                                               frames=len(slices), interval=200,
                                               blit=False)
     return anim
+
+
+def convert_channel_id_to_IC_id(data_frame, channel_ids):
+    return pd.Index(data_frame.ChannelID).get_indexer(channel_ids)
 
 
 # def plot_event_3D(pmap, sipmdf, outputfile=None, thrs=0.):
