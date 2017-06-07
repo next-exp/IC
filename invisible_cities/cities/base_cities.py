@@ -129,14 +129,13 @@ class City:
 
     def get_rwf_vectors(self, h5in):
         "Return RWF vectors and sensor data."
-        pmtrwf, sipmrwf = self._get_rwf(h5in)
-
+        pmtrwf, sipmrwf, pmtblr  = self._get_rwf(h5in)
         NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
         NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
         assert NEVT_simp == NEVT_pmt
         NEVT = NEVT_pmt
 
-        return NEVT, pmtrwf, sipmrwf
+        return NEVT, pmtrwf, sipmrwf, pmtblr
 
     def get_rd_vectors(self, h5in):
         """Return MC RD vectors and sensor data.
@@ -162,9 +161,9 @@ class City:
 
     def get_sensor_params(self, filename):
         with tb.open_file(filename, "r") as h5in:
-            pmtrwf, sipmrwf = self._get_rwf(h5in)
-            _, NPMT,   PMTWL = pmtrwf .shape
-            _, NSIPM, SIPMWL = sipmrwf.shape
+            pmtrwf, sipmrwf, _ = self._get_rwf(h5in)
+            _, NPMT,   PMTWL   = pmtrwf .shape
+            _, NSIPM, SIPMWL   = sipmrwf.shape
         return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
 
     @staticmethod
@@ -191,7 +190,8 @@ class City:
     def _get_rwf(self, h5in):
         "Return raw waveforms for SIPM and PMT data"
         return (h5in.root.RD.pmtrwf,
-                h5in.root.RD.sipmrwf)
+                h5in.root.RD.sipmrwf,
+                h5in.root.RD.pmtblr)
 
     def _get_rd(self, h5in):
         "Return (MC) raw data waveforms for SIPM and PMT data"
