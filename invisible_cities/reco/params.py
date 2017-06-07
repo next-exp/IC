@@ -53,6 +53,8 @@ for name, attrs in (
         ('Peak'           , 't E'),
         ('FitFunction'    , 'fn values errors chi2 pvalue'),
         ('Cluster'        , 'Q pos rms Nsipm'),
+        ('TriggerParams'  , 'trigger_channels min_number_channels charge height width'),
+        ('PeakData'       , 'charge height width'),
         ('Measurement'    , 'value uncertainty')):
     _add_namedtuple_in_this_module(name, attrs)
 

@@ -9,7 +9,7 @@ from pytest import mark
 
 @mark.slow
 @mark.parametrize('city',
-                  'diomira isidora irene dorothea zaira'.split())
+                  'diomira isidora irene dorothea zaira cecilia'.split())
 def test_command_line_run(city, tmpdir_factory):
     ICTDIR = getenv('ICTDIR')
     # Use the example config file included in the repository
