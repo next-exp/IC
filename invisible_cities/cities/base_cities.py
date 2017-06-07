@@ -88,6 +88,9 @@ class City:
         self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
         self.noise_rms       = DataPMT.noise_rms.values      .astype(np.double)
 
+        self.DataPMT  = DataPMT
+        self.DataSiPM = DataSiPM
+
     @property
     def monte_carlo(self):
         return self.run_number <= 0
