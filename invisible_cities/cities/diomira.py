@@ -118,18 +118,20 @@ class Diomira(SensorResponseCity):
                     nmax, n_events_tot, h5in, first_event_no):
 
         for evt in range(NEVT):
-            event, timestamp = self.event_and_timestamp(evt, events_info)
-            local_event_number = event + first_event_no
-            write.mc(h5in.root.MC.MCTracks, local_event_number)
-            write.run_and_event(self.run_number, local_event_number, timestamp)
             # Simulate detector response
             dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd)
             dataSiPM_noisy = self.simulate_sipm_response(evt, sipmrd, self.noise_sampler)
             dataSiPM = wfm.noise_suppression(dataSiPM_noisy, self.sipms_thresholds)
-            # append the data to pytable vectors
+
+            event, timestamp = self.event_and_timestamp(evt, events_info)
+            local_event_number = event + first_event_no
+
+            write.mc(h5in.root.MC.MCTracks, local_event_number)
+            write.run_and_event(self.run_number, local_event_number, timestamp)
             write.rwf(dataPMT.astype(int))
             write.cwf( blrPMT.astype(int))
             write.sipm(dataSiPM)
+
             n_events_tot += 1
             self.conditional_print(evt, n_events_tot)
             if self.max_events_reached(nmax, n_events_tot):
