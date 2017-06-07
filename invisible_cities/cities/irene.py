@@ -15,6 +15,7 @@ from .. io.pmap_io            import pmap_writer
 from .. io.run_and_event_io   import run_and_event_writer
 from .. reco                  import tbl_functions as tbl
 from .. reco.params           import S12Params as S12P
+from .. reco.params           import minmax
 
 from .  base_cities  import PmapCity
 
@@ -169,20 +170,20 @@ def IRENE(argv = sys.argv):
     CFP = configure(argv)
 
     # parameters for s1 searches
-    s1par = S12P(tmin   = CFP.S1_TMIN * units.mus,
-                 tmax   = CFP.S1_TMAX * units.mus,
-                 stride = CFP.S1_STRIDE,
-                 lmin   = CFP.S1_LMIN,
-                 lmax   = CFP.S1_LMAX,
-                 rebin  = False)
+    s1par = S12P(time = minmax(min   = CFP.S1_TMIN * units.mus,
+                               max   = CFP.S1_TMAX * units.mus),
+                 stride              = CFP.S1_STRIDE,
+                 length = minmax(min = CFP.S1_LMIN,
+                                 max = CFP.S1_LMAX),
+                 rebin               = False)
 
     # parameters for s2 searches
-    s2par = S12P(tmin   = CFP.S2_TMIN * units.mus,
-                 tmax   = CFP.S2_TMAX * units.mus,
-                 stride = CFP.S2_STRIDE,
-                 lmin   = CFP.S2_LMIN,
-                 lmax   = CFP.S2_LMAX,
-                 rebin  = True)
+    s2par = S12P(time = minmax(min   = CFP.S2_TMIN * units.mus,
+                               max   = CFP.S2_TMAX * units.mus),
+                 stride              = CFP.S2_STRIDE,
+                 length = minmax(min = CFP.S2_LMIN,
+                                 max = CFP.S2_LMAX),
+                 rebin               = True)
 
     # input files
     # TODO detect non existing files and raise sensible message
