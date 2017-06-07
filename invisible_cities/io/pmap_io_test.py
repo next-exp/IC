@@ -20,6 +20,7 @@ from .. reco                   import peak_functions_c as cpf
 from .. reco.params            import S12Params        as S12P
 from .. reco.params            import ThresholdParams
 from .. reco.params            import PMaps
+from .. reco.params            import minmax
 
 from . pmap_io                 import pmap_writer
 from . pmap_io                 import S12
@@ -113,23 +114,23 @@ def test_pmap_electrons_40keV(config_tmpdir):
     PMAP_file_name = os.path.join(str(config_tmpdir),
               'electrons_40keV_z250_PMP.h5')
 
-    s1_params = S12P(tmin=90*units.mus,
-                 tmax=110*units.mus,
-                 lmin=4,
-                 lmax=20,
-                 stride=4,
-                 rebin=False)
-    s2_params = S12P(tmin=110*units.mus,
-                 tmax=1190*units.mus,
-                 lmin=80,
-                 lmax=200000,
-                 stride=40,
-                 rebin=True)
-    thr = ThresholdParams(thr_s1=0.2*units.pes,
-                          thr_s2=1*units.pes,
-                          thr_MAU=3*units.adc,
-                          thr_sipm=5*units.pes,
-                          thr_SIPM=20*units.pes)
+    s1_params = S12P(time   = minmax(min =     90 * units.mus,
+                                     max =    110 * units.mus),
+                     length = minmax(min =      4,
+                                     max =     20),
+                     stride              =      4,
+                     rebin               =  False)
+    s2_params = S12P(time =   minmax(min =    110 * units.mus,
+                                     max =   1190 * units.mus),
+                     length = minmax(min =     80,
+                                     max = 200000),
+                     stride              =     40,
+                     rebin               =   True)
+    thr = ThresholdParams(thr_s1   =  0.2 * units.pes,
+                          thr_s2   =  1   * units.pes,
+                          thr_MAU  =  3   * units.adc,
+                          thr_sipm =  5   * units.pes,
+                          thr_SIPM = 20   * units.pes)
 
     run_number = 0
 
