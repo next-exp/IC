@@ -35,7 +35,6 @@ from ..reco             import tbl_functions    as tbf
 from ..reco             import wfm_functions    as wfm
 from ..reco.params      import SensorParams
 from ..reco.nh5         import DECONV_PARAM
-from ..reco.nh5         import FEE
 from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection
 
@@ -272,45 +271,6 @@ class SensorResponseCity(City):
             # blr waveform stored with positive sign and no offset
             BLRX.append(signal_blr)
         return np.array(RWF), np.array(BLRX)
-
-    def _write_FEE_table(self, h5out):
-        self.create_FEE_table(h5out)
-        self. store_FEE_table()
-
-    def create_FEE_table(self, h5out):
-        # create a table to store Energy plane FEE
-        FEE_group = h5out.create_group(h5out.root, "FEE")
-        self.fee_table = h5out.create_table(FEE_group, "FEE", FEE,
-                          "EP-FEE parameters",
-                          tbf.filters("NOCOMPR"))
-
-    def store_FEE_table(self):
-        """Store the parameters of the EP FEE simulation."""
-        row = self.fee_table.row
-        row["OFFSET"]        = FE.OFFSET
-        row["CEILING"]       = FE.CEILING
-        row["PMT_GAIN"]      = FE.PMT_GAIN
-        row["FEE_GAIN"]      = FE.FEE_GAIN
-        row["R1"]            = FE.R1
-        row["C1"]            = FE.C1
-        row["C2"]            = FE.C2
-        row["ZIN"]           = FE.Zin
-        row["DAQ_GAIN"]      = FE.DAQ_GAIN
-        row["NBITS"]         = FE.NBITS
-        row["LSB"]           = FE.LSB
-        row["NOISE_I"]       = FE.NOISE_I
-        row["NOISE_DAQ"]     = FE.NOISE_DAQ
-        row["t_sample"]      = FE.t_sample
-        row["f_sample"]      = FE.f_sample
-        row["f_mc"]          = FE.f_mc
-        row["f_LPF1"]        = FE.f_LPF1
-        row["f_LPF2"]        = FE.f_LPF2
-        row["coeff_c"]       = self.coeff_c
-        row["coeff_blr"]     = self.coeff_blr
-        row["adc_to_pes"]    = self.adc_to_pes
-        row["pmt_noise_rms"] = self.noise_rms
-        row.append()
-        self.fee_table.flush()
 
     @property
     def FE_t_sample(self):
