@@ -72,12 +72,11 @@ indx:   a vector of indexes
 returns a dictionary
 
 do not interrupt the peak if next sample comes within stride
-accept the peak only if within [lmin, lmax)
-accept the peak only if within [tmin, tmax)
+accept the peak only if within [l.min, l.max)
+accept the peak only if within [t.min, t.max)
 """
 cpdef find_S12(double [:] wfzs, int [:] index,
-               double tmin=*, double tmax=*,
-               int lmin=*, int lmax=*,
+               time=*, length=*,
                int stride=*, rebin=*, rebin_stride=*)
 
 """
