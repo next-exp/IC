@@ -183,37 +183,3 @@ class Cecilia(DeconvolutionCity):
             peak_data[channel_no] = pd
 
         return peak_data
-
-
-def CECILIA(argv=sys.argv):
-    CFP = configure(argv)
-    files_in = glob(CFP.FILE_IN)
-    files_in.sort()
-    cecilia = Cecilia(files_in            = files_in,
-                      file_out            = CFP.FILE_OUT,
-                      trigger_channels    = CFP.TR_CHANNELS,
-                      min_number_channels = CFP.MIN_NUMBER_CHANNELS,
-                      height = minmax(min = CFP.MIN_HEIGHT,
-                                      max = CFP.MAX_HEIGHT),
-                      charge = minmax(min = CFP.MIN_CHARGE,
-                                      max = CFP.MAX_CHARGE),
-                      width  = minmax(min = CFP.MIN_WIDTH,
-                                      max = CFP.MAX_WIDTH),
-                      data_MC_ratio       = CFP.DATA_MC_RATIO
-    )
-
-    # TODO
-    # trigger_type = CFP.TRIGGER
-
-
-    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
-    t0 = time()
-    nevt_in, nevt_out = cecilia.run(nmax=nevts)
-    t1 = time()
-    dt = t1 - t0
-
-    print("run {} evts in {} s, time/event = {}".format(nevt_in, dt, dt/nevt_in))
-
-
-if __name__ == "__main__":
-    CECILIA(sys.argv)
