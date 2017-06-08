@@ -110,30 +110,3 @@ class Isidora(DeconvolutionCity):
             datapmt.copy(newparent=self.sensors_group)
             datasipm = h5in.root.Sensors.DataSiPM
             datasipm.copy(newparent=self.sensors_group)
-
-
-def ISIDORA(argv = sys.argv):
-    """ISIDORA DRIVER"""
-    CFP = configure(argv)
-
-    files_in    = glob(CFP.FILE_IN)
-    files_in.sort()
-
-
-    fpp = Isidora(run_number  = CFP.RUN_NUMBER,
-                  nprint      = CFP.NPRINT,
-                  compression = CFP.COMPRESSION,
-                  files_in    = files_in,
-                  file_out    = CFP.FILE_OUT,
-                  n_baseline  = CFP.NBASELINE,
-                  thr_trigger = CFP.THR_TRIGGER * units.adc)
-
-    t0 = time()
-    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
-    nevt = fpp.run(nmax=nevts)
-    t1 = time()
-    dt = t1 - t0
-
-    print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt / nevt))
-
-    return nevts, nevt

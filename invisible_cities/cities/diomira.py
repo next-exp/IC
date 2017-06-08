@@ -135,26 +135,3 @@ class Diomira(SensorResponseCity):
             if self.max_events_reached(nmax, n_events_tot):
                 break
         return n_events_tot
-
-
-def DIOMIRA(argv=sys.argv):
-    """DIOMIRA DRIVER"""
-
-    CFP = configure(argv)
-    files_in = glob(CFP.FILE_IN)
-    files_in.sort()
-
-    # TODO: remove first_event now that we use the hash
-    diomira = Diomira(first_evt      = CFP.FIRST_EVT,
-                      files_in       = files_in,
-                      file_out       = CFP.FILE_OUT,
-                      sipm_noise_cut = CFP.NOISE_CUT)
-
-    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
-    t0 = time()
-    nevt = diomira.run(nmax=nevts)
-    t1 = time()
-    dt = t1 - t0
-
-    if nevt > 0:
-        print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
