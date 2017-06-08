@@ -573,21 +573,33 @@ class MapCity(City):
 
 class HitCollectionCity(City):
     def __init__(self,
+                 run_number  = 0,
+                 files_in    = None,
+                 file_out    = None,
+                 compression = 'ZLIB4',
+                 nprint      = 10000,
+                 # Parameters added at this level
                  rebin            = 1,
                   z_corr_filename = None,
                  xy_corr_filename = None,
                  lifetime         = None,
                  reco_algorithm   = barycenter):
 
+        super().__init__(self,
+                         run_number  = run_number,
+                         files_in    = files_in,
+                         file_out    = file_out,
+                         compression = compression,
+                         nprint      = nprint)
+
         self.rebin          = rebin
-        self. z_corr        = LifetimeCorrection(lifetime)\
-                              if lifetime else\
-                              dstf.load_z_corrections(z_corr_filename)
+        self. z_corr        = (LifetimeCorrection(lifetime)
+                               if lifetime else
+                               dstf.load_z_corrections(z_corr_filename))
 
         self.xy_corr        = dstf.load_xy_corrections(xy_corr_filename)
         self.reco_algorithm = reco_algorithm
 
-    # TODO: remove from here
     def rebin_s2(self, S2, Si):
         if self.rebin <= 1:
             return S2, Si
