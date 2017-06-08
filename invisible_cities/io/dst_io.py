@@ -1,5 +1,3 @@
-import abc
-
 import tables as tb
 
 from .. reco import tbl_functions as tbl
@@ -54,11 +52,21 @@ def _make_table(hdf5_file, group, name, format, compression, description):
     return table
 
 
-class PointLikeEvent:
+class Event:
     def __init__(self):
-        self.evt   = -1
-        self.T     = -1
+        self.evt  = None
+        self.time = None
 
+    def __str__(self):
+        s = "{0}Event\n{0}".format("#"*20 + "\n")
+        for attr in self.__dict__:
+            s += "{}: {}\n".format(attr, getattr(self, attr))
+        return s
+
+
+class KrEvent(Event):
+    def __init__(self):
+        super().__init__()
         self.nS1   = -1
         # Consider replacing with a list of namedtuples or a
         # structured array
@@ -91,7 +99,7 @@ class PointLikeEvent:
         return s
 
 
-class KrEvent(PointLikeEvent):
+class PersistentKrEvent(KrEvent):
     def store(self, table):
         row = table.row
         for i in range(int(self.nS2)):
@@ -122,3 +130,46 @@ class KrEvent(PointLikeEvent):
             row["Yrms" ] = self.Yrms [i]
             row.append()
 
+
+class Hit:
+    def __init__(self):
+        self.Npeak = -1
+        self.X     = -1e12
+        self.Y     = -1e12
+        self.R     = -1e12
+        self.Phi   = -1e12
+        self.Z     = -1
+        self.E     = -1
+        self.Q     = -1
+        self.Nsipm = -1
+
+
+class HitCollection(Event):
+    def __init__(self):
+        super().__init__()
+        self.hits = []
+        self.S1w = -1
+        self.S1h = -1
+        self.S1e = -1
+        self.S1t = -1
+
+
+class PersistentHitCollection(HitCollection):
+
+    def store(self, row):
+        for hit in self.hits:
+            row["event"] = self.evt
+            row["time" ] = self.time
+            row["S1w"  ] = self.S1w
+            row["S1h"  ] = self.S1h
+            row["S1e"  ] = self.S1e
+            row["S1t"  ] = self.S1t
+
+            row["npeak"] = hit.npeak
+            row["X"    ] = hit.X
+            row["Y"    ] = hit.Y
+            row["Z"    ] = hit.Z
+            row["R"    ] = hit.R
+            row["Phi"  ] = hit.Phi
+            row["Nsipm"] = hit.Nsipm
+            row.append()
