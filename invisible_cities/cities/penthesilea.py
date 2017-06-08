@@ -14,6 +14,7 @@ from ..cities.base_cities     import City
 from ..cities.base_cities     import S12SelectorCity
 from ..cities.base_cities     import HitCollectionCity
 from ..reco.tbl_functions     import get_event_numbers_and_timestamps
+from ..reco                   import tbl_functions as tbl
 from ..reco.pmaps_functions   import load_pmaps
 from ..reco.xy_algorithms     import barycenter
 from ..reco.xy_algorithms     import find_algorithm
@@ -94,53 +95,102 @@ class Penthesilea(HitCollectionCity):
                                           S2_Ethr     = S2_Ethr)
 
     def run(self, nmax):
-        nevt_in = nevt_out = 0
+        self.display_IO_info(nmax)
 
-        with HitCollection_writer(self.output_file, "DST", "w",
-                                  self.compression, "Tracks") as write:
-
-            exit_file_loop = False
-            for filename in self.input_files:
-                print("Reading {}".format(filename), end="... ")
-
-                try:
-                    S1s, S2s, S2Sis = load_pmaps(filename)
-                except (ValueError, tb.exceptions.NoSuchNodeError):
-                    print("Empty file. Skipping.")
-                    continue
-
-                event_numbers, timestamps = get_event_numbers_and_timestamps(filename)
-                for evt_number, evt_time in zip(event_numbers, timestamps):
-                    nevt_in +=1
-
-                    S1 = S1s  .get(evt_number, {})
-                    S2 = S2s  .get(evt_number, {})
-                    Si = S2Sis.get(evt_number, {})
-
-                    evt = self.select_event(evt_number, evt_time, S1, S2, Si)
-
-                    if evt:
-                        nevt_out += 1
-                        write(evt)
-
-                    if not nevt_in % self.nprint:
-                        print("{} evts analyzed".format(nevt_in))
-
-                    if -1 < nmax < nevt_in:
-                        exit_file_loop = True
-                        break
-
-                print("OK")
-                if exit_file_loop:
-                    break
-
-
+        # with HitCollection_writer(self.output_file, "DST", "w",
+        #                           self.compression, "Tracks") as write:
+        with tb.open_file(self.output_file, "w",
+                          filters = tbl.filters(self.compression)) as h5out:
+            write_hits = hits_writer(h5out)
+            nevt_in, nevt_out = self._file_loop(write_hits, nmax)
         print(textwrap.dedent("""
                               Number of events in : {}
                               Number of events out: {}
                               Ratio               : {}
-                              """.format(nevt_in, nevt_out, nevt_out/nevt_in)))
-        return nevt_in, nevt_out, nevt_in/nevt_out
+                              """.format(nevt_in, nevt_out, nevt_out / nevt_in)))
+        return nevt_in, nevt_out
+
+    def _file_loop(self, write_hits, nmax):
+        nevt_in = nevt_out = 0
+
+        for filename in self.input_files:
+            print("Opening {filename}".format(**locals()), end="... ")
+
+            try:
+                S1s, S2s, S2Sis = load_pmaps(filename)
+            except (ValueError, tb.exceptions.NoSuchNodeError):
+                print("Empty file. Skipping.")
+                continue
+
+            event_numbers, timestamps = get_event_numbers_and_timestamps_from_file_name(filename)
+
+            nevt_in, nevt_out, max_events_reached = self._event_loop(
+                event_numbers, timestamps, nmax, nevt_in, nevt_out, write_hits, S1s, S2s, S2Sis)
+
+            if max_events_reached:
+                print('Max events reached')
+                break
+            else:
+                print("OK")
+
+        return nevt_in, nevt_out
+
+    def _event_loop(self, event_numbers, timestamps, nmax, nevt_in, nevt_out, write_hits, S1s, S2s, S2Sis):
+        max_events_reached = False
+        for evt_number, evt_time in zip(event_numbers, timestamps):
+            nevt_in += 1
+            if self.max_events_reached(nmax, nevt_in):
+                max_events_reached = True
+                break
+            S1 = S1s  .get(evt_number, {})
+            S2 = S2s  .get(evt_number, {})
+            Si = S2Sis.get(evt_number, {})
+
+            if not s1s2_filter(self._s1s2_selector, S1, S2, Si):
+                continue
+            nevt_out += 1
+
+            evt = self._create_hits_event(evt_number, evt_time, S1, S2, Si)
+            write_hits(evt)
+
+            self.conditional_print(evt, nevt_in)
+
+        return nevt_in, nevt_out, max_events_reached
+
+    def _create_hits_event(self, evt_number, evt_time, S1, S2, Si):
+        hitc = PersistentHitCollection()
+        hitc.evt   = evt_number
+        hitc.time  = evt_time * 1e-3 # s
+
+        t, e = next(iter(S1.values()))
+        S1t  = t[np.argmax(e)]
+
+        S2, Si = self.rebin_s2(S2, Si)
+
+        npeak = 0
+        for peak_no, (t_peak, e_peak) in sorted(S2.items()):
+            si = Si[peak_no]
+            for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
+                clusters = self.compute_xy_position(si, slice_no)
+                es       = self.split_energy(e_slice, clusters)
+                z        = (t_slice - S1t) * units.ns * self.drift_v
+                for c, e in zip(clusters, es):
+                    hit       = Hit()
+                    hit.Npeak = npeak
+                    hit.X     = c.X
+                    hit.Y     = c.Y
+                    hit.R     = (c.X**2 + c.Y**2)**0.5
+                    hit.Phi   = np.arctan2(c.Y, c.X)
+                    hit.Z     = z
+                    hit.Q     = c.Q
+                    hit.E     = e
+                    hit.Ecorr = self.correct_energy(e, c.X, c.Y, z)
+                    hit.Nsipm = c.Nsipm
+                    hitc.hits.append(hit)
+            npeak += 1
+
+        return hitc
+
 
 
 def PENTHESILEA(argv = sys.argv):
