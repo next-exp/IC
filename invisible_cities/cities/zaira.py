@@ -89,38 +89,38 @@ class Zaira(MapCity):
         return len(dst)
 
 
-def ZAIRA(argv = sys.argv):
-    """ZAIRA DRIVER"""
+# def ZAIRA(argv = sys.argv):
+#     """ZAIRA DRIVER"""
 
-    # get parameters dictionary
-    CFP = configure(argv)
+#     # get parameters dictionary
+#     CFP = configure(argv)
 
-    #class instance
-    zaira = Zaira(run_number   = CFP.RUN_NUMBER,
-                  files_in     = [CFP.FILE_IN],
-                  file_out     = CFP.FILE_OUT,
-                  compression  = CFP.COMPRESSION,
-                  nprint       = CFP.NPRINT,
+#     #class instance
+#     zaira = Zaira(run_number   = CFP.RUN_NUMBER,
+#                   files_in     = [CFP.FILE_IN],
+#                   file_out     = CFP.FILE_OUT,
+#                   compression  = CFP.COMPRESSION,
+#                   nprint       = CFP.NPRINT,
 
-                  dst_group    = CFP.DST_GROUP,
-                  dst_node     = CFP.DST_NODE,
+#                   dst_group    = CFP.DST_GROUP,
+#                   dst_node     = CFP.DST_NODE,
 
-                  lifetime     = CFP.LIFETIME,
-                  xbins        = CFP.XBINS,
-                  xmin         = CFP.XMIN if "XMIN" in CFP else None,
-                  xmax         = CFP.XMAX if "XMAX" in CFP else None,
+#                   lifetime     = CFP.LIFETIME,
+#                   xbins        = CFP.XBINS,
+#                   xmin         = CFP.XMIN if "XMIN" in CFP else None,
+#                   xmax         = CFP.XMAX if "XMAX" in CFP else None,
 
-                  ybins        = CFP.YBINS,
-                  ymin         = CFP.YMIN if "YMIN" in CFP else None,
-                  ymax         = CFP.YMAX if "YMAX" in CFP else None,
+#                   ybins        = CFP.YBINS,
+#                   ymin         = CFP.YMIN if "YMIN" in CFP else None,
+#                   ymax         = CFP.YMAX if "YMAX" in CFP else None,
 
-                  fiducial_z   = CFP.FIDUCIAL_Z if "FIDUCIAL_Z" in CFP else None,
-                  fiducial_e   = CFP.FIDUCIAL_E if "FIDUCIAL_E" in CFP else None)
+#                   fiducial_z   = CFP.FIDUCIAL_Z if "FIDUCIAL_Z" in CFP else None,
+#                   fiducial_e   = CFP.FIDUCIAL_E if "FIDUCIAL_E" in CFP else None)
 
-    t0   = time.time()
-    nevt = zaira.run()
-    t1   = time.time()
-    dt   = t1 - t0
+#     t0   = time.time()
+#     nevt = zaira.run()
+#     t1   = time.time()
+#     dt   = t1 - t0
 
-    if nevt > 0:
-        print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
+#     if nevt > 0:
+#         print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
