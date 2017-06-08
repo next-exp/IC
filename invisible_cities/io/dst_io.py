@@ -122,18 +122,3 @@ class KrEvent(PointLikeEvent):
             row["Yrms" ] = self.Yrms [i]
             row.append()
 
-def write_test_dst(df, filename, group, node):
-    with tb.open_file(filename, "w") as h5in:
-        group = h5in.create_group(h5in.root, group)
-        table = h5in.create_table(group,
-                                  "data",
-                                  table_formats.KrTable,
-                                  "Test data",
-                                  tbl.filters("ZLIB4"))
-
-        tablerow = table.row
-        for index, row in df.iterrows():
-            for name, value in row.items():
-                tablerow[name] = value
-            tablerow.append()
-        table.flush()
