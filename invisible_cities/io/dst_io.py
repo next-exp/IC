@@ -17,6 +17,20 @@ def _make_kr_tables(hdf5_file, compression):
         dst_group, 'Events', table_formats.KrTable, 'Events Table', c)
     return events_table
 
+# TODO: Remove duplication: this is just like the above
+def hits_writer(file, *, compression='ZLIB4'):
+    hits_table = _make_hits_tables(file, compression)
+    def write_hits(hits_event):
+        hits_event.store(hits_table)
+    return write_hits
+
+def _make_hits_tables(hdf5_file, compression):
+    c = tbl.filters(compression)
+    dst_group = hdf5_file.create_group(hdf5_file.root, 'DST')
+    events_table = hdf5_file.create_table(
+        dst_group, 'Events', table_formats.HitsTable, 'Events Table', c)
+    return events_table
+
 
 def xy_writer(file, *, compression='ZLIB4'):
     xy_table = _make_xy_tables(file, compression)
