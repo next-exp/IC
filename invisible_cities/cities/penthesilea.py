@@ -17,6 +17,9 @@ from ..reco.tbl_functions     import get_event_numbers_and_timestamps
 from ..reco.pmaps_functions   import load_pmaps
 from ..reco.xy_algorithms     import barycenter
 from ..reco.xy_algorithms     import find_algorithm
+from .. filters.s1s2_filter   import s1s2_filter
+from .. filters.s1s2_filter   import S12Selector
+
 
 
 class Penthesilea(HitCollectionCity):
@@ -27,7 +30,7 @@ class Penthesilea(HitCollectionCity):
                  compression      = "ZLIB4",
                  nprint           = 10000,
 
-                 drift_v          = 1 * units.mm/units.mus,
+                 drift_v          = 1 * units.mm / units.mus,
 
                  S1_Emin          = 0,
                  S1_Emax          = np.inf,
@@ -55,45 +58,42 @@ class Penthesilea(HitCollectionCity):
                  lifetime         = None,
                  reco_algorithm   = barycenter):
 
-        City             .__init__(self,
-                                   run_number       = run_number,
-                                   files_in         = files_in,
-                                   file_out         = file_out,
-                                   compression      = compression,
-                                   nprint           = nprint)
+        super().__init__(self,
+                         run_number       = run_number,
+                         files_in         = files_in,
+                         file_out         = file_out,
+                         compression      = compression,
+                         nprint           = nprint,
+                         rebin            = rebin,
+                         z_corr_filename =  z_corr_filename,
+                         xy_corr_filename = xy_corr_filename,
+                         lifetime         = lifetime,
+                         reco_algorithm   = reco_algorithm)
 
-        S12SelectorCity  .__init__(self,
-                                   drift_v          = drift_v,
+        self.drift_v        = drift_v
+        self._s1s2_selector = S12Selector(S1_Nmin     = 1,
+                                          S1_Nmax     = 1,
+                                          S1_Emin     = S1_Emin,
+                                          S1_Emax     = S1_Emax,
+                                          S1_Lmin     = S1_Lmin,
+                                          S1_Lmax     = S1_Lmax,
+                                          S1_Hmin     = S1_Hmin,
+                                          S1_Hmax     = S1_Hmax,
+                                          S1_Ethr     = S1_Ethr,
 
-                                   S1_Emin          = S1_Emin,
-                                   S1_Emax          = S1_Emax,
-                                   S1_Lmin          = S1_Lmin,
-                                   S1_Lmax          = S1_Lmax,
-                                   S1_Hmin          = S1_Hmin,
-                                   S1_Hmax          = S1_Hmax,
-                                   S1_Ethr          = S1_Ethr,
+                                          S2_Nmin     = 1,
+                                          S2_Nmax     = S2_Nmax,
+                                          S2_Emin     = S2_Emin,
+                                          S2_Emax     = S2_Emax,
+                                          S2_Lmin     = S2_Lmin,
+                                          S2_Lmax     = S2_Lmax,
+                                          S2_Hmin     = S2_Hmin,
+                                          S2_Hmax     = S2_Hmax,
+                                          S2_NSIPMmin = S2_NSIPMmin,
+                                          S2_NSIPMmax = S2_NSIPMmax,
+                                          S2_Ethr     = S2_Ethr)
 
-                                   S2_Nmin          = S2_Nmin,
-                                   S2_Nmax          = S2_Nmax,
-                                   S2_Emin          = S2_Emin,
-                                   S2_Emax          = S2_Emax,
-                                   S2_Lmin          = S2_Lmin,
-                                   S2_Lmax          = S2_Lmax,
-                                   S2_Hmin          = S2_Hmin,
-                                   S2_Hmax          = S2_Hmax,
-                                   S2_NSIPMmin      = S2_NSIPMmin,
-                                   S2_NSIPMmax      = S2_NSIPMmax,
-                                   S2_Ethr          = S2_Ethr)
-
-
-        HitCollectionCity.__init__(self,
-                                   rebin            = rebin,
-                                    z_corr_filename =  z_corr_filename,
-                                   xy_corr_filename = xy_corr_filename,
-                                   lifetime         = lifetime,
-                                   reco_algorithm   = reco_algorithm)
-
-    def run(self, max_evt = -1):
+    def run(self, nmax):
         nevt_in = nevt_out = 0
 
         with HitCollection_writer(self.output_file, "DST", "w",
@@ -126,7 +126,7 @@ class Penthesilea(HitCollectionCity):
                     if not nevt_in % self.nprint:
                         print("{} evts analyzed".format(nevt_in))
 
-                    if -1 < max_evt < nevt_in:
+                    if -1 < nmax < nevt_in:
                         exit_file_loop = True
                         break
 
@@ -187,7 +187,7 @@ def PENTHESILEA(argv = sys.argv):
     t0 = time.time()
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
 
-    nevt_in, nevt_out, ratio = penthesilea.run(max_evt = nevts)
+    nevt_in, nevt_out, ratio = penthesilea.run(nmax = nevts)
     t1 = time.time()
     dt = t1 - t0
 
