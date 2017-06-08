@@ -31,6 +31,7 @@ from ..io.dst_io          import KrEvent
 from ..reco               import peak_functions_c as cpf
 from ..reco               import peak_functions   as pf
 from ..reco               import pmaps_functions  as pmp
+from ..reco               import dst_functions    as dstf
 from ..reco               import tbl_functions    as tbf
 from ..reco               import wfm_functions    as wfm
 from ..reco.params        import SensorParams
@@ -533,7 +534,7 @@ class HitCollectionCity(City):
                  lifetime         = None,
                  reco_algorithm   = barycenter):
 
-        super().__init__(self,
+        City.__init__(self,
                          run_number  = run_number,
                          files_in    = files_in,
                          file_out    = file_out,

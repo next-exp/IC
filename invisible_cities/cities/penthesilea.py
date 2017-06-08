@@ -59,14 +59,14 @@ class Penthesilea(HitCollectionCity):
                  lifetime         = None,
                  reco_algorithm   = barycenter):
 
-        super().__init__(self,
+        HitCollectionCity.__init__(self,
                          run_number       = run_number,
                          files_in         = files_in,
                          file_out         = file_out,
                          compression      = compression,
                          nprint           = nprint,
                          rebin            = rebin,
-                         z_corr_filename =  z_corr_filename,
+                         z_corr_filename  = z_corr_filename,
                          xy_corr_filename = xy_corr_filename,
                          lifetime         = lifetime,
                          reco_algorithm   = reco_algorithm)
