@@ -9,7 +9,7 @@ import tables as tb
 
 from ..core.configure         import configure
 from ..core.system_of_units_c import units
-from ..reco.dst_io            import HitCollection_writer
+from ..io.dst_io              import hits_writer
 from ..cities.base_cities     import City
 from ..cities.base_cities     import S12SelectorCity
 from ..cities.base_cities     import HitCollectionCity
