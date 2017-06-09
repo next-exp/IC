@@ -529,9 +529,6 @@ class HitCollectionCity(City):
                  nprint      = 10000,
                  # Parameters added at this level
                  rebin            = 1,
-                  z_corr_filename = None,
-                 xy_corr_filename = None,
-                 lifetime         = None,
                  reco_algorithm   = barycenter):
 
         City.__init__(self,
@@ -542,11 +539,6 @@ class HitCollectionCity(City):
                          nprint      = nprint)
 
         self.rebin          = rebin
-        self. z_corr        = (LifetimeCorrection(lifetime)
-                               if lifetime else
-                               dstf.load_z_corrections(z_corr_filename))
-
-        self.xy_corr        = dstf.load_xy_corrections(xy_corr_filename)
         self.reco_algorithm = reco_algorithm
 
     def rebin_s2(self, S2, Si):
@@ -567,11 +559,6 @@ class HitCollectionCity(City):
         qs = np.array([c.Q for c in clusters])
         return e * qs / np.sum(qs)
 
-    def correct_energy(self, e, x, y, z):
-        ecorr = e * self.z_corr([z])[0][0]
-        if not np.isnan([x, y]).any():
-            ecorr *= self.xy_corr([x], [y])[0][0]
-        return ecorr
 
     def compute_xy_position(self, si, slice_no):
         si      = pmp.select_si_slice(si, slice_no)
