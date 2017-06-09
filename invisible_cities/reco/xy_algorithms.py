@@ -18,7 +18,12 @@ def barycenter(pos, qs):
     if sum(qs) == 0: raise SipmZeroCharge
     mu  = np.average( pos           , weights=qs, axis=0)
     std = np.average((pos - mu) ** 2, weights=qs, axis=0)
-    return Cluster(sum(qs), mu, std, len(qs))
+    # For uniformity of interface, all xy algorithms should return a
+    # list of clusters. barycenter always returns a single clusters,
+    # but we still want it in a list.
+    from collections import namedtuple
+    XY = namedtuple('XY', 'X Y')
+    return [Cluster(sum(qs), XY(*mu), std, len(qs))]
 
 def discard_sipms(sis, pos, qs):
     return np.delete(pos, sis, axis=0), np.delete(qs, sis)
@@ -65,7 +70,7 @@ def corona(pos, qs, Qthr           =  0 * units.pes,
         # find locmax (the baryc of charge in SiPMs less than lm_radius from hottest_sipm)
         within_lm_radius = get_nearby_sipm_inds(pos[hottest_sipm], lm_radius, pos, qs)
         new_local_maximum  = barycenter(pos[within_lm_radius],
-                                        qs [within_lm_radius]).pos
+                                        qs [within_lm_radius])[0].pos
 
         # new_lm_radius is an array of the responsive sipms less than
         # new_lm_radius from locmax
@@ -74,7 +79,7 @@ def corona(pos, qs, Qthr           =  0 * units.pes,
 
         # if there are at least msipms within_new_lm_radius, get the barycenter
         if len(within_new_lm_radius) >= msipm:
-            c.append(barycenter(pos[within_new_lm_radius],
+            c.extend(barycenter(pos[within_new_lm_radius],
                                 qs [within_new_lm_radius]))
 
         # delete the SiPMs contributing to this cluster
