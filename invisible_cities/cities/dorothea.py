@@ -12,8 +12,8 @@ from .. core.system_of_units_c import units
 from .. io.dst_io              import kr_writer
 from .. io.dst_io              import PersistentKrEvent
 
-from .. reco                   import tbl_functions as tbl
-from .. reco                   import pmaps_functions  as pmp
+from .. reco                   import tbl_functions   as tbl
+from .. reco                   import pmaps_functions as pmp
 from .. reco.pmaps_functions   import load_pmaps
 from .. reco.tbl_functions     import get_event_numbers_and_timestamps_from_file_name
 
