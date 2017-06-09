@@ -52,7 +52,7 @@ for name, attrs in (
         ('PMaps'          , 'S1 S2 S2Si'),
         ('Peak'           , 't E'),
         ('FitFunction'    , 'fn values errors chi2 pvalue'),
-        ('Cluster'        , 'Q pos rms Nsipm'),
+        ('Cluster'        , 'Q pos rms nsipm'),
         ('TriggerParams'  , 'trigger_channels min_number_channels charge height width'),
         ('PeakData'       , 'charge height width'),
         ('Measurement'    , 'value uncertainty')):
