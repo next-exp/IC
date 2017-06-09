@@ -52,9 +52,6 @@ class Penthesilea(HitCollectionCity):
                  S2_Ethr          = 0,
 
                  rebin            = 1,
-                  z_corr_filename = None,
-                 xy_corr_filename = None,
-                 lifetime         = None,
                  reco_algorithm   = barycenter):
 
         HitCollectionCity.__init__(self,
@@ -64,9 +61,6 @@ class Penthesilea(HitCollectionCity):
                          compression      = compression,
                          nprint           = nprint,
                          rebin            = rebin,
-                         z_corr_filename  = z_corr_filename,
-                         xy_corr_filename = xy_corr_filename,
-                         lifetime         = lifetime,
                          reco_algorithm   = reco_algorithm)
 
         self.drift_v        = drift_v
@@ -182,8 +176,6 @@ class Penthesilea(HitCollectionCity):
                     hit.Z     = z
                     hit.Q     = c.Q
                     hit.E     = e
-                    hit.Ecorr = self.correct_energy(e, c.X, c.Y, z)
-                    hit.Nsipm = c.Nsipm
                     hitc.hits.append(hit)
             npeak += 1
 
@@ -227,9 +219,6 @@ def PENTHESILEA(argv = sys.argv):
                               S2_Ethr          = CFP.S2_ETHR * units.pes,
 
                               rebin            = CFP.REBIN if "REBIN" in CFP else 1,
-                               z_corr_filename = CFP. Z_CORR_FILENAME if  "Z_CORR_FILENAME" in CFP else None,
-                              xy_corr_filename = CFP.XY_CORR_FILENAME if "XY_CORR_FILENAME" in CFP else None,
-                              lifetime         = CFP.LIFETIME if "LIFETIME" in CFP else None,
                               reco_algorithm   = find_algorithm(CFP.RECO_ALGORITHM))
 
     t0 = time.time()
