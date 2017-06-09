@@ -13,12 +13,28 @@ from . pmaps_functions import df_to_pmaps_dict
 from . pmaps_functions import df_to_s2si_dict
 
 
-def test_integrate_charge():
-    sipms = {1000: range(5),
-             1001: range(10)}
-    charges = np.array([[1000,1001],[10,45]])
-    charges_test = pmapf.integrate_charge(sipms)
-    np.testing.assert_array_equal(charges, charges_test)
+def test_integrate_charges_as_dict():
+    sipm1 = 1000
+    sipm2 = 1001
+    qs1 = list(range(5))
+    qs2 = list(range(10))
+    sipms = {sipm1:     qs1,
+             sipm2:     qs2 }
+    Qs    = {sipm1: sum(qs1),
+             sipm2: sum(qs2)}
+    assert pmapf.integrate_charges_as_dict(sipms) == Qs
+
+
+def test_integrate_charges():
+    sipm1 = 1234
+    sipm2 =  987
+    qs1 = [8,6,9,3]
+    qs2 = [4,1,9,6,7]
+    sipms = {sipm1: qs1,
+             sipm2: qs2}
+    ids, Qs =  pmapf.integrate_charges(sipms)
+    assert np.array_equal(ids, np.array((  sipm1,    sipm2)))
+    assert np.array_equal(Qs , np.array((sum(qs1), sum(qs2))))
 
 
 def test_width():
