@@ -6,21 +6,19 @@ import textwrap
 import numpy  as np
 import tables as tb
 
-
 from ..core.configure         import configure
 from ..core.system_of_units_c import units
 from ..io.dst_io              import hits_writer
 from ..cities.base_cities     import City
-from ..cities.base_cities     import S12SelectorCity
 from ..cities.base_cities     import HitCollectionCity
-from ..reco.tbl_functions     import get_event_numbers_and_timestamps
 from ..reco                   import tbl_functions as tbl
+from ..reco.tbl_functions     import get_event_numbers_and_timestamps_from_file_name
+
 from ..reco.pmaps_functions   import load_pmaps
 from ..reco.xy_algorithms     import barycenter
 from ..reco.xy_algorithms     import find_algorithm
-from .. filters.s1s2_filter   import s1s2_filter
-from .. filters.s1s2_filter   import S12Selector
-
+from ..filters.s1s2_filter    import s1s2_filter
+from ..filters.s1s2_filter    import S12Selector
 
 
 class Penthesilea(HitCollectionCity):
@@ -229,8 +227,8 @@ def PENTHESILEA(argv = sys.argv):
                               S2_Ethr          = CFP.S2_ETHR * units.pes,
 
                               rebin            = CFP.REBIN if "REBIN" in CFP else 1,
-                               z_corr_filename = CFP. Z_CORR_FILENAME if "Z_CORR_FILENAME" in CFP else None,
-                              xy_corr_filename = CFP.XY_CORR_FILENAME,
+                               z_corr_filename = CFP. Z_CORR_FILENAME if  "Z_CORR_FILENAME" in CFP else None,
+                              xy_corr_filename = CFP.XY_CORR_FILENAME if "XY_CORR_FILENAME" in CFP else None,
                               lifetime         = CFP.LIFETIME if "LIFETIME" in CFP else None,
                               reco_algorithm   = find_algorithm(CFP.RECO_ALGORITHM))
 
