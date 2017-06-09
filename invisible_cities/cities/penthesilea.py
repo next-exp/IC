@@ -234,13 +234,8 @@ def PENTHESILEA(argv = sys.argv):
     t0 = time.time()
     nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
 
-    nevt_in, nevt_out, ratio = penthesilea.run(nmax = nevts)
+    nevt_in, nevt_out = penthesilea.run(nmax = nevts)
     t1 = time.time()
     dt = t1 - t0
 
     print("run {} evts in {} s, time/event = {}".format(nevt_in, dt, dt/nevt_in))
-
-    return nevts, nevt_in, nevt_out
-
-if __name__ == "__main__":
-    PENTHESILEA(sys.argv)
