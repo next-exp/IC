@@ -5,6 +5,7 @@ from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmZeroCharge
 from .       params            import Cluster
+from .       params            import XY
 
 
 def find_algorithm(algoname):
@@ -21,8 +22,6 @@ def barycenter(pos, qs):
     # For uniformity of interface, all xy algorithms should return a
     # list of clusters. barycenter always returns a single clusters,
     # but we still want it in a list.
-    from collections import namedtuple
-    XY = namedtuple('XY', 'X Y')
     return [Cluster(sum(qs), XY(*mu), std, len(qs))]
 
 def discard_sipms(sis, pos, qs):
