@@ -66,6 +66,8 @@ def _make_table(hdf5_file, group, name, format, compression, description):
     return table
 
 
+# TODO: these have no busieness being here! Move them somewhere more
+# sensible.
 class Event:
     def __init__(self):
         self.evt  = None
@@ -147,43 +149,39 @@ class PersistentKrEvent(KrEvent):
 
 class Hit:
     def __init__(self):
-        self.Npeak = -1
+        self.npeak = -1
         self.X     = -1e12
         self.Y     = -1e12
-        self.R     = -1e12
-        self.Phi   = -1e12
         self.Z     = -1
         self.E     = -1
         self.Q     = -1
-        self.Nsipm = -1
+        self.nsipm = -1
+
+    @property
+    def R(self): return np.sqrt(self.X ** 2 + self.Y ** 2)
+
+    @property
+    def Phi(self): return np.arctan2(self.Y, self.X)
 
 
 class HitCollection(Event):
     def __init__(self):
         super().__init__()
         self.hits = []
-        self.S1w = -1
-        self.S1h = -1
-        self.S1e = -1
-        self.S1t = -1
 
 
 class PersistentHitCollection(HitCollection):
 
-    def store(self, row):
+    def store(self, table):
+        row = table.row
         for hit in self.hits:
             row["event"] = self.evt
             row["time" ] = self.time
-            row["S1w"  ] = self.S1w
-            row["S1h"  ] = self.S1h
-            row["S1e"  ] = self.S1e
-            row["S1t"  ] = self.S1t
-
             row["npeak"] = hit.npeak
+            row["nsipm"] = hit.nsipm
             row["X"    ] = hit.X
             row["Y"    ] = hit.Y
             row["Z"    ] = hit.Z
-            row["R"    ] = hit.R
-            row["Phi"  ] = hit.Phi
-            row["Nsipm"] = hit.Nsipm
+            row["Q"    ] = hit.Q
+            row["E"    ] = hit.E
             row.append()
