@@ -15,6 +15,11 @@ def load_dsts(dst_list, group, node):
     return pd.concat(dsts)
 
 
+def load_z_corrections(filename):
+    dst = load_dst(filename, "Corrections", "Zcorrections")
+    return Correction((dst.z.values,), dst.factor.values, dst.uncertainty.values)
+
+
 def load_xy_corrections(filename, interp_strategy="nearest"):
     dst  = load_dst(filename, "Corrections", "XYcorrections")
     x, y = np.unique(dst.x.values), np.unique(dst.y.values)
