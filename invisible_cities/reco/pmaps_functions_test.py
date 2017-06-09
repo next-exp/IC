@@ -13,7 +13,7 @@ from . pmaps_functions import df_to_pmaps_dict
 from . pmaps_functions import df_to_s2si_dict
 
 
-def test_integrate_charges_as_dict():
+def test_integrate_sipm_charges_in_peak_as_dict():
     sipm1 = 1000
     sipm2 = 1001
     qs1 = list(range(5))
@@ -22,19 +22,44 @@ def test_integrate_charges_as_dict():
              sipm2:     qs2 }
     Qs    = {sipm1: sum(qs1),
              sipm2: sum(qs2)}
-    assert pmapf.integrate_charges_as_dict(sipms) == Qs
+    assert pmapf.integrate_sipm_charges_in_peak_as_dict(sipms) == Qs
 
-
-def test_integrate_charges():
+def test_integrate_sipm_charges_in_peak():
     sipm1 = 1234
     sipm2 =  987
     qs1 = [8,6,9,3]
     qs2 = [4,1,9,6,7]
     sipms = {sipm1: qs1,
              sipm2: qs2}
-    ids, Qs =  pmapf.integrate_charges(sipms)
+    ids, Qs =  pmapf.integrate_sipm_charges_in_peak(sipms)
     assert np.array_equal(ids, np.array((  sipm1,    sipm2)))
     assert np.array_equal(Qs , np.array((sum(qs1), sum(qs2))))
+
+def test_integrate_S2Si_charge():
+    peak1 = 0
+    sipm1_1, Q1_1 = 1000, list(range(5))
+    sipm1_2, Q1_2 = 1001, list(range(10))
+
+    peak2 = 1
+    sipm2_1, Q2_1 =  999, [6,4,9]
+    sipm2_2, Q2_2 =  456, [8,4,3,7,5]
+    sipm2_3, Q2_3 = 1234, [6,2]
+    sipm2_4, Q2_4 =  666, [0,0] # !!! Zero charge
+
+    S2Si = {peak1 : {sipm1_1 : Q1_1,
+                     sipm1_2 : Q1_2},
+            peak2 : {sipm2_1 : Q2_1,
+                     sipm2_2 : Q2_2,
+                     sipm2_3 : Q2_3,
+                     sipm2_4 : Q2_4}}
+
+    integrated_S2Si = pmapf.integrate_S2Si_charge(S2Si)
+    assert integrated_S2Si == {peak1 : {sipm1_1 : sum(Q1_1),
+                                        sipm1_2 : sum(Q1_2)},
+                               peak2 : {sipm2_1 : sum(Q2_1),
+                                        sipm2_2 : sum(Q2_2),
+                                        sipm2_3 : sum(Q2_3),
+                                        sipm2_4 : sum(Q2_4)}}
 
 
 def test_width():
