@@ -128,12 +128,15 @@ def width(times, to_mus=False):
     return w * units.ns/units.mus if to_mus else w
 
 
-def integrate_charge(d):
-    """
-    Integrate charge from a SiPM dictionary.
-    """
-    newd = dict((key, np.sum(value)) for key, value in d.items())
-    return list(map(np.array, list(zip(*newd.items()))))
+def integrate_charges_as_dict(d):
+    "Return dict of integrated charges from a SiPM dictionary."
+    return { sipm : sum(qs) for (sipm, qs) in d.items() }
+
+def integrate_charges(d):
+    sipms_and_Q_totals = integrate_charges_as_dict(d)
+    sipms = np.array(tuple(sipms_and_Q_totals.keys()))
+    Qs    = np.array(tuple(sipms_and_Q_totals.values()))
+    return sipms, Qs
 
 def select_si_slice(si, slice_no):
     # This is a temporary fix! The number of slices in the SiPM arrays

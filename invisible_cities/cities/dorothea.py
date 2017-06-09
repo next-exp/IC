@@ -165,7 +165,7 @@ class Dorothea(City):
             evt.S2e.append(np.sum(e))
             evt.S2t.append(s2time)
 
-            IDs, Qs = pmp.integrate_charge(Si[peak_no])
+            IDs, Qs = pmp.integrate_charges(Si[peak_no])
             xsipms  = self.xs[IDs]
             ysipms  = self.ys[IDs]
             x       = np.average(xsipms, weights=Qs)
