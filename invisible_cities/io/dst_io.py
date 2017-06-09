@@ -1,5 +1,3 @@
-import abc
-
 import tables as tb
 
 from .. reco import tbl_functions as tbl
@@ -17,6 +15,20 @@ def _make_kr_tables(hdf5_file, compression):
     dst_group = hdf5_file.create_group(hdf5_file.root, 'DST')
     events_table = hdf5_file.create_table(
         dst_group, 'Events', table_formats.KrTable, 'Events Table', c)
+    return events_table
+
+# TODO: Remove duplication: this is just like the above
+def hits_writer(file, *, compression='ZLIB4'):
+    hits_table = _make_hits_tables(file, compression)
+    def write_hits(hits_event):
+        hits_event.store(hits_table)
+    return write_hits
+
+def _make_hits_tables(hdf5_file, compression):
+    c = tbl.filters(compression)
+    dst_group = hdf5_file.create_group(hdf5_file.root, 'DST')
+    events_table = hdf5_file.create_table(
+        dst_group, 'Events', table_formats.HitsTable, 'Events Table', c)
     return events_table
 
 
@@ -54,11 +66,23 @@ def _make_table(hdf5_file, group, name, format, compression, description):
     return table
 
 
-class PointLikeEvent:
+# TODO: these have no busieness being here! Move them somewhere more
+# sensible.
+class Event:
     def __init__(self):
-        self.evt   = -1
-        self.T     = -1
+        self.evt  = None
+        self.time = None
 
+    def __str__(self):
+        s = "{0}Event\n{0}".format("#"*20 + "\n")
+        for attr in self.__dict__:
+            s += "{}: {}\n".format(attr, getattr(self, attr))
+        return s
+
+
+class KrEvent(Event):
+    def __init__(self):
+        super().__init__()
         self.nS1   = -1
         # Consider replacing with a list of namedtuples or a
         # structured array
@@ -91,7 +115,7 @@ class PointLikeEvent:
         return s
 
 
-class KrEvent(PointLikeEvent):
+class PersistentKrEvent(KrEvent):
     def store(self, table):
         row = table.row
         for i in range(int(self.nS2)):
@@ -122,18 +146,42 @@ class KrEvent(PointLikeEvent):
             row["Yrms" ] = self.Yrms [i]
             row.append()
 
-def write_test_dst(df, filename, group, node):
-    with tb.open_file(filename, "w") as h5in:
-        group = h5in.create_group(h5in.root, group)
-        table = h5in.create_table(group,
-                                  "data",
-                                  table_formats.KrTable,
-                                  "Test data",
-                                  tbl.filters("ZLIB4"))
 
-        tablerow = table.row
-        for index, row in df.iterrows():
-            for name, value in row.items():
-                tablerow[name] = value
-            tablerow.append()
-        table.flush()
+class Hit:
+    def __init__(self):
+        self.npeak = -1
+        self.X     = -1e12
+        self.Y     = -1e12
+        self.Z     = -1
+        self.E     = -1
+        self.Q     = -1
+        self.nsipm = -1
+
+    @property
+    def R(self): return np.sqrt(self.X ** 2 + self.Y ** 2)
+
+    @property
+    def Phi(self): return np.arctan2(self.Y, self.X)
+
+
+class HitCollection(Event):
+    def __init__(self):
+        super().__init__()
+        self.hits = []
+
+
+class PersistentHitCollection(HitCollection):
+
+    def store(self, table):
+        row = table.row
+        for hit in self.hits:
+            row["event"] = self.evt
+            row["time" ] = self.time
+            row["npeak"] = hit.npeak
+            row["nsipm"] = hit.nsipm
+            row["X"    ] = hit.X
+            row["Y"    ] = hit.Y
+            row["Z"    ] = hit.Z
+            row["Q"    ] = hit.Q
+            row["E"    ] = hit.E
+            row.append()
