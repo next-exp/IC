@@ -6,11 +6,12 @@ import textwrap
 import numpy  as np
 import tables as tb
 
-
 from ..core.configure         import configure
 from ..core.system_of_units_c import units
 from ..io.dst_io              import hits_writer
 from ..cities.base_cities     import City
+from ..io.dst_io              import PersistentHitCollection
+from ..io.dst_io              import Hit
 from ..cities.base_cities     import HitCollectionCity
 from ..reco                   import tbl_functions as tbl
 from ..reco.tbl_functions     import get_event_numbers_and_timestamps_from_file_name
@@ -20,8 +21,6 @@ from ..reco.xy_algorithms     import find_algorithm
 from ..filters.s1s2_filter    import s1s2_filter
 from ..filters.s1s2_filter    import S12Selector
 from ..reco.pmaps_functions   import integrate_S2Si_charge
-
-
 
 
 class Penthesilea(HitCollectionCity):
@@ -180,11 +179,10 @@ class Penthesilea(HitCollectionCity):
                 z        = (t_slice - S1t) * units.ns * self.drift_v
                 for c, e in zip(clusters, es):
                     hit       = Hit()
-                    hit.Npeak = npeak
-                    hit.X     = c.X
-                    hit.Y     = c.Y
-                    hit.R     = (c.X**2 + c.Y**2)**0.5
-                    hit.Phi   = np.arctan2(c.Y, c.X)
+                    hit.npeak = npeak
+                    hit.nsipm = c.nsipm
+                    hit.X     = c.pos.X
+                    hit.Y     = c.pos.Y
                     hit.Z     = z
                     hit.Q     = c.Q
                     hit.E     = e
