@@ -10,10 +10,10 @@ from .. core.configure         import configure
 from .. core.system_of_units_c import units
 
 from .. io.dst_io              import kr_writer
-from .. io.dst_io              import KrEvent
+from .. io.dst_io              import PersistentKrEvent
 
-from .. reco                   import tbl_functions as tbl
-from .. reco                   import pmaps_functions  as pmp
+from .. reco                   import tbl_functions   as tbl
+from .. reco                   import pmaps_functions as pmp
 from .. reco.pmaps_functions   import load_pmaps
 from .. reco.tbl_functions     import get_event_numbers_and_timestamps_from_file_name
 
@@ -145,7 +145,7 @@ class Dorothea(City):
         return nevt_in, nevt_out, max_events_reached
 
     def _create_kr_event(self, evt_number, evt_time, S1, S2, Si):
-        evt       = KrEvent()
+        evt       = PersistentKrEvent()
         evt.event = evt_number
         evt.time  = evt_time * 1e-3 # s
 
@@ -165,7 +165,7 @@ class Dorothea(City):
             evt.S2e.append(np.sum(e))
             evt.S2t.append(s2time)
 
-            IDs, Qs = pmp.integrate_charge(Si[peak_no])
+            IDs, Qs = pmp.integrate_sipm_charges_in_peak(Si[peak_no])
             xsipms  = self.xs[IDs]
             ysipms  = self.ys[IDs]
             x       = np.average(xsipms, weights=Qs)
