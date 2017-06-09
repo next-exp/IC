@@ -6,6 +6,7 @@ import textwrap
 import numpy  as np
 import tables as tb
 
+
 from ..core.configure         import configure
 from ..core.system_of_units_c import units
 from ..io.dst_io              import hits_writer
@@ -13,12 +14,14 @@ from ..cities.base_cities     import City
 from ..cities.base_cities     import HitCollectionCity
 from ..reco                   import tbl_functions as tbl
 from ..reco.tbl_functions     import get_event_numbers_and_timestamps_from_file_name
-
 from ..reco.pmaps_functions   import load_pmaps
 from ..reco.xy_algorithms     import barycenter
 from ..reco.xy_algorithms     import find_algorithm
 from ..filters.s1s2_filter    import s1s2_filter
 from ..filters.s1s2_filter    import S12Selector
+from ..reco.pmaps_functions   import integrate_S2Si_charge
+
+
 
 
 class Penthesilea(HitCollectionCity):
@@ -134,15 +137,24 @@ class Penthesilea(HitCollectionCity):
             if self.max_events_reached(nmax, nevt_in):
                 max_events_reached = True
                 break
-            S1 = S1s  .get(evt_number, {})
-            S2 = S2s  .get(evt_number, {})
-            Si = S2Sis.get(evt_number, {})
+            S1   = S1s  .get(evt_number, {})
+            S2   = S2s  .get(evt_number, {})
+            S2Si = S2Sis.get(evt_number, {})
 
-            if not s1s2_filter(self._s1s2_selector, S1, S2, Si):
+            if not s1s2_filter(self._s1s2_selector, S1, S2, S2Si):
+                continue
+            iS2Si = integrate_S2Si_charge(S2Si)
+            # All peaks must contain at least one non-zero charged sipm
+            def at_least_one_sipm_with_Q_gt_0(Si):
+                return any(q > 0 for q in Si.values())
+            def all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si):
+               return all(at_least_one_sipm_with_Q_gt_0(Si)
+                          for Si in iS2Si.values())
+            if not all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si):
                 continue
             nevt_out += 1
 
-            evt = self._create_hits_event(evt_number, evt_time, S1, S2, Si)
+            evt = self._create_hits_event(evt_number, evt_time, S1, S2, S2Si)
             write_hits(evt)
 
             self.conditional_print(evt, nevt_in)

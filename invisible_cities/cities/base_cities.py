@@ -559,12 +559,11 @@ class HitCollectionCity(City):
         qs = np.array([c.Q for c in clusters])
         return e * qs / np.sum(qs)
 
-
     def compute_xy_position(self, si, slice_no):
-        si      = pmp.select_si_slice(si, slice_no)
-        IDs, Qs = map(list, zip(*si.items()))
-        xs, ys  = self.xs[IDs], self.ys[IDs]
-        return self.reco_algorithm(np.stack((xs, ys)), Qs)
+        si_slice = pmp.select_si_slice(si, slice_no)
+        IDs, Qs  = pmp.integrate_sipm_charges_in_peak(si)
+        xs, ys   = self.xs[IDs], self.ys[IDs]
+        return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
 
     def select_event(self, evt_number, evt_time, S1, S2, Si):
         hitc = HitCollection()
