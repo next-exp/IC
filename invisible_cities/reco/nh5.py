@@ -156,3 +156,15 @@ class Tfactors(tb.IsDescription):
     t            = tb.Float32Col(pos=0)
     factor       = tb.Float32Col(pos=1)
     uncertainty  = tb.Float32Col(pos=2)
+
+
+class HitsTable(tb.IsDescription):
+    event = tb.  Int32Col(pos=0)
+    time  = tb.Float64Col(pos=1)
+    npeak = tb. UInt16Col(pos=2)
+    nsipm = tb. UInt16Col(pos=3)
+    X     = tb.Float64Col(pos=4)
+    Y     = tb.Float64Col(pos=5)
+    Z     = tb.Float64Col(pos=6)
+    Q     = tb.Float64Col(pos=7)
+    E     = tb.Float64Col(pos=8)

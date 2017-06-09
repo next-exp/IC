@@ -34,10 +34,10 @@ def positions_and_qs(draw, min_value=0, max_value=100):
 @given(positions_and_qs(1))
 def test_barycenter(p_q):
     pos, qs = p_q
-    B  = barycenter(pos, qs)
+    B  = barycenter(pos, qs)[0]
     assert np.allclose(B.pos, np.average(pos, weights=qs, axis=0))
     assert np. isclose(B.Q  , qs.sum())
-    assert B.Nsipm == len(qs)
+    assert B.nsipm == len(qs)
 
 def test_barycenter_raises_sipm_empty_list():
     with raises(SipmEmptyList):
@@ -63,13 +63,13 @@ def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
                         Qlm           =  4.9 * units.pes,
                         Qthr          =  0)
     c_cluster = c_clusters[0]
-    b_cluster = barycenter(pos, qs)
+    b_cluster = barycenter(pos, qs)[0]
 
     assert len(c_cluster)  == len(b_cluster)
     np.array_equal(c_cluster.pos, b_cluster.pos)
     np.array_equal(c_cluster.rms, b_cluster.rms)
     assert c_cluster.Q     == b_cluster.Q
-    assert c_cluster.Nsipm == b_cluster.Nsipm
+    assert c_cluster.nsipm == b_cluster.nsipm
 
 def test_corona_multiple_clusters(toy_sipm_signal):
     pos, qs = toy_sipm_signal
@@ -92,7 +92,7 @@ def test_corona_min_threshold_Qthr():
                       msipm          = 1)
     assert len(clusters) ==   1
     assert clusters[0].Q ==  99
-    assert clusters[0].pos.tolist() == [990, 0]
+    assert clusters[0].pos == (990, 0)
 
 def test_corona_msipm(toy_sipm_signal):
     pos, qs = toy_sipm_signal
