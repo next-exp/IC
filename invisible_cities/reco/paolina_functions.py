@@ -8,16 +8,16 @@ import networkx as nx
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
 
-class Hit:
-
-    def __init__(self, x,y,z, E):
-        self.pos = np.array((x,y,z))
-        self.E   = E
-
-    def __str__(self):
-        return '<{} {} {}>'.format(self.__class__.__name__,
-                                   self.pos.tolist(), self.E)
-    __repr__ = __str__
+# class Hit:
+#
+#     def __init__(self, x,y,z, E):
+#         self.pos = np.array((x,y,z))
+#         self.E   = E
+#
+#     def __str__(self):
+#         return '<{} {} {}>'.format(self.__class__.__name__,
+#                                    self.pos.tolist(), self.E)
+#     __repr__ = __str__
 
 
 class Voxel:
@@ -26,7 +26,10 @@ class Voxel:
         self.pos = np.array((x,y,z))
         self.E   = E
 
-    __str__  = Hit.__str__
+    #__str__  = Hit.__str__
+    def __str__(self):
+        return '<{} {} {}>'.format(self.__class__.__name__,
+                                   self.pos.tolist(), self.E)
     __repr__ =     __str__
 
     def __eq__(self, other):
