@@ -13,7 +13,7 @@ from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
 
-from . paolina_functions import Hit
+#from . paolina_functions import Hit
 from . paolina_functions import Voxel
 from . paolina_functions import bounding_box
 from . paolina_functions import find_extrema
@@ -32,7 +32,7 @@ def big_enough(hits):
 
 posn = floats(min_value=10, max_value=100)
 ener = posn
-bunch_of_hits = lists(builds(Hit, posn, posn, posn, ener),
+bunch_of_hits = lists(builds(Voxel, posn, posn, posn, ener),
                       min_size =  1,
                       max_size = 30).filter(big_enough)
 
