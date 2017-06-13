@@ -13,14 +13,14 @@ from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
 
-from . paolina import Hit
-from . paolina import Voxel
-from . paolina import bounding_box
-from . paolina import find_extrema
-from . paolina import blob_energies
-from . paolina import voxelize_hits
-from . paolina import shortest_paths
-from . paolina import make_track_graphs
+from . paolina_functions import Hit
+from . paolina_functions import Voxel
+from . paolina_functions import bounding_box
+from . paolina_functions import find_extrema
+from . paolina_functions import blob_energies
+from . paolina_functions import voxelize_hits
+from . paolina_functions import shortest_paths
+from . paolina_functions import make_track_graphs
 
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
