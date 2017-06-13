@@ -11,7 +11,7 @@ from ..core.system_of_units_c import units
 from ..io.dst_io              import hits_writer
 from ..cities.base_cities     import City
 from ..io.dst_io              import PersistentHitCollection
-from ..io.dst_io              import Hit
+from ..reco.event_model       import Hit
 from ..cities.base_cities     import HitCollectionCity
 from ..reco                   import tbl_functions as tbl
 from ..reco.tbl_functions     import get_event_numbers_and_timestamps_from_file_name

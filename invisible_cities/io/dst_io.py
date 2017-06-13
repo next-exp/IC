@@ -3,6 +3,9 @@ import tables as tb
 from .. reco import tbl_functions as tbl
 from .. reco import nh5           as table_formats
 
+#from .. reco.event_model  import Event
+from .. reco.event_model  import KrEvent
+from .. reco.event_model  import HitCollection
 
 def kr_writer(file, *, compression='ZLIB4'):
     kr_table = _make_kr_tables(file, compression)
@@ -54,7 +57,6 @@ def _make_xy_tables(hdf5_file, compression):
     return xy_table
 
 
-
 def _make_table(hdf5_file, group, name, format, compression, description):
     if group not in hdf5_file.root:
         hdf5_file.create_group(hdf5_file.root, group)
@@ -64,55 +66,6 @@ def _make_table(hdf5_file, group, name, format, compression, description):
                                    description,
                                    tbl.filters(compression))
     return table
-
-
-# TODO: these have no busieness being here! Move them somewhere more
-# sensible.
-class Event:
-    def __init__(self):
-        self.evt  = None
-        self.time = None
-
-    def __str__(self):
-        s = "{0}Event\n{0}".format("#"*20 + "\n")
-        for attr in self.__dict__:
-            s += "{}: {}\n".format(attr, getattr(self, attr))
-        return s
-
-
-class KrEvent(Event):
-    def __init__(self):
-        super().__init__()
-        self.nS1   = -1
-        # Consider replacing with a list of namedtuples or a
-        # structured array
-        self.S1w   = []
-        self.S1h   = []
-        self.S1e   = []
-        self.S1t   = []
-
-        self.nS2   = -1
-        self.S2w   = []
-        self.S2h   = []
-        self.S2e   = []
-        self.S2q   = []
-        self.S2t   = []
-
-        self.Nsipm = []
-        self.DT    = []
-        self.Z     = []
-        self.X     = []
-        self.Y     = []
-        self.R     = []
-        self.Phi   = []
-        self.Xrms  = []
-        self.Yrms  = []
-
-    def __str__(self):
-        s = "{0}Event\n{0}".format("#"*20 + "\n")
-        for attr in self.__dict__:
-            s += "{}: {}\n".format(attr, getattr(self, attr))
-        return s
 
 
 class PersistentKrEvent(KrEvent):
@@ -147,36 +100,11 @@ class PersistentKrEvent(KrEvent):
             row.append()
 
 
-class Hit:
-    def __init__(self):
-        self.npeak = -1
-        self.X     = -1e12
-        self.Y     = -1e12
-        self.Z     = -1
-        self.E     = -1
-        self.Q     = -1
-        self.nsipm = -1
-
-    @property
-    def R(self): return np.sqrt(self.X ** 2 + self.Y ** 2)
-
-    @property
-    def Phi(self): return np.arctan2(self.Y, self.X)
-
-
-class HitCollection(Event):
-    def __init__(self):
-        super().__init__()
-        self.hits = []
-
-
 class PersistentHitCollection(HitCollection):
 
     def store(self, table):
         row = table.row
         for hit in self.hits:
-            row["event"] = self.evt
-            row["time" ] = self.time
             row["npeak"] = hit.npeak
             row["nsipm"] = hit.nsipm
             row["X"    ] = hit.X
