@@ -3,6 +3,7 @@ import numpy as np
 
 from .. core.system_of_units_c import units
 from .. reco                   import peak_functions as pf
+from ..reco.pmaps_functions   import integrate_S2Si_charge
 
 class S12Selector:
     def __init__(self,
@@ -80,3 +81,14 @@ def s1s2_filter(selector, s1s, s2s, sis):
     return (selector.S1_Nmin <= len(S1) <= selector.S1_Nmax and
             selector.S2_Nmin <= len(S2) <= selector.S2_Nmax)
 
+def s2si_filter(S2Si):
+    """All peaks must contain at least one non-zero charged sipm"""
+
+    def at_least_one_sipm_with_Q_gt_0(Si):
+        return any(q > 0 for q in Si.values())
+
+    def all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si):
+        return all(at_least_one_sipm_with_Q_gt_0(Si)
+                          for Si in iS2Si.values())
+    iS2Si = integrate_S2Si_charge(S2Si)
+    return all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si)
