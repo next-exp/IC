@@ -19,9 +19,8 @@ from ..reco.pmaps_functions   import load_pmaps
 from ..reco.xy_algorithms     import barycenter
 from ..reco.xy_algorithms     import find_algorithm
 from ..filters.s1s2_filter    import s1s2_filter
+from ..filters.s1s2_filter    import s2si_filter
 from ..filters.s1s2_filter    import S12Selector
-from ..reco.pmaps_functions   import integrate_S2Si_charge
-
 
 class Penthesilea(HitCollectionCity):
     def __init__(self,
@@ -140,16 +139,9 @@ class Penthesilea(HitCollectionCity):
             S2   = S2s  .get(evt_number, {})
             S2Si = S2Sis.get(evt_number, {})
 
-            if not s1s2_filter(self._s1s2_selector, S1, S2, S2Si):
-                continue
-            iS2Si = integrate_S2Si_charge(S2Si)
-            # All peaks must contain at least one non-zero charged sipm
-            def at_least_one_sipm_with_Q_gt_0(Si):
-                return any(q > 0 for q in Si.values())
-            def all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si):
-               return all(at_least_one_sipm_with_Q_gt_0(Si)
-                          for Si in iS2Si.values())
-            if not all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si):
+            f1 = s1s2_filter(self._s1s2_selector, S1, S2, S2Si)
+            f2 = s2si_filter(S2Si)
+            if not f1 or not f2:
                 continue
             nevt_out += 1
 
