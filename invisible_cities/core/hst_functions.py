@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from   matplotlib.colors import LogNorm
 
 import invisible_cities.core.fit_functions as     fitf
-from   invisible_cities.reco.params        import Measurement
+from   invisible_cities.reco.params        import Measurement, XY
 
 def labels(xlabel, ylabel, title=""):
     """
@@ -125,19 +125,21 @@ def doublescatter(x1, y1, x2, y2, lbls, *args, **kwargs):
     return sc1, sc2, plt.legend()
 
 
-def covariance(x, y):
-    cov = np.cov(x, y)
-    l, v = np.linalg.eig(cov)
+def covariance(x, y, plot_arrows=True):
+    cov    = np.cov(x, y)
+    l, v   = np.linalg.eig(cov)
+
     lx, ly = l**0.5
     vx, vy = v.T
+
     x0, y0 = np.mean(x), np.mean(y)
-    x1     = lx * vx[0]
-    y1     = lx * vx[1]
-    plt.arrow(x0, y0, x1, y1, head_width=0.1*ly, head_length=0.1*lx, fc='r', ec='r')
-    x1     = ly * vy[0]
-    y1     = ly * vy[1]
-    plt.arrow(x0, y0, x1, y1, head_width=0.1*lx, head_length=0.1*ly, fc='r', ec='r')
-    return l, v
+    x1, y1 = lx * vx
+    x2, y2 = ly * vy
+
+    if plot_arrows:
+        plt.arrow(x0, y0, x1, y1, head_width=0.1*ly, head_length=0.1*lx, fc='r', ec='r')
+        plt.arrow(x0, y0, x2, y2, head_width=0.1*lx, head_length=0.1*ly, fc='r', ec='r')
+    return l, v, (XY(x0, y0), XY(x1, y1), XY(x2,y2))
 
 
 def resolution(values, errors = None, E_from=41.5, E_to=2458):
@@ -147,7 +149,10 @@ def resolution(values, errors = None, E_from=41.5, E_to=2458):
     u_amp, u_mu, u_sigma, *_ = errors
     r   = 235. * sigma/mu
     u_r = r * (u_mu**2/mu**2 + u_sigma**2/sigma**2)**0.5
-    return Measurement(r, u_r), Measurement(r * (E_from/E_to)**0.5, u_r * (E_from/E_to)**0.5)
+
+    rbb   =   r * (E_from/E_to)**0.5
+    u_rbb = u_r * (E_from/E_to)**0.5
+    return Measurement(r, u_r), Measurement(rbb, u_rbb)
 
 
 def gausstext(values, E_from=41.5, E_to=2458):
@@ -156,7 +161,7 @@ def gausstext(values, E_from=41.5, E_to=2458):
         $\mu$ = {0:.1f}
         $\sigma$ = {1:.2f}
         R = {2:.3}% @ {4} keV
-        Rbb = {3:.3}% @ {5}""".format(*values[1:3], reso[0].value, reso[1].value,
+        Rbb = {3:.3}% @ {5}""".format(*values[1:3], reso[0].value, reso[1].value,
                                       E_from, "Qbb" if E_to==2458 else str(E_to) + " keV"))
 
 
