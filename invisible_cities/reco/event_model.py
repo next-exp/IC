@@ -34,10 +34,10 @@ class Cluster:
     def Yrms(self): return self._xy_rms.y
 
     @property
-    def R(self): return np.sqrt(self._xy.x ** 2 + self._xy.y ** 2)
+    def R(self): return self._xy.R
 
     @property
-    def Phi(self): return np.arctan2(self._xy.y, self._xy.x)
+    def Phi(self): return self._xy.Phi
 
     def __str__(self):
         return """<nsipm = {} Q = {}
