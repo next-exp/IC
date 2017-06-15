@@ -26,7 +26,6 @@ from .. core                   import fit_functions        as fitf
 from .. database import load_db
 
 from ..io                 import pmap_io          as pio
-from ..io.dst_io          import KrEvent
 
 from ..reco               import peak_functions_c as cpf
 from ..reco               import peak_functions   as pf
