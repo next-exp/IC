@@ -1,4 +1,4 @@
-from . params import minmax
+from . ic_types          import minmax
 
 from pytest import raises
 

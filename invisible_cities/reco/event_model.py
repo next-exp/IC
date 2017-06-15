@@ -1,5 +1,92 @@
 # Clsses defining the event model
-# sensible.
+
+import numpy as np
+
+
+class Cluster:
+    """Represents a reconstructed cluster in the tracking plane"""
+    def __init__(self, Q, xy, xy_rms, nsipm):
+
+        self.Q        =  Q
+        self._xy       =  xy
+        self._xy_rms   =  xy_rms
+        self.nsipm    =  nsipm
+
+    @property
+    def pos(self): return self._xy.pos
+
+    @property
+    def rms(self): return self._xy_rms.pos
+
+    @property
+    def X(self): return self._xy.x
+
+    @property
+    def Y(self): return self._xy.y
+
+    @property
+    def XY(self): return self._xy.XY
+
+    @property
+    def Xrms(self): return self._xy_rms.x
+
+    @property
+    def Yrms(self): return self._xy_rms.y
+
+    @property
+    def R(self): return np.sqrt(self._xy.x ** 2 + self._xy.y ** 2)
+
+    @property
+    def Phi(self): return np.arctan2(self._xy.y, self._xy.x)
+
+    def __str__(self):
+        return """<nsipm = {} Q = {}
+                    xy = {}  >""".format(self.__class__.__name__,
+                                         self.nsipm, sel.Q, self._xy)
+    __repr__ =     __str__
+
+
+class Hit(Cluster):
+    """Represents a reconstructed hit (cluster + z + energy)"""
+    def __init__(self, peak_number, cluster, z, s2_energy):
+
+        Cluster.__init__(self, cluster.Q,
+                               cluster._xy, cluster._xy_rms,
+                               cluster.nsipm)
+
+        self.peak_number = peak_number
+        self.z           = z
+        self.s2_energy   = s2_energy
+    @property
+    def E(self): return self.s2_energy
+
+    @property
+    def Z(self): return self.z
+
+    @property
+    def npeak(self): return self.peak_number
+
+    def __str__(self):
+        return """<npeak = {} z = {} E = {} cluster ={} >""".format(self.__class__.__name__,
+                    self.npeak, self.Z, sel.E, Cluster.__str())
+
+    __repr__ =     __str__
+
+
+class HitCollection:
+    def __init__(self):
+
+
+        self.hits = []
+
+    def __str__(self):
+        s =  "{}".format(self.__class__.__name__)
+        s+= "Hit list:"
+        s = [s + str(hit) for hit in self.hits]
+        return s
+
+    __repr__ =     __str__
+
 class Event:
    def __init__(self):
        self.evt  = None
@@ -43,42 +130,3 @@ class KrEvent(Event):
         for attr in self.__dict__:
             s += "{}: {}\n".format(attr, getattr(self, attr))
         return s
-
-class Hit:
-    """Represents a reconstructed hit"""
-    def __init__(self):
-        self.npeak = -1
-        self.X     = -1e12
-        self.Y     = -1e12
-        self.Z     = -1
-        self.E     = -1
-        self.Q     = -1
-        self.nsipm = -1
-
-    @property
-    def R(self): return np.sqrt(self.X ** 2 + self.Y ** 2)
-
-    @property
-    def Phi(self): return np.arctan2(self.Y, self.X)
-
-    def __str__(self):
-        return """<npeak = {} nsipm = {} Q = {}
-                x = {} y = {} z = {} E = {} >""".format(self.__class__.__name__,
-                                       self.npeak, self.nsipm, sel.Q,
-                                       self.X, sel.Y, sel.Z, self.E)
-
-    __repr__ =     __str__
-
-
-class HitCollection:
-    def __init__(self):
-        super().__init__()
-        self.hits = []
-
-    def __str__(self):
-        s =  "{}".format(self.__class__.__name__)
-        s+= "Hit list:"
-        s = [s + str(hit) for hit in self.hits]
-        return s
-
-    __repr__ =     __str__

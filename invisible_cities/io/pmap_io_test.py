@@ -20,7 +20,7 @@ from .. reco                   import peak_functions_c as cpf
 from .. reco.params            import S12Params        as S12P
 from .. reco.params            import ThresholdParams
 from .. reco.params            import PMaps
-from .. reco.params            import minmax
+from .. core.ic_types          import minmax
 
 from . pmap_io                 import pmap_writer
 from . pmap_io                 import S12
