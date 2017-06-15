@@ -5,8 +5,8 @@ from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmZeroCharge
 from .. core.ic_types          import xy
-from .       params            import Cluster
-from .       params            import XY
+#from .       params            import Cluster
+#from .       params            import XY
 from .. reco.event_model       import Cluster
 
 
