@@ -20,7 +20,7 @@ from . params                  import S12Params
 from . params                  import ThresholdParams
 from . params                  import DeconvParams
 from . params                  import CalibVectors
-from . params                  import minmax
+from .. core.ic_types          import minmax
 
 
 # TODO: rethink this test (list(6) could stop working anytime if DataPMT is changed)

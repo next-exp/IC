@@ -15,7 +15,7 @@ from .. io.pmap_io            import pmap_writer
 from .. io.run_and_event_io   import run_and_event_writer
 from .. reco                  import tbl_functions as tbl
 from .. reco.params           import S12Params as S12P
-from .. reco.params           import minmax
+from .. core.ic_types         import minmax
 
 from .  base_cities  import PmapCity
 

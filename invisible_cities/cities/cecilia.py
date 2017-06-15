@@ -27,7 +27,7 @@ from .. reco                    import peak_functions_c as cpf
 from .. database                import load_db          as db
 from .. reco.nh5                import RunInfo
 from .. reco.nh5                import EventInfo
-from .. reco.params             import minmax
+from .. core.ic_types           import minmax
 from .. reco.params             import PeakData
 from .. reco.params             import TriggerParams
 from .  base_cities             import DeconvolutionCity
