@@ -65,4 +65,5 @@ def test_xy(xy, a, b):
     np.isclose(np.array(xy.XY), np.array((a,b)), rtol=1e-4)
     np.isclose(xy.R, np.sqrt(a ** 2 + b ** 2), rtol=1e-4)
     np.isclose(xy.Phi, np.arctan2(b, a), rtol=1e-4)
-    assert np.allclose(xy.pos, np.stack(([a], [b]), axis=1), rtol=1e-4)
+    assert np.allclose(xy.pos, np.stack(([a], [b]), axis=1),
+                       rtol=1e-3, atol=1e-03)
