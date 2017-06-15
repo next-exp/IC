@@ -7,7 +7,7 @@ cimport numpy as np
 import  numpy as np
 
 from .  params     import Peak
-from .. io.pmap_io import S12
+from .. io.pmap_io  import S12
 from .. io.pmap_io import S2Si
 
 
