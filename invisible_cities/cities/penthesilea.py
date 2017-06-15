@@ -11,7 +11,7 @@ from ..core.system_of_units_c import units
 from ..core.ic_types          import xy
 from ..io.dst_io              import hits_writer
 from ..cities.base_cities     import City
-from ..io.dst_io              import PersistentHitCollection
+from ..reco.event_model       import PersistentHitCollection
 from ..reco.event_model       import Cluster
 from ..reco.event_model       import Hit
 from ..cities.base_cities     import HitCollectionCity
