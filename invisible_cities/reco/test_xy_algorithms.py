@@ -15,8 +15,6 @@ from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmZeroCharge
 
-
-from .       params            import Cluster
 from .       xy_algorithms     import corona
 from .       xy_algorithms     import barycenter
 from .       xy_algorithms     import discard_sipms

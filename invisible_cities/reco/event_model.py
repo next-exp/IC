@@ -57,6 +57,13 @@ class Hit(Cluster):
         self.peak_number = peak_number
         self.z           = z
         self.s2_energy   = s2_energy
+
+    @property
+    def XYZ(self): return (self.X, self.Y, self.Z)
+
+    @property
+    def VXYZ(self): return np.array([self.X, self.Y, self.Z])
+
     @property
     def E(self): return self.s2_energy
 
