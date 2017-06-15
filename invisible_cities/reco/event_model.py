@@ -1,6 +1,7 @@
 # Clsses defining the event model
 
 import numpy as np
+from . import nh5 as table_formats
 
 
 class Cluster:
