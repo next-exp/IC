@@ -4,8 +4,10 @@ import numpy as np
 from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmZeroCharge
+from .. core.ic_types          import xy
 from .       params            import Cluster
 from .       params            import XY
+from .. reco.event_model       import Cluster
 
 
 def find_algorithm(algoname):
@@ -15,6 +17,15 @@ def find_algorithm(algoname):
         raise ValueError("The algorithm <{}> does not exist".format(algoname))
 
 def barycenter(pos, qs):
+    """pos = column np.array --> (matrix n x 2)
+       ([x1, y1],
+        [x2, y2]
+        ...
+        [xs, ys])
+       qs = vector (q1, q2...qs) --> (1xn)
+
+        """
+
     if not len(pos): raise SipmEmptyList
     if sum(qs) == 0: raise SipmZeroCharge
     mu  = np.average( pos           , weights=qs, axis=0)
@@ -22,7 +33,9 @@ def barycenter(pos, qs):
     # For uniformity of interface, all xy algorithms should return a
     # list of clusters. barycenter always returns a single clusters,
     # but we still want it in a list.
-    return [Cluster(sum(qs), XY(*mu), std, len(qs))]
+    return [Cluster(sum(qs), xy(*mu), xy(*std), len(qs))]
+
+    #return [Cluster(sum(qs), XY(*mu), std, len(qs))]
 
 def discard_sipms(sis, pos, qs):
     return np.delete(pos, sis, axis=0), np.delete(qs, sis)
@@ -32,12 +45,20 @@ def get_nearby_sipm_inds(cs, d, pos, qs):
     return np.where(np.linalg.norm(pos - cs, axis=1) <= d)[0]
 
 
-def corona(pos, qs, Qthr           =  0 * units.pes,
-                    Qlm            =  5 * units.pes,
-                        lm_radius  = 15 * units.mm,
-                    new_lm_radius  = 25 * units.mm,
-                    msipm          =  3):
+def corona(pos, qs,
+           Qthr           =  0 * units.pes,
+           Qlm            =  5 * units.pes,
+           lm_radius      = 15 * units.mm,
+           new_lm_radius  = 25 * units.mm,
+           msipm          =  3):
     """
+    pos = column np.array --> (matrix n x 2)
+       ([x1, y1],
+        [x2, y2]
+        ...
+        [xs, ys])
+       qs = vector (q1, q2...qs) --> (1xn)
+
     corona creates a list of Clusters by
     first , identifying a loc max (gonz wanted more precise than just max sipm)
     second, calling barycenter to find the Cluster given by SiPMs around the max
