@@ -58,12 +58,11 @@ xys = builds(make_xy, sensible_floats, sensible_floats)
 @given(xys,  sensible_floats, sensible_floats)
 def test_xy(xy, a, b):
     #xy, a, b = xys
-
-    assert xy.x   == a
-    assert xy.y   == b
-    assert xy.X   == a
-    assert xy.Y   == b
-    assert xy.XY  == (a,b)
-    assert xy.R   == np.sqrt(a ** 2 + b ** 2)
-    assert xy.Phi == np.arctan2(b, a)
-    assert np.array_equal(xy.pos, np.stack(([a], [b]), axis=1))
+    np.isclose(xy.x, a, rtol=1e-4)
+    np.isclose(xy.y, b, rtol=1e-4)
+    np.isclose(xy.X, a, rtol=1e-4)
+    np.isclose(xy.Y, b, rtol=1e-4)
+    np.isclose(np.array(xy.XY), np.array((a,b)), rtol=1e-4)
+    np.isclose(xy.R, np.sqrt(a ** 2 + b ** 2), rtol=1e-4)
+    np.isclose(xy.Phi, np.arctan2(b, a), rtol=1e-4)
+    assert np.allclose(xy.pos, np.stack(([a], [b]), axis=1), rtol=1e-4)
