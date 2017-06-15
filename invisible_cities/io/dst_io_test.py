@@ -6,8 +6,8 @@ from pytest import mark
 
 from .. core.test_utils    import assert_dataframes_equal
 from .. reco.dst_functions import load_dst
-from .  dst_io             import kr_writer
-from .  dst_io             import PersistentKrEvent
+from .  kdst_io             import kr_writer
+from ..reco.event_model    import PersistentKrEvent
 
 
 def test_Kr_writer(config_tmpdir, Kr_dst_data):
