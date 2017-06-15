@@ -8,9 +8,11 @@ import tables as tb
 
 from ..core.configure         import configure
 from ..core.system_of_units_c import units
+from ..core.ic_types          import xy
 from ..io.dst_io              import hits_writer
 from ..cities.base_cities     import City
 from ..io.dst_io              import PersistentHitCollection
+from ..reco.event_model       import Cluster
 from ..reco.event_model       import Hit
 from ..cities.base_cities     import HitCollectionCity
 from ..reco                   import tbl_functions as tbl
@@ -170,14 +172,17 @@ class Penthesilea(HitCollectionCity):
                 es       = self.split_energy(e_slice, clusters)
                 z        = (t_slice - S1t) * units.ns * self.drift_v
                 for c, e in zip(clusters, es):
-                    hit       = Hit()
-                    hit.npeak = npeak
-                    hit.nsipm = c.nsipm
-                    hit.X     = c.pos.X
-                    hit.Y     = c.pos.Y
-                    hit.Z     = z
-                    hit.Q     = c.Q
-                    hit.E     = e
+                    # cluster = Cluster(c.nsipm,
+                    #                   xy(c.pos.X, c.pos.Y),
+                    #                   c.Q)
+                    hit       = Hit(npeak, c, z, e)
+                    # hit.npeak = npeak
+                    # hit.nsipm = c.nsipm
+                    # hit.X     = c.pos.X
+                    # hit.Y     = c.pos.Y
+                    # hit.Z     = z
+                    # hit.Q     = c.Q
+                    # hit.E     = e
                     hitc.hits.append(hit)
             npeak += 1
 
