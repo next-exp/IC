@@ -1,4 +1,7 @@
+import numpy as np
+
 from . ic_types          import minmax
+from . ic_types          import xy
 
 from pytest import raises
 
@@ -45,3 +48,22 @@ def test_minmax_add(mm, f):
     raised = mm + f
     assert raised.min == lo + f
     assert raised.max == hi + f
+
+
+def make_xy(a,b):
+    return xy(a,b)
+
+xys = builds(make_xy, sensible_floats, sensible_floats)
+
+@given(xys,  sensible_floats, sensible_floats)
+def test_xy(xy, a, b):
+    #xy, a, b = xys
+
+    assert xy.x   == a
+    assert xy.y   == b
+    assert xy.X   == a
+    assert xy.Y   == b
+    assert xy.XY  == (a,b)
+    assert xy.R   == np.sqrt(a ** 2 + b ** 2)
+    assert xy.Phi == np.arctan2(b, a)
+    assert np.array_equal(xy.pos, np.stack(([a], [b]), axis=1))
