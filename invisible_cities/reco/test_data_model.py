@@ -44,15 +44,17 @@ def test_cluster(ci):
     Q, x, y, xrms, yrms, nsipm = ci
     c = Cluster(Q, xy(x,y), xy(xrms,yrms), nsipm)
     assert c.nsipm      == nsipm
-    assert c.Q          == Q
-    assert c.X          == x
-    assert c.Y          == y
-    assert c.Xrms       == xrms
-    assert c.Yrms       == yrms
-    assert c.XY         == (x,y)
-    assert c.R          == np.sqrt(x ** 2 + y ** 2)
-    assert c.Phi        == np.arctan2(y, x)
-    assert np.array_equal(c.pos, np.stack(([x], [y]), axis=1))
+
+    np.isclose(c.Q, Q, rtol=1e-4)
+    np.isclose(c.X, x, rtol=1e-4)
+    np.isclose(c.Y, y, rtol=1e-4)
+    np.isclose(xy.Y, b, rtol=1e-4)
+    np.isclose(c.Xrms, xrms, rtol=01e-4)
+    np.isclose(c.Yrms, yrms, rtol=1e-4)
+    np.isclose(np.array(c.XY), np.array((x,y)), rtol=1e-4)
+    np.isclose(c.R, np.sqrt(x ** 2 + y ** 2), rtol=1e-4)
+    np.isclose(c.Phi, np.arctan2(y, x), rtol=1e-4)
+    np.allclose(c.pos, np.stack(([x], [y]), axis=1), rtol=1e-4)
 
 @given(cluster_input(1), hit_input(1))
 def test_cluster(ci, hi):
@@ -61,10 +63,10 @@ def test_cluster(ci, hi):
     c = Cluster(Q, xy(x,y), xy(xrms,yrms), nsipm)
     h = Hit(peak_number, c, z, s2_energy)
     assert h.peak_number      == peak_number
-    assert h.z                == z
-    assert h.s2_energy        == s2_energy
-    assert h.Z                == z
-    assert h.E                == s2_energy
     assert h.npeak            == peak_number
-    assert h.XYZ              == (x,y,z)
-    assert np.array_equal(h.VXYZ, np.array([x,y,z]))
+    np.isclose(h.z, z, rtol=1e-4)
+    np.isclose(h.Z, z, rtol=1e-4)
+    np.isclose(h.s2_energy, s2_energy, rtol=1e-4)
+    np.isclose(h.E, s2_energy, rtol=1e-4)
+    np.isclose(np.array(h.XYZ), np.array((x,y,z)), rtol=1e-4)
+    np.allclose(h.VXYZ, np.array([x,y,z]), rtol=1e-4)
