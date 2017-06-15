@@ -18,6 +18,12 @@ class xy:
     @property
     def Y(self): return self.y
 
+    @property
+    def R(self): return np.sqrt(self.x ** 2 + self.y ** 2)
+
+    @property
+    def Phi(self): return np.arctan2(self.y, self.x)
+
     def __str__(self):
         return 'xy(x={.x}, max={.y})'.format(self, self)
     __repr__ = __str__
