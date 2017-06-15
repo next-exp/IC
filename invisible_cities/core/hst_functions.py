@@ -3,8 +3,8 @@ import textwrap
 import numpy             as np
 import matplotlib.pyplot as plt
 
-import invisible_cities.core.fit_functions as     fitf
-from   invisible_cities.reco.params        import Measurement, XY
+from .             import fit_functions as     fitf
+from ..reco.params import Measurement, XY
 
 def labels(xlabel, ylabel, title=""):
     """
