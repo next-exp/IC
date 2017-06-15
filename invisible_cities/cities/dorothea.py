@@ -9,8 +9,9 @@ import tables as tb
 from .. core.configure         import configure
 from .. core.system_of_units_c import units
 
-from .. io.dst_io              import kr_writer
-from .. io.dst_io              import PersistentKrEvent
+from .. io.kdst_io              import kr_writer
+from ..reco.event_model         import PersistentKrEvent
+#from .. io.kdst_io              import PersistentKrEvent
 
 from .. reco                   import tbl_functions   as tbl
 from .. reco                   import pmaps_functions as pmp
