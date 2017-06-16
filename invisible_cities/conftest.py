@@ -123,5 +123,7 @@ def corr_toy_data(ICDIR):
     y = np.arange(-200,   0)
     E = np.arange( 1e4, 1e4 + x.size*y.size).reshape(x.size, y.size)
     U = np.arange( 1e2, 1e2 + x.size*y.size).reshape(x.size, y.size)
+    N = np.ones_like(U)
+
     corr_filename = os.path.join(ICDIR, "database/test_data/toy_corr.h5")
-    return corr_filename, (x, y, E, U)
+    return corr_filename, (x, y, E, U, N)
