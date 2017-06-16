@@ -1,10 +1,14 @@
 import os
 
+import numpy  as np
 import tables as tb
+
+from numpy.testing import assert_allclose
 
 from ..core.test_utils    import assert_dataframes_equal
 from ..reco.dst_functions import load_dst
 from . kdst_io            import kr_writer
+from . kdst_io            import xy_writer
 from ..reco.event_model   import PersistentKrEvent
 
 
@@ -30,3 +34,23 @@ def test_Kr_writer(config_tmpdir, Kr_dst_data):
 
     dst = load_dst(filename, group = "DST", node = "Events")
     assert_dataframes_equal(dst, df, False)
+
+
+def test_xy_writer(config_tmpdir, corr_toy_data):
+    output_file = os.path.join(str(config_tmpdir), "test_corr.h5")
+
+    _, (x, y, F, U, N) = corr_toy_data
+
+    with tb.open_file(output_file, 'w') as h5out:
+        write = xy_writer(h5out)
+        write(x, y, F, U, N)
+
+    x, y    = np.repeat(x, y.size), np.tile(y, x.size)
+    F, U, N = F.flatten(), U.flatten(), N.flatten()
+
+    dst = load_dst(output_file, group = "Corrections", node = "XYcorrections")
+    assert_allclose(x, dst.x          .values)
+    assert_allclose(y, dst.y          .values)
+    assert_allclose(F, dst.factor     .values)
+    assert_allclose(U, dst.uncertainty.values)
+    assert_allclose(N, dst.nevt       .values)
