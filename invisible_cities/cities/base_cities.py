@@ -974,7 +974,7 @@ class KerasDNNCity(DNNCity):
         prediction = self.model.predict(self.X_in,verbose=2)
 
         # print test results if true information is given
-        if(len(self.Y_in) == len(self.X_in)):
-            loss_and_metrics = self.model.evaluate(self.X_in, self.Y_in)
+        #if(len(self.Y_in) == len(self.X_in)):
+        #    loss_and_metrics = self.model.evaluate(self.X_in, self.Y_in)
 
         return prediction

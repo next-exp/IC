@@ -83,7 +83,7 @@ def read_pmaps(files_in, nmax, id_to_coords, max_slices, tbin):
             evt_numbers -- [1]
     """
 
-    maps = []; energies = []; evt_numbers = []
+    maps = []; energies = []; evt_numbers = []; drift_times = []
     tot_ev = 0
     for fin in files_in:
 
@@ -98,7 +98,7 @@ def read_pmaps(files_in, nmax, id_to_coords, max_slices, tbin):
         evtnum = s2maps[0]['event'] # event number from file
         while(rnum < s2maps.nrows and (nmax < 0 or tot_ev < nmax)):
 
-            logger.info("-- Attempting to process event {0} with rnum {1} of {2}...".format(evtnum, rnum, s2maps.nrows))
+            #logger.info("-- Attempting to process event {0} with rnum {1} of {2}...".format(evtnum, rnum, s2maps.nrows))
 
             # get the initial time for this event
             t0 = s2maps[rnum]['time']
@@ -106,6 +106,7 @@ def read_pmaps(files_in, nmax, id_to_coords, max_slices, tbin):
             # create SiPM maps for this event.
             tmap = np.zeros((48, 48, max_slices), dtype=np.float32)
             eslices = np.zeros(max_slices)
+            tmax = -1; emax = -1
 
             # loop over all peaks for this event
             while(rnum < s2maps.nrows and s2maps[rnum]['event'] == evtnum):
@@ -120,12 +121,14 @@ def read_pmaps(files_in, nmax, id_to_coords, max_slices, tbin):
                     # get the time value
                     time = s2maps[rnum]['time']
                     times.append(time)
-
+                    
                     # calculate the bin number.
-                    bb = int((time - t0) / tbin)
+                    bb = min(int((time - t0) / tbin),max_slices-1)
 
                     # add the energy to the energy array.
                     eslices[bb] += s2maps[rnum]['ene']
+                    if(emax < 0 or eslices[bb] > emax):
+                        tmax = time - t0
 
                     rnum += 1
 
@@ -138,7 +141,7 @@ def read_pmaps(files_in, nmax, id_to_coords, max_slices, tbin):
                     for ti in times:
 
                         # calculate the bin number
-                        bb = int((ti - t0) / tbin)
+                        bb = min(int((ti - t0) / tbin),max_slices-1)
 
                         # consistency check
                         sipm_id = s2simaps[rnum_si]['nsipm']
@@ -159,10 +162,11 @@ def read_pmaps(files_in, nmax, id_to_coords, max_slices, tbin):
                 maps.append(tmap)
                 energies.append(eslices)
                 evt_numbers.append(np.array([evtnum]))
+                drift_times.append(tmax)
                 ev += 1; tot_ev += 1
-                logger.info("** Added map for event {0}; file event number {1}".format(ev,evtnum))
-            else:
-                logger.warning("*** WARNING *** not adding SiPM map with 0 max charge.")
+                #logger.info("** Added map for event {0}; file event number {1}".format(ev,evtnum))
+            #else:
+            #    logger.warning("*** WARNING *** not adding SiPM map with 0 max charge.")
 
             # Set to the next event.
             if(rnum < s2maps.nrows):
@@ -171,7 +175,8 @@ def read_pmaps(files_in, nmax, id_to_coords, max_slices, tbin):
         fpmap.close()
 
     # return the set of maps, energies, and event numbers
-    maps = np.array(maps);
-    energies = np.array(energies);
-    evt_numbers = np.array(evt_numbers);
-    return maps, energies, evt_numbers;
+    maps = np.array(maps)
+    energies = np.array(energies)
+    evt_numbers = np.array(evt_numbers)
+    drift_times = np.array(drift_times)
+    return maps, energies, drift_times, evt_numbers

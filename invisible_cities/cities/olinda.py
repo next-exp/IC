@@ -20,11 +20,25 @@ from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import AveragePooling2D
 from keras.layers.core          import Flatten
 
-from   .. core.log_config import logger
-from   .. core.configure import configure
-from   .. core.dnn_functions import read_xyz_labels
-from   .. core.dnn_functions import read_pmaps
-from   .  base_cities import KerasDNNCity
+from   invisible_cities.core                  import fit_functions        as fitf
+from   invisible_cities.core.log_config       import logger
+from   invisible_cities.core.configure        import configure
+from   invisible_cities.core.dnn_functions    import read_xyz_labels
+from   invisible_cities.core.dnn_functions    import read_pmaps
+from   invisible_cities.cities.base_cities           import KerasDNNCity
+from   invisible_cities.reco.dst_io           import XYcorr_writer
+
+from   invisible_cities.reco.corrections      import Correction
+
+#from   .. core                  import fit_functions        as fitf
+#from   .. core.log_config       import logger
+#from   .. core.configure        import configure
+#from   .. core.dnn_functions    import read_xyz_labels
+#from   .. core.dnn_functions    import read_pmaps
+#from   .  base_cities           import KerasDNNCity
+#from   .. reco.dst_io           import XYcorr_writer
+#
+#from   .. reco.corrections      import Correction
 
 class Olinda(KerasDNNCity):
     """
@@ -94,7 +108,8 @@ class Olinda(KerasDNNCity):
                  sch_decay   = 0.01,
                  loss_type   = 'mse',
                  opt         = 'nadam',
-                 mode        = 'eval'):
+                 mode        = 'eval',
+                 lifetime    = 1000):
         """
         Init the machine with the run number.
         Load the data base to access calibration and geometry.
@@ -113,6 +128,7 @@ class Olinda(KerasDNNCity):
                                    loss_type       = loss_type,
                                    opt             = opt,
                                    mode            = mode)
+        self.lifetime = lifetime
 
     def build_DNN_FC(self):
         """Builds a fully-connected neural network.
@@ -149,10 +165,12 @@ class Olinda(KerasDNNCity):
         """Builds the inputs and labels for a maximum of nmax events.
 
         The inputs will be placed in the vector X_in and the corresponding
-        labels in the vector Y_in.
+        labels in the vector Y_in.  The corresponding event energies will be
+        placed in the vector E_in.
 
         X_in has shape [Nevts, 48, 48 , 1]
         Y_in has shape [Nevts, 2]
+        E_in has shape [Nevts, 1]
         """
         print(type(self.dnn_datafile))
         print(self.dnn_datafile)
@@ -161,7 +179,7 @@ class Olinda(KerasDNNCity):
         if(not os.path.isfile(self.dnn_datafile)):
 
             # read the pmaps from the input files
-            maps, energies, evt_numbers = read_pmaps(self.input_files, nmax,
+            maps, energies, drift_times, evt_numbers = read_pmaps(self.input_files, nmax,
                                                      self.id_to_coords,
                                                      3, 10000)
 
@@ -174,13 +192,15 @@ class Olinda(KerasDNNCity):
                 # check to ensure the event numbers match
                 for e1,e2 in zip(evt_numbers,levt_numbers):
                     if(e1 != e2):
-                        logger.error("ERROR: Mismatch in event numbers.")
+                        logger.error("ERROR: Mismatch in event numbers e1 = {0}, e2 = {1}.".format(e1,e2))
                         exit()
                 logger.info("Found {0} labels for {1} maps".format(len(levt_numbers),len(evt_numbers)))
 
             # add all slices to a single 2D projection and normalize
             sum_maps = np.zeros((len(maps), 48, 48))
-            for iw, wmap in enumerate(maps):
+            sum_energies = np.zeros((len(maps),1))
+            for iw, (wmap,emap) in enumerate(zip(maps,energies)):
+                sum_energies[iw] = [np.sum(emap)]
                 sum_maps[iw,:,:] = np.sum(wmap,axis=2)
                 msum = np.sum(sum_maps[iw,:,:])
                 if(msum != 0):
@@ -190,9 +210,18 @@ class Olinda(KerasDNNCity):
             f = tb.open_file(self.dnn_datafile, 'w')
             filters = tb.Filters(complib='blosc', complevel=9, shuffle=False)
             atom    = tb.Atom.from_dtype(sum_maps.dtype)
-            tmaps   = f.create_earray(f.root, 'maps',   atom, (0, 48, 48), filters=filters)
+            tmaps   = f.create_earray(f.root, 'maps', atom, (0, 48, 48), filters=filters)
             for i in range(len(sum_maps)):
                 tmaps.append([sum_maps[i]])
+            atom    = tb.Atom.from_dtype(sum_energies.dtype)
+            tenergies   = f.create_earray(f.root, 'energies', atom, (0, 1), filters=filters)
+            for i in range(len(sum_energies)):
+                tenergies.append([sum_energies[i]])
+            dt_arr = np.reshape(drift_times,[len(drift_times),1])
+            atom    = tb.Atom.from_dtype(dt_arr.dtype)
+            ttimes   = f.create_earray(f.root, 'times', atom, (0, 1), filters=filters)
+            for i in range(len(dt_arr)):
+                ttimes.append([dt_arr[i]])
 
             if(self.mode == 'train' or self.mode == 'retrain' or self.mode == 'test'):
                 atom    = tb.Atom.from_dtype(labels.dtype)
@@ -207,15 +236,30 @@ class Olinda(KerasDNNCity):
             indata = tb.open_file(self.dnn_datafile, 'r')
             if(nmax > 0):
                 in_maps = indata.root.maps[0:nmax]
-                in_coords = indata.root.coords[0:nmax]
+                in_energies = indata.root.energies[0:nmax]
+                in_times = indata.root.times[0:nmax]
+                
+                if(self.mode == 'train' or self.mode == 'retrain' or self.mode == 'test'):
+                    in_coords = indata.root.coords[0:nmax]
             else:
                 in_maps = indata.root.maps
-                in_coords = indata.root.coords
+                in_energies = indata.root.energies
+                in_times = indata.root.times
+                
+                if(self.mode == 'train' or self.mode == 'retrain' or self.mode == 'test'):
+                    in_coords = indata.root.coords
+                    
             sum_maps = np.reshape(in_maps,(len(in_maps), 48, 48))
-            labels = np.array(in_coords,dtype=np.float32)
+            sum_energies = np.array(in_energies,dtype=np.float32)
+            drift_times = np.array(in_times,dtype=np.float32)
+            
+            if(self.mode == 'train' or self.mode == 'retrain' or self.mode == 'test'):
+                labels = np.array(in_coords,dtype=np.float32)
             indata.close()
 
         self.X_in = np.reshape(sum_maps, (len(sum_maps), 48, 48, 1))
+        self.E_in = sum_energies
+        self.T_in = drift_times
         if(self.mode == 'test' or self.mode == 'train' or self.mode == 'retrain'):
             self.Y_in = labels[:,:2]/400. + 0.5
         else:
@@ -319,17 +363,83 @@ class Olinda(KerasDNNCity):
         else:
             prediction = self.evaluate()
 
-            # print true vs. predicted if in test mode
-            if(self.mode == 'test'):
-                for ytrue,ypred in zip(self.Y_in, prediction):
-                    xt = ytrue[0]*400 - 200
-                    yt = ytrue[1]*400 - 200
-                    xp = ypred[0]*400 - 200
-                    yp = ypred[1]*400 - 200
+            X = np.zeros(len(prediction))
+            Y = np.zeros(len(prediction))
+            E = np.zeros(len(prediction))
+            T = np.zeros(len(prediction))
+            for i, (ypred,energy,tval) in enumerate(zip(prediction, self.E_in, self.T_in)):
+                
+                X[i] = ypred[0]*400 - 200
+                Y[i] = ypred[1]*400 - 200
+                E[i] = energy
+                T[i] = tval
+            
+            # correct the energies for lifetime
+            print("Times from min = {0} and max = {1}; and mean = {2}".format(np.min(T),np.max(T),np.mean(T)))
+            E_corr = np.zeros(len(prediction))
+            for i,(e,t) in enumerate(zip(E,T)):
+                E_corr[i] = e / np.exp(-t/1000/self.lifetime)
 
-                    err = np.sqrt((xt - xp)**2 + (yt - yp)**2)
-                    logger.info("true = ({0},{1}); predicted = ({2},{3}), err = {4}".format(xt,
-                          yt,xp,yp,err))
+            # apply cuts
+            Z = T/1000.
+            
+            # radial
+#            X_corr = X[X**2 + Y**2 < 1e4]
+#            Y_corr = Y[X**2 + Y**2 < 1e4]
+#            X = X_corr
+#            Y = Y_corr
+#            Z = Z[X**2 + Y**2 < 1e4]
+#            E_corr = E_corr[X**2 + Y**2 < 1e4]
+#            T = T[X**2 + Y**2 < 1e4]
+            
+            # z-range
+            X = X[(Z > 0) & (Z < 500)]
+            Y = Y[(Z > 0) & (Z < 500)]
+            E_corr = E_corr[(Z > 0) & (Z < 500)]
+            T = T[(Z > 0) & (Z < 500)]
+
+            # energy
+            X = X[(E_corr > 1000) & (E_corr < 13000)]
+            Y = Y[(E_corr > 1000) & (E_corr < 13000)]
+            T = T[(E_corr > 1000) & (E_corr < 13000)]
+            E_corr = E_corr[(E_corr > 1000) & (E_corr < 13000)]
+            print(X)
+            print(Y)
+            print(E_corr)
+
+            # create a Kr table
+            xs, ys, es, us = \
+            fitf.profileXY(X, Y, E_corr, 30, 30, [-215.,215.], [-215.,215.])
+
+            norm_index = xs.size//2, ys.size//2
+            xycorr = Correction((xs, ys), es, us, norm_strategy="index", index=norm_index)
+            nevt = np.histogram2d(X, Y, (30, 30), ([-215.,215.], [-215.,215.]))[0]
+
+            # Dump to file
+            with XYcorr_writer(self.output_file) as write:
+                write(*xycorr._xs, xycorr._fs, xycorr._us, nevt)
+                
+            # set up the figure
+            fig = plt.figure();
+            #ax1 = fig.add_subplot(111);
+            fig.set_figheight(15.0)
+            fig.set_figwidth(15.0)
+    
+            plt.hist(E_corr,bins=50)
+            plt.savefig("{0}/plt_energies_all.png".format(self.temp_dir))
+
+#            if(self.mode == 'test'):
+#                
+#                # print true vs. predicted if in test mode
+#                for ytrue,ypred in zip(self.Y_in, prediction):
+#                    xt = ytrue[0]*400 - 200
+#                    yt = ytrue[1]*400 - 200
+#                    xp = ypred[0]*400 - 200
+#                    yp = ypred[1]*400 - 200
+#
+#                    err = np.sqrt((xt - xp)**2 + (yt - yp)**2)
+#                    logger.info("true = ({0},{1}); predicted = ({2},{3}), err = {4}".format(xt,
+#                          yt,xp,yp,err))
 
         return len(self.X_in)
 
@@ -351,7 +461,8 @@ def OLINDA(argv = sys.argv):
                  opt             = CFP.OPT,
                  lrate           = CFP.LRATE,
                  sch_decay       = CFP.DECAY,
-                 loss_type       = CFP.LOSS)
+                 loss_type       = CFP.LOSS,
+                 lifetime        = CFP.LIFETIME)
 
     fpp.set_output_file(CFP.FILE_OUT)
     fpp.set_compression(CFP.COMPRESSION)
