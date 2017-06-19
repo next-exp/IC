@@ -1,14 +1,15 @@
-from . table_io import make_table
-from .. reco import nh5           as table_formats
+from .  table_io import make_table
+from .. reco.nh5 import KrTable
+from .. reco.nh5 import XYfactors
 
 
 def kr_writer(hdf5_file, *, compression='ZLIB4'):
     kr_table = make_table(hdf5_file,
-                          group='DST',
-                          name='Events',
-                          fformat=table_formats.KrTable,
-                          description='KDST Events',
-                          compression=compression)
+                          group       = 'DST',
+                          name        = 'Events',
+                          fformat     = KrTable,
+                          description = 'KDST Events',
+                          compression = compression)
     #kr_table = _make_kr_tables(file, compression)
     def write_kr(kr_event):
         kr_event.store(kr_table)
@@ -17,11 +18,11 @@ def kr_writer(hdf5_file, *, compression='ZLIB4'):
 
 def xy_writer(hdf5_file, *, compression='ZLIB4'):
     xy_table = make_table(hdf5_file,
-                          group='Corrections',
-                          name='XYcorrections',
-                          fformat=table_formats.XYfactors,
-                          description='x,y corrections',
-                          compression=compression)
+                          group       = 'Corrections',
+                          name        = 'XYcorrections',
+                          fformat     = XYfactors,
+                          description = 'x,y corrections',
+                          compression = compression)
     
     def write_xy(xs, ys, fs, us, ns):
         row = xy_table.row
