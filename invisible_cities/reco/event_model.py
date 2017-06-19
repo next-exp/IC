@@ -2,6 +2,62 @@
 
 import numpy as np
 from . import nh5 as table_formats
+from .. core.ic_types import minmax
+from .. core.core_functions import loc_elem_1d
+
+class Waveform:
+    """Transient class representing a waveform.
+
+    A Waveform is represented as a pair of arrays:
+    t: np.array() describing time bins
+    E: np.array() describing energy.
+    """
+    def __init__(self, t, E):
+        self.t            = np.array(t)
+        self.E            = np.array(E)
+        self.total_energy = np.sum(self.E)
+        self.height       = np.max(self.E)
+        self._tm          = minmax(self._t[0], self._t[-1])
+        self._i_t         = loc_elem_1d(self.E, self.height)
+
+    @property
+    def tpeak(self): return self.t(self._i_t)
+
+    @property
+    def tmin_tmax(self): return self._tm
+
+    @property
+    def width(self): return self._tm.bracket
+
+    def __str__(self):
+        return """Waveform(width = {}, energy = {), heigth = {}
+                  tmin-tmax = {})
+                """.format(self.width, self.total_energy, self.heigth,
+                           self.tmin_tmax)
+    __repr__ = __str__
+
+
+class S12:
+    """Transient class representing an S1/S2 signal
+    The S12 attribute is a dictionary s12
+    {i: Waveform(t,E)}, where i is peak number.
+
+    """
+
+    def __init__(self, s12):
+        self._s12 = {i: Waveform(t, E) for i, (t,E) in S12.items()}
+
+    @property
+    def number_of_peaks(self): return len(self._s12)
+
+    @property
+    def peaks(self): return self._s12
+
+    def peak_waveform(self, i):
+        """[t,E] collection for peak i """
+        return np.array(self.s12[i])
+
+    def peak_width(self, i): return self._s12
 
 
 class Cluster:
