@@ -16,7 +16,7 @@ def test_Kr_writer(config_tmpdir, Kr_dst_data):
 
     def dump_df(write, df):
         for evt_no in sorted(set(df.event)):
-            evt = PersistentKrEvent()
+            evt = PersistentKrEvent(-1, -1) #should be dummy here
             for row in df[df.event == evt_no].iterrows():
                 for col in df.columns:
                     value = row[1][col]

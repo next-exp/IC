@@ -7,6 +7,18 @@ from .. core.core_functions import loc_elem_1d
 from .. core.system_of_units_c import units
 from functools import reduce
 
+class Event:
+    """Transient class storing event and time info."""
+    def __init__(self, event_number, event_time):
+       self.event  = event_number
+       self.time = event_time
+
+    def __str__(self):
+       s = "{0}Event\n{0}".format("#"*20 + "\n")
+       for attr in self.__dict__:
+           s += "{}: {}\n".format(attr, getattr(self, attr))
+       return s
+
 class Waveform:
     """Transient class representing a waveform.
 
@@ -154,9 +166,10 @@ class Hit(Cluster):
     __repr__ =     __str__
 
 
-class HitCollection:
+class HitCollection(Event):
     """Transient version of Hit Collection"""
-    def __init__(self):
+    def __init__(self, event_number, event_time):
+        Event.__init__(self, event_number, event_time)
         self.hits = []
 
     def __str__(self):
@@ -173,6 +186,8 @@ class PersistentHitCollection(HitCollection):
     def store(self, table):
         row = table.row
         for hit in self.hits:
+            row["event"] = self.event
+            row["time" ] = self.time
             row["npeak"] = hit.npeak
             row["nsipm"] = hit.nsipm
             row["X"    ] = hit.X
@@ -184,21 +199,10 @@ class PersistentHitCollection(HitCollection):
             row["E"    ] = hit.E
             row.append()
 
-class Event:
-   def __init__(self):
-       self.evt  = None
-       self.time = None
-
-   def __str__(self):
-       s = "{0}Event\n{0}".format("#"*20 + "\n")
-       for attr in self.__dict__:
-           s += "{}: {}\n".format(attr, getattr(self, attr))
-       return s
-
 class KrEvent(Event):
     """Transient version of a point-like (Krypton) event."""
-    def __init__(self):
-        super().__init__()
+    def __init__(self, event_number, event_time):
+        Event.__init__(self, event_number, event_time)
         self.nS1   = -1 # number of S1 in the event
         self.S1w   = [] # widht
         self.S1h   = [] # heigth
