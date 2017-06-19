@@ -146,9 +146,9 @@ class Dorothea(City):
         return nevt_in, nevt_out, max_events_reached
 
     def _create_kr_event(self, evt_number, evt_time, S1, S2, Si):
-        evt       = PersistentKrEvent()
-        evt.event = evt_number
-        evt.time  = evt_time * 1e-3 # s
+        evt       = PersistentKrEvent(evt_number, evt_time * 1e-3)
+        #evt.event =
+        #evt.time  = evt_time * 1e-3 # s
 
         evt.nS1 = len(S1)
         for peak_no, (t, e) in sorted(S1.items()):
