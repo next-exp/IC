@@ -40,6 +40,12 @@ class minmax:
         self.min = min
         self.max = max
 
+    @property
+    def bracket(self): return self.max - self.min
+
+    @property
+    def center(self): return (self.max + self.min) / 2 
+
     def __mul__(self, factor):
         return minmax(self.min * factor, self.max * factor)
 
