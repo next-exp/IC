@@ -155,9 +155,10 @@ class Penthesilea(HitCollectionCity):
         return nevt_in, nevt_out, max_events_reached
 
     def _create_hits_event(self, evt_number, evt_time, S1, S2, Si):
-        hitc = PersistentHitCollection()
-        hitc.evt   = evt_number
-        hitc.time  = evt_time * 1e-3 # s
+
+        hitc = PersistentHitCollection(evt_number, evt_time * 1e-3)
+        #hitc.evt   = evt_number
+        #hitc.time  = evt_time * 1e-3 # s
 
         t, e = next(iter(S1.values()))
         S1t  = t[np.argmax(e)]
