@@ -4,6 +4,8 @@ import numpy as np
 from . import nh5 as table_formats
 from .. core.ic_types import minmax
 from .. core.core_functions import loc_elem_1d
+from .. core.system_of_units_c import units
+from functools import reduce
 
 class Waveform:
     """Transient class representing a waveform.
@@ -13,12 +15,16 @@ class Waveform:
     E: np.array() describing energy.
     """
     def __init__(self, t, E):
+        assert len(t) == len(E)
         self.t            = np.array(t)
         self.E            = np.array(E)
         self.total_energy = np.sum(self.E)
         self.height       = np.max(self.E)
-        self._tm          = minmax(self._t[0], self._t[-1])
+        self._tm          = minmax(self.t[0], self.t[-1])
         self._i_t         = loc_elem_1d(self.E, self.height)
+
+    @property
+    def number_of_samples(self): return len(self.t)
 
     @property
     def tpeak(self): return self.t(self._i_t)
@@ -30,10 +36,12 @@ class Waveform:
     def width(self): return self._tm.bracket
 
     def __str__(self):
-        return """Waveform(width = {}, energy = {), heigth = {}
-                  tmin-tmax = {})
-                """.format(self.width, self.total_energy, self.heigth,
-                           self.tmin_tmax)
+        s = """Waveform(samples = {} width = {} ns , energy = {} pes
+        height = {} pes tmin-tmax = {} mus """.format(self.number_of_samples,
+        self.width, self.total_energy, self.height,
+        self.tmin_tmax * (1/ units.mus))
+        return s
+
     __repr__ = __str__
 
 
@@ -44,8 +52,9 @@ class S12:
 
     """
 
-    def __init__(self, s12):
-        self._s12 = {i: Waveform(t, E) for i, (t,E) in S12.items()}
+    def __init__(self, s12, s12_type='S1'):
+        self._s12 = {i: Waveform(t, E) for i, (t,E) in s12.items()}
+        self.type = s12_type
 
     @property
     def number_of_peaks(self): return len(self._s12)
@@ -54,10 +63,18 @@ class S12:
     def peaks(self): return self._s12
 
     def peak_waveform(self, i):
-        """[t,E] collection for peak i """
-        return np.array(self.s12[i])
+        return self._s12[i]
 
-    def peak_width(self, i): return self._s12
+    def __str__(self):
+        s =  "S12(type = {}, number of peaks = {})\n".format(self.type,
+                                                      self.number_of_peaks)
+
+        s2 = ['peak number = {}: {} \n'.format(i,
+                                    self.peak_waveform(i)) for i in self.peaks]
+
+        return reduce(lambda s, x: s + x, s2, s)
+
+    __repr__ = __str__
 
 
 class Cluster:
