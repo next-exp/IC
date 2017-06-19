@@ -140,8 +140,10 @@ class Irene(PmapCity):
             # calibrated PMT sum
             csum, csum_mau = self.calibrated_pmt_sum(CWF)
             #ZS sum for S1 and S2
-            s1_ene, s1_indx = self.csum_zs(csum_mau, threshold = self.thr_csum_s1)
-            s2_ene, s2_indx = self.csum_zs(csum,     threshold = self.thr_csum_s2)
+            s1_ene, s1_indx = self.csum_zs(csum_mau, threshold =
+                                           self.thr_csum_s1)
+            s2_ene, s2_indx = self.csum_zs(csum,     threshold =
+                                           self.thr_csum_s2)
             return s1_ene, s1_indx, s2_ene, s2_indx, csum
 
     def pmaps(self, s1_ene, s1_indx, s2_ene, s2_indx, csum, sipmzs):
