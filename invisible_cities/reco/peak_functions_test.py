@@ -60,7 +60,7 @@ def csum_zs_blr_cwf(electron_RWF_file):
                                n_MAU = 100,
                                thr_MAU =   3)
 
-        csum_blr_py, _, _ = pf.calibrated_pmt_sum(
+        csum_blr_py, _, _ = pf._calibrated_pmt_sum(
                                pmtblr[event].astype(np.float64),
                                adc_to_pes,
                                pmt_active = pmt_active,
@@ -80,7 +80,7 @@ def csum_zs_blr_cwf(electron_RWF_file):
                                n_MAU = 100,
                                thr_MAU =   3)
 
-        csum_blr_py_pmt6, _, _ = pf.calibrated_pmt_sum(
+        csum_blr_py_pmt6, _, _ = pf._calibrated_pmt_sum(
                                     pmtblr[event].astype(np.float64),
                                     adc_to_pes,
                                     pmt_active = list(range(6)),
@@ -95,7 +95,7 @@ def csum_zs_blr_cwf(electron_RWF_file):
 
 
         wfzs_ene,    wfzs_indx    = cpf.wfzs(csum_blr,    threshold=0.5)
-        wfzs_ene_py, wfzs_indx_py =  pf.wfzs(csum_blr_py, threshold=0.5)
+        wfzs_ene_py, wfzs_indx_py =  pf._wfzs(csum_blr_py, threshold=0.5)
 
         return (namedtuple('Csum',
                         """cwf cwf6
@@ -213,21 +213,21 @@ def pmaps_electrons(electron_RWF_file):
         deconv = DeconvParams(n_baseline = 28000,
                               thr_trigger = 5)
 
-        csum, pmp = pf.compute_csum_and_pmaps(pmtrwf,
+        csum, pmp = pf.compute_csum_and_pmaps(event,
+                                              pmtrwf,
                                               sipmrwf,
                                               s1par,
                                               s2par,
                                               thr,
-                                              event,
                                               calib,
                                               deconv)
 
-        _, pmp2 = pf.compute_csum_and_pmaps(pmtrwf,
+        _, pmp2 = pf.compute_csum_and_pmaps(event,
+                                            pmtrwf,
                                             sipmrwf,
                                             s1par,
                                             s2par._replace(rebin=False),
                                             thr,
-                                            event,
                                             calib,
                                             deconv)
 
@@ -302,18 +302,18 @@ def test_csum_zs_s12():
     wfzs_ene, wfzs_indx = cpf.wfzs(csum, threshold=10)
     npt.assert_allclose(vsum_zs, wfzs_ene)
 
-    t1 =  pf.time_from_index(wfzs_indx)
+    t1 =  pf._time_from_index(wfzs_indx)
     t2 = cpf.time_from_index(wfzs_indx)
     npt.assert_allclose(t1, t2)
 
-    t = pf.time_from_index(wfzs_indx)
+    t = pf._time_from_index(wfzs_indx)
     e = wfzs_ene
-    t1, e1  = pf.rebin_waveform(t, e, stride=10)
+    t1, e1  = pf._rebin_waveform(t, e, stride=10)
     t2, e2 = cpf.rebin_waveform(t, e, stride=10)
     npt.assert_allclose(t1, t2)
     npt.assert_allclose(e1, e2)
 
-    S12L1 = pf.find_S12_py(wfzs_ene, wfzs_indx,
+    S12L1 = pf._find_S12(wfzs_ene, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
