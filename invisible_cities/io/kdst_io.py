@@ -10,7 +10,7 @@ def kr_writer(hdf5_file, *, compression='ZLIB4'):
                           fformat     = KrTable,
                           description = 'KDST Events',
                           compression = compression)
-    #kr_table = _make_kr_tables(file, compression)
+
     def write_kr(kr_event):
         kr_event.store(kr_table)
     return write_kr
@@ -23,7 +23,7 @@ def xy_writer(hdf5_file, *, compression='ZLIB4'):
                           fformat     = XYfactors,
                           description = 'x,y corrections',
                           compression = compression)
-    
+
     def write_xy(xs, ys, fs, us, ns):
         row = xy_table.row
         for i, x in enumerate(xs):
