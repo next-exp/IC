@@ -44,10 +44,13 @@ class minmax:
     def bracket(self): return self.max - self.min
 
     @property
-    def center(self): return (self.max + self.min) / 2 
+    def center(self): return (self.max + self.min) / 2
 
     def __mul__(self, factor):
         return minmax(self.min * factor, self.max * factor)
+
+    def __div__(self, factor):
+        return minmax(self.min / factor, self.max / factor)
 
     def __add__(self, scalar):
         return minmax(self.min + scalar, self.max + scalar)
