@@ -1,11 +1,12 @@
 # Clsses defining the event model
 
-import numpy as np
-from . import nh5 as table_formats
-from .. core.ic_types import minmax
-from .. core.core_functions import loc_elem_1d
-from .. core.system_of_units_c import units
 from functools import reduce
+
+import numpy as np
+
+from .. core.ic_types          import minmax
+from .. core.core_functions    import loc_elem_1d
+from .. core.system_of_units_c import units
 
 class Event:
     """Transient class storing event and time info."""
@@ -18,6 +19,7 @@ class Event:
        for attr in self.__dict__:
            s += "{}: {}\n".format(attr, getattr(self, attr))
        return s
+
 
 class Waveform:
     """Transient class representing a waveform.
@@ -128,7 +130,7 @@ class Cluster:
     def __str__(self):
         return """<nsipm = {} Q = {}
                     xy = {}  >""".format(self.__class__.__name__,
-                                         self.nsipm, sel.Q, self._xy)
+                                         self.nsipm, self.Q, self._xy)
     __repr__ =     __str__
 
 
@@ -161,7 +163,7 @@ class Hit(Cluster):
 
     def __str__(self):
         return """<npeak = {} z = {} E = {} cluster ={} >""".format(self.__class__.__name__,
-                    self.npeak, self.Z, sel.E, Cluster.__str())
+                    self.npeak, self.Z, self.E, Cluster.__str())
 
     __repr__ =     __str__
 
