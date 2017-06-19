@@ -19,7 +19,7 @@ def test_hits_writer(config_tmpdir, hits_toy_data):
 
     with tb.open_file(output_file, 'w') as h5out:
         write = hits_writer(h5out)
-        hits = PersistentHitCollection()
+        hits = PersistentHitCollection(-1, -1)
         for i in range(len(x)):
             c = Cluster(q[i], xy(x[i], y[i]), xy(xrms[i], yrms[i]), nsipm[i])
             h = Hit(npeak[i], c, z[i], e[i])
