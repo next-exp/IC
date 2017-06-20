@@ -11,7 +11,6 @@ def _add_namedtuple_in_this_module(name, attribute_names):
 
 for name, attrs in (
         ('RawVectors'     , 'event pmtrwf sipmrwf pmt_active sipm_active'),
-        ('SensorParams'   , 'NPMT PMTWL NSIPM SIPMWL'),
         ('CalibParams'    , 'coeff_c, coeff_blr, adc_to_pes_pmt adc_to_pes_sipm'),
         ('DeconvParams'   , 'n_baseline thr_trigger'),
         ('CalibVectors'   , 'channel_id coeff_blr coeff_c adc_to_pes adc_to_pes_sipm pmt_active'),
