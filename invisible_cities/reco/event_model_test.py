@@ -1,8 +1,5 @@
 import numpy as np
 
-from pytest import mark
-parametrize = mark.parametrize
-
 from hypothesis             import given
 from hypothesis.strategies  import floats
 from hypothesis.strategies  import integers
@@ -11,7 +8,6 @@ from hypothesis.strategies  import composite
 from .. core.ic_types    import xy
 from .       event_model import Cluster
 from .       event_model import Hit
-
 
 
 @composite
@@ -37,7 +33,8 @@ def hit_input(draw, min_value=0, max_value=100):
 def test_cluster(ci):
     Q, x, y, xrms, yrms, nsipm = ci
     r, phi =  np.sqrt(x ** 2 + y ** 2), np.arctan2(y, x)
-    xyarr  = x, y
+    xyar   = x, y
+    rmsar  = xrms, yrms
     pos    = np.stack(([x], [y]), axis=1)
     c      = Cluster(Q, xy(x,y), xy(xrms,yrms), nsipm)
 
@@ -47,7 +44,8 @@ def test_cluster(ci):
     np.isclose (c.Y   ,     y, rtol=1e-4)
     np.isclose (c.Xrms,  xrms, rtol=1e-4)
     np.isclose (c.Yrms,  yrms, rtol=1e-4)
-    np.allclose(c.XY  , xyarr, rtol=1e-4)
+    np.isclose (c.rms , rmsar, rtol=1e-4)
+    np.allclose(c.XY  ,  xyar, rtol=1e-4)
     np.isclose (c.R   ,     r, rtol=1e-4)
     np.isclose (c.Phi ,   phi, rtol=1e-4)
     np.allclose(c.pos ,   pos, rtol=1e-4)
@@ -64,7 +62,9 @@ def test_hit(ci, hi):
 
     assert h.peak_number == peak_number
     assert h.npeak       == peak_number
-    np.isclose (h.Z   ,   z, rtol=1e-4)
-    np.isclose (h.E   ,   E, rtol=1e-4)
-    np.allclose(h.XYZ , xyz, rtol=1e-4)
-    np.allclose(h.VXYZ, xyz, rtol=1e-4)
+    np.isclose (h.z        ,   z, rtol=1e-4)
+    np.isclose (h.Z        ,   z, rtol=1e-4)
+    np.isclose (h.s2_energy,   E, rtol=1e-4)
+    np.isclose (h.E        ,   E, rtol=1e-4)
+    np.allclose(h.XYZ      , xyz, rtol=1e-4)
+    np.allclose(h.VXYZ     , xyz, rtol=1e-4)
