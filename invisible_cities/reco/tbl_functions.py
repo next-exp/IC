@@ -15,6 +15,7 @@ import numpy as np
 import tables as tb
 import pandas as pd
 from argparse import Namespace
+from ..reco.params        import SensorParams
 
 def filters(name):
     """Return the filter corresponding to a given key.
@@ -110,6 +111,52 @@ def get_vectors(h5f):
     pmtblr = h5f.root.RD.pmtblr
     sipmrwf = h5f.root.RD.sipmrwf
     return pmtrwf, pmtblr, sipmrwf
+
+
+def get_rwf_vectors(h5in):
+    """Return the most relevant fields stored in a raw data file.
+
+    Parameters
+    ----------
+    h5f : tb.File
+        (Open) hdf5 file.
+
+    Returns
+    -------
+    NEVT   : number of events in array
+    pmtrwf : tb.EArray
+        RWF array for PMTs
+    pmtblr : tb.EArray
+        BLR array for PMTs
+    sipmrwf : tb.EArray
+        RWF array for PMTs
+
+    """
+    pmtrwf, pmtblr, sipmrwf  = get_vectors(h5in)
+    NEVT_pmt , _, _          = pmtrwf .shape
+    NEVT_simp, _, _          = sipmrwf.shape
+
+    assert NEVT_simp == NEVT_pmt
+    return NEVT_pmt, pmtrwf, sipmrwf, pmtblr
+
+
+def get_rd_vectors(h5in):
+    "Return MC RD vectors and sensor data."
+    pmtrd            = h5in.root.pmtrd
+    sipmrd           = h5in.root.sipmrd
+    NEVT_pmt , _, _  = pmtrd .shape
+    NEVT_simp, _, _  = sipmrd.shape
+    assert NEVT_simp == NEVT_pmt
+
+    return NEVT_pmt, pmtrd, sipmrd
+
+
+def get_sensor_params(filename):
+    with tb.open_file(filename, "r") as h5in:
+        _, pmtrwf, sipmrwf, _ = get_rwf_vectors(h5in)
+        _, NPMT,   PMTWL   = pmtrwf .shape
+        _, NSIPM, SIPMWL   = sipmrwf.shape
+        return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
 
 
 def get_nof_events(table, column_name="evt_number"):
