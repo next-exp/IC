@@ -15,7 +15,7 @@ import numpy as np
 import tables as tb
 import pandas as pd
 from argparse import Namespace
-from ..reco.params        import SensorParams
+from ..reco.event_model  import SensorParams
 
 def filters(name):
     """Return the filter corresponding to a given key.
@@ -151,12 +151,16 @@ def get_rd_vectors(h5in):
     return NEVT_pmt, pmtrd, sipmrd
 
 
+def get_sensor_params_from_vectors(pmtrwf, sipmrwf):
+    _, NPMT,   PMTWL   = pmtrwf .shape
+    _, NSIPM, SIPMWL   = sipmrwf.shape
+    return SensorParams(NPMT, PMTWL, NSIPM, SIPMWL)
+
+
 def get_sensor_params(filename):
     with tb.open_file(filename, "r") as h5in:
         _, pmtrwf, sipmrwf, _ = get_rwf_vectors(h5in)
-        _, NPMT,   PMTWL   = pmtrwf .shape
-        _, NSIPM, SIPMWL   = sipmrwf.shape
-        return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
+        return get_sensor_params_from_vectors(pmtrwf, sipmrwf)
 
 
 def get_nof_events(table, column_name="evt_number"):
