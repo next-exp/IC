@@ -303,7 +303,7 @@ def test_csum_zs_s12():
     npt.assert_allclose(vsum_zs, wfzs_ene)
 
     t1 =  pf._time_from_index(wfzs_indx)
-    t2 = cpf.time_from_index(wfzs_indx)
+    t2 = cpf._time_from_index(wfzs_indx)
     npt.assert_allclose(t1, t2)
 
     t = pf._time_from_index(wfzs_indx)
