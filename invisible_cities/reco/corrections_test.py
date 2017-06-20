@@ -6,7 +6,7 @@ from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection
 from ..reco.corrections import LifetimeCorrection
 
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_allclose
 from pytest        import fixture, mark
 
 from flaky import flaky
