@@ -185,13 +185,7 @@ class City:
 
     @staticmethod
     def event_number_from_input_file_name(filename):
-        file_base_name = filename.split('/')[-1]
-        base_hash = hash(file_base_name)
-        # Something, somewhere, is preventing us from using the full
-        # 64 bit space, and limiting us to 32 bits. TODO find and
-        # eliminate it.
-        limited_hash = base_hash % int(1e9)
-        return limited_hash
+        return tbf.event_number_from_input_file_name(filename)
 
     def _get_rwf(self, h5in):
         "Return raw waveforms for SIPM and PMT data"
