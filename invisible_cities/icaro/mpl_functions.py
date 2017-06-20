@@ -7,7 +7,7 @@ from matplotlib.collections import PatchCollection
 # from mpl_toolkits.mplot3d import Axes3D
 # from IPython.display import HTML
 
-from .      import system_of_units as units
+from .. core.system_of_units_c import units
 
 # matplotlib.style.use("ggplot")
 #matplotlib.rc('animation', html='html5')
