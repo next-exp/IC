@@ -80,9 +80,9 @@ class Cecilia(DeconvolutionCity):
 
     def run(self, nmax):
         self.display_IO_info(nmax)
-        sp = sensor_params = self.get_sensor_params(self.input_files[0])
-        self.print_configuration(sensor_params)
-
+        sp = self.get_sensor_params(self.input_files[0])
+        print(sp)
+        
         # loop over input files
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
