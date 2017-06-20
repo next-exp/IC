@@ -1,4 +1,7 @@
 """Functions to find peaks, S12 selection etc.
+Last revision: JJGC, June, 2017
+
+
 The list of the functions is:
 
 **Private functions used for testing**
