@@ -49,8 +49,8 @@ class Isidora(DeconvolutionCity):
     def run(self, nmax : 'max number of events to run'):
         self.display_IO_info(nmax)
         sensor_params = self.get_sensor_params(self.input_files[0])
-        self.print_configuration(sensor_params)
-
+        print(sensor_params)
+        
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
             pmt_writer  = rwf_writer(h5out,
