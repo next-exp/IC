@@ -34,7 +34,7 @@ from ..reco               import dst_functions    as dstf
 from ..reco               import tbl_functions    as tbf
 from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
-from ..reco.params        import SensorParams
+from ..reco.event_model   import SensorParams
 from ..reco.nh5           import DECONV_PARAM
 from ..reco.corrections   import Correction
 from ..reco.corrections   import Fcorrection
@@ -126,12 +126,7 @@ class City:
                  Output File = {}
                           """.format(self.__class__.__name__,
                                      nmax, self.input_files, self.output_file))
-
-    def print_configuration(self, sp):
-        print_configuration({"# PMT"        : sp.NPMT,
-                             "PMT WL"       : sp.PMTWL,
-                             "# SiPM"       : sp.NSIPM,
-                             "SIPM WL"      : sp.SIPMWL})
+                                     
     @staticmethod
     def get_rwf_vectors(h5in):
         "Return RWF vectors and sensor data."
@@ -149,11 +144,12 @@ class City:
            obtained by divinding the RD PMT vector and the sample
            time of the electronics (25 ns). """
         with tb.open_file(filename, "r") as h5in:
-            pmtrd, sipmrd = self._get_rd(h5in)
+            #pmtrd, sipmrd = self._get_rd(h5in)
+            _, pmtrd, sipmrd = tbl.get_rd_vectors(h5in)
             _, NPMT,   PMTWL = pmtrd .shape
             _, NSIPM, SIPMWL = sipmrd.shape
             PMTWL_FEE = int(PMTWL // self.FE_t_sample)
-        return SensorParams(NPMT=NPMT, PMTWL=PMTWL_FEE, NSIPM=NSIPM, SIPMWL=SIPMWL)
+            return SensorParams(NPMT, PMTWL_FEE, NSIPM, SIPMWL)
 
     @staticmethod
     def get_sensor_params(filename):
@@ -163,9 +159,7 @@ class City:
     def get_run_and_event_info(h5in):
         return h5in.root.Run.events
 
-    # TODO Replace this with
-    # tbl_functions.get_event_numbers_and_timestamps_from_file_name,
-    # maybe
+
     @staticmethod
     def event_and_timestamp(evt, events_info):
         return events_info[evt]
