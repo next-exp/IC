@@ -11,17 +11,20 @@ from .. core.system_of_units_c import units
 class SensorParams:
     """Transient class storing sensor parameters."""
     def __init__(self, npmt, pmtwl, nsipm, sipmwl):
-       self.npmt     = npmt
-       self.pmtwl    = pmtwl
-       self.nsipm    = nsipm
-       self.sipmwl   = sipmwl
+       self.npmt   = npmt
+       self.pmtwl  = pmtwl
+       self.nsipm  = nsipm
+       self.sipmwl = sipmwl
 
     @property
-    def NPMT(self): return self.npmt
+    def NPMT  (self): return self.npmt
+
     @property
-    def PMTWL(self): return self.pmtwl
+    def PMTWL (self): return self.pmtwl
+
     @property
-    def NSIPM(self): return self.nsipm
+    def NSIPM (self): return self.nsipm
+
     @property
     def SIPMWL(self): return self.sipmwl
 
@@ -33,11 +36,12 @@ class SensorParams:
 
     __repr__ = __str__
 
+
 class Event:
     """Transient class storing event and time info."""
     def __init__(self, event_number, event_time):
-       self.event  = event_number
-       self.time = event_time
+       self.event = event_number
+       self.time  = event_time
 
     def __str__(self):
        s = "{0}Event\n{0}".format("#"*20 + "\n")
@@ -121,26 +125,25 @@ class S12:
 class Cluster:
     """Represents a reconstructed cluster in the tracking plane"""
     def __init__(self, Q, xy, xy_rms, nsipm):
-
-        self.Q        =  Q
-        self._xy       =  xy
-        self._xy_rms   =  xy_rms
-        self.nsipm    =  nsipm
-
-    @property
-    def pos(self): return self._xy.pos
+        self.Q       = Q
+        self._xy     = xy
+        self._xy_rms = xy_rms
+        self.nsipm   = nsipm
 
     @property
-    def rms(self): return self._xy_rms.pos
+    def pos (self): return self._xy.pos
 
     @property
-    def X(self): return self._xy.x
+    def rms (self): return self._xy_rms.pos
 
     @property
-    def Y(self): return self._xy.y
+    def X   (self): return self._xy.x
 
     @property
-    def XY(self): return self._xy.XY
+    def Y   (self): return self._xy.y
+
+    @property
+    def XY  (self): return self._xy.XY
 
     @property
     def Xrms(self): return self._xy_rms.x
@@ -149,10 +152,10 @@ class Cluster:
     def Yrms(self): return self._xy_rms.y
 
     @property
-    def R(self): return self._xy.R
+    def R   (self): return self._xy.R
 
     @property
-    def Phi(self): return self._xy.Phi
+    def Phi (self): return self._xy.Phi
 
     def __str__(self):
         return """<nsipm = {} Q = {}
@@ -174,16 +177,16 @@ class Hit(Cluster):
         self.s2_energy   = s2_energy
 
     @property
-    def XYZ(self): return (self.X, self.Y, self.Z)
+    def XYZ  (self): return (self.X, self.Y, self.Z)
 
     @property
-    def VXYZ(self): return np.array([self.X, self.Y, self.Z])
+    def VXYZ (self): return np.array([self.X, self.Y, self.Z])
 
     @property
-    def E(self): return self.s2_energy
+    def E    (self): return self.s2_energy
 
     @property
-    def Z(self): return self.z
+    def Z    (self): return self.z
 
     @property
     def npeak(self): return self.peak_number
