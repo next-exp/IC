@@ -10,6 +10,7 @@ functions in sensorFunctions for now, give functions here more coherente names
 now returns also calibration constants for RWF and BLR (MC version)
 """
 
+import re
 import numpy as np
 import tables as tb
 import pandas as pd
@@ -139,3 +140,33 @@ def get_event_numbers_and_timestamps_from_file(file):
     event_numbers = file.root.Run.events.cols.evt_number[:]
     timestamps    = file.root.Run.events.cols.timestamp [:]
     return event_numbers, timestamps
+
+
+def event_number_from_input_file_name(filename):
+    # We use a regular expression to get the file number, this is the meaning:
+    # NEXT_v\d[_\d+]+   -> Get software version, example: NEXT_v0_08_09
+    # [_\w]+?           -> Matches blocks with _[a-zA-Z0-9] in a non-greedy way
+    # _(?P<number>\d+)_ -> Matches the file number and save it with name 'fnumber'
+    # [_\w]+?           -> Matches blocks with _[a-zA-Z0-9] in a non-greedy way
+    # (?P<nevts>\d+)    -> Matches number of events and save it with name 'nevts'
+    # \..*              -> Matches a dot and the rest of the name
+    # Sample name: 'dst_NEXT_v0_08_09_Co56_INTERNALPORTANODE_74_0_7bar_MCRD_10000.root.h5'
+    pattern = re.compile('NEXT_v\d[_\d+]+[_\w]+?_(?P<fnumber>\d+)_[_\w]+?_(?P<nevts>\d+)\..*',
+                         re.IGNORECASE)
+    match = pattern.search(filename)
+    # If string does not match the pattern, return 0 as default
+    filenumber = 0
+    nevts      = 0
+    if match:
+        filenumber = int(match.group('fnumber'))
+        nevts      = int(match.group('nevts'))
+    return filenumber * nevts
+
+def event_number_from_input_file_name_hash(filename):
+    file_base_name = filename.split('/')[-1]
+    base_hash = hash(file_base_name)
+    # Something, somewhere, is preventing us from using the full
+    # 64 bit space, and limiting us to 32 bits. TODO find and
+    # eliminate it.
+    limited_hash = base_hash % int(1e9)
+    return limited_hash
