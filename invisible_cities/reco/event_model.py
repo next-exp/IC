@@ -8,6 +8,31 @@ from .. core.ic_types          import minmax
 from .. core.core_functions    import loc_elem_1d
 from .. core.system_of_units_c import units
 
+class SensorParams:
+    """Transient class storing sensor parameters."""
+    def __init__(self, npmt, pmtwl, nsipm, sipmwl):
+       self.npmt     = npmt
+       self.pmtwl    = pmtwl
+       self.nsipm    = nsipm
+       self.sipmwl   = sipmwl
+
+    @property
+    def NPMT(self): return self.npmt
+    @property
+    def PMTWL(self): return self.pmtwl
+    @property
+    def NSIPM(self): return self.nsipm
+    @property
+    def SIPMWL(self): return self.sipmwl
+
+    def __str__(self):
+       s = "{0}SensorParams\n{0}".format("#"*20 + "\n")
+       for attr in self.__dict__:
+           s += "{}: {}\n".format(attr, getattr(self, attr))
+       return s
+
+    __repr__ = __str__
+
 class Event:
     """Transient class storing event and time info."""
     def __init__(self, event_number, event_time):
@@ -19,6 +44,8 @@ class Event:
        for attr in self.__dict__:
            s += "{}: {}\n".format(attr, getattr(self, attr))
        return s
+
+    __repr__ = __str__
 
 
 class Waveform:
