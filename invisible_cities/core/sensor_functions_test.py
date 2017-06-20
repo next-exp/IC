@@ -8,8 +8,7 @@ from . sensor_functions import convert_channel_id_to_IC_id
 def test_channel_id_to_IC_id():
     data_frame = pd.DataFrame({'SensorID' : [2,9,4,1,3],
                                'ChannelID': [2,8,5,7,6]})
-    #                              index  :  0 1 2 3 4
-
+    
     assert np.array_equal(
         convert_channel_id_to_IC_id(data_frame, [2,6,5]),
         np.array                               ([0,4,2]))
