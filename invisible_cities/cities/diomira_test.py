@@ -191,3 +191,14 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
             assert mctracks_out[0] == start_evt
             for e in zip(mctracks_in[1:], mctracks_out[1:]):
                 np.testing.assert_array_equal(e[0],e[1])
+
+@mark.parametrize('filename, first_evt',
+             (('dst_NEXT_v0_08_09_Co56_INTERNALPORTANODE_74_0_7bar_MCRD_10000.root.h5',
+               740000),
+              ('NEXT_v0_08_09_Co56_2_0_7bar_MCRD_1000.root.h5',
+               2000),
+              ('electrons_40keV_z250_MCRD.h5',
+               0)))
+def test_event_number_from_input_file_name(filename, first_evt):
+    assert Diomira.event_number_from_input_file_name(filename) == first_evt
+
