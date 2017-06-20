@@ -74,8 +74,8 @@ class Irene(PmapCity):
     def run(self, nmax, print_empty=True):
         self.display_IO_info(nmax)
         sensor_params = self.get_sensor_params(self.input_files[0])
-        self.print_configuration(sensor_params)
-
+        print(sensor_params)
+        
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
             writers = Namespace(
