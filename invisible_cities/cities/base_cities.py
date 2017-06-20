@@ -33,6 +33,7 @@ from ..reco               import pmaps_functions  as pmp
 from ..reco               import dst_functions    as dstf
 from ..reco               import tbl_functions    as tbf
 from ..reco               import wfm_functions    as wfm
+from ..reco               import tbl_functions    as tbl
 from ..reco.params        import SensorParams
 from ..reco.nh5           import DECONV_PARAM
 from ..reco.corrections   import Correction
@@ -131,32 +132,22 @@ class City:
                              "PMT WL"       : sp.PMTWL,
                              "# SiPM"       : sp.NSIPM,
                              "SIPM WL"      : sp.SIPMWL})
-
-    def get_rwf_vectors(self, h5in):
+    @staticmethod
+    def get_rwf_vectors(h5in):
         "Return RWF vectors and sensor data."
-        pmtrwf, sipmrwf, pmtblr  = self._get_rwf(h5in)
-        NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
-        NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
-        assert NEVT_simp == NEVT_pmt
-        NEVT = NEVT_pmt
+        return tbl.get_rwf_vectors(h5in)
 
-        return NEVT, pmtrwf, sipmrwf, pmtblr
-
-    def get_rd_vectors(self, h5in):
-        """Return MC RD vectors and sensor data.
-
-        PMTWL is the length of the RWF computed by divinging the
-        length of the MCRD for wavelength by sampling time. """
-
-        pmtrd, sipmrd = self._get_rd(h5in)
-
-        NEVT_pmt , NPMT,   PMTWL = pmtrd .shape
-        NEVT_simp, NSIPM, SIPMWL = sipmrd.shape
-        assert NEVT_simp == NEVT_pmt
-        NEVT = NEVT_pmt
-        return NEVT, pmtrd, sipmrd
+    @staticmethod
+    def get_rd_vectors(h5in):
+        "Return MC RD vectors and sensor data."
+        return tbl.get_rd_vectors(h5in)
 
     def get_sensor_rd_params(self, filename):
+        """Return MCRD sensors.
+           pmtrd.shape returns the length of the RD PMT vector
+           (1 ns bins). PMTWL_FEE is the length of the RWF vector
+           obtained by divinding the RD PMT vector and the sample
+           time of the electronics (25 ns). """
         with tb.open_file(filename, "r") as h5in:
             pmtrd, sipmrd = self._get_rd(h5in)
             _, NPMT,   PMTWL = pmtrd .shape
@@ -164,12 +155,9 @@ class City:
             PMTWL_FEE = int(PMTWL // self.FE_t_sample)
         return SensorParams(NPMT=NPMT, PMTWL=PMTWL_FEE, NSIPM=NSIPM, SIPMWL=SIPMWL)
 
-    def get_sensor_params(self, filename):
-        with tb.open_file(filename, "r") as h5in:
-            pmtrwf, sipmrwf, _ = self._get_rwf(h5in)
-            _, NPMT,   PMTWL   = pmtrwf .shape
-            _, NSIPM, SIPMWL   = sipmrwf.shape
-        return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
+    @staticmethod
+    def get_sensor_params(filename):
+        return tbl.get_sensor_params(filename)
 
     @staticmethod
     def get_run_and_event_info(h5in):
