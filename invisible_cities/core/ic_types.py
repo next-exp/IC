@@ -33,6 +33,7 @@ class xy:
         if n == 1: return self.y
         raise IndexError
 
+
 class minmax:
 
     def __init__(self, min, max):
