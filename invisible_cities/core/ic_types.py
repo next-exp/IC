@@ -59,6 +59,9 @@ class minmax:
     def __sub__(self, scalar):
         return minmax(self.min - scalar, self.max - scalar)
 
+    def __eq__(self, other):
+        return self.min == other.min and self.max == other.max
+
     def __str__(self):
         return 'minmax(min={.min}, max={.max})'.format(self, self)
     __repr__ = __str__
