@@ -96,16 +96,21 @@ def test_event(test_class, event_pars):
 def test_waveform(waveform_pars):
     size, t, E = waveform_pars
     wf =  Waveform(t, E)
+    if np.array_equal(wf.t, np.array([0])) or np.array_equal(wf.E,np.array([0])):
+         assert wf.good_waveform == False
+    else:
+        assert wf.good_waveform == True
 
-    assert_equal(wf.t, t)
-    assert_equal(wf.E, E)
-    assert wf == wf
-    assert wf.total_energy      == np.sum(E)
-    assert wf.height            == np.max(E)
-    assert wf.number_of_samples == size
-    assert wf.tpeak             == t[np.argmax(E)]
-    assert wf.tmin_tmax         == minmax(t[0], t[-1])
-    assert wf.width             == t[-1] - t[0]
+    if wf.good_waveform == True:
+        assert_equal(wf.t, t)
+        assert_equal(wf.E, E)
+        assert wf == wf
+        assert wf.total_energy      == np.sum(E)
+        assert wf.height            == np.max(E)
+        assert wf.number_of_samples == size
+        assert wf.tpeak             == t[np.argmax(E)]
+        assert wf.tmin_tmax         == minmax(t[0], t[-1])
+        assert wf.width             == t[-1] - t[0]
 
 
 @given(integers(min_value=31, max_value=40)) # pick a random event, limits from KrMC_pmaps fixture in conftest.py
