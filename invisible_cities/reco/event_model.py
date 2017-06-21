@@ -72,13 +72,16 @@ class Waveform:
     def number_of_samples(self): return len(self.t)
 
     @property
-    def tpeak(self): return self.t(self._i_t)
+    def tpeak(self): return self.t[self._i_t]
 
     @property
     def tmin_tmax(self): return self._tm
 
     @property
     def width(self): return self._tm.bracket
+
+    def __eq__(self, other):
+        return np.all(self.t == other.t) and np.all(self.E == other.E)
 
     def __str__(self):
         s = """Waveform(samples = {} width = {} ns , energy = {} pes
@@ -231,6 +234,7 @@ class PersistentHitCollection(HitCollection):
             row["E"    ] = hit.E
             row.append()
 
+
 class KrEvent(Event):
     """Transient version of a point-like (Krypton) event."""
     def __init__(self, event_number, event_time):
@@ -263,6 +267,7 @@ class KrEvent(Event):
         for attr in self.__dict__:
             s += "{}: {}\n".format(attr, getattr(self, attr))
         return s
+
 
 class PersistentKrEvent(KrEvent):
     """Persistent version of KrEvent"""
