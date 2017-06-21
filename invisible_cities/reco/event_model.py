@@ -61,12 +61,22 @@ class Waveform:
     """
     def __init__(self, t, E):
         assert len(t) == len(E)
-        self.t            = np.array(t)
-        self.E            = np.array(E)
+        self.t            = (np.array(t) if not np.any(np.isnan(t))
+                             else np.array([0]))
+        self.E            = (np.array(E) if not np.any(np.isnan(E))
+                             else np.array([0]))
         self.total_energy = np.sum(self.E)
         self.height       = np.max(self.E)
         self._tm          = minmax(self.t[0], self.t[-1])
-        self._i_t         = loc_elem_1d(self.E, self.height)
+
+        self._i_t         = (loc_elem_1d(self.E, self.height)
+                             if self.total_energy > 0
+                             else 0)
+    @property
+    def good_waveform(self): return (False
+                                    if np.array_equal(self.t, np.array([0])) or
+                                       np.array_equal(self.E, np.array([0]))
+                                    else True )
 
     @property
     def number_of_samples(self): return len(self.t)
