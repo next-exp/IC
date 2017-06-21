@@ -40,10 +40,10 @@ def event_input(draw):
 
 
 @composite
-def waveform_input(draw, min_size=1, max_size=1000):
+def waveform_input(draw, min_size=1, max_size=100):
     size = draw(integers(min_size, max_size))
-    t    = draw(arrays(float, size, floats())); t.sort() # times in order!
-    E    = draw(arrays(float, size, floats()))
+    t    = draw(arrays(float, size, floats(0.1, 1000.))); t.sort() # times in order!
+    E    = draw(arrays(float, size, floats(0.1, 100.)))
     return size, t, E
 
 
@@ -109,7 +109,7 @@ def test_waveform(waveform_pars):
         np.isclose (wf.tpeak , t[np.argmax(E)], rtol=1e-4)
         np.isclose (wf.width , t[-1] - t[0], rtol=1e-4)
         assert wf.number_of_samples == size
-        
+
 
 
 @given(integers(min_value=31, max_value=40)) # pick a random event, limits from KrMC_pmaps fixture in conftest.py
