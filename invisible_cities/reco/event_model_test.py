@@ -102,15 +102,14 @@ def test_waveform(waveform_pars):
         assert wf.good_waveform == True
 
     if wf.good_waveform == True:
-        assert_equal(wf.t, t)
-        assert_equal(wf.E, E)
-        assert wf == wf
-        assert wf.total_energy      == np.sum(E)
-        assert wf.height            == np.max(E)
+        np.allclose (wf.t , t, rtol=1e-4)
+        np.allclose (wf.E , E, rtol=1e-4)
+        np.isclose (wf.total_energy , np.sum(E), rtol=1e-4)
+        np.isclose (wf.height , np.max(E), rtol=1e-4)
+        np.isclose (wf.tpeak , t[np.argmax(E)], rtol=1e-4)
+        np.isclose (wf.width , t[-1] - t[0], rtol=1e-4)
         assert wf.number_of_samples == size
-        assert wf.tpeak             == t[np.argmax(E)]
-        assert wf.tmin_tmax         == minmax(t[0], t[-1])
-        assert wf.width             == t[-1] - t[0]
+        
 
 
 @given(integers(min_value=31, max_value=40)) # pick a random event, limits from KrMC_pmaps fixture in conftest.py
