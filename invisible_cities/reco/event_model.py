@@ -5,8 +5,12 @@ from functools import reduce
 import numpy as np
 
 from .. core.ic_types          import minmax
+from .. core.exceptions        import PeakNotFound
+from .. core.exceptions        import SipmEmptyList
+from .. core.exceptions        import SipmNotFound
 from .. core.core_functions    import loc_elem_1d
 from .. core.system_of_units_c import units
+
 
 from enum import Enum
 class S12L(Enum):
@@ -114,7 +118,7 @@ class _S12:
     {i: Waveform(t,E)}, where i is peak number.
 
     The notation _S12 is intended to make this
-    class private (publica classes S1 and S2 will
+    class private (public classes S1 and S2 will
     extend it).
 
     The rationale to use S1 and S2 rather than a single
@@ -123,19 +127,25 @@ class _S12:
     different objects. In Particular an S2Si is constructed
     with a S2 not a S1.
 
+    An S12 is represented as a dictinary of Peaks, where each
+    peak is a waveform.
+
     """
 
-    def __init__(self, s12):
-        self._s12 = {i: Waveform(t, E) for i, (t,E) in s12.items()}
+    def __init__(self, s12d):
+        """Takes an s12d ={peak_number:[[t], [E]]}"""
+        self._s12d = s12d
+        self.peaks = {i: Waveform(t, E) for i, (t,E) in s12d.items()}
 
     @property
-    def number_of_peaks(self): return len(self._s12)
+    def number_of_peaks(self): return len(self.peaks)
 
-    @property
-    def peaks(self): return self._s12
-
-    def peak_waveform(self, i):
-        return self._s12[i]
+    def peak_waveform(self, peak_number):
+        try:
+            return self.peaks[peak_number]
+        except KeyError:
+             print("Peak {} not found".format(peak_number))
+             raise PeakNotFound
 
     def __str__(self):
         s =  "S12(type = {}, number of peaks = {})\n".format(self.type.name,
@@ -151,46 +161,103 @@ class _S12:
 
 class S1(_S12):
     """Transient class representing an S1 signal."""
-    def __init__(self, s1):
-        _S12.__init__(self, s1)
-        self.type = S12L.S1
+    def __init__(self, s1d):
+        """Takes an s1d={peak_number:[[t], [E]]}"""
+        _S12.__init__(self, s1d)
+        self.signal_type = S12L.S1
 
 
 class S2(_S12):
     """Transient class representing an S2 signal."""
-    def __init__(self, s2):
-        _S12.__init__(self, s2)
-        self.type = S12L.S2
+    def __init__(self, s2d):
+        """Takes an s2d={peak_number:[[t], [E]]}"""
+        _S12.__init__(self, s2d)
+        self.signal_type = S12L.S2
 
 
-class S2Si:
-    """Transient class representing an S1/S2 signal
-    The S12 attribute is a dictionary s12
-    {i: Waveform(t,E)}, where i is peak number.
+class S2Si(S2):
+    """Transient class representing the combination of
+    S2 and the SiPM information.
+    Notice that S2Si is constructed using an s2d and an s2sid.
+    The s2d is an s12 dictionary (not an S2 instance)
+    The s2sid is a dictionary {peak:{nsipm:[E]}}
 
     """
 
-    def __init__(self, S2, SIPM):
-        self._s12 = {i: Waveform(t, E) for i, (t,E) in s12.items()}
-        self.type = s12_type
+    def __init__(self, s2d, s2sid):
+        """where:
+           s2d   = {peak_number:[[t], [E]]}
+           s2sid = {peak:{nsipm:[Q]}}
+           Q is the energy in each SiPM sample
 
-    @property
-    def number_of_peaks(self): return len(self._s12)
+        """
+        S2.__init__(self, s2d)
+        self._s2sid = s2sid
 
-    @property
-    def peaks(self): return self._s12
+    def number_of_sipms_in_peak(self, peak_number):
+        return len(self._s2sid[peak_number])
 
-    def peak_waveform(self, i):
-        return self._s12[i]
+    def sipms_in_peak(self, peak_number):
+        try:
+            return self._s2sid[peak_number].keys()
+        except KeyError:
+            print("Peak {} not found".format(peak_number))
+            raise PeakNotFound
+
+
+    def sipm_waveform(self, peak_number, sipm_number):
+        if self.number_of_sipms_in_peak(peak_number) == 0:
+            print("No SiPMs associated to peak = {}".format(peak_number))
+            raise SipmEmptyList
+        try:
+            E = self._s2sid[peak_number][sipm_number]
+            return Waveform(self.peak_waveform(peak_number).t, E)
+        except KeyError:
+            print("sipm {} not in sipm list".format(sipm_number))
+            raise SipmNotFound
+
+    def sipm_waveform_zs(self, peak_number, sipm_number):
+        if self.number_of_sipms_in_peak(peak_number) == 0:
+            raise SipmEmptyList("No SiPMs associated to this peak")
+        try:
+            E = self._s2sid[peak_number][sipm_number]
+            t = self.peak_waveform(peak_number).t[E>0]
+            return Waveform(t, E[E>0])
+        except KeyError:
+            print("sipm {} not in sipm list".format(sipm_number))
+            raise SipmNotFound
+
+    def sipm_total_energy(self, peak_number, sipm_number):
+        if self.number_of_sipms_in_peak(peak_number) == 0:
+            raise SipmEmptyList("No SiPMs associated to this peak")
+        try:
+            et = np.sum(self._s2sid[peak_number][sipm_number])
+            return et
+        except KeyError:
+            print("sipm {} not in sipm list".format(sipm_number))
+            raise SipmNotFound
 
     def __str__(self):
-        s =  "S12(type = {}, number of peaks = {})\n".format(self.type,
-                                                      self.number_of_peaks)
+        s =  "S2Si(S2 = {})\n".format(S2.__str__(self))
 
-        s2 = ['peak number = {}: {} \n'.format(i,
-                                    self.peak_waveform(i)) for i in self.peaks]
+        s+="\nSiPMs for non-empty peaks\n"
 
-        return reduce(lambda s, x: s + x, s2, s)
+        s2a =["""peak number = {}: nsipm in peak = {} \n
+              """.format(peak_number,
+              self.sipms_in_peak(peak_number)) for peak_number in self.peaks if len(self.sipms_in_peak(peak_number)) > 0]
+
+        s = reduce(lambda s, x: s + x, s2a, s)
+
+        s+="\nSiPMs Waveforms\n"
+
+        s2b = ["""peak number = {}: sipm number = {} \n
+                 sipm waveform (zs) = {}
+              """.format(peak_number, sipm_number,
+                 self.sipm_waveform_zs(peak_number, sipm_number)) for peak_number in self.peaks for sipm_number in self.sipms_in_peak(peak_number) if len(self.sipms_in_peak(peak_number)) > 0]
+
+        return reduce(lambda s, x: s + x, s2b, s)
+
+        #return s
 
     __repr__ = __str__
 
