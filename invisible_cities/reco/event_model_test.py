@@ -138,10 +138,10 @@ def test_s1_s2(KrMC_pmaps, evt_no):
     s1 = S1(s1data)
     s2 = S2(s2data)
 
-    assert s1.type.name == "S1"
-    assert s2.type.name == "S2"
-    assert s1.type.value == 1
-    assert s2.type.value == 2
+    assert s1.signal_type.name == "S1"
+    assert s2.signal_type.name == "S2"
+    assert s1.signal_type.value == 1
+    assert s2.signal_type.value == 2
 
     assert s1.number_of_peaks == len(s1data)
     assert s2.number_of_peaks == len(s2data)
