@@ -6,8 +6,8 @@ import pandas as pd
 import tables as tb
 import matplotlib.pyplot as plt
 
-from .. core.mpl_functions     import circles
-from .. core.mpl_functions     import set_plot_labels
+from .  mpl_functions     import circles
+from .  mpl_functions     import set_plot_labels
 from .. core.system_of_units_c import units
 
 from .. database               import load_db
