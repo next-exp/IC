@@ -111,6 +111,21 @@ def test_waveform(waveform_pars):
         assert wf.number_of_samples == size
 
 
+@given(waveform_input())
+def test_s12c(wform):
+    _, t1, E1 = wform
+    _, t2, E2 = wform
+
+
+    s12d = {0: [t1, E1], 1: [t2, E2] }
+    s12 = S12(s12d)
+
+    assert s12.number_of_peaks == len(s12d)
+    for i in range(s12.number_of_peaks):
+        if s12.peak_waveform(i).good_waveform:
+            np.allclose (s12.peak_waveform(i).t , s12d[i][0], rtol=1e-4)
+            np.allclose (s12.peak_waveform(i).E , s12d[i][1], rtol=1e-4)
+
 
 @given(integers(min_value=31, max_value=40)) # pick a random event, limits from KrMC_pmaps fixture in conftest.py
 def test_s12(KrMC_pmaps, evt_no):
