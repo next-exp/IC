@@ -8,6 +8,11 @@ from .. core.ic_types          import minmax
 from .. core.core_functions    import loc_elem_1d
 from .. core.system_of_units_c import units
 
+from enum import Enum
+class S12L(Enum):
+    S1 = 1
+    S2 = 2
+
 class SensorParams:
     """Transient class storing sensor parameters."""
     def __init__(self, npmt, pmtwl, nsipm, sipmwl):
@@ -103,14 +108,69 @@ class Waveform:
     __repr__ = __str__
 
 
-class S12:
+class _S12:
+    """Base class representing an S1/S2 signal
+    The S12 attribute is a dictionary s12
+    {i: Waveform(t,E)}, where i is peak number.
+
+    The notation _S12 is intended to make this
+    class private (publica classes S1 and S2 will
+    extend it).
+
+    The rationale to use S1 and S2 rather than a single
+    class S12 to represent both S1 and S2 is that, although
+    structurally identical, S1 and S2 represent quite
+    different objects. In Particular an S2Si is constructed
+    with a S2 not a S1.
+
+    """
+
+    def __init__(self, s12):
+        self._s12 = {i: Waveform(t, E) for i, (t,E) in s12.items()}
+
+    @property
+    def number_of_peaks(self): return len(self._s12)
+
+    @property
+    def peaks(self): return self._s12
+
+    def peak_waveform(self, i):
+        return self._s12[i]
+
+    def __str__(self):
+        s =  "S12(type = {}, number of peaks = {})\n".format(self.type.name,
+                                                      self.number_of_peaks)
+
+        s2 = ['peak number = {}: {} \n'.format(i,
+                                    self.peak_waveform(i)) for i in self.peaks]
+
+        return reduce(lambda s, x: s + x, s2, s)
+
+    __repr__ = __str__
+
+
+class S1(_S12):
+    """Transient class representing an S1 signal."""
+    def __init__(self, s1):
+        _S12.__init__(self, s1)
+        self.type = S12L.S1
+
+
+class S2(_S12):
+    """Transient class representing an S2 signal."""
+    def __init__(self, s2):
+        _S12.__init__(self, s2)
+        self.type = S12L.S2
+
+
+class S2Si:
     """Transient class representing an S1/S2 signal
     The S12 attribute is a dictionary s12
     {i: Waveform(t,E)}, where i is peak number.
 
     """
 
-    def __init__(self, s12, s12_type='S1'):
+    def __init__(self, S2, SIPM):
         self._s12 = {i: Waveform(t, E) for i, (t,E) in s12.items()}
         self.type = s12_type
 
