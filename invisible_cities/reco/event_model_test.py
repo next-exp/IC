@@ -14,7 +14,9 @@ from .. core.ic_types    import minmax
 from .       event_model import SensorParams
 from .       event_model import Event
 from .       event_model import Waveform
-from .       event_model import S12
+from .       event_model import _S12
+from .       event_model import S1
+from .       event_model import S2
 from .       event_model import Cluster
 from .       event_model import Hit
 from .       event_model import HitCollection
@@ -116,9 +118,8 @@ def test_s12c(wform):
     _, t1, E1 = wform
     _, t2, E2 = wform
 
-
     s12d = {0: [t1, E1], 1: [t2, E2] }
-    s12 = S12(s12d)
+    s12 = _S12(s12d)
 
     assert s12.number_of_peaks == len(s12d)
     for i in range(s12.number_of_peaks):
@@ -128,17 +129,19 @@ def test_s12c(wform):
 
 
 @given(integers(min_value=31, max_value=40)) # pick a random event, limits from KrMC_pmaps fixture in conftest.py
-def test_s12(KrMC_pmaps, evt_no):
+def test_s1_s2(KrMC_pmaps, evt_no):
     *_, (s1data, s2data, _) = KrMC_pmaps
 
     s1data = s1data[evt_no]
     s2data = s2data[evt_no]
 
-    s1 = S12(s1data, "S1")
-    s2 = S12(s2data, "S2")
+    s1 = S1(s1data)
+    s2 = S2(s2data)
 
-    assert s1.type == "S1"
-    assert s2.type == "S2"
+    assert s1.type.name == "S1"
+    assert s2.type.name == "S2"
+    assert s1.type.value == 1
+    assert s2.type.value == 2
 
     assert s1.number_of_peaks == len(s1data)
     assert s2.number_of_peaks == len(s2data)
