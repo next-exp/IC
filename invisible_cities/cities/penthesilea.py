@@ -8,10 +8,12 @@ import tables as tb
 
 from ..core.configure         import configure
 from ..core.system_of_units_c import units
+from ..core.ic_types          import xy
 from ..io.dst_io              import hits_writer
 from ..cities.base_cities     import City
-from ..io.dst_io              import PersistentHitCollection
-from ..io.dst_io              import Hit
+from ..reco.event_model       import PersistentHitCollection
+from ..reco.event_model       import Cluster
+from ..reco.event_model       import Hit
 from ..cities.base_cities     import HitCollectionCity
 from ..reco                   import tbl_functions as tbl
 from ..reco.tbl_functions     import get_event_numbers_and_timestamps_from_file_name
@@ -19,9 +21,8 @@ from ..reco.pmaps_functions   import load_pmaps
 from ..reco.xy_algorithms     import barycenter
 from ..reco.xy_algorithms     import find_algorithm
 from ..filters.s1s2_filter    import s1s2_filter
+from ..filters.s1s2_filter    import s2si_filter
 from ..filters.s1s2_filter    import S12Selector
-from ..reco.pmaps_functions   import integrate_S2Si_charge
-
 
 class Penthesilea(HitCollectionCity):
     def __init__(self,
@@ -140,16 +141,9 @@ class Penthesilea(HitCollectionCity):
             S2   = S2s  .get(evt_number, {})
             S2Si = S2Sis.get(evt_number, {})
 
-            if not s1s2_filter(self._s1s2_selector, S1, S2, S2Si):
-                continue
-            iS2Si = integrate_S2Si_charge(S2Si)
-            # All peaks must contain at least one non-zero charged sipm
-            def at_least_one_sipm_with_Q_gt_0(Si):
-                return any(q > 0 for q in Si.values())
-            def all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si):
-               return all(at_least_one_sipm_with_Q_gt_0(Si)
-                          for Si in iS2Si.values())
-            if not all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si):
+            f1 = s1s2_filter(self._s1s2_selector, S1, S2, S2Si)
+            f2 = s2si_filter(S2Si)
+            if not f1 or not f2:
                 continue
             nevt_out += 1
 
@@ -161,9 +155,10 @@ class Penthesilea(HitCollectionCity):
         return nevt_in, nevt_out, max_events_reached
 
     def _create_hits_event(self, evt_number, evt_time, S1, S2, Si):
-        hitc = PersistentHitCollection()
-        hitc.evt   = evt_number
-        hitc.time  = evt_time * 1e-3 # s
+
+        hitc = PersistentHitCollection(evt_number, evt_time * 1e-3)
+        #hitc.evt   = evt_number
+        #hitc.time  = evt_time * 1e-3 # s
 
         t, e = next(iter(S1.values()))
         S1t  = t[np.argmax(e)]
@@ -178,14 +173,7 @@ class Penthesilea(HitCollectionCity):
                 es       = self.split_energy(e_slice, clusters)
                 z        = (t_slice - S1t) * units.ns * self.drift_v
                 for c, e in zip(clusters, es):
-                    hit       = Hit()
-                    hit.npeak = npeak
-                    hit.nsipm = c.nsipm
-                    hit.X     = c.pos.X
-                    hit.Y     = c.pos.Y
-                    hit.Z     = z
-                    hit.Q     = c.Q
-                    hit.E     = e
+                    hit       = Hit(npeak, c, z, e)
                     hitc.hits.append(hit)
             npeak += 1
 

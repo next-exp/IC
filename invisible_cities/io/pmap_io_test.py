@@ -20,7 +20,7 @@ from .. reco                   import peak_functions_c as cpf
 from .. reco.params            import S12Params        as S12P
 from .. reco.params            import ThresholdParams
 from .. reco.params            import PMaps
-from .. reco.params            import minmax
+from .. core.ic_types          import minmax
 
 from . pmap_io                 import pmap_writer
 from . pmap_io                 import S12
@@ -169,9 +169,9 @@ def test_pmap_electrons_40keV(config_tmpdir):
                                                     thr_MAU=thr.thr_MAU)
                 # zs sum
                 s2_ene, s2_indx = cpf.wfzs(csum, threshold=thr.thr_s2)
-                s2_t = cpf.time_from_index(s2_indx)
+                s2_t = cpf._time_from_index(s2_indx)
                 s1_ene, s1_indx = cpf.wfzs(csum_mau, threshold=thr.thr_s1)
-                s1_t = cpf.time_from_index(s1_indx)
+                s1_t = cpf._time_from_index(s1_indx)
 
                 # S1 and S2
                 s1 = cpf.find_S12(s1_ene, s1_indx, **s1_params._asdict())

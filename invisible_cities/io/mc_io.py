@@ -24,6 +24,8 @@ class mc_track_writer:
                         title       = "MCTracks",
                         filters     = tbl.filters(self.compression))
 
+        self.mc_table.cols.event_indx.create_index()
+
     def __call__(self, mctracks, evt_number):
         for r in mctracks.iterrows(start=self.last_row):
             self.last_row += 1

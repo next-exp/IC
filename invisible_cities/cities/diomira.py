@@ -29,7 +29,6 @@ from .. io.fee_io           import write_FEE_table
 
 from .. reco        import wfm_functions as wfm
 from .. reco        import tbl_functions as tbl
-from .. reco.params import SensorParams
 from .. reco.nh5    import FEE
 from .. reco.nh5    import RunInfo
 from .. reco.nh5    import EventInfo
@@ -67,11 +66,11 @@ class Diomira(SensorResponseCity):
     def run(self, nmax):
 
         self.display_IO_info(nmax)
-        sp = sensor_params = self.get_sensor_rd_params(self.input_files[0])
-        self.print_configuration(sensor_params)
+        sp = self.get_sensor_rd_params(self.input_files[0])
+        print(sp)
 
         # Create instance of the noise sampler
-        self.noise_sampler = SiPMsNoiseSampler(sensor_params.SIPMWL, True)
+        self.noise_sampler = SiPMsNoiseSampler(sp.SIPMWL, True)
         # thresholds in adc counts
         self.sipms_thresholds = (self.sipm_noise_cut
                               *  self.sipm_adc_to_pes)
