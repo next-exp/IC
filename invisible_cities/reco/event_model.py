@@ -150,18 +150,14 @@ class _S12:
     __repr__ = __str__
 
 
+# These types merely serve to distinguish the different meanings of
+# isomorphic data structures.
 class S1(_S12):
     """Transient class representing an S1 signal."""
-    def __init__(self, s1d):
-        """Takes an s1d={peak_number:[[t], [E]]}"""
-        _S12.__init__(self, s1d)
 
 
 class S2(_S12):
     """Transient class representing an S2 signal."""
-    def __init__(self, s2d):
-        """Takes an s2d={peak_number:[[t], [E]]}"""
-        _S12.__init__(self, s2d)
 
 
 class S2Si(S2):
