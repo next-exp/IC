@@ -1,6 +1,60 @@
 """
-Cython version of some peak functions
-JJGC December, 2016
+Functions used for peak finding.
+Last revision: June 2017, JJGC
+
+**Public functions**
+
+calibrated_pmt_sum(double [:, :]  CWF,
+                         double [:]     adc_to_pes,
+                         list           pmt_active = [],
+                         int            n_MAU = 100,
+                         double         thr_MAU =   3)
+
+  Compute the ZS calibrated sum of the PMTs
+  after correcting the baseline with a MAU to suppress low frequency noise.
+
+calibrated_pmt_mau(double [:, :]  CWF,
+                           double [:]     adc_to_pes,
+                           list           pmt_active = [],
+                           int            n_MAU = 200,
+                           double         thr_MAU =   5):
+
+   Returns the calibrated waveforms for PMTs correcting by MAU.
+
+wfzs(double [:] wf, double threshold=0)
+  Takes a waveform wf and return the values of the wf above threshold:
+
+rebin_waveform(double [:] t, double[:] e, int stride = 40)
+  Rebin a waveform according to stride
+
+cpdef correct_S1_ene(S1, np.ndarray csum)??
+
+find_S12(double [:] wfzs,  int [:] index,
+               time=(), length=(),
+               int stride=4, rebin=False, rebin_stride=40)
+  Find S1/S2 peaks. Wrapper around the cython version returning instances
+  of S12 class.
+
+
+signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
+                    double [:] adc_to_pes, double thr,
+                    int n_MAU=100):
+
+   subtracts the baseline
+   Uses a MAU to set the signal threshold (thr, in PES)
+   returns ZS waveforms for all SiPMs
+
+cpdef select_sipm(double [:, :] sipmzs)
+       Selects the SiPMs with signal
+       and returns a dictionary
+
+** Private **
+
+cpdef _time_from_index(int [:] indx):
+  returns the times (in ns) corresponding to the indexes in indx
+
+
+
 """
 cimport numpy as np
 import  numpy as np
@@ -140,7 +194,7 @@ cpdef wfzs(double [:] wf, double threshold=0):
     return np.asarray(wfzs_ene), np.asarray(wfzs_indx)
 
 
-cpdef time_from_index(int [:] indx):
+cpdef _time_from_index(int [:] indx):
     """
     returns the times (in ns) corresponding to the indexes in indx
     """
@@ -175,7 +229,7 @@ cpdef find_S12(double [:] wfzs,  int [:] index,
     cdef int    limn, lmax
 
     cdef double [:] P = wfzs
-    cdef double [:] T = time_from_index(index)
+    cdef double [:] T = _time_from_index(index)
 
     assert len(wfzs) == len(index)
 

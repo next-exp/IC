@@ -61,7 +61,7 @@ cpdef wfzs(double [:] wf, double threshold=*)
 """
 returns the times (in ns) corresponding to the indexes in indx
 """
-cpdef time_from_index(int [:] indx)
+cpdef _time_from_index(int [:] indx)
 
 
 """
