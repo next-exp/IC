@@ -173,7 +173,6 @@ class S2Si(S2):
            s2d   = {peak_number:[[t], [E]]}
            s2sid = {peak:{nsipm:[Q]}}
            Q is the energy in each SiPM sample
-
         """
         S2.__init__(self, s2d)
         self._s2sid = s2sid
@@ -183,7 +182,7 @@ class S2Si(S2):
 
     def sipms_in_peak(self, peak_number):
         try:
-            return self._s2sid[peak_number].keys()
+            return tuple(self._s2sid[peak_number].keys())
         except KeyError:
             raise PeakNotFound
 
