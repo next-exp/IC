@@ -3,12 +3,15 @@
 from sys import argv
 from importlib import import_module
 
-_, city, *args = argv
+_, *args = argv
+
+city_name = args[0]
 
 try:
-    city_class = getattr(import_module('invisible_cities.cities.'+city), city.capitalize())
+    module_name = 'invisible_cities.cities.' + city_name
+    city_class  = getattr(import_module(module_name), city_name.capitalize())
 except ModuleNotFoundError:
     print('available cities: <TODO look at contents of config directory>')
     print('usage TODO: <get this from our config parser>')
 else:
-    city_class.drive(['city {city}'.format(**locals())] + args)
+    city_class.drive(args)
