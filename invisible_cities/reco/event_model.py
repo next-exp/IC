@@ -214,27 +214,25 @@ class S2Si(S2):
             raise SipmNotFound
 
     def __str__(self):
-        s = S2.__str__(self)
+        s  = "=" * 80 + "\n" + S2.__str__(self)
 
-        s += "\nSiPMs for non-empty peaks\n"
+        s += "-" * 80 + "\nSiPMs for non-empty peaks\n\n"
 
         s2a = ["peak number = {}: nsipm in peak = {}"
                .format(peak_number, self.sipms_in_peak(peak_number))
                for peak_number in self.peaks
                if len(self.sipms_in_peak(peak_number)) > 0]
 
-        s += '\n'.join(s2a)
+        s += '\n\n'.join(s2a) + "\n"
 
-        s += "\nSiPMs Waveforms\n"
+        s += "-" * 80 + "\nSiPMs Waveforms\n\n"
 
-        s2b = ["""peak number = {}: sipm number = {} \n
-                 sipm waveform (zs) = {}
-              """.format(peak_number, sipm_number, self.sipm_waveform_zs(peak_number, sipm_number))
+        s2b = ["peak number = {}: sipm number = {}\n    sipm waveform (zs) = {}".format(peak_number, sipm_number, self.sipm_waveform_zs(peak_number, sipm_number))
                for peak_number in self.peaks
                for sipm_number in self.sipms_in_peak(peak_number)
                if len(self.sipms_in_peak(peak_number)) > 0]
 
-        return s + ''.join(s2b)
+        return s + '\n'.join(s2b) + "\n" + "=" * 80
 
     __repr__ = __str__
 
