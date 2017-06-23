@@ -1,7 +1,5 @@
 # Clsses defining the event model
 
-from functools import reduce
-
 import numpy as np
 
 from .. core.ic_types          import minmax
@@ -155,7 +153,7 @@ class _S12:
         s2 = ['peak number = {}: {} \n'.format(i,
                                     self.peak_waveform(i)) for i in self.peaks]
 
-        return reduce(lambda s, x: s + x, s2, s)
+        return  s + ''.join(s2)
 
     __repr__ = __str__
 
