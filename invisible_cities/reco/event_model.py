@@ -13,9 +13,10 @@ from .. core.system_of_units_c import units
 
 
 from enum import Enum
-class S12L(Enum):
+class PMAPL(Enum):
     S1 = 1
     S2 = 2
+    S2Si = 3
 
 class SensorParams:
     """Transient class storing sensor parameters."""
@@ -148,7 +149,7 @@ class _S12:
              raise PeakNotFound
 
     def __str__(self):
-        s =  "S12(type = {}, number of peaks = {})\n".format(self.type.name,
+        s =  "S12(type = {}, number of peaks = {})\n".format(self.signal_type.name,
                                                       self.number_of_peaks)
 
         s2 = ['peak number = {}: {} \n'.format(i,
@@ -164,7 +165,7 @@ class S1(_S12):
     def __init__(self, s1d):
         """Takes an s1d={peak_number:[[t], [E]]}"""
         _S12.__init__(self, s1d)
-        self.signal_type = S12L.S1
+        self.signal_type = PMAPL.S1
 
 
 class S2(_S12):
@@ -172,7 +173,7 @@ class S2(_S12):
     def __init__(self, s2d):
         """Takes an s2d={peak_number:[[t], [E]]}"""
         _S12.__init__(self, s2d)
-        self.signal_type = S12L.S2
+        self.signal_type = PMAPL.S2
 
 
 class S2Si(S2):
@@ -193,6 +194,7 @@ class S2Si(S2):
         """
         S2.__init__(self, s2d)
         self._s2sid = s2sid
+        self.signal_type = PMAPL.S2Si
 
     def number_of_sipms_in_peak(self, peak_number):
         return len(self._s2sid[peak_number])
