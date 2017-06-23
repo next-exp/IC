@@ -10,8 +10,7 @@ from .. core.configure         import configure
 from .. core.system_of_units_c import units
 
 from .. io.kdst_io              import kr_writer
-from ..reco.event_model         import PersistentKrEvent
-#from .. io.kdst_io              import PersistentKrEvent
+from .. reco.event_model        import PersistentKrEvent
 
 from .. reco                   import tbl_functions   as tbl
 from .. reco                   import pmaps_functions as pmp
@@ -25,72 +24,41 @@ from .  base_cities            import City
 
 
 class Dorothea(City):
-    def __init__(self,
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = "ZLIB4",
-                 nprint      = 10000,
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        conf = self.conf
 
-                 drift_v     = 1 * units.mm / units.mus,
-
-                 S1_Emin     = 0,
-                 S1_Emax     = np.inf,
-                 S1_Lmin     = 0,
-                 S1_Lmax     = np.inf,
-                 S1_Hmin     = 0,
-                 S1_Hmax     = np.inf,
-                 S1_Ethr     = 0,
-
-                 S2_Nmax     = 1,
-                 S2_Emin     = 0,
-                 S2_Emax     = np.inf,
-                 S2_Lmin     = 0,
-                 S2_Lmax     = np.inf,
-                 S2_Hmin     = 0,
-                 S2_Hmax     = np.inf,
-                 S2_NSIPMmin = 1,
-                 S2_NSIPMmax = np.inf,
-                 S2_Ethr     = 0):
-
-        City       .__init__(self,
-                             run_number ,
-                             files_in   ,
-                             file_out   ,
-                             compression,
-                             nprint     )
-
-        self.drift_v        = drift_v
+        self.drift_v = conf.drift_v
         self._s1s2_selector = S12Selector(S1_Nmin     = 1,
                                           S1_Nmax     = 1,
-                                          S1_Emin     = S1_Emin,
-                                          S1_Emax     = S1_Emax,
-                                          S1_Lmin     = S1_Lmin,
-                                          S1_Lmax     = S1_Lmax,
-                                          S1_Hmin     = S1_Hmin,
-                                          S1_Hmax     = S1_Hmax,
-                                          S1_Ethr     = S1_Ethr,
+                                          S1_Emin     = conf.s1_emin,
+                                          S1_Emax     = conf.s1_emax,
+                                          S1_Lmin     = conf.s1_lmin,
+                                          S1_Lmax     = conf.s1_lmax,
+                                          S1_Hmin     = conf.s1_hmin,
+                                          S1_Hmax     = conf.s1_hmax,
+                                          S1_Ethr     = conf.s1_ethr,
 
                                           S2_Nmin     = 1,
-                                          S2_Nmax     = S2_Nmax,
-                                          S2_Emin     = S2_Emin,
-                                          S2_Emax     = S2_Emax,
-                                          S2_Lmin     = S2_Lmin,
-                                          S2_Lmax     = S2_Lmax,
-                                          S2_Hmin     = S2_Hmin,
-                                          S2_Hmax     = S2_Hmax,
-                                          S2_NSIPMmin = S2_NSIPMmin,
-                                          S2_NSIPMmax = S2_NSIPMmax,
-                                          S2_Ethr     = S2_Ethr)
+                                          S2_Nmax     = conf.s2_nmax,
+                                          S2_Emin     = conf.s2_emin,
+                                          S2_Emax     = conf.s2_emax,
+                                          S2_Lmin     = conf.s2_lmin,
+                                          S2_Lmax     = conf.s2_lmax,
+                                          S2_Hmin     = conf.s2_hmin,
+                                          S2_Hmax     = conf.s2_hmax,
+                                          S2_NSIPMmin = conf.s2_nsipmmin,
+                                          S2_NSIPMmax = conf.s2_nsipmmax,
+                                          S2_Ethr     = conf.s2_ethr)
 
-    def run(self, nmax):
-        self.display_IO_info(nmax)
+    def run(self):
+        self.display_IO_info()
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
 
             write_kr = kr_writer(h5out)
 
-            nevt_in, nevt_out = self._file_loop(write_kr, nmax)
+            nevt_in, nevt_out = self._file_loop(write_kr)
         print(textwrap.dedent("""
                               Number of events in : {}
                               Number of events out: {}
@@ -98,7 +66,7 @@ class Dorothea(City):
                               """.format(nevt_in, nevt_out, nevt_out / nevt_in)))
         return nevt_in, nevt_out
 
-    def _file_loop(self, write_kr, nmax):
+    def _file_loop(self, write_kr):
         nevt_in = nevt_out = 0
 
         for filename in self.input_files:
@@ -113,7 +81,7 @@ class Dorothea(City):
             event_numbers, timestamps = get_event_numbers_and_timestamps_from_file_name(filename)
 
             nevt_in, nevt_out, max_events_reached = self._event_loop(
-                event_numbers, timestamps, nmax, nevt_in, nevt_out, write_kr, S1s, S2s, S2Sis)
+                event_numbers, timestamps, nevt_in, nevt_out, write_kr, S1s, S2s, S2Sis)
 
             if max_events_reached:
                 print('Max events reached')
@@ -123,11 +91,11 @@ class Dorothea(City):
 
         return nevt_in, nevt_out
 
-    def _event_loop(self, event_numbers, timestamps, nmax, nevt_in, nevt_out, write_kr, S1s, S2s, S2Sis):
+    def _event_loop(self, event_numbers, timestamps, nevt_in, nevt_out, write_kr, S1s, S2s, S2Sis):
         max_events_reached = False
         for evt_number, evt_time in zip(event_numbers, timestamps):
             nevt_in += 1
-            if self.max_events_reached(nmax, nevt_in):
+            if self.max_events_reached(nevt_in):
                 max_events_reached = True
                 break
             S1 = S1s  .get(evt_number, {})
