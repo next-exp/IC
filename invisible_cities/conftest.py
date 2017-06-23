@@ -123,5 +123,23 @@ def corr_toy_data(ICDIR):
     y = np.arange(-200,   0)
     E = np.arange( 1e4, 1e4 + x.size*y.size).reshape(x.size, y.size)
     U = np.arange( 1e2, 1e2 + x.size*y.size).reshape(x.size, y.size)
+    N = np.ones_like(U)
+
     corr_filename = os.path.join(ICDIR, "database/test_data/toy_corr.h5")
-    return corr_filename, (x, y, E, U)
+    return corr_filename, (x, y, E, U, N)
+
+
+@pytest.fixture(scope='session')
+def hits_toy_data(ICDIR):
+    npeak = np.array   ([0]*25 + [1]*30 + [2]*35 + [3]*10)
+    nsipm = np.arange  (1000, 1100)
+    x     = np.linspace( 150,  250, 100)
+    y     = np.linspace(-280, -180, 100)
+    xrms  = np.linspace(   1,   80, 100)
+    yrms  = np.linspace(   2,   40, 100)
+    z     = np.linspace(   0,  515, 100)
+    q     = np.linspace( 1e3,  1e3, 100)
+    e     = np.linspace( 2e3,  1e4, 100)
+
+    hits_filename = os.path.join(ICDIR, "database/test_data/toy_hits.h5")
+    return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e)
