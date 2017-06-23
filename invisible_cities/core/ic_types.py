@@ -62,8 +62,11 @@ class minmax:
     def __eq__(self, other):
         return self.min == other.min and self.max == other.max
 
-    def __str__(self):
-        return 'minmax(min={.min}, max={.max})'.format(self, self)
+    def __str__(self, decimals=None):
+        if decimals is None:
+            return 'minmax(min={.min}, max={.max})'.format(self, self)
+        fmt = 'minmax(min={{.min:.{0}f}}, max={{.max:.{0}f}})'.format(decimals)
+        return fmt.format(self, self)
     __repr__ = __str__
 
     def __getitem__(self, n):

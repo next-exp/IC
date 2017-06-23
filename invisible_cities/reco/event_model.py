@@ -97,9 +97,9 @@ class Waveform:
 
     def __str__(self):
         s = """Waveform(samples = {} width = {:.1f} mus , energy = {:.1f} pes
-        height = {:.1f} pes tmin-tmax = {:.1f} mus """.format(self.number_of_samples,
+        height = {:.1f} pes tmin-tmax = {} mus """.format(self.number_of_samples,
         self.width / units.mus, self.total_energy, self.height,
-        self.tmin_tmax * (1 / units.mus))
+        (self.tmin_tmax * (1 / units.mus)).__str__(1))
         return s
 
     __repr__ = __str__
