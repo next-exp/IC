@@ -15,8 +15,6 @@ from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmZeroCharge
 
-
-from .       params            import Cluster
 from .       xy_algorithms     import corona
 from .       xy_algorithms     import barycenter
 from .       xy_algorithms     import discard_sipms
@@ -65,21 +63,38 @@ def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
     c_cluster = c_clusters[0]
     b_cluster = barycenter(pos, qs)[0]
 
-    assert len(c_cluster)  == len(b_cluster)
+    # assert len(c_cluster)  == len(b_cluster)
+    # A cluster object has no length!
     np.array_equal(c_cluster.pos, b_cluster.pos)
     np.array_equal(c_cluster.rms, b_cluster.rms)
-    assert c_cluster.Q     == b_cluster.Q
-    assert c_cluster.nsipm == b_cluster.nsipm
+    assert c_cluster.nsipm      == b_cluster.nsipm
+    assert c_cluster.Q          == b_cluster.Q
+    assert c_cluster.nsipm      == b_cluster.nsipm
+    assert c_cluster.X          == b_cluster.X
+    assert c_cluster.Y          == b_cluster.Y
+    assert c_cluster.Xrms       == b_cluster.Xrms
+    assert c_cluster.Yrms       == b_cluster.Yrms
+    assert c_cluster.XY         == b_cluster.XY
+    assert c_cluster.R          == b_cluster.R
+    assert c_cluster.Phi        == b_cluster.Phi
 
 def test_corona_multiple_clusters(toy_sipm_signal):
+    """notice: cluster.xy =(x,y)
+               cluster.pos = ([x],
+                              [y])
+    """
     pos, qs = toy_sipm_signal
     clusters = corona(pos, qs, msipm=1, new_lm_radius=15*units.mm, Qlm=4.9*units.pes)
     assert len(clusters) == 2
     for i in range(len(pos)):
-        assert np.array_equal(clusters[i].pos, pos[i])
+        assert np.array_equal(clusters[i].XY, pos[i])
         assert clusters[i].Q == qs[i]
 
 def test_corona_min_threshold_Qthr():
+    """notice: cluster.XY =(x,y)
+               cluster.pos = ([x],
+                              [y])
+    """
     xs = np.arange(100) * 10
     ys = np.zeros (100)
     qs = np.arange(100)
@@ -92,7 +107,7 @@ def test_corona_min_threshold_Qthr():
                       msipm          = 1)
     assert len(clusters) ==   1
     assert clusters[0].Q ==  99
-    assert clusters[0].pos == (990, 0)
+    assert clusters[0].XY == (990, 0)
 
 def test_corona_msipm(toy_sipm_signal):
     pos, qs = toy_sipm_signal

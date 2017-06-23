@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 
 from .. database     import load_db
-from . mpl_functions import circles
+from .. icaro.mpl_functions import circles
 
 
 def weighted_sum(CWF, w_vector):

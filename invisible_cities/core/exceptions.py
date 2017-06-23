@@ -16,7 +16,13 @@ class NoOutputFile(ICException):
 class ParameterNotSet(ICException):
     pass
 
+class PeakNotFound(ICException):
+    pass
+
 class SipmEmptyList(ICException):
+    pass
+
+class SipmNotFound(ICException):
     pass
 
 class SipmZeroCharge(ICException):

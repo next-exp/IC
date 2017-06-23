@@ -15,7 +15,7 @@ from .. io.pmap_io            import pmap_writer
 from .. io.run_and_event_io   import run_and_event_writer
 from .. reco                  import tbl_functions as tbl
 from .. reco.params           import S12Params as S12P
-from .. reco.params           import minmax
+from .. core.ic_types         import minmax
 
 from .  base_cities  import PmapCity
 
@@ -74,8 +74,8 @@ class Irene(PmapCity):
     def run(self, nmax, print_empty=True):
         self.display_IO_info(nmax)
         sensor_params = self.get_sensor_params(self.input_files[0])
-        self.print_configuration(sensor_params)
-
+        print(sensor_params)
+        
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
             writers = Namespace(
@@ -140,8 +140,10 @@ class Irene(PmapCity):
             # calibrated PMT sum
             csum, csum_mau = self.calibrated_pmt_sum(CWF)
             #ZS sum for S1 and S2
-            s1_ene, s1_indx = self.csum_zs(csum_mau, threshold = self.thr_csum_s1)
-            s2_ene, s2_indx = self.csum_zs(csum,     threshold = self.thr_csum_s2)
+            s1_ene, s1_indx = self.csum_zs(csum_mau, threshold =
+                                           self.thr_csum_s1)
+            s2_ene, s2_indx = self.csum_zs(csum,     threshold =
+                                           self.thr_csum_s2)
             return s1_ene, s1_indx, s2_ene, s2_indx, csum
 
     def pmaps(self, s1_ene, s1_indx, s2_ene, s2_indx, csum, sipmzs):
