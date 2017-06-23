@@ -133,7 +133,6 @@ class _S12:
 
     def __init__(self, s12d):
         """Takes an s12d ={peak_number:[[t], [E]]}"""
-        self._s12d = s12d
         self.peaks = {i: Waveform(t, E) for i, (t,E) in s12d.items()}
 
     @property
