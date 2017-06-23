@@ -96,10 +96,10 @@ class Waveform:
         return np.all(self.t == other.t) and np.all(self.E == other.E)
 
     def __str__(self):
-        s = """Waveform(samples = {} width = {} ns , energy = {} pes
-        height = {} pes tmin-tmax = {} mus """.format(self.number_of_samples,
-        self.width, self.total_energy, self.height,
-        self.tmin_tmax * (1/ units.mus))
+        s = """Waveform(samples = {} width = {:.1f} mus , energy = {:.1f} pes
+        height = {:.1f} pes tmin-tmax = {:.1f} mus """.format(self.number_of_samples,
+        self.width / units.mus, self.total_energy, self.height,
+        self.tmin_tmax * (1 / units.mus))
         return s
 
     __repr__ = __str__
