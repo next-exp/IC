@@ -1,4 +1,7 @@
-from . params import minmax
+import numpy as np
+
+from . ic_types          import minmax
+from . ic_types          import xy
 
 from pytest import raises
 
@@ -6,14 +9,21 @@ from hypothesis            import given
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
 
-sensible_floats = floats(min_value=0.1, max_value=1e6, allow_nan=False, allow_infinity=False)
 
 def make_minmax(a,b):
     # Ensure that arguments respect the required order
-    if a > b: a,b = b,a
-    return minmax(a,b)
+    if a > b: a, b = b, a
+    return minmax(a, b)
 
-minmaxes = builds(make_minmax, sensible_floats, sensible_floats)
+
+def make_xy(a,b):
+    return xy(a,b)
+
+
+sensible_floats = floats(min_value=0.5, max_value=1e3, allow_nan=False, allow_infinity=False)
+minmaxes        = builds(make_minmax, sensible_floats, sensible_floats)
+xys             = builds(make_xy, sensible_floats, sensible_floats)
+
 
 @given(sensible_floats, sensible_floats)
 def test_minmax_does_not_accept_min_greater_than_max(a,b):
@@ -25,12 +35,14 @@ def test_minmax_does_not_accept_min_greater_than_max(a,b):
         with raises(AssertionError):
             minmax(a,b)
 
+
 @given(minmaxes, sensible_floats)
 def test_minmax_mul(mm, f):
     lo, hi = mm
     scaled = mm * f
     assert scaled.min == lo * f
     assert scaled.max == hi * f
+
 
 @given(minmaxes, sensible_floats)
 def test_minmax_sub(mm, f):
@@ -39,9 +51,28 @@ def test_minmax_sub(mm, f):
     assert lowered.min == lo - f
     assert lowered.max == hi - f
 
+
 @given(minmaxes, sensible_floats)
 def test_minmax_add(mm, f):
     lo, hi = mm
     raised = mm + f
     assert raised.min == lo + f
     assert raised.max == hi + f
+
+
+
+@given(xys,  sensible_floats, sensible_floats)
+def test_xy(xy, a, b):
+    ab  = a, b
+    r   = np.sqrt(a ** 2 + b ** 2)
+    phi = np.arctan2(b, a)
+    pos = np.stack(([a], [b]), axis=1)
+
+    np.isclose (xy.x  ,   a, rtol=1e-4)
+    np.isclose (xy.y  ,   b, rtol=1e-4)
+    np.isclose (xy.X  ,   a, rtol=1e-4)
+    np.isclose (xy.Y  ,   b, rtol=1e-4)
+    np.isclose (xy.XY ,  ab, rtol=1e-4)
+    np.isclose (xy.R  ,   r, rtol=1e-4)
+    np.isclose (xy.Phi, phi, rtol=1e-4)
+    np.allclose(xy.pos, pos, rtol=1e-3, atol=1e-03)

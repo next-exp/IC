@@ -27,7 +27,7 @@ from .. reco                    import peak_functions_c as cpf
 from .. database                import load_db          as db
 from .. reco.nh5                import RunInfo
 from .. reco.nh5                import EventInfo
-from .. reco.params             import minmax
+from .. core.ic_types           import minmax
 from .. reco.params             import PeakData
 from .. reco.params             import TriggerParams
 from .  base_cities             import DeconvolutionCity
@@ -80,9 +80,9 @@ class Cecilia(DeconvolutionCity):
 
     def run(self, nmax):
         self.display_IO_info(nmax)
-        sp = sensor_params = self.get_sensor_params(self.input_files[0])
-        self.print_configuration(sensor_params)
-
+        sp = self.get_sensor_params(self.input_files[0])
+        print(sp)
+        
         # loop over input files
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
