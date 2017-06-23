@@ -5,7 +5,8 @@ import argparse
 import sys
 import os
 
-from . log_config import logger
+from .        log_config      import logger
+from . import system_of_units as     units
 
 
 def print_configuration(options):
@@ -106,85 +107,17 @@ def define_event_loop(options, n_evt):
         yield i
 
 
-def parse_value(value):
-    """Parse booleans, ints on strings.
+def read_config_file(file_name):
+    config = argparse.Namespace(verbosity=20)
+    with open(file_name, 'r') as config_file:
+        exec(config_file.read(), vars(units), vars(config))
 
-    Parameters
-    ----------
-    value : string
-        Token to be converted.
+    if hasattr(config, "path_in") and hasattr(config, "files_in"):
+        config.files_in = os.path.expandvars(os.path.join(config.path_in, config.files_in))
+        del config.path_in
 
-    Returns
-    -------
-    converted_value : object
-        Python object of the guessed type.
-    """
-    if value in ('True', 'False'): return eval(value)
-    for parse in (int, float):
-        try:                       return parse(value)
-        except ValueError: pass
-    else:                          return os.path.expandvars(value)
+    if hasattr(config, "path_out") and hasattr(config, "file_out"):
+        config.file_out = os.path.expandvars(os.path.join(config.path_out, config.file_out))
+        del config.path_out
 
-
-def read_config_file(cfile):
-    """Read a configuration file of the form PARAMETER VALUE.
-
-    Parameters
-    ----------
-    cfile : string
-        Configuration file name (path included).
-
-    Returns
-    -------
-    n : namespace
-        Contains the parameters specified in cfile.
-    """
-    n = argparse.Namespace(verbosity=20, run_all=False, compression="ZLIB4")
-    for line in open(cfile, "r"):
-        line = line.split("#", 1)[0]
-
-        if line.isspace() or line == "":
-            continue
-
-        # python-2 & python-3
-        #tokens = [i for i in line.rstrip().split(" ") if i]
-        # python-2 only. In python-2 filter returns a list in
-        # python-3 filter retuns an iterator
-        tokens = list(filter(None, line.rstrip().split(" ")))
-        key = tokens[0]
-
-        value = list(map(parse_value, tokens[1:]))  # python-2 & python-3
-        vars(n)[key] = value[0] if len(value) == 1 else value
-
-    if hasattr(n, "path_in") and hasattr(n, "files_in"):
-        n.files_in = os.path.join(n.path_in, n.files_in)
-        del n.path_in
-
-    if hasattr(n, "path_out") and hasattr(n, "file_out"):
-        n.file_out = os.path.join(n.path_out, n.file_out)
-        del n.path_out
-    return n
-
-
-def filter_options(options, name):
-    """Construct a new option dictionary with the parameters relevant to
-    some module.
-
-    Parameters
-    ----------
-    options : dictionary
-        Dictionary of options with format "MODULE:PARAMETER": value.
-    name : string
-        Selected module name.
-
-    Returns
-    -------
-    out : dictionary
-        Filtered dictionary.
-
-    """
-    out = {}
-    for key, value in options.items():
-        if name in key:
-            out[key.split(":")[1]] = value
-    return out
+    return config
