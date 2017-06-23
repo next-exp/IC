@@ -7,15 +7,14 @@ import pandas as pd
 import tables as tb
 import matplotlib.pyplot as plt
 
-from .. core.mpl_functions     import circles
-from .. core.mpl_functions     import set_plot_labels
+from .. icaro.mpl_functions     import circles
+from .. icaro.mpl_functions     import set_plot_labels
 from .. core.system_of_units_c import units
 
 from .. database               import load_db
 
 from .  pmaps_functions_c      import df_to_pmaps_dict
 from .  pmaps_functions_c      import df_to_s2si_dict
-
 
 def load_pmaps(PMP_file_name):
     """Read the PMAP file and return transient PMAP rep."""

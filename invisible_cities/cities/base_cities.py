@@ -26,7 +26,6 @@ from .. core                   import fit_functions        as fitf
 from .. database import load_db
 
 from ..io                 import pmap_io          as pio
-from ..io.dst_io          import KrEvent
 
 from ..reco               import peak_functions_c as cpf
 from ..reco               import peak_functions   as pf
@@ -34,7 +33,8 @@ from ..reco               import pmaps_functions  as pmp
 from ..reco               import dst_functions    as dstf
 from ..reco               import tbl_functions    as tbf
 from ..reco               import wfm_functions    as wfm
-from ..reco.params        import SensorParams
+from ..reco               import tbl_functions    as tbl
+from ..reco.event_model   import SensorParams
 from ..reco.nh5           import DECONV_PARAM
 from ..reco.corrections   import Correction
 from ..reco.corrections   import Fcorrection
@@ -126,59 +126,40 @@ class City:
                  Output File = {}
                           """.format(self.__class__.__name__,
                                      nmax, self.input_files, self.output_file))
-
-    def print_configuration(self, sp):
-        print_configuration({"# PMT"        : sp.NPMT,
-                             "PMT WL"       : sp.PMTWL,
-                             "# SiPM"       : sp.NSIPM,
-                             "SIPM WL"      : sp.SIPMWL})
-
-    def get_rwf_vectors(self, h5in):
+                                     
+    @staticmethod
+    def get_rwf_vectors(h5in):
         "Return RWF vectors and sensor data."
-        pmtrwf, sipmrwf, pmtblr  = self._get_rwf(h5in)
-        NEVT_pmt , NPMT,   PMTWL = pmtrwf .shape
-        NEVT_simp, NSIPM, SIPMWL = sipmrwf.shape
-        assert NEVT_simp == NEVT_pmt
-        NEVT = NEVT_pmt
+        return tbl.get_rwf_vectors(h5in)
 
-        return NEVT, pmtrwf, sipmrwf, pmtblr
-
-    def get_rd_vectors(self, h5in):
-        """Return MC RD vectors and sensor data.
-
-        PMTWL is the length of the RWF computed by divinging the
-        length of the MCRD for wavelength by sampling time. """
-
-        pmtrd, sipmrd = self._get_rd(h5in)
-
-        NEVT_pmt , NPMT,   PMTWL = pmtrd .shape
-        NEVT_simp, NSIPM, SIPMWL = sipmrd.shape
-        assert NEVT_simp == NEVT_pmt
-        NEVT = NEVT_pmt
-        return NEVT, pmtrd, sipmrd
+    @staticmethod
+    def get_rd_vectors(h5in):
+        "Return MC RD vectors and sensor data."
+        return tbl.get_rd_vectors(h5in)
 
     def get_sensor_rd_params(self, filename):
+        """Return MCRD sensors.
+           pmtrd.shape returns the length of the RD PMT vector
+           (1 ns bins). PMTWL_FEE is the length of the RWF vector
+           obtained by divinding the RD PMT vector and the sample
+           time of the electronics (25 ns). """
         with tb.open_file(filename, "r") as h5in:
-            pmtrd, sipmrd = self._get_rd(h5in)
+            #pmtrd, sipmrd = self._get_rd(h5in)
+            _, pmtrd, sipmrd = tbl.get_rd_vectors(h5in)
             _, NPMT,   PMTWL = pmtrd .shape
             _, NSIPM, SIPMWL = sipmrd.shape
             PMTWL_FEE = int(PMTWL // self.FE_t_sample)
-        return SensorParams(NPMT=NPMT, PMTWL=PMTWL_FEE, NSIPM=NSIPM, SIPMWL=SIPMWL)
+            return SensorParams(NPMT, PMTWL_FEE, NSIPM, SIPMWL)
 
-    def get_sensor_params(self, filename):
-        with tb.open_file(filename, "r") as h5in:
-            pmtrwf, sipmrwf, _ = self._get_rwf(h5in)
-            _, NPMT,   PMTWL   = pmtrwf .shape
-            _, NSIPM, SIPMWL   = sipmrwf.shape
-        return SensorParams(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
+    @staticmethod
+    def get_sensor_params(filename):
+        return tbl.get_sensor_params(filename)
 
     @staticmethod
     def get_run_and_event_info(h5in):
         return h5in.root.Run.events
 
-    # TODO Replace this with
-    # tbl_functions.get_event_numbers_and_timestamps_from_file_name,
-    # maybe
+
     @staticmethod
     def event_and_timestamp(evt, events_info):
         return events_info[evt]
@@ -558,44 +539,3 @@ class HitCollectionCity(City):
         IDs, Qs  = pmp.integrate_sipm_charges_in_peak(si)
         xs, ys   = self.xs[IDs], self.ys[IDs]
         return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
-
-    def select_event(self, evt_number, evt_time, S1, S2, Si):
-        hitc = HitCollection()
-
-        S1     = self.select_S1(S1)
-        S2, Si = self.select_S2(S2, Si)
-
-        if len(S1) != 1 or not self.S2_Nmin <= len(S2) <= self.S2_Nmax:
-            return None
-
-        hitc.evt   = evt_number
-        hitc.time  = evt_time * 1e-3 # s
-
-        t, e = next(iter(S1.values()))
-        S1t  = t[np.argmax(e)]
-
-        S2, Si = self.rebin_s2(S2, Si)
-
-        npeak = 0
-        for peak_no, (t_peak, e_peak) in sorted(S2.items()):
-            si = Si[peak_no]
-            for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
-                clusters = self.compute_xy_position(si, slice_no)
-                es       = self.split_energy(e_slice, clusters)
-                z        = (t_slice - S1t) * units.ns * self.drift_v
-                for c, e in zip(clusters, es):
-                    hit       = Hit()
-                    hit.Npeak = npeak
-                    hit.X     = c.X
-                    hit.Y     = c.Y
-                    hit.R     = (c.X**2 + c.Y**2)**0.5
-                    hit.Phi   = np.arctan2(c.Y, c.X)
-                    hit.Z     = z
-                    hit.Q     = c.Q
-                    hit.E     = e
-                    hit.Ecorr = self.correct_energy(e, c.X, c.Y, z)
-                    hit.Nsipm = c.Nsipm
-                    hitc.append(hit)
-            npeak += 1
-
-        return hitc
