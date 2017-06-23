@@ -165,7 +165,6 @@ class S2Si(S2):
     Notice that S2Si is constructed using an s2d and an s2sid.
     The s2d is an s12 dictionary (not an S2 instance)
     The s2sid is a dictionary {peak:{nsipm:[E]}}
-
     """
 
     def __init__(self, s2d, s2sid):
@@ -185,7 +184,6 @@ class S2Si(S2):
             return tuple(self._s2sid[peak_number].keys())
         except KeyError:
             raise PeakNotFound
-
 
     def sipm_waveform(self, peak_number, sipm_number):
         if self.number_of_sipms_in_peak(peak_number) == 0:
@@ -216,26 +214,27 @@ class S2Si(S2):
             raise SipmNotFound
 
     def __str__(self):
-        s =  "S2Si(S2 = {})\n".format(S2.__str__(self))
+        s = S2.__str__(self)
 
-        s+="\nSiPMs for non-empty peaks\n"
+        s += "\nSiPMs for non-empty peaks\n"
 
-        s2a =["""peak number = {}: nsipm in peak = {} \n
-              """.format(peak_number,
-              self.sipms_in_peak(peak_number)) for peak_number in self.peaks if len(self.sipms_in_peak(peak_number)) > 0]
+        s2a = ["peak number = {}: nsipm in peak = {}"
+               .format(peak_number, self.sipms_in_peak(peak_number))
+               for peak_number in self.peaks
+               if len(self.sipms_in_peak(peak_number)) > 0]
 
-        s = reduce(lambda s, x: s + x, s2a, s)
+        s += '\n'.join(s2a)
 
-        s+="\nSiPMs Waveforms\n"
+        s += "\nSiPMs Waveforms\n"
 
         s2b = ["""peak number = {}: sipm number = {} \n
                  sipm waveform (zs) = {}
-              """.format(peak_number, sipm_number,
-                 self.sipm_waveform_zs(peak_number, sipm_number)) for peak_number in self.peaks for sipm_number in self.sipms_in_peak(peak_number) if len(self.sipms_in_peak(peak_number)) > 0]
+              """.format(peak_number, sipm_number, self.sipm_waveform_zs(peak_number, sipm_number))
+               for peak_number in self.peaks
+               for sipm_number in self.sipms_in_peak(peak_number)
+               if len(self.sipms_in_peak(peak_number)) > 0]
 
-        return reduce(lambda s, x: s + x, s2b, s)
-
-        #return s
+        return s + ''.join(s2b)
 
     __repr__ = __str__
 
