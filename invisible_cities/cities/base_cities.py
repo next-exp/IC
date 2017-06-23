@@ -193,25 +193,9 @@ class SensorResponseCity(City):
        tracking plane sensors (PMTs and SiPMs).
     """
 
-    def __init__(self,
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = 'ZLIB4',
-                 nprint      = 10000,
-                 # Parameters added at this level
-                 sipm_noise_cut = 3 * units.pes,
-                 first_evt = 0):
-
-        City.__init__(self,
-                      run_number  = run_number,
-                      files_in    = files_in,
-                      file_out    = file_out,
-                      compression = compression,
-                      nprint      = nprint)
-
-        self.sipm_noise_cut = sipm_noise_cut
-        self.first_evt      = first_evt
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.sipm_noise_cut = self.conf.sipm_noise_cut
 
     def simulate_sipm_response(self, event, sipmrd,
                                sipms_noise_sampler):
