@@ -136,7 +136,6 @@ class _S12:
         try:
             return self.peaks[peak_number]
         except KeyError:
-             print("Peak {} not found".format(peak_number))
              raise PeakNotFound
 
     def __str__(self):
@@ -186,19 +185,16 @@ class S2Si(S2):
         try:
             return self._s2sid[peak_number].keys()
         except KeyError:
-            print("Peak {} not found".format(peak_number))
             raise PeakNotFound
 
 
     def sipm_waveform(self, peak_number, sipm_number):
         if self.number_of_sipms_in_peak(peak_number) == 0:
-            print("No SiPMs associated to peak = {}".format(peak_number))
             raise SipmEmptyList
         try:
             E = self._s2sid[peak_number][sipm_number]
             return Waveform(self.peak_waveform(peak_number).t, E)
         except KeyError:
-            print("sipm {} not in sipm list".format(sipm_number))
             raise SipmNotFound
 
     def sipm_waveform_zs(self, peak_number, sipm_number):
@@ -209,7 +205,6 @@ class S2Si(S2):
             t = self.peak_waveform(peak_number).t[E>0]
             return Waveform(t, E[E>0])
         except KeyError:
-            print("sipm {} not in sipm list".format(sipm_number))
             raise SipmNotFound
 
     def sipm_total_energy(self, peak_number, sipm_number):
@@ -219,7 +214,6 @@ class S2Si(S2):
             et = np.sum(self._s2sid[peak_number][sipm_number])
             return et
         except KeyError:
-            print("sipm {} not in sipm list".format(sipm_number))
             raise SipmNotFound
 
     def __str__(self):
