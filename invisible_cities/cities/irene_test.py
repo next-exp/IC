@@ -156,7 +156,6 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
     # (eg, 2) to speed the test. BUT NB, this has to be propagated to this
     # test, eg. h5in .root.Run.events[0:2] if one has run 2 events.
 
-    #import pdb; pdb.set_trace()
     PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'run_2983.h5')
     PATH_OUT = os.path.join(config_tmpdir,               'run_2983_pmaps.h5')
 
@@ -217,12 +216,16 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
     assert nempty  == 1
 
 
-def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR):
+def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR, s12params):
     "Check that PMT active correctly describes the PMT configuration of the detector"
-    irene = Irene(run_number =  job_info_missing_pmts.run_number,
-                  files_in   = [job_info_missing_pmts. input_filename],
-                  file_out   =  job_info_missing_pmts.output_filename,
-                  s1_params  = S12P('dummy','not used','in','the test'),
-                  s2_params  = S12P('dummy','not used','in','the test'))
+    nrequired = 1
+    conf = vars(configure('dummy -c invisible_cities/config/irene.conf'.split()))
+    conf.update(dict(run_number =  job_info_missing_pmts.run_number,
+                     files_in   =  job_info_missing_pmts. input_filename,
+                     file_out   =  job_info_missing_pmts.output_filename,
+                     nmax       = nrequired,
+                     **unpack_s12params(s12params))) # s12params are just dummy values in this test
+
+    irene = Irene(**conf)
 
     assert irene.pmt_active == job_info_missing_pmts.pmt_active
