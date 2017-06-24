@@ -11,13 +11,14 @@ last changed: 01-12-2017
 from   pytest import raises
 
 from .. core.exceptions import NoInputFiles
-from .  isidora import Isidora
+from .. core.exceptions import NoOutputFile
+from .  base_cities     import City
 
 
-def test_isidora_no_input():
-    """Test that Isidora throws NoInputFiles exceptions if no input files
-       are defined. """
-
+def test_no_input_files_raises_NoInputFiles():
     with raises(NoInputFiles):
-        fpp = Isidora(run_number = 0)
-        fpp.run(nmax=1)
+        City(file_out = 'dummy/output/file')
+
+def test_no_output_files_raises_NoOutptFiles():
+    with raises(NoOutputFile):
+        City(files_in = 'dummy/input/files')
