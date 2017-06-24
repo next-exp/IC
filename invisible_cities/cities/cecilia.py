@@ -39,47 +39,28 @@ from .. filters.trigger_filters import TriggerFilter
 
 class Cecilia(DeconvolutionCity):
     "The city of CECILIA simulates the trigger."
-    def __init__(self,
-                 run_number            = 0,
-                 files_in              = None,
-                 file_out              = None,
-                 compression           = 'ZLIB4',
-                 nprint                = 10000,
-                 n_baseline            = 28000,
-                 thr_trigger           =     5 * units.adc,
-                 acum_discharge_length =  5000,
-                 # Parameters added at this level
-                 trigger_channels      = tuple(range(12)),
-                 min_number_channels   =     5,
-                 height = minmax(min   =    15,
-                                 max   =  1000),
-                 charge = minmax(min   =  3000,
-                                 max   = 20000),
-                 width  = minmax(min   =  4000,
-                                 max   = 12000),
-                 data_MC_ratio         =     0.8):
+    def __init__(self, **kwds):
 
-        super().__init__(run_number            = run_number,
-                         files_in              = files_in,
-                         file_out              = file_out,
-                         compression           = compression,
-                         nprint                = nprint,
-                         n_baseline            = n_baseline,
-                         thr_trigger           = thr_trigger,
-                         acum_discharge_length = acum_discharge_length)
+        super().__init__(**kwds)
+
+        conf = self.conf
+
+        height = minmax(min = conf.min_height, max = conf.max_height)
+        charge = minmax(min = conf.min_charge, max = conf.max_charge)
+        width  = minmax(min = conf.min_width , max = conf.max_width )
 
         self.trigger_params = TriggerParams(
-            trigger_channels    = trigger_channels,
-            min_number_channels = min_number_channels,
-            charge              = charge * data_MC_ratio,
-            height              = height * data_MC_ratio,
+            trigger_channels    = conf.tr_channels,
+            min_number_channels = conf.min_number_channels,
+            charge              = charge * conf.data_mc_ratio,
+            height              = height * conf.data_mc_ratio,
             width               = width)
 
         self.event_in = 0
         self.event_out = 0
 
-    def run(self, nmax):
-        self.display_IO_info(nmax)
+    def run(self):
+        self.display_IO_info()
         sp = self.get_sensor_params(self.input_files[0])
         print(sp)
         
@@ -100,7 +81,7 @@ class Cecilia(DeconvolutionCity):
             # Create and store Front-End Electronics parameters (for the PMTs)
             write_FEE_table(h5out)
 
-            nevt_in, nevt_out = self._file_loop(writers, nmax)
+            nevt_in, nevt_out = self._file_loop(writers)
         print(textwrap.dedent("""
                               Number of events in : {}
                               Number of events out: {}
@@ -108,7 +89,7 @@ class Cecilia(DeconvolutionCity):
                               """.format(nevt_in, nevt_out, nevt_out / nevt_in)))
         return nevt_in, nevt_out
 
-    def _file_loop(self, writers, nmax):
+    def _file_loop(self, writers):
         nevt_in = nevt_out = 0
         trigger_filter = TriggerFilter(self.trigger_params)
 
@@ -122,7 +103,7 @@ class Cecilia(DeconvolutionCity):
                 nevt_in, nevt_out, max_events_reached = self._event_loop(
                     NEVT, pmtrwf, sipmrwf, pmtblr, events_info,
                     writers,
-                    nmax, nevt_in, nevt_out, h5in, trigger_filter)
+                    nevt_in, nevt_out, h5in, trigger_filter)
 
             if max_events_reached:
                 print('Max events reached')
@@ -134,11 +115,11 @@ class Cecilia(DeconvolutionCity):
 
     def _event_loop(self, NEVT, pmtrwf, sipmrwf, pmtblr, events_info,
                     write,
-                    nmax, nevt_in, nevt_out, h5in, trigger_pass):
+                    nevt_in, nevt_out, h5in, trigger_pass):
         max_events_reached = False
         for evt in range(NEVT):
             nevt_in += 1
-            if self.max_events_reached(nmax, nevt_in):
+            if self.max_events_reached(nevt_in):
                 max_events_reached = True
                 break
             event_number, timestamp = self.event_and_timestamp(evt, events_info)
