@@ -86,7 +86,6 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
     PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'electrons_40keV_z250_RWF.h5')
     PATH_OUT = os.path.join(config_tmpdir,               'electrons_40keV_z250_CWF.h5')
 
-    s1par, s2par = s12params
     nrequired  = 2
 
     conf = vars(configure('dummy -c invisible_cities/config/irene.conf'.split()))
@@ -128,21 +127,21 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
     # in the IRENE parameters is 5, but it can run with a smaller values
     # (eg, 2) to speed the test.
 
-    PATH_IN = os.path.join(ICDIR,
-                           'database/test_data/',
-                           'run_2983.h5')
+    PATH_IN  = os.path.join(ICDIR, 'database/test_data/', 'run_2983.h5')
     PATH_OUT = os.path.join(config_tmpdir, 'run_2983_pmaps.h5')
 
-    s1par, s2par = s12params
+    nrequired = 2
 
-    irene = Irene(run_number = 2983,
-                  files_in   = [PATH_IN],
-                  file_out   = PATH_OUT,
-                  s1_params  = s1par,
-                  s2_params  = s2par)
+    conf = vars(configure('dummy -c invisible_cities/config/irene.conf'.split()))
+    conf.update(dict(run_number = 2983,
+                     files_in   = PATH_IN,
+                     file_out   = PATH_OUT,
+                     nmax       = nrequired,
+                     **unpack_s12params(s12params)))
 
-    nrequired  = 2
-    nactual, _ = irene.run(nmax = nrequired)
+    irene = Irene(**conf)
+
+    nactual, _ = irene.run()
     if nrequired > 0:
         assert nrequired == nactual
 
