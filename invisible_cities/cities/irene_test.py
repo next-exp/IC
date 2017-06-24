@@ -200,15 +200,18 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
     PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'irene_bug_Kr_ACTIVE_7bar_RWF.h5')
     PATH_OUT = os.path.join(config_tmpdir,               'irene_bug_Kr_ACTIVE_7bar_CWF.h5')
 
-    s1par, s2par = s12params
+    nrequired = 10
 
-    irene = Irene(run_number = 0,
-                  files_in   = [PATH_IN],
-                  file_out   = PATH_OUT,
-                  s1_params  = s1par,
-                  s2_params  = s2par)
+    conf = vars(configure('dummy -c invisible_cities/config/irene.conf'.split()))
+    conf.update(dict(run_number = 0,
+                     files_in   = PATH_IN,
+                     file_out   = PATH_OUT,
+                     nmax       = nrequired,
+                     **unpack_s12params(s12params)))
 
-    nactual, nempty = irene.run(nmax = 10)
+    irene = Irene(**conf)
+
+    nactual, nempty = irene.run()
 
     assert nactual == 0
     assert nempty  == 1
