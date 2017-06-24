@@ -112,12 +112,4 @@ def read_config_file(file_name):
     with open(file_name, 'r') as config_file:
         exec(config_file.read(), vars(units), vars(config))
 
-    if hasattr(config, "path_in") and hasattr(config, "files_in"):
-        config.files_in = os.path.expandvars(os.path.join(config.path_in, config.files_in))
-        del config.path_in
-
-    if hasattr(config, "path_out") and hasattr(config, "file_out"):
-        config.file_out = os.path.expandvars(os.path.join(config.path_out, config.file_out))
-        del config.path_out
-
     return config
