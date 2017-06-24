@@ -17,6 +17,7 @@ from argparse import Namespace
 from operator import attrgetter
 from glob     import glob
 from time     import time
+from os.path  import expandvars
 
 import numpy  as np
 import tables as tb
@@ -76,8 +77,8 @@ class City:
         if not hasattr(conf, 'file_out'):
             raise NoOutputFile
 
-        self.input_files = sorted(glob(conf.files_in))
-        self.output_file = conf.file_out
+        self.input_files = sorted(glob(expandvars(conf.files_in)))
+        self.output_file =             expandvars(conf.file_out)
         self.compression = conf.compression
         self.run_number  = conf.run_number
         self.nprint      = conf.nprint  # default print frequency
