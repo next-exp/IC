@@ -18,9 +18,11 @@ from pytest import fixture
 
 from .  irene import Irene
 from .. core                 import system_of_units as units
+from .. core.configure       import configure
+from .. core.ic_types        import minmax
 from .. reco.pmaps_functions import read_run_and_event_from_pmaps_file
 from .. reco.params          import S12Params as S12P
-from .. core.ic_types        import minmax
+
 
 @fixture(scope='module')
 def s12params():
@@ -38,6 +40,23 @@ def s12params():
                  stride              =     40,
                  rebin               = True)
     return s1par, s2par
+
+
+def unpack_s12params(s12params):
+    s1par, s2par = s12params
+    return dict(s1_tmin   = s1par.time.min,
+                s1_tmax   = s1par.time.max,
+                s1_string = s1par.stride,
+                s1_rebin  = s1par.rebin,
+                s1_lmin   = s1par.length.min,
+                s1_lmax   = s1par.length.max,
+
+                s2_tmin   = s2par.time.min,
+                s2_tmax   = s2par.time.max,
+                s2_string = s2par.stride,
+                s2_rebin  = s2par.rebin,
+                s2_lmin   = s2par.length.min,
+                s2_lmax   = s2par.length.max)
 
 
 @fixture(scope='module')
@@ -68,15 +87,18 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
     PATH_OUT = os.path.join(config_tmpdir,               'electrons_40keV_z250_CWF.h5')
 
     s1par, s2par = s12params
-
-    irene = Irene(run_number = 0,
-                  files_in   = [PATH_IN],
-                  file_out   = PATH_OUT,
-                  s1_params  = s1par,
-                  s2_params  = s2par)
-
     nrequired  = 2
-    nactual, _ = irene.run(nmax = nrequired)
+
+    conf = vars(configure('dummy -c invisible_cities/config/irene.conf'.split()))
+    conf.update(dict(run_number = 0,
+                     files_in   = PATH_IN,
+                     file_out   = PATH_OUT,
+                     nmax       = nrequired,
+                     **unpack_s12params(s12params)))
+
+    irene = Irene(**conf)
+
+    nactual, _ = irene.run()
     if nrequired > 0:
         assert nrequired == nactual
 
