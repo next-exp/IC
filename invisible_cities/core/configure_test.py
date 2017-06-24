@@ -5,11 +5,9 @@ from . import configure as conf
 
 config_file_format = """
 # set_input_files
-path_in  = '{path_in}' # comment to be ignored 1
-files_in = '{files_in}'
+files_in = '{files_in}' # comment to be ignored 1
 
 # set_pmap_store
-path_out = '{path_out}'
 file_out = '{file_out}'
 
 compression = '{compression}'
@@ -58,9 +56,7 @@ run_all = {run_all}
 """
 
 # The values that will be fed into the above.
-config_file_spec = dict(path_in  = '$ICDIR/database/test_data/',
-                        files_in = 'electrons_40keV_z250_RWF.h5',
-                        path_out = '$ICDIR/database/test_data/',
+config_file_spec = dict(files_in = 'electrons_40keV_z250_RWF.h5',
                         file_out = 'electrons_40keV_z250_PMP.h5',
                         compression        = 'ZLIB4',
                         run_number         = 23,
@@ -176,20 +172,6 @@ def test_configure(config_tmpdir, spec):
                 this_configuration[k] = path.expandvars(v)
         except TypeError:
             pass
-
-    # FILE_IN and FILE_OUT have to be treated specially: the
-    # corresponding PATHs must be prepended, unless the file is
-    # specified on the command line.
-    if not ('files_in' in cmdline_spec):
-        this_configuration['files_in']  = path.join(this_configuration['path_in'],
-                                                    this_configuration['files_in'])
-
-    if not ('file_out' in cmdline_spec):
-        this_configuration['file_out'] = path.join(this_configuration['path_out'],
-                                                   this_configuration['file_out'])
-
-    del this_configuration['path_in']
-    del this_configuration['path_out']
 
     # Check that all options have the expected values
     for option in this_configuration:
