@@ -70,6 +70,12 @@ class City:
 
         self.conf = conf
 
+        if not hasattr(conf, 'files_in'):
+            raise NoInputFiles
+
+        if not hasattr(conf, 'file_out'):
+            raise NoOutputFile
+
         self.input_files = sorted(glob(conf.files_in))
         self.output_file = conf.file_out
         self.compression = conf.compression
