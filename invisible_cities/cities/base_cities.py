@@ -46,7 +46,7 @@ from ..reco.nh5           import DECONV_PARAM
 from ..reco.corrections   import Correction
 from ..reco.corrections   import Fcorrection
 from ..reco.corrections   import LifetimeCorrection
-from ..reco.xy_algorithms import barycenter
+from ..reco.xy_algorithms import find_algorithm
 
 from ..sierpe             import blr
 from ..sierpe             import fee as FE
@@ -425,25 +425,11 @@ class MapCity(City):
 
 
 class HitCollectionCity(City):
-    def __init__(self,
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = 'ZLIB4',
-                 nprint      = 10000,
-                 # Parameters added at this level
-                 rebin            = 1,
-                 reco_algorithm   = barycenter):
-
-        City.__init__(self,
-                         run_number  = run_number,
-                         files_in    = files_in,
-                         file_out    = file_out,
-                         compression = compression,
-                         nprint      = nprint)
-
-        self.rebin          = rebin
-        self.reco_algorithm = reco_algorithm
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        conf  = self.conf
+        self.rebin          = conf.rebin
+        self.reco_algorithm = find_algorithm(conf.reco_algorithm)
 
     def rebin_s2(self, S2, Si):
         if self.rebin <= 1:
