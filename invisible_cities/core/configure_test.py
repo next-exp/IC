@@ -5,92 +5,97 @@ from . import configure as conf
 
 config_file_format = """
 # set_input_files
-PATH_IN {PATH_IN} # comment to be ignored 1
-FILE_IN {FILE_IN}
+path_in  = '{path_in}' # comment to be ignored 1
+files_in = '{files_in}'
 
 # set_pmap_store
-PATH_OUT {PATH_OUT}
-FILE_OUT {FILE_OUT}
-COMPRESSION {COMPRESSION}
+path_out = '{path_out}'
+file_out = '{file_out}'
+
+compression = '{compression}'
 
 # irene
-RUN_NUMBER {RUN_NUMBER}
+run_number = {run_number}
 
 # set_print
-NPRINT {NPRINT}
+nprint = {nprint}
 
 # print empty events (skipped)
-PRINT_EMPTY_EVENTS {PRINT_EMPTY_EVENTS}
+print_empty_events = {print_empty_events}
 
 # set_blr
-NBASELINE {NBASELINE}
-THR_TRIGGER {THR_TRIGGER}
+nbaseline   = {nbaseline}
+thr_trigger = {thr_trigger}
 
 # set_mau
-NMAU {NMAU}
-THR_MAU {THR_MAU}
+nmau    = {nmau}
+thr_mau = {thr_mau}
 
 # set_csum
-THR_CSUM {THR_CSUM}
+thr_csum = {thr_csum}
 
 # set_s1
-S1_TMIN {S1_TMIN}     units.mus
-S1_TMAX {S1_TMAX}
-S1_STRIDE {S1_STRIDE}
-S1_LMIN {S1_LMIN}
-S1_LMAX {S1_LMAX}
+s1_tmin = {s1_tmin}  # * mus
+s1_tmax = {s1_tmax}
+s1_stride = {s1_stride}
+s1_lmin = {s1_lmin}
+s1_lmax = {s1_lmax}
 
 # set_s2
-S2_TMIN {S2_TMIN}
-S2_TMAX {S2_TMAX}
-S2_STRIDE {S2_STRIDE}
-S2_LMIN {S2_LMIN}
-S2_LMAX {S2_LMAX}
+s2_tmin = {s2_tmin}
+s2_tmax = {s2_tmax}
+s2_stride = {s2_stride}
+s2_lmin = {s2_lmin}
+s2_lmax = {s2_lmax}
 
 # set_sipm
-THR_ZS {THR_ZS}
-THR_SIPM_S2 {THR_SIPM_S2}
+thr_zs = {thr_zs}
+thr_sipm_s2 = {thr_sipm_s2}
 
 # run
-NEVENTS {NEVENTS}
-RUN_ALL {RUN_ALL}
+nevents = {nevents}
+run_all = {run_all}
 """
 
 # The values that will be fed into the above.
-config_file_spec = dict(PATH_IN  = '$ICDIR/database/test_data/',
-                        FILE_IN  = 'electrons_40keV_z250_RWF.h5',
-                        PATH_OUT = '$ICDIR/database/test_data/',
-                        FILE_OUT = 'electrons_40keV_z250_PMP.h5',
-                        COMPRESSION        = 'ZLIB4',
-                        RUN_NUMBER         = 23,
-                        NPRINT             = 24,
-                        PRINT_EMPTY_EVENTS = 25,
-                        NBASELINE          = 26,
-                        THR_TRIGGER        = 27,
-                        NMAU               = 28,
-                        THR_MAU            = 29,
-                        THR_CSUM           =  0.5,
-                        S1_TMIN            = 31,
-                        S1_TMAX            = 32,
-                        S1_STRIDE          = 33,
-                        S1_LMIN            = 34,
-                        S1_LMAX            = 35,
-                        S2_TMIN            = 36,
-                        S2_TMAX            = 37,
-                        S2_STRIDE          = 39,
-                        S2_LMIN            = 41,
-                        S2_LMAX            = 42,
-                        THR_ZS             = 43,
-                        THR_SIPM_S2        = 44,
-                        RUN_ALL            = False,
-                        NEVENTS            = 45)
+config_file_spec = dict(path_in  = '$ICDIR/database/test_data/',
+                        files_in = 'electrons_40keV_z250_RWF.h5',
+                        path_out = '$ICDIR/database/test_data/',
+                        file_out = 'electrons_40keV_z250_PMP.h5',
+                        compression        = 'ZLIB4',
+                        run_number         = 23,
+                        nprint             = 24,
+                        print_empty_events = 25,
+                        nbaseline          = 26,
+                        thr_trigger        = 27,
+                        nmau               = 28,
+                        thr_mau            = 29,
+                        thr_csum           =  0.5,
+                        s1_tmin            = 31,
+                        s1_tmax            = 32,
+                        s1_stride          = 33,
+                        s1_lmin            = 34,
+                        s1_lmax            = 35,
+                        s2_tmin            = 36,
+                        s2_tmax            = 37,
+                        s2_stride          = 39,
+                        s2_lmin            = 41,
+                        s2_lmax            = 42,
+                        thr_zs             = 43,
+                        thr_sipm_s2        = 44,
+                        run_all            = False,
+                        nevents            = 45)
 
-# Values that the configuration should assume if they are specified
-# neither in the config file, nor on the command line.
-default_config_spec = dict(INFO      = False,
-                           RUN_ALL   = False,
-                           SKIP      =  0,
-                           VERBOSITY = 20)
+# TODO remove! *ALL* possible parameters must now be set explicitly in
+# the config files. (Users will be able to avoid having to specify
+# them in their own config files by including the official config
+# files for any city.)
+
+# # Values that the configuration should assume if they are specified
+# # neither in the config file, nor on the command line.
+# default_config_spec = dict(run_all   = False,
+#                            SKIP      =  0,
+#                            VERBOSITY = 20)
 
 config_file_contents = config_file_format.format(**config_file_spec)
 
@@ -118,33 +123,27 @@ def join_dicts(*args):
                     # Nothing overridden on the command line
                     (),
                     # Two short form command line args
-                    (('NEVENTS', '-n 99', 99),
-                     ('SKIP'   , '-s 98', 98)),
+                    (('nevents', '-n 99', 99),
+                     ('skip'   , '-s 98', 98)),
                     # A long option in full
-                    (('RUN_ALL' , '--runall', True),),
+                    (('run_all' , '--runall', True),),
                     # A long option abbreviated
-                    (('RUN_ALL' , '--ru', True),),
+                    (('run_all' , '--ru', True),),
                     # Verbosity level 1
-                    (('VERBOSITY', '-v', 40),),
+                    (('verbosity', '-v', 40),),
                     # Verbosity level 2
-                    (('VERBOSITY', '-v -v', 30),),
+                    (('verbosity', '-v -v', 30),),
                     # Verbosity level 3
-                    (('VERBOSITY', '-v -v -v', 20),),
+                    (('verbosity', '-v -v -v', 20),),
                     # Verbosity level 4
-                    (('VERBOSITY', '-v -v -v -v ', 10),),
+                    (('verbosity', '-v -v -v -v ', 10),),
                     # Verbosity level maxes out at 4
-                    (('VERBOSITY', '-v -v -v -v -v ', 10),),
+                    (('verbosity', '-v -v -v -v -v ', 10),),
                     # Input and output files
-                    (('FILE_IN',  '-i some_input_file',  'some_input_file'),
-                     ('FILE_OUT', '-o some_output_file', 'some_output_file')),
-                    # Info on
-                    (('INFO', '-I', True),),
-                    # Info on
-                    (('INFO', '',   False),),
+                    (('files_in', '-i some_input_file',  'some_input_file'),
+                     ('file_out', '-o some_output_file', 'some_output_file')),
                   ))
 def test_configure(config_tmpdir, spec):
-    """Test configure function. Read from conf file.
-    """
 
     conf_file_name = config_tmpdir.join('test.conf')
     with open(conf_file_name, 'w') as conf_file:
@@ -167,8 +166,7 @@ def test_configure(config_tmpdir, spec):
     # 1. Default values
     # 2. The configuration file can override these
     # 3. Command line arguments can override all of these
-    this_configuration = join_dicts(default_config_spec,
-                                    config_file_spec,
+    this_configuration = join_dicts(config_file_spec,
                                     cmdline_spec)
 
     # Expand environment variables in paths
@@ -182,12 +180,16 @@ def test_configure(config_tmpdir, spec):
     # FILE_IN and FILE_OUT have to be treated specially: the
     # corresponding PATHs must be prepended, unless the file is
     # specified on the command line.
-    if not ('FILE_IN' in cmdline_spec):
-        this_configuration['FILE_IN']  = path.join(this_configuration['PATH_IN'],
-                                                   this_configuration['FILE_IN'])
-    if not ('FILE_OUT' in cmdline_spec):
-        this_configuration['FILE_OUT'] = path.join(this_configuration['PATH_OUT'],
-                                                   this_configuration['FILE_OUT'])
+    if not ('files_in' in cmdline_spec):
+        this_configuration['files_in']  = path.join(this_configuration['path_in'],
+                                                    this_configuration['files_in'])
+
+    if not ('file_out' in cmdline_spec):
+        this_configuration['file_out'] = path.join(this_configuration['path_out'],
+                                                   this_configuration['file_out'])
+
+    del this_configuration['path_in']
+    del this_configuration['path_out']
 
     # Check that all options have the expected values
     for option in this_configuration:
