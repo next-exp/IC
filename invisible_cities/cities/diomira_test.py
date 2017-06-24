@@ -67,7 +67,7 @@ def test_diomira_cwf_blr(electron_RWF_file):
         pmtrwf = e40rwf.root.RD.pmtrwf
         pmtblr = e40rwf.root.RD.pmtblr
         DataPMT = load_db.DataPMT(0)
-        coeff_c = DataPMT.coeff_c.values.astype(np.double)
+        coeff_c   = DataPMT.coeff_c  .values.astype(np.double)
         coeff_blr = DataPMT.coeff_blr.values.astype(np.double)
 
         event = 0
@@ -143,8 +143,7 @@ def test_diomira_identify_bug(ICDIR):
     The same event is later processed with Irene (where a protection
     that skips empty events has been added) to ensure that no crash occur."""
 
-    infile = os.path.join(ICDIR,
-                          'database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
+    infile = os.path.join(ICDIR, 'database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
     with tb.open_file(infile, 'r') as h5in:
 
         pmtrd  = h5in.root.pmtrd
