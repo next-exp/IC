@@ -156,8 +156,16 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
     # (eg, 2) to speed the test. BUT NB, this has to be propagated to this
     # test, eg. h5in .root.Run.events[0:2] if one has run 2 events.
 
+<<<<<<< HEAD
     PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'run_2983.h5')
     PATH_OUT = os.path.join(config_tmpdir,               'run_2983_pmaps.h5')
+=======
+    PATH_IN = os.path.join(ICDIR,
+                           'database/test_data/',
+                           'run_2983.h5')
+    PATH_OUT = os.path.join(str(config_tmpdir),
+                            'run_2983_pmaps.h5')
+>>>>>>> Adapt test_irene_40keV...correctly_set to new structure
 
     with tb.open_file(PATH_IN, mode='r') as h5in:
         evt_in  = h5in.root.Run.events[0:2]
