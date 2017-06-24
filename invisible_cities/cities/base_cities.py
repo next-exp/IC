@@ -14,6 +14,7 @@ Feburary, 2017.
 
 import sys
 from argparse import Namespace
+from operator import attrgetter
 from glob     import glob
 from time     import time
 
@@ -391,17 +392,12 @@ class PmapCity(CalibratedCity):
 
 
 class MapCity(City):
-    def __init__(self,
-                 lifetime           ,
-                 u_lifetime   =    1,
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
 
-                 xbins        =  100,
-                 xmin         = None,
-                 xmax         = None,
-
-                 ybins        =  100,
-                 ymin         = None,
-                 ymax         = None):
+        conf = self.conf
+        required_names = 'lifetime u_lifetime xmin xmax ymin ymax xbins ybins'.split()
+        lifetime, u_lifetime, xmin, xmax, ymin, ymax, xbins, ybins = attrgetter(*required_names)(conf)
 
         self.  _lifetimes = [lifetime]   if not np.shape(  lifetime) else   lifetime
         self._u_lifetimes = [u_lifetime] if not np.shape(u_lifetime) else u_lifetime
