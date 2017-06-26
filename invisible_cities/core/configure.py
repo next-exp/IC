@@ -5,6 +5,8 @@ import argparse
 import sys
 import os
 
+from collections import namedtuple
+
 from .        log_config      import logger
 from . import system_of_units as     units
 
@@ -23,21 +25,16 @@ parser.add_argument("--run-all",     action="store_true", help="number of events
 parser.add_argument('--show-config', action='store_true', help="do not run")
 
 
-def print_configuration(options):
-    for key, value in sorted(vars(options).items()):
-        print("{0: <22} => {1}".format(key, value))
-
-
 def configure(input_options=sys.argv):
     program, *args = input_options
 
     CLI = parser.parse_args(args)
     options = read_config_file(CLI.config_file)
 
-    vars(options).update((opt, val) for opt, val in vars(CLI).items() if val is not None)
-    logger.setLevel(vars(options).get("verbosity", "info"))
+    options.as_dict.update((opt, val) for opt, val in vars(CLI).items() if val is not None)
+    logger.setLevel(options.as_dict.get("verbosity", "info"))
 
-    print_configuration(options)
+    options.display()
     return options
 
 
@@ -52,11 +49,59 @@ def make_config_file_reader():
     builtins = __builtins__.copy()
     builtins.update(vars(units))
     globals_ = {'__builtins__': builtins}
-    config = argparse.Namespace()
+    config = Configuration()
     def read_included_file(file_name):
         full_file_name = os.path.expandvars(file_name)
+        config.push_file(full_file_name)
         with open(full_file_name, 'r') as config_file:
-            exec(config_file.read(), globals_, vars(config))
+            exec(config_file.read(), globals_, config)
+        config.pop_file()
         return config
     builtins['include'] = read_included_file
     return read_included_file
+
+
+HistoryItem = namedtuple('HistoryItem', 'name value, file_name')
+
+
+from collections.abc import MutableMapping
+
+class Configuration(MutableMapping):
+
+    def __init__(self):
+        self._data = {}
+        self.history = []
+        self._file_stack = []
+
+    @property
+    def as_namespace(self):
+        return argparse.Namespace(**self._data)
+
+    @property
+    def as_dict(self):
+        return self._data
+
+    @property
+    def _current_filename(self):
+        return self._file_stack[-1]
+
+    def __setitem__(self, key, value):
+        if key in self._data:
+            self.history.append(HistoryItem(key, self._data[key], self._current_filename))
+        self._data[key] = value
+
+    def __getitem__(self, key): return self._data[key]
+    def __delitem__(self, key): raise NotImplementedError
+    def __len__    (self):      return len (self._data)
+    def __iter__   (self):      return iter(self._data)
+
+    def push_file(self, file_name):
+        self._file_stack.append(file_name)
+
+    def pop_file(self):
+        self._file_stack.pop()
+
+
+    def display(self):
+        for key, value in sorted(self._data.items()):
+            print("{0: <22} => {1}".format(key, value))

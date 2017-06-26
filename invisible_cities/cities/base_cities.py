@@ -22,7 +22,6 @@ from os.path  import expandvars
 import numpy  as np
 import tables as tb
 
-from .. core.configure         import print_configuration
 from .. core.configure         import configure
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
@@ -88,7 +87,7 @@ class City:
 
     @classmethod
     def drive(cls, argv):
-        conf = configure(argv)
+        conf = configure(argv).as_namespace
         if conf.show_config:
             return
         instance = cls(**vars(conf))
