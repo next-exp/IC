@@ -17,7 +17,6 @@ from argparse  import Namespace
 import tables as tb
 
 from .. core.configure         import configure
-from .. core.configure         import print_configuration
 from .. core.random_sampling   import NoiseSampler as SiPMsNoiseSampler
 from .. core.system_of_units_c import units
 from .. core.exceptions        import ParameterNotSet

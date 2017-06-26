@@ -19,7 +19,6 @@ import numpy as np
 import tables as tb
 
 from .. core.configure          import configure
-from .. core.configure          import print_configuration
 from .. core.system_of_units_c  import units
 from .. core.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco                    import tbl_functions    as tbl

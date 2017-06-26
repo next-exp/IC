@@ -1,7 +1,13 @@
 from os import getenv, path
-from pytest import mark
 
-from . import configure as conf
+import pytest
+from   pytest import mark
+
+from . configure import configure
+from . configure import Configuration
+from . configure import make_config_file_reader
+
+
 
 config_file_format = """
 # set_input_files
@@ -154,7 +160,7 @@ def test_configure(config_tmpdir, spec):
     args = (args_base + args_options).split()
 
     # Present the command line to the parser
-    CFP = conf.configure(args)
+    CFP = configure(args).as_namespace
 
     # The values in the configuration can come from three different places
     # 1. Default values
@@ -174,3 +180,72 @@ def test_configure(config_tmpdir, spec):
     # Check that all options have the expected values
     for option in this_configuration:
         assert getattr(CFP, option) == this_configuration[option], 'option = ' + option
+
+
+def write_config_file(file_name, contents):
+    with open(file_name, 'w') as out:
+        out.write(contents)
+
+
+@pytest.fixture(scope = 'session')
+def sample_configuration(tmpdir_factory):
+    dir_ = tmpdir_factory.mktemp('test_config_files')
+    top_file_name = path.join(dir_, 'top_file')
+    include_1     = path.join(dir_, 'include_1')
+    include_1_1   = path.join(dir_, 'include_1_1')
+    include_2     = path.join(dir_, 'include_2')
+    write_config_file(top_file_name, """
+include('{include_1}')
+set_just_once_in_top_file = 1
+overridden_in_top_file = 'original'
+overridden_in_top_file = 'first override'
+overridden_in_top_file = 'second override'
+overridden_in_top_file = 'final override'
+include_1_overridden_by_top = 'top overrides'
+top_overridden_by_include_2 = 'replaced'
+include('{include_2}')
+""".format(**locals()))
+
+    write_config_file(include_1, """
+include('{include_1_1}')
+only_in_include_1 = 'just 1'
+include_1_overridden_by_top = 'gone'
+""".format(**locals()))
+
+    write_config_file(include_2, """
+only_in_include_1 = 'just 1'
+top_overridden_by_include_2 = 'i2 overrides'
+""")
+
+    write_config_file(include_1_1, """
+only_in_include_1 = 'just 1'
+top_overridden_by_include_2 = 'i2 overrides'
+""")
+
+    return make_config_file_reader()(top_file_name)
+
+
+def test_config_set_just_once_in_top_file(sample_configuration):
+    conf = sample_configuration.as_namespace
+    assert conf.set_just_once_in_top_file == 1
+
+def test_config_overridden_in_top_file_value(sample_configuration):
+    conf = sample_configuration.as_namespace
+    assert conf.overridden_in_top_file == 'final override'
+
+def test_config_overridden_in_top_file_history(sample_configuration):
+    history = sample_configuration.history
+    relevant_history = [ value for name, value, _ in history if name == 'overridden_in_top_file' ]
+    assert relevant_history == ['original', 'first override', 'second override']
+
+def test_config_only_in_include(sample_configuration):
+    conf = sample_configuration.as_namespace
+    assert conf.only_in_include_1 == 'just 1'
+
+def test_config_include_overridden_by_top(sample_configuration):
+    conf = sample_configuration.as_namespace
+    assert conf.include_1_overridden_by_top == 'top overrides'
+
+def test_config_top_overridden_by_include(sample_configuration):
+    conf = sample_configuration.as_namespace
+    assert conf.top_overridden_by_include_2 == 'i2 overrides'
