@@ -108,8 +108,20 @@ def define_event_loop(options, n_evt):
 
 
 def read_config_file(file_name):
-    config = argparse.Namespace(verbosity=20)
-    with open(file_name, 'r') as config_file:
-        exec(config_file.read(), vars(units), vars(config))
+    full_file_name             = os.path.expandvars(file_name)
+    read_top_level_config_file = make_config_file_reader()
+    whole_config               = read_top_level_config_file(full_file_name)
+    return whole_config
 
-    return config
+def make_config_file_reader():
+    builtins = __builtins__.copy()
+    builtins.update(vars(units))
+    globals_ = {'__builtins__': builtins}
+    config = argparse.Namespace(verbosity=20)
+    def read_config_file(file_name):
+        full_file_name = os.path.expandvars(file_name)
+        with open(full_file_name, 'r') as config_file:
+            exec(config_file.read(), globals_, vars(config))
+        return config
+    builtins['include'] = read_config_file
+    return read_config_file
