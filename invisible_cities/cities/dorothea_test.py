@@ -19,7 +19,7 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
 
     from .. core.system_of_units import pes, mm, mus
 
-    conf = vars(configure('dummy -c invisible_cities/config/dorothea.conf'.split()))
+    conf = configure('dummy -c invisible_cities/config/dorothea.conf'.split()).as_dict
     conf.update(dict(run_number = 0,
                      files_in   = PATH_IN,
                      file_out   = PATH_OUT,
