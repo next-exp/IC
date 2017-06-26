@@ -89,6 +89,8 @@ class City:
     @classmethod
     def drive(cls, argv):
         conf = configure(argv)
+        if conf.show_config:
+            return
         instance = cls(**vars(conf))
         instance.go()
 
