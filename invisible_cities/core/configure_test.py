@@ -122,19 +122,17 @@ def join_dicts(*args):
                     (('nevents', '-n 99', 99),
                      ('skip'   , '-s 98', 98)),
                     # A long option in full
-                    (('run_all' , '--runall', True),),
+                    (('run_all' , '--run-all', True),),
                     # A long option abbreviated
-                    (('run_all' , '--ru', True),),
+                    (('nevents' , '--ne 6', 6),),
                     # Verbosity level 1
-                    (('verbosity', '-v', 40),),
+                    (('verbosity', '-v',    1),),
                     # Verbosity level 2
-                    (('verbosity', '-v -v', 30),),
+                    (('verbosity', '-v -v', 2),),
                     # Verbosity level 3
-                    (('verbosity', '-v -v -v', 20),),
+                    (('verbosity', '-vvv',  3),),
                     # Verbosity level 4
-                    (('verbosity', '-v -v -v -v ', 10),),
-                    # Verbosity level maxes out at 4
-                    (('verbosity', '-v -v -v -v -v ', 10),),
+                    (('verbosity', '-vvv -v ', 4),),
                     # Input and output files
                     (('files_in', '-i some_input_file',  'some_input_file'),
                      ('file_out', '-o some_output_file', 'some_output_file')),
