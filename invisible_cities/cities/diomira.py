@@ -42,8 +42,6 @@ class Diomira(SensorResponseCity):
     traking plane sensors.
 
     """
-    def __init__(self, **kwds):
-        super().__init__(**kwds)
 
     def go(self):
         t0 = time()
