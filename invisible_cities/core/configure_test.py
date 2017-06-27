@@ -227,7 +227,7 @@ def test_config_overridden_in_top_file_value(sample_configuration):
     assert conf.overridden_in_top_file == 'final override'
 
 def test_config_overridden_in_top_file_history(sample_configuration):
-    history = sample_configuration.history['overridden_in_top_file']
+    history = sample_configuration._history['overridden_in_top_file']
     value_history = [ i.value for i in history ]
     assert value_history == ['original', 'first override', 'second override']
 
@@ -244,7 +244,7 @@ def test_config_top_overridden_by_include(sample_configuration):
     assert conf.top_overridden_by_include_2 == 'i2 overrides'
 
 def test_config_overridden_file_history(sample_configuration):
-    history = sample_configuration.history['overridden_in_3_places']
+    history = sample_configuration._history['overridden_in_3_places']
     file_history  = [ path.basename(i.file_name) for i in history ]
     value_history = [               i.value      for i in history ]
 
