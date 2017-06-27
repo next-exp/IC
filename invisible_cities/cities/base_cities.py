@@ -87,10 +87,13 @@ class City:
 
     @classmethod
     def drive(cls, argv):
-        conf = configure(argv).as_namespace
-        if conf.show_config:
+        conf = configure(argv)
+        opts = conf.as_namespace
+        if not opts.hide_config:
+            conf.display()
+        if opts.do_not_run:
             return
-        instance = cls(**vars(conf))
+        instance = cls(**conf.as_dict)
         instance.go()
 
     def go(self):
