@@ -315,20 +315,20 @@ def test_csum_zs_s12():
     ts = t1[0]
     t_finish = t1[-1] + 25* units.ns
 
-    import pdb; pdb.set_trace()
-    t1, e1  = pf._rebin_waveform(t1[0], t1[-1] + 25* units.ns, csum[i0:i1], stride=40)
-    #t2, e2 = cpf.rebin_waveform(t, e, stride=10)
-    pdb.set_trace()
-    t2, e2 = pf._rebin_waveform(t1[0], t1[-1] + 25* units.ns, csum[i0:i1], stride=40)
-    npt.assert_allclose(t1, t2)
-    npt.assert_allclose(e1, e2)
 
-    S12L1 = pf._find_S12(csum, wfzs_indx,
+    pt1, pe1  = pf._rebin_waveform(t1[0], t1[-1] + 25* units.ns, csum[i0:i1], stride=40)
+    #t2, e2 = cpf.rebin_waveform(t, e, stride=10)
+    ct2, ce2 = pf._rebin_waveform(t1[0], t1[-1] + 25* units.ns, csum[i0:i1], stride=40)
+
+    npt.assert_allclose(pt1, ct2)
+    npt.assert_allclose(pe1, ce2)
+
+    S12L1 = pf.find_S12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
 
-    S12L2 = pf._find_S12(csum, wfzs_indx,
+    S12L2 = pf.find_S12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
