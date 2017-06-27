@@ -97,8 +97,7 @@ def test_diomira_sipm(irene_diomira_chain_tmpdir, ICDIR):
     sipm_noise_cut = 20 # in pes. Should kill essentially all background
 
     max_sipm_with_signal = 10
-    infile = os.path.join(ICDIR,
-                          'database/test_data/electrons_40keV_z250_MCRD.h5')
+    infile = os.path.join(ICDIR, 'database/test_data/electrons_40keV_z250_MCRD.h5')
     with tb.open_file(infile, 'r') as e40rd:
 
         NEVENTS_DST, NSIPM, SIPMWL = e40rd.root.sipmrd.shape
@@ -156,12 +155,9 @@ def test_diomira_identify_bug(ICDIR):
 
 @mark.slow
 def test_diomira_copy_mc_and_offset(config_tmpdir):
-    PATH_IN = os.path.join(os.environ['ICDIR'],
-              'database/test_data/',
-              'electrons_40keV_z250_MCRD.h5')
-    PATH_OUT = os.path.join(str(config_tmpdir),
-              'electrons_40keV_z250_RWF.h5')
-    start_evt  = Diomira.event_number_from_input_file_name(str(PATH_IN))
+    PATH_IN = os.path.join(os.environ['ICDIR'], 'database/test_data/', 'electrons_40keV_z250_MCRD.h5')
+    PATH_OUT = os.path.join(config_tmpdir,                             'electrons_40keV_z250_RWF.h5')
+    start_evt  = Diomira.event_number_from_input_file_name(PATH_IN)
     run_number = 0
 
     diomira = Diomira(run_number = run_number,
