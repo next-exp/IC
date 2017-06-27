@@ -14,7 +14,9 @@ the command
   source manage.sh install_and_check 3.6
 
 Where the 3.6 can be replaced with any sensible Python version you
-like. (On 2017-02-24 we actively support Python 3.6 and 3.5.)
+like. (On 2017-06-27 we dropped support for Python 3.5, so Python 3.6
+will be the only supported version until 3.7 is released and the third
+party modules we use are uploaded to conda and pip.)
    
 If you have already done the above procedure once, then you should
 already have an `IC3.6` conda environment available, as long as
