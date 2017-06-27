@@ -216,9 +216,8 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
 
     if r > 0:
         esum  = 0
-        itf = int(t_finish) # to avoid accidental re-writing of external ref.
         for tb in range(int(t_start + n*stride*25*units.ns),
-                        itf,
+                        int(t_finish),
                         int(25*units.ns)):
             if tb < ts: continue
             esum += wf[j]
@@ -227,7 +226,7 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
         E[n] = esum
         if n == 0: T[n] = (ts + t_finish) / 2
         else     : T[n] = (t_start + n*stride*25*units.ns + t_finish) / 2
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
     assert j == len(wf) # ensures you have rebinned correctly the waveform
     return T, E
 
