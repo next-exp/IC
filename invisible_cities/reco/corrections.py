@@ -120,14 +120,28 @@ class Correction:
 
 class Fcorrection:
     def __init__(self, f, u_f, pars):
-        self._f   = lambda x:   f(x, *pars)
-        self._u_f = lambda x: u_f(x, *pars)
+        self._f   = lambda *x:   f(*x, *pars)
+        self._u_f = lambda *x: u_f(*x, *pars)
 
-    def __call__(self, x):
-        return Measurement(self._f(x), self._u_f(x))
+    def __call__(self, *x):
+        return Measurement(self._f(*x), self._u_f(*x))
 
 
 def LifetimeCorrection(LT, u_LT):
     fun   = lambda z, LT, u_LT=0: fitf.expo(z, 1, LT)
     u_fun = lambda z, LT, u_LT  : z * u_LT / LT**2 * fun(z, LT)
     return Fcorrection(fun, u_fun, (LT, u_LT))
+
+
+def LifetimeRCorrection(pars, u_pars):
+    def LTfun(z, r, a, b, c, u_a, u_b, u_c):
+        LT = a - b * r * np.exp(r/c)
+        return fitf.expo(z, 1, LT)
+
+    def u_LTfun(z, r, a, b, c, u_a, u_b, u_c):
+        LT   = a - b * r * np.exp(r/c)
+        u_LT = (u_a**2 + u_b**2 * np.exp(2*r/c) +
+                u_c**2 * b**2 * r**2 * np.exp(2*r/c)/c**4)**0.5
+        return z * u_LT / LT**2 * LTfun(z, r, a, b, c, u_a, u_b, u_c)
+
+    return Fcorrection(LTfun, u_LTfun, np.concatenate([pars, u_pars]))
