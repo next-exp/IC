@@ -8,7 +8,6 @@ from . configure import Configuration
 from . configure import make_config_file_reader
 
 
-
 config_file_format = """
 # set_input_files
 files_in = '{files_in}' # comment to be ignored 1
@@ -88,16 +87,6 @@ config_file_spec = dict(files_in = 'electrons_40keV_z250_RWF.h5',
                         run_all            = False,
                         nevents            = 45)
 
-# TODO remove! *ALL* possible parameters must now be set explicitly in
-# the config files. (Users will be able to avoid having to specify
-# them in their own config files by including the official config
-# files for any city.)
-
-# # Values that the configuration should assume if they are specified
-# # neither in the config file, nor on the command line.
-# default_config_spec = dict(run_all   = False,
-#                            SKIP      =  0,
-#                            VERBOSITY = 20)
 
 config_file_contents = config_file_format.format(**config_file_spec)
 
