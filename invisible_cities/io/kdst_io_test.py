@@ -13,7 +13,7 @@ from ..reco.event_model   import PersistentKrEvent
 
 
 def test_Kr_writer(config_tmpdir, Kr_dst_data):
-    filename = os.path.join(str(config_tmpdir), 'test_dst.h5')
+    filename = os.path.join(config_tmpdir, 'test_dst.h5')
     _, df    = Kr_dst_data
 
     def dump_df(write, df):
@@ -37,7 +37,7 @@ def test_Kr_writer(config_tmpdir, Kr_dst_data):
 
 
 def test_xy_writer(config_tmpdir, corr_toy_data):
-    output_file = os.path.join(str(config_tmpdir), "test_corr.h5")
+    output_file = os.path.join(config_tmpdir, "test_corr.h5")
 
     _, (x, y, F, U, N) = corr_toy_data
 

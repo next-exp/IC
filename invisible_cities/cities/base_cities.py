@@ -44,15 +44,9 @@ from ..reco.xy_algorithms import barycenter
 from ..sierpe             import blr
 from ..sierpe             import fee as FE
 
-if sys.version_info >= (3,5):
-    # Exec to avoid syntax errors in older Pythons
-    exec("""def merge_two_dicts(a,b):
-               return {**a, **b}""")
-else:
-    def merge_two_dicts(a,b):
-        c = a.copy()
-        c.update(b)
-        return c
+
+def merge_two_dicts(a,b):
+    return {**a, **b}
 
 
 class City:
@@ -126,7 +120,7 @@ class City:
                  Output File = {}
                           """.format(self.__class__.__name__,
                                      nmax, self.input_files, self.output_file))
-                                     
+
     @staticmethod
     def get_rwf_vectors(h5in):
         "Return RWF vectors and sensor data."

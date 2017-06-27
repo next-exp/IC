@@ -16,7 +16,7 @@ def test_command_line_run(city, tmpdir_factory):
     config_file_name = join(ICTDIR, 'invisible_cities/config', city+'.conf')
     # Ensure that output does not pollute: send it to a temporary dir
     temp_dir = tmpdir_factory.mktemp('output_files')
-    out_file_name = join(str(temp_dir), city+'.out')
+    out_file_name = join(temp_dir, city+'.out')
     # The actual command that we want to test
     command = ('city {city} -c {config_file_name} -o {out_file_name}'
                .format(**locals()))
