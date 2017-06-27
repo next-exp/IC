@@ -29,8 +29,8 @@ class Dorothea(City):
         conf = self.conf
 
         self.drift_v = conf.drift_v
-        self._s1s2_selector = S12Selector(S1_Nmin     = 1,
-                                          S1_Nmax     = 1,
+        self._s1s2_selector = S12Selector(S1_Nmin     = conf.s1_nmin,
+                                          S1_Nmax     = conf.s1_nmax,
                                           S1_Emin     = conf.s1_emin,
                                           S1_Emax     = conf.s1_emax,
                                           S1_Lmin     = conf.s1_lmin,
@@ -39,7 +39,7 @@ class Dorothea(City):
                                           S1_Hmax     = conf.s1_hmax,
                                           S1_Ethr     = conf.s1_ethr,
 
-                                          S2_Nmin     = 1,
+                                          S2_Nmin     = conf.s2_nmin,
                                           S2_Nmax     = conf.s2_nmax,
                                           S2_Emin     = conf.s2_emin,
                                           S2_Emax     = conf.s2_emax,
