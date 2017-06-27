@@ -5,6 +5,8 @@ import argparse
 import sys
 import os
 
+from os.path import basename
+
 from collections     import namedtuple
 from collections     import defaultdict
 from collections.abc import MutableMapping
@@ -22,9 +24,18 @@ parser.add_argument("-f", '--first-event',     type=int,  help="event number for
 parser.add_argument("-r", '--run-number',      type=int,  help="run number")
 parser.add_argument("-s", '--skip',            type=int,  help="number of events to be skipped", default=0)
 parser.add_argument("-p", '--print_mod',       type=int,  help="print every this number of events")
-parser.add_argument("-v", dest='verbosity', action="count",                 help="verbosity level", default=0)
-parser.add_argument("--run-all",     action="store_true", help="number of events to be skipped") # TODO fix help
-parser.add_argument('--show-config', action='store_true', help="do not run")
+parser.add_argument("-v", dest='verbosity', action="count", help="increase verbosity level", default=0)
+parser.add_argument("--run-all",       action="store_true", help="number of events to be skipped") # TODO fix help
+parser.add_argument('--do-not-run',    action='store_true', help='useful for checking configuration')
+
+display = parser.add_mutually_exclusive_group()
+parser .add_argument('--hide-config',   action='store_true')
+parser .add_argument('--no-overrides',  action='store_true', help='do not show overridden values in --show-config')
+display.add_argument('--no-files',      action='store_true', help='do not show config files in --show-config')
+display.add_argument('--full-files',    action='store_true', help='show config files with full paths in --show-config')
+
+
+uninteresting_options = '''hide_config no_overrides no_files full_files do_not_run'''.split()
 
 
 def configure(input_options=sys.argv):
@@ -36,7 +47,6 @@ def configure(input_options=sys.argv):
     options.as_dict.update((opt, val) for opt, val in vars(CLI).items() if val is not None)
     logger.setLevel(options.as_dict.get("verbosity", "info"))
 
-    options.display()
     return options
 
 
@@ -66,13 +76,12 @@ def make_config_file_reader():
 Overridden = namedtuple('Overridden', 'value file_name')
 
 
-
 class Configuration(MutableMapping):
 
     def __init__(self):
         self._data = {}
         self._file = {}
-        self.history = defaultdict(list)
+        self._history = defaultdict(list)
         self._file_stack = []
 
     @property
@@ -89,7 +98,7 @@ class Configuration(MutableMapping):
 
     def __setitem__(self, key, value):
         if key in self._data:
-            self.history[key].append(Overridden(self._data[key], self._file[key]))
+            self._history[key].append(Overridden(self._data[key], self._file[key]))
         self._data[key] = value
         self._file[key] = self._current_filename
 
@@ -104,7 +113,24 @@ class Configuration(MutableMapping):
     def pop_file(self):
         self._file_stack.pop()
 
-
     def display(self):
+        conf = self.as_namespace
+        longest = max(self._data, key=len)
+        width = len(longest) + 3
+        fmt            =  "{key:<%d} = {value:<8} {file_name}"             %  width
+        fmt_overridden = "#{key:>%d} = {exval:<8} {file_name}  OVERRIDDEN" % (width - 1)
+
+        def style_filename(file_name):
+            if conf.   no_files: return ''
+            if conf. full_files: return '# ' +          file_name
+            return                      '# ' + basename(file_name)
+
         for key, value in sorted(self._data.items()):
-            print("{0: <22} => {1}".format(key, value))
+            if key in uninteresting_options:
+                continue
+            if not conf.no_overrides:
+                for exval, file_name in self._history[key]:
+                    file_name = style_filename(file_name)
+                    print(fmt_overridden.format(**locals()))
+            file_name = style_filename(self._file.get(key, '<command line>'))
+            print(fmt.format(**locals()))
