@@ -204,22 +204,26 @@ overridden_in_top_file = 'final override'
 include_1_overridden_by_top = 'top overrides'
 top_overridden_by_include_2 = 'replaced'
 include('{include_2}')
+overridden_in_3_places = 'four'
 """.format(**locals()))
 
     write_config_file(include_1, """
 include('{include_1_1}')
 only_in_include_1 = 'just 1'
 include_1_overridden_by_top = 'gone'
+overridden_in_3_places = 'two'
 """.format(**locals()))
-
-    write_config_file(include_2, """
-only_in_include_1 = 'just 1'
-top_overridden_by_include_2 = 'i2 overrides'
-""")
 
     write_config_file(include_1_1, """
 only_in_include_1 = 'just 1'
 top_overridden_by_include_2 = 'i2 overrides'
+overridden_in_3_places = 'one'
+""")
+
+    write_config_file(include_2, """
+only_in_include_1 = 'just 1'
+top_overridden_by_include_2 = 'i2 overrides'
+overridden_in_3_places = 'three'
 """)
 
     return make_config_file_reader()(top_file_name)
@@ -234,9 +238,9 @@ def test_config_overridden_in_top_file_value(sample_configuration):
     assert conf.overridden_in_top_file == 'final override'
 
 def test_config_overridden_in_top_file_history(sample_configuration):
-    history = sample_configuration.history
-    relevant_history = [ value for name, value, _ in history if name == 'overridden_in_top_file' ]
-    assert relevant_history == ['original', 'first override', 'second override']
+    history = sample_configuration.history['overridden_in_top_file']
+    value_history = [ i.value for i in history ]
+    assert value_history == ['original', 'first override', 'second override']
 
 def test_config_only_in_include(sample_configuration):
     conf = sample_configuration.as_namespace
@@ -249,3 +253,12 @@ def test_config_include_overridden_by_top(sample_configuration):
 def test_config_top_overridden_by_include(sample_configuration):
     conf = sample_configuration.as_namespace
     assert conf.top_overridden_by_include_2 == 'i2 overrides'
+
+def test_config_overridden_file_history(sample_configuration):
+    history = sample_configuration.history['overridden_in_3_places']
+    file_history  = [ path.basename(i.file_name) for i in history ]
+    value_history = [               i.value      for i in history ]
+
+    assert file_history  == ['include_1_1', 'include_1', 'include_2']
+    assert value_history == ['one',         'two',       'three'    ]
+    assert sample_configuration.as_namespace.overridden_in_3_places == 'four'

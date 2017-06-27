@@ -5,7 +5,9 @@ import argparse
 import sys
 import os
 
-from collections import namedtuple
+from collections     import namedtuple
+from collections     import defaultdict
+from collections.abc import MutableMapping
 
 from .        log_config      import logger
 from . import system_of_units as     units
@@ -61,16 +63,16 @@ def make_config_file_reader():
     return read_included_file
 
 
-HistoryItem = namedtuple('HistoryItem', 'name value, file_name')
+Overridden = namedtuple('Overridden', 'value file_name')
 
 
-from collections.abc import MutableMapping
 
 class Configuration(MutableMapping):
 
     def __init__(self):
         self._data = {}
-        self.history = []
+        self._file = {}
+        self.history = defaultdict(list)
         self._file_stack = []
 
     @property
@@ -87,8 +89,9 @@ class Configuration(MutableMapping):
 
     def __setitem__(self, key, value):
         if key in self._data:
-            self.history.append(HistoryItem(key, self._data[key], self._current_filename))
+            self.history[key].append(Overridden(self._data[key], self._file[key]))
         self._data[key] = value
+        self._file[key] = self._current_filename
 
     def __getitem__(self, key): return self._data[key]
     def __delitem__(self, key): raise NotImplementedError
