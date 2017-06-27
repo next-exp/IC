@@ -14,7 +14,7 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
     # NB: avoid taking defaults for run number (test-specific)
 
     PATH_IN =  KrMC_pmaps[0]
-    PATH_OUT = os.path.join(str(config_tmpdir), 'KrDST.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'KrDST.h5')
 
     dorothea = Dorothea(run_number = 0,
                         files_in   = [PATH_IN],

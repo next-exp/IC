@@ -148,7 +148,7 @@ def test_configure(config_tmpdir, spec):
     """Test configure function. Read from conf file.
     """
 
-    conf_file_name = str(config_tmpdir.join('test.conf'))
+    conf_file_name = config_tmpdir.join('test.conf')
     with open(conf_file_name, 'w') as conf_file:
         conf_file.write(config_file_contents)
 
