@@ -233,6 +233,32 @@ def pmaps_electrons(electron_RWF_file):
 
     return pmp, pmp2, csum
 
+def test_rebin_waveform():
+    """Ale to document"""
+    wf     = np.ones (int(3*units.mus / (25*units.ns)))
+    times  = np.arange(0, 3*units.mus,   25*units.ns)
+    stride = 40
+
+    for s in times:
+        for f in times[times > s]:
+            [T, E] = pf._rebin_waveform(s, f,
+                                      wf[int(s/25): int(f/25)],
+                                      stride=stride)
+
+            for i, (t, e) in enumerate(zip(T, E)):
+                if i==0:
+                    assert np.isclose(t,
+                            min(np.mean((s, (s // (stride*25*units.ns) + 1)*stride*25*units.ns)), np.mean((f, s))))
+                    assert e == min(((s // (stride*25*units.ns) + 1)*stride*25*units.ns - s) / 25*units.ns,
+                                    (f - s) / (25*units.ns))
+                elif i < len(T) - 1:
+                    assert np.isclose(t, np.ceil(T[i-1]/(stride*25*units.ns))*stride*25*units.ns + stride * 25*units.ns / 2)
+                    assert e == stride
+                else:
+                    assert i == len(T) - 1
+                    assert np.isclose(t, np.mean((np.ceil(T[i-1] / (stride*25*units.ns))*stride*25*units.ns, f)))
+                    assert e == (f - np.ceil(T[i-1] / (stride*25*units.ns)) * stride*25*units.ns) / (25*units.ns)
+
 def test_rebinning_does_not_affect_the_sum_of_S2(pmaps_electrons):
     pmp, pmp2, _ = pmaps_electrons
     np.isclose(np.sum(pmp.S2[0][1]), np.sum(pmp2.S2[0][1]), rtol=1e-05)
