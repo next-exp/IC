@@ -80,7 +80,7 @@ class Irene(PmapCity):
                 continue
 
             sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
-            S1, S2, Si = self.pmaps(s1_ene, s1_indx, s2_ene, s2_indx, csum, sipmzs)
+            S1, S2, Si = self.pmaps(s1_indx, s2_indx, csum, sipmzs)
 
             event, timestamp = self.event_and_timestamp(evt, events_info)
             # write to file
@@ -104,11 +104,6 @@ class Irene(PmapCity):
                                            self.thr_csum_s2)
             return s1_ene, s1_indx, s2_ene, s2_indx, csum
 
-    def pmaps(self, s1_ene, s1_indx, s2_ene, s2_indx, csum, sipmzs):
-        S1, S2 = self.find_S12(csum, s1_indx, s2_indx)
-        S1     = self.correct_S1_ene(S1, csum)
-        Si     = self.find_S2Si(S2, sipmzs)
-        return S1, S2, Si
 
     def display_IO_info(self):
         PmapCity.display_IO_info(self)
