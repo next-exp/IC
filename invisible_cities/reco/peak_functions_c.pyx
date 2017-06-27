@@ -4,6 +4,7 @@ Last revision: June 2017, JJGC
 
 **Public functions**
 
+
 calibrated_pmt_sum(double [:, :]  CWF,
                          double [:]     adc_to_pes,
                          list           pmt_active = [],
