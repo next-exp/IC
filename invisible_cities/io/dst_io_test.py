@@ -13,7 +13,7 @@ from . dst_io             import hits_writer
 
 
 def test_hits_writer(config_tmpdir, hits_toy_data):
-    output_file = os.path.join(str(config_tmpdir), "test_hits.h5")
+    output_file = os.path.join(config_tmpdir, "test_hits.h5")
 
     _, (npeak, nsipm, x, y, xrms, yrms, z, q, e) = hits_toy_data
 
