@@ -7,7 +7,6 @@ matrix:
   - os: osx
 
 env:
-  - IC_PYTHON_VERSION=3.5
   - IC_PYTHON_VERSION=3.6
 
 os:
