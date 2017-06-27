@@ -378,13 +378,20 @@ class PmapCity(CalibratedCity):
 
         self.thr_sipm_s2 = conf.thr_sipm_s2
 
-    def find_S12(self, s1_ene, s1_indx, s2_ene, s2_indx):
+    def find_S12(self, csum, s1_indx, s2_indx):
         """Return S1 and S2."""
-        S1 = cpf.find_S12(s1_ene,
-                          s1_indx,
+        # S1 = cpf.find_S12(s1_ene,
+        #                   s1_indx,
+        #                   **self.s1_params._asdict())
+        #
+        # S2 = cpf.find_S12(s2_ene,
+        #                   s2_indx,
+        #                   **self.s2_params._asdict())
+        S1 = pf.find_S12(csum,
+                         s1_indx,
                           **self.s1_params._asdict())
 
-        S2 = cpf.find_S12(s2_ene,
+        S2 = pf.find_S12(csum,
                           s2_indx,
                           **self.s2_params._asdict())
         return S1, S2

@@ -33,7 +33,7 @@ class Irene(PmapCity):
         self.display_IO_info()
         sensor_params = self.get_sensor_params(self.input_files[0])
         print(sensor_params)
-        
+
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
             writers = Namespace(
@@ -105,7 +105,7 @@ class Irene(PmapCity):
             return s1_ene, s1_indx, s2_ene, s2_indx, csum
 
     def pmaps(self, s1_ene, s1_indx, s2_ene, s2_indx, csum, sipmzs):
-        S1, S2 = self.find_S12(s1_ene, s1_indx,   s2_ene, s2_indx)
+        S1, S2 = self.find_S12(csum, s1_indx, s2_indx)
         S1     = self.correct_S1_ene(S1, csum)
         Si     = self.find_S2Si(S2, sipmzs)
         return S1, S2, Si
