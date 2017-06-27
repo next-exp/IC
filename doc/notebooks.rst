@@ -31,7 +31,7 @@ Workflow
 --------
 
 1. First thing you will need to do is to configure your environment,  this can
-   be done as usual: ``source manage.sh  work_in_python_version 3.5``.
+   be done as usual: ``source manage.sh  work_in_python_version 3.6``.
 
 2. Define your ``$IC_DATA`` if you don't have it yet.
 

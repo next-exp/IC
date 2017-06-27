@@ -37,7 +37,7 @@ def test_pmap_writer(config_tmpdir, s12_dataframe_converted, s2si_dataframe_conv
 
     filename = 'test_pmaps_auto.h5'
 
-    PMP_file_name = os.path.join(str(config_tmpdir), filename)
+    PMP_file_name = os.path.join(config_tmpdir, filename)
 
     # Get test data
     s12,  a =  s12_dataframe_converted
@@ -111,7 +111,7 @@ def test_pmap_electrons_40keV(config_tmpdir):
               'database/test_data/',
               'electrons_40keV_z250_RWF.h5')
 
-    PMAP_file_name = os.path.join(str(config_tmpdir),
+    PMAP_file_name = os.path.join(config_tmpdir,
               'electrons_40keV_z250_PMP.h5')
 
     s1_params = S12P(time   = minmax(min =     90 * units.mus,
