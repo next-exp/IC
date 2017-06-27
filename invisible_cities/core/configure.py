@@ -126,10 +126,12 @@ class Configuration(MutableMapping):
             return                      '# ' + basename(file_name)
 
         for key, value in sorted(self._data.items()):
+            value = str(value)
             if key in uninteresting_options:
                 continue
             if not conf.no_overrides:
                 for exval, file_name in self._history[key]:
+                    exval = str(exval)
                     file_name = style_filename(file_name)
                     print(fmt_overridden.format(**locals()))
             file_name = style_filename(self._file.get(key, '<command line>'))
