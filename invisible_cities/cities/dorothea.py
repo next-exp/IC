@@ -29,27 +29,7 @@ class Dorothea(City):
         conf = self.conf
 
         self.drift_v = conf.drift_v
-        self._s1s2_selector = S12Selector(S1_Nmin     = conf.s1_nmin,
-                                          S1_Nmax     = conf.s1_nmax,
-                                          S1_Emin     = conf.s1_emin,
-                                          S1_Emax     = conf.s1_emax,
-                                          S1_Lmin     = conf.s1_lmin,
-                                          S1_Lmax     = conf.s1_lmax,
-                                          S1_Hmin     = conf.s1_hmin,
-                                          S1_Hmax     = conf.s1_hmax,
-                                          S1_Ethr     = conf.s1_ethr,
-
-                                          S2_Nmin     = conf.s2_nmin,
-                                          S2_Nmax     = conf.s2_nmax,
-                                          S2_Emin     = conf.s2_emin,
-                                          S2_Emax     = conf.s2_emax,
-                                          S2_Lmin     = conf.s2_lmin,
-                                          S2_Lmax     = conf.s2_lmax,
-                                          S2_Hmin     = conf.s2_hmin,
-                                          S2_Hmax     = conf.s2_hmax,
-                                          S2_NSIPMmin = conf.s2_nsipmmin,
-                                          S2_NSIPMmax = conf.s2_nsipmmax,
-                                          S2_Ethr     = conf.s2_ethr)
+        self._s1s2_selector = S12Selector(**kwds)
 
     def run(self):
         self.display_IO_info()
