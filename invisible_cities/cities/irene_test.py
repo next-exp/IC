@@ -52,12 +52,8 @@ def job_info_missing_pmts(config_tmpdir, ICDIR):
     pmt_active  = list(filter(lambda x: x not in pmt_missing, range(12)))
 
 
-    ifilename   = os.path.join(ICDIR,
-                                'database/test_data/',
-                                'electrons_40keV_z250_RWF.h5.h5')
-
-    ofilename   = os.path.join(str(config_tmpdir),
-                                'electron_40keV_z250_pmaps_missing_PMT.h5')
+    ifilename   = os.path.join(ICDIR, 'database/test_data/', 'electrons_40keV_z250_RWF.h5.h5')
+    ofilename   = os.path.join(config_tmpdir,                'electrons_40keV_z250_pmaps_missing_PMT.h5')
 
     return job_info(run_number, pmt_missing, pmt_active, ifilename, ofilename)
 
@@ -68,11 +64,8 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
 
-    PATH_IN = os.path.join(ICDIR,
-                           'database/test_data/',
-                           'electrons_40keV_z250_RWF.h5')
-    PATH_OUT = os.path.join(str(config_tmpdir),
-                            'electrons_40keV_z250_CWF.h5')
+    PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'electrons_40keV_z250_RWF.h5')
+    PATH_OUT = os.path.join(config_tmpdir,               'electrons_40keV_z250_CWF.h5')
 
     s1par, s2par = s12params
 
@@ -116,8 +109,7 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
     PATH_IN = os.path.join(ICDIR,
                            'database/test_data/',
                            'run_2983.h5')
-    PATH_OUT = os.path.join(str(config_tmpdir),
-                            'run_2983_pmaps.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'run_2983_pmaps.h5')
 
     s1par, s2par = s12params
 
@@ -144,11 +136,8 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
     # test, eg. h5in .root.Run.events[0:2] if one has run 2 events.
 
     #import pdb; pdb.set_trace()
-    PATH_IN = os.path.join(ICDIR,
-                           'database/test_data/',
-                           'run_2983.h5')
-    PATH_OUT = os.path.join(str(config_tmpdir),
-                            'run_2983_pmaps.h5')
+    PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'run_2983.h5')
+    PATH_OUT = os.path.join(config_tmpdir,               'run_2983_pmaps.h5')
 
     with tb.open_file(PATH_IN, mode='r') as h5in:
         evt_in  = h5in.root.Run.events[0:2]
@@ -172,7 +161,7 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
 @mark.serial
 @mark.slow
 def test_irene_output_file_structure(config_tmpdir, ICDIR):
-    PATH_OUT = os.path.join(str(config_tmpdir), 'run_2983_pmaps.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'run_2983_pmaps.h5')
 
     with tb.open_file(PATH_OUT) as h5out:
         assert "PMAPS"        in h5out.root
@@ -187,11 +176,8 @@ def test_irene_output_file_structure(config_tmpdir, ICDIR):
 
 def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
     # NB: explicit PATH_OUT
-    PATH_IN = os.path.join(ICDIR,
-                           'database/test_data/',
-                           'irene_bug_Kr_ACTIVE_7bar_RWF.h5')
-    PATH_OUT = os.path.join(str(config_tmpdir),
-                            'irene_bug_Kr_ACTIVE_7bar_CWF.h5')
+    PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'irene_bug_Kr_ACTIVE_7bar_RWF.h5')
+    PATH_OUT = os.path.join(config_tmpdir,               'irene_bug_Kr_ACTIVE_7bar_CWF.h5')
 
     s1par, s2par = s12params
 
