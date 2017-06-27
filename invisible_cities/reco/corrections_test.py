@@ -5,6 +5,7 @@ from ..core             import fit_functions as fitf
 from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection
 from ..reco.corrections import LifetimeCorrection
+from ..reco.corrections import LifetimeRCorrection
 
 from numpy.testing import assert_allclose
 from pytest        import fixture, mark
@@ -21,8 +22,9 @@ from hypothesis.extra.numpy import arrays
 data_1d = namedtuple("data_1d",   "X   E Eu Xdata       Edata")
 data_2d = namedtuple("data_2d",   "X Y E Eu Xdata Ydata Edata")
 
-FField_1d = namedtuple("Ffield"  , "X   P Pu F Fu fun u_fun")
-EField_1d = namedtuple("Efield1d", "X   E Eu F Fu imax")
+FField_1d = namedtuple("Ffield1d", "X   P Pu F Fu fun u_fun")
+FField_2d = namedtuple("Ffield2d", "X Y P Pu F Fu fun u_fun")
+EField_1d = namedtuple("Efield1d", "X   E Eu F Fu imax"     )
 EField_2d = namedtuple("Efield2d", "X Y E Eu F Fu imax jmax")
 
 
@@ -74,14 +76,36 @@ def uniform_energy_2d(draw, interp_strategy="nearest"):
 
 @composite
 def uniform_energy_fun_data_1d(draw):
-    fun   = lambda x, LT, u_LT: fitf.expo(x, 1, LT)
-    u_fun = lambda x, LT, u_LT: x * u_LT / LT**2 * fun(x, LT, u_LT)
+    fun   = lambda z, LT, u_LT: fitf.expo(z, 1, LT)
+    u_fun = lambda z, LT, u_LT: z * u_LT / LT**2 * fun(z, LT, u_LT)
     LT    = draw(floats(min_value=1e+2, max_value=1e+3))
     u_LT  = draw(floats(min_value=1e+1, max_value=1e+1))
-    X     = np.linspace(0, 600, 100)
-    F     =   fun(X, LT, u_LT)
-    u_F   = u_fun(X, LT, u_LT)
-    return FField_1d(X, LT, u_LT, F, u_F, fun, u_fun)
+    Z     = np.linspace(0, 600, 100)
+    F     =   fun(Z, LT, u_LT)
+    u_F   = u_fun(Z, LT, u_LT)
+    return FField_1d(Z, LT, u_LT, F, u_F, fun, u_fun)
+
+
+@composite
+def uniform_energy_fun_data_2d(draw):
+    def fun(z, r, a, b, c, u_a, u_b, u_c):
+        LT = a - b * r * np.exp(r/c)
+        return fitf.expo(z, 1, LT)
+
+    def u_fun(z, r, a, b, c, u_a, u_b, u_c):
+        LT   = a - b * r * np.exp(r/c)
+        u_LT = (u_a**2 + u_b**2 * np.exp(2*r/c) +
+                u_c**2 * b**2 * r**2 * np.exp(2*r/c)/c**4)**0.5
+        return z * u_LT / LT**2 * fun(z, r, a, b, c, u_a, u_b, u_c)
+
+    a     = draw(floats(min_value=1e+2, max_value=1e+3));u_a = 0.1*a
+    b     = draw(floats(min_value=1e-2, max_value=1e-1));u_b = 0.1*b
+    c     = draw(floats(min_value=1e+1, max_value=1e+2));u_c = 0.1*c
+    Z     = np.linspace(0, 600, 100)
+    R     = np.linspace(0, 200, 100)
+    F     =   fun(Z, R, a, b, c, u_a, u_b, u_c)
+    u_F   = u_fun(Z, R, a, b, c, u_a, u_b, u_c)
+    return FField_2d(Z, R, (a, b, c), (u_a, u_b, u_c), F, u_F, fun, u_fun)
 
 
 @fixture
@@ -206,6 +230,16 @@ def test_lifetimecorrection(toy_f_data):
     assert_allclose(u_F, u_corrected)
 
 
+@given(uniform_energy_fun_data_2d())
+def test_lifetimeRcorrection(toy_f_data):
+    Z, R, pars, u_pars, F, u_F, fun, u_fun = toy_f_data
+    correct = LifetimeRCorrection(pars, u_pars)
+    f_corrected, u_corrected = correct(Z, R)
+
+    assert_allclose(  F, f_corrected)
+    assert_allclose(u_F, u_corrected)
+
+
 #--------------------------------------------------------
 
 
@@ -240,3 +274,4 @@ def test_corrections_2d(gauss_data_2d):
     x    = x[:-1] + np.diff(x) * 0.5
     f    = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
     assert f.chi2 < 3
+
