@@ -144,7 +144,7 @@ def test_configure(config_tmpdir, spec):
     cmdline_spec = { opt : value  for (opt, _, value) in spec }
 
     # Compose the command line
-    args_base = 'program_name -c {conf_file_name} '.format(**locals())
+    args_base = 'program_name {conf_file_name} '.format(**locals())
     args_options = ' '.join(extra_args)
     args = (args_base + args_options).split()
 
