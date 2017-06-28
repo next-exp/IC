@@ -12,8 +12,9 @@ import numpy  as np
 
 from pytest import mark
 
-from .. core import system_of_units as units
+from .. core                 import system_of_units as units
 from .. core.random_sampling import NoiseSampler as SiPMsNoiseSampler
+from .. core.configure       import configure
 
 from .. reco     import tbl_functions as tbl
 from .. reco     import wfm_functions as wfm
@@ -25,9 +26,8 @@ from .  diomira  import Diomira
 
 
 def test_diomira_fee_table(ICDIR):
-    """Test that FEE table reads back correctly with expected values."""
-    RWF_file = os.path.join(ICDIR,
-                            'database/test_data/electrons_40keV_z250_RWF.h5')
+    "Test that FEE table reads back correctly with expected values."
+    RWF_file = os.path.join(ICDIR, 'database/test_data/electrons_40keV_z250_RWF.h5')
 
     with tb.open_file(RWF_file, 'r') as e40rwf:
         fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
@@ -67,7 +67,7 @@ def test_diomira_cwf_blr(electron_RWF_file):
         pmtrwf = e40rwf.root.RD.pmtrwf
         pmtblr = e40rwf.root.RD.pmtblr
         DataPMT = load_db.DataPMT(0)
-        coeff_c = DataPMT.coeff_c.values.astype(np.double)
+        coeff_c   = DataPMT.coeff_c  .values.astype(np.double)
         coeff_blr = DataPMT.coeff_blr.values.astype(np.double)
 
         event = 0
@@ -143,8 +143,7 @@ def test_diomira_identify_bug(ICDIR):
     The same event is later processed with Irene (where a protection
     that skips empty events has been added) to ensure that no crash occur."""
 
-    infile = os.path.join(ICDIR,
-                          'database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
+    infile = os.path.join(ICDIR, 'database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
     with tb.open_file(infile, 'r') as h5in:
 
         pmtrd  = h5in.root.pmtrd
@@ -159,14 +158,17 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
     PATH_OUT = os.path.join(config_tmpdir,                             'electrons_40keV_z250_RWF.h5')
     start_evt  = Diomira.event_number_from_input_file_name(PATH_IN)
     run_number = 0
-
-    diomira = Diomira(run_number = run_number,
-                      files_in   = [PATH_IN],
-                      file_out   = PATH_OUT,
-                      first_evt  = start_evt)
-
     nrequired = 2
-    nactual = diomira.run(nmax=nrequired)
+
+    conf = configure('diomira invisible_cities/config/diomira.conf'.split()).as_dict
+    conf.update(dict(run_number = run_number,
+                     files_in   = PATH_IN,
+                     file_out   = PATH_OUT,
+                     first_evt  = start_evt,
+                     nmax       = nrequired))
+
+    diomira = Diomira(**conf)
+    nactual = diomira.run()
 
     if nrequired > 0:
         assert nrequired == nactual
