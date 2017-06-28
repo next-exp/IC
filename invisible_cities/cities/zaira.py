@@ -12,56 +12,26 @@ from .. core.configure      import configure
 from .. reco.dst_functions  import load_dst
 from .. io.kdst_io           import xy_writer
 
+from .  diomira     import Diomira
+
 
 class Zaira(MapCity):
-    def __init__(self,
-                 lifetime,
 
-                 run_number   = 0,
-                 files_in     = None,
-                 file_out     = None,
-                 compression  = 'ZLIB4',
-                 nprint       = 10000,
+    go = Diomira.go
 
-                 dst_group    = "DST",
-                 dst_node     = "Events",
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        conf = self.conf
 
-                 xbins        =  100,
-                 xmin         = None,
-                 xmax         = None,
-
-                 ybins        =  100,
-                 ymin         = None,
-                 ymax         = None,
-
-                 fiducial_z   = None,
-                 fiducial_e   = None):
-
-        City.__init__(self,
-                      run_number  = run_number,
-                      files_in    = files_in,
-                      file_out    = file_out,
-                      compression = compression,
-                      nprint      = nprint)
-
-        MapCity.__init__(self,
-                         lifetime,
-
-                         xbins        = xbins,
-                         xmin         = xmin,
-                         xmax         = xmax,
-
-                         ybins        = ybins,
-                         ymin         = ymin,
-                         ymax         = ymax)
+        fiducial_z, fiducial_e = conf.fiducial_z, conf.fiducial_e
 
         self._fiducial_z = ((self.det_geo.ZMIN[0], self.det_geo.ZMAX[0])
                              if fiducial_z is None
                              else fiducial_z)
         self._fiducial_e = (0, np.inf) if fiducial_e is None else fiducial_e
 
-        self._dst_group  = dst_group
-        self._dst_node   = dst_node
+        self._dst_group  = conf.dst_group
+        self._dst_node   = conf.dst_node
 
     def run(self):
         dsts = [load_dst(input_file, self._dst_group, self._dst_node)
@@ -87,40 +57,3 @@ class Zaira(MapCity):
             write_xy(*xycorr._xs, xycorr._fs, xycorr._us, nevt)
 
         return len(dst)
-
-
-def ZAIRA(argv = sys.argv):
-    """ZAIRA DRIVER"""
-
-    # get parameters dictionary
-    CFP = configure(argv)
-
-    #class instance
-    zaira = Zaira(run_number   = CFP.RUN_NUMBER,
-                  files_in     = [CFP.FILE_IN],
-                  file_out     = CFP.FILE_OUT,
-                  compression  = CFP.COMPRESSION,
-                  nprint       = CFP.NPRINT,
-
-                  dst_group    = CFP.DST_GROUP,
-                  dst_node     = CFP.DST_NODE,
-
-                  lifetime     = CFP.LIFETIME,
-                  xbins        = CFP.XBINS,
-                  xmin         = CFP.XMIN if "XMIN" in CFP else None,
-                  xmax         = CFP.XMAX if "XMAX" in CFP else None,
-
-                  ybins        = CFP.YBINS,
-                  ymin         = CFP.YMIN if "YMIN" in CFP else None,
-                  ymax         = CFP.YMAX if "YMAX" in CFP else None,
-
-                  fiducial_z   = CFP.FIDUCIAL_Z if "FIDUCIAL_Z" in CFP else None,
-                  fiducial_e   = CFP.FIDUCIAL_E if "FIDUCIAL_E" in CFP else None)
-
-    t0   = time.time()
-    nevt = zaira.run()
-    t1   = time.time()
-    dt   = t1 - t0
-
-    if nevt > 0:
-        print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))

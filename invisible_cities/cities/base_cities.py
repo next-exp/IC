@@ -13,13 +13,19 @@ Feburary, 2017.
 """
 
 import sys
+from argparse import Namespace
+from operator import attrgetter
+from glob     import glob
+from time     import time
+from os.path  import expandvars
 
 import numpy  as np
 import tables as tb
 
-from .. core.configure         import print_configuration
+from .. core.configure         import configure
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
+from .. core.ic_types          import minmax
 from .. core.system_of_units_c import units
 from .. core                   import fit_functions        as fitf
 
@@ -34,12 +40,13 @@ from ..reco               import dst_functions    as dstf
 from ..reco               import tbl_functions    as tbf
 from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
+from ..reco.params        import S12Params
 from ..reco.event_model   import SensorParams
 from ..reco.nh5           import DECONV_PARAM
 from ..reco.corrections   import Correction
 from ..reco.corrections   import Fcorrection
 from ..reco.corrections   import LifetimeCorrection
-from ..reco.xy_algorithms import barycenter
+from ..reco.xy_algorithms import find_algorithm
 
 from ..sierpe             import blr
 from ..sierpe             import fee as FE
@@ -58,24 +65,51 @@ class City:
 
      """
 
-    def __init__(self,
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = 'ZLIB4',
-                 nprint      = 10000):
+    def __init__(self, **kwds):
+        conf = Namespace(**kwds)
 
-        self.run_number     = run_number
-        self.nprint         = nprint  # default print frequency
-        self.input_files    = files_in
-        self.output_file    = file_out
-        self.compression    = compression
-        # access data base
-        DataPMT             = load_db.DataPMT (run_number)
-        DataSiPM            = load_db.DataSiPM(run_number)
-        self.det_geo        = load_db.DetectorGeo()
+        self.conf = conf
 
-        # This is JCK-1: text reveals symmetry!
+        if not hasattr(conf, 'files_in'):
+            raise NoInputFiles
+
+        if not hasattr(conf, 'file_out'):
+            raise NoOutputFile
+
+        self.input_files = sorted(glob(expandvars(conf.files_in)))
+        self.output_file =             expandvars(conf.file_out)
+        self.compression = conf.compression
+        self.run_number  = conf.run_number
+        self.nprint      = conf.nprint  # default print frequency
+        self.nmax        = conf.nmax
+
+        self.set_up_database()
+
+    @classmethod
+    def drive(cls, argv):
+        conf = configure(argv)
+        opts = conf.as_namespace
+        if not opts.hide_config:
+            conf.display()
+        if opts.print_config_only:
+            return
+        instance = cls(**conf.as_dict)
+        instance.go()
+
+    def go(self):
+        t0 = time()
+        nevt_in, nevt_out = self.run()
+        t1 = time()
+        dt = t1 - t0
+        print("run {} evts in {} s, time/event = {}".format(nevt_in, dt, dt/nevt_in))
+
+    def set_up_database(self):
+        DataPMT       = load_db.DataPMT (self.run_number)
+        DataSiPM      = load_db.DataSiPM(self.run_number)
+        self.det_geo  = load_db.DetectorGeo()
+        self.DataPMT  = DataPMT
+        self.DataSiPM = DataSiPM
+
         self.xs              = DataSiPM.X.values
         self.ys              = DataSiPM.Y.values
         self.pmt_active      = np.nonzero(DataPMT.Active.values)[0].tolist()
@@ -85,41 +119,32 @@ class City:
         self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
         self.noise_rms       = DataPMT.noise_rms.values      .astype(np.double)
 
-        self.DataPMT  = DataPMT
-        self.DataSiPM = DataSiPM
-
     @property
     def monte_carlo(self):
         return self.run_number <= 0
-
-    def check_files(self):
-        if not self.input_files:
-            raise NoInputFiles('input file list is empty, must set before running')
-        if not self.output_file:
-            raise NoOutputFile('must set output file before running')
 
     def conditional_print(self, evt, n_events_tot):
         if n_events_tot % self.nprint == 0:
             print('event in file = {}, total = {}'
                   .format(evt, n_events_tot))
 
-    def max_events_reached(self, nmax, n_events_in):
-        if nmax < 0:
+    def max_events_reached(self, n_events_in):
+        if self.nmax < 0:
             return False
-        if n_events_in == nmax:
+        if n_events_in == self.nmax:
             print('reached max nof of events (= {})'
-                  .format(nmax))
+                  .format(self.nmax))
             return True
         return False
 
 
-    def display_IO_info(self, nmax):
+    def display_IO_info(self):
         print("""
                  {} will run a max of {} events
                  Input Files = {}
                  Output File = {}
                           """.format(self.__class__.__name__,
-                                     nmax, self.input_files, self.output_file))
+                                     self.nmax, self.input_files, self.output_file))
 
     @staticmethod
     def get_rwf_vectors(h5in):
@@ -180,25 +205,9 @@ class SensorResponseCity(City):
        tracking plane sensors (PMTs and SiPMs).
     """
 
-    def __init__(self,
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = 'ZLIB4',
-                 nprint      = 10000,
-                 # Parameters added at this level
-                 sipm_noise_cut = 3 * units.pes,
-                 first_evt = 0):
-
-        City.__init__(self,
-                      run_number  = run_number,
-                      files_in    = files_in,
-                      file_out    = file_out,
-                      compression = compression,
-                      nprint      = nprint)
-
-        self.sipm_noise_cut = sipm_noise_cut
-        self.first_evt      = first_evt
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.sipm_noise_cut = self.conf.sipm_noise_cut
 
     def simulate_sipm_response(self, event, sipmrd,
                                sipms_noise_sampler):
@@ -260,28 +269,14 @@ class DeconvolutionCity(City):
        thr_trigger in the rising signal (thr_trigger)
     """
 
-    def __init__(self,
-                 run_number            = 0,
-                 files_in              = None,
-                 file_out              = None,
-                 compression           = 'ZLIB4',
-                 nprint                = 10000,
-                 # Parameters added at this level
-                 n_baseline            = 28000,
-                 thr_trigger           = 5 * units.adc,
-                 acum_discharge_length = 5000):
-
-        City.__init__(self,
-                      run_number  = run_number,
-                      files_in    = files_in,
-                      file_out    = file_out,
-                      compression = compression,
-                      nprint      = nprint)
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        conf = self.conf
 
         # BLR parameters
-        self.n_baseline            = n_baseline
-        self.thr_trigger           = thr_trigger
-        self.acum_discharge_length = acum_discharge_length
+        self.n_baseline            = conf.n_baseline
+        self.thr_trigger           = conf.thr_trigger
+        self.acum_discharge_length = conf.acum_discharge_length
 
     def write_deconv_params(self, ofile):
         group = ofile.create_group(ofile.root, "DeconvParams")
@@ -323,42 +318,19 @@ class CalibratedCity(DeconvolutionCity):
              MAU + threshold.
        """
 
-    def __init__(self,
-                 run_number            = 0,
-                 files_in              = None,
-                 file_out              = None,
-                 compression           = 'ZLIB4',
-                 nprint                = 10000,
-                 n_baseline            = 28000,
-                 thr_trigger           = 5 * units.adc,
-                 acum_discharge_length = 5000,
-                 # Parameters added at this level
-                 n_MAU                 = 100,
-                 thr_MAU               = 3.0 * units.adc,
-                 thr_csum_s1           = 0.2 * units.pes,
-                 thr_csum_s2           = 1.0 * units.pes,
-                 n_MAU_sipm            = 100,
-                   thr_sipm            = 5.0 * units.pes):
+    def __init__(self, **kwds):
 
-        DeconvolutionCity.__init__(self,
-                                   run_number            = run_number,
-                                   files_in              = files_in,
-                                   file_out              = file_out,
-                                   compression           = compression,
-                                   nprint                = nprint,
-                                   n_baseline            = n_baseline,
-                                   thr_trigger           = thr_trigger,
-                                   acum_discharge_length = acum_discharge_length)
-
+        super().__init__(**kwds)
+        conf = self.conf
         # Parameters of the PMT csum.
-        self.n_MAU       = n_MAU
-        self.thr_MAU     = thr_MAU
-        self.thr_csum_s1 = thr_csum_s1
-        self.thr_csum_s2 = thr_csum_s2
+        self.n_MAU       = conf.n_mau
+        self.thr_MAU     = conf.thr_mau
+        self.thr_csum_s1 = conf.thr_csum_s1
+        self.thr_csum_s2 = conf.thr_csum_s2
 
         # Parameters of the SiPM signal
-        self.n_MAU_sipm = n_MAU_sipm
-        self.  thr_sipm =   thr_sipm
+        self.n_MAU_sipm = conf.n_mau_sipm
+        self.  thr_sipm = conf.  thr_sipm
 
     def calibrated_pmt_sum(self, CWF):
         """Return the csum and csum_mau calibrated sums."""
@@ -386,45 +358,24 @@ class PmapCity(CalibratedCity):
 
     """
 
-    def __init__(self,
-                 run_number            = 0,
-                 files_in              = None,
-                 file_out              = None,
-                 compression           = 'ZLIB4',
-                 nprint                = 10000,
-                 n_baseline            = 28000,
-                 thr_trigger           = 5 * units.adc,
-                 acum_discharge_length = 5000,
-                 n_MAU                 = 100,
-                 thr_MAU               = 3.0 * units.adc,
-                 thr_csum_s1           = 0.2 * units.adc,
-                 thr_csum_s2           = 1.0 * units.adc,
-                 n_MAU_sipm            = 100,
-                 thr_sipm              = 5.0 * units.pes,
-                 # Parameters added at this level
-                 s1_params             = None,
-                 s2_params             = None,
-                 thr_sipm_s2           = 30 * units.pes):
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        conf = self.conf
+        self.s1_params = S12Params(time = minmax(min   = conf.s1_tmin,
+                                                 max   = conf.s1_tmax),
+                                   stride              = conf.s1_stride,
+                                   length = minmax(min = conf.s1_lmin,
+                                                   max = conf.s1_lmax),
+                                   rebin               = False)
 
-        CalibratedCity.__init__(self,
-                                run_number            = run_number,
-                                files_in              = files_in,
-                                file_out              = file_out,
-                                compression           = compression,
-                                nprint                = nprint,
-                                n_baseline            = n_baseline,
-                                thr_trigger           = thr_trigger,
-                                acum_discharge_length = acum_discharge_length,
-                                n_MAU                 = n_MAU,
-                                thr_MAU               = thr_MAU,
-                                thr_csum_s1           = thr_csum_s1,
-                                thr_csum_s2           = thr_csum_s2,
-                                n_MAU_sipm            = n_MAU_sipm,
-                                  thr_sipm            =   thr_sipm)
+        self.s2_params = S12Params(time = minmax(min   = conf.s2_tmin,
+                                                 max   = conf.s2_tmax),
+                                   stride              = conf.s2_stride,
+                                   length = minmax(min = conf.s2_lmin,
+                                                   max = conf.s2_lmax),
+                                   rebin               = True)
 
-        self.s1_params   = s1_params
-        self.s2_params   = s2_params
-        self.thr_sipm_s2 = thr_sipm_s2
+        self.thr_sipm_s2 = conf.thr_sipm_s2
 
     def find_S12(self, s1_ene, s1_indx, s2_ene, s2_indx):
         """Return S1 and S2."""
@@ -452,17 +403,12 @@ class PmapCity(CalibratedCity):
 
 
 class MapCity(City):
-    def __init__(self,
-                 lifetime           ,
-                 u_lifetime   =    1,
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
 
-                 xbins        =  100,
-                 xmin         = None,
-                 xmax         = None,
-
-                 ybins        =  100,
-                 ymin         = None,
-                 ymax         = None):
+        conf = self.conf
+        required_names = 'lifetime u_lifetime xmin xmax ymin ymax xbins ybins'.split()
+        lifetime, u_lifetime, xmin, xmax, ymin, ymax, xbins, ybins = attrgetter(*required_names)(conf)
 
         self.  _lifetimes = [lifetime]   if not np.shape(  lifetime) else   lifetime
         self._u_lifetimes = [u_lifetime] if not np.shape(u_lifetime) else u_lifetime
@@ -490,25 +436,11 @@ class MapCity(City):
 
 
 class HitCollectionCity(City):
-    def __init__(self,
-                 run_number  = 0,
-                 files_in    = None,
-                 file_out    = None,
-                 compression = 'ZLIB4',
-                 nprint      = 10000,
-                 # Parameters added at this level
-                 rebin            = 1,
-                 reco_algorithm   = barycenter):
-
-        City.__init__(self,
-                         run_number  = run_number,
-                         files_in    = files_in,
-                         file_out    = file_out,
-                         compression = compression,
-                         nprint      = nprint)
-
-        self.rebin          = rebin
-        self.reco_algorithm = reco_algorithm
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        conf  = self.conf
+        self.rebin          = conf.rebin
+        self.reco_algorithm = find_algorithm(conf.reco_algorithm)
 
     def rebin_s2(self, S2, Si):
         if self.rebin <= 1:

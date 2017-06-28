@@ -17,7 +17,6 @@ from argparse  import Namespace
 import tables as tb
 
 from .. core.configure         import configure
-from .. core.configure         import print_configuration
 from .. core.random_sampling   import NoiseSampler as SiPMsNoiseSampler
 from .. core.system_of_units_c import units
 from .. core.exceptions        import ParameterNotSet
@@ -42,30 +41,17 @@ class Diomira(SensorResponseCity):
     traking plane sensors.
 
     """
-    def __init__(self,
-                 run_number     = 0,
-                 files_in       = None,
-                 file_out       = None,
-                 sipm_noise_cut = 3 * units.pes,
-                 first_evt      = 0):
-        """
-        -1. Inits the machine
-        -2. Loads the data base to access calibration data
-        -3. Sets all switches to default value
-        """
 
-        SensorResponseCity.__init__(self,
-                                    run_number     = run_number,
-                                    files_in       = files_in,
-                                    file_out       = file_out,
-                                    sipm_noise_cut = sipm_noise_cut,
-                                    first_evt      = first_evt)
-        self.check_files()
+    def go(self):
+        t0 = time()
+        nevt_tot = self.run()
+        t1 = time()
+        dt = t1 - t0
+        print("run {} evts in {} s, time/event = {}".format(nevt_tot, dt, dt/nevt_tot))
 
+    def run(self):
 
-    def run(self, nmax):
-
-        self.display_IO_info(nmax)
+        self.display_IO_info()
         sp = self.get_sensor_rd_params(self.input_files[0])
         print(sp)
 
@@ -93,10 +79,10 @@ class Diomira(SensorResponseCity):
             # Create and store Front-End Electronics parameters (for the PMTs)
             write_FEE_table(h5out)
 
-            n_events_tot = self._file_loop(writers, nmax)
+            n_events_tot = self._file_loop(writers)
         return n_events_tot
 
-    def _file_loop(self, writers, nmax):
+    def _file_loop(self, writers):
         n_events_tot = 0
         for filename in self.input_files:
             first_event_no = self.event_number_from_input_file_name(filename)
@@ -107,13 +93,13 @@ class Diomira(SensorResponseCity):
                 events_info = self.get_run_and_event_info(h5in)
                 n_events_tot = self._event_loop(NEVT, pmtrd, sipmrd, events_info,
                                                 writers,
-                                                nmax, n_events_tot, h5in, first_event_no)
+                                                n_events_tot, h5in, first_event_no)
         return n_events_tot
 
 
     def _event_loop(self, NEVT, pmtrd, sipmrd, events_info,
                     write,
-                    nmax, n_events_tot, h5in, first_event_no):
+                    n_events_tot, h5in, first_event_no):
 
         for evt in range(NEVT):
             # Simulate detector response
@@ -132,29 +118,6 @@ class Diomira(SensorResponseCity):
 
             n_events_tot += 1
             self.conditional_print(evt, n_events_tot)
-            if self.max_events_reached(nmax, n_events_tot):
+            if self.max_events_reached(n_events_tot):
                 break
         return n_events_tot
-
-
-def DIOMIRA(argv=sys.argv):
-    """DIOMIRA DRIVER"""
-
-    CFP = configure(argv)
-    files_in = glob(CFP.FILE_IN)
-    files_in.sort()
-
-    # TODO: remove first_event now that we use the hash
-    diomira = Diomira(first_evt      = CFP.FIRST_EVT,
-                      files_in       = files_in,
-                      file_out       = CFP.FILE_OUT,
-                      sipm_noise_cut = CFP.NOISE_CUT)
-
-    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
-    t0 = time()
-    nevt = diomira.run(nmax=nevts)
-    t1 = time()
-    dt = t1 - t0
-
-    if nevt > 0:
-        print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
