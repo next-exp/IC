@@ -75,7 +75,7 @@ do not interrupt the peak if next sample comes within stride
 accept the peak only if within [l.min, l.max)
 accept the peak only if within [t.min, t.max)
 """
-cpdef find_S12(double [:] wfzs, int [:] index,
+cpdef find_S12(double [:] csum, int [:] index,
                time=*, length=*,
                int stride=*, rebin=*, rebin_stride=*)
 
