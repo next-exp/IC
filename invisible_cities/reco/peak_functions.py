@@ -231,7 +231,7 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
     return T, E
 
 
-def find_S12(csum, index,
+def _find_S12(csum, index,
               time   = minmax(0, 1e+6),
               length = minmax(8, 1000000),
               stride=4, rebin=False, rebin_stride=40):
