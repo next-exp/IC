@@ -335,7 +335,6 @@ def sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
     return {i: sipm_s2(SIPM, S2, thr=thr) for i, S2 in S2d.items()}
 
 
-
 def sipm_s2(dSIPM, S2, thr=5*units.pes):
     """Given a vector with SIPMs (energies above threshold), return a dict
     of np arrays, where the key is the sipm with signal.
@@ -354,6 +353,7 @@ def sipm_s2(dSIPM, S2, thr=5*units.pes):
         if psum > thr:
             SIPML[ID] = slices.astype(np.double)
     return SIPML
+
 
 def compute_csum_and_pmaps(event, pmtrwf, sipmrwf, s1par, s2par, thresholds,
                         calib_vectors, deconv_params):
@@ -402,8 +402,8 @@ def compute_csum_and_pmaps(event, pmtrwf, sipmrwf, s1par, s2par, thresholds,
     s1_ene, s1_indx = cpf.wfzs(csum_mau, threshold=thr.thr_s1)
 
     # S1 and S2
-    S1 = cpf.find_S12(s1_ene, s1_indx, **s1_params._asdict())
-    S2 = cpf.find_S12(s2_ene, s2_indx, **s2_params._asdict())
+    S1 = cpf.find_S12(csum, s1_indx, **s1_params._asdict())
+    S2 = cpf.find_S12(csum, s2_indx, **s2_params._asdict())
 
     #S2Si
     sipm = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
