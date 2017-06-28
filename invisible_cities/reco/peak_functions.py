@@ -234,7 +234,7 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
 def find_S12(csum, index,
               time   = minmax(0, 1e+6),
               length = minmax(8, 1000000),
-              stride=4, rebin=False, rebin_stride=40, default_binsize=25*units.ns):
+              stride=4, rebin=False, rebin_stride=40):
     """
     Find S1/S2 peaks.
     input:
@@ -273,7 +273,7 @@ def find_S12(csum, index,
             j += 1
             S12[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
 
-        # Same s12, update end index
+        # Update end index in current S12
         S12[j][1] = index[i] + 1
 
     j = 0
@@ -284,12 +284,10 @@ def find_S12(csum, index,
 
         S12wf = csum[i_peak[0]: i_peak[1]]
         if rebin == True:
-            TR, ER = _rebin_waveform(*cpf._time_from_index(i_peak),
-                                        S12wf,
-                                        stride = rebin_stride)
+            TR, ER = _rebin_waveform(*cpf._time_from_index(i_peak), S12wf, stride=rebin_stride)
             S12L[j] = [TR, ER]
         else:
-            S12L[j] = [np.arange(*cpf._time_from_index(i_peak), default_binsize), S12wf]
+            S12L[j] = [np.arange(*cpf._time_from_index(i_peak), 25*units.ns), S12wf]
         j += 1
 
     return pio.S12(S12L)
