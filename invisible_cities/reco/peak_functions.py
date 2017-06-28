@@ -187,12 +187,14 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
     """
 
     assert (ts < t_finish)
+    bs = 25*units.ns  # bin size
+    rbs = bs * stride # rebinned bin size
 
     # Find the nearest time (in stride samples) before ts
-    t_start  = int((ts // (stride*25*units.ns)) * stride*25*units.ns)
+    t_start  = int((ts // (rbs)) * rbs)
     t_total  = t_finish - t_start
-    n = int(t_total // (stride*25*units.ns))  # number of samples
-    r = int(t_total  % (stride*25*units.ns))
+    n = int(t_total // (rbs))  # number of samples
+    r = int(t_total  % (rbs))
 
     lenb = n
     if r > 0: lenb = n+1
@@ -203,29 +205,29 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
     j = 0
     for i in range(n):
         esum  = 0
-        for tb in range(int(t_start +  i   *stride*25*units.ns),
-                        int(t_start + (i+1)*stride*25*units.ns),
-                        int(25*units.ns)):
+        for tb in range(int(t_start +  i   *rbs),
+                        int(t_start + (i+1)*rbs),
+                        int(bs)):
             if tb < ts: continue
             esum += wf[j]
             j    += 1
 
         E[i] = esum
-        if i == 0: T[0] = (ts + t_start +   stride*25*units.ns) / 2
-        else     : T[i] = (     t_start + i*stride*25*units.ns + stride*25*units.ns/2)
+        if i == 0: T[0] = np.mean((ts, t_start + rbs))
+        else     : T[i] = t_start + i*rbs + rbs/2
 
     if r > 0:
         esum  = 0
-        for tb in range(int(t_start + n*stride*25*units.ns),
+        for tb in range(int(t_start + n*rbs),
                         int(t_finish),
-                        int(25*units.ns)):
+                        int(bs)):
             if tb < ts: continue
             esum += wf[j]
             j    += 1
 
         E[n] = esum
-        if n == 0: T[n] = (ts + t_finish) / 2
-        else     : T[n] = (t_start + n*stride*25*units.ns + t_finish) / 2
+        if n == 0: T[n] = np.mean((ts             , t_finish))
+        else     : T[n] = np.mean((t_start + n*rbs, t_finish))
 
     assert j == len(wf) # ensures you have rebinned correctly the waveform
     return T, E
