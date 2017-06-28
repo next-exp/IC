@@ -20,7 +20,7 @@ def test_zaira_KrMC(config_tmpdir, ICDIR):
 
     from .. core.system_of_units import ns
 
-    conf = configure('dummy -c invisible_cities/config/zaira.conf'.split()).as_dict
+    conf = configure('dummy invisible_cities/config/zaira.conf'.split()).as_dict
     conf.update(dict(run_number = 0,
                      files_in   = PATH_IN,
                      file_out   = PATH_OUT,
