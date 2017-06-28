@@ -339,7 +339,7 @@ def test_csum_zs_s12():
     npt.assert_allclose(pt1, ct2)
     npt.assert_allclose(pe1, ce2)
 
-    S12L1 = pf.find_S12(csum, wfzs_indx,
+    S12L1 = pf._find_S12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
