@@ -159,6 +159,7 @@ cpdef calibrated_pmt_mau(double [:, :]  CWF,
 
     return np.asarray(pmt_thr), np.asarray(pmt_thr_mau)
 
+
 cpdef wfzs(double [:] wf, double threshold=0):
     """
     takes a waveform wf and returns the values of the wf above threshold:
@@ -283,7 +284,7 @@ cpdef correct_S1_ene(S1, np.ndarray csum):
         S1_corr[peak_no] = t, csum[indices]
     return pio.S12(S1_corr)
 
-#cpdef rebin_waveform(double[:] t, double[:] e, int stride = 40):
+
 cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
     """
     Rebin a waveform according to stride
@@ -293,12 +294,14 @@ cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
     """
 
     assert (ts < t_finish)
+    cdef int  bs = 25*units.ns # bin size
+    cdef int rbs = bs * stride # rebinned bin size
 
     # Find the nearest time (in stride samples) before ts
-    cdef int t_start  = (ts // (stride*25*units.ns)) * stride*25*units.ns
+    cdef int t_start  = (ts // (rbs)) * rbs
     cdef int t_total  = t_finish - t_start
-    cdef int n = t_total // (stride*25*units.ns)
-    cdef int r = t_total  % (stride*25*units.ns)
+    cdef int n = t_total // (rbs)
+    cdef int r = t_total  % (rbs)
 
     lenb = n
     if r > 0: lenb = n+1
@@ -311,32 +314,33 @@ cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
     cdef double esum
     for i in range(n):
         esum = 0
-        for tb in range(int(t_start +     i*stride*25*units.ns),
-                        int(t_start + (1+i)*stride*25*units.ns),
-                        int(25*units.ns)):
+        for tb in range(int(t_start +     i*rbs),
+                        int(t_start + (1+i)*rbs),
+                        int(bs)):
             if tb < ts: continue
             esum  += wf[j]
             j     += 1
 
         E[i] = esum
-        if i == 0: T[i] = np.mean((ts, t_start + stride*25*units.ns))
-        else     : T[i] = t_start + i*stride*25*units.ns + stride*25*units.ns/2.0
+        if i == 0: T[i] = np.mean((ts, t_start + rbs))
+        else     : T[i] = t_start + i*rbs + rbs/2.0
 
     if r > 0:
         esum  = 0
-        for tb in range(int(t_start + n*stride*25*units.ns),
+        for tb in range(int(t_start + n*rbs),
                        int(t_finish),
-                       int(25*units.ns)):
+                       int(bs)):
             if tb < ts:continue
             esum  += wf[j]
             j     += 1
 
         E[n] = esum
         if n == 0: T[n] = np.mean((ts, t_finish))
-        else     : T[n] = (t_start + n*stride*25*units.ns + t_finish) / 2.0
+        else     : T[n] = (t_start + n*rbs + t_finish) / 2.0
 
     assert j == len(wf)
     return np.asarray(T), np.asarray(E)
+
 
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
                   double [:] adc_to_pes, double thr,
