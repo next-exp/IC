@@ -62,6 +62,8 @@ import  numpy as np
 from scipy import signal
 
 from .. io import pmap_io as pio
+from .. core.system_of_units_c import units
+
 
 cpdef calibrated_pmt_sum(double [:, :]  CWF,
                          double [:]     adc_to_pes,
@@ -295,8 +297,8 @@ cpdef correct_S1_ene(S1, np.ndarray csum):
         S1_corr[peak_no] = t, csum[indices]
     return pio.S12(S1_corr)
 
-
-cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
+#cpdef rebin_waveform(double[:] t, double[:] e, int stride = 40):
+cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
     """
     Rebin a waveform according to stride
     The input waveform is a vector such that the index expresses time bin and the
@@ -304,43 +306,50 @@ cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
     The function returns the rebinned T& E vectors.
     """
 
-    assert len(t) == len(e)
+    assert (ts < t_finish)
 
-    cdef int n = len(t) // stride
-    cdef int r = len(t) %  stride
+    # Find the nearest time (in stride samples) before ts
+    cdef int t_start  = (ts // (stride*25*units.ns)) * stride*25*units.ns
+    cdef int t_total  = t_finish - t_start
+    cdef int n = t_total // (stride*25*units.ns)
+    cdef int r = t_total  % (stride*25*units.ns)
 
     lenb = n
-    if r > 0:
-        lenb = n+1
+    if r > 0: lenb = n+1
 
     cdef double [:] T = np.zeros(lenb, dtype=np.double)
     cdef double [:] E = np.zeros(lenb, dtype=np.double)
 
     cdef int j = 0
-    cdef int i, k
-    cdef double esum, tmean
+    cdef int i, tb
+    cdef double esum
     for i in range(n):
         esum = 0
-        tmean = 0
-        for k in range(j, j + stride):
-            esum  += e[k]
-            tmean += t[k]
+        for tb in range(int(t_start +     i*stride*25*units.ns),
+                        int(t_start + (1+i)*stride*25*units.ns),
+                        int(25*units.ns)):
+            if tb < ts: continue
+            esum  += wf[j]
+            j     += 1
 
-        tmean /= stride
         E[i] = esum
-        T[i] = tmean
-        j += stride
+        if i == 0: T[i] = np.mean((ts, t_start + stride*25*units.ns))
+        else     : T[i] = t_start + i*stride*25*units.ns + stride*25*units.ns/2.0
 
     if r > 0:
         esum  = 0
-        tmean = 0
-        for k in range(j, len(t)):
-            esum  += e[k]
-            tmean += t[k]
-        tmean /= (len(t) - j)
-        E[n] = esum
-        T[n] = tmean
+        for tb in range(int(t_start + n*stride*25*units.ns),
+                       int(t_finish),
+                       int(25*units.ns)):
+            if tb < ts:continue
+            esum  += wf[j]
+            j     += 1
 
+        E[n] = esum
+        if n == 0: T[n] = np.mean((ts, t_finish))
+        else     : T[n] = (t_start + n*stride*25*units.ns + t_finish) / 2.0
+
+    assert j == len(wf)
     return np.asarray(T), np.asarray(E)
 
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,

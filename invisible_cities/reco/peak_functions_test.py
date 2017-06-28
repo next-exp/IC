@@ -119,7 +119,6 @@ def csum_zs_blr_cwf(electron_RWF_file):
          wfzs_indx         = wfzs_indx,
          wfzs_indx_py      = wfzs_indx_py))
 
-
 @fixture(scope="module")
 def toy_S1_wf():
     s1      = {}
@@ -129,7 +128,6 @@ def toy_S1_wf():
 
     wf = np.random.rand(1000)
     return s1, wf, indices
-
 
 def test_csum_cwf_close_to_csum_of_calibrated_pmts(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
@@ -241,7 +239,7 @@ def test_rebin_waveform():
 
     for s in times:
         for f in times[times > s]:
-            [T, E] = pf._rebin_waveform(s, f,
+            [T, E] = cpf.rebin_waveform(s, f,
                                       wf[int(s/25): int(f/25)],
                                       stride=stride)
 
@@ -295,18 +293,15 @@ def toy_pmt_signal():
     pmt = np.concatenate((v, v, v))
     return pmt
 
-
 def toy_cwf_and_adc(v, npmt=10):
     """Return CWF and adc_to_pes for toy example"""
     CWF = [v] * npmt
     adc_to_pes = np.ones(v.shape[0])
     return np.array(CWF), adc_to_pes
 
-
 def vsum_zsum(vsum, threshold=10):
     """Compute ZS over vsum"""
     return vsum[vsum > threshold]
-
 
 def test_csum_zs_s12():
     """Several sequencial tests:
@@ -344,7 +339,7 @@ def test_csum_zs_s12():
 
     pt1, pe1  = pf._rebin_waveform(t1[0], t1[-1] + 25* units.ns, csum[i0:i1], stride=40)
     #t2, e2 = cpf.rebin_waveform(t, e, stride=10)
-    ct2, ce2 = pf._rebin_waveform(t1[0], t1[-1] + 25* units.ns, csum[i0:i1], stride=40)
+    ct2, ce2 = cpf.rebin_waveform(t1[0], t1[-1] + 25* units.ns, csum[i0:i1], stride=40)
 
     npt.assert_allclose(pt1, ct2)
     npt.assert_allclose(pe1, ce2)
@@ -381,7 +376,7 @@ def test_csum_zs_s12():
         npt.assert_allclose(e,E)
 
     # rebin
-    S12L2 = cpf.find_S12(wfzs_ene, wfzs_indx,
+    S12L2 = pf.find_S12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=10, rebin=True, rebin_stride=10)
@@ -392,10 +387,8 @@ def test_csum_zs_s12():
         e = S12L2[i][1]
         npt.assert_allclose(e, E)
 
-
 def test_cwf_are_empty_for_masked_pmts(csum_zs_blr_cwf):
     assert np.all(csum_zs_blr_cwf.cwf6[6:] == 0.)
-
 
 def test_correct_S1_ene_returns_correct_energies(toy_S1_wf):
     S1, wf, indices = toy_S1_wf
