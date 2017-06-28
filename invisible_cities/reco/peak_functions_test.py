@@ -232,26 +232,41 @@ def pmaps_electrons(electron_RWF_file):
     return pmp, pmp2, csum
 
 def test_rebin_waveform():
-    """Ale to document"""
-    wf     = np.ones (int(3*units.mus / (25*units.ns)))
-    times  = np.arange(0, 3*units.mus,   25*units.ns)
+    """
+    Uses a toy wf and and all possible combinations of S12 start and stop times to assure that
+    rebin_waveform performs across a wide parameter space with particular focus on edge cases.
+    Specifically it checks that:
+    1) time bins are properly aligned such that there is an obvious S2-S2Si time bin mapping
+        (one to one, onto when stride=40) by computing the expected mean time for each time bin. 
+    2) the correct energy is distributed to each time bin.
+    """
+    nmus   =  3
     stride = 40
+    wf     = np.ones (int(nmus*units.mus / (25*units.ns))) * units.pes
+    times  = np.arange(0, nmus*units.mus,   25*units.ns)
 
+    # Test for every possible combination of start and stop time over an nmus microsecond wf
     for s in times:
         for f in times[times > s]:
-            [T, E] = cpf.rebin_waveform(s, f,
-                                      wf[int(s/25): int(f/25)],
-                                      stride=stride)
-
+            # compute the rebinned waveform
+            [T, E] = cpf.rebin_waveform(s, f, wf[int(s/25): int(f/25)], stride=stride)
+            # check the waveforms values...
             for i, (t, e) in enumerate(zip(T, E)):
+                # ...in the first time bin
                 if i==0:
+
                     assert np.isclose(t,
-                            min(np.mean((s, (s // (stride*25*units.ns) + 1)*stride*25*units.ns)), np.mean((f, s))))
-                    assert e == min(((s // (stride*25*units.ns) + 1)*stride*25*units.ns - s) / 25*units.ns,
-                                    (f - s) / (25*units.ns))
+                            min(np.mean((s, (s // (stride*25*units.ns) + 1)*stride*25*units.ns)),
+                                np.mean((f, s))))
+                    assert e == min(
+                        ((s // (stride*25*units.ns) + 1)*stride*25*units.ns - s) / 25*units.ns,
+                        (f - s) / (25*units.ns))
+                # ...in the middle time bins
                 elif i < len(T) - 1:
-                    assert np.isclose(t, np.ceil(T[i-1]/(stride*25*units.ns))*stride*25*units.ns + stride * 25*units.ns / 2)
+                    assert np.isclose(t,
+                        np.ceil(T[i - 1] / (stride*25*units.ns))*stride*25*units.ns + stride * 25*units.ns / 2)
                     assert e == stride
+                # ...in the remainder time bin
                 else:
                     assert i == len(T) - 1
                     assert np.isclose(t, np.mean((np.ceil(T[i-1] / (stride*25*units.ns))*stride*25*units.ns, f)))
