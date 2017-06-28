@@ -1,8 +1,7 @@
-# import numpy as np
+from argparse import Namespace
 
 import numpy  as np
 from .. core.system_of_units_c import units
-#from .. reco                   import peak_functions as pf
 from ..reco.pmaps_functions   import integrate_S2Si_charge
 
 def select_peaks(peaks,
@@ -25,50 +24,29 @@ def select_Si(peaks,
 
 
 class S12Selector:
-    def __init__(self,
-                 S1_Nmin     = 0,
-                 S1_Nmax     = 1000,
-                 S1_Emin     = 0,
-                 S1_Emax     = np.inf,
-                 S1_Lmin     = 0,
-                 S1_Lmax     = np.inf,
-                 S1_Hmin     = 0,
-                 S1_Hmax     = np.inf,
-                 S1_Ethr     = 0,
+    def __init__(self, **kwds):
+        conf = Namespace(**kwds)
+        self.S1_Nmin     = conf.s1_nmin
+        self.S1_Nmax     = conf.s1_nmax
+        self.S1_Emin     = conf.s1_emin
+        self.S1_Emax     = conf.s1_emax
+        self.S1_Lmin     = conf.s1_lmin
+        self.S1_Lmax     = conf.s1_lmax
+        self.S1_Hmin     = conf.s1_hmin
+        self.S1_Hmax     = conf.s1_hmax
+        self.S1_Ethr     = conf.s1_ethr
 
-                 S2_Nmin     = 0,
-                 S2_Nmax     = 1000,
-                 S2_Emin     = 0,
-                 S2_Emax     = np.inf,
-                 S2_Lmin     = 0,
-                 S2_Lmax     = np.inf,
-                 S2_Hmin     = 0,
-                 S2_Hmax     = np.inf,
-                 S2_NSIPMmin = 1,
-                 S2_NSIPMmax = np.inf,
-                 S2_Ethr     = 0):
-
-        self.S1_Nmin     = S1_Nmin
-        self.S1_Nmax     = S1_Nmax
-        self.S1_Emin     = S1_Emin
-        self.S1_Emax     = S1_Emax
-        self.S1_Lmin     = S1_Lmin
-        self.S1_Lmax     = S1_Lmax
-        self.S1_Hmin     = S1_Hmin
-        self.S1_Hmax     = S1_Hmax
-        self.S1_Ethr     = S1_Ethr
-
-        self.S2_Nmin     = S2_Nmin
-        self.S2_Nmax     = S2_Nmax
-        self.S2_Emin     = S2_Emin
-        self.S2_Emax     = S2_Emax
-        self.S2_Lmin     = S2_Lmin
-        self.S2_Lmax     = S2_Lmax
-        self.S2_Hmin     = S2_Hmin
-        self.S2_Hmax     = S2_Hmax
-        self.S2_NSIPMmin = S2_NSIPMmin
-        self.S2_NSIPMmax = S2_NSIPMmax
-        self.S2_Ethr     = S2_Ethr
+        self.S2_Nmin     = conf.s2_nmin
+        self.S2_Nmax     = conf.s2_nmax
+        self.S2_Emin     = conf.s2_emin
+        self.S2_Emax     = conf.s2_emax
+        self.S2_Lmin     = conf.s2_lmin
+        self.S2_Lmax     = conf.s2_lmax
+        self.S2_Hmin     = conf.s2_hmin
+        self.S2_Hmax     = conf.s2_hmax
+        self.S2_NSIPMmin = conf.s2_nsipmmin
+        self.S2_NSIPMmax = conf.s2_nsipmmax
+        self.S2_Ethr     = conf.s2_ethr
 
     def select_S1(self, s1s):
         return select_peaks(s1s,
