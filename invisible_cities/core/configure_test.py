@@ -1,98 +1,92 @@
 from os import getenv, path
-from pytest import mark
-from hypothesis import given, example
-from hypothesis.strategies import integers, floats, one_of, none
 
-from . import configure as conf
+import pytest
+from   pytest import mark
+
+from . configure import configure
+from . configure import Configuration
+from . configure import make_config_file_reader
+
 
 config_file_format = """
 # set_input_files
-PATH_IN {PATH_IN} # comment to be ignored 1
-FILE_IN {FILE_IN}
+files_in = '{files_in}' # comment to be ignored 1
 
 # set_pmap_store
-PATH_OUT {PATH_OUT}
-FILE_OUT {FILE_OUT}
-COMPRESSION {COMPRESSION}
+file_out = '{file_out}'
+
+compression = '{compression}'
 
 # irene
-RUN_NUMBER {RUN_NUMBER}
+run_number = {run_number}
 
 # set_print
-NPRINT {NPRINT}
+nprint = {nprint}
 
 # print empty events (skipped)
-PRINT_EMPTY_EVENTS {PRINT_EMPTY_EVENTS}
+print_empty_events = {print_empty_events}
 
 # set_blr
-NBASELINE {NBASELINE}
-THR_TRIGGER {THR_TRIGGER}
+nbaseline   = {nbaseline}
+thr_trigger = {thr_trigger}
 
 # set_mau
-NMAU {NMAU}
-THR_MAU {THR_MAU}
+nmau    = {nmau}
+thr_mau = {thr_mau}
 
 # set_csum
-THR_CSUM {THR_CSUM}
+thr_csum = {thr_csum}
 
 # set_s1
-S1_TMIN {S1_TMIN}
-S1_TMAX {S1_TMAX}
-S1_STRIDE {S1_STRIDE}
-S1_LMIN {S1_LMIN}
-S1_LMAX {S1_LMAX}
+s1_tmin = {s1_tmin}  # * mus
+s1_tmax = {s1_tmax}
+s1_stride = {s1_stride}
+s1_lmin = {s1_lmin}
+s1_lmax = {s1_lmax}
 
 # set_s2
-S2_TMIN {S2_TMIN}
-S2_TMAX {S2_TMAX}
-S2_STRIDE {S2_STRIDE}
-S2_LMIN {S2_LMIN}
-S2_LMAX {S2_LMAX}
+s2_tmin = {s2_tmin}
+s2_tmax = {s2_tmax}
+s2_stride = {s2_stride}
+s2_lmin = {s2_lmin}
+s2_lmax = {s2_lmax}
 
 # set_sipm
-THR_ZS {THR_ZS}
-THR_SIPM_S2 {THR_SIPM_S2}
+thr_zs = {thr_zs}
+thr_sipm_s2 = {thr_sipm_s2}
 
 # run
-NEVENTS {NEVENTS}
-RUN_ALL {RUN_ALL}
+nevents = {nevents}
+run_all = {run_all}
 """
 
 # The values that will be fed into the above.
-config_file_spec = dict(PATH_IN  = '$ICDIR/database/test_data/',
-                        FILE_IN  = 'electrons_40keV_z250_RWF.h5',
-                        PATH_OUT = '$ICDIR/database/test_data/',
-                        FILE_OUT = 'electrons_40keV_z250_PMP.h5',
-                        COMPRESSION        = 'ZLIB4',
-                        RUN_NUMBER         = 23,
-                        NPRINT             = 24,
-                        PRINT_EMPTY_EVENTS = 25,
-                        NBASELINE          = 26,
-                        THR_TRIGGER        = 27,
-                        NMAU               = 28,
-                        THR_MAU            = 29,
-                        THR_CSUM           =  0.5,
-                        S1_TMIN            = 31,
-                        S1_TMAX            = 32,
-                        S1_STRIDE          = 33,
-                        S1_LMIN            = 34,
-                        S1_LMAX            = 35,
-                        S2_TMIN            = 36,
-                        S2_TMAX            = 37,
-                        S2_STRIDE          = 39,
-                        S2_LMIN            = 41,
-                        S2_LMAX            = 42,
-                        THR_ZS             = 43,
-                        THR_SIPM_S2        = 44,
-                        RUN_ALL            = False,
-                        NEVENTS            = 45)
+config_file_spec = dict(files_in = 'electrons_40keV_z250_RWF.h5',
+                        file_out = 'electrons_40keV_z250_PMP.h5',
+                        compression        = 'ZLIB4',
+                        run_number         = 23,
+                        nprint             = 24,
+                        print_empty_events = 25,
+                        nbaseline          = 26,
+                        thr_trigger        = 27,
+                        nmau               = 28,
+                        thr_mau            = 29,
+                        thr_csum           =  0.5,
+                        s1_tmin            = 31,
+                        s1_tmax            = 32,
+                        s1_stride          = 33,
+                        s1_lmin            = 34,
+                        s1_lmax            = 35,
+                        s2_tmin            = 36,
+                        s2_tmax            = 37,
+                        s2_stride          = 39,
+                        s2_lmin            = 41,
+                        s2_lmax            = 42,
+                        thr_zs             = 43,
+                        thr_sipm_s2        = 44,
+                        run_all            = False,
+                        nevents            = 45)
 
-# Values that the configuration should assume if they are specified
-# neither in the config file, nor on the command line.
-default_config_spec = dict(INFO      = False,
-                           RUN_ALL   = False,
-                           SKIP      =  0,
-                           VERBOSITY = 20)
 
 config_file_contents = config_file_format.format(**config_file_spec)
 
@@ -120,33 +114,25 @@ def join_dicts(*args):
                     # Nothing overridden on the command line
                     (),
                     # Two short form command line args
-                    (('NEVENTS', '-n 99', 99),
-                     ('SKIP'   , '-s 98', 98)),
+                    (('nevents', '-n 99', 99),
+                     ('skip'   , '-s 98', 98)),
                     # A long option in full
-                    (('RUN_ALL' , '--runall', True),),
+                    (('run_all' , '--run-all', True),),
                     # A long option abbreviated
-                    (('RUN_ALL' , '--ru', True),),
+                    (('nevents' , '--ne 6', 6),),
                     # Verbosity level 1
-                    (('VERBOSITY', '-v', 40),),
+                    (('verbosity', '-v',    1),),
                     # Verbosity level 2
-                    (('VERBOSITY', '-v -v', 30),),
+                    (('verbosity', '-v -v', 2),),
                     # Verbosity level 3
-                    (('VERBOSITY', '-v -v -v', 20),),
+                    (('verbosity', '-vvv',  3),),
                     # Verbosity level 4
-                    (('VERBOSITY', '-v -v -v -v ', 10),),
-                    # Verbosity level maxes out at 4
-                    (('VERBOSITY', '-v -v -v -v -v ', 10),),
+                    (('verbosity', '-vvv -v ', 4),),
                     # Input and output files
-                    (('FILE_IN',  '-i some_input_file',  'some_input_file'),
-                     ('FILE_OUT', '-o some_output_file', 'some_output_file')),
-                    # Info on
-                    (('INFO', '-I', True),),
-                    # Info on
-                    (('INFO', '',   False),),
+                    (('files_in', '-i some_input_file',  'some_input_file'),
+                     ('file_out', '-o some_output_file', 'some_output_file')),
                   ))
 def test_configure(config_tmpdir, spec):
-    """Test configure function. Read from conf file.
-    """
 
     conf_file_name = config_tmpdir.join('test.conf')
     with open(conf_file_name, 'w') as conf_file:
@@ -158,19 +144,18 @@ def test_configure(config_tmpdir, spec):
     cmdline_spec = { opt : value  for (opt, _, value) in spec }
 
     # Compose the command line
-    args_base = 'program_name -c {conf_file_name} '.format(**locals())
+    args_base = 'program_name {conf_file_name} '.format(**locals())
     args_options = ' '.join(extra_args)
     args = (args_base + args_options).split()
 
     # Present the command line to the parser
-    CFP = conf.configure(args)
+    CFP = configure(args).as_namespace
 
     # The values in the configuration can come from three different places
     # 1. Default values
     # 2. The configuration file can override these
     # 3. Command line arguments can override all of these
-    this_configuration = join_dicts(default_config_spec,
-                                    config_file_spec,
+    this_configuration = join_dicts(config_file_spec,
                                     cmdline_spec)
 
     # Expand environment variables in paths
@@ -181,39 +166,88 @@ def test_configure(config_tmpdir, spec):
         except TypeError:
             pass
 
-    # FILE_IN and FILE_OUT have to be treated specially: the
-    # corresponding PATHs must be prepended, unless the file is
-    # specified on the command line.
-    if not ('FILE_IN' in cmdline_spec):
-        this_configuration['FILE_IN']  = path.join(this_configuration['PATH_IN'],
-                                                   this_configuration['FILE_IN'])
-    if not ('FILE_OUT' in cmdline_spec):
-        this_configuration['FILE_OUT'] = path.join(this_configuration['PATH_OUT'],
-                                                   this_configuration['FILE_OUT'])
-
     # Check that all options have the expected values
     for option in this_configuration:
         assert getattr(CFP, option) == this_configuration[option], 'option = ' + option
 
 
+def write_config_file(file_name, contents):
+    with open(file_name, 'w') as out:
+        out.write(contents)
 
-@given(one_of(integers(),
-              floats(allow_nan=False, allow_infinity=False)),
-       none())
-@example(True,  True)
-@example(False, False)
-@example(    '$PWD',          getenv('PWD'))
-@example('xxx/$PWD', 'xxx/' + getenv('PWD'))
-@example('astring', 'astring')
-@example('spa ace', 'spa ace')
-def test_parse_value(i,o):
-    # `given` generates integers or floats as input: their string
-    # representation needs to be seen by `parse_value`.
-    input  = str(i)
-    # `given` generates `None` as the correct answer, signalling to
-    # the test that the answer should be obtained by evaluating the
-    # input; `example` passes in the exact correct answer, signalling
-    # that that is the value we should use in the assertion.
-    output = eval(input) if o is None else o
 
-    assert conf.parse_value(input) == output
+@pytest.fixture(scope = 'session')
+def sample_configuration(tmpdir_factory):
+    dir_ = tmpdir_factory.mktemp('test_config_files')
+    top_file_name = path.join(dir_, 'top_file')
+    include_1     = path.join(dir_, 'include_1')
+    include_1_1   = path.join(dir_, 'include_1_1')
+    include_2     = path.join(dir_, 'include_2')
+    write_config_file(top_file_name, """
+include('{include_1}')
+set_just_once_in_top_file = 1
+overridden_in_top_file = 'original'
+overridden_in_top_file = 'first override'
+overridden_in_top_file = 'second override'
+overridden_in_top_file = 'final override'
+include_1_overridden_by_top = 'top overrides'
+top_overridden_by_include_2 = 'replaced'
+include('{include_2}')
+overridden_in_3_places = 'four'
+""".format(**locals()))
+
+    write_config_file(include_1, """
+include('{include_1_1}')
+only_in_include_1 = 'just 1'
+include_1_overridden_by_top = 'gone'
+overridden_in_3_places = 'two'
+""".format(**locals()))
+
+    write_config_file(include_1_1, """
+only_in_include_1 = 'just 1'
+top_overridden_by_include_2 = 'i2 overrides'
+overridden_in_3_places = 'one'
+""")
+
+    write_config_file(include_2, """
+only_in_include_1 = 'just 1'
+top_overridden_by_include_2 = 'i2 overrides'
+overridden_in_3_places = 'three'
+""")
+
+    return make_config_file_reader()(top_file_name)
+
+
+def test_config_set_just_once_in_top_file(sample_configuration):
+    conf = sample_configuration.as_namespace
+    assert conf.set_just_once_in_top_file == 1
+
+def test_config_overridden_in_top_file_value(sample_configuration):
+    conf = sample_configuration.as_namespace
+    assert conf.overridden_in_top_file == 'final override'
+
+def test_config_overridden_in_top_file_history(sample_configuration):
+    history = sample_configuration._history['overridden_in_top_file']
+    value_history = [ i.value for i in history ]
+    assert value_history == ['original', 'first override', 'second override']
+
+def test_config_only_in_include(sample_configuration):
+    conf = sample_configuration.as_namespace
+    assert conf.only_in_include_1 == 'just 1'
+
+def test_config_include_overridden_by_top(sample_configuration):
+    conf = sample_configuration.as_namespace
+    assert conf.include_1_overridden_by_top == 'top overrides'
+
+def test_config_top_overridden_by_include(sample_configuration):
+    conf = sample_configuration.as_namespace
+    assert conf.top_overridden_by_include_2 == 'i2 overrides'
+
+def test_config_overridden_file_history(sample_configuration):
+    history = sample_configuration._history['overridden_in_3_places']
+    file_history  = [ path.basename(i.file_name) for i in history ]
+    value_history = [               i.value      for i in history ]
+
+    assert file_history  == ['include_1_1', 'include_1', 'include_2']
+    assert value_history == ['one',         'two',       'three'    ]
+    assert sample_configuration.as_namespace.overridden_in_3_places == 'four'

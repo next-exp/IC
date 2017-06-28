@@ -1,7 +1,5 @@
 import sys
 
-from glob     import glob
-from time     import time
 from argparse import Namespace
 
 import numpy  as np
@@ -27,52 +25,12 @@ class Irene(PmapCity):
     It is optimized for speed (use of CYTHON functions) and intended
     for fast processing of data.
     """
-    def __init__(self,
-                 run_number            = 0,
-                 nprint                = 10000,
-                 files_in              = None,
-                 file_out              = None,
-                 compression           = 'ZLIB4',
-                 n_baseline            = 28000,
-                 thr_trigger           =   5.0 * units.adc,
-                 n_MAU                 = 100,
-                 thr_MAU               =   3.0 * units.adc,
-                 thr_csum_s1           =   0.2 * units.pes,
-                 thr_csum_s2           =   1.0 * units.pes,
-                 n_MAU_sipm            = 100   * units.adc,
-                 thr_sipm              =   5.0 * units.pes,
-                 s1_params             = None,
-                 s2_params             = None,
-                 thr_sipm_s2           =  30 * units.pes,
-                 # Almost a hard-wired parameter. Not settable via
-                 # driver or config file.
-                 acum_discharge_length = 5000):
-
-        PmapCity.__init__(self,
-                          run_number            = run_number,
-                          files_in              = files_in,
-                          file_out              = file_out,
-                          compression           = compression,
-                          nprint                = nprint,
-                          n_baseline            = n_baseline,
-                          thr_trigger           = thr_trigger,
-                          acum_discharge_length = acum_discharge_length,
-                          n_MAU                 = n_MAU,
-                          thr_MAU               = thr_MAU,
-                          thr_csum_s1           = thr_csum_s1,
-                          thr_csum_s2           = thr_csum_s2,
-                          n_MAU_sipm            = n_MAU_sipm,
-                          thr_sipm              = thr_sipm,
-                          s1_params             = s1_params,
-                          s2_params             = s2_params,
-                          thr_sipm_s2           = thr_sipm_s2)
-
-        self.check_files()
+    def __init__(self, **kwds):
+        PmapCity.__init__(self, **kwds)
         self.check_s1s2_params()
 
-
-    def run(self, nmax, print_empty=True):
-        self.display_IO_info(nmax)
+    def run(self, print_empty=True):
+        self.display_IO_info()
         sensor_params = self.get_sensor_params(self.input_files[0])
         print(sensor_params)
         
@@ -84,13 +42,13 @@ class Irene(PmapCity):
                 mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
             )
             self.write_deconv_params(h5out)
-            n_events_tot, n_empty_events = self._file_loop(writers, nmax)
+            n_events_tot, n_empty_events = self._file_loop(writers)
         if print_empty:
             print('Energy plane empty events (skipped) = {}'.format(
                    n_empty_events))
         return n_events_tot, n_empty_events
 
-    def _file_loop(self, writers, nmax):
+    def _file_loop(self, writers):
         n_events_tot, n_empty_events = 0, 0
         for filename in self.input_files:
             print("Opening", filename, end="... ")
@@ -102,12 +60,12 @@ class Irene(PmapCity):
                 (n_events_tot,
                  n_empty_events) = self._event_loop(NEVT, pmtrwf, sipmrwf, events_info,
                                                     writers,
-                                                    nmax, n_events_tot, n_empty_events, h5in)
+                                                    n_events_tot, n_empty_events, h5in)
         return n_events_tot, n_empty_events
 
     def _event_loop(self, NEVT, pmtrwf, sipmrwf, events_info,
                     write,
-                    nmax, n_events_tot, n_empty_events, h5in):
+                    n_events_tot, n_empty_events, h5in):
         for evt in range(NEVT):
             if self.monte_carlo:
                 write.mc(h5in.root.MC.MCTracks, n_events_tot)
@@ -130,7 +88,7 @@ class Irene(PmapCity):
             write.run_and_event(self.run_number, event, timestamp)
             n_events_tot += 1
             self.conditional_print(evt, n_events_tot)
-            if self.max_events_reached(nmax, n_events_tot):
+            if self.max_events_reached(n_events_tot):
                 break
         return n_events_tot, n_empty_events
 
@@ -152,8 +110,8 @@ class Irene(PmapCity):
         Si     = self.find_S2Si(S2, sipmzs)
         return S1, S2, Si
 
-    def display_IO_info(self, nmax):
-        PmapCity.display_IO_info(self, nmax)
+    def display_IO_info(self):
+        PmapCity.display_IO_info(self)
         print("""
                  S1 parameters {}""" .format(self.s1_params))
         print("""
@@ -163,57 +121,3 @@ class Irene(PmapCity):
                  threshold min charge per SiPM = {s.thr_sipm} pes
                  threshold min charge in  S2   = {s.thr_sipm_s2} pes
                           """.format(s=self))
-
-
-def IRENE(argv = sys.argv):
-    """IRENE DRIVER"""
-
-    # get parameters dictionary
-    CFP = configure(argv)
-
-    # parameters for s1 searches
-    s1par = S12P(time = minmax(min   = CFP.S1_TMIN * units.mus,
-                               max   = CFP.S1_TMAX * units.mus),
-                 stride              = CFP.S1_STRIDE,
-                 length = minmax(min = CFP.S1_LMIN,
-                                 max = CFP.S1_LMAX),
-                 rebin               = False)
-
-    # parameters for s2 searches
-    s2par = S12P(time = minmax(min   = CFP.S2_TMIN * units.mus,
-                               max   = CFP.S2_TMAX * units.mus),
-                 stride              = CFP.S2_STRIDE,
-                 length = minmax(min = CFP.S2_LMIN,
-                                 max = CFP.S2_LMAX),
-                 rebin               = True)
-
-    # input files
-    # TODO detect non existing files and raise sensible message
-    files_in = glob(CFP.FILE_IN)
-    files_in.sort()
-    irene = Irene(run_number  = CFP.RUN_NUMBER,
-                  nprint      = CFP.NPRINT,
-                  files_in    = files_in,
-                  file_out    = CFP.FILE_OUT,
-                  compression = CFP.COMPRESSION,
-                  n_baseline  = CFP.NBASELINE,
-                  thr_trigger = CFP.THR_TRIGGER * units.adc,
-                  n_MAU       = CFP.NMAU,
-                  thr_MAU     = CFP.THR_MAU     * units.adc,
-                  thr_csum_s1 = CFP.THR_CSUM_S1 * units.pes,
-                  thr_csum_s2 = CFP.THR_CSUM_S2 * units.pes,
-                  n_MAU_sipm  = CFP.NMAU_SIPM   * units.adc,
-                  thr_sipm    = CFP.THR_SIPM    * units.pes,
-                  s1_params   = s1par,
-                  s2_params   = s2par,
-                  thr_sipm_s2 = CFP.THR_SIPM_S2)
-
-    t0 = time()
-    nevts = CFP.NEVENTS if not CFP.RUN_ALL else -1
-    # run
-    nevt, n_empty_events = irene.run(nmax=nevts, print_empty=CFP.PRINT_EMPTY_EVENTS)
-    t1 = time()
-    dt = t1 - t0
-
-    if nevt > 0:
-        print("run {} evts in {} s, time/event = {}".format(nevt, dt, dt/nevt))
