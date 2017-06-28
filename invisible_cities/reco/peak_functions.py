@@ -226,7 +226,7 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
         E[n] = esum
         if n == 0: T[n] = (ts + t_finish) / 2
         else     : T[n] = (t_start + n*stride*25*units.ns + t_finish) / 2
-        #import pdb; pdb.set_trace()
+
     assert j == len(wf) # ensures you have rebinned correctly the waveform
     return T, E
 
