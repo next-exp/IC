@@ -16,7 +16,7 @@ from . import system_of_units as     units
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-c", '--config-file',     type=str,  help="configuration file", required=True)
+parser.add_argument('config_file',             type=str,  help="configuration file")
 parser.add_argument("-i", '--files-in',        type=str,  help="input file")
 parser.add_argument("-o", '--file-out',        type=str,  help="output file")
 parser.add_argument("-n", '--nevents',         type=int,  help="number of events to be processed")
