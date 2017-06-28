@@ -6,7 +6,7 @@ from . dorothea import Dorothea
 
 from .. reco.dst_functions import load_dst
 from .. core.test_utils    import assert_dataframes_close
-from .. core               import system_of_units as units
+from .. core.configure     import configure
 
 def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
@@ -15,33 +15,40 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
 
     PATH_IN =  KrMC_pmaps[0]
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST.h5')
-
-    dorothea = Dorothea(run_number = 0,
-                        files_in   = [PATH_IN],
-                        file_out   = PATH_OUT,
-
-                        drift_v    = 1 * units.mm/units.mus,
-                        S1_Emin     =      0,
-                        S1_Emax     =     30,
-                        S1_Lmin     =      4,
-                        S1_Lmax     =     20,
-                        S1_Hmin     =    0.5,
-                        S1_Hmax     =     10,
-                        S1_Ethr     =    0.5,
-
-                        S2_Nmax     =      1,
-                        S2_Emin     =    1e3,
-                        S2_Emax     =    1e8,
-                        S2_Lmin     =      1,
-                        S2_Lmax     =     20,
-                        S2_Hmin     =    500,
-                        S2_Hmax     =    1e5,
-                        S2_Ethr     =      1,
-                        S2_NSIPMmin =      2,
-                        S2_NSIPMmax =   1000)
-
     nrequired = 10
-    nevt_in, nevt_out = dorothea.run(nmax=nrequired)
+
+    from .. core.system_of_units import pes, mm, mus
+
+    conf = configure('dummy invisible_cities/config/dorothea.conf'.split()).as_dict
+    conf.update(dict(run_number = 0,
+                     files_in   = PATH_IN,
+                     file_out   = PATH_OUT,
+
+                     drift_v     =      1 * mm / mus,
+                     S1_Emin     =      0 * pes,
+                     S1_Emax     =     30,
+                     S1_Lmin     =      4,
+                     S1_Lmax     =     20,
+                     S1_Hmin     =    0.5 * pes,
+                     S1_Hmax     =     10 * pes,
+                     S1_Ethr     =    0.5 * pes,
+
+                     S2_Nmax     =      1,
+                     S2_Emin     =    1e3 * pes,
+                     S2_Emax     =    1e8 * pes,
+                     S2_Lmin     =      1,
+                     S2_Lmax     =     20,
+                     S2_Hmin     =    500 * pes,
+                     S2_Hmax     =    1e5 * pes,
+                     S2_Ethr     =      1 * pes,
+                     S2_NSIPMmin =      2,
+                     S2_NSIPMmax =   1000,
+                     nmax        = nrequired))
+
+
+    dorothea = Dorothea(**conf)
+
+    nevt_in, nevt_out = dorothea.run()
     if nrequired > 0:
         assert nrequired    == nevt_in
         assert nevt_out     <= nevt_in
