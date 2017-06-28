@@ -25,8 +25,8 @@ parser.add_argument("-r", '--run-number',      type=int,  help="run number")
 parser.add_argument("-s", '--skip',            type=int,  help="number of events to be skipped", default=0)
 parser.add_argument("-p", '--print_mod',       type=int,  help="print every this number of events")
 parser.add_argument("-v", dest='verbosity', action="count", help="increase verbosity level", default=0)
-parser.add_argument("--run-all",       action="store_true", help="number of events to be skipped") # TODO fix help
-parser.add_argument('--do-not-run',    action='store_true', help='useful for checking configuration')
+parser.add_argument("--run-all",            action="store_true")
+parser.add_argument('--print-config-only',  action='store_true', help='do not run the city')
 
 display = parser.add_mutually_exclusive_group()
 parser .add_argument('--hide-config',   action='store_true')
@@ -35,7 +35,7 @@ display.add_argument('--no-files',      action='store_true', help='do not show c
 display.add_argument('--full-files',    action='store_true', help='show config files with full paths in --show-config')
 
 
-uninteresting_options = '''hide_config no_overrides no_files full_files do_not_run'''.split()
+uninteresting_options = '''hide_config no_overrides no_files full_files print_config_only'''.split()
 
 
 def configure(input_options=sys.argv):
