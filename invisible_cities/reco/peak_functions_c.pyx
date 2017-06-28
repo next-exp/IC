@@ -212,13 +212,13 @@ cpdef _time_from_index(int [:] indx):
     return np.asarray(tzs)
 
 
-cpdef find_S12(double [:] wfzs,  int [:] index,
+cpdef find_S12(double [:] csum,  int [:] index,
                time=(), length=(),
                int stride=4, rebin=False, rebin_stride=40):
     """
     Find S1/S2 peaks.
     input:
-    wfzs:   a vector containining the zero supressed wf
+    csum:   a summed (across pmts) waveform
     indx:   a vector of indexes
     returns a dictionary
 
@@ -231,60 +231,46 @@ cpdef find_S12(double [:] wfzs,  int [:] index,
     cdef double tmin, tmax
     cdef int    limn, lmax
 
-    cdef double [:] P = wfzs
+    #cdef double [:] P = wfzs
     cdef double [:] T = _time_from_index(index)
-
-    assert len(wfzs) == len(index)
 
     cdef dict S12  = {}
     cdef dict S12L = {}
     cdef int i, j, k, ls
 
-    cdef list s12 = []
-
     tmin, tmax = time
     lmin, lmax = length
 
-    S12[0] = s12
-    S12[0].append([T[0], P[0]])
+    S12[0] = np.array([index[0], index[0] + 1], dtype=np.int32)
 
     j = 0
-    for i in range(1, len(wfzs)):
+    for i in range(1, len(index)):
 
-        if T[i] > tmax:
-            break
+        if T[i] > tmax: break
+        if T[i] < tmin: continue
 
-        if T[i] < tmin:
-            continue
-
-        if index[i] - stride > index[i-1]:  #new s12
+        # New s12, create new start and end index
+        if index[i] - stride > index[i-1]:
             j += 1
-            s12 = []
-            S12[j] = s12
-        S12[j].append([T[i], P[i]])
+            S12[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
+
+        # Update end index in current S12
+        S12[j][1] = index[i] + 1
 
 
     # re-arrange and rebin
     j = 0
+    for i_peak in S12.values():
 
-    for i in S12:
-        ls = len(S12[i])
-
-        if not (lmin <= ls < lmax):
+        if not (lmin <= i_peak[1] - i_peak[0] < lmax):
             continue
 
-        t = np.zeros(ls, dtype=np.double)
-        e = np.zeros(ls, dtype=np.double)
-
-        for k in range(ls):
-            t[k] = S12[i][k][0]
-            e[k] = S12[i][k][1]
-
+        S12wf = csum[i_peak[0]: i_peak[1]]
         if rebin == True:
-            TR, ER = rebin_waveform(t, e, stride = rebin_stride)
+            TR, ER = rebin_waveform(*_time_from_index(i_peak), S12wf, stride=rebin_stride)
             S12L[j] = [TR, ER]
         else:
-            S12L[j] = [t, e]
+            S12L[j] = [np.arange(*_time_from_index(i_peak), 25*units.ns), S12wf]
         j += 1
 
     return pio.S12(S12L)
