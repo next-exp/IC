@@ -332,14 +332,9 @@ def test_csum_zs_s12():
     t = pf._time_from_index(wfzs_indx)
     e = wfzs_ene
 
-    # WARNING:
-    ts = t1[0]
-    t_finish = t1[-1] + 25* units.ns
 
-
-    pt1, pe1  = pf._rebin_waveform(t1[0], t1[-1] + 25* units.ns, csum[i0:i1], stride=40)
-    #t2, e2 = cpf.rebin_waveform(t, e, stride=10)
-    ct2, ce2 = cpf.rebin_waveform(t1[0], t1[-1] + 25* units.ns, csum[i0:i1], stride=40)
+    pt1, pe1 = pf._rebin_waveform(t1[0], t1[-1] + 25*units.ns, csum[i0:i1], stride=40)
+    ct2, ce2 = cpf.rebin_waveform(t1[0], t1[-1] + 25*units.ns, csum[i0:i1], stride=40)
 
     npt.assert_allclose(pt1, ct2)
     npt.assert_allclose(pe1, ce2)
@@ -349,15 +344,10 @@ def test_csum_zs_s12():
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
 
-    S12L2 = pf.find_S12(csum, wfzs_indx,
+    S12L2 = cpf.find_S12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
-
-    # S12L2 = cpf.find_S12(wfzs_ene, wfzs_indx,
-    #          time   = minmax(0, 1e+6),
-    #          length = minmax(0, 1000000),
-    #          stride=4, rebin=False, rebin_stride=40)
 
     for i in S12L1:
         t1 = S12L1[i][0]
@@ -376,7 +366,7 @@ def test_csum_zs_s12():
         npt.assert_allclose(e,E)
 
     # rebin
-    S12L2 = pf.find_S12(csum, wfzs_indx,
+    S12L2 = cpf.find_S12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=10, rebin=True, rebin_stride=10)
