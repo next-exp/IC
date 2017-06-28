@@ -49,7 +49,7 @@ def to_pes(wfs, adc_to_pes):
     """
     return wfs / adc_to_pes.reshape(wfs.shape[0], 1)
 
-
+## TODO DECIDE WHAT TO DO WITH THESE REBIN FUNCTIONS: (replace, delete or move)
 def rebin_wf(t, e, stride=40):
     """Rebin arrays according to some stride.
 
@@ -82,7 +82,6 @@ def rebin_wf(t, e, stride=40):
         T[i] = np.mean(t[low:upp])
 
     return T, E
-
 
 def rebin_waveform(t, e, stride = 40):
     """Rebin waveforms t and e according to stride.
