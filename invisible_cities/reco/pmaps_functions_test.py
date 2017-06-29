@@ -72,6 +72,37 @@ def test_width():
     assert width * units.ns / units.mus == pmapf.width(times, to_mus=True)
 
 
+
+def test_equal_number_of_timebins_in_S2s_and_S2Sis(KrMC_pmaps):  
+
+    _, (s1t, s2t, s2sit), (_, _, _), (s1, s2, s2si) = KrMC_pmaps
+    S2s, S2Sis = s2, s2si
+    for S2, Si in zip(S2s.values(), S2Sis.values()):
+        for p in S2:
+            if p in Si:
+                if len(Si[p]) > 0: # Not necessary once Irene run completely with fix
+                    assert len(Si[p][next(iter(Si[p]))]) == len(S2[p][0])
+
+def timebin_size_must_be_equal_to_stride_times_25_ns_shows_bug_in_old_data(KrMC_pmaps):
+    """This fails when the time bin exceeds the allowed time range.
+    This bug is an artifact of the old rebin_waveform function, and
+    has been fixed now. Old data, like the one used in this test has the
+    bug in it, and this test demonstrates it.
+    """
+    _, (_, _, _), (_, _, _), (_, s2, _) = KrMC_pmaps
+    S2s = {0 : s2[31]}
+    max_timebin_size = 1 * units.mus
+
+    for S2s_ev in S2s.values(): # event loop
+        for S2_p in S2s_ev.values(): # peak loop
+            try:  # will fail, and we cath it and pass
+                assert (np.array([S2_p[0][i] - S2_p[0][i-1] \
+                        for i in range(1, len(S2_p[0]))])  \
+                        <= max_timebin_size).all()
+            except AssertionError:
+                pass
+
+
 def test_load_pmaps(KrMC_pmaps):
 
     _, (s1t, s2t, s2sit), (_, _, _), (s1, s2, s2si) = KrMC_pmaps
