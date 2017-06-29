@@ -4,6 +4,7 @@ Last revision: June 2017, JJGC
 
 **Public functions**
 
+
 calibrated_pmt_sum(double [:, :]  CWF,
                          double [:]     adc_to_pes,
                          list           pmt_active = [],
@@ -61,6 +62,8 @@ import  numpy as np
 from scipy import signal
 
 from .. io import pmap_io as pio
+from .. core.system_of_units_c import units
+
 
 cpdef calibrated_pmt_sum(double [:, :]  CWF,
                          double [:]     adc_to_pes,
@@ -156,6 +159,7 @@ cpdef calibrated_pmt_mau(double [:, :]  CWF,
 
     return np.asarray(pmt_thr), np.asarray(pmt_thr_mau)
 
+
 cpdef wfzs(double [:] wf, double threshold=0):
     """
     takes a waveform wf and returns the values of the wf above threshold:
@@ -209,13 +213,13 @@ cpdef _time_from_index(int [:] indx):
     return np.asarray(tzs)
 
 
-cpdef find_S12(double [:] wfzs,  int [:] index,
+cpdef find_S12(double [:] csum,  int [:] index,
                time=(), length=(),
                int stride=4, rebin=False, rebin_stride=40):
     """
     Find S1/S2 peaks.
     input:
-    wfzs:   a vector containining the zero supressed wf
+    csum:   a summed (across pmts) waveform
     indx:   a vector of indexes
     returns a dictionary
 
@@ -228,60 +232,46 @@ cpdef find_S12(double [:] wfzs,  int [:] index,
     cdef double tmin, tmax
     cdef int    limn, lmax
 
-    cdef double [:] P = wfzs
+    #cdef double [:] P = wfzs
     cdef double [:] T = _time_from_index(index)
-
-    assert len(wfzs) == len(index)
 
     cdef dict S12  = {}
     cdef dict S12L = {}
     cdef int i, j, k, ls
 
-    cdef list s12 = []
-
     tmin, tmax = time
     lmin, lmax = length
 
-    S12[0] = s12
-    S12[0].append([T[0], P[0]])
+    S12[0] = np.array([index[0], index[0] + 1], dtype=np.int32)
 
     j = 0
-    for i in range(1, len(wfzs)):
+    for i in range(1, len(index)):
 
-        if T[i] > tmax:
-            break
+        if T[i] > tmax: break
+        if T[i] < tmin: continue
 
-        if T[i] < tmin:
-            continue
-
-        if index[i] - stride > index[i-1]:  #new s12
+        # New s12, create new start and end index
+        if index[i] - stride > index[i-1]:
             j += 1
-            s12 = []
-            S12[j] = s12
-        S12[j].append([T[i], P[i]])
+            S12[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
+
+        # Update end index in current S12
+        S12[j][1] = index[i] + 1
 
 
     # re-arrange and rebin
     j = 0
+    for i_peak in S12.values():
 
-    for i in S12:
-        ls = len(S12[i])
-
-        if not (lmin <= ls < lmax):
+        if not (lmin <= i_peak[1] - i_peak[0] < lmax):
             continue
 
-        t = np.zeros(ls, dtype=np.double)
-        e = np.zeros(ls, dtype=np.double)
-
-        for k in range(ls):
-            t[k] = S12[i][k][0]
-            e[k] = S12[i][k][1]
-
+        S12wf = csum[i_peak[0]: i_peak[1]]
         if rebin == True:
-            TR, ER = rebin_waveform(t, e, stride = rebin_stride)
+            TR, ER = rebin_waveform(*_time_from_index(i_peak), S12wf, stride=rebin_stride)
             S12L[j] = [TR, ER]
         else:
-            S12L[j] = [t, e]
+            S12L[j] = [np.arange(*_time_from_index(i_peak), 25*units.ns), S12wf]
         j += 1
 
     return pio.S12(S12L)
@@ -295,7 +285,7 @@ cpdef correct_S1_ene(S1, np.ndarray csum):
     return pio.S12(S1_corr)
 
 
-cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
+cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
     """
     Rebin a waveform according to stride
     The input waveform is a vector such that the index expresses time bin and the
@@ -303,44 +293,54 @@ cpdef rebin_waveform(double [:] t, double[:] e, int stride = 40):
     The function returns the rebinned T& E vectors.
     """
 
-    assert len(t) == len(e)
+    assert (ts < t_finish)
+    cdef int  bs = 25*units.ns # bin size
+    cdef int rbs = bs * stride # rebinned bin size
 
-    cdef int n = len(t) // stride
-    cdef int r = len(t) %  stride
+    # Find the nearest time (in stride samples) before ts
+    cdef int t_start  = (ts // (rbs)) * rbs
+    cdef int t_total  = t_finish - t_start
+    cdef int n = t_total // (rbs)
+    cdef int r = t_total  % (rbs)
 
     lenb = n
-    if r > 0:
-        lenb = n+1
+    if r > 0: lenb = n+1
 
     cdef double [:] T = np.zeros(lenb, dtype=np.double)
     cdef double [:] E = np.zeros(lenb, dtype=np.double)
 
     cdef int j = 0
-    cdef int i, k
-    cdef double esum, tmean
+    cdef int i, tb
+    cdef double esum
     for i in range(n):
         esum = 0
-        tmean = 0
-        for k in range(j, j + stride):
-            esum  += e[k]
-            tmean += t[k]
+        for tb in range(int(t_start +     i*rbs),
+                        int(t_start + (1+i)*rbs),
+                        int(bs)):
+            if tb < ts: continue
+            esum  += wf[j]
+            j     += 1
 
-        tmean /= stride
         E[i] = esum
-        T[i] = tmean
-        j += stride
+        if i == 0: T[i] = np.mean((ts, t_start + rbs))
+        else     : T[i] = t_start + i*rbs + rbs/2.0
 
     if r > 0:
         esum  = 0
-        tmean = 0
-        for k in range(j, len(t)):
-            esum  += e[k]
-            tmean += t[k]
-        tmean /= (len(t) - j)
-        E[n] = esum
-        T[n] = tmean
+        for tb in range(int(t_start + n*rbs),
+                       int(t_finish),
+                       int(bs)):
+            if tb < ts:continue
+            esum  += wf[j]
+            j     += 1
 
+        E[n] = esum
+        if n == 0: T[n] = np.mean((ts, t_finish))
+        else     : T[n] = (t_start + n*rbs + t_finish) / 2.0
+
+    assert j == len(wf)
     return np.asarray(T), np.asarray(E)
+
 
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
                   double [:] adc_to_pes, double thr,

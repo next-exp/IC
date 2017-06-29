@@ -75,7 +75,7 @@ do not interrupt the peak if next sample comes within stride
 accept the peak only if within [l.min, l.max)
 accept the peak only if within [t.min, t.max)
 """
-cpdef find_S12(double [:] wfzs, int [:] index,
+cpdef find_S12(double [:] csum, int [:] index,
                time=*, length=*,
                int stride=*, rebin=*, rebin_stride=*)
 
@@ -88,7 +88,8 @@ The function returns a rebinned vector of T and E.
 
 cpdef correct_S1_ene(S1, np.ndarray csum)
 
-cpdef rebin_waveform(double [:] t, double[:] e, int stride=*)
+#cpdef rebin_waveform(double [:] t, double[:] e, int stride=*)
+cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=*)
 
 
 """

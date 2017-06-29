@@ -161,6 +161,7 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
     nrequired = 2
 
     conf = configure('diomira invisible_cities/config/diomira.conf'.split()).as_dict
+
     conf.update(dict(run_number = run_number,
                      files_in   = PATH_IN,
                      file_out   = PATH_OUT,
@@ -199,4 +200,3 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
                0)))
 def test_event_number_from_input_file_name(filename, first_evt):
     assert Diomira.event_number_from_input_file_name(filename) == first_evt
-

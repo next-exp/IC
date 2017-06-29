@@ -11,7 +11,6 @@ from . configure import make_config_file_reader
 config_file_format = """
 # set_input_files
 files_in = '{files_in}' # comment to be ignored 1
-
 # set_pmap_store
 file_out = '{file_out}'
 
@@ -86,7 +85,6 @@ config_file_spec = dict(files_in = 'electrons_40keV_z250_RWF.h5',
                         thr_sipm_s2        = 44,
                         run_all            = False,
                         nevents            = 45)
-
 
 config_file_contents = config_file_format.format(**config_file_spec)
 
@@ -165,6 +163,7 @@ def test_configure(config_tmpdir, spec):
                 this_configuration[k] = path.expandvars(v)
         except TypeError:
             pass
+
 
     # Check that all options have the expected values
     for option in this_configuration:
