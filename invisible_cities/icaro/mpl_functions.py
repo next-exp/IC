@@ -135,7 +135,7 @@ def plot_wfa_wfb(wfa, wfb, zoom=False, window_size=800):
             first, last = define_window(wfa[i], window_size)
         plt.subplot(3, 4, i+1)
         # ax1.set_xlim([0, len_pmt])
-        mpl.set_plot_labels(xlabel="samples", ylabel="adc")
+        set_plot_labels(xlabel="samples", ylabel="adc")
         plt.plot(wfa[i][first:last], label= 'WFA')
         plt.plot(wfb[i][first:last], label= 'WFB')
         legend = plt.legend(loc='upper right')
