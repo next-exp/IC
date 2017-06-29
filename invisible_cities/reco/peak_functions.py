@@ -58,6 +58,7 @@ from scipy import signal
 from .. core   import system_of_units as units
 from .. sierpe import blr
 
+from .. io import pmap_io as pio
 from .         import peak_functions_c as cpf
 from .  params import CalibratedSum
 from .  params import PMaps
@@ -165,7 +166,7 @@ def _time_from_index(indx):
     return tzs
 
 
-def _rebin_waveform(t, e, stride=40):
+def _rebin_waveform(ts, t_finish, wf, stride=40):
     """
     Rebin a waveform according to stride
     The input waveform is a vector such that the index expresses time bin and the
@@ -178,49 +179,64 @@ def _rebin_waveform(t, e, stride=40):
     function (in peak_functions_c), which runs faster and should be used
     instead of this one for nornal calculations.
 
+    Parameters:
+    t_s:       starting time for waveform
+    t_finish:  end time for waveform
+    wf:        wavform (chunk)
+    stride:    How many (25 ns) samples we combine into a single bin
     """
 
-    assert len(t) == len(e)
+    assert (ts < t_finish)
+    bs = 25*units.ns  # bin size
+    rbs = bs * stride # rebinned bin size
 
-    n = len(t) // stride
-    r = len(t) %  stride
+    # Find the nearest time (in stride samples) before ts
+    t_start  = int((ts // (rbs)) * rbs)
+    t_total  = t_finish - t_start
+    n = int(t_total // (rbs))  # number of samples
+    r = int(t_total  % (rbs))
 
     lenb = n
-    if r > 0:
-        lenb = n+1
+    if r > 0: lenb = n+1
 
     T = np.zeros(lenb, dtype=np.double)
     E = np.zeros(lenb, dtype=np.double)
 
     j = 0
     for i in range(n):
-        esum = 0
-        tmean = 0
-        for k in range(j, j + stride):
-            esum  += e[k]
-            tmean += t[k]
+        esum  = 0
+        for tb in range(int(t_start +  i   *rbs),
+                        int(t_start + (i+1)*rbs),
+                        int(bs)):
+            if tb < ts: continue
+            esum += wf[j]
+            j    += 1
 
-        tmean /= stride
         E[i] = esum
-        T[i] = tmean
-        j += stride
+        if i == 0: T[0] = np.mean((ts, t_start + rbs))
+        else     : T[i] = t_start + i*rbs + rbs/2
 
     if r > 0:
         esum  = 0
-        tmean = 0
-        for k in range(j, len(t)):
-            esum  += e[k]
-            tmean += t[k]
-        tmean /= (len(t) - j)
-        E[n] = esum
-        T[n] = tmean
+        for tb in range(int(t_start + n*rbs),
+                        int(t_finish),
+                        int(bs)):
+            if tb < ts: continue
+            esum += wf[j]
+            j    += 1
 
+        E[n] = esum
+        if n == 0: T[n] = np.mean((ts             , t_finish))
+        else     : T[n] = np.mean((t_start + n*rbs, t_finish))
+
+    assert j == len(wf) # ensures you have rebinned correctly the waveform
     return T, E
 
-def _find_S12(wfzs, index,
-             time   = minmax(0, 1e+6),
-             length = minmax(8, 1000000),
-             stride=4, rebin=False, rebin_stride=40):
+
+def _find_S12(csum, index,
+              time   = minmax(0, 1e+6),
+              length = minmax(8, 1000000),
+              stride=4, rebin=False, rebin_stride=40):
     """
     Find S1/S2 peaks.
     input:
@@ -240,88 +256,76 @@ def _find_S12(wfzs, index,
     instead of this one for nornal calculations.
     """
 
-    P = wfzs
-    T = _time_from_index(index)
-
-    assert len(wfzs) == len(index)
+    T = cpf._time_from_index(index)
 
     S12  = {}
     S12L = {}
-    s12  = []
 
-    S12[0] = s12
-    S12[0].append([T[0], P[0]])
+    # Start end end index of S12, [start i, end i)
+    S12[0] = np.array([index[0], index[0] + 1], dtype=np.int32)
 
     j = 0
-    for i in range(1, len(wfzs)) :
+    for i in range(1, len(index)) :
 
-        if T[i] > time.max:
-            break
+        if T[i] > time.max: break
+        if T[i] < time.min: continue
 
-        if T[i] < time.min:
-            continue
-
-        if index[i] - stride > index[i-1]:  #new s12
+        # New s12, create new start and end index
+        if index[i] - stride > index[i-1]:
             j += 1
-            s12 = []
-            S12[j] = s12
-        S12[j].append([T[i], P[i]])
+            S12[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
 
-    # re-arrange and rebin
+        # Update end index in current S12
+        S12[j][1] = index[i] + 1
+
     j = 0
-    for i in S12:
-        ls = len(S12[i])
+    for i_peak in S12.values():
 
-        if not (length.min <= ls < length.max):
+        if not (length.min <= i_peak[1] - i_peak[0] < length.max):
             continue
 
-        t = np.zeros(ls, dtype=np.double)
-        e = np.zeros(ls, dtype=np.double)
-
-        for k in range(ls):
-            t[k] = S12[i][k][0]
-            e[k] = S12[i][k][1]
-
+        S12wf = csum[i_peak[0]: i_peak[1]]
         if rebin == True:
-            TR, ER = rebin_waveform(t, e, stride = rebin_stride)
+            TR, ER = _rebin_waveform(*cpf._time_from_index(i_peak), S12wf, stride=rebin_stride)
             S12L[j] = [TR, ER]
         else:
-            S12L[j] = [t, e]
+            S12L[j] = [np.arange(*cpf._time_from_index(i_peak), 25*units.ns), S12wf]
         j += 1
 
-    return S12L
+    return pio.S12(S12L)
 
-def find_S12(wfzs, index,
-             time   = minmax(0, 1e+6),
-             length = minmax(8, 1000000),
-             stride=4, rebin=False, rebin_stride=40):
-    """
-    Find S1/S2 peaks.
-    input:
-    wfzs:   a vector containining the zero supressed wf
-    indx:   a vector of indexes
-    returns a dictionary
 
-    do not interrupt the peak if next sample comes within stride
-    accept the peak only if within [lmin, lmax)
-    accept the peak only if within [tmin, tmax)
-    returns a dictionary of S12
-
-    NB: This function is a wrapper around the cython function. It returns
-    a dictionary of namedtuples (Waveform(t = [t], E = [E])), where
-    [t] and [E] are np arrays.
-    """
-
-    from collections import namedtuple
-
-    Waveform = namedtuple('Waveform', 't E')
-
-    S12 = cpf.find_S12(wfzs, index,
-                       *t, *l,
-                      stride,
-                      rebin, rebin_stride)
-
-    return {i: Waveform(t, E) for i, (t,E) in S12.items()}
+# def find_S12(wfzs, index,
+#              time   = minmax(0, 1e+6),
+#              length = minmax(8, 1000000),
+#              stride=4, rebin=False, rebin_stride=40):
+#     """
+#     Find S1/S2 peaks.
+#     input:
+#     wfzs:   a vector containining the zero supressed wf
+#     indx:   a vector of indexes
+#     returns a dictionary
+#
+#     do not interrupt the peak if next sample comes within stride
+#     accept the peak only if within [lmin, lmax)
+#     accept the peak only if within [tmin, tmax)
+#     returns a dictionary of S12
+#
+#     NB: This function is a wrapper around the cython function. It returns
+#     a dictionary of namedtuples (Waveform(t = [t], E = [E])), where
+#     [t] and [E] are np arrays.
+#     """
+#
+#     from collections import namedtuple
+#
+#     Waveform = namedtuple('Waveform', 't E')
+#
+#     S12 = cpf.find_S12(wfzs, index,
+#                        *t, *l,
+#                       stride,
+#                       rebin, rebin_stride)
+#
+#     return {i: Waveform(t, E) for i, (t,E) in S12.items()}
 
 def sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
     """Given a vector with SIPMs (energies above threshold), and a
@@ -331,7 +335,6 @@ def sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
     not zero)
     """
     return {i: sipm_s2(SIPM, S2, thr=thr) for i, S2 in S2d.items()}
-
 
 
 def sipm_s2(dSIPM, S2, thr=5*units.pes):
@@ -352,6 +355,7 @@ def sipm_s2(dSIPM, S2, thr=5*units.pes):
         if psum > thr:
             SIPML[ID] = slices.astype(np.double)
     return SIPML
+
 
 def compute_csum_and_pmaps(event, pmtrwf, sipmrwf, s1par, s2par, thresholds,
                         calib_vectors, deconv_params):
@@ -400,8 +404,8 @@ def compute_csum_and_pmaps(event, pmtrwf, sipmrwf, s1par, s2par, thresholds,
     s1_ene, s1_indx = cpf.wfzs(csum_mau, threshold=thr.thr_s1)
 
     # S1 and S2
-    S1 = cpf.find_S12(s1_ene, s1_indx, **s1_params._asdict())
-    S2 = cpf.find_S12(s2_ene, s2_indx, **s2_params._asdict())
+    S1 = cpf.find_S12(csum, s1_indx, **s1_params._asdict())
+    S2 = cpf.find_S12(csum, s2_indx, **s2_params._asdict())
 
     #S2Si
     sipm = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,

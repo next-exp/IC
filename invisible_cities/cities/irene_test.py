@@ -159,6 +159,7 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
     PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'run_2983.h5')
     PATH_OUT = os.path.join(config_tmpdir,               'run_2983_pmaps.h5')
 
+
     with tb.open_file(PATH_IN, mode='r') as h5in:
         evt_in  = h5in.root.Run.events[0:2]
         evts_in = []

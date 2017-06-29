@@ -12,7 +12,6 @@ def test_zaira_KrMC(config_tmpdir, ICDIR):
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
 
-
     PATH_IN =  os.path.join(ICDIR, 'database/test_data', 'KrDST_MC.h5')
     PATH_OUT = os.path.join(config_tmpdir,               'KrCorr.h5')
 
