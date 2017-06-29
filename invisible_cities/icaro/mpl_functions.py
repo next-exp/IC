@@ -9,6 +9,7 @@ from matplotlib.collections import PatchCollection
 # from IPython.display import HTML
 
 from .. core.system_of_units_c import units
+from .. core.core_functions import define_window
 from .. database     import load_db
 
 
@@ -99,6 +100,47 @@ def plot_signal_vs_time_mus(signal,
     set_plot_labels(xlabel = "t (mus)",
                     ylabel = "signal (pes/adc)")
     plt.plot(signal_t, signal)
+
+
+def plot_waveform(pmtwf, zoom=False, window_size=800):
+    """Take as input a vector a single waveform and plot it"""
+
+    first, last = 0, len(pmtwf)
+    if zoom:
+        first, last = define_window(pmtwf, window_size)
+
+    mpl.set_plot_labels(xlabel="samples", ylabel="adc")
+    plt.plot(pmtwf[first:last])
+
+
+def plot_waveforms_overlap(wfs, zoom=False, window_size=800):
+    """Draw all waveforms together. If zoom is True, plot is zoomed
+    around peak.
+    """
+    first, last = 0, wfs.shape[1]
+    if zoom:
+        first, last = define_window(wfs[0], window_size)
+    for wf in wfs:
+        plt.plot(wf[first:last])
+
+
+def plot_wfa_wfb(wfa, wfb, zoom=False, window_size=800):
+    """Plot together wfa and wfb, where wfa and wfb can be
+    RWF, CWF, BLR.
+    """
+    plt.figure(figsize=(12, 12))
+    for i in range(len(wfa)):
+        first, last = 0, len(wfa[i])
+        if zoom:
+            first, last = define_window(wfa[i], window_size)
+        plt.subplot(3, 4, i+1)
+        # ax1.set_xlim([0, len_pmt])
+        mpl.set_plot_labels(xlabel="samples", ylabel="adc")
+        plt.plot(wfa[i][first:last], label= 'WFA')
+        plt.plot(wfb[i][first:last], label= 'WFB')
+        legend = plt.legend(loc='upper right')
+        for label in legend.get_texts():
+            label.set_fontsize('small')
 
 
 def plot_pmt_waveforms(pmtwfdf, zoom=False, window_size=800, figsize=(10,10)):
