@@ -174,8 +174,8 @@ def test_pmap_electrons_40keV(config_tmpdir):
                 s1_t = cpf._time_from_index(s1_indx)
 
                 # S1 and S2
-                s1 = cpf.find_S12(s1_ene, s1_indx, **s1_params._asdict())
-                s2 = cpf.find_S12(s2_ene, s2_indx, **s2_params._asdict())
+                s1 = cpf.find_S12(csum, s1_indx, **s1_params._asdict())
+                s2 = cpf.find_S12(csum, s2_indx, **s2_params._asdict())
                 #S2Si
                 sipm = cpf.signal_sipm(sipmrwf[event],
                                        adc_to_pes_sipm,
