@@ -119,7 +119,6 @@ def csum_zs_blr_cwf(electron_RWF_file):
          wfzs_indx         = wfzs_indx,
          wfzs_indx_py      = wfzs_indx_py))
 
-
 @fixture(scope="module")
 def toy_S1_wf():
     s1      = {}
@@ -129,7 +128,6 @@ def toy_S1_wf():
 
     wf = np.random.rand(1000)
     return s1, wf, indices
-
 
 def test_csum_cwf_close_to_csum_of_calibrated_pmts(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
@@ -233,6 +231,44 @@ def pmaps_electrons(electron_RWF_file):
 
     return pmp, pmp2, csum
 
+def test_rebin_waveform():
+    """
+    Uses a toy wf and and all possible combinations of S12 start and stop times to assure that
+    rebin_waveform performs across a wide parameter space with particular focus on edge cases.
+    Specifically it checks that:
+    1) time bins are properly aligned such that there is an obvious S2-S2Si time bin mapping
+        (one to one, onto when stride=40) by computing the expected mean time for each time bin.
+    2) the correct energy is distributed to each time bin.
+    """
+
+    nmus   =  3
+    stride = 40
+    bs     = 25*units.ns
+    rbs    = stride * bs
+    wf     = np.ones (int(nmus*units.mus / (bs))) * units.pes
+    times  = np.arange(0, nmus*units.mus,   bs)
+    # Test for every possible combination of start and stop time over an nmus microsecond wf
+    for s in times:
+        for f in times[times > s]:
+            # compute the rebinned waveform
+            [T, E] = cpf.rebin_waveform(s, f, wf[int(s/bs): int(f/bs)], stride=stride)
+            # check the waveforms values...
+            for i, (t, e) in enumerate(zip(T, E)):
+                # ...in the first time bin
+                if i==0:
+                    assert np.isclose(t, min(np.mean((s, (s // (rbs) + 1)*rbs)), np.mean((f, s))))
+                    assert e == min(((s // (rbs) + 1)*rbs - s) / bs, (f - s) / (bs))
+                # ...in the middle time bins
+                elif i < len(T) - 1:
+                    assert np.isclose(t,
+                        np.ceil(T[i - 1] / (rbs))*rbs + stride * bs / 2)
+                    assert e == stride
+                # ...in the remainder time bin
+                else:
+                    assert i == len(T) - 1
+                    assert np.isclose(t, np.mean((np.ceil(T[i-1] / (rbs))*rbs, f)))
+                    assert e == (f - np.ceil(T[i-1] / (rbs)) * rbs) / (bs)
+
 def test_rebinning_does_not_affect_the_sum_of_S2(pmaps_electrons):
     pmp, pmp2, _ = pmaps_electrons
     np.isclose(np.sum(pmp.S2[0][1]), np.sum(pmp2.S2[0][1]), rtol=1e-05)
@@ -269,18 +305,15 @@ def toy_pmt_signal():
     pmt = np.concatenate((v, v, v))
     return pmt
 
-
 def toy_cwf_and_adc(v, npmt=10):
     """Return CWF and adc_to_pes for toy example"""
     CWF = [v] * npmt
     adc_to_pes = np.ones(v.shape[0])
     return np.array(CWF), adc_to_pes
 
-
 def vsum_zsum(vsum, threshold=10):
     """Compute ZS over vsum"""
     return vsum[vsum > threshold]
-
 
 def test_csum_zs_s12():
     """Several sequencial tests:
@@ -302,23 +335,28 @@ def test_csum_zs_s12():
     wfzs_ene, wfzs_indx = cpf.wfzs(csum, threshold=10)
     npt.assert_allclose(vsum_zs, wfzs_ene)
 
-    t1 =  pf._time_from_index(wfzs_indx)
+    t1 =  cpf._time_from_index(wfzs_indx)
     t2 = cpf._time_from_index(wfzs_indx)
+    i0 = wfzs_indx[0]
+    i1 = wfzs_indx[-1] + 1
     npt.assert_allclose(t1, t2)
 
     t = pf._time_from_index(wfzs_indx)
     e = wfzs_ene
-    t1, e1  = pf._rebin_waveform(t, e, stride=10)
-    t2, e2 = cpf.rebin_waveform(t, e, stride=10)
-    npt.assert_allclose(t1, t2)
-    npt.assert_allclose(e1, e2)
 
-    S12L1 = pf._find_S12(wfzs_ene, wfzs_indx,
+
+    pt1, pe1 = pf._rebin_waveform(t1[0], t1[-1] + 25*units.ns, csum[i0:i1], stride=40)
+    ct2, ce2 = cpf.rebin_waveform(t1[0], t1[-1] + 25*units.ns, csum[i0:i1], stride=40)
+
+    npt.assert_allclose(pt1, ct2)
+    npt.assert_allclose(pe1, ce2)
+
+    S12L1 = pf._find_S12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
 
-    S12L2 = cpf.find_S12(wfzs_ene, wfzs_indx,
+    S12L2 = cpf.find_S12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
@@ -340,7 +378,7 @@ def test_csum_zs_s12():
         npt.assert_allclose(e,E)
 
     # rebin
-    S12L2 = cpf.find_S12(wfzs_ene, wfzs_indx,
+    S12L2 = cpf.find_S12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=10, rebin=True, rebin_stride=10)
@@ -351,10 +389,8 @@ def test_csum_zs_s12():
         e = S12L2[i][1]
         npt.assert_allclose(e, E)
 
-
 def test_cwf_are_empty_for_masked_pmts(csum_zs_blr_cwf):
     assert np.all(csum_zs_blr_cwf.cwf6[6:] == 0.)
-
 
 def test_correct_S1_ene_returns_correct_energies(toy_S1_wf):
     S1, wf, indices = toy_S1_wf
