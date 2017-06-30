@@ -5,6 +5,7 @@ import numpy  as np
 import pandas as pd
 
 from ..sierpe             import fee as FE
+from .                    import wfm_functions as wfm
 
 def convert_channel_id_to_IC_id(data_frame, channel_ids):
     return pd.Index(data_frame.ChannelID).get_indexer(channel_ids)
@@ -45,3 +46,11 @@ def simulate_pmt_response(event, pmtrd, adc_to_pes):
         # blr waveform stored with positive sign and no offset
         BLRX.append(signal_blr)
     return np.array(RWF), np.array(BLRX)
+
+def simulate_sipm_response(event, sipmrd, sipms_noise_sampler, sipm_adc_to_pes):
+    """Add noise to the sipms with the NoiseSampler class and return
+    the noisy waveform (in adc)."""
+    # add noise (in PES) to true waveform
+    dataSiPM = sipmrd[event] + sipms_noise_sampler.Sample()
+    # return total signal in adc counts
+    return wfm.to_adc(dataSiPM, sipm_adc_to_pes)
