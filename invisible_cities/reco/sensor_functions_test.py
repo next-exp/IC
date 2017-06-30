@@ -5,14 +5,15 @@ import pandas as pd
 from pytest import mark
 
 from .. core                 import system_of_units as units
+from .. core.random_sampling import NoiseSampler as SiPMsNoiseSampler
 
-from .. reco     import tbl_functions as tbl
-from .. reco     import wfm_functions as wfm
+from .           import tbl_functions as tbl
+from .           import wfm_functions as wfm
 from .. sierpe   import fee as FEE
 from .. sierpe   import blr
 from .. database import load_db
-from . sensor_functions import convert_channel_id_to_IC_id
-from . sensor_functions import simulate_pmt_response
+from .  sensor_functions import convert_channel_id_to_IC_id
+from .  sensor_functions import simulate_pmt_response
 
 
 def test_cwf_blr(electron_MCRD_file):
@@ -45,6 +46,47 @@ def test_cwf_blr(electron_MCRD_file):
                                    window_size = 500)
         assert diff[0] < 1
 
+@mark.slow
+def test_sipm_noise_sampler(electron_MCRD_file):
+    """This test checks that the number of SiPms surviving a hard energy
+        cut (50 pes) is  small (<10). The test exercises the full
+       construction of the SiPM vectors as well as the noise suppression.
+    """
+
+    run_number = 0
+    DataSiPM = load_db.DataSiPM(run_number)
+    sipm_adc_to_pes = DataSiPM.adc_to_pes.values.astype(np.double)
+
+    cal_min = 13
+    cal_max = 19
+    # the average calibration constant is 16 see diomira_nb in Docs
+    sipm_noise_cut = 30 # in pes. Should kill essentially all background
+
+    max_sipm_with_signal = 10
+
+    with tb.open_file(electron_MCRD_file, 'r') as e40rd:
+        event = 0
+
+        NEVENTS_DST, NSIPM, SIPMWL = e40rd.root.sipmrd.shape
+
+        assert NSIPM == 1792
+        assert SIPMWL == 800
+
+        assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) > cal_min
+        assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) < cal_max
+
+        sipms_thresholds = sipm_noise_cut *  sipm_adc_to_pes
+        noise_sampler = SiPMsNoiseSampler(SIPMWL, True)
+
+        # signal in sipm with noise
+        sipmrwf = e40rd.root.sipmrd[event] + noise_sampler.Sample()
+        # zs waveform
+        sipmzs = wfm.noise_suppression(sipmrwf, sipms_thresholds)
+        n_sipm = 0
+        for j in range(sipmzs.shape[0]):
+            if np.sum(sipmzs[j] > 0):
+                n_sipm+=1
+        assert n_sipm < max_sipm_with_signal
 
 def test_channel_id_to_IC_id():
     data_frame = pd.DataFrame({'SensorID' : [2,9,4,1,3],

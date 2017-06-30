@@ -214,11 +214,8 @@ class SensorResponseCity(City):
     def simulate_sipm_response(self, event, sipmrd,
                                sipms_noise_sampler):
         """Add noise with the NoiseSampler class and return
-        the noisy waveform (in pes)."""
-        # add noise (in PES) to true waveform
-        dataSiPM = sipmrd[event] + sipms_noise_sampler.Sample()
-        # return total signal in adc counts
-        return wfm.to_adc(dataSiPM, self.sipm_adc_to_pes)
+        the noisy waveform (in adc counts)."""
+        return sf.simulate_sipm_response(event, sipmrd, sipms_noise_sampler, self.sipm_adc_to_pes)
 
     def simulate_pmt_response(self, event, pmtrd):
         """ Full simulation of the energy plane response
@@ -232,8 +229,6 @@ class SensorResponseCity(City):
         array of BLR waveforms (only decimation)
         """
         return sf.simulate_pmt_response(event, pmtrd, self.adc_to_pes)
-
-
 
     @property
     def FE_t_sample(self):
