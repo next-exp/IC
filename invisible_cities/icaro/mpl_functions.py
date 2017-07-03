@@ -2,12 +2,16 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation
 from matplotlib.patches import Circle
 from matplotlib.collections import PatchCollection
 # from mpl_toolkits.mplot3d import Axes3D
 # from IPython.display import HTML
 
 from .. core.system_of_units_c import units
+from .. core.core_functions import define_window
+from .. database     import load_db
+
 
 # matplotlib.style.use("ggplot")
 #matplotlib.rc('animation', html='html5')
@@ -98,6 +102,47 @@ def plot_signal_vs_time_mus(signal,
     plt.plot(signal_t, signal)
 
 
+def plot_waveform(pmtwf, zoom=False, window_size=800):
+    """Take as input a vector a single waveform and plot it"""
+
+    first, last = 0, len(pmtwf)
+    if zoom:
+        first, last = define_window(pmtwf, window_size)
+
+    mpl.set_plot_labels(xlabel="samples", ylabel="adc")
+    plt.plot(pmtwf[first:last])
+
+
+def plot_waveforms_overlap(wfs, zoom=False, window_size=800):
+    """Draw all waveforms together. If zoom is True, plot is zoomed
+    around peak.
+    """
+    first, last = 0, wfs.shape[1]
+    if zoom:
+        first, last = define_window(wfs[0], window_size)
+    for wf in wfs:
+        plt.plot(wf[first:last])
+
+
+def plot_wfa_wfb(wfa, wfb, zoom=False, window_size=800):
+    """Plot together wfa and wfb, where wfa and wfb can be
+    RWF, CWF, BLR.
+    """
+    plt.figure(figsize=(12, 12))
+    for i in range(len(wfa)):
+        first, last = 0, len(wfa[i])
+        if zoom:
+            first, last = define_window(wfa[i], window_size)
+        plt.subplot(3, 4, i+1)
+        # ax1.set_xlim([0, len_pmt])
+        set_plot_labels(xlabel="samples", ylabel="adc")
+        plt.plot(wfa[i][first:last], label= 'WFA')
+        plt.plot(wfb[i][first:last], label= 'WFB')
+        legend = plt.legend(loc='upper right')
+        for label in legend.get_texts():
+            label.set_fontsize('small')
+
+
 def plot_pmt_waveforms(pmtwfdf, zoom=False, window_size=800, figsize=(10,10)):
     """plot PMT wf and return figure"""
     plt.figure(figsize=figsize)
@@ -152,6 +197,139 @@ def plot_calibrated_sum_in_mus(CSUM,
                                 signal_min=signal_min, signal_max=signal_max,
                                 label='CSUM_MAU')
 
+
+
+def plot_sipm_list(sipmrwf, sipm_list, x=4):
+    """Plot a list of SiPMs."""
+    plt.figure(figsize=(12, 12))
+    nmax = len(sipm_list)
+    y = int(nmax / x) + 1
+    for i in range(0, nmax):
+        plt.subplot(x, y, i+1)
+        plt.plot(sipmrwf[sipm_list[i]])
+
+
+def plot_sensor_list_ene_map(swf, slist, stype='PMT', cmap='Blues'):
+        """Plot a map of the energies of sensors in list."""
+        DataSensor = load_db.DataPMT(0)
+        radius = 10
+        if stype == 'SiPM':
+            DataSensor = load_db.DataSiPM(0)
+            radius = 2
+        xs = DataSensor.X.values
+        ys = DataSensor.Y.values
+        r = np.ones(len(xs)) * radius
+        col = np.zeros(len(xs))
+        for i in slist:
+            col[i] = np.sum(swf[i])
+
+        plt.figure(figsize=(8, 8))
+        plt.subplot(aspect="equal")
+        circles(xs, ys, r, c=col, alpha=0.5, ec="none", cmap=cmap)
+        plt.colorbar()
+
+        plt.xlim(-198, 198)
+        plt.ylim(-198, 198)
+
+
+def make_tracking_plane_movie(slices, thrs=0.1):
+    """Create a video made of consecutive frames showing the response of
+    the tracking plane.
+
+    Parameters
+    ----------
+    slices : 2-dim np.ndarray
+        The signal of each SiPM (axis 1) for each time sample (axis 0).
+    thrs : float, optional
+        Default cut value to be applied to each slice. Defaults to 0.1.
+
+    Returns
+    -------
+    mov : matplotlib.animation
+        The movie.
+    """
+
+    fig, ax = plt.subplots()
+    fig.set_size_inches(10, 8)
+    DataSensor = load_db.DataSiPM(0)
+    X = DataSensor.X.values
+    Y = DataSensor.Y.values
+
+    xmin, xmax = np.nanmin(X), np.nanmax(X)
+    ymin, ymax = np.nanmin(Y), np.nanmax(Y)
+    def init():
+        global cbar, scplot
+        ax.set_xlabel("x (mm)")
+        ax.set_ylabel("y (mm)")
+        ax.set_xlim((xmin, xmax))
+        ax.set_ylim((ymin, ymax))
+        scplot = ax.scatter([], [], c=[])
+        cbar = fig.colorbar(scplot, ax=ax)
+        cbar.set_label("Charge (pes)")
+        return (scplot,)
+
+    def animate(i):
+        global cbar, scplot
+        slice_ = slices[i]
+        selection = slice_ > np.nanmax(slice_) * thrs
+        x, y, q = X[selection], Y[selection], slice_[selection]
+        cbar.remove()
+        fig.clear()
+        ax = plt.gca()
+        ax.set_xlabel("x (mm)")
+        ax.set_ylabel("y (mm)")
+        ax.set_xlim((xmin, xmax))
+        ax.set_ylim((ymin, ymax))
+        scplot = ax.scatter(x, y, c=q, marker="s", vmin=0,
+                            vmax=np.nanmax(slices))
+        cbar = fig.colorbar(scplot, ax=ax,
+                            boundaries=np.linspace(0, np.nanmax(slices), 100))
+        cbar.set_label("Charge (pes)")
+        return (scplot,)
+
+    anim = matplotlib.animation.FuncAnimation(fig, animate, init_func=init,
+                                              frames=len(slices), interval=200,
+                                              blit=False)
+    return anim
+
+
+
+def plot_event_3D(pmap, sipmdf, outputfile=None, thrs=0.):
+    """Create a 3D+1 representation of the event based on the SiPMs signal
+    for each slice.
+
+    Parameters
+    ----------
+    pmap : Bridges.PMap
+        The pmap of some event.
+    sipmdf : pd.DataFrame
+        Contains the X, Y info.
+    outputfile : string, optional
+        Name of the outputfile. If given, the plot is saved with this name.
+        It is not saved by default.
+    thrs : float, optional
+        Relative cut to be applied per slice. Defaults to 0.
+
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    x, y, z, q = [], [], [], []
+    for peak in pmap.get("S2"):
+        for time, sl in zip(peak.times, peak.anode):
+            selection = sl > thrs * np.nanmax(sl)
+            x.extend(sipmdf["X"].values[selection])
+            y.extend(sipmdf["Y"].values[selection])
+            z.extend(np.ones_like(sl[selection]) * time)
+            q.extend(sl[selection])
+
+    ax.scatter(x, z, y, c=q, s=[2*qi for qi in q], alpha=0.3)
+    ax.set_xlabel("x (mm)")
+    ax.set_ylabel("z (mm)")
+    ax.set_zlabel("y (mm)")
+    fig.set_size_inches(10,8)
+    if outputfile is not None:
+        fig.savefig(outputfile)
 
 def set_plot_labels(xlabel="", ylabel="", grid=True):
     """Short cut to set labels in plots."""
