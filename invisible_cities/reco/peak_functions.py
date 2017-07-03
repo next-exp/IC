@@ -295,38 +295,6 @@ def _find_S12(csum, index,
     return pio.S12(S12L)
 
 
-# def find_S12(wfzs, index,
-#              time   = minmax(0, 1e+6),
-#              length = minmax(8, 1000000),
-#              stride=4, rebin=False, rebin_stride=40):
-#     """
-#     Find S1/S2 peaks.
-#     input:
-#     wfzs:   a vector containining the zero supressed wf
-#     indx:   a vector of indexes
-#     returns a dictionary
-#
-#     do not interrupt the peak if next sample comes within stride
-#     accept the peak only if within [lmin, lmax)
-#     accept the peak only if within [tmin, tmax)
-#     returns a dictionary of S12
-#
-#     NB: This function is a wrapper around the cython function. It returns
-#     a dictionary of namedtuples (Waveform(t = [t], E = [E])), where
-#     [t] and [E] are np arrays.
-#     """
-#
-#     from collections import namedtuple
-#
-#     Waveform = namedtuple('Waveform', 't E')
-#
-#     S12 = cpf.find_S12(wfzs, index,
-#                        *t, *l,
-#                       stride,
-#                       rebin, rebin_stride)
-#
-#     return {i: Waveform(t, E) for i, (t,E) in S12.items()}
-
 def sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
     """Given a vector with SIPMs (energies above threshold), and a
     dictionary of S2s, S2d, returns a dictionary of SiPMs-S2.  Each
@@ -334,7 +302,8 @@ def sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
     arrays. Each element of the list is the S2 window in the SiPM (if
     not zero)
     """
-    return {i: sipm_s2(SIPM, S2, thr=thr) for i, S2 in S2d.items()}
+    #return {i: cpf.sipm_s2(SIPM, S2, thr=thr) for i, S2 in S2d.items()}
+    return cpf.sipm_s2_dict(SIPM, S2d, thr)
 
 
 def sipm_s2(dSIPM, S2, thr=5*units.pes):
@@ -357,8 +326,9 @@ def sipm_s2(dSIPM, S2, thr=5*units.pes):
     return SIPML
 
 
-def compute_csum_and_pmaps(event, pmtrwf, sipmrwf, s1par, s2par, thresholds,
-                        calib_vectors, deconv_params):
+def compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
+                           s1par, s2par, thresholds,
+                           calib_vectors, deconv_params):
     """Compute calibrated sum and PMAPS.
 
     :param pmtrwf: PMTs RWF
