@@ -104,7 +104,45 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
 
 """
 Selects the SiPMs with signal
-and returns a dictionary
+and returns a dictionary:
+input: sipmzs[i,k], where:
+       i: runs over number of SiPms (with signal)
+       k: runs over waveform.
+       sipmzs[i,k] only includes samples above
+       threshold (e.g, dark current threshold)
+returns {j: [i, sipmzs[i]]}, where:
+       j: enumerates sipms with psum >0
+       i: sipm ID
 """
 
 cpdef select_sipm(double [:, :] sipmzs)
+
+"""Given a dict with SIPMs (energies above threshold),
+return a dict of np arrays, where the key is the sipm
+with signal.
+
+input {j: [i, sipmzs[i]]}, where:
+       j: enumerates sipms with psum >0
+       i: sipm ID
+      S2d defining an S2 signal
+
+returns:
+      {i, sipm_i[i0:i1]} where:
+      i: sipm ID
+      sipm_i[i0:i1] waveform corresponding to SiPm i between:
+      i0: min index of S2d
+      i1: max index of S2d
+      only IF the total energy of SiPM is above thr
+
+"""
+#cpdef sipm_s2(dict dSIPM, dict S2, double thr)
+
+
+"""Given a vector with SIPMs (energies above threshold), and a
+dictionary of S2s, S2d, returns a dictionary of SiPMs-S2.  Each
+index of the dictionary correspond to one S2 and is a list of np
+arrays. Each element of the list is the S2 window in the SiPM (if
+not zero)
+
+"""
+cpdef sipm_s2_dict(dict dSIPM, dict S2d, double thr)
