@@ -24,6 +24,13 @@ def electron_RWF_file(request, ICDIR):
                         'database/test_data',
                         request.param)
 
+@pytest.fixture(scope  = 'session',
+                params = ['electrons_40keV_z250_MCRD.h5'])
+def electron_MCRD_file(request, ICDIR):
+    return os.path.join(ICDIR,
+                        'database/test_data',
+                        request.param)
+
 from .reco.pmaps_functions import (df_to_pmaps_dict,
                                    df_to_s2si_dict,
                                    read_pmaps,
