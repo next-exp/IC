@@ -64,7 +64,6 @@ from scipy import signal
 from .. io import pmap_io as pio
 from .. core.system_of_units_c import units
 
-
 cpdef calibrated_pmt_sum(double [:, :]  CWF,
                          double [:]     adc_to_pes,
                          list           pmt_active = [],
@@ -229,43 +228,49 @@ cpdef find_S12(double [:] csum,  int [:] index,
     returns a dictionary of S12
     """
 
+
+    return pio.S12(find_s12(csum, index, time, length, stride, rebin, rebin_stride))
+
+
+cpdef find_s12(double [:] csum,  int [:] index,
+               time=(), length=(),
+               int stride=4, rebin=False, rebin_stride=40):
+    """
+    Find S1/S2 peaks.
+    input:
+    csum:   a summed (across pmts) waveform
+    indx:   a vector of indexes
+    returns a dictionary
+    do not interrupt the peak if next sample comes within stride
+    accept the peak only if within [lmin, lmax)
+    accept the peak only if within [tmin, tmax)
+    returns a dictionary of S12
+    """
     cdef double tmin, tmax
     cdef int    limn, lmax
-
     #cdef double [:] P = wfzs
     cdef double [:] T = _time_from_index(index)
-
     cdef dict S12  = {}
     cdef dict S12L = {}
     cdef int i, j, k, ls
-
     tmin, tmax = time
     lmin, lmax = length
-
     S12[0] = np.array([index[0], index[0] + 1], dtype=np.int32)
-
     j = 0
     for i in range(1, len(index)):
-
         if T[i] > tmax: break
         if T[i] < tmin: continue
-
         # New s12, create new start and end index
         if index[i] - stride > index[i-1]:
             j += 1
             S12[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
-
         # Update end index in current S12
         S12[j][1] = index[i] + 1
-
-
     # re-arrange and rebin
     j = 0
     for i_peak in S12.values():
-
         if not (lmin <= i_peak[1] - i_peak[0] < lmax):
             continue
-
         S12wf = csum[i_peak[0]: i_peak[1]]
         if rebin == True:
             TR, ER = rebin_waveform(*_time_from_index(i_peak), S12wf, stride=rebin_stride)
@@ -274,7 +279,7 @@ cpdef find_S12(double [:] csum,  int [:] index,
             S12L[j] = [np.arange(*_time_from_index(i_peak), 25*units.ns), S12wf]
         j += 1
 
-    return pio.S12(S12L)
+    return S12L
 
 
 cpdef correct_S1_ene(S1, np.ndarray csum):
