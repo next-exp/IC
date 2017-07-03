@@ -45,8 +45,16 @@ def event_input(draw):
 @composite
 def waveform_input(draw, min_size=1, max_size=100):
     size = draw(integers(min_size, max_size))
-    t    = draw(arrays(float, size, floats(0.1, 1000.))); t.sort() # times in order!
-    E    = draw(arrays(float, size, floats(0.1, 100.)))
+    t    = draw(arrays(float, size, floats(0.1, 10000.))); t.sort() # times in order!
+    E    = draw(arrays(float, size, floats(-10., 1000.)))
+    return size, t, E
+
+
+@composite
+def peak_input(draw, min_size=1, max_size=100):
+    size = draw(integers(min_size, max_size))
+    t    = draw(arrays(float, size, floats(0.1, 10000.))); t.sort() # times in order!
+    E    = draw(arrays(float, size, floats(-10., 1000.)))
     return size, t, E
 
 

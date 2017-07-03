@@ -50,64 +50,64 @@ def test_minmax_does_not_accept_min_greater_than_max(a,b):
 def test_minmax_add(mm, f):
     lo, hi = mm
     raised = mm + f
-    assert raised.min == lo + f
-    assert raised.max == hi + f
+    np.isclose (raised.min , lo + f, rtol=1e-4)
+    np.isclose (raised.max , hi + f, rtol=1e-4)
 
 
 @given(minmaxes, sensible_floats)
 def test_minmax_mul(mm, f):
     lo, hi = mm
     scaled = mm * f
-    assert scaled.min == lo * f
-    assert scaled.max == hi * f
+    np.isclose (scaled.min , lo * f, rtol=1e-4)
+    np.isclose (scaled.max , hi * f, rtol=1e-4)
 
 
 @given(minmaxes, sensible_floats)
 def test_minmax_div(mm, f):
     lo, hi = mm
     scaled = mm / f
-    assert scaled.min == lo / f
-    assert scaled.max == hi / f
+    np.isclose (scaled.min , lo / f, rtol=1e-4)
+    np.isclose (scaled.max , hi / f, rtol=1e-4)
 
 
 @given(minmaxes, sensible_floats)
 def test_minmax_sub(mm, f):
     lo, hi = mm
     lowered = mm - f
-    assert lowered.min == lo - f
-    assert lowered.max == hi - f
+    np.isclose (lowered.min , lo - f, rtol=1e-4)
+    np.isclose (lowered.max , hi - f, rtol=1e-4)
 
 
 @given(cmms, sensible_floats)
 def test_cminmax_add(mm, f):
     lo, hi = mm
     raised = mm + f
-    assert raised.min == lo + f
-    assert raised.max == hi + f
+    np.isclose (raised.min , lo + f, rtol=1e-4)
+    np.isclose (raised.max , hi + f, rtol=1e-4)
 
 
 @given(cmms, sensible_floats)
 def test_cminmax_div(mm, f):
     lo, hi = mm
     scaled = mm / f
-    assert scaled.min == lo / f
-    assert scaled.max == hi / f
+    np.isclose (scaled.min , lo / f, rtol=1e-4)
+    np.isclose (scaled.max , hi / f, rtol=1e-4)
 
 
 @given(cmms, sensible_floats)
 def test_cminmax_mul(mm, f):
     lo, hi = mm
     scaled = mm * f
-    assert scaled.min == lo * f
-    assert scaled.max == hi * f
+    np.isclose (scaled.min , lo * f, rtol=1e-4)
+    np.isclose (scaled.max , hi * f, rtol=1e-4)
 
 
 @given(cmms, sensible_floats)
 def test_cminmax_sub(mm, f):
     lo, hi = mm
     lowered = mm - f
-    assert lowered.min == lo - f
-    assert lowered.max == hi - f
+    np.isclose (lowered.min , lo - f, rtol=1e-4)
+    np.isclose (lowered.max , hi - f, rtol=1e-4)
 
 
 @given(xys, sensible_floats, sensible_floats)
