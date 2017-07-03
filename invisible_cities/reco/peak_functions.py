@@ -302,8 +302,8 @@ def sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
     arrays. Each element of the list is the S2 window in the SiPM (if
     not zero)
     """
-    #return {i: cpf.sipm_s2(SIPM, S2, thr=thr) for i, S2 in S2d.items()}
-    return cpf.sipm_s2_dict(SIPM, S2d, thr)
+    return {i: sipm_s2(SIPM, S2, thr=thr) for i, S2 in S2d.items()}
+    #return cpf.sipm_s2_dict(SIPM, S2d, thr)
 
 
 def sipm_s2(dSIPM, S2, thr=5*units.pes):
