@@ -50,8 +50,9 @@ class minmax:
     def __mul__(self, factor):
         return minmax(self.min * factor, self.max * factor)
 
-    def __div__(self, factor):
-        return minmax(self.min / factor, self.max / factor)
+    def __truediv__(self, factor):
+        assert factor != 0
+        return self.__mul__(1./factor)
 
     def __add__(self, scalar):
         return minmax(self.min + scalar, self.max + scalar)
