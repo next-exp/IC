@@ -34,6 +34,7 @@ from .. database import load_db
 from ..io                 import pmap_io          as pio
 
 from ..reco               import peak_functions_c as cpf
+from ..reco               import sensor_functions as sf
 from ..reco               import peak_functions   as pf
 from ..reco               import pmaps_functions  as pmp
 from ..reco               import dst_functions    as dstf
@@ -213,11 +214,8 @@ class SensorResponseCity(City):
     def simulate_sipm_response(self, event, sipmrd,
                                sipms_noise_sampler):
         """Add noise with the NoiseSampler class and return
-        the noisy waveform (in pes)."""
-        # add noise (in PES) to true waveform
-        dataSiPM = sipmrd[event] + sipms_noise_sampler.Sample()
-        # return total signal in adc counts
-        return wfm.to_adc(dataSiPM, self.sipm_adc_to_pes)
+        the noisy waveform (in adc counts)."""
+        return sf.simulate_sipm_response(event, sipmrd, sipms_noise_sampler, self.sipm_adc_to_pes)
 
     def simulate_pmt_response(self, event, pmtrd):
         """ Full simulation of the energy plane response
@@ -230,32 +228,7 @@ class SensorResponseCity(City):
         front end electronics (LPF, HPF filters)
         array of BLR waveforms (only decimation)
         """
-        # Single Photoelectron class
-        spe = FE.SPE()
-        # FEE, with noise PMT
-        fee  = FE.FEE(noise_FEEPMB_rms=FE.NOISE_I, noise_DAQ_rms=FE.NOISE_DAQ)
-        NPMT = pmtrd.shape[1]
-        RWF  = []
-        BLRX = []
-
-        for pmt in range(NPMT):
-            # normalize calibration constants from DB to MC value
-            cc = self.adc_to_pes[pmt] / FE.ADC_TO_PES
-            # signal_i in current units
-            signal_i = FE.spe_pulse_from_vector(spe, pmtrd[event, pmt])
-            # Decimate (DAQ decimation)
-            signal_d = FE.daq_decimator(FE.f_mc, FE.f_sample, signal_i)
-            # Effect of FEE and transform to adc counts
-            signal_fee = FE.signal_v_fee(fee, signal_d, pmt) * FE.v_to_adc()
-            # add noise daq
-            signal_daq = cc * FE.noise_adc(fee, signal_fee)
-            # signal blr is just pure MC decimated by adc in adc counts
-            signal_blr = cc * FE.signal_v_lpf(fee, signal_d) * FE.v_to_adc()
-            # raw waveform stored with negative sign and offset
-            RWF.append(FE.OFFSET - signal_daq)
-            # blr waveform stored with positive sign and no offset
-            BLRX.append(signal_blr)
-        return np.array(RWF), np.array(BLRX)
+        return sf.simulate_pmt_response(event, pmtrd, self.adc_to_pes)
 
     @property
     def FE_t_sample(self):
