@@ -20,7 +20,7 @@ import tables as tb
 
 from .. core.configure          import configure
 from .. core.system_of_units_c  import units
-from .. core.sensor_functions   import convert_channel_id_to_IC_id
+from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco                    import tbl_functions    as tbl
 from .. reco                    import peak_functions_c as cpf
 from .. database                import load_db          as db
@@ -62,7 +62,7 @@ class Cecilia(DeconvolutionCity):
         self.display_IO_info()
         sp = self.get_sensor_params(self.input_files[0])
         print(sp)
-        
+
         # loop over input files
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
