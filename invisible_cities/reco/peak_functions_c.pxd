@@ -79,6 +79,9 @@ cpdef find_S12(double [:] csum, int [:] index,
                time=*, length=*,
                int stride=*, rebin=*, rebin_stride=*)
 
+cpdef find_s12(double [:] csum,  int [:] index,
+               time=*, length=*, int stride=*, rebin=*, rebin_stride=*)
+
 """
 rebins  a waveform according to stride
 The input waveform is a vector such that the index expresses time bin and the
