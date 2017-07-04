@@ -276,7 +276,7 @@ cpdef find_s12(double [:] csum,  int [:] index,
             TR, ER = rebin_waveform(*_time_from_index(i_peak), S12wf, stride=rebin_stride)
             S12L[j] = [TR, ER]
         else:
-            S12L[j] = [np.arange(*_time_from_index(i_peak), 25*units.ns), S12wf]
+            S12L[j] = [np.arange(*_time_from_index(i_peak), 25*units.ns), np.asarray(S12wf)]
         j += 1
 
     return S12L
