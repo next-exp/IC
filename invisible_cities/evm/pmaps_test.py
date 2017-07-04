@@ -15,6 +15,7 @@ from .. core.ic_types_c    import minmax
 from .  pmaps import S12
 from .  pmaps import S1
 from .  pmaps import S2
+from .  pmaps import S2Si
 from .  pmaps import Peak
 
 
@@ -78,28 +79,28 @@ def test_s1_s2(KrMC_pmaps, evt_no):
         np.allclose (pwf.E , pk.E, rtol=1e-4)
 
 
-# @given(integers(min_value=31, max_value=40))
-# def test_s2si(KrMC_pmaps, evt_no):
-#     *_, (_, s2data, s2sidata) = KrMC_pmaps
-#
-#     s2d   = s2data[evt_no]
-#     s2sid = s2sidata[evt_no]
-#
-#     s2si = S2Si(s2d, s2sid)
-#     assert s2si.number_of_peaks == len(s2d)
-#
-#     for peak_number in range(s2si.number_of_peaks):
-#         assert (s2si.number_of_sipms_in_peak(peak_number) ==
-#                 len(s2sid[peak_number]))
-#
-#         np.array_equal(np.array(s2si.sipms_in_peak(peak_number)),
-#                        np.array(s2sid[peak_number].keys()))
-#
-#         for sipm_number in s2si.sipms_in_peak(peak_number):
-#             w   = s2si.sipm_waveform(peak_number, sipm_number)
-#             wzs = s2si.sipm_waveform_zs(peak_number, sipm_number)
-#             E   = s2sid[peak_number][sipm_number]
-#             t = s2si.peak_waveform(peak_number).t
-#             np.allclose(w.E , E)
-#             np.allclose(wzs.E , E[E>0])
-#             np.allclose(wzs.t , t[E>0])
+@given(integers(min_value=31, max_value=40))
+def test_s2si(KrMC_pmaps, evt_no):
+    *_, (_, s2data, s2sidata) = KrMC_pmaps
+
+    s2d   = s2data[evt_no]
+    s2sid = s2sidata[evt_no]
+
+    s2si = S2Si(s2d, s2sid)
+    assert s2si.number_of_peaks == len(s2d)
+
+    for peak_number in range(s2si.number_of_peaks):
+        assert (s2si.number_of_sipms_in_peak(peak_number) ==
+                len(s2sid[peak_number]))
+
+        np.array_equal(np.array(s2si.sipms_in_peak(peak_number)),
+                       np.array(s2sid[peak_number].keys()))
+
+        for sipm_number in s2si.sipms_in_peak(peak_number):
+            w   = s2si.sipm_waveform(peak_number, sipm_number)
+            wzs = s2si.sipm_waveform_zs(peak_number, sipm_number)
+            E   = s2sid[peak_number][sipm_number]
+            t = s2si.peak_waveform(peak_number).t
+            np.allclose(w.E , E)
+            np.allclose(wzs.E , E[E>0])
+            np.allclose(wzs.t , t[E>0])
