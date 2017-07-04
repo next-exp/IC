@@ -352,30 +352,43 @@ class PmapCity(CalibratedCity):
         self.thr_sipm_s2 = conf.thr_sipm_s2
 
     def pmaps(self, s1_indx, s2_indx, csum, sipmzs):
-        S1, S2 = self.find_S12(csum, s1_indx, s2_indx)
-        S1     = self.correct_S1_ene(S1, csum)
-        Si     = self.find_S2Si(S2, sipmzs)
-        return S1, S2, Si
-
-    def find_S12(self, csum, s1_indx, s2_indx):
-        """Return S1 and S2."""
-        S1 = cpf.find_S12(csum,
+        s1d = cpf.find_s12(csum,
                           s1_indx,
                           **self.s1_params._asdict())
 
-        S2 = cpf.find_S12(csum,
+        s2d = cpf.find_s12(csum,
                           s2_indx,
                           **self.s2_params._asdict())
-        return S1, S2
 
-    def correct_S1_ene(self, S1, csum):
-        return cpf.correct_S1_ene(S1, csum)
+        s1d     = cpf.correct_s1_ene(s1d, csum)
+        s2sid = cpf.sipm_s2_dict(sipmzs, s2d, thr = self.thr_sipm_s2)
+        return pio.S12(s1d), pio.S12(s2d), pio.S2Si(s2sid)
 
-    def find_S2Si(self, S2, sipmzs):
-        """Return S2Si."""
-        SIPM = cpf.select_sipm(sipmzs)
-        S2Si = pf.sipm_s2_dict(SIPM, S2, thr = self.thr_sipm_s2)
-        return pio.S2Si(S2Si)
+        # S1, S2 = self.find_S12(csum, s1_indx, s2_indx)
+        # S1     = self.correct_S1_ene(S1, csum)
+        # Si     = self.find_S2Si(S2, sipmzs)
+        # return S1, S2, Si
+
+    # def find_S12(self, csum, s1_indx, s2_indx):
+    #     """Return S1 and S2."""
+    #     S1 = cpf.find_s12(csum,
+    #                       s1_indx,
+    #                       **self.s1_params._asdict())
+    #
+    #     S2 = cpf.find_s12(csum,
+    #                       s2_indx,
+    #                       **self.s2_params._asdict())
+    #     return S1, S2
+    #
+    # def correct_S1_ene(self, S1, csum):
+    #     return cpf.correct_S1_ene(S1, csum)
+    #
+    # def find_S2Si(self, S2, sipmzs):
+    #     """Return S2Si."""
+    #     #SIPM = cpf.select_sipm(sipmzs)
+    #     #S2Si = pf.sipm_s2_dict(SIPM, S2, thr = self.thr_sipm_s2)
+    #     S2Si = cpf.sipm_s2_dict(sipmzs, S2, thr = self.thr_sipm_s2)
+    #     return pio.S2Si(S2Si)
 
     def check_s1s2_params(self):
         if (not self.s1_params) or (not self.s2_params):
