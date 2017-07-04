@@ -52,13 +52,14 @@ cdef class Peak:
 
 
     def __str__(self):
-        s = """Peak(samples = {} width = {:.1f} mus , energy = {:.1f} pes
-        height = {:.1f} pes tmin-tmax = {} mus """.format(self.number_of_samples,
+        s = """Peak(samples = {0:d} width = {1:8.1f} mus , energy = {2:8.1f} pes
+        height = {3:8.1f} pes tmin-tmax = {4} mus """.format(self.number_of_samples,
         self.width / units.mus, self.total_energy, self.height,
-        (self.tmin_tmax * (1 / units.mus)).__str__(1))
+        (self.tmin_tmax * (1 / units.mus)))
         return s
 
-    __repr__ = __str__
+    def __repr__(self):
+        return self.__str__()
 
 
 cdef class S12:
@@ -82,15 +83,121 @@ cdef class S12:
     property number_of_peaks:
          def __get__(self): return len(self.peaks)
 
-    cpdef peak_waveform(self, peak_number):
+    cpdef peak_waveform(self, int peak_number):
         try:
             return self.peaks[peak_number]
         except KeyError:
              raise PeakNotFound
 
+
+cdef class S1(S12):
     def __str__(self):
-        s =  "{}(number of peaks = {})\n".format(self.__class__.__name__, self.number_of_peaks)
+        s =  "S1 (number of peaks = {})\n".format(self.number_of_peaks)
         s2 = ['peak number = {}: {} \n'.format(i,
                                     self.peak_waveform(i)) for i in self.peaks]
         return  s + ''.join(s2)
-    __repr__ = __str__
+
+    def __repr__(self):
+        return self.__str__()
+
+cdef class S2(S12):
+    def __str__(self):
+        s =  "S2 (number of peaks = {})\n".format(self.number_of_peaks)
+        s2 = ['peak number = {}: {} \n'.format(i,
+                                    self.peak_waveform(i)) for i in self.peaks]
+        return  s + ''.join(s2)
+
+    def __repr__(self):
+        return self.__str__()
+
+cdef class S2Si(S2):
+    """Transient class representing the combination of
+    S2 and the SiPM information.
+    Notice that S2Si is constructed using an s2d and an s2sid.
+    The s2d is an s12 dictionary (not an S2 instance)
+    The s2sid is a dictionary {peak:{nsipm:[E]}}
+    """
+
+    def __init__(self, s2d, s2sid):
+        """where:
+           s2d   = {peak_number:[[t], [E]]}
+           s2sid = {peak:{nsipm:[Q]}}
+           Q is the energy in each SiPM sample
+        """
+        S2.__init__(self, s2d)
+        self._s2sid = s2sid
+
+    cpdef number_of_sipms_in_peak(self, int peak_number):
+        return len(self._s2sid[peak_number])
+
+    cpdef sipms_in_peak(self, int peak_number):
+        try:
+            return tuple(self._s2sid[peak_number].keys())
+        except KeyError:
+            raise PeakNotFound
+
+    cpdef sipm_waveform(self, int peak_number, int sipm_number):
+        cdef double [:] E
+        if self.number_of_sipms_in_peak(peak_number) == 0:
+            raise SipmEmptyList
+        try:
+            E = self._s2sid[peak_number][sipm_number]
+            return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
+        except KeyError:
+            raise SipmNotFound
+
+    cpdef sipm_waveform_zs(self, int peak_number, int sipm_number):
+        cdef double [:] E, t, tzs, Ezs
+        cdef list TZS = []
+        cdef list EZS = []
+        cdef int i
+        if self.number_of_sipms_in_peak(peak_number) == 0:
+            raise SipmEmptyList("No SiPMs associated to this peak")
+        try:
+            E = self._s2sid[peak_number][sipm_number]
+            t = self.peak_waveform(peak_number).t
+
+            for i in range(len(E)):
+                if E[i] > 0:
+                    TZS.append(t[i])
+                    EZS.append(E[i])
+            tzs = np.array(TZS)
+            Ezs = np.array(EZS)
+
+            return Peak(np.asarray(tzs), np.asarray(Ezs))
+        except KeyError:
+            raise SipmNotFound
+
+    cpdef sipm_total_energy(self, int peak_number, int sipm_number):
+        cdef double et
+        if self.number_of_sipms_in_peak(peak_number) == 0:
+            raise SipmEmptyList("No SiPMs associated to this peak")
+        try:
+            et = np.sum(self._s2sid[peak_number][sipm_number])
+            return et
+        except KeyError:
+            raise SipmNotFound
+
+    def __str__(self):
+        s  = "=" * 80 + "\n" + S2.__str__(self)
+
+        s += "-" * 80 + "\nSiPMs for non-empty peaks\n\n"
+
+        s2a = ["peak number = {}: nsipm in peak = {}"
+               .format(peak_number, self.sipms_in_peak(peak_number))
+               for peak_number in self.peaks
+               if len(self.sipms_in_peak(peak_number)) > 0]
+
+        s += '\n\n'.join(s2a) + "\n"
+
+        s += "-" * 80 + "\nSiPMs Waveforms\n\n"
+
+        s2b = ["peak number = {}: sipm number = {}\n    sipm waveform (zs) = {}".format(peak_number, sipm_number, self.sipm_waveform_zs(peak_number, sipm_number))
+               for peak_number in self.peaks
+               for sipm_number in self.sipms_in_peak(peak_number)
+               if len(self.sipms_in_peak(peak_number)) > 0]
+
+        return s + '\n'.join(s2b) + "\n" + "=" * 80
+
+    def __repr__(self):
+        return self.__str__()
