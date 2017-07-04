@@ -89,7 +89,7 @@ contents expresses energy (e.g, in pes)
 The function returns a rebinned vector of T and E.
 """
 
-cpdef correct_S1_ene(S1, np.ndarray csum)
+#cpdef correct_S1_ene(S1, np.ndarray csum)
 cpdef correct_s1_ene(dict s1d, np.ndarray csum)
 
 #cpdef rebin_waveform(double [:] t, double[:] e, int stride=*)
@@ -119,7 +119,7 @@ returns {j: [i, sipmzs[i]]}, where:
        i: sipm ID
 """
 
-cpdef select_sipm(double [:, :] sipmzs)
+#\cpdef select_sipm(double [:, :] sipmzs)
 
 """Given a dict with SIPMs (energies above threshold),
 return a dict of np arrays, where the key is the sipm
