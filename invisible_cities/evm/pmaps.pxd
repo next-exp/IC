@@ -43,7 +43,7 @@ cdef class S2Si(S2):
     The s2sid is a dictionary {peak:{nsipm:[E]}}
     """
 
-    cdef dict s2d, s2sid
+    cdef dict _s2sid
     cpdef number_of_sipms_in_peak(self, int peak_number)
     cpdef sipms_in_peak(self, int peak_number)
     cpdef sipm_waveform(self, int peak_number, int sipm_number)
