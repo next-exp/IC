@@ -289,6 +289,14 @@ cpdef correct_S1_ene(S1, np.ndarray csum):
         S1_corr[peak_no] = t, csum[indices]
     return pio.S12(S1_corr)
 
+cpdef correct_s1_ene(dict s1d, np.ndarray csum):
+    cdef dict S1_corr = {}
+    cdef int peak_no
+    for peak_no, (t, _) in s1d.items():
+        indices          = (t // 25).astype(int)
+        S1_corr[peak_no] = t, csum[indices]
+    return S1_corr
+
 
 cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
     """
@@ -427,14 +435,14 @@ cpdef select_sipm(double [:, :] sipmzs):
     return SIPM
 
 
-cdef _index_from_s2(dict S2d):
+cdef _index_from_s2(list S2d):
     """Return the indexes defining the vector."""
     cdef int t0 = int(S2d[0][0] // units.mus)
     return t0, t0 + len(S2d[0])
 
 
 
-cdef sipm_s2(dict dSIPM, dict S2d, double thr):
+cdef sipm_s2(dict dSIPM, list S2d, double thr):
     """Given a dict with SIPMs (energies above threshold),
     return a dict of np arrays, where the key is the sipm
     with signal.
@@ -467,18 +475,24 @@ cdef sipm_s2(dict dSIPM, dict S2d, double thr):
     return SIPML
 
 
-cpdef sipm_s2_dict(dict dSIPM, dict S2d, double thr):
+cpdef sipm_s2_dict(double [:, :] sipmzs, dict S2d, double thr):
     """Given a vector with SIPMs (energies above threshold), and a
-    dictionary of S2s, S2d, returns a dictionary of SiPMs-S2.  Each
+    dictionary S2d, returns a dictionary of SiPMs-S2.  Each
     index of the dictionary correspond to one S2 and is a list of np
     arrays. Each element of the list is the S2 window in the SiPM (if
     not zero)
 
     """
-    cdef int i
-    cdef dict S2
-    cdef dict si = {}
-    for i, S2 in S2d.items():
-        si[i] = sipm_s2(dSIPM, S2, thr=thr)
-
-    return si
+    # dict dSIPM
+    # select_sipm(sipmzs)
+    return {i: sipm_s2(select_sipm(sipmzs), S2l, thr=thr) for i, S2l in S2d.items()}
+    # cdef int i
+    # cdef dict S2
+    # cdef dict si = {}
+    #
+    # for i, S2 in S2d.items():
+    #     SIPML = sipm_s2(dSIPM, S2, thr=thr)
+    #     print(type(SIPML))
+    #     si[i] = sipm_s2(dSIPM, S2, thr=thr)
+    #
+    # return si

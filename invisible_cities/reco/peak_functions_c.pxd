@@ -90,6 +90,7 @@ The function returns a rebinned vector of T and E.
 """
 
 cpdef correct_S1_ene(S1, np.ndarray csum)
+cpdef correct_s1_ene(dict s1d, np.ndarray csum)
 
 #cpdef rebin_waveform(double [:] t, double[:] e, int stride=*)
 cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=*)
@@ -148,4 +149,5 @@ arrays. Each element of the list is the S2 window in the SiPM (if
 not zero)
 
 """
-cpdef sipm_s2_dict(dict dSIPM, dict S2d, double thr)
+#cpdef sipm_s2_dict(dict dSIPM, dict S2d, double thr)
+cpdef sipm_s2_dict(double [:, :] sipmzs, dict S2d, double thr)
