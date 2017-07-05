@@ -174,33 +174,38 @@ def test_pmap_electrons_40keV(config_tmpdir):
                 s1_t = cpf._time_from_index(s1_indx)
 
                 # S1 and S2
-                s1 = cpf.find_S12(csum, s1_indx, **s1_params._asdict())
-                s2 = cpf.find_S12(csum, s2_indx, **s2_params._asdict())
-                #S2Si
-                sipm = cpf.signal_sipm(sipmrwf[event],
-                                       adc_to_pes_sipm,
-                                       thr=thr.thr_sipm,
-                                       n_MAU=100)
-                SIPM = cpf.select_sipm(sipm)
-                s2si = pf.sipm_s2_dict(SIPM, s2, thr=thr.thr_SIPM)
+                s1d = cpf.find_s12(csum, s1_indx, **s1_params._asdict())
+                s2d = cpf.find_s12(csum, s2_indx, **s2_params._asdict())
+                # sipm
+                sipmzs = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
+                                         thr=thr.thr_sipm, n_MAU=100)
+
+                s2sid = cpf.sipm_s2_dict(sipmzs, s2d, thr = thr.thr_SIPM)
+
+                # s1 = cpf.find_S12(csum, s1_indx, **s1_params._asdict())
+                # s2 = cpf.find_S12(csum, s2_indx, **s2_params._asdict())
+                # #S2Si
+                #
+                # SIPM = cpf.select_sipm(sipm)
+                # s2si = pf.sipm_s2_dict(SIPM, s2, thr=thr.thr_SIPM)
 
                 # tests:
                 # energy vector and time vector equal in S1 and s2
-                assert len(s1[0][0]) == len(s1[0][1])
-                assert len(s2[0][0]) == len(s2[0][1])
+                assert len(s1d[0][0]) == len(s1d[0][1])
+                assert len(s2d[0][0]) == len(s2d[0][1])
 
-                if s2 and s2si:
-                    for nsipm in s2si[0]:
-                        assert len(s2si[0][nsipm]) == len(s2[0][0])
+                if s2d and s2sid:
+                    for nsipm in s2sid[0]:
+                        assert len(s2sid[0][nsipm]) == len(s2d[0][0])
 
                 # make S1, S2 and S2Si objects (from dicts)
-                S1 = S12(s1)
-                S2 = S12(s2)
-                Si = S2Si(s2si)
+                S1 = S12(s1d)
+                S2 = S12(s2d)
+                Si = S2Si(s2sid)
                 # store in lists for further testing
-                XS1L.append(s1)
-                XS2L.append(s2)
-                XS2SiL.append(s2si)
+                XS1L.append(s1d)
+                XS2L.append(s2d)
+                XS2SiL.append(s2sid)
                 # produce a fake timestamp (in real like comes from data)
                 timestamp = int(time.time())
                 # write to file
