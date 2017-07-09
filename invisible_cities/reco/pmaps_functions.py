@@ -1,11 +1,13 @@
-"""PMAPS functions.
-JJGC December 2016
+"""Python (private) functions used for testing.
+
+1. _integrate_sipm_charges_in_peak(s2si, peak_number)
+Returns (np.array[[nsipm_1 ,     nsipm_2, ...]],
+         np.array[[sum(q_1), sum(nsipm_2), ...]])
+
+Last revised, JJGC, July, 2017.
 
 """
 import numpy  as np
-# import pandas as pd
-# import tables as tb
-
 from .. core.system_of_units_c import units
 
 
@@ -20,7 +22,7 @@ def integrate_sipm_charges_in_peak_as_dict(Si):
     return { sipm : sum(qs) for (sipm, qs) in Si.items() }
 
 
-def integrate_sipm_charges_in_peak(Si):
+def _integrate_sipm_charges_in_peak(Si):
     """Return arrays of nsipm and integrated charges from SiPM dictionary.
 
     S2Si = {  peak : Si }

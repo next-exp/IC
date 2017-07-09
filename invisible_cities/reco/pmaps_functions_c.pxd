@@ -5,10 +5,13 @@ JJGC December, 2016
 cimport numpy as np
 import numpy as np
 
-"""Takes a table with the persistent representation of pmaps
-(in the form of a pandas data frame) and returns a dict {event:s12d}
+"""Return arrays of nsipm and integrated charges from S2Si.
+
+Returns (np.array[[nsipm_1 ,     nsipm_2, ...]],
+         np.array[[sum(q_1), sum(nsipm_2), ...]])
 """
-#cpdef df_to_pmaps_dict(df, max_events=?)
+
+cpdef integrate_sipm_charges_in_peak(s2si, peak_number)
 
 """Takes a table with the persistent representation of pmaps
 (in the form of a pandas data frame) and returns a dict {event:S2Si} """
