@@ -64,16 +64,6 @@ def test_integrate_S2Si_charge():
                                         sipm2_4 : sum(Q2_4)}}
 
 
-def test_width():
-    initial_time = 10000
-    width = 1000
-    times = range(10000,initial_time + width+1)
-    # Convert times to ns
-    times = list(map(lambda t: t * units.ns, times))
-    assert width == pmapf.width(times)
-    assert width * units.ns / units.mus == pmapf.width(times, to_mus=True)
-
-
 
 def test_equal_number_of_timebins_in_S2s_and_S2Sis(KrMC_pmaps):
 
