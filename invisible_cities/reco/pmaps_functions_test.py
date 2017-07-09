@@ -33,7 +33,7 @@ def test_integrate_sipm_charges_in_peak_as_dict():
     Qs    = {sipm1: np.sum(qs1),
              sipm2: np.sum(qs2)}
     assert pmapf._integrate_sipm_charges_in_peak_as_dict(sipms) == Qs
-    assert s2si.sipm_total_energy_dict(peak_number) == Qs 
+    assert s2si.sipm_total_energy_dict(peak_number) == Qs
 
 def test_integrate_sipm_charges_in_peak():
     sipm1 = 1234
@@ -62,25 +62,36 @@ def test_integrate_S2Si_charge():
     sipm1_2, Q1_2 = 1001, list(range(10))
 
     peak2 = 1
-    sipm2_1, Q2_1 =  999, [6,4,9]
-    sipm2_2, Q2_2 =  456, [8,4,3,7,5]
-    sipm2_3, Q2_3 = 1234, [6,2]
-    sipm2_4, Q2_4 =  666, [0,0] # !!! Zero charge
+    sipm2_1, Q2_1 =  999, [6,4,9,7]
+    sipm2_2, Q2_2 =  456, [8,4,3,5]
+    sipm2_3, Q2_3 = 1234, [6,2,0,0]
+    sipm2_4, Q2_4 =  666, [0,0,0,0] # !!! Zero charge
 
-    S2Si = {peak1 : {sipm1_1 : Q1_1,
+    t1 = np.array([1,2,3,4], dtype=np.double)
+    E1 = np.array([10,20,30,40], dtype=np.double)
+
+    t2 = np.array([5,6,7,8], dtype=np.double)
+    E2 = np.array([50,60,70,80], dtype=np.double)
+
+    s2sid = {peak1 : {sipm1_1 : Q1_1,
                      sipm1_2 : Q1_2},
             peak2 : {sipm2_1 : Q2_1,
                      sipm2_2 : Q2_2,
                      sipm2_3 : Q2_3,
                      sipm2_4 : Q2_4}}
+    s2d   = {peak1 : [t1,E1],
+            peak2 : [t2,E2]}
 
-    integrated_S2Si = pmapf.integrate_S2Si_charge(S2Si)
+    s2si = S2Si(s2d,s2sid)
+
+    integrated_S2Si = pmapf._integrate_S2Si_charge(s2sid)
     assert integrated_S2Si == {peak1 : {sipm1_1 : sum(Q1_1),
                                         sipm1_2 : sum(Q1_2)},
                                peak2 : {sipm2_1 : sum(Q2_1),
                                         sipm2_2 : sum(Q2_2),
                                         sipm2_3 : sum(Q2_3),
                                         sipm2_4 : sum(Q2_4)}}
+    assert s2si.peak_and_sipm_total_energy_dict() == integrated_S2Si
 
 
 
