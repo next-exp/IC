@@ -27,7 +27,7 @@ class Irene(PmapCity):
     """
     def __init__(self, **kwds):
         PmapCity.__init__(self, **kwds)
-        self.check_s1s2_params()
+        #self.check_s1s2_params()
 
     def run(self, print_empty=True):
         self.display_IO_info()
