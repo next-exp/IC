@@ -37,7 +37,7 @@ def _integrate_sipm_charges_in_peak(Si):
     return sipms, Qs
 
 
-def integrate_S2Si_charge(S2Si):
+def _integrate_S2Si_charge(S2Si):
     """Return S2Si containing integrated charges.
 
     S2Si = {  peak : Si }
