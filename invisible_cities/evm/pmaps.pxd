@@ -53,4 +53,6 @@ cdef class S2Si(S2):
     cpdef sipm_waveform(self, int peak_number, int sipm_number)
     cpdef sipm_waveform_zs(self, int peak_number, int sipm_number)
     cpdef sipm_total_energy(self, int peak_number, int sipm_number)
+    cpdef sipm_total_energy_dict(self, int peak_number)
+    cpdef peak_and_sipm_total_energy_dict(self)
     cpdef store(self, table, event_number)
