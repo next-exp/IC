@@ -9,15 +9,6 @@ import numpy  as np
 from .. core.system_of_units_c import units
 
 
-def width(times, to_mus=False):
-    """
-    Compute peak width. Times has to be ordered.
-    """
-
-    w = times[-1] - times[0] if len(times) > 0 else 0
-    return w * units.ns/units.mus if to_mus else w
-
-
 def integrate_sipm_charges_in_peak_as_dict(Si):
     """Return dict of integrated charges from a SiPM dictionary.
 
