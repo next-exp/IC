@@ -2,7 +2,7 @@ from argparse import Namespace
 
 import numpy  as np
 from .. core.system_of_units_c import units
-from ..reco.pmaps_functions   import integrate_S2Si_charge
+#from ..reco.pmaps_functions   import integrate_S2Si_charge
 
 def select_peaks(peaks,
                  Emin, Emax,
@@ -35,7 +35,7 @@ class S12Selector:
         self.S1_Hmin     = conf.s1_hmin
         self.S1_Hmax     = conf.s1_hmax
         self.S1_Ethr     = conf.s1_ethr
-        
+
         self.S2_Nmin     = conf.s2_nmin
         self.S2_Nmax     = conf.s2_nmax
         self.S2_Emin     = conf.s2_emin
@@ -95,5 +95,6 @@ def s2si_filter(s2si):
     def all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si):
         return all(at_least_one_sipm_with_Q_gt_0(Si)
                           for Si in iS2Si.values())
-    iS2Si = integrate_S2Si_charge(s2si.s2sid)
+    #iS2Si = integrate_S2Si_charge(s2si.s2sid)
+    iS2Si = s2si.peak_and_sipm_total_energy_dict()
     return all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si)
