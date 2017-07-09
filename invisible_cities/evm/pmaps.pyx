@@ -36,7 +36,6 @@ cdef class Peak:
 
         self.tpeak  =  self.t[i_t]
 
-
     property tmin_tmax:
         def __get__(self): return minmax(self.t[0], self.t[-1])
 
@@ -45,10 +44,10 @@ cdef class Peak:
 
 
     property good_waveform:
-        def __get__(self):  return (True
+        def __get__(self):  return (False
                                     if np.any(np.isnan(self.t))  or
                                        np.any(np.isnan(self.E))
-                                    else False)
+                                    else True)
 
 
     def __str__(self):
@@ -77,11 +76,31 @@ cdef class S12:
     An s12 is represented as a dictinary of Peaks.
 
     """
-    def __init__(self, s12d):
-        self.peaks = {i: Peak(t, E) for i, (t,E) in s12d.items()}
+    def __init__(self, dict s12d):
+
+        cdef int event_no
+        cdef np.ndarray[double, ndim=1] t
+        cdef np.ndarray[double, ndim=1] E
+        self.peaks = {}
+
+        #print('s12d ={}'.format(s12d))
+        for event_no, (t, E) in s12d.items():
+            #print('t ={}'.format(t))
+            #print('E ={}'.format(E))
+            assert len(t) == len(E)
+            #p = Peak(t,E)
+            #print('peak = {}'.format(p))
+
+            self.peaks[event_no] =  Peak(t, E)
 
     property number_of_peaks:
          def __get__(self): return len(self.peaks)
+
+    cpdef peak_collection(self):
+        try:
+            return tuple(self.peaks.keys())
+        except KeyError:
+            raise PeakNotFound
 
     cpdef peak_waveform(self, int peak_number):
         try:
@@ -89,8 +108,23 @@ cdef class S12:
         except KeyError:
              raise PeakNotFound
 
+    cpdef store(self, table, event_number):
+        row = table.row
+        for peak_number, peak in self.peaks.items():
+            for t, E in zip(peak.t, peak.E):
+                row["event"] = event_number
+                row["peak"]  =  peak_number
+                row["time"]  = t
+                row["ene"]   = E
+                row.append()
+
+
 
 cdef class S1(S12):
+    def __init__(self, s1d):
+        self.s1d = s1d
+        super(S1,self).__init__(s1d)
+
     def __str__(self):
         s =  "S1 (number of peaks = {})\n".format(self.number_of_peaks)
         s2 = ['peak number = {}: {} \n'.format(i,
@@ -101,6 +135,10 @@ cdef class S1(S12):
         return self.__str__()
 
 cdef class S2(S12):
+    def __init__(self, s2d):
+        self.s2d = s2d
+        super(S2, self).__init__(s2d)
+
     def __str__(self):
         s =  "S2 (number of peaks = {})\n".format(self.number_of_peaks)
         s2 = ['peak number = {}: {} \n'.format(i,
@@ -125,14 +163,14 @@ cdef class S2Si(S2):
            Q is the energy in each SiPM sample
         """
         S2.__init__(self, s2d)
-        self._s2sid = s2sid
+        self.s2sid = s2sid
 
     cpdef number_of_sipms_in_peak(self, int peak_number):
-        return len(self._s2sid[peak_number])
+        return len(self.s2sid[peak_number])
 
     cpdef sipms_in_peak(self, int peak_number):
         try:
-            return tuple(self._s2sid[peak_number].keys())
+            return tuple(self.s2sid[peak_number].keys())
         except KeyError:
             raise PeakNotFound
 
@@ -141,7 +179,10 @@ cdef class S2Si(S2):
         if self.number_of_sipms_in_peak(peak_number) == 0:
             raise SipmEmptyList
         try:
-            E = self._s2sid[peak_number][sipm_number]
+            E = self.s2sid[peak_number][sipm_number]
+            #print("in sipm_waveform")
+            #print('t ={}'.format(self.peak_waveform(peak_number).t))
+            #print('E ={}'.format(np.asarray(E)))
             return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
         except KeyError:
             raise SipmNotFound
@@ -154,7 +195,7 @@ cdef class S2Si(S2):
         if self.number_of_sipms_in_peak(peak_number) == 0:
             raise SipmEmptyList("No SiPMs associated to this peak")
         try:
-            E = self._s2sid[peak_number][sipm_number]
+            E = self.s2sid[peak_number][sipm_number]
             t = self.peak_waveform(peak_number).t
 
             for i in range(len(E)):
@@ -173,10 +214,21 @@ cdef class S2Si(S2):
         if self.number_of_sipms_in_peak(peak_number) == 0:
             raise SipmEmptyList("No SiPMs associated to this peak")
         try:
-            et = np.sum(self._s2sid[peak_number][sipm_number])
+            et = np.sum(self.s2sid[peak_number][sipm_number])
             return et
         except KeyError:
             raise SipmNotFound
+
+    cpdef store(self, table, event_number):
+        row = table.row
+        for peak, sipm in self.s2sid.items():
+            for nsipm, ene in sipm.items():
+                for E in ene:
+                    row["event"]   = event_number
+                    row["peak"]    = peak
+                    row["nsipm"]   = nsipm
+                    row["ene"]     = E
+                    row.append()
 
     def __str__(self):
         s  = "=" * 80 + "\n" + S2.__str__(self)
