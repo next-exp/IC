@@ -24,6 +24,8 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
                      file_out   = PATH_OUT,
 
                      drift_v     =      1 * mm / mus,
+                     S1_Nmin     =      1,
+                     S1_Nmax     =      1,
                      S1_Emin     =      0 * pes,
                      S1_Emax     =     30,
                      S1_Lmin     =      4,
@@ -31,8 +33,8 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
                      S1_Hmin     =    0.5 * pes,
                      S1_Hmax     =     10 * pes,
                      S1_Ethr     =    0.5 * pes,
-
-                     S2_Nmax     =      1,
+                     S2_Nmin     =      1,
+                     S2_Nmax     =      2,
                      S2_Emin     =    1e3 * pes,
                      S2_Emax     =    1e8 * pes,
                      S2_Lmin     =      1,
