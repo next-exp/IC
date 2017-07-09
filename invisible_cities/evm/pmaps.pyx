@@ -210,14 +210,32 @@ cdef class S2Si(S2):
             raise SipmNotFound
 
     cpdef sipm_total_energy(self, int peak_number, int sipm_number):
+        """Return the total energy for peak_number and sipm_number"""
         cdef double et
         if self.number_of_sipms_in_peak(peak_number) == 0:
-            raise SipmEmptyList("No SiPMs associated to this peak")
+            return 0
         try:
             et = np.sum(self.s2sid[peak_number][sipm_number])
             return et
         except KeyError:
             raise SipmNotFound
+
+    cpdef sipm_total_energy_dict(self, int peak_number):
+        """Return a dict of sipm energies for peak_number."""
+        cdef dict Q_sipm_dict = {}
+        if self.number_of_sipms_in_peak(peak_number) == 0:
+            return Q_sipm_dict
+        for sipm_number in self.sipms_in_peak(peak_number):
+            Q_sipm_dict[sipm_number] = self.sipm_total_energy( peak_number, sipm_number)
+        return Q_sipm_dict
+
+    cpdef peak_and_sipm_total_energy_dict(self):
+        """Return {peak_no: sipm: Q}"""
+        cdef dict Q_dict = {}
+        for peak_number in self.peak_collection():
+            Q_dict[peak_number] = self.sipm_total_energy_dict(peak_number)
+
+        return Q_dict
 
     cpdef store(self, table, event_number):
         row = table.row
