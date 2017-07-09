@@ -85,6 +85,7 @@ def test_s2si(KrMC_pmaps, evt_no):
     *_, (_, _, s2si_dict) = KrMC_pmaps
 
     s2si = s2si_dict[evt_no]
+    Q_dict = s2si.peak_and_sipm_total_energy_dict()
 
     for peak_number in s2si.peak_collection():
         assert (s2si.number_of_sipms_in_peak(peak_number) ==
@@ -93,7 +94,13 @@ def test_s2si(KrMC_pmaps, evt_no):
         np.array_equal(np.array(s2si.sipms_in_peak(peak_number)),
                        np.array(s2si.s2sid[peak_number].keys()))
 
+        Q_sipm_dict = s2si.sipm_total_energy_dict(peak_number)
+        qdict = Q_dict[peak_number]
+
         for sipm_number in s2si.sipms_in_peak(peak_number):
+            Q = np.sum(s2si.s2sid[peak_number][sipm_number])
+            np.allclose(Q_sipm_dict[sipm_number] , Q)
+            np.allclose(qdict[sipm_number] , Q)
             w   = s2si.sipm_waveform(peak_number, sipm_number)
             wzs = s2si.sipm_waveform_zs(peak_number, sipm_number)
             E   = s2si.s2sid[peak_number][sipm_number]
