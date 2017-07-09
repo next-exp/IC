@@ -3,49 +3,10 @@ JJGC December 2016
 
 """
 import numpy  as np
-import pandas as pd
-import tables as tb
-import matplotlib.pyplot as plt
+# import pandas as pd
+# import tables as tb
 
-from .. icaro.mpl_functions     import circles
-from .. icaro.mpl_functions     import set_plot_labels
 from .. core.system_of_units_c import units
-
-from .. database               import load_db
-
-from .  pmaps_functions_c      import df_to_pmaps_dict
-from .  pmaps_functions_c      import df_to_s2si_dict
-
-def load_pmaps(PMP_file_name):
-    """Read the PMAP file and return transient PMAP rep."""
-
-    s1t, s2t, s2sit = read_pmaps(PMP_file_name)
-    S1              = df_to_pmaps_dict(s1t)
-    S2              = df_to_pmaps_dict(s2t)
-    S2Si            = df_to_s2si_dict(s2sit)
-    return S1, S2, S2Si
-
-
-def read_pmaps(PMP_file_name):
-    """Return the PMAPS as PD DataFrames."""
-    with tb.open_file(PMP_file_name, 'r') as h5f:
-        s1t   = h5f.root.PMAPS.S1
-        s2t   = h5f.root.PMAPS.S2
-        s2sit = h5f.root.PMAPS.S2Si
-
-        return (pd.DataFrame.from_records(s1t  .read()),
-                pd.DataFrame.from_records(s2t  .read()),
-                pd.DataFrame.from_records(s2sit.read()))
-
-
-def read_run_and_event_from_pmaps_file(PMP_file_name):
-    """Return the PMAPS as PD DataFrames."""
-    with tb.open_file(PMP_file_name, 'r') as h5f:
-        event_t = h5f.root.Run.events
-        run_t   = h5f.root.Run.runInfo
-
-        return (pd.DataFrame.from_records(run_t  .read()),
-                pd.DataFrame.from_records(event_t.read()))
 
 
 def width(times, to_mus=False):
