@@ -18,15 +18,22 @@ from .. evm.pmaps import S2Si
 
 
 def test_integrate_sipm_charges_in_peak_as_dict():
-    sipm1 = 1000
-    sipm2 = 1001
-    qs1 = list(range(5))
-    qs2 = list(range(10))
-    sipms = {sipm1:     qs1,
-             sipm2:     qs2 }
-    Qs    = {sipm1: sum(qs1),
-             sipm2: sum(qs2)}
-    assert pmapf.integrate_sipm_charges_in_peak_as_dict(sipms) == Qs
+    sipm1 = 1234
+    sipm2 =  987
+    qs1 = np.array([8,6,9,3])
+    qs2 = np.array([4,1,9,6,7])
+    t = np.array([1,2,3,4], dtype=np.double)
+    E = np.array([10,20,30,40], dtype=np.double)
+    sipms = {sipm1: qs1, sipm2: qs2}
+    peak_number = 0
+    s2sid = {peak_number:sipms}
+    s2d = {peak_number:[t, E]}
+    s2si = S2Si(s2d,s2sid)
+
+    Qs    = {sipm1: np.sum(qs1),
+             sipm2: np.sum(qs2)}
+    assert pmapf._integrate_sipm_charges_in_peak_as_dict(sipms) == Qs
+    assert s2si.sipm_total_energy_dict(peak_number) == Qs 
 
 def test_integrate_sipm_charges_in_peak():
     sipm1 = 1234
