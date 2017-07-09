@@ -13,6 +13,8 @@ from .                 import pmaps_functions as pmapf
 from . pmaps_functions_c import df_to_s1_dict
 from . pmaps_functions_c import df_to_s2_dict
 from . pmaps_functions_c import df_to_s2si_dict
+from . pmaps_functions_c import integrate_sipm_charges_in_peak
+from .. evm.pmaps import S2Si
 
 
 def test_integrate_sipm_charges_in_peak_as_dict():
@@ -29,13 +31,23 @@ def test_integrate_sipm_charges_in_peak_as_dict():
 def test_integrate_sipm_charges_in_peak():
     sipm1 = 1234
     sipm2 =  987
-    qs1 = [8,6,9,3]
-    qs2 = [4,1,9,6,7]
-    sipms = {sipm1: qs1,
-             sipm2: qs2}
-    ids, Qs =  pmapf.integrate_sipm_charges_in_peak(sipms)
+    qs1 = np.array([8,6,9,3])
+    qs2 = np.array([4,1,9,6,7])
+    t = np.array([1,2,3,4], dtype=np.double)
+    E = np.array([10,20,30,40], dtype=np.double)
+    sipms = {sipm1: qs1, sipm2: qs2}
+    peak_number = 0
+    s2sid = {peak_number:sipms}
+    s2d = {peak_number:[t, E]}
+    s2si = S2Si(s2d,s2sid)
+
+    ids, Qs =  pmapf._integrate_sipm_charges_in_peak(sipms)
     assert np.array_equal(ids, np.array((  sipm1,    sipm2)))
     assert np.array_equal(Qs , np.array((sum(qs1), sum(qs2))))
+
+    ids_c, Qs_c =  integrate_sipm_charges_in_peak(s2si, peak_number)
+    assert np.array_equal(ids, ids_c)
+    assert np.array_equal(Qs , Qs_c)
 
 def test_integrate_S2Si_charge():
     peak1 = 0
