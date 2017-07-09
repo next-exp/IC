@@ -75,9 +75,23 @@ do not interrupt the peak if next sample comes within stride
 accept the peak only if within [l.min, l.max)
 accept the peak only if within [t.min, t.max)
 """
-cpdef find_S12(double [:] csum, int [:] index,
-               time=*, length=*,
-               int stride=*, rebin=*, rebin_stride=*)
+# cpdef find_S12(double [:] csum, int [:] index,
+#                time=*, length=*,
+#                int stride=*, rebin=*, rebin_stride=*)
+
+
+cpdef find_s1(double [:] csum,  int [:] index,
+              time=*, length=*,
+              int stride=*, rebin=*, rebin_stride=*)
+
+
+cpdef find_s2(double [:] csum,  int [:] index,
+              time=*, length=*,
+              int stride=*, rebin=*, rebin_stride=*)
+
+
+cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr)
+
 
 cpdef find_s12(double [:] csum,  int [:] index,
                time=*, length=*, int stride=*, rebin=*, rebin_stride=*)
@@ -150,4 +164,4 @@ not zero)
 
 """
 #cpdef sipm_s2_dict(dict dSIPM, dict S2d, double thr)
-cpdef sipm_s2_dict(double [:, :] sipmzs, dict S2d, double thr)
+#cpdef sipm_s2_dict(double [:, :] sipmzs, dict S2d, double thr)
