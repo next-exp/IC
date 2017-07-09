@@ -1,6 +1,14 @@
 import os
 import pytest
+from pandas import DataFrame, Series
+import numpy as np
 
+# from . io.pmap_io   import df_to_pmaps_dict
+from . io.pmap_io   import df_to_s1_dict
+from . io.pmap_io   import df_to_s2_dict
+from . io.pmap_io   import df_to_s2si_dict
+from . io.pmap_io   import read_pmaps
+from . io.pmap_io   import load_pmaps
 
 @pytest.fixture(scope = 'session')
 def ICDIR():
@@ -31,15 +39,10 @@ def electron_MCRD_file(request, ICDIR):
                         'database/test_data',
                         request.param)
 
-from .reco.pmaps_functions import (df_to_pmaps_dict,
-                                   df_to_s2si_dict,
-                                   read_pmaps,
-                                   load_pmaps)
-from pandas import DataFrame, Series
-import numpy as np
+
 
 @pytest.fixture(scope='session')
-def s12_dataframe_converted():
+def s1_dataframe_converted():
     evs  = [   0,     0,     0,     0,     0,      3,     3]
     peak = [   0,     0,     1,     1,     1,      0,     0]
     time = [1000., 1025., 2050., 2075., 2100., 5000., 5025.]
@@ -51,24 +54,40 @@ def s12_dataframe_converted():
         time   = Series(time, dtype=np.float32),
         ene    = Series(ene , dtype=np.float32),
     ))
-    return df_to_pmaps_dict(df), df
+    return df_to_s1_dict(df), df
+
+@pytest.fixture(scope='session')
+def s2_dataframe_converted():
+    evs  = [   0,     0,     0,     0,     0,      3,     3]
+    peak = [   0,     0,     1,     1,     1,      0,     0]
+    time = [1000., 1025., 2050., 2075., 2100., 5000., 5025.]
+    ene  = [123.4, 140.8, 730.0, 734.2, 732.7, 400.0, 420.3]
+    df = DataFrame.from_dict(dict(
+        event  = Series(evs , dtype=np.  int32),
+        evtDaq = evs,
+        peak   = Series(peak, dtype=np.   int8),
+        time   = Series(time, dtype=np.float32),
+        ene    = Series(ene , dtype=np.float32),
+    ))
+
+    return df_to_s2_dict(df), df
 
 @pytest.fixture(scope='session')
 def s2si_dataframe_converted():
-    evs  = [    0,     0,     0,     0,     0,     3,     3]
-    peak = [    0,     0,     1,     1,     1,     0,     0]
-    sipm = [    1,     2,     3,     4,     5,     5,     6]
-    samp = [    0,     2,     0,     1,     2,     3,     4]
-    ene  = [123.4, 140.8, 730.0, 734.2, 732.7, 400.0, 420.3]
-    df = DataFrame.from_dict(dict(
+    evs  = [  0,   0,  0,  0,   0,  0,  0,  3,  3,  3,  3]
+    peak = [  0,   0,  0,  0,   1,  1,  1,  0,  0,  0,  0]
+    sipm = [  0,   0,  1,  1,   3,  3,  3, 10, 10, 15, 15]
+    ene  = [1.5, 2.5, 15, 25, 5.5, 10, 20,  8,  9, 17, 18]
+
+    dfs2si = DataFrame.from_dict(dict(
         event   = Series(evs , dtype=np.int32),
         evtDaq  = evs,
         peak    = Series(peak, dtype=np.   int8),
         nsipm   = Series(sipm, dtype=np.  int16),
-        nsample = Series(samp, dtype=np.  int16),
         ene     = Series(ene , dtype=np.float32),
     ))
-    return df_to_s2si_dict(df), df
+    _,  dfs2 =  s2_dataframe_converted()
+    return df_to_s2si_dict(dfs2, dfs2si), dfs2si
 
 
 @pytest.fixture(scope='session')
@@ -78,10 +97,10 @@ def KrMC_pmaps(ICDIR):
     S1_evts   = list(filter(lambda x: x not in [48, 50], range(23, 52)))
     S2_evts   = list(range(31, 41))
     S2Si_evts = list(range(31, 41))
-    s1s, s2s, s2sis = read_pmaps(test_file)
+    s1t, s2t, s2sit = read_pmaps(test_file)
     s1, s2, s2si    = load_pmaps(test_file)
     return (test_file,
-            (s1s, s2s, s2sis),
+            (s1t, s2t, s2sit),
             (S1_evts, S2_evts, S2Si_evts),
             (s1, s2, s2si))
 
