@@ -170,7 +170,7 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
     return T, E
 
 
-def _find_S12(csum, index,
+def _find_s12(csum, index,
               time   = minmax(0, 1e+6),
               length = minmax(8, 1000000),
               stride=4, rebin=False, rebin_stride=40):
@@ -224,7 +224,8 @@ def _find_S12(csum, index,
             S12L[j] = [np.arange(*cpf._time_from_index(i_peak), 25*units.ns), S12wf]
         j += 1
 
-    return pio.S12(S12L)
+    return S12L
+    #return pio.S12(S12L)
 
 
 def _sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
@@ -305,18 +306,21 @@ def compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
     s2_ene, s2_indx = cpf.wfzs(csum, threshold=thr.thr_s2)
     s1_ene, s1_indx = cpf.wfzs(csum_mau, threshold=thr.thr_s1)
 
-    s1d = cpf.find_s12(csum,
+    s1 = cpf.find_s1(csum,
                       s1_indx,
                       **s1_params._asdict())
 
-    s2d = cpf.find_s12(csum,
+    s2 = cpf.find_s2(csum,
                       s2_indx,
                       **s2_params._asdict())
 
-    s1d     = cpf.correct_s1_ene(s1d, csum)
+    s1 = cpf.correct_s1_ene(s1.s1d, csum)
     sipmzs = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
                            thr=thr.thr_sipm, n_MAU=100)
-    s2sid = cpf.sipm_s2_dict(sipmzs, s2d, thr=thr.thr_SIPM)
+
+    s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = thr.thr_SIPM)
+
+    #s2sid = cpf.sipm_s2_dict(sipmzs, s2d, thr=thr.thr_SIPM)
 
     # S1 and S2
     # S1 = cpf.find_S12(csum, s1_indx, **s1_params._asdict())
@@ -328,4 +332,4 @@ def compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
     # SIPM = cpf.select_sipm(sipm)
     # S2Si = sipm_s2_dict(SIPM, S2, thr=thr.thr_SIPM)
     return (CalibratedSum(csum=csum, csum_mau=csum_mau),
-            PMaps(S1=s1d, S2=s2d, S2Si=s2sid))
+            PMaps(S1=s1.s1d, S2=s2.s2d, S2Si=s2si.s2sid))
