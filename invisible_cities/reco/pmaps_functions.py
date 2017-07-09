@@ -11,7 +11,7 @@ import numpy  as np
 from .. core.system_of_units_c import units
 
 
-def integrate_sipm_charges_in_peak_as_dict(Si):
+def _integrate_sipm_charges_in_peak_as_dict(Si):
     """Return dict of integrated charges from a SiPM dictionary.
 
     S2Si = {  peak : Si }
@@ -31,7 +31,7 @@ def _integrate_sipm_charges_in_peak(Si):
     Returns (np.array[[nsipm_1 ,     nsipm_2, ...]],
              np.array[[sum(q_1), sum(nsipm_2), ...]])
     """
-    sipms_and_Q_totals = integrate_sipm_charges_in_peak_as_dict(Si)
+    sipms_and_Q_totals = _integrate_sipm_charges_in_peak_as_dict(Si)
     sipms = np.array(tuple(sipms_and_Q_totals.keys()))
     Qs    = np.array(tuple(sipms_and_Q_totals.values()))
     return sipms, Qs
@@ -45,7 +45,7 @@ def integrate_S2Si_charge(S2Si):
 
     Returns S2Si where Si = { nsipm : sum([q1, q2, ...])}
 """
-    return { peak_no : integrate_sipm_charges_in_peak_as_dict(peak)
+    return { peak_no : _integrate_sipm_charges_in_peak_as_dict(peak)
              for (peak_no, peak) in S2Si.items() }
 
 
