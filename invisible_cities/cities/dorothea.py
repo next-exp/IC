@@ -13,7 +13,7 @@ from .. io.kdst_io              import kr_writer
 from .. reco.event_model        import PersistentKrEvent
 
 from .. reco                   import tbl_functions   as tbl
-from .. reco                   import pmaps_functions as pmp
+from .. reco                   import pmaps_functions_c as pmp
 
 from .. filters.s1s2_filter    import s1s2_filter
 from .. filters.s1s2_filter    import S12Selector
@@ -102,7 +102,7 @@ class Dorothea(City):
                               Ratio               : {}
                               """.format(nevt_in, nevt_out, nevt_out / nevt_in)))
 
-    def _create_kr_event(self, evt_number, evt_time, s1, s2, si):
+    def _create_kr_event(self, evt_number, evt_time, s1, s2, s2si):
         evt       = PersistentKrEvent(evt_number, evt_time * 1e-3)
         #evt.event =
         #evt.time  = evt_time * 1e-3 # s
@@ -123,7 +123,9 @@ class Dorothea(City):
             evt.S2e.append(peak.total_energy)
             evt.S2t.append(peak.tpeak)
 
-            IDs, Qs = pmp.integrate_sipm_charges_in_peak(si.s2sid[peak_no])
+            # IDs, Qs = pmp.integrate_sipm_charges_in_peak(si.s2sid[peak_no])
+
+            IDs, Qs = pmp.integrate_sipm_charges_in_peak(s2si, peak_no)
             xsipms  = self.xs[IDs]
             ysipms  = self.ys[IDs]
             x       = np.average(xsipms, weights=Qs)
