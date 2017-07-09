@@ -24,15 +24,19 @@ cdef class S12:
     An s12 is represented as a dictinary of Peaks.
     """
     cdef public dict peaks
+    cpdef peak_collection(self)
     cpdef peak_waveform(self, int peak_number)
+    cpdef store(self, table, event_number)
 
 
 cdef class S1(S12):
     """Transient class representing an S1 signal."""
+    cdef public s1d
 
 
 cdef class S2(S12):
     """Transient class representing an S2 signal."""
+    cdef public s2d
 
 
 cdef class S2Si(S2):
@@ -42,10 +46,11 @@ cdef class S2Si(S2):
     The s2d is an s12 dictionary (not an S2 instance)
     The s2sid is a dictionary {peak:{nsipm:[E]}}
     """
-
+    cdef public s2sid
     cdef dict _s2sid
     cpdef number_of_sipms_in_peak(self, int peak_number)
     cpdef sipms_in_peak(self, int peak_number)
     cpdef sipm_waveform(self, int peak_number, int sipm_number)
     cpdef sipm_waveform_zs(self, int peak_number, int sipm_number)
     cpdef sipm_total_energy(self, int peak_number, int sipm_number)
+    cpdef store(self, table, event_number)
