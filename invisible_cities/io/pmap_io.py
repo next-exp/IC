@@ -1,40 +1,51 @@
 import tables as tb
+import pandas as pd
 
 from .. reco import nh5           as table_formats
 from .. reco import tbl_functions as tbl
+#from .. reco.pmaps_functions_c      import df_to_pmaps_dict
+from .. reco.pmaps_functions_c      import df_to_s1_dict
+from .. reco.pmaps_functions_c      import df_to_s2_dict
+from .. reco.pmaps_functions_c      import df_to_s2si_dict
 
-class S12(dict):
-    """Defines an S12 type."""
+def s1_s2_si_from_pmaps(s1_dict, s2_dict, s2si_dict, evt_number):
+    s1 = s1_dict  .get(evt_number, None)
+    s2 = s2_dict  .get(evt_number, None)
+    s2si = s2si_dict.get(evt_number, None)
+    return s1, s2, s2si
 
-    table_format = table_formats.S12
+def load_pmaps(PMP_file_name):
+    """Read the PMAP file and return transient PMAP rep."""
 
-    def store(self, table, event_number):
-        row = table.row
-        for peak_number, (ts, Es) in self.items():
-            assert len(ts) == len(Es)
-            for t, E in zip(ts, Es):
-                row["event"] = event_number
-                row["peak"]  =  peak_number
-                row["time"]  = t
-                row["ene"]   = E
-                row.append()
+    s1t, s2t, s2sit = read_pmaps(PMP_file_name)
+    S1              = df_to_s1_dict(s1t)
+    S2              = df_to_s2_dict(s2t)
+    S2Si            = df_to_s2si_dict(s2t, s2sit)
+    return S1, S2, S2Si
 
-class S2Si(dict):
-    """Defines an S2Si type."""
 
-    table_format = table_formats.S2Si
+def read_pmaps(PMP_file_name):
+    """Return the PMAPS as PD DataFrames."""
+    with tb.open_file(PMP_file_name, 'r') as h5f:
+        s1t   = h5f.root.PMAPS.S1
+        s2t   = h5f.root.PMAPS.S2
+        s2sit = h5f.root.PMAPS.S2Si
 
-    def store(self, table, event_number):
-        row = table.row
-        for peak, sipm in self.items():
-            for nsipm, ene in sipm.items():
-                for E in ene:
-                    row["event"]   = event_number
-                    row["peak"]    = peak
-                    row["nsipm"]   = nsipm
-                    #row["nsample"] = nsample
-                    row["ene"]     = E
-                    row.append()
+        return (pd.DataFrame.from_records(s1t  .read()),
+                pd.DataFrame.from_records(s2t  .read()),
+                pd.DataFrame.from_records(s2sit.read()))
+
+
+def read_run_and_event_from_pmaps_file(PMP_file_name):
+    """Return the PMAPS as PD DataFrames."""
+    with tb.open_file(PMP_file_name, 'r') as h5f:
+        event_t = h5f.root.Run.events
+        run_t   = h5f.root.Run.runInfo
+
+        return (pd.DataFrame.from_records(run_t  .read()),
+                pd.DataFrame.from_records(event_t.read()))
+
+
 
 def pmap_writer(file, *, compression='ZLIB4'):
     pmp_tables = _make_pmp_tables(file, compression)
@@ -50,9 +61,9 @@ def _make_pmp_tables(hdf5_file, compression):
     c = tbl.filters(compression)
     pmaps_group  = hdf5_file.create_group(hdf5_file.root, 'PMAPS')
     MKT = hdf5_file.create_table
-    s1         = MKT(pmaps_group, 'S1'  , S12 .table_format,   "S1 Table", c)
-    s2         = MKT(pmaps_group, 'S2'  , S12 .table_format,   "S2 Table", c)
-    s2si       = MKT(pmaps_group, 'S2Si', S2Si.table_format, "S2Si Table", c)
+    s1         = MKT(pmaps_group, 'S1'  , table_formats.S12,   "S1 Table", c)
+    s2         = MKT(pmaps_group, 'S2'  , table_formats.S12,   "S2 Table", c)
+    s2si       = MKT(pmaps_group, 'S2Si', table_formats.S2Si, "S2Si Table", c)
 
     pmp_tables = (s1, s2, s2si)
 
