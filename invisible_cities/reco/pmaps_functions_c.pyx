@@ -1,6 +1,15 @@
 """
-Cython version of PMAPS
-JJGC December, 2016
+Cython functions providing pmaps io and some extra functionality
+
+1. df_to_s1_dict --> transforms pandas df into {event:s1}
+2. df_to_s2_dict --> transforms pandas df into {event:s2}
+3. df_to_s2si_dict --> transforms pandas df into {event:s2si}
+
+4. integrate_sipm_charges_in_peak(s2si, peak_number)
+Returns (np.array[[nsipm_1 ,     nsipm_2, ...]],
+         np.array[[sum(q_1), sum(nsipm_2), ...]])
+
+Last revised, JJGC, July, 2017.
 """
 
 cimport numpy as np
@@ -13,6 +22,19 @@ from .. evm.pmaps import S1
 from .. evm.pmaps import S2
 from .. evm.pmaps import S2Si
 
+cpdef integrate_sipm_charges_in_peak(s2si, peak_number):
+    """Return arrays of nsipm and integrated charges from SiPM dictionary.
+
+    S2Si = {  peak : Si }
+      Si = { nsipm : [ q1, q2, ...] }
+
+    Returns (np.array[[nsipm_1 ,     nsipm_2, ...]],
+             np.array[[sum(q_1), sum(nsipm_2), ...]])
+    """
+
+    cdef long[:] sipms = np.asarray(tuple(s2si.sipm_total_energy_dict(peak_number).keys()))
+    cdef double[:] Qs    = np.array(tuple(s2si.sipm_total_energy_dict(peak_number).values()))
+    return np.asarray(sipms), np.asarray(Qs)
 
 cpdef df_to_s1_dict(df, int max_events=-1):
     """Takes a table with the persistent representation of pmaps
