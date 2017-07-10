@@ -18,10 +18,10 @@ def load_pmaps(PMP_file_name):
     """Read the PMAP file and return transient PMAP rep."""
 
     s1t, s2t, s2sit = read_pmaps(PMP_file_name)
-    S1              = df_to_s1_dict(s1t)
-    S2              = df_to_s2_dict(s2t)
-    S2Si            = df_to_s2si_dict(s2t, s2sit)
-    return S1, S2, S2Si
+    s1_dict              = df_to_s1_dict(s1t)
+    s2_dict              = df_to_s2_dict(s2t)
+    s2si_dict            = df_to_s2si_dict(s2t, s2sit)
+    return s1_dict, s2_dict, s2si_dict
 
 
 def read_pmaps(PMP_file_name):
