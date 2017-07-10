@@ -119,7 +119,6 @@ cdef class S12:
                 row.append()
 
 
-
 cdef class S1(S12):
     def __init__(self, s1d):
         self.s1d = s1d
@@ -210,7 +209,7 @@ cdef class S2Si(S2):
             raise SipmNotFound
 
     cpdef sipm_total_energy(self, int peak_number, int sipm_number):
-        """Return the total energy for peak_number and sipm_number"""
+        """For peak and and sipm_number return Q, where Q is the SiPM total energy."""
         cdef double et
         if self.number_of_sipms_in_peak(peak_number) == 0:
             return 0
@@ -221,7 +220,7 @@ cdef class S2Si(S2):
             raise SipmNotFound
 
     cpdef sipm_total_energy_dict(self, int peak_number):
-        """Return a dict of sipm energies for peak_number."""
+        """For peak number return {sipm: Q}. """
         cdef dict Q_sipm_dict = {}
         if self.number_of_sipms_in_peak(peak_number) == 0:
             return Q_sipm_dict
@@ -230,7 +229,7 @@ cdef class S2Si(S2):
         return Q_sipm_dict
 
     cpdef peak_and_sipm_total_energy_dict(self):
-        """Return {peak_no: sipm: Q}"""
+        """Return {peak_no: sipm: Q}."""
         cdef dict Q_dict = {}
         for peak_number in self.peak_collection():
             Q_dict[peak_number] = self.sipm_total_energy_dict(peak_number)

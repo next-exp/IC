@@ -49,8 +49,8 @@ def _integrate_S2Si_charge(S2Si):
              for (peak_no, peak) in S2Si.items() }
 
 
-def select_si_slice(si, slice_no):
-    # This is a temporary fix! The number of slices in the SiPM arrays
-    # must match that of the PMT PMaps.
-    return {sipm_no: (sipm[slice_no] if len(sipm) > slice_no else 0)
-                      for sipm_no, sipm in si.items()}
+# def select_si_slice(si, slice_no):
+#     # This is a temporary fix! The number of slices in the SiPM arrays
+#     # must match that of the PMT PMaps.
+#     return {sipm_no: (sipm[slice_no] if len(sipm) > slice_no else 0)
+#                       for sipm_no, sipm in si.items()}
