@@ -235,21 +235,20 @@ def _sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
     arrays. Each element of the list is the S2 window in the SiPM (if
     not zero)
     """
-    return {i: _sipm_s2(SIPM, S2, thr=thr) for i, S2 in S2d.items()}
+    return {i: _sipm_s2(SIPM, s2l, thr=thr) for i, s2l in S2d.items()}
 
 
-
-def _sipm_s2(dSIPM, S2, thr=5*units.pes):
-    """Given a vector with SIPMs (energies above threshold), return a dict
-    of np arrays, where the key is the sipm with signal.
+def _sipm_s2(dSIPM, s2l, thr=5*units.pes):
+    """Given a vector with SIPMs (energies above threshold), and a list containing s2 times
+    and energies, return a dict of np arrays, where the key is the sipm with signal.
     """
 
-    def index_from_s2(S2):
+    def index_from_s2(s2l):
         """Return the indexes defining the vector."""
-        t0 = int(S2[0][0] // units.mus)
-        return t0, t0 + len(S2[0])
+        t0 = int(s2l[0][0] // units.mus)
+        return t0, t0 + len(s2l[0])
 
-    i0, i1 = index_from_s2(S2)
+    i0, i1 = index_from_s2(s2l)
     SIPML = {}
     for ID, sipm in dSIPM.values():
         slices = sipm[i0:i1]
