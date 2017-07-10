@@ -179,6 +179,15 @@ def rebin_array(arr, stride):
     return rebinned
 
 
+def rebin_array_with_remainder(arr, stride):
+    rebinned  = rebin_array(arr, stride):
+    if len(arr) % int(stride) == 0:
+        return rebinned
+    else:
+        return np.append(rebinned, np.sum(arr[len(rebinned) * int(stride):]))
+
+
+
 def define_window(wf, window_size):
     """Define a window based on a peak. Takes max plus/minus *window_size*."""
     peak = np.argmax(abs(wf - np.mean(wf)))
