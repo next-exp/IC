@@ -133,6 +133,9 @@ def test_farray_from_string():
 def test_rebin_array():
     core.rebin_array(core.lrange(100), 5)[0] == 10
 
+def test_rebin_array_with_remainder():
+    
+
 def test_define_window():
     mu, sigma = 100, 0.2 # mean and standard deviation
     sgn = np.random.normal(mu, sigma, 10000)
