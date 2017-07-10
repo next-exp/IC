@@ -9,6 +9,7 @@ Last revised, JJGC, July, 2017.
 """
 import numpy  as np
 from .. core.system_of_units_c import units
+from .. core.core_functions    import rebin_array
 
 
 def _integrate_sipm_charges_in_peak_as_dict(Si):
@@ -38,15 +39,22 @@ def _integrate_sipm_charges_in_peak(Si):
 
 
 def _integrate_S2Si_charge(S2Si):
-    """Return S2Si containing integrated charges.
+    """
+    Return S2Si containing integrated charges.
 
     S2Si = {  peak : Si }
       Si = { nsipm : [ q1, q2, ...] }
 
     Returns S2Si where Si = { nsipm : sum([q1, q2, ...])}
-"""
+    """
     return { peak_no : _integrate_sipm_charges_in_peak_as_dict(peak)
              for (peak_no, peak) in S2Si.items() }
+
+def _rebin_S2(t, e, sipms, stride):
+    """rebin: s2 times, s2 energies, s2 sipm qs, by stride"""
+    return rebin_array(t, stride),
+           rebin_array(e, stride),
+           {sipm: rebin_array(qs, stride) for sipm, qs in sipms.items()}
 
 
 # def select_si_slice(si, slice_no):
