@@ -78,20 +78,20 @@ cdef class S12:
     """
     def __init__(self, dict s12d):
 
-        cdef int event_no
+        cdef int peak_no
         cdef np.ndarray[double, ndim=1] t
         cdef np.ndarray[double, ndim=1] E
         self.peaks = {}
 
         #print('s12d ={}'.format(s12d))
-        for event_no, (t, E) in s12d.items():
+        for peak_no, (t, E) in s12d.items():
             #print('t ={}'.format(t))
             #print('E ={}'.format(E))
             assert len(t) == len(E)
             #p = Peak(t,E)
             #print('peak = {}'.format(p))
 
-            self.peaks[event_no] =  Peak(t, E)
+            self.peaks[peak_no] =  Peak(t, E)
 
     property number_of_peaks:
          def __get__(self): return len(self.peaks)
