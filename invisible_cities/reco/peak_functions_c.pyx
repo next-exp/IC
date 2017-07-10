@@ -447,14 +447,14 @@ cpdef select_sipm(double [:, :] sipmzs):
     return SIPM
 
 
-cdef _index_from_s2(list S2d):
+cdef _index_from_s2(list s2l):
     """Return the indexes defining the vector."""
-    cdef int t0 = int(S2d[0][0] // units.mus)
-    return t0, t0 + len(S2d[0])
+    cdef int t0 = int(s2l[0][0] // units.mus)
+    return t0, t0 + len(s2l[0])
 
 
 
-cdef sipm_s2(dict dSIPM, list S2d, double thr):
+cdef sipm_s2(dict dSIPM, list s2l, double thr):
     """Given a dict with SIPMs (energies above threshold),
     return a dict of np arrays, where the key is the sipm
     with signal.
@@ -475,7 +475,7 @@ cdef sipm_s2(dict dSIPM, list S2d, double thr):
     """
 
     cdef int i0, i1, ID
-    i0, i1 = _index_from_s2(S2d)
+    i0, i1 = _index_from_s2(s2l)
     cdef dict SIPML = {}
     cdef double psum
 
