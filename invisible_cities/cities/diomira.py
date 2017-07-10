@@ -2,10 +2,9 @@
 code: diomira.py
 description: simulation of the response of the energy and tracking planes
 for the NEXT detector.
-author: J.J. Gomez-Cadenas
-IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
-package: invisible cities. See release notes and licence
-last changed: 09-11-2017
+credits: see ic_authors_and_legal.rst in /doc
+
+last revised: JJGC, 10-July-2017
 """
 import sys
 
@@ -57,6 +56,7 @@ class Diomira(SensorResponseCity):
 
         # Create instance of the noise sampler
         self.noise_sampler = SiPMsNoiseSampler(self.run_number, sp.SIPMWL, True)
+
         # thresholds in adc counts
         self.sipms_thresholds = (self.sipm_noise_cut
                               *  self.sipm_adc_to_pes)
@@ -89,6 +89,9 @@ class Diomira(SensorResponseCity):
             print("Opening file {filename} with first event no {first_event_no}"
                   .format(**locals()))
             with tb.open_file(filename, "r") as h5in:
+                # NEVT is the total number of events in pmtrd and sipmrd
+                # pmtrd = pmrtd[events][NPMT][rd_waveform]
+                # sipmrd = sipmrd[events][NPMT][rd_waveform]
                 NEVT, pmtrd, sipmrd = self.get_rd_vectors(h5in)
                 events_info = self.get_run_and_event_info(h5in)
                 n_events_tot = self._event_loop(NEVT, pmtrd, sipmrd, events_info,
