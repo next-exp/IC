@@ -417,8 +417,7 @@ class HitCollectionCity(City):
     def rebin_s2si(self, s2, s2si):
         """rebins s2d and sid dictionaries"""
         if self.rebin > 1:
-            s2, s2si = pf._rebin_si(s2, s2si, self.rebin)
-        # check that this is not destructive
+            s2, s2si = pmp.rebin_s2si(s2, s2si, self.rebin)
         return s2, s2si
 
     def split_energy(self, e, clusters):
