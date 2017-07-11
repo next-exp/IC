@@ -8,11 +8,11 @@ from hypothesis.extra.numpy import arrays
 from . import hst_functions as hst
 
 
-@given(arrays(float, 10, floats(min_value=-1e12, max_value=1e12)))
+@given(arrays(float, 10, floats(min_value=-1e4, max_value=1e4)))
 def test_shift_to_bin_centers(x):
     x_shifted = hst.shift_to_bin_centers(x)
     truth     = [np.mean(x[i:i+2]) for i in range(x.size-1)]
-    assert_allclose(x_shifted, truth, atol=1e-100)
+    assert_allclose(x_shifted, truth, rtol=1e-5, atol=1e-12)
 
 
 def test_resolution_no_errors():
