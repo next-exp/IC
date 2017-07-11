@@ -154,8 +154,8 @@ def farray_from_string(sfl):
     return np.array(list(map(float, sfl.split())))
 
 
-def rebin_array(arr, stride):
-    """Rebins an array according to some stride.
+"""def rebin_array(arr, stride):
+    """"""Rebins an array according to some stride.
 
     Parameters
     ----------
@@ -168,7 +168,7 @@ def rebin_array(arr, stride):
     -------
     rebinned : np.ndarray
         Rebinned array
-    """
+    """"""
     #n = int(math.ceil(len(t) / float(stride)))
     lenb = int(len(arr) / int(stride))
     rebinned = np.empty(lenb)
@@ -176,16 +176,24 @@ def rebin_array(arr, stride):
         low = i * stride
         upp = low + stride
         rebinned[i] = np.sum(arr[low:upp])
-    return rebinned
+    return rebinned"""
 
-
-def rebin_array_with_remainder(arr, stride):
-    rebinned  = rebin_array(arr, stride):
-    if len(arr) % int(stride) == 0:
-        return rebinned
+def _rebin_array(arr, stride, met=np.sum, remainder=False):
+    """
+    rebin arr by a factor stride, using method (ex: np.sum or np.mean), keep the remainder in the
+    last bin or not
+    """
+    lenb = int(len(arr) / int(stride))
+    if remainder:
+        rebinned     = np.empty(lenb + 1)
+        rebinned[-1] = met(arr[lenb*stride:])
     else:
-        return np.append(rebinned, np.sum(arr[len(rebinned) * int(stride):]))
-
+        rebinned = np.empty(lenb)
+    for i in range(lenb):
+        low = i * stride
+        upp = low + stride
+        rebinned[i] = met(arr[low:upp])
+    return rebinned
 
 
 def define_window(wf, window_size):
