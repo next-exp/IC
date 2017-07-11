@@ -130,11 +130,38 @@ def test_dict_filter():
 def test_farray_from_string():
     core.farray_from_string('1 10 100')[2] == 100
 
-def test_rebin_array():
-    core.rebin_array(core.lrange(100), 5)[0] == 10
+#def test_rebin_array():
+#    core.rebin_array(core.lrange(100), 5)[0] == 10
 
-def test_rebin_array_with_remainder():
-    
+def test_rebin_array():
+    """
+    rebin arrays of len 1 to 100 with strides 1 to 10 and test output discarding the remainder
+    """
+    length = 100
+    arr = np.ones(length)
+    for stride in range(1,11):
+        for s in range(length):
+            for i, v in enumerate(core._rebin_array(arr[s:], stride)):
+                if i == 0: assert v == min(stride, len(arr))
+                else     : assert v == stride
+
+def test_rebin_array_remainder():
+    """
+    rebin arrays of len 1 to 100 with strides 1 to 10 and test output with method=np.sum
+    without discarding the remainder
+    """
+    length = 100
+    arr = np.ones(length)
+    for stride in range(1,11):
+        for s in range(length):
+            for i, v in enumerate(core._rebin_array(arr[s:], stride, met=np.sum, remainder=True)):
+                if i == 0:
+                    assert v == min(stride, len(arr[s:]))
+                elif i < len(arr[s:]) // stride:
+                    assert v == stride
+                else:
+                    assert i == len(arr[s:]) // stride
+                    assert v == min(stride, len(arr[s:][i * stride:]))
 
 def test_define_window():
     mu, sigma = 100, 0.2 # mean and standard deviation

@@ -41,7 +41,7 @@ from ..reco               import dst_functions    as dstf
 from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
 from ..io                 import pmap_io          as pio
-from ..reco.params        import S12Params
+from ..reco.params        import S12Params, Peak
 from ..reco.event_model   import SensorParams
 from ..reco.nh5           import DECONV_PARAM
 from ..reco.corrections   import Correction
@@ -414,20 +414,12 @@ class HitCollectionCity(City):
         self.rebin          = conf.rebin
         self.reco_algorithm = find_algorithm(conf.reco_algorithm)
 
-    #TODO ALEX SHOULD REVISE
-
-    # def rebin_s2(self, s2d, sid):
-    #     """rebins s2d and sid dictionaries"""
-    #     if self.rebin <= 1:
-    #         return s2d, sid
-    #
-    #     S2_rebin = {}
-    #     Si_rebin = {}
-    #     for peak in S2:
-    #         t, e, sipms = cpf.rebin_S2(S2[peak][0], S2[peak][1], Si[peak], self.rebin)
-    #         S2_rebin[peak] = Peak(t, e)
-    #         Si_rebin[peak] = sipms
-    #     return S2_rebin, Si_rebin
+    def rebin_s2si(self, s2, s2si):
+        """rebins s2d and sid dictionaries"""
+        if self.rebin > 1:
+            s2, s2si = pf._rebin_si(s2, s2si, self.rebin)
+        # check that this is not destructive
+        return s2, s2si
 
     def split_energy(self, e, clusters):
         if len(clusters) == 1:
