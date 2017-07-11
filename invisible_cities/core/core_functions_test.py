@@ -15,7 +15,8 @@ from hypothesis.strategies import composite
 sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 
 from .test_utils import random_length_float_arrays
-from .           import core_functions as core
+from .           import core_functions   as core
+from .           import core_functions_c as core_c
 
 def test_timefunc(capfd):
     # We run a function with a defined time duration (sleep) and we check
@@ -138,8 +139,8 @@ def test_rebin_array():
     arr = np.ones(length)
     for stride in range(1,11):
         for s in range(length):
-            for i, v in enumerate(core._rebin_array(arr[s:], stride)):
-                if i == 0: assert v == min(stride, len(arr))
+            for i, v in enumerate(core_c.rebin_array(arr[s:], stride, remainder=False)):
+                if i == 0: assert v == min(stride, len(arr[s:]))
                 else     : assert v == stride
 
 def test_rebin_array_remainder():
@@ -151,7 +152,7 @@ def test_rebin_array_remainder():
     arr = np.ones(length)
     for stride in range(1,11):
         for s in range(length):
-            for i, v in enumerate(core._rebin_array(arr[s:], stride, met=np.sum, remainder=True)):
+            for i, v in enumerate(core_c.rebin_array(arr[s:], stride, remainder=True)):
                 if i == 0:
                     assert v == min(stride, len(arr[s:]))
                 elif i < len(arr[s:]) // stride:
