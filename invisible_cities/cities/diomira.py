@@ -56,7 +56,7 @@ class Diomira(SensorResponseCity):
         print(sp)
 
         # Create instance of the noise sampler
-        self.noise_sampler = SiPMsNoiseSampler(sp.SIPMWL, True)
+        self.noise_sampler = SiPMsNoiseSampler(self.run_number, sp.SIPMWL, True)
         # thresholds in adc counts
         self.sipms_thresholds = (self.sipm_noise_cut
                               *  self.sipm_adc_to_pes)
