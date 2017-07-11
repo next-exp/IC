@@ -130,9 +130,6 @@ def test_dict_filter():
 def test_farray_from_string():
     core.farray_from_string('1 10 100')[2] == 100
 
-#def test_rebin_array():
-#    core.rebin_array(core.lrange(100), 5)[0] == 10
-
 def test_rebin_array():
     """
     rebin arrays of len 1 to 100 with strides 1 to 10 and test output discarding the remainder
