@@ -13,7 +13,6 @@ import numpy  as np
 from pytest import mark
 
 from .. core                 import system_of_units as units
-from .. core.random_sampling import NoiseSampler as SiPMsNoiseSampler
 from .. core.configure       import configure
 
 from .. reco     import tbl_functions as tbl
