@@ -6,7 +6,7 @@ from .. database import load_db as DB
 
 
 class NoiseSampler:
-    def __init__(self, sample_size=1, smear=True):
+    def __init__(self, run_number, sample_size=1, smear=True):
         """Sample a histogram as if it was a PDF.
 
         Parameters
@@ -35,9 +35,11 @@ class NoiseSampler:
         self.nsamples = sample_size
         self.probs, self.xbins, self.baselines = DB.SiPMNoise()
 
-        self.probs = np.apply_along_axis(norm, 1, self.probs)
+        active         = DB.DataSiPM(run_number).Active.values[:, np.newaxis]
+        # probs * active means that masked sensors are set to 0
+        self.probs     = np.apply_along_axis(norm, 1, self.probs * active)
         self.baselines = self.baselines.reshape(self.baselines.shape[0], 1)
-        self.dx = np.diff(self.xbins)[0] * 0.5
+        self.dx        = np.diff(self.xbins)[0] * 0.5
 
         # Sampling functions
         def _sample_sensor(probs):
