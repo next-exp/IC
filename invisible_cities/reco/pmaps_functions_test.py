@@ -7,6 +7,7 @@ from pytest import mark
 parametrize = mark.parametrize
 
 from .. core           import system_of_units as units
+from . pmaps_functions   import rebin_s2si
 from . pmaps_functions_c import df_to_s1_dict
 from . pmaps_functions_c import df_to_s2_dict
 from . pmaps_functions_c import df_to_s2si_dict
@@ -146,3 +147,26 @@ def test_df_to_s2si_dict_number_of_slices_is_correct(KrMC_pmaps):
             for sipm_no in s2si.sipms_in_peak(peak_no):
                 sipm_ts = s2si.sipm_waveform(peak_no, sipm_no).number_of_samples
                 assert sipm_ts == s2_ts
+
+# ###############################################################
+# # rebin s2si-related tests
+# ###############################################################
+def test_rebinned_s2_energy_sum_same_as_original_energy_sum(KrMC_pmaps):
+    _, (_, _, _), (_, _, _), (_, s2_dict, s2si_dict)  = KrMC_pmaps
+    for s2, s2si in zip(s2_dict.values(), s2si_dict.values()):
+        for rf in range(1,11):
+            s2r, s2sir = rebin_s2si(s2, s2si, rf)
+            for p in s2.s2d:
+                assert s2.s2d[p][1].sum() == s2r.s2d[p][1].sum()
+                for sipm in s2si.s2sid[p]:
+                    assert s2si.s2sid[p][sipm].sum() == s2sir.s2sid[p][sipm].sum()
+
+
+def test_rebinned_s2si_yeilds_correct_average_times(KrMC_pmaps):
+    _, (_, _, _), (_, _, _), (_, s2_dict, s2si_dict)  = KrMC_pmaps
+    for s2, s2si in zip(s2_dict.values(), s2si_dict.values()):
+        for rf in range(1,11):
+            s2r, s2sir = rebin_s2si(s2, s2si, rf)
+            for p in s2.s2d:
+                for i, t in enumerate(s2r.s2d[p][0]):
+                    assert t == np.mean(s2.s2d[p][0][i*rf: min(i*rf + rf, len(s2.s2d[p][0]))])

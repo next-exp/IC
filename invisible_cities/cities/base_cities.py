@@ -41,7 +41,7 @@ from ..reco               import dst_functions    as dstf
 from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
 from ..io                 import pmap_io          as pio
-from ..reco.params        import S12Params, Peak
+from ..reco.params        import S12Params
 from ..reco.event_model   import SensorParams
 from ..reco.nh5           import DECONV_PARAM
 from ..reco.corrections   import Correction
