@@ -8,8 +8,10 @@ Last revised, JJGC, July, 2017.
 
 """
 import numpy  as np
-from .. core.core_functions_c  import rebin_array
+from .. core import core_functions_c as ccf
 from .. core.system_of_units_c import units
+from .. reco.params            import Peak
+from .. evm .pmaps             import S2, S2Si
 
 
 def _integrate_sipm_charges_in_peak_as_dict(s2si):
@@ -50,20 +52,25 @@ def _integrate_S2Si_charge(s2sid):
 
 def rebin_s2si(s2, s2si, rf):
     """given an s2 and a corresponding s2si, rebin them by a factor rf"""
-    s2_rebin = {}
-    s2si_rebin = {}
-    for peak in s2d:
-        t, e, sipms = rebin_s2si_peak(s2d[peak][0], s2d[peak][1], s2sid[peak], rf)
+    assert rf >= 1 and rf % 1 == 0
+    s2d_rebin = {}
+    s2sid_rebin = {}
+    for peak in s2.s2d:
+        t, e, sipms = rebin_s2si_peak(s2.s2d[peak][0], s2.s2d[peak][1], s2si.s2sid[peak], rf)
+
         s2d_rebin  [peak] = Peak(t, e)
         s2sid_rebin[peak] = sipms
-    return S2(s2d_rebin), S2Si(s2sid_rebin)
+
+    return S2(s2d_rebin), S2Si(s2d_rebin, s2sid_rebin)
 
 
-def _rebin_s2si_peak(t, e, sipms, stride):
+def rebin_s2si_peak(t, e, sipms, stride):
     """rebin: s2 times (taking mean), s2 energies, s2 sipm qs, by stride"""
-    return rebin_array(t, stride, remainder=True, mean=True), \
-           rebin_array(e, stride, remainder=True, \
-          {sipm: rebin_array(qs, stride, mean=True, remainder=True) for sipm, qs in sipms.items()}
+
+    # cython rebin_array is returning memoryview so we need to cast as np array
+    return np.asarray(ccf.rebin_array(t, stride, remainder=True, mean=True)), \
+           np.asarray(ccf.rebin_array(e, stride, remainder=True)), \
+      {sipm: np.asarray(ccf.rebin_array(qs, stride, remainder=True)) for sipm, qs in sipms.items()}
 
 # def select_si_slice(si, slice_no):
 #     # This is a temporary fix! The number of slices in the SiPM arrays
