@@ -76,7 +76,7 @@ def test_sipm_noise_sampler(electron_MCRD_file):
         assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) < cal_max
 
         sipms_thresholds = sipm_noise_cut *  sipm_adc_to_pes
-        noise_sampler = SiPMsNoiseSampler(SIPMWL, True)
+        noise_sampler = SiPMsNoiseSampler(run_number, SIPMWL, True)
 
         # signal in sipm with noise
         sipmrwf = e40rd.root.sipmrd[event] + noise_sampler.Sample()
