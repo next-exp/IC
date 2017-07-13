@@ -154,28 +154,21 @@ def farray_from_string(sfl):
     return np.array(list(map(float, sfl.split())))
 
 
-def rebin_array(arr, stride):
-    """Rebins an array according to some stride.
-
-    Parameters
-    ----------
-    arr : np.ndarray
-        Array of numbers
-    stride : int
-        Integration step.
-
-    Returns
-    -------
-    rebinned : np.ndarray
-        Rebinned array
+def _rebin_array(arr, stride, met=np.sum, remainder=False):
     """
-    #n = int(math.ceil(len(t) / float(stride)))
+    rebin arr by a factor stride, using method (ex: np.sum or np.mean), keep the remainder in the
+    last bin or not
+    """
     lenb = int(len(arr) / int(stride))
-    rebinned = np.empty(lenb)
+    if remainder and len(arr) % stride != 0:
+        rebinned     = np.empty(lenb + 1)
+        rebinned[-1] = met(arr[lenb*stride:])
+    else:
+        rebinned = np.empty(lenb)
     for i in range(lenb):
-        low = i * stride
-        upp = low + stride
-        rebinned[i] = np.sum(arr[low:upp])
+        s = i * stride
+        f = s + stride
+        rebinned[i] = met(arr[s:f])
     return rebinned
 
 

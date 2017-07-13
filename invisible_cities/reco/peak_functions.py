@@ -1,52 +1,11 @@
 """Functions to find peaks, S12 selection etc.
-Last revision: JJGC, June, 2017
+Last revision: JJGC, July, 2017
 
-
-The list of the functions is:
-
-**Private functions used for testing**
-(the corresponding public functions without the _  in fron of the name are
-in module peak_functions_c)
-
-_calibrated_pmt_sum(CWF, adc_to_pes, pmt_active = [], n_MAU=200, thr_MAU=5)
-  Compute the ZS calibrated sum of the PMTs
-  after correcting the baseline with a MAU to suppress low frequency noise.
-
-_wfzs(wf, threshold=0)
-  Takes a waveform wf and return the values of the wf above threshold:
-
-_time_from_index(indx)
-  Return the times (in ns) corresponding to the indexes in indx
-
-_rebin_waveform(t, e, stride=40)
-  Rebin a waveform according to stride
-
-_find_S12(wfzs, index,
-          time   = minmax(0, 1e+6),
-          length = minmax(8, 1000000),
-          stride=4, rebin=False, rebin_stride=40)
-  Find S1/S2 peaks.
-
-**Public functions**
-
-find_S12(wfzs, index,
-             time   = minmax(0, 1e+6),
-             length = minmax(8, 1000000),
-             stride=4, rebin=False, rebin_stride=40)
-  Find S1/S2 peaks. Wrapper around the cython version returning instances
-  of S12 class.
-
-sipm_s2_dict(SIPM, S2d, thr=5 * units.pes)
-  Given a vector with SIPMs (energies above threshold), and a
-  dictionary of S2s, S2d, returns a dictionary of SiPMs-S2.
-
-sipm_s2(dSIPM, S2, thr=5*units.pes)
-  Given a vector with SIPMs (energies above threshold), return a dict
-  of np arrays, where the key is the sipm with signal.
-
-compute_csum_and_pmaps(event,pmtrwf, sipmrwf, s1par, s2par, thresholds,
-                       calib_vectors, deconv_params)
-    Compute calibrated sum and PMAPS.
+A python module containing peak finding functions. Most of the functions
+are private and used only for testing (e.g, comparison with the
+corresponding cython functions). Private functions are labelled _function_name
+the corresponding public function (to be found in the cython module)
+is labelled function_name.
 
 """
 
@@ -73,12 +32,6 @@ def _calibrated_pmt_sum(CWF, adc_to_pes, pmt_active = [], n_MAU=200, thr_MAU=5):
     n_MAU       : length of the MAU window
     thr_MAU     : treshold above MAU to select sample
 
-    NB: This function is used only for testing purposes, thus the
-    annotation _name marking it as private (e.g, not in the API). It is
-    programmed "c-style", which is not necesarily optimal in python,
-    but follows the same logic that the corresponding cython function
-    (in peak_functions_c), which runs faster and should be used
-    instead of this one for nornal calculations.
     """
 
     NPMT = CWF.shape[0]
@@ -121,11 +74,6 @@ def _wfzs(wf, threshold=0):
     a vector of amplitudes [7,8,9,9,10,9,8,7,6] and a vector of indexes
     [4,5,6,7,8,9,10,12,14]
 
-    NB: This function is used only for testing purposed (thus private). It is
-    programmed "c-style", which is not necesarily optimal in python,
-    but follows the same logic that the corresponding cython function
-    (in peak_functions_c), which runs faster and should be used
-    instead of this one for nornal calculations.
     """
     len_wf = wf.shape[0]
     wfzs_e = np.zeros(len_wf, dtype=np.double)
@@ -150,11 +98,6 @@ def _wfzs(wf, threshold=0):
 def _time_from_index(indx):
     """Return the times (in ns) corresponding to the indexes in indx
 
-    NB: This function is used mainly for testing purposed (private). It is
-    programmed "c-style", which is not necesarily optimal in python,
-    but follows the same logic that the corresponding cython function
-    (in peak_functions_c), which runs faster and should be used
-    instead of this one for nornal calculations.
     """
     len_indx = indx.shape[0]
     tzs = np.zeros(len_indx, dtype=np.double)
@@ -172,12 +115,6 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
     The input waveform is a vector such that the index expresses time bin and the
     contents expresses energy (e.g, in pes)
     The function returns the rebinned T and E vectors
-
-    NB: This function is used mainly for testing purposes (private). It is
-     programmed "c-style", which is not necesarily optimal
-    in python, but follows the same logic that the corresponding cython
-    function (in peak_functions_c), which runs faster and should be used
-    instead of this one for nornal calculations.
 
     Parameters:
     t_s:       starting time for waveform
@@ -233,7 +170,7 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
     return T, E
 
 
-def _find_S12(csum, index,
+def _find_s12(csum, index,
               time   = minmax(0, 1e+6),
               length = minmax(8, 1000000),
               stride=4, rebin=False, rebin_stride=40):
@@ -249,11 +186,6 @@ def _find_S12(csum, index,
     accept the peak only if within [tmin, tmax)
     returns a dictionary of S12
 
-    NB: This function is used mainly for testing purposed. It is programmed
-     "c-style", which is not necesarily optimal
-    in python, but follows the same logic that the corresponding cython
-    function (in peak_functions_c), which runs faster and should be used
-    instead of this one for nornal calculations.
     """
 
     T = cpf._time_from_index(index)
@@ -292,62 +224,31 @@ def _find_S12(csum, index,
             S12L[j] = [np.arange(*cpf._time_from_index(i_peak), 25*units.ns), S12wf]
         j += 1
 
-    return pio.S12(S12L)
+    return S12L
+    #return pio.S12(S12L)
 
 
-# def find_S12(wfzs, index,
-#              time   = minmax(0, 1e+6),
-#              length = minmax(8, 1000000),
-#              stride=4, rebin=False, rebin_stride=40):
-#     """
-#     Find S1/S2 peaks.
-#     input:
-#     wfzs:   a vector containining the zero supressed wf
-#     indx:   a vector of indexes
-#     returns a dictionary
-#
-#     do not interrupt the peak if next sample comes within stride
-#     accept the peak only if within [lmin, lmax)
-#     accept the peak only if within [tmin, tmax)
-#     returns a dictionary of S12
-#
-#     NB: This function is a wrapper around the cython function. It returns
-#     a dictionary of namedtuples (Waveform(t = [t], E = [E])), where
-#     [t] and [E] are np arrays.
-#     """
-#
-#     from collections import namedtuple
-#
-#     Waveform = namedtuple('Waveform', 't E')
-#
-#     S12 = cpf.find_S12(wfzs, index,
-#                        *t, *l,
-#                       stride,
-#                       rebin, rebin_stride)
-#
-#     return {i: Waveform(t, E) for i, (t,E) in S12.items()}
-
-def sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
+def _sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
     """Given a vector with SIPMs (energies above threshold), and a
     dictionary of S2s, S2d, returns a dictionary of SiPMs-S2.  Each
     index of the dictionary correspond to one S2 and is a list of np
     arrays. Each element of the list is the S2 window in the SiPM (if
     not zero)
     """
-    return {i: sipm_s2(SIPM, S2, thr=thr) for i, S2 in S2d.items()}
+    return {i: _sipm_s2(SIPM, s2l, thr=thr) for i, s2l in S2d.items()}
 
 
-def sipm_s2(dSIPM, S2, thr=5*units.pes):
-    """Given a vector with SIPMs (energies above threshold), return a dict
-    of np arrays, where the key is the sipm with signal.
+def _sipm_s2(dSIPM, s2l, thr=5*units.pes):
+    """Given a vector with SIPMs (energies above threshold), and a list containing s2 times
+    and energies, return a dict of np arrays, where the key is the sipm with signal.
     """
 
-    def index_from_s2(S2):
+    def index_from_s2(s2l):
         """Return the indexes defining the vector."""
-        t0 = int(S2[0][0] // units.mus)
-        return t0, t0 + len(S2[0])
+        t0 = int(s2l[0][0] // units.mus)
+        return t0, t0 + len(s2l[0])
 
-    i0, i1 = index_from_s2(S2)
+    i0, i1 = index_from_s2(s2l)
     SIPML = {}
     for ID, sipm in dSIPM.values():
         slices = sipm[i0:i1]
@@ -357,8 +258,9 @@ def sipm_s2(dSIPM, S2, thr=5*units.pes):
     return SIPML
 
 
-def compute_csum_and_pmaps(event, pmtrwf, sipmrwf, s1par, s2par, thresholds,
-                        calib_vectors, deconv_params):
+def compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
+                           s1par, s2par, thresholds,
+                           calib_vectors, deconv_params):
     """Compute calibrated sum and PMAPS.
 
     :param pmtrwf: PMTs RWF
@@ -403,14 +305,30 @@ def compute_csum_and_pmaps(event, pmtrwf, sipmrwf, s1par, s2par, thresholds,
     s2_ene, s2_indx = cpf.wfzs(csum, threshold=thr.thr_s2)
     s1_ene, s1_indx = cpf.wfzs(csum_mau, threshold=thr.thr_s1)
 
+    s1 = cpf.find_s1(csum,
+                      s1_indx,
+                      **s1_params._asdict())
+
+    s2 = cpf.find_s2(csum,
+                      s2_indx,
+                      **s2_params._asdict())
+
+    s1 = cpf.correct_s1_ene(s1.s1d, csum)
+    sipmzs = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
+                           thr=thr.thr_sipm, n_MAU=100)
+
+    s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = thr.thr_SIPM)
+
+    #s2sid = cpf.sipm_s2_dict(sipmzs, s2d, thr=thr.thr_SIPM)
+
     # S1 and S2
-    S1 = cpf.find_S12(csum, s1_indx, **s1_params._asdict())
-    S2 = cpf.find_S12(csum, s2_indx, **s2_params._asdict())
+    # S1 = cpf.find_S12(csum, s1_indx, **s1_params._asdict())
+    # S2 = cpf.find_S12(csum, s2_indx, **s2_params._asdict())
 
     #S2Si
-    sipm = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
-                           thr=thr.thr_sipm, n_MAU=100)
-    SIPM = cpf.select_sipm(sipm)
-    S2Si = sipm_s2_dict(SIPM, S2, thr=thr.thr_SIPM)
+    # sipm = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
+    #                        thr=thr.thr_sipm, n_MAU=100)
+    # SIPM = cpf.select_sipm(sipm)
+    # S2Si = sipm_s2_dict(SIPM, S2, thr=thr.thr_SIPM)
     return (CalibratedSum(csum=csum, csum_mau=csum_mau),
-            PMaps(S1=S1, S2=S2, S2Si=S2Si))
+            PMaps(S1=s1.s1d, S2=s2.s2d, S2Si=s2si.s2sid))
