@@ -216,7 +216,7 @@ cpdef _time_from_index(int [:] indx):
 
 
 cpdef find_s1(double [:] csum,  int [:] index,
-              time=(), length=(),
+              time, length,
               int stride=4, rebin=False, rebin_stride=4):
     """
     find s1 peaks and returns S1 objects
@@ -226,7 +226,7 @@ cpdef find_s1(double [:] csum,  int [:] index,
 
 
 cpdef find_s2(double [:] csum,  int [:] index,
-              time=(), length=(),
+              time, length,
               int stride=40, rebin=True, rebin_stride=40):
     """
     find s2 peaks and returns S2 objects
