@@ -1,5 +1,5 @@
 from .. reco     import tbl_functions as tbl
-from .. reco.nh5 import MCTrack
+from .. evm.nh5  import MCTrack
 
 
 class mc_track_writer:
