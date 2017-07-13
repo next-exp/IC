@@ -2,7 +2,7 @@ from argparse import Namespace
 
 import numpy  as np
 from .. core.system_of_units_c import units
-from ..reco.pmaps_functions   import integrate_S2Si_charge
+#from ..reco.pmaps_functions   import integrate_S2Si_charge
 
 def select_peaks(peaks,
                  Emin, Emax,
@@ -48,37 +48,45 @@ class S12Selector:
         self.S2_NSIPMmax = conf.s2_nsipmmax
         self.S2_Ethr     = conf.s2_ethr
 
-    def select_S1(self, s1s):
-        return select_peaks(s1s,
+    def select_S1(self, s1d):
+        return select_peaks(s1d,
                                self.S1_Emin, self.S1_Emax,
                                self.S1_Lmin, self.S1_Lmax,
                                self.S1_Hmin, self.S1_Hmax,
                                self.S1_Ethr)
 
-    def select_S2(self, s2s, sis):
-        s2s = select_peaks(s2s,
+    def select_S2(self, s2d, sid):
+        s2df = select_peaks(s2d,
                               self.S2_Emin, self.S2_Emax,
                               self.S2_Lmin, self.S2_Lmax,
                               self.S2_Hmin, self.S2_Hmax,
                               self.S2_Ethr)
-        sis = select_Si(sis,
+        sidf = select_Si(sid,
                            self.S2_NSIPMmin, self.S2_NSIPMmax)
 
-        valid_peaks = set(s2s) & set(sis)
-        s2s = {peak_no: peak for peak_no, peak in s2s.items() if peak_no in valid_peaks}
-        sis = {peak_no: peak for peak_no, peak in sis.items() if peak_no in valid_peaks}
+        valid_peaks = set(s2df) & set(sidf)
+        s2s = {peak_no: peak for peak_no, peak in s2df.items() if peak_no in valid_peaks}
+        sis = {peak_no: peak for peak_no, peak in sidf.items() if peak_no in valid_peaks}
         return s2s, sis
 
 
-def s1s2_filter(selector, s1s, s2s, sis):
+def s1s2_filter(selector, s1, s2, s2si):
+    """Takes the event pmaps (s1, s2 and  s2si)
+    and filters the corresponding peaks in terms. The
+    objects s1df, s2df and sidf are filtered dictionaries
+    {peak:[(t,E)]}
 
-    S1     = selector.select_S1(s1s)
-    S2, Si = selector.select_S2(s2s, sis)
+    """
 
-    return (selector.S1_Nmin <= len(S1) <= selector.S1_Nmax and
-            selector.S2_Nmin <= len(S2) <= selector.S2_Nmax)
+    # s1f, s2f and sif are filtered dicts, containining
+    # the peaks that pass selection
+    s1df          = selector.select_S1(s1.s1d)
+    s2df, _       = selector.select_S2(s2.s2d, s2si.s2sid)
 
-def s2si_filter(S2Si):
+    return (selector.S1_Nmin <= len(s1df) <= selector.S1_Nmax and
+            selector.S2_Nmin <= len(s2df) <= selector.S2_Nmax)
+
+def s2si_filter(s2si):
     """All peaks must contain at least one non-zero charged sipm"""
 
     def at_least_one_sipm_with_Q_gt_0(Si):
@@ -87,5 +95,6 @@ def s2si_filter(S2Si):
     def all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si):
         return all(at_least_one_sipm_with_Q_gt_0(Si)
                           for Si in iS2Si.values())
-    iS2Si = integrate_S2Si_charge(S2Si)
+    #iS2Si = integrate_S2Si_charge(s2si.s2sid)
+    iS2Si = s2si.peak_and_sipm_total_energy_dict()
     return all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si)
