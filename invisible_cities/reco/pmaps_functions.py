@@ -55,11 +55,10 @@ def rebin_s2si(s2, s2si, rf):
     assert rf >= 1 and rf % 1 == 0
     s2d_rebin = {}
     s2sid_rebin = {}
-    for peak in s2.s2d:
-        t, e, sipms = rebin_s2si_peak(s2.s2d[peak][0], s2.s2d[peak][1], s2si.s2sid[peak], rf)
-
-        s2d_rebin  [peak] = Peak(t, e)
-        s2sid_rebin[peak] = sipms
+    for pn in s2.peaks:
+        t, e, sipms = rebin_s2si_peak(s2.peaks[pn].t, s2.peaks[pn].E, s2si.s2sid[pn], rf)
+        s2d_rebin  [pn] = Peak(t, e)
+        s2sid_rebin[pn] = sipms
 
     return S2(s2d_rebin), S2Si(s2d_rebin, s2sid_rebin)
 
@@ -68,8 +67,8 @@ def rebin_s2si_peak(t, e, sipms, stride):
     """rebin: s2 times (taking mean), s2 energies, s2 sipm qs, by stride"""
 
     # cython rebin_array is returning memoryview so we need to cast as np array
-    return np.asarray(ccf.rebin_array(t, stride, remainder=True, mean=True)), \
-           np.asarray(ccf.rebin_array(e, stride, remainder=True)), \
+    return   np.asarray(ccf.rebin_array(t , stride, remainder=True, mean=True)), \
+             np.asarray(ccf.rebin_array(e , stride, remainder=True))           , \
       {sipm: np.asarray(ccf.rebin_array(qs, stride, remainder=True)) for sipm, qs in sipms.items()}
 
 # def select_si_slice(si, slice_no):
