@@ -1,5 +1,5 @@
 from .  table_io import make_table
-from .. reco.nh5 import HitsTable
+from .. evm.nh5 import HitsTable
 
 
 def hits_writer(hdf5_file, *, compression='ZLIB4'):

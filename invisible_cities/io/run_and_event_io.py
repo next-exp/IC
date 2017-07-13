@@ -1,4 +1,4 @@
-from ..reco import nh5           as table_formats
+from ..evm import nh5           as table_formats
 from ..reco import tbl_functions as tbl
 
 def _make_run_event_tables(hdf5_file, compression):
