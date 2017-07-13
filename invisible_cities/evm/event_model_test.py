@@ -9,8 +9,8 @@ from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
-from .. core.ic_types_c    import xy
-from .. core.ic_types_c    import minmax
+from .. types.ic_types_c import xy
+from .. types.ic_types_c import minmax
 from .       event_model import SensorParams
 from .       event_model import Event
 

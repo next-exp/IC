@@ -9,8 +9,8 @@ from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
-from .. core.ic_types_c    import xy
-from .. core.ic_types_c    import minmax
+from .. types.ic_types_c    import xy
+from .. types.ic_types_c    import minmax
 
 from .. reco import  pmaps_functions as pmapf
 from .. reco.pmaps_functions_c import integrate_sipm_charges_in_peak
