@@ -1,3 +1,10 @@
+"""
+code: irene.py
+description: perform fast processing from raw data to pmaps.
+credits: see ic_authors_and_legal.rst in /doc
+
+last revised: JJGC, 12-July-2017
+"""
 import sys
 
 from argparse import Namespace
