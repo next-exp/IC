@@ -15,7 +15,7 @@ import numpy as np
 import tables as tb
 import pandas as pd
 from argparse import Namespace
-from ..reco.event_model  import SensorParams
+from ..evm.event_model  import SensorParams
 
 def filters(name):
     """Return the filter corresponding to a given key.

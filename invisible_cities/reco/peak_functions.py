@@ -21,7 +21,7 @@ from .. io import pmap_io as pio
 from .         import peak_functions_c as cpf
 from .  params import CalibratedSum
 from .  params import PMaps
-from .. core.ic_types          import minmax
+from .. types.ic_types          import minmax
 
 def _calibrated_pmt_sum(CWF, adc_to_pes, pmt_active = [], n_MAU=200, thr_MAU=5):
     """Compute the ZS calibrated sum of the PMTs
