@@ -27,9 +27,9 @@ from .. io.fee_io           import write_FEE_table
 
 from .. reco        import wfm_functions as wfm
 from .. reco        import tbl_functions as tbl
-from .. reco.nh5    import FEE
-from .. reco.nh5    import RunInfo
-from .. reco.nh5    import EventInfo
+from .. evm.nh5     import FEE
+from .. evm.nh5     import RunInfo
+from .. evm.nh5     import EventInfo
 
 from .  base_cities import SensorResponseCity
 

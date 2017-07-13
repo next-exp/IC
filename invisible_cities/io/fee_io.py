@@ -1,5 +1,5 @@
 from .. reco     import tbl_functions as tbl
-from .. reco.nh5 import FEE
+from .. evm.nh5 import FEE
 from .. sierpe   import fee as FE
 
 
