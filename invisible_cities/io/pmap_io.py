@@ -1,7 +1,7 @@
 import tables as tb
 import pandas as pd
 
-from .. reco import nh5           as table_formats
+from .. evm import nh5           as table_formats
 from .. reco import tbl_functions as tbl
 #from .. reco.pmaps_functions_c      import df_to_pmaps_dict
 from .. reco.pmaps_functions_c      import df_to_s1_dict

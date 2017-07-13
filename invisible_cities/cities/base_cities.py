@@ -42,8 +42,8 @@ from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
 from ..io                 import pmap_io          as pio
 from ..reco.params        import S12Params
-from ..evm.event_model   import SensorParams
-from ..reco.nh5           import DECONV_PARAM
+from ..evm.event_model    import SensorParams
+from ..evm.nh5            import DECONV_PARAM
 from ..reco.corrections   import Correction
 from ..reco.corrections   import Fcorrection
 from ..reco.corrections   import LifetimeCorrection
