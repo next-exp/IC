@@ -4,8 +4,8 @@ import numpy as np
 from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmZeroCharge
-from .. core.ic_types          import xy
-from .. reco.event_model       import Cluster
+from .. types.ic_types         import xy
+from .. evm.event_model        import Cluster
 
 
 def find_algorithm(algoname):

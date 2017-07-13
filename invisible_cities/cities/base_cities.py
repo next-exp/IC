@@ -25,7 +25,7 @@ import tables as tb
 from .. core.configure         import configure
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
-from .. core.ic_types          import minmax
+from .. types.ic_types         import minmax
 from .. core.system_of_units_c import units
 from .. core                   import fit_functions        as fitf
 
@@ -42,7 +42,7 @@ from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
 from ..io                 import pmap_io          as pio
 from ..reco.params        import S12Params
-from ..reco.event_model   import SensorParams
+from ..evm.event_model   import SensorParams
 from ..reco.nh5           import DECONV_PARAM
 from ..reco.corrections   import Correction
 from ..reco.corrections   import Fcorrection
