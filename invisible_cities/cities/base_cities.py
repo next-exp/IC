@@ -38,9 +38,9 @@ from ..reco               import sensor_functions as sf
 from ..reco               import peak_functions   as pf
 from ..reco               import pmaps_functions  as pmp
 from ..reco               import dst_functions    as dstf
-from ..reco               import tbl_functions    as tbf
 from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
+from ..io                 import pmap_io          as pio
 from ..reco.params        import S12Params
 from ..reco.event_model   import SensorParams
 from ..reco.nh5           import DECONV_PARAM
@@ -185,9 +185,15 @@ class City:
     def event_and_timestamp(evt, events_info):
         return events_info[evt]
 
+
     @staticmethod
     def event_number_from_input_file_name(filename):
-        return tbf.event_number_from_input_file_name(filename)
+        return tbl.event_number_from_input_file_name(filename)
+
+    @staticmethod
+    def event_numbers_and_timestamps_from_file_name(filename):
+        return tbl.get_event_numbers_and_timestamps_from_file_name(filename)
+
 
     def _get_rwf(self, h5in):
         "Return raw waveforms for SIPM and PMT data"
@@ -199,6 +205,15 @@ class City:
         "Return (MC) raw data waveforms for SIPM and PMT data"
         return (h5in.root.pmtrd,
                 h5in.root.sipmrd)
+
+    @staticmethod
+    def get_pmaps_dicts(filename):
+        return pio.load_pmaps(filename)
+
+    @staticmethod
+    def get_pmaps_from_dicts(s1_dict, s2_dict, s2si_dict, evt_number):
+        return pio.s1_s2_si_from_pmaps(s1_dict, s2_dict, s2si_dict, evt_number)
+
 
 
 class SensorResponseCity(City):
@@ -259,7 +274,7 @@ class DeconvolutionCity(City):
                                    "DeconvParams",
                                    DECONV_PARAM,
                                    "deconvolution parameters",
-                                   tbf.filters(self.compression))
+                                   tbl.filters(self.compression))
 
         row = table.row
         row["N_BASELINE"]            = self.n_baseline
@@ -352,34 +367,11 @@ class PmapCity(CalibratedCity):
         self.thr_sipm_s2 = conf.thr_sipm_s2
 
     def pmaps(self, s1_indx, s2_indx, csum, sipmzs):
-        S1, S2 = self.find_S12(csum, s1_indx, s2_indx)
-        S1     = self.correct_S1_ene(S1, csum)
-        Si     = self.find_S2Si(S2, sipmzs)
-        return S1, S2, Si
-
-    def find_S12(self, csum, s1_indx, s2_indx):
-        """Return S1 and S2."""
-        S1 = cpf.find_S12(csum,
-                          s1_indx,
-                          **self.s1_params._asdict())
-
-        S2 = cpf.find_S12(csum,
-                          s2_indx,
-                          **self.s2_params._asdict())
-        return S1, S2
-
-    def correct_S1_ene(self, S1, csum):
-        return cpf.correct_S1_ene(S1, csum)
-
-    def find_S2Si(self, S2, sipmzs):
-        """Return S2Si."""
-        SIPM = cpf.select_sipm(sipmzs)
-        S2Si = pf.sipm_s2_dict(SIPM, S2, thr = self.thr_sipm_s2)
-        return pio.S2Si(S2Si)
-
-    def check_s1s2_params(self):
-        if (not self.s1_params) or (not self.s2_params):
-            raise IOError('must set S1/S2 parameters before running')
+        s1 = cpf.find_s1(csum, s1_indx, **self.s1_params._asdict())
+        s1 = cpf.correct_s1_ene(s1.s1d, csum)
+        s2 = cpf.find_s2(csum, s2_indx, **self.s2_params._asdict())
+        s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = self.thr_sipm_s2)
+        return s1, s2, s2si
 
 
 class MapCity(City):
@@ -422,17 +414,11 @@ class HitCollectionCity(City):
         self.rebin          = conf.rebin
         self.reco_algorithm = find_algorithm(conf.reco_algorithm)
 
-    def rebin_s2(self, S2, Si):
-        if self.rebin <= 1:
-            return S2, Si
-
-        S2_rebin = {}
-        Si_rebin = {}
-        for peak in S2:
-            t, e, sipms = cpf.rebin_S2(S2[peak][0], S2[peak][1], Si[peak], self.rebin)
-            S2_rebin[peak] = Peak(t, e)
-            Si_rebin[peak] = sipms
-        return S2_rebin, Si_rebin
+    def rebin_s2si(self, s2, s2si):
+        """rebins s2d and sid dictionaries"""
+        if self.rebin > 1:
+            s2, s2si = pmp.rebin_s2si(s2, s2si, self.rebin)
+        return s2, s2si
 
     def split_energy(self, e, clusters):
         if len(clusters) == 1:

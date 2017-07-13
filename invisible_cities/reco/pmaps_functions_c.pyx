@@ -1,18 +1,98 @@
 """
-Cython version of PMAPS
-JJGC December, 2016
+Cython functions providing pmaps io and some extra functionality
+
+1. df_to_s1_dict --> transforms pandas df into {event:s1}
+2. df_to_s2_dict --> transforms pandas df into {event:s2}
+3. df_to_s2si_dict --> transforms pandas df into {event:s2si}
+
+4. integrate_sipm_charges_in_peak(s2si, peak_number)
+Returns (np.array[[nsipm_1 ,     nsipm_2, ...]],
+         np.array[[sum(q_1), sum(nsipm_2), ...]])
+
+Last revised, JJGC, July, 2017.
 """
 
 cimport numpy as np
 import  numpy as np
 
-from .  params     import Peak
-from .. io.pmap_io  import S12
-from .. io.pmap_io import S2Si
+# from .  params     import Peak
+# from .. io.pmap_io  import S12
+# from .. io.pmap_io import S2Si
+from .. evm.pmaps import S1
+from .. evm.pmaps import S2
+from .. evm.pmaps import S2Si
+
+cpdef integrate_sipm_charges_in_peak(s2si, peak_number):
+    """Return arrays of nsipm and integrated charges from SiPM dictionary.
+
+    S2Si = {  peak : Si }
+      Si = { nsipm : [ q1, q2, ...] }
+
+    Returns (np.array[[nsipm_1 ,     nsipm_2, ...]],
+             np.array[[sum(q_1), sum(nsipm_2), ...]])
+    """
+
+    cdef long[:] sipms = np.asarray(tuple(s2si.sipm_total_energy_dict(peak_number).keys()))
+    cdef double[:] Qs    = np.array(tuple(s2si.sipm_total_energy_dict(peak_number).values()))
+    return np.asarray(sipms), np.asarray(Qs)
+
+cpdef df_to_s1_dict(df, int max_events=-1):
+    """Takes a table with the persistent representation of pmaps
+    (in the form of a pandas data frame) and returns a dict {event:S1}
+
+    """
+    cdef dict s1_dict = {}
+    cdef dict s12d_dict, s12d
+    cdef int event_no
+
+    s12d_dict = df_to_pmaps_dict(df, max_events)  # {event:s12d}
+
+    for event_no, s12d in s12d_dict.items():
+        s1_dict[event_no] = S1(s12d)
+
+    return s1_dict
 
 
-cpdef df_to_pmaps_dict(df, max_events=None):
-    """Transform S1/S2 from DF format to dict format."""
+cpdef df_to_s2_dict(df, int max_events=-1):
+    """Takes a table with the persistent representation of pmaps
+    (in the form of a pandas data frame) and returns a dict {event:S1}
+
+    """
+    cdef dict s2_dict = {}
+    cdef dict s12d_dict, s12d
+    cdef int event_no
+
+    s12d_dict = df_to_pmaps_dict(df, max_events)  # {event:s12d}
+
+    for event_no, s12d in s12d_dict.items():
+        s2_dict[event_no] = S2(s12d)
+
+    return s2_dict
+
+cpdef df_to_s2si_dict(dfs2, dfsi, int max_events=-1):
+    """Takes a table with the persistent representation of pmaps
+    (in the form of a pandas data frame) and returns a dict {event:S2Si}
+
+    """
+    cdef dict s2si_dict = {}
+    cdef s2sid_dict, s2_dict, s2sid, s2d
+    cdef int event_no
+
+    s2sid_dict = df_to_s2sid_dict(dfsi, max_events)
+    s2_dict    = df_to_s2_dict(dfs2, max_events)
+
+    for event_no, s2sid in s2sid_dict.items():
+        s2d = s2_dict[event_no].s2d
+        s2si_dict[event_no] = S2Si(s2d, s2sid)
+
+    return s2si_dict
+
+cdef df_to_pmaps_dict(df, max_events):
+    """Takes a table with the persistent representation of pmaps
+    (in the form of a pandas data frame) and returns a dict {event:s12d}
+
+    """
+
     cdef dict all_events = {}
     cdef dict current_event
     cdef tuple current_peak
@@ -24,7 +104,7 @@ cpdef df_to_pmaps_dict(df, max_events=None):
 
     cdef int df_size = len(df.index)
     cdef int i
-    cdef long limit = np.iinfo(int).max if max_events is None or max_events < 0 else max_events
+    cdef long limit = np.iinfo(int).max if max_events < 0 else max_events
     cdef int peak_number
     cdef list t, E
 
@@ -39,12 +119,12 @@ cpdef df_to_pmaps_dict(df, max_events=None):
     # Postprocessing: Turn lists to numpy arrays before returning
     for current_event in all_events.values():
         for peak_number, (t, E) in current_event.items():
-            current_event[peak_number] = Peak(np.array(t), np.array(E))
+            current_event[peak_number] = [np.array(t), np.array(E)]
 
-    return S12(all_events)
+    return all_events
 
 
-cpdef df_to_s2si_dict(df, max_events=None):
+cdef df_to_s2sid_dict(df, max_events):
     """ Transform S2Si from DF format to dict format."""
     cdef dict all_events = {}
     cdef dict current_event
@@ -57,7 +137,7 @@ cpdef df_to_s2si_dict(df, max_events=None):
     cdef float [:] ene   = df.ene  .values
 
     cdef int df_size = len(df.index)
-    cdef long limit = np.iinfo(int).max if max_events is None or max_events < 0 else max_events
+    cdef long limit = np.iinfo(int).max if max_events < 0 else max_events
 
     cdef int i
     for i in range(df_size):
@@ -78,4 +158,5 @@ cpdef df_to_s2si_dict(df, max_events=None):
             for ID, energy in current_peak.items():
                 current_peak[ID] = np.array(energy)
 
-    return S2Si(all_events)
+
+    return all_events
