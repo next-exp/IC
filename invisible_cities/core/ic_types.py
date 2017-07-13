@@ -1,6 +1,59 @@
 
 import numpy as np
 
+class Counter:
+
+    def __init__(self, counter_name=''):
+        self.cd = {}
+        self.cn = counter_name
+
+    def init_counter(self, name, value=0):
+        self.cd.setdefault(name, value)
+
+    def init_counters(self, name_list, value=None):
+        if value==None:
+            for name in name_list:
+                self.cd.setdefault(name, 0)
+        else:
+            for value_no, name in enumerate(name_list):
+                self.cd.setdefault(name, value[value_no])
+
+    def increment_counter(self, name, value=1):
+        self.cd[name] += value
+
+    def increment_counters(self, name_list, value=None):
+        if value==None:
+            for name in name_list:
+                self.cd[name] += 1
+        else:
+            for value_no, name in enumerate(name_list):
+                self.cd[name] += value[value_no]
+
+    def set_counter(self, name, value=0):
+        self.cd[name] = value
+
+    def set_counters(self, name_list, value=None):
+        if value==None:
+            for name in name_list:
+                self.cd[name] =0
+        else:
+            for value_no, name in enumerate(name_list):
+                self.cd[name] = value[value_no]
+
+    def counter_value(self, name):
+        return self.cd[name]
+
+    def counters(self):
+        return tuple(self.cd.keys())
+
+    def __str__(self):
+        s = self.cn+':'
+        s2 = [' (counter = {}, value = {}), '.format(counter, value) for counter, value in self.cd.items()]
+        return  s + ''.join(s2)
+
+    __repr__ = __str__
+
+
 class xy:
     def __init__(self, x, y):
         self.x = x
