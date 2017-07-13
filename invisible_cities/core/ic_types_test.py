@@ -2,6 +2,7 @@ import numpy as np
 
 from . ic_types          import minmax
 from . ic_types          import xy
+from . ic_types          import Counter
 from . ic_types_c        import xy as cxy
 from . ic_types_c        import minmax as cmm
 
@@ -140,3 +141,82 @@ def test_cxy(xyc, a, b):
     np.isclose (xyc.R  ,   r, rtol=1e-4)
     np.isclose (xyc.Phi, phi, rtol=1e-4)
     np.allclose(xyc.pos, pos, rtol=1e-3, atol=1e-03)
+
+def test_counters():
+    cnt = Counter('CityName')
+    # init by default to zero
+    cnt.init_counter('c1')
+    assert cnt.cd['c1'] == 0
+
+    # cannot init again
+    cnt.init_counter('c1', value=10)
+    assert cnt.cd['c1'] == 0
+
+    # but one can set
+    cnt.set_counter('c1', 10)
+    assert cnt.cd['c1'] == 10
+
+    # init to a value different than cero
+    cnt.init_counter('c2', value=1)
+    assert cnt.cd['c2'] == 1
+
+    # init a sequence of counters to zero
+    cnt_list = ('a1', 'a2', 'a3')
+    cnt.init_counters(cnt_list)
+    for a in cnt_list:
+        assert cnt.cd[a] == 0
+
+    # set them to diferent values
+    cnt_values = (10, 20, 30)
+    cnt.set_counters(cnt_list, value=cnt_values)
+    for i, a in enumerate(cnt_list):
+        assert cnt.cd[a] == cnt_values[i]
+
+    # init to diferent values
+    cnt_list2 = ('b1', 'b2', 'b3')
+    cnt.set_counters(cnt_list2, value=cnt_values)
+    for i, a in enumerate(cnt_list2):
+        assert cnt.cd[a] == cnt_values[i]
+
+    # cannot re-init
+    cnt_list3 = ('d1', 'd2', 'd3')
+    cnt.init_counters(cnt_list3)
+    for a in (cnt_list3):
+        assert cnt.cd[a] == 0
+
+    cnt.init_counters(cnt_list3, value=cnt_values)
+    for a in (cnt_list3):
+        assert cnt.cd[a] == 0
+
+    #increment counter (1 by default)
+    cnt.increment_counter('c1')
+    assert cnt.cd['c1'] == 11
+
+    #increment counter by some value
+    cnt.increment_counter('c1',value=9)
+    assert cnt.cd['c1'] == 20
+
+    cnt.set_counters(cnt_list)
+    #print(cnt)
+
+    #increment a list of counters
+    cnt.increment_counters(cnt_list)
+    #print(cnt)
+    for a in cnt_list:
+        assert cnt.cd[a] == 1
+
+    cnt.increment_counters(cnt_list, value=(10,10,10))
+    for a in cnt_list:
+        assert cnt.cd[a] == 11
+
+
+    cc = cnt.counters()
+
+    cc2 = ('c1','c2') + cnt_list + cnt_list2 + cnt_list3
+
+    for c in cc:
+        assert c in cc2
+
+    #counter value
+    assert cnt.counter_value('c1') == 20
+    assert cnt.counter_value('c2') == 1
