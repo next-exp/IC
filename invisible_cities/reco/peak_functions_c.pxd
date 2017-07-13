@@ -81,12 +81,12 @@ accept the peak only if within [t.min, t.max)
 
 
 cpdef find_s1(double [:] csum,  int [:] index,
-              time=*, length=*,
+              time, length,
               int stride=*, rebin=*, rebin_stride=*)
 
 
 cpdef find_s2(double [:] csum,  int [:] index,
-              time=*, length=*,
+              time, length,
               int stride=*, rebin=*, rebin_stride=*)
 
 
