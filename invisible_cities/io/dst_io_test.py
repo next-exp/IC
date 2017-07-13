@@ -4,12 +4,12 @@ import tables as tb
 
 from numpy.testing import assert_allclose
 
-from ..core.ic_types      import xy
-from ..reco.dst_functions import load_dst
-from ..reco.event_model   import Cluster
-from ..reco.event_model   import Hit
-from ..reco.event_model   import PersistentHitCollection
-from . dst_io             import hits_writer
+from ..types.ic_types      import xy
+from ..reco.dst_functions  import load_dst
+from ..evm.event_model     import Cluster
+from ..evm.event_model     import Hit
+from ..evm.event_model     import PersistentHitCollection
+from . dst_io              import hits_writer
 
 
 def test_hits_writer(config_tmpdir, hits_toy_data):

@@ -3,7 +3,7 @@
 cimport numpy as np
 import numpy as np
 
-from .. core.ic_types_c        cimport minmax
+from .. types.ic_types_c       cimport minmax
 from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
