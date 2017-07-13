@@ -15,7 +15,8 @@ from hypothesis.strategies import composite
 sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 
 from .test_utils import random_length_float_arrays
-from .           import core_functions as core
+from .           import core_functions   as core
+from .           import core_functions_c as core_c
 
 def test_timefunc(capfd):
     # We run a function with a defined time duration (sleep) and we check
@@ -131,7 +132,34 @@ def test_farray_from_string():
     core.farray_from_string('1 10 100')[2] == 100
 
 def test_rebin_array():
-    core.rebin_array(core.lrange(100), 5)[0] == 10
+    """
+    rebin arrays of len 1 to 100 with strides 1 to 10 and test output discarding the remainder
+    """
+    length = 100
+    arr = np.ones(length)
+    for stride in range(1,11):
+        for s in range(length):
+            for i, v in enumerate(core_c.rebin_array(arr[s:], stride, remainder=False)):
+                if i == 0: assert v == min(stride, len(arr[s:]))
+                else     : assert v == stride
+
+def test_rebin_array_remainder():
+    """
+    rebin arrays of len 1 to 100 with strides 1 to 10 and test output with method=np.sum
+    without discarding the remainder
+    """
+    length = 100
+    arr = np.ones(length)
+    for stride in range(1,11):
+        for s in range(length):
+            for i, v in enumerate(core_c.rebin_array(arr[s:], stride, remainder=True)):
+                if i == 0:
+                    assert v == min(stride, len(arr[s:]))
+                elif i < len(arr[s:]) // stride:
+                    assert v == stride
+                else:
+                    assert i == len(arr[s:]) // stride
+                    assert v == min(stride, len(arr[s:][i * stride:]))
 
 def test_define_window():
     mu, sigma = 100, 0.2 # mean and standard deviation

@@ -351,12 +351,12 @@ def test_csum_zs_s12():
     npt.assert_allclose(pt1, ct2)
     npt.assert_allclose(pe1, ce2)
 
-    S12L1 = pf._find_S12(csum, wfzs_indx,
+    S12L1 = pf._find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
 
-    S12L2 = cpf.find_S12(csum, wfzs_indx,
+    S12L2 = cpf.find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
@@ -378,7 +378,7 @@ def test_csum_zs_s12():
         npt.assert_allclose(e,E)
 
     # rebin
-    S12L2 = cpf.find_S12(csum, wfzs_indx,
+    S12L2 = cpf.find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
              stride=10, rebin=True, rebin_stride=10)
@@ -394,6 +394,6 @@ def test_cwf_are_empty_for_masked_pmts(csum_zs_blr_cwf):
 
 def test_correct_S1_ene_returns_correct_energies(toy_S1_wf):
     S1, wf, indices = toy_S1_wf
-    corrS1 = cpf.correct_S1_ene(S1, wf)
-    for peak_no, (t, E) in corrS1.items():
+    corrS1 = cpf.correct_s1_ene(S1, wf)
+    for peak_no, (t, E) in corrS1.s1d.items():
         assert np.all(E == wf[indices[peak_no]])

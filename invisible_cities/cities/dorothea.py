@@ -13,9 +13,7 @@ from .. io.kdst_io              import kr_writer
 from .. reco.event_model        import PersistentKrEvent
 
 from .. reco                   import tbl_functions   as tbl
-from .. reco                   import pmaps_functions as pmp
-from .. reco.pmaps_functions   import load_pmaps
-from .. reco.tbl_functions     import get_event_numbers_and_timestamps_from_file_name
+from .. reco                   import pmaps_functions_c as pmp
 
 from .. filters.s1s2_filter    import s1s2_filter
 from .. filters.s1s2_filter    import S12Selector
@@ -39,11 +37,8 @@ class Dorothea(City):
             write_kr = kr_writer(h5out)
 
             nevt_in, nevt_out = self._file_loop(write_kr)
-        print(textwrap.dedent("""
-                              Number of events in : {}
-                              Number of events out: {}
-                              Ratio               : {}
-                              """.format(nevt_in, nevt_out, nevt_out / nevt_in)))
+            self.print_stats(nevt_in, nevt_out)
+
         return nevt_in, nevt_out
 
     def _file_loop(self, write_kr):
@@ -53,15 +48,16 @@ class Dorothea(City):
             print("Opening {filename}".format(**locals()), end="... ")
 
             try:
-                S1s, S2s, S2Sis = load_pmaps(filename)
+                s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
+
             except (ValueError, tb.exceptions.NoSuchNodeError):
                 print("Empty file. Skipping.")
                 continue
 
-            event_numbers, timestamps = get_event_numbers_and_timestamps_from_file_name(filename)
+            event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
 
             nevt_in, nevt_out, max_events_reached = self._event_loop(
-                event_numbers, timestamps, nevt_in, nevt_out, write_kr, S1s, S2s, S2Sis)
+                event_numbers, timestamps, nevt_in, nevt_out, write_kr, s1_dict, s2_dict, s2si_dict)
 
             if max_events_reached:
                 print('Max events reached')
@@ -71,50 +67,65 @@ class Dorothea(City):
 
         return nevt_in, nevt_out
 
-    def _event_loop(self, event_numbers, timestamps, nevt_in, nevt_out, write_kr, S1s, S2s, S2Sis):
+    def _event_loop(self, event_numbers, timestamps, nevt_in, nevt_out, write_kr, s1_dict, s2_dict, s2si_dict):
         max_events_reached = False
         for evt_number, evt_time in zip(event_numbers, timestamps):
             nevt_in += 1
             if self.max_events_reached(nevt_in):
                 max_events_reached = True
                 break
-            S1 = S1s  .get(evt_number, {})
-            S2 = S2s  .get(evt_number, {})
-            Si = S2Sis.get(evt_number, {})
-
-            if not s1s2_filter(self._s1s2_selector, S1, S2, Si):
+            s1, s2, s2si = self. get_pmaps_from_dicts(s1_dict,
+                                                      s2_dict,
+                                                      s2si_dict,
+                                                      evt_number)
+            # loop event away if any signal (s1, s2 or s2si) not present
+            if s1 == None or s2 == None or s2si == None:
+                continue
+            # loop event away if filter fails
+            if not s1s2_filter(self._s1s2_selector, s1, s2, s2si):
                 continue
             nevt_out += 1
 
-            evt = self._create_kr_event(evt_number, evt_time, S1, S2, Si)
+            evt = self._create_kr_event(evt_number, evt_time, s1, s2, s2si)
             write_kr(evt)
 
             self.conditional_print(evt, nevt_in)
 
         return nevt_in, nevt_out, max_events_reached
 
-    def _create_kr_event(self, evt_number, evt_time, S1, S2, Si):
+
+    @staticmethod
+    def print_stats(nevt_in, nevt_out):
+        print(textwrap.dedent("""
+                              Number of events in : {}
+                              Number of events out: {}
+                              Ratio               : {}
+                              """.format(nevt_in, nevt_out, nevt_out / nevt_in)))
+
+    def _create_kr_event(self, evt_number, evt_time, s1, s2, s2si):
         evt       = PersistentKrEvent(evt_number, evt_time * 1e-3)
         #evt.event =
         #evt.time  = evt_time * 1e-3 # s
 
-        evt.nS1 = len(S1)
-        for peak_no, (t, e) in sorted(S1.items()):
-            evt.S1w.append(pmp.width(t))
-            evt.S1h.append(np.max(e))
-            evt.S1e.append(np.sum(e))
-            evt.S1t.append(t[np.argmax(e)])
+        evt.nS1 = s1.number_of_peaks
+        for peak_no in s1.peak_collection():
+            peak = s1.peak_waveform(peak_no)
+            evt.S1w.append(peak.width)
+            evt.S1h.append(peak.height)
+            evt.S1e.append(peak.total_energy)
+            evt.S1t.append(peak.tpeak)
 
-        evt.nS2 = len(S2)
-        for peak_no, (t, e) in sorted(S2.items()):
-            s2time  = t[np.argmax(e)]
+        evt.nS2 = s2.number_of_peaks
+        for peak_no in s2.peak_collection():
+            peak = s2.peak_waveform(peak_no)
+            evt.S2w.append(peak.width/units.mus)
+            evt.S2h.append(peak.height)
+            evt.S2e.append(peak.total_energy)
+            evt.S2t.append(peak.tpeak)
 
-            evt.S2w.append(pmp.width(t, to_mus=True))
-            evt.S2h.append(np.max(e))
-            evt.S2e.append(np.sum(e))
-            evt.S2t.append(s2time)
+            # IDs, Qs = pmp.integrate_sipm_charges_in_peak(si.s2sid[peak_no])
 
-            IDs, Qs = pmp.integrate_sipm_charges_in_peak(Si[peak_no])
+            IDs, Qs = pmp.integrate_sipm_charges_in_peak(s2si, peak_no)
             xsipms  = self.xs[IDs]
             ysipms  = self.ys[IDs]
             x       = np.average(xsipms, weights=Qs)
@@ -133,9 +144,10 @@ class Dorothea(City):
             evt.R    .append((x**2 + y**2)**0.5)
             evt.Phi  .append(np.arctan2(y, x))
 
-            dt  = s2time - evt.S1t[0] if len(evt.S1t) > 0 else -1e3
-            dt *= units.ns / units.mus
+            dt  = evt.S2t[peak_no] - evt.S1t[0]
+            dt  *= units.ns / units.mus
             evt.DT   .append(dt)
             evt.Z    .append(dt * units.mus * self.drift_v)
 
         return evt
+

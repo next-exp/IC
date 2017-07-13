@@ -61,9 +61,11 @@ cimport numpy as np
 import  numpy as np
 from scipy import signal
 
-from .. io import pmap_io as pio
-from .. core.system_of_units_c import units
+from .. evm.pmaps import S1
+from .. evm.pmaps import S2
+from .. evm.pmaps import S2Si
 
+from .. core.system_of_units_c import units
 
 cpdef calibrated_pmt_sum(double [:, :]  CWF,
                          double [:]     adc_to_pes,
@@ -213,7 +215,35 @@ cpdef _time_from_index(int [:] indx):
     return np.asarray(tzs)
 
 
-cpdef find_S12(double [:] csum,  int [:] index,
+cpdef find_s1(double [:] csum,  int [:] index,
+              time=(), length=(),
+              int stride=4, rebin=False, rebin_stride=4):
+    """
+    find s1 peaks and returns S1 objects
+    """
+
+    return S1(find_s12(csum, index, time, length, stride, rebin, rebin_stride))
+
+
+cpdef find_s2(double [:] csum,  int [:] index,
+              time=(), length=(),
+              int stride=40, rebin=True, rebin_stride=40):
+    """
+    find s2 peaks and returns S2 objects
+    """
+
+    return S2(find_s12(csum, index, time, length, stride, rebin, rebin_stride))
+
+
+cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr):
+    """
+    find s2si and returns S2Si objects
+    """
+    s2sid = sipm_s2sid(sipmzs, s2d, thr)
+    return S2Si(s2d, s2sid)
+
+
+cpdef find_s12(double [:] csum,  int [:] index,
                time=(), length=(),
                int stride=4, rebin=False, rebin_stride=40):
     """
@@ -222,67 +252,62 @@ cpdef find_S12(double [:] csum,  int [:] index,
     csum:   a summed (across pmts) waveform
     indx:   a vector of indexes
     returns a dictionary
-
     do not interrupt the peak if next sample comes within stride
     accept the peak only if within [lmin, lmax)
     accept the peak only if within [tmin, tmax)
     returns a dictionary of S12
     """
-
     cdef double tmin, tmax
     cdef int    limn, lmax
-
     #cdef double [:] P = wfzs
     cdef double [:] T = _time_from_index(index)
-
     cdef dict S12  = {}
     cdef dict S12L = {}
     cdef int i, j, k, ls
-
     tmin, tmax = time
     lmin, lmax = length
-
     S12[0] = np.array([index[0], index[0] + 1], dtype=np.int32)
-
     j = 0
     for i in range(1, len(index)):
-
         if T[i] > tmax: break
         if T[i] < tmin: continue
-
         # New s12, create new start and end index
         if index[i] - stride > index[i-1]:
             j += 1
             S12[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
-
         # Update end index in current S12
         S12[j][1] = index[i] + 1
-
-
     # re-arrange and rebin
     j = 0
     for i_peak in S12.values():
-
         if not (lmin <= i_peak[1] - i_peak[0] < lmax):
             continue
-
         S12wf = csum[i_peak[0]: i_peak[1]]
         if rebin == True:
             TR, ER = rebin_waveform(*_time_from_index(i_peak), S12wf, stride=rebin_stride)
             S12L[j] = [TR, ER]
         else:
-            S12L[j] = [np.arange(*_time_from_index(i_peak), 25*units.ns), S12wf]
+            S12L[j] = [np.arange(*_time_from_index(i_peak), 25*units.ns), np.asarray(S12wf)]
         j += 1
 
-    return pio.S12(S12L)
+    return S12L
 
 
-cpdef correct_S1_ene(S1, np.ndarray csum):
+# cpdef correct_S1_ene(S1, np.ndarray csum):
+#     cdef dict S1_corr = {}
+#     for peak_no, (t, _) in S1.items():
+#         indices          = (t // 25).astype(int)
+#         S1_corr[peak_no] = t, csum[indices]
+#     return S12(S1_corr)
+
+
+cpdef correct_s1_ene(dict s1d, np.ndarray csum):
     cdef dict S1_corr = {}
-    for peak_no, (t, _) in S1.items():
+    cdef int peak_no
+    for peak_no, (t, _) in s1d.items():
         indices          = (t // 25).astype(int)
         S1_corr[peak_no] = t, csum[indices]
-    return pio.S12(S1_corr)
+    return S1(S1_corr)
 
 
 cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
@@ -393,7 +418,17 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
 cpdef select_sipm(double [:, :] sipmzs):
     """
     Selects the SiPMs with signal
-    and returns a dictionary
+    and returns a dictionary:
+    input: sipmzs[i,k], where:
+           i: runs over number of SiPms (with signal)
+           k: runs over waveform.
+
+           sipmzs[i,k] only includes samples above
+           threshold (e.g, dark current threshold)
+
+    returns {j: [i, sipmzs[i]]}, where:
+           j: enumerates sipms with psum >0
+           i: sipm ID
     """
     cdef int NSIPM = sipmzs.shape[0]
     cdef int NWFM = sipmzs.shape[1]
@@ -410,3 +445,62 @@ cpdef select_sipm(double [:, :] sipmzs):
             SIPM[j] = [i,np.asarray(sipmzs[i])]
             j += 1
     return SIPM
+
+
+cdef _index_from_s2(list s2l):
+    """Return the indexes defining the vector."""
+    cdef int t0 = int(s2l[0][0] // units.mus)
+    return t0, t0 + len(s2l[0])
+
+
+
+cdef sipm_s2(dict dSIPM, list s2l, double thr):
+    """Given a dict with SIPMs (energies above threshold),
+    return a dict of np arrays, where the key is the sipm
+    with signal.
+
+    input {j: [i, sipmzs[i]]}, where:
+           j: enumerates sipms with psum >0
+           i: sipm ID
+          S2d defining an S2 signal
+
+    returns:
+          {i, sipm_i[i0:i1]} where:
+          i: sipm ID
+          sipm_i[i0:i1] waveform corresponding to SiPm i between:
+          i0: min index of S2d
+          i1: max index of S2d
+          only IF the total energy of SiPM is above thr
+
+    """
+
+    cdef int i0, i1, ID
+    i0, i1 = _index_from_s2(s2l)
+    cdef dict SIPML = {}
+    cdef double psum
+
+    for ID, sipm in dSIPM.values():
+        slices = sipm[i0:i1]
+        psum = np.sum(slices)
+        if psum > thr:
+            SIPML[ID] = slices.astype(np.double)
+    return SIPML
+
+
+cdef sipm_s2sid(double [:, :] sipmzs, dict s2d, double thr):
+    """Given a vector with SIPMs (energies above threshold), and a
+    dictionary S2d, returns a dictionary of SiPMs-S2.  Each
+    index of the dictionary correspond to one S2 and is a list of np
+    arrays. Each element of the list is the S2 window in the SiPM (if
+    not zero)
+
+    """
+    # dict dSIPM
+    # select_sipm(sipmzs)
+    cdef int peak_no
+    cdef list s2l
+    cdef dict s2si = {}
+    for peak_no, s2l in s2d.items():
+        s2si[peak_no] = sipm_s2(select_sipm(sipmzs), s2l, thr=thr)
+
+    return s2si
