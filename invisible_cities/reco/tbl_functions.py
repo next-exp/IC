@@ -151,6 +151,12 @@ def get_rd_vectors(h5in):
     return NEVT_pmt, pmtrd, sipmrd
 
 
+
+def get_mc_tracks(h5in):
+    """Return MC Tracks bank"""
+    return h5in.root.MC.MCTracks
+
+
 def get_sensor_params_from_vectors(pmtrwf, sipmrwf):
     _, NPMT,   PMTWL   = pmtrwf .shape
     _, NSIPM, SIPMWL   = sipmrwf.shape
