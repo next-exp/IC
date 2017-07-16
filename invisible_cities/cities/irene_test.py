@@ -96,10 +96,12 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
+    cnt = irene.run()
 
-    nactual, _ = irene.run()
+    nactual = cnt.counter_value('n_events_tot')
     if nrequired > 0:
         assert nrequired == nactual
+        assert nrequired == cnt.counter_value('nmax')
 
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
@@ -140,10 +142,10 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
-
-    nactual, _ = irene.run()
+    cnt = irene.run()
     if nrequired > 0:
-        assert nrequired == nactual
+        assert nrequired == cnt.counter_value('n_events_tot')
+
 
 
 @mark.slow # not slow itself, but depends on a slow test
@@ -154,14 +156,14 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
     # NB: the input file has 5 events. The maximum value for 'n'
     # in the IRENE parameters is 5, but it can run with a smaller values
     # (eg, 2) to speed the test. BUT NB, this has to be propagated to this
-    # test, eg. h5in .root.Run.events[0:2] if one has run 2 events.
+    # test, eg. h5in .root.Run.events[0:3] if one has run 2 events.
 
     PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'run_2983.h5')
     PATH_OUT = os.path.join(config_tmpdir,               'run_2983_pmaps.h5')
 
 
     with tb.open_file(PATH_IN, mode='r') as h5in:
-        evt_in  = h5in.root.Run.events[0:2]
+        evt_in  = h5in.root.Run.events[0:3]
         evts_in = []
         ts_in   = []
         for e in evt_in:
@@ -210,11 +212,10 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
+    cnt = irene.run()
 
-    nactual, nempty = irene.run()
-
-    assert nactual == 0
-    assert nempty  == 1
+    assert cnt.counter_value('n_events_tot')   == 0
+    assert cnt.counter_value('n_empty_events') == 1
 
 
 def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR, s12params):
