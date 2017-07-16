@@ -42,6 +42,8 @@ from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
 from ..io                 import pmap_io          as pio
 from ..reco.params        import S12Params
+from ..reco.params        import S12Sum
+from ..reco.params        import CSum
 from ..evm.event_model    import SensorParams
 from ..evm.nh5            import DECONV_PARAM
 from ..reco.corrections   import Correction
@@ -51,6 +53,8 @@ from ..reco.xy_algorithms import find_algorithm
 
 from ..sierpe             import blr
 from ..sierpe             import fee as FE
+
+from .. types.ic_types    import Counter
 
 
 def merge_two_dicts(a,b):
@@ -67,8 +71,15 @@ class City:
      """
 
     def __init__(self, **kwds):
-        conf = Namespace(**kwds)
+        """The init method of a city handles:
+        1. provides access to an instance of counters (cnt) to be used by derived cities.
+        2. provides access to the conf namespace
+        3. provides access to input/output files.
+        4. provides access to the data base.
+        """
 
+        self.cnt = Counter()
+        conf = Namespace(**kwds)
         self.conf = conf
 
         if not hasattr(conf, 'files_in'):
@@ -87,6 +98,47 @@ class City:
 
         self.set_up_database()
 
+    def run(self):
+        """The (base) run method of a city does the following chores:
+        1. Calls a display_IO_info() function (to be provided by the concrete cities)
+        2. open the output file
+        3. Writes any desired parameters to output file (must be implemented by cities)
+        4. gets the writers for the specific city.
+        5. Pass the writers to the file_loop() method.
+        6. returns the counter dictionary.
+        """
+        self.display_IO_info()
+
+
+        with tb.open_file(self.output_file, "w",
+                          filters = tbl.filters(self.compression)) as h5out:
+
+            self.write_parameters(h5out)
+            self.writers = self.get_writers(h5out)
+            self.file_loop()
+
+        return self.cnt
+
+    def file_loop(self):
+        """Must be implemented by concrete cities"""
+        pass
+
+    def event_loop(self):
+        """Must be implemented by concrete cities"""
+        pass
+
+    def display_IO_info(self):
+        """Must be implemented by concrete cities"""
+        pass
+
+    def write_parameters(self, h5out):
+        """Must be implemented by concrete cities"""
+        pass
+
+    def get_writers(self, h5out):
+        """Must be implemented by concrete cities"""
+        pass
+
     @classmethod
     def drive(cls, argv):
         conf = configure(argv)
@@ -100,10 +152,12 @@ class City:
 
     def go(self):
         t0 = time()
-        nevt_in, nevt_out = self.run()
+        cnt = self.run()
         t1 = time()
         dt = t1 - t0
-        print("run {} evts in {} s, time/event = {}".format(nevt_in, dt, dt/nevt_in))
+        n_events = cnt.counter_value('n_events_tot')
+        print("run {} evts in {} s, time/event = {}".format(n_events, dt, dt/n_events))
+        print(cnt)
 
     def set_up_database(self):
         DataPMT       = load_db.DataPMT (self.run_number)
@@ -146,7 +200,15 @@ class City:
                  Input Files = {}
                  Output File = {}
                           """.format(self.__class__.__name__,
+
                                      self.nmax, self.input_files, self.output_file))
+
+    def get_mc_tracks(self, h5in):
+        "Return RWF vectors and sensor data."
+        if self.monte_carlo:
+            return tbl.get_mc_tracks(h5in)
+        else:
+            return None
 
     @staticmethod
     def get_rwf_vectors(h5in):
@@ -366,7 +428,36 @@ class PmapCity(CalibratedCity):
 
         self.thr_sipm_s2 = conf.thr_sipm_s2
 
+
+    def pmt_transformation(self, RWF):
+        """
+        Performs the transformations in the PMT plane, namely:
+        1. Deconvolve the raw waveforms (RWF) to obtain corrected waveforms (CWF)
+        2. Computes the calibrated sum of the PMTs
+        3. Finds the zero suppressed waveforms to search for s1 and s2
+
+        """
+
+        # deconvolve
+        CWF = self.deconv_pmt(RWF)
+        # calibrated PMT sum
+        csum, csum_mau = self.calibrated_pmt_sum(CWF)
+        #ZS sum for S1 and S2
+        s1_ene, s1_indx = self.csum_zs(csum_mau, threshold =
+                                           self.thr_csum_s1)
+        s2_ene, s2_indx = self.csum_zs(csum,     threshold =
+                                           self.thr_csum_s2)
+        return (S12Sum(s1_ene  = s1_ene,
+                          s1_indx = s1_indx,
+                          s2_ene  = s2_ene,
+                          s2_indx = s2_indx),
+                CSum(csum = csum, csum_mau = csum_mau)
+                    )
+
+
+
     def pmaps(self, s1_indx, s2_indx, csum, sipmzs):
+        """Computes s1, s2 and s2si objects (PMAPS)"""
         s1 = cpf.find_s1(csum, s1_indx, **self.s1_params._asdict())
         s1 = cpf.correct_s1_ene(s1.s1d, csum)
         s2 = cpf.find_s2(csum, s2_indx, **self.s2_params._asdict())
