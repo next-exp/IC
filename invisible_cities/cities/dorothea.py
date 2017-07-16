@@ -24,25 +24,30 @@ from .  base_cities            import City
 class Dorothea(City):
     def __init__(self, **kwds):
         super().__init__(**kwds)
-        conf = self.conf
+        #conf = self.conf
 
-        self.drift_v = conf.drift_v
+        self.drift_v = self.conf.drift_v
         self._s1s2_selector = S12Selector(**kwds)
 
-    def run(self):
-        self.display_IO_info()
-        with tb.open_file(self.output_file, "w",
-                          filters = tbl.filters(self.compression)) as h5out:
+        self.cnt.set_name('dorothea')
+        self.cnt.set_counter('nmax', value=self.conf.nmax)
 
-            write_kr = kr_writer(h5out)
+    # def run(self):
+    #     self.display_IO_info()
+    #     with tb.open_file(self.output_file, "w",
+    #                       filters = tbl.filters(self.compression)) as h5out:
+    #
+    #         write_kr = kr_writer(h5out)
+    #
+    #         nevt_in, nevt_out = self._file_loop(write_kr)
+    #         self.print_stats(nevt_in, nevt_out)
+    #
+    #     return nevt_in, nevt_out
 
-            nevt_in, nevt_out = self._file_loop(write_kr)
-            self.print_stats(nevt_in, nevt_out)
-
-        return nevt_in, nevt_out
-
-    def _file_loop(self, write_kr):
-        nevt_in = nevt_out = 0
+    def file_loop(self):
+        write_kr = self.writers
+        self.cnt.init_counters(('n_events_tot', 'nevt_out'))
+        # nevt_in = nevt_out = 0
 
         for filename in self.input_files:
             print("Opening {filename}".format(**locals()), end="... ")
@@ -56,8 +61,7 @@ class Dorothea(City):
 
             event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
 
-            nevt_in, nevt_out, max_events_reached = self._event_loop(
-                event_numbers, timestamps, nevt_in, nevt_out, write_kr, s1_dict, s2_dict, s2si_dict)
+            max_events_reached = self.event_loop(event_numbers, timestamps, write_kr, s1_dict, s2_dict, s2si_dict)
 
             if max_events_reached:
                 print('Max events reached')
@@ -65,13 +69,14 @@ class Dorothea(City):
             else:
                 print("OK")
 
-        return nevt_in, nevt_out
+        # return nevt_in, nevt_out
 
-    def _event_loop(self, event_numbers, timestamps, nevt_in, nevt_out, write_kr, s1_dict, s2_dict, s2si_dict):
+    def event_loop(self, event_numbers, timestamps, write_kr, s1_dict, s2_dict, s2si_dict):
         max_events_reached = False
         for evt_number, evt_time in zip(event_numbers, timestamps):
-            nevt_in += 1
-            if self.max_events_reached(nevt_in):
+            self.cnt.increment_counter('n_events_tot')
+
+            if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
                 max_events_reached = True
                 break
             s1, s2, s2si = self. get_pmaps_from_dicts(s1_dict,
@@ -84,14 +89,15 @@ class Dorothea(City):
             # loop event away if filter fails
             if not s1s2_filter(self._s1s2_selector, s1, s2, s2si):
                 continue
-            nevt_out += 1
+            self.cnt.increment_counter('nevt_out')
 
             evt = self._create_kr_event(evt_number, evt_time, s1, s2, s2si)
             write_kr(evt)
 
-            self.conditional_print(evt, nevt_in)
+            self.conditional_print(self.cnt.counter_value('n_events_tot'),
+            self.cnt.counter_value('nevt_out'))
 
-        return nevt_in, nevt_out, max_events_reached
+        return max_events_reached
 
 
     @staticmethod
@@ -101,6 +107,10 @@ class Dorothea(City):
                               Number of events out: {}
                               Ratio               : {}
                               """.format(nevt_in, nevt_out, nevt_out / nevt_in)))
+
+    def get_writers(self, h5out):
+        """Get the writers needed by dorothea"""
+        return  kr_writer(h5out)
 
     def _create_kr_event(self, evt_number, evt_time, s1, s2, s2si):
         evt       = PersistentKrEvent(evt_number, evt_time * 1e-3)
@@ -150,4 +160,3 @@ class Dorothea(City):
             evt.Z    .append(dt * units.mus * self.drift_v)
 
         return evt
-
