@@ -7,6 +7,9 @@ class Counter:
         self.cd = {}
         self.cn = counter_name
 
+    def set_name(self, counter_name):
+        self.cn = counter_name
+
     def init_counter(self, name, value=0):
         self.cd.setdefault(name, value)
 
