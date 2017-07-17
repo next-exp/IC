@@ -71,7 +71,7 @@ def job_info_missing_pmts(config_tmpdir, ICDIR):
     pmt_active  = list(filter(lambda x: x not in pmt_missing, range(12)))
 
 
-    ifilename   = os.path.join(ICDIR, 'database/test_data/', 'electrons_40keV_z250_RWF.h5.h5')
+    ifilename   = os.path.join(ICDIR, 'database/test_data/', 'electrons_40keV_z250_RWF.h5')
     ofilename   = os.path.join(config_tmpdir,                'electrons_40keV_z250_pmaps_missing_PMT.h5')
 
     return job_info(run_number, pmt_missing, pmt_active, ifilename, ofilename)
@@ -227,7 +227,7 @@ def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts
                      file_out   =  job_info_missing_pmts.output_filename,
                      nmax       = nrequired,
                      **unpack_s12params(s12params))) # s12params are just dummy values in this test
-
+    #import pdb; pdb.set_trace()
     irene = Irene(**conf)
 
     assert irene.pmt_active == job_info_missing_pmts.pmt_active
