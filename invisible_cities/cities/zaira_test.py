@@ -27,5 +27,5 @@ def test_zaira_KrMC(config_tmpdir, ICDIR):
                      lifetime   = 1e6 * ns))
 
     zaira = Zaira(**conf)
-    dst_size = zaira.run()
-    assert dst_size > 0
+    cnt = zaira.run()
+    assert cnt.counter_value('n_events_tot') > 0
