@@ -21,7 +21,7 @@ from .. core                 import system_of_units as units
 from .. core.configure       import configure
 from .. types.ic_types       import minmax
 from .. io.pmap_io           import read_run_and_event_from_pmaps_file
-from .. reco.params          import S12Params as S12P
+from .. evm.ic_containers    import S12Params as S12P
 
 
 @fixture(scope='module')
