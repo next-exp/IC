@@ -1,3 +1,10 @@
+"""
+code: dorothea.py
+description: create a lightweight DST.
+credits: see ic_authors_and_legal.rst in /doc
+
+last revised: JJGC, July-2017
+"""
 import sys
 import glob
 import time
