@@ -121,15 +121,18 @@ class City:
 
         return self.cnt
 
+    def display_IO_info(self):
+        print("""
+                 {} will run a max of {} events
+                 Input Files = {}
+                 Output File = {}
+                          """.format(self.__class__.__name__, self.nmax, self.input_files, self.output_file))
+
     def file_loop(self):
         """Must be implemented by concrete cities"""
         pass
 
     def event_loop(self):
-        """Must be implemented by concrete cities"""
-        pass
-
-    def display_IO_info(self):
         """Must be implemented by concrete cities"""
         pass
 
@@ -194,16 +197,6 @@ class City:
                   .format(self.nmax))
             return True
         return False
-
-
-    def display_IO_info(self):
-        print("""
-                 {} will run a max of {} events
-                 Input Files = {}
-                 Output File = {}
-                          """.format(self.__class__.__name__,
-
-                                     self.nmax, self.input_files, self.output_file))
 
     def get_mc_tracks(self, h5in):
         "Return RWF vectors and sensor data."
@@ -360,6 +353,25 @@ class DeconvolutionCity(City):
                               thr_trigger           = self.thr_trigger,
                               acum_discharge_length = self.acum_discharge_length)
 
+    def file_loop(self):
+        """
+        The file loop of a deconvolution city:
+        1. access RWF vectors for PMT and SiPMs
+        2. access run and event info
+        3. access MC track info
+        4. calls event_loop
+        """
+        # import pdb; pdb.set_trace()
+
+        for filename in self.input_files:
+            print("Opening", filename, end="... ")
+            with tb.open_file(filename, "r") as h5in:
+
+                NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
+                events_info              = self.get_run_and_event_info(h5in)
+                mc_tracks                = self.get_mc_tracks(h5in)
+
+                self.event_loop(NEVT, pmtrwf, sipmrwf, mc_tracks, events_info)
 
 class CalibratedCity(DeconvolutionCity):
     """A calibrated city extends a DeconvCity, performing two actions.
@@ -504,7 +516,7 @@ class MapCity(City):
         return np.histogram2d(X, Y, (self._xbins, self._ybins), (self._xrange, self._yrange))
 
 
-class HitCollectionCity(City):
+class HitCity(City):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         conf  = self.conf
@@ -528,3 +540,26 @@ class HitCollectionCity(City):
         IDs, Qs  = pmp.integrate_sipm_charges_in_peak(si)
         xs, ys   = self.xs[IDs], self.ys[IDs]
         return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
+
+    def file_loop(self):
+        """
+        actions:
+        1. access pmaps (si_dicts )
+        2. access run and event info
+        3. call event_loop
+        """
+
+        for filename in self.input_files:
+            print("Opening {filename}".format(**locals()), end="... ")
+
+            try:
+                s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
+
+            except (ValueError, tb.exceptions.NoSuchNodeError):
+                print("Empty file. Skipping.")
+                continue
+
+            event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
+
+            max_events_reached = self.event_loop(event_numbers, timestamps,
+            s1_dict, s2_dict, s2si_dict)
