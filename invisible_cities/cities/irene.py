@@ -28,11 +28,18 @@ from .  base_cities  import PmapCity
 
 class Irene(PmapCity):
     """Perform fast processing from raw data to pmaps."""
-    def __init__(self, **kwds):
 
-        PmapCity.__init__(self, **kwds)
+    def __init__(self, **kwds):
+        """Irene Init:
+        1. inits base city
+        2. inits counters
+        3. gets sensor parameters
+
+        """
+        super().__init__(**kwds)
         self.cnt.set_name('irene')
         self.cnt.set_counter('nmax', value=self.conf.nmax)
+        self.sp = self.get_sensor_params(self.input_files[0])
 
     # def run(self):
     #     self.display_IO_info()
@@ -50,11 +57,12 @@ class Irene(PmapCity):
 
     def file_loop(self):
         """
-        Irene file loop does the following:
-        1. access RWF vectors for PMT and SiPMs
-        2. access run and event info
-        3. access MC track info
-
+        actions:
+        1. inite counters
+        2. access RWF vectors for PMT and SiPMs
+        3. access run and event info
+        4. access MC track info
+        5. call event_loop
         """
         # import pdb; pdb.set_trace()
         self.cnt.init_counters(('n_events_tot', 'n_empty_events'))
@@ -67,16 +75,14 @@ class Irene(PmapCity):
                 events_info              = self.get_run_and_event_info(h5in)
                 mc_tracks                = self.get_mc_tracks(h5in)
 
-
-
-
                 self.event_loop(NEVT, pmtrwf, sipmrwf, mc_tracks, events_info)
         # return self.cnt
 
     def event_loop(self, NEVT, pmtrwf, sipmrwf, mc_tracks, events_info):
-        """Irene event loop does the following:
+        """actions:
         1. loops over all the events in each file.
         2. write MC tracks on file
+        3. write event/run to file
         3. compute PMAPS and write them to file
         """
 
@@ -102,7 +108,6 @@ class Irene(PmapCity):
             write.pmap         (event, s1, s2, s2si)
             write.run_and_event(self.run_number, event, timestamp)
 
-
             self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
             if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
                 break
@@ -126,9 +131,9 @@ class Irene(PmapCity):
         """display info"""
         PmapCity.display_IO_info(self)
 
-        sensor_params = self.get_sensor_params(self.input_files[0])
 
-        print(sensor_params)
+
+        print(self.sp)
         print("""
                  S1 parameters {}""" .format(self.s1_params))
         print("""
