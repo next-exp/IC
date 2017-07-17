@@ -38,50 +38,6 @@ class Dorothea(HitCity):
         self.drift_v = self.conf.drift_v
         self._s1s2_selector = S12Selector(**kwds)
 
-    # def run(self):
-    #     self.display_IO_info()
-    #     with tb.open_file(self.output_file, "w",
-    #                       filters = tbl.filters(self.compression)) as h5out:
-    #
-    #         write_kr = kr_writer(h5out)
-    #
-    #         nevt_in, nevt_out = self._file_loop(write_kr)
-    #         self.print_stats(nevt_in, nevt_out)
-    #
-    #     return nevt_in, nevt_out
-
-    # def file_loop(self):
-    #     """
-    #     actions:
-    #     1. init counters
-    #     2. access pmaps (si_dicts )
-    #     3. access run and event info
-    #     4. call event_loop
-    #     """
-    #
-    #
-    #     for filename in self.input_files:
-    #         print("Opening {filename}".format(**locals()), end="... ")
-    #
-    #         try:
-    #             s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
-    #
-    #         except (ValueError, tb.exceptions.NoSuchNodeError):
-    #             print("Empty file. Skipping.")
-    #             continue
-    #
-    #         event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
-    #
-    #         max_events_reached = self.event_loop(event_numbers, timestamps,
-    #         s1_dict, s2_dict, s2si_dict)
-    #
-    #         if max_events_reached:
-    #             print('Max events reached')
-    #             break
-    #         else:
-    #             print("OK")
-
-        # return nevt_in, nevt_out
 
     def event_loop(self, event_numbers, timestamps, s1_dict, s2_dict, s2si_dict):
         """actions:
@@ -91,7 +47,6 @@ class Dorothea(HitCity):
         """
 
         write_kr = self.writers
-        #max_events_reached = False
         for evt_number, evt_time in zip(event_numbers, timestamps):
             # Count events in and break if necessary before filtering
             if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
@@ -135,8 +90,6 @@ class Dorothea(HitCity):
 
     def _create_kr_event(self, evt_number, evt_time, s1, s2, s2si):
         evt       = PersistentKrEvent(evt_number, evt_time * 1e-3)
-        #evt.event =
-        #evt.time  = evt_time * 1e-3 # s
 
         evt.nS1 = s1.number_of_peaks
         for peak_no in s1.peak_collection():
@@ -153,8 +106,6 @@ class Dorothea(HitCity):
             evt.S2h.append(peak.height)
             evt.S2e.append(peak.total_energy)
             evt.S2t.append(peak.tpeak)
-
-            # IDs, Qs = pmp.integrate_sipm_charges_in_peak(si.s2sid[peak_no])
 
             IDs, Qs = pmp.integrate_sipm_charges_in_peak(s2si, peak_no)
             xsipms  = self.xs[IDs]
