@@ -25,8 +25,6 @@ from .  diomira     import Diomira
 
 class Zaira(MapCity):
 
-    #go = Diomira.go
-
     def __init__(self, **kwds):
         """Zaira Init:
         1. inits base city
