@@ -16,10 +16,10 @@ from .. sierpe                 import blr
 from .                         import peak_functions   as pf
 from .                         import peak_functions_c as cpf
 from .                         import tbl_functions    as tbl
-from . params                  import S12Params
-from . params                  import ThresholdParams
-from . params                  import DeconvParams
-from . params                  import CalibVectors
+from .. evm.ic_containers      import S12Params
+from .. evm.ic_containers      import ThresholdParams
+from .. evm.ic_containers      import DeconvParams
+from .. evm.ic_containers      import CalibVectors
 from .. types.ic_types         import minmax
 
 

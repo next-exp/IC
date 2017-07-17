@@ -43,9 +43,9 @@ from ..reco               import tbl_functions    as tbl
 from ..io                 import pmap_io          as pio
 from .. io.fee_io         import write_FEE_table
 
-from ..reco.params        import S12Params
-from ..reco.params        import S12Sum
-from ..reco.params        import CSum
+from .. evm.ic_containers      import S12Params
+from .. evm.ic_containers      import S12Sum
+from .. evm.ic_containers      import CSum
 from ..evm.event_model    import SensorParams
 from ..evm.nh5            import DECONV_PARAM
 from ..reco.corrections   import Correction
