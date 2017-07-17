@@ -1,10 +1,9 @@
 """
 code: cecilia.py
 description: simulation of trigger for the NEXT detector.
-author: P. Ferrario
-IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
-package: invisible cities. See release notes and licence
-last changed: 01-02-2017
+credits: see ic_authors_and_legal.rst in /doc
+
+last revised: Paola, 01-02-2017
 """
 
 import sys
