@@ -21,6 +21,7 @@ from .. core.configure         import configure
 from .. core.system_of_units_c import units
 from .. reco        import tbl_functions as tbl
 
+from .. io.mc_io               import mc_track_writer
 from .. io.run_and_event_io    import run_and_event_writer
 from .. io.rwf_io   import rwf_writer
 from .  base_cities import DeconvolutionCity
@@ -43,7 +44,7 @@ class Isidora(DeconvolutionCity):
         super().__init__(**kwds)
         self.cnt.set_name('isidora')
         self.cnt.set_counter('nmax', value=self.conf.nmax)
-
+        self.cnt.init_counter('n_events_tot')
         self.sp = self.get_sensor_params(self.input_files[0])
 
     # def run(self):
@@ -72,28 +73,28 @@ class Isidora(DeconvolutionCity):
     #     return n_events_tot
 
 
-    def file_loop(self):
-        """
-        actions:
-        1. inite counters
-        2. access RWF vectors for PMT and SiPMs
-        3. access run and event info
-        4. call event_loop
-        """
-        self.cnt.init_counter('n_events_tot')
-        for filename in self.input_files:
-            print("Opening", filename, end="... ")
-            with tb.open_file(filename, "r") as h5in:
+    # def file_loop(self):
+    #     """
+    #     actions:
+    #     1. inite counters
+    #     2. access RWF vectors for PMT and SiPMs
+    #     3. access run and event info
+    #     4. call event_loop
+    #     """
+    #
+    #     for filename in self.input_files:
+    #         print("Opening", filename, end="... ")
+    #         with tb.open_file(filename, "r") as h5in:
+    #
+    #             self._copy_sensor_table(h5in)
+    #
+    #             NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
+    #             events_info              = self.get_run_and_event_info(h5in)
+    #
+    #             self.event_loop(NEVT, pmtrwf, sipmrwf, events_info)
 
-                self._copy_sensor_table(h5in)
 
-                NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
-                events_info              = self.get_run_and_event_info(h5in)
-
-                self.event_loop(NEVT, pmtrwf, sipmrwf, events_info)
-
-
-    def event_loop(self, NEVT, pmtrwf, sipmrwf, events_info):
+    def event_loop(self, NEVT, pmtrwf, sipmrwf, mc_tracks, events_info):
         """actions:
         1. loops over all the events in each file.
         2. write event/run to file
@@ -101,12 +102,17 @@ class Isidora(DeconvolutionCity):
         """
         write = self.writers
         for evt in range(NEVT):
-            CWF = self.deconv_pmt(pmtrwf[evt])
+            CWF = self.deconv_pmt(pmtrwf[evt])  # deconvolution
+
+            # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)
             write.run_and_event(self.run_number, event, timestamp)
             write.pmt (CWF)
             write.sipm(sipmrwf[evt])
+            if self.monte_carlo:
+                write.mc(mc_tracks, self.cnt.counter_value('n_events_tot'))
 
+            # conditional print and exit of loop condition
             self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
             if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
                 break
@@ -122,6 +128,7 @@ class Isidora(DeconvolutionCity):
             run_and_event = run_and_event_writer(h5out),
             pmt  = RWF(table_name='pmtcwf' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
             sipm  = RWF(table_name='sipmrwf' , n_sensors=self.sp.NSIPM , waveform_length=self.sp.SIPMWL),
+            mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
             )
         #     pmt  = rwf_writer(h5out,
         #                       group_name      = 'BLR',
@@ -140,8 +147,8 @@ class Isidora(DeconvolutionCity):
 
     def display_IO_info(self):
         """display info"""
+        super().display_IO_info()
         print(self.sp)
-
 
     def _copy_sensor_table(self, h5in):
         # Copy sensor table if exists (needed for GATE)

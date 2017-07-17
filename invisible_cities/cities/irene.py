@@ -30,7 +30,7 @@ class Irene(PmapCity):
     """Perform fast processing from raw data to pmaps."""
 
     def __init__(self, **kwds):
-        """Irene Init:
+        """actions:
         1. inits base city
         2. inits counters
         3. gets sensor parameters
@@ -39,6 +39,8 @@ class Irene(PmapCity):
         super().__init__(**kwds)
         self.cnt.set_name('irene')
         self.cnt.set_counter('nmax', value=self.conf.nmax)
+        self.cnt.init_counters(('n_events_tot', 'n_empty_events'))
+
         self.sp = self.get_sensor_params(self.input_files[0])
 
     # def run(self):
@@ -55,27 +57,27 @@ class Irene(PmapCity):
     #
     #     return self.cnt
 
-    def file_loop(self):
-        """
-        actions:
-        1. inite counters
-        2. access RWF vectors for PMT and SiPMs
-        3. access run and event info
-        4. access MC track info
-        5. call event_loop
-        """
-        # import pdb; pdb.set_trace()
-        self.cnt.init_counters(('n_events_tot', 'n_empty_events'))
-
-        for filename in self.input_files:
-            print("Opening", filename, end="... ")
-            with tb.open_file(filename, "r") as h5in:
-
-                NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
-                events_info              = self.get_run_and_event_info(h5in)
-                mc_tracks                = self.get_mc_tracks(h5in)
-
-                self.event_loop(NEVT, pmtrwf, sipmrwf, mc_tracks, events_info)
+    # def file_loop(self):
+    #     """
+    #     actions:
+    #     1. inite counters
+    #     2. access RWF vectors for PMT and SiPMs
+    #     3. access run and event info
+    #     4. access MC track info
+    #     5. call event_loop
+    #     """
+    #     # import pdb; pdb.set_trace()
+    #
+    #
+    #     for filename in self.input_files:
+    #         print("Opening", filename, end="... ")
+    #         with tb.open_file(filename, "r") as h5in:
+    #
+    #             NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
+    #             events_info              = self.get_run_and_event_info(h5in)
+    #             mc_tracks                = self.get_mc_tracks(h5in)
+    #
+    #             self.event_loop(NEVT, pmtrwf, sipmrwf, mc_tracks, events_info)
         # return self.cnt
 
     def event_loop(self, NEVT, pmtrwf, sipmrwf, mc_tracks, events_info):
@@ -88,25 +90,26 @@ class Irene(PmapCity):
 
         write = self.writers
         for evt in range(NEVT):
-            if self.monte_carlo:
-                write.mc(mc_tracks, self.cnt.counter_value('n_events_tot'))
+            # calibrated sum in PMTs
             s12sum, calsum = self.pmt_transformation(pmtrwf[evt])
 
             if np.sum(s12sum.s2_ene) == 0: # ocasional but rare empty events
                 self.cnt.increment_counter('n_empty_events')
                 continue
-
+            # calibrated sum in SiPMs
             sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
+            # pmaps
             s1, s2, s2si = self.pmaps(s12sum.s1_indx,
                                       s12sum.s2_indx,
                                       calsum.csum,
                                       sipmzs)
 
+            # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)
-
-            # write to file
             write.pmap         (event, s1, s2, s2si)
             write.run_and_event(self.run_number, event, timestamp)
+            if self.monte_carlo:
+                write.mc(mc_tracks, self.cnt.counter_value('n_events_tot'))
 
             self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
             if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
@@ -129,10 +132,7 @@ class Irene(PmapCity):
 
     def display_IO_info(self):
         """display info"""
-        PmapCity.display_IO_info(self)
-
-
-
+        super().display_IO_info()
         print(self.sp)
         print("""
                  S1 parameters {}""" .format(self.s1_params))
