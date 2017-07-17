@@ -15,8 +15,8 @@ from .. database import load_db
 from .        import peak_functions_c as cpf
 from .        import tbl_functions    as tbl
 from .        import wfm_functions    as wfm
-from . params import CalibVectors
-from . params import DeconvParams
+from .. evm.ic_containers import CalibVectors
+from .. evm.ic_containers import DeconvParams
 
 
 def ndarrays_of_shape(shape, lo=-1000.0, hi=1000.0):
