@@ -18,19 +18,18 @@ from .. reco                   import pmaps_functions_c as pmp
 from .. filters.s1s2_filter    import s1s2_filter
 from .. filters.s1s2_filter    import S12Selector
 
-from .  base_cities            import City
+from .  base_cities            import HitCity
 
 
-class Dorothea(City):
+class Dorothea(HitCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
-        #conf = self.conf
+        self.cnt.set_name('dorothea')
+        self.cnt.set_counter('nmax', value=self.conf.nmax)
+        self.cnt.init_counters(('n_events_tot', 'nevt_out'))
 
         self.drift_v = self.conf.drift_v
         self._s1s2_selector = S12Selector(**kwds)
-
-        self.cnt.set_name('dorothea')
-        self.cnt.set_counter('nmax', value=self.conf.nmax)
 
     # def run(self):
     #     self.display_IO_info()
@@ -44,60 +43,74 @@ class Dorothea(City):
     #
     #     return nevt_in, nevt_out
 
-    def file_loop(self):
-        write_kr = self.writers
-        self.cnt.init_counters(('n_events_tot', 'nevt_out'))
-        # nevt_in = nevt_out = 0
-
-        for filename in self.input_files:
-            print("Opening {filename}".format(**locals()), end="... ")
-
-            try:
-                s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
-
-            except (ValueError, tb.exceptions.NoSuchNodeError):
-                print("Empty file. Skipping.")
-                continue
-
-            event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
-
-            max_events_reached = self.event_loop(event_numbers, timestamps, write_kr, s1_dict, s2_dict, s2si_dict)
-
-            if max_events_reached:
-                print('Max events reached')
-                break
-            else:
-                print("OK")
+    # def file_loop(self):
+    #     """
+    #     actions:
+    #     1. init counters
+    #     2. access pmaps (si_dicts )
+    #     3. access run and event info
+    #     4. call event_loop
+    #     """
+    #
+    #
+    #     for filename in self.input_files:
+    #         print("Opening {filename}".format(**locals()), end="... ")
+    #
+    #         try:
+    #             s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
+    #
+    #         except (ValueError, tb.exceptions.NoSuchNodeError):
+    #             print("Empty file. Skipping.")
+    #             continue
+    #
+    #         event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
+    #
+    #         max_events_reached = self.event_loop(event_numbers, timestamps,
+    #         s1_dict, s2_dict, s2si_dict)
+    #
+    #         if max_events_reached:
+    #             print('Max events reached')
+    #             break
+    #         else:
+    #             print("OK")
 
         # return nevt_in, nevt_out
 
-    def event_loop(self, event_numbers, timestamps, write_kr, s1_dict, s2_dict, s2si_dict):
-        max_events_reached = False
-        for evt_number, evt_time in zip(event_numbers, timestamps):
-            self.cnt.increment_counter('n_events_tot')
+    def event_loop(self, event_numbers, timestamps, s1_dict, s2_dict, s2si_dict):
+        """actions:
+        1. loops over all PMAPS
+        2. filter pmaps
+        3. write kr_event
+        """
 
+        write_kr = self.writers
+        #max_events_reached = False
+        for evt_number, evt_time in zip(event_numbers, timestamps):
+            # Count events in and break if necessary before filtering
             if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
-                max_events_reached = True
                 break
+            else:
+                self.cnt.increment_counter('n_events_tot')
+
+            # get pmaps
             s1, s2, s2si = self. get_pmaps_from_dicts(s1_dict,
                                                       s2_dict,
                                                       s2si_dict,
                                                       evt_number)
+            # filtering
             # loop event away if any signal (s1, s2 or s2si) not present
             if s1 == None or s2 == None or s2si == None:
                 continue
             # loop event away if filter fails
             if not s1s2_filter(self._s1s2_selector, s1, s2, s2si):
                 continue
+            # event passed selection: increment counter and write
             self.cnt.increment_counter('nevt_out')
-
             evt = self._create_kr_event(evt_number, evt_time, s1, s2, s2si)
             write_kr(evt)
 
             self.conditional_print(self.cnt.counter_value('n_events_tot'),
             self.cnt.counter_value('nevt_out'))
-
-        return max_events_reached
 
 
     @staticmethod
@@ -111,6 +124,7 @@ class Dorothea(City):
     def get_writers(self, h5out):
         """Get the writers needed by dorothea"""
         return  kr_writer(h5out)
+
 
     def _create_kr_event(self, evt_number, evt_time, s1, s2, s2si):
         evt       = PersistentKrEvent(evt_number, evt_time * 1e-3)
