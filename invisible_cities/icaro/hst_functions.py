@@ -5,8 +5,8 @@ import numpy             as np
 import matplotlib.pyplot as plt
 from   matplotlib.colors import LogNorm
 
-import invisible_cities.core.fit_functions as     fitf
-from   invisible_cities.reco.params        import Measurement
+from .. core              import fit_functions as     fitf
+from .. evm.ic_containers import Measurement
 
 def labels(xlabel, ylabel, title=""):
     """

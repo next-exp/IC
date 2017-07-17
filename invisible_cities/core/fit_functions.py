@@ -8,8 +8,8 @@ import numpy as np
 import scipy.optimize
 import scipy.stats
 
-from .  core_functions import in_range
-from .. reco.params    import FitFunction
+from .  core_functions       import in_range
+from .. evm.ic_containers    import FitFunction
 
 def get_errors(cov):
     """

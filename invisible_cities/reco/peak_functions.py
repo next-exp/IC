@@ -17,11 +17,11 @@ from scipy import signal
 from .. core   import system_of_units as units
 from .. sierpe import blr
 
-from .. io import pmap_io as pio
-from .         import peak_functions_c as cpf
-from .  params import CSum
-from .  params import PMaps
-from .. types.ic_types          import minmax
+from ..io                  import pmap_io as pio
+from .                     import peak_functions_c as cpf
+from .. evm.ic_containers  import CSum
+from .. evm.ic_containers  import PMaps
+from .. types.ic_types     import minmax
 
 def _calibrated_pmt_sum(CWF, adc_to_pes, pmt_active = [], n_MAU=200, thr_MAU=5):
     """Compute the ZS calibrated sum of the PMTs
