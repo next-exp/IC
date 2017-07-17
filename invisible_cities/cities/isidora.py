@@ -47,53 +47,6 @@ class Isidora(DeconvolutionCity):
         self.cnt.init_counter('n_events_tot')
         self.sp = self.get_sensor_params(self.input_files[0])
 
-    # def run(self):
-    #     self.display_IO_info()
-    #     sensor_params = self.get_sensor_params(self.input_files[0])
-    #     print(sensor_params)
-    #
-    #     with tb.open_file(self.output_file, "w",
-    #                       filters = tbl.filters(self.compression)) as h5out:
-    #
-    #         writers = Namespace(
-    #             pmt  = rwf_writer(h5out,
-    #                               group_name      = 'BLR',
-    #                               table_name      = 'pmtcwf',
-    #                               n_sensors       = sensor_params.NPMT,
-    #                               waveform_length = sensor_params.PMTWL),
-    #             sipm = rwf_writer(h5out,
-    #                               group_name      = 'BLR',
-    #                               table_name      = 'sipmrwf',
-    #                               n_sensors       = sensor_params.NSIPM,
-    #                               waveform_length = sensor_params.SIPMWL)
-    #         )
-    #
-    #         n_events_tot = self._file_loop(writers)
-    #
-    #     return n_events_tot
-
-
-    # def file_loop(self):
-    #     """
-    #     actions:
-    #     1. inite counters
-    #     2. access RWF vectors for PMT and SiPMs
-    #     3. access run and event info
-    #     4. call event_loop
-    #     """
-    #
-    #     for filename in self.input_files:
-    #         print("Opening", filename, end="... ")
-    #         with tb.open_file(filename, "r") as h5in:
-    #
-    #             self._copy_sensor_table(h5in)
-    #
-    #             NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
-    #             events_info              = self.get_run_and_event_info(h5in)
-    #
-    #             self.event_loop(NEVT, pmtrwf, sipmrwf, events_info)
-
-
     def event_loop(self, NEVT, pmtrwf, sipmrwf, mc_tracks, events_info):
         """actions:
         1. loops over all the events in each file.
@@ -130,18 +83,6 @@ class Isidora(DeconvolutionCity):
             sipm  = RWF(table_name='sipmrwf' , n_sensors=self.sp.NSIPM , waveform_length=self.sp.SIPMWL),
             mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
             )
-        #     pmt  = rwf_writer(h5out,
-        #                       group_name      = 'BLR',
-        #                       table_name      = 'pmtcwf',
-        #                       n_sensors       = sensor_params.NPMT,
-        #                       waveform_length = sensor_params.PMTWL),
-        #     sipm = rwf_writer(h5out,
-        #                       group_name      = 'BLR',
-        #                       table_name      = 'sipmrwf',
-        #                       n_sensors       = sensor_params.NSIPM,
-        #                       waveform_length = sensor_params.SIPMWL)
-        # )
-
 
         return writers
 
