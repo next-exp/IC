@@ -41,6 +41,8 @@ from ..reco               import dst_functions    as dstf
 from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
 from ..io                 import pmap_io          as pio
+from .. io.fee_io         import write_FEE_table
+
 from ..reco.params        import S12Params
 from ..reco.params        import S12Sum
 from ..reco.params        import CSum
@@ -310,6 +312,10 @@ class SensorResponseCity(City):
     @property
     def FE_t_sample(self):
         return FE.t_sample
+
+    @staticmethod
+    def write_simulation_parameters_table(filename):
+        write_FEE_table(filename)
 
 
 class DeconvolutionCity(City):
