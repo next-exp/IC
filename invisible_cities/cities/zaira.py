@@ -1,3 +1,10 @@
+"""
+code: zaira.py
+description: computation of correction map
+credits: see ic_authors_and_legal.rst in /doc
+
+last revised: JJGC, 12-July-2017
+"""
 import sys
 import time
 from functools import partial
