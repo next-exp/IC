@@ -50,7 +50,7 @@ class Diomira(SensorResponseCity):
         super().__init__(**kwds)
         self.cnt.set_name('diomira')
         self.cnt.set_counter('nmax', value=self.conf.nmax)
-
+        self.cnt.init_counter('n_events_tot')
         self.sp = self.get_sensor_rd_params(self.input_files[0])
 
         # Create instance of the noise sampler
@@ -59,55 +59,6 @@ class Diomira(SensorResponseCity):
         # thresholds in adc counts
         self.sipms_thresholds = (self.sipm_noise_cut
                               *  self.sipm_adc_to_pes)
-
-    # def go(self):
-    #     t0 = time()
-    #     nevt_tot = self.run()
-    #     t1 = time()
-    #     dt = t1 - t0
-    #     print("run {} evts in {} s, time/event = {}".format(nevt_tot, dt, dt/nevt_tot))
-
-    # def run(self):
-    #
-    #     self.display_IO_info()
-    #
-    #     # loop over input files
-    #     with tb.open_file(self.output_file, "w",
-    #                       filters = tbl.filters(self.compression)) as h5out:
-    #
-    #         # Create writers
-    #         RWF = partial(rwf_writer,  h5out,   group_name='RD')
-    #         writers = Namespace(
-    #             run_and_event = run_and_event_writer(h5out),
-    #             mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
-    #             # 3 variations on the  RWF writer theme
-    #             rwf  = RWF(table_name='pmtrwf' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL),
-    #             cwf  = RWF(table_name='pmtblr' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL),
-    #             sipm = RWF(table_name='sipmrwf', n_sensors=sp.NSIPM, waveform_length=sp.SIPMWL),
-    #         )
-    #
-    #         # Create and store Front-End Electronics parameters (for the PMTs)
-    #         write_FEE_table(h5out)
-    #
-    #         n_events_tot = self._file_loop(writers)
-    #     return n_events_tot
-
-    def file_loop(self):
-        self.cnt.init_counter('n_events_tot')
-
-        for filename in self.input_files:
-            first_event_no = self.event_number_from_input_file_name(filename)
-            print("Opening file {filename} with first event no {first_event_no}"
-                  .format(**locals()))
-            with tb.open_file(filename, "r") as h5in:
-                # NEVT is the total number of events in pmtrd and sipmrd
-                # pmtrd = pmrtd[events][NPMT][rd_waveform]
-                # sipmrd = sipmrd[events][NPMT][rd_waveform]
-                NEVT, pmtrd, sipmrd = self.get_rd_vectors(h5in)
-                events_info         = self.get_run_and_event_info(h5in)
-                mc_tracks           = self.get_mc_tracks(h5in)
-                self.event_loop(NEVT, pmtrd, sipmrd, mc_tracks,events_info,
-                                                first_event_no)
 
 
     def event_loop(self, NEVT, pmtrd, sipmrd, mc_tracks, events_info,
@@ -137,14 +88,6 @@ class Diomira(SensorResponseCity):
             else:
                 self.cnt.increment_counter('n_events_tot')
 
-        #
-        #     n_events_tot += 1
-        #     self.conditional_print(evt, n_events_tot)
-        #     if self.max_events_reached(n_events_tot):
-        #         break
-        # return n_events_tot
-
-
     def write_parameters(self, h5out):
         """Write deconvolution parameters to output file"""
         self.write_simulation_parameters_table(h5out)
@@ -161,10 +104,9 @@ class Diomira(SensorResponseCity):
             cwf  = RWF(table_name='pmtblr' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
             sipm = RWF(table_name='sipmrwf', n_sensors=self.sp.NSIPM, waveform_length=self.sp.SIPMWL),
         )
-
         return writers
-
 
 def display_IO_info(self):
     """display info"""
+    super().display_IO_info()
     print(self.sp)

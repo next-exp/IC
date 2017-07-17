@@ -302,6 +302,30 @@ class SensorResponseCity(City):
         """
         return sf.simulate_pmt_response(event, pmtrd, self.adc_to_pes)
 
+    def file_loop(self):
+        """
+        The file loop of a SensorResponseCity:
+        1. access RD vectors for PMT
+        2. access run and event info
+        3. access MC track info
+        4. calls event_loop
+        """
+
+        for filename in self.input_files:
+            first_event_no = self.event_number_from_input_file_name(filename)
+            print("Opening file {filename} with first event no {first_event_no}"
+                  .format(**locals()))
+            with tb.open_file(filename, "r") as h5in:
+                # NEVT is the total number of events in pmtrd and sipmrd
+                # pmtrd = pmrtd[events][NPMT][rd_waveform]
+                # sipmrd = sipmrd[events][NPMT][rd_waveform]
+                NEVT, pmtrd, sipmrd = self.get_rd_vectors(h5in)
+                events_info         = self.get_run_and_event_info(h5in)
+                mc_tracks           = self.get_mc_tracks(h5in)
+                self.event_loop(NEVT, pmtrd, sipmrd, mc_tracks,events_info,
+                                                first_event_no)
+
+
     @property
     def FE_t_sample(self):
         return FE.t_sample
