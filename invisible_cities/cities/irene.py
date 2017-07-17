@@ -40,45 +40,7 @@ class Irene(PmapCity):
         self.cnt.set_name('irene')
         self.cnt.set_counter('nmax', value=self.conf.nmax)
         self.cnt.init_counters(('n_events_tot', 'n_empty_events'))
-
         self.sp = self.get_sensor_params(self.input_files[0])
-
-    # def run(self):
-    #     self.display_IO_info()
-    #
-    #
-    #     with tb.open_file(self.output_file, "w",
-    #                       filters = tbl.filters(self.compression)) as h5out:
-    #
-    #         self.write_deconv_params(h5out)
-    #         writers = self._get_writers()
-    #         self._file_loop(writers)
-    #
-    #
-    #     return self.cnt
-
-    # def file_loop(self):
-    #     """
-    #     actions:
-    #     1. inite counters
-    #     2. access RWF vectors for PMT and SiPMs
-    #     3. access run and event info
-    #     4. access MC track info
-    #     5. call event_loop
-    #     """
-    #     # import pdb; pdb.set_trace()
-    #
-    #
-    #     for filename in self.input_files:
-    #         print("Opening", filename, end="... ")
-    #         with tb.open_file(filename, "r") as h5in:
-    #
-    #             NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
-    #             events_info              = self.get_run_and_event_info(h5in)
-    #             mc_tracks                = self.get_mc_tracks(h5in)
-    #
-    #             self.event_loop(NEVT, pmtrwf, sipmrwf, mc_tracks, events_info)
-        # return self.cnt
 
     def event_loop(self, NEVT, pmtrwf, sipmrwf, mc_tracks, events_info):
         """actions:
