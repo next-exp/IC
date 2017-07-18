@@ -59,8 +59,9 @@ def _sipm_ids_and_charges_in_slice(s2sid_peak, slice_no):
     ids      = np.empty(number_of_sipms, dtype=np.uint16)
     qs_slice = np.empty(number_of_sipms, dtype=np.float32)
     for i, (nsipm, qs) in enumerate(s2sid_peak.items()):
-        ids     [i] = nsipm
-        qs_slice[i] = qs[slice_no]
+        if qs[slice_no] > 0:
+            ids     [i] = nsipm
+            qs_slice[i] = qs[slice_no]
 
     return ids, qs_slice
 
