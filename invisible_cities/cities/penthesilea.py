@@ -16,12 +16,12 @@ import tables as tb
 
 from ..core.configure         import configure
 from ..core.system_of_units_c import units
-from ..core.ic_types          import xy
+from ..types.ic_types         import xy
 from ..io.dst_io              import hits_writer
 from ..cities.base_cities     import City
-from ..reco.event_model       import PersistentHitCollection
-from ..reco.event_model       import Cluster
-from ..reco.event_model       import Hit
+from ..evm.event_model        import PersistentHitCollection
+from ..evm.event_model        import Cluster
+from ..evm.event_model        import Hit
 from ..cities.base_cities     import HitCity
 from ..reco                   import tbl_functions as tbl
 
@@ -60,6 +60,8 @@ class Penthesilea(HitCity):
         s1_dict = pmapVectors.s1
         s2_dict = pmapVectors.s2
         s2si_dict = pmapVectors.s2si
+
+        import pdb; pdb.set_trace()
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
             # Count events in and break if necessary before filtering
