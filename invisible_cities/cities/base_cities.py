@@ -585,10 +585,10 @@ class HitCity(KrCity):
         self.rebin          = conf.rebin
         self.reco_algorithm = find_algorithm(conf.reco_algorithm)
 
-    def rebin_s2si(self, s2, s2si):
+    def rebin_s2si(self, s2, s2si, rebin):
         """rebins s2d and sid dictionaries"""
-        if self.rebin > 1:
-            s2, s2si = pmp.rebin_s2si(s2, s2si, self.rebin)
+        if rebin > 1:
+            s2, s2si = pmp.rebin_s2si(s2, s2si, rebin)
         return s2, s2si
 
     def split_energy(self, e, clusters):
@@ -597,8 +597,7 @@ class HitCity(KrCity):
         qs = np.array([c.Q for c in clusters])
         return e * qs / np.sum(qs)
 
-    def compute_xy_position(self, si, slice_no):
-        si_slice = pmp.select_si_slice(si, slice_no)
-        IDs, Qs  = pmp.integrate_sipm_charges_in_peak(si)
+    def compute_xy_position(self, s2sid_peak, slice_no):
+        IDs, Qs  = pmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
         return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
