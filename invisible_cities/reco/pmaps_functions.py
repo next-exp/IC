@@ -72,7 +72,7 @@ def rebin_s2si(s2, s2si, rf):
     s2sid_rebin = {}
     for pn in s2.peaks:
         t, e, sipms = rebin_s2si_peak(s2.peaks[pn].t, s2.peaks[pn].E, s2si.s2sid[pn], rf)
-        s2d_rebin  [pn] = Peak(t, e)
+        s2d_rebin  [pn] = [t, e]
         s2sid_rebin[pn] = sipms
 
     return S2(s2d_rebin), S2Si(s2d_rebin, s2sid_rebin)
