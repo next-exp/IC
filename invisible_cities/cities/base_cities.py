@@ -59,7 +59,6 @@ from ..sierpe                   import blr
 from ..sierpe                   import fee as FE
 from .. types.ic_types          import Counter
 
-
 def merge_two_dicts(a,b):
     return {**a, **b}
 
@@ -110,8 +109,9 @@ class City:
         5. Pass the writers to the file_loop() method.
         6. returns the counter dictionary.
         """
+        #import pdb; pdb.set_trace()
         self.display_IO_info()
-
+        #print('no in city ={}'.format(self.__class__.__name__))
 
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
