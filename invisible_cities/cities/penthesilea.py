@@ -61,8 +61,6 @@ class Penthesilea(HitCity):
         s2_dict = pmapVectors.s2
         s2si_dict = pmapVectors.s2si
 
-        import pdb; pdb.set_trace()
-
         for evt_number, evt_time in zip(event_numbers, timestamps):
             # Count events in and break if necessary before filtering
             if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
@@ -91,6 +89,10 @@ class Penthesilea(HitCity):
             write_hits(evt)
             self.conditional_print(self.cnt.counter_value('n_events_tot'),
             self.cnt.counter_value('nevt_out'))
+
+    def get_writers(self, h5out):
+        """Get the writers needed by dorothea"""
+        return  hits_writer(h5out)
 
 
     def _create_hits_event(self, evt_number, evt_time,
