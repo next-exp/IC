@@ -114,6 +114,8 @@ class Penthesilea(HitCity):
         for peak_no, (t_peak, e_peak) in sorted(s2.s2d.items()):
             for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
                 clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
+                if clusters == None:
+                    continue 
                 es       = self.split_energy(e_slice, clusters)
                 z        = (t_slice - s1_t) * units.ns * self.drift_v
                 for c, e in zip(clusters, es):
