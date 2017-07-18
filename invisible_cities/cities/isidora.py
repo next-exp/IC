@@ -47,13 +47,18 @@ class Isidora(DeconvolutionCity):
         self.cnt.init_counter('n_events_tot')
         self.sp = self.get_sensor_params(self.input_files[0])
 
-    def event_loop(self, NEVT, pmtrwf, sipmrwf, mc_tracks, events_info):
+    def event_loop(self, NEVT, dataVectors):
         """actions:
         1. loops over all the events in each file.
         2. write event/run to file
         3. compute deconvoluted functions and write them to file
         """
         write = self.writers
+        pmtrwf       = dataVectors.pmt
+        sipmrwf      = dataVectors.sipm
+        mc_tracks    = dataVectors.mc
+        events_info = dataVectors.events
+
         for evt in range(NEVT):
             CWF = self.deconv_pmt(pmtrwf[evt])  # deconvolution
 
@@ -71,7 +76,6 @@ class Isidora(DeconvolutionCity):
                 break
             else:
                 self.cnt.increment_counter('n_events_tot')
-
 
     def get_writers(self, h5out):
         """Get the writers needed by Isidora"""
