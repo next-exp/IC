@@ -543,8 +543,42 @@ class MapCity(City):
     def xy_statistics(self, X, Y):
         return np.histogram2d(X, Y, (self._xbins, self._ybins), (self._xrange, self._yrange))
 
+class KrCity(City):
+    """A city that computes and writes a KrEvent"""
+    def file_loop(self):
+        """
+        actions:
+        1. access pmaps (si_dicts )
+        2. access run and event info
+        3. call event_loop
+        """
 
-class HitCity(City):
+        for filename in self.input_files:
+            print("Opening {filename}".format(**locals()), end="... ")
+
+            try:
+                s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
+            except (ValueError, tb.exceptions.NoSuchNodeError):
+                print("Empty file. Skipping.")
+                continue
+
+            event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
+            pmapVectors               = PmapVectors(s1=s1_dict, s2=s2_dict, s2si=s2si_dict,
+                                                    events=event_numbers, timestamps=timestamps)
+
+            self.event_loop(pmapVectors)
+
+    # def compute_xy_position(self, s2si, peak_no):
+    #     """"""
+    #     IDs, Qs = pmp.integrate_sipm_charges_in_peak(s2si, peak_no)
+    #     xsipms  = self.xs[IDs]
+    #     ysipms  = self.ys[IDs]
+    #     x       = np.average(xsipms, weights=Qs)
+    #     y       = np.average(ysipms, weights=Qs)
+    #     q       = np.sum    (Qs)
+
+class HitCity(KrCity):
+    """A city that computes and writes a hit event"""
     def __init__(self, **kwds):
         super().__init__(**kwds)
         conf  = self.conf
@@ -568,26 +602,3 @@ class HitCity(City):
         IDs, Qs  = pmp.integrate_sipm_charges_in_peak(si)
         xs, ys   = self.xs[IDs], self.ys[IDs]
         return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
-
-    def file_loop(self):
-        """
-        actions:
-        1. access pmaps (si_dicts )
-        2. access run and event info
-        3. call event_loop
-        """
-
-        for filename in self.input_files:
-            print("Opening {filename}".format(**locals()), end="... ")
-
-            try:
-                s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
-            except (ValueError, tb.exceptions.NoSuchNodeError):
-                print("Empty file. Skipping.")
-                continue
-
-            event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
-            pmapVectors               = PmapVectors(s1=s1_dict, s2=s2_dict, s2si=s2si_dict,
-                                                    events=event_numbers, timestamps=timestamps)
-
-            self.event_loop(pmapVectors)
