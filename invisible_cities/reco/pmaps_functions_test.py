@@ -6,7 +6,8 @@ import numpy as np
 from pytest import mark
 parametrize = mark.parametrize
 
-from .. core           import system_of_units as units
+from .. core             import system_of_units as units
+from . pmaps_functions   import sipm_ids_and_charges_in_slice
 from . pmaps_functions   import rebin_s2si
 from . pmaps_functions_c import df_to_s1_dict
 from . pmaps_functions_c import df_to_s2_dict
@@ -170,3 +171,15 @@ def test_rebinned_s2si_yeilds_correct_average_times(KrMC_pmaps):
             for p in s2.s2d:
                 for i, t in enumerate(s2r.s2d[p][0]):
                     assert t == np.mean(s2.s2d[p][0][i*rf: min(i*rf + rf, len(s2.s2d[p][0]))])
+
+#####
+
+def test_sipm_ids_and_charges_in_slice(KrMC_pmaps):
+    _, _, _, (_, _, s2si_dict) = KrMC_pmaps
+    for s2si in s2si_dict.values():
+        for s2sid_peak in s2si.s2sid.values():
+            n_slices = len(s2sid_peak[list(s2sid_peak.keys())[0]])
+            for i_slice in range(n_slices):
+                ids, qs = sipm_ids_and_charges_in_slice(s2sid_peak, i_slice)
+                for nsipm, q in zip(ids, qs):
+                    assert s2sid_peak[nsipm][i_slice] == q
