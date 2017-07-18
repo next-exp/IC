@@ -42,7 +42,7 @@ class Irene(PmapCity):
         self.cnt.init_counters(('n_events_tot', 'n_empty_events'))
         self.sp = self.get_sensor_params(self.input_files[0])
 
-    def event_loop(self, NEVT, pmtrwf, sipmrwf, mc_tracks, events_info):
+    def event_loop(self, NEVT, dataVectors):
         """actions:
         1. loops over all the events in each file.
         2. write MC tracks on file
@@ -51,6 +51,11 @@ class Irene(PmapCity):
         """
 
         write = self.writers
+        pmtrwf       = dataVectors.pmt
+        sipmrwf      = dataVectors.sipm
+        mc_tracks    = dataVectors.mc
+        events_info = dataVectors.events
+
         for evt in range(NEVT):
             # calibrated sum in PMTs
             s12sum, calsum = self.pmt_transformation(pmtrwf[evt])

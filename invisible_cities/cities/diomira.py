@@ -61,10 +61,20 @@ class Diomira(SensorResponseCity):
                               *  self.sipm_adc_to_pes)
 
 
-    def event_loop(self, NEVT, pmtrd, sipmrd, mc_tracks, events_info,
-                    first_event_no):
+    def event_loop(self, NEVT, first_event_no, dataVectors):
+        """
+        loop over events:
+        1. simulate pmt and sipm response
+        2. write RWF and CWF for PMTs
+        3. write SiPMR
+        4. write event info and MC info to file
+        """
 
-        write = self.writers
+        write       = self.writers
+        pmtrd       = dataVectors.pmt
+        sipmrd      = dataVectors.sipm
+        mc_tracks    = dataVectors.mc
+        events_info = dataVectors.events
         for evt in range(NEVT):
             # Simulate detector response
             dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd)
