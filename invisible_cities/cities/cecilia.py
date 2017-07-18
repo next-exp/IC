@@ -38,10 +38,12 @@ from .. filters.trigger_filters import TriggerFilter
 class Cecilia(DeconvolutionCity):
     "The city of CECILIA simulates the trigger."
     def __init__(self, **kwds):
-
         super().__init__(**kwds)
-
         conf = self.conf
+        self.cnt.set_name('cecilia')
+        self.cnt.set_counter('nmax', value=self.conf.nmax)
+        self.cnt.init_counters(('n_events_tot', 'nevt_out'))
+
 
         height = minmax(min = conf.min_height, max = conf.max_height)
         charge = minmax(min = conf.min_charge, max = conf.max_charge)
@@ -135,6 +137,15 @@ class Cecilia(DeconvolutionCity):
 
             self.conditional_print(evt, nevt_in)
         return nevt_in, nevt_out, max_events_reached
+
+    def get_writers(self, h5out):
+        """Get the writers needed by Irene"""
+        writers = Namespace(
+        pmap          =          pmap_writer(h5out),
+        run_and_event = run_and_event_writer(h5out),
+        mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
+        )
+        return writers
 
     def _emulate_trigger(self, RWF):
         # Emulate deconvolution in the FPGA
