@@ -53,8 +53,17 @@ def sipm_ids_and_charges_in_slice(s2sid_peak, slice_no):
     """Given s2sid_peak = {nsipm : [ q1, q2, ...qn]} and a slice_no
     (running from 1, 2..n) returns:
     Returns (np.array[nsipm_1 , nsipm_2, ...],
-             np.array[q_1, q_2, ...]])
+             np.array[q_k from nsipm_1, q_k from nsipm_2, ...]]) when slice_no=k
      """
+    number_of_sipms = len(s2sid_peak.keys())
+    ids      = np.empty(number_of_sipms, dtype=np.uint16)
+    qs_slice = np.empty(number_of_sipms, dtype=np.float32)
+    for i, (nsipm, qs) in enumerate(s2sid_peak.items()):
+        ids     [i] = nsipm
+        qs_slice[i] = qs[slice_no]
+
+    return ids, qs_slice
+
 
 def rebin_s2si(s2, s2si, rf):
     """given an s2 and a corresponding s2si, rebin them by a factor rf"""
