@@ -23,11 +23,11 @@ from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco                    import tbl_functions    as tbl
 from .. reco                    import peak_functions_c as cpf
 from .. database                import load_db          as db
-from .. reco.nh5                import RunInfo
-from .. reco.nh5                import EventInfo
-from .. core.ic_types           import minmax
-from .. reco.params             import PeakData
-from .. reco.params             import TriggerParams
+from .. evm.nh5                 import RunInfo
+from .. evm.nh5                 import EventInfo
+from .. types.ic_types          import minmax
+from .. evm.ic_containers       import PeakData
+from .. evm.ic_containers       import TriggerParams
 from .  base_cities             import DeconvolutionCity
 from .. io.mc_io                import mc_track_writer
 from .. io.run_and_event_io     import run_and_event_writer
