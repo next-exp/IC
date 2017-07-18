@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import traceback
 from sys import argv
 from importlib import import_module
 
@@ -13,5 +13,7 @@ try:
 except ModuleNotFoundError:
     print('available cities: <TODO look at contents of config directory>')
     print('usage TODO: <get this from our config parser>')
+    traceback.print_exc()
+    exit(1)
 else:
     city_class.drive(args)
