@@ -56,14 +56,14 @@ def _sipm_ids_and_charges_in_slice(s2sid_peak, slice_no):
              np.array[q_k from nsipm_1, q_k from nsipm_2, ...]]) when slice_no=k
      """
     number_of_sipms = len(s2sid_peak.keys())
-    ids      = np.empty(number_of_sipms, dtype=np.uint16)
-    qs_slice = np.empty(number_of_sipms, dtype=np.float32)
+    ids      = []
+    qs_slice = []
     for i, (nsipm, qs) in enumerate(s2sid_peak.items()):
         if qs[slice_no] > 0:
-            ids     [i] = nsipm
-            qs_slice[i] = qs[slice_no]
+            ids.append(nsipm)
+            qs_slice.append(qs[slice_no])
 
-    return ids, qs_slice
+    return np.array(ids), n.array(qs_slice)
 
 
 def rebin_s2si(s2, s2si, rf):
