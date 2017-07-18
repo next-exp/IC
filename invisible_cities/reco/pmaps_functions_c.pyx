@@ -175,7 +175,8 @@ cpdef sipm_ids_and_charges_in_slice(dict s2sid_peak, int slice_no):
     cdef short int i, nsipm
     cdef double [:] qs
     for i, (nsipm, qs) in enumerate(s2sid_peak.items()):
-        ids     [i] = nsipm
-        qs_slice[i] = qs[slice_no]
+        if qs[slice_no] > 0:
+            ids     [i] = nsipm
+            qs_slice[i] = qs[slice_no]
 
-    return ids, qs_slice
+    return np.asarray(ids), np.asarray(qs_slice)
