@@ -10,8 +10,7 @@ Last revised, JJGC, July, 2017.
 import numpy  as np
 from .. core import core_functions_c as ccf
 from .. core.system_of_units_c      import units
-from .. evm.ic_containers           import Peak
-from .. evm.pmaps                   import S2, S2Si
+from .. evm.pmaps                   import S2, S2Si, Peak
 
 
 def _integrate_sipm_charges_in_peak_as_dict(s2si):
