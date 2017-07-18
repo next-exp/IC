@@ -25,10 +25,10 @@ from .. reco                   import pmaps_functions_c as pmp
 from .. filters.s1s2_filter    import s1s2_filter
 from .. filters.s1s2_filter    import S12Selector
 
-from .  base_cities            import HitCity
+from .  base_cities            import KrCity
 
 
-class Dorothea(HitCity):
+class Dorothea(KrCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.cnt.set_name('dorothea')
