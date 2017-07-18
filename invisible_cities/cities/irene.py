@@ -22,7 +22,6 @@ from .. reco                   import tbl_functions as tbl
 from .. evm.ic_containers      import S12Params as S12P
 from .. types.ic_types         import minmax
 
-
 from .  base_cities  import PmapCity
 
 
