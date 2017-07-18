@@ -26,4 +26,3 @@ def test_command_line_run(city, tmpdir_factory):
         # Ensure that stdout and stderr are visible when test fails
         print(e.stdout.decode())
         raise
-
