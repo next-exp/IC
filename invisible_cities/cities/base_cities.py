@@ -28,6 +28,7 @@ from .. core.exceptions        import NoOutputFile
 from .. types.ic_types         import minmax
 from .. core.system_of_units_c import units
 from .. core                   import fit_functions        as fitf
+from .. core.exceptions        import SipmEmptyList
 
 from .. database import load_db
 
@@ -112,7 +113,7 @@ class City:
         """
         #import pdb; pdb.set_trace()
         self.display_IO_info()
-        
+
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
 
@@ -598,6 +599,10 @@ class HitCity(KrCity):
         return e * qs / np.sum(qs)
 
     def compute_xy_position(self, s2sid_peak, slice_no):
+        #import pdb; pdb.set_trace()
         IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
-        return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
+        try:
+            return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
+        except SipmEmptyList:
+            return None
