@@ -37,6 +37,7 @@ from ..reco               import peak_functions_c as cpf
 from ..reco               import sensor_functions as sf
 from ..reco               import peak_functions   as pf
 from ..reco               import pmaps_functions  as pmp
+from ..reco               import pmaps_functions_c  as cpmp
 from ..reco               import dst_functions    as dstf
 from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
@@ -111,8 +112,7 @@ class City:
         """
         #import pdb; pdb.set_trace()
         self.display_IO_info()
-        #print('no in city ={}'.format(self.__class__.__name__))
-
+        
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
 
@@ -598,6 +598,6 @@ class HitCity(KrCity):
         return e * qs / np.sum(qs)
 
     def compute_xy_position(self, s2sid_peak, slice_no):
-        IDs, Qs  = pmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
+        IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
         return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
