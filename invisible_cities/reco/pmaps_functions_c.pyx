@@ -22,7 +22,7 @@ from .. evm.pmaps import S1
 from .. evm.pmaps import S2
 from .. evm.pmaps import S2Si
 
-cpdef integrate_sipm_charges_in_peak(s2si, peak_number):
+cpdef integrate_sipm_charges_in_peak(s2si, int peak_number):
     """Return arrays of nsipm and integrated charges from SiPM dictionary.
 
     S2Si = {  peak : Si }
@@ -158,5 +158,24 @@ cdef df_to_s2sid_dict(df, max_events):
             for ID, energy in current_peak.items():
                 current_peak[ID] = np.array(energy)
 
-
     return all_events
+
+
+cpdef sipm_ids_and_charges_in_slice(dict s2sid_peak, int slice_no):
+    """Given s2sid_peak = {nsipm : [ q1, q2, ...qn]} and a slice_no
+    (running from 1, 2..n) returns:
+    Returns (np.array[nsipm_1 , nsipm_2, ...],
+             np.array[q_k from nsipm_1, q_k from nsipm_2, ...]]) when slice_no=k
+    """
+
+    cdef int number_of_sipms = len(s2sid_peak.keys())
+    cdef short int  [:] ids      = np.empty(number_of_sipms, dtype=np.int16  )
+    cdef float      [:] qs_slice = np.empty(number_of_sipms, dtype=np.float32)
+
+    cdef short int i, nsipm
+    cdef double [:] qs
+    for i, (nsipm, qs) in enumerate(s2sid_peak.items()):
+        ids     [i] = nsipm
+        qs_slice[i] = qs[slice_no]
+
+    return ids, qs_slice

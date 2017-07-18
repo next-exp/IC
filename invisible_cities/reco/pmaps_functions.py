@@ -49,7 +49,7 @@ def _integrate_S2Si_charge(s2sid):
              for (peak_no, peak) in s2sid.items() }
 
 
-def sipm_ids_and_charges_in_slice(s2sid_peak, slice_no):
+def _sipm_ids_and_charges_in_slice(s2sid_peak, slice_no):
     """Given s2sid_peak = {nsipm : [ q1, q2, ...qn]} and a slice_no
     (running from 1, 2..n) returns:
     Returns (np.array[nsipm_1 , nsipm_2, ...],

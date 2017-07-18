@@ -7,11 +7,11 @@ from pytest import mark
 parametrize = mark.parametrize
 
 from .. core             import system_of_units as units
-from . pmaps_functions   import sipm_ids_and_charges_in_slice
 from . pmaps_functions   import rebin_s2si
 from . pmaps_functions_c import df_to_s1_dict
 from . pmaps_functions_c import df_to_s2_dict
 from . pmaps_functions_c import df_to_s2si_dict
+from . pmaps_functions_c import sipm_ids_and_charges_in_slice
 
 def test_rebin_s2_yeilds_output_of_correct_len(KrMC_pmaps):
     _, (_, _, _), (_, _, _), (_, s2_dict, s2si_dict) = KrMC_pmaps
