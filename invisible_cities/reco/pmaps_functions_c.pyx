@@ -169,14 +169,14 @@ cpdef sipm_ids_and_charges_in_slice(dict s2sid_peak, int slice_no):
     """
 
     cdef int number_of_sipms = len(s2sid_peak.keys())
-    cdef short int  [:] ids      = np.empty(number_of_sipms, dtype=np.int16  )
-    cdef float      [:] qs_slice = np.empty(number_of_sipms, dtype=np.float32)
+    cdef list ids = []
+    cdef list qs_slice = []
 
     cdef short int i, nsipm
-    cdef double [:] qs
+    print(slice_no)
     for i, (nsipm, qs) in enumerate(s2sid_peak.items()):
         if qs[slice_no] > 0:
-            ids     [i] = nsipm
-            qs_slice[i] = qs[slice_no]
+            ids.append(nsipm)
+            qs_slice.append(qs[slice_no])
 
-    return np.asarray(ids), np.asarray(qs_slice)
+    return np.array(ids, dtype=np.int), np.array(qs_slice, dtype=np.double)
