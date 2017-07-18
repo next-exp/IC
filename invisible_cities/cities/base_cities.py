@@ -46,17 +46,18 @@ from .. io.fee_io         import write_FEE_table
 from .. evm.ic_containers      import S12Params
 from .. evm.ic_containers      import S12Sum
 from .. evm.ic_containers      import CSum
-from ..evm.event_model    import SensorParams
-from ..evm.nh5            import DECONV_PARAM
-from ..reco.corrections   import Correction
-from ..reco.corrections   import Fcorrection
-from ..reco.corrections   import LifetimeCorrection
-from ..reco.xy_algorithms import find_algorithm
+from .. evm.ic_containers      import DataVectors
+from .. evm.ic_containers      import PmapVectors
+from ..evm.event_model         import SensorParams
+from ..evm.nh5                 import DECONV_PARAM
+from ..reco.corrections        import Correction
+from ..reco.corrections        import Fcorrection
+from ..reco.corrections        import LifetimeCorrection
+from ..reco.xy_algorithms      import find_algorithm
 
-from ..sierpe             import blr
-from ..sierpe             import fee as FE
-
-from .. types.ic_types    import Counter
+from ..sierpe                   import blr
+from ..sierpe                   import fee as FE
+from .. types.ic_types          import Counter
 
 
 def merge_two_dicts(a,b):
@@ -322,8 +323,9 @@ class SensorResponseCity(City):
                 NEVT, pmtrd, sipmrd = self.get_rd_vectors(h5in)
                 events_info         = self.get_run_and_event_info(h5in)
                 mc_tracks           = self.get_mc_tracks(h5in)
-                self.event_loop(NEVT, pmtrd, sipmrd, mc_tracks,events_info,
-                                                first_event_no)
+                dataVectors = DataVectors(pmt=pmtrd, sipm=sipmrd,
+                                          mc=mc_tracks, events=events_info)
+                self.event_loop(NEVT, first_event_no, dataVectors)
 
 
     @property
@@ -394,8 +396,10 @@ class DeconvolutionCity(City):
                 NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
                 events_info              = self.get_run_and_event_info(h5in)
                 mc_tracks                = self.get_mc_tracks(h5in)
-
-                self.event_loop(NEVT, pmtrwf, sipmrwf, mc_tracks, events_info)
+                dataVectors              = DataVectors(pmt=pmtrwf, sipm=sipmrwf,
+                                                       mc=mc_tracks,
+                                                       events=events_info)
+                self.event_loop(NEVT, dataVectors)
 
 class CalibratedCity(DeconvolutionCity):
     """A calibrated city extends a DeconvCity, performing two actions.
@@ -578,12 +582,12 @@ class HitCity(City):
 
             try:
                 s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
-
             except (ValueError, tb.exceptions.NoSuchNodeError):
                 print("Empty file. Skipping.")
                 continue
 
             event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
+            pmapVectors               = PmapVectors(s1=s1_dict, s2=s2_dict, s2si=s2si_dict,
+                                                    events=event_numbers, timestamps=timestamps)
 
-            max_events_reached = self.event_loop(event_numbers, timestamps,
-            s1_dict, s2_dict, s2si_dict)
+            self.event_loop(pmapVectors)

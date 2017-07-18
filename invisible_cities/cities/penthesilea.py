@@ -47,7 +47,7 @@ class Penthesilea(HitCity):
         self._s1s2_selector = S12Selector(**kwds)
 
 
-    def event_loop(self, event_numbers, timestamps, s1_dict, s2_dict, s2si_dict):
+    def event_loop(self, pmapVectors):
         """actions:
         1. loops over all PMAPS
         2. filter pmaps
@@ -55,6 +55,12 @@ class Penthesilea(HitCity):
         """
 
         write_hits = self.writers
+        event_numbers= pmapVectors.events
+        timestamps = pmapVectors.timestamps
+        s1_dict = pmapVectors.s1
+        s2_dict = pmapVectors.s2
+        s2si_dict = pmapVectors.s2si
+
         for evt_number, evt_time in zip(event_numbers, timestamps):
             # Count events in and break if necessary before filtering
             if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
