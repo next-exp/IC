@@ -76,6 +76,8 @@ def corona(pos, qs,
     returns
     c    : a list of Clusters
     """
+    if not len(pos): raise SipmEmptyList
+    if sum(qs) == 0: raise SipmZeroCharge
     c  = []
     # Keep SiPMs with at least Qthr pes
     above_threshold = np.where(qs >= Qthr)[0]
@@ -102,5 +104,7 @@ def corona(pos, qs,
 
         # delete the SiPMs contributing to this cluster
         pos, qs = discard_sipms(within_new_lm_radius, pos, qs)
+
+    if not len(c): raise SipmEmptyList
 
     return c
