@@ -9,7 +9,7 @@ from ..core.test_utils    import assert_dataframes_equal
 from ..reco.dst_functions import load_dst
 from . kdst_io            import kr_writer
 from . kdst_io            import xy_writer
-from ..evm.event_model   import PersistentKrEvent
+from ..evm.event_model   import KrEvent
 
 
 def test_Kr_writer(config_tmpdir, Kr_dst_data):
@@ -18,7 +18,7 @@ def test_Kr_writer(config_tmpdir, Kr_dst_data):
 
     def dump_df(write, df):
         for evt_no in sorted(set(df.event)):
-            evt = PersistentKrEvent(-1, -1)
+            evt = KrEvent(-1, -1)
             for row in df[df.event == evt_no].iterrows():
                 for col in df.columns:
                     value = row[1][col]

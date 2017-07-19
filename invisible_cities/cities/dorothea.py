@@ -17,7 +17,6 @@ from .. core.configure         import configure
 from .. core.system_of_units_c import units
 
 from .. io.kdst_io              import kr_writer
-from .. evm.event_model         import PersistentKrEvent
 from .. evm.ic_containers       import PmapVectors
 
 from .. reco                   import tbl_functions   as tbl

@@ -51,8 +51,8 @@ from .. evm.ic_containers      import CSum
 from .. evm.ic_containers      import DataVectors
 from .. evm.ic_containers      import PmapVectors
 from .. evm.event_model        import SensorParams
-from .. evm.event_model        import PersistentKrEvent
-from ..evm.event_model         import PersistentHitCollection
+from .. evm.event_model        import KrEvent
+from ..evm.event_model         import HitCollection
 from ..evm.event_model         import Hit
 from ..evm.nh5                 import DECONV_PARAM
 from ..reco.corrections        import Correction
@@ -616,7 +616,7 @@ class KrCity(City):
         s2         = pmapVectors.s2
         s2si       = pmapVectors.s2si
 
-        evt       = PersistentKrEvent(evt_number, evt_time * 1e-3)
+        evt       = KrEvent(evt_number, evt_time * 1e-3)
 
         evt.nS1 = s1.number_of_peaks
         for peak_no in s1.peak_collection():
@@ -708,7 +708,7 @@ class HitCity(KrCity):
         s2         = pmapVectors.s2
         s2si       = pmapVectors.s2si
 
-        hitc = PersistentHitCollection(evt_number, evt_time * 1e-3)
+        hitc = HitCollection(evt_number, evt_time * 1e-3)
 
         # in order to compute z one needs to define one S1
         # for time reference. By default the filter will only
