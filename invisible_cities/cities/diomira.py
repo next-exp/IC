@@ -2,10 +2,9 @@
 code: diomira.py
 description: simulation of the response of the energy and tracking planes
 for the NEXT detector.
-author: J.J. Gomez-Cadenas
-IC core team: Jacek Generowicz, JJGC, G. Martinez, J.A. Hernando, J.M Benlloch
-package: invisible cities. See release notes and licence
-last changed: 09-11-2017
+credits: see ic_authors_and_legal.rst in /doc
+
+last revised: JJGC, 10-July-2017
 """
 import sys
 
@@ -24,13 +23,12 @@ from .. core.exceptions        import ParameterNotSet
 from .. io.mc_io            import mc_track_writer
 from .. io.run_and_event_io import run_and_event_writer
 from .. io.rwf_io           import rwf_writer
-from .. io.fee_io           import write_FEE_table
 
 from .. reco        import wfm_functions as wfm
 from .. reco        import tbl_functions as tbl
-from .. reco.nh5    import FEE
-from .. reco.nh5    import RunInfo
-from .. reco.nh5    import EventInfo
+from .. evm.nh5     import FEE
+from .. evm.nh5     import RunInfo
+from .. evm.nh5     import EventInfo
 
 from .  base_cities import SensorResponseCity
 
@@ -42,65 +40,41 @@ class Diomira(SensorResponseCity):
 
     """
 
-    def go(self):
-        t0 = time()
-        nevt_tot = self.run()
-        t1 = time()
-        dt = t1 - t0
-        print("run {} evts in {} s, time/event = {}".format(nevt_tot, dt, dt/nevt_tot))
-
-    def run(self):
-
-        self.display_IO_info()
-        sp = self.get_sensor_rd_params(self.input_files[0])
-        print(sp)
+    def __init__(self, **kwds):
+        """Diomira Init:
+        1. inits base city
+        2. inits counters
+        3. get sensor parameters
+        4. inits the noise sampler and the sipms thesholds
+        """
+        super().__init__(**kwds)
+        self.cnt.set_name('diomira')
+        self.cnt.set_counter('nmax', value=self.conf.nmax)
+        self.cnt.init_counter('n_events_tot')
+        self.sp = self.get_sensor_rd_params(self.input_files[0])
 
         # Create instance of the noise sampler
-        self.noise_sampler = SiPMsNoiseSampler(self.run_number, sp.SIPMWL, True)
+        self.noise_sampler = SiPMsNoiseSampler(self.run_number, self.sp.SIPMWL, True)
+
         # thresholds in adc counts
         self.sipms_thresholds = (self.sipm_noise_cut
                               *  self.sipm_adc_to_pes)
 
-        # loop over input files
-        with tb.open_file(self.output_file, "w",
-                          filters = tbl.filters(self.compression)) as h5out:
 
-            # Create writers
-            RWF = partial(rwf_writer,  h5out,   group_name='RD')
-            writers = Namespace(
-                run_and_event = run_and_event_writer(h5out),
-                mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
-                # 3 variations on the  RWF writer theme
-                rwf  = RWF(table_name='pmtrwf' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL),
-                cwf  = RWF(table_name='pmtblr' , n_sensors=sp.NPMT , waveform_length=sp.PMTWL),
-                sipm = RWF(table_name='sipmrwf', n_sensors=sp.NSIPM, waveform_length=sp.SIPMWL),
-            )
+    def event_loop(self, NEVT, first_event_no, dataVectors):
+        """
+        loop over events:
+        1. simulate pmt and sipm response
+        2. write RWF and CWF for PMTs
+        3. write SiPMR
+        4. write event info and MC info to file
+        """
 
-            # Create and store Front-End Electronics parameters (for the PMTs)
-            write_FEE_table(h5out)
-
-            n_events_tot = self._file_loop(writers)
-        return n_events_tot
-
-    def _file_loop(self, writers):
-        n_events_tot = 0
-        for filename in self.input_files:
-            first_event_no = self.event_number_from_input_file_name(filename)
-            print("Opening file {filename} with first event no {first_event_no}"
-                  .format(**locals()))
-            with tb.open_file(filename, "r") as h5in:
-                NEVT, pmtrd, sipmrd = self.get_rd_vectors(h5in)
-                events_info = self.get_run_and_event_info(h5in)
-                n_events_tot = self._event_loop(NEVT, pmtrd, sipmrd, events_info,
-                                                writers,
-                                                n_events_tot, h5in, first_event_no)
-        return n_events_tot
-
-
-    def _event_loop(self, NEVT, pmtrd, sipmrd, events_info,
-                    write,
-                    n_events_tot, h5in, first_event_no):
-
+        write       = self.writers
+        pmtrd       = dataVectors.pmt
+        sipmrd      = dataVectors.sipm
+        mc_tracks    = dataVectors.mc
+        events_info = dataVectors.events
         for evt in range(NEVT):
             # Simulate detector response
             dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd)
@@ -110,14 +84,39 @@ class Diomira(SensorResponseCity):
             event_number, timestamp = self.event_and_timestamp(evt, events_info)
             local_event_number = event_number + first_event_no
 
-            write.mc(h5in.root.MC.MCTracks, local_event_number)
+            if self.monte_carlo:
+                write.mc(mc_tracks, local_event_number)
+
             write.run_and_event(self.run_number, local_event_number, timestamp)
             write.rwf(dataPMT.astype(int))
             write.cwf( blrPMT.astype(int))
             write.sipm(dataSiPM)
 
-            n_events_tot += 1
-            self.conditional_print(evt, n_events_tot)
-            if self.max_events_reached(n_events_tot):
+            self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
+            if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
                 break
-        return n_events_tot
+            else:
+                self.cnt.increment_counter('n_events_tot')
+
+    def write_parameters(self, h5out):
+        """Write deconvolution parameters to output file"""
+        self.write_simulation_parameters_table(h5out)
+
+    def get_writers(self, h5out):
+        """Get the writers needed by Diomira"""
+
+        RWF = partial(rwf_writer,  h5out,   group_name='RD')
+        writers = Namespace(
+        run_and_event = run_and_event_writer(h5out),
+        mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
+        # 3 variations on the  RWF writer theme
+            rwf  = RWF(table_name='pmtrwf' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
+            cwf  = RWF(table_name='pmtblr' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
+            sipm = RWF(table_name='sipmrwf', n_sensors=self.sp.NSIPM, waveform_length=self.sp.SIPMWL),
+        )
+        return writers
+
+def display_IO_info(self):
+    """display info"""
+    super().display_IO_info()
+    print(self.sp)
