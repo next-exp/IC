@@ -50,7 +50,8 @@ from .. evm.ic_containers      import S12Sum
 from .. evm.ic_containers      import CSum
 from .. evm.ic_containers      import DataVectors
 from .. evm.ic_containers      import PmapVectors
-from ..evm.event_model         import SensorParams
+from .. evm.event_model        import SensorParams
+from .. evm.event_model        import PersistentKrEvent
 from ..evm.nh5                 import DECONV_PARAM
 from ..reco.corrections        import Correction
 from ..reco.corrections        import Fcorrection
@@ -60,6 +61,7 @@ from ..reco.xy_algorithms      import find_algorithm
 from ..sierpe                   import blr
 from ..sierpe                   import fee as FE
 from .. types.ic_types          import Counter
+from .. types.ic_types          import NN
 
 def merge_two_dicts(a,b):
     return {**a, **b}
@@ -274,7 +276,6 @@ class City:
         return pio.s1_s2_si_from_pmaps(s1_dict, s2_dict, s2si_dict, evt_number)
 
 
-
 class SensorResponseCity(City):
     """A SensorResponseCity city extends the City base class adding the
        response (Monte Carlo simulation) of the energy plane and
@@ -401,6 +402,7 @@ class DeconvolutionCity(City):
                                                        mc=mc_tracks,
                                                        events=events_info)
                 self.event_loop(NEVT, dataVectors)
+
 
 class CalibratedCity(DeconvolutionCity):
     """A calibrated city extends a DeconvCity, performing two actions.
@@ -544,8 +546,14 @@ class MapCity(City):
     def xy_statistics(self, X, Y):
         return np.histogram2d(X, Y, (self._xbins, self._ybins), (self._xrange, self._yrange))
 
+
 class KrCity(City):
     """A city that computes and writes a KrEvent"""
+
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.reco_algorithm = find_algorithm(self.conf.reco_algorithm)
+
     def file_loop(self):
         """
         actions:
@@ -569,22 +577,99 @@ class KrCity(City):
 
             self.event_loop(pmapVectors)
 
-    # def compute_xy_position(self, s2si, peak_no):
-    #     """"""
-    #     IDs, Qs = pmp.integrate_sipm_charges_in_peak(s2si, peak_no)
-    #     xsipms  = self.xs[IDs]
-    #     ysipms  = self.ys[IDs]
-    #     x       = np.average(xsipms, weights=Qs)
-    #     y       = np.average(ysipms, weights=Qs)
-    #     q       = np.sum    (Qs)
+    def compute_xy_position(self, s2si, peak_no):
+        """
+        Computes position using the integral of the charge
+        in each SiPM.
+        """
+        IDs, Qs = cpmp.integrate_sipm_charges_in_peak(s2si, peak_no)
+        xs, ys   = self.xs[IDs], self.ys[IDs]
+        try:
+            return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
+        except SipmEmptyList:
+            return None
+
+    def compute_z_and_dt(self, ts2, ts1):
+        """
+        Computes dt & z
+        dt = ts2 - ts1 (in mus)
+        z = dt * v_drift (i natural units)
+
+        """
+        dt  = ts2 - ts1
+        z = dt * self.drift_v
+        dt  *= units.ns / units.mus  #in mus
+        return z, dt
+
+    def create_kr_event(self, pmapVectors):
+        """Create a Kr event:
+        A Kr event treats the data as being produced by a point-like
+        (krypton-like) interaction. Thus, the event is assumed to have
+        negligible extension in z, and the position of the event is
+        computed integrating the temporal dependence of each sipm.
+        """
+        evt_number = pmapVectors.events
+        evt_time   = pmapVectors.timestamps
+        s1         = pmapVectors.s1
+        s2         = pmapVectors.s2
+        s2si       = pmapVectors.s2si
+
+        evt       = PersistentKrEvent(evt_number, evt_time * 1e-3)
+
+        evt.nS1 = s1.number_of_peaks
+        for peak_no in s1.peak_collection():
+            peak = s1.peak_waveform(peak_no)
+            evt.S1w.append(peak.width)
+            evt.S1h.append(peak.height)
+            evt.S1e.append(peak.total_energy)
+            evt.S1t.append(peak.tpeak)
+
+        evt.nS2 = s2.number_of_peaks
+        for peak_no in s2.peak_collection():
+            peak = s2.peak_waveform(peak_no)
+            evt.S2w.append(peak.width/units.mus)
+            evt.S2h.append(peak.height)
+            evt.S2e.append(peak.total_energy)
+            evt.S2t.append(peak.tpeak)
+
+            clusters = self.compute_xy_position(s2si, peak_no)
+
+            if clusters == None:
+
+                evt.Nsipm.append(NN)
+                evt.S2q  .append(NN)
+                evt.X    .append(NN)
+                evt.Y    .append(NN)
+                evt.Xrms .append(NN)
+                evt.Yrms .append(NN)
+                evt.R    .append(NN)
+                evt.Phi  .append(NN)
+                evt.DT   .append(NN)
+                evt.Z    .append(NN)
+            else:
+                assert len(clusters) == 1 #only one cluster
+                c = clusters[0]
+                evt.Nsipm.append(c.nsipm)
+                evt.S2q  .append(c.Q)
+                evt.X    .append(c.X)
+                evt.Y    .append(c.Y)
+                evt.Xrms .append(c.Xrms)
+                evt.Yrms .append(c.Yrms)
+                evt.R    .append(c.R)
+                evt.Phi  .append(c.Phi)
+
+                z, dt = self.compute_z_and_dt(evt.S2t[peak_no], evt.S1t[0])
+                evt.DT   .append(dt)
+                evt.Z    .append(z)
+
+        return evt
+
 
 class HitCity(KrCity):
     """A city that computes and writes a hit event"""
     def __init__(self, **kwds):
         super().__init__(**kwds)
-        conf  = self.conf
-        self.rebin          = conf.rebin
-        self.reco_algorithm = find_algorithm(conf.reco_algorithm)
+        self.rebin  = self.conf.rebin
 
     def rebin_s2si(self, s2, s2si, rebin):
         """rebins s2d and sid dictionaries"""
@@ -599,6 +684,7 @@ class HitCity(KrCity):
         return e * qs / np.sum(qs)
 
     def compute_xy_position(self, s2sid_peak, slice_no):
+        """Compute x-y position for each time slice. """
         #import pdb; pdb.set_trace()
         IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
