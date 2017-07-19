@@ -136,17 +136,6 @@ class HitCollection(Event):
         Event.__init__(self, event_number, event_time)
         self.hits = []
 
-    def __str__(self):
-        s =  "{}".format(self.__class__.__name__)
-        s+= "Hit list:"
-        s = [s + str(hit) for hit in self.hits]
-        return s
-
-    __repr__ =     __str__
-
-
-class PersistentHitCollection(HitCollection):
-    """Persistent version"""
     def store(self, table):
         row = table.row
         for hit in self.hits:
@@ -163,9 +152,36 @@ class PersistentHitCollection(HitCollection):
             row["E"    ] = hit.E
             row.append()
 
+    def __str__(self):
+        s =  "{}".format(self.__class__.__name__)
+        s+= "Hit list:"
+        s = [s + str(hit) for hit in self.hits]
+        return s
+
+    __repr__ =     __str__
+
+
+# class PersistentHitCollection(HitCollection):
+#     """Persistent version"""
+#     def store(self, table):
+#         row = table.row
+#         for hit in self.hits:
+#             row["event"] = self.event
+#             row["time" ] = self.time
+#             row["npeak"] = hit.npeak
+#             row["nsipm"] = hit.nsipm
+#             row["X"    ] = hit.X
+#             row["Y"    ] = hit.Y
+#             row["Xrms" ] = hit.Xrms
+#             row["Yrms" ] = hit.Yrms
+#             row["Z"    ] = hit.Z
+#             row["Q"    ] = hit.Q
+#             row["E"    ] = hit.E
+#             row.append()
+
 
 class KrEvent(Event):
-    """Transient version of a point-like (Krypton) event."""
+    """Represents a point-like (Krypton) event."""
     def __init__(self, event_number, event_time):
         Event.__init__(self, event_number, event_time)
         self.nS1   = -1 # number of S1 in the event
@@ -191,15 +207,6 @@ class KrEvent(Event):
         self.Xrms  = [] # error in position
         self.Yrms  = []
 
-    def __str__(self):
-        s = "{0}Event\n{0}".format("#"*20 + "\n")
-        for attr in self.__dict__:
-            s += "{}: {}\n".format(attr, getattr(self, attr))
-        return s
-
-
-class PersistentKrEvent(KrEvent):
-    """Persistent version of KrEvent"""
     def store(self, table):
         row = table.row
         for i in range(int(self.nS2)):
@@ -229,3 +236,44 @@ class PersistentKrEvent(KrEvent):
             row["Xrms" ] = self.Xrms [i]
             row["Yrms" ] = self.Yrms [i]
             row.append()
+
+    def __str__(self):
+        s = "{0}Event\n{0}".format("#"*20 + "\n")
+        for attr in self.__dict__:
+            s += "{}: {}\n".format(attr, getattr(self, attr))
+        return s
+
+    __repr__ =     __str__
+
+
+# class PersistentKrEvent(KrEvent):
+#     """Persistent version of KrEvent"""
+#     def store(self, table):
+#         row = table.row
+#         for i in range(int(self.nS2)):
+#             row["event"] = self.event
+#             row["time" ] = self.time
+#             row["peak" ] = i
+#             row["nS2"  ] = self.nS2
+#
+#             row["S1w"  ] = self.S1w  [0]
+#             row["S1h"  ] = self.S1h  [0]
+#             row["S1e"  ] = self.S1e  [0]
+#             row["S1t"  ] = self.S1t  [0]
+#
+#             row["S2w"  ] = self.S2w  [i]
+#             row["S2h"  ] = self.S2h  [i]
+#             row["S2e"  ] = self.S2e  [i]
+#             row["S2q"  ] = self.S2q  [i]
+#             row["S2t"  ] = self.S2t  [i]
+#
+#             row["Nsipm"] = self.Nsipm[i]
+#             row["DT"   ] = self.DT   [i]
+#             row["Z"    ] = self.Z    [i]
+#             row["X"    ] = self.X    [i]
+#             row["Y"    ] = self.Y    [i]
+#             row["R"    ] = self.R    [i]
+#             row["Phi"  ] = self.Phi  [i]
+#             row["Xrms" ] = self.Xrms [i]
+#             row["Yrms" ] = self.Yrms [i]
+#             row.append()
