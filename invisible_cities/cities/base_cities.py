@@ -25,9 +25,10 @@ import tables as tb
 from .. core.configure         import configure
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
-from .. core.ic_types          import minmax
+from .. types.ic_types         import minmax
 from .. core.system_of_units_c import units
 from .. core                   import fit_functions        as fitf
+from .. core.exceptions        import SipmEmptyList
 
 from .. database import load_db
 
@@ -37,21 +38,32 @@ from ..reco               import peak_functions_c as cpf
 from ..reco               import sensor_functions as sf
 from ..reco               import peak_functions   as pf
 from ..reco               import pmaps_functions  as pmp
+from ..reco               import pmaps_functions_c  as cpmp
 from ..reco               import dst_functions    as dstf
 from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
 from ..io                 import pmap_io          as pio
-from ..reco.params        import S12Params
-from ..reco.event_model   import SensorParams
-from ..reco.nh5           import DECONV_PARAM
-from ..reco.corrections   import Correction
-from ..reco.corrections   import Fcorrection
-from ..reco.corrections   import LifetimeCorrection
-from ..reco.xy_algorithms import find_algorithm
+from .. io.fee_io         import write_FEE_table
 
-from ..sierpe             import blr
-from ..sierpe             import fee as FE
+from .. evm.ic_containers      import S12Params
+from .. evm.ic_containers      import S12Sum
+from .. evm.ic_containers      import CSum
+from .. evm.ic_containers      import DataVectors
+from .. evm.ic_containers      import PmapVectors
+from .. evm.event_model        import SensorParams
+from .. evm.event_model        import KrEvent
+from ..evm.event_model         import HitCollection
+from ..evm.event_model         import Hit
+from ..evm.nh5                 import DECONV_PARAM
+from ..reco.corrections        import Correction
+from ..reco.corrections        import Fcorrection
+from ..reco.corrections        import LifetimeCorrection
+from ..reco.xy_algorithms      import find_algorithm
 
+from ..sierpe                   import blr
+from ..sierpe                   import fee as FE
+from .. types.ic_types          import Counter
+from .. types.ic_types          import NN
 
 def merge_two_dicts(a,b):
     return {**a, **b}
@@ -67,8 +79,15 @@ class City:
      """
 
     def __init__(self, **kwds):
-        conf = Namespace(**kwds)
+        """The init method of a city handles:
+        1. provides access to an instance of counters (cnt) to be used by derived cities.
+        2. provides access to the conf namespace
+        3. provides access to input/output files.
+        4. provides access to the data base.
+        """
 
+        self.cnt = Counter()
+        conf = Namespace(**kwds)
         self.conf = conf
 
         if not hasattr(conf, 'files_in'):
@@ -87,6 +106,50 @@ class City:
 
         self.set_up_database()
 
+    def run(self):
+        """The (base) run method of a city does the following chores:
+        1. Calls a display_IO_info() function (to be provided by the concrete cities)
+        2. open the output file
+        3. Writes any desired parameters to output file (must be implemented by cities)
+        4. gets the writers for the specific city.
+        5. Pass the writers to the file_loop() method.
+        6. returns the counter dictionary.
+        """
+        #import pdb; pdb.set_trace()
+        self.display_IO_info()
+
+        with tb.open_file(self.output_file, "w",
+                          filters = tbl.filters(self.compression)) as h5out:
+
+            self.write_parameters(h5out)
+            self.writers = self.get_writers(h5out)
+            self.file_loop()
+
+        return self.cnt
+
+    def display_IO_info(self):
+        print("""
+                 {} will run a max of {} events
+                 Input Files = {}
+                 Output File = {}
+                          """.format(self.__class__.__name__, self.nmax, self.input_files, self.output_file))
+
+    def file_loop(self):
+        """Must be implemented by concrete cities"""
+        pass
+
+    def event_loop(self):
+        """Must be implemented by concrete cities"""
+        pass
+
+    def write_parameters(self, h5out):
+        """Must be implemented by concrete cities"""
+        pass
+
+    def get_writers(self, h5out):
+        """Must be implemented by concrete cities"""
+        pass
+
     @classmethod
     def drive(cls, argv):
         conf = configure(argv)
@@ -100,10 +163,12 @@ class City:
 
     def go(self):
         t0 = time()
-        nevt_in, nevt_out = self.run()
+        cnt = self.run()
         t1 = time()
         dt = t1 - t0
-        print("run {} evts in {} s, time/event = {}".format(nevt_in, dt, dt/nevt_in))
+        n_events = cnt.counter_value('n_events_tot')
+        print("run {} evts in {} s, time/event = {}".format(n_events, dt, dt/n_events))
+        print(cnt)
 
     def set_up_database(self):
         DataPMT       = load_db.DataPMT (self.run_number)
@@ -139,14 +204,12 @@ class City:
             return True
         return False
 
-
-    def display_IO_info(self):
-        print("""
-                 {} will run a max of {} events
-                 Input Files = {}
-                 Output File = {}
-                          """.format(self.__class__.__name__,
-                                     self.nmax, self.input_files, self.output_file))
+    def get_mc_tracks(self, h5in):
+        "Return RWF vectors and sensor data."
+        if self.monte_carlo:
+            return tbl.get_mc_tracks(h5in)
+        else:
+            return None
 
     @staticmethod
     def get_rwf_vectors(h5in):
@@ -215,7 +278,6 @@ class City:
         return pio.s1_s2_si_from_pmaps(s1_dict, s2_dict, s2si_dict, evt_number)
 
 
-
 class SensorResponseCity(City):
     """A SensorResponseCity city extends the City base class adding the
        response (Monte Carlo simulation) of the energy plane and
@@ -245,9 +307,38 @@ class SensorResponseCity(City):
         """
         return sf.simulate_pmt_response(event, pmtrd, self.adc_to_pes)
 
+    def file_loop(self):
+        """
+        The file loop of a SensorResponseCity:
+        1. access RD vectors for PMT
+        2. access run and event info
+        3. access MC track info
+        4. calls event_loop
+        """
+
+        for filename in self.input_files:
+            first_event_no = self.event_number_from_input_file_name(filename)
+            print("Opening file {filename} with first event no {first_event_no}"
+                  .format(**locals()))
+            with tb.open_file(filename, "r") as h5in:
+                # NEVT is the total number of events in pmtrd and sipmrd
+                # pmtrd = pmrtd[events][NPMT][rd_waveform]
+                # sipmrd = sipmrd[events][NPMT][rd_waveform]
+                NEVT, pmtrd, sipmrd = self.get_rd_vectors(h5in)
+                events_info         = self.get_run_and_event_info(h5in)
+                mc_tracks           = self.get_mc_tracks(h5in)
+                dataVectors = DataVectors(pmt=pmtrd, sipm=sipmrd,
+                                          mc=mc_tracks, events=events_info)
+                self.event_loop(NEVT, first_event_no, dataVectors)
+
+
     @property
     def FE_t_sample(self):
         return FE.t_sample
+
+    @staticmethod
+    def write_simulation_parameters_table(filename):
+        write_FEE_table(filename)
 
 
 class DeconvolutionCity(City):
@@ -291,6 +382,28 @@ class DeconvolutionCity(City):
                               n_baseline            = self.n_baseline,
                               thr_trigger           = self.thr_trigger,
                               acum_discharge_length = self.acum_discharge_length)
+
+    def file_loop(self):
+        """
+        The file loop of a deconvolution city:
+        1. access RWF vectors for PMT and SiPMs
+        2. access run and event info
+        3. access MC track info
+        4. calls event_loop
+        """
+        # import pdb; pdb.set_trace()
+
+        for filename in self.input_files:
+            print("Opening", filename, end="... ")
+            with tb.open_file(filename, "r") as h5in:
+
+                NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
+                events_info              = self.get_run_and_event_info(h5in)
+                mc_tracks                = self.get_mc_tracks(h5in)
+                dataVectors              = DataVectors(pmt=pmtrwf, sipm=sipmrwf,
+                                                       mc=mc_tracks,
+                                                       events=events_info)
+                self.event_loop(NEVT, dataVectors)
 
 
 class CalibratedCity(DeconvolutionCity):
@@ -366,7 +479,36 @@ class PmapCity(CalibratedCity):
 
         self.thr_sipm_s2 = conf.thr_sipm_s2
 
+
+    def pmt_transformation(self, RWF):
+        """
+        Performs the transformations in the PMT plane, namely:
+        1. Deconvolve the raw waveforms (RWF) to obtain corrected waveforms (CWF)
+        2. Computes the calibrated sum of the PMTs
+        3. Finds the zero suppressed waveforms to search for s1 and s2
+
+        """
+
+        # deconvolve
+        CWF = self.deconv_pmt(RWF)
+        # calibrated PMT sum
+        csum, csum_mau = self.calibrated_pmt_sum(CWF)
+        #ZS sum for S1 and S2
+        s1_ene, s1_indx = self.csum_zs(csum_mau, threshold =
+                                           self.thr_csum_s1)
+        s2_ene, s2_indx = self.csum_zs(csum,     threshold =
+                                           self.thr_csum_s2)
+        return (S12Sum(s1_ene  = s1_ene,
+                          s1_indx = s1_indx,
+                          s2_ene  = s2_ene,
+                          s2_indx = s2_indx),
+                CSum(csum = csum, csum_mau = csum_mau)
+                    )
+
+
+
     def pmaps(self, s1_indx, s2_indx, csum, sipmzs):
+        """Computes s1, s2 and s2si objects (PMAPS)"""
         s1 = cpf.find_s1(csum, s1_indx, **self.s1_params._asdict())
         s1 = cpf.correct_s1_ene(s1.s1d, csum)
         s2 = cpf.find_s2(csum, s2_indx, **self.s2_params._asdict())
@@ -407,17 +549,134 @@ class MapCity(City):
         return np.histogram2d(X, Y, (self._xbins, self._ybins), (self._xrange, self._yrange))
 
 
-class HitCollectionCity(City):
+class KrCity(City):
+    """A city that computes and writes a KrEvent"""
+
     def __init__(self, **kwds):
         super().__init__(**kwds)
-        conf  = self.conf
-        self.rebin          = conf.rebin
-        self.reco_algorithm = find_algorithm(conf.reco_algorithm)
+        self.reco_algorithm = find_algorithm(self.conf.reco_algorithm)
 
-    def rebin_s2si(self, s2, s2si):
+    def file_loop(self):
+        """
+        actions:
+        1. access pmaps (si_dicts )
+        2. access run and event info
+        3. call event_loop
+        """
+
+        for filename in self.input_files:
+            print("Opening {filename}".format(**locals()), end="... ")
+
+            try:
+                s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
+            except (ValueError, tb.exceptions.NoSuchNodeError):
+                print("Empty file. Skipping.")
+                continue
+
+            event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
+            pmapVectors               = PmapVectors(s1=s1_dict, s2=s2_dict, s2si=s2si_dict,
+                                                    events=event_numbers, timestamps=timestamps)
+
+            self.event_loop(pmapVectors)
+
+    def compute_xy_position(self, s2si, peak_no):
+        """
+        Computes position using the integral of the charge
+        in each SiPM.
+        """
+        IDs, Qs = cpmp.integrate_sipm_charges_in_peak(s2si, peak_no)
+        xs, ys   = self.xs[IDs], self.ys[IDs]
+        try:
+            return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
+        except SipmEmptyList:
+            return None
+
+    def compute_z_and_dt(self, ts2, ts1):
+        """
+        Computes dt & z
+        dt = ts2 - ts1 (in mus)
+        z = dt * v_drift (i natural units)
+
+        """
+        dt  = ts2 - ts1
+        z = dt * self.drift_v
+        dt  *= units.ns / units.mus  #in mus
+        return z, dt
+
+    def create_kr_event(self, pmapVectors):
+        """Create a Kr event:
+        A Kr event treats the data as being produced by a point-like
+        (krypton-like) interaction. Thus, the event is assumed to have
+        negligible extension in z, and the transverse coordinates are
+        computed integrating the temporal dependence of each sipm.
+        """
+        evt_number = pmapVectors.events
+        evt_time   = pmapVectors.timestamps
+        s1         = pmapVectors.s1
+        s2         = pmapVectors.s2
+        s2si       = pmapVectors.s2si
+
+        evt       = KrEvent(evt_number, evt_time * 1e-3)
+
+        evt.nS1 = s1.number_of_peaks
+        for peak_no in s1.peak_collection():
+            peak = s1.peak_waveform(peak_no)
+            evt.S1w.append(peak.width)
+            evt.S1h.append(peak.height)
+            evt.S1e.append(peak.total_energy)
+            evt.S1t.append(peak.tpeak)
+
+        evt.nS2 = s2.number_of_peaks
+        for peak_no in s2.peak_collection():
+            peak = s2.peak_waveform(peak_no)
+            evt.S2w.append(peak.width/units.mus)
+            evt.S2h.append(peak.height)
+            evt.S2e.append(peak.total_energy)
+            evt.S2t.append(peak.tpeak)
+
+            clusters = self.compute_xy_position(s2si, peak_no)
+
+            if clusters == None:
+
+                evt.Nsipm.append(NN)
+                evt.S2q  .append(NN)
+                evt.X    .append(NN)
+                evt.Y    .append(NN)
+                evt.Xrms .append(NN)
+                evt.Yrms .append(NN)
+                evt.R    .append(NN)
+                evt.Phi  .append(NN)
+                evt.DT   .append(NN)
+                evt.Z    .append(NN)
+            else:
+                assert len(clusters) == 1 #only one cluster
+                c = clusters[0]
+                evt.Nsipm.append(c.nsipm)
+                evt.S2q  .append(c.Q)
+                evt.X    .append(c.X)
+                evt.Y    .append(c.Y)
+                evt.Xrms .append(c.Xrms)
+                evt.Yrms .append(c.Yrms)
+                evt.R    .append(c.R)
+                evt.Phi  .append(c.Phi)
+
+                z, dt = self.compute_z_and_dt(evt.S2t[peak_no], evt.S1t[0])
+                evt.DT   .append(dt)
+                evt.Z    .append(z)
+
+        return evt
+
+
+class HitCity(KrCity):
+    """A city that computes and writes a hit event"""
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.rebin  = self.conf.rebin
+
+    def rebin_s2si(self, s2, s2si, rebin):
         """rebins s2d and sid dictionaries"""
-        if self.rebin > 1:
-            s2, s2si = pmp.rebin_s2si(s2, s2si, self.rebin)
+        if rebin > 1:
+            s2, s2si = pmp.rebin_s2si(s2, s2si, rebin)
         return s2, s2si
 
     def split_energy(self, e, clusters):
@@ -426,8 +685,55 @@ class HitCollectionCity(City):
         qs = np.array([c.Q for c in clusters])
         return e * qs / np.sum(qs)
 
-    def compute_xy_position(self, si, slice_no):
-        si_slice = pmp.select_si_slice(si, slice_no)
-        IDs, Qs  = pmp.integrate_sipm_charges_in_peak(si)
+    def compute_xy_position(self, s2sid_peak, slice_no):
+        """Compute x-y position for each time slice. """
+        #import pdb; pdb.set_trace()
+        IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
-        return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
+        try:
+            return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
+        except SipmEmptyList:
+            return None
+
+    def create_hits_event(self, pmapVectors):
+        """Create a hits_event:
+        A hits event treats the data as being produced by a sequence
+        of time slices. Thus, the event is assumed to have
+        finite extension in z, and the transverse coordinates of the event are
+        computed for each time slice in each sipm, creating a hit collection.
+        """
+        evt_number = pmapVectors.events
+        evt_time   = pmapVectors.timestamps
+        s1         = pmapVectors.s1
+        s2         = pmapVectors.s2
+        s2si       = pmapVectors.s2si
+
+        hitc = HitCollection(evt_number, evt_time * 1e-3)
+
+        # in order to compute z one needs to define one S1
+        # for time reference. By default the filter will only
+        # take events with exactly one s1. Otherwise, the
+        # convention is to take the first peak in the S1 object
+        # as reference.
+
+        s1_t = s1.peak_waveform(0).tpeak
+        # in general one rebins the time slices wrt the time slices
+        # produces by pmaps. This is controlled by self.rebin which can
+        # be set by parameter to a factor x pmaps-rebin.
+        s2, s2si = self.rebin_s2si(s2, s2si, self.rebin)
+
+        npeak = 0
+        for peak_no, (t_peak, e_peak) in sorted(s2.s2d.items()):
+            for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
+                clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
+                if clusters == None:
+                    continue
+                # create hits only for those slices with OK clusters
+                es       = self.split_energy(e_slice, clusters)
+                z        = (t_slice - s1_t) * units.ns * self.drift_v
+                for c, e in zip(clusters, es):
+                    hit       = Hit(npeak, c, z, e)
+                    hitc.hits.append(hit)
+            npeak += 1
+
+        return hitc

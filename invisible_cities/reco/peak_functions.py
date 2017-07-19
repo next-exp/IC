@@ -17,11 +17,11 @@ from scipy import signal
 from .. core   import system_of_units as units
 from .. sierpe import blr
 
-from .. io import pmap_io as pio
-from .         import peak_functions_c as cpf
-from .  params import CalibratedSum
-from .  params import PMaps
-from .. core.ic_types          import minmax
+from ..io                  import pmap_io as pio
+from .                     import peak_functions_c as cpf
+from .. evm.ic_containers  import CSum
+from .. evm.ic_containers  import PMaps
+from .. types.ic_types     import minmax
 
 def _calibrated_pmt_sum(CWF, adc_to_pes, pmt_active = [], n_MAU=200, thr_MAU=5):
     """Compute the ZS calibrated sum of the PMTs
@@ -319,16 +319,6 @@ def compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
 
     s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = thr.thr_SIPM)
 
-    #s2sid = cpf.sipm_s2_dict(sipmzs, s2d, thr=thr.thr_SIPM)
 
-    # S1 and S2
-    # S1 = cpf.find_S12(csum, s1_indx, **s1_params._asdict())
-    # S2 = cpf.find_S12(csum, s2_indx, **s2_params._asdict())
-
-    #S2Si
-    # sipm = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
-    #                        thr=thr.thr_sipm, n_MAU=100)
-    # SIPM = cpf.select_sipm(sipm)
-    # S2Si = sipm_s2_dict(SIPM, S2, thr=thr.thr_SIPM)
-    return (CalibratedSum(csum=csum, csum_mau=csum_mau),
+    return (CSum(csum=csum, csum_mau=csum_mau),
             PMaps(S1=s1.s1d, S2=s2.s2d, S2Si=s2si.s2sid))

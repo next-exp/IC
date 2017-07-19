@@ -1,5 +1,13 @@
+"""
+code: zaira.py
+description: computation of correction map
+credits: see ic_authors_and_legal.rst in /doc
+
+last revised: JJGC, 12-July-2017
+"""
 import sys
 import time
+from functools import partial
 
 import numpy  as np
 import tables as tb
@@ -17,10 +25,18 @@ from .  diomira     import Diomira
 
 class Zaira(MapCity):
 
-    go = Diomira.go
-
     def __init__(self, **kwds):
+        """Zaira Init:
+        1. inits base city
+        2. inits counters
+        3. defines fiducial
+        4. gets dst info
+
+        """
         super().__init__(**kwds)
+        self.cnt.set_name('irene')
+        self.cnt.set_counter('nmax', value=self.conf.nmax)
+
         conf = self.conf
 
         fiducial_z, fiducial_e = conf.fiducial_z, conf.fiducial_e
@@ -34,6 +50,8 @@ class Zaira(MapCity):
         self._dst_node   = conf.dst_node
 
     def run(self):
+        """Zaira overwrites the default run method """
+
         dsts = [load_dst(input_file, self._dst_group, self._dst_node)
                 for input_file in self.input_files]
 
@@ -56,4 +74,5 @@ class Zaira(MapCity):
             write_xy = xy_writer(h5out)
             write_xy(*xycorr._xs, xycorr._fs, xycorr._us, nevt)
 
-        return len(dst)
+        self.cnt.set_counter('n_events_tot', value=len(dst))
+        return self.cnt
