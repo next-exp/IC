@@ -66,7 +66,7 @@ def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
     # assert len(c_cluster)  == len(b_cluster)
     # A cluster object has no length!
     np.array_equal(c_cluster.pos, b_cluster.pos)
-    np.array_equal(c_cluster.rms, b_cluster.rms)
+    np.array_equal(c_cluster.std.XY, b_cluster.std.XY)
     assert c_cluster.nsipm      == b_cluster.nsipm
     assert c_cluster.Q          == b_cluster.Q
     assert c_cluster.nsipm      == b_cluster.nsipm
