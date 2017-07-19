@@ -9,9 +9,8 @@ Last revised, JJGC, July, 2017.
 """
 import numpy  as np
 from .. core import core_functions_c as ccf
-from .. core.system_of_units_c import units
-from .. reco.params            import Peak
-from .. evm .pmaps             import S2, S2Si
+from .. core.system_of_units_c      import units
+from .. evm.pmaps                   import S2, S2Si, Peak
 
 
 def _integrate_sipm_charges_in_peak_as_dict(s2si):
@@ -50,6 +49,23 @@ def _integrate_S2Si_charge(s2sid):
              for (peak_no, peak) in s2sid.items() }
 
 
+def _sipm_ids_and_charges_in_slice(s2sid_peak, slice_no):
+    """Given s2sid_peak = {nsipm : [ q1, q2, ...qn]} and a slice_no
+    (running from 1, 2..n) returns:
+    Returns (np.array[nsipm_1 , nsipm_2, ...],
+             np.array[q_k from nsipm_1, q_k from nsipm_2, ...]]) when slice_no=k
+     """
+    number_of_sipms = len(s2sid_peak.keys())
+    ids      = []
+    qs_slice = []
+    for i, (nsipm, qs) in enumerate(s2sid_peak.items()):
+        if qs[slice_no] > 0:
+            ids.append(nsipm)
+            qs_slice.append(qs[slice_no])
+
+    return np.array(ids), n.array(qs_slice)
+
+
 def rebin_s2si(s2, s2si, rf):
     """given an s2 and a corresponding s2si, rebin them by a factor rf"""
     assert rf >= 1 and rf % 1 == 0
@@ -57,7 +73,7 @@ def rebin_s2si(s2, s2si, rf):
     s2sid_rebin = {}
     for pn in s2.peaks:
         t, e, sipms = rebin_s2si_peak(s2.peaks[pn].t, s2.peaks[pn].E, s2si.s2sid[pn], rf)
-        s2d_rebin  [pn] = Peak(t, e)
+        s2d_rebin  [pn] = [t, e]
         s2sid_rebin[pn] = sipms
 
     return S2(s2d_rebin), S2Si(s2d_rebin, s2sid_rebin)

@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from .. core.ic_types          import minmax
+from .. types.ic_types         import minmax
 from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
@@ -56,17 +56,17 @@ class Event:
 
 class Cluster:
     """Represents a reconstructed cluster in the tracking plane"""
-    def __init__(self, Q, xy, xy_rms, nsipm):
+    def __init__(self, Q, xy, xy_std, nsipm):
         self.Q       = Q
         self._xy     = xy
-        self._xy_rms = xy_rms
+        self._xy_std = xy_std
         self.nsipm   = nsipm
 
     @property
     def pos (self): return self._xy.pos
 
     @property
-    def rms (self): return self._xy_rms.pos
+    def std (self): return self._xy_std
 
     @property
     def X   (self): return self._xy.x
@@ -78,10 +78,10 @@ class Cluster:
     def XY  (self): return self._xy.XY
 
     @property
-    def Xrms(self): return self._xy_rms.x
+    def Xrms(self): return np.sqrt(self._xy_std.x)
 
     @property
-    def Yrms(self): return self._xy_rms.y
+    def Yrms(self): return np.sqrt(self._xy_std.y)
 
     @property
     def R   (self): return self._xy.R
@@ -101,7 +101,7 @@ class Hit(Cluster):
     def __init__(self, peak_number, cluster, z, s2_energy):
 
         Cluster.__init__(self, cluster.Q,
-                               cluster._xy, cluster._xy_rms,
+                               cluster._xy, cluster._xy_std,
                                cluster.nsipm)
 
         self.peak_number = peak_number
@@ -136,17 +136,6 @@ class HitCollection(Event):
         Event.__init__(self, event_number, event_time)
         self.hits = []
 
-    def __str__(self):
-        s =  "{}".format(self.__class__.__name__)
-        s+= "Hit list:"
-        s = [s + str(hit) for hit in self.hits]
-        return s
-
-    __repr__ =     __str__
-
-
-class PersistentHitCollection(HitCollection):
-    """Persistent version"""
     def store(self, table):
         row = table.row
         for hit in self.hits:
@@ -163,9 +152,17 @@ class PersistentHitCollection(HitCollection):
             row["E"    ] = hit.E
             row.append()
 
+    def __str__(self):
+        s =  "{}".format(self.__class__.__name__)
+        s+= "Hit list:"
+        s = [s + str(hit) for hit in self.hits]
+        return s
+
+    __repr__ =     __str__
+
 
 class KrEvent(Event):
-    """Transient version of a point-like (Krypton) event."""
+    """Represents a point-like (Krypton) event."""
     def __init__(self, event_number, event_time):
         Event.__init__(self, event_number, event_time)
         self.nS1   = -1 # number of S1 in the event
@@ -191,15 +188,6 @@ class KrEvent(Event):
         self.Xrms  = [] # error in position
         self.Yrms  = []
 
-    def __str__(self):
-        s = "{0}Event\n{0}".format("#"*20 + "\n")
-        for attr in self.__dict__:
-            s += "{}: {}\n".format(attr, getattr(self, attr))
-        return s
-
-
-class PersistentKrEvent(KrEvent):
-    """Persistent version of KrEvent"""
     def store(self, table):
         row = table.row
         for i in range(int(self.nS2)):
@@ -229,3 +217,11 @@ class PersistentKrEvent(KrEvent):
             row["Xrms" ] = self.Xrms [i]
             row["Yrms" ] = self.Yrms [i]
             row.append()
+
+    def __str__(self):
+        s = "{0}Event\n{0}".format("#"*20 + "\n")
+        for attr in self.__dict__:
+            s += "{}: {}\n".format(attr, getattr(self, attr))
+        return s
+
+    __repr__ =     __str__

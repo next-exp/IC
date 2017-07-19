@@ -94,8 +94,8 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
                      nmax       = nrequired))
 
     diomira = Diomira(**conf)
-    nactual = diomira.run()
-
+    cnt     = diomira.run()
+    nactual = cnt.counter_value('n_events_tot')
     if nrequired > 0:
         assert nrequired == nactual
 

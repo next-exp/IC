@@ -19,7 +19,7 @@ from .       xy_algorithms     import corona
 from .       xy_algorithms     import barycenter
 from .       xy_algorithms     import discard_sipms
 from .       xy_algorithms     import get_nearby_sipm_inds
-
+from .. core.exceptions        import SipmEmptyList
 
 @composite
 def positions_and_qs(draw, min_value=0, max_value=100):
@@ -66,7 +66,7 @@ def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
     # assert len(c_cluster)  == len(b_cluster)
     # A cluster object has no length!
     np.array_equal(c_cluster.pos, b_cluster.pos)
-    np.array_equal(c_cluster.rms, b_cluster.rms)
+    np.array_equal(c_cluster.std.XY, b_cluster.std.XY)
     assert c_cluster.nsipm      == b_cluster.nsipm
     assert c_cluster.Q          == b_cluster.Q
     assert c_cluster.nsipm      == b_cluster.nsipm
@@ -111,7 +111,13 @@ def test_corona_min_threshold_Qthr():
 
 def test_corona_msipm(toy_sipm_signal):
     pos, qs = toy_sipm_signal
-    assert len(corona(pos, qs, msipm=2)) == 0
+    # this is gonna raise and error:
+    try:
+        cc = corona(pos, qs, msipm=2)
+        assert False # otherwise make it crahs
+    except SipmEmptyList:
+        pass
+
 
 @parametrize(' Qlm,    rmax, nclusters',
              ((6.1,      15, 0),
@@ -119,11 +125,13 @@ def test_corona_msipm(toy_sipm_signal):
               (4.9, 1000000, 1)))
 def test_corona_simple_examples(toy_sipm_signal, Qlm, rmax, nclusters):
     pos, qs = toy_sipm_signal
-    assert len(corona(pos, qs,
-                      msipm          =  1,
-                      Qlm            =  Qlm * units.pes,
-                      new_lm_radius  = rmax * units.mm )) == nclusters
-
+    try:
+        assert len(corona(pos, qs,
+                          msipm          =  1,
+                          Qlm            =  Qlm * units.pes,
+                          new_lm_radius  = rmax * units.mm )) == nclusters
+    except SipmEmptyList:
+        pass
 @fixture
 def toy_sipm_signal_and_inds():
     k = 10000

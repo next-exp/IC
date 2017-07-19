@@ -15,7 +15,7 @@ import numpy as np
 import tables as tb
 import pandas as pd
 from argparse import Namespace
-from ..reco.event_model  import SensorParams
+from ..evm.event_model  import SensorParams
 
 def filters(name):
     """Return the filter corresponding to a given key.
@@ -149,6 +149,12 @@ def get_rd_vectors(h5in):
     assert NEVT_simp == NEVT_pmt
 
     return NEVT_pmt, pmtrd, sipmrd
+
+
+
+def get_mc_tracks(h5in):
+    """Return MC Tracks bank"""
+    return h5in.root.MC.MCTracks
 
 
 def get_sensor_params_from_vectors(pmtrwf, sipmrwf):
