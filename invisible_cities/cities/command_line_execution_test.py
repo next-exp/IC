@@ -9,7 +9,7 @@ from pytest import mark
 
 @mark.slow
 @mark.parametrize('city',
-                  'diomira isidora irene dorothea zaira cecilia penthesilea'.split())
+                  'diomira isidora irene dorothea zaira penthesilea'.split())
 def test_command_line_run(city, tmpdir_factory):
     ICTDIR = getenv('ICTDIR')
     # Use the example config file included in the repository
@@ -26,4 +26,3 @@ def test_command_line_run(city, tmpdir_factory):
         # Ensure that stdout and stderr are visible when test fails
         print(e.stdout.decode())
         raise
-
