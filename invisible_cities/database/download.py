@@ -1,4 +1,5 @@
 import sqlite3
+import sys
 import pymysql
 import pymysql as MySQLdb
 pymysql.install_as_MySQLdb()
@@ -6,7 +7,7 @@ import os
 from os import path
 
 
-def loadDB():
+def loadDB(dbname='NEWDB'):
     dbfile = path.join(os.environ['ICDIR'], 'database/localdb.sqlite3')
     try:
         os.remove(dbfile)
@@ -17,7 +18,7 @@ def loadDB():
     cursorSql3 = connSql3.cursor()
 
 
-    connMySql = MySQLdb.connect(host="neutrinos1.ific.uv.es", user='nextreader',passwd='readonly', db="NEWDB")
+    connMySql = MySQLdb.connect(host="neutrinos1.ific.uv.es", user='nextreader',passwd='readonly', db=dbname)
     cursorMySql = connMySql.cursor()
 
     # Create tables
@@ -419,4 +420,7 @@ def loadDB():
 
 
 if __name__ == '__main__':
-    loadDB()
+    dbname = 'NEWDB'
+    if len(sys.argv) > 1:
+        dbname = sys.argv[1]
+    loadDB(dbname)
