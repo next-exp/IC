@@ -17,9 +17,9 @@ from .       event_model import Event
 from .       event_model import Cluster
 from .       event_model import Hit
 from .       event_model import HitCollection
-from .       event_model import PersistentHitCollection
+from .       event_model import HitCollection
 from .       event_model import KrEvent
-from .       event_model import PersistentKrEvent
+from .       event_model import KrEvent
 
 
 @composite
@@ -72,9 +72,9 @@ def test_sensor_params(sensor_pars):
 @mark.parametrize("test_class",
                   (Event,
                    HitCollection,
-                   PersistentHitCollection,
+                   HitCollection,
                    KrEvent,
-                   PersistentKrEvent))
+                   KrEvent))
 @given(event_input())
 def test_event(test_class, event_pars):
     evt_no, time = event_pars
@@ -130,7 +130,7 @@ def test_hit(ci, hi):
 
 @mark.parametrize("test_class",
                   (HitCollection,
-                   PersistentHitCollection))
+                   HitCollection))
 def test_hit_collection_empty(test_class):
     hc = test_class(-1, -1)
     assert hc.hits == []
@@ -138,7 +138,7 @@ def test_hit_collection_empty(test_class):
 
 @mark.parametrize("test_class",
                   (KrEvent,
-                   PersistentKrEvent))
+                   KrEvent))
 def test_kr_event_attributes(test_class):
     evt =  test_class(-1, -1)
 
