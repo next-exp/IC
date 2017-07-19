@@ -1,6 +1,7 @@
 
 import numpy as np
 
+NN= -999999  # No Number, a trick to aovid nans in data structs
 class Counter:
 
     def __init__(self, counter_name=''):
