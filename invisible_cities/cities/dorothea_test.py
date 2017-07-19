@@ -83,4 +83,4 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
             Xrms  = [     6.762344   ],
             Yrms  = [     4.710678   ]))
 
-    assert_dataframes_close(dst, df, False, rtol=1e-6)
+    assert_dataframes_close(dst, df, False, rtol=1e-2)
