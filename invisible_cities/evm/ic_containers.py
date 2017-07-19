@@ -10,6 +10,8 @@ def _add_namedtuple_in_this_module(name, attribute_names):
     setattr(this_module, name, new_nametuple)
 
 for name, attrs in (
+        ('DataVectors'     , 'pmt sipm mc events'),
+        ('PmapVectors'     , 's1 s2 s2si events timestamps'),
         ('RawVectors'     , 'event pmtrwf sipmrwf pmt_active sipm_active'),
         ('CalibParams'    , 'coeff_c, coeff_blr, adc_to_pes_pmt adc_to_pes_sipm'),
         ('DeconvParams'   , 'n_baseline thr_trigger'),
@@ -17,7 +19,8 @@ for name, attrs in (
         ('S12Params'      , 'time stride length rebin'),
         ('PmapParams'     , 's1_params s2_params s1p_params s1_PMT_params s1p_PMT_params'),
         ('ThresholdParams', 'thr_s1 thr_s2 thr_MAU thr_sipm thr_SIPM'),
-        ('CalibratedSum'  , 'csum csum_mau'),
+        ('CSum'           , 'csum csum_mau'),
+        ('S12Sum'         , 's1_ene, s1_indx, s2_ene, s2_indx'),
         ('CalibratedPMT'  , 'CPMT CPMT_mau'),
         ('S1PMaps'        , 'S1 S1_PMT S1p S1p_PMT'),
         ('PMaps'          , 'S1 S2 S2Si'),
