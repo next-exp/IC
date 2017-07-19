@@ -1,6 +1,6 @@
 from .  table_io import make_table
-from .. reco.nh5 import KrTable
-from .. reco.nh5 import XYfactors
+from .. evm.nh5  import KrTable
+from .. evm.nh5  import XYfactors
 
 
 def kr_writer(hdf5_file, *, compression='ZLIB4'):
