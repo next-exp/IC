@@ -8,7 +8,7 @@ from ..types.ic_types      import xy
 from ..reco.dst_functions  import load_dst
 from ..evm.event_model     import Cluster
 from ..evm.event_model     import Hit
-from ..evm.event_model     import PersistentHitCollection
+from ..evm.event_model     import HitCollection
 from . dst_io              import hits_writer
 
 
@@ -19,7 +19,7 @@ def test_hits_writer(config_tmpdir, hits_toy_data):
 
     with tb.open_file(output_file, 'w') as h5out:
         write = hits_writer(h5out)
-        hits = PersistentHitCollection(-1, -1)
+        hits = HitCollection(-1, -1)
         for i in range(len(x)):
             c = Cluster(q[i], xy(x[i], y[i]), xy(xstd[i], ystd[i]), nsipm[i])
             h = Hit(npeak[i], c, z[i], e[i])
