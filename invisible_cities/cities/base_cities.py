@@ -52,6 +52,8 @@ from .. evm.ic_containers      import DataVectors
 from .. evm.ic_containers      import PmapVectors
 from .. evm.event_model        import SensorParams
 from .. evm.event_model        import PersistentKrEvent
+from ..evm.event_model         import PersistentHitCollection
+from ..evm.event_model         import Hit
 from ..evm.nh5                 import DECONV_PARAM
 from ..reco.corrections        import Correction
 from ..reco.corrections        import Fcorrection
@@ -605,7 +607,7 @@ class KrCity(City):
         """Create a Kr event:
         A Kr event treats the data as being produced by a point-like
         (krypton-like) interaction. Thus, the event is assumed to have
-        negligible extension in z, and the position of the event is
+        negligible extension in z, and the transverse coordinates are
         computed integrating the temporal dependence of each sipm.
         """
         evt_number = pmapVectors.events
@@ -692,3 +694,46 @@ class HitCity(KrCity):
             return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
         except SipmEmptyList:
             return None
+
+    def create_hits_event(self, pmapVectors):
+        """Create a hits_event:
+        A hits event treats the data as being produced by a sequence
+        of time slices. Thus, the event is assumed to have
+        finite extension in z, and the transverse coordinates of the event are
+        computed for each time slice in each sipm, creating a hit collection.
+        """
+        evt_number = pmapVectors.events
+        evt_time   = pmapVectors.timestamps
+        s1         = pmapVectors.s1
+        s2         = pmapVectors.s2
+        s2si       = pmapVectors.s2si
+
+        hitc = PersistentHitCollection(evt_number, evt_time * 1e-3)
+
+        # in order to compute z one needs to define one S1
+        # for time reference. By default the filter will only
+        # take events with exactly one s1. Otherwise, the
+        # convention is to take the first peak in the S1 object
+        # as reference.
+
+        s1_t = s1.peak_waveform(0).tpeak
+        # in general one rebins the time slices wrt the time slices
+        # produces by pmaps. This is controlled by self.rebin which can
+        # be set by parameter to a factor x pmaps-rebin.
+        s2, s2si = self.rebin_s2si(s2, s2si, self.rebin)
+
+        npeak = 0
+        for peak_no, (t_peak, e_peak) in sorted(s2.s2d.items()):
+            for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
+                clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
+                if clusters == None:
+                    continue
+                # create hits only for those slices with OK clusters
+                es       = self.split_energy(e_slice, clusters)
+                z        = (t_slice - s1_t) * units.ns * self.drift_v
+                for c, e in zip(clusters, es):
+                    hit       = Hit(npeak, c, z, e)
+                    hitc.hits.append(hit)
+            npeak += 1
+
+        return hitc
