@@ -56,17 +56,17 @@ class Event:
 
 class Cluster:
     """Represents a reconstructed cluster in the tracking plane"""
-    def __init__(self, Q, xy, xy_rms, nsipm):
+    def __init__(self, Q, xy, xy_std, nsipm):
         self.Q       = Q
         self._xy     = xy
-        self._xy_rms = xy_rms
+        self._xy_std = xy_std
         self.nsipm   = nsipm
 
     @property
     def pos (self): return self._xy.pos
 
     @property
-    def rms (self): return self._xy_rms.pos
+    def std (self): return self._xy_std
 
     @property
     def X   (self): return self._xy.x
@@ -78,10 +78,10 @@ class Cluster:
     def XY  (self): return self._xy.XY
 
     @property
-    def Xrms(self): return self._xy_rms.x
+    def Xrms(self): return np.sqrt(self._xy_std.x)
 
     @property
-    def Yrms(self): return self._xy_rms.y
+    def Yrms(self): return np.sqrt(self._xy_std.y)
 
     @property
     def R   (self): return self._xy.R
@@ -101,7 +101,7 @@ class Hit(Cluster):
     def __init__(self, peak_number, cluster, z, s2_energy):
 
         Cluster.__init__(self, cluster.Q,
-                               cluster._xy, cluster._xy_rms,
+                               cluster._xy, cluster._xy_std,
                                cluster.nsipm)
 
         self.peak_number = peak_number
