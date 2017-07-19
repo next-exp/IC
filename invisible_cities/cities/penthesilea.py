@@ -19,9 +19,8 @@ from ..core.system_of_units_c import units
 from ..types.ic_types         import xy
 from ..io.dst_io              import hits_writer
 from ..cities.base_cities     import City
-from ..evm.event_model        import PersistentHitCollection
 from ..evm.event_model        import Cluster
-from ..evm.event_model        import Hit
+from .. evm.ic_containers     import PmapVectors
 from ..cities.base_cities     import HitCity
 from ..reco                   import tbl_functions as tbl
 
@@ -84,8 +83,10 @@ class Penthesilea(HitCity):
                 continue
             # event passed selection: increment counter and write
             self.cnt.increment_counter('nevt_out')
-
-            evt = self._create_hits_event(evt_number, evt_time, s1, s2, s2si)
+            pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
+                                      events=evt_number,
+                                      timestamps=evt_time)
+            evt = self.create_hits_event(pmapVectors)
             write_hits(evt)
             self.conditional_print(self.cnt.counter_value('n_events_tot'),
             self.cnt.counter_value('nevt_out'))
@@ -95,32 +96,32 @@ class Penthesilea(HitCity):
         return  hits_writer(h5out)
 
 
-    def _create_hits_event(self, evt_number, evt_time,
-                           s1, s2, s2si):
-
-        hitc = PersistentHitCollection(evt_number, evt_time * 1e-3)
-
-        # in order to compute z one needs to define one S1
-        # for time reference. By default the filter will only
-        # take events with exactly one s1. Otherwise, the
-        # convention is to take the first peak in the S1 object
-        # as reference.
-
-        s1_t = s1.peak_waveform(0).tpeak
-
-        s2, s2si = self.rebin_s2si(s2, s2si, self.rebin)
-
-        npeak = 0
-        for peak_no, (t_peak, e_peak) in sorted(s2.s2d.items()):
-            for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
-                clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
-                if clusters == None:
-                    continue 
-                es       = self.split_energy(e_slice, clusters)
-                z        = (t_slice - s1_t) * units.ns * self.drift_v
-                for c, e in zip(clusters, es):
-                    hit       = Hit(npeak, c, z, e)
-                    hitc.hits.append(hit)
-            npeak += 1
-
-        return hitc
+    # def _create_hits_event(self, evt_number, evt_time,
+    #                        s1, s2, s2si):
+    #
+    #     hitc = PersistentHitCollection(evt_number, evt_time * 1e-3)
+    #
+    #     # in order to compute z one needs to define one S1
+    #     # for time reference. By default the filter will only
+    #     # take events with exactly one s1. Otherwise, the
+    #     # convention is to take the first peak in the S1 object
+    #     # as reference.
+    #
+    #     s1_t = s1.peak_waveform(0).tpeak
+    #
+    #     s2, s2si = self.rebin_s2si(s2, s2si, self.rebin)
+    #
+    #     npeak = 0
+    #     for peak_no, (t_peak, e_peak) in sorted(s2.s2d.items()):
+    #         for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
+    #             clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
+    #             if clusters == None:
+    #                 continue
+    #             es       = self.split_energy(e_slice, clusters)
+    #             z        = (t_slice - s1_t) * units.ns * self.drift_v
+    #             for c, e in zip(clusters, es):
+    #                 hit       = Hit(npeak, c, z, e)
+    #                 hitc.hits.append(hit)
+    #         npeak += 1
+    #
+    #     return hitc
