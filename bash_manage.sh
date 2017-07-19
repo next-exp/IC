@@ -15,6 +15,7 @@ manage.sh()
                                     compile_and_test\
                                     compile_and_test_par\
                                     download_test_db\
+                                    download_test_db_dev\
                                     clean"
             COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
             return 0
@@ -59,6 +60,7 @@ source_manage.sh()
                                     compile_and_test\
                                     compile_and_test_par\
                                     download_test_db\
+                                    download_test_db_dev\
                                     clean"
             COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
             return 0
