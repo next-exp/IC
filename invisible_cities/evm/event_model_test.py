@@ -43,11 +43,11 @@ def event_input(draw):
 def cluster_input(draw, min_value=0, max_value=100):
     x     = draw(floats  (  1,   5))
     y     = draw(floats  (-10,  10))
-    xrms  = draw(floats  (.01,  .5))
-    yrms  = draw(floats  (.10,  .9))
+    xstd  = draw(floats  (.01,  .5))
+    ystd  = draw(floats  (.10,  .9))
     Q     = draw(floats  ( 50, 100))
     nsipm = draw(integers(  1,  20))
-    return Q, x, y, xrms, yrms, nsipm
+    return Q, x, y, xstd, ystd, nsipm
 
 
 @composite
@@ -87,33 +87,35 @@ def test_event(test_class, event_pars):
 
 @given(cluster_input(1))
 def test_cluster(ci):
-    Q, x, y, xrms, yrms, nsipm = ci
+    Q, x, y, xstd, ystd, nsipm = ci
+    xrms = np.sqrt(xstd)
+    yrms = np.sqrt(ystd)
     r, phi =  np.sqrt(x ** 2 + y ** 2), np.arctan2(y, x)
-    xyar   = x, y
-    rmsar  = xrms, yrms
+    xyar   = (x, y)
+    stdar  = (xstd, ystd)
     pos    = np.stack(([x], [y]), axis=1)
-    c      = Cluster(Q, xy(x,y), xy(xrms,yrms), nsipm)
+    c      = Cluster(Q, xy(x,y), xy(xstd,ystd), nsipm)
 
     assert c.nsipm == nsipm
     np.isclose (c.Q   ,     Q, rtol=1e-4)
     np.isclose (c.X   ,     x, rtol=1e-4)
     np.isclose (c.Y   ,     y, rtol=1e-4)
-    np.isclose (c.Xrms,  xrms, rtol=1e-4)
-    np.isclose (c.Yrms,  yrms, rtol=1e-4)
-    np.isclose (c.rms , rmsar, rtol=1e-4)
-    np.allclose(c.XY  ,  xyar, rtol=1e-4)
+    np.isclose (c.Xrms,     xrms, rtol=1e-3)
+    np.isclose (c.Yrms,     yrms, rtol=1e-3)
+    np.isclose (c.std.XY,   stdar, rtol=1e-4)
+    np.allclose(c.XY,       xyar, rtol=1e-4)
     np.isclose (c.R   ,     r, rtol=1e-4)
-    np.isclose (c.Phi ,   phi, rtol=1e-4)
-    np.allclose(c.pos ,   pos, rtol=1e-4)
+    np.isclose (c.Phi ,     phi, rtol=1e-4)
+    np.allclose(c.pos ,     pos, rtol=1e-4)
 
 
 @given(cluster_input(1), hit_input(1))
 def test_hit(ci, hi):
-    Q, x, y, xrms, yrms, nsipm = ci
+    Q, x, y, xstd, ystd, nsipm = ci
     peak_number, E, z          = hi
     xyz = x, y, z
 
-    c = Cluster(Q, xy(x,y), xy(xrms,yrms), nsipm)
+    c = Cluster(Q, xy(x,y), xy(xstd,ystd), nsipm)
     h = Hit(peak_number, c, z, E)
 
     assert h.peak_number == peak_number
