@@ -196,19 +196,22 @@ def _find_s12(csum, index,
     # Start end end index of S12, [start i, end i)
     S12[0] = np.array([index[0], index[0] + 1], dtype=np.int32)
 
+    # Start end end index of S12, [start i, end i)
+    i_min = int(time[0] / (25*units.ns))     # index in csum  corresponding to t.min
+    i_i = np.where(index >= i_min)[0].min()  # index in index corresponding to t.min (or first
+                                             # time not threshold suppressed)
+    S12[0] = np.array([index[i_i], index[i_i]+ 1], dtype=np.int32)
+
     j = 0
-    for i in range(1, len(index)) :
-
+    for i in range(i_i + 1, len(index)):
+        assert T[i] > time[0]
         if T[i] > time.max: break
-        if T[i] < time.min: continue
-
         # New s12, create new start and end index
-        if index[i] - stride > index[i-1]:
+        elif index[i] - stride > index[i-1]:
             j += 1
             S12[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
-
         # Update end index in current S12
-        S12[j][1] = index[i] + 1
+        else: S12[j][1] = index[i] + 1
 
     j = 0
     for i_peak in S12.values():
