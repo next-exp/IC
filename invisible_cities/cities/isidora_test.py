@@ -40,7 +40,8 @@ def test_isidora_electrons_40keV(config_tmpdir, ICDIR):
                      nmax       = nrequired))
 
     isidora = Isidora(**conf)
-    cnt = isidora.run()
+    isidora.run()
+    cnt = isidora.end()
 
     nactual = cnt.counter_value('n_events_tot')
     if nrequired > 0:
