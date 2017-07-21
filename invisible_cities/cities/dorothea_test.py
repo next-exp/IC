@@ -4,7 +4,7 @@ from pandas import DataFrame
 
 from . dorothea import Dorothea
 
-from .. reco.dst_functions import load_dst
+from .. io.dst_io import load_dst
 from .. core.test_utils    import assert_dataframes_close
 from .. core.configure     import configure
 from .. core.system_of_units import pes, mm, mus
