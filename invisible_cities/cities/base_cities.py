@@ -627,7 +627,7 @@ class KrCity(City):
             evt.S1t.append(peak.tpeak)
 
         evt.nS2 = s2si.number_of_peaks
-        for peak_no in s2si.peak_collection():
+        for i, peak_no in enumerate(s2si.peak_collection()):
             peak = s2si.peak_waveform(peak_no)
             evt.S2w.append(peak.width/units.mus)
             evt.S2h.append(peak.height)
@@ -659,8 +659,7 @@ class KrCity(City):
                 evt.Yrms .append(c.Yrms)
                 evt.R    .append(c.R)
                 evt.Phi  .append(c.Phi)
-
-                z, dt = self.compute_z_and_dt(evt.S2t[peak_no], evt.S1t[0])
+                z, dt = self.compute_z_and_dt(evt.S2t[i], evt.S1t[0])
                 evt.DT   .append(dt)
                 evt.Z    .append(z)
 
