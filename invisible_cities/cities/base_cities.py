@@ -64,6 +64,7 @@ from ..sierpe                   import blr
 from ..sierpe                   import fee as FE
 from .. types.ic_types          import Counter
 from .. types.ic_types          import NN
+from .. daemons.idaemon         import invoke_daemon
 
 def merge_two_dicts(a,b):
     return {**a, **b}
@@ -125,6 +126,17 @@ class City:
             self.writers = self.get_writers(h5out)
             self.file_loop()
 
+
+
+    def end(self):
+        """The (base) end method of a city does the following chores:
+        1. prints the counter dictionary
+        2. calls the end method of the daemons if they have been invoked.
+        """
+        if hasattr(self, 'daemons'):
+            for deamon in self.daemons:
+                deamon.end()
+
         return self.cnt
 
     def display_IO_info(self):
@@ -159,16 +171,25 @@ class City:
         if opts.print_config_only:
             return
         instance = cls(**conf.as_dict)
+
+        # set the deamons
+
+        if 'daemons' in conf.as_dict:
+            d_list_name = conf.as_dict['daemons']
+            instance.daemons = list(map(invoke_daemon, d_list_name))
         instance.go()
+        instance.end()
 
     def go(self):
         t0 = time()
-        cnt = self.run()
+        self.run()
         t1 = time()
         dt = t1 - t0
-        n_events = cnt.counter_value('n_events_tot')
-        print("run {} evts in {} s, time/event = {}".format(n_events, dt, dt/n_events))
-        print(cnt)
+        n_events = self.cnt.counter_value('n_events_tot')
+        print("run {} evts in {} s, time/event = {}".format(n_events,
+                                                            dt,
+                                                            dt/n_events))
+
 
     def set_up_database(self):
         DataPMT       = load_db.DataPMT (self.run_number)

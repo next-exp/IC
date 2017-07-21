@@ -96,7 +96,8 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
-    cnt = irene.run()
+    irene.run()
+    cnt = irene.end()
 
     nactual = cnt.counter_value('n_events_tot')
     if nrequired > 0:
@@ -142,7 +143,8 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
-    cnt = irene.run()
+    irene.run()
+    cnt = irene.end()
     if nrequired > 0:
         assert nrequired == cnt.counter_value('n_events_tot')
 
@@ -212,7 +214,8 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
-    cnt = irene.run()
+    irene.run()
+    cnt = irene.end()
 
     assert cnt.counter_value('n_events_tot')   == 0
     assert cnt.counter_value('n_empty_events') == 1
