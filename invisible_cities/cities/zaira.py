@@ -17,8 +17,8 @@ from .  base_cities         import City
 from .  base_cities         import MapCity
 from .. core.fit_functions  import in_range
 from .. core.configure      import configure
-from .. reco.dst_functions  import load_dst
-from .. io.kdst_io           import xy_writer
+from .. io. dst_io          import load_dst
+from .. io.kdst_io          import xy_writer
 
 from .  diomira     import Diomira
 
