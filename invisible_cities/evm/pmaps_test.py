@@ -19,6 +19,7 @@ from .  pmaps import S1
 from .  pmaps import S2
 from .  pmaps import S2Si
 from .  pmaps import Peak
+from .  pmaps import check_s2d_and_s2sid_share_peaks
 
 
 @composite
@@ -195,3 +196,17 @@ def test_integrate_S2Si_charge():
                                         sipm2_3 : sum(Q2_3),
                                         sipm2_4 : sum(Q2_4)}}
     assert s2si.peak_and_sipm_total_energy_dict() == integrated_S2Si
+
+
+def test_check_s2d_and_s2sid_share_peaks():
+    s2d   = {}
+    s2sid = {}
+    for pn in range(100):
+        s2d[pn] = -1*pn
+        if pn % 2 == 0:
+            s2sid[pn] = s2d[pn]
+    s2d_shared_peaks = check_s2d_and_s2sid_share_peaks(s2d, s2sid)
+
+    for pn in s2d_shared_peaks:
+        assert pn in s2sid
+        assert pn % 2 == 0

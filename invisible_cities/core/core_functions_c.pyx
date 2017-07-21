@@ -27,4 +27,4 @@ cpdef rebin_array(double [:] arr, int stride, bool mean=False, bool remainder=Fa
         if mean: rebinned[i] = np.mean(arr[s:f])
         else   : rebinned[i] = np.sum (arr[s:f])
 
-    return rebinned
+    return np.asarray(rebinned)

@@ -626,9 +626,9 @@ class KrCity(City):
             evt.S1e.append(peak.total_energy)
             evt.S1t.append(peak.tpeak)
 
-        evt.nS2 = s2.number_of_peaks
-        for peak_no in s2.peak_collection():
-            peak = s2.peak_waveform(peak_no)
+        evt.nS2 = s2si.number_of_peaks
+        for i, peak_no in enumerate(s2si.peak_collection()):
+            peak = s2si.peak_waveform(peak_no)
             evt.S2w.append(peak.width/units.mus)
             evt.S2h.append(peak.height)
             evt.S2e.append(peak.total_energy)
@@ -659,8 +659,7 @@ class KrCity(City):
                 evt.Yrms .append(c.Yrms)
                 evt.R    .append(c.R)
                 evt.Phi  .append(c.Phi)
-
-                z, dt = self.compute_z_and_dt(evt.S2t[peak_no], evt.S1t[0])
+                z, dt = self.compute_z_and_dt(evt.S2t[i], evt.S1t[0])
                 evt.DT   .append(dt)
                 evt.Z    .append(z)
 
@@ -723,7 +722,7 @@ class HitCity(KrCity):
         s2, s2si = self.rebin_s2si(s2, s2si, self.rebin)
 
         npeak = 0
-        for peak_no, (t_peak, e_peak) in sorted(s2.s2d.items()):
+        for peak_no, (t_peak, e_peak) in sorted(s2si.s2d.items()):
             for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
                 clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
                 if clusters == None:

@@ -69,23 +69,27 @@ def _sipm_ids_and_charges_in_slice(s2sid_peak, slice_no):
 def rebin_s2si(s2, s2si, rf):
     """given an s2 and a corresponding s2si, rebin them by a factor rf"""
     assert rf >= 1 and rf % 1 == 0
-    s2d_rebin = {}
+    s2d_rebin   = {}
     s2sid_rebin = {}
     for pn in s2.peaks:
-        t, e, sipms = rebin_s2si_peak(s2.peaks[pn].t, s2.peaks[pn].E, s2si.s2sid[pn], rf)
-        s2d_rebin  [pn] = [t, e]
-        s2sid_rebin[pn] = sipms
+        if pn in s2si.peaks:
+            t, e, sipms = rebin_s2si_peak(s2.peaks[pn].t, s2.peaks[pn].E, s2si.s2sid[pn], rf)
+            s2sid_rebin[pn] = sipms
+        else:
+            t, e, _ = rebin_s2si_peak(s2.peaks[pn].t, s2.peaks[pn].E, {}, rf)
+
+        s2d_rebin[pn] = [t, e]
+
 
     return S2(s2d_rebin), S2Si(s2d_rebin, s2sid_rebin)
 
 
 def rebin_s2si_peak(t, e, sipms, stride):
     """rebin: s2 times (taking mean), s2 energies, s2 sipm qs, by stride"""
-
     # cython rebin_array is returning memoryview so we need to cast as np array
-    return   np.asarray(ccf.rebin_array(t , stride, remainder=True, mean=True)), \
-             np.asarray(ccf.rebin_array(e , stride, remainder=True))           , \
-      {sipm: np.asarray(ccf.rebin_array(qs, stride, remainder=True)) for sipm, qs in sipms.items()}
+    return   ccf.rebin_array(t , stride, remainder=True, mean=True), \
+             ccf.rebin_array(e , stride, remainder=True)           , \
+      {sipm: ccf.rebin_array(qs, stride, remainder=True) for sipm, qs in sipms.items()}
 
 # def select_si_slice(si, slice_no):
 #     # This is a temporary fix! The number of slices in the SiPM arrays

@@ -56,3 +56,6 @@ cdef class S2Si(S2):
     cpdef sipm_total_energy_dict(self, int peak_number)
     cpdef peak_and_sipm_total_energy_dict(self)
     cpdef store(self, table, event_number)
+
+"""Given an s2d and an s2sid, return an s2d containing only the peaks shared by s2sid"""
+cpdef check_s2d_and_s2sid_share_peaks(dict s2d, dict s2sid)

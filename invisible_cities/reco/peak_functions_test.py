@@ -389,6 +389,24 @@ def test_csum_zs_s12():
         e = S12L2[i][1]
         npt.assert_allclose(e, E)
 
+def test_find_s12_finds_first_correct_candidate_peak():
+    """
+    Checks that find_s12 initializes S12[0] (the array defining the boundaries of the
+    0th candidate peak) to the correct values
+    """
+    wf  = np.array([0,0,1,0,0], dtype=np.float64)
+    ene = np.array([2], dtype=np.int32)
+    S12L = cpf.find_s12(wf, ene,
+                 time   = minmax(0, 1e+6),
+                 length = minmax(0, 1000000),
+                 stride=10, rebin=True, rebin_stride=10)
+    assert len(S12L) == 1
+    assert np.allclose(S12L[0][0], np.array([2*25*units.ns + 25/2 *units.ns]))
+    assert np.allclose(S12L[0][1], np.array([1]))
+
+
+
+
 def test_cwf_are_empty_for_masked_pmts(csum_zs_blr_cwf):
     assert np.all(csum_zs_blr_cwf.cwf6[6:] == 0.)
 
