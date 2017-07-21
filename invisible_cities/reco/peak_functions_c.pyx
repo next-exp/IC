@@ -263,20 +263,24 @@ cpdef find_s12(double [:] csum,  int [:] index,
     cdef double [:] T = _time_from_index(index)
     cdef dict S12  = {}
     cdef dict S12L = {}
-    cdef int i, j, k, ls
+    cdef int i, j, k, ls, i_i, i_min
     tmin, tmax = time
     lmin, lmax = length
-    S12[0] = np.array([index[0], index[0] + 1], dtype=np.int32)
+
+    i_min = tmin / (25*units.ns)
+    i_i = np.where(np.asarray(index) >= i_min)[0].min() #first index of index with t > tmin
+    S12[0] = np.array([index[i_i], index[i_i] + 1], dtype=np.int32)
     j = 0
-    for i in range(1, len(index)):
+    for i in range(i_i + 1, len(index)):
+        assert T[i] > tmin
         if T[i] > tmax: break
-        if T[i] < tmin: continue
         # New s12, create new start and end index
-        if index[i] - stride > index[i-1]:
+        elif index[i] - stride > index[i-1]:
             j += 1
             S12[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
         # Update end index in current S12
-        S12[j][1] = index[i] + 1
+        else: S12[j][1] = index[i] + 1
+
     # re-arrange and rebin
     j = 0
     for i_peak in S12.values():

@@ -147,6 +147,16 @@ cdef class S2(S12):
     def __repr__(self):
         return self.__str__()
 
+cpdef check_s2d_and_s2sid_share_peaks(dict s2d, dict s2sid):
+    cdef dict s2d_shared_peaks = {}
+    cdef int pn
+    for pn, peak in s2d.items():
+        if pn in s2sid:
+          s2d_shared_peaks[pn] = peak
+
+    return s2d_shared_peaks
+
+
 cdef class S2Si(S2):
     """Transient class representing the combination of
     S2 and the SiPM information.
@@ -161,7 +171,8 @@ cdef class S2Si(S2):
            s2sid = {peak:{nsipm:[Q]}}
            Q is the energy in each SiPM sample
         """
-        S2.__init__(self, s2d)
+
+        S2.__init__(self, check_s2d_and_s2sid_share_peaks(s2d, s2sid))
         self.s2sid = s2sid
 
     cpdef number_of_sipms_in_peak(self, int peak_number):
