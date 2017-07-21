@@ -2,17 +2,8 @@ import pandas as pd
 import tables as tb
 import numpy  as np
 
-from . corrections import Correction
-
-def load_dst(filename, group, node):
-    with tb.open_file(filename) as h5in:
-        table = getattr(getattr(h5in.root, group), node).read()
-        return pd.DataFrame.from_records(table)
-
-
-def load_dsts(dst_list, group, node):
-    dsts = [load_dst(filename, group, node) for filename in dst_list]
-    return pd.concat(dsts)
+from .  corrections import Correction
+from .. io.dst_io   import load_dst
 
 
 def load_z_corrections(filename):

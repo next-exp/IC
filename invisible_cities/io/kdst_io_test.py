@@ -6,10 +6,10 @@ import tables as tb
 from numpy.testing import assert_allclose
 
 from ..core.test_utils    import assert_dataframes_equal
-from ..reco.dst_functions import load_dst
+from ..io.dst_io          import load_dst
 from . kdst_io            import kr_writer
 from . kdst_io            import xy_writer
-from ..evm.event_model   import KrEvent
+from ..evm.event_model    import KrEvent
 
 
 def test_Kr_writer(config_tmpdir, Kr_dst_data):
