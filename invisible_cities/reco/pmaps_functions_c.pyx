@@ -173,7 +173,6 @@ cpdef sipm_ids_and_charges_in_slice(dict s2sid_peak, int slice_no):
     cdef list qs_slice = []
 
     cdef short int i, nsipm
-    print(slice_no)
     for i, (nsipm, qs) in enumerate(s2sid_peak.items()):
         if qs[slice_no] > 0:
             ids.append(nsipm)
