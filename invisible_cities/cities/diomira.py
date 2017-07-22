@@ -15,25 +15,31 @@ from argparse  import Namespace
 
 import tables as tb
 
-from .. core.configure         import configure
-from .. core.random_sampling   import NoiseSampler as SiPMsNoiseSampler
-from .. core.system_of_units_c import units
-from .. core.exceptions        import ParameterNotSet
+from .. core.system_of_units_c  import units
+from .. core.exceptions         import ParameterNotSet
 
-from .. io.mc_io            import mc_track_writer
-from .. io.run_and_event_io import run_and_event_writer
-from .. io.rwf_io           import rwf_writer
+from .. io.mc_io                import mc_track_writer
+from .. io.run_and_event_io     import run_and_event_writer
+from .. io.rwf_io               import rwf_writer
+from .. io.fee_io               import write_FEE_table
+from .. filters.trigger_filters import TriggerFilter
 
-from .. reco        import wfm_functions as wfm
-from .. reco        import tbl_functions as tbl
-from .. evm.nh5     import FEE
-from .. evm.nh5     import RunInfo
-from .. evm.nh5     import EventInfo
+from .. reco                    import wfm_functions as wfm
+from .. reco                    import tbl_functions as tbl
+from .. reco.sensor_functions   import convert_channel_id_to_IC_id
+from .. reco                    import tbl_functions    as tbl
+from .. reco                    import peak_functions_c as cpf
+from .. evm.nh5                 import FEE
+from .. evm.nh5                 import RunInfo
+from .. evm.nh5                 import EventInfo
+from .. evm.ic_containers       import PeakData
 
-from .  base_cities import SensorResponseCity
+from .. database                import load_db          as db
+from .. types.ic_types          import minmax
+from .  base_cities             import MonteCarloCity
 
 
-class Diomira(SensorResponseCity):
+class Diomira(MonteCarloCity):
     """
     The city of DIOMIRA simulates the response of the energy and
     traking plane sensors.
@@ -48,18 +54,11 @@ class Diomira(SensorResponseCity):
         4. inits the noise sampler and the sipms thesholds
         """
         super().__init__(**kwds)
+        conf = self.conf
+
         self.cnt.set_name('diomira')
         self.cnt.set_counter('nmax', value=self.conf.nmax)
-        self.cnt.init_counter('n_events_tot')
-        self.sp = self.get_sensor_rd_params(self.input_files[0])
-
-        # Create instance of the noise sampler
-        self.noise_sampler = SiPMsNoiseSampler(self.run_number, self.sp.SIPMWL, True)
-
-        # thresholds in adc counts
-        self.sipms_thresholds = (self.sipm_noise_cut
-                              *  self.sipm_adc_to_pes)
-
+        self.cnt.init_counters(('n_events_tot', 'nevt_out'))
 
     def event_loop(self, NEVT, first_event_no, dataVectors):
         """
@@ -75,11 +74,17 @@ class Diomira(SensorResponseCity):
         sipmrd      = dataVectors.sipm
         mc_tracks    = dataVectors.mc
         events_info = dataVectors.events
+
         for evt in range(NEVT):
             # Simulate detector response
-            dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd)
-            dataSiPM_noisy = self.simulate_sipm_response(evt, sipmrd, self.noise_sampler)
+            dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd,
+                                                         self.sipm_adc_to_pes)
+            dataSiPM_noisy = self.simulate_sipm_response(evt, sipmrd,
+                                                         self.noise_sampler,
+                                                         self.sipm_adc_to_pes)
             dataSiPM = wfm.noise_suppression(dataSiPM_noisy, self.sipms_thresholds)
+
+            # simulate trigger
 
             event_number, timestamp = self.event_and_timestamp(evt, events_info)
             local_event_number = event_number + first_event_no
@@ -107,8 +112,8 @@ class Diomira(SensorResponseCity):
 
         RWF = partial(rwf_writer,  h5out,   group_name='RD')
         writers = Namespace(
-        run_and_event = run_and_event_writer(h5out),
-        mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
+            run_and_event = run_and_event_writer(h5out),
+            mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
         # 3 variations on the  RWF writer theme
             rwf  = RWF(table_name='pmtrwf' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
             cwf  = RWF(table_name='pmtblr' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
