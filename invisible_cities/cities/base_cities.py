@@ -14,7 +14,6 @@ Feburary, 2017.
 
 import sys
 from argparse import Namespace
-from operator import attrgetter
 from glob     import glob
 from time     import time
 from os.path  import expandvars
@@ -22,17 +21,21 @@ from os.path  import expandvars
 import numpy  as np
 import tables as tb
 
+from .. core.core_functions    import merge_two_dicts
 from .. core.configure         import configure
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
-from .. types.ic_types         import minmax
+from .. core.exceptions        import UnknownRWF
 from .. core.system_of_units_c import units
-from .. core                   import fit_functions        as fitf
 from .. core.exceptions        import SipmEmptyList
+from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
 from .. database import load_db
 
 from ..io                 import pmap_io          as pio
+from ..io                 import pmap_io          as pio
+from .. io. dst_io        import load_dst
+from .. io.fee_io         import write_FEE_table
 
 from ..reco               import peak_functions_c as cpf
 from ..reco               import sensor_functions as sf
@@ -42,32 +45,31 @@ from ..reco               import pmaps_functions_c  as cpmp
 from ..reco               import dst_functions    as dstf
 from ..reco               import wfm_functions    as wfm
 from ..reco               import tbl_functions    as tbl
-from ..io                 import pmap_io          as pio
-from .. io.fee_io         import write_FEE_table
+from ..reco.corrections        import Correction
+from ..reco.corrections        import Fcorrection
+from ..reco.xy_algorithms      import find_algorithm
 
 from .. evm.ic_containers      import S12Params
 from .. evm.ic_containers      import S12Sum
 from .. evm.ic_containers      import CSum
 from .. evm.ic_containers      import DataVectors
 from .. evm.ic_containers      import PmapVectors
+from .. evm.ic_containers      import TriggerParams
 from .. evm.event_model        import SensorParams
 from .. evm.event_model        import KrEvent
 from ..evm.event_model         import HitCollection
 from ..evm.event_model         import Hit
 from ..evm.nh5                 import DECONV_PARAM
-from ..reco.corrections        import Correction
-from ..reco.corrections        import Fcorrection
-from ..reco.corrections        import LifetimeCorrection
-from ..reco.xy_algorithms      import find_algorithm
 
 from ..sierpe                   import blr
 from ..sierpe                   import fee as FE
+
+from .. types.ic_types         import minmax
 from .. types.ic_types          import Counter
 from .. types.ic_types          import NN
+
 from .. daemons.idaemon         import invoke_daemon
 
-def merge_two_dicts(a,b):
-    return {**a, **b}
 
 
 class City:
@@ -190,7 +192,6 @@ class City:
                                                             dt,
                                                             dt/n_events))
 
-
     def set_up_database(self):
         DataPMT       = load_db.DataPMT (self.run_number)
         DataSiPM      = load_db.DataSiPM(self.run_number)
@@ -299,75 +300,56 @@ class City:
         return pio.s1_s2_si_from_pmaps(s1_dict, s2_dict, s2si_dict, evt_number)
 
 
-class SensorResponseCity(City):
-    """A SensorResponseCity city extends the City base class adding the
-       response (Monte Carlo simulation) of the energy plane and
-       tracking plane sensors (PMTs and SiPMs).
+class RawCity(City):
+    """A Raw city reads Raw Data. Consequently it provides a file loop
+       that access and serves to the event_loop the corresponding raw data
+       vectors.
     """
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
-        self.sipm_noise_cut = self.conf.sipm_noise_cut
-
-    def simulate_sipm_response(self, event, sipmrd,
-                               sipms_noise_sampler):
-        """Add noise with the NoiseSampler class and return
-        the noisy waveform (in adc counts)."""
-        return sf.simulate_sipm_response(event, sipmrd, sipms_noise_sampler, self.sipm_adc_to_pes)
-
-    def simulate_pmt_response(self, event, pmtrd):
-        """ Full simulation of the energy plane response
-        Input:
-         1) extensible array pmtrd
-         2) event_number
-
-        returns:
-        array of raw waveforms (RWF) obtained by convoluting pmtrd with the PMT
-        front end electronics (LPF, HPF filters)
-        array of BLR waveforms (only decimation)
-        """
-        return sf.simulate_pmt_response(event, pmtrd, self.adc_to_pes)
-
+        self.raw_data_type = self.conf.raw_data_type
     def file_loop(self):
         """
-        The file loop of a SensorResponseCity:
-        1. access RD vectors for PMT
+        The file loop of a Raw city:
+        1. access RWF vectors for PMT and SiPMs
         2. access run and event info
         3. access MC track info
-        4. calls event_loop
+        4. calls event_loop passing a DataVector which holds rwf, mc and event info
+
         """
-
         for filename in self.input_files:
-            first_event_no = self.event_number_from_input_file_name(filename)
-            print("Opening file {filename} with first event no {first_event_no}"
-                  .format(**locals()))
+            print("Opening", filename, end="... ")
             with tb.open_file(filename, "r") as h5in:
-                # NEVT is the total number of events in pmtrd and sipmrd
-                # pmtrd = pmrtd[events][NPMT][rd_waveform]
-                # sipmrd = sipmrd[events][NPMT][rd_waveform]
-                NEVT, pmtrd, sipmrd = self.get_rd_vectors(h5in)
-                events_info         = self.get_run_and_event_info(h5in)
-                mc_tracks           = self.get_mc_tracks(h5in)
-                dataVectors = DataVectors(pmt=pmtrd, sipm=sipmrd,
-                                          mc=mc_tracks, events=events_info)
-                self.event_loop(NEVT, first_event_no, dataVectors)
+
+                events_info = self.get_run_and_event_info(h5in)
+                mc_tracks   = self.get_mc_tracks(h5in)
+                dataVectors = 0
+                NEVT        = 0
+
+                if self.raw_data_type == 'RWF':
+                    NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
+                    dataVectors = DataVectors(pmt=pmtrwf, sipm=sipmrwf,
+                                             mc=mc_tracks, events=events_info)
+                elif self.raw_data_type == 'MCRD':
+                    NEVT, pmtrd, sipmrd     = self.get_rd_vectors(h5in)
+                    dataVectors = DataVectors(pmt=pmtrd, sipm=sipmrd,
+                                             mc=mc_tracks, events=events_info)
+                else:
+                    raise UnknownRWF
+
+                self.event_loop(NEVT, dataVectors)
 
 
-    @property
-    def FE_t_sample(self):
-        return FE.t_sample
-
-    @staticmethod
-    def write_simulation_parameters_table(filename):
-        write_FEE_table(filename)
-
-
-class DeconvolutionCity(City):
+class DeconvolutionCity(RawCity):
     """A Deconvolution city extends the City base class adding the
        deconvolution step, which transforms RWF into CWF.
        The parameters of the deconvolution are the number of samples
        used to compute the baseline (n_baseline) and the threshold to
-       thr_trigger in the rising signal (thr_trigger)
+       thr_trigger in the rising signal (thr_trigger).
+
+       Since a Deconvolution city reads RWF, it is also a RawCity.
+
     """
 
     def __init__(self, **kwds):
@@ -403,28 +385,6 @@ class DeconvolutionCity(City):
                               n_baseline            = self.n_baseline,
                               thr_trigger           = self.thr_trigger,
                               acum_discharge_length = self.acum_discharge_length)
-
-    def file_loop(self):
-        """
-        The file loop of a deconvolution city:
-        1. access RWF vectors for PMT and SiPMs
-        2. access run and event info
-        3. access MC track info
-        4. calls event_loop
-        """
-        # import pdb; pdb.set_trace()
-
-        for filename in self.input_files:
-            print("Opening", filename, end="... ")
-            with tb.open_file(filename, "r") as h5in:
-
-                NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
-                events_info              = self.get_run_and_event_info(h5in)
-                mc_tracks                = self.get_mc_tracks(h5in)
-                dataVectors              = DataVectors(pmt=pmtrwf, sipm=sipmrwf,
-                                                       mc=mc_tracks,
-                                                       events=events_info)
-                self.event_loop(NEVT, dataVectors)
 
 
 class CalibratedCity(DeconvolutionCity):
@@ -537,45 +497,27 @@ class PmapCity(CalibratedCity):
         return s1, s2, s2si
 
 
-class MapCity(City):
+class DstCity(City):
+    """A DstCity reads a list of KDSTs """
     def __init__(self, **kwds):
         super().__init__(**kwds)
 
         conf = self.conf
-        required_names = 'lifetime u_lifetime xmin xmax ymin ymax xbins ybins'.split()
-        lifetime, u_lifetime, xmin, xmax, ymin, ymax, xbins, ybins = attrgetter(*required_names)(conf)
+        self._dst_group  = conf.dst_group
+        self._dst_node   = conf.dst_node
 
-        self.  _lifetimes = [lifetime]   if not np.shape(  lifetime) else   lifetime
-        self._u_lifetimes = [u_lifetime] if not np.shape(u_lifetime) else u_lifetime
-        self._lifetime_corrections = tuple(map(LifetimeCorrection, self._lifetimes, self._u_lifetimes))
-
-        xmin = self.det_geo.XMIN[0] if xmin is None else xmin
-        xmax = self.det_geo.XMAX[0] if xmax is None else xmax
-        ymin = self.det_geo.YMIN[0] if ymin is None else ymin
-        ymax = self.det_geo.YMAX[0] if ymax is None else ymax
-
-        self._xbins  = xbins
-        self._ybins  = ybins
-        self._xrange = xmin, xmax
-        self._yrange = ymin, ymax
-
-    def xy_correction(self, X, Y, E):
-        xs, ys, es, us = \
-        fitf.profileXY(X, Y, E, self._xbins, self._ybins, self._xrange, self._yrange)
-
-        norm_index = xs.size//2, ys.size//2
-        return Correction((xs, ys), es, us, norm_strategy="index", index=norm_index)
-
-    def xy_statistics(self, X, Y):
-        return np.histogram2d(X, Y, (self._xbins, self._ybins), (self._xrange, self._yrange))
+        self.dsts = [load_dst(input_file, self._dst_group, self._dst_node)
+                        for input_file in self.input_files]
 
 
-class KrCity(City):
-    """A city that computes and writes a KrEvent"""
+class PmpCity(City):
+    """A Pmp city reads PMAPS. Consequently it provides a file loop
+       that access and serves to the event_loop the corresponding PMAPS
+       vectors.
+    """
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
-        self.reco_algorithm = find_algorithm(self.conf.reco_algorithm)
 
     def file_loop(self):
         """
@@ -595,10 +537,19 @@ class KrCity(City):
                 continue
 
             event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
+
             pmapVectors               = PmapVectors(s1=s1_dict, s2=s2_dict, s2si=s2si_dict,
                                                     events=event_numbers, timestamps=timestamps)
 
             self.event_loop(pmapVectors)
+
+class KrCity(PmpCity):
+    """A city that read pmaps and computes/writes a KrEvent"""
+
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.reco_algorithm = find_algorithm(self.conf.reco_algorithm)
+
 
     def compute_xy_position(self, s2si, peak_no):
         """
@@ -688,7 +639,7 @@ class KrCity(City):
 
 
 class HitCity(KrCity):
-    """A city that computes and writes a hit event"""
+    """A city that reads PMPAS and computes/writes a hit event"""
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.rebin  = self.conf.rebin
@@ -757,3 +708,64 @@ class HitCity(KrCity):
             npeak += 1
 
         return hitc
+
+
+class MonteCarloCity(RawCity):
+    """A SMonteCarloCity city extends the City base class adding the
+       response (Monte Carlo simulation) of the sensors (energy plane and
+       tracking plane) as well as the response of the trigger.
+    """
+
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        conf = self.conf
+        self.sp = self.get_sensor_rd_params(self.input_files[0])
+
+        self.sipm_noise_cut = conf.sipm_noise_cut
+        # Create instance of the noise sampler
+        self.noise_sampler    = SiPMsNoiseSampler(self.run_number, self.sp.SIPMWL, True)
+        # thresholds in adc counts
+        self.sipms_thresholds = self.sipm_noise_cut *  self.sipm_adc_to_pes
+        self.trigger_params   = self.trigger_parameters()
+
+    @staticmethod
+    def simulate_sipm_response(self, event, sipmrd,
+                               sipms_noise_sampler, sipm_adc_to_pes):
+        """Add noise with the NoiseSampler class and return
+        the noisy waveform (in adc counts)."""
+        return sf.simulate_sipm_response(event, sipmrd, sipms_noise_sampler,
+                                         sipm_adc_to_pes)
+
+    @staticmethod
+    def simulate_pmt_response(self, event, pmtrd, sipm_adc_to_pes):
+        """ Full simulation of the energy plane response
+        Input:
+         1) extensible array pmtrd
+         2) event_number
+
+        returns:
+        array of raw waveforms (RWF) obtained by convoluting pmtrd with the PMT
+        front end electronics (LPF, HPF filters)
+        array of BLR waveforms (only decimation)
+        """
+        return sf.simulate_pmt_response(event, pmtrd, sipm_adc_to_pes)
+
+    def trigger_parameters(self):
+        """Simulate trigger parameters."""
+        conf = self.conf
+        height = minmax(min = conf.min_height, max = conf.max_height)
+        charge = minmax(min = conf.min_charge, max = conf.max_charge)
+        width  = minmax(min = conf.min_width , max = conf.max_width )
+        return TriggerParams(trigger_channels    = conf.tr_channels,
+                             min_number_channels = conf.min_number_channels,
+                             charge              = charge * conf.data_mc_ratio,
+                             height              = height * conf.data_mc_ratio,
+                             width               = width)
+
+    @property
+    def FE_t_sample(self):
+        return FE.t_sample
+
+    @staticmethod
+    def write_simulation_parameters_table(filename):
+        write_FEE_table(filename)
