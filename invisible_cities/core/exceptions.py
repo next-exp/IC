@@ -13,6 +13,9 @@ class NoInputFiles(ICException):
 class NoOutputFile(ICException):
     pass
 
+class UnknownRWF(ICException):
+    pass
+
 class ParameterNotSet(ICException):
     pass
 
