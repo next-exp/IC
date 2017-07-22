@@ -331,14 +331,17 @@ class RawCity(City):
                     NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
                     dataVectors = DataVectors(pmt=pmtrwf, sipm=sipmrwf,
                                              mc=mc_tracks, events=events_info)
+
+                    self.event_loop(NEVT, dataVectors)
                 elif self.raw_data_type == 'MCRD':
+                    first_event_no = self.event_number_from_input_file_name(filename)
                     NEVT, pmtrd, sipmrd     = self.get_rd_vectors(h5in)
                     dataVectors = DataVectors(pmt=pmtrd, sipm=sipmrd,
                                              mc=mc_tracks, events=events_info)
+
+                    self.event_loop(NEVT, first_event_no, dataVectors)
                 else:
                     raise UnknownRWF
-
-                self.event_loop(NEVT, dataVectors)
 
 
 class DeconvolutionCity(RawCity):
@@ -729,7 +732,7 @@ class MonteCarloCity(RawCity):
         self.trigger_params   = self.trigger_parameters()
 
     @staticmethod
-    def simulate_sipm_response(self, event, sipmrd,
+    def simulate_sipm_response(event, sipmrd,
                                sipms_noise_sampler, sipm_adc_to_pes):
         """Add noise with the NoiseSampler class and return
         the noisy waveform (in adc counts)."""
@@ -737,7 +740,7 @@ class MonteCarloCity(RawCity):
                                          sipm_adc_to_pes)
 
     @staticmethod
-    def simulate_pmt_response(self, event, pmtrd, sipm_adc_to_pes):
+    def simulate_pmt_response(event, pmtrd, sipm_adc_to_pes):
         """ Full simulation of the energy plane response
         Input:
          1) extensible array pmtrd
