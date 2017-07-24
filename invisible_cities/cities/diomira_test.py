@@ -81,6 +81,8 @@ def test_diomira_identify_bug(ICDIR):
 def test_diomira_copy_mc_and_offset(config_tmpdir):
     PATH_IN = os.path.join(os.environ['ICDIR'], 'database/test_data/', 'electrons_40keV_z250_MCRD.h5')
     PATH_OUT = os.path.join(config_tmpdir,                             'electrons_40keV_z250_RWF.h5')
+    # PATH_OUT = os.path.join(os.environ['IC_DATA'],                             'electrons_40keV_z250_test_RWF.h5')
+
     start_evt  = Diomira.event_number_from_input_file_name(PATH_IN)
     run_number = 0
     nrequired = 2
