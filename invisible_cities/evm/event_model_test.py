@@ -120,12 +120,12 @@ def test_hit(ci, hi):
 
     assert h.peak_number == peak_number
     assert h.npeak       == peak_number
-    np.isclose (h.z        ,   z, rtol=1e-4)
+    #np.isclose (h.z        ,   z, rtol=1e-4)
     np.isclose (h.Z        ,   z, rtol=1e-4)
-    np.isclose (h.s2_energy,   E, rtol=1e-4)
+    #np.isclose (h.s2_energy,   E, rtol=1e-4)
     np.isclose (h.E        ,   E, rtol=1e-4)
     np.allclose(h.XYZ      , xyz, rtol=1e-4)
-    np.allclose(h.VXYZ     , xyz, rtol=1e-4)
+    #np.allclose(h.VXYZ     , xyz, rtol=1e-4)
 
 
 @mark.parametrize("test_class",
