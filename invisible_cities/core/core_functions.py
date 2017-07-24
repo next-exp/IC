@@ -6,6 +6,10 @@ import numpy as np
 import time
 
 
+def merge_two_dicts(a,b):
+    return {**a, **b}
+
+
 def timefunc(f):
     """
     Decorator for function timing.
