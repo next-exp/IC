@@ -113,7 +113,7 @@ class Cluster(BHit):
         self.nsipm   = nsipm
 
     @property
-    def pos (self): return self._xy.pos
+    def posxy (self): return self._xy.pos
 
     @property
     def std (self): return self._xy_std
