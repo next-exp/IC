@@ -90,7 +90,7 @@ def corona(pos, qs,
         # find locmax (the baryc of charge in SiPMs less than lm_radius from hottest_sipm)
         within_lm_radius = get_nearby_sipm_inds(pos[hottest_sipm], lm_radius, pos, qs)
         new_local_maximum  = barycenter(pos[within_lm_radius],
-                                        qs [within_lm_radius])[0].pos
+                                        qs [within_lm_radius])[0].posxy
 
         # new_lm_radius is an array of the responsive sipms less than
         # new_lm_radius from locmax
