@@ -94,7 +94,7 @@ cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr)
 
 
 cpdef find_s12(double [:] csum,  int [:] index,
-               time=*, length=*, int stride=*, rebin=*, rebin_stride=*)
+               time, length, int stride, rebin, rebin_stride)
 
 """
 rebins  a waveform according to stride
