@@ -45,3 +45,8 @@ def test_DetectorGeometry():
     assert geo['ZMIN'][0] ==    0
     assert geo['ZMAX'][0] ==  532
     assert geo['RMAX'][0] ==  198
+
+
+def test_mc_runs_equal_data_runs():
+    assert (DB.DataPMT (-3550).values == DB.DataPMT (3550).values).all()
+    assert (DB.DataSiPM(-3550).values == DB.DataSiPM(3550).values).all()
