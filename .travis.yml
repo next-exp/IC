@@ -19,6 +19,7 @@ branches:
 
 install:
   - source manage.sh install ${IC_PYTHON_VERSION}
+  - bash manage.sh download_test_db_dev
 
 script:
   - HYPOTHESIS_PROFILE=hard bash manage.sh run_tests_par 4
