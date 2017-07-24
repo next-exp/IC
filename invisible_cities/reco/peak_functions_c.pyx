@@ -244,8 +244,7 @@ cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr):
 
 
 cpdef find_s12(double [:] csum,  int [:] index,
-               time=(), length=(),
-               int stride=4, rebin=False, rebin_stride=40):
+               time, length, int stride, rebin, rebin_stride):
     """
     Find S1/S2 peaks.
     input:
