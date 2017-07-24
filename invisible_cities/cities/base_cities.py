@@ -1,15 +1,9 @@
 """
-This module defines base classes for the IC cities. The classes are:
-City: Handles input and output files, compression, and access to data base
-DeconvolutionCity: A City that performs deconvolution of the PMT RWFs
-CalibratedCity: A DeconvolutionCity that perform the calibrated sum of the
-                PMTs and computes the calibrated signals in the SiPM plane.
-PmapCity: A CalibratedCity that computes S1, S2 and S2Si that togehter
-          constitute a PMAP.
-SensorResponseCity: A city that describes sensor response
+code: base_cities.py
+description: defines base classes for the IC cities.
+credits: see ic_authors_and_legal.rst in /doc
+last revised: JJGC, July-2017
 
-Authors: J.J. Gomez-Cadenas and J. Generowicz.
-Feburary, 2017.
 """
 
 import sys
@@ -21,50 +15,53 @@ from os.path  import expandvars
 import numpy  as np
 import tables as tb
 
-from .. core.core_functions    import merge_two_dicts
-from .. core.configure         import configure
-from .. core.exceptions        import NoInputFiles
-from .. core.exceptions        import NoOutputFile
-from .. core.exceptions        import UnknownRWF
-from .. core.system_of_units_c import units
-from .. core.exceptions        import SipmEmptyList
+from .. core.core_functions     import merge_two_dicts
+from .. core.configure          import configure
+from .. core.exceptions         import NoInputFiles
+from .. core.exceptions         import NoOutputFile
+from .. core.exceptions         import UnknownRWF
+from .. core.exceptions         import FileLoopMethodNotSet
+from .. core.exceptions         import EventLoopMethodNotSet
+from .. core.system_of_units_c  import units
+from .. core.exceptions         import SipmEmptyList
 from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
 from .. database import load_db
 
-from ..io                 import pmap_io          as pio
-from ..io                 import pmap_io          as pio
-from .. io. dst_io        import load_dst
-from .. io.fee_io         import write_FEE_table
+from ..io                       import pmap_io          as pio
+from ..io                       import pmap_io          as pio
+from .. io. dst_io              import load_dst
+from .. io.fee_io               import write_FEE_table
 
-from ..reco               import peak_functions_c as cpf
-from ..reco               import sensor_functions as sf
-from ..reco               import peak_functions   as pf
-from ..reco               import pmaps_functions  as pmp
-from ..reco               import pmaps_functions_c  as cpmp
-from ..reco               import dst_functions    as dstf
-from ..reco               import wfm_functions    as wfm
-from ..reco               import tbl_functions    as tbl
-from ..reco.corrections        import Correction
-from ..reco.corrections        import Fcorrection
-from ..reco.xy_algorithms      import find_algorithm
+from ..reco                     import peak_functions_c as cpf
+from ..reco                     import sensor_functions as sf
+from ..reco                     import peak_functions   as pf
+from ..reco                     import pmaps_functions  as pmp
+from ..reco                     import pmaps_functions_c  as cpmp
+from ..reco                     import dst_functions    as dstf
+from ..reco                     import wfm_functions    as wfm
+from ..reco                     import tbl_functions    as tbl
+from .. reco.sensor_functions   import convert_channel_id_to_IC_id
+from ..reco.corrections         import Correction
+from ..reco.corrections         import Fcorrection
+from ..reco.xy_algorithms       import find_algorithm
 
-from .. evm.ic_containers      import S12Params
-from .. evm.ic_containers      import S12Sum
-from .. evm.ic_containers      import CSum
-from .. evm.ic_containers      import DataVectors
-from .. evm.ic_containers      import PmapVectors
-from .. evm.ic_containers      import TriggerParams
-from .. evm.event_model        import SensorParams
-from .. evm.event_model        import KrEvent
-from ..evm.event_model         import HitCollection
-from ..evm.event_model         import Hit
-from ..evm.nh5                 import DECONV_PARAM
+from .. evm.ic_containers       import S12Params
+from .. evm.ic_containers       import S12Sum
+from .. evm.ic_containers       import CSum
+from .. evm.ic_containers       import DataVectors
+from .. evm.ic_containers       import PmapVectors
+from .. evm.ic_containers       import TriggerParams
+from .. evm.event_model         import SensorParams
+from .. evm.event_model         import KrEvent
+from ..evm.event_model          import HitCollection
+from ..evm.event_model          import Hit
+from ..evm.nh5                  import DECONV_PARAM
 
 from ..sierpe                   import blr
 from ..sierpe                   import fee as FE
 
-from .. types.ic_types         import minmax
+from .. types.ic_types          import minmax
 from .. types.ic_types          import Counter
 from .. types.ic_types          import NN
 
@@ -109,6 +106,47 @@ class City:
 
         self.set_up_database()
 
+    @classmethod
+    def drive(cls, argv):
+        """The drive methods allows invocation of the cities and their daemons
+        through the command line.
+        1. It reads the configuration file and calls the instances of the cities,
+           passing a dictionary of arguments.
+        2. It instantiates the daemons defined in the city configuration and
+           sets them as attributes of the city.
+        3. Calls the method "go" to launch execution of the city.
+        4. Calls the method "end" for post-processing.
+
+        """
+        conf = configure(argv)
+        opts = conf.as_namespace
+        if not opts.hide_config:
+            conf.display()
+        if opts.print_config_only:
+            return
+        instance = cls(**conf.as_dict)
+
+        # set the deamons
+        if 'daemons' in conf.as_dict:
+            d_list_name = conf.as_dict['daemons']
+            instance.daemons = list(map(invoke_daemon, d_list_name))
+        instance.go()
+        instance.end()
+
+    def go(self):
+        """Launch the execution of the city (calling method run)
+        and prints execution statistics.
+
+        """
+        t0 = time()
+        self.run()
+        t1 = time()
+        dt = t1 - t0
+        n_events = self.cnt.counter_value('n_events_tot')
+        print("run {} evts in {} s, time/event = {}".format(n_events,
+                                                            dt,
+                                                            dt/n_events))
+
     def run(self):
         """The (base) run method of a city does the following chores:
         1. Calls a display_IO_info() function (to be provided by the concrete cities)
@@ -117,6 +155,7 @@ class City:
         4. gets the writers for the specific city.
         5. Pass the writers to the file_loop() method.
         6. returns the counter dictionary.
+
         """
         #import pdb; pdb.set_trace()
         self.display_IO_info()
@@ -128,12 +167,11 @@ class City:
             self.writers = self.get_writers(h5out)
             self.file_loop()
 
-
-
     def end(self):
-        """The (base) end method of a city does the following chores:
-        1. prints the counter dictionary
-        2. calls the end method of the daemons if they have been invoked.
+        """Postoprocessing after city execution:
+        1. calls the end method of the daemons if they have been invoked.
+        2. prints the counter dictionary
+
         """
         if hasattr(self, 'daemons'):
             for deamon in self.daemons:
@@ -149,48 +187,20 @@ class City:
                           """.format(self.__class__.__name__, self.nmax, self.input_files, self.output_file))
 
     def file_loop(self):
-        """Must be implemented by concrete cities"""
-        pass
+        """Must be implemented by cities"""
+        raise FileLoopMethodNotSet
 
     def event_loop(self):
-        """Must be implemented by concrete cities"""
-        pass
+        """Must be implemented by cities"""
+        raise EventLoopMethodNotSet
 
     def write_parameters(self, h5out):
-        """Must be implemented by concrete cities"""
+        """Must be implemented by cities"""
         pass
 
     def get_writers(self, h5out):
-        """Must be implemented by concrete cities"""
+        """Must be implemented by cities"""
         pass
-
-    @classmethod
-    def drive(cls, argv):
-        conf = configure(argv)
-        opts = conf.as_namespace
-        if not opts.hide_config:
-            conf.display()
-        if opts.print_config_only:
-            return
-        instance = cls(**conf.as_dict)
-
-        # set the deamons
-
-        if 'daemons' in conf.as_dict:
-            d_list_name = conf.as_dict['daemons']
-            instance.daemons = list(map(invoke_daemon, d_list_name))
-        instance.go()
-        instance.end()
-
-    def go(self):
-        t0 = time()
-        self.run()
-        t1 = time()
-        dt = t1 - t0
-        n_events = self.cnt.counter_value('n_events_tot')
-        print("run {} evts in {} s, time/event = {}".format(n_events,
-                                                            dt,
-                                                            dt/n_events))
 
     def set_up_database(self):
         DataPMT       = load_db.DataPMT (self.run_number)
@@ -301,14 +311,18 @@ class City:
 
 
 class RawCity(City):
-    """A Raw city reads Raw Data. Consequently it provides a file loop
-       that access and serves to the event_loop the corresponding raw data
-       vectors.
-    """
+    """A Raw city reads Raw Data.
+       1. It provides a file loop that access Raw Data. The type of
+       Raw Data is controled by the parameter raw_data_type and can be
+       RWF (Raw Waveforms) or MCRD (Monte Carlo Raw Waveforms)
+       2. It calls the event loop passing the RD, event and run info and (eventually)
+       Monte Carlo Track info.
 
+    """
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.raw_data_type = self.conf.raw_data_type
+
     def file_loop(self):
         """
         The file loop of a Raw city:
@@ -513,8 +527,8 @@ class DstCity(City):
                         for input_file in self.input_files]
 
 
-class PmpCity(City):
-    """A Pmp city reads PMAPS. Consequently it provides a file loop
+class PCity(City):
+    """A PCity reads PMAPS. Consequently it provides a file loop
        that access and serves to the event_loop the corresponding PMAPS
        vectors.
     """
@@ -546,7 +560,8 @@ class PmpCity(City):
 
             self.event_loop(pmapVectors)
 
-class KrCity(PmpCity):
+
+class KrCity(PCity):
     """A city that read pmaps and computes/writes a KrEvent"""
 
     def __init__(self, **kwds):
@@ -712,24 +727,66 @@ class HitCity(KrCity):
 
         return hitc
 
+class TriggerEmulationCity(PmapCity):
+    """Emulates the trigger in the FPGA.
+       1. It is a PmapCity since the FPGA performs deconvolution and PMAP
+       searches to set the trigger.
 
-class MonteCarloCity(RawCity):
-    """A SMonteCarloCity city extends the City base class adding the
-       response (Monte Carlo simulation) of the sensors (energy plane and
-       tracking plane) as well as the response of the trigger.
     """
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
-        conf = self.conf
-        self.sp = self.get_sensor_rd_params(self.input_files[0])
-
-        self.sipm_noise_cut = conf.sipm_noise_cut
-        # Create instance of the noise sampler
-        self.noise_sampler    = SiPMsNoiseSampler(self.run_number, self.sp.SIPMWL, True)
-        # thresholds in adc counts
-        self.sipms_thresholds = self.sipm_noise_cut *  self.sipm_adc_to_pes
         self.trigger_params   = self.trigger_parameters()
+
+    def trigger_parameters(self):
+        """Simulate trigger parameters."""
+        conf = self.conf
+        height = minmax(min = conf.min_height, max = conf.max_height)
+        charge = minmax(min = conf.min_charge, max = conf.max_charge)
+        width  = minmax(min = conf.min_width , max = conf.max_width )
+        return TriggerParams(trigger_channels    = conf.tr_channels,
+                             min_number_channels = conf.min_number_channels,
+                             charge              = charge * conf.data_mc_ratio,
+                             height              = height * conf.data_mc_ratio,
+                             width               = width)
+
+    def emulate_trigger(self, RWF):
+        """emulates trigger by simulating:
+        1. online deconvolution of the waveforms.
+        2. peak computation in the FPGA
+        """
+
+        CWF = self.deconv_pmt(RWF)
+        IC_ids_selection = convert_channel_id_to_IC_id(self.DataPMT,
+                                                       self.trigger_params.trigger_channels)
+
+        peak_data = {}
+        for pmt_id in IC_ids_selection:
+            # Emulate zero suppression in the FPGA
+            _, wfm_index = cpf.wfzs(CWF[pmt_id],
+                                          threshold = self.trigger_params.height.min)
+
+            # Emulate peak search (s2) in the FPGA
+            s2 =  cpf.find_s2(CWF[pmt_id], wfm_index, **self.s2_params._asdict())
+            peak_data[pmt_id] = s2
+
+        return peak_data
+
+
+class MonteCarloCity(TriggerEmulationCity):
+    """A MonteCarloCity city:
+     1. Simulates the response of sensors (energy plane and tracking plane)
+        that transforms MCRD in RWF.
+     2. Emulates the trigger prepocessor: the functionality is provided
+        by the inheritance from TriggerEmulationCity.
+
+    """
+
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        # Create instance of the noise sampler
+        self.sp               = self.get_sensor_rd_params(self.input_files[0])
+        self.noise_sampler    = SiPMsNoiseSampler(self.run_number, self.sp.SIPMWL, True)
 
     @staticmethod
     def simulate_sipm_response(event, sipmrd,
@@ -753,17 +810,6 @@ class MonteCarloCity(RawCity):
         """
         return sf.simulate_pmt_response(event, pmtrd, sipm_adc_to_pes)
 
-    def trigger_parameters(self):
-        """Simulate trigger parameters."""
-        conf = self.conf
-        height = minmax(min = conf.min_height, max = conf.max_height)
-        charge = minmax(min = conf.min_charge, max = conf.max_charge)
-        width  = minmax(min = conf.min_width , max = conf.max_width )
-        return TriggerParams(trigger_channels    = conf.tr_channels,
-                             min_number_channels = conf.min_number_channels,
-                             charge              = charge * conf.data_mc_ratio,
-                             height              = height * conf.data_mc_ratio,
-                             width               = width)
 
     @property
     def FE_t_sample(self):
