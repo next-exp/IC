@@ -16,6 +16,7 @@ from .       event_model import Event
 
 from .       event_model import Cluster
 from .       event_model import Hit
+from .       event_model import Voxel
 from .       event_model import HitCollection
 from .       event_model import HitCollection
 from .       event_model import KrEvent
@@ -37,7 +38,13 @@ def event_input(draw):
     time   = draw(floats  (allow_nan=False))
     return evt_no, time
 
-
+@composite
+def voxel_input(draw, min_value=0, max_value=100):
+    x     = draw(floats  (  1,   5))
+    y     = draw(floats  (-10,  10))
+    z     = draw(floats  (.01,  .5))
+    E     = draw(floats  ( 50, 100))
+    return x, y, z, E
 
 @composite
 def cluster_input(draw, min_value=0, max_value=100):
@@ -106,7 +113,7 @@ def test_cluster(ci):
     np.allclose(c.XY,       xyar, rtol=1e-4)
     np.isclose (c.R   ,     r, rtol=1e-4)
     np.isclose (c.Phi ,     phi, rtol=1e-4)
-    np.allclose(c.pos ,     pos, rtol=1e-4)
+    np.allclose(c.posxy ,   pos, rtol=1e-4)
 
 
 @given(cluster_input(1), hit_input(1))
@@ -120,12 +127,26 @@ def test_hit(ci, hi):
 
     assert h.peak_number == peak_number
     assert h.npeak       == peak_number
-    #np.isclose (h.z        ,   z, rtol=1e-4)
-    np.isclose (h.Z        ,   z, rtol=1e-4)
-    #np.isclose (h.s2_energy,   E, rtol=1e-4)
-    np.isclose (h.E        ,   E, rtol=1e-4)
-    np.allclose(h.XYZ      , xyz, rtol=1e-4)
-    #np.allclose(h.VXYZ     , xyz, rtol=1e-4)
+
+    np.isclose (h.X        , x ,            rtol=1e-4)
+    np.isclose (h.Y        , y ,            rtol=1e-4)
+    np.isclose (h.Z        , z,             rtol=1e-4)
+    np.isclose (h.E        , E,             rtol=1e-4)
+    np.allclose(h.XYZ      , xyz,           rtol=1e-4)
+    np.allclose(h.pos      , np.array(xyz), rtol=1e-4)
+
+@given(voxel_input(1))
+def test_voxel(vi):
+    x, y, z, E = vi
+    xyz = x, y, z
+    v = Voxel(x, y, z, E)
+
+    np.allclose(v.XYZ  , xyz,                rtol=1e-4)
+    np.allclose(v.pos , np.array(xyz),       rtol=1e-4)
+    np.isclose (v.E    , E,                  rtol=1e-4)
+    np.isclose (v.X    , x ,                 rtol=1e-4)
+    np.isclose (v.Y    , y ,                 rtol=1e-4)
+    np.isclose (v.Z    , z ,                 rtol=1e-4)
 
 
 @mark.parametrize("test_class",
