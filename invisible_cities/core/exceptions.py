@@ -10,6 +10,14 @@ class NoInputFiles(ICException):
     """ Input files list is not defined """
     pass
 
+class FileLoopMethodNotSet(ICException):
+    """ File loop method no defined by cities"""
+    pass
+
+class EventLoopMethodNotSet(ICException):
+    """ Event loop method no defined by cities"""
+    pass
+
 class NoOutputFile(ICException):
     pass
 
