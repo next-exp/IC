@@ -466,14 +466,14 @@ class PmapCity(CalibratedCity):
                                    stride              = conf.s1_stride,
                                    length = minmax(min = conf.s1_lmin,
                                                    max = conf.s1_lmax),
-                                   rebin               = False)
+                                   rebin               = conf.s1_rebin)
 
         self.s2_params = S12Params(time = minmax(min   = conf.s2_tmin,
                                                  max   = conf.s2_tmax),
                                    stride              = conf.s2_stride,
                                    length = minmax(min = conf.s2_lmin,
                                                    max = conf.s2_lmax),
-                                   rebin               = True)
+                                   rebin               = conf.s2_rebin)
 
         self.thr_sipm_s2 = conf.thr_sipm_s2
 
