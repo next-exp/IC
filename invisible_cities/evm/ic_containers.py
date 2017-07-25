@@ -1,3 +1,13 @@
+"""
+code: ic_cotainers.py
+description: namedtuples describing miscellaenous containers to
+pass info around.
+
+credits: see ic_authors_and_legal.rst in /doc
+
+last revised: JJGC, 10-July-2017
+"""
+
 import sys
 
 from collections import namedtuple
