@@ -263,7 +263,7 @@ def _sipm_s2(dSIPM, s2l, thr=5*units.pes):
     return SIPML
 
 
-def compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
+def _compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
                            s1par, s2par, thresholds,
                            calib_vectors, deconv_params):
 
