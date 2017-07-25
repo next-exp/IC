@@ -59,3 +59,10 @@ cdef class S2Si(S2):
 
 """Given an s2d and an s2sid, return an s2d containing only the peaks shared by s2sid"""
 cpdef check_s2d_and_s2sid_share_peaks(dict s2d, dict s2sid)
+
+cdef class S2Pmt(S2):
+  cdef public s2pmtd
+  cdef dict _s2pmtd
+  cpdef pmt_waveform(self, int peak_number, int pmt_number)
+  cpdef pmt_total_energy(self, int peak_number, int pmt_number)
+  cpdef store(self, table, event_number)
