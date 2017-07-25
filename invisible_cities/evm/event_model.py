@@ -9,7 +9,7 @@ from .. core.exceptions        import SipmNotFound
 from .. core.core_functions    import loc_elem_1d
 from .. core.system_of_units_c import units
 
-ZANODE = 0
+ZANODE = -9.425 * units.mm
 
 class SensorParams:
     """Transient class storing sensor parameters."""
