@@ -11,13 +11,14 @@ from hypothesis.extra.numpy import arrays
 
 from .. types.ic_types_c    import xy
 from .. types.ic_types_c    import minmax
+from .. core.exceptions     import SumNotEqualToSumOfParts
 
-from .. reco import  pmaps_functions as pmapf
 from .. reco.pmaps_functions_c import integrate_sipm_charges_in_peak
-
+from .. reco  import pmaps_functions as pmapf
 from .  pmaps import S1
 from .  pmaps import S2
 from .  pmaps import S2Si
+from .  pmaps import S2Pmt
 from .  pmaps import Peak
 from .  pmaps import check_s2d_and_s2sid_share_peaks
 
@@ -210,3 +211,16 @@ def test_check_s2d_and_s2sid_share_peaks():
     for pn in s2d_shared_peaks:
         assert pn in s2sid
         assert pn % 2 == 0
+
+
+def test_S2Pmt_raises_error_when_s2_peak_E_not_equal_to_sum_of_s2pmt_peak():
+    timebins = 10
+    npmts  = 12
+    s2pmtd = {0: np.random.random((npmts, timebins))}
+    s2d    = {0: np.array([list(range(timebins)), s2pmtd[0].sum(axis=0)])}
+    s2pmtd[0][-1, -1] += .001
+    try:
+        S2Pmt(s2d, s2pmtd)
+        assert False
+    except SumNotEqualToSumOfParts:
+        pass
