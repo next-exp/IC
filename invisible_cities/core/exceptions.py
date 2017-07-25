@@ -44,3 +44,6 @@ class NoHits(ICException):
 
 class NoVoxels(ICException):
     pass
+
+class SumNotEqualToSumOfParts(ICException):
+    pass
