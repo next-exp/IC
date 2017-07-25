@@ -334,7 +334,7 @@ def _compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
 
 def compute_pmaps_from_rwf(event, pmtrwf, sipmrwf,
                            s1par, s2par, thresholds,
-                           calib_params, deconv_params):
+                           calib_vectors, deconv_params):
 
     """Compute pmaps from rwf
     :param event:        event number
@@ -346,9 +346,9 @@ def compute_pmaps_from_rwf(event, pmtrwf, sipmrwf,
     :param thresholds:   thresholds for searches
                          ('ThresholdParams',
                           'thr_s1 thr_s2 thr_MAU thr_sipm thr_SIPM')
-    :param calib_params: calibration vectors
-                         ('CalibParams' ,
-                         'coeff_c, coeff_blr, adc_to_pes_pmt adc_to_pes_sipm')
+    :param calib_vectors: calibration vectors
+                         ('CalibVectors' ,
+                         'channel_id coeff_blr coeff_c adc_to_pes adc_to_pes_sipm pmt_active')
     :param deconv_params: deconvolution parameters
                          ('DeconvParams', 'n_baseline thr_trigger')
 
