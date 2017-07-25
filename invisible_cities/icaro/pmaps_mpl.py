@@ -39,19 +39,19 @@ def plot_s12(s12, figsize=(6,6)):
             plt.plot(wfm.t/units.mus, wfm.E)
 
 
-def plot_s2si_map(s2si, cmap='Blues'):
+def plot_s2si_map(s2si, run_number=0, cmap='Blues'):
         """Plot a map of the energies of S2Si objects."""
 
-        DataSensor = load_db.DataSiPM(0)
+        DataSensor = load_db.DataSiPM(run_number)
         radius = 2
         xs = DataSensor.X.values
         ys = DataSensor.Y.values
         r = np.ones(len(xs)) * radius
-        #col = np.zeros(len(xs))
+        col = np.zeros(len(xs))
+        for peak_no in range(s2si.number_of_peaks):
+               for sipm_no in s2si.sipms_in_peak(peak_no):
+                    col[sipm_no] += s2si.sipm_total_energy(peak_no, sipm_no)
 
-        col = np.array([s2si.sipm_total_energy(peak_no, sipm_no)
-               for peak_no in range(s2si.number_of_peaks)
-               for sipm_no in s2si.sipms_in_peak(peak_no)])
         plt.figure(figsize=(8, 8))
         plt.subplot(aspect="equal")
         circles(xs, ys, r, c=col, alpha=0.5, ec="none", cmap=cmap)
