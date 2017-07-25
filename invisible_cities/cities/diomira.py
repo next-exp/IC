@@ -105,7 +105,6 @@ class Diomira(MonteCarloCity):
             # simulate trigger
             peak_data = self.emulate_trigger(RWF)
             # filter events as a function of trigger
-
             if not self.trigger_filter(peak_data):
                 continue
             self.cnt.increment_counter('nevt_out')
