@@ -11,7 +11,7 @@ def convert_channel_id_to_IC_id(data_frame, channel_ids):
     return pd.Index(data_frame.ChannelID).get_indexer(channel_ids)
 
 
-def simulate_pmt_response(event, pmtrd, adc_to_pes):
+def simulate_pmt_response(event, pmtrd, adc_to_pes, run_number = 0):
     """ Full simulation of the energy plane response
     Input:
      1) extensible array pmtrd
@@ -24,7 +24,8 @@ def simulate_pmt_response(event, pmtrd, adc_to_pes):
     # Single Photoelectron class
     spe = FE.SPE()
     # FEE, with noise PMT
-    fee  = FE.FEE(noise_FEEPMB_rms=FE.NOISE_I, noise_DAQ_rms=FE.NOISE_DAQ)
+    fee  = FE.FEE(run_number,
+                  noise_FEEPMB_rms=FE.NOISE_I, noise_DAQ_rms=FE.NOISE_DAQ)
     NPMT = pmtrd.shape[1]
     RWF  = []
     BLRX = []

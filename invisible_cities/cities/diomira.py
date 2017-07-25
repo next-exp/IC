@@ -94,7 +94,7 @@ class Diomira(MonteCarloCity):
 
             # Simulate detector response
             dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd,
-                                                         self.sipm_adc_to_pes)
+                                                         self.adc_to_pes)
             dataSiPM_noisy = self.simulate_sipm_response(evt, sipmrd,
                                                          self.noise_sampler,
                                                          self.sipm_adc_to_pes)
@@ -105,7 +105,6 @@ class Diomira(MonteCarloCity):
             # simulate trigger
             peak_data = self.emulate_trigger(RWF)
             # filter events as a function of trigger
-
             if not self.trigger_filter(peak_data):
                 continue
             self.cnt.increment_counter('nevt_out')
