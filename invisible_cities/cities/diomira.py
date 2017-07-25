@@ -68,7 +68,7 @@ class Diomira(MonteCarloCity):
         self.sipms_thresholds = self.sipm_noise_cut *  self.sipm_adc_to_pes
 
         self.trigger_filter   = TriggerFilter(self.trigger_params)
-
+        self.trigger_type = conf.trigger_type
 
     def event_loop(self, NEVT, first_event_no, dataVectors):
         """
@@ -103,10 +103,12 @@ class Diomira(MonteCarloCity):
             BLR = blrPMT.astype(np.int16)
 
             # simulate trigger
-            peak_data = self.emulate_trigger(RWF)
-            # filter events as a function of trigger
-            if not self.trigger_filter(peak_data):
-                continue
+            if self.trigger_type == 'S2':
+                peak_data = self.emulate_trigger(RWF)
+                # filter events as a function of trigger
+                if not self.trigger_filter(peak_data):
+                    continue
+                    
             self.cnt.increment_counter('nevt_out')
 
             #write
