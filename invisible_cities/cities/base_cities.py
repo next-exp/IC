@@ -796,8 +796,8 @@ class MonteCarloCity(TriggerEmulationCity):
         return sf.simulate_sipm_response(event, sipmrd, sipms_noise_sampler,
                                          sipm_adc_to_pes)
 
-    @staticmethod
-    def simulate_pmt_response(event, pmtrd, sipm_adc_to_pes):
+
+    def simulate_pmt_response(self, event, pmtrd, pmt_adc_to_pes):
         """ Full simulation of the energy plane response
         Input:
          1) extensible array pmtrd
@@ -808,8 +808,9 @@ class MonteCarloCity(TriggerEmulationCity):
         front end electronics (LPF, HPF filters)
         array of BLR waveforms (only decimation)
         """
-        return sf.simulate_pmt_response(event, pmtrd, sipm_adc_to_pes)
-
+        return sf.simulate_pmt_response(event, pmtrd,
+                                        pmt_adc_to_pes,
+                                        self.run_number)
 
     @property
     def FE_t_sample(self):
