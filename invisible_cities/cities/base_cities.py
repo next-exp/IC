@@ -177,6 +177,7 @@ class City:
             for deamon in self.daemons:
                 deamon.end()
 
+        print(self.cnt)
         return self.cnt
 
     def display_IO_info(self):
