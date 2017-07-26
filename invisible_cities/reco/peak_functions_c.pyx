@@ -1,61 +1,10 @@
 """
-Functions used for peak finding.
-Last revision: June 2017, JJGC
+code: peak_functions_c.pyx
+description: Cython peak finding functions.
 
-**Public functions**
+credits: see ic_authors_and_legal.rst in /doc
 
-
-calibrated_pmt_sum(double [:, :]  CWF,
-                         double [:]     adc_to_pes,
-                         list           pmt_active = [],
-                         int            n_MAU = 100,
-                         double         thr_MAU =   3)
-
-  Compute the ZS calibrated sum of the PMTs
-  after correcting the baseline with a MAU to suppress low frequency noise.
-
-calibrated_pmt_mau(double [:, :]  CWF,
-                           double [:]     adc_to_pes,
-                           list           pmt_active = [],
-                           int            n_MAU = 200,
-                           double         thr_MAU =   5):
-
-   Returns the calibrated waveforms for PMTs correcting by MAU.
-
-wfzs(double [:] wf, double threshold=0)
-  Takes a waveform wf and return the values of the wf above threshold:
-
-rebin_waveform(double [:] t, double[:] e, int stride = 40)
-  Rebin a waveform according to stride
-
-cpdef correct_S1_ene(S1, np.ndarray csum)??
-
-find_S12(double [:] wfzs,  int [:] index,
-               time=(), length=(),
-               int stride=4, rebin=False, rebin_stride=40)
-  Find S1/S2 peaks. Wrapper around the cython version returning instances
-  of S12 class.
-
-
-signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
-                    double [:] adc_to_pes, double thr,
-                    int n_MAU=100):
-
-   subtracts the baseline
-   Uses a MAU to set the signal threshold (thr, in PES)
-   returns ZS waveforms for all SiPMs
-
-cpdef select_sipm(double [:, :] sipmzs)
-       Selects the SiPMs with signal
-       and returns a dictionary
-
-** Private **
-
-cpdef _time_from_index(int [:] indx):
-  returns the times (in ns) corresponding to the indexes in indx
-
-
-
+last revised: JJGC, July-2017
 """
 cimport numpy as np
 import  numpy as np
@@ -294,14 +243,6 @@ cpdef find_s12(double [:] csum,  int [:] index,
         j += 1
 
     return S12L
-
-
-# cpdef correct_S1_ene(S1, np.ndarray csum):
-#     cdef dict S1_corr = {}
-#     for peak_no, (t, _) in S1.items():
-#         indices          = (t // 25).astype(int)
-#         S1_corr[peak_no] = t, csum[indices]
-#     return S12(S1_corr)
 
 
 cpdef correct_s1_ene(dict s1d, np.ndarray csum):
