@@ -425,18 +425,18 @@ def test_select_peaks_of_allowed_length():
     pbounds = {}
     length = minmax(5,10)
     for k in range(15):
-        i_start = np.random.randint(999)
-        i_stop  = i_start + np.random.randint(length.min)
-        pbounds[k] = [i_start, i_stop]
+        i_start = np.random.randint(999, dtype=np.int32)
+        i_stop  = i_start + np.random.randint(length.min, dtype=np.int32)
+        pbounds[k] = np.array([i_start, i_stop], dtype=np.int32)
     for k in range(15, 30):
-        i_start = np.random.randint(999)
-        i_stop  = i_start + np.random.randint(length.min, length.max)
-        pbounds[k] = [i_start, i_stop]
+        i_start = np.random.randint(999, dtype=np.int32)
+        i_stop  = i_start + np.random.randint(length.min, length.max, dtype=np.int32)
+        pbounds[k] = np.array([i_start, i_stop], dtype=np.int32)
     for k in range(30, 45):
-        i_start = np.random.randint(999)
-        i_stop  = i_start + np.random.randint(length.max, 999)
-        pbounds[k] = [i_start, i_stop]
-    bounds = pf._select_peaks_of_allowed_length(pbounds, length)
+        i_start = np.random.randint(999, dtype=np.int32)
+        i_stop  = i_start + np.random.randint(length.max, 999, dtype=np.int32)
+        pbounds[k] = np.array([i_start, i_stop], dtype=np.int32)
+    bounds = cpf.select_peaks_of_allowed_length(pbounds, length)
     for i, k in zip(range(15), bounds):
         assert k == i
         l = bounds[k][1] - bounds[k][0]
@@ -451,7 +451,7 @@ def test_find_peaks_finds_peaks_when_index_spaced_by_less_than_or_equal_to_strid
             # the concatenated np.array checks that find peaks will find separated peaks
             index  = np.concatenate((np.arange(  0, 500, s, dtype=np.int32),
                                      np.arange(600, 605, 1, dtype=np.int32)))
-            bounds = pf._find_peaks(index, time   = minmax(0, 1e+6),
+            bounds = cpf.find_peaks(index, time   = minmax(0, 1e+6),
                                            length = minmax(5, 9999),
                                            stride = stride)
             assert len(bounds)  ==    2            # found both peaks
@@ -464,7 +464,7 @@ def test_find_peaks_finds_no_peaks_when_index_spaced_by_more_than_stride():
     for stride in range(2,8):
         index  = np.concatenate((np.arange(  0, 500, stride + 1, dtype=np.int32),
                                  np.arange(600, 605,          1, dtype=np.int32)))
-        bounds = pf._find_peaks(index, time   = minmax(0, 1e+6),
+        bounds = cpf.find_peaks(index, time   = minmax(0, 1e+6),
                                        length = minmax(2, 9999),
                                        stride = stride)
         assert len(bounds)  ==    1
@@ -480,7 +480,7 @@ def test_extract_peaks_from_waveform():
         i_stop  = np.random.randint(i_start + 1, 52001)
         peak_bounds[k] = np.array([i_start, i_stop], dtype=np.int32)
     # Extract peaks
-    S12L = pf._extract_peaks_from_waveform(wf, peak_bounds, rebin_stride=1)
+    S12L = cpf.extract_peaks_from_waveform(wf, peak_bounds, rebin_stride=1)
     for k in peak_bounds:
         T = cpf._time_from_index(np.arange(peak_bounds[k][0], peak_bounds[k][1], dtype=np.int32))
         assert np.allclose(S12L[k][0], T)                                         # Check times
