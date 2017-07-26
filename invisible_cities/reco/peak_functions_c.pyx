@@ -164,6 +164,23 @@ cpdef _time_from_index(int [:] indx):
     return np.asarray(tzs)
 
 
+cdef select_peaks_of_allowed_length(dict peak_bounds_temp, length):
+    """
+    Given a dictionary, pbounds, mapping potential peak number to potential peak, return a
+    dictionary, bounds, mapping peak numbers (consecutive and starting from 0) to those peaks in
+    pbounds of allowed length.
+    """
+
+    cdef int j = 0
+    cdef dict peak_bounds = {}
+    cdef bound_temp = int [:]
+    for bound_temp in peak_bounds_temp.values():
+        if length.min <= bound_temp[1] - bound_temp[0] < length.max:
+            peak_bounds[j] = bound_temp
+            j+=1
+    return peak_bounds
+
+
 cpdef find_peaks(int [:] index, time, length, int stride=4):
     cdef double tmin, tmax
     cdef double [:] T = _time_from_index(index)
@@ -188,7 +205,26 @@ cpdef find_peaks(int [:] index, time, length, int stride=4):
         # Update end index in current peak_bounds
         else: peak_bounds[j][1] = index[i] + 1
 
-    return peak_bounds
+    return select_peaks_of_allowed_length(peak_bounds, length)
+
+
+cpdef extract_peaks_from_waveform(double [:] wf, dict peak_bounds, int rebin_stride=1):
+    cdef int j = 0
+    cdef dict S12L = {}
+    cdef double [:] wf_peak
+    for peak_no, i_peak in peak_bounds.items():
+        wf_peak = wf[i_peak[0]: i_peak[1]]
+        if rebin_stride > 1:
+            TR, ER = rebin_waveform(*_time_from_index(i_peak), wf_peak, stride=rebin_stride)
+            S12L[j] = [TR, ER]
+        else:
+            S12L[j] = [np.arange(*_time_from_index(i_peak), 25*units.ns), np.asarray(wf_peak)]
+        j += 1
+
+    return S12L
+
+
+
 
 
 cpdef find_s1(double [:] csum,  int [:] index,
