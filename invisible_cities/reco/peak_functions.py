@@ -215,6 +215,22 @@ def _find_peaks(index, time=minmax(0, 1e+6), length=minmax(8, 1000000), stride=4
     return _get_peaks_of_allowed_length(bounds, length=length)
 
 
+def _extract_peaks_from_waveform(wf, bounds, rebin_stride=40):
+    """
+    given a waveform a a dictionary mapping peak_no to the indices in the waveform corresponding
+    to that peak, return an S12L
+    """
+    S12L = {}
+    for peak_no, i_peak in bounds.items():
+        wf_peak = wf[i_peak[0]: i_peak[1]]
+        if rebin_stride > 1:
+            TR, ER = _rebin_waveform(*cpf._time_from_index(i_peak), wf_peak, stride=rebin_stride)
+            S12L[peak_no] = [TR, ER]
+        else:
+            S12L[peak_no] = [np.arange(*cpf._time_from_index(i_peak), 25*units.ns), wf_peak]
+    return S12L
+
+
 def _find_s12(csum, index,
               time   = minmax(0, 1e+6),
               length = minmax(8, 1000000),
@@ -262,7 +278,6 @@ def _find_s12(csum, index,
 
             S12wf = csum[i_peak[0]: i_peak[1]]
             if rebin_stride > 1:
-                timebounds[j] = i_peak
                 TR, ER = _rebin_waveform(*cpf._time_from_index(i_peak), S12wf, stride=rebin_stride)
                 S12L[j] = [TR, ER]
             else:
