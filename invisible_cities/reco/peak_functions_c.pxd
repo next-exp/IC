@@ -9,6 +9,14 @@ from scipy import signal
 
 
 """
+Given a dictionary, pbounds, mapping potential peak number to potential peak, return a
+dictionary, bounds, mapping peak numbers (consecutive and starting from 0) to those peaks in
+pbounds of allowed length.
+"""
+cdef select_peaks_of_allowed_length(dict peak_bounds_temp, length)
+
+
+"""
 find_peaks finds the start and stop indices of all the peaks within the time boundaries prescribed
 by time.
 
@@ -17,6 +25,12 @@ assumed to be index*25ns in time_from_index function
 """
 cpdef find_peaks(int [:] index, time, length, int stride=*)
 
+
+"""
+given a waveform a a dictionary mapping peak_no to the indices in the waveform corresponding
+to that peak, return an S12L
+"""
+cpdef extract_peaks_from_waveform(double [:] wf, dict peak_bounds, int rebin_stride=*)
 
 
 """
