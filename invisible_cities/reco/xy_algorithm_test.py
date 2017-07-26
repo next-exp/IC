@@ -33,7 +33,7 @@ def positions_and_qs(draw, min_value=0, max_value=100):
 def test_barycenter(p_q):
     pos, qs = p_q
     B  = barycenter(pos, qs)[0]
-    assert np.allclose(B.pos, np.average(pos, weights=qs, axis=0))
+    assert np.allclose(B.posxy, np.average(pos, weights=qs, axis=0))
     assert np. isclose(B.Q  , qs.sum())
     assert B.nsipm == len(qs)
 
@@ -65,7 +65,7 @@ def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
 
     # assert len(c_cluster)  == len(b_cluster)
     # A cluster object has no length!
-    np.array_equal(c_cluster.pos, b_cluster.pos)
+    np.array_equal(c_cluster.posxy, b_cluster.posxy)
     np.array_equal(c_cluster.std.XY, b_cluster.std.XY)
     assert c_cluster.nsipm      == b_cluster.nsipm
     assert c_cluster.Q          == b_cluster.Q
@@ -80,7 +80,7 @@ def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
 
 def test_corona_multiple_clusters(toy_sipm_signal):
     """notice: cluster.xy =(x,y)
-               cluster.pos = ([x],
+               cluster.posxy = ([x],
                               [y])
     """
     pos, qs = toy_sipm_signal
@@ -92,7 +92,7 @@ def test_corona_multiple_clusters(toy_sipm_signal):
 
 def test_corona_min_threshold_Qthr():
     """notice: cluster.XY =(x,y)
-               cluster.pos = ([x],
+               cluster.posxy = ([x],
                               [y])
     """
     xs = np.arange(100) * 10
