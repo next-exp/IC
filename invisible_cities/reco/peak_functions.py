@@ -199,7 +199,7 @@ def _find_peaks(index, time=minmax(0, 1e+6), length=minmax(8, 1000000), stride=4
     i_min = int(time[0] / (25*units.ns))     # index in csum  corresponding to t.min
     i_i = np.where(index >= i_min)[0].min()  # index in index corresponding to t.min (or first
                                              # time not threshold suppressed)
-    bounds[0] = np.array([index[i_i], index[i_i]+ 1], dtype=np.int32)
+    bounds[0] = np.array([index[i_i], index[i_i] + 1], dtype=np.int32)
 
     j = 0
     for i in range(i_i + 1, len(index)):
@@ -210,9 +210,8 @@ def _find_peaks(index, time=minmax(0, 1e+6), length=minmax(8, 1000000), stride=4
             j += 1
             bounds[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
         # Update end index in current S12
-    else: bounds[j][1] = index[i] + 1
-
-    return _get_peaks_of_allowed_length(bounds, length=length)
+        else: bounds[j][1] = index[i] + 1
+    return _select_peaks_of_allowed_length(bounds, length=length)
 
 
 def _extract_peaks_from_waveform(wf, bounds, rebin_stride=40):
@@ -249,6 +248,7 @@ def _find_s12(csum, index,
     """
 
     S12  = {}
+    T = cpf._time_from_index(index)
 
     # Start end end index of S12, [start i, end i)
     i_min = int(time[0] / (25*units.ns))     # index in csum  corresponding to t.min
@@ -268,7 +268,7 @@ def _find_s12(csum, index,
         else: S12[j][1] = index[i] + 1
 
 
-    assert ribin_stride >= 1 and rebin_stride % 1 == 0
+    assert rebin_stride >= 1 and rebin_stride % 1 == 0
 
     S12L = {}
 
