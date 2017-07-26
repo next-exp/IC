@@ -38,7 +38,12 @@ class Irene(PmapCity):
         super().__init__(**kwds)
         self.cnt.set_name('irene')
         self.cnt.set_counter('nmax', value=self.conf.nmax)
-        self.cnt.init_counters(('n_events_tot', 'n_empty_events'))
+        self.cnt.init_counters(('n_events_tot',
+                                'n_empty_events',
+                                'n_empty_events_s2_ene_eq_0',
+                                'n_empty_events_s1_indx_empty',
+                                'n_empty_events_s2_indx_empty'))
+
         self.sp = self.get_sensor_params(self.input_files[0])
 
     def event_loop(self, NEVT, dataVectors):
@@ -59,9 +64,10 @@ class Irene(PmapCity):
             # calibrated sum in PMTs
             s12sum, calsum = self.pmt_transformation(pmtrwf[evt])
 
-            if np.sum(s12sum.s2_ene) == 0: # ocasional but rare empty events
+            if not self.check_s12(s12sum): # ocasional but rare empty events
                 self.cnt.increment_counter('n_empty_events')
                 continue
+
             # calibrated sum in SiPMs
             sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
             # pmaps
@@ -82,6 +88,23 @@ class Irene(PmapCity):
                 break
             else:
                 self.cnt.increment_counter('n_events_tot')
+
+    def check_s12(self, s12sum):
+        """Checks for ocassional empty events, characterized by null s2_energy
+        or empty index list for s1/s2
+
+        """
+        if  np.sum(s12sum.s2_ene) == 0:
+            self.cnt.increment_counter('n_empty_events_s2_ene_eq_0')
+            return False
+        elif np.sum(s12sum.s1_indx) == 0:
+            self.cnt.increment_counter('n_empty_events_s1_indx_empty')
+            return False
+        elif np.sum(s12sum.s2_indx) == 0:
+            self.cnt.increment_counter('n_empty_events_s2_indx_empty')
+            return False
+        else:
+            return True
 
     def write_parameters(self, h5out):
         """Write deconvolution parameters to output file"""
