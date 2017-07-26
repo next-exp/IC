@@ -460,3 +460,15 @@ def test_find_peaks_finds_peaks_when_index_spaced_by_less_than_or_equal_to_strid
             assert bounds[0][1] == (499//s)*s + 1  # find correct end   i for first  p
             assert bounds[1][0] ==  600            # find correct start i for second p
             assert bounds[1][1] ==  605            # find correct end   i for second p
+
+def test_find_peaks_finds_no_peaks_when_index_spaced_by_more_than_stride():
+        for stride in range(2,8):
+            index = np.concatenate((np.arange(  0, 500, stride + 1, dtype=np.int32),
+                                    np.arange(600, 605,          1, dtype=np.int32)))
+            bounds = pf._find_peaks(index,
+                                    time   = minmax(0, 1e+6),
+                                    length = minmax(5, 1000000),
+                                    stride = stride)
+            assert len(bounds)  ==    1
+            assert bounds[0][0] ==  600
+            assert bounds[0][1] ==  605
