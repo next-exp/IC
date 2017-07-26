@@ -214,7 +214,6 @@ def _find_peaks(index, time=minmax(0, 1e+6), stride=4):
             peak_bounds[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
         # Update end index in current S12
         else: peak_bounds[j][1] = index[i] + 1
-    #return _select_peaks_of_allowed_length(peak_bounds, length=length)
     return peak_bounds
 
 
