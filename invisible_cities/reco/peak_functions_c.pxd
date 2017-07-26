@@ -15,7 +15,7 @@ by time.
 Note: for now find_peaks cannot be used to find s2si peaks as time associated with indices is
 assumed to be index*25ns in time_from_index function
 """
-cpdef find_peaks(int [:] index, time, int stride=*)
+cpdef find_peaks(int [:] index, time, length, int stride=*)
 
 
 
