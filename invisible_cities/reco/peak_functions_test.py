@@ -362,7 +362,7 @@ def test_csum_zs_s12():
     S12L1 = pf._find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
-             stride=4, rebin=False, rebin_stride=40)
+             stride=4, rebin_stride=1)
 
     S12L2 = cpf.find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
@@ -412,9 +412,6 @@ def test_find_s12_finds_first_correct_candidate_peak():
     assert np.allclose(S12L[0][0], np.array([2*25*units.ns + 25/2 *units.ns]))
     assert np.allclose(S12L[0][1], np.array([1]))
 
-
-
-
 def test_cwf_are_empty_for_masked_pmts(csum_zs_blr_cwf):
     assert np.all(csum_zs_blr_cwf.cwf6[6:] == 0.)
 
@@ -423,3 +420,25 @@ def test_correct_S1_ene_returns_correct_energies(toy_S1_wf):
     corrS1 = cpf.correct_s1_ene(S1, wf)
     for peak_no, (t, E) in corrS1.s1d.items():
         assert np.all(E == wf[indices[peak_no]])
+
+def test_select_peaks_of_allowed_length():
+    pbounds = {}
+    length = minmax(5,10)
+    for k in range(15):
+        i_start = np.random.randint(999)
+        i_stop  = i_start + np.random.randint(length.min)
+        pbounds[k] = [i_start, i_stop]
+    for k in range(15, 30):
+        i_start = np.random.randint(999)
+        i_stop  = i_start + np.random.randint(length.min, length.max)
+        pbounds[k] = [i_start, i_stop]
+    for k in range(30, 45):
+        i_start = np.random.randint(999)
+        i_stop  = i_start + np.random.randint(length.max, 999)
+        pbounds[k] = [i_start, i_stop]
+    bounds = pf._select_peaks_of_allowed_length(pbounds, length)
+    for i, k in zip(range(15), bounds):
+        assert k == i
+        l = bounds[k][1] - bounds[k][0]
+        assert l >= length.min
+        assert l <  length.max
