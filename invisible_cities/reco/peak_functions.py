@@ -234,6 +234,27 @@ def _extract_peaks_from_waveform(wf, peak_bounds, rebin_stride=1):
     return S12L
 
 
+def get_s2pmtd(CWF, peak_bounds, rebin_stride=40):
+    """
+    Given the corrected waveforms of all active pmts for one event, CWF, and the boundaries of
+    all of the s12 peaks found in the csum, peak_bounds, return the s2 peaks of the individual
+    pmts, s2pmtd.
+    """
+    # extract the peaks from the cwf of each pmt
+    S12Ls = [cpf.extract_peaks_from_waveform(cwf, peak_bounds, rebin_stride=rebin_stride) \
+             for cwf in CWF]
+
+    s2pmtd = {}
+    npmts  = len(S12Ls)
+    for pn in peak_bounds:
+        # initialize an the array of pmt energies with shape npmts, len(peak.t)
+        s2pmtd[pn] = np.empty((npmts, len(S12Ls[0][pn][0])), dtype=np.float32)
+        # fill the array of pmt s2 energies one pmt at a time
+        for pmt in range(npmts): s2pmtd[pn][pmt] = S12Ls[pmt][pn][1]
+
+    return s2pmtd
+
+
 def _find_s12(csum, index,
               time   = minmax(0, 1e+6),
               length = minmax(8, 1000000),
