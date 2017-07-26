@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from .. core              import fit_functions as     fitf
 from .. evm.ic_containers import Measurement
 
+
 def labels(xlabel, ylabel, title=""):
     """
     Set x and y labels.
