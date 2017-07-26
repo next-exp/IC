@@ -4,7 +4,7 @@ from itertools   import combinations
 
 import numpy    as np
 import networkx as nx
-
+from .. evm.event_model import Voxel 
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
 
@@ -20,26 +20,26 @@ from .. core.exceptions import NoVoxels
 #     __repr__ = __str__
 
 
-class Voxel:
-
-    def __init__(self, x,y,z, E):
-        self.pos = np.array((x,y,z))
-        self.E   = E
-
-    #__str__  = Hit.__str__
-    def __str__(self):
-        return '<{} {} {}>'.format(self.__class__.__name__,
-                                   self.pos.tolist(), self.E)
-    __repr__ =     __str__
-
-    def __eq__(self, other):
-        try:
-            return np.array_equal(self.pos, other.pos) and self.E == other.E
-        except AttributeError:
-            return False
-
-    def __hash__(self):
-        return hash((self.E, tuple(self.pos)))
+# class Voxel:
+#
+#     def __init__(self, x,y,z, E):
+#         self.pos = np.array((x,y,z))
+#         self.E   = E
+#
+#     #__str__  = Hit.__str__
+#     def __str__(self):
+#         return '<{} {} {}>'.format(self.__class__.__name__,
+#                                    self.pos.tolist(), self.E)
+#     __repr__ =     __str__
+#
+#     def __eq__(self, other):
+#         try:
+#             return np.array_equal(self.pos, other.pos) and self.E == other.E
+#         except AttributeError:
+#             return False
+#
+#     def __hash__(self):
+#         return hash((self.E, tuple(self.pos)))
 
 
 MAX3D = np.array([float(' inf')] * 3)

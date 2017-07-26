@@ -1,3 +1,11 @@
+"""
+code: peak_functions_test.py
+description: tests for peak functions.
+
+credits: see ic_authors_and_legal.rst in /doc
+
+last revised: JJGC, 10-July-2017
+"""
 from collections import namedtuple
 
 import tables        as tb
@@ -211,7 +219,7 @@ def pmaps_electrons(electron_RWF_file):
         deconv = DeconvParams(n_baseline = 28000,
                               thr_trigger = 5)
 
-        csum, pmp = pf.compute_csum_and_pmaps(event,
+        csum, pmp = pf._compute_csum_and_pmaps(event,
                                               pmtrwf,
                                               sipmrwf,
                                               s1par,
@@ -220,7 +228,7 @@ def pmaps_electrons(electron_RWF_file):
                                               calib,
                                               deconv)
 
-        _, pmp2 = pf.compute_csum_and_pmaps(event,
+        _, pmp2 = pf._compute_csum_and_pmaps(event,
                                             pmtrwf,
                                             sipmrwf,
                                             s1par,
