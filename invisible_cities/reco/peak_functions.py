@@ -172,10 +172,53 @@ def _rebin_waveform(ts, t_finish, wf, stride=40):
     return T, E
 
 
+def _select_peaks_of_allowed_length(pbounds, length=minmax(8, 1000000)):
+    """
+    Given a dictionary, pbounds, mapping potential peak number to potential peak, return a
+    dictionary, bounds, mapping peak numbers (consecutive and starting from 0) to those peaks in
+    pbounds of allowed length.
+    """
+    j=0
+    bounds = {}
+    for pbound in pbounds.values():
+        if length.min <= pbound[1] - pbound[0] < length.max:
+            bounds[j] = pbound
+            j+=1
+    return bounds
+
+
+def _find_peaks(index, time=minmax(0, 1e+6), length=minmax(8, 1000000), stride=4):
+    """
+    _find_s12 was too big. First it found the start and stop times of an S12, then it created the S12L.
+    This can and should be performed by separate functions. This also enables us to find the S2Pmt.
+    """
+
+    bounds = {}
+    T = cpf._time_from_index(index)
+    # Start end end index of S12, [start i, end i)
+    i_min = int(time[0] / (25*units.ns))     # index in csum  corresponding to t.min
+    i_i = np.where(index >= i_min)[0].min()  # index in index corresponding to t.min (or first
+                                             # time not threshold suppressed)
+    bounds[0] = np.array([index[i_i], index[i_i]+ 1], dtype=np.int32)
+
+    j = 0
+    for i in range(i_i + 1, len(index)):
+        assert T[i] > time[0]
+        if T[i] > time.max: break
+        # New pbounds, create new start and end index
+        elif index[i] - stride > index[i-1]:
+            j += 1
+            bounds[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
+        # Update end index in current S12
+    else: bounds[j][1] = index[i] + 1
+
+    return _get_peaks_of_allowed_length(bounds, length=length)
+
+
 def _find_s12(csum, index,
               time   = minmax(0, 1e+6),
               length = minmax(8, 1000000),
-              stride=4, rebin=False, rebin_stride=40):
+              stride=4, rebin_stride=40):
     """
     Find S1/S2 peaks.
     input:
@@ -187,16 +230,9 @@ def _find_s12(csum, index,
     accept the peak only if within [lmin, lmax)
     accept the peak only if within [tmin, tmax)
     returns a dictionary of S12
-
     """
 
-    T = cpf._time_from_index(index)
-
     S12  = {}
-    S12L = {}
-
-    # Start end end index of S12, [start i, end i)
-    S12[0] = np.array([index[0], index[0] + 1], dtype=np.int32)
 
     # Start end end index of S12, [start i, end i)
     i_min = int(time[0] / (25*units.ns))     # index in csum  corresponding to t.min
@@ -215,19 +251,23 @@ def _find_s12(csum, index,
         # Update end index in current S12
         else: S12[j][1] = index[i] + 1
 
+
+    assert ribin_stride >= 1 and rebin_stride % 1 == 0
+
+    S12L = {}
+
     j = 0
     for i_peak in S12.values():
+        if (length.min <= i_peak[1] - i_peak[0] < length.max): # Ensure peak abides length params
 
-        if not (length.min <= i_peak[1] - i_peak[0] < length.max):
-            continue
-
-        S12wf = csum[i_peak[0]: i_peak[1]]
-        if rebin == True:
-            TR, ER = _rebin_waveform(*cpf._time_from_index(i_peak), S12wf, stride=rebin_stride)
-            S12L[j] = [TR, ER]
-        else:
-            S12L[j] = [np.arange(*cpf._time_from_index(i_peak), 25*units.ns), S12wf]
-        j += 1
+            S12wf = csum[i_peak[0]: i_peak[1]]
+            if rebin_stride > 1:
+                timebounds[j] = i_peak
+                TR, ER = _rebin_waveform(*cpf._time_from_index(i_peak), S12wf, stride=rebin_stride)
+                S12L[j] = [TR, ER]
+            else:
+                S12L[j] = [np.arange(*cpf._time_from_index(i_peak), 25*units.ns), S12wf]
+            j += 1
 
     return S12L
     #return pio.S12(S12L)
