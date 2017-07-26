@@ -462,13 +462,30 @@ def test_find_peaks_finds_peaks_when_index_spaced_by_less_than_or_equal_to_strid
             assert bounds[1][1] ==  605            # find correct end   i for second p
 
 def test_find_peaks_finds_no_peaks_when_index_spaced_by_more_than_stride():
-        for stride in range(2,8):
-            index = np.concatenate((np.arange(  0, 500, stride + 1, dtype=np.int32),
-                                    np.arange(600, 605,          1, dtype=np.int32)))
-            bounds = pf._find_peaks(index,
-                                    time   = minmax(0, 1e+6),
-                                    length = minmax(5, 1000000),
-                                    stride = stride)
-            assert len(bounds)  ==    1
-            assert bounds[0][0] ==  600
-            assert bounds[0][1] ==  605
+    for stride in range(2,8):
+        index = np.concatenate((np.arange(  0, 500, stride + 1, dtype=np.int32),
+                                np.arange(600, 605,          1, dtype=np.int32)))
+        bounds = pf._find_peaks(index,
+                                time   = minmax(0, 1e+6),
+                                length = minmax(5, 1000000),
+                                stride = stride)
+        assert len(bounds)  ==    1
+        assert bounds[0][0] ==  600
+        assert bounds[0][1] ==  605
+
+def test_extract_peaks_from_waveform():
+    wf = np.random.uniform(size=52000)
+    # Generate peak_bounds
+    peak_bounds = {}
+    for k in range(100):
+        i_start = np.random.randint(52000)
+        i_stop  = np.random.randint(i_start + 1, 52001)
+        peak_bounds[k] = np.array([i_start, i_stop], dtype=np.int32)
+    # Extract peaks
+    S12L = pf._extract_peaks_from_waveform(wf, peak_bounds, rebin_stride=1)
+    for k in peak_bounds:
+        T = cpf._time_from_index(np.arange(peak_bounds[k][0], peak_bounds[k][1], dtype=np.int32))
+        assert np.allclose(S12L[k][0], T)                                         # Check times
+        assert np.allclose(S12L[k][1], wf[peak_bounds[k][0]: peak_bounds[k][1]])  # Check energies
+    # Check that _extract... did not return extra peaks
+    assert len(peak_bounds) == len(S12L)
