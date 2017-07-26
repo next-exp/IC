@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 from matplotlib.patches import Circle
 from matplotlib.collections import PatchCollection
+from matplotlib.offsetbox import (TextArea, DrawingArea, OffsetImage,
+                                  AnnotationBbox)
 # from mpl_toolkits.mplot3d import Axes3D
 # from IPython.display import HTML
 
@@ -209,12 +211,12 @@ def plot_sipm_list(sipmrwf, sipm_list, x=4):
         plt.plot(sipmrwf[sipm_list[i]])
 
 
-def plot_sensor_list_ene_map(swf, slist, stype='PMT', cmap='Blues'):
+def plot_sensor_list_ene_map(run_number, swf, slist, stype='PMT', cmap='Blues'):
         """Plot a map of the energies of sensors in list."""
-        DataSensor = load_db.DataPMT(0)
+        DataSensor = load_db.DataPMT(run_number)
         radius = 10
         if stype == 'SiPM':
-            DataSensor = load_db.DataSiPM(0)
+            DataSensor = load_db.DataSiPM(run_number)
             radius = 2
         xs = DataSensor.X.values
         ys = DataSensor.Y.values
@@ -231,6 +233,26 @@ def plot_sensor_list_ene_map(swf, slist, stype='PMT', cmap='Blues'):
         plt.xlim(-198, 198)
         plt.ylim(-198, 198)
 
+def draw_pmt_map(run_number):
+    """Draws a map with the channel_id number in the positions of the PMTs.
+        channel_id = elecID (electronic ID) for PMTs.
+        xpmt       = x pos
+    """
+    DataPMT = load_db.DataPMT(run_number)
+    xpmt = DataPMT.X.values
+    ypmt = DataPMT.Y.values
+    channel_id = DataPMT.ChannelID.values
+    cid = ['{}'.format(c) for c in channel_id]
+    fig, ax = plt.subplots()
+    plt.plot(xpmt, ypmt, 'o')
+
+    for c, x,y in zip(cid, xpmt,ypmt):
+        xy = (x,y)
+        offsetbox = TextArea(c, minimumdescent=False)
+        ab = AnnotationBbox(offsetbox, xy)
+        ax.add_artist(ab)
+
+    plt.show()
 
 def make_tracking_plane_movie(slices, thrs=0.1):
     """Create a video made of consecutive frames showing the response of
