@@ -1,12 +1,14 @@
-"""Functions to find peaks, S12 selection etc.
-Last revision: JJGC, July, 2017
-
-A python module containing peak finding functions. Most of the functions
+"""
+code: peak_functions.py
+description: peak finding functions. Most of the functions
 are private and used only for testing (e.g, comparison with the
 corresponding cython functions). Private functions are labelled _function_name
 the corresponding public function (to be found in the cython module)
 is labelled function_name.
 
+credits: see ic_authors_and_legal.rst in /doc
+
+last revised: JJGC, 10-July-2017
 """
 
 
@@ -261,25 +263,28 @@ def _sipm_s2(dSIPM, s2l, thr=5*units.pes):
     return SIPML
 
 
-def compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
+def _compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
                            s1par, s2par, thresholds,
                            calib_vectors, deconv_params):
-    """Compute calibrated sum and PMAPS.
 
-    :param pmtrwf: PMTs RWF
-    :param sipmrwf: SiPMs RWF
-    :param s1par: parameters for S1 search (S12Params namedtuple)
-    :param s2par: parameters for S2 search (S12Params namedtuple)
-    :param thresholds: thresholds for searches (ThresholdParams namedtuple)
-                       ('ThresholdParams',
-                        'thr_s1 thr_s2 thr_MAU thr_sipm thr_SIPM')
-    :param pmt_active: a list specifying the active (not dead) pmts
-                       in the event. An empty list implies all active.
-    :param n_baseline:  number of samples taken to compute baseline
-    :param thr_trigger: threshold to start the BLR process
-    :param event: event number
+    """Compute csum and pmaps from rwf
+    :param event:        event number
+    :param pmtrwf:       PMTs RWF
+    :param sipmrwf:      SiPMs RWF
+    :param s1par:        parameters for S1 search:
+                         ('S12Params', 'time stride length rebin')
+    :param s2par:        parameters for S2 search (S12Params namedtuple)
+    :param thresholds:   thresholds for searches
+                         ('ThresholdParams',
+                          'thr_s1 thr_s2 thr_MAU thr_sipm thr_SIPM')
+    :param calib_params: calibration vectors
+                         ('CalibParams' ,
+                         'coeff_c, coeff_blr, adc_to_pes_pmt adc_to_pes_sipm')
+    :param deconv_params: deconvolution parameters
+                         ('DeconvParams', 'n_baseline thr_trigger')
 
-    :returns: a nametuple of calibrated sum and a namedtuple of PMAPS
+    :returns: a namedtuple of PMAPS
+
     """
     s1_params = s1par
     s2_params = s2par
@@ -325,3 +330,71 @@ def compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
 
     return (CSum(csum=csum, csum_mau=csum_mau),
             PMaps(S1=s1.s1d, S2=s2.s2d, S2Si=s2si.s2sid))
+
+
+def compute_pmaps_from_rwf(event, pmtrwf, sipmrwf,
+                           s1par, s2par, thresholds,
+                           calib_vectors, deconv_params):
+
+    """Compute pmaps from rwf
+    :param event:        event number
+    :param pmtrwf:       PMTs RWF
+    :param sipmrwf:      SiPMs RWF
+    :param s1par:        parameters for S1 search:
+                         ('S12Params', 'time stride length rebin')
+    :param s2par:        parameters for S2 search (S12Params namedtuple)
+    :param thresholds:   thresholds for searches
+                         ('ThresholdParams',
+                          'thr_s1 thr_s2 thr_MAU thr_sipm thr_SIPM')
+    :param calib_vectors: calibration vectors
+                         ('CalibVectors' ,
+                         'channel_id coeff_blr coeff_c adc_to_pes adc_to_pes_sipm pmt_active')
+    :param deconv_params: deconvolution parameters
+                         ('DeconvParams', 'n_baseline thr_trigger')
+
+    :returns: a namedtuple of CSUM and a namedtuple of PMAPS (dicts)
+
+    """
+    s1_params = s1par
+    s2_params = s2par
+    thr = thresholds
+
+    adc_to_pes = calib_vectors.adc_to_pes
+    coeff_c    = calib_vectors.coeff_c
+    coeff_blr  = calib_vectors.coeff_blr
+    adc_to_pes_sipm = calib_vectors.adc_to_pes_sipm
+    pmt_active = calib_vectors.pmt_active
+
+    # deconv
+    CWF = blr.deconv_pmt(pmtrwf[event], coeff_c, coeff_blr,
+                         pmt_active  = pmt_active,
+                         n_baseline  = deconv_params.n_baseline,
+                         thr_trigger = deconv_params.thr_trigger)
+
+    # calibrated sum
+    csum, csum_mau = cpf.calibrated_pmt_sum(CWF,
+                                            adc_to_pes,
+                                            pmt_active  = pmt_active,
+                                            n_MAU       = 100,
+                                            thr_MAU     = thr.thr_MAU)
+
+    # zs sum
+    s2_ene, s2_indx = cpf.wfzs(csum, threshold=thr.thr_s2)
+    s1_ene, s1_indx = cpf.wfzs(csum_mau, threshold=thr.thr_s1)
+
+    s1 = cpf.find_s1(csum,
+                      s1_indx,
+                      **s1_params._asdict())
+
+    s2 = cpf.find_s2(csum,
+                      s2_indx,
+                      **s2_params._asdict())
+
+    s1 = cpf.correct_s1_ene(s1.s1d, csum)
+    sipmzs = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
+                           thr=thr.thr_sipm, n_MAU=100)
+
+    s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = thr.thr_SIPM)
+
+
+    return PMaps(S1=s1, S2=s2, S2Si=s2si)
