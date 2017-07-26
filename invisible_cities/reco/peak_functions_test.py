@@ -442,3 +442,21 @@ def test_select_peaks_of_allowed_length():
         l = bounds[k][1] - bounds[k][0]
         assert l >= length.min
         assert l <  length.max
+
+def test_find_peaks_finds_peaks_when_index_spaced_by_less_than_or_equal_to_stride():
+    # explore a range of strides
+    for stride in range(2,8):
+        # for each stride create a index array with ints spaced by (1 to stride)
+        for s in range(1, stride + 1):
+            # the concatenated np.array checks that find peaks will find separated peaks
+            index = np.concatenate((np.arange(  0, 500, s, dtype=np.int32),
+                                    np.arange(600, 605, 1, dtype=np.int32)))
+            bounds = pf._find_peaks(index,
+                                    time   = minmax(0, 1e+6),
+                                    length = minmax(2, 1000000),
+                                    stride = stride)
+            assert len(bounds)  ==    2            # found both peaks
+            assert bounds[0][0] ==    0            # find correct start i for first  p
+            assert bounds[0][1] == (499//s)*s + 1  # find correct end   i for first  p
+            assert bounds[1][0] ==  600            # find correct start i for second p
+            assert bounds[1][1] ==  605            # find correct end   i for second p
