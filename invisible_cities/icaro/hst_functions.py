@@ -102,13 +102,38 @@ def hist2d_profile(x, y, z, nbinx, nbiny, xrange, yrange, **kwargs):
     """
     Create a profile 2d of the data and plot it as an histogram.
     """
-    plt.figure()
+    if "new_figure" in kwargs:
+        del kwargs["new_figure"]
+    else:
+        plt.figure()
+
     x, y, z, ze = fitf.profileXY(x, y, z, nbinx, nbiny, xrange, yrange)
-    x_ = np.repeat(x, y.size)
-    y_ = np.tile  (y, x.size)
+    plot_output = display_matrix(x, y, z)
+    return ((x, y, z, ze), *plot_output)
+
+
+def display_matrix(x, y, z, **kwargs):
+    if "new_figure" in kwargs:
+        del kwargs["new_figure"]
+    else:
+        plt.figure()
+
+    nx = np.size(x)
+    ny = np.size(y)
+
+    dx = (np.max(x) - np.min(x)) / nx
+    dy = (np.max(y) - np.min(y)) / ny
+
+    x_binning = np.linspace(np.min(x) - dx, np.max(x) + dx, nx + 1)
+    y_binning = np.linspace(np.min(y) - dy, np.max(y) + dy, ny + 1)
+
+    x_ = np.repeat(x, ny)
+    y_ = np.tile  (y, nx)
     z_ = z.flatten()
-    h  = hist2d(x_, y_, (nbinx, nbiny), (xrange, yrange), weights=z_, **kwargs)
-    return (x, y, z, ze), h, plt.colorbar()
+
+    h  = hist2d(x_, y_, (x_binning,
+                         y_binning), weights=z_, **kwargs)
+    return h, plt.colorbar()
 
 
 def doublescatter(x1, y1, x2, y2, lbls, *args, **kwargs):
