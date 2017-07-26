@@ -1,7 +1,7 @@
 # Clsses defining the event model
 
 import numpy as np
-
+from .. types.ic_types         import NN
 from .. types.ic_types         import minmax
 from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
@@ -9,6 +9,7 @@ from .. core.exceptions        import SipmNotFound
 from .. core.core_functions    import loc_elem_1d
 from .. core.system_of_units_c import units
 
+ZANODE = -9.425 * units.mm
 
 class SensorParams:
     """Transient class storing sensor parameters."""
@@ -53,26 +54,69 @@ class Event:
 
     __repr__ = __str__
 
+class BHit:
+    """Base class representing a hit"""
 
-class Cluster:
+    def __init__(self, x,y,z, E):
+        self.xyz      = (x,y,z)
+        self.energy   = E
+
+    @property
+    def XYZ  (self): return self.xyz
+
+    @property
+    def pos  (self): return np.array(self.xyz)
+
+    @property
+    def X   (self): return self.xyz[0]
+
+    @property
+    def Y   (self): return self.xyz[1]
+
+    @property
+    def Z   (self): return self.xyz[2]
+
+    @property
+    def E   (self): return self.energy
+
+    def __str__(self):
+        return '<{} {} {}>'.format(self.__class__.__name__,
+                                   self.pos.tolist(), self.E)
+    __repr__ =     __str__
+
+    def __eq__(self, other):
+        try:
+            return np.array_equal(self.pos, other.pos) and self.E == other.E
+        except AttributeError:
+            return False
+
+    def __hash__(self):
+        return hash((self.E, tuple(self.pos)))
+
+class Voxel(BHit):
+    """Represents a Voxel"""
+    def __init__(self, x,y,z, E):
+        super().__init__(x,y,z, E)
+
+
+class Cluster(BHit):
     """Represents a reconstructed cluster in the tracking plane"""
-    def __init__(self, Q, xy, xy_std, nsipm):
+    def __init__(self, Q, xy, xy_std, nsipm, z=ZANODE, E=NN):
+        if E == NN:
+            super().__init__(xy.x, xy.y, z, Q)
+        else:
+            super().__init__(xy.x, xy.y, z, E)
+
         self.Q       = Q
         self._xy     = xy
         self._xy_std = xy_std
         self.nsipm   = nsipm
 
     @property
-    def pos (self): return self._xy.pos
+    def posxy (self): return self._xy.pos
 
     @property
     def std (self): return self._xy_std
-
-    @property
-    def X   (self): return self._xy.x
-
-    @property
-    def Y   (self): return self._xy.y
 
     @property
     def XY  (self): return self._xy.XY
@@ -91,8 +135,9 @@ class Cluster:
 
     def __str__(self):
         return """<nsipm = {} Q = {}
-                    xy = {}  >""".format(self.__class__.__name__,
-                                         self.nsipm, self.Q, self._xy)
+                    xy = {}, hit = {}  >""".format(self.__class__.__name__,
+                                         self.nsipm, self.Q, self._xy,
+                                         super().__str())
     __repr__ =     __str__
 
 
@@ -100,25 +145,12 @@ class Hit(Cluster):
     """Represents a reconstructed hit (cluster + z + energy)"""
     def __init__(self, peak_number, cluster, z, s2_energy):
 
-        Cluster.__init__(self, cluster.Q,
-                               cluster._xy, cluster._xy_std,
-                               cluster.nsipm)
+
+        super().__init__(cluster.Q,
+                         cluster._xy, cluster._xy_std,
+                         cluster.nsipm, z, s2_energy)
 
         self.peak_number = peak_number
-        self.z           = z
-        self.s2_energy   = s2_energy
-
-    @property
-    def XYZ  (self): return (self.X, self.Y, self.Z)
-
-    @property
-    def VXYZ (self): return np.array([self.X, self.Y, self.Z])
-
-    @property
-    def E    (self): return self.s2_energy
-
-    @property
-    def Z    (self): return self.z
 
     @property
     def npeak(self): return self.peak_number
@@ -128,6 +160,7 @@ class Hit(Cluster):
                     self.npeak, self.Z, self.E, Cluster.__str())
 
     __repr__ =     __str__
+
 
 
 class HitCollection(Event):
