@@ -187,7 +187,7 @@ def _select_peaks_of_allowed_length(peak_bounds_temp, length=minmax(8, 1000000))
     return peak_bounds
 
 
-def _find_peaks(index, time=minmax(0, 1e+6), length=minmax(8, 1000000), stride=4):
+def _find_peaks(index, time=minmax(0, 1e+6), stride=4):
     """
     _find_s12 is too big. First it found the start and stop times of an S12, then it created the S12L.
     This can and should be performed by separate functions. This also enables us to find the S2Pmt.
@@ -214,7 +214,8 @@ def _find_peaks(index, time=minmax(0, 1e+6), length=minmax(8, 1000000), stride=4
             peak_bounds[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
         # Update end index in current S12
         else: peak_bounds[j][1] = index[i] + 1
-    return _select_peaks_of_allowed_length(peak_bounds, length=length)
+    #return _select_peaks_of_allowed_length(peak_bounds, length=length)
+    return peak_bounds
 
 
 def _extract_peaks_from_waveform(wf, peak_bounds, rebin_stride=1):

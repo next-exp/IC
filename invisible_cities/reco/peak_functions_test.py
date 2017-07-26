@@ -449,12 +449,9 @@ def test_find_peaks_finds_peaks_when_index_spaced_by_less_than_or_equal_to_strid
         # for each stride create a index array with ints spaced by (1 to stride)
         for s in range(1, stride + 1):
             # the concatenated np.array checks that find peaks will find separated peaks
-            index = np.concatenate((np.arange(  0, 500, s, dtype=np.int32),
-                                    np.arange(600, 605, 1, dtype=np.int32)))
-            bounds = pf._find_peaks(index,
-                                    time   = minmax(0, 1e+6),
-                                    length = minmax(2, 1000000),
-                                    stride = stride)
+            index  = np.concatenate((np.arange(  0, 500, s, dtype=np.int32),
+                                     np.arange(600, 605, 1, dtype=np.int32)))
+            bounds = pf._find_peaks(index, time=minmax(0, 1e+6), stride=stride)
             assert len(bounds)  ==    2            # found both peaks
             assert bounds[0][0] ==    0            # find correct start i for first  p
             assert bounds[0][1] == (499//s)*s + 1  # find correct end   i for first  p
@@ -463,12 +460,9 @@ def test_find_peaks_finds_peaks_when_index_spaced_by_less_than_or_equal_to_strid
 
 def test_find_peaks_finds_no_peaks_when_index_spaced_by_more_than_stride():
     for stride in range(2,8):
-        index = np.concatenate((np.arange(  0, 500, stride + 1, dtype=np.int32),
-                                np.arange(600, 605,          1, dtype=np.int32)))
-        bounds = pf._find_peaks(index,
-                                time   = minmax(0, 1e+6),
-                                length = minmax(5, 1000000),
-                                stride = stride)
+        index  = np.concatenate((np.arange(  0, 500, stride + 1, dtype=np.int32),
+                                 np.arange(600, 605,          1, dtype=np.int32)))
+        bounds = pf._find_peaks(index, time=minmax(0, 1e+6), stride=stride)
         assert len(bounds)  ==    1
         assert bounds[0][0] ==  600
         assert bounds[0][1] ==  605
