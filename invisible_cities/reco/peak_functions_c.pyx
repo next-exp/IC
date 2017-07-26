@@ -164,6 +164,33 @@ cpdef _time_from_index(int [:] indx):
     return np.asarray(tzs)
 
 
+cpdef find_peaks(int [:] index, time, int stride=4):
+    cdef double tmin, tmax
+    cdef double [:] T = _time_from_index(index)
+    cdef dict peak_bounds  = {}
+    cdef int i, j, i_i, i_min
+    tmin, tmax = time
+    lmin, lmax = length
+
+    i_min = tmin / (25*units.ns)                          # index in csum  corresponding to t.min
+    i_i   = np.where(np.asarray(index) >= i_min)[0].min() # index in index corresponding to t.min 
+                                                          # (or first time not threshold suppressed)
+    peak_bounds[0] = np.array([index[i_i], index[i_i] + 1], dtype=np.int32)
+
+    j = 0
+    for i in range(i_i + 1, len(index)):
+        assert T[i] > tmin
+        if T[i] > tmax: break
+        # New peak_bounds, create new start and end index
+        elif index[i] - stride > index[i-1]:
+            j += 1
+            peak_bounds[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
+        # Update end index in current peak_bounds
+        else: peak_bounds[j][1] = index[i] + 1
+
+    return peak_bounds
+
+
 cpdef find_s1(double [:] csum,  int [:] index,
               time, length,
               int stride=4, rebin=False, rebin_stride=4):

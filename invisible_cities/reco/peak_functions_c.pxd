@@ -7,6 +7,18 @@ cimport numpy as np
 import numpy as np
 from scipy import signal
 
+
+"""
+find_peaks finds the start and stop indices of all the peaks within the time boundaries prescribed
+by time.
+
+Note: for now find_peaks cannot be used to find s2si peaks as time associated with indices is
+assumed to be index*25ns in time_from_index function
+"""
+cpdef find_peaks(int [:] index, time, int stride=*)
+
+
+
 """
 computes the ZS calibrated sum of the PMTs
 after correcting the baseline with a MAU to suppress low frequency noise.
