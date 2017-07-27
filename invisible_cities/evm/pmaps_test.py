@@ -11,7 +11,7 @@ from hypothesis.extra.numpy import arrays
 
 from .. types.ic_types_c    import xy
 from .. types.ic_types_c    import minmax
-from .. core.exceptions     import SumNotEqualToSumOfParts
+from .. core.exceptions     import InconsistentS2dS2pmtd
 
 from .. reco.pmaps_functions_c import integrate_sipm_charges_in_peak
 from .. reco  import pmaps_functions as pmapf
@@ -218,11 +218,11 @@ def test_S2Pmt_raises_error_when_s2_peak_E_not_equal_to_sum_of_s2pmt_peak():
     npmts  = 12
     s2pmtd = {0: np.random.random((npmts, timebins))}
     s2d    = {0: np.array([list(range(timebins)), s2pmtd[0].sum(axis=0)])}
-    s2pmtd[0][-1, -1] += .001
+    s2pmtd[0][-1, -1] += .0001
     try:
         S2Pmt(s2d, s2pmtd)
         assert False
-    except SumNotEqualToSumOfParts:
+    except InconsistentS2dS2pmtd:
         pass
 
 
