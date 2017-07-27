@@ -8,7 +8,7 @@ from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
 from .. core.core_functions    import loc_elem_1d
-from .. core.exceptions        import SumNotEqualToSumOfParts
+from .. core.exceptions        import InconsistentS2dS2pmtd
 from .. core.system_of_units_c import units
 
 
@@ -134,6 +134,7 @@ cdef class S1(S12):
     def __repr__(self):
         return self.__str__()
 
+
 cdef class S2(S12):
     def __init__(self, s2d):
         self.s2d = s2d
@@ -147,6 +148,7 @@ cdef class S2(S12):
 
     def __repr__(self):
         return self.__str__()
+
 
 cpdef check_s2d_and_s2sid_share_peaks(dict s2d, dict s2sid):
     cdef dict s2d_shared_peaks = {}
@@ -297,13 +299,10 @@ cdef class S2Pmt(S2):
         s2d    = { peak_number: [[t], [E]]}
         s2pmtd = { peak_number: [[Epmt0], [Epmt1], ... ,[EpmtN]] }
         """
-
-        cdef int i, pn
-        cdef double E
-        for pn in s2d:
-            for i, E in enumerate(s2d[pn][1]):        # Check that each energy in s2d[peak][E]
-                if E != s2pmtd[pn][:, i].sum():      # equals the sum of the energies in
-                    raise SumNotEqualToSumOfParts    # the pmts at that time bin.
+        # Check that energies in s2d are sum of s2pmtd across pmts for each peak
+        for peak, s2_pmts in zip(s2d.values(), s2pmtd.values()):
+            if not np.allclose(peak[1], s2_pmts.sum(axis=0)):
+                raise InconsistentS2dS2pmtd
 
         S2.__init__(self, s2d)
         self.s2pmtd = s2pmtd
