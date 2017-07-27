@@ -33,6 +33,9 @@ class PeakNotFound(ICException):
 class SipmEmptyList(ICException):
     pass
 
+class ClusterEmptyList(ICException):
+    pass
+
 class SipmNotFound(ICException):
     pass
 
