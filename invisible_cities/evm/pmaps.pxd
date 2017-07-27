@@ -47,7 +47,7 @@ cdef class S2Si(S2):
     The s2sid is a dictionary {peak:{nsipm:[E]}}
     """
     cdef public s2sid
-    cdef dict _s2sid
+    cdef  dict _s2sid
     cpdef number_of_sipms_in_peak(self, int peak_number)
     cpdef sipms_in_peak(self, int peak_number)
     cpdef sipm_waveform(self, int peak_number, int sipm_number)
@@ -60,9 +60,11 @@ cdef class S2Si(S2):
 """Given an s2d and an s2sid, return an s2d containing only the peaks shared by s2sid"""
 cpdef check_s2d_and_s2sid_share_peaks(dict s2d, dict s2sid)
 
+
 cdef class S2Pmt(S2):
-  cdef public s2pmtd
-  cdef dict _s2pmtd
-  cpdef pmt_waveform(self, int peak_number, int pmt_number)
-  cpdef pmt_total_energy(self, int peak_number, int pmt_number)
-  cpdef store(self, table, event_number)
+    cdef public s2pmtd
+    cdef  dict _s2pmtd
+    cpdef pmt_waveform(self, int peak_number, int pmt_number)
+    cpdef pmt_total_energy_in_peak(self, int peak_number, int pmt_number)
+    cpdef pmt_total_energy(self, int pmt_number)
+    cpdef store(self, table, event_number)
