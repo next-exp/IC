@@ -343,7 +343,7 @@ def test_csum_zs_s12():
     wfzs_ene, wfzs_indx = cpf.wfzs(csum, threshold=10)
     npt.assert_allclose(vsum_zs, wfzs_ene)
 
-    t1 =  cpf._time_from_index(wfzs_indx)
+    t1 = cpf._time_from_index(wfzs_indx)
     t2 = cpf._time_from_index(wfzs_indx)
     i0 = wfzs_indx[0]
     i1 = wfzs_indx[-1] + 1
@@ -369,13 +369,21 @@ def test_csum_zs_s12():
              length = minmax(0, 1000000),
              stride=4, rebin=False, rebin_stride=40)
 
+    pbs   = cpf.find_peaks(wfzs_indx, time=minmax(0, 1e+6), length=minmax(0, 1000000), stride=4)
+    S12L3 = cpf.extract_peaks_from_waveform(csum, pbs, rebin_stride=1)
+
     for i in S12L1:
         t1 = S12L1[i][0]
         e1 = S12L1[i][1]
         t2 = S12L2[i][0]
         e2 = S12L2[i][1]
+        t3 = S12L3[i][0]
+        e3 = S12L3[i][1]
+
         npt.assert_allclose(t1, t2)
         npt.assert_allclose(e1, e2)
+        npt.assert_allclose(t2, t3)
+        npt.assert_allclose(e2, e3)
 
     # toy yields 3 idential vectors of energy
     E = np.array([ 11,  12,  13,  14,  15,  16,  17,  18,  19,  20,
