@@ -102,22 +102,13 @@ def hist2d_profile(x, y, z, nbinx, nbiny, xrange, yrange, **kwargs):
     """
     Create a profile 2d of the data and plot it as an histogram.
     """
-    if "new_figure" in kwargs:
-        del kwargs["new_figure"]
-    else:
-        plt.figure()
 
     x, y, z, ze = fitf.profileXY(x, y, z, nbinx, nbiny, xrange, yrange)
-    plot_output = display_matrix(x, y, z)
+    plot_output = display_matrix(x, y, z, **kwargs)
     return ((x, y, z, ze), *plot_output)
 
 
 def display_matrix(x, y, z, **kwargs):
-    if "new_figure" in kwargs:
-        del kwargs["new_figure"]
-    else:
-        plt.figure()
-
     nx = np.size(x)
     ny = np.size(y)
 
