@@ -45,5 +45,5 @@ class NoHits(ICException):
 class NoVoxels(ICException):
     pass
 
-class SumNotEqualToSumOfParts(ICException):
+class InconsistentS2dS2pmtd(ICException):
     pass
