@@ -316,21 +316,34 @@ cdef class S2Pmt(S2):
           E = self.s2pmtd[peak_number][pmt_number]
           return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
 
-    cpdef pmt_total_energy(self, int peak_number, int pmt_number):
+    cpdef pmt_total_energy_in_peak(self, int peak_number, int pmt_number):
         """
         For peak_number and and pmt_number return the integrated energy in that pmt in that peak
         s2pmtd[peak_number][pmt_number].sum().
         """
         cdef double et
         try:
-            et = np.sum(self.s2sid[peak_number][pmt_number])
+            et = np.sum(self.s2pmtd[peak_number][pmt_number])
             return et
         except KeyError:
             raise PeakNotFound
 
+    cpdef pmt_total_energy(self, int pmt_number):
+        """
+        For peak_number and and pmt_number return the integrated energy in that pmt in that peak
+        s2pmtd[peak_number][pmt_number].sum().
+        """
+        cdef double sum
+        cdef int pn
+        sum = 0
+        for pn in self.s2pmtd:
+            sum += self.pmt_total_energy_in_peak(pn, pmt_number)
+        return sum
+
+
     cpdef store(self, table, event_number):
         row = table.row
-        for peak, s2_pmts in self.s2sid.items():
+        for peak, s2_pmts in self.s2pmtd.items():
             for npmt, s2_pmt in enumerate(s2_pmt):
                 for E in s2_pmt:
                     row["event"]   = event_number
