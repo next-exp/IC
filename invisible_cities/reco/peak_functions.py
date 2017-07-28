@@ -271,11 +271,8 @@ def _find_s12(csum, index,
     accept the peak only if within [tmin, tmax)
     returns a dictionary of S12
     """
-    if not rebin: rebin_stride = 1
     return _extract_peaks_from_waveform(
         csum, _find_peaks(index, time=time, length=length, stride=stride), rebin_stride=rebin_stride)
-
-
 
 
 def _sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
