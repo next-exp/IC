@@ -12,10 +12,8 @@ from scipy import signal
 Given a dictionary, pbounds, mapping potential peak number to potential peak, return a
 dictionary, bounds, mapping peak numbers (consecutive and starting from 0) to those peaks in
 pbounds of allowed length.
-
-* Consider making cdef
 """
-cpdef select_peaks_of_allowed_length(dict peak_bounds_temp, length)
+cpdef  select_peaks_of_allowed_length(dict peak_bounds_temp, length)
 
 
 """
@@ -92,22 +90,6 @@ returns the times (in ns) corresponding to the indexes in indx
 cpdef _time_from_index(int [:] indx)
 
 
-"""
-Find S1/S2 peaks.
-input:
-wfzs:   a vector containining the zero supressed wf
-indx:   a vector of indexes
-returns a dictionary
-
-do not interrupt the peak if next sample comes within stride
-accept the peak only if within [l.min, l.max)
-accept the peak only if within [t.min, t.max)
-"""
-# cpdef find_S12(double [:] csum, int [:] index,
-#                time=*, length=*,
-#                int stride=*, rebin=*, rebin_stride=*)
-
-
 cpdef find_s1(double [:] csum,  int [:] index,
               time, length,
               int stride=*, rebin=*, rebin_stride=*)
@@ -122,7 +104,11 @@ cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr)
 
 
 cpdef find_s12(double [:] csum,  int [:] index,
-               time, length, int stride, rebin, rebin_stride)
+               time, length, int stride, rebin_stride)
+
+
+cpdef correct_s1_ene(dict s1d, np.ndarray csum)
+
 
 """
 rebins  a waveform according to stride
@@ -130,11 +116,6 @@ The input waveform is a vector such that the index expresses time bin and the
 contents expresses energy (e.g, in pes)
 The function returns a rebinned vector of T and E.
 """
-
-#cpdef correct_S1_ene(S1, np.ndarray csum)
-cpdef correct_s1_ene(dict s1d, np.ndarray csum)
-
-#cpdef rebin_waveform(double [:] t, double[:] e, int stride=*)
 cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=*)
 
 
@@ -143,7 +124,6 @@ subtracts the baseline
 Uses a MAU to set the signal threshold (thr, in PES)
 returns ZS waveforms for all SiPMs
 """
-
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
                   double [:] adc_to_pes, double thr,
                   int n_MAU=*)
