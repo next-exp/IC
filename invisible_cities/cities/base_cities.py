@@ -28,23 +28,23 @@ from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
 from .. database import load_db
 
-from ..io                       import pmap_io          as pio
-from ..io                       import pmap_io          as pio
-from .. io. dst_io              import load_dst
+from .. io                      import pmap_io          as pio
+from .. io                      import pmap_io          as pio
+from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
 
-from ..reco                     import peak_functions_c as cpf
-from ..reco                     import sensor_functions as sf
-from ..reco                     import peak_functions   as pf
-from ..reco                     import pmaps_functions  as pmp
-from ..reco                     import pmaps_functions_c  as cpmp
-from ..reco                     import dst_functions    as dstf
-from ..reco                     import wfm_functions    as wfm
-from ..reco                     import tbl_functions    as tbl
+from .. reco                    import peak_functions_c as cpf
+from .. reco                    import sensor_functions as sf
+from .. reco                    import peak_functions   as pf
+from .. reco                    import pmaps_functions  as pmp
+from .. reco                    import pmaps_functions_c  as cpmp
+from .. reco                    import dst_functions    as dstf
+from .. reco                    import wfm_functions    as wfm
+from .. reco                    import tbl_functions    as tbl
 from .. reco.sensor_functions   import convert_channel_id_to_IC_id
-from ..reco.corrections         import Correction
-from ..reco.corrections         import Fcorrection
-from ..reco.xy_algorithms       import find_algorithm
+from .. reco.corrections        import Correction
+from .. reco.corrections        import Fcorrection
+from .. reco.xy_algorithms      import find_algorithm
 
 from .. evm.ic_containers       import S12Params
 from .. evm.ic_containers       import S12Sum
@@ -462,19 +462,20 @@ class PmapCity(CalibratedCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         conf = self.conf
+        print(self.conf.s1_rebin_stride)
         self.s1_params = S12Params(time = minmax(min   = conf.s1_tmin,
                                                  max   = conf.s1_tmax),
                                    stride              = conf.s1_stride,
                                    length = minmax(min = conf.s1_lmin,
                                                    max = conf.s1_lmax),
-                                   rebin               = conf.s1_rebin)
+                                   rebin_stride        = conf.s1_rebin_stride)
 
         self.s2_params = S12Params(time = minmax(min   = conf.s2_tmin,
                                                  max   = conf.s2_tmax),
                                    stride              = conf.s2_stride,
                                    length = minmax(min = conf.s2_lmin,
                                                    max = conf.s2_lmax),
-                                   rebin               = conf.s2_rebin)
+                                   rebin_stride        = conf.s2_rebin_stride)
 
         self.thr_sipm_s2 = conf.thr_sipm_s2
 
