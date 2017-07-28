@@ -444,7 +444,7 @@ def test_select_peaks_of_allowed_length():
         i_start = np.random.randint(999, dtype=np.int32)
         i_stop  = i_start + np.random.randint(length.max, 999, dtype=np.int32)
         pbounds[k] = np.array([i_start, i_stop], dtype=np.int32)
-    bounds = cpf.select_peaks_of_allowed_length(pbounds, length)
+    bounds = cpf._select_peaks_of_allowed_length(pbounds, length)
     for i, k in zip(range(15), bounds):
         assert k == i
         l = bounds[k][1] - bounds[k][0]
