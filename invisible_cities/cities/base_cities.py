@@ -24,6 +24,7 @@ from .. core.exceptions         import FileLoopMethodNotSet
 from .. core.exceptions         import EventLoopMethodNotSet
 from .. core.system_of_units_c  import units
 from .. core.exceptions         import SipmEmptyList
+from .. core.exceptions         import ClusterEmptyList
 from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
 from .. database import load_db
@@ -583,6 +584,8 @@ class KrCity(PCity):
             return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
         except SipmEmptyList:
             return None
+        except ClusterEmptyList:
+            return None
 
     def compute_z_and_dt(self, ts2, ts1):
         """
@@ -685,6 +688,8 @@ class HitCity(KrCity):
         try:
             return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
         except SipmEmptyList:
+            return None
+        except ClusterEmptyList:
             return None
 
     def create_hits_event(self, pmapVectors):

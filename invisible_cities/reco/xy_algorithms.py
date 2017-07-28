@@ -3,6 +3,7 @@ import numpy as np
 
 from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
+from .. core.exceptions        import ClusterEmptyList
 from .. core.exceptions        import SipmZeroCharge
 from .. types.ic_types         import xy
 from .. evm.event_model        import Cluster
@@ -105,6 +106,6 @@ def corona(pos, qs,
         # delete the SiPMs contributing to this cluster
         pos, qs = discard_sipms(within_new_lm_radius, pos, qs)
 
-    if not len(c): raise SipmEmptyList
+    if not len(c): raise ClusterEmptyList
 
     return c
