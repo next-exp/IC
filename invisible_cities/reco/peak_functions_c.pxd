@@ -104,7 +104,7 @@ cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr)
 
 
 cpdef find_s12(double [:] csum,  int [:] index,
-               time, length, int stride, rebin_stride)
+               time, length, int stride, rebin, rebin_stride)
 
 
 cpdef correct_s1_ene(dict s1d, np.ndarray csum)

@@ -362,12 +362,12 @@ def test_csum_zs_s12():
     S12L1 = pf._find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
-             stride=4, rebin_stride=1)
+             stride=4, rebin=False, rebin_stride=1)
 
     S12L2 = cpf.find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
-             stride=4, rebin_stride=1)
+             stride=4, rebin=False, rebin_stride=1)
 
     #pbs   = cpf.find_peaks(wfzs_indx, time=minmax(0, 1e+6), length=minmax(0, 1000000), stride=4)
     #S12L3 = cpf.extract_peaks_from_waveform(csum, pbs, rebin_stride=1)
