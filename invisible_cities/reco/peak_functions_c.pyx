@@ -164,7 +164,7 @@ cpdef _time_from_index(int [:] indx):
     return np.asarray(tzs)
 
 
-cpdef select_peaks_of_allowed_length(dict peak_bounds_temp, length):
+cpdef _select_peaks_of_allowed_length(dict peak_bounds_temp, length):
     """
     Given a dictionary, pbounds, mapping potential peak number to potential peak, return a
     dictionary, bounds, mapping peak numbers (consecutive and starting from 0) to those peaks in
@@ -205,7 +205,7 @@ cpdef find_peaks(int [:] index, time, length, int stride=4):
         # Update end index in current peak_bounds
         else: peak_bounds[j][1] = index[i] + 1
 
-    return select_peaks_of_allowed_length(peak_bounds, length)
+    return _select_peaks_of_allowed_length(peak_bounds, length)
 
 
 cpdef extract_peaks_from_waveform(double [:] wf, dict peak_bounds, int rebin_stride=1):
