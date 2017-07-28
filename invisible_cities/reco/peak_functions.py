@@ -258,7 +258,7 @@ def get_s2pmtd(CWF, peak_bounds, rebin_stride=40):
 def _find_s12(csum, index,
               time   = minmax(0, 1e+6),
               length = minmax(8, 1000000),
-              stride=4, rebin_stride=40):
+              stride=4, rebin=False, rebin_stride=40):
     """
     Find S1/S2 peaks.
     input:
@@ -271,6 +271,7 @@ def _find_s12(csum, index,
     accept the peak only if within [tmin, tmax)
     returns a dictionary of S12
     """
+    if not rebin: rebin_stride = 1
     return _extract_peaks_from_waveform(
         csum, _find_peaks(index, time=time, length=length, stride=stride), rebin_stride=rebin_stride)
 

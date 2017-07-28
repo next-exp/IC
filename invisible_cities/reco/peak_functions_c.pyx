@@ -231,7 +231,7 @@ cpdef find_s1(double [:] csum,  int [:] index,
     find s1 peaks and returns S1 objects
     """
 
-    return S1(find_s12(csum, index, time, length, stride, rebin_stride))
+    return S1(find_s12(csum, index, time, length, stride, rebin, rebin_stride))
 
 
 cpdef find_s2(double [:] csum,  int [:] index,
@@ -253,7 +253,7 @@ cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr):
 
 
 cpdef find_s12(double [:] csum,  int [:] index,
-               time, length, int stride, rebin_stride):
+               time, length, int stride, rebin, rebin_stride):
     """
     Find S1/S2 peaks.
     input:
@@ -265,6 +265,7 @@ cpdef find_s12(double [:] csum,  int [:] index,
     accept the peak only if within [tmin, tmax)
     returns a dictionary of S12
     """
+    if not rebin: rebin_stride = 1
     return extract_peaks_from_waveform(
         csum, find_peaks(index, time, length, stride=stride), rebin_stride=rebin_stride)
 
