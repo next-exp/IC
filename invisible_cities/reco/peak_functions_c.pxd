@@ -13,7 +13,7 @@ Given a dictionary, pbounds, mapping potential peak number to potential peak, re
 dictionary, bounds, mapping peak numbers (consecutive and starting from 0) to those peaks in
 pbounds of allowed length.
 """
-cpdef  select_peaks_of_allowed_length(dict peak_bounds_temp, length)
+cpdef  _select_peaks_of_allowed_length(dict peak_bounds_temp, length)
 
 
 """
