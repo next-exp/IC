@@ -26,7 +26,7 @@ for name, attrs in (
         ('CalibParams'    , 'coeff_c, coeff_blr, adc_to_pes_pmt adc_to_pes_sipm'),
         ('DeconvParams'   , 'n_baseline thr_trigger'),
         ('CalibVectors'   , 'channel_id coeff_blr coeff_c adc_to_pes adc_to_pes_sipm pmt_active'),
-        ('S12Params'      , 'time stride length rebin'),
+        ('S12Params'      , 'time stride length rebin_stride'),
         ('PmapParams'     , 's1_params s2_params s1p_params s1_PMT_params s1p_PMT_params'),
         ('ThresholdParams', 'thr_s1 thr_s2 thr_MAU thr_sipm thr_SIPM'),
         ('CSum'           , 'csum csum_mau'),
