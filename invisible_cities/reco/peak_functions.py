@@ -271,46 +271,10 @@ def _find_s12(csum, index,
     accept the peak only if within [tmin, tmax)
     returns a dictionary of S12
     """
-
-    S12  = {}
-    T = cpf._time_from_index(index)
-
-    # Start end end index of S12, [start i, end i)
-    i_min = int(time[0] / (25*units.ns))     # index in csum  corresponding to t.min
-    i_i = np.where(index >= i_min)[0].min()  # index in index corresponding to t.min (or first
-                                             # time not threshold suppressed)
-    S12[0] = np.array([index[i_i], index[i_i]+ 1], dtype=np.int32)
-
-    j = 0
-    for i in range(i_i + 1, len(index)):
-        assert T[i] > time[0]
-        if T[i] > time.max: break
-        # New s12, create new start and end index
-        elif index[i] - stride > index[i-1]:
-            j += 1
-            S12[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
-        # Update end index in current S12
-        else: S12[j][1] = index[i] + 1
+    return _extract_peaks_from_waveform(
+        csum, _find_peaks(index, time=time, length=length, stride=stride), rebin_stride=rebin_stride)
 
 
-    assert rebin_stride >= 1 and rebin_stride % 1 == 0
-
-    S12L = {}
-
-    j = 0
-    for i_peak in S12.values():
-        if (length.min <= i_peak[1] - i_peak[0] < length.max): # Ensure peak abides length params
-
-            S12wf = csum[i_peak[0]: i_peak[1]]
-            if rebin_stride > 1:
-                TR, ER = _rebin_waveform(*cpf._time_from_index(i_peak), S12wf, stride=rebin_stride)
-                S12L[j] = [TR, ER]
-            else:
-                S12L[j] = [np.arange(*cpf._time_from_index(i_peak), 25*units.ns), S12wf]
-            j += 1
-
-    return S12L
-    #return pio.S12(S12L)
 
 
 def _sipm_s2_dict(SIPM, S2d, thr=5 * units.pes):
