@@ -188,14 +188,14 @@ def pmaps_electrons(electron_RWF_file):
                       length = minmax(min =   4,
                                       max =  20),
                       stride              =   4,
-                      rebin               = False)
+                      rebin_stride        =   1)
 
     s2par = S12Params(time = minmax(min   =    101 * units.mus,
                                     max   =   1199 * units.mus),
                       length = minmax(min =     80,
                                       max = 200000),
                       stride              =     40,
-                      rebin               = True)
+                      rebin_stride        =     40)
 
     thr = ThresholdParams(thr_s1   =  0.2 * units.pes,
                           thr_s2   =  1   * units.pes,
@@ -232,7 +232,7 @@ def pmaps_electrons(electron_RWF_file):
                                             pmtrwf,
                                             sipmrwf,
                                             s1par,
-                                            s2par._replace(rebin=False),
+                                            s2par._replace(rebin_stride=1),
                                             thr,
                                             calib,
                                             deconv)
@@ -362,12 +362,12 @@ def test_csum_zs_s12():
     S12L1 = pf._find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
-             stride=4, rebin=False, rebin_stride=1)
+             stride=4, rebin_stride=1)
 
     S12L2 = cpf.find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
-             stride=4, rebin=False, rebin_stride=1)
+             stride=4, rebin_stride=1)
 
     #pbs   = cpf.find_peaks(wfzs_indx, time=minmax(0, 1e+6), length=minmax(0, 1000000), stride=4)
     #S12L3 = cpf.extract_peaks_from_waveform(csum, pbs, rebin_stride=1)
@@ -397,7 +397,7 @@ def test_csum_zs_s12():
     S12L2 = cpf.find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
-             stride=10, rebin=True, rebin_stride=10)
+             stride=10, rebin_stride=10)
 
     E = np.array([155,  200,  155])
 
@@ -415,7 +415,7 @@ def test_find_s12_finds_first_correct_candidate_peak():
     S12L = cpf.find_s12(wf, ene,
                  time   = minmax(0, 1e+6),
                  length = minmax(0, 1000000),
-                 stride=10, rebin=True, rebin_stride=10)
+                 stride=10, rebin_stride=10)
     assert len(S12L) == 1
     assert np.allclose(S12L[0][0], np.array([2*25*units.ns + 25/2 *units.ns]))
     assert np.allclose(S12L[0][1], np.array([1]))
