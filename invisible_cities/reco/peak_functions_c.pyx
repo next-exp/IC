@@ -231,7 +231,7 @@ cpdef find_s1(double [:] csum,  int [:] index,
     find s1 peaks and returns S1 objects
     """
 
-    return S1(find_s12(csum, index, time, length, stride, rebin, rebin_stride))
+    return S1(find_s12(csum, index, time, length, stride, rebin_stride))
 
 
 cpdef find_s2(double [:] csum,  int [:] index,
@@ -253,7 +253,7 @@ cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr):
 
 
 cpdef find_s12(double [:] csum,  int [:] index,
-               time, length, int stride, rebin, rebin_stride):
+               time, length, int stride, rebin_stride):
     """
     Find S1/S2 peaks.
     input:
@@ -265,44 +265,8 @@ cpdef find_s12(double [:] csum,  int [:] index,
     accept the peak only if within [tmin, tmax)
     returns a dictionary of S12
     """
-    cdef double tmin, tmax
-    cdef int    limn, lmax
-    #cdef double [:] P = wfzs
-    cdef double [:] T = _time_from_index(index)
-    cdef dict S12  = {}
-    cdef dict S12L = {}
-    cdef int i, j, k, ls, i_i, i_min
-    tmin, tmax = time
-    lmin, lmax = length
-
-    i_min = tmin / (25*units.ns)
-    i_i = np.where(np.asarray(index) >= i_min)[0].min() #first index of index with t > tmin
-    S12[0] = np.array([index[i_i], index[i_i] + 1], dtype=np.int32)
-    j = 0
-    for i in range(i_i + 1, len(index)):
-        assert T[i] > tmin
-        if T[i] > tmax: break
-        # New s12, create new start and end index
-        elif index[i] - stride > index[i-1]:
-            j += 1
-            S12[j] = np.array([index[i], index[i] + 1], dtype=np.int32)
-        # Update end index in current S12
-        else: S12[j][1] = index[i] + 1
-
-    # re-arrange and rebin
-    j = 0
-    for i_peak in S12.values():
-        if not (lmin <= i_peak[1] - i_peak[0] < lmax):
-            continue
-        S12wf = csum[i_peak[0]: i_peak[1]]
-        if rebin == True:
-            TR, ER = rebin_waveform(*_time_from_index(i_peak), S12wf, stride=rebin_stride)
-            S12L[j] = [TR, ER]
-        else:
-            S12L[j] = [np.arange(*_time_from_index(i_peak), 25*units.ns), np.asarray(S12wf)]
-        j += 1
-
-    return S12L
+    return extract_peaks_from_waveform(
+        csum, find_peaks(index, time, length, stride=stride), rebin_stride=rebin_stride)
 
 
 cpdef correct_s1_ene(dict s1d, np.ndarray csum):
