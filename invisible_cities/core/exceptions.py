@@ -44,3 +44,6 @@ class NoHits(ICException):
 
 class NoVoxels(ICException):
     pass
+
+class InconsistentS2dS2pmtd(ICException):
+    pass
