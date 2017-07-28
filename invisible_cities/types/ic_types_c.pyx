@@ -42,7 +42,9 @@ cdef class xy:
 
     def __str__(self):
         return 'xy(x={.x}, max={.y})'.format(self, self)
-    __repr__ = __str__
+
+    def __repr__(self):
+        return 'xy(x={.x}, max={.y})'.format(self, self)
 
     def __getitem__(self, n):
         if n == 0: return self.x
@@ -73,6 +75,9 @@ cdef class minmax:
         def __get__(self):
             return (self.max + self.min) / 2
 
+    def contains(self, double x):
+        return self.min <= x <= self.max
+
     def __add__(self, scalar):
         return minmax(self.min + scalar, self.max + scalar)
 
@@ -100,7 +105,9 @@ cdef class minmax:
 
     def __str__(self):
             return 'minmax(min={.min}, max={.max})'.format(self, self)
-    __repr__ = __str__
+
+    def __repr__(self):
+            return 'minmax(min={.min}, max={.max})'.format(self, self)
 
     def __getitem__(self, n):
         if n == 0: return self.min
