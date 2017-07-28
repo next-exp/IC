@@ -31,32 +31,32 @@ def s12params():
                  length = minmax(min =   4,
                                  max =  20,),
                  stride              =   4,
-                 rebin               = False)
+                 rebin_stride        =   1)
 
     s2par = S12P(time = minmax(min   =    101 * units.mus,
                                max   =   1199 * units.mus),
                  length = minmax(min =     80,
                                  max = 200000),
                  stride              =     40,
-                 rebin               = True)
+                 rebin_stride        =     40)
     return s1par, s2par
 
 
 def unpack_s12params(s12params):
     s1par, s2par = s12params
-    return dict(s1_tmin   = s1par.time.min,
-                s1_tmax   = s1par.time.max,
-                s1_string = s1par.stride,
-                s1_rebin  = s1par.rebin,
-                s1_lmin   = s1par.length.min,
-                s1_lmax   = s1par.length.max,
+    return dict(s1_tmin          = s1par.time.min,
+                s1_tmax          = s1par.time.max,
+                s1_string        = s1par.stride,
+                s1_rebin_stride  = s1par.rebin_stride,
+                s1_lmin          = s1par.length.min,
+                s1_lmax          = s1par.length.max,
 
-                s2_tmin   = s2par.time.min,
-                s2_tmax   = s2par.time.max,
-                s2_string = s2par.stride,
-                s2_rebin  = s2par.rebin,
-                s2_lmin   = s2par.length.min,
-                s2_lmax   = s2par.length.max)
+                s2_tmin          = s2par.time.min,
+                s2_tmax          = s2par.time.max,
+                s2_string        = s2par.stride,
+                s2_rebin_stride  = s2par.rebin_stride,
+                s2_lmin          = s2par.length.min,
+                s2_lmax          = s2par.length.max)
 
 
 @fixture(scope='module')
