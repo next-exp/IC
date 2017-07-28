@@ -8,6 +8,7 @@ from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
 from .. core.core_functions    import loc_elem_1d
+from .. core.exceptions        import InconsistentS2dS2pmtd
 from .. core.system_of_units_c import units
 
 
@@ -133,6 +134,7 @@ cdef class S1(S12):
     def __repr__(self):
         return self.__str__()
 
+
 cdef class S2(S12):
     def __init__(self, s2d):
         self.s2d = s2d
@@ -146,6 +148,7 @@ cdef class S2(S12):
 
     def __repr__(self):
         return self.__str__()
+
 
 cpdef check_s2d_and_s2sid_share_peaks(dict s2d, dict s2sid):
     cdef dict s2d_shared_peaks = {}
@@ -281,3 +284,69 @@ cdef class S2Si(S2):
 
     def __repr__(self):
         return self.__str__()
+
+
+cdef class S2Pmt(S2):
+    """
+    A pmt S2 class for storing individual pmt s2 responses.
+
+    It is analagous to S2Si with the caveat that each peak key in s2pmtd maps to a nparray of
+    pmt energies instead of another dictionary. Here a dictionary mapping pmt_number --> energy is
+    superfluous since the csum of all active pmts are used to calculate the s2 energy.
+    """
+    def __init__(self, s2d, s2pmtd):
+        """where:
+        s2d    = { peak_number: [[t], [E]]}
+        s2pmtd = { peak_number: [[Epmt0], [Epmt1], ... ,[EpmtN]] }
+        """
+        # Check that energies in s2d are sum of s2pmtd across pmts for each peak
+        for peak, s2_pmts in zip(s2d.values(), s2pmtd.values()):
+            if not np.allclose(peak[1], s2_pmts.sum(axis=0)):
+                raise InconsistentS2dS2pmtd
+
+        S2.__init__(self, s2d)
+        self.s2pmtd = s2pmtd
+
+    cpdef pmt_waveform(self, int peak_number, int pmt_number):
+        cdef double [:] E
+        if peak_number not in self.s2pmtd:
+            raise PeakNotFound
+        else:
+          E = self.s2pmtd[peak_number][pmt_number]
+          return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
+
+    cpdef pmt_total_energy_in_peak(self, int peak_number, int pmt_number):
+        """
+        For peak_number and and pmt_number return the integrated energy in that pmt in that peak
+        s2pmtd[peak_number][pmt_number].sum().
+        """
+        cdef double et
+        try:
+            et = np.sum(self.s2pmtd[peak_number][pmt_number])
+            return et
+        except KeyError:
+            raise PeakNotFound
+
+    cpdef pmt_total_energy(self, int pmt_number):
+        """
+        For peak_number and and pmt_number return the integrated energy in that pmt in that peak
+        s2pmtd[peak_number][pmt_number].sum().
+        """
+        cdef double sum
+        cdef int pn
+        sum = 0
+        for pn in self.s2pmtd:
+            sum += self.pmt_total_energy_in_peak(pn, pmt_number)
+        return sum
+
+
+    cpdef store(self, table, event_number):
+        row = table.row
+        for peak, s2_pmts in self.s2pmtd.items():
+            for npmt, s2_pmt in enumerate(s2_pmt):
+                for E in s2_pmt:
+                    row["event"]   = event_number
+                    row["peak"]    = peak
+                    row["nsipm"]   = npmt
+                    row["ene"]     = E
+                    row.append()

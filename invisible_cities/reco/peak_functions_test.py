@@ -343,7 +343,7 @@ def test_csum_zs_s12():
     wfzs_ene, wfzs_indx = cpf.wfzs(csum, threshold=10)
     npt.assert_allclose(vsum_zs, wfzs_ene)
 
-    t1 =  cpf._time_from_index(wfzs_indx)
+    t1 = cpf._time_from_index(wfzs_indx)
     t2 = cpf._time_from_index(wfzs_indx)
     i0 = wfzs_indx[0]
     i1 = wfzs_indx[-1] + 1
@@ -362,20 +362,28 @@ def test_csum_zs_s12():
     S12L1 = pf._find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
-             stride=4, rebin=False, rebin_stride=40)
+             stride=4, rebin=False, rebin_stride=1)
 
     S12L2 = cpf.find_s12(csum, wfzs_indx,
              time   = minmax(0, 1e+6),
              length = minmax(0, 1000000),
-             stride=4, rebin=False, rebin_stride=40)
+             stride=4, rebin=False, rebin_stride=1)
+
+    #pbs   = cpf.find_peaks(wfzs_indx, time=minmax(0, 1e+6), length=minmax(0, 1000000), stride=4)
+    #S12L3 = cpf.extract_peaks_from_waveform(csum, pbs, rebin_stride=1)
 
     for i in S12L1:
         t1 = S12L1[i][0]
         e1 = S12L1[i][1]
         t2 = S12L2[i][0]
         e2 = S12L2[i][1]
+        #t3 = S12L3[i][0]
+        #e3 = S12L3[i][1]
+
         npt.assert_allclose(t1, t2)
         npt.assert_allclose(e1, e2)
+        #npt.assert_allclose(t2, t3)
+        #npt.assert_allclose(e2, e3)
 
     # toy yields 3 idential vectors of energy
     E = np.array([ 11,  12,  13,  14,  15,  16,  17,  18,  19,  20,
@@ -412,9 +420,6 @@ def test_find_s12_finds_first_correct_candidate_peak():
     assert np.allclose(S12L[0][0], np.array([2*25*units.ns + 25/2 *units.ns]))
     assert np.allclose(S12L[0][1], np.array([1]))
 
-
-
-
 def test_cwf_are_empty_for_masked_pmts(csum_zs_blr_cwf):
     assert np.all(csum_zs_blr_cwf.cwf6[6:] == 0.)
 
@@ -423,3 +428,92 @@ def test_correct_S1_ene_returns_correct_energies(toy_S1_wf):
     corrS1 = cpf.correct_s1_ene(S1, wf)
     for peak_no, (t, E) in corrS1.s1d.items():
         assert np.all(E == wf[indices[peak_no]])
+
+def test_select_peaks_of_allowed_length():
+    pbounds = {}
+    length = minmax(5,10)
+    for k in range(15):
+        i_start = np.random.randint(999, dtype=np.int32)
+        i_stop  = i_start + np.random.randint(length.min, dtype=np.int32)
+        pbounds[k] = np.array([i_start, i_stop], dtype=np.int32)
+    for k in range(15, 30):
+        i_start = np.random.randint(999, dtype=np.int32)
+        i_stop  = i_start + np.random.randint(length.min, length.max, dtype=np.int32)
+        pbounds[k] = np.array([i_start, i_stop], dtype=np.int32)
+    for k in range(30, 45):
+        i_start = np.random.randint(999, dtype=np.int32)
+        i_stop  = i_start + np.random.randint(length.max, 999, dtype=np.int32)
+        pbounds[k] = np.array([i_start, i_stop], dtype=np.int32)
+    bounds = cpf._select_peaks_of_allowed_length(pbounds, length)
+    for i, k in zip(range(15), bounds):
+        assert k == i
+        l = bounds[k][1] - bounds[k][0]
+        assert l >= length.min
+        assert l <  length.max
+
+def test_find_peaks_finds_peaks_when_index_spaced_by_less_than_or_equal_to_stride():
+    # explore a range of strides
+    for stride in range(2,8):
+        # for each stride create a index array with ints spaced by (1 to stride)
+        for s in range(1, stride + 1):
+            # the concatenated np.array checks that find peaks will find separated peaks
+            index  = np.concatenate((np.arange(  0, 500, s, dtype=np.int32),
+                                     np.arange(600, 605, 1, dtype=np.int32)))
+            bounds = cpf.find_peaks(index, time   = minmax(0, 1e+6),
+                                           length = minmax(5, 9999),
+                                           stride = stride)
+            assert len(bounds)  ==    2            # found both peaks
+            assert bounds[0][0] ==    0            # find correct start i for first  p
+            assert bounds[0][1] == (499//s)*s + 1  # find correct end   i for first  p
+            assert bounds[1][0] ==  600            # find correct start i for second p
+            assert bounds[1][1] ==  605            # find correct end   i for second p
+
+def test_find_peaks_finds_no_peaks_when_index_spaced_by_more_than_stride():
+    for stride in range(2,8):
+        index  = np.concatenate((np.arange(  0, 500, stride + 1, dtype=np.int32),
+                                 np.arange(600, 605,          1, dtype=np.int32)))
+        bounds = cpf.find_peaks(index, time   = minmax(0, 1e+6),
+                                       length = minmax(2, 9999),
+                                       stride = stride)
+        assert len(bounds)  ==    1
+        assert bounds[0][0] ==  600
+        assert bounds[0][1] ==  605
+
+def test_extract_peaks_from_waveform():
+    wf = np.random.uniform(size=52000)
+    # Generate peak_bounds
+    peak_bounds = {}
+    for k in range(100):
+        i_start = np.random.randint(52000)
+        i_stop  = np.random.randint(i_start + 1, 52001)
+        peak_bounds[k] = np.array([i_start, i_stop], dtype=np.int32)
+    # Extract peaks
+    S12L = cpf.extract_peaks_from_waveform(wf, peak_bounds, rebin_stride=1)
+    for k in peak_bounds:
+        T = cpf._time_from_index(np.arange(peak_bounds[k][0], peak_bounds[k][1], dtype=np.int32))
+        assert np.allclose(S12L[k][0], T)                                         # Check times
+        assert np.allclose(S12L[k][1], wf[peak_bounds[k][0]: peak_bounds[k][1]])  # Check energies
+    # Check that _extract... did not return extra peaks
+    assert len(peak_bounds) == len(S12L)
+
+def test_get_s2pmtd():
+    npmts  = 4
+    ntbins = 52000
+    CWF    = np.random.random(size=(npmts, ntbins)) # generate wfs for pmts
+    csum   = CWF.sum(axis=0)                 # and their sum
+    npeaks = 20
+    peak_bounds  = {}
+    rebin_stride = 40
+    for pn in range(npeaks):
+        start = np.random.randint(      0, ntbins  )
+        stop  = np.random.randint(1+start, ntbins+1)
+        peak_bounds[pn] = np.array([start, stop], dtype=np.int32) # generate some peak_bounds
+
+    # extract the peaks from the csum, and for each pmt extract the peaks from the CWF
+    S12L   = cpf.extract_peaks_from_waveform(csum, peak_bounds, rebin_stride=rebin_stride)
+    s2pmtd = pf.get_s2pmtd(CWF, peak_bounds, rebin_stride=rebin_stride)
+    for s12l, s2_pmts, i_peak in zip(S12L.values(), s2pmtd.values(), peak_bounds.values()):
+        # check that the sum of the individual pmt s2s equals the total s2, at each time bin
+        assert np.allclose(s12l[1], s2_pmts.sum(axis=0))
+        # check that the correct energy is in each pmt
+        assert np.allclose(s2_pmts.sum(axis=1), CWF[:, i_peak[0]: i_peak[1]].sum(axis=1))
