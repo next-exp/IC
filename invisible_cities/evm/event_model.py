@@ -80,8 +80,8 @@ class BHit:
     def E   (self): return self.energy
 
     def __str__(self):
-        return '<{} {} {}>'.format(self.__class__.__name__,
-                                   self.pos.tolist(), self.E)
+        return '<{} {}>'.format(self.pos.tolist(), self.E)
+
     __repr__ =     __str__
 
     def __eq__(self, other):
@@ -134,10 +134,9 @@ class Cluster(BHit):
     def Phi (self): return self._xy.Phi
 
     def __str__(self):
-        return """<nsipm = {} Q = {}
-                    xy = {}, hit = {}  >""".format(self.__class__.__name__,
-                                         self.nsipm, self.Q, self._xy,
-                                         super().__str())
+        return """< nsipm = {} Q = {}
+                    xy = {}. 3dHit = {}  >""".format(self.nsipm, self.Q, self._xy,
+                                                     super().__str__())
     __repr__ =     __str__
 
 
@@ -156,8 +155,8 @@ class Hit(Cluster):
     def npeak(self): return self.peak_number
 
     def __str__(self):
-        return """<npeak = {} z = {} E = {} cluster ={} >""".format(self.__class__.__name__,
-                    self.npeak, self.Z, self.E, Cluster.__str())
+        return """<{} : npeak = {} z = {} E = {} cluster ={} >""".format(self.__class__.__name__,
+                    self.npeak, self.Z, self.E, super().__str__())
 
     __repr__ =     __str__
 
@@ -188,8 +187,8 @@ class HitCollection(Event):
     def __str__(self):
         s =  "{}".format(self.__class__.__name__)
         s+= "Hit list:"
-        s = [s + str(hit) for hit in self.hits]
-        return s
+        s2 = [str(hit) for hit in self.hits]
+        return  s + ''.join(s2)
 
     __repr__ =     __str__
 

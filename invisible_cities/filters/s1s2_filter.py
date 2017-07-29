@@ -143,6 +143,15 @@ class S12Selector:
         # sis = {peak_no: peak for peak_no, peak in sidf.items() if peak_no in valid_peaks}
         return len(valid_peaks)
 
+    def __str__(self):
+        s = """S12_selector(s1n = {} s1e = {} pes s1w = {} ns pes s1h = {} pes s1_ethr = {} pes
+            s2n = {} s2e = {}  s2w = {} ns pes s2h = {} pes nsipm = {} s2_ethr = {} pes
+            """.format(self.s1n, self.s1e, self.s1w, self.s1h, self.s1_ethr,
+                                       self.s2n, self.s2e, self.s2w, self.s2h, self.nsi,
+                                       self.s2_ethr)
+        return s
+
+    __repr__ = __str__
 
 def s1s2_filter(selector : S12Selector, s1 : S1, s2 : S2, s2si : S2Si) ->bool:
     """Takes the event pmaps (s1, s2 and  s2si)
