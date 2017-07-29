@@ -22,9 +22,9 @@ from .. core.exceptions         import NoOutputFile
 from .. core.exceptions         import UnknownRWF
 from .. core.exceptions         import FileLoopMethodNotSet
 from .. core.exceptions         import EventLoopMethodNotSet
-from .. core.system_of_units_c  import units
 from .. core.exceptions         import SipmEmptyList
 from .. core.exceptions         import ClusterEmptyList
+from .. core.system_of_units_c  import units
 from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
 from .. database import load_db
@@ -47,6 +47,7 @@ from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco.corrections        import Correction
 from .. reco.corrections        import Fcorrection
 from .. reco.xy_algorithms      import find_algorithm
+from .. reco.xy_algorithms      import barycenter
 
 from .. evm.ic_containers       import S12Params
 from .. evm.ic_containers       import S12Sum
@@ -588,12 +589,7 @@ class KrCity(PCity):
         """
         IDs, Qs = cpmp.integrate_sipm_charges_in_peak(s2si, peak_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
-        try:
-            return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
-        except SipmEmptyList:
-            return None
-        except ClusterEmptyList:
-            return None
+        return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
 
     def compute_z_and_dt(self, ts2, ts1):
         """
@@ -638,10 +634,9 @@ class KrCity(PCity):
             evt.S2e.append(peak.total_energy)
             evt.S2t.append(peak.tpeak)
 
-            clusters = self.compute_xy_position(s2si, peak_no)
-
-            if clusters == None:
-
+            try:
+                clusters = self.compute_xy_position(s2si, peak_no)
+            except SipmEmptyList:
                 evt.Nsipm.append(NN)
                 evt.S2q  .append(NN)
                 evt.X    .append(NN)
@@ -693,12 +688,7 @@ class HitCity(KrCity):
         #import pdb; pdb.set_trace()
         IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
-        try:
-            return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
-        except SipmEmptyList:
-            return None
-        except ClusterEmptyList:
-            return None
+        return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
 
     def create_hits_event(self, pmapVectors):
         """Create a hits_event:
@@ -730,9 +720,18 @@ class HitCity(KrCity):
         npeak = 0
         for peak_no, (t_peak, e_peak) in sorted(s2si.s2d.items()):
             for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
-                clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
-                if clusters == None:
+                try:
+                    clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
+                except SipmEmptyList:
                     continue
+                except SipmZeroCharge:
+                    continue
+                # this cannot happen with the barycenter algorithm by construction
+                except ClusterEmptyList:
+                    IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2si.s2sid[peak_no], slice_no)
+                    xs, ys   = self.xs[IDs], self.ys[IDs]
+                    clusters = barycenter(np.stack((xs, ys)).T, Qs)
+
                 # create hits only for those slices with OK clusters
                 es       = self.split_energy(e_slice, clusters)
                 z        = (t_slice - s1_t) * units.ns * self.drift_v
