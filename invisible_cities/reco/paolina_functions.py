@@ -4,54 +4,33 @@ from itertools   import combinations
 
 import numpy    as np
 import networkx as nx
-from .. evm.event_model import Voxel 
+
+from networkx           import Graph
+from .. evm.event_model import Voxel
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
+from .. evm.event_model import BHit
 
-# class Hit:
-#
-#     def __init__(self, x,y,z, E):
-#         self.pos = np.array((x,y,z))
-#         self.E   = E
-#
-#     def __str__(self):
-#         return '<{} {} {}>'.format(self.__class__.__name__,
-#                                    self.pos.tolist(), self.E)
-#     __repr__ = __str__
-
-
-# class Voxel:
-#
-#     def __init__(self, x,y,z, E):
-#         self.pos = np.array((x,y,z))
-#         self.E   = E
-#
-#     #__str__  = Hit.__str__
-#     def __str__(self):
-#         return '<{} {} {}>'.format(self.__class__.__name__,
-#                                    self.pos.tolist(), self.E)
-#     __repr__ =     __str__
-#
-#     def __eq__(self, other):
-#         try:
-#             return np.array_equal(self.pos, other.pos) and self.E == other.E
-#         except AttributeError:
-#             return False
-#
-#     def __hash__(self):
-#         return hash((self.E, tuple(self.pos)))
-
+from typing import Sequence
+from typing import List
+from typing import Dict
 
 MAX3D = np.array([float(' inf')] * 3)
 MIN3D = np.array([float('-inf')] * 3)
 
-def bounding_box(seq):
+def bounding_box(seq : BHit) ->Sequence[np.ndarray]:
+    """Returns two arrays defining the coordinates of a box that bounds the voxels"""
     posns = [x.pos for x in seq]
     return (reduce(np.minimum, posns, MAX3D),
             reduce(np.maximum, posns, MIN3D))
 
 
-def voxelize_hits(hits, voxel_dimensions):
+def voxelize_hits(hits : BHit, voxel_dimensions : np.ndarray) ->List[Voxel]:
+    """1. Hits are enclosed by a bounding box.
+       2. Boundix box is discretized (via a hitogramdd).
+       3. The energy of all the hits insidex each discreet "voxel" is added.
+
+     """
     if not hits:
         raise NoHits
     hlo, hhi = bounding_box(hits)
@@ -61,7 +40,7 @@ def voxelize_hits(hits, voxel_dimensions):
     hit_energies  =          [h.E   for h in hits]
     E, edges = np.histogramdd(hit_positions, bins=bins, weights=hit_energies)
 
-    def centres(a):
+    def centres(a : np.ndarray) -> np.ndarray:
         return (a[1:] + a[:-1]) / 2
 
     cx, cy, cz = map(centres, edges)
@@ -71,10 +50,15 @@ def voxelize_hits(hits, voxel_dimensions):
             for (x,y,z) in np.stack(nz).T]
 
 
-def make_track_graphs(voxels, voxel_dimensions):
+def make_track_graphs(voxels : Voxel,  voxel_dimensions : np.ndarray) ->Sequence[Graph]:
+    """Creates a graph where the voxels are the nodes and the edges are any
+    pair of neighbour voxel. Two voxels are considered to be neighbours if
+    their distance normalized to their size is smaller than a scale factor.
 
-    def neighbours(va, vb):
-        return ((abs(va.pos - vb.pos) / voxel_dimensions) < 1.5).all()
+    """
+
+    def neighbours(va : Voxel, vb : Voxel, scale : float = 1.5) ->bool:
+        return ((abs(va.pos - vb.pos) / voxel_dimensions) < scale).all()
 
     voxel_graph = nx.Graph()
     voxel_graph.add_nodes_from(voxels)
@@ -85,11 +69,17 @@ def make_track_graphs(voxels, voxel_dimensions):
 
     return tuple(nx.connected_component_subgraphs(voxel_graph))
 
+def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
+    """Compute shortest path lengths between all nodes in a weighted graph."""
+    f = partial(nx.all_pairs_dijkstra_path_length, weight='distance')
+    return f (track_graph)
 
-shortest_paths = partial(nx.all_pairs_dijkstra_path_length, weight='distance')
+
+#shortest_paths = partial(nx.all_pairs_dijkstra_path_length, weight='distance')
 
 
-def find_extrema(distance : 'dict of dicts'):
+def find_extrema(distance : Dict[Voxel, Dict[Voxel, float]]) -> Sequence[Voxel]:
+    """Find the extrema of the track """
     if not distance:
         raise NoVoxels
     if len(distance) == 1:
@@ -103,11 +93,12 @@ def find_extrema(distance : 'dict of dicts'):
     return (first, last)
 
 
-def energy_within_radius(distances, radius):
+def energy_within_radius(distances : Dict[Voxel, Dict[Voxel, float]], radius : float) -> float:
     return sum(v.E for (v, d) in distances.items() if d < radius)
 
 
-def blob_energies(track_graph, radius):
+def blob_energies(track_graph : Graph, radius : float) ->Sequence[float]:
+    """Return the energies around the extrema of the track. """
     distances = shortest_paths(track_graph)
     a,b = find_extrema(distances)
     Ea = energy_within_radius(distances[a], radius)
