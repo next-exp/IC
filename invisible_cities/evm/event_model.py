@@ -8,6 +8,11 @@ from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
 from .. core.core_functions    import loc_elem_1d
 from .. core.system_of_units_c import units
+from .  pmaps import Peak
+from .  pmaps import S1
+from .  pmaps import S2
+from .  pmaps import S2Si
+from .  pmaps import S2Pmt
 
 ZANODE = -9.425 * units.mm
 
