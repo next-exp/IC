@@ -1,6 +1,7 @@
 # Clsses defining the event model
 
 import numpy as np
+from networkx                  import Graph
 from .. types.ic_types         import NN
 from .. types.ic_types         import minmax
 from .. core.exceptions        import PeakNotFound
@@ -13,6 +14,8 @@ from .  pmaps import S1
 from .  pmaps import S2
 from .  pmaps import S2Si
 from .  pmaps import S2Pmt
+from typing import List
+from typing import Tuple
 
 ZANODE = -9.425 * units.mm
 
@@ -166,9 +169,95 @@ class Hit(Cluster):
     __repr__ =     __str__
 
 
+class VoxelCollection:
+    """A collection of voxels. """
+    def __init__(self, voxels : List[Voxel]):
+        self.voxels = voxels
+
+    @property
+    def number_of_voxels(self):
+        return len(self.voxels)
+
+    def __str__(self):
+        s =  "VoxelCollection: (number of voxels = {})\n".format(self.number_of_voxels)
+        s2 = ['voxel number {} = {} \n'.format((i, voxel) for (i, voxel) in enumerate(self.voxels))]
+
+        return  s + ''.join(s2)
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class Blob(VoxelCollection):
+    """A Blob is a collection of Voxels which adds the energy of the blob. """
+    def __init__(self, voxels : List[Voxel], energy : float) ->None:
+        super().__init__(voxels)
+        self.E = energy
+
+    def __str__(self):
+        s =  """Bolb: (number of voxels = {})\n,
+                voxels = {} \n
+                blob energy = {}
+        """.format(self.number_of_voxels, self.voxels, self.E)
+
+        return  s
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class Track(VoxelCollection):
+    """A track is a collection of linked voxels. """
+    def __init__(self, voxels : List[Voxel], blobs: Tuple[Blob, Blob]) ->None:
+        super().__init__(voxels)
+        self.blobs = blobs
+
+    def __str__(self):
+        s =  """Track: (number of voxels = {})\n,
+                voxels = {} \n
+                blob_a = {} \n
+                blob_b = {}
+        """.format(self.number_of_voxels, self.voxels, self.blobs[0], self.blobs[1])
+
+        return  s
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class TrackCollection(Event):
+    """A Collection of tracks"""
+    def __init__(self, event_number, event_time):
+        Event.__init__(self, event_number, event_time)
+        self.tracks = []
+
+    def store(self, table):
+        row = table.row
+        for i, t in enumerate(self.tracks):
+            row["event"]    = self.event
+            row["time" ]    = self.time
+            row["track_no"] = i
+
+            for j, voxel in enumerate(t.voxels):
+                row["voxel_no"] = j
+                row["X"    ] = voxel.X
+                row["Y"    ] = voxel.Y
+                row["Z"    ] = voxel.Z
+                row["E"    ] = voxel.E
+
+                row.append()
+
+    def __str__(self):
+        s =  "{}".format(self.__class__.__name__)
+        s+= "Track list:"
+        s2 = [str(trk) for trk in self.tracks]
+        return  s + ''.join(s2)
+
+    __repr__ =     __str__
+
 
 class HitCollection(Event):
-    """Transient version of Hit Collection"""
+    """A Collection of hits"""
     def __init__(self, event_number, event_time):
         Event.__init__(self, event_number, event_time)
         self.hits = []
