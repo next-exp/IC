@@ -25,7 +25,7 @@ def bounding_box(seq : BHit) ->Sequence[np.ndarray]:
             reduce(np.maximum, posns, MIN3D))
 
 
-def voxelize_hits(hits : BHit, voxel_dimensions : np.ndarray) ->List[Voxel]:
+def voxelize_hits(hits : Sequence[BHit], voxel_dimensions : np.ndarray) ->List[Voxel]:
     """1. Hits are enclosed by a bounding box.
        2. Boundix box is discretized (via a hitogramdd).
        3. The energy of all the hits insidex each discreet "voxel" is added.
@@ -68,6 +68,14 @@ def make_track_graphs(voxels : Voxel,  voxel_dimensions : np.ndarray) ->Sequence
                                  distance = np.linalg.norm(va.pos - vb.pos))
 
     return tuple(nx.connected_component_subgraphs(voxel_graph))
+
+
+def voxels_from_track_graph(track: Graph) ->List[Voxel]:
+    """Create and return a list of voxels from a track graph"""
+
+    voxels = [Voxel(t) for t in t.nodes]
+    return voxels
+
 
 def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
     """Compute shortest path lengths between all nodes in a weighted graph."""
