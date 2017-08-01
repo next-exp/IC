@@ -73,7 +73,7 @@ def make_track_graphs(voxels : Voxel,  voxel_dimensions : np.ndarray) ->Sequence
 def voxels_from_track_graph(track: Graph) ->List[Voxel]:
     """Create and return a list of voxels from a track graph"""
 
-    voxels = [Voxel(t) for t in t.nodes]
+    voxels = [Voxel(t.X, t.Y, t.Z, t.E) for t in track.nodes()]
     return voxels
 
 
