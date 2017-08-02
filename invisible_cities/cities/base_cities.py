@@ -763,15 +763,16 @@ class TrackCity(HitCity):
         track_graphs = paf.make_track_graphs(voxels, self.voxel_dimensions) # type: Sequence[Graph]
 
         for trk in track_graphs:
-            distances = paf.shortest_paths(track_graph)
-            a,b       = paf.find_extrema(distances) # type: Sequence[Voxel]
-            Ea = energy_within_radius(distances[a], self.blob_radius) # type: float
-            Eb = energy_within_radius(distances[b], self.blob_radius)
-            blob_a = Blob(a, Ea) # type: Blob
-            blob_b = Blob(b, Eb)
-            blobs = (blob_a, blob_b) if Ea < Eb else (blob_b, blob_a) # type: Tuple[Blob, Blob]
+            distances = paf.shortest_paths(trk)
+            a,b       = paf.find_extrema(distances) # type: Tuple[Voxel, Voxel]
+            ba, bb = paf.blobs(trk, blob_radius) # type: Tuple[List[Voxel], List[Voxel]]
+            #Ea = paf.energy_within_radius(distances[a], self.blob_radius) # type: float
+            #Eb = paf.energy_within_radius(distances[b], self.blob_radius)
+            blob_a = Blob(ba) # type: Blob
+            blob_b = Blob(bb)
+            blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a) # type: Tuple[Blob, Blob]
             track = Track(paf.voxels_from_track_graph(trk), blobs)
-            tc.append(track)
+            tc.tracks.append(track)
         return tc
 
 
