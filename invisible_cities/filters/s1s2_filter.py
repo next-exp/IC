@@ -9,29 +9,6 @@ from .. evm.pmaps import S1
 from .. evm.pmaps import S2
 from .. evm.pmaps import S2Si
 from typing import List
-#from ..reco.pmaps_functions   import integrate_S2Si_charge
-#
-# def select_peaks(s1,
-#                  Emin, Emax,
-#                  Lmin, Lmax,
-#                  Hmin, Hmax,
-#                  Ethr = -1):
-#
-#     is_valid = lambda E: (Lmin <= np.size(E) < Lmax and
-#                           Hmin <= np.max (E) < Hmax and
-#                           Emin <= np.sum (E) < Emax)
-#
-#     for peak_no in s1.peak_collection():
-#         peak = s1.peak_waveform(peak_no)
-#         if valid_peak()
-#
-#     return {peak_no: (t, E) for peak_no, (t, E) in peaks.items() if is_valid(E[E > Ethr])}
-#
-#
-# def select_Si(peaks,
-#               Nmin, Nmax):
-#     is_valid = lambda sipms: Nmin <= len(sipms) < Nmax
-#     return {peak_no: sipms for peak_no, sipms in peaks.items() if is_valid(sipms)}
 
 
 class S12Selector:
@@ -49,28 +26,6 @@ class S12Selector:
         self.nsi = minmax(conf.s2_nsipmmin, conf.s2_nsipmmax)
         self.s2_ethr = conf.s2_ethr
 
-
-        # self.S1_Nmin     = conf.s1_nmin
-        # self.S1_Nmax     = conf.s1_nmax
-        # self.S1_Emin     = conf.s1_emin
-        # self.S1_Emax     = conf.s1_emax
-        # self.S1_Lmin     = conf.s1_lmin
-        # self.S1_Lmax     = conf.s1_lmax
-        # self.S1_Hmin     = conf.s1_hmin
-        # self.S1_Hmax     = conf.s1_hmax
-        # self.S1_Ethr     = conf.s1_ethr
-        #
-        # self.S2_Nmin     = conf.s2_nmin
-        # self.S2_Nmax     = conf.s2_nmax
-        # self.S2_Emin     = conf.s2_emin
-        # self.S2_Emax     = conf.s2_emax
-        # self.S2_Lmin     = conf.s2_lmin
-        # self.S2_Lmax     = conf.s2_lmax
-        # self.S2_Hmin     = conf.s2_hmin
-        # self.S2_Hmax     = conf.s2_hmax
-        # self.S2_NSIPMmin = conf.s2_nsipmmin
-        # self.S2_NSIPMmax = conf.s2_nsipmmax
-        # self.S2_Ethr     = conf.s2_ethr
 
     @staticmethod
     def valid_peak(peak : Peak, thr : float,
@@ -94,19 +49,10 @@ class S12Selector:
         within the boundaries defined by energy, width and height.
 
         """
-        # valid_peaks = 0
-        # for peak_no in s1.peak_collection():
-        #     peak = s1.peak_waveform(peak_no)
-        #     if valid_peak(energy, width, height, peak):
-        #         valid_peaks+=1
 
-        # less clear than above
-        # valid_peaks = {peak_no: s1.peak_waveform(peak_no) for peak_no in s1.peak_collection()
-        # if valid_peak(self.s1e, self.s1w, self.s1h, s1.peak_waveform(peak_no))
-        # }
         valid_peaks = [peak_no for peak_no in s12.peak_collection()
-                      if S12Selector.valid_peak(s12.peak_waveform(peak_no), thr,
-                                    energy, width, height)]
+                      if S12Selector.valid_peak(s12.peak_waveform(peak_no),
+                                                thr, energy, width, height)]
 
         return valid_peaks
 
@@ -116,11 +62,6 @@ class S12Selector:
         within the boundaries defined by nsipm.
 
         """
-        # valid_peaks = {}
-        # for peak_no in s2si.peak_collection():
-        #     nof_sipm = s2si.number_of_sipms_in_peak(peak_no)
-        #     if nsipm.contains(nof_sipm):
-        #         valid_peaks[peak_no] = nof_sipm
 
         valid_peaks = [peak_no for peak_no in s2si.peak_collection()
                        if nsipm.contains(s2si.number_of_sipms_in_peak(peak_no))]
