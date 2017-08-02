@@ -13,6 +13,7 @@ from .. evm.event_model import BHit
 
 from typing import Sequence
 from typing import List
+from typing import Tuple
 from typing import Dict
 
 MAX3D = np.array([float(' inf')] * 3)
@@ -86,7 +87,7 @@ def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
 #shortest_paths = partial(nx.all_pairs_dijkstra_path_length, weight='distance')
 
 
-def find_extrema(distance : Dict[Voxel, Dict[Voxel, float]]) -> Sequence[Voxel]:
+def find_extrema(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Voxel]:
     """Find the extrema of the track """
     if not distance:
         raise NoVoxels
@@ -105,10 +106,26 @@ def energy_within_radius(distances : Dict[Voxel, Dict[Voxel, float]], radius : f
     return sum(v.E for (v, d) in distances.items() if d < radius)
 
 
-def blob_energies(track_graph : Graph, radius : float) ->Sequence[float]:
+def voxels_within_radius(distances : Dict[Voxel, Dict[Voxel, float]],
+                         radius : float) -> List[Voxel]:
+
+    return [v for (v, d) in distances.items() if d < radius]
+
+
+def blob_energies(track_graph : Graph, radius : float) ->Tuple[float, float]:
     """Return the energies around the extrema of the track. """
     distances = shortest_paths(track_graph)
     a,b = find_extrema(distances)
     Ea = energy_within_radius(distances[a], radius)
     Eb = energy_within_radius(distances[b], radius)
     return (Ea, Eb) if Ea < Eb else (Eb, Ea)
+
+
+def blobs(track_graph : Graph, radius : float) ->Tuple[List[Voxel], List[Voxel]]:
+    """Return the blobs (list of voxels) around the extrema of the track. """
+    distances = shortest_paths(track_graph)
+    a,b = find_extrema(distances)
+    ba = voxels_within_radius(distances[a], radius)
+    bb = voxels_within_radius(distances[b], radius)
+
+    return (ba, bb)
