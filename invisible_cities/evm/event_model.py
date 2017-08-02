@@ -190,12 +190,12 @@ class VoxelCollection:
 
 class Blob(VoxelCollection):
     """A Blob is a collection of Voxels which adds the energy of the blob. """
-    def __init__(self, voxels : List[Voxel], energy : float) ->None:
+    def __init__(self, voxels : List[Voxel]) ->None:
         super().__init__(voxels)
-        self.E = energy
+        self.E = sum(v.E for v in voxels)
 
     def __str__(self):
-        s =  """Bolb: (number of voxels = {})\n,
+        s =  """Blob: (number of voxels = {})\n,
                 voxels = {} \n
                 blob energy = {}
         """.format(self.number_of_voxels, self.voxels, self.E)
