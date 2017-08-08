@@ -175,7 +175,7 @@ def track_extrema():
                   (20,20,20,  2000),
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    track, = make_track_graphs(voxels, np.array([1,1,1]))
+    track  = make_track_graphs(voxels, np.array([1,1,1]))
     distances = shortest_paths(track)
     extrema = find_extrema(distances)
 
