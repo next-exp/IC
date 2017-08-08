@@ -173,6 +173,7 @@ class VoxelCollection:
     """A collection of voxels. """
     def __init__(self, voxels : List[Voxel]):
         self.voxels = voxels
+        self.E = sum(v.E for v in voxels)
 
     @property
     def number_of_voxels(self):
@@ -190,15 +191,16 @@ class VoxelCollection:
 
 class Blob(VoxelCollection):
     """A Blob is a collection of Voxels which adds the energy of the blob. """
-    def __init__(self, voxels : List[Voxel]) ->None:
+    def __init__(self, a: Voxel, voxels : List[Voxel]) ->None:
         super().__init__(voxels)
-        self.E = sum(v.E for v in voxels)
+        self.seed = a
 
     def __str__(self):
         s =  """Blob: (number of voxels = {})\n,
                 voxels = {} \n
+                seed   = {} \n
                 blob energy = {}
-        """.format(self.number_of_voxels, self.voxels, self.E)
+        """.format(self.number_of_voxels, self.voxels, self.seed, self.E)
 
         return  s
 
@@ -230,6 +232,10 @@ class TrackCollection(Event):
     def __init__(self, event_number, event_time):
         Event.__init__(self, event_number, event_time)
         self.tracks = []
+
+    @property
+    def number_of_tracks(self):
+        return len(self.tracks)
 
     def store(self, table):
         row = table.row
