@@ -123,8 +123,6 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
             first_evt_number = h5out.root.MC.MCTracks[ 0][0]
             last_evt_number  = h5out.root.MC.MCTracks[-1][0]
             assert first_evt_number != last_evt_number
-            print(first_evt_number, last_evt_number)
-            assert false
 
 @mark.parametrize('filename, first_evt',
              (('dst_NEXT_v0_08_09_Co56_INTERNALPORTANODE_74_0_7bar_MCRD_10000.root.h5',
