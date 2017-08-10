@@ -110,6 +110,9 @@ def find_extrema(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Vox
             first, last, max_distance = source, target, d
     return (first, last)
 
+def length(track_graph):
+    return len(shortest_paths(track_graph))
+
 
 def energy_within_radius(distances : Dict[Voxel, Dict[Voxel, float]], radius : float) -> float:
     return sum(v.E for (v, d) in distances.items() if d < radius)
