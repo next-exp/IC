@@ -108,7 +108,7 @@ class Diomira(MonteCarloCity):
                 # filter events as a function of trigger
                 if not self.trigger_filter(peak_data):
                     continue
-                    
+
             self.cnt.increment_counter('nevt_out')
 
             #write
