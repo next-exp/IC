@@ -123,7 +123,7 @@ cdef class S12:
 cdef class S1(S12):
     def __init__(self, s1d):
         self.s1d = s1d
-        super(S1,self).__init__(s1d)
+        super(S1, self).__init__(s1d)
 
     def __str__(self):
         s =  "S1 (number of peaks = {})\n".format(self.number_of_peaks)
@@ -350,3 +350,15 @@ cdef class S12Pmt(S12):
                     row["nsipm"]   = npmt
                     row["ene"]     = E
                     row.append()
+
+
+cdef class S1Pmt(S12Pmt):
+    def __init__(self, s1d, pmtsd):
+        self.s1d = s1d
+        S12Pmt.__init__(self, s1d, pmtsd)
+
+
+cdef class S2Pmt(S12Pmt):
+    def __init__(self, s2d, pmtsd):
+        self.s2d = s2d
+        S12Pmt.__init__(self, s2d, pmtsd)
