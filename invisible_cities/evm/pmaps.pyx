@@ -8,7 +8,7 @@ from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
 from .. core.core_functions    import loc_elem_1d
-from .. core.exceptions        import InconsistentS2dS2pmtd
+from .. core.exceptions        import InconsistentS12dPmtsd
 from .. core.system_of_units_c import units
 
 
@@ -302,7 +302,7 @@ cdef class S12Pmt(S12):
         # Check that energies in s12d are sum of pmtsd across pmts for each peak
         for peak, s12_pmts in zip(s12d.values(), pmtsd.values()):
             if not np.allclose(peak[1], s12_pmts.sum(axis=0)):
-                raise InconsistentS2dS2pmtd
+                raise InconsistentS12dPmtsd
 
         S12.__init__(self, s12d)
         self.pmtsd = pmtsd
