@@ -68,3 +68,11 @@ cdef class S12Pmt(S12):
     cpdef pmt_total_energy_in_peak(self, int peak_number, int pmt_number)
     cpdef pmt_total_energy(self, int pmt_number)
     cpdef store(self, table, event_number)
+
+
+cdef class S1Pmt(S12Pmt):
+    cdef public s1d
+
+
+cdef class S2Pmt(S12Pmt):
+    cdef public s2d
