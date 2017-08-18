@@ -11,7 +11,7 @@ from hypothesis.extra.numpy import arrays
 
 from .. types.ic_types_c    import xy
 from .. types.ic_types_c    import minmax
-from .. core.exceptions     import InconsistentS2dS2pmtd
+from .. core.exceptions     import InconsistentS12dPmtsd
 
 from .. reco.pmaps_functions_c import integrate_sipm_charges_in_peak
 from .. reco  import pmaps_functions as pmapf
@@ -222,7 +222,7 @@ def test_S12Pmt_raises_error_when_s2_peak_E_not_equal_to_sum_of_s12pmt_peak():
     try:
         S12Pmt(s12d, pmtsd)
         assert False
-    except InconsistentS2dS2pmtd:
+    except InconsistentS12dPmtsd:
         pass
 
 
