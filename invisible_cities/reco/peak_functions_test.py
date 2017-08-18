@@ -496,24 +496,26 @@ def test_extract_peaks_from_waveform():
     # Check that _extract... did not return extra peaks
     assert len(peak_bounds) == len(S12L)
 
-def test_get_s2pmtd():
+def test_get_s12pmtd():
     npmts  = 4
     ntbins = 52000
-    CWF    = np.random.random(size=(npmts, ntbins)) # generate wfs for pmts
-    csum   = CWF.sum(axis=0)                 # and their sum
+    cCWF    = np.random.random(size=(npmts, ntbins)) # generate wfs for pmts
+    csum   = cCWF.sum(axis=0)                 # and their sum
     npeaks = 20
     peak_bounds  = {}
-    rebin_stride = 40
+    rebin_strides = [1,7,40]
+
     for pn in range(npeaks):
         start = np.random.randint(      0, ntbins  )
         stop  = np.random.randint(1+start, ntbins+1)
         peak_bounds[pn] = np.array([start, stop], dtype=np.int32) # generate some peak_bounds
 
-    # extract the peaks from the csum, and for each pmt extract the peaks from the CWF
-    S12L   = cpf.extract_peaks_from_waveform(csum, peak_bounds, rebin_stride=rebin_stride)
-    s2pmtd = pf.get_s2pmtd(CWF, peak_bounds, rebin_stride=rebin_stride)
-    for s12l, s2_pmts, i_peak in zip(S12L.values(), s2pmtd.values(), peak_bounds.values()):
-        # check that the sum of the individual pmt s2s equals the total s2, at each time bin
-        assert np.allclose(s12l[1], s2_pmts.sum(axis=0))
-        # check that the correct energy is in each pmt
-        assert np.allclose(s2_pmts.sum(axis=1), CWF[:, i_peak[0]: i_peak[1]].sum(axis=1))
+    for rebin_stride in rebin_strides:
+        # extract the peaks from the csum, and for each pmt extract the peaks from the cCWF
+        S12L   = cpf.extract_peaks_from_waveform(csum, peak_bounds, rebin_stride=rebin_stride)
+        s12pmtd = pf.get_s12pmtd(cCWF, peak_bounds, rebin_stride=rebin_stride)
+        for s12l, s12_pmts, i_peak in zip(S12L.values(), s12pmtd.values(), peak_bounds.values()):
+            # check that the sum of the individual pmt s12s equals the total s12, at each time bin
+            assert np.allclose(s12l[1], s12_pmts.sum(axis=0))
+            # check that the correct energy is in each pmt
+            assert np.allclose(s12_pmts.sum(axis=1), cCWF[:, i_peak[0]: i_peak[1]].sum(axis=1))
