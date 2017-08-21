@@ -175,14 +175,16 @@ def track_extrema():
                   (20,20,20,  2000),
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    track  = make_track_graphs(voxels, np.array([1,1,1]))
-    distances = shortest_paths(track)
+    tracks  = make_track_graphs(voxels, np.array([1,1,1]), contiguity=1.5)
+
+    assert len(tracks) == 1
+    distances = shortest_paths(tracks[0])
     extrema = find_extrema(distances)
 
     assert voxels[ 0] in extrema
     assert voxels[-1] in extrema
 
-    return track, extrema
+    return tracks[0], extrema
 
 
 @parametrize('radius, expected',
