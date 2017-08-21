@@ -50,9 +50,16 @@ def print_tracks(tc):
         print('\n')
 
 def print_distance_to_track(tc, trkm):
+    trkm_ba, trkm_bb = trkm.blobs
     for trk_no, trk in enumerate(tc.tracks):
         print('trk no = {}, number of voxels = {}, energy = {}'.
               format(trk_no, trk.number_of_voxels, trk.E))
+        ba, bb = trk.blobs
+        print('----------------------------')
+        print('blob a: number of voxels = {}, seed = {}, energy = {}'.
+              format(ba.number_of_voxels, ba.seed, ba.E))
+        print('blob b: number of voxels = {}, seed = {}, energy = {}'.
+              format(bb.number_of_voxels, bb.seed, bb.E))
 
         print("""distances to reference track:
             a : a = {}        a : b = {}
