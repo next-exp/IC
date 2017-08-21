@@ -7,7 +7,7 @@ from . dorothea import Dorothea
 from .. io.dst_io import load_dst
 from .. core.test_utils    import assert_dataframes_close
 from .. core.configure     import configure
-from .. core.system_of_units import pes, mm, mus
+from .. core.system_of_units import pes, mm, mus, ns
 
 def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
@@ -24,26 +24,26 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
                      file_out   = PATH_OUT,
 
                      drift_v     =      1 * mm / mus,
-                     S1_Nmin     =      1,
-                     S1_Nmax     =      1,
-                     S1_Emin     =      0 * pes,
-                     S1_Emax     =     30,
-                     S1_Lmin     =      4,
-                     S1_Lmax     =     20,
-                     S1_Hmin     =    0.5 * pes,
-                     S1_Hmax     =     10 * pes,
-                     S1_Ethr     =    0.5 * pes,
-                     S2_Nmin     =      1,
-                     S2_Nmax     =      2,
-                     S2_Emin     =    1e3 * pes,
-                     S2_Emax     =    1e8 * pes,
-                     S2_Lmin     =      1,
-                     S2_Lmax     =     20,
-                     S2_Hmin     =    500 * pes,
-                     S2_Hmax     =    1e5 * pes,
-                     S2_Ethr     =      1 * pes,
-                     S2_NSIPMmin =      2,
-                     S2_NSIPMmax =   1000,
+                     s1_nmin     =      1,
+                     s1_nmax     =      1,
+                     s1_emin     =      0 * pes,
+                     s1_emax     =     30,
+                     s1_wmin     =    100 * ns,
+                     s1_wmax     =    500 * ns,
+                     s1_hmin     =    0.5 * pes,
+                     s1_hmax     =     10 * pes,
+                     s1_ethr     =    0.37 * pes,
+                     s2_nmin     =      1,
+                     s2_nmax     =      2,
+                     s2_emin     =    1e3 * pes,
+                     s2_emax     =    1e8 * pes,
+                     s2_wmin     =      1 * mus,
+                     s2_wmax     =     20 * mus,
+                     s2_hmin     =    500 * pes,
+                     s2_hmax     =    1e5 * pes,
+                     s2_ethr     =      1 * pes,
+                     s2_nsipmmin =      2,
+                     s2_nsipmmax =   1000,
                      nmax        = nrequired))
 
 

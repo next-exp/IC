@@ -39,7 +39,7 @@ def plot_s12(s12, figsize=(6,6)):
             plt.plot(wfm.t/units.mus, wfm.E)
 
 
-def plot_s2si_map(s2si, run_number=0, cmap='Blues'):
+def plot_s2si_map(s2si, run_number=0, vmin=None, vmax=None, cmap='Blues'):
         """Plot a map of the energies of S2Si objects."""
 
         DataSensor = load_db.DataSiPM(run_number)
@@ -54,7 +54,7 @@ def plot_s2si_map(s2si, run_number=0, cmap='Blues'):
 
         plt.figure(figsize=(8, 8))
         plt.subplot(aspect="equal")
-        circles(xs, ys, r, c=col, alpha=0.5, ec="none", cmap=cmap)
+        circles(xs, ys, r, c=col, vmin=vmin, vmax=vmax, alpha=0.5, ec="none", cmap=cmap)
         plt.colorbar()
 
         plt.xlim(-198, 198)
