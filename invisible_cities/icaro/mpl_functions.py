@@ -7,8 +7,13 @@ from matplotlib.patches import Circle
 from matplotlib.collections import PatchCollection
 from matplotlib.offsetbox import (TextArea, DrawingArea, OffsetImage,
                                   AnnotationBbox)
-# from mpl_toolkits.mplot3d import Axes3D
-# from IPython.display import HTML
+
+
+from matplotlib import colors as mcolors
+import matplotlib.cm as cm
+from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from matplotlib.pyplot import figure, show
 
 from .. core.system_of_units_c import units
 from .. core.core_functions import define_window
@@ -19,33 +24,6 @@ from .. database     import load_db
 #matplotlib.rc('animation', html='html5')
 
 # histograms, signals and shortcuts
-def hbins(x, nsigma=5, nbins=10):
-    """Given an array x, hbins returns the number of bins
-    in an interval of  [<x> - nsigma*std(x), <x> + nsigma*std(x)]
-    """
-    xmin = np.average(x) - nsigma*np.std(x)
-    xmax = np.average(x) + nsigma*np.std(x)
-    bins = np.linspace(xmin, xmax, nbins)
-    return bins
-
-
-def histo(x, nbins, title="hsimple", xlabel="", ylabel="Frequency"):
-    """histograms"""
-
-    plt.hist(x, nbins, histtype="bar", alpha=0.75)
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-
-
-def plts(signal, signal_start=0, signal_end=1e+4, offset=5):
-    """Plot a signal in a give interval, control offset by hand."""
-    ax1 = plt.subplot(1, 1, 1)
-    ymin = np.amin(signal[signal_start:signal_end]) - offset
-    ymax = np.amax(signal[signal_start:signal_end]) + offset
-    ax1.set_xlim([signal_start, signal_end])
-    ax1.set_ylim([ymin, ymax])
-    plt.plot(signal)
 
 
 def plot_vector(v, figsize=(10,10)):
@@ -68,137 +46,6 @@ def plot_xy(x, y, figsize=(10,10)):
     plt.figure(figsize=figsize)
     ax1 = plt.subplot(1, 1, 1)
     plt.plot(x,y)
-
-
-def plot_signal(signal_t, signal, title="signal",
-                signal_start=0, signal_end=1e+4,
-                ymax=200, t_units="", units=""):
-    """Given a series signal (t, signal), plot the signal."""
-
-    ax1 = plt.subplot(1, 1, 1)
-    ax1.set_xlim([signal_start, signal_end])
-    ax1.set_ylim([0, ymax])
-    set_plot_labels(xlabel="t ({})".format(t_units),
-                  ylabel="signal ({})".format(units))
-    plt.title(title)
-    plt.plot(signal_t, signal)
-    # plt.show()
-
-
-def plot_signal_vs_time_mus(signal,
-                            t_min      =    0,
-                            t_max      = 1200,
-                            signal_min =    0,
-                            signal_max =  200,
-                            figsize=(6,6)):
-    """Plot signal versus time in mus (tmin, tmax in mus). """
-    plt.figure(figsize=figsize)
-    tstep = 25 # in ns
-    PMTWL = signal.shape[0]
-    signal_t = np.arange(0., PMTWL * tstep, tstep)/units.mus
-    ax1 = plt.subplot(1, 1, 1)
-    ax1.set_xlim([t_min, t_max])
-    ax1.set_ylim([signal_min, signal_max])
-    set_plot_labels(xlabel = "t (mus)",
-                    ylabel = "signal (pes/adc)")
-    plt.plot(signal_t, signal)
-
-
-def plot_waveform(pmtwf, zoom=False, window_size=800):
-    """Take as input a vector a single waveform and plot it"""
-
-    first, last = 0, len(pmtwf)
-    if zoom:
-        first, last = define_window(pmtwf, window_size)
-
-    mpl.set_plot_labels(xlabel="samples", ylabel="adc")
-    plt.plot(pmtwf[first:last])
-
-
-def plot_waveforms_overlap(wfs, zoom=False, window_size=800):
-    """Draw all waveforms together. If zoom is True, plot is zoomed
-    around peak.
-    """
-    first, last = 0, wfs.shape[1]
-    if zoom:
-        first, last = define_window(wfs[0], window_size)
-    for wf in wfs:
-        plt.plot(wf[first:last])
-
-
-def plot_wfa_wfb(wfa, wfb, zoom=False, window_size=800):
-    """Plot together wfa and wfb, where wfa and wfb can be
-    RWF, CWF, BLR.
-    """
-    plt.figure(figsize=(12, 12))
-    for i in range(len(wfa)):
-        first, last = 0, len(wfa[i])
-        if zoom:
-            first, last = define_window(wfa[i], window_size)
-        plt.subplot(3, 4, i+1)
-        # ax1.set_xlim([0, len_pmt])
-        set_plot_labels(xlabel="samples", ylabel="adc")
-        plt.plot(wfa[i][first:last], label= 'WFA')
-        plt.plot(wfb[i][first:last], label= 'WFB')
-        legend = plt.legend(loc='upper right')
-        for label in legend.get_texts():
-            label.set_fontsize('small')
-
-
-def plot_pmt_waveforms(pmtwfdf, zoom=False, window_size=800, figsize=(10,10)):
-    """plot PMT wf and return figure"""
-    plt.figure(figsize=figsize)
-    for i in range(len(pmtwfdf)):
-        first, last = 0, len(pmtwfdf[i])
-        if zoom:
-            first, last = define_window(pmtwfdf[i], window_size)
-
-        ax = plt.subplot(3, 4, i+1)
-        set_plot_labels(xlabel="samples", ylabel="adc")
-        plt.plot(pmtwfdf[i][first:last])
-
-
-def plot_pmt_signals_vs_time_mus(pmt_signals,
-                                 pmt_active,
-                                 t_min      =    0,
-                                 t_max      = 1200,
-                                 signal_min =    0,
-                                 signal_max =  200,
-                                 figsize=(10,10)):
-    """Plot PMT signals versus time in mus  and return figure."""
-
-    tstep = 25
-    PMTWL = pmt_signals[0].shape[0]
-    signal_t = np.arange(0., PMTWL * tstep, tstep)/units.mus
-    plt.figure(figsize=figsize)
-
-    for j, i in enumerate(pmt_active):
-        ax1 = plt.subplot(3, 4, j+1)
-        ax1.set_xlim([t_min, t_max])
-        ax1.set_ylim([signal_min, signal_max])
-        set_plot_labels(xlabel = "t (mus)",
-                        ylabel = "signal (pes/adc)")
-
-        plt.plot(signal_t, pmt_signals[i])
-
-
-def plot_calibrated_sum_in_mus(CSUM,
-                               tmin=0, tmax=1200,
-                               signal_min=-5, signal_max=200,
-                               csum=True, csum_mau=False):
-    """Plots calibrated sums in mus (notice units)"""
-
-    if csum:
-        plot_signal_vs_time_mus(CSUM.csum,
-                                t_min=tmin, t_max=tmax,
-                                signal_min=signal_min, signal_max=signal_max,
-                                label='CSUM')
-    if csum_mau:
-        plot_signal_vs_time_mus(CSUM.csum_mau,
-                                t_min=tmin, t_max=tmax,
-                                signal_min=signal_min, signal_max=signal_max,
-                                label='CSUM_MAU')
-
 
 
 def plot_sipm_list(sipmrwf, sipm_list, x=4):
@@ -233,6 +80,7 @@ def plot_sensor_list_ene_map(run_number, swf, slist, stype='PMT', cmap='Blues'):
         plt.xlim(-198, 198)
         plt.ylim(-198, 198)
 
+
 def draw_pmt_map(run_number):
     """Draws a map with the channel_id number in the positions of the PMTs.
         channel_id = elecID (electronic ID) for PMTs.
@@ -253,6 +101,20 @@ def draw_pmt_map(run_number):
         ax.add_artist(ab)
 
     plt.show()
+
+
+def plt_scatter3d(ax, x, y, z, q, s = 30, alpha=0.3):
+    ax.scatter(x, y, z, c=q, s=s, alpha=alpha)
+    ax.set_xlabel("x (mm)")
+    ax.set_ylabel("y (mm)")
+    ax.set_zlabel("z (mm)")
+
+
+def plt_scatter2d(ax, x, y, q, s = 30, alpha=0.3):
+    ax.scatter(x, y, c=q, s=s, alpha=alpha)
+    ax.set_xlabel("x (mm)")
+    ax.set_ylabel("y (mm)")
+
 
 def make_tracking_plane_movie(slices, thrs=0.1):
     """Create a video made of consecutive frames showing the response of
@@ -314,44 +176,6 @@ def make_tracking_plane_movie(slices, thrs=0.1):
                                               blit=False)
     return anim
 
-
-
-def plot_event_3D(pmap, sipmdf, outputfile=None, thrs=0.):
-    """Create a 3D+1 representation of the event based on the SiPMs signal
-    for each slice.
-
-    Parameters
-    ----------
-    pmap : Bridges.PMap
-        The pmap of some event.
-    sipmdf : pd.DataFrame
-        Contains the X, Y info.
-    outputfile : string, optional
-        Name of the outputfile. If given, the plot is saved with this name.
-        It is not saved by default.
-    thrs : float, optional
-        Relative cut to be applied per slice. Defaults to 0.
-
-    """
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    x, y, z, q = [], [], [], []
-    for peak in pmap.get("S2"):
-        for time, sl in zip(peak.times, peak.anode):
-            selection = sl > thrs * np.nanmax(sl)
-            x.extend(sipmdf["X"].values[selection])
-            y.extend(sipmdf["Y"].values[selection])
-            z.extend(np.ones_like(sl[selection]) * time)
-            q.extend(sl[selection])
-
-    ax.scatter(x, z, y, c=q, s=[2*qi for qi in q], alpha=0.3)
-    ax.set_xlabel("x (mm)")
-    ax.set_ylabel("z (mm)")
-    ax.set_zlabel("y (mm)")
-    fig.set_size_inches(10,8)
-    if outputfile is not None:
-        fig.savefig(outputfile)
 
 def set_plot_labels(xlabel="", ylabel="", grid=True):
     """Short cut to set labels in plots."""
@@ -430,3 +254,234 @@ def circles(x, y, s, c="a", vmin=None, vmax=None, **kwargs):
     if c is not None:
         plt.sci(collection)
     return collection
+
+"""
+Defines geometry plotting utilities objects:
+-   :func:`quad`
+-   :func:`grid`
+-   :func:`cube`
+"""
+
+
+__all__ = ['quad', 'grid', 'cube']
+
+
+def quad(plane='xy', origin=None, width=1, height=1, depth=0):
+    """
+    Returns the vertices of a quad geometric element in counter-clockwise
+    order.
+    Parameters
+    ----------
+    plane : array_like, optional
+        **{'xy', 'xz', 'yz'}**,
+        Construction plane of the quad.
+    origin: array_like, optional
+        Quad origin on the construction plane.
+    width: numeric, optional
+        Quad width.
+    height: numeric, optional
+        Quad height.
+    depth: numeric, optional
+        Quad depth.
+    Returns
+    -------
+    ndarray
+        Quad vertices.
+    Examples
+    --------
+    >>> quad()
+    array([[0, 0, 0],
+           [1, 0, 0],
+           [1, 1, 0],
+           [0, 1, 0]])
+    """
+
+    u, v = (0, 0) if origin is None else origin
+
+    plane = plane.lower()
+    if plane == 'xy':
+        vertices = ((u, v, depth), (u + width, v, depth),
+                    (u + width, v + height, depth), (u, v + height, depth))
+    elif plane == 'xz':
+        vertices = ((u, depth, v), (u + width, depth, v),
+                    (u + width, depth, v + height), (u, depth, v + height))
+    elif plane == 'yz':
+        vertices = ((depth, u, v), (depth, u + width, v),
+                    (depth, u + width, v + height), (depth, u, v + height))
+    else:
+        raise ValueError('"{0}" is not a supported plane!'.format(plane))
+
+    return np.array(vertices)
+
+
+def grid(plane='xy',
+         origin=None,
+         width=1,
+         height=1,
+         depth=0,
+         width_segments=1,
+         height_segments=1):
+    """
+    Returns the vertices of a grid made of quads.
+    Parameters
+    ----------
+    plane : array_like, optional
+        **{'xy', 'xz', 'yz'}**,
+        Construction plane of the grid.
+    origin: array_like, optional
+        Grid origin on the construction plane.
+    width: numeric, optional
+        Grid width.
+    height: numeric, optional
+        Grid height.
+    depth: numeric, optional
+        Grid depth.
+    width_segments: int, optional
+        Grid segments, quad counts along the width.
+    height_segments: int, optional
+        Grid segments, quad counts along the height.
+    Returns
+    -------
+    ndarray
+        Grid vertices.
+    Examples
+    --------
+    >>> grid(width_segments=2, height_segments=2)
+    array([[[ 0. ,  0. ,  0. ],
+            [ 0.5,  0. ,  0. ],
+            [ 0.5,  0.5,  0. ],
+            [ 0. ,  0.5,  0. ]],
+    <BLANKLINE>
+           [[ 0. ,  0.5,  0. ],
+            [ 0.5,  0.5,  0. ],
+            [ 0.5,  1. ,  0. ],
+            [ 0. ,  1. ,  0. ]],
+    <BLANKLINE>
+           [[ 0.5,  0. ,  0. ],
+            [ 1. ,  0. ,  0. ],
+            [ 1. ,  0.5,  0. ],
+            [ 0.5,  0.5,  0. ]],
+    <BLANKLINE>
+           [[ 0.5,  0.5,  0. ],
+            [ 1. ,  0.5,  0. ],
+            [ 1. ,  1. ,  0. ],
+            [ 0.5,  1. ,  0. ]]])
+    """
+
+    u, v = (0, 0) if origin is None else origin
+
+    w_x, h_y = width / width_segments, height / height_segments
+
+    quads = []
+    for i in range(width_segments):
+        for j in range(height_segments):
+            quads.append(
+                quad(plane, (i * w_x + u, j * h_y + v), w_x, h_y, depth))
+
+    return np.array(quads)
+
+
+def cube(plane=None,
+         origin=None,
+         width=1,
+         height=1,
+         depth=1,
+         width_segments=1,
+         height_segments=1,
+         depth_segments=1):
+    """
+    Returns the vertices of a cube made of grids.
+    Parameters
+    ----------
+    plane : array_like, optional
+        Any combination of **{'+x', '-x', '+y', '-y', '+z', '-z'}**,
+        Included grids in the cube construction.
+    origin: array_like, optional
+        Cube origin.
+    width: numeric, optional
+        Cube width.
+    height: numeric, optional
+        Cube height.
+    depth: numeric, optional
+        Cube depth.
+    width_segments: int, optional
+        Cube segments, quad counts along the width.
+    height_segments: int, optional
+        Cube segments, quad counts along the height.
+    depth_segments: int, optional
+        Cube segments, quad counts along the depth.
+    Returns
+    -------
+    ndarray
+        Cube vertices.
+    Examples
+    --------
+    >>> cube()
+    array([[[ 0.,  0.,  0.],
+            [ 1.,  0.,  0.],
+            [ 1.,  1.,  0.],
+            [ 0.,  1.,  0.]],
+    <BLANKLINE>
+           [[ 0.,  0.,  1.],
+            [ 1.,  0.,  1.],
+            [ 1.,  1.,  1.],
+            [ 0.,  1.,  1.]],
+    <BLANKLINE>
+           [[ 0.,  0.,  0.],
+            [ 1.,  0.,  0.],
+            [ 1.,  0.,  1.],
+            [ 0.,  0.,  1.]],
+    <BLANKLINE>
+           [[ 0.,  1.,  0.],
+            [ 1.,  1.,  0.],
+            [ 1.,  1.,  1.],
+            [ 0.,  1.,  1.]],
+    <BLANKLINE>
+           [[ 0.,  0.,  0.],
+            [ 0.,  1.,  0.],
+            [ 0.,  1.,  1.],
+            [ 0.,  0.,  1.]],
+    <BLANKLINE>
+           [[ 1.,  0.,  0.],
+            [ 1.,  1.,  0.],
+            [ 1.,  1.,  1.],
+            [ 1.,  0.,  1.]]])
+    """
+
+    plane = (('+x', '-x', '+y', '-y', '+z', '-z')
+             if plane is None else [p.lower() for p in plane])
+    u, v, w = (0, 0, 0) if origin is None else origin
+
+    w_s, h_s, d_s = width_segments, height_segments, depth_segments
+
+    grids = []
+    if '-z' in plane:
+        grids.extend(grid('xy', (u, w), width, depth, v, w_s, d_s))
+    if '+z' in plane:
+        grids.extend(grid('xy', (u, w), width, depth, v + height, w_s, d_s))
+
+    if '-y' in plane:
+        grids.extend(grid('xz', (u, v), width, height, w, w_s, h_s))
+    if '+y' in plane:
+        grids.extend(grid('xz', (u, v), width, height, w + depth, w_s, h_s))
+
+    if '-x' in plane:
+        grids.extend(grid('yz', (w, v), depth, height, u, d_s, h_s))
+    if '+x' in plane:
+        grids.extend(grid('yz', (w, v), depth, height, u + width, d_s, h_s))
+
+    return np.array(grids)
+
+def make_color_map(lst, alpha=0.5, colormap='inferno'):
+    """lst is the sequence to map to colors"""
+    minima = min(lst)
+    maxima = max(lst)
+
+    norm = mcolors.Normalize(vmin=minima, vmax=maxima, clip=True)
+    mapper = cm.ScalarMappable(norm=norm, cmap=colormap)
+
+    RGBA = []
+    for v in lst:
+        RGBA.append(mapper.to_rgba(v, alpha))
+
+    return RGBA, mapper
