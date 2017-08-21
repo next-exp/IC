@@ -13,6 +13,7 @@ from hypothesis.extra.numpy import arrays
 
 from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
+from .. core.exceptions        import ClusterEmptyList
 from .. core.exceptions        import SipmZeroCharge
 
 from .       xy_algorithms     import corona
@@ -99,12 +100,15 @@ def test_corona_min_threshold_Qthr():
     ys = np.zeros (100)
     qs = np.arange(100)
     pos = np.stack((xs, ys), axis=1)
-    clusters = corona(pos, qs,
-                      Qthr           = 99*units.pes,
-                      Qlm            = 1*units.pes,
-                          lm_radius  = 1*units.mm,
-                      new_lm_radius  = 2*units.mm,
-                      msipm          = 1)
+    try:
+        clusters = corona(pos, qs,
+                        Qthr           = 99*units.pes,
+                        Qlm            = 1*units.pes,
+                        lm_radius  = 1*units.mm,
+                        new_lm_radius  = 2*units.mm,
+                        msipm          = 1)
+    except ClusterEmptyList:
+        pass
     assert len(clusters) ==   1
     assert clusters[0].Q ==  99
     assert clusters[0].XY == (990, 0)
@@ -117,7 +121,8 @@ def test_corona_msipm(toy_sipm_signal):
         assert False # otherwise make it crahs
     except SipmEmptyList:
         pass
-
+    except ClusterEmptyList:
+        pass
 
 @parametrize(' Qlm,    rmax, nclusters',
              ((6.1,      15, 0),
@@ -131,6 +136,8 @@ def test_corona_simple_examples(toy_sipm_signal, Qlm, rmax, nclusters):
                           Qlm            =  Qlm * units.pes,
                           new_lm_radius  = rmax * units.mm )) == nclusters
     except SipmEmptyList:
+        pass
+    except ClusterEmptyList:
         pass
 @fixture
 def toy_sipm_signal_and_inds():
