@@ -21,7 +21,7 @@ from .  pmaps import S2Si
 from .  pmaps import S12Pmt
 from .  pmaps import Peak
 from .  pmaps import check_s2d_and_s2sid_share_peaks
-
+from .. core.core_functions    import loc_elem_1d
 
 @composite
 def peak_input(draw, min_size=1, max_size=100):
@@ -60,6 +60,35 @@ def test_peak(peak_pars):
     np.isclose (wf.tmin_tmax.min , t[0], rtol=1e-4)
     np.isclose (wf.tmin_tmax.max , t[-1], rtol=1e-4)
     assert wf.number_of_samples == len(t)
+
+@given(peak_input())
+def test_peak_above_thr(peak_pars):
+    size, t, E = peak_pars
+    ethr = 10
+    eth = E[E > ethr]
+    w_thr = 0
+    esum_thr = 0
+    height_thr = 0
+    if len(eth):
+        t0 = (loc_elem_1d(E, eth[0]))
+        t1 = (loc_elem_1d(E, eth[-1]))
+        w_thr = t[t1] - t[t0]
+        esum_thr = np.sum(eth)
+        height_thr = np.max(eth)
+
+    wf =  Peak(t, E)
+    if (np.any(np.isnan(t))  or
+       np.any(np.isnan(E))):
+       assert  wf.good_waveform == False
+    else:
+       assert  wf.good_waveform == True
+
+    np.isclose (wf.total_energy_above_trheshold(ethr) ,
+                esum_thr, rtol=1e-4)
+    np.isclose (wf.height_above_trheshold(ethr),
+                height_thr, rtol=1e-4)
+    np.isclose (wf.width_above_trheshold(ethr),
+                w_thr, rtol=1e-4)
 
 
 @given(peak_input())
