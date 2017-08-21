@@ -17,6 +17,25 @@ def labels(xlabel, ylabel, title=""):
     plt.title ( title)
 
 
+def hbins(x, nsigma=5, nbins=10):
+    """Given an array x, hbins returns the number of bins
+    in an interval of  [<x> - nsigma*std(x), <x> + nsigma*std(x)]
+    """
+    xmin = np.average(x) - nsigma*np.std(x)
+    xmax = np.average(x) + nsigma*np.std(x)
+    bins = np.linspace(xmin, xmax, nbins)
+    return bins
+
+
+def histo(x, nbins, title="hsimple", xlabel="", ylabel="Frequency"):
+    """histograms"""
+
+    plt.hist(x, nbins, histtype="bar", alpha=0.75)
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+
 def shift_to_bin_centers(x):
     """
     Return bin centers, given bin lower edges.
