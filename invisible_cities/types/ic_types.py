@@ -104,6 +104,9 @@ class minmax:
     @property
     def center(self): return (self.max + self.min) / 2
 
+    def contains(self, x):
+        return self.min <= x < self.max
+
     def __mul__(self, factor):
         return minmax(self.min * factor, self.max * factor)
 

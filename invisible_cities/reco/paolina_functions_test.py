@@ -21,6 +21,7 @@ from . paolina_functions import blob_energies
 from . paolina_functions import voxelize_hits
 from . paolina_functions import shortest_paths
 from . paolina_functions import make_track_graphs
+from . paolina_functions import voxels_from_track_graph
 
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
@@ -84,6 +85,17 @@ def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
 
     assert_almost_equal(sum_energy(hits), sum_energy(voxels))
 
+@given(bunch_of_hits, box_sizes)
+def test_voxels_from_track_return_node_voxels(hits, voxel_dimensions):
+    voxels = voxelize_hits    (hits  , voxel_dimensions)
+
+    tracks = make_track_graphs(voxels, voxel_dimensions)
+    for t in tracks:
+        voxels = voxels_from_track_graph(t)
+        nodes  = t.nodes()
+        assert len(voxels) == len(nodes)
+        for voxel, node in zip(voxels, nodes):
+            np.isclose(voxel.pos, node.pos)
 
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
@@ -104,6 +116,8 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     tracks = make_track_graphs(voxels, voxel_dimensions)
     voxels_in_tracks = set().union(*(set(t.nodes_iter()) for t in tracks))
     assert set(voxels) == voxels_in_tracks
+
+
 
 
 @parametrize(' spec,           extrema',
@@ -161,14 +175,16 @@ def track_extrema():
                   (20,20,20,  2000),
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    track, = make_track_graphs(voxels, np.array([1,1,1]))
-    distances = shortest_paths(track)
+    tracks  = make_track_graphs(voxels, np.array([1,1,1]), contiguity=1.5)
+
+    assert len(tracks) == 1
+    distances = shortest_paths(tracks[0])
     extrema = find_extrema(distances)
 
     assert voxels[ 0] in extrema
     assert voxels[-1] in extrema
 
-    return track, extrema
+    return tracks[0], extrema
 
 
 @parametrize('radius, expected',

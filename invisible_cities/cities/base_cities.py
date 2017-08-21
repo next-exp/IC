@@ -34,6 +34,7 @@ from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
 
 from .. reco                    import peak_functions_c as cpf
+from .. reco                    import paolina_functions as paf
 from .. reco                    import sensor_functions as sf
 from .. reco                    import peak_functions   as pf
 from .. reco                    import pmaps_functions  as pmp
@@ -56,6 +57,10 @@ from .. evm.event_model         import SensorParams
 from .. evm.event_model         import KrEvent
 from ..evm.event_model          import HitCollection
 from ..evm.event_model          import Hit
+from .. evm.event_model         import Voxel
+from .. evm.event_model         import Track
+from .. evm.event_model         import Blob
+from ..evm.event_model          import TrackCollection
 from ..evm.nh5                  import DECONV_PARAM
 
 from ..sierpe                   import blr
@@ -66,6 +71,8 @@ from .. types.ic_types          import Counter
 from .. types.ic_types          import NN
 
 from .. daemons.idaemon         import invoke_daemon
+from typing import Sequence
+from typing import List
 
 
 
@@ -730,6 +737,44 @@ class HitCity(KrCity):
             npeak += 1
 
         return hitc
+
+
+class TrackCity(HitCity):
+    """A city that reads PMPAS and computes/writes a track event"""
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.voxel_dimensions  = self.conf.voxel_dimensions # type: np.ndarray
+        self.blob_radius       = self.blob_radius # type: float
+
+    def voxelize_hits(self, hits : Sequence[Hit]) ->List[Voxel]:
+        """1. Hits are enclosed by a bounding box.
+           2. Boundix box is discretized (via a hitogramdd).
+           3. The energy of all the hits insidex each discreet "voxel" is added.
+
+         """
+        return paf.voxelize_hits(hits, self.voxel_dimensions)
+
+    def make_tracks(self, evt_number : float , evt_time: float,
+                    voxels : List[Voxel]) ->TrackCollection:
+        """Makes a track collection. """
+
+        tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
+
+        track_graphs = paf.make_track_graphs(voxels, self.voxel_dimensions) # type: Sequence[Graph]
+
+        for trk in track_graphs:
+            distances = paf.shortest_paths(trk)
+            a,b       = paf.find_extrema(distances) # type: Tuple[Voxel, Voxel]
+            ba, bb = paf.blobs(trk, blob_radius) # type: Tuple[List[Voxel], List[Voxel]]
+            #Ea = paf.energy_within_radius(distances[a], self.blob_radius) # type: float
+            #Eb = paf.energy_within_radius(distances[b], self.blob_radius)
+            blob_a = Blob(ba) # type: Blob
+            blob_b = Blob(bb)
+            blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a) # type: Tuple[Blob, Blob]
+            track = Track(paf.voxels_from_track_graph(trk), blobs)
+            tc.tracks.append(track)
+        return tc
+
 
 class TriggerEmulationCity(PmapCity):
     """Emulates the trigger in the FPGA.

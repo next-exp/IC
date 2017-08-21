@@ -43,12 +43,38 @@ cdef class Peak:
     property number_of_samples:
         def __get__(self): return len(self.t)
 
-
     property good_waveform:
         def __get__(self):  return (False
                                     if np.any(np.isnan(self.t))  or
                                        np.any(np.isnan(self.E))
                                     else True)
+
+    def total_energy_above_trheshold(self, thr):
+        eth = self.E[self.E > thr]
+        if len(eth):
+            return np.sum(eth)
+        else:
+            return 0
+
+    def width_above_trheshold(self, thr):
+        eth = self.E[self.E > thr]
+        if len(eth):
+            t0 = (loc_elem_1d(self.E, eth[0])
+              if self.total_energy > 0
+              else 0)
+            t1 = (loc_elem_1d(self.E, eth[-1])
+              if self.total_energy > 0
+              else 0)
+            return self.t[t1] - self.t[t0]
+        else:
+            return 0
+
+    def height_above_trheshold(self, thr):
+        eth = self.E[self.E > thr]
+        if len(eth):
+            return np.max(eth)
+        else:
+            return 0
 
 
     def __str__(self):
