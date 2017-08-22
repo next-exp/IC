@@ -47,61 +47,92 @@ def get_nearby_sipm_inds(cs, d, pos, qs):
 def corona(pos, qs,
            Qthr           =  0 * units.pes,
            Qlm            =  5 * units.pes,
-           lm_radius      = 15 * units.mm,
-           new_lm_radius  = 25 * units.mm,
+           lm_radius      =  0 * units.mm,
+           new_lm_radius  = 15 * units.mm,
            msipm          =  3):
     """
-    pos = column np.array --> (matrix n x 2)
-       ([x1, y1],
-        [x2, y2]
-        ...
-        [xs, ys])
-       qs = vector (q1, q2...qs) --> (1xn)
-
     corona creates a list of Clusters by
-    first , identifying a loc max (gonz wanted more precise than just max sipm)
-    second, calling barycenter to find the Cluster given by SiPMs around the max
-    third , removing (nondestructively) the sipms contributing to that Cluster
-    until there are no more local maxima
+    first , identifying hottest_sipm, the sipm with max charge in qs (must be > Qlm)
+    second, calling barycenter() on the pos and qs SiPMs within lm_radius of hottest_sipm to
+            find new_local_maximum.
+    third , calling barycenter() on all SiPMs within new_lm_radius of new_local_maximum
+    fourth, recording the Cluster found by barycenter if the cluster contains at least msipm
+    fifth , removing (nondestructively) the sipms contributing to that Cluster
+    sixth , repeating 1-5 until there are no more SiPMs of charge > Qlm
 
-    kwargs
-    Qthr : SiPMs with less than Qthr pes are ignored
-    Qlm  : local maxima must have a SiPM with at least T pes
-    lm_radius  : all SiPMs within lm_radius distance from the local max
-           SiPM are used (by barycenter) to compute the approximate center
-            of the local max.
-    new_lm_radius : xs,ys,qs, of SiPMs within new_lm_radius of a local max
-           are used by barycenter to compute a Cluster.
-    msipm: the minimum number of SiPMs needed to make a cluster
+    arguments:
+    pos   = column np.array --> (matrix n x 2)
+            ([x1, y1],
+             [x2, y2],
+             ...     ,
+             [xs, ys])
+    qs    = vector (q1, q2...qs) --> (1xn)
+    Qthr  = charge threshold, ignore all SiPMs with less than Qthr pes
+    Qlm   = charge threshold, every Cluster must contain at least one SiPM with charge >= Qlm
+    msipm = minimum number of SiPMs in a Cluster
+    lm_radius = radius, find new_local_maximum by taking the barycenter of SiPMs within
+                lm_radius of the max sipm. new_local_maximum is new in the sense that the
+                prev loc max was the position of hottest_sipm. (Then allow all SiPMs with
+                new_local_maximum of new_local_maximum to contribute to the pos and q of the
+                new cluster). ** lm_radius should typically be set to 0, or some value slightly
+                larger than pitch or pitch*sqrt(2) **
+                ---------
+                    This kwarg has some physical motivation. It exists to try to partially
+                compensate problem that the NEW tracking plane is not continuous even though light
+                can be emitted by the EL at any (x,y). When lm_radius < pitch, the search for SiPMs
+                that might contribute pos and charge to a new Cluster is always centered about
+                the position of hottest_sipm. That is, SiPMs within new_lm_radius of
+                hottest_sipm are taken into account by barycenter(). In contrast, when
+                lm_radius = pitch or pitch*sqrt(2) the search for SiPMs contributing to the new
+                cluster can be centered at any (x,y). Consider the case where at a local maximum
+                there are four nearly equally 'hot' SiPMs. new_local_maximum would yield a pos,
+                pos1, between these hot SiPMs. Searching for SiPMs that contribute to this
+                cluster within new_lm_radius of pos1 might be better than searching searching for
+                SiPMs  within new_lm_radius of hottest_sipm.
+                    We should be aware that setting lm_radius to some distance greater than pitch,
+                we allow new_local_maximum to assume any (x,y) but we also create the effect that
+                depending on where new_local_maximum is, more or fewer SiPMs will be
+                within new_lm_radius. This effect does not exist when lm_radius = 0
+                    lm_radius can always be set to 0 mm, but setting it to 15 mm (slightly larger
+                than 10mm * sqrt(2)), should not hurt.
 
+    new_lm_radius = radius, find a new cluster by calling barycenter() on pos/qs of SiPMs within
+                    new_lm_radius of new_local_maximum
     returns
     c    : a list of Clusters
+
+    Usage Example
+    In order to create each Cluster from a 3x3 block of SiPMs (where the center SiPM has more
+    charge than the others), one would call:
+    corona(pos, qs,
+           Qthr           =  K1 * units.pes,
+           Qlm            =  K2 * units.pes,
+           lm_radius      =  0  * units.mm , # must be 0
+           new_lm_radius  =  15 * units.mm , # must be 10mm*sqrt(2) or some number slightly larger
+           msipm          =  K3)
     """
+
     if not len(pos): raise SipmEmptyList
     if sum(qs) == 0: raise SipmZeroCharge
     c  = []
-    # Keep SiPMs with at least Qthr pes
-    above_threshold = np.where(qs >= Qthr)[0]
-    pos, qs = pos[above_threshold], qs[above_threshold]
+    above_threshold = np.where(qs >= Qthr)[0]            # Find SiPMs with qs at least Qthr
+    pos, qs = pos[above_threshold], qs[above_threshold]  # Discard SiPMs with qs less than Qthr
+
     # While there are more local maxima
     while len(qs) > 0:
         hottest_sipm = np.argmax(qs)       # SiPM with largest Q
         if qs[hottest_sipm] < Qlm: break   # largest Q remaining is negligible
 
-        # find locmax (the baryc of charge in SiPMs less than lm_radius from hottest_sipm)
-        within_lm_radius = get_nearby_sipm_inds(pos[hottest_sipm], lm_radius, pos, qs)
-        new_local_maximum  = barycenter(pos[within_lm_radius],
-                                        qs [within_lm_radius])[0].posxy
+        # find new local maximum of charge considering all SiPMs within lm_radius of hottest_sipm
+        within_lm_radius   = get_nearby_sipm_inds(pos[hottest_sipm], lm_radius, pos, qs)
+        new_local_maximum  = barycenter(pos[within_lm_radius], qs[within_lm_radius])[0].posxy
 
-        # new_lm_radius is an array of the responsive sipms less than
-        # new_lm_radius from locmax
-        within_new_lm_radius = get_nearby_sipm_inds(new_local_maximum,
-                                                    new_lm_radius, pos, qs)
+        # find the SiPMs within new_lm_radius of the new local maximum of charge
+        within_new_lm_radius = get_nearby_sipm_inds(new_local_maximum, new_lm_radius, pos, qs)
 
         # if there are at least msipms within_new_lm_radius, get the barycenter
         if len(within_new_lm_radius) >= msipm:
-            c.extend(barycenter(pos[within_new_lm_radius],
-                                qs [within_new_lm_radius]))
+            c.extend(barycenter(pos[within_new_lm_radius], qs[within_new_lm_radius]))
 
         # delete the SiPMs contributing to this cluster
         pos, qs = discard_sipms(within_new_lm_radius, pos, qs)
