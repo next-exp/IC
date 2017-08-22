@@ -3,8 +3,11 @@ import numpy as np
 
 from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
-from .. core.exceptions        import ClusterEmptyList
 from .. core.exceptions        import SipmZeroCharge
+from .. core.exceptions        import SipmEmptyListAboveQthr
+from .. core.exceptions        import SipmZeroChargeAboveQthr
+from .. core.exceptions        import ClusterEmptyList
+
 from .. types.ic_types         import xy
 from .. evm.event_model        import Cluster
 
@@ -74,8 +77,15 @@ def corona(pos, qs,
                 lm_radius of the max sipm. new_local_maximum is new in the sense that the
                 prev loc max was the position of hottest_sipm. (Then allow all SiPMs with
                 new_local_maximum of new_local_maximum to contribute to the pos and q of the
-                new cluster). ** lm_radius should typically be set to 0, or some value slightly
-                larger than pitch or pitch*sqrt(2) **
+                new cluster).
+
+                ***In general lm_radius should typically be set to 0, or some value slightly
+                larger than pitch or pitch*sqrt(2).***
+
+                ***If lm_radius is set to a negative number, the algorithm will simply return
+                the overall barycenter all the SiPms above threshold.***
+
+
                 ---------
                     This kwarg has some physical motivation. It exists to try to partially
                 compensate problem that the NEW tracking plane is not continuous even though light
@@ -114,10 +124,19 @@ def corona(pos, qs,
 
     if not len(pos): raise SipmEmptyList
     if sum(qs) == 0: raise SipmZeroCharge
-    c  = []
+
+
     above_threshold = np.where(qs >= Qthr)[0]            # Find SiPMs with qs at least Qthr
     pos, qs = pos[above_threshold], qs[above_threshold]  # Discard SiPMs with qs less than Qthr
 
+    if not len(pos): raise SipmEmptyListAboveQthr
+    if sum(qs) == 0: raise SipmZeroChargeAboveQthr
+
+    # if lm_radius or new_lm_radius is negative, just call overall barycenter
+    if lm_radius < 0 or new_lm_radius < 0:
+        return barycenter(pos, qs)
+
+    c  = []
     # While there are more local maxima
     while len(qs) > 0:
         hottest_sipm = np.argmax(qs)       # SiPM with largest Q
