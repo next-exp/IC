@@ -23,6 +23,7 @@ from .. core.exceptions         import UnknownRWF
 from .. core.exceptions         import FileLoopMethodNotSet
 from .. core.exceptions         import EventLoopMethodNotSet
 from .. core.exceptions         import SipmEmptyList
+from .. core.exceptions         import SipmZeroCharge
 from .. core.exceptions         import ClusterEmptyList
 from .. core.system_of_units_c  import units
 from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
