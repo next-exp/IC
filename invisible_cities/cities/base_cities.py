@@ -50,7 +50,7 @@ from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco.corrections        import Correction
 from .. reco.corrections        import Fcorrection
 from .. reco.xy_algorithms      import corona
-from .. reco.xy_algorithms      import barycenter
+#from .. reco.xy_algorithms      import barycenter
 
 from .. evm.ic_containers       import S12Params
 from .. evm.ic_containers       import S12Sum
@@ -62,6 +62,7 @@ from .. evm.event_model         import SensorParams
 from .. evm.event_model         import KrEvent
 from ..evm.event_model          import HitCollection
 from ..evm.event_model          import Hit
+from .. evm.event_model         import Cluster
 from .. evm.event_model         import Voxel
 from .. evm.event_model         import Track
 from .. evm.event_model         import Blob
@@ -74,6 +75,7 @@ from ..sierpe                   import fee as FE
 from .. types.ic_types          import minmax
 from .. types.ic_types          import Counter
 from .. types.ic_types          import NN
+from .. types.ic_types          import xy
 
 from .. daemons.idaemon         import invoke_daemon
 from typing import Sequence
@@ -653,8 +655,15 @@ class KrCity(PCity):
                 if len(clusters) == 1:
                     c = clusters[0]
                 else:
-                    c_closest = np.amin([abs(c.Q - peak.total_energy) for c in clusters])
+                    print('found case with more than one cluster')
+                    print('clusters charge = {}'.format(
+                          [c.Q for c in clusters]))
+
+                    c_closest = np.amax([c.Q for c in clusters])
+
+                    print('c_closest = {}'.format(c_closest))
                     c = clusters[loc_elem_1d(clusters, c_closest)]
+                    print('c_chosen = {}'.format(c))
                 evt.Nsipm.append(c.nsipm)
                 evt.S2q  .append(c.Q)
                 evt.X    .append(c.X)
@@ -677,7 +686,7 @@ class KrCity(PCity):
                 evt.Phi  .append(NN)
                 evt.DT   .append(NN)
                 evt.Z    .append(NN)
-            
+
         return evt
 
 
@@ -686,6 +695,24 @@ class HitCity(KrCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.rebin  = self.conf.rebin
+
+    def compute_xy_position(self, s2sid_peak, slice_no):
+        """Compute x-y position for each time slice. """
+        #import pdb; pdb.set_trace()
+        IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
+        xs, ys   = self.xs[IDs], self.ys[IDs]
+
+        # print('compute_xy_position')
+        # print('s2si.s2sid[peak_no] = {}'.format(s2sid_peak))
+        # print('IDs = {}'.format(IDs))
+        # print('Qs = {}'.format(Qs))
+
+        return corona(np.stack((xs, ys)).T, Qs,
+                      Qthr           =  self.conf.qthr,
+                      Qlm            =  self.conf.qlm,
+                      lm_radius      =  self.conf.lm_radius,
+                      new_lm_radius  =  self.conf.new_lm_radius,
+                      msipm          =  self.conf.msipm)
 
     def rebin_s2si(self, s2, s2si, rebin):
         """rebins s2d and sid dictionaries"""
@@ -698,7 +725,6 @@ class HitCity(KrCity):
             return [e]
         qs = np.array([c.Q for c in clusters])
         return e * qs / np.sum(qs)
-
 
     def create_hits_event(self, pmapVectors):
         """Create a hits_event:
@@ -727,6 +753,9 @@ class HitCity(KrCity):
         # be set by parameter to a factor x pmaps-rebin.
         s2, s2si = self.rebin_s2si(s2, s2si, self.rebin)
 
+        # print(s2)
+        # print(s2si)
+
         # here hits are computed for each peak and each slice.
         # In case of an exception, a hit is still created with a NN cluster.
         # (NN cluster is a cluster where the energy is an IC not number NN)
@@ -734,6 +763,8 @@ class HitCity(KrCity):
         for peak_no, (t_peak, e_peak) in sorted(s2si.s2d.items()):
             for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
                 z        = (t_slice - s1_t) * units.ns * self.drift_v
+                #print('peak_no = {} slice_no = {}'.format(peak_no, slice_no))
+
                 try:
                     clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
                     es       = self.split_energy(e_slice, clusters)
@@ -741,7 +772,7 @@ class HitCity(KrCity):
                         hit       = Hit(peak_no, c, z, e)
                         hitc.hits.append(hit)
                 except XYRecoFail:
-                    c = Cluster(NN, 0, 0, 0)
+                    c = Cluster(NN, xy(0,0), xy(0,0), 0)
                     hit       = Hit(peak_no, c, z, e_slice)
                     hitc.hits.append(hit)
 
