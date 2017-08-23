@@ -52,24 +52,6 @@ def _integrate_S2Si_charge(s2sid):
     return { peak_no : _integrate_sipm_charges_in_peak_as_dict(peak)
              for (peak_no, peak) in s2sid.items() }
 
-
-def _sipm_ids_and_charges_in_slice(s2sid_peak, slice_no):
-    """Given s2sid_peak = {nsipm : [ q1, q2, ...qn]} and a slice_no
-    (running from 1, 2..n) returns:
-    Returns (np.array[nsipm_1 , nsipm_2, ...],
-             np.array[q_k from nsipm_1, q_k from nsipm_2, ...]]) when slice_no=k
-     """
-    number_of_sipms = len(s2sid_peak.keys())
-    ids      = []
-    qs_slice = []
-    for i, (nsipm, qs) in enumerate(s2sid_peak.items()):
-        if qs[slice_no] > 0:
-            ids.append(nsipm)
-            qs_slice.append(qs[slice_no])
-
-    return np.array(ids), np.array(qs_slice)
-
-
 def rebin_s2si(s2, s2si, rf):
     """given an s2 and a corresponding s2si, rebin them by a factor rf"""
     assert rf >= 1 and rf % 1 == 0
