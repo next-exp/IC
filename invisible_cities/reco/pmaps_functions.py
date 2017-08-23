@@ -63,7 +63,7 @@ def _sipm_ids_and_charges_in_slice(s2sid_peak, slice_no):
             ids.append(nsipm)
             qs_slice.append(qs[slice_no])
 
-    return np.array(ids), n.array(qs_slice)
+    return np.array(ids), np.array(qs_slice)
 
 
 def rebin_s2si(s2, s2si, rf):
