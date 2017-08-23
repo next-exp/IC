@@ -125,7 +125,6 @@ def corona(pos, qs,
     if not len(pos): raise SipmEmptyList
     if sum(qs) == 0: raise SipmZeroCharge
 
-
     above_threshold = np.where(qs >= Qthr)[0]            # Find SiPMs with qs at least Qthr
     pos, qs = pos[above_threshold], qs[above_threshold]  # Discard SiPMs with qs less than Qthr
 
@@ -136,9 +135,11 @@ def corona(pos, qs,
     if lm_radius < 0 or new_lm_radius < 0:
         return barycenter(pos, qs)
 
+
     c  = []
     # While there are more local maxima
     while len(qs) > 0:
+
         hottest_sipm = np.argmax(qs)       # SiPM with largest Q
         if qs[hottest_sipm] < Qlm: break   # largest Q remaining is negligible
 
