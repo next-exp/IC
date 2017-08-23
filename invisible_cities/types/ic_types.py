@@ -82,7 +82,7 @@ class xy:
     def Phi(self): return np.arctan2(self.y, self.x)
 
     def __str__(self):
-        return 'xy(x={.x}, max={.y})'.format(self, self)
+        return 'xy(x={.x}, y={.y})'.format(self, self)
     __repr__ = __str__
 
     def __getitem__(self, n):

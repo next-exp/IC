@@ -143,7 +143,7 @@ class Cluster(BHit):
 
     def __str__(self):
         return """< nsipm = {} Q = {}
-                    xy = {}. 3dHit = {}  >""".format(self.nsipm, self.Q, self._xy,
+                    xy = {} 3dHit = {}  >""".format(self.nsipm, self.Q, self._xy,
                                                      super().__str__())
     __repr__ =     __str__
 
