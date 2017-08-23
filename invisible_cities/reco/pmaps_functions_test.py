@@ -2,16 +2,25 @@ from operator import itemgetter
 
 import numpy as np
 
-
 from pytest import mark
 parametrize = mark.parametrize
 
+from .. evm.pmaps        import Peak
+from .. evm.pmaps        import S2
+from .. evm.pmaps        import S2Si
 from .. core             import system_of_units as units
 from . pmaps_functions   import rebin_s2si
+from . pmaps_functions   import _impose_thr_sipm_destructive
+from . pmaps_functions   import _impose_thr_sipm_s2_destructive
+from . pmaps_functions   import _delete_empty_s2si_peaks
+from . pmaps_functions   import _delete_empty_s2si_dict_events
+from . pmaps_functions   import raise_s2si_thresholds_destructive
 from . pmaps_functions_c import df_to_s1_dict
 from . pmaps_functions_c import df_to_s2_dict
 from . pmaps_functions_c import df_to_s2si_dict
 from . pmaps_functions_c import sipm_ids_and_charges_in_slice
+
+
 
 def test_rebin_s2_yeilds_output_of_correct_len(KrMC_pmaps):
     _, (_, _, _), (_, _, _), (_, s2_dict, s2si_dict) = KrMC_pmaps
@@ -183,3 +192,76 @@ def test_sipm_ids_and_charges_in_slice(KrMC_pmaps):
                 ids, qs = sipm_ids_and_charges_in_slice(s2sid_peak, i_slice)
                 for nsipm, q in zip(ids, qs):
                     assert s2sid_peak[nsipm][i_slice] == q
+
+
+# ###############################################################
+# raise s2si threshold related tests
+# ###############################################################
+def test_impose_thr_sipm_destructive_leaves_no_sipms_in_dict_with_lt_thr_sipm_charge(KrMC_pmaps):
+    _, _, _, (_, _, s2si_dict0) = KrMC_pmaps
+    thr_sipm = 20*units.pes
+    s2si_dict = _impose_thr_sipm_destructive(s2si_dict0, thr_sipm)
+    for ev in s2si_dict.keys():
+        for pn in s2si_dict[ev].s2sid.keys():
+            for qs in s2si_dict[ev].s2sid[pn].values():
+                for q in qs:
+                    if q != 0:
+                        assert q > thr_sipm
+
+
+def test_impose_thr_sipm_destructive_leaves_no_sipms_in_dict_with_0_integral_charge(KrMC_pmaps):
+    _, _, _, (_, _, s2si_dict0) = KrMC_pmaps
+    s2si_dict = _impose_thr_sipm_destructive(s2si_dict0, 20*units.pes)
+    for ev in s2si_dict.keys():
+        for pn in s2si_dict[ev].s2sid.keys():
+            for sipm in s2si_dict[ev].s2sid[pn].keys():
+                assert  s2si_dict[ev].s2sid[pn][sipm].sum() > 0
+
+
+def test_impose_thr_sipm_destructive_does_does_nothing_with_smaller_threshold(KrMC_pmaps):
+    _, _, _, (_, _, s2si_dict) = KrMC_pmaps
+    s2si_dict1 = _impose_thr_sipm_destructive(s2si_dict, 0.01*units.pes)
+    for ev in s2si_dict.keys():
+        for pn in s2si_dict[ev].s2sid.keys():
+            for sipm in s2si_dict[ev].s2sid[pn].keys():
+                assert np.allclose(s2si_dict[ev].s2sid[pn][sipm], s2si_dict1[ev].s2sid[pn][sipm])
+
+
+def test_impose_thr_sipm_s2_destructive_does_does_nothing_with_smaller_threshold(KrMC_pmaps):
+    _, _, _, (_, _, s2si_dict) = KrMC_pmaps
+    s2si_dict1 = _impose_thr_sipm_s2_destructive(s2si_dict, 0.01*units.pes)
+    for ev in s2si_dict.keys():
+        for pn in s2si_dict[ev].s2sid.keys():
+            for sipm in s2si_dict[ev].s2sid[pn].keys():
+                assert np.allclose(s2si_dict[ev].s2sid[pn][sipm], s2si_dict1[ev].s2sid[pn][sipm])
+
+
+def test_impose_thr_sipm_s2_destructive_leaves_no_sipms_with_lt_thr_integral_charge(KrMC_pmaps):
+    _, _, _, (_, _, s2si_dict) = KrMC_pmaps
+    thr_sipm_s2 = 50*units.pes
+    s2si_dict1 = _impose_thr_sipm_s2_destructive(s2si_dict, thr_sipm_s2)
+    for s2si in s2si_dict1.values():
+        for s2si_peak in s2si.s2sid.values():
+            for qs in s2si_peak.values():
+                assert qs.sum() > thr_sipm_s2
+
+
+def test_delete_empty_s2si_peaks():
+    s2d   = {0: (np.array([1, 2], dtype=np.float64), np.array([ 2,  2], dtype=np.float64)),
+             1: (np.array([5, 6], dtype=np.float64), np.array([10, 10], dtype=np.float64))}
+    s2sid = {0: {},
+             1: {1000: np.array([1, 1], dtype=np.float64), 1001: np.array([3, 3], dtype=np.float64)}
+             }
+    s2si_dict = {0: S2Si(s2d, s2sid)}
+    s2si_dict = _delete_empty_s2si_peaks(s2si_dict)
+    assert len( s2si_dict[0].s2d    .keys())   == 1  # check s2d peak has been deleted
+    assert len( s2si_dict[0].s2sid  .keys())   == 1  # check s2si peak has been deleted
+    assert list(s2si_dict[0].peaks.keys())[0]  == 1  # check peak deleted in high level functions
+    assert np.allclose(s2si_dict[0].s2sid[1][1000], s2sid[1][1000])
+    assert np.allclose(s2si_dict[0].s2sid[1][1001], s2sid[1][1001])
+
+
+def test_raise_s2si_thresholds_destructive_returns_empty_dict_with_enormous_thresholds(KrMC_pmaps):
+    _, _, _, (_, _, s2si_dict) = KrMC_pmaps
+    assert len(raise_s2si_thresholds_destructive(s2si_dict, None,  1e9)) == 0
+    assert len(raise_s2si_thresholds_destructive(s2si_dict,  1e9, None)) == 0

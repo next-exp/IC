@@ -10,6 +10,7 @@ Last revised, JJGC, July, 2017.
 import numpy  as np
 from .. core import core_functions_c as ccf
 from .. core.system_of_units_c      import units
+from .. core.exceptions             import NegativeThresholdNotAllowed
 from .. evm.pmaps                   import S2, S2Si, Peak
 
 
@@ -85,11 +86,87 @@ def rebin_s2si(s2, s2si, rf):
 
 
 def rebin_s2si_peak(t, e, sipms, stride):
-    """rebin: s2 times (taking mean), s2 energies, s2 sipm qs, by stride"""
+    """rebin: s2 times (taking mean), s2 energies, and s2 sipm qs, by stride"""
     # cython rebin_array is returning memoryview so we need to cast as np array
     return   ccf.rebin_array(t , stride, remainder=True, mean=True), \
              ccf.rebin_array(e , stride, remainder=True)           , \
       {sipm: ccf.rebin_array(qs, stride, remainder=True) for sipm, qs in sipms.items()}
+
+
+def _impose_thr_sipm_destructive(s2si_dict, thr_sipm):
+    """imposes a thr_sipm on s2si_dict"""
+    for s2si in s2si_dict.values():                   # iter over events
+        for si_peak in s2si.s2sid.values():           # iter over peaks
+            for sipm in list(si_peak.keys()):         # iter over sipms ** avoid mod while iter
+                for i, q in enumerate(si_peak[sipm]): # iter over timebins
+                    if q < thr_sipm:                  # impose threshold
+                        si_peak[sipm][i] = 0
+                if si_peak[sipm].sum() == 0:          # Delete SiPMs with integral
+                    del si_peak[sipm]                 # charge equal to 0
+    return s2si_dict
+
+
+def _impose_thr_sipm_s2_destructive(s2si_dict, thr_sipm_s2):
+    """imposes a thr_sipm_s2 on s2si_dict. deletes keys (sipms) from each s2sid peak if sipm
+       integral charge is less than thr_sipm_s2"""
+    for s2si in s2si_dict.values():
+        for si_peak in s2si.s2sid.values():
+            for sipm, qs in list(si_peak.items()): # ** avoid modifying while iterating
+                sipm_integral_charge = qs.sum()
+                if sipm_integral_charge < thr_sipm_s2:
+                    del si_peak[sipm]
+    return s2si_dict
+
+
+def _delete_empty_s2si_peaks(s2si_dict):
+    """makes sure there are no empty peaks stored in an s2sid
+        (s2sid[pn] != {} for all pn in s2sid and all s2sid in s2si_dict)
+        ** Also deletes corresponding peak in s2si.s2d! """
+    for ev in list(s2si_dict.keys()):
+        for pn in list(s2si_dict[ev].s2sid.keys()):
+            if len(s2si_dict[ev].s2sid[pn]) == 0:
+                del s2si_dict[ev].s2sid[pn]
+                del s2si_dict[ev].s2d  [pn]
+                # It is not sufficient to just delete the peaks because the S2Si class instance
+                # will still think it has peak pn even though its base dictionary does not
+                s2si_dict[ev] = S2Si(s2si_dict[ev].s2d, s2si_dict[ev].s2sid)
+    return s2si_dict
+
+
+def _delete_empty_s2si_dict_events(s2si_dict):
+    """ delete all events from s2si_dict with empty s2sid"""
+    for ev in list(s2si_dict.keys()):
+        if len(s2si_dict[ev].s2sid) == 0:
+            del s2si_dict[ev]
+    return s2si_dict
+
+
+def raise_s2si_thresholds_destructive(s2si_dict, thr_sipm, thr_sipm_s2):
+    """
+    returns s2si_dict after imposing more thr_sipm and/or thr_sipm_s2 thresholds.
+    ** NOTE:
+        1) thr_sipm IS IMPOSED BEFORE thr_sipm_s2
+        2) thresholds cannot be lowered. this function will do nothing if thresholds are set below
+           previous values.
+        3) This function is destructive. It MODIFIES ITS INPUT s2si_dict
+    """
+    # Ensure thresholds are acceptable values
+    if thr_sipm     is None: thr_sipm    = 0
+    if thr_sipm_s2  is None: thr_sipm_s2 = 0
+    if thr_sipm < 0 or thr_sipm_s2 < 0:
+        raise NegativeThresholdNotAllowed('Threshold can be 0 or None, but not negative')
+
+    # Impose thresholds
+    if thr_sipm    > 0:
+        s2si_dict  = _impose_thr_sipm_destructive   (s2si_dict, thr_sipm   )
+    if thr_sipm_s2 > 0:
+        s2si_dict  = _impose_thr_sipm_s2_destructive(s2si_dict, thr_sipm_s2)
+    # Get rid of any empty dictionaries
+    if thr_sipm > 0 or thr_sipm_s2 > 0:
+        s2si_dict  = _delete_empty_s2si_peaks      (s2si_dict)
+        s2si_dict  = _delete_empty_s2si_dict_events(s2si_dict)
+    return s2si_dict
+
 
 # def select_si_slice(si, slice_no):
 #     # This is a temporary fix! The number of slices in the SiPM arrays
