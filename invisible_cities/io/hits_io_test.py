@@ -46,6 +46,33 @@ def test_load_hits_double_ratio_e_q_equals_one(TlMC_hits):
     r = r1/r2
     np.isclose(r, 1, rtol=0.1)
 
+def test_load_hits_double_ratio_e_q_equals_one_skipping_NN(TlMC_hits_skipping_NN):
+    hits = TlMC_hits_skipping_NN
+    Ein = []
+    Qin = []
+    Emax = []
+    Qmax = []
+    for event, hitc in hits.items():
+        E = []
+        Q = []
+
+        for hit in hitc.hits:
+            E.append(hit.E)
+            Q.append(hit.Q)
+
+        Emax.append(np.max(E))
+        Qmax.append(np.max(Q))
+        pop = E.pop(np.argmax(E))
+        pop = Q.pop(np.argmax(Q))
+        Ein.extend(E)
+        Qin.extend(Q)
+
+
+    r1 = np.mean(Emax)/np.mean(Qmax)
+    r2 = np.mean(Ein)/np.mean(Qin)
+    r = r1/r2
+    np.isclose(r, 1, rtol=0.1)
+
 def test_hits_writer(config_tmpdir, hits_toy_data):
     output_file = os.path.join(config_tmpdir, "test_hits.h5")
 
