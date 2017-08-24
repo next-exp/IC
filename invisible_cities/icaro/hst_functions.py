@@ -5,8 +5,15 @@ import textwrap
 import numpy             as np
 import matplotlib.pyplot as plt
 
-from .. core              import fit_functions as     fitf
+from .. core              import fit_functions as fitf
 from .. evm.ic_containers import Measurement
+
+
+def create_new_figure(kwargs):
+    if kwargs.setdefault("new_figure", True):
+        plt.figure()
+    del kwargs["new_figure"]
+
 
 def labels(xlabel, ylabel, title=""):
     """
@@ -47,10 +54,7 @@ def plot(*args, **kwargs):
     """
     Create a figure and then the histogram
     """
-    if "new_figure" in kwargs:
-        del kwargs["new_figure"]
-    else:
-        plt.figure()
+    create_new_figure(kwargs)
     return plt.plot(*args, **kwargs)
 
 
@@ -58,10 +62,8 @@ def hist(*args, **kwargs):
     """
     Create a figure and then the histogram
     """
-    if "new_figure" in kwargs:
-        del kwargs["new_figure"]
-    else:
-        plt.figure()
+    create_new_figure(kwargs)
+
     y, x, p = plt.hist(*args, **kwargs)
     return y, shift_to_bin_centers(x), p
 
@@ -70,7 +72,9 @@ def doublehist(data1, data2, lbls, *args, **kwargs):
     """
     Create a figure and then the histogram
     """
-    h1 = hist(data1, *args, label=lbls[0], alpha=0.5, normed=True, new_figure=True, **kwargs)
+    create_new_figure(kwargs)
+
+    h1 = hist(data1, *args, label=lbls[0], alpha=0.5, normed=True, new_figure=False, **kwargs)
     h2 = hist(data2, *args, label=lbls[1], alpha=0.5, normed=True, new_figure=False, **kwargs)
     return h1, h2, plt.legend()
 
@@ -79,10 +83,8 @@ def hist2d(*args, **kwargs):
     """
     Create a figure and then the histogram
     """
-    if "new_figure" in kwargs:
-        del kwargs["new_figure"]
-    else:
-        plt.figure()
+    create_new_figure(kwargs)
+
     z, x, y, p = plt.hist2d(*args, **kwargs)
     return z, shift_to_bin_centers(x), shift_to_bin_centers(y), p
 
@@ -91,10 +93,8 @@ def pdf(data, *args, **kwargs):
     """
     Create a figure and then the normalized histogram
     """
-    if "new_figure" in kwargs:
-        del kwargs["new_figure"]
-    else:
-        plt.figure()
+    create_new_figure(kwargs)
+
     h = hist(data, *args, **kwargs, weights=np.ones_like(data)/len(data))
     plt.yscale("log")
     plt.ylim(1e-4, 1.)
@@ -105,10 +105,7 @@ def scatter(*args, **kwargs):
     """
     Create a figure and then a scatter plot
     """
-    if "new_figure" in kwargs:
-        del kwargs["new_figure"]
-    else:
-        plt.figure()
+    create_new_figure(kwargs)
     return plt.scatter(*args, **kwargs)
 
 
@@ -118,10 +115,8 @@ def profile_and_scatter(x, y, z, nbin, *args, **kwargs):
     """
     Create a figure and then a scatter plot
     """
-    if "new_figure" in kwargs:
-        del kwargs["new_figure"]
-    else:
-        plt.figure()
+    create_new_figure(kwargs)
+
     x, y, z, ze = fitf.profileXY(x, y, z, *nbin, *args, **kwargs)
     x_ = np.repeat(x, x.size)
     y_ = np.tile  (y, y.size)
@@ -140,6 +135,9 @@ def hist2d_profile(x, y, z, nbinx, nbiny, xrange, yrange, **kwargs):
 
 
 def display_matrix(x, y, z, mask=None, **kwargs):
+    """
+    Display the matrix z using the coordinates x and y as the bin centers.
+    """
     nx = np.size(x)
     ny = np.size(y)
 
@@ -166,16 +164,19 @@ def doublescatter(x1, y1, x2, y2, lbls, *args, **kwargs):
     """
     Create a figure and then a scatter plot
     """
-    if "new_figure" in kwargs:
-        del kwargs["new_figure"]
-    else:
-        plt.figure()
-    sc1 = scatter(x1, y1, *args, label=lbls[0], **kwargs)
+    create_new_figure(kwargs)
+
+    sc1 = scatter(x1, y1, *args, label=lbls[0], new_figure=False, **kwargs)
     sc2 = scatter(x2, y2, *args, label=lbls[1], new_figure=False, **kwargs)
     return sc1, sc2, plt.legend()
 
 
-def covariance(x, y):
+def covariance(x, y, **kwargs):
+    """
+    Display the eigenvectors of the covariance matrix.
+    """
+    create_new_figure(kwargs)
+
     cov = np.cov(x, y)
     l, v = np.linalg.eig(cov)
     lx, ly = l**0.5
@@ -191,16 +192,28 @@ def covariance(x, y):
 
 
 def resolution(values, errors = None, E_from=41.5, E_to=2458):
+    """
+    Compute resolution at E_from and resolution at E_to
+    with uncertainty propagation.
+    """
     if errors is None:
         errors = np.zeros_like(values)
+
     amp  ,   mu,   sigma, *_ = values
     u_amp, u_mu, u_sigma, *_ = errors
+
     r   = 235. * sigma/mu
     u_r = r * (u_mu**2/mu**2 + u_sigma**2/sigma**2)**0.5
-    return Measurement(r, u_r), Measurement(r * (E_from/E_to)**0.5, u_r * (E_from/E_to)**0.5)
+
+    scale = (E_from/E_to)**0.5
+    return Measurement(r        , u_r        ), \
+           Measurement(r * scale, u_r * scale)
 
 
 def gausstext(values, errors, E_from=41.5, E_to=2458):
+    """
+    Build a string to be displayed within a matplotlib plot.
+    """
     reso = resolution(values, errors, E_from=E_from, E_to=E_to)
     E_to = "Qbb" if E_to==2458 else str(E_to) + " keV"
     return textwrap.dedent("""
@@ -213,27 +226,40 @@ def gausstext(values, errors, E_from=41.5, E_to=2458):
                                   measurement_string(* reso[1]), E_to))
 
 
-def save_to_folder(outputfolder, name, format="png"):
+def save_to_folder(outputfolder, name, format="png", dpi=100):
     """
     Set title and save plot in folder.
     """
-    plt.savefig("{}/{}.{}".format(outputfolder, name, format), dpi=100)
+    plt.savefig("{}/{}.{}".format(outputfolder, name, format), dpi=dpi)
 
 
-def plot_writer(outputfolder, format):
+def plot_writer(outputfolder, format, dpi=100):
+    """
+    Build a partial implementation of the save_to_folder function ensuring
+    the output folder exists.
+    """
     os.makedirs(outputfolder,  exist_ok = True)
+
     return functools.partial(save_to_folder,
                              outputfolder,
-                             format        = format)
+                             format = format,
+                             dpi    = dpi)
 
 
 def poisson_sigma(x, default=3):
+    """
+    Get the uncertainty of x (assuming it is poisson-distributed).
+    Set *default* when x is 0 to avoid null uncertainties.
+    """
     u = x**0.5
     u[x==0] = default
     return u
 
 
 def measurement_string(x, u_x):
+    """
+    Display a value-uncertainty pair with the same precision.
+    """
     scale = int(np.floor(np.log10(u_x)))
     if scale >= 2:
         return "({}) · 1e{}".format(measurement_string(  x/10**scale,
