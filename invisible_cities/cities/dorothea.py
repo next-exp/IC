@@ -33,7 +33,13 @@ class Dorothea(KrCity):
         super().__init__(**kwds)
         self.cnt.set_name('dorothea')
         self.cnt.set_counter('nmax', value=self.conf.nmax)
-        self.cnt.init_counters(('n_events_tot', 'nevt_out'))
+        self.cnt.init_counters(('n_events_tot', 'nevt_out',
+                                'n_events_not_s1',
+                                'n_events_not_s2',
+                                'n_events_not_s2si',
+                                'n_events_rejected_filter',
+                                'n_events_more_than_1_cluster'
+                                ))
 
         self.drift_v = self.conf.drift_v
         self._s1s2_selector = S12Selector(**kwds)
@@ -66,10 +72,18 @@ class Dorothea(KrCity):
                                                       evt_number)
             # filtering
             # loop event away if any signal (s1, s2 or s2si) not present
-            if s1 == None or s2 == None or s2si == None:
+            if s1 == None:
+                self.cnt.increment_counter('n_events_not_s1')
+                continue
+            if s2 == None:
+                self.cnt.increment_counter('n_events_not_s2')
+                continue
+            if s2si == None:
+                self.cnt.increment_counter('n_events_not_s2si')
                 continue
             # loop event away if filter fails
             if not s1s2_filter(self._s1s2_selector, s1, s2, s2si):
+                self.cnt.increment_counter('n_events_more_than_1_cluster')
                 continue
             # event passed selection:
             self.cnt.increment_counter('nevt_out') # increment counter
