@@ -9,6 +9,7 @@ from . io.pmap_io   import df_to_s2_dict
 from . io.pmap_io   import df_to_s2si_dict
 from . io.pmap_io   import read_pmaps
 from . io.pmap_io   import load_pmaps
+from . io.hits_io   import load_hits
 
 @pytest.fixture(scope = 'session')
 def ICDIR():
@@ -104,6 +105,12 @@ def KrMC_pmaps(ICDIR):
             (S1_evts, S2_evts, S2Si_evts),
             (s1, s2, s2si))
 
+@pytest.fixture(scope='session')
+def TlMC_hits(ICDIR):
+    # Input file was produced to contain exactly 15 S1 and 50 S2.
+    hits_file_name = ICDIR + "/database/test_data/dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
+    hits = load_hits(hits_file_name)
+    return hits
 
 
 @pytest.fixture(scope='session')
