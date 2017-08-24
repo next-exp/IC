@@ -1,12 +1,11 @@
 import textwrap
-import functools
 
 import numpy             as np
 import matplotlib.pyplot as plt
-from   matplotlib.colors import LogNorm
 
 from .. core              import fit_functions as     fitf
 from .. evm.ic_containers import Measurement
+
 
 def labels(xlabel, ylabel, title=""):
     """
@@ -122,13 +121,29 @@ def hist2d_profile(x, y, z, nbinx, nbiny, xrange, yrange, **kwargs):
     """
     Create a profile 2d of the data and plot it as an histogram.
     """
-    plt.figure()
+
     x, y, z, ze = fitf.profileXY(x, y, z, nbinx, nbiny, xrange, yrange)
-    x_ = np.repeat(x, x.size)
-    y_ = np.tile  (y, y.size)
+    plot_output = display_matrix(x, y, z, **kwargs)
+    return ((x, y, z, ze), *plot_output)
+
+
+def display_matrix(x, y, z, **kwargs):
+    nx = np.size(x)
+    ny = np.size(y)
+
+    dx = (np.max(x) - np.min(x)) / nx
+    dy = (np.max(y) - np.min(y)) / ny
+
+    x_binning = np.linspace(np.min(x) - dx, np.max(x) + dx, nx + 1)
+    y_binning = np.linspace(np.min(y) - dy, np.max(y) + dy, ny + 1)
+
+    x_ = np.repeat(x, ny)
+    y_ = np.tile  (y, nx)
     z_ = z.flatten()
-    h  = hist2d(x_, y_, (nbinx, nbiny), (xrange, yrange), weights=z_, **kwargs)
-    return (x, y, z, ze), h, plt.colorbar()
+
+    h  = hist2d(x_, y_, (x_binning,
+                         y_binning), weights=z_, **kwargs)
+    return h, plt.colorbar()
 
 
 def doublescatter(x1, y1, x2, y2, lbls, *args, **kwargs):
@@ -175,7 +190,7 @@ def gausstext(values, E_from=41.5, E_to=2458):
         $\mu$ = {0:.1f}
         $\sigma$ = {1:.2f}
         R = {2:.3}% @ {4} keV
-        Rbb = {3:.3}% @ {5}""".format(*values[1:3], reso[0].value, reso[1].value,
+        Rbb = {3:.3}% @ {5}""".format(*values[1:3], reso[0].value, reso[1].value,
                                       E_from, "Qbb" if E_to==2458 else str(E_to) + " keV"))
 
 
