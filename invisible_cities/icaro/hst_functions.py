@@ -109,6 +109,14 @@ def scatter(*args, **kwargs):
     return plt.scatter(*args, **kwargs)
 
 
+def errorbar(*args, **kwargs):
+    """
+    Create a figure and then a scatter plot
+    """
+    create_new_figure(kwargs)
+    return plt.errorbar(*args, **kwargs)
+
+
 # I will leave this function here so old code does not crash,
 # but the user will want to use the one after that
 def profile_and_scatter(x, y, z, nbin, *args, **kwargs):
