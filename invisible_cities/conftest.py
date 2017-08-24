@@ -10,6 +10,7 @@ from . io.pmap_io   import df_to_s2si_dict
 from . io.pmap_io   import read_pmaps
 from . io.pmap_io   import load_pmaps
 from . io.hits_io   import load_hits
+from . io.hits_io   import load_hits_skipping_NN
 
 @pytest.fixture(scope = 'session')
 def ICDIR():
@@ -110,6 +111,14 @@ def TlMC_hits(ICDIR):
     # Input file was produced to contain exactly 15 S1 and 50 S2.
     hits_file_name = ICDIR + "/database/test_data/dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
     hits = load_hits(hits_file_name)
+    return hits
+
+
+@pytest.fixture(scope='session')
+def TlMC_hits_skipping_NN(ICDIR):
+    # Input file was produced to contain exactly 15 S1 and 50 S2.
+    hits_file_name = ICDIR + "/database/test_data/dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
+    hits = load_hits_skipping_NN(hits_file_name)
     return hits
 
 
