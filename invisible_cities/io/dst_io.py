@@ -24,7 +24,7 @@ def hits_writer(hdf5_file, *, compression='ZLIB4'):
                              compression = compression)
 
     hits_table.cols.event.create_index()
-
+    
     def write_hits(hits_event):
         hits_event.store(hits_table)
     return write_hits
