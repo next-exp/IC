@@ -17,7 +17,7 @@ import tables as tb
 from ..core.configure         import configure
 from ..core.system_of_units_c import units
 from ..types.ic_types         import xy
-from ..io.dst_io              import hits_writer
+from ..io.hits_io             import hits_writer
 from ..cities.base_cities     import City
 from ..evm.event_model        import Cluster
 from .. evm.ic_containers     import PmapVectors
