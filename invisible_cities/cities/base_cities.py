@@ -16,6 +16,7 @@ import numpy  as np
 import tables as tb
 
 from .. core.core_functions     import merge_two_dicts
+from .. core.core_functions     import loc_elem_1d
 from .. core.configure          import configure
 from .. core.exceptions         import NoInputFiles
 from .. core.exceptions         import NoOutputFile
@@ -25,6 +26,7 @@ from .. core.exceptions         import EventLoopMethodNotSet
 from .. core.exceptions         import SipmEmptyList
 from .. core.exceptions         import SipmZeroCharge
 from .. core.exceptions         import ClusterEmptyList
+from .. core.exceptions         import XYRecoFail
 from .. core.system_of_units_c  import units
 from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
@@ -47,8 +49,8 @@ from .. reco                    import tbl_functions    as tbl
 from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco.corrections        import Correction
 from .. reco.corrections        import Fcorrection
-from .. reco.xy_algorithms      import find_algorithm
-from .. reco.xy_algorithms      import barycenter
+from .. reco.xy_algorithms      import corona
+#from .. reco.xy_algorithms      import barycenter
 
 from .. evm.ic_containers       import S12Params
 from .. evm.ic_containers       import S12Sum
@@ -60,6 +62,7 @@ from .. evm.event_model         import SensorParams
 from .. evm.event_model         import KrEvent
 from ..evm.event_model          import HitCollection
 from ..evm.event_model          import Hit
+from .. evm.event_model         import Cluster
 from .. evm.event_model         import Voxel
 from .. evm.event_model         import Track
 from .. evm.event_model         import Blob
@@ -72,6 +75,7 @@ from ..sierpe                   import fee as FE
 from .. types.ic_types          import minmax
 from .. types.ic_types          import Counter
 from .. types.ic_types          import NN
+from .. types.ic_types          import xy
 
 from .. daemons.idaemon         import invoke_daemon
 from typing import Sequence
@@ -580,7 +584,7 @@ class KrCity(PCity):
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
-        self.reco_algorithm = find_algorithm(self.conf.reco_algorithm)
+        #self.reco_algorithm = find_algorithm(self.conf.reco_algorithm)
 
 
     def compute_xy_position(self, s2si, peak_no):
@@ -590,7 +594,13 @@ class KrCity(PCity):
         """
         IDs, Qs = cpmp.integrate_sipm_charges_in_peak(s2si, peak_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
-        return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
+        #return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
+        return corona(np.stack((xs, ys)).T, Qs,
+                      Qthr           =  self.conf.qthr,
+                      Qlm            =  self.conf.qlm,
+                      lm_radius      =  self.conf.lm_radius,
+                      new_lm_radius  =  self.conf.new_lm_radius,
+                      msipm          =  self.conf.msipm)
 
     def compute_z_and_dt(self, ts2, ts1):
         """
@@ -628,6 +638,7 @@ class KrCity(PCity):
             evt.S1t.append(peak.tpeak)
 
         evt.nS2 = s2si.number_of_peaks
+
         for i, peak_no in enumerate(s2si.peak_collection()):
             peak = s2si.peak_waveform(peak_no)
             evt.S2w.append(peak.width/units.mus)
@@ -637,20 +648,22 @@ class KrCity(PCity):
 
             try:
                 clusters = self.compute_xy_position(s2si, peak_no)
-            except SipmEmptyList:
-                evt.Nsipm.append(NN)
-                evt.S2q  .append(NN)
-                evt.X    .append(NN)
-                evt.Y    .append(NN)
-                evt.Xrms .append(NN)
-                evt.Yrms .append(NN)
-                evt.R    .append(NN)
-                evt.Phi  .append(NN)
-                evt.DT   .append(NN)
-                evt.Z    .append(NN)
-            else:
-                assert len(clusters) == 1 #only one cluster
-                c = clusters[0]
+                # if there is more than one cluster compare the energy measured
+                # in the tracking plane with the energy measured in the energy plane
+                # and thake the cluster where both energies are closer.
+                c = 0
+                if len(clusters) == 1:
+                    c = clusters[0]
+                else:
+                    print('found case with more than one cluster')
+                    print('clusters charge = {}'.format(
+                          [c.Q for c in clusters]))
+
+                    c_closest = np.amax([c.Q for c in clusters])
+
+                    print('c_closest = {}'.format(c_closest))
+                    c = clusters[loc_elem_1d(clusters, c_closest)]
+                    print('c_chosen = {}'.format(c))
                 evt.Nsipm.append(c.nsipm)
                 evt.S2q  .append(c.Q)
                 evt.X    .append(c.X)
@@ -662,6 +675,17 @@ class KrCity(PCity):
                 z, dt = self.compute_z_and_dt(evt.S2t[i], evt.S1t[0])
                 evt.DT   .append(dt)
                 evt.Z    .append(z)
+            except XYRecoFail:
+                evt.Nsipm.append(NN)
+                evt.S2q  .append(NN)
+                evt.X    .append(NN)
+                evt.Y    .append(NN)
+                evt.Xrms .append(NN)
+                evt.Yrms .append(NN)
+                evt.R    .append(NN)
+                evt.Phi  .append(NN)
+                evt.DT   .append(NN)
+                evt.Z    .append(NN)
 
         return evt
 
@@ -671,6 +695,24 @@ class HitCity(KrCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.rebin  = self.conf.rebin
+
+    def compute_xy_position(self, s2sid_peak, slice_no):
+        """Compute x-y position for each time slice. """
+        #import pdb; pdb.set_trace()
+        IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
+        xs, ys   = self.xs[IDs], self.ys[IDs]
+
+        # print('compute_xy_position')
+        # print('s2si.s2sid[peak_no] = {}'.format(s2sid_peak))
+        # print('IDs = {}'.format(IDs))
+        # print('Qs = {}'.format(Qs))
+
+        return corona(np.stack((xs, ys)).T, Qs,
+                      Qthr           =  self.conf.qthr,
+                      Qlm            =  self.conf.qlm,
+                      lm_radius      =  self.conf.lm_radius,
+                      new_lm_radius  =  self.conf.new_lm_radius,
+                      msipm          =  self.conf.msipm)
 
     def rebin_s2si(self, s2, s2si, rebin):
         """rebins s2d and sid dictionaries"""
@@ -683,13 +725,6 @@ class HitCity(KrCity):
             return [e]
         qs = np.array([c.Q for c in clusters])
         return e * qs / np.sum(qs)
-
-    def compute_xy_position(self, s2sid_peak, slice_no):
-        """Compute x-y position for each time slice. """
-        #import pdb; pdb.set_trace()
-        IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
-        xs, ys   = self.xs[IDs], self.ys[IDs]
-        return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
 
     def create_hits_event(self, pmapVectors):
         """Create a hits_event:
@@ -718,28 +753,28 @@ class HitCity(KrCity):
         # be set by parameter to a factor x pmaps-rebin.
         s2, s2si = self.rebin_s2si(s2, s2si, self.rebin)
 
-        npeak = 0
+        # print(s2)
+        # print(s2si)
+
+        # here hits are computed for each peak and each slice.
+        # In case of an exception, a hit is still created with a NN cluster.
+        # (NN cluster is a cluster where the energy is an IC not number NN)
+        # this allows to keep track of the energy associated to non reonstructed hits.
         for peak_no, (t_peak, e_peak) in sorted(s2si.s2d.items()):
             for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
+                z        = (t_slice - s1_t) * units.ns * self.drift_v
+                #print('peak_no = {} slice_no = {}'.format(peak_no, slice_no))
+
                 try:
                     clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
-                except SipmEmptyList:
-                    continue
-                except SipmZeroCharge:
-                    continue
-                # this cannot happen with the barycenter algorithm by construction
-                except ClusterEmptyList:
-                    IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2si.s2sid[peak_no], slice_no)
-                    xs, ys   = self.xs[IDs], self.ys[IDs]
-                    clusters = barycenter(np.stack((xs, ys)).T, Qs)
-
-                # create hits only for those slices with OK clusters
-                es       = self.split_energy(e_slice, clusters)
-                z        = (t_slice - s1_t) * units.ns * self.drift_v
-                for c, e in zip(clusters, es):
-                    hit       = Hit(npeak, c, z, e)
+                    es       = self.split_energy(e_slice, clusters)
+                    for c, e in zip(clusters, es):
+                        hit       = Hit(peak_no, c, z, e)
+                        hitc.hits.append(hit)
+                except XYRecoFail:
+                    c = Cluster(NN, xy(0,0), xy(0,0), 0)
+                    hit       = Hit(peak_no, c, z, e_slice)
                     hitc.hits.append(hit)
-            npeak += 1
 
         return hitc
 
