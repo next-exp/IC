@@ -30,16 +30,25 @@ class ParameterNotSet(ICException):
 class PeakNotFound(ICException):
     pass
 
-class SipmEmptyList(ICException):
+class XYRecoFail(ICException):
     pass
 
-class ClusterEmptyList(ICException):
+class SipmEmptyList(XYRecoFail):
     pass
 
-class SipmNotFound(ICException):
+class SipmEmptyListAboveQthr(XYRecoFail):
     pass
 
-class SipmZeroCharge(ICException):
+class ClusterEmptyList(XYRecoFail):
+    pass
+
+class SipmNotFound(XYRecoFail):
+    pass
+
+class SipmZeroCharge(XYRecoFail):
+    pass
+
+class SipmZeroChargeAboveQthr(XYRecoFail):
     pass
 
 class NoHits(ICException):
