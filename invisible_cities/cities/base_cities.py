@@ -655,14 +655,15 @@ class KrCity(PCity):
                 if len(clusters) == 1:
                     c = clusters[0]
                 else:
+                    cQ = [c.Q for c in clusters]
+                    self.cnt.increment_counter('n_events_more_than_1_cluster')
                     print('found case with more than one cluster')
-                    print('clusters charge = {}'.format(
-                          [c.Q for c in clusters]))
+                    print('clusters charge = {}'.format(cQ))
 
                     c_closest = np.amax([c.Q for c in clusters])
 
                     print('c_closest = {}'.format(c_closest))
-                    c = clusters[loc_elem_1d(clusters, c_closest)]
+                    c = clusters[loc_elem_1d(cQ, c_closest)]
                     print('c_chosen = {}'.format(c))
                 evt.Nsipm.append(c.nsipm)
                 evt.S2q  .append(c.Q)
