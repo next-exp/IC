@@ -4,6 +4,7 @@ Tests for fit_functions
 
 import numpy as np
 from pytest import mark
+from flaky  import flaky
 
 from numpy.testing import assert_array_equal
 from numpy.testing import assert_allclose
@@ -176,6 +177,22 @@ def test_profile1D_uniform_distribution(func):
 
     assert np.allclose(yp, 0.5, atol=3*rms)
     assert np.allclose(ye, rms/n**0.5, rtol=eps)
+
+
+@mark.parametrize(["func"],
+                  ((fit.profileX,),
+                   (fit.profileY,)))
+@flaky(max_runs=3, min_passes=1)
+def test_profile1D_uniform_distribution_std(func):
+    N    = 100000
+    Nbin = 100
+    rms  = 12**-0.5
+
+    xdata = np.random.rand(N)
+    ydata = np.random.rand(N)
+    xp, yp, ye = func(xdata, ydata, Nbin, std=True)
+
+    assert np.allclose(ye, rms, rtol=0.1)
 
 
 @mark.parametrize("func xdata ydata".split(),
