@@ -14,6 +14,7 @@ def s1_s2_si_from_pmaps(s1_dict, s2_dict, s2si_dict, evt_number):
     s2si = s2si_dict.get(evt_number, None)
     return s1, s2, s2si
 
+
 def load_pmaps(PMP_file_name):
     """Read the PMAP file and return transient PMAP rep."""
 
@@ -46,7 +47,6 @@ def read_run_and_event_from_pmaps_file(PMP_file_name):
                 pd.DataFrame.from_records(event_t.read()))
 
 
-
 def pmap_writer(file, *, compression='ZLIB4'):
     pmp_tables = _make_pmp_tables(file, compression)
     def write_pmap(event_number, s1, s2, s2si):
@@ -54,6 +54,15 @@ def pmap_writer(file, *, compression='ZLIB4'):
         s2  .store(pmp_tables[1], event_number)
         s2si.store(pmp_tables[2], event_number)
     return write_pmap
+
+
+def ipmt_pmap_writer(file, *, compression='ZLIB4'):
+    ipmt_tables = _make_ipmt_pmp_tables(file, compression)
+    def write_ipmt_pmap(event_number, s1pmt, s2pmt):
+        s1pmt.store(ipmt_tables[0], event_number)
+        s2pmt.store(ipmt_tables[1], event_number)
+
+    return write_ipmt_pmap
 
 
 def _make_pmp_tables(hdf5_file, compression):
@@ -71,3 +80,20 @@ def _make_pmp_tables(hdf5_file, compression):
         table.cols.event.create_index()
 
     return pmp_tables
+
+
+def _make_ipmt_pmp_tables(hdf5_file, compression):
+
+    c = tbl.filters(compression)
+    # OR JUST EXTEND PMAPS?
+    ipmt_group  = hdf5_file.create_group(hdf5_file.root, 'IPMT')
+    MKT   = hdf5_file.create_table
+    s1pmt = MKT(ipmt_group, 'S1Pmt'  , table_formats.S12Pmt,   "S1Pmt Table", c)
+    s2pmt = MKT(ipmt_group, 'S2Pmt'  , table_formats.S12Pmt,   "S2Pmt Table", c)
+
+    ipmt_tables = (s1pmt, s2pmt)
+
+    for table in ipmt_tables:
+        table.cols.event.create_index()
+
+    return ipmt_tables
