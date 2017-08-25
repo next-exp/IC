@@ -110,7 +110,8 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
 
 
 def profileX(xdata, ydata, nbins=100,
-             xrange=None, yrange=None, drop_nan=True):
+             xrange=None, yrange=None,
+             std=False, drop_nan=True):
     """
     Compute the x-axis binned average of a dataset.
 
@@ -151,7 +152,10 @@ def profileX(xdata, ydata, nbins=100,
                               minval = x_out[i],
                               maxval = x_out[i+1])]
         y_out[i] = np.mean(bin_data)
-        y_err[i] = np.std(bin_data) / bin_data.size ** 0.5
+        y_err[i] = np.std (bin_data)
+        if not std:
+            y_err[i] /= bin_data.size ** 0.5
+
     x_out += dx / 2.
     x_out  = x_out[:-1]
     if drop_nan:
@@ -163,7 +167,8 @@ def profileX(xdata, ydata, nbins=100,
 
 
 def profileY(xdata, ydata, nbins = 100,
-             yrange=None, xrange=None, drop_nan=True):
+             yrange=None, xrange=None,
+             std=False, drop_nan=True):
     """
     Compute the y-axis binned average of a dataset.
 
@@ -189,11 +194,12 @@ def profileY(xdata, ydata, nbins = 100,
     y_err : 1-dim np.ndarray
         Average error for each bin.
     """
-    return profileX(ydata, xdata, nbins, yrange, xrange, drop_nan)
+    return profileX(ydata, xdata, nbins, yrange, xrange, std, drop_nan)
 
 
 def profileXY(xdata, ydata, zdata, nbinsx, nbinsy,
-              xrange=None, yrange=None, zrange=None, drop_nan=True):
+              xrange=None, yrange=None, zrange=None,
+              std=False, drop_nan=True):
     """
     Compute the xy-axis binned average of a dataset.
 
@@ -243,12 +249,14 @@ def profileXY(xdata, ydata, zdata, nbinsx, nbinsy,
             selection = (in_range(xdata, x_out[i], x_out[i+1]) &
                          in_range(ydata, y_out[j], y_out[j+1]))
             bin_data = zdata[selection]
-            z_out[i,j] = np.nanmean(bin_data) if bin_data.size else 0.
-            z_err[i,j] = np.nanstd(bin_data) / bin_data.size**0.5 if bin_data.size else 0.
+            z_out[i,j] = np.nanmean(bin_data)
+            z_err[i,j] = np.nanstd (bin_data)
+            if not std:
+                z_err[i,j] /= bin_data.size ** 0.5
     x_out += dx / 2.
     y_out += dy / 2.
-    x_out = x_out[:-1]
-    y_out = y_out[:-1]
+    x_out  = x_out[:-1]
+    y_out  = y_out[:-1]
     if drop_nan:
         selection = (np.isnan(z_out) | np.isnan(z_err))
         z_out[selection] = 0
