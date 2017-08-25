@@ -525,8 +525,6 @@ class PmapCity(CalibratedCity):
         """Computes s1, s2 and s2si objects (PMAPS)"""
 
         s1 = cpf.find_s1(csum, s1_indx, **self.s1_params._asdict())
-        s1 = cpf.correct_s1_ene(s1.s1d, csum)
-
         s2 = cpf.find_s2(csum, s2_indx, **self.s2_params._asdict())
         s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = self.thr_sipm_s2)
         return s1, s2, s2si
