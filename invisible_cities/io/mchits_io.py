@@ -15,6 +15,13 @@ def load_mchits(file_name: str, max_events:int =1e+9) -> Mapping[int, MCHit]:
     return mchits_dict
 
 
+def load_mcparticles(file_name: str, max_events:int =1e+9) -> Mapping[int, MCParticle]:
+
+    with tables.open_file(file_name,mode='r') as h5in:
+        mctable = h5in.root.MC.MCTracks
+        return read_mctracks (mctable, max_events)
+
+
 def read_mctracks (mc_table: tables.table.Table,
                    max_events:int =1e+9) ->Mapping[int, Mapping[int, MCParticle]]:
 
