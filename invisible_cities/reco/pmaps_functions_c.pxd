@@ -50,3 +50,14 @@ cpdef _delete_empty_s2si_peaks(dict s2si_dict)
 
 """ delete all events from s2si_dict with empty s2sid"""
 cpdef _delete_empty_s2si_dict_events(dict s2si_dict)
+
+"""Takes a table with the persistent representation of pmaps
+(in the form of a pandas data frame) and returns a dict {event:s1pmt}
+"""
+cpdef df_to_s1pmt_dict(dfs1, dfpmts, int max_events=*)
+
+
+"""Takes a table with the persistent representation of pmaps
+(in the form of a pandas data frame) and returns a dict {event:s2pmt}
+"""
+cpdef df_to_s2pmt_dict(dfs2, dfpmts, int max_events=*)
