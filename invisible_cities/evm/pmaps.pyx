@@ -367,6 +367,8 @@ cdef class S12Pmt(S12):
 
 
     cpdef store(self, table, event_number):
+        cdef int even_number, peak, npmt
+        cdef float E
         row = table.row
         for peak, s12_pmts in self.pmtsd.items():
             for npmt, s12_pmt in enumerate(s12_pmts):
