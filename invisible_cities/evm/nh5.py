@@ -105,7 +105,7 @@ class S12Pmt(tb.IsDescription):
     """
     event  = tb.  Int32Col(pos=0)
     peak   = tb.  UInt8Col(pos=2) # peak number
-    npmt   = tb.Float32Col(pos=3) # time in ns
+    npmt   = tb.  UInt8Col(pos=3) # pmt number (in order of IC db 26/8/2017: equal to SensorID)
     ene    = tb.Float32Col(pos=5) # energy in pes
 
 
