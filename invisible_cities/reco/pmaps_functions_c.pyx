@@ -87,7 +87,7 @@ cpdef df_to_s2si_dict(dfs2, dfsi, int max_events=-1):
 
     return s2si_dict
 
-cdef df_to_pmaps_dict(df, max_events):
+cdef df_to_pmaps_dict(df, int max_events):
     """Takes a table with the persistent representation of pmaps
     (in the form of a pandas data frame) and returns a dict {event:s12d}
 
@@ -124,7 +124,7 @@ cdef df_to_pmaps_dict(df, max_events):
     return all_events
 
 
-cdef df_to_s2sid_dict(df, max_events):
+cdef df_to_s2sid_dict(df, int max_events):
     """ Transform S2Si from DF format to dict format."""
     cdef dict all_events = {}
     cdef dict current_event
