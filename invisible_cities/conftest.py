@@ -9,6 +9,8 @@ from . io.pmap_io   import df_to_s2_dict
 from . io.pmap_io   import df_to_s2si_dict
 from . io.pmap_io   import read_pmaps
 from . io.pmap_io   import load_pmaps
+from . io.pmap_io   import load_ipmt_pmaps
+from . io.pmap_io   import ipmt_pmap_writer
 from . io.hits_io   import load_hits
 from . io.hits_io   import load_hits_skipping_NN
 
@@ -16,13 +18,16 @@ from . io.hits_io   import load_hits_skipping_NN
 def ICDIR():
     return os.environ['ICDIR']
 
+
 @pytest.fixture(scope = 'session')
 def irene_diomira_chain_tmpdir(tmpdir_factory):
     return tmpdir_factory.mktemp('irene_diomira_tests')
 
+
 @pytest.fixture(scope = 'session')
 def config_tmpdir(tmpdir_factory):
     return tmpdir_factory.mktemp('configure_tests')
+
 
 @pytest.fixture(scope  = 'session',
                 params = ['electrons_40keV_z250_RWF.h5',
@@ -33,6 +38,7 @@ def electron_RWF_file(request, ICDIR):
     return os.path.join(ICDIR,
                         'database/test_data',
                         request.param)
+
 
 @pytest.fixture(scope  = 'session',
                 params = ['electrons_40keV_z250_MCRD.h5'])
@@ -61,7 +67,6 @@ def mc_particle_and_hits_data(electron_MCRD_file):
     return efile, name, pdg, vi, vf, p, Ep, nhits, X, Y, Z, E, t
 
 
-
 @pytest.fixture(scope='session')
 def s1_dataframe_converted():
     evs  = [   0,     0,     0,     0,     0,      3,     3]
@@ -76,6 +81,7 @@ def s1_dataframe_converted():
         ene    = Series(ene , dtype=np.float32),
     ))
     return df_to_s1_dict(df), df
+
 
 @pytest.fixture(scope='session')
 def s2_dataframe_converted():
@@ -92,6 +98,7 @@ def s2_dataframe_converted():
     ))
 
     return df_to_s2_dict(df), df
+
 
 @pytest.fixture(scope='session')
 def s2si_dataframe_converted():
@@ -124,6 +131,7 @@ def KrMC_pmaps(ICDIR):
             (s1t, s2t, s2sit),
             (S1_evts, S2_evts, S2Si_evts),
             (s1, s2, s2si))
+
 
 @pytest.fixture(scope='session')
 def TlMC_hits(ICDIR):
@@ -204,3 +212,17 @@ def hits_toy_data(ICDIR):
 
     hits_filename = os.path.join(ICDIR, "database/test_data/toy_hits.h5")
     return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e)
+
+
+@pytest.fixture(scope='session')
+def Kr_MC_4446_load_s1_s2_s2si(ICDIR):
+    ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_5evt.h5'
+    Kr_MC_4446_load_pmaps = load_pmaps(ipmt_pmap_path)
+    return Kr_MC_4446_load_pmaps
+
+
+@pytest.fixture(scope='session')
+def Kr_MC_4446_load_ipmt_pmaps(ICDIR):
+    ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_5evt.h5'
+    Kr_MC_4446_load_ipmt_pmaps = load_ipmt_pmaps(ipmt_pmap_path)
+    return Kr_MC_4446_load_ipmt_pmaps
