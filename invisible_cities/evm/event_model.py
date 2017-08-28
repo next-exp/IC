@@ -62,6 +62,33 @@ class Event:
 
     __repr__ = __str__
 
+
+class MCParticle:
+    """A MC Particle """
+
+    def __init__(self, particle_name, pdg_code,
+                 initial_vertex, final_vertex,
+                 momentum, energy):
+        self.name = particle_name
+        self.pdg  = pdg_code
+        self.vi   = initial_vertex
+        self.vf   = final_vertex
+        self.p    = momentum
+        self.E    = energy
+        self.hits = []
+
+    def __str__(self):
+        return """ MCParticle: name = {} pdg = {}
+                    vi = {} vf = {}
+                    p =  {}  E = {}
+                    number of hits = {}
+                    hits = {}\n""".format(self.name, self.pdg,
+                                          self.vi, self.vf, self.p, self.E,
+                                          len(self.hits), self.hits)
+
+    __repr__ =     __str__
+
+
 class BHit:
     """Base class representing a hit"""
 
@@ -100,6 +127,33 @@ class BHit:
 
     def __hash__(self):
         return hash((self.E, tuple(self.pos)))
+
+
+class MCHit(BHit):
+    """Represents a MCHit"""
+    def __init__(self, pos, t, E):
+        super().__init__(pos[0],pos[1],pos[2], E)
+        self.time     = t
+
+    @property
+    def T   (self): return self.time
+
+
+    def __str__(self):
+        return '<pos = {} E = {} time = {}>'.format(
+                self.pos.tolist(), self.E, self.time)
+
+    __repr__ =     __str__
+
+    def __eq__(self, other):
+        try:
+            return np.array_equal(self.pos, other.pos) and self.E == other.E and self.time == other.time
+        except AttributeError:
+            return False
+
+    def __hash__(self):
+        return hash((self.E, self.time, self.xyz))
+
 
 class Voxel(BHit):
     """Represents a Voxel"""
