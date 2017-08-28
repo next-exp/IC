@@ -9,9 +9,9 @@ import numpy  as np
 
 from pytest import mark
 
-from hypothesis             import given
-from hypothesis.strategies  import floats
-from hypothesis.strategies  import integers
+from hypothesis                import given
+from hypothesis.strategies     import floats
+from hypothesis.strategies     import integers
 
 from .. core.system_of_units_c import units
 from .. database               import load_db
@@ -26,18 +26,22 @@ from .. evm.ic_containers      import ThresholdParams
 from .. evm.ic_containers      import PMaps
 from .. types.ic_types         import minmax
 
-from . pmap_io                 import pmap_writer
 from .. evm.pmaps              import S1
 from .. evm.pmaps              import S2
 from .. evm.pmaps              import S2Si
+from .. evm.pmaps              import S1Pmt
+from .. evm.pmaps              import S2Pmt
 from . run_and_event_io        import run_and_event_writer
 
 from . pmap_io                 import load_pmaps
+from . pmap_io                 import pmap_writer
+from . pmap_io                 import load_ipmt_pmaps
+from . pmap_io                 import ipmt_pmap_writer
 from . pmap_io                 import s1_s2_si_from_pmaps
 from . pmap_io                 import read_run_and_event_from_pmaps_file
-from . pmap_io   import df_to_s1_dict
-from . pmap_io   import df_to_s2_dict
-from . pmap_io   import df_to_s2si_dict
+from . pmap_io                 import df_to_s1_dict
+from . pmap_io                 import df_to_s2_dict
+from . pmap_io                 import df_to_s2si_dict
 
 @given(integers(min_value=23, max_value=51))
 def test_s1_s2_si_from_pmaps(KrMC_pmaps, evt_no):
@@ -79,7 +83,6 @@ def test_s1_s2_si_from_pmaps(KrMC_pmaps, evt_no):
                 W   = S2si.sipm_waveform(peak_number, sipm_number)
                 np.allclose(w.t , W.t)
                 np.allclose(w.E , W.E)
-
 
 
 def test_pmap_writer(config_tmpdir,
@@ -171,3 +174,66 @@ def test_pmap_writer(config_tmpdir,
     # Run numbers
     np.testing.assert_equal(rundf.run_number.values,
                             np.full(len(event_numbers), run_number, dtype=np.int32))
+
+
+def assert_s12_dict_equality(s12_dict0, s12_dict1):
+    assert s12_dict0.keys() == s12_dict1.keys()
+    for ev in s12_dict0:
+        for pn in s12_dict0[ev].peaks:
+            assert np.allclose(s12_dict0[ev].peaks[pn].t, s12_dict1[ev].peaks[pn].t)
+            assert np.allclose(s12_dict0[ev].peaks[pn].E, s12_dict1[ev].peaks[pn].E)
+
+def assert_s2si_dict_equality(s2si_dict0, s2si_dict1):
+    assert s2si_dict0.keys() == s2si_dict1.keys()
+    for ev in s2si_dict0:
+        for pn in s2si_dict0[ev].peaks:
+            for sipm in s2si_dict0[ev].sipms_in_peak(pn):
+                assert np.allclose(s2si_dict0[ev].sipm_waveform(pn, sipm).E,
+                                   s2si_dict1[ev].sipm_waveform(pn, sipm).E)
+
+def test_load_ipmt_pmaps_equality_with_load_pmaps_for_s1_s2_s2si(Kr_MC_4446_load_s1_s2_s2si,
+                                                                 Kr_MC_4446_load_ipmt_pmaps):
+    s1_dict0, s2_dict0, s2si_dict0       = Kr_MC_4446_load_s1_s2_s2si
+    s1_dict1, s2_dict1, s2si_dict1, _, _ = Kr_MC_4446_load_ipmt_pmaps
+    assert_s12_dict_equality (  s1_dict0,   s1_dict1) # check s1   equality
+    assert_s12_dict_equality (  s2_dict0,   s2_dict1) # check s2   equality
+    assert_s2si_dict_equality(s2si_dict0, s2si_dict1) # check s2si equality
+
+
+
+def test_load_ipmt_pmaps_s12pmt_have_same_events_and_peaks_as_s12(Kr_MC_4446_load_s1_s2_s2si,
+                                                                  Kr_MC_4446_load_ipmt_pmaps):
+    s1_dict, s2_dict, _             = Kr_MC_4446_load_s1_s2_s2si # loaded with load_pmaps
+    _, _, _, s1pmt_dict, s2pmt_dict = Kr_MC_4446_load_ipmt_pmaps # loaded with load_ipmt_pmaps
+    assert_s12_dict_equality(s1_dict, s1pmt_dict) # compares the s1.s1d with s1pmt.s1d
+    assert_s12_dict_equality(s2_dict, s2pmt_dict) # compares the s2.s2d with s2pmt.s2d
+
+
+def test_check_that_write_ipmt_pmaps_does_not_modify_pmaps(config_tmpdir,
+                                                           Kr_MC_4446_load_ipmt_pmaps):
+    test_write_path = 'test_pmaps_auto.h5'
+    ipmt_PMP_file_name = os.path.join(config_tmpdir, test_write_path)
+    s1_dict, s2_dict, s2si_dict, s1pmt_dict, s2pmt_dict = Kr_MC_4446_load_ipmt_pmaps
+    events = list(range(5))
+    with tb.open_file(test_write_path, 'w') as h5out:
+        write = ipmt_pmap_writer(h5out)
+        for ev in events:
+            if ev in s1_dict   :    s1 = s1_dict[ev]   # Create empty si if there was no
+            else               :    s1 = S1({})        # peak of that kind found for that ev
+            if ev in s2_dict   :    s2 = s2_dict[ev]
+            else               :    s2 = S2({})
+            if ev in s2si_dict :  s2si = s2si_dict[ev]
+            else               :  s2si = S2Si({}, {})
+            if ev in s1pmt_dict: s1pmt = s1pmt_dict[ev]
+            else               : s1pmt = S1Pmt({}, {})
+            if ev in s2pmt_dict: s2pmt = s2pmt_dict[ev]
+            else               : s2pmt = S2Pmt({}, {})
+            write(ev, s1, s2, s2si, s1pmt, s2pmt)
+            #print(h5out) # TODO: UNCOMMENT THIS LINE TO MAKE TEST PASS
+
+    with tb.open_file(test_write_path, 'r') as h5out: print(h5out)
+    s1_dict0, s2_dict0, s2si_dict0, s1pmt_dict0, s2pmt_dict0 = load_ipmt_pmaps(test_write_path)
+    assert_s12_dict_equality (   s1_dict,    s1_dict0)
+    assert_s12_dict_equality (   s2_dict,    s2_dict0)
+    assert_s12_dict_equality (s1pmt_dict, s1pmt_dict0)
+    assert_s12_dict_equality (s2pmt_dict, s2pmt_dict0)

@@ -98,9 +98,7 @@ def _make_pmp_tables(hdf5_file, compression):
     s1         = MKT(pmaps_group, 'S1'  , table_formats.S12,   "S1 Table", c)
     s2         = MKT(pmaps_group, 'S2'  , table_formats.S12,   "S2 Table", c)
     s2si       = MKT(pmaps_group, 'S2Si', table_formats.S2Si, "S2Si Table", c)
-
     pmp_tables = (s1, s2, s2si)
-
     for table in pmp_tables:
         table.cols.event.create_index()
 
@@ -108,13 +106,11 @@ def _make_pmp_tables(hdf5_file, compression):
 
 
 def _make_ipmt_pmp_tables(hdf5_file, compression):
-
     c = tbl.filters(compression)
     pmaps_group  = hdf5_file.root.PMAPS # Don't create new group, add more tables to group
     MKT   = hdf5_file.create_table
     s1pmt = MKT(pmaps_group, 'S1Pmt'  , table_formats.S12Pmt,   "S1Pmt Table", c)
     s2pmt = MKT(pmaps_group, 'S2Pmt'  , table_formats.S12Pmt,   "S2Pmt Table", c)
-
     ipmt_tables = (s1pmt, s2pmt)
     for table in ipmt_tables:
         table.cols.event.create_index()
