@@ -9,15 +9,12 @@ Cython functions providing pmaps io and some extra functionality
 Returns (np.array[[nsipm_1 ,     nsipm_2, ...]],
          np.array[[sum(q_1), sum(nsipm_2), ...]])
 
-Last revised, JJGC, July, 2017.
+Last revised, Alejandro Botas, August, 2017.
 """
 
 cimport numpy as np
 import  numpy as np
 
-# from .  params     import Peak
-# from .. io.pmap_io  import S12
-# from .. io.pmap_io import S2Si
 from .. evm.pmaps import S1
 from .. evm.pmaps import S2
 from .. evm.pmaps import S2Si
@@ -179,3 +176,59 @@ cpdef sipm_ids_and_charges_in_slice(dict s2sid_peak, int slice_no):
             qs_slice.append(qs[slice_no])
 
     return np.array(ids, dtype=np.int), np.array(qs_slice, dtype=np.double)
+
+
+cpdef _impose_thr_sipm_destructive(dict s2si_dict, float thr_sipm):
+    """imposes a thr_sipm on s2si_dict"""
+    cdef dict si_peak
+    cdef int sipm, i
+    cdef float q
+    for s2si in s2si_dict.values():                   # iter over events
+        for si_peak in s2si.s2sid.values():           # iter over peaks
+            for sipm in list(si_peak.keys()):         # iter over sipms ** avoid mod while iter
+                for i, q in enumerate(si_peak[sipm]): # iter over timebins
+                    if q < thr_sipm:                  # impose threshold
+                        si_peak[sipm][i] = 0
+                if si_peak[sipm].sum() == 0:          # Delete SiPMs with integral
+                    del si_peak[sipm]                 # charge equal to 0
+    return s2si_dict
+
+
+cpdef _impose_thr_sipm_s2_destructive(dict s2si_dict, float thr_sipm_s2):
+    """imposes a thr_sipm_s2 on s2si_dict. deletes keys (sipms) from each s2sid peak if sipm
+       integral charge is less than thr_sipm_s2"""
+    cdef dict si_peak
+    cdef int sipm
+    cdef np.ndarray qs
+    for s2si in s2si_dict.values():
+        for si_peak in s2si.s2sid.values():
+            for sipm, qs in list(si_peak.items()): # ** avoid modifying while iterating
+                sipm_integral_charge = qs.sum()
+                if sipm_integral_charge < thr_sipm_s2:
+                    del si_peak[sipm]
+    return s2si_dict
+
+
+cpdef _delete_empty_s2si_peaks(dict s2si_dict):
+    """makes sure there are no empty peaks stored in an s2sid
+        (s2sid[pn] != {} for all pn in s2sid and all s2sid in s2si_dict)
+        ** Also deletes corresponding peak in s2si.s2d! """
+    cdef int ev, pn
+    for ev in list(s2si_dict.keys()):
+        for pn in list(s2si_dict[ev].s2sid.keys()):
+            if len(s2si_dict[ev].s2sid[pn]) == 0:
+                del s2si_dict[ev].s2sid[pn]
+                del s2si_dict[ev].s2d  [pn]
+                # It is not sufficient to just delete the peaks because the S2Si class instance
+                # will still think it has peak pn even though its base dictionary does not
+                s2si_dict[ev] = S2Si(s2si_dict[ev].s2d, s2si_dict[ev].s2sid)
+    return s2si_dict
+
+
+cpdef _delete_empty_s2si_dict_events(dict s2si_dict):
+    """ delete all events from s2si_dict with empty s2sid"""
+    cdef int ev
+    for ev in list(s2si_dict.keys()):
+        if len(s2si_dict[ev].s2sid) == 0:
+            del s2si_dict[ev]
+    return s2si_dict

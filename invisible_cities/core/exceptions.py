@@ -59,3 +59,6 @@ class NoVoxels(ICException):
 
 class InconsistentS12dPmtsd(ICException):
     pass
+
+class NegativeThresholdNotAllowed(ICException):
+    pass
