@@ -10,11 +10,13 @@ from .. evm.pmaps        import S2
 from .. evm.pmaps        import S2Si
 from .. core             import system_of_units as units
 from . pmaps_functions   import rebin_s2si
+from . pmaps_functions   import copy_s2si
+from . pmaps_functions   import copy_s2si_dict
 from . pmaps_functions   import _impose_thr_sipm_destructive
 from . pmaps_functions   import _impose_thr_sipm_s2_destructive
 from . pmaps_functions   import _delete_empty_s2si_peaks
 from . pmaps_functions   import _delete_empty_s2si_dict_events
-from . pmaps_functions   import raise_s2si_thresholds_destructive
+from . pmaps_functions   import raise_s2si_thresholds
 from . pmaps_functions_c import df_to_s1_dict
 from . pmaps_functions_c import df_to_s2_dict
 from . pmaps_functions_c import df_to_s2si_dict
@@ -261,7 +263,41 @@ def test_delete_empty_s2si_peaks():
     assert np.allclose(s2si_dict[0].s2sid[1][1001], s2sid[1][1001])
 
 
-def test_raise_s2si_thresholds_destructive_returns_empty_dict_with_enormous_thresholds(KrMC_pmaps):
+def test_raise_s2si_thresholds_returns_empty_dict_with_enormous_thresholds(KrMC_pmaps):
     _, _, _, (_, _, s2si_dict) = KrMC_pmaps
-    assert len(raise_s2si_thresholds_destructive(s2si_dict, None,  1e9)) == 0
-    assert len(raise_s2si_thresholds_destructive(s2si_dict,  1e9, None)) == 0
+    assert len(raise_s2si_thresholds(s2si_dict, None,  1e9)) == 0
+    assert len(raise_s2si_thresholds(s2si_dict,  1e9, None)) == 0
+
+
+def test_copy_s2si_changing_copy_does_not_affect_original():
+    a     = np.array([[1,2],[1,2]], dtype=np.float64)
+    b     = np.array([1,2], dtype=np.float64)
+    s2d   = {0: np.array([[1,2],[1,2]], dtype=np.float64),
+             2: np.array([[1,2],[1,2]], dtype=np.float64)}
+    s2sid = {0: {1:b, 2: np.array([2,3], dtype=np.float64)},
+             2: {     2: np.array([2,3], dtype=np.float64)}}
+    s2si0 = S2Si(s2d, s2sid)
+    s2si1 = copy_s2si(s2si0)
+    # Check changing SiPM energy does not affect original
+    s2si1.s2sid[0][2][0] -= 2
+    assert s2si0.s2sid[0][2][0] == 2
+    # Check deleting SiPM keys in copy does not affect original
+    del s2si1.s2sid[0][1]
+    assert (s2si0.s2sid[0][1] == b).all()
+    # Check deleting peak keys in copy does not affect original in s2d
+    del s2si1.s2sid[0]
+    assert 0 in s2si0.s2sid
+    # Check changing value in s2si1.s2d does not affect original
+    s2si1.s2d[0][0][0] -= 1
+    assert s2si0.s2d[0][0][0] == 1
+    # Check deleting peak keys in copy does not affect original in s2sid
+    del s2si1.s2d[2]
+    assert 2 in s2si0.s2d
+
+
+def test_copy_s2si_dict_deleting_keys_in_copy_does_not_affect_keys_in_original(KrMC_pmaps):
+    _, _, _, (_, _, s2si_dict0) = KrMC_pmaps
+    key  = list(s2si_dict0.keys())[-1]
+    s2si_dict1 = copy_s2si_dict(s2si_dict0)
+    del s2si_dict1[key]
+    assert key in s2si_dict0

@@ -7,7 +7,8 @@ Returns (np.array[[nsipm_1 ,     nsipm_2, ...]],
 Last revised, JJGC, July, 2017.
 
 """
-import numpy  as np
+import copy
+import numpy  as     np
 from .. core import core_functions_c as ccf
 from .. core.system_of_units_c      import units
 from .. core.exceptions             import NegativeThresholdNotAllowed
@@ -141,20 +142,33 @@ def _delete_empty_s2si_dict_events(s2si_dict):
     return s2si_dict
 
 
-def raise_s2si_thresholds_destructive(s2si_dict, thr_sipm, thr_sipm_s2):
+def copy_s2si(s2si_original):
+    """ return an identical copy of an s2si. ** note these must be deepcopies, and a deepcopy of
+    the s2si itself does not seem to work. """
+    return S2Si(copy.deepcopy(s2si_original.s2d),
+                copy.deepcopy(s2si_original.s2sid))
+
+
+def copy_s2si_dict(s2si_dict_original):
+    """ returns an identical copy of the input s2si_dict """
+    return {ev: copy_s2si(s2si) for ev, s2si in s2si_dict_original.items()}
+
+
+def raise_s2si_thresholds(s2si_dict_original, thr_sipm, thr_sipm_s2):
     """
     returns s2si_dict after imposing more thr_sipm and/or thr_sipm_s2 thresholds.
     ** NOTE:
         1) thr_sipm IS IMPOSED BEFORE thr_sipm_s2
         2) thresholds cannot be lowered. this function will do nothing if thresholds are set below
            previous values.
-        3) This function is destructive. It MODIFIES ITS INPUT s2si_dict
     """
     # Ensure thresholds are acceptable values
     if thr_sipm     is None: thr_sipm    = 0
     if thr_sipm_s2  is None: thr_sipm_s2 = 0
     if thr_sipm < 0 or thr_sipm_s2 < 0:
         raise NegativeThresholdNotAllowed('Threshold can be 0 or None, but not negative')
+    elif thr_sipm == 0 and thr_sipm_s2 == 0: return s2si_dict_original
+    else: s2si_dict = copy_s2si_dict(s2si_dict_original)
 
     # Impose thresholds
     if thr_sipm    > 0:
