@@ -96,29 +96,6 @@ def rebin_s2si_peak(t, e, sipms, stride):
       {sipm: ccf.rebin_array(qs, stride, remainder=True) for sipm, qs in sipms.items()}
 
 
-def _delete_empty_s2si_peaks(s2si_dict : Dict[int, S2Si]) -> Dict[int, S2Si]:
-    """makes sure there are no empty peaks stored in an s2sid
-        (s2sid[pn] != {} for all pn in s2sid and all s2sid in s2si_dict)
-        ** Also deletes corresponding peak in s2si.s2d! """
-    for ev in list(s2si_dict.keys()):
-        for pn in list(s2si_dict[ev].s2sid.keys()):
-            if len(s2si_dict[ev].s2sid[pn]) == 0:
-                del s2si_dict[ev].s2sid[pn]
-                del s2si_dict[ev].s2d  [pn]
-                # It is not sufficient to just delete the peaks because the S2Si class instance
-                # will still think it has peak pn even though its base dictionary does not
-                s2si_dict[ev] = S2Si(s2si_dict[ev].s2d, s2si_dict[ev].s2sid)
-    return s2si_dict
-
-
-def _delete_empty_s2si_dict_events(s2si_dict: Dict[int, S2Si]) -> Dict[int, S2Si]:
-    """ delete all events from s2si_dict with empty s2sid"""
-    for ev in list(s2si_dict.keys()):
-        if len(s2si_dict[ev].s2sid) == 0:
-            del s2si_dict[ev]
-    return s2si_dict
-
-
 def copy_s2si(s2si_original : S2Si) -> S2Si:
     """ return an identical copy of an s2si. ** note these must be deepcopies, and a deepcopy of
     the s2si itself does not seem to work. """
