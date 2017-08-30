@@ -18,6 +18,7 @@ from .test_utils import random_length_float_arrays
 from .           import core_functions   as core
 from .           import core_functions_c as core_c
 
+
 def test_timefunc(capfd):
     # We run a function with a defined time duration (sleep) and we check
     # the decorator prints a correct measurement.
@@ -169,3 +170,23 @@ def test_define_window():
     peak = core.loc_elem_1d(n, np.max(n))
     assert n0 == peak - 10
     assert n1 == peak + 10
+
+
+@given(random_length_float_arrays(min_length = 1))
+def test_mean_handle_empty_nonempty_input  (array):
+    npt.assert_equal(  np.mean             (array),
+                     core.mean_handle_empty(array))
+
+
+def test_mean_handle_empty_empty_input():
+    assert np.isnan(core.mean_handle_empty([]))
+
+
+@given(random_length_float_arrays(min_length =  1))
+def test_std_handle_empty_nonempty_input  (array):
+    npt.assert_equal(  np.std             (array),
+                     core.std_handle_empty(array))
+
+
+def test_std_handle_empty_empty_input():
+    assert np.isnan(core.std_handle_empty([]))
