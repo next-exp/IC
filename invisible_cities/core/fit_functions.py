@@ -145,8 +145,8 @@ def profileX(xdata, ydata, nbins=100,
     y_err = np.empty(nbins)
     dx    = x_out[1] - x_out[0]
 
-    selection = coref.in_range(xdata, xmin, xmax) &\
-                coref.in_range(ydata, ymin, ymax)
+    selection = (coref.in_range(xdata, xmin, xmax) &
+                 coref.in_range(ydata, ymin, ymax))
     x, y = xdata[selection], ydata[selection]
     for i in range(nbins):
         bin_data = y[coref.in_range(x,
@@ -241,14 +241,14 @@ def profileXY(xdata, ydata, zdata, nbinsx, nbinsy,
     dx = x_out[1] - x_out[0]
     dy = y_out[1] - y_out[0]
 
-    selection = coref.in_range(xdata, xmin, xmax) &\
-                coref.in_range(ydata, ymin, ymax) &\
-                coref.in_range(zdata, zmin, zmax)
+    selection = (coref.in_range(xdata, xmin, xmax) &
+                 coref.in_range(ydata, ymin, ymax) &
+                 coref.in_range(zdata, zmin, zmax))
     xdata, ydata, zdata = xdata[selection], ydata[selection], zdata[selection]
     for i in range(nbinsx):
         for j in range(nbinsy):
-            selection = coref.in_range(xdata, x_out[i], x_out[i+1]) &\
-                        coref.in_range(ydata, y_out[j], y_out[j+1])
+            selection = (coref.in_range(xdata, x_out[i], x_out[i+1]) &
+                         coref.in_range(ydata, y_out[j], y_out[j+1]))
             bin_data = zdata[selection]
             z_out[i,j] = coref.mean_handle_empty(bin_data)
             z_err[i,j] = coref. std_handle_empty(bin_data)
