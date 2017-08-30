@@ -8,7 +8,7 @@ import numpy as np
 import scipy.optimize
 import scipy.stats
 
-from .  core_functions       import in_range
+from . import core_functions as coref
 from .. evm.ic_containers    import FitFunction
 
 def get_errors(cov):
@@ -88,7 +88,7 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
     [ 1.77245385  1.          0.70710678]
     """
     if fit_range is not None:
-        sel  = in_range(x, *fit_range)
+        sel  = coref.in_range(x, *fit_range)
         x, y = x[sel], y[sel]
         if "sigma" in kwargs:
             kwargs["sigma"] = kwargs["sigma"][sel]
@@ -105,7 +105,7 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
     return FitFunction(fitf,
                        vals,
                        get_errors(cov),
-                       chi2 / (len(x) - 1 - len(vals)),
+                       chi2 / (len(x) - len(vals)),
                        pval)
 
 
@@ -145,14 +145,15 @@ def profileX(xdata, ydata, nbins=100,
     y_err = np.empty(nbins)
     dx    = x_out[1] - x_out[0]
 
-    selection = in_range(xdata, xmin, xmax) & in_range(ydata, ymin, ymax)
+    selection = coref.in_range(xdata, xmin, xmax) &\
+                coref.in_range(ydata, ymin, ymax)
     x, y = xdata[selection], ydata[selection]
     for i in range(nbins):
-        bin_data = y[in_range(x,
-                              minval = x_out[i],
-                              maxval = x_out[i+1])]
-        y_out[i] = np.mean(bin_data)
-        y_err[i] = np.std (bin_data)
+        bin_data = y[coref.in_range(x,
+                                    minval = x_out[i],
+                                    maxval = x_out[i+1])]
+        y_out[i] = coref.mean_handle_empty(bin_data)
+        y_err[i] = coref. std_handle_empty(bin_data)
         if not std:
             y_err[i] /= bin_data.size ** 0.5
 
@@ -240,17 +241,17 @@ def profileXY(xdata, ydata, zdata, nbinsx, nbinsy,
     dx = x_out[1] - x_out[0]
     dy = y_out[1] - y_out[0]
 
-    selection = (in_range(xdata, xmin, xmax) &
-                 in_range(ydata, ymin, ymax) &
-                 in_range(zdata, zmin, zmax))
+    selection = coref.in_range(xdata, xmin, xmax) &\
+                coref.in_range(ydata, ymin, ymax) &\
+                coref.in_range(zdata, zmin, zmax)
     xdata, ydata, zdata = xdata[selection], ydata[selection], zdata[selection]
     for i in range(nbinsx):
         for j in range(nbinsy):
-            selection = (in_range(xdata, x_out[i], x_out[i+1]) &
-                         in_range(ydata, y_out[j], y_out[j+1]))
+            selection = coref.in_range(xdata, x_out[i], x_out[i+1]) &\
+                        coref.in_range(ydata, y_out[j], y_out[j+1])
             bin_data = zdata[selection]
-            z_out[i,j] = np.nanmean(bin_data)
-            z_err[i,j] = np.nanstd (bin_data)
+            z_out[i,j] = coref.mean_handle_empty(bin_data)
+            z_err[i,j] = coref. std_handle_empty(bin_data)
             if not std:
                 z_err[i,j] /= bin_data.size ** 0.5
     x_out += dx / 2.
