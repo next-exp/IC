@@ -96,33 +96,6 @@ def rebin_s2si_peak(t, e, sipms, stride):
       {sipm: ccf.rebin_array(qs, stride, remainder=True) for sipm, qs in sipms.items()}
 
 
-def _impose_thr_sipm_destructive(s2si_dict: Dict[int, S2Si],
-                                 thr_sipm : float           ) -> Dict[int, S2Si]:
-    """imposes a thr_sipm on s2si_dict"""
-    for s2si in s2si_dict.values():                   # iter over events
-        for si_peak in s2si.s2sid.values():           # iter over peaks
-            for sipm in list(si_peak.keys()):         # iter over sipms ** avoid mod while iter
-                for i, q in enumerate(si_peak[sipm]): # iter over timebins
-                    if q < thr_sipm:                  # impose threshold
-                        si_peak[sipm][i] = 0
-                if si_peak[sipm].sum() == 0:          # Delete SiPMs with integral
-                    del si_peak[sipm]                 # charge equal to 0
-    return s2si_dict
-
-
-def _impose_thr_sipm_s2_destructive(s2si_dict   : Dict[int, S2Si],
-                                    thr_sipm_s2 : float           ) -> Dict[int, S2Si]:
-    """imposes a thr_sipm_s2 on s2si_dict. deletes keys (sipms) from each s2sid peak if sipm
-       integral charge is less than thr_sipm_s2"""
-    for s2si in s2si_dict.values():
-        for si_peak in s2si.s2sid.values():
-            for sipm, qs in list(si_peak.items()): # ** avoid modifying while iterating
-                sipm_integral_charge = qs.sum()
-                if sipm_integral_charge < thr_sipm_s2:
-                    del si_peak[sipm]
-    return s2si_dict
-
-
 def _delete_empty_s2si_peaks(s2si_dict : Dict[int, S2Si]) -> Dict[int, S2Si]:
     """makes sure there are no empty peaks stored in an s2sid
         (s2sid[pn] != {} for all pn in s2sid and all s2sid in s2si_dict)
