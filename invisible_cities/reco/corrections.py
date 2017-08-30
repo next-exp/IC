@@ -73,7 +73,9 @@ class Correction:
         elif   strategy == "index": pass#index = index
         else: raise ValueError("Normalization option not recognized: {}".format(strategy))
 
-        f_ref = self._fs[index] if self._fs[index] else 1
+        f_ref = self._fs[index]
+        assert f_ref > 0
+
         u_ref = self._us[index]
         valid = (self._fs > 0) & (self._us > 0)
 
