@@ -182,7 +182,9 @@ def test_mean_handle_empty_empty_input():
     assert np.isnan(core.mean_handle_empty([]))
 
 
-@given(random_length_float_arrays(min_length =  1))
+@given(random_length_float_arrays(min_length =  1,
+                                  min_value  = -1e10,
+                                  max_value  = +1e10))
 def test_std_handle_empty_nonempty_input  (array):
     npt.assert_equal(  np.std             (array),
                      core.std_handle_empty(array))
