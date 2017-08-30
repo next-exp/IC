@@ -235,11 +235,11 @@ def test_profile1D_one_bin_missing_x(func, xdata, ydata):
 
 @mark.parametrize("func xdata ydata".split(),
                   ((fit.profileX,
-                    FLOAT_ARRAY(100),
-                    FLOAT_ARRAY(100)),
+                    FLOAT_ARRAY(100, min_value=-1e10, max_value=+1e10),
+                    FLOAT_ARRAY(100, min_value=-1e10, max_value=+1e10)),
                    (fit.profileY,
-                    FLOAT_ARRAY(100),
-                    FLOAT_ARRAY(100))))
+                    FLOAT_ARRAY(100, min_value=-1e10, max_value=+1e10),
+                    FLOAT_ARRAY(100, min_value=-1e10, max_value=+1e10))))
 def test_number_of_bins_matches(func, xdata, ydata):
     N = 50
     xp, yp, ye = func(xdata, ydata, N, drop_nan=False)
