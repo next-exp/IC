@@ -7,11 +7,15 @@ Returns (np.array[[nsipm_1 ,     nsipm_2, ...]],
 Last revised, JJGC, July, 2017.
 
 """
-import numpy  as np
+import copy
+import numpy  as     np
+from .. reco import pmaps_functions_c as pmpc
 from .. core import core_functions_c as ccf
 from .. core.system_of_units_c      import units
+from .. core.exceptions             import NegativeThresholdNotAllowed
 from .. evm.pmaps                   import S2, S2Si, Peak
 
+from typing import Dict
 
 def _integrate_sipm_charges_in_peak_as_dict(s2si):
     """Return dict of integrated charges from a SiPM dictionary.
@@ -85,11 +89,54 @@ def rebin_s2si(s2, s2si, rf):
 
 
 def rebin_s2si_peak(t, e, sipms, stride):
-    """rebin: s2 times (taking mean), s2 energies, s2 sipm qs, by stride"""
+    """rebin: s2 times (taking mean), s2 energies, and s2 sipm qs, by stride"""
     # cython rebin_array is returning memoryview so we need to cast as np array
     return   ccf.rebin_array(t , stride, remainder=True, mean=True), \
              ccf.rebin_array(e , stride, remainder=True)           , \
       {sipm: ccf.rebin_array(qs, stride, remainder=True) for sipm, qs in sipms.items()}
+
+
+def copy_s2si(s2si_original : S2Si) -> S2Si:
+    """ return an identical copy of an s2si. ** note these must be deepcopies, and a deepcopy of
+    the s2si itself does not seem to work. """
+    return S2Si(copy.deepcopy(s2si_original.s2d),
+                copy.deepcopy(s2si_original.s2sid))
+
+
+def copy_s2si_dict(s2si_dict_original: Dict[int, S2Si]) -> Dict[int, S2Si]:
+    """ returns an identical copy of the input s2si_dict """
+    return {ev: copy_s2si(s2si) for ev, s2si in s2si_dict_original.items()}
+
+
+def raise_s2si_thresholds(s2si_dict_original: Dict[int, S2Si],
+                         thr_sipm           : float,
+                         thr_sipm_s2        : float) -> Dict[int, S2Si]:
+    """
+    returns s2si_dict after imposing more thr_sipm and/or thr_sipm_s2 thresholds.
+    ** NOTE:
+        1) thr_sipm IS IMPOSED BEFORE thr_sipm_s2
+        2) thresholds cannot be lowered. this function will do nothing if thresholds are set below
+           previous values.
+    """
+    # Ensure thresholds are acceptable values
+    if thr_sipm     is None: thr_sipm    = 0
+    if thr_sipm_s2  is None: thr_sipm_s2 = 0
+    if thr_sipm < 0 or thr_sipm_s2 < 0:
+        raise NegativeThresholdNotAllowed('Threshold can be 0 or None, but not negative')
+    elif thr_sipm == 0 and thr_sipm_s2 == 0: return s2si_dict_original
+    else: s2si_dict = copy_s2si_dict(s2si_dict_original)
+
+    # Impose thresholds
+    if thr_sipm    > 0:
+        s2si_dict  = pmpc._impose_thr_sipm_destructive   (s2si_dict, thr_sipm   )
+    if thr_sipm_s2 > 0:
+        s2si_dict  = pmpc._impose_thr_sipm_s2_destructive(s2si_dict, thr_sipm_s2)
+    # Get rid of any empty dictionaries
+    if thr_sipm > 0 or thr_sipm_s2 > 0:
+        s2si_dict  = pmpc._delete_empty_s2si_peaks      (s2si_dict)
+        s2si_dict  = pmpc._delete_empty_s2si_dict_events(s2si_dict)
+    return s2si_dict
+
 
 # def select_si_slice(si, slice_no):
 #     # This is a temporary fix! The number of slices in the SiPM arrays
