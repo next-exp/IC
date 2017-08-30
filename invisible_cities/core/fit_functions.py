@@ -100,7 +100,7 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
 
     fitf = lambda x: func(x, *vals)
     fitx = fitf(x)
-    chi2, pval = scipy.stats.chisquare(y, fitx, len(vals))
+    chi2, pval = scipy.stats.chisquare(y[fitx != 0], fitx[fitx != 0], len(vals))
 
     return FitFunction(fitf,
                        vals,
