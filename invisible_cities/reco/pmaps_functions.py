@@ -14,6 +14,7 @@ from .. core.system_of_units_c      import units
 from .. core.exceptions             import NegativeThresholdNotAllowed
 from .. evm.pmaps                   import S2, S2Si, Peak
 
+from typing import Dict
 
 def _integrate_sipm_charges_in_peak_as_dict(s2si):
     """Return dict of integrated charges from a SiPM dictionary.
@@ -94,7 +95,8 @@ def rebin_s2si_peak(t, e, sipms, stride):
       {sipm: ccf.rebin_array(qs, stride, remainder=True) for sipm, qs in sipms.items()}
 
 
-def _impose_thr_sipm_destructive(s2si_dict, thr_sipm):
+def _impose_thr_sipm_destructive(s2si_dict: Dict[int, S2Si],
+                                 thr_sipm : float           ) -> Dict[int, S2Si]:
     """imposes a thr_sipm on s2si_dict"""
     for s2si in s2si_dict.values():                   # iter over events
         for si_peak in s2si.s2sid.values():           # iter over peaks
@@ -107,7 +109,8 @@ def _impose_thr_sipm_destructive(s2si_dict, thr_sipm):
     return s2si_dict
 
 
-def _impose_thr_sipm_s2_destructive(s2si_dict, thr_sipm_s2):
+def _impose_thr_sipm_s2_destructive(s2si_dict   : Dict[int, S2Si],
+                                    thr_sipm_s2 : float           ) -> Dict[int, S2Si]:
     """imposes a thr_sipm_s2 on s2si_dict. deletes keys (sipms) from each s2sid peak if sipm
        integral charge is less than thr_sipm_s2"""
     for s2si in s2si_dict.values():
@@ -119,7 +122,7 @@ def _impose_thr_sipm_s2_destructive(s2si_dict, thr_sipm_s2):
     return s2si_dict
 
 
-def _delete_empty_s2si_peaks(s2si_dict):
+def _delete_empty_s2si_peaks(s2si_dict : Dict[int, S2Si]) -> Dict[int, S2Si]:
     """makes sure there are no empty peaks stored in an s2sid
         (s2sid[pn] != {} for all pn in s2sid and all s2sid in s2si_dict)
         ** Also deletes corresponding peak in s2si.s2d! """
@@ -134,7 +137,7 @@ def _delete_empty_s2si_peaks(s2si_dict):
     return s2si_dict
 
 
-def _delete_empty_s2si_dict_events(s2si_dict):
+def _delete_empty_s2si_dict_events(s2si_dict: Dict[int, S2Si]) -> Dict[int, S2Si]:
     """ delete all events from s2si_dict with empty s2sid"""
     for ev in list(s2si_dict.keys()):
         if len(s2si_dict[ev].s2sid) == 0:
@@ -142,19 +145,21 @@ def _delete_empty_s2si_dict_events(s2si_dict):
     return s2si_dict
 
 
-def copy_s2si(s2si_original):
+def copy_s2si(s2si_original : S2Si) -> S2Si:
     """ return an identical copy of an s2si. ** note these must be deepcopies, and a deepcopy of
     the s2si itself does not seem to work. """
     return S2Si(copy.deepcopy(s2si_original.s2d),
                 copy.deepcopy(s2si_original.s2sid))
 
 
-def copy_s2si_dict(s2si_dict_original):
+def copy_s2si_dict(s2si_dict_original: Dict[int, S2Si]) -> Dict[int, S2Si]:
     """ returns an identical copy of the input s2si_dict """
     return {ev: copy_s2si(s2si) for ev, s2si in s2si_dict_original.items()}
 
 
-def raise_s2si_thresholds(s2si_dict_original, thr_sipm, thr_sipm_s2):
+def raise_s2si_thresholds(s2si_dict_original: Dict[int, S2Si],
+                         thr_sipm           : float,
+                         thr_sipm_s2        : float) -> Dict[int, S2Si]:
     """
     returns s2si_dict after imposing more thr_sipm and/or thr_sipm_s2 thresholds.
     ** NOTE:
