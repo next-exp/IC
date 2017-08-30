@@ -180,3 +180,11 @@ def define_window(wf, window_size):
     """Define a window based on a peak. Takes max plus/minus *window_size*."""
     peak = np.argmax(abs(wf - np.mean(wf)))
     return max(0, peak - window_size), min(len(wf), peak + window_size)
+
+
+def mean_handle_empty(array):
+    return np.mean(array) if len(array) else np.nan
+
+
+def  std_handle_empty(array):
+    return np.std (array) if len(array) else np.nan
