@@ -9,6 +9,7 @@ Last revised, JJGC, July, 2017.
 """
 import copy
 import numpy  as     np
+from .. reco import pmaps_functions_c as pmpc
 from .. core import core_functions_c as ccf
 from .. core.system_of_units_c      import units
 from .. core.exceptions             import NegativeThresholdNotAllowed
@@ -177,13 +178,13 @@ def raise_s2si_thresholds(s2si_dict_original: Dict[int, S2Si],
 
     # Impose thresholds
     if thr_sipm    > 0:
-        s2si_dict  = _impose_thr_sipm_destructive   (s2si_dict, thr_sipm   )
+        s2si_dict  = pmpc._impose_thr_sipm_destructive   (s2si_dict, thr_sipm   )
     if thr_sipm_s2 > 0:
-        s2si_dict  = _impose_thr_sipm_s2_destructive(s2si_dict, thr_sipm_s2)
+        s2si_dict  = pmpc._impose_thr_sipm_s2_destructive(s2si_dict, thr_sipm_s2)
     # Get rid of any empty dictionaries
     if thr_sipm > 0 or thr_sipm_s2 > 0:
-        s2si_dict  = _delete_empty_s2si_peaks      (s2si_dict)
-        s2si_dict  = _delete_empty_s2si_dict_events(s2si_dict)
+        s2si_dict  = pmpc._delete_empty_s2si_peaks      (s2si_dict)
+        s2si_dict  = pmpc._delete_empty_s2si_dict_events(s2si_dict)
     return s2si_dict
 
 
