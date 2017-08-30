@@ -12,10 +12,10 @@ from .. core             import system_of_units as units
 from . pmaps_functions   import rebin_s2si
 from . pmaps_functions   import copy_s2si
 from . pmaps_functions   import copy_s2si_dict
-from . pmaps_functions   import _impose_thr_sipm_destructive
-from . pmaps_functions   import _impose_thr_sipm_s2_destructive
-from . pmaps_functions   import _delete_empty_s2si_peaks
-from . pmaps_functions   import _delete_empty_s2si_dict_events
+from . pmaps_functions_c   import _impose_thr_sipm_destructive
+from . pmaps_functions_c   import _impose_thr_sipm_s2_destructive
+from . pmaps_functions_c   import _delete_empty_s2si_peaks
+from . pmaps_functions_c   import _delete_empty_s2si_dict_events
 from . pmaps_functions   import raise_s2si_thresholds
 from . pmaps_functions_c import df_to_s1_dict
 from . pmaps_functions_c import df_to_s2_dict
