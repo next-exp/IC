@@ -74,20 +74,24 @@ class Correction:
         else: raise ValueError("Normalization option not recognized: {}".format(strategy))
 
         f_ref = self._fs[index]
-        u_ref = self._us[index]
+        assert f_ref > 0
 
-        valid_fs = self._fs > 0
-        input_fs = self._fs.copy()
+        u_ref = self._us[index]
+        valid = (self._fs > 0) & (self._us > 0)
+
+        valid_fs = self._fs[valid].copy()
+        valid_us = self._us[valid].copy()
 
         # Redefine and propagate uncertainties as:
         # u(F) = F sqrt(u(F)**2/F**2 + u(Fref)**2/Fref**2)
-        self._fs = f_ref / self._fs
-        self._us = self._fs * np.sqrt((self._us / input_fs)**2 +
-                                      (   u_ref / f_ref   )**2 )
+        self._fs[ valid]  = f_ref / valid_fs
+        self._us[ valid]  = np.sqrt((valid_us/valid_fs)**2 +
+                                    (   u_ref/f_ref   )**2 )
+        self._us[ valid] *= self._fs[valid]
 
         # Set invalid to defaults
-        self._fs[~valid_fs] = self._default_f
-        self._us[~valid_fs] = self._default_u
+        self._fs[~valid]  = self._default_f
+        self._us[~valid]  = self._default_u
 
     def _find_closest_indices(self, x, y):
         # Find the index of the closest value in y for each value in x.
