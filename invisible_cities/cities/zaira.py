@@ -15,7 +15,7 @@ import pandas as pd
 from operator import attrgetter
 
 from .  base_cities         import DstCity
-from .. core.fit_functions  import in_range
+from .. core.core_functions import in_range
 from .. core.configure      import configure
 from .. io.kdst_io          import xy_writer
 from ..reco.corrections     import Correction
