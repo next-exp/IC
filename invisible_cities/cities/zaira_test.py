@@ -15,16 +15,15 @@ def test_zaira_KrMC(config_tmpdir, ICDIR):
     PATH_IN =  os.path.join(ICDIR, 'database/test_data', 'KrDST_MC.h5')
     PATH_OUT = os.path.join(config_tmpdir,               'KrCorr.h5')
 
-    nrequired = 1
-
     from .. core.system_of_units import ns
 
     conf = configure('dummy invisible_cities/config/zaira.conf'.split()).as_dict
     conf.update(dict(run_number = 0,
                      files_in   = PATH_IN,
                      file_out   = PATH_OUT,
-                     nmax       = nrequired,
-                     lifetime   = 1e6 * ns))
+                     lifetime   = 1e6 * ns,
+                     xbins      = 20,
+                     ybins      = 20))
 
     zaira = Zaira(**conf)
     cnt = zaira.run()
