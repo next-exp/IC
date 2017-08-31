@@ -10,6 +10,7 @@ from . io.pmap_io   import df_to_s2si_dict
 from . io.pmap_io   import read_pmaps
 from . io.pmap_io   import load_pmaps
 from . io.pmap_io   import load_ipmt_pmaps
+from . io.pmap_io   import load_pmaps_with_ipmt
 from . io.pmap_io   import ipmt_pmap_writer
 from . io.hits_io   import load_hits
 from . io.hits_io   import load_hits_skipping_NN
@@ -222,7 +223,7 @@ def Kr_MC_4446_load_s1_s2_s2si(ICDIR):
 
 
 @pytest.fixture(scope='session')
-def Kr_MC_4446_load_ipmt_pmaps(ICDIR):
+def Kr_MC_4446_load_pmaps_with_ipmt(ICDIR):
     ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_5evt.h5'
-    Kr_MC_4446_load_ipmt_pmaps = load_ipmt_pmaps(ipmt_pmap_path)
-    return Kr_MC_4446_load_ipmt_pmaps
+    Kr_MC_4446_load_pmaps_with_ipmt = load_pmaps_with_ipmt(ipmt_pmap_path)
+    return Kr_MC_4446_load_pmaps_with_ipmt
