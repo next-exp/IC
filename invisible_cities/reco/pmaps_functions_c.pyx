@@ -76,14 +76,14 @@ cpdef df_to_s1pmt_dict(dfs1, dfpmts, int max_events=-1):
     (in the form of a pandas data frame) and returns a dict {event:s1pmt}
     """
     cdef dict s1pmt_dict = {}
-    cdef s1pmtd_dict, s1_dict, pmtsd, s1d
+    cdef s1pmtd_dict, s1_dict, ipmtd, s1d
     cdef int event_no
 
     s1_dict     = df_to_s1_dict     (dfs1  , max_events)
     s1pmtd_dict = df_to_s12pmtd_dict(dfpmts, max_events)
-    for event_no, pmtsd in s1pmtd_dict.items():
+    for event_no, ipmtd in s1pmtd_dict.items():
         s1d = s1_dict[event_no].s1d
-        s1pmt_dict[event_no] = S1Pmt(s1d, pmtsd)
+        s1pmt_dict[event_no] = S1Pmt(s1d, ipmtd)
 
     return s1pmt_dict
 
@@ -93,14 +93,14 @@ cpdef df_to_s2pmt_dict(dfs2, dfpmts, int max_events=-1):
     (in the form of a pandas data frame) and returns a dict {event:s2pmt}
     """
     cdef dict s2pmt_dict = {}
-    cdef s2pmtd_dict, s2_dict, pmtsd, s2d
+    cdef s2pmtd_dict, s2_dict, ipmtd, s2d
     cdef int event_no
 
     s2_dict     = df_to_s2_dict     (dfs2  , max_events)
     s2pmtd_dict = df_to_s12pmtd_dict(dfpmts, max_events)
-    for event_no, pmtsd in s2pmtd_dict.items():
+    for event_no, ipmtd in s2pmtd_dict.items():
         s2d = s2_dict[event_no].s2d
-        s2pmt_dict[event_no] = S2Pmt(s2d, pmtsd)
+        s2pmt_dict[event_no] = S2Pmt(s2d, ipmtd)
 
     return s2pmt_dict
 
