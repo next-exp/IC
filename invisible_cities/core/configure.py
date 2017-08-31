@@ -20,7 +20,7 @@ parser.add_argument('config_file',             type=str,  help="configuration fi
 parser.add_argument("-i", '--files-in',        type=str,  help="input file")
 parser.add_argument("-o", '--file-out',        type=str,  help="output file")
 parser.add_argument("-n", '--nevents',         type=int,  help="number of events to be processed")
-parser.add_argument("-f", '--first-event',     type=int,  help="event number for first event")
+parser.add_argument("-f", '--first-event',     type=int,  help="event number for first event", default=0)
 parser.add_argument("-r", '--run-number',      type=int,  help="run number")
 parser.add_argument("-s", '--skip',            type=int,  help="number of events to be skipped", default=0)
 parser.add_argument("-p", '--print_mod',       type=int,  help="print every this number of events")
