@@ -176,7 +176,7 @@ def write_config_file(file_name, contents):
 
 
 @pytest.fixture(scope = 'session')
-def sample_configuration(tmpdir_factory):
+def hierarchical_configuration(tmpdir_factory):
     "Create a dummy city configuration spread across a hierarchy of included files."
     dir_ = tmpdir_factory.mktemp('test_config_files')
     top_file_name = path.join(dir_, 'top_file')
@@ -218,36 +218,36 @@ overridden_in_3_places = 'three'
     return make_config_file_reader()(top_file_name)
 
 
-def test_config_set_just_once_in_top_file(sample_configuration):
-    conf = sample_configuration.as_namespace
+def test_config_set_just_once_in_top_file(hierarchical_configuration):
+    conf = hierarchical_configuration.as_namespace
     assert conf.set_just_once_in_top_file == 1
 
-def test_config_overridden_in_top_file_value(sample_configuration):
-    conf = sample_configuration.as_namespace
+def test_config_overridden_in_top_file_value(hierarchical_configuration):
+    conf = hierarchical_configuration.as_namespace
     assert conf.overridden_in_top_file == 'final override'
 
-def test_config_overridden_in_top_file_history(sample_configuration):
-    history = sample_configuration._history['overridden_in_top_file']
+def test_config_overridden_in_top_file_history(hierarchical_configuration):
+    history = hierarchical_configuration._history['overridden_in_top_file']
     value_history = [ i.value for i in history ]
     assert value_history == ['original', 'first override', 'second override']
 
-def test_config_only_in_include(sample_configuration):
-    conf = sample_configuration.as_namespace
+def test_config_only_in_include(hierarchical_configuration):
+    conf = hierarchical_configuration.as_namespace
     assert conf.only_in_include_1 == 'just 1'
 
-def test_config_include_overridden_by_top(sample_configuration):
-    conf = sample_configuration.as_namespace
+def test_config_include_overridden_by_top(hierarchical_configuration):
+    conf = hierarchical_configuration.as_namespace
     assert conf.include_1_overridden_by_top == 'top overrides'
 
-def test_config_top_overridden_by_include(sample_configuration):
-    conf = sample_configuration.as_namespace
+def test_config_top_overridden_by_include(hierarchical_configuration):
+    conf = hierarchical_configuration.as_namespace
     assert conf.top_overridden_by_include_2 == 'i2 overrides'
 
-def test_config_overridden_file_history(sample_configuration):
-    history = sample_configuration._history['overridden_in_3_places']
+def test_config_overridden_file_history(hierarchical_configuration):
+    history = hierarchical_configuration._history['overridden_in_3_places']
     file_history  = [ path.basename(i.file_name) for i in history ]
     value_history = [               i.value      for i in history ]
 
     assert file_history  == ['include_1_1', 'include_1', 'include_2']
     assert value_history == ['one',         'two',       'three'    ]
-    assert sample_configuration.as_namespace.overridden_in_3_places == 'four'
+    assert hierarchical_configuration.as_namespace.overridden_in_3_places == 'four'
