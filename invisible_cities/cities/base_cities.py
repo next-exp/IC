@@ -37,20 +37,19 @@ from .. io                      import pmap_io          as pio
 from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
 
-from .. reco                    import peak_functions_c as cpf
+from .. reco                    import peak_functions_c  as cpf
 from .. reco                    import paolina_functions as paf
-from .. reco                    import sensor_functions as sf
-from .. reco                    import peak_functions   as pf
-from .. reco                    import pmaps_functions  as pmp
-from .. reco                    import pmaps_functions_c  as cpmp
-from .. reco                    import dst_functions    as dstf
-from .. reco                    import wfm_functions    as wfm
-from .. reco                    import tbl_functions    as tbl
+from .. reco                    import sensor_functions  as sf
+from .. reco                    import peak_functions    as pf
+from .. reco                    import pmaps_functions   as pmp
+from .. reco                    import pmaps_functions_c as cpmp
+from .. reco                    import dst_functions     as dstf
+from .. reco                    import wfm_functions     as wfm
+from .. reco                    import tbl_functions     as tbl
 from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco.corrections        import Correction
 from .. reco.corrections        import Fcorrection
 from .. reco.xy_algorithms      import corona
-#from .. reco.xy_algorithms      import barycenter
 
 from .. evm.ic_containers       import S12Params
 from .. evm.ic_containers       import S12Sum
@@ -60,17 +59,17 @@ from .. evm.ic_containers       import PmapVectors
 from .. evm.ic_containers       import TriggerParams
 from .. evm.event_model         import SensorParams
 from .. evm.event_model         import KrEvent
-from ..evm.event_model          import HitCollection
-from ..evm.event_model          import Hit
+from .. evm.event_model         import HitCollection
+from .. evm.event_model         import Hit
 from .. evm.event_model         import Cluster
 from .. evm.event_model         import Voxel
 from .. evm.event_model         import Track
 from .. evm.event_model         import Blob
-from ..evm.event_model          import TrackCollection
-from ..evm.nh5                  import DECONV_PARAM
+from .. evm.event_model         import TrackCollection
+from .. evm.nh5                 import DECONV_PARAM
 
-from ..sierpe                   import blr
-from ..sierpe                   import fee as FE
+from .. sierpe                  import blr
+from .. sierpe                  import fee as FE
 
 from .. types.ic_types          import minmax
 from .. types.ic_types          import Counter
@@ -78,6 +77,7 @@ from .. types.ic_types          import NN
 from .. types.ic_types          import xy
 
 from .. daemons.idaemon         import invoke_daemon
+
 from typing import Sequence
 from typing import List
 
