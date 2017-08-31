@@ -2,10 +2,13 @@ from os import getenv, path
 
 import pytest
 from   pytest import mark
+from   pytest import raises
 
 from . configure import configure
 from . configure import Configuration
 from . configure import make_config_file_reader
+
+from .. cities.base_cities import City
 
 
 config_file_format = """
@@ -251,3 +254,19 @@ def test_config_overridden_file_history(hierarchical_configuration):
     assert file_history  == ['include_1_1', 'include_1', 'include_2']
     assert value_history == ['one',         'two',       'three'    ]
     assert hierarchical_configuration.as_namespace.overridden_in_3_places == 'four'
+@pytest.fixture(scope = 'session')
+def simple_conf_file_name(tmpdir_factory):
+    dir_ = tmpdir_factory.mktemp('test_config_files')
+    file_name = path.join(dir_, 'simple.conf')
+    write_config_file(file_name, """
+foo = 3
+""")
+    return str(file_name)
+
+class DummyCity(City):
+    pass
+
+def test_config_drive_fails_without_config_file():
+    argv = 'dummy'.split()
+    with raises(SystemExit):
+        DummyCity.drive(argv)
