@@ -298,7 +298,7 @@ def test_config_drive_fails_without_output_file(simple_conf_file_name):
     with raises(NoOutputFile):
         DummyCity.drive(argv)
 
-def test_config_drive_first_event_default(simple_conf_file_name, tmpdir_factory):
+def test_config_drive_flags(simple_conf_file_name, tmpdir_factory):
     conf   = simple_conf_file_name
     infile = conf # any existing file will do as a dummy for now
     outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file-s')
@@ -306,18 +306,14 @@ def test_config_drive_first_event_default(simple_conf_file_name, tmpdir_factory)
     conf = DummyCity.drive(argv)
     assert conf.first_event == 0
 
-def test_config_drive_first_event_short(simple_conf_file_name, tmpdir_factory):
+@mark.parametrize(  'name          flags            value'.split(),
+                  (('first_event',            '-f 21', 21),
+                   ('first_event', '--first-event 22', 22)))
+def test_config_drive_first_event_short(simple_conf_file_name, tmpdir_factory, name, flags, value):
     conf   = simple_conf_file_name
     infile = conf # any existing file will do as a dummy for now
-    outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file-s')
-    argv = 'dummy {conf} -i {infile} -o {outfile} -f 15'.format(**locals()).split()
+    outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file' + name)
+    argv = 'dummy {conf} -i {infile} -o {outfile} {flags}'.format(**locals()).split()
+    print(argv)
     conf = DummyCity.drive(argv)
-    assert conf.first_event == 15
-
-def test_config_drive_first_event_long(simple_conf_file_name, tmpdir_factory):
-    conf   = simple_conf_file_name
-    infile = conf # any existing file will do as a dummy for now
-    outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file-s')
-    argv = 'dummy {conf} -i {infile} -o {outfile} --first-event 16'.format(**locals()).split()
-    conf = DummyCity.drive(argv)
-    assert conf.first_event == 16
+    assert conf.first_event == value
