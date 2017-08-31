@@ -277,12 +277,12 @@ def test_config_drive_fails_without_config_file():
     with raises(SystemExit):
         DummyCity.drive(argv)
 
-def test_config_drive_fails_without_input_file(simple_conf_file_name, tmpdir_factory):
+def test_config_drive_fails_without_input_file(simple_conf_file_name):
     argv = 'dummy {simple_conf_file_name}'.format(**locals()).split()
     with raises(NoInputFiles):
         DummyCity.drive(argv)
 
-def test_config_drive_fails_without_output_file(simple_conf_file_name, tmpdir_factory):
+def test_config_drive_fails_without_output_file(simple_conf_file_name):
     conf   = simple_conf_file_name
     infile = conf # any existing file will do as a dummy for now
     argv = 'dummy {conf} -i {infile}'.format(**locals()).split()
