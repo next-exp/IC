@@ -13,9 +13,9 @@ from hypothesis            import given
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
 
-from .test_utils import float_arrays
-from .test_utils import FLOAT_ARRAY
-from .test_utils import random_length_float_arrays
+from .testing_utils import float_arrays
+from .testing_utils import FLOAT_ARRAY
+from .testing_utils import random_length_float_arrays
 
 from . import core_functions as core
 from . import  fit_functions as fit

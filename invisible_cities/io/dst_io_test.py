@@ -5,14 +5,14 @@ import pandas as pd
 from . dst_io              import load_dst
 from numpy.testing import assert_allclose
 
-from .. core.test_utils    import assert_dataframes_equal
+from .. core.testing_utils    import assert_dataframes_equal
 # from ..types.ic_types      import xy
 # from ..evm.event_model     import Cluster
 # from ..evm.event_model     import Hit
 # from ..evm.event_model     import HitCollection
 # from . dst_io              import hits_writer
-from . dst_io              import load_dst
-from . dst_io              import load_dsts
+from . dst_io                 import load_dst
+from . dst_io                 import load_dsts
 
 
 def test_load_dst(Kr_dst_data):
