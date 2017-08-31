@@ -9,6 +9,7 @@ from . configure import Configuration
 from . configure import make_config_file_reader
 
 from . exceptions import NoInputFiles
+from . exceptions import NoOutputFile
 
 from .. cities.base_cities import City
 
@@ -270,6 +271,7 @@ foo = 3
 class DummyCity(City):
     pass
 
+
 def test_config_drive_fails_without_config_file():
     argv = 'dummy'.split()
     with raises(SystemExit):
@@ -279,3 +281,11 @@ def test_config_drive_fails_without_input_file(simple_conf_file_name, tmpdir_fac
     argv = 'dummy {simple_conf_file_name}'.format(**locals()).split()
     with raises(NoInputFiles):
         DummyCity.drive(argv)
+
+def test_config_drive_fails_without_output_file(simple_conf_file_name, tmpdir_factory):
+    conf   = simple_conf_file_name
+    infile = conf # any existing file will do as a dummy for now
+    argv = 'dummy {conf} -i {infile}'.format(**locals()).split()
+    with raises(NoOutputFile):
+        DummyCity.drive(argv)
+
