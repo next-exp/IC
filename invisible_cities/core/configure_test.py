@@ -313,3 +313,11 @@ def test_config_drive_first_event_short(simple_conf_file_name, tmpdir_factory):
     argv = 'dummy {conf} -i {infile} -o {outfile} -f 15'.format(**locals()).split()
     conf = DummyCity.drive(argv)
     assert conf.first_event == 15
+
+def test_config_drive_first_event_long(simple_conf_file_name, tmpdir_factory):
+    conf   = simple_conf_file_name
+    infile = conf # any existing file will do as a dummy for now
+    outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file-s')
+    argv = 'dummy {conf} -i {infile} -o {outfile} --first-event 16'.format(**locals()).split()
+    conf = DummyCity.drive(argv)
+    assert conf.first_event == 16
