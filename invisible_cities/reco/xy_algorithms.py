@@ -31,13 +31,13 @@ def barycenter(pos, qs):
     if not len(pos): raise SipmEmptyList
     if sum(qs) == 0: raise SipmZeroCharge
     mu  = np.average( pos           , weights=qs, axis=0)
-    std = np.average((pos - mu) ** 2, weights=qs, axis=0)
+    var = np.average((pos - mu) ** 2, weights=qs, axis=0)
     # For uniformity of interface, all xy algorithms should return a
     # list of clusters. barycenter always returns a single clusters,
     # but we still want it in a list.
-    return [Cluster(sum(qs), xy(*mu), xy(*std), len(qs))]
+    return [Cluster(sum(qs), xy(*mu), xy(*var), len(qs))]
 
-    #return [Cluster(sum(qs), XY(*mu), std, len(qs))]
+    #return [Cluster(sum(qs), XY(*mu), var, len(qs))]
 
 def discard_sipms(sis, pos, qs):
     return np.delete(pos, sis, axis=0), np.delete(qs, sis)
