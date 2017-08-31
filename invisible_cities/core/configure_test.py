@@ -118,8 +118,8 @@ def join_dicts(*args):
                     # Nothing overridden on the command line
                     (),
                     # Two short form command line args
-                    (('nevents', '-n 99', 99),
-                     ('skip'   , '-s 98', 98)),
+                    (('nevents'    , '-n 99', 99),
+                     ('first_event', '-f 98', 98)),
                     # A long option in full
                     (('run_all' , '--run-all', True),),
                     # A long option abbreviated
