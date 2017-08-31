@@ -161,7 +161,7 @@ class City:
         n_events = self.cnt.counter_value('n_events_tot')
         print("run {} evts in {} s, time/event = {}".format(n_events,
                                                             dt,
-                                                            dt/n_events))
+                                                            dt / n_events))
 
     def run(self):
         """The (base) run method of a city does the following chores:
