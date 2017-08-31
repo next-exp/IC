@@ -189,7 +189,7 @@ def assert_s12_dict_equality(s12_dict0, s12_dict1):
 def assert_s12pmt_dict_equality(s12pmt_dict0, s12pmt_dict1):
     assert_s12_dict_equality(s12pmt_dict0, s12pmt_dict1)
     for s12pmt0, s12pmt1 in zip(s12pmt_dict0.values(), s12pmt_dict1.values()):
-        assert s12pmt0.pmtsd.keys() == s12pmt1.pmtsd.keys()
+        assert s12pmt0.ipmtd.keys() == s12pmt1.ipmtd.keys()
         for pn in s12pmt0.peaks:
             assert (s12pmt0.energies_in_peak(pn) == s12pmt1.energies_in_peak(pn)).all()
 
