@@ -264,12 +264,21 @@ def simple_conf_file_name(tmpdir_factory):
     dir_ = tmpdir_factory.mktemp('test_config_files')
     file_name = path.join(dir_, 'simple.conf')
     write_config_file(file_name, """
-foo = 3
+compression = 'ZLIB4'
+run_number  = 12
+nprint      = 13
+nmax        = 14
 """)
     return str(file_name)
 
+
 class DummyCity(City):
-    pass
+
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.cnt.init_counter('n_events_tot', value=10)
+
+    def file_loop(self): pass
 
 
 def test_config_drive_fails_without_config_file():
@@ -289,3 +298,10 @@ def test_config_drive_fails_without_output_file(simple_conf_file_name):
     with raises(NoOutputFile):
         DummyCity.drive(argv)
 
+def test_config_drive_first_event_default(simple_conf_file_name, tmpdir_factory):
+    conf   = simple_conf_file_name
+    infile = conf # any existing file will do as a dummy for now
+    outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file-s')
+    argv = 'dummy {conf} -i {infile} -o {outfile}'.format(**locals()).split()
+    conf = DummyCity.drive(argv)
+    assert conf.first_event == 0
