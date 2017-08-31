@@ -14,9 +14,9 @@ from hypothesis.strategies import composite
 
 sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 
-from .test_utils import random_length_float_arrays
-from .           import core_functions   as core
-from .           import core_functions_c as core_c
+from .testing_utils import random_length_float_arrays
+from .              import core_functions   as core
+from .              import core_functions_c as core_c
 
 
 def test_timefunc(capfd):
