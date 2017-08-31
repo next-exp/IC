@@ -5,7 +5,7 @@ import tables as tb
 
 from numpy.testing import assert_allclose
 
-from ..core.test_utils    import assert_dataframes_equal
+from ..core.testing_utils import assert_dataframes_equal
 from ..io.dst_io          import load_dst
 from . kdst_io            import kr_writer
 from . kdst_io            import xy_writer
