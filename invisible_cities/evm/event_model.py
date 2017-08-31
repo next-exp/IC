@@ -163,7 +163,7 @@ class Voxel(BHit):
 
 class Cluster(BHit):
     """Represents a reconstructed cluster in the tracking plane"""
-    def __init__(self, Q, xy, xy_std, nsipm, z=ZANODE, E=NN):
+    def __init__(self, Q, xy, xy_var, nsipm, z=ZANODE, E=NN):
         if E == NN:
             super().__init__(xy.x, xy.y, z, Q)
         else:
@@ -171,23 +171,23 @@ class Cluster(BHit):
 
         self.Q       = Q
         self._xy     = xy
-        self._xy_std = xy_std
+        self._xy_var = xy_var
         self.nsipm   = nsipm
 
     @property
     def posxy (self): return self._xy.pos
 
     @property
-    def std (self): return self._xy_std
+    def var (self): return self._xy_var
 
     @property
     def XY  (self): return self._xy.XY
 
     @property
-    def Xrms(self): return np.sqrt(self._xy_std.x)
+    def Xrms(self): return np.sqrt(self._xy_var.x)
 
     @property
-    def Yrms(self): return np.sqrt(self._xy_std.y)
+    def Yrms(self): return np.sqrt(self._xy_var.y)
 
     @property
     def R   (self): return self._xy.R
@@ -208,7 +208,7 @@ class Hit(Cluster):
 
 
         super().__init__(cluster.Q,
-                         cluster._xy, cluster._xy_std,
+                         cluster._xy, cluster._xy_var,
                          cluster.nsipm, z, s2_energy)
 
         self.peak_number = peak_number
