@@ -8,7 +8,7 @@ from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
 from .. core.core_functions    import loc_elem_1d
-from .. core.exceptions        import InconsistentS12dPmtsd
+from .. core.exceptions        import InconsistentS12dIpmtd
 from .. core.system_of_units_c import units
 
 
@@ -316,61 +316,64 @@ cdef class S12Pmt(S12):
     """
     A pmt S12 class for storing individual pmt s12 responses.
 
-    It is analagous to S2Si with the caveat that each peak key in pmtsd maps to a nparray of
+    It is analagous to S2Si with the caveat that each peak key in ipmtd maps to a nparray of
     pmt energies instead of another dictionary. Here a dictionary mapping pmt_number --> energy is
     superfluous since the csum of all active pmts are used to calculate the s12 energy.
     """
-    def __init__(self, s12d, pmtsd):
+    def __init__(self, s12d, ipmtd):
         """where:
         s12d  = { peak_number: [[t], [E]]}
-        pmtsd = { peak_number: [[Epmt0], [Epmt1], ... ,[EpmtN]] }
+        ipmtd = { peak_number: [[Epmt0], [Epmt1], ... ,[EpmtN]] }
         """
-        # Check that energies in s12d are sum of pmtsd across pmts for each peak
-        for peak, s12_pmts in zip(s12d.values(), pmtsd.values()):
+        cdef int npmts
+        # Check that energies in s12d are sum of ipmtd across pmts for each peak
+        for peak, s12_pmts in zip(s12d.values(), ipmtd.values()):
             if not np.allclose(peak[1], s12_pmts.sum(axis=0)):
-                raise InconsistentS12dPmtsd
+                raise InconsistentS12dIpmtd
 
         S12.__init__(self, s12d)
-        self.pmtsd = pmtsd
+        self.ipmtd = ipmtd
+        try                 : self.npmts = len(ipmtd[next(iter(ipmtd))])
+        except StopIteration: self.npmts = 0
+
+    cpdef energies_in_peak(self, int peak_number):
+        if peak_number not in self.ipmtd: raise PeakNotFound
+        else: return np.asarray(self.ipmtd[peak_number])
 
     cpdef pmt_waveform(self, int peak_number, int pmt_number):
         cdef double [:] E
-        if peak_number not in self.pmtsd:
-            raise PeakNotFound
+        if peak_number not in self.ipmtd: raise PeakNotFound
         else:
-          E = self.pmtsd[peak_number][pmt_number]
+          E = self.ipmtd[peak_number][pmt_number].astype(np.float64)
           return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
 
     cpdef pmt_total_energy_in_peak(self, int peak_number, int pmt_number):
         """
         For peak_number and and pmt_number return the integrated energy in that pmt in that peak
-        pmtsd[peak_number][pmt_number].sum().
+        ipmtd[peak_number][pmt_number].sum().
         """
         cdef double et
         try:
-            et = np.sum(self.pmtsd[peak_number][pmt_number])
+            et = np.sum(self.ipmtd[peak_number][pmt_number], dtype=np.float64)
             return et
         except KeyError:
             raise PeakNotFound
 
     cpdef pmt_total_energy(self, int pmt_number):
         """
-        For peak_number and and pmt_number return the integrated energy in that pmt in that peak
-        pmtsd[peak_number][pmt_number].sum().
+        return the integrated energy in that pmt across all peaks and time bins
         """
-        cdef double sum
+        cdef double sum = 0
         cdef int pn
-        sum = 0
-        for pn in self.pmtsd:
+        #sum = 0
+        for pn in self.ipmtd:
             sum += self.pmt_total_energy_in_peak(pn, pmt_number)
         return sum
 
 
     cpdef store(self, table, event_number):
-        cdef int even_number, peak, npmt
-        cdef float E
         row = table.row
-        for peak, s12_pmts in self.pmtsd.items():
+        for peak, s12_pmts in self.ipmtd.items():
             for npmt, s12_pmt in enumerate(s12_pmts):
                 for E in s12_pmt:
                     row["event"]   = event_number
@@ -381,12 +384,12 @@ cdef class S12Pmt(S12):
 
 
 cdef class S1Pmt(S12Pmt):
-    def __init__(self, s1d, pmtsd):
+    def __init__(self, s1d, ipmtd):
         self.s1d = s1d
-        S12Pmt.__init__(self, s1d, pmtsd)
+        S12Pmt.__init__(self, s1d, ipmtd)
 
 
 cdef class S2Pmt(S12Pmt):
-    def __init__(self, s2d, pmtsd):
+    def __init__(self, s2d, ipmtd):
         self.s2d = s2d
-        S12Pmt.__init__(self, s2d, pmtsd)
+        S12Pmt.__init__(self, s2d, ipmtd)
