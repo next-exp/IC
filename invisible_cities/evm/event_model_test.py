@@ -50,11 +50,11 @@ def voxel_input(draw, min_value=0, max_value=100):
 def cluster_input(draw, min_value=0, max_value=100):
     x     = draw(floats  (  1,   5))
     y     = draw(floats  (-10,  10))
-    xstd  = draw(floats  (.01,  .5))
-    ystd  = draw(floats  (.10,  .9))
+    xvar  = draw(floats  (.01,  .5))
+    yvar  = draw(floats  (.10,  .9))
     Q     = draw(floats  ( 50, 100))
     nsipm = draw(integers(  1,  20))
-    return Q, x, y, xstd, ystd, nsipm
+    return Q, x, y, xvar, yvar, nsipm
 
 
 @composite
@@ -94,14 +94,14 @@ def test_event(test_class, event_pars):
 
 @given(cluster_input(1))
 def test_cluster(ci):
-    Q, x, y, xstd, ystd, nsipm = ci
-    xrms = np.sqrt(xstd)
-    yrms = np.sqrt(ystd)
+    Q, x, y, xvar, yvar, nsipm = ci
+    xrms = np.sqrt(xvar)
+    yrms = np.sqrt(yvar)
     r, phi =  np.sqrt(x ** 2 + y ** 2), np.arctan2(y, x)
     xyar   = (x, y)
-    stdar  = (xstd, ystd)
+    varar  = (xvar, yvar)
     pos    = np.stack(([x], [y]), axis=1)
-    c      = Cluster(Q, xy(x,y), xy(xstd,ystd), nsipm)
+    c      = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
 
     assert c.nsipm == nsipm
     np.isclose (c.Q   ,     Q, rtol=1e-4)
@@ -109,7 +109,7 @@ def test_cluster(ci):
     np.isclose (c.Y   ,     y, rtol=1e-4)
     np.isclose (c.Xrms,     xrms, rtol=1e-3)
     np.isclose (c.Yrms,     yrms, rtol=1e-3)
-    np.isclose (c.std.XY,   stdar, rtol=1e-4)
+    np.isclose (c.var.XY,   varar, rtol=1e-4)
     np.allclose(c.XY,       xyar, rtol=1e-4)
     np.isclose (c.R   ,     r, rtol=1e-4)
     np.isclose (c.Phi ,     phi, rtol=1e-4)
@@ -118,11 +118,11 @@ def test_cluster(ci):
 
 @given(cluster_input(1), hit_input(1))
 def test_hit(ci, hi):
-    Q, x, y, xstd, ystd, nsipm = ci
+    Q, x, y, xvar, yvar, nsipm = ci
     peak_number, E, z          = hi
     xyz = x, y, z
 
-    c = Cluster(Q, xy(x,y), xy(xstd,ystd), nsipm)
+    c = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
     h = Hit(peak_number, c, z, E)
 
     assert h.peak_number == peak_number
