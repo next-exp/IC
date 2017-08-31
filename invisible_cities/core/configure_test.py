@@ -8,6 +8,8 @@ from . configure import configure
 from . configure import Configuration
 from . configure import make_config_file_reader
 
+from . exceptions import NoInputFiles
+
 from .. cities.base_cities import City
 
 
@@ -254,6 +256,8 @@ def test_config_overridden_file_history(hierarchical_configuration):
     assert file_history  == ['include_1_1', 'include_1', 'include_2']
     assert value_history == ['one',         'two',       'three'    ]
     assert hierarchical_configuration.as_namespace.overridden_in_3_places == 'four'
+
+
 @pytest.fixture(scope = 'session')
 def simple_conf_file_name(tmpdir_factory):
     dir_ = tmpdir_factory.mktemp('test_config_files')
@@ -269,4 +273,9 @@ class DummyCity(City):
 def test_config_drive_fails_without_config_file():
     argv = 'dummy'.split()
     with raises(SystemExit):
+        DummyCity.drive(argv)
+
+def test_config_drive_fails_without_input_file(simple_conf_file_name, tmpdir_factory):
+    argv = 'dummy {simple_conf_file_name}'.format(**locals()).split()
+    with raises(NoInputFiles):
         DummyCity.drive(argv)
