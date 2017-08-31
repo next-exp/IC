@@ -17,7 +17,6 @@ from .. core.system_of_units_c import units
 
 from .. io.mc_io               import mc_track_writer
 from .. io.pmap_io             import pmap_writer
-from .. io.pmap_io             import ipmt_pmap_writer
 from .. io.run_and_event_io    import run_and_event_writer
 from .. reco                   import tbl_functions as tbl
 from .. evm.ic_containers      import S12Params as S12P
@@ -118,11 +117,6 @@ class Irene(PmapCity):
         run_and_event = run_and_event_writer(h5out),
         mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
         )
-        return writers
-
-    def get_ipmt_writers(self, h5out):
-        """Get the writer to add individual pmt s1s and s2s"""
-        writers = Namespace(ipmt = ipmt_pmap_writer(h5out))
         return writers
 
     def display_IO_info(self):
