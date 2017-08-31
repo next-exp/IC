@@ -58,6 +58,17 @@ def read_config_file(file_name):
 
 
 def make_config_file_reader():
+    """Create a config file parser with a new empty configuration.
+
+    Configurations can be spread over multiple files, organized in a
+    hierachy in which some files can include othes. This factory
+    function creates a fresh config parser, which, given the name of a
+    top-level config file, will collect all the settings contained in
+    the given file and any files it includes, and return a
+    corresponding instance of Configuration.
+
+    """
+
     builtins = __builtins__.copy()
     builtins.update(vars(units))
     globals_ = {'__builtins__': builtins}
