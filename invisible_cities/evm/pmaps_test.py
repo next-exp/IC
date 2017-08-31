@@ -11,7 +11,7 @@ from hypothesis.extra.numpy import arrays
 
 from .. types.ic_types_c    import xy
 from .. types.ic_types_c    import minmax
-from .. core.exceptions     import InconsistentS12dPmtsd
+from .. core.exceptions     import InconsistentS12dIpmtd
 
 from .. reco.pmaps_functions_c import integrate_sipm_charges_in_peak
 from .. reco  import pmaps_functions as pmapf
@@ -245,13 +245,13 @@ def test_check_s2d_and_s2sid_share_peaks():
 def test_S12Pmt_raises_error_when_s2_peak_E_not_equal_to_sum_of_s12pmt_peak():
     timebins = 10
     npmts  = 12
-    pmtsd = {0: np.random.random((npmts, timebins))}
-    s12d    = {0: np.array([list(range(timebins)), pmtsd[0].sum(axis=0)])}
-    pmtsd[0][-1, -1] += .0001
+    ipmtd = {0: np.random.random((npmts, timebins))}
+    s12d    = {0: np.array([list(range(timebins)), ipmtd[0].sum(axis=0)])}
+    ipmtd[0][-1, -1] += .0001
     try:
-        S12Pmt(s12d, pmtsd)
+        S12Pmt(s12d, ipmtd)
         assert False
-    except InconsistentS12dPmtsd:
+    except InconsistentS12dIpmtd:
         pass
 
 
@@ -260,24 +260,24 @@ def test_S12Pmt_pmt_waveform():
     npmts = 5
     # construct dicts
     for peak in range(3):
-        pmtsd = {peak: np.random.random((npmts, timebins))}
-        s12d    = {peak: np.array([list(range(timebins)), pmtsd[peak].sum(axis=0)])}
+        ipmtd = {peak: np.random.random((npmts, timebins))}
+        s12d    = {peak: np.array([list(range(timebins)), ipmtd[peak].sum(axis=0)])}
     # get pmt s12pmt
-    s12pmt = S12Pmt(s12d, pmtsd)
+    s12pmt = S12Pmt(s12d, ipmtd)
     for pn in s12pmt.peaks:
         for pmt in range(npmts):
             assert (s12pmt.pmt_waveform(pn, pmt).t == s12d   [pn][  0]).all()
-            assert (s12pmt.pmt_waveform(pn, pmt).E == pmtsd[pn][pmt]).all()
+            assert (s12pmt.pmt_waveform(pn, pmt).E == ipmtd[pn][pmt]).all()
 
 
 def test_S12Pmt_pmt_total_energy_in_peak():
     timebins = 10
     npmts  = 12
-    pmtsd = {0: np.random.random((npmts, timebins))}
-    s12d    = {0: np.array([list(range(timebins)), pmtsd[0].sum(axis=0)])}
-    s12pmt  = S12Pmt(s12d, pmtsd)
+    ipmtd = {0: np.random.random((npmts, timebins))}
+    s12d    = {0: np.array([list(range(timebins)), ipmtd[0].sum(axis=0)])}
+    s12pmt  = S12Pmt(s12d, ipmtd)
     for pmt in range(npmts):
-        assert s12pmt.pmt_total_energy_in_peak(0, pmt) == pmtsd[0][pmt].sum()
+        assert s12pmt.pmt_total_energy_in_peak(0, pmt) == ipmtd[0][pmt].sum()
 
 
 def test_pmt_total_energy():
@@ -285,10 +285,10 @@ def test_pmt_total_energy():
     npmts = 5
     # construct dicts
     for peak in range(3):
-        pmtsd = {peak: np.random.random((npmts, timebins))}
-        s12d    = {peak: np.array([list(range(timebins)), pmtsd[peak].sum(axis=0)])}
+        ipmtd = {peak: np.random.random((npmts, timebins))}
+        s12d    = {peak: np.array([list(range(timebins)), ipmtd[peak].sum(axis=0)])}
     # get pmt s12pmt
-    s12pmt = S12Pmt(s12d, pmtsd)
+    s12pmt = S12Pmt(s12d, ipmtd)
     for pmt in range(npmts):
         s = 0
         for pn in s12pmt.peaks: s += s12pmt.pmt_total_energy_in_peak(pn, pmt)

@@ -62,8 +62,10 @@ cpdef check_s2d_and_s2sid_share_peaks(dict s2d, dict s2sid)
 
 
 cdef class S12Pmt(S12):
-    cdef public pmtsd
-    cdef  dict _pmtsd
+    cdef public ipmtd
+    cdef public npmts
+    cdef  dict _ipmtd
+    cpdef energies_in_peak(self, int peak_number)
     cpdef pmt_waveform(self, int peak_number, int pmt_number)
     cpdef pmt_total_energy_in_peak(self, int peak_number, int pmt_number)
     cpdef pmt_total_energy(self, int pmt_number)
