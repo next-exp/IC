@@ -177,6 +177,7 @@ def write_config_file(file_name, contents):
 
 @pytest.fixture(scope = 'session')
 def sample_configuration(tmpdir_factory):
+    "Create a dummy city configuration spread across a hierarchy of included files."
     dir_ = tmpdir_factory.mktemp('test_config_files')
     top_file_name = path.join(dir_, 'top_file')
     include_1     = path.join(dir_, 'include_1')
