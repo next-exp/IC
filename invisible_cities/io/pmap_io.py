@@ -95,9 +95,9 @@ def read_run_and_event_from_pmaps_file(PMP_file_name):
 def pmap_writer(file, *, compression='ZLIB4'):
     pmp_tables = _make_pmp_tables(file, compression)
     def write_pmap(event_number, s1, s2, s2si):
-        s1  .store(pmp_tables[0], event_number)
-        s2  .store(pmp_tables[1], event_number)
-        s2si.store(pmp_tables[2], event_number)
+        if s1   is not None: s1  .store(pmp_tables[0], event_number)
+        if s2   is not None: s2  .store(pmp_tables[1], event_number)
+        if s2si is not None: s2si.store(pmp_tables[2], event_number)
 
     return write_pmap
 
@@ -105,8 +105,8 @@ def pmap_writer(file, *, compression='ZLIB4'):
 def ipmt_pmap_writer(file, *, compression='ZLIB4'):
     ipmt_tables = _make_ipmt_pmp_tables(file, compression)
     def write_ipmt_pmap(event_number, s1pmt, s2pmt):
-        s1pmt.store(ipmt_tables[0], event_number)
-        s2pmt.store(ipmt_tables[1], event_number)
+        if s1pmt is not None: s1pmt.store(ipmt_tables[0], event_number)
+        if s2pmt is not None: s2pmt.store(ipmt_tables[1], event_number)
     return write_ipmt_pmap
 
 
