@@ -179,6 +179,7 @@ class City:
             self.write_parameters(h5out)
             self.writers = self.get_writers(h5out)
             self.file_loop()
+            h5out.flush()
 
     def end(self):
         """Postoprocessing after city execution:
