@@ -186,12 +186,15 @@ cpdef find_peaks(int [:] index, time, length, int stride=4):
     cdef double [:] T = _time_from_index(index)
     cdef dict peak_bounds  = {}
     cdef int i, j, i_i, i_min
+    cdef np.ndarray where_after_tmin
     tmin, tmax = time
     lmin, lmax = length
 
-    i_min = tmin / (25*units.ns)                          # index in csum  corresponding to t.min
-    i_i   = np.where(np.asarray(index) >= i_min)[0].min() # index in index corresponding to t.min
-                                                          # (or first time not threshold suppressed)
+    i_min = tmin / (25*units.ns)                                # index in csum of tmin
+    where_after_tmin = np.where(np.asarray(index) >= i_min)[0]  # where, in index, time is >= tmin
+    if len(where_after_tmin) == 0 : return {}                   # find no peaks in this case
+    i_i = where_after_tmin.min()                                # index in index of tmin (or first
+                                                                # time not threshold suppressed)
     peak_bounds[0] = np.array([index[i_i], index[i_i] + 1], dtype=np.int32)
 
     j = 0
