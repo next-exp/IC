@@ -86,6 +86,15 @@ def make_config_file_reader():
 Overridden = namedtuple('Overridden', 'value file_name')
 
 
+class ReadOnlyNamespace(argparse.Namespace):
+
+    def __setattr__(self, name, value):
+        raise TypeError('''Do not set attibutes in this namespace.
+
+If you really must set a value, do it with the setitem
+syntax on the Configuration instance from which you got
+this namespace.''')
+
 class Configuration(MutableMapping):
 
     def __init__(self):
@@ -96,7 +105,10 @@ class Configuration(MutableMapping):
 
     @property
     def as_namespace(self):
-        return argparse.Namespace(**self._data)
+        ns = argparse.Namespace(**self._data)
+        # Make the namespace nead-only *after* its content has been set
+        ns.__class__ = ReadOnlyNamespace
+        return ns
 
     @property
     def as_dict(self):

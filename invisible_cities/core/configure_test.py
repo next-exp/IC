@@ -269,6 +269,17 @@ def test_Configuration_setitem_getitem():
     c['some_key'] = 'some value'
     assert c['some_key'] == 'some value'
 
+def test_Configuration_as_namespace_getattr():
+    c = Configuration()
+    c['something'] = 'its value'
+    ns = c.as_namespace
+    assert ns.something == 'its value'
+
+def test_Configuration_as_namespace_is_read_only():
+    c = Configuration()
+    ns = c.as_namespace
+    with raises(TypeError):
+        ns.new_attribute = 'any value'
 
 
 @pytest.fixture(scope = 'session')
