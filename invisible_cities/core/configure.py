@@ -43,8 +43,8 @@ def configure(input_options=sys.argv):
     CLI = parser.parse_args(args)
     options = read_config_file(CLI.config_file)
 
-    options.as_dict.update((opt, val) for opt, val in vars(CLI).items() if val is not None)
-    logger.setLevel(options.as_dict.get("verbosity", "info"))
+    options.update((opt, val) for opt, val in vars(CLI).items() if val is not None)
+    logger.setLevel(options.get("verbosity", "info"))
 
     return options
 
@@ -111,10 +111,6 @@ class Configuration(MutableMapping):
         return ns
 
     @property
-    def as_dict(self):
-        return self._data
-
-    @property
     def _current_filename(self):
         return self._file_stack[-1]
 
@@ -128,6 +124,9 @@ class Configuration(MutableMapping):
     def __delitem__(self, key): raise NotImplementedError
     def __len__    (self):      return len (self._data)
     def __iter__   (self):      return iter(self._data)
+
+    def update(self, *others):
+        self._data.update(*others)
 
     def push_file(self, file_name):
         self._file_stack.append(file_name)
