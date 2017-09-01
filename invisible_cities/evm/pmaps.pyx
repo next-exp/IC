@@ -9,6 +9,7 @@ from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
 from .. core.core_functions    import loc_elem_1d
 from .. core.exceptions        import InconsistentS12dIpmtd
+from .. core.exceptions        import InitializedEmptyPmapObject
 from .. core.system_of_units_c import units
 
 
@@ -23,6 +24,7 @@ cdef class Peak:
     def __init__(self, np.ndarray[double, ndim=1] t,
                        np.ndarray[double, ndim=1] E):
 
+        if len(t) == 0 or len(E) == 0: raise InitializedEmptyPmapObject
         cdef int i_t
         assert len(t) == len(E)
         self.t              = t
@@ -105,6 +107,7 @@ cdef class S12:
     """
     def __init__(self, dict s12d):
 
+        if len(s12d) == 0: raise InitializedEmptyPmapObject
         cdef int peak_no
         cdef np.ndarray[double, ndim=1] t
         cdef np.ndarray[double, ndim=1] E
@@ -148,6 +151,8 @@ cdef class S12:
 
 cdef class S1(S12):
     def __init__(self, s1d):
+
+        if len(s1d) == 0: raise InitializedEmptyPmapObject
         self.s1d = s1d
         super(S1, self).__init__(s1d)
 
@@ -162,7 +167,9 @@ cdef class S1(S12):
 
 
 cdef class S2(S12):
+
     def __init__(self, s2d):
+        if len(s2d) == 0: raise InitializedEmptyPmapObject
         self.s2d = s2d
         super(S2, self).__init__(s2d)
 
@@ -201,6 +208,7 @@ cdef class S2Si(S2):
            Q is the energy in each SiPM sample
         """
 
+        if len(s2sid) == 0 or len(s2d) == 0: raise InitializedEmptyPmapObject
         S2.__init__(self, check_s2d_and_s2sid_share_peaks(s2d, s2sid))
         self.s2sid = s2sid
 
@@ -325,7 +333,8 @@ cdef class S12Pmt(S12):
         s12d  = { peak_number: [[t], [E]]}
         ipmtd = { peak_number: [[Epmt0], [Epmt1], ... ,[EpmtN]] }
         """
-        cdef int npmts
+
+        if len(ipmtd) == 0 or len(s12d) == 0: raise InitializedEmptyPmapObject
         # Check that energies in s12d are sum of ipmtd across pmts for each peak
         for peak, s12_pmts in zip(s12d.values(), ipmtd.values()):
             if not np.allclose(peak[1], s12_pmts.sum(axis=0)):
@@ -333,6 +342,7 @@ cdef class S12Pmt(S12):
 
         S12.__init__(self, s12d)
         self.ipmtd = ipmtd
+        cdef int npmts
         try                 : self.npmts = len(ipmtd[next(iter(ipmtd))])
         except StopIteration: self.npmts = 0
 
@@ -398,6 +408,8 @@ cdef class S12Pmt(S12):
 
 cdef class S1Pmt(S12Pmt):
     def __init__(self, s1d, ipmtd):
+
+        if len(ipmtd) == 0 or len(s1d) == 0: raise InitializedEmptyPmapObject
         self.s1d = s1d
         S12Pmt.__init__(self, s1d, ipmtd)
 
@@ -411,6 +423,8 @@ cdef class S1Pmt(S12Pmt):
 
 cdef class S2Pmt(S12Pmt):
     def __init__(self, s2d, ipmtd):
+
+        if len(ipmtd) == 0 or len(s2d) == 0: raise InitializedEmptyPmapObject
         self.s2d = s2d
         S12Pmt.__init__(self, s2d, ipmtd)
 
