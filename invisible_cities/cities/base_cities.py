@@ -140,11 +140,11 @@ class City:
             conf.display()
         if opts.print_config_only:
             return
-        instance = cls(**conf.as_dict)
+        instance = cls(**conf)
 
         # set the deamons
-        if 'daemons' in conf.as_dict:
-            d_list_name = conf.as_dict['daemons']
+        if 'daemons' in conf:
+            d_list_name = conf['daemons']
             instance.daemons = list(map(invoke_daemon, d_list_name))
         instance.go()
         instance.end()
