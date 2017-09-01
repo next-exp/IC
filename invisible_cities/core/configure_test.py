@@ -307,8 +307,11 @@ def test_config_drive_flags(simple_conf_file_name, tmpdir_factory):
     assert conf.first_event == 0
 
 @mark.parametrize(  'name          flags            value'.split(),
-                  (('first_event',            '-f 21', 21),
-                   ('first_event', '--first-event 22', 22)))
+                  (('first_event',              '-f 21', 21),
+                   ('first_event',   '--first-event 22', 22),
+                   ('run_number',               '-r 23', 23),
+                   ('run_number',     '--run-number 24', 24),
+                  ))
 def test_config_drive_first_event_short(simple_conf_file_name, tmpdir_factory, name, flags, value):
     conf   = simple_conf_file_name
     infile = conf # any existing file will do as a dummy for now
