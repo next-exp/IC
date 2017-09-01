@@ -198,10 +198,11 @@ def _find_peaks(index, time=minmax(0, 1e+6), length=minmax(8, 1000000), stride=4
 
     peak_bounds = {}
     T = cpf._time_from_index(index)
-    # Start end end index of S12, [start i, end i)
-    i_min = int(time[0] / (25*units.ns))     # index in csum  corresponding to t.min
-    i_i = np.where(index >= i_min)[0].min()  # index in index corresponding to t.min (or first
-                                             # time not threshold suppressed)
+    i_min = int(time[0] / (25*units.ns))             # index in csum corresponding to t.min
+    where_after_tmin = np.where(index >= i_min)[0]   # where, in index, time is >= tmin
+    if len(where_after_tmin) == 0: return {}         # find no peaks if no index after tmin
+    i_i = where_after_tmin.min()                     # index in index corresponding to t.min
+                                                     # (or first time not threshold suppressed)
     peak_bounds[0] = np.array([index[i_i], index[i_i] + 1], dtype=np.int32)
 
     j = 0
