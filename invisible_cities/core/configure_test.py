@@ -259,6 +259,18 @@ def test_config_overridden_file_history(hierarchical_configuration):
     assert hierarchical_configuration.as_namespace.overridden_in_3_places == 'four'
 
 
+def test_Configuration_missing_key_raises_KE():
+    c = Configuration()
+    with raises(KeyError):
+        c['absent']
+
+def test_Configuration_setitem_getitem():
+    c = Configuration()
+    c['some_key'] = 'some value'
+    assert c['some_key'] == 'some value'
+
+
+
 @pytest.fixture(scope = 'session')
 def simple_conf_file_name(tmpdir_factory):
     dir_ = tmpdir_factory.mktemp('test_config_files')

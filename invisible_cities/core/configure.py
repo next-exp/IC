@@ -92,7 +92,7 @@ class Configuration(MutableMapping):
         self._data = {}
         self._file = {}
         self._history = defaultdict(list)
-        self._file_stack = []
+        self._file_stack = ['<none>']
 
     @property
     def as_namespace(self):
