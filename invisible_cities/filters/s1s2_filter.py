@@ -36,9 +36,9 @@ class S12Selector:
 
         """
         #import pdb; pdb.set_trace()
-        f1 = energy.contains(peak.total_energy_above_trheshold(thr))
-        f2 = width.contains(peak.width_above_trheshold(thr))
-        f3 = height.contains(peak.height_above_trheshold(thr))
+        f1 = energy.contains(peak.total_energy_above_threshold(thr))
+        f2 = width.contains(peak.width_above_threshold(thr))
+        f3 = height.contains(peak.height_above_threshold(thr))
 
         return f1 and f2 and f3
 

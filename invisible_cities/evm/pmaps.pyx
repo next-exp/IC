@@ -49,14 +49,14 @@ cdef class Peak:
                                        np.any(np.isnan(self.E))
                                     else True)
 
-    def total_energy_above_trheshold(self, thr):
+    def total_energy_above_threshold(self, thr):
         eth = self.E[self.E > thr]
         if len(eth):
             return np.sum(eth)
         else:
             return 0
 
-    def width_above_trheshold(self, thr):
+    def width_above_threshold(self, thr):
         eth = self.E[self.E > thr]
         if len(eth):
             t0 = (loc_elem_1d(self.E, eth[0])
@@ -69,7 +69,7 @@ cdef class Peak:
         else:
             return 0
 
-    def height_above_trheshold(self, thr):
+    def height_above_threshold(self, thr):
         eth = self.E[self.E > thr]
         if len(eth):
             return np.max(eth)

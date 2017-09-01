@@ -83,11 +83,11 @@ def test_peak_above_thr(peak_pars):
     else:
        assert  wf.good_waveform == True
 
-    np.isclose (wf.total_energy_above_trheshold(ethr) ,
+    np.isclose (wf.total_energy_above_threshold(ethr) ,
                 esum_thr, rtol=1e-4)
-    np.isclose (wf.height_above_trheshold(ethr),
+    np.isclose (wf.height_above_threshold(ethr),
                 height_thr, rtol=1e-4)
-    np.isclose (wf.width_above_trheshold(ethr),
+    np.isclose (wf.width_above_threshold(ethr),
                 w_thr, rtol=1e-4)
 
 
