@@ -62,3 +62,6 @@ class InconsistentS12dIpmtd(ICException):
 
 class NegativeThresholdNotAllowed(ICException):
     pass
+
+class InitializedEmptyPmapObject(ICException):
+    pass
