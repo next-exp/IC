@@ -479,6 +479,18 @@ def test_find_peaks_finds_no_peaks_when_index_spaced_by_more_than_stride():
         assert bounds[0][0] ==  600
         assert bounds[0][1] ==  605
 
+def test_find_peaks_when_no_index_after_tmin():
+    stride = 2
+    index = np.concatenate((np.arange(  0, 500, stride, dtype=np.int32),
+                            np.arange(600, 605,      1, dtype=np.int32)))
+    assert cpf.find_peaks(index, time   = minmax(9e9, 9e10),
+                                 length = minmax(2, 9999),
+                                 stride = stride) == {}
+    assert pf._find_peaks(index, time   = minmax(9e9, 9e10),
+                                 length = minmax(2, 9999),
+                                 stride = stride) == {}
+
+
 def test_extract_peaks_from_waveform():
     wf = np.random.uniform(size=52000)
     # Generate peak_bounds
