@@ -10,6 +10,7 @@ def kr_writer(hdf5_file, *, compression='ZLIB4'):
                           fformat     = KrTable,
                           description = 'KDST Events',
                           compression = compression)
+    kr_table.cols.event.create_index()
 
     def write_kr(kr_event):
         kr_event.store(kr_table)
