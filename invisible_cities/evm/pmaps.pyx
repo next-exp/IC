@@ -370,6 +370,19 @@ cdef class S12Pmt(S12):
             sum += self.pmt_total_energy_in_peak(pn, pmt_number)
         return sum
 
+    def __str__(self):
+        ss =  "number of peaks = {}\n".format(self.number_of_peaks)
+        ss += "-" * 80 + "\n\n"
+        for peak_number in self.peaks:
+            s2 = 'peak number = {}: peak waveform for csum ={} \n'.format(peak_number,
+                                self.peak_waveform(peak_number))
+            s3 = ['pmt number = {}: pmt waveforms = {}\n'.format(pmt_number,
+                                    self.pmt_waveform(peak_number, pmt_number))
+                                    for pmt_number in range(self.npmts)]
+            ss+= s2 + '\n'.join(s3)
+        ss += "-" * 80 + "\n\n"
+        return ss
+
 
     cpdef store(self, table, event_number):
         row = table.row
@@ -388,8 +401,21 @@ cdef class S1Pmt(S12Pmt):
         self.s1d = s1d
         S12Pmt.__init__(self, s1d, ipmtd)
 
+    def __str__(self):
+        return "S1Pmt: " + S12Pmt.__str__(self)
+
+    def __repr__(self):
+        return self.__str__()
+
+
 
 cdef class S2Pmt(S12Pmt):
     def __init__(self, s2d, ipmtd):
         self.s2d = s2d
         S12Pmt.__init__(self, s2d, ipmtd)
+
+    def __str__(self):
+        return "S2Pmt: " + S12Pmt.__str__(self)
+
+    def __repr__(self):
+        return self.__str__()
