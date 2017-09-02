@@ -96,6 +96,18 @@ class S12(tb.IsDescription):
     time   = tb.Float32Col(pos=3) # time in ns
     ene    = tb.Float32Col(pos=4) # energy in pes
 
+class S12Pmt(tb.IsDescription):
+    """Store for a S1/S2 of the individual pmts
+    The table maps a S12Pmt:
+    peak is the index of the S12 dictionary, running over the number of peaks found
+    npmt gives the pmt sensor id
+    time and energy of the peak.
+    """
+    event  = tb.  Int32Col(pos=0)
+    peak   = tb.  UInt8Col(pos=2) # peak number
+    npmt   = tb.  UInt8Col(pos=3) # pmt number (in order of IC db 26/8/2017: equal to SensorID)
+    ene    = tb.Float32Col(pos=5) # energy in pes
+
 
 class S2Si(tb.IsDescription):
     """Store for a S2Si
