@@ -7,7 +7,7 @@ from matplotlib.pyplot import figure, show
 from .. core.system_of_units_c import units
 from .. core.core_functions import define_window
 from .. database     import load_db
-
+from . mpl_functions import set_plot_labels
 
 # matplotlib.style.use("ggplot")
 #matplotlib.rc('animation', html='html5')
