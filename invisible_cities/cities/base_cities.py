@@ -171,7 +171,6 @@ class City:
         6. returns the counter dictionary.
 
         """
-        #import pdb; pdb.set_trace()
         self.display_IO_info()
 
         with tb.open_file(self.output_file, "w",
@@ -180,6 +179,7 @@ class City:
             self.write_parameters(h5out)
             self.writers = self.get_writers(h5out)
             self.file_loop()
+            h5out.flush()
 
     def end(self):
         """Postoprocessing after city execution:
@@ -476,7 +476,6 @@ class PmapCity(CalibratedCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         conf = self.conf
-        print(self.conf.s1_rebin_stride)
         self.s1_params = S12Params(time = minmax(min   = conf.s1_tmin,
                                                  max   = conf.s1_tmax),
                                    stride              = conf.s1_stride,
