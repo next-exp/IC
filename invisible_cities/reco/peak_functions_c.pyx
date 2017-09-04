@@ -239,6 +239,32 @@ cpdef find_s1(double [:] csum,  int [:] index,
     except InitializedEmptyPmapObject:
         return None
 
+cpdef find_s1_ipmt(double [:] csum, double [:,:] cCWF, int [:] index,
+                   time, length, int stride=4, rebin_stride=1):
+    """find s2 peaks and return s2 and s2pmt objects"""
+    # Find indices bounding s1-like peaks
+    s1_bounds = cpf.find_peaks(s1_indx, time, length, stride)
+    try:
+        s1    = S1(cpf.extract_peaks_from_waveform(csum, s1_bounds, rebin_stride=rebin_stride))
+        s1pmt = S1Pmt(s1.s1d, get_s12pmtd(cCWF, s1_bounds, rebin_stride=rebin_stride))
+        return s1, s1pmt
+    except InitializedEmptyPmapObject:
+        return None, None
+
+
+cpdef find_s2_ipmt(double [:] csum, double [:,:] cCWF,  int [:] index,
+              time, length, int stride=4, rebin_stride=40):
+    """find s2 peaks and return s2 and s2pmt objects"""
+    # Find indices bounding s2-like peaks
+    s1_bounds = cpf.find_peaks(s2_indx, time, length, stride)
+    try:
+        s1    = S2(cpf.extract_peaks_from_waveform(csum, s2_bounds, rebin_stride=rebin_stride))
+        s1pmt = S2Pmt(s2.s2d, get_s12pmtd(cCWF, s2_bounds, rebin_stride=rebin_stride))
+        return s2, s2pmt
+    except InitializedEmptyPmapObject:
+        return None, None
+
+
 cpdef find_s2(double [:] csum,  int [:] index,
               time, length,
               int stride=40, rebin_stride=40):
