@@ -70,15 +70,13 @@ class Irene(PmapCity):
 
             # calibrated sum in SiPMs
             sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
+
             # pmaps
-            s1, s2, s2si = self.pmaps(s12sum.s1_indx,
-                                      s12sum.s2_indx,
-                                      calsum.csum,
-                                      sipmzs)
+            pmap = self.pmaps(s12sum.s1_indx, s12sum.s2_indx, calsum.csum, sipmzs)
 
             # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)
-            write.pmap         (event, s1, s2, s2si)
+            write.pmap         (event, *pmap)
             write.run_and_event(self.run_number, event, timestamp)
             if self.monte_carlo:
                 write.mc(mc_tracks, self.cnt.counter_value('n_events_tot'))
