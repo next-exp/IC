@@ -2,6 +2,7 @@ import numpy as np
 
 from numpy.testing import assert_equal
 from pytest        import mark
+from pytest        import raises
 
 from hypothesis             import given
 from hypothesis.strategies  import floats
@@ -12,13 +13,17 @@ from hypothesis.extra.numpy import arrays
 from .. types.ic_types_c    import xy
 from .. types.ic_types_c    import minmax
 from .. core.exceptions     import InconsistentS12dIpmtd
+from .. core.exceptions     import InitializedEmptyPmapObject
 
 from .. reco.pmaps_functions_c import integrate_sipm_charges_in_peak
 from .. reco  import pmaps_functions as pmapf
 from .  pmaps import S1
 from .  pmaps import S2
+from .  pmaps import S12
 from .  pmaps import S2Si
 from .  pmaps import S12Pmt
+from .  pmaps import S1Pmt
+from .  pmaps import S2Pmt
 from .  pmaps import Peak
 from .  pmaps import check_s2d_and_s2sid_share_peaks
 from .. core.core_functions    import loc_elem_1d
@@ -293,3 +298,16 @@ def test_pmt_total_energy():
         s = 0
         for pn in s12pmt.peaks: s += s12pmt.pmt_total_energy_in_peak(pn, pmt)
         assert s12pmt.pmt_total_energy(pmt) == s
+
+@mark.parametrize("constructor, args",
+    ((Peak  , (np.array([],dtype=np.float64), np.array([], np.float64))),
+     (S1    , ({},   )),
+     (S2    , ({},   )),
+     (S12   , ({},   )),
+     (S2Si  , ({}, {})),
+     (S1Pmt , ({}, {})),
+     (S2Pmt , ({}, {})),
+     (S12Pmt, ({}, {}))))
+def test_pmap_constructors_raise_exception_when_initialized_with_empty_dicts(constructor, args):
+    with raises(InitializedEmptyPmapObject):
+        constructor(*args)
