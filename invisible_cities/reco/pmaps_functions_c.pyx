@@ -20,7 +20,7 @@ from .. evm.pmaps import S2
 from .. evm.pmaps import S2Si
 from .. evm.pmaps import S1Pmt
 from .. evm.pmaps import S2Pmt
-
+from .. core.exceptions import InitializedEmptyPmapObject
 
 cpdef integrate_sipm_charges_in_peak(s2si, int peak_number):
     """Return arrays of nsipm and integrated charges from SiPM dictionary.
@@ -49,7 +49,8 @@ cpdef df_to_s1_dict(df, int max_events=-1):
     s12d_dict = df_to_pmaps_dict(df, max_events)  # {event:s12d}
 
     for event_no, s12d in s12d_dict.items():
-        s1_dict[event_no] = S1(s12d)
+        try: s1_dict[event_no] = S1(s12d)
+        except InitializedEmptyPmapObject: pass
 
     return s1_dict
 
@@ -66,7 +67,8 @@ cpdef df_to_s2_dict(df, int max_events=-1):
     s12d_dict = df_to_pmaps_dict(df, max_events)  # {event:s12d}
 
     for event_no, s12d in s12d_dict.items():
-        s2_dict[event_no] = S2(s12d)
+        try: s2_dict[event_no] = S2(s12d)
+        except InitializedEmptyPmapObject: pass
 
     return s2_dict
 
@@ -83,8 +85,8 @@ cpdef df_to_s1pmt_dict(dfs1, dfpmts, int max_events=-1):
     s1pmtd_dict = df_to_s12pmtd_dict(dfpmts, max_events)
     for event_no, ipmtd in s1pmtd_dict.items():
         s1d = s1_dict[event_no].s1d
-        s1pmt_dict[event_no] = S1Pmt(s1d, ipmtd)
-
+        try: s1pmt_dict[event_no] = S1Pmt(s1d, ipmtd)
+        except InitializedEmptyPmapObject: pass
     return s1pmt_dict
 
 
@@ -100,8 +102,8 @@ cpdef df_to_s2pmt_dict(dfs2, dfpmts, int max_events=-1):
     s2pmtd_dict = df_to_s12pmtd_dict(dfpmts, max_events)
     for event_no, ipmtd in s2pmtd_dict.items():
         s2d = s2_dict[event_no].s2d
-        s2pmt_dict[event_no] = S2Pmt(s2d, ipmtd)
-
+        try: s2pmt_dict[event_no] = S2Pmt(s2d, ipmtd)
+        except InitializedEmptyPmapObject: pass
     return s2pmt_dict
 
 
@@ -119,7 +121,8 @@ cpdef df_to_s2si_dict(dfs2, dfsi, int max_events=-1):
 
     for event_no, s2sid in s2sid_dict.items():
         s2d = s2_dict[event_no].s2d
-        s2si_dict[event_no] = S2Si(s2d, s2sid)
+        try: s2si_dict[event_no] = S2Si(s2d, s2sid)
+        except InitializedEmptyPmapObject: pass
 
     return s2si_dict
 
@@ -290,7 +293,8 @@ cpdef _delete_empty_s2si_peaks(dict s2si_dict):
                 del s2si_dict[ev].s2d  [pn]
                 # It is not sufficient to just delete the peaks because the S2Si class instance
                 # will still think it has peak pn even though its base dictionary does not
-                s2si_dict[ev] = S2Si(s2si_dict[ev].s2d, s2si_dict[ev].s2sid)
+                try: s2si_dict[ev] = S2Si(s2si_dict[ev].s2d, s2si_dict[ev].s2sid)
+                except InitializedEmptyPmapObject: del s2si_dict[ev]
     return s2si_dict
 
 
