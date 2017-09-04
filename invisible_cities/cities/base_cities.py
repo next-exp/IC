@@ -520,23 +520,14 @@ class PmapCity(CalibratedCity):
                     )
 
 
-<<<<<<< HEAD
-    def pmaps(self, s1_indx, s2_indx, csum, sipmzs):
-        """Computes s1, s2 and s2si objects (PMAPS)"""
-        s1   = cpf.find_s1(csum, s1_indx, **self.s1_params._asdict())
-        s2   = cpf.find_s2(csum, s2_indx, **self.s2_params._asdict())
-        s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = self.thr_sipm_s2)
-        return s1, s2, s2si
-=======
-    def pmaps(self, s1_indx, s2_indx, csum, sipmzs, compute_ipmt_pmaps=False):
+    def pmaps(self, s1_indx, s2_indx, csum, cCWF, sipmzs, compute_ipmt_pmaps=False):
         """Computes s1, s2 and s2si objects (PMAPS)"""
         if compute_ipmt_pmaps:
             return pmp.get_pmaps_with_ipmt(s1_indx, s2_indx, csum, sipmzs,
                                            self.s1_params, self.s2_params, self.thr_sipm_s2)
         else:
-            return pmp.get_pmaps(s1_indx, s2_indx, csum, sipmzs,
+            return pmp.get_pmaps(s1_indx, s2_indx, csum, cCWF, sipmzs,
                                  self.s1_params, self.s2_params, self.thr_sipm_s2)
->>>>>>> allow irene to compute ipmt pmaps
 
 
 class DstCity(City):
