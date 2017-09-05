@@ -81,6 +81,7 @@ def make_config_file_reader():
 
     builtins = __builtins__.copy()
     builtins.update(vars(units))
+    builtins['All'] = All
     globals_ = {'__builtins__': builtins}
     config = Configuration()
     def read_included_file(file_name):
