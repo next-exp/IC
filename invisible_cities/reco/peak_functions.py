@@ -353,8 +353,9 @@ def _compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
                                             thr_MAU     = thr.thr_MAU)
 
     # zs sum
-    s2_ene, s2_indx = cpf.wfzs(csum, threshold=thr.thr_s2)
     s1_ene, s1_indx = cpf.wfzs(csum_mau, threshold=thr.thr_s1)
+    s2_ene, s2_indx = cpf.wfzs(csum    , threshold=thr.thr_s2)
+
 
     s1 = cpf.find_s1(csum,
                       s1_indx,
@@ -364,15 +365,20 @@ def _compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
                       s2_indx,
                       **s2_params._asdict())
 
-    s1 = cpf.correct_s1_ene(s1.s1d, csum)
     sipmzs = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
                            thr=thr.thr_sipm, n_MAU=100)
 
     s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = thr.thr_SIPM)
 
+    if s1   is None:   s1d = None
+    else:    s1d = s1.s1d
+    if s2   is None:   s2d = None
+    else:   s2d = s2.s2d
+    if s2si is None: s2sid = None
+    else: s2sid = s2si.s2sid
 
     return (CSum(csum=csum, csum_mau=csum_mau),
-            PMaps(S1=s1.s1d, S2=s2.s2d, S2Si=s2si.s2sid))
+            PMaps(S1=s1d, S2=s2d, S2Si=s2sid))
 
 
 def compute_pmaps_from_rwf(event, pmtrwf, sipmrwf,
