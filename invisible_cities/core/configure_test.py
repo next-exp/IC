@@ -4,6 +4,7 @@ import pytest
 from   pytest import mark
 from   pytest import raises
 
+from . configure import All
 from . configure import configure
 from . configure import Configuration
 from . configure import make_config_file_reader
@@ -319,15 +320,18 @@ def test_config_drive_fails_without_output_file(simple_conf_file_name):
     with raises(NoOutputFile):
         DummyCity.drive(argv)
 
+
 @mark.parametrize(     'name             flags           value'.split(),
-                  (('first_event',              '-f 21', 21),
-                   ('first_event',   '--first-event 22', 22),
-                   ('run_number',               '-r 23', 23),
-                   ('run_number',     '--run-number 24', 24),
-                   ('print_mod',                '-p 25', 25),
-                   ('print_mod',       '--print-mod 26', 26),
-                   ('n_events_max',             '-n 27', 27),
-                   ('n_events_max', '--n-events-max 28', 28),
+                  (('first_event',              '-f 21'  , 21),
+                   ('first_event',   '--first-event 22'  , 22),
+                   ('run_number',               '-r 23'  , 23),
+                   ('run_number',     '--run-number 24'  , 24),
+                   ('print_mod',                '-p 25'  , 25),
+                   ('print_mod',       '--print-mod 26'  , 26),
+                   ('n_events_max',             '-n 27'  , 27),
+                   ('n_events_max', '--n-events-max 28'  , 28),
+                   ('n_events_max',             '-n All', All),
+                   ('n_events_max', '--n-events-max All', All),
                   ))
 def test_config_drive_flags(simple_conf_file_name, tmpdir_factory, name, flags, value):
     conf   = simple_conf_file_name
