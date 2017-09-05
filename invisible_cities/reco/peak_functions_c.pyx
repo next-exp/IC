@@ -14,6 +14,7 @@ from .. evm.pmaps import S1
 from .. evm.pmaps import S2
 from .. evm.pmaps import S2Si
 
+from .. core.exceptions        import InitializedEmptyPmapObject
 from .. core.system_of_units_c import units
 
 cpdef calibrated_pmt_sum(double [:, :]  CWF,
@@ -231,26 +232,34 @@ cpdef find_s1(double [:] csum,  int [:] index,
               time, length,
               int stride=4, rebin_stride=1):
     """
-    find s1 peaks and returns S1 objects
+    find s1 peaks and returns S1 objects. Will raise InitializedEmptyPmapObject if there is no S1
     """
-    return S1(find_s12(csum, index, time, length, stride, rebin_stride))
-
+    try:
+        return S1(find_s12(csum, index, time, length, stride, rebin_stride))
+    except InitializedEmptyPmapObject:
+        return None
 
 cpdef find_s2(double [:] csum,  int [:] index,
               time, length,
               int stride=40, rebin_stride=40):
     """
-    find s2 peaks and returns S2 objects
+    find s2 peaks and returns S2 objects.  Will raise InitializedEmptyPmapObject if there is no S2
     """
-    return S2(find_s12(csum, index, time, length, stride, rebin_stride))
+    try:
+        return S2(find_s12(csum, index, time, length, stride, rebin_stride))
+    except InitializedEmptyPmapObject:
+        return None
 
 
 cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr):
     """
-    find s2si and returns S2Si objects
+    find s2si and returns S2Si objects.  Will raise InitializedEmptyPmapObject if there is no S2Si
     """
     s2sid = sipm_s2sid(sipmzs, s2d, thr)
-    return S2Si(s2d, s2sid)
+    try:
+        return S2Si(s2d, s2sid)
+    except InitializedEmptyPmapObject:
+        return None
 
 
 cpdef find_s12(double [:] csum,  int [:] index,
@@ -271,13 +280,17 @@ cpdef find_s12(double [:] csum,  int [:] index,
 
 
 cpdef correct_s1_ene(dict s1d, np.ndarray csum):
+    """Will raise InitializedEmptyPmapObject if there is no S2Si"""
     cdef dict S1_corr = {}
     cdef int peak_no
     for peak_no, (t, _) in s1d.items():
         indices          = (t // 25).astype(int)
         S1_corr[peak_no] = t, csum[indices]
-    return S1(S1_corr)
 
+    try:
+        return S1(S1_corr)
+    except InitializedEmptyPmapObject:
+        return None
 
 cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
     """
