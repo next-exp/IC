@@ -17,6 +17,7 @@ import tables as tb
 
 from .. core.core_functions     import merge_two_dicts
 from .. core.core_functions     import loc_elem_1d
+from .. core.configure          import All
 from .. core.configure          import configure
 from .. core.exceptions         import NoInputFiles
 from .. core.exceptions         import NoOutputFile
@@ -247,7 +248,7 @@ class City:
                   .format(evt, n_events_tot))
 
     def max_events_reached(self, n_events_in):
-        if self.n_events_max < 0:
+        if self.n_events_max is All:
             return False
         if n_events_in == self.n_events_max:
             print('reached max nof of events (= {})'
