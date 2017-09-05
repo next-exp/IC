@@ -113,12 +113,12 @@ class City:
             raise NoOutputFile
 
 
-        self.input_files = sorted(glob(expandvars(conf.files_in)))
-        self.output_file =             expandvars(conf.file_out)
-        self.compression = conf.compression
-        self.run_number  = conf.run_number
-        self.nprint      = conf.nprint  # default print frequency
-        self.nmax        = conf.nmax
+        self.input_files  = sorted(glob(expandvars(conf.files_in)))
+        self.output_file  =             expandvars(conf.file_out)
+        self.compression  = conf.compression
+        self.run_number   = conf.run_number
+        self.nprint       = conf.nprint  # default print frequency
+        self.n_events_max = conf.n_events_max
 
         self.set_up_database()
 
@@ -202,7 +202,7 @@ class City:
                  {} will run a max of {} events
                  Input Files = {}
                  Output File = {}
-                          """.format(self.__class__.__name__, self.nmax, self.input_files, self.output_file))
+                          """.format(self.__class__.__name__, self.n_events_max, self.input_files, self.output_file))
 
     def file_loop(self):
         """Must be implemented by cities"""
@@ -246,11 +246,11 @@ class City:
                   .format(evt, n_events_tot))
 
     def max_events_reached(self, n_events_in):
-        if self.nmax < 0:
+        if self.n_events_max < 0:
             return False
-        if n_events_in == self.nmax:
+        if n_events_in == self.n_events_max:
             print('reached max nof of events (= {})'
-                  .format(self.nmax))
+                  .format(self.n_events_max))
             return True
         return False
 

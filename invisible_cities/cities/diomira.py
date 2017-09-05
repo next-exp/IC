@@ -59,7 +59,7 @@ class Diomira(MonteCarloCity):
         conf = self.conf
 
         self.cnt.set_name('diomira')
-        self.cnt.set_counter('nmax', value=self.conf.nmax)
+        self.cnt.set_counter   ('n_events_max', value=self.conf.n_events_max)
         self.cnt.init_counters(('n_events_tot', 'nevt_out'))
 
         self.sipm_noise_cut   = conf.sipm_noise_cut
