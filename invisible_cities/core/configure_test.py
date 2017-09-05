@@ -344,11 +344,13 @@ def test_config_drive_flags(simple_conf_file_name, tmpdir_factory, name, flags, 
     assert getattr(conf_ns, name) == value
 
 
-def test_config_drive_Penthesilea_n_event_max_All(simple_conf_file_name, tmpdir_factory):
+@mark.parametrize('flags value counter'.split(),
+                  (('-n All', 27, 'n_events_tot'),
+                   ('-n  11', 11, 'n_events_tot')))
+def test_config_drive_penthesilea_counters(simple_conf_file_name, tmpdir_factory, flags, value, counter):
     conf   = 'invisible_cities/config/penthesilea.conf'
     infile = 'invisible_cities/database/test_data/KrMC_pmaps.h5'
-    outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file-irene-n-events-max-All')
-    argv = 'penthesilea {conf} -i {infile} -o {outfile} -n All'.format(**locals()).split()
+    outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file-penthesilea-counters'+flags.replace(' ','-'))
+    argv = 'penthesilea {conf} -i {infile} -o {outfile} {flags}'.format(**locals()).split()
     conf_ns, counters = Penthesilea.drive(argv)
-    assert conf_ns.n_events_max is All
-    assert counters.counter_value('n_events_tot') == 27
+    assert counters.counter_value(counter) == value
