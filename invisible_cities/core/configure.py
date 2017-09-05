@@ -6,6 +6,7 @@ import sys
 import os
 
 from os.path import basename
+from enum    import Enum
 
 from collections     import namedtuple
 from collections     import defaultdict
@@ -15,8 +16,9 @@ from .        log_config      import logger
 from . import system_of_units as     units
 
 
-class All:
-    pass
+class NEventsMax(Enum): All = 1
+All = NEventsMax.All
+
 
 def max_events(string):
     try:
