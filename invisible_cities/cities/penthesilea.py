@@ -40,7 +40,7 @@ class Penthesilea(HitCity):
         super().__init__(**kwds)
         conf = self.conf
         self.cnt.set_name('penthesilea')
-        self.cnt.set_counter('nmax', value=conf.nmax)
+        self.cnt.set_counter   ('n_events_max', value=conf.n_events_max)
         self.cnt.init_counters(('n_events_tot', 'nevt_out'))
         self.drift_v        = conf.drift_v
         self._s1s2_selector = S12Selector(**kwds)
