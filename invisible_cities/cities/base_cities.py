@@ -253,19 +253,19 @@ class City:
 
     def file_loop(self):
         """Must be implemented by cities"""
-        raise FileLoopMethodNotSet
+        raise NotImplementedError("Concrete City must implement `file_loop`")
 
     def event_loop(self):
         """Must be implemented by cities"""
-        raise EventLoopMethodNotSet
+        raise NotImplementedError("Concrete City must implement `event_loop`")
 
     def write_parameters(self, h5out):
         """Must be implemented by cities"""
-        pass
+        raise NotImplementedError("Concrete City must implement `write_parameters`")
 
     def get_writers(self, h5out):
         """Must be implemented by cities"""
-        pass
+        raise NotImplementedError("Concrete City must implement `get_writers`")
 
     def set_up_database(self):
         DataPMT       = load_db.DataPMT (self.run_number)
