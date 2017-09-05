@@ -150,7 +150,7 @@ class City:
             instance.daemons = list(map(invoke_daemon, d_list_name))
         instance.go()
         instance.end()
-        return conf.as_namespace
+        return conf.as_namespace, instance.cnt
 
     def go(self):
         """Launch the execution of the city (calling method run)
