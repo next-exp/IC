@@ -32,8 +32,9 @@ class Dorothea(KrCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.cnt.set_name('dorothea')
-        self.cnt.set_counter('nmax', value=self.conf.nmax)
-        self.cnt.init_counters(('n_events_tot', 'nevt_out',
+        self.cnt.set_counter   ('n_events_max', value=self.conf.n_events_max)
+        self.cnt.init_counters(('n_events_tot',
+                                'nevt_out',
                                 'n_events_not_s1',
                                 'n_events_not_s2',
                                 'n_events_not_s2si',
