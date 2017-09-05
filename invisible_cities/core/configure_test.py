@@ -14,6 +14,7 @@ from . exceptions import NoInputFiles
 from . exceptions import NoOutputFile
 
 from .. cities.base_cities import City
+from .. cities.penthesilea import Penthesilea
 
 
 config_file_format = """
@@ -339,5 +340,15 @@ def test_config_drive_flags(simple_conf_file_name, tmpdir_factory, name, flags, 
     infile = conf # any existing file will do as a dummy for now
     outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file' + name)
     argv = 'dummy {conf} -i {infile} -o {outfile} {flags}'.format(**locals()).split()
-    conf_ns = DummyCity.drive(argv)
+    conf_ns, _ = DummyCity.drive(argv)
     assert getattr(conf_ns, name) == value
+
+
+def test_config_drive_Penthesilea_n_event_max_All(simple_conf_file_name, tmpdir_factory):
+    conf   = 'invisible_cities/config/penthesilea.conf'
+    infile = 'invisible_cities/database/test_data/KrMC_pmaps.h5'
+    outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file-irene-n-events-max-All')
+    argv = 'penthesilea {conf} -i {infile} -o {outfile} -n All'.format(**locals()).split()
+    conf_ns, counters = Penthesilea.drive(argv)
+    assert conf_ns.n_events_max is All
+    assert counters.counter_value('n_events_tot') == 27
