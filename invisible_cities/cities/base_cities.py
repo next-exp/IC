@@ -126,8 +126,9 @@ class City:
     def drive(cls, argv):
         """The drive methods allows invocation of the cities and their daemons
         through the command line.
-        1. It reads the configuration file and calls the instances of the cities,
-           passing a dictionary of arguments.
+
+        1. It reads the configuration files and CLI arguments and
+           creates an instance of the city based on that configuration.
         2. It instantiates the daemons defined in the city configuration and
            sets them as attributes of the city.
         3. Calls the method "go" to launch execution of the city.
