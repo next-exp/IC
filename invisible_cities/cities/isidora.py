@@ -43,7 +43,7 @@ class Isidora(DeconvolutionCity):
 
         super().__init__(**kwds)
         self.cnt.set_name('isidora')
-        self.cnt.set_counter('nmax', value=self.conf.nmax)
+        self.cnt.set_counter ('n_events_max', value=self.conf.n_events_max)
         self.cnt.init_counter('n_events_tot')
         self.sp = self.get_sensor_params(self.input_files[0])
 

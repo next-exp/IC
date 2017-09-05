@@ -38,7 +38,7 @@ class Irene(PmapCity):
         """
         super().__init__(**kwds)
         self.cnt.set_name('irene')
-        self.cnt.set_counter('nmax', value=self.conf.nmax)
+        self.cnt.set_counter   ('n_events_max', value=self.conf.n_events_max)
         self.cnt.init_counters(('n_events_tot',
                                 'n_empty_events',
                                 'n_empty_events_s2_ene_eq_0',
