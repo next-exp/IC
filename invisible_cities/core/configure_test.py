@@ -61,7 +61,7 @@ thr_zs = {thr_zs}
 thr_sipm_s2 = {thr_sipm_s2}
 
 # run
-nevents = {nevents}
+n_events_max = {n_events_max}
 """
 
 # The values that will be fed into the above.
@@ -88,7 +88,7 @@ config_file_spec = dict(files_in = 'electrons_40keV_z250_RWF.h5',
                         s2_lmax            = 42,
                         thr_zs             = 43,
                         thr_sipm_s2        = 44,
-                        nevents            = 45)
+                        n_events_max       = 45)
 
 config_file_contents = config_file_format.format(**config_file_spec)
 
@@ -116,12 +116,12 @@ def join_dicts(*args):
                     # Nothing overridden on the command line
                     (),
                     # Two short form command line args
-                    (('nevents'    , '-n 99', 99),
-                     ('first_event', '-f 98', 98)),
+                    (('n_events_max', '-n 99', 99),
+                     ('first_event',  '-f 98', 98)),
                     # A long option in full
                     (('run_number' , '--run-number 97', 97),),
                     # A long option abbreviated
-                    (('nevents' , '--ne 6', 6),),
+                    (('run_number' , '--ru 6', 6),),
                     # Verbosity level 1
                     (('verbosity', '-v',    1),),
                     # Verbosity level 2
@@ -285,10 +285,10 @@ def simple_conf_file_name(tmpdir_factory):
     dir_ = tmpdir_factory.mktemp('test_config_files')
     file_name = path.join(dir_, 'simple.conf')
     write_config_file(file_name, """
-compression = 'ZLIB4'
-run_number  = 12
-nprint      = 13
-nmax        = 14
+compression  = 'ZLIB4'
+run_number   = 12
+nprint       = 13
+n_events_max = 14
 """)
     return str(file_name)
 
@@ -326,6 +326,8 @@ def test_config_drive_fails_without_output_file(simple_conf_file_name):
                    ('run_number',     '--run-number 24', 24),
                    ('print_mod',                '-p 25', 25),
                    ('print_mod',       '--print-mod 26', 26),
+                   ('n_events_max',             '-n 27', 27),
+                   ('n_events_max', '--n-events-max 28', 28),
                   ))
 def test_config_drive_flags(simple_conf_file_name, tmpdir_factory, name, flags, value):
     conf   = simple_conf_file_name
