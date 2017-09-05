@@ -1,4 +1,5 @@
-from os import getenv, path
+from os import getenv
+from os import path
 
 import pytest
 from   pytest import mark
