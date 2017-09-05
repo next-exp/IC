@@ -62,7 +62,6 @@ thr_sipm_s2 = {thr_sipm_s2}
 
 # run
 nevents = {nevents}
-run_all = {run_all}
 """
 
 # The values that will be fed into the above.
@@ -89,7 +88,6 @@ config_file_spec = dict(files_in = 'electrons_40keV_z250_RWF.h5',
                         s2_lmax            = 42,
                         thr_zs             = 43,
                         thr_sipm_s2        = 44,
-                        run_all            = False,
                         nevents            = 45)
 
 config_file_contents = config_file_format.format(**config_file_spec)
@@ -121,7 +119,7 @@ def join_dicts(*args):
                     (('nevents'    , '-n 99', 99),
                      ('first_event', '-f 98', 98)),
                     # A long option in full
-                    (('run_all' , '--run-all', True),),
+                    (('run_number' , '--run-number 97', 97),),
                     # A long option abbreviated
                     (('nevents' , '--ne 6', 6),),
                     # Verbosity level 1
