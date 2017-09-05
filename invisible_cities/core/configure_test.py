@@ -338,6 +338,5 @@ def test_config_drive_flags(simple_conf_file_name, tmpdir_factory, name, flags, 
     infile = conf # any existing file will do as a dummy for now
     outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file' + name)
     argv = 'dummy {conf} -i {infile} -o {outfile} {flags}'.format(**locals()).split()
-    print(argv)
     conf_ns = DummyCity.drive(argv)
     assert getattr(conf_ns, name) == value
