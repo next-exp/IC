@@ -34,10 +34,10 @@ def test_isidora_electrons_40keV(config_tmpdir, ICDIR):
     nrequired  = 2
 
     conf = configure('dummy invisible_cities/config/isidora.conf'.split())
-    conf.update(dict(run_number = 0,
-                     filesin   = PATH_IN,
-                     file_out   = PATH_OUT,
-                     nmax       = nrequired))
+    conf.update(dict(run_number   = 0,
+                     filesin      = PATH_IN,
+                     file_out     = PATH_OUT,
+                     n_events_max = nrequired))
 
     isidora = Isidora(**conf)
     isidora.run()
@@ -46,7 +46,7 @@ def test_isidora_electrons_40keV(config_tmpdir, ICDIR):
     nactual = cnt.counter_value('n_events_tot')
     if nrequired > 0:
         assert nrequired == nactual
-        assert nrequired == cnt.counter_value('nmax')
+        assert nrequired == cnt.counter_value('n_events_max')
 
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
