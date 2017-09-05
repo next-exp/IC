@@ -24,7 +24,6 @@ parser.add_argument("-f", '--first-event',     type=int,  help="event number for
 parser.add_argument("-r", '--run-number',      type=int,  help="run number")
 parser.add_argument("-p", '--print-mod',       type=int,  help="print every this number of events")
 parser.add_argument("-v", dest='verbosity', action="count", help="increase verbosity level", default=0)
-parser.add_argument("--run-all",            action="store_true")
 parser.add_argument('--print-config-only',  action='store_true', help='do not run the city')
 
 display = parser.add_mutually_exclusive_group()
