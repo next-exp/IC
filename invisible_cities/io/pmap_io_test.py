@@ -238,15 +238,15 @@ def test_check_that_pmap_writer_and_ipmt_writer_does_not_modify_pmaps(config_tmp
         write_all_pmaps = pmap_writer_and_ipmt_writer(h5out)
         for ev in list(range(5)):
             if ev in    s1_dict:    s1 =    s1_dict[ev]  # Create empty si if there was no
-            else:    s1 = S1   ({}    )                  # peak of that kind found for that ev
+            else:    s1 = None                           # peak of that kind found for that ev
             if ev in    s2_dict:    s2 =    s2_dict[ev]
-            else:    s2 = S2   ({}    )
+            else:    s2 = None
             if ev in  s2si_dict:  s2si =  s2si_dict[ev]
-            else:  s2si = S2Si ({}, {})
+            else:  s2si = None
             if ev in s1pmt_dict: s1pmt = s1pmt_dict[ev]
-            else: s1pmt = S1Pmt({}, {})
+            else: s1pmt = None
             if ev in s2pmt_dict: s2pmt = s2pmt_dict[ev]
-            else: s2pmt = S2Pmt({}, {})
+            else: s2pmt = None
             write_all_pmaps(ev, s1, s2, s2si, s1pmt, s2pmt)
         h5out.flush() # Flush cannot go inside writers since writers do not know
                       # how much they have written or how much they will write
