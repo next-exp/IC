@@ -118,7 +118,7 @@ class City:
         self.compression  = conf.compression
         self.run_number   = conf.run_number
         self.nprint       = conf.nprint  # default print frequency
-        self.n_events_max = conf.n_events_max
+        self.n_events_max = conf.n_events_max if hasattr(conf, 'n_events_max') else None
 
         self.set_up_database()
 
