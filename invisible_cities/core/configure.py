@@ -15,15 +15,27 @@ from .        log_config      import logger
 from . import system_of_units as     units
 
 
+class All:
+    pass
+
+def max_events(string):
+    try:
+        return int(string)
+    except ValueError:
+        if string == 'All':
+            return All
+        raise ValueError('`--n-event-max` must be an int or All')
+
+
 parser = argparse.ArgumentParser()
-parser.add_argument('config_file',             type=str,  help="configuration file")
-parser.add_argument("-i", '--files-in',        type=str,  help="input file")
-parser.add_argument("-o", '--file-out',        type=str,  help="output file")
-parser.add_argument("-n", '--n-events-max',    type=int,  help="number of events to be processed")
-parser.add_argument("-f", '--first-event',     type=int,  help="event number for first event", default=0)
-parser.add_argument("-r", '--run-number',      type=int,  help="run number")
-parser.add_argument("-p", '--print-mod',       type=int,  help="print every this number of events")
-parser.add_argument("-v", dest='verbosity', action="count", help="increase verbosity level", default=0)
+parser.add_argument('config_file',          type=str,            help="configuration file")
+parser.add_argument("-i", '--files-in',     type=str,            help="input file")
+parser.add_argument("-o", '--file-out',     type=str,            help="output file")
+parser.add_argument("-n", '--n-events-max', type=max_events,     help="number of events to be processed")
+parser.add_argument("-f", '--first-event',  type=int,            help="event number for first event", default=0)
+parser.add_argument("-r", '--run-number',   type=int,            help="run number")
+parser.add_argument("-p", '--print-mod',    type=int,            help="print every this number of events")
+parser.add_argument("-v", dest='verbosity', action="count",      help="increase verbosity level", default=0)
 parser.add_argument('--print-config-only',  action='store_true', help='do not run the city')
 
 display = parser.add_mutually_exclusive_group()
