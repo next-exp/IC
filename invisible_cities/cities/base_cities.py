@@ -27,6 +27,7 @@ from .. core.exceptions         import SipmEmptyList
 from .. core.exceptions         import SipmZeroCharge
 from .. core.exceptions         import ClusterEmptyList
 from .. core.exceptions         import XYRecoFail
+from .. core.exceptions         import InitializedEmptyPmapObject
 from .. core.system_of_units_c  import units
 from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
@@ -519,12 +520,10 @@ class PmapCity(CalibratedCity):
                     )
 
 
-
     def pmaps(self, s1_indx, s2_indx, csum, sipmzs):
         """Computes s1, s2 and s2si objects (PMAPS)"""
-
-        s1 = cpf.find_s1(csum, s1_indx, **self.s1_params._asdict())
-        s2 = cpf.find_s2(csum, s2_indx, **self.s2_params._asdict())
+        s1   = cpf.find_s1(csum, s1_indx, **self.s1_params._asdict())
+        s2   = cpf.find_s2(csum, s2_indx, **self.s2_params._asdict())
         s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = self.thr_sipm_s2)
         return s1, s2, s2si
 
