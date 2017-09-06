@@ -301,7 +301,7 @@ class DummyCity(City):
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
-        self.cnt.init_counter('n_events_tot', value=10)
+        self.cnt.n_events_tot = 10
 
     def file_loop(self): pass
 
@@ -360,4 +360,4 @@ def test_config_drive_penthesilea_counters(simple_conf_file_name, tmpdir_factory
         'dummy-output-file-penthesilea-counters'+flags.replace(' ','-'))
     argv = 'penthesilea {conf} -i {infile} -o {outfile} {flags}'.format(**locals()).split()
     conf_ns, counters = Penthesilea.drive(argv)
-    assert counters.counter_value(counter) == value
+    assert getattr(counters, counter) == value

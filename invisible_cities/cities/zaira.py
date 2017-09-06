@@ -30,7 +30,6 @@ class Zaira(DstCity):
 
         """
         super().__init__(**kwds)
-        self.cnt.set_name('zaira')
         self.set_lifetime_correction()
         self.set_xybins_and_range()
         self.set_z_and_e_fiducial()
@@ -90,7 +89,7 @@ class Zaira(DstCity):
             write_xy = xy_writer(h5out)
             write_xy(*xycorr._xs, xycorr._fs, xycorr._us, nevt)
 
-        self.cnt.set_counter('n_events_tot', value=len(dst))
+        self.cnt.n_events_tot = len(dst)
         return self.cnt
 
 
