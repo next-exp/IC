@@ -337,7 +337,7 @@ cdef class S12Pmt(S12):
         if len(ipmtd) == 0 or len(s12d) == 0: raise InitializedEmptyPmapObject
         # Check that energies in s12d are sum of ipmtd across pmts for each peak
         for peak, s12_pmts in zip(s12d.values(), ipmtd.values()):
-            if not np.allclose(peak[1], s12_pmts.sum(axis=0)):
+            if not np.allclose(peak[1], s12_pmts.sum(axis=0), atol=.01):
                 raise InconsistentS12dIpmtd
 
         S12.__init__(self, s12d)

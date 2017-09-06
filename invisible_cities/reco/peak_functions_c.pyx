@@ -13,6 +13,8 @@ from scipy import signal
 from .. evm.pmaps import S1
 from .. evm.pmaps import S2
 from .. evm.pmaps import S2Si
+from .. evm.pmaps import S1Pmt
+from .. evm.pmaps import S2Pmt
 
 from .. core.exceptions        import InitializedEmptyPmapObject
 from .. core.system_of_units_c import units
@@ -95,9 +97,9 @@ cpdef calibrated_pmt_mau(double [:, :]  CWF,
                                    dtype = np.double) * (1 / n_MAU)
 
     # CWF if above MAU threshold
-    cdef double [:, :] pmt_thr  = np.zeros((NPMT,NWF), dtype=np.double)
-    cdef double [:, :] pmt_thr_mau  = np.zeros((NPMT,NWF), dtype=np.double)
-    cdef double [:]    MAU_pmt  = np.zeros(      NWF , dtype=np.double)
+    cdef double [:, :] pmt_thr  = np.zeros((NPMT, NWF), dtype=np.double)
+    cdef double [:, :] pmt_thr_mau  = np.zeros((NPMT, NWF), dtype=np.double)
+    cdef double [:]    MAU_pmt  = np.zeros(      NWF, dtype=np.double)
 
     for j in PMT:
         # MAU for each of the PMTs, following the waveform
@@ -107,7 +109,6 @@ cpdef calibrated_pmt_mau(double [:, :]  CWF,
             pmt_thr[j,k] = CWF[j,k] * 1 / adc_to_pes[j]
             if CWF[j,k] >= MAU_pmt[k] + thr_MAU: # >= not >: found testing!
                 pmt_thr_mau[j,k] = CWF[j,k] * 1 / adc_to_pes[j]
-
 
     return np.asarray(pmt_thr), np.asarray(pmt_thr_mau)
 
@@ -230,7 +231,7 @@ cpdef extract_peaks_from_waveform(double [:] wf, dict peak_bounds, int rebin_str
 
 cpdef find_s1(double [:] csum,  int [:] index,
               time, length,
-              int stride=4, rebin_stride=1):
+              int stride=4, int rebin_stride=1):
     """
     find s1 peaks and returns S1 objects. Will raise InitializedEmptyPmapObject if there is no S1
     """
@@ -239,9 +240,39 @@ cpdef find_s1(double [:] csum,  int [:] index,
     except InitializedEmptyPmapObject:
         return None
 
+
+cpdef find_s1_ipmt(double [:,:] ccwf, double [:] csum, int [:] index,
+                   time, length, int stride=4, int rebin_stride=1):
+    """
+    find s1 peaks and return s1 and s1pmt objects. Will raise InitializedEmptyPmapObject if no S1
+    """
+    # Find indices bounding s1-like peaks
+    s1_bounds = find_peaks(index, time, length, stride)
+    try:
+        s1    = S1(extract_peaks_from_waveform(csum, s1_bounds, rebin_stride=rebin_stride))
+        s1pmt = S1Pmt(s1.s1d, get_ipmtd(ccwf, s1_bounds, rebin_stride=rebin_stride))
+    except InitializedEmptyPmapObject:
+        return None, None
+    return s1, s1pmt
+
+
+cpdef find_s2_ipmt(double [:,:] ccwf, double [:] csum,  int [:] index,
+              time, length, int stride=4, int rebin_stride=40):
+    """find s2 peaks and return s2 and s2pmt objects"""
+    # Find indices bounding s2-like peaks
+    s2_bounds = find_peaks(index, time, length, stride)
+    try:
+        s2    = S2(extract_peaks_from_waveform(csum, s2_bounds, rebin_stride=rebin_stride))
+        s2pmt = S2Pmt(s2.s2d, get_ipmtd(ccwf, s2_bounds, rebin_stride=rebin_stride))
+    except InitializedEmptyPmapObject:
+        return None, None
+
+    return s2, s2pmt
+
+
 cpdef find_s2(double [:] csum,  int [:] index,
               time, length,
-              int stride=40, rebin_stride=40):
+              int stride=40, int rebin_stride=40):
     """
     find s2 peaks and returns S2 objects.  Will raise InitializedEmptyPmapObject if there is no S2
     """
@@ -263,7 +294,7 @@ cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr):
 
 
 cpdef find_s12(double [:] csum,  int [:] index,
-               time, length, int stride, rebin_stride):
+               time, length, int stride, int rebin_stride):
     """
     Find S1/S2 peaks.
     input:
@@ -279,6 +310,29 @@ cpdef find_s12(double [:] csum,  int [:] index,
         csum, find_peaks(index, time, length, stride=stride), rebin_stride=rebin_stride)
 
 
+cpdef get_ipmtd(double [:,:] ccwf, dict peak_bounds, int rebin_stride=1):
+    """
+    Given the calibrated corrected waveforms of all active pmts for one event, CWF, and the
+    boundaries of all of the s12 peaks found in the csum, peak_bounds, return the s12 peaks of the
+    individual pmts, s12pmtd.
+    """
+    # extract the peaks from the cwf of each pmt
+    cdef list s12Ls
+    S12Ls = [extract_peaks_from_waveform(wf, peak_bounds, rebin_stride=rebin_stride) \
+             for wf in ccwf]
+
+    cdef dict s12pmtd = {}
+    cdef int npmts  = len(S12Ls)
+    cdef int pn, pmt
+    for pn in peak_bounds:
+        # initialize an the array of pmt energies with shape npmts, len(peak.t)
+        s12pmtd[pn] = np.empty((npmts, len(S12Ls[0][pn][0])), dtype=np.float32)
+        # fill the array of pmt s2 energies one pmt at a time
+        for pmt in range(npmts): s12pmtd[pn][pmt] = S12Ls[pmt][pn][1]
+
+    return s12pmtd
+
+
 cpdef correct_s1_ene(dict s1d, np.ndarray csum):
     """Will raise InitializedEmptyPmapObject if there is no S2Si"""
     cdef dict S1_corr = {}
@@ -291,6 +345,7 @@ cpdef correct_s1_ene(dict s1d, np.ndarray csum):
         return S1(S1_corr)
     except InitializedEmptyPmapObject:
         return None
+
 
 cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
     """
@@ -433,7 +488,6 @@ cdef _index_from_s2(list s2l):
     """Return the indexes defining the vector."""
     cdef int t0 = int(s2l[0][0] // units.mus)
     return t0, t0 + len(s2l[0])
-
 
 
 cdef sipm_s2(dict dSIPM, list s2l, double thr):
