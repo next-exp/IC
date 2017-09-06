@@ -490,7 +490,6 @@ def test_find_peaks_when_no_index_after_tmin():
                                  length = minmax(2, 9999),
                                  stride = stride) == {}
 
-
 def test_extract_peaks_from_waveform():
     wf = np.random.uniform(size=52000)
     # Generate peak_bounds
@@ -508,10 +507,10 @@ def test_extract_peaks_from_waveform():
     # Check that _extract... did not return extra peaks
     assert len(peak_bounds) == len(S12L)
 
-def test_get_s12pmtd():
+def test_get_ipmtd():
     npmts  = 4
     ntbins = 52000
-    cCWF    = np.random.random(size=(npmts, ntbins)) # generate wfs for pmts
+    cCWF   = np.random.random(size=(npmts, ntbins)) # generate wfs for pmts
     csum   = cCWF.sum(axis=0)                 # and their sum
     npeaks = 20
     peak_bounds  = {}
@@ -525,9 +524,71 @@ def test_get_s12pmtd():
     for rebin_stride in rebin_strides:
         # extract the peaks from the csum, and for each pmt extract the peaks from the cCWF
         S12L   = cpf.extract_peaks_from_waveform(csum, peak_bounds, rebin_stride=rebin_stride)
-        s12pmtd = pf.get_s12pmtd(cCWF, peak_bounds, rebin_stride=rebin_stride)
+        s12pmtd = cpf.get_ipmtd(cCWF, peak_bounds, rebin_stride=rebin_stride)
         for s12l, s12_pmts, i_peak in zip(S12L.values(), s12pmtd.values(), peak_bounds.values()):
             # check that the sum of the individual pmt s12s equals the total s12, at each time bin
             assert np.allclose(s12l[1], s12_pmts.sum(axis=0))
             # check that the correct energy is in each pmt
             assert np.allclose(s12_pmts.sum(axis=1), cCWF[:, i_peak[0]: i_peak[1]].sum(axis=1))
+
+def test_sum_waveforms():
+    wfs = np.random.random((12,1300*40))
+    assert np.allclose(pf.sum_waveforms(wfs), np.sum(wfs, axis=0))
+
+@fixture(scope='module')
+def toy_ccwfs_and_csum():
+    ccwf  = np.zeros((3, 52000), dtype=np.float64)
+    psize = 200
+    peak  = np.random.normal(loc=10, size=(ccwf.shape[0], psize))
+    indx  = np.arange(650, 650+psize, dtype=np.int32)
+    ccwf[:, indx[0]: indx[-1] + 1] += peak
+    csum  = ccwf.sum(axis=0)
+    return indx, ccwf, csum
+
+def test_find_s12_ipmt_find_same_s12_as_find_s12(toy_ccwfs_and_csum):
+    indx, ccwf, csum = toy_ccwfs_and_csum
+    s10    = cpf.find_s1(csum, indx,
+                     time   = minmax(0, 1e+6),
+                     length = minmax(0, 1000000),
+                     stride = 4,
+                     rebin_stride = 1)
+    s11, _ = cpf.find_s1_ipmt(ccwf, csum, indx,
+                     time   = minmax(0, 1e+6),
+                     length = minmax(0, 1000000),
+                     stride = 4,
+                     rebin_stride = 1)
+    s20    = cpf.find_s2(csum, indx,
+                     time   = minmax(0, 1e+6),
+                     length = minmax(0, 1000000),
+                     stride = 4,
+                     rebin_stride = 40)
+    s21, _ = cpf.find_s2_ipmt(ccwf, csum, indx,
+                     time   = minmax(0, 1e+6),
+                     length = minmax(0, 1000000),
+                     stride = 4,
+                     rebin_stride = 0)
+    # Check same s1s found
+    assert s10.s1d.keys() == s11.s1d.keys()
+    for peak0, peak1 in zip(s10.s1d.values(), s11.s1d.values()):
+        assert np.allclose(peak0, peak1)
+    # Check same s2s found
+    assert s20.s2d.keys() == s21.s2d.keys()
+    for peak0, peak1 in zip(s10.s1d.values(), s11.s1d.values()):
+        assert np.allclose(peak0, peak1)
+
+def test_find_s12_ipmt_return_none_when_empty_index(toy_ccwfs_and_csum):
+    indx, ccwf, csum = toy_ccwfs_and_csum
+    # Check no s1 found
+    for pmap_class in cpf.find_s1_ipmt(ccwf, csum, np.array([], dtype=np.int32),
+                         time   = minmax(0, 1e+6),
+                         length = minmax(0, 1000000),
+                         stride = 4,
+                         rebin_stride = 1):
+        assert pmap_class is None
+    # Check no s2 found
+    for pmap_class in cpf.find_s2_ipmt(ccwf, csum, np.array([], dtype=np.int32),
+                         time   = minmax(0, 1e+6),
+                         length = minmax(0, 1000000),
+                         stride = 4,
+                         rebin_stride = 1):
+        assert pmap_class is None

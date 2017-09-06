@@ -235,27 +235,6 @@ def _extract_peaks_from_waveform(wf, peak_bounds, rebin_stride=1):
     return S12L
 
 
-def get_s12pmtd(cCWF, peak_bounds, rebin_stride=1):
-    """
-    Given the calibrated corrected waveforms of all active pmts for one event, CWF, and the
-    boundaries of all of the s12 peaks found in the csum, peak_bounds, return the s12 peaks of the
-    individual pmts, s12pmtd.
-    """
-    # extract the peaks from the cwf of each pmt
-    S12Ls = [cpf.extract_peaks_from_waveform(ccwf, peak_bounds, rebin_stride=rebin_stride) \
-             for ccwf in cCWF]
-
-    s12pmtd = {}
-    npmts  = len(S12Ls)
-    for pn in peak_bounds:
-        # initialize an the array of pmt energies with shape npmts, len(peak.t)
-        s12pmtd[pn] = np.empty((npmts, len(S12Ls[0][pn][0])), dtype=np.float32)
-        # fill the array of pmt s2 energies one pmt at a time
-        for pmt in range(npmts): s12pmtd[pn][pmt] = S12Ls[pmt][pn][1]
-
-    return s12pmtd
-
-
 def _find_s12(csum, index,
               time   = minmax(0, 1e+6),
               length = minmax(8, 1000000),
@@ -447,3 +426,8 @@ def compute_pmaps_from_rwf(event, pmtrwf, sipmrwf,
 
 
     return PMaps(S1=s1, S2=s2, S2Si=s2si)
+
+
+def sum_waveforms(waveforms):
+    """sum waveforms over the 0th axis"""
+    return np.sum(waveforms, axis=0)
