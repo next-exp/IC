@@ -13,7 +13,7 @@ from .. evm.event_model         import BHit
 from .. evm.event_model         import Voxel
 from .. evm.event_model         import Track
 from .. evm.event_model         import Blob
-from ..evm.event_model          import TrackCollection
+from .. evm.event_model         import TrackCollection
 from .. core.system_of_units_c  import units
 
 from typing import Sequence
