@@ -51,8 +51,8 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
 
     dorothea.run()
     cnt  = dorothea.end()
-    nevt_in = cnt.counter_value('n_events_tot')
-    nevt_out = cnt.counter_value('nevt_out')
+    nevt_in  = cnt.n_events_tot
+    nevt_out = cnt.nevt_out
     if nrequired > 0:
         assert nrequired    == nevt_in
         assert nevt_out     <= nevt_in
