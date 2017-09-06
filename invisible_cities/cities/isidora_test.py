@@ -43,7 +43,7 @@ def test_isidora_electrons_40keV(config_tmpdir, ICDIR):
     isidora.run()
     cnt = isidora.end()
 
-    nactual = cnt.counter_value('n_events_tot')
+    nactual = cnt.n_events_tot
     if nrequired > 0:
         assert nrequired == nactual
 
