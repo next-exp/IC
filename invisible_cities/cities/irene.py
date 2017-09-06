@@ -38,12 +38,12 @@ class Irene(PmapCity):
 
         """
         super().__init__(**kwds)
-        self.cnt.set_name('irene')
-        self.cnt.init_counters(('n_events_tot',
-                                'n_empty_events',
-                                'n_empty_events_s2_ene_eq_0',
-                                'n_empty_events_s1_indx_empty',
-                                'n_empty_events_s2_indx_empty'))
+
+        self.cnt.init(n_events_tot                 = 0,
+                      n_empty_events               = 0,
+                      n_empty_events_s2_ene_eq_0   = 0,
+                      n_empty_events_s1_indx_empty = 0,
+                      n_empty_events_s2_indx_empty = 0)
 
         self.sp = self.get_sensor_params(self.input_files[0])
 
@@ -62,18 +62,18 @@ class Irene(PmapCity):
         events_info = dataVectors.events
 
         for evt in range(NEVT):
-            self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
+            self.conditional_print(evt, self.cnt.n_events_tot)
 
             what_next = self.event_range_step()
             if what_next is EventLoop.skip_this_event: continue
             if what_next is EventLoop.terminate_loop : break
-            self.cnt.increment_counter('n_events_tot')
+            self.cnt.n_events_tot += 1
 
             # calibrated sum in PMTs
             s12sum, cal_cwf, calsum = self.pmt_transformation(pmtrwf[evt])
 
             if not self.check_s12(s12sum): # ocasional but rare empty events
-                self.cnt.increment_counter('n_empty_events')
+                self.cnt.n_empty_events += 1
                 continue
 
             # calibrated sum in SiPMs
@@ -95,13 +95,13 @@ class Irene(PmapCity):
 
         """
         if  np.sum(s12sum.s2_ene) == 0:
-            self.cnt.increment_counter('n_empty_events_s2_ene_eq_0')
+            self.cnt.n_empty_events_s2_ene_eq_0 += 1
             return False
         elif np.sum(s12sum.s1_indx) == 0:
-            self.cnt.increment_counter('n_empty_events_s1_indx_empty')
+            self.cnt.n_empty_events_s1_indx_empty += 1
             return False
         elif np.sum(s12sum.s2_indx) == 0:
-            self.cnt.increment_counter('n_empty_events_s2_indx_empty')
+            self.cnt.n_empty_events_s2_indx_empty += 1
             return False
         else:
             return True
