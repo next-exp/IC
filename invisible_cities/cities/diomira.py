@@ -70,7 +70,7 @@ class Diomira(MonteCarloCity):
         self.trigger_filter   = TriggerFilter(self.trigger_params)
         self.trigger_type = conf.trigger_type
 
-    def event_loop(self, NEVT, first_event_no, dataVectors):
+    def event_loop(self, NEVT, dataVectors):
         """
         loop over events:
         1. simulate pmt and sipm response
@@ -113,12 +113,10 @@ class Diomira(MonteCarloCity):
 
             #write
             event_number, timestamp = self.event_and_timestamp(evt, events_info)
-            local_event_number = event_number + first_event_no
-
             if self.monte_carlo:
-                write.mc(mc_tracks, local_event_number)
+                write.mc(mc_tracks, event_number)
 
-            write.run_and_event(self.run_number, local_event_number, timestamp)
+            write.run_and_event(self.run_number, event_number, timestamp)
             write.rwf(RWF)
             write.cwf(BLR)
             write.sipm(dataSiPM)
