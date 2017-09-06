@@ -19,11 +19,11 @@ import tables as tb
 
 from .. core.configure         import configure
 from .. core.system_of_units_c import units
-from .. reco        import tbl_functions as tbl
+from .. reco                   import tbl_functions as tbl
 
-from .. io.mc_io               import mc_track_writer
+from .. io.           mc_io    import      mc_track_writer
+from .. io.          rwf_io    import           rwf_writer
 from .. io.run_and_event_io    import run_and_event_writer
-from .. io.rwf_io   import rwf_writer
 from .  base_cities import DeconvolutionCity
 
 
