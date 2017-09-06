@@ -75,7 +75,7 @@ from .. sierpe                  import blr
 from .. sierpe                  import fee as FE
 
 from .. types.ic_types          import minmax
-from .. types.ic_types          import Counter
+from .. types.ic_types          import Counters
 from .. types.ic_types          import NN
 from .. types.ic_types          import xy
 
@@ -111,8 +111,8 @@ class City:
         4. provides access to the data base.
         """
 
-        self.cnt = Counter()
-        self.cnt.init_counter('n_events_for_range')
+        self.cnt = Counters(n_events_for_range = 0)
+
         conf = Namespace(**kwds)
         self.conf = conf
 
@@ -177,7 +177,7 @@ class City:
         self.run()
         t1 = time()
         dt = t1 - t0
-        n_events = self.cnt.counter_value('n_events_tot')
+        n_events = self.cnt.n_events_tot
         print("run {} evts in {} s, time/event = {}".format(n_events,
                                                             dt,
                                                             dt / n_events))
@@ -276,8 +276,8 @@ class City:
                   .format(evt, n_events_tot))
 
     def event_range_step(self):
-        N = self.cnt.counter_value('n_events_for_range')
-        self.cnt.increment_counter('n_events_for_range')
+        N = self.cnt.n_events_for_range
+        self.cnt.n_events_for_range += 1
 
         if isinstance(self.last_event, int) and N >= self.last_event:
             # TODO: this side-effect should not be here
@@ -289,7 +289,7 @@ class City:
             return EventLoop.skip_this_event
 
     def event_range_finished(self):
-        N = self.cnt.counter_value('n_events_for_range')
+        N = self.cnt.n_events_for_range
         return isinstance(self.last_event, int) and N >= self.last_event
 
 
@@ -708,7 +708,7 @@ class KrCity(PCity):
                     c = clusters[0]
                 else:
                     cQ = [c.Q for c in clusters]
-                    self.cnt.increment_counter('n_events_more_than_1_cluster')
+                    self.cnt.n_events_more_than_1_cluster += 1
                     print('found case with more than one cluster')
                     print('clusters charge = {}'.format(cQ))
 
