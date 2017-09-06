@@ -17,6 +17,7 @@ from .. core.system_of_units_c import units
 
 from .. io.mc_io               import mc_track_writer
 from .. io.pmap_io             import pmap_writer
+from .. io.pmap_io             import pmap_writer_and_ipmt_writer
 from .. io.run_and_event_io    import run_and_event_writer
 from .. reco                   import tbl_functions as tbl
 from .. evm.ic_containers      import S12Params as S12P
@@ -72,7 +73,7 @@ class Irene(PmapCity):
             sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
 
             # pmaps
-            pmap = self.pmaps(s12sum.s1_indx, s12sum.s2_indx, calsum.csum, sipmzs)
+            pmap = self.pmaps(s12sum.s1_indx, s12sum.s2_indx, cal_cwf.ccwf, calsum.csum, sipmzs)
 
             # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)
@@ -111,9 +112,10 @@ class Irene(PmapCity):
     def get_writers(self, h5out):
         """Get the writers needed by Irene"""
         writers = Namespace(
-        pmap          =          pmap_writer(h5out),
-        run_and_event = run_and_event_writer(h5out),
-        mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
+        run_and_event =        run_and_event_writer(h5out),
+        mc            =             mc_track_writer(h5out) if self.monte_carlo else None,
+        pmap          = pmap_writer_and_ipmt_writer(h5out) if self.compute_ipmt_pmaps \
+                                   else pmap_writer(h5out),
         )
         return writers
 

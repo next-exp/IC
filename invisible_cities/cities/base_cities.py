@@ -487,6 +487,7 @@ class PmapCity(CalibratedCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         conf = self.conf
+        self.compute_ipmt_pmaps = conf.compute_ipmt_pmaps
         self.s1_params = S12Params(time = minmax(min   = conf.s1_tmin,
                                                  max   = conf.s1_tmax),
                                    stride              = conf.s1_stride,
@@ -529,13 +530,13 @@ class PmapCity(CalibratedCity):
                 CSum(csum = csum, csum_mau = csum_mau))
 
 
-    def pmaps(self, s1_indx, s2_indx, csum, cCWF, sipmzs, compute_ipmt_pmaps=False):
+    def pmaps(self, s1_indx, s2_indx, ccwf, csum, sipmzs):
         """Computes s1, s2 and s2si objects (PMAPS)"""
-        if compute_ipmt_pmaps:
-            return pmp.get_pmaps_with_ipmt(s1_indx, s2_indx, csum, sipmzs,
+        if self.compute_ipmt_pmaps:
+            return pmp.get_pmaps_with_ipmt(s1_indx, s2_indx, ccwf, csum, sipmzs,
                                            self.s1_params, self.s2_params, self.thr_sipm_s2)
         else:
-            return pmp.get_pmaps(s1_indx, s2_indx, csum, cCWF, sipmzs,
+            return pmp.get_pmaps(s1_indx, s2_indx, csum, sipmzs,
                                  self.s1_params, self.s2_params, self.thr_sipm_s2)
 
 
