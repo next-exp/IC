@@ -243,7 +243,9 @@ cpdef find_s1(double [:] csum,  int [:] index,
 
 cpdef find_s1_ipmt(double [:,:] ccwf, double [:] csum, int [:] index,
                    time, length, int stride=4, int rebin_stride=1):
-    """find s2 peaks and return s2 and s2pmt objects"""
+    """
+    find s1 peaks and return s1 and s1pmt objects. Will raise InitializedEmptyPmapObject if no S1
+    """
     # Find indices bounding s1-like peaks
     s1_bounds = find_peaks(index, time, length, stride)
     try:
