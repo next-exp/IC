@@ -5,9 +5,6 @@ credits: see ic_authors_and_legal.rst in /doc
 
 last revised: JJGC, 12-July-2017
 """
-import sys
-import time
-from functools import partial
 
 import numpy  as np
 import tables as tb

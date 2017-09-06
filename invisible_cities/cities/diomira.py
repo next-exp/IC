@@ -8,8 +8,6 @@ last revised: JJGC, 10-July-2017
 """
 import sys
 
-from glob      import glob
-from time      import time
 from functools import partial
 from argparse  import Namespace
 
