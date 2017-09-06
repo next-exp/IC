@@ -98,9 +98,9 @@ cpdef calibrated_pmt_mau(double [:, :]  CWF,
                                    dtype = np.double) * (1 / n_MAU)
 
     # CWF if above MAU threshold
-    cdef double [:, :] pmt_thr  = np.zeros((NPMT,NWF), dtype=np.double)
-    cdef double [:, :] pmt_thr_mau  = np.zeros((NPMT,NWF), dtype=np.double)
-    cdef double [:]    MAU_pmt  = np.zeros(      NWF , dtype=np.double)
+    cdef double [:, :] pmt_thr  = np.zeros((NPMT, NWF), dtype=np.double)
+    cdef double [:, :] pmt_thr_mau  = np.zeros((NPMT, NWF), dtype=np.double)
+    cdef double [:]    MAU_pmt  = np.zeros(      NWF, dtype=np.double)
 
     for j in PMT:
         # MAU for each of the PMTs, following the waveform
@@ -110,7 +110,6 @@ cpdef calibrated_pmt_mau(double [:, :]  CWF,
             pmt_thr[j,k] = CWF[j,k] * 1 / adc_to_pes[j]
             if CWF[j,k] >= MAU_pmt[k] + thr_MAU: # >= not >: found testing!
                 pmt_thr_mau[j,k] = CWF[j,k] * 1 / adc_to_pes[j]
-
 
     return np.asarray(pmt_thr), np.asarray(pmt_thr_mau)
 
