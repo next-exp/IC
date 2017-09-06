@@ -35,8 +35,9 @@ class Penthesilea(HitCity):
         """
         super().__init__(**kwds)
         conf = self.conf
-        self.cnt.set_name('penthesilea')
-        self.cnt.init_counters(('n_events_tot', 'nevt_out'))
+
+        self.cnt.init(n_events_tot = 0,
+                      nevt_out     = 0)
         self.drift_v        = conf.drift_v
         self._s1s2_selector = S12Selector(**kwds)
 
@@ -56,14 +57,13 @@ class Penthesilea(HitCity):
         s2si_dict = pmapVectors.s2si
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
-            self.conditional_print(self.cnt.counter_value('n_events_tot'),
-                                   self.cnt.counter_value('nevt_out'))
+            self.conditional_print(self.cnt.n_events_tot, self.cnt.nevt_out)
 
             # Count events in and break if necessary before filtering
             what_next = self.event_range_step()
             if what_next is EventLoop.skip_this_event: continue
             if what_next is EventLoop.terminate_loop : break
-            self.cnt.increment_counter('n_events_tot')
+            self.cnt.n_events_tot += 1
 
             # get pmaps
             s1, s2, s2si = self. get_pmaps_from_dicts(s1_dict,
@@ -80,7 +80,7 @@ class Penthesilea(HitCity):
             if not f1 or not f2:
                 continue
             # event passed selection: increment counter and write
-            self.cnt.increment_counter('nevt_out')
+            self.cnt.nevt_out += 1
             pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
                                       events     = evt_number,
                                       timestamps = evt_time)
