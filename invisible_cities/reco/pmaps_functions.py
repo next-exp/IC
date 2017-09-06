@@ -27,11 +27,11 @@ def get_pmaps(s1_indx, s2_indx, csum, sipmzs, s1_params, s2_params, thr_sipm_s2)
     return s1, s2, s2si
 
 
-def get_pmaps_with_ipmt(s1_indx, s2_indx, csum, sipmzs, s1_params, s2_params, thr_sipm_s2):
+def get_pmaps_with_ipmt(s1_indx, s2_indx, ccwf, csum, sipmzs, s1_params, s2_params, thr_sipm_s2):
     """Computes s1, s2, s2si, s1pmt and s2pmt objects"""
-    s1, s1pmt = cpf.find_s1_ipmt(csum, s1_indx, **s1_params._asdict())
-    s2, s2pmt = cpf.find_s2_ipmt(csum, s2_indx, **s2_params._asdict())
-    s2si      = cpf.find_s2si(sipmzs, s2.s2d, thr=thr_sipm_s2)
+    s1, s1pmt = cpf.find_s1_ipmt(ccwf, csum, s1_indx, **s1_params._asdict())
+    s2, s2pmt = cpf.find_s2_ipmt(ccwf, csum, s2_indx, **s2_params._asdict())
+    s2si      = cpf.find_s2si(sipmzs, s2.s2d, thr = thr_sipm_s2)
     return s1, s2, s2si, s1pmt, s2pmt
 
 
@@ -69,6 +69,7 @@ def _integrate_S2Si_charge(s2sid):
     """
     return { peak_no : _integrate_sipm_charges_in_peak_as_dict(peak)
              for (peak_no, peak) in s2sid.items() }
+
 
 def rebin_s2si(s2, s2si, rf):
     """given an s2 and a corresponding s2si, rebin them by a factor rf"""
