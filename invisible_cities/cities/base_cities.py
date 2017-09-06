@@ -55,6 +55,7 @@ from .. reco.xy_algorithms      import corona
 from .. evm.ic_containers       import S12Params
 from .. evm.ic_containers       import S12Sum
 from .. evm.ic_containers       import CSum
+from .. evm.ic_containers       import CCWf
 from .. evm.ic_containers       import DataVectors
 from .. evm.ic_containers       import PmapVectors
 from .. evm.ic_containers       import TriggerParams
@@ -448,6 +449,15 @@ class CalibratedCity(DeconvolutionCity):
         self.n_MAU_sipm = conf.n_mau_sipm
         self.  thr_sipm = conf.  thr_sipm
 
+
+    def calibrated_pmt_mau(self, CWF):
+        """Return the csum and csum_mau calibrated sums."""
+        return cpf.calibrated_pmt_mau(CWF,
+                                      self.adc_to_pes,
+                                      pmt_active = self.pmt_active,
+                                           n_MAU = self.  n_MAU   ,
+                                         thr_MAU = self.thr_MAU   )
+
     def calibrated_pmt_sum(self, CWF):
         """Return the csum and csum_mau calibrated sums."""
         return cpf.calibrated_pmt_sum(CWF,
@@ -506,18 +516,17 @@ class PmapCity(CalibratedCity):
         # deconvolve
         CWF = self.deconv_pmt(RWF)
         # calibrated PMT sum
+        ccwf, ccwf_mau = self.calibrated_pmt_mau(CWF)
         csum, csum_mau = self.calibrated_pmt_sum(CWF)
         #ZS sum for S1 and S2
-        s1_ene, s1_indx = self.csum_zs(csum_mau, threshold =
-                                           self.thr_csum_s1)
-        s2_ene, s2_indx = self.csum_zs(csum,     threshold =
-                                           self.thr_csum_s2)
+        s1_ene, s1_indx = self.csum_zs(csum_mau, threshold=self.thr_csum_s1)
+        s2_ene, s2_indx = self.csum_zs(csum,     threshold=self.thr_csum_s2)
         return (S12Sum(s1_ene  = s1_ene,
-                          s1_indx = s1_indx,
-                          s2_ene  = s2_ene,
-                          s2_indx = s2_indx),
-                CSum(csum = csum, csum_mau = csum_mau)
-                    )
+                       s1_indx = s1_indx,
+                       s2_ene  = s2_ene,
+                       s2_indx = s2_indx),
+                CCWf(ccwf = ccwf, ccwf_mau = ccwf_mau),
+                CSum(csum = csum, csum_mau = csum_mau))
 
 
     def pmaps(self, s1_indx, s2_indx, csum, cCWF, sipmzs, compute_ipmt_pmaps=False):
