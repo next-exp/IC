@@ -365,12 +365,11 @@ class RawCity(City):
 
                     self.event_loop(NEVT, dataVectors)
                 elif self.raw_data_type == 'MCRD':
-                    first_event_no = self.event_number_from_input_file_name(filename)
                     NEVT, pmtrd, sipmrd     = self.get_rd_vectors(h5in)
                     dataVectors = DataVectors(pmt=pmtrd, sipm=sipmrd,
                                              mc=mc_tracks, events=events_info)
 
-                    self.event_loop(NEVT, first_event_no, dataVectors)
+                    self.event_loop(NEVT, dataVectors)
                 else:
                     raise UnknownRWF
 
