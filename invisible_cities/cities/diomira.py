@@ -25,9 +25,9 @@ from .. filters.trigger_filters import TriggerFilter
 
 from .. reco                    import wfm_functions as wfm
 from .. reco                    import tbl_functions as tbl
-from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco                    import tbl_functions    as tbl
 from .. reco                    import peak_functions_c as cpf
+from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. evm.nh5                 import FEE
 from .. evm.nh5                 import RunInfo
 from .. evm.nh5                 import EventInfo
