@@ -511,7 +511,7 @@ def test_extract_peaks_from_waveform():
 def test_get_s12pmtd():
     npmts  = 4
     ntbins = 52000
-    cCWF    = np.random.random(size=(npmts, ntbins)) # generate wfs for pmts
+    cCWF   = np.random.random(size=(npmts, ntbins)) # generate wfs for pmts
     csum   = cCWF.sum(axis=0)                 # and their sum
     npeaks = 20
     peak_bounds  = {}
@@ -531,3 +531,7 @@ def test_get_s12pmtd():
             assert np.allclose(s12l[1], s12_pmts.sum(axis=0))
             # check that the correct energy is in each pmt
             assert np.allclose(s12_pmts.sum(axis=1), cCWF[:, i_peak[0]: i_peak[1]].sum(axis=1))
+
+def test_sum_waveforms():
+    wfs = np.random.random((12,1300*40))
+    assert np.allclose(pf.sum_waveforms(wfs), np.sum(wfs, axis=0))
