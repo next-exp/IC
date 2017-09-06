@@ -458,6 +458,9 @@ class CalibratedCity(DeconvolutionCity):
                                            n_MAU = self.  n_MAU   ,
                                          thr_MAU = self.thr_MAU   )
 
+    def sum_calibrated_pmt_mau(self, ccwf, ccwf_mau):
+        return pf.sum_waveforms(ccwf), pf.sum_waveforms(ccwf_mau)
+
     def calibrated_pmt_sum(self, CWF):
         """Return the csum and csum_mau calibrated sums."""
         return cpf.calibrated_pmt_sum(CWF,
@@ -518,7 +521,7 @@ class PmapCity(CalibratedCity):
         CWF = self.deconv_pmt(RWF)
         # calibrated PMT sum
         ccwf, ccwf_mau = self.calibrated_pmt_mau(CWF)
-        csum, csum_mau = self.calibrated_pmt_sum(CWF)
+        csum, csum_mau = self.sum_calibrated_pmt_mau(ccwf, ccwf_mau)
         #ZS sum for S1 and S2
         s1_ene, s1_indx = self.csum_zs(csum_mau, threshold=self.thr_csum_s1)
         s2_ene, s2_indx = self.csum_zs(csum,     threshold=self.thr_csum_s2)
