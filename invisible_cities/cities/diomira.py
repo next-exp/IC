@@ -57,8 +57,8 @@ class Diomira(MonteCarloCity):
         super().__init__(**kwds)
         conf = self.conf
 
-        self.cnt.set_name('diomira')
-        self.cnt.init_counters(('n_events_tot', 'nevt_out'))
+        self.cnt.init(n_events_tot = 0,
+                      nevt_out     = 0)
 
         self.sipm_noise_cut   = conf.sipm_noise_cut
 
@@ -84,14 +84,13 @@ class Diomira(MonteCarloCity):
         events_info = dataVectors.events
 
         for evt in range(NEVT):
-            self.conditional_print(self.cnt.counter_value('n_events_tot'),
-                                   self.cnt.counter_value('nevt_out'))
+            self.conditional_print(self.cnt.n_events_tot, self.cnt.nevt_out)
 
             # Count events in and break if necessary before filtering
             what_next = self.event_range_step()
             if what_next is EventLoop.skip_this_event: continue
             if what_next is EventLoop.terminate_loop : break
-            self.cnt.increment_counter('n_events_tot')
+            self.cnt.n_events_tot += 1
 
             # Simulate detector response
             dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd,
@@ -110,7 +109,7 @@ class Diomira(MonteCarloCity):
                 if not self.trigger_filter(peak_data):
                     continue
 
-            self.cnt.increment_counter('nevt_out')
+            self.cnt.nevt_out += 1
 
             #write
             event_number, timestamp = self.event_and_timestamp(evt, events_info)

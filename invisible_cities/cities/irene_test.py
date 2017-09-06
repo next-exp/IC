@@ -99,7 +99,7 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
     irene.run()
     cnt = irene.end()
 
-    nactual = cnt.counter_value('n_events_tot')
+    nactual = cnt.n_events_tot
     if nrequired > 0:
         assert nrequired == nactual
 
@@ -145,7 +145,7 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
     irene.run()
     cnt = irene.end()
     if nrequired > 0:
-        assert nrequired == cnt.counter_value('n_events_tot')
+        assert nrequired == cnt.n_events_tot
 
 
 
@@ -216,9 +216,9 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
     irene.run()
     cnt = irene.end()
 
-    assert cnt.counter_value('n_events_tot'              ) == 1
-    assert cnt.counter_value('n_empty_events_s2_ene_eq_0') == 1
-    assert cnt.counter_value('n_empty_events'            ) == 1
+    assert cnt.n_events_tot               == 1
+    assert cnt.n_empty_events_s2_ene_eq_0 == 1
+    assert cnt.n_empty_events             == 1
 
 
 def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR, s12params):
