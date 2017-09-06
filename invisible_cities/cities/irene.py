@@ -62,7 +62,7 @@ class Irene(PmapCity):
 
         for evt in range(NEVT):
             # calibrated sum in PMTs
-            s12sum, calsum = self.pmt_transformation(pmtrwf[evt])
+            s12sum, cal_cwf, calsum = self.pmt_transformation(pmtrwf[evt])
 
             if not self.check_s12(s12sum): # ocasional but rare empty events
                 self.cnt.increment_counter('n_empty_events')

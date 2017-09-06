@@ -30,6 +30,7 @@ for name, attrs in (
         ('PmapParams'     , 's1_params s2_params s1p_params s1_PMT_params s1p_PMT_params'),
         ('ThresholdParams', 'thr_s1 thr_s2 thr_MAU thr_sipm thr_SIPM'),
         ('CSum'           , 'csum csum_mau'),
+        ('CCWf'           , 'ccwf, ccwf_mau'),
         ('S12Sum'         , 's1_ene, s1_indx, s2_ene, s2_indx'),
         ('CalibratedPMT'  , 'CPMT CPMT_mau'),
         ('S1PMaps'        , 'S1 S1_PMT S1p S1p_PMT'),
