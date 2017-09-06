@@ -17,6 +17,7 @@ from .. core.system_of_units_c import units
 
 from .. io.mc_io               import mc_track_writer
 from .. io.pmap_io             import pmap_writer
+from .. io.pmap_io             import pmap_writer_and_ipmt_writer
 from .. io.run_and_event_io    import run_and_event_writer
 from .. reco                   import tbl_functions as tbl
 from .. evm.ic_containers      import S12Params as S12P
@@ -62,7 +63,7 @@ class Irene(PmapCity):
 
         for evt in range(NEVT):
             # calibrated sum in PMTs
-            s12sum, calsum = self.pmt_transformation(pmtrwf[evt])
+            s12sum, cal_cwf, calsum = self.pmt_transformation(pmtrwf[evt])
 
             if not self.check_s12(s12sum): # ocasional but rare empty events
                 self.cnt.increment_counter('n_empty_events')
@@ -70,15 +71,13 @@ class Irene(PmapCity):
 
             # calibrated sum in SiPMs
             sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
+
             # pmaps
-            s1, s2, s2si = self.pmaps(s12sum.s1_indx,
-                                      s12sum.s2_indx,
-                                      calsum.csum,
-                                      sipmzs)
+            pmap = self.pmaps(s12sum.s1_indx, s12sum.s2_indx, cal_cwf.ccwf, calsum.csum, sipmzs)
 
             # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)
-            write.pmap         (event, s1, s2, s2si)
+            write.pmap         (event, *pmap)
             write.run_and_event(self.run_number, event, timestamp)
             if self.monte_carlo:
                 write.mc(mc_tracks, self.cnt.counter_value('n_events_tot'))
@@ -113,9 +112,10 @@ class Irene(PmapCity):
     def get_writers(self, h5out):
         """Get the writers needed by Irene"""
         writers = Namespace(
-        pmap          =          pmap_writer(h5out),
-        run_and_event = run_and_event_writer(h5out),
-        mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
+        run_and_event =        run_and_event_writer(h5out),
+        mc            =             mc_track_writer(h5out) if self.monte_carlo else None,
+        pmap          = pmap_writer_and_ipmt_writer(h5out) if self.compute_ipmt_pmaps \
+                                   else pmap_writer(h5out),
         )
         return writers
 

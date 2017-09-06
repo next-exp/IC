@@ -55,6 +55,7 @@ from .. reco.xy_algorithms      import corona
 from .. evm.ic_containers       import S12Params
 from .. evm.ic_containers       import S12Sum
 from .. evm.ic_containers       import CSum
+from .. evm.ic_containers       import CCWf
 from .. evm.ic_containers       import DataVectors
 from .. evm.ic_containers       import PmapVectors
 from .. evm.ic_containers       import TriggerParams
@@ -448,6 +449,18 @@ class CalibratedCity(DeconvolutionCity):
         self.n_MAU_sipm = conf.n_mau_sipm
         self.  thr_sipm = conf.  thr_sipm
 
+
+    def calibrated_pmt_mau(self, CWF):
+        """Return the csum and csum_mau calibrated sums."""
+        return cpf.calibrated_pmt_mau(CWF,
+                                      self.adc_to_pes,
+                                      pmt_active = self.pmt_active,
+                                           n_MAU = self.  n_MAU   ,
+                                         thr_MAU = self.thr_MAU   )
+
+    def sum_calibrated_pmt_mau(self, ccwf, ccwf_mau):
+        return pf.sum_waveforms(ccwf), pf.sum_waveforms(ccwf_mau)
+
     def calibrated_pmt_sum(self, CWF):
         """Return the csum and csum_mau calibrated sums."""
         return cpf.calibrated_pmt_sum(CWF,
@@ -477,6 +490,7 @@ class PmapCity(CalibratedCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         conf = self.conf
+        self.compute_ipmt_pmaps = conf.compute_ipmt_pmaps
         self.s1_params = S12Params(time = minmax(min   = conf.s1_tmin,
                                                  max   = conf.s1_tmax),
                                    stride              = conf.s1_stride,
@@ -506,26 +520,27 @@ class PmapCity(CalibratedCity):
         # deconvolve
         CWF = self.deconv_pmt(RWF)
         # calibrated PMT sum
-        csum, csum_mau = self.calibrated_pmt_sum(CWF)
+        ccwf, ccwf_mau = self.calibrated_pmt_mau(CWF)
+        csum, csum_mau = self.sum_calibrated_pmt_mau(ccwf, ccwf_mau)
         #ZS sum for S1 and S2
-        s1_ene, s1_indx = self.csum_zs(csum_mau, threshold =
-                                           self.thr_csum_s1)
-        s2_ene, s2_indx = self.csum_zs(csum,     threshold =
-                                           self.thr_csum_s2)
+        s1_ene, s1_indx = self.csum_zs(csum_mau, threshold=self.thr_csum_s1)
+        s2_ene, s2_indx = self.csum_zs(csum,     threshold=self.thr_csum_s2)
         return (S12Sum(s1_ene  = s1_ene,
-                          s1_indx = s1_indx,
-                          s2_ene  = s2_ene,
-                          s2_indx = s2_indx),
-                CSum(csum = csum, csum_mau = csum_mau)
-                    )
+                       s1_indx = s1_indx,
+                       s2_ene  = s2_ene,
+                       s2_indx = s2_indx),
+                CCWf(ccwf = ccwf, ccwf_mau = ccwf_mau),
+                CSum(csum = csum, csum_mau = csum_mau))
 
 
-    def pmaps(self, s1_indx, s2_indx, csum, sipmzs):
+    def pmaps(self, s1_indx, s2_indx, ccwf, csum, sipmzs):
         """Computes s1, s2 and s2si objects (PMAPS)"""
-        s1   = cpf.find_s1(csum, s1_indx, **self.s1_params._asdict())
-        s2   = cpf.find_s2(csum, s2_indx, **self.s2_params._asdict())
-        s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = self.thr_sipm_s2)
-        return s1, s2, s2si
+        if self.compute_ipmt_pmaps:
+            return pmp.get_pmaps_with_ipmt(s1_indx, s2_indx, ccwf, csum, sipmzs,
+                                           self.s1_params, self.s2_params, self.thr_sipm_s2)
+        else:
+            return pmp.get_pmaps(s1_indx, s2_indx, csum, sipmzs,
+                                 self.s1_params, self.s2_params, self.thr_sipm_s2)
 
 
 class DstCity(City):
