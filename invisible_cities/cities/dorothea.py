@@ -5,10 +5,6 @@ credits: see ic_authors_and_legal.rst in /doc
 
 last revised: JJGC, July-2017
 """
-import sys
-import glob
-import time
-import textwrap
 
 import numpy  as np
 import tables as tb
