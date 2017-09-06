@@ -447,3 +447,8 @@ def compute_pmaps_from_rwf(event, pmtrwf, sipmrwf,
 
 
     return PMaps(S1=s1, S2=s2, S2Si=s2si)
+
+
+def sum_waveforms(waveforms):
+    """sum waveforms over the 0th axis"""
+    return np.sum(waveforms, axis=0)
