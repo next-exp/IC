@@ -490,7 +490,6 @@ def test_find_peaks_when_no_index_after_tmin():
                                  length = minmax(2, 9999),
                                  stride = stride) == {}
 
-
 def test_extract_peaks_from_waveform():
     wf = np.random.uniform(size=52000)
     # Generate peak_bounds
@@ -525,7 +524,7 @@ def test_get_s12pmtd():
     for rebin_stride in rebin_strides:
         # extract the peaks from the csum, and for each pmt extract the peaks from the cCWF
         S12L   = cpf.extract_peaks_from_waveform(csum, peak_bounds, rebin_stride=rebin_stride)
-        s12pmtd = pf.get_s12pmtd(cCWF, peak_bounds, rebin_stride=rebin_stride)
+        s12pmtd = cpf.get_ipmtd(cCWF, peak_bounds, rebin_stride=rebin_stride)
         for s12l, s12_pmts, i_peak in zip(S12L.values(), s12pmtd.values(), peak_bounds.values()):
             # check that the sum of the individual pmt s12s equals the total s12, at each time bin
             assert np.allclose(s12l[1], s12_pmts.sum(axis=0))
