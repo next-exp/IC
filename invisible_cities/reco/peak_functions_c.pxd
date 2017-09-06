@@ -90,21 +90,24 @@ returns the times (in ns) corresponding to the indexes in indx
 cpdef _time_from_index(int [:] indx)
 
 
-cpdef find_s1(double [:] csum,  int [:] index,
-              time, length,
-              int stride=*, rebin_stride=*)
+cpdef find_s1(double [:] csum, int [:] index, time, length, int stride=*, int rebin_stride=*)
 
 
-cpdef find_s2(double [:] csum,  int [:] index,
-              time, length,
-              int stride=*, rebin_stride=*)
+"""find s1 peaks and return s1 and s1pmt objects"""
+cpdef find_s1_ipmt(double [:,:] ccwf, double [:] csum, int [:] index, time, length, int stride=*, int rebin_stride=*)
+
+
+cpdef find_s2(double [:] csum,  int [:] index, time, length, int stride=*, int rebin_stride=*)
+
+
+"""find s2 peaks and return s2 and s2pmt objects"""
+cpdef find_s2_ipmt(double [:,:] ccwf, double [:] csum, int [:] index, time, length, int stride=*, int rebin_stride=*)
 
 
 cpdef find_s2si(double [:, :] sipmzs, dict s2d, double thr)
 
 
-cpdef find_s12(double [:] csum,  int [:] index,
-               time, length, int stride, rebin_stride)
+cpdef find_s12(double [:] csum, int [:] index, time, length, int stride, int rebin_stride)
 
 
 cpdef correct_s1_ene(dict s1d, np.ndarray csum)
