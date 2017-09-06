@@ -9,19 +9,19 @@ last revised: JJGC, July-2017
 import numpy  as np
 import tables as tb
 
-from ..core.configure         import configure
-from ..core.system_of_units_c import units
-from ..types.ic_types         import xy
-from ..io.hits_io             import hits_writer
-from ..cities.base_cities     import City
-from ..evm.event_model        import Cluster
-from .. evm.ic_containers     import PmapVectors
-from ..cities.base_cities     import HitCity
-from ..reco                   import tbl_functions as tbl
+from .. core.configure         import configure
+from .. core.system_of_units_c import units
+from .. types.ic_types         import xy
+from .. io.hits_io             import hits_writer
+from .. cities.base_cities     import City
+from .. cities.base_cities     import HitCity
+from .. evm.event_model        import Cluster
+from .. evm.ic_containers      import PmapVectors
+from .. reco                   import tbl_functions as tbl
 
-from ..filters.s1s2_filter    import s1s2_filter
-from ..filters.s1s2_filter    import s2si_filter
-from ..filters.s1s2_filter    import S12Selector
+from .. filters.s1s2_filter    import s1s2_filter
+from .. filters.s1s2_filter    import s2si_filter
+from .. filters.s1s2_filter    import S12Selector
 
 class Penthesilea(HitCity):
     """Read PMAPS and produces hits and beyond"""
