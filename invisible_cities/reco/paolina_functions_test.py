@@ -210,4 +210,4 @@ def test_one_hit_case():
     vox_size = np.array([10,10,10],dtype=np.int16)
     voxelize_hits(hits, vox_size)
 
-    return len(voxelize_hits(hits))
+    assert len(voxelize_hits(hits)) == 1
