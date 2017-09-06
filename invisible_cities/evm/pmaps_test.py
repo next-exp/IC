@@ -252,12 +252,9 @@ def test_S12Pmt_raises_error_when_s2_peak_E_not_equal_to_sum_of_s12pmt_peak():
     npmts  = 12
     ipmtd = {0: np.random.random((npmts, timebins))}
     s12d    = {0: np.array([list(range(timebins)), ipmtd[0].sum(axis=0)])}
-    ipmtd[0][-1, -1] += .0001
-    try:
+    ipmtd[0][-1, -1] += .1
+    with raises(InconsistentS12dIpmtd):
         S12Pmt(s12d, ipmtd)
-        assert False
-    except InconsistentS12dIpmtd:
-        pass
 
 
 def test_S12Pmt_pmt_waveform():
