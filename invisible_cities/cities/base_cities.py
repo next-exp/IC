@@ -438,7 +438,6 @@ class DeconvolutionCity(RawCity):
        thr_trigger in the rising signal (thr_trigger).
 
        Since a Deconvolution city reads RWF, it is also a RawCity.
-
     """
 
     parameters = tuple("""raw_data_type n_baseline thr_trigger acum_discharge_length""".split())
@@ -543,7 +542,6 @@ class CalibratedCity(DeconvolutionCity):
 class PmapCity(CalibratedCity):
     """A PMAP city extends a CalibratedCity, computing the S1, S2 and S2Si
        objects that togehter constitute a PMAP.
-
     """
 
     parameters = tuple("""compute_ipmt_pmaps
@@ -780,6 +778,7 @@ class KrCity(PCity):
 
 class HitCity(KrCity):
     """A city that reads PMAPS and computes/writes a hit event"""
+
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.rebin  = self.conf.rebin
@@ -908,7 +907,6 @@ class TriggerEmulationCity(PmapCity):
     """Emulates the trigger in the FPGA.
        1. It is a PmapCity since the FPGA performs deconvolution and PMAP
        searches to set the trigger.
-
     """
 
     parameters = tuple("""tr_channels min_number_channels
@@ -960,7 +958,6 @@ class MonteCarloCity(TriggerEmulationCity):
         that transforms MCRD in RWF.
      2. Emulates the trigger prepocessor: the functionality is provided
         by the inheritance from TriggerEmulationCity.
-
     """
 
     parameters = tuple("""sipm_noise_cut""".split())
