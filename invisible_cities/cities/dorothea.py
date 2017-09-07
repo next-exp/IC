@@ -58,7 +58,7 @@ class Dorothea(KrCity):
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
             # Count events in and break if necessary before filtering
-            what_next = self.event_loop_step()
+            what_next = self.event_range_step()
             if what_next is EventLoop.skip_this_event: continue
             if what_next is EventLoop.terminate_loop : break
             self.cnt.increment_counter('n_events_tot')
