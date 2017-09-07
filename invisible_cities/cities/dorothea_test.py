@@ -44,7 +44,7 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
                      s2_ethr     =      1 * pes,
                      s2_nsipmmin =      2,
                      s2_nsipmmax =   1000,
-                     nmax        = nrequired))
+                     event_range = (0, nrequired)))
 
 
     dorothea = Dorothea(**conf)
