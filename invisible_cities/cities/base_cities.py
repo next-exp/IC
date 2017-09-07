@@ -785,14 +785,8 @@ class HitCity(KrCity):
 
     def compute_xy_position(self, s2sid_peak, slice_no):
         """Compute x-y position for each time slice. """
-        #import pdb; pdb.set_trace()
         IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
-
-        # print('compute_xy_position')
-        # print('s2si.s2sid[peak_no] = {}'.format(s2sid_peak))
-        # print('IDs = {}'.format(IDs))
-        # print('Qs = {}'.format(Qs))
 
         return corona(np.stack((xs, ys)).T, Qs,
                       Qthr           =  self.conf.qthr,
