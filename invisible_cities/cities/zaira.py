@@ -33,8 +33,8 @@ class Zaira(DstCity):
         2. inits counters
         3. defines fiducial
         4. gets dst info
-
         """
+
         super().__init__(**kwds)
         self.set_lifetime_correction()
         self.set_xybins_and_range()
