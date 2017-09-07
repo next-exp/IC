@@ -16,25 +16,28 @@ from .        log_config      import logger
 from . import system_of_units as     units
 
 
-class NEventsMax(Enum): All = 1
-All = NEventsMax.All
+class EventRange(Enum):
+    all  = 1
+    last = 2
 
+# to allow direct imports from other odules
+all, last = EventRange
 
-def max_events(string):
+def event_range(string):
     try:
         return int(string)
     except ValueError:
-        if string == 'All':
-            return All
-        raise ValueError('`--n-event-max` must be an int or All')
+        if string.lower() == 'all' : return EventRange.all
+        if string.lower() == 'last': return EventRange.last
+        # TODO Improve the message in the ValueError
+        raise ValueError("`--event-range` must be an int, 'all' or 'last'")
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('config_file',          type=str,            help="configuration file")
 parser.add_argument("-i", '--files-in',     type=str,            help="input file")
 parser.add_argument("-o", '--file-out',     type=str,            help="output file")
-parser.add_argument("-n", '--n-events-max', type=max_events,     help="number of events to be processed")
-parser.add_argument("-f", '--first-event',  type=int,            help="event number for first event", default=0)
+parser.add_argument("-e", '--event-range',  type=event_range,    help="number of events to be processed", nargs='*')
 parser.add_argument("-r", '--run-number',   type=int,            help="run number")
 parser.add_argument("-p", '--print-mod',    type=int,            help="print every this number of events")
 parser.add_argument("-v", dest='verbosity', action="count",      help="increase verbosity level", default=0)
@@ -78,12 +81,13 @@ def make_config_file_reader():
     top-level config file, will collect all the settings contained in
     the given file and any files it includes, and return a
     corresponding instance of Configuration.
-
     """
 
     builtins = __builtins__.copy()
     builtins.update(vars(units))
-    builtins['All'] = All
+    # TODO: move setting of extra 'builtins' elsewhere
+    builtins['all']  = EventRange.all
+    builtins['last'] = EventRange.last
     globals_ = {'__builtins__': builtins}
     config = Configuration()
     def read_included_file(file_name):

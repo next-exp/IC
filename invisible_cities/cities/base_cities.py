@@ -17,7 +17,7 @@ import tables as tb
 
 from .. core.core_functions     import merge_two_dicts
 from .. core.core_functions     import loc_elem_1d
-from .. core.configure          import All
+from .. core.configure          import all
 from .. core.configure          import configure
 from .. core.exceptions         import NoInputFiles
 from .. core.exceptions         import NoOutputFile
@@ -85,6 +85,13 @@ from typing import Sequence
 from typing import List
 
 
+# TODO: move this somewhere else
+from enum import Enum
+
+class EventLoop(Enum):
+    skip_this_event = 1
+    terminate_loop  = 2
+
 
 class City:
     """Base class for all cities.
@@ -105,6 +112,7 @@ class City:
         """
 
         self.cnt = Counter()
+        self.cnt.init_counter('n_events_for_range')
         conf = Namespace(**kwds)
         self.conf = conf
 
@@ -120,9 +128,18 @@ class City:
         self.compression  = conf.compression
         self.run_number   = conf.run_number
         self.nprint       = conf.nprint  # default print frequency
-        self.n_events_max = conf.n_events_max if hasattr(conf, 'n_events_max') else None
-
+        self.first_event, self.last_event = self._event_range()
         self.set_up_database()
+
+    def _event_range(self):
+        if not hasattr(self.conf, 'event_range'): return None, None
+        er = self.conf.event_range
+        if len(er) == 1:                          return None, er[0]
+        if len(er) == 2:                          return tuple(er)
+        if len(er) == 0: ValueError('event_range needs at least one value')
+        if len(er) >  2:
+            raise ValueError('event_range accepts at most 2 values but was given {}'
+                             .format(er))
 
     @classmethod
     def drive(cls, argv):
@@ -197,11 +214,12 @@ class City:
         return self.cnt
 
     def display_IO_info(self):
+        n_events_max = 'TODO: FIXME'
         print("""
                  {} will run a max of {} events
                  Input Files = {}
                  Output File = {}
-                          """.format(self.__class__.__name__, self.n_events_max, self.input_files, self.output_file))
+                          """.format(self.__class__.__name__, n_events_max, self.input_files, self.output_file))
 
     def file_loop(self):
         """Must be implemented by cities"""
@@ -244,14 +262,20 @@ class City:
             print('event in file = {}, total = {}'
                   .format(evt, n_events_tot))
 
-    def max_events_reached(self, n_events_in):
-        if self.n_events_max is All:
-            return False
-        if n_events_in == self.n_events_max:
-            print('reached max nof of events (= {})'
-                  .format(self.n_events_max))
-            return True
-        return False
+    # Will probably need to add partner method event_loop_check, for
+    # jumping out of the file loop.
+    def event_loop_step(self):
+        N = self.cnt.counter_value('n_events_for_range')
+        self.cnt.increment_counter('n_events_for_range')
+
+        if isinstance(self.last_event, int) and N >= self.last_event:
+            # TODO: this side-effect should not be here
+            print('reached event cutoff (= {})'
+                  .format(self.last_event))
+            return EventLoop.terminate_loop
+
+        if self.first_event is not None and N < self.first_event:
+            return EventLoop.skip_this_event
 
     def get_mc_tracks(self, h5in):
         "Return RWF vectors and sensor data."
@@ -573,7 +597,7 @@ class PCity(City):
         """
 
         for filename in self.input_files:
-            print("Opening {filename}".format(**locals()), end="... ")
+            print("Opening {filename}".format(**locals()), end="...\n")
 
             try:
                 s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
