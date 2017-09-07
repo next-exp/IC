@@ -23,8 +23,6 @@ from .. core.configure          import configure
 from .. core.exceptions         import NoInputFiles
 from .. core.exceptions         import NoOutputFile
 from .. core.exceptions         import UnknownRWF
-from .. core.exceptions         import FileLoopMethodNotSet
-from .. core.exceptions         import EventLoopMethodNotSet
 from .. core.exceptions         import SipmEmptyList
 from .. core.exceptions         import SipmZeroCharge
 from .. core.exceptions         import ClusterEmptyList
