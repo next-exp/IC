@@ -15,6 +15,7 @@ from .. types.ic_types         import xy
 from .. io.hits_io             import hits_writer
 from .. cities.base_cities     import City
 from .. cities.base_cities     import HitCity
+from .. cities.base_cities     import EventLoop
 from .. evm.event_model        import Cluster
 from .. evm.ic_containers      import PmapVectors
 from .. reco                   import tbl_functions as tbl
@@ -35,7 +36,6 @@ class Penthesilea(HitCity):
         super().__init__(**kwds)
         conf = self.conf
         self.cnt.set_name('penthesilea')
-        self.cnt.set_counter   ('n_events_max', value=conf.n_events_max)
         self.cnt.init_counters(('n_events_tot', 'nevt_out'))
         self.drift_v        = conf.drift_v
         self._s1s2_selector = S12Selector(**kwds)
@@ -57,10 +57,10 @@ class Penthesilea(HitCity):
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
             # Count events in and break if necessary before filtering
-            if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
-                break
-            else:
-                self.cnt.increment_counter('n_events_tot')
+            what_next = self.event_loop_step()
+            if what_next is EventLoop.skip_this_event: continue
+            if what_next is EventLoop.terminate_loop : break
+            self.cnt.increment_counter('n_events_tot')
 
             # get pmaps
             s1, s2, s2si = self. get_pmaps_from_dicts(s1_dict,
@@ -79,12 +79,12 @@ class Penthesilea(HitCity):
             # event passed selection: increment counter and write
             self.cnt.increment_counter('nevt_out')
             pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
-                                      events=evt_number,
-                                      timestamps=evt_time)
+                                      events     = evt_number,
+                                      timestamps = evt_time)
             evt = self.create_hits_event(pmapVectors)
             write_hits(evt)
             self.conditional_print(self.cnt.counter_value('n_events_tot'),
-            self.cnt.counter_value('nevt_out'))
+                                   self.cnt.counter_value('nevt_out'))
 
     def get_writers(self, h5out):
         """Get the writers needed by dorothea"""
