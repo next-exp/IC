@@ -31,7 +31,6 @@ class Zaira(DstCity):
         """
         super().__init__(**kwds)
         self.cnt.set_name('zaira')
-        self.cnt.set_counter('n_events_max', value=self.conf.n_events_max)
         self.set_lifetime_correction()
         self.set_xybins_and_range()
         self.set_z_and_e_fiducial()
