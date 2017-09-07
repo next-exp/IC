@@ -133,7 +133,7 @@ class City:
         self.output_file  =             expandvars(conf.file_out)
         self.compression  = conf.compression
         self.run_number   = conf.run_number
-        self.nprint       = conf.nprint  # default print frequency
+        self.print_mod    = conf.print_mod  # default print frequency
         self.first_event, self.last_event = self._event_range()
         self.set_up_database()
 
@@ -286,7 +286,7 @@ class City:
         return self.run_number <= 0
 
     def conditional_print(self, evt, n_events_tot):
-        if n_events_tot % self.nprint == 0:
+        if n_events_tot % self.print_mod == 0:
             print('event in file = {}, total = {}'
                   .format(evt, n_events_tot))
 
