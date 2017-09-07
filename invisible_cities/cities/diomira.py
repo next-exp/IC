@@ -46,6 +46,8 @@ class Diomira(MonteCarloCity):
     2. the response of the trigger
     """
 
+    parameters = tuple("""trigger_type""".split())
+
     def __init__(self, **kwds):
         """Diomira Init:
         1. inits base city
