@@ -1,5 +1,4 @@
 from functools   import reduce
-from functools   import partial
 from itertools   import combinations
 
 import numpy    as np
@@ -87,11 +86,7 @@ def voxels_from_track_graph(track: Graph) -> List[Voxel]:
 
 def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
     """Compute shortest path lengths between all nodes in a weighted graph."""
-    f = partial(nx.all_pairs_dijkstra_path_length, weight='distance')
-    return f (track_graph)
-
-
-#shortest_paths = partial(nx.all_pairs_dijkstra_path_length, weight='distance')
+    return nx.all_pairs_dijkstra_path_length(track_graph, weight='distance')
 
 
 def find_extrema(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Voxel]:
