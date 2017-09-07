@@ -33,11 +33,13 @@ def event_range(string):
         raise ValueError("`--event-range` must be an int, 'all' or 'last'")
 
 
+event_range_help = """<stop> | <start> <stop> | all | <start> last"""
+
 parser = argparse.ArgumentParser()
 parser.add_argument('config_file',          type=str,            help="configuration file")
 parser.add_argument("-i", '--files-in',     type=str,            help="input file")
 parser.add_argument("-o", '--file-out',     type=str,            help="output file")
-parser.add_argument("-e", '--event-range',  type=event_range,    help="number of events to be processed", nargs='*')
+parser.add_argument("-e", '--event-range',  type=event_range,    help=event_range_help, nargs='*')
 parser.add_argument("-r", '--run-number',   type=int,            help="run number")
 parser.add_argument("-p", '--print-mod',    type=int,            help="print every this number of events")
 parser.add_argument("-v", dest='verbosity', action="count",      help="increase verbosity level", default=0)
