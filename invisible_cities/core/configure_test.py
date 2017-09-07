@@ -291,7 +291,7 @@ def simple_conf_file_name(tmpdir_factory):
     write_config_file(file_name, """
 compression  = 'ZLIB4'
 run_number   = 12
-nprint       = 13
+print_mod    = 13
 event_range  = 14,
 """)
     return str(file_name)
