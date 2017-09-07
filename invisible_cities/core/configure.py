@@ -61,7 +61,7 @@ def configure(input_options=sys.argv):
     CLI = parser.parse_args(args)
     options = read_config_file(CLI.config_file)
 
-    options.update((opt, val) for opt, val in vars(CLI).items() if val is not None)
+    options.add_cli((opt, val) for opt, val in vars(CLI).items() if val is not None)
     logger.setLevel(options.get("verbosity", "info"))
 
     return options
@@ -145,8 +145,11 @@ class Configuration(MutableMapping):
     def __len__    (self):      return len (self._data)
     def __iter__   (self):      return iter(self._data)
 
-    def update(self, *others):
-        self._data.update(*others)
+    def add_cli(self, keys_and_vals):
+        self.push_file('<command line>')
+        for k,v in keys_and_vals:
+            self[k] = v
+        self.pop_file()
 
     def push_file(self, file_name):
         self._file_stack.append(file_name)
@@ -175,5 +178,5 @@ class Configuration(MutableMapping):
                     exval = str(exval)
                     file_name = style_filename(file_name)
                     print(fmt_overridden.format(**locals()))
-            file_name = style_filename(self._file.get(key, '<command line>'))
+            file_name = style_filename(self._file[key])
             print(fmt.format(**locals()))
