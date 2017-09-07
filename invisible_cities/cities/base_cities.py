@@ -262,8 +262,6 @@ class City:
             print('event in file = {}, total = {}'
                   .format(evt, n_events_tot))
 
-    # Will probably need to add partner method event_loop_check, for
-    # jumping out of the file loop.
     def event_range_step(self):
         N = self.cnt.counter_value('n_events_for_range')
         self.cnt.increment_counter('n_events_for_range')
@@ -276,6 +274,11 @@ class City:
 
         if self.first_event is not None and N < self.first_event:
             return EventLoop.skip_this_event
+
+    def event_range_finished(self):
+        N = self.cnt.counter_value('n_events_for_range')
+        return isinstance(self.last_event, int) and N >= self.last_event
+
 
     def get_mc_tracks(self, h5in):
         "Return RWF vectors and sensor data."
@@ -374,6 +377,7 @@ class RawCity(City):
 
         """
         for filename in self.input_files:
+            if self.event_range_finished(): break
             print("Opening", filename, end="... ")
             with tb.open_file(filename, "r") as h5in:
 
@@ -597,6 +601,7 @@ class PCity(City):
         """
 
         for filename in self.input_files:
+            if self.event_range_finished(): break
             print("Opening {filename}".format(**locals()), end="...\n")
 
             try:
