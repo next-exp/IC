@@ -90,7 +90,7 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number   = 0,
-                     filesin      = PATH_IN,
+                     files_in     = PATH_IN,
                      file_out     = PATH_OUT,
                      event_range  = (0, nrequired),
                      **unpack_s12params(s12params)))
