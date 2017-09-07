@@ -744,7 +744,7 @@ class KrCity(PCity):
 
 
 class HitCity(KrCity):
-    """A city that reads PMPAS and computes/writes a hit event"""
+    """A city that reads PMAPS and computes/writes a hit event"""
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.rebin  = self.conf.rebin
