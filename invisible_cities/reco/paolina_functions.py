@@ -36,7 +36,6 @@ def voxelize_hits(hits             : Sequence[BHit],
     """1. Hits are enclosed by a bounding box.
        2. Boundix box is discretized (via a hitogramdd).
        3. The energy of all the hits insidex each discreet "voxel" is added.
-
      """
     if not hits:
         raise NoHits
@@ -61,11 +60,10 @@ def voxelize_hits(hits             : Sequence[BHit],
 def make_track_graphs(voxels           : Voxel,
                       voxel_dimensions : np.ndarray,
                       contiguity       : float = 1) -> Sequence[Graph]:
-    """Creates a graph where the voxels are the nodes and the edges are any
-    pair of neighbour voxel. Two voxels are considered to be neighbours if
-    their distance normalized to their size is smaller than a
-    contiguity factor .
-
+    """Create a graph where the voxels are the nodes and the edges are any
+    pair of neighbour voxel. Two voxels are considered to be
+    neighbours if their distance normalized to their size is smaller
+    than a contiguity factor.
     """
 
     def neighbours(va : Voxel, vb : Voxel, scale : float = 1.0) -> bool:
@@ -81,7 +79,7 @@ def make_track_graphs(voxels           : Voxel,
 
 
 def voxels_from_track_graph(track: Graph) -> List[Voxel]:
-    """Create and return a list of voxels from a track graph"""
+    """Create and return a list of voxels from a track graph."""
 
     voxels = [Voxel(t.X, t.Y, t.Z, t.E) for t in track.nodes()]
     return voxels
@@ -97,7 +95,7 @@ def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
 
 
 def find_extrema(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Voxel]:
-    """Find the extrema of the track """
+    """Find the extrema of the track."""
     if not distance:
         raise NoVoxels
     if len(distance) == 1:
@@ -125,7 +123,7 @@ def voxels_within_radius(distances : Dict[Voxel, Dict[Voxel, float]],
 
 
 def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
-    """Return the energies around the extrema of the track. """
+    """Return the energies around the extrema of the track."""
     distances = shortest_paths(track_graph)
     a,b = find_extrema(distances)
     Ea = energy_within_radius(distances[a], radius)
@@ -134,7 +132,7 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
 
 
 def compute_blobs(track_graph : Graph, radius : float) -> Tuple[List[Voxel], List[Voxel]]:
-    """Return the blobs (list of voxels) around the extrema of the track. """
+    """Return the blobs (list of voxels) around the extrema of the track."""
     distances = shortest_paths(track_graph)
     a,b = find_extrema(distances)
     ba = voxels_within_radius(distances[a], radius)
@@ -149,7 +147,7 @@ def make_tracks(evt_number       : float,
                 voxel_dimensions : np.ndarray,
                 contiguity       : float = 1,
                 blob_radius      : float = 30*units.mm) -> TrackCollection:
-    """Makes a track collection. """
+    """Make a track collection."""
 
     tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
     track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
