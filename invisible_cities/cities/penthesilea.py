@@ -26,6 +26,7 @@ from .. filters.s1s2_filter    import S12Selector
 
 class Penthesilea(HitCity):
     """Read PMAPS and produces hits and beyond"""
+
     def __init__(self, **kwds):
         """actions:
         1. inits base city
