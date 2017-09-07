@@ -92,7 +92,7 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
     conf.update(dict(run_number   = 0,
                      filesin      = PATH_IN,
                      file_out     = PATH_OUT,
-                     n_events_max = nrequired,
+                     event_range  = (0, nrequired),
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
@@ -102,7 +102,6 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
     nactual = cnt.counter_value('n_events_tot')
     if nrequired > 0:
         assert nrequired == nactual
-        assert nrequired == cnt.counter_value('n_events_max')
 
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
@@ -139,7 +138,7 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
     conf.update(dict(run_number   = 2983,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
-                     n_events_max = nrequired,
+                     event_range = (0, nrequired),
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
@@ -210,7 +209,7 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
     conf.update(dict(run_number   = 0,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
-                     n_events_max = nrequired,
+                     event_range = (0, nrequired),
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
@@ -228,7 +227,7 @@ def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts
     conf.update(dict(run_number   =  job_info_missing_pmts.run_number,
                      files_in     =  job_info_missing_pmts. input_filename,
                      file_out     =  job_info_missing_pmts.output_filename,
-                     n_events_max = nrequired,
+                     event_range   = (0, nrequired),
                      **unpack_s12params(s12params))) # s12params are just dummy values in this test
     #import pdb; pdb.set_trace()
     irene = Irene(**conf)
