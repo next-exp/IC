@@ -88,12 +88,13 @@ from typing import List
 
 class City:
     """Base class for all cities.
-       An IC city consumes data stored in the input_files and produce new data
-       which is stored in the output_file. In addition to setting input and
-       output files, the base class sets the print frequency and accesses
-       the data base, storing as attributed several calibration coefficients
 
-     """
+       An IC city consumes data stored in the input_files and produce
+       new data which is stored in the output_file. In addition to
+       setting input and output files, the base class sets the print
+       frequency and accesses the data base, storing as attributed
+       several calibration coefficients
+    """
 
     def __init__(self, **kwds):
         """The init method of a city handles:
@@ -134,7 +135,6 @@ class City:
            sets them as attributes of the city.
         3. Calls the method "go" to launch execution of the city.
         4. Calls the method "end" for post-processing.
-
         """
         conf = configure(argv)
         opts = conf.as_namespace
@@ -155,7 +155,6 @@ class City:
     def go(self):
         """Launch the execution of the city (calling method run)
         and prints execution statistics.
-
         """
         t0 = time()
         self.run()
@@ -174,7 +173,6 @@ class City:
         4. gets the writers for the specific city.
         5. Pass the writers to the file_loop() method.
         6. returns the counter dictionary.
-
         """
         self.display_IO_info()
 
@@ -190,7 +188,6 @@ class City:
         """Postoprocessing after city execution:
         1. calls the end method of the daemons if they have been invoked.
         2. prints the counter dictionary
-
         """
         if hasattr(self, 'daemons'):
             for deamon in self.daemons:
