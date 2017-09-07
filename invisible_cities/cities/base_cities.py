@@ -7,10 +7,11 @@ last revised: JJGC, July-2017
 """
 
 import sys
-from argparse import Namespace
-from glob     import glob
-from time     import time
-from os.path  import expandvars
+from argparse  import Namespace
+from glob      import glob
+from time      import time
+from os.path   import expandvars
+from itertools import chain
 
 import numpy  as np
 import tables as tb
@@ -103,6 +104,11 @@ class City:
        several calibration coefficients
     """
 
+    parameters = tuple("""print_config_only hide_config no_overrides
+        no_files full_files config_file
+        files_in file_out compression
+        run_number print_mod event_range verbosity print_mod daemons""".split())
+
     def __init__(self, **kwds):
         """The init method of a city handles:
         1. provides access to an instance of counters (cnt) to be used by derived cities.
@@ -111,7 +117,7 @@ class City:
         4. provides access to the data base.
         """
 
-        self.cnt = Counters(n_events_for_range = 0)
+        self.detect_unknown_parameters(kwds)
 
         conf = Namespace(**kwds)
         self.conf = conf
@@ -122,7 +128,7 @@ class City:
         if not hasattr(conf, 'file_out'):
             raise NoOutputFile
 
-
+        self.cnt = Counters(n_events_for_range = 0)
         self.input_files  = sorted(glob(expandvars(conf.files_in)))
         self.output_file  =             expandvars(conf.file_out)
         self.compression  = conf.compression
@@ -130,6 +136,15 @@ class City:
         self.nprint       = conf.nprint  # default print frequency
         self.first_event, self.last_event = self._event_range()
         self.set_up_database()
+
+    def detect_unknown_parameters(self, kwds):
+        known = self.allowed_parameters()
+        for name in kwds:
+            assert name in known, (name, self.__class__.__name__)
+
+    @classmethod
+    def allowed_parameters(cls):
+        return set(chain.from_iterable(base.parameters for base in cls.__mro__ if hasattr(base, 'parameters')))
 
     def _event_range(self):
         if not hasattr(self.conf, 'event_range'): return None, None
@@ -426,6 +441,8 @@ class DeconvolutionCity(RawCity):
 
     """
 
+    parameters = tuple("""raw_data_type n_baseline thr_trigger acum_discharge_length""".split())
+
     def __init__(self, **kwds):
         super().__init__(**kwds)
         conf = self.conf
@@ -474,6 +491,8 @@ class CalibratedCity(DeconvolutionCity):
           b) compute a MAU that follows baseline and keep samples above
              MAU + threshold.
        """
+
+    parameters = tuple("""n_mau thr_mau thr_csum_s1 thr_csum_s2 n_mau_sipm thr_sipm""".split())
 
     def __init__(self, **kwds):
 
@@ -526,6 +545,11 @@ class PmapCity(CalibratedCity):
        objects that togehter constitute a PMAP.
 
     """
+
+    parameters = tuple("""compute_ipmt_pmaps
+      s1_tmin s1_tmax s1_stride s1_lmin s1_lmax s1_rebin_stride
+      s2_tmin s2_tmax s2_stride s2_lmin s2_lmax s2_rebin_stride
+      thr_sipm_s2""".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
@@ -585,6 +609,9 @@ class PmapCity(CalibratedCity):
 
 class DstCity(City):
     """A DstCity reads a list of KDSTs """
+
+    parameters = tuple("""dst_group dst_node""".split())
+
     def __init__(self, **kwds):
         super().__init__(**kwds)
 
@@ -638,6 +665,14 @@ class KrCity(PCity):
         super().__init__(**kwds)
         #self.reco_algorithm = find_algorithm(self.conf.reco_algorithm)
 
+
+    parameters = tuple("""""".split())
+    parameters = tuple("""lm_radius new_lm_radius
+        msipm drift_v
+        qlm qthr rebin
+        s1_nmin s1_nmax s1_emin s1_emax s1_wmin s1_wmax s1_hmin s1_hmax s1_ethr
+        s2_nmin s2_nmax s2_emin s2_emax s2_wmin s2_wmax s2_hmin s2_hmax s2_ethr
+        s2_nsipmmin s2_nsipmmax""".split())
 
     def compute_xy_position(self, s2si, peak_no):
         """
@@ -876,6 +911,10 @@ class TriggerEmulationCity(PmapCity):
 
     """
 
+    parameters = tuple("""tr_channels min_number_channels
+        min_height max_height min_width max_width min_charge max_charge
+        data_mc_ratio""".split())
+
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.trigger_params   = self.trigger_parameters()
@@ -923,6 +962,8 @@ class MonteCarloCity(TriggerEmulationCity):
         by the inheritance from TriggerEmulationCity.
 
     """
+
+    parameters = tuple("""sipm_noise_cut""".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
