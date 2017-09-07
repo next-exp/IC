@@ -5,22 +5,26 @@ import numpy as np
 from pytest import mark
 parametrize = mark.parametrize
 
-from .. evm.pmaps        import Peak
-from .. evm.pmaps        import S2
-from .. evm.pmaps        import S2Si
-from .. core             import system_of_units as units
-from . pmaps_functions   import rebin_s2si
-from . pmaps_functions   import copy_s2si
-from . pmaps_functions   import copy_s2si_dict
-from . pmaps_functions   import raise_s2si_thresholds
-from . pmaps_functions_c import _impose_thr_sipm_destructive
-from . pmaps_functions_c import _impose_thr_sipm_s2_destructive
-from . pmaps_functions_c import _delete_empty_s2si_peaks
-from . pmaps_functions_c import _delete_empty_s2si_dict_events
-from . pmaps_functions_c import df_to_s1_dict
-from . pmaps_functions_c import df_to_s2_dict
-from . pmaps_functions_c import df_to_s2si_dict
-from . pmaps_functions_c import sipm_ids_and_charges_in_slice
+from .. evm.pmaps         import Peak
+from .. evm.pmaps         import S2
+from .. evm.pmaps         import S2Si
+from .. evm.ic_containers import S12Params
+from .. types.ic_types    import minmax
+from .. core              import system_of_units as units
+from . pmaps_functions    import rebin_s2si
+from . pmaps_functions    import copy_s2si
+from . pmaps_functions    import copy_s2si_dict
+from . pmaps_functions    import raise_s2si_thresholds
+from . pmaps_functions    import get_pmaps
+from . pmaps_functions    import get_pmaps_with_ipmt
+from . pmaps_functions_c  import _impose_thr_sipm_destructive
+from . pmaps_functions_c  import _impose_thr_sipm_s2_destructive
+from . pmaps_functions_c  import _delete_empty_s2si_peaks
+from . pmaps_functions_c  import _delete_empty_s2si_dict_events
+from . pmaps_functions_c  import df_to_s1_dict
+from . pmaps_functions_c  import df_to_s2_dict
+from . pmaps_functions_c  import df_to_s2si_dict
+from . pmaps_functions_c  import sipm_ids_and_charges_in_slice
 
 
 
@@ -301,3 +305,22 @@ def test_copy_s2si_dict_deleting_keys_in_copy_does_not_affect_keys_in_original(K
     s2si_dict1 = copy_s2si_dict(s2si_dict0)
     del s2si_dict1[key]
     assert key in s2si_dict0
+
+
+####
+def test_get_pmap_functions_dont_crash_when_s2_is_None():
+    index  = np.array(    [] , dtype=np.int32)
+    csum   = np.ones(    100 , dtype=np.float64)
+    sipmzs = np.ones(    100 , dtype=np.float64)
+    ccwf   = np.ones((2, 100), dtype=np.float64) * 0.5
+    params = S12Params(time=minmax(min=0.0, max=644000.0),
+              stride=4,
+              length=minmax(min=4, max=16),
+              rebin_stride=1)
+    thr_sipm_s2 = 5
+
+    for s12 in get_pmaps(index, index, csum, sipmzs, params, params, thr_sipm_s2):
+        assert s12 is None
+
+    for s12 in get_pmaps_with_ipmt(index, index, ccwf, csum, sipmzs, params, params, thr_sipm_s2):
+        assert s12 is None
