@@ -126,7 +126,7 @@ class Configuration(MutableMapping):
     @property
     def as_namespace(self):
         ns = argparse.Namespace(**self._data)
-        # Make the namespace nead-only *after* its content has been set
+        # Make the namespace read-only *after* its content has been set
         ns.__class__ = ReadOnlyNamespace
         return ns
 
