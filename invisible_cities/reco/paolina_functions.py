@@ -50,10 +50,7 @@ def voxelize_hits(hits             : Sequence[BHit],
 
     cx, cy, cz = map(centres, edges)
     nz = np.nonzero(E)
-    voxels = [Voxel(cx[x], cy[y], cz[z], E[x,y,z])
-            for (x,y,z) in np.stack(nz).T]
-
-    return voxels
+    return [Voxel(cx[x], cy[y], cz[z], E[x,y,z]) for (x,y,z) in np.stack(nz).T]
 
 
 def make_track_graphs(voxels           : Voxel,
