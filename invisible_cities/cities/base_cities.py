@@ -264,7 +264,7 @@ class City:
 
     # Will probably need to add partner method event_loop_check, for
     # jumping out of the file loop.
-    def event_loop_step(self):
+    def event_range_step(self):
         N = self.cnt.counter_value('n_events_for_range')
         self.cnt.increment_counter('n_events_for_range')
 
