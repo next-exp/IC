@@ -21,6 +21,12 @@ from .. core                import fit_functions  as fitf
 
 class Zaira(DstCity):
 
+    parameters = tuple("""lifetime u_lifetime
+        xbins xmin xmax
+        ybins ymin ymax
+        zbins zmin zmax     tbins
+        fiducial_r fiducial_z fiducial_e""".split())
+
     def __init__(self, **kwds):
         """Zaira Init:
         1. inits base city
