@@ -23,7 +23,7 @@ def get_pmaps(s1_indx, s2_indx, csum, sipmzs, s1_params, s2_params, thr_sipm_s2)
     """Computes s1, s2 and s2si objects (PMAPS)"""
     s1 = cpf.find_s1(csum, s1_indx, **s1_params._asdict())
     s2 = cpf.find_s2(csum, s2_indx, **s2_params._asdict())
-    s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = thr_sipm_s2)
+    s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = thr_sipm_s2) if s2 is not None else None
     return s1, s2, s2si
 
 
@@ -31,7 +31,7 @@ def get_pmaps_with_ipmt(s1_indx, s2_indx, ccwf, csum, sipmzs, s1_params, s2_para
     """Computes s1, s2, s2si, s1pmt and s2pmt objects"""
     s1, s1pmt = cpf.find_s1_ipmt(ccwf, csum, s1_indx, **s1_params._asdict())
     s2, s2pmt = cpf.find_s2_ipmt(ccwf, csum, s2_indx, **s2_params._asdict())
-    s2si      = cpf.find_s2si(sipmzs, s2.s2d, thr = thr_sipm_s2)
+    s2si      = cpf.find_s2si(sipmzs, s2.s2d, thr = thr_sipm_s2) if s2 is not None else None
     return s1, s2, s2si, s1pmt, s2pmt
 
 
