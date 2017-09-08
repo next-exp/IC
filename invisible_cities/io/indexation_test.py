@@ -16,13 +16,13 @@ from .  pmap_io            import     pmap_writer
 
 @fixture(scope="session")
 def init_city(ICDIR, config_tmpdir):
-        conf = configure(('city ' + ICDIR +  'config/city.conf').split())
-        file_out = os.path.join(config_tmpdir, "empty_file.h5")
-        conf.update(dict(file_out = file_out))
-        city = City(**conf)
-        city.display_IO_info = lambda: None
-        city.file_loop       = lambda: None
-        return city, file_out
+    conf = configure(('city ' + ICDIR +  'config/city.conf').split())
+    file_out = os.path.join(config_tmpdir, "empty_file.h5")
+    conf.update(dict(file_out = file_out))
+    city = City(**conf)
+    city.display_IO_info = lambda: None
+    city.file_loop       = lambda: None
+    return city, file_out
 
 
 @mark.parametrize("writer group node column".split(),
