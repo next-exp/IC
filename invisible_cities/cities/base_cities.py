@@ -195,23 +195,36 @@ class City:
 
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
-
             self.write_parameters(h5out)
             self.writers = self.get_writers(h5out)
             self.file_loop()
-            h5out.flush()
 
     def end(self):
         """Postoprocessing after city execution:
         1. calls the end method of the daemons if they have been invoked.
         2. prints the counter dictionary
         """
+        self.index_tables() # index cols in tables marked for indexing by city's writers
+
         if hasattr(self, 'daemons'):
             for deamon in self.daemons:
                 deamon.end()
 
         print(self.cnt)
         return self.cnt
+
+    def index_tables(self):
+        """
+        -finds all tables in self.output_file
+        -checks if any columns in the tables have been marked to be indexed by writers
+        -indexes those columns
+        """
+        with tb.open_file(self.output_file, 'r+') as h5out:
+            for table in h5out.walk_nodes(classname='Table'):        # Walk over all tables in h5out
+                if 'columns_to_index' not in table.attrs:  continue  # Check for columns to index
+                for colname in table.attrs.columns_to_index:         # Index those columns
+                    table.colinstances[colname].create_index()
+
 
     def display_IO_info(self):
         n_events_max = 'TODO: FIXME'
