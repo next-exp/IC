@@ -62,6 +62,11 @@ class Irene(PmapCity):
         events_info = dataVectors.events
 
         for evt in range(NEVT):
+            what_next = self.event_range_step()
+            if what_next is EventLoop.skip_this_event: continue
+            if what_next is EventLoop.terminate_loop : break
+            self.cnt.increment_counter('n_events_tot')
+
             # calibrated sum in PMTs
             s12sum, cal_cwf, calsum = self.pmt_transformation(pmtrwf[evt])
 
@@ -83,10 +88,6 @@ class Irene(PmapCity):
                 write.mc(mc_tracks, self.cnt.counter_value('n_events_tot'))
 
             self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
-            what_next = self.event_range_step()
-            if what_next is EventLoop.skip_this_event: continue
-            if what_next is EventLoop.terminate_loop : break
-            self.cnt.increment_counter('n_events_tot')
 
     def check_s12(self, s12sum):
         """Checks for ocassional empty events, characterized by null s2_energy
