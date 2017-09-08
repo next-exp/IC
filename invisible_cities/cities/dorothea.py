@@ -57,6 +57,9 @@ class Dorothea(KrCity):
         s2si_dict = pmapVectors.s2si
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
+            self.conditional_print(self.cnt.counter_value('n_events_tot'),
+                                   self.cnt.counter_value('nevt_out'))
+
             # Count events in and break if necessary before filtering
             what_next = self.event_range_step()
             if what_next is EventLoop.skip_this_event: continue
@@ -91,8 +94,6 @@ class Dorothea(KrCity):
             evt = self.create_kr_event(pmapVectors)
             write_kr(evt)
 
-            self.conditional_print(self.cnt.counter_value('n_events_tot'),
-            self.cnt.counter_value('nevt_out'))
 
     def get_writers(self, h5out):
         """Get the writers needed by dorothea"""
