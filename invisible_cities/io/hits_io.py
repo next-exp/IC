@@ -81,8 +81,8 @@ def hits_writer(hdf5_file, *, compression='ZLIB4'):
                              fformat     = HitsTable,
                              description = 'Hits',
                              compression = compression)
-
-    hits_table.cols.event.create_index()
+    # Mark column to index after populating table
+    hits_table.set_attr('columns_to_index', ['event'])
 
     def write_hits(hits_event):
         hits_event.store(hits_table)
