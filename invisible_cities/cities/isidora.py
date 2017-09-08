@@ -61,6 +61,8 @@ class Isidora(DeconvolutionCity):
         events_info = dataVectors.events
 
         for evt in range(NEVT):
+            self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
+
             what_next = self.event_range_step()
             if what_next is EventLoop.skip_this_event: continue
             if what_next is EventLoop.terminate_loop : break
@@ -75,8 +77,6 @@ class Isidora(DeconvolutionCity):
             write.sipm(sipmrwf[evt])
             if self.monte_carlo:
                 write.mc(mc_tracks, self.cnt.counter_value('n_events_tot'))
-
-            self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
 
     def get_writers(self, h5out):
         """Get the writers needed by Isidora"""

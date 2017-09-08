@@ -84,6 +84,9 @@ class Diomira(MonteCarloCity):
         events_info = dataVectors.events
 
         for evt in range(NEVT):
+            self.conditional_print(self.cnt.counter_value('n_events_tot'),
+                                   self.cnt.counter_value('nevt_out'))
+
             # Count events in and break if necessary before filtering
             what_next = self.event_range_step()
             if what_next is EventLoop.skip_this_event: continue
@@ -118,9 +121,6 @@ class Diomira(MonteCarloCity):
             write.rwf(RWF)
             write.cwf(BLR)
             write.sipm(dataSiPM)
-
-            self.conditional_print(self.cnt.counter_value('n_events_tot'),
-            self.cnt.counter_value('nevt_out'))
 
     def write_parameters(self, h5out):
         """Write deconvolution parameters to output file"""
