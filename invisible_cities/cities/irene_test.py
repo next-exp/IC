@@ -88,11 +88,11 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
 
     nrequired  = 2
 
-    conf = configure('dummy invisible_cities/config/irene.conf'.split()).as_dict
-    conf.update(dict(run_number = 0,
-                     filesin   = PATH_IN,
-                     file_out   = PATH_OUT,
-                     nmax       = nrequired,
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(run_number   = 0,
+                     filesin      = PATH_IN,
+                     file_out     = PATH_OUT,
+                     event_range  = (0, nrequired),
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
@@ -102,7 +102,6 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
     nactual = cnt.counter_value('n_events_tot')
     if nrequired > 0:
         assert nrequired == nactual
-        assert nrequired == cnt.counter_value('nmax')
 
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
@@ -135,11 +134,11 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
 
     nrequired = 2
 
-    conf = configure('dummy invisible_cities/config/irene.conf'.split()).as_dict
-    conf.update(dict(run_number = 2983,
-                     files_in   = PATH_IN,
-                     file_out   = PATH_OUT,
-                     nmax       = nrequired,
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(run_number   = 2983,
+                     files_in     = PATH_IN,
+                     file_out     = PATH_OUT,
+                     event_range = (0, nrequired),
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
@@ -165,7 +164,7 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
 
 
     with tb.open_file(PATH_IN, mode='r') as h5in:
-        evt_in  = h5in.root.Run.events[0:3]
+        evt_in  = h5in.root.Run.events[0:2]
         evts_in = []
         ts_in   = []
         for e in evt_in:
@@ -206,29 +205,30 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
 
     nrequired = 10
 
-    conf = configure('dummy invisible_cities/config/irene.conf'.split()).as_dict
-    conf.update(dict(run_number = 0,
-                     files_in   = PATH_IN,
-                     file_out   = PATH_OUT,
-                     nmax       = nrequired,
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(run_number   = 0,
+                     files_in     = PATH_IN,
+                     file_out     = PATH_OUT,
+                     event_range = (0, nrequired),
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
     irene.run()
     cnt = irene.end()
 
-    assert cnt.counter_value('n_events_tot')   == 0
-    assert cnt.counter_value('n_empty_events') == 1
+    assert cnt.counter_value('n_events_tot'              ) == 1
+    assert cnt.counter_value('n_empty_events_s2_ene_eq_0') == 1
+    assert cnt.counter_value('n_empty_events'            ) == 1
 
 
 def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR, s12params):
     "Check that PMT active correctly describes the PMT configuration of the detector"
     nrequired = 1
-    conf = configure('dummy invisible_cities/config/irene.conf'.split()).as_dict
-    conf.update(dict(run_number =  job_info_missing_pmts.run_number,
-                     files_in   =  job_info_missing_pmts. input_filename,
-                     file_out   =  job_info_missing_pmts.output_filename,
-                     nmax       = nrequired,
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(run_number   =  job_info_missing_pmts.run_number,
+                     files_in     =  job_info_missing_pmts. input_filename,
+                     file_out     =  job_info_missing_pmts.output_filename,
+                     event_range   = (0, nrequired),
                      **unpack_s12params(s12params))) # s12params are just dummy values in this test
     #import pdb; pdb.set_trace()
     irene = Irene(**conf)
