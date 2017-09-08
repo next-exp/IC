@@ -87,7 +87,7 @@ class Irene(PmapCity):
             write.pmap         (event, *pmap)
             write.run_and_event(self.run_number, event, timestamp)
             if self.monte_carlo:
-                write.mc(mc_tracks, evt)
+                write.mc(mc_tracks, event)
 
     def check_s12(self, s12sum):
         """Checks for ocassional empty events, characterized by null s2_energy
