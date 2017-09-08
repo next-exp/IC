@@ -13,15 +13,20 @@ from .    mc_io            import mc_track_writer
 from .  pmap_io            import     pmap_writer
 
 
+class DummyCity(City):
+    def display_IO_info(self):
+        "Override so it is not executed"
+
+    def file_loop(self):
+        "Override so it is not executed"
+
 
 @fixture(scope="session")
 def init_city(ICDIR, config_tmpdir):
     conf = configure(('city ' + ICDIR +  'config/city.conf').split())
     file_out = os.path.join(config_tmpdir, "empty_file.h5")
     conf.update(dict(file_out = file_out))
-    city = City(**conf)
-    city.display_IO_info = lambda: None
-    city.file_loop       = lambda: None
+    city = DummyCity(**conf)
     return city, file_out
 
 
