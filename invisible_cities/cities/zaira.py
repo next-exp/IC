@@ -5,9 +5,6 @@ credits: see ic_authors_and_legal.rst in /doc
 
 last revised: JJGC, 12-July-2017
 """
-import sys
-import time
-from functools import partial
 
 import numpy  as np
 import tables as tb
@@ -34,7 +31,6 @@ class Zaira(DstCity):
         """
         super().__init__(**kwds)
         self.cnt.set_name('zaira')
-        self.cnt.set_counter('nmax', value=self.conf.nmax)
         self.set_lifetime_correction()
         self.set_xybins_and_range()
         self.set_z_and_e_fiducial()
