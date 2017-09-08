@@ -8,7 +8,7 @@ package: invisible cities. See release notes and licence
 last changed: 01-12-2017
 """
 
-from   pytest import raises
+from pytest import raises
 
 from .. core.exceptions import NoInputFiles
 from .. core.exceptions import NoOutputFile
