@@ -24,6 +24,7 @@ from .. evm.ic_containers      import S12Params as S12P
 from .. types.ic_types         import minmax
 
 from .  base_cities  import PmapCity
+from .  base_cities  import EventLoop
 
 
 class Irene(PmapCity):
@@ -38,7 +39,6 @@ class Irene(PmapCity):
         """
         super().__init__(**kwds)
         self.cnt.set_name('irene')
-        self.cnt.set_counter('nmax', value=self.conf.nmax)
         self.cnt.init_counters(('n_events_tot',
                                 'n_empty_events',
                                 'n_empty_events_s2_ene_eq_0',
@@ -62,6 +62,13 @@ class Irene(PmapCity):
         events_info = dataVectors.events
 
         for evt in range(NEVT):
+            self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
+
+            what_next = self.event_range_step()
+            if what_next is EventLoop.skip_this_event: continue
+            if what_next is EventLoop.terminate_loop : break
+            self.cnt.increment_counter('n_events_tot')
+
             # calibrated sum in PMTs
             s12sum, cal_cwf, calsum = self.pmt_transformation(pmtrwf[evt])
 
@@ -80,13 +87,7 @@ class Irene(PmapCity):
             write.pmap         (event, *pmap)
             write.run_and_event(self.run_number, event, timestamp)
             if self.monte_carlo:
-                write.mc(mc_tracks, self.cnt.counter_value('n_events_tot'))
-
-            self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
-            if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
-                break
-            else:
-                self.cnt.increment_counter('n_events_tot')
+                write.mc(mc_tracks, evt)
 
     def check_s12(self, s12sum):
         """Checks for ocassional empty events, characterized by null s2_energy

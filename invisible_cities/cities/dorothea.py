@@ -5,10 +5,6 @@ credits: see ic_authors_and_legal.rst in /doc
 
 last revised: JJGC, July-2017
 """
-import sys
-import glob
-import time
-import textwrap
 
 import numpy  as np
 import tables as tb
@@ -26,14 +22,15 @@ from .. filters.s1s2_filter    import s1s2_filter
 from .. filters.s1s2_filter    import S12Selector
 
 from .  base_cities            import KrCity
+from .  base_cities            import EventLoop
 
 
 class Dorothea(KrCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.cnt.set_name('dorothea')
-        self.cnt.set_counter('nmax', value=self.conf.nmax)
-        self.cnt.init_counters(('n_events_tot', 'nevt_out',
+        self.cnt.init_counters(('n_events_tot',
+                                'nevt_out',
                                 'n_events_not_s1',
                                 'n_events_not_s2',
                                 'n_events_not_s2si',
@@ -60,11 +57,14 @@ class Dorothea(KrCity):
         s2si_dict = pmapVectors.s2si
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
+            self.conditional_print(self.cnt.counter_value('n_events_tot'),
+                                   self.cnt.counter_value('nevt_out'))
+
             # Count events in and break if necessary before filtering
-            if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
-                break
-            else:
-                self.cnt.increment_counter('n_events_tot')
+            what_next = self.event_range_step()
+            if what_next is EventLoop.skip_this_event: continue
+            if what_next is EventLoop.terminate_loop : break
+            self.cnt.increment_counter('n_events_tot')
             # get pmaps
             s1, s2, s2si = self. get_pmaps_from_dicts(s1_dict,
                                                       s2_dict,
@@ -94,8 +94,6 @@ class Dorothea(KrCity):
             evt = self.create_kr_event(pmapVectors)
             write_kr(evt)
 
-            self.conditional_print(self.cnt.counter_value('n_events_tot'),
-            self.cnt.counter_value('nevt_out'))
 
     def get_writers(self, h5out):
         """Get the writers needed by dorothea"""

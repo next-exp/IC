@@ -18,7 +18,7 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
 
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST.h5')
     nrequired = 10
-    conf = configure('dummy invisible_cities/config/dorothea.conf'.split()).as_dict
+    conf = configure('dummy invisible_cities/config/dorothea.conf'.split())
     conf.update(dict(run_number = 0,
                      files_in   = PATH_IN,
                      file_out   = PATH_OUT,
