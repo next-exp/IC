@@ -5,18 +5,19 @@ from pytest import mark
 from pytest import fixture
 
 from .. cities.base_cities import City
-from .. core.configure   import configure
-from . hits_io import     hits_writer
-from . kdst_io import       kr_writer
-from .   mc_io import mc_track_writer
-from . pmap_io import     pmap_writer
+from .. core  .configure   import configure
+
+from .  hits_io            import     hits_writer
+from .  kdst_io            import       kr_writer
+from .    mc_io            import mc_track_writer
+from .  pmap_io            import     pmap_writer
 
 
 
 @fixture
 def init_city(ICDIR, config_tmpdir):
         conf = configure(('city ' + ICDIR +  'config/city.conf').split())
-        file_out = os.path.join(config_tmpdir, f"empty_file.h5")
+        file_out = os.path.join(config_tmpdir, "empty_file.h5")
         conf.update(dict(file_out = file_out))
         city = City(**conf)
         city.display_IO_info = lambda: None
