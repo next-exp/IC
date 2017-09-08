@@ -17,6 +17,7 @@ import tables as tb
 
 from .. core.core_functions     import merge_two_dicts
 from .. core.core_functions     import loc_elem_1d
+from .. core.configure          import all
 from .. core.configure          import configure
 from .. core.exceptions         import NoInputFiles
 from .. core.exceptions         import NoOutputFile
@@ -84,15 +85,23 @@ from typing import Sequence
 from typing import List
 
 
+# TODO: move this somewhere else
+from enum import Enum
+
+class EventLoop(Enum):
+    skip_this_event = 1
+    terminate_loop  = 2
+
 
 class City:
     """Base class for all cities.
-       An IC city consumes data stored in the input_files and produce new data
-       which is stored in the output_file. In addition to setting input and
-       output files, the base class sets the print frequency and accesses
-       the data base, storing as attributed several calibration coefficients
 
-     """
+       An IC city consumes data stored in the input_files and produce
+       new data which is stored in the output_file. In addition to
+       setting input and output files, the base class sets the print
+       frequency and accesses the data base, storing as attributed
+       several calibration coefficients
+    """
 
     def __init__(self, **kwds):
         """The init method of a city handles:
@@ -103,6 +112,7 @@ class City:
         """
 
         self.cnt = Counter()
+        self.cnt.init_counter('n_events_for_range')
         conf = Namespace(**kwds)
         self.conf = conf
 
@@ -113,26 +123,35 @@ class City:
             raise NoOutputFile
 
 
-        self.input_files = sorted(glob(expandvars(conf.files_in)))
-        self.output_file =             expandvars(conf.file_out)
-        self.compression = conf.compression
-        self.run_number  = conf.run_number
-        self.nprint      = conf.nprint  # default print frequency
-        self.nmax        = conf.nmax
-
+        self.input_files  = sorted(glob(expandvars(conf.files_in)))
+        self.output_file  =             expandvars(conf.file_out)
+        self.compression  = conf.compression
+        self.run_number   = conf.run_number
+        self.nprint       = conf.nprint  # default print frequency
+        self.first_event, self.last_event = self._event_range()
         self.set_up_database()
+
+    def _event_range(self):
+        if not hasattr(self.conf, 'event_range'): return None, None
+        er = self.conf.event_range
+        if len(er) == 1:                          return None, er[0]
+        if len(er) == 2:                          return tuple(er)
+        if len(er) == 0: ValueError('event_range needs at least one value')
+        if len(er) >  2:
+            raise ValueError('event_range accepts at most 2 values but was given {}'
+                             .format(er))
 
     @classmethod
     def drive(cls, argv):
         """The drive methods allows invocation of the cities and their daemons
         through the command line.
-        1. It reads the configuration file and calls the instances of the cities,
-           passing a dictionary of arguments.
+
+        1. It reads the configuration files and CLI arguments and
+           creates an instance of the city based on that configuration.
         2. It instantiates the daemons defined in the city configuration and
            sets them as attributes of the city.
         3. Calls the method "go" to launch execution of the city.
         4. Calls the method "end" for post-processing.
-
         """
         conf = configure(argv)
         opts = conf.as_namespace
@@ -140,19 +159,19 @@ class City:
             conf.display()
         if opts.print_config_only:
             return
-        instance = cls(**conf.as_dict)
+        instance = cls(**conf)
 
         # set the deamons
-        if 'daemons' in conf.as_dict:
-            d_list_name = conf.as_dict['daemons']
+        if 'daemons' in conf:
+            d_list_name = conf['daemons']
             instance.daemons = list(map(invoke_daemon, d_list_name))
         instance.go()
         instance.end()
+        return conf.as_namespace, instance.cnt
 
     def go(self):
         """Launch the execution of the city (calling method run)
         and prints execution statistics.
-
         """
         t0 = time()
         self.run()
@@ -161,7 +180,7 @@ class City:
         n_events = self.cnt.counter_value('n_events_tot')
         print("run {} evts in {} s, time/event = {}".format(n_events,
                                                             dt,
-                                                            dt/n_events))
+                                                            dt / n_events))
 
     def run(self):
         """The (base) run method of a city does the following chores:
@@ -171,7 +190,6 @@ class City:
         4. gets the writers for the specific city.
         5. Pass the writers to the file_loop() method.
         6. returns the counter dictionary.
-
         """
         self.display_IO_info()
 
@@ -187,7 +205,6 @@ class City:
         """Postoprocessing after city execution:
         1. calls the end method of the daemons if they have been invoked.
         2. prints the counter dictionary
-
         """
         if hasattr(self, 'daemons'):
             for deamon in self.daemons:
@@ -197,11 +214,12 @@ class City:
         return self.cnt
 
     def display_IO_info(self):
+        n_events_max = 'TODO: FIXME'
         print("""
                  {} will run a max of {} events
                  Input Files = {}
                  Output File = {}
-                          """.format(self.__class__.__name__, self.nmax, self.input_files, self.output_file))
+                          """.format(self.__class__.__name__, n_events_max, self.input_files, self.output_file))
 
     def file_loop(self):
         """Must be implemented by cities"""
@@ -244,14 +262,23 @@ class City:
             print('event in file = {}, total = {}'
                   .format(evt, n_events_tot))
 
-    def max_events_reached(self, n_events_in):
-        if self.nmax < 0:
-            return False
-        if n_events_in == self.nmax:
-            print('reached max nof of events (= {})'
-                  .format(self.nmax))
-            return True
-        return False
+    def event_range_step(self):
+        N = self.cnt.counter_value('n_events_for_range')
+        self.cnt.increment_counter('n_events_for_range')
+
+        if isinstance(self.last_event, int) and N >= self.last_event:
+            # TODO: this side-effect should not be here
+            print('reached event cutoff (= {})'
+                  .format(self.last_event))
+            return EventLoop.terminate_loop
+
+        if self.first_event is not None and N < self.first_event:
+            return EventLoop.skip_this_event
+
+    def event_range_finished(self):
+        N = self.cnt.counter_value('n_events_for_range')
+        return isinstance(self.last_event, int) and N >= self.last_event
+
 
     def get_mc_tracks(self, h5in):
         "Return RWF vectors and sensor data."
@@ -350,6 +377,7 @@ class RawCity(City):
 
         """
         for filename in self.input_files:
+            if self.event_range_finished(): break
             print("Opening", filename, end="... ")
             with tb.open_file(filename, "r") as h5in:
 
@@ -573,7 +601,8 @@ class PCity(City):
         """
 
         for filename in self.input_files:
-            print("Opening {filename}".format(**locals()), end="... ")
+            if self.event_range_finished(): break
+            print("Opening {filename}".format(**locals()), end="...\n")
 
             try:
                 s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)

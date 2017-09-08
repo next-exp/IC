@@ -8,8 +8,6 @@ last revised: JJGC, 10-July-2017
 """
 import sys
 
-from glob      import glob
-from time      import time
 from functools import partial
 from argparse  import Namespace
 
@@ -27,9 +25,9 @@ from .. filters.trigger_filters import TriggerFilter
 
 from .. reco                    import wfm_functions as wfm
 from .. reco                    import tbl_functions as tbl
-from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco                    import tbl_functions    as tbl
 from .. reco                    import peak_functions_c as cpf
+from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. evm.nh5                 import FEE
 from .. evm.nh5                 import RunInfo
 from .. evm.nh5                 import EventInfo
@@ -38,6 +36,7 @@ from .. evm.ic_containers       import PeakData
 from .. database                import load_db          as db
 from .. types.ic_types          import minmax
 from .  base_cities             import MonteCarloCity
+from .  base_cities             import EventLoop
 from .. filters.trigger_filters import TriggerFilter
 
 class Diomira(MonteCarloCity):
@@ -59,7 +58,6 @@ class Diomira(MonteCarloCity):
         conf = self.conf
 
         self.cnt.set_name('diomira')
-        self.cnt.set_counter('nmax', value=self.conf.nmax)
         self.cnt.init_counters(('n_events_tot', 'nevt_out'))
 
         self.sipm_noise_cut   = conf.sipm_noise_cut
@@ -86,11 +84,14 @@ class Diomira(MonteCarloCity):
         events_info = dataVectors.events
 
         for evt in range(NEVT):
+            self.conditional_print(self.cnt.counter_value('n_events_tot'),
+                                   self.cnt.counter_value('nevt_out'))
+
             # Count events in and break if necessary before filtering
-            if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
-                break
-            else:
-                self.cnt.increment_counter('n_events_tot')
+            what_next = self.event_range_step()
+            if what_next is EventLoop.skip_this_event: continue
+            if what_next is EventLoop.terminate_loop : break
+            self.cnt.increment_counter('n_events_tot')
 
             # Simulate detector response
             dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd,
@@ -120,9 +121,6 @@ class Diomira(MonteCarloCity):
             write.rwf(RWF)
             write.cwf(BLR)
             write.sipm(dataSiPM)
-
-            self.conditional_print(self.cnt.counter_value('n_events_tot'),
-            self.cnt.counter_value('nevt_out'))
 
     def write_parameters(self, h5out):
         """Write deconvolution parameters to output file"""
