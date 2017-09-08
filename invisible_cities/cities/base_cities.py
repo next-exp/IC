@@ -30,6 +30,7 @@ from .. core.exceptions         import SipmZeroCharge
 from .. core.exceptions         import ClusterEmptyList
 from .. core.exceptions         import XYRecoFail
 from .. core.exceptions         import InitializedEmptyPmapObject
+from .. core.exceptions         import UnknownParameter
 from .. core.system_of_units_c  import units
 from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
@@ -140,7 +141,8 @@ class City:
     def detect_unknown_parameters(self, kwds):
         known = self.allowed_parameters()
         for name in kwds:
-            assert name in known, (name, self.__class__.__name__)
+            if name not in known:
+                raise UnknownParameter('{} does not expect {}.'.format(self.__class__.__name__, name))
 
     @classmethod
     def allowed_parameters(cls):
