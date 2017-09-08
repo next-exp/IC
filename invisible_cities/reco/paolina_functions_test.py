@@ -13,7 +13,8 @@ from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
 
-#from . paolina_functions import Hit
+from .. evm.event_model  import BHit
+
 from . paolina_functions import Voxel
 from . paolina_functions import bounding_box
 from . paolina_functions import find_extrema
@@ -201,3 +202,8 @@ def test_blobs(track_extrema, radius, expected):
     Ea, Eb = expected
 
     assert blob_energies(track, radius) == (Ea, Eb)
+
+def test_voxelize_single_hit():
+    hits = [BHit(1, 1, 1, 100)]
+    vox_size = np.array([10,10,10], dtype=np.int16)
+    assert len(voxelize_hits(hits, vox_size)) == 1
