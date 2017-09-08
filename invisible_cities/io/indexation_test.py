@@ -14,7 +14,7 @@ from .  pmap_io            import     pmap_writer
 
 
 
-@fixture
+@fixture(scope="session")
 def init_city(ICDIR, config_tmpdir):
         conf = configure(('city ' + ICDIR +  'config/city.conf').split())
         file_out = os.path.join(config_tmpdir, "empty_file.h5")
