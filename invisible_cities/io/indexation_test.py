@@ -32,7 +32,7 @@ def init_city(ICDIR, config_tmpdir):
                    (    pmap_writer, "PMAPS", "S1"      , "event"     ),
                    (    pmap_writer, "PMAPS", "S2"      , "event"     ),
                    (    pmap_writer, "PMAPS", "S2Si"    , "event"     )])
-def test_hits_table_is_indexed(init_city, writer, group, node, column):
+def test_table_is_indexed(init_city, writer, group, node, column):
     city, file_out = init_city
     city.get_writers = writer
     city.run()
