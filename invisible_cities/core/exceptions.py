@@ -65,3 +65,6 @@ class NegativeThresholdNotAllowed(ICException):
 
 class InitializedEmptyPmapObject(ICException):
     pass
+
+class UnknownParameter(ICException):
+    pass
