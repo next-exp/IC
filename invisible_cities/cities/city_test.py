@@ -12,6 +12,7 @@ from   pytest import raises
 
 from .. core.exceptions import NoInputFiles
 from .. core.exceptions import NoOutputFile
+from .. core.exceptions import UnknownParameter
 from .  base_cities     import City
 
 
@@ -22,3 +23,7 @@ def test_no_input_files_raises_NoInputFiles():
 def test_no_output_files_raises_NoOutptFiles():
     with raises(NoOutputFile):
         City(files_in = 'dummy/input/files')
+
+def test_unknown_parameters_are_dectected():
+    with raises(UnknownParameter):
+        City(a_parameter_that_was_not_expected=0)
