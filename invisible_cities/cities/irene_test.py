@@ -164,7 +164,7 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
 
 
     with tb.open_file(PATH_IN, mode='r') as h5in:
-        evt_in  = h5in.root.Run.events[0:3]
+        evt_in  = h5in.root.Run.events[0:2]
         evts_in = []
         ts_in   = []
         for e in evt_in:
@@ -216,8 +216,9 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
     irene.run()
     cnt = irene.end()
 
-    assert cnt.counter_value('n_events_tot')   == 0
-    assert cnt.counter_value('n_empty_events') == 1
+    assert cnt.counter_value('n_events_tot'              ) == 1
+    assert cnt.counter_value('n_empty_events_s2_ene_eq_0') == 1
+    assert cnt.counter_value('n_empty_events'            ) == 1
 
 
 def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR, s12params):
