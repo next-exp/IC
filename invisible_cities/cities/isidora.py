@@ -19,12 +19,14 @@ import tables as tb
 
 from .. core.configure         import configure
 from .. core.system_of_units_c import units
-from .. reco        import tbl_functions as tbl
+from .. reco                   import tbl_functions as tbl
 
-from .. io.mc_io               import mc_track_writer
+from .. io.           mc_io    import      mc_track_writer
+from .. io.          rwf_io    import           rwf_writer
 from .. io.run_and_event_io    import run_and_event_writer
-from .. io.rwf_io   import rwf_writer
+
 from .  base_cities import DeconvolutionCity
+from .  base_cities import EventLoop
 
 
 class Isidora(DeconvolutionCity):
@@ -43,7 +45,6 @@ class Isidora(DeconvolutionCity):
 
         super().__init__(**kwds)
         self.cnt.set_name('isidora')
-        self.cnt.set_counter('nmax', value=self.conf.nmax)
         self.cnt.init_counter('n_events_tot')
         self.sp = self.get_sensor_params(self.input_files[0])
 
@@ -60,6 +61,13 @@ class Isidora(DeconvolutionCity):
         events_info = dataVectors.events
 
         for evt in range(NEVT):
+            self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
+
+            what_next = self.event_range_step()
+            if what_next is EventLoop.skip_this_event: continue
+            if what_next is EventLoop.terminate_loop : break
+            self.cnt.increment_counter('n_events_tot')
+
             CWF = self.deconv_pmt(pmtrwf[evt])  # deconvolution
 
             # write stuff
@@ -69,13 +77,6 @@ class Isidora(DeconvolutionCity):
             write.sipm(sipmrwf[evt])
             if self.monte_carlo:
                 write.mc(mc_tracks, self.cnt.counter_value('n_events_tot'))
-
-            # conditional print and exit of loop condition
-            self.conditional_print(evt, self.cnt.counter_value('n_events_tot'))
-            if self.max_events_reached(self.cnt.counter_value('n_events_tot')):
-                break
-            else:
-                self.cnt.increment_counter('n_events_tot')
 
     def get_writers(self, h5out):
         """Get the writers needed by Isidora"""

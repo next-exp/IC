@@ -6,6 +6,7 @@ import sys
 import os
 
 from os.path import basename
+from enum    import Enum
 
 from collections     import namedtuple
 from collections     import defaultdict
@@ -15,17 +16,33 @@ from .        log_config      import logger
 from . import system_of_units as     units
 
 
+class EventRange(Enum):
+    all  = 1
+    last = 2
+
+# to allow direct imports from other odules
+all, last = EventRange
+
+def event_range(string):
+    try:
+        return int(string)
+    except ValueError:
+        if string.lower() == 'all' : return EventRange.all
+        if string.lower() == 'last': return EventRange.last
+        # TODO Improve the message in the ValueError
+        raise ValueError("`--event-range` must be an int, 'all' or 'last'")
+
+
+event_range_help = """<stop> | <start> <stop> | all | <start> last"""
+
 parser = argparse.ArgumentParser()
-parser.add_argument('config_file',             type=str,  help="configuration file")
-parser.add_argument("-i", '--files-in',        type=str,  help="input file")
-parser.add_argument("-o", '--file-out',        type=str,  help="output file")
-parser.add_argument("-n", '--nevents',         type=int,  help="number of events to be processed")
-parser.add_argument("-f", '--first-event',     type=int,  help="event number for first event")
-parser.add_argument("-r", '--run-number',      type=int,  help="run number")
-parser.add_argument("-s", '--skip',            type=int,  help="number of events to be skipped", default=0)
-parser.add_argument("-p", '--print_mod',       type=int,  help="print every this number of events")
-parser.add_argument("-v", dest='verbosity', action="count", help="increase verbosity level", default=0)
-parser.add_argument("--run-all",            action="store_true")
+parser.add_argument('config_file',          type=str,            help="configuration file")
+parser.add_argument("-i", '--files-in',     type=str,            help="input file")
+parser.add_argument("-o", '--file-out',     type=str,            help="output file")
+parser.add_argument("-e", '--event-range',  type=event_range,    help=event_range_help, nargs='*')
+parser.add_argument("-r", '--run-number',   type=int,            help="run number")
+parser.add_argument("-p", '--print-mod',    type=int,            help="print every this number of events")
+parser.add_argument("-v", dest='verbosity', action="count",      help="increase verbosity level", default=0)
 parser.add_argument('--print-config-only',  action='store_true', help='do not run the city')
 
 display = parser.add_mutually_exclusive_group()
@@ -44,8 +61,8 @@ def configure(input_options=sys.argv):
     CLI = parser.parse_args(args)
     options = read_config_file(CLI.config_file)
 
-    options.as_dict.update((opt, val) for opt, val in vars(CLI).items() if val is not None)
-    logger.setLevel(options.as_dict.get("verbosity", "info"))
+    options.update((opt, val) for opt, val in vars(CLI).items() if val is not None)
+    logger.setLevel(options.get("verbosity", "info"))
 
     return options
 
@@ -58,8 +75,21 @@ def read_config_file(file_name):
 
 
 def make_config_file_reader():
+    """Create a config file parser with a new empty configuration.
+
+    Configurations can be spread over multiple files, organized in a
+    hierachy in which some files can include othes. This factory
+    function creates a fresh config parser, which, given the name of a
+    top-level config file, will collect all the settings contained in
+    the given file and any files it includes, and return a
+    corresponding instance of Configuration.
+    """
+
     builtins = __builtins__.copy()
     builtins.update(vars(units))
+    # TODO: move setting of extra 'builtins' elsewhere
+    builtins['all']  = EventRange.all
+    builtins['last'] = EventRange.last
     globals_ = {'__builtins__': builtins}
     config = Configuration()
     def read_included_file(file_name):
@@ -76,21 +106,29 @@ def make_config_file_reader():
 Overridden = namedtuple('Overridden', 'value file_name')
 
 
+class ReadOnlyNamespace(argparse.Namespace):
+
+    def __setattr__(self, name, value):
+        raise TypeError('''Do not set attibutes in this namespace.
+
+If you really must set a value, do it with the setitem
+syntax on the Configuration instance from which you got
+this namespace.''')
+
 class Configuration(MutableMapping):
 
     def __init__(self):
         self._data = {}
         self._file = {}
         self._history = defaultdict(list)
-        self._file_stack = []
+        self._file_stack = ['<none>']
 
     @property
     def as_namespace(self):
-        return argparse.Namespace(**self._data)
-
-    @property
-    def as_dict(self):
-        return self._data
+        ns = argparse.Namespace(**self._data)
+        # Make the namespace read-only *after* its content has been set
+        ns.__class__ = ReadOnlyNamespace
+        return ns
 
     @property
     def _current_filename(self):
@@ -106,6 +144,9 @@ class Configuration(MutableMapping):
     def __delitem__(self, key): raise NotImplementedError
     def __len__    (self):      return len (self._data)
     def __iter__   (self):      return iter(self._data)
+
+    def update(self, *others):
+        self._data.update(*others)
 
     def push_file(self, file_name):
         self._file_stack.append(file_name)
