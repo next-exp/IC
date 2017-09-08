@@ -10,7 +10,8 @@ def kr_writer(hdf5_file, *, compression='ZLIB4'):
                           fformat     = KrTable,
                           description = 'KDST Events',
                           compression = compression)
-    kr_table.cols.event.create_index()
+    # Mark column to index after populating table
+    kr_table.set_attr('columns_to_index', ['event'])
 
     def write_kr(kr_event):
         kr_event.store(kr_table)
@@ -24,6 +25,8 @@ def xy_writer(hdf5_file, *, compression='ZLIB4'):
                           fformat     = XYfactors,
                           description = 'x,y corrections',
                           compression = compression)
+    # Mark column to index after populating table
+    xy_table.set_attr('columns_to_index', ['nevt'])
 
     def write_xy(xs, ys, fs, us, ns):
         row = xy_table.row
