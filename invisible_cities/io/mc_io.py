@@ -24,7 +24,8 @@ class mc_track_writer:
                         title       = "MCTracks",
                         filters     = tbl.filters(self.compression))
 
-        self.mc_table.cols.event_indx.create_index()
+        # Mark column to index after populating table
+        self.mc_table.set_attr('columns_to_index', ['event_indx'])
 
     def __call__(self, mctracks, evt_number):
         for r in mctracks.iterrows(start=self.last_row):
