@@ -32,9 +32,6 @@ run_number = {run_number}
 # set_print
 nprint = {nprint}
 
-# print empty events (skipped)
-print_empty_events = {print_empty_events}
-
 # set_blr
 nbaseline   = {nbaseline}
 thr_trigger = {thr_trigger}
@@ -74,7 +71,6 @@ config_file_spec = dict(files_in = 'electrons_40keV_z250_RWF.h5',
                         compression        = 'ZLIB4',
                         run_number         = 23,
                         nprint             = 24,
-                        print_empty_events = 25,
                         nbaseline          = 26,
                         thr_trigger        = 27,
                         nmau               = 28,
@@ -291,7 +287,7 @@ def simple_conf_file_name(tmpdir_factory):
     write_config_file(file_name, """
 compression  = 'ZLIB4'
 run_number   = 12
-nprint       = 13
+print_mod    = 13
 event_range  = 14,
 """)
     return str(file_name)

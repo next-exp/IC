@@ -89,11 +89,10 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
 
     conf = configure('diomira invisible_cities/config/diomira.conf'.split())
 
-    conf.update(dict(run_number = run_number,
-                     files_in   = PATH_IN,
-                     file_out   = PATH_OUT,
-                     first_evt  = start_evt,
-                     nmax       = nrequired))
+    conf.update(dict(run_number  = run_number,
+                     files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
+                     event_range = (start_evt, start_evt + nrequired)))
 
     diomira = Diomira(**conf)
     diomira.run()

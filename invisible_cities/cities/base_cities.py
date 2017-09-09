@@ -7,10 +7,11 @@ last revised: JJGC, July-2017
 """
 
 import sys
-from argparse import Namespace
-from glob     import glob
-from time     import time
-from os.path  import expandvars
+from argparse  import Namespace
+from glob      import glob
+from time      import time
+from os.path   import expandvars
+from itertools import chain
 
 import numpy  as np
 import tables as tb
@@ -29,6 +30,7 @@ from .. core.exceptions         import SipmZeroCharge
 from .. core.exceptions         import ClusterEmptyList
 from .. core.exceptions         import XYRecoFail
 from .. core.exceptions         import InitializedEmptyPmapObject
+from .. core.exceptions         import UnknownParameter
 from .. core.system_of_units_c  import units
 from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
@@ -103,6 +105,11 @@ class City:
        several calibration coefficients
     """
 
+    parameters = tuple("""print_config_only hide_config no_overrides
+        no_files full_files config_file
+        files_in file_out compression
+        run_number print_mod event_range verbosity print_mod daemons""".split())
+
     def __init__(self, **kwds):
         """The init method of a city handles:
         1. provides access to an instance of counters (cnt) to be used by derived cities.
@@ -111,7 +118,7 @@ class City:
         4. provides access to the data base.
         """
 
-        self.cnt = Counters(n_events_for_range = 0)
+        self.detect_unknown_parameters(kwds)
 
         conf = Namespace(**kwds)
         self.conf = conf
@@ -122,14 +129,24 @@ class City:
         if not hasattr(conf, 'file_out'):
             raise NoOutputFile
 
-
+        self.cnt = Counters(n_events_for_range = 0)
         self.input_files  = sorted(glob(expandvars(conf.files_in)))
         self.output_file  =             expandvars(conf.file_out)
         self.compression  = conf.compression
         self.run_number   = conf.run_number
-        self.nprint       = conf.nprint  # default print frequency
+        self.print_mod    = conf.print_mod  # default print frequency
         self.first_event, self.last_event = self._event_range()
         self.set_up_database()
+
+    def detect_unknown_parameters(self, kwds):
+        known = self.allowed_parameters()
+        for name in kwds:
+            if name not in known:
+                raise UnknownParameter('{} does not expect {}.'.format(self.__class__.__name__, name))
+
+    @classmethod
+    def allowed_parameters(cls):
+        return set(chain.from_iterable(base.parameters for base in cls.__mro__ if hasattr(base, 'parameters')))
 
     def _event_range(self):
         if not hasattr(self.conf, 'event_range'): return None, None
@@ -271,7 +288,7 @@ class City:
         return self.run_number <= 0
 
     def conditional_print(self, evt, n_events_tot):
-        if n_events_tot % self.nprint == 0:
+        if n_events_tot % self.print_mod == 0:
             print('event in file = {}, total = {}'
                   .format(evt, n_events_tot))
 
@@ -423,8 +440,9 @@ class DeconvolutionCity(RawCity):
        thr_trigger in the rising signal (thr_trigger).
 
        Since a Deconvolution city reads RWF, it is also a RawCity.
-
     """
+
+    parameters = tuple("""raw_data_type n_baseline thr_trigger acum_discharge_length""".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
@@ -475,6 +493,8 @@ class CalibratedCity(DeconvolutionCity):
              MAU + threshold.
        """
 
+    parameters = tuple("""n_mau thr_mau thr_csum_s1 thr_csum_s2 n_mau_sipm thr_sipm""".split())
+
     def __init__(self, **kwds):
 
         super().__init__(**kwds)
@@ -524,8 +544,12 @@ class CalibratedCity(DeconvolutionCity):
 class PmapCity(CalibratedCity):
     """A PMAP city extends a CalibratedCity, computing the S1, S2 and S2Si
        objects that togehter constitute a PMAP.
-
     """
+
+    parameters = tuple("""compute_ipmt_pmaps
+      s1_tmin s1_tmax s1_stride s1_lmin s1_lmax s1_rebin_stride
+      s2_tmin s2_tmax s2_stride s2_lmin s2_lmax s2_rebin_stride
+      thr_sipm_s2""".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
@@ -585,6 +609,9 @@ class PmapCity(CalibratedCity):
 
 class DstCity(City):
     """A DstCity reads a list of KDSTs """
+
+    parameters = tuple("""dst_group dst_node""".split())
+
     def __init__(self, **kwds):
         super().__init__(**kwds)
 
@@ -638,6 +665,14 @@ class KrCity(PCity):
         super().__init__(**kwds)
         #self.reco_algorithm = find_algorithm(self.conf.reco_algorithm)
 
+
+    parameters = tuple("""""".split())
+    parameters = tuple("""lm_radius new_lm_radius
+        msipm drift_v
+        qlm qthr rebin
+        s1_nmin s1_nmax s1_emin s1_emax s1_wmin s1_wmax s1_hmin s1_hmax s1_ethr
+        s2_nmin s2_nmax s2_emin s2_emax s2_wmin s2_wmax s2_hmin s2_hmax s2_ethr
+        s2_nsipmmin s2_nsipmmax""".split())
 
     def compute_xy_position(self, s2si, peak_no):
         """
@@ -744,21 +779,16 @@ class KrCity(PCity):
 
 
 class HitCity(KrCity):
-    """A city that reads PMPAS and computes/writes a hit event"""
+    """A city that reads PMAPS and computes/writes a hit event"""
+
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.rebin  = self.conf.rebin
 
     def compute_xy_position(self, s2sid_peak, slice_no):
         """Compute x-y position for each time slice. """
-        #import pdb; pdb.set_trace()
         IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
-
-        # print('compute_xy_position')
-        # print('s2si.s2sid[peak_no] = {}'.format(s2sid_peak))
-        # print('IDs = {}'.format(IDs))
-        # print('Qs = {}'.format(Qs))
 
         return corona(np.stack((xs, ys)).T, Qs,
                       Qthr           =  self.conf.qthr,
@@ -873,8 +903,11 @@ class TriggerEmulationCity(PmapCity):
     """Emulates the trigger in the FPGA.
        1. It is a PmapCity since the FPGA performs deconvolution and PMAP
        searches to set the trigger.
-
     """
+
+    parameters = tuple("""tr_channels min_number_channels
+        min_height max_height min_width max_width min_charge max_charge
+        data_mc_ratio""".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
@@ -921,8 +954,9 @@ class MonteCarloCity(TriggerEmulationCity):
         that transforms MCRD in RWF.
      2. Emulates the trigger prepocessor: the functionality is provided
         by the inheritance from TriggerEmulationCity.
-
     """
+
+    parameters = tuple("""sipm_noise_cut""".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
