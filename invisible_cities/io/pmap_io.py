@@ -128,7 +128,9 @@ def _make_pmp_tables(hdf5_file, compression):
     s2si       = MKT(pmaps_group, 'S2Si', table_formats.S2Si, "S2Si Table", c)
     pmp_tables = (s1, s2, s2si)
     for table in pmp_tables:
-        table.cols.event.create_index()
+        # Mark column to be indexed
+        table.set_attr('columns_to_index', ['event'])
+
 
     return pmp_tables
 
@@ -145,5 +147,6 @@ def _make_ipmt_pmp_tables(hdf5_file, compression):
     s2pmt = MKT(ipmt_pmaps_group, 'S2Pmt', table_formats.S12Pmt,   "S2Pmt Table", c)
     ipmt_tables = (s1pmt, s2pmt)
     for table in ipmt_tables:
-        table.cols.event.create_index()
+        # Mark column to be indexed
+        table.set_attr('columns_to_index', ['event'])
     return ipmt_tables
