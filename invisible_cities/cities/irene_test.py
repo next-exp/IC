@@ -46,14 +46,11 @@ def unpack_s12params(s12params):
     s1par, s2par = s12params
     return dict(s1_tmin          = s1par.time.min,
                 s1_tmax          = s1par.time.max,
-                s1_string        = s1par.stride,
-                s1_rebin_stride  = s1par.rebin_stride,
                 s1_lmin          = s1par.length.min,
                 s1_lmax          = s1par.length.max,
 
                 s2_tmin          = s2par.time.min,
                 s2_tmax          = s2par.time.max,
-                s2_string        = s2par.stride,
                 s2_rebin_stride  = s2par.rebin_stride,
                 s2_lmin          = s2par.length.min,
                 s2_lmax          = s2par.length.max)
@@ -90,7 +87,7 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number   = 0,
-                     filesin      = PATH_IN,
+                     files_in     = PATH_IN,
                      file_out     = PATH_OUT,
                      event_range  = (0, nrequired),
                      **unpack_s12params(s12params)))
