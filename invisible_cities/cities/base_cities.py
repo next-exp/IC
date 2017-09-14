@@ -81,6 +81,7 @@ from .. types.ic_types          import xy
 
 from .. filters.s1s2_filter     import s1s2_filter
 from .. filters.s1s2_filter     import s2si_filter
+from .. filters.s1s2_filter      import S12Selector
 
 from .. daemons.idaemon         import invoke_daemon
 
@@ -213,7 +214,7 @@ class City:
 
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
-            #self.write_parameters(h5out)
+            self.write_parameters(h5out)
             self.writers = self.get_writers(h5out)
             self.file_loop()
 
@@ -260,9 +261,9 @@ class City:
         """Must be implemented by cities"""
         raise NotImplementedError("Concrete City must implement `event_loop`")
 
-    # def write_parameters(self, h5out):
-    #     """Must be implemented by cities"""
-    #     raise NotImplementedError("Concrete City must implement `write_parameters`")
+    def write_parameters(self, h5out):
+        """Must be implemented by cities"""
+        raise NotImplementedError("Concrete City must implement `write_parameters`")
 
     def get_writers(self, h5out):
         """Must be implemented by cities"""
@@ -632,6 +633,9 @@ class PCity(City):
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
+        self.drift_v = self.conf.drift_v
+        self.s1s2_selector = S12Selector(**kwds)
+
         self.cnt.init(n_events_tot                 = 0,
                       n_events_not_s1              = 0,
                       n_events_not_s2              = 0,
@@ -644,9 +648,6 @@ class PCity(City):
         """Must be implemented by any city derived from PCity"""
         raise NotImplementedError("Concrete City must implement `create_dst_event`")
 
-    def s12_selector(self):
-        """Must be implemented by any city derived from PCity"""
-        raise NotImplementedError("Concrete City must implement `s12_selector`")
 
     def event_loop(self, pmapVectors):
         """actions:
@@ -663,7 +664,7 @@ class PCity(City):
         s2si_dict = pmapVectors.s2si
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
-            self.conditional_print(self.cnt.n_events_tot, self.cnt.nevt_out)
+            self.conditional_print(self.cnt.n_events_tot, self.cnt.n_events_selected)
 
             # Count events in and break if necessary before filtering
             what_next = self.event_range_step()
@@ -727,7 +728,7 @@ class PCity(City):
             self.cnt.n_events_not_s2si += 1
             return False
         # filters in s12 and s2si
-        f1 = s1s2_filter(self.s1s2_selector(), s1, s2, s2si)
+        f1 = s1s2_filter(self.s1s2_selector, s1, s2, s2si)
         if not f1:
             self.cnt.n_events_not_s1s2_filter += 1
             return False
