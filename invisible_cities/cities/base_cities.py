@@ -637,6 +637,13 @@ class PCity(City):
                       n_events_not_s2si_filter     = 0,
                       n_events_selected            = 0)
 
+    def create_dst_event(self, pmapVectors):
+        """Must be implemented by any city derived from PCity"""
+        raise NotImplementedError("Concrete City must implement `create_dst_event`")
+
+    def s12_selector(self):
+        """Must be implemented by any city derived from PCity"""
+        raise NotImplementedError("Concrete City must implement `s12_selector`")
 
     def event_loop(self, pmapVectors):
         """actions:
