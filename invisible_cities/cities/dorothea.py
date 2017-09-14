@@ -35,8 +35,9 @@ class Dorothea(KrCity):
                       n_events_not_s1              = 0,
                       n_events_not_s2              = 0,
                       n_events_not_s2si            = 0,
-                      n_events_rejected_filter     = 0,
-                      n_events_more_than_1_cluster = 0)
+                      n_events_not_s1s2_filter     = 0,
+                      n_events_not_s2si_filter     = 0,
+                      n_events_selected            = 0)
 
 
         self.drift_v = self.conf.drift_v
@@ -86,7 +87,7 @@ class Dorothea(KrCity):
                 self.cnt.n_events_more_than_1_cluster += 1
                 continue
             # event passed selection:
-            self.cnt.nevt_out += 1
+            self.cnt.n_events_selected     += 1
             # create Kr event & write to file
             pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
                                       events=evt_number,
