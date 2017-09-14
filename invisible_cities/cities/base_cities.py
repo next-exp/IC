@@ -210,7 +210,7 @@ class City:
 
         with tb.open_file(self.output_file, "w",
                           filters = tbl.filters(self.compression)) as h5out:
-            self.write_parameters(h5out)
+            #self.write_parameters(h5out)
             self.writers = self.get_writers(h5out)
             self.file_loop()
 
@@ -257,9 +257,9 @@ class City:
         """Must be implemented by cities"""
         raise NotImplementedError("Concrete City must implement `event_loop`")
 
-    def write_parameters(self, h5out):
-        """Must be implemented by cities"""
-        raise NotImplementedError("Concrete City must implement `write_parameters`")
+    # def write_parameters(self, h5out):
+    #     """Must be implemented by cities"""
+    #     raise NotImplementedError("Concrete City must implement `write_parameters`")
 
     def get_writers(self, h5out):
         """Must be implemented by cities"""
