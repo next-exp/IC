@@ -622,13 +622,79 @@ class DstCity(City):
 
 
 class PCity(City):
-    """A PCity reads PMAPS. Consequently it provides a file loop
+    """A PCity reads PMAPS. Consequently it provides a file loop and an event loop
        that access and serves to the event_loop the corresponding PMAPS
        vectors.
     """
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
+        self.cnt.init(n_events_tot                 = 0,
+                      n_events_not_s1              = 0,
+                      n_events_not_s2              = 0,
+                      n_events_not_s2si            = 0,
+                      n_events_not_s1s2_filter     = 0,
+                      n_events_not_s2si_filter     = 0,
+                      n_events_selected            = 0)
+
+
+    def event_loop(self, pmapVectors):
+        """actions:
+        1. loops over all PMAPS
+        2. filter pmaps
+        3. write dst_event
+        """
+
+        write_dst = self.writers
+        event_numbers= pmapVectors.events
+        timestamps = pmapVectors.timestamps
+        s1_dict = pmapVectors.s1
+        s2_dict = pmapVectors.s2
+        s2si_dict = pmapVectors.s2si
+
+        for evt_number, evt_time in zip(event_numbers, timestamps):
+            self.conditional_print(self.cnt.n_events_tot, self.cnt.nevt_out)
+
+            # Count events in and break if necessary before filtering
+            what_next = self.event_range_step()
+            if what_next is EventLoop.skip_this_event: continue
+            if what_next is EventLoop.terminate_loop : break
+            self.cnt.n_events_tot += 1
+            # get pmaps
+            s1, s2, s2si = self. get_pmaps_from_dicts(s1_dict,
+                                                      s2_dict,
+                                                      s2si_dict,
+                                                      evt_number)
+            # filtering
+            # loop event away if any signal (s1, s2 or s2si) not present
+            if s1 == None:
+                self.cnt.n_events_not_s1 += 1
+                continue
+            if s2 == None:
+                self.cnt.n_events_not_s2 += 1
+                continue
+            if s2si == None:
+                self.cnt.n_events_not_s2si += 1
+                continue
+            # filters in s12 and s2si
+            f1 = s1s2_filter(self._s1s2_selector, s1, s2, s2si)
+            if not f1:
+                self.cnt.n_events_not_s1s2_filter += 1
+                continue
+            f2 = s2si_filter(s2si)
+            if not f2:
+                self.cnt.n_events_not_s2si_filter += 1
+                continue
+
+            # event passed selection:
+            self.cnt.n_events_selected     += 1
+            self.cnt.nevt_out += 1
+            # create Kr event & write to file
+            pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
+                                      events=evt_number,
+                                      timestamps=evt_time)
+            evt = self.create_dst_event(pmapVectors)
+            write_dst(evt)
 
     def file_loop(self):
         """
@@ -655,6 +721,28 @@ class PCity(City):
 
             self.event_loop(pmapVectors)
 
+    def filter_event(self):
+        """Filter the event in terms of s1, s2, s2si"""
+        # loop event away if any signal (s1, s2 or s2si) not present
+        if   s1 == None:
+            self.cnt.n_events_not_s1 += 1
+            return False
+        elif s2 == None:
+            self.cnt.n_events_not_s2 += 1
+            return False
+        elif s2si == None:
+            self.cnt.n_events_not_s2si += 1
+            return False
+        # filters in s12 and s2si
+        f1 = s1s2_filter(self._s1s2_selector, s1, s2, s2si)
+        if not f1:
+            self.cnt.n_events_not_s1s2_filter += 1
+            return False
+        f2 = s2si_filter(s2si)
+        if not f2:
+            self.cnt.n_events_not_s2si_filter += 1
+            return False
+        return True
 
 class KrCity(PCity):
     """A city that read pmaps and computes/writes a KrEvent"""
