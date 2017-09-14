@@ -300,6 +300,8 @@ class DummyCity(City):
         self.cnt.n_events_tot = 10
 
     def file_loop(self): pass
+    def get_writers(self, h5out): pass
+    def write_parameters(self, h5out): pass
 
 
 def test_config_drive_fails_without_config_file():
