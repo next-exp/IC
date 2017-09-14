@@ -79,6 +79,9 @@ from .. types.ic_types          import Counters
 from .. types.ic_types          import NN
 from .. types.ic_types          import xy
 
+from .. filters.s1s2_filter     import s1s2_filter
+from .. filters.s1s2_filter     import s2si_filter
+
 from .. daemons.idaemon         import invoke_daemon
 
 from typing import Sequence
@@ -673,30 +676,13 @@ class PCity(City):
                                                       s2si_dict,
                                                       evt_number)
             # filtering
-            # loop event away if any signal (s1, s2 or s2si) not present
-            if s1 == None:
-                self.cnt.n_events_not_s1 += 1
+            pass_filter = self.filter_event(s1, s2, s2si)
+            if not pass_filter:
                 continue
-            if s2 == None:
-                self.cnt.n_events_not_s2 += 1
-                continue
-            if s2si == None:
-                self.cnt.n_events_not_s2si += 1
-                continue
-            # filters in s12 and s2si
-            f1 = s1s2_filter(self._s1s2_selector, s1, s2, s2si)
-            if not f1:
-                self.cnt.n_events_not_s1s2_filter += 1
-                continue
-            f2 = s2si_filter(s2si)
-            if not f2:
-                self.cnt.n_events_not_s2si_filter += 1
-                continue
-
             # event passed selection:
             self.cnt.n_events_selected     += 1
-            self.cnt.nevt_out += 1
-            # create Kr event & write to file
+
+            # create DST event & write to file
             pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
                                       events=evt_number,
                                       timestamps=evt_time)
@@ -728,7 +714,7 @@ class PCity(City):
 
             self.event_loop(pmapVectors)
 
-    def filter_event(self):
+    def filter_event(self, s1, s2, s2si):
         """Filter the event in terms of s1, s2, s2si"""
         # loop event away if any signal (s1, s2 or s2si) not present
         if   s1 == None:
@@ -741,7 +727,7 @@ class PCity(City):
             self.cnt.n_events_not_s2si += 1
             return False
         # filters in s12 and s2si
-        f1 = s1s2_filter(self._s1s2_selector, s1, s2, s2si)
+        f1 = s1s2_filter(self.s1s2_selector(), s1, s2, s2si)
         if not f1:
             self.cnt.n_events_not_s1s2_filter += 1
             return False
