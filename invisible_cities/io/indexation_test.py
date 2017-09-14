@@ -20,6 +20,9 @@ class DummyCity(City):
     def file_loop(self):
         "Override so it is not executed"
 
+    def get_writers(self, h5out): pass
+    def write_parameters(self, h5out): pass
+
 
 @fixture(scope="session")
 def init_city(ICDIR, config_tmpdir):
