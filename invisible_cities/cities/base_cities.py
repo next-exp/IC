@@ -23,8 +23,6 @@ from .. core.configure          import configure
 from .. core.exceptions         import NoInputFiles
 from .. core.exceptions         import NoOutputFile
 from .. core.exceptions         import UnknownRWF
-from .. core.exceptions         import FileLoopMethodNotSet
-from .. core.exceptions         import EventLoopMethodNotSet
 from .. core.exceptions         import SipmEmptyList
 from .. core.exceptions         import SipmZeroCharge
 from .. core.exceptions         import ClusterEmptyList
@@ -80,6 +78,10 @@ from .. types.ic_types          import minmax
 from .. types.ic_types          import Counters
 from .. types.ic_types          import NN
 from .. types.ic_types          import xy
+
+from .. filters.s1s2_filter     import s1s2_filter
+from .. filters.s1s2_filter     import s2si_filter
+from .. filters.s1s2_filter      import S12Selector
 
 from .. daemons.idaemon         import invoke_daemon
 
@@ -253,19 +255,19 @@ class City:
 
     def file_loop(self):
         """Must be implemented by cities"""
-        raise FileLoopMethodNotSet
+        raise NotImplementedError("Concrete City must implement `file_loop`")
 
     def event_loop(self):
         """Must be implemented by cities"""
-        raise EventLoopMethodNotSet
+        raise NotImplementedError("Concrete City must implement `event_loop`")
 
     def write_parameters(self, h5out):
         """Must be implemented by cities"""
-        pass
+        raise NotImplementedError("Concrete City must implement `write_parameters`")
 
     def get_writers(self, h5out):
         """Must be implemented by cities"""
-        pass
+        raise NotImplementedError("Concrete City must implement `get_writers`")
 
     def set_up_database(self):
         DataPMT       = load_db.DataPMT (self.run_number)
@@ -624,13 +626,69 @@ class DstCity(City):
 
 
 class PCity(City):
-    """A PCity reads PMAPS. Consequently it provides a file loop
+    """A PCity reads PMAPS. Consequently it provides a file loop and an event loop
        that access and serves to the event_loop the corresponding PMAPS
        vectors.
     """
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
+        self.drift_v = self.conf.drift_v
+        self.s1s2_selector = S12Selector(**kwds)
+
+        self.cnt.init(n_events_tot                 = 0,
+                      n_events_not_s1              = 0,
+                      n_events_not_s2              = 0,
+                      n_events_not_s2si            = 0,
+                      n_events_not_s1s2_filter     = 0,
+                      n_events_not_s2si_filter     = 0,
+                      n_events_selected            = 0)
+
+    def create_dst_event(self, pmapVectors):
+        """Must be implemented by any city derived from PCity"""
+        raise NotImplementedError("Concrete City must implement `create_dst_event`")
+
+
+    def event_loop(self, pmapVectors):
+        """actions:
+        1. loops over all PMAPS
+        2. filter pmaps
+        3. write dst_event
+        """
+
+        write_dst = self.writers
+        event_numbers= pmapVectors.events
+        timestamps = pmapVectors.timestamps
+        s1_dict = pmapVectors.s1
+        s2_dict = pmapVectors.s2
+        s2si_dict = pmapVectors.s2si
+
+        for evt_number, evt_time in zip(event_numbers, timestamps):
+            self.conditional_print(self.cnt.n_events_tot, self.cnt.n_events_selected)
+
+            # Count events in and break if necessary before filtering
+            what_next = self.event_range_step()
+            if what_next is EventLoop.skip_this_event: continue
+            if what_next is EventLoop.terminate_loop : break
+            self.cnt.n_events_tot += 1
+            # get pmaps
+            s1, s2, s2si = self. get_pmaps_from_dicts(s1_dict,
+                                                      s2_dict,
+                                                      s2si_dict,
+                                                      evt_number)
+            # filtering
+            pass_filter = self.filter_event(s1, s2, s2si)
+            if not pass_filter:
+                continue
+            # event passed selection:
+            self.cnt.n_events_selected     += 1
+
+            # create DST event & write to file
+            pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
+                                      events=evt_number,
+                                      timestamps=evt_time)
+            evt = self.create_dst_event(pmapVectors)
+            write_dst(evt)
 
     def file_loop(self):
         """
@@ -657,6 +715,28 @@ class PCity(City):
 
             self.event_loop(pmapVectors)
 
+    def filter_event(self, s1, s2, s2si):
+        """Filter the event in terms of s1, s2, s2si"""
+        # loop event away if any signal (s1, s2 or s2si) not present
+        if   s1 == None:
+            self.cnt.n_events_not_s1 += 1
+            return False
+        elif s2 == None:
+            self.cnt.n_events_not_s2 += 1
+            return False
+        elif s2si == None:
+            self.cnt.n_events_not_s2si += 1
+            return False
+        # filters in s12 and s2si
+        f1 = s1s2_filter(self.s1s2_selector, s1, s2, s2si)
+        if not f1:
+            self.cnt.n_events_not_s1s2_filter += 1
+            return False
+        f2 = s2si_filter(s2si)
+        if not f2:
+            self.cnt.n_events_not_s2si_filter += 1
+            return False
+        return True
 
 class KrCity(PCity):
     """A city that read pmaps and computes/writes a KrEvent"""
