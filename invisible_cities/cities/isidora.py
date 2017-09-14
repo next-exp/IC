@@ -90,6 +90,9 @@ class Isidora(DeconvolutionCity):
 
         return writers
 
+    def write_parameters(self, h5out):
+        pass
+
     def display_IO_info(self):
         """display info"""
         super().display_IO_info()
