@@ -140,6 +140,7 @@ class City:
         self.print_mod    = conf.print_mod  # default print frequency
         self.first_event, self.last_event = self._event_range()
         self.set_up_database()
+        self.daemons = list(map(invoke_daemon, kwds.get('daemons', [])))
 
     def detect_unknown_parameters(self, kwds):
         known = self.allowed_parameters()
@@ -180,11 +181,6 @@ class City:
         if opts.print_config_only:
             return
         instance = cls(**conf)
-
-        # set the deamons
-        if 'daemons' in conf:
-            d_list_name = conf['daemons']
-            instance.daemons = list(map(invoke_daemon, d_list_name))
         instance.go()
         instance.end()
         return conf.as_namespace, instance.cnt
