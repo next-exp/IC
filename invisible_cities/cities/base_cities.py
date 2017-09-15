@@ -140,7 +140,7 @@ class City:
         self.print_mod    = conf.print_mod  # default print frequency
         self.first_event, self.last_event = self._event_range()
         self.set_up_database()
-        self.daemons = list(map(invoke_daemon, kwds.get('daemons', [])))
+        self.daemons = tuple(map(invoke_daemon, kwds.get('daemons', [])))
 
     def detect_unknown_parameters(self, kwds):
         known = self.allowed_parameters()
