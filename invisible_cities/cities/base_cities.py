@@ -756,8 +756,8 @@ class KrCity(PCity):
         """
         IDs, Qs = cpmp.integrate_sipm_charges_in_peak(s2si, peak_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
-        #return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
-        return corona(np.stack((xs, ys)).T, Qs,
+        #return self.reco_algorithm(np.stack((xs, ys), axis=1), Qs)
+        return corona(np.stack((xs, ys), axis=1), Qs,
                       Qthr           =  self.conf.qthr,
                       Qlm            =  self.conf.qlm,
                       lm_radius      =  self.conf.lm_radius,
@@ -870,7 +870,7 @@ class HitCity(KrCity):
         IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
 
-        return corona(np.stack((xs, ys)).T, Qs,
+        return corona(np.stack((xs, ys), axis=1), Qs,
                       Qthr           =  self.conf.qthr,
                       Qlm            =  self.conf.qlm,
                       lm_radius      =  self.conf.lm_radius,

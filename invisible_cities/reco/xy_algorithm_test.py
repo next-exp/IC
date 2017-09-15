@@ -40,7 +40,7 @@ def test_barycenter(p_q):
 
 def test_barycenter_raises_sipm_empty_list():
     with raises(SipmEmptyList):
-        pos = np.stack(([], [])).T
+        pos = np.stack(([], []), axis=1)
         barycenter(np.array(pos, dtype=np.float64), np.array([], dtype=np.float64))
 
 def test_barycenter_raises_sipm_zero_charge():
