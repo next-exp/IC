@@ -46,7 +46,7 @@ cdef class S2Si(S2):
     The s2d is an s12 dictionary (not an S2 instance)
     The s2sid is a dictionary {peak:{nsipm:[E]}}
     """
-    cdef public s2sid
+    cdef public dict s2sid
     cdef  dict _s2sid
     cpdef sipm_peak(self, int peak_number)
     cpdef find_sipm(self, int peak_number, int sipm_number)

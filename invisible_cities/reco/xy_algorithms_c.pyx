@@ -20,14 +20,15 @@ cpdef barycenter(np.ndarray[double, ndim=2] pos, np.ndarray[double, ndim=1] qs):
        qs = vector (q1, q2...qs) --> (1xn)
 
         """
-    if len(pos) == 0: raise SipmEmptyList
-    if  sum(qs) == 0: raise SipmZeroCharge
+    cdef double Q = np.sum(qs)
+    if   len(pos) == 0: raise SipmEmptyList
+    if          Q == 0: raise SipmZeroCharge
     cdef np.ndarray[double, ndim=1] mu  = np.average( pos           , weights=qs, axis=0)
     cdef np.ndarray[double, ndim=1] var = np.average((pos - mu) ** 2, weights=qs, axis=0)
     # For uniformity of interface, all xy algorithms should return a
     # list of clusters. barycenter always returns a single clusters,
     # but we still want it in a list.
-    return [Cluster(sum(qs), xy(*mu), xy(*var), len(qs))]
+    return [Cluster(Q, xy(*mu), xy(*var), len(qs))]
 
 
 cpdef corona(np.ndarray[double, ndim=2] pos, np.ndarray[double, ndim=1] qs,
@@ -105,15 +106,15 @@ cpdef corona(np.ndarray[double, ndim=2] pos, np.ndarray[double, ndim=1] qs,
            msipm          =  K3)
     """
 
-    if len(pos) == 0: raise SipmEmptyList
-    if  sum(qs) == 0: raise SipmZeroCharge
+    if len(pos)   == 0: raise SipmEmptyList
+    if np.sum(qs) == 0: raise SipmZeroCharge
 
     cdef np.ndarray[long, ndim=1] above_threshold
     above_threshold = np.where(qs >= Qthr)[0]            # Find SiPMs with qs at least Qthr
     pos, qs = pos[above_threshold], qs[above_threshold]  # Discard SiPMs with qs less than Qthr
 
-    if len(pos) == 0: raise SipmEmptyListAboveQthr
-    if  sum(qs) == 0: raise SipmZeroChargeAboveQthr
+    if len(pos)   == 0: raise SipmEmptyListAboveQthr
+    if np.sum(qs) == 0: raise SipmZeroChargeAboveQthr
 
     # if lm_radius or new_lm_radius is negative, just call overall barycenter
     if lm_radius < 0 or new_lm_radius < 0:
