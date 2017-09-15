@@ -222,9 +222,8 @@ class City:
         """
         self.index_tables() # index cols in tables marked for indexing by city's writers
 
-        if hasattr(self, 'daemons'):
-            for deamon in self.daemons:
-                deamon.end()
+        for daemon in self.daemons:
+            daemon.end()
 
         print(self.cnt)
         return self.cnt
