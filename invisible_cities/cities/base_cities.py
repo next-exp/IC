@@ -51,7 +51,7 @@ from .. reco                    import tbl_functions     as tbl
 from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco.corrections        import Correction
 from .. reco.corrections        import Fcorrection
-from .. reco.xy_algorithms      import corona
+from .. reco.xy_algorithms_c      import corona
 
 from .. evm.ic_containers       import S12Params
 from .. evm.ic_containers       import S12Sum

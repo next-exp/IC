@@ -15,12 +15,12 @@ from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import ClusterEmptyList
 from .. core.exceptions        import SipmZeroCharge
-
-from .       xy_algorithms     import corona
-from .       xy_algorithms     import barycenter
-from .       xy_algorithms     import discard_sipms
-from .       xy_algorithms     import get_nearby_sipm_inds
 from .. core.exceptions        import SipmEmptyList
+from .  xy_algorithms_c        import corona
+from .  xy_algorithms_c        import barycenter
+from .  xy_algorithms_c        import discard_sipms
+from .  xy_algorithms_c        import get_nearby_sipm_inds
+
 
 @composite
 def positions_and_qs(draw, min_value=0, max_value=100):
@@ -40,17 +40,18 @@ def test_barycenter(p_q):
 
 def test_barycenter_raises_sipm_empty_list():
     with raises(SipmEmptyList):
-        barycenter(np.array([]), None)
+        pos = np.stack(([], [])).T
+        barycenter(np.array(pos, dtype=np.float64), np.array([], dtype=np.float64))
 
 def test_barycenter_raises_sipm_zero_charge():
     with raises(SipmZeroCharge):
-        barycenter(np.array([1,2]), np.array([0,0]))
+        barycenter(np.array([[1,2]], dtype=np.float64), np.array([0,0], dtype=np.float64))
 
 @fixture
 def toy_sipm_signal():
-    xs = np.array([65, -64]) * units.mm
-    ys = np.array([63, -62]) * units.mm
-    qs = np.array([ 6,   5]) * units.pes
+    xs = np.array([65, -64], dtype=np.float64) * units.mm
+    ys = np.array([63, -62], dtype=np.float64) * units.mm
+    qs = np.array([ 6,   5], dtype=np.float64) * units.pes
     pos = np.stack((xs, ys), axis=1)
     return pos, qs
 
@@ -96,9 +97,9 @@ def test_corona_min_threshold_Qthr():
                cluster.posxy = ([x],
                               [y])
     """
-    xs = np.arange(100) * 10
-    ys = np.zeros (100)
-    qs = np.arange(100)
+    xs = np.arange(100, dtype=np.float64) * 10
+    ys = np.zeros (100, dtype=np.float64)
+    qs = np.arange(100, dtype=np.float64)
     pos = np.stack((xs, ys), axis=1)
     try:
         clusters = corona(pos, qs,
@@ -142,7 +143,7 @@ def test_corona_simple_examples(toy_sipm_signal, Qlm, rmax, nclusters):
 @fixture
 def toy_sipm_signal_and_inds():
     k = 10000
-    xs = np.arange(k)
+    xs = np.arange(k, dtype=np.float64)
     ys = xs + k
     pos = np.stack((xs, ys), axis=1)
     qs = xs + 2*k
@@ -159,12 +160,13 @@ def test_discard_sipms(toy_sipm_signal_and_inds):
         assert ind + 2 * k not in qsel
 
 def test_get_nearby_sipm_inds():
-    xs  = np.array([0,1,2,3,4,0,1,2,3,4,0,1,2,3,4])
-    ys  = np.array([0,0,0,1,1,1,2,2,2,3,3,3,4,4,4])
+    xs  = np.array([0,1,2,3,4,0,1,2,3,4,0,1,2,3,4], dtype=np.float64)
+    ys  = np.array([0,0,0,1,1,1,2,2,2,3,3,3,4,4,4], dtype=np.float64)
     pos = np.stack((xs, ys), axis=1)
-    qs  = np.ones (100) * 10 * units.pes
-    xc, yc = (2, 2)
-    c = np.array((xc, yc))
+    qs  = np.ones (100, dtype=np.float64) * 10 * units.pes
+    xc = 2
+    yc = 2
+    c = (xc, yc)
     d  = 1.5
     sis = get_nearby_sipm_inds(c, d, pos, qs)
     for i in range(len(xs)):

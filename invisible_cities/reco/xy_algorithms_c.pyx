@@ -1,4 +1,4 @@
-import sys
+cimport numpy as np
 import numpy as np
 
 from .. core.system_of_units_c import units
@@ -7,46 +7,35 @@ from .. core.exceptions        import SipmZeroCharge
 from .. core.exceptions        import SipmEmptyListAboveQthr
 from .. core.exceptions        import SipmZeroChargeAboveQthr
 from .. core.exceptions        import ClusterEmptyList
-
 from .. types.ic_types         import xy
 from .. evm.event_model        import Cluster
 
 
-def _barycenter(pos, qs):
-    """
-    pos = column np.array --> (matrix n x 2)
+cpdef barycenter(np.ndarray[double, ndim=2] pos, np.ndarray[double, ndim=1] qs):
+    """pos = column np.array --> (matrix n x 2)
        ([x1, y1],
         [x2, y2]
         ...
         [xs, ys])
        qs = vector (q1, q2...qs) --> (1xn)
-    """
 
-    if not len(pos): raise SipmEmptyList
-    if sum(qs) == 0: raise SipmZeroCharge
-    mu  = np.average( pos           , weights=qs, axis=0)
-    var = np.average((pos - mu) ** 2, weights=qs, axis=0)
+        """
+    if len(pos) == 0: raise SipmEmptyList
+    if  sum(qs) == 0: raise SipmZeroCharge
+    cdef np.ndarray[double, ndim=1] mu  = np.average( pos           , weights=qs, axis=0)
+    cdef np.ndarray[double, ndim=1] var = np.average((pos - mu) ** 2, weights=qs, axis=0)
     # For uniformity of interface, all xy algorithms should return a
     # list of clusters. barycenter always returns a single clusters,
     # but we still want it in a list.
     return [Cluster(sum(qs), xy(*mu), xy(*var), len(qs))]
 
 
-def _discard_sipms(sis, pos, qs):
-    return np.delete(pos, sis, axis=0), np.delete(qs, sis)
-
-
-def _get_nearby_sipm_inds(cs, d, pos, qs):
-    """return indices of sipms less than d from (xc,yc)"""
-    return np.where(np.linalg.norm(pos - cs, axis=1) <= d)[0]
-
-
-def _corona(pos, qs,
-           Qthr           =  0 * units.pes,
-           Qlm            =  5 * units.pes,
-           lm_radius      =  0 * units.mm,
-           new_lm_radius  = 15 * units.mm,
-           msipm          =  3):
+cpdef corona(np.ndarray[double, ndim=2] pos, np.ndarray[double, ndim=1] qs,
+             float Qthr           =  0 * units.pes,
+             float Qlm            =  5 * units.pes,
+             float lm_radius      =  0 * units.mm,
+             float new_lm_radius  = 15 * units.mm,
+             int msipm            =  3):
     """
     corona creates a list of Clusters by
     first , identifying hottest_sipm, the sipm with max charge in qs (must be > Qlm)
@@ -82,9 +71,9 @@ def _corona(pos, qs,
 
                 ---------
                     This kwarg has some physical motivation. It exists to try to partially
-                compensate problem that the NEW tracking plane is not continuous even though light
-                can be emitted by the EL at any (x,y). When lm_radius < pitch, the search for SiPMs
-                that might contribute pos and charge to a new Cluster is always centered about
+                compensate for the problem that the NEW tracking plane is not continuous even though
+                light can be emitted by the EL at any (x,y). When lm_radius < pitch, the search for
+                SiPMs that might contribute pos and charge to a new Cluster is always centered about
                 the position of hottest_sipm. That is, SiPMs within new_lm_radius of
                 hottest_sipm are taken into account by barycenter(). In contrast, when
                 lm_radius = pitch or pitch*sqrt(2) the search for SiPMs contributing to the new
@@ -92,7 +81,7 @@ def _corona(pos, qs,
                 there are four nearly equally 'hot' SiPMs. new_local_maximum would yield a pos,
                 pos1, between these hot SiPMs. Searching for SiPMs that contribute to this
                 cluster within new_lm_radius of pos1 might be better than searching searching for
-                SiPMs  within new_lm_radius of hottest_sipm.
+                SiPMs within new_lm_radius of hottest_sipm.
                     We should be aware that setting lm_radius to some distance greater than pitch,
                 we allow new_local_maximum to assume any (x,y) but we also create the effect that
                 depending on where new_local_maximum is, more or fewer SiPMs will be
@@ -116,21 +105,25 @@ def _corona(pos, qs,
            msipm          =  K3)
     """
 
-    if not len(pos): raise SipmEmptyList
-    if sum(qs) == 0: raise SipmZeroCharge
+    if len(pos) == 0: raise SipmEmptyList
+    if  sum(qs) == 0: raise SipmZeroCharge
 
+    cdef np.ndarray[long, ndim=1] above_threshold
     above_threshold = np.where(qs >= Qthr)[0]            # Find SiPMs with qs at least Qthr
     pos, qs = pos[above_threshold], qs[above_threshold]  # Discard SiPMs with qs less than Qthr
 
-    if not len(pos): raise SipmEmptyListAboveQthr
-    if sum(qs) == 0: raise SipmZeroChargeAboveQthr
+    if len(pos) == 0: raise SipmEmptyListAboveQthr
+    if  sum(qs) == 0: raise SipmZeroChargeAboveQthr
 
     # if lm_radius or new_lm_radius is negative, just call overall barycenter
     if lm_radius < 0 or new_lm_radius < 0:
         return barycenter(pos, qs)
 
-
-    c  = []
+    cdef list c = []
+    cdef np.ndarray[long, ndim=1] within_lm_radius
+    cdef np.ndarray[long, ndim=1] within_new_lm_radius
+    cdef tuple new_local_maximum
+    cdef int hottest_sipm
     # While there are more local maxima
     while len(qs) > 0:
 
@@ -138,8 +131,8 @@ def _corona(pos, qs,
         if qs[hottest_sipm] < Qlm: break   # largest Q remaining is negligible
 
         # find new local maximum of charge considering all SiPMs within lm_radius of hottest_sipm
-        within_lm_radius   = get_nearby_sipm_inds(pos[hottest_sipm], lm_radius, pos, qs)
-        new_local_maximum  = barycenter(pos[within_lm_radius], qs[within_lm_radius])[0].posxy
+        within_lm_radius   = get_nearby_sipm_inds(tuple(pos[hottest_sipm]), lm_radius, pos, qs)
+        new_local_maximum  = barycenter(pos[within_lm_radius], qs[within_lm_radius])[0].XY
 
         # find the SiPMs within new_lm_radius of the new local maximum of charge
         within_new_lm_radius = get_nearby_sipm_inds(new_local_maximum, new_lm_radius, pos, qs)
@@ -154,3 +147,16 @@ def _corona(pos, qs,
     if not len(c): raise ClusterEmptyList
 
     return c
+
+
+cpdef discard_sipms(np.ndarray[  long, ndim=1] sis,
+                    np.ndarray[double, ndim=2] pos,
+                    np.ndarray[double, ndim=1] qs):
+    return np.delete(pos, sis, axis=0), np.delete(qs, sis)
+
+
+cpdef get_nearby_sipm_inds(tuple cs, float d,
+                           np.ndarray[double, ndim=2] pos,
+                           np.ndarray[double, ndim=1] qs):
+    """return indices of sipms less than d from (xc,yc)"""
+    return np.where(np.linalg.norm(pos - cs, axis=1) <= d)[0]
