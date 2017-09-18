@@ -139,6 +139,6 @@ class Diomira(MonteCarloCity):
         )
         return writers
 
-def display_IO_info(self):
-    super().display_IO_info()
-    print(self.sp)
+    def display_IO_info(self):
+        super().display_IO_info()
+        print(self.sp)
