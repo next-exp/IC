@@ -130,7 +130,6 @@ def compute_blobs(track_graph : Graph, radius : float) -> Tuple[List[Voxel], Lis
     a,b = find_extrema(distances)
     ba = voxels_within_radius(distances[a], radius)
     bb = voxels_within_radius(distances[b], radius)
-
     return a, b, ba, bb
 
 
@@ -141,14 +140,10 @@ def make_tracks(evt_number       : float,
                 contiguity       : float = 1,
                 blob_radius      : float = 30*units.mm) -> TrackCollection:
     """Make a track collection."""
-
     tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
     track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
     for trk in track_graphs:
-        # distances = shortest_paths(trk) # type: Dict[Voxel, Dict[Voxel, float]]
-        # a,b       = find_extrema(distances) # type: Tuple[Voxel, Voxel]
         a, b, voxels_a, voxels_b    = compute_blobs(trk, blob_radius)
-
         blob_a = Blob(a, voxels_a) # type: Blob
         blob_b = Blob(b, voxels_b)
         blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a)
