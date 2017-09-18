@@ -947,7 +947,7 @@ class TrackCity(HitCity):
         self.voxel_dimensions  = self.conf.voxel_dimensions # type: np.ndarray
         self.blob_radius       = self.blob_radius # type: float
 
-    def voxelize_hits(self, hits : Sequence[Hit]) ->List[Voxel]:
+    def voxelize_hits(self, hits : Sequence[Hit]) -> List[Voxel]:
         """1. Hits are enclosed by a bounding box.
            2. Boundix box is discretized (via a hitogramdd).
            3. The energy of all the hits insidex each discreet "voxel" is added.
@@ -955,8 +955,7 @@ class TrackCity(HitCity):
          """
         return paf.voxelize_hits(hits, self.voxel_dimensions)
 
-    def make_tracks(self, evt_number : float , evt_time: float,
-                    voxels : List[Voxel]) ->TrackCollection:
+    def make_tracks(self, evt_number: float, evt_time: float, voxels: List[Voxel]) -> TrackCollection:
         """Makes a track collection. """
 
         tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
