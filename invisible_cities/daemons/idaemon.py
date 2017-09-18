@@ -2,7 +2,8 @@ from importlib import import_module
 import traceback
 
 
-def invoke_daemon(daemon_name):
+
+def summon_daemon(daemon_name):
     """Takes a daemon name and returns an instance of the daemon"""
     try:
         module_name = 'invisible_cities.daemons.' + daemon_name
