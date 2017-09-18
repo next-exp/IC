@@ -124,7 +124,7 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
     return (Ea, Eb) if Ea < Eb else (Eb, Ea)
 
 
-def compute_blobs(track_graph : Graph, radius : float) -> Tuple[List[Voxel], List[Voxel]]:
+def compute_blobs(track_graph : Graph, radius : float) -> Tuple[Voxel, Voxel, List[Voxel], List[Voxel]]:
     """Return the blobs (list of voxels) around the extrema of the track."""
     distances = shortest_paths(track_graph)
     a,b = find_extrema(distances)
