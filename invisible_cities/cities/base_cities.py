@@ -955,24 +955,6 @@ class TrackCity(HitCity):
          """
         return paf.voxelize_hits(hits, self.voxel_dimensions)
 
-    def make_tracks(self, evt_number: float, evt_time: float, voxels: List[Voxel]) -> TrackCollection:
-        """Makes a track collection. """
-
-        tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
-
-        track_graphs = paf.make_track_graphs(voxels, self.voxel_dimensions) # type: Sequence[Graph]
-
-        for trk in track_graphs:
-            distances = paf.shortest_paths(trk)
-            a,b       = paf.find_extrema(distances) # type: Tuple[Voxel, Voxel]
-            ba, bb = paf.blobs(trk, blob_radius) # type: Tuple[List[Voxel], List[Voxel]]
-            blob_a = Blob(ba) # type: Blob
-            blob_b = Blob(bb)
-            blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a) # type: Tuple[Blob, Blob]
-            track = Track(paf.voxels_from_track_graph(trk), blobs)
-            tc.tracks.append(track)
-        return tc
-
 
 class TriggerEmulationCity(PmapCity):
     """Emulates the trigger in the FPGA.
