@@ -6,8 +6,8 @@ credits: see ic_authors_and_legal.rst in /doc
 last revised: JJGC, September-2017
 """
 
-from .. io.kdst_io               import kr_writer
-from .  base_cities              import KrCity
+from .. io.kdst_io  import kr_writer
+from .  base_cities import KrCity
 
 class Dorothea(KrCity):
     """Read PMAPS and produces a KDST"""

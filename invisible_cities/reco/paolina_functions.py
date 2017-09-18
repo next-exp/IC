@@ -101,6 +101,7 @@ def find_extrema(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Vox
             first, last, max_distance = source, target, d
     return (first, last)
 
+
 def length(track_graph):
     return len(shortest_paths(track_graph))
 
@@ -111,7 +112,6 @@ def energy_within_radius(distances : Dict[Voxel, Dict[Voxel, float]], radius : f
 
 def voxels_within_radius(distances : Dict[Voxel, Dict[Voxel, float]],
                          radius : float) -> List[Voxel]:
-
     return [v for (v, d) in distances.items() if d < radius]
 
 
@@ -138,7 +138,7 @@ def make_tracks(evt_number       : float,
                 voxels           : List[Voxel],
                 voxel_dimensions : np.ndarray,
                 contiguity       : float = 1,
-                blob_radius      : float = 30*units.mm) -> TrackCollection:
+                blob_radius      : float = 30 * units.mm) -> TrackCollection:
     """Make a track collection."""
     tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
     track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
