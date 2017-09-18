@@ -77,9 +77,7 @@ def make_track_graphs(voxels           : Voxel,
 
 def voxels_from_track_graph(track: Graph) -> List[Voxel]:
     """Create and return a list of voxels from a track graph."""
-
-    voxels = [Voxel(t.X, t.Y, t.Z, t.E) for t in track.nodes()]
-    return voxels
+    return track.nodes()
 
 
 def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
