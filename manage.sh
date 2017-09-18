@@ -65,25 +65,25 @@ function make_environment {
     echo creating ${YML_FILENAME}
 
     cat <<EOF > ${YML_FILENAME}
-name: IC${PYTHON_VERSION}
+name: IC3.6
 dependencies:
-- python=${PYTHON_VERSION}
-- cython
-- numpy
-- pandas
-- pymysql
-- pytables
-- pytest
-- scipy
-- matplotlib
-- jupyter
-- notebook
-- sphinx
-- networkx
+- cython=0.26=py36_0
+- jupyter=1.0.0=py36_3
+- matplotlib=2.0.2=np113py36_0
+- networkx=1.11=py36_0
+- notebook=5.0.0=py36_0
+- numpy=1.13.1=py36_0
+- pandas=0.20.3=py36_0
+- pymysql=0.7.9=py36_0
+- pytables=3.4.2=np113py36_0
+- pytest=3.2.1=py36_0
+- python=3.6.2=0
+- scipy=0.19.1=np113py36_0
+- sphinx=1.6.3=py36_0
 - pip:
-  - hypothesis
-  - flaky
-  - pytest-xdist
+  - flaky==3.4.0
+  - hypothesis==3.31.2
+  - pytest-xdist==1.20.0
 EOF
 
     conda env create -f ${YML_FILENAME}
