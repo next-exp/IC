@@ -332,7 +332,6 @@ class City:
            obtained by divinding the RD PMT vector and the sample
            time of the electronics (25 ns). """
         with tb.open_file(filename, "r") as h5in:
-            #pmtrd, sipmrd = self._get_rd(h5in)
             _, pmtrd, sipmrd = tbl.get_rd_vectors(h5in)
             _, NPMT,   PMTWL = pmtrd .shape
             _, NSIPM, SIPMWL = sipmrd.shape
@@ -918,9 +917,6 @@ class HitCity(KrCity):
         # be set by parameter to a factor x pmaps-rebin.
         s2, s2si = self.rebin_s2si(s2, s2si, self.rebin)
 
-        # print(s2)
-        # print(s2si)
-
         # here hits are computed for each peak and each slice.
         # In case of an exception, a hit is still created with a NN cluster.
         # (NN cluster is a cluster where the energy is an IC not number NN)
@@ -930,8 +926,6 @@ class HitCity(KrCity):
 
             for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
                 z        = (t_slice - s1_t) * units.ns * self.drift_v
-                #print('peak_no = {} slice_no = {}'.format(peak_no, slice_no))
-
                 try:
                     clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
                     es       = self.split_energy(e_slice, clusters)
@@ -973,8 +967,6 @@ class TrackCity(HitCity):
             distances = paf.shortest_paths(trk)
             a,b       = paf.find_extrema(distances) # type: Tuple[Voxel, Voxel]
             ba, bb = paf.blobs(trk, blob_radius) # type: Tuple[List[Voxel], List[Voxel]]
-            #Ea = paf.energy_within_radius(distances[a], self.blob_radius) # type: float
-            #Eb = paf.energy_within_radius(distances[b], self.blob_radius)
             blob_a = Blob(ba) # type: Blob
             blob_b = Blob(bb)
             blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a) # type: Tuple[Blob, Blob]
