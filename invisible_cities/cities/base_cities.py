@@ -46,6 +46,7 @@ from .. reco                    import peak_functions    as pf
 from .. reco                    import pmaps_functions   as pmp
 from .. reco                    import pmaps_functions_c as cpmp
 from .. reco                    import dst_functions     as dstf
+from .. reco                    import dst_functions_c   as cdstf
 from .. reco                    import wfm_functions     as wfm
 from .. reco                    import tbl_functions     as tbl
 from .. reco.sensor_functions   import convert_channel_id_to_IC_id
@@ -885,7 +886,7 @@ class HitCity(KrCity):
 
     def split_energy(self, e, clusters):
         if len(clusters) == 1:
-            return [e]
+            return np.array(e, dtype=np.double, ndmin=1)
         qs = np.array([c.Q for c in clusters])
         return e * qs / np.sum(qs)
 
@@ -921,6 +922,7 @@ class HitCity(KrCity):
         # In case of an exception, a hit is still created with a NN cluster.
         # (NN cluster is a cluster where the energy is an IC not number NN)
         # this allows to keep track of the energy associated to non reonstructed hits.
+
         for peak_no, (t_peak, e_peak) in sorted(s2si.s2d.items()):
             if not filter_output.s2_peaks[peak_no]: continue
 
@@ -938,6 +940,10 @@ class HitCity(KrCity):
                     hitc.hits.append(hit)
 
         return hitc
+        # return cdstf.collect_hits(hitc, s2si,
+        #                           self.compute_xy_position,
+        #                           self.split_energy, s1_t,
+        #                           self.drift_v)
 
 
 class TrackCity(HitCity):
