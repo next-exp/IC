@@ -1,4 +1,5 @@
 from argparse import Namespace
+from textwrap import dedent
 
 import numpy  as np
 from .. core.system_of_units_c import units
@@ -9,6 +10,54 @@ from .. evm.pmaps import S1
 from .. evm.pmaps import S2
 from .. evm.pmaps import S2Si
 from typing import List
+
+
+class S12SelectorOutput:
+    def __init__(self, passed, s1_peaks, s2_peaks):
+        self.passed   = passed
+        self.s1_peaks = s1_peaks
+        self.s2_peaks = s2_peaks
+
+    def __and__(self, other):
+        s1_peaks = set(self.s1_peaks) | set(other.s1_peaks)
+        s2_peaks = set(self.s2_peaks) | set(other.s2_peaks)
+
+        passed   = self.passed and other.passed
+
+        s1_peaks = {peak_no: ( self.s1_peaks.get(peak_no, False) and
+                              other.s1_peaks.get(peak_no, False))
+                    for peak_no in s1_peaks}
+
+        s2_peaks = {peak_no: ( self.s2_peaks.get(peak_no, False) and
+                              other.s2_peaks.get(peak_no, False))
+                    for peak_no in s2_peaks}
+
+        return S12SelectorOutput(passed, s1_peaks, s2_peaks)
+
+    def __or__(self, other):
+        s1_peaks = set(self.s1_peaks) | set(other.s1_peaks)
+        s2_peaks = set(self.s2_peaks) | set(other.s2_peaks)
+
+        passed   = self.passed or other.passed
+
+        s1_peaks = {peak_no: ( self.s1_peaks.get(peak_no, False) or
+                              other.s1_peaks.get(peak_no, False))
+                    for peak_no in s1_peaks}
+
+        s2_peaks = {peak_no: ( self.s2_peaks.get(peak_no, False) or
+                              other.s2_peaks.get(peak_no, False))
+                    for peak_no in s2_peaks}
+
+        return S12SelectorOutput(passed, s1_peaks, s2_peaks)
+
+    def __str__(self):
+        return dedent("""
+                      Passed  : {self.passed}
+                      s1_peaks: {self.s1_peaks}
+                      s2_peaks: {self.s2_peaks}
+                      """.format(self = self))
+
+    __repr__ = __str__
 
 
 class S12Selector:
