@@ -1,5 +1,6 @@
-from argparse import Namespace
-from textwrap import dedent
+from argparse  import Namespace
+from functools import partial
+from textwrap  import dedent
 
 import numpy  as np
 from .. core.system_of_units_c import units
@@ -9,7 +10,7 @@ from .. evm.pmaps import S12
 from .. evm.pmaps import S1
 from .. evm.pmaps import S2
 from .. evm.pmaps import S2Si
-from typing import List
+from typing import Dict
 
 
 class S12SelectorOutput:
@@ -93,45 +94,42 @@ class S12Selector:
 
     @staticmethod
     def select_valid_peaks(s12 : S12, thr: float,
-                           energy : minmax, width: minmax, height : minmax) ->List[int] :
-        """Takes an s1/s2 and returns a list of peaks that are contained
-        within the boundaries defined by energy, width and height.
-
-        """
-
-        valid_peaks = [peak_no for peak_no in s12.peak_collection()
-                      if S12Selector.valid_peak(s12.peak_waveform(peak_no),
-                                                thr, energy, width, height)]
-
+                           energy : minmax, width: minmax, height : minmax) ->Dict[int, bool] :
+        """Takes a s1/s2 and returns a dictionary with the outcome of the
+        filter for each peak"""
+        peak_is_valid = partial(S12Selector.valid_peak,
+                                thr    = thr,
+                                energy = energy,
+                                width  = width,
+                                height = height)
+        valid_peaks   = {peak_no: peak_is_valid(s12.peak_waveform(peak_no))
+                         for peak_no in s12.peak_collection()}
         return valid_peaks
 
     @staticmethod
-    def select_s2si(s2si : S2Si, nsipm : minmax) -> List[int]:
-        """Takes an s2si and returns a list of peaks that are contained
-        within the boundaries defined by nsipm.
-
-        """
-
-        valid_peaks = [peak_no for peak_no in s2si.peak_collection()
-                       if nsipm.contains(s2si.number_of_sipms_in_peak(peak_no))]
+    def select_s2si(s2si : S2Si, nsipm : minmax) -> Dict[int, bool]:
+        """Takes a s2si and returns a dictionary with the outcome of the
+        filter for each peak"""
+        valid_peaks = {peak_no: nsipm.contains(s2si.number_of_sipms_in_peak(peak_no))
+                       for peak_no in s2si.peak_collection()}
         return valid_peaks
 
-    def select_s1(self, s1 : S1) -> int:
-        """Takes an s1 and returns the number of peaks that pass the filter"""
-        peak_list = self.select_valid_peaks(s1, self.s1_ethr,
+    def select_s1(self, s1 : S1) -> Dict[int, bool]:
+        """Takes a s1 and returns a dictionary with the outcome of the
+        filter for each peak"""
+        pass_dict = self.select_valid_peaks(s1, self.s1_ethr,
                                             self.s1e, self.s1w, self.s1h)
-        return len(peak_list)
+        return pass_dict
 
-    def select_s2(self, s2 : S2, s2si : S2Si) -> int:
-        """Takes an s2/s2si and returns the number of peaks that pass the filter"""
-        s2_peak_list   = self.select_valid_peaks(s2, self.s2_ethr,
+    def select_s2(self, s2 : S2, s2si : S2Si) -> Dict[int, bool]:
+        """Takes a s2 and a s2si and returns a dictionary with the
+        outcome of the filter for each peak"""
+        s2_pass_dict   = self.select_valid_peaks(s2, self.s2_ethr,
                                                  self.s2e, self.s2w, self.s2h)
-        s2si_peak_list = self.select_s2si(s2si, self.nsi)
-
-        valid_peaks = set(s2_peak_list) & set(s2si_peak_list)
-        # s2s = {peak_no: peak for peak_no, peak in s2df.items() if peak_no in valid_peaks}
-        # sis = {peak_no: peak for peak_no, peak in sidf.items() if peak_no in valid_peaks}
-        return len(valid_peaks)
+        s2si_pass_dict = self.select_s2si(s2si, self.nsi)
+        combined       = (S12SelectorOutput(None, {},   s2_pass_dict) &
+                          S12SelectorOutput(None, {}, s2si_pass_dict))
+        return combined.s2_peaks
 
     def __str__(self):
         s = """S12_selector(s1n = {} s1e = {} pes s1w = {} ns pes s1h = {} pes s1_ethr = {} pes
