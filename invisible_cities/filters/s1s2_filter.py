@@ -168,7 +168,16 @@ def s2si_filter(s2si : S2Si) -> S12SelectorOutput:
     #iS2Si = integrate_S2Si_charge(s2si.s2sid)
     iS2Si = s2si.peak_and_sipm_total_energy_dict()
 
-    selected_si_peaks = [at_least_one_sipm_with_Q_gt_0(peak)
-                         for peak_no, peak in iS2Si.items()]
+    selected_si_peaks = {peak_no: at_least_one_sipm_with_Q_gt_0(peak)
+                         for peak_no, peak in iS2Si.items()}
     passed = len(selected_si_peaks) > 0
-    return S12SelectorOutput(passed, None, selected_si_peaks)
+    return S12SelectorOutput(passed, {}, selected_si_peaks)
+
+def s1s2si_filter(selector : S12Selector, s1 : S1, s2 : S2, s2si : S2Si) -> S12SelectorOutput:
+    """Combine s1s2 and s2si filters"""
+    s1s2f = s1s2_filter(selector, s1, s2, s2si)
+    s2sif = s2si_filter(s2si)
+
+    # Set s1 peaks to s2si filter so it can be anded.
+    s2sif.s1_peaks = s1s2f.s1_peaks
+    return s1s2f & s2sif
