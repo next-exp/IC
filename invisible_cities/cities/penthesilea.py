@@ -19,9 +19,9 @@ class Penthesilea(HitCity):
         """Get the writers needed by dorothea"""
         return  hits_writer(h5out)
 
-    def create_dst_event(self, pmapVectors):
+    def create_dst_event(self, pmapVectors, filter_output):
         """Get the writers needed by dorothea"""
-        return  self.create_hits_event(pmapVectors)
+        return  self.create_hits_event(pmapVectors, filter_output)
 
     def write_parameters(self, h5out):
         pass
