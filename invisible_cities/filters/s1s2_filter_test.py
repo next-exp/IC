@@ -2,6 +2,7 @@ from argparse import Namespace
 
 import numpy as np
 
+from pytest                 import mark
 from pytest                 import fixture
 from hypothesis             import given
 from hypothesis.strategies  import integers
@@ -15,6 +16,9 @@ from .. evm.pmaps   import S2
 from .. evm.pmaps   import S2Si
 from .  s1s2_filter import S12SelectorOutput
 from .  s1s2_filter import S12Selector
+from .  s1s2_filter import s1s2_filter
+from .  s1s2_filter import s2si_filter
+from .  s1s2_filter import s1s2si_filter
 
 
 @composite
@@ -253,3 +257,68 @@ def test_s12selector_select_s2_fake_si_peak(selector_conf,
     selector_output = selector.select_s2(S2(peaks), S2Si(peaks, sipms))
     truth           = dict(enumerate([False, False, False, False]))
     assert np.all(selector_output == truth)
+
+
+@mark.parametrize("filter_function".split(),
+                  [(  s1s2_filter,),
+                   (s1s2si_filter,)])
+def test_s1s2_filter(filter_function,
+                     selector_conf,
+                      true_s1_peak,
+                     small_s1_peak,
+                      weak_s1_peak,
+                     short_s1_peak,
+
+                      true_s2_peak,
+                     small_s2_peak,
+                      weak_s2_peak,
+                     short_s2_peak,
+                      true_s2si_peak,
+                      fake_s2si_peak):
+    selector = S12Selector(**selector_conf.__dict__)
+    s1_peaks = dict(enumerate([( true_s1_peak.t,  true_s1_peak.E),
+                               (small_s1_peak.t, small_s1_peak.E),
+                               ( weak_s1_peak.t,  weak_s1_peak.E),
+                               (short_s1_peak.t, short_s1_peak.E)]))
+
+    s2_peaks = dict(enumerate([( true_s2_peak.t,  true_s2_peak.E),
+                               ( true_s2_peak.t,  true_s2_peak.E),
+                               (small_s2_peak.t, small_s2_peak.E),
+                               ( weak_s2_peak.t,  weak_s2_peak.E),
+                               (short_s2_peak.t, short_s2_peak.E)]))
+
+    si_peaks = {p: (true_s2si_peak   if p else
+                    fake_s2si_peak) for p in s2_peaks}
+
+    filter_output  = filter_function(selector,
+                                     S1  (s1_peaks),
+                                     S2  (s2_peaks),
+                                     S2Si(s2_peaks, si_peaks))
+
+    truth_s1_peaks = dict(enumerate([ True, False, False, False]))
+    truth_s2_peaks = dict(enumerate([False,  True, False, False, False]))
+    truth          = S12SelectorOutput(True,
+                                       truth_s1_peaks,
+                                       truth_s2_peaks)
+
+    assert filter_output.passed   == truth.passed  
+    assert filter_output.s1_peaks == truth.s1_peaks
+    assert filter_output.s2_peaks == truth.s2_peaks
+
+
+def test_s2si_filter(true_s2_peak,
+                     true_s2si_peak,
+                     fake_s2si_peak):
+    s2_peaks = dict(enumerate([(true_s2_peak.t, true_s2_peak.E),
+                               (true_s2_peak.t, true_s2_peak.E)]))
+
+    si_peaks = {p: (true_s2si_peak   if p else
+                    fake_s2si_peak) for p in s2_peaks}
+
+    filter_output  = s2si_filter(S2Si(s2_peaks, si_peaks))
+
+    truth_si_peaks = dict(enumerate([False, True]))
+    truth          = S12SelectorOutput(True, {}, truth_si_peaks)
+    assert filter_output.passed   == truth.passed  
+    assert filter_output.s1_peaks == truth.s1_peaks
+    assert filter_output.s2_peaks == truth.s2_peaks
