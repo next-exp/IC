@@ -81,7 +81,8 @@ from .. types.ic_types          import xy
 
 from .. filters.s1s2_filter     import s1s2_filter
 from .. filters.s1s2_filter     import s2si_filter
-from .. filters.s1s2_filter      import S12Selector
+from .. filters.s1s2_filter     import S12Selector
+from .. filters.s1s2_filter     import S12SelectorOutput
 
 from .. daemons.idaemon         import invoke_daemon
 
@@ -644,7 +645,7 @@ class PCity(City):
                       n_events_not_s2si_filter     = 0,
                       n_events_selected            = 0)
 
-    def create_dst_event(self, pmapVectors):
+    def create_dst_event(self, pmapVectors, filter_output):
         """Must be implemented by any city derived from PCity"""
         raise NotImplementedError("Concrete City must implement `create_dst_event`")
 
@@ -677,8 +678,8 @@ class PCity(City):
                                                       s2si_dict,
                                                       evt_number)
             # filtering
-            pass_filter = self.filter_event(s1, s2, s2si)
-            if not pass_filter:
+            filter_output = self.filter_event(s1, s2, s2si)
+            if not filter_output.passed:
                 continue
             # event passed selection:
             self.cnt.n_events_selected     += 1
@@ -687,7 +688,7 @@ class PCity(City):
             pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
                                       events=evt_number,
                                       timestamps=evt_time)
-            evt = self.create_dst_event(pmapVectors)
+            evt = self.create_dst_event(pmapVectors, filter_output)
             write_dst(evt)
 
     def file_loop(self):
@@ -718,25 +719,24 @@ class PCity(City):
     def filter_event(self, s1, s2, s2si):
         """Filter the event in terms of s1, s2, s2si"""
         # loop event away if any signal (s1, s2 or s2si) not present
+        empty = S12SelectorOutput(False, [], [])
         if   s1 == None:
             self.cnt.n_events_not_s1 += 1
-            return False
+            return empty
         elif s2 == None:
             self.cnt.n_events_not_s2 += 1
-            return False
+            return empty
         elif s2si == None:
             self.cnt.n_events_not_s2si += 1
-            return False
+            return empty
+
         # filters in s12 and s2si
         f1 = s1s2_filter(self.s1s2_selector, s1, s2, s2si)
-        if not f1:
-            self.cnt.n_events_not_s1s2_filter += 1
-            return False
         f2 = s2si_filter(s2si)
-        if not f2:
-            self.cnt.n_events_not_s2si_filter += 1
-            return False
-        return True
+        f2.s1_peaks = f1.s1_peaks
+        self.cnt.n_events_not_s1s2_filter += int(not f1.passed)
+        self.cnt.n_events_not_s2si_filter += int(not f2.passed)
+        return f1 & f2
 
 class KrCity(PCity):
     """A city that read pmaps and computes/writes a KrEvent"""
@@ -781,7 +781,7 @@ class KrCity(PCity):
         dt  *= units.ns / units.mus  #in mus
         return z, dt
 
-    def create_kr_event(self, pmapVectors):
+    def create_kr_event(self, pmapVectors, filter_output):
         """Create a Kr event:
         A Kr event treats the data as being produced by a point-like
         (krypton-like) interaction. Thus, the event is assumed to have
@@ -796,17 +796,22 @@ class KrCity(PCity):
 
         evt       = KrEvent(evt_number, evt_time * 1e-3)
 
-        evt.nS1 = s1.number_of_peaks
-        for peak_no in s1.peak_collection():
+        evt.nS1 = 0
+        for peak_no, passed in filter_output.s1_peaks.items():
+            if not passed: continue
+
+            evt.nS1 += 1
             peak = s1.peak_waveform(peak_no)
             evt.S1w.append(peak.width)
             evt.S1h.append(peak.height)
             evt.S1e.append(peak.total_energy)
             evt.S1t.append(peak.tpeak)
 
-        evt.nS2 = s2si.number_of_peaks
+        evt.nS2 = 0
+        for peak_no, passed in filter_output.s2_peaks.items():
+            if not passed: continue
 
-        for i, peak_no in enumerate(s2si.peak_collection()):
+            evt.nS2 += 1
             peak = s2si.peak_waveform(peak_no)
             evt.S2w.append(peak.width/units.mus)
             evt.S2h.append(peak.height)
@@ -840,7 +845,7 @@ class KrCity(PCity):
                 evt.Yrms .append(c.Yrms)
                 evt.R    .append(c.R)
                 evt.Phi  .append(c.Phi)
-                z, dt = self.compute_z_and_dt(evt.S2t[i], evt.S1t[0])
+                z, dt = self.compute_z_and_dt(peak.tpeak, evt.S1t[0])
                 evt.DT   .append(dt)
                 evt.Z    .append(z)
             except XYRecoFail:
@@ -889,7 +894,7 @@ class HitCity(KrCity):
         qs = np.array([c.Q for c in clusters])
         return e * qs / np.sum(qs)
 
-    def create_hits_event(self, pmapVectors):
+    def create_hits_event(self, pmapVectors, filter_output):
         """Create a hits_event:
         A hits event treats the data as being produced by a sequence
         of time slices. Thus, the event is assumed to have
@@ -909,8 +914,9 @@ class HitCity(KrCity):
         # take events with exactly one s1. Otherwise, the
         # convention is to take the first peak in the S1 object
         # as reference.
+        first_s1 = list(filter(lambda x: x[1], filter_output.s1_peaks.items()))[0][0]
+        s1_t     = s1.peak_waveform(first_s1).tpeak
 
-        s1_t = s1.peak_waveform(0).tpeak
         # in general one rebins the time slices wrt the time slices
         # produces by pmaps. This is controlled by self.rebin which can
         # be set by parameter to a factor x pmaps-rebin.
@@ -924,6 +930,8 @@ class HitCity(KrCity):
         # (NN cluster is a cluster where the energy is an IC not number NN)
         # this allows to keep track of the energy associated to non reonstructed hits.
         for peak_no, (t_peak, e_peak) in sorted(s2si.s2d.items()):
+            if not filter_output.s2_peaks[peak_no]: continue
+
             for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
                 z        = (t_slice - s1_t) * units.ns * self.drift_v
                 #print('peak_no = {} slice_no = {}'.format(peak_no, slice_no))
