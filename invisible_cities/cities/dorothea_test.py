@@ -1,6 +1,7 @@
 import os
 
-from pandas import DataFrame
+import numpy  as np
+import pandas as pd
 
 from . dorothea import Dorothea
 
@@ -60,7 +61,7 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
     dst = load_dst(PATH_OUT, "DST", "Events")
     assert len(set(dst.event)) == nevt_out
 
-    df = DataFrame.from_dict(dict(
+    df = pd.DataFrame.from_dict(dict(
             event = [    31          ],
             time  = [     0.031      ],
             peak  = [     0          ],
@@ -85,3 +86,57 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps):
             Yrms  = [     4.710678   ]))
 
     assert_dataframes_close(dst, df, False, rtol=1e-2)
+
+
+def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
+    PATH_IN =  Kr_pmaps_run4628
+
+    PATH_OUT = os.path.join(config_tmpdir, 'KrDST_4628.h5')
+    nrequired = 50
+    conf = configure('dummy invisible_cities/config/dorothea.conf'.split())
+    conf.update(dict(run_number = 4628,
+                     files_in   = PATH_IN,
+                     file_out   = PATH_OUT,
+
+                     drift_v     =      2 * mm / mus,
+                     s1_nmin     =      1,
+                     s1_nmax     =      1,
+                     s1_emin     =      1 * pes,
+                     s1_emax     =     30 * pes,
+                     s1_wmin     =    100 * ns,
+                     s1_wmax     =    300 * ns,
+                     s1_hmin     =      1 * pes,
+                     s1_hmax     =      5 * pes,
+                     s1_ethr     =    0.5 * pes,
+                     s2_nmin     =      1,
+                     s2_nmax     =      2,
+                     s2_emin     =    1e3 * pes,
+                     s2_emax     =    1e4 * pes,
+                     s2_wmin     =      2 * mus,
+                     s2_wmax     =     20 * mus,
+                     s2_hmin     =    1e3 * pes,
+                     s2_hmax     =    1e5 * pes,
+                     s2_ethr     =      1 * pes,
+                     s2_nsipmmin =      5,
+                     s2_nsipmmax =     30,
+                     event_range = (0, nrequired)))
+
+    events_pass = [ 1,  4, 10, 19, 20, 21, 26,
+                   26, 29, 33, 41, 43, 45, 46]
+    peak_pass   = [ 0,  0,  0,  0,  0,  0,  0,
+                    1,  0,  0,  0,  0,  0,  0]
+
+    dorothea = Dorothea(**conf)
+
+    dorothea.run()
+    cnt  = dorothea.end()
+    nevt_in  = cnt.n_events_tot
+    nevt_out = cnt.n_events_selected
+    assert nrequired    == nevt_in
+    assert nevt_out     == len(set(events_pass))
+
+    dst = load_dst(PATH_OUT, "DST", "Events")
+    assert len(set(dst.event.values)) == nevt_out
+
+    assert np.all(dst.event.values == events_pass)
+    assert np.all(dst.peak.values  ==   peak_pass)
