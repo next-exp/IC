@@ -1,16 +1,16 @@
 from argparse  import Namespace
 from functools import partial
 from textwrap  import dedent
+from typing    import Dict
 
-import numpy  as np
-from .. core.system_of_units_c import units
+import numpy as np
+
 from .. types.ic_types_c import minmax
-from .. evm.pmaps import Peak
-from .. evm.pmaps import S12
-from .. evm.pmaps import S1
-from .. evm.pmaps import S2
-from .. evm.pmaps import S2Si
-from typing import Dict
+from .. evm  .pmaps      import Peak
+from .. evm  .pmaps      import S12
+from .. evm  .pmaps      import S1
+from .. evm  .pmaps      import S2
+from .. evm  .pmaps      import S2Si
 
 
 class S12SelectorOutput:
@@ -53,6 +53,7 @@ class S12SelectorOutput:
 
     def __str__(self):
         return dedent("""
+                  S12SelectorOutput:
                       Passed  : {self.passed}
                       s1_peaks: {self.s1_peaks}
                       s2_peaks: {self.s2_peaks}
@@ -69,6 +70,7 @@ class S12Selector:
         self.s1w = minmax(conf.s1_wmin, conf.s1_wmax)
         self.s1h = minmax(conf.s1_hmin, conf.s1_hmax)
         self.s1_ethr = conf.s1_ethr
+
         self.s2n = minmax(conf.s2_nmin, conf.s2_nmax)
         self.s2e = minmax(conf.s2_emin, conf.s2_emax)
         self.s2w = minmax(conf.s2_wmin, conf.s2_wmax)
@@ -76,25 +78,27 @@ class S12Selector:
         self.nsi = minmax(conf.s2_nsipmmin, conf.s2_nsipmmax)
         self.s2_ethr = conf.s2_ethr
 
-
     @staticmethod
-    def valid_peak(peak : Peak, thr : float,
-                   energy : minmax, width: minmax, height : minmax) -> bool :
+    def valid_peak(peak   : Peak,
+                   thr    : float,
+                   energy : minmax,
+                   width  : minmax,
+                   height : minmax) -> bool:
         """Returns True if the peak energy, width and height
         is contained in the minmax defined by energy, width and
-        height.
-
-        """
-        #import pdb; pdb.set_trace()
+        height."""
         f1 = energy.contains(peak.total_energy_above_threshold(thr))
-        f2 = width.contains(peak.width_above_threshold(thr))
-        f3 = height.contains(peak.height_above_threshold(thr))
+        f2 = width .contains(peak.       width_above_threshold(thr))
+        f3 = height.contains(peak.      height_above_threshold(thr))
 
         return f1 and f2 and f3
 
     @staticmethod
-    def select_valid_peaks(s12 : S12, thr: float,
-                           energy : minmax, width: minmax, height : minmax) ->Dict[int, bool] :
+    def select_valid_peaks(s12    : S12,
+                           thr    : float,
+                           energy : minmax,
+                           width  : minmax,
+                           height : minmax) ->Dict[int, bool]:
         """Takes a s1/s2 and returns a dictionary with the outcome of the
         filter for each peak"""
         peak_is_valid = partial(S12Selector.valid_peak,
@@ -107,7 +111,8 @@ class S12Selector:
         return valid_peaks
 
     @staticmethod
-    def select_s2si(s2si : S2Si, nsipm : minmax) -> Dict[int, bool]:
+    def select_s2si(s2si  : S2Si,
+                    nsipm : minmax) -> Dict[int, bool]:
         """Takes a s2si and returns a dictionary with the outcome of the
         filter for each peak"""
         valid_peaks = {peak_no: nsipm.contains(s2si.number_of_sipms_in_peak(peak_no))
@@ -117,31 +122,48 @@ class S12Selector:
     def select_s1(self, s1 : S1) -> Dict[int, bool]:
         """Takes a s1 and returns a dictionary with the outcome of the
         filter for each peak"""
-        pass_dict = self.select_valid_peaks(s1, self.s1_ethr,
-                                            self.s1e, self.s1w, self.s1h)
+        pass_dict = self.select_valid_peaks(s1,
+                                            self.s1_ethr,
+                                            self.s1e,
+                                            self.s1w,
+                                            self.s1h)
         return pass_dict
 
     def select_s2(self, s2 : S2, s2si : S2Si) -> Dict[int, bool]:
         """Takes a s2 and a s2si and returns a dictionary with the
         outcome of the filter for each peak"""
-        s2_pass_dict   = self.select_valid_peaks(s2, self.s2_ethr,
-                                                 self.s2e, self.s2w, self.s2h)
+        s2_pass_dict   = self.select_valid_peaks(s2,
+                                                 self.s2_ethr,
+                                                 self.s2e,
+                                                 self.s2w,
+                                                 self.s2h)
         s2si_pass_dict = self.select_s2si(s2si, self.nsi)
         combined       = (S12SelectorOutput(None, {},   s2_pass_dict) &
                           S12SelectorOutput(None, {}, s2si_pass_dict))
         return combined.s2_peaks
 
     def __str__(self):
-        s = """S12_selector(s1n = {} s1e = {} pes s1w = {} ns pes s1h = {} pes s1_ethr = {} pes
-            s2n = {} s2e = {}  s2w = {} ns pes s2h = {} pes nsipm = {} s2_ethr = {} pes
-            """.format(self.s1n, self.s1e, self.s1w, self.s1h, self.s1_ethr,
-                                       self.s2n, self.s2e, self.s2w, self.s2h, self.nsi,
-                                       self.s2_ethr)
-        return s
+        return dedent("""
+                   S12_selector:
+                       s1n     = {self.s1n}
+                       s1e     = {self.s1e} pes
+                       s1w     = {self.s1w} ns
+                       s1h     = {self.s1h} pes
+                       s1_ethr = {self.s1_ethr} pes
+                       s2n     = {self.s2n}
+                       s2e     = {self.s2e} pes
+                       s2w     = {self.s2w} ns
+                       s2h     = {self.s2h} pes
+                       nsipm   = {self.nsi}
+                       s2_ethr = {self.s2_ethr} pes""".format(self = self))
 
     __repr__ = __str__
 
-def s1s2_filter(selector : S12Selector, s1 : S1, s2 : S2, s2si : S2Si) -> S12SelectorOutput:
+
+def s1s2_filter(selector : S12Selector,
+                s1       : S1,
+                s2       : S2,
+                s2si     : S2Si) -> S12SelectorOutput:
     """Takes the event pmaps (s1, s2 and  s2si)
     and filters the corresponding peaks in terms of the selector.
     1. select_s1 returns the s1 peak numbers whose energy, width and height
@@ -159,13 +181,13 @@ def s1s2_filter(selector : S12Selector, s1 : S1, s2 : S2, s2si : S2Si) -> S12Sel
 
     return S12SelectorOutput(passed, selected_s1_peaks, selected_s2_peaks)
 
+
 def s2si_filter(s2si : S2Si) -> S12SelectorOutput:
     """All peaks must contain at least one non-zero charged sipm"""
 
     def at_least_one_sipm_with_Q_gt_0(Si):
         return any(q > 0 for q in Si.values())
 
-    #iS2Si = integrate_S2Si_charge(s2si.s2sid)
     iS2Si = s2si.peak_and_sipm_total_energy_dict()
 
     selected_si_peaks = {peak_no: at_least_one_sipm_with_Q_gt_0(peak)
@@ -173,7 +195,11 @@ def s2si_filter(s2si : S2Si) -> S12SelectorOutput:
     passed = len(selected_si_peaks) > 0
     return S12SelectorOutput(passed, {}, selected_si_peaks)
 
-def s1s2si_filter(selector : S12Selector, s1 : S1, s2 : S2, s2si : S2Si) -> S12SelectorOutput:
+
+def s1s2si_filter(selector : S12Selector,
+                  s1       : S1,
+                  s2       : S2,
+                  s2si     : S2Si) -> S12SelectorOutput:
     """Combine s1s2 and s2si filters"""
     s1s2f = s1s2_filter(selector, s1, s2, s2si)
     s2sif = s2si_filter(s2si)
