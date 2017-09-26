@@ -141,35 +141,34 @@ class S12Selector:
 
     __repr__ = __str__
 
-def s1s2_filter(selector : S12Selector, s1 : S1, s2 : S2, s2si : S2Si) ->bool:
+def s1s2_filter(selector : S12Selector, s1 : S1, s2 : S2, s2si : S2Si) -> S12SelectorOutput:
     """Takes the event pmaps (s1, s2 and  s2si)
     and filters the corresponding peaks in terms of the selector.
-    1. select_s1 returns the number of s1 peaks whose energy, width and height
+    1. select_s1 returns the s1 peak numbers whose energy, width and height
        are within the boundaries defined by the selector parameters.
-    2. select_s2 returns the number of s2 peaks whose energy, width and height
+    2. select_s2 returns the s2 peak numbers whose energy, width and height
        are within the boundaries defined by the selector parameters and
        AND which have a number of sipms within boundaries.
 
     """
+    selected_s1_peaks = selector.select_s1(s1)
+    selected_s2_peaks = selector.select_s2(s2, s2si)
 
-    # s1f, s2f and sif are filtered dicts, containining
-    # the peaks that pass selection
-    n_s1_peaks           = selector.select_s1(s1)
-    n_s2_peaks           = selector.select_s2(s2, s2si)
+    passed = (selector.s1n.contains(np.count_nonzero(list(selected_s1_peaks.values()))) and
+              selector.s2n.contains(np.count_nonzero(list(selected_s2_peaks.values()))))
 
+    return S12SelectorOutput(passed, selected_s1_peaks, selected_s2_peaks)
 
-    return (selector.s1n.contains(n_s1_peaks) and
-            selector.s2n.contains(n_s2_peaks))
-
-def s2si_filter(s2si : S2Si) -> bool :
+def s2si_filter(s2si : S2Si) -> S12SelectorOutput:
     """All peaks must contain at least one non-zero charged sipm"""
 
     def at_least_one_sipm_with_Q_gt_0(Si):
         return any(q > 0 for q in Si.values())
 
-    def all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si):
-        return all(at_least_one_sipm_with_Q_gt_0(Si)
-                          for Si in iS2Si.values())
     #iS2Si = integrate_S2Si_charge(s2si.s2sid)
     iS2Si = s2si.peak_and_sipm_total_energy_dict()
-    return all_peaks_contain_at_least_one_non_zero_charged_sipm(iS2Si)
+
+    selected_si_peaks = [at_least_one_sipm_with_Q_gt_0(peak)
+                         for peak_no, peak in iS2Si.items()]
+    passed = len(selected_si_peaks) > 0
+    return S12SelectorOutput(passed, None, selected_si_peaks)
