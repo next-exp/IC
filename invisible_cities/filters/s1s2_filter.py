@@ -14,12 +14,29 @@ from .. evm  .pmaps      import S2Si
 
 
 class S12SelectorOutput:
-    def __init__(self, passed, s1_peaks, s2_peaks):
+    """
+    Class devoted to hold the output of the S12Selector.
+
+    It contains:
+        - passed  : a boolean flag indicating whether the event as
+                    a whole has passed the filter.
+        - s1_peaks: a dictionary with a boolean flag for each peak
+                    indicating whether the peak has been selected
+                    or not.
+        - s2_peaks: same as s1_peaks.
+
+    The __and__ (&) and __or__ (|) methods, allow the user to combine
+    two outputs.
+    """
+    def __init__(self,
+                 passed   : bool,
+                 s1_peaks : Dict[int, bool],
+                 s2_peaks : Dict[int, bool]):
         self.passed   = passed
         self.s1_peaks = s1_peaks
         self.s2_peaks = s2_peaks
 
-    def __and__(self, other):
+    def __and__(self, other : "S12SelectorOutput") -> "S12SelectorOutput":
         s1_peaks = set(self.s1_peaks) | set(other.s1_peaks)
         s2_peaks = set(self.s2_peaks) | set(other.s2_peaks)
 
@@ -35,7 +52,7 @@ class S12SelectorOutput:
 
         return S12SelectorOutput(passed, s1_peaks, s2_peaks)
 
-    def __or__(self, other):
+    def __or__(self, other : "S12SelectorOutput") -> "S12SelectorOutput":
         s1_peaks = set(self.s1_peaks) | set(other.s1_peaks)
         s2_peaks = set(self.s2_peaks) | set(other.s2_peaks)
 
