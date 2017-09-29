@@ -113,18 +113,20 @@ where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
 order by SensorID;'''.format(abs(run_number))
     cursor.execute(sqlbaseline)
     baselines = np.array(tmap(itemgetter(0), cursor.fetchall()))
+    nsipms = baselines.shape[0]
 
-    sqlnoisebins = '''select Energy from SipmNoiseBins
+    sqlnoisebins = '''select distinct(BinEnergyPes) from SipmNoisePDF
 where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
-order by Bin;'''.format(abs(run_number))
+order by BinEnergyPes;'''.format(abs(run_number))
     cursor.execute(sqlnoisebins)
     noise_bins = np.array(tmap(itemgetter(0), cursor.fetchall()))
+    nbins = noise_bins.shape[0]
 
-    sqlnoise = '''select * from SipmNoise
+    sqlnoise = '''select Probability from SipmNoisePDF
 where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
-order by SensorID;'''.format(abs(run_number))
+order by SensorID, BinEnergyPes;'''.format(abs(run_number))
     cursor.execute(sqlnoise)
-    data = tmap(itemgetter(slice(3,None)), cursor.fetchall())
-    noise = np.array(data).reshape(1792, 300)
+    data = tmap(itemgetter(0), cursor.fetchall())
+    noise = np.array(data).reshape(nsipms, nbins)
 
     return noise, noise_bins, baselines
