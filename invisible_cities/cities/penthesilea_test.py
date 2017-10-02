@@ -1,6 +1,7 @@
 import os
 import numpy  as np
 
+from .. core.core_functions  import in_range
 from .. core.system_of_units import *
 from .. core.testing_utils   import assert_dataframes_close
 from .  penthesilea          import Penthesilea
@@ -51,3 +52,58 @@ def test_penthesilea_run_on_Kr_MC_ipmt_pmaps_5evt(ICDIR, config_tmpdir):
     pent = dio.load_dst(PATH_OUT , 'RECO', 'Events')
     comp = dio.load_dst(PATH_COMP, 'RECO', 'Events')
     assert_dataframes_close(pent, comp)
+
+
+def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
+    PATH_IN =  Kr_pmaps_run4628
+
+    PATH_OUT = os.path.join(config_tmpdir, 'KrDST_4628.h5')
+    nrequired = 50
+    conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
+    conf.update(dict(run_number = 4628,
+                     files_in   = PATH_IN,
+                     file_out   = PATH_OUT,
+
+                     drift_v     =      2 * mm / mus,
+                     s1_nmin     =      1,
+                     s1_nmax     =      1,
+                     s1_emin     =      1 * pes,
+                     s1_emax     =     30 * pes,
+                     s1_wmin     =    100 * ns,
+                     s1_wmax     =    300 * ns,
+                     s1_hmin     =      1 * pes,
+                     s1_hmax     =      5 * pes,
+                     s1_ethr     =    0.5 * pes,
+                     s2_nmin     =      1,
+                     s2_nmax     =      2,
+                     s2_emin     =    1e3 * pes,
+                     s2_emax     =    1e4 * pes,
+                     s2_wmin     =      2 * mus,
+                     s2_wmax     =     20 * mus,
+                     s2_hmin     =    1e3 * pes,
+                     s2_hmax     =    1e5 * pes,
+                     s2_ethr     =      1 * pes,
+                     s2_nsipmmin =      5,
+                     s2_nsipmmax =     30,
+                     event_range = (0, nrequired)))
+
+    events_pass = ([ 1]*21 + [ 4]*15 + [10]*16 + [19]*17 +
+                   [20]*19 + [21]*15 + [26]*23 + [29]*22 +
+                   [33]*14 + [41]*18 + [43]*18 + [45]*13 +
+                   [46]*18)
+    peak_pass   = [int(in_range(i, 119, 126))
+                   for i in range(229)]
+    dorothea = Penthesilea(**conf)
+
+    dorothea.run()
+    cnt  = dorothea.end()
+    nevt_in  = cnt.n_events_tot
+    nevt_out = cnt.n_events_selected
+    assert nrequired    == nevt_in
+    assert nevt_out     == len(set(events_pass))
+
+    dst = dio.load_dst(PATH_OUT, "RECO", "Events")
+    assert len(set(dst.event.values)) ==   nevt_out
+    assert  np.all(dst.event.values   == events_pass)
+    assert  np.all(dst.npeak.values   ==   peak_pass)
+
