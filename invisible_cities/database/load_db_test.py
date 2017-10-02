@@ -1,5 +1,9 @@
 from . import load_db as DB
 
+import sqlite3
+import numpy as np
+from pytest  import fixture
+from os.path import join
 
 def test_pmts_pd():
     """Check that we retrieve the correct number of PMTs."""
@@ -50,3 +54,53 @@ def test_DetectorGeometry():
 def test_mc_runs_equal_data_runs():
     assert (DB.DataPMT (-3550).values == DB.DataPMT (3550).values).all()
     assert (DB.DataSiPM(-3550).values == DB.DataSiPM(3550).values).all()
+
+
+@fixture(scope='module')
+def test_db(tmpdir_factory):
+    temp_dir = tmpdir_factory.mktemp('output_files')
+    dbfile = join(temp_dir, 'db.sqlite3')
+    connSql3 = sqlite3.connect(dbfile)
+    cursorSql3 = connSql3.cursor()
+
+    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `SipmBaseline` (
+`MinRun` integer NOT NULL
+,  `MaxRun` integer DEFAULT NULL
+,  `SensorID` integer NOT NULL
+,  `Energy` float NOT NULL
+);''')
+
+    cursorSql3.execute('''CREATE TABLE IF NOT EXISTS `SipmNoisePDF` (
+    `MinRun` integer NOT NULL
+    ,  `MaxRun` integer DEFAULT NULL
+    ,  `SensorID` integer NOT NULL
+    ,  `BinEnergyPes` float NOT NULL
+    ,  `Probability` float NOT NULL
+);''')
+
+    #Insert sample data
+    sql = 'INSERT INTO SipmBaseline (MinRun, MaxRun, SensorID, Energy) VALUES ({})'
+    cursorSql3.execute(sql.format('0,NULL,1,0'))
+    sql = 'INSERT INTO SipmNoisePDF (MinRun, MaxRun, SensorID, BinEnergyPes, Probability) VALUES ({})'
+    cursorSql3.execute(sql.format('0,NULL,1,5,0.1'))
+    cursorSql3.execute(sql.format('0,NULL,1,3,0.3'))
+    cursorSql3.execute(sql.format('0,NULL,1,4,0.2'))
+    cursorSql3.execute(sql.format('0,NULL,1,1,0.5'))
+    cursorSql3.execute(sql.format('0,NULL,1,2,0.4'))
+    connSql3.commit()
+    connSql3.close()
+
+    return dbfile
+
+def test_sipm_noise_order(test_db):
+    print (DB.SiPMNoise(1, test_db))
+    #'True' values
+    noise_true     = np.array([[ 0.5,  0.4,  0.3,  0.2,  0.1]])
+    bins_true      = np.array([ 1.,  2.,  3.,  4.,  5.])
+    baselines_true = np.array([ 0.])
+    #Read from DB
+    noise, bins, baselines = DB.SiPMNoise(1, test_db)
+
+    np.testing.assert_allclose(noise,     noise_true)
+    np.testing.assert_allclose(bins,      bins_true)
+    np.testing.assert_allclose(baselines, baselines_true)
