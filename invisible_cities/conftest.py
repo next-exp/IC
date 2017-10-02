@@ -227,3 +227,9 @@ def Kr_MC_4446_load_pmaps_with_ipmt(ICDIR):
     ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_5evt.h5'
     Kr_MC_4446_load_pmaps_with_ipmt = load_pmaps_with_ipmt(ipmt_pmap_path)
     return Kr_MC_4446_load_pmaps_with_ipmt
+
+
+@pytest.fixture(scope='session')
+def Kr_pmaps_run4628(ICDIR):
+    filename = ICDIR + 'database/test_data/Kr_pmaps_run4628.h5'
+    return filename
