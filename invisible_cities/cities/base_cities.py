@@ -743,6 +743,7 @@ class KrCity(PCity):
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
+        self.cnt.init(n_events_more_than_1_cluster = 0)
         #self.reco_algorithm = find_algorithm(self.conf.reco_algorithm)
 
 
