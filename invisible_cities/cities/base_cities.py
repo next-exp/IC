@@ -490,7 +490,7 @@ class CalibratedCity(DeconvolutionCity):
              MAU + threshold.
        """
 
-    parameters = tuple("""n_mau thr_mau thr_csum_s1 thr_csum_s2 n_mau_sipm thr_sipm""".split())
+    parameters = tuple("""n_mau thr_mau thr_csum_s1 thr_csum_s2 n_mau_sipm thr_sipm thr_sipm_type""".split())
 
     def __init__(self, **kwds):
 
@@ -503,9 +503,17 @@ class CalibratedCity(DeconvolutionCity):
         self.thr_csum_s2 = conf.thr_csum_s2
 
         # Parameters of the SiPM signal
-        self.n_MAU_sipm = conf.n_mau_sipm
-        self.  thr_sipm = conf.  thr_sipm
-
+        self.n_MAU_sipm  = conf.n_mau_sipm
+        if   conf.thr_sipm_type.lower() == "common":
+            # In this case, the threshold is a value of threshold in pes
+            self.thr_sipm = conf.thr_sipm
+        elif conf.thr_sipm_type.lower() == "individual":
+            # In this case, the threshold is a percentual value
+            noise_sampler = SiPMsNoiseSampler(self.run_number)
+            self.thr_sipm = noise_sampler.ComputeThresholds(conf.thr_sipm)
+        else:
+            raise ValueError(("Wrong value in thr_sipm_type. It must"
+                              "be either 'Common' or 'Individual'"))
 
     def calibrated_pmt_mau(self, CWF):
         """Return the csum and csum_mau calibrated sums."""
