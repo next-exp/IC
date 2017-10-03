@@ -5,7 +5,7 @@ import os
 from operator import itemgetter
 
 
-DATABASE_LOCATION = '/invisible_cities/database/localdb.sqlite3'
+DATABASE_LOCATION =  os.environ['ICTDIR'] + '/invisible_cities/database/localdb.sqlite3'
 
 def tmap(*args):
     return tuple(map(*args))
@@ -44,7 +44,7 @@ where SensorID {} 100 and MinRun < {}'''.format(bound, abs(run_number))
 def DataPMT(run_number=1e5):
     if run_number == 0:
         run_number = runNumberForMC
-    dbfile = os.environ['ICTDIR'] + DATABASE_LOCATION
+    dbfile = DATABASE_LOCATION
     conn = sqlite3.connect(dbfile)
 
     minrun_gain, minrun_position, minrun_map = \
@@ -74,7 +74,7 @@ order by Active desc, pos.SensorID'''\
 def DataSiPM(run_number=1e5):
     if run_number == 0:
         run_number = runNumberForMC
-    dbfile = os.environ['ICTDIR'] + DATABASE_LOCATION
+    dbfile = DATABASE_LOCATION
     conn = sqlite3.connect(dbfile)
 
     minrun_gain, minrun_position, minrun_map = \
@@ -96,15 +96,14 @@ and map.MinRun={2} order by pos.SensorID'''\
     return data
 
 def DetectorGeo():
-    dbfile = os.environ['ICTDIR'] + DATABASE_LOCATION
+    dbfile = DATABASE_LOCATION
     conn = sqlite3.connect(dbfile)
     sql = 'select * from DetectorGeo'
     data = pd.read_sql_query(sql, conn)
     conn.close()
     return data
 
-def SiPMNoise(run_number=1e5):
-    dbfile = os.environ['ICTDIR'] + DATABASE_LOCATION
+def SiPMNoise(run_number=1e5, dbfile=DATABASE_LOCATION):
     conn = sqlite3.connect(dbfile)
     cursor = conn.cursor()
 
@@ -113,18 +112,20 @@ where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
 order by SensorID;'''.format(abs(run_number))
     cursor.execute(sqlbaseline)
     baselines = np.array(tmap(itemgetter(0), cursor.fetchall()))
+    nsipms = baselines.shape[0]
 
-    sqlnoisebins = '''select Energy from SipmNoiseBins
+    sqlnoisebins = '''select distinct(BinEnergyPes) from SipmNoisePDF
 where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
-order by Bin;'''.format(abs(run_number))
+order by BinEnergyPes;'''.format(abs(run_number))
     cursor.execute(sqlnoisebins)
     noise_bins = np.array(tmap(itemgetter(0), cursor.fetchall()))
+    nbins = noise_bins.shape[0]
 
-    sqlnoise = '''select * from SipmNoise
+    sqlnoise = '''select Probability from SipmNoisePDF
 where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
-order by SensorID;'''.format(abs(run_number))
+order by SensorID, BinEnergyPes;'''.format(abs(run_number))
     cursor.execute(sqlnoise)
-    data = tmap(itemgetter(slice(3,None)), cursor.fetchall())
-    noise = np.array(data).reshape(1792, 300)
+    data = tmap(itemgetter(0), cursor.fetchall())
+    noise = np.array(data).reshape(nsipms, nbins)
 
     return noise, noise_bins, baselines
