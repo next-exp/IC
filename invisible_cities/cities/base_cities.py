@@ -976,7 +976,7 @@ class TrackCity(HitCity):
         for trk in track_graphs:
             distances = paf.shortest_paths(trk)
             a,b       = paf.find_extrema(distances) # type: Tuple[Voxel, Voxel]
-            ba, bb = paf.blobs(trk, blob_radius) # type: Tuple[List[Voxel], List[Voxel]]
+            ba, bb = paf.blobs(trk, self.blob_radius) # type: Tuple[List[Voxel], List[Voxel]]
             #Ea = paf.energy_within_radius(distances[a], self.blob_radius) # type: float
             #Eb = paf.energy_within_radius(distances[b], self.blob_radius)
             blob_a = Blob(ba) # type: Blob
