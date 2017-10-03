@@ -84,7 +84,6 @@ class NoiseSampler:
 
         if pes_to_adc is None:
             pes_to_adc = np.ones(self.probs.shape[0])
-        pes_to_adc.reshape(self.probs.shape[0], 1)
 
         cumprobs = np.apply_along_axis(np.cumsum, 1, self.probs)
         return np.apply_along_axis(findcut, 1, cumprobs) * pes_to_adc
