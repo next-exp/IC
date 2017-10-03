@@ -39,12 +39,19 @@ def voxelize_hits(hits             : Sequence[BHit],
     if not hits:
         raise NoHits
     hlo, hhi = bounding_box(hits)
-    hranges = hhi - hlo
-    bins = np.ceil(hranges / voxel_dimensions).astype(int)
-    nonzero_bins = np.clip(bins, a_min=1, a_max=None)
+    bounding_box_centre = (hhi + hlo) / 2
+    bounding_box_size   =  hhi - hlo
+    number_of_voxels = np.ceil(bounding_box_size / voxel_dimensions).astype(int)
+    number_of_voxels = np.clip(number_of_voxels, a_min=1, a_max=None)
+    voxel_edges_lo = bounding_box_centre - number_of_voxels * voxel_dimensions / 2
+    voxel_edges_hi = bounding_box_centre + number_of_voxels * voxel_dimensions / 2
+
     hit_positions = np.array([h.pos for h in hits])
     hit_energies  =          [h.E   for h in hits]
-    E, edges = np.histogramdd(hit_positions, bins=nonzero_bins, weights=hit_energies)
+    E, edges = np.histogramdd(hit_positions,
+                              bins    = number_of_voxels,
+                              range   = tuple(zip(voxel_edges_lo, voxel_edges_hi)),
+                              weights = hit_energies)
 
     def centres(a : np.ndarray) -> np.ndarray:
         return (a[1:] + a[:-1]) / 2
