@@ -39,7 +39,7 @@ def big_enough(hits):
 
 posn = floats(min_value=10, max_value=100)
 ener = posn
-bunch_of_hits = lists(builds(Voxel, posn, posn, posn, ener),
+bunch_of_hits = lists(builds(BHit, posn, posn, posn, ener),
                       min_size =  1,
                       max_size = 30).filter(big_enough)
 
