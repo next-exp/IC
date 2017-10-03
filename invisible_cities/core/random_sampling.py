@@ -68,7 +68,7 @@ class NoiseSampler:
         noise_cut : float
             Fraction of the distribution to be left behind. Default is 0.99.
         pes_to_adc : float or array of floats, optional
-            Constant(s) for adc to pes conversion (default None).
+            Constant(s) for pes to adc conversion (default None).
             If not present, the thresholds are given in pes.
 
         Returns
