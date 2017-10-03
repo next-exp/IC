@@ -129,9 +129,6 @@ def test_voxelize_hits_respects_voxel_dimensions(hits, requested_voxel_dimension
                 np.isclose(off_by, unit)).all()
 
 
-
-
-
 @given(bunch_of_hits, box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
