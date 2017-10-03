@@ -90,16 +90,23 @@ def test_db(tmpdir_factory):
     connSql3.commit()
     connSql3.close()
 
-    return dbfile
-
-def test_sipm_noise_order(test_db):
-    print (DB.SiPMNoise(1, test_db))
-    #'True' values
     noise_true     = np.array([[ 0.5,  0.4,  0.3,  0.2,  0.1]])
     bins_true      = np.array([ 1.,  2.,  3.,  4.,  5.])
     baselines_true = np.array([ 0.])
+    sipm_noise = noise_true, bins_true, baselines_true
+
+    return dbfile, sipm_noise
+
+def test_sipm_noise_order(test_db):
     #Read from DB
-    noise, bins, baselines = DB.SiPMNoise(1, test_db)
+    dbfile = test_db[0]
+    noise, bins, baselines = DB.SiPMNoise(1, dbfile)
+
+    #'True' values
+    sipm_noise     = test_db[1]
+    noise_true     = sipm_noise[0]
+    bins_true      = sipm_noise[1]
+    baselines_true = sipm_noise[2]
 
     np.testing.assert_allclose(noise,     noise_true)
     np.testing.assert_allclose(bins,      bins_true)
