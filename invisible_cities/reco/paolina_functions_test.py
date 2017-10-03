@@ -3,6 +3,8 @@ from functools import partial
 import numpy    as np
 import networkx as nx
 
+from itertools import combinations
+
 from numpy.testing import assert_almost_equal
 
 from pytest import fixture
@@ -114,6 +116,21 @@ def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
 
     assert (vlo <= hlo).all()
     assert (vhi >= hhi).all()
+
+
+@given(bunch_of_hits, box_sizes)
+def test_voxelize_hits_respects_voxel_dimensions(hits, requested_voxel_dimensions):
+    voxels = voxelize_hits(hits, requested_voxel_dimensions)
+    unit   =                     requested_voxel_dimensions
+    for v1, v2 in combinations(voxels, 2):
+        distance_between_voxels = np.array(v2.XYZ) - np.array(v1.XYZ)
+        off_by = distance_between_voxels % requested_voxel_dimensions
+        assert (np.isclose(off_by, 0   ) |
+                np.isclose(off_by, unit)).all()
+
+
+
+
 
 @given(bunch_of_hits, box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
