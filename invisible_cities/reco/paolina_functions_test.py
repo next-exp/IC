@@ -55,6 +55,7 @@ def test_voxelize_hits_should_detect_no_hits():
     with raises(NoHits):
         voxelize_hits([], None)
 
+
 @given(bunch_of_hits)
 def test_bounding_box(hits):
     if not len(hits): # TODO: deal with empty sequences
@@ -100,6 +101,7 @@ random_graph = builds(partial(fast_gnp_random_graph, p=0.5),
 def test_voxels_from_track_return_node_voxels(graph):
     assert voxels_from_track_graph(graph) == graph.nodes()
 
+
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
     voxels = voxelize_hits(hits, voxel_dimensions)
@@ -143,15 +145,18 @@ def test_find_extrema(spec, extrema):
     assert a in found
     assert b in found
 
+
 @given(builds(Voxel, posn, posn, posn, ener))
 def test_find_extrema_single_voxel(voxel):
     g = nx.Graph()
     g.add_node(voxel)
     assert find_extrema(shortest_paths(g)) == (voxel, voxel)
 
+
 def test_find_extrema_no_voxels():
     with raises(NoVoxels):
         find_extrema({})
+
 
 @fixture(scope='module')
 def track_extrema():
@@ -204,6 +209,7 @@ def test_blobs(track_extrema, radius, expected):
     Ea, Eb = expected
 
     assert blob_energies(track, radius) == (Ea, Eb)
+
 
 def test_voxelize_single_hit():
     hits = [BHit(1, 1, 1, 100)]
