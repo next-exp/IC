@@ -2,6 +2,7 @@ from collections   import namedtuple
 import numpy as np
 
 from ..core             import fit_functions as fitf
+from ..core.exceptions  import ParameterNotSet
 from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection
 from ..reco.corrections import LifetimeCorrection
@@ -9,7 +10,9 @@ from ..reco.corrections import LifetimeRCorrection
 from ..reco.corrections import LifetimeXYCorrection
 
 from numpy.testing import assert_allclose
-from pytest        import fixture, mark
+from pytest        import fixture
+from pytest        import mark
+from pytest        import raises
 
 from flaky import flaky
 
@@ -157,6 +160,18 @@ def gauss_data_2d():
 
 #--------------------------------------------------------
 #--------------------------------------------------------
+@mark.parametrize("strategy options".split(),
+                  (("const", {}),
+                   ("index", {}),
+                   ("const", {"wrong_option": None}),
+                   ("index", {"wrong_option": None})))
+def test_correction_raises_exception_when_input_is_incomplete(strategy, options):
+    data = np.arange(5)
+    with raises(ParameterNotSet):
+        Correction((data,), data, data,
+                   norm_strategy = strategy,
+                   norm_opts     = options)
+
 
 @given(uniform_energy_1d())
 def test_correction_attributes_1d(toy_data_1d):
