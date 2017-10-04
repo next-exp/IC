@@ -137,6 +137,11 @@ def LifetimeCorrection(LT, u_LT):
     return Fcorrection(fun, u_fun, (LT, u_LT))
 
 
+def LifetimeXYCorrection(pars, u_pars, xs, ys):
+    LTs = Correction((xs, ys), pars, u_pars)
+    return (lambda z, x, y: LifetimeCorrection(*LTs(x, y))(z))
+
+
 def LifetimeRCorrection(pars, u_pars):
     def LTfun(z, r, a, b, c, u_a, u_b, u_c):
         LT = a - b * r * np.exp(r/c)
