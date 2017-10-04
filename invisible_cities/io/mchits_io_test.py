@@ -3,6 +3,12 @@ import numpy  as np
 from . mchits_io import load_mchits
 from . mchits_io import load_mcparticles
 
+def test_load_all_mchits(mc_all_hits_data):
+    efile, number_of_hits, evt_number = mc_all_hits_data
+    mchits_dict = load_mchits(efile)
+
+    assert len(mchits_dict[evt_number]) == number_of_hits
+
 def test_load_mchits(mc_particle_and_hits_data):
     efile, _, _, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_data
 
