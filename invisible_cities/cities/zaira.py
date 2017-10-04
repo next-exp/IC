@@ -14,7 +14,7 @@ from operator import attrgetter
 from .  base_cities         import DstCity
 from .. core.core_functions import in_range
 from .. core.configure      import configure
-from .. io.kdst_io          import xy_writer
+from .. io.kdst_io          import xy_correction_writer
 from ..reco.corrections     import Correction
 from ..reco.corrections     import LifetimeCorrection
 from .. core                import fit_functions  as fitf
@@ -92,7 +92,7 @@ class Zaira(DstCity):
         nevt   = self.xy_statistics(dst.X.values, dst.Y.values)[0]
 
         with tb.open_file(self.output_file, 'w') as h5out:
-            write_xy = xy_writer(h5out)
+            write_xy = xy_correction_writer(h5out)
             write_xy(*xycorr._xs, xycorr._fs, xycorr._us, nevt)
 
         self.cnt.n_events_tot = len(dst)
