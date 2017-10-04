@@ -3,6 +3,7 @@ import scipy as sc
 
 
 from ..core                     import fit_functions as fitf
+from ..core.exceptions          import ParameterNotSet
 from .. evm.ic_containers       import Measurement
 
 
@@ -69,17 +70,27 @@ class Correction:
 
     def _normalize(self, strategy, opts):
         if not strategy           : return
+
         elif   strategy == "const":
+            if "value" not in opts:
+                raise ParameterNotSet(("Normalization stratery 'const' requires"
+                                       "the normalization option 'value'"))
             f_ref = opts["value"]
             u_ref = 0
+
         elif   strategy == "max"  :
             index = np.argmax(self._fs)
             f_ref = self._fs[index]
             u_ref = self._us[index]
+
         elif   strategy == "index":
+            if "index" not in opts:
+                raise ParameterNotSet(("Normalization stratery 'index' requires"
+                                       "the normalization option 'index'"))
             index = opts["index"]
             f_ref = self._fs[index]
             u_ref = self._us[index]
+
         else:
             raise ValueError("Normalization option not recognized: {}".format(strategy))
 
