@@ -196,6 +196,17 @@ def test_correction_normalization(toy_data_1d):
     assert_allclose(correct(X_test).value, 1) # correct.xs is a list of axis
 
 
+@given(uniform_energy_1d(),
+       floats  (min_value=1e-8, max_value=1e8))
+def test_correction_normalization_to_const(toy_data_1d, norm_value):
+    X, E, Eu, _, _, _ = toy_data_1d
+    c = Correction((X,), E, Eu,
+                   norm_strategy = "const",
+                   norm_opts     = {"value": norm_value})
+    assert_allclose(c._fs, norm_value/E)
+    assert_allclose(c._us, norm_value/E**2*Eu)
+
+
 #--------------------------------------------------------
 
 @given(uniform_energy_2d())
