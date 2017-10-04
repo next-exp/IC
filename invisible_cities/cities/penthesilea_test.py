@@ -21,9 +21,9 @@ def test_penthesilea_KrMC(KrMC_pmaps, KrMC_hdst, config_tmpdir):
 
     DF_TRUE =  KrMC_hdst.true
 
-    conf.update(dict(files_in      = PATH_IN,
-                     file_out      = PATH_OUT,
-                     event_range   = (nevt_req,),
+    conf.update(dict(files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
+                     event_range = (nevt_req,),
                      **KrMC_hdst.config))
 
     penthesilea = Penthesilea(**conf)
@@ -42,10 +42,10 @@ def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628):
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST_4628.h5')
     nrequired = 50
     conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
-    conf.update(dict(run_number = 4628,
-                     files_in   = PATH_IN,
-                     file_out   = PATH_OUT,
 
+    conf.update(dict(run_number  = 4628,
+                     files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
                      drift_v     =      2 * units.mm / units.mus,
                      s1_nmin     =      1,
                      s1_nmax     =      2, #right-open interval
