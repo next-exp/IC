@@ -33,7 +33,7 @@ class Correction:
 
     def __init__(self,
                  xs, fs, us,
-                   norm_strategy = False, index = None,
+                   norm_strategy = False, norm_opts = None,
                  interp_strategy = "nearest",
                  default_f = 0, default_u = 0):
 
@@ -46,7 +46,7 @@ class Correction:
         self._default_f = default_f
         self._default_u = default_u
 
-        self._normalize(norm_strategy, index)
+        self._normalize(norm_strategy, norm_opts)
         self._get_correction = self._define_interpolation(interp_strategy)
 
     def __call__(self, *x):
@@ -67,18 +67,22 @@ class Correction:
         else: raise ValueError("Interpolation option not recognized: {}".format(opt))
         return corr
 
-    def _normalize(self, strategy, index):
+    def _normalize(self, strategy, opts):
         if not strategy           : return
-        elif   strategy == "max"  : index = np.argmax(self._fs)
-        elif   strategy == "index": pass#index = index
-        else: raise ValueError("Normalization option not recognized: {}".format(strategy))
+        elif   strategy == "max"  :
+            index = np.argmax(self._fs)
+            f_ref = self._fs[index]
+            u_ref = self._us[index]
+        elif   strategy == "index":
+            index = opts["index"]
+            f_ref = self._fs[index]
+            u_ref = self._us[index]
+        else:
+            raise ValueError("Normalization option not recognized: {}".format(strategy))
 
-        f_ref = self._fs[index]
-        assert f_ref > 0
+        assert f_ref > 0, "Invalid reference value."
 
-        u_ref = self._us[index]
-        valid = (self._fs > 0) & (self._us > 0)
-
+        valid    = (self._fs > 0) & (self._us > 0)
         valid_fs = self._fs[valid].copy()
         valid_us = self._us[valid].copy()
 
@@ -106,7 +110,6 @@ class Correction:
         f_interp = sc.interpolate.RectBivariateSpline(*self._xs, self._fs)
         u_interp = sc.interpolate.RectBivariateSpline(*self._xs, self._us)
         return lambda x, y: (f_interp(x, y), u_interp(x, y))
-
 
     def __eq__(self, other):
         for i, x in enumerate(self._xs):
