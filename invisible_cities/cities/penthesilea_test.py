@@ -36,7 +36,7 @@ def test_penthesilea_KrMC(KrMC_pmaps, KrMC_hdst, config_tmpdir):
     assert_dataframes_close(df_penthesilea, DF_TRUE, check_types=False)
 
 
-def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
+def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628):
     PATH_IN =  Kr_pmaps_run4628
 
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST_4628.h5')
@@ -75,9 +75,9 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
                    [46]*18)
     peak_pass   = [int(in_range(i, 138, 145))
                    for i in range(226)]
-    dorothea = Penthesilea(**conf)
-    dorothea.run()
-    cnt  = dorothea.end()
+    penthesilea = Penthesilea(**conf)
+    penthesilea.run()
+    cnt  = penthesilea.end()
     nevt_in  = cnt.n_events_tot
     nevt_out = cnt.n_events_selected
     assert nrequired    == nevt_in
