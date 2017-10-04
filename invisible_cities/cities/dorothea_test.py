@@ -141,16 +141,17 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
     assert np.all(dst.event.values == events_pass)
     assert np.all(dst.peak.values  ==   peak_pass)
 
-def test_dorothea_issue_347(KrMC_pmaps, config_tmpdir):
-    PATH_IN =  KrMC_pmaps[0]
+def test_dorothea_issue_347(Kr_pmaps_run4628, config_tmpdir):
+    PATH_IN =  Kr_pmaps_run4628
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST.h5')
     conf = configure('dummy invisible_cities/config/dorothea_with_corona.conf'.split())
     # with this parameters Corona will find several clusters
     conf.update(dict(files_in   = PATH_IN,
                      file_out   = PATH_OUT,
-                     lm_radius     = 0.1,
-                     new_lm_radius = 0.2,
+                     lm_radius     = 10.0,
+                     new_lm_radius = 13.0,
                      msipm         = 1))
     dorothea = Dorothea(**conf)
     dorothea.run()
-    dorothea.end()
+    cnts = dorothea.end()
+    assert cnts.n_events_more_than_1_cluster == 3
