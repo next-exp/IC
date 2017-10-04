@@ -69,6 +69,9 @@ class Correction:
 
     def _normalize(self, strategy, opts):
         if not strategy           : return
+        elif   strategy == "const":
+            f_ref = opts["value"]
+            u_ref = 0
         elif   strategy == "max"  :
             index = np.argmax(self._fs)
             f_ref = self._fs[index]
