@@ -75,12 +75,12 @@ def ored_filter(draw):
 
 @fixture(scope="session")
 def selector_conf():
-    return Namespace(s1_nmin     =   1  , s1_nmax     = 1    ,
+    return Namespace(s1_nmin     =   1  , s1_nmax     = 2    ,
                      s1_emin     =   2  , s1_emax     = 10   ,
                      s1_wmin     =  10  , s1_wmax     = 100  ,
                      s1_hmin     =   0.4, s1_hmax     = 10   ,
                      s1_ethr     =   0.1,
-                     s2_nmin     =   1  , s2_nmax     = 2    ,
+                     s2_nmin     =   1  , s2_nmax     = 3    ,
                      s2_emin     = 500  , s2_emax     = 50000,
                      s2_wmin     = 200  , s2_wmax     = 1000 ,
                      s2_hmin     = 100  , s2_hmax     = 1000 ,

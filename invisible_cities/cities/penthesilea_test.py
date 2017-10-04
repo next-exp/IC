@@ -48,7 +48,7 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
 
                      drift_v     =      2 * units.mm / units.mus,
                      s1_nmin     =      1,
-                     s1_nmax     =      1,
+                     s1_nmax     =      2, #right-open interval
                      s1_emin     =      1 * units.pes,
                      s1_emax     =     30 * units.pes,
                      s1_wmin     =    100 * units.ns,
@@ -57,7 +57,7 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
                      s1_hmax     =      5 * units.pes,
                      s1_ethr     =    0.5 * units.pes,
                      s2_nmin     =      1,
-                     s2_nmax     =      2,
+                     s2_nmax     =      3, #right-open interval
                      s2_emin     =    1e3 * units.pes,
                      s2_emax     =    1e4 * units.pes,
                      s2_wmin     =      2 * units.mus,
@@ -69,14 +69,13 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
                      s2_nsipmmax =     30,
                      event_range = (0, nrequired)))
 
-    events_pass = ([ 1]*21 + [ 4]*15 + [10]*16 + [19]*17 +
-                   [20]*19 + [21]*15 + [26]*23 + [29]*22 +
+    events_pass = ([ 1]*21 + [ 4]*15 + [10]*16 + [15]*19 +
+                   [19]*17 + [20]*19 + [21]*15 + [26]*23 +
                    [33]*14 + [41]*18 + [43]*18 + [45]*13 +
                    [46]*18)
-    peak_pass   = [int(in_range(i, 119, 126))
-                   for i in range(229)]
+    peak_pass   = [int(in_range(i, 138, 145))
+                   for i in range(226)]
     dorothea = Penthesilea(**conf)
-
     dorothea.run()
     cnt  = dorothea.end()
     nevt_in  = cnt.n_events_tot

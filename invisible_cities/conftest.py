@@ -176,7 +176,7 @@ def KrMC_kdst(ICDIR):
     configuration = dict(run_number  =  -4446,
                          drift_v     =      2 * units.mm / units.mus,
                          s1_nmin     =      1,
-                         s1_nmax     =      1,
+                         s1_nmax     =      2, #right-open interval
                          s1_emin     =      0 * units.pes,
                          s1_emax     =     30 * units.pes,
                          s1_wmin     =    100 * units.ns,
@@ -185,7 +185,7 @@ def KrMC_kdst(ICDIR):
                          s1_hmax     =     10 * units.pes,
                          s1_ethr     =   0.37 * units.pes,
                          s2_nmin     =      1,
-                         s2_nmax     =      2,
+                         s2_nmax     =      3,#right-open interval
                          s2_emin     =    1e3 * units.pes,
                          s2_emax     =    1e8 * units.pes,
                          s2_wmin     =      1 * units.mus,
@@ -271,7 +271,7 @@ def KrMC_hdst(ICDIR):
                          rebin         =      2,
                          drift_v       =      2 * units.mm / units.mus,
                          s1_nmin       =      1,
-                         s1_nmax       =      1,
+                         s1_nmax       =      2, #right-open interval
                          s1_emin       =      0 * units.pes,
                          s1_emax       =     30 * units.pes,
                          s1_wmin       =    100 * units.ns,
@@ -280,7 +280,7 @@ def KrMC_hdst(ICDIR):
                          s1_hmax       =     10 * units.pes,
                          s1_ethr       =   0.37 * units.pes,
                          s2_nmin       =      1,
-                         s2_nmax       =      2,
+                         s2_nmax       =      3, #right-open interval
                          s2_emin       =    1e3 * units.pes,
                          s2_emax       =    1e8 * units.pes,
                          s2_wmin       =      1 * units.mus,

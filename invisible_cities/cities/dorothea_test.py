@@ -56,8 +56,8 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
                      file_out   = PATH_OUT,
 
                      drift_v     =      2 * mm / mus,
-                     s1_nmin     =      1,
-                     s1_nmax     =      1,
+                     s1_nmin     =      1, # These are right-open intervals
+                     s1_nmax     =      2, # therefore, only 1 S1 is allowed
                      s1_emin     =      1 * pes,
                      s1_emax     =     30 * pes,
                      s1_wmin     =    100 * ns,
@@ -65,8 +65,8 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
                      s1_hmin     =      1 * pes,
                      s1_hmax     =      5 * pes,
                      s1_ethr     =    0.5 * pes,
-                     s2_nmin     =      1,
-                     s2_nmax     =      2,
+                     s2_nmin     =      1, # These are right-open intervals
+                     s2_nmax     =      3, # therefore, only 1 or 2 S2s are allowed
                      s2_emin     =    1e3 * pes,
                      s2_emax     =    1e4 * pes,
                      s2_wmin     =      2 * mus,
@@ -78,10 +78,10 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
                      s2_nsipmmax =     30,
                      event_range = (0, nrequired)))
 
-    events_pass = [ 1,  4, 10, 19, 20, 21, 26,
-                   26, 29, 33, 41, 43, 45, 46]
+    events_pass = [ 1,  4, 10, 15, 19, 20, 21,
+                   26, 26, 33, 41, 43, 45, 46]
     peak_pass   = [ 0,  0,  0,  0,  0,  0,  0,
-                    1,  0,  0,  0,  0,  0,  0]
+                    0,  1,  0,  0,  0,  0,  0]
 
     dorothea = Dorothea(**conf)
 
