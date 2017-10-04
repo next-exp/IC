@@ -76,7 +76,7 @@ cdef class minmax:
             return (self.max + self.min) / 2
 
     def contains(self, double x):
-        return self.min <= x <= self.max
+        return self.min <= x < self.max
 
     def __add__(self, scalar):
         return minmax(self.min + scalar, self.max + scalar)
