@@ -80,7 +80,7 @@ class NoiseSampler:
         def findcut(probs):
             if not probs.any():
                 return np.inf
-            return self.xbins[probs > noise_cut][0]
+            return self.xbins[probs >= noise_cut][0]
 
         if pes_to_adc is None:
             pes_to_adc = np.ones(self.probs.shape[0])
