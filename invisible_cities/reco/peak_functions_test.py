@@ -6,6 +6,7 @@ credits: see ic_authors_and_legal.rst in /doc
 
 last revised: JJGC, 10-July-2017
 """
+
 from collections import namedtuple
 
 import tables        as tb
@@ -127,6 +128,7 @@ def csum_zs_blr_cwf(electron_RWF_file):
          wfzs_indx         = wfzs_indx,
          wfzs_indx_py      = wfzs_indx_py))
 
+
 @fixture(scope="module")
 def toy_S1_wf():
     s1      = {}
@@ -137,6 +139,7 @@ def toy_S1_wf():
     wf = np.random.rand(1000)
     return s1, wf, indices
 
+
 def test_csum_cwf_close_to_csum_of_calibrated_pmts(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
 
@@ -146,35 +149,43 @@ def test_csum_cwf_close_to_csum_of_calibrated_pmts(csum_zs_blr_cwf):
 
     assert np.isclose(np.sum(p.csum_cwf), np.sum(csum), rtol=0.0001)
 
+
 def test_csum_cwf_close_to_csum_blr(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
     assert np.isclose(np.sum(p.csum_cwf), np.sum(p.csum_blr), rtol=0.01)
+
 
 def test_csum_cwf_pmt_close_to_csum_blr_pmt(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
     assert np.isclose(np.sum(p.csum_cwf_pmt6), np.sum(p.csum_blr_pmt6),
                       rtol=0.01)
 
+
 def test_csum_cwf_close_to_wfzs_ene(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
     assert np.isclose(np.sum(p.csum_cwf), np.sum(p.wfzs_ene), rtol=0.1)
 
+
 def test_csum_blr_close_to_csum_blr_py(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
     assert np.isclose(np.sum(p.csum_blr), np.sum(p.csum_blr_py), rtol=1e-4)
+
 
 def test_csum_blr_pmt_close_to_csum_blr_py_pmt(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
     assert np.isclose(np.sum(p.csum_blr_pmt6), np.sum(p.csum_blr_py_pmt6),
                       rtol=1e-3)
 
+
 def test_wfzs_ene_close_to_wfzs_ene_py(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
     assert np.isclose(np.sum(p.wfzs_ene), np.sum(p.wfzs_ene_py), atol=1e-4)
 
+
 def test_wfzs_indx_close_to_wfzs_indx_py(csum_zs_blr_cwf):
     p = csum_zs_blr_cwf
     npt.assert_array_equal(p.wfzs_indx, p.wfzs_indx_py)
+
 
 @fixture(scope='module')
 def pmaps_electrons(electron_RWF_file):
@@ -239,6 +250,7 @@ def pmaps_electrons(electron_RWF_file):
 
     return pmp, pmp2, csum
 
+
 def test_rebin_waveform():
     """
     Uses a toy wf and and all possible combinations of S12 start and stop times to assure that
@@ -277,23 +289,28 @@ def test_rebin_waveform():
                     assert np.isclose(t, np.mean((np.ceil(T[i-1] / (rbs))*rbs, f)))
                     assert e == (f - np.ceil(T[i-1] / (rbs)) * rbs) / (bs)
 
+
 def test_rebinning_does_not_affect_the_sum_of_S2(pmaps_electrons):
     pmp, pmp2, _ = pmaps_electrons
     np.isclose(np.sum(pmp.S2[0][1]), np.sum(pmp2.S2[0][1]), rtol=1e-05)
 
+
 def test_sum_of_S2_and_sum_of_calibrated_sum_vector_must_be_close(pmaps_electrons):
     pmp, _, csum = pmaps_electrons
     np.isclose(np.sum(pmp.S2[0][1]), np.sum(csum.csum), rtol=1e-02)
+
 
 def test_length_of_S1_time_array_must_match_energy_array(pmaps_electrons):
     pmp, _, _ = pmaps_electrons
     if pmp.S1:
         assert len(pmp.S1[0][0]) == len(pmp.S1[0][1])
 
+
 def test_length_of_S2_time_array_must_match_energy_array(pmaps_electrons):
     pmp, _, _ = pmaps_electrons
     if pmp.S2:
         assert len(pmp.S2[0][0]) == len(pmp.S2[0][1])
+
 
 def test_length_of_S2_time_array_and_length_of_S2Si_energy_array_must_be_the_same(pmaps_electrons):
     pmp, _, _ = pmaps_electrons
@@ -301,6 +318,7 @@ def test_length_of_S2_time_array_and_length_of_S2Si_energy_array_must_be_the_sam
     if pmp.S2 and pmp.S2Si:
         for nsipm in pmp.S2Si[0]:
             assert len(pmp.S2Si[0][nsipm]) == len(pmp.S2[0][0])
+
 
 def toy_pmt_signal():
     """ Mimick a PMT waveform."""
@@ -313,15 +331,18 @@ def toy_pmt_signal():
     pmt = np.concatenate((v, v, v))
     return pmt
 
+
 def toy_cwf_and_adc(v, npmt=10):
     """Return CWF and adc_to_pes for toy example"""
     CWF = [v] * npmt
     adc_to_pes = np.ones(v.shape[0])
     return np.array(CWF), adc_to_pes
 
+
 def vsum_zsum(vsum, threshold=10):
     """Compute ZS over vsum"""
     return vsum[vsum > threshold]
+
 
 def test_csum_zs_s12():
     """Several sequencial tests:
@@ -405,6 +426,7 @@ def test_csum_zs_s12():
         e = S12L2[i][1]
         npt.assert_allclose(e, E)
 
+
 def test_find_s12_finds_first_correct_candidate_peak():
     """
     Checks that find_s12 initializes S12[0] (the array defining the boundaries of the
@@ -420,14 +442,17 @@ def test_find_s12_finds_first_correct_candidate_peak():
     assert np.allclose(S12L[0][0], np.array([2*25*units.ns + 25/2 *units.ns]))
     assert np.allclose(S12L[0][1], np.array([1]))
 
+
 def test_cwf_are_empty_for_masked_pmts(csum_zs_blr_cwf):
     assert np.all(csum_zs_blr_cwf.cwf6[6:] == 0.)
+
 
 def test_correct_S1_ene_returns_correct_energies(toy_S1_wf):
     S1, wf, indices = toy_S1_wf
     corrS1 = cpf.correct_s1_ene(S1, wf)
     for peak_no, (t, E) in corrS1.s1d.items():
         assert np.all(E == wf[indices[peak_no]])
+
 
 def test_select_peaks_of_allowed_length():
     pbounds = {}
@@ -451,6 +476,7 @@ def test_select_peaks_of_allowed_length():
         assert l >= length.min
         assert l <  length.max
 
+
 def test_find_peaks_finds_peaks_when_index_spaced_by_less_than_or_equal_to_stride():
     # explore a range of strides
     for stride in range(2,8):
@@ -468,6 +494,7 @@ def test_find_peaks_finds_peaks_when_index_spaced_by_less_than_or_equal_to_strid
             assert bounds[1][0] ==  600            # find correct start i for second p
             assert bounds[1][1] ==  605            # find correct end   i for second p
 
+
 def test_find_peaks_finds_no_peaks_when_index_spaced_by_more_than_stride():
     for stride in range(2,8):
         index  = np.concatenate((np.arange(  0, 500, stride + 1, dtype=np.int32),
@@ -479,6 +506,7 @@ def test_find_peaks_finds_no_peaks_when_index_spaced_by_more_than_stride():
         assert bounds[0][0] ==  600
         assert bounds[0][1] ==  605
 
+
 def test_find_peaks_when_no_index_after_tmin():
     stride = 2
     index = np.concatenate((np.arange(  0, 500, stride, dtype=np.int32),
@@ -489,6 +517,7 @@ def test_find_peaks_when_no_index_after_tmin():
     assert pf._find_peaks(index, time   = minmax(9e9, 9e10),
                                  length = minmax(2, 9999),
                                  stride = stride) == {}
+
 
 def test_extract_peaks_from_waveform():
     wf = np.random.uniform(size=52000)
@@ -506,6 +535,7 @@ def test_extract_peaks_from_waveform():
         assert np.allclose(S12L[k][1], wf[peak_bounds[k][0]: peak_bounds[k][1]])  # Check energies
     # Check that _extract... did not return extra peaks
     assert len(peak_bounds) == len(S12L)
+
 
 def test_get_ipmtd():
     npmts  = 4
@@ -531,9 +561,11 @@ def test_get_ipmtd():
             # check that the correct energy is in each pmt
             assert np.allclose(s12_pmts.sum(axis=1), cCWF[:, i_peak[0]: i_peak[1]].sum(axis=1))
 
+
 def test_sum_waveforms():
     wfs = np.random.random((12,1300*40))
     assert np.allclose(pf.sum_waveforms(wfs), np.sum(wfs, axis=0))
+
 
 @fixture(scope='module')
 def toy_ccwfs_and_csum():
@@ -544,6 +576,7 @@ def toy_ccwfs_and_csum():
     ccwf[:, indx[0]: indx[-1] + 1] += peak
     csum  = ccwf.sum(axis=0)
     return indx, ccwf, csum
+
 
 def test_find_s12_ipmt_find_same_s12_as_find_s12(toy_ccwfs_and_csum):
     indx, ccwf, csum = toy_ccwfs_and_csum
@@ -575,6 +608,7 @@ def test_find_s12_ipmt_find_same_s12_as_find_s12(toy_ccwfs_and_csum):
     assert s20.s2d.keys() == s21.s2d.keys()
     for peak0, peak1 in zip(s10.s1d.values(), s11.s1d.values()):
         assert np.allclose(peak0, peak1)
+
 
 def test_find_s12_ipmt_return_none_when_empty_index(toy_ccwfs_and_csum):
     indx, ccwf, csum = toy_ccwfs_and_csum
