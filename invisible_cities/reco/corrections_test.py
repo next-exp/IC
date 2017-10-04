@@ -173,6 +173,17 @@ def test_correction_raises_exception_when_input_is_incomplete(strategy, options)
                    norm_opts     = options)
 
 
+def test_correction_raises_exception_when_data_is_invalid():
+    x   = np.arange(  0, 10)
+    y   = np.arange(-10,  0)
+    z   = np.zeros ((x.size, y.size))
+    u_z = np.ones  ((x.size, y.size))
+    with raises(AssertionError):
+        Correction((x, y), z, u_z,
+                   norm_strategy =  "index",
+                   norm_opts     = {"index": (0, 0)})
+
+
 @given(uniform_energy_1d())
 def test_correction_attributes_1d(toy_data_1d):
     X, E, Eu, F, Fu, _ = toy_data_1d
