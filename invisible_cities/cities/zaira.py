@@ -9,11 +9,9 @@ last revised: JJGC, 12-July-2017
 import numpy  as np
 import tables as tb
 import pandas as pd
-from operator import attrgetter
 
 from .  base_cities         import DstCity
 from .. core.core_functions import in_range
-from .. core.configure      import configure
 from .. io.kdst_io          import xy_correction_writer
 from ..reco.corrections     import Correction
 from ..reco.corrections     import LifetimeCorrection
@@ -104,10 +102,7 @@ class Zaira(DstCity):
                                         self.xbins, self.ybins,
                                         self.xrange, self.yrange)
 
-        norm_index = xs.size//2, ys.size//2
-        return Correction((xs, ys), es, us,
-                          norm_strategy =  "index",
-                          norm_opts     = {"index": norm_index})
+        return Correction((xs, ys), es, us)
 
     def xy_statistics(self, X, Y):
         return np.histogram2d(X, Y, (self.xbins, self.ybins),
