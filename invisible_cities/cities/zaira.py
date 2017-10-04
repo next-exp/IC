@@ -105,7 +105,9 @@ class Zaira(DstCity):
                                         self.xrange, self.yrange)
 
         norm_index = xs.size//2, ys.size//2
-        return Correction((xs, ys), es, us, norm_strategy="index", index=norm_index)
+        return Correction((xs, ys), es, us,
+                          norm_strategy =  "index",
+                          norm_opts     = {"index": norm_index})
 
     def xy_statistics(self, X, Y):
         return np.histogram2d(X, Y, (self.xbins, self.ybins),

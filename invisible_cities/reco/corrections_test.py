@@ -161,7 +161,8 @@ def gauss_data_2d():
 @given(uniform_energy_1d())
 def test_correction_attributes_1d(toy_data_1d):
     X, E, Eu, F, Fu, _ = toy_data_1d
-    correct  = Correction((X,), E, Eu, "max")
+    correct  = Correction((X,), E, Eu,
+                          norm_strategy = "max")
     assert_allclose(correct._xs[0], X ) # correct.xs is a list of axis
     assert_allclose(correct._fs   , F )
     assert_allclose(correct._us   , Fu)
@@ -170,7 +171,8 @@ def test_correction_attributes_1d(toy_data_1d):
 @given(uniform_energy_1d())
 def test_correction_attributes_1d_unnormalized(toy_data_1d):
     X, _, _, F, Fu, _ = toy_data_1d
-    c = Correction((X,), F, Fu, False)
+    c = Correction((X,), F, Fu,
+                   norm_strategy = None)
     assert_allclose(c._fs, F )
     assert_allclose(c._us, Fu)
 
@@ -178,7 +180,8 @@ def test_correction_attributes_1d_unnormalized(toy_data_1d):
 @given(uniform_energy_1d())
 def test_correction_call_1d(toy_data_1d):
     X, E, Eu, F, Fu, _ = toy_data_1d
-    correct  = Correction((X,), E, Eu, "max")
+    correct  = Correction((X,), E, Eu,
+                          norm_strategy = "max")
     F_corrected, U_corrected = correct(X)
     assert_allclose(F_corrected, F )
     assert_allclose(U_corrected, Fu)
@@ -187,7 +190,8 @@ def test_correction_call_1d(toy_data_1d):
 @given(uniform_energy_1d())
 def test_correction_normalization(toy_data_1d):
     X, E, Eu, *_, i_max = toy_data_1d
-    correct  = Correction((X,), E, Eu, "max")
+    correct  = Correction((X,), E, Eu,
+                          norm_strategy = "max")
     X_test  = X[i_max]
     assert_allclose(correct(X_test).value, 1) # correct.xs is a list of axis
 
@@ -199,7 +203,8 @@ def test_correction_attributes_2d(toy_data_2d):
     X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
     interp_strategy="nearest"
     correct = Correction((X,Y), E, Eu,
-                           norm_strategy = "index", index = (i_max, j_max),
+                           norm_strategy =  "index",
+                           norm_opts     = {"index": (i_max, j_max)},
                          interp_strategy = interp_strategy)
 
     # attributes of the Correction class are 2d arrays,
@@ -211,7 +216,8 @@ def test_correction_attributes_2d(toy_data_2d):
 @given(uniform_energy_2d())
 def test_correction_attributes_2d_unnormalized(toy_data_2d):
     X, Y, _, _, F, Fu, _, _ = toy_data_2d
-    c = Correction((X,Y), F, Fu, False)
+    c = Correction((X,Y), F, Fu,
+                   norm_strategy = None)
     assert_allclose(c._fs, F )
     assert_allclose(c._us, Fu)
 
@@ -221,7 +227,8 @@ def test_correction_call_2d(toy_data_2d):
     X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
     interp_strategy="nearest"
     correct = Correction((X,Y), E, Eu,
-                           norm_strategy = "index", index = (i_max, j_max),
+                           norm_strategy =  "index",
+                           norm_opts     = {"index": (i_max, j_max)},
                          interp_strategy = interp_strategy)
 
     # create a collection of (x,y) point such that the
@@ -289,7 +296,8 @@ def test_lifetimeXYcorrection(toy_f_data):
 def test_corrections_1d(gauss_data_1d):
     Z, E, Eu, Zevt, Eevt = gauss_data_1d
 
-    correct = Correction((Z,), E, Eu, "max")
+    correct = Correction((Z,), E, Eu,
+                         norm_strategy = "max")
     Eevt   *= correct(Zevt).value
 
     mean = np.mean(Eevt)
@@ -305,7 +313,9 @@ def test_corrections_1d(gauss_data_1d):
 @flaky(max_runs=5, min_passes=1)
 def test_corrections_2d(gauss_data_2d):
     X, Y, E, Eu, Xevt, Yevt, Eevt = gauss_data_2d
-    correct = Correction((X, Y), E, Eu, "index", index=(25,25))
+    correct = Correction((X, Y), E, Eu,
+                         norm_strategy =  "index",
+                         norm_opts     = {"index": (25,25)})
     Eevt   *= correct(Xevt, Yevt)[0]
 
     mean = np.mean(Eevt)
