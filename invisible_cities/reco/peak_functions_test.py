@@ -592,3 +592,52 @@ def test_find_s12_ipmt_return_none_when_empty_index(toy_ccwfs_and_csum):
                          stride = 4,
                          rebin_stride = 1):
         assert pmap_class is None
+
+
+@fixture(scope="session")
+def toy_sipm_signal():
+    NSIPM = 1792
+    WL    = 100
+
+    common_threshold      = np.random.uniform(0.3, 0.7)
+    individual_thresholds = np.random.uniform(0.3, 0.7, size=NSIPM)
+
+    adc_to_pes  = np.full(NSIPM, 100, dtype=np.double)
+    signal_adc  = np.random.randint(0, 100, size=(NSIPM, WL), dtype=np.int16)
+
+    # subtract baseline and convert to pes
+    signal_pes  = signal_adc - np.mean(signal_adc, axis=1)[:, np.newaxis]
+    signal_pes /= adc_to_pes[:, np.newaxis]
+
+    signal_zs_common_threshold = np.array(signal_pes)
+    signal_zs_common_threshold[signal_pes < common_threshold] = 0
+
+    # thresholds must be reshaped to allow broadcasting
+    individual_thresholds_reshaped = individual_thresholds[:, np.newaxis]
+
+    signal_zs_individual_thresholds = np.array(signal_pes)
+    signal_zs_individual_thresholds[signal_pes < individual_thresholds_reshaped] = 0
+
+    return (signal_adc, adc_to_pes,
+            signal_zs_common_threshold,
+            signal_zs_individual_thresholds,
+            common_threshold,
+            individual_thresholds)
+
+
+def test_signal_sipm_common_threshold(toy_sipm_signal):
+    (signal_adc, adc_to_pes,
+     signal_zs_common_threshold, _,
+     common_threshold, _) = toy_sipm_signal
+
+    zs_wf = cpf.signal_sipm(signal_adc, adc_to_pes, common_threshold)
+    assert np.allclose(zs_wf, signal_zs_common_threshold)
+
+
+def test_signal_sipm_individual_thresholds(toy_sipm_signal):
+    (signal_adc, adc_to_pes,
+     _, signal_zs_individual_thresholds,
+     _, individual_thresholds) = toy_sipm_signal
+
+    zs_wf = cpf.signal_sipm(signal_adc, adc_to_pes, individual_thresholds)
+    assert np.allclose(zs_wf, signal_zs_individual_thresholds)
