@@ -6,6 +6,7 @@ from ..reco.corrections import Correction
 from ..reco.corrections import Fcorrection
 from ..reco.corrections import LifetimeCorrection
 from ..reco.corrections import LifetimeRCorrection
+from ..reco.corrections import LifetimeXYCorrection
 
 from numpy.testing import assert_allclose
 from pytest        import fixture, mark
@@ -106,6 +107,31 @@ def uniform_energy_fun_data_2d(draw):
     F     =   fun(Z, R, a, b, c, u_a, u_b, u_c)
     u_F   = u_fun(Z, R, a, b, c, u_a, u_b, u_c)
     return FField_2d(Z, R, (a, b, c), (u_a, u_b, u_c), F, u_F, fun, u_fun)
+
+
+@composite
+def uniform_energy_fun_data_3d(draw):
+    x_size  = draw(integers(min_value= 2  , max_value=10 ))
+    y_size  = draw(integers(min_value= 2  , max_value=10 ))
+    X0      = draw(floats  (min_value=-100, max_value=100))
+    Y0      = draw(floats  (min_value=-100, max_value=100))
+    dX      = draw(floats  (min_value= 0.1, max_value=100))
+    dY      = draw(floats  (min_value= 0.1, max_value=100))
+    X       = np.arange(x_size) * dX + X0
+    Y       = np.arange(y_size) * dY + Y0
+
+    LTs     = draw(arrays(float, (x_size, y_size), floats(min_value = 1e+2, max_value = 1e+3)))
+    u_LTs   = LTs * 0.1
+
+    LTc     = Correction((X,Y), LTs, u_LTs)
+
+    def LT_corr(z, x, y):
+        return np.exp(z/LTc(x,y).value)
+
+    def u_LT_corr(z, x, y):
+        ltc = LTc(x,y)
+        return z*ltc.uncertainty/ltc.value**2*np.exp(z/ltc.value)
+    return FField_2d(X, Y, LTs, u_LTs, LTs, u_LTs, LT_corr, u_LT_corr)
 
 
 @fixture
@@ -235,6 +261,21 @@ def test_lifetimeRcorrection(toy_f_data):
     Z, R, pars, u_pars, F, u_F, fun, u_fun = toy_f_data
     correct = LifetimeRCorrection(pars, u_pars)
     f_corrected, u_corrected = correct(Z, R)
+
+    assert_allclose(  F, f_corrected)
+    assert_allclose(u_F, u_corrected)
+
+
+@given(uniform_energy_fun_data_3d())
+def test_lifetimeXYcorrection(toy_f_data):
+    Xgrid, Ygrid, LTs, u_LTs, LTs, u_LTs, LT_corr, u_LT_corr = toy_f_data
+
+    X       = np.repeat  (Xgrid, Ygrid.size)
+    Y       = np.tile    (Ygrid, Xgrid.size)
+    Z       = np.linspace(0, 50, X    .size)
+    F, u_F  = LT_corr(Z, X, Y), u_LT_corr(Z, X, Y)
+    correct = LifetimeXYCorrection(LTs, u_LTs, Xgrid, Ygrid)
+    f_corrected, u_corrected = correct(Z, X, Y)
 
     assert_allclose(  F, f_corrected)
     assert_allclose(u_F, u_corrected)
