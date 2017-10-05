@@ -4,7 +4,7 @@ from . ic_types          import minmax
 from . ic_types          import xy
 from . ic_types          import Counters
 from . ic_types_c        import xy as cxy
-from . ic_types_c        import minmax as cmm
+from . ic_types_c        import minmax as cminmax
 
 from pytest import raises
 
@@ -24,7 +24,7 @@ def make_xy(a,b):
 def make_cminmax(a,b):
     # Ensure that arguments respect the required order
     if a > b: a, b = b, a
-    return cmm(a, b)
+    return cminmax(a, b)
 
 def make_xyc(a,b):
     return cxy(a,b)
@@ -32,7 +32,7 @@ def make_xyc(a,b):
 
 sensible_floats = floats(min_value=0.5, max_value=1e3, allow_nan=False, allow_infinity=False)
 minmaxes        = builds(make_minmax, sensible_floats, sensible_floats)
-cmms            = builds(make_cminmax, sensible_floats, sensible_floats)
+cminmaxes       = builds(make_cminmax, sensible_floats, sensible_floats)
 xys             = builds(make_xy, sensible_floats, sensible_floats)
 cxys            = builds(make_xyc, sensible_floats, sensible_floats)
 
@@ -118,29 +118,29 @@ def test_minmax_contains(mm):
 @given(sensible_floats, sensible_floats)
 def test_cminmax_getitem(lo, hi):
     lo, hi = sorted([lo, hi])
-    mm = cmm(lo, hi)
+    mm = cminmax(lo, hi)
     assert lo == mm[0] == mm.min
     assert hi == mm[1] == mm.max
 
 
-@given(cmms)
+@given(cminmaxes)
 def test_cminmax_bracket(mm):
     bracket = mm.max - mm.min
     assert mm.bracket == bracket
 
 
-@given(cmms)
+@given(cminmaxes)
 def test_cminmax_center(mm):
     center = (mm.max + mm.min)*0.5
     assert mm.center == center
 
 
-@given(cmms)
+@given(cminmaxes)
 def test_cminmax_eq(mm):
     assert mm == mm
 
 
-@given(cmms, sensible_floats)
+@given(cminmaxes, sensible_floats)
 def test_cminmax_add(mm, f):
     lo, hi = mm
     raised = mm + f
@@ -148,7 +148,7 @@ def test_cminmax_add(mm, f):
     np.isclose (raised.max , hi + f, rtol=1e-4)
 
 
-@given(cmms, sensible_floats)
+@given(cminmaxes, sensible_floats)
 def test_cminmax_div(mm, f):
     lo, hi = mm
     scaled = mm / f
@@ -156,7 +156,7 @@ def test_cminmax_div(mm, f):
     np.isclose (scaled.max , hi / f, rtol=1e-4)
 
 
-@given(cmms, sensible_floats)
+@given(cminmaxes, sensible_floats)
 def test_cminmax_mul(mm, f):
     lo, hi = mm
     scaled = mm * f
@@ -164,7 +164,7 @@ def test_cminmax_mul(mm, f):
     np.isclose (scaled.max , hi * f, rtol=1e-4)
 
 
-@given(cmms, sensible_floats)
+@given(cminmaxes, sensible_floats)
 def test_cminmax_sub(mm, f):
     lo, hi = mm
     lowered = mm - f
@@ -172,7 +172,7 @@ def test_cminmax_sub(mm, f):
     np.isclose (lowered.max , hi - f, rtol=1e-4)
 
 
-@given(cmms)
+@given(cminmaxes)
 def test_cminmax_contains(mm):
     lo, hi = mm
     if lo == hi:
