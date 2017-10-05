@@ -47,6 +47,31 @@ def test_minmax_does_not_accept_min_greater_than_max(a,b):
         with raises(AssertionError):
             minmax(a,b)
 
+@given(sensible_floats, sensible_floats)
+def test_minmax_getitem(lo, hi):
+    lo, hi = sorted([lo, hi])
+    mm = minmax(lo, hi)
+    assert lo == mm[0] == mm.min
+    assert hi == mm[1] == mm.max
+
+
+@given(minmaxes)
+def test_minmax_bracket(mm):
+    bracket = mm.max - mm.min
+    assert mm.bracket == bracket
+
+
+@given(minmaxes)
+def test_minmax_center(mm):
+    center = (mm.max + mm.min)*0.5
+    assert mm.center == center
+
+
+@given(minmaxes)
+def test_minmax_eq(mm):
+    assert mm == mm
+
+
 @given(minmaxes, sensible_floats)
 def test_minmax_add(mm, f):
     lo, hi = mm
@@ -88,6 +113,31 @@ def test_minmax_contains(mm):
         assert     mm.contains(lo)
         assert not mm.contains(hi)
         assert     mm.contains(0.5*(lo+hi))
+
+
+@given(sensible_floats, sensible_floats)
+def test_cminmax_getitem(lo, hi):
+    lo, hi = sorted([lo, hi])
+    mm = cmm(lo, hi)
+    assert lo == mm[0] == mm.min
+    assert hi == mm[1] == mm.max
+
+
+@given(cmms)
+def test_cminmax_bracket(mm):
+    bracket = mm.max - mm.min
+    assert mm.bracket == bracket
+
+
+@given(cmms)
+def test_cminmax_center(mm):
+    center = (mm.max + mm.min)*0.5
+    assert mm.center == center
+
+
+@given(cmms)
+def test_cminmax_eq(mm):
+    assert mm == mm
 
 
 @given(cmms, sensible_floats)
