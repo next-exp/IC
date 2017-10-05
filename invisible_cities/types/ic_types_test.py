@@ -79,6 +79,17 @@ def test_minmax_sub(mm, f):
     np.isclose (lowered.max , hi - f, rtol=1e-4)
 
 
+@given(minmaxes)
+def test_minmax_contains(mm):
+    lo, hi = mm
+    if lo == hi:
+        assert not mm.contains(lo)
+    else:
+        assert     mm.contains(lo)
+        assert not mm.contains(hi)
+        assert     mm.contains(0.5*(lo+hi))
+
+
 @given(cmms, sensible_floats)
 def test_cminmax_add(mm, f):
     lo, hi = mm
@@ -109,6 +120,17 @@ def test_cminmax_sub(mm, f):
     lowered = mm - f
     np.isclose (lowered.min , lo - f, rtol=1e-4)
     np.isclose (lowered.max , hi - f, rtol=1e-4)
+
+
+@given(cmms)
+def test_cminmax_contains(mm):
+    lo, hi = mm
+    if lo == hi:
+        assert not mm.contains(lo)
+    else:
+        assert     mm.contains(lo)
+        assert not mm.contains(hi)
+        assert     mm.contains(0.5*(lo+hi))
 
 
 @given(xys, sensible_floats, sensible_floats)
