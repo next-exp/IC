@@ -2,7 +2,6 @@ import numpy as np
 
 from . ic_types          import minmax
 from . ic_types          import xy
-from . ic_types          import Counters
 from . ic_types_c        import xy as cxy
 from . ic_types_c        import minmax as cminmax
 
