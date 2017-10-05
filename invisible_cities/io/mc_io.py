@@ -29,7 +29,9 @@ class mc_track_writer:
 
     def __call__(self, mctracks, evt_number):
         for r in mctracks.iterrows(start=self.last_row):
-            if r['event_indx'] != evt_number:
+            if r['event_indx'] < evt_number:
+                continue
+            if r['event_indx'] > evt_number:
                 break
             self.last_row += 1
             evt = (evt_number,) + r[1:]
