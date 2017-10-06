@@ -172,6 +172,11 @@ function compile_and_test {
     run_tests
 }
 
+function compile_and_test_par {
+    compile_cython_components
+    run_tests_par
+}
+
 function clean {
     echo "Cleaning IC generated files:"
     FILETYPES='*.c *.so *.pyc __pycache__'
