@@ -237,5 +237,6 @@ case $COMMAND in
        echo "bash   $THIS download_test_db"
        echo "bash   $THIS download_test_db_dev"
        echo "bash   $THIS clean"
+       echo "bash   $THIS show_ic_env"
        ;;
 esac
