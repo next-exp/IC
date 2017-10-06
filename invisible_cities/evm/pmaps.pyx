@@ -33,11 +33,8 @@ cdef class Peak:
         self.width          = self.t[-1] - self.t[0]
         self.total_energy   = np.sum(self.E)
 
-        i_t    = (loc_elem_1d(self.E, self.height)
-                             if self.total_energy > 0
-                             else 0)
-
-        self.tpeak  =  self.t[i_t]
+        i_t        = np.argmax(self.E)
+        self.tpeak = self.t[i_t]
 
     property tmin_tmax:
         def __get__(self): return minmax(self.t[0], self.t[-1])
