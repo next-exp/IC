@@ -3,6 +3,8 @@
 cimport numpy as np
 import numpy as np
 
+from textwrap import dedent
+
 from .. types.ic_types_c       cimport minmax
 from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
@@ -61,14 +63,22 @@ cdef class Peak:
         sat = self.signal_above_threshold(thr)
         return np.max(self.E[sat]) if sat.any() else 0
 
-
     def __str__(self):
-        s = """Peak(samples = {0:d} width = {1:8.1f} mus , energy = {2:8.1f} pes
-        height = {3:8.1f} pes tmin-tmax = {4} mus """.format(self.number_of_samples,
-        self.width / units.mus, self.total_energy, self.height,
-        (self.tmin_tmax * (1 / units.mus)))
-        return s
-
+        if self.width < units.mus:
+            width   = "{:d} ns".format(self.width)
+            tminmax = "{} ns".format(self.tmin_tmax)
+        else:
+            width   = "{:.1f} mus".format(self.width/units.mus)
+            tminmax = "{} mus".format(self.tmin_tmax / units.mus)
+        
+        return dedent("""
+                      Peak(
+                           samples   = {self.number_of_samples:d}
+                           width     = {width}
+                           energy    = {self.total_energy:8.1f} pes
+                           height    = {self.height:8.1f} pes
+                           tmin-tmax = {tminmax} mus
+                      """.format(self = self, width = width, tminmax = tminmax)
     def __repr__(self):
         return self.__str__()
 
