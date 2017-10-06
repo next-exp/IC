@@ -95,7 +95,7 @@ cdef class S12:
     structurally identical, s1 and s2 represent quite
     different objects. In Particular an s2si is constructed
     with a s2 not a s1.
-    An s12 is represented as a dictinary of Peaks.
+    An s12 is represented as a dictionary of Peaks.
 
     """
     def __init__(self, dict s12d):
@@ -135,6 +135,12 @@ cdef class S12:
                 row["ene"]   = E
                 row.append()
 
+    def _s12_str(self, s1_or_s2):
+        header =  "{} (number of peaks = {})\n".format(s1_or_s2, self.number_of_peaks)
+        body   = ["peak number = {}: {} \n".format(i, self.peak_waveform(i))
+                  for i in self.peaks]
+        return header + ''.join(body)
+
     def __repr__(self):
         return dedent(self.__str__())
 
@@ -146,10 +152,7 @@ cdef class S1(S12):
         super(S1, self).__init__(s1d)
 
     def __str__(self):
-        s0 =  "S1 (number of peaks = {})\n".format(self.number_of_peaks)
-        s1 = ["peak number = {}: {} \n".format(i, self.peak_waveform(i))
-              for i in self.peaks]
-        return s0 + ''.join(s1)
+        return self._s12_str("S1")
 
 
 cdef class S2(S12):
@@ -160,10 +163,7 @@ cdef class S2(S12):
         super(S2, self).__init__(s2d)
 
     def __str__(self):
-        s0 =  "S2 (number of peaks = {})\n\n".format(self.number_of_peaks)
-        s2 = ["peak number = {}: {} \n".format(i, self.peak_waveform(i))
-              for i in self.peaks]
-        return s0 + ''.join(s2)
+        return self._s12_str("S2")
 
 
 cpdef check_s2d_and_s2sid_share_peaks(dict s2d, dict s2sid):
