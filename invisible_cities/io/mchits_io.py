@@ -71,7 +71,6 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]])->Mappin
         hits = []
         for particle_no in particle_dict.keys():
             particle = particle_dict[particle_no]
-            if abs(particle.pdg) == 11:
-                hits.extend(particle.hits)
+            hits.extend(particle.hits)
         mchits_dict[event_no] = hits
     return mchits_dict
