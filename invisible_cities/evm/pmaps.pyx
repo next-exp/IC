@@ -43,10 +43,7 @@ cdef class Peak:
         def __get__(self): return len(self.t)
 
     property good_waveform:
-        def __get__(self):  return (False
-                                    if np.any(np.isnan(self.t))  or
-                                       np.any(np.isnan(self.E))
-                                    else True)
+        def __get__(self):  return not np.any(np.isnan(self.t) | np.isnan(self.E))
 
     def total_energy_above_threshold(self, thr):
         eth = self.E[self.E > thr]
