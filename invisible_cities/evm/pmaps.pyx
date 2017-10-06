@@ -1,20 +1,18 @@
-# Clsses defining the event model
+# Classes defining the event model
 
 cimport numpy as np
 import numpy as np
 
-from textwrap import indent
 from textwrap import dedent
 
 from .. types.ic_types_c       cimport minmax
-from .. core.exceptions        import PeakNotFound
-from .. core.exceptions        import SipmEmptyList
-from .. core.exceptions        import SipmNotFound
-from .. core.exceptions        import PmtNotFound
-from .. core.core_functions    import loc_elem_1d
-from .. core.exceptions        import InconsistentS12dIpmtd
-from .. core.exceptions        import InitializedEmptyPmapObject
-from .. core.system_of_units_c import units
+from .. core.exceptions         import PeakNotFound
+from .. core.exceptions         import SipmEmptyList
+from .. core.exceptions         import SipmNotFound
+from .. core.exceptions         import PmtNotFound
+from .. core.exceptions         import InconsistentS12dIpmtd
+from .. core.exceptions         import InitializedEmptyPmapObject
+from .. core.system_of_units_c  import units
 
 
 cdef class Peak:
@@ -82,7 +80,7 @@ cdef class Peak:
                """.format(self = self, width = width, tminmax = tminmax))
 
     def __repr__(self):
-        return dedent(self.__str__())
+        return self.__str__()
 
 
 cdef class S12:
@@ -143,7 +141,6 @@ cdef class S12:
 
 cdef class S1(S12):
     def __init__(self, s1d):
-
         if len(s1d) == 0: raise InitializedEmptyPmapObject
         self.s1d = s1d
         super(S1, self).__init__(s1d)
@@ -232,7 +229,7 @@ cdef class S2Si(S2):
         if self.number_of_sipms_in_peak(peak_number) == 0:
             raise SipmEmptyList("No SiPMs associated to this peak")
 
-        E = self.find_sipm(peak_number, sipm_number)
+        E = self.find_sipm    (peak_number, sipm_number)
         t = self.peak_waveform(peak_number).t
 
         for i in range(len(E)):
