@@ -106,14 +106,8 @@ cdef class S12:
         cdef np.ndarray[double, ndim=1] E
         self.peaks = {}
 
-        #print('s12d ={}'.format(s12d))
         for peak_no, (t, E) in s12d.items():
-            #print('t ={}'.format(t))
-            #print('E ={}'.format(E))
             assert len(t) == len(E)
-            #p = Peak(t,E)
-            #print('peak = {}'.format(p))
-
             self.peaks[peak_no] =  Peak(t, E)
 
     property number_of_peaks:
@@ -220,9 +214,6 @@ cdef class S2Si(S2):
             raise SipmEmptyList
         try:
             E = self.s2sid[peak_number][sipm_number]
-            #print("in sipm_waveform")
-            #print('t ={}'.format(self.peak_waveform(peak_number).t))
-            #print('E ={}'.format(np.asarray(E)))
             return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
         except KeyError:
             raise SipmNotFound
