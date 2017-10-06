@@ -215,9 +215,6 @@ cdef class S2Si(S2):
 
     cpdef sipm_waveform(self, int peak_number, int sipm_number):
         cdef double [:] E
-        if self.number_of_sipms_in_peak(peak_number) == 0:
-            raise SipmEmptyList
-
         E = self.find_sipm(peak_number, sipm_number)
         return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
 
@@ -226,9 +223,6 @@ cdef class S2Si(S2):
         cdef list TZS = []
         cdef list EZS = []
         cdef int i
-        if self.number_of_sipms_in_peak(peak_number) == 0:
-            raise SipmEmptyList("No SiPMs associated to this peak")
-
         E = self.find_sipm    (peak_number, sipm_number)
         t = self.peak_waveform(peak_number).t
 
