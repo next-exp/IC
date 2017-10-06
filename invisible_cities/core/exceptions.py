@@ -32,6 +32,9 @@ class SipmEmptyListAboveQthr(XYRecoFail):
 class ClusterEmptyList(XYRecoFail):
     pass
 
+class PmtNotFound(ICException):
+    pass
+
 class SipmNotFound(XYRecoFail):
     pass
 

@@ -9,6 +9,7 @@ from .. types.ic_types_c       cimport minmax
 from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
+from .. core.exceptions        import PmtNotFound
 from .. core.core_functions    import loc_elem_1d
 from .. core.exceptions        import InconsistentS12dIpmtd
 from .. core.exceptions        import InitializedEmptyPmapObject
@@ -199,24 +200,31 @@ cdef class S2Si(S2):
         S2.__init__(self, check_s2d_and_s2sid_share_peaks(s2d, s2sid))
         self.s2sid = s2sid
 
-    cpdef number_of_sipms_in_peak(self, int peak_number):
-        return len(self.s2sid[peak_number])
-
-    cpdef sipms_in_peak(self, int peak_number):
+    cpdef sipm_peak(self, int peak_number):
         try:
-            return tuple(self.s2sid[peak_number].keys())
+            return self.s2sid[peak_number]
         except KeyError:
             raise PeakNotFound
+
+    cpdef find_sipm(self, int peak_number, int sipm_number):
+        try:
+            return self.sipm_peak(peak_number)[sipm_number]
+        except KeyError:
+            raise SipmNotFound
+
+    cpdef number_of_sipms_in_peak(self, int peak_number):
+        return len(self.sipm_peak(peak_number))
+
+    cpdef sipms_in_peak(self, int peak_number):
+        return tuple(self.sipm_peak(peak_number).keys())
 
     cpdef sipm_waveform(self, int peak_number, int sipm_number):
         cdef double [:] E
         if self.number_of_sipms_in_peak(peak_number) == 0:
             raise SipmEmptyList
-        try:
-            E = self.s2sid[peak_number][sipm_number]
-            return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
-        except KeyError:
-            raise SipmNotFound
+
+        E = self.find_sipm(peak_number, sipm_number)
+        return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
 
     cpdef sipm_waveform_zs(self, int peak_number, int sipm_number):
         cdef double [:] E, t, tzs, Ezs
@@ -225,31 +233,22 @@ cdef class S2Si(S2):
         cdef int i
         if self.number_of_sipms_in_peak(peak_number) == 0:
             raise SipmEmptyList("No SiPMs associated to this peak")
-        try:
-            E = self.s2sid[peak_number][sipm_number]
-            t = self.peak_waveform(peak_number).t
 
-            for i in range(len(E)):
-                if E[i] > 0:
-                    TZS.append(t[i])
-                    EZS.append(E[i])
-            tzs = np.array(TZS)
-            Ezs = np.array(EZS)
+        E = self.find_sipm(peak_number, sipm_number)
+        t = self.peak_waveform(peak_number).t
 
-            return Peak(np.asarray(tzs), np.asarray(Ezs))
-        except KeyError:
-            raise SipmNotFound
+        for i in range(len(E)):
+            if E[i] > 0:
+                TZS.append(t[i])
+                EZS.append(E[i])
+        tzs = np.array(TZS)
+        Ezs = np.array(EZS)
+
+        return Peak(np.asarray(tzs), np.asarray(Ezs))
 
     cpdef sipm_total_energy(self, int peak_number, int sipm_number):
         """For peak and and sipm_number return Q, where Q is the SiPM total energy."""
-        cdef double et
-        if self.number_of_sipms_in_peak(peak_number) == 0:
-            return 0
-        try:
-            et = np.sum(self.s2sid[peak_number][sipm_number])
-            return et
-        except KeyError:
-            raise SipmNotFound
+        return np.sum(self.find_sipm(peak_number, sipm_number))
 
     cpdef sipm_total_energy_dict(self, int peak_number):
         """For peak number return {sipm: Q}. """
@@ -330,28 +329,33 @@ cdef class S12Pmt(S12):
         try                 : self.npmts = len(ipmtd[next(iter(ipmtd))])
         except StopIteration: self.npmts = 0
 
+    cpdef ipmt_peak(self, int peak_number):
+        try:
+            return self.ipmtd[peak_number]
+        except KeyError:
+            raise PeakNotFound
+
+    cpdef find_ipmt(self, int peak_number, int pmt_number):
+        try:
+            return self.ipmt_peak(peak_number)[pmt_number].astype(np.float64)
+        except KeyError:
+            raise PmtNotFound
+
     cpdef energies_in_peak(self, int peak_number):
-        if peak_number not in self.ipmtd: raise PeakNotFound
-        else: return np.asarray(self.ipmtd[peak_number])
+        return np.asarray(self.ipmt_peak(peak_number))
 
     cpdef pmt_waveform(self, int peak_number, int pmt_number):
         cdef double [:] E
-        if peak_number not in self.ipmtd: raise PeakNotFound
-        else:
-          E = self.ipmtd[peak_number][pmt_number].astype(np.float64)
-          return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
+
+        E = self.find_ipmt(peak_number, pmt_number)
+        return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
 
     cpdef pmt_total_energy_in_peak(self, int peak_number, int pmt_number):
         """
         For peak_number and and pmt_number return the integrated energy in that pmt in that peak
         ipmtd[peak_number][pmt_number].sum().
         """
-        cdef double et
-        try:
-            et = np.sum(self.ipmtd[peak_number][pmt_number], dtype=np.float64)
-            return et
-        except KeyError:
-            raise PeakNotFound
+        return np.sum(self.find_ipmt(peak_number, pmt_number))
 
     cpdef pmt_total_energy(self, int pmt_number):
         """
@@ -359,7 +363,6 @@ cdef class S12Pmt(S12):
         """
         cdef double sum = 0
         cdef int pn
-        #sum = 0
         for pn in self.ipmtd:
             sum += self.pmt_total_energy_in_peak(pn, pmt_number)
         return sum

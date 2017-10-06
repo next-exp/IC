@@ -48,6 +48,8 @@ cdef class S2Si(S2):
     """
     cdef public s2sid
     cdef  dict _s2sid
+    cpdef sipm_peak(self, int peak_number)
+    cpdef find_sipm(self, int peak_number, int sipm_number)
     cpdef number_of_sipms_in_peak(self, int peak_number)
     cpdef sipms_in_peak(self, int peak_number)
     cpdef sipm_waveform(self, int peak_number, int sipm_number)
@@ -65,6 +67,8 @@ cdef class S12Pmt(S12):
     cdef public ipmtd
     cdef public npmts
     cdef  dict _ipmtd
+    cpdef ipmt_peak(self, int peak_number)
+    cpdef find_ipmt(self, int peak_number, int pmt_number)
     cpdef energies_in_peak(self, int peak_number)
     cpdef pmt_waveform(self, int peak_number, int pmt_number)
     cpdef pmt_total_energy_in_peak(self, int peak_number, int pmt_number)
