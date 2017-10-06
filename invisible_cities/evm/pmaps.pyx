@@ -3,6 +3,7 @@
 cimport numpy as np
 import numpy as np
 
+from textwrap import indent
 from textwrap import dedent
 
 from .. types.ic_types_c       cimport minmax
@@ -66,22 +67,22 @@ cdef class Peak:
 
     def __str__(self):
         if self.width < units.mus:
-            width   = "{:d} ns".format(self.width)
-            tminmax = "{} ns".format(self.tmin_tmax)
+            width   = "{:.0f} ns" .format(self.width)
+            tminmax = "{} ns"     .format(self.tmin_tmax)
         else:
             width   = "{:.1f} mus".format(self.width/units.mus)
-            tminmax = "{} mus".format(self.tmin_tmax / units.mus)
-        
+            tminmax = "{} mus"    .format(self.tmin_tmax/units.mus)
+
         return dedent("""
-                      Peak(
-                           samples   = {self.number_of_samples:d}
-                           width     = {width}
-                           energy    = {self.total_energy:8.1f} pes
-                           height    = {self.height:8.1f} pes
-                           tmin-tmax = {tminmax} mus
-                      """.format(self = self, width = width, tminmax = tminmax)
+               Peak|samples   = {self.number_of_samples:d}
+                   |width     = {width}
+                   |energy    = {self.total_energy:.1f} pes
+                   |height    = {self.height:.1f} pes
+                   |tmin-tmax = {tminmax}
+               """.format(self = self, width = width, tminmax = tminmax))
+
     def __repr__(self):
-        return self.__str__()
+        return dedent(self.__str__())
 
 
 cdef class S12:
@@ -136,6 +137,9 @@ cdef class S12:
                 row["ene"]   = E
                 row.append()
 
+    def __repr__(self):
+        return dedent(self.__str__())
+
 
 cdef class S1(S12):
     def __init__(self, s1d):
@@ -145,13 +149,10 @@ cdef class S1(S12):
         super(S1, self).__init__(s1d)
 
     def __str__(self):
-        s =  "S1 (number of peaks = {})\n".format(self.number_of_peaks)
-        s2 = ['peak number = {}: {} \n'.format(i,
-                                    self.peak_waveform(i)) for i in self.peaks]
-        return  s + ''.join(s2)
-
-    def __repr__(self):
-        return self.__str__()
+        s0 =  "S1 (number of peaks = {})\n".format(self.number_of_peaks)
+        s1 = ["peak number = {}: {} \n".format(i, self.peak_waveform(i))
+              for i in self.peaks]
+        return s0 + ''.join(s1)
 
 
 cdef class S2(S12):
@@ -162,13 +163,10 @@ cdef class S2(S12):
         super(S2, self).__init__(s2d)
 
     def __str__(self):
-        s =  "S2 (number of peaks = {})\n".format(self.number_of_peaks)
-        s2 = ['peak number = {}: {} \n'.format(i,
-                                    self.peak_waveform(i)) for i in self.peaks]
-        return  s + ''.join(s2)
-
-    def __repr__(self):
-        return self.__str__()
+        s0 =  "S2 (number of peaks = {})\n\n".format(self.number_of_peaks)
+        s2 = ["peak number = {}: {} \n".format(i, self.peak_waveform(i))
+              for i in self.peaks]
+        return s0 + ''.join(s2)
 
 
 cpdef check_s2d_and_s2sid_share_peaks(dict s2d, dict s2sid):
@@ -279,28 +277,30 @@ cdef class S2Si(S2):
                     row.append()
 
     def __str__(self):
-        s  = "=" * 80 + "\n" + S2.__str__(self)
+        split_bar_1 = "=" * 40
+        split_bar_2 = "-" * 40
 
-        s += "-" * 80 + "\nSiPMs for non-empty peaks\n\n"
+        peak_str = "peak number = {}, nsipm in peak = {}"
+        wf_str   = "peak number = {}, sipm number = {}, zs-waveform = {}"
 
-        s2a = ["peak number = {}: nsipm in peak = {}"
-               .format(peak_number, self.sipms_in_peak(peak_number))
-               for peak_number in self.peaks
-               if len(self.sipms_in_peak(peak_number)) > 0]
+        peaks     = []
+        waveforms = []
+        for peak_no, peak in self.s2sid.items():
+            nsipm = self.number_of_sipms_in_peak(peak_no)
+            peaks.append(peak_str.format(peak_no, nsipm))
 
-        s += '\n\n'.join(s2a) + "\n"
+            for sipm_no in self.sipms_in_peak(peak_no):
+                wf = self.sipm_waveform_zs(peak_no, sipm_no)
+                waveforms.append(split_bar_2)
+                waveforms.append(wf_str.format(peak_no, sipm_no, wf))
 
-        s += "-" * 80 + "\nSiPMs Waveforms\n\n"
-
-        s2b = ["peak number = {}: sipm number = {}\n    sipm waveform (zs) = {}".format(peak_number, sipm_number, self.sipm_waveform_zs(peak_number, sipm_number))
-               for peak_number in self.peaks
-               for sipm_number in self.sipms_in_peak(peak_number)
-               if len(self.sipms_in_peak(peak_number)) > 0]
-
-        return s + '\n'.join(s2b) + "\n" + "=" * 80
-
-    def __repr__(self):
-        return self.__str__()
+        header = lambda x: ("", split_bar_1, x, split_bar_1, "")
+        return "\n".join([*header("S2Si instance"),
+                           S2.__str__(self),
+                          *header("Peaks"),
+                          *peaks,
+                          *header("SiPM waveforms"),
+                          *waveforms])
 
 
 cdef class S12Pmt(S12):
