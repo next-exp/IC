@@ -50,10 +50,7 @@ cdef class Peak:
 
     def total_energy_above_threshold(self, thr):
         eth = self.E[self.signal_above_threshold(thr)]
-        if len(eth):
-            return np.sum(eth)
-        else:
-            return 0
+        return np.sum(eth)
 
     def width_above_threshold(self, thr):
         eth = self.E[self.signal_above_threshold(thr)]
