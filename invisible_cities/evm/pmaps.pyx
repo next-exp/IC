@@ -223,6 +223,7 @@ cdef class S2Si(S2):
         cdef list TZS = []
         cdef list EZS = []
         cdef int i
+
         E = self.find_sipm    (peak_number, sipm_number)
         t = self.peak_waveform(peak_number).t
 
@@ -242,8 +243,6 @@ cdef class S2Si(S2):
     cpdef sipm_total_energy_dict(self, int peak_number):
         """For peak number return {sipm: Q}. """
         cdef dict Q_sipm_dict = {}
-        if self.number_of_sipms_in_peak(peak_number) == 0:
-            return Q_sipm_dict
         for sipm_number in self.sipms_in_peak(peak_number):
             Q_sipm_dict[sipm_number] = self.sipm_total_energy( peak_number, sipm_number)
         return Q_sipm_dict
