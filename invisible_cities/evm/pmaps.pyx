@@ -49,28 +49,17 @@ cdef class Peak:
         return self.E > thr
 
     def total_energy_above_threshold(self, thr):
-        eth = self.E[self.signal_above_threshold(thr)]
-        return np.sum(eth)
+        sat = self.signal_above_threshold(thr)
+        return np.sum(self.E[sat])
 
     def width_above_threshold(self, thr):
-        eth = self.E[self.signal_above_threshold(thr)]
-        if len(eth):
-            t0 = (loc_elem_1d(self.E, eth[0])
-              if self.total_energy > 0
-              else 0)
-            t1 = (loc_elem_1d(self.E, eth[-1])
-              if self.total_energy > 0
-              else 0)
-            return self.t[t1] - self.t[t0]
-        else:
-            return 0
+        sat = self.signal_above_threshold(thr)
+        t   = self.t[sat]
+        return t[-1] - t[0] if sat.any() else 0
 
     def height_above_threshold(self, thr):
-        eth = self.E[self.signal_above_threshold(thr)]
-        if len(eth):
-            return np.max(eth)
-        else:
-            return 0
+        sat = self.signal_above_threshold(thr)
+        return np.max(self.E[sat]) if sat.any() else 0
 
 
     def __str__(self):
