@@ -2,6 +2,7 @@ import numpy as np
 
 from flaky  import flaky
 from pytest import mark
+from pytest import fixture
 
 from hypothesis            import given
 from hypothesis.strategies import composite
@@ -147,23 +148,28 @@ def test_inverse_cdf_hypothesis_generated(distribution, percentile):
     assert true_value == icdf
 
 
-def test_noise_sampler_output_shape():
-    run_number = 0
-    nsipm      = len(DataSiPM(run_number))
-    nsamples   = 1000
+@fixture(scope="module")
+def datasipm_run0():
+    return DataSiPM(0)
 
-    sampler = NoiseSampler(run_number, nsamples, False)
-    sample  = sampler.Sample()
 
+@fixture(scope="module")
+def noise_sampler_run0():
+    nsamples = 1000
+    smear    = False
+    return NoiseSampler(0, nsamples, smear), nsamples, smear
+
+
+def test_noise_sampler_output_shape(datasipm_run0, noise_sampler_run0):
+    nsipm                        = len(datasipm_run0)
+    noise_sampler, nsamples, _   = noise_sampler_run0
+    sample                       = noise_sampler.Sample()
     assert sample.shape == (nsipm, nsamples)
 
 
-def test_noise_sampler_masked_sensors():
-    run_number = 0
+def test_noise_sampler_masked_sensors(datasipm_run0, noise_sampler_run0):
+    noise_sampler, *_ = noise_sampler_run0
+    sample            = noise_sampler.Sample()
 
-    sampler = NoiseSampler(run_number, 1000, False)
-    sample  = sampler.Sample()
-
-    datasipm = DataSiPM(run_number)
-    masked_sensors = datasipm[datasipm.Active==0].index.values
+    masked_sensors = datasipm_run0[datasipm_run0.Active==0].index.values
     assert not np.any(sample[masked_sensors])
