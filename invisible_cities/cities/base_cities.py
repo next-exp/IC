@@ -488,6 +488,12 @@ class CalibratedCity(DeconvolutionCity):
           a) equalize to pes;
           b) compute a MAU that follows baseline and keep samples above
              MAU + threshold.
+             The threshold can be used in two ways:
+             - A single value for all sipms (thr_sipm_type = "common"). In this
+               case, thr_sipm is the threshold value in pes.
+             - A value for each SiPM, based on a common the percentage
+               of noise reduction (thr_sipm_type = "individual"). In this case,
+               thr_sipm is the percentage.
        """
 
     parameters = tuple("""n_mau thr_mau thr_csum_s1 thr_csum_s2 n_mau_sipm thr_sipm thr_sipm_type""".split())
