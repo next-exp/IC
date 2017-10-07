@@ -205,3 +205,25 @@ def test_noise_sampler_take_sample(datasipm, noise_sampler):
                 assert np.all(np.in1d(sample, noise_sampler.xbins))
         else:
             assert not np.any(sample)
+
+
+def test_noise_sampler_compute_thresholds(datasipm, noise_sampler):
+    noise_sampler, *_ = noise_sampler
+    true_threshold_counts = {
+    0.85  :  19,
+    0.95  : 687,
+    1.05  : 829,
+    1.15  : 199,
+    1.25  :  32,
+    1.35  :   8,
+    1.45  :   6,
+    1.55  :   3,
+    2.05  :   1,
+    np.inf:   8}
+
+    thresholds       = noise_sampler.compute_thresholds(0.99)
+    threshold_counts = np.unique(thresholds, return_counts = True)
+    threshold_counts = dict(zip(*threshold_counts))
+    assert sorted(true_threshold_counts) == sorted(threshold_counts)
+    for i, truth in true_threshold_counts.items():
+        assert truth == threshold_counts[i]
