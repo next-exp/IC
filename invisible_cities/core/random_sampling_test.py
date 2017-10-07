@@ -153,10 +153,10 @@ def datasipm_run0():
     return DataSiPM(0)
 
 
-@fixture(scope="module")
-def noise_sampler_run0():
+@fixture(scope="module", params=[False, True])
+def noise_sampler_run0(request):
     nsamples = 1000
-    smear    = False
+    smear    = request.param
     return NoiseSampler(0, nsamples, smear), nsamples, smear
 
 
