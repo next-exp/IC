@@ -207,7 +207,11 @@ def test_noise_sampler_take_sample(datasipm, noise_sampler):
             assert not np.any(sample)
 
 
-def test_noise_sampler_compute_thresholds(datasipm, noise_sampler):
+@mark.parametrize("pes_to_adc",
+                  (1, 2.5, 10, 25.4))
+@mark.parametrize("as_array",
+                  (False, True))
+def test_noise_sampler_compute_thresholds(datasipm, noise_sampler, pes_to_adc, as_array):
     noise_sampler, *_ = noise_sampler
     true_threshold_counts = {
     0.85  :  19,
@@ -220,8 +224,11 @@ def test_noise_sampler_compute_thresholds(datasipm, noise_sampler):
     1.55  :   3,
     2.05  :   1,
     np.inf:   8}
+    true_threshold_counts = {pes_to_adc*k: v for k,v in true_threshold_counts.items()}
+    if as_array:
+        pes_to_adc *= np.ones(len(datasipm))
 
-    thresholds       = noise_sampler.compute_thresholds(0.99)
+    thresholds       = noise_sampler.compute_thresholds(0.99, pes_to_adc)
     threshold_counts = np.unique(thresholds, return_counts = True)
     threshold_counts = dict(zip(*threshold_counts))
     assert sorted(true_threshold_counts) == sorted(threshold_counts)
