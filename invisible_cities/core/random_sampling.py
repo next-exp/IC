@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from functools import partial
+
 from .. database import load_db as DB
 
 
@@ -58,32 +60,26 @@ class NoiseSampler:
         nsamples: int
             Number of samples per sensor taken at each call.
         """
-        def norm(ps):
-            return ps / np.sum(ps) if ps.any() else ps
-
-        self.nsamples    = sample_size
         (self.probs,
          self.xbins,
          self.baselines) = DB.SiPMNoise()
+        self.nsamples    = sample_size
+        self.smear       = smear
         self.active      = DB.DataSiPM(run_number).Active.values[:, np.newaxis]
+        self.nsensors    = self.active.size
 
-        self.probs       = np.apply_along_axis(norm, 1, self.mask(self.probs))
+        self.probs       = np.apply_along_axis(normalize_distribution, 1,
+                                               self.mask(self.probs))
         self.baselines   = self.baselines[:, np.newaxis]
         self.dx          = np.diff(self.xbins)[0] * 0.5
 
-        # Sampling functions
-        def _sample_sensor(probs):
-            if not probs.any():
-                return np.zeros(self.nsamples)
-            return np.random.choice(self.xbins, size=self.nsamples, p=probs)
-
-        def _discrete_sampler():
-            return np.apply_along_axis(_sample_sensor, 1, self.probs)
-
-        def _continuous_sampler():
-            return _discrete_sampler() + np.random.uniform(-self.dx, self.dx)
-
-        self._sampler = _continuous_sampler if smear else _discrete_sampler
+        self._sampler    = partial(sample_discrete_distribution,
+                                   self.xbins,
+                                   size = self.nsamples)
+        self._smearer    = partial(uniform_smearing,
+                                   max_deviation = self.dx,
+                                   size          = (self.nsensors,
+                                                    self.nsamples))
 
     def mask(self, array):
         """Set to 0 those rows corresponding to masked sensors"""
@@ -91,7 +87,11 @@ class NoiseSampler:
 
     def sample(self):
         """Return a sample of each distribution."""
-        return self.mask(self._sampler() + self.baselines)
+        sample  = np.apply_along_axis(self._sampler, 1, self.probs)
+        if self.smear:
+            sample += self._smearer()
+        sample += self.baselines
+        return self.mask(sample)
 
     def compute_thresholds(self, noise_cut=0.99, pes_to_adc=None):
         """Find the number of pes at which each noise distribution leaves
@@ -111,14 +111,10 @@ class NoiseSampler:
             Cuts in adc or pes.
 
         """
-        def findcut(probs):
-            if not probs.any():
-                return np.inf
-            return self.xbins[probs >= noise_cut][0]
-
         if pes_to_adc is None:
             pes_to_adc = np.ones(self.probs.shape[0])
 
+        find_thr = partial(inverse_cdf, self.xbins, percentile = noise_cut)
         cumprobs = np.apply_along_axis(np.cumsum, 1, self.probs)
-        cuts_pes = np.apply_along_axis(findcut  , 1,   cumprobs)
+        cuts_pes = np.apply_along_axis(find_thr , 1,   cumprobs)
         return cuts_pes * pes_to_adc
