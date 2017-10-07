@@ -79,7 +79,7 @@ def test_sipm_noise_sampler(electron_MCRD_file):
         noise_sampler = SiPMsNoiseSampler(run_number, SIPMWL, True)
 
         # signal in sipm with noise
-        sipmrwf = e40rd.root.sipmrd[event] + noise_sampler.Sample()
+        sipmrwf = e40rd.root.sipmrd[event] + noise_sampler.sample()
         # zs waveform
         sipmzs = wfm.noise_suppression(sipmrwf, sipms_thresholds)
         n_sipm = 0

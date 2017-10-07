@@ -11,6 +11,7 @@ from hypothesis.strategies import floats
 
 from . testing_utils    import float_arrays
 from . core_functions   import in_range
+from ..database.load_db import DataSiPM
 
 from . random_sampling  import normalize_distribution
 from . random_sampling  import sample_discrete_distribution
@@ -18,7 +19,6 @@ from . random_sampling  import uniform_smearing
 from . random_sampling  import inverse_cdf_index
 from . random_sampling  import inverse_cdf
 from . random_sampling  import NoiseSampler
-from ..database.load_db import DataSiPM
 
 sensible_sizes    =                  integers(min_value =    2,
                                               max_value =   20)
@@ -161,15 +161,15 @@ def noise_sampler_run0(request):
 
 
 def test_noise_sampler_output_shape(datasipm_run0, noise_sampler_run0):
-    nsipm                        = len(datasipm_run0)
-    noise_sampler, nsamples, _   = noise_sampler_run0
-    sample                       = noise_sampler.Sample()
+    nsipm                      = len(datasipm_run0)
+    noise_sampler, nsamples, _ = noise_sampler_run0
+    sample                     = noise_sampler.sample()
     assert sample.shape == (nsipm, nsamples)
 
 
 def test_noise_sampler_masked_sensors(datasipm_run0, noise_sampler_run0):
     noise_sampler, *_ = noise_sampler_run0
-    sample            = noise_sampler.Sample()
+    sample            = noise_sampler.sample()
 
     masked_sensors = datasipm_run0[datasipm_run0.Active==0].index.values
     assert not np.any(sample[masked_sensors])

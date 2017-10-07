@@ -38,6 +38,8 @@ class NoiseSampler:
 
         Parameters
         ----------
+        run_number: int
+            Run number used to load information from the database.
         sample_size: int
             Number of samples per sensor and call.
         smear: bool
@@ -59,14 +61,16 @@ class NoiseSampler:
         def norm(ps):
             return ps / np.sum(ps) if ps.any() else ps
 
-        self.nsamples = sample_size
-        self.probs, self.xbins, self.baselines = DB.SiPMNoise()
+        self.nsamples    = sample_size
+        (self.probs,
+         self.xbins,
+         self.baselines) = DB.SiPMNoise()
+        self.active      = DB.DataSiPM(run_number).Active.values[:, np.newaxis]
 
-        self.active    = DB.DataSiPM(run_number).Active.values[:, np.newaxis]
         # probs * active means that masked sensors are set to 0
-        self.probs     = np.apply_along_axis(norm, 1, self.probs * self.active)
-        self.baselines = self.baselines.reshape(self.baselines.shape[0], 1)
-        self.dx        = np.diff(self.xbins)[0] * 0.5
+        self.probs       = np.apply_along_axis(norm, 1, self.probs * self.active)
+        self.baselines   = self.baselines[:, np.newaxis]
+        self.dx          = np.diff(self.xbins)[0] * 0.5
 
         # Sampling functions
         def _sample_sensor(probs):
@@ -82,11 +86,11 @@ class NoiseSampler:
 
         self._sampler = _continuous_sampler if smear else _discrete_sampler
 
-    def Sample(self):
+    def sample(self):
         """Return a sample of each distribution."""
         return (self._sampler() + self.baselines) * self.active
 
-    def ComputeThresholds(self, noise_cut=0.99, pes_to_adc=None):
+    def compute_thresholds(self, noise_cut=0.99, pes_to_adc=None):
         """Find the number of pes at which each noise distribution leaves
         behind the a given fraction of its population.
 
