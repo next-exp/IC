@@ -161,13 +161,28 @@ def datasipm(run_number):
 def noise_sampler(request, run_number):
     nsamples = 1000
     smear    = request.param
-    return NoiseSampler(run_number, nsamples, smear), nsamples, smear
+    thr      = 0.99
+    true_threshold_counts = {
+    0.85  :  19,
+    0.95  : 687,
+    1.05  : 829,
+    1.15  : 199,
+    1.25  :  32,
+    1.35  :   8,
+    1.45  :   6,
+    1.55  :   3,
+    2.05  :   1,
+    np.inf:   8}
+
+    return (NoiseSampler(run_number, nsamples, smear),
+            nsamples, smear,
+            thr, true_threshold_counts)
 
 
 def test_noise_sampler_output_shape(datasipm, noise_sampler):
-    nsipm                      = len(datasipm)
-    noise_sampler, nsamples, _ = noise_sampler
-    sample                     = noise_sampler.sample()
+    nsipm                       = len(datasipm)
+    noise_sampler, nsamples, *_ = noise_sampler
+    sample                      = noise_sampler.sample()
     assert sample.shape == (nsipm, nsamples)
 
 
@@ -191,7 +206,7 @@ def test_noise_sampler_attributes(datasipm, noise_sampler):
 
 
 def test_noise_sampler_take_sample(datasipm, noise_sampler):
-    noise_sampler, _, smear = noise_sampler
+    noise_sampler, _, smear, *_ = noise_sampler
     samples = noise_sampler.sample()
     for i, active in enumerate(datasipm.Active):
         sample = samples[i]
@@ -212,18 +227,8 @@ def test_noise_sampler_take_sample(datasipm, noise_sampler):
 @mark.parametrize("as_array",
                   (False, True))
 def test_noise_sampler_compute_thresholds(datasipm, noise_sampler, pes_to_adc, as_array):
-    noise_sampler, *_ = noise_sampler
-    true_threshold_counts = {
-    0.85  :  19,
-    0.95  : 687,
-    1.05  : 829,
-    1.15  : 199,
-    1.25  :  32,
-    1.35  :   8,
-    1.45  :   6,
-    1.55  :   3,
-    2.05  :   1,
-    np.inf:   8}
+    noise_sampler, *_, thr, true_threshold_counts = noise_sampler
+
     true_threshold_counts = {pes_to_adc*k: v for k,v in true_threshold_counts.items()}
     if as_array:
         pes_to_adc *= np.ones(len(datasipm))
