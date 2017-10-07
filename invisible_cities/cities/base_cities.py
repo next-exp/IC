@@ -516,7 +516,7 @@ class CalibratedCity(DeconvolutionCity):
         elif conf.thr_sipm_type.lower() == "individual":
             # In this case, the threshold is a percentual value
             noise_sampler = SiPMsNoiseSampler(self.run_number)
-            self.thr_sipm = noise_sampler.ComputeThresholds(conf.thr_sipm)
+            self.thr_sipm = noise_sampler.compute_thresholds(conf.thr_sipm)
         else:
             raise ValueError(("Wrong value in thr_sipm_type. It must"
                               "be either 'Common' or 'Individual'"))
