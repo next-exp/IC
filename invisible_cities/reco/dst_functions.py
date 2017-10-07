@@ -12,7 +12,7 @@ def load_z_corrections(filename):
     return Correction((dst.z.values,), dst.factor.values, dst.uncertainty.values)
 
 
-def load_xy_corrections(filename, interp_strategy="nearest"):
+def load_xy_corrections(filename, **kwargs):
     dst  = load_dst(filename, "Corrections", "XYcorrections")
     x, y = np.unique(dst.x.values), np.unique(dst.y.values)
     f, u = dst.factor.values, dst.uncertainty.values
@@ -20,7 +20,7 @@ def load_xy_corrections(filename, interp_strategy="nearest"):
     return Correction((x, y),
                       f.reshape(x.size, y.size),
                       u.reshape(x.size, y.size),
-                      interp_strategy = interp_strategy)
+                      **kwargs)
 
 
 def load_lifetime_xy_corrections(filename, interp_strategy="nearest"):
