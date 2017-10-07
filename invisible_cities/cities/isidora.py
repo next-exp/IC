@@ -78,8 +78,6 @@ class Isidora(DeconvolutionCity):
                 write.mc(mc_tracks, self.cnt.n_events_tot)
 
     def get_writers(self, h5out):
-        """Get the writers needed by Isidora"""
-
         RWF = partial(rwf_writer,  h5out,   group_name='BLR')
         writers = Namespace(
             run_and_event = run_and_event_writer(h5out),
@@ -94,7 +92,6 @@ class Isidora(DeconvolutionCity):
         pass
 
     def display_IO_info(self):
-        """display info"""
         super().display_IO_info()
         print(self.sp)
 

@@ -77,9 +77,7 @@ def make_track_graphs(voxels           : Voxel,
 
 def voxels_from_track_graph(track: Graph) -> List[Voxel]:
     """Create and return a list of voxels from a track graph."""
-
-    voxels = [Voxel(t.X, t.Y, t.Z, t.E) for t in track.nodes()]
-    return voxels
+    return track.nodes()
 
 
 def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
@@ -101,6 +99,7 @@ def find_extrema(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Vox
             first, last, max_distance = source, target, d
     return (first, last)
 
+
 def length(track_graph):
     return len(shortest_paths(track_graph))
 
@@ -111,7 +110,6 @@ def energy_within_radius(distances : Dict[Voxel, Dict[Voxel, float]], radius : f
 
 def voxels_within_radius(distances : Dict[Voxel, Dict[Voxel, float]],
                          radius : float) -> List[Voxel]:
-
     return [v for (v, d) in distances.items() if d < radius]
 
 
@@ -124,13 +122,12 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
     return (Ea, Eb) if Ea < Eb else (Eb, Ea)
 
 
-def compute_blobs(track_graph : Graph, radius : float) -> Tuple[List[Voxel], List[Voxel]]:
+def compute_blobs(track_graph : Graph, radius : float) -> Tuple[Voxel, Voxel, List[Voxel], List[Voxel]]:
     """Return the blobs (list of voxels) around the extrema of the track."""
     distances = shortest_paths(track_graph)
     a,b = find_extrema(distances)
     ba = voxels_within_radius(distances[a], radius)
     bb = voxels_within_radius(distances[b], radius)
-
     return a, b, ba, bb
 
 
@@ -139,16 +136,12 @@ def make_tracks(evt_number       : float,
                 voxels           : List[Voxel],
                 voxel_dimensions : np.ndarray,
                 contiguity       : float = 1,
-                blob_radius      : float = 30*units.mm) -> TrackCollection:
+                blob_radius      : float = 30 * units.mm) -> TrackCollection:
     """Make a track collection."""
-
     tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
     track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
     for trk in track_graphs:
-        # distances = shortest_paths(trk) # type: Dict[Voxel, Dict[Voxel, float]]
-        # a,b       = find_extrema(distances) # type: Tuple[Voxel, Voxel]
         a, b, voxels_a, voxels_b    = compute_blobs(trk, blob_radius)
-
         blob_a = Blob(a, voxels_a) # type: Blob
         blob_b = Blob(b, voxels_b)
         blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a)

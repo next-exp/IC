@@ -84,7 +84,7 @@ from .. filters.s1s2_filter     import s2si_filter
 from .. filters.s1s2_filter     import S12Selector
 from .. filters.s1s2_filter     import S12SelectorOutput
 
-from .. daemons.idaemon         import invoke_daemon
+from .. daemons.idaemon         import summon_daemon
 
 from typing import Sequence
 from typing import List
@@ -140,6 +140,7 @@ class City:
         self.print_mod    = conf.print_mod  # default print frequency
         self.first_event, self.last_event = self._event_range()
         self.set_up_database()
+        self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
 
     def detect_unknown_parameters(self, kwds):
         known = self.allowed_parameters()
@@ -180,11 +181,6 @@ class City:
         if opts.print_config_only:
             return
         instance = cls(**conf)
-
-        # set the deamons
-        if 'daemons' in conf:
-            d_list_name = conf['daemons']
-            instance.daemons = list(map(invoke_daemon, d_list_name))
         instance.go()
         instance.end()
         return conf.as_namespace, instance.cnt
@@ -226,9 +222,8 @@ class City:
         """
         self.index_tables() # index cols in tables marked for indexing by city's writers
 
-        if hasattr(self, 'daemons'):
-            for deamon in self.daemons:
-                deamon.end()
+        for daemon in self.daemons:
+            daemon.end()
 
         print(self.cnt)
         return self.cnt
@@ -337,7 +332,6 @@ class City:
            obtained by divinding the RD PMT vector and the sample
            time of the electronics (25 ns). """
         with tb.open_file(filename, "r") as h5in:
-            #pmtrd, sipmrd = self._get_rd(h5in)
             _, pmtrd, sipmrd = tbl.get_rd_vectors(h5in)
             _, NPMT,   PMTWL = pmtrd .shape
             _, NSIPM, SIPMWL = sipmrd.shape
@@ -923,9 +917,6 @@ class HitCity(KrCity):
         # be set by parameter to a factor x pmaps-rebin.
         s2, s2si = self.rebin_s2si(s2, s2si, self.rebin)
 
-        # print(s2)
-        # print(s2si)
-
         # here hits are computed for each peak and each slice.
         # In case of an exception, a hit is still created with a NN cluster.
         # (NN cluster is a cluster where the energy is an IC not number NN)
@@ -935,8 +926,6 @@ class HitCity(KrCity):
 
             for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
                 z        = (t_slice - s1_t) * units.ns * self.drift_v
-                #print('peak_no = {} slice_no = {}'.format(peak_no, slice_no))
-
                 try:
                     clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
                     es       = self.split_energy(e_slice, clusters)
@@ -958,34 +947,13 @@ class TrackCity(HitCity):
         self.voxel_dimensions  = self.conf.voxel_dimensions # type: np.ndarray
         self.blob_radius       = self.blob_radius # type: float
 
-    def voxelize_hits(self, hits : Sequence[Hit]) ->List[Voxel]:
+    def voxelize_hits(self, hits : Sequence[Hit]) -> List[Voxel]:
         """1. Hits are enclosed by a bounding box.
            2. Boundix box is discretized (via a hitogramdd).
            3. The energy of all the hits insidex each discreet "voxel" is added.
 
          """
         return paf.voxelize_hits(hits, self.voxel_dimensions)
-
-    def make_tracks(self, evt_number : float , evt_time: float,
-                    voxels : List[Voxel]) ->TrackCollection:
-        """Makes a track collection. """
-
-        tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
-
-        track_graphs = paf.make_track_graphs(voxels, self.voxel_dimensions) # type: Sequence[Graph]
-
-        for trk in track_graphs:
-            distances = paf.shortest_paths(trk)
-            a,b       = paf.find_extrema(distances) # type: Tuple[Voxel, Voxel]
-            ba, bb = paf.blobs(trk, blob_radius) # type: Tuple[List[Voxel], List[Voxel]]
-            #Ea = paf.energy_within_radius(distances[a], self.blob_radius) # type: float
-            #Eb = paf.energy_within_radius(distances[b], self.blob_radius)
-            blob_a = Blob(ba) # type: Blob
-            blob_b = Blob(bb)
-            blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a) # type: Tuple[Blob, Blob]
-            track = Track(paf.voxels_from_track_graph(trk), blobs)
-            tc.tracks.append(track)
-        return tc
 
 
 class TriggerEmulationCity(PmapCity):

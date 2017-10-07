@@ -128,8 +128,6 @@ class Diomira(MonteCarloCity):
         self.write_simulation_parameters_table(h5out)
 
     def get_writers(self, h5out):
-        """Get the writers needed by Diomira"""
-
         RWF = partial(rwf_writer,  h5out,   group_name='RD')
         writers = Namespace(
             run_and_event = run_and_event_writer(h5out),
@@ -141,7 +139,6 @@ class Diomira(MonteCarloCity):
         )
         return writers
 
-def display_IO_info(self):
-    """display info"""
-    super().display_IO_info()
-    print(self.sp)
+    def display_IO_info(self):
+        super().display_IO_info()
+        print(self.sp)

@@ -111,7 +111,6 @@ class Irene(PmapCity):
         self.write_deconv_params(h5out)
 
     def get_writers(self, h5out):
-        """Get the writers needed by Irene"""
         writers = Namespace(
         run_and_event =        run_and_event_writer(h5out),
         mc            =             mc_track_writer(h5out) if self.monte_carlo else None,
@@ -121,7 +120,6 @@ class Irene(PmapCity):
         return writers
 
     def display_IO_info(self):
-        """display info"""
         super().display_IO_info()
         print(self.sp)
         print("""
