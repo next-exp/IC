@@ -177,3 +177,14 @@ def test_noise_sampler_masked_sensors(datasipm, noise_sampler):
 
     masked_sensors = datasipm[datasipm.Active==0].index.values
     assert not np.any(sample[masked_sensors])
+
+
+def test_noise_sampler_attributes(datasipm, noise_sampler):
+    true_av_noise     = 0.00333333333333333
+    noise_sampler, *_ = noise_sampler
+
+    av_noise = noise_sampler.probs.mean(axis=1)
+    active   = datasipm.Active.values
+    masked   = active == 0; masked
+    assert np.allclose(av_noise[active == 0],             0, rtol = 1e-8)
+    assert np.allclose(av_noise[active == 1], true_av_noise, rtol = 1e-8)
