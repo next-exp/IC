@@ -147,6 +147,17 @@ def test_inverse_cdf_hypothesis_generated(distribution, percentile):
     assert true_value == icdf
 
 
+def test_noise_sampler_output_shape():
+    run_number = 0
+    nsipm      = len(DataSiPM(run_number))
+    nsamples   = 1000
+
+    sampler = NoiseSampler(run_number, nsamples, False)
+    sample  = sampler.Sample()
+
+    assert sample.shape == (nsipm, nsamples)
+
+
 def test_noise_sampler_masked_sensors():
     run_number = 0
 
