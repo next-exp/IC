@@ -1,3 +1,5 @@
+from functools import partial
+
 import numpy    as np
 import networkx as nx
 
@@ -12,6 +14,9 @@ from hypothesis            import given
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
+from hypothesis.strategies import integers
+
+from networkx.generators.random_graphs import fast_gnp_random_graph
 
 from .. evm.event_model  import BHit
 
@@ -86,17 +91,14 @@ def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
 
     assert_almost_equal(sum_energy(hits), sum_energy(voxels))
 
-@given(bunch_of_hits, box_sizes)
-def test_voxels_from_track_return_node_voxels(hits, voxel_dimensions):
-    voxels = voxelize_hits    (hits  , voxel_dimensions)
 
-    tracks = make_track_graphs(voxels, voxel_dimensions)
-    for t in tracks:
-        voxels = voxels_from_track_graph(t)
-        nodes  = t.nodes()
-        assert len(voxels) == len(nodes)
-        for voxel, node in zip(voxels, nodes):
-            np.isclose(voxel.pos, node.pos)
+random_graph = builds(partial(fast_gnp_random_graph, p=0.5),
+                      n=integers(min_value=0, max_value=10),
+                      seed=integers())
+
+@given(random_graph)
+def test_voxels_from_track_return_node_voxels(graph):
+    assert voxels_from_track_graph(graph) == graph.nodes()
 
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
