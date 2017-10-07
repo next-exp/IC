@@ -1,5 +1,3 @@
-"""Defines a class for random sampling."""
-
 import numpy as np
 
 from functools import partial
@@ -44,21 +42,23 @@ class NoiseSampler:
             Run number used to load information from the database.
         sample_size: int
             Number of samples per sensor and call.
-        smear: bool
-            Flag to choose between performing discrete or continuous sampling.
+        smear: bool, optional
+            If True, the samples are uniformly smeared to simulate
+            a continuous distribution. If False, the samples are
+            always the center of the histograms' bins. Default is True.
 
         Attributes
         ---------
         baselines : array of floats
-            Pedestal for each SiPM.
+            Baseline for each SiPM.
         xbins : numpy.ndarray
             Contains the the bins centers in pes.
-        dx: float
+        dx : float
             Half of the bin size.
         probs: numpy.ndarray
-            Matrix holding the probability for each sensor at each bin.
-        nsamples: int
-            Number of samples per sensor taken at each call.
+            Matrix holding the noise probabilities for each sensor.
+            The sensors are arranged along the first dimension, while
+            the other axis corresponds to the energy bins.
         """
         (self.probs,
          self.xbins,
@@ -86,20 +86,20 @@ class NoiseSampler:
         return array * self.active
 
     def sample(self):
-        """Return a sample of each distribution."""
+        """Take a set of samples from each pdf."""
         sample  = np.apply_along_axis(self._sampler, 1, self.probs)
         if self.smear:
             sample += self._smearer()
         sample += self.baselines
         return self.mask(sample)
 
-    def compute_thresholds(self, noise_cut=0.99, pes_to_adc=None):
-        """Find the number of pes at which each noise distribution leaves
-        behind the a given fraction of its population.
+    def compute_thresholds(self, noise_cut=0.99, pes_to_adc=1):
+        """Find the energy threshold that reduces the noise population by a
+        fraction of *noise_cut*.
 
         Parameters
         ----------
-        noise_cut : float
+        noise_cut : float, optional
             Fraction of the distribution to be left behind. Default is 0.99.
         pes_to_adc : float or array of floats, optional
             Constant(s) for pes to adc conversion (default None).
@@ -109,11 +109,7 @@ class NoiseSampler:
         -------
         cuts: array of floats
             Cuts in adc or pes.
-
         """
-        if pes_to_adc is None:
-            pes_to_adc = np.ones(self.probs.shape[0])
-
         find_thr = partial(inverse_cdf, self.xbins, percentile = noise_cut)
         cumprobs = np.apply_along_axis(np.cumsum, 1, self.probs)
         cuts_pes = np.apply_along_axis(find_thr , 1,   cumprobs)
