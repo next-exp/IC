@@ -62,9 +62,9 @@ class NoiseSampler:
         self.nsamples = sample_size
         self.probs, self.xbins, self.baselines = DB.SiPMNoise()
 
-        active         = DB.DataSiPM(run_number).Active.values[:, np.newaxis]
+        self.active    = DB.DataSiPM(run_number).Active.values[:, np.newaxis]
         # probs * active means that masked sensors are set to 0
-        self.probs     = np.apply_along_axis(norm, 1, self.probs * active)
+        self.probs     = np.apply_along_axis(norm, 1, self.probs * self.active)
         self.baselines = self.baselines.reshape(self.baselines.shape[0], 1)
         self.dx        = np.diff(self.xbins)[0] * 0.5
 
@@ -84,7 +84,7 @@ class NoiseSampler:
 
     def Sample(self):
         """Return a sample of each distribution."""
-        return self._sampler() + self.baselines
+        return (self._sampler() + self.baselines) * self.active
 
     def ComputeThresholds(self, noise_cut=0.99, pes_to_adc=None):
         """Find the number of pes at which each noise distribution leaves
