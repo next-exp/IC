@@ -188,3 +188,20 @@ def test_noise_sampler_attributes(datasipm, noise_sampler):
     masked   = active == 0; masked
     assert np.allclose(av_noise[active == 0],             0, rtol = 1e-8)
     assert np.allclose(av_noise[active == 1], true_av_noise, rtol = 1e-8)
+
+
+def test_noise_sampler_take_sample(datasipm, noise_sampler):
+    noise_sampler, _, smear = noise_sampler
+    samples = noise_sampler.sample()
+    for i, active in enumerate(datasipm.Active):
+        sample = samples[i]
+        if active:
+            if smear:
+                # Find closest energy bin and ensure it is close enough.
+                diffs      = noise_sampler.xbins - sample[:, np.newaxis]
+                closest    = np.min(np.abs(diffs), axis=1)
+                assert np.all(closest <= noise_sampler.dx)
+            else:
+                assert np.all(np.in1d(sample, noise_sampler.xbins))
+        else:
+            assert not np.any(sample)
