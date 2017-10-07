@@ -5,6 +5,33 @@ import numpy as np
 from .. database import load_db as DB
 
 
+def normalize_distribution(y):
+    ysum = np.sum(y)
+    return y / ysum if ysum else y
+
+
+def sample_discrete_distribution(x, y, size=1):
+    if not y.any():
+        return np.zeros(size)
+    return np.random.choice(x, p=y, size=size)
+
+
+def uniform_smearing(max_deviation, size=1):
+    return np.random.uniform(-max_deviation,
+                             +max_deviation,
+                             size = size)
+
+
+def inverse_cdf_index(y, percentile):
+    return np.argwhere(y >= percentile)[0,0]
+
+
+def inverse_cdf(x, y, percentile):
+    if not y.any():
+        return np.inf
+    return x[inverse_cdf_index(y, percentile)]
+
+
 class NoiseSampler:
     def __init__(self, run_number, sample_size=1, smear=True):
         """Sample a histogram as if it was a PDF.
