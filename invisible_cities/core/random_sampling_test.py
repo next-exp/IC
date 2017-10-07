@@ -149,27 +149,31 @@ def test_inverse_cdf_hypothesis_generated(distribution, percentile):
 
 
 @fixture(scope="module")
-def datasipm_run0():
-    return DataSiPM(0)
+def run_number():
+    return 0
+
+@fixture(scope="module")
+def datasipm(run_number):
+    return DataSiPM(run_number)
 
 
 @fixture(scope="module", params=[False, True])
-def noise_sampler_run0(request):
+def noise_sampler(request, run_number):
     nsamples = 1000
     smear    = request.param
-    return NoiseSampler(0, nsamples, smear), nsamples, smear
+    return NoiseSampler(run_number, nsamples, smear), nsamples, smear
 
 
-def test_noise_sampler_output_shape(datasipm_run0, noise_sampler_run0):
-    nsipm                      = len(datasipm_run0)
-    noise_sampler, nsamples, _ = noise_sampler_run0
+def test_noise_sampler_output_shape(datasipm, noise_sampler):
+    nsipm                      = len(datasipm)
+    noise_sampler, nsamples, _ = noise_sampler
     sample                     = noise_sampler.sample()
     assert sample.shape == (nsipm, nsamples)
 
 
-def test_noise_sampler_masked_sensors(datasipm_run0, noise_sampler_run0):
-    noise_sampler, *_ = noise_sampler_run0
+def test_noise_sampler_masked_sensors(datasipm, noise_sampler):
+    noise_sampler, *_ = noise_sampler
     sample            = noise_sampler.sample()
 
-    masked_sensors = datasipm_run0[datasipm_run0.Active==0].index.values
+    masked_sensors = datasipm[datasipm.Active==0].index.values
     assert not np.any(sample[masked_sensors])
