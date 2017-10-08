@@ -93,17 +93,17 @@ def test_uniform_smearing_range(max_deviation, nsamples):
                 max_value = 1e+2),
        integers(min_value = 200,
                 max_value = 1000))
-@flaky(max_runs=5, min_passes=2)
+@flaky(max_runs=10, min_passes=1)
 def test_uniform_smearing_stats(max_deviation, nsamples):
     expected_mean  = 0
     expected_std   = max_deviation / 3**0.5
-    tolerance_mean = 3    * expected_std / nsamples**0.5 # mean within 3 rms
-    tolerance_std  = 0.50                                # std  within 50%
+    tolerance_mean = 5 * expected_std / nsamples**0.5 # mean within 5 sigma
+    tolerance_std  = 0.20                             # std  within 20%
     samples        = uniform_smearing(max_deviation, nsamples)
     sample_mean    = np.mean(samples)
     sample_std     = np.std (samples)
-    assert np.isclose(sample_mean, expected_mean, atol=tolerance_mean)
-    assert np.isclose(sample_std , expected_std , rtol=tolerance_std )
+    assert np.isclose(sample_mean, expected_mean,    atol=tolerance_mean)
+    assert np.isclose(sample_std / expected_std , 1, rtol=tolerance_std )
 
 
 @mark.parametrize("frequencies percentile true_index".split(),
