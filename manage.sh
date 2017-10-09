@@ -82,7 +82,7 @@ dependencies:
 - sphinx=1.6.3=py36_0
 - pip:
   - flaky==3.4.0
-  - hypothesis==3.31.2
+  - hypothesis==3.28
   - pytest-xdist==1.20.0
 EOF
 
