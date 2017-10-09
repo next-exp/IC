@@ -92,7 +92,7 @@ def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
     def sum_energy(seq):
         return sum(e.E for e in seq)
 
-    assert_almost_equal(sum_energy(hits), sum_energy(voxels))
+    assert_almost_equal(sum_energy(voxels), sum_energy(hits))
 
 
 random_graph = builds(partial(fast_gnp_random_graph, p=0.5),
