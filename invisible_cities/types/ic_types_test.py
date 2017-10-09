@@ -26,22 +26,14 @@ def make_minmax_c(a,b):
     return minmax_c(a, b)
 
 
-def make_xy(a,b):
-    return xy(a, b)
-
-
-def make_xy_c(a,b):
-    return xy_c(a, b)
-
-
 sensible_floats = floats(min_value=0.5, max_value=1e3, allow_nan=False, allow_infinity=False)
 
 py_minmax = builds(make_minmax  , sensible_floats, sensible_floats)
 cy_minmax = builds(make_minmax_c, sensible_floats, sensible_floats)
 minmaxes  = one_of(py_minmax, cy_minmax)
 
-py_xy     = builds(make_xy  , sensible_floats, sensible_floats)
-cy_xy     = builds(make_xy_c, sensible_floats, sensible_floats)
+py_xy     = builds(xy  , sensible_floats, sensible_floats)
+cy_xy     = builds(xy_c, sensible_floats, sensible_floats)
 xys       = one_of(py_xy, cy_xy)
 
 
