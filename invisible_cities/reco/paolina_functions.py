@@ -46,6 +46,12 @@ def voxelize_hits(hits             : Sequence[BHit],
     voxel_edges_lo = bounding_box_centre - number_of_voxels * voxel_dimensions / 2
     voxel_edges_hi = bounding_box_centre + number_of_voxels * voxel_dimensions / 2
 
+    # Expand the voxels a tiny bit, in order to include hits which
+    # fall within the margin of error of the voxel bounding box.
+    eps = 3e-12 # geometric mean of range that seems to work
+    voxel_edges_lo -= eps
+    voxel_edges_hi += eps
+
     hit_positions = np.array([h.pos for h in hits])
     hit_energies  =          [h.E   for h in hits]
     E, edges = np.histogramdd(hit_positions,
