@@ -72,9 +72,11 @@ def test_minmax_center(mm):
     assert mm.center == center
 
 
-@given(minmaxes)
-def test_minmax_eq(mm):
-    assert mm == mm
+@given(minmaxes, minmaxes)
+def test_minmax_eq(mm1, mm2):
+    are_equal = ((mm1.min == mm2.min) and
+                 (mm1.max == mm2.max))
+    assert (mm1 == mm2) == are_equal
 
 
 @given(minmaxes, sensible_floats)
