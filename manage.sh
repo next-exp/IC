@@ -172,6 +172,11 @@ function compile_and_test {
     run_tests
 }
 
+function compile_and_test_par {
+    compile_cython_components
+    run_tests_par
+}
+
 function clean {
     echo "Cleaning IC generated files:"
     FILETYPES='*.c *.so *.pyc __pycache__'
@@ -232,5 +237,6 @@ case $COMMAND in
        echo "bash   $THIS download_test_db"
        echo "bash   $THIS download_test_db_dev"
        echo "bash   $THIS clean"
+       echo "bash   $THIS show_ic_env"
        ;;
 esac
