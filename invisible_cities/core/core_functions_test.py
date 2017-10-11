@@ -60,7 +60,7 @@ def test_in_range_positives():
     assert np.count_nonzero(core.in_range(data, 0, 10)) == 500
 
 
-@given(random_length_float_arrays(max_length = 1000))
+@given(random_length_float_arrays(max_length = 100))
 def test_in_range_right_shape(data):
     assert core.in_range(data, -1., 1.).shape == data.shape
 
