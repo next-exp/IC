@@ -48,17 +48,17 @@ cdef class Peak:
         def __get__(self):  return not np.any(np.isnan(self.t) | np.isnan(self.E))
 
     def total_energy_above_threshold(self, thr):
-        sat = self.E > thr
-        return np.sum(self.E[sat])
+        over_thr = self.E > thr
+        return np.sum(self.E[over_thr])
 
     def width_above_threshold(self, thr):
-        sat = self.E > thr
-        t   = self.t[sat]
-        return t[-1] - t[0] if sat.any() else 0
+        over_thr = self.E > thr
+        t        = self.t[over_thr]
+        return t[-1] - t[0] if over_thr.any() else 0
 
     def height_above_threshold(self, thr):
-        sat = self.E > thr
-        return np.max(self.E[sat]) if sat.any() else 0
+        over_thr = self.E > thr
+        return np.max(self.E[over_thr]) if over_thr.any() else 0
 
     def __str__(self):
         if self.width < units.mus:
