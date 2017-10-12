@@ -47,20 +47,17 @@ cdef class Peak:
     property good_waveform:
         def __get__(self):  return not np.any(np.isnan(self.t) | np.isnan(self.E))
 
-    def signal_above_threshold(self, thr):
-        return self.E > thr
-
     def total_energy_above_threshold(self, thr):
-        sat = self.signal_above_threshold(thr)
+        sat = self.E > thr
         return np.sum(self.E[sat])
 
     def width_above_threshold(self, thr):
-        sat = self.signal_above_threshold(thr)
+        sat = self.E > thr
         t   = self.t[sat]
         return t[-1] - t[0] if sat.any() else 0
 
     def height_above_threshold(self, thr):
-        sat = self.signal_above_threshold(thr)
+        sat = self.E > thr
         return np.max(self.E[sat]) if sat.any() else 0
 
     def __str__(self):
