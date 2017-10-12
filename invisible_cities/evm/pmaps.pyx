@@ -1,16 +1,18 @@
-# Clsses defining the event model
+# Classes defining the event model
 
 cimport numpy as np
 import numpy as np
 
+from textwrap import dedent
+
 from .. types.ic_types_c       cimport minmax
-from .. core.exceptions        import PeakNotFound
-from .. core.exceptions        import SipmEmptyList
-from .. core.exceptions        import SipmNotFound
-from .. core.core_functions    import loc_elem_1d
-from .. core.exceptions        import InconsistentS12dIpmtd
-from .. core.exceptions        import InitializedEmptyPmapObject
-from .. core.system_of_units_c import units
+from .. core.exceptions         import PeakNotFound
+from .. core.exceptions         import SipmEmptyList
+from .. core.exceptions         import SipmNotFound
+from .. core.exceptions         import PmtNotFound
+from .. core.exceptions         import InconsistentS12dIpmtd
+from .. core.exceptions         import InitializedEmptyPmapObject
+from .. core.system_of_units_c  import units
 
 
 cdef class Peak:
@@ -33,11 +35,8 @@ cdef class Peak:
         self.width          = self.t[-1] - self.t[0]
         self.total_energy   = np.sum(self.E)
 
-        i_t    = (loc_elem_1d(self.E, self.height)
-                             if self.total_energy > 0
-                             else 0)
-
-        self.tpeak  =  self.t[i_t]
+        i_t        = np.argmax(self.E)
+        self.tpeak = self.t[i_t]
 
     property tmin_tmax:
         def __get__(self): return minmax(self.t[0], self.t[-1])
@@ -46,45 +45,36 @@ cdef class Peak:
         def __get__(self): return len(self.t)
 
     property good_waveform:
-        def __get__(self):  return (False
-                                    if np.any(np.isnan(self.t))  or
-                                       np.any(np.isnan(self.E))
-                                    else True)
+        def __get__(self):  return not np.any(np.isnan(self.t) | np.isnan(self.E))
 
     def total_energy_above_threshold(self, thr):
-        eth = self.E[self.E > thr]
-        if len(eth):
-            return np.sum(eth)
-        else:
-            return 0
+        over_thr = self.E > thr
+        return np.sum(self.E[over_thr])
 
     def width_above_threshold(self, thr):
-        eth = self.E[self.E > thr]
-        if len(eth):
-            t0 = (loc_elem_1d(self.E, eth[0])
-              if self.total_energy > 0
-              else 0)
-            t1 = (loc_elem_1d(self.E, eth[-1])
-              if self.total_energy > 0
-              else 0)
-            return self.t[t1] - self.t[t0]
-        else:
-            return 0
+        over_thr = self.E > thr
+        t        = self.t[over_thr]
+        return t[-1] - t[0] if over_thr.any() else 0
 
     def height_above_threshold(self, thr):
-        eth = self.E[self.E > thr]
-        if len(eth):
-            return np.max(eth)
-        else:
-            return 0
-
+        over_thr = self.E > thr
+        return np.max(self.E[over_thr]) if over_thr.any() else 0
 
     def __str__(self):
-        s = """Peak(samples = {0:d} width = {1:8.1f} mus , energy = {2:8.1f} pes
-        height = {3:8.1f} pes tmin-tmax = {4} mus """.format(self.number_of_samples,
-        self.width / units.mus, self.total_energy, self.height,
-        (self.tmin_tmax * (1 / units.mus)))
-        return s
+        if self.width < units.mus:
+            width   = "{:.0f} ns" .format(self.width)
+            tminmax = "{} ns"     .format(self.tmin_tmax)
+        else:
+            width   = "{:.1f} mus".format(self.width/units.mus)
+            tminmax = "{} mus"    .format(self.tmin_tmax/units.mus)
+
+        return dedent("""
+               Peak|samples   = {self.number_of_samples:d}
+                   |width     = {width}
+                   |energy    = {self.total_energy:.1f} pes
+                   |height    = {self.height:.1f} pes
+                   |tmin-tmax = {tminmax}
+               """.format(self = self, width = width, tminmax = tminmax))
 
     def __repr__(self):
         return self.__str__()
@@ -102,7 +92,7 @@ cdef class S12:
     structurally identical, s1 and s2 represent quite
     different objects. In Particular an s2si is constructed
     with a s2 not a s1.
-    An s12 is represented as a dictinary of Peaks.
+    An s12 is represented as a dictionary of Peaks.
 
     """
     def __init__(self, dict s12d):
@@ -113,14 +103,8 @@ cdef class S12:
         cdef np.ndarray[double, ndim=1] E
         self.peaks = {}
 
-        #print('s12d ={}'.format(s12d))
         for peak_no, (t, E) in s12d.items():
-            #print('t ={}'.format(t))
-            #print('E ={}'.format(E))
             assert len(t) == len(E)
-            #p = Peak(t,E)
-            #print('peak = {}'.format(p))
-
             self.peaks[peak_no] =  Peak(t, E)
 
     property number_of_peaks:
@@ -148,22 +132,24 @@ cdef class S12:
                 row["ene"]   = E
                 row.append()
 
+    def _s12_str(self, s1_or_s2):
+        header =  "{} (number of peaks = {})\n".format(s1_or_s2, self.number_of_peaks)
+        body   = ["peak number = {}: {} \n".format(i, self.peak_waveform(i))
+                  for i in self.peaks]
+        return header + ''.join(body)
+
+    def __repr__(self):
+        return dedent(self.__str__())
+
 
 cdef class S1(S12):
     def __init__(self, s1d):
-
         if len(s1d) == 0: raise InitializedEmptyPmapObject
         self.s1d = s1d
         super(S1, self).__init__(s1d)
 
     def __str__(self):
-        s =  "S1 (number of peaks = {})\n".format(self.number_of_peaks)
-        s2 = ['peak number = {}: {} \n'.format(i,
-                                    self.peak_waveform(i)) for i in self.peaks]
-        return  s + ''.join(s2)
-
-    def __repr__(self):
-        return self.__str__()
+        return self._s12_str("S1")
 
 
 cdef class S2(S12):
@@ -174,13 +160,7 @@ cdef class S2(S12):
         super(S2, self).__init__(s2d)
 
     def __str__(self):
-        s =  "S2 (number of peaks = {})\n".format(self.number_of_peaks)
-        s2 = ['peak number = {}: {} \n'.format(i,
-                                    self.peak_waveform(i)) for i in self.peaks]
-        return  s + ''.join(s2)
-
-    def __repr__(self):
-        return self.__str__()
+        return self._s12_str("S2")
 
 
 cpdef check_s2d_and_s2sid_share_peaks(dict s2d, dict s2sid):
@@ -212,66 +192,54 @@ cdef class S2Si(S2):
         S2.__init__(self, check_s2d_and_s2sid_share_peaks(s2d, s2sid))
         self.s2sid = s2sid
 
-    cpdef number_of_sipms_in_peak(self, int peak_number):
-        return len(self.s2sid[peak_number])
-
-    cpdef sipms_in_peak(self, int peak_number):
+    cpdef sipm_peak(self, int peak_number):
         try:
-            return tuple(self.s2sid[peak_number].keys())
+            return self.s2sid[peak_number]
         except KeyError:
             raise PeakNotFound
 
-    cpdef sipm_waveform(self, int peak_number, int sipm_number):
-        cdef double [:] E
-        if self.number_of_sipms_in_peak(peak_number) == 0:
-            raise SipmEmptyList
+    cpdef find_sipm(self, int peak_number, int sipm_number):
         try:
-            E = self.s2sid[peak_number][sipm_number]
-            #print("in sipm_waveform")
-            #print('t ={}'.format(self.peak_waveform(peak_number).t))
-            #print('E ={}'.format(np.asarray(E)))
-            return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
+            return self.sipm_peak(peak_number)[sipm_number]
         except KeyError:
             raise SipmNotFound
+
+    cpdef number_of_sipms_in_peak(self, int peak_number):
+        return len(self.sipm_peak(peak_number))
+
+    cpdef sipms_in_peak(self, int peak_number):
+        return tuple(self.sipm_peak(peak_number).keys())
+
+    cpdef sipm_waveform(self, int peak_number, int sipm_number):
+        cdef double [:] E
+        E = self.find_sipm(peak_number, sipm_number)
+        return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
 
     cpdef sipm_waveform_zs(self, int peak_number, int sipm_number):
         cdef double [:] E, t, tzs, Ezs
         cdef list TZS = []
         cdef list EZS = []
         cdef int i
-        if self.number_of_sipms_in_peak(peak_number) == 0:
-            raise SipmEmptyList("No SiPMs associated to this peak")
-        try:
-            E = self.s2sid[peak_number][sipm_number]
-            t = self.peak_waveform(peak_number).t
 
-            for i in range(len(E)):
-                if E[i] > 0:
-                    TZS.append(t[i])
-                    EZS.append(E[i])
-            tzs = np.array(TZS)
-            Ezs = np.array(EZS)
+        E = self.find_sipm    (peak_number, sipm_number)
+        t = self.peak_waveform(peak_number).t
 
-            return Peak(np.asarray(tzs), np.asarray(Ezs))
-        except KeyError:
-            raise SipmNotFound
+        for i in range(len(E)):
+            if E[i] > 0:
+                TZS.append(t[i])
+                EZS.append(E[i])
+        tzs = np.array(TZS)
+        Ezs = np.array(EZS)
+
+        return Peak(np.asarray(tzs), np.asarray(Ezs))
 
     cpdef sipm_total_energy(self, int peak_number, int sipm_number):
         """For peak and and sipm_number return Q, where Q is the SiPM total energy."""
-        cdef double et
-        if self.number_of_sipms_in_peak(peak_number) == 0:
-            return 0
-        try:
-            et = np.sum(self.s2sid[peak_number][sipm_number])
-            return et
-        except KeyError:
-            raise SipmNotFound
+        return np.sum(self.find_sipm(peak_number, sipm_number))
 
     cpdef sipm_total_energy_dict(self, int peak_number):
         """For peak number return {sipm: Q}. """
         cdef dict Q_sipm_dict = {}
-        if self.number_of_sipms_in_peak(peak_number) == 0:
-            return Q_sipm_dict
         for sipm_number in self.sipms_in_peak(peak_number):
             Q_sipm_dict[sipm_number] = self.sipm_total_energy( peak_number, sipm_number)
         return Q_sipm_dict
@@ -296,28 +264,30 @@ cdef class S2Si(S2):
                     row.append()
 
     def __str__(self):
-        s  = "=" * 80 + "\n" + S2.__str__(self)
+        split_bar_1 = "=" * 40
+        split_bar_2 = "-" * 40
 
-        s += "-" * 80 + "\nSiPMs for non-empty peaks\n\n"
+        peak_str = "peak number = {}, nsipm in peak = {}"
+        wf_str   = "peak number = {}, sipm number = {}, zs-waveform = {}"
 
-        s2a = ["peak number = {}: nsipm in peak = {}"
-               .format(peak_number, self.sipms_in_peak(peak_number))
-               for peak_number in self.peaks
-               if len(self.sipms_in_peak(peak_number)) > 0]
+        peaks     = []
+        waveforms = []
+        for peak_no, peak in self.s2sid.items():
+            nsipm = self.number_of_sipms_in_peak(peak_no)
+            peaks.append(peak_str.format(peak_no, nsipm))
 
-        s += '\n\n'.join(s2a) + "\n"
+            for sipm_no in self.sipms_in_peak(peak_no):
+                wf = self.sipm_waveform_zs(peak_no, sipm_no)
+                waveforms.append(split_bar_2)
+                waveforms.append(wf_str.format(peak_no, sipm_no, wf))
 
-        s += "-" * 80 + "\nSiPMs Waveforms\n\n"
-
-        s2b = ["peak number = {}: sipm number = {}\n    sipm waveform (zs) = {}".format(peak_number, sipm_number, self.sipm_waveform_zs(peak_number, sipm_number))
-               for peak_number in self.peaks
-               for sipm_number in self.sipms_in_peak(peak_number)
-               if len(self.sipms_in_peak(peak_number)) > 0]
-
-        return s + '\n'.join(s2b) + "\n" + "=" * 80
-
-    def __repr__(self):
-        return self.__str__()
+        header = lambda x: ("", split_bar_1, x, split_bar_1, "")
+        return "\n".join([*header("S2Si instance"),
+                           S2.__str__(self),
+                          *header("Peaks"),
+                          *peaks,
+                          *header("SiPM waveforms"),
+                          *waveforms])
 
 
 cdef class S12Pmt(S12):
@@ -346,28 +316,33 @@ cdef class S12Pmt(S12):
         try                 : self.npmts = len(ipmtd[next(iter(ipmtd))])
         except StopIteration: self.npmts = 0
 
+    cpdef ipmt_peak(self, int peak_number):
+        try:
+            return self.ipmtd[peak_number]
+        except KeyError:
+            raise PeakNotFound
+
+    cpdef find_ipmt(self, int peak_number, int pmt_number):
+        try:
+            return self.ipmt_peak(peak_number)[pmt_number].astype(np.float64)
+        except KeyError:
+            raise PmtNotFound
+
     cpdef energies_in_peak(self, int peak_number):
-        if peak_number not in self.ipmtd: raise PeakNotFound
-        else: return np.asarray(self.ipmtd[peak_number])
+        return np.asarray(self.ipmt_peak(peak_number))
 
     cpdef pmt_waveform(self, int peak_number, int pmt_number):
         cdef double [:] E
-        if peak_number not in self.ipmtd: raise PeakNotFound
-        else:
-          E = self.ipmtd[peak_number][pmt_number].astype(np.float64)
-          return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
+
+        E = self.find_ipmt(peak_number, pmt_number)
+        return Peak(self.peak_waveform(peak_number).t, np.asarray(E))
 
     cpdef pmt_total_energy_in_peak(self, int peak_number, int pmt_number):
         """
         For peak_number and and pmt_number return the integrated energy in that pmt in that peak
         ipmtd[peak_number][pmt_number].sum().
         """
-        cdef double et
-        try:
-            et = np.sum(self.ipmtd[peak_number][pmt_number], dtype=np.float64)
-            return et
-        except KeyError:
-            raise PeakNotFound
+        return np.sum(self.find_ipmt(peak_number, pmt_number))
 
     cpdef pmt_total_energy(self, int pmt_number):
         """
@@ -375,7 +350,6 @@ cdef class S12Pmt(S12):
         """
         cdef double sum = 0
         cdef int pn
-        #sum = 0
         for pn in self.ipmtd:
             sum += self.pmt_total_energy_in_peak(pn, pmt_number)
         return sum
