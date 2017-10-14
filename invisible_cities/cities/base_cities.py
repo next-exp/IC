@@ -38,6 +38,7 @@ from .. io                      import pmap_io          as pio
 from .. io                      import pmap_io          as pio
 from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
+from .. io.mc_io                import mc_track_writer
 
 from .. reco                    import peak_functions_c  as cpf
 from .. reco                    import paolina_functions as paf
@@ -658,6 +659,9 @@ class PCity(City):
                       n_events_not_s2si_filter     = 0,
                       n_events_selected            = 0)
 
+    def get_mc_track_writer(self, h5out):
+        return mc_track_writer(h5out) if self.write_mc_tracks else None
+
     def create_dst_event(self, pmapVectors, filter_output):
         """Must be implemented by any city derived from PCity"""
         raise NotImplementedError("Concrete City must implement `create_dst_event`")
@@ -670,7 +674,7 @@ class PCity(City):
         3. write dst_event
         """
 
-        write_dst = self.writers
+        write = self.writers
         event_numbers= pmapVectors.events
         timestamps = pmapVectors.timestamps
         s1_dict = pmapVectors.s1
@@ -702,7 +706,7 @@ class PCity(City):
                                       events=evt_number,
                                       timestamps=evt_time)
             evt = self.create_dst_event(pmapVectors, filter_output)
-            write_dst(evt)
+            write.dst(evt)
 
     def file_loop(self):
         """
