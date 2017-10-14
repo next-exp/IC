@@ -639,6 +639,10 @@ class PCity(City):
        that access and serves to the event_loop the corresponding PMAPS
        vectors.
     """
+    parameters = tuple("""drift_v
+                          s1_nmin s1_nmax s1_emin s1_emax s1_wmin s1_wmax s1_hmin s1_hmax s1_ethr
+                          s2_nmin s2_nmax s2_emin s2_emax s2_wmin s2_wmax s2_hmin s2_hmax s2_ethr
+                          s2_nsipmmin s2_nsipmmax""".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
@@ -753,13 +757,7 @@ class KrCity(PCity):
         super().__init__(**kwds)
         self.cnt.init(n_events_more_than_1_cluster = 0)
 
-    parameters = tuple("""""".split())
-    parameters = tuple("""lm_radius new_lm_radius
-        msipm drift_v
-        qlm qthr rebin
-        s1_nmin s1_nmax s1_emin s1_emax s1_wmin s1_wmax s1_hmin s1_hmax s1_ethr
-        s2_nmin s2_nmax s2_emin s2_emax s2_wmin s2_wmax s2_hmin s2_hmax s2_ethr
-        s2_nsipmmin s2_nsipmmax""".split())
+    parameters = tuple("lm_radius new_lm_radius msipm qlm qthr".split())
 
     def compute_xy_position(self, s2si, peak_no):
         """
@@ -871,6 +869,7 @@ class KrCity(PCity):
 
 class HitCity(KrCity):
     """A city that reads PMAPS and computes/writes a hit event"""
+    parameters = tuple("rebin".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
