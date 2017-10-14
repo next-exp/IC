@@ -17,6 +17,28 @@ def test_load_lifetime_xy_corrections(corr_toy_data):
     x, y, LT, U, _ = true_data
     corr           = load_lifetime_xy_corrections(filename)
 
+    for i in np.linspace(0, 2, 5):
+        # This should yield exp(i * x/x) = exp(i)
+        z_test   = LT.flatten() * i
+        x_test   = np.repeat(x, y.size)
+        y_test   = np.tile  (y, x.size)
+        (f_test,
+         u_test) = corr(z_test, x_test, y_test)
+
+        f_true = np.exp(i)
+        u_true = z_test * U.flatten()/LT.flatten()**2 * f_test
+        assert np.allclose(f_test, f_true)
+        assert np.allclose(u_test, u_true)
+
+
+def test_load_lifetime_xy_corrections_kwargs(corr_toy_data):
+    filename, true_data = corr_toy_data
+    x, y, LT, U, _ = true_data
+    kwargs         = {"norm_strategy": "const",
+                      "norm_opts"    : {"value": 1}}
+    corr           = load_lifetime_xy_corrections(filename,
+                                                  node = "LifetimeXY_inverse",
+                                                  **kwargs)
 
     for i in np.linspace(0, 2, 5):
         # This should yield exp(i * x/x) = exp(i)
