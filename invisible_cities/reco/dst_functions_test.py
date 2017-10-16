@@ -1,22 +1,44 @@
+from collections import namedtuple
+
 import numpy as np
+
+from pytest import fixture
+from pytest import mark
 
 from .  corrections        import Correction
 from .  dst_functions      import load_xy_corrections
 from .  dst_functions      import load_lifetime_xy_corrections
 
+normalization_data = namedtuple("normalization_data", "node kwargs")
 
-def test_load_xy_corrections(corr_toy_data):
+@fixture(scope  = "session",
+         params = [False, True])
+def normalization(request):
+    if request.param:
+        node   = "LifetimeXY_inverse"
+        kwargs = {"norm_strategy": "const",
+                  "norm_opts"    : {"value": 1}}
+    else:
+        node   = "LifetimeXY"
+        kwargs = {}
+    return normalization_data(node, kwargs)
+
+
+def test_load_xy_corrections(corr_toy_data, normalization):
     filename, true_data = corr_toy_data
     x, y, E, U, _ = true_data
-    corr          = load_xy_corrections(filename)
+    corr          = load_xy_corrections(filename,
+                                        node = normalization.node,
+                                        **normalization.kwargs)
     assert corr == Correction((x,y), E, U)
 
 
-def test_load_lifetime_xy_corrections(corr_toy_data):
+def test_load_lifetime_xy_corrections(corr_toy_data, normalization):
     filename, true_data = corr_toy_data
     x, y, LT, U, _ = true_data
-    corr           = load_lifetime_xy_corrections(filename)
-
+    corr           = load_lifetime_xy_corrections(filename,
+                                                  node = normalization.node,
+                                                  **normalization.kwargs)
 
     for i in np.linspace(0, 2, 5):
         # This should yield exp(i * x/x) = exp(i)

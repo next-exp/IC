@@ -325,6 +325,26 @@ def test_lifetimeXYcorrection(toy_f_data):
     assert_allclose(u_F, u_corrected)
 
 
+@given(uniform_energy_fun_data_3d())
+def test_lifetimeXYcorrection_kwargs(toy_f_data):
+    Xgrid, Ygrid, LTs, u_LTs, LTs, u_LTs, LT_corr, u_LT_corr = toy_f_data
+    kwargs = {"norm_strategy" :  "const",
+              "norm_opts"     : {"value": 1}}
+
+    X       = np.repeat  (Xgrid, Ygrid.size)
+    Y       = np.tile    (Ygrid, Xgrid.size)
+    Z       = np.linspace(0, 50, X    .size)
+    F, u_F  = LT_corr(Z, X, Y), u_LT_corr(Z, X, Y)
+
+    # These input values are chosen because they
+    # effectively cancel the normalization.
+    correct = LifetimeXYCorrection(1/LTs, u_LTs/LTs**2, Xgrid, Ygrid, **kwargs)
+    f_corrected, u_corrected = correct(Z, X, Y)
+
+    assert_allclose(  F, f_corrected)
+    assert_allclose(u_F, u_corrected)
+
+
 #--------------------------------------------------------
 
 
@@ -362,4 +382,3 @@ def test_corrections_2d(gauss_data_2d):
     x    = x[:-1] + np.diff(x) * 0.5
     f    = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
     assert f.chi2 < 3
-
