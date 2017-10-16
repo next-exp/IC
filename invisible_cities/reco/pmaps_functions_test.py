@@ -27,11 +27,6 @@ from . pmaps_functions_c  import df_to_s2si_dict
 from . pmaps_functions_c  import sipm_ids_and_charges_in_slice
 
 
-
-def test_rebin_s2_yeilds_output_of_correct_len(KrMC_pmaps):
-    _, (_, _, _), (_, _, _), (_, s2_dict, s2si_dict) = KrMC_pmaps
-
-
 def test_equal_number_of_timebins_in_S2s_and_S2Sis(KrMC_pmaps):
 
     _, (_, _, _), (_, _, _), (_, s2_dict, s2si_dict) = KrMC_pmaps
