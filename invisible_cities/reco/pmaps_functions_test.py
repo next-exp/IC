@@ -42,6 +42,7 @@ def test_equal_number_of_timebins_in_S2s_and_S2Sis(KrMC_pmaps):
                 sipm_ts = s2si.sipm_waveform(peak_no, sipm_no).number_of_samples
                 assert sipm_ts == s2_ts
 
+
 def timebin_size_must_be_equal_to_stride_times_25_ns_shows_bug_in_old_data(KrMC_pmaps):
     """This fails when the time bin exceeds the allowed time range.
     This bug is an artifact of the old rebin_waveform function, and
@@ -81,7 +82,7 @@ def test_df_to_s1s2si_dict_limit_events(KrMC_pmaps):
         si_dict = df_to_s2si_dict(s2t, sit, max_events)
         assert sorted(si_dict.keys()) == Si_evts[:i]
 
-#
+
 def test_df_to_s1s2si_dict_take_all_events_if_limit_too_high(KrMC_pmaps):
     max_events_is_more_than_available = 10000
     _, (s1s, s2s, sis), (S1_evts, S2_evts, Si_evts), _  = KrMC_pmaps
@@ -93,7 +94,7 @@ def test_df_to_s1s2si_dict_take_all_events_if_limit_too_high(KrMC_pmaps):
     assert sorted(s2_dict.keys()) == S2_evts
     assert sorted(si_dict.keys()) == Si_evts
 
-#
+
 def test_df_to_s1s2si_dict_default_number_of_events(KrMC_pmaps):
     # Read all events
     _, (s1s, s2s, sis), (S1_evts, S2_evts, Si_evts), _  = KrMC_pmaps
@@ -105,7 +106,7 @@ def test_df_to_s1s2si_dict_default_number_of_events(KrMC_pmaps):
     assert sorted(s2_dict.keys()) == S2_evts
     assert sorted(si_dict.keys()) == Si_evts
 
-#
+
 def test_df_to_s1s2si_dict_negative_limit_takes_all_events(KrMC_pmaps):
     # Read all events
     negative_max_events = -23
@@ -144,6 +145,7 @@ def test_df_to_s2si_dict_number_of_slices_is_correct(KrMC_pmaps):
                 sipm_ts = s2si.sipm_waveform(peak_no, sipm_no).number_of_samples
                 assert sipm_ts == s2_ts
 
+
 # ###############################################################
 # # rebin s2si-related tests
 # ###############################################################
@@ -167,7 +169,6 @@ def test_rebinned_s2si_yeilds_correct_average_times(KrMC_pmaps):
                 for i, t in enumerate(s2r.s2d[p][0]):
                     assert t == np.mean(s2.s2d[p][0][i*rf: min(i*rf + rf, len(s2.s2d[p][0]))])
 
-#####
 
 def test_sipm_ids_and_charges_in_slice(KrMC_pmaps):
     _, _, _, (_, _, s2si_dict) = KrMC_pmaps
@@ -287,7 +288,6 @@ def test_copy_s2si_dict_deleting_keys_in_copy_does_not_affect_keys_in_original(K
     assert key in s2si_dict0
 
 
-####
 def test_get_pmap_functions_dont_crash_when_s2_is_None():
     index  = np.array(    [] , dtype=np.int32)
     csum   = np.ones(    100 , dtype=np.float64)
