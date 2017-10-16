@@ -14,9 +14,9 @@ from . kdst_io            import xy_lifetime_writer
 from ..evm.event_model    import KrEvent
 
 
-def test_Kr_writer(config_tmpdir, Kr_dst_data):
+def test_Kr_writer(config_tmpdir, KrMC_kdst):
     filename = os.path.join(config_tmpdir, 'test_dst.h5')
-    _, df    = Kr_dst_data
+    (_, group, node), *_, df = KrMC_kdst
 
     def dump_df(write, df):
         for evt_no in sorted(set(df.event)):
@@ -34,7 +34,7 @@ def test_Kr_writer(config_tmpdir, Kr_dst_data):
         write = kr_writer(h5out)
         dump_df(write, df)
 
-    dst = load_dst(filename, group = "DST", node = "Events")
+    dst = load_dst(filename, group = group, node = node)
     assert_dataframes_equal(dst, df, False)
 
 
