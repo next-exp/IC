@@ -389,43 +389,6 @@ def TlMC_hits_skipping_NN(ICDIR):
 
 
 @pytest.fixture(scope='session')
-def Kr_dst_data(ICDIR):
-    data = {}
-    data["event"] = np.array   ([  1] * 3 + [2  ] + [6   ] * 2)
-    data["time" ] = np.array   ([1e7] * 3 + [2e7] + [3e7 ] * 2)
-    data["peak" ] = np.array   ([0, 1, 2] + [0  ] + [0, 1]    )
-    data["nS2"  ] = np.array   ([  3] * 3 + [1  ] + [2   ] * 2)
-    data["S1w"  ] = np.array   ([100] * 3 + [160] + [180 ] * 2)
-    data["S1h"  ] = np.array   ([ 10] * 3 + [ 50] + [ 60 ] * 2)
-    data["S1e"  ] = np.array   ([  5] * 3 + [  2] + [  8 ] * 2)
-    data["S1t"  ] = np.array   ([100] * 3 + [200] + [700 ] * 2)
-
-    data["S2w"  ] = np.linspace( 10,  17, 6)
-    data["S2h"  ] = np.linspace(150, 850, 6)
-    data["S2e"  ] = np.linspace(1e3, 8e3, 6)
-    data["S2q"  ] = np.linspace(  0, 700, 6)
-    data["S2t"  ] = np.linspace(200, 900, 6)
-
-    data["Nsipm"] = np.arange  (  1,   7, 1)
-    data["DT"   ] = np.linspace(100, 107, 6)
-    data["Z"    ] = np.linspace(200, 207, 6)
-    data["X"    ] = np.linspace(-55, +55, 6)
-    data["Y"    ] = np.linspace(-95, +95, 6)
-    data["R"    ] = (data["X"]**2 + data["Y"]**2)**0.5
-    data["Phi"  ] = np.arctan2 (data["Y"], data["X"])
-    data["Xrms" ] = np.linspace( 10,  70, 6)
-    data["Yrms" ] = np.linspace( 20,  90, 6)
-
-    cols = ("event", "time", "peak", "nS2",
-            "S1w", "S1h", "S1e", "S1t", "S2w", "S2h", "S2e", "S2q", "S2t",
-            "Nsipm", "DT", "Z", "X", "Y", "R", "Phi", "Xrms", "Yrms")
-
-    df = DataFrame(data, columns = cols)
-
-    return (ICDIR + "/database/test_data/Kr_dst.h5", "DST", "data"), df
-
-
-@pytest.fixture(scope='session')
 def corr_toy_data(ICDIR):
     x = np.arange( 100, 200)
     y = np.arange(-200,   0)
