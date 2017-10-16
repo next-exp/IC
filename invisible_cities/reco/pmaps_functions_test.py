@@ -1,13 +1,6 @@
-from operator import itemgetter
-
 import numpy as np
 
-from pytest import mark
 from pytest import raises
-parametrize = mark.parametrize
-
-from .. evm.pmaps         import Peak
-from .. evm.pmaps         import S2
 
 from .. evm.pmaps         import S2Si
 from .. evm.ic_containers import S12Params
@@ -22,7 +15,6 @@ from . pmaps_functions    import get_pmaps_with_ipmt
 from . pmaps_functions_c  import _impose_thr_sipm_destructive
 from . pmaps_functions_c  import _impose_thr_sipm_s2_destructive
 from . pmaps_functions_c  import _delete_empty_s2si_peaks
-from . pmaps_functions_c  import _delete_empty_s2si_dict_events
 from . pmaps_functions_c  import df_to_s1_dict
 from . pmaps_functions_c  import df_to_s2_dict
 from . pmaps_functions_c  import df_to_s2si_dict

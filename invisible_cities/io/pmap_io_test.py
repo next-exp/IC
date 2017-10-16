@@ -7,44 +7,20 @@ import time
 import tables as tb
 import numpy  as np
 
-from pytest import mark
+from hypothesis            import given
+from hypothesis.strategies import lists
+from hypothesis.strategies import integers
 
-from hypothesis                import given
-from hypothesis.strategies     import lists
+from . run_and_event_io    import run_and_event_writer
 
-from hypothesis.strategies     import integers
+from . pmap_io             import load_pmaps
+from . pmap_io             import load_ipmt_pmaps
+from . pmap_io             import load_pmaps_with_ipmt
+from . pmap_io             import pmap_writer
+from . pmap_io             import pmap_writer_and_ipmt_writer
+from . pmap_io             import s1_s2_si_from_pmaps
+from . pmap_io             import read_run_and_event_from_pmaps_file
 
-from .. core.system_of_units_c import units
-from .. database               import load_db
-from .. sierpe                 import blr
-
-from .. reco                   import tbl_functions    as tbl
-from .. reco                   import peak_functions   as pf
-from .. reco                   import peak_functions_c as cpf
-
-from .. evm.ic_containers      import S12Params        as S12P
-from .. evm.ic_containers      import ThresholdParams
-from .. evm.ic_containers      import PMaps
-from .. types.ic_types         import minmax
-
-from .. evm.pmaps              import S1
-from .. evm.pmaps              import S2
-from .. evm.pmaps              import S2Si
-from .. evm.pmaps              import S1Pmt
-from .. evm.pmaps              import S2Pmt
-from . run_and_event_io        import run_and_event_writer
-
-from . pmap_io                 import load_pmaps
-from . pmap_io                 import load_ipmt_pmaps
-from . pmap_io                 import load_pmaps_with_ipmt
-from . pmap_io                 import pmap_writer
-from . pmap_io                 import ipmt_pmap_writer
-from . pmap_io                 import pmap_writer_and_ipmt_writer
-from . pmap_io                 import s1_s2_si_from_pmaps
-from . pmap_io                 import read_run_and_event_from_pmaps_file
-from . pmap_io                 import df_to_s1_dict
-from . pmap_io                 import df_to_s2_dict
-from . pmap_io                 import df_to_s2si_dict
 
 @given(random_evts = lists(integers(min_value = -50,
                                     max_value = +50)))
