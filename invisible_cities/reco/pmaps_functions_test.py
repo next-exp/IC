@@ -70,73 +70,58 @@ def timebin_size_must_be_equal_to_stride_times_25_ns_shows_bug_in_old_data(KrMC_
 ###############################################################
 # df_to_pmaps_dict-related tests
 ###############################################################
-def test_df_to_pmaps_dict_limit_events(KrMC_pmaps):
-    max_events = 30
-    _, (s1t, s2t, s2sit), (S1_evts, _, _), _ = KrMC_pmaps
-    s1dict = df_to_s1_dict(s1t, max_events)
-    s2dict = df_to_s2_dict(s2t, max_events)
-    assert sorted(s1dict.keys()) == S1_evts[:7]
-    assert sorted(s2dict.keys()) == []
+
+def test_df_to_s1s2si_dict_limit_events(KrMC_pmaps):
+    _, (s1t, s2t, sit), (S1_evts, S2_evts, Si_evts), _ = KrMC_pmaps
+
+    for i, max_events in enumerate(S1_evts):
+        s1_dict = df_to_s1_dict(s1t, max_events)
+        assert sorted(s1_dict.keys()) == S1_evts[:i]
+
+    for i, max_events in enumerate(S2_evts):
+        s2_dict = df_to_s2_dict(s2t, max_events)
+        assert sorted(s2_dict.keys()) == S2_evts[:i]
+
+    for i, max_events in enumerate(Si_evts):
+        si_dict = df_to_s2si_dict(s2t, sit, max_events)
+        assert sorted(si_dict.keys()) == Si_evts[:i]
 
 #
-def test_df_to_pmaps_dict_take_all_events_if_limit_too_high(KrMC_pmaps):
+def test_df_to_s1s2si_dict_take_all_events_if_limit_too_high(KrMC_pmaps):
     max_events_is_more_than_available = 10000
-    _, (s1s, s2s, s2sis), (S1_evts, S2_evts, _), _  = KrMC_pmaps
-    s1dict = df_to_s1_dict(s1s, max_events_is_more_than_available)
-    s2dict = df_to_s2_dict(s2s, max_events_is_more_than_available)
-    assert sorted(s1dict.keys()) == S1_evts
-    assert sorted(s2dict.keys()) == S2_evts
+    _, (s1s, s2s, sis), (S1_evts, S2_evts, Si_evts), _  = KrMC_pmaps
+    s1_dict = df_to_s1_dict  (s1s,      max_events_is_more_than_available)
+    s2_dict = df_to_s2_dict  (s2s,      max_events_is_more_than_available)
+    si_dict = df_to_s2si_dict(s2s, sis, max_events_is_more_than_available)
+
+    assert sorted(s1_dict.keys()) == S1_evts
+    assert sorted(s2_dict.keys()) == S2_evts
+    assert sorted(si_dict.keys()) == Si_evts
 
 #
-def test_df_to_pmaps_dict_default_number_of_events(KrMC_pmaps):
+def test_df_to_s1s2si_dict_default_number_of_events(KrMC_pmaps):
     # Read all events
-    _, (s1s, s2s, s2sis), (S1_evts, S2_evts, _), _  = KrMC_pmaps
-    s1dict = df_to_s1_dict(s1s)
-    s2dict = df_to_s2_dict(s2s)
-    assert sorted(s1dict.keys()) == S1_evts
-    assert sorted(s2dict.keys()) == S2_evts
+    _, (s1s, s2s, sis), (S1_evts, S2_evts, Si_evts), _  = KrMC_pmaps
+    s1_dict = df_to_s1_dict  (s1s)
+    s2_dict = df_to_s2_dict  (s2s)
+    si_dict = df_to_s2si_dict(s2s, sis)
+
+    assert sorted(s1_dict.keys()) == S1_evts
+    assert sorted(s2_dict.keys()) == S2_evts
+    assert sorted(si_dict.keys()) == Si_evts
 
 #
-def test_df_to_pmaps_dict_negative_limit_takes_all_events(KrMC_pmaps):
+def test_df_to_s1s2si_dict_negative_limit_takes_all_events(KrMC_pmaps):
     # Read all events
     negative_max_events = -23
-    _, (s1s, s2s, s2sis), (S1_evts, S2_evts, _), _  = KrMC_pmaps
-    s1dict = df_to_s1_dict(s1s, negative_max_events)
-    s2dict = df_to_s2_dict(s2s, negative_max_events)
-    assert sorted(list(s1dict.keys())) == S1_evts
-    assert sorted(list(s2dict.keys())) == S2_evts
+    _, (s1s, s2s, sis), (S1_evts, S2_evts, Si_evts), _  = KrMC_pmaps
+    s1_dict = df_to_s1_dict  (s1s,      negative_max_events)
+    s2_dict = df_to_s2_dict  (s2s,      negative_max_events)
+    si_dict = df_to_s2si_dict(s2s, sis, negative_max_events)
 
-
-# ###############################################################
-# # df_to_s2si_dict-related tests
-# ###############################################################
-def test_df_to_s2si_dict_limit_events(KrMC_pmaps):
-    max_events = 30
-    _, (_, s2t, s2sit), (_, _, S2Si_evts), _  = KrMC_pmaps
-    s2si_dict = df_to_s2si_dict(s2t, s2sit, max_events)
-    assert sorted(s2si_dict.keys()) == []
-
-#
-def test_df_to_s2si_dict_take_all_events_if_limit_too_high(KrMC_pmaps):
-    max_events_is_more_than_available = 10000
-    _, (_, s2t, s2sit), (_, _, S2Si_evts), _  = KrMC_pmaps
-    s2si_dict = df_to_s2si_dict(s2t, s2sit, max_events_is_more_than_available)
-    assert sorted(s2si_dict.keys()) == S2Si_evts
-
-#
-def test_df_to_s2si_dict_default_number_of_events(KrMC_pmaps):
-    # Read all events
-    _, (_, s2t, s2sit), (_, _, S2Si_evts), _  = KrMC_pmaps
-    s2si_dict = df_to_s2si_dict(s2t, s2sit)
-    assert sorted(s2si_dict.keys()) == S2Si_evts
-
-#
-def test_df_to_s2si_dict_negative_limit_takes_all_events(KrMC_pmaps):
-    # Read all events
-    negative_max_events = -23
-    _, (_, s2t, s2sit), (_, _, S2Si_evts), _  = KrMC_pmaps
-    s2si_dict = df_to_s2si_dict(s2t, s2sit, negative_max_events)
-    assert sorted(s2si_dict.keys()) == S2Si_evts
+    assert sorted(list(s1_dict.keys())) == S1_evts
+    assert sorted(list(s2_dict.keys())) == S2_evts
+    assert sorted(list(si_dict.keys())) == Si_evts
 
 
 def test_df_to_s2si_dict_number_of_slices_is_correct(KrMC_pmaps):
