@@ -18,6 +18,7 @@ from . io.hits_io   import load_hits_skipping_NN
 
 from . core.system_of_units_c import units
 
+
 @pytest.fixture(scope = 'session')
 def ICDIR():
     return os.environ['ICDIR']
@@ -51,6 +52,7 @@ def electron_MCRD_file(request, ICDIR):
                         'database/test_data',
                         request.param)
 
+
 @pytest.fixture(scope  = 'session',
                 params = ['dst_NEXT_v1_00_05_Tl_ACTIVE_140_0_7bar_PMP_2.h5'])
 def thallium_DST_file(request, ICDIR):
@@ -58,12 +60,14 @@ def thallium_DST_file(request, ICDIR):
                         'database/test_data',
                         request.param)
 
+
 @pytest.fixture(scope='session')
 def mc_all_hits_data(thallium_DST_file):
     number_of_hits = 18
     evt_number = 5600000
     efile = thallium_DST_file
     return efile, number_of_hits, evt_number
+
 
 @pytest.fixture(scope='session')
 def mc_particle_and_hits_data(electron_MCRD_file):
