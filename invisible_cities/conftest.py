@@ -12,8 +12,11 @@ from . io.pmap_io   import load_pmaps
 from . io.pmap_io   import load_ipmt_pmaps
 from . io.pmap_io   import load_pmaps_with_ipmt
 from . io.pmap_io   import ipmt_pmap_writer
+from . io. dst_io   import load_dst
 from . io.hits_io   import load_hits
 from . io.hits_io   import load_hits_skipping_NN
+
+from . core.system_of_units_c import units
 
 @pytest.fixture(scope = 'session')
 def ICDIR():
@@ -147,6 +150,100 @@ def KrMC_pmaps(ICDIR):
             (s1t, s2t, s2sit),
             (S1_evts, S2_evts, S2Si_evts),
             (s1, s2, s2si))
+
+
+@pytest.fixture(scope='session')
+def KrMC_kdst(ICDIR):
+    test_file = os.path.join(ICDIR,
+                             "database",
+                             "test_data",
+                             "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_KDST_10evt.h5")
+    group = "DST"
+    node  = "Events"
+
+    configuration = dict(run_number  =  -4446,
+                         drift_v     =      2 * units.mm / units.mus,
+                         s1_nmin     =      1,
+                         s1_nmax     =      1,
+                         s1_emin     =      0 * units.pes,
+                         s1_emax     =     30 * units.pes,
+                         s1_wmin     =    100 * units.ns,
+                         s1_wmax     =    500 * units.ns,
+                         s1_hmin     =    0.5 * units.pes,
+                         s1_hmax     =     10 * units.pes,
+                         s1_ethr     =   0.37 * units.pes,
+                         s2_nmin     =      1,
+                         s2_nmax     =      2,
+                         s2_emin     =    1e3 * units.pes,
+                         s2_emax     =    1e8 * units.pes,
+                         s2_wmin     =      1 * units.mus,
+                         s2_wmax     =     20 * units.mus,
+                         s2_hmin     =    500 * units.pes,
+                         s2_hmax     =    1e5 * units.pes,
+                         s2_ethr     =      1 * units.pes,
+                         s2_nsipmmin =      2,
+                         s2_nsipmmax =   1000)
+
+    event = [ 15, 17, 19, 25, 27]
+    time  = [  0,  0,  0,  0,  0]
+    peak  = [  0,  0,  0,  0,  0]
+    nS2   = [  1,  1,  1,  1,  1]
+
+    S1w   = [   125         ,    250         ,    250         ,    200         ,    150         ]
+    S1h   = [     1.56272364,      3.25255418,      2.44831991,      1.75402236,      1.12322664]
+    S1e   = [     6.198125  ,     19.414172  ,     16.340692  ,     10.747040  ,      6.176510  ]
+    S1t   = [100200         , 100150         , 100100         , 100100         , 100225         ]
+
+    S2w   = [    11.2625    ,     11.2625    ,     11.3625    ,      8.6375    ,      8.5375    ]
+    S2h   = [   885.675964  ,    881.007202  ,    851.110901  ,   1431.818237  ,   1970.844116  ]
+    S2e   = [  4532.44612527,   5008.20850897,   4993.90345001,   5979.88975143,   7006.23293018]
+    S2q   = [   263.91775739,    185.49846303,    184.47896039,    311.68750608,    385.77873647]
+    S2t   = [528500         , 554500         , 625500         , 338500         , 283500         ]
+    Nsipm = [     7         ,      5         ,      6         ,      7         ,      7         ]
+
+    DT    = [ 428.300     , 454.350     ,  525.400    , 238.400     , 183.275     ]
+    Z     = [ 856.6       , 908.7       , 1050.8      , 476.8       , 366.55      ]
+    X     = [-177.29208558, 120.08634576,    2.6156617, 154.08992723,  77.7168822 ]
+    Y     = [   4.565395  , 106.715016  ,  147.882146 ,  72.077534  , -77.904470  ]
+    R     = [ 177.350857  , 160.651253  ,  147.905276 , 170.114304  , 110.040993  ]
+    Phi   = [   3.11584764,   0.7265102 ,    1.5531107,   0.43752688,  -0.78660357]
+    Xrms  = [   6.14794   ,   4.999254  ,    5.906495 ,   6.198707  ,   6.42701   ]
+    Yrms  = [   6.802864  ,   5.797995  ,    6.467924 ,   5.600673  ,   5.670117  ]
+
+    df_true = DataFrame({"event": event,
+                         "time" : time ,
+                         "peak" : peak ,
+                         "nS2"  : nS2  ,
+
+                         "S1w"  : S1w,
+                         "S1h"  : S1h,
+                         "S1e"  : S1e,
+                         "S1t"  : S1t,
+
+                         "S2w"  : S2w,
+                         "S2h"  : S2h,
+                         "S2e"  : S2e,
+                         "S2q"  : S2q,
+                         "S2t"  : S2t,
+                         "Nsipm": Nsipm,
+
+                         "DT"   : DT,
+                         "Z"    : Z,
+                         "X"    : X,
+                         "Y"    : Y,
+                         "R"    : R,
+                         "Phi"  : Phi,
+                         "Xrms" : Xrms,
+                         "Yrms" : Yrms})
+
+    df_read = load_dst(test_file,
+                       group = group,
+                       node  = node)
+
+    return ((test_file, group, node),
+            configuration,
+            df_read,
+            df_true)
 
 
 @pytest.fixture(scope='session')
