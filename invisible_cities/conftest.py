@@ -11,9 +11,7 @@ from . io.pmap_io   import df_to_s2_dict
 from . io.pmap_io   import df_to_s2si_dict
 from . io.pmap_io   import read_pmaps
 from . io.pmap_io   import load_pmaps
-from . io.pmap_io   import load_ipmt_pmaps
 from . io.pmap_io   import load_pmaps_with_ipmt
-from . io.pmap_io   import ipmt_pmap_writer
 from . io. dst_io   import load_dst
 from . io.hits_io   import load_hits
 from . io.hits_io   import load_hits_skipping_NN
