@@ -346,16 +346,17 @@ def test_config_drive_flags(simple_conf_file_name, tmpdir_factory, name, flags, 
 
 
 @mark.parametrize('flags value counter'.split(),
-                  (('-e all'    , 27, 'n_events_tot'), # 27 events in the file
-                   ('-e    11'  , 11, 'n_events_tot'), # [ 0, 11)
-                   ('-e 10 15'  ,  5, 'n_events_tot'), # [10, 15)
-                   ('-e 24 last',  3, 'n_events_tot'), # events 24, 25 and 26
+                  (('-e all'   , 10, 'n_events_tot'), # 10 events in the file
+                   ('-e   9'   ,  9, 'n_events_tot'), # [ 0,  9) -> 9
+                   ('-e 5 9'   ,  4, 'n_events_tot'), # [ 5,  9) -> 4
+                   ('-e 2 last',  8, 'n_events_tot'), # events [2, 10) -> 8
                   ))
-def test_config_drive_penthesilea_counters(simple_conf_file_name, tmpdir_factory, flags, value, counter):
-    conf   = 'invisible_cities/config/penthesilea.conf'
-    infile = 'invisible_cities/database/test_data/KrMC_pmaps.h5'
-    outfile = tmpdir_factory.mktemp('drive-config').join(
-        'dummy-output-file-penthesilea-counters'+flags.replace(' ','-'))
-    argv = 'penthesilea {conf} -i {infile} -o {outfile} {flags}'.format(**locals()).split()
+def test_config_drive_penthesilea_counters(config_tmpdir, KrMC_pmaps, flags, value, counter):
+    input_filename  = KrMC_pmaps[0]
+    config_filename = 'invisible_cities/config/penthesilea.conf'
+    flags_wo_spaces = flags.replace(" ", "_")
+    output_filename = path.join(config_tmpdir,
+                                f'penthesilea_counters_output_{flags_wo_spaces}.h5')
+    argv = f'penthesilea {config_filename} -i {input_filename} -o {output_filename} {flags}'.split()
     conf_ns, counters = Penthesilea.drive(argv)
     assert getattr(counters, counter) == value
