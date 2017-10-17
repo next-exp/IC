@@ -8,6 +8,8 @@ from .  penthesilea          import Penthesilea
 from .. core.configure       import configure
 from .. io                   import dst_io as dio
 
+import timeit
+
 
 def test_penthesilea_run_on_Kr_MC_ipmt_pmaps_5evt(ICDIR, config_tmpdir):
     #PATH_IN  = os.path.join(ICDIR, 'database/test_data/Kr_MC_ipmt_pmaps_5evt.h5')
@@ -45,8 +47,9 @@ def test_penthesilea_run_on_Kr_MC_ipmt_pmaps_5evt(ICDIR, config_tmpdir):
                      new_lm_radius =    15 * mm))
 
     penthesilea = Penthesilea(**conf)
-    penthesilea.run()
+    print(timeit.timeit(penthesilea.run()))
     cnt = penthesilea.end()
+    assert False
     assert cnt.n_events_tot == 9
     assert cnt.n_events_selected == 6
     pent = dio.load_dst(PATH_OUT , 'RECO', 'Events')
@@ -106,4 +109,3 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
     assert len(set(dst.event.values)) ==   nevt_out
     assert  np.all(dst.event.values   == events_pass)
     assert  np.all(dst.npeak.values   ==   peak_pass)
-
