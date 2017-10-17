@@ -1,12 +1,12 @@
 import os
 import numpy  as np
 
-from .. core.core_functions  import in_range
-from .. core.system_of_units import *
-from .. core.testing_utils   import assert_dataframes_close
-from .  penthesilea          import Penthesilea
-from .. core.configure       import configure
-from .. io                   import dst_io as dio
+from .. core.core_functions    import in_range
+from .. core.system_of_units_c import units
+from .. core.testing_utils     import assert_dataframes_close
+from .  penthesilea            import Penthesilea
+from .. core.configure         import configure
+from .. io                     import dst_io as dio
 
 
 def test_penthesilea_KrMC(KrMC_pmaps, KrMC_hdst, config_tmpdir):
@@ -44,25 +44,25 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
                      files_in   = PATH_IN,
                      file_out   = PATH_OUT,
 
-                     drift_v     =      2 * mm / mus,
+                     drift_v     =      2 * units.mm / units.mus,
                      s1_nmin     =      1,
                      s1_nmax     =      1,
-                     s1_emin     =      1 * pes,
-                     s1_emax     =     30 * pes,
-                     s1_wmin     =    100 * ns,
-                     s1_wmax     =    300 * ns,
-                     s1_hmin     =      1 * pes,
-                     s1_hmax     =      5 * pes,
-                     s1_ethr     =    0.5 * pes,
+                     s1_emin     =      1 * units.pes,
+                     s1_emax     =     30 * units.pes,
+                     s1_wmin     =    100 * units.ns,
+                     s1_wmax     =    300 * units.ns,
+                     s1_hmin     =      1 * units.pes,
+                     s1_hmax     =      5 * units.pes,
+                     s1_ethr     =    0.5 * units.pes,
                      s2_nmin     =      1,
                      s2_nmax     =      2,
-                     s2_emin     =    1e3 * pes,
-                     s2_emax     =    1e4 * pes,
-                     s2_wmin     =      2 * mus,
-                     s2_wmax     =     20 * mus,
-                     s2_hmin     =    1e3 * pes,
-                     s2_hmax     =    1e5 * pes,
-                     s2_ethr     =      1 * pes,
+                     s2_emin     =    1e3 * units.pes,
+                     s2_emax     =    1e4 * units.pes,
+                     s2_wmin     =      2 * units.mus,
+                     s2_wmax     =     20 * units.mus,
+                     s2_hmin     =    1e3 * units.pes,
+                     s2_hmax     =    1e5 * units.pes,
+                     s2_ethr     =      1 * units.pes,
                      s2_nsipmmin =      5,
                      s2_nsipmmax =     30,
                      event_range = (0, nrequired)))
