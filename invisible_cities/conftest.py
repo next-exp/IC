@@ -134,11 +134,13 @@ def s2si_dataframe_converted():
 
 @pytest.fixture(scope='session')
 def KrMC_pmaps(ICDIR):
-    # Input file was produced to contain exactly 15 S1 and 50 S2.
-    test_file = ICDIR + "/database/test_data/KrMC_pmaps.h5"
-    S1_evts   = list(filter(lambda x: x not in [48, 50], range(23, 52)))
-    S2_evts   = list(range(31, 41))
-    S2Si_evts = list(range(31, 41))
+    test_file = os.path.join(ICDIR,
+                             "database",
+                             "test_data",
+                             "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_PMP_10evt.h5")
+    S1_evts   = [15, 17, 19, 25, 27]
+    S2_evts   = [15, 17, 19, 21, 23, 25, 27, 29, 31, 33]
+    S2Si_evts = [15, 17, 19, 21, 23, 25, 27, 29, 31, 33]
     s1t, s2t, s2sit = read_pmaps(test_file)
     s1, s2, s2si    = load_pmaps(test_file)
     return (test_file,
