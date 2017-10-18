@@ -1,5 +1,6 @@
 import os
 import numpy  as np
+import tables as tb
 
 from .. core.core_functions    import in_range
 from .. core.system_of_units_c import units
@@ -84,3 +85,23 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
     assert len(set(dst.event.values)) ==   nevt_out
     assert  np.all(dst.event.values   == events_pass)
     assert  np.all(dst.npeak.values   ==   peak_pass)
+
+
+def test_penthesilea_produces_tracks(KrMC_pmaps, KrMC_hdst, config_tmpdir):
+    PATH_IN   = KrMC_pmaps[0]
+    PATH_OUT  = os.path.join(config_tmpdir,'Kr_HDST.h5')
+    conf      = configure('dummy invisible_cities/config/penthesilea.conf'.split())
+    nevt_req  = 10
+
+    conf.update(dict(files_in        = PATH_IN,
+                     file_out        = PATH_OUT,
+                     event_range     = (nevt_req,),
+                     write_mc_tracks = True,
+                     **KrMC_hdst.config))
+
+    penthesilea = Penthesilea(**conf)
+    penthesilea.run()
+
+    with tb.open_file(PATH_OUT) as h5out:
+        assert "MC"          in h5out.root
+        assert "MC/MCTracks" in h5out.root
