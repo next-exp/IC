@@ -15,6 +15,7 @@ from . io.pmap_io   import load_pmaps_with_ipmt
 from . io. dst_io   import load_dst
 from . io.hits_io   import load_hits
 from . io.hits_io   import load_hits_skipping_NN
+from . io.mchits_io import load_mchits
 
 from . core.system_of_units_c import units
 
@@ -22,6 +23,7 @@ from . core.system_of_units_c import units
 tbl_data = namedtuple("tbl_data", "filename group node")
 dst_data = namedtuple("dst_data", "file_info config read true")
 pmp_data = namedtuple("pmp_data", "s1 s2 s2si")
+mcs_data = namedtuple("mcs_data", "pmap hdst")
 
 
 @pytest.fixture(scope = 'session')
@@ -380,6 +382,14 @@ def KrMC_hdst(ICDIR):
                     df_read,
                     df_true)
 
+
+@pytest.fixture(scope='session')
+def KrMC_true_hits(KrMC_pmaps, KrMC_hdst):
+    pmap_filename = KrMC_pmaps[0]
+    hdst_filename = KrMC_hdst .file_info.filename
+    pmap_mctracks = load_mchits(pmap_filename)
+    hdst_mctracks = load_mchits(hdst_filename)
+    return mcs_data(pmap_mctracks, hdst_mctracks)
 
 
 @pytest.fixture(scope='session')
