@@ -198,7 +198,7 @@ def test_load_pmaps_with_ipmt_equality_with_load_pmaps_for_s1_s2_s2si(Kr_MC_4446
 def test_load_pmaps_with_ipmt_equality_with_load_ipmt_pmaps_for_ipmt(Kr_MC_4446_load_s1_s2_s2si,
                                                                 Kr_MC_4446_load_pmaps_with_ipmt):
     test_ipmt_pmap_path = os.path.join(os.environ['ICDIR'],
-                                       'database/test_data/Kr_MC_ipmt_pmaps_5evt.h5')
+                                       'database/test_data/Kr_MC_ipmt_pmaps_6evt.h5')
     s1pmt_dict0, s2pmt_dict0          = load_ipmt_pmaps(test_ipmt_pmap_path)
     _, _, _, s1pmt_dict1, s2pmt_dict1 = Kr_MC_4446_load_pmaps_with_ipmt
     assert_s12pmt_dict_equality (  s1pmt_dict0,   s1pmt_dict1)

@@ -84,4 +84,3 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
     assert len(set(dst.event.values)) ==   nevt_out
     assert  np.all(dst.event.values   == events_pass)
     assert  np.all(dst.npeak.values   ==   peak_pass)
-

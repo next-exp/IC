@@ -428,14 +428,14 @@ def hits_toy_data(ICDIR):
 
 @pytest.fixture(scope='session')
 def Kr_MC_4446_load_s1_s2_s2si(ICDIR):
-    ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_5evt.h5'
+    ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_6evt.h5'
     Kr_MC_4446_load_pmaps = load_pmaps(ipmt_pmap_path)
     return Kr_MC_4446_load_pmaps
 
 
 @pytest.fixture(scope='session')
 def Kr_MC_4446_load_pmaps_with_ipmt(ICDIR):
-    ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_5evt.h5'
+    ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_6evt.h5'
     Kr_MC_4446_load_pmaps_with_ipmt = load_pmaps_with_ipmt(ipmt_pmap_path)
     return Kr_MC_4446_load_pmaps_with_ipmt
 
