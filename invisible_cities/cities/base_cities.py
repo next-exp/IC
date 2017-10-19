@@ -752,8 +752,6 @@ class KrCity(PCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.cnt.init(n_events_more_than_1_cluster = 0)
-        #self.reco_algorithm = find_algorithm(self.conf.reco_algorithm)
-
 
     parameters = tuple("""""".split())
     parameters = tuple("""lm_radius new_lm_radius
@@ -770,8 +768,7 @@ class KrCity(PCity):
         """
         IDs, Qs = cpmp.integrate_sipm_charges_in_peak(s2si, peak_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
-        #return self.reco_algorithm(np.stack((xs, ys)).T, Qs)
-        return corona(np.stack((xs, ys)).T, Qs,
+        return corona(np.stack((xs, ys), axis=1), Qs,
                       Qthr           =  self.conf.qthr,
                       Qlm            =  self.conf.qlm,
                       lm_radius      =  self.conf.lm_radius,
@@ -884,7 +881,7 @@ class HitCity(KrCity):
         IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
         xs, ys   = self.xs[IDs], self.ys[IDs]
 
-        return corona(np.stack((xs, ys)).T, Qs,
+        return corona(np.stack((xs, ys), axis=1), Qs,
                       Qthr           =  self.conf.qthr,
                       Qlm            =  self.conf.qlm,
                       lm_radius      =  self.conf.lm_radius,

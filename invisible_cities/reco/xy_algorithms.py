@@ -28,14 +28,14 @@ def barycenter(pos, qs):
 
         """
 
-    if not len(pos): raise SipmEmptyList
-    if sum(qs) == 0: raise SipmZeroCharge
+    if not len(pos)   : raise SipmEmptyList
+    if np.sum(qs) == 0: raise SipmZeroCharge
     mu  = np.average( pos           , weights=qs, axis=0)
     var = np.average((pos - mu) ** 2, weights=qs, axis=0)
     # For uniformity of interface, all xy algorithms should return a
     # list of clusters. barycenter always returns a single clusters,
     # but we still want it in a list.
-    return [Cluster(sum(qs), xy(*mu), xy(*var), len(qs))]
+    return [Cluster(np.sum(qs), xy(*mu), xy(*var), len(qs))]
 
     #return [Cluster(sum(qs), XY(*mu), var, len(qs))]
 
@@ -122,14 +122,14 @@ def corona(pos, qs,
            msipm          =  K3)
     """
 
-    if not len(pos): raise SipmEmptyList
-    if sum(qs) == 0: raise SipmZeroCharge
+    if not len(pos)   : raise SipmEmptyList
+    if np.sum(qs) == 0: raise SipmZeroCharge
 
     above_threshold = np.where(qs >= Qthr)[0]            # Find SiPMs with qs at least Qthr
     pos, qs = pos[above_threshold], qs[above_threshold]  # Discard SiPMs with qs less than Qthr
 
-    if not len(pos): raise SipmEmptyListAboveQthr
-    if sum(qs) == 0: raise SipmZeroChargeAboveQthr
+    if not len(pos)   : raise SipmEmptyListAboveQthr
+    if np.sum(qs) == 0: raise SipmZeroChargeAboveQthr
 
     # if lm_radius or new_lm_radius is negative, just call overall barycenter
     if lm_radius < 0 or new_lm_radius < 0:
