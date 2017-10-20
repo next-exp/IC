@@ -112,10 +112,10 @@ def test_s1__(wform):
 
 
 def test_s1_s2(KrMC_pmaps):
-    *_, (s1_dict, s2_dict, _) = KrMC_pmaps
-
-    for s12_evts, peak_attr in zip(( s1_dict,  s2_dict),
-                                   ("s1d"   , "s2d"   )):
+    *_, pmaps = KrMC_pmaps
+    for attr in ("s1", "s2"):
+        s12_evts  = getattr(pmaps, attr)
+        peak_attr = attr + "d"
         for evt_no, s12 in s12_evts.items():
             assert s12.number_of_peaks == len(s12.peaks)
 
@@ -128,7 +128,8 @@ def test_s1_s2(KrMC_pmaps):
 
 
 def test_s2si(KrMC_pmaps):
-    *_, (_, _, s2si_dict) = KrMC_pmaps
+    *_, pmaps = KrMC_pmaps
+    s2si_dict = pmaps.s2si
 
     for evt_no, s2si in s2si_dict.items():
         Q_dict = s2si.peak_and_sipm_total_energy_dict()
