@@ -5,7 +5,6 @@ import numpy as np
 from pandas      import DataFrame
 from pandas      import Series
 
-# from . io.pmap_io   import df_to_pmaps_dict
 from . io.pmap_io   import df_to_s1_dict
 from . io.pmap_io   import df_to_s2_dict
 from . io.pmap_io   import df_to_s2si_dict
