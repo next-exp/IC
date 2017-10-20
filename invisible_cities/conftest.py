@@ -4,6 +4,7 @@ import numpy as np
 
 from pandas      import DataFrame
 from pandas      import Series
+from collections import namedtuple
 
 from . io.pmap_io   import df_to_s1_dict
 from . io.pmap_io   import df_to_s2_dict
@@ -18,6 +19,11 @@ from . io.hits_io   import load_hits
 from . io.hits_io   import load_hits_skipping_NN
 
 from . core.system_of_units_c import units
+
+
+tbl_data = namedtuple("tbl_data", "filename group node")
+dst_data = namedtuple("dst_data", "file_info config read true")
+pmp_data = namedtuple("pmp_data", "s1 s2 s2si")
 
 
 @pytest.fixture(scope = 'session')
@@ -151,10 +157,11 @@ def KrMC_pmaps(ICDIR):
     S2Si_evts = [15, 17, 19, 21, 23, 25, 27, 29, 31, 33]
     s1t, s2t, s2sit = read_pmaps(test_file)
     s1, s2, s2si    = load_pmaps(test_file)
+
     return (test_file,
-            (s1t, s2t, s2sit),
-            (S1_evts, S2_evts, S2Si_evts),
-            (s1, s2, s2si))
+            pmp_data(s1t, s2t, s2sit),
+            pmp_data(S1_evts, S2_evts, S2Si_evts),
+            pmp_data(s1, s2, s2si))
 
 
 @pytest.fixture(scope='session')
@@ -245,10 +252,10 @@ def KrMC_kdst(ICDIR):
                        group = group,
                        node  = node)
 
-    return ((test_file, group, node),
-            configuration,
-            df_read,
-            df_true)
+    return dst_data(tbl_data(test_file, group, node),
+                    configuration,
+                    df_read,
+                    df_true)
 
 
 @pytest.fixture(scope='session')
@@ -370,10 +377,10 @@ def KrMC_hdst(ICDIR):
                        group = group,
                        node  = node)
 
-    return ((test_file, group, node),
-            configuration,
-            df_read,
-            df_true)
+    return dst_data(tbl_data(test_file, group, node),
+                    configuration,
+                    df_read,
+                    df_true)
 
 
 
