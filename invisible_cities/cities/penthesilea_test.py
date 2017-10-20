@@ -15,22 +15,20 @@ def test_penthesilea_KrMC(KrMC_pmaps, KrMC_hdst, config_tmpdir):
     conf      = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     nevt_req  = 10
 
-    PATH_COMP, configuration, _, DF_TRUE = KrMC_hdst
+    DF_TRUE =  KrMC_hdst.true
 
     conf.update(dict(files_in      = PATH_IN,
                      file_out      = PATH_OUT,
                      event_range   = (nevt_req,),
-                     **configuration))
+                     **KrMC_hdst.config))
 
     penthesilea = Penthesilea(**conf)
     penthesilea.run()
-    cnt = penthesilea.end()
+    cnt         = penthesilea.end()
     assert cnt.n_events_tot      == nevt_req
     assert cnt.n_events_selected == len(set(DF_TRUE.event))
 
     df_penthesilea = dio.load_dst(PATH_OUT , 'RECO', 'Events')
-    print(df_penthesilea.columns)
-    print(DF_TRUE.columns)
     assert_dataframes_close(df_penthesilea, DF_TRUE, check_types=False)
 
 

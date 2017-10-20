@@ -10,7 +10,8 @@ import numpy  as np
 from pytest import mark
 
 from hypothesis                import given
-from hypothesis.strategies     import floats
+from hypothesis.strategies     import lists
+
 from hypothesis.strategies     import integers
 
 from .. core.system_of_units_c import units
@@ -45,46 +46,52 @@ from . pmap_io                 import df_to_s1_dict
 from . pmap_io                 import df_to_s2_dict
 from . pmap_io                 import df_to_s2si_dict
 
-@given(integers(min_value=23, max_value=51))
-def test_s1_s2_si_from_pmaps(KrMC_pmaps, evt_no):
-    *_, (s1_dict,s2_dict, s2si_dict) = KrMC_pmaps
+@given(random_evts = lists(integers(min_value = -50,
+                                    max_value = +50)))
+def test_s1_s2_si_from_pmaps(KrMC_pmaps, random_evts):
+    *_, evts, pmaps = KrMC_pmaps
 
-    s1, s2, s2si = s1_s2_si_from_pmaps(s1_dict, s2_dict, s2si_dict, evt_no)
+    evt_nos = set(evts.s1) | set(evts.s2) | set(evts.s2si) | set(random_evts)
+    for evt_no in evt_nos:
+        s1, s2, s2si = s1_s2_si_from_pmaps(pmaps.s1,
+                                           pmaps.s2,
+                                           pmaps.s2si,
+                                           evt_no)
 
-    S1 = s1_dict  .get(evt_no, None)
-    S2 = s2_dict  .get(evt_no, None)
-    S2si = s2si_dict.get(evt_no, None)
+        S1   = pmaps.s1  .get(evt_no, None)
+        S2   = pmaps.s2  .get(evt_no, None)
+        S2si = pmaps.s2si.get(evt_no, None)
 
-    if S1 == None:
-        assert S1 == s1
-    else:
-        assert s1.number_of_peaks == S1.number_of_peaks
-        for i in s1.peak_collection():
-            if s1.peak_waveform(i).good_waveform:
-                np.allclose (s1.peak_waveform(i).t , S1.peak_waveform(i).t, rtol=1e-4)
-                np.allclose (s1.peak_waveform(i).E , S1.peak_waveform(i).E, rtol=1e-4)
+        if S1 == None:
+            assert S1 == s1
+        else:
+            assert s1.number_of_peaks == S1.number_of_peaks
+            for i in s1.peak_collection():
+                if s1.peak_waveform(i).good_waveform:
+                    np.allclose (s1.peak_waveform(i).t , S1.peak_waveform(i).t, rtol=1e-4)
+                    np.allclose (s1.peak_waveform(i).E , S1.peak_waveform(i).E, rtol=1e-4)
 
-    if S2 == None:
-        assert S2 == s2
-    else:
-        assert s2.number_of_peaks == S2.number_of_peaks
-        for i in s2.peak_collection():
-            if s2.peak_waveform(i).good_waveform:
-                np.allclose (s2.peak_waveform(i).t , S2.peak_waveform(i).t, rtol=1e-4)
-                np.allclose (s2.peak_waveform(i).E , S2.peak_waveform(i).E, rtol=1e-4)
+        if S2 == None:
+            assert S2 == s2
+        else:
+            assert s2.number_of_peaks == S2.number_of_peaks
+            for i in s2.peak_collection():
+                if s2.peak_waveform(i).good_waveform:
+                    np.allclose (s2.peak_waveform(i).t , S2.peak_waveform(i).t, rtol=1e-4)
+                    np.allclose (s2.peak_waveform(i).E , S2.peak_waveform(i).E, rtol=1e-4)
 
-    if S2si == None:
-        assert S2si == s2si
-    else:
-        assert s2si.number_of_peaks == S2si.number_of_peaks
-        for peak_number in s2si.peak_collection():
-            assert (s2si.number_of_sipms_in_peak(peak_number) ==
-                    S2si.number_of_sipms_in_peak(peak_number))
-            for sipm_number in s2si.sipms_in_peak(peak_number):
-                w   = s2si.sipm_waveform(peak_number, sipm_number)
-                W   = S2si.sipm_waveform(peak_number, sipm_number)
-                np.allclose(w.t , W.t)
-                np.allclose(w.E , W.E)
+        if S2si == None:
+            assert S2si == s2si
+        else:
+            assert s2si.number_of_peaks == S2si.number_of_peaks
+            for peak_number in s2si.peak_collection():
+                assert (s2si.number_of_sipms_in_peak(peak_number) ==
+                        S2si.number_of_sipms_in_peak(peak_number))
+                for sipm_number in s2si.sipms_in_peak(peak_number):
+                    w   = s2si.sipm_waveform(peak_number, sipm_number)
+                    W   = S2si.sipm_waveform(peak_number, sipm_number)
+                    np.allclose(w.t , W.t)
+                    np.allclose(w.E , W.E)
 
 
 def test_pmap_writer(config_tmpdir,

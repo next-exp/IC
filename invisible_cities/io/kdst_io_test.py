@@ -16,7 +16,8 @@ from ..evm.event_model    import KrEvent
 
 def test_Kr_writer(config_tmpdir, KrMC_kdst):
     filename = os.path.join(config_tmpdir, 'test_dst.h5')
-    (_, group, node), *_, df = KrMC_kdst
+    tbl      = KrMC_kdst.file_info
+    df       = KrMC_kdst.true
 
     def dump_df(write, df):
         for evt_no in sorted(set(df.event)):
@@ -34,7 +35,7 @@ def test_Kr_writer(config_tmpdir, KrMC_kdst):
         write = kr_writer(h5out)
         dump_df(write, df)
 
-    dst = load_dst(filename, group = group, node = node)
+    dst = load_dst(filename, group = tbl.group, node = tbl.node)
     assert_dataframes_equal(dst, df, False)
 
 

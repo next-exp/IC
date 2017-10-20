@@ -28,13 +28,12 @@ from . pmaps_functions_c  import sipm_ids_and_charges_in_slice
 
 
 def test_equal_number_of_timebins_in_S2s_and_S2Sis(KrMC_pmaps):
+    *_, pmaps = KrMC_pmaps
 
-    _, (_, _, _), (_, _, _), (_, s2_dict, s2si_dict) = KrMC_pmaps
-
-    for event_no, s2 in s2_dict.items():
-        s2si = s2si_dict[event_no]
+    for event_no, s2 in pmaps.s2.items():
+        s2si = pmaps.s2si[event_no]
         for peak_no in s2.peak_collection():
-            s2_ts = s2.peak_waveform(peak_no).number_of_samples
+            s2_ts = s2  .peak_waveform(peak_no).number_of_samples
             si_ts = s2si.peak_waveform(peak_no).number_of_samples
             assert s2_ts == si_ts
 
@@ -68,62 +67,62 @@ def timebin_size_must_be_equal_to_stride_times_25_ns_shows_bug_in_old_data(KrMC_
 ###############################################################
 
 def test_df_to_s1s2si_dict_limit_events(KrMC_pmaps):
-    _, (s1t, s2t, sit), (S1_evts, S2_evts, Si_evts), _ = KrMC_pmaps
+    _, pmaps, evts, _ = KrMC_pmaps
 
-    for i, max_events in enumerate(S1_evts):
-        s1_dict = df_to_s1_dict(s1t, max_events)
-        assert sorted(s1_dict.keys()) == S1_evts[:i]
+    for i, max_events in enumerate(evts.s1):
+        s1_dict = df_to_s1_dict(pmaps.s1, max_events)
+        assert sorted(s1_dict) == evts.s1[:i]
 
-    for i, max_events in enumerate(S2_evts):
-        s2_dict = df_to_s2_dict(s2t, max_events)
-        assert sorted(s2_dict.keys()) == S2_evts[:i]
+    for i, max_events in enumerate(evts.s2):
+        s2_dict = df_to_s2_dict(pmaps.s2, max_events)
+        assert sorted(s2_dict) == evts.s2[:i]
 
-    for i, max_events in enumerate(Si_evts):
-        si_dict = df_to_s2si_dict(s2t, sit, max_events)
-        assert sorted(si_dict.keys()) == Si_evts[:i]
+    for i, max_events in enumerate(evts.s2si):
+        si_dict = df_to_s2si_dict(pmaps.s2, pmaps.s2si, max_events)
+        assert sorted(si_dict) == evts.s2si[:i]
 
 
 def test_df_to_s1s2si_dict_take_all_events_if_limit_too_high(KrMC_pmaps):
     max_events_is_more_than_available = 10000
-    _, (s1s, s2s, sis), (S1_evts, S2_evts, Si_evts), _  = KrMC_pmaps
-    s1_dict = df_to_s1_dict  (s1s,      max_events_is_more_than_available)
-    s2_dict = df_to_s2_dict  (s2s,      max_events_is_more_than_available)
-    si_dict = df_to_s2si_dict(s2s, sis, max_events_is_more_than_available)
+    _, pmaps, evts, _  = KrMC_pmaps
+    s1_dict = df_to_s1_dict  (pmaps.s1,             max_events_is_more_than_available)
+    s2_dict = df_to_s2_dict  (pmaps.s2,             max_events_is_more_than_available)
+    si_dict = df_to_s2si_dict(pmaps.s2, pmaps.s2si, max_events_is_more_than_available)
 
-    assert sorted(s1_dict.keys()) == S1_evts
-    assert sorted(s2_dict.keys()) == S2_evts
-    assert sorted(si_dict.keys()) == Si_evts
+    assert sorted(s1_dict) == evts.s1
+    assert sorted(s2_dict) == evts.s2
+    assert sorted(si_dict) == evts.s2si
 
 
 def test_df_to_s1s2si_dict_default_number_of_events(KrMC_pmaps):
     # Read all events
-    _, (s1s, s2s, sis), (S1_evts, S2_evts, Si_evts), _  = KrMC_pmaps
-    s1_dict = df_to_s1_dict  (s1s)
-    s2_dict = df_to_s2_dict  (s2s)
-    si_dict = df_to_s2si_dict(s2s, sis)
+    _, pmaps, evts, _  = KrMC_pmaps
+    s1_dict = df_to_s1_dict  (pmaps.s1)
+    s2_dict = df_to_s2_dict  (pmaps.s2)
+    si_dict = df_to_s2si_dict(pmaps.s2, pmaps.s2si)
 
-    assert sorted(s1_dict.keys()) == S1_evts
-    assert sorted(s2_dict.keys()) == S2_evts
-    assert sorted(si_dict.keys()) == Si_evts
+    assert sorted(s1_dict) == evts.s1
+    assert sorted(s2_dict) == evts.s2
+    assert sorted(si_dict) == evts.s2si
 
 
 def test_df_to_s1s2si_dict_negative_limit_takes_all_events(KrMC_pmaps):
     # Read all events
     negative_max_events = -23
-    _, (s1s, s2s, sis), (S1_evts, S2_evts, Si_evts), _  = KrMC_pmaps
-    s1_dict = df_to_s1_dict  (s1s,      negative_max_events)
-    s2_dict = df_to_s2_dict  (s2s,      negative_max_events)
-    si_dict = df_to_s2si_dict(s2s, sis, negative_max_events)
+    _, pmaps, evts, _  = KrMC_pmaps
+    s1_dict = df_to_s1_dict  (pmaps.s1,             negative_max_events)
+    s2_dict = df_to_s2_dict  (pmaps.s2,             negative_max_events)
+    si_dict = df_to_s2si_dict(pmaps.s2, pmaps.s2si, negative_max_events)
 
-    assert sorted(list(s1_dict.keys())) == S1_evts
-    assert sorted(list(s2_dict.keys())) == S2_evts
-    assert sorted(list(si_dict.keys())) == Si_evts
+    assert sorted(s1_dict) == evts.s1
+    assert sorted(s2_dict) == evts.s2
+    assert sorted(si_dict) == evts.s2si
 
 
 def test_df_to_s2si_dict_number_of_slices_is_correct(KrMC_pmaps):
-    _, (_, s2s, s2sis), (_, S2_evts, _), _  = KrMC_pmaps
-    s2_dict   = df_to_s2_dict   (s2s)
-    s2si_dict = df_to_s2si_dict (s2s, s2sis)
+    _, pmaps, _, _  = KrMC_pmaps
+    s2_dict   = df_to_s2_dict   (pmaps.s2)
+    s2si_dict = df_to_s2si_dict (pmaps.s2, pmaps.s2si)
 
     event_numbers_seen_in_tracking_plane = set(s2_dict)
     event_numbers_seen_in_energy_plane   = set(s2si_dict)
@@ -137,7 +136,7 @@ def test_df_to_s2si_dict_number_of_slices_is_correct(KrMC_pmaps):
         assert s2si.number_of_peaks == s2.number_of_peaks
 
         for peak_no in s2.peak_collection():
-            s2_ts = s2.peak_waveform(peak_no).number_of_samples
+            s2_ts = s2  .peak_waveform(peak_no).number_of_samples
             si_ts = s2si.peak_waveform(peak_no).number_of_samples
             assert s2_ts == si_ts
 
@@ -150,8 +149,8 @@ def test_df_to_s2si_dict_number_of_slices_is_correct(KrMC_pmaps):
 # # rebin s2si-related tests
 # ###############################################################
 def test_rebinned_s2_energy_sum_same_as_original_energy_sum(KrMC_pmaps):
-    _, (_, _, _), (_, _, _), (_, s2_dict, s2si_dict)  = KrMC_pmaps
-    for s2, s2si in zip(s2_dict.values(), s2si_dict.values()):
+    *_, pmaps = KrMC_pmaps
+    for s2, s2si in zip(pmaps.s2.values(), pmaps.s2si.values()):
         for rf in range(1,11):
             s2r, s2sir = rebin_s2si(s2, s2si, rf)
             for p in s2.s2d:
@@ -161,8 +160,8 @@ def test_rebinned_s2_energy_sum_same_as_original_energy_sum(KrMC_pmaps):
 
 
 def test_rebinned_s2si_yeilds_correct_average_times(KrMC_pmaps):
-    _, (_, _, _), (_, _, _), (_, s2_dict, s2si_dict)  = KrMC_pmaps
-    for s2, s2si in zip(s2_dict.values(), s2si_dict.values()):
+    *_, pmaps= KrMC_pmaps
+    for s2, s2si in zip(pmaps.s2.values(), pmaps.s2si.values()):
         for rf in range(1,11):
             s2r, s2sir = rebin_s2si(s2, s2si, rf)
             for p in s2.s2d:
@@ -171,8 +170,8 @@ def test_rebinned_s2si_yeilds_correct_average_times(KrMC_pmaps):
 
 
 def test_sipm_ids_and_charges_in_slice(KrMC_pmaps):
-    _, _, _, (_, _, s2si_dict) = KrMC_pmaps
-    for s2si in s2si_dict.values():
+    *_, pmaps = KrMC_pmaps
+    for s2si in pmaps.s2si.values():
         for s2sid_peak in s2si.s2sid.values():
             n_slices = len(s2sid_peak[list(s2sid_peak.keys())[0]])
             for i_slice in range(n_slices):
@@ -185,9 +184,9 @@ def test_sipm_ids_and_charges_in_slice(KrMC_pmaps):
 # raise s2si threshold related tests
 # ###############################################################
 def test_impose_thr_sipm_destructive_leaves_no_sipms_in_dict_with_lt_thr_sipm_charge(KrMC_pmaps):
-    _, _, _, (_, _, s2si_dict0) = KrMC_pmaps
-    thr_sipm = 20*units.pes
-    s2si_dict = _impose_thr_sipm_destructive(s2si_dict0, thr_sipm)
+    *_, pmaps = KrMC_pmaps
+    thr_sipm  = 20*units.pes
+    s2si_dict = _impose_thr_sipm_destructive(pmaps.s2si, thr_sipm)
     for ev in s2si_dict.keys():
         for pn in s2si_dict[ev].s2sid.keys():
             for qs in s2si_dict[ev].s2sid[pn].values():
@@ -197,8 +196,8 @@ def test_impose_thr_sipm_destructive_leaves_no_sipms_in_dict_with_lt_thr_sipm_ch
 
 
 def test_impose_thr_sipm_destructive_leaves_no_sipms_in_dict_with_0_integral_charge(KrMC_pmaps):
-    _, _, _, (_, _, s2si_dict0) = KrMC_pmaps
-    s2si_dict = _impose_thr_sipm_destructive(s2si_dict0, 20*units.pes)
+    *_, pmaps = KrMC_pmaps
+    s2si_dict = _impose_thr_sipm_destructive(pmaps.s2si, 20*units.pes)
     for ev in s2si_dict.keys():
         for pn in s2si_dict[ev].s2sid.keys():
             for sipm in s2si_dict[ev].s2sid[pn].keys():
@@ -206,7 +205,8 @@ def test_impose_thr_sipm_destructive_leaves_no_sipms_in_dict_with_0_integral_cha
 
 
 def test_impose_thr_sipm_destructive_does_does_nothing_with_smaller_threshold(KrMC_pmaps):
-    _, _, _, (_, _, s2si_dict) = KrMC_pmaps
+    *_, pmaps  = KrMC_pmaps
+    s2si_dict  = pmaps.s2si
     s2si_dict1 = _impose_thr_sipm_destructive(s2si_dict, 0.01*units.pes)
     for ev in s2si_dict.keys():
         for pn in s2si_dict[ev].s2sid.keys():
@@ -215,7 +215,8 @@ def test_impose_thr_sipm_destructive_does_does_nothing_with_smaller_threshold(Kr
 
 
 def test_impose_thr_sipm_s2_destructive_does_does_nothing_with_smaller_threshold(KrMC_pmaps):
-    _, _, _, (_, _, s2si_dict) = KrMC_pmaps
+    *_, pmaps  = KrMC_pmaps
+    s2si_dict  = pmaps.s2si
     s2si_dict1 = _impose_thr_sipm_s2_destructive(s2si_dict, 0.01*units.pes)
     for ev in s2si_dict.keys():
         for pn in s2si_dict[ev].s2sid.keys():
@@ -224,9 +225,9 @@ def test_impose_thr_sipm_s2_destructive_does_does_nothing_with_smaller_threshold
 
 
 def test_impose_thr_sipm_s2_destructive_leaves_no_sipms_with_lt_thr_integral_charge(KrMC_pmaps):
-    _, _, _, (_, _, s2si_dict) = KrMC_pmaps
+    *_, pmaps   = KrMC_pmaps
     thr_sipm_s2 = 50*units.pes
-    s2si_dict1 = _impose_thr_sipm_s2_destructive(s2si_dict, thr_sipm_s2)
+    s2si_dict1  = _impose_thr_sipm_s2_destructive(pmaps.s2si, thr_sipm_s2)
     for s2si in s2si_dict1.values():
         for s2si_peak in s2si.s2sid.values():
             for qs in s2si_peak.values():
@@ -237,10 +238,11 @@ def test_delete_empty_s2si_peaks():
     s2d   = {0: (np.array([1, 2], dtype=np.float64), np.array([ 2,  2], dtype=np.float64)),
              1: (np.array([5, 6], dtype=np.float64), np.array([10, 10], dtype=np.float64))}
     s2sid = {0: {},
-             1: {1000: np.array([1, 1], dtype=np.float64), 1001: np.array([3, 3], dtype=np.float64)}
-             }
+             1: {1000: np.array([1, 1], dtype=np.float64), 1001: np.array([3, 3], dtype=np.float64)}}
+
     s2si_dict = {0: S2Si(s2d, s2sid)}
     s2si_dict = _delete_empty_s2si_peaks(s2si_dict)
+
     assert len( s2si_dict[0].s2d    .keys())   == 1  # check s2d peak has been deleted
     assert len( s2si_dict[0].s2sid  .keys())   == 1  # check s2si peak has been deleted
     assert list(s2si_dict[0].peaks.keys())[0]  == 1  # check peak deleted in high level functions
@@ -249,9 +251,9 @@ def test_delete_empty_s2si_peaks():
 
 
 def test_raise_s2si_thresholds_returns_empty_dict_with_enormous_thresholds(KrMC_pmaps):
-    _, _, _, (_, _, s2si_dict) = KrMC_pmaps
-    assert len(raise_s2si_thresholds(s2si_dict, None,  1e9)) == 0
-    assert len(raise_s2si_thresholds(s2si_dict,  1e9, None)) == 0
+    *_, pmaps = KrMC_pmaps
+    assert len(raise_s2si_thresholds(pmaps.s2si, None,  1e9)) == 0
+    assert len(raise_s2si_thresholds(pmaps.s2si,  1e9, None)) == 0
 
 
 def test_copy_s2si_changing_copy_does_not_affect_original():
@@ -281,8 +283,9 @@ def test_copy_s2si_changing_copy_does_not_affect_original():
 
 
 def test_copy_s2si_dict_deleting_keys_in_copy_does_not_affect_keys_in_original(KrMC_pmaps):
-    _, _, _, (_, _, s2si_dict0) = KrMC_pmaps
-    key  = list(s2si_dict0.keys())[-1]
+    *_, pmaps  = KrMC_pmaps
+    s2si_dict0 = pmaps.s2si
+    key        = list(s2si_dict0.keys())[-1]
     s2si_dict1 = copy_s2si_dict(s2si_dict0)
     del s2si_dict1[key]
     assert key in s2si_dict0
