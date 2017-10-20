@@ -1,12 +1,12 @@
 import pandas as pd
 
 from ..core.testing_utils import assert_dataframes_close
+from .      dst_io        import load_dst
 from .      dst_io        import load_dsts
 
 
 def test_load_dst(KrMC_kdst):
-    # The function load_dst is actually used in the fixture
-    df_read = KrMC_kdst.read
+    df_read = load_dst(*KrMC_kdst.file_info)
     assert_dataframes_close(df_read, KrMC_kdst.true, False)
 
 
