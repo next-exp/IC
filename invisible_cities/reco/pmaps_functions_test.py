@@ -3,10 +3,12 @@ from operator import itemgetter
 import numpy as np
 
 from pytest import mark
+from pytest import raises
 parametrize = mark.parametrize
 
 from .. evm.pmaps         import Peak
 from .. evm.pmaps         import S2
+
 from .. evm.pmaps         import S2Si
 from .. evm.ic_containers import S12Params
 from .. types.ic_types    import minmax
@@ -48,18 +50,13 @@ def timebin_size_must_be_equal_to_stride_times_25_ns_shows_bug_in_old_data(KrMC_
     has been fixed now. Old data, like the one used in this test has the
     bug in it, and this test demonstrates it.
     """
-    _, (_, _, _), (_, _, _), (_, s2, _) = KrMC_pmaps
-    S2s = {0 : s2[31]}
+    *_, pmaps = KrMC_pmaps
     max_timebin_size = 1 * units.mus
 
-    for S2s_ev in S2s.values(): # event loop
-        for S2_p in S2s_ev.values(): # peak loop
-            try:  # will fail, and we cath it and pass
-                assert (np.array([S2_p[0][i] - S2_p[0][i-1] \
-                        for i in range(1, len(S2_p[0]))])  \
-                        <= max_timebin_size).all()
-            except AssertionError:
-                pass
+    for evt in pmaps.s2.values(): # evt  loop
+        for peak in evt.values(): # peak loop
+            with raises(AssertionError):
+                assert np.all(np.diff(peak.t) <= max_timebin_size)
 
 
 ###############################################################
