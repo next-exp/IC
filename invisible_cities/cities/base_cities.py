@@ -736,9 +736,12 @@ class PCity(City):
 
                 event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
 
-                pmapVectors               = PmapVectors(s1=s1_dict, s2=s2_dict, s2si=s2si_dict,
-                                                        events=event_numbers, timestamps=timestamps,
-                                                        mc=mc_tracks)
+                pmapVectors               = PmapVectors(s1         = s1_dict,
+                                                        s2         = s2_dict,
+                                                        s2si       = s2si_dict,
+                                                        events     = event_numbers,
+                                                        timestamps = timestamps,
+                                                        mc         = mc_tracks)
 
                 self.event_loop(pmapVectors)
 
