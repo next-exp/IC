@@ -405,7 +405,7 @@ cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
 
 
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
-                  double [:] adc_to_pes, double thr,
+                  double [:] adc_to_pes, thr,
                   int n_MAU=100):
     """
     subtracts the baseline
@@ -423,6 +423,7 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
 
     cdef double [:, :] siwf = np.zeros((NSiPM, NSiWF), dtype=np.double)
     cdef double [:]    MAU_ = np.zeros(        NSiWF , dtype=np.double)
+    cdef double [:]    thrs = np.full ( NSiPM, thr)
     cdef double pmean
 
     # loop over all SiPMs. Skip any SiPM with adc_to_pes constant = 0
@@ -446,7 +447,7 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
 
         # threshold using the MAU
         for k in range(NSiWF):
-            if SiWF[j,k]  > MAU_[k] + thr * adc_to_pes[j]:
+            if SiWF[j,k]  > MAU_[k] + thrs[j] * adc_to_pes[j]:
                 siwf[j,k] = SiWF[j,k] / adc_to_pes[j]
 
     return np.asarray(siwf)

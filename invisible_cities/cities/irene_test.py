@@ -75,7 +75,10 @@ def job_info_missing_pmts(config_tmpdir, ICDIR):
 
 
 @mark.slow
-def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
+@mark.parametrize("thr_sipm_type thr_sipm_value".split(),
+                  (("common"    , 3.5 ),
+                   ("individual", 0.99)))
+def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params, thr_sipm_type, thr_sipm_value):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
@@ -86,10 +89,12 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params):
     nrequired  = 2
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number   = 0,
-                     files_in     = PATH_IN,
-                     file_out     = PATH_OUT,
-                     event_range  = (0, nrequired),
+    conf.update(dict(run_number    = 0,
+                     files_in      = PATH_IN,
+                     file_out      = PATH_OUT,
+                     event_range   = (0, nrequired),
+                     thr_sipm_type = thr_sipm_type,
+                     thr_sipm      = thr_sipm_value,
                      **unpack_s12params(s12params)))
 
     irene = Irene(**conf)
