@@ -91,29 +91,33 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
 
 
 @mark.serial
-def test_penthesilea_produces_tracks(KrMC_pmaps, KrMC_hdst, config_tmpdir):
+@mark.parametrize("write_mc_tracks outputfilename".split(),
+                  ((True , "Kr_HDST_with_MC.h5"),
+                   (False, "Kr_HDST_without_MC.h5")))
+def test_penthesilea_produces_tracks_when_required(KrMC_pmaps, KrMC_hdst, config_tmpdir,
+                                                   write_mc_tracks, outputfilename):
     PATH_IN   = KrMC_pmaps[0]
-    PATH_OUT  = os.path.join(config_tmpdir,'Kr_HDST.h5')
+    PATH_OUT  = os.path.join(config_tmpdir, outputfilename)
     conf      = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     nevt_req  = 10
 
     conf.update(dict(files_in        = PATH_IN,
                      file_out        = PATH_OUT,
                      event_range     = (nevt_req,),
-                     write_mc_tracks = True,
+                     write_mc_tracks = write_mc_tracks,
                      **KrMC_hdst.config))
 
     penthesilea = Penthesilea(**conf)
     penthesilea.run()
 
     with tb.open_file(PATH_OUT) as h5out:
-        assert "MC"          in h5out.root
-        assert "MC/MCTracks" in h5out.root
+        assert write_mc_tracks == ("MC"          in h5out.root)
+        assert write_mc_tracks == ("MC/MCTracks" in h5out.root)
 
 
 @mark.serial
 def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
-    penthesilea_output_path = os.path.join(config_tmpdir,'Kr_HDST.h5')
+    penthesilea_output_path = os.path.join(config_tmpdir,'Kr_HDST_with_MC.h5')
     penthesilea_evts        = load_mchits(penthesilea_output_path)
     true_evts               = KrMC_true_hits.hdst
 
