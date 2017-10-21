@@ -488,9 +488,15 @@ class CalibratedCity(DeconvolutionCity):
           a) equalize to pes;
           b) compute a MAU that follows baseline and keep samples above
              MAU + threshold.
+             The threshold can be used in two ways:
+             - A single value for all sipms (thr_sipm_type = "common"). In this
+               case, thr_sipm is the threshold value in pes.
+             - A value for each SiPM, based on a common the percentage
+               of noise reduction (thr_sipm_type = "individual"). In this case,
+               thr_sipm is the percentage.
        """
 
-    parameters = tuple("""n_mau thr_mau thr_csum_s1 thr_csum_s2 n_mau_sipm thr_sipm""".split())
+    parameters = tuple("""n_mau thr_mau thr_csum_s1 thr_csum_s2 n_mau_sipm thr_sipm thr_sipm_type""".split())
 
     def __init__(self, **kwds):
 
@@ -503,9 +509,17 @@ class CalibratedCity(DeconvolutionCity):
         self.thr_csum_s2 = conf.thr_csum_s2
 
         # Parameters of the SiPM signal
-        self.n_MAU_sipm = conf.n_mau_sipm
-        self.  thr_sipm = conf.  thr_sipm
-
+        self.n_MAU_sipm  = conf.n_mau_sipm
+        if   conf.thr_sipm_type.lower() == "common":
+            # In this case, the threshold is a value of threshold in pes
+            self.thr_sipm = conf.thr_sipm
+        elif conf.thr_sipm_type.lower() == "individual":
+            # In this case, the threshold is a percentual value
+            noise_sampler = SiPMsNoiseSampler(self.run_number)
+            self.thr_sipm = noise_sampler.compute_thresholds(conf.thr_sipm)
+        else:
+            raise ValueError(("Wrong value in thr_sipm_type. It must"
+                              "be either 'Common' or 'Individual'"))
 
     def calibrated_pmt_mau(self, CWF):
         """Return the csum and csum_mau calibrated sums."""

@@ -132,7 +132,7 @@ Uses a MAU to set the signal threshold (thr, in PES)
 returns ZS waveforms for all SiPMs
 """
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
-                  double [:] adc_to_pes, double thr,
+                  double [:] adc_to_pes, thr,
                   int n_MAU=*)
 
 """
