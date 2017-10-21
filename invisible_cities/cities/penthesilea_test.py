@@ -2,12 +2,15 @@ import os
 import numpy  as np
 import tables as tb
 
+from pytest import mark
+
 from .. core.core_functions    import in_range
 from .. core.system_of_units_c import units
 from .. core.testing_utils     import assert_dataframes_close
 from .  penthesilea            import Penthesilea
 from .. core.configure         import configure
 from .. io                     import dst_io as dio
+from .. io.mchits_io           import load_mchits
 
 
 def test_penthesilea_KrMC(KrMC_pmaps, KrMC_hdst, config_tmpdir):
@@ -87,6 +90,7 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
     assert  np.all(dst.npeak.values   ==   peak_pass)
 
 
+@mark.serial
 def test_penthesilea_produces_tracks(KrMC_pmaps, KrMC_hdst, config_tmpdir):
     PATH_IN   = KrMC_pmaps[0]
     PATH_OUT  = os.path.join(config_tmpdir,'Kr_HDST.h5')
@@ -105,3 +109,17 @@ def test_penthesilea_produces_tracks(KrMC_pmaps, KrMC_hdst, config_tmpdir):
     with tb.open_file(PATH_OUT) as h5out:
         assert "MC"          in h5out.root
         assert "MC/MCTracks" in h5out.root
+
+
+@mark.serial
+def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
+    penthesilea_output_path = os.path.join(config_tmpdir,'Kr_HDST.h5')
+    penthesilea_evts        = load_mchits(penthesilea_output_path)
+    true_evts               = KrMC_true_hits.hdst
+
+    assert sorted(penthesilea_evts) == sorted(true_evts)
+    for evt_no, true_hits in true_evts.items():
+        penthesilea_hits = penthesilea_evts[evt_no]
+
+        assert len(penthesilea_hits) == len(true_hits)
+        assert all(p_hit == t_hit for p_hit, t_hit in zip(penthesilea_hits, true_hits))
