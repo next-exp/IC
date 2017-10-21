@@ -680,6 +680,7 @@ class PCity(City):
         s1_dict = pmapVectors.s1
         s2_dict = pmapVectors.s2
         s2si_dict = pmapVectors.s2si
+        mc_tracks = pmapVectors.mc
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
             self.conditional_print(self.cnt.n_events_tot, self.cnt.n_events_selected)
@@ -704,9 +705,12 @@ class PCity(City):
             # create DST event & write to file
             pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
                                       events=evt_number,
-                                      timestamps=evt_time)
+                                      timestamps=evt_time,
+                                      mc=None)
             evt = self.create_dst_event(pmapVectors, filter_output)
             write.dst(evt)
+            if self.write_mc_tracks:
+                write.mc(mc_tracks, evt_number)
 
     def file_loop(self):
         """
@@ -726,12 +730,17 @@ class PCity(City):
                 print("Empty file. Skipping.")
                 continue
 
-            event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
+            with tb.open_file(filename) as h5in:
+                # Save time when we are not interested in mc tracks
+                mc_tracks = self.get_mc_tracks(h5in) if self.write_mc_tracks else None
 
-            pmapVectors               = PmapVectors(s1=s1_dict, s2=s2_dict, s2si=s2si_dict,
-                                                    events=event_numbers, timestamps=timestamps)
+                event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
 
-            self.event_loop(pmapVectors)
+                pmapVectors               = PmapVectors(s1=s1_dict, s2=s2_dict, s2si=s2si_dict,
+                                                        events=event_numbers, timestamps=timestamps,
+                                                        mc=mc_tracks)
+
+                self.event_loop(pmapVectors)
 
     def filter_event(self, s1, s2, s2si):
         """Filter the event in terms of s1, s2, s2si"""
