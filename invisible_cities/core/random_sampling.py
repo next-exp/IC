@@ -1,8 +1,35 @@
-"""Defines a class for random sampling."""
-
 import numpy as np
 
+from functools import partial
+
 from .. database import load_db as DB
+
+
+def normalize_distribution(y):
+    ysum = np.sum(y)
+    return y / ysum if ysum else y
+
+
+def sample_discrete_distribution(x, y, size=1):
+    if not y.any():
+        return np.zeros(size)
+    return np.random.choice(x, p=y, size=size)
+
+
+def uniform_smearing(max_deviation, size=1):
+    return np.random.uniform(-max_deviation,
+                             +max_deviation,
+                             size = size)
+
+
+def inverse_cdf_index(y, percentile):
+    return np.argwhere(y >= percentile)[0,0]
+
+
+def inverse_cdf(x, y, percentile):
+    if not y.any():
+        return np.inf
+    return x[inverse_cdf_index(y, percentile)]
 
 
 class NoiseSampler:
@@ -11,80 +38,79 @@ class NoiseSampler:
 
         Parameters
         ----------
+        run_number: int
+            Run number used to load information from the database.
         sample_size: int
             Number of samples per sensor and call.
-        smear: bool
-            Flag to choose between performing discrete or continuous sampling.
+        smear: bool, optional
+            If True, the samples are uniformly smeared to simulate
+            a continuous distribution. If False, the samples are
+            always the center of the histograms' bins. Default is True.
 
         Attributes
         ---------
         baselines : array of floats
-            Pedestal for each SiPM.
+            Baseline for each SiPM.
         xbins : numpy.ndarray
             Contains the the bins centers in pes.
-        dx: float
+        dx : float
             Half of the bin size.
         probs: numpy.ndarray
-            Matrix holding the probability for each sensor at each bin.
-        nsamples: int
-            Number of samples per sensor taken at each call.
+            Matrix holding the noise probabilities for each sensor.
+            The sensors are arranged along the first dimension, while
+            the other axis corresponds to the energy bins.
         """
-        def norm(ps):
-            return ps / np.sum(ps) if ps.any() else ps
+        (self.probs,
+         self.xbins,
+         self.baselines) = DB.SiPMNoise()
+        self.nsamples    = sample_size
+        self.smear       = smear
+        self.active      = DB.DataSiPM(run_number).Active.values[:, np.newaxis]
+        self.nsensors    = self.active.size
 
-        self.nsamples = sample_size
-        self.probs, self.xbins, self.baselines = DB.SiPMNoise()
+        self.probs       = np.apply_along_axis(normalize_distribution, 1,
+                                               self.mask(self.probs))
+        self.baselines   = self.baselines[:, np.newaxis]
+        self.dx          = np.diff(self.xbins)[0] * 0.5
 
-        active         = DB.DataSiPM(run_number).Active.values[:, np.newaxis]
-        # probs * active means that masked sensors are set to 0
-        self.probs     = np.apply_along_axis(norm, 1, self.probs * active)
-        self.baselines = self.baselines.reshape(self.baselines.shape[0], 1)
-        self.dx        = np.diff(self.xbins)[0] * 0.5
+        self._sampler    = partial(sample_discrete_distribution,
+                                   self.xbins,
+                                   size = self.nsamples)
+        self._smearer    = partial(uniform_smearing,
+                                   max_deviation = self.dx,
+                                   size          = (self.nsensors,
+                                                    self.nsamples))
 
-        # Sampling functions
-        def _sample_sensor(probs):
-            if not probs.any():
-                return np.zeros(self.nsamples)
-            return np.random.choice(self.xbins, size=self.nsamples, p=probs)
+    def mask(self, array):
+        """Set to 0 those rows corresponding to masked sensors"""
+        return array * self.active
 
-        def _discrete_sampler():
-            return np.apply_along_axis(_sample_sensor, 1, self.probs)
+    def sample(self):
+        """Take a set of samples from each pdf."""
+        sample  = np.apply_along_axis(self._sampler, 1, self.probs)
+        if self.smear:
+            sample += self._smearer()
+        sample += self.baselines
+        return self.mask(sample)
 
-        def _continuous_sampler():
-            return _discrete_sampler() + np.random.uniform(-self.dx, self.dx)
-
-        self._sampler = _continuous_sampler if smear else _discrete_sampler
-
-    def Sample(self):
-        """Return a sample of each distribution."""
-        return self._sampler() + self.baselines
-
-    def ComputeThresholds(self, noise_cut=0.99, pes_to_adc=None):
-        """Find the number of pes at which each noise distribution leaves
-        behind the a given fraction of its population.
+    def compute_thresholds(self, noise_cut=0.99, pes_to_adc=1):
+        """Find the energy threshold that reduces the noise population by a
+        fraction of *noise_cut*.
 
         Parameters
         ----------
-        noise_cut : float
+        noise_cut : float, optional
             Fraction of the distribution to be left behind. Default is 0.99.
         pes_to_adc : float or array of floats, optional
-            Constant(s) for adc to pes conversion (default None).
+            Constant(s) for pes to adc conversion (default None).
             If not present, the thresholds are given in pes.
 
         Returns
         -------
         cuts: array of floats
             Cuts in adc or pes.
-
         """
-        def findcut(probs):
-            if not probs.any():
-                return np.inf
-            return self.xbins[probs > noise_cut][0]
-
-        if pes_to_adc is None:
-            pes_to_adc = np.ones(self.probs.shape[0])
-        pes_to_adc.reshape(self.probs.shape[0], 1)
-
+        find_thr = partial(inverse_cdf, self.xbins, percentile = noise_cut)
         cumprobs = np.apply_along_axis(np.cumsum, 1, self.probs)
-        return np.apply_along_axis(findcut, 1, cumprobs) * pes_to_adc
+        cuts_pes = np.apply_along_axis(find_thr , 1,   cumprobs)
+        return cuts_pes * pes_to_adc
