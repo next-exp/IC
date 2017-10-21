@@ -639,7 +639,7 @@ class PCity(City):
        that access and serves to the event_loop the corresponding PMAPS
        vectors.
     """
-    parameters = tuple("""drift_v
+    parameters = tuple("""drift_v write_mc_tracks
                           s1_nmin s1_nmax s1_emin s1_emax s1_wmin s1_wmax s1_hmin s1_hmax s1_ethr
                           s2_nmin s2_nmax s2_emin s2_emax s2_wmin s2_wmax s2_hmin s2_hmax s2_ethr
                           s2_nsipmmin s2_nsipmmax""".split())
@@ -648,6 +648,7 @@ class PCity(City):
         super().__init__(**kwds)
         self.drift_v = self.conf.drift_v
         self.s1s2_selector = S12Selector(**kwds)
+        self.write_mc_tracks = self.conf.write_mc_tracks and self.monte_carlo
 
         self.cnt.init(n_events_tot                 = 0,
                       n_events_not_s1              = 0,
