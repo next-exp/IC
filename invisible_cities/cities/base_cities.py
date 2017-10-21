@@ -6,7 +6,6 @@ last revised: JJGC, July-2017
 
 """
 
-import sys
 from argparse  import Namespace
 from glob      import glob
 from time      import time
@@ -16,26 +15,19 @@ from itertools import chain
 import numpy  as np
 import tables as tb
 
-from .. core.core_functions     import merge_two_dicts
 from .. core.core_functions     import loc_elem_1d
-from .. core.configure          import all
 from .. core.configure          import configure
 from .. core.exceptions         import NoInputFiles
 from .. core.exceptions         import NoOutputFile
 from .. core.exceptions         import UnknownRWF
-from .. core.exceptions         import SipmEmptyList
-from .. core.exceptions         import SipmZeroCharge
-from .. core.exceptions         import ClusterEmptyList
 from .. core.exceptions         import XYRecoFail
-from .. core.exceptions         import InitializedEmptyPmapObject
 from .. core.exceptions         import UnknownParameter
 from .. core.system_of_units_c  import units
 from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
 from .. database import load_db
 
-from .. io                      import pmap_io          as pio
-from .. io                      import pmap_io          as pio
+from .. io                      import pmap_io           as pio
 from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
 from .. io.mc_io                import mc_track_writer
@@ -46,12 +38,8 @@ from .. reco                    import sensor_functions  as sf
 from .. reco                    import peak_functions    as pf
 from .. reco                    import pmaps_functions   as pmp
 from .. reco                    import pmaps_functions_c as cpmp
-from .. reco                    import dst_functions     as dstf
-from .. reco                    import wfm_functions     as wfm
 from .. reco                    import tbl_functions     as tbl
 from .. reco.sensor_functions   import convert_channel_id_to_IC_id
-from .. reco.corrections        import Correction
-from .. reco.corrections        import Fcorrection
 from .. reco.xy_algorithms      import corona
 
 from .. evm.ic_containers       import S12Params
@@ -67,9 +55,6 @@ from .. evm.event_model         import HitCollection
 from .. evm.event_model         import Hit
 from .. evm.event_model         import Cluster
 from .. evm.event_model         import Voxel
-from .. evm.event_model         import Track
-from .. evm.event_model         import Blob
-from .. evm.event_model         import TrackCollection
 from .. evm.nh5                 import DECONV_PARAM
 
 from .. sierpe                  import blr
