@@ -60,6 +60,17 @@ cdef class Peak:
         over_thr = self.E > thr
         return np.max(self.E[over_thr]) if over_thr.any() else 0
 
+    def rms_above_threshold(self, thr):
+        over_thr   = self.E > thr
+        n_over_thr = np.count_nonzero(over_thr)
+        if n_over_thr < 2: return 0
+
+        t    = self.t[over_thr]
+        E    = self.E[over_thr]
+        mean = np.average( t         , weights=E)
+        var  = np.average((t-mean)**2, weights=E)
+        return var**0.5
+
     def __str__(self):
         if self.width < units.mus:
             width   = "{:.0f} ns" .format(self.width)
