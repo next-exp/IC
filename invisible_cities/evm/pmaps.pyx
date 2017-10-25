@@ -31,9 +31,9 @@ cdef class Peak:
         assert len(t) == len(E)
         self.t              = t
         self.E              = E
-        self.height         = np.max(self.E)
-        self.width          = self.t[-1] - self.t[0]
-        self.total_energy   = np.sum(self.E)
+        self.height         = self.      height_above_threshold(0)
+        self.width          = self.       width_above_threshold(0)
+        self.total_energy   = self.total_energy_above_threshold(0)
 
         i_t        = np.argmax(self.E)
         self.tpeak = self.t[i_t]
