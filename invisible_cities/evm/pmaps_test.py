@@ -76,17 +76,19 @@ def test_peak(peak_pars):
 @given(peak_input())
 def test_peak_above_thr(peak_pars):
     size, t, E = peak_pars
-    ethr = 10
-    tth = t[E > ethr]
-    eth = E[E > ethr]
-    w_thr = -2
-    esum_thr = -1
+    ethr       = 10
+    tth        = t[E > ethr]
+    eth        = E[E > ethr]
+    w_thr      = -1
+    esum_thr   = -1
     height_thr = -1
+    rms_thr    = -1
     if len(eth):
         t0 = (loc_elem_1d(E, eth[0]))
         t1 = (loc_elem_1d(E, eth[-1]))
-        w_thr = t[t1] - t[t0]
-        esum_thr = np.sum(eth)
+
+        w_thr      = t[t1] - t[t0]
+        esum_thr   = np.sum(eth)
         height_thr = np.max(eth)
         rms_thr    = rms(tth, eth)
 
@@ -97,14 +99,10 @@ def test_peak_above_thr(peak_pars):
     else:
        assert  wf.good_waveform == True
 
-    np.isclose (wf.total_energy_above_threshold(ethr) ,
-                esum_thr, rtol=1e-4)
-    np.isclose (wf.height_above_threshold(ethr),
-                height_thr, rtol=1e-4)
-    np.isclose (wf.width_above_threshold(ethr),
-                w_thr, rtol=1e-4)
-    np.isclose (wf.rms_above_threshold(ethr),
-                rms_thr, rtol=1e-4)
+    np.isclose (wf.total_energy_above_threshold(ethr),   esum_thr, rtol=1e-4)
+    np.isclose (wf.      height_above_threshold(ethr), height_thr, rtol=1e-4)
+    np.isclose (wf.       width_above_threshold(ethr),      w_thr, rtol=1e-4)
+    np.isclose (wf.         rms_above_threshold(ethr),    rms_thr, rtol=1e-4)
 
 @given(peak_input())
 def test_s1__(wform):
