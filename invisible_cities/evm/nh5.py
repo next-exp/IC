@@ -142,12 +142,13 @@ class KrTable(tb.IsDescription):
     Nsipm = tb. UInt16Col(pos=13)
     DT    = tb.Float64Col(pos=14)
     Z     = tb.Float64Col(pos=15)
-    X     = tb.Float64Col(pos=16)
-    Y     = tb.Float64Col(pos=17)
-    R     = tb.Float64Col(pos=18)
-    Phi   = tb.Float64Col(pos=19)
-    Xrms  = tb.Float64Col(pos=20)
-    Yrms  = tb.Float64Col(pos=21)
+    Zrms  = tb.Float64Col(pos=16)
+    X     = tb.Float64Col(pos=17)
+    Y     = tb.Float64Col(pos=18)
+    R     = tb.Float64Col(pos=19)
+    Phi   = tb.Float64Col(pos=10)
+    Xrms  = tb.Float64Col(pos=21)
+    Yrms  = tb.Float64Col(pos=22)
 
 
 class XYfactors(tb.IsDescription):
