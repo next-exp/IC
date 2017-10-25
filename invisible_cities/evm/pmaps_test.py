@@ -25,6 +25,7 @@ from .  pmaps import Peak
 from .  pmaps import check_s2d_and_s2sid_share_peaks
 from .. core.core_functions    import loc_elem_1d
 
+
 @composite
 def peak_input(draw, min_size=1, max_size=100):
     size = draw(integers(min_size, max_size))
@@ -73,6 +74,7 @@ def test_peak(peak_pars):
     np.isclose (wf.rms, rms(wf.t[positive], wf.E[positive]), rtol=1e-4)
     assert wf.number_of_samples == len(t)
 
+
 @given(peak_input())
 def test_peak_above_thr(peak_pars):
     size, t, E = peak_pars
@@ -103,6 +105,7 @@ def test_peak_above_thr(peak_pars):
     np.isclose (wf.      height_above_threshold(ethr), height_thr, rtol=1e-4)
     np.isclose (wf.       width_above_threshold(ethr),      w_thr, rtol=1e-4)
     np.isclose (wf.         rms_above_threshold(ethr),    rms_thr, rtol=1e-4)
+
 
 @given(peak_input())
 def test_s1__(wform):
@@ -302,6 +305,7 @@ def test_pmt_total_energy():
         s = 0
         for pn in s12pmt.peaks: s += s12pmt.pmt_total_energy_in_peak(pn, pmt)
         assert s12pmt.pmt_total_energy(pmt) == s
+
 
 @mark.parametrize("constructor, args",
     ((Peak  , (np.array([],dtype=np.float64), np.array([], np.float64))),
