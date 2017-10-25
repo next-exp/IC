@@ -34,6 +34,7 @@ cdef class Peak:
         self.height         = self.      height_above_threshold(0)
         self.width          = self.       width_above_threshold(0)
         self.total_energy   = self.total_energy_above_threshold(0)
+        self.rms            = self.         rms_above_threshold(0)
 
         i_t        = np.argmax(self.E)
         self.tpeak = self.t[i_t]
