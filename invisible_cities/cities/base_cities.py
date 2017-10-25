@@ -850,6 +850,10 @@ class KrCity(PCity):
                     print('c_closest = {}'.format(c_closest))
                     c = clusters[loc_elem_1d(cQ, c_closest)]
                     print('c_chosen = {}'.format(c))
+
+                Z, DT = self.compute_z_and_dt(peak.tpeak, evt.S1t[0])
+                Zrms  = peak.rms / units.mus
+
                 evt.Nsipm.append(c.nsipm)
                 evt.S2q  .append(c.Q)
                 evt.X    .append(c.X)
@@ -858,9 +862,9 @@ class KrCity(PCity):
                 evt.Yrms .append(c.Yrms)
                 evt.R    .append(c.R)
                 evt.Phi  .append(c.Phi)
-                z, dt = self.compute_z_and_dt(peak.tpeak, evt.S1t[0])
-                evt.DT   .append(dt)
-                evt.Z    .append(z)
+                evt.DT   .append(DT)
+                evt.Z    .append(Z)
+                evt.Zrms .append(Zrms)
             except XYRecoFail:
                 evt.Nsipm.append(NN)
                 evt.S2q  .append(NN)
@@ -872,7 +876,7 @@ class KrCity(PCity):
                 evt.Phi  .append(NN)
                 evt.DT   .append(NN)
                 evt.Z    .append(NN)
-
+                evt.Zrms .append(NN)
         return evt
 
 
