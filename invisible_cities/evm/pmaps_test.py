@@ -43,6 +43,13 @@ def s2si_input(draw, min_size=1, max_size=10):
     return size, t, E, qs1, qs2
 
 
+def rms(x, y):
+    if len(x) == len(y) < 2: return 0
+    mean = np.average(x, weights=y)
+    var  = np.average((x-mean)**2, weights=y)
+    return var**0.5
+
+
 @given(peak_input())
 def test_peak(peak_pars):
     size, t, E = peak_pars
@@ -53,6 +60,8 @@ def test_peak(peak_pars):
     else:
        assert  wf.good_waveform == True
 
+    positive = wf.E > 0
+
     np.allclose (wf.t , t, rtol=1e-4)
     np.allclose (wf.E , E, rtol=1e-4)
     np.isclose (wf.total_energy , np.sum(E), rtol=1e-4)
@@ -61,22 +70,25 @@ def test_peak(peak_pars):
     np.isclose (wf.width , t[-1] - t[0], rtol=1e-4)
     np.isclose (wf.tmin_tmax.min , t[0], rtol=1e-4)
     np.isclose (wf.tmin_tmax.max , t[-1], rtol=1e-4)
+    np.isclose (wf.rms, rms(wf.t[positive], wf.E[positive]), rtol=1e-4)
     assert wf.number_of_samples == len(t)
 
 @given(peak_input())
 def test_peak_above_thr(peak_pars):
     size, t, E = peak_pars
     ethr = 10
+    tth = t[E > ethr]
     eth = E[E > ethr]
-    w_thr = 0
-    esum_thr = 0
-    height_thr = 0
+    w_thr = -2
+    esum_thr = -1
+    height_thr = -1
     if len(eth):
         t0 = (loc_elem_1d(E, eth[0]))
         t1 = (loc_elem_1d(E, eth[-1]))
         w_thr = t[t1] - t[t0]
         esum_thr = np.sum(eth)
         height_thr = np.max(eth)
+        rms_thr    = rms(tth, eth)
 
     wf =  Peak(t, E)
     if (np.any(np.isnan(t))  or
@@ -91,7 +103,8 @@ def test_peak_above_thr(peak_pars):
                 height_thr, rtol=1e-4)
     np.isclose (wf.width_above_threshold(ethr),
                 w_thr, rtol=1e-4)
-
+    np.isclose (wf.rms_above_threshold(ethr),
+                rms_thr, rtol=1e-4)
 
 @given(peak_input())
 def test_s1__(wform):
