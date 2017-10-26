@@ -26,6 +26,7 @@ from .. evm.event_model  import BHit
 from . paolina_functions import Voxel
 from . paolina_functions import bounding_box
 from . paolina_functions import find_extrema
+from . paolina_functions import find_extrema_and_length
 from . paolina_functions import blob_energies
 from . paolina_functions import voxelize_hits
 from . paolina_functions import shortest_paths
@@ -156,7 +157,7 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
                 ( 1 , 5 , 2)], ( 4 , 5 )),))
 def test_find_extrema(spec, extrema):
     weighted_graph = nx.Graph([(a,b, dict(distance=d)) for (a,b,d) in spec])
-    found = find_extrema(shortest_paths(weighted_graph))
+    found = find_extrema_and_length(shortest_paths(weighted_graph))
     a, b = extrema
     assert a in found
     assert b in found
@@ -166,12 +167,12 @@ def test_find_extrema(spec, extrema):
 def test_find_extrema_single_voxel(voxel):
     g = nx.Graph()
     g.add_node(voxel)
-    assert find_extrema(shortest_paths(g)) == (voxel, voxel)
+    assert find_extrema(g) == (voxel, voxel)
 
 
 def test_find_extrema_no_voxels():
     with raises(NoVoxels):
-        find_extrema({})
+        find_extrema_and_length({})
 
 
 @fixture(scope='module')
@@ -202,8 +203,7 @@ def track_extrema():
     tracks  = make_track_graphs(voxels, np.array([1,1,1]), contiguity=1.5)
 
     assert len(tracks) == 1
-    distances = shortest_paths(tracks[0])
-    extrema = find_extrema(distances)
+    extrema = find_extrema(tracks[0])
 
     assert voxels[ 0] in extrema
     assert voxels[-1] in extrema
@@ -249,8 +249,7 @@ def test_length():
     tracks  = make_track_graphs(voxels, np.array([1,1,1]), contiguity=1.85)
 
     assert len(tracks) == 1
-    distances = shortest_paths(tracks[0])
-    track_length = length(distances)
+    track_length = length(tracks[0])
 
     expected_length = 8 + np.sqrt(2)
 
