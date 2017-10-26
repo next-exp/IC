@@ -254,4 +254,4 @@ def test_length():
 
     expected_length = 8 + np.sqrt(2)
 
-    assert_almost_equal(track_length, expected_length)
+    assert track_length == approx(expected_length)
