@@ -31,6 +31,7 @@ from . paolina_functions import voxelize_hits
 from . paolina_functions import shortest_paths
 from . paolina_functions import make_track_graphs
 from . paolina_functions import voxels_from_track_graph
+from . paolina_functions import length
 
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
