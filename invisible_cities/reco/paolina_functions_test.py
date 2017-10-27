@@ -278,6 +278,26 @@ def test_length_around_bend(contiguity, expected_length):
     assert track_length == approx(expected_length)
 
 
+@parametrize('contiguity, expected_length',
+             (# Face contiguity requires 3 steps, each parallel to an axis
+              (Contiguity.FACE,  1 + 1 + 1),
+              # Edge continuity allows to cut one corner
+              (Contiguity.EDGE,  1 + sqrt(2)),
+              # Corner contiguity makes it possible to do in a single step
+              (Contiguity.CORNER,    sqrt(3))))
+def test_length_cuts_corners(contiguity, expected_length):
+    "Make sure that we cut corners, if the contiguity allows"
+    voxel_spec = ((0,0,0,  1), # Extremum 1
+                  (1,0,0,  1),
+                  (1,1,0,  1),
+                  (1,1,1,  1)) # Extremum 2
+    voxels = list(starmap(Voxel, voxel_spec))
+    tracks = make_track_graphs(voxels, np.array([1,1,1]), contiguity=contiguity)
+    assert len(tracks) == 1
+    track_length = length(tracks[0])
+    assert track_length == approx(expected_length)
+
+
 
 @parametrize('criterion,  proximity,     are_neighbours',
              (('FACE',   'share_face',            True),
