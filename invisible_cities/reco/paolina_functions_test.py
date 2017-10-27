@@ -261,7 +261,7 @@ def test_length():
 
 
 @parametrize('contiguity, expected_length',
-             (mark.xfail((Contiguity.FACE, 4), reason='contiguity is broken'),
+             ((Contiguity.FACE, 4),
               (Contiguity.CORNER, 2 * sqrt(2))))
 def test_length_around_bend(contiguity, expected_length):
     # Make sure that we calculate the length along the track rather
