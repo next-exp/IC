@@ -203,7 +203,7 @@ def track_extrema():
                   (20,20,20,  2000),
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    tracks  = make_track_graphs(voxels, np.array([1,1,1]), contiguity=1.8)
+    tracks  = make_track_graphs(voxels, np.array([1,1,1]), contiguity=Contiguity.CORNER)
 
     assert len(tracks) == 1
     extrema = find_extrema(tracks[0])
@@ -250,7 +250,7 @@ def test_length():
                   (10,15,15,1)
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    tracks  = make_track_graphs(voxels, np.array([1,1,1]), contiguity=1.85)
+    tracks  = make_track_graphs(voxels, np.array([1,1,1]), contiguity=Contiguity.CORNER)
 
     assert len(tracks) == 1
     track_length = length(tracks[0])
@@ -261,8 +261,8 @@ def test_length():
 
 
 @parametrize('contiguity, expected_length',
-             (mark.xfail((1.2, 4), reason='contiguity is broken'),
-              (1.5, 2 * sqrt(2))))
+             (mark.xfail((Contiguity.FACE, 4), reason='contiguity is broken'),
+              (Contiguity.CORNER, 2 * sqrt(2))))
 def test_length_around_bend(contiguity, expected_length):
     # Make sure that we calculate the length along the track rather
     # that the shortcut
