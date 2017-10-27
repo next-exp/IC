@@ -76,7 +76,7 @@ def make_track_graphs(voxels           : Voxel,
     than a contiguity factor.
     """
 
-    def neighbours(va : Voxel, vb : Voxel, scale : float = 1.0) -> bool:
+    def neighbours(va : Voxel, vb : Voxel) -> bool:
         return np.linalg.norm((va.pos - vb.pos) / voxel_dimensions) < contiguity
 
     voxel_graph = nx.Graph()
