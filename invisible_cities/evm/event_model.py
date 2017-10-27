@@ -115,7 +115,8 @@ class BHit:
     def E   (self): return self.energy
 
     def __str__(self):
-        return '<{} {}>'.format(self.pos.tolist(), self.E)
+        return '{}({.X}, {.Y}, {.Z}, E={.E})'.format(
+            self.__class__.__name__, self, self, self, self)
 
     __repr__ =     __str__
 
