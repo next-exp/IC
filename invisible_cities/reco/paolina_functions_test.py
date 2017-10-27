@@ -1,9 +1,11 @@
+from math      import sqrt
 from functools import partial
 
 import numpy    as np
 import networkx as nx
 
 from itertools import combinations
+from itertools import starmap
 
 from numpy.testing import assert_almost_equal
 
@@ -232,6 +234,7 @@ def test_voxelize_single_hit():
     vox_size = np.array([10,10,10], dtype=np.int16)
     assert len(voxelize_hits(hits, vox_size)) == 1
 
+
 def test_length():
     voxel_spec = ((10,10,10,1),
                   (10,10,11,1),
@@ -253,4 +256,22 @@ def test_length():
 
     expected_length = 8 + np.sqrt(2)
 
+    assert track_length == approx(expected_length)
+
+
+@parametrize('contiguity, expected_length',
+             (mark.xfail((1.2, 4), reason='contiguity is broken'),
+              (1.5, 2 * sqrt(2))))
+def test_length_around_bend(contiguity, expected_length):
+    # Make sure that we calculate the length along the track rather
+    # that the shortcut
+    voxel_spec = ((0,0,0, 1),
+                  (1,0,0, 1),
+                  (1,1,0, 1),
+                  (1,2,0, 1),
+                  (0,2,0, 1))
+    voxels = list(starmap(Voxel, voxel_spec))
+    tracks = make_track_graphs(voxels, np.array([1,1,1]), contiguity=contiguity)
+    assert len(tracks) == 1
+    track_length = length(tracks[0])
     assert track_length == approx(expected_length)
