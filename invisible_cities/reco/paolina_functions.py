@@ -1,5 +1,6 @@
 from functools   import reduce
 from itertools   import combinations
+from enum        import Enum
 
 import numpy    as np
 import networkx as nx
@@ -67,9 +68,15 @@ def voxelize_hits(hits             : Sequence[BHit],
     return [Voxel(cx[x], cy[y], cz[z], E[x,y,z]) for (x,y,z) in np.stack(nz).T]
 
 
+class Contiguity(Enum):
+    FACE   = 1.2
+    EDGE   = 1.5
+    CORNER = 1.8
+
+
 def make_track_graphs(voxels           : Voxel,
                       voxel_dimensions : np.ndarray,
-                      contiguity       : float = 1) -> Sequence[Graph]:
+                      contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Graph]:
     """Create a graph where the voxels are the nodes and the edges are any
     pair of neighbour voxel. Two voxels are considered to be
     neighbours if their distance normalized to their size is smaller
@@ -77,7 +84,7 @@ def make_track_graphs(voxels           : Voxel,
     """
 
     def neighbours(va : Voxel, vb : Voxel) -> bool:
-        return np.linalg.norm((va.pos - vb.pos) / voxel_dimensions) < contiguity
+        return np.linalg.norm((va.pos - vb.pos) / voxel_dimensions) < contiguity.value
 
     voxel_graph = nx.Graph()
     voxel_graph.add_nodes_from(voxels)
