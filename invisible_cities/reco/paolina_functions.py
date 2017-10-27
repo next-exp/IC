@@ -98,23 +98,36 @@ def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
     return nx.all_pairs_dijkstra_path_length(track_graph, weight='distance')
 
 
-def find_extrema(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Voxel]:
-    """Find the extrema of the track."""
+def find_extrema_and_length(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Voxel, float]:
+    """Find the extrema and the length of a track, given its dictionary of distances."""
     if not distance:
         raise NoVoxels
     if len(distance) == 1:
         only_voxel = next(iter(distance))
-        return (only_voxel, only_voxel)
+        return (only_voxel, only_voxel, 0.)
     first, last, max_distance = None, None, 0
     for source, target in combinations(distance, 2):
         d = distance[source][target]
         if d > max_distance:
             first, last, max_distance = source, target, d
-    return (first, last)
+    return (first, last, max_distance)
 
 
-def length(track_graph):
-    return len(shortest_paths(track_graph))
+def find_extrema(track: Graph) -> Tuple[Voxel, Voxel]:
+    """Find the pair of voxels separated by the greatest geometric
+      distance along the track.
+
+    """
+    distances = shortest_paths(track)
+    extremum_a, extremum_b, _ = find_extrema_and_length(distances)
+    return extremum_a, extremum_b
+
+
+def length(track: Graph) -> float:
+    """Calculate the length of a track."""
+    distances = shortest_paths(track)
+    _, _, length = find_extrema_and_length(distances)
+    return length
 
 
 def energy_within_radius(distances : Dict[Voxel, Dict[Voxel, float]], radius : float) -> float:
@@ -129,7 +142,7 @@ def voxels_within_radius(distances : Dict[Voxel, Dict[Voxel, float]],
 def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
     """Return the energies around the extrema of the track."""
     distances = shortest_paths(track_graph)
-    a,b = find_extrema(distances)
+    a, b, _ = find_extrema_and_length(distances)
     Ea = energy_within_radius(distances[a], radius)
     Eb = energy_within_radius(distances[b], radius)
     return (Ea, Eb) if Ea < Eb else (Eb, Ea)
@@ -138,7 +151,7 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
 def compute_blobs(track_graph : Graph, radius : float) -> Tuple[Voxel, Voxel, List[Voxel], List[Voxel]]:
     """Return the blobs (list of voxels) around the extrema of the track."""
     distances = shortest_paths(track_graph)
-    a,b = find_extrema(distances)
+    a, b, _ = find_extrema_and_length(distances)
     ba = voxels_within_radius(distances[a], radius)
     bb = voxels_within_radius(distances[b], radius)
     return a, b, ba, bb
