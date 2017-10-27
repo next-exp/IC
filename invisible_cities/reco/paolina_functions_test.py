@@ -3,10 +3,13 @@ from functools import partial
 import numpy    as np
 import networkx as nx
 
+from itertools import combinations
+
 from numpy.testing import assert_almost_equal
 
 from pytest import fixture
 from pytest import mark
+from pytest import approx
 from pytest import raises
 parametrize = mark.parametrize
 
@@ -39,7 +42,7 @@ def big_enough(hits):
 
 posn = floats(min_value=10, max_value=100)
 ener = posn
-bunch_of_hits = lists(builds(Voxel, posn, posn, posn, ener),
+bunch_of_hits = lists(builds(BHit, posn, posn, posn, ener),
                       min_size =  1,
                       max_size = 30).filter(big_enough)
 
@@ -54,6 +57,7 @@ box_sizes = builds(np.array, lists(box_dimension,
 def test_voxelize_hits_should_detect_no_hits():
     with raises(NoHits):
         voxelize_hits([], None)
+
 
 @given(bunch_of_hits)
 def test_bounding_box(hits):
@@ -89,7 +93,7 @@ def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
     def sum_energy(seq):
         return sum(e.E for e in seq)
 
-    assert_almost_equal(sum_energy(hits), sum_energy(voxels))
+    assert sum_energy(voxels) == approx(sum_energy(hits))
 
 
 random_graph = builds(partial(fast_gnp_random_graph, p=0.5),
@@ -99,6 +103,7 @@ random_graph = builds(partial(fast_gnp_random_graph, p=0.5),
 @given(random_graph)
 def test_voxels_from_track_return_node_voxels(graph):
     assert voxels_from_track_graph(graph) == graph.nodes()
+
 
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
@@ -112,6 +117,18 @@ def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
 
     assert (vlo <= hlo).all()
     assert (vhi >= hhi).all()
+
+
+@given(bunch_of_hits, box_sizes)
+def test_voxelize_hits_respects_voxel_dimensions(hits, requested_voxel_dimensions):
+    voxels = voxelize_hits(hits, requested_voxel_dimensions)
+    unit   =                     requested_voxel_dimensions
+    for v1, v2 in combinations(voxels, 2):
+        distance_between_voxels = np.array(v2.XYZ) - np.array(v1.XYZ)
+        off_by = distance_between_voxels % requested_voxel_dimensions
+        assert (np.isclose(off_by, 0   ) |
+                np.isclose(off_by, unit)).all()
+
 
 @given(bunch_of_hits, box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
@@ -143,15 +160,18 @@ def test_find_extrema(spec, extrema):
     assert a in found
     assert b in found
 
+
 @given(builds(Voxel, posn, posn, posn, ener))
 def test_find_extrema_single_voxel(voxel):
     g = nx.Graph()
     g.add_node(voxel)
     assert find_extrema(shortest_paths(g)) == (voxel, voxel)
 
+
 def test_find_extrema_no_voxels():
     with raises(NoVoxels):
         find_extrema({})
+
 
 @fixture(scope='module')
 def track_extrema():
@@ -204,6 +224,7 @@ def test_blobs(track_extrema, radius, expected):
     Ea, Eb = expected
 
     assert blob_energies(track, radius) == (Ea, Eb)
+
 
 def test_voxelize_single_hit():
     hits = [BHit(1, 1, 1, 100)]
