@@ -119,14 +119,15 @@ def find_extrema(track: Graph) -> Tuple[Voxel, Voxel]:
 
     """
     distances = shortest_paths(track)
-    extrema_and_length = find_extrema_and_length(distances)
-    return (extrema_and_length[0], extrema_and_length[1])
+    extremum_a, extremum_b, _ = find_extrema_and_length(distances)
+    return extremum_a, extremum_b
+
 
 def length(track: Graph) -> float:
     """Calculate the length of a track."""
     distances = shortest_paths(track)
-    extrema_and_length = find_extrema_and_length(distances)
-    return extrema_and_length[2]
+    _, _, length = find_extrema_and_length(distances)
+    return length
 
 
 def energy_within_radius(distances : Dict[Voxel, Dict[Voxel, float]], radius : float) -> float:
