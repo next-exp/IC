@@ -112,7 +112,10 @@ def find_extrema_and_length(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple
     return (first, last, max_distance)
 
 def find_extrema(track: Graph) -> Tuple[Voxel, Voxel]:
-    """Find the extrema of a track."""
+    """Find the pair of voxels separated by the greatest geometric
+      distance along the track.
+
+    """
     distances = shortest_paths(track)
     extrema_and_length = find_extrema_and_length(distances)
     return (extrema_and_length[0], extrema_and_length[1])
