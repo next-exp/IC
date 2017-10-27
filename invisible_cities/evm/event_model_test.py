@@ -40,11 +40,12 @@ def event_input(draw):
 
 @composite
 def voxel_input(draw, min_value=0, max_value=100):
-    x     = draw(floats  (  1,   5))
-    y     = draw(floats  (-10,  10))
-    z     = draw(floats  (.01,  .5))
-    E     = draw(floats  ( 50, 100))
-    return x, y, z, E
+    x     = draw(floats(  1,   5))
+    y     = draw(floats(-10,  10))
+    z     = draw(floats(.01,  .5))
+    E     = draw(floats( 50, 100))
+    size  = np.array([draw(floats(1,2)), draw(floats(1,2)), draw(floats(1,2))])
+    return x, y, z, E, size
 
 @composite
 def cluster_input(draw, min_value=0, max_value=100):
@@ -137,9 +138,9 @@ def test_hit(ci, hi):
 
 @given(voxel_input(1))
 def test_voxel(vi):
-    x, y, z, E = vi
+    x, y, z, E, size = vi
     xyz = x, y, z
-    v = Voxel(x, y, z, E)
+    v = Voxel(x, y, z, E, size)
 
     np.allclose(v.XYZ  , xyz,                rtol=1e-4)
     np.allclose(v.pos , np.array(xyz),       rtol=1e-4)
