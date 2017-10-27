@@ -35,6 +35,7 @@ from . paolina_functions import shortest_paths
 from . paolina_functions import make_track_graphs
 from . paolina_functions import voxels_from_track_graph
 from . paolina_functions import length
+from . paolina_functions import Contiguity
 
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
@@ -279,23 +280,23 @@ def test_length_around_bend(contiguity, expected_length):
 
 
 @parametrize('criterion,  proximity,     are_neighbours',
-             (('face',   'share_face',            True),
-              ('face',   'share_edge',            False),
-              ('face',   'share_corner',          False),
-              ('face',   'share_nothing',         False),
-              ('face',   'share_nothing_algined', False),
+             (('FACE',   'share_face',            True),
+              ('FACE',   'share_edge',            False),
+              ('FACE',   'share_corner',          False),
+              ('FACE',   'share_nothing',         False),
+              ('FACE',   'share_nothing_algined', False),
 
-              ('edge',   'share_face',            True),
-              ('edge',   'share_edge',            True),
-              ('edge',   'share_corner',          False),
-              ('edge',   'share_nothing',         False),
-              ('edge',   'share_nothing_algined', False),
+              ('EDGE',   'share_face',            True),
+              ('EDGE',   'share_edge',            True),
+              ('EDGE',   'share_corner',          False),
+              ('EDGE',   'share_nothing',         False),
+              ('EDGE',   'share_nothing_algined', False),
 
-              ('corner', 'share_face',            True),
-              ('corner', 'share_edge',            True),
-              ('corner', 'share_corner',          True),
-              ('corner', 'share_nothing',         False),
-              ('corner', 'share_nothing_algined', False),))
+              ('CORNER', 'share_face',            True),
+              ('CORNER', 'share_edge',            True),
+              ('CORNER', 'share_corner',          True),
+              ('CORNER', 'share_nothing',         False),
+              ('CORNER', 'share_nothing_algined', False),))
 def test_contiguity(proximity, criterion, are_neighbours):
     voxel_spec = dict(share_face            = ((0,0,0, 1),
                                                (0,0,1, 1)),
@@ -307,8 +308,7 @@ def test_contiguity(proximity, criterion, are_neighbours):
                                                (2,2,2, 1)),
                       share_nothing_algined = ((0,0,0, 1),
                                                (2,0,0, 1)) )[proximity]
-    contiguity = dict(face=1.2, edge=1.5, corner=1.8)[criterion]
     expected_number_of_tracks = 1 if are_neighbours else 2
     voxels = list(starmap(Voxel, voxel_spec))
-    tracks = make_track_graphs(voxels, np.array([1,1,1]), contiguity=contiguity)
+    tracks = make_track_graphs(voxels, np.array([1,1,1]), contiguity=Contiguity[criterion])
     assert len(tracks) == expected_number_of_tracks
