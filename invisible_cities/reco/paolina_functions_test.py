@@ -203,7 +203,7 @@ def track_extrema():
                   (20,20,20,  2000),
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    tracks  = make_track_graphs(voxels, np.array([1,1,1]), contiguity=Contiguity.CORNER)
+    tracks  = make_track_graphs(voxels, np.array([1,1,1]))
 
     assert len(tracks) == 1
     extrema = find_extrema(tracks[0])
@@ -250,7 +250,7 @@ def test_length():
                   (10,15,15,1)
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    tracks  = make_track_graphs(voxels, np.array([1,1,1]), contiguity=Contiguity.CORNER)
+    tracks  = make_track_graphs(voxels, np.array([1,1,1]))
 
     assert len(tracks) == 1
     track_length = length(tracks[0])
