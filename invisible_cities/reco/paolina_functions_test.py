@@ -299,25 +299,26 @@ def test_length_cuts_corners(contiguity, expected_length):
 
 
 
-@parametrize('criterion,  proximity,     are_neighbours',
-             (('FACE',   'share_face',            True),
-              ('FACE',   'share_edge',            False),
-              ('FACE',   'share_corner',          False),
-              ('FACE',   'share_nothing',         False),
-              ('FACE',   'share_nothing_algined', False),
+FACE, EDGE, CORNER = Contiguity
+@parametrize('contiguity,  proximity,          are_neighbours',
+             ((FACE,      'share_face',            True),
+              (FACE,      'share_edge',            False),
+              (FACE,      'share_corner',          False),
+              (FACE,      'share_nothing',         False),
+              (FACE,      'share_nothing_algined', False),
 
-              ('EDGE',   'share_face',            True),
-              ('EDGE',   'share_edge',            True),
-              ('EDGE',   'share_corner',          False),
-              ('EDGE',   'share_nothing',         False),
-              ('EDGE',   'share_nothing_algined', False),
+              (EDGE,      'share_face',            True),
+              (EDGE,      'share_edge',            True),
+              (EDGE,      'share_corner',          False),
+              (EDGE,      'share_nothing',         False),
+              (EDGE,      'share_nothing_algined', False),
 
-              ('CORNER', 'share_face',            True),
-              ('CORNER', 'share_edge',            True),
-              ('CORNER', 'share_corner',          True),
-              ('CORNER', 'share_nothing',         False),
-              ('CORNER', 'share_nothing_algined', False),))
-def test_contiguity(proximity, criterion, are_neighbours):
+              (CORNER,    'share_face',            True),
+              (CORNER,    'share_edge',            True),
+              (CORNER,    'share_corner',          True),
+              (CORNER,    'share_nothing',         False),
+              (CORNER,    'share_nothing_algined', False),))
+def test_contiguity(proximity, contiguity, are_neighbours):
     voxel_spec = dict(share_face            = ((0,0,0, 1),
                                                (0,0,1, 1)),
                       share_edge            = ((0,0,0, 1),
@@ -330,5 +331,5 @@ def test_contiguity(proximity, criterion, are_neighbours):
                                                (2,0,0, 1)) )[proximity]
     expected_number_of_tracks = 1 if are_neighbours else 2
     voxels = list(starmap(Voxel, voxel_spec))
-    tracks = make_track_graphs(voxels, np.array([1,1,1]), contiguity=Contiguity[criterion])
+    tracks = make_track_graphs(voxels, np.array([1,1,1]), contiguity=contiguity)
     assert len(tracks) == expected_number_of_tracks
