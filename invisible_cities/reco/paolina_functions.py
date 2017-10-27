@@ -182,3 +182,47 @@ def make_tracks(evt_number       : float,
         track = Track(voxels_from_track_graph(trk), blobs)
         tc.tracks.append(track)
     return tc
+
+def merge_tracks(tracks : Sequence[Graph]) -> Sequence[Graph]:
+    factor = 0.75 # fraction of energy remaining energy after subtraction
+    min_nodes = 2
+    new_voxels = []
+    # {track: {voxel: energy to be subtracted}}
+    modificandi_voxels = collections.defaultdict(dict)
+    for t1, t2 in combinations(tracks, 2):
+        if len(t1.nodes()) < min_nodes or len(t2.nodes()) < min_nodes:
+            continue
+        found = False
+        voxel_pairs = product(t1.nodes(), t2.nodes())
+        for (v1, v2) in voxel_pairs:
+            if not found:
+                if np.all(abs((v1.pos - v2.pos) / vox_size) < 2.5):
+                    found = True
+                    new_pos = (v1.pos + v2.pos) / 2.
+                    new_pos = vox_size * np.round(new_pos / vox_size)
+                    new_energy = (v1.energy + v2.energy) * (1 - factor)
+                    new_voxel = Voxel(new_pos[0], new_pos[1], new_pos[2], new_energy)
+                    if not (new_voxel in new_voxels):
+                        new_voxels.append(new_voxel)
+                        if v1 in modificandi_voxels[t1]:
+                            modificandi_voxels[t1][v1] += v1.energy * (1 - factor)
+                        else:
+                            modificandi_voxels[t1][v1] = v1.energy * (1 - factor)
+                        if v2 in modificandi_voxels[t2]:
+                            modificandi_voxels[t2][v2] += v2.energy * (1 - factor)
+                        else:
+                            modificandi_voxels[t2][v2] = v2.energy * (1 - factor)
+
+    old_voxels = []
+    for t in tracks:
+        for v in t.nodes():
+            if t in modificandi_voxels:
+                if v in modificandi_voxels[t]:
+                    v.energy = v.energy - modificandi_voxels[t][v]
+            old_voxels.append(v)
+
+    joint_voxels = old_voxels + new_voxels
+    voxel_graph = nx.Graph()
+    voxel_graph.add_nodes_from(joint_voxels)
+
+    return tuple(nx.connected_component_subgraphs(voxel_graph))
