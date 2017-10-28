@@ -279,7 +279,7 @@ def test_length_around_bend(contiguity, expected_length):
     track_length = length(tracks[0])
     assert track_length == approx(expected_length)
 
-
+    
 @parametrize('contiguity, expected_length',
              (# Face contiguity requires 3 steps, each parallel to an axis
               (Contiguity.FACE,  1 + 1 + 1),
