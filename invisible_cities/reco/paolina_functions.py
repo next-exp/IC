@@ -193,8 +193,7 @@ def merge_tracks(tracks    : Sequence[Graph],
                  min_nodes : int) -> Sequence[Graph]:
     factor = 0.75 # fraction of energy remaining energy after subtraction
     new_voxels = []
-    # {track: {voxel: energy to be subtracted}}
-    modificandi_voxels = collections.defaultdict(dict)
+    modificandi_voxels = collections.defaultdict(dict) # {track: {voxel: energy to be subtracted}}
     for t1, t2 in combinations(tracks, 2):
         if len(t1.nodes()) < min_nodes or len(t2.nodes()) < min_nodes:
             continue
@@ -228,7 +227,4 @@ def merge_tracks(tracks    : Sequence[Graph],
             old_voxels.append(v)
 
     joint_voxels = old_voxels + new_voxels
-    voxel_graph = nx.Graph()
-    voxel_graph.add_nodes_from(joint_voxels)
-
-    return tuple(nx.connected_component_subgraphs(voxel_graph))
+    return make_track_graphs(joint_voxels, vox_size, 1.85)
