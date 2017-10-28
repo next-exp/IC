@@ -21,6 +21,11 @@ from typing import List
 from typing import Tuple
 from typing import Dict
 
+from itertools import product
+from itertools import combinations
+from itertools import chain
+import collections
+
 MAX3D = np.array([float(' inf')] * 3)
 MIN3D = np.array([float('-inf')] * 3)
 

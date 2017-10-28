@@ -35,6 +35,7 @@ from . paolina_functions import make_track_graphs
 from . paolina_functions import voxels_from_track_graph
 from . paolina_functions import length
 from . paolina_functions import Contiguity
+from . paolina_functions import merge_tracks
 
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
@@ -301,7 +302,6 @@ def test_length_cuts_corners(contiguity, expected_length):
     assert track_length == approx(expected_length)
 
 
-
 FACE, EDGE, CORNER = Contiguity
 @parametrize('contiguity,  proximity,          are_neighbours',
              ((FACE,      'share_face',            True),
@@ -337,3 +337,22 @@ def test_contiguity(proximity, contiguity, are_neighbours):
     tracks = make_track_graphs(voxels, contiguity=contiguity)
 
     assert len(tracks) == expected_number_of_tracks
+
+
+def test_energy_conservation_in_merging():
+    vox_size = np.array([1,1,1],dtype=np.int16)
+    voxel_spec = ((1, 1, 0, 5),
+                  (1, 2, 0, 5),
+                  (1, 4, 0, 5),
+                  (3, 1, 0, 5)
+    )
+    voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
+    tracks  = make_track_graphs(voxels, vox_size, contiguity=1.85)
+    merged_tracks = merge_tracks(tracks)
+
+    sum_e = 0.
+    for t in merged_tracks:
+        for v in t.nodes():
+            sum_e += v.energy
+
+    assert sum_e == approx(20)
