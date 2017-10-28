@@ -188,9 +188,10 @@ def make_tracks(evt_number       : float,
         tc.tracks.append(track)
     return tc
 
-def merge_tracks(tracks : Sequence[Graph]) -> Sequence[Graph]:
+def merge_tracks(tracks    : Sequence[Graph],
+                 vox_size  : np.ndarray,
+                 min_nodes : int) -> Sequence[Graph]:
     factor = 0.75 # fraction of energy remaining energy after subtraction
-    min_nodes = 2
     new_voxels = []
     # {track: {voxel: energy to be subtracted}}
     modificandi_voxels = collections.defaultdict(dict)
