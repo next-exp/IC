@@ -235,6 +235,34 @@ def test_correction_normalization_1d_to_const(toy_data_1d, norm_value):
     assert_allclose(c._us, norm_value/E**2*Eu)
 
 
+@given(uniform_energy_1d())
+def test_correction_normalization_to_center_1d(toy_data_1d):
+    X, E, Eu, *_ = toy_data_1d
+    c = Correction((X,), E, Eu,
+                   norm_strategy = "center")
+
+    norm_index = E.size//2
+    norm_value = E [norm_index]
+    norm_uncer = Eu[norm_index]
+    prop_uncer = ((Eu/E)**2 + (norm_uncer/norm_value)**2)**0.5 * norm_value/E
+    assert_allclose(c._fs, norm_value/E)
+    assert_allclose(c._us, prop_uncer  )
+
+
+@given(uniform_energy_2d())
+def test_correction_normalization_to_center_2d(toy_data_2d):
+    X, Y, E, Eu, *_ = toy_data_2d
+    c = Correction((X,Y), E, Eu,
+                   norm_strategy = "center")
+
+    norm_index = X.size//2, Y.size//2
+    norm_value = E [norm_index]
+    norm_uncer = Eu[norm_index]
+    prop_uncer = ((Eu/E)**2 + (norm_uncer/norm_value)**2)**0.5 * norm_value/E
+    assert_allclose(c._fs, norm_value/E)
+    assert_allclose(c._us, prop_uncer  )
+
+
 #--------------------------------------------------------
 
 @given(uniform_energy_2d())

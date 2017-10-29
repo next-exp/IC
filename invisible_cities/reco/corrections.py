@@ -84,6 +84,11 @@ class Correction:
             f_ref = self._fs[mult_index]
             u_ref = self._us[mult_index]
 
+        elif   strategy == "center":
+            index = tuple(i//2 for i in self._fs.shape)
+            f_ref = self._fs[index]
+            u_ref = self._us[index]
+
         elif   strategy == "index":
             if "index" not in opts:
                 raise ParameterNotSet(("Normalization stratery 'index' requires"
