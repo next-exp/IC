@@ -344,11 +344,13 @@ def test_energy_conservation_in_merging():
     voxel_spec = ((1, 1, 0, 5),
                   (1, 2, 0, 5),
                   (1, 4, 0, 5),
-                  (3, 1, 0, 5)
+                  (1, 5, 0, 5),
+                  (3, 2, 0, 5),
+                  (4, 2, 0, 5)
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
     tracks  = make_track_graphs(voxels, vox_size, contiguity=1.85)
-    merged_tracks = merge_tracks(tracks, vox_size, min_nodes=1)
+    merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
 
     sum_e = 0.
     for t in merged_tracks:

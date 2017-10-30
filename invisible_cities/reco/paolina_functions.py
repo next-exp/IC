@@ -192,8 +192,7 @@ def merge_tracks(tracks    : Sequence[Graph],
                  vox_size  : np.ndarray,
                  min_nodes : int) -> Sequence[Graph]:
     factor = 0.75 # fraction of energy remaining energy after subtraction
-    new_voxels = []
-    modificandi_voxels = collections.defaultdict(dict) # {track: {voxel: energy to be subtracted}}
+    new_voxels_dict = {} # Voxel[x,y,z,0.]: energy
     for t1, t2 in combinations(tracks, 2):
         if len(t1.nodes()) < min_nodes or len(t2.nodes()) < min_nodes:
             continue
@@ -202,29 +201,24 @@ def merge_tracks(tracks    : Sequence[Graph],
         for (v1, v2) in voxel_pairs:
             if not found:
                 if np.all(abs((v1.pos - v2.pos) / vox_size) < 2.5):
+                    print(v1,v2)
                     found = True
                     new_pos = (v1.pos + v2.pos) / 2.
                     new_pos = vox_size * np.round(new_pos / vox_size)
-                    new_energy = (v1.energy + v2.energy) * (1 - factor)
-                    new_voxel = Voxel(new_pos[0], new_pos[1], new_pos[2], new_energy)
-                    if not (new_voxel in new_voxels):
-                        new_voxels.append(new_voxel)
-                        if v1 in modificandi_voxels[t1]:
-                            modificandi_voxels[t1][v1] += v1.energy * (1 - factor)
-                        else:
-                            modificandi_voxels[t1][v1] = v1.energy * (1 - factor)
-                        if v2 in modificandi_voxels[t2]:
-                            modificandi_voxels[t2][v2] += v2.energy * (1 - factor)
-                        else:
-                            modificandi_voxels[t2][v2] = v2.energy * (1 - factor)
+                    new_voxel = Voxel(new_pos[0], new_pos[1], new_pos[2], 0.)
+                    if not (new_voxel in new_voxels_dict.keys()):
+                        new_energy = (v1.energy + v2.energy) * (1 - factor)
+                        new_voxels_dict[new_voxel] = new_energy
+                        v1.energy = v1.energy * factor
+                        v2.energy = v2.energy * factor
 
-    old_voxels = []
+    joint_voxels = []
     for t in tracks:
         for v in t.nodes():
-            if t in modificandi_voxels:
-                if v in modificandi_voxels[t]:
-                    v.energy = v.energy - modificandi_voxels[t][v]
-            old_voxels.append(v)
+            joint_voxels.append(v)
 
-    joint_voxels = old_voxels + new_voxels
+    for vxl, energy in new_voxels_dict.items():
+        new_vxl = Voxel(vxl.X, vxl.Y, vxl.Z, energy)
+        joint_voxels.append(new_vxl)
+
     return make_track_graphs(joint_voxels, vox_size, 1.85)
