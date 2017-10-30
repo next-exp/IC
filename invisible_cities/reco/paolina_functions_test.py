@@ -354,8 +354,9 @@ def test_energy_conservation_in_merging():
     for t in merged_tracks:
         for v in t.nodes():
             sum_e += v.energy
+    sum_e_vox = sum([vox.E for vox in voxels])
 
-    assert sum_e == approx(20)
+    assert sum_e == approx(sum_e_vox)
 
 def test_short_tracks_no_merge():
     vox_size = np.array([1,1,1],dtype=np.int16)
@@ -369,3 +370,5 @@ def test_short_tracks_no_merge():
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
     tracks  = make_track_graphs(voxels, vox_size, contiguity=1.85)
     merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
+
+    assert len(merged_tracks) == len(tracks) -1
