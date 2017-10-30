@@ -201,7 +201,6 @@ def merge_tracks(tracks    : Sequence[Graph],
         for (v1, v2) in voxel_pairs:
             if not found:
                 if np.all(abs((v1.pos - v2.pos) / vox_size) < 2.5):
-                    print(v1,v2)
                     found = True
                     new_pos = (v1.pos + v2.pos) / 2.
                     new_pos = vox_size * np.round(new_pos / vox_size)
