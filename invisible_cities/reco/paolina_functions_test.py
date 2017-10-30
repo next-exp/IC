@@ -374,3 +374,22 @@ def test_short_tracks_no_merge():
     merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
 
     assert len(merged_tracks) == len(tracks) -1
+
+def test_new_voxels_only_appear_once():
+    vox_size = np.array([1,1,1],dtype=np.int16)
+    voxel_spec = ((1, 1, 0, 5),
+                  (1, 2, 0, 5),
+                  (1, 4, 0, 5),
+                  (1, 5, 0, 5),
+                  (3, 2, 0, 5),
+                  (4, 2, 0, 5),
+                  (3, 4, 0, 5),
+                  (4, 4, 0, 5)
+    )
+    voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
+    tracks  = make_track_graphs(voxels, vox_size, contiguity=1.85)
+    merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
+
+    for t in merged_tracks:
+        for v1, v2 in combinations(t.nodes(), 2):
+            assert np.any(abs(v1.pos - v2.pos) != approx(0.))
