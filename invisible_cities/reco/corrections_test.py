@@ -241,7 +241,7 @@ def test_correction_normalization_to_center_1d(toy_data_1d):
     c = Correction((X,), E, Eu,
                    norm_strategy = "center")
 
-    norm_index = E.size//2
+    norm_index = X.size//2
     norm_value = E [norm_index]
     norm_uncer = Eu[norm_index]
     prop_uncer = ((Eu/E)**2 + (norm_uncer/norm_value)**2)**0.5 * norm_value/E
