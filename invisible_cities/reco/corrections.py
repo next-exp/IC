@@ -2,9 +2,9 @@ import numpy as np
 import scipy as sc
 
 
-from ..core                     import fit_functions as fitf
-from ..core.exceptions          import ParameterNotSet
-from .. evm.ic_containers       import Measurement
+from ..core               import fit_functions as fitf
+from ..core.exceptions    import ParameterNotSet
+from .. evm.ic_containers import Measurement
 
 
 class Correction:
