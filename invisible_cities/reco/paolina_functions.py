@@ -220,4 +220,4 @@ def merge_tracks(tracks    : Sequence[Graph],
         new_vxl = Voxel(vxl.X, vxl.Y, vxl.Z, energy)
         joint_voxels.append(new_vxl)
 
-    return make_track_graphs(joint_voxels, vox_size, 1.85)
+    return make_track_graphs(joint_voxels, vox_size)

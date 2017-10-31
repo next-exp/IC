@@ -349,7 +349,7 @@ def test_energy_conservation_in_merging():
                   (4, 2, 0, 5)
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    tracks  = make_track_graphs(voxels, vox_size, contiguity=1.85)
+    tracks  = make_track_graphs(voxels, vox_size)
     merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
 
     sum_e = 0.
@@ -370,7 +370,7 @@ def test_short_tracks_no_merge():
                   (3, 1, 0, 5)
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    tracks  = make_track_graphs(voxels, vox_size, contiguity=1.85)
+    tracks  = make_track_graphs(voxels, vox_size)
     merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
 
     assert len(merged_tracks) == len(tracks) -1
@@ -387,7 +387,7 @@ def test_new_voxels_only_appear_once():
                   (4, 4, 0, 5)
     )
     voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    tracks  = make_track_graphs(voxels, vox_size, contiguity=1.85)
+    tracks  = make_track_graphs(voxels, vox_size)
     merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
 
     for t in merged_tracks:
