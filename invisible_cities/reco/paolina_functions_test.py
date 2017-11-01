@@ -308,20 +308,22 @@ FACE, EDGE, CORNER = Contiguity
               (FACE,      'share_edge',            False),
               (FACE,      'share_corner',          False),
               (FACE,      'share_nothing',         False),
-              (FACE,      'share_nothing_algined', False),
+              (FACE,      'share_nothing_aligned', False),
 
               (EDGE,      'share_face',            True),
               (EDGE,      'share_edge',            True),
               (EDGE,      'share_corner',          False),
               (EDGE,      'share_nothing',         False),
-              (EDGE,      'share_nothing_algined', False),
+              (EDGE,      'share_nothing_aligned', False),
 
               (CORNER,    'share_face',            True),
               (CORNER,    'share_edge',            True),
               (CORNER,    'share_corner',          True),
               (CORNER,    'share_nothing',         False),
-              (CORNER,    'share_nothing_algined', False),))
+              (CORNER,    'share_nothing_aligned', False),))
+
 def test_contiguity(proximity, contiguity, are_neighbours):
+
     voxel_spec = dict(share_face            = ((0,0,0),
                                                (0,0,1)),
                       share_edge            = ((0,0,0),
@@ -331,7 +333,7 @@ def test_contiguity(proximity, contiguity, are_neighbours):
                       share_nothing         = ((0,0,0),
                                                (2,2,2)),
                       share_nothing_algined = ((0,0,0),
-                                               (2,0,0)) )[proximity]
+
     expected_number_of_tracks = 1 if are_neighbours else 2
     voxels = [Voxel(x,y,z, 1, np.array([1,1,1])) for x,y,z in voxel_spec]
     tracks = make_track_graphs(voxels, contiguity=contiguity)
