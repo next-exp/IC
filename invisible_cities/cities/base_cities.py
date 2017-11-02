@@ -716,8 +716,13 @@ class PCity(City):
                 continue
 
             with tb.open_file(filename) as h5in:
-                # Save time when we are not interested in mc tracks
-                mc_tracks = self.get_mc_tracks(h5in) if self.write_mc_tracks else None
+                mc_tracks = None
+                if self.write_mc_tracks:
+                    # reset last row read in order to read new table
+                    self.writers.mc.last_row = 0
+
+                    # Save time when we are not interested in mc tracks
+                    mc_tracks = self.get_mc_tracks(h5in)
 
                 event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
 
