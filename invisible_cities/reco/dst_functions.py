@@ -31,6 +31,22 @@ def load_lifetime_xy_corrections(filename, *,
                                  node  = "LifetimeXY",
                                  scale = 1,
                                  **kwargs):
+    """
+    Load the lifetime map from hdf5 file.
+
+    Parameters
+    ----------
+    filename: str
+        Path to the file containing the map.
+    group: str
+        Name of the group where the table is stored.
+    node: str
+        Name of the table containing the data.
+    scale: float
+        Scale factor for the lifetime values.
+
+    Other kwargs are passed to the contructor of LifetimeXYCorrection.
+    """
     dst  = load_dst(filename, group, node)
     x, y = np.unique(dst.x.values), np.unique(dst.y.values)
     f, u = dst.factor.values * scale, dst.uncertainty.values * scale
