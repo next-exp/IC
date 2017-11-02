@@ -1,5 +1,3 @@
-import pandas as pd
-import tables as tb
 import numpy  as np
 
 from .  corrections import Correction
