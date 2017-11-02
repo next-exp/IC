@@ -29,10 +29,11 @@ def load_xy_corrections(filename, *,
 def load_lifetime_xy_corrections(filename, *,
                                  group = "Corrections",
                                  node  = "LifetimeXY",
+                                 scale = 1,
                                  **kwargs):
     dst  = load_dst(filename, group, node)
     x, y = np.unique(dst.x.values), np.unique(dst.y.values)
-    f, u = dst.factor.values, dst.uncertainty.values
+    f, u = dst.factor.values * scale, dst.uncertainty.values * scale
 
     return LifetimeXYCorrection(f.reshape(x.size, y.size),
                                 u.reshape(x.size, y.size),
