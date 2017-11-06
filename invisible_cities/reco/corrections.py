@@ -70,7 +70,7 @@ class Correction:
     def _define_interpolator(self, strategy, opts):
         if   strategy == "nearest"  : corr = self._nearest_neighbor
         elif strategy == "bivariate": corr = self._bivariate()
-        else: raise ValueError("Interpolation strategy not recognized: {}".format(stragegy))
+        else: raise ValueError("Interpolation strategy not recognized: {}".format(strategy))
 
         self._get_correction = corr
 
@@ -79,7 +79,7 @@ class Correction:
 
         elif   strategy == "const" :
             if "value" not in opts:
-                raise ParameterNotSet(("Normalization stratery 'const' requires"
+                raise ParameterNotSet(("Normalization strategy 'const' requires"
                                        "the normalization option 'value'"))
             f_ref = opts["value"]
             u_ref = 0
@@ -97,14 +97,14 @@ class Correction:
 
         elif   strategy == "index" :
             if "index" not in opts:
-                raise ParameterNotSet(("Normalization stratery 'index' requires"
+                raise ParameterNotSet(("Normalization strategy 'index' requires"
                                        "the normalization option 'index'"))
             index = opts["index"]
             f_ref = self._fs[index]
             u_ref = self._us[index]
 
         else:
-            raise ValueError("Normalization option not recognized: {}".format(strategy))
+            raise ValueError("Normalization strategy not recognized: {}".format(strategy))
 
         assert f_ref > 0, "Invalid reference value."
 
