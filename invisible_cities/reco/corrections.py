@@ -44,10 +44,11 @@ class Correction:
         self._fs =  np.array(fs, dtype=float)
         self._us =  np.array(us, dtype=float)
 
-        self._interp_strategy = interp_strategy
-
-        self._default_f = default_f
-        self._default_u = default_u
+        self.norm_strategy   =   norm_strategy
+        self.norm_opts       =   norm_opts
+        self.interp_strategy = interp_strategy
+        self.default_f       = default_f
+        self.default_u       = default_u
 
         self._normalize(norm_strategy, norm_opts)
         self._get_correction = self._define_interpolation(interp_strategy)
@@ -116,8 +117,8 @@ class Correction:
         self._us[ valid] *= self._fs[valid]
 
         # Set invalid to defaults
-        self._fs[~valid]  = self._default_f
-        self._us[~valid]  = self._default_u
+        self._fs[~valid]  = self.default_f
+        self._us[~valid]  = self.default_u
 
     def _find_closest_indices(self, x, y):
         # Find the index of the closest value in y for each value in x.
