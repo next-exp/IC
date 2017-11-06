@@ -50,8 +50,8 @@ class Correction:
         self.default_f       = default_f
         self.default_u       = default_u
 
-        self._normalize(norm_strategy, norm_opts)
-        self._get_correction = self._define_interpolation(interp_strategy)
+        self._normalize          (  norm_strategy, norm_opts)
+        self._define_interpolator(interp_strategy)
 
     def __call__(self, *x):
         """
@@ -65,11 +65,12 @@ class Correction:
         """
         return Measurement(*self._get_correction(*x))
 
-    def _define_interpolation(self, opt):
+    def _define_interpolator(self, opt):
         if   opt == "nearest"  : corr = self._nearest_neighbor
         elif opt == "bivariate": corr = self._bivariate()
         else: raise ValueError("Interpolation option not recognized: {}".format(opt))
-        return corr
+
+        self._get_correction = corr
 
     def _normalize(self, strategy, opts):
         if not strategy            : return
