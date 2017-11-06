@@ -1,6 +1,8 @@
-import numpy as np
-import scipy as sc
+from functools import partial
+from itertools import product
 
+import numpy as np
+from scipy.interpolate import griddata
 
 from ..core               import fit_functions as fitf
 from ..core.exceptions    import ParameterNotSet
@@ -24,10 +26,6 @@ class Correction:
         - False:    Do not normalize.
         - "max":    Normalize to maximum energy encountered.
         - "index":  Normalize to the energy placed to index (i,j).
-    interp_strategy : string
-        Flag to set the interpolation option. Accepted values:
-        - "nearest"  : Take correction from the closest node
-        - "bivariate": Cubic spline interpolation in 2d.
     default_f, default_u : floats
         Default correction and uncertainty for missing values (where fs = 0).
     """
@@ -36,8 +34,7 @@ class Correction:
                  xs, fs, us,
                    norm_strategy = None,
                    norm_opts     = {},
-                 interp_strategy = "nearest",
-                 interp_opts     = {},
+                 interp_method   = "nearest",
                  default_f       = 0,
                  default_u       = 0):
 
@@ -47,15 +44,15 @@ class Correction:
 
         self.norm_strategy   =   norm_strategy
         self.norm_opts       =   norm_opts
-        self.interp_strategy = interp_strategy
-        self.interp_opts     = interp_opts
+        self.interp_method   = interp_method
         self.default_f       = default_f
         self.default_u       = default_u
 
-        self._normalize          (  norm_strategy,   norm_opts)
-        self._define_interpolator(interp_strategy, interp_opts)
+        self._normalize        (  norm_strategy,
+                                  norm_opts    )
+        self._init_interpolator(interp_method  , default_f, default_u)
 
-    def __call__(self, *x):
+    def __call__(self, *xs):
         """
         Compute the correction factor.
 
@@ -65,14 +62,23 @@ class Correction:
              Each array is one coordinate. The number of coordinates must match
              that of the `xs` array in the init method.
         """
-        return Measurement(*self._get_correction(*x))
+        x = np.array(xs, ndmin=2).T
+        return Measurement(self._get_value      (x).flatten(),
+                           self._get_uncertainty(x).flatten())
 
-    def _define_interpolator(self, strategy, opts):
-        if   strategy == "nearest"  : corr = self._nearest_neighbor
-        elif strategy == "bivariate": corr = self._bivariate()
-        else: raise ValueError("Interpolation strategy not recognized: {}".format(strategy))
+    def _init_interpolator(self, method, default_f, default_u):
+        coordinates           = np.array(list(product(*self._xs)))
+        self._get_value       = partial(griddata,
+                                        coordinates,
+                                        self._fs.flatten(),
+                                        method     = method,
+                                        fill_value = default_f)
 
-        self._get_correction = corr
+        self._get_uncertainty = partial(griddata,
+                                        coordinates,
+                                        self._us.flatten(),
+                                        method     = method,
+                                        fill_value = default_u)
 
     def _normalize(self, strategy, opts):
         if not strategy            : return
@@ -122,20 +128,6 @@ class Correction:
         # Set invalid to defaults
         self._fs[~valid]  = self.default_f
         self._us[~valid]  = self.default_u
-
-    def _find_closest_indices(self, x, y):
-        # Find the index of the closest value in y for each value in x.
-        return np.argmin(abs(x-y[:, np.newaxis]), axis=0)
-
-    def _nearest_neighbor(self, *x):
-        # Find the index of the closest value for each axis
-        x_closest = tuple(map(self._find_closest_indices, x, self._xs))
-        return self._fs[x_closest], self._us[x_closest]
-
-    def _bivariate(self):
-        f_interp = sc.interpolate.RectBivariateSpline(*self._xs, self._fs)
-        u_interp = sc.interpolate.RectBivariateSpline(*self._xs, self._us)
-        return lambda x, y: (f_interp(x, y), u_interp(x, y))
 
     def __eq__(self, other):
         for i, x in enumerate(self._xs):
