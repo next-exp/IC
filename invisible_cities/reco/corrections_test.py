@@ -53,7 +53,7 @@ def uniform_energy_1d(draw):
 
 
 @composite
-def uniform_energy_2d(draw, interp_strategy="nearest"):
+def uniform_energy_2d(draw):
     x_size  = draw(integers(min_value=2   , max_value=10 ))
     y_size  = draw(integers(min_value=2   , max_value=10 ))
     X0      = draw(floats  (min_value=-100, max_value=100))
@@ -273,11 +273,14 @@ def test_correction_normalization_to_center_2d(toy_data_2d):
 @given(uniform_energy_2d())
 def test_correction_attributes_2d(toy_data_2d):
     X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
+<<<<<<< 571dddbf9cd59d7cca3a655b5e08fa4357a2d015
     interp_strategy="nearest"
     correct = Correction((X, Y), E, Eu,
+=======
+    correct = Correction((X,Y), E, Eu,
+>>>>>>> Adapt tests to new arguments
                            norm_strategy =  "index",
-                           norm_opts     = {"index": (i_max, j_max)},
-                         interp_strategy = interp_strategy)
+                           norm_opts     = {"index": (i_max, j_max)})
 
     # attributes of the Correction class are 2d arrays,
     # so they must be flatten for comparison
@@ -309,11 +312,9 @@ def test_correction_normalization_2d_to_max(toy_data_2d):
 @given(uniform_energy_2d())
 def test_correction_call_2d(toy_data_2d):
     X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
-    interp_strategy="nearest"
     correct = Correction((X, Y), E, Eu,
-                           norm_strategy =  "index",
-                           norm_opts     = {"index": (i_max, j_max)},
-                         interp_strategy = interp_strategy)
+                         norm_strategy =  "index",
+                         norm_opts     = {"index": (i_max, j_max)})
 
     # create a collection of (x,y) point such that the
     # x coordinates are stored in X_sample and the y coordinates in Y_sample
