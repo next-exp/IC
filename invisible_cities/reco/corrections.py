@@ -34,10 +34,10 @@ class Correction:
 
     def __init__(self,
                  xs, fs, us,
-                   norm_strategy = False,
-                   norm_opts     = None,
+                   norm_strategy = None,
+                   norm_opts     = {},
                  interp_strategy = "nearest",
-                 interp_opts     = None,
+                 interp_opts     = {},
                  default_f       = 0,
                  default_u       = 0):
 
