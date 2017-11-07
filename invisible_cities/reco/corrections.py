@@ -71,9 +71,15 @@ class Correction:
              Each array is one coordinate. The number of coordinates must match
              that of the `xs` array in the init method.
         """
-        x = np.array(xs, ndmin=2).T
-        return Measurement(self._get_value      (x).flatten(),
-                           self._get_uncertainty(x).flatten())
+        # In order for this to work well both for arrays and scalars
+        arrays = len(np.shape(xs)) > 1
+        if arrays:
+            xs = np.stack(xs, axis=1)
+
+        value  = self._get_value      (xs).flatten()
+        uncert = self._get_uncertainty(xs).flatten()
+        return (Measurement(value   , uncert   ) if arrays else
+                Measurement(value[0], uncert[0]))
 
     def _init_interpolator(self, method, default_f, default_u):
         coordinates           = np.array(list(product(*self._xs)))
