@@ -221,7 +221,7 @@ def test_noise_sampler_take_sample(datasipm, noise_sampler):
         else:
             assert not np.any(sample)
 
-
+@mark.skip
 @mark.parametrize("pes_to_adc",
                   (1, 2.5, 10, 25.4))
 @mark.parametrize("as_array",
