@@ -20,6 +20,7 @@ from pytest        import raises
 from flaky         import flaky
 
 from hypothesis             import given
+from hypothesis             import settings
 from hypothesis.strategies  import floats
 from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
@@ -214,6 +215,18 @@ def test_correction_attributes_1d_unnormalized(toy_data_1d):
     assert_allclose(c._us, Fu)
 
 
+@settings(max_examples=1)
+@given(uniform_energy_1d())
+def test_correction_call_scalar_values_1d(toy_data_1d):
+    X, E, Eu, F, Fu, _ = toy_data_1d
+    correct  = Correction((X,), E, Eu,
+                          norm_strategy = "max",
+                          **opt_nearest)
+    F_corrected, U_corrected = correct(X[0])
+    assert F_corrected == F [0]
+    assert U_corrected == Fu[0]
+
+
 @given(uniform_energy_1d())
 def test_correction_call_1d(toy_data_1d):
     X, E, Eu, F, Fu, _ = toy_data_1d
@@ -307,6 +320,20 @@ def test_correction_attributes_2d_unnormalized(toy_data_2d):
 
     assert_allclose(c._fs, F )
     assert_allclose(c._us, Fu)
+
+
+@settings(max_examples=1)
+@given(uniform_energy_2d())
+def test_correction_call_scalar_values_2d(toy_data_2d):
+    X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
+    correct = Correction((X,Y), E, Eu,
+                         norm_strategy =  "index",
+                         norm_opts     = {"index": (i_max, j_max)},
+                         **opt_nearest)
+
+    F_corrected, U_corrected = correct(X[0], Y[0])
+    assert F_corrected == F [0]
+    assert U_corrected == Fu[0]
 
 
 @given(uniform_energy_2d())
