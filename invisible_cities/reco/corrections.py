@@ -9,6 +9,15 @@ from ..core.exceptions    import ParameterNotSet
 from .. evm.ic_containers import Measurement
 
 
+opt_nearest = {"interp_method": "nearest"}
+opt_linear  = {"interp_method": "linear" ,
+               "default_f"    :     1    ,
+               "default_u"    :     0    }
+opt_cubic   = {"interp_method":  "cubic" ,
+               "default_f"    :     1    ,
+               "default_u"    :     0    }
+
+
 class Correction:
     """
     Interface for accessing any kind of corrections.
