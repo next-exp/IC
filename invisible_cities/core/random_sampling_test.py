@@ -171,9 +171,7 @@ def noise_sampler(request, run_number):
     1.35  :   8,
     1.45  :   6,
     1.55  :   3,
-    2.05  :   1,
-    np.inf:   8}
-
+    np.inf:   9}
     return (NoiseSampler(run_number, nsamples, smear),
             nsamples, smear,
             thr, true_threshold_counts)
@@ -212,7 +210,7 @@ def test_noise_sampler_take_sample(datasipm, noise_sampler):
         sample = samples[i]
         if active:
             if smear:
-                # Find closest energy bin and ensure it is close enough.
+                # Find closest energy bin and ensure it is close enough.
                 diffs      = noise_sampler.xbins - sample[:, np.newaxis]
                 closest    = np.min(np.abs(diffs), axis=1)
                 assert np.all(closest <= noise_sampler.dx)
@@ -221,7 +219,7 @@ def test_noise_sampler_take_sample(datasipm, noise_sampler):
         else:
             assert not np.any(sample)
 
-@mark.skip
+
 @mark.parametrize("pes_to_adc",
                   (1, 2.5, 10, 25.4))
 @mark.parametrize("as_array",
@@ -236,6 +234,7 @@ def test_noise_sampler_compute_thresholds(datasipm, noise_sampler, pes_to_adc, a
     thresholds       = noise_sampler.compute_thresholds(0.99, pes_to_adc)
     threshold_counts = np.unique(thresholds, return_counts = True)
     threshold_counts = dict(zip(*threshold_counts))
+
     assert sorted(true_threshold_counts) == sorted(threshold_counts)
     for i, truth in true_threshold_counts.items():
         assert truth == threshold_counts[i]
