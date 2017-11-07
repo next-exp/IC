@@ -10,6 +10,7 @@ from ..reco.corrections import LifetimeCorrection
 from ..reco.corrections import LifetimeRCorrection
 from ..reco.corrections import LifetimeXYCorrection
 from ..reco.corrections import opt_nearest
+from ..reco.corrections import opt_linear
 
 from numpy.testing import assert_allclose
 from pytest        import fixture
@@ -449,3 +450,35 @@ def test_corrections_2d(gauss_data_2d):
     x    = x[:-1] + np.diff(x) * 0.5
     f    = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
     assert f.chi2 < 3
+
+
+def test_corrections_linear_interpolation():
+    # This is the function f(x,y) = x + y on a square grid. Because the
+    # interpolation is linear, any point with coordinates (x, y) should
+    # yield exactly f(x, y).
+    xmin, xmax  = 10, 20
+    ymin, ymax  = 20, 30
+    grid_x      = np.arange(xmin, xmax+1)
+    grid_y      = np.arange(ymin, ymax+1)
+    grid_points = np.array([(i, j) for i in grid_x\
+                                   for j in grid_y])
+
+    grid_fun    = np.sum
+    grid_values = np.apply_along_axis(grid_fun, 1, grid_points)
+    grid_uncert = np.apply_along_axis(grid_fun, 1, grid_points)/10
+
+    correct = Correction((grid_x, grid_y),
+                         grid_values,
+                         grid_uncert,
+                         **opt_linear)
+
+    x_test  = np.random.uniform(xmin, xmax, size=100)
+    y_test  = np.random.uniform(ymin, ymax, size=100)
+    xy_test = np.stack([x_test, y_test], axis=1)
+
+    correction      = correct(x_test, y_test)
+    expected_values = np.apply_along_axis(grid_fun, 1, xy_test)
+    expected_uncert = expected_values/10
+
+    assert np.allclose(correction.value      , expected_values)
+    assert np.allclose(correction.uncertainty, expected_uncert)
