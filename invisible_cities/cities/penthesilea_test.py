@@ -1,5 +1,8 @@
 import os
 import numpy  as np
+import tables as tb
+
+from pytest import mark
 
 from .. core.core_functions    import in_range
 from .. core.system_of_units_c import units
@@ -7,6 +10,7 @@ from .. core.testing_utils     import assert_dataframes_close
 from .  penthesilea            import Penthesilea
 from .. core.configure         import configure
 from .. io                     import dst_io as dio
+from .. io.mchits_io           import load_mchits
 
 
 def test_penthesilea_KrMC(KrMC_pmaps, KrMC_hdst, config_tmpdir):
@@ -84,3 +88,42 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
     assert len(set(dst.event.values)) ==   nevt_out
     assert  np.all(dst.event.values   == events_pass)
     assert  np.all(dst.npeak.values   ==   peak_pass)
+
+
+@mark.serial
+@mark.parametrize("write_mc_tracks outputfilename".split(),
+                  ((True , "Kr_HDST_with_MC.h5"),
+                   (False, "Kr_HDST_without_MC.h5")))
+def test_penthesilea_produces_tracks_when_required(KrMC_pmaps, KrMC_hdst, config_tmpdir,
+                                                   write_mc_tracks, outputfilename):
+    PATH_IN   = KrMC_pmaps[0]
+    PATH_OUT  = os.path.join(config_tmpdir, outputfilename)
+    conf      = configure('dummy invisible_cities/config/penthesilea.conf'.split())
+    nevt_req  = 10
+
+    conf.update(dict(files_in        = PATH_IN,
+                     file_out        = PATH_OUT,
+                     event_range     = (nevt_req,),
+                     write_mc_tracks = write_mc_tracks,
+                     **KrMC_hdst.config))
+
+    penthesilea = Penthesilea(**conf)
+    penthesilea.run()
+
+    with tb.open_file(PATH_OUT) as h5out:
+        assert write_mc_tracks == ("MC"          in h5out.root)
+        assert write_mc_tracks == ("MC/MCTracks" in h5out.root)
+
+
+@mark.serial
+def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
+    penthesilea_output_path = os.path.join(config_tmpdir,'Kr_HDST_with_MC.h5')
+    penthesilea_evts        = load_mchits(penthesilea_output_path)
+    true_evts               = KrMC_true_hits.hdst
+
+    assert sorted(penthesilea_evts) == sorted(true_evts)
+    for evt_no, true_hits in true_evts.items():
+        penthesilea_hits = penthesilea_evts[evt_no]
+
+        assert len(penthesilea_hits) == len(true_hits)
+        assert all(p_hit == t_hit for p_hit, t_hit in zip(penthesilea_hits, true_hits))

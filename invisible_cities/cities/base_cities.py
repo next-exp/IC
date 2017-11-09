@@ -6,7 +6,6 @@ last revised: JJGC, July-2017
 
 """
 
-import sys
 from argparse  import Namespace
 from glob      import glob
 from time      import time
@@ -16,28 +15,22 @@ from itertools import chain
 import numpy  as np
 import tables as tb
 
-from .. core.core_functions     import merge_two_dicts
 from .. core.core_functions     import loc_elem_1d
-from .. core.configure          import all
 from .. core.configure          import configure
 from .. core.exceptions         import NoInputFiles
 from .. core.exceptions         import NoOutputFile
 from .. core.exceptions         import UnknownRWF
-from .. core.exceptions         import SipmEmptyList
-from .. core.exceptions         import SipmZeroCharge
-from .. core.exceptions         import ClusterEmptyList
 from .. core.exceptions         import XYRecoFail
-from .. core.exceptions         import InitializedEmptyPmapObject
 from .. core.exceptions         import UnknownParameter
 from .. core.system_of_units_c  import units
 from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
 from .. database import load_db
 
-from .. io                      import pmap_io          as pio
-from .. io                      import pmap_io          as pio
+from .. io                      import pmap_io           as pio
 from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
+from .. io.mc_io                import mc_track_writer
 
 from .. reco                    import peak_functions_c  as cpf
 from .. reco                    import paolina_functions as paf
@@ -45,12 +38,8 @@ from .. reco                    import sensor_functions  as sf
 from .. reco                    import peak_functions    as pf
 from .. reco                    import pmaps_functions   as pmp
 from .. reco                    import pmaps_functions_c as cpmp
-from .. reco                    import dst_functions     as dstf
-from .. reco                    import wfm_functions     as wfm
 from .. reco                    import tbl_functions     as tbl
 from .. reco.sensor_functions   import convert_channel_id_to_IC_id
-from .. reco.corrections        import Correction
-from .. reco.corrections        import Fcorrection
 from .. reco.xy_algorithms      import corona
 
 from .. evm.ic_containers       import S12Params
@@ -66,9 +55,6 @@ from .. evm.event_model         import HitCollection
 from .. evm.event_model         import Hit
 from .. evm.event_model         import Cluster
 from .. evm.event_model         import Voxel
-from .. evm.event_model         import Track
-from .. evm.event_model         import Blob
-from .. evm.event_model         import TrackCollection
 from .. evm.nh5                 import DECONV_PARAM
 
 from .. sierpe                  import blr
@@ -639,11 +625,16 @@ class PCity(City):
        that access and serves to the event_loop the corresponding PMAPS
        vectors.
     """
+    parameters = tuple("""drift_v write_mc_tracks
+                          s1_nmin s1_nmax s1_emin s1_emax s1_wmin s1_wmax s1_hmin s1_hmax s1_ethr
+                          s2_nmin s2_nmax s2_emin s2_emax s2_wmin s2_wmax s2_hmin s2_hmax s2_ethr
+                          s2_nsipmmin s2_nsipmmax""".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.drift_v = self.conf.drift_v
         self.s1s2_selector = S12Selector(**kwds)
+        self.write_mc_tracks = self.conf.write_mc_tracks and self.monte_carlo
 
         self.cnt.init(n_events_tot                 = 0,
                       n_events_not_s1              = 0,
@@ -652,6 +643,9 @@ class PCity(City):
                       n_events_not_s1s2_filter     = 0,
                       n_events_not_s2si_filter     = 0,
                       n_events_selected            = 0)
+
+    def get_mc_track_writer(self, h5out):
+        return mc_track_writer(h5out) if self.write_mc_tracks else None
 
     def create_dst_event(self, pmapVectors, filter_output):
         """Must be implemented by any city derived from PCity"""
@@ -665,12 +659,13 @@ class PCity(City):
         3. write dst_event
         """
 
-        write_dst = self.writers
+        write = self.writers
         event_numbers= pmapVectors.events
         timestamps = pmapVectors.timestamps
         s1_dict = pmapVectors.s1
         s2_dict = pmapVectors.s2
         s2si_dict = pmapVectors.s2si
+        mc_tracks = pmapVectors.mc
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
             self.conditional_print(self.cnt.n_events_tot, self.cnt.n_events_selected)
@@ -695,9 +690,12 @@ class PCity(City):
             # create DST event & write to file
             pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
                                       events=evt_number,
-                                      timestamps=evt_time)
+                                      timestamps=evt_time,
+                                      mc=None)
             evt = self.create_dst_event(pmapVectors, filter_output)
-            write_dst(evt)
+            write.dst(evt)
+            if self.write_mc_tracks:
+                write.mc(mc_tracks, evt_number)
 
     def file_loop(self):
         """
@@ -717,12 +715,25 @@ class PCity(City):
                 print("Empty file. Skipping.")
                 continue
 
-            event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
+            with tb.open_file(filename) as h5in:
+                mc_tracks = None
+                if self.write_mc_tracks:
+                    # reset last row read in order to read new table
+                    self.writers.mc.last_row = 0
 
-            pmapVectors               = PmapVectors(s1=s1_dict, s2=s2_dict, s2si=s2si_dict,
-                                                    events=event_numbers, timestamps=timestamps)
+                    # Save time when we are not interested in mc tracks
+                    mc_tracks = self.get_mc_tracks(h5in)
 
-            self.event_loop(pmapVectors)
+                event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
+
+                pmapVectors               = PmapVectors(s1         = s1_dict,
+                                                        s2         = s2_dict,
+                                                        s2si       = s2si_dict,
+                                                        events     = event_numbers,
+                                                        timestamps = timestamps,
+                                                        mc         = mc_tracks)
+
+                self.event_loop(pmapVectors)
 
     def filter_event(self, s1, s2, s2si):
         """Filter the event in terms of s1, s2, s2si"""
@@ -753,13 +764,7 @@ class KrCity(PCity):
         super().__init__(**kwds)
         self.cnt.init(n_events_more_than_1_cluster = 0)
 
-    parameters = tuple("""""".split())
-    parameters = tuple("""lm_radius new_lm_radius
-        msipm drift_v
-        qlm qthr rebin
-        s1_nmin s1_nmax s1_emin s1_emax s1_wmin s1_wmax s1_hmin s1_hmax s1_ethr
-        s2_nmin s2_nmax s2_emin s2_emax s2_wmin s2_wmax s2_hmin s2_hmax s2_ethr
-        s2_nsipmmin s2_nsipmmax""".split())
+    parameters = tuple("lm_radius new_lm_radius msipm qlm qthr".split())
 
     def compute_xy_position(self, s2si, peak_no):
         """
@@ -871,6 +876,7 @@ class KrCity(PCity):
 
 class HitCity(KrCity):
     """A city that reads PMAPS and computes/writes a hit event"""
+    parameters = tuple("rebin".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
