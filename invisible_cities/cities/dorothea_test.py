@@ -103,7 +103,8 @@ def test_dorothea_issue_347(Kr_pmaps_run4628, config_tmpdir):
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST.h5')
     conf = configure('dummy invisible_cities/config/dorothea_with_corona.conf'.split())
     # with this parameters Corona will find several clusters
-    conf.update(dict(files_in   = PATH_IN,
+    conf.update(dict(run_number = 4628,
+                     files_in   = PATH_IN,
                      file_out   = PATH_OUT,
                      lm_radius     = 10.0,
                      new_lm_radius = 13.0,
