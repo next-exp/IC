@@ -231,7 +231,7 @@ def test_noise_sampler_compute_thresholds(datasipm, noise_sampler, pes_to_adc, a
     if as_array:
         pes_to_adc *= np.ones(len(datasipm))
 
-    thresholds       = noise_sampler.compute_thresholds(0.99, pes_to_adc)
+    thresholds       = noise_sampler.compute_thresholds(thr, pes_to_adc)
     threshold_counts = np.unique(thresholds, return_counts = True)
     threshold_counts = dict(zip(*threshold_counts))
 
