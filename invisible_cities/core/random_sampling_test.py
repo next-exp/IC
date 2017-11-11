@@ -221,7 +221,7 @@ def test_noise_sampler_take_sample(datasipm, noise_sampler):
 
 
 @mark.parametrize("pes_to_adc",
-                  (1, 2.5, 10, 25.4))
+                  (0.25, 1, 2.5, 10))
 @mark.parametrize("as_array",
                   (False, True))
 def test_noise_sampler_compute_thresholds(datasipm, noise_sampler, pes_to_adc, as_array):
