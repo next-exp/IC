@@ -139,7 +139,7 @@ class City:
         return set(chain.from_iterable(base.parameters for base in cls.__mro__ if hasattr(base, 'parameters')))
 
     def _event_range(self):
-        if not hasattr(self.conf, 'event_range'): return None, None
+        if not hasattr(self.conf, 'event_range'): return None, 1
         er = self.conf.event_range
         if len(er) == 1:                          return None, er[0]
         if len(er) == 2:                          return tuple(er)
