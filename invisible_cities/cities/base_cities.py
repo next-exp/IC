@@ -6,11 +6,12 @@ last revised: JJGC, July-2017
 
 """
 
-from argparse  import Namespace
-from glob      import glob
-from time      import time
-from os.path   import expandvars
-from itertools import chain
+from collections import Sequence
+from argparse    import Namespace
+from glob        import glob
+from time        import time
+from os.path     import expandvars
+from itertools   import chain
 
 import numpy  as np
 import tables as tb
@@ -141,6 +142,7 @@ class City:
     def _event_range(self):
         if not hasattr(self.conf, 'event_range'): return None, 1
         er = self.conf.event_range
+        if not isinstance(er, Sequence): er = (er,)
         if len(er) == 1:                          return None, er[0]
         if len(er) == 2:                          return tuple(er)
         if len(er) == 0: ValueError('event_range needs at least one value')
