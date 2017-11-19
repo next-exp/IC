@@ -1,3 +1,5 @@
+from operator    import mul
+from operator    import truediv
 from collections import namedtuple
 
 import numpy as np
@@ -9,7 +11,7 @@ from .  corrections        import Correction
 from .  dst_functions      import load_xy_corrections
 from .  dst_functions      import load_lifetime_xy_corrections
 
-normalization_data = namedtuple("normalization_data", "node kwargs")
+normalization_data = namedtuple("normalization_data", "node kwargs op")
 
 @fixture(scope  = "session",
          params = [False, True])
@@ -18,10 +20,12 @@ def normalization(request):
         node   = "LifetimeXY_inverse"
         kwargs = {"norm_strategy": "const",
                   "norm_opts"    : {"value": 1}}
+        op     = truediv
     else:
         node   = "LifetimeXY"
         kwargs = {}
-    return normalization_data(node, kwargs)
+        op     = mul
+    return normalization_data(node, kwargs, op)
 
 
 def test_load_xy_corrections(corr_toy_data, normalization):
@@ -33,13 +37,18 @@ def test_load_xy_corrections(corr_toy_data, normalization):
     assert corr == Correction((x,y), E, U)
 
 
-def test_load_lifetime_xy_corrections(corr_toy_data, normalization):
+@mark.parametrize("scale",
+                  (0.5, 1, 2.0))
+def test_load_lifetime_xy_corrections(corr_toy_data, normalization, scale):
     filename, true_data = corr_toy_data
     x, y, LT, U, _ = true_data
     corr           = load_lifetime_xy_corrections(filename,
-                                                  node = normalization.node,
+                                                  node  = normalization.node,
+                                                  scale = scale,
                                                   **normalization.kwargs)
 
+    LT = normalization.op(LT, scale)
+    U  = normalization.op(U , scale)
     for i in np.linspace(0, 2, 5):
         # This should yield exp(i * x/x) = exp(i)
         z_test   = LT.flatten() * i
