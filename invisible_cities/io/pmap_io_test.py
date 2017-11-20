@@ -44,8 +44,8 @@ def test_s1_s2_si_from_pmaps(KrMC_pmaps, random_evts):
             assert s1.number_of_peaks == S1.number_of_peaks
             for i in s1.peak_collection():
                 if s1.peak_waveform(i).good_waveform:
-                    np.allclose (s1.peak_waveform(i).t , S1.peak_waveform(i).t, rtol=1e-4)
-                    np.allclose (s1.peak_waveform(i).E , S1.peak_waveform(i).E, rtol=1e-4)
+                    assert np.allclose (s1.peak_waveform(i).t , S1.peak_waveform(i).t, rtol=1e-4)
+                    assert np.allclose (s1.peak_waveform(i).E , S1.peak_waveform(i).E, rtol=1e-4)
 
         if S2 == None:
             assert S2 == s2
@@ -53,8 +53,8 @@ def test_s1_s2_si_from_pmaps(KrMC_pmaps, random_evts):
             assert s2.number_of_peaks == S2.number_of_peaks
             for i in s2.peak_collection():
                 if s2.peak_waveform(i).good_waveform:
-                    np.allclose (s2.peak_waveform(i).t , S2.peak_waveform(i).t, rtol=1e-4)
-                    np.allclose (s2.peak_waveform(i).E , S2.peak_waveform(i).E, rtol=1e-4)
+                    assert np.allclose (s2.peak_waveform(i).t , S2.peak_waveform(i).t, rtol=1e-4)
+                    assert np.allclose (s2.peak_waveform(i).E , S2.peak_waveform(i).E, rtol=1e-4)
 
         if S2si == None:
             assert S2si == s2si
@@ -66,8 +66,8 @@ def test_s1_s2_si_from_pmaps(KrMC_pmaps, random_evts):
                 for sipm_number in s2si.sipms_in_peak(peak_number):
                     w   = s2si.sipm_waveform(peak_number, sipm_number)
                     W   = S2si.sipm_waveform(peak_number, sipm_number)
-                    np.allclose(w.t , W.t)
-                    np.allclose(w.E , W.E)
+                    assert np.allclose(w.t , W.t)
+                    assert np.allclose(w.E , W.E)
 
 
 def test_pmap_writer(config_tmpdir,
