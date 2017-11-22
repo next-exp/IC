@@ -214,7 +214,7 @@ def test_correction_call_1d(toy_data_1d):
 
 
 @given(uniform_energy_1d())
-def test_correction_normalization(toy_data_1d):
+def test_correction_normalization_1d_to_max(toy_data_1d):
     X, E, Eu, *_, i_max = toy_data_1d
     correct  = Correction((X,), E, Eu,
                           norm_strategy = "max")
@@ -224,7 +224,7 @@ def test_correction_normalization(toy_data_1d):
 
 @given(uniform_energy_1d(),
        floats  (min_value=1e-8, max_value=1e8))
-def test_correction_normalization_to_const(toy_data_1d, norm_value):
+def test_correction_normalization_1d_to_const(toy_data_1d, norm_value):
     X, E, Eu, _, _, _ = toy_data_1d
     c = Correction((X,), E, Eu,
                    norm_strategy = "const",
