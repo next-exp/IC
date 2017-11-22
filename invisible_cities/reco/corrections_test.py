@@ -104,7 +104,7 @@ def uniform_energy_fun_data_2d(draw):
 
     a     = draw(floats(min_value=1e+2, max_value=1e+3));u_a = 0.1*a
     b     = draw(floats(min_value=1e-2, max_value=1e-1));u_b = 0.1*b
-    c     = draw(floats(min_value=1e+1, max_value=1e+2));u_c = 0.1*c
+    c     = draw(floats(min_value=1e+3, max_value=5e+3));u_c = 0.1*c
     Z     = np.linspace(0, 600, 100)
     R     = np.linspace(0, 200, 100)
     F     =   fun(Z, R, a, b, c, u_a, u_b, u_c)
