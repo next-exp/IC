@@ -218,8 +218,10 @@ def test_correction_normalization_1d_to_max(toy_data_1d):
     X, E, Eu, *_, i_max = toy_data_1d
     correct  = Correction((X,), E, Eu,
                           norm_strategy = "max")
-    X_test  = X[i_max]
-    assert_allclose(correct(X_test).value, 1) # correct.xs is a list of axis
+
+    x_test = X
+    corrected_E = E * correct(x_test).value
+    assert_allclose(corrected_E, np.max(E))
 
 
 @given(uniform_energy_1d(),
