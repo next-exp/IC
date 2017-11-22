@@ -262,6 +262,18 @@ def test_correction_attributes_2d_unnormalized(toy_data_2d):
 
 
 @given(uniform_energy_2d())
+def test_correction_normalization_2d_to_max(toy_data_2d):
+    X, Y, E, Eu, *_, i_max = toy_data_2d
+    correct  = Correction((X, Y), E, Eu,
+                          norm_strategy = "max")
+
+    x_test      = np.repeat(X, Y.size)
+    y_test      = np.tile  (Y, X.size)
+    corrected_E = E.flatten() * correct(x_test, y_test).value
+    assert_allclose(corrected_E, np.max(E))
+
+
+@given(uniform_energy_2d())
 def test_correction_call_2d(toy_data_2d):
     X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
     interp_strategy="nearest"
