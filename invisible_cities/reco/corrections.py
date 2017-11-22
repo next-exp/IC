@@ -79,9 +79,10 @@ class Correction:
             u_ref = 0
 
         elif   strategy == "max"  :
-            index = np.argmax(self._fs)
-            f_ref = self._fs[index]
-            u_ref = self._us[index]
+            flat_index = np.argmax(self._fs)
+            mult_index = np.unravel_index(flat_index, self._fs.shape)
+            f_ref = self._fs[mult_index]
+            u_ref = self._us[mult_index]
 
         elif   strategy == "index":
             if "index" not in opts:
