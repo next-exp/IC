@@ -532,12 +532,13 @@ class CalibratedCity(DeconvolutionCity):
         """Zero Suppression over csum"""
         return cpf.wfzs(csum, threshold=threshold)
 
-    def calibrated_signal_sipm(self, SiRWF):
+    def calibrated_signal_sipm(self, SiRWF, cal=0):
         """Return the calibrated signal in the SiPMs."""
         return cpf.signal_sipm(SiRWF,
                                self.sipm_adc_to_pes,
                                thr   = self.  thr_sipm,
-                               n_MAU = self.n_MAU_sipm)
+                               n_MAU = self.n_MAU_sipm,
+                               Cal=cal)
 
 
 class PmapCity(CalibratedCity):
