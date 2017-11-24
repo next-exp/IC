@@ -133,7 +133,7 @@ returns ZS waveforms for all SiPMs
 """
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
                   double [:] adc_to_pes, thr,
-                  int n_MAU=*)
+                  int n_MAU=*, int Cal=*)
 
 """
 Selects the SiPMs with signal

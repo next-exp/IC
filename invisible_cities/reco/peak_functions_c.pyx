@@ -406,11 +406,15 @@ cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
 
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
                   double [:] adc_to_pes, thr,
-                  int n_MAU=100):
+                  int n_MAU=100, int Cal=0):
     """
     subtracts the baseline
     Uses a MAU to set the signal threshold (thr, in PES)
     returns ZS waveforms for all SiPMs
+
+    setting Cal to a non zero value invokes calibration mode
+    where the unselected time bins are returned as they are
+    instead of set to zero.
 
     """
 
@@ -425,7 +429,7 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
     cdef double [:]    MAU_ = np.zeros(        NSiWF , dtype=np.double)
     cdef double [:]    thrs = np.full ( NSiPM, thr)
     cdef double pmean
-
+    
     # loop over all SiPMs. Skip any SiPM with adc_to_pes constant = 0
     # since this means SiPM is dead
     for j in range(NSiPM):
@@ -438,16 +442,21 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
         for k in range(NSiWF):
             pmean += SiWF[j,k]
         pmean /= NSiWF
-
+	
         for k in range(NSiWF):
             SiWF[j,k] = SiWF[j,k] - pmean
 
         # MAU for each of the SiPMs, following the ZS waveform
         MAU_ = signal.lfilter(MAU, 1, SiWF[j,:])
-
+	
         # threshold using the MAU
         for k in range(NSiWF):
-            if SiWF[j,k]  > MAU_[k] + thrs[j] * adc_to_pes[j]:
+            if Cal != 0:
+                if Cal == 1:
+                    siwf[j,k] = SiWF[j,k] / adc_to_pes[j]
+                else:
+                    siwf[j,k] = (SiWF[j,k] - MAU_[k]) / adc_to_pes[j]
+            elif SiWF[j,k]  > MAU_[k] + thrs[j] * adc_to_pes[j]:
                 siwf[j,k] = SiWF[j,k] / adc_to_pes[j]
 
     return np.asarray(siwf)
