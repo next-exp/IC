@@ -65,7 +65,7 @@ def voxelize_hits(hits             : Sequence[BHit],
 
     cx, cy, cz = map(centres, edges)
     nz = np.nonzero(E)
-    return [Voxel(cx[x], cy[y], cz[z], E[x,y,z]) for (x,y,z) in np.stack(nz).T]
+    return [Voxel(cx[x], cy[y], cz[z], E[x,y,z], voxel_dimensions) for (x,y,z) in np.stack(nz).T]
 
 
 class Contiguity(Enum):

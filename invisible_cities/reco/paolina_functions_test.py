@@ -5,7 +5,6 @@ import numpy    as np
 import networkx as nx
 
 from itertools import combinations
-from itertools import starmap
 
 from numpy.testing import assert_almost_equal
 
@@ -166,7 +165,7 @@ def test_find_extrema(spec, extrema):
     assert b in found
 
 
-@given(builds(Voxel, posn, posn, posn, ener))
+@given(builds(Voxel, posn, posn, posn, ener, box_sizes))
 def test_find_extrema_single_voxel(voxel):
     g = nx.Graph()
     g.add_node(voxel)
@@ -202,8 +201,9 @@ def track_extrema():
                   (19,19,19,     1),
                   (20,20,20,  2000),
     )
-    voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
-    tracks  = make_track_graphs(voxels, np.array([1,1,1]))
+    vox_size = np.array([1,1,1])
+    voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
+    tracks  = make_track_graphs(voxels, vox_size)
 
     assert len(tracks) == 1
     extrema = find_extrema(tracks[0])
@@ -249,7 +249,7 @@ def test_length():
                   (10,14,15,1),
                   (10,15,15,1)
     )
-    voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
+    voxels = [Voxel(x,y,z, E, np.array([1,1,1])) for (x,y,z,E) in voxel_spec]
     tracks  = make_track_graphs(voxels, np.array([1,1,1]))
 
     assert len(tracks) == 1
@@ -266,13 +266,14 @@ def test_length():
 def test_length_around_bend(contiguity, expected_length):
     # Make sure that we calculate the length along the track rather
     # that the shortcut
-    voxel_spec = ((0,0,0, 1),
-                  (1,0,0, 1),
-                  (1,1,0, 1),
-                  (1,2,0, 1),
-                  (0,2,0, 1))
-    voxels = list(starmap(Voxel, voxel_spec))
-    tracks = make_track_graphs(voxels, np.array([1,1,1]), contiguity=contiguity)
+    voxel_spec = ((0,0,0),
+                  (1,0,0),
+                  (1,1,0),
+                  (1,2,0),
+                  (0,2,0))
+    vox_size = np.array([1,1,1])
+    voxels = [Voxel(x,y,z, 1, vox_size) for x,y,z in voxel_spec]
+    tracks = make_track_graphs(voxels, vox_size, contiguity=contiguity)
     assert len(tracks) == 1
     track_length = length(tracks[0])
     assert track_length == approx(expected_length)
@@ -287,12 +288,13 @@ def test_length_around_bend(contiguity, expected_length):
               (Contiguity.CORNER,    sqrt(3))))
 def test_length_cuts_corners(contiguity, expected_length):
     "Make sure that we cut corners, if the contiguity allows"
-    voxel_spec = ((0,0,0,  1), # Extremum 1
-                  (1,0,0,  1),
-                  (1,1,0,  1),
-                  (1,1,1,  1)) # Extremum 2
-    voxels = list(starmap(Voxel, voxel_spec))
-    tracks = make_track_graphs(voxels, np.array([1,1,1]), contiguity=contiguity)
+    voxel_spec = ((0,0,0), # Extremum 1
+                  (1,0,0),
+                  (1,1,0),
+                  (1,1,1)) # Extremum 2
+    vox_size = np.array([1,1,1])
+    voxels = [Voxel(x,y,z, 1, vox_size) for x,y,z in voxel_spec]
+    tracks = make_track_graphs(voxels, vox_size, contiguity=contiguity)
     assert len(tracks) == 1
     track_length = length(tracks[0])
     assert track_length == approx(expected_length)
@@ -319,17 +321,17 @@ FACE, EDGE, CORNER = Contiguity
               (CORNER,    'share_nothing',         False),
               (CORNER,    'share_nothing_algined', False),))
 def test_contiguity(proximity, contiguity, are_neighbours):
-    voxel_spec = dict(share_face            = ((0,0,0, 1),
-                                               (0,0,1, 1)),
-                      share_edge            = ((0,0,0, 1),
-                                               (0,1,1, 1)),
-                      share_corner          = ((0,0,0, 1),
-                                               (1,1,1, 1)),
-                      share_nothing         = ((0,0,0, 1),
-                                               (2,2,2, 1)),
-                      share_nothing_algined = ((0,0,0, 1),
-                                               (2,0,0, 1)) )[proximity]
+    voxel_spec = dict(share_face            = ((0,0,0),
+                                               (0,0,1)),
+                      share_edge            = ((0,0,0),
+                                               (0,1,1)),
+                      share_corner          = ((0,0,0),
+                                               (1,1,1)),
+                      share_nothing         = ((0,0,0),
+                                               (2,2,2)),
+                      share_nothing_algined = ((0,0,0),
+                                               (2,0,0)) )[proximity]
     expected_number_of_tracks = 1 if are_neighbours else 2
-    voxels = list(starmap(Voxel, voxel_spec))
+    voxels = [Voxel(x,y,z, 1, np.array([1,1,1])) for x,y,z in voxel_spec]
     tracks = make_track_graphs(voxels, np.array([1,1,1]), contiguity=contiguity)
     assert len(tracks) == expected_number_of_tracks

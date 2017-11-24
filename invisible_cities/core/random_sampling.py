@@ -62,7 +62,7 @@ class NoiseSampler:
         """
         (self.probs,
          self.xbins,
-         self.baselines) = DB.SiPMNoise()
+         self.baselines) = DB.SiPMNoise(run_number)
         self.nsamples    = sample_size
         self.smear       = smear
         self.active      = DB.DataSiPM(run_number).Active.values[:, np.newaxis]

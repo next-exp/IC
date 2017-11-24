@@ -17,7 +17,7 @@ DAQ_GAIN = 1.25
 NBITS = 12
 LSB = 2 * units.V / 2 ** NBITS / DAQ_GAIN
 NOISE_I = LSB / (FEE_GAIN * DAQ_GAIN)
-NOISE_DAQ = 0.313 * units.mV
+NOISE_DAQ = 0.258 * units.mV
 
 C2 =    8 * units.nF
 C1 = 2714 * units.nF

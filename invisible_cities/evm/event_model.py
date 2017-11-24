@@ -139,7 +139,6 @@ class MCHit(BHit):
     @property
     def T   (self): return self.time
 
-
     def __str__(self):
         return '<pos = {} E = {} time = {}>'.format(
                 self.pos.tolist(), self.E, self.time)
@@ -158,8 +157,12 @@ class MCHit(BHit):
 
 class Voxel(BHit):
     """Represents a Voxel"""
-    def __init__(self, x,y,z, E):
+    def __init__(self, x,y,z, E, size):
         super().__init__(x,y,z, E)
+        self._size = size
+
+    @property
+    def size(self): return self._size
 
 
 class Cluster(BHit):

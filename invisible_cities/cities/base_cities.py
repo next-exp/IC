@@ -6,11 +6,12 @@ last revised: JJGC, July-2017
 
 """
 
-from argparse  import Namespace
-from glob      import glob
-from time      import time
-from os.path   import expandvars
-from itertools import chain
+from collections import Sequence
+from argparse    import Namespace
+from glob        import glob
+from time        import time
+from os.path     import expandvars
+from itertools   import chain
 
 import numpy  as np
 import tables as tb
@@ -139,8 +140,9 @@ class City:
         return set(chain.from_iterable(base.parameters for base in cls.__mro__ if hasattr(base, 'parameters')))
 
     def _event_range(self):
-        if not hasattr(self.conf, 'event_range'): return None, None
+        if not hasattr(self.conf, 'event_range'): return None, 1
         er = self.conf.event_range
+        if not isinstance(er, Sequence): er = (er,)
         if len(er) == 1:                          return None, er[0]
         if len(er) == 2:                          return tuple(er)
         if len(er) == 0: ValueError('event_range needs at least one value')
@@ -530,12 +532,13 @@ class CalibratedCity(DeconvolutionCity):
         """Zero Suppression over csum"""
         return cpf.wfzs(csum, threshold=threshold)
 
-    def calibrated_signal_sipm(self, SiRWF):
+    def calibrated_signal_sipm(self, SiRWF, cal=0):
         """Return the calibrated signal in the SiPMs."""
         return cpf.signal_sipm(SiRWF,
                                self.sipm_adc_to_pes,
                                thr   = self.  thr_sipm,
-                               n_MAU = self.n_MAU_sipm)
+                               n_MAU = self.n_MAU_sipm,
+                               Cal=cal)
 
 
 class PmapCity(CalibratedCity):
