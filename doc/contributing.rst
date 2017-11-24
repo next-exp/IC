@@ -59,6 +59,10 @@ Sandofsky:
   3. Once your code is perfect, clean up its history.
   4. Merge the cleaned-up branch back into the public branch.
 
+- In IC, step 4 is done by the IC administators *after the work has
+  been reviewed and approved*, so you don't have to worry about this
+  step for now.
+
 - The history that appears in your local clone (your private history)
   is there entirely for *your* benefit. As such, it is malleable and
   disposable, and you can modify it however and whenever you like.
@@ -100,7 +104,8 @@ Sandofsky:
 Workflow summary
 ----------------
 
-1. Create a topic branch in your local repo.
+1. Create a topic branch starting at ``upstream/master`` in your local
+   repo.
 
 2. Make numerous checkpoint commits to your topic branch.
 
@@ -110,20 +115,23 @@ Workflow summary
    want feedback from Travis.
 
 5. In preparation for making a pull request (PR), squash the
-   checkpoint commits into a single commit with a descriptive,
-   high-level commit message.
+   checkpoint commits into a smaller number of logically
+   self-contained commits with descriptive, high-level commit
+   messages. Try to make each commit (and its diff) tell a story that
+   will be easily understood by the reviewers.
 
-6. Pull ``nextic/master`` into your local ``master``.
+6. Fetch (whatever you do, **do not pull**) ``upstream/master`` into
+   your local repository..
 
-7. Rebase your topic branch onto ``master``.
+7. Rebase your topic branch onto ``upstream/master``.
 
-8. Push the commit to ``origin``.
+8. Push the branch to ``origin``.
 
-9. Submit a pull request (PR) from your github page.
+9. a pull request (PR) from your github page.
 
 10. Wait for the PR to be approved and merged.
 
-11. Pull ``nextic/master`` into your local ``master``.
+11. Fetch ``upstream/master`` into your local repo.
 
 12. Delete your topic branch, both locally and in your fork.
 
@@ -152,7 +160,22 @@ general can be interrupted with ``C-g``.
 In the case of the git CLI, you should type the commands in a shell
 whose working directory is inside there relevant git repository.
 
-1. Before starting some new work, create a topic branch.
+1. Before starting some new work, make sure that you have the most
+   recent IC code.
+
+   - magit: ``f e upstream RET``
+
+     - ``f`` opens the magit fetching popup
+     - ``e`` allows you to specify the remote from which you would
+       elike to fetch
+     - ``upstream`` specifies that you want to fetch from the central
+       nextic repository. (This assumes that you have already added
+       ``upstream`` as a remote pointing at ``nextic/IC`` in your
+       local repository)
+
+   - git CLI: ``git fetch upstream``
+
+2. Create a topic branch.
 
    In the following examples replace 'topic' with whatever name you
    want to give to your branch. The name sohuld be meaningful to you
@@ -160,21 +183,21 @@ whose working directory is inside there relevant git repository.
    multiple topic branches in existence simultaneously, so picking
    good names will make life easier for *you*.
 
-   - magit: ``b c master RET topic RET``
+   - magit: ``b c upstream/master RET topic RET``
 
      - ``b`` opens the magit branch popup
      - ``c`` creates and checks out a new branch
-     - ``master`` is the location from which you want to branch off
+     - ``upstream/master`` is the location from which you want to branch off
      - ``topic`` is the name of your new branch
 
-   - git CLI: ``git checkout -b topic master``
+   - git CLI: ``git checkout -b topic upstream/master``
 
    Magit will walk you through these steps interactively. Helm, if
    you've installed it, will improve the interactive experience. If
    you make a mistake magit will help you avoid digging yourself into
    a deeper hole. With the git CLI you are on your own.
 
-2. Create plenty of checkpoint commits while you are working. Frequent
+3. Create plenty of checkpoint commits while you are working. Frequent
    checkpoint commits ensure that, if you ever get yourself into a
    complete mess, you can get out of it cheaply by reverting to a
    *recent* sensible state.
@@ -207,17 +230,18 @@ whose working directory is inside there relevant git repository.
        message and then perform the commit with ``C-c C-c``.
 
        When you get around to creating a pull request, you should
-       replace all your checkpoint commit messages with one, coherent,
-       clean, descriptive commit message describing your work. So, the
-       purpose of the checkpoint commit messages is to make authoring
-       the pull request commit message as easy as possible.
+       squash (see below) your checkpoint commit messages into a
+       smaller number of coherent, clean, commits with descriptive
+       commit messages describing your work. The purpose of the
+       checkpoint commit messages is to make authoring the pull
+       request commit messages as easy as possible.
 
    - git CLI: TODO
 
-3. Make sure that the code you contribute is adequately tested. See
+4. Make sure that the code you contribute is adequately tested. See
    below.
 
-4. Whenever you want to see whether your current code builds and
+5. Whenever you want to see whether your current code builds and
    passes all the required tests in a clean environment, commit
    (described above) and push to your fork (origin).
 
@@ -232,18 +256,18 @@ whose working directory is inside there relevant git repository.
 
    - git CLI: TODO
 
-5. Once you have achieved something worth incorporating into the main
+6. Once you have achieved something worth incorporating into the main
    repository, it's time to make a pull request (PR). Usually your
-   pull request should consist of a *single* commit with a carefully
-   written, high-level, descriptive commit message describing your
-   work. The commit message of a single-commit PR is taken as the
-   default PR description text.
+   pull request should consist of a smaller number of commits than you
+   originally made during development, each with a carefully written,
+   high-level, descriptive commit message describing your work. The
+   commit message of a single-commit PR is taken as the default PR
+   description text. If your PR contains more than one commit, you
+   should create a description of the whole collection in the GitHub
+   PR interface.
 
-   You should squash your numerous checkpoint commits to make the
-   single PR commit. It might be reasonable to squash down to a small
-   number of commits greater than one, if your work consists of a
-   number of significant and logically distinct steps. But this is
-   likely to be quite rare.
+   You should squash your numerous checkpoint commits to make cleaner
+   PR commits.
 
    - magit:
 
@@ -251,7 +275,7 @@ whose working directory is inside there relevant git repository.
        shows the log for the current branch only
 
      - navigate down to the first commit in your branch with ``n`` and
-       ``p``
+       ``p`` (which stand for [n]ext and [p]revious line)
 
      - ``r i``: opens the magit rebase popup and selects interactive
        rebase. This will give you a buffer listing all the commits in
@@ -265,7 +289,9 @@ whose working directory is inside there relevant git repository.
          first (earliest) commit).
 
          The subsequent ``s``\ s change the action for the subsequent
-         commits to **s**\ quash.
+         commits to **s**\ quash. This will incorporate the changes
+         that appeared in the squashed commits, into the last
+         unsquashed commits before them.
 
          Finally, ``C-c C-c`` instructs magit to perform the actions
          specified in the buffer. At this point you will get a commit
@@ -284,23 +310,16 @@ whose working directory is inside there relevant git repository.
 
        - ``C-c C-c``
 
-6. Pull ``nextic/master`` into your ``master``.
+7. Fetch the latest developments on ``upstream/master``. (You already
+   did this in step 1.)
 
    - magit: 
 
-      - ``b b master RET``: checkout ``master``
+      - ``f e upstream RET``
 
-      - ``F``: Pull (fetch + merge) into current branch (``master``)
+   - git CLI: ``git fetch upstream``
 
-      At this point, you may discover that new additions to the main
-      repository conflict with your work. You will need to resolve
-      these conflicts before proceeding.
-
-      TODO: how on earth do I resolve these conflicts?
-
-   - git CLI: TODO
-
-7. Rebase your topic branch onto ``master``
+8. Rebase your topic branch onto ``upstream/master``
 
    - magit:
 
@@ -310,7 +329,19 @@ whose working directory is inside there relevant git repository.
 
    - git CLI: TODO
 
-8. Push your clean pull request (PR) commit to your github fork
+   At this point, you may discover that new additions to the main
+   repository conflict with your work. If this happens, abort the
+   rebase
+
+   - magit: ``r a y`` ([r]ebase [a]bort [y]es)  
+
+   and proceed with the PR without rebasing. These conflicts will need
+   to be resolved and your commits will have to rebased eventually,
+   but, at this stage, it's best not to try it on your own if these
+   complications arise: let some IC admin help you or do it for you on
+   your first attempts.
+
+9. Push your clean pull request-ready (PR) commits to your github fork
 
    - magit: ``P -f p``
 
@@ -321,43 +352,35 @@ whose working directory is inside there relevant git repository.
 
    - git CLI: TODO
 
-9. Submit a pull request (PR) from your github page.
+10. Submit a pull request (PR) from your github page.
 
    TODO: Is it worth writing anything here, or is github sufficiently
    self-explanatory on this topic?
 
-10. Once your PR has been merged, you should receive an automatic
+11. Once your PR has been merged, you should receive an automatic
     email from github. Once your PR has been merged you can proceed to
     clean up as follows.
 
-11. Pull ``nextic/master`` into your local ``master``
+12. Fetch the latest ``upstream/master`` into your local clone. (We've
+    done this before in steps 1. and 7.)
 
    - magit:
 
-      - ``b b master RET``: checkout ``master``
+      - ``f e upstream RET``
 
-      - ``F u``: Pull into current branch from upstream
+13. Delete your topic branch, both locally and in your fork.
 
-        TODO: talk about the need to set upstream first, or about the
-        use of elsewhere
+   - magit:
 
-   - git CLI:
-
-12. Delete your topic branch, both locally and in your fork.
-
-    - Delete the one in your fork on your github page
-
-    - The local one needs to be deleted in your local repository
-
-        - magit: ``b k topic RET``
+     - ``b k topic RET``
+     - ``b k origin/topic RET``
+     - ``b k origin/topic RET`` : Yes! The same thing twice!  The
+       first on removes the branch on the remote, once that has gone,
+       the second removes your local tracking branch.
 
         - git CLI: TODO
 
-    - This still leaves you with a remote tracking branch:
-      ``origin/topic``. The simplest way of getting rid of in in magit
-      is ``f -p a``.
-
-13. That's it. Now you can repeat the process all over again for some
+14. That's it. Now you can repeat the process all over again for some
     new work.
 
     Don't forget that you can interleave work on different branches:
@@ -393,9 +416,9 @@ Tests serve a number of purposes:
    do.
 
    This is a frequently underappreciated aspect of tests. On many
-   occasions, the process of devising, writing and passing tests makes
-   leads to a much better understanding of the tested code and the
-   domain it addresses.
+   occasions, the process of devising, writing and passing tests leads
+   to a much better understanding of the tested code and the domain it
+   addresses.
 
 3. Act as documentation.
 
@@ -409,14 +432,14 @@ Code that has made it into the central repository should already have
 accompanying tests. Before starting any work, make sure that the code
 you checked out passes all the tests. In the (hopefully extremely
 unlikely case) that it does not, contact the author of the failing
-code and make sure that a fix uploaded to the central repository as
+code and make sure that a fix is uploaded to the central repository as
 soon as possible.
 
 Conversely, make sure that any pull requests you submit pass all
 tests. Enabling Travis in your fork will give you an early
 warning. Travis automatically runs on any pull requests submitted to
 the nextic main repository, and the repository configuration prevents
-merging pull requests which
+merging pull requests which contain failing tests.
 
 **Submitting code without tests is equivalent to saying that you don't
 mind if the code is broken by someone else!**
