@@ -214,17 +214,19 @@ def test_correction_call_1d(toy_data_1d):
 
 
 @given(uniform_energy_1d())
-def test_correction_normalization(toy_data_1d):
+def test_correction_normalization_1d_to_max(toy_data_1d):
     X, E, Eu, *_, i_max = toy_data_1d
     correct  = Correction((X,), E, Eu,
                           norm_strategy = "max")
-    X_test  = X[i_max]
-    assert_allclose(correct(X_test).value, 1) # correct.xs is a list of axis
+
+    x_test = X
+    corrected_E = E * correct(x_test).value
+    assert_allclose(corrected_E, np.max(E))
 
 
 @given(uniform_energy_1d(),
        floats  (min_value=1e-8, max_value=1e8))
-def test_correction_normalization_to_const(toy_data_1d, norm_value):
+def test_correction_normalization_1d_to_const(toy_data_1d, norm_value):
     X, E, Eu, _, _, _ = toy_data_1d
     c = Correction((X,), E, Eu,
                    norm_strategy = "const",
@@ -257,6 +259,18 @@ def test_correction_attributes_2d_unnormalized(toy_data_2d):
                    norm_strategy = None)
     assert_allclose(c._fs, F )
     assert_allclose(c._us, Fu)
+
+
+@given(uniform_energy_2d())
+def test_correction_normalization_2d_to_max(toy_data_2d):
+    X, Y, E, Eu, *_, i_max = toy_data_2d
+    correct  = Correction((X, Y), E, Eu,
+                          norm_strategy = "max")
+
+    x_test      = np.repeat(X, Y.size)
+    y_test      = np.tile  (Y, X.size)
+    corrected_E = E.flatten() * correct(x_test, y_test).value
+    assert_allclose(corrected_E, np.max(E))
 
 
 @given(uniform_energy_2d())
