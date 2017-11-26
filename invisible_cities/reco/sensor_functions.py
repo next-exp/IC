@@ -31,7 +31,7 @@ def simulate_pmt_response(event, pmtrd, adc_to_pes, run_number = 0):
     BLRX = []
     for pmt in range(NPMT):
         # normalize calibration constants from DB to MC value
-        cc = adc_to_pes[pmt] / FE.ADC_TO_PES
+        cc = 1.
         # signal_i in current units
         signal_i = FE.spe_pulse_from_vector(spe, pmtrd[event, pmt])
         # Decimate (DAQ decimation)
