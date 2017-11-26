@@ -32,7 +32,8 @@ def bounding_box(seq : BHit) -> Sequence[np.ndarray]:
 
 
 def voxelize_hits(hits             : Sequence[BHit],
-                  voxel_dimensions : np.ndarray) -> List[Voxel]:
+                  voxel_dimensions : np.ndarray,
+                  strict_voxel_size: bool = True) -> List[Voxel]:
     """1. Hits are enclosed by a bounding box.
        2. Boundix box is discretized (via a hitogramdd).
        3. The energy of all the hits insidex each discreet "voxel" is added.
@@ -44,8 +45,10 @@ def voxelize_hits(hits             : Sequence[BHit],
     bounding_box_size   =  hhi - hlo
     number_of_voxels = np.ceil(bounding_box_size / voxel_dimensions).astype(int)
     number_of_voxels = np.clip(number_of_voxels, a_min=1, a_max=None)
-    voxel_edges_lo = bounding_box_centre - number_of_voxels * voxel_dimensions / 2
-    voxel_edges_hi = bounding_box_centre + number_of_voxels * voxel_dimensions / 2
+    if strict_voxel_size: half_range = number_of_voxels * voxel_dimensions / 2
+    else                : half_range =          bounding_box_size          / 2
+    voxel_edges_lo = bounding_box_centre - half_range
+    voxel_edges_hi = bounding_box_centre + half_range
 
     # Expand the voxels a tiny bit, in order to include hits which
     # fall within the margin of error of the voxel bounding box.
