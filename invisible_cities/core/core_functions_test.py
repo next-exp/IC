@@ -17,6 +17,7 @@ sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 from .testing_utils import random_length_float_arrays
 from .              import core_functions   as core
 from .              import core_functions_c as core_c
+from .              import  fit_functions   as fitf
 
 
 def test_timefunc(capfd):
@@ -78,6 +79,23 @@ def test_weighted_mean_and_var_all_weights_equal(data, weights):
 
     npt.assert_allclose(expected_mean, actual_mean, rtol=1e-5)
     npt.assert_allclose(expected_var , actual_var , rtol=1e-5, atol=1e-4)
+
+
+@given(floats  (min_value = -100,
+                max_value = +100),
+       floats  (min_value =    1,
+                max_value = +100),
+       integers(min_value =  100,
+                max_value = 1000))
+def test_weighted_mean_and_var_gaussian_function(mu, sigma, ndata):
+    data = np.linspace(mu - 5 * sigma,
+                       mu + 5 * sigma,
+                       ndata)
+    weights = fitf.gauss(data, 1, mu, sigma)
+
+    ave, var = core.weighted_mean_and_var(data, weights)
+    npt.assert_allclose(mu      , ave, atol=1e-8)
+    npt.assert_allclose(sigma**2, var, rtol=1e-4)
 
 
 def test_loc_elem_1d():
