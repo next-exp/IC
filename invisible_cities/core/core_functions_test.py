@@ -6,6 +6,7 @@ import pandas as pd
 import numpy  as np
 import numpy.testing as npt
 
+from flaky                 import flaky
 from hypothesis            import given
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
@@ -96,6 +97,18 @@ def test_weighted_mean_and_var_gaussian_function(mu, sigma, ndata):
     ave, var = core.weighted_mean_and_var(data, weights)
     npt.assert_allclose(mu      , ave, atol=1e-8)
     npt.assert_allclose(sigma**2, var, rtol=1e-4)
+
+
+@flaky(max_runs   = 4,
+       min_passes = 3)
+@given(integers(min_value=5, max_value=20))
+def test_weighted_mean_and_var_unbiased_frequentist(ndata):
+    mu, sigma = 100, 1
+    data = np.random.normal(mu, sigma, size=ndata)
+    values, freqs = np.unique(data, return_counts=True)
+
+    ave, var = core.weighted_mean_and_var(values, freqs, unbiased=True, frequentist=True)
+    assert abs(mu - ave) * (ndata / var)**0.5 < 3
 
 
 def test_loc_elem_1d():
