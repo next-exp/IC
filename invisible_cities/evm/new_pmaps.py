@@ -1,12 +1,17 @@
 class PMap:
 
-    def peaks(self, kind = object):
-        return [ peak for peak in self._peaks if isinstance(peak, kind) ]
+    @property
+    def s1s(self): pass
 
     @property
-    def n_peaks(self): pass
+    def s2s(self): pass
 
-    def get_peak(self): pass
+    # Optionally:
+    @property
+    def number_of_s1s(self): pass
+
+    @property
+    def number_of_s2s(self): pass
 
 
 class _Peak:
