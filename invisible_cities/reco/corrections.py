@@ -100,8 +100,8 @@ class Correction:
 
         elif   strategy == "const" :
             if "value" not in opts:
-                raise ParameterNotSet(("Normalization strategy 'const' requires"
-                                       "the normalization option 'value'"))
+                raise ParameterNotSet("Normalization strategy 'const' requires"
+                                      "the normalization option 'value'")
             f_ref = opts["value"]
             u_ref = 0
 
@@ -118,8 +118,8 @@ class Correction:
 
         elif   strategy == "index" :
             if "index" not in opts:
-                raise ParameterNotSet(("Normalization strategy 'index' requires"
-                                       "the normalization option 'index'"))
+                raise ParameterNotSet("Normalization strategy 'index' requires"
+                                      "the normalization option 'index'")
             index = opts["index"]
             f_ref = self._fs[index]
             u_ref = self._us[index]
