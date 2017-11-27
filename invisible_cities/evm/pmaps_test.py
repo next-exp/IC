@@ -9,6 +9,7 @@ from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
+from .. core.core_functions import weighted_mean_and_std
 from .. core.exceptions     import InconsistentS12dIpmtd
 from .. core.exceptions     import InitializedEmptyPmapObject
 
@@ -46,9 +47,7 @@ def s2si_input(draw, min_size=1, max_size=10):
 
 def rms(x, y):
     if len(x) == len(y) < 2: return 0
-    mean = np.average(x, weights=y)
-    var  = np.average((x-mean)**2, weights=y)
-    return var**0.5
+    return weighted_mean_and_std(x, y)[1]
 
 
 @given(peak_input())
