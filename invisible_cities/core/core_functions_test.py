@@ -111,6 +111,20 @@ def test_weighted_mean_and_var_unbiased_frequentist(ndata):
     assert abs(mu - ave) * (ndata / var)**0.5 < 3
 
 
+@flaky(max_runs   = 4,
+       min_passes = 3)
+@given(integers(min_value=5, max_value=20))
+def test_weighted_mean_and_var_unbiased_reliability_weights(ndata):
+    mu, sigma = 100, 1
+    values = np.linspace(mu - 5 * sigma,
+                         mu + 5 * sigma,
+                         ndata)
+    weights = fitf.gauss(values, 1, mu, sigma)
+
+    ave, var = core.weighted_mean_and_var(values, weights, unbiased=True, frequentist=False)
+    assert abs(mu - ave) * (ndata / var)**0.5 < 3
+
+
 def test_loc_elem_1d():
     assert core.loc_elem_1d(np.array(core.lrange(10)), 5) == 5
 
