@@ -1,15 +1,25 @@
+import numpy as np
+
+from pytest import approx
+from pytest import raises
+from pytest import mark
+
 from hypothesis             import assume
+from hypothesis             import given
 from hypothesis.strategies  import integers
 from hypothesis.strategies  import floats
 from hypothesis.strategies  import sampled_from
 from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
-from . new_pmaps import  PMTResponses
-from . new_pmaps import SiPMResponses
-from . new_pmaps import S1
-from . new_pmaps import S2
-from . new_pmaps import PMap
+from .. core.core_functions import weighted_mean_and_std
+from .. core.testing_utils  import exactly
+
+from .  new_pmaps import  PMTResponses
+from .  new_pmaps import SiPMResponses
+from .  new_pmaps import S1
+from .  new_pmaps import S2
+from .  new_pmaps import PMap
 
 
 wf_min =   0
@@ -52,3 +62,49 @@ def pmaps(draw):
     s2s  = tuple(draw(peaks(S2))[1] for i in range(n_s2))
     args = s1s, s2s
     return args, PMap(*args)
+
+
+@given(sensor_responses())
+def test_SensorResponses_all_waveforms(srs):
+    (_, all_waveforms), sr = srs
+    assert all_waveforms == approx(sr.all_waveforms)
+
+
+@given(sensor_responses())
+def test_SensorResponses_ids(srs):
+    (ids, _), sr = srs
+    assert ids == exactly(sr.ids)
+
+
+@given(sensor_responses())
+def test_SensorResponses_waveform(srs):
+    (ids, all_waveforms), sr = srs
+    for sensor_id, waveform in zip(ids, all_waveforms):
+        assert waveform == approx(sr.waveform(sensor_id))
+
+
+@given(sensor_responses())
+def test_SensorResponses_time_slice(srs):
+    (_, all_waveforms), sr = srs
+    for i, time_slice in enumerate(all_waveforms.T):
+        assert time_slice == approx(sr.time_slice(i))
+
+
+@given(sensor_responses())
+def test_SensorResponses_sum_over_times(srs):
+    (_, all_waveforms), sr = srs
+    assert np.sum(all_waveforms, axis=1) == approx(sr.sum_over_times)
+
+
+@given(sensor_responses())
+def test_SensorResponses_sum_over_sensors(srs):
+    (_, all_waveforms), sr = srs
+    assert np.sum(all_waveforms, axis=0) == approx(sr.sum_over_sensors)
+
+
+@mark.parametrize("SR", (PMTResponses, SiPMResponses))
+@given(size=integers(1, 10))
+def test_SensorResponses_raises_exception_when_shapes_dont_match(SR, size):
+    with raises(ValueError):
+        sr = SR(np.empty(size),
+                np.empty((size + 1, 1)))
