@@ -25,6 +25,24 @@ class _Peak:
     @property
     def times(self): pass
 
+    @property
+    def time_at_max_energy(self): pass
+
+    @property
+    def total_energy(self): pass
+
+    @property
+    def height(self): pass
+
+    @property
+    def width(self): pass
+
+    def energy_above_threshold(self, thr): pass
+
+    def  width_above_threshold(self, thr): pass
+
+    def    rms_above_threshold(self, thr): pass
+
 
 class S1(_Peak): pass
 class S2(_Peak): pass
