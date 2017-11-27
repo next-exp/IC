@@ -204,7 +204,7 @@ def merge_tracks(tracks    : Sequence[Graph],
                     found = True
                     new_pos = (v1.pos + v2.pos) / 2.
                     new_pos = vox_size * np.round(new_pos / vox_size)
-                    new_voxel = Voxel(new_pos[0], new_pos[1], new_pos[2], 0.)
+                    new_voxel = Voxel(new_pos[0], new_pos[1], new_pos[2], 0., vox_size)
                     if not (new_voxel in new_voxels_dict.keys()):
                         new_energy = (v1.energy + v2.energy) * (1 - factor)
                         new_voxels_dict[new_voxel] = new_energy
@@ -217,7 +217,7 @@ def merge_tracks(tracks    : Sequence[Graph],
             joint_voxels.append(v)
 
     for vxl, energy in new_voxels_dict.items():
-        new_vxl = Voxel(vxl.X, vxl.Y, vxl.Z, energy)
+        new_vxl = Voxel(vxl.X, vxl.Y, vxl.Z, energy, vox_size)
         joint_voxels.append(new_vxl)
 
     return make_track_graphs(joint_voxels, vox_size)

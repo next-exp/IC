@@ -321,9 +321,7 @@ FACE, EDGE, CORNER = Contiguity
               (CORNER,    'share_corner',          True),
               (CORNER,    'share_nothing',         False),
               (CORNER,    'share_nothing_aligned', False),))
-
 def test_contiguity(proximity, contiguity, are_neighbours):
-
     voxel_spec = dict(share_face            = ((0,0,0),
                                                (0,0,1)),
                       share_edge            = ((0,0,0),
@@ -332,7 +330,8 @@ def test_contiguity(proximity, contiguity, are_neighbours):
                                                (1,1,1)),
                       share_nothing         = ((0,0,0),
                                                (2,2,2)),
-                      share_nothing_algined = ((0,0,0),
+                      share_nothing_aligned = ((0,0,0),
+                                               (2,0,0)) )[proximity]
 
     expected_number_of_tracks = 1 if are_neighbours else 2
     voxels = [Voxel(x,y,z, 1, np.array([1,1,1])) for x,y,z in voxel_spec]
@@ -350,7 +349,7 @@ def test_energy_conservation_in_merging():
                   (3, 2, 0, 5),
                   (4, 2, 0, 5)
     )
-    voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
+    voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
     tracks  = make_track_graphs(voxels, vox_size)
     merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
 
@@ -371,7 +370,7 @@ def test_short_tracks_no_merge():
                   (1, 4, 0, 5),
                   (3, 1, 0, 5)
     )
-    voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
+    voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
     tracks  = make_track_graphs(voxels, vox_size)
     merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
 
@@ -388,7 +387,7 @@ def test_new_voxels_only_appear_once():
                   (3, 4, 0, 5),
                   (4, 4, 0, 5)
     )
-    voxels = [Voxel(x,y,z, E) for (x,y,z,E) in voxel_spec]
+    voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
     tracks  = make_track_graphs(voxels, vox_size)
     merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
 
