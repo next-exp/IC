@@ -78,7 +78,6 @@ class Contiguity(Enum):
 
 
 def make_track_graphs(voxels           : Voxel,
-                      voxel_dimensions : np.ndarray,
                       contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Graph]:
     """Create a graph where the voxels are the nodes and the edges are any
     pair of neighbour voxel. Two voxels are considered to be
@@ -87,7 +86,7 @@ def make_track_graphs(voxels           : Voxel,
     """
 
     def neighbours(va : Voxel, vb : Voxel) -> bool:
-        return np.linalg.norm((va.pos - vb.pos) / voxel_dimensions) < contiguity.value
+        return np.linalg.norm((va.pos - vb.pos) / va.size) < contiguity.value
 
     voxel_graph = nx.Graph()
     voxel_graph.add_nodes_from(voxels)
