@@ -6,6 +6,7 @@ import numpy as np
 from textwrap import dedent
 
 from .. types.ic_types_c       cimport minmax
+from .. core.core_functions     import weighted_mean_and_std
 from .. core.exceptions         import PeakNotFound
 from .. core.exceptions         import SipmEmptyList
 from .. core.exceptions         import SipmNotFound
@@ -31,9 +32,10 @@ cdef class Peak:
         assert len(t) == len(E)
         self.t              = t
         self.E              = E
-        self.height         = np.max(self.E)
-        self.width          = self.t[-1] - self.t[0]
-        self.total_energy   = np.sum(self.E)
+        self.height         = self.      height_above_threshold(0)
+        self.width          = self.       width_above_threshold(0)
+        self.total_energy   = self.total_energy_above_threshold(0)
+        self.rms            = self.         rms_above_threshold(0)
 
         i_t        = np.argmax(self.E)
         self.tpeak = self.t[i_t]
@@ -59,6 +61,17 @@ cdef class Peak:
     def height_above_threshold(self, thr):
         over_thr = self.E > thr
         return np.max(self.E[over_thr]) if over_thr.any() else 0
+
+    def rms_above_threshold(self, thr):
+        over_thr   = self.E > thr
+        n_over_thr = np.count_nonzero(over_thr)
+        if n_over_thr < 2: return 0
+
+        t    = self.t[over_thr]
+        E    = self.E[over_thr]
+
+        _, std = weighted_mean_and_std(t, E)
+        return std
 
     def __str__(self):
         if self.width < units.mus:

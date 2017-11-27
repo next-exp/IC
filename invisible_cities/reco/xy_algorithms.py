@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 
+from .. core.core_functions    import weighted_mean_and_var
 from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmZeroCharge
@@ -30,8 +31,7 @@ def barycenter(pos, qs):
 
     if not len(pos)   : raise SipmEmptyList
     if np.sum(qs) == 0: raise SipmZeroCharge
-    mu  = np.average( pos           , weights=qs, axis=0)
-    var = np.average((pos - mu) ** 2, weights=qs, axis=0)
+    mu, var = weighted_mean_and_var(pos, qs, axis=0)
     # For uniformity of interface, all xy algorithms should return a
     # list of clusters. barycenter always returns a single clusters,
     # but we still want it in a list.

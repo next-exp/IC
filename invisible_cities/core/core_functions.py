@@ -5,6 +5,7 @@ This module includes utility functions.
 import numpy as np
 import time
 
+from typing import Sequence
 
 def merge_two_dicts(a,b):
     return {**a, **b}
@@ -59,6 +60,64 @@ def in_range(data, minval=-np.inf, maxval=np.inf):
         for those values of data in the input range and False for the others.
     """
     return (minval <= data) & (data < maxval)
+
+
+def weighted_mean_and_var(data       : Sequence,
+                          weights    : Sequence,
+                          unbiased   : bool = False,
+                          frequentist: bool = True,
+                          axis              = None) -> (float, float):
+    """
+    Compute mean value and variance of a dataset with given
+    weights.
+
+    Parameters
+    ----------
+    data: Sequence
+        Dataset to which mean and variance are measured.
+    weights: Sequence
+        Weight for each data point.
+    unbiased: Boolean, optional
+        Whether to use the unbiased estimator of the variance.
+    frequentist: Boolean, optional
+        This parameter is ignored if `unbiased` is False.
+        If True (default) the weights are interpreted as
+        frequencies. Otherwise, they are interpreted as
+        a measurement of the reliability of the data point.
+    axis: None, int or tuple of ints
+        Axis or axes along which to average a. The default, axis=None,
+        will average over all of the elements of the input array.
+        If axis is negative it counts from the last to the first axis.
+
+    Returns
+    -------
+    ave: float
+        Weighted average of data.
+    var: float
+        Weighted average of data.
+    """
+    data      = np.array(data   )
+    weights   = np.array(weights)
+
+    ave, wsum = np.average( data          , weights=weights, axis=axis, returned=True)
+    var       = np.average((data - ave)**2, weights=weights, axis=axis)
+
+    if unbiased:
+        if frequentist:
+            var *= wsum / (wsum - 1)
+        else:
+            wsum2 = np.sum(weights**2)
+            var *= 1 / (1 - wsum2/wsum**2)
+    return ave, var
+
+
+def weighted_mean_and_std(*args, **kwargs):
+    """
+    Same as `weighted_mean_and_var`, but returns the
+    standard deviation instead of the variance.
+    """
+    ave, var = weighted_mean_and_var(*args, **kwargs)
+    return ave, np.sqrt(var)
 
 
 def loc_elem_1d(np1d, elem):
