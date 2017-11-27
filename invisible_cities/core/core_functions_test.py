@@ -65,6 +65,21 @@ def test_in_range_right_shape(data):
     assert core.in_range(data, -1., 1.).shape == data.shape
 
 
+@given(random_length_float_arrays(min_length = 5,
+                                  min_value  = 1e-4,
+                                  max_value  = 1e+4),
+       floats(min_value = 1e-5,
+              max_value = 1e-0))
+def test_weighted_mean_and_var_all_weights_equal(data, weights):
+    weights = np.full_like(data, weights)
+
+    expected_mean, expected_var = np.mean(data), np.var(data)
+    actual_mean  , actual_var   = core.weighted_mean_and_var(data, weights)
+
+    npt.assert_allclose(expected_mean, actual_mean, rtol=1e-5)
+    npt.assert_allclose(expected_var , actual_var , rtol=1e-5, atol=1e-4)
+
+
 def test_loc_elem_1d():
     assert core.loc_elem_1d(np.array(core.lrange(10)), 5) == 5
 
