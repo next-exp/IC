@@ -14,6 +14,8 @@ from hypothesis.extra.numpy import arrays
 
 from .. core.core_functions import weighted_mean_and_std
 from .. core.testing_utils  import exactly
+from .. core.testing_utils  import assert_SensorResponses_equality
+from .. core.testing_utils  import previous_float
 
 from .  new_pmaps import  PMTResponses
 from .  new_pmaps import SiPMResponses
@@ -108,3 +110,159 @@ def test_SensorResponses_raises_exception_when_shapes_dont_match(SR, size):
     with raises(ValueError):
         sr = SR(np.empty(size),
                 np.empty((size + 1, 1)))
+
+
+@given(peaks())
+def test_Peak_sipms(pks):
+    (_, _, sipm_r), peak = pks
+    assert_SensorResponses_equality(sipm_r, peak.sipms)
+
+
+@given(peaks())
+def test_Peak_pmts(pks):
+    (_, pmt_r, _), peak = pks
+    assert_SensorResponses_equality(pmt_r, peak.pmts)
+
+
+@given(peaks())
+def test_Peak_times(pks):
+    (times, _, _), peak = pks
+    assert times == approx(peak.times)
+
+
+@given(peaks())
+def test_Peak_time_at_max_energy(pks):
+    _, peak = pks
+    index_at_max_energy = np.argmax(peak.pmts.sum_over_sensors)
+    assert peak.time_at_max_energy == peak.times[index_at_max_energy]
+
+
+@given(peaks())
+def test_Peak_total_energy(pks):
+    _, peak = pks
+    assert peak.total_energy == approx(peak.pmts.all_waveforms.sum())
+
+
+@given(peaks())
+def test_Peak_total_charge(pks):
+    _, peak = pks
+    assert peak.total_charge == approx(peak.sipms.all_waveforms.sum())
+
+
+@given(peaks())
+def test_Peak_height(pks):
+    _, peak = pks
+    assert peak.height == approx(peak.pmts.sum_over_sensors.max())
+
+
+@given(peaks())
+def test_Peak_width(pks):
+    _, peak = pks
+    assert peak.width == approx(peak.times[-1] - peak.times[0])
+
+
+def _get_indices_above_thr(sr, thr):
+    return np.where(sr.sum_over_sensors > thr)[0]
+
+
+@given(peaks())
+def test_Peak_energy_above_threshold_less_than_wf_min(pks):
+    _, peak = pks
+    sum_wf_min = previous_float(peak.pmts.sum_over_sensors.min())
+    assert peak.energy_above_threshold(sum_wf_min) == approx(peak.total_energy)
+
+
+@given(peaks())
+def test_Peak_energy_above_threshold_greater_than_equal_to_wf_max(pks):
+    _, peak = pks
+    assert peak.energy_above_threshold(peak.height) == 0
+
+
+@given(peaks(), floats(wf_min, wf_max))
+def test_Peak_energy_above_threshold(pks, thr):
+    _, peak = pks
+    i_above_thr = _get_indices_above_thr(peak.pmts, thr)
+    assert (peak.pmts.sum_over_sensors[i_above_thr].sum() ==
+            approx(peak.energy_above_threshold(thr)))
+
+
+@given(peaks())
+def test_Peak_charge_above_threshold_less_than_wf_min(pks):
+    _, peak = pks
+    sum_wf_min = previous_float(peak.sipms.sum_over_sensors.min())
+    assert peak.charge_above_threshold(sum_wf_min) == approx(peak.total_charge)
+
+
+@given(peaks())
+def test_Peak_charge_above_threshold_greater_than_equal_to_wf_max(pks):
+    _, peak = pks
+    sipms_max = peak.sipms.sum_over_sensors.max()
+    assert peak.charge_above_threshold(sipms_max) == 0
+
+
+@given(peaks(), floats(wf_min, wf_max))
+def test_Peak_charge_above_threshold(pks, thr):
+    _, peak = pks
+    i_above_thr = _get_indices_above_thr(peak.sipms, thr)
+    assert (peak.sipms.sum_over_sensors[i_above_thr].sum() ==
+            approx(peak.charge_above_threshold(thr)))
+
+
+@given(peaks())
+def test_Peak_width_above_threshold_less_than_wf_min(pks):
+    _, peak = pks
+    sum_wf_min = previous_float(peak.pmts.sum_over_sensors.min())
+    full_width = peak.width_above_threshold(sum_wf_min)
+    assert full_width == approx(peak.times[-1] - peak.times[0])
+
+
+@given(peaks())
+def test_Peak_width_above_threshold_greater_than_equal_to_wf_max(pks):
+    _, peak = pks
+    assert peak.width_above_threshold(peak.height) == 0
+
+
+@given(peaks(), floats(wf_min, wf_max))
+def test_Peak_width_above_threshold(pks, thr):
+    _, peak = pks
+    i_above_thr     = _get_indices_above_thr(peak.pmts, thr)
+    times_above_thr = peak.times[i_above_thr]
+    expected        = (times_above_thr[-1] - times_above_thr[0]
+                       if np.size(i_above_thr) > 0
+                       else 0)
+    assert peak.width_above_threshold(thr) == approx(expected)
+
+
+@given(peaks(), floats(wf_min, wf_max))
+def test_Peak_rms_above_threshold(pks, thr):
+    _, peak = pks
+    i_above_thr     = _get_indices_above_thr(peak.pmts, thr)
+    times_above_thr = peak.times[i_above_thr]
+    wf_above_thr    = peak.pmts.sum_over_sensors[i_above_thr]
+    expected        = (weighted_mean_and_std(times_above_thr, wf_above_thr)[1]
+                       if np.size(i_above_thr) > 1 and np.sum(wf_above_thr) > 0
+                       else 0)
+    assert peak.rms_above_threshold(thr) == approx(expected)
+
+
+@given(peaks())
+def test_Peak_rms_above_threshold_less_than_wf_min(pks):
+    _, peak = pks
+    sum_wf_min = previous_float(peak.pmts.sum_over_sensors.min())
+    assert peak.rms == approx(peak.rms_above_threshold(sum_wf_min))
+
+
+@given(peaks())
+def test_Peak_rms_above_threshold_greater_than_equal_to_wf_max(pks):
+    _, peak = pks
+    assert peak.rms_above_threshold(peak.height) == 0
+
+
+@mark.parametrize("PK", (S1, S2))
+@given(sr1=sensor_responses(), sr2=sensor_responses())
+def test_Peak_raises_exception_when_shapes_dont_match(PK, sr1, sr2):
+    with raises(ValueError):
+        (ids, wfs), sr1 = sr1
+        _         , sr2 = sr2
+        n_samples       = wfs.shape[1]
+        pk = PK(np.empty(n_samples + 1), sr1, sr2)
