@@ -2,9 +2,9 @@ import numpy as np
 import scipy as sc
 
 
-from ..core                     import fit_functions as fitf
-from ..core.exceptions          import ParameterNotSet
-from .. evm.ic_containers       import Measurement
+from ..core               import fit_functions as fitf
+from ..core.exceptions    import ParameterNotSet
+from .. evm.ic_containers import Measurement
 
 
 class Correction:
@@ -34,9 +34,11 @@ class Correction:
 
     def __init__(self,
                  xs, fs, us,
-                   norm_strategy = False, norm_opts = None,
+                   norm_strategy = False,
+                   norm_opts     = None,
                  interp_strategy = "nearest",
-                 default_f = 0, default_u = 0):
+                 default_f       = 0,
+                 default_u       = 0):
 
         self._xs = [np.array( x, dtype=float) for x in xs]
         self._fs =  np.array(fs, dtype=float)
@@ -69,22 +71,27 @@ class Correction:
         return corr
 
     def _normalize(self, strategy, opts):
-        if not strategy           : return
+        if not strategy            : return
 
-        elif   strategy == "const":
+        elif   strategy == "const" :
             if "value" not in opts:
                 raise ParameterNotSet(("Normalization stratery 'const' requires"
                                        "the normalization option 'value'"))
             f_ref = opts["value"]
             u_ref = 0
 
-        elif   strategy == "max"  :
+        elif   strategy == "max"   :
             flat_index = np.argmax(self._fs)
             mult_index = np.unravel_index(flat_index, self._fs.shape)
             f_ref = self._fs[mult_index]
             u_ref = self._us[mult_index]
 
-        elif   strategy == "index":
+        elif   strategy == "center":
+            index = tuple(i // 2 for i in self._fs.shape)
+            f_ref = self._fs[index]
+            u_ref = self._us[index]
+
+        elif   strategy == "index" :
             if "index" not in opts:
                 raise ParameterNotSet(("Normalization stratery 'index' requires"
                                        "the normalization option 'index'"))
@@ -104,8 +111,8 @@ class Correction:
         # Redefine and propagate uncertainties as:
         # u(F) = F sqrt(u(F)**2/F**2 + u(Fref)**2/Fref**2)
         self._fs[ valid]  = f_ref / valid_fs
-        self._us[ valid]  = np.sqrt((valid_us/valid_fs)**2 +
-                                    (   u_ref/f_ref   )**2 )
+        self._us[ valid]  = np.sqrt((valid_us / valid_fs)**2 +
+                                    (   u_ref / f_ref   )**2 )
         self._us[ valid] *= self._fs[valid]
 
         # Set invalid to defaults
@@ -162,13 +169,13 @@ def LifetimeXYCorrection(pars, u_pars, xs, ys, **kwargs):
 
 def LifetimeRCorrection(pars, u_pars):
     def LTfun(z, r, a, b, c, u_a, u_b, u_c):
-        LT = a - b * r * np.exp(r/c)
+        LT = a - b * r * np.exp(r / c)
         return fitf.expo(z, 1, LT)
 
     def u_LTfun(z, r, a, b, c, u_a, u_b, u_c):
-        LT   = a - b * r * np.exp(r/c)
-        u_LT = (u_a**2 + u_b**2 * np.exp(2*r/c) +
-                u_c**2 * b**2 * r**2 * np.exp(2*r/c)/c**4)**0.5
+        LT   = a - b * r * np.exp(r / c)
+        u_LT = (u_a**2 + u_b**2 * np.exp(2 * r / c) +
+                u_c**2 *   b**2 * r**2 * np.exp(2 * r / c) / c**4)**0.5
         return z * u_LT / LT**2 * LTfun(z, r, a, b, c, u_a, u_b, u_c)
 
     return Fcorrection(LTfun, u_LTfun, np.concatenate([pars, u_pars]))
