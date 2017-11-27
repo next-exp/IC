@@ -15,6 +15,7 @@ from hypothesis.extra.numpy import arrays
 from .. core.core_functions import weighted_mean_and_std
 from .. core.testing_utils  import exactly
 from .. core.testing_utils  import assert_SensorResponses_equality
+from .. core.testing_utils  import assert_Peak_equality
 from .. core.testing_utils  import previous_float
 
 from .  new_pmaps import  PMTResponses
@@ -266,3 +267,19 @@ def test_Peak_raises_exception_when_shapes_dont_match(PK, sr1, sr2):
         _         , sr2 = sr2
         n_samples       = wfs.shape[1]
         pk = PK(np.empty(n_samples + 1), sr1, sr2)
+
+
+@given(pmaps())
+def test_PMap_s1s(pmps):
+    (s1s, _), pmp = pmps
+    assert len(pmp.s1s) == len(s1s)
+    for kept_s1, true_s1 in zip(pmp.s1s, s1s):
+        assert_Peak_equality(kept_s1, true_s1)
+
+
+@given(pmaps())
+def test_PMap_s2s(pmps):
+    (_, s2s), pmp = pmps
+    assert len(pmp.s2s) == len(s2s)
+    for kept_s2, true_s2 in zip(pmp.s2s, s2s):
+        assert_Peak_equality(kept_s2, true_s2)
