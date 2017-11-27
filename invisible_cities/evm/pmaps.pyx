@@ -6,6 +6,7 @@ import numpy as np
 from textwrap import dedent
 
 from .. types.ic_types_c       cimport minmax
+from .. core.core_functions     import weighted_mean_and_std
 from .. core.exceptions         import PeakNotFound
 from .. core.exceptions         import SipmEmptyList
 from .. core.exceptions         import SipmNotFound
@@ -68,9 +69,9 @@ cdef class Peak:
 
         t    = self.t[over_thr]
         E    = self.E[over_thr]
-        mean = np.average( t         , weights=E)
-        var  = np.average((t-mean)**2, weights=E)
-        return var**0.5
+
+        _, std = weighted_mean_and_std(t, E)
+        return std
 
     def __str__(self):
         if self.width < units.mus:
