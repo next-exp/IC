@@ -6,6 +6,7 @@ import pandas as pd
 import numpy  as np
 import numpy.testing as npt
 
+from flaky                 import flaky
 from hypothesis            import given
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
@@ -17,6 +18,7 @@ sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 from .testing_utils import random_length_float_arrays
 from .              import core_functions   as core
 from .              import core_functions_c as core_c
+from .              import  fit_functions   as fitf
 
 
 def test_timefunc(capfd):
@@ -63,6 +65,64 @@ def test_in_range_positives():
 @given(random_length_float_arrays(max_length = 100))
 def test_in_range_right_shape(data):
     assert core.in_range(data, -1., 1.).shape == data.shape
+
+
+@given(random_length_float_arrays(min_length = 5,
+                                  min_value  = 1e-4,
+                                  max_value  = 1e+4),
+       floats(min_value = 1e-5,
+              max_value = 1e-0))
+def test_weighted_mean_and_var_all_weights_equal(data, weights):
+    weights = np.full_like(data, weights)
+
+    expected_mean, expected_var = np.mean(data), np.var(data)
+    actual_mean  , actual_var   = core.weighted_mean_and_var(data, weights)
+
+    npt.assert_allclose(expected_mean, actual_mean, rtol=1e-5)
+    npt.assert_allclose(expected_var , actual_var , rtol=1e-5, atol=1e-4)
+
+
+@given(floats  (min_value = -100,
+                max_value = +100),
+       floats  (min_value =    1,
+                max_value = +100),
+       integers(min_value =  100,
+                max_value = 1000))
+def test_weighted_mean_and_var_gaussian_function(mu, sigma, ndata):
+    data = np.linspace(mu - 5 * sigma,
+                       mu + 5 * sigma,
+                       ndata)
+    weights = fitf.gauss(data, 1, mu, sigma)
+
+    ave, var = core.weighted_mean_and_var(data, weights)
+    npt.assert_allclose(mu      , ave, atol=1e-8)
+    npt.assert_allclose(sigma**2, var, rtol=1e-4)
+
+
+@flaky(max_runs   = 4,
+       min_passes = 3)
+@given(integers(min_value=5, max_value=20))
+def test_weighted_mean_and_var_unbiased_frequentist(ndata):
+    mu, sigma = 100, 1
+    data = np.random.normal(mu, sigma, size=ndata)
+    values, freqs = np.unique(data, return_counts=True)
+
+    ave, var = core.weighted_mean_and_var(values, freqs, unbiased=True, frequentist=True)
+    assert abs(mu - ave) * (ndata / var)**0.5 < 3
+
+
+@flaky(max_runs   = 4,
+       min_passes = 3)
+@given(integers(min_value=5, max_value=20))
+def test_weighted_mean_and_var_unbiased_reliability_weights(ndata):
+    mu, sigma = 100, 1
+    values = np.linspace(mu - 5 * sigma,
+                         mu + 5 * sigma,
+                         ndata)
+    weights = fitf.gauss(values, 1, mu, sigma)
+
+    ave, var = core.weighted_mean_and_var(values, weights, unbiased=True, frequentist=False)
+    assert abs(mu - ave) * (ndata / var)**0.5 < 3
 
 
 def test_loc_elem_1d():

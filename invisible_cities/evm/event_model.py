@@ -371,6 +371,7 @@ class KrEvent(Event):
         self.Nsipm = [] # number of SiPMs in S2Si
         self.DT    = [] # drift time (wrt S1[0])
         self.Z     = [] # Position (x,y,z,R,phi)
+        self.Zrms  = []
         self.X     = []
         self.Y     = []
         self.R     = []
@@ -400,6 +401,7 @@ class KrEvent(Event):
             row["Nsipm"] = self.Nsipm[i]
             row["DT"   ] = self.DT   [i]
             row["Z"    ] = self.Z    [i]
+            row["Zrms" ] = self.Zrms [i]
             row["X"    ] = self.X    [i]
             row["Y"    ] = self.Y    [i]
             row["R"    ] = self.R    [i]

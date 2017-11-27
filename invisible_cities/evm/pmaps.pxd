@@ -7,7 +7,7 @@ cdef class Peak:
     E: np.array() describing energy.
     """
     cdef public object t, E
-    cdef public double height, width, total_energy, tpeak
+    cdef public double height, width, total_energy, rms, tpeak
 
 cdef class S12:
     """Base class representing an S1/S2 signal
