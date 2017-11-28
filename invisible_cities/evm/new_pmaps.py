@@ -7,19 +7,36 @@ from .. core.core_functions    import weighted_mean_and_std
 
 
 class PMap:
+    def __init__(self, s1s, s2s):
+        self._s1s = tuple(s1s)
+        self._s2s = tuple(s2s)
 
     @property
-    def s1s(self): pass
+    def s1s(self):
+        return self._s1s
 
     @property
-    def s2s(self): pass
+    def s2s(self):
+        return self._s2s
 
     # Optionally:
     @property
-    def number_of_s1s(self): pass
+    def number_of_s1s(self):
+        return len(self.s1s)
 
     @property
-    def number_of_s2s(self): pass
+    def number_of_s2s(self):
+        return len(self.s2s)
+
+    def __repr__(self):
+        s  = f"""
+        ---------------------
+        PMap instance
+        ---------------------
+        Number of S1s: {self.number_of_s1s}
+        Number of S2s: {self.number_of_s2s}
+        """
+        return dedent(s)
 
 
 class _Peak:
