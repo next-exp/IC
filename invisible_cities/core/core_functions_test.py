@@ -101,9 +101,8 @@ def test_weighted_mean_and_var_gaussian_function(mu, sigma, ndata):
 
 @flaky(max_runs   = 4,
        min_passes = 3)
-@given(integers(min_value=5, max_value=20))
-def test_weighted_mean_and_var_unbiased_frequentist(ndata):
-    mu, sigma = 100, 1
+def test_weighted_mean_and_var_unbiased_frequentist():
+    mu, sigma, ndata = 100, 1, np.random.randint(5, 20)
     data = np.random.normal(mu, sigma, size=ndata)
     values, freqs = np.unique(data, return_counts=True)
 
