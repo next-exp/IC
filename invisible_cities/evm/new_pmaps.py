@@ -37,6 +37,9 @@ class _Peak:
     @property
     def width(self): pass
 
+    @property
+    def rms(self): pass
+
     def energy_above_threshold(self, thr): pass
 
     def  width_above_threshold(self, thr): pass
