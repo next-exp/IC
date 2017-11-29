@@ -5,7 +5,7 @@ author: A. Laing
 IC core team: Jacek Generowicz, JJGC,
 G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
-last changed: 
+last changed:
 """
 
 
@@ -18,7 +18,7 @@ import numpy  as np
 from pytest import mark
 from pytest import fixture
 
-from .  sipmPDF import Sipmpdf
+from .  sipmPDF import SipmPdf
 from .. core.configure       import configure
 
 
@@ -39,7 +39,7 @@ def test_sipmPDF_electrons_40keV(config_tmpdir, ICDIR):
                      file_out     = PATH_OUT,
                      event_range  = (0, nrequired)))
 
-    sipmpdf = Sipmpdf(**conf)
+    sipmpdf = SipmPdf(**conf)
     sipmpdf.run()
     cnt = sipmpdf.end()
 
