@@ -18,7 +18,7 @@ import numpy  as np
 from pytest import mark
 from pytest import fixture
 
-from .  sipmPDF import SipmPdf
+from .  sipm_pdf import Sipm_pdf
 from .. core.configure       import configure
 
 
@@ -33,13 +33,13 @@ def test_sipmPDF_electrons_40keV(config_tmpdir, ICDIR):
 
     nrequired  = 2
 
-    conf = configure('dummy invisible_cities/config/sipmPDF.conf'.split())
+    conf = configure('dummy invisible_cities/config/sipm_pdf.conf'.split())
     conf.update(dict(run_number   = 0,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
                      event_range  = (0, nrequired)))
 
-    sipmpdf = SipmPdf(**conf)
+    sipmpdf = Sipm_pdf(**conf)
     sipmpdf.run()
     cnt = sipmpdf.end()
 

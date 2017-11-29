@@ -22,7 +22,7 @@ from ..  cities.base_cities import CalibratedCity
 from ..  cities.base_cities import EventLoop
 
 
-class SipmPdf(CalibratedCity):
+class Sipm_pdf(CalibratedCity):
     """
     Generates binned spectra of sipm rwf - mean
     and (rwf - mean)-mau
