@@ -4,7 +4,7 @@ description: Generates binned spectra of sipm rwf - mean
 and (rwf - mean)-mau
 credits: see ic_authors_and_legal.rst in /doc
 
-last revised: 
+last revised:
 """
 import sys
 
@@ -22,14 +22,14 @@ from ..  cities.base_cities import CalibratedCity
 from ..  cities.base_cities import EventLoop
 
 
-class Sipmpdf(CalibratedCity):
+class SipmPdf(CalibratedCity):
     """
     Generates binned spectra of sipm rwf - mean
     and (rwf - mean)-mau
     """
 
     parameters = tuple("""min_bin max_bin bin_wid""".split())
-    
+
     def __init__(self, **kwds):
         """sipmPDF Init:
         1. inits base city
@@ -74,7 +74,7 @@ class Sipmpdf(CalibratedCity):
             ## Zeroed sipm waveforms in pe
             sipmzs = self.calibrated_signal_sipm(sipmrwf[evt], cal=1)
             bsipmzs += self.bin_waveform(sipmzs)
-            
+
             ## Difference from the MAU
             sipmmzs = self.calibrated_signal_sipm(sipmrwf[evt], cal=2)
             bsipmmzs += self.bin_waveform(sipmmzs)
@@ -93,7 +93,7 @@ class Sipmpdf(CalibratedCity):
         binData = np.array([np.histogram(sipm, self.histbins)[0] for sipm in waveData])
 
         return binData
-    
+
 
     def get_writers(self, h5out):
         HIST = partial(hist_writer,  h5out,   group_name='HIST')
