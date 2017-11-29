@@ -15,11 +15,11 @@ from functools import partial
 import numpy  as np
 import tables as tb
 
-from .. io.          hist_io   import           hist_writer
+from .. io.         hist_io    import          hist_writer
 from .. io.run_and_event_io    import run_and_event_writer
 
-from .  base_cities import CalibratedCity
-from .  base_cities import EventLoop
+from ..  cities.base_cities import CalibratedCity
+from ..  cities.base_cities import EventLoop
 
 
 class Sipmpdf(CalibratedCity):
