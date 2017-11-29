@@ -12,7 +12,7 @@ from pytest import mark
 #                   'diomira isidora irene dorothea zaira penthesilea'.split())
 # TODO understand what's wrong with isidora (in Travis)
 @mark.parametrize('city',
-                  'diomira irene dorothea zaira penthesilea'.split())
+                  'diomira irene dorothea zaira penthesilea sipm_pdf'.split())
 
 def test_command_line_run(city, tmpdir_factory):
     ICTDIR = getenv('ICTDIR')
