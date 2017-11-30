@@ -1,5 +1,5 @@
 """
-code: sipmPDF_test.py
+code: sipmpdf_test.py
 description: test suite for sipmPDF (currently just adapted from isidora_test)
 author: A. Laing
 IC core team: Jacek Generowicz, JJGC,
@@ -18,12 +18,12 @@ import numpy  as np
 from pytest import mark
 from pytest import fixture
 
-from .  sipm_pdf import Sipm_pdf
+from .  sipmpdf              import Sipmpdf
 from .. core.configure       import configure
 
 
 @mark.slow
-def test_sipmPDF_electrons_40keV(config_tmpdir, ICDIR):
+def test_sipmpdf_electrons_40keV(config_tmpdir, ICDIR):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
@@ -33,13 +33,13 @@ def test_sipmPDF_electrons_40keV(config_tmpdir, ICDIR):
 
     nrequired  = 2
 
-    conf = configure('dummy invisible_cities/config/sipm_pdf.conf'.split())
+    conf = configure('dummy invisible_cities/config/sipmpdf.conf'.split())
     conf.update(dict(run_number   = 0,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
                      event_range  = (0, nrequired)))
 
-    sipmpdf = Sipm_pdf(**conf)
+    sipmpdf = Sipmpdf(**conf)
     sipmpdf.run()
     cnt = sipmpdf.end()
 

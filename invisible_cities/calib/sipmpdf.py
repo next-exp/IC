@@ -1,5 +1,5 @@
 """
-code: sipmPDF.py
+code: sipmpdf.py
 description: Generates binned spectra of sipm rwf - mean
 and (rwf - mean)-mau
 credits: see ic_authors_and_legal.rst in /doc
@@ -22,10 +22,12 @@ from ..  cities.base_cities import CalibratedCity
 from ..  cities.base_cities import EventLoop
 
 
-class Sipm_pdf(CalibratedCity):
+class Sipmpdf(CalibratedCity):
     """
     Generates binned spectra of sipm rwf - mean
     and (rwf - mean)-mau
+    Reads: Raw data waveforms.
+    Produces: Histograms of pedestal subtracted waveforms.
     """
 
     parameters = tuple("""min_bin max_bin bin_wid""".split())
