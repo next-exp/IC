@@ -21,6 +21,7 @@ from .. sierpe import blr
 
 from ..io                  import pmap_io as pio
 from .                     import peak_functions_c as cpf
+from .                     import calib_sensors_functions_c as csf
 from .. evm.ic_containers  import CSum
 from .. evm.ic_containers  import PMaps
 from .. types.ic_types     import minmax
@@ -325,7 +326,7 @@ def _compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
                          thr_trigger = deconv_params.thr_trigger)
 
     # calibrated sum
-    csum, csum_mau = cpf.calibrated_pmt_sum(CWF,
+    csum, csum_mau = csf.calibrated_pmt_sum(CWF,
                                             adc_to_pes,
                                             pmt_active  = pmt_active,
                                             n_MAU       = 100,
@@ -400,7 +401,7 @@ def compute_pmaps_from_rwf(event, pmtrwf, sipmrwf,
                          thr_trigger = deconv_params.thr_trigger)
 
     # calibrated sum
-    csum, csum_mau = cpf.calibrated_pmt_sum(CWF,
+    csum, csum_mau = csf.calibrated_pmt_sum(CWF,
                                             adc_to_pes,
                                             pmt_active  = pmt_active,
                                             n_MAU       = 100,
