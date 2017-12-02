@@ -13,7 +13,7 @@ last revised: JJGC, 10-July-2017
 
 
 import numpy  as np
-
+import numpy.testing as npt
 from scipy import signal
 
 from .. core   import system_of_units as units
@@ -345,8 +345,11 @@ def _compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
                       s2_indx,
                       **s2_params._asdict())
 
-    sipmzs = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
-                           thr=thr.thr_sipm, n_MAU=100)
+    # sipmzs = csf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
+    #                        thr=thr.thr_sipm, n_MAU=100)
+
+    sipmzs = csf.sipm_signal_above_thr_mau(sipmrwf[event], adc_to_pes_sipm,
+                                                  thr=thr.thr_sipm, n_MAU=100)
 
     s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = thr.thr_SIPM)
 
