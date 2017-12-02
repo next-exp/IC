@@ -7,6 +7,10 @@ cimport numpy as np
 import numpy as np
 from scipy import signal
 
+"""
+Computes the mean of a vector
+"""
+cpdef double cmean(double [:] v)
 
 """
 Given a dictionary, pbounds, mapping potential peak number to potential peak, return a
@@ -125,6 +129,24 @@ The function returns a rebinned vector of T and E.
 """
 cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=*)
 
+
+"""Computes pedestal as average of the waveform"""
+cpdef sipm_subtract_baseline_and_normalize(np.ndarray[np.int16_t, ndim=2] sipm,
+                                           np.ndarray[np.float64_t, ndim=1] adc_to_pes)
+
+"""Computes pedetal using a MAU"""
+cpdef sipm_subtract_baseline_and_normalize_mau(np.ndarray[np.int16_t, ndim=2]sipm,
+                                               np.ndarray[np.float64_t, ndim=1] adc_to_pes,
+                                               int n_MAU=*)
+
+"""
+subtracts the baseline
+Uses a MAU to set the signal threshold (thr, in PES)
+"""
+cpdef sipm_signal_above_thr_mau(np.ndarray[np.int16_t, ndim=2] sipm,
+                                np.ndarray[np.float64_t, ndim=1] adc_to_pes,
+                                double thr,
+                                int n_MAU=*)
 
 """
 subtracts the baseline
