@@ -206,7 +206,7 @@ cpdef sipm_signal_above_thr_mau(np.ndarray[np.int16_t, ndim=2] sipm,
     return np.asarray(siwf)
 
 
-cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
+cpdef _signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
                   double [:] adc_to_pes, thr,
                   int n_MAU=100, int Cal=0):
     """
