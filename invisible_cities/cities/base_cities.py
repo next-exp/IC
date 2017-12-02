@@ -34,6 +34,7 @@ from .. io.fee_io               import write_FEE_table
 from .. io.mc_io                import mc_track_writer
 
 from .. reco                    import peak_functions_c  as cpf
+from .. reco                    import calib_sensors_functions_c  as csf
 from .. reco                    import paolina_functions as paf
 from .. reco                    import sensor_functions  as sf
 from .. reco                    import peak_functions    as pf
@@ -511,7 +512,7 @@ class CalibratedCity(DeconvolutionCity):
 
     def calibrated_pmt_mau(self, CWF):
         """Return the csum and csum_mau calibrated sums."""
-        return cpf.calibrated_pmt_mau(CWF,
+        return csf.calibrated_pmt_mau(CWF,
                                       self.adc_to_pes,
                                       pmt_active = self.pmt_active,
                                            n_MAU = self.  n_MAU   ,
@@ -522,7 +523,7 @@ class CalibratedCity(DeconvolutionCity):
 
     def calibrated_pmt_sum(self, CWF):
         """Return the csum and csum_mau calibrated sums."""
-        return cpf.calibrated_pmt_sum(CWF,
+        return csf.calibrated_pmt_sum(CWF,
                                       self.adc_to_pes,
                                       pmt_active = self.pmt_active,
                                            n_MAU = self.  n_MAU   ,
@@ -534,7 +535,7 @@ class CalibratedCity(DeconvolutionCity):
 
     def calibrated_signal_sipm(self, SiRWF, cal=0):
         """Return the calibrated signal in the SiPMs."""
-        return cpf.signal_sipm(SiRWF,
+        return csf.signal_sipm(SiRWF,
                                self.sipm_adc_to_pes,
                                thr   = self.  thr_sipm,
                                n_MAU = self.n_MAU_sipm,
