@@ -19,6 +19,18 @@ from .. evm.pmaps import S2Pmt
 from .. core.exceptions        import InitializedEmptyPmapObject
 from .. core.system_of_units_c import units
 
+
+cpdef double cmean(double [:] v):
+    """Computes the mean of vector v."""
+    cdef int  k
+    cdef int N = len(v)
+    cdef double pmean = 0
+
+    for k in range(N):
+        pmean += v[k]
+    pmean /= N
+    return pmean
+
 cpdef calibrated_pmt_sum(double [:, :]  CWF,
                          double [:]     adc_to_pes,
                          list           pmt_active = [],
@@ -404,6 +416,95 @@ cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
     return np.asarray(T), np.asarray(E)
 
 
+cpdef sipm_subtract_baseline_and_normalize(np.ndarray[np.int16_t, ndim=2] sipm,
+                                           np.ndarray[np.float64_t, ndim=1] adc_to_pes):
+    """Computes pedetal as average of the waveform. Very fast"""
+    cdef int NSiPM = sipm.shape[0]
+    cdef int NSiWF = sipm.shape[1]
+    cdef double [:, :] SiWF = sipm.astype(np.double)
+    cdef double [:, :] siwf = np.zeros((NSiPM, NSiWF), dtype=np.double)
+    cdef int j, k
+    cdef double pmean
+
+    for j in range(NSiPM):
+        if adc_to_pes[j] == 0:  # zero calib constant: dead sipm
+            continue
+        pmean = cmean(SiWF[j])
+
+        for k in range(NSiWF):
+            siwf[j,k] = (SiWF[j,k] - pmean) / adc_to_pes[j]
+
+    return np.asarray(siwf)
+
+
+cpdef sipm_subtract_baseline_and_normalize_mau(np.ndarray[np.int16_t, ndim=2]sipm,
+                                               np.ndarray[np.float64_t, ndim=1] adc_to_pes,
+                                               int n_MAU=100):
+    """Computes pedetal using a MAU. Runs a factor 100 slower than previous"""
+    cdef int NSiPM = sipm.shape[0]
+    cdef int NSiWF = sipm.shape[1]
+    cdef double [:, :] SiWF = sipm.astype(np.double)
+    cdef double [:, :] siwf = np.zeros((NSiPM, NSiWF), dtype=np.double)
+    cdef double [:] MAU = np.array(np.ones(n_MAU), dtype = np.double) * (1 / n_MAU)
+    cdef double [:] MAU_ = np.zeros(NSiWF, dtype=np.double)
+    cdef int j, k
+    cdef double pmean
+
+    for j in range(NSiPM):
+        if adc_to_pes[j] == 0:  # zero calib constant: dead sipm
+            continue
+        pmean = cmean(SiWF[j])
+
+        for k in range(NSiWF):
+            siwf[j,k] = SiWF[j,k] - pmean
+        MAU_ = signal.lfilter(MAU, 1, siwf[j,:])
+
+        for k in range(NSiWF):
+            siwf[j,k] = (siwf[j,k] - MAU_[k]) / adc_to_pes[j]
+
+    return np.asarray(siwf)
+
+cpdef sipm_signal_above_thr_mau(np.ndarray[np.int16_t, ndim=2] sipm,
+                                np.ndarray[np.float64_t, ndim=1] adc_to_pes,
+                                double thr,
+                                int n_MAU=100):
+    """
+    subtracts the baseline
+    Uses a MAU to set the signal threshold (thr, in PES)
+
+    """
+
+    cdef int NSiPM = sipm.shape[0]
+    cdef int NSiWF = sipm.shape[1]
+    cdef double [:, :] SiWF = sipm.astype(np.double)
+    cdef double [:, :] siwf = np.zeros((NSiPM, NSiWF), dtype=np.double)
+    cdef double [:] MAU = np.array(np.ones(n_MAU), dtype = np.double) * (1 / n_MAU)
+    cdef double [:] MAU_ = np.zeros(NSiWF, dtype=np.double)
+    cdef int j, k
+    cdef double pmean
+    cdef double [:] thrs = np.full(NSiPM, thr)
+
+
+    # loop over all SiPMs. Skip any SiPM with adc_to_pes constant = 0
+    # since this means SiPM is dead
+    for j in range(NSiPM):
+        if adc_to_pes[j] == 0:
+            continue
+
+        # compute and subtract the baseline
+        pmean = cmean(SiWF[j])
+
+        for k in range(NSiWF):
+            SiWF[j,k] = SiWF[j,k] - pmean
+        MAU_ = signal.lfilter(MAU, 1, SiWF[j,:])
+
+        # threshold using the MAU
+        if SiWF[j,k]  > MAU_[k] + thrs[j] * adc_to_pes[j]:
+            siwf[j,k] = SiWF[j,k] / adc_to_pes[j]
+
+    return np.asarray(siwf)
+
+
 cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
                   double [:] adc_to_pes, thr,
                   int n_MAU=100, int Cal=0):
@@ -429,7 +530,7 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
     cdef double [:]    MAU_ = np.zeros(        NSiWF , dtype=np.double)
     cdef double [:]    thrs = np.full ( NSiPM, thr)
     cdef double pmean
-    
+
     # loop over all SiPMs. Skip any SiPM with adc_to_pes constant = 0
     # since this means SiPM is dead
     for j in range(NSiPM):
@@ -442,13 +543,13 @@ cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
         for k in range(NSiWF):
             pmean += SiWF[j,k]
         pmean /= NSiWF
-	
+
         for k in range(NSiWF):
             SiWF[j,k] = SiWF[j,k] - pmean
 
         # MAU for each of the SiPMs, following the ZS waveform
         MAU_ = signal.lfilter(MAU, 1, SiWF[j,:])
-	
+
         # threshold using the MAU
         for k in range(NSiWF):
             if Cal != 0:
