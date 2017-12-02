@@ -211,6 +211,26 @@ def toy_sipm_signal():
             common_threshold,
             individual_thresholds)
 
+@fixture(scope="session")
+def gaussian_sipm_signal():
+    """This fixture generates waveforms gaussianly distributed
+    around the basline, so that the average of the zs waveform is
+    very close to zero.
+
+    """
+    nsipm = 40
+    wfl = 100
+    baseline = 1000
+    sipm = np.zeros(nsipm * wfl, dtype=np.int16)
+    sipm = np.reshape(sipm,(nsipm,wfl))
+    for i in range(nsipm):
+        sipm[i,:] = np.random.normal(baseline + i*10, 1, wfl)
+
+    NSiPM = sipm.shape[0]
+    NSiWF = sipm.shape[1]
+    adc_to_pes = np.abs(np.random.normal(1, 0.01, nsipm))
+
+    return (sipm, adc_to_pes)
 
 def test_signal_sipm_common_threshold(toy_sipm_signal):
     (signal_adc, adc_to_pes,
@@ -233,3 +253,13 @@ def test_signal_sipm_individual_thresholds(toy_sipm_signal):
                                            individual_thresholds, n_MAU=100)
     assert np.allclose(zs_wf, signal_zs_individual_thresholds)
     assert np.allclose(zs_wf2, signal_zs_individual_thresholds)
+
+def test_wf_baseline_subtracted_is_close_to_zero(gaussian_sipm_signal):
+    sipm, adc_to_pes = gaussian_sipm_signal
+    wf = cpf.sipm_subtract_baseline_and_normalize(sipm, adc_to_pes)
+    npt.assert_allclose(np.mean(wf, axis=1), 0, atol=1e-10)
+
+def test_wf_baseline_subtracted_mau_is_close_to_zero(gaussian_sipm_signal):
+    sipm, adc_to_pes = gaussian_sipm_signal
+    wf = cpf.sipm_subtract_baseline_and_normalize_mau(sipm, adc_to_pes, n_MAU=10)
+    npt.assert_allclose(np.mean(wf, axis=1), 0, atol=1e-10)
