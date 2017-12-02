@@ -166,7 +166,7 @@ cpdef sipm_subtract_baseline_and_normalize_mau(np.ndarray[np.int16_t, ndim=2]sip
 
 cpdef sipm_signal_above_thr_mau(np.ndarray[np.int16_t, ndim=2] sipm,
                                 np.ndarray[np.float64_t, ndim=1] adc_to_pes,
-                                double thr,
+                                thr,
                                 int n_MAU=100):
     """
     subtracts the baseline
@@ -199,8 +199,9 @@ cpdef sipm_signal_above_thr_mau(np.ndarray[np.int16_t, ndim=2] sipm,
         MAU_ = signal.lfilter(MAU, 1, SiWF[j,:])
 
         # threshold using the MAU
-        if SiWF[j,k]  > MAU_[k] + thrs[j] * adc_to_pes[j]:
-            siwf[j,k] = SiWF[j,k] / adc_to_pes[j]
+        for k in range(NSiWF):
+            if SiWF[j,k]  > MAU_[k] + thrs[j] * adc_to_pes[j]:
+                siwf[j,k] = SiWF[j,k] / adc_to_pes[j]
 
     return np.asarray(siwf)
 
