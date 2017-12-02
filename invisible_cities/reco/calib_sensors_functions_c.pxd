@@ -65,5 +65,5 @@ Uses a MAU to set the signal threshold (thr, in PES)
 """
 cpdef sipm_signal_above_thr_mau(np.ndarray[np.int16_t, ndim=2] sipm,
                                 np.ndarray[np.float64_t, ndim=1] adc_to_pes,
-                                double thr,
+                                thr,
                                 int n_MAU=*)
