@@ -218,7 +218,9 @@ def test_signal_sipm_common_threshold(toy_sipm_signal):
      common_threshold, _) = toy_sipm_signal
 
     zs_wf = cpf.signal_sipm(signal_adc, adc_to_pes, common_threshold)
+    zs_wf2 = cpf.sipm_signal_above_thr_mau(signal_adc, adc_to_pes, common_threshold, n_MAU=100)
     assert np.allclose(zs_wf, signal_zs_common_threshold)
+    assert np.allclose(zs_wf2, signal_zs_common_threshold)
 
 
 def test_signal_sipm_individual_thresholds(toy_sipm_signal):
@@ -227,4 +229,7 @@ def test_signal_sipm_individual_thresholds(toy_sipm_signal):
      _, individual_thresholds) = toy_sipm_signal
 
     zs_wf = cpf.signal_sipm(signal_adc, adc_to_pes, individual_thresholds)
+    zs_wf2 = cpf.sipm_signal_above_thr_mau(signal_adc, adc_to_pes,
+                                           individual_thresholds, n_MAU=100)
     assert np.allclose(zs_wf, signal_zs_individual_thresholds)
+    assert np.allclose(zs_wf2, signal_zs_individual_thresholds)
