@@ -183,7 +183,7 @@ def test_cwf_are_empty_for_masked_pmts(csum_zs_blr_cwf):
 
 @fixture(scope="session")
 def toy_sipm_signal():
-    NSIPM = 1792
+    NSIPM = 100
     WL    = 100
 
     common_threshold      = np.random.uniform(0.3, 0.7)
@@ -263,3 +263,23 @@ def test_wf_baseline_subtracted_mau_is_close_to_zero(gaussian_sipm_signal):
     sipm, adc_to_pes = gaussian_sipm_signal
     wf = cpf.sipm_subtract_baseline_and_normalize_mau(sipm, adc_to_pes, n_MAU=10)
     npt.assert_allclose(np.mean(wf, axis=1), 0, atol=1e-10)
+
+def test_sipm_signal_above_thr_mau_same_as__signal_sipm_Cal_0(toy_sipm_signal):
+    signal_adc, adc_to_pes, _, _, common_threshold, _ = toy_sipm_signal
+
+    zs_wf0 = cpf._signal_sipm(signal_adc, adc_to_pes, common_threshold, n_MAU=100, Cal=0)
+    zs_xf0 = cpf.sipm_signal_above_thr_mau(signal_adc, adc_to_pes, common_threshold, n_MAU=100)
+    np.testing.assert_allclose(zs_wf0, zs_xf0, atol=1e-10)
+
+def test_sipm_subtract_baseline_and_normalize_mau_same_as_signal_sipm_Cal_2(toy_sipm_signal):
+    signal_adc, adc_to_pes, _, _, common_threshold, _ = toy_sipm_signal
+
+    zs_wf1 = cpf._signal_sipm(signal_adc, adc_to_pes, common_threshold, n_MAU=100, Cal=2)
+    zs_xf1 = cpf.sipm_subtract_baseline_and_normalize_mau(signal_adc, adc_to_pes, n_MAU=100)
+    np.testing.assert_allclose(zs_wf1, zs_xf1, atol=1e-10)
+
+def test_sipm_subtract_baseline_and_normalize_same_as_signal_sipm_Cal_1(toy_sipm_signal):
+    signal_adc, adc_to_pes, _, _, common_threshold, _ = toy_sipm_signal
+    zs_wf2 = cpf._signal_sipm(signal_adc, adc_to_pes, common_threshold, n_MAU=100, Cal=2)
+    zs_xf2 = cpf.sipm_subtract_baseline_and_normalize(signal_adc, adc_to_pes)
+    np.testing.assert_allclose(zs_wf2, zs_xf2, atol=1e-10)
