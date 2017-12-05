@@ -1,8 +1,34 @@
 import numpy  as np
 
+from pytest import approx
+
 from numpy.testing          import assert_array_equal, assert_allclose
 from hypothesis.strategies  import integers, floats
 from hypothesis.extra.numpy import arrays
+
+
+def exactly(value, **kwargs):
+    """
+    Assert that two numbers (or two sets of numbers) are equal to each
+    other with zero tolerance. This function is intended to have a
+    similar behavior to `pytest`'s approx function, but for integers.
+    This is particularly interesting when comparing numpy arrays, as
+    the expression is less readable:
+
+    ```
+    np.all(array1 == array2)
+    ```
+
+    to be compared with
+
+    ```
+    array1 == exactly(array2)
+    ```
+
+    which is more pleasant to the human eye and keeps the symmetry with
+    floating point comparisons.
+    """
+    return approx(value, rel=0, abs=0, **kwargs)
 
 
 def float_arrays(size       =   100,
