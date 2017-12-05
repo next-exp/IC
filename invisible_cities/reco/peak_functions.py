@@ -13,7 +13,7 @@ last revised: JJGC, 10-July-2017
 
 
 import numpy  as np
-
+import numpy.testing as npt
 from scipy import signal
 
 from .. core   import system_of_units as units
@@ -21,6 +21,7 @@ from .. sierpe import blr
 
 from ..io                  import pmap_io as pio
 from .                     import peak_functions_c as cpf
+from .                     import calib_sensors_functions_c as csf
 from .. evm.ic_containers  import CSum
 from .. evm.ic_containers  import PMaps
 from .. types.ic_types     import minmax
@@ -325,7 +326,7 @@ def _compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
                          thr_trigger = deconv_params.thr_trigger)
 
     # calibrated sum
-    csum, csum_mau = cpf.calibrated_pmt_sum(CWF,
+    csum, csum_mau = csf.calibrated_pmt_sum(CWF,
                                             adc_to_pes,
                                             pmt_active  = pmt_active,
                                             n_MAU       = 100,
@@ -344,8 +345,11 @@ def _compute_csum_and_pmaps(event, pmtrwf, sipmrwf,
                       s2_indx,
                       **s2_params._asdict())
 
-    sipmzs = cpf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
-                           thr=thr.thr_sipm, n_MAU=100)
+    # sipmzs = csf.signal_sipm(sipmrwf[event], adc_to_pes_sipm,
+    #                        thr=thr.thr_sipm, n_MAU=100)
+
+    sipmzs = csf.sipm_signal_above_thr_mau(sipmrwf[event], adc_to_pes_sipm,
+                                                  thr=thr.thr_sipm, n_MAU=100)
 
     s2si = cpf.find_s2si(sipmzs, s2.s2d, thr = thr.thr_SIPM)
 
@@ -400,7 +404,7 @@ def compute_pmaps_from_rwf(event, pmtrwf, sipmrwf,
                          thr_trigger = deconv_params.thr_trigger)
 
     # calibrated sum
-    csum, csum_mau = cpf.calibrated_pmt_sum(CWF,
+    csum, csum_mau = csf.calibrated_pmt_sum(CWF,
                                             adc_to_pes,
                                             pmt_active  = pmt_active,
                                             n_MAU       = 100,

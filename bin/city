@@ -5,15 +5,20 @@ from importlib import import_module
 
 _, *args = argv
 
+city_dirs = [ 'cities', 'calib' ]
+
 city_name = args[0]
 
-try:
-    module_name = 'invisible_cities.cities.' + city_name
-    city_class  = getattr(import_module(module_name), city_name.capitalize())
-except ModuleNotFoundError:
-    print('available cities: <TODO look at contents of config directory>')
-    print('usage TODO: <get this from our config parser>')
-    traceback.print_exc()
-    exit(1)
-else:
-    city_class.drive(args)
+for i, fldr in enumerate(city_dirs):
+    try:
+        module_name = 'invisible_cities.'+fldr+'.' + city_name
+        city_class  = getattr(import_module(module_name), city_name.capitalize())
+    except ModuleNotFoundError:
+        if i == len(city_dirs)-1:
+            print('available cities: <TODO look at contents of config directory>')
+            print('usage TODO: <get this from our config parser>')
+            traceback.print_exc()
+            exit(1)
+    else:
+        city_class.drive(args)
+        break

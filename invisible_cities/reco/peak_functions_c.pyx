@@ -4,7 +4,6 @@ description: Cython peak finding functions.
 
 credits: see ic_authors_and_legal.rst in /doc
 
-last revised: JJGC, July-2017
 """
 cimport numpy as np
 import  numpy as np
@@ -18,99 +17,6 @@ from .. evm.pmaps import S2Pmt
 
 from .. core.exceptions        import InitializedEmptyPmapObject
 from .. core.system_of_units_c import units
-
-cpdef calibrated_pmt_sum(double [:, :]  CWF,
-                         double [:]     adc_to_pes,
-                         list           pmt_active = [],
-                         int            n_MAU = 100,
-                         double         thr_MAU =   3):
-    """
-    Computes the ZS calibrated sum of the PMTs
-    after correcting the baseline with a MAU to suppress low frequency noise.
-    input:
-    CWF:    Corrected waveform (passed by BLR)
-    adc_to_pes: a vector with calibration constants
-    pmt_active: a list of active PMTs
-    n_MAU:  length of the MAU window
-    thr_MAU: treshold above MAU to select sample
-
-    """
-
-    cdef int j, k
-    cdef int NPMT = CWF.shape[0]
-    cdef int NWF  = CWF.shape[1]
-    cdef double [:] MAU = np.array(np.ones(n_MAU),
-                                   dtype = np.double) * (1 / n_MAU)
-
-
-    # CWF if above MAU threshold
-    cdef double [:, :] pmt_thr  = np.zeros((NPMT,NWF), dtype=np.double)
-    cdef double [:]    csum     = np.zeros(      NWF , dtype=np.double)
-    cdef double [:]    csum_mau = np.zeros(      NWF , dtype=np.double)
-    cdef double [:]    MAU_pmt  = np.zeros(      NWF , dtype=np.double)
-
-    cdef list PMT = list(range(NPMT))
-    if len(pmt_active) > 0:
-        PMT = pmt_active
-
-    for j in PMT:
-        # MAU for each of the PMTs, following the waveform
-        MAU_pmt = signal.lfilter(MAU, 1, CWF[j,:])
-
-        for k in range(NWF):
-            if CWF[j,k] >= MAU_pmt[k] + thr_MAU: # >= not >: found testing!
-                pmt_thr[j,k] = CWF[j,k]
-
-    for j in PMT:
-        for k in range(NWF):
-            csum_mau[k] += pmt_thr[j, k] * 1 / adc_to_pes[j]
-            csum[k] += CWF[j, k] * 1 / adc_to_pes[j]
-
-    return np.asarray(csum), np.asarray(csum_mau)
-
-
-cpdef calibrated_pmt_mau(double [:, :]  CWF,
-                         double [:]     adc_to_pes,
-                         list           pmt_active = [],
-                         int            n_MAU = 200,
-                         double         thr_MAU =   5):
-    """
-    Returns the calibrated waveforms for PMTs correcting by MAU.
-    input:
-    CWF:    Corrected waveform (passed by BLR)
-    adc_to_pes: a vector with calibration constants
-    list: list of active PMTs
-    n_MAU:  length of the MAU window
-    thr_MAU: treshold above MAU to select sample
-
-    """
-
-    cdef int j, k
-    cdef int NPMT = CWF.shape[0]
-    cdef int NWF  = CWF.shape[1]
-    cdef list PMT = list(range(NPMT))
-    if len(pmt_active) > 0:
-        PMT = pmt_active
-
-
-    cdef double [:] MAU = np.array(np.ones(n_MAU),
-                                   dtype = np.double) * (1 / n_MAU)
-
-    # CWF if above MAU threshold
-    cdef double [:, :] pmt_thr  = np.zeros((NPMT, NWF), dtype=np.double)
-    cdef double [:, :] pmt_thr_mau  = np.zeros((NPMT, NWF), dtype=np.double)
-    cdef double [:]    MAU_pmt  = np.zeros(      NWF, dtype=np.double)
-
-    for j in PMT:
-        # MAU for each of the PMTs, following the waveform
-        MAU_pmt = signal.lfilter(MAU, 1, CWF[j,:])
-
-        for k in range(NWF):
-            pmt_thr[j,k] = CWF[j,k] * 1 / adc_to_pes[j]
-            if CWF[j,k] >= MAU_pmt[k] + thr_MAU: # >= not >: found testing!
-                pmt_thr_mau[j,k] = CWF[j,k] * 1 / adc_to_pes[j]
-
-    return np.asarray(pmt_thr), np.asarray(pmt_thr_mau)
 
 
 cpdef wfzs(double [:] wf, double threshold=0):
@@ -402,55 +308,6 @@ cpdef rebin_waveform(int ts, int t_finish, double[:] wf, int stride=40):
 
     assert j == len(wf)
     return np.asarray(T), np.asarray(E)
-
-
-cpdef signal_sipm(np.ndarray[np.int16_t, ndim=2] SIPM,
-                  double [:] adc_to_pes, thr,
-                  int n_MAU=100):
-    """
-    subtracts the baseline
-    Uses a MAU to set the signal threshold (thr, in PES)
-    returns ZS waveforms for all SiPMs
-
-    """
-
-    cdef int j, k
-    cdef double [:, :] SiWF = SIPM.astype(np.double)
-    cdef int NSiPM = SiWF.shape[0]
-    cdef int NSiWF = SiWF.shape[1]
-    cdef double [:] MAU = np.array(np.ones(n_MAU),
-                                   dtype = np.double) * (1 / n_MAU)
-
-    cdef double [:, :] siwf = np.zeros((NSiPM, NSiWF), dtype=np.double)
-    cdef double [:]    MAU_ = np.zeros(        NSiWF , dtype=np.double)
-    cdef double [:]    thrs = np.full ( NSiPM, thr)
-    cdef double pmean
-
-    # loop over all SiPMs. Skip any SiPM with adc_to_pes constant = 0
-    # since this means SiPM is dead
-    for j in range(NSiPM):
-        if adc_to_pes[j] == 0:
-            #print('adc_to_pes[{}] = 0, setting sipm waveform to zero'.format(j))
-            continue
-
-        # compute and subtract the baseline
-        pmean = 0
-        for k in range(NSiWF):
-            pmean += SiWF[j,k]
-        pmean /= NSiWF
-
-        for k in range(NSiWF):
-            SiWF[j,k] = SiWF[j,k] - pmean
-
-        # MAU for each of the SiPMs, following the ZS waveform
-        MAU_ = signal.lfilter(MAU, 1, SiWF[j,:])
-
-        # threshold using the MAU
-        for k in range(NSiWF):
-            if SiWF[j,k]  > MAU_[k] + thrs[j] * adc_to_pes[j]:
-                siwf[j,k] = SiWF[j,k] / adc_to_pes[j]
-
-    return np.asarray(siwf)
 
 
 cpdef select_sipm(double [:, :] sipmzs):
