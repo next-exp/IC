@@ -18,8 +18,8 @@ def TriggerFilter(trigger_params):
         # print(min_charge,  max_charge)
         # print(min_height,  max_height)
 
-        for channel_no, s2 in peak_data.items():
-            for peak_number, peak in s2.peaks.items():
+        for channel_no, s2s in peak_data.items():
+            for peak_number, peak in enumerate(s2s):
                 # print(peak.width)
                 # print(peak.total_energy)
                 # print(peak.height)

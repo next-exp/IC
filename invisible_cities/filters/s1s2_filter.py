@@ -1,16 +1,13 @@
 from argparse  import Namespace
 from functools import partial
 from textwrap  import dedent
-from typing    import Dict
+from typing    import Sequence
 
 import numpy as np
 
 from .. types.ic_types_c import minmax
-from .. evm  .pmaps      import Peak
-from .. evm  .pmaps      import S12
-from .. evm  .pmaps      import S1
-from .. evm  .pmaps      import S2
-from .. evm  .pmaps      import S2Si
+from .. evm  .new_pmaps  import _Peak
+from .. evm  .new_pmaps  import PMap
 
 
 class S12SelectorOutput:
@@ -20,7 +17,7 @@ class S12SelectorOutput:
     It contains:
         - passed  : a boolean flag indicating whether the event as
                     a whole has passed the filter.
-        - s1_peaks: a dictionary with a boolean flag for each peak
+        - s1_peaks: a sequence with a boolean flag for each peak
                     indicating whether the peak has been selected
                     or not.
         - s2_peaks: same as s1_peaks.
@@ -30,42 +27,29 @@ class S12SelectorOutput:
     """
     def __init__(self,
                  passed   : bool,
-                 s1_peaks : Dict[int, bool],
-                 s2_peaks : Dict[int, bool]):
+                 s1_peaks : Sequence[bool],
+                 s2_peaks : Sequence[bool]):
         self.passed   = passed
         self.s1_peaks = s1_peaks
         self.s2_peaks = s2_peaks
 
     def __and__(self, other : "S12SelectorOutput") -> "S12SelectorOutput":
-        s1_peaks = set(self.s1_peaks) | set(other.s1_peaks)
-        s2_peaks = set(self.s2_peaks) | set(other.s2_peaks)
-
+        if (len(self.s1_peaks) != len(other.s1_peaks) or
+            len(self.s2_peaks) != len(other.s2_peaks)):
+            raise ValueError("Cannot and lists of different length")
+        s1_peaks = tuple(map(np.logical_and, self.s1_peaks, other.s1_peaks))
+        s2_peaks = tuple(map(np.logical_and, self.s2_peaks, other.s2_peaks))
         passed   = self.passed and other.passed
-
-        s1_peaks = {peak_no: ( self.s1_peaks.get(peak_no, False) and
-                              other.s1_peaks.get(peak_no, False))
-                    for peak_no in s1_peaks}
-
-        s2_peaks = {peak_no: ( self.s2_peaks.get(peak_no, False) and
-                              other.s2_peaks.get(peak_no, False))
-                    for peak_no in s2_peaks}
-
         return S12SelectorOutput(passed, s1_peaks, s2_peaks)
 
+
     def __or__(self, other : "S12SelectorOutput") -> "S12SelectorOutput":
-        s1_peaks = set(self.s1_peaks) | set(other.s1_peaks)
-        s2_peaks = set(self.s2_peaks) | set(other.s2_peaks)
-
+        if (len(self.s1_peaks) != len(other.s1_peaks) or
+            len(self.s2_peaks) != len(other.s2_peaks)):
+            raise ValueError("Cannot or lists of different length")
+        s1_peaks = tuple(map(np.logical_or, self.s1_peaks, other.s1_peaks))
+        s2_peaks = tuple(map(np.logical_or, self.s2_peaks, other.s2_peaks))
         passed   = self.passed or other.passed
-
-        s1_peaks = {peak_no: ( self.s1_peaks.get(peak_no, False) or
-                              other.s1_peaks.get(peak_no, False))
-                    for peak_no in s1_peaks}
-
-        s2_peaks = {peak_no: ( self.s2_peaks.get(peak_no, False) or
-                              other.s2_peaks.get(peak_no, False))
-                    for peak_no in s2_peaks}
-
         return S12SelectorOutput(passed, s1_peaks, s2_peaks)
 
     def __str__(self):
@@ -96,68 +80,68 @@ class S12Selector:
         self.s2_ethr = conf.s2_ethr
 
     @staticmethod
-    def valid_peak(peak   : Peak,
+    def valid_peak(peak   : _Peak,
                    thr    : float,
                    energy : minmax,
                    width  : minmax,
-                   height : minmax) -> bool:
+                   height : minmax,
+                   nsipm  : minmax = None) -> bool:
         """Returns True if the peak energy, width and height
         is contained in the minmax defined by energy, width and
         height."""
-        f1 = energy.contains(peak.total_energy_above_threshold(thr))
-        f2 = width .contains(peak.       width_above_threshold(thr))
-        f3 = height.contains(peak.      height_above_threshold(thr))
-
-        return f1 and f2 and f3
+        f1 = energy.contains(peak.energy_above_threshold(thr))
+        f2 = width .contains(peak. width_above_threshold(thr))
+        f3 = height.contains(peak.height)
+        f4 = True
+        if nsipm:
+            f4 = nsipm.contains(peak.sipms.ids.size)
+        return f1 and f2 and f3 and f4
 
     @staticmethod
-    def select_valid_peaks(s12    : S12,
+    def select_valid_peaks(peaks  : Sequence[_Peak],
                            thr    : float,
                            energy : minmax,
                            width  : minmax,
-                           height : minmax) ->Dict[int, bool]:
-        """Takes a s1/s2 and returns a dictionary with the outcome of the
-        filter for each peak"""
+                           height : minmax,
+                           nsipm  : minmax = None) ->Sequence[bool]:
+        """
+        Takes a sequence of peaks and returns a sequence
+        with the outcome of the filter for each peak
+        """
         peak_is_valid = partial(S12Selector.valid_peak,
                                 thr    = thr,
                                 energy = energy,
                                 width  = width,
-                                height = height)
-        valid_peaks   = {peak_no: peak_is_valid(s12.peak_waveform(peak_no))
-                         for peak_no in s12.peak_collection()}
+                                height = height,
+                                nsipm  = nsipm)
+        valid_peaks   = tuple(map(peak_is_valid, peaks))
         return valid_peaks
 
-    @staticmethod
-    def select_s2si(s2si  : S2Si,
-                    nsipm : minmax) -> Dict[int, bool]:
-        """Takes a s2si and returns a dictionary with the outcome of the
-        filter for each peak"""
-        valid_peaks = {peak_no: nsipm.contains(s2si.number_of_sipms_in_peak(peak_no))
-                       for peak_no in s2si.peak_collection()}
-        return valid_peaks
+    def select_s1(self, s1s : Sequence[_Peak]) -> Sequence[bool]:
+        """
+        Takes a sequence of S1s and returns a sequence with the
+        outcome of the filter for each peak.
+        """
+        passed = self.select_valid_peaks(s1s,
+                                         self.s1_ethr,
+                                         self.s1e,
+                                         self.s1w,
+                                         self.s1h)
+        return passed
 
-    def select_s1(self, s1 : S1) -> Dict[int, bool]:
-        """Takes a s1 and returns a dictionary with the outcome of the
-        filter for each peak"""
-        pass_dict = self.select_valid_peaks(s1,
-                                            self.s1_ethr,
-                                            self.s1e,
-                                            self.s1w,
-                                            self.s1h)
-        return pass_dict
+    def select_s2(self, s2s : Sequence[_Peak]) -> Sequence[bool]:
+        """
+        Takes a sequence of S2s and returns a sequence with the
+        outcome of the filter for each peak
+        """
+        passed = self.select_valid_peaks(s2s,
+                                         self.s2_ethr,
+                                         self.s2e,
+                                         self.s2w,
+                                         self.s2h,
+                                         self.nsi)
+        return passed
 
-    def select_s2(self, s2 : S2, s2si : S2Si) -> Dict[int, bool]:
-        """Takes a s2 and a s2si and returns a dictionary with the
-        outcome of the filter for each peak"""
-        s2_pass_dict   = self.select_valid_peaks(s2,
-                                                 self.s2_ethr,
-                                                 self.s2e,
-                                                 self.s2w,
-                                                 self.s2h)
-        s2si_pass_dict = self.select_s2si(s2si, self.nsi)
-        combined       = (S12SelectorOutput(None, {},   s2_pass_dict) &
-                          S12SelectorOutput(None, {}, s2si_pass_dict))
-        return combined.s2_peaks
 
     def __str__(self):
         return dedent("""
@@ -177,11 +161,9 @@ class S12Selector:
     __repr__ = __str__
 
 
-def s1s2_filter(selector : S12Selector,
-                s1       : S1,
-                s2       : S2,
-                s2si     : S2Si) -> S12SelectorOutput:
-    """Takes the event pmaps (s1, s2 and  s2si)
+def pmap_filter(selector : S12Selector,
+                pmap     : PMap) -> S12SelectorOutput:
+    """Takes the event pmaps
     and filters the corresponding peaks in terms of the selector.
     1. select_s1 returns the s1 peak numbers whose energy, width and height
        are within the boundaries defined by the selector parameters.
@@ -190,37 +172,10 @@ def s1s2_filter(selector : S12Selector,
        AND which have a number of sipms within boundaries.
 
     """
-    selected_s1_peaks = selector.select_s1(s1)
-    selected_s2_peaks = selector.select_s2(s2, s2si)
+    selected_s1_peaks = selector.select_s1(pmap.s1s)
+    selected_s2_peaks = selector.select_s2(pmap.s2s)
 
-    passed = (selector.s1n.contains(np.count_nonzero(list(selected_s1_peaks.values()))) and
-              selector.s2n.contains(np.count_nonzero(list(selected_s2_peaks.values()))))
+    passed = (selector.s1n.contains(np.count_nonzero(selected_s1_peaks)) and
+              selector.s2n.contains(np.count_nonzero(selected_s2_peaks)))
 
     return S12SelectorOutput(passed, selected_s1_peaks, selected_s2_peaks)
-
-
-def s2si_filter(s2si : S2Si) -> S12SelectorOutput:
-    """All peaks must contain at least one non-zero charged sipm"""
-
-    def at_least_one_sipm_with_Q_gt_0(Si):
-        return any(q > 0 for q in Si.values())
-
-    iS2Si = s2si.peak_and_sipm_total_energy_dict()
-
-    selected_si_peaks = {peak_no: at_least_one_sipm_with_Q_gt_0(peak)
-                         for peak_no, peak in iS2Si.items()}
-    passed = len(selected_si_peaks) > 0
-    return S12SelectorOutput(passed, {}, selected_si_peaks)
-
-
-def s1s2si_filter(selector : S12Selector,
-                  s1       : S1,
-                  s2       : S2,
-                  s2si     : S2Si) -> S12SelectorOutput:
-    """Combine s1s2 and s2si filters"""
-    s1s2f = s1s2_filter(selector, s1, s2, s2si)
-    s2sif = s2si_filter(s2si)
-
-    # Set s1 peaks to s2si filter so it can be anded.
-    s2sif.s1_peaks = s1s2f.s1_peaks
-    return s1s2f & s2sif
