@@ -519,9 +519,11 @@ def hits_toy_data(ICDATADIR):
     z     = np.linspace(   0,  515, 100)
     q     = np.linspace( 1e3,  1e3, 100)
     e     = np.linspace( 2e3,  1e4, 100)
+    x_peak = np.array([(x * e).sum() / e.sum()] * 100)
+    y_peak = np.array([(y * e).sum() / e.sum()] * 100)
 
     hits_filename = os.path.join(ICDATADIR, "toy_hits.h5")
-    return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e)
+    return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e, x_peak, y_peak)
 
 
 @pytest.fixture(scope='session')
