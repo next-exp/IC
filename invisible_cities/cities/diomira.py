@@ -6,38 +6,21 @@ credits: see ic_authors_and_legal.rst in /doc
 
 last revised: JJGC, 10-July-2017
 """
-import sys
 
 from functools import partial
 from argparse  import Namespace
 
 import numpy as np
-import tables as tb
 
-from .. core.system_of_units_c  import units
-from .. core.exceptions         import ParameterNotSet
 
 from .. io.mc_io                import mc_track_writer
 from .. io.run_and_event_io     import run_and_event_writer
 from .. io.rwf_io               import rwf_writer
-from .. io.fee_io               import write_FEE_table
 from .. filters.trigger_filters import TriggerFilter
-
 from .. reco                    import wfm_functions as wfm
-from .. reco                    import tbl_functions as tbl
-from .. reco                    import tbl_functions    as tbl
-from .. reco                    import peak_functions_c as cpf
-from .. reco.sensor_functions   import convert_channel_id_to_IC_id
-from .. evm.nh5                 import FEE
-from .. evm.nh5                 import RunInfo
-from .. evm.nh5                 import EventInfo
-from .. evm.ic_containers       import PeakData
-
-from .. database                import load_db          as db
-from .. types.ic_types          import minmax
 from .  base_cities             import MonteCarloCity
 from .  base_cities             import EventLoop
-from .. filters.trigger_filters import TriggerFilter
+
 
 class Diomira(MonteCarloCity):
     """

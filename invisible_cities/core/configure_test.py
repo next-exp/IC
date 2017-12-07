@@ -351,8 +351,8 @@ def test_config_drive_flags(simple_conf_file_name, tmpdir_factory, name, flags, 
                    ('-e 5 9'   ,  4, 'n_events_tot'), # [ 5,  9) -> 4
                    ('-e 2 last',  8, 'n_events_tot'), # events [2, 10) -> 8
                   ))
-def test_config_drive_penthesilea_counters(config_tmpdir, KrMC_pmaps, flags, value, counter):
-    input_filename  = KrMC_pmaps[0]
+def test_config_drive_penthesilea_counters(config_tmpdir, KrMC_pmaps_filename, flags, value, counter):
+    input_filename  = KrMC_pmaps_filename
     config_filename = 'invisible_cities/config/penthesilea.conf'
     flags_wo_spaces = flags.replace(" ", "_")
     output_filename = path.join(config_tmpdir,

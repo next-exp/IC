@@ -7,10 +7,10 @@ from pytest import fixture
 from .. cities.base_cities import City
 from .. core  .configure   import configure
 
-from .  hits_io            import     hits_writer
-from .  kdst_io            import       kr_writer
-from .    mc_io            import mc_track_writer
-from .  pmap_io            import     pmap_writer
+from .  hits_io      import     hits_writer
+from .  kdst_io      import       kr_writer
+from .    mc_io      import mc_track_writer
+from .  new_pmaps_io import     pmap_writer
 
 
 class DummyCity(City):

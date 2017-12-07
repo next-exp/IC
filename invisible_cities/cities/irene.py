@@ -5,23 +5,14 @@ credits: see ic_authors_and_legal.rst in /doc
 
 last revised: JJGC, 12-July-2017
 """
-import sys
-
 from argparse import Namespace
 
 import numpy  as np
-import tables as tb
-
-from .. core.configure         import configure
-from .. core.system_of_units_c import units
 
 from .. io.mc_io               import mc_track_writer
 from .. io.pmap_io             import pmap_writer
 from .. io.pmap_io             import pmap_writer_and_ipmt_writer
 from .. io.run_and_event_io    import run_and_event_writer
-from .. reco                   import tbl_functions as tbl
-from .. evm.ic_containers      import S12Params as S12P
-from .. types.ic_types         import minmax
 
 from .  base_cities  import PmapCity
 from .  base_cities  import EventLoop
@@ -55,10 +46,10 @@ class Irene(PmapCity):
         3. compute PMAPS and write them to file
         """
 
-        write = self.writers
-        pmtrwf       = dataVectors.pmt
-        sipmrwf      = dataVectors.sipm
-        mc_tracks    = dataVectors.mc
+        write       = self.writers
+        pmtrwf      = dataVectors.pmt
+        sipmrwf     = dataVectors.sipm
+        mc_tracks   = dataVectors.mc
         events_info = dataVectors.events
 
         for evt in range(NEVT):

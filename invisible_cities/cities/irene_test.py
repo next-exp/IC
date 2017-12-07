@@ -16,12 +16,12 @@ import numpy  as np
 from pytest import mark
 from pytest import fixture
 
-from .  irene import Irene
-from .. core                 import system_of_units as units
-from .. core.configure       import configure
-from .. types.ic_types       import minmax
-from .. io.pmap_io           import read_run_and_event_from_pmaps_file
-from .. evm.ic_containers    import S12Params as S12P
+from .. core                import system_of_units as units
+from .. core.configure      import configure
+from .. types.ic_types      import minmax
+from .. io.run_and_event_io import read_run_and_event
+from .. evm.ic_containers   import S12Params as S12P
+from .  irene               import Irene
 
 
 @fixture(scope='module')
@@ -173,7 +173,7 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
             evts_in.append(e[0])
             ts_in  .append(e[1])
 
-        rundf, evtdf = read_run_and_event_from_pmaps_file(PATH_OUT)
+        rundf, evtdf = read_run_and_event(PATH_OUT)
         evts_out = evtdf.evt_number.values
         ts_out = evtdf.timestamp.values
         np.testing.assert_array_equal(evts_in, evts_out)
