@@ -137,10 +137,12 @@ def build_sipm_responses(sidf):
 
 def s1s_from_df(s1df, s1pmtdf):
     s1s = []
-    peak_numbers = set(s1df.peak)
-    for peak_number in peak_numbers:
-        times, pmt_r = build_pmt_responses(s1df   [s1df   .peak == peak_number],
-                                           s1pmtdf[s1pmtdf.peak == peak_number])
+
+    all_groups = s1df   .groupby("peak")
+    pmt_groups = s1pmtdf.groupby("peak")
+    for (_, all_df), (_, pmt_df) in zip(all_groups,
+                                        pmt_groups):
+        times, pmt_r = build_pmt_responses(all_df, pmt_df)
         s1s.append(S1(times, pmt_r, SiPMResponses.build_empty_instance()))
 
     return s1s
@@ -148,11 +150,15 @@ def s1s_from_df(s1df, s1pmtdf):
 
 def s2s_from_df(s2df, s2pmtdf, sidf):
     s2s = []
-    peak_numbers = set(s2df.peak)
-    for peak_number in peak_numbers:
-        times, pmt_r = build_pmt_responses (s2df   [s2df   .peak == peak_number],
-                                            s2pmtdf[s2pmtdf.peak == peak_number])
-        sipm_r       = build_sipm_responses(sidf   [sidf   .peak == peak_number])
+
+    all_groups = s2df   .groupby("peak")
+    pmt_groups = s2pmtdf.groupby("peak")
+    si_groups  = sidf   .groupby("peak")
+    for (_, all_df), (_, pmt_df), (_, si_df) in zip(all_groups,
+                                                    pmt_groups,
+                                                     si_groups):
+        times, pmt_r = build_pmt_responses (all_df, pmt_df)
+        sipm_r       = build_sipm_responses(si_df)
         s2s.append(S2(times, pmt_r, sipm_r))
 
     return s2s
