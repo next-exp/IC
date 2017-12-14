@@ -17,6 +17,8 @@ import tables as tb
 
 from .. io.         hist_io    import          hist_writer
 from .. io.run_and_event_io    import run_and_event_writer
+from .. icaro.hst_functions    import shift_to_bin_centers
+from .. reco                   import calib_sensors_functions as csf
 
 from ..  cities.base_cities import CalibratedCity
 from ..  cities.base_cities import EventLoop
@@ -33,7 +35,8 @@ class Sipmpdf(CalibratedCity):
     parameters = tuple("""min_bin max_bin bin_wid""".split())
 
     def __init__(self, **kwds):
-        """sipmPDF Init:
+        """
+        sipmPDF Init:
         1. inits base city
         2. inits counters
         3. gets sensor parameters
@@ -45,25 +48,34 @@ class Sipmpdf(CalibratedCity):
         self.sp = self.get_sensor_params(self.input_files[0])
 
         ## The bin range for the histograms
-        conf = self.conf
-        min_bin = conf.min_bin
-        max_bin = conf.max_bin
-        bin_wid = conf.bin_wid
+        min_bin = self.conf.min_bin
+        max_bin = self.conf.max_bin
+        bin_wid = self.conf.bin_wid
         self.histbins = np.arange(min_bin, max_bin, bin_wid)
 
+    def calibrate_with_mean(self, wfs):
+        f = csf.subtract_baseline_and_calibrate
+        return f(wfs, self.sipm_adc_to_pes)
+
+    def calibrate_with_mau(self, wfs):
+        f = csf.subtract_baseline_mau_and_calibrate
+        return f(wfs, self.sipm_adc_to_pes, self.n_MAU_sipm)
+
     def event_loop(self, NEVT, dataVectors):
-        """actions:
+        """
+        actions:
         1. loops over all the events in each file.
         2. write event/run to file
         3. write histogram info to file (to reduce memory usage)
         """
-        write = self.writers
-        sipmrwf      = dataVectors.sipm
+        write       = self.writers
+        sipmrwf     = dataVectors.sipm
         events_info = dataVectors.events
 
         ## Where we'll be saving the binned info for each channel
-        bsipmzs = np.zeros((sipmrwf.shape[1], len(self.histbins)-1), dtype=np.int)
-        bsipmmzs = np.zeros((sipmrwf.shape[1], len(self.histbins)-1), dtype=np.int)
+        shape    = sipmrwf.shape[1], len(self.histbins) - 1
+        bsipmzs  = np.zeros(shape, dtype=np.int)
+        bsipmmzs = np.zeros(shape, dtype=np.int)
 
         for evt in range(NEVT):
             self.conditional_print(evt, self.cnt.n_events_tot)
@@ -74,40 +86,43 @@ class Sipmpdf(CalibratedCity):
             self.cnt.n_events_tot += 1
 
             ## Zeroed sipm waveforms in pe
-            sipmzs = self.calibrated_signal_sipm(sipmrwf[evt], cal=1)
-            bsipmzs += self.bin_waveform(sipmzs)
+            sipmzs   = self.calibrate_with_mean(sipmrwf[evt])
+            bsipmzs += self.bin_waveforms(sipmzs)
 
             ## Difference from the MAU
-            sipmmzs = self.calibrated_signal_sipm(sipmrwf[evt], cal=2)
-            bsipmmzs += self.bin_waveform(sipmmzs)
+            sipmmzs   = self.calibrate_with_mau(sipmrwf[evt])
+            bsipmmzs += self.bin_waveforms(sipmmzs)
 
             # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)
             write.run_and_event(self.run_number, event, timestamp)
-        write.sipm(bsipmzs)
+
+        write.sipm (bsipmzs)
         write.mausi(bsipmmzs)
 
 
-    def bin_waveform(self, waveData):
-        """ Bins the current event data and adds it
-        to the file level bin array """
-
-        binData = np.array([np.histogram(sipm, self.histbins)[0] for sipm in waveData])
-
-        return binData
+    def bin_waveforms(self, waveforms):
+        """
+        Bins the current event data and adds it
+        to the file level bin array
+        """
+        bin_waveform = lambda x: np.histogram(x, self.histbins)[0]
+        return np.apply_along_axis(bin_waveform, 1, waveforms)
 
 
     def get_writers(self, h5out):
-        HIST = partial(hist_writer,  h5out,   group_name='HIST')
+        bin_centres = shift_to_bin_centers(self.histbins)
+        HIST        = partial(hist_writer,
+                              h5out,
+                              group_name  = 'HIST',
+                              n_sensors   = self.sp.NSIPM,
+                              n_bins      = len(bin_centres),
+                              bin_centres = bin_centres)
+
         writers = Namespace(
             run_and_event = run_and_event_writer(h5out),
-            sipm  = HIST(table_name='sipm' ,
-                        n_sensors=self.sp.NSIPM , n_bins=len(self.histbins)-1,
-                        bin_centres=(self.histbins+0.05)[:-1]),
-            mausi = HIST(table_name='sipmMAU' ,
-                        n_sensors=self.sp.NSIPM , n_bins=len(self.histbins)-1,
-                        bin_centres=(self.histbins+0.05)[:-1])
-            )
+            sipm          = HIST(table_name  = 'sipm'),
+            mausi         = HIST(table_name  = 'sipmMAU'))
 
         return writers
 
@@ -120,10 +135,11 @@ class Sipmpdf(CalibratedCity):
 
     def _copy_sensor_table(self, h5in):
         # Copy sensor table if exists (needed for GATE)
-        if 'Sensors' in h5in.root:
-            self.sensors_group = self.output_file.create_group(
-                self.output_file.root, "Sensors")
-            datapmt = h5in.root.Sensors.DataPMT
-            datapmt.copy(newparent=self.sensors_group)
-            datasipm = h5in.root.Sensors.DataSiPM
-            datasipm.copy(newparent=self.sensors_group)
+        if 'Sensors' not in h5in.root: return
+
+        group = self.output_file.create_group(self.output_file.root,
+                                              "Sensors")
+        datapmt  = h5in.root.Sensors.DataPMT
+        datasipm = h5in.root.Sensors.DataSiPM
+        datapmt .copy(newparent=group)
+        datasipm.copy(newparent=group)
