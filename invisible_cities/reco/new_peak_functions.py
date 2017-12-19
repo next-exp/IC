@@ -18,32 +18,6 @@ from .. evm .new_pmaps         import PMTResponses
 from .. evm .new_pmaps         import SiPMResponses
 
 
-def calibrate_pmts(cwfs, adc_to_pes,
-                   n_MAU = 100, thr_MAU = 3):
-    adc_to_pes  = adc_to_pes.reshape(adc_to_pes.size, 1)
-    MAU         = np.full(n_MAU, 1 / n_MAU)
-    mau         = signal.lfilter(MAU, 1, cwfs, axis=1)
-
-    # ccwfs stands for calibrated corrected waveforms
-    ccwfs       = cwfs / adc_to_pes
-    ccwfs_mau   = np.where(cwfs >= mau + thr_MAU, ccwfs, 0)
-
-    cwf_sum     = np.sum(ccwfs    , axis=0)
-    cwf_sum_mau = np.sum(ccwfs_mau, axis=0)
-    return ccwfs, ccwfs_mau, cwf_sum, cwf_sum_mau
-
-
-def calibrate_sipms(rwfs, adc_to_pes, thr, n_MAU=100):
-    unifm = np.full(n_MAU, 1/n_MAU)
-    blswf = rwfs.T - np.mean(rwfs, axis=1)
-    ok    = adc_to_pes > 0
-    calc  = np.where(ok, adc_to_pes, 1e-20)
-    mau   = signal.lfilter  (unifm, 1, blswf, axis=0)
-    calwf = np.where((blswf > mau + thr * calc) & ok,
-                     blswf / calc, 0)
-    return calwf.T
-
-
 def indices_and_wf_above_threshold(wf, thr):
     indices_above_thr = np.where(wf > thr)[0]
     wf_above_thr      = wf[indices_above_thr]
