@@ -80,25 +80,6 @@ def peak_indices(draw):
 
 
 @fixture
-def oscillating_waveform_wo_baseline():
-    n_samples   = 50000
-    noise_sigma = 0.01
-    times       = np.linspace(0, 10, n_samples)
-    wf          = np.sin(times) + np.random.normal(0, noise_sigma, n_samples)
-    wfs         = wf[np.newaxis]
-    adc_to_pes  = np.random.uniform(10, 20, size=(1,))
-    return wfs, adc_to_pes, n_samples, noise_sigma
-
-
-@fixture
-def oscillating_waveform_with_baseline(oscillating_waveform_wo_baseline):
-    wfs, adc_to_pes, n_samples, noise_sigma = oscillating_waveform_wo_baseline
-    baseline = np.random.uniform(1000, 2000, size=(1,))
-    wfs     += baseline
-    return wfs, adc_to_pes, n_samples, noise_sigma, baseline
-
-
-@fixture
 def wf_with_indices(n_sensors=5, n_samples=500, length=None, first=None):
     times = np.arange(n_samples) * 25 * units.ns
     wfs   = np.zeros((n_sensors, n_samples))
@@ -174,52 +155,6 @@ def s1_and_s2_with_indices(n_pmt=3, n_sipm=10, n_samples_sipm=40):
     return (times, pmt_wfs, sipm_wfs,
             pmt_indices_s1, pmt_indices_s2, sipm_indices,
             s1_params, s2_params)
-
-
-@flaky(max_runs=2)
-@mark.parametrize("nsigma fraction".split(),
-                  ((1, 0.68),
-                   (2, 0.95),
-                   (3, 0.97)))
-def test_calibrate_pmts_stat(oscillating_waveform_wo_baseline,
-                             nsigma, fraction):
-    (wfs, adc_to_pes,
-     n_samples, noise_sigma) = oscillating_waveform_wo_baseline
-    n_mau                    = n_samples // 500
-
-    (ccwfs  , ccwfs_mau  ,
-     cwf_sum, cwf_sum_mau) = pf.calibrate_pmts(wfs, adc_to_pes,
-                                               n_mau, nsigma * noise_sigma)
-
-    # Because there is only one waveform, the sum and the
-    # waveform itself must be the same.
-    assert ccwfs    .size == cwf_sum    .size
-    assert ccwfs_mau.size == cwf_sum_mau.size
-
-    assert ccwfs    [0] == approx(cwf_sum)
-    assert ccwfs_mau[0] == approx(cwf_sum_mau)
-
-    assert wfs[0] / adc_to_pes[0] == approx(cwf_sum)
-
-    number_of_zeros = np.count_nonzero(cwf_sum_mau == 0)
-    assert number_of_zeros > fraction * cwf_sum_mau.size
-
-
-@mark.parametrize("nsigma fraction".split(),
-                  ((1, 0.68),
-                   (2, 0.95),
-                   (3, 0.97)))
-def test_calibrate_sipms_stat(oscillating_waveform_with_baseline,
-                              nsigma, fraction):
-    (wfs, adc_to_pes,
-     n_samples, noise_sigma,
-     baseline )              = oscillating_waveform_with_baseline
-    n_mau                    = n_samples // 500
-
-    ccwfs = pf.calibrate_sipms(wfs, adc_to_pes, nsigma * noise_sigma, n_mau)
-
-    number_of_zeros = np.count_nonzero(ccwfs == 0)
-    assert number_of_zeros > fraction * ccwfs.size
 
 
 @given(waveforms())

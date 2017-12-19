@@ -73,6 +73,25 @@ def gaussian_sipm_signal(gaussian_sipm_signal_wo_baseline):
     return sipm, adc_to_pes
 
 
+@fixture
+def oscillating_waveform_wo_baseline():
+    n_samples   = 50000
+    noise_sigma = 0.01
+    times       = np.linspace(0, 10, n_samples)
+    wf          = np.sin(times) + np.random.normal(0, noise_sigma, n_samples)
+    wfs         = wf[np.newaxis]
+    adc_to_pes  = np.random.uniform(10, 20, size=(1,))
+    return wfs, adc_to_pes, n_samples, noise_sigma
+
+
+@fixture
+def oscillating_waveform_with_baseline(oscillating_waveform_wo_baseline):
+    wfs, adc_to_pes, n_samples, noise_sigma = oscillating_waveform_wo_baseline
+    baseline = np.random.uniform(1000, 2000, size=(1,))
+    wfs     += baseline
+    return wfs, adc_to_pes, n_samples, noise_sigma, baseline
+
+
 @flaky(max_runs=2)
 @mark.parametrize("kwargs",
                   (dict(bls_mode = csf.BlsMode.mean),
@@ -121,38 +140,82 @@ def test_calibrate_wfs_with_zeros(gaussian_sipm_signal_wo_baseline):
     assert calibrated[dead_index] == approx(np.zeros(signal_pes.shape[1]))
 
 
-def test_signal_sipm_common_threshold(toy_sipm_signal):
+@flaky(max_runs=2)
+@mark.parametrize("nsigma fraction".split(),
+                  ((1, 0.68),
+                   (2, 0.95),
+                   (3, 0.97)))
+def test_calibrate_pmts_stat(oscillating_waveform_wo_baseline,
+                             nsigma, fraction):
+    (wfs, adc_to_pes,
+     n_samples, noise_sigma) = oscillating_waveform_wo_baseline
+    n_mau                    = n_samples // 500
+
+    (ccwfs  , ccwfs_mau  ,
+     cwf_sum, cwf_sum_mau) = csf.calibrate_pmts(wfs, adc_to_pes,
+                                                n_mau, nsigma * noise_sigma)
+
+    # Because there is only one waveform, the sum and the
+    # waveform itself must be the same.
+    assert ccwfs    .size == cwf_sum    .size
+    assert ccwfs_mau.size == cwf_sum_mau.size
+
+    assert ccwfs    [0] == approx(cwf_sum)
+    assert ccwfs_mau[0] == approx(cwf_sum_mau)
+
+    assert wfs[0] / adc_to_pes[0] == approx(cwf_sum)
+
+    number_of_zeros = np.count_nonzero(cwf_sum_mau == 0)
+    assert number_of_zeros > fraction * cwf_sum_mau.size
+
+
+@mark.parametrize("nsigma fraction".split(),
+                  ((1, 0.68),
+                   (2, 0.95),
+                   (3, 0.97)))
+def test_calibrate_sipms_stat(oscillating_waveform_with_baseline,
+                              nsigma, fraction):
+    (wfs, adc_to_pes,
+     n_samples, noise_sigma,
+     baseline )              = oscillating_waveform_with_baseline
+    n_mau                    = n_samples // 500
+
+    ccwfs = csf.calibrate_sipms(wfs, adc_to_pes, nsigma * noise_sigma, n_mau)
+
+    number_of_zeros = np.count_nonzero(ccwfs == 0)
+    assert number_of_zeros > fraction * ccwfs.size
+
+
+def test_calibrate_sipms_common_threshold(toy_sipm_signal):
     (signal_adc, adc_to_pes,
      signal_zs_common_threshold, _,
      common_threshold, _) = toy_sipm_signal
 
-    zs_wf = csf.sipm_subtract_baseline_and_zs_mau(signal_adc, adc_to_pes,
-                                                  common_threshold, n_MAU=100)
+    zs_wf = csf.calibrate_sipms(signal_adc, adc_to_pes,
+                                common_threshold, n_MAU=100)
 
     for actual, expected in zip(zs_wf, signal_zs_common_threshold):
         assert actual == approx(expected)
 
 
-def test_signal_sipm_individual_thresholds(toy_sipm_signal):
+def test_calibrate_sipms_individual_thresholds(toy_sipm_signal):
     (signal_adc, adc_to_pes,
      _, signal_zs_individual_thresholds,
      _, individual_thresholds) = toy_sipm_signal
 
-    zs_wf = csf.sipm_subtract_baseline_and_zs_mau(signal_adc, adc_to_pes,
-                                                  individual_thresholds,
-                                                  n_MAU=100)
+    zs_wf = csf.calibrate_sipms(signal_adc, adc_to_pes,
+                                individual_thresholds, n_MAU=100)
     for actual, expected in zip(zs_wf, signal_zs_individual_thresholds):
         assert actual == approx(expected)
 
 
 def test_wf_baseline_subtracted_is_close_to_zero(gaussian_sipm_signal):
     sipm_wfs, adc_to_pes = gaussian_sipm_signal
-    bls_wf = csf.sipm_subtract_baseline_and_calibrate(sipm_wfs, adc_to_pes)
+    bls_wf = csf.subtract_baseline_and_calibrate(sipm_wfs, adc_to_pes)
     np.testing.assert_allclose(np.mean(bls_wf, axis=1), 0, atol=1e-10)
 
 
 def test_wf_baseline_subtracted_mau_is_close_to_zero(gaussian_sipm_signal):
     sipm_wfs, adc_to_pes = gaussian_sipm_signal
-    bls_wf = csf.sipm_subtract_baseline_mau_and_calibrate(sipm_wfs, adc_to_pes,
-                                                          n_MAU=10)
+    bls_wf = csf.subtract_baseline_mau_and_calibrate(sipm_wfs, adc_to_pes, n_MAU=10)
     np.testing.assert_allclose(np.mean(bls_wf, axis=1), 0, atol=0.1)
