@@ -4,6 +4,7 @@ Tests for fit_functions
 
 import numpy as np
 from pytest import mark
+from pytest import approx
 from flaky  import flaky
 
 from numpy.testing import assert_array_equal
@@ -26,6 +27,41 @@ def test_get_errors():
                      [-1,  4, -1],
                      [ 2, -4,  1]], dtype=float)
     assert_array_equal(fitf.get_errors(data), [3., 2., 1.])
+
+
+def test_get_chi2_and_pvalue_when_data_equals_error_and_fit_equals_zero():
+    Nevt  = int(1e6)
+    ydata = np.random.uniform(1, 100, Nevt)
+    yfit  = np.zeros_like(ydata)
+    errs  = ydata
+    chi2, pvalue = fitf.get_chi2_and_pvalue(ydata, yfit, Nevt, errs)
+
+    assert chi2   == approx(1  , rel=1e-3)
+    assert pvalue == approx(0.5, rel=1e-3)
+
+
+def test_get_chi2_and_pvalue_when_data_equals_fit():
+    Nevt  = int(1e6)
+    ydata = np.random.uniform(1, 100, Nevt)
+    yfit  = ydata
+    errs  = ydata**0.5 # Dummy value, not needed
+    chi2, pvalue = fitf.get_chi2_and_pvalue(ydata, yfit, Nevt, errs)
+
+    assert chi2   == approx(0., rel=1e-3)
+    assert pvalue == approx(1., rel=1e-3)
+
+
+@given(floats(min_value = -2500,
+              max_value = +2500),
+       floats(min_value = + 100,
+              max_value = + 300))
+def test_get_chi2_and_pvalue_gauss_errors(mean, sigma):
+    Nevt  = int(1e6)
+    ydata = np.random.normal(mean, sigma, Nevt)
+
+    chi2, pvalue = fitf.get_chi2_and_pvalue(ydata, mean, Nevt-1, sigma)
+
+    assert chi2 == approx(1, rel=1e-2)
 
 
 @given(float_arrays(min_value=-10,
