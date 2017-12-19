@@ -28,6 +28,41 @@ def get_errors(cov):
     return np.sqrt(np.diag(cov))
 
 
+def get_chi2_and_pvalue(ydata, yfit, ndf, sigma=None):
+    """
+    Gets reduced chi2 and p-value
+
+    Parameters
+    ----------
+    ydata : np.ndarray
+        Data points.
+    yfit : np.ndarray
+        Fit values corresponding to ydata array.
+    sigma : np.ndarray
+        Data errors. If sigma is not given, it takes the poisson case:
+            sigma = sqrt(ydata)
+    ndf : int
+        Number of degrees of freedom
+        (number of data points - number of parameters).
+
+    Returns
+    -------
+    chi2 : float
+        Reduced chi2 computed as:
+            chi2 = [sum(ydata - yfit)**2 / sigma**2] / ndf
+    pvalue : float
+        Fit p-value.
+    """
+
+    if sigma is None:
+        sigma = ydata**0.5
+
+    chi2   = np.sum(((ydata - yfit) / sigma)**2)
+    pvalue = scipy.stats.chi2.sf(chi2, ndf)
+
+    return chi2 / ndf, pvalue
+
+
 # ###########################################################
 # Functions
 def gauss(x, amp, mu, sigma):
