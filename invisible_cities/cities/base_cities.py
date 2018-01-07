@@ -259,16 +259,32 @@ class City:
         self.DataPMT  = DataPMT
         self.DataSiPM = DataSiPM
 
-        self.xs                 = DataSiPM.X.values
-        self.ys                 = DataSiPM.Y.values
-        self.pmt_active         = np.nonzero(pmt_active)[0].tolist()
-        self.active_pmt_ids     = DataPMT.SensorID[DataPMT.Active == 1].values
-        self.all_pmt_adc_to_pes = abs(DataPMT.adc_to_pes.values).astype(np.double)
-        self.    pmt_adc_to_pes = self.all_pmt_adc_to_pes[pmt_active]
-        self.   sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
-        self.coeff_c            = DataPMT.coeff_c.values        .astype(np.double)
-        self.coeff_blr          = DataPMT.coeff_blr.values      .astype(np.double)
-        self.noise_rms          = DataPMT.noise_rms.values      .astype(np.double)
+        self.xs                  = DataSiPM.X.values
+        self.ys                  = DataSiPM.Y.values
+        self.pmt_active          = np.nonzero(pmt_active)[0].tolist()
+        self.active_pmt_ids      = DataPMT.SensorID[DataPMT.Active == 1].values
+        self.all_pmt_adc_to_pes  = abs(DataPMT.adc_to_pes.values).astype(np.double)
+        self.    pmt_adc_to_pes  = self.all_pmt_adc_to_pes[pmt_active]
+        self.   sipm_adc_to_pes  = DataSiPM.adc_to_pes.values    .astype(np.double)
+        self.coeff_c             = DataPMT.coeff_c.values        .astype(np.double)
+        self.coeff_blr           = DataPMT.coeff_blr.values      .astype(np.double)
+        self.noise_rms           = DataPMT.noise_rms.values      .astype(np.double)
+
+        ## Charge resolution for sensor simulation
+        pmt_single_pe_rms      = DataPMT.Sigma.values          .astype(np.double)
+        self.pmt_pe_resolution = np.divide(pmt_single_pe_rms                         ,
+                                           self.all_pmt_adc_to_pes                   ,
+                                           out=np.zeros(len(self.all_pmt_adc_to_pes)),
+                                           where=self.all_pmt_adc_to_pes!=0          )
+        sipm_single_pe_rms     = DataSiPM.Sigma.values         .astype(np.double)
+        if not sipm_single_pe_rms.any():
+            ## Default values for compatibility with older runs
+            ## where pe_rms values not in database
+            sipm_single_pe_rms = np.full(len(sipm_single_pe_rms), 2.24)
+        self.sipm_pe_resolution = np.divide(sipm_single_pe_rms                     ,
+                                            self.sipm_adc_to_pes                   ,
+                                            out=np.zeros(len(self.sipm_adc_to_pes)),
+                                            where=self.sipm_adc_to_pes!=0          )
 
         sipm_x_masked = DataSiPM[DataSiPM.Active == 0].X.values
         sipm_y_masked = DataSiPM[DataSiPM.Active == 0].Y.values
@@ -1075,7 +1091,9 @@ class MonteCarloCity(TriggerEmulationCity):
         the noisy waveform (in adc counts)."""
         return sf.simulate_sipm_response(event, sipmrd,
                                          self.noise_sampler,
-                                         self.sipm_adc_to_pes)
+                                         self.sipm_adc_to_pes,
+                                         self.sipm_pe_resolution,
+                                         self.run_number)
 
 
     def simulate_pmt_response(self, event, pmtrd):
@@ -1091,6 +1109,7 @@ class MonteCarloCity(TriggerEmulationCity):
         """
         return sf.simulate_pmt_response(event, pmtrd,
                                         self.all_pmt_adc_to_pes,
+                                        self.pmt_pe_resolution,
                                         self.run_number)
 
     @property

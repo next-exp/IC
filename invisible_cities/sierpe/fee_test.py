@@ -41,7 +41,7 @@ def test_fee_params():
     assert FE.NBITS == 12
     assert FE.LSB == 2 * units.V / 2 ** FE.NBITS / FE.DAQ_GAIN
     assert FE.NOISE_I == FE.LSB / (FE.FEE_GAIN * FE.DAQ_GAIN)
-    assert FE.NOISE_DAQ == 0.313 * units.mV
+    assert FE.NOISE_DAQ == 0.258 * units.mV
     assert FE.C2 == 8 * units.nF
     assert FE.C1 == 2714 * units.nF
     assert FE.R1  == 1567 * units.ohm
