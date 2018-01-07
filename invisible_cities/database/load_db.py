@@ -52,7 +52,7 @@ def DataSiPM(run_number=1e5):
 
     sql='''select pos.SensorID, map.ElecID "ChannelID",
 case when msk.SensorID is NULL then 1 else 0 end "Active",
-X, Y, Centroid "adc_to_pes"
+X, Y, Centroid "adc_to_pes", Sigma
 from ChannelPosition as pos INNER JOIN ChannelGain as gain
 ON pos.SensorID = gain.SensorID INNER JOIN ChannelMapping as map
 ON pos.SensorID = map.SensorID LEFT JOIN
