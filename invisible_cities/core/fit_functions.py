@@ -28,6 +28,41 @@ def get_errors(cov):
     return np.sqrt(np.diag(cov))
 
 
+def get_chi2_and_pvalue(ydata, yfit, ndf, sigma=None):
+    """
+    Gets reduced chi2 and p-value
+
+    Parameters
+    ----------
+    ydata : np.ndarray
+        Data points.
+    yfit : np.ndarray
+        Fit values corresponding to ydata array.
+    sigma : np.ndarray
+        Data errors. If sigma is not given, it takes the poisson case:
+            sigma = sqrt(ydata)
+    ndf : int
+        Number of degrees of freedom
+        (number of data points - number of parameters).
+
+    Returns
+    -------
+    chi2 : float
+        Reduced chi2 computed as:
+            chi2 = [sum(ydata - yfit)**2 / sigma**2] / ndf
+    pvalue : float
+        Fit p-value.
+    """
+
+    if sigma is None:
+        sigma = ydata**0.5
+
+    chi2   = np.sum(((ydata - yfit) / sigma)**2)
+    pvalue = scipy.stats.chi2.sf(chi2, ndf)
+
+    return chi2 / ndf, pvalue
+
+
 # ###########################################################
 # Functions
 def gauss(x, amp, mu, sigma):
@@ -93,19 +128,30 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
         if "sigma" in kwargs:
             kwargs["sigma"] = kwargs["sigma"][sel]
 
+    abs_sigma = "sigma" in kwargs
+
     vals, cov = scipy.optimize.curve_fit(func,
                                          x, y,
                                          seed,
+                                         absolute_sigma = abs_sigma,
                                          **kwargs)
 
-    fitf = lambda x: func(x, *vals)
-    fitx = fitf(x)
-    chi2, pval = scipy.stats.chisquare(y[fitx != 0], fitx[fitx != 0], len(vals))
+    fitf    = lambda x: func(x, *vals)
+    fitx    = fitf(x)
+    nonzero = fitx != 0
+
+    sigma_r = kwargs.get("sigma", np.ones_like(y))
+    sigma_r = sigma_r[nonzero]
+
+    chi2, pval = get_chi2_and_pvalue(y    [nonzero],
+                                     fitx [nonzero],
+                                     len(y[nonzero]) - len(vals),
+                                     sigma_r)
 
     return FitFunction(fitf,
                        vals,
                        get_errors(cov),
-                       chi2 / (len(x) - len(vals)),
+                       chi2,
                        pval)
 
 
