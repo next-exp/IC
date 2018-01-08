@@ -128,19 +128,30 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
         if "sigma" in kwargs:
             kwargs["sigma"] = kwargs["sigma"][sel]
 
+    abs_sigma = "sigma" in kwargs
+
     vals, cov = scipy.optimize.curve_fit(func,
                                          x, y,
                                          seed,
+                                         absolute_sigma = abs_sigma,
                                          **kwargs)
 
-    fitf = lambda x: func(x, *vals)
-    fitx = fitf(x)
-    chi2, pval = scipy.stats.chisquare(y[fitx != 0], fitx[fitx != 0], len(vals))
+    fitf    = lambda x: func(x, *vals)
+    fitx    = fitf(x)
+    nonzero = fitx != 0
+
+    sigma_r = kwargs.get("sigma", np.ones_like(y))
+    sigma_r = sigma_r[nonzero]
+
+    chi2, pval = get_chi2_and_pvalue(y    [nonzero],
+                                     fitx [nonzero],
+                                     len(y[nonzero]) - len(vals),
+                                     sigma_r)
 
     return FitFunction(fitf,
                        vals,
                        get_errors(cov),
-                       chi2 / (len(x) - len(vals)),
+                       chi2,
                        pval)
 
 
