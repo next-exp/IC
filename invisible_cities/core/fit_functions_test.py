@@ -21,6 +21,8 @@ from .testing_utils import random_length_float_arrays
 from . import core_functions as core
 from . import  fit_functions as fitf
 
+from ..icaro.hst_functions import poisson_sigma
+
 
 def test_get_errors():
     data = np.array([[ 9, -2,  1],
@@ -62,6 +64,51 @@ def test_get_chi2_and_pvalue_gauss_errors(mean, sigma):
     chi2, pvalue = fitf.get_chi2_and_pvalue(ydata, mean, Nevt-1, sigma)
 
     assert chi2 == approx(1, rel=1e-2)
+
+
+def test_chi2_str_line():
+    def line(x, m, n):
+        return m * x + n
+
+    y  = np.array([ 9.108e3, 10.34e3,   1.52387e5,   1.6202e5])
+    ey = np.array([ 3.17   , 13.5   ,  70        ,  21       ])
+    x  = np.array([29.7    , 33.8   , 481        , 511       ])
+
+    f = fitf.fit(line, x, y, seed=(1,1), sigma=ey)
+
+    assert f.chi2 == approx(14, rel=1e-02)
+
+
+@mark.slow
+@flaky(max_runs=10, min_passes=9)
+def test_chi2_poisson_errors():
+    mu    = np.random.uniform(-100, 100)
+    sigma = np.random.uniform(   0, 100)
+    A     =  1e9
+    x     = np.linspace(mu - 5 * sigma, mu + 5 * sigma, 100)
+    y     = fitf.gauss(x, A, mu, sigma)
+    y     = np.random.poisson(y)
+    errs  = poisson_sigma(y)
+
+    f = fitf.fit(fitf.gauss, x, y, seed=(A, mu, sigma), sigma=errs)
+
+    assert 0.60 < f.chi2 < 1.5
+
+
+@mark.slow
+@flaky(max_runs=10, min_passes=9)
+def test_chi2_log_errors():
+    mu    = np.random.uniform(-100, 100)
+    sigma = np.random.uniform(   0, 100)
+    A     =  1e9
+    x     = np.linspace(mu - 2 * sigma, mu + 2*sigma, 100)
+    y     = fitf.gauss(x, A, mu, sigma)
+    y     = np.random.normal(y, np.log(y))
+    errs  = np.log(y)
+
+    f = fitf.fit(fitf.gauss, x, y, seed=(A, mu, sigma), sigma=errs)
+
+    assert 0.60 < f.chi2 < 1.5
 
 
 @given(float_arrays(min_value=-10,
