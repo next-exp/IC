@@ -2,16 +2,18 @@ from collections import namedtuple
 
 import numpy as np
 
-from ..core             import fit_functions as fitf
-from ..core.exceptions  import ParameterNotSet
-from ..reco.corrections import Correction
-from ..reco.corrections import Fcorrection
-from ..reco.corrections import LifetimeCorrection
-from ..reco.corrections import LifetimeRCorrection
-from ..reco.corrections import LifetimeXYCorrection
-from ..reco.corrections import opt_nearest
-from ..reco.corrections import opt_linear
-from ..reco.corrections import opt_cubic
+from ..core                import fit_functions as fitf
+from ..core .exceptions    import ParameterNotSet
+from ..reco .corrections   import Correction
+from ..reco .corrections   import Fcorrection
+from ..reco .corrections   import LifetimeCorrection
+from ..reco .corrections   import LifetimeRCorrection
+from ..reco .corrections   import LifetimeXYCorrection
+from ..reco .corrections   import opt_nearest
+from ..reco .corrections   import opt_linear
+from ..reco .corrections   import opt_cubic
+from ..icaro.hst_functions import poisson_sigma
+from ..icaro.hst_functions import shift_to_bin_centers
 
 from numpy.testing import assert_allclose
 from pytest        import fixture
@@ -147,7 +149,7 @@ def uniform_energy_fun_data_3d(draw):
 
 @fixture
 def gauss_data_1d():
-    mean = lambda z: 1e4 * np.exp(-z / 300)
+    mean = lambda z: 1e4 * np.exp(-z / 1000)
     Nevt = 100000
     Zevt = np.random.uniform(0, 500, size=Nevt)
     Eevt = np.random.normal(mean(Zevt), mean(Zevt)**0.5)
@@ -439,7 +441,7 @@ def test_lifetimeXYcorrection_kwargs(toy_f_data):
 
 
 @mark.slow
-@flaky(max_runs=5, min_passes=1)
+@flaky(max_runs=5, min_passes=4)
 def test_corrections_1d(gauss_data_1d):
     Z, E, Eu, Zevt, Eevt = gauss_data_1d
 
@@ -454,13 +456,15 @@ def test_corrections_1d(gauss_data_1d):
     y, x = np.histogram(Eevt, np.linspace(mean - 3 * std,
                                           mean + 3 * std,
                                           100))
-    x    = x[:-1] + np.diff(x) * 0.5
-    f    = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
-    assert f.chi2 < 3
+    x     = shift_to_bin_centers(x)
+    sigma = poisson_sigma(y)
+    f     = fitf.fit(fitf.gauss, x, y, (1e5, mean, std), sigma=sigma)
+
+    assert 0.75 < f.chi2 < 1.5
 
 
 @mark.slow
-@flaky(max_runs=5, min_passes=1)
+@flaky(max_runs=5, min_passes=4)
 def test_corrections_2d(gauss_data_2d):
     X, Y, E, Eu, Xevt, Yevt, Eevt = gauss_data_2d
     correct = Correction((X, Y), E, Eu,
@@ -475,9 +479,11 @@ def test_corrections_2d(gauss_data_2d):
     y, x = np.histogram(Eevt, np.linspace(mean - 3 * std,
                                           mean + 3 * std,
                                           100))
-    x    = x[:-1] + np.diff(x) * 0.5
-    f    = fitf.fit(fitf.gauss, x, y, (1e5, mean, std))
-    assert f.chi2 < 3
+    x     = shift_to_bin_centers(x)
+    sigma = poisson_sigma(y)
+    f     = fitf.fit(fitf.gauss, x, y, (1e5, mean, std), sigma=sigma)
+
+    assert 0.75 < f.chi2 < 1.5
 
 
 def test_corrections_linear_interpolation():
