@@ -5,8 +5,8 @@ import sys
 import signal
 from pyqtgraph.Qt import QtGui, QtCore
 
-from . gui     import evdgui3D
-from . manager import evd_manager_3D
+from invisible_cities.viewer.gui     import EvdGui3D
+from invisible_cities.viewer.manager import EvdManager3D
 
 
 def sigintHandler(*args):
@@ -36,7 +36,7 @@ def main():
     manager = EvdManager3D(args.file)
 
     # Initialize the GUI, which knows about the manager
-    thisgui = evdgui3D(manager)
+    thisgui = EvdGui3D(manager)
     
     #init_ui builds the PyQt user interface
     thisgui.init_ui()
