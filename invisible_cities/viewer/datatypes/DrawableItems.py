@@ -2,9 +2,9 @@
 # If your class isn't here, it can't be drawn
 import collections
 
-from . MCHit   import mchit
-from . MCTrack import mctrack
-from . PMap    import pmap
+from . MCHit   import MCHit
+from . MCTrack import MCTrack
+from . PMap    import PMap
 
 class DrawableItems3D(object):
 
@@ -12,12 +12,12 @@ class DrawableItems3D(object):
     # If you make a new drawing class, add it here
 
     def __init__(self):
-        super(drawableItems3D, self).__init__()
+        super(DrawableItems3D, self).__init__()
         # items are stored as pointers to the classes (not instances)
         self._drawableClasses = collections.OrderedDict()
-        self._drawableClasses.update({'MCHits' : mchit})
-        self._drawableClasses.update({'MCTracks' : mctrack})
-        self._drawableClasses.update({'PMaps' : pmap})
+        self._drawableClasses.update({'MCHits' : MCHit})
+        self._drawableClasses.update({'MCTracks' : MCTrack})
+        self._drawableClasses.update({'PMaps' : PMap})
 
     def get_list_of_titles(self):
         return self._drawableClasses.keys()

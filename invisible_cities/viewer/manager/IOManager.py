@@ -10,7 +10,7 @@ class IOManager(object):
     the event viewer to access them randomly.
     """
     def __init__(self):
-        super(io_manager, self).__init__()
+        super(IOManager, self).__init__()
 
         # List of event numbers
         self._events = []

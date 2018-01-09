@@ -1,7 +1,7 @@
 from pyqtgraph.Qt import QtCore
 
 from . EventMeta import NEWMeta
-from . IoManager import IOManager
+from . IOManager import IOManager
 
 class EvdManagerBase(QtCore.QObject):
     """Basic manager class for interfacing the GUI and IOManager
@@ -80,8 +80,8 @@ class EvdManagerBase(QtCore.QObject):
         """Quick function to iterate to the next entry and redraw
         
         """
-        if self.entry() + 1 < self.n_entries():
-            self.go_to_entry(self.entry() + 1)
+        if self.io().entry() + 1 < self.n_entries():
+            self.go_to_entry(self.io().entry() + 1)
         else:
             print("On the last event, can't go to next.")
 
@@ -89,8 +89,8 @@ class EvdManagerBase(QtCore.QObject):
         """Quick function to iterate to the previous entry and redraw
         
         """
-        if self.entry != 0:
-            self.go_to_entry(self.entry() - 1)
+        if self.io().entry != 0:
+            self.go_to_entry(self.io().entry() - 1)
         else:
             print("On the first event, can't go to previous.")
 

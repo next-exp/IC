@@ -1,6 +1,6 @@
 import numpy
 
-from . Database import RecoBase3D
+from . DataBase import RecoBase3D
 from pyqtgraph  import opengl as gl
 
 class PMap(RecoBase3D):
@@ -11,8 +11,8 @@ class PMap(RecoBase3D):
     """
 
     def __init__(self):
-        super(pmap, self).__init__()
-        self._product_name = 'pmap'
+        super(PMap, self).__init__()
+        self._product_name = 'PMap'
         self._gl_voxel_mesh = None
         # X/Y/Z/Val information is cached for fast redrawing
         self._x = None
@@ -125,10 +125,10 @@ class PMap(RecoBase3D):
 
         mesh.setGLOptions("translucent")        
         self._gl_voxel_mesh = mesh
-        view_manager.getView().addItem(self._gl_voxel_mesh)
+        view_manager.get_view().addItem(self._gl_voxel_mesh)
 
 
-    def buildTriangleArray(self, view_manager):
+    def build_triangle_array(self, view_manager):
         """Build an array in the proper format for a gl mesh
         
         Each x/y/z/value point creates 8 vertexes, 12 faces, and 12 face colors
@@ -164,7 +164,7 @@ class PMap(RecoBase3D):
                                       axis=0)
 
             # print "({}, {}, {})".format(_pos[0], _pos[1], _pos[2])
-            this_verts = self.make_box(x, y, z, self._meta)
+            this_verts = self.make_box(x, y, z)
 
             if faces is None:
                 faces = self._faces_template
@@ -217,7 +217,7 @@ class PMap(RecoBase3D):
         return verts_box
 
 
-    def get_color(self, _lookupTable, _levels, _voxel_value ):
+    def get_color(self, lookupTable, levels, value ):
         """Use the lookup table and levels to interpolate a color
         
         Finds the value of the lookup table that is closest to the 
@@ -237,11 +237,11 @@ class PMap(RecoBase3D):
 
         if value >= lmax:
             return lookupTable[-1]
-        elif value < min:
+        elif value < lmin:
             return (0,0,0,0)
         else:
             # Map this value to the closest in the lookup table (255 items)
-            index = 255*(value - min) / (lmax - min)
+            index = 255*(value - lmin) / (lmax - lmin)
             return lookupTable[int(index)]
 
 

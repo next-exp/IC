@@ -9,8 +9,8 @@ class MCTrack(RecoBase3D):
     """docstring for mctrack"""
 
     def __init__(self):
-        super(mctrack, self).__init__()
-        self._product_name = 'mctrack'
+        super(MCTrack, self).__init__()
+        self._product_name = 'MCTrack'
         self._points = None
         self._vals = None
 
@@ -29,13 +29,11 @@ class MCTrack(RecoBase3D):
         """
         # Get the data from the file:
         mc_tracks = event.mctracks()
-        print(mc_tracks.keys())
 
         running_min = None
         running_max = None
         for track_id in mc_tracks:
             track = mc_tracks[track_id]
-            print(type(track))
             # construct a line for this track:
             points = track.hits
             x = numpy.zeros(len(points))

@@ -33,7 +33,7 @@ class RecoBase3D(DataBase):
     """
 
     def __init__(self):
-        super(recoBase3D, self).__init__()
+        super(RecoBase3D, self).__init__()
         self._drawnObjects = []
         self._min_coords = numpy.asarray((0,0,0))
         self._max_coords = numpy.asarray((0,0,0))
@@ -64,7 +64,7 @@ class RecoBase3D(DataBase):
         Arguments:
             view_manager {ViewManager3D} -- The view manager
         """
-        view = view_manager.get_iew()
+        view = view_manager.get_view()
         for item in self._drawnObjects:
             view.removeItem(item)
         # clear the list:

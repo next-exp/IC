@@ -1,7 +1,7 @@
 import numpy
 
 from pyqtgraph    import opengl as gl
-from . DataBase   import recoBase3D
+from . DataBase   import RecoBase3D
 
 class MCHit(RecoBase3D):
 
@@ -11,8 +11,8 @@ class MCHit(RecoBase3D):
     """
 
     def __init__(self):
-        super(mchit, self).__init__()
-        self._product_name = 'mchit'
+        super(MCHit, self).__init__()
+        self._product_name = 'MCHit'
         # OpenGL Object to draw:
         self._gl_points_collection = None
         # List of points to draw (cached for refreshing)
@@ -112,11 +112,11 @@ class MCHit(RecoBase3D):
 
         if value >= lmax:
             return lookupTable[-1]
-        elif value < min:
+        elif value < lmin:
             return (0,0,0,0)
         else:
             # Map this value to the closest in the lookup table (255 items)
-            index = 255*(value - min) / (lmax - min)
+            index = 255*(value - lmin) / (lmax - lmin)
             return lookupTable[int(index)]
 
 
@@ -130,7 +130,7 @@ class MCHit(RecoBase3D):
         """
 
         if self._gl_points_collection is not None:
-            view_manager.getView().removeItem(self._gl_points_collection)
+            view_manager.get_view().removeItem(self._gl_points_collection)
 
         self._gl_points_collection = None
         self._points = None

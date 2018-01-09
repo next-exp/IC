@@ -1,7 +1,7 @@
 from pyqtgraph.Qt import QtCore
 import numpy
 
-import datatypes
+from .. datatypes     import DrawableItems3D
 from . EvdManagerBase import EvdManagerBase
 from . EventMeta      import NEWMeta
 
@@ -22,7 +22,7 @@ class EvdManager3D(EvdManagerBase):
         super(EvdManager3D, self).__init__(_file)
 
         # This dictionary is the list of items that the viewer knows how to draw
-        self._drawableItems = datatypes.drawableItems3D()
+        self._drawableItems = DrawableItems3D()
         
         # The manager initialization ofo the base class does not call init_manager
         self.init_manager(_file[0])
@@ -145,3 +145,6 @@ class EvdManager3D(EvdManagerBase):
                 maxs.append(_cls.max())
 
             return numpy.min(mins, axis=0), numpy.max(maxs, axis=0)
+
+    def get_drawable_items(self):
+        return self._drawableItems.get_list_of_titles()
