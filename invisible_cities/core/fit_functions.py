@@ -10,6 +10,7 @@ import scipy.stats
 
 from . import core_functions as coref
 from .. evm.ic_containers    import FitFunction
+from ..icaro.hst_functions   import poisson_sigma
 
 def get_errors(cov):
     """
@@ -55,7 +56,7 @@ def get_chi2_and_pvalue(ydata, yfit, ndf, sigma=None):
     """
 
     if sigma is None:
-        sigma = ydata**0.5
+        sigma = poisson_sigma(ydata)
 
     chi2   = np.sum(((ydata - yfit) / sigma)**2)
     pvalue = scipy.stats.chi2.sf(chi2, ndf)
