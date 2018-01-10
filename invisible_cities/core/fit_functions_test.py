@@ -72,7 +72,7 @@ def test_fit_raises_ValueError_when_negative_or_zero_value_in_sigma(ey):
     def dummy(x, m):
         return m
 
-    x  = np.array([0  , 1])
+    x  = np.array([0  , 1  ])
     y  = np.array([4.1, 4.2])
     ey = np.full_like(y, ey)
 

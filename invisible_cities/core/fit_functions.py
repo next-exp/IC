@@ -130,28 +130,22 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
             kwargs["sigma"] = kwargs["sigma"][sel]
 
     sigma_r = kwargs.get("sigma", np.ones_like(y))
+    if np.any(sigma_r <= 0):
+        raise ValueError("Zero or negative value found in argument sigma. "
+                         "Errors must be greater than 0.")
 
-    abs_sigma = "sigma" in kwargs
+    kwargs['absolute_sigma'] = "sigma" in kwargs
 
-    vals, cov = scipy.optimize.curve_fit(func,
-                                         x, y,
-                                         seed,
-                                         absolute_sigma = abs_sigma,
-                                         **kwargs)
+    vals, cov = scipy.optimize.curve_fit(func, x, y, seed, **kwargs)
 
-    fitf  = lambda x: func(x, *vals)
-    fitx  = fitf(x)
+    fitf       = lambda x: func(x, *vals)
+    fitx       = fitf(x)
+    errors     = get_errors(cov)
+    ndof       = len(y) - len(vals)
+    chi2, pval = get_chi2_and_pvalue(y, fitx, ndof, sigma_r)
 
-    chi2, pval = get_chi2_and_pvalue(y                 ,
-                                     fitx              ,
-                                     len(y) - len(vals),
-                                     sigma_r           )
 
-    return FitFunction(fitf,
-                       vals,
-                       get_errors(cov),
-                       chi2,
-                       pval)
+    return FitFunction(fitf, vals, errors, chi2, pval)
 
 
 def profileX(xdata, ydata, nbins=100,
