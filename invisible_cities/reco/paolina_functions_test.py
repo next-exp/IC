@@ -89,7 +89,7 @@ def test_bounding_box(hits):
 
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
-    voxels = voxelize_hits(hits, voxel_dimensions)
+    voxels = voxelize_hits(hits, voxel_dimensions, strict_voxel_size=False)
 
     if not hits:
         assert voxels == []
