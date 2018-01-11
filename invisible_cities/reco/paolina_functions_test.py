@@ -134,10 +134,16 @@ def test_voxelize_hits_respects_voxel_dimensions(hits, requested_voxel_dimension
                 np.isclose(off_by, unit)).all()
 
 @given(bunch_of_hits, box_sizes)
-def test_voxelize_hits_gives_voxels_correct_size(hits, requested_voxel_dimensions):
+def test_voxelize_hits_gives_maximum_voxels_size(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     for v in voxels:
-        assert (v.size != requested_voxel_dimensions).all()
+        assert (v.size <= requested_voxel_dimensions).all()
+
+@given(bunch_of_hits, box_sizes)
+def test_voxelize_hits_strict_gives_required_voxels_size(hits, requested_voxel_dimensions):
+    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=True)
+    for v in voxels:
+        assert v.size == approx(requested_voxel_dimensions)
 
 
 @given(bunch_of_hits, box_sizes)
