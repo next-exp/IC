@@ -9,9 +9,9 @@ from argparse import Namespace
 
 import numpy  as np
 
-from .. io.mc_io               import mc_track_writer
-from .. io.new_pmaps_io        import pmap_writer
-from .. io.run_and_event_io    import run_and_event_writer
+from .. io.mc_io            import mc_track_writer
+from .. io.pmaps_io         import pmap_writer
+from .. io.run_and_event_io import run_and_event_writer
 
 from .  base_cities  import PmapCity
 from .  base_cities  import EventLoop

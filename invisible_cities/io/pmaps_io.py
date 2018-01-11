@@ -4,11 +4,11 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
-from .. evm .new_pmaps     import  PMTResponses
-from .. evm .new_pmaps     import SiPMResponses
-from .. evm .new_pmaps     import S1
-from .. evm .new_pmaps     import S2
-from .. evm .new_pmaps     import PMap
+from .. evm .pmaps         import  PMTResponses
+from .. evm .pmaps         import SiPMResponses
+from .. evm .pmaps         import S1
+from .. evm .pmaps         import S2
+from .. evm .pmaps         import PMap
 from .. evm                import nh5     as table_formats
 from .. reco.tbl_functions import filters as tbl_filters
 

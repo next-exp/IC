@@ -1,6 +1,6 @@
-from ..evm.new_pmaps      import  PMTResponses
-from ..evm.new_pmaps      import SiPMResponses
-from . new_peak_functions import rebin_times_and_waveforms
+from ..evm.pmaps      import  PMTResponses
+from ..evm.pmaps      import SiPMResponses
+from . peak_functions import rebin_times_and_waveforms
 
 
 def rebin_peak(peak, rebin_factor):

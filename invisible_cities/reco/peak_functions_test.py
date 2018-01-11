@@ -17,13 +17,13 @@ from ..core.testing_utils     import assert_Peak_equality
 from ..core.testing_utils     import assert_PMap_equality
 from ..core.system_of_units_c import units
 from ..core.fit_functions     import gauss
-from ..evm .new_pmaps         import PMTResponses
-from ..evm .new_pmaps         import SiPMResponses
-from ..evm .new_pmaps         import S1
-from ..evm .new_pmaps         import S2
-from ..evm .new_pmaps         import PMap
+from ..evm .pmaps             import PMTResponses
+from ..evm .pmaps             import SiPMResponses
+from ..evm .pmaps             import S1
+from ..evm .pmaps             import S2
+from ..evm .pmaps             import PMap
 from ..types.ic_types_c       import minmax
-from .                        import new_peak_functions as pf
+from .                        import peak_functions as pf
 
 
 wf_min =   0

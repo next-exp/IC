@@ -23,11 +23,11 @@ from .. core.exceptions         import UnknownRWF
 from .. core.exceptions         import XYRecoFail
 from .. core.exceptions         import UnknownParameter
 from .. core.system_of_units_c  import units
-from .. core.random_sampling    import NoiseSampler     as SiPMsNoiseSampler
+from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
 from .. database import load_db
 
-from .. io                      import new_pmaps_io    as pio
+from .. io                      import pmaps_io    as pio
 from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
 from .. io.mc_io                import mc_track_writer
@@ -35,8 +35,8 @@ from .. io.mc_io                import mc_track_writer
 from .. reco                    import calib_sensors_functions  as csf
 from .. reco                    import paolina_functions        as paf
 from .. reco                    import sensor_functions         as sf
-from .. reco                    import new_peak_functions       as pkf
-from .. reco                    import new_pmaps_functions      as pmf
+from .. reco                    import peak_functions           as pkf
+from .. reco                    import pmaps_functions          as pmf
 from .. reco                    import tbl_functions            as tbl
 from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco.xy_algorithms      import corona
@@ -54,7 +54,7 @@ from .. evm.event_model         import HitCollection
 from .. evm.event_model         import Hit
 from .. evm.event_model         import Cluster
 from .. evm.event_model         import Voxel
-from .. evm.new_pmaps           import S2
+from .. evm.pmaps               import S2
 from .. evm.nh5                 import DECONV_PARAM
 
 from .. sierpe                  import blr

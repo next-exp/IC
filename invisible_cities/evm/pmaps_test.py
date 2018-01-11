@@ -18,11 +18,11 @@ from .. core.testing_utils  import assert_SensorResponses_equality
 from .. core.testing_utils  import assert_Peak_equality
 from .. core.testing_utils  import previous_float
 
-from .  new_pmaps import  PMTResponses
-from .  new_pmaps import SiPMResponses
-from .  new_pmaps import S1
-from .  new_pmaps import S2
-from .  new_pmaps import PMap
+from .  pmaps import  PMTResponses
+from .  pmaps import SiPMResponses
+from .  pmaps import S1
+from .  pmaps import S2
+from .  pmaps import PMap
 
 
 wf_min =   0
