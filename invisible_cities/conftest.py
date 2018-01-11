@@ -32,6 +32,11 @@ def ICDIR():
 
 
 @pytest.fixture(scope = 'session')
+def ICDATADIR(ICDIR):
+    return os.path.join(ICDIR, "database/test_data/")
+
+
+@pytest.fixture(scope = 'session')
 def irene_diomira_chain_tmpdir(tmpdir_factory):
     return tmpdir_factory.mktemp('irene_diomira_tests')
 
@@ -42,8 +47,8 @@ def config_tmpdir(tmpdir_factory):
 
 
 @pytest.fixture(scope='session')
-def example_blr_wfs_filename(ICDIR):
-    return os.path.join(ICDIR, "database/test_data/", "blr_examples.h5")
+def example_blr_wfs_filename(ICDATADIR):
+    return os.path.join(ICDATADIR, "blr_examples.h5")
 
 
 @pytest.fixture(scope  = 'session',
@@ -51,26 +56,20 @@ def example_blr_wfs_filename(ICDIR):
                           'electrons_511keV_z250_RWF.h5',
                           'electrons_1250keV_z250_RWF.h5',
                           'electrons_2500keV_z250_RWF.h5'])
-def electron_RWF_file(request, ICDIR):
-    return os.path.join(ICDIR,
-                        'database/test_data',
-                        request.param)
+def electron_RWF_file(request, ICDATADIR):
+    return os.path.join(ICDATADIR, request.param)
 
 
 @pytest.fixture(scope  = 'session',
                 params = ['electrons_40keV_z250_MCRD.h5'])
-def electron_MCRD_file(request, ICDIR):
-    return os.path.join(ICDIR,
-                        'database/test_data',
-                        request.param)
+def electron_MCRD_file(request, ICDATADIR):
+    return os.path.join(ICDATADIR, request.param)
 
 
 @pytest.fixture(scope  = 'session',
                 params = ['dst_NEXT_v1_00_05_Tl_ACTIVE_140_0_7bar_PMP_2.h5'])
-def thallium_DST_file(request, ICDIR):
-    return os.path.join(ICDIR,
-                        'database/test_data',
-                        request.param)
+def thallium_DST_file(request, ICDATADIR):
+    return os.path.join(ICDATADIR, request.param)
 
 
 @pytest.fixture(scope='session')
@@ -152,11 +151,9 @@ def s2si_dataframe_converted():
 
 
 @pytest.fixture(scope='session')
-def KrMC_pmaps(ICDIR):
-    test_file = os.path.join(ICDIR,
-                             "database",
-                             "test_data",
-                             "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_PMP_10evt.h5")
+def KrMC_pmaps(ICDATADIR):
+    test_file = "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_PMP_10evt_new.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
     S1_evts   = [15, 17, 19, 25, 27]
     S2_evts   = [15, 17, 19, 21, 23, 25, 27, 29, 31, 33]
     S2Si_evts = [15, 17, 19, 21, 23, 25, 27, 29, 31, 33]
@@ -170,11 +167,10 @@ def KrMC_pmaps(ICDIR):
 
 
 @pytest.fixture(scope='session')
-def KrMC_kdst(ICDIR):
-    test_file = os.path.join(ICDIR,
-                             "database",
-                             "test_data",
-                             "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_KDST_10evt.h5")
+def KrMC_kdst(ICDATADIR):
+    test_file = "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_KDST_10evt_new.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+
     group = "DST"
     node  = "Events"
 
@@ -266,11 +262,10 @@ def KrMC_kdst(ICDIR):
 
 
 @pytest.fixture(scope='session')
-def KrMC_hdst(ICDIR):
-    test_file = os.path.join(ICDIR,
-                             "database",
-                             "test_data",
-                             "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_HDST_10evt.h5")
+def KrMC_hdst(ICDATADIR):
+    test_file = "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_HDST_10evt_new.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+
     group = "RECO"
     node  = "Events"
 
@@ -400,35 +395,37 @@ def KrMC_true_hits(KrMC_pmaps, KrMC_hdst):
 
 
 @pytest.fixture(scope='session')
-def TlMC_hits(ICDIR):
+def TlMC_hits(ICDATADIR):
     # Input file was produced to contain exactly 15 S1 and 50 S2.
-    hits_file_name = ICDIR + "/database/test_data/dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
+    hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
+    hits_file_name = os.path.join(ICDATADIR, hits_file_name)
     hits = load_hits(hits_file_name)
     return hits
 
 
 @pytest.fixture(scope='session')
-def TlMC_hits_skipping_NN(ICDIR):
+def TlMC_hits_skipping_NN(ICDATADIR):
     # Input file was produced to contain exactly 15 S1 and 50 S2.
-    hits_file_name = ICDIR + "/database/test_data/dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
+    hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
+    hits_file_name = os.path.join(ICDATADIR, hits_file_name)
     hits = load_hits_skipping_NN(hits_file_name)
     return hits
 
 
 @pytest.fixture(scope='session')
-def corr_toy_data(ICDIR):
+def corr_toy_data(ICDATADIR):
     x = np.arange( 100, 200)
     y = np.arange(-200,   0)
     E = np.arange( 1e4, 1e4 + x.size*y.size).reshape(x.size, y.size)
     U = np.arange( 1e2, 1e2 + x.size*y.size).reshape(x.size, y.size)
     N = np.ones_like(U)
 
-    corr_filename = os.path.join(ICDIR, "database/test_data/toy_corr.h5")
+    corr_filename = os.path.join(ICDATADIR, "toy_corr.h5")
     return corr_filename, (x, y, E, U, N)
 
 
 @pytest.fixture(scope='session')
-def hits_toy_data(ICDIR):
+def hits_toy_data(ICDATADIR):
     npeak = np.array   ([0]*25 + [1]*30 + [2]*35 + [3]*10)
     nsipm = np.arange  (1000, 1100)
     x     = np.linspace( 150,  250, 100)
@@ -439,25 +436,25 @@ def hits_toy_data(ICDIR):
     q     = np.linspace( 1e3,  1e3, 100)
     e     = np.linspace( 2e3,  1e4, 100)
 
-    hits_filename = os.path.join(ICDIR, "database/test_data/toy_hits.h5")
+    hits_filename = os.path.join(ICDATADIR, "toy_hits.h5")
     return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e)
 
 
 @pytest.fixture(scope='session')
-def Kr_MC_4446_load_s1_s2_s2si(ICDIR):
-    ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_6evt.h5'
+def Kr_MC_4446_load_s1_s2_s2si(ICDATADIR):
+    ipmt_pmap_path = os.path.join(ICDATADIR, "Kr_MC_ipmt_pmaps_6evt.h5")
     Kr_MC_4446_load_pmaps = load_pmaps(ipmt_pmap_path)
     return Kr_MC_4446_load_pmaps
 
 
 @pytest.fixture(scope='session')
-def Kr_MC_4446_load_pmaps_with_ipmt(ICDIR):
-    ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_6evt.h5'
+def Kr_MC_4446_load_pmaps_with_ipmt(ICDATADIR):
+    ipmt_pmap_path = os.path.join(ICDATADIR, "Kr_MC_ipmt_pmaps_6evt.h5")
     Kr_MC_4446_load_pmaps_with_ipmt = load_pmaps_with_ipmt(ipmt_pmap_path)
     return Kr_MC_4446_load_pmaps_with_ipmt
 
 
 @pytest.fixture(scope='session')
-def Kr_pmaps_run4628(ICDIR):
-    filename = ICDIR + 'database/test_data/Kr_pmaps_run4628.h5'
+def Kr_pmaps_run4628(ICDATADIR):
+    filename = os.path.join(ICDATADIR, "Kr_pmaps_run4628.h5")
     return filename
