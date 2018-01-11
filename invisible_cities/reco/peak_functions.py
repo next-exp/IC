@@ -11,11 +11,11 @@ last revised: @abotas & @gonzaponte. Dec 1st 2017
 import numpy        as np
 
 from .. core.system_of_units_c import units
-from .. evm .new_pmaps         import S1
-from .. evm .new_pmaps         import S2
-from .. evm .new_pmaps         import PMap
-from .. evm .new_pmaps         import PMTResponses
-from .. evm .new_pmaps         import SiPMResponses
+from .. evm .pmaps             import S1
+from .. evm .pmaps             import S2
+from .. evm .pmaps             import PMap
+from .. evm .pmaps             import PMTResponses
+from .. evm .pmaps             import SiPMResponses
 
 
 def indices_and_wf_above_threshold(wf, thr):

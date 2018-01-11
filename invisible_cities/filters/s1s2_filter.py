@@ -6,8 +6,8 @@ from typing    import Sequence
 import numpy as np
 
 from .. types.ic_types_c import minmax
-from .. evm  .new_pmaps  import _Peak
-from .. evm  .new_pmaps  import PMap
+from .. evm  .pmaps      import _Peak
+from .. evm  .pmaps      import PMap
 
 
 class S12SelectorOutput:

@@ -4,13 +4,13 @@ from hypothesis            import given
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
 
-from .. evm .new_pmaps_test import peaks
-from .. evm .new_pmaps      import  PMTResponses
-from .. evm .new_pmaps      import SiPMResponses
+from .. evm .pmaps_test     import peaks
+from .. evm .pmaps          import  PMTResponses
+from .. evm .pmaps          import SiPMResponses
 from .. core.testing_utils  import assert_SensorResponses_equality
 from .. core.testing_utils  import assert_Peak_equality
-from .                      import new_peak_functions  as pkf
-from .                      import new_pmaps_functions as pmf
+from .                      import peak_functions  as pkf
+from .                      import pmaps_functions as pmf
 
 
 @given(peaks())

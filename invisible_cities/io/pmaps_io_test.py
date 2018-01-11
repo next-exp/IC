@@ -11,9 +11,9 @@ import numpy  as np
 from ..core.testing_utils import assert_PMap_equality
 from ..core.testing_utils import assert_dataframes_equal
 from ..core.testing_utils import exactly
-from ..evm .new_pmaps     import S1
-from ..evm .new_pmaps     import S2
-from .                    import new_pmaps_io            as pmpio
+from ..evm .pmaps         import S1
+from ..evm .pmaps         import S2
+from .                    import pmaps_io as pmpio
 
 
 pmaps_data = namedtuple("pmaps_data", """evt_numbers      peak_numbers
