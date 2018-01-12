@@ -125,7 +125,7 @@ def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
 
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_respects_voxel_dimensions(hits, requested_voxel_dimensions):
-    voxels = voxelize_hits(hits, requested_voxel_dimensions)
+    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=True)
     unit   =                     requested_voxel_dimensions
     for v1, v2 in combinations(voxels, 2):
         distance_between_voxels = np.array(v2.XYZ) - np.array(v1.XYZ)
