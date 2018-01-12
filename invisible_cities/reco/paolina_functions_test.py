@@ -307,6 +307,7 @@ def test_length_cuts_corners(contiguity, expected_length):
     vox_size = np.array([1,1,1])
     voxels = [Voxel(x,y,z, 1, vox_size) for x,y,z in voxel_spec]
     tracks = make_track_graphs(voxels, contiguity=contiguity)
+
     assert len(tracks) == 1
     track_length = length(tracks[0])
     assert track_length == approx(expected_length)
@@ -346,5 +347,6 @@ def test_contiguity(proximity, contiguity, are_neighbours):
     expected_number_of_tracks = 1 if are_neighbours else 2
     voxels = [Voxel(x,y,z, 1, np.array([1,1,1])) for x,y,z in voxel_spec]
     tracks = make_track_graphs(voxels, contiguity=contiguity)
+
     assert len(tracks) == expected_number_of_tracks
     
