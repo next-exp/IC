@@ -196,20 +196,18 @@ def merge_tracks(tracks    : Sequence[Graph],
     for t1, t2 in combinations(tracks, 2):
         if len(t1.nodes()) < min_nodes or len(t2.nodes()) < min_nodes:
             continue
-        found = False
         voxel_pairs = product(t1.nodes(), t2.nodes())
         for (v1, v2) in voxel_pairs:
-            if not found:
-                if np.all(abs((v1.pos - v2.pos) / vox_size) < 2.5):
-                    found = True
-                    new_pos = (v1.pos + v2.pos) / 2.
-                    new_pos = vox_size * np.round(new_pos / vox_size)
-                    new_voxel = Voxel(new_pos[0], new_pos[1], new_pos[2], 0., vox_size)
-                    if not (new_voxel in new_voxels_dict.keys()):
-                        new_energy = (v1.energy + v2.energy) * (1 - factor)
-                        new_voxels_dict[new_voxel] = new_energy
-                        v1.energy = v1.energy * factor
-                        v2.energy = v2.energy * factor
+            if np.all(abs((v1.pos - v2.pos) / vox_size) < 2.5):
+                new_pos = (v1.pos + v2.pos) / 2.
+                new_pos = vox_size * np.round(new_pos / vox_size)
+                new_voxel = Voxel(new_pos[0], new_pos[1], new_pos[2], 0., vox_size)
+                if not (new_voxel in new_voxels_dict.keys()):
+                    new_energy = (v1.energy + v2.energy) * (1 - factor)
+                    new_voxels_dict[new_voxel] = new_energy
+                    v1.energy = v1.energy * factor
+                    v2.energy = v2.energy * factor
+                break
 
     joint_voxels = []
     for t in tracks:

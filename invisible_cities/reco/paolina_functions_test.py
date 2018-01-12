@@ -341,34 +341,33 @@ def test_contiguity(proximity, contiguity, are_neighbours):
 
 
 def test_energy_conservation_in_merging():
-    vox_size = np.array([1,1,1],dtype=np.int16)
-    voxel_spec = ((1, 1, 0, 5),
-                  (1, 2, 0, 5),
-                  (1, 4, 0, 5),
-                  (1, 5, 0, 5),
-                  (3, 2, 0, 5),
-                  (4, 2, 0, 5)
+    vox_size = np.array([1,1,1],dtype=np.float64)
+    voxel_spec = ((1, 1, 0,     5),
+                  (1, 2, 0,     5),
+                  (1, 4, 0,     5),
+                  (1, 5, 0,     5),
+                  (3, 2, 0,     5),
+                  (4, 2, 0,     5)
     )
     voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
     tracks  = make_track_graphs(voxels, vox_size)
     merged_tracks = merge_tracks(tracks, vox_size, min_nodes=2)
 
-    sum_e = 0.
-    for t in merged_tracks:
-        for v in t.nodes():
-            sum_e += v.energy
-    sum_e_vox = sum([vox.E for vox in voxels])
+    sum_e = sum( sum(v.energy for v in t.nodes())
+                 for t in merged_tracks)
+
+    sum_e_vox = sum(vox.E for vox in voxels)
 
     assert sum_e == approx(sum_e_vox)
 
 def test_short_tracks_no_merge():
-    vox_size = np.array([1,1,1],dtype=np.int16)
-    voxel_spec = ((1, 1, 2, 5),
-                  (1, 1, 3, 5),
-                  (1, 1, 0, 5),
-                  (1, 2, 0, 5),
-                  (1, 4, 0, 5),
-                  (3, 1, 0, 5)
+    vox_size = np.array([1,1,1],dtype=np.float64)
+    voxel_spec = ((1, 1, 2,     5),
+                  (1, 1, 3,     5),
+                  (1, 1, 0,     5),
+                  (1, 2, 0,     5),
+                  (1, 4, 0,     5),
+                  (3, 1, 0,     5)
     )
     voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
     tracks  = make_track_graphs(voxels, vox_size)
@@ -377,15 +376,15 @@ def test_short_tracks_no_merge():
     assert len(merged_tracks) == len(tracks) -1
 
 def test_new_voxels_only_appear_once():
-    vox_size = np.array([1,1,1],dtype=np.int16)
-    voxel_spec = ((1, 1, 0, 5),
-                  (1, 2, 0, 5),
-                  (1, 4, 0, 5),
-                  (1, 5, 0, 5),
-                  (3, 2, 0, 5),
-                  (4, 2, 0, 5),
-                  (3, 4, 0, 5),
-                  (4, 4, 0, 5)
+    vox_size = np.array([1,1,1],dtype=np.float64)
+    voxel_spec = ((1, 1, 0,     5),
+                  (1, 2, 0,     5),
+                  (1, 4, 0,     5),
+                  (1, 5, 0,     5),
+                  (3, 2, 0,     5),
+                  (4, 2, 0,     5),
+                  (3, 4, 0,     5),
+                  (4, 4, 0,     5)
     )
     voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
     tracks  = make_track_graphs(voxels, vox_size)
