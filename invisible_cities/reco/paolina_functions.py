@@ -75,7 +75,6 @@ class Contiguity(Enum):
 
 
 def make_track_graphs(voxels           : Voxel,
-                      voxel_dimensions : np.ndarray,
                       contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Graph]:
     """Create a graph where the voxels are the nodes and the edges are any
     pair of neighbour voxel. Two voxels are considered to be
@@ -84,6 +83,7 @@ def make_track_graphs(voxels           : Voxel,
     """
 
     def neighbours(va : Voxel, vb : Voxel) -> bool:
+        voxel_dimensions = va.size
         return np.linalg.norm((va.pos - vb.pos) / voxel_dimensions) < contiguity.value
 
     voxel_graph = nx.Graph()
@@ -172,7 +172,8 @@ def make_tracks(evt_number       : float,
                 blob_radius      : float = 30 * units.mm) -> TrackCollection:
     """Make a track collection."""
     tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
-    track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
+    track_graphs = make_track_graphs(voxels) # type: Sequence[Graph]
+#    track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
     for trk in track_graphs:
         a, b, voxels_a, voxels_b    = compute_blobs(trk, blob_radius)
         blob_a = Blob(a, voxels_a) # type: Blob
