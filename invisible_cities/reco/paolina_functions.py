@@ -174,7 +174,8 @@ def make_tracks(evt_number       : float,
                 blob_radius      : float = 30 * units.mm) -> TrackCollection:
     """Make a track collection."""
     tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
-    track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
+    track_graphs = make_track_graphs(voxels) # type: Sequence[Graph]
+#    track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
     for trk in track_graphs:
         a, b, voxels_a, voxels_b    = compute_blobs(trk, blob_radius)
         blob_a = Blob(a, voxels_a) # type: Blob
