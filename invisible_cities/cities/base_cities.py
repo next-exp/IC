@@ -428,16 +428,16 @@ class DeconvolutionCity(RawCity):
        Since a Deconvolution city reads RWF, it is also a RawCity.
     """
 
-    parameters = tuple("""raw_data_type n_baseline thr_trigger acum_discharge_length""".split())
+    parameters = tuple("""raw_data_type n_baseline thr_trigger accum_discharge_length""".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
         conf = self.conf
 
         # BLR parameters
-        self.n_baseline            = conf.n_baseline
-        self.thr_trigger           = conf.thr_trigger
-        self.acum_discharge_length = conf.acum_discharge_length
+        self.n_baseline             = conf.n_baseline
+        self.thr_trigger            = conf.thr_trigger
+        self.accum_discharge_length = conf.accum_discharge_length
 
     def write_deconv_params(self, ofile):
         group = ofile.create_group(ofile.root, "DeconvParams")
@@ -449,9 +449,9 @@ class DeconvolutionCity(RawCity):
                                    tbl.filters(self.compression))
 
         row = table.row
-        row["N_BASELINE"]            = self.n_baseline
-        row["THR_TRIGGER"]           = self.thr_trigger
-        row["ACUM_DISCHARGE_LENGTH"] = self.acum_discharge_length
+        row["N_BASELINE"]             = self.n_baseline
+        row["THR_TRIGGER"]            = self.thr_trigger
+        row["ACCUM_DISCHARGE_LENGTH"] = self.accum_discharge_length
         table.flush()
 
     def deconv_pmt(self, RWF):
@@ -459,10 +459,10 @@ class DeconvolutionCity(RawCity):
         return blr.deconv_pmt(RWF,
                               self.coeff_c,
                               self.coeff_blr,
-                              pmt_active            = self.pmt_active,
-                              n_baseline            = self.n_baseline,
-                              thr_trigger           = self.thr_trigger,
-                              acum_discharge_length = self.acum_discharge_length)
+                              pmt_active             = self.pmt_active,
+                              n_baseline             = self.n_baseline,
+                              thr_trigger            = self.thr_trigger,
+                              accum_discharge_length = self.accum_discharge_length)
 
 
 class CalibratedCity(DeconvolutionCity):
