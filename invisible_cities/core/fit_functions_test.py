@@ -22,7 +22,7 @@ from .testing_utils import random_length_float_arrays
 from . import core_functions as core
 from . import  fit_functions as fitf
 
-from ..icaro.hst_functions import poisson_sigma
+from . stat_functions import poisson_sigma
 
 
 def test_get_errors():
