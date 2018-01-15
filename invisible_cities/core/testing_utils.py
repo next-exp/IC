@@ -117,3 +117,63 @@ def assert_PMap_equality(pmp0, pmp1):
 
     for s2_0, s2_1 in zip(pmp0.s2s, pmp1.s2s):
         assert_Peak_equality(s2_0, s2_1)
+
+
+def assert_xy_equality(xy1, xy2):
+    assert xy1.x == approx(xy2.x)
+    assert xy1.y == approx(xy2.y)
+
+
+def assert_xyz_equality(xyz1, xyz2):
+    assert_xy_equality(xyz1, xyz2)
+    assert xyz1.z == approx(xyz2.z)
+
+
+def assert_xyzE_equality(xyze1, xyze2):
+    assert_xyz_equality(xyze1, xyze2)
+    assert xyze1.E == approx(xyze2.E)
+
+
+def assert_cluster_equality(cluster1, cluster2):
+    assert cluster1.Q      == approx (cluster2.Q     )
+    assert cluster1.x      == approx (cluster2.x     )
+    assert cluster1.y      == approx (cluster2.y     )
+    assert cluster1.x_var  == approx (cluster2.x_var )
+    assert cluster1.y_var  == approx (cluster2.y_var )
+    assert cluster1.n_sipm == exactly(cluster2.n_sipm)
+
+
+def assert_hit_equality(hit1, hit2):
+    assert_xyzE_equality   (hit1        , hit2        )
+    assert_cluster_equality(hit1.cluster, hit2.cluster)
+    assert hit1.peak_no == exactly(hit2.peak_no)
+
+
+def assert_space_element_equality(se1, se2):
+    assert_xyzE_equality(se1, se2)
+    assert se1.size   == approx(se2.size  )
+    assert se1.hit_es == approx(se2.hit_es)
+
+
+def assert_voxel_collection_equality(track1, track2):
+    assert len(track1.voxels) == len(track2.voxels)
+    for v1, v2 in zip(track1.voxels, track2.voxels):
+        assert_space_element_equality(v1, v2)
+
+
+def assert_blob_equality(blob1, blob2):
+    assert_voxel_collection_equality(blob1, blob2)
+    assert_xyz_equality(blob1.seed, blob2.seed)
+    assert blob1.size == approx(blob2.size)
+
+
+def assert_track_equality(track1, track2):
+    assert_voxel_collection_equality(track1, track2)
+
+    assert len(track1.blobs) == len(track2.blobs)
+    for b1, b2 in zip(track1.blobs, track2.blobs):
+        assert_blob_equality(b1, b2)
+
+    assert len(track1.extrema) == len(track2.extrema)
+    for e1, e2 in zip(track1.extrema, track2.extrema):
+        assert_xyz_equality(e1, e2)
