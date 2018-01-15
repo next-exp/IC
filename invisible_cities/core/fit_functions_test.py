@@ -5,6 +5,7 @@ Tests for fit_functions
 import numpy as np
 from pytest import mark
 from pytest import approx
+from pytest import raises
 from flaky  import flaky
 
 from numpy.testing import assert_array_equal
@@ -64,6 +65,19 @@ def test_get_chi2_and_pvalue_gauss_errors(mean, sigma):
     chi2, pvalue = fitf.get_chi2_and_pvalue(ydata, mean, Nevt-1, sigma)
 
     assert chi2 == approx(1, rel=1e-2)
+
+
+@mark.parametrize("ey", (0, -1, -100))
+def test_fit_raises_ValueError_when_negative_or_zero_value_in_sigma(ey):
+    def dummy(x, m):
+        return m
+
+    x  = np.array([0  , 1  ])
+    y  = np.array([4.1, 4.2])
+    ey = np.full_like(y, ey)
+
+    with raises(ValueError):
+        fitf.fit(dummy, x, y, seed=(4,), sigma=ey)
 
 
 def test_chi2_str_line():
