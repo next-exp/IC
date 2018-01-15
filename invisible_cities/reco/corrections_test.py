@@ -12,7 +12,7 @@ from ..reco .corrections   import LifetimeXYCorrection
 from ..reco .corrections   import opt_nearest
 from ..reco .corrections   import opt_linear
 from ..reco .corrections   import opt_cubic
-from ..icaro.hst_functions import poisson_sigma
+from ..core.stat_functions import poisson_sigma
 from ..icaro.hst_functions import shift_to_bin_centers
 
 from numpy.testing import assert_allclose
