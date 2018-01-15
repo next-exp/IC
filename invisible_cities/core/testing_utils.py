@@ -31,6 +31,20 @@ def exactly(value, **kwargs):
     return approx(value, rel=0, abs=0, **kwargs)
 
 
+def previous_float(x):
+    """
+    Return the next float towards -inf.
+    """
+    return np.nextafter(x, -np.inf)
+
+
+def next_float(x):
+    """
+    Return the next float towards +inf.
+    """
+    return np.nextafter(x, +np.inf)
+
+
 def float_arrays(size       =   100,
                  min_value  = -1e20,
                  max_value  = +1e20,
@@ -78,3 +92,28 @@ def assert_dataframes_equal(df1, df2, check_types=True, **kwargs):
 
 def assert_dataframes_close(df1, df2, check_types=True, **kwargs):
     _compare_dataframes(assert_allclose, df1, df2, check_types, **kwargs)
+
+
+def assert_SensorResponses_equality(sr0, sr1):
+    # This is sufficient to assert equality since all of SensorResponses other
+    # properties depend solely on .all_waveforms, and all of those properties
+    # are tested.
+    assert sr0.ids           == exactly(sr1.ids)
+    assert sr0.all_waveforms == approx(sr1.all_waveforms)
+
+
+def assert_Peak_equality(pk0, pk1):
+    assert pk0.times == approx(pk1.times)
+    assert_SensorResponses_equality(pk0.pmts , pk1.pmts )
+    assert_SensorResponses_equality(pk0.sipms, pk1.sipms)
+
+
+def assert_PMap_equality(pmp0, pmp1):
+    assert len(pmp0.s1s) == len(pmp1.s1s)
+    assert len(pmp0.s2s) == len(pmp1.s2s)
+
+    for s1_0, s1_1 in zip(pmp0.s1s, pmp1.s1s):
+        assert_Peak_equality(s1_0, s1_1)
+
+    for s2_0, s2_1 in zip(pmp0.s2s, pmp1.s2s):
+        assert_Peak_equality(s2_0, s2_1)
