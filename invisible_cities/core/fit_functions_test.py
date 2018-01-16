@@ -3,26 +3,24 @@ Tests for fit_functions
 """
 
 import numpy as np
-from pytest import mark
-from pytest import approx
-from pytest import raises
-from flaky  import flaky
 
+from pytest        import mark
+from pytest        import approx
+from pytest        import raises
+from flaky         import flaky
 from numpy.testing import assert_array_equal
 from numpy.testing import assert_allclose
 
 from hypothesis            import given
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
+from . testing_utils       import float_arrays
+from . testing_utils       import FLOAT_ARRAY
+from . testing_utils       import random_length_float_arrays
 
-from .testing_utils import float_arrays
-from .testing_utils import FLOAT_ARRAY
-from .testing_utils import random_length_float_arrays
-
-from . import core_functions as core
-from . import  fit_functions as fitf
-
-from ..icaro.hst_functions import poisson_sigma
+from .                import core_functions as core
+from .                import  fit_functions as fitf
+from . stat_functions import poisson_sigma
 
 
 def test_get_errors():
