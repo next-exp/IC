@@ -2,18 +2,18 @@ from collections import namedtuple
 
 import numpy as np
 
-from ..core                import fit_functions as fitf
-from ..core .exceptions    import ParameterNotSet
-from ..reco .corrections   import Correction
-from ..reco .corrections   import Fcorrection
-from ..reco .corrections   import LifetimeCorrection
-from ..reco .corrections   import LifetimeRCorrection
-from ..reco .corrections   import LifetimeXYCorrection
-from ..reco .corrections   import opt_nearest
-from ..reco .corrections   import opt_linear
-from ..reco .corrections   import opt_cubic
-from ..icaro.hst_functions import poisson_sigma
-from ..icaro.hst_functions import shift_to_bin_centers
+from .. core                 import fit_functions as fitf
+from .. core .stat_functions import poisson_sigma
+from .. core .exceptions     import ParameterNotSet
+from .. icaro.hst_functions  import shift_to_bin_centers
+from .. reco .corrections    import Correction
+from .. reco .corrections    import Fcorrection
+from .. reco .corrections    import LifetimeCorrection
+from .. reco .corrections    import LifetimeRCorrection
+from .. reco .corrections    import LifetimeXYCorrection
+from .. reco .corrections    import opt_nearest
+from .. reco .corrections    import opt_linear
+from .. reco .corrections    import opt_cubic
 
 from numpy.testing import assert_allclose
 from pytest        import fixture
