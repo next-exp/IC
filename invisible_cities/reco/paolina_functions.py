@@ -40,32 +40,24 @@ def voxelize_hits(hits             : Sequence[BHit],
     if not hits:
         raise NoHits
     hlo, hhi = bounding_box(hits)
-    bounding_box_centre = (hhi + hlo) / 2
-    bounding_box_size   =  hhi - hlo
-    number_of_voxels = np.ceil(bounding_box_size / voxel_dimensions).astype(int)
-    number_of_voxels = np.clip(number_of_voxels, a_min=1, a_max=None)
-    voxel_edges_lo = bounding_box_centre - number_of_voxels * voxel_dimensions / 2
-    voxel_edges_hi = bounding_box_centre + number_of_voxels * voxel_dimensions / 2
-
-    # Expand the voxels a tiny bit, in order to include hits which
-    # fall within the margin of error of the voxel bounding box.
-    eps = 3e-12 # geometric mean of range that seems to work
-    voxel_edges_lo -= eps
-    voxel_edges_hi += eps
-
+    hranges = hhi - hlo
+    bins = np.ceil(hranges / voxel_dimensions).astype(int)
+    nonzero_bins = np.clip(bins, a_min=1, a_max=None)
     hit_positions = np.array([h.pos for h in hits])
     hit_energies  =          [h.E   for h in hits]
-    E, edges = np.histogramdd(hit_positions,
-                              bins    = number_of_voxels,
-                              range   = tuple(zip(voxel_edges_lo, voxel_edges_hi)),
-                              weights = hit_energies)
+    E, edges = np.histogramdd(hit_positions, bins=nonzero_bins, weights=hit_energies)
 
     def centres(a : np.ndarray) -> np.ndarray:
         return (a[1:] + a[:-1]) / 2
+    def dimensions(a : np.ndarray) -> np.ndarray:
+        return a[1] - a[0]
 
     cx, cy, cz = map(centres, edges)
+    dx, dy, dz = map(dimensions, edges)
+    current_dimensions = np.array((dx, dy, dz))
+
     nz = np.nonzero(E)
-    return [Voxel(cx[x], cy[y], cz[z], E[x,y,z], voxel_dimensions) for (x,y,z) in np.stack(nz).T]
+    return [Voxel(cx[x], cy[y], cz[z], E[x,y,z], current_dimensions) for (x,y,z) in np.stack(nz).T]
 
 
 class Contiguity(Enum):
@@ -75,7 +67,6 @@ class Contiguity(Enum):
 
 
 def make_track_graphs(voxels           : Voxel,
-                      voxel_dimensions : np.ndarray,
                       contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Graph]:
     """Create a graph where the voxels are the nodes and the edges are any
     pair of neighbour voxel. Two voxels are considered to be
@@ -84,7 +75,7 @@ def make_track_graphs(voxels           : Voxel,
     """
 
     def neighbours(va : Voxel, vb : Voxel) -> bool:
-        return np.linalg.norm((va.pos - vb.pos) / voxel_dimensions) < contiguity.value
+        return np.linalg.norm((va.pos - vb.pos) / va.size) < contiguity.value
 
     voxel_graph = nx.Graph()
     voxel_graph.add_nodes_from(voxels)
