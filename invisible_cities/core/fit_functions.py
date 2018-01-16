@@ -8,9 +8,10 @@ import numpy as np
 import scipy.optimize
 import scipy.stats
 
-from . import core_functions as coref
-from .. evm.ic_containers    import FitFunction
-from ..icaro.hst_functions   import poisson_sigma
+from .                    import core_functions as coref
+from .  stat_functions    import poisson_sigma
+from .. evm.ic_containers import FitFunction
+
 
 def get_errors(cov):
     """
