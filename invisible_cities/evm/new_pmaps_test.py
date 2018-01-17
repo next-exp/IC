@@ -30,39 +30,47 @@ wf_max = 100
 
 
 @composite
-def sensor_responses(draw, nsamples=None, type_=None):
-    nsensors    = draw(integers(1,  5))
-    nsamples    = draw(integers(1, 50)) if nsamples is None else nsamples
-    shape       = nsensors, nsamples
-    ids         = draw(arrays(  int, nsensors, integers(0, 1e3), unique=True))
-    all_wfs     = draw(arrays(float,    shape, floats  (wf_min, wf_max)))
-    PMT_or_SiPM =(draw(sampled_from((PMTResponses, SiPMResponses)))
-                  if type_ is None else type_)
-    args        = ids, all_wfs
-    return args, PMT_or_SiPM(*args)
+def sensor_responses(draw, n_samples=None, subtype=None, ids=None):
+    n_sensors   = draw(integers(1,  5)) if       ids is None else len(ids)
+    n_samples   = draw(integers(1, 50)) if n_samples is None else n_samples
+    shape       = n_sensors, n_samples
+    all_wfs     = draw(arrays(float,     shape, floats  (wf_min, wf_max)))
+    if     ids is None:
+        ids     = draw(arrays(  int, n_sensors, integers(0, 1e3), unique=True))
+    if subtype is None:
+        subtype = draw(sampled_from((PMTResponses, SiPMResponses)))
+    args        = np.sort(ids), all_wfs
+    return args, subtype(*args)
 
 
 @composite
-def peaks(draw, type_=None):
-    nsamples  = draw(integers(1, 50))
-    _, pmt_r  = draw(sensor_responses(nsamples,  PMTResponses))
-    _, sipm_r = draw(sensor_responses(nsamples, SiPMResponses))
+def peaks(draw, subtype=None, pmt_ids=None, with_sipms=True):
+    nsamples      = draw(integers(1, 50))
+    _, pmt_r      = draw(sensor_responses(nsamples,  PMTResponses, pmt_ids))
+    sipm_r        = SiPMResponses.build_empty_instance()
     assume(pmt_r.sum_over_sensors[ 0] != 0)
     assume(pmt_r.sum_over_sensors[-1] != 0)
+
+    if subtype is None:
+        subtype   = draw(sampled_from((S1, S2)))
+    if with_sipms:
+        _, sipm_r = draw(sensor_responses(nsamples, SiPMResponses))
+
     times     = draw(arrays(float, nsamples,
                             floats(min_value=0, max_value=1e3),
                             unique = True))
-    S1_or_S2  = draw(sampled_from((S1, S2))) if type_ is None else type_
-    args      = times, pmt_r, sipm_r
-    return args, S1_or_S2(*args)
+    args      = np.sort(times), pmt_r, sipm_r
+    return args, subtype(*args)
 
 
 @composite
-def pmaps(draw):
+def pmaps(draw, pmt_ids=None):
     n_s1 = draw(integers(0, 3))
     n_s2 = draw(integers(0, 3))
-    s1s  = tuple(draw(peaks(S1))[1] for i in range(n_s1))
-    s2s  = tuple(draw(peaks(S2))[1] for i in range(n_s2))
+    assume(n_s1 + n_s2 > 0)
+
+    s1s  = tuple(draw(peaks(S1, pmt_ids, False))[1] for i in range(n_s1))
+    s2s  = tuple(draw(peaks(S2, pmt_ids, True ))[1] for i in range(n_s2))
     args = s1s, s2s
     return args, PMap(*args)
 
