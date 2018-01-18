@@ -41,6 +41,11 @@ def config_tmpdir(tmpdir_factory):
     return tmpdir_factory.mktemp('configure_tests')
 
 
+@pytest.fixture(scope='session')
+def example_blr_wfs_filename(ICDIR):
+    return os.path.join(ICDIR, "database/test_data/", "blr_examples.h5")
+
+
 @pytest.fixture(scope  = 'session',
                 params = ['electrons_40keV_z250_RWF.h5',
                           'electrons_511keV_z250_RWF.h5',
@@ -321,7 +326,7 @@ def KrMC_hdst(ICDIR):
               1.47104004e+02,  1.50782271e+02,  1.35000000e+02,  1.47748654e+02,  1.48782929e+02,
               0.00000000e+00,  0.00000000e+00,  7.20626968e+01,  7.19827231e+01,  7.17844856e+01,
               7.35674548e+01,  0.00000000e+00,  0.00000000e+00, -7.83527723e+01, -7.78888272e+01,
-             -7.75947914e+01, -7.69924054e+01,  0.00000000e+0] 
+             -7.75947914e+01, -7.69924054e+01,  0.00000000e+0]
 
     Xrms  = [ 0.00000000e+00,  4.99964935e+00,  6.16285499e+00,  6.39776071e+00,  4.73166675e+00,
               0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  4.99915988e+00,  4.99213896e+00,
