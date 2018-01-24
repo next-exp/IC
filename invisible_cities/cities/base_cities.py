@@ -6,7 +6,6 @@ last revised: JJGC, July-2017
 
 """
 
-from collections import Sequence
 from argparse    import Namespace
 from glob        import glob
 from time        import time
@@ -28,19 +27,17 @@ from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 
 from .. database import load_db
 
-from .. io                      import pmap_io           as pio
+from .. io                      import pmaps_io    as pio
 from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
 from .. io.mc_io                import mc_track_writer
 
-from .. reco                    import peak_functions_c  as cpf
-from .. reco                    import calib_sensors_functions_c  as csf
-from .. reco                    import paolina_functions as paf
-from .. reco                    import sensor_functions  as sf
-from .. reco                    import peak_functions    as pf
-from .. reco                    import pmaps_functions   as pmp
-from .. reco                    import pmaps_functions_c as cpmp
-from .. reco                    import tbl_functions     as tbl
+from .. reco                    import calib_sensors_functions  as csf
+from .. reco                    import paolina_functions        as paf
+from .. reco                    import sensor_functions         as sf
+from .. reco                    import peak_functions           as pkf
+from .. reco                    import pmaps_functions          as pmf
+from .. reco                    import tbl_functions            as tbl
 from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco.xy_algorithms      import corona
 
@@ -57,6 +54,7 @@ from .. evm.event_model         import HitCollection
 from .. evm.event_model         import Hit
 from .. evm.event_model         import Cluster
 from .. evm.event_model         import Voxel
+from .. evm.pmaps               import S2
 from .. evm.nh5                 import DECONV_PARAM
 
 from .. sierpe                  import blr
@@ -67,15 +65,13 @@ from .. types.ic_types          import Counters
 from .. types.ic_types          import NN
 from .. types.ic_types          import xy
 
-from .. filters.s1s2_filter     import s1s2_filter
-from .. filters.s1s2_filter     import s2si_filter
+from .. filters.s1s2_filter     import pmap_filter
 from .. filters.s1s2_filter     import S12Selector
 from .. filters.s1s2_filter     import S12SelectorOutput
 
 from .. daemons.idaemon         import summon_daemon
 
 from typing import Sequence
-from typing import List
 
 
 # TODO: move this somewhere else
@@ -257,14 +253,18 @@ class City:
     def set_up_database(self):
         DataPMT       = load_db.DataPMT (self.run_number)
         DataSiPM      = load_db.DataSiPM(self.run_number)
+        pmt_active    = DataPMT.Active.values.astype(bool)
+
         self.det_geo  = load_db.DetectorGeo()
         self.DataPMT  = DataPMT
         self.DataSiPM = DataSiPM
 
         self.xs              = DataSiPM.X.values
         self.ys              = DataSiPM.Y.values
-        self.pmt_active      = np.nonzero(DataPMT.Active.values)[0].tolist()
-        self.adc_to_pes      = abs(DataPMT.adc_to_pes.values).astype(np.double)
+        self.pmt_active      = np.nonzero(pmt_active)[0].tolist()
+        self.active_pmt_ids  = DataPMT.SensorID[DataPMT.Active == 1].values
+        self.pmt_adc_to_pes  = abs(DataPMT.adc_to_pes.values).astype(np.double)
+        self.pmt_adc_to_pes  = self.pmt_adc_to_pes[pmt_active]
         self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
         self.coeff_c         = DataPMT.coeff_c.values        .astype(np.double)
         self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
@@ -364,10 +364,6 @@ class City:
     @staticmethod
     def get_pmaps_dicts(filename):
         return pio.load_pmaps(filename)
-
-    @staticmethod
-    def get_pmaps_from_dicts(s1_dict, s2_dict, s2si_dict, evt_number):
-        return pio.s1_s2_si_from_pmaps(s1_dict, s2_dict, s2si_dict, evt_number)
 
 
 class RawCity(City):
@@ -510,36 +506,21 @@ class CalibratedCity(DeconvolutionCity):
             raise ValueError(("Wrong value in thr_sipm_type. It must"
                               "be either 'Common' or 'Individual'"))
 
-    def calibrated_pmt_mau(self, CWF):
+    def calibrate_pmts(self, CWF):
         """Return the csum and csum_mau calibrated sums."""
-        return csf.calibrated_pmt_mau(CWF,
-                                      self.adc_to_pes,
-                                      pmt_active = self.pmt_active,
-                                           n_MAU = self.  n_MAU   ,
-                                         thr_MAU = self.thr_MAU   )
+        return csf.calibrate_pmts(CWF, self.pmt_adc_to_pes,
+                                    n_MAU = self.  n_MAU,
+                                  thr_MAU = self.thr_MAU)
 
-    def sum_calibrated_pmt_mau(self, ccwf, ccwf_mau):
-        return pf.sum_waveforms(ccwf), pf.sum_waveforms(ccwf_mau)
+    def pmt_zero_suppression(self, wf, thr):
+        return pkf.indices_and_wf_above_threshold(wf, thr)
 
-    def calibrated_pmt_sum(self, CWF):
-        """Return the csum and csum_mau calibrated sums."""
-        return csf.calibrated_pmt_sum(CWF,
-                                      self.adc_to_pes,
-                                      pmt_active = self.pmt_active,
-                                           n_MAU = self.  n_MAU   ,
-                                         thr_MAU = self.thr_MAU   )
-
-    def csum_zs(self, csum, threshold):
-        """Zero Suppression over csum"""
-        return cpf.wfzs(csum, threshold=threshold)
-
-    def calibrated_signal_sipm(self, SiRWF, cal=0):
+    def calibrate_sipms(self, SiRWF):
         """Return the calibrated signal in the SiPMs."""
-        return csf._signal_sipm(SiRWF,
-                               self.sipm_adc_to_pes,
-                               thr   = self.  thr_sipm,
-                               n_MAU = self.n_MAU_sipm,
-                               Cal=cal)
+        return csf.calibrate_sipms(SiRWF,
+                                   self.sipm_adc_to_pes,
+                                   thr   = self.  thr_sipm,
+                                   n_MAU = self.n_MAU_sipm)
 
 
 class PmapCity(CalibratedCity):
@@ -547,24 +528,24 @@ class PmapCity(CalibratedCity):
        objects that togehter constitute a PMAP.
     """
 
-    parameters = tuple("""compute_ipmt_pmaps
+    parameters = tuple("""
       s1_tmin s1_tmax s1_stride s1_lmin s1_lmax s1_rebin_stride
       s2_tmin s2_tmax s2_stride s2_lmin s2_lmax s2_rebin_stride
-      thr_sipm_s2""".split())
+      thr_sipm_s2
+      """.split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
         conf = self.conf
-        self.compute_ipmt_pmaps = conf.compute_ipmt_pmaps
-        self.s1_params = S12Params(time = minmax(min   = conf.s1_tmin,
-                                                 max   = conf.s1_tmax),
+        self.s1_params = S12Params(time   = minmax(min = conf.s1_tmin,
+                                                   max = conf.s1_tmax),
                                    stride              = conf.s1_stride,
                                    length = minmax(min = conf.s1_lmin,
                                                    max = conf.s1_lmax),
                                    rebin_stride        = conf.s1_rebin_stride)
 
-        self.s2_params = S12Params(time = minmax(min   = conf.s2_tmin,
-                                                 max   = conf.s2_tmax),
+        self.s2_params = S12Params(time   = minmax(min = conf.s2_tmin,
+                                                   max = conf.s2_tmax),
                                    stride              = conf.s2_stride,
                                    length = minmax(min = conf.s2_lmin,
                                                    max = conf.s2_lmax),
@@ -585,27 +566,26 @@ class PmapCity(CalibratedCity):
         # deconvolve
         CWF = self.deconv_pmt(RWF)
         # calibrated PMT sum
-        ccwf, ccwf_mau = self.calibrated_pmt_mau(CWF)
-        csum, csum_mau = self.sum_calibrated_pmt_mau(ccwf, ccwf_mau)
+        ccwfs, ccwfs_mau, cwf_sum, cwf_sum_mau = self.calibrate_pmts(CWF)
+
         #ZS sum for S1 and S2
-        s1_ene, s1_indx = self.csum_zs(csum_mau, threshold=self.thr_csum_s1)
-        s2_ene, s2_indx = self.csum_zs(csum,     threshold=self.thr_csum_s2)
+        s1_indx, s1_ene = self.pmt_zero_suppression(cwf_sum_mau, thr=self.thr_csum_s1)
+        s2_indx, s2_ene = self.pmt_zero_suppression(cwf_sum    , thr=self.thr_csum_s2)
         return (S12Sum(s1_ene  = s1_ene,
                        s1_indx = s1_indx,
                        s2_ene  = s2_ene,
                        s2_indx = s2_indx),
-                CCWf(ccwf = ccwf, ccwf_mau = ccwf_mau),
-                CSum(csum = csum, csum_mau = csum_mau))
+                CCWf(ccwf = ccwfs  , ccwf_mau = ccwfs_mau  ),
+                CSum(csum = cwf_sum, csum_mau = cwf_sum_mau))
 
 
-    def pmaps(self, s1_indx, s2_indx, ccwf, csum, sipmzs):
+    def pmaps(self, s1_indx, s2_indx, ccwf, sipmzs):
         """Computes s1, s2 and s2si objects (PMAPS)"""
-        if self.compute_ipmt_pmaps:
-            return pmp.get_pmaps_with_ipmt(s1_indx, s2_indx, ccwf, csum, sipmzs,
-                                           self.s1_params, self.s2_params, self.thr_sipm_s2)
-        else:
-            return pmp.get_pmaps(s1_indx, s2_indx, csum, sipmzs,
-                                 self.s1_params, self.s2_params, self.thr_sipm_s2)
+        return pkf.get_pmap(ccwf, s1_indx, s2_indx, sipmzs,
+                            self.s1_params._asdict(),
+                            self.s2_params._asdict(),
+                            self.thr_sipm_s2,
+                            self.active_pmt_ids)
 
 
 class DstCity(City):
@@ -663,13 +643,11 @@ class PCity(City):
         3. write dst_event
         """
 
-        write = self.writers
-        event_numbers= pmapVectors.events
-        timestamps = pmapVectors.timestamps
-        s1_dict = pmapVectors.s1
-        s2_dict = pmapVectors.s2
-        s2si_dict = pmapVectors.s2si
-        mc_tracks = pmapVectors.mc
+        write         = self.writers
+        event_numbers = pmapVectors.events
+        timestamps    = pmapVectors.timestamps
+        pmaps         = pmapVectors.pmaps
+        mc_tracks     = pmapVectors.mc
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
             self.conditional_print(self.cnt.n_events_tot, self.cnt.n_events_selected)
@@ -679,20 +657,18 @@ class PCity(City):
             if what_next is EventLoop.skip_this_event: continue
             if what_next is EventLoop.terminate_loop : break
             self.cnt.n_events_tot += 1
-            # get pmaps
-            s1, s2, s2si = self. get_pmaps_from_dicts(s1_dict,
-                                                      s2_dict,
-                                                      s2si_dict,
-                                                      evt_number)
+
+            pmap = pmaps[evt_number]
+
             # filtering
-            filter_output = self.filter_event(s1, s2, s2si)
+            filter_output = self.filter_event(pmap)
             if not filter_output.passed:
                 continue
-            # event passed selection:
-            self.cnt.n_events_selected     += 1
+
+            self.cnt.n_events_selected += 1
 
             # create DST event & write to file
-            pmapVectors = PmapVectors(s1=s1, s2=s2, s2si=s2si,
+            pmapVectors = PmapVectors(pmaps=pmap,
                                       events=evt_number,
                                       timestamps=evt_time,
                                       mc=None)
@@ -714,7 +690,7 @@ class PCity(City):
             print("Opening {filename}".format(**locals()), end="...\n")
 
             try:
-                s1_dict, s2_dict, s2si_dict = self.get_pmaps_dicts(filename)
+                pmaps = self.get_pmaps_dicts(filename)
             except (ValueError, tb.exceptions.NoSuchNodeError):
                 print("Empty file. Skipping.")
                 continue
@@ -728,38 +704,32 @@ class PCity(City):
                     # Save time when we are not interested in mc tracks
                     mc_tracks = self.get_mc_tracks(h5in)
 
-                event_numbers, timestamps = self.event_numbers_and_timestamps_from_file_name(filename)
+                event_numbers, timestamps = \
+                self.event_numbers_and_timestamps_from_file_name(filename)
 
-                pmapVectors               = PmapVectors(s1         = s1_dict,
-                                                        s2         = s2_dict,
-                                                        s2si       = s2si_dict,
-                                                        events     = event_numbers,
-                                                        timestamps = timestamps,
-                                                        mc         = mc_tracks)
+                pmapVectors = PmapVectors(pmaps      = pmaps,
+                                          events     = event_numbers,
+                                          timestamps = timestamps,
+                                          mc         = mc_tracks)
 
                 self.event_loop(pmapVectors)
 
-    def filter_event(self, s1, s2, s2si):
+    def filter_event(self, pmap):
         """Filter the event in terms of s1, s2, s2si"""
         # loop event away if any signal (s1, s2 or s2si) not present
         empty = S12SelectorOutput(False, [], [])
-        if   s1 == None:
+        if not pmap.s1s:
             self.cnt.n_events_not_s1 += 1
             return empty
-        elif s2 == None:
+        elif not pmap.s2s:
             self.cnt.n_events_not_s2 += 1
-            return empty
-        elif s2si == None:
-            self.cnt.n_events_not_s2si += 1
             return empty
 
         # filters in s12 and s2si
-        f1 = s1s2_filter(self.s1s2_selector, s1, s2, s2si)
-        f2 = s2si_filter(s2si)
-        f2.s1_peaks = f1.s1_peaks
-        self.cnt.n_events_not_s1s2_filter += int(not f1.passed)
-        self.cnt.n_events_not_s2si_filter += int(not f2.passed)
-        return f1 & f2
+        f = pmap_filter(self.s1s2_selector, pmap)
+        self.cnt.n_events_not_s1s2_filter += int(not f.passed)
+        return f
+
 
 class KrCity(PCity):
     """A city that read pmaps and computes/writes a KrEvent"""
@@ -770,12 +740,13 @@ class KrCity(PCity):
 
     parameters = tuple("lm_radius new_lm_radius msipm qlm qthr".split())
 
-    def compute_xy_position(self, s2si, peak_no):
+    def compute_xy_position(self, sr):
         """
         Computes position using the integral of the charge
         in each SiPM.
         """
-        IDs, Qs = cpmp.integrate_sipm_charges_in_peak(s2si, peak_no)
+        IDs = sr.ids
+        Qs  = sr.sum_over_times
         xs, ys   = self.xs[IDs], self.ys[IDs]
         return corona(np.stack((xs, ys), axis=1), Qs,
                       Qthr           =  self.conf.qthr,
@@ -805,36 +776,31 @@ class KrCity(PCity):
         """
         evt_number = pmapVectors.events
         evt_time   = pmapVectors.timestamps
-        s1         = pmapVectors.s1
-        s2         = pmapVectors.s2
-        s2si       = pmapVectors.s2si
-
-        evt       = KrEvent(evt_number, evt_time * 1e-3)
+        pmap       = pmapVectors.pmaps
+        evt        = KrEvent(evt_number, evt_time * 1e-3)
 
         evt.nS1 = 0
-        for peak_no, passed in filter_output.s1_peaks.items():
+        for passed, peak in zip(filter_output.s1_peaks, pmap.s1s):
             if not passed: continue
 
             evt.nS1 += 1
-            peak = s1.peak_waveform(peak_no)
             evt.S1w.append(peak.width)
             evt.S1h.append(peak.height)
             evt.S1e.append(peak.total_energy)
-            evt.S1t.append(peak.tpeak)
+            evt.S1t.append(peak.time_at_max_energy)
 
         evt.nS2 = 0
-        for peak_no, passed in filter_output.s2_peaks.items():
+        for passed, peak in zip(filter_output.s2_peaks, pmap.s2s):
             if not passed: continue
 
             evt.nS2 += 1
-            peak = s2si.peak_waveform(peak_no)
             evt.S2w.append(peak.width/units.mus)
             evt.S2h.append(peak.height)
             evt.S2e.append(peak.total_energy)
-            evt.S2t.append(peak.tpeak)
+            evt.S2t.append(peak.time_at_max_energy)
 
             try:
-                clusters = self.compute_xy_position(s2si, peak_no)
+                clusters = self.compute_xy_position(peak.sipms)
                 # if there is more than one cluster compare the energy measured
                 # in the tracking plane with the energy measured in the energy plane
                 # and thake the cluster where both energies are closer.
@@ -853,7 +819,7 @@ class KrCity(PCity):
                     c = clusters[loc_elem_1d(cQ, c_closest)]
                     print('c_chosen = {}'.format(c))
 
-                Z, DT = self.compute_z_and_dt(peak.tpeak, evt.S1t[0])
+                Z, DT = self.compute_z_and_dt(evt.S2t[-1], evt.S1t[0])
                 Zrms  = peak.rms / units.mus
 
                 evt.Nsipm.append(c.nsipm)
@@ -890,10 +856,11 @@ class HitCity(KrCity):
         super().__init__(**kwds)
         self.rebin  = self.conf.rebin
 
-    def compute_xy_position(self, s2sid_peak, slice_no):
+    def compute_xy_position(self, sr, slice_no):
         """Compute x-y position for each time slice. """
-        IDs, Qs  = cpmp.sipm_ids_and_charges_in_slice(s2sid_peak, slice_no)
-        xs, ys   = self.xs[IDs], self.ys[IDs]
+        IDs = sr.ids
+        Qs  = sr.time_slice(slice_no)
+        xs, ys = self.xs[IDs], self.ys[IDs]
 
         return corona(np.stack((xs, ys), axis=1), Qs,
                       Qthr           =  self.conf.qthr,
@@ -901,12 +868,6 @@ class HitCity(KrCity):
                       lm_radius      =  self.conf.lm_radius,
                       new_lm_radius  =  self.conf.new_lm_radius,
                       msipm          =  self.conf.msipm)
-
-    def rebin_s2si(self, s2, s2si, rebin):
-        """rebins s2d and sid dictionaries"""
-        if rebin > 1:
-            s2, s2si = pmp.rebin_s2si(s2, s2si, rebin)
-        return s2, s2si
 
     def split_energy(self, e, clusters):
         if len(clusters) == 1:
@@ -923,9 +884,7 @@ class HitCity(KrCity):
         """
         evt_number = pmapVectors.events
         evt_time   = pmapVectors.timestamps
-        s1         = pmapVectors.s1
-        s2         = pmapVectors.s2
-        s2si       = pmapVectors.s2si
+        pmap       = pmapVectors.pmaps
 
         hitc = HitCollection(evt_number, evt_time * 1e-3)
 
@@ -934,32 +893,31 @@ class HitCity(KrCity):
         # take events with exactly one s1. Otherwise, the
         # convention is to take the first peak in the S1 object
         # as reference.
-        first_s1 = list(filter(lambda x: x[1], filter_output.s1_peaks.items()))[0][0]
-        s1_t     = s1.peak_waveform(first_s1).tpeak
-
-        # in general one rebins the time slices wrt the time slices
-        # produces by pmaps. This is controlled by self.rebin which can
-        # be set by parameter to a factor x pmaps-rebin.
-        s2, s2si = self.rebin_s2si(s2, s2si, self.rebin)
+        first_s1 = np.where(filter_output.s1_peaks)[0][0]
+        s1_t     = pmap.s1s[first_s1].time_at_max_energy
 
         # here hits are computed for each peak and each slice.
         # In case of an exception, a hit is still created with a NN cluster.
         # (NN cluster is a cluster where the energy is an IC not number NN)
         # this allows to keep track of the energy associated to non reonstructed hits.
-        for peak_no, (t_peak, e_peak) in sorted(s2si.s2d.items()):
-            if not filter_output.s2_peaks[peak_no]: continue
+        for peak_no, (passed, peak) in enumerate(zip(filter_output.s2_peaks,
+                                                     pmap.s2s)):
+            if not passed: continue
 
-            for slice_no, (t_slice, e_slice) in enumerate(zip(t_peak, e_peak)):
-                z        = (t_slice - s1_t) * units.ns * self.drift_v
+            peak = pmf.rebin_peak(peak, self.rebin)
+
+            for slice_no, t_slice in enumerate(peak.times):
+                z_slice = (t_slice - s1_t) * units.ns * self.drift_v
+                e_slice = peak.pmts.sum_over_sensors[slice_no]
                 try:
-                    clusters = self.compute_xy_position(s2si.s2sid[peak_no], slice_no)
+                    clusters = self.compute_xy_position(peak.sipms, slice_no)
                     es       = self.split_energy(e_slice, clusters)
                     for c, e in zip(clusters, es):
-                        hit       = Hit(peak_no, c, z, e)
+                        hit       = Hit(peak_no, c, z_slice, e)
                         hitc.hits.append(hit)
                 except XYRecoFail:
                     c = Cluster(NN, xy(0,0), xy(0,0), 0)
-                    hit       = Hit(peak_no, c, z, e_slice)
+                    hit       = Hit(peak_no, c, z_slice, e_slice)
                     hitc.hits.append(hit)
 
         return hitc
@@ -972,7 +930,7 @@ class TrackCity(HitCity):
         self.voxel_dimensions  = self.conf.voxel_dimensions # type: np.ndarray
         self.blob_radius       = self.blob_radius # type: float
 
-    def voxelize_hits(self, hits : Sequence[Hit]) -> List[Voxel]:
+    def voxelize_hits(self, hits : Sequence[Hit]) -> Sequence[Voxel]:
         """1. Hits are enclosed by a bounding box.
            2. Boundix box is discretized (via a hitogramdd).
            3. The energy of all the hits insidex each discreet "voxel" is added.
@@ -1020,11 +978,15 @@ class TriggerEmulationCity(PmapCity):
         peak_data = {}
         for pmt_id in IC_ids_selection:
             # Emulate zero suppression in the FPGA
-            _, wfm_index = cpf.wfzs(CWF[pmt_id],
-                                          threshold = self.trigger_params.height.min)
+            wfm_index, _ = \
+            pkf.indices_and_wf_above_threshold(CWF[pmt_id],
+                                               thr = self.trigger_params.height.min)
 
             # Emulate peak search (s2) in the FPGA
-            s2 =  cpf.find_s2(CWF[pmt_id], wfm_index, **self.s2_params._asdict())
+            s2 = pkf.find_peaks(CWF[pmt_id], wfm_index,
+                                Pk      = S2,
+                                pmt_ids = [-1],
+                                **self.s2_params._asdict())
             peak_data[pmt_id] = s2
 
         return peak_data

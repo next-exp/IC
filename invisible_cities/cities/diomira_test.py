@@ -16,10 +16,7 @@ from .. core                 import system_of_units as units
 from .. core.configure       import configure
 
 from .. reco     import tbl_functions as tbl
-from .. reco     import wfm_functions as wfm
 from .. sierpe   import fee as FEE
-from .. sierpe   import blr
-from .. database import load_db
 
 from .  diomira  import Diomira
 
@@ -122,6 +119,7 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
             first_evt_number = h5out.root.MC.MCTracks[ 0][0]
             last_evt_number  = h5out.root.MC.MCTracks[-1][0]
             assert first_evt_number != last_evt_number
+
 
 @mark.parametrize('filename, first_evt',
              (('dst_NEXT_v0_08_09_Co56_INTERNALPORTANODE_74_0_7bar_MCRD_10000.root.h5',

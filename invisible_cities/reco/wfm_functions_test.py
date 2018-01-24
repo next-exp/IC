@@ -12,7 +12,6 @@ from hypothesis.extra.numpy import arrays
 
 from .. database import load_db
 
-from .        import peak_functions_c as cpf
 from .        import tbl_functions    as tbl
 from .        import wfm_functions    as wfm
 from .. evm.ic_containers import CalibVectors

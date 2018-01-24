@@ -1,5 +1,9 @@
-from ..evm import nh5           as table_formats
-from ..reco import tbl_functions as tbl
+import pandas as pd
+import tables as tb
+
+from .. evm  import nh5           as table_formats
+from .. reco import tbl_functions as tbl
+
 
 def _make_run_event_tables(hdf5_file, compression):
 
@@ -35,3 +39,9 @@ def event_table_dumper(table, event_number, timestamp):
     row["evt_number"] = event_number
     row["timestamp"] = timestamp
     row.append()
+
+
+def read_run_and_event(filename):
+    with tb.open_file(filename) as h5f:
+        return (pd.DataFrame.from_records(h5f.root.Run.runInfo.read()),
+                pd.DataFrame.from_records(h5f.root.Run.events .read()))

@@ -1,480 +1,545 @@
-"""
-code: peak_functions_test.py
-description: tests for peak functions.
+import numpy as np
 
-credits: see ic_authors_and_legal.rst in /doc
-
-last revised: JJGC, 10-July-2017
-"""
-
-from collections import namedtuple
-
-import tables        as tb
-import numpy         as np
-import numpy.testing as npt
-
+from pytest import approx
+from pytest import mark
 from pytest import fixture
 
-from .. core                   import core_functions   as cf
-from .. core.system_of_units_c import units
-
-from .. database               import load_db
-
-from .. sierpe                 import blr
-from .                         import calib_sensors_functions_c as csf
-from .                         import peak_functions   as pf
-from .                         import peak_functions_c as cpf
-from .                         import tbl_functions    as tbl
-from .. evm.ic_containers      import S12Params
-from .. evm.ic_containers      import ThresholdParams
-from .. evm.ic_containers      import DeconvParams
-from .. evm.ic_containers      import CalibVectors
-from .. types.ic_types         import minmax
-
-
-@fixture(scope="module")
-def toy_S1_wf():
-    s1      = {}
-    indices = [np.arange(125, 130), np.arange(412, 417), np.arange(113, 115)]
-    for i, index in enumerate(indices):
-        s1[i] = index * 25., np.random.rand(index.size)
-
-    wf = np.random.rand(1000)
-    return s1, wf, indices
-
-
-@fixture(scope='module')
-def pmaps_electrons(electron_RWF_file):
-    """Compute PMAPS for ele of 40 keV. Check that results are consistent."""
-
-    event = 0
-    run_number = 0
-
-    s1par = S12Params(time = minmax(min   =  99 * units.mus,
-                                    max   = 101 * units.mus),
-                      length = minmax(min =   4,
-                                      max =  20),
-                      stride              =   4,
-                      rebin_stride        =   1)
-
-    s2par = S12Params(time = minmax(min   =    101 * units.mus,
-                                    max   =   1199 * units.mus),
-                      length = minmax(min =     80,
-                                      max = 200000),
-                      stride              =     40,
-                      rebin_stride        =     40)
-
-    thr = ThresholdParams(thr_s1   =  0.2 * units.pes,
-                          thr_s2   =  1   * units.pes,
-                          thr_MAU  =  3   * units.adc,
-                          thr_sipm =  5   * units.pes,
-                          thr_SIPM = 30   * units.pes )
-
-
-    with tb.open_file(electron_RWF_file,'r') as h5rwf:
-        pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
-        DataPMT = load_db.DataPMT(run_number)
-        DataSiPM = load_db.DataSiPM(run_number)
-
-        calib = CalibVectors(channel_id = DataPMT.ChannelID.values,
-                             coeff_blr = abs(DataPMT.coeff_blr   .values),
-                             coeff_c = abs(DataPMT.coeff_c   .values),
-                             adc_to_pes = DataPMT.adc_to_pes.values,
-                             adc_to_pes_sipm = DataSiPM.adc_to_pes.values,
-                             pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist())
-
-        deconv = DeconvParams(n_baseline = 28000,
-                              thr_trigger = 5)
-
-        csum, pmp = pf._compute_csum_and_pmaps(event,
-                                              pmtrwf,
-                                              sipmrwf,
-                                              s1par,
-                                              s2par,
-                                              thr,
-                                              calib,
-                                              deconv)
-
-        _, pmp2 = pf._compute_csum_and_pmaps(event,
-                                            pmtrwf,
-                                            sipmrwf,
-                                            s1par,
-                                            s2par._replace(rebin_stride=1),
-                                            thr,
-                                            calib,
-                                            deconv)
-
-    return pmp, pmp2, csum
-
-
-def test_rebin_waveform():
-    """
-    Uses a toy wf and and all possible combinations of S12 start and stop times to assure that
-    rebin_waveform performs across a wide parameter space with particular focus on edge cases.
-    Specifically it checks that:
-    1) time bins are properly aligned such that there is an obvious S2-S2Si time bin mapping
-        (one to one, onto when stride=40) by computing the expected mean time for each time bin.
-    2) the correct energy is distributed to each time bin.
-    """
-
-    nmus   =  3
-    stride = 40
-    bs     = 25*units.ns
-    rbs    = stride * bs
-    wf     = np.ones (int(nmus*units.mus / (bs))) * units.pes
-    times  = np.arange(0, nmus*units.mus,   bs)
-    # Test for every possible combination of start and stop time over an nmus microsecond wf
-    for s in times:
-        for f in times[times > s]:
-            # compute the rebinned waveform
-            [T, E] = cpf.rebin_waveform(s, f, wf[int(s/bs): int(f/bs)], stride=stride)
-            # check the waveforms values...
-            for i, (t, e) in enumerate(zip(T, E)):
-                # ...in the first time bin
-                if i==0:
-                    assert np.isclose(t, min(np.mean((s, (s // (rbs) + 1)*rbs)), np.mean((f, s))))
-                    assert e == min(((s // (rbs) + 1)*rbs - s) / bs, (f - s) / (bs))
-                # ...in the middle time bins
-                elif i < len(T) - 1:
-                    assert np.isclose(t,
-                        np.ceil(T[i - 1] / (rbs))*rbs + stride * bs / 2)
-                    assert e == stride
-                # ...in the remainder time bin
-                else:
-                    assert i == len(T) - 1
-                    assert np.isclose(t, np.mean((np.ceil(T[i-1] / (rbs))*rbs, f)))
-                    assert e == (f - np.ceil(T[i-1] / (rbs)) * rbs) / (bs)
-
-
-def test_rebinning_does_not_affect_the_sum_of_S2(pmaps_electrons):
-    pmp, pmp2, _ = pmaps_electrons
-    np.isclose(np.sum(pmp.S2[0][1]), np.sum(pmp2.S2[0][1]), rtol=1e-05)
-
-
-def test_sum_of_S2_and_sum_of_calibrated_sum_vector_must_be_close(pmaps_electrons):
-    pmp, _, csum = pmaps_electrons
-    np.isclose(np.sum(pmp.S2[0][1]), np.sum(csum.csum), rtol=1e-02)
-
-
-def test_length_of_S1_time_array_must_match_energy_array(pmaps_electrons):
-    pmp, _, _ = pmaps_electrons
-    if pmp.S1:
-        assert len(pmp.S1[0][0]) == len(pmp.S1[0][1])
-
-
-def test_length_of_S2_time_array_must_match_energy_array(pmaps_electrons):
-    pmp, _, _ = pmaps_electrons
-    if pmp.S2:
-        assert len(pmp.S2[0][0]) == len(pmp.S2[0][1])
-
-
-def test_length_of_S2_time_array_and_length_of_S2Si_energy_array_must_be_the_same(pmaps_electrons):
-    pmp, _, _ = pmaps_electrons
-
-    if pmp.S2 and pmp.S2Si:
-        for nsipm in pmp.S2Si[0]:
-            assert len(pmp.S2Si[0][nsipm]) == len(pmp.S2[0][0])
-
-
-def toy_pmt_signal():
-    """ Mimick a PMT waveform."""
-    v0 = cf.np_constant(200, 1)
-    v1 = cf.np_range(1.1, 2.1, 0.1)
-    v2 = cf.np_constant(10, 2)
-    v3 = cf.np_reverse_range(1.1, 2.1, 0.1)
-
-    v   = np.concatenate((v0, v1, v2, v3, v0))
-    pmt = np.concatenate((v, v, v))
-    return pmt
-
-
-def toy_cwf_and_adc(v, npmt=10):
-    """Return CWF and adc_to_pes for toy example"""
-    CWF = [v] * npmt
-    adc_to_pes = np.ones(v.shape[0])
-    return np.array(CWF), adc_to_pes
-
-
-def vsum_zsum(vsum, threshold=10):
-    """Compute ZS over vsum"""
-    return vsum[vsum > threshold]
-
-
-def test_csum_zs_s12():
-    """Several sequencial tests:
-    1) Test that csum (the object of the test) and vsum (sum of toy pmt
-    waveforms) yield the same result.
-    2) Same for ZS sum
-    3) Test that time_from_index is the same in python and cython functions.
-    4) test that rebin is the same in python and cython functions.
-    5) test that find_S12 is the same in python and cython functions.
-    """
-    v = toy_pmt_signal()
-    npmt = 10
-    vsum = v * npmt
-    CWF, adc_to_pes = toy_cwf_and_adc(v, npmt=npmt)
-    csum, _ = csf.calibrated_pmt_sum(CWF, adc_to_pes, n_MAU=1, thr_MAU=0)
-    npt.assert_allclose(vsum, csum)
-
-    vsum_zs = vsum_zsum(vsum, threshold=10)
-    wfzs_ene, wfzs_indx = cpf.wfzs(csum, threshold=10)
-    npt.assert_allclose(vsum_zs, wfzs_ene)
-
-    t1 = cpf._time_from_index(wfzs_indx)
-    t2 = cpf._time_from_index(wfzs_indx)
-    i0 = wfzs_indx[0]
-    i1 = wfzs_indx[-1] + 1
-    npt.assert_allclose(t1, t2)
-
-    t = pf._time_from_index(wfzs_indx)
-    e = wfzs_ene
-
-
-    pt1, pe1 = pf._rebin_waveform(t1[0], t1[-1] + 25*units.ns, csum[i0:i1], stride=40)
-    ct2, ce2 = cpf.rebin_waveform(t1[0], t1[-1] + 25*units.ns, csum[i0:i1], stride=40)
-
-    npt.assert_allclose(pt1, ct2)
-    npt.assert_allclose(pe1, ce2)
-
-    S12L1 = pf._find_s12(csum, wfzs_indx,
-             time   = minmax(0, 1e+6),
-             length = minmax(0, 1000000),
-             stride=4, rebin_stride=1)
-
-    S12L2 = cpf.find_s12(csum, wfzs_indx,
-             time   = minmax(0, 1e+6),
-             length = minmax(0, 1000000),
-             stride=4, rebin_stride=1)
-
-    #pbs   = cpf.find_peaks(wfzs_indx, time=minmax(0, 1e+6), length=minmax(0, 1000000), stride=4)
-    #S12L3 = cpf.extract_peaks_from_waveform(csum, pbs, rebin_stride=1)
-
-    for i in S12L1:
-        t1 = S12L1[i][0]
-        e1 = S12L1[i][1]
-        t2 = S12L2[i][0]
-        e2 = S12L2[i][1]
-        #t3 = S12L3[i][0]
-        #e3 = S12L3[i][1]
-
-        npt.assert_allclose(t1, t2)
-        npt.assert_allclose(e1, e2)
-        #npt.assert_allclose(t2, t3)
-        #npt.assert_allclose(e2, e3)
-
-    # toy yields 3 idential vectors of energy
-    E = np.array([ 11,  12,  13,  14,  15,  16,  17,  18,  19,  20,
-                   20,  20,  20,  20,  20,  20,  20,  20,  20,  20,
-                   20,  19,  18,  17,  16,  15,  14,  13,  12,  11])
-    for i in S12L2.keys():
-        e = S12L2[i][1]
-        npt.assert_allclose(e,E)
-
-    # rebin
-    S12L2 = cpf.find_s12(csum, wfzs_indx,
-             time   = minmax(0, 1e+6),
-             length = minmax(0, 1000000),
-             stride=10, rebin_stride=10)
-
-    E = np.array([155,  200,  155])
-
-    for i in S12L2.keys():
-        e = S12L2[i][1]
-        npt.assert_allclose(e, E)
-
-
-def test_find_s12_finds_first_correct_candidate_peak():
-    """
-    Checks that find_s12 initializes S12[0] (the array defining the boundaries of the
-    0th candidate peak) to the correct values
-    """
-    wf  = np.array([0,0,1,0,0], dtype=np.float64)
-    ene = np.array([2], dtype=np.int32)
-    S12L = cpf.find_s12(wf, ene,
-                 time   = minmax(0, 1e+6),
-                 length = minmax(0, 1000000),
-                 stride=10, rebin_stride=10)
-    assert len(S12L) == 1
-    assert np.allclose(S12L[0][0], np.array([2*25*units.ns + 25/2 *units.ns]))
-    assert np.allclose(S12L[0][1], np.array([1]))
-
-
-def test_correct_S1_ene_returns_correct_energies(toy_S1_wf):
-    S1, wf, indices = toy_S1_wf
-    corrS1 = cpf.correct_s1_ene(S1, wf)
-    for peak_no, (t, E) in corrS1.s1d.items():
-        assert np.all(E == wf[indices[peak_no]])
-
-
-def test_select_peaks_of_allowed_length():
-    pbounds = {}
-    length = minmax(5,10)
-    for k in range(15):
-        i_start = np.random.randint(999, dtype=np.int32)
-        i_stop  = i_start + np.random.randint(length.min, dtype=np.int32)
-        pbounds[k] = np.array([i_start, i_stop], dtype=np.int32)
-    for k in range(15, 30):
-        i_start = np.random.randint(999, dtype=np.int32)
-        i_stop  = i_start + np.random.randint(length.min, length.max, dtype=np.int32)
-        pbounds[k] = np.array([i_start, i_stop], dtype=np.int32)
-    for k in range(30, 45):
-        i_start = np.random.randint(999, dtype=np.int32)
-        i_stop  = i_start + np.random.randint(length.max, 999, dtype=np.int32)
-        pbounds[k] = np.array([i_start, i_stop], dtype=np.int32)
-    bounds = cpf._select_peaks_of_allowed_length(pbounds, length)
-    for i, k in zip(range(15), bounds):
-        assert k == i
-        l = bounds[k][1] - bounds[k][0]
-        assert l >= length.min
-        assert l <  length.max
-
-
-def test_find_peaks_finds_peaks_when_index_spaced_by_less_than_or_equal_to_stride():
-    # explore a range of strides
-    for stride in range(2,8):
-        # for each stride create a index array with ints spaced by (1 to stride)
-        for s in range(1, stride + 1):
-            # the concatenated np.array checks that find peaks will find separated peaks
-            index  = np.concatenate((np.arange(  0, 500, s, dtype=np.int32),
-                                     np.arange(600, 605, 1, dtype=np.int32)))
-            bounds = cpf.find_peaks(index, time   = minmax(0, 1e+6),
-                                           length = minmax(5, 9999),
-                                           stride = stride)
-            assert len(bounds)  ==    2            # found both peaks
-            assert bounds[0][0] ==    0            # find correct start i for first  p
-            assert bounds[0][1] == (499//s)*s + 1  # find correct end   i for first  p
-            assert bounds[1][0] ==  600            # find correct start i for second p
-            assert bounds[1][1] ==  605            # find correct end   i for second p
-
-
-def test_find_peaks_finds_no_peaks_when_index_spaced_by_more_than_stride():
-    for stride in range(2,8):
-        index  = np.concatenate((np.arange(  0, 500, stride + 1, dtype=np.int32),
-                                 np.arange(600, 605,          1, dtype=np.int32)))
-        bounds = cpf.find_peaks(index, time   = minmax(0, 1e+6),
-                                       length = minmax(2, 9999),
-                                       stride = stride)
-        assert len(bounds)  ==    1
-        assert bounds[0][0] ==  600
-        assert bounds[0][1] ==  605
-
-
-def test_find_peaks_when_no_index_after_tmin():
-    stride = 2
-    index = np.concatenate((np.arange(  0, 500, stride, dtype=np.int32),
-                            np.arange(600, 605,      1, dtype=np.int32)))
-    assert cpf.find_peaks(index, time   = minmax(9e9, 9e10),
-                                 length = minmax(2, 9999),
-                                 stride = stride) == {}
-    assert pf._find_peaks(index, time   = minmax(9e9, 9e10),
-                                 length = minmax(2, 9999),
-                                 stride = stride) == {}
-
-
-def test_extract_peaks_from_waveform():
-    wf = np.random.uniform(size=52000)
-    # Generate peak_bounds
-    peak_bounds = {}
-    for k in range(100):
-        i_start = np.random.randint(52000)
-        i_stop  = np.random.randint(i_start + 1, 52001)
-        peak_bounds[k] = np.array([i_start, i_stop], dtype=np.int32)
-    # Extract peaks
-    S12L = cpf.extract_peaks_from_waveform(wf, peak_bounds, rebin_stride=1)
-    for k in peak_bounds:
-        T = cpf._time_from_index(np.arange(peak_bounds[k][0], peak_bounds[k][1], dtype=np.int32))
-        assert np.allclose(S12L[k][0], T)                                         # Check times
-        assert np.allclose(S12L[k][1], wf[peak_bounds[k][0]: peak_bounds[k][1]])  # Check energies
-    # Check that _extract... did not return extra peaks
-    assert len(peak_bounds) == len(S12L)
-
-
-def test_get_ipmtd():
-    npmts  = 4
-    ntbins = 52000
-    cCWF   = np.random.random(size=(npmts, ntbins)) # generate wfs for pmts
-    csum   = cCWF.sum(axis=0)                 # and their sum
-    npeaks = 20
-    peak_bounds  = {}
-    rebin_strides = [1,7,40]
-
-    for pn in range(npeaks):
-        start = np.random.randint(      0, ntbins  )
-        stop  = np.random.randint(1+start, ntbins+1)
-        peak_bounds[pn] = np.array([start, stop], dtype=np.int32) # generate some peak_bounds
-
-    for rebin_stride in rebin_strides:
-        # extract the peaks from the csum, and for each pmt extract the peaks from the cCWF
-        S12L   = cpf.extract_peaks_from_waveform(csum, peak_bounds, rebin_stride=rebin_stride)
-        s12pmtd = cpf.get_ipmtd(cCWF, peak_bounds, rebin_stride=rebin_stride)
-        for s12l, s12_pmts, i_peak in zip(S12L.values(), s12pmtd.values(), peak_bounds.values()):
-            # check that the sum of the individual pmt s12s equals the total s12, at each time bin
-            assert np.allclose(s12l[1], s12_pmts.sum(axis=0))
-            # check that the correct energy is in each pmt
-            assert np.allclose(s12_pmts.sum(axis=1), cCWF[:, i_peak[0]: i_peak[1]].sum(axis=1))
-
-
-def test_sum_waveforms():
-    wfs = np.random.random((12,1300*40))
-    assert np.allclose(pf.sum_waveforms(wfs), np.sum(wfs, axis=0))
-
-
-@fixture(scope='module')
-def toy_ccwfs_and_csum():
-    ccwf  = np.zeros((3, 52000), dtype=np.float64)
-    psize = 200
-    peak  = np.random.normal(loc=10, size=(ccwf.shape[0], psize))
-    indx  = np.arange(650, 650+psize, dtype=np.int32)
-    ccwf[:, indx[0]: indx[-1] + 1] += peak
-    csum  = ccwf.sum(axis=0)
-    return indx, ccwf, csum
-
-
-def test_find_s12_ipmt_find_same_s12_as_find_s12(toy_ccwfs_and_csum):
-    indx, ccwf, csum = toy_ccwfs_and_csum
-    s10    = cpf.find_s1(csum, indx,
-                     time   = minmax(0, 1e+6),
-                     length = minmax(0, 1000000),
-                     stride = 4,
-                     rebin_stride = 1)
-    s11, _ = cpf.find_s1_ipmt(ccwf, csum, indx,
-                     time   = minmax(0, 1e+6),
-                     length = minmax(0, 1000000),
-                     stride = 4,
-                     rebin_stride = 1)
-    s20    = cpf.find_s2(csum, indx,
-                     time   = minmax(0, 1e+6),
-                     length = minmax(0, 1000000),
-                     stride = 4,
-                     rebin_stride = 40)
-    s21, _ = cpf.find_s2_ipmt(ccwf, csum, indx,
-                     time   = minmax(0, 1e+6),
-                     length = minmax(0, 1000000),
-                     stride = 4,
-                     rebin_stride = 0)
-    # Check same s1s found
-    assert s10.s1d.keys() == s11.s1d.keys()
-    for peak0, peak1 in zip(s10.s1d.values(), s11.s1d.values()):
-        assert np.allclose(peak0, peak1)
-    # Check same s2s found
-    assert s20.s2d.keys() == s21.s2d.keys()
-    for peak0, peak1 in zip(s10.s1d.values(), s11.s1d.values()):
-        assert np.allclose(peak0, peak1)
-
-
-def test_find_s12_ipmt_return_none_when_empty_index(toy_ccwfs_and_csum):
-    indx, ccwf, csum = toy_ccwfs_and_csum
-    # Check no s1 found
-    for pmap_class in cpf.find_s1_ipmt(ccwf, csum, np.array([], dtype=np.int32),
-                         time   = minmax(0, 1e+6),
-                         length = minmax(0, 1000000),
-                         stride = 4,
-                         rebin_stride = 1):
-        assert pmap_class is None
-    # Check no s2 found
-    for pmap_class in cpf.find_s2_ipmt(ccwf, csum, np.array([], dtype=np.int32),
-                         time   = minmax(0, 1e+6),
-                         length = minmax(0, 1000000),
-                         stride = 4,
-                         rebin_stride = 1):
-        assert pmap_class is None
+from hypothesis               import given
+from hypothesis               import assume
+from hypothesis.strategies    import composite
+from hypothesis.strategies    import floats
+from hypothesis.strategies    import integers
+from hypothesis.extra.numpy   import arrays
+
+from ..core.testing_utils     import exactly
+from ..core.testing_utils     import previous_float
+from ..core.testing_utils     import assert_Peak_equality
+from ..core.testing_utils     import assert_PMap_equality
+from ..core.system_of_units_c import units
+from ..core.fit_functions     import gauss
+from ..evm .pmaps             import PMTResponses
+from ..evm .pmaps             import SiPMResponses
+from ..evm .pmaps             import S1
+from ..evm .pmaps             import S2
+from ..evm .pmaps             import PMap
+from ..types.ic_types_c       import minmax
+from .                        import peak_functions as pf
+
+
+wf_min =   0
+wf_max = 100
+
+
+@composite
+def waveforms(draw):
+    n_samples = draw(integers(1, 50))
+    return draw(arrays(float, n_samples, floats(wf_min, wf_max)))
+
+
+@composite
+def multiple_waveforms(draw):
+    n_sensors = draw(integers(1, 10))
+    n_samples = draw(integers(1, 50))
+    return draw(arrays(float, (n_sensors, n_samples), floats(wf_min, wf_max)))
+
+
+@composite
+def times_and_waveforms(draw):
+    waveforms = draw(multiple_waveforms())
+    n_samples = waveforms.shape[1]
+    times     = draw(arrays(float, n_samples, floats(0, 10*n_samples), unique=True))
+    return times, waveforms
+
+
+@composite
+def rebinned_sliced_waveforms(draw):
+    times, wfs = draw(times_and_waveforms())
+    assume(times.size >= 5)
+
+    indices     = np.arange(times.size)
+    first       = draw(integers(        0, times.size - 2))
+    last        = draw(integers(first + 1, times.size - 1))
+    slice_      = slice(first, last + 1)
+    indices     = indices[   slice_]
+    times_slice = times  [   slice_]
+    wfs_slice   = wfs    [:, slice_]
+    rebin       = draw(integers(1, 5))
+    (times_slice,
+     wfs_slice) = pf.rebin_times_and_waveforms(times_slice, wfs_slice, rebin)
+    return times, wfs, indices, times_slice, wfs_slice, rebin
+
+
+@composite
+def peak_indices(draw):
+    size    = draw(integers(10, 50))
+    indices = draw(arrays(int, size, integers(0, 5 * size), unique=True))
+    indices = np.sort(indices)
+    stride  = draw(integers(1, 5))
+    peaks   = np.split(indices, 1 + np.where(np.diff(indices) > stride)[0])
+    return indices, peaks, stride
+
+
+@fixture
+def wf_with_indices(n_sensors=5, n_samples=500, length=None, first=None):
+    times = np.arange(n_samples) * 25 * units.ns
+    wfs   = np.zeros((n_sensors, n_samples))
+    amps  = np.random.uniform(50, 100, size=(n_sensors, 1))
+    if length is None:
+        length = np.random.randint(2, n_samples // 2)
+    if first  is None:
+        first  = np.random.randint(0, n_samples // 5)
+    indices = np.arange(first, first + length)
+    x_eval  = np.linspace(-3, 3, length)
+    wfs[:, indices] = gauss(x_eval, amps, 0, 1)
+    return times, wfs, indices
+
+
+@fixture
+def pmt_and_sipm_wfs_with_indices(n_pmt=3, n_sipm=10, n_samples_sipm=10):
+    n_samples_pmt = n_samples_sipm * 40
+    first_pmt     = np.random.randint(0, n_samples_pmt // 5)
+    length_pmt    = np.random.randint(2, n_samples_pmt // 2)
+    first_sipm    = first_pmt // 40
+    length_sipm   = int(np.ceil((first_pmt + length_pmt) / 40)) - first_sipm
+    times,  pmt_wfs,  pmt_indices = wf_with_indices(n_pmt , n_samples_sipm * 40,
+                                                    length_pmt, first_pmt)
+
+    _    , sipm_wfs, sipm_indices = wf_with_indices(n_sipm, n_samples_sipm,
+                                                    length_sipm, first_sipm)
+    return times, pmt_wfs, sipm_wfs, pmt_indices, sipm_indices
+
+
+@fixture
+def s1_and_s2_with_indices(n_pmt=3, n_sipm=10, n_samples_sipm=40):
+    n_samples_pmt_s1 = 400
+    length_pmt_s1    = np.random.randint(5, 20)
+
+    times_s1, pmt_wfs_s1, pmt_indices_s1 = wf_with_indices(n_pmt,
+                                                           n_samples_pmt_s1,
+                                                           length_pmt_s1)
+    sipm_wfs_s1 = np.zeros((n_sipm, n_samples_pmt_s1 // 40))
+
+    n_samples_pmt_s2 = n_samples_sipm * 40
+    first_pmt        = np.random.randint( 0, n_samples_pmt_s2 // 5)
+    length_pmt_s2    = np.random.randint(40, n_samples_pmt_s2 // 2)
+    times_s2, pmt_wfs_s2, pmt_indices_s2 = wf_with_indices(n_pmt,
+                                                           n_samples_pmt_s2,
+                                                           length_pmt_s2,
+                                                           first_pmt)
+
+    first_sipm  = first_pmt // 40
+    length_sipm = int(np.ceil((first_pmt + length_pmt_s2) / 40)) - first_sipm
+    _    , sipm_wfs_s2, sipm_indices = wf_with_indices(n_sipm, n_samples_sipm,
+                                                       length_sipm, first_sipm)
+
+    times_s2 += times_s1[-1] + np.diff(times_s1)[-1]
+    times     = np.concatenate([   times_s1,    times_s2]        )
+    pmt_wfs   = np.concatenate([ pmt_wfs_s1,  pmt_wfs_s2], axis=1)
+    sipm_wfs  = np.concatenate([sipm_wfs_s1, sipm_wfs_s2], axis=1)
+
+    pmt_indices_s2 += n_samples_pmt_s1
+    sipm_indices   += n_samples_pmt_s1 // 40
+
+    s1_params = {
+    "time"        : minmax(times_s1[0], times_s1[-1]),
+    "length"      : minmax(5, 20),
+    "stride"      : 1,
+    "rebin_stride": 1}
+
+    s2_params = {
+    "time"        : minmax(times_s2[0], times_s2[-1]),
+    "length"      : minmax(40, n_samples_pmt_s2 // 2),
+    "stride"      :  1,
+    "rebin_stride": 40}
+
+    return (times, pmt_wfs, sipm_wfs,
+            pmt_indices_s1, pmt_indices_s2, sipm_indices,
+            s1_params, s2_params)
+
+
+@given(waveforms())
+def test_indices_and_wf_above_threshold_minus_inf(wf):
+    thr = -np.inf
+    indices, wf_above_thr = pf.indices_and_wf_above_threshold(wf, thr)
+    assert      indices == exactly(np.arange(wf.size))
+    assert wf_above_thr == approx (wf)
+
+
+@given(waveforms())
+def test_indices_and_wf_above_threshold_min(wf):
+    thr = previous_float(np.min(wf))
+    indices, wf_above_thr = pf.indices_and_wf_above_threshold(wf, thr)
+    assert      indices == exactly(np.arange(wf.size))
+    assert wf_above_thr == approx (wf)
+
+
+@given(waveforms())
+def test_indices_and_wf_above_threshold_plus_inf(wf):
+    thr = +np.inf
+    indices, wf_above_thr = pf.indices_and_wf_above_threshold(wf, thr)
+    assert np.size(indices)      == 0
+    assert np.size(wf_above_thr) == 0
+
+
+@given(waveforms())
+def test_indices_and_wf_above_threshold_max(wf):
+    thr = np.max(wf)
+    indices, wf_above_thr = pf.indices_and_wf_above_threshold(wf, thr)
+
+    assert indices     .size == 0
+    assert wf_above_thr.size == 0
+
+
+@given(waveforms(), floats(wf_min, wf_max))
+def test_indices_and_wf_above_threshold(wf, thr):
+    indices, wf_above_thr = pf.indices_and_wf_above_threshold(wf, thr)
+    expected_indices      = np.where(wf > thr)[0]
+    expected_wf           = wf[expected_indices]
+    assert      indices == exactly(expected_indices)
+    assert wf_above_thr == approx (expected_wf)
+
+
+@given(multiple_waveforms())
+def test_select_wfs_above_time_integrated_thr_minus_inf(sipm_wfs):
+    thr      = -np.inf
+    ids, wfs = pf.select_wfs_above_time_integrated_thr(sipm_wfs, thr)
+
+    assert ids == exactly(np.arange(sipm_wfs.shape[0]))
+    assert wfs == exactly(sipm_wfs)
+
+
+@given(multiple_waveforms())
+def test_select_wfs_above_time_integrated_thr_plus_inf(sipm_wfs):
+    thr      = +np.inf
+    ids, wfs = pf.select_wfs_above_time_integrated_thr(sipm_wfs, thr)
+
+    assert ids.size == 0
+    assert wfs.size == 0
+
+
+@given(multiple_waveforms(), floats(wf_min, wf_max))
+def test_select_wfs_above_time_integrated_thr(sipm_wfs, thr):
+    ids, wfs     = pf.select_wfs_above_time_integrated_thr(sipm_wfs, thr)
+    expected_ids = np.where(np.sum(sipm_wfs, axis=1) >= thr)[0]
+    expected_wfs = sipm_wfs[expected_ids]
+
+    assert ids == exactly(expected_ids)
+    assert wfs == approx (expected_wfs)
+
+
+@given(peak_indices())
+def test_split_in_peaks(peak_data):
+    indices, expected_peaks, stride = peak_data
+    peaks = pf.split_in_peaks(indices, stride)
+
+    assert len(peaks) == len(expected_peaks)
+    for got, expected in zip(peaks, expected_peaks):
+        assert got == exactly(expected)
+
+
+@given(peak_indices())
+def test_select_peaks_without_bounds(peak_data):
+    _, peaks , _ = peak_data
+    t_limits = minmax(-np.inf, np.inf)
+    l_limits = minmax(-np.inf, np.inf)
+    selected = pf.select_peaks(peaks, t_limits, l_limits)
+    assert len(selected) == len(peaks)
+    for got, expected in zip(selected, peaks):
+        assert got == exactly(expected)
+
+
+@given(peak_indices(),
+       floats(0,  5), floats( 6, 10),
+       floats(0, 10), floats(11, 20))
+def test_select_peaks_filtered_out(peak_data, i0, i1, l0, l1):
+    _, peaks , _ = peak_data
+    i_limits = minmax(i0, i1)
+    l_limits = minmax(l0, l1)
+    selected = pf.select_peaks(peaks, i_limits * 25 * units.ns, l_limits)
+    for peak in selected:
+        assert i0 <=                peak[0] <= i1
+        assert l0 <= peak[-1] + 1 - peak[0] <= l1
+
+
+def test_select_peaks_right_length_with_holes():
+    peak_with_hole = np.array([1, 2, 3,   7, 8, 9])
+    length_correct = peak_with_hole[-1] + 1 - peak_with_hole[0]
+    length_wrong   = len(peak_with_hole)
+
+    l_limits_correct = minmax(length_correct - 1, length_correct + 1)
+    l_limits_wrong   = minmax(length_wrong   - 1, length_wrong   + 1)
+
+    peaks    = (peak_with_hole,)
+    i_limits = minmax(0, 10) * 25 * units.ns
+
+    selected_correct = pf.select_peaks(peaks, i_limits, l_limits_correct)
+    selected_wrong   = pf.select_peaks(peaks, i_limits, l_limits_wrong)
+
+    assert selected_correct[0] == exactly(peak_with_hole)
+    assert selected_wrong      == ()
+
+
+@given(peak_indices(),
+       floats(0,  5), floats( 6, 10),
+       floats(0, 10), floats(11, 20))
+def test_select_peaks(peak_data, t0, t1, l0, l1):
+    _, peaks , _ = peak_data
+    i_limits = minmax(t0, t1)
+    t_limits = i_limits * 25 * units.ns
+    l_limits = minmax(l0, l1)
+    selected = pf.select_peaks(peaks, t_limits, l_limits)
+
+    select = lambda ids: (i_limits.contains(ids[ 0]) and
+                          i_limits.contains(ids[-1]) and
+                          l_limits.contains(ids[-1] + 1 - ids[0]))
+    expected_peaks = tuple(filter(select, peaks))
+
+    assert len(selected) == len(expected_peaks)
+    for got, expected in zip(selected, expected_peaks):
+        assert got == exactly(expected)
+
+
+@given(rebinned_sliced_waveforms())
+def test_pick_slice_and_rebin(wfs_slice_data):
+    times, wfs, indices, times_slice, wfs_slice, rebin = wfs_slice_data
+    sliced_times, sliced_wfs = pf.pick_slice_and_rebin(indices, times,
+                                                       wfs, rebin)
+
+    assert sliced_times == approx(times_slice)
+    assert sliced_wfs   == approx(  wfs_slice)
+
+
+def test_build_pmt_responses(wf_with_indices):
+    times, wfs, indices = wf_with_indices
+    ids = np.arange(wfs.shape[0])
+    ts, pmt_r = pf.build_pmt_responses(indices, times,
+                                       wfs, ids, 1, False)
+    assert ts                  == approx (times[indices])
+    assert pmt_r.ids           == exactly(ids)
+    assert pmt_r.all_waveforms == approx (wfs[:, indices])
+
+
+def test_build_sipm_responses(wf_with_indices):
+    times, wfs, indices = wf_with_indices
+    ids = np.arange(wfs.shape[0])
+    wfs_slice       = wfs[:, indices]
+    peak_integrals  = wfs_slice.sum(axis=1)
+    below_thr_index = np.argmin (peak_integrals)
+    # next_float doesn't work here
+    thr             = peak_integrals[below_thr_index] * 1.000001
+    sipm_r          = pf.build_sipm_responses(indices, times, wfs, 1, thr)
+
+    expected_ids = np.delete(      ids, below_thr_index)
+    expected_wfs = np.delete(wfs_slice, below_thr_index, axis=0)
+    assert sipm_r.ids           == exactly(expected_ids)
+    assert sipm_r.all_waveforms == approx (expected_wfs)
+
+
+@mark.parametrize("Pk rebin with_sipms".split(),
+                  ((S1,  1, False),
+                   (S2,  1, False),
+                   (S2, 40, True )))
+def test_build_peak_development(pmt_and_sipm_wfs_with_indices,
+                                Pk, rebin, with_sipms):
+    (times, pmt_wfs, sipm_wfs,
+     pmt_indices, sipm_indices) = pmt_and_sipm_wfs_with_indices
+    pmt_ids  = np.arange( pmt_wfs.shape[0])
+
+    if with_sipms:
+        sipm_ids = np.arange(sipm_wfs.shape[0])
+        rebin    = 40
+        indices  = sipm_indices
+        sipm_r = SiPMResponses(sipm_ids, sipm_wfs[:, indices])
+    else:
+        rebin   = 1
+        indices = pmt_indices
+        sipm_r = SiPMResponses.build_empty_instance()
+
+    (rebinned_times,
+     rebinned_wfs  ) = pf.rebin_times_and_waveforms(times, pmt_wfs, rebin)
+    pmt_r            = PMTResponses(pmt_ids, rebinned_wfs[:, indices])
+    expected_peak    = S2(rebinned_times[indices], pmt_r, sipm_r)
+
+    peak = pf.build_peak(pmt_indices, times,
+                         pmt_wfs, pmt_ids,
+                         rebin_stride = rebin,
+                         with_sipms   = with_sipms,
+                         Pk           = Pk,
+                         sipm_wfs     = sipm_wfs,
+                         thr_sipm_s2  = -1)
+
+    assert_Peak_equality(peak, expected_peak)
+
+
+def test_find_peaks_trigger_style(pmt_and_sipm_wfs_with_indices):
+    (times, pmt_wfs, sipm_wfs,
+     pmt_indices, sipm_indices) = pmt_and_sipm_wfs_with_indices
+
+    t_slice      = times[pmt_indices]
+    time_range   = minmax(      t_slice[0] - 1,      t_slice[-1] + 2)
+    length_range = minmax(pmt_indices.size - 1, pmt_indices.size + 2)
+    stride       =   1
+    rebin_stride =  40
+    pmt_ids      = [-1]
+
+    wf    = pmt_wfs[0]
+    wfs   = wf[np.newaxis]
+    peaks = pf.find_peaks(wf, pmt_indices,
+                          time_range, length_range,
+                          stride, rebin_stride,
+                          S2, pmt_ids)
+
+    (rebinned_times,
+     rebinned_wfs  ) = pf.rebin_times_and_waveforms(times [pmt_indices],
+                                                    wfs[:, pmt_indices],
+                                                    rebin_stride)
+
+    pmt_r            =  PMTResponses(pmt_ids, rebinned_wfs)
+    sipm_r           = SiPMResponses.build_empty_instance()
+    expected_peak    = S2(rebinned_times, pmt_r, sipm_r)
+
+    assert len(peaks) == 1
+    assert_Peak_equality(peaks[0], expected_peak)
+
+
+def test_find_peaks_s1_style(pmt_and_sipm_wfs_with_indices):
+    times, pmt_wfs, _, pmt_indices, _ = pmt_and_sipm_wfs_with_indices
+
+    pmt_ids      = np.arange(pmt_wfs.shape[0])
+    t_slice      = times[pmt_indices]
+    time_range   = minmax(      t_slice[0] - 1,      t_slice[-1] + 2)
+    length_range = minmax(pmt_indices.size - 1, pmt_indices.size + 2)
+    stride       = 1
+    rebin_stride = 1
+
+    peaks = pf.find_peaks(pmt_wfs, pmt_indices,
+                          time_range, length_range,
+                          stride, rebin_stride,
+                          S1, pmt_ids)
+
+    pmt_r         =  PMTResponses(pmt_ids, pmt_wfs[:, pmt_indices])
+    sipm_r        = SiPMResponses.build_empty_instance()
+    expected_peak = S2(times[pmt_indices], pmt_r, sipm_r)
+
+    assert len(peaks) == 1
+    assert_Peak_equality(peaks[0], expected_peak)
+
+
+def test_find_peaks_s2_style(pmt_and_sipm_wfs_with_indices):
+    (times, pmt_wfs, sipm_wfs,
+     pmt_indices, sipm_indices) = pmt_and_sipm_wfs_with_indices
+
+    pmt_ids      = np.arange(pmt_wfs.shape[0])
+    sipm_ids     = np.arange(sipm_wfs.shape[0])
+    t_slice      = times[pmt_indices]
+    time_range   = minmax(      t_slice[0] - 1,      t_slice[-1] + 2)
+    length_range = minmax(pmt_indices.size - 1, pmt_indices.size + 2)
+    stride       =  1
+    rebin_stride = 40
+
+    peaks = pf.find_peaks(pmt_wfs, pmt_indices,
+                          time_range, length_range,
+                          stride, rebin_stride,
+                          S2, pmt_ids,
+                          sipm_wfs    = sipm_wfs,
+                          thr_sipm_s2 = -1)
+
+    (rebinned_times,
+     rebinned_wfs  ) = pf.rebin_times_and_waveforms(times, pmt_wfs,
+                                                    rebin_stride)
+
+    pmt_r            =  PMTResponses( pmt_ids, rebinned_wfs[:, sipm_indices])
+    sipm_r           = SiPMResponses(sipm_ids, sipm_wfs    [:, sipm_indices])
+    expected_peak    = S2(rebinned_times[sipm_indices], pmt_r, sipm_r)
+
+    assert len(peaks) == 1
+    assert_Peak_equality(peaks[0], expected_peak)
+
+
+def test_get_pmap(s1_and_s2_with_indices):
+    (times, pmt_wfs, sipm_wfs,
+     s1_indx, s2_indx, sipm_indices,
+     s1_params, s2_params) = s1_and_s2_with_indices
+    pmt_ids  = np.arange( pmt_wfs.shape[0])
+    sipm_ids = np.arange(sipm_wfs.shape[0])
+
+
+    pmap = pf.get_pmap(pmt_wfs, s1_indx, s2_indx, sipm_wfs,
+                       s1_params, s2_params,
+                       thr_sipm_s2 = -1,
+                       pmt_ids     = pmt_ids)
+
+    (rebinned_times,
+     rebinned_wfs  ) = pf.rebin_times_and_waveforms(times,
+                                                    pmt_wfs,
+                                                    s2_params["rebin_stride"])
+
+
+    s1 = S1(times[s1_indx],
+            PMTResponses ( pmt_ids, pmt_wfs[:, s1_indx]),
+            SiPMResponses.build_empty_instance())
+
+    s2 = S2(rebinned_times[sipm_indices],
+            PMTResponses ( pmt_ids, rebinned_wfs[:, sipm_indices]),
+            SiPMResponses(sipm_ids,     sipm_wfs[:, sipm_indices]))
+
+    expected_pmap = PMap([s1], [s2])
+    assert_PMap_equality(pmap, expected_pmap)
+
+
+@given(times_and_waveforms(), integers(2, 10))
+def test_rebin_times_and_waveforms_sum_axis_1_does_not_change(t_and_wf, stride):
+    times, wfs = t_and_wf
+    _, rb_wfs  = pf.rebin_times_and_waveforms(times, wfs, stride)
+    assert np.sum(wfs, axis=1) == approx(np.sum(rb_wfs, axis=1))
+
+
+@given(times_and_waveforms(), integers(2, 10))
+def test_rebin_times_and_waveforms_sum_axis_0_does_not_change(t_and_wf, stride):
+    times, wfs = t_and_wf
+    sum_wf     = np.stack([np.sum(wfs, axis=0)])
+    _, rb_wfs  = pf.rebin_times_and_waveforms(times,     wfs, stride)
+    _, rb_sum  = pf.rebin_times_and_waveforms(times, sum_wf , stride)
+    assert rb_sum[0] == approx(np.sum(rb_wfs, axis=0))
+
+
+@given(times_and_waveforms(), integers(2, 10))
+def test_rebin_times_and_waveforms_number_of_wfs_does_not_change(t_and_wf, stride):
+    times, wfs  = t_and_wf
+    _, rb_wfs = pf.rebin_times_and_waveforms(times, wfs, stride)
+    assert len(wfs) == len(rb_wfs)
+
+
+@given(times_and_waveforms(), integers(2, 10))
+def test_rebin_times_and_waveforms_number_of_bins_is_correct(t_and_wf, stride):
+    times, wfs       = t_and_wf
+    rb_times, rb_wfs = pf.rebin_times_and_waveforms(times, wfs, stride)
+    expected_n_bins  = times.size // stride
+    if times.size % stride != 0:
+        expected_n_bins += 1
+
+    assert rb_times.size     == expected_n_bins
+    assert rb_wfs  .shape[1] == expected_n_bins
+
+
+@given(times_and_waveforms())
+def test_rebin_times_and_waveforms_stride_1_does_not_rebin(t_and_wf):
+    times, wfs       = t_and_wf
+    rb_times, rb_wfs = pf.rebin_times_and_waveforms(times, wfs, 1)
+
+    assert np.all(times == rb_times)
+    assert wfs == approx(rb_wfs)
+
+
+@given(times_and_waveforms(), integers(2, 10))
+def test_rebin_times_and_waveforms_times_are_consistent(t_and_wf, stride):
+    times, wfs  = t_and_wf
+
+    # The samples falling in the last bin cannot be so easily
+    # compared as the other ones so I remove them.
+    remain = times.size - times.size % stride
+    times  = times[:remain]
+    wfs    = wfs  [:remain]
+    rb_times, _ = pf.rebin_times_and_waveforms(times, np.ones_like(wfs), stride)
+
+    assert np.sum(rb_times) * stride == approx(np.sum(times))
