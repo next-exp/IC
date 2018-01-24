@@ -5,23 +5,13 @@ credits: see ic_authors_and_legal.rst in /doc
 
 last revised: JJGC, 12-July-2017
 """
-import sys
-
 from argparse import Namespace
 
 import numpy  as np
-import tables as tb
 
-from .. core.configure         import configure
-from .. core.system_of_units_c import units
-
-from .. io.mc_io               import mc_track_writer
-from .. io.pmap_io             import pmap_writer
-from .. io.pmap_io             import pmap_writer_and_ipmt_writer
-from .. io.run_and_event_io    import run_and_event_writer
-from .. reco                   import tbl_functions as tbl
-from .. evm.ic_containers      import S12Params as S12P
-from .. types.ic_types         import minmax
+from .. io.mc_io            import mc_track_writer
+from .. io.pmaps_io         import pmap_writer
+from .. io.run_and_event_io import run_and_event_writer
 
 from .  base_cities  import PmapCity
 from .  base_cities  import EventLoop
@@ -55,10 +45,10 @@ class Irene(PmapCity):
         3. compute PMAPS and write them to file
         """
 
-        write = self.writers
-        pmtrwf       = dataVectors.pmt
-        sipmrwf      = dataVectors.sipm
-        mc_tracks    = dataVectors.mc
+        write       = self.writers
+        pmtrwf      = dataVectors.pmt
+        sipmrwf     = dataVectors.sipm
+        mc_tracks   = dataVectors.mc
         events_info = dataVectors.events
 
         for evt in range(NEVT):
@@ -70,21 +60,22 @@ class Irene(PmapCity):
             self.cnt.n_events_tot += 1
 
             # calibrated sum in PMTs
-            s12sum, cal_cwf, calsum = self.pmt_transformation(pmtrwf[evt])
+            s12sum, cal_cwf, _ = self.pmt_transformation(pmtrwf[evt])
 
             if not self.check_s12(s12sum): # ocasional but rare empty events
                 self.cnt.n_empty_events += 1
                 continue
 
             # calibrated sum in SiPMs
-            sipmzs = self.calibrated_signal_sipm(sipmrwf[evt])
+            sipmzs = self.calibrate_sipms(sipmrwf[evt])
 
             # pmaps
-            pmap = self.pmaps(s12sum.s1_indx, s12sum.s2_indx, cal_cwf.ccwf, calsum.csum, sipmzs)
+            pmap = self.pmaps(s12sum.s1_indx, s12sum.s2_indx,
+                              cal_cwf.ccwf, sipmzs)
 
             # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)
-            write.pmap         (event, *pmap)
+            write.pmap         (pmap, event)
             write.run_and_event(self.run_number, event, timestamp)
             if self.monte_carlo:
                 write.mc(mc_tracks, event)
@@ -112,11 +103,9 @@ class Irene(PmapCity):
 
     def get_writers(self, h5out):
         writers = Namespace(
-        run_and_event =        run_and_event_writer(h5out),
-        mc            =             mc_track_writer(h5out) if self.monte_carlo else None,
-        pmap          = pmap_writer_and_ipmt_writer(h5out) if self.compute_ipmt_pmaps \
-                                   else pmap_writer(h5out),
-        )
+        run_and_event = run_and_event_writer(h5out),
+        mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
+        pmap          =          pmap_writer(h5out))
         return writers
 
     def display_IO_info(self):

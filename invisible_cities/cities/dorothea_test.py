@@ -10,12 +10,12 @@ from .. core.configure     import configure
 from .. core.system_of_units import pes, mm, mus, ns
 
 
-def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps, KrMC_kdst):
+def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps_filename, KrMC_kdst):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
 
-    PATH_IN   = KrMC_pmaps[0]
+    PATH_IN   = KrMC_pmaps_filename
     PATH_OUT  = os.path.join(config_tmpdir, 'KrDST.h5')
     nrequired = 10
     df_true   = KrMC_kdst.true
@@ -45,8 +45,8 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps, KrMC_kdst):
     assert_dataframes_close(dst, df_true, False, rtol=1e-2)
 
 
-def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
-    PATH_IN =  Kr_pmaps_run4628
+def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
+    PATH_IN =  Kr_pmaps_run4628_filename
 
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST_4628.h5')
     nrequired = 50
@@ -98,14 +98,14 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628):
     assert np.all(dst.event.values == events_pass)
     assert np.all(dst.peak.values  ==   peak_pass)
 
-def test_dorothea_issue_347(Kr_pmaps_run4628, config_tmpdir):
-    PATH_IN =  Kr_pmaps_run4628
+def test_dorothea_issue_347(Kr_pmaps_run4628_filename, config_tmpdir):
+    PATH_IN =  Kr_pmaps_run4628_filename
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST.h5')
     conf = configure('dummy invisible_cities/config/dorothea_with_corona.conf'.split())
     # with this parameters Corona will find several clusters
-    conf.update(dict(run_number = 4628,
-                     files_in   = PATH_IN,
-                     file_out   = PATH_OUT,
+    conf.update(dict(run_number    = 4628,
+                     files_in      = PATH_IN,
+                     file_out      = PATH_OUT,
                      lm_radius     = 10.0,
                      new_lm_radius = 13.0,
                      msipm         = 1))
