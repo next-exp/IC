@@ -259,16 +259,16 @@ class City:
         self.DataPMT  = DataPMT
         self.DataSiPM = DataSiPM
 
-        self.xs              = DataSiPM.X.values
-        self.ys              = DataSiPM.Y.values
-        self.pmt_active      = np.nonzero(pmt_active)[0].tolist()
-        self.active_pmt_ids  = DataPMT.SensorID[DataPMT.Active == 1].values
-        self.pmt_adc_to_pes  = abs(DataPMT.adc_to_pes.values).astype(np.double)
-        self.pmt_adc_to_pes  = self.pmt_adc_to_pes[pmt_active]
-        self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
-        self.coeff_c         = DataPMT.coeff_c.values        .astype(np.double)
-        self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
-        self.noise_rms       = DataPMT.noise_rms.values      .astype(np.double)
+        self.xs                 = DataSiPM.X.values
+        self.ys                 = DataSiPM.Y.values
+        self.pmt_active         = np.nonzero(pmt_active)[0].tolist()
+        self.active_pmt_ids     = DataPMT.SensorID[DataPMT.Active == 1].values
+        self.all_pmt_adc_to_pes = abs(DataPMT.adc_to_pes.values).astype(np.double)
+        self.    pmt_adc_to_pes = self.all_pmt_adc_to_pes[pmt_active]
+        self.   sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
+        self.coeff_c            = DataPMT.coeff_c.values        .astype(np.double)
+        self.coeff_blr          = DataPMT.coeff_blr.values      .astype(np.double)
+        self.noise_rms          = DataPMT.noise_rms.values      .astype(np.double)
 
         sipm_x_masked = DataSiPM[DataSiPM.Active == 0].X.values
         sipm_y_masked = DataSiPM[DataSiPM.Active == 0].Y.values
