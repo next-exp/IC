@@ -11,6 +11,7 @@ import tables as tb
 import numpy  as np
 
 from pytest import mark
+from pytest import raises
 
 from .. core                 import system_of_units as units
 from .. core.configure       import configure
@@ -150,3 +151,20 @@ def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
 
     # we are just interested in checking whether the code runs or not
     assert cnt.n_events_tot == 1
+
+
+@mark.slow
+def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdir):
+    file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
+    file_out = os.path.join(output_tmpdir, 'electrons_40keV_z250_RWF_test_trigger.h5')
+
+    conf = configure('diomira invisible_cities/config/diomira.conf'.split())
+    conf.update(dict(run_number   = -4500, # Must be a run number with dead pmts
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     trigger_type = "S2",
+                     tr_channels  = (0,), # This is a masked PMT for this run
+                     event_range  = (0, 1)))
+
+    with raises(ValueError):
+        Diomira(**conf).run()
