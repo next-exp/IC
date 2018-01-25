@@ -130,3 +130,23 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
                0)))
 def test_event_number_from_input_file_name(filename, first_evt):
     assert Diomira.event_number_from_input_file_name(filename) == first_evt
+
+
+@mark.slow
+def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
+    file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
+    file_out = os.path.join(output_tmpdir, 'electrons_40keV_z250_RWF_test_mismatch.h5')
+
+    conf = configure('diomira invisible_cities/config/diomira.conf'.split())
+    conf.update(dict(run_number  = -4500, # Must be a run number with dead pmts
+                     files_in    = file_in,
+                     file_out    = file_out,
+                     tr_channels = (18, 19),
+                     event_range = (0, 1)))
+
+    diomira = Diomira(**conf)
+    diomira.run()
+    cnt     = diomira.end()
+
+    # we are just interested in checking whether the code runs or not
+    assert cnt.n_events_tot == 1
