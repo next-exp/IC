@@ -1001,6 +1001,12 @@ class TriggerEmulationCity(PmapCity):
         super().__init__(**kwds)
         self.trigger_params   = self.trigger_parameters()
 
+        self.IC_ids_selection = convert_channel_id_to_IC_id(self.DataPMT,
+                                                            self.trigger_params.trigger_channels)
+
+        if not np.all(np.in1d(self.IC_ids_selection, self.pmt_active)):
+            raise ValueError("Attempt to trigger in masked PMT")
+
     def trigger_parameters(self):
         """Simulate trigger parameters."""
         conf = self.conf
@@ -1020,15 +1026,9 @@ class TriggerEmulationCity(PmapCity):
         """
 
         CWF = self.deconv_pmt(RWF)
-        IC_ids_selection = convert_channel_id_to_IC_id(self.DataPMT,
-                                                       self.trigger_params.trigger_channels)
-
-        if not np.all(np.in1d(IC_ids_selection, self.pmt_active)):
-            raise ValueError("Attempt to trigger in masked PMT")
-
 
         peak_data = {}
-        for pmt_id in IC_ids_selection:
+        for pmt_id in self.IC_ids_selection:
             # Emulate zero suppression in the FPGA
             wfm_index, _ = \
             pkf.indices_and_wf_above_threshold(CWF[pmt_id],
