@@ -1056,16 +1056,16 @@ class MonteCarloCity(TriggerEmulationCity):
         self.sp               = self.get_sensor_rd_params(self.input_files[0])
         self.noise_sampler    = SiPMsNoiseSampler(self.run_number, self.sp.SIPMWL, True)
 
-    @staticmethod
-    def simulate_sipm_response(event, sipmrd,
-                               sipms_noise_sampler, sipm_adc_to_pes):
+
+    def simulate_sipm_response(self, event, sipmrd):
         """Add noise with the NoiseSampler class and return
         the noisy waveform (in adc counts)."""
-        return sf.simulate_sipm_response(event, sipmrd, sipms_noise_sampler,
-                                         sipm_adc_to_pes)
+        return sf.simulate_sipm_response(event, sipmrd,
+                                         self.noise_sampler,
+                                         self.sipm_adc_to_pes)
 
 
-    def simulate_pmt_response(self, event, pmtrd, pmt_adc_to_pes):
+    def simulate_pmt_response(self, event, pmtrd):
         """ Full simulation of the energy plane response
         Input:
          1) extensible array pmtrd
@@ -1077,7 +1077,7 @@ class MonteCarloCity(TriggerEmulationCity):
         array of BLR waveforms (only decimation)
         """
         return sf.simulate_pmt_response(event, pmtrd,
-                                        pmt_adc_to_pes,
+                                        self.all_pmt_adc_to_pes,
                                         self.run_number)
 
     @property
