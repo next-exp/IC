@@ -21,9 +21,9 @@ from .. sierpe   import fee as FEE
 from .  diomira  import Diomira
 
 
-def test_diomira_fee_table(ICDIR):
+def test_diomira_fee_table(ICDATADIR):
     "Test that FEE table reads back correctly with expected values."
-    RWF_file = os.path.join(ICDIR, 'database/test_data/electrons_40keV_z250_RWF.h5')
+    RWF_file = os.path.join(ICDATADIR, 'electrons_40keV_z250_RWF.h5')
 
     with tb.open_file(RWF_file, 'r') as e40rwf:
         fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
@@ -52,7 +52,7 @@ def test_diomira_fee_table(ICDIR):
         assert abs(feep.CEILING - FEE.CEILING)             < eps
 
 
-def test_diomira_identify_bug(ICDIR):
+def test_diomira_identify_bug(ICDATADIR):
     """Read a one-event file in which the energy of PMTs is equal to zero and
     asset it must be son. This test would fail for a normal file where there
     is always some energy in the PMTs. It's purpose is to provide an automaic
@@ -65,7 +65,7 @@ def test_diomira_identify_bug(ICDIR):
     The same event is later processed with Irene (where a protection
     that skips empty events has been added) to ensure that no crash occur."""
 
-    infile = os.path.join(ICDIR, 'database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
+    infile = os.path.join(ICDATADIR, 'irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
     with tb.open_file(infile, 'r') as h5in:
 
         pmtrd  = h5in.root.pmtrd
@@ -75,10 +75,10 @@ def test_diomira_identify_bug(ICDIR):
 
 
 @mark.slow
-def test_diomira_copy_mc_and_offset(config_tmpdir):
-    PATH_IN = os.path.join(os.environ['ICDIR'], 'database/test_data/', 'electrons_40keV_z250_MCRD.h5')
-    PATH_OUT = os.path.join(config_tmpdir,                             'electrons_40keV_z250_RWF.h5')
-    # PATH_OUT = os.path.join(os.environ['IC_DATA'],                             'electrons_40keV_z250_test_RWF.h5')
+def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
+    PATH_IN  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'electrons_40keV_z250_RWF.h5' )
+    #PATH_OUT = os.path.join(ICDATADIR, 'electrons_40keV_z250_test_RWF.h5')
 
     start_evt  = Diomira.event_number_from_input_file_name(PATH_IN)
     run_number = 0
