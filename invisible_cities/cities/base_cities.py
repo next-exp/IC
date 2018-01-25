@@ -454,12 +454,14 @@ class DeconvolutionCity(RawCity):
         row["ACCUM_DISCHARGE_LENGTH"] = self.accum_discharge_length
         table.flush()
 
-    def deconv_pmt(self, RWF):
+    def deconv_pmt(self, RWF, selection=None):
         """Deconvolve the RWF of the PMTs"""
+        if selection is None:
+            selection = self.pmt_active
         return blr.deconv_pmt(RWF,
                               self.coeff_c,
                               self.coeff_blr,
-                              pmt_active             = self.pmt_active,
+                              pmt_active             = selection,
                               n_baseline             = self.n_baseline,
                               thr_trigger            = self.thr_trigger,
                               accum_discharge_length = self.accum_discharge_length)
@@ -1024,18 +1026,16 @@ class TriggerEmulationCity(PmapCity):
         1. online deconvolution of the waveforms.
         2. peak computation in the FPGA
         """
-
-        CWF = self.deconv_pmt(RWF)
+        CWFs = self.deconv_pmt(RWF, self.IC_ids_selection.tolist())
 
         peak_data = {}
-        for pmt_id in self.IC_ids_selection:
+        for pmt_id, cwf in zip(self.IC_ids_selection, CWFs):
             # Emulate zero suppression in the FPGA
             wfm_index, _ = \
-            pkf.indices_and_wf_above_threshold(CWF[pmt_id],
-                                               thr = self.trigger_params.height.min)
+            pkf.indices_and_wf_above_threshold(cwf, thr = self.trigger_params.height.min)
 
             # Emulate peak search (s2) in the FPGA
-            s2 = pkf.find_peaks(CWF[pmt_id], wfm_index,
+            s2 = pkf.find_peaks(cwf, wfm_index,
                                 Pk      = S2,
                                 pmt_ids = [-1],
                                 **self.s2_params._asdict())
