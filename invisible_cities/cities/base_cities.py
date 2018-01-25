@@ -1023,6 +1023,10 @@ class TriggerEmulationCity(PmapCity):
         IC_ids_selection = convert_channel_id_to_IC_id(self.DataPMT,
                                                        self.trigger_params.trigger_channels)
 
+        if not np.all(np.in1d(IC_ids_selection, self.pmt_active)):
+            raise ValueError("Attempt to trigger in masked PMT")
+
+
         peak_data = {}
         for pmt_id in IC_ids_selection:
             # Emulate zero suppression in the FPGA
