@@ -144,8 +144,8 @@ def assert_cluster_equality(cluster1, cluster2):
 
 
 def assert_hit_equality(hit1, hit2):
-    assert_xyzE_equality   (hit1        , hit2        )
-    assert_cluster_equality(hit1.cluster, hit2.cluster)
+    assert_xyzE_equality   (hit1, hit2)
+    assert_cluster_equality(hit1, hit2)
     assert hit1.peak_no == exactly(hit2.peak_no)
 
 
