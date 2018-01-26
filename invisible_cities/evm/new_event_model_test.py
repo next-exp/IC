@@ -100,10 +100,10 @@ def clusters(draw):
 
 @composite
 def hits(draw):
-    x, y, z, E = draw(xyzEs()).args
-    cluster    = draw(clusters()).obj
-    peak_no    = draw(number_of_things)
-    args       = x, y, z, E, cluster, peak_no
+    *_, z, E = draw(xyzEs   ()).args
+    cluster  = draw(clusters()).obj
+    peak_no  = draw(number_of_things)
+    args     = cluster, z, E, peak_no
     return obj_with_args(args, evm.Hit)
 
 
@@ -254,16 +254,16 @@ def test_Cluster_attributes(cluster_data):
 
 @given(hits())
 def test_Hit_attributes(hit_data):
-    (x, y, z, E, cluster, peak_no), hit = hit_data
-    assert hit.x       == approx (x)
-    assert hit.y       == approx (y)
-    assert hit.z       == approx (z)
-    assert hit.E       == approx (E)
-    assert hit.xy      == approx ((x, y))
-    assert hit.xyz     == approx ((x, y, z))
-    assert hit.xyze    == approx ((x, y, z, E))
-    assert hit.r       == approx ((x**2 + y**2)**0.5)
-    assert hit.phi     == approx (np.arctan2(y, x))
+    (cluster, z, E, peak_no), hit = hit_data
+    assert hit.x       == approx ( cluster.x)
+    assert hit.y       == approx ( cluster.y)
+    assert hit.z       == approx (         z)
+    assert hit.E       == approx (         E)
+    assert hit.xy      == approx ((cluster.x    , cluster.y         ))
+    assert hit.xyz     == approx ((cluster.x    , cluster.y   , z   ))
+    assert hit.xyze    == approx ((cluster.x    , cluster.y   , z, E))
+    assert hit.r       == approx ((cluster.x**2 + cluster.y**2)**0.5)
+    assert hit.phi     == approx (np.arctan2(cluster.y, cluster.x))
     assert hit.peak_no == exactly(peak_no)
     assert_cluster_equality(hit.cluster, cluster)
 
