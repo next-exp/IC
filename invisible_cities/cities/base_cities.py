@@ -869,6 +869,21 @@ class HitCity(KrCity):
                       new_lm_radius  =  self.conf.new_lm_radius,
                       msipm          =  self.conf.msipm)
 
+    def compute_xy_peak_position(self, sr):
+        """
+        Computes position using the integral of the charge
+        in each SiPM. Config parameters set equal to the standard kDST values.
+        """
+        IDs = sr.ids
+        Qs = sr.sum_over_times
+        xs, ys   = self.xs[IDs], self.ys[IDs]
+        return corona(np.stack((xs, ys), axis=1), Qs,
+                      Qthr           =  1.,
+                      Qlm            =  0.,
+                      lm_radius      =  -1.,
+                      new_lm_radius  =  -1.,
+                      msipm          =  1)
+
     def split_energy(self, e, clusters):
         if len(clusters) == 1:
             return [e]
@@ -906,6 +921,29 @@ class HitCity(KrCity):
 
             peak = pmf.rebin_peak(peak, self.rebin)
 
+            try:
+                eventCluster = self.compute_xy_peak_position(peak.sipms)
+                # if there is more than one cluster compare the energy measured
+                # in the tracking plane with the energy measured in the energy plane
+                # and thake the cluster where both energies are closer.
+                c = 0
+                if len(eventCluster) == 1:
+                    c = eventCluster[0]
+                else:
+                    cQ = [c.Q for c in eventCluster]
+                    self.cnt.n_events_more_than_1_cluster += 1
+                    print('found case with more than one cluster')
+                    print('eventCluster charge = {}'.format(cQ))
+
+                    c_closest = np.amax([c.Q for c in eventCluster])
+
+                    print('c_closest = {}'.format(c_closest))
+                    c = eventCluster[loc_elem_1d(cQ, c_closest)]
+                    print('c_chosen = {}'.format(c))
+                xy_peak = xy(c.X, c.Y)
+            except:
+                xy_peak = xy(0, 0)
+
             for slice_no, t_slice in enumerate(peak.times):
                 z_slice = (t_slice - s1_t) * units.ns * self.drift_v
                 e_slice = peak.pmts.sum_over_sensors[slice_no]
@@ -913,11 +951,11 @@ class HitCity(KrCity):
                     clusters = self.compute_xy_position(peak.sipms, slice_no)
                     es       = self.split_energy(e_slice, clusters)
                     for c, e in zip(clusters, es):
-                        hit       = Hit(peak_no, c, z_slice, e)
+                        hit       = Hit(peak_no, c, z_slice, e, xy_peak)
                         hitc.hits.append(hit)
                 except XYRecoFail:
                     c = Cluster(NN, xy(0,0), xy(0,0), 0)
-                    hit       = Hit(peak_no, c, z_slice, e_slice)
+                    hit       = Hit(peak_no, c, z_slice, e_slice, xy_peak)
                     hitc.hits.append(hit)
 
         return hitc
