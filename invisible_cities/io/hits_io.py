@@ -36,8 +36,8 @@ def load_hits(DST_file_name):
         current_event = all_events.setdefault(event[i],
                                               HitCollection(event[i], time[i] * 1e-3))
         hit = Hit(npeak[i],
-                 Cluster(Q[i], xy(X[i],Y[i]), xy(Xrms[i],Yrms[i]),
-                         nsipm[i], Z[i], E[i]), Z[i], E[i], xy(Xpeak[i],Ypeak[i]))
+                 Cluster(Q[i], xy(X[i], Y[i]), xy(Xrms[i], Yrms[i]),
+                         nsipm[i], Z[i], E[i]), Z[i], E[i], xy(Xpeak[i], Ypeak[i]))
         current_event.hits.append(hit)
     return all_events
 
@@ -68,8 +68,8 @@ def load_hits_skipping_NN(DST_file_name):
         current_event = all_events.setdefault(event[i],
                                               HitCollection(event[i], time[i] * 1e-3))
         hit = Hit(npeak[i],
-                 Cluster(Q[i], xy(X[i],Y[i]), xy(Xrms[i],Yrms[i]),
-                         nsipm[i], Z[i], E[i]), Z[i], E[i], xy(Xpeak[i],Ypeak[i]))
+                 Cluster(Q[i], xy(X[i], Y[i]), xy(Xrms[i], Yrms[i]),
+                         nsipm[i], Z[i], E[i]), Z[i], E[i], xy(Xpeak[i], Ypeak[i]))
         if(hit.Q != NN):
             current_event.hits.append(hit)
     good_events = {}
