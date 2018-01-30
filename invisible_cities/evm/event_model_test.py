@@ -63,8 +63,8 @@ def hit_input(draw, min_value=0, max_value=100):
     z           = draw(floats  (.1,  .9))
     s2_energy   = draw(floats  (50, 100))
     peak_number = draw(integers( 1,  20))
-    x_peak        = draw(floats (-10., 2.))
-    y_peak        = draw(floats (-20., 5.))
+    x_peak      = draw(floats (-10., 2.))
+    y_peak      = draw(floats (-20., 5.))
     return peak_number, s2_energy, z, x_peak, y_peak
 
 
