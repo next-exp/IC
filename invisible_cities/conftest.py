@@ -438,9 +438,18 @@ def KrMC_hdst(ICDATADIR):
              1303.8236541748047,
              150.27177047729492]
 
+    Xpeak = [120.23567275745617, 120.23567275745617, 120.23567275745617, 120.23567275745617, 120.23567275745617, 120.23567275745617, 120.23567275745617,
+             1.0275026443161928, 1.0275026443161928, 1.0275026443161928, 1.0275026443161928, 1.0275026443161928, 1.0275026443161928, 1.0275026443161928, 1.0275026443161928,
+             154.7712193078262, 154.7712193078262, 154.7712193078262, 154.7712193078262, 154.7712193078262]
+    Ypeak = [106.26682866707235, 106.26682866707235, 106.26682866707235, 106.26682866707235, 106.26682866707235, 106.26682866707235, 106.26682866707235,
+             146.81638358971426, 146.81638358971426, 146.81638358971426, 146.81638358971426, 146.81638358971426, 146.81638358971426, 146.81638358971426, 146.81638358971426,
+             71.50342482013173, 71.50342482013173, 71.50342482013173, 71.50342482013173, 71.50342482013173]
+
     df_true = DataFrame({"event": event,
                          "time" : time ,
                          "npeak": peak ,
+                         "Xpeak": Xpeak,
+                         "Ypeak": Ypeak,
                          "nsipm": nsipm,
                          "X"    : X,
                          "Y"    : Y,
@@ -448,8 +457,7 @@ def KrMC_hdst(ICDATADIR):
                          "Yrms" : Yrms,
                          "Z"    : Z,
                          "Q"    : Q,
-                         "E"    : E})
-
+                         "E"    : E})    
     df_read = load_dst(test_file,
                        group = group,
                        node  = node)
@@ -501,18 +509,20 @@ def corr_toy_data(ICDATADIR):
 
 @pytest.fixture(scope='session')
 def hits_toy_data(ICDATADIR):
-    npeak = np.array   ([0]*25 + [1]*30 + [2]*35 + [3]*10)
-    nsipm = np.arange  (1000, 1100)
-    x     = np.linspace( 150,  250, 100)
-    y     = np.linspace(-280, -180, 100)
-    xrms  = np.linspace(   1,   80, 100)
-    yrms  = np.linspace(   2,   40, 100)
-    z     = np.linspace(   0,  515, 100)
-    q     = np.linspace( 1e3,  1e3, 100)
-    e     = np.linspace( 2e3,  1e4, 100)
+    npeak  = np.array   ([0]*25 + [1]*30 + [2]*35 + [3]*10)
+    nsipm  = np.arange  (1000, 1100)
+    x      = np.linspace( 150,  250, 100)
+    y      = np.linspace(-280, -180, 100)
+    xrms   = np.linspace(   1,   80, 100)
+    yrms   = np.linspace(   2,   40, 100)
+    z      = np.linspace(   0,  515, 100)
+    q      = np.linspace( 1e3,  1e3, 100)
+    e      = np.linspace( 2e3,  1e4, 100)
+    x_peak = np.array([(x * e).sum() / e.sum()] * 100)
+    y_peak = np.array([(y * e).sum() / e.sum()] * 100)
 
     hits_filename = os.path.join(ICDATADIR, "toy_hits.h5")
-    return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e)
+    return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e, x_peak, y_peak)
 
 
 @pytest.fixture(scope='session')

@@ -63,7 +63,9 @@ def hit_input(draw, min_value=0, max_value=100):
     z           = draw(floats  (.1,  .9))
     s2_energy   = draw(floats  (50, 100))
     peak_number = draw(integers( 1,  20))
-    return peak_number, s2_energy, z
+    x_peak      = draw(floats (-10., 2.))
+    y_peak      = draw(floats (-20., 5.))
+    return peak_number, s2_energy, z, x_peak, y_peak
 
 
 @given(sensor_params_input())
@@ -119,12 +121,12 @@ def test_cluster(ci):
 
 @given(cluster_input(1), hit_input(1))
 def test_hit(ci, hi):
-    Q, x, y, xvar, yvar, nsipm = ci
-    peak_number, E, z          = hi
+    Q, x, y, xvar, yvar, nsipm        = ci
+    peak_number, E, z, x_peak, y_peak = hi
     xyz = x, y, z
 
     c = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
-    h = Hit(peak_number, c, z, E)
+    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak))
 
     assert h.peak_number == peak_number
     assert h.npeak       == peak_number
@@ -133,6 +135,8 @@ def test_hit(ci, hi):
     np.isclose (h.Y        , y ,            rtol=1e-4)
     np.isclose (h.Z        , z,             rtol=1e-4)
     np.isclose (h.E        , E,             rtol=1e-4)
+    np.isclose (h.Xpeak    , x_peak,        rtol=1e-4)
+    np.isclose (h.Ypeak    , y_peak,        rtol=1e-4)
     np.allclose(h.XYZ      , xyz,           rtol=1e-4)
     np.allclose(h.pos      , np.array(xyz), rtol=1e-4)
 
