@@ -457,8 +457,7 @@ def KrMC_hdst(ICDATADIR):
                          "Yrms" : Yrms,
                          "Z"    : Z,
                          "Q"    : Q,
-                         "E"    : E})
-    
+                         "E"    : E})    
     df_read = load_dst(test_file,
                        group = group,
                        node  = node)
@@ -510,15 +509,15 @@ def corr_toy_data(ICDATADIR):
 
 @pytest.fixture(scope='session')
 def hits_toy_data(ICDATADIR):
-    npeak = np.array   ([0]*25 + [1]*30 + [2]*35 + [3]*10)
-    nsipm = np.arange  (1000, 1100)
-    x     = np.linspace( 150,  250, 100)
-    y     = np.linspace(-280, -180, 100)
-    xrms  = np.linspace(   1,   80, 100)
-    yrms  = np.linspace(   2,   40, 100)
-    z     = np.linspace(   0,  515, 100)
-    q     = np.linspace( 1e3,  1e3, 100)
-    e     = np.linspace( 2e3,  1e4, 100)
+    npeak  = np.array   ([0]*25 + [1]*30 + [2]*35 + [3]*10)
+    nsipm  = np.arange  (1000, 1100)
+    x      = np.linspace( 150,  250, 100)
+    y      = np.linspace(-280, -180, 100)
+    xrms   = np.linspace(   1,   80, 100)
+    yrms   = np.linspace(   2,   40, 100)
+    z      = np.linspace(   0,  515, 100)
+    q      = np.linspace( 1e3,  1e3, 100)
+    e      = np.linspace( 2e3,  1e4, 100)
     x_peak = np.array([(x * e).sum() / e.sum()] * 100)
     y_peak = np.array([(y * e).sum() / e.sum()] * 100)
 

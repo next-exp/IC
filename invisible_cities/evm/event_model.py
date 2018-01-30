@@ -330,8 +330,8 @@ class HitCollection(Event):
             row["event"] = self.event
             row["time" ] = self.time
             row["npeak"] = hit.npeak
-            row["Xpeak" ] = hit.Xpeak
-            row["Ypeak" ] = hit.Ypeak
+            row["Xpeak"] = hit.Xpeak
+            row["Ypeak"] = hit.Ypeak
             row["nsipm"] = hit.nsipm
             row["X"    ] = hit.X
             row["Y"    ] = hit.Y
