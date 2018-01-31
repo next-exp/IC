@@ -18,6 +18,7 @@ from pytest import fixture
 
 from .. core                import system_of_units as units
 from .. core.configure      import configure
+from .. core.testing_utils  import exactly
 from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
@@ -236,3 +237,30 @@ def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts
     irene = Irene(**conf)
 
     assert irene.pmt_active == job_info_missing_pmts.pmt_active
+
+
+def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
+    file_in  = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_diomira_3evt.h5")
+    file_out = os.path.join(output_tmpdir, "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_pmaps_3evt.h5")
+
+    nrequired = 3
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(run_number   = -4714,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     event_range  = (0, nrequired),
+                     **unpack_s12params(s12params))) # s12params are just dummy values in this test
+
+    irene = Irene(**conf)
+    irene.run()
+    cnt = irene.end()
+
+    assert cnt.n_events_tot   == 3
+    assert cnt.n_empty_events == 0
+    assert cnt.n_empty_pmaps  == 1
+
+    with tb.open_file(file_in) as fin:
+        with tb.open_file(file_out) as fout:
+            got      = fout.root.Run.events.cols.evt_number[:]
+            expected = fin .root.Run.events.cols.evt_number[::2] # skip event in the middle
+            assert got == exactly(expected)
