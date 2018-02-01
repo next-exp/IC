@@ -97,13 +97,10 @@ class Cluster(xy):
         return self.x_rms, self.y_rms
 
 
-class Hit(xyzE, Cluster):
+class Hit(xyzE):
     def __init__(self, cluster, z, E, peak_no):
-        xyzE   .__init__(self, cluster.x     , cluster.y    , z, E)
-        Cluster.__init__(self, cluster.Q     ,
-                               cluster.x     , cluster.y    ,
-                               cluster.x_var , cluster.y_var,
-                               cluster.n_sipm)
+        xyzE.__init__(self, cluster.x, cluster.y, z, E)
+        self.cluster = cluster
         self.peak_no = peak_no
 
 
