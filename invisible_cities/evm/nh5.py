@@ -185,3 +185,5 @@ class HitsTable(tb.IsDescription):
     Z        = tb.Float64Col(pos=10)
     Q        = tb.Float64Col(pos=11)
     E        = tb.Float64Col(pos=12)
+
+# Replace this commit with some actual code
