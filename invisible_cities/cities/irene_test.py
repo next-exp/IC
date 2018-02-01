@@ -154,7 +154,7 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
 
 @mark.slow # not slow itself, but depends on a slow test
 @mark.serial
-def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
+def test_irene_runinfo_run_2983(config_tmpdir, ICDATADIR):
     """Read back the file written by previous test. Check runinfo."""
 
     # NB: the input file has 5 events. The maximum value for 'n'
@@ -162,27 +162,24 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
     # (eg, 2) to speed the test. BUT NB, this has to be propagated to this
     # test, eg. h5in .root.Run.events[0:3] if one has run 2 events.
 
-    PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'run_2983.h5')
-    PATH_OUT = os.path.join(config_tmpdir,               'run_2983_pmaps.h5')
+    PATH_IN  = os.path.join(ICDATADIR    , 'run_2983.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'run_2983_pmaps.h5')
 
 
     with tb.open_file(PATH_IN, mode='r') as h5in:
-        evt_in  = h5in.root.Run.events[0:2]
-        evts_in = []
-        ts_in   = []
-        for e in evt_in:
-            evts_in.append(e[0])
-            ts_in  .append(e[1])
+        # Only event 0 contains a valid pmap
+        evts_in = h5in.root.Run.events.cols.evt_number[:1]
+        ts_in   = h5in.root.Run.events.cols.timestamp [:1]
 
         rundf, evtdf = read_run_and_event(PATH_OUT)
         evts_out = evtdf.evt_number.values
-        ts_out = evtdf.timestamp.values
+        ts_out   = evtdf.timestamp .values
         np.testing.assert_array_equal(evts_in, evts_out)
         np.testing.assert_array_equal(  ts_in,   ts_out)
 
-        rin = h5in.root.Run.runInfo[:][0][0]
-        rout = rundf.run_number[0]
-        assert rin == rout
+        run_number_in  = h5in.root.Run.runInfo[0][0]
+        run_number_out = rundf.run_number[0]
+        assert run_number_in == run_number_out
 
 
 @mark.serial
