@@ -1,4 +1,5 @@
 # TODO: test implicit pipes in fork
+# TODO: test spy_count
 
 import builtins
 import functools
@@ -177,6 +178,13 @@ def count(future):
             count += 1
     finally:
         future.set_result(count)
+
+
+FutureSpy = namedtuple("FutureSpy", "future spy")
+
+def spy_count():
+    pair = count()
+    return FutureSpy(future = pair.future, spy = branch(pair.sink))
 
 
 def stop_when(predicate):
