@@ -33,6 +33,7 @@ for name, attrs in (
         ('CSum'           , 'csum csum_mau'),
         ('CCWf'           , 'ccwf ccwf_mau'),
         ('S12Sum'         , 's1_ene s1_indx s2_ene s2_indx'),
+        ('ZsWf'           , 'indices energies'),
         ('CalibratedPMT'  , 'CPMT CPMT_mau'),
         ('S1PMaps'        , 'S1 S1_PMT S1p S1p_PMT'),
         ('PMaps'          , 'S1 S2 S2Si'),
