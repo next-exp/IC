@@ -1,6 +1,15 @@
 import dataflow as df
 
+from pytest import raises
 from pytest import mark
+parametrize = mark.parametrize
+
+
+from hypothesis            import given
+from hypothesis.strategies import tuples
+from hypothesis.strategies import integers
+from hypothesis.strategies import none
+from hypothesis.strategies import one_of
 
 
 def test_simplest_pipeline():
@@ -380,6 +389,42 @@ def test_reuse_terminated_pipes():
         return [ x for pair in zip(a,b) for x in pair ]
 
     assert collected_by_sinks == intercalate(route1, route2)
+
+
+small_ints         = integers(min_value=0, max_value=15)
+small_ints_nonzero = integers(min_value=1, max_value=15)
+slice_arg          = one_of(none(), small_ints)
+slice_arg_nonzero  = one_of(none(), small_ints_nonzero)
+
+@given(one_of(tuples(small_ints),
+              tuples(small_ints, small_ints),
+              tuples(slice_arg,  slice_arg, slice_arg_nonzero)))
+def test_slice_downstream(spec):
+
+    the_source = list('abcdefghij')
+    result = []
+    the_sink = df.sink(result.append)
+
+    df.push(source = the_source,
+            pipe   = df.pipe(df.slice(*spec), the_sink))
+
+    specslice = slice(*spec)
+    assert result == the_source[specslice]
+    assert result == the_source[specslice.start : specslice.stop : specslice.step]
+
+
+#TODO: Write test slice_close_all
+
+@parametrize('args',
+             ((      -1,),
+              (None, -1),
+              (-1, None),
+              (None, None, -1),
+              (None, None,  0),
+             ))
+def test_slice_raises_ValueError(args):
+    with raises(ValueError):
+        df.slice(*args)
 
 
 @mark.xfail
