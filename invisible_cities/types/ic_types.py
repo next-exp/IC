@@ -4,6 +4,13 @@ import numpy as np
 
 NN= -999999  # No Number, a trick to aovid nans in data structs
 
+
+class NNN:
+
+    def __getattr__(self, _):
+        return NN
+
+
 class Counters(Namespace):
 
     def set(self, **kwds):

@@ -1,8 +1,12 @@
+from string import ascii_letters
+
 import numpy as np
 
 from . ic_types          import minmax
 from . ic_types          import xy
 from . ic_types          import Counters
+from . ic_types          import NN
+from . ic_types          import NNN
 from . ic_types_c        import xy as cxy
 from . ic_types_c        import minmax as cmm
 
@@ -11,6 +15,7 @@ from pytest import raises
 from hypothesis            import given
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
+from hypothesis.strategies import text
 
 
 def make_minmax(a,b):
@@ -145,3 +150,9 @@ def test_cxy(xyc, a, b):
     np.isclose (xyc.R  ,   r, rtol=1e-4)
     np.isclose (xyc.Phi, phi, rtol=1e-4)
     np.allclose(xyc.pos, pos, rtol=1e-3, atol=1e-03)
+
+
+@given(text(min_size=1, max_size=10, alphabet=ascii_letters))
+def test_NNN_generates_NN_for_every_attribute_name(name):
+    nnn = NNN()
+    assert getattr(nnn, name) == NN
