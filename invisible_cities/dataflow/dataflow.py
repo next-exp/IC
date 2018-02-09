@@ -1,6 +1,7 @@
 # TODO: test implicit pipes in fork
 # TODO: test count_filter
 # TODO: test spy_count
+# TODO: test polymorphic result of pipe
 
 import builtins
 import functools
@@ -10,6 +11,7 @@ from collections import namedtuple
 from functools   import wraps
 from asyncio     import Future
 from contextlib  import contextmanager
+from argparse    import Namespace
 
 @contextmanager
 def closing(target):
@@ -248,7 +250,12 @@ def push(source, pipe, result=()):
         except StopPipeline:
             break
     pipe.close()
+    if isinstance(result, dict):
+        return Namespace(**{k: v.result() for k, v in result.items()})
+    if isinstance(result, Future):
+        return result.result()
     return tuple(f.result() for f in result)
+
 
 def pipe(*pieces):
 
