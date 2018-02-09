@@ -158,10 +158,10 @@ def test_push_futures():
 
     the_source = list(range(100))
 
-    result = df.push(source  = the_source,
-                     pipe    = df.fork(                                 count_all.sink,
-                                       df.pipe(df.filter(lambda n:n%2), count_odd.sink)),
-                     futures = (count_odd.future, count_all.future))
+    result = df.push(source = the_source,
+                     pipe   = df.fork(                                 count_all.sink,
+                                      df.pipe(df.filter(lambda n:n%2), count_odd.sink)),
+                     result = (count_odd.future, count_all.future))
 
     all_count = len(the_source)
     odd_count = all_count // 2
@@ -185,10 +185,10 @@ def test_reduce():
     N = 15
     the_source = list(range(N))
 
-    result = df.push(source  = the_source,
-                     pipe    = df.fork(                                 total_all.sink,
-                                       df.pipe(df.filter(lambda n:n%2), total_odd.sink)),
-                     futures = (total_all.future, total_odd.future))
+    result = df.push(source = the_source,
+                     pipe   = df.fork(                                 total_all.sink,
+                                      df.pipe(df.filter(lambda n:n%2), total_odd.sink)),
+                     result = (total_all.future, total_odd.future))
 
     sum_all, sum_odd = sum(the_source), (N // 2) ** 2
     assert result == (sum_all, sum_odd)
@@ -210,10 +210,10 @@ def test_stop_when():
 
     import itertools
 
-    result = df.push(source  = itertools.count(start=0, step=step),
-                     pipe    = df.fork(df.stop_when(lambda n:n==limit),
-                                       count),
-                     futures = (countfuture,))
+    result = df.push(source = itertools.count(start=0, step=step),
+                     pipe   = df.fork(df.stop_when(lambda n:n==limit),
+                                      count),
+                     result = (countfuture,))
 
     assert result == (limit // step,)
 
@@ -232,10 +232,10 @@ def test_stateful_stop_when():
     import itertools
     limit, step = 10, 2
 
-    result = df.push(source  = itertools.count(start=0, step=step),
-                     pipe    = df.fork(df.stop_when(n_items_seen(limit)),
-                                       count),
-                     futures = (countfuture,))
+    result = df.push(source = itertools.count(start=0, step=step),
+                     pipe   = df.fork(df.stop_when(n_items_seen(limit)),
+                                      count),
+                     result = (countfuture,))
 
     assert result == (limit,)
 
