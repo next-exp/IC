@@ -11,6 +11,8 @@ import numpy  as np
 
 from .. dataflow               import dataflow      as fl
 from .. evm .ic_containers     import SensorData
+from .. reco                   import calib_sensors_functions as csf
+from .. reco                   import  peak_functions as pkf
 from .. database               import load_db
 from .. sierpe                 import blr
 
@@ -138,3 +140,42 @@ def sensor_data(path, wf_type):
         _, NPMT ,  PMTWL =  pmt_wfs.shape
         _, NSIPM, SIPMWL = sipm_wfs.shape
         return SensorData(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
+
+####### Transformers ########
+
+def calibrate_pmts(run_number, n_MAU, thr_MAU):
+    DataPMT    = load_db.DataPMT(run_number = run_number)
+    adc_to_pes = np.abs(DataPMT.adc_to_pes.values)
+    adc_to_pes = adc_to_pes[adc_to_pes > 0]
+
+    def calibrate_pmts(cwf):# -> CCwfs:
+        return csf.calibrate_pmts(cwf,
+                                  adc_to_pes = adc_to_pes,
+                                  n_MAU      = n_MAU,
+                                  thr_MAU    = thr_MAU)
+    return calibrate_pmts
+
+
+def calibrate_sipms(run_number, thr_sipm):
+    DataSiPM   = load_db.DataSiPM(run_number)
+    adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
+
+    def calibrate_sipms(rwf):
+        return csf.calibrate_sipms(rwf,
+                                   adc_to_pes = adc_to_pes,
+                                   thr        = thr_sipm,
+                                   bls_mode   = csf.BlsMode.mode)
+
+    return calibrate_sipms
+
+
+def zero_suppress_wfs(thr_csum_s1, thr_csum_s2):
+    def ccwfs_to_zs(ccwf_sum, ccwf_sum_mau):
+        return (pkf.indices_and_wf_above_threshold(ccwf_sum_mau, thr_csum_s1).indices,
+                pkf.indices_and_wf_above_threshold(ccwf_sum    , thr_csum_s2).indices)
+    return ccwfs_to_zs
+
+####### Filters ########
+
+def check_nonempty_indices(indices):
+    return indices.size

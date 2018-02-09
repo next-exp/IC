@@ -11,6 +11,7 @@ last revised: @abotas & @gonzaponte. Dec 1st 2017
 import numpy        as np
 
 from .. core.system_of_units_c import units
+from .. evm .ic_containers     import ZsWf
 from .. evm .pmaps             import S1
 from .. evm .pmaps             import S2
 from .. evm .pmaps             import PMap
@@ -21,7 +22,7 @@ from .. evm .pmaps             import SiPMResponses
 def indices_and_wf_above_threshold(wf, thr):
     indices_above_thr = np.where(wf > thr)[0]
     wf_above_thr      = wf[indices_above_thr]
-    return indices_above_thr, wf_above_thr
+    return ZsWf(indices_above_thr, wf_above_thr)
 
 
 def select_wfs_above_time_integrated_thr(wfs, thr):
