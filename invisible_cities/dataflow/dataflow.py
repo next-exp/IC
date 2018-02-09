@@ -1,3 +1,6 @@
+# TODO: test implicit pipes in fork
+
+import builtins
 from collections import namedtuple
 from functools   import wraps
 from asyncio     import Future
@@ -65,8 +68,10 @@ def branch(*pieces):
                 downstream.send(val)
     return bbb
 
+
 @coroutine
 def fork(*targets):
+    targets = implicit_pipes(targets)
     try:
         while True:
             value = (yield)
@@ -148,6 +153,14 @@ def pipe(*pieces):
             return pipe(*pieces, downstream)
         return pipe_awaiting_sink
 
+
+
+def implicit_pipes(seq):
+    return tuple(builtins.map(if_tuple_make_pipe, seq))
+
+
+def if_tuple_make_pipe(thing):
+    return pipe(*thing) if type(thing) is tuple else thing
 # TODO:
 # + sum
 # + dispatch
