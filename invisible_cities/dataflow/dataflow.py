@@ -2,6 +2,7 @@
 # TODO: test count_filter
 # TODO: test spy_count
 # TODO: test polymorphic result of pipe
+# TODO: Add test for failure to close sideways in branch
 
 import builtins
 import functools
@@ -156,13 +157,13 @@ def spy(op):
 def branch(*pieces):
     sideways = pipe(*pieces)
     @coroutine
-    def bbb(downstream):
-        with closing(downstream):
+    def branch_loop(downstream):
+        with closing(sideways), closing(downstream):
             while True:
                 val = yield
                 sideways  .send(val)
                 downstream.send(val)
-    return bbb
+    return branch_loop
 
 
 @coroutine
