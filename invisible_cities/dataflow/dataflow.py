@@ -1,4 +1,5 @@
 # TODO: test implicit pipes in fork
+# TODO: test count_filter
 # TODO: test spy_count
 
 import builtins
@@ -95,6 +96,49 @@ def filter(predicate, *, args=None):
                         target.send(data)
 
     return coroutine(filter_loop)
+
+FutureFilter = namedtuple('FutureFilter', 'future filter')
+PassedFailed = namedtuple('PassedFailed', 'n_passed n_failed')
+
+def count_filter(predicate, *, args=None):
+    future = Future()
+    n_passed = 0
+    n_failed = 0
+    if args is None:
+        def filter_loop(target):
+            nonlocal n_passed, n_failed
+            try:
+                with closing(target):
+                    while True:
+                        val = yield
+                        passed = predicate(val)
+                        if passed:
+                            n_passed += 1
+                            target.send(val)
+                        else:
+                            n_failed += 1
+            finally:
+                future.set_result(PassedFailed(n_passed, n_failed))
+    else:
+        if _exactly_one(args):
+            args = args,
+
+        def filter_loop(target):
+            nonlocal n_passed, n_failed
+            try:
+                with closing(target):
+                    while True:
+                        data = yield
+                        values = (data[arg] for arg in args)
+                        passed = predicate(*values)
+                        if passed:
+                            n_passed += 1
+                            target.send(data)
+                        else:
+                            n_failed += 1
+            finally:
+                future.set_result(PassedFailed(n_passed, n_failed))
+    return FutureFilter(future=future, filter=coroutine(filter_loop))
 
 
 def spy(op):
