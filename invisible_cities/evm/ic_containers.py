@@ -21,6 +21,7 @@ def _add_namedtuple_in_this_module(name, attribute_names):
 
 for name, attrs in (
         ('DataVectors'    , 'pmt sipm mc events trg_type trg_channels'),
+        ('SensorData'     , 'NPMT PMTWL NSIPM SIPMWL '),
         ('PmapVectors'    , 'pmaps events timestamps mc'),
         ('RawVectors'     , 'event pmtrwf sipmrwf pmt_active sipm_active'),
         ('CalibParams'    , 'coeff_c coeff_blr adc_to_pes_pmt adc_to_pes_sipm'),
