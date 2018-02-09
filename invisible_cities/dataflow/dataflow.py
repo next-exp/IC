@@ -1,13 +1,13 @@
 # TODO: test implicit pipes in fork
 
 import builtins
+import functools
 import itertools as it
+
 from collections import namedtuple
 from functools   import wraps
 from asyncio     import Future
 from contextlib  import contextmanager
-
-import functools
 
 @contextmanager
 def closing(target):
@@ -30,23 +30,71 @@ def coroutine_send(generator_function):
         return coroutine.send
     return proxy
 
-def map(op):
-    @coroutine
-    def map_loop(target):
-        with closing(target):
-            while True:
-                target.send(op((yield)))
-    return map_loop
 
-def filter(predicate):
-    @coroutine
-    def filter_loop(target):
-        with closing(target):
-            while True:
-                val = yield
-                if predicate(val):
-                    target.send(val)
-    return filter_loop
+NoneType = type(None)
+
+def   _exactly_one(spec): return not isinstance(spec, (tuple, list, NoneType))
+def _more_than_one(spec): return     isinstance(spec, (tuple, list)          )
+
+
+# TODO: improve ValueError message
+def map(op=None, *, args=None, out=None, item=None):
+    if item is not None:
+        if args is not None or out is not None:
+            raise ValueError("dataflow.map: use of `item` parameter excludes both `args` and `out`")
+        assert args is None and out is None
+        args = out = item
+
+    if args is None and out is None:
+        def map_loop(target):
+            with closing(target):
+                while True:
+                    target.send(op((yield)))
+    else:
+        if _exactly_one(args):
+            args = args,
+
+        merged_output = _exactly_one(out)
+        if merged_output:
+            out = out,
+
+        def map_loop(target):
+            with closing(target):
+                while True:
+                    data   = yield
+                    values = (data[arg] for arg in args)
+                    trans  = op(*values)
+                    if merged_output:
+                        trans = trans,
+                    for name, value in zip(out, trans):
+                        data[name] = value
+                    target.send(data)
+
+    return coroutine(map_loop)
+
+
+def filter(predicate, *, args=None):
+    if args is None:
+        def filter_loop(target):
+            with closing(target):
+                while True:
+                    val = yield
+                    if predicate(val):
+                        target.send(val)
+    else:
+        if _exactly_one(args):
+            args = args,
+
+        def filter_loop(target):
+            with closing(target):
+                while True:
+                    data = yield
+                    values = (data[arg] for arg in args)
+                    if predicate(*values):
+                        target.send(data)
+
+    return coroutine(filter_loop)
+
 
 def spy(op):
     @coroutine
@@ -94,12 +142,20 @@ def RESULT(generator_function):
         return FutureSink(future, coroutine)
     return proxy
 
-def sink(effect):
-    @coroutine
-    def sink_loop():
-        while True:
-            effect((yield))
-    return sink_loop()
+def sink(effect, *, args=None):
+    if args is None:
+        def sink_loop():
+            while True:
+                effect((yield))
+    else:
+        if _exactly_one(args):
+            args = args,
+        def sink_loop():
+            while True:
+                data   = yield
+                values = (data[arg] for arg in args)
+                effect(*values)
+    return coroutine(sink_loop)()
 
 def reduce(update, initial):
     @RESULT
