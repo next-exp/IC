@@ -31,7 +31,7 @@ def hist_writer(file,
     ## The bins can be written just once at definition of the writer
     file.create_array(hist_group, table_name+'_bins', bin_centres)
 
-    def write_hist(histo : 'np.array: RWF, CWF, SiPM'):
+    def write_hist(histo : 'np.array of histograms, one for each sensor'):
         hist_table.append(histo.reshape(1, n_sensors, n_bins))
 
     return write_hist
