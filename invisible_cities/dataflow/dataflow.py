@@ -3,6 +3,7 @@
 # TODO: test spy_count
 # TODO: test polymorphic result of pipe
 # TODO: Add test for failure to close sideways in branch
+# TODO: test string_to_pick and its usage
 
 import builtins
 import functools
@@ -14,6 +15,8 @@ from functools   import wraps
 from asyncio     import Future
 from contextlib  import contextmanager
 from argparse    import Namespace
+from operator    import itemgetter
+
 
 @contextmanager
 def closing(target):
@@ -180,6 +183,7 @@ def fork(*targets):
             t.close()
 
 
+
 FutureSink = namedtuple('FutureSink', 'future sink')
 
 def RESULT(generator_function):
@@ -261,6 +265,8 @@ def push(source, pipe, result=()):
 
 def pipe(*pieces):
 
+    pieces = tuple(builtins.map(string_to_pick, pieces))
+
     def apply(arg, fn):
         return fn(arg)
 
@@ -270,6 +276,12 @@ def pipe(*pieces):
         def pipe_awaiting_sink(downstream):
             return pipe(*pieces, downstream)
         return pipe_awaiting_sink
+
+
+def string_to_pick(component):
+    if isinstance(component, str):
+        return map(itemgetter(component))
+    return component
 
 
 def slice(*args, close_all=False):
