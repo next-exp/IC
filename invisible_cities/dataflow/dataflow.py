@@ -7,6 +7,7 @@
 import builtins
 import functools
 import itertools as it
+import copy
 
 from collections import namedtuple
 from functools   import wraps
@@ -208,7 +209,7 @@ def sink(effect, *, args=None):
 def reduce(update, initial):
     @RESULT
     def reduce_loop(future):
-        accumulator = initial
+        accumulator = copy.copy(initial)
         try:
             while True:
                 accumulator = update(accumulator, (yield))
