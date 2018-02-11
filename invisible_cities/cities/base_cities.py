@@ -621,6 +621,7 @@ class PCity(City):
         self.write_mc_tracks = self.conf.write_mc_tracks and self.monte_carlo
 
         self.cnt.init(n_events_tot                 = 0,
+                      n_empty_pmaps                = 0,
                       n_events_not_s1              = 0,
                       n_events_not_s2              = 0,
                       n_events_not_s2si            = 0,
@@ -658,7 +659,10 @@ class PCity(City):
             if what_next is EventLoop.terminate_loop : break
             self.cnt.n_events_tot += 1
 
-            pmap = pmaps[evt_number]
+            pmap = pmaps.get(evt_number, None)
+            if pmap is None:
+                self.cnt.n_empty_pmaps += 1
+                continue
 
             # filtering
             filter_output = self.filter_event(pmap)
