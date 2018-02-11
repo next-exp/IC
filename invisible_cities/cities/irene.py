@@ -33,7 +33,8 @@ class Irene(PmapCity):
                       n_empty_events               = 0,
                       n_empty_events_s2_ene_eq_0   = 0,
                       n_empty_events_s1_indx_empty = 0,
-                      n_empty_events_s2_indx_empty = 0)
+                      n_empty_events_s2_indx_empty = 0,
+                      n_empty_pmaps                = 0)
 
         self.sp = self.get_sensor_params(self.input_files[0])
 
@@ -72,6 +73,10 @@ class Irene(PmapCity):
             # pmaps
             pmap = self.pmaps(s12sum.s1_indx, s12sum.s2_indx,
                               cal_cwf.ccwf, sipmzs)
+
+            if not pmap.s1s and not pmap.s2s:
+                self.cnt.n_empty_pmaps += 1
+                continue
 
             # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)

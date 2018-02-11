@@ -18,6 +18,7 @@ from pytest import fixture
 
 from .. core                import system_of_units as units
 from .. core.configure      import configure
+from .. core.testing_utils  import exactly
 from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
@@ -153,7 +154,7 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
 
 @mark.slow # not slow itself, but depends on a slow test
 @mark.serial
-def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
+def test_irene_runinfo_run_2983(config_tmpdir, ICDATADIR):
     """Read back the file written by previous test. Check runinfo."""
 
     # NB: the input file has 5 events. The maximum value for 'n'
@@ -161,27 +162,24 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDIR):
     # (eg, 2) to speed the test. BUT NB, this has to be propagated to this
     # test, eg. h5in .root.Run.events[0:3] if one has run 2 events.
 
-    PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'run_2983.h5')
-    PATH_OUT = os.path.join(config_tmpdir,               'run_2983_pmaps.h5')
+    PATH_IN  = os.path.join(ICDATADIR    , 'run_2983.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'run_2983_pmaps.h5')
 
 
     with tb.open_file(PATH_IN, mode='r') as h5in:
-        evt_in  = h5in.root.Run.events[0:2]
-        evts_in = []
-        ts_in   = []
-        for e in evt_in:
-            evts_in.append(e[0])
-            ts_in  .append(e[1])
+        # Only event 0 contains a valid pmap
+        evts_in = h5in.root.Run.events.cols.evt_number[:1]
+        ts_in   = h5in.root.Run.events.cols.timestamp [:1]
 
         rundf, evtdf = read_run_and_event(PATH_OUT)
         evts_out = evtdf.evt_number.values
-        ts_out = evtdf.timestamp.values
+        ts_out   = evtdf.timestamp .values
         np.testing.assert_array_equal(evts_in, evts_out)
         np.testing.assert_array_equal(  ts_in,   ts_out)
 
-        rin = h5in.root.Run.runInfo[:][0][0]
-        rout = rundf.run_number[0]
-        assert rin == rout
+        run_number_in  = h5in.root.Run.runInfo[0][0]
+        run_number_out = rundf.run_number[0]
+        assert run_number_in == run_number_out
 
 
 @mark.serial
@@ -236,3 +234,30 @@ def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts
     irene = Irene(**conf)
 
     assert irene.pmt_active == job_info_missing_pmts.pmt_active
+
+
+def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
+    file_in  = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_diomira_3evt.h5")
+    file_out = os.path.join(output_tmpdir, "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_pmaps_3evt.h5")
+
+    nrequired = 3
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(run_number   = -4714,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     event_range  = (0, nrequired),
+                     **unpack_s12params(s12params))) # s12params are just dummy values in this test
+
+    irene = Irene(**conf)
+    irene.run()
+    cnt = irene.end()
+
+    assert cnt.n_events_tot   == 3
+    assert cnt.n_empty_events == 0
+    assert cnt.n_empty_pmaps  == 1
+
+    with tb.open_file(file_in) as fin:
+        with tb.open_file(file_out) as fout:
+            got      = fout.root.Run.events.cols.evt_number[:]
+            expected = fin .root.Run.events.cols.evt_number[::2] # skip event in the middle
+            assert got == exactly(expected)

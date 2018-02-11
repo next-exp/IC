@@ -128,3 +128,20 @@ def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
 
         assert len(penthesilea_hits) == len(true_hits)
         assert all(p_hit == t_hit for p_hit, t_hit in zip(penthesilea_hits, true_hits))
+
+
+def test_penthesilea_event_not_found(ICDATADIR, output_tmpdir):
+    file_in   = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_irene_3evt.h5")
+    file_out  = os.path.join(output_tmpdir, "test_penthesilea_event_not_found.h5")
+
+    conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
+    nevt = 3
+
+    conf.update(dict(files_in    = file_in,
+                     file_out    = file_out,
+                     event_range = (0, nevt)))
+
+    penthesilea = Penthesilea(**conf)
+    penthesilea.run()
+    cnt = penthesilea.end()
+    assert cnt.n_empty_pmaps == 1
