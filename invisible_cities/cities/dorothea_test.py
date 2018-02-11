@@ -113,3 +113,20 @@ def test_dorothea_issue_347(Kr_pmaps_run4628_filename, config_tmpdir):
     dorothea.run()
     cnts = dorothea.end()
     assert cnts.n_events_more_than_1_cluster == 3
+
+
+def test_dorothea_event_not_found(ICDATADIR, output_tmpdir):
+    file_in   = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_irene_3evt.h5")
+    file_out  = os.path.join(output_tmpdir, "test_dorothea_event_not_found.h5")
+
+    conf = configure('dummy invisible_cities/config/dorothea.conf'.split())
+    nevt = 3
+
+    conf.update(dict(files_in    = file_in,
+                     file_out    = file_out,
+                     event_range = (0, nevt)))
+
+    dorothea = Dorothea(**conf)
+    dorothea.run()
+    cnt = dorothea.end()
+    assert cnt.n_empty_pmaps == 1
