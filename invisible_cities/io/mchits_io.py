@@ -1,6 +1,5 @@
 
 import tables
-import h5py
 from ..evm.event_model     import MCParticle
 from ..evm.event_model     import MCHit
 from typing import Mapping
@@ -18,9 +17,9 @@ def load_mchits(file_name: str, max_events:int =1e+9) -> Mapping[int, MCHit]:
 def load_mchits_nexus(file_name: str,
                       event_range=(0,int(1e9))) -> Mapping[int, MCHit]:
 
-    h5f = h5py.File(file_name, 'r')
-    mcevents = read_mctracks_nexus(h5f, event_range)
-    mchits_dict = compute_mchits_dict(mcevents)
+    with tables.open_file(file_name,mode='r') as h5in:
+        mcevents = read_mctracks_nexus(h5in, event_range)
+        mchits_dict = compute_mchits_dict(mcevents)
 
     return mchits_dict
 
@@ -32,8 +31,8 @@ def load_mcparticles(file_name: str, max_events:int =1e+9) -> Mapping[int, MCPar
 
 def load_mcparticles_nexus(file_name: str, event_range=(0,int(1e9))) -> Mapping[int, MCParticle]:
 
-    h5f = h5py.File(file_name, 'r')
-    return read_mctracks_nexus(h5f, event_range)
+    with tables.open_file(file_name,mode='r') as h5in:
+        return read_mctracks_nexus(h5in, event_range)
 
 def read_mctracks (mc_table: tables.table.Table,
                    max_events:int =1e+9) ->Mapping[int, Mapping[int, MCParticle]]:
@@ -78,13 +77,12 @@ def read_mctracks (mc_table: tables.table.Table,
 
 def read_mctracks_nexus (h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[int, MCParticle]]:
 
-    h5extents = h5f.get('Run/extents')
-    h5hits = h5f.get('Run/hits')
-    h5particles = h5f.get('Run/particles')
+    h5extents = h5f.root.Run.extents
+    h5hits = h5f.root.Run.hits
+    h5particles = h5f.root.Run.particles
 
     all_events = {}
     particles = {}
-    current_event = {}
 
     ihit = 0; ipart = 0
     if(event_range[0] > 0):
@@ -100,7 +98,7 @@ def read_mctracks_nexus (h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[i
         ipart_end = h5extents[iext]['last_particle']
         while(ipart <= ipart_end):
             h5particle = h5particles[ipart]
-            itrack = h5particle['track_indx']
+            itrack = h5particle['particle_indx']
 
             current_event[itrack] = MCParticle(h5particle['particle_name'],
                                                0, # PDG code not currently stored
@@ -114,7 +112,7 @@ def read_mctracks_nexus (h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[i
         ihit_end = h5extents[iext]['last_hit']
         while(ihit <= ihit_end):
             h5hit = h5hits[ihit]
-            itrack = h5hit['track_indx']
+            itrack = h5hit['particle_indx']
 
             # in case the hit does not belong to a particle, create one
             current_particle = current_event.setdefault(itrack,
