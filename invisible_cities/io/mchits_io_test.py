@@ -4,6 +4,7 @@ from . mchits_io import load_mchits
 from . mchits_io import load_mcparticles
 from . mchits_io import load_mchits_nexus
 from . mchits_io import load_mcparticles_nexus
+from . mchits_io import load_mcsensor_response_nexus
 
 def test_load_all_mchits(mc_all_hits_data):
     efile, number_of_hits, evt_number = mc_all_hits_data
@@ -94,3 +95,21 @@ def test_load_mcparticles_nexus(mc_particle_and_hits_nexus_data):
     assert np.isclose(Z,hZ).all()
     assert np.isclose(E,hE).all()
     assert np.isclose(t,ht).all()
+
+def test_load_sensors_nexus(mc_sensors_nexus_data):
+    efile, pmt0_first, pmt0_last, pmt0_tot_samples, sipm12013 = mc_sensors_nexus_data
+
+    mcsensors_dict = load_mcsensor_response_nexus(efile)
+
+    waveforms = mcsensors_dict[0]
+    sns_number = 0
+    samples = list(waveforms[sns_number])
+
+    assert samples[0]   == pmt0_first
+    assert samples[-1]  == pmt0_last
+    assert len(samples) == pmt0_tot_samples
+
+    sns_number = 12013
+    samples = list(waveforms[sns_number])
+
+    assert np.allclose(samples, sipm12013)
