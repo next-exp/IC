@@ -84,6 +84,181 @@ def expo(x, const, mean):
 def power(x, const, pow_):
     return const * np.power(x, pow_)
 
+## Sensor response function as class
+class sensorSpeResponse:
+    """
+    Class for fitting sensor single photon response.
+    Contains various functions to be able to fit under
+    different conditions:
+    """
+    
+    def __init__(self, bins, integ, cent=0., sig=1.):
+        ## Initialize with a Gaussian
+        self.dspec = np.histogram(np.random.normal(cent, sig, integ), bins)[0]
+
+        ## Possible fixed noise position and sigma
+        self.x0 = cent
+        self.s0 = sig
+
+        ## Initialize a Gaussian counter (default value)
+        self.nGau = 7
+
+        ## Default value for minimum integral
+        ## for Gaussians.
+        self.min_integ = 100.
+
+        ## In case we want to pad to do a convolution
+        # difference bins before and after 0
+        bin_diff = len(np.argwhere(bins<=0)) - len(np.argwhere(bins>0))
+        self.pad = (abs(min(bin_diff, 0)), abs(max(bin_diff,0)))
+
+    ## Possibility to set a spectrum as 'dark'
+    def set_dark_func(self, dark, cent=0., sig=1., scale=1.):
+        """
+        dark  : np array representing no light spectrum
+        cent  : centroid to act in certain functions as 0
+        sig   : rms of pedestal
+        scale : additional scaling factor in case dark and
+        led spectra don't have same number of entries.
+        """
+        self.dspec = dark * scale
+
+        self.x0 = cent
+        self.s0 = sig
+
+    ## In case want to change binning and need to repad.
+    ## Only needed for convolution function
+    def redefine_bins(self, bins):
+
+        bin_diff = len(np.argwhere(bins<=0)) - len(np.argwhere(bins>0))
+        self.pad = (abs(min(bin_diff, 0)), abs(max(bin_diff,0)))
+
+    ## Assumes Gaussian for pedestal and a set number of
+    ## Gaussians for 1 -> nGau pe
+    def set_gaussians(self, xs, *ps):
+        """
+        ps[0] - scale
+        ps[1] - origin (usually 0.)
+        ps[2] - period
+        ps[3] - poisson mean (dark current)
+        ps[4] - noise (peak 0)
+        ps[5] - sigma of the first gaussian
+        """
+        ifacto = np.array(map(math.factorial, range(self.nGau)))
+        efacto = 1./math.sqrt(2.*math.pi)
+        nn, x0, pe, mu, s0, s1 = ps
+
+        def ifun_(i):
+            s2 = s0*s0 + i*s1*s1
+            xref = x0+i*pe
+            fact = (efacto/math.sqrt(s2))
+            yg = fact*np.exp(-(xs-xref)*(xs-xref)/(2.*s2))
+            yp = (math.exp(i*math.log(mu))/ifacto[i])
+            return yg*yp
+
+        iys = map(ifun_, range(ngauss))
+        ys = reduce(lambda x, y: x+y, iys)
+        ys = nn*math.exp(-mu)*ys
+        return ys
+
+    ## As above but fitting Gaussians up to min_integ
+    def min_integ_gaussians(self, xs, *ps):
+        """ function to fo a poisson distribution with gaussian peaks
+        ps[0] - scale
+        ps[1] - origin (usually 0.)
+        ps[2] - 1pe mean
+        ps[3] - poisson mean (dark current)
+        ps[4] - noise (peak 0)
+        ps[5] - sigma of the first gaussian
+        min_integ controles the maximum number of Gaussians to calculate
+        """
+        efacto = 1./np.sqrt(2.*np.pi)
+        nn, x0, pe, mu, s0, s1 = ps
+
+        def ifun_():
+            self.nGau = 0
+            norm = nn*mu**self.nGau*np.exp(-mu)/np.math.factorial(self.nGau)
+            while norm >= self.min_integ:
+                s2 = s0*s0 + self.nGau*s1*s1
+                xref = x0 + self.nGau*pe
+                fact = (efacto/np.sqrt(s2))
+                yg = fact*np.exp(-(xs-xref)*(xs-xref)/(2.*s2))
+                # pe's can't really contribute to -ves
+                yg[xs<0] = 0
+                yield norm*yg
+                self.nGau += 1
+                norm *= mu/self.nGau
+
+        ys = np.sum(ifun_())
+        return ys
+
+    ## Scaled dark spectrum for no light distribution
+    def scaled_dark_pedestal(self, xs, *ps):
+        """ 
+        ps[0] - scale
+        ps[1] - 1pe mean
+        ps[2] - poisson mean (dark current)
+        ps[3] - sigma of the first gaussian
+        min_integ controles the maximum number of Gaussians to calculate
+        """
+        efacto = 1./np.sqrt(2.*np.pi)
+        nn, pe, mu, s1 = ps
+
+        ped_spec = np.exp(-mu) * self.dspec
+        def ifun_():
+            self.nGau = 1
+            norm = nn*mu**self.nGau*np.exp(-mu)/np.math.factorial(self.nGau)
+            while norm >= self.min_integ:
+                s2 = self.s0*self.s0 + self.nGau*s1*s1
+                xref = self.x0 + self.nGau*pe
+                fact = (efacto/np.sqrt(s2))
+                yg = fact*np.exp(-(xs-xref)*(xs-xref)/(2.*s2))
+                # pe's can't really contribute to -ves
+                yg[xs<0] = 0
+                yield norm*yg
+                self.nGau += 1
+                norm *= mu/self.nGau
+
+        ys = ped_spec + np.sum(ifun_())
+        return ys
+
+    ## Convolution of dark spectrum with Gaussians
+    def dark_convolution(self, xs, *ps):
+        """ response function convoluting a dark spectrum
+        with multiple Gaussian distributions.
+        ps[0] - scale
+        ps[1] - 1pe mean
+        ps[2] - poisson mean (dark current)
+        ps[3] - sigma of the first gaussian
+        min_integ controles the maximum number of Gaussians to calculate
+        """
+        nn, pe, mu, s1 = ps
+
+        g_norm = 1./(np.sqrt(2.*np.pi) * s1)
+        ped_spec = np.exp(-mu) * self.dspec
+        dnorm = np.pad(self.dspec/self.dspec.sum(), self.pad,
+                       'constant', constant_values=0.)
+
+        ## FFTs of the base function: 1pe
+        ## Single photon
+        speG = g_norm * np.exp(-(xs-pe)*(xs-pe)/(2.*s1**2))
+        speG[xs<0] = 0
+        speG = np.pad(speG, self.pad, 'constant', constant_values=0.)
+        ##
+        def ifun_():
+            self.nGau = 1
+            norm = nn*mu**self.nGau*np.exp(-mu)/np.math.factorial(self.nGau)
+            conv = np.convolve(dnorm, speG, 'same')
+            while norm >= self.min_integ:
+                if self.nGau > 1:
+                    conv = np.convolve(conv, speG, 'same')
+                yield norm * conv[self.pad[0]:len(conv)-self.pad[-1]]
+                self.nGau += 1
+                norm *= mu/self.nGau
+
+        ys = ped_spec + np.sum(ifun_())
+        return ys
+    
 
 # ###########################################################
 # Tools

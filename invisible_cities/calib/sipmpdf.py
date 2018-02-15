@@ -15,10 +15,11 @@ from functools import partial
 import numpy  as np
 import tables as tb
 
+from .                         import calib_functions as cf
+from .. reco                   import calib_sensors_functions as csf
 from .. io.         hist_io    import          hist_writer
 from .. io.run_and_event_io    import run_and_event_writer
 from .. icaro.hst_functions    import shift_to_bin_centers
-from .. reco                   import calib_sensors_functions as csf
 
 from ..  cities.base_cities import CalibratedCity
 from ..  cities.base_cities import EventLoop
@@ -53,14 +54,6 @@ class Sipmpdf(CalibratedCity):
         bin_wid = self.conf.bin_wid
         self.histbins = np.arange(min_bin, max_bin, bin_wid)
 
-    def calibrate_with_mean(self, wfs):
-        f = csf.subtract_baseline_and_calibrate
-        return f(wfs, self.sipm_adc_to_pes)
-
-    def calibrate_with_mau(self, wfs):
-        f = csf.subtract_baseline_mau_and_calibrate
-        return f(wfs, self.sipm_adc_to_pes, self.n_MAU_sipm)
-
     def event_loop(self, NEVT, dataVectors):
         """
         actions:
@@ -86,12 +79,15 @@ class Sipmpdf(CalibratedCity):
             self.cnt.n_events_tot += 1
 
             ## Zeroed sipm waveforms in pe
-            sipmzs   = self.calibrate_with_mean(sipmrwf[evt])
-            bsipmzs += self.bin_waveforms(sipmzs)
+            ## sipmzs   = self.calibrate_with_mean(sipmrwf[evt])
+            sipmzs   = csf.sipm_processing['pdf'](sipmrwf[evt],
+                                                      self.sipm_adc_to_pes)
+            bsipmzs += cf.bin_waveforms(sipmzs, self.histbins)
 
             ## Difference from the MAU
-            sipmmzs   = self.calibrate_with_mau(sipmrwf[evt])
-            bsipmmzs += self.bin_waveforms(sipmmzs)
+            sipmmzs   = csf.sipm_processing['pdfMM'](sipmrwf[evt],
+                                                         self.sipm_adc_to_pes)
+            bsipmmzs += cf.bin_waveforms(sipmmzs, self.histbins)
 
             # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)
@@ -99,15 +95,6 @@ class Sipmpdf(CalibratedCity):
 
         write.sipm (bsipmzs)
         write.mausi(bsipmmzs)
-
-
-    def bin_waveforms(self, waveforms):
-        """
-        Bins the current event data and adds it
-        to the file level bin array
-        """
-        bin_waveform = lambda x: np.histogram(x, self.histbins)[0]
-        return np.apply_along_axis(bin_waveform, 1, waveforms)
 
 
     def get_writers(self, h5out):
