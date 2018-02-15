@@ -9,11 +9,7 @@ from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
 from .. core.core_functions    import loc_elem_1d
 from .. core.system_of_units_c import units
-from .  pmaps import Peak
-from .  pmaps import S1
-from .  pmaps import S2
-from .  pmaps import S2Si
-from .  pmaps import S2Pmt
+
 from typing import List
 from typing import Tuple
 
@@ -208,7 +204,7 @@ class Cluster(BHit):
 
 class Hit(Cluster):
     """Represents a reconstructed hit (cluster + z + energy)"""
-    def __init__(self, peak_number, cluster, z, s2_energy):
+    def __init__(self, peak_number, cluster, z, s2_energy, peak_xy):
 
 
         super().__init__(cluster.Q,
@@ -216,13 +212,15 @@ class Hit(Cluster):
                          cluster.nsipm, z, s2_energy)
 
         self.peak_number = peak_number
-
+        self.Xpeak = peak_xy.x
+        self.Ypeak = peak_xy.y
+        
     @property
     def npeak(self): return self.peak_number
 
     def __str__(self):
-        return """<{} : npeak = {} z = {} E = {} cluster ={} >""".format(self.__class__.__name__,
-                    self.npeak, self.Z, self.E, super().__str__())
+        return """<{} : npeak = {} z = {} XYpeak = {}, {} E = {} cluster ={} >""".format(self.__class__.__name__,
+                    self.npeak, self.Z, self.Xpeak, self.Ypeak, self.E, super().__str__())
 
     __repr__ =     __str__
 
@@ -332,6 +330,8 @@ class HitCollection(Event):
             row["event"] = self.event
             row["time" ] = self.time
             row["npeak"] = hit.npeak
+            row["Xpeak"] = hit.Xpeak
+            row["Ypeak"] = hit.Ypeak
             row["nsipm"] = hit.nsipm
             row["X"    ] = hit.X
             row["Y"    ] = hit.Y

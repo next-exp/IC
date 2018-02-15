@@ -76,19 +76,21 @@ def test_load_hits_double_ratio_e_q_equals_one_skipping_NN(TlMC_hits_skipping_NN
 def test_hits_writer(config_tmpdir, hits_toy_data):
     output_file = os.path.join(config_tmpdir, "test_hits.h5")
 
-    _, (npeak, nsipm, x, y, xstd, ystd, z, q, e) = hits_toy_data
+    _, (npeak, nsipm, x, y, xstd, ystd, z, q, e, x_peak, y_peak) = hits_toy_data
 
     with tb.open_file(output_file, 'w') as h5out:
         write = hits_writer(h5out)
         hits = HitCollection(-1, -1)
         for i in range(len(x)):
             c = Cluster(q[i], xy(x[i], y[i]), xy(xstd[i], ystd[i]), nsipm[i])
-            h = Hit(npeak[i], c, z[i], e[i])
+            h = Hit(npeak[i], c, z[i], e[i], xy(x_peak[i], y_peak[i]))
             hits.hits.append(h)
         write(hits)
 
     dst = load_dst(output_file, group = "RECO", node = "Events")
     assert_allclose(npeak, dst.npeak.values)
+    assert_allclose(x_peak , dst.Xpeak .values)
+    assert_allclose(y_peak , dst.Ypeak .values)
     assert_allclose(nsipm, dst.nsipm.values)
     assert_allclose(x    , dst.X    .values)
     assert_allclose(y    , dst.Y    .values)
@@ -97,3 +99,4 @@ def test_hits_writer(config_tmpdir, hits_toy_data):
     assert_allclose(z    , dst.Z    .values)
     assert_allclose(q    , dst.Q    .values)
     assert_allclose(e    , dst.E    .values)
+

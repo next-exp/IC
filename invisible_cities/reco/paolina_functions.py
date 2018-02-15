@@ -32,7 +32,8 @@ def bounding_box(seq : BHit) -> Sequence[np.ndarray]:
 
 
 def voxelize_hits(hits             : Sequence[BHit],
-                  voxel_dimensions : np.ndarray) -> List[Voxel]:
+                  voxel_dimensions : np.ndarray,
+                  strict_voxel_size: bool = False) -> List[Voxel]:
     """1. Hits are enclosed by a bounding box.
        2. Boundix box is discretized (via a hitogramdd).
        3. The energy of all the hits insidex each discreet "voxel" is added.
@@ -44,8 +45,10 @@ def voxelize_hits(hits             : Sequence[BHit],
     bounding_box_size   =  hhi - hlo
     number_of_voxels = np.ceil(bounding_box_size / voxel_dimensions).astype(int)
     number_of_voxels = np.clip(number_of_voxels, a_min=1, a_max=None)
-    voxel_edges_lo = bounding_box_centre - number_of_voxels * voxel_dimensions / 2
-    voxel_edges_hi = bounding_box_centre + number_of_voxels * voxel_dimensions / 2
+    if strict_voxel_size: half_range = number_of_voxels * voxel_dimensions / 2
+    else                : half_range =          bounding_box_size          / 2
+    voxel_edges_lo = bounding_box_centre - half_range
+    voxel_edges_hi = bounding_box_centre + half_range
 
     # Expand the voxels a tiny bit, in order to include hits which
     # fall within the margin of error of the voxel bounding box.
@@ -75,7 +78,6 @@ class Contiguity(Enum):
 
 
 def make_track_graphs(voxels           : Voxel,
-                      voxel_dimensions : np.ndarray,
                       contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Graph]:
     """Create a graph where the voxels are the nodes and the edges are any
     pair of neighbour voxel. Two voxels are considered to be
@@ -84,7 +86,7 @@ def make_track_graphs(voxels           : Voxel,
     """
 
     def neighbours(va : Voxel, vb : Voxel) -> bool:
-        return np.linalg.norm((va.pos - vb.pos) / voxel_dimensions) < contiguity.value
+        return np.linalg.norm((va.pos - vb.pos) / va.size) < contiguity.value
 
     voxel_graph = nx.Graph()
     voxel_graph.add_nodes_from(voxels)
@@ -172,7 +174,8 @@ def make_tracks(evt_number       : float,
                 blob_radius      : float = 30 * units.mm) -> TrackCollection:
     """Make a track collection."""
     tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
-    track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
+    track_graphs = make_track_graphs(voxels) # type: Sequence[Graph]
+#    track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
     for trk in track_graphs:
         a, b, voxels_a, voxels_b    = compute_blobs(trk, blob_radius)
         blob_a = Blob(a, voxels_a) # type: Blob

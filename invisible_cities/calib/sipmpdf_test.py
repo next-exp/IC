@@ -10,31 +10,29 @@ last changed:
 
 
 import os
-from collections import namedtuple
 
 import tables as tb
 import numpy  as np
 
 from pytest import mark
-from pytest import fixture
 
-from .  sipmpdf              import Sipmpdf
-from .. core.configure       import configure
+from .  sipmpdf        import Sipmpdf
+from .. core.configure import configure
 
 
 @mark.slow
-def test_sipmpdf_electrons_40keV(config_tmpdir, ICDIR):
+def test_sipmpdf_sipmdarkcurrent(config_tmpdir, ICDATADIR):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
 
-    PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'electrons_40keV_z250_RWF.h5')
-    PATH_OUT = os.path.join(config_tmpdir,               'electrons_40keV_z250_HIST.h5')
+    PATH_IN  = os.path.join(ICDATADIR    , 'sipmdarkcurrentdata.h5' )
+    PATH_OUT = os.path.join(config_tmpdir, 'sipmdarkcurrentdata_HIST.h5')
 
     nrequired  = 2
 
     conf = configure('dummy invisible_cities/config/sipmpdf.conf'.split())
-    conf.update(dict(run_number   = 0,
+    conf.update(dict(run_number   = 4000,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
                      event_range  = (0, nrequired)))

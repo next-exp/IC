@@ -1,34 +1,37 @@
 import os
 import pytest
-import numpy as np
+import numpy  as np
+import tables as tb
 
 from pandas      import DataFrame
-from pandas      import Series
 from collections import namedtuple
 
-from . io.pmap_io   import df_to_s1_dict
-from . io.pmap_io   import df_to_s2_dict
-from . io.pmap_io   import df_to_s2si_dict
-from . io.pmap_io   import read_pmaps
-from . io.pmap_io   import load_pmaps
-from . io.pmap_io   import load_pmaps_with_ipmt
-from . io. dst_io   import load_dst
-from . io.hits_io   import load_hits
-from . io.hits_io   import load_hits_skipping_NN
-from . io.mchits_io import load_mchits
-
 from . core.system_of_units_c import units
+from . evm . pmaps_test       import pmaps
+from . io  . pmaps_io         import load_pmaps_as_df
+from . io  . pmaps_io         import load_pmaps
+from . io  . pmaps_io         import pmap_writer
+from . io  .   dst_io         import load_dst
+from . io  .  hits_io         import load_hits
+from . io  .  hits_io         import load_hits_skipping_NN
+from . io  .mchits_io         import load_mchits
 
 
-tbl_data = namedtuple("tbl_data", "filename group node")
-dst_data = namedtuple("dst_data", "file_info config read true")
-pmp_data = namedtuple("pmp_data", "s1 s2 s2si")
-mcs_data = namedtuple("mcs_data", "pmap hdst")
+tbl_data = namedtuple('tbl_data', 'filename group node')
+dst_data = namedtuple('dst_data', 'file_info config read true')
+pmp_dfs  = namedtuple('pmp_dfs' , 's1 s2 si, s1pmt, s2pmt')
+pmp_data = namedtuple('pmp_data', 's1 s2 si')
+mcs_data = namedtuple('mcs_data', 'pmap hdst')
 
 
 @pytest.fixture(scope = 'session')
 def ICDIR():
     return os.environ['ICDIR']
+
+
+@pytest.fixture(scope = 'session')
+def ICDATADIR(ICDIR):
+    return os.path.join(ICDIR, "database/test_data/")
 
 
 @pytest.fixture(scope = 'session')
@@ -41,31 +44,35 @@ def config_tmpdir(tmpdir_factory):
     return tmpdir_factory.mktemp('configure_tests')
 
 
+@pytest.fixture(scope = 'session')
+def output_tmpdir(tmpdir_factory):
+    return tmpdir_factory.mktemp('output_files')
+
+
+@pytest.fixture(scope='session')
+def example_blr_wfs_filename(ICDATADIR):
+    return os.path.join(ICDATADIR, "blr_examples.h5")
+
+
 @pytest.fixture(scope  = 'session',
                 params = ['electrons_40keV_z250_RWF.h5',
                           'electrons_511keV_z250_RWF.h5',
                           'electrons_1250keV_z250_RWF.h5',
                           'electrons_2500keV_z250_RWF.h5'])
-def electron_RWF_file(request, ICDIR):
-    return os.path.join(ICDIR,
-                        'database/test_data',
-                        request.param)
+def electron_RWF_file(request, ICDATADIR):
+    return os.path.join(ICDATADIR, request.param)
 
 
 @pytest.fixture(scope  = 'session',
                 params = ['electrons_40keV_z250_MCRD.h5'])
-def electron_MCRD_file(request, ICDIR):
-    return os.path.join(ICDIR,
-                        'database/test_data',
-                        request.param)
+def electron_MCRD_file(request, ICDATADIR):
+    return os.path.join(ICDATADIR, request.param)
 
 
 @pytest.fixture(scope  = 'session',
                 params = ['dst_NEXT_v1_00_05_Tl_ACTIVE_140_0_7bar_PMP_2.h5'])
-def thallium_DST_file(request, ICDIR):
-    return os.path.join(ICDIR,
-                        'database/test_data',
-                        request.param)
+def thallium_DST_file(request, ICDATADIR):
+    return os.path.join(ICDATADIR, request.param)
 
 
 @pytest.fixture(scope='session')
@@ -95,81 +102,80 @@ def mc_particle_and_hits_data(electron_MCRD_file):
     return efile, name, pdg, vi, vf, p, Ep, nhits, X, Y, Z, E, t
 
 
-@pytest.fixture(scope='session')
-def s1_dataframe_converted():
-    evs  = [   0,     0,     0,     0,     0,      3,     3]
-    peak = [   0,     0,     1,     1,     1,      0,     0]
-    time = [1000., 1025., 2050., 2075., 2100., 5000., 5025.]
-    ene  = [123.4, 140.8, 730.0, 734.2, 732.7, 400.0, 420.3]
-    df = DataFrame.from_dict(dict(
-        event  = Series(evs , dtype=np.  int32),
-        evtDaq = evs,
-        peak   = Series(peak, dtype=np.   int8),
-        time   = Series(time, dtype=np.float32),
-        ene    = Series(ene , dtype=np.float32),
-    ))
-    return df_to_s1_dict(df), df
+def _get_pmaps_dict_and_event_numbers(filename):
+    dict_pmaps = load_pmaps(filename)
+
+    def peak_contains_sipms(s2 ): return bool(s2.sipms.ids.size)
+    def  evt_contains_sipms(evt): return any (map(peak_contains_sipms, dict_pmaps[evt].s2s))
+    def  evt_contains_s1s  (evt): return bool(dict_pmaps[evt].s1s)
+    def  evt_contains_s2s  (evt): return bool(dict_pmaps[evt].s2s)
+
+    s1_events  = tuple(filter(evt_contains_s1s  , dict_pmaps))
+    s2_events  = tuple(filter(evt_contains_s2s  , dict_pmaps))
+    si_events  = tuple(filter(evt_contains_sipms, dict_pmaps))
+
+    return dict_pmaps, pmp_data(s1_events, s2_events, si_events)
 
 
 @pytest.fixture(scope='session')
-def s2_dataframe_converted():
-    evs  = [   0,     0,     0,     0,     0,      3,     3]
-    peak = [   0,     0,     1,     1,     1,      0,     0]
-    time = [1000., 1025., 2050., 2075., 2100., 5000., 5025.]
-    ene  = [123.4, 140.8, 730.0, 734.2, 732.7, 400.0, 420.3]
-    df = DataFrame.from_dict(dict(
-        event  = Series(evs , dtype=np.  int32),
-        evtDaq = evs,
-        peak   = Series(peak, dtype=np.   int8),
-        time   = Series(time, dtype=np.float32),
-        ene    = Series(ene , dtype=np.float32),
-    ))
-
-    return df_to_s2_dict(df), df
+def KrMC_pmaps_filename(ICDATADIR):
+    test_file = "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_PMP_10evt_new.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
 
 
 @pytest.fixture(scope='session')
-def s2si_dataframe_converted():
-    evs  = [  0,   0,  0,  0,   0,  0,  0,  3,  3,  3,  3]
-    peak = [  0,   0,  0,  0,   1,  1,  1,  0,  0,  0,  0]
-    sipm = [  0,   0,  1,  1,   3,  3,  3, 10, 10, 15, 15]
-    ene  = [1.5, 2.5, 15, 25, 5.5, 10, 20,  8,  9, 17, 18]
-
-    dfs2si = DataFrame.from_dict(dict(
-        event   = Series(evs , dtype=np.int32),
-        evtDaq  = evs,
-        peak    = Series(peak, dtype=np.   int8),
-        nsipm   = Series(sipm, dtype=np.  int16),
-        ene     = Series(ene , dtype=np.float32),
-    ))
-    _,  dfs2 =  s2_dataframe_converted()
-    return df_to_s2si_dict(dfs2, dfs2si), dfs2si
+def KrMC_pmaps_without_ipmt_filename(ICDATADIR):
+    test_file = "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_PMP_10evt_new_wo_ipmt.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
 
 
 @pytest.fixture(scope='session')
-def KrMC_pmaps(ICDIR):
-    test_file = os.path.join(ICDIR,
-                             "database",
-                             "test_data",
-                             "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_PMP_10evt.h5")
-    S1_evts   = [15, 17, 19, 25, 27]
-    S2_evts   = [15, 17, 19, 21, 23, 25, 27, 29, 31, 33]
-    S2Si_evts = [15, 17, 19, 21, 23, 25, 27, 29, 31, 33]
-    s1t, s2t, s2sit = read_pmaps(test_file)
-    s1, s2, s2si    = load_pmaps(test_file)
-
-    return (test_file,
-            pmp_data(s1t, s2t, s2sit),
-            pmp_data(S1_evts, S2_evts, S2Si_evts),
-            pmp_data(s1, s2, s2si))
+def KrMC_pmaps_dfs(KrMC_pmaps_filename):
+    s1df, s2df, sidf, s1pmtdf, s2pmtdf = load_pmaps_as_df(KrMC_pmaps_filename)
+    return pmp_dfs(s1df, s2df, sidf, s1pmtdf, s2pmtdf)
 
 
 @pytest.fixture(scope='session')
-def KrMC_kdst(ICDIR):
-    test_file = os.path.join(ICDIR,
-                             "database",
-                             "test_data",
-                             "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_KDST_10evt.h5")
+def KrMC_pmaps_without_ipmt_dfs(KrMC_pmaps_without_ipmt_filename):
+    s1df, s2df, sidf, s1pmtdf, s2pmtdf = load_pmaps_as_df(KrMC_pmaps_without_ipmt_filename)
+    return pmp_dfs(s1df, s2df, sidf, s1pmtdf, s2pmtdf)
+
+
+@pytest.fixture(scope='session')
+def KrMC_pmaps_dict(KrMC_pmaps_filename):
+    dict_pmaps, evt_numbers = _get_pmaps_dict_and_event_numbers(KrMC_pmaps_filename)
+    return dict_pmaps, evt_numbers
+
+
+@pytest.fixture(scope='session')
+def KrMC_pmaps_without_ipmt_dict(KrMC_pmaps_without_ipmt_filename):
+    dict_pmaps, evt_numbers = _get_pmaps_dict_and_event_numbers(KrMC_pmaps_without_ipmt_filename)
+    return dict_pmaps, evt_numbers
+
+
+@pytest.fixture(scope='session')
+def KrMC_pmaps_example(output_tmpdir):
+    output_filename  = os.path.join(output_tmpdir, "test_pmap_file.h5")
+    number_of_events = 3
+    event_numbers    = np.random.choice(2 * number_of_events, size=number_of_events, replace=False)
+    event_numbers    = sorted(event_numbers)
+    pmt_ids          = np.arange(3) * 2
+    pmap_generator   = pmaps(pmt_ids)
+    true_pmaps       = [pmap_generator.example()[1] for _ in range(number_of_events)]
+
+    with tb.open_file(output_filename, "w") as output_file:
+        write = pmap_writer(output_file)
+        list(map(write, true_pmaps, event_numbers))
+    return output_filename, dict(zip(event_numbers, true_pmaps))
+
+
+@pytest.fixture(scope='session')
+def KrMC_kdst(ICDATADIR):
+    test_file = "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_KDST_10evt_new.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+
     group = "DST"
     node  = "Events"
 
@@ -196,32 +202,32 @@ def KrMC_kdst(ICDIR):
                          s2_nsipmmin =      2,
                          s2_nsipmmax =   1000)
 
-    event = [ 15, 17, 19, 25, 27]
-    time  = [  0,  0,  0,  0,  0]
-    peak  = [  0,  0,  0,  0,  0]
-    nS2   = [  1,  1,  1,  1,  1]
+    event = [17, 19, 25]
+    time  = [  0,  0,  0]
+    peak  = [  0,  0,  0]
+    nS2   = [  1,  1,  1]
 
-    S1w   = [   125         ,    250         ,    250         ,    200         ,    150         ]
-    S1h   = [     1.56272364,      3.25255418,      2.44831991,      1.75402236,      1.12322664]
-    S1e   = [     6.198125  ,     19.414172  ,     16.340692  ,     10.747040  ,      6.176510  ]
-    S1t   = [100200         , 100150         , 100100         , 100100         , 100225         ]
+    S1w   = [250.0, 225.0, 200.0]
+    S1h   = [3.2523329257965088, 2.4484190940856934, 1.7538540363311768]
+    S1e   = [19.411735534667969, 15.692093849182129, 10.745523452758789]
+    S1t   = [100150.0, 100100.0, 100100.0]
 
-    S2w   = [    11.2625    ,     11.2625    ,     11.3625    ,      8.6375    ,      8.5375    ]
-    S2h   = [   885.675964  ,    881.007202  ,    851.110901  ,   1431.818237  ,   1970.844116  ]
-    S2e   = [  4532.44612527,   5008.20850897,   4993.90345001,   5979.88975143,   7006.23293018]
-    S2q   = [   263.91775739,    185.49846303,    184.47896039,    311.68750608,    385.77873647]
-    S2t   = [528500         , 554500         , 625500         , 338500         , 283500         ]
-    Nsipm = [     7         ,      5         ,      6         ,      7         ,      7         ]
+    S2w   = [11.228562500000001, 11.358750000000001, 8.5991874999999993]
+    S2h   = [880.9984130859375, 851.11505126953125, 1431.811279296875]
+    S2e   = [5008.1044921875, 4993.95166015625, 5979.82373046875]
+    S2q   = [157.06857299804688, 146.64302062988281, 263.83566284179688]
+    S2t   = [554493.0625, 625482.0, 338503.65625]
+    Nsipm = [5, 6, 6]
 
-    DT    = [  428.300     ,  454.350     ,  525.400     ,  238.400     ,  183.275     ]
-    Z     = [  856.6       ,  908.7       , 1050.8       ,  476.8       ,  366.55      ]
-    Zrms  = [    2.00848182,    2.12301933,    2.22942152,    1.58147948,    1.4250668 ]
-    X     = [-177.29208558 ,  120.08634576,    2.6156617 ,  154.08992723,   77.7168822 ]
-    Y     = [    4.565395  ,  106.715016  ,  147.882146  ,   72.077534  ,  -77.904470  ]
-    R     = [  177.350857  ,  160.651253  ,  147.905276  ,  170.114304  ,  110.040993  ]
-    Phi   = [    3.11584764,    0.7265102 ,    1.5531107 ,    0.43752688,   -0.78660357]
-    Xrms  = [    6.14794   ,    4.999254  ,    5.906495  ,    6.198707   ,   6.42701   ]
-    Yrms  = [    6.802864  ,    5.797995  ,    6.467924  ,    5.600673  ,    5.670117  ]
+    DT    = [454.34306250000003, 525.38200000000006, 238.40365625000001]
+    Z     = [908.68612500000006, 1050.7640000000001, 476.80731250000002]
+    Zrms  = [2.082009521484375, 2.19840771484375, 1.5321597900390624]
+    X     = [120.2356729453311, 1.0275025311778865, 154.77121933901094]
+    Y     = [106.26682866748105, 146.81638355271943, 71.503424708151769]
+    R     = [160.46574688593327, 146.8199790251681, 170.49008792501272]
+    Phi   = [0.7238042531182578, 1.5637978860814405, 0.43278351817373956]
+    Xrms  = [4.9944427379677672, 4.8932850467168816, 5.7780285188196077]
+    Yrms  = [5.3678579292067852, 7.1442047998378158, 4.7686176347992912]
 
     df_true = DataFrame({"event": event,
                          "time" : time ,
@@ -261,11 +267,10 @@ def KrMC_kdst(ICDIR):
 
 
 @pytest.fixture(scope='session')
-def KrMC_hdst(ICDIR):
-    test_file = os.path.join(ICDIR,
-                             "database",
-                             "test_data",
-                             "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_HDST_10evt.h5")
+def KrMC_hdst(ICDATADIR):
+    test_file = "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_HDST_10evt_new.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+
     group = "RECO"
     node  = "Events"
 
@@ -298,74 +303,153 @@ def KrMC_hdst(ICDIR):
                          lm_radius     =      0 * units.mm,
                          new_lm_radius =     15 * units.mm)
 
-    event = [15] * 7 + [17] * 7 + [19] * 8 + [25] * 5 + [27] * 6
-    time  = [0]  * 33
-    peak  = [0]  * 33
-    nsipm = [0, 6, 7, 7, 4, 0, 0,
-             0, 4, 5, 5, 0, 0, 0,
-             0, 6, 4, 1, 6, 3, 0, 0,
-             3, 7, 7, 6, 0,
-             0, 7, 5, 2, 6, 0]
+    event = [17] * 7 + [19] * 8 + [25] * 5
+    time  = [0]  * 20
+    peak  = [0]  * 20
+    nsipm = [0, 4, 5, 4, 0, 0, 0, 0, 3, 4, 2, 6, 0, 0, 0, 1, 6, 6, 1, 0]
 
-    X     = [ 0.00000000e+00, -1.79940785e+02, -1.77493026e+02, -1.76512358e+02, -1.75334056e+02,
-              0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.19908346e+02,  1.20280265e+02,
-              1.19897288e+02,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
-              3.11653915e+00,  1.68025927e+00,  5.00000000e+00,  1.96339537e+00,  5.79493732e+00,
-              0.00000000e+00,  0.00000000e+00,  1.56440365e+02,  1.54312276e+02,  1.54017158e+02,
-              1.52760628e+02,  0.00000000e+00,  0.00000000e+00,  7.66086466e+01,  7.98235545e+01,
-              6.50000000e+01,  7.75782656e+01,  0.00000000e+00]
+    X     = [0.0,
+             120.19301521736676,
+             120.2417342322328,
+             119.8876430125747,
+             0.0,
+             0.0,
+             0.0,
+             0.0,
+             1.4141658648702744,
+             2.0059661341323785,
+             -0.44500029002100205,
+             0.71450467122860617,
+             0.0,
+             0.0,
+             0.0,
+             155.0,
+             155.30091118461135,
+             154.42891365610399,
+             155.0,
+             0.0]
 
-    Y     = [ 0.00000000e+00,  4.86151945e+00,  5.64318878e+00,  4.57161366e+00,  8.34641810e-01,
-              0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.08774814e+02,  1.05106046e+02,
-              1.07573831e+02,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
-              1.47104004e+02,  1.50782271e+02,  1.35000000e+02,  1.47748654e+02,  1.48782929e+02,
-              0.00000000e+00,  0.00000000e+00,  7.20626968e+01,  7.19827231e+01,  7.17844856e+01,
-              7.35674548e+01,  0.00000000e+00,  0.00000000e+00, -7.83527723e+01, -7.78888272e+01,
-             -7.75947914e+01, -7.69924054e+01,  0.00000000e+0] 
+    Y     = [0.0, 108.12404705116668, 104.42646749780661, 107.77236935123307,  0.0,  0.0, 0.0, 0.0,
+             142.75961853042116, 150.74664509647295, 135.0, 147.01393806830407, 0.0, 0.0, 0.0,
+             75.0, 71.165499244103017, 71.181017825460103, 75.0, 0.0]
 
-    Xrms  = [ 0.00000000e+00,  4.99964935e+00,  6.16285499e+00,  6.39776071e+00,  4.73166675e+00,
-              0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  4.99915988e+00,  4.99213896e+00,
-              4.99894491e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
-              6.67177274e+00,  4.70921743e+00,  0.00000000e+00,  5.96738923e+00,  7.84466590e+00,
-              0.00000000e+00,  0.00000000e+00,  3.51126694e+00,  6.25898165e+00,  6.46279288e+00,
-              5.39667925e+00,  0.00000000e+00,  0.00000000e+00,  6.39273276e+00,  4.99688573e+00,
-              0.00000000e+00,  5.60389979e+00,  0.00000000e+00]
+    Xrms  = [0.0,
+            4.9962731236257358,
+            4.9941530373995162,
+            4.9987374313297064,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            4.7958455882811437,
+            4.5799672344585609,
+            4.9801581041048513,
+            4.9486849843966123,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            5.5135164273344754,
+            6.3081332082454828,
+            0.0,
+            0.0]
 
-    Yrms  = [ 0.00000000e+00,  6.99179462e+00,  7.16712038e+00,  6.57909879e+00,  4.92984513e+00,
-              0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  4.84756843e+00,  6.17415930e+00,
-              5.11706448e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
-              6.33785683e+00,  4.93842608e+00,  0.00000000e+00,  6.05342196e+00,  4.84961221e+00,
-              0.00000000e+00,  0.00000000e+00,  4.55469889e+00,  5.70961845e+00,  5.52716097e+00,
-              5.86810454e+00,  0.00000000e+00,  0.00000000e+00,  5.58579870e+00,  5.76180862e+00,
-              4.38348850e+00,  5.76341550e+00,  0.00000000e+00]
+    Yrms  = [0.0,
+             4.6347384536523304,
+             5.7924982219597982,
+             4.4763446798335611,
+             0.0,
+             0.0,
+             0.0,
+             0.0,
+             4.1694730562213946,
+             4.9439378131114182,
+             0.0,
+             7.0751297093843268,
+             0.0,
+             0.0,
+             0.0,
+             0.0,
+             4.8622640314975998,
+             4.8585179732039174,
+             0.0,
+             0.0]
 
-    Z     = [ 8.47850000e+02,  8.51600000e+02,  8.55600000e+02,  8.59600000e+02,  8.63600000e+02,
-              8.67600000e+02,  8.69625000e+02,  8.99950000e+02,  9.03700000e+02,  9.07700000e+02,
-              9.11700000e+02,  9.15700000e+02,  9.19700000e+02,  9.21725000e+02,  1.04010000e+03,
-              1.04380000e+03,  1.04780000e+03,  1.04780000e+03,  1.05180000e+03,  1.05580000e+03,
-              1.05980000e+03,  1.06212500e+03,  4.69962500e+02,  4.73800000e+02,  4.77800000e+02,
-              4.81800000e+02,  4.85600000e+02,  3.57875000e+02,  3.61550000e+02,  3.65550000e+02,
-              3.65550000e+02,  3.69550000e+02,  3.73412500e+02]
+    Z     = [900.48312499999997,
+             904.04050000000007,
+             907.76300000000003,
+             911.51125000000002,
+             915.24025000000006,
+             919.07112500000005,
+             921.70000000000005,
+             1040.7703750000001,
+             1044.0696250000001,
+             1047.867125,
+             1047.867125,
+             1051.664,
+             1055.4748750000001,
+             1059.220875,
+             1062.1355000000001,
+             470.79374999999999,
+             474.22925000000004,
+             477.73925000000003,
+             481.31693749999999,
+             484.77218750000003]
 
-    Q     = [-9.99999000e+05,  4.62482347e+01,  9.17025954e+01,  9.13810852e+01,  3.07611203e+01,
-             -9.99999000e+05, -9.99999000e+05, -9.99999000e+05,  3.66840464e+01,  7.52080684e+01,
-              5.74266894e+01, -9.99999000e+05, -9.99999000e+05, -9.99999000e+05, -9.99999000e+05,
-              3.34944267e+01,  4.60593218e+01,  7.88968563e+00,  7.13625143e+01,  1.53295889e+01,
-             -9.99999000e+05, -9.99999000e+05,  1.38965549e+01,  1.02213222e+02,  1.59417052e+02,
-              3.42498608e+01, -9.99999000e+05, -9.99999000e+05,  1.06680569e+02,  1.88616520e+02,
-              2.29496250e+01,  6.45566070e+01, -9.99999000e+05]
+    Q     = [-999999.0,
+             29.235990524291992,
+             70.374324321746826,
+             53.386228561401367,
+             -999999.0,
+             -999999.0,
+             -999999.0,
+             -999999.0,
+             17.607906818389893,
+             41.205404996871948,
+             10.87603235244751,
+             68.89520788192749,
+             -999999.0,
+             -999999.0,
+             -999999.0,
+             9.8147153854370117,
+             88.746064186096191,
+             152.45538997650146,
+             12.819503784179688,
+             -999999.0]
 
-    E     = [ 6.40848265e+01,  4.54434708e+02,  1.47234515e+03,  1.58452844e+03,  7.91471527e+02,
-              1.64559525e+02,  1.02194333e+00,  1.42587963e+02,  7.93532227e+02,  1.67873566e+03,
-              1.56285858e+03,  6.89836090e+02,  1.39569141e+02,  1.08884954e+00,  1.18094801e+02,
-              8.13183167e+02,  1.26648796e+03,  2.16941793e+02,  1.56585492e+03,  8.15261322e+02,
-              1.84432705e+02,  1.36467876e+01,  1.67134626e+02,  1.54898758e+03,  2.80964453e+03,
-              1.30383865e+03,  1.50284361e+02,  8.28040495e+01,  1.24097345e+03,  3.28156814e+03,
-              3.99279757e+02,  1.81999011e+03,  1.81617418e+02]
+    E     = [142.57600879669189,
+             793.51572418212891,
+             1678.7182083129883,
+             1562.8402099609375,
+             689.81671142578125,
+             139.54881477355957,
+             1.0885893274098635,
+             118.0997519493103,
+             813.1905517578125,
+             1173.6551782119202,
+             309.78245911718147,
+             1565.8631744384766,
+             815.27002334594727,
+             184.44183254241943,
+             13.648312956094742,
+             167.12385177612305,
+             1548.9741058349609,
+             2809.6304168701172,
+             1303.8236541748047,
+             150.27177047729492]
+
+    Xpeak = [120.23567275745617, 120.23567275745617, 120.23567275745617, 120.23567275745617, 120.23567275745617, 120.23567275745617, 120.23567275745617,
+             1.0275026443161928, 1.0275026443161928, 1.0275026443161928, 1.0275026443161928, 1.0275026443161928, 1.0275026443161928, 1.0275026443161928, 1.0275026443161928,
+             154.7712193078262, 154.7712193078262, 154.7712193078262, 154.7712193078262, 154.7712193078262]
+    Ypeak = [106.26682866707235, 106.26682866707235, 106.26682866707235, 106.26682866707235, 106.26682866707235, 106.26682866707235, 106.26682866707235,
+             146.81638358971426, 146.81638358971426, 146.81638358971426, 146.81638358971426, 146.81638358971426, 146.81638358971426, 146.81638358971426, 146.81638358971426,
+             71.50342482013173, 71.50342482013173, 71.50342482013173, 71.50342482013173, 71.50342482013173]
 
     df_true = DataFrame({"event": event,
                          "time" : time ,
                          "npeak": peak ,
+                         "Xpeak": Xpeak,
+                         "Ypeak": Ypeak,
                          "nsipm": nsipm,
                          "X"    : X,
                          "Y"    : Y,
@@ -373,8 +457,7 @@ def KrMC_hdst(ICDIR):
                          "Yrms" : Yrms,
                          "Z"    : Z,
                          "Q"    : Q,
-                         "E"    : E})
-
+                         "E"    : E})    
     df_read = load_dst(test_file,
                        group = group,
                        node  = node)
@@ -386,8 +469,8 @@ def KrMC_hdst(ICDIR):
 
 
 @pytest.fixture(scope='session')
-def KrMC_true_hits(KrMC_pmaps, KrMC_hdst):
-    pmap_filename = KrMC_pmaps[0]
+def KrMC_true_hits(KrMC_pmaps_filename, KrMC_hdst):
+    pmap_filename = KrMC_pmaps_filename
     hdst_filename = KrMC_hdst .file_info.filename
     pmap_mctracks = load_mchits(pmap_filename)
     hdst_mctracks = load_mchits(hdst_filename)
@@ -395,64 +478,54 @@ def KrMC_true_hits(KrMC_pmaps, KrMC_hdst):
 
 
 @pytest.fixture(scope='session')
-def TlMC_hits(ICDIR):
+def TlMC_hits(ICDATADIR):
     # Input file was produced to contain exactly 15 S1 and 50 S2.
-    hits_file_name = ICDIR + "/database/test_data/dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
+    hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
+    hits_file_name = os.path.join(ICDATADIR, hits_file_name)
     hits = load_hits(hits_file_name)
     return hits
 
 
 @pytest.fixture(scope='session')
-def TlMC_hits_skipping_NN(ICDIR):
+def TlMC_hits_skipping_NN(ICDATADIR):
     # Input file was produced to contain exactly 15 S1 and 50 S2.
-    hits_file_name = ICDIR + "/database/test_data/dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
+    hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
+    hits_file_name = os.path.join(ICDATADIR, hits_file_name)
     hits = load_hits_skipping_NN(hits_file_name)
     return hits
 
 
 @pytest.fixture(scope='session')
-def corr_toy_data(ICDIR):
+def corr_toy_data(ICDATADIR):
     x = np.arange( 100, 200)
     y = np.arange(-200,   0)
     E = np.arange( 1e4, 1e4 + x.size*y.size).reshape(x.size, y.size)
     U = np.arange( 1e2, 1e2 + x.size*y.size).reshape(x.size, y.size)
     N = np.ones_like(U)
 
-    corr_filename = os.path.join(ICDIR, "database/test_data/toy_corr.h5")
+    corr_filename = os.path.join(ICDATADIR, "toy_corr.h5")
     return corr_filename, (x, y, E, U, N)
 
 
 @pytest.fixture(scope='session')
-def hits_toy_data(ICDIR):
-    npeak = np.array   ([0]*25 + [1]*30 + [2]*35 + [3]*10)
-    nsipm = np.arange  (1000, 1100)
-    x     = np.linspace( 150,  250, 100)
-    y     = np.linspace(-280, -180, 100)
-    xrms  = np.linspace(   1,   80, 100)
-    yrms  = np.linspace(   2,   40, 100)
-    z     = np.linspace(   0,  515, 100)
-    q     = np.linspace( 1e3,  1e3, 100)
-    e     = np.linspace( 2e3,  1e4, 100)
+def hits_toy_data(ICDATADIR):
+    npeak  = np.array   ([0]*25 + [1]*30 + [2]*35 + [3]*10)
+    nsipm  = np.arange  (1000, 1100)
+    x      = np.linspace( 150,  250, 100)
+    y      = np.linspace(-280, -180, 100)
+    xrms   = np.linspace(   1,   80, 100)
+    yrms   = np.linspace(   2,   40, 100)
+    z      = np.linspace(   0,  515, 100)
+    q      = np.linspace( 1e3,  1e3, 100)
+    e      = np.linspace( 2e3,  1e4, 100)
+    x_peak = np.array([(x * e).sum() / e.sum()] * 100)
+    y_peak = np.array([(y * e).sum() / e.sum()] * 100)
 
-    hits_filename = os.path.join(ICDIR, "database/test_data/toy_hits.h5")
-    return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e)
-
-
-@pytest.fixture(scope='session')
-def Kr_MC_4446_load_s1_s2_s2si(ICDIR):
-    ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_6evt.h5'
-    Kr_MC_4446_load_pmaps = load_pmaps(ipmt_pmap_path)
-    return Kr_MC_4446_load_pmaps
+    hits_filename = os.path.join(ICDATADIR, "toy_hits.h5")
+    return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e, x_peak, y_peak)
 
 
 @pytest.fixture(scope='session')
-def Kr_MC_4446_load_pmaps_with_ipmt(ICDIR):
-    ipmt_pmap_path = ICDIR + 'database/test_data/Kr_MC_ipmt_pmaps_6evt.h5'
-    Kr_MC_4446_load_pmaps_with_ipmt = load_pmaps_with_ipmt(ipmt_pmap_path)
-    return Kr_MC_4446_load_pmaps_with_ipmt
-
-
-@pytest.fixture(scope='session')
-def Kr_pmaps_run4628(ICDIR):
-    filename = ICDIR + 'database/test_data/Kr_pmaps_run4628.h5'
+def Kr_pmaps_run4628_filename(ICDATADIR):
+    filename = os.path.join(ICDATADIR, "Kr_pmaps_run4628.h5")
     return filename

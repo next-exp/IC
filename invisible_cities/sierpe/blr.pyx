@@ -3,11 +3,11 @@ cimport numpy as np
 from scipy import signal as SGN
 
 cpdef deconvolve_signal(double [:] signal_daq,
-                        int    n_baseline            = 28000,
-                        double coef_clean            = 2.905447E-06,
-                        double coef_blr              = 1.632411E-03,
-                        double thr_trigger           =     5,
-                        int    acum_discharge_length =  5000):
+                        int    n_baseline             = 28000,
+                        double coeff_clean            = 2.905447E-06,
+                        double coeff_blr              = 1.632411E-03,
+                        double thr_trigger            =     5,
+                        int    accum_discharge_length =  5000):
 
     """
     The accumulator approach by Master VHB
@@ -21,7 +21,7 @@ cpdef deconvolve_signal(double [:] signal_daq,
     which should be good for Na and Kr
     """
 
-    cdef double coef = coef_blr
+    cdef double coef = coeff_blr
     cdef int nm = n_baseline
     cdef double thr_acum = thr_trigger / coef
     cdef int len_signal_daq = len(signal_daq)
@@ -56,7 +56,7 @@ cpdef deconvolve_signal(double [:] signal_daq,
     cdef double [:]  b_cf
     cdef double [:]  a_cf
 
-    b_cf, a_cf = SGN.butter(1, coef_clean, 'high', analog=False);
+    b_cf, a_cf = SGN.butter(1, coeff_clean, 'high', analog=False);
     signal_daq = SGN.lfilter(b_cf, a_cf, signal_daq)
 
     cdef int k
@@ -75,10 +75,10 @@ cpdef deconvolve_signal(double [:] signal_daq,
 
             if acum[k-1] > 1:
                 acum[k] = acum[k-1] * (1 - coef)
-                if j < acum_discharge_length - 1:
+                if j < accum_discharge_length - 1:
                     j = j + 1
                 else:
-                    j = acum_discharge_length - 1
+                    j = accum_discharge_length - 1
             else:
                 acum[k] = 0
                 j = 0
@@ -89,10 +89,10 @@ cpdef deconvolve_signal(double [:] signal_daq,
 cpdef deconv_pmt(np.ndarray[np.int16_t, ndim=2] pmtrwf,
                  double [:]                     coeff_c,
                  double [:]                     coeff_blr,
-                 list                           pmt_active            =    [],
-                 int                            n_baseline            = 28000,
-                 double                         thr_trigger           =     5,
-                 int                            acum_discharge_length =  5000):
+                 list                           pmt_active             =    [],
+                 int                            n_baseline             = 28000,
+                 double                         thr_trigger            =     5,
+                 int                            accum_discharge_length =  5000):
     """
     Deconvolve all the PMTs in the event.
     :param pmtrwf: array of PMTs holding the raw waveform
@@ -120,11 +120,11 @@ cpdef deconv_pmt(np.ndarray[np.int16_t, ndim=2] pmtrwf,
     cdef int pmt
     for pmt in PMT:
         signal_r = deconvolve_signal(signal_i[pmt],
-                                     n_baseline            = n_baseline,
-                                     coef_clean            = coeff_c[pmt],
-                                     coef_blr              = coeff_blr[pmt],
-                                     thr_trigger           = thr_trigger,
-                                     acum_discharge_length = acum_discharge_length)
+                                     n_baseline             = n_baseline,
+                                     coeff_clean            = coeff_c[pmt],
+                                     coeff_blr              = coeff_blr[pmt],
+                                     thr_trigger            = thr_trigger,
+                                     accum_discharge_length = accum_discharge_length)
 
         CWF.append(signal_r)
 

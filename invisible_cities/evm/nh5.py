@@ -80,9 +80,9 @@ class FEE(tb.IsDescription):
 
 
 class DECONV_PARAM(tb.IsDescription):
-    N_BASELINE            = tb.Int32Col(pos=0)
-    THR_TRIGGER           = tb.Int16Col(pos=1)
-    ACUM_DISCHARGE_LENGTH = tb.Int16Col(pos=2)
+    N_BASELINE             = tb.Int32Col(pos=0)
+    THR_TRIGGER            = tb.Int16Col(pos=1)
+    ACCUM_DISCHARGE_LENGTH = tb.Int16Col(pos=2)
 
 
 class S12(tb.IsDescription):
@@ -175,11 +175,13 @@ class HitsTable(tb.IsDescription):
     event    = tb.  Int32Col(pos=0)
     time     = tb.Float64Col(pos=1)
     npeak    = tb. UInt16Col(pos=2)
-    nsipm    = tb. UInt16Col(pos=3)
-    X        = tb.Float64Col(pos=4)
-    Y        = tb.Float64Col(pos=5)
-    Xrms     = tb.Float64Col(pos=6)
-    Yrms     = tb.Float64Col(pos=7)
-    Z        = tb.Float64Col(pos=8)
-    Q        = tb.Float64Col(pos=9)
-    E        = tb.Float64Col(pos=10)
+    Xpeak    = tb.Float64Col(pos=3)
+    Ypeak    = tb.Float64Col(pos=4)
+    nsipm    = tb. UInt16Col(pos=5)
+    X        = tb.Float64Col(pos=6)
+    Y        = tb.Float64Col(pos=7)
+    Xrms     = tb.Float64Col(pos=8)
+    Yrms     = tb.Float64Col(pos=9)
+    Z        = tb.Float64Col(pos=10)
+    Q        = tb.Float64Col(pos=11)
+    E        = tb.Float64Col(pos=12)
