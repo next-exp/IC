@@ -103,7 +103,7 @@ def read_mctracks_nexus (h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[i
             h5particle = h5particles[ipart]
             itrack     = h5particle['particle_indx']
 
-            current_event[itrack] = MCParticle(h5particle['particle_name'],
+            current_event[itrack] = MCParticle(h5particle['particle_name'].decode('utf-8','ignore'),
                                                0, # PDG code not currently stored
                                                h5particle['initial_vertex'],
                                                h5particle['final_vertex'],
@@ -122,7 +122,9 @@ def read_mctracks_nexus (h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[i
 
             hit = MCHit(h5hit['hit_position'],h5hit['hit_time'],
                           h5hit['hit_energy'])
-            current_particle.hits.append(hit)
+            # for now, only keep the ACTIVE hits
+            if(h5hit['label'].decode('utf-8','ignore') == 'ACTIVE'):
+                current_particle.hits.append(hit)
             ihit += 1
 
         evt_number             = h5extents[iext]['evt_number']
