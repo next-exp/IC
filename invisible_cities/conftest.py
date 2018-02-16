@@ -63,6 +63,11 @@ def electron_RWF_file(request, ICDATADIR):
     return os.path.join(ICDATADIR, request.param)
 
 @pytest.fixture(scope  = 'session',
+                params = ['electrons_40keV_z250_MCRD.h5'])
+def electron_MCRD_file(request, ICDATADIR):
+    return os.path.join(ICDATADIR, request.param)
+
+@pytest.fixture(scope  = 'session',
                 params = ['dst_NEXT_v1_00_05_Tl_ACTIVE_140_0_7bar_PMP_2.h5'])
 def thallium_DST_file(request, ICDATADIR):
     return os.path.join(ICDATADIR, request.param)
@@ -77,7 +82,7 @@ def mc_all_hits_data(thallium_DST_file):
 
 
 @pytest.fixture(scope='session')
-def mc_particle_and_hits_data(ICDATADIR):
+def mc_particle_and_hits_data(electron_MCRD_file):
     X     = [ -0.10718990862369537,  -0.16415221989154816, -0.18664051592350006, -0.19431403279304504]
     Y     = [ -0.01200979482382536,  -0.07335199415683746, -0.09059777110815048, -0.09717071801424026]
     Z     = [    25.12295150756836,    25.140811920166016,    25.11968994140625,   25.115009307861328]
@@ -88,7 +93,7 @@ def mc_particle_and_hits_data(ICDATADIR):
     vf    = np.array([   -0.19431403, -0.09717072, 25.11500931])
     p     = np.array([   -0.20033967,  -0.0224465,   0.0428962])
 
-    efile = os.path.join(ICDATADIR, 'electrons_40keV_z250_MCRD.h5')
+    efile = electron_MCRD_file
     Ep    = 0.03999999910593033
     name  = b'e-'
     pdg   = 11
@@ -109,7 +114,7 @@ def mc_particle_and_hits_nexus_data(ICDATADIR):
 
     p     = np.array([0.11278941, -0.12040872,  0.02847717])
 
-    efile = os.path.join(ICDATADIR, 'electron_26keV_nexus_MCRD.h5')
+    efile = os.path.join(ICDATADIR, 'electron_26keV_nexus.h5')
     Ep    = 0.02672829
     name  = 'e-'
     pdg   = 0
