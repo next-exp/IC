@@ -35,9 +35,8 @@ def test_load_mcparticles(mc_particle_and_hits_data):
     particle = mcparticles_dict[0][0]
 
     assert particle.name == name
-    assert particle.pdg  == pdg
-    assert np.isclose(particle.vi,vi).all()
-    assert np.isclose(particle.vf,vf).all()
+    assert np.isclose(particle.initial_vertex,vi).all()
+    assert np.isclose(particle.final_vertex,vf).all()
     assert np.isclose(particle.p,p).all()
     assert particle.E    == Ep
     assert len(particle.hits) == nhits
@@ -75,12 +74,10 @@ def test_load_mcparticles_nexus(mc_particle_and_hits_nexus_data):
 
     mcparticles_dict = load_mcparticles_nexus(efile)
     particle = mcparticles_dict[0][1]
-
     assert particle.name == name
-    assert particle.pdg  == pdg
-    assert np.isclose(particle.vi,vi).all()
-    assert np.isclose(particle.vf,vf).all()
-    assert np.isclose(particle.p,p).all()
+    assert np.isclose(particle.initial_vertex,vi).all
+    assert np.isclose(particle.final_vertex,vf).all
+    assert np.isclose(particle.p,p).all
     assert np.isclose(particle.E,Ep)
     assert len(particle.hits) == nhits
 

@@ -53,7 +53,7 @@ def read_mcinfo (mc_table: tables.table.Table,
     event            =  data["event_indx"]
     particle         =  data["mctrk_indx"]
     particle_name    =  data["particle_name"]
-    pdg_code         =  data["pdg_code"]
+#    pdg_code         =  data["pdg_code"]
     initial_vertex   =  data["initial_vertex"]
     final_vertex     =  data["final_vertex"]
     momentum         =  data["momentum"]
@@ -71,13 +71,18 @@ def read_mcinfo (mc_table: tables.table.Table,
         current_event = all_events.setdefault(event[i], {})
 
         current_particle = current_event.setdefault( particle[i],
-                                                    MCParticle(particle_name[i],
-                                                               pdg_code[i],
-                                                               initial_vertex[i],
-                                                               final_vertex[i],
-                                                               momentum[i],
-                                                               energy[i]))
-        hit = MCHit(hit_position[i], hit_time[i], hit_energy[i])
+                                                     MCParticle(particle_name[i],
+                                                     -1, # primariness not saved
+                                                     -1, # mother index not saved
+                                                     initial_vertex[i],
+                                                     final_vertex[i],
+                                                     '', # initial volume not saved
+                                                     '', # final volume not saved
+                                                     momentum[i],
+                                                     energy[i],
+                                                     '' # creator process not saved
+                                                      ))
+        hit = MCHit(hit_position[i], hit_time[i], hit_energy[i], '') # label not saved
         current_particle.hits.append(hit)
 
     return all_events
@@ -111,11 +116,15 @@ def read_mcinfo_nexus (h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[int
             itrack     = h5particle['particle_indx']
 
             current_event[itrack] = MCParticle(h5particle['particle_name'].decode('utf-8','ignore'),
-                                               0, # PDG code not currently stored
+                                               h5particle['primary'],
+                                               h5particle['mother_indx'],
                                                h5particle['initial_vertex'],
                                                h5particle['final_vertex'],
+                                               h5particle['initial_volume'].decode('utf-8','ignore'),
+                                               h5particle['final_volume'].decode('utf-8','ignore'),
                                                h5particle['momentum'],
-                                               h5particle['kin_energy'])
+                                               h5particle['kin_energy'],
+                                               h5particle['creator_proc'])
             ipart += 1
 
         while ihit <= ihit_end:
@@ -124,15 +133,17 @@ def read_mcinfo_nexus (h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[int
 
             # in case the hit does not belong to a particle, create one
             # This shouldn't happen!
-            current_particle = current_event.setdefault(itrack,
-                                   MCParticle('unknown', 0, [0.,0.,0.],
-                                              [0.,0.,0.], [0.,0.,0.], 0.))
+            current_particle = current_event[itrack]
+ #           current_particle = current_event.setdefault(itrack,
+ #                                  MCParticle('unknown', 0, [0.,0.,0.],
+ #                                             [0.,0.,0.], [0.,0.,0.], 0.))
 
-            hit = MCHit(h5hit['hit_position'],h5hit['hit_time'],
-                          h5hit['hit_energy'])
+            hit = MCHit(h5hit['hit_position'], h5hit['hit_time'],
+                          h5hit['hit_energy'], h5hit['label'])
             # for now, only keep the ACTIVE hits
-            if(h5hit['label'].decode('utf-8','ignore') == 'ACTIVE'):
-                current_particle.hits.append(hit)
+            #if(h5hit['label'].decode('utf-8','ignore') == 'ACTIVE'):
+
+            current_particle.hits.append(hit)
             ihit += 1
 
         evt_number             = h5extents[iext]['evt_number']
