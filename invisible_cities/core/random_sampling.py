@@ -66,6 +66,7 @@ class NoiseSampler:
         self.nsamples    = sample_size
         self.smear       = smear
         self.active      = DB.DataSiPM(run_number).Active.values[:, np.newaxis]
+        self.adc_to_pes  = DB.DataSiPM(run_number).adc_to_pes.values.astype(np.double)[:, np.newaxis]
         self.nsensors    = self.active.size
 
         self.probs       = np.apply_along_axis(normalize_distribution, 1,
@@ -90,7 +91,7 @@ class NoiseSampler:
         sample  = np.apply_along_axis(self._sampler, 1, self.probs)
         if self.smear:
             sample += self._smearer()
-        sample += self.baselines
+        sample = self.adc_to_pes * sample + self.baselines
         return self.mask(sample)
 
     def compute_thresholds(self, noise_cut=0.99, pes_to_adc=1):
