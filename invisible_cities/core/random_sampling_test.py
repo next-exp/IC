@@ -207,15 +207,19 @@ def test_noise_sampler_take_sample(datasipm, noise_sampler):
     noise_sampler, _, smear, *_ = noise_sampler
     samples = noise_sampler.sample()
     for i, active in enumerate(datasipm.Active):
-        sample = samples[i]
+        sample        = samples[i]
+        adc_to_pe     = noise_sampler.adc_to_pes[i]
+        baseline      = noise_sampler.baselines[i]
+        bins_adc      = noise_sampler.xbins * adc_to_pe
+        bin_width_adc = noise_sampler.dx * adc_to_pe
         if active:
             if smear:
                 # Find closest energy bin and ensure it is close enough.
-                diffs      = noise_sampler.xbins - sample[:, np.newaxis]
+                diffs      = bins_adc + baseline - sample[:, np.newaxis]
                 closest    = np.min(np.abs(diffs), axis=1)
-                assert np.all(closest <= noise_sampler.dx)
+                assert np.all(closest <= bin_width_adc)
             else:
-                assert np.all(np.in1d(sample, noise_sampler.xbins))
+                assert np.all(np.in1d(sample, bins_adc + baseline))
         else:
             assert not np.any(sample)
 
