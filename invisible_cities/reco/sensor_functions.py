@@ -51,7 +51,5 @@ def simulate_pmt_response(event, pmtrd, adc_to_pes, run_number = 0):
 def simulate_sipm_response(event, sipmrd, sipms_noise_sampler, sipm_adc_to_pes):
     """Add noise to the sipms with the NoiseSampler class and return
     the noisy waveform (in adc)."""
-    # add noise (in PES) to true waveform
-    dataSiPM = sipmrd[event] + sipms_noise_sampler.sample()
-    # return total signal in adc counts
-    return wfm.to_adc(dataSiPM, sipm_adc_to_pes)
+    # add noise (in ADC) to true waveform and return total signal in ADC
+    return wfm.to_adc(sipmrd[event], sipm_adc_to_pes) + sipms_noise_sampler.sample()
