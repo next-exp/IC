@@ -1,10 +1,74 @@
 
 import tables
+
+from .. reco     import tbl_functions as tbl
+
 from ..evm.event_model     import MCParticle
 from ..evm.event_model     import MCHit
+
+from .. evm.nh5  import MCExtentInfo
+from .. evm.nh5  import MCHitInfo
+from .. evm.nh5  import MCParticleInfo
+
 from typing import Mapping
 
 # use Mapping (duck type) rather than dict
+
+class mc_info_writer:
+    """Write MC info to file."""
+    def __init__(self, h5file, compression = 'ZLIB4'):
+
+        self.h5file      = h5file
+        self.compression = compression
+        self._create_tables()
+        # last visited row
+        self.last_row = 0
+
+    def _create_tables(self):
+        """Create tables in MC group in file h5file."""
+        if '/MC' in self.h5file:
+            MC = self.h5file.root.MC
+        else:
+            MC = self.h5file.create_group(self.h5file.root, "MC")
+
+        self.extent_table = self.h5file.create_table(MC, "extents",
+                        description = MCExtentInfo,
+                        title       = "extents",
+                        filters     = tbl.filters(self.compression))
+
+        # Mark column to index after populating table
+        self.extent_table.set_attr('columns_to_index', ['evt_number'])
+
+        self.hit_table = self.h5file.create_table(MC, "hits",
+                        description = MCHitInfo,
+                        title       = "hits",
+                        filters     = tbl.filters(self.compression))
+
+        self.particle_table = self.h5file.create_table(MC, "particles",
+                        description = MCParticleInfo,
+                        title       = "particles",
+                        filters     = tbl.filters(self.compression))
+
+    def __call__(self, mctables: tuple(),
+                     evt_number: int):
+
+        for r in mctables[0].iterrows(start=self.last_row):
+            if r['evt_number'] < evt_number:
+                continue
+            if r['evt_number'] > evt_number:
+                break
+            self.last_row += 1
+            self.extent_table.append(r)
+        self.extent_table.flush()
+
+        hits, particles = read_mcinfo_evt_by_evt(mctables, evt_number)
+
+        self.hit_table.append(hits)
+        self.hit_table.flush()
+
+        self.particle_table.append(particles)
+        self.particle_table.flush()
+
 
 def load_mchits(file_name: str, max_events:int =1e+9) -> Mapping[int, MCHit]:
 
@@ -214,3 +278,34 @@ def read_mcsns_response_nexus (h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[
         all_events[evt_number] = current_event
 
     return all_events
+
+def read_mcinfo_evt_by_evt (mctables: tuple(),
+                                event_number: int):
+    h5extents   = mctables[0]
+    h5hits      = mctables[1]
+    h5particles = mctables[2]
+
+    particle_rows = []
+    hit_rows = []
+
+    event_range = (0,int(1e9))
+    ihit = 0; ipart = 0
+
+    for iext in range(*event_range):
+        if extents[iext]['evt_number'] == event_number:
+
+            ipart_end = h5extents[iext]['last_particle']
+            ihit_end  = h5extents[iext]['last_hit']
+
+            while ihit <= ihit_end:
+                hit_rows.append(h5hits[ihit])
+                ihit += 1
+
+            while ipart <= ipart_end:
+                particle_rows.append(h5particles[ipart])
+                ipart += 1
+
+            break
+
+    return hit_rows, particle_rows
+

@@ -152,9 +152,9 @@ def get_rd_vectors(h5in):
 
 
 
-def get_mc_tracks(h5in):
-    """Return MC Tracks bank"""
-    return h5in.root.MC.MCTracks
+def get_mc_info(h5in):
+    """Return MC info bank"""
+    return h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles
 
 
 def get_sensor_params_from_vectors(pmtrwf, sipmrwf):
