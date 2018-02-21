@@ -2,10 +2,11 @@ import sqlite3
 import numpy as np
 import pandas as pd
 import os
-from operator import itemgetter
-
+from operator  import itemgetter
+from functools import lru_cache
 
 DATABASE_LOCATION =  os.environ['ICTDIR'] + '/invisible_cities/database/localdb.sqlite3'
+
 
 def tmap(*args):
     return tuple(map(*args))
@@ -14,10 +15,12 @@ def tmap(*args):
 # 3012 was the first SiPM calibration after remapping.
 runNumberForMC = 3012
 
+@lru_cache(maxsize=10)
 def DataPMT(run_number=1e5, db_file=DATABASE_LOCATION):
     if run_number == 0:
         run_number = runNumberForMC
 
+    dbfile = DATABASE_LOCATION
     conn = sqlite3.connect(db_file)
 
     sql = '''select pos.SensorID, map.ElecID "ChannelID", Label "PmtID",
@@ -44,6 +47,7 @@ order by Active desc, pos.SensorID
     conn.close()
     return data
 
+@lru_cache(maxsize=10)
 def DataSiPM(run_number=1e5, db_file=DATABASE_LOCATION):
     if run_number == 0:
         run_number = runNumberForMC
@@ -72,6 +76,7 @@ order by pos.SensorID'''.format(abs(run_number))
         
     return data
 
+@lru_cache(maxsize=10)
 def DetectorGeo(db_file=DATABASE_LOCATION):
     conn = sqlite3.connect(db_file)
     sql = 'select * from DetectorGeo'
@@ -79,6 +84,7 @@ def DetectorGeo(db_file=DATABASE_LOCATION):
     conn.close()
     return data
 
+@lru_cache(maxsize=10)
 def SiPMNoise(run_number=1e5, db_file=DATABASE_LOCATION):
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
