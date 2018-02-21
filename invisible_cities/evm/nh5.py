@@ -29,24 +29,39 @@ class DataSensor(tb.IsDescription):
     adc_to_pes = tb.Float32Col(pos=3)
     noise_rms  = tb.Float32Col(pos=4)
 
-
-class MCTrack(tb.IsDescription):
+class MCExtentInfo(tb.IsDescription):
     """Stores. the parameters used by the simulation as metadata using
     Pytables.
     """
-    event_indx     = tb.  Int32Col(    pos= 1)
-    mctrk_indx     = tb.  Int16Col(    pos= 2)
-    particle_name  = tb. StringCol(10, pos= 3)
-    pdg_code       = tb.  Int16Col(    pos= 4)
-    initial_vertex = tb.Float32Col(    pos= 5, shape=3)
-    final_vertex   = tb.Float32Col(    pos= 6, shape=3)
-    momentum       = tb.Float32Col(    pos= 7, shape=3)
-    energy         = tb.Float32Col(    pos= 8)
-    nof_hits       = tb.  Int16Col(    pos= 9)
-    hit_indx       = tb.  Int16Col(    pos=10)
-    hit_position   = tb.Float32Col(    pos=11, shape=3)
-    hit_time       = tb.Float32Col(    pos=12)
-    hit_energy     = tb.Float32Col(    pos=13)
+    evt_number    = tb.Int16Col(pos=0)
+    last_hit      = tb.Int16Col(pos=1)
+    last_particle = tb.Int16Col(pos=2)
+
+class MCHitInfo(tb.IsDescription):
+    """Stores. the parameters used by the simulation as metadata using
+    Pytables.
+    """
+    hit_position  = tb.Float32Col(    pos=0, shape=3)
+    hit_time      = tb.Float64Col(    pos=1)
+    hit_energy    = tb.Float32Col(    pos=2)
+    label         = tb. StringCol(20, pos=3)
+    particle_indx = tb.  Int16Col(    pos=4)
+    hit_indx      = tb.  Int16Col(    pos=5)
+
+class MCParticleInfo(tb.IsDescription):
+    """Stores. the parameters used by the simulation as metadata using
+    Pytables.
+    """
+    particle_indx  = tb.  Int16Col(    pos=0)
+    particle_name  = tb. StringCol(20, pos=1)
+    primary        = tb.  Int16Col(    pos=2)
+    mother_indx    = tb.  Int16Col(    pos=3)
+    initial_vertex = tb.Float32Col(    pos=4, shape=4)
+    final_vertex   = tb.Float32Col(    pos=5, shape=4)
+    initial_volume = tb. StringCol(20, pos=6)
+    final_volume   = tb. StringCol(20, pos=7)
+    momentum       = tb.Float32Col(    pos=8, shape=3)
+    kin_energy     = tb.Float32Col(    pos=9)
 
 
 class SENSOR_WF(tb.IsDescription):
