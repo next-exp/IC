@@ -109,8 +109,8 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params, thr_sipm_type, t
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
             nrow = 0
-            mctracks_in  = h5in .root.MC.MCTracks[nrow]
-            mctracks_out = h5out.root.MC.MCTracks[nrow]
+            mctracks_in  = h5in .root.MC.particles[nrow]
+            mctracks_out = h5out.root.MC.particles[nrow]
             np.testing.assert_array_equal(mctracks_in, mctracks_out)
 
             # check events numbers & timestamps

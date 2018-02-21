@@ -1,10 +1,32 @@
 import os
 import numpy  as np
+import tables as tb
+
 from . mchits_io import load_mchits
 from . mchits_io import load_mcparticles
 from . mchits_io import load_mchits_nexus
 from . mchits_io import load_mcparticles_nexus
 from . mchits_io import load_mcsensor_response_nexus
+from . mchits_io import mc_info_writer
+
+def test_non_consecutive_events(config_tmpdir, ICDIR):
+    filein  = os.path.join(ICDIR, 'database/test_data/', 'kr.3evts.MCRD.h5')
+    fileout = os.path.join(config_tmpdir, 'test_mcextents.h5')
+    h5in    = tb.open_file(filein)
+    h5out   = tb.open_file(fileout, 'w')
+
+    mc_writer = mc_info_writer(h5out)
+    mc_extents = h5in.root.MC.extents
+    events_in = np.unique(h5in.root.MC.extents[:]['evt_number'])
+
+    #Skip one event (there are only 3 in the file)
+    events_to_copy = events_in[::2]
+    for evt in events_to_copy:
+        mc_writer(mc_extents, evt)
+
+    events_out = np.unique(h5out.root.MC.extents[:]['evt_number'])
+
+    np.testing.assert_array_equal(events_to_copy, events_out)
 
 def test_load_all_mchits(mc_all_hits_data):
     efile, number_of_hits, evt_number = mc_all_hits_data
