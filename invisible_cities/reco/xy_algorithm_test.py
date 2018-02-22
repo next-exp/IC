@@ -172,3 +172,46 @@ def test_get_nearby_sipm_inds():
             assert np.sqrt((xs[i] - xc)**2 + (ys[i] - yc)**2) <= d
         else:
             assert np.sqrt((xs[i] - xc)**2 + (ys[i] - yc)**2) >  d
+
+
+def test_masked_channels():
+    """
+    Scheme of SiPM positions (the numbers are the SiPM charges)
+    1 1 1
+    1 6 1
+    1 1 1
+    1 5 0
+    1 1 1
+    This test is meant to fail if either
+    1) in the case of an empty masked channel list,
+       the actual threshold in the number of SiPMs
+       around the hottest one turns out to be different from msipm
+    2) the masked channel is not taken properly into account
+       by the code
+    """
+    xs         = np.array([0, 0, 0, 1, 1, 1, 2, 2, 0, 0, 1, 1, 2, 2])
+    ys         = np.array([0, 1, 2, 0, 1, 2, 0, 2, 3, 4, 3, 4, 3, 4])
+    qs         = np.array([1, 1, 1, 1, 5, 1, 1, 1, 1, 1, 6, 1, 1, 1])
+    pos        = np.stack((xs, ys), axis=1)
+    masked_pos = np.array([(2, 1)])
+
+    # Corona should return 1 cluster if the masked sipm is taken into account...
+    expected_nclusters = 1
+    found_clusters = corona(pos, qs,
+                            msipm         = 6              ,
+                            Qlm           = 4   * units.pes,
+                            new_lm_radius = 1.5 * units.mm ,
+                            pitch         = 1   * units.mm )
+
+    assert len(found_clusters) == expected_nclusters
+
+    # ... and two when ignored.
+    expected_nclusters = 2
+    found_clusters = corona(pos, qs,
+                            msipm          = 6              ,
+                            Qlm            = 4   * units.pes,
+                            new_lm_radius  = 1.5 * units.mm ,
+                            pitch          = 1   * units.mm ,
+                            masked_sipm    = masked_pos     )
+
+    assert len(found_clusters) == expected_nclusters
