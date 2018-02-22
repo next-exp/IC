@@ -1,9 +1,14 @@
-from . import load_db as DB
-
+import time
 import sqlite3
-import numpy as np
-from pytest  import fixture
+
 from os.path import join
+
+import numpy as np
+
+from pytest  import fixture
+from pytest  import mark
+
+from . import load_db as DB
 
 def test_pmts_pd():
     """Check that we retrieve the correct number of PMTs."""
@@ -13,6 +18,7 @@ def test_pmts_pd():
     assert columns == list(pmts)
     assert pmts['PmtID'].str.startswith('PMT').all()
     assert pmts.shape[0] == 12
+
 
 def test_pmts_MC_pd():
     """Check that we retrieve the correct number of PMTs."""
@@ -24,12 +30,14 @@ def test_pmts_MC_pd():
     assert pmts['PmtID'].str.startswith('PMT').all()
     assert pmts.shape[0] == 12
 
+
 def test_sipm_pd():
     """Check that we retrieve the correct number of SiPMs."""
     sipms = DB.DataSiPM()
     columns = ['SensorID', 'ChannelID', 'Active', 'X', 'Y', 'adc_to_pes', 'Sigma']
     assert columns == list(sipms)
     assert sipms.shape[0] == 1792
+
 
 def test_SiPMNoise():
     """Check we have noise for all SiPMs and energy of each bin."""
@@ -97,6 +105,7 @@ def test_db(tmpdir_factory):
 
     return dbfile, sipm_noise
 
+
 def test_sipm_noise_order(test_db):
     #Read from DB
     dbfile = test_db[0]
@@ -111,3 +120,24 @@ def test_sipm_noise_order(test_db):
     np.testing.assert_allclose(noise,     noise_true)
     np.testing.assert_allclose(bins,      bins_true)
     np.testing.assert_allclose(baselines, baselines_true)
+
+
+@mark.parametrize("db_fun", (DB.DataPMT, DB.DataSiPM, DB.SiPMNoise))
+def test_database_is_being_cached(db_fun):
+    run_number = 3333 # a value not used by any other test
+
+    t0 = time.time()
+    first_call  = db_fun(run_number)
+    t1 = time.time()
+    second_call = db_fun(run_number)
+    t2 = time.time()
+
+    time_first_call  = t1 - t0
+    time_second_call = t2 - t1
+
+    if db_fun is DB.SiPMNoise:
+        for item_first, item_second in zip(first_call, second_call):
+            assert np.allclose(item_first, item_second)
+    else:
+        assert np.all(first_call.values == second_call.values)
+    assert time_second_call < 1e6 * time_first_call
