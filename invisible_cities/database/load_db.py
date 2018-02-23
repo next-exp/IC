@@ -14,11 +14,11 @@ def tmap(*args):
 # 3012 was the first SiPM calibration after remapping.
 runNumberForMC = 3012
 
-def DataPMT(run_number=1e5):
+def DataPMT(run_number=1e5, db_file=DATABASE_LOCATION):
     if run_number == 0:
         run_number = runNumberForMC
-    dbfile = DATABASE_LOCATION
-    conn = sqlite3.connect(dbfile)
+
+    conn = sqlite3.connect(db_file)
 
     sql = '''select pos.SensorID, map.ElecID "ChannelID", Label "PmtID",
 case when msk.SensorID is NULL then 1 else 0 end "Active",
@@ -44,11 +44,11 @@ order by Active desc, pos.SensorID
     conn.close()
     return data
 
-def DataSiPM(run_number=1e5):
+def DataSiPM(run_number=1e5, db_file=DATABASE_LOCATION):
     if run_number == 0:
         run_number = runNumberForMC
-    dbfile = DATABASE_LOCATION
-    conn = sqlite3.connect(dbfile)
+
+    conn = sqlite3.connect(db_file)
 
     sql='''select pos.SensorID, map.ElecID "ChannelID",
 case when msk.SensorID is NULL then 1 else 0 end "Active",
@@ -72,16 +72,15 @@ order by pos.SensorID'''.format(abs(run_number))
         
     return data
 
-def DetectorGeo():
-    dbfile = DATABASE_LOCATION
-    conn = sqlite3.connect(dbfile)
+def DetectorGeo(db_file=DATABASE_LOCATION):
+    conn = sqlite3.connect(db_file)
     sql = 'select * from DetectorGeo'
     data = pd.read_sql_query(sql, conn)
     conn.close()
     return data
 
-def SiPMNoise(run_number=1e5, dbfile=DATABASE_LOCATION):
-    conn = sqlite3.connect(dbfile)
+def SiPMNoise(run_number=1e5, db_file=DATABASE_LOCATION):
+    conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
 
     sqlbaseline = '''select Energy from SipmBaseline
