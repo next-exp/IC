@@ -10,7 +10,7 @@ from .. core.testing_utils     import assert_dataframes_close
 from .  penthesilea            import Penthesilea
 from .. core.configure         import configure
 from .. io                     import dst_io as dio
-from .. io.mchits_io           import load_mchits
+from .. io.mchits_io           import load_mchits_nexus
 
 
 def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, config_tmpdir):
@@ -91,11 +91,11 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
 
 
 @mark.serial
-@mark.parametrize("write_mc_tracks outputfilename".split(),
+@mark.parametrize("write_mc_info outputfilename".split(),
                   ((True , "Kr_HDST_with_MC.h5"),
                    (False, "Kr_HDST_without_MC.h5")))
 def test_penthesilea_produces_tracks_when_required(KrMC_pmaps_filename, KrMC_hdst,
-                                                   config_tmpdir, write_mc_tracks,
+                                                   config_tmpdir, write_mc_info,
                                                    outputfilename):
     PATH_IN   = KrMC_pmaps_filename
     PATH_OUT  = os.path.join(config_tmpdir, outputfilename)
@@ -105,21 +105,21 @@ def test_penthesilea_produces_tracks_when_required(KrMC_pmaps_filename, KrMC_hds
     conf.update(dict(files_in        = PATH_IN,
                      file_out        = PATH_OUT,
                      event_range     = (nevt_req,),
-                     write_mc_tracks = write_mc_tracks,
+                     write_mc_info = write_mc_info,
                      **KrMC_hdst.config))
 
     penthesilea = Penthesilea(**conf)
     penthesilea.run()
 
     with tb.open_file(PATH_OUT) as h5out:
-        assert write_mc_tracks == ("MC"          in h5out.root)
-        assert write_mc_tracks == ("MC/MCTracks" in h5out.root)
+        assert write_mc_info == ("MC"          in h5out.root)
+        assert write_mc_info == ("MC/particles" in h5out.root)
 
 
 @mark.serial
 def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
     penthesilea_output_path = os.path.join(config_tmpdir,'Kr_HDST_with_MC.h5')
-    penthesilea_evts        = load_mchits(penthesilea_output_path)
+    penthesilea_evts        = load_mchits_nexus(penthesilea_output_path)
     true_evts               = KrMC_true_hits.hdst
 
     assert sorted(penthesilea_evts) == sorted(true_evts)
