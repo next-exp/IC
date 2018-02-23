@@ -58,15 +58,15 @@ class mc_info_writer:
             if r['evt_number'] > evt_number:
                 break
             self.last_row += 1
-            self.extent_table.append(r)
+            self.extent_table.append([r[:]])
         self.extent_table.flush()
 
         hits, particles = read_mcinfo_evt_by_evt(mctables, evt_number)
 
-        self.hit_table.append(hits)
+        (self.hit_table.append(h[:]) for h in hits)
         self.hit_table.flush()
 
-        self.particle_table.append(particles)
+        (self.particle_table.append(p[:]) for p in particles)
         self.particle_table.flush()
 
 
@@ -292,7 +292,7 @@ def read_mcinfo_evt_by_evt (mctables: tuple(),
     ihit = 0; ipart = 0
 
     for iext in range(*event_range):
-        if extents[iext]['evt_number'] == event_number:
+        if h5extents[iext]['evt_number'] == event_number:
 
             ipart_end = h5extents[iext]['last_particle']
             ihit_end  = h5extents[iext]['last_hit']

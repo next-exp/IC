@@ -65,7 +65,7 @@ class Diomira(MonteCarloCity):
         write       = self.writers
         pmtrd       = dataVectors.pmt
         sipmrd      = dataVectors.sipm
-        mc_tracks   = dataVectors.mc
+        mc_info   = dataVectors.mc
         events_info = dataVectors.events
 
         for evt in range(NEVT):
@@ -97,7 +97,7 @@ class Diomira(MonteCarloCity):
             #write
             event_number, timestamp = self.event_and_timestamp(evt, events_info)
             if self.monte_carlo:
-                write.mc(mc_tracks, event_number)
+                write.mc(mc_info, event_number)
 
             write.run_and_event(self.run_number, event_number, timestamp)
             write.rwf(RWF)
