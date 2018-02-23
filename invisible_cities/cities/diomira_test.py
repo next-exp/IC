@@ -30,7 +30,7 @@ def test_diomira_fee_table(ICDATADIR):
         fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
         feep = fee.fee_param
         eps = 1e-04
-        # Ignoring PEP8 to imrpove readability by making symmetry explicit.
+        # Ignoring PEP8 to improve readability by making symmetry explicit.
         assert len(fee.adc_to_pes)    == e40rwf.root.RD.pmtrwf.shape[1]
         assert len(fee.coeff_blr)     == e40rwf.root.RD.pmtrwf.shape[1]
         assert len(fee.coeff_c)       == e40rwf.root.RD.pmtrwf.shape[1]
@@ -105,20 +105,20 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
             assert h5out.root.Run.runInfo[0]['run_number'] == run_number
             assert h5out.root.Run.events [0]['evt_number'] == start_evt
 
-            # check mctracks
+            # check mcextents
             # we have to convert manually into a tuple because MCTracks[0]
             # returns an object of type numpy.void where we cannot index
             # using ranges like mctracks_in[1:]
-            mctracks_in  = tuple(h5in .root.MC.MCTracks[0])
-            mctracks_out = tuple(h5out.root.MC.MCTracks[0])
+            mcextents_in  = tuple(h5in.root.MC.extents[0])
+            mcextents_out = tuple(h5out.root.MC.extents[0])
             #evt number is not equal if we redefine first event number
-            assert mctracks_out[0] == start_evt
-            for e in zip(mctracks_in[1:], mctracks_out[1:]):
+            assert mcextents_out[0] == start_evt
+            for e in zip(mcextents_in[1:], mcextents_out[1:]):
                 np.testing.assert_array_equal(e[0],e[1])
 
             # check event number is different for each event
-            first_evt_number = h5out.root.MC.MCTracks[ 0][0]
-            last_evt_number  = h5out.root.MC.MCTracks[-1][0]
+            first_evt_number = h5out.root.MC.extents[ 0][0]
+            last_evt_number  = h5out.root.MC.extents[-1][0]
             assert first_evt_number != last_evt_number
 
 
