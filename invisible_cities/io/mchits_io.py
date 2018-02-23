@@ -23,6 +23,9 @@ class mc_info_writer:
         self._create_tables()
         # last visited row
         self.last_row = 0
+        self.last_written_hit = 0
+        self.last_written_particle = 0
+        self.first_extent_row = True
 
     def _create_tables(self):
         """Create tables in MC group in file h5file."""
@@ -52,13 +55,35 @@ class mc_info_writer:
     def __call__(self, mctables: tuple(),
                      evt_number: int):
 
-        for r in mctables[0].iterrows(start=self.last_row):
-            if r['evt_number'] < evt_number:
+        extents = mctables[0]
+        for iext in range(self.last_row, len(extents)):
+            if extents[iext]['evt_number'] < evt_number:
                 continue
-            if r['evt_number'] > evt_number:
+            if  extents[iext]['evt_number'] > evt_number:
                 break
             self.last_row += 1
-            self.extent_table.append([r[:]])
+            if iext == 0:
+                modified_hit = extents[iext]['last_hit']
+                modified_particle = extents[iext]['last_particle']
+            elif self.first_extent_row:
+                previous_row = extents[iext-1]
+                modified_hit = extents[iext]['last_hit']-previous_row['last_hit']+self.last_written_hit-1
+                modified_particle = extents[iext]['last_particle']-previous_row['last_particle']+self.last_written_particle-1
+                self.first_extent_row = False
+            else:
+                previous_row = extents[iext-1]
+                modified_hit = extents[iext]['last_hit']-previous_row['last_hit']+self.last_written_hit
+                modified_particle = extents[iext]['last_particle']-previous_row['last_particle']+self.last_written_particle
+
+            modified_row = self.extent_table.row
+            modified_row['evt_number'] = evt_number
+            modified_row['last_hit'] = modified_hit
+            modified_row['last_particle'] = modified_particle
+            modified_row.append()
+
+            self.last_written_hit = modified_hit
+            self.last_written_particle = modified_particle
+
         self.extent_table.flush()
 
         hits, particles = read_mcinfo_evt_by_evt(mctables, evt_number)
