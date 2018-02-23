@@ -12,12 +12,17 @@ from .. core.exceptions        import ClusterEmptyList
 from .. types.ic_types         import xy
 from .. evm.event_model        import Cluster
 
+from .. core.system_of_units_c import units
+
+from itertools import product
+
 
 def find_algorithm(algoname):
     if algoname in sys.modules[__name__].__dict__:
         return getattr(sys.modules[__name__], algoname)
     else:
         raise ValueError("The algorithm <{}> does not exist".format(algoname))
+
 
 def barycenter(pos, qs):
     """pos = column np.array --> (matrix n x 2)
@@ -39,12 +44,31 @@ def barycenter(pos, qs):
 
     #return [Cluster(sum(qs), XY(*mu), var, len(qs))]
 
+
 def discard_sipms(sis, pos, qs):
     return np.delete(pos, sis, axis=0), np.delete(qs, sis)
+
 
 def get_nearby_sipm_inds(cs, d, pos, qs):
     """return indices of sipms less than d from (xc,yc)"""
     return np.where(np.linalg.norm(pos - cs, axis=1) <= d)[0]
+
+
+def get_neighbours(cs, pitch):
+    """return positions of all sipms around cs,
+       irrespectively of the charge detected"""
+    x0, y0 = cs[0]
+    shift = np.array([-pitch, 0, +pitch])
+    return product(x0 + shift, y0 + shift)
+
+
+def have_same_position_in_space(a, b):
+    return np.allclose(a, b)
+
+
+def is_masked(sipm, masked_sipm):
+    return any(have_same_position_in_space(sipm, m_sipm)
+                   for m_sipm in masked_sipm)
 
 
 def corona(pos, qs,
@@ -52,7 +76,9 @@ def corona(pos, qs,
            Qlm            =  5 * units.pes,
            lm_radius      =  0 * units.mm,
            new_lm_radius  = 15 * units.mm,
-           msipm          =  3):
+           msipm          =  3,
+           pitch          = 10. * units.mm,
+           masked_sipm    = ()):
     """
     corona creates a list of Clusters by
     first , identifying hottest_sipm, the sipm with max charge in qs (must be > Qlm)
@@ -73,6 +99,7 @@ def corona(pos, qs,
     Qthr  = charge threshold, ignore all SiPMs with less than Qthr pes
     Qlm   = charge threshold, every Cluster must contain at least one SiPM with charge >= Qlm
     msipm = minimum number of SiPMs in a Cluster
+    pitch = distance between SiPMs
     lm_radius = radius, find new_local_maximum by taking the barycenter of SiPMs within
                 lm_radius of the max sipm. new_local_maximum is new in the sense that the
                 prev loc max was the position of hottest_sipm. (Then allow all SiPMs with
@@ -108,6 +135,9 @@ def corona(pos, qs,
 
     new_lm_radius = radius, find a new cluster by calling barycenter() on pos/qs of SiPMs within
                     new_lm_radius of new_local_maximum
+
+    masked_sipm = list of positions of masked SiPMs
+
     returns
     c    : a list of Clusters
 
@@ -135,7 +165,6 @@ def corona(pos, qs,
     if lm_radius < 0 or new_lm_radius < 0:
         return barycenter(pos, qs)
 
-
     c  = []
     # While there are more local maxima
     while len(qs) > 0:
@@ -150,8 +179,14 @@ def corona(pos, qs,
         # find the SiPMs within new_lm_radius of the new local maximum of charge
         within_new_lm_radius = get_nearby_sipm_inds(new_local_maximum, new_lm_radius, pos, qs)
 
-        # if there are at least msipms within_new_lm_radius, get the barycenter
-        if len(within_new_lm_radius) >= msipm:
+        # find any masked channel in the first ring around the new local maximum of charge
+        neighbours = get_neighbours(new_local_maximum, pitch)
+
+        n_masked_neighbours = sum(1 for neigh in neighbours if is_masked(neigh, masked_sipm))
+
+        # if there are at least msipms within_new_lm_radius, taking
+        # into account any masked channel, get the barycenter
+        if len(within_new_lm_radius) >= msipm - n_masked_neighbours:
             c.extend(barycenter(pos[within_new_lm_radius], qs[within_new_lm_radius]))
 
         # delete the SiPMs contributing to this cluster

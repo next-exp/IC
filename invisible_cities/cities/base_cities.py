@@ -270,6 +270,10 @@ class City:
         self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
         self.noise_rms       = DataPMT.noise_rms.values      .astype(np.double)
 
+        sipm_x_masked = DataSiPM[DataSiPM.Active == 0].X.values
+        sipm_y_masked = DataSiPM[DataSiPM.Active == 0].Y.values
+        self.pos_sipm_masked = np.stack((sipm_x_masked, sipm_y_masked), axis=1)
+
     @property
     def monte_carlo(self):
         return self.run_number <= 0
@@ -757,7 +761,8 @@ class KrCity(PCity):
                       Qlm            =  self.conf.qlm,
                       lm_radius      =  self.conf.lm_radius,
                       new_lm_radius  =  self.conf.new_lm_radius,
-                      msipm          =  self.conf.msipm)
+                      msipm          =  self.conf.msipm,
+                      masked_sipm    =  self.pos_sipm_masked)
 
     def compute_z_and_dt(self, ts2, ts1):
         """
@@ -871,7 +876,8 @@ class HitCity(KrCity):
                       Qlm            =  self.conf.qlm,
                       lm_radius      =  self.conf.lm_radius,
                       new_lm_radius  =  self.conf.new_lm_radius,
-                      msipm          =  self.conf.msipm)
+                      msipm          =  self.conf.msipm,
+                      masked_sipm    =  self.pos_sipm_masked)
 
     def compute_xy_peak_position(self, sr):
         """
