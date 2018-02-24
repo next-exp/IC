@@ -14,7 +14,7 @@ from . io  . pmaps_io         import pmap_writer
 from . io  .   dst_io         import load_dst
 from . io  .  hits_io         import load_hits
 from . io  .  hits_io         import load_hits_skipping_NN
-from . io  .mchits_io         import load_mchits_nexus
+from . io  .mcinfo_io         import load_mchits
 
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
@@ -412,8 +412,8 @@ def KrMC_hdst(ICDATADIR):
 def KrMC_true_hits(KrMC_pmaps_filename, KrMC_hdst):
     pmap_filename = KrMC_pmaps_filename
     hdst_filename = KrMC_hdst .file_info.filename
-    pmap_mctracks = load_mchits_nexus(pmap_filename)
-    hdst_mctracks = load_mchits_nexus(hdst_filename)
+    pmap_mctracks = load_mchits(pmap_filename)
+    hdst_mctracks = load_mchits(hdst_filename)
     return mcs_data(pmap_mctracks, hdst_mctracks)
 
 

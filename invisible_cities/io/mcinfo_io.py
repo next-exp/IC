@@ -124,11 +124,11 @@ class mc_info_writer:
  #       mchits_dict = compute_mchits_dict(mcevents)
   #  return mchits_dict
 
-def load_mchits_nexus(file_name: str,
-                      event_range=(0,int(1e9))) -> Mapping[int, MCHit]:
+def load_mchits(file_name: str,
+                    event_range=(0,int(1e9))) -> Mapping[int, MCHit]:
 
     with tables.open_file(file_name,mode='r') as h5in:
-        mcevents = read_mcinfo_nexus(h5in, event_range)
+        mcevents = read_mcinfo(h5in, event_range)
         mchits_dict = compute_mchits_dict(mcevents)
 
     return mchits_dict
@@ -139,17 +139,17 @@ def load_mchits_nexus(file_name: str,
 #        mctable = h5in.root.MC.MCTracks
 #        return read_mcinfo (mctable, max_events)
 
-def load_mcparticles_nexus(file_name: str,
+def load_mcparticles(file_name: str,
+                         event_range=(0,int(1e9))) -> Mapping[int, MCParticle]:
+
+    with tables.open_file(file_name,mode='r') as h5in:
+        return read_mcinfo(h5in, event_range)
+
+def load_mcsensor_response(file_name: str,
                                event_range=(0,int(1e9))) -> Mapping[int, MCParticle]:
 
     with tables.open_file(file_name,mode='r') as h5in:
-        return read_mcinfo_nexus(h5in, event_range)
-
-def load_mcsensor_response_nexus(file_name: str,
-                               event_range=(0,int(1e9))) -> Mapping[int, MCParticle]:
-
-    with tables.open_file(file_name,mode='r') as h5in:
-        return read_mcsns_response_nexus(h5in, event_range)
+        return read_mcsns_response(h5in, event_range)
 
 #def read_mcinfo (mc_table: tables.table.Table,
 #                   max_events:int =1e+9) ->Mapping[int, Mapping[int, MCParticle]]:
@@ -197,7 +197,7 @@ def load_mcsensor_response_nexus(file_name: str,
 
  #   return all_events
 
-def read_mcinfo_nexus (h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[int, MCParticle]]:
+def read_mcinfo(h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[int, MCParticle]]:
     h5extents   = h5f.root.MC.extents
     h5hits      = h5f.root.MC.hits
     h5particles = h5f.root.MC.particles
@@ -249,7 +249,7 @@ def read_mcinfo_nexus (h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[int
  #                                             [0.,0.,0.], [0.,0.,0.], 0.))
 
             hit = MCHit(h5hit['hit_position'], h5hit['hit_time'],
-                          h5hit['hit_energy'], h5hit['label'])
+                          h5hit['hit_energy'], h5hit['label'].decode('utf-8','ignore'))
             # for now, only keep the ACTIVE hits
             #if(h5hit['label'].decode('utf-8','ignore') == 'ACTIVE'):
 
@@ -273,7 +273,7 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]])->Mappin
     return mchits_dict
 
 
-def read_mcsns_response_nexus (h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, MCParticle]]:
+def read_mcsns_response(h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, MCParticle]]:
 
 #    h5config = h5f.get('Run/configuration')
 #    for row in h5config:

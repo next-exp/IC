@@ -30,7 +30,7 @@ from .. database import load_db
 from .. io                      import pmaps_io    as pio
 from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
-from .. io.mchits_io            import mc_info_writer
+from .. io.mcinfo_io            import mc_info_writer
 
 from .. reco                    import calib_sensors_functions  as csf
 from .. reco                    import paolina_functions        as paf
