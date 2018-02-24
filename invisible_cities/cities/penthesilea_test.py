@@ -137,7 +137,8 @@ def test_penthesilea_event_not_found(ICDATADIR, output_tmpdir):
     conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     nevt = 3
 
-    conf.update(dict(files_in    = file_in,
+    conf.update(dict(run_number = 4714,
+                     files_in    = file_in,
                      file_out    = file_out,
                      event_range = (0, nevt)))
 
