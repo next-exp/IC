@@ -10,7 +10,7 @@ from .. core.testing_utils     import assert_dataframes_close
 from .  penthesilea            import Penthesilea
 from .. core.configure         import configure
 from .. io                     import dst_io as dio
-from .. io.mchits_io           import load_mchits_nexus
+from .. io.mcinfo_io           import load_mchits
 
 
 def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, config_tmpdir):
@@ -119,7 +119,7 @@ def test_penthesilea_produces_tracks_when_required(KrMC_pmaps_filename, KrMC_hds
 @mark.serial
 def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
     penthesilea_output_path = os.path.join(config_tmpdir,'Kr_HDST_with_MC.h5')
-    penthesilea_evts        = load_mchits_nexus(penthesilea_output_path)
+    penthesilea_evts        = load_mchits(penthesilea_output_path)
     true_evts               = KrMC_true_hits.hdst
 
     assert sorted(penthesilea_evts) == sorted(true_evts)

@@ -9,7 +9,7 @@ from argparse import Namespace
 
 import numpy  as np
 
-from .. io.mchits_io            import mc_info_writer
+from .. io.mcinfo_io        import mc_info_writer
 from .. io.pmaps_io         import pmap_writer
 from .. io.run_and_event_io import run_and_event_writer
 
