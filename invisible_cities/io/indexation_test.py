@@ -9,7 +9,7 @@ from .. core  .configure   import configure
 
 from . hits_io   import     hits_writer
 from . kdst_io   import       kr_writer
-from . mchits_io import  mc_info_writer
+from . mcinfo_io import  mc_info_writer
 from . pmaps_io  import     pmap_writer
 
 

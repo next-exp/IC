@@ -81,12 +81,12 @@ class MCParticle:
 
     def __str__(self):
         return """ MCParticle: name = {}
-                    ini_vertex = {} final_vertex = {}
-                    p =  {}  E = {}
+                    initial vertex = {}, final vertex = {}
+                    momentum =  {},  kinetic energy = {}
                     number of hits = {}
-                    hits = {}\n""".format(self.name,
-                                          self.initial_vertex, self.final_vertex, self.p, self.E,
-                                          len(self.hits), self.hits)
+                    \n""".format(self.name,
+                                     self.initial_vertex, self.final_vertex, self.p, self.E,
+                                     len(self.hits))
 
     __repr__ =     __str__
 
@@ -146,7 +146,7 @@ class MCHit(BHit):
     def Label (self): return self.label
 
     def __str__(self):
-        return '<label = {} pos = {} E = {} time = {}>'.format(self.label,
+        return '<label = {}, pos = {}, E = {}, time = {}>'.format(self.label,
                 self.pos.tolist(), self.E, self.time)
 
     __repr__ =     __str__
