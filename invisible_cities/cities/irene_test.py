@@ -203,7 +203,7 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
     nrequired = 10
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number   = 0,
+    conf.update(dict(run_number   = 4714,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
                      event_range = (0, nrequired),
@@ -239,7 +239,7 @@ def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
 
     nrequired = 3
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number   = -4714,
+    conf.update(dict(run_number   = 4714,
                      files_in     = file_in,
                      file_out     = file_out,
                      event_range  = (0, nrequired),
