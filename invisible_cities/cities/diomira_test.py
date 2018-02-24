@@ -22,12 +22,13 @@ from .. sierpe   import fee as FEE
 from .  diomira  import Diomira
 
 
+@mark.skip
 def test_diomira_fee_table(ICDATADIR):
     "Test that FEE table reads back correctly with expected values."
     RWF_file = os.path.join(ICDATADIR, 'electrons_40keV_z250_RWF.h5')
 
     with tb.open_file(RWF_file, 'r') as e40rwf:
-        fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
+        fee = tbl.read_FEE_table(e40rwf.root.FEE.FEE)
         feep = fee.fee_param
         eps = 1e-04
         # Ignoring PEP8 to improve readability by making symmetry explicit.
