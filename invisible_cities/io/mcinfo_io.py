@@ -52,7 +52,7 @@ class mc_info_writer:
                         title       = "particles",
                         filters     = tbl.filters(self.compression))
 
-    def __call__(self, mctables: tuple(),
+    def __call__(self, mctables: (tables.Table, tables.Table, tables.Table),
                      evt_number: int):
 
         extents = mctables[0]
@@ -124,11 +124,13 @@ def load_mchits(file_name: str,
 
     return mchits_dict
 
+
 def load_mcparticles(file_name: str,
                          event_range=(0,int(1e9))) -> Mapping[int, MCParticle]:
 
     with tables.open_file(file_name,mode='r') as h5in:
         return read_mcinfo(h5in, event_range)
+
 
 def load_mcsensor_response(file_name: str,
                                event_range=(0,int(1e9))) -> Mapping[int, MCParticle]:
@@ -136,8 +138,9 @@ def load_mcsensor_response(file_name: str,
     with tables.open_file(file_name,mode='r') as h5in:
         return read_mcsns_response(h5in, event_range)
 
-def read_mcinfo_evt_by_evt (mctables: tuple(), event_number: int,
-                                last_row: int):
+
+def read_mcinfo_evt_by_evt (mctables: (tables.Table, tables.Table, tables.Table),
+                                event_number: int, last_row: int) -> ([tables.Table], [tables.Table]):
     h5extents   = mctables[0]
     h5hits      = mctables[1]
     h5particles = mctables[2]
@@ -169,6 +172,7 @@ def read_mcinfo_evt_by_evt (mctables: tuple(), event_number: int,
             break
 
     return hit_rows, particle_rows
+
 
 def read_mcinfo(h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[int, MCParticle]]:
     h5extents   = h5f.root.MC.extents
@@ -213,6 +217,7 @@ def read_mcinfo(h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[int, MCPar
         all_events[evt_number] = current_event
 
     return all_events
+
 
 def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]])->Mapping[int, MCHit]:
     """Returns all hits in the event"""
