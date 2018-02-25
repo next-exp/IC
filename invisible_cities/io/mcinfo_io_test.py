@@ -33,14 +33,32 @@ def test_non_consecutive_events(config_tmpdir, ICDIR):
 
     h5out.close()
 
-    hits_row, _ = read_mcinfo_evt_by_evt(mc_info, event_number=2)
-    nhits_evt2  = len(hits_row)
+    hit_rows, particle_rows = read_mcinfo_evt_by_evt(mc_info, event_number=2)
+    nhits_evt2  = len(hit_rows)
 
     h5filtered = tb.open_file(fileout)
     filtered_extents = h5filtered.root.MC.extents
     hit_extent_evt2 = filtered_extents[1]['last_hit'] - filtered_extents[0]['last_hit']
 
     assert hit_extent_evt2 == nhits_evt2
+
+    filt_mc_info = get_mc_info(h5filtered)
+    filt_hit_rows, filt_particle_rows = read_mcinfo_evt_by_evt(filt_mc_info,
+                                                                   event_number=2)
+
+    for hitr, filt_hitr in zip(hit_rows, filt_hit_rows):
+        assert np.allclose(hitr['hit_position'], filt_hitr['hit_position'])
+        assert np.allclose(hitr['hit_time'],     filt_hitr['hit_time'])
+        assert np.allclose(hitr['hit_energy'],   filt_hitr['hit_energy'])
+        assert hitr['label'] == filt_hitr['label']
+
+
+    for partr, filt_partr in zip(particle_rows,     filt_particle_rows):
+        assert np.allclose(partr['initial_vertex'], filt_partr['initial_vertex'])
+        assert np.allclose(partr['final_vertex'],   filt_partr['final_vertex'])
+        assert np.allclose(partr['momentum'],       filt_partr['momentum'])
+        assert np.allclose(partr['kin_energy'],     filt_partr['kin_energy'])
+        assert partr['particle_name'] == filt_partr['particle_name']
 
 
 def test_load_all_mchits(mc_all_hits_data):
