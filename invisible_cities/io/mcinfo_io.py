@@ -64,6 +64,7 @@ class mc_info_writer:
             if iext == 0:
                 modified_hit = extents[iext]['last_hit']
                 modified_particle = extents[iext]['last_particle']
+                self.first_extent_row = False
             elif self.first_extent_row:
                 previous_row = extents[iext-1]
                 modified_hit = extents[iext]['last_hit']-previous_row['last_hit']+self.last_written_hit-1
@@ -140,7 +141,7 @@ def load_mcsensor_response(file_name: str,
 
 
 def read_mcinfo_evt_by_evt (mctables: (tables.Table, tables.Table, tables.Table),
-                                event_number: int, last_row: int) -> ([tables.Table], [tables.Table]):
+                                event_number: int, last_row=0) -> ([tables.Table], [tables.Table]):
     h5extents   = mctables[0]
     h5hits      = mctables[1]
     h5particles = mctables[2]

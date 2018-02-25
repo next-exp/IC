@@ -6,6 +6,7 @@ from . mcinfo_io import load_mchits
 from . mcinfo_io import load_mcparticles
 from . mcinfo_io import load_mcsensor_response
 from . mcinfo_io import mc_info_writer
+from . mcinfo_io import read_mcinfo_evt_by_evt
 
 from .. reco.tbl_functions import get_mc_info
 
@@ -30,11 +31,24 @@ def test_non_consecutive_events(config_tmpdir, ICDIR):
 
     np.testing.assert_array_equal(events_to_copy, events_out)
 
+    h5out.close()
+
+    hits_row, _ = read_mcinfo_evt_by_evt(mc_info, event_number=2)
+    nhits_evt2  = len(hits_row)
+
+    h5filtered = tb.open_file(fileout)
+    filtered_extents = h5filtered.root.MC.extents
+    hit_extent_evt2 = filtered_extents[1]['last_hit'] - filtered_extents[0]['last_hit']
+
+    assert hit_extent_evt2 == nhits_evt2
+
+
 def test_load_all_mchits(mc_all_hits_data):
     efile, number_of_hits, evt_number = mc_all_hits_data
     mchits_dict = load_mchits(efile)
 
     assert len(mchits_dict[evt_number]) == number_of_hits
+
 
 def test_load_mchits(mc_particle_and_hits_nexus_data):
     efile, _, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
@@ -51,6 +65,7 @@ def test_load_mchits(mc_particle_and_hits_nexus_data):
     assert np.isclose(Z,hZ).all()
     assert np.isclose(E,hE).all()
     assert np.isclose(t,ht).all()
+
 
 def test_load_mcparticles(mc_particle_and_hits_nexus_data):
     efile, name, vi, vf, p, Ep, nhits, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
@@ -75,6 +90,7 @@ def test_load_mcparticles(mc_particle_and_hits_nexus_data):
     assert np.isclose(Z,hZ).all()
     assert np.isclose(E,hE).all()
     assert np.isclose(t,ht).all()
+
 
 def test_load_sensors_data(mc_sensors_nexus_data):
     efile, pmt0_first, pmt0_last, pmt0_tot_samples, sipm12013 = mc_sensors_nexus_data
