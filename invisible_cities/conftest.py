@@ -14,7 +14,7 @@ from . io  . pmaps_io         import pmap_writer
 from . io  .   dst_io         import load_dst
 from . io  .  hits_io         import load_hits
 from . io  .  hits_io         import load_hits_skipping_NN
-from . io  .mcinfo_io         import load_mchits
+from . io  . mcinfo_io        import load_mchits
 
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
@@ -62,10 +62,12 @@ def example_blr_wfs_filename(ICDATADIR):
 def electron_RWF_file(request, ICDATADIR):
     return os.path.join(ICDATADIR, request.param)
 
+
 @pytest.fixture(scope  = 'session',
                 params = ['electrons_40keV_z250_MCRD.h5'])
 def electron_MCRD_file(request, ICDATADIR):
     return os.path.join(ICDATADIR, request.param)
+
 
 @pytest.fixture(scope  = 'session',
                 params = ['Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5'])
@@ -76,30 +78,9 @@ def krypton_MCRD_file(request, ICDATADIR):
 @pytest.fixture(scope='session')
 def mc_all_hits_data(krypton_MCRD_file):
     number_of_hits = 8
-    evt_number = 2
-    efile = krypton_MCRD_file
+    evt_number     = 2
+    efile          = krypton_MCRD_file
     return efile, number_of_hits, evt_number
-
-
-#@pytest.fixture(scope='session')
-#def mc_particle_and_hits_data(electron_MCRD_file):
-#    X     = [ -0.10718990862369537,  -0.16415221989154816, -0.18664051592350006, -0.19431403279304504]
-#    Y     = [ -0.01200979482382536,  -0.07335199415683746, -0.09059777110815048, -0.09717071801424026]
-#    Z     = [    25.12295150756836,    25.140811920166016,    25.11968994140625,   25.115009307861328]
-#    E     = [ 0.006218845956027508,  0.014433029107749462, 0.010182539001107216, 0.009165585972368717]
-#    t     = [0.0009834024822339416, 0.0018070531077682972, 0.002247565658763051, 0.002446305239573121]
-
-#    vi    = np.array([3.06151588e-14,         0.0,  25.1000004])
-#    vf    = np.array([   -0.19431403, -0.09717072, 25.11500931])
-#    p     = np.array([   -0.20033967,  -0.0224465,   0.0428962])
-
-#    efile = electron_MCRD_file
-#    Ep    = 0.03999999910593033
-#    name  = b'e-'
-#    pdg   = 11
-#    nhits = 4
-
-#    return efile, name, pdg, vi, vf, p, Ep, nhits, X, Y, Z, E, t
 
 @pytest.fixture(scope='session')
 def mc_particle_and_hits_nexus_data(ICDATADIR):
@@ -124,16 +105,17 @@ def mc_particle_and_hits_nexus_data(ICDATADIR):
 
 @pytest.fixture(scope='session')
 def mc_sensors_nexus_data(ICDATADIR):
-    pmt0_first = (0, 1)
-    pmt0_last  = (670, 1)
+    pmt0_first       = (0, 1)
+    pmt0_last        = (670, 1)
     pmt0_tot_samples = 54
 
     sipm_id = 13016
-    sipm  = [(63, 3), (64, 2), (65, 1)]
+    sipm    = [(63, 3), (64, 2), (65, 1)]
 
     efile = os.path.join(ICDATADIR, 'Kr83_full_nexus_v5_03_01_ACTIVE_7bar_1evt.sim.h5')
 
     return efile, pmt0_first, pmt0_last, pmt0_tot_samples, sipm_id, sipm
+
 
 def _get_pmaps_dict_and_event_numbers(filename):
     dict_pmaps = load_pmaps(filename)
@@ -148,6 +130,7 @@ def _get_pmaps_dict_and_event_numbers(filename):
     si_events  = tuple(filter(evt_contains_sipms, dict_pmaps))
 
     return dict_pmaps, pmp_data(s1_events, s2_events, si_events)
+
 
 @pytest.fixture(scope='session')
 def KrMC_pmaps_filename(ICDATADIR):

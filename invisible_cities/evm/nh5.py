@@ -29,17 +29,18 @@ class DataSensor(tb.IsDescription):
     adc_to_pes = tb.Float32Col(pos=3)
     noise_rms  = tb.Float32Col(pos=4)
 
+
 class MCExtentInfo(tb.IsDescription):
-    """Stores. the parameters used by the simulation as metadata using
+    """Store the last row of each table as metadata using
     Pytables.
     """
     evt_number    = tb.Int16Col(pos=0)
     last_hit      = tb.Int16Col(pos=1)
     last_particle = tb.Int16Col(pos=2)
 
+
 class MCHitInfo(tb.IsDescription):
-    """Stores. the parameters used by the simulation as metadata using
-    Pytables.
+    """Stores the simulated hits as metadata using Pytables.
     """
     hit_position  = tb.Float32Col(    pos=0, shape=3)
     hit_time      = tb.Float64Col(    pos=1)
@@ -48,9 +49,9 @@ class MCHitInfo(tb.IsDescription):
     particle_indx = tb.  Int16Col(    pos=4)
     hit_indx      = tb.  Int16Col(    pos=5)
 
+
 class MCParticleInfo(tb.IsDescription):
-    """Stores. the parameters used by the simulation as metadata using
-    Pytables.
+    """Stores the simulated particles as metadata using Pytables.
     """
     particle_indx  = tb.  Int16Col(    pos=0)
     particle_name  = tb. StringCol(20, pos=1)

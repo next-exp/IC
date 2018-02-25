@@ -1,5 +1,6 @@
 
-import tables
+import tables as tb
+import numpy  as np
 
 from .. reco            import tbl_functions as tbl
 from .. core            import system_of_units as units
@@ -17,6 +18,7 @@ from typing import Mapping
 
 # use Mapping (duck type) rather than dict
 
+
 class mc_info_writer:
     """Write MC info to file."""
     def __init__(self, h5file, compression = 'ZLIB4'):
@@ -25,10 +27,10 @@ class mc_info_writer:
         self.compression = compression
         self._create_tables()
         # last visited row
-        self.last_row = 0
-        self.last_written_hit = 0
+        self.last_row              = 0
+        self.last_written_hit      = 0
         self.last_written_particle = 0
-        self.first_extent_row = True
+        self.first_extent_row      = True
 
     def _create_tables(self):
         """Create tables in MC group in file h5file."""
@@ -38,57 +40,56 @@ class mc_info_writer:
             MC = self.h5file.create_group(self.h5file.root, "MC")
 
         self.extent_table = self.h5file.create_table(MC, "extents",
-                        description = MCExtentInfo,
-                        title       = "extents",
-                        filters     = tbl.filters(self.compression))
+                                                     description = MCExtentInfo,
+                                                     title       = "extents",
+                                                     filters     = tbl.filters(self.compression))
 
         # Mark column to index after populating table
         self.extent_table.set_attr('columns_to_index', ['evt_number'])
 
         self.hit_table = self.h5file.create_table(MC, "hits",
-                        description = MCHitInfo,
-                        title       = "hits",
-                        filters     = tbl.filters(self.compression))
+                                                  description = MCHitInfo,
+                                                  title       = "hits",
+                                                  filters     = tbl.filters(self.compression))
 
         self.particle_table = self.h5file.create_table(MC, "particles",
-                        description = MCParticleInfo,
-                        title       = "particles",
-                        filters     = tbl.filters(self.compression))
+                                                       description = MCParticleInfo,
+                                                       title       = "particles",
+                                                       filters     = tbl.filters(self.compression))
 
-    def __call__(self, mctables: (tables.Table, tables.Table, tables.Table),
-                     evt_number: int):
+    def __call__(self, mctables: (tb.Table, tb.Table, tb.Table),
+                 evt_number: int):
 
         extents = mctables[0]
         for iext in range(self.last_row, len(extents)):
-            if extents[iext]['evt_number'] < evt_number:
-                continue
-            if  extents[iext]['evt_number'] > evt_number:
-                break
+            this_row = extents[iext]
+            if this_row['evt_number'] < evt_number: continue
+            if this_row['evt_number'] > evt_number: break
             if iext == 0:
-                modified_hit = extents[iext]['last_hit']
-                modified_particle = extents[iext]['last_particle']
+                modified_hit          = this_row['last_hit']
+                modified_particle     = this_row['last_particle']
                 self.first_extent_row = False
             elif self.first_extent_row:
-                previous_row = extents[iext-1]
-                modified_hit = extents[iext]['last_hit']-previous_row['last_hit']+self.last_written_hit-1
-                modified_particle = extents[iext]['last_particle']-previous_row['last_particle']+self.last_written_particle-1
+                previous_row          = extents[iext-1]
+                modified_hit          = this_row['last_hit'] - previous_row['last_hit'] + self.last_written_hit - 1
+                modified_particle     = this_row['last_particle'] - previous_row['last_particle'] + self.last_written_particle - 1
                 self.first_extent_row = False
             else:
-                previous_row = extents[iext-1]
-                modified_hit = extents[iext]['last_hit']-previous_row['last_hit']+self.last_written_hit
-                modified_particle = extents[iext]['last_particle']-previous_row['last_particle']+self.last_written_particle
+                previous_row      = extents[iext-1]
+                modified_hit      = this_row['last_hit'] - previous_row['last_hit'] + self.last_written_hit
+                modified_particle = this_row['last_particle'] - previous_row['last_particle'] + self.last_written_particle
 
-            modified_row = self.extent_table.row
-            modified_row['evt_number'] = evt_number
-            modified_row['last_hit'] = modified_hit
+            modified_row                  = self.extent_table.row
+            modified_row['evt_number']    = evt_number
+            modified_row['last_hit']      = modified_hit
             modified_row['last_particle'] = modified_particle
             modified_row.append()
 
-            self.last_written_hit = modified_hit
+            self.last_written_hit      = modified_hit
             self.last_written_particle = modified_particle
         self.extent_table.flush()
 
-        hits, particles = read_mcinfo_evt_by_evt(mctables, evt_number, self.last_row)
+        hits, particles = read_mcinfo_evt(mctables, evt_number, self.last_row)
         self.last_row += 1
 
         for h in hits:
@@ -120,50 +121,52 @@ class mc_info_writer:
 
 
 def load_mchits(file_name: str,
-                    event_range=(0,int(1e9))) -> Mapping[int, MCHit]:
+                event_range=(0, int(1e9))) -> Mapping[int, MCHit]:
 
-    with tables.open_file(file_name,mode='r') as h5in:
-        mcevents = read_mcinfo(h5in, event_range)
+    with tb.open_file(file_name, mode='r') as h5in:
+        mcevents    = read_mcinfo(h5in, event_range)
         mchits_dict = compute_mchits_dict(mcevents)
 
     return mchits_dict
 
 
 def load_mcparticles(file_name: str,
-                         event_range=(0,int(1e9))) -> Mapping[int, MCParticle]:
+                     event_range=(0, int(1e9))) -> Mapping[int, MCParticle]:
 
-    with tables.open_file(file_name,mode='r') as h5in:
+    with tb.open_file(file_name, mode='r') as h5in:
         return read_mcinfo(h5in, event_range)
 
 
 def load_mcsensor_response(file_name: str,
-                               event_range=(0,int(1e9))) -> Mapping[int, MCParticle]:
+                           event_range=(0, int(1e9))) -> Mapping[int, MCParticle]:
 
-    with tables.open_file(file_name,mode='r') as h5in:
+    with tb.open_file(file_name, mode='r') as h5in:
         return read_mcsns_response(h5in, event_range)
 
 
-def read_mcinfo_evt_by_evt (mctables: (tables.Table, tables.Table, tables.Table),
-                                event_number: int, last_row=0) -> ([tables.Table], [tables.Table]):
+def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table),
+                     event_number: int, last_row=0) -> ([tb.Table], [tb.Table]):
     h5extents   = mctables[0]
     h5hits      = mctables[1]
     h5particles = mctables[2]
 
     particle_rows = []
-    hit_rows = []
+    hit_rows      = []
 
-    event_range = (last_row,int(1e9))
+    event_range = (last_row, int(1e9))
     for iext in range(*event_range):
-        if h5extents[iext]['evt_number'] == event_number:
+        this_row = h5extents[iext]
+        if this_row['evt_number'] == event_number:
             # the indices of the first hit and particle are 0 unless the first event
             #  written is to be skipped: in this case they must be read from the extents
-            ihit = 0; ipart = 0
+            ihit = ipart = 0
             if iext > 0:
-                ihit = h5extents[iext-1]['last_hit'] + 1
-                ipart = h5extents[iext-1]['last_particle'] + 1
+                previous_row = h5extents[iext-1]
+                ihit         = previous_row['last_hit'] + 1
+                ipart        = previous_row['last_particle'] + 1
 
-            ihit_end  = h5extents[iext]['last_hit']
-            ipart_end = h5extents[iext]['last_particle']
+            ihit_end  = this_row['last_hit']
+            ipart_end = this_row['last_particle']
 
             while ihit <= ihit_end:
                 hit_rows.append(h5hits[ihit])
@@ -178,42 +181,45 @@ def read_mcinfo_evt_by_evt (mctables: (tables.Table, tables.Table, tables.Table)
     return hit_rows, particle_rows
 
 
-def read_mcinfo(h5f, event_range=(0,int(1e9))) ->Mapping[int, Mapping[int, MCParticle]]:
+def read_mcinfo(h5f, event_range=(0, int(1e9))) ->Mapping[int, Mapping[int, MCParticle]]:
     h5extents   = h5f.root.MC.extents
     h5hits      = h5f.root.MC.hits
     h5particles = h5f.root.MC.particles
 
-    mc_info = (h5extents, h5hits, h5particles)
+    mc_info        = (h5extents, h5hits, h5particles)
+    events_in_file = len(h5extents)
 
     all_events = {}
 
     for iext in range(*event_range):
-        if iext >= len(h5extents):
+        if iext >= events_in_file:
             break
 
-        current_event = {}
-        evt_number = h5extents[iext]['evt_number']
-        hit_rows, particle_rows = read_mcinfo_evt_by_evt(mc_info, evt_number, iext)
+        current_event           = {}
+        evt_number              = h5extents[iext]['evt_number']
+        hit_rows, particle_rows = read_mcinfo_evt(mc_info, evt_number, iext)
 
         for h5particle in particle_rows:
-
-            current_event[h5particle['particle_indx']] = MCParticle(h5particle['particle_name'].decode('utf-8','ignore'),
-                                               h5particle['primary'],
-                                               h5particle['mother_indx'],
-                                               h5particle['initial_vertex'],
-                                               h5particle['final_vertex'],
-                                               h5particle['initial_volume'].decode('utf-8','ignore'),
-                                               h5particle['final_volume'].decode('utf-8','ignore'),
-                                               h5particle['momentum'],
-                                               h5particle['kin_energy'],
-                                               h5particle['creator_proc'])
+            this_particle = h5particle['particle_indx']
+            current_event[this_particle] = MCParticle(h5particle['particle_name'].decode('utf-8','ignore'),
+                                                      h5particle['primary'],
+                                                      h5particle['mother_indx'],
+                                                      h5particle['initial_vertex'],
+                                                      h5particle['final_vertex'],
+                                                      h5particle['initial_volume'].decode('utf-8','ignore'),
+                                                      h5particle['final_volume'].decode('utf-8','ignore'),
+                                                      h5particle['momentum'],
+                                                      h5particle['kin_energy'],
+                                                      h5particle['creator_proc'].decode('utf-8','ignore'))
 
         for h5hit in hit_rows:
-            ipart = h5hit['particle_indx']
+            ipart            = h5hit['particle_indx']
             current_particle = current_event[ipart]
 
-            hit = MCHit(h5hit['hit_position'], h5hit['hit_time'],
-                          h5hit['hit_energy'], h5hit['label'].decode('utf-8','ignore'))
+            hit = MCHit(h5hit['hit_position'],
+                        h5hit['hit_time'],
+                        h5hit['hit_energy'],
+                        h5hit['label'].decode('utf-8','ignore'))
 
             current_particle.hits.append(hit)
 
@@ -235,7 +241,7 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]])->Mappin
     return mchits_dict
 
 
-def read_mcsns_response(h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, Waveform]]:
+def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, Waveform]]:
 
     h5config = h5f.root.MC.configuration
 
@@ -245,66 +251,64 @@ def read_mcsns_response(h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, Wa
         param_name = row['param_key'].decode('utf-8','ignore')
         if param_name.find('time_binning') >= 0:
             param_value = row['param_value'].decode('utf-8','ignore')
-            numb, unit = param_value.split()
+            numb, unit  = param_value.split()
             if param_name.find('Pmt') > 0:
                 bin_width_PMT = float(numb)
             elif param_name.find('SiPM') >= 0:
                 bin_width_SiPM = float(numb)
 
 
-    if not  bin_width_PMT:
+    if bin_width_PMT is None:
         raise SensorBinningNotFound
-    if not  bin_width_PMT:
+    if bin_width_SiPM is None:
         raise SensorBinningNotFound
 
 
-    h5extents = h5f.root.MC.extents
+    h5extents   = h5f.root.MC.extents
     h5waveforms = h5f.root.MC.waveforms
 
     last_line_of_event = 'last_sns_data'
+    events_in_file     = len(h5extents)
 
     all_events = {}
 
     iwvf = 0
-    if(event_range[0] > 0):
-        iwvf = h5extents[event_range[0]-1][last_line_of_event]+1
+    if event_range[0] > 0:
+        iwvf = h5extents[event_range[0]-1][last_line_of_event] + 1
 
     for iext in range(*event_range):
-        if (iext >= len(h5extents)):
+        if iext >= events_in_file:
             break
 
         current_event = {}
 
-        iwvf_end = h5extents[iext][last_line_of_event]
+        iwvf_end          = h5extents[iext][last_line_of_event]
         current_sensor_id = h5waveforms[iwvf]['sensor_id']
-        time_bins = []
-        charges = []
-        while (iwvf <= iwvf_end):
-            wvf_row = h5waveforms[iwvf]
+        time_bins         = []
+        charges           = []
+        while iwvf <= iwvf_end:
+            wvf_row   = h5waveforms[iwvf]
             sensor_id = wvf_row['sensor_id']
 
-            if (sensor_id == current_sensor_id):
+            if sensor_id == current_sensor_id:
                 time_bins.append(wvf_row['time_bin'])
-                charges.append(wvf_row['charge'])
+                charges.  append(wvf_row['charge'])
             else:
-               # current_event[current_sensor_id] = zip(time_bins, charges)
-                if 0 <= sensor_id < 1000:
-                    bin_width = bin_width_PMT
-                else :
-                    bin_width = bin_width_SiPM
-
-                times = [t * bin_width for t in time_bins]
+                bin_width = bin_width_PMT if sensor_id < 1000 else bin_width_SiPM
+                times     = np.array(time_bins) * bin_width
 
                 current_event[current_sensor_id] = Waveform(times, charges, bin_width)
+
                 time_bins = []
-                charges = []
+                charges   = []
                 time_bins.append(wvf_row['time_bin'])
                 charges.append(wvf_row['charge'])
+
                 current_sensor_id = sensor_id
 
             iwvf += 1
 
-        evt_number = h5extents[iext]['evt_number']
+        evt_number             = h5extents[iext]['evt_number']
         all_events[evt_number] = current_event
 
     return all_events

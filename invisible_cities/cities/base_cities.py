@@ -398,20 +398,20 @@ class RawCity(City):
             with tb.open_file(filename, "r") as h5in:
 
                 events_info = self.get_run_and_event_info(h5in)
-                mc_info   = self.get_mc_info(h5in)
+                mc_info     = self.get_mc_info(h5in)
                 dataVectors = 0
                 NEVT        = 0
 
                 if self.raw_data_type == 'RWF':
                     NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
                     dataVectors = DataVectors(pmt=pmtrwf, sipm=sipmrwf,
-                                             mc=mc_info, events=events_info)
+                                              mc=mc_info, events=events_info)
 
                     self.event_loop(NEVT, dataVectors)
                 elif self.raw_data_type == 'MCRD':
                     NEVT, pmtrd, sipmrd     = self.get_rd_vectors(h5in)
-                    dataVectors = DataVectors(pmt=pmtrd, sipm=sipmrd,
-                                             mc=mc_info, events=events_info)
+                    dataVectors = DataVectors(pmt=pmtrd,  sipm=sipmrd,
+                                              mc=mc_info, events=events_info)
 
                     self.event_loop(NEVT, dataVectors)
                 else:

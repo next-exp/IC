@@ -18,7 +18,7 @@ class Penthesilea(HitCity):
         super().__init__(**kwds)
 
     def get_writers(self, h5out):
-        return Namespace(dst = hits_writer    (h5out),
+        return Namespace(dst = hits_writer(h5out),
                          mc  = self.get_mc_info_writer(h5out))
 
     def create_dst_event(self, pmapVectors, filter_output):

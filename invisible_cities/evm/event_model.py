@@ -1,7 +1,7 @@
 # Clsses defining the event model
 
-import tables
-import numpy as np
+import tables as tb
+import numpy  as np
 
 from networkx                  import Graph
 from .. types.ic_types         import NN
@@ -17,6 +17,7 @@ from typing import Tuple
 from typing import NamedTuple
 
 ZANODE = -9.425 * units.mm
+
 
 class SensorParams:
     """Transient class storing sensor parameters."""
@@ -49,9 +50,9 @@ class SensorParams:
 
 class MCInfo(NamedTuple):
     """Transient class storing the tables of MC true info"""
-    extents : tables.Table
-    hits : tables.Table
-    particles : tables.Table
+    extents   : tb.Table
+    hits      : tb.Table
+    particles : tb.Table
 
 
 class Waveform(NamedTuple):
@@ -97,15 +98,14 @@ class MCParticle:
         self.hits           = []
 
     def __str__(self):
-        return """ MCParticle: name = {}
-                    initial vertex = {}, final vertex = {}
-                    momentum =  {},  kinetic energy = {}
-                    number of hits = {}
-                    \n""".format(self.name,
-                                     self.initial_vertex, self.final_vertex, self.p, self.E,
-                                     len(self.hits))
+        return f""" MCParticle: name = {self.name}
+                    initial volume = {self.initial_volume}, final volume = {self.final_volume}
+                    kinetic energy = {self.E} MeV
+                    mother = {self.mother_indx}, creator process = {self.process}
+                    number of hits = {len(self.hits)}
+                    \n"""
 
-    __repr__ =     __str__
+    __repr__ =  __str__
 
 
 class BHit:
