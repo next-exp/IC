@@ -81,9 +81,9 @@ class Isidora(DeconvolutionCity):
         RWF = partial(rwf_writer,  h5out,   group_name='BLR')
         writers = Namespace(
             run_and_event = run_and_event_writer(h5out),
-            pmt  = RWF(table_name='pmtcwf' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
-            sipm  = RWF(table_name='sipmrwf' , n_sensors=self.sp.NSIPM , waveform_length=self.sp.SIPMWL),
-            mc            =      mc_info_writer(h5out) if self.monte_carlo else None,
+            pmt           = RWF(table_name='pmtcwf' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
+            sipm          = RWF(table_name='sipmrwf' , n_sensors=self.sp.NSIPM , waveform_length=self.sp.SIPMWL),
+            mc            = mc_info_writer(h5out) if self.monte_carlo else None,
             )
 
         return writers

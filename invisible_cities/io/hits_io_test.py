@@ -6,11 +6,11 @@ from . dst_io              import load_dst
 from numpy.testing import assert_allclose
 
 from .. core.testing_utils import assert_dataframes_equal
-from ..types.ic_types      import xy
-from ..evm.event_model     import Cluster
-from ..evm.event_model     import Hit
-from ..evm.event_model     import HitCollection
-from . hits_io             import hits_writer
+from .. types.ic_types     import xy
+from .. evm.event_model    import Cluster
+from .. evm.event_model    import Hit
+from .. evm.event_model    import HitCollection
+from .  hits_io            import hits_writer
 from .. types.ic_types     import NN
 
 def test_load_hits_load_events(TlMC_hits):
