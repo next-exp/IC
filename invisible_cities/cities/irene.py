@@ -109,8 +109,8 @@ class Irene(PmapCity):
     def get_writers(self, h5out):
         writers = Namespace(
         run_and_event = run_and_event_writer(h5out),
-        mc            =      mc_info_writer(h5out) if self.monte_carlo else None,
-        pmap          =          pmap_writer(h5out))
+        mc            = mc_info_writer(h5out) if self.monte_carlo else None,
+        pmap          = pmap_writer(h5out))
         return writers
 
     def display_IO_info(self):

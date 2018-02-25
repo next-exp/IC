@@ -13,7 +13,7 @@ from argparse  import Namespace
 import numpy as np
 
 
-from .. io.mcinfo_io                import mc_info_writer
+from .. io.mcinfo_io            import mc_info_writer
 from .. io.run_and_event_io     import run_and_event_writer
 from .. io.rwf_io               import rwf_writer
 from .. filters.trigger_filters import TriggerFilter
@@ -65,7 +65,7 @@ class Diomira(MonteCarloCity):
         write       = self.writers
         pmtrd       = dataVectors.pmt
         sipmrd      = dataVectors.sipm
-        mc_info   = dataVectors.mc
+        mc_info     = dataVectors.mc
         events_info = dataVectors.events
 
         for evt in range(NEVT):
@@ -112,7 +112,7 @@ class Diomira(MonteCarloCity):
         RWF = partial(rwf_writer,  h5out,   group_name='RD')
         writers = Namespace(
             run_and_event = run_and_event_writer(h5out),
-            mc            =      mc_info_writer(h5out) if self.monte_carlo else None,
+            mc            = mc_info_writer(h5out) if self.monte_carlo else None,
         # 3 variations on the  RWF writer theme
             rwf  = RWF(table_name='pmtrwf' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
             cwf  = RWF(table_name='pmtblr' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
