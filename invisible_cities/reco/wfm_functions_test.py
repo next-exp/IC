@@ -41,7 +41,7 @@ def test_compare_cwf_blr():
     NEVT, NPMT, PMTWL = pmtrwf.shape
 
 
-    deconv = DeconvParams(n_baseline  = 28000,
+    deconv = DeconvParams(n_baseline  = 45000,
                           thr_trigger =     5)
 
     run_number = 0
