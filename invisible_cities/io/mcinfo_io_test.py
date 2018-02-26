@@ -22,7 +22,7 @@ def test_non_consecutive_events(config_tmpdir, ICDIR):
 
     mc_info = get_mc_info(h5in)
 
-    #Skip one event (there are only 3 in the file)
+    #Skip one event in the middle (there are only 3 in the file)
     events_to_copy = events_in[::2]
     for evt in events_to_copy:
         mc_writer(mc_info, evt)
@@ -43,22 +43,51 @@ def test_non_consecutive_events(config_tmpdir, ICDIR):
     assert hit_extent_evt2 == nhits_evt2
 
     filt_mc_info = get_mc_info(h5filtered)
-    filt_hit_rows, filt_particle_rows = read_mcinfo_evt_by_evt(filt_mc_info,
-                                                                   event_number=2)
+    # test the content of the first and the last event to be sure that they are written
+    # correctly
+    for evt_numb in (0,2):
+        hit_rows, particle_rows = read_mcinfo_evt_by_evt(mc_info, evt_numb)
+        filt_hit_rows, filt_particle_rows = read_mcinfo_evt_by_evt(filt_mc_info,
+                                                                    evt_numb)
 
+        for hitr, filt_hitr in zip(hit_rows, filt_hit_rows):
+            assert np.allclose(hitr['hit_position'], filt_hitr['hit_position'])
+            assert np.allclose(hitr['hit_time']    , filt_hitr['hit_time'])
+            assert np.allclose(hitr['hit_energy']  , filt_hitr['hit_energy'])
+            assert hitr['label']                  == filt_hitr['label']
+
+
+        for partr, filt_partr in zip(particle_rows    , filt_particle_rows):
+            assert np.allclose(partr['initial_vertex'], filt_partr['initial_vertex'])
+            assert np.allclose(partr['final_vertex']  , filt_partr['final_vertex'])
+            assert np.allclose(partr['momentum']      , filt_partr['momentum'])
+            assert np.allclose(partr['kin_energy']    , filt_partr['kin_energy'])
+            assert partr['particle_name']            == filt_partr['particle_name']
+
+    #Now skip the first event
+    events_to_copy = events_in[1:]
+    fileout = os.path.join(config_tmpdir, 'test_mcinfo_2.h5')
+    h5out   = tb.open_file(fileout, 'w')
+    mc_writer = mc_info_writer(h5out)
+    for evt in events_to_copy:
+        mc_writer(mc_info, evt)
+
+    hit_rows, particle_rows = read_mcinfo_evt_by_evt(mc_info, event_number=0)
+    filt_hit_rows, filt_particle_rows = read_mcinfo_evt_by_evt(filt_mc_info,
+                                                                   event_number=0)
     for hitr, filt_hitr in zip(hit_rows, filt_hit_rows):
         assert np.allclose(hitr['hit_position'], filt_hitr['hit_position'])
-        assert np.allclose(hitr['hit_time'],     filt_hitr['hit_time'])
-        assert np.allclose(hitr['hit_energy'],   filt_hitr['hit_energy'])
-        assert hitr['label'] == filt_hitr['label']
+        assert np.allclose(hitr['hit_time']    , filt_hitr['hit_time'])
+        assert np.allclose(hitr['hit_energy']  , filt_hitr['hit_energy'])
+        assert hitr['label']                  == filt_hitr['label']
 
 
-    for partr, filt_partr in zip(particle_rows,     filt_particle_rows):
+    for partr, filt_partr in zip(particle_rows    , filt_particle_rows):
         assert np.allclose(partr['initial_vertex'], filt_partr['initial_vertex'])
-        assert np.allclose(partr['final_vertex'],   filt_partr['final_vertex'])
-        assert np.allclose(partr['momentum'],       filt_partr['momentum'])
-        assert np.allclose(partr['kin_energy'],     filt_partr['kin_energy'])
-        assert partr['particle_name'] == filt_partr['particle_name']
+        assert np.allclose(partr['final_vertex']  , filt_partr['final_vertex'])
+        assert np.allclose(partr['momentum']      , filt_partr['momentum'])
+        assert np.allclose(partr['kin_energy']    , filt_partr['kin_energy'])
+        assert partr['particle_name']            == filt_partr['particle_name']
 
 
 def test_load_all_mchits(mc_all_hits_data):
