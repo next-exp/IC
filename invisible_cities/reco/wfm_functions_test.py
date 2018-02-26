@@ -35,7 +35,7 @@ def test_compare_cwf_blr():
     """
 
     RWF_file = path.join(os.environ['ICDIR'],
-                         'database/test_data/electrons_40keV_z250_RWF.h5')
+                         'database/test_data/electrons_40keV_z25_RWF.h5')
     h5rwf = tb.open_file(RWF_file,'r')
     pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
     NEVT, NPMT, PMTWL = pmtrwf.shape
@@ -57,6 +57,6 @@ def test_compare_cwf_blr():
 
     CWF = wfm.cwf_from_rwf(pmtrwf, range(NEVT), calib, deconv)
     diff = wfm.compare_cwf_blr(CWF, pmtblr,
-                               event_list=range(NEVT), window_size=200)
+                               event_list=range(NEVT), window_size=300)
 
-    assert max(diff) < 0.1
+    assert max(diff) < 0.15
