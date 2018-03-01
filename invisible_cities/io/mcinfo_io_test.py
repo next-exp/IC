@@ -152,7 +152,7 @@ def test_load_sensors_data(mc_sensors_nexus_data):
     assert samples[-1]  == pmt0_last
     assert len(samples) == pmt0_tot_samples
 
-    sns_number = 12013
+    sns_number = 23009
     samples = list(waveforms[sns_number])
 
     assert np.allclose(samples, sipm12013)

@@ -238,8 +238,8 @@ def read_mcsns_response(h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, MC
 #    for row in h5config:
 #        if row['param_key']
 
-    h5extents = h5f.root.Run.extents
-    h5waveforms = h5f.root.Run.waveforms
+    h5extents = h5f.root.MC.extents
+    h5waveforms = h5f.root.MC.waveforms
 
     last_line_of_event = 'last_sns_data'
 
