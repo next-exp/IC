@@ -140,19 +140,24 @@ def test_load_mcparticles(mc_particle_and_hits_nexus_data):
 
 
 def test_load_sensors_data(mc_sensors_nexus_data):
-    efile, pmt0_first, pmt0_last, pmt0_tot_samples, sipm12013 = mc_sensors_nexus_data
+    efile, pmt0_first, pmt0_last, pmt0_tot_samples, sipm = mc_sensors_nexus_data
 
     mcsensors_dict = load_mcsensor_response(efile)
 
     waveforms = mcsensors_dict[0]
+
     sns_number = 0
-    samples = list(waveforms[sns_number])
+    wvf = waveforms[sns_number]
+    bins = [t/wvf.bin_width for t in wvf.times]
+    samples = list(zip(bins, wvf.charges))
 
     assert samples[0]   == pmt0_first
     assert samples[-1]  == pmt0_last
     assert len(samples) == pmt0_tot_samples
 
     sns_number = 23009
-    samples = list(waveforms[sns_number])
+    wvf = waveforms[sns_number]
+    bins = [t/wvf.bin_width for t in wvf.times]
+    samples = list(zip(bins, wvf.charges))
 
-    assert np.allclose(samples, sipm12013)
+    assert np.allclose(samples, sipm)

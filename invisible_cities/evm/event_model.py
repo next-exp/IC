@@ -43,6 +43,23 @@ class SensorParams:
 
     __repr__ = __str__
 
+class Waveform:
+    """Transient class storing times and charges for a sensor"""
+    def __init__(self, times, charges, bin_width):
+        self.times     = times
+        self.charges   = charges
+        self.bin_width = bin_width
+
+    def __str__(self):
+        return """ Waveform: times = {}
+                    charges = {}
+                    bin width = {}
+                    \n""".format(self.times,
+                                     self.charges,
+                                     self.bin_width)
+
+    __repr__ =     __str__
+
 
 class Event:
     """Transient class storing event and time info."""

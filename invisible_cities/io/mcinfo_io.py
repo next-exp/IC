@@ -1,14 +1,16 @@
 
 import tables
 
-from .. reco     import tbl_functions as tbl
+from .. reco import tbl_functions as tbl
+from .. core import system_of_units as units
 
-from ..evm.event_model     import MCParticle
-from ..evm.event_model     import MCHit
+from .. evm.event_model import MCParticle
+from .. evm.event_model import MCHit
+from .. evm.event_model import Waveform
 
-from .. evm.nh5  import MCExtentInfo
-from .. evm.nh5  import MCHitInfo
-from .. evm.nh5  import MCParticleInfo
+from .. evm.nh5 import MCExtentInfo
+from .. evm.nh5 import MCHitInfo
+from .. evm.nh5 import MCParticleInfo
 
 from typing import Mapping
 
@@ -232,11 +234,20 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]])->Mappin
     return mchits_dict
 
 
-def read_mcsns_response(h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, MCParticle]]:
+def read_mcsns_response(h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, Waveform]]:
 
-#    h5config = h5f.get('Run/configuration')
-#    for row in h5config:
-#        if row['param_key']
+    h5config = h5f.root.MC.configuration
+
+    bin_width_PMT  = 100. * units.nanosecond
+    bin_width_SiPM = 1. * units.microsecond
+    for row in h5config:
+        param_name = row['param_key'].decode('utf-8','ignore')
+        if param_name.find('time_binning') >= 0:
+            print(param_name, row['param_value'].decode('utf-8','ignore'))
+            if param_name.find('Pmt') > 0:
+                bin_width_PMT = float(row['param_value'])
+            elif param_name.find('SiPM') >= 0:
+                bin_width_SiPM = float(row['param_value'])
 
     h5extents = h5f.root.MC.extents
     h5waveforms = h5f.root.MC.waveforms
@@ -257,20 +268,28 @@ def read_mcsns_response(h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, MC
 
         iwvf_end = h5extents[iext][last_line_of_event]
         current_sensor_id = h5waveforms[iwvf]['sensor_id']
-        times = []
+        time_bins = []
         charges = []
         while (iwvf <= iwvf_end):
             wvf_row = h5waveforms[iwvf]
             sensor_id = wvf_row['sensor_id']
 
             if (sensor_id == current_sensor_id):
-                times.append(wvf_row['time_bin'])
+                time_bins.append(wvf_row['time_bin'])
                 charges.append(wvf_row['charge'])
             else:
-                current_event[current_sensor_id] = zip(times, charges)
-                times = []
+               # current_event[current_sensor_id] = zip(time_bins, charges)
+                if 0 <= sensor_id < 1000:
+                    bin_width = bin_width_PMT
+                else :
+                    bin_width = bin_width_SiPM
+
+                times = [t * bin_width for t in time_bins]
+
+                current_event[current_sensor_id] = Waveform(times, charges, bin_width)
+                time_bins = []
                 charges = []
-                times.append(wvf_row['time_bin'])
+                time_bins.append(wvf_row['time_bin'])
                 charges.append(wvf_row['charge'])
                 current_sensor_id = sensor_id
 
