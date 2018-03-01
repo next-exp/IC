@@ -243,11 +243,12 @@ def read_mcsns_response(h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, Wa
     for row in h5config:
         param_name = row['param_key'].decode('utf-8','ignore')
         if param_name.find('time_binning') >= 0:
-            print(param_name, row['param_value'].decode('utf-8','ignore'))
+            param_value = row['param_value'].decode('utf-8','ignore')
+            numb, unit = param_value.split()
             if param_name.find('Pmt') > 0:
-                bin_width_PMT = float(row['param_value'])
+                bin_width_PMT = float(numb)
             elif param_name.find('SiPM') >= 0:
-                bin_width_SiPM = float(row['param_value'])
+                bin_width_SiPM = float(numb)
 
     h5extents = h5f.root.MC.extents
     h5waveforms = h5f.root.MC.waveforms
