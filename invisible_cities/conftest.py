@@ -124,11 +124,11 @@ def mc_particle_and_hits_nexus_data(ICDATADIR):
 
 @pytest.fixture(scope='session')
 def mc_sensors_nexus_data(ICDATADIR):
-    pmt0_first = (3575, 1)
-    pmt0_last  = (3685, 1)
-    pmt0_tot_samples = 92
+    pmt0_first = (0, 1)
+    pmt0_last  = (1884, 1)
+    pmt0_tot_samples = 52
 
-    sipm  = [(361, 2), (362, 1), (363, 2), (364, 1), (365, 1), (366, 3)]
+    sipm  = [(182, 3), (183, 5), (184, 3), (187, 2)]
 
     efile = os.path.join(ICDATADIR, 'Kr83_full.h5')
 
