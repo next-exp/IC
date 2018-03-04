@@ -69,15 +69,15 @@ def electron_MCRD_file(request, ICDATADIR):
 
 @pytest.fixture(scope  = 'session',
                 params = ['kr.3evts.MCRD.h5'])
-def krypton_DST_file(request, ICDATADIR):
+def krypton_MCRD_file(request, ICDATADIR):
     return os.path.join(ICDATADIR, request.param)
 
 
 @pytest.fixture(scope='session')
-def mc_all_hits_data(krypton_DST_file):
+def mc_all_hits_data(krypton_MCRD_file):
     number_of_hits = 7
     evt_number = 2
-    efile = krypton_DST_file
+    efile = krypton_MCRD_file
     return efile, number_of_hits, evt_number
 
 
