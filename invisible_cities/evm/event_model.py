@@ -1,6 +1,8 @@
 # Clsses defining the event model
 
+import tables
 import numpy as np
+
 from networkx                  import Graph
 from .. types.ic_types         import NN
 from .. types.ic_types         import minmax
@@ -12,6 +14,7 @@ from .. core.system_of_units_c import units
 
 from typing import List
 from typing import Tuple
+from typing import NamedTuple
 
 ZANODE = -9.425 * units.mm
 
@@ -43,22 +46,19 @@ class SensorParams:
 
     __repr__ = __str__
 
-class Waveform:
+
+class MCInfo(NamedTuple):
+    """Transient class storing the tables of MC true info"""
+    extents : tables.Table
+    hits : tables.Table
+    particles : tables.Table
+
+
+class Waveform(NamedTuple):
     """Transient class storing times and charges for a sensor"""
-    def __init__(self, times, charges, bin_width):
-        self.times     = times
-        self.charges   = charges
-        self.bin_width = bin_width
-
-    def __str__(self):
-        return """ Waveform: times = {}
-                    charges = {}
-                    bin width = {}
-                    \n""".format(self.times,
-                                     self.charges,
-                                     self.bin_width)
-
-    __repr__ =     __str__
+    times     : np.ndarray
+    charges   : np.ndarray
+    bin_width : float
 
 
 class Event:
