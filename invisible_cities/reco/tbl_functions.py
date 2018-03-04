@@ -14,8 +14,11 @@ import re
 import numpy as np
 import tables as tb
 import pandas as pd
+
 from argparse import Namespace
+
 from ..evm.event_model  import SensorParams
+from ..evm.event_model  import MCInfo
 
 def filters(name):
     """Return the filter corresponding to a given key.
@@ -154,7 +157,7 @@ def get_rd_vectors(h5in):
 
 def get_mc_info(h5in):
     """Return MC info bank"""
-    return h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles
+    return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles)
 
 
 def get_sensor_params_from_vectors(pmtrwf, sipmrwf):
