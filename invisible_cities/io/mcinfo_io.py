@@ -1,8 +1,9 @@
 
 import tables
 
-from .. reco import tbl_functions as tbl
-from .. core import system_of_units as units
+from .. reco            import tbl_functions as tbl
+from .. core            import system_of_units as units
+from .. core.exceptions import SensorBinningNotFound
 
 from .. evm.event_model import MCParticle
 from .. evm.event_model import MCHit
@@ -238,8 +239,8 @@ def read_mcsns_response(h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, Wa
 
     h5config = h5f.root.MC.configuration
 
-    bin_width_PMT  = 100. * units.nanosecond
-    bin_width_SiPM = 1. * units.microsecond
+    bin_width_PMT  = None
+    bin_width_SiPM = None
     for row in h5config:
         param_name = row['param_key'].decode('utf-8','ignore')
         if param_name.find('time_binning') >= 0:
@@ -249,6 +250,13 @@ def read_mcsns_response(h5f, event_range=(0,1e9)) ->Mapping[int, Mapping[int, Wa
                 bin_width_PMT = float(numb)
             elif param_name.find('SiPM') >= 0:
                 bin_width_SiPM = float(numb)
+
+
+    if not  bin_width_PMT:
+        raise SensorBinningNotFound
+    if not  bin_width_PMT:
+        raise SensorBinningNotFound
+
 
     h5extents = h5f.root.MC.extents
     h5waveforms = h5f.root.MC.waveforms

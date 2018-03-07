@@ -61,3 +61,6 @@ class InitializedEmptyPmapObject(ICException):
 
 class UnknownParameter(ICException):
     pass
+
+class SensorBinningNotFound(ICException):
+    pass
