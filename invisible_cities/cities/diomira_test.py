@@ -11,6 +11,7 @@ import tables as tb
 import numpy  as np
 
 from pytest import mark
+from pytest import raises
 
 from .. core                 import system_of_units as units
 from .. core.configure       import configure
@@ -21,9 +22,9 @@ from .. sierpe   import fee as FEE
 from .  diomira  import Diomira
 
 
-def test_diomira_fee_table(ICDIR):
+def test_diomira_fee_table(ICDATADIR):
     "Test that FEE table reads back correctly with expected values."
-    RWF_file = os.path.join(ICDIR, 'database/test_data/electrons_40keV_z250_RWF.h5')
+    RWF_file = os.path.join(ICDATADIR, 'electrons_40keV_z250_RWF.h5')
 
     with tb.open_file(RWF_file, 'r') as e40rwf:
         fee = tbl.read_FEE_table(e40rwf.root.MC.FEE)
@@ -52,7 +53,7 @@ def test_diomira_fee_table(ICDIR):
         assert abs(feep.CEILING - FEE.CEILING)             < eps
 
 
-def test_diomira_identify_bug(ICDIR):
+def test_diomira_identify_bug(ICDATADIR):
     """Read a one-event file in which the energy of PMTs is equal to zero and
     asset it must be son. This test would fail for a normal file where there
     is always some energy in the PMTs. It's purpose is to provide an automaic
@@ -65,7 +66,7 @@ def test_diomira_identify_bug(ICDIR):
     The same event is later processed with Irene (where a protection
     that skips empty events has been added) to ensure that no crash occur."""
 
-    infile = os.path.join(ICDIR, 'database/test_data/irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
+    infile = os.path.join(ICDATADIR, 'irene_bug_Kr_ACTIVE_7bar_MCRD.h5')
     with tb.open_file(infile, 'r') as h5in:
 
         pmtrd  = h5in.root.pmtrd
@@ -75,10 +76,10 @@ def test_diomira_identify_bug(ICDIR):
 
 
 @mark.slow
-def test_diomira_copy_mc_and_offset(config_tmpdir):
-    PATH_IN = os.path.join(os.environ['ICDIR'], 'database/test_data/', 'electrons_40keV_z250_MCRD.h5')
-    PATH_OUT = os.path.join(config_tmpdir,                             'electrons_40keV_z250_RWF.h5')
-    # PATH_OUT = os.path.join(os.environ['IC_DATA'],                             'electrons_40keV_z250_test_RWF.h5')
+def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
+    PATH_IN  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'electrons_40keV_z250_RWF.h5' )
+    #PATH_OUT = os.path.join(ICDATADIR, 'electrons_40keV_z250_test_RWF.h5')
 
     start_evt  = Diomira.event_number_from_input_file_name(PATH_IN)
     run_number = 0
@@ -130,3 +131,40 @@ def test_diomira_copy_mc_and_offset(config_tmpdir):
                0)))
 def test_event_number_from_input_file_name(filename, first_evt):
     assert Diomira.event_number_from_input_file_name(filename) == first_evt
+
+
+@mark.slow
+def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
+    file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
+    file_out = os.path.join(output_tmpdir, 'electrons_40keV_z250_RWF_test_mismatch.h5')
+
+    conf = configure('diomira invisible_cities/config/diomira.conf'.split())
+    conf.update(dict(run_number  = -4500, # Must be a run number with dead pmts
+                     files_in    = file_in,
+                     file_out    = file_out,
+                     tr_channels = (18, 19),
+                     event_range = (0, 1)))
+
+    diomira = Diomira(**conf)
+    diomira.run()
+    cnt     = diomira.end()
+
+    # we are just interested in checking whether the code runs or not
+    assert cnt.n_events_tot == 1
+
+
+@mark.slow
+def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdir):
+    file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
+    file_out = os.path.join(output_tmpdir, 'electrons_40keV_z250_RWF_test_trigger.h5')
+
+    conf = configure('diomira invisible_cities/config/diomira.conf'.split())
+    conf.update(dict(run_number   = -4500, # Must be a run number with dead pmts
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     trigger_type = "S2",
+                     tr_channels  = (0,), # This is a masked PMT for this run
+                     event_range  = (0, 1)))
+
+    with raises(ValueError):
+        Diomira(**conf).run()
