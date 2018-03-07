@@ -259,16 +259,16 @@ class City:
         self.DataPMT  = DataPMT
         self.DataSiPM = DataSiPM
 
-        self.xs              = DataSiPM.X.values
-        self.ys              = DataSiPM.Y.values
-        self.pmt_active      = np.nonzero(pmt_active)[0].tolist()
-        self.active_pmt_ids  = DataPMT.SensorID[DataPMT.Active == 1].values
-        self.pmt_adc_to_pes  = abs(DataPMT.adc_to_pes.values).astype(np.double)
-        self.pmt_adc_to_pes  = self.pmt_adc_to_pes[pmt_active]
-        self.sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
-        self.coeff_c         = DataPMT.coeff_c.values        .astype(np.double)
-        self.coeff_blr       = DataPMT.coeff_blr.values      .astype(np.double)
-        self.noise_rms       = DataPMT.noise_rms.values      .astype(np.double)
+        self.xs                 = DataSiPM.X.values
+        self.ys                 = DataSiPM.Y.values
+        self.pmt_active         = np.nonzero(pmt_active)[0].tolist()
+        self.active_pmt_ids     = DataPMT.SensorID[DataPMT.Active == 1].values
+        self.all_pmt_adc_to_pes = abs(DataPMT.adc_to_pes.values).astype(np.double)
+        self.    pmt_adc_to_pes = self.all_pmt_adc_to_pes[pmt_active]
+        self.   sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
+        self.coeff_c            = DataPMT.coeff_c.values        .astype(np.double)
+        self.coeff_blr          = DataPMT.coeff_blr.values      .astype(np.double)
+        self.noise_rms          = DataPMT.noise_rms.values      .astype(np.double)
 
         sipm_x_masked = DataSiPM[DataSiPM.Active == 0].X.values
         sipm_y_masked = DataSiPM[DataSiPM.Active == 0].Y.values
@@ -454,12 +454,14 @@ class DeconvolutionCity(RawCity):
         row["ACCUM_DISCHARGE_LENGTH"] = self.accum_discharge_length
         table.flush()
 
-    def deconv_pmt(self, RWF):
+    def deconv_pmt(self, RWF, selection=None):
         """Deconvolve the RWF of the PMTs"""
+        if selection is None:
+            selection = self.pmt_active
         return blr.deconv_pmt(RWF,
                               self.coeff_c,
                               self.coeff_blr,
-                              pmt_active             = self.pmt_active,
+                              pmt_active             = selection,
                               n_baseline             = self.n_baseline,
                               thr_trigger            = self.thr_trigger,
                               accum_discharge_length = self.accum_discharge_length)
@@ -1001,6 +1003,12 @@ class TriggerEmulationCity(PmapCity):
         super().__init__(**kwds)
         self.trigger_params   = self.trigger_parameters()
 
+        self.IC_ids_selection = convert_channel_id_to_IC_id(self.DataPMT,
+                                                            self.trigger_params.trigger_channels)
+
+        if not np.all(np.in1d(self.IC_ids_selection, self.pmt_active)):
+            raise ValueError("Attempt to trigger in masked PMT")
+
     def trigger_parameters(self):
         """Simulate trigger parameters."""
         conf = self.conf
@@ -1018,20 +1026,16 @@ class TriggerEmulationCity(PmapCity):
         1. online deconvolution of the waveforms.
         2. peak computation in the FPGA
         """
-
-        CWF = self.deconv_pmt(RWF)
-        IC_ids_selection = convert_channel_id_to_IC_id(self.DataPMT,
-                                                       self.trigger_params.trigger_channels)
+        CWFs = self.deconv_pmt(RWF, self.IC_ids_selection.tolist())
 
         peak_data = {}
-        for pmt_id in IC_ids_selection:
+        for pmt_id, cwf in zip(self.IC_ids_selection, CWFs):
             # Emulate zero suppression in the FPGA
             wfm_index, _ = \
-            pkf.indices_and_wf_above_threshold(CWF[pmt_id],
-                                               thr = self.trigger_params.height.min)
+            pkf.indices_and_wf_above_threshold(cwf, thr = self.trigger_params.height.min)
 
             # Emulate peak search (s2) in the FPGA
-            s2 = pkf.find_peaks(CWF[pmt_id], wfm_index,
+            s2 = pkf.find_peaks(cwf, wfm_index,
                                 Pk      = S2,
                                 pmt_ids = [-1],
                                 **self.s2_params._asdict())
@@ -1056,16 +1060,16 @@ class MonteCarloCity(TriggerEmulationCity):
         self.sp               = self.get_sensor_rd_params(self.input_files[0])
         self.noise_sampler    = SiPMsNoiseSampler(self.run_number, self.sp.SIPMWL, True)
 
-    @staticmethod
-    def simulate_sipm_response(event, sipmrd,
-                               sipms_noise_sampler, sipm_adc_to_pes):
+
+    def simulate_sipm_response(self, event, sipmrd):
         """Add noise with the NoiseSampler class and return
         the noisy waveform (in adc counts)."""
-        return sf.simulate_sipm_response(event, sipmrd, sipms_noise_sampler,
-                                         sipm_adc_to_pes)
+        return sf.simulate_sipm_response(event, sipmrd,
+                                         self.noise_sampler,
+                                         self.sipm_adc_to_pes)
 
 
-    def simulate_pmt_response(self, event, pmtrd, pmt_adc_to_pes):
+    def simulate_pmt_response(self, event, pmtrd):
         """ Full simulation of the energy plane response
         Input:
          1) extensible array pmtrd
@@ -1077,7 +1081,7 @@ class MonteCarloCity(TriggerEmulationCity):
         array of BLR waveforms (only decimation)
         """
         return sf.simulate_pmt_response(event, pmtrd,
-                                        pmt_adc_to_pes,
+                                        self.all_pmt_adc_to_pes,
                                         self.run_number)
 
     @property
