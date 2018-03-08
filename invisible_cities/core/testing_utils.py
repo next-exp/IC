@@ -1,10 +1,13 @@
 import numpy  as np
 
-from pytest import approx
-
-from numpy.testing          import assert_array_equal, assert_allclose
-from hypothesis.strategies  import integers, floats
+from pytest                 import approx
+from numpy.testing          import assert_array_equal
+from numpy.testing          import assert_allclose
+from hypothesis.strategies  import integers
+from hypothesis.strategies  import floats
 from hypothesis.extra.numpy import arrays
+
+from . core_functions import relative_difference
 
 
 def exactly(value, **kwargs):
@@ -29,6 +32,20 @@ def exactly(value, **kwargs):
     floating point comparisons.
     """
     return approx(value, rel=0, abs=0, **kwargs)
+
+
+def all_elements_close(x, t_rel=1e-3, t_abs=1e-6):
+    """Tests that all the elements of a sequence are close within
+    relative of abs tolerance
+
+    """
+    x  = np.asarray(x)
+    x0 = x[0]
+    rel_diff = relative_difference(x0, x)
+    abs_diff = np.abs(x0 - x)
+
+    return (not np.any(rel_diff > t_rel) or
+            not np.any(abs_diff > t_abs))
 
 
 def previous_float(x):
