@@ -2,10 +2,20 @@
 Core functions
 This module includes utility functions.
 """
-import numpy as np
 import time
+import enum
+
+import numpy as np
 
 from typing import Sequence
+
+
+class NormMode(enum.Enum):
+    first   = 0
+    second  = 1
+    sumof   = 3
+    mean    = 4
+
 
 def merge_two_dicts(a,b):
     return {**a, **b}
@@ -38,6 +48,15 @@ def lrange(*args):
 def trange(*args):
     """Create a tuple specified as a range."""
     return tuple(range(*args))
+
+
+def relative_difference(x, y, *, norm_mode=NormMode.first):
+    if   norm_mode is NormMode.first : return     (x - y) /  x
+    elif norm_mode is NormMode.second: return     (x - y) /      y
+    elif norm_mode is NormMode.sumof : return     (x - y) / (x + y)
+    elif norm_mode is NormMode.mean  : return 2 * (x - y) / (x + y)
+    else:
+        raise TypeError(f"Unrecognized relative difference option: {norm_mode}")
 
 
 def in_range(data, minval=-np.inf, maxval=np.inf):
@@ -140,6 +159,22 @@ def np_reverse_range(start, end, stride):
 def np_constant(dim, value):
     """Returns a np array of dimension dim with all elements == value."""
     return np.ones(dim) * value
+
+
+def to_row_vector(x):
+    """
+    Takes a np.array of shape (n,) and returns a row vector
+    of shape (1, n).
+    """
+    return x[np.newaxis, :]
+
+
+def to_col_vector(x):
+    """
+    Takes a np.array of shape (n,) and returns a column
+    vector of shape (n, 1).
+    """
+    return x[:, np.newaxis]
 
 
 def dict_map(func, dic):
