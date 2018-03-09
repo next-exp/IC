@@ -36,7 +36,7 @@ for name, attrs in (
         ('S1PMaps'        , 'S1 S1_PMT S1p S1p_PMT'),
         ('PMaps'          , 'S1 S2 S2Si'),
         ('Peak'           , 't E'),
-        ('FitFunction'    , 'fn values errors chi2 pvalue'),
+        ('FitFunction'    , 'fn values errors chi2 pvalue cov'),
         ('TriggerParams'  , 'trigger_channels min_number_channels charge height width'),
         ('PeakData'       , 'charge height width'),
         ('Measurement'    , 'value uncertainty')):
