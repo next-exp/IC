@@ -523,10 +523,11 @@ class CalibratedCity(DeconvolutionCity):
 
     def calibrate_sipms(self, SiRWF):
         """Return the calibrated signal in the SiPMs."""
+
         return csf.calibrate_sipms(SiRWF,
                                    self.sipm_adc_to_pes,
                                    thr   = self.  thr_sipm,
-                                   n_MAU = self.n_MAU_sipm)
+                                   bls_mode=csf.BlsMode.mode)
 
 
 class PmapCity(CalibratedCity):
