@@ -147,7 +147,7 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
     chi2, pval = get_chi2_and_pvalue(y, fitx, ndof, sigma_r)
 
 
-    return FitFunction(fitf, vals, errors, chi2, pval)
+    return FitFunction(fitf, vals, errors, chi2, pval, cov)
 
 
 def profileX(xdata, ydata, nbins=100,
