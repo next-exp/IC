@@ -6,6 +6,10 @@ import pandas as pd
 import numpy  as np
 import numpy.testing as npt
 
+from pytest import approx
+from pytest import mark
+from pytest import raises
+
 from flaky                 import flaky
 from hypothesis            import given
 from hypothesis.strategies import integers
@@ -65,6 +69,25 @@ def test_in_range_positives():
 @given(random_length_float_arrays(max_length = 100))
 def test_in_range_right_shape(data):
     assert core.in_range(data, -1., 1.).shape == data.shape
+
+
+@mark.parametrize(" first  second       norm_mode        expected".split(),
+                  ((  1  ,    2  , core.NormMode.first ,   -1    ),
+                   (  4  ,    2  , core.NormMode.second,    1    ),
+                   (  4  ,    1  , core.NormMode.sumof ,    0.6  ),
+                   (  8  ,    2  , core.NormMode.mean  ,    1.2  )))
+def test_relative_difference(first, second, norm_mode, expected):
+    got = core.relative_difference(first, second, norm_mode=norm_mode)
+    assert got == approx(expected)
+
+
+@mark.parametrize("norm_mode",
+                  (0, "0", 1, "1", None, "None",
+                   "first", "second",
+                   "NormMode.first", "NormMode.second"))
+def test_relative_difference_raises_TypeError(norm_mode):
+    with raises(TypeError):
+        core.relative_difference(1, 1, norm_mode=norm_mode)
 
 
 @given(random_length_float_arrays(min_length = 5,
@@ -169,6 +192,16 @@ def test_np_constant(N, k):
     array = core.np_constant(N,k)
     assert len(array) == N
     assert all(array == k)
+
+
+def test_to_row_vector():
+    x = np.arange(5)
+    assert core.to_row_vector(x).shape == (1, 5)
+
+
+def test_to_col_vector():
+    x = np.arange(5)
+    assert core.to_col_vector(x).shape == (5, 1)
 
 
 def test_dict_map():
