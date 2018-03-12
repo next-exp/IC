@@ -100,9 +100,9 @@ def print_every_alternative_implementation(N):
 
 
 # TODO: consider caching database
-def deconv_pmt(run_number, n_baseline):
+def deconv_pmt(run_number, n_baseline, selection=None):
     DataPMT    = load_db.DataPMT(run_number = run_number)
-    pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist()
+    pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist() if selection is None else selection
     coeff_c    = DataPMT.coeff_c  .values.astype(np.double)
     coeff_blr  = DataPMT.coeff_blr.values.astype(np.double)
 
