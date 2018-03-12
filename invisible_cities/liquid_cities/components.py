@@ -13,16 +13,23 @@ import numpy  as np
 from .. dataflow               import dataflow      as fl
 from .. evm .ic_containers     import SensorData
 from .. evm .event_model       import KrEvent
+from .. evm .event_model       import Hit
+from .. evm .event_model       import Cluster
+from .. evm .event_model       import HitCollection
 from .. core.system_of_units_c import units
 from .. core.exceptions        import XYRecoFail
 from .. reco                   import calib_sensors_functions as csf
-from .. reco                   import  peak_functions as pkf
+from .. reco                   import          peak_functions as pkf
+from .. reco                   import         pmaps_functions as pmf
 from .. reco.xy_algorithms     import corona
 from .. filters.s1s2_filter    import S12Selector
 from .. filters.s1s2_filter    import pmap_filter
 from .. database               import load_db
 from .. sierpe                 import blr
 from .. io.pmaps_io            import load_pmaps
+from .. types.ic_types         import xy
+from .. types.ic_types         import NN
+from .. types.ic_types         import NNN
 
 
 def city(city_function):
@@ -284,3 +291,72 @@ def build_pointlike_event(run_number, drift_v, reco):
         return evt
 
     return build_pointlike_event
+
+
+def split_energy(total_e, clusters):
+    if len(clusters) == 1:
+        return [total_e]
+    qs = np.array([c.Q for c in clusters])
+    return total_e * qs / np.sum(qs)
+
+
+def hit_builder(run_number, drift_v, reco, rebin_slices):
+    datasipm = load_db.DataSiPM(run_number)
+    sipm_xs  = datasipm.X.values
+    sipm_ys  = datasipm.Y.values
+    sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
+
+    baricenter = partial(corona,
+                         Qthr           =  0 * units.pes,
+                         Qlm            =  0 * units.pes,
+                         lm_radius      = -1 * units.mm,
+                         new_lm_radius  = -1 * units.mm,
+                         msipm          =  1)
+
+    def empty_cluster():
+        return Cluster(NN, xy(0,0), xy(0,0), 0)
+
+    def build_hits(pmap, selector_output, event_number, timestamp):
+        hitc = HitCollection(event_number, timestamp * 1e-3)
+
+        # in order to compute z one needs to define one S1
+        # for time reference. By default the filter will only
+        # take events with exactly one s1. Otherwise, the
+        # convention is to take the first peak in the S1 object
+        # as reference.
+        first_s1 = np.where(selector_output.s1_peaks)[0][0]
+        s1_t     = pmap.s1s[first_s1].time_at_max_energy
+
+        # here hits are computed for each peak and each slice.
+        # In case of an exception, a hit is still created with a NN cluster.
+        # (NN cluster is a cluster where the energy is an IC not number NN)
+        # this allows to keep track of the energy associated to non reonstructed hits.
+        for peak_no, (passed, peak) in enumerate(zip(selector_output.s2_peaks,
+                                                     pmap.s2s)):
+            if not passed: continue
+
+            peak = pmf.rebin_peak(peak, rebin_slices)
+
+            xys     = sipm_xys[peak.sipms.ids           ]
+            qs      =          peak.sipms.sum_over_times
+            try              : cluster = baricenter(xys, qs)[0]
+            except XYRecoFail: xy_peak = xy(NN, NN)
+            else             : xy_peak = xy(cluster.X, cluster.Y)
+
+            for slice_no, t_slice in enumerate(peak.times):
+                z_slice = (t_slice - s1_t) * units.ns * drift_v
+                e_slice = peak.pmts.sum_over_sensors[slice_no]
+                try:
+                    xys      = sipm_xys[peak.sipms.ids                 ]
+                    qs       =          peak.sipms.time_slice(slice_no)
+                    clusters = reco(xys, qs)
+                    es       = split_energy(e_slice, clusters)
+                    for c, e in zip(clusters, es):
+                        hit       = Hit(peak_no, c, z_slice, e, xy_peak)
+                        hitc.hits.append(hit)
+                except XYRecoFail:
+                    hit = Hit(peak_no, empty_cluster(), z_slice, e_slice, xy_peak)
+                    hitc.hits.append(hit)
+
+        return hitc
+    return build_hits
