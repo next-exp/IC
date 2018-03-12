@@ -389,3 +389,9 @@ def waveform_binner(bins):
     def bin_waveforms(wfs):
         return cf.bin_waveforms(wfs, bins)
     return bin_waveforms
+
+
+def waveform_integrator(limits):
+    def integrate_wfs(wfs):
+        return cf.spaced_integrals(wfs, limits)[:, ::2]
+    return integrate_wfs
