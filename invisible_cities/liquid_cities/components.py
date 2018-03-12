@@ -18,6 +18,9 @@ from .. evm .event_model       import Cluster
 from .. evm .event_model       import HitCollection
 from .. core.system_of_units_c import units
 from .. core.exceptions        import XYRecoFail
+from .. core.exceptions        import NoInputFiles
+from .. core.exceptions        import NoOutputFile
+from .. reco                   import         calib_functions as  cf
 from .. reco                   import calib_sensors_functions as csf
 from .. reco                   import          peak_functions as pkf
 from .. reco                   import         pmaps_functions as pmf
@@ -125,9 +128,14 @@ class WfType(Enum):
     mcrd = 1
 
 
-def get_wfs(h5in, wf_type):
-    if   wf_type is WfType.rwf : return h5in.root.RD .pmtrwf,   h5in.root.RD .sipmrwf
-    elif wf_type is WfType.mcrd: return h5in.root.    pmtrd ,   h5in.root.    sipmrd
+def get_pmt_wfs(h5in, wf_type):
+    if   wf_type is WfType.rwf : return h5in.root.RD.pmtrwf
+    elif wf_type is WfType.mcrd: return h5in.root.   pmtrd
+    else                       : raise  TypeError(f"Invalid WfType: {type(wf_type)}")
+
+def get_sipm_wfs(h5in, wf_type):
+    if   wf_type is WfType.rwf : return h5in.root.RD.sipmrwf
+    elif wf_type is WfType.mcrd: return h5in.root.   sipmrd
     else                       : raise  TypeError(f"Invalid WfType: {type(wf_type)}")
 
 
@@ -136,8 +144,8 @@ def wf_from_files(paths, wf_type):
         with tb.open_file(path, "r") as h5in:
             event_infos = h5in.root.Run.events
             run_number  = get_run_number(h5in)
-            ( pmt_wfs,
-             sipm_wfs) = get_wfs(h5in, wf_type)
+            pmt_wfs     = get_pmt_wfs (h5in, wf_type)
+            sipm_wfs    = get_sipm_wfs(h5in, wf_type)
             mc_tracks  = h5in.root.MC.MCTracks if run_number <= 0 else None
             for pmt, sipm, (event_number, timestamp) in zip(pmt_wfs, sipm_wfs, event_infos[:]):
                 yield dict(pmt=pmt, sipm=sipm, mc=mc_tracks,
@@ -197,6 +205,21 @@ def calibrate_sipms(run_number, thr_sipm):
                                    bls_mode   = csf.BlsMode.mode)
 
     return calibrate_sipms
+
+
+def calibrate_with_mean(run_number):
+    DataSiPM   = load_db.DataSiPM(run_number)
+    adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
+    def calibrate_with_mean(wfs):
+        return csf.subtract_baseline_and_calibrate(wfs, adc_to_pes)
+    return calibrate_with_mean
+
+def calibrate_with_mau(run_number, n_mau_sipm):
+    DataSiPM   = load_db.DataSiPM(run_number)
+    adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
+    def calibrate_with_mau(wfs):
+        return csf.subtract_baseline_mau_and_calibrate(wfs, adc_to_pes, n_mau_sipm)
+    return calibrate_with_mau
 
 
 def zero_suppress_wfs(thr_csum_s1, thr_csum_s2):
@@ -360,3 +383,9 @@ def hit_builder(run_number, drift_v, reco, rebin_slices):
 
         return hitc
     return build_hits
+
+
+def waveform_binner(bins):
+    def bin_waveforms(wfs):
+        return cf.bin_waveforms(wfs, bins)
+    return bin_waveforms
