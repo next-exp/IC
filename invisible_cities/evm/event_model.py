@@ -1,6 +1,8 @@
 # Clsses defining the event model
 
-import numpy as np
+import tables as tb
+import numpy  as np
+
 from networkx                  import Graph
 from .. types.ic_types         import NN
 from .. types.ic_types         import minmax
@@ -12,8 +14,10 @@ from .. core.system_of_units_c import units
 
 from typing import List
 from typing import Tuple
+from typing import NamedTuple
 
 ZANODE = -9.425 * units.mm
+
 
 class SensorParams:
     """Transient class storing sensor parameters."""
@@ -44,6 +48,20 @@ class SensorParams:
     __repr__ = __str__
 
 
+class MCInfo(NamedTuple):
+    """Transient class storing the tables of MC true info"""
+    extents   : tb.Table
+    hits      : tb.Table
+    particles : tb.Table
+
+
+class Waveform(NamedTuple):
+    """Transient class storing times and charges for a sensor"""
+    times     : np.ndarray
+    charges   : np.ndarray
+    bin_width : float
+
+
 class Event:
     """Transient class storing event and time info."""
     def __init__(self, event_number, event_time):
@@ -62,27 +80,32 @@ class Event:
 class MCParticle:
     """A MC Particle """
 
-    def __init__(self, particle_name, pdg_code,
+    def __init__(self, particle_name, primary,
+                 mother_indx,
                  initial_vertex, final_vertex,
-                 momentum, energy):
-        self.name = particle_name
-        self.pdg  = pdg_code
-        self.vi   = initial_vertex
-        self.vf   = final_vertex
-        self.p    = momentum
-        self.E    = energy
-        self.hits = []
+                 initial_volume, final_volume,
+                 momentum, energy, creator_proc):
+        self.name           = particle_name
+        self.primary        = primary
+        self.mother_indx    = mother_indx
+        self.initial_vertex = initial_vertex
+        self.final_vertex   = final_vertex
+        self.initial_volume = initial_volume
+        self.final_volume   = final_volume
+        self.p              = momentum
+        self.E              = energy
+        self.process        = creator_proc
+        self.hits           = []
 
     def __str__(self):
-        return """ MCParticle: name = {} pdg = {}
-                    vi = {} vf = {}
-                    p =  {}  E = {}
-                    number of hits = {}
-                    hits = {}\n""".format(self.name, self.pdg,
-                                          self.vi, self.vf, self.p, self.E,
-                                          len(self.hits), self.hits)
+        return f""" MCParticle: name = {self.name}
+                    initial volume = {self.initial_volume}, final volume = {self.final_volume}
+                    kinetic energy = {self.E} MeV
+                    mother = {self.mother_indx}, creator process = {self.process}
+                    number of hits = {len(self.hits)}
+                    \n"""
 
-    __repr__ =     __str__
+    __repr__ =  __str__
 
 
 class BHit:
@@ -128,15 +151,19 @@ class BHit:
 
 class MCHit(BHit):
     """Represents a MCHit"""
-    def __init__(self, pos, t, E):
+    def __init__(self, pos, t, E, l):
         super().__init__(pos[0],pos[1],pos[2], E)
-        self.time     = t
+        self.time          = t
+        self.label         = l
 
     @property
-    def T   (self): return self.time
+    def T     (self): return self.time
+
+    @property
+    def Label (self): return self.label
 
     def __str__(self):
-        return '<pos = {} E = {} time = {}>'.format(
+        return '<label = {}, pos = {}, E = {}, time = {}>'.format(self.label,
                 self.pos.tolist(), self.E, self.time)
 
     __repr__ =     __str__

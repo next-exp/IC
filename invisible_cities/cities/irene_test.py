@@ -109,18 +109,15 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params, thr_sipm_type, t
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
             nrow = 0
-            mctracks_in  = h5in .root.MC.MCTracks[nrow]
-            mctracks_out = h5out.root.MC.MCTracks[nrow]
+            mctracks_in  = h5in .root.MC.particles[nrow]
+            mctracks_out = h5out.root.MC.particles[nrow]
             np.testing.assert_array_equal(mctracks_in, mctracks_out)
 
             # check events numbers & timestamps
             evts_in     = h5in .root.Run.events[:nactual]
             evts_out_u8 = h5out.root.Run.events[:nactual]
-            # The old format used <i4 for th event number; the new one
-            # uses <u8. Casting the latter to the former allows us to
-            # re-use the old test data files.
-            evts_out_i4 = evts_out_u8.astype([('evt_number', '<i4'), ('timestamp', '<u8')])
-            np.testing.assert_array_equal(evts_in, evts_out_i4)
+
+            np.testing.assert_array_equal(evts_in, evts_out_u8)
 
 
 @mark.slow
@@ -206,7 +203,7 @@ def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
     nrequired = 10
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number   = 0,
+    conf.update(dict(run_number   = 4714,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
                      event_range = (0, nrequired),
@@ -242,7 +239,7 @@ def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
 
     nrequired = 3
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number   = -4714,
+    conf.update(dict(run_number   = 4714,
                      files_in     = file_in,
                      file_out     = file_out,
                      event_range  = (0, nrequired),

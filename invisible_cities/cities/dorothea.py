@@ -19,7 +19,7 @@ class Dorothea(KrCity):
 
     def get_writers(self, h5out):
         return Namespace(dst = kr_writer(h5out),
-                         mc  = self.get_mc_track_writer(h5out))
+                         mc  = self.get_mc_info_writer(h5out))
 
     def create_dst_event(self, pmapVectors, filter_output):
         return  self.create_kr_event(pmapVectors, filter_output)
