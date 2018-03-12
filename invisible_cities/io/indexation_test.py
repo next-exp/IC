@@ -4,7 +4,7 @@ import tables as tb
 from pytest import mark
 from pytest import fixture
 
-from .. cities.base_cities import City
+from .. liquid_cities.components import city
 from .. core  .configure   import configure
 
 from . hits_io   import     hits_writer
@@ -13,14 +13,12 @@ from . mcinfo_io import  mc_info_writer
 from . pmaps_io  import     pmap_writer
 
 
-class DummyCity(City):
-    def display_IO_info(self):
-        "Override so it is not executed"
+@city
+def writer_test_city(writer, file_out, files_in, event_range):
+    with tb.open_file(file_out, 'w') as h5out:
+        writer(h5out)
 
-    def file_loop(self):
-        "Override so it is not executed"
-
-    def get_writers(self, h5out): pass
+    def get_writers     (self, h5out): pass
     def write_parameters(self, h5out): pass
 
 
@@ -33,18 +31,17 @@ def init_city(ICDIR, config_tmpdir):
     return city, file_out
 
 
-@mark.parametrize("writer group node column".split(),
-                  [(    hits_writer, "RECO" , "Events"  , "event"     ),
-                   (      kr_writer, "DST"  , "Events"  , "event"     ),
-                   ( mc_info_writer, "MC"   , "extents" , "evt_number"),
-                   (    pmap_writer, "PMAPS", "S1"      , "event"     ),
-                   (    pmap_writer, "PMAPS", "S2"      , "event"     ),
-                   (    pmap_writer, "PMAPS", "S2Si"    , "event"     )])
-def test_table_is_indexed(init_city, writer, group, node, column):
-    city, file_out = init_city
-    city.get_writers = writer
-    city.run()
-    city.end() # or city.index_tables(), but this checks that city.end() calls city.index_tables()
+@mark.parametrize("         writer  group      node      column        thing".split(),
+                  [(   hits_writer, "RECO" , "Events"  , "event"     , "hits"),
+                   (     kr_writer, "DST"  , "Events"  , "event"     , "kr"  ),
+                   (mc_info_writer, "MC"   , "extents" , "evt_number", "mc"  ),
+                   (   pmap_writer, "PMAPS", "S1"      , "event"     , "s1"  ),
+                   (   pmap_writer, "PMAPS", "S2"      , "event"     , "s2"  ),
+                   (   pmap_writer, "PMAPS", "S2Si"    , "event"     , "s2si")])
+def test_table_is_indexed(tmpdir_factory, writer, group, node, column, thing):
+    tmpdir = tmpdir_factory.mktemp('indexation')
+    file_out = os.path.join(tmpdir, f"empty_table_containing_{thing}.h5")
+    writer_test_city(writer=writer, file_out=file_out, files_in='dummy')
     with tb.open_file(file_out, 'r') as h5out:
         table = getattr(getattr(h5out.root, group), node)
         assert getattr(table.cols, column).is_indexed
