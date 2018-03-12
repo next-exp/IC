@@ -42,18 +42,18 @@ def city(city_function):
 
         # TODO: remove these in the config parser itself, before
         # they ever gets here
-        del conf.config_file
+        if hasattr(conf, 'config_file'):       del conf.config_file
         # TODO: these will disappear once hierarchical config files
         # are removed
-        del conf.print_config_only
-        del conf.hide_config
-        del conf.no_overrides
-        del conf.no_files
-        del conf.full_files
+        if hasattr(conf, 'print_config_only'): del conf.print_config_only
+        if hasattr(conf, 'hide_config'):       del conf.hide_config
+        if hasattr(conf, 'no_overrides'):      del conf.no_overrides
+        if hasattr(conf, 'no_files'):          del conf.no_files
+        if hasattr(conf, 'full_files'):        del conf.full_files
 
         # TODO: we have decided to remove verbosity.
         # Needs to be removed form config parser
-        del conf.verbosity
+        if hasattr(conf, 'verbosity'):         del conf.verbosity
 
         # TODO Check raw_data_type in parameters for RawCity
 
@@ -66,8 +66,23 @@ def city(city_function):
         conf.event_range  = _event_range(conf)
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
 
-        return city_function(**vars(conf))
+        result = city_function(**vars(conf))
+        index_tables(conf.file_out)
+        return result
     return proxy
+
+
+def index_tables(file_out):
+    """
+    -finds all tables in output_file
+    -checks if any columns in the tables have been marked to be indexed by writers
+    -indexes those columns
+    """
+    with tb.open_file(file_out, 'r+') as h5out:
+        for table in h5out.walk_nodes(classname='Table'):        # Walk over all tables in h5out
+            if 'columns_to_index' not in table.attrs:  continue  # Check for columns to index
+            for colname in table.attrs.columns_to_index:         # Index those columns
+                table.colinstances[colname].create_index()
 
 
 def _event_range(conf):
