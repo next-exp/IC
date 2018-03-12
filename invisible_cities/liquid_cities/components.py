@@ -1,4 +1,5 @@
 from functools   import wraps
+from functools   import partial
 from collections import Sequence
 from argparse    import Namespace
 from glob        import glob
@@ -11,10 +12,17 @@ import numpy  as np
 
 from .. dataflow               import dataflow      as fl
 from .. evm .ic_containers     import SensorData
+from .. evm .event_model       import KrEvent
+from .. core.system_of_units_c import units
+from .. core.exceptions        import XYRecoFail
 from .. reco                   import calib_sensors_functions as csf
 from .. reco                   import  peak_functions as pkf
+from .. reco.xy_algorithms     import corona
+from .. filters.s1s2_filter    import S12Selector
+from .. filters.s1s2_filter    import pmap_filter
 from .. database               import load_db
 from .. sierpe                 import blr
+from .. io.pmaps_io            import load_pmaps
 
 
 def city(city_function):
@@ -132,6 +140,21 @@ def wf_from_files(paths, wf_type):
             # single event) at a time.
 
 
+def pmap_from_files(paths):
+    for path in paths:
+        pmaps = load_pmaps(path)
+        with tb.open_file(path, "r") as h5in:
+            run_number  = get_run_number(h5in)
+            event_infos = h5in.root.Run.events
+            mc_tracks   = h5in.root.MC .MCTracks if run_number <= 0 else None
+            for event_number, timestamp in event_infos[:]:
+                yield dict(pmap=pmaps[event_number], mc=mc_tracks,
+                           run_number=run_number, event_number=event_number, timestamp=timestamp)
+            # NB, the monte_carlo writer is different from the others:
+            # it needs to be given the WHOLE TABLE (rather than a
+            # single event) at a time.
+
+
 def sensor_data(path, wf_type):
     with tb.open_file(path, "r") as h5in:
         if   wf_type is WfType.rwf :   (pmt_wfs, sipm_wfs) = (h5in.root.RD .pmtrwf,   h5in.root.RD .sipmrwf)
@@ -179,3 +202,85 @@ def zero_suppress_wfs(thr_csum_s1, thr_csum_s2):
 
 def check_nonempty_indices(indices):
     return indices.size
+
+
+def peak_classifier(**params):
+    selector = S12Selector(**params)
+    return partial(pmap_filter, selector)
+
+
+def compute_xy_position(qthr, qlm, lm_radius, new_lm_radius, msipm):
+    def compute_xy_position(xys, qs):
+        return corona(xys, qs,
+                      Qthr           =          qthr,
+                      Qlm            =           qlm,
+                      lm_radius      =     lm_radius,
+                      new_lm_radius  = new_lm_radius,
+                      msipm          =         msipm)
+    return compute_xy_position
+
+
+def compute_z_and_dt(t_s2, t_s1, drift_v):
+    dt  = t_s2 - np.array(t_s1)
+    z   = dt * drift_v
+    dt *= units.ns / units.mus
+    return z, dt
+
+
+def build_pointlike_event(run_number, drift_v, reco):
+    datasipm = load_db.DataSiPM(run_number)
+    sipm_xs  = datasipm.X.values
+    sipm_ys  = datasipm.Y.values
+    sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
+
+    def build_pointlike_event(pmap, selector_output, event_number, timestamp):
+        evt = KrEvent(event_number, timestamp * 1e-3)
+
+        evt.nS1 = 0
+        for passed, peak in zip(selector_output.s1_peaks, pmap.s1s):
+            if not passed: continue
+
+            evt.nS1 += 1
+            evt.S1w.append(peak.width)
+            evt.S1h.append(peak.height)
+            evt.S1e.append(peak.total_energy)
+            evt.S1t.append(peak.time_at_max_energy)
+
+        evt.nS2 = 0
+
+        for passed, peak in zip(selector_output.s2_peaks, pmap.s2s):
+            if not passed: continue
+
+            evt.nS2 += 1
+            evt.S2w.append(peak.width / units.mus)
+            evt.S2h.append(peak.height)
+            evt.S2e.append(peak.total_energy)
+            evt.S2t.append(peak.time_at_max_energy)
+
+            xys = sipm_xys[peak.sipms.ids           ]
+            qs  =          peak.sipms.sum_over_times
+            try:
+                clusters = reco(xys, qs)
+            except XYRecoFail:
+                c = NNN()
+                Z, DT, Zrms = NN, NN, NN
+            else:
+                c = clusters[0]
+                Z, DT = compute_z_and_dt(evt.S2t[-1], evt.S1t, drift_v)
+                Zrms  = peak.rms / units.mus
+
+            evt.Nsipm.append(c.nsipm)
+            evt.S2q  .append(c.Q)
+            evt.X    .append(c.X)
+            evt.Y    .append(c.Y)
+            evt.Xrms .append(c.Xrms)
+            evt.Yrms .append(c.Yrms)
+            evt.R    .append(c.R)
+            evt.Phi  .append(c.Phi)
+            evt.DT   .append(DT)
+            evt.Z    .append(Z)
+            evt.Zrms .append(Zrms)
+
+        return evt
+
+    return build_pointlike_event
