@@ -9,7 +9,7 @@ from argparse import Namespace
 
 import numpy  as np
 
-from .. io.mc_io            import mc_track_writer
+from .. io.mcinfo_io        import mc_info_writer
 from .. io.pmaps_io         import pmap_writer
 from .. io.run_and_event_io import run_and_event_writer
 
@@ -49,7 +49,7 @@ class Irene(PmapCity):
         write       = self.writers
         pmtrwf      = dataVectors.pmt
         sipmrwf     = dataVectors.sipm
-        mc_tracks   = dataVectors.mc
+        mc_info     = dataVectors.mc
         events_info = dataVectors.events
 
         for evt in range(NEVT):
@@ -83,7 +83,7 @@ class Irene(PmapCity):
             write.pmap         (pmap, event)
             write.run_and_event(self.run_number, event, timestamp)
             if self.monte_carlo:
-                write.mc(mc_tracks, event)
+                write.mc(mc_info, event)
 
     def check_s12(self, s12sum):
         """Checks for ocassional empty events, characterized by null s2_energy
@@ -109,8 +109,8 @@ class Irene(PmapCity):
     def get_writers(self, h5out):
         writers = Namespace(
         run_and_event = run_and_event_writer(h5out),
-        mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
-        pmap          =          pmap_writer(h5out))
+        mc            = mc_info_writer(h5out) if self.monte_carlo else None,
+        pmap          = pmap_writer(h5out))
         return writers
 
     def display_IO_info(self):

@@ -21,7 +21,7 @@ from .. core.configure         import configure
 from .. core.system_of_units_c import units
 from .. reco                   import tbl_functions as tbl
 
-from .. io.           mc_io    import      mc_track_writer
+from .. io.       mcinfo_io    import       mc_info_writer
 from .. io.          rwf_io    import           rwf_writer
 from .. io.run_and_event_io    import run_and_event_writer
 
@@ -56,8 +56,8 @@ class Isidora(DeconvolutionCity):
         write = self.writers
         pmtrwf       = dataVectors.pmt
         sipmrwf      = dataVectors.sipm
-        mc_tracks    = dataVectors.mc
-        events_info = dataVectors.events
+        mc_info      = dataVectors.mc
+        events_info  = dataVectors.events
 
         for evt in range(NEVT):
             self.conditional_print(evt, self.cnt.n_events_tot)
@@ -75,15 +75,15 @@ class Isidora(DeconvolutionCity):
             write.pmt (CWF)
             write.sipm(sipmrwf[evt])
             if self.monte_carlo:
-                write.mc(mc_tracks, self.cnt.n_events_tot)
+                write.mc(mc_info, self.cnt.n_events_tot)
 
     def get_writers(self, h5out):
         RWF = partial(rwf_writer,  h5out,   group_name='BLR')
         writers = Namespace(
             run_and_event = run_and_event_writer(h5out),
-            pmt  = RWF(table_name='pmtcwf' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
-            sipm  = RWF(table_name='sipmrwf' , n_sensors=self.sp.NSIPM , waveform_length=self.sp.SIPMWL),
-            mc            =      mc_track_writer(h5out) if self.monte_carlo else None,
+            pmt           = RWF(table_name='pmtcwf' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
+            sipm          = RWF(table_name='sipmrwf' , n_sensors=self.sp.NSIPM , waveform_length=self.sp.SIPMWL),
+            mc            = mc_info_writer(h5out) if self.monte_carlo else None,
             )
 
         return writers
