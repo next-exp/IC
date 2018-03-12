@@ -30,7 +30,7 @@ from .. database import load_db
 from .. io                      import pmaps_io    as pio
 from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
-from .. io.mc_io                import mc_track_writer
+from .. io.mcinfo_io            import mc_info_writer
 
 from .. reco                    import calib_sensors_functions  as csf
 from .. reco                    import paolina_functions        as paf
@@ -301,10 +301,10 @@ class City:
         return isinstance(self.last_event, int) and N >= self.last_event
 
 
-    def get_mc_tracks(self, h5in):
-        "Return RWF vectors and sensor data."
+    def get_mc_info(self, h5in):
+        "Return true MC information."
         if self.monte_carlo:
-            return tbl.get_mc_tracks(h5in)
+            return tbl.get_mc_info(h5in)
         else:
             return None
 
@@ -398,20 +398,20 @@ class RawCity(City):
             with tb.open_file(filename, "r") as h5in:
 
                 events_info = self.get_run_and_event_info(h5in)
-                mc_tracks   = self.get_mc_tracks(h5in)
+                mc_info     = self.get_mc_info(h5in)
                 dataVectors = 0
                 NEVT        = 0
 
                 if self.raw_data_type == 'RWF':
                     NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
                     dataVectors = DataVectors(pmt=pmtrwf, sipm=sipmrwf,
-                                             mc=mc_tracks, events=events_info)
+                                              mc=mc_info, events=events_info)
 
                     self.event_loop(NEVT, dataVectors)
                 elif self.raw_data_type == 'MCRD':
                     NEVT, pmtrd, sipmrd     = self.get_rd_vectors(h5in)
-                    dataVectors = DataVectors(pmt=pmtrd, sipm=sipmrd,
-                                             mc=mc_tracks, events=events_info)
+                    dataVectors = DataVectors(pmt=pmtrd,  sipm=sipmrd,
+                                              mc=mc_info, events=events_info)
 
                     self.event_loop(NEVT, dataVectors)
                 else:
@@ -616,7 +616,7 @@ class PCity(City):
        that access and serves to the event_loop the corresponding PMAPS
        vectors.
     """
-    parameters = tuple("""drift_v write_mc_tracks
+    parameters = tuple("""drift_v write_mc_info
                           s1_nmin s1_nmax s1_emin s1_emax s1_wmin s1_wmax s1_hmin s1_hmax s1_ethr
                           s2_nmin s2_nmax s2_emin s2_emax s2_wmin s2_wmax s2_hmin s2_hmax s2_ethr
                           s2_nsipmmin s2_nsipmmax""".split())
@@ -625,7 +625,7 @@ class PCity(City):
         super().__init__(**kwds)
         self.drift_v = self.conf.drift_v
         self.s1s2_selector = S12Selector(**kwds)
-        self.write_mc_tracks = self.conf.write_mc_tracks and self.monte_carlo
+        self.write_mc_info = self.conf.write_mc_info and self.monte_carlo
 
         self.cnt.init(n_events_tot                 = 0,
                       n_empty_pmaps                = 0,
@@ -636,8 +636,8 @@ class PCity(City):
                       n_events_not_s2si_filter     = 0,
                       n_events_selected            = 0)
 
-    def get_mc_track_writer(self, h5out):
-        return mc_track_writer(h5out) if self.write_mc_tracks else None
+    def get_mc_info_writer(self, h5out):
+        return mc_info_writer(h5out) if self.write_mc_info else None
 
     def create_dst_event(self, pmapVectors, filter_output):
         """Must be implemented by any city derived from PCity"""
@@ -655,7 +655,7 @@ class PCity(City):
         event_numbers = pmapVectors.events
         timestamps    = pmapVectors.timestamps
         pmaps         = pmapVectors.pmaps
-        mc_tracks     = pmapVectors.mc
+        mc_info       = pmapVectors.mc
 
         for evt_number, evt_time in zip(event_numbers, timestamps):
             self.conditional_print(self.cnt.n_events_tot, self.cnt.n_events_selected)
@@ -685,8 +685,8 @@ class PCity(City):
                                       mc=None)
             evt = self.create_dst_event(pmapVectors, filter_output)
             write.dst(evt)
-            if self.write_mc_tracks:
-                write.mc(mc_tracks, evt_number)
+            if self.write_mc_info:
+                write.mc(mc_info, evt_number)
 
     def file_loop(self):
         """
@@ -707,13 +707,13 @@ class PCity(City):
                 continue
 
             with tb.open_file(filename) as h5in:
-                mc_tracks = None
-                if self.write_mc_tracks:
+                mc_info = None
+                if self.write_mc_info:
                     # reset last row read in order to read new table
                     self.writers.mc.last_row = 0
 
                     # Save time when we are not interested in mc tracks
-                    mc_tracks = self.get_mc_tracks(h5in)
+                    mc_info = self.get_mc_info(h5in)
 
                 event_numbers, timestamps = \
                 self.event_numbers_and_timestamps_from_file_name(filename)
@@ -721,7 +721,7 @@ class PCity(City):
                 pmapVectors = PmapVectors(pmaps      = pmaps,
                                           events     = event_numbers,
                                           timestamps = timestamps,
-                                          mc         = mc_tracks)
+                                          mc         = mc_info)
 
                 self.event_loop(pmapVectors)
 

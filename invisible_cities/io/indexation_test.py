@@ -7,10 +7,10 @@ from pytest import fixture
 from .. cities.base_cities import City
 from .. core  .configure   import configure
 
-from .  hits_io import     hits_writer
-from .  kdst_io import       kr_writer
-from .    mc_io import mc_track_writer
-from . pmaps_io import     pmap_writer
+from . hits_io   import     hits_writer
+from . kdst_io   import       kr_writer
+from . mcinfo_io import  mc_info_writer
+from . pmaps_io  import     pmap_writer
 
 
 class DummyCity(City):
@@ -36,7 +36,7 @@ def init_city(ICDIR, config_tmpdir):
 @mark.parametrize("writer group node column".split(),
                   [(    hits_writer, "RECO" , "Events"  , "event"     ),
                    (      kr_writer, "DST"  , "Events"  , "event"     ),
-                   (mc_track_writer, "MC"   , "MCTracks", "event_indx"),
+                   ( mc_info_writer, "MC"   , "extents" , "evt_number"),
                    (    pmap_writer, "PMAPS", "S1"      , "event"     ),
                    (    pmap_writer, "PMAPS", "S2"      , "event"     ),
                    (    pmap_writer, "PMAPS", "S2Si"    , "event"     )])

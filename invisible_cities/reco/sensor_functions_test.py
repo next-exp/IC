@@ -48,7 +48,7 @@ def test_cwf_blr(electron_MCRD_file):
 
 @mark.slow
 def test_sipm_noise_sampler(electron_MCRD_file):
-    """This test checks that the number of SiPms surviving a hard energy
+    """This test checks that the number of SiPMs surviving a hard energy
         cut (50 pes) is  small (<10). The test exercises the full
        construction of the SiPM vectors as well as the noise suppression.
     """
@@ -70,7 +70,7 @@ def test_sipm_noise_sampler(electron_MCRD_file):
         NEVENTS_DST, NSIPM, SIPMWL = e40rd.root.sipmrd.shape
 
         assert NSIPM == 1792
-        assert SIPMWL == 800
+        assert SIPMWL == 1200
 
         assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) > cal_min
         assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) < cal_max
