@@ -5,8 +5,9 @@ import textwrap
 import numpy             as np
 import matplotlib.pyplot as plt
 
-from .. core              import fit_functions as fitf
-from .. evm.ic_containers import Measurement
+from .. core                import fit_functions as fitf
+from .. core.core_functions import shift_to_bin_centers
+from .. evm.ic_containers   import Measurement
 
 
 def create_new_figure(kwargs):
@@ -32,13 +33,6 @@ def hbins(x, nsigma=5, nbins=10):
     xmax = np.average(x) + nsigma * np.std(x)
     bins = np.linspace(xmin, xmax, nbins + 1)
     return bins
-
-
-def shift_to_bin_centers(x):
-    """
-    Return bin centers, given bin lower edges.
-    """
-    return x[:-1] + np.diff(x) * 0.5
 
 
 def plot(*args, **kwargs):

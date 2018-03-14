@@ -282,3 +282,10 @@ def mean_handle_empty(array):
 
 def  std_handle_empty(array):
     return np.std (array) if len(array) else np.nan
+
+
+def shift_to_bin_centers(x):
+    """
+    Return bin centers, given bin lower edges.
+    """
+    return x[:-1] + np.diff(x) * 0.5
