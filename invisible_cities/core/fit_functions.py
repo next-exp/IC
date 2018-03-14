@@ -4,7 +4,8 @@ A set of functions for data fitting.
 GML November 2016
 """
 
-import numpy as np
+import numpy  as np
+import pandas as pd
 import scipy.optimize
 import scipy.stats
 
@@ -177,34 +178,36 @@ def profileX(xdata, ydata, nbins=100,
     y_err : 1-dim np.ndarray
         Average error for each bin.
     """
-    xmin, xmax = xrange if xrange else (np.min(xdata), np.max(xdata))
-    ymin, ymax = yrange if yrange else (np.min(ydata), np.max(ydata))
+    if xrange is None: xrange = np.min(xdata), np.max(xdata)
 
-    x_out = np.linspace(xmin, xmax, nbins+1)
-    y_out = np.empty(nbins)
-    y_err = np.empty(nbins)
-    dx    = x_out[1] - x_out[0]
+    selection = coref.in_range(xdata, *xrange)
+    xdata     = xdata[selection]
+    ydata     = ydata[selection]
 
-    selection = (coref.in_range(xdata, xmin, xmax) &
-                 coref.in_range(ydata, ymin, ymax))
-    x, y = xdata[selection], ydata[selection]
-    for i in range(nbins):
-        bin_data = y[coref.in_range(x,
-                                    minval = x_out[i],
-                                    maxval = x_out[i+1])]
-        y_out[i] = coref.mean_handle_empty(bin_data)
-        y_err[i] = coref. std_handle_empty(bin_data)
-        if not std:
-            y_err[i] /= bin_data.size ** 0.5
+    if yrange is not None:
+        selection = coref.in_range(ydata, *yrange)
+        xdata     = xdata[selection]
+        ydata     = ydata[selection]
 
-    x_out += dx / 2.
-    x_out  = x_out[:-1]
+    bin_edges   = np.linspace(*xrange, nbins + 1)
+    bin_centers = coref.shift_to_bin_centers(bin_edges)
+    bin_numbers = np.digitize(xdata, bin_edges, right=False)
+    df          = pd.DataFrame(dict(bin=bin_numbers, y=ydata))
+    gb          = df.groupby("bin").y
+
+    mean      = gb.mean().values
+    deviation = gb.std () if std else gb.std() / gb.size()**0.5
+    indices   = deviation.index.values
+
     if drop_nan:
-        selection = ~(np.isnan(y_out) | np.isnan(y_err))
-        x_out = x_out[selection]
-        y_out = y_out[selection]
-        y_err = y_err[selection]
-    return x_out, y_out, y_err
+        return bin_centers[indices - 1], mean, deviation.values
+
+    mean_               = np.full_like(bin_centers, np.nan)
+    deviation_          = np.full_like(bin_centers, np.nan)
+    mean_     [indices] = mean
+    deviation_[indices] = deviation
+
+    return bin_centers, mean_, deviation_
 
 
 def profileY(xdata, ydata, nbins = 100,
@@ -270,36 +273,41 @@ def profileXY(xdata, ydata, zdata, nbinsx, nbinsy,
     z_err : 1-dim np.ndarray
         Average error for each bin.
     """
-    xmin, xmax = xrange if xrange else (np.min(xdata), np.max(xdata))
-    ymin, ymax = yrange if yrange else (np.min(ydata), np.max(ydata))
-    zmin, zmax = zrange if zrange else (np.min(zdata), np.max(zdata))
+    if xrange is None: xrange = np.min(xdata), np.max(xdata)
+    if yrange is None: yrange = np.min(ydata), np.max(ydata)
 
-    x_out = np.linspace(xmin, xmax, nbinsx+1)
-    y_out = np.linspace(ymin, ymax, nbinsy+1)
-    z_out = np.empty((nbinsx, nbinsy))
-    z_err = np.empty((nbinsx, nbinsy))
-    dx = x_out[1] - x_out[0]
-    dy = y_out[1] - y_out[0]
+    selection  = coref.in_range(xdata, *xrange)
+    selection &= coref.in_range(ydata, *yrange)
+    xdata      = xdata[selection]
+    ydata      = ydata[selection]
+    zdata      = zdata[selection]
 
-    selection = (coref.in_range(xdata, xmin, xmax) &
-                 coref.in_range(ydata, ymin, ymax) &
-                 coref.in_range(zdata, zmin, zmax))
-    xdata, ydata, zdata = xdata[selection], ydata[selection], zdata[selection]
-    for i in range(nbinsx):
-        for j in range(nbinsy):
-            selection = (coref.in_range(xdata, x_out[i], x_out[i+1]) &
-                         coref.in_range(ydata, y_out[j], y_out[j+1]))
-            bin_data = zdata[selection]
-            z_out[i,j] = coref.mean_handle_empty(bin_data)
-            z_err[i,j] = coref. std_handle_empty(bin_data)
-            if not std:
-                z_err[i,j] /= bin_data.size ** 0.5
-    x_out += dx / 2.
-    y_out += dy / 2.
-    x_out  = x_out[:-1]
-    y_out  = y_out[:-1]
-    if drop_nan:
-        selection = (np.isnan(z_out) | np.isnan(z_err))
-        z_out[selection] = 0
-        z_err[selection] = 0
-    return x_out, y_out, z_out, z_err
+    if zrange is not None:
+        selection = coref.in_range(zdata, *zrange)
+        xdata     = xdata[selection]
+        ydata     = ydata[selection]
+        zdata     = zdata[selection]
+
+    bin_edges_x   = np.linspace(*xrange, nbinsx + 1)
+    bin_edges_y   = np.linspace(*yrange, nbinsy + 1)
+    bin_centers_x = coref.shift_to_bin_centers(bin_edges_x)
+    bin_centers_y = coref.shift_to_bin_centers(bin_edges_y)
+    bin_numbers_x = np.digitize(xdata, bin_edges_x, right=False)
+    bin_numbers_y = np.digitize(ydata, bin_edges_y, right=False)
+    df            = pd.DataFrame(dict(binx=bin_numbers_x, biny=bin_numbers_y, z=zdata))
+    gb            = df.groupby(("binx", "biny")).z
+
+    shape     = nbinsx, nbinsy
+    mean      = np.zeros(shape)
+    deviation = np.zeros(shape)
+
+    mean_       = gb.mean().values
+    deviation_  = gb.std () if std else gb.std() / gb.size()**0.5
+    (indices_x,
+     indices_y) = map(np.array, zip(*deviation_.index.values))
+
+    notnan = ~np.isnan(deviation_.values)
+    mean     [indices_x - 1, indices_y - 1] = mean_
+    deviation[indices_x - 1, indices_y - 1] = np.where(notnan, deviation_.values, 0)
+
+    return bin_centers_x, bin_centers_y, mean, deviation
