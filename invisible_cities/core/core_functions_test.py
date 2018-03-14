@@ -10,12 +10,13 @@ from pytest import approx
 from pytest import mark
 from pytest import raises
 
-from flaky                 import flaky
-from hypothesis            import given
-from hypothesis.strategies import integers
-from hypothesis.strategies import floats
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import composite
+from flaky                  import flaky
+from hypothesis             import given
+from hypothesis.strategies  import integers
+from hypothesis.strategies  import floats
+from hypothesis.strategies  import sampled_from
+from hypothesis.strategies  import composite
+from hypothesis.extra.numpy import arrays
 
 sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
 
@@ -284,3 +285,10 @@ def test_std_handle_empty_nonempty_input  (array):
 
 def test_std_handle_empty_empty_input():
     assert np.isnan(core.std_handle_empty([]))
+
+
+@given(arrays(float, 10, floats(min_value=-1e5, max_value=1e5)))
+def test_shift_to_bin_centers(x):
+    x_shifted = core.shift_to_bin_centers(x)
+    truth     = [np.mean(x[i:i+2]) for i in range(x.size-1)]
+    npt.assert_allclose(x_shifted, truth, rtol=1e-6, atol=1e-6)
