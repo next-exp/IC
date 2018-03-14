@@ -20,7 +20,7 @@ from hypothesis.strategies  import lists
 from hypothesis.strategies  import sampled_from
 from hypothesis.strategies  import one_of
 
-characters = tuple(string.ascii_letters + string.digits + "_-")
+characters = tuple(string.ascii_letters + string.digits + "-")
 
 def assert_histogram_equality(histogram1, histogram2):
     assert np.all     (a == b for a, b in zip(histogram1.bins, histogram2.bins))
