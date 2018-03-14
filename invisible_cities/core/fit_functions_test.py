@@ -291,8 +291,8 @@ def test_profile1D_uniform_distribution_std(func):
 
 
 @mark.parametrize("func xdata ydata".split(),
-                  ((fitf.profileX, FLOAT_ARRAY(100), FLOAT_ARRAY(100)),
-                   (fitf.profileY, FLOAT_ARRAY(100), FLOAT_ARRAY(100))))
+                  ((fitf.profileX, FLOAT_ARRAY(100, -1e3, 1e3), FLOAT_ARRAY(100, -1e3, 1e3)),
+                   (fitf.profileY, FLOAT_ARRAY(100, -1e3, 1e3), FLOAT_ARRAY(100, -1e3, 1e3))))
 def test_profile1D_custom_range(func, xdata, ydata):
     xrange     = (-100, 100)
     kw         = "yrange" if func.__name__.endswith("Y") else "xrange"
