@@ -32,7 +32,7 @@ def test_join_histo_managers(histogram_list):
         assert_histogram_equality(histogram, aux_histogram)
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
+@settings(suppress_health_check=(HealthCheck.too_slow, HealthCheck.filter_too_much,))
 @given(histograms_lists(), histograms_lists())
 def test_join_histo_managers_with_different_histograms(histogram_list1, histogram_list2):
     _, list_of_histograms1   = histogram_list1
@@ -86,7 +86,7 @@ def test_create_histomanager_from_dicts(bins):
         assert_histogram_equality(histogram, histograms_dict[histoname])
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
+@settings(suppress_health_check=(HealthCheck.too_slow, HealthCheck.filter_too_much,))
 @given(histograms_lists())
 def test_get_histograms_from_file(output_tmpdir, histogram_list):
     args, list_of_histograms  = histogram_list
@@ -102,7 +102,7 @@ def test_get_histograms_from_file(output_tmpdir, histogram_list):
         assert_histogram_equality(histogram_manager1[histoname], histogram_manager2[histoname])
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
+@settings(suppress_health_check=(HealthCheck.too_slow, HealthCheck.filter_too_much,))
 @given(histograms_lists(), histograms_lists())
 def test_join_histograms_from_file(output_tmpdir, histogram_list1, histogram_list2):
     _, list_of_histograms1   = histogram_list1
@@ -122,7 +122,7 @@ def test_join_histograms_from_file(output_tmpdir, histogram_list1, histogram_lis
     for histoname in joined_histogram_manager1.histos:
         assert_histogram_equality(joined_histogram_manager1[histoname], joined_histogram_manager2[histoname])
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
+@settings(suppress_health_check=(HealthCheck.too_slow, HealthCheck.filter_too_much,))
 @given(histograms_lists())
 def test_join_histograms_from_file_and_write(output_tmpdir, histogram_list):
     _, list_of_histograms   = histogram_list
