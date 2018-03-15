@@ -1,16 +1,17 @@
-import numpy as np
-import tables as tb
 import glob
+from   collections import defaultdict
 
-from invisible_cities.evm.histos  import HistoManager
-from invisible_cities.io.pmaps_io import load_pmaps
-from invisible_cities.reco.tbl_functions import get_rwf_vectors
+import numpy  as np
+import tables as tb
 
-from collections import defaultdict
+from .. database           import load_db             as dbf
+from .. reco               import histogram_functions as histf
+from .. core               import system_of_units     as units
 
-import invisible_cities.database.load_db         as dbf
-import invisible_cities.reco.histogram_functions as histf
-from   invisible_cities.core import system_of_units as units
+from .. evm .histos        import HistoManager
+from .. io  .pmaps_io      import load_pmaps
+from .. reco.tbl_functions import get_rwf_vectors
+
 
 def pmap_bins(config_dict):
     """
@@ -23,38 +24,35 @@ def pmap_bins(config_dict):
     var_labels = {}
 
     for k, v in config_dict.items():
-        if "_bins" in k:
-            var_bins[k.replace("_bins", "")] = [ np.linspace(v[0], v[1], v[2] + 1) ]
+        if "_bins"     in k:
+            var_bins  [k.replace("_bins", "")]   = [ np.linspace(v[0], v[1], v[2] + 1) ]
         elif "_labels" in k:
             var_labels[k.replace("_labels", "")] = v
 
     exception = ['S1_Energy', 'S1_Number', 'S1_Time']
-    bin_sel = lambda x: ('S2' not in x) and (x not in exception)
+    bin_sel   = lambda x: ('S2' not in x) and (x not in exception)
     for param in filter(bin_sel, list(var_bins)):
-        var_bins  ['S1_Energy_' + param] = var_bins['S1_Energy']   + var_bins[param]
+        var_bins  ['S1_Energy_' + param] = var_bins  ['S1_Energy'] + var_bins  [param]
         var_labels['S1_Energy_' + param] = var_labels['S1_Energy'] + var_labels[param]
-
-    var_bins  ['S1_Time_S1_Energy'] = var_bins['S1_Time']   + var_bins['S1_Energy']
-    var_labels['S1_Time_S1_Energy'] = var_labels['S1_Time'] + var_labels['S1_Energy']
+    var_bins      ['S1_Time_S1_Energy']  = var_bins  ['S1_Time'] + var_bins  ['S1_Energy']
+    var_labels    ['S1_Time_S1_Energy']  = var_labels['S1_Time'] + var_labels['S1_Energy']
 
     exception = ['S2_Energy', 'S2_Number', 'S2_Time']
-    bin_sel = lambda x: ('S1' not in x) and (x not in exception) and ('SiPM' not in x)
+    bin_sel   = lambda x: ('S1' not in x) and (x not in exception) and ('SiPM' not in x)
     for param in filter(bin_sel, list(var_bins)):
-        var_bins  ['S2_Energy_' + param] = var_bins['S2_Energy']   + var_bins[param]
-        var_labels['S2_Energy_' + param] = var_labels['S2_Energy'] + var_labels[param]
-
-    var_bins  ['S2_Time_S2_Energy'] = var_bins['S2_Time']   + var_bins['S2_Energy']
-    var_labels['S2_Time_S2_Energy'] = var_labels['S2_Time'] + var_labels['S2_Energy']
-
-    var_bins  ['S2_Energy_S1_Energy'] = var_bins['S2_Energy']   + var_bins['S1_Energy']
-    var_labels['S2_Energy_S1_Energy'] = var_labels['S2_Energy'] + var_labels['S1_Energy']
-
-    var_bins  ['S2_XYSiPM'] = var_bins['S2_XSiPM']   + var_bins['S2_XSiPM']
-    var_labels['S2_XYSiPM'] = var_labels['S2_XSiPM'] + ['Y (mm)']
+        var_bins  ['S2_Energy_' + param]  = var_bins  ['S2_Energy'] + var_bins  [param]
+        var_labels['S2_Energy_' + param]  = var_labels['S2_Energy'] + var_labels[param]
+    var_bins      ['S2_Time_S2_Energy']   = var_bins  ['S2_Time']   + var_bins  ['S2_Energy']
+    var_labels    ['S2_Time_S2_Energy']   = var_labels['S2_Time']   + var_labels['S2_Energy']
+    var_bins      ['S2_Energy_S1_Energy'] = var_bins  ['S2_Energy'] + var_bins  ['S1_Energy']
+    var_labels    ['S2_Energy_S1_Energy'] = var_labels['S2_Energy'] + var_labels['S1_Energy']
+    var_bins      ['S2_XYSiPM']           = var_bins  ['S2_XSiPM']  + var_bins['S2_XSiPM']
+    var_labels    ['S2_XYSiPM']           = var_labels['S2_XSiPM']  + ['Y (mm)']
 
     del var_bins['S2_XSiPM']
 
     return var_bins, var_labels
+
 
 def fill_pmap_var_1d(speaks, var_dict, ptype, DataSiPM=None):
     """
@@ -67,29 +65,29 @@ def fill_pmap_var_1d(speaks, var_dict, ptype, DataSiPM=None):
     DataSiPM = Database with the SiPM information. Only needed in case of 'S2'
                ptype
     """
-
     var_dict[ptype + '_Number'].append(len(speaks))
     for speak in speaks:
-        var_dict[ptype + '_Width'] .append(speak.width / units.mus)
+        var_dict[ptype + '_Width' ].append(speak.width / units.mus)
         var_dict[ptype + '_Height'].append(speak.height)
         var_dict[ptype + '_Energy'].append(speak.total_energy)
         var_dict[ptype + '_Charge'].append(speak.total_charge)
-        var_dict[ptype + '_Time']  .append(speak.time_at_max_energy / units.mus)
+        var_dict[ptype + '_Time'  ].append(speak.time_at_max_energy / units.mus)
 
         if ptype == 'S2':
             nS1 = var_dict['S1_Number'][-1]
-            var_dict[ptype + '_SingleS1'].append(nS1)
+            var_dict    [ptype + '_SingleS1']       .append(nS1)
             if nS1 == 1:
                 var_dict[ptype + '_SingleS1_Energy'].append(var_dict['S1_Energy'][-1])
 
             sipm_ids = speak.sipms.ids
             sipm_Q   = speak.sipms.sum_over_times
-            var_dict[ptype + '_NSiPM'] .append(len(sipm_ids))
-            var_dict[ptype + '_QSiPM'] .extend(sipm_Q)
-            var_dict[ptype + '_IdSiPM'].extend(sipm_ids)
+            var_dict    [ptype + '_NSiPM' ].append(len(sipm_ids))
+            var_dict    [ptype + '_QSiPM' ].extend(sipm_Q)
+            var_dict    [ptype + '_IdSiPM'].extend(sipm_ids)
             if len(sipm_ids) > 0:
-                var_dict[ptype + '_XSiPM'].extend(DataSiPM.X.values[sipm_ids])
-                var_dict[ptype + '_YSiPM'].extend(DataSiPM.Y.values[sipm_ids])
+                var_dict[ptype + '_XSiPM' ].extend(DataSiPM.X.values[sipm_ids])
+                var_dict[ptype + '_YSiPM' ].extend(DataSiPM.Y.values[sipm_ids])
+
 
 def fill_pmap_var_2d(var_dict, ptype):
     """
@@ -100,18 +98,32 @@ def fill_pmap_var_2d(var_dict, ptype):
     var_dict = Dictionary that stores the variable values.
     ptype    = Type of pmap ('S1' or 'S2')
     """
-
     param_list = ['Width', 'Height', 'Charge']
     for param in param_list:
         var_dict[ptype + '_Energy_' + ptype + '_' + param] = np.array([var_dict[ptype + '_Energy'], var_dict[ptype + '_' + param]])
-
-    var_dict[ptype + '_Time_' + ptype + '_Energy'] = np.array([var_dict[ptype + '_Time'], var_dict[ptype + '_Energy']])
+    var_dict    [ptype + '_Time_' + ptype + '_Energy']     = np.array([var_dict[ptype + '_Time']  , var_dict[ptype + '_Energy']])
 
     if ptype == 'S2':
         sel = np.asarray(var_dict['S2_SingleS1']) == 1
         var_dict[ptype + '_Energy_S1_Energy'] = np.array([np.asarray(var_dict[ptype + '_Energy'])[sel],
                                                           np.asarray(var_dict[ptype + '_SingleS1_Energy'])])
         var_dict[ptype + '_XYSiPM']           = np.array([var_dict[ptype + '_XSiPM'], var_dict[ptype + '_YSiPM']])
+
+
+def fill_pmap_var(pmap, sipm_db):
+    var = defaultdict(list)
+
+    fill_pmap_var_1d(pmap.s1s, var, 'S1')
+    fill_pmap_var_1d(pmap.s2s, var, 'S2', sipm_db)
+    fill_pmap_var_2d(var, 'S1')
+    fill_pmap_var_2d(var, 'S2')
+
+    del var['S2_XSiPM']
+    del var['S2_YSiPM']
+    del var['S2_SingleS1']
+    del var['S2_SingleS1_Energy']
+
+    return var
 
 def fill_pmap_histos(in_path, run_number, config_dict):
     """
@@ -122,29 +134,35 @@ def fill_pmap_histos(in_path, run_number, config_dict):
     run_number  = Run number of the dataset (used to obtain the SiPM database).
     config_dict = Dictionary with the configuration parameters (bins, labels).
     """
-
     var_bins, var_labels = pmap_bins(config_dict)
-
     histo_manager = histf.create_histomanager_from_dicts(var_bins, var_labels)
-
     SiPM_db = dbf.DataSiPM(run_number)
 
     for in_file in glob.glob(in_path):
         pmaps = load_pmaps(in_file)
-        var = defaultdict(list)
         for ti, pi in enumerate(pmaps):
-            fill_pmap_var_1d(pmaps[pi].s1s, var, 'S1')
-            fill_pmap_var_1d(pmaps[pi].s2s, var, 'S2', SiPM_db)
+            var = fill_pmap_var(pmaps[pi], SiPM_db)
+            histo_manager.fill_histograms(var)
+    return histo_manager
 
-        fill_pmap_var_2d(var, 'S1')
-        fill_pmap_var_2d(var, 'S2')
+def histogram_pmap_variable_creator(run_number):
+    SiPM_db = dbf.DataSiPM(run_number)
 
-        del var['S2_XSiPM']
-        del var['S2_YSiPM']
-        del var['S2_SingleS1']
-        del var['S2_SingleS1_Energy']
+    def create_histogram_pmap_variable(pmap):
+        var = fill_pmap_var(pmaps[pi], SiPM_db)
+        return var
 
-        histo_manager.fill_histograms(var)
+    return create_histogram_pmap_variable
+
+def pmap_histogram_filler(config_dict_path):
+    with open(config_dict_path, 'r') as content_file:
+        config_dict = json.load(content_file)
+    var_bins, var_labels = pmap_bins(config_dict)
+    histo_manager = histf.create_histomanager_from_dicts(var_bins, var_labels)
+    return histo_manager
+
+def fill_pmap_histograms(histo_manager, var):
+    histo_manager.fill_histograms(var)
     return histo_manager
 
 def rwf_bins(config_dict):
@@ -154,13 +172,12 @@ def rwf_bins(config_dict):
 
     Returns a dictionary with the bins and another with the labels.
     """
-
     var_bins   = {}
     var_labels = {}
 
     for k, v in config_dict.items():
-        if "_bins" in k:
-            var_bins[k.replace("_bins", "")] = [ np.linspace(v[0], v[1], v[2] + 1) ]
+        if "_bins"     in k:
+            var_bins  [k.replace("_bins", "")  ] = [ np.linspace(v[0], v[1], v[2] + 1) ]
         elif "_labels" in k:
             var_labels[k.replace("_labels", "")] = v
 
@@ -189,7 +206,6 @@ def fill_rwf_histos(in_path, config_dict):
     in_path     = String with the path to the file(s) to be monitored.
     config_dict = Dictionary with the configuration parameters (bins, labels)
     """
-
     var_bins, var_labels, n_baseline = rwf_bins(config_dict)
 
     histo_manager = histf.create_histomanager_from_dicts(var_bins, var_labels)
@@ -199,8 +215,8 @@ def fill_rwf_histos(in_path, config_dict):
             var = defaultdict(list)
             nevt, pmtrwf, sipmrwf, _ = get_rwf_vectors(h5in)
             for evt in range(nevt):
-                fill_rwf_var(pmtrwf[evt,:,0:n_baseline], var, "PMT")
-                fill_rwf_var(              sipmrwf[evt], var,"SiPM")
+                fill_rwf_var(pmtrwf [evt,:,0:n_baseline], var,  "PMT")
+                fill_rwf_var(sipmrwf[evt]               , var, "SiPM")
 
         histo_manager.fill_histograms(var)
     return histo_manager
