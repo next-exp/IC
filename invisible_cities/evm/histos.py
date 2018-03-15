@@ -1,8 +1,9 @@
-import numpy             as np
-import tables            as tb
+import numpy  as np
+import tables as tb
 
-from .. reco import tbl_functions as tbl
-from .. io.hist_io          import hist_writer_var
+from .. reco       import tbl_functions as tbl
+from .. io.hist_io import hist_writer_var
+
 
 class Histogram:
     def __init__(self, title, bins, labels, values=None):
@@ -25,12 +26,11 @@ class Histogram:
         values = Array with initial values, optional.
                  If not passed, then the initial bin content is set to zero.
         """
-
         self.title     = title
         self.bins      = bins
         self.data      = self.init_from_bins()
-        self.out_range = np.zeros(shape=(2, len(self.bins)))
         self.errors    = self.init_from_bins()
+        self.out_range = np.zeros(shape=(2, len(self.bins)))
         self.labels    = labels
 
         if values is not None:
@@ -51,12 +51,11 @@ class Histogram:
         additive = np.array(additive)
 
         if len(data_weights) != len(additive.T):
-            data_weights = np.ones(len(additive.T))
+            data_weights = np.ones (len(additive.T))
         else:
             data_weights = np.array(data_weights)
 
-        binnedData, outRange = self.bin_data(additive,
-                                             data_weights)
+        binnedData, outRange = self.bin_data(additive, data_weights)
 
         self.data      += binnedData
         self.out_range += outRange
@@ -87,8 +86,8 @@ class Histogram:
         for i, bins in enumerate(self.bins):
             lower_limit = bins[0]
             upper_limit = bins[-1]
-            out_of_range.append([ np.count_nonzero(data[i] < lower_limit),
-                                  np.count_nonzero(data[i] > upper_limit)])
+            out_of_range.append([np.count_nonzero(data[i] < lower_limit),
+                                 np.count_nonzero(data[i] > upper_limit)])
 
         return np.asarray(out_of_range).T
 
@@ -105,24 +104,24 @@ class Histogram:
         else:
             self.errors = np.sqrt(self.data)
 
-    def __radd__(self,other):
+    def __radd__(self, other):
         return self + other
 
-    def __add__(self, other):
+    def __add__ (self, other):
         if other is None:
             return self
         if len(self.bins) != len(other.bins) or not np.all(a == b for a, b in zip(self.bins, other.bins)):
             raise ValueError("Histogram binning is not compatible")
-        if self.title != other.title:
+        if self.title  !=  other.title:
             print(f"""Warning: Histogram titles are different.
                       {self.title}, {other.title}""")
         if self.labels != other.labels:
             print(f"""Warning: Histogram titles are different.
                       {self.labels}, {other.labels}""")
         new_histogram           = Histogram(self.title, self.bins, self.labels)
-        new_histogram.data      =         self.data        + other.data
-        new_histogram.out_range =         self.out_range   + other.out_range
-        new_histogram.errors    = np.sqrt(self.errors ** 2 + other.errors ** 2)
+        new_histogram.data      =           self.data        + other.data
+        new_histogram.out_range =           self.out_range   + other.out_range
+        new_histogram.errors    = np.sqrt  (self.errors ** 2 + other.errors ** 2)
         return new_histogram
 
 
@@ -185,11 +184,11 @@ class HistoManager:
         with tb.open_file(file_out, mode, filters=tbl.filters('ZLIB4')) as h5out:
             writer = hist_writer_var(h5out)
             for histoname, histo in self.histos.items():
-                writer(group, histoname, histo.data, histo.bins, histo.out_range,
-                       histo.errors, histo.labels)
+                writer(group, histoname, histo.data,   histo.bins, histo.out_range,
+                                         histo.errors, histo.labels)
 
     def __getitem__(self, histoname):
         return self.histos[histoname]
 
     def __setitem__(self, histoname, histogram):
-        self.histos[histoname]=histogram
+        self.histos[histoname] = histogram
