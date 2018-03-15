@@ -1,42 +1,47 @@
-import numpy as np
-import tables as tb
+import numpy             as np
+import tables            as tb
 import matplotlib.pyplot as plt
 
-from .. evm.histos import Histogram
-from .. evm.histos import HistoManager
+from .. evm  .histos         import Histogram
+from .. evm  .histos         import HistoManager
+from .. core .core_functions import weighted_mean_and_std
+from .. icaro.hst_functions  import shift_to_bin_centers
 
-from .. core.core_functions import weighted_mean_and_std
-from .. icaro.hst_functions import shift_to_bin_centers
 
 def create_histomanager_from_dicts(histobins_dict, histolabels_dict, init_fill_dict={}):
+    """
+    Creates and returns an HistoManager from a dict of bins and a given of labels with identical keys.
+
+    Arguments:
+    histobins_dict   = Dictionary with keys equal to Histogram names and values equal to the binning.
+    histolabels_dict = Dictionary with keys equal to Histogram names and values equal to the axis labels.
+    init_fill_dict   = Dictionary with keys equal to Histogram names and values equal to an initial filling.
+    """
     histo_manager = HistoManager()
     for histotitle, histobins in histobins_dict.items():
         histo_manager.new_histogram(Histogram(histotitle, histobins, histolabels_dict[histotitle],
-                                    init_fill_dict.get(histotitle, None)))
+                                              init_fill_dict.get(histotitle, None)))
     return histo_manager
 
 
-def get_histograms_from_file(file_input):
+def get_histograms_from_file(file_input, group_name='HIST'):
     histo_manager = HistoManager()
     with tb.open_file(file_input, "r") as h5in:
-
         name_sel = lambda x: (    ('bins'     not in x)
                               and ('labels'   not in x)
                               and ('errors'   not in x)
                               and ('outRange' not in x))
-
         histogram_list = []
-
-        for histoname in filter(name_sel, list(h5in.root.HIST._v_children)):
-            entries   = np.array(getattr(h5in.root.HIST, histoname)[:])
-            bins      =          getattr(h5in.root.HIST, histoname + '_bins')[:]
-            out_range =          getattr(h5in.root.HIST, histoname + '_outRange')[:]
-            errors    = np.array(getattr(h5in.root.HIST, histoname + '_errors')[:])
-            labels    =          getattr(h5in.root.HIST, histoname + '_labels')[:]
+        group = getattr(h5in.root, group_name)
+        for histoname in filter(name_sel, list(group._v_children)):
+            entries   = np.array(getattr(group, histoname              )[:])
+            bins      =          getattr(group, histoname + '_bins'    )[:]
+            out_range =          getattr(group, histoname + '_outRange')[:]
+            errors    = np.array(getattr(group, histoname + '_errors'  )[:])
+            labels    =          getattr(group, histoname + '_labels'  )[:]
             labels    = [str(lab)[2:-1].replace('\\\\', '\\') for lab in labels]
 
-            histogram = Histogram(histoname, bins, labels)
-
+            histogram           = Histogram(histoname, bins, labels)
             histogram.data      = entries
             histogram.out_range = out_range
             histogram.errors    = errors
@@ -46,7 +51,7 @@ def get_histograms_from_file(file_input):
     return HistoManager(histogram_list)
 
 
-def join_histograms_from_files(histofiles, join_file=None):
+def join_histograms_from_files(histofiles, group_name='HIST', join_file=None):
     """
     Joins the histograms of a given list of histogram files. If possible,
     Histograms with the same name will be added.
@@ -54,15 +59,14 @@ def join_histograms_from_files(histofiles, join_file=None):
     histofiles = List of strings with the filenames to be summed.
     join_file  = String. If passed, saves the resulting HistoManager to this path.
     """
-
     if len(histofiles)<1:
         raise ValueError("List of files is empty")
 
-    final_histogram_manager = get_histograms_from_file(histofiles[0])
+    final_histogram_manager = get_histograms_from_file(histofiles[0], group_name)
 
     for file in histofiles[1:]:
-        added_histograms = get_histograms_from_file(file)
-        final_histogram_manager = join_histo_managers(final_histogram_manager, added_histograms)
+        added_histograms        = get_histograms_from_file(file, group_name)
+        final_histogram_manager = join_histo_managers     (final_histogram_manager, added_histograms)
 
     if join_file is not None:
         final_histogram_manager.save_to_file(join_file)
@@ -70,35 +74,41 @@ def join_histograms_from_files(histofiles, join_file=None):
     return final_histogram_manager
 
 
-def plot_histograms_from_file(histofile, histonames='all', plot_errors=False, out_path=None):
+def plot_histograms_from_file(histofile, histonames='all', group_name='HIST', plot_errors=False, out_path=None):
     """
-    Plots the histograms of a given histogram file in a 3 column plot grid.
+    Plots the Histograms of a given file containing an HistoManager in a 3 column plot grid.
 
-    histofile   = File containing the histograms.
+    histofile   = String. Path to the file containing the histograms.
     histonames  = List with histogram name to be plotted, if 'all', all histograms are plotted.
+    group_name  = String. Name of the group were Histograms were saved.
     plot_errors = Boolean. If true, plot the associated errors instead of the data.
-    save_pdf    = Length 2 list, first element is a boolean. If true, saves the histograms
-                  separately in pdf on the path passed as second element of the list.
+    out_path    = String. Path to save the histograms in png. If not passed, histograms won't be saved.
     """
-    histograms = get_histograms_from_file(histofile)
+    histograms = get_histograms_from_file(histofile, group_name)
     plot_histograms(histograms, histonames=histonames, plot_errors=plot_errors, out_path=out_path)
 
 
 def plot_histogram(histogram, ax=None, plot_errors=False):
-    if ax is None:
-            fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    """
+    Plot a Histogram.
 
-    bins      = histogram.bins
-    out_range = histogram.out_range
-    labels    = histogram.labels
-    title     = histogram.title
+    ax          = Axes object to plot the figure. If not passed, a new axes will be created.
+    plot_errors = Boolean. If true, plot the associated errors instead of the data.
+    """
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+
+    bins        = histogram.bins
+    out_range   = histogram.out_range
+    labels      = histogram.labels
+    title       = histogram.title
     if plot_errors:
         entries = histogram.errors
     else:
         entries = histogram.data
 
     if len(bins) == 1:
-        ax.bar(shift_to_bin_centers(bins[0]), entries, width=np.diff(bins[0]))
+        ax.bar       (shift_to_bin_centers(bins[0]), entries, width=np.diff(bins[0]))
         ax.set_ylabel("Entries", weight='bold', fontsize=20)
         out_range_string = 'Out range (%) = [{0:.2f}, {1:.2f}]'.format(get_percentage(out_range[0,0], np.sum(entries)),
                                                                        get_percentage(out_range[1,0], np.sum(entries)))
@@ -137,19 +147,28 @@ def plot_histogram(histogram, ax=None, plot_errors=False):
                     horizontalalignment = 'right',
                     verticalalignment   = 'top')
 
-    ax.set_xlabel(labels[0], weight='bold', fontsize=20)
+    ax.set_xlabel      (labels[0], weight='bold', fontsize=20)
     ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,3))
 
     for label in (ax.get_xticklabels() + ax.get_yticklabels()):
         label.set_fontweight('bold')
-        label.set_fontsize(16)
-    ax.xaxis.offsetText.set_fontsize(14)
-    ax.xaxis.offsetText.set_fontweight('bold')
+        label.set_fontsize  (16)
+    ax .xaxis.offsetText.set_fontsize  (14)
+    ax .xaxis.offsetText.set_fontweight('bold')
 
 
 def plot_histograms(histo_manager, histonames='all', n_columns=3, plot_errors=False, out_path=None):
+    """
+    Plot Histograms from a HistoManager.
+
+    histo_manager = HistoManager object containing the Histograms to be plotted.
+    histonames    = List with histogram name to be plotted, if 'all', all histograms are plotted.
+    n_columns     = Int. Number of columns to distribute the histograms.
+    plot_errors   = Boolean. If true, plot the associated errors instead of the data.
+    out_path      = String. Path to save the histograms in png. If not passed, histograms won't be saved.
+    """
     if histonames == 'all':
-            histonames = histo_manager#.histos
+        histonames = histo_manager#.histos
 
     n_histos  = len(histonames)
     n_columns = min(3, n_histos)
@@ -178,7 +197,7 @@ def join_histo_managers(histo_manager1, histo_manager2):
     histo_manager1, histo_manager2 = HistoManager objects to be joined.
     """
     new_histogram_manager = HistoManager()
-    list_of_histograms = set(histo_manager1.histos) | set(histo_manager2.histos)
+    list_of_histograms    = set(histo_manager1.histos) | set(histo_manager2.histos)
     for histoname in list_of_histograms:
         histo1 = histo_manager1.histos.get(histoname, None)
         histo2 = histo_manager2.histos.get(histoname, None)
@@ -191,6 +210,9 @@ def join_histo_managers(histo_manager1, histo_manager2):
 
 
 def get_percentage(a, b):
+    """
+    Given two flots, return the percentage between them.
+    """
     if b == 0:
         return -100.
     return 100. * a / b
