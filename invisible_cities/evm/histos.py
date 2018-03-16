@@ -2,7 +2,6 @@ import numpy  as np
 import tables as tb
 
 from .. reco       import tbl_functions as tbl
-from .. io.hist_io import hist_writer_var
 
 
 class Histogram:
@@ -40,7 +39,7 @@ class Histogram:
         "Encapsulation for histogram initialization to 0"
         return np.zeros(shape=tuple(len(x) - 1 for x in self.bins))
 
-    def fill(self, additive, data_weights=[]):
+    def fill(self, additive, data_weights=None):
         """
         Given datapoints, bins and adds thems to the stored bin content.
 
@@ -49,11 +48,9 @@ class Histogram:
         data_weights = Array or list with weights of the data.
         """
         additive = np.array(additive)
-
+        data_weights = np.ones(len(additive.T)) if data_weights is None else np.array(data_weights)
         if len(data_weights) != len(additive.T):
-            data_weights = np.ones (len(additive.T))
-        else:
-            data_weights = np.array(data_weights)
+            raise ValueError("Dimensions of data and weights is not compatible.")
 
         binnedData, outRange = self.bin_data(additive, data_weights)
 
@@ -99,10 +96,11 @@ class Histogram:
         Arguments:
         errors = List or array of errors.
         """
-        if errors is not None:
-            self.errors = np.asarray(errors)
-        else:
-            self.errors = np.sqrt(self.data)
+        self.errors = np.asarray(errors) if errors is not None else np.sqrt(self.data)
+
+    def _check_valid_binning(self, bins):
+        if len(self.bins) != len(bins) or not np.all(a == b for a, b in zip(self.bins, bins)):
+            raise ValueError("Histogram binning is not compatible")
 
     def __radd__(self, other):
         return self + other
@@ -110,8 +108,7 @@ class Histogram:
     def __add__ (self, other):
         if other is None:
             return self
-        if len(self.bins) != len(other.bins) or not np.all(a == b for a, b in zip(self.bins, other.bins)):
-            raise ValueError("Histogram binning is not compatible")
+        self._check_valid_binning(other.bins)
         if self.title  !=  other.title:
             print(f"""Warning: Histogram titles are different.
                       {self.title}, {other.title}""")
@@ -167,25 +164,7 @@ class HistoManager:
             if histoname in self.histos:
                 self[histoname].fill(np.asarray(additive))
             else:
-                print("Histogram with name {} does not exist".format(histoname))
-
-    def save_to_file(self, file_out, mode='w', group='HIST'):
-        """
-        Saves the HistoManager and its contained Histograms to a file.
-
-        Arguments:
-        file_out = String with the path of the file were the HistoManager will
-                   be written.
-        mode     = Writting mode. By default a new file will be created.
-        group    = Group name to save the histograms in the file.
-        """
-        if mode not in 'wa':
-            raise ValueError("Incompatible mode of writting, please use 'w' (write) or 'a' (append).")
-        with tb.open_file(file_out, mode, filters=tbl.filters('ZLIB4')) as h5out:
-            writer = hist_writer_var(h5out)
-            for histoname, histo in self.histos.items():
-                writer(group, histoname, histo.data,   histo.bins, histo.out_range,
-                                         histo.errors, histo.labels)
+                print(f"Histogram with name {histoname} does not exist")
 
     def __getitem__(self, histoname):
         return self.histos[histoname]
