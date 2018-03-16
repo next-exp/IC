@@ -24,10 +24,8 @@ def pmap_bins(config_dict):
     var_labels = {}
 
     for k, v in config_dict.items():
-        if "_bins"     in k:
-            var_bins  [k.replace("_bins", "")]   = [ np.linspace(v[0], v[1], v[2] + 1) ]
-        elif "_labels" in k:
-            var_labels[k.replace("_labels", "")] = v
+        if   "_bins"   in k: var_bins  [k.replace("_bins"  , "")] = [np.linspace(v[0], v[1], v[2] + 1)]
+        elif "_labels" in k: var_labels[k.replace("_labels", "")] = v
 
     exception = ['S1_Energy', 'S1_Number', 'S1_Time']
     bin_sel   = lambda x: ('S2' not in x) and (x not in exception)
@@ -46,10 +44,11 @@ def pmap_bins(config_dict):
     var_labels    ['S2_Time_S2_Energy']   = var_labels['S2_Time']   + var_labels['S2_Energy']
     var_bins      ['S2_Energy_S1_Energy'] = var_bins  ['S2_Energy'] + var_bins  ['S1_Energy']
     var_labels    ['S2_Energy_S1_Energy'] = var_labels['S2_Energy'] + var_labels['S1_Energy']
-    var_bins      ['S2_XYSiPM']           = var_bins  ['S2_XSiPM']  + var_bins['S2_XSiPM']
-    var_labels    ['S2_XYSiPM']           = var_labels['S2_XSiPM']  + ['Y (mm)']
+    var_bins      ['S2_XYSiPM']           = var_bins  ['S2_XSiPM']  + var_bins  ['S2_YSiPM']
+    var_labels    ['S2_XYSiPM']           = var_labels['S2_XSiPM']  + var_labels['S2_YSiPM']
 
     del var_bins['S2_XSiPM']
+    del var_bins['S2_YSiPM']
 
     return var_bins, var_labels
 
@@ -125,6 +124,7 @@ def fill_pmap_var(pmap, sipm_db):
 
     return var
 
+
 def fill_pmap_histos(in_path, run_number, config_dict):
     """
     Creates and returns an HistoManager object with the pmap histograms.
@@ -135,8 +135,8 @@ def fill_pmap_histos(in_path, run_number, config_dict):
     config_dict = Dictionary with the configuration parameters (bins, labels).
     """
     var_bins, var_labels = pmap_bins(config_dict)
-    histo_manager = histf.create_histomanager_from_dicts(var_bins, var_labels)
-    SiPM_db = dbf.DataSiPM(run_number)
+    histo_manager        = histf.create_histomanager_from_dicts(var_bins, var_labels)
+    SiPM_db              = dbf.DataSiPM(run_number)
 
     for in_file in glob.glob(in_path):
         pmaps = load_pmaps(in_file)
@@ -145,25 +145,6 @@ def fill_pmap_histos(in_path, run_number, config_dict):
             histo_manager.fill_histograms(var)
     return histo_manager
 
-def histogram_pmap_variable_creator(run_number):
-    SiPM_db = dbf.DataSiPM(run_number)
-
-    def create_histogram_pmap_variable(pmap):
-        var = fill_pmap_var(pmaps[pi], SiPM_db)
-        return var
-
-    return create_histogram_pmap_variable
-
-def pmap_histogram_filler(config_dict_path):
-    with open(config_dict_path, 'r') as content_file:
-        config_dict = json.load(content_file)
-    var_bins, var_labels = pmap_bins(config_dict)
-    histo_manager = histf.create_histomanager_from_dicts(var_bins, var_labels)
-    return histo_manager
-
-def fill_pmap_histograms(histo_manager, var):
-    histo_manager.fill_histograms(var)
-    return histo_manager
 
 def rwf_bins(config_dict):
     """
@@ -176,10 +157,8 @@ def rwf_bins(config_dict):
     var_labels = {}
 
     for k, v in config_dict.items():
-        if "_bins"     in k:
-            var_bins  [k.replace("_bins", "")  ] = [ np.linspace(v[0], v[1], v[2] + 1) ]
-        elif "_labels" in k:
-            var_labels[k.replace("_labels", "")] = v
+        if   "_bins"   in k: var_bins  [k.replace("_bins"  , "")] = [np.linspace(v[0], v[1], v[2] + 1)]
+        elif "_labels" in k: var_labels[k.replace("_labels", "")] = v
 
     return var_bins, var_labels, config_dict['n_baseline']
 
@@ -193,10 +172,12 @@ def fill_rwf_var(rwf, var_dict, sensor_type):
     sensor_type    = Type of sensor('PMT' or 'SiPM')
     """
 
-    bls = np.mean(rwf, axis=1)[:, np.newaxis]
-    rms = np.std (rwf, axis=1)[:, np.newaxis]
-    var_dict[sensor_type + '_Baseline']   .extend(bls.flatten())
-    var_dict[sensor_type + '_BaselineRMS'].extend(rms.flatten())
+    bls = np.mean(rwf, axis=1)
+    rms = np.std (rwf, axis=1)
+    var_dict[sensor_type + '_Baseline']   .extend(bls)
+    var_dict[sensor_type + '_BaselineRMS'].extend(rms)
+    var_dict[sensor_type + '_nSensors']   .append(len(rwf))
+
 
 def fill_rwf_histos(in_path, config_dict):
     """
@@ -215,8 +196,8 @@ def fill_rwf_histos(in_path, config_dict):
             var = defaultdict(list)
             nevt, pmtrwf, sipmrwf, _ = get_rwf_vectors(h5in)
             for evt in range(nevt):
-                fill_rwf_var(pmtrwf [evt,:,0:n_baseline], var,  "PMT")
-                fill_rwf_var(sipmrwf[evt]               , var, "SiPM")
+                fill_rwf_var(pmtrwf [evt, :, :n_baseline], var,  "PMT")
+                fill_rwf_var(sipmrwf[evt]                , var, "SiPM")
 
         histo_manager.fill_histograms(var)
     return histo_manager
