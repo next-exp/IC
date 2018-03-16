@@ -2,13 +2,14 @@ import numpy             as np
 import tables            as tb
 import matplotlib.pyplot as plt
 
+from .. io   .hist_io        import save_histomanager_to_file
 from .. evm  .histos         import Histogram
 from .. evm  .histos         import HistoManager
 from .. core .core_functions import weighted_mean_and_std
 from .. icaro.hst_functions  import shift_to_bin_centers
 
 
-def create_histomanager_from_dicts(histobins_dict, histolabels_dict, init_fill_dict={}):
+def create_histomanager_from_dicts(histobins_dict, histolabels_dict, init_fill_dict=None):
     """
     Creates and returns an HistoManager from a dict of bins and a given of labels with identical keys.
 
@@ -18,22 +19,29 @@ def create_histomanager_from_dicts(histobins_dict, histolabels_dict, init_fill_d
     init_fill_dict   = Dictionary with keys equal to Histogram names and values equal to an initial filling.
     """
     histo_manager = HistoManager()
+    if init_fill_dict is None: init_fill_dict = dict()
     for histotitle, histobins in histobins_dict.items():
-        histo_manager.new_histogram(Histogram(histotitle, histobins, histolabels_dict[histotitle],
+        histo_manager.new_histogram(Histogram(histotitle,
+                                              histobins,
+                                              histolabels_dict[histotitle],
                                               init_fill_dict.get(histotitle, None)))
     return histo_manager
 
 
 def get_histograms_from_file(file_input, group_name='HIST'):
     histo_manager = HistoManager()
+
+    def name_selection(x):
+        selection = (   ('bins'     not in x)
+                    and ('labels'   not in x)
+                    and ('errors'   not in x)
+                    and ('outRange' not in x))
+        return selection
+
     with tb.open_file(file_input, "r") as h5in:
-        name_sel = lambda x: (    ('bins'     not in x)
-                              and ('labels'   not in x)
-                              and ('errors'   not in x)
-                              and ('outRange' not in x))
         histogram_list = []
         group = getattr(h5in.root, group_name)
-        for histoname in filter(name_sel, list(group._v_children)):
+        for histoname in filter(name_selection, group._v_children):
             entries   = np.array(getattr(group, histoname              )[:])
             bins      =          getattr(group, histoname + '_bins'    )[:]
             out_range =          getattr(group, histoname + '_outRange')[:]
@@ -51,7 +59,7 @@ def get_histograms_from_file(file_input, group_name='HIST'):
     return HistoManager(histogram_list)
 
 
-def join_histograms_from_files(histofiles, group_name='HIST', join_file=None):
+def join_histograms_from_files(histofiles, group_name='HIST', join_file=None, write_mode='w'):
     """
     Joins the histograms of a given list of histogram files. If possible,
     Histograms with the same name will be added.
@@ -59,7 +67,7 @@ def join_histograms_from_files(histofiles, group_name='HIST', join_file=None):
     histofiles = List of strings with the filenames to be summed.
     join_file  = String. If passed, saves the resulting HistoManager to this path.
     """
-    if len(histofiles)<1:
+    if not histofiles:
         raise ValueError("List of files is empty")
 
     final_histogram_manager = get_histograms_from_file(histofiles[0], group_name)
@@ -69,7 +77,7 @@ def join_histograms_from_files(histofiles, group_name='HIST', join_file=None):
         final_histogram_manager = join_histo_managers     (final_histogram_manager, added_histograms)
 
     if join_file is not None:
-        final_histogram_manager.save_to_file(join_file)
+        save_histomanager_to_file(final_histogram_manager, join_file, mode=write_mode, group=group_name)
 
     return final_histogram_manager
 
@@ -168,7 +176,7 @@ def plot_histograms(histo_manager, histonames='all', n_columns=3, plot_errors=Fa
     out_path      = String. Path to save the histograms in png. If not passed, histograms won't be saved.
     """
     if histonames == 'all':
-        histonames = histo_manager#.histos
+        histonames = histo_manager.histos
 
     n_histos  = len(histonames)
     n_columns = min(3, n_histos)
@@ -213,6 +221,4 @@ def get_percentage(a, b):
     """
     Given two flots, return the percentage between them.
     """
-    if b == 0:
-        return -100.
-    return 100. * a / b
+    return 100 * a / b if b else -100
