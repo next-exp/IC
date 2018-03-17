@@ -1,6 +1,14 @@
+import numpy  as np
 import tables as tb
 
-from .. reco import tbl_functions as tbl
+from hypothesis import settings
+from hypothesis import HealthCheck
+from hypothesis import given
+
+from .. reco    import tbl_functions as tbl
+
+from .. evm.histos import HistoManager
+from .. evm.histos import Histogram
 
 
 def hist_writer(file,
@@ -65,6 +73,7 @@ def hist_writer_var(file, *, compression='ZLIB4'):
 
     return write_hist
 
+
 def save_histomanager_to_file(histogram_manager, file_out, mode='w', group='HIST'):
     """
     Saves the HistoManager and its contained Histograms to a file.
@@ -83,3 +92,34 @@ def save_histomanager_to_file(histogram_manager, file_out, mode='w', group='HIST
             writer(group, histoname,
                    histo.data, histo.bins, histo.out_range,
                    histo.errors, histo.labels)
+
+
+def get_histograms_from_file(file_input, group_name='HIST'):
+    histo_manager = HistoManager()
+
+    def name_selection(x):
+        selection = (   ('bins'     not in x)
+                    and ('labels'   not in x)
+                    and ('errors'   not in x)
+                    and ('outRange' not in x))
+        return selection
+
+    with tb.open_file(file_input, "r") as h5in:
+        histogram_list = []
+        group = getattr(h5in.root, group_name)
+        for histoname in filter(name_selection, group._v_children):
+            entries   = np.array(getattr(group, histoname              )[:])
+            bins      =          getattr(group, histoname + '_bins'    )[:]
+            out_range =          getattr(group, histoname + '_outRange')[:]
+            errors    = np.array(getattr(group, histoname + '_errors'  )[:])
+            labels    =          getattr(group, histoname + '_labels'  )[:]
+            labels    = [str(lab)[2:-1].replace('\\\\', '\\') for lab in labels]
+
+            histogram           = Histogram(histoname, bins, labels)
+            histogram.data      = entries
+            histogram.out_range = out_range
+            histogram.errors    = errors
+
+            histogram_list.append(histogram)
+
+    return HistoManager(histogram_list)
