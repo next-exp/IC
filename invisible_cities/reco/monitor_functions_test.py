@@ -210,7 +210,7 @@ def test_fill_pmap_histos(ICDATADIR):
     test_checkfile = "Kr_pmaps_histos_run4628.h5"
     test_checkfile = os.path.join(ICDATADIR, test_checkfile)
     check_histo    = histf.get_histograms_from_file(test_checkfile)
-    print (test_checkfile)
+
     assert set(check_histo.histos) ==  set(test_histo.histos)
 
     for k, v in check_histo.histos.items():
@@ -279,15 +279,19 @@ def test_rwf_bins():
 
 
 def test_fill_rwf_histos(ICDATADIR):
-    test_config_dict = {'PMT_Baseline_bins'       : [ 2300., 2700., 400 ],
-                        'PMT_BaselineRMS_bins'    : [    0.,   10., 100 ],
-                        'SiPM_Baseline_bins'      : [    0.,  100., 100 ],
-                        'SiPM_BaselineRMS_bins'   : [    0.,   10., 100 ],
+    test_config_dict = {'PMT_Baseline_bins'       : [  2300,   2700,  400],
+                        'PMT_BaselineRMS_bins'    : [     0,     10,  100],
+                        'PMT_nSensors_bins'       : [  -0.5,   12.5,   13],
+                        'SiPM_Baseline_bins'      : [     0,    100,  100],
+                        'SiPM_BaselineRMS_bins'   : [     0,     10,  100],
+                        'SiPM_nSensors_bins'      : [1750.5, 1800.5,   50],
 
-                        'PMT_Baseline_labels'     : ["ADCs"],
-                        'PMT_BaselineRMS_labels'  : ["ADCs"],
-                        'SiPM_Baseline_labels'    : ["ADCs"],
-                        'SiPM_BaselineRMS_labels' : ["ADCs"],
+                        'PMT_Baseline_labels'     : ["PMT Baseline (ADC)"],
+                        'PMT_BaselineRMS_labels'  : ["PMT Baseline RMS (ADC)"],
+                        'PMT_nSensors_labels'     : ["Number of PMTs"],
+                        'SiPM_Baseline_labels'    : ["SiPM Baseline (ADC)"],
+                        'SiPM_BaselineRMS_labels' : ["SiPM Baseline RMS (ADC)"],
+                        'SiPM_nSensors_labels'    : ["Number of SiPMs"],
 
                         'n_baseline'              : 48000}
 

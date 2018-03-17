@@ -176,7 +176,7 @@ def fill_rwf_var(rwf, var_dict, sensor_type):
     rms = np.std (rwf, axis=1)
     var_dict[sensor_type + '_Baseline']   .extend(bls)
     var_dict[sensor_type + '_BaselineRMS'].extend(rms)
-    var_dict[sensor_type + '_nSensors']   .append(len(rwf))
+    var_dict[sensor_type + '_nSensors']   .append(len(bls))
 
 
 def fill_rwf_histos(in_path, config_dict):
