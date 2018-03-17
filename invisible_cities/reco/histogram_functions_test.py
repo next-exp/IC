@@ -11,6 +11,7 @@ from hypothesis.strategies  import lists
 from .. reco                import histogram_functions as histf
 
 from .. io .hist_io         import save_histomanager_to_file
+from .. io .hist_io         import get_histograms_from_file
 from .. evm.histos          import HistoManager
 from .. evm.histos          import Histogram
 from .. evm.histos_test     import assert_histogram_equality
@@ -85,22 +86,6 @@ def test_create_histomanager_from_dicts(bins):
     assert len(histograms_dict) == len(histo_manager.histos)
     for histoname, histogram in histo_manager.histos.items():
         assert_histogram_equality(histogram, histograms_dict[histoname])
-
-
-@settings(suppress_health_check=(HealthCheck.too_slow, HealthCheck.filter_too_much,))
-@given(histograms_lists())
-def test_get_histograms_from_file(output_tmpdir, histogram_list):
-    args, list_of_histograms  = histogram_list
-    histogram_manager1        = HistoManager(list_of_histograms)
-
-    file_out = os.path.join(output_tmpdir, 'test_save_histogram_manager.h5')
-    save_histomanager_to_file(histogram_manager1, file_out)
-
-    histogram_manager2 = histf.get_histograms_from_file(file_out)
-
-    assert len(histogram_manager1.histos) == len(histogram_manager2.histos)
-    for histoname in histogram_manager1.histos:
-        assert_histogram_equality(histogram_manager1[histoname], histogram_manager2[histoname])
 
 
 @settings(suppress_health_check=(HealthCheck.too_slow, HealthCheck.filter_too_much,))
