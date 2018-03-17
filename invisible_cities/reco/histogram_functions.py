@@ -3,6 +3,7 @@ import tables            as tb
 import matplotlib.pyplot as plt
 
 from .. io   .hist_io        import save_histomanager_to_file
+from .. io   .hist_io        import get_histograms_from_file
 from .. evm  .histos         import Histogram
 from .. evm  .histos         import HistoManager
 from .. core .core_functions import weighted_mean_and_std
@@ -26,37 +27,6 @@ def create_histomanager_from_dicts(histobins_dict, histolabels_dict, init_fill_d
                                               histolabels_dict[histotitle],
                                               init_fill_dict.get(histotitle, None)))
     return histo_manager
-
-
-def get_histograms_from_file(file_input, group_name='HIST'):
-    histo_manager = HistoManager()
-
-    def name_selection(x):
-        selection = (   ('bins'     not in x)
-                    and ('labels'   not in x)
-                    and ('errors'   not in x)
-                    and ('outRange' not in x))
-        return selection
-
-    with tb.open_file(file_input, "r") as h5in:
-        histogram_list = []
-        group = getattr(h5in.root, group_name)
-        for histoname in filter(name_selection, group._v_children):
-            entries   = np.array(getattr(group, histoname              )[:])
-            bins      =          getattr(group, histoname + '_bins'    )[:]
-            out_range =          getattr(group, histoname + '_outRange')[:]
-            errors    = np.array(getattr(group, histoname + '_errors'  )[:])
-            labels    =          getattr(group, histoname + '_labels'  )[:]
-            labels    = [str(lab)[2:-1].replace('\\\\', '\\') for lab in labels]
-
-            histogram           = Histogram(histoname, bins, labels)
-            histogram.data      = entries
-            histogram.out_range = out_range
-            histogram.errors    = errors
-
-            histogram_list.append(histogram)
-
-    return HistoManager(histogram_list)
 
 
 def join_histograms_from_files(histofiles, group_name='HIST', join_file=None, write_mode='w'):
@@ -121,7 +91,10 @@ def plot_histogram(histogram, ax=None, plot_errors=False):
         out_range_string = 'Out range (%) = [{0:.2f}, {1:.2f}]'.format(get_percentage(out_range[0,0], np.sum(entries)),
                                                                        get_percentage(out_range[1,0], np.sum(entries)))
 
-        mean, std = weighted_mean_and_std(shift_to_bin_centers(bins[0]), entries)
+        if np.sum(entries) > 0:
+            mean, std = weighted_mean_and_std(shift_to_bin_centers(bins[0]), entries)
+        else:
+            mean, std = 0, 0
 
         ax.annotate('Mean = {0:.2f}\n'.format(mean) + 'RMS = {0:.2f}\n' .format(std) +
                     out_range_string,
@@ -141,8 +114,12 @@ def plot_histogram(histogram, ax=None, plot_errors=False):
         out_range_stringY = 'Out range Y (%) = [{0:.2f}, {1:.2f}]'.format(get_percentage(out_range[0,1], np.sum(entries)),
                                                                           get_percentage(out_range[1,1], np.sum(entries)))
 
-        meanX, stdX = weighted_mean_and_std(shift_to_bin_centers(bins[0]), np.sum(entries, axis = 1))
-        meanY, stdY = weighted_mean_and_std(shift_to_bin_centers(bins[1]), np.sum(entries, axis = 0))
+        if np.sum(entries) > 0:
+            meanX, stdX = weighted_mean_and_std(shift_to_bin_centers(bins[0]), np.sum(entries, axis = 1))
+            meanY, stdY = weighted_mean_and_std(shift_to_bin_centers(bins[1]), np.sum(entries, axis = 0))
+        else:
+            meanX, stdX = 0, 0
+            meanY, stdY = 0, 0
 
         ax.annotate('Mean X = {0:.2f}\n'.format(meanX) + 'Mean Y = {0:.2f}\n'.format(meanY) +
                     'RMS X = {0:.2f}\n' .format(stdX)  + 'RMS Y = {0:.2f}\n' .format(stdY)  +
