@@ -86,8 +86,14 @@ def plot_histogram(histogram, ax=None, plot_errors=False):
         entries = histogram.data
 
     if len(bins) == 1:
-        ax.bar       (shift_to_bin_centers(bins[0]), entries, width=np.diff(bins[0]))
-        ax.set_ylabel("Entries", weight='bold', fontsize=20)
+        ax.hist         (shift_to_bin_centers(bins[0]), bins[0],
+                        weights   = entries,
+                        histtype  = 'step',
+                        edgecolor = 'black',
+                        linewidth = 1.5)
+        ax.grid         (True)
+        ax.set_axisbelow(True)
+        ax.set_ylabel   ("Entries", weight='bold', fontsize=20)
         out_range_string = 'Out range (%) = [{0:.2f}, {1:.2f}]'.format(get_percentage(out_range[0,0], np.sum(entries)),
                                                                        get_percentage(out_range[1,0], np.sum(entries)))
 
