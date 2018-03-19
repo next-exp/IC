@@ -1,11 +1,11 @@
 import numpy  as np
 import tables as tb
 
-from hypothesis import settings
-from hypothesis import HealthCheck
-from hypothesis import given
+from hypothesis    import settings
+from hypothesis    import HealthCheck
+from hypothesis    import given
 
-from .. reco    import tbl_functions as tbl
+from .. reco       import tbl_functions as tbl
 
 from .. evm.histos import HistoManager
 from .. evm.histos import Histogram
@@ -53,8 +53,8 @@ def hist_writer_var(file, *, compression='ZLIB4'):
             raise ValueError(f"Histogram {table_name} already exists")
 
         vlarray = file.create_vlarray(hist_group, table_name + '_bins',
-                                      atom=tb.Float64Atom(shape=()),
-                                      filters=tbl.filters(compression))
+                                      atom    = tb.Float64Atom(shape=()),
+                                      filters = tbl.filters(compression))
         for ibin in bins:
             vlarray.append(ibin)
         add_carray       (hist_group, table_name              , entries     )
@@ -66,9 +66,9 @@ def hist_writer_var(file, *, compression='ZLIB4'):
         array_atom  = tb  .Atom.from_dtype(var.dtype)
         array_shape = var .shape
         entry       = file.create_carray(hist_group, table_name,
-                                         atom=array_atom,
-                                         shape=array_shape,
-                                         filters=tbl.filters(compression))
+                                         atom    = array_atom,
+                                         shape   = array_shape,
+                                         filters = tbl.filters(compression))
         entry[:]    = var
 
     return write_hist
