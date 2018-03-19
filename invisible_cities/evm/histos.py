@@ -1,7 +1,7 @@
 import numpy  as np
 import tables as tb
 
-from .. reco       import tbl_functions as tbl
+from .. reco  import tbl_functions as tbl
 
 
 class Histogram:
@@ -47,7 +47,7 @@ class Histogram:
         additive     = Array or list with data to fill the histogram.
         data_weights = Array or list with weights of the data.
         """
-        additive = np.array(additive)
+        additive     = np.array(additive)
         data_weights = np.ones(len(additive.T)) if data_weights is None else np.array(data_weights)
         if len(data_weights) != len(additive.T):
             raise ValueError("Dimensions of data and weights is not compatible.")
