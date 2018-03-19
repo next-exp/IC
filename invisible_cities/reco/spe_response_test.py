@@ -6,11 +6,11 @@ from pytest import fixture
 from flaky  import flaky
 from numpy.testing import assert_allclose
 
-from .. icaro. hst_functions import shift_to_bin_centers
-from .. core .stat_functions import poisson_sigma
-from .. core .core_functions import in_range
-from .. core                 import fit_functions        as fitf
-from .                       import spe_response         as spe
+from .. core.stat_functions import poisson_sigma
+from .. core.core_functions import shift_to_bin_centers
+from .. core.core_functions import in_range
+from .. core                import fit_functions        as fitf
+from .                      import spe_response         as spe
 
 
 @mark.parametrize("         bins               expected ".split(),
