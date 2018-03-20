@@ -1,6 +1,7 @@
 
 import tables
 
+from .  dst_io             import load_dst
 from .. io.table_io        import make_table
 from .. evm.event_model    import Voxel
 from .. evm.event_model    import VoxelCollection
@@ -33,20 +34,20 @@ def true_voxels_writer(hdf5_file, *, compression='ZLIB4'):
 def load_voxels(DST_file_name):
     """Return the Voxels as PD DataFrames."""
 
-    dst = load_dst(DST_file_name, 'TrueVoxels', 'Voxels')
+    dst = tables.open_file(DST_file_name,'r')
     dst_size = len(dst)
     all_events = {}
 
-    event = dst.event.values
-    X     = dst.X   .values
-    Y     = dst.Y   .values
-    Z     = dst.Z   .values
-    E     = dst.E   .values
-    size  = dst.size.values
+    event = dst.root.TrueVoxels.Voxels[:]['event']
+    X     = dst.root.TrueVoxels.Voxels[:]['X']
+    Y     = dst.root.TrueVoxels.Voxels[:]['Y']
+    Z     = dst.root.TrueVoxels.Voxels[:]['Z']
+    E     = dst.root.TrueVoxels.Voxels[:]['E']
+    size  = dst.root.TrueVoxels.Voxels[:]['size']
 
     for i in range(dst_size):
         current_event = all_events.setdefault(event[i],
-                                              VoxelCollection())
+                                              VoxelCollection([]))
         voxel = Voxel(X[i], Y[i], Z[i], E[i], size[i])
-        current_event.hits.append(voxel)
+        current_event.voxels.append(voxel)
     return all_events
