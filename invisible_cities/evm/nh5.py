@@ -220,4 +220,4 @@ class VoxelsTable(tb.IsDescription):
     Y        = tb.Float64Col(pos=2)
     Z        = tb.Float64Col(pos=3)
     E        = tb.Float64Col(pos=4)
-    size     = tb.Float32Col(pos=5, shape=3)
+    size     = tb.Float64Col(pos=5, shape=3)

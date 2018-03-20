@@ -485,4 +485,4 @@ def voxels_toy_data(ICDATADIR):
     size  = np.reshape(np.repeat([10,10,10],100),(100,3))
 
     voxels_filename = os.path.join(ICDATADIR, "toy_voxels.h5")
-    return hits_filename, (event, X, Y, Z, E)
+    return voxels_filename, (event, X, Y, Z, E, size)

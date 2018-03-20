@@ -1,27 +1,32 @@
 import os
-import numpy  as np
-from . mchits_io import load_mchits
-from . mchits_io import load_mcparticles
-from . mchits_io import load_mchits_nexus
-from . mchits_io import load_mcparticles_nexus
+import tables as tb
+
+from numpy.testing import assert_allclose
+
+from .. evm.event_model import Voxel
+from .. evm.event_model import VoxelCollection
+from .  dst_io          import load_dst
+from .  voxels_io       import true_voxels_writer
 
 def test_true_voxels_writer(config_tmpdir, voxels_toy_data):
-    output_file = os.path.join(config_tmpdir, "test_hits.h5")
+    output_file = os.path.join(config_tmpdir, "test_voxels.h5")
 
     _, (event, X, Y, Z, E, size) = voxels_toy_data
 
     with tb.open_file(output_file, 'w') as h5out:
         write = true_voxels_writer(h5out)
-        voxels = VoxelCollection()
-        for xv, yv, zv, ev in zip(X, Y, Z, E):
-            v = Voxel(xv, yv, zv, ev)
+        voxels = VoxelCollection([])
+        for xv, yv, zv, ev, sv in zip(X, Y, Z, E, size):
+            v = Voxel(xv, yv, zv, ev, sv)
             voxels.voxels.append(v)
-        write(voxels.voxels)
+        write(event[0],voxels.voxels)
 
-    dst = load_dst(output_file, group = "RECO", node = "Events")
-    assert_allclose(event, dst.event.values)
-    assert_allclose(X,    dst.X.values)
-    assert_allclose(Y,    dst.Y.values)
-    assert_allclose(Z,    dst.Z.values)
-    assert_allclose(E,    dst.E.values)
-    assert_allclose(size, dst.size.values)
+    vdst = tb.open_file(output_file,'r')
+    assert_allclose(event, vdst.root.TrueVoxels.Voxels[:]['event'])
+    assert_allclose(X,     vdst.root.TrueVoxels.Voxels[:]['X'])
+    assert_allclose(Y,     vdst.root.TrueVoxels.Voxels[:]['Y'])
+    assert_allclose(Z,     vdst.root.TrueVoxels.Voxels[:]['Z'])
+    assert_allclose(E,     vdst.root.TrueVoxels.Voxels[:]['E'])
+    assert_allclose(size,  vdst.root.TrueVoxels.Voxels[:]['size'])
+
+def test_load_voxels():
