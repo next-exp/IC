@@ -35,7 +35,7 @@ def load_voxels(DST_file_name):
     """Return the Voxels as PD DataFrames."""
 
     dst = tables.open_file(DST_file_name,'r')
-    dst_size = len(dst)
+    dst_size = len(dst.root.TrueVoxels.Voxels)
     all_events = {}
 
     event = dst.root.TrueVoxels.Voxels[:]['event']

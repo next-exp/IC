@@ -12,7 +12,7 @@ import numpy as np
 from argparse import Namespace
 
 from .. cities.base_cities           import City
-from .. io.mchits_io                 import load_mchits_nexus
+from .. io.mcinfo_io                 import load_mchits
 
 from .. io.pmaps_io                  import pmap_writer
 from .. io.run_and_event_io          import run_and_event_writer
@@ -50,7 +50,7 @@ class Detsim(City):
 
         """
         for filename in self.input_files:
-            mchits_dict = load_mchits_nexus(filename, self.conf.event_range)
+            mchits_dict = load_mchits(filename, self.conf.event_range)
             self.event_loop(mchits_dict)
 
 
