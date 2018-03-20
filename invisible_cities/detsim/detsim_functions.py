@@ -6,10 +6,8 @@ Defines key functions used in Detsim.
 import numpy as np
 
 from .. core.system_of_units_c import units
-
 from .. evm.event_model        import MCHit
-
-from .. reco                   import peak_functions           as pkf
+from .. reco                   import peak_functions as pkf
 
 def diffuse_and_smear_hits(mchits, zmin, zmax, diff_transv, diff_long,
                            resolution_FWHM, Qbb):
@@ -33,6 +31,6 @@ def diffuse_and_smear_hits(mchits, zmin, zmax, diff_transv, diff_long,
         zh = np.random.normal(hit.Z+zdrift,np.sqrt(zdrift/10.)*diff_long)
         eh = np.random.normal(hit.E,np.sqrt(var0*hit.E/E_evt))
 
-        dmchits.append(MCHit([xh,yh,zh], hit.T, eh))
+        dmchits.append(MCHit([xh,yh,zh], hit.T, eh, hit.label))
 
     return dmchits,zdrift
