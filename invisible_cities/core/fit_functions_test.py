@@ -107,6 +107,20 @@ def test_chi2_poisson_errors():
     assert 0.60 < f.chi2 < 1.5
 
 
+def test_covariance_matrix_shape():
+    mu    = np.random.uniform(-100, 100)
+    sigma = np.random.uniform(   0, 100)
+    A     =  1e9
+    x     = np.linspace(mu - 5 * sigma, mu + 5 * sigma, 100)
+    y     = fitf.gauss(x, A, mu, sigma)
+    y     = np.random.poisson(y)
+    errs  = poisson_sigma(y)
+
+    f = fitf.fit(fitf.gauss, x, y, seed=(A, mu, sigma), sigma=errs)
+
+    assert f.cov.shape == (3, 3)
+
+
 @mark.slow
 @flaky(max_runs=10, min_passes=9)
 def test_chi2_log_errors():
