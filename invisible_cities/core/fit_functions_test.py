@@ -373,6 +373,28 @@ def test_profile_statistic_values_simple(func, xdata, ydata, xrange, yrange):
     assert   ye[0] == approx(3.0276503540974917)
 
 
+@mark.parametrize("     func                  xdata                 ydata                     ".split(),
+                  ((fitf.profileX, np.array([0] * 10 + [1] * 10), np.tile (np.arange(10),    2)),
+                   (fitf.profileY, np.tile (np.arange(10),    2), np.array([0] * 10 + [1] * 10))))
+@mark.parametrize("drop_nan", (True, False))
+def test_profile_data_in_edges(func, xdata, ydata, drop_nan):
+    # This test ensures the intervals are half-open [a, b)
+    xp, yp, ye = func(xdata, ydata, 2, std=True, drop_nan=drop_nan)
+
+    expected_xp = [0.25              ]
+    expected_yp = [4.50              ]
+    expected_ye = [3.0276503540974917]
+    if not drop_nan:
+        expected_xp.append( 0.75 )
+        expected_yp.append(np.nan)
+        expected_ye.append(np.nan)
+
+    assert len(xp) == len(yp) == len(ye) == len(expected_xp)
+    assert np.allclose(xp, expected_xp, equal_nan=True)
+    assert np.allclose(yp, expected_yp, equal_nan=True)
+    assert np.allclose(ye, expected_ye, equal_nan=True)
+
+
 @mark.slow
 def test_profileXY_full_range():
     N    = 10000
