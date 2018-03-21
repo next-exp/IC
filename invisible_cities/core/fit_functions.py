@@ -197,10 +197,10 @@ def profileX(xdata, ydata, nbins=100,
 
     mean      = gb.mean().values
     deviation = gb.std () if std else gb.std() / gb.size()**0.5
-    indices   = deviation.index.values
+    indices   = deviation.index.values - 1
 
     if drop_nan:
-        return bin_centers[indices - 1], mean, deviation.values
+        return bin_centers[indices], mean, deviation.values
 
     mean_               = np.full_like(bin_centers, np.nan)
     deviation_          = np.full_like(bin_centers, np.nan)
