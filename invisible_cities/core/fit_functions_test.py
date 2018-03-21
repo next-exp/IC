@@ -359,6 +359,20 @@ def test_empty_dataset_yields_nans(func, xdata, ydata):
     assert np.all(np.isnan(ye))
 
 
+@mark.parametrize("     func          xdata          ydata        xrange    yrange".split(),
+                  ((fitf.profileX, np.ones  (10), np.arange(10),  (0, 2),     None),
+                   (fitf.profileY, np.arange(10), np.ones  (10),    None,   (0, 2))))
+def test_profile_statistic_values_simple(func, xdata, ydata, xrange, yrange):
+    # Ensure the return values are exactly what they should
+    # be in a simple case
+    xp, yp, ye = func(xdata, ydata, 1, xrange=xrange, yrange=yrange, std=True)
+
+    assert len(xp) == len(yp) == len(ye) == 1
+    assert   xp[0] == approx(1                 )
+    assert   yp[0] == approx(4.5               )
+    assert   ye[0] == approx(3.0276503540974917)
+
+
 @mark.slow
 def test_profileXY_full_range():
     N    = 10000
