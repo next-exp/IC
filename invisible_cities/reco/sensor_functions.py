@@ -18,13 +18,14 @@ def charge_fluctuation(signal, single_pe_rms):
     if single_pe_rms == 0:
         ## Protection for some versions of numpy etc
         return signal
-    else:
-        ## We need to convert to float to get accuracy here
-        sig_fl = signal.astype(float)
-        sigma = np.sqrt(sig_fl[sig_fl>0]) * single_pe_rms
-        sig_fl[sig_fl>0] = np.random.normal(sig_fl[sig_fl>0], sigma)
-        ## This fluctuation can't give negative signal
-        sig_fl[sig_fl<0] = 0
+    
+    ## We need to convert to float to get accuracy here
+    sig_fl = signal.astype(float)
+    non_zero = sig_fl > 0
+    sigma = np.sqrt(sig_fl[non_zero]) * single_pe_rms
+    sig_fl[non_zero] = np.random.normal(sig_fl[non_zero], sigma)
+    ## This fluctuation can't give negative signal
+    sig_fl[sig_fl<0] = 0
     return sig_fl
 
 
@@ -43,7 +44,7 @@ def simulate_pmt_response(event, pmtrd, adc_to_pes, pe_resolution, run_number = 
     # FEE, with noise PMT
     fee  = FE.FEE(run_number,
                   noise_FEEPMB_rms=FE.NOISE_I, noise_DAQ_rms=FE.NOISE_DAQ)
-    #
+    
     NPMT = pmtrd.shape[1]
     RWF  = []
     BLRX = []
@@ -77,7 +78,7 @@ def simulate_sipm_response(event, sipmrd, sipms_noise_sampler, sipm_adc_to_pes,
     the noisy waveform (in adc)."""
 
     ## Fluctuate according to charge resolution
-    sipm_fl = np.array([charge_fluctuation(si, rms) for si, rms in zip(sipmrd[event], pe_resolution)])
+    sipm_fl = np.array(tuple(map(charge_fluctuation, sipmrd[event], pe_resolution)))
 
     # return total signal in adc counts + noise sampled from pdf spectra
     return wfm.to_adc(sipm_fl, sipm_adc_to_pes) + sipms_noise_sampler.sample()
