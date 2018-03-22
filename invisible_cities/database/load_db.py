@@ -65,6 +65,11 @@ and map.MinRun <= {0} and {0} <= map.MaxRun
 order by pos.SensorID'''.format(abs(run_number))
     data = pd.read_sql_query(sql, conn)
     conn.close()
+
+    ## Add default value to Sigma for runs without measurement
+    if not data.Sigma.values.any():
+        data.Sigma = 2.24
+        
     return data
 
 def DetectorGeo():
