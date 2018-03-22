@@ -135,7 +135,7 @@ def spe_pulse_from_vector(spe, cnt, norm=1.):
     Returns a train of SPE pulses corresponding to vector cnt
     """
 
-    spe_pulse = signal.convolve(cnt[0:-len(spe.spe)+1], spe.spe * norm)
+    spe_pulse = signal.convolve(cnt[:-len(spe.spe) + 1], spe.spe * norm)
     return spe_pulse
 
 
@@ -173,7 +173,6 @@ class FEE:
         self.coeff_c = self.freq_zero / (self.f_sample * np.pi)
 
         DataPMT = DB.DataPMT(run_number)
-        
         self.coeff_blr_pmt = DataPMT.coeff_blr.values
         self.freq_LHPFd_pmt = self.coeff_blr_pmt / np.pi
         self.coeff_c_pmt = DataPMT.coeff_c.values
