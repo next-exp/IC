@@ -8,10 +8,13 @@ package: invisible cities. See release notes and licence
 last changed: 01-12-2017
 """
 import os
+from os          import getenv
 from collections import namedtuple
 
 import tables as tb
 import numpy  as np
+
+from subprocess import check_output
 
 from pytest import mark
 from pytest import fixture
@@ -258,3 +261,25 @@ def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
             got      = fout.root.Run.events.cols.evt_number[:]
             expected = fin .root.Run.events.cols.evt_number[::2] # skip event in the middle
             assert got == exactly(expected)
+
+def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
+        ICTDIR = getenv('ICTDIR')
+        file_in  = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_*.h5")
+        file_out = os.path.join(output_tmpdir, "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts.h5")
+
+        nrequired = 10
+        conf = configure('dummy invisible_cities/config/irene.conf'.split())
+        conf.update(dict(run_number   = -4735,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     event_range  = (0, nrequired),
+                     **unpack_s12params(s12params))) # s12params are just dummy values in this test
+        config_file_name = os.path.join(ICTDIR, 'invisible_cities/config/irene.conf')
+        command = ('city irene {config_file_name}'.format(**locals()))
+
+        irene = Irene(**conf)
+        try:
+            irene.run()
+            #check_output(command, shell = True)
+        except IndexError:
+            raise
