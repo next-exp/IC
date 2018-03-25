@@ -274,12 +274,9 @@ def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
                      file_out     = file_out,
                      event_range  = (0, nrequired),
                      **unpack_s12params(s12params))) # s12params are just dummy values in this test
-        config_file_name = os.path.join(ICTDIR, 'invisible_cities/config/irene.conf')
-        command = ('city irene {config_file_name}'.format(**locals()))
 
         irene = Irene(**conf)
         try:
             irene.run()
-            #check_output(command, shell = True)
         except IndexError:
             raise
