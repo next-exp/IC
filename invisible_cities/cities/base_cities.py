@@ -410,9 +410,10 @@ class RawCity(City):
 
                     if self.monte_carlo:
                         # reset last rows read in order to read new table
-                        self.writers.mc.last_row = 0
-                        self.writers.mc.last_written_hit = 0
+                        self.writers.mc.last_row              = 0
+                        self.writers.mc.last_written_hit      = 0
                         self.writers.mc.last_written_particle = 0
+                        self.writers.mc.first_extent_row      = True
 
                     self.event_loop(NEVT, dataVectors)
                 elif self.raw_data_type == 'MCRD':
