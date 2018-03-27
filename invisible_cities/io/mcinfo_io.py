@@ -162,8 +162,9 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table),
             ihit = ipart = 0
             if iext > 0:
                 previous_row = h5extents[iext-1]
-                ihit         = previous_row['last_hit'] + 1
-                ipart        = previous_row['last_particle'] + 1
+
+                ihit         = int(previous_row['last_hit']) + 1
+                ipart        = int(previous_row['last_particle']) + 1
 
             ihit_end  = this_row['last_hit']
             ipart_end = this_row['last_particle']
