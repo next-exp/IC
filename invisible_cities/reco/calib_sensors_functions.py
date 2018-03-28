@@ -110,6 +110,16 @@ def calibrate_pmts(cwfs, adc_to_pes, n_MAU=100, thr_MAU=3):
     return ccwfs, ccwfs_mau, cwf_sum, cwf_sum_mau
 
 
+def pmt_subtract_mau(cwfs, n_MAU=100):
+    """
+    Subtract a MAU from the input waveforms.
+    """
+    MAU         = np.full(n_MAU, 1 / n_MAU)
+    mau         = signal.lfilter(MAU, 1, cwfs, axis=1)
+
+    return cwfs - mau
+
+
 def calibrate_sipms(sipm_wfs, adc_to_pes, thr, *, bls_mode=BlsMode.mode):
     """
     Subtracts the baseline, calibrates waveforms to pes
