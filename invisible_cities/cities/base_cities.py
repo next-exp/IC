@@ -393,6 +393,7 @@ class RawCity(City):
 
         """
         for filename in self.input_files:
+            print('Reading file...')
             if self.event_range_finished(): break
             print("Opening", filename, end="... ")
             with tb.open_file(filename, "r") as h5in:
@@ -406,6 +407,13 @@ class RawCity(City):
                     NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
                     dataVectors = DataVectors(pmt=pmtrwf, sipm=sipmrwf,
                                               mc=mc_info, events=events_info)
+
+                    if self.monte_carlo:
+                        # reset last rows read in order to read new table
+                        self.writers.mc.last_row              = 0
+                        self.writers.mc.last_written_hit      = 0
+                        self.writers.mc.last_written_particle = 0
+                        self.writers.mc.first_extent_row      = True
 
                     self.event_loop(NEVT, dataVectors)
                 elif self.raw_data_type == 'MCRD':
