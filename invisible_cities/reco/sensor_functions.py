@@ -11,6 +11,7 @@ from .                    import wfm_functions as wfm
 def convert_channel_id_to_IC_id(data_frame, channel_ids):
     return pd.Index(data_frame.ChannelID).get_indexer(channel_ids)
 
+
 def charge_fluctuation(signal, single_pe_rms):
     """Simulate the fluctuation of the pe before noise addition
     produced by each photoelectron
@@ -20,12 +21,12 @@ def charge_fluctuation(signal, single_pe_rms):
         return signal
     
     ## We need to convert to float to get accuracy here
-    sig_fl = signal.astype(float)
+    sig_fl   = signal.astype(float)
     non_zero = sig_fl > 0
-    sigma = np.sqrt(sig_fl[non_zero]) * single_pe_rms
+    sigma    = np.sqrt(sig_fl[non_zero]) * single_pe_rms
     sig_fl[non_zero] = np.random.normal(sig_fl[non_zero], sigma)
     ## This fluctuation can't give negative signal
-    sig_fl[sig_fl<0] = 0
+    sig_fl[sig_fl < 0] = 0
     return sig_fl
 
 
