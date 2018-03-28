@@ -20,7 +20,8 @@ from .. core.configure import configure
 
 
 @mark.slow
-def test_sipmgain_pulsedata(config_tmpdir, ICDATADIR):
+@mark.parametrize("proc_opt", ('subtract_mode', 'subtract_median'))
+def test_sipmgain_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
     PATH_IN   = os.path.join(ICDATADIR     , 'sipmledpulsedata.h5')
     PATH_OUT  = os.path.join(config_tmpdir, 'sipmledpulsedata_HIST.h5')
     nrequired = 2
@@ -29,7 +30,8 @@ def test_sipmgain_pulsedata(config_tmpdir, ICDATADIR):
     conf.update(dict(run_number   = 4000,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
-                     event_range  = (0, nrequired)))
+                     event_range  = (0, nrequired),
+                     proc_mode    = proc_opt      ))
 
     sipmgain = Sipmgain(**conf)
     sipmgain.run()
