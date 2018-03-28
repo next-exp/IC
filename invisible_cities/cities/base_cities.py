@@ -270,6 +270,18 @@ class City:
         self.coeff_blr          = DataPMT.coeff_blr.values      .astype(np.double)
         self.noise_rms          = DataPMT.noise_rms.values      .astype(np.double)
 
+        ## Charge resolution for sensor simulation
+        pmt_single_pe_rms       = DataPMT.Sigma.values .astype(np.double)
+        self.pmt_pe_resolution  = np.divide(pmt_single_pe_rms                             ,
+                                            self.all_pmt_adc_to_pes                       ,
+                                            out   = np.zeros_like(self.all_pmt_adc_to_pes),
+                                            where = self.all_pmt_adc_to_pes != 0          )
+        sipm_single_pe_rms      = DataSiPM.Sigma.values.astype(np.double)
+        self.sipm_pe_resolution = np.divide(sipm_single_pe_rms                         ,
+                                            self.sipm_adc_to_pes                       ,
+                                            out   = np.zeros_like(self.sipm_adc_to_pes),
+                                            where = self.sipm_adc_to_pes != 0          )
+
         sipm_x_masked = DataSiPM[DataSiPM.Active == 0].X.values
         sipm_y_masked = DataSiPM[DataSiPM.Active == 0].Y.values
         self.pos_sipm_masked = np.stack((sipm_x_masked, sipm_y_masked), axis=1)
@@ -1075,7 +1087,9 @@ class MonteCarloCity(TriggerEmulationCity):
         the noisy waveform (in adc counts)."""
         return sf.simulate_sipm_response(event, sipmrd,
                                          self.noise_sampler,
-                                         self.sipm_adc_to_pes)
+                                         self.sipm_adc_to_pes,
+                                         self.sipm_pe_resolution,
+                                         self.run_number)
 
 
     def simulate_pmt_response(self, event, pmtrd):
@@ -1091,6 +1105,7 @@ class MonteCarloCity(TriggerEmulationCity):
         """
         return sf.simulate_pmt_response(event, pmtrd,
                                         self.all_pmt_adc_to_pes,
+                                        self.pmt_pe_resolution,
                                         self.run_number)
 
     @property

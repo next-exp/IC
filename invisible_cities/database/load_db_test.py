@@ -27,7 +27,7 @@ def test_pmts_MC_pd():
 def test_sipm_pd():
     """Check that we retrieve the correct number of SiPMs."""
     sipms = DB.DataSiPM()
-    columns = ['SensorID', 'ChannelID', 'Active', 'X', 'Y', 'adc_to_pes']
+    columns = ['SensorID', 'ChannelID', 'Active', 'X', 'Y', 'adc_to_pes', 'Sigma']
     assert columns == list(sipms)
     assert sipms.shape[0] == 1792
 
