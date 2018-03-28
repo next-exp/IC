@@ -26,11 +26,12 @@ def test_cwf_blr(electron_MCRD_file):
     coeff_blr = abs(DataPMT.coeff_blr.values)
     coeff_c = abs(DataPMT.coeff_c .values)
     adc_to_pes = abs(DataPMT.adc_to_pes.values)
+    single_pe_rms = abs(DataPMT.Sigma.values)
 
     with tb.open_file(electron_MCRD_file, 'r') as h5in:
         event = 0
         _, pmtrd, _ = tbl.get_rd_vectors(h5in)
-        dataPMT, BLR = simulate_pmt_response(event, pmtrd, adc_to_pes)
+        dataPMT, BLR = simulate_pmt_response(event, pmtrd, adc_to_pes, single_pe_rms)
         RWF = dataPMT.astype(np.int16)
 
         CWF = blr.deconv_pmt(RWF,
