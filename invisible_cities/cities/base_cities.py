@@ -272,15 +272,15 @@ class City:
 
         ## Charge resolution for sensor simulation
         pmt_single_pe_rms       = DataPMT.Sigma.values .astype(np.double)
-        self.pmt_pe_resolution  = np.divide(pmt_single_pe_rms                         ,
-                                            self.all_pmt_adc_to_pes                   ,
-                                            out=np.zeros_like(self.all_pmt_adc_to_pes),
-                                            where=self.all_pmt_adc_to_pes != 0        )
+        self.pmt_pe_resolution  = np.divide(pmt_single_pe_rms                             ,
+                                            self.all_pmt_adc_to_pes                       ,
+                                            out   = np.zeros_like(self.all_pmt_adc_to_pes),
+                                            where = self.all_pmt_adc_to_pes != 0          )
         sipm_single_pe_rms      = DataSiPM.Sigma.values.astype(np.double)
-        self.sipm_pe_resolution = np.divide(sipm_single_pe_rms                     ,
-                                            self.sipm_adc_to_pes                   ,
-                                            out=np.zeros_like(self.sipm_adc_to_pes),
-                                            where=self.sipm_adc_to_pes != 0        )
+        self.sipm_pe_resolution = np.divide(sipm_single_pe_rms                         ,
+                                            self.sipm_adc_to_pes                       ,
+                                            out   = np.zeros_like(self.sipm_adc_to_pes),
+                                            where = self.sipm_adc_to_pes != 0          )
 
         sipm_x_masked = DataSiPM[DataSiPM.Active == 0].X.values
         sipm_y_masked = DataSiPM[DataSiPM.Active == 0].Y.values
