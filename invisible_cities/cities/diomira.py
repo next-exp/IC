@@ -22,6 +22,7 @@ from .  base_cities             import MonteCarloCity
 from .  base_cities             import EventLoop
 
 
+
 class Diomira(MonteCarloCity):
     """
     The city of DIOMIRA simulates:

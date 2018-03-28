@@ -17,7 +17,7 @@ DAQ_GAIN = 1.25
 NBITS = 12
 LSB = 2 * units.V / 2 ** NBITS / DAQ_GAIN
 NOISE_I = LSB / (FEE_GAIN * DAQ_GAIN)
-NOISE_DAQ = 0.313 * units.mV
+NOISE_DAQ = 0.258 * units.mV
 
 C2 =    8 * units.nF
 C1 = 2714 * units.nF
@@ -29,7 +29,7 @@ f_mc = 1 / (1 * units.ns)
 f_LPF1 =  3 * units.MHZ
 f_LPF2 = 10 * units.MHZ
 ADC_TO_PES_LPF = 24.1  # After LPF, comes out from spe area
-ADC_TO_PES     = 23.1
+ADC_TO_PES     = 18.71
 OFFSET = 2500  # offset adc
 CEILING = 4096  # ceiling of adc
 
@@ -129,13 +129,13 @@ def spe_pulse_train(spe,
     return spe_pulse
 
 
-def spe_pulse_from_vector(spe, cnt):
+def spe_pulse_from_vector(spe, cnt, norm=1.):
     """
     input: an instance of spe
     Returns a train of SPE pulses corresponding to vector cnt
     """
 
-    spe_pulse = signal.convolve(cnt[0:-len(spe.spe)+1], spe.spe)
+    spe_pulse = signal.convolve(cnt[:-len(spe.spe) + 1], spe.spe * norm)
     return spe_pulse
 
 
@@ -173,7 +173,6 @@ class FEE:
         self.coeff_c = self.freq_zero / (self.f_sample * np.pi)
 
         DataPMT = DB.DataPMT(run_number)
-
         self.coeff_blr_pmt = DataPMT.coeff_blr.values
         self.freq_LHPFd_pmt = self.coeff_blr_pmt / np.pi
         self.coeff_c_pmt = DataPMT.coeff_c.values
@@ -187,6 +186,7 @@ class FEE:
         self.LSB = lsb
         self.voltsToAdc = self.LSB / units.volt
         self.DAQnoise_rms = noise_DAQ_rms
+        
 
     def __str__(self):
         s = """
