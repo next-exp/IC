@@ -111,3 +111,4 @@ order by SensorID, BinEnergyPes;'''.format(abs(run_number))
     noise = np.array(data).reshape(nsipms, nbins)
 
     return noise, noise_bins, baselines
+
