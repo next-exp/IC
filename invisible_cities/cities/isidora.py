@@ -75,7 +75,7 @@ class Isidora(DeconvolutionCity):
             write.pmt (CWF)
             write.sipm(sipmrwf[evt])
             if self.monte_carlo:
-                write.mc(mc_info, self.cnt.n_events_tot)
+                write.mc(mc_info, event)
 
     def get_writers(self, h5out):
         RWF = partial(rwf_writer,  h5out,   group_name='BLR')
