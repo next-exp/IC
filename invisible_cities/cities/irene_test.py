@@ -21,7 +21,9 @@ from pytest import fixture
 
 from .. core                import system_of_units as units
 from .. core.configure      import configure
+from .. core.configure      import all as all_events
 from .. core.testing_utils  import exactly
+from .. core.testing_utils  import assert_tables_equality
 from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
@@ -421,3 +423,32 @@ def test_irene_split_trigger(config_tmpdir, ICDIR, s12params):
             evt_out2 = h5out2.root.Run.events[0][0]
             np.testing.assert_array_equal(evt_in1, evt_out1)
             np.testing.assert_array_equal(evt_in2, evt_out2)
+
+
+def test_irene_exact_result(ICDATADIR, output_tmpdir):
+    file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
+    file_out    = os.path.join(output_tmpdir,                        "exact_result_irene.h5")
+    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
+
+    conf = configure("irene invisible_cities/config/irene.conf".split())
+    conf.update(dict(run_number   = 0,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     event_range  = all_events))
+
+    Irene(**conf).run()
+
+    tables = ("DeconvParams/DeconvParams",
+                        "MC/extents"     ,      "MC/hits"   ,    "MC/particles", "MC/generators",
+                     "PMAPS/S1"          ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
+                     "PMAPS/S1Pmt"       ,   "PMAPS/S2Pmt"  ,
+                       "Run/events"      ,     "Run/runInfo",
+                   "Trigger/events"      , "Trigger/trigger")
+    with tb.open_file(true_output)  as true_output_file:
+        with tb.open_file(file_out) as      output_file:
+            print(true_output_file)
+            print(     output_file)
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
