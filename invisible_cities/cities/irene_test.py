@@ -118,8 +118,9 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params, thr_sipm_type, t
 
             # check events numbers & timestamps
             evts_in     = h5in .root.Run.events[:nactual]
-            evts_out_u8 = h5out.root.Run.events[:nactual]
+            evts_out_i4 = h5out.root.Run.events[:nactual]
 
+            evts_out_u8 = evts_out_i4.astype([('evt_number', '<u8'), ('timestamp', '<u8')])
             np.testing.assert_array_equal(evts_in, evts_out_u8)
 
 
