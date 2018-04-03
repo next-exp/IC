@@ -1,12 +1,15 @@
 import os
 
 import numpy  as np
+import tables as tb
 
 from . dorothea import Dorothea
 
-from .. io.dst_io import load_dst
-from .. core.testing_utils    import assert_dataframes_close
-from .. core.configure     import configure
+from .. io.dst_io            import load_dst
+from .. core.testing_utils   import assert_dataframes_close
+from .. core.testing_utils   import assert_tables_equality
+from .. core.configure       import configure
+from .. core.configure       import all as all_events
 from .. core.system_of_units import pes, mm, mus, ns
 
 
@@ -134,3 +137,25 @@ def test_dorothea_event_not_found(ICDATADIR, output_tmpdir):
     dorothea.run()
     cnt = dorothea.end()
     assert cnt.n_empty_pmaps == 1
+
+
+def test_dorothea_exact_result(ICDATADIR, output_tmpdir):
+    file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
+    file_out    = os.path.join(output_tmpdir,                      "exact_result_dorothea.h5")
+    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.KDST.h5")
+
+    conf = configure("dorothea invisible_cities/config/dorothea.conf".split())
+    conf.update(dict(run_number   = 0,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     event_range  = all_events))
+
+    Dorothea(**conf).run()
+
+    tables = ("DST/Events",)
+    with tb.open_file(true_output)  as true_output_file:
+        with tb.open_file(file_out) as      output_file:
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
