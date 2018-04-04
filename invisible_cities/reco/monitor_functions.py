@@ -47,6 +47,14 @@ def pmap_bins(config_dict):
     var_bins      ['S2_XYSiPM']           = var_bins  ['S2_XSiPM']  + var_bins  ['S2_YSiPM']
     var_labels    ['S2_XYSiPM']           = var_labels['S2_XSiPM']  + var_labels['S2_YSiPM']
 
+    for i in range(config_dict['nPMT']):
+        var_bins  [f'PMT{i}_S2_Energy'] =               var_bins  ['S2_Energy']
+        var_bins  [f'PMT{i}_S2_Height'] =               var_bins  ['S2_Height']
+        var_bins  [f'PMT{i}_S2_Time'  ] =               var_bins  ['S2_Time'  ]
+        var_labels[f'PMT{i}_S2_Energy'] = [f'PMT{i} ' + var_labels['S2_Energy'][0]]
+        var_labels[f'PMT{i}_S2_Height'] = [f'PMT{i} ' + var_labels['S2_Height'][0]]
+        var_labels[f'PMT{i}_S2_Time'  ] = [f'PMT{i} ' + var_labels['S2_Time'  ][0]]
+
     del var_bins['S2_XSiPM']
     del var_bins['S2_YSiPM']
 
@@ -109,6 +117,20 @@ def fill_pmap_var_2d(var_dict, ptype):
         var_dict[ptype + '_XYSiPM']           = np.array([var_dict[ptype + '_XSiPM'], var_dict[ptype + '_YSiPM']])
 
 
+def fill_pmt_var(speaks, var_dict):
+    for speak in speaks:
+        pmts     = speak.pmts
+        times    = speak.times
+        energies = pmts .sum_over_times
+        heights  = np.max             (pmts.all_waveforms, axis=1)
+        times    = np.apply_along_axis(lambda wf: times[np.argmax(wf)], axis=1, arr=pmts.all_waveforms) / units.mus
+
+        for i in range(len(pmts.all_waveforms)):
+            var_dict['PMT' + str(i) + '_S2_Energy'].append(energies[i])
+            var_dict['PMT' + str(i) + '_S2_Height'].append(heights [i])
+            var_dict['PMT' + str(i) + '_S2_Time'  ].append(times   [i])
+
+
 def fill_pmap_var(pmap, sipm_db):
     var = defaultdict(list)
 
@@ -116,6 +138,7 @@ def fill_pmap_var(pmap, sipm_db):
     fill_pmap_var_1d(pmap.s2s, var, 'S2', sipm_db)
     fill_pmap_var_2d(var, 'S1')
     fill_pmap_var_2d(var, 'S2')
+    fill_pmt_var    (pmap.s2s, var)
 
     del var['S2_XSiPM']
     del var['S2_YSiPM']
