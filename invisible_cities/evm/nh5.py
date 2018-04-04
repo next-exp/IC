@@ -7,7 +7,7 @@ class RunInfo(tb.IsDescription):
 
 
 class EventInfo(tb.IsDescription):
-    evt_number = tb.UInt64Col(shape=(), pos=0)
+    evt_number = tb.Int32Col(shape=(), pos=0)
     timestamp  = tb.UInt64Col(shape=(), pos=1)
 
 
@@ -34,9 +34,9 @@ class MCExtentInfo(tb.IsDescription):
     """Store the last row of each table as metadata using
     Pytables.
     """
-    evt_number    = tb.Int16Col(pos=0)
-    last_hit      = tb.Int16Col(pos=1)
-    last_particle = tb.Int16Col(pos=2)
+    evt_number    = tb.Int32Col(pos=0)
+    last_hit      = tb.UInt64Col(pos=1)
+    last_particle = tb.UInt64Col(pos=2)
 
 
 class MCHitInfo(tb.IsDescription):
