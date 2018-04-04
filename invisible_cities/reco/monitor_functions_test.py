@@ -98,6 +98,7 @@ def test_pmap_bins():
                  'S1_Width_bins'    : [   0,     6, 3],
                  'S1_Time_bins'     : [   0,     5, 4],
                  'S2_Energy_bins'   : [   0, 15000, 2],
+                 'S2_Height_bins'   : [   0, 15000, 2],
                  'S2_XSiPM_bins'    : [-100,   100, 4],
                  'S2_YSiPM_bins'    : [-100,   100, 4],
                  'S2_Time_bins'     : [   5,    10, 4],
@@ -106,21 +107,25 @@ def test_pmap_bins():
                  'S1_Width_labels'  : [ 'S1 width (mus)'],
                  'S1_Time_labels'   : [  'S1 time (mus)'],
                  'S2_Energy_labels' : ['S2 energy (pes)'],
+                 'S2_Height_labels' : ['S2 energy (pes)'],
                  'S2_XSiPM_labels'  : [         'X (mm)'],
                  'S2_YSiPM_labels'  : [         'Y (mm)'],
-                 'S2_Time_labels'   : [  'S2 time (mus)']}
+                 'S2_Time_labels'   : [  'S2 time (mus)'],
+                 'nPMT'             : 12}
 
     test_bins = {'S1_Energy': [   0,     5,   10            ],
                  'S1_Width' : [   0,     2,    4,    6      ],
                  'S1_Time'  : [   0, 1.250,  2.5, 3.75,   5.],
+                 'S2_Time'  : [   0, 1.250,  2.5, 3.75,   5.],
                  'S2_Energy': [   0, 7.5e3, 15e3            ],
+                 'S2_Height': [   0, 7.5e3, 15e3            ],
                  'S2_XSiPM' : [-100,   -50,    0,   50, 100.],
                  'S2_YSiPM' : [-100,   -50,    0,   50, 100.],
                  'S2_Time'  : [   5,  6.25,  7.5, 8.75,  10.]}
 
     out_bins, out_labels = monf.pmap_bins(test_dict)
 
-    list_var = ['S1_Energy', 'S1_Width', 'S1_Time', 'S2_Energy', 'S2_Time']
+    list_var = ['S1_Energy', 'S1_Width', 'S1_Time', 'S2_Time', 'S2_Energy', 'S2_Height']
 
     for var_name in list_var:
         assert np.allclose(out_bins[var_name], test_bins[var_name])
@@ -141,23 +146,42 @@ def test_pmap_bins():
     assert np.allclose(out_bins['S2_XYSiPM']          [0], test_bins['S2_XSiPM' ])
     assert np.allclose(out_bins['S2_XYSiPM']          [1], test_bins['S2_YSiPM' ])
 
-    assert out_labels['S1_Energy_S1_Width'][0]  == test_dict['S1_Energy_labels'][0]
-    assert out_labels['S1_Energy_S1_Width'][1]  == test_dict['S1_Width_labels' ][0]
+    assert out_labels['S1_Energy_S1_Width'] [0] == test_dict['S1_Energy_labels'][0]
+    assert out_labels['S1_Energy_S1_Width'] [1] == test_dict['S1_Width_labels' ][0]
 
-    assert out_labels['S1_Time_S1_Energy'] [0]  == test_dict['S1_Time_labels'  ][0]
-    assert out_labels['S1_Time_S1_Energy'] [1]  == test_dict['S1_Energy_labels'][0]
+    assert out_labels['S1_Time_S1_Energy']  [0] == test_dict['S1_Time_labels'  ][0]
+    assert out_labels['S1_Time_S1_Energy']  [1] == test_dict['S1_Energy_labels'][0]
+
+    assert out_labels['S2_Time_S2_Energy']  [0] == test_dict['S2_Time_labels'  ][0]
+    assert out_labels['S2_Time_S2_Energy']  [1] == test_dict['S2_Energy_labels'][0]
 
     assert out_labels['S2_Energy_S1_Energy'][0] == test_dict['S2_Energy_labels'][0]
     assert out_labels['S2_Energy_S1_Energy'][1] == test_dict['S1_Energy_labels'][0]
 
+    assert out_labels['S2_Energy_S2_Height'][0] == test_dict['S2_Energy_labels'][0]
+    assert out_labels['S2_Energy_S2_Height'][1] == test_dict['S2_Height_labels'][0]
+
     assert out_labels['S2_XYSiPM']          [0] == test_dict['S2_XSiPM_labels' ][0]
     assert out_labels['S2_XYSiPM']          [1] == test_dict['S2_YSiPM_labels' ][0]
 
-    for k in out_bins:
-        assert k in ['S1_Energy', 'S1_Width', 'S1_Time', 'S2_Energy', 'S2_Time',
-                     'S1_Energy_S1_Width', 'S1_Time_S1_Energy', 'S2_Time_S2_Energy',
-                     'S2_Energy_S1_Energy', 'S2_XYSiPM']
+    variable_names = ['S1_Energy', 'S1_Width', 'S1_Time', 'S2_Energy', 'S2_Time',
+                     'S2_Height', 'S1_Energy_S1_Width', 'S1_Time_S1_Energy',
+                     'S2_Time_S2_Energy', 'S2_Energy_S1_Energy', 'S2_Energy_S2_Height',
+                     'S2_XYSiPM']
 
+    for i in range(test_dict['nPMT']):
+        energy_name = f'PMT{i}_S2_Energy'
+        height_name = f'PMT{i}_S2_Height'
+        time_name   = f'PMT{i}_S2_Time'
+        variable_names.append(energy_name)
+        variable_names.append(height_name)
+        variable_names.append(  time_name)
+        assert out_labels[energy_name] == [f'PMT{i} ' + test_dict['S2_Energy_labels'][0]]
+        assert out_labels[height_name] == [f'PMT{i} ' + test_dict['S2_Height_labels'][0]]
+        assert out_labels[  time_name] == [f'PMT{i} ' + test_dict['S2_Time_labels'  ][0]]
+
+    for k in out_bins:
+        assert k in variable_names
 
 def test_fill_pmap_histos(ICDATADIR):
     test_config_dict = {'S1_Number_bins'   : [-0.50,   10.50,   11],
@@ -198,7 +222,9 @@ def test_fill_pmap_histos(ICDATADIR):
                         'S2_IdSiPM_labels' : [             'SiPM id'],
                         'S2_QSiPM_labels'  : [   'SiPM charge (pes)'],
                         'S2_XSiPM_labels'  : [              'X (mm)'],
-                        'S2_YSiPM_labels'  : [              'Y (mm)']}
+                        'S2_YSiPM_labels'  : [              'Y (mm)'],
+
+                        'nPMT'             : 12}
 
     test_infile = "Kr_pmaps_run4628.h5"
     test_infile = os.path.join(ICDATADIR, test_infile)
