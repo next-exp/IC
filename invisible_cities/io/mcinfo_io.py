@@ -27,6 +27,7 @@ class mc_info_writer:
         self.compression = compression
         self._create_tables()
         self.reset()
+        self.current_tables = None
 
     def reset(self):
         # last visited row
@@ -62,6 +63,9 @@ class mc_info_writer:
 
     def __call__(self, mctables: (tb.Table, tb.Table, tb.Table),
                  evt_number: int):
+        if mctables is not self.current_tables:
+            self.current_tables = mctables
+            self.reset()
 
         extents = mctables[0]
         for iext in range(self.last_row, len(extents)):
