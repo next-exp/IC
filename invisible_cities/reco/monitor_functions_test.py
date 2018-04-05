@@ -109,9 +109,9 @@ def test_fill_pmt_var(pmaps):
         npmts    = len(pmts.all_waveforms)
 
         for j in range(npmts):
-            assert var_dict['PMT' + str(j) + '_S2_Energy'][i] == energies[j]
-            assert var_dict['PMT' + str(j) + '_S2_Height'][i] == heights [j]
-            assert var_dict['PMT' + str(j) + '_S2_Time'  ][i] == times   [j]
+            assert var_dict[f'PMT{j}_S2_Energy'][i] == energies[j]
+            assert var_dict[f'PMT{j}_S2_Height'][i] == heights [j]
+            assert var_dict[f'PMT{j}_S2_Time'  ][i] == times   [j]
 
 
 def test_pmap_bins():
