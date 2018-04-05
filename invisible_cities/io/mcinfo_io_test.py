@@ -26,7 +26,6 @@ def test_mc_info_writer_non_consecutive_events(output_tmpdir, ICDATADIR, krypton
         with tb.open_file(fileout, 'w') as h5out:
 
             mc_writer  = mc_info_writer(h5out)
-            mc_extents = h5in.root.MC.extents
             events_in  = np.unique(h5in.root.MC.extents[:]['evt_number'])
 
             mc_info = get_mc_info(h5in)
