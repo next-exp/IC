@@ -75,6 +75,34 @@ def test_mc_info_writer_output_non_consecutive_events(output_tmpdir, ICDATADIR, 
                 assert             partr['particle_name'] == filtered_partr['particle_name']
 
 
+def test_mc_info_writer_reset(output_tmpdir, ICDATADIR, krypton_MCRD_file):
+    filein  = os.path.join(ICDATADIR, krypton_MCRD_file)
+    fileout = os.path.join(output_tmpdir, "test_mc_info_writer_reset.h5")
+
+    with tb.open_file(filein) as h5in:
+        with tb.open_file(fileout, 'w') as h5out:
+
+            mc_writer  = mc_info_writer(h5out)
+            events_in  = np.unique(h5in.root.MC.extents[:]['evt_number'])
+
+            assert mc_writer.last_row              == 0
+            assert mc_writer.last_written_hit      == 0
+            assert mc_writer.last_written_particle == 0
+            assert mc_writer.first_extent_row      == True
+
+            mc_writer(get_mc_info(h5in), events_in[0])
+            assert mc_writer.last_row              == 1
+            assert mc_writer.last_written_hit      == 7
+            assert mc_writer.last_written_particle == 1
+            assert mc_writer.first_extent_row      == False
+
+            mc_writer.reset()
+            assert mc_writer.last_row              == 0
+            assert mc_writer.last_written_hit      == 0
+            assert mc_writer.last_written_particle == 0
+            assert mc_writer.first_extent_row      == True
+
+
 def test_load_mchits_correct_number_of_hits(mc_all_hits_data):
     efile, number_of_hits, evt_number = mc_all_hits_data
     mchits_dict = load_mchits(efile)
