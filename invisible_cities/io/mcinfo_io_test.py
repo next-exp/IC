@@ -18,7 +18,7 @@ parametrize = mark.parametrize
 @parametrize('skipped_evt, out_filename',
             ((0, 'test_mcinfo_skip_evt0.h5'),
              (1, 'test_mcinfo_skip_evt1.h5')))
-def test_non_consecutive_events(config_tmpdir, ICDATADIR, krypton_MCRD_file, skipped_evt, out_filename):
+def test_mc_info_writer_non_consecutive_events(config_tmpdir, ICDATADIR, krypton_MCRD_file, skipped_evt, out_filename):
     filein  = os.path.join(ICDATADIR, krypton_MCRD_file)
     fileout = os.path.join(config_tmpdir, out_filename)
 
@@ -47,7 +47,7 @@ def test_non_consecutive_events(config_tmpdir, ICDATADIR, krypton_MCRD_file, ski
             (('test_mcinfo_skip_evt0.h5', 1),
              ('test_mcinfo_skip_evt1.h5', 0),
              ('test_mcinfo_skip_evt1.h5', 2)))
-def test_output_non_consecutive_events(config_tmpdir, ICDATADIR, krypton_MCRD_file, file_to_check, evt_to_be_read):
+def test_mc_info_writer_output_non_consecutive_events(config_tmpdir, ICDATADIR, krypton_MCRD_file, file_to_check, evt_to_be_read):
         filein  = os.path.join(ICDATADIR, krypton_MCRD_file)
         filecheck = os.path.join(config_tmpdir, file_to_check)
 
