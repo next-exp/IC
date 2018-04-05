@@ -10,8 +10,8 @@ from .. reco             import histogram_functions as histf
 from .. database         import load_db             as dbf
 from .. core             import system_of_units     as units
 
-from   .. evm.pmaps_test import pmaps
-from   .. evm.pmaps_test import sensor_responses
+from .. evm.pmaps_test   import pmaps
+from .. evm.pmaps_test   import sensor_responses
 
 
 @given(pmaps())
@@ -38,7 +38,6 @@ def test_fill_pmap_var_1d(pmaps):
         assert     var_dict['S2_Energy']  [i] == speak.total_energy
         assert     var_dict['S2_Width']   [i] == speak.width / units.mus
         assert     var_dict['S2_Height']  [i] == speak.height
-        assert     var_dict['S2_Energy']  [i] == speak.total_energy
         assert     var_dict['S2_Charge']  [i] == speak.total_charge
         assert     var_dict['S2_Time']    [i] == speak.time_at_max_energy / units.mus
         assert     var_dict['S2_SingleS1'][i] == len(s1s)
@@ -91,6 +90,28 @@ def test_fill_pmap_var_2d(pmaps):
         assert np.allclose(var_dict['S2_XYSiPM'][0, counter:counter + len(sipm_ids)], data_sipm.X.values[speak.sipms.ids].tolist())
         assert np.allclose(var_dict['S2_XYSiPM'][1, counter:counter + len(sipm_ids)], data_sipm.Y.values[speak.sipms.ids].tolist())
         counter += len(sipm_ids)
+
+
+@given(pmaps(pmt_ids=np.arange(0,11,1)))
+def test_fill_pmt_var(pmaps):
+    var_dict    = defaultdict(list)
+    (_, s2s), _ = pmaps
+    data_sipm   = dbf.DataSiPM(4670)
+
+    monf.fill_pmt_var(s2s, var_dict)
+
+    for i, speak in enumerate(s2s):
+        pmts     = speak.pmts
+        times    = speak.times
+        energies = pmts .sum_over_times
+        heights  = np.max             (pmts.all_waveforms, axis=1)
+        times    = np.apply_along_axis(lambda wf: times[np.argmax(wf)], axis=1, arr=pmts.all_waveforms) / units.mus
+        npmts    = len(pmts.all_waveforms)
+
+        for j in range(npmts):
+            assert var_dict['PMT' + str(j) + '_S2_Energy'][i] == energies[j]
+            assert var_dict['PMT' + str(j) + '_S2_Height'][i] == heights [j]
+            assert var_dict['PMT' + str(j) + '_S2_Time'  ][i] == times   [j]
 
 
 def test_pmap_bins():
