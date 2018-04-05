@@ -103,6 +103,26 @@ def test_mc_info_writer_reset(output_tmpdir, ICDATADIR, krypton_MCRD_file):
             assert mc_writer.first_extent_row      == True
 
 
+def test_mc_info_writer_automatic_reset(output_tmpdir, ICDATADIR, krypton_MCRD_file, electron_MCRD_file):
+    fileout = os.path.join(output_tmpdir, "test_mc_info_writer_automatic_reset.h5")
+
+    with tb.open_file(fileout, "w") as h5out:
+        mc_writer  = mc_info_writer(h5out)
+
+        with tb.open_file(krypton_MCRD_file) as h5in:
+            events_in  = np.unique(h5in.root.MC.extents[:]['evt_number'])
+            mc_writer(get_mc_info(h5in), events_in[0])
+
+        # This would not be possible without automatic reset
+        with tb.open_file(electron_MCRD_file) as h5in:
+            events_in  = np.unique(h5in.root.MC.extents[:]['evt_number'])
+            mc_writer(get_mc_info(h5in), events_in[0])
+
+        assert h5out.root.MC.extents  [:].size ==  2
+        assert h5out.root.MC.hits     [:].size == 12
+        assert h5out.root.MC.particles[:].size ==  3
+
+
 def test_load_mchits_correct_number_of_hits(mc_all_hits_data):
     efile, number_of_hits, evt_number = mc_all_hits_data
     mchits_dict = load_mchits(efile)
