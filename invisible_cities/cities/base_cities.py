@@ -420,13 +420,6 @@ class RawCity(City):
                     dataVectors = DataVectors(pmt=pmtrwf, sipm=sipmrwf,
                                               mc=mc_info, events=events_info)
 
-                    if self.monte_carlo:
-                        # reset last rows read in order to read new table
-                        self.writers.mc.last_row              = 0
-                        self.writers.mc.last_written_hit      = 0
-                        self.writers.mc.last_written_particle = 0
-                        self.writers.mc.first_extent_row      = True
-
                     self.event_loop(NEVT, dataVectors)
                 elif self.raw_data_type == 'MCRD':
                     NEVT, pmtrd, sipmrd     = self.get_rd_vectors(h5in)
@@ -729,9 +722,6 @@ class PCity(City):
             with tb.open_file(filename) as h5in:
                 mc_info = None
                 if self.write_mc_info:
-                    # reset last row read in order to read new table
-                    self.writers.mc.last_row = 0
-
                     # Save time when we are not interested in mc tracks
                     mc_info = self.get_mc_info(h5in)
 
