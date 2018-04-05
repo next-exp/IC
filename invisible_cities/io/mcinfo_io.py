@@ -26,6 +26,9 @@ class mc_info_writer:
         self.h5file      = h5file
         self.compression = compression
         self._create_tables()
+        self.reset()
+
+    def reset(self):
         # last visited row
         self.last_row              = 0
         self.last_written_hit      = 0
@@ -313,6 +316,3 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
         all_events[evt_number] = current_event
 
     return all_events
-
-
-
