@@ -44,7 +44,8 @@ def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, gro
             saved_labels = [str(label)[2:-1].replace('\\\\', '\\') for label in getattr(file_group, histoname + "_labels")[:]]
 
             assert histoname in file_group
-            assert np.all     (a == b for a, b in zip(histogram.bins, getattr(file_group, histoname + "_bins")[:]))
+            assert                                len(histogram.bins) == len(getattr(file_group, histoname + "_bins")[:])
+            assert np.all     (a == b for a, b in zip(histogram.bins,        getattr(file_group, histoname + "_bins")[:]))
             assert np.allclose(histogram.data     , getattr(file_group, histoname              )[:])
             assert np.allclose(histogram.errors   , getattr(file_group, histoname + "_errors"  )[:])
             assert np.allclose(histogram.out_range, getattr(file_group, histoname + "_outRange")[:])
@@ -69,7 +70,8 @@ def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, gr
             saved_labels = [str(label)[2:-1].replace('\\\\', '\\') for label in getattr(file_group, histoname + "_labels")[:]]
 
             assert histoname in file_group
-            assert np.all     (a == b for a, b in zip(histogram.bins, getattr(file_group, histoname + "_bins")[:]))
+            assert                                len(histogram.bins) == len(getattr(file_group, histoname + "_bins")[:])
+            assert np.all     (a == b for a, b in zip(histogram.bins,        getattr(file_group, histoname + "_bins")[:]))
             assert np.allclose(histogram.data     , getattr(file_group, histoname              )[:])
             assert np.allclose(histogram.errors   , getattr(file_group, histoname + "_errors"  )[:])
             assert np.allclose(histogram.out_range, getattr(file_group, histoname + "_outRange")[:])
@@ -77,14 +79,13 @@ def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, gr
 
 
 @settings(suppress_health_check=(HealthCheck.too_slow,))
-@given   (histograms_lists(), text(characters, min_size=1), text(characters, min_size=1, max_size=1))
+@given   (histograms_lists(), text(characters, min_size=1), text(characters, min_size=1, max_size=1).filter(lambda x: x not in ["w", "a"]))
 def test_save_histomanager_to_file_raises_ValueError(output_tmpdir, histogram_list, group, write_mode):
     args, list_of_histograms = histogram_list
     histogram_manager        = HistoManager(list_of_histograms)
 
     file_out   = os.path.join      (output_tmpdir, 'test_save_histogram_manager.h5')
-    write_mode = write_mode.replace('w','')
-    write_mode = write_mode.replace('a','')
+
     with raises(ValueError):
         save_histomanager_to_file(histogram_manager, file_out, mode=write_mode, group=group)
 

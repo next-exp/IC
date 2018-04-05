@@ -126,9 +126,9 @@ def fill_pmt_var(speaks, var_dict):
         times    = np.apply_along_axis(lambda wf: times[np.argmax(wf)], axis=1, arr=pmts.all_waveforms) / units.mus
 
         for i in range(len(pmts.all_waveforms)):
-            var_dict['PMT' + str(i) + '_S2_Energy'].append(energies[i])
-            var_dict['PMT' + str(i) + '_S2_Height'].append(heights [i])
-            var_dict['PMT' + str(i) + '_S2_Time'  ].append(times   [i])
+            var_dict[f'PMT{i}_S2_Energy'].append(energies[i])
+            var_dict[f'PMT{i}_S2_Height'].append(heights [i])
+            var_dict[f'PMT{i}_S2_Time'  ].append(times   [i])
 
 
 def fill_pmap_var(pmap, sipm_db):
