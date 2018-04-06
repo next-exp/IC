@@ -423,7 +423,7 @@ class RawCity(City):
 
                     if self.monte_carlo:
                         # reset last rows read in order to read new table
-                        self.writers.mc.last_row              = 0
+                        self.writers.mc.last_row = 0
                         if not first_file_in_loop:
                             self.writers.mc.first_file = False
                         first_file_in_loop = False
@@ -432,6 +432,11 @@ class RawCity(City):
                     NEVT, pmtrd, sipmrd     = self.get_rd_vectors(h5in)
                     dataVectors = DataVectors(pmt=pmtrd,  sipm=sipmrd,
                                               mc=mc_info, events=events_info)
+
+                    self.writers.mc.last_row = 0
+                    if not first_file_in_loop:
+                        self.writers.mc.first_file = False
+                    first_file_in_loop = False
 
                     self.event_loop(NEVT, dataVectors)
                 else:
