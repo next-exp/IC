@@ -427,9 +427,6 @@ class RawCity(City):
                         if not first_file_in_loop:
                             self.writers.mc.first_file = False
                         first_file_in_loop = False
-                        #self.writers.mc.last_written_hit      = 0
-                        #self.writers.mc.last_written_particle = 0
-                        #self.writers.mc.first_extent_row      = True
                     self.event_loop(NEVT, dataVectors)
                 elif self.raw_data_type == 'MCRD':
                     NEVT, pmtrd, sipmrd     = self.get_rd_vectors(h5in)
@@ -719,6 +716,7 @@ class PCity(City):
         3. call event_loop
         """
 
+        first_file_in_loop = True
         for filename in self.input_files:
             if self.event_range_finished(): break
             print("Opening {filename}".format(**locals()), end="...\n")
@@ -734,7 +732,9 @@ class PCity(City):
                 if self.write_mc_info:
                     # reset last row read in order to read new table
                     self.writers.mc.last_row = 0
-
+                    if not first_file_in_loop:
+                        self.writers.mc.first_file = False
+                    first_file_in_loop = False
                     # Save time when we are not interested in mc tracks
                     mc_info = self.get_mc_info(h5in)
 
