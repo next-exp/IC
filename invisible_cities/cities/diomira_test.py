@@ -7,6 +7,7 @@ G. Martinez, J.A. Hernando, J.M Benlloch
 package: invisible cities. See release notes and licence
 """
 import os
+from os       import getenv
 import tables as tb
 import numpy  as np
 
@@ -169,3 +170,41 @@ def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdi
 
     with raises(ValueError):
         Diomira(**conf).run()
+
+
+def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
+        ICTDIR      = getenv('ICTDIR')
+        file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts*.MCRD.h5")
+        file_out    = os.path.join(output_tmpdir, "Kr83_nexus_v5_03_00_ACTIVE_7bar_6evts.RWF.h5")
+        second_file = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts_1.MCRD.h5")
+
+        nevents_per_file = 3
+
+        nrequired = 10
+        conf = configure('dummy invisible_cities/config/diomira.conf'.split())
+        conf.update(dict(run_number   = -4734,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     event_range  = (0, nrequired),
+                     tr_channels = [18,19]))
+
+        diomira = Diomira(**conf)
+        try:
+            diomira.run()
+        except IndexError:
+            raise
+
+        with tb.open_file(file_out) as h5out:
+            last_particle_list = h5out.root.MC.extents[:]['last_particle']
+            last_hit_list = h5out.root.MC.extents[:]['last_hit']
+
+            assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
+            assert all(x<y for x, y in zip(last_hit_list, last_hit_list[1:]))
+
+            with tb.open_file(second_file) as h5second:
+
+                nparticles_in_first_event = h5second.root.MC.extents[0]['last_particle'] + 1
+                nhits_in_first_event = h5second.root.MC.extents[0]['last_hit'] + 1
+
+                assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
+                assert last_hit_list[nevents_per_file] - last_hit_list[nevents_per_file - 1] == nhits_in_first_event
