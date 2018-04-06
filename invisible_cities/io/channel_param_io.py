@@ -2,14 +2,6 @@ import tables as tb
 from .. reco     import tbl_functions as tbl
 
 
-## A dictionary to define the structure of the output table
-## At initialization, the function specific entries will
-## be defined.
-calibration_parameters = {
-    'SensorID' : tb.UInt32Col(pos=0)
-    }
-
-
 ## Suggested parameter list
 ## Useful for generic/default fit functions
 generic_params = ["normalization", "poisson_mu"    ,
@@ -18,15 +10,7 @@ generic_params = ["normalization", "poisson_mu"    ,
                   "fit_limits"   , "n_gaussians_chi2" ]
 
 
-def create_param_table(h5out, sensor_type, func_name, param_names, covariance=None):
-    ## First sort out the column names:
-    for i, par in enumerate(param_names):
-        calibration_parameters[par] = tb.Float32Col(pos=i + 1, shape=2)
-
-    if covariance:
-        # We're saving the covariance matrix too
-        calibration_parameters["covariance"] = tb.Float32Col(pos=len(param_names)+1,
-                                                             shape=covariance   )
+def create_param_table(h5out, sensor_type, func_name, parameter_dict):
     
     ## If the group 'FITPARAMS' doesn't already exist, create it
     try:                       PARAM_group = getattr(h5out.root, "FITPARAMS")
@@ -35,7 +19,7 @@ def create_param_table(h5out, sensor_type, func_name, param_names, covariance=No
     ## Define a table for this fitting function
     param_table = h5out.create_table(PARAM_group,
                                      "FIT_"+sensor_type+"_"+func_name,
-                                     calibration_parameters,
+                                     parameter_dict,
                                      "Calibration parameters",
                                      tbl.filters("NOCOMPR"))
     return param_table
@@ -64,9 +48,18 @@ def channel_param_writer(h5out, *, sensor_type,
     param_names : A list of parameter names
     covariance : None or a tuple with the shape of the covariance matrix
     """
+
+    parameter_dict = {'SensorID' : tb.UInt32Col(pos=0)}
+    for i, par in enumerate(param_names):
+        parameter_dict[par] = tb.Float32Col(pos=i + 1, shape=2)
+
+    if covariance:
+        # We're saving the covariance matrix too
+        parameter_dict["covariance"] = tb.Float32Col(pos=len(param_names)+1,
+                                                     shape=covariance   )
     
     param_table = create_param_table(h5out, sensor_type,
-                                     func_name, param_names, covariance)
+                                     func_name, parameter_dict)
     def store_channel_fit(sensor_id, fit_result):
         """
         input:
