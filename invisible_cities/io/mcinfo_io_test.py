@@ -86,21 +86,12 @@ def test_mc_info_writer_reset(output_tmpdir, ICDATADIR, krypton_MCRD_file):
             events_in  = np.unique(h5in.root.MC.extents[:]['evt_number'])
 
             assert mc_writer.last_row              == 0
-            assert mc_writer.last_written_hit      == 0
-            assert mc_writer.last_written_particle == 0
-            assert mc_writer.first_extent_row      == True
 
             mc_writer(get_mc_info(h5in), events_in[0])
             assert mc_writer.last_row              == 1
-            assert mc_writer.last_written_hit      == 7
-            assert mc_writer.last_written_particle == 1
-            assert mc_writer.first_extent_row      == False
 
             mc_writer.reset()
             assert mc_writer.last_row              == 0
-            assert mc_writer.last_written_hit      == 0
-            assert mc_writer.last_written_particle == 0
-            assert mc_writer.first_extent_row      == True
 
 
 def test_mc_info_writer_automatic_reset(output_tmpdir, ICDATADIR, krypton_MCRD_file, electron_MCRD_file):
