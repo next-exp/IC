@@ -404,6 +404,7 @@ class RawCity(City):
         4. calls event_loop passing a DataVector which holds rwf, mc and event info
 
         """
+        first_file_in_loop = True
         for filename in self.input_files:
             print('Reading file...')
             if self.event_range_finished(): break
@@ -423,10 +424,12 @@ class RawCity(City):
                     if self.monte_carlo:
                         # reset last rows read in order to read new table
                         self.writers.mc.last_row              = 0
-                        self.writers.mc.last_written_hit      = 0
-                        self.writers.mc.last_written_particle = 0
-                        self.writers.mc.first_extent_row      = True
-
+                        if not first_file_in_loop:
+                            self.writers.mc.first_file = False
+                        first_file_in_loop = False
+                        #self.writers.mc.last_written_hit      = 0
+                        #self.writers.mc.last_written_particle = 0
+                        #self.writers.mc.first_extent_row      = True
                     self.event_loop(NEVT, dataVectors)
                 elif self.raw_data_type == 'MCRD':
                     NEVT, pmtrd, sipmrd     = self.get_rd_vectors(h5in)
