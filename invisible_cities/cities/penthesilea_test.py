@@ -148,3 +148,38 @@ def test_penthesilea_event_not_found(ICDATADIR, output_tmpdir):
     penthesilea.run()
     cnt = penthesilea.end()
     assert cnt.n_empty_pmaps == 1
+
+
+def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
+        ICTDIR      = os.getenv('ICTDIR')
+        file_in     = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts_*.h5")
+        file_out    = os.path.join(output_tmpdir, "Tl_v1_00_05_nexus_v5_02_08_7bar_hits.h5")
+        second_file = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts_1.h5")
+
+        nrequired = 10
+        conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
+        conf.update(dict(run_number   = -4735,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     event_range  = (0, nrequired)))
+
+        penthe = Penthesilea(**conf)
+        penthe.run()
+
+        with tb.open_file(file_out) as h5out:
+            last_particle_list = h5out.root.MC.extents[:]['last_particle']
+            last_hit_list = h5out.root.MC.extents[:]['last_hit']
+
+            assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
+            assert all(x<y for x, y in zip(last_hit_list, last_hit_list[1:]))
+
+            with tb.open_file(second_file) as h5second:
+
+                first_event_out = 4
+                nparticles_in_first_event_out = h5second.root.MC.extents[first_event_out]['last_particle'] - h5second.root.MC.extents[first_event_out - 1]['last_particle']
+                nhits_in_first_event_out = h5second.root.MC.extents[first_event_out]['last_hit'] - h5second.root.MC.extents[first_event_out - 1]['last_hit']
+
+                nevents_out_in_first_file = 5
+
+                assert last_particle_list[nevents_out_in_first_file] - last_particle_list[nevents_out_in_first_file - 1] == nparticles_in_first_event_out
+                assert last_hit_list[nevents_out_in_first_file] - last_hit_list[nevents_out_in_first_file - 1] == nhits_in_first_event_out
