@@ -33,7 +33,7 @@
          ("M-x"     . helm-M-x)
          ("C-x C-f" . helm-find-files)
          ("M-y"     . helm-show-kill-ring)
-         ("C-x b"   . ido-switch-buffer)
+         ("C-x b"   . helm-mini)
 
          :map helm-map
          ;; ("<tab>" . helm-execute-persistent-action) ; Bug: gets
