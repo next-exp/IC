@@ -35,8 +35,6 @@
          ("M-y"     . helm-show-kill-ring)
          ("C-x b"   . ido-switch-buffer)
 
-         :unbind "C-x c"                ; Too similar to C-x C-c !
-
          :map helm-map
          ;; ("<tab>" . helm-execute-persistent-action) ; Bug: gets
          ;; bound in global map ! so I'm doing it below with
