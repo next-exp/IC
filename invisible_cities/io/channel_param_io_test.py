@@ -5,8 +5,12 @@ import tables as tb
 
 from numpy.testing import assert_allclose
 
-from . channel_param_io import       generic_params
-from . channel_param_io import channel_param_writer
+from .. reco     import tbl_functions as tbl
+
+from . channel_param_io import        generic_params
+from . channel_param_io import      store_fit_values
+from . channel_param_io import  channel_param_writer
+from . channel_param_io import make_table_dictionary
 
 
 def test_generic_parameters(config_tmpdir):
@@ -55,4 +59,41 @@ def test_simple_parameters_with_covariance(config_tmpdir):
 
         file_cov = dataIn.root.FITPARAMS.FIT_test_simple[0]["covariance"]
         assert_allclose(file_cov, cov)
+
+
+def test_make_table_dictionary():
+
+    param_names = ["par0", "par1", "par2"]
     
+    par_dict = make_table_dictionary(param_names)
+    
+    # Add the sensor id to the test list
+    param_names = ["SensorID"] + param_names
+
+    assert param_names == list(par_dict.keys())
+
+
+def test_store_fit_values(config_tmpdir):
+    filename = os.path.join(config_tmpdir, 'test_param.h5')
+
+    dummy_dict = {'SensorID' : tb.UInt32Col(pos=0),
+                  'par0' : tb.UInt32Col(pos=1)}
+
+    with tb.open_file(filename, 'w') as dataOut:
+        PARAM_group = dataOut.create_group(dataOut.root, "testgroup")
+
+        param_table = dataOut.create_table(PARAM_group,
+                                           "testtable",
+                                           dummy_dict,
+                                           "test parameters",
+                                           tbl.filters("NOCOMPR"))
+        
+        store_fit_values(param_table, 0, {'par0' : 22})
+
+    with tb.open_file(filename) as dataIn:
+
+        tblRead = dataIn.root.testgroup.testtable
+        assert tblRead.nrows == 1
+        assert len(tblRead.colnames) == len(dummy_dict)
+        assert tblRead.colnames == list(dummy_dict.keys())
+
