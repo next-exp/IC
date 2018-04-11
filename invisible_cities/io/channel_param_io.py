@@ -35,6 +35,25 @@ def store_fit_values(param_table, sensor_id, fit_result):
     param_table.flush()
 
 
+def make_table_dictionary(param_names, covariance=None):
+    """
+    returns a dictionary to be used in the
+    table definition.
+    """
+
+    parameter_dict = {'SensorID' : tb.UInt32Col(pos=0)}
+    for i, par in enumerate(param_names):
+        parameter_dict[par] = tb.Float32Col(pos=i + 1, shape=2)
+
+    if covariance:
+        # We're saving the covariance matrix too
+        cov_pos = len(param_names) + 1
+        parameter_dict["covariance"] = tb.Float32Col(pos=cov_pos,
+                                                     shape=covariance)
+
+    return parameter_dict
+
+
 def channel_param_writer(h5out, *, sensor_type,
                          func_name, param_names,
                          covariance=None):
@@ -49,14 +68,7 @@ def channel_param_writer(h5out, *, sensor_type,
     covariance : None or a tuple with the shape of the covariance matrix
     """
 
-    parameter_dict = {'SensorID' : tb.UInt32Col(pos=0)}
-    for i, par in enumerate(param_names):
-        parameter_dict[par] = tb.Float32Col(pos=i + 1, shape=2)
-
-    if covariance:
-        # We're saving the covariance matrix too
-        parameter_dict["covariance"] = tb.Float32Col(pos=len(param_names)+1,
-                                                     shape=covariance   )
+    parameter_dict = make_table_dictionary(param_names, covariance)
     
     param_table = create_param_table(h5out, sensor_type,
                                      func_name, parameter_dict)
