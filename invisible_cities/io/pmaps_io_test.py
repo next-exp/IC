@@ -7,6 +7,7 @@ from pytest import approx
 
 import tables as tb
 import numpy  as np
+import pandas as pd
 
 from ..core.testing_utils import assert_PMap_equality
 from ..core.testing_utils import assert_dataframes_equal
@@ -231,3 +232,41 @@ def test_build_sipm_responses(KrMC_pmaps_dfs):
         sipm_r = pmpio.build_sipm_responses(df_peak)
 
         assert sipm_r.all_waveforms.flatten() == approx(df_peak.ene.values)
+
+
+def test_build_pmt_responses_unordered():
+    data_ipmt = pd.DataFrame(dict(
+    event = np.zeros(10),
+    peak  = np.zeros(10),
+    npmt  = np.array([1, 1, 3, 3, 2, 2, 0, 0, 4, 4]),
+    ene   = np.arange(10)))
+
+    data_pmt = pd.DataFrame(dict(
+    event = np.zeros (2),
+    peak  = np.zeros (2),
+    time  = np.arange(2),
+    ene   = np.array ([20, 25])))
+
+
+    expected_pmts = np.array([1, 3, 2, 0, 4])
+    expected_enes = np.arange(10)
+    for (_, peak_pmt), (_, peak_ipmt) in zip(data_pmt .groupby(("event", "peak")),
+                                             data_ipmt.groupby(("event", "peak"))):
+        _, pmt_r = pmpio.build_pmt_responses(peak_pmt, peak_ipmt)
+        assert pmt_r.ids                     == exactly(expected_pmts)
+        assert pmt_r.all_waveforms.flatten() == exactly(expected_enes)
+
+
+def test_build_sipm_responses_unordered():
+    data = pd.DataFrame(dict(
+    event = np.zeros(10),
+    peak  = np.zeros(10),
+    nsipm = np.array([1, 1, 3, 3, 2, 2, 0, 0, 4, 4]),
+    ene   = np.arange(10)))
+
+    expected_sipms = np.array([1, 3, 2, 0, 4])
+    expected_enes  = np.arange(10)
+    for _, peak in data.groupby(("event", "peak")):
+        sipm_r = pmpio.build_sipm_responses(peak)
+        assert sipm_r.ids                     == exactly(expected_sipms)
+        assert sipm_r.all_waveforms.flatten() == exactly(expected_enes)
