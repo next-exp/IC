@@ -119,7 +119,7 @@ def load_pmaps(filename):
 
 def build_pmt_responses(pmtdf, ipmtdf):
     times   =            pmtdf.time.values
-    pmt_ids = np.unique(ipmtdf.npmt.values)
+    pmt_ids = pd.unique(ipmtdf.npmt.values)
     enes    =           ipmtdf.ene .values.reshape(pmt_ids.size,
                                                      times.size)
     return times, PMTResponses(pmt_ids, enes)
@@ -128,7 +128,7 @@ def build_pmt_responses(pmtdf, ipmtdf):
 def build_sipm_responses(sidf):
     if len(sidf) == 0: return SiPMResponses.build_empty_instance()
 
-    sipm_ids = np.unique(sidf.nsipm.values)
+    sipm_ids = pd.unique(sidf.nsipm.values)
     enes     =           sidf.ene  .values
     n_times  = enes.size // sipm_ids.size
     enes     = enes.reshape(sipm_ids.size, n_times)
