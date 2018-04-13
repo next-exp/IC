@@ -117,19 +117,25 @@ def load_pmaps(filename):
     return pmap_dict
 
 
+import itertools
+import operator
+def unique(values):
+    return np.array(tuple(map(operator.itemgetter(0), itertools.groupby(values))))
+
+
 def build_pmt_responses(pmtdf, ipmtdf):
-    times   =            pmtdf.time.values
-    pmt_ids = np.unique(ipmtdf.npmt.values)
-    enes    =           ipmtdf.ene .values.reshape(pmt_ids.size,
-                                                     times.size)
+    times   =         pmtdf.time.values
+    pmt_ids = unique(ipmtdf.npmt.values)
+    enes    =        ipmtdf.ene .values.reshape(pmt_ids.size,
+                                                times.size)
     return times, PMTResponses(pmt_ids, enes)
 
 
 def build_sipm_responses(sidf):
     if len(sidf) == 0: return SiPMResponses.build_empty_instance()
 
-    sipm_ids = np.unique(sidf.nsipm.values)
-    enes     =           sidf.ene  .values
+    sipm_ids = unique(sidf.nsipm.values)
+    enes     =        sidf.ene  .values
     n_times  = enes.size // sipm_ids.size
     enes     = enes.reshape(sipm_ids.size, n_times)
     return SiPMResponses(sipm_ids, enes)
