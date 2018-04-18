@@ -75,7 +75,7 @@ def channel_param_writer(h5out, *, sensor_type,
     def store_channel_fit(sensor_id, fit_result):
         """
         input:
-        channel_id : Sensor number
+        sensor_id : Sensor number
         fit_result : dict with keys as parameter names
                      Fit parameters should be (value, error)
         """
