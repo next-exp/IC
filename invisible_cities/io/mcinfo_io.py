@@ -26,11 +26,18 @@ class mc_info_writer:
         self.h5file      = h5file
         self.compression = compression
         self._create_tables()
-        # last visited row
-        self.last_row              = 0
+        self.reset()
+        self.current_tables = None
+
         self.last_written_hit      = 0
         self.last_written_particle = 0
         self.first_extent_row      = True
+        self.first_file            = True
+
+
+    def reset(self):
+        # last visited row
+        self.last_row              = 0
 
     def _create_tables(self):
         """Create tables in MC group in file h5file."""
@@ -59,6 +66,9 @@ class mc_info_writer:
 
     def __call__(self, mctables: (tb.Table, tb.Table, tb.Table),
                  evt_number: int):
+        if mctables is not self.current_tables:
+            self.current_tables = mctables
+            self.reset()
 
         extents = mctables[0]
         for iext in range(self.last_row, len(extents)):
@@ -66,9 +76,16 @@ class mc_info_writer:
             if this_row['evt_number'] < evt_number: continue
             if this_row['evt_number'] > evt_number: break
             if iext == 0:
-                modified_hit          = this_row['last_hit']
-                modified_particle     = this_row['last_particle']
-                self.first_extent_row = False
+                if self.first_file:
+                    modified_hit          = this_row['last_hit']
+                    modified_particle     = this_row['last_particle']
+                    self.first_extent_row = False
+                    self.first_file       = False
+                else:
+                    modified_hit          = this_row['last_hit'] + self.last_written_hit + 1
+                    modified_particle     = this_row['last_particle'] + self.last_written_particle + 1
+                    self.first_extent_row = False
+
             elif self.first_extent_row:
                 previous_row          = extents[iext-1]
                 modified_hit          = this_row['last_hit'] - previous_row['last_hit'] + self.last_written_hit - 1
@@ -313,6 +330,3 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
         all_events[evt_number] = current_event
 
     return all_events
-
-
-

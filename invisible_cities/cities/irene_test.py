@@ -8,7 +8,6 @@ package: invisible cities. See release notes and licence
 last changed: 01-12-2017
 """
 import os
-from os          import getenv
 from collections import namedtuple
 
 import tables as tb
@@ -263,10 +262,14 @@ def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
             expected = fin .root.Run.events.cols.evt_number[::2] # skip event in the middle
             assert got == exactly(expected)
 
+
 def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
-        ICTDIR = getenv('ICTDIR')
-        file_in  = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_*.h5")
-        file_out = os.path.join(output_tmpdir, "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts.h5")
+        ICTDIR      = os.getenv('ICTDIR')
+        file_in     = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_*.h5")
+        file_out    = os.path.join(output_tmpdir, "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_10evts.h5")
+        second_file = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_1.h5")
+
+        nevents_per_file = 5
 
         nrequired = 10
         conf = configure('dummy invisible_cities/config/irene.conf'.split())
@@ -281,3 +284,20 @@ def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
             irene.run()
         except IndexError:
             raise
+
+        with tb.open_file(file_out) as h5out:
+            last_particle_list = h5out.root.MC.extents[:]['last_particle']
+            last_hit_list = h5out.root.MC.extents[:]['last_hit']
+
+            assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
+            assert all(x<y for x, y in zip(last_hit_list, last_hit_list[1:]))
+
+            with tb.open_file(second_file) as h5second:
+
+                nparticles_in_first_event = h5second.root.MC.extents[0]['last_particle'] + 1
+                nhits_in_first_event = h5second.root.MC.extents[0]['last_hit'] + 1
+
+                assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
+                assert last_hit_list[nevents_per_file] - last_hit_list[nevents_per_file - 1] == nhits_in_first_event
+
+
