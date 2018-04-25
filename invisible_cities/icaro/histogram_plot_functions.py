@@ -64,6 +64,7 @@ def plot_histogram(histogram, ax=None, plot_errors=False):
                     xycoords            = 'axes fraction',
                     fontsize            = 11,
                     weight              = 'bold',
+                    color               = 'black',
                     horizontalalignment = 'right',
                     verticalalignment   = 'top')
 
@@ -93,6 +94,19 @@ def plot_histogram(histogram, ax=None, plot_errors=False):
                     color               = 'white',
                     horizontalalignment = 'right',
                     verticalalignment   = 'top')
+
+    elif len(bins) == 3:
+        ave = np .apply_along_axis(average_empty, 2, entries, shift_to_bin_centers(bins[2]))
+        ave = np.ma.masked_array(ave, ave < 0.00001)
+
+        img = ax .pcolormesh      (bins[0], bins[1], ave.T)
+        cb  = plt.colorbar        (img, ax=ax)
+        cb       .set_label       (labels[2], weight='bold', fontsize=20)
+        for label in cb.ax.yaxis.get_ticklabels():
+            label.set_weight      ("bold")
+            label.set_fontsize    (16)
+
+        ax.set_ylabel(labels[1], weight='bold', fontsize=20)
 
     ax.set_xlabel      (labels[0], weight='bold', fontsize=20)
     ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,3))
@@ -135,8 +149,15 @@ def plot_histograms(histo_manager, histonames='all', n_columns=3, plot_errors=Fa
             extent = axes.flatten()[i].get_tightbbox(fig.canvas.get_renderer()).transformed(fig.dpi_scale_trans.inverted())
             fig.savefig(out_path + histoname + '.png', bbox_inches=extent)
 
+
 def get_percentage(a, b):
     """
     Given two flots, return the percentage between them.
     """
     return 100 * a / b if b else -100
+
+def average_empty(x, bins):
+    """
+    Returns the weighted mean. If all weights are 0, the mean is considered to be 0.
+    """
+    return np.average(bins, weights=x) if np.any(x > 0.) else 0.
