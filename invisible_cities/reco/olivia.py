@@ -10,7 +10,7 @@ from   invisible_cities.core.configure import configure
 import invisible_cities.reco.monitor_functions   as monf
 
 
-data_types = ['rwf', 'pmaps']
+data_types = ['rwf', 'pmaps', 'kdst']
 
 def olivia(conf):
     print(conf)
@@ -31,6 +31,8 @@ def olivia(conf):
             histo_manager = monf.fill_rwf_histos (files_in, config_dict)
         elif data_type == 'pmaps':
             histo_manager = monf.fill_pmap_histos(files_in, run_number, config_dict)
+        elif data_type == 'kdst' :
+            histo_manager = monf.fill_kdst_histos(files_in, config_dict)
         save_histomanager_to_file(histo_manager, file_out)
 
 
