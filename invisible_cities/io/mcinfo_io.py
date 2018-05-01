@@ -91,6 +91,7 @@ class mc_info_writer:
                 modified_hit          = this_row['last_hit'] - previous_row['last_hit'] + self.last_written_hit - 1
                 modified_particle     = this_row['last_particle'] - previous_row['last_particle'] + self.last_written_particle - 1
                 self.first_extent_row = False
+                self.first_file       = False
             else:
                 previous_row      = extents[iext-1]
                 modified_hit      = this_row['last_hit'] - previous_row['last_hit'] + self.last_written_hit
