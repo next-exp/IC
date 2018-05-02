@@ -2,6 +2,9 @@ import os
 import numpy  as np
 import tables as tb
 
+from glob    import glob
+from os.path import expandvars
+
 from .  mcinfo_io import load_mchits
 from .  mcinfo_io import load_mcparticles
 from .  mcinfo_io import load_mcsensor_response
@@ -25,8 +28,8 @@ def test_mc_info_writer_non_consecutive_events(output_tmpdir, ICDATADIR, krypton
     with tb.open_file(filein) as h5in:
         with tb.open_file(fileout, 'w') as h5out:
 
-            mc_writer  = mc_info_writer(h5out)
-            events_in  = np.unique(h5in.root.MC.extents[:]['evt_number'])
+            mc_writer = mc_info_writer(h5out)
+            events_in = np.unique(h5in.root.MC.extents[:]['evt_number'])
 
             mc_info = get_mc_info(h5in)
 
@@ -98,10 +101,10 @@ def test_mc_info_writer_automatic_reset(output_tmpdir, ICDATADIR, krypton_MCRD_f
     fileout = os.path.join(output_tmpdir, "test_mc_info_writer_automatic_reset.h5")
 
     with tb.open_file(fileout, "w") as h5out:
-        mc_writer  = mc_info_writer(h5out)
+        mc_writer = mc_info_writer(h5out)
 
         with tb.open_file(krypton_MCRD_file) as h5in:
-            events_in  = np.unique(h5in.root.MC.extents[:]['evt_number'])
+            events_in = np.unique(h5in.root.MC.extents[:]['evt_number'])
             mc_writer(get_mc_info(h5in), events_in[0])
 
         # This would not be possible without automatic reset
@@ -112,6 +115,33 @@ def test_mc_info_writer_automatic_reset(output_tmpdir, ICDATADIR, krypton_MCRD_f
         assert h5out.root.MC.extents  [:].size ==  2
         assert h5out.root.MC.hits     [:].size == 12
         assert h5out.root.MC.particles[:].size ==  3
+
+
+def test_mc_info_writer_filter_first_event_of_first_file(output_tmpdir, ICDATADIR):
+    files_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_02_08_ACTIVE_7bar_RWF.*.h5")
+    input_files  = sorted(glob(expandvars(files_in)))
+
+    file_out     = os.path.join(output_tmpdir, "Kr83_nexus_v5_02_08_ACTIVE_7bar_RWF_all.h5")
+
+    with tb.open_file(file_out, "w") as h5out:
+        mc_writer = mc_info_writer(h5out)
+
+        skip_evt = True
+        for filename in input_files:
+            with tb.open_file(filename) as h5in:
+                events_in = np.unique(h5in.root.MC.extents[:]['evt_number'])
+                for evt in events_in:
+                    if skip_evt:
+                        skip_evt = False
+                        continue
+                    mc_writer(get_mc_info(h5in), evt)
+
+        last_particle_list = h5out.root.MC.extents[:]['last_particle']
+        last_hit_list = h5out.root.MC.extents[:]['last_hit']
+
+        assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
+        assert all(x<y for x, y in zip(last_hit_list, last_hit_list[1:]))
+
 
 
 def test_load_mchits_correct_number_of_hits(mc_all_hits_data):
