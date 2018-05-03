@@ -126,6 +126,9 @@ class Pmtgain(CalibratedCity):
 
 
     def get_writers(self, h5out):
+        ## Copy sensor info (good for non DB tests)
+        cf.copy_sensor_table(self.input_files[0], h5out)
+        
         bin_centres = shift_to_bin_centers(self.histbins)
         HIST        = partial(hist_writer,
                               h5out,
@@ -146,14 +149,3 @@ class Pmtgain(CalibratedCity):
     def display_IO_info(self):
         super().display_IO_info()
         print(self.sp)
-
-    def _copy_sensor_table(self, h5in):
-        # Copy sensor table if exists (needed for GATE)
-        if 'Sensors' not in h5in.root: return
-
-        group    = self.output_file.create_group(self.output_file.root, "Sensors")
-        datapmt  = h5in.root.Sensors.DataPMT
-        datasipm = h5in.root.Sensors.DataSiPM
-
-        datapmt .copy(newparent=group)
-        datasipm.copy(newparent=group)
