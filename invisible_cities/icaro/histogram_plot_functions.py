@@ -64,7 +64,7 @@ def plot_histogram(histogram, ax=None, plot_errors=False, draw_color='black', st
                                                                        get_percentage(out_range[1,0], np.sum(entries)))
 
             if np.sum(entries) > 0:
-                mean, std = weighted_mean_and_std(shift_to_bin_centers(bins[0]), entries)
+                mean, std = weighted_mean_and_std(shift_to_bin_centers(bins[0]), entries, frequentist = True, unbiased = True)
             else:
                 mean, std = 0, 0
 
@@ -89,8 +89,8 @@ def plot_histogram(histogram, ax=None, plot_errors=False, draw_color='black', st
                                                                               get_percentage(out_range[1,1], np.sum(entries)))
 
             if np.sum(entries) > 0:
-                meanX, stdX = weighted_mean_and_std(shift_to_bin_centers(bins[0]), np.sum(entries, axis = 1))
-                meanY, stdY = weighted_mean_and_std(shift_to_bin_centers(bins[1]), np.sum(entries, axis = 0))
+                meanX, stdX = weighted_mean_and_std(shift_to_bin_centers(bins[0]), np.sum(entries, axis = 1), frequentist = True, unbiased = True)
+                meanY, stdY = weighted_mean_and_std(shift_to_bin_centers(bins[1]), np.sum(entries, axis = 0), frequentist = True, unbiased = True)
             else:
                 meanX, stdX = 0, 0
                 meanY, stdY = 0, 0
