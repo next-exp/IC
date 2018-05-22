@@ -82,3 +82,86 @@ def channel_param_writer(h5out, *, sensor_type,
         store_fit_values(param_table, sensor_id, fit_result)
     
     return store_channel_fit
+
+
+def basic_param_reader(h5in):
+    """
+    Reads information from the FITPARAMS group.
+    returns tuple with lists of
+    table names, parameter names and the tables present
+    """
+    try:
+        param_tables = h5in.root.FITPARAMS._f_list_nodes('Leaf')
+        table_names = [ tab.name for tab in param_tables ]
+        param_names = [ tab.colnames for tab in param_tables ]
+        return table_names, param_names, param_tables
+    except tb.NoSuchNodeError:
+        print('File does not contain FITPARAMS node')
+        exit()
+
+
+def generator_param_reader(h5in, table_name):
+    """
+    Accesses the file to get the tables and
+    loops over the table requested yielding
+    sensor number, (parameter value dict, parameter error dict)
+    """
+
+    table_names, param_names, param_tables = basic_param_reader(h5in)
+
+    try:
+        indx = table_names.index(table_name)
+        for row in param_tables[indx].iterrows():
+            yield row['SensorID'], parameters_and_errors(row, param_names[indx][1:])
+    except ValueError:
+        print('Requested table not present')
+        exit()
+
+
+def subset_param_reader(h5in, table_name, param_names):
+
+    table_names, _, param_tables = basic_param_reader(h5in)
+
+    try:
+        indx = table_names.index(table_name)
+        for row in param_tables[indx].iterrows():
+            yield row['SensorID'], parameters_and_errors(row, param_names)
+    except ValueError:
+        print('Requested table not present')
+        exit()
+
+
+def all_channel_value_reader(param_table, param_names):
+    """
+    Like subset_param_reader but with the correct
+    table already extracted from file.
+    """
+    for row in param_table.iterrows():
+        yield row['SensorID'], parameters_and_errors(row, param_names)
+
+
+def single_channel_value_reader(channel, param_table, param_names):
+    """
+    Read the parameters for a specific channel
+    assuming table already extracted
+    """
+    channel_params = param_table.read_where('SensorID=='+str(channel))
+    if channel_params.size == 0:
+        print('Sensor info not found')
+        exit()
+    elif channel_params.size > 1:
+        print('Ambiguous call, more than one sensor entry found')
+        exit()
+    return parameters_and_errors(channel_params[0], param_names)
+
+
+def parameters_and_errors(table_row, parameters):
+    param_dict = {}
+    error_dict = {}
+    for pname in parameters:
+        param_dict[pname] = table_row[pname][0]
+        error_dict[pname] = table_row[pname][1]
+
+    return param_dict, error_dict
+
+    
