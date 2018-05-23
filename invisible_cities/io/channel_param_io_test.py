@@ -18,7 +18,7 @@ from . channel_param_io import generator_param_reader
 def test_generic_parameters(config_tmpdir):
     filename = os.path.join(config_tmpdir, 'test_param.h5')
 
-    outDict = {}
+    out_dict = {}
     val_list = []
     n_rows = 5
     with tb.open_file(filename, 'w') as data_out:
@@ -28,12 +28,12 @@ def test_generic_parameters(config_tmpdir):
 
         for sens in range(n_rows):
             for i, par in enumerate(generic_params):
-                outDict[par] = [i, (i + sens) / 10]
+                out_dict[par] = [i, (i + sens) / 10]
 
-            pWrite(sens, outDict)
-            val_list.append(list(outDict.values()))
+            pWrite(sens, out_dict)
+            val_list.append(list(out_dict.values()))
 
-    col_list = ['SensorID'] + list(outDict.keys())
+    col_list = ['SensorID'] + list(out_dict.keys())
     val_list = np.concatenate(val_list)
     with tb.open_file(filename) as data_in:
 
@@ -49,7 +49,7 @@ def test_generic_parameters(config_tmpdir):
 def test_generator_param_reader(config_tmpdir):
     filename = os.path.join(config_tmpdir, 'test_param.h5')
 
-    outDict = {}
+    out_dict = {}
     val_list = []
     n_rows = 5
     with tb.open_file(filename, 'w') as data_out:
@@ -59,17 +59,17 @@ def test_generator_param_reader(config_tmpdir):
 
         for sens in range(n_rows):
             for i, par in enumerate(generic_params):
-                outDict[par] = [i, (i + sens) / 10]
+                out_dict[par] = [i, (i + sens) / 10]
 
-            pWrite(sens, outDict)
-            val_list.append(list(outDict.values()))
+            pWrite(sens, out_dict)
+            val_list.append(list(out_dict.values()))
 
     val_list = np.array(val_list)
     with tb.open_file(filename) as data_in:
         counter = 0
         for sens, (vals, errs) in generator_param_reader(data_in, 'FIT_test_generic'):
             assert sens == counter
-            assert len(vals) == len(errs) == len(outDict)
+            assert len(vals) == len(errs) == len(out_dict)
             assert_allclose(val_list[sens, :, 0], np.array(list(vals.values())))
             assert_allclose(val_list[sens, :, 1], np.array(list(errs.values())))
             counter += 1
@@ -82,17 +82,17 @@ def test_simple_parameters_with_covariance(config_tmpdir):
 
     simple = ["par0", "par1", "par2"]
     cov = np.array([[0, 1, 2], [3, 4, 5]])
-    outDict = {}
+    out_dict = {}
     with tb.open_file(filename, 'w') as data_out:
         pWrite = channel_param_writer(data_out, sensor_type="test",
                                       func_name="simple",
                                       param_names=simple, covariance=cov.shape)
 
         for i, par in enumerate(simple):
-            outDict[par] = (i, i / 10)
-        outDict["covariance"] = cov
+            out_dict[par] = (i, i / 10)
+        out_dict["covariance"] = cov
         
-        pWrite(0, outDict)
+        pWrite(0, out_dict)
 
     with tb.open_file(filename) as data_in:
 
