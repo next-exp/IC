@@ -21,8 +21,8 @@ def test_generic_parameters(config_tmpdir):
     outDict = {}
     val_list = []
     n_rows = 5
-    with tb.open_file(filename, 'w') as dataOut:
-        pWrite = channel_param_writer(dataOut, sensor_type="test",
+    with tb.open_file(filename, 'w') as data_out:
+        pWrite = channel_param_writer(data_out, sensor_type="test",
                                       func_name="generic",
                                       param_names=generic_params)
 
@@ -35,9 +35,9 @@ def test_generic_parameters(config_tmpdir):
 
     col_list = ['SensorID'] + list(outDict.keys())
     val_list = np.concatenate(val_list)
-    with tb.open_file(filename) as dataIn:
+    with tb.open_file(filename) as data_in:
 
-        tbl_names, param_names, tbls = basic_param_reader(dataIn)
+        tbl_names, param_names, tbls = basic_param_reader(data_in)
         assert len(tbls) == 1
         assert tbls[0].nrows == n_rows
         assert len(param_names[0]) == len(col_list)
@@ -52,8 +52,8 @@ def test_generator_param_reader(config_tmpdir):
     outDict = {}
     val_list = []
     n_rows = 5
-    with tb.open_file(filename, 'w') as dataOut:
-        pWrite = channel_param_writer(dataOut, sensor_type="test",
+    with tb.open_file(filename, 'w') as data_out:
+        pWrite = channel_param_writer(data_out, sensor_type="test",
                                       func_name="generic",
                                       param_names=generic_params)
 
@@ -65,9 +65,9 @@ def test_generator_param_reader(config_tmpdir):
             val_list.append(list(outDict.values()))
 
     val_list = np.array(val_list)
-    with tb.open_file(filename) as dataIn:
+    with tb.open_file(filename) as data_in:
         counter = 0
-        for sens, (vals, errs) in generator_param_reader(dataIn, 'FIT_test_generic'):
+        for sens, (vals, errs) in generator_param_reader(data_in, 'FIT_test_generic'):
             assert sens == counter
             assert len(vals) == len(errs) == len(outDict)
             assert_allclose(val_list[sens, :, 0], np.array(list(vals.values())))
@@ -83,8 +83,8 @@ def test_simple_parameters_with_covariance(config_tmpdir):
     simple = ["par0", "par1", "par2"]
     cov = np.array([[0, 1, 2], [3, 4, 5]])
     outDict = {}
-    with tb.open_file(filename, 'w') as dataOut:
-        pWrite = channel_param_writer(dataOut, sensor_type="test",
+    with tb.open_file(filename, 'w') as data_out:
+        pWrite = channel_param_writer(data_out, sensor_type="test",
                                       func_name="simple",
                                       param_names=simple, covariance=cov.shape)
 
@@ -94,9 +94,9 @@ def test_simple_parameters_with_covariance(config_tmpdir):
         
         pWrite(0, outDict)
 
-    with tb.open_file(filename) as dataIn:
+    with tb.open_file(filename) as data_in:
 
-        file_cov = dataIn.root.FITPARAMS.FIT_test_simple[0]["covariance"]
+        file_cov = data_in.root.FITPARAMS.FIT_test_simple[0]["covariance"]
         assert_allclose(file_cov, cov)
 
 
@@ -117,10 +117,10 @@ def test_store_fit_values(config_tmpdir):
 
     dummy_dict = make_table_dictionary(['par0'])
 
-    with tb.open_file(filename, 'w') as dataOut:
-        PARAM_group = dataOut.create_group(dataOut.root, "testgroup")
+    with tb.open_file(filename, 'w') as data_out:
+        PARAM_group = data_out.create_group(data_out.root, "testgroup")
 
-        param_table = dataOut.create_table(PARAM_group,
+        param_table = data_out.create_table(PARAM_group,
                                            "testtable",
                                            dummy_dict,
                                            "test parameters",
@@ -128,9 +128,9 @@ def test_store_fit_values(config_tmpdir):
         
         store_fit_values(param_table, 0, {'par0' : 22})
 
-    with tb.open_file(filename) as dataIn:
+    with tb.open_file(filename) as data_in:
 
-        tblRead = dataIn.root.testgroup.testtable
+        tblRead = data_in.root.testgroup.testtable
         assert tblRead.nrows == 1
         assert len(tblRead.colnames) == len(dummy_dict)
         assert tblRead.colnames == list(dummy_dict.keys())
