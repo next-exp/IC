@@ -60,15 +60,18 @@ def plot_histogram(histogram, ax=None, plot_errors=False, draw_color='black', st
         ax.set_ylabel   ("Entries", weight='bold', fontsize=20)
 
         if stats:
+            entries_string   = f'Entries = {np.sum(entries):.0f}\n'
             out_range_string = 'Out range (%) = [{0:.2f}, {1:.2f}]'.format(get_percentage(out_range[0,0], np.sum(entries)),
-                                                                       get_percentage(out_range[1,0], np.sum(entries)))
+                                                                           get_percentage(out_range[1,0], np.sum(entries)))
 
             if np.sum(entries) > 0:
                 mean, std = weighted_mean_and_std(shift_to_bin_centers(bins[0]), entries, frequentist = True, unbiased = True)
             else:
                 mean, std = 0, 0
 
-            ax.annotate('Mean = {0:.2f}\n'.format(mean) + 'RMS = {0:.2f}\n' .format(std) +
+            ax.annotate(entries_string                  +
+                        'Mean = {0:.2f}\n'.format(mean) +
+                        'RMS = {0:.2f}\n' .format(std)  +
                         out_range_string,
                         xy                  = (0.99, 0.99),
                         xycoords            = 'axes fraction',
@@ -83,6 +86,7 @@ def plot_histogram(histogram, ax=None, plot_errors=False, draw_color='black', st
         ax.set_ylabel(labels[1], weight='bold', fontsize=20)
 
         if stats:
+            entries_string   = f'Entries = {np.sum(entries):.0f}\n'
             out_range_stringX = 'Out range X (%) = [{0:.2f}, {1:.2f}]'.format(get_percentage(out_range[0,0], np.sum(entries)),
                                                                               get_percentage(out_range[1,0], np.sum(entries)))
             out_range_stringY = 'Out range Y (%) = [{0:.2f}, {1:.2f}]'.format(get_percentage(out_range[0,1], np.sum(entries)),
@@ -95,7 +99,8 @@ def plot_histogram(histogram, ax=None, plot_errors=False, draw_color='black', st
                 meanX, stdX = 0, 0
                 meanY, stdY = 0, 0
 
-            ax.annotate('Mean X = {0:.2f}\n'.format(meanX) + 'Mean Y = {0:.2f}\n'.format(meanY) +
+            ax.annotate(entries_string +
+                        'Mean X = {0:.2f}\n'.format(meanX) + 'Mean Y = {0:.2f}\n'.format(meanY) +
                         'RMS X = {0:.2f}\n' .format(stdX)  + 'RMS Y = {0:.2f}\n' .format(stdY)  +
                         out_range_stringX + '\n' + out_range_stringY,
                         xy                  = (0.99, 0.99),
