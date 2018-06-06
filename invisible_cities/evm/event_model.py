@@ -241,7 +241,7 @@ class Hit(Cluster):
         self.peak_number = peak_number
         self.Xpeak = peak_xy.x
         self.Ypeak = peak_xy.y
-        
+
     @property
     def npeak(self): return self.peak_number
 
@@ -408,34 +408,37 @@ class KrEvent(Event):
 
     def store(self, table):
         row = table.row
-        for i in range(int(self.nS2)):
-            row["event"] = self.event
-            row["time" ] = self.time
-            row["peak" ] = i
-            row["nS2"  ] = self.nS2
+        for i in range(int(self.nS1)):
+            for j in range(int(self.nS2)):
+                row["event"  ] = self.event
+                row["time"   ] = self.time
+                row["s1_peak"] = i
+                row["s2_peak"] = j
+                row["nS1"    ] = self.nS1
+                row["nS2"    ] = self.nS2
 
-            row["S1w"  ] = self.S1w  [0]
-            row["S1h"  ] = self.S1h  [0]
-            row["S1e"  ] = self.S1e  [0]
-            row["S1t"  ] = self.S1t  [0]
+                row["S1w"    ] = self.S1w  [i]
+                row["S1h"    ] = self.S1h  [i]
+                row["S1e"    ] = self.S1e  [i]
+                row["S1t"    ] = self.S1t  [i]
 
-            row["S2w"  ] = self.S2w  [i]
-            row["S2h"  ] = self.S2h  [i]
-            row["S2e"  ] = self.S2e  [i]
-            row["S2q"  ] = self.S2q  [i]
-            row["S2t"  ] = self.S2t  [i]
+                row["S2w"    ] = self.S2w  [j]
+                row["S2h"    ] = self.S2h  [j]
+                row["S2e"    ] = self.S2e  [j]
+                row["S2q"    ] = self.S2q  [j]
+                row["S2t"    ] = self.S2t  [j]
 
-            row["Nsipm"] = self.Nsipm[i]
-            row["DT"   ] = self.DT   [i]
-            row["Z"    ] = self.Z    [i]
-            row["Zrms" ] = self.Zrms [i]
-            row["X"    ] = self.X    [i]
-            row["Y"    ] = self.Y    [i]
-            row["R"    ] = self.R    [i]
-            row["Phi"  ] = self.Phi  [i]
-            row["Xrms" ] = self.Xrms [i]
-            row["Yrms" ] = self.Yrms [i]
-            row.append()
+                row["Nsipm"  ] = self.Nsipm[j]
+                row["DT"     ] = self.DT   [j]
+                row["Z"      ] = self.Z    [j]
+                row["Zrms"   ] = self.Zrms [j]
+                row["X"      ] = self.X    [j]
+                row["Y"      ] = self.Y    [j]
+                row["R"      ] = self.R    [j]
+                row["Phi"    ] = self.Phi  [j]
+                row["Xrms"   ] = self.Xrms [j]
+                row["Yrms"   ] = self.Yrms [j]
+                row.append()
 
     def __str__(self):
         s = "{0}Event\n{0}".format("#"*20 + "\n")
