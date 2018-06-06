@@ -20,7 +20,6 @@ from .       event_model import Voxel
 from .       event_model import HitCollection
 from .       event_model import HitCollection
 from .       event_model import KrEvent
-from .       event_model import KrEvent
 
 
 @composite
@@ -83,7 +82,6 @@ def test_sensor_params(sensor_pars):
                   (Event,
                    HitCollection,
                    HitCollection,
-                   KrEvent,
                    KrEvent))
 @given(event_input())
 def test_event(test_class, event_pars):
@@ -162,11 +160,8 @@ def test_hit_collection_empty(test_class):
     assert hc.hits == []
 
 
-@mark.parametrize("test_class",
-                  (KrEvent,
-                   KrEvent))
-def test_kr_event_attributes(test_class):
-    evt =  test_class(-1, -1)
+def test_kr_event_attributes():
+    evt =  KrEvent(-1, -1)
 
     for attr in ["nS1", "nS2"]:
         assert getattr(evt, attr) == -1
