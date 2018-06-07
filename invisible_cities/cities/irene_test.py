@@ -233,7 +233,7 @@ def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts
     #import pdb; pdb.set_trace()
     irene = Irene(**conf)
 
-    assert irene.pmt_active == job_info_missing_pmts.pmt_active
+    assert irene.pmt_active_list == job_info_missing_pmts.pmt_active
 
 
 def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
@@ -299,5 +299,3 @@ def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
 
                 assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
                 assert last_hit_list[nevents_per_file] - last_hit_list[nevents_per_file - 1] == nhits_in_first_event
-
-
