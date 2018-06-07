@@ -14,6 +14,10 @@ class BlsMode(Enum):
     mode      = 3
 
 
+def mask_sensors(wfs, active):
+    return wfs * active.astype(wfs.dtype).reshape(active.size, 1)
+
+
 def scipy_mode(x, axis=0):
     """
     Scipy implementation of the mode (runs very slow).
