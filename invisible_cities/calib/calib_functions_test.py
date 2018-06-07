@@ -92,3 +92,26 @@ def test_filter_limits_outside():
     assert len(filtered_dlimits) < len(unfiltered_dlimits)
     assert len(filtered_llimits) % 2 == 0
     assert len(filtered_dlimits) % 2 == 0
+
+
+## def test_copy_sensor_table(config_tmpdir):
+
+##     ## Create an empty input file to begin
+##     in_name = os.path.join(config_tmpdir, 'test_copy_in.h5')
+##     out_name = os.path.join(config_tmpdir, 'test_copy_out.h5')
+##     with tb.open_file(in_name, 'w') as input_file:
+##         input_file.create_group(input_file.root, 'dummy')
+    
+##     ## Test copy where Sensors group not present etc.
+##     with tb.open_file(in_name, 'a') as inF, tb.open_file(out_name, 'w') as outF:
+
+##         ## Nothing to copy
+##         cf.copy_sensor_table(inF, outF)
+
+##         ## Sensor group with no table
+##         inF.create_group(inF.root, 'Sensors')
+##         cf.copy_sensor_table(inF, outF)
+##         assert 'Sensors' in outF.root
+
+##         ## Only PMTs
+##         inF.
