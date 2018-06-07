@@ -18,8 +18,8 @@ from .  sipmpdf           import Sipmpdf
 from .. core   .configure import configure
 
 
-@mark.slow
-def test_sipmpdf_sipmdarkcurrent(config_tmpdir, ICDATADIR):
+@mark.parametrize("adc_plots", (True, False))
+def test_sipmpdf_sipmdarkcurrent(config_tmpdir, ICDATADIR, adc_plots):
     PATH_IN    = os.path.join(ICDATADIR    , 'sipmdarkcurrentdata.h5' )
     PATH_OUT   = os.path.join(config_tmpdir, 'sipmdarkcurrentdata_HIST.h5')
     nrequired  = 2
@@ -28,7 +28,8 @@ def test_sipmpdf_sipmdarkcurrent(config_tmpdir, ICDATADIR):
     conf.update(dict(run_number   = 4000,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
-                     event_range  = (0, nrequired)))
+                     event_range  = (0, nrequired),
+                     adc_only     = adc_plots))
 
     sipmpdf = Sipmpdf(**conf)
     sipmpdf.run()
