@@ -1,11 +1,16 @@
-import numpy as np
+import os
+
+import numpy  as np
+import tables as tb
 
 from numpy.testing import assert_array_equal
 from pytest        import mark
 from pytest        import raises
 
 from .                         import calib_functions as cf
+from .. reco                   import tbl_functions as tbl
 from .. core.system_of_units_c import units
+from .. evm.nh5                import DataSensor
 
 
 def test_bin_waveforms():
@@ -94,24 +99,42 @@ def test_filter_limits_outside():
     assert len(filtered_dlimits) % 2 == 0
 
 
-## def test_copy_sensor_table(config_tmpdir):
+def test_copy_sensor_table(config_tmpdir):
 
-##     ## Create an empty input file to begin
-##     in_name = os.path.join(config_tmpdir, 'test_copy_in.h5')
-##     out_name = os.path.join(config_tmpdir, 'test_copy_out.h5')
-##     with tb.open_file(in_name, 'w') as input_file:
-##         input_file.create_group(input_file.root, 'dummy')
+    ## Create an empty input file to begin
+    in_name = os.path.join(config_tmpdir, 'test_copy_in.h5')
+    out_name = os.path.join(config_tmpdir, 'test_copy_out.h5')
+    with tb.open_file(in_name, 'w') as input_file:
+        input_file.create_group(input_file.root, 'dummy')
     
-##     ## Test copy where Sensors group not present etc.
-##     with tb.open_file(in_name, 'a') as inF, tb.open_file(out_name, 'w') as outF:
+    ## Test copy where Sensors group not present etc.
+    with tb.open_file(out_name, 'w') as out_file:
 
-##         ## Nothing to copy
-##         cf.copy_sensor_table(inF, outF)
+        ## Nothing to copy
+        cf.copy_sensor_table(in_name, out_file)
 
-##         ## Sensor group with no table
-##         inF.create_group(inF.root, 'Sensors')
-##         cf.copy_sensor_table(inF, outF)
-##         assert 'Sensors' in outF.root
+        ## Sensor group with no table
+        with tb.open_file(in_name, 'a') as input_file:
+            sens_group = input_file.create_group(input_file.root, 'Sensors')
+        cf.copy_sensor_table(in_name, out_file)
+        assert 'Sensors' in out_file.root
+        out_file.remove_node(out_file.root.Sensors)
 
-##         ## Only PMTs
-##         inF.
+        ## Only PMTs
+        with tb.open_file(in_name, 'a') as input_file:
+            sens_group = input_file.root.Sensors
+            input_file.create_table(sens_group, "DataPMT", DataSensor,
+                                    "", tbl.filters("NOCOMPR"))
+        cf.copy_sensor_table(in_name, out_file)
+        assert 'DataPMT' in out_file.root.Sensors
+        out_file.remove_node(out_file.root.Sensors, recursive=True)
+
+        ## All sensors
+        with tb.open_file(in_name, 'a') as input_file:
+            sens_group = input_file.root.Sensors
+            input_file.create_table(sens_group, "DataSiPM", DataSensor,
+                                    "", tbl.filters("NOCOMPR"))
+        cf.copy_sensor_table(in_name, out_file)
+        assert 'DataPMT'  in out_file.root.Sensors
+        assert 'DataSiPM' in out_file.root.Sensors
+        
