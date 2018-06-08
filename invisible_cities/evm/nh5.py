@@ -30,6 +30,15 @@ class DataSensor(tb.IsDescription):
     noise_rms  = tb.Float32Col(pos=4)
 
 
+class SensorTable(tb.IsDescription):
+    """
+    Stores the Sensors group, mimicking what is saved
+    by the decoder.
+    """
+    channel  = tb.Int32Col(pos=0)
+    sensorID = tb.Int32Col(pos=1)
+
+    
 class MCExtentInfo(tb.IsDescription):
     """Store the last row of each table as metadata using
     Pytables.
