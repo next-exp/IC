@@ -214,3 +214,17 @@ def test_load_sensors_data(mc_sensors_nexus_data):
     samples = list(zip(bins, wvf.charges))
 
     assert np.allclose(samples, sipm)
+
+
+def test_read_last_sensor_response(mc_sensors_nexus_data):
+    efile, _, _, _, _, _ = mc_sensors_nexus_data
+
+    mcsensors_dict = load_mcsensor_response(efile)
+    waveforms = mcsensors_dict[0]
+
+    with tb.open_file(efile, mode='r') as h5in:
+        last_written_id = h5in.root.MC.sensor_positions[-1][0]
+        last_read_id = list(waveforms.keys())[-1]
+
+        assert last_read_id == last_written_id
+

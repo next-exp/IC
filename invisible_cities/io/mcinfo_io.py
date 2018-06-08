@@ -327,6 +327,10 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
 
             iwvf += 1
 
+        bin_width = bin_width_PMT if sensor_id < 1000 else bin_width_SiPM
+        times     = np.array(time_bins) * bin_width
+        current_event[current_sensor_id] = Waveform(times, charges, bin_width)
+
         evt_number             = h5extents[iext]['evt_number']
         all_events[evt_number] = current_event
 
