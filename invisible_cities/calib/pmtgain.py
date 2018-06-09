@@ -92,7 +92,7 @@ class Pmtgain(CalibratedCity):
         events_info = dataVectors.events
 
         ## Where we'll be saving the binned info for each channel
-        shape    = len(self.pmt_active), len(self.histbins) - 1
+        shape    = len(self.pmt_active_list), len(self.histbins) - 1
         pmt_spe  = np.zeros(shape, dtype=np.int)
         pmt_dark = np.zeros(shape, dtype=np.int)
 
@@ -130,7 +130,7 @@ class Pmtgain(CalibratedCity):
         HIST        = partial(hist_writer,
                               h5out,
                               group_name  = 'HIST',
-                              n_sensors   = len(self.pmt_active),
+                              n_sensors   = len(self.pmt_active_list),
                               n_bins      = len(bin_centres),
                               bin_centres = bin_centres)
 

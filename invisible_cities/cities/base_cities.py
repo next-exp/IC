@@ -251,9 +251,8 @@ class City:
         raise NotImplementedError("Concrete City must implement `get_writers`")
 
     def set_up_database(self):
-        DataPMT       = load_db.DataPMT (self.run_number)
-        DataSiPM      = load_db.DataSiPM(self.run_number)
-        pmt_active    = DataPMT.Active.values.astype(bool)
+        DataPMT       = load_db .DataPMT (self.run_number)
+        DataSiPM      = load_db .DataSiPM(self.run_number)
 
         self.det_geo  = load_db.DetectorGeo()
         self.DataPMT  = DataPMT
@@ -261,10 +260,12 @@ class City:
 
         self.xs                 = DataSiPM.X.values
         self.ys                 = DataSiPM.Y.values
-        self.pmt_active         = np.nonzero(pmt_active)[0].tolist()
+        self.pmt_active         = DataPMT .Active.values
+        self.sipm_active        = DataSiPM.Active.values
+        self.pmt_active_list    = np.nonzero(self.pmt_active)[0].tolist()
         self.active_pmt_ids     = DataPMT.SensorID[DataPMT.Active == 1].values
         self.all_pmt_adc_to_pes = abs(DataPMT.adc_to_pes.values).astype(np.double)
-        self.    pmt_adc_to_pes = self.all_pmt_adc_to_pes[pmt_active]
+        self.    pmt_adc_to_pes = self.all_pmt_adc_to_pes[DataPMT.Active == 1]
         self.   sipm_adc_to_pes = DataSiPM.adc_to_pes.values    .astype(np.double)
         self.coeff_c            = DataPMT.coeff_c.values        .astype(np.double)
         self.coeff_blr          = DataPMT.coeff_blr.values      .astype(np.double)
@@ -395,6 +396,12 @@ class RawCity(City):
         super().__init__(**kwds)
         self.raw_data_type = self.conf.raw_data_type
 
+    def mask_pmts(self, wfs):
+        return csf.mask_sensors(wfs, self.pmt_active)
+
+    def mask_sipms(self, wfs):
+        return csf.mask_sensors(wfs, self.sipm_active)
+
     def file_loop(self):
         """
         The file loop of a Raw city:
@@ -470,7 +477,7 @@ class DeconvolutionCity(RawCity):
     def deconv_pmt(self, RWF, selection=None):
         """Deconvolve the RWF of the PMTs"""
         if selection is None:
-            selection = self.pmt_active
+            selection = self.pmt_active_list
         return blr.deconv_pmt(RWF,
                               self.coeff_c,
                               self.coeff_blr,
@@ -1017,7 +1024,7 @@ class TriggerEmulationCity(PmapCity):
         self.IC_ids_selection = convert_channel_id_to_IC_id(self.DataPMT,
                                                             self.trigger_params.trigger_channels)
 
-        if not np.all(np.in1d(self.IC_ids_selection, self.pmt_active)):
+        if not np.all(np.in1d(self.IC_ids_selection, self.pmt_active_list)):
             raise ValueError("Attempt to trigger in masked PMT")
 
     def trigger_parameters(self):
