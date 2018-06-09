@@ -406,10 +406,33 @@ class KrEvent(Event):
         self.Yrms  = []
         self.Zrms  = []
 
+    def fill_defaults(self):
+        if self.nS1 == 0:
+            for attribute in ["w", "h", "e", "t"]:
+                setattr(self, "S1" + attribute, [np.nan])
+
+        if self.nS2 == 0:
+            for attribute in ["w", "h", "e", "t", "q"]:
+                setattr(self, "S2" + attribute, [np.nan])
+
+            self.Nsipm = 0
+            for attribute in ["X", "Y", "R", "Phi", "Xrms", "Yrms", "Zrms"]:
+                setattr(self, attribute, [np.nan])
+
+        if not self.nS1 or not self.nS2:
+            for attribute in ["Z", "DT"]:
+                setattr(self, attribute, [[np.nan] * max(self.nS1, 1)] * max(self.nS2, 1))
+
     def store(self, table):
         row = table.row
-        for i in range(int(self.nS1)):
-            for j in range(int(self.nS2)):
+
+        s1_peaks = range(int(self.nS1)) if self.nS1 else [-1]
+        s2_peaks = range(int(self.nS2)) if self.nS2 else [-1]
+        self.fill_defaults()
+
+        print(self)
+        for i in s1_peaks:
+            for j in s2_peaks:
                 row["event"  ] = self.event
                 row["time"   ] = self.time
                 row["s1_peak"] = i
@@ -429,8 +452,8 @@ class KrEvent(Event):
                 row["S2t"    ] = self.S2t  [j]
 
                 row["Nsipm"  ] = self.Nsipm[j]
-                row["DT"     ] = self.DT   [j][i] if self.nS1 else np.nan
-                row["Z"      ] = self.Z    [j][i] if self.nS1 else np.nan
+                row["DT"     ] = self.DT   [j][i]
+                row["Z"      ] = self.Z    [j][i]
                 row["Zrms"   ] = self.Zrms [j]
                 row["X"      ] = self.X    [j]
                 row["Y"      ] = self.Y    [j]
