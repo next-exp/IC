@@ -61,14 +61,16 @@ class Irene(PmapCity):
             self.cnt.n_events_tot += 1
 
             # calibrated sum in PMTs
-            s12sum, cal_cwf, _ = self.pmt_transformation(pmtrwf[evt])
+            pmt_wfs = self.mask_pmts(pmtrwf[evt])
+            s12sum, cal_cwf, _ = self.pmt_transformation(pmt_wfs)
 
             if not self.check_s12(s12sum): # ocasional but rare empty events
                 self.cnt.n_empty_events += 1
                 continue
 
             # calibrated sum in SiPMs
-            sipmzs = self.calibrate_sipms(sipmrwf[evt])
+            sipm_wfs = self.mask_sipms(sipmrwf[evt])
+            sipmzs = self.calibrate_sipms(sipm_wfs)
 
             # pmaps
             pmap = self.pmaps(s12sum.s1_indx, s12sum.s2_indx,
