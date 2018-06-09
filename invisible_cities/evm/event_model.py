@@ -396,15 +396,15 @@ class KrEvent(Event):
         self.S2t   = [] # time
 
         self.Nsipm = [] # number of SiPMs in S2Si
-        self.DT    = [] # drift time (wrt S1[0])
+        self.DT    = [] # drift time
         self.Z     = [] # Position (x,y,z,R,phi)
-        self.Zrms  = []
         self.X     = []
         self.Y     = []
         self.R     = []
         self.Phi   = []
         self.Xrms  = [] # error in position
         self.Yrms  = []
+        self.Zrms  = []
 
     def store(self, table):
         row = table.row
