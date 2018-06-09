@@ -429,8 +429,8 @@ class KrEvent(Event):
                 row["S2t"    ] = self.S2t  [j]
 
                 row["Nsipm"  ] = self.Nsipm[j]
-                row["DT"     ] = self.DT   [j]
-                row["Z"      ] = self.Z    [j]
+                row["DT"     ] = self.DT   [j][i] if self.nS1 else np.nan
+                row["Z"      ] = self.Z    [j][i] if self.nS1 else np.nan
                 row["Zrms"   ] = self.Zrms [j]
                 row["X"      ] = self.X    [j]
                 row["Y"      ] = self.Y    [j]
