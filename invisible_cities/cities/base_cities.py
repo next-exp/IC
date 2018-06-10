@@ -649,8 +649,6 @@ class PCity(City):
 
         self.cnt.init(n_events_tot                 = 0,
                       n_empty_pmaps                = 0,
-                      n_events_not_s1              = 0,
-                      n_events_not_s2              = 0,
                       n_events_not_s2si            = 0,
                       n_events_not_s1s2_filter     = 0,
                       n_events_not_s2si_filter     = 0,
@@ -746,12 +744,6 @@ class PCity(City):
         """Filter the event in terms of s1, s2, s2si"""
         # loop event away if any signal (s1, s2 or s2si) not present
         empty = S12SelectorOutput(False, [], [])
-        if not pmap.s1s:
-            self.cnt.n_events_not_s1 += 1
-            return empty
-        elif not pmap.s2s:
-            self.cnt.n_events_not_s2 += 1
-            return empty
 
         # filters in s12 and s2si
         f = pmap_filter(self.s1s2_selector, pmap)
@@ -784,15 +776,15 @@ class KrCity(PCity):
                       msipm          =  self.conf.msipm,
                       masked_sipm    =  self.pos_sipm_masked)
 
-    def compute_z_and_dt(self, ts2, ts1):
+    def compute_z_and_dt(self, ts2, ts1s):
         """
         Computes dt & z
         dt = ts2 - ts1 (in mus)
         z = dt * v_drift (i natural units)
 
         """
-        dt  = ts2 - ts1
-        z = dt * self.drift_v
+        dt   = ts2 - np.array(ts1s)
+        z    = dt * self.drift_v
         dt  *= units.ns / units.mus  #in mus
         return z, dt
 
@@ -848,7 +840,7 @@ class KrCity(PCity):
                     c = clusters[loc_elem_1d(cQ, c_closest)]
                     print('c_chosen = {}'.format(c))
 
-                Z, DT = self.compute_z_and_dt(evt.S2t[-1], evt.S1t[0])
+                Z, DT = self.compute_z_and_dt(evt.S2t[-1], evt.S1t)
                 Zrms  = peak.rms / units.mus
 
                 evt.Nsipm.append(c.nsipm)
