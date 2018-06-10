@@ -29,6 +29,16 @@ def test_Kr_writer(config_tmpdir, KrMC_kdst):
                         getattr(evt, col).append(value)
                     except AttributeError:
                         setattr(evt, col, value)
+
+            evt.nS1 = int(evt.nS1)
+            evt.nS2 = int(evt.nS2)
+            for col in ("Z", "DT"):
+                column = list(getattr(evt, col))
+                setattr(evt, col, [])
+                for i in range(evt.nS2):
+                    s1_data = column[:evt.nS1 ]
+                    column  = column[ evt.nS1:]
+                    getattr(evt, col).append(s1_data)
             write(evt)
 
     with tb.open_file(filename, 'w') as h5out:
