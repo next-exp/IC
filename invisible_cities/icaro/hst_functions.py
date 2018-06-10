@@ -146,6 +146,8 @@ def display_matrix(x, y, z, mask=None, **kwargs):
 
     if mask is None:
         mask = np.ones_like(z_, dtype=bool)
+    else:
+        mask = mask.flatten()
     h  = hist2d(x_[mask], y_[mask], (x_binning,
                                      y_binning),
                 weights = z_[mask],
