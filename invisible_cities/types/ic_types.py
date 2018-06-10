@@ -60,6 +60,9 @@ class minmax:
     def bracket(self): return self.max - self.min
 
     @property
+    def interval(self): return (self.min, self.max) 
+
+    @property
     def center(self): return (self.max + self.min) / 2
 
     def contains(self, x):
