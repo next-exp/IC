@@ -19,7 +19,7 @@ from .  pmtgain        import Pmtgain
 from .. core.configure import configure
 
 
-@mark.parametrize("proc_opt", ('gain', 'gain_mau'))
+@mark.parametrize("proc_opt", ('gain', 'gain_mau', 'gain_nodeconv'))
 def test_pmtgain_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
     PATH_IN   = os.path.join(ICDATADIR    , 'pmtledpulsedata.h5')
     PATH_OUT  = os.path.join(config_tmpdir, 'pmtledpulsedata_HIST.h5')
