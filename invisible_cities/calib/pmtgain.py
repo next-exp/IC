@@ -56,6 +56,8 @@ class Pmtgain(CalibratedCity):
             self.pmt_processing = self.deconv_pmt
         elif conf.proc_mode == "gain_mau":
             self.pmt_processing = self.deconv_pmt_mau
+        elif conf.proc_mode == "gain_nodeconv":
+            self.pmt_processing = self.without_deconv
         else:
             raise ValueError(f"Unrecognized processing mode: {conf.proc_mode}")
 
@@ -80,6 +82,10 @@ class Pmtgain(CalibratedCity):
     def deconv_pmt_mau(self, RWF):
         CWF = self.deconv_pmt(RWF)
         return csf.pmt_subtract_mau(CWF, n_MAU=self.n_MAU)
+
+    def without_deconv(self, RWF):
+        CWF = csf.subtract_mode(RWF)
+        return CWF[self.pmt_active]
 
     def event_loop(self, NEVT, dataVectors):
         """actions:
@@ -113,7 +119,7 @@ class Pmtgain(CalibratedCity):
             # LED (correlated)
             led_ints  = cf.spaced_integrals(pmt_adc, self.l_limits)[:, ::2]
             pmt_spe  += cf.bin_waveforms(led_ints, self.histbins)
-
+            
             # Dark (anti-correlated)
             dark_ints  = cf.spaced_integrals(pmt_adc, self.d_limits)[:, ::2]
             pmt_dark  += cf.bin_waveforms(dark_ints, self.histbins)
