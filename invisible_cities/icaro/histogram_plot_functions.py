@@ -149,33 +149,35 @@ def plot_histograms(histo_manager, histonames='all', n_columns=3, plot_errors=Fa
     if histonames == 'all':
         histonames = histo_manager.histos
 
-    n_histos  = len(histonames)
-    n_columns = min(3, n_histos)
-    n_rows    = int(np.ceil(n_histos / n_columns))
+    if out_path is None:
+        n_histos  = len(histonames)
+        n_columns = min(3, n_histos)
+        n_rows    = int(np.ceil(n_histos / n_columns))
 
-    fig, axes = plt.subplots(n_rows, n_columns, figsize=(8 * n_columns, 6 * n_rows))
+        fig, axes = plt.subplots(n_rows, n_columns, figsize=(8 * n_columns, 6 * n_rows))
 
-    if n_histos == 1:
-        axes = np.array([axes])
     for i, histoname in enumerate(histonames):
         if reference_histo:
-             if len(reference_histo[histoname].bins) == 1:
-                 plot_histogram(reference_histo[histoname], ax=axes.flatten()[i], plot_errors=plot_errors, normed=normed, draw_color='red', stats=False)
-        plot_histogram         (histo_manager  [histoname], ax=axes.flatten()[i], plot_errors=plot_errors, normed=normed)
+            if out_path:
+                fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+            else:
+                ax = axes.flatten()[i] if isinstance(axes, np.ndarray) else axes
+            if len(reference_histo[histoname].bins) == 1:
+                plot_histogram(reference_histo[histoname], ax=ax, plot_errors=plot_errors, normed=normed, draw_color='red', stats=False)
+        plot_histogram        (histo_manager  [histoname], ax=ax, plot_errors=plot_errors, normed=normed)
 
-    fig.tight_layout()
-
-    if out_path:
-        for i, histoname in enumerate(histonames):
-            extent = axes.flatten()[i].get_tightbbox(fig.canvas.get_renderer()).transformed(fig.dpi_scale_trans.inverted())
-            fig.savefig(out_path + histoname + '.png', bbox_inches=extent)
-
+        if out_path:
+            fig.tight_layout()
+            fig.savefig(out_path + histoname + '.png')
+            fig.clf()
+            plt.close(fig)
 
 def get_percentage(a, b):
     """
     Given two flots, return the percentage between them.
     """
     return 100 * a / b if b else -100
+
 
 def average_empty(x, bins):
     """
