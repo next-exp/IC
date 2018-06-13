@@ -85,7 +85,7 @@ class Pmtgain(CalibratedCity):
 
     def without_deconv(self, RWF):
         CWF = csf.subtract_mode(RWF)
-        return CWF[self.pmt_active]
+        return CWF[self.pmt_active_list]
 
     def event_loop(self, NEVT, dataVectors):
         """actions:
