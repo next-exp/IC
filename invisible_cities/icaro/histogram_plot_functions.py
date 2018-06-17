@@ -157,11 +157,11 @@ def plot_histograms(histo_manager, histonames='all', n_columns=3, plot_errors=Fa
         fig, axes = plt.subplots(n_rows, n_columns, figsize=(8 * n_columns, 6 * n_rows))
 
     for i, histoname in enumerate(histonames):
+        if out_path:
+            fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+        else:
+            ax = axes.flatten()[i] if isinstance(axes, np.ndarray) else axes
         if reference_histo:
-            if out_path:
-                fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-            else:
-                ax = axes.flatten()[i] if isinstance(axes, np.ndarray) else axes
             if len(reference_histo[histoname].bins) == 1:
                 plot_histogram(reference_histo[histoname], ax=ax, plot_errors=plot_errors, normed=normed, draw_color='red', stats=False)
         plot_histogram        (histo_manager  [histoname], ax=ax, plot_errors=plot_errors, normed=normed)
@@ -171,6 +171,9 @@ def plot_histograms(histo_manager, histonames='all', n_columns=3, plot_errors=Fa
             fig.savefig(out_path + histoname + '.png')
             fig.clf()
             plt.close(fig)
+    if out_path is None:
+        fig.tight_layout()
+
 
 def get_percentage(a, b):
     """
