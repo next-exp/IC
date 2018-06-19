@@ -10,7 +10,7 @@ from pytest        import raises
 from .                         import calib_functions as cf
 from .. reco                   import tbl_functions as tbl
 from .. core.system_of_units_c import units
-from .. evm.nh5                import DataSensor
+from .. evm.nh5                import SensorTable
 
 
 def test_bin_waveforms():
@@ -102,7 +102,7 @@ def test_filter_limits_outside():
 def test_copy_sensor_table(config_tmpdir):
 
     ## Create an empty input file to begin
-    in_name = os.path.join(config_tmpdir, 'test_copy_in.h5')
+    in_name  = os.path.join(config_tmpdir, 'test_copy_in.h5')
     out_name = os.path.join(config_tmpdir, 'test_copy_out.h5')
     with tb.open_file(in_name, 'w') as input_file:
         input_file.create_group(input_file.root, 'dummy')
@@ -118,23 +118,54 @@ def test_copy_sensor_table(config_tmpdir):
             sens_group = input_file.create_group(input_file.root, 'Sensors')
         cf.copy_sensor_table(in_name, out_file)
         assert 'Sensors' in out_file.root
-        out_file.remove_node(out_file.root.Sensors)
 
-        ## Only PMTs
-        with tb.open_file(in_name, 'a') as input_file:
-            sens_group = input_file.root.Sensors
-            input_file.create_table(sens_group, "DataPMT", DataSensor,
-                                    "", tbl.filters("NOCOMPR"))
+
+def test_copy_sensor_table2(config_tmpdir):
+
+    ## Create an empty input file to begin
+    in_name  = os.path.join(config_tmpdir, 'test_copy_in.h5')
+    out_name = os.path.join(config_tmpdir, 'test_copy_out.h5')
+    ## Only PMTs
+    dummy_pmt = (0, 11)
+    with tb.open_file(in_name, 'w') as input_file:
+        sens_group = input_file.create_group(input_file.root, 'Sensors')
+        pmt_table  = input_file.create_table(sens_group, "DataPMT", SensorTable,
+                                             "", tbl.filters("NOCOMPR"))
+        row = pmt_table.row
+        row["channel"]  = dummy_pmt[0]
+        row["sensorID"] = dummy_pmt[1]
+        row.append()
+        pmt_table.flush
+
+    ## Test copy where Sensors group not present etc.
+    with tb.open_file(out_name, 'w') as out_file:
         cf.copy_sensor_table(in_name, out_file)
         assert 'DataPMT' in out_file.root.Sensors
-        out_file.remove_node(out_file.root.Sensors, recursive=True)
+        assert out_file.root.Sensors.DataPMT[0][0] == dummy_pmt[0]
+        assert out_file.root.Sensors.DataPMT[0][1] == dummy_pmt[1]
 
-        ## All sensors
-        with tb.open_file(in_name, 'a') as input_file:
-            sens_group = input_file.root.Sensors
-            input_file.create_table(sens_group, "DataSiPM", DataSensor,
-                                    "", tbl.filters("NOCOMPR"))
+
+def test_copy_sensor_table3(config_tmpdir):
+
+    ## Create an empty input file to begin
+    in_name  = os.path.join(config_tmpdir, 'test_copy_in.h5')
+    out_name = os.path.join(config_tmpdir, 'test_copy_out.h5')
+    ## Only SiPMs
+    dummy_sipm = (1013, 1000)
+    with tb.open_file(in_name, 'w') as input_file:
+        sens_group = input_file.create_group(input_file.root, 'Sensors')
+        sipm_table = input_file.create_table(sens_group, "DataSiPM", SensorTable,
+                                             "", tbl.filters("NOCOMPR"))
+        row = sipm_table.row
+        row["channel"]  = dummy_sipm[0]
+        row["sensorID"] = dummy_sipm[1]
+        row.append()
+        sipm_table.flush
+
+    ## Test copy where Sensors group not present etc.
+    with tb.open_file(out_name, 'w') as out_file:
         cf.copy_sensor_table(in_name, out_file)
-        assert 'DataPMT'  in out_file.root.Sensors
         assert 'DataSiPM' in out_file.root.Sensors
+        assert out_file.root.Sensors.DataSiPM[0][0] == dummy_sipm[0]
+        assert out_file.root.Sensors.DataSiPM[0][1] == dummy_sipm[1]
         
