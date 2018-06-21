@@ -18,6 +18,10 @@ from typing import Mapping
 
 # use Mapping (duck type) rather than dict
 
+units_dict = {'nanosecond' : units.nanosecond,  'ns' : units.nanosecond,
+              'microsecond': units.microsecond, 'mus': units.microsecond,
+              'millisecond': units.millisecond, 'ms' : units.millisecond}
+
 
 class mc_info_writer:
     """Write MC info to file."""
@@ -272,9 +276,9 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
             param_value = row['param_value'].decode('utf-8','ignore')
             numb, unit  = param_value.split()
             if param_name.find('Pmt') > 0:
-                bin_width_PMT = float(numb)
+                bin_width_PMT = float(numb) * units_dict[unit]
             elif param_name.find('SiPM') >= 0:
-                bin_width_SiPM = float(numb)
+                bin_width_SiPM = float(numb) * units_dict[unit]
 
 
     if bin_width_PMT is None:
