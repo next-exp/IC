@@ -11,6 +11,8 @@ from .  mcinfo_io import load_mcsensor_response
 from .  mcinfo_io import mc_info_writer
 from .  mcinfo_io import read_mcinfo_evt
 
+from .. core import system_of_units as units
+
 from .. reco.tbl_functions import get_mc_info
 
 from pytest import mark
@@ -228,3 +230,17 @@ def test_read_last_sensor_response(mc_sensors_nexus_data):
 
         assert last_read_id == last_written_id
 
+
+def test_pick_correct_sensor_binning(mc_sensors_nexus_data):
+    efile, _, _, _, _, _ = mc_sensors_nexus_data
+
+    mcsensors_dict = load_mcsensor_response(efile)
+    waveforms = mcsensors_dict[0]
+
+    last_sipm_id = 11054
+    last_sipm_bin_width = waveforms[last_sipm_id].bin_width
+
+    assert last_sipm_bin_width == 1. * units.microsecond
+
+   # with tb.open_file(efile, mode='r') as h5in:
+    #    row_first_pmt = h5in.root.MC.waveforms[751:752]
