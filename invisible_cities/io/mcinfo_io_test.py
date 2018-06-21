@@ -241,6 +241,3 @@ def test_pick_correct_sensor_binning(mc_sensors_nexus_data):
     last_sipm_bin_width = waveforms[last_sipm_id].bin_width
 
     assert last_sipm_bin_width == 1. * units.microsecond
-
-   # with tb.open_file(efile, mode='r') as h5in:
-    #    row_first_pmt = h5in.root.MC.waveforms[751:752]
