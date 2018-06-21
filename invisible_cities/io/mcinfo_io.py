@@ -313,7 +313,7 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
                 time_bins.append(wvf_row['time_bin'])
                 charges.  append(wvf_row['charge'])
             else:
-                bin_width = bin_width_PMT if sensor_id < 1000 else bin_width_SiPM
+                bin_width = bin_width_PMT if current_sensor_id < 1000 else bin_width_SiPM
                 times     = np.array(time_bins) * bin_width
 
                 current_event[current_sensor_id] = Waveform(times, charges, bin_width)
@@ -327,7 +327,7 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
 
             iwvf += 1
 
-        bin_width = bin_width_PMT if sensor_id < 1000 else bin_width_SiPM
+        bin_width = bin_width_PMT if current_sensor_id < 1000 else bin_width_SiPM
         times     = np.array(time_bins) * bin_width
         current_event[current_sensor_id] = Waveform(times, charges, bin_width)
 
