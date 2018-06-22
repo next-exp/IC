@@ -18,7 +18,8 @@ from typing import Mapping
 
 # use Mapping (duck type) rather than dict
 
-units_dict = {'nanosecond' : units.nanosecond,  'ns' : units.nanosecond,
+units_dict = {'picosecond' : units.picosecond,  'ps' : units.picosecond,
+              'nanosecond' : units.nanosecond,  'ns' : units.nanosecond,
               'microsecond': units.microsecond, 'mus': units.microsecond,
               'millisecond': units.millisecond, 'ms' : units.millisecond}
 
