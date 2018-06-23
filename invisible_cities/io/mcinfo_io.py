@@ -18,6 +18,11 @@ from typing import Mapping
 
 # use Mapping (duck type) rather than dict
 
+units_dict = {'picosecond' : units.picosecond,  'ps' : units.picosecond,
+              'nanosecond' : units.nanosecond,  'ns' : units.nanosecond,
+              'microsecond': units.microsecond, 'mus': units.microsecond,
+              'millisecond': units.millisecond, 'ms' : units.millisecond}
+
 
 class mc_info_writer:
     """Write MC info to file."""
@@ -272,9 +277,9 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
             param_value = row['param_value'].decode('utf-8','ignore')
             numb, unit  = param_value.split()
             if param_name.find('Pmt') > 0:
-                bin_width_PMT = float(numb)
+                bin_width_PMT = float(numb) * units_dict[unit]
             elif param_name.find('SiPM') >= 0:
-                bin_width_SiPM = float(numb)
+                bin_width_SiPM = float(numb) * units_dict[unit]
 
 
     if bin_width_PMT is None:
@@ -313,7 +318,7 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
                 time_bins.append(wvf_row['time_bin'])
                 charges.  append(wvf_row['charge'])
             else:
-                bin_width = bin_width_PMT if sensor_id < 1000 else bin_width_SiPM
+                bin_width = bin_width_PMT if current_sensor_id < 1000 else bin_width_SiPM
                 times     = np.array(time_bins) * bin_width
 
                 current_event[current_sensor_id] = Waveform(times, charges, bin_width)
@@ -327,7 +332,7 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
 
             iwvf += 1
 
-        bin_width = bin_width_PMT if sensor_id < 1000 else bin_width_SiPM
+        bin_width = bin_width_PMT if current_sensor_id < 1000 else bin_width_SiPM
         times     = np.array(time_bins) * bin_width
         current_event[current_sensor_id] = Waveform(times, charges, bin_width)
 
