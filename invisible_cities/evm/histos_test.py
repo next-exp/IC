@@ -20,8 +20,9 @@ from hypothesis.strategies  import one_of
 from .. evm.histos  import HistoManager, Histogram
 
 
-characters = tuple(string.ascii_letters + string.digits)
-letters    = tuple(string.ascii_letters)
+characters = string.ascii_letters + string.digits
+letters    = string.ascii_letters
+
 
 def assert_histogram_equality(histogram1, histogram2):
     assert np.all     (a == b for a, b in zip(histogram1.bins, histogram2.bins))
@@ -31,17 +32,24 @@ def assert_histogram_equality(histogram1, histogram2):
     assert             histogram1.title   == histogram2.title
     assert             histogram1.labels  == histogram2.labels
 
+
+@composite
+def titles(draw):
+    return draw(text(letters, min_size=1)) + draw(text(characters, min_size=5))
+
+
 @composite
 def bins_arrays(draw, dimension=0):
     if dimension <= 0:
         dimension = draw(sampled_from((1,2)))
 
-    bin_margins   = draw(arrays(float, (dimension, 2),
-                         floats(-1e3, 1e3, allow_nan=False, allow_infinity=False)))
-    for bin_margin in bin_margins:
-        assume(round(bin_margin.min(), 2) < round(bin_margin.max(), 2))
+    bin_lower_margins = draw(arrays(float, dimension,
+                             floats(-1e3, 1e3, allow_nan=False, allow_infinity=False)))
+    bin_additive      = draw(arrays(float, dimension,
+                             floats(1.1 , 1e3, allow_nan=False, allow_infinity=False)))
+    bin_upper_margins = bin_lower_margins + bin_additive
 
-    bins = [ np.linspace(bin_margin.min(), bin_margin.max(), draw(integers(2, 20))) for bin_margin in bin_margins ]
+    bins = [ np.linspace(bin_lower_margins[i], bin_upper_margins[i], draw(integers(2, 20))) for i, _ in enumerate(bin_lower_margins) ]
 
     return bins
 
@@ -58,19 +66,17 @@ def filled_histograms(draw, dimension=0, fixed_bins=None):
     else:
         bins = draw(bins_arrays(dimension=dimension))
 
-    title  = draw(text(letters, min_size=1)) + draw(text(characters, min_size=1))
-    labels = draw(lists(text(characters, min_size=1), min_size=dimension, max_size=dimension))
+    labels = draw(lists(text(characters, min_size=5), min_size=dimension, max_size=dimension))
     shape  = draw(integers(50, 100)),
     data   = []
     for i in range(dimension):
-        lower_limit = bins[i][0]  * draw(floats(0.5, 1.5))
-        upper_limit = bins[i][-1] * draw(floats(0.5, 1.5))
-        assume(lower_limit < upper_limit)
+        lower_limit = bins[i][0]  - draw(floats(0.5, 1e8, allow_nan=False, allow_infinity=False))
+        upper_limit = bins[i][-1] + draw(floats(0.5, 1e8, allow_nan=False, allow_infinity=False))
         data.append(draw(arrays(float, shape, floats(lower_limit, upper_limit,
                                                      allow_nan=False, allow_infinity=False))))
     data = np.array(data)
-    args = title, bins, labels, data
-    return args, Histogram(title, bins, labels, data)
+    args = draw(titles()), bins, labels, data
+    return args, Histogram(*args)
 
 
 @composite
@@ -78,10 +84,9 @@ def empty_histograms(draw, dimension=0):
     if dimension <= 0:
         dimension = draw(sampled_from((1,2)))
     bins   = draw(bins_arrays(dimension=dimension))
-    title  = draw(text(letters, min_size=1)) + draw(text(characters, min_size=1))
-    labels = draw(lists(text(characters, min_size=1), min_size=dimension, max_size=dimension))
-    args   = title, bins, labels
-    return args, Histogram(title, bins, labels)
+    labels = draw(lists(text(characters, min_size=5), min_size=dimension, max_size=dimension))
+    args   = draw(titles()), bins, labels
+    return args, Histogram(*args)
 
 
 @composite
