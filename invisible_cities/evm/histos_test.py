@@ -20,7 +20,8 @@ from hypothesis.strategies  import one_of
 from .. evm.histos  import HistoManager, Histogram
 
 
-characters = tuple(string.ascii_letters + string.digits + "-")
+characters = tuple(string.ascii_letters + string.digits)
+letters    = tuple(string.ascii_letters)
 
 def assert_histogram_equality(histogram1, histogram2):
     assert np.all     (a == b for a, b in zip(histogram1.bins, histogram2.bins))
@@ -57,7 +58,7 @@ def filled_histograms(draw, dimension=0, fixed_bins=None):
     else:
         bins = draw(bins_arrays(dimension=dimension))
 
-    title  = draw(text(characters, min_size=1))
+    title  = draw(text(letters, min_size=1)) + draw(text(characters, min_size=1))
     labels = draw(lists(text(characters, min_size=1), min_size=dimension, max_size=dimension))
     shape  = draw(integers(50, 100)),
     data   = []
@@ -77,7 +78,7 @@ def empty_histograms(draw, dimension=0):
     if dimension <= 0:
         dimension = draw(sampled_from((1,2)))
     bins   = draw(bins_arrays(dimension=dimension))
-    title  = draw(text(characters, min_size=1))
+    title  = draw(text(letters, min_size=1)) + draw(text(characters, min_size=1))
     labels = draw(lists(text(characters, min_size=1), min_size=dimension, max_size=dimension))
     args   = title, bins, labels
     return args, Histogram(title, bins, labels)

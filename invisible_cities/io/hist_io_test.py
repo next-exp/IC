@@ -26,10 +26,10 @@ from .. evm.histos_test     import histograms_lists
 from .. evm.histos_test     import assert_histogram_equality
 
 
-characters = tuple(string.ascii_letters + string.digits + "-")
+letters    = tuple(string.ascii_letters)
 
 @settings(suppress_health_check=(HealthCheck.too_slow,))
-@given   (histograms_lists(), text(characters, min_size=1))
+@given   (histograms_lists(), text(letters, min_size=1))
 def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, group):
     args, list_of_histograms = histogram_list
     histogram_manager        = HistoManager(list_of_histograms)
@@ -53,7 +53,7 @@ def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, gro
 
 
 @settings(suppress_health_check=(HealthCheck.too_slow,))
-@given   (histograms_lists(), text(characters, min_size=1))
+@given   (histograms_lists(), text(letters, min_size=1))
 def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, group):
     args, list_of_histograms = histogram_list
     histogram_manager        = HistoManager(list_of_histograms[:1])
@@ -79,7 +79,7 @@ def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, gr
 
 
 @settings(suppress_health_check=(HealthCheck.too_slow,))
-@given   (histograms_lists(), text(characters, min_size=1), text(characters, min_size=1, max_size=1).filter(lambda x: x not in ["w", "a"]))
+@given   (histograms_lists(), text(letters, min_size=1), text(letters, min_size=1, max_size=1).filter(lambda x: x not in ["w", "a"]))
 def test_save_histomanager_to_file_raises_ValueError(output_tmpdir, histogram_list, group, write_mode):
     args, list_of_histograms = histogram_list
     histogram_manager        = HistoManager(list_of_histograms)
