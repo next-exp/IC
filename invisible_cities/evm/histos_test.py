@@ -20,7 +20,9 @@ from hypothesis.strategies  import one_of
 from .. evm.histos  import HistoManager, Histogram
 
 
-characters = tuple(string.ascii_letters + string.digits + "-")
+characters = string.ascii_letters + string.digits
+letters    = string.ascii_letters
+
 
 def assert_histogram_equality(histogram1, histogram2):
     assert np.all     (a == b for a, b in zip(histogram1.bins, histogram2.bins))
@@ -29,6 +31,12 @@ def assert_histogram_equality(histogram1, histogram2):
     assert np.allclose(histogram1.out_range, histogram2.out_range)
     assert             histogram1.title   == histogram2.title
     assert             histogram1.labels  == histogram2.labels
+
+
+@composite
+def titles(draw):
+    return draw(text(letters, min_size=1)) + draw(text(characters, min_size=5))
+
 
 @composite
 def bins_arrays(draw, dimension=0):
@@ -57,8 +65,7 @@ def filled_histograms(draw, dimension=0, fixed_bins=None):
     else:
         bins = draw(bins_arrays(dimension=dimension))
 
-    title  = draw(text(characters, min_size=1))
-    labels = draw(lists(text(characters, min_size=1), min_size=dimension, max_size=dimension))
+    labels = draw(lists(text(characters, min_size=5), min_size=dimension, max_size=dimension))
     shape  = draw(integers(50, 100)),
     data   = []
     for i in range(dimension):
@@ -68,8 +75,8 @@ def filled_histograms(draw, dimension=0, fixed_bins=None):
         data.append(draw(arrays(float, shape, floats(lower_limit, upper_limit,
                                                      allow_nan=False, allow_infinity=False))))
     data = np.array(data)
-    args = title, bins, labels, data
-    return args, Histogram(title, bins, labels, data)
+    args = draw(titles()), bins, labels, data
+    return args, Histogram(*args)
 
 
 @composite
@@ -77,10 +84,9 @@ def empty_histograms(draw, dimension=0):
     if dimension <= 0:
         dimension = draw(sampled_from((1,2)))
     bins   = draw(bins_arrays(dimension=dimension))
-    title  = draw(text(characters, min_size=1))
-    labels = draw(lists(text(characters, min_size=1), min_size=dimension, max_size=dimension))
-    args   = title, bins, labels
-    return args, Histogram(title, bins, labels)
+    labels = draw(lists(text(characters, min_size=5), min_size=dimension, max_size=dimension))
+    args   = draw(titles()), bins, labels
+    return args, Histogram(*args)
 
 
 @composite
