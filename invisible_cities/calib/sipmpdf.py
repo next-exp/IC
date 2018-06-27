@@ -28,7 +28,7 @@ class Sipmpdf(CalibratedCity):
     Reads: Raw data waveforms.
     Produces: Histograms of pedestal subtracted waveforms.
     """
-    parameters = tuple("""min_bin max_bin bin_width""".split())
+    parameters = tuple("""min_bin max_bin bin_width adc_only""".split())
 
     def __init__(self, **kwds):
         """
@@ -44,6 +44,10 @@ class Sipmpdf(CalibratedCity):
         conf          = self.conf
         self.histbins = np.arange(conf.min_bin, conf.max_bin, conf.bin_width)
 
+        ## ADC plots?
+        self.adc_only = conf.adc_only
+        
+        self.sipm_processing_adc    = csf.sipm_processing["subtract_mode"]
         self.sipm_processing_mode   = csf.sipm_processing["subtract_mode_calibrate"]
         self.sipm_processing_median = csf.sipm_processing["subtract_median_calibrate"]
 
@@ -60,8 +64,11 @@ class Sipmpdf(CalibratedCity):
 
         ## Where we'll be saving the binned info for each channel
         shape          = sipmrwf.shape[1], len(self.histbins) - 1
-        sipm_mode_zs   = np.zeros(shape, dtype=np.int)
-        sipm_median_zs = np.zeros(shape, dtype=np.int)
+        if self.adc_only:
+            sipm_adc_zs    = np.zeros(shape, dtype=np.int)
+        else:
+            sipm_mode_zs   = np.zeros(shape, dtype=np.int)
+            sipm_median_zs = np.zeros(shape, dtype=np.int)
 
         for evt in range(NEVT):
             self.conditional_print(evt, self.cnt.n_events_tot)
@@ -74,21 +81,30 @@ class Sipmpdf(CalibratedCity):
             wfs = sipmrwf[evt]
 
             # Zeroed sipm waveforms in pe
-            sipm_mode   = self.sipm_processing_mode  (wfs, self.sipm_adc_to_pes)
-            sipm_median = self.sipm_processing_median(wfs, self.sipm_adc_to_pes)
+            if self.adc_only:
+                sipm_adc    = self.sipm_processing_adc   (wfs)
+                sipm_adc_zs    += cf.bin_waveforms(sipm_adc   , self.histbins)
+            else:
+                sipm_mode   = self.sipm_processing_mode  (wfs, self.sipm_adc_to_pes)
+                sipm_median = self.sipm_processing_median(wfs, self.sipm_adc_to_pes)
 
-            sipm_mode_zs   += cf.bin_waveforms(sipm_mode  , self.histbins)
-            sipm_median_zs += cf.bin_waveforms(sipm_median, self.histbins)
+                sipm_mode_zs   += cf.bin_waveforms(sipm_mode  , self.histbins)
+                sipm_median_zs += cf.bin_waveforms(sipm_median, self.histbins)
 
             # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)
             write.run_and_event(self.run_number, event, timestamp)
 
-        write.sipm (sipm_mode_zs  )
-        write.mausi(sipm_median_zs)
+        if self.adc_only:
+            write.adc_spec(sipm_adc_zs)
+        else:
+            write.sipm (sipm_mode_zs  )
+            write.medsi(sipm_median_zs)
 
 
     def get_writers(self, h5out):
+        cf.copy_sensor_table(self.input_files[0], h5out)
+        
         bin_centres = shift_to_bin_centers(self.histbins)
         HIST        = partial(hist_writer,
                               h5out,
@@ -97,10 +113,16 @@ class Sipmpdf(CalibratedCity):
                               n_bins      = len(bin_centres),
                               bin_centres = bin_centres)
 
+        if self.adc_only:
+            writers = Namespace(
+                run_and_event = run_and_event_writer(h5out),
+                adc_spec      = HIST(table_name  = 'sipm_adc'))
+            return writers
+
         writers = Namespace(
             run_and_event = run_and_event_writer(h5out),
             sipm          = HIST(table_name  = 'sipm_mode'  ),
-            mausi         = HIST(table_name  = 'sipm_median'))
+            medsi         = HIST(table_name  = 'sipm_median'))
 
         return writers
 
@@ -110,14 +132,3 @@ class Sipmpdf(CalibratedCity):
     def display_IO_info(self):
         super().display_IO_info()
         print(self.sp)
-
-    def _copy_sensor_table(self, h5in):
-        # Copy sensor table if exists (needed for GATE)
-        if 'Sensors' not in h5in.root: return
-
-        group    = self.output_file.create_group(self.output_file.root, "Sensors")
-        datapmt  = h5in.root.Sensors.DataPMT
-        datasipm = h5in.root.Sensors.DataSiPM
-
-        datapmt .copy(newparent=group)
-        datasipm.copy(newparent=group)
