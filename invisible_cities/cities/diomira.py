@@ -81,7 +81,10 @@ class Diomira(MonteCarloCity):
             # Simulate detector response
             dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd)
             dataSiPM_noisy  = self.simulate_sipm_response(evt, sipmrd)
-            dataSiPM        = wfm.noise_suppression(dataSiPM_noisy, self.sipms_thresholds)
+            
+            thr_with_base   = self.sipms_thresholds[:, np.newaxis]
+            thr_with_base  += self.noise_sampler.baselines
+            dataSiPM        = wfm.noise_suppression(dataSiPM_noisy, thr_with_base)
 
             RWF = dataPMT.astype(np.int16)
             BLR = blrPMT.astype(np.int16)
