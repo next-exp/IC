@@ -2,7 +2,8 @@
 Contains functions used in calibration.
 """
 
-import numpy as np
+import numpy  as np
+import tables as tb
 
 from .. core.system_of_units_c import units
 from .. core.core_functions    import in_range
@@ -107,3 +108,20 @@ def filter_limits(limits, buffer_length):
     if n_false_second_half % 2: within_buffer[- n_false_second_half - 1] = False
 
     return limits[within_buffer]
+
+
+def copy_sensor_table(h5in, h5out):
+    # Copy sensor table if exists (needed for Non DB calibrations)
+
+    with tb.open_file(h5in) as dIn:
+        if 'Sensors' not in dIn.root:
+            return
+        group    = h5out.create_group(h5out.root, "Sensors")
+
+        if 'DataPMT' in dIn.root.Sensors:
+            datapmt  = dIn.root.Sensors.DataPMT
+            datapmt.copy(newparent=group)
+
+        if 'DataSiPM' in dIn.root.Sensors:
+            datasipm = dIn.root.Sensors.DataSiPM
+            datasipm.copy(newparent=group)

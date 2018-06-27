@@ -110,9 +110,18 @@ def get_vectors(h5f):
         RWF array for PMTs
     """
 
-    pmtrwf = h5f.root.RD.pmtrwf
-    pmtblr = h5f.root.RD.pmtblr
-    sipmrwf = h5f.root.RD.sipmrwf
+    pmtrwf = np.zeros((1, 12, 1))
+    pmtblr = np.zeros((1, 12, 1))
+    sipmrwf = np.zeros((1, 1792, 1))
+    if 'pmtrwf' in h5f.root.RD:
+        pmtrwf = h5f.root.RD.pmtrwf
+
+    if 'pmtblr' in h5f.root.RD:
+        pmtblr = h5f.root.RD.pmtblr
+
+    if 'sipmrwf' in h5f.root.RD:
+        sipmrwf = h5f.root.RD.sipmrwf
+        
     return pmtrwf, pmtblr, sipmrwf
 
 
@@ -139,8 +148,8 @@ def get_rwf_vectors(h5in):
     NEVT_pmt , _, _          = pmtrwf .shape
     NEVT_simp, _, _          = sipmrwf.shape
 
-    assert NEVT_simp == NEVT_pmt
-    return NEVT_pmt, pmtrwf, sipmrwf, pmtblr
+    #assert NEVT_simp == NEVT_pmt
+    return max(NEVT_pmt, NEVT_simp), pmtrwf, sipmrwf, pmtblr
 
 
 def get_rd_vectors(h5in):
