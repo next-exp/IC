@@ -56,6 +56,8 @@ class Pmtgain(CalibratedCity):
             self.pmt_processing = self.deconv_pmt
         elif conf.proc_mode == "gain_mau":
             self.pmt_processing = self.deconv_pmt_mau
+        elif conf.proc_mode == "gain_nodeconv":
+            self.pmt_processing = self.without_deconv
         else:
             raise ValueError(f"Unrecognized processing mode: {conf.proc_mode}")
 
@@ -80,6 +82,10 @@ class Pmtgain(CalibratedCity):
     def deconv_pmt_mau(self, RWF):
         CWF = self.deconv_pmt(RWF)
         return csf.pmt_subtract_mau(CWF, n_MAU=self.n_MAU)
+
+    def without_deconv(self, RWF):
+        CWF = csf.subtract_mode(RWF)
+        return CWF[self.pmt_active_list]
 
     def event_loop(self, NEVT, dataVectors):
         """actions:
@@ -126,6 +132,9 @@ class Pmtgain(CalibratedCity):
 
 
     def get_writers(self, h5out):
+        ## Copy sensor info (good for non DB tests)
+        cf.copy_sensor_table(self.input_files[0], h5out)
+
         bin_centres = shift_to_bin_centers(self.histbins)
         HIST        = partial(hist_writer,
                               h5out,
@@ -146,14 +155,3 @@ class Pmtgain(CalibratedCity):
     def display_IO_info(self):
         super().display_IO_info()
         print(self.sp)
-
-    def _copy_sensor_table(self, h5in):
-        # Copy sensor table if exists (needed for GATE)
-        if 'Sensors' not in h5in.root: return
-
-        group    = self.output_file.create_group(self.output_file.root, "Sensors")
-        datapmt  = h5in.root.Sensors.DataPMT
-        datasipm = h5in.root.Sensors.DataSiPM
-
-        datapmt .copy(newparent=group)
-        datasipm.copy(newparent=group)
