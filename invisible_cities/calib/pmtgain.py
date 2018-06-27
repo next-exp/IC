@@ -119,7 +119,7 @@ class Pmtgain(CalibratedCity):
             # LED (correlated)
             led_ints  = cf.spaced_integrals(pmt_adc, self.l_limits)[:, ::2]
             pmt_spe  += cf.bin_waveforms(led_ints, self.histbins)
-            
+
             # Dark (anti-correlated)
             dark_ints  = cf.spaced_integrals(pmt_adc, self.d_limits)[:, ::2]
             pmt_dark  += cf.bin_waveforms(dark_ints, self.histbins)
@@ -134,7 +134,7 @@ class Pmtgain(CalibratedCity):
     def get_writers(self, h5out):
         ## Copy sensor info (good for non DB tests)
         cf.copy_sensor_table(self.input_files[0], h5out)
-        
+
         bin_centres = shift_to_bin_centers(self.histbins)
         HIST        = partial(hist_writer,
                               h5out,
