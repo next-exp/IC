@@ -247,7 +247,6 @@ def test_wf_baseline_subtracted_is_close_to_zero(gaussian_sipm_signal):
 def test_mean_for_pmts_fee_is_unbiased(square_pmt_and_sipm_waveforms):
     _, _, pmts_fee, _, _, _, _ = square_pmt_and_sipm_waveforms
     pmts_bls = csf.subtract_mean(pmts_fee) # ped subtracted near zero
-    print(pmts_bls)
     sums     = np.sum(pmts_bls, axis=1)    # cancel fluctuations very close to zeo
     assert np.allclose(sums, 0)
 
