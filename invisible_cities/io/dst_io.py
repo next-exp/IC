@@ -1,16 +1,17 @@
 import tables as tb
 import pandas as pd
-from .. core.exceptions import UnknownDST
+from tables import NoSuchNodeError
 
 def load_dst(filename, group, node):
     with tb.open_file(filename) as h5in:
         try:
             table = getattr(getattr(h5in.root, group), node).read()
-        except:
+            return pd.DataFrame.from_records(table)
+        except NoSuchNodeError:
             print(f' error loading {filename}')
-            raise UnknownDST
+            #raise UnknownDST
 
-        return pd.DataFrame.from_records(table)
+            #return pd.DataFrame.from_records(table)
 
 
 def load_dsts(dst_list, group, node):

@@ -31,4 +31,3 @@ def test_load_dsts_throw_except_if_wrong_file(KrMC_kdst):
     df_true = KrMC_kdst[0].true
     wrong_file =KrMC_kdst[1].filename
     cdst = load_dsts([tbl.filename, tbl.filename, wrong_file], tbl.group, tbl.node)
-    
