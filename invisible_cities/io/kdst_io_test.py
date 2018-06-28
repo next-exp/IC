@@ -16,8 +16,8 @@ from ..evm.event_model    import KrEvent
 
 def test_Kr_writer(config_tmpdir, KrMC_kdst):
     filename = os.path.join(config_tmpdir, 'test_dst.h5')
-    tbl      = KrMC_kdst.file_info
-    df       = KrMC_kdst.true
+    tbl      = KrMC_kdst[0].file_info
+    df       = KrMC_kdst[0].true
 
     def dump_df(write, df):
         for evt_no in sorted(set(df.event)):
