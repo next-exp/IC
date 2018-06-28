@@ -4,6 +4,8 @@ import numpy        as np
 import scipy.signal as signal
 import scipy.stats  as stats
 
+from functools import wraps
+
 from .. core.core_functions import to_col_vector
 
 
@@ -34,14 +36,31 @@ def mode(wfs, axis=0):
     positive waveforms.
     """
     def wf_mode(wf):
-        positive = wf >= 0
-        return np.bincount(wf[positive]).argmax() if np.count_nonzero(positive) else -1
+        positive = wf > 0
+        return np.bincount(wf[positive]).argmax() if np.count_nonzero(positive) else 0
     return np.apply_along_axis(wf_mode, axis, wfs).astype(float)
 
 
-def means  (wfs): return to_col_vector(np.mean  (wfs, axis=1))
-def medians(wfs): return to_col_vector(np.median(wfs, axis=1))
-def modes  (wfs): return to_col_vector(   mode  (wfs, axis=1))
+def zero_masked(fn):
+    """
+    protection for mean and median
+    so that we get the correct answer in case of 
+    zero suppressed data
+    """
+    @wraps(fn)
+    def proxy(wfs, *args, **kwds):
+        mask_wfs = np.ma.masked_where(wfs == 0, wfs)
+        return fn(mask_wfs, *args, **kwds).filled(0)
+    proxy.__doc__ = "Masked version to protect ZS mode \n\n" + proxy.__doc__
+    return proxy
+
+median = zero_masked(np.ma.median)
+mean   = zero_masked(np.ma.mean)
+
+
+def means  (wfs): return to_col_vector(mean  (wfs, axis=1))
+def medians(wfs): return to_col_vector(median(wfs, axis=1))
+def modes  (wfs): return to_col_vector(mode  (wfs, axis=1))
 
 
 def subtract_baseline(wfs, *, bls_mode=BlsMode.mean):
