@@ -4,6 +4,8 @@ import numpy        as np
 import scipy.signal as signal
 import scipy.stats  as stats
 
+from functools import wraps
+
 from .. core.core_functions import to_col_vector
 
 
@@ -39,24 +41,21 @@ def mode(wfs, axis=0):
     return np.apply_along_axis(wf_mode, axis, wfs).astype(float)
 
 
-def median(wfs, axis=0):
+def zero_masked(fn):
     """
-    The numpy median but with protection
+    protection for mean and median
     so that we get the correct answer in case of 
     zero suppressed data
     """
-    mask_wfs = np.ma.masked_where(wfs == 0, wfs)
-    return np.ma.median(mask_wfs, axis=axis).filled(0)
+    @wraps(fn)
+    def proxy(wfs, *args, **kwds):
+        mask_wfs = np.ma.masked_where(wfs == 0, wfs)
+        return fn(mask_wfs, *args, **kwds).filled(0)
+    proxy.__doc__ = "Masked version to protect ZS mode \n\n" + proxy.__doc__
+    return proxy
 
-
-def mean(wfs, axis=0):
-    """
-    The numpy mean but with protection
-    so that we get the correct answer in case of 
-    zero suppressed data
-    """
-    mask_wfs = np.ma.masked_where(wfs == 0, wfs)
-    return np.ma.mean(mask_wfs, axis=axis).filled(0)
+median = zero_masked(np.ma.median)
+mean   = zero_masked(np.ma.mean)
 
 
 def means  (wfs): return to_col_vector(mean  (wfs, axis=1))
