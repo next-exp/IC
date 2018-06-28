@@ -191,6 +191,9 @@ def KrMC_kdst(ICDATADIR):
     test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_KDST.h5"
     test_file = os.path.join(ICDATADIR, test_file)
 
+    wrong_file = "kdst_5881_map_lt.h5"
+    wrong_file = os.path.join(ICDATADIR, test_file)
+
     group = "DST"
     node  = "Events"
 
@@ -282,7 +285,7 @@ def KrMC_kdst(ICDATADIR):
     return dst_data(tbl_data(test_file, group, node),
                     configuration,
                     df_read,
-                    df_true)
+                    df_true), tbl_data(wrong_file, group, node)
 
 
 @pytest.fixture(scope='session')
