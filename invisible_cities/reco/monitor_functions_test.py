@@ -18,6 +18,7 @@ from .. evm.pmaps_test       import pmaps
 from .. evm.pmaps_test       import sensor_responses
 
 
+@settings(deadline=2000)
 @given(pmaps())
 def test_fill_pmap_var_1d(pmaps):
     var_dict      = defaultdict(list)
@@ -56,6 +57,7 @@ def test_fill_pmap_var_1d(pmaps):
         counter += nsipm
 
 
+@settings(deadline=2000)
 @given(pmaps())
 def test_fill_pmap_var_2d(pmaps):
     var_dict      = defaultdict(list)
