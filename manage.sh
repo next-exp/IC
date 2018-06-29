@@ -72,7 +72,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2018-05-03
+CONDA_ENV_TAG=2018-06-30
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
@@ -83,24 +83,23 @@ function make_environment {
     cat <<EOF > ${YML_FILENAME}
 name: ${CONDA_ENV_NAME}
 dependencies:
-- cython=0.26=py36_0
-- jupyter=1.0.0=py36_3
-- matplotlib=2.0.2=np113py36_0
-- networkx=1.11=py36_0
-- notebook=5.0.0=py36_0
-- numpy=1.13.1=py36_0
-- pandas=0.20.3=py36_0
-- pymysql=0.7.9=py36_0
-- pytables=3.4.2=np113py36_0
-- pytest=3.2.1=py36_0
-- python=3.6.2=0
-- scipy=0.19.1=np113py36_0
-- sphinx=1.6.3=py36_0
-- tornado=4.5.1=py36_0
-- pip:
-  - flaky==3.4.0
-  - hypothesis==3.32.0
-  - pytest-xdist==1.20.0
+- python=${PYTHON_VERSION}
+- cython=0.28.3
+- jupyter=1.0.0
+- matplotlib=2.2.2
+- networkx=2.1
+- notebook=5.5.0
+- numpy=1.14.5
+- pandas=0.23.1
+- pymysql=0.8.1
+- pytables=3.4.4
+- pytest=3.6.2
+- scipy=1.1.0
+- sphinx=1.7.5
+- tornado=5.0.2
+- flaky=3.4.0
+- hypothesis=3.57
+- pytest-xdist=1.22.2
 EOF
 
     conda env create -f ${YML_FILENAME}
