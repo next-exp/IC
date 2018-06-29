@@ -52,10 +52,9 @@ function install_conda {
             curl https://repo.continuum.io/miniconda/Miniconda3-4.5.4-${CONDA_OS}-x86_64.sh -o miniconda.sh
         fi
         bash miniconda.sh -b -p $HOME/miniconda
-        export PATH="$HOME/miniconda/bin:$PATH"
-        echo Prepended $HOME/miniconda/bin to your PATH. Please add it to your shell profile for future sessions.
-        conda config --set always_yes yes --set changeps1 no
-        echo Prepended $HOME/miniconda/bin to your PATH. Please add it to your shell profile for future sessions.
+        CONDA_SH=$HOME/miniconda/etc/profile.d/conda.sh
+        source $CONDA_SH
+        echo Activated conda by sourcing $CONDA_SH
     fi
 }
 
@@ -92,7 +91,7 @@ EOF
 
 function python_version_env {
     # Activate the relevant conda env
-    source activate IC${PYTHON_VERSION}
+    conda activate IC${PYTHON_VERSION}
     # Set IC environment variables and download database
     ic_env
 }
