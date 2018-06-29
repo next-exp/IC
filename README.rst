@@ -8,9 +8,9 @@ Quickstart guide
 
 + Clone the repository
 
-+ `cd` into the `IC` directory
++ :code:`cd` into the `IC` directory
 
-+ `source manage.sh work_in_python_version 3.6`
++ :code:`source manage.sh work_in_python_version 3.6`
 
 The last step will, if necessary, install conda and create an
 appropriate conda environment, as well as setting environment
@@ -32,7 +32,7 @@ suite. This can be done with
    source manage.sh compile_and_test_par
 
 If you check out a commit which requires an older set of dependencies,
-the `compile_and_test` commands will automatically switch to an
+the :code:`compile_and_test` commands will automatically switch to an
 appropriate environment, creating it on the fly if necessary.
 
 :Travis CI: |travis|
