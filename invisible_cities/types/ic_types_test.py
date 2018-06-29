@@ -36,6 +36,10 @@ cmms            = builds(make_cminmax, sensible_floats, sensible_floats)
 xys             = builds(make_xy, sensible_floats, sensible_floats)
 cxys            = builds(make_xyc, sensible_floats, sensible_floats)
 
+@given(sensible_floats, sensible_floats)
+def test_minmax_interval(a,b):
+    if a > b: a, b = b, a
+    assert np.allclose(minmax(a,b).interval , (a,b), rtol=1e-4)
 
 @given(sensible_floats, sensible_floats)
 def test_minmax_does_not_accept_min_greater_than_max(a,b):
