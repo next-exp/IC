@@ -116,7 +116,7 @@ function work_in_python_version {
 
     python_version_env
     compile_cython_components
-    run_tests
+    run_tests_par
 }
 
 function run_tests {
