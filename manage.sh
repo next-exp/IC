@@ -58,13 +58,16 @@ function install_conda {
     fi
 }
 
+CONDA_ENV_TAG=2018-05-03
+CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
+
 function make_environment {
-    YML_FILENAME=environment${PYTHON_VERSION}.yml
+    YML_FILENAME=environment-${CONDA_ENV_NAME}.yml
 
     echo creating ${YML_FILENAME}
 
     cat <<EOF > ${YML_FILENAME}
-name: IC3.6
+name: ${CONDA_ENV_NAME}
 dependencies:
 - cython=0.26=py36_0
 - jupyter=1.0.0=py36_3
@@ -89,14 +92,28 @@ EOF
     conda env create -f ${YML_FILENAME}
 }
 
+function switch_to_conda_env {
+    conda deactivate # in case some other environment was already active
+    conda activate ${CONDA_ENV_NAME}
+}
+
 function python_version_env {
-    # Activate the relevant conda env
-    conda activate IC${PYTHON_VERSION}
+    switch_to_conda_env
     # Set IC environment variables and download database
     ic_env
 }
 
 function work_in_python_version {
+    if ! which conda >> /dev/null
+    then
+       install_conda
+    fi
+
+    if ! (conda env list | grep ${CONDA_ENV_NAME}) >> /dev/null
+    then
+        make_environment
+    fi
+
     python_version_env
     compile_cython_components
     run_tests
@@ -146,7 +163,7 @@ function ic_env {
 }
 
 function show_ic_env {
-    conda-env list
+    conda env list
 
     echo "ICTDIR set to $ICTDIR"
     echo "ICDIR  set to $ICDIR"
@@ -182,7 +199,7 @@ function clean {
     FILETYPES='*.c *.so *.pyc __pycache__'
     for TYPE in $FILETYPES
     do
-		echo Cleaning $TYPE files
+                echo Cleaning $TYPE files
         REMOVE=`find . -name $TYPE`
         if [ ! -z "${REMOVE// }" ]
         then
@@ -229,6 +246,7 @@ case $COMMAND in
        echo "source $THIS install_and_check X.Y"
        echo "source $THIS install X.Y"
        echo "source $THIS work_in_python_version X.Y"
+       echo "source $THIS switch_to_conda_env X.Y"
        echo "bash   $THIS make_environment X.Y"
        echo "bash   $THIS run_tests"
        echo "bash   $THIS run_tests_par"
