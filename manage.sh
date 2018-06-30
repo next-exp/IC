@@ -3,6 +3,14 @@
 COMMAND=$1
 ARGUMENT=$2
 
+## Interpret meaning of command line argument depending on which
+## function will receive it.
+
+case $COMMAND in
+    run_tests_par | compile_and_test_par)     N_PROC=${ARGUMENT:-auto} ;;
+    *)                                PYTHON_VERSION=${ARGUMENT}       ;;
+esac
+
 
 function install_and_check {
     install
@@ -217,15 +225,8 @@ function clean {
     done
 }
 
+
 THIS=manage.sh
-
-## Interpret meaning of command line argument depending on which
-## function will receive it.
-
-case $COMMAND in
-    run_tests_par | compile_and_test_par)     N_PROC=${ARGUMENT:-auto} ;;
-    *)                                PYTHON_VERSION=${ARGUMENT}       ;;
-esac
 
 ## Main command dispatcher
 
