@@ -104,6 +104,11 @@ function python_version_env {
 }
 
 function work_in_python_version {
+    work_in_python_version_no_tests
+    run_tests_par
+}
+
+function work_in_python_version_no_tests {
     if ! which conda >> /dev/null
     then
        install_conda
@@ -116,7 +121,6 @@ function work_in_python_version {
 
     python_version_env
     compile_cython_components
-    run_tests_par
 }
 
 function run_tests {
@@ -226,18 +230,19 @@ esac
 ## Main command dispatcher
 
 case $COMMAND in
-    install_and_check)      install_and_check ;;
-    install)                install ;;
-    work_in_python_version) work_in_python_version ;;
-    make_environment)       make_environment ;;
-    run_tests)              run_tests ;;
-    run_tests_par)          run_tests_par ;;
-    compile_and_test)       compile_and_test ;;
-    compile_and_test_par)   compile_and_test_par ;;
-    download_test_db)       download_test_db ;;
-    download_test_db_dev)   download_test_db_dev ;;
-    clean)                  clean ;;
-    show_ic_env)            show_ic_env ;;
+    install_and_check)               install_and_check ;;
+    install)                         install ;;
+    work_in_python_version)          work_in_python_version ;;
+    work_in_python_version_no_tests) work_in_python_version_no_tests ;;
+    make_environment)                make_environment ;;
+    run_tests)                       run_tests ;;
+    run_tests_par)                   run_tests_par ;;
+    compile_and_test)                compile_and_test ;;
+    compile_and_test_par)            compile_and_test_par ;;
+    download_test_db)                download_test_db ;;
+    download_test_db_dev)            download_test_db_dev ;;
+    clean)                           clean ;;
+    show_ic_env)                     show_ic_env ;;
 
     *) echo Unrecognized command: ${COMMAND}
        echo
@@ -246,6 +251,7 @@ case $COMMAND in
        echo "source $THIS install_and_check X.Y"
        echo "source $THIS install X.Y"
        echo "source $THIS work_in_python_version X.Y"
+       echo "source $THIS work_in_python_version_no_tests X.Y"
        echo "source $THIS switch_to_conda_env X.Y"
        echo "bash   $THIS make_environment X.Y"
        echo "bash   $THIS run_tests"
