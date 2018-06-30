@@ -160,10 +160,10 @@ function run_tests {
 function run_tests_par {
     ensure_environment_matches_checked_out_version
     # Run the test suite
-    EXIT=0
-    pytest -v -n ${N_PROC} -m "not serial" --no-success-flaky-report || EXIT=$?
-    pytest -v              -m      serial  --no-success-flaky-report || EXIT=$?
-    exit $EXIT
+    STATUS=0
+    pytest -v -n ${N_PROC} -m "not serial" --no-success-flaky-report || STATUS=$?
+    pytest -v              -m      serial  --no-success-flaky-report || STATUS=$?
+    [[ $STATUS = 0 ]]
 }
 
 function ic_env {
