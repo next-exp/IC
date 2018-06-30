@@ -44,8 +44,15 @@ def test_join_histo_managers_with_different_histograms(histogram_list1, histogra
     histogram_manager2       = HistoManager(list_of_histograms2)
     joined_histogram_manager = histf.join_histo_managers(histogram_manager1, histogram_manager2)
 
-    list_of_names = set(histogram_manager1.histos) | set(histogram_manager2.histos)
-    assert len(list_of_names) == len(joined_histogram_manager.histos)
+    unique_histograms = set(histogram_manager1.histos) | set(histogram_manager2.histos)
+    common_histograms = set(histogram_manager1.histos) & set(histogram_manager2.histos)
+
+    remove_names      = []
+    for name in unique_histograms:
+        if name in common_histograms:
+            if not np.all(a == b for a, b in zip(histogram_manager1[name].bins, histogram_manager2[name].bins)):
+                remove_names.append(name)
+    list_of_names = unique_histograms - set(remove_names)
 
     for histoname, histogram in joined_histogram_manager.histos.items():
         assert histoname in list_of_names
