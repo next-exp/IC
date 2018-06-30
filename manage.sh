@@ -11,6 +11,12 @@ case $COMMAND in
     *)                                PYTHON_VERSION=${ARGUMENT}       ;;
 esac
 
+# If PYTHON_VERSION was not specified as an argument, deduce it from
+# the conda environment
+
+if [[ $PYTHON_VERSION = "" ]]; then
+    PYTHON_VERSION=${CONDA_DEFAULT_ENV:3:3}
+fi
 
 function install_and_check {
     install
