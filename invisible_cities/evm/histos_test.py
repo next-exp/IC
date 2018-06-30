@@ -43,12 +43,13 @@ def bins_arrays(draw, dimension=0):
     if dimension <= 0:
         dimension = draw(sampled_from((1,2)))
 
-    bin_margins   = draw(arrays(float, (dimension, 2),
-                         floats(-1e3, 1e3, allow_nan=False, allow_infinity=False)))
-    for bin_margin in bin_margins:
-        assume(round(bin_margin.min(), 2) < round(bin_margin.max(), 2))
+    bin_lower_margins = draw(arrays(float, dimension,
+                             floats(-1e3, 1e3, allow_nan=False, allow_infinity=False)))
+    bin_additive      = draw(arrays(float, dimension,
+                             floats(1.1 , 1e3, allow_nan=False, allow_infinity=False)))
+    bin_upper_margins = bin_lower_margins + bin_additive
 
-    bins = [ np.linspace(bin_margin.min(), bin_margin.max(), draw(integers(2, 20))) for bin_margin in bin_margins ]
+    bins = [ np.linspace(bin_lower_margins[i], bin_upper_margins[i], draw(integers(2, 20))) for i, _ in enumerate(bin_lower_margins) ]
 
     return bins
 
@@ -69,9 +70,8 @@ def filled_histograms(draw, dimension=0, fixed_bins=None):
     shape  = draw(integers(50, 100)),
     data   = []
     for i in range(dimension):
-        lower_limit = bins[i][0]  * draw(floats(0.5, 1.5))
-        upper_limit = bins[i][-1] * draw(floats(0.5, 1.5))
-        assume(lower_limit < upper_limit)
+        lower_limit = bins[i][0]  - draw(floats(0.5, 1e8, allow_nan=False, allow_infinity=False))
+        upper_limit = bins[i][-1] + draw(floats(0.5, 1e8, allow_nan=False, allow_infinity=False))
         data.append(draw(arrays(float, shape, floats(lower_limit, upper_limit,
                                                      allow_nan=False, allow_infinity=False))))
     data = np.array(data)
