@@ -131,22 +131,28 @@ function work_in_python_version_no_tests {
     compile_cython_components
 }
 
-function run_tests {
+function ensure_environment_matches_checked_out_version {
+
+    # Ensure that the currently active conda environment name contains
+    # the tag that corresponds to this version of the code
+    if [[ $CONDA_DEFAULT_ENV != *$CONDA_ENV_TAG ]]; then
+        switch_to_conda_env
+    fi
+
     # Ensure that the test database is present
     if [ ! -f invisible_cities/database/localdb.sqlite3 ]; then
         download_test_db
     fi
+}
 
+function run_tests {
+    ensure_environment_matches_checked_out_version
     # Run the test suite
     pytest -v --no-success-flaky-report
 }
 
 function run_tests_par {
-    # Ensure that the test database is present
-    if [ ! -f invisible_cities/database/localdb.sqlite3 ]; then
-        download_test_db
-    fi
-
+    ensure_environment_matches_checked_out_version
     # Run the test suite
     EXIT=0
     pytest -v -n ${N_PROC} -m "not serial" --no-success-flaky-report || EXIT=$?
