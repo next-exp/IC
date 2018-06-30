@@ -474,3 +474,15 @@ def hits_toy_data(ICDATADIR):
 def Kr_pmaps_run4628_filename(ICDATADIR):
     filename = os.path.join(ICDATADIR, "Kr_pmaps_run4628.h5")
     return filename
+
+@pytest.fixture(scope='session')
+def voxels_toy_data(ICDATADIR):
+    event = np.zeros(100)
+    X     = np.linspace( 150,  250, 100)
+    Y     = np.linspace(-280, -180, 100)
+    Z     = np.linspace(   0,  100, 100)
+    E     = np.linspace( 1e3,  1e3, 100)
+    size  = np.reshape(np.repeat([10,10,10],100),(100,3))
+
+    voxels_filename = os.path.join(ICDATADIR, "toy_voxels.h5")
+    return voxels_filename, (event, X, Y, Z, E, size)
