@@ -218,9 +218,13 @@ def test_df_map():
     l2 = core.df_map(lambda x: x*1000, leptons, 'mass')
     assert l2.mass.values[0] == 511
 
-def test_dict_filter():
-    core.dict_filter(lambda x: x>5,
+def test_dict_filter_by_value():
+    core.dict_filter_by_value(lambda x: x>5,
       {'a':1,'b':20,'c':3,'d':40}) == {'b': 20, 'd': 40}
+
+def test_dict_filter_by_key():
+    core.dict_filter_by_key(lambda x: x in 'ac',
+      {'a':1,'b':20,'c':3,'d':40}) == {'a': 1, 'c': 3}
 
 def test_farray_from_string():
     core.farray_from_string('1 10 100')[2] == 100
