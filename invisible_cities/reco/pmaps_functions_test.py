@@ -3,8 +3,11 @@ import numpy as np
 from hypothesis            import given
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
+from hypothesis.strategies import dictionaries
+from hypothesis.strategies import lists
 
 from .. evm .pmaps_test     import peaks
+from .. evm .pmaps_test     import pmaps
 from .. evm .pmaps          import  PMTResponses
 from .. evm .pmaps          import SiPMResponses
 from .. core.testing_utils  import assert_SensorResponses_equality
@@ -74,3 +77,11 @@ def test_rebin_peak(pk, fraction):
                             rebinned_pmts,
                             rebinned_sipms)
     assert_Peak_equality(rebinned_pk, expected_pk)
+
+
+@given(dictionaries(keys=integers(min_value=-1e5, max_value=1e5), values=pmaps(), max_size=5), lists(integers(min_value=-1e5, max_value=1e5)))
+def test_pmap_event_id_selection(pmaps, events):
+    filtered_pmaps = pmf.pmap_event_id_selection(pmaps, events)
+    assert set(filtered_pmaps) == set(pmaps) & set(events)
+    for evt, pmap in filtered_pmaps.items():
+        assert pmap == pmaps[evt]
