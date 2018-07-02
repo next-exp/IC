@@ -490,7 +490,6 @@ def KrMC_true_hits(KrMC_pmaps_filename, KrMC_hdst):
 
 @pytest.fixture(scope='session')
 def TlMC_hits(ICDATADIR):
-    # Input file was produced to contain exactly 15 S1 and 50 S2.
     hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
     hits_file_name = os.path.join(ICDATADIR, hits_file_name)
     hits = load_hits(hits_file_name)
@@ -499,7 +498,6 @@ def TlMC_hits(ICDATADIR):
 
 @pytest.fixture(scope='session')
 def TlMC_hits_skipping_NN(ICDATADIR):
-    # Input file was produced to contain exactly 15 S1 and 50 S2.
     hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
     hits_file_name = os.path.join(ICDATADIR, hits_file_name)
     hits = load_hits_skipping_NN(hits_file_name)
