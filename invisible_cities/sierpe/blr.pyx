@@ -104,7 +104,7 @@ cpdef deconv_pmt(np.ndarray[np.int16_t, ndim=2] pmtrwf,
     :param thr_trigger: threshold to start the BLR process
     
     :returns: an array with deconvoluted PMTs. If PMT is not active
-              the array is filled with zeros.
+              wvfs are removed.
     """
 
     cdef int NPMT = pmtrwf.shape[0]
