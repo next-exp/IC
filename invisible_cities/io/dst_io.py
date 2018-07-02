@@ -1,6 +1,7 @@
 import tables as tb
 import pandas as pd
 from tables import NoSuchNodeError
+import warnings
 
 def load_dst(filename, group, node):
     with tb.open_file(filename) as h5in:
@@ -8,8 +9,7 @@ def load_dst(filename, group, node):
             table = getattr(getattr(h5in.root, group), node).read()
             return pd.DataFrame.from_records(table)
         except NoSuchNodeError:
-            print(f' error loading {filename}')
-
+            warnings.warn(f' warning: could no load  {filename}')
 
 
 def load_dsts(dst_list, group, node):
