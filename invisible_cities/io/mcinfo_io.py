@@ -16,6 +16,7 @@ from .. evm.nh5 import MCHitInfo
 from .. evm.nh5 import MCParticleInfo
 
 from typing import Mapping
+from typing import List
 
 # use Mapping (duck type) rather than dict
 
@@ -161,7 +162,7 @@ class mc_info_writer:
 
 
 def load_mchits(file_name: str,
-                event_range=(0, int(1e9))) -> Mapping[int, MCHit]:
+                event_range=(0, int(1e9))) -> Mapping[int, List[MCHit]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
         mcevents    = read_mcinfo(h5in, event_range)
@@ -171,14 +172,14 @@ def load_mchits(file_name: str,
 
 
 def load_mcparticles(file_name: str,
-                     event_range=(0, int(1e9))) -> Mapping[int, MCParticle]:
+                     event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, List[MCParticle]]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
         return read_mcinfo(h5in, event_range)
 
 
 def load_mcsensor_response(file_name: str,
-                           event_range=(0, int(1e9))) -> Mapping[int, MCParticle]:
+                           event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, List[Waveform]]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
         return read_mcsns_response(h5in, event_range)
@@ -276,7 +277,7 @@ def read_mcinfo(h5f, event_range=(0, int(1e9))) ->Mapping[int, Mapping[int, MCPa
     return all_events
 
 
-def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]])->Mapping[int, MCHit]:
+def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, List[MCParticle]]]) -> Mapping[int, List[MCHit]]:
     """Returns all hits in the event"""
     mchits_dict = {}
     for event_no, particle_dict in mcevents.items():
@@ -288,7 +289,7 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]])->Mappin
     return mchits_dict
 
 
-def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, Waveform]]:
+def read_mcsns_response(h5f, event_range=(0, 1e9)) -> Mapping[int, Mapping[int, List[Waveform]]]:
 
     h5config = h5f.root.MC.configuration
 
