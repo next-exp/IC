@@ -2,14 +2,21 @@ from operator    import mul
 from operator    import truediv
 from collections import namedtuple
 
-import numpy as np
+import numpy  as np
+import pandas as pd
 
 from pytest import fixture
 from pytest import mark
 
-from .  corrections        import Correction
-from .  dst_functions      import load_xy_corrections
-from .  dst_functions      import load_lifetime_xy_corrections
+from hypothesis              import given
+from hypothesis.strategies   import integers
+from hypothesis.strategies   import lists
+from hypothesis.extra.pandas import columns, data_frames
+
+from .  corrections          import Correction
+from .  dst_functions        import load_xy_corrections
+from .  dst_functions        import load_lifetime_xy_corrections
+from .  dst_functions        import dst_event_id_selection
 
 normalization_data = namedtuple("normalization_data", "node kwargs op")
 
@@ -61,3 +68,21 @@ def test_load_lifetime_xy_corrections(corr_toy_data, normalization, scale):
         u_true = z_test * U.flatten()/LT.flatten()**2 * f_test
         assert np.allclose(f_test, f_true)
         assert np.allclose(u_test, u_true)
+
+
+@given(data_frames(columns=columns(['event'], elements=integers(min_value=-1e5, max_value=1e5))),
+       lists(integers(min_value=-1e5, max_value=1e5)))
+def test_dst_event_id_selection(dst, events):
+    filtered_dst = dst_event_id_selection(dst, events)
+    assert set(filtered_dst.event.values) == set(dst.event.values) & set(events)
+
+
+def test_dst_event_id_selection_2():
+    data         = {'event': [1, 1, 3, 6, 7], 'values': [3, 4, 2, 5, 6]}
+    filt_data    = {'event': [1, 1, 6], 'values': [3, 4, 5]}
+
+    df_data      = pd.DataFrame(data=data)
+    df_filt_data = pd.DataFrame(data=filt_data)
+    df_real_filt = dst_event_id_selection(df_data, [1, 2, 6, 10])
+
+    assert np.all(df_real_filt.reset_index(drop=True) == df_filt_data.reset_index(drop=True))
