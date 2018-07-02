@@ -1,7 +1,7 @@
-from ..evm.pmaps      import  PMTResponses
-from ..evm.pmaps      import SiPMResponses
-from . peak_functions import rebin_times_and_waveforms
-
+from ..evm.pmaps           import  PMTResponses
+from ..evm.pmaps           import SiPMResponses
+from . peak_functions      import rebin_times_and_waveforms
+from ..core.core_functions import dict_filter_by_key
 
 def rebin_peak(peak, rebin_factor):
     if rebin_factor == 1: return peak
@@ -19,3 +19,19 @@ def rebin_peak(peak, rebin_factor):
         sipm_r = SiPMResponses(peak.sipms.ids, sipms)
 
     return type(peak)(times, pmt_r, sipm_r)
+
+
+def pmap_event_id_selection(data, event_ids):
+    """Filter a pmap dictionary by a list of event IDs.
+    Parameters
+    ----------
+    data      : dict
+        pmaps to be filtered.
+    event_ids : list
+        List of event ids that will be kept.
+    Returns
+    -------
+    filterdata : dict
+        Filtered pmaps
+    """
+    return dict_filter_by_key(lambda x: x in event_ids, data)

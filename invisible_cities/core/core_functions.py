@@ -218,7 +218,7 @@ def df_map(func, df, field):
     return out
 
 
-def dict_filter(cond, dic):
+def dict_filter_by_value(cond, dic):
     """Apply filter to dictionary values maintaining correspondence.
 
     Parameters
@@ -234,6 +234,22 @@ def dict_filter(cond, dic):
         Contains the key, value pairs in dic satisfying cond.
     """
     return {key: val for key, val in dic.items() if cond(val)}
+
+
+def dict_filter_by_key(cond, dic):
+    """Apply filter to dictionary keys maintaining correspondence.
+    Parameters
+    ----------
+    cond : callable
+        Condition to be satisfied.
+    dic : dictionary
+        Dictionary on which cond is applied.
+    Returns
+    -------
+    filterdic : dictionary
+        Contains the key, value pairs in dic satisfying cond.
+    """
+    return {key: val for key, val in dic.items() if cond(key)}
 
 
 def farray_from_string(sfl):
