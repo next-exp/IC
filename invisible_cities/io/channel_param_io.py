@@ -11,7 +11,7 @@ generic_params = ["normalization", "poisson_mu"    ,
 
 
 def create_param_table(h5out, sensor_type, func_name, parameter_dict):
-    
+
     ## If the group 'FITPARAMS' doesn't already exist, create it
     try:                       PARAM_group = getattr(h5out.root, "FITPARAMS")
     except tb.NoSuchNodeError: PARAM_group = h5out.create_group(h5out.root,
@@ -69,7 +69,7 @@ def channel_param_writer(h5out, *, sensor_type,
     """
 
     parameter_dict = make_table_dictionary(param_names, covariance)
-    
+
     param_table = create_param_table(h5out, sensor_type,
                                      func_name, parameter_dict)
     def store_channel_fit(sensor_id, fit_result):
@@ -80,7 +80,7 @@ def channel_param_writer(h5out, *, sensor_type,
                      Fit parameters should be (value, error)
         """
         store_fit_values(param_table, sensor_id, fit_result)
-    
+
     return store_channel_fit
 
 
@@ -164,4 +164,3 @@ def parameters_and_errors(table_row, parameters):
 
     return param_dict, error_dict
 
-    
