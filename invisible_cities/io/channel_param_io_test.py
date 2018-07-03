@@ -74,7 +74,7 @@ def test_generator_param_reader(config_tmpdir):
             assert_allclose(val_list[sens, :, 1], np.array(list(errs.values())))
             counter += 1
         assert counter == n_rows
-            
+
 
 
 def test_simple_parameters_with_covariance(config_tmpdir):
@@ -91,7 +91,7 @@ def test_simple_parameters_with_covariance(config_tmpdir):
         for i, par in enumerate(simple):
             out_dict[par] = (i, i / 10)
         out_dict["covariance"] = cov
-        
+
         pWrite(0, out_dict)
 
     with tb.open_file(filename) as data_in:
@@ -103,9 +103,9 @@ def test_simple_parameters_with_covariance(config_tmpdir):
 def test_make_table_dictionary():
 
     param_names = ["par0", "par1", "par2"]
-    
+
     par_dict = make_table_dictionary(param_names)
-    
+
     # Add the sensor id to the test list
     param_names = ["SensorID"] + param_names
 
@@ -125,7 +125,7 @@ def test_store_fit_values(config_tmpdir):
                                            dummy_dict,
                                            "test parameters",
                                            tbl.filters("NOCOMPR"))
-        
+
         store_fit_values(param_table, 0, {'par0' : 22})
 
     with tb.open_file(filename) as data_in:
