@@ -73,7 +73,7 @@ order by pos.SensorID'''.format(abs(run_number))
     ## Add default value to Sigma for runs without measurement
     if not data.Sigma.values.any():
         data.Sigma = 2.24
-        
+
     return data
 
 @lru_cache(maxsize=10)
@@ -111,4 +111,3 @@ order by SensorID, BinEnergyPes;'''.format(abs(run_number))
     noise = np.array(data).reshape(nsipms, nbins)
 
     return noise, noise_bins, baselines
-
