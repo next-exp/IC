@@ -73,7 +73,7 @@ order by pos.SensorID'''.format(abs(run_number))
     ## Add default value to Sigma for runs without measurement
     if not data.Sigma.values.any():
         data.Sigma = 2.24
-        
+
     return data
 
 @lru_cache(maxsize=10)
