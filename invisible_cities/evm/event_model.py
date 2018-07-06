@@ -111,9 +111,10 @@ class MCParticle:
 class BHit:
     """Base class representing a hit"""
 
-    def __init__(self, x,y,z, E):
-        self.xyz      = (x,y,z)
-        self.energy   = E
+    def __init__(self, x,y,z, E,Ec=-1.):
+        self.xyz         = (x,y,z)
+        self.energy      = E
+        self.corr_energy = Ec
 
     @property
     def XYZ  (self): return self.xyz
@@ -133,9 +134,12 @@ class BHit:
     @property
     def E   (self): return self.energy
 
+    @property
+    def Ec  (self): return self.corr_energy
+
     def __str__(self):
-        return '{}({.X}, {.Y}, {.Z}, E={.E})'.format(
-            self.__class__.__name__, self, self, self, self)
+        return '{}({.X}, {.Y}, {.Z}, E={.E}, Ec={.Ec})'.format(
+            self.__class__.__name__, self, self, self, self, self)
 
     __repr__ =     __str__
 
@@ -252,31 +256,19 @@ class Hit(Cluster):
     __repr__ =     __str__
 
 
-class VoxelCollection:
-    """A collection of voxels. """
-    def __init__(self, voxels : List[Voxel]):
+class Blob:
+    """A Blob is a collection of Voxels which sums to the energy of the blob. """
+    def __init__(self, a: Voxel, voxels : List[Voxel]) ->None:
         self.voxels = voxels
-        self.E = sum(v.E for v in voxels)
+        self.seed = a
 
     @property
     def number_of_voxels(self):
         return len(self.voxels)
 
-    def __str__(self):
-        s =  "VoxelCollection: (number of voxels = {})\n".format(self.number_of_voxels)
-        s2 = ['voxel number {} = {} \n'.format((i, voxel) for (i, voxel) in enumerate(self.voxels))]
-
-        return  s + ''.join(s2)
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class Blob(VoxelCollection):
-    """A Blob is a collection of Voxels which adds the energy of the blob. """
-    def __init__(self, a: Voxel, voxels : List[Voxel]) ->None:
-        super().__init__(voxels)
-        self.seed = a
+    @property
+    def E(self):
+        return sum(v.E for v in self.voxels)
 
     def __str__(self):
         s =  """Blob: (number of voxels = {})\n,
@@ -291,11 +283,20 @@ class Blob(VoxelCollection):
         return self.__str__()
 
 
-class Track(VoxelCollection):
+class Track:
     """A track is a collection of linked voxels. """
-    def __init__(self, voxels : List[Voxel], blobs: Tuple[Blob, Blob]) ->None:
-        super().__init__(voxels)
-        self.blobs = blobs
+    def __init__(self, voxels : List[Voxel], blobs: Tuple[Blob, Blob], length) ->None:
+        self.voxels = voxels
+        self.blobs  = blobs
+        self.length = length
+
+    @property
+    def number_of_voxels(self):
+        return len(self.voxels)
+
+    @property
+    def E(self):
+        return sum(v.E for v in self.voxels)
 
     def __str__(self):
         s =  """Track: (number of voxels = {})\n,
@@ -305,6 +306,44 @@ class Track(VoxelCollection):
         """.format(self.number_of_voxels, self.voxels, self.blobs[0], self.blobs[1])
 
         return  s
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class VoxelCollection(Event):
+    """A collection of voxels. """
+    def __init__(self, event_number, event_time):
+        Event.__init__(self, event_number, event_time)
+        self.voxels = []
+
+    @property
+    def number_of_voxels(self):
+        return len(self.voxels)
+
+    @property
+    def E(self):
+        return sum(v.E for v in self.voxels)
+
+    def store(self, table):
+        row = table.row
+        row["event"]    = self.event
+        row["time" ]    = self.time
+
+        for i, voxel in enumerate(self.voxels):
+            row["voxel_no"] = i
+            row["X"    ] = voxel.X
+            row["Y"    ] = voxel.Y
+            row["Z"    ] = voxel.Z
+            row["E"    ] = voxel.E
+
+            row.append()
+
+    def __str__(self):
+        s =  "VoxelCollection: (number of voxels = {})\n".format(self.number_of_voxels)
+        s2 = ['voxel number {} = {} \n'.format((i, voxel) for (i, voxel) in enumerate(self.voxels))]
+
+        return  s + ''.join(s2)
 
     def __repr__(self):
         return self.__str__()
@@ -462,6 +501,78 @@ class KrEvent(Event):
                 row["Xrms"   ] = self.Xrms [j]
                 row["Yrms"   ] = self.Yrms [j]
                 row.append()
+
+    def __str__(self):
+        s = "{0}Event\n{0}".format("#"*20 + "\n")
+        for attr in self.__dict__:
+            s += "{}: {}\n".format(attr, getattr(self, attr))
+        return s
+
+    __repr__ =     __str__
+
+
+class NtupleEvent(Event):
+    """Represents an extended event."""
+    def __init__(self, event_number, event_time):
+        Event.__init__(self, event_number, event_time)
+
+        self.ntrks  = 0  # number of tracks in the event
+        self.lmtrk  = 0  # length of maximum energy track
+        self.nvox   = 0  # number of voxels
+        self.S1e     = 0  # energy of maximum S1
+        self.S2q    = 0  # S2 (SiPM plane)
+        self.S2e    = 0  # S2 (energy plane)
+        self.S2ec   = 0  # corrected S2
+        self.eblob1 = 0  # energy of blob 1
+        self.eblob2 = 0  # energy of blob 2
+
+        self.xavg   = 0  # average X
+        self.yavg   = 0  # average Y
+        self.zavg   = 0  # average Z
+        self.xmin   = 0  # minimum X-coordinate over all hits
+        self.ymin   = 0  # minimum Y-coordinate over all hits
+        self.zmin   = 0  # minimum Z-coordinate over all hits
+        self.xmax   = 0  # maximum X-coordinate over all hits
+        self.ymax   = 0  # maximum Y-coordinate over all hits
+        self.zmax   = 0  # maximum Z-coordinate over all hits
+
+        self.emtrk  = np.zeros(10)  # energy of 10 most energetic tracks
+        self.xmtrk  = np.zeros(10)  # average X of 10 most energetic tracks
+        self.ymtrk  = np.zeros(10)  # average Y of 10 most energetic tracks
+        self.zmtrk  = np.zeros(10)  # average Z of 10 most energetic tracks
+
+    def store(self, table):
+        row = table.row
+
+        row["event"  ] = self.event
+        row["time"   ] = self.time
+
+        row["S1e"    ] = self.S1e
+        row["S2e"    ] = self.S2e
+        row["S2q"    ] = self.S2q
+        row["S2ec"   ] = self.S2ec
+        row["ntrks"  ] = self.ntrks
+        row["lmtrk"  ] = self.lmtrk
+        row["nvox"   ] = self.nvox
+        row["eblob1" ] = self.eblob1
+        row["eblob2" ] = self.eblob2
+
+        row["xavg"   ] = self.xavg
+        row["yavg"   ] = self.yavg
+        row["zavg"   ] = self.zavg
+        row["xmin"   ] = self.xmin
+        row["ymin"   ] = self.ymin
+        row["zmin"   ] = self.zmin
+        row["xmax"   ] = self.xmax
+        row["ymax"   ] = self.ymax
+        row["zmax"   ] = self.zmax
+
+        row["emtrk"  ] = self.emtrk
+        row["xmtrk"  ] = self.xmtrk
+        row["ymtrk"  ] = self.ymtrk
+        row["zmtrk"  ] = self.zmtrk
+
+        row.append()
 
     def __str__(self):
         s = "{0}Event\n{0}".format("#"*20 + "\n")

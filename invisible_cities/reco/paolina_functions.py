@@ -160,10 +160,10 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
 def compute_blobs(track_graph : Graph, radius : float) -> Tuple[Voxel, Voxel, List[Voxel], List[Voxel]]:
     """Return the blobs (list of voxels) around the extrema of the track."""
     distances = shortest_paths(track_graph)
-    a, b, _ = find_extrema_and_length(distances)
+    a, b, tlen = find_extrema_and_length(distances)
     ba = voxels_within_radius(distances[a], radius)
     bb = voxels_within_radius(distances[b], radius)
-    return a, b, ba, bb
+    return a, b, ba, bb, tlen
 
 
 def make_tracks(evt_number       : float,
@@ -177,10 +177,10 @@ def make_tracks(evt_number       : float,
     track_graphs = make_track_graphs(voxels) # type: Sequence[Graph]
 #    track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
     for trk in track_graphs:
-        a, b, voxels_a, voxels_b    = compute_blobs(trk, blob_radius)
+        a, b, voxels_a, voxels_b, tlen    = compute_blobs(trk, blob_radius)
         blob_a = Blob(a, voxels_a) # type: Blob
         blob_b = Blob(b, voxels_b)
         blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a)
-        track = Track(voxels_from_track_graph(trk), blobs)
+        track = Track(voxels_from_track_graph(trk), blobs, tlen)
         tc.tracks.append(track)
     return tc

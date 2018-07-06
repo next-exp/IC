@@ -38,6 +38,7 @@ from .. reco                    import sensor_functions         as sf
 from .. reco                    import peak_functions           as pkf
 from .. reco                    import pmaps_functions          as pmf
 from .. reco                    import tbl_functions            as tbl
+from .. reco                    import dst_functions            as dstf
 from .. reco.sensor_functions   import convert_channel_id_to_IC_id
 from .. reco.xy_algorithms      import corona
 
@@ -50,6 +51,7 @@ from .. evm.ic_containers       import PmapVectors
 from .. evm.ic_containers       import TriggerParams
 from .. evm.event_model         import SensorParams
 from .. evm.event_model         import KrEvent
+from .. evm.event_model         import NtupleEvent
 from .. evm.event_model         import HitCollection
 from .. evm.event_model         import Hit
 from .. evm.event_model         import Cluster
@@ -905,11 +907,22 @@ class KrCity(PCity):
 
 class HitCity(KrCity):
     """A city that reads PMAPS and computes/writes a hit event"""
-    parameters = tuple("rebin".split())
+    parameters = tuple("rebin correction_map".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.rebin  = self.conf.rebin
+        if(os.path.isfile(self.conf.correction_map)):
+            self.XYcorr = dstf.load_xy_corrections(self.conf.correction_map,
+                                                    group = "XYcorrections",
+                                                    node = f"GeometryE_5.0mm",
+                                                    norm_strategy = "max")
+            self.LTcorr = dstf.load_lifetime_xy_corrections(self.conf.correction_map,
+                                                    group = "XYcorrections",
+                                                    node  =  "Lifetime")
+        else:
+            self.XYcorr = None
+            self.LYcorr = None
 
     def compute_xy_position(self, sr, slice_no):
         """Compute x-y position for each time slice. """
@@ -1014,6 +1027,14 @@ class HitCity(KrCity):
                     hit       = Hit(peak_no, c, z_slice, e_slice, xy_peak)
                     hitc.hits.append(hit)
 
+            x_hits = [hit.X for hit in hitc.hits]
+            y_hits = [hit.Y for hit in hitc.hits]
+            z_hits = [hit.Z for hit in hitc.hits]
+            e_hits = [hit.E for hit in hitc.hits]
+            hecorr  = e_hits * self.XYcorr(x_hits,y_hits).value * self.LTcorr(z_hits, x_hits, y_hits).value
+            for ihit,hit in enumerate(hitc.hits):
+                hit.Ec = hecorr[ihit]
+
         return hitc
 
 
@@ -1028,10 +1049,77 @@ class TrackCity(HitCity):
         """1. Hits are enclosed by a bounding box.
            2. Boundix box is discretized (via a hitogramdd).
            3. The energy of all the hits insidex each discreet "voxel" is added.
-
          """
         return paf.voxelize_hits(hits, self.voxel_dimensions)
 
+class NtupleCity(HitCity):
+    """A city that reads PMAPS and writes an Ntuple for each event"""
+    parameters = tuple("voxel_dimensions blob_radius".split())
+
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.voxel_dimensions  = self.conf.voxel_dimensions # type: np.ndarray
+        self.blob_radius       = self.blob_radius # type: float
+
+    def create_ntuple_event(self, pmapVectors, filter_output):
+        """Create an ntuple_event:
+        An Ntuple event contains key information about the event.
+        """
+        evt_number = pmapVectors.events
+        evt_time   = pmapVectors.timestamps
+
+        hitc   = self.create_hits_event(pmapVectors, filter_output)
+
+        voxels = paf.voxelize_hits(hits, self.voxel_dimensions)
+        vc = VoxelCollection(evt_number, evt_time)
+        vc.voxels = voxels
+
+        tc     = paf.make_tracks(evt_number, evt_time, voxels,
+                                self.voxel_dimensions)
+
+        ntc = NtupleEvent(evt_number, evt_time)
+
+        # Choose only the max S1 to be placed in the Ntuple.
+        S1e  = -1
+        for passed, peak in zip(filter_output.s1_peaks, pmap.s1s):
+            if not passed: continue
+            if(peak.total_energy > S1e):
+                S1e = peak.total_energy
+        ntc.S1e = S1e
+
+        ntc.S2e  = np.sum([hit.E  for hit in hitc.hits])
+        ntc.S2q  = np.sum([hit.Q  for hit in hitc.hits])
+        ntc.S2ec = np.sum([hit.Ec for hit in hitc.hits])
+        if(ntc.S2ec > 0):
+            ntc.xavg = np.sum([hit.X*hit.Ec for hit in hitc.hits])/ntc.S2ec
+            ntc.yavg = np.sum([hit.Y*hit.Ec for hit in hitc.hits])/ntc.S2ec
+            ntc.zavg = np.sum([hit.Z*hit.Ec for hit in hitc.hits])/ntc.S2ec
+            ntc.xmin = np.min([hit.X for hit in hitc.hits])
+            ntc.ymin = np.min([hit.Y for hit in hitc.hits])
+            ntc.zmin = np.min([hit.Z for hit in hitc.hits])
+            ntc.xmax = np.max([hit.X for hit in hitc.hits])
+            ntc.ymax = np.max([hit.Y for hit in hitc.hits])
+            ntc.zmax = np.max([hit.Z for hit in hitc.hits])
+
+        ntc.nvox = vc.number_of_voxels
+
+        # Record the top 10 most energetic tracks.
+        ntc.ntrks = tc.number_of_tracks
+        tc.tracks.sort(key = lambda x: x.E, reverse=True)
+        eblob1 = tc.tracks[0].blobs[0].E
+        eblob2 = tc.tracks[0].blobs[1].E
+        ntc.eblob1 = max(eblob1,eblob2)
+        ntc.eblob2 = min(eblob1,eblob2)
+        ntc.lmtrk = tc.tracks[0].length
+        for itrk,trk in enumerate(tc.tracks):
+            if(trk.number_of_voxels > 0 and itrk < 10):
+                ntc.emtrk[itrk] = trk.E
+                if(trk.E > 0):
+                    ntc.xmtrk[itrk] = sum([vox.X*vox.E for vox in trk.voxels])/trk.E
+                    ntc.ymtrk[itrk] = sum([vox.Y*vox.E for vox in trk.voxels])/trk.E
+                    ntc.zmtrk[itrk] = sum([vox.Z*vox.E for vox in trk.voxels])/trk.E
+
+        return hitc, voxels, tc, nte
 
 class TriggerEmulationCity(PmapCity):
     """Emulates the trigger in the FPGA.

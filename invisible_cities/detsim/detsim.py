@@ -16,7 +16,7 @@ from .. io.mcinfo_io                 import load_mchits
 
 from .. io.pmaps_io                  import pmap_writer
 from .. io.run_and_event_io          import run_and_event_writer
-from .. io.voxels_io                 import true_voxels_writer
+from .. io.voxels_io                 import voxels_writer
 
 from .. reco.paolina_functions       import voxelize_hits
 from .. detsim.detsim_functions      import diffuse_and_smear_hits
@@ -75,8 +75,10 @@ class Detsim(City):
                                                     self.conf.Qbb)
 
             voxels = voxelize_hits(dmchits, self.conf.true_voxel_dimensions)
+            vc = VoxelCollection(evt_number, 0.)
+            vc.voxels = voxels_b
 
-            write.true_voxels(evt_number,voxels)
+            write.true_voxels(evt_number,vc)
             write.run_and_event(self.run_number, evt_number, 0)
 
         self.cnt.n_events_tot += len(mchits_dict)
@@ -85,7 +87,7 @@ class Detsim(City):
     def get_writers(self, h5out):
         writers = Namespace(
         run_and_event = run_and_event_writer(h5out),
-        true_voxels = true_voxels_writer(h5out)
+        true_voxels = voxels_writer(h5out)
         )
         return writers
 

@@ -42,7 +42,7 @@ class SensorTable(tb.IsDescription):
     channel  = tb.Int32Col(pos=0)
     sensorID = tb.Int32Col(pos=1)
 
-    
+
 class MCExtentInfo(tb.IsDescription):
     """Store the last row of each table as metadata using
     Pytables.
@@ -220,8 +220,47 @@ class HitsTable(tb.IsDescription):
 
 class VoxelsTable(tb.IsDescription):
     event    = tb.  Int32Col(pos=0)
-    X        = tb.Float64Col(pos=1)
-    Y        = tb.Float64Col(pos=2)
-    Z        = tb.Float64Col(pos=3)
-    E        = tb.Float64Col(pos=4)
-    size     = tb.Float64Col(pos=5, shape=3)
+    time     = tb.Float64Col(pos=1)
+    voxel_no = tb.  Int32Col(pos=2)
+    X        = tb.Float64Col(pos=3)
+    Y        = tb.Float64Col(pos=4)
+    Z        = tb.Float64Col(pos=5)
+    E        = tb.Float64Col(pos=6)
+    size     = tb.Float64Col(pos=7, shape=3)
+
+class TracksTable(tb.IsDescription):
+    event    = tb.  Int32Col(pos=0)
+    time     = tb.Float64Col(pos=1)
+    track_no = tb.  Int32Col(pos=2)
+    voxel_no = tb.  Int32Col(pos=3)
+    X        = tb.Float64Col(pos=4)
+    Y        = tb.Float64Col(pos=5)
+    Z        = tb.Float64Col(pos=6)
+    E        = tb.Float64Col(pos=7)
+    size     = tb.Float64Col(pos=8, shape=3)
+
+class NtupleTable(tb.IsDescription):
+    event    = tb.  Int32Col(pos=0)
+    time     = tb.Float64Col(pos=1)
+    S1e      = tb.Float64Col(pos=2)
+    S2e      = tb.Float64Col(pos=3)
+    S2ec     = tb.Float64Col(pos=4)
+    S2q      = tb.Float64Col(pos=5)
+    nvox     = tb.Float64Col(pos=6)
+    ntrks    = tb.Float64Col(pos=7)
+    lmtrk    = tb.Float64Col(pos=8)
+    eblob1   = tb.Float64Col(pos=9)
+    eblob2   = tb.Float64Col(pos=10)
+    xavg     = tb.Float64Col(pos=11)
+    yavg     = tb.Float64Col(pos=12)
+    zavg     = tb.Float64Col(pos=13)
+    xmin     = tb.Float64Col(pos=14)
+    ymin     = tb.Float64Col(pos=15)
+    zmin     = tb.Float64Col(pos=16)
+    xmax     = tb.Float64Col(pos=17)
+    ymax     = tb.Float64Col(pos=18)
+    zmax     = tb.Float64Col(pos=19)
+    emtrk    = tb.Float64Col(pos=20,shape=10)
+    xmtrk    = tb.Float64Col(pos=21,shape=10)
+    ymtrk    = tb.Float64Col(pos=22,shape=10)
+    zmtrk    = tb.Float64Col(pos=23,shape=10)
