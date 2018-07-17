@@ -13,12 +13,12 @@ def load_dst(filename, group, node):
                 table = getattr(getattr(h5in.root, group), node).read()
                 return pd.DataFrame.from_records(table)
             except NoSuchNodeError:
-                warnings.warn(f' warning:  {filename} not of kdst type')
+                warnings.warn(f' not of kdst type: file= {filename} ', UserWarning)
     except HDF5ExtError:
-        warnings.warn(f' warning:  {filename} corrupted')
+        warnings.warn(f' corrupted: file = {filename} ', UserWarning)
     except IOError:
-        warnings.warn(f' warning:  {filename} does not exist')
-        
+        warnings.warn(f' does not exist: file = {filename} ', UserWarning)
+
 
 def load_dsts(dst_list, group, node):
     dsts = [load_dst(filename, group, node) for filename in dst_list]
