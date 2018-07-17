@@ -26,8 +26,9 @@ def test_load_dsts_double_file(KrMC_kdst):
     assert_dataframes_close(df_read, df_true, False)
 
 
-def test_load_dsts_throw_except_if_wrong_file(KrMC_kdst):
+def test_load_dsts_warn_if_wrong_file(KrMC_kdst):
     tbl     = KrMC_kdst[0].file_info
     df_true = KrMC_kdst[0].true
     wrong_file =KrMC_kdst[1].filename
-    cdst = load_dsts([tbl.filename, tbl.filename, wrong_file], tbl.group, tbl.node)
+    non_existing_file ="non_existing.hdf5"
+    cdst = load_dsts([tbl.filename, non_existing_file, wrong_file], tbl.group, tbl.node)
