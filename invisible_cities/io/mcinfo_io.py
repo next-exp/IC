@@ -10,6 +10,7 @@ from .. evm.event_model import MCParticle
 from .. evm.event_model import MCHit
 from .. evm.event_model import Waveform
 
+from .. evm.nh5 import MCGeneratorInfo
 from .. evm.nh5 import MCExtentInfo
 from .. evm.nh5 import MCHitInfo
 from .. evm.nh5 import MCParticleInfo
@@ -69,7 +70,14 @@ class mc_info_writer:
                                                        title       = "particles",
                                                        filters     = tbl.filters(self.compression))
 
-    def __call__(self, mctables: (tb.Table, tb.Table, tb.Table),
+        self.generator_table = self.h5file.create_table(MC, "generators",
+                                                        description = MCGeneratorInfo,
+                                                        title       = "generators",
+                                                        filters     = tbl.filters(self.compression))
+
+
+
+    def __call__(self, mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
                  evt_number: int):
         if mctables is not self.current_tables:
             self.current_tables = mctables
@@ -112,7 +120,7 @@ class mc_info_writer:
             self.last_written_particle = modified_particle
         self.extent_table.flush()
 
-        hits, particles = read_mcinfo_evt(mctables, evt_number, self.last_row)
+        hits, particles, generators = read_mcinfo_evt(mctables, evt_number, self.last_row)
         self.last_row += 1
 
         for h in hits:
@@ -142,6 +150,15 @@ class mc_info_writer:
             new_row.append()
         self.particle_table.flush()
 
+        for g in generators:
+            new_row = self.generator_table.row
+            new_row['evt_number']    = g[0]
+            new_row['atomic_number'] = g[1]
+            new_row['mass_number']   = g[2]
+            new_row['region']        = g[3]
+            new_row.append()
+        self.generator_table.flush()
+
 
 def load_mchits(file_name: str,
                 event_range=(0, int(1e9))) -> Mapping[int, MCHit]:
@@ -167,14 +184,16 @@ def load_mcsensor_response(file_name: str,
         return read_mcsns_response(h5in, event_range)
 
 
-def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table),
-                     event_number: int, last_row=0) -> ([tb.Table], [tb.Table]):
-    h5extents   = mctables[0]
-    h5hits      = mctables[1]
-    h5particles = mctables[2]
+def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
+                     event_number: int, last_row=0) -> ([tb.Table], [tb.Table], [tb.Table]):
+    h5extents    = mctables[0]
+    h5hits       = mctables[1]
+    h5particles  = mctables[2]
+    h5generators = mctables[3] 
 
     particle_rows = []
     hit_rows      = []
+    generator_rows = [] 
 
     event_range = (last_row, int(1e9))
     for iext in range(*event_range):
@@ -200,17 +219,22 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table),
                 particle_rows.append(h5particles[ipart])
                 ipart += 1
 
+            # It is possible for the 'generators' dataset to have a different length compared to the 'extents' dataset. In particular, it may occur that the 'generators' dataset is empty. In this case, do not add any rows to 'generators'.
+            if len(h5generators) == len(h5extents):
+                generator_rows.append(h5generators[iext])
+
             break
 
-    return hit_rows, particle_rows
+    return hit_rows, particle_rows, generator_rows
 
 
 def read_mcinfo(h5f, event_range=(0, int(1e9))) ->Mapping[int, Mapping[int, MCParticle]]:
-    h5extents   = h5f.root.MC.extents
-    h5hits      = h5f.root.MC.hits
-    h5particles = h5f.root.MC.particles
+    h5extents    = h5f.root.MC.extents
+    h5hits       = h5f.root.MC.hits
+    h5particles  = h5f.root.MC.particles
+    h5generators = h5f.root.MC.generators
 
-    mc_info        = (h5extents, h5hits, h5particles)
+    mc_info        = (h5extents, h5hits, h5particles, h5generators)
     events_in_file = len(h5extents)
 
     all_events = {}
@@ -221,7 +245,7 @@ def read_mcinfo(h5f, event_range=(0, int(1e9))) ->Mapping[int, Mapping[int, MCPa
 
         current_event           = {}
         evt_number              = h5extents[iext]['evt_number']
-        hit_rows, particle_rows = read_mcinfo_evt(mc_info, evt_number, iext)
+        hit_rows, particle_rows, generator_rows = read_mcinfo_evt(mc_info, evt_number, iext)
 
         for h5particle in particle_rows:
             this_particle = h5particle['particle_indx']
