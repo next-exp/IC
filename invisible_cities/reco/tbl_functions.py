@@ -166,7 +166,11 @@ def get_rd_vectors(h5in):
 
 def get_mc_info(h5in):
     """Return MC info bank"""
-    return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles)
+    if 'generators' in h5in.root.MC:
+        return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles, h5in.root.MC.generators)
+    else:
+        # FIXME: deal properly with cases where 'generators' dataset is not in hdf5 file, which can happen 
+        return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles, h5in.root.MC.particles)
 
 
 def get_sensor_params_from_vectors(pmtrwf, sipmrwf):
