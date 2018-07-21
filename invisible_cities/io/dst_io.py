@@ -7,6 +7,7 @@ import warnings
 
 
 def load_dst(filename, group, node):
+    """load a kdst if filename, group and node correctly found"""
     try:
         with tb.open_file(filename) as h5in:
             try:
