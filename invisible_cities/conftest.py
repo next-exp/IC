@@ -192,7 +192,7 @@ def KrMC_kdst(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
 
     wrong_file = "kdst_5881_map_lt.h5"
-    wrong_file = os.path.join(ICDATADIR, test_file)
+    wrong_file = os.path.join(ICDATADIR, wrong_file)
 
     group = "DST"
     node  = "Events"
