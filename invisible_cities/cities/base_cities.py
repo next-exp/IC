@@ -352,6 +352,27 @@ class City:
     def get_run_and_event_info(h5in):
         return h5in.root.Run.events
 
+    @staticmethod
+    def get_trigger_types(h5in):
+        if 'Trigger/trigger' in h5in.root:
+            return h5in.root.Trigger.trigger
+        else:
+            return None
+
+    @staticmethod
+    def get_trigger_channels(h5in):
+        if 'Trigger/events' in h5in.root:
+            return h5in.root.Trigger.events
+        else:
+            return None
+
+    @staticmethod
+    def trigger_type(evt, trg_types):
+        return trg_types[evt][0] if trg_types else None
+
+    @staticmethod
+    def trigger_channels(evt, trg_channels):
+        return trg_channels[evt] if trg_channels else None
 
     @staticmethod
     def event_and_timestamp(evt, events_info):
@@ -417,21 +438,27 @@ class RawCity(City):
             print("Opening", filename, end="... ")
             with tb.open_file(filename, "r") as h5in:
 
-                events_info = self.get_run_and_event_info(h5in)
-                mc_info     = self.get_mc_info(h5in)
-                dataVectors = 0
-                NEVT        = 0
+                events_info  = self.get_run_and_event_info(h5in)
+                trg_type     = self.get_trigger_types(h5in)
+                trg_channels = self.get_trigger_channels(h5in)
+                mc_info      = self.get_mc_info(h5in)
+                dataVectors  = 0
+                NEVT         = 0
 
                 if self.raw_data_type == 'RWF':
                     NEVT, pmtrwf, sipmrwf, _ = self.get_rwf_vectors(h5in)
                     dataVectors = DataVectors(pmt=pmtrwf, sipm=sipmrwf,
-                                              mc=mc_info, events=events_info)
+                                              mc=mc_info, events=events_info,
+                                              trg_type=trg_type,
+                                              trg_channels=trg_channels)
 
                     self.event_loop(NEVT, dataVectors)
                 elif self.raw_data_type == 'MCRD':
                     NEVT, pmtrd, sipmrd     = self.get_rd_vectors(h5in)
                     dataVectors = DataVectors(pmt=pmtrd,  sipm=sipmrd,
-                                              mc=mc_info, events=events_info)
+                                              mc=mc_info, events=events_info,
+                                              trg_type=trg_type,
+                                              trg_channels=trg_channels)
 
                     self.event_loop(NEVT, dataVectors)
                 else:
