@@ -16,6 +16,7 @@ import numpy  as np
 from subprocess import check_output
 
 from pytest import mark
+from pytest import warns
 from pytest import fixture
 
 from .. core                import system_of_units as units
@@ -359,3 +360,64 @@ def test_irene_trigger_channels(config_tmpdir, ICDIR, s12params):
             trigger_in  = h5in .root.Trigger.events[nrow]
             trigger_out = h5out.root.Trigger.events[nrow]
             np.testing.assert_array_equal(trigger_in, trigger_out)
+
+
+def test_irene_split_trigger(config_tmpdir, ICDIR, s12params):
+    PATH_IN = os.path.join(ICDIR, 'database/test_data/', '6229_000_split_trigger.h5')
+    PATH_OUT1 = os.path.join(config_tmpdir,              'pmaps_6229_000_trg1.h5')
+    PATH_OUT2 = os.path.join(config_tmpdir,              'pmaps_6229_000_trg2.h5')
+
+    nrequired  = 3
+
+    run_number = 6229
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(run_number     = run_number,
+                     files_in       = PATH_IN,
+                     file_out       = PATH_OUT1,
+                     file_out2      = PATH_OUT2,
+                     split_triggers = True,
+                     trg1_code      = 1,
+                     trg2_code      = 9,
+                     event_range    = (0, nrequired),
+                     **unpack_s12params(s12params)))
+
+    with warns(UserWarning) as record:
+        irene = Irene(**conf)
+        irene.run()
+        cnt = irene.end()
+
+    #check there is a warning for unknown trigger types
+    assert len(record) == 1
+    evt_warn = 2
+    trg_warn = 5
+    message = "Event {} has an unknown trigger type ({})".format(evt_warn, trg_warn)
+    assert record[0].message.args[0] == message
+
+    nactual = cnt.n_events_tot
+    if nrequired > 0:
+        assert nrequired == nactual
+
+    # Check events has been properly redirected to their files
+    with tb.open_file(PATH_IN,  mode='r') as h5in, \
+         tb.open_file(PATH_OUT1, mode='r') as h5out1, \
+         tb.open_file(PATH_OUT2, mode='r') as h5out2:
+            # There is only one event per file
+            assert h5out1.root.Trigger.events.shape[0] == 1
+            assert h5out2.root.Trigger.events.shape[0] == 1
+
+            # Event number and trigger type are correct
+            evt1 = 0
+            evt2 = 2
+            trigger_in1  = h5in  .root.Trigger.events[evt1]
+            trigger_in2  = h5in  .root.Trigger.events[evt2]
+            trigger_out1 = h5out1.root.Trigger.events[0]
+            trigger_out2 = h5out2.root.Trigger.events[0]
+            np.testing.assert_array_equal(trigger_in1, trigger_out1)
+            np.testing.assert_array_equal(trigger_in2, trigger_out2)
+
+            evt_in1  = h5in  .root.Run.events[evt1][0]
+            evt_in2  = h5in  .root.Run.events[evt2][0]
+            evt_out1 = h5out1.root.Run.events[0][0]
+            evt_out2 = h5out2.root.Run.events[0][0]
+            np.testing.assert_array_equal(evt_in1, evt_out1)
+            np.testing.assert_array_equal(evt_in2, evt_out2)
