@@ -264,7 +264,7 @@ def test_copy_mc_generator_info(output_tmpdir, ICDATADIR, in_filename, out_filen
             mc_writer = mc_info_writer(h5out)
             mc_info = get_mc_info(h5in)
 
-            events_in = h5in.root.MC.generators[:]['evt_number']
+            events_in = mc_info.generators[:]['evt_number']
             for evt in events_in:
                 mc_writer(mc_info, evt)
 
