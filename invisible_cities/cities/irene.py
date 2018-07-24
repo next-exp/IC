@@ -8,11 +8,17 @@ last revised: JJGC, 12-July-2017
 from argparse import Namespace
 
 import numpy  as np
+import tables as tb
+import warnings
+
+from os.path                import expandvars
 
 from .. io.mcinfo_io        import mc_info_writer
 from .. io.pmaps_io         import pmap_writer
 from .. io.run_and_event_io import run_and_event_writer
 from .. io.trigger_io       import trigger_writer
+
+from .. reco                import tbl_functions as tbl
 
 from .  base_cities  import PmapCity
 from .  base_cities  import EventLoop
@@ -20,6 +26,9 @@ from .  base_cities  import EventLoop
 
 class Irene(PmapCity):
     """Perform fast processing from raw data to pmaps."""
+
+    parameters = tuple("""trg1_code trg2_code split_triggers
+                       file_out2""".split())
 
     def __init__(self, **kwds):
         """actions:
@@ -30,6 +39,12 @@ class Irene(PmapCity):
         """
         super().__init__(**kwds)
 
+        self.split_triggers = self.conf.split_triggers
+        if self.conf.split_triggers:
+            self.output_file2 = expandvars(self.conf.file_out2)
+            self.trg1_code      = self.conf.trg1_code
+            self.trg2_code      = self.conf.trg2_code
+
         self.cnt.init(n_events_tot                 = 0,
                       n_empty_events               = 0,
                       n_empty_events_s2_ene_eq_0   = 0,
@@ -39,6 +54,32 @@ class Irene(PmapCity):
 
         self.sp = self.get_sensor_params(self.input_files[0])
 
+    def run(self):
+        """The (base) run method of a city does the following chores:
+        1. Calls a display_IO_info() function (to be provided by the concrete cities)
+        2. open the output file
+        3. Writes any desired parameters to output file (must be implemented by cities)
+        4. gets the writers for the specific city.
+        5. Pass the writers to the file_loop() method.
+        6. returns the counter dictionary.
+        """
+        self.display_IO_info()
+
+        with tb.open_file(self.output_file, "w",
+                          filters = tbl.filters(self.compression)) as h5out1:
+            self.write_parameters(h5out1)
+            self.writers1 = self.get_writers(h5out1)
+            self.writers2 = None
+
+            if self.split_triggers:
+                with tb.open_file(self.output_file2, "w",
+                          filters = tbl.filters(self.compression)) as h5out2:
+                    self.write_parameters(h5out2)
+                    self.writers2 = self.get_writers(h5out2)
+                    self.file_loop()
+            else:
+                self.file_loop()
+
     def event_loop(self, NEVT, dataVectors):
         """actions:
         1. loops over all the events in each file.
@@ -47,7 +88,8 @@ class Irene(PmapCity):
         3. compute PMAPS and write them to file
         """
 
-        write        = self.writers
+        write1       = self.writers1
+        write2       = self.writers2
         pmtrwf       = dataVectors.pmt
         sipmrwf      = dataVectors.sipm
         mc_info      = dataVectors.mc
@@ -85,14 +127,32 @@ class Irene(PmapCity):
 
             # write stuff
             event, timestamp = self.event_and_timestamp(evt, events_info)
-            write.pmap         (pmap, event)
-            write.run_and_event(self.run_number, event, timestamp)
-            if self.monte_carlo:
-                write.mc(mc_info, event)
-            if trg_types or trg_channels:
-                trg_channel = self.trigger_channels(evt, trg_channels)
-                trg_type    = self.trigger_type    (evt, trg_types)
-                write.trigger(trg_type, trg_channel)
+            trg_type         = self.trigger_type    (evt, trg_types)
+            trg_channel      = self.trigger_channels(evt, trg_channels)
+
+            # If there is trigger information and split is true => write 2 files
+            if self.split_triggers and trg_types:
+                if trg_type == self.trg1_code:
+                    self.write_event(write1, pmap, mc_info, event, timestamp,
+                                     trg_type, trg_channel)
+                elif trg_type == self.trg2_code:
+                    self.write_event(write2, pmap, mc_info, event, timestamp,
+                                     trg_type, trg_channel)
+                else:
+                    message = f"Event {event} has an unknown trigger type ({trg_type})"
+                    warnings.warn(message)
+            else:
+                self.write_event(write1, pmap, mc_info, event, timestamp,
+                                 trg_type, trg_channel)
+
+
+    def write_event(self, writers, pmap, mc_info, event, timestamp,
+                    trg_type, trg_channel):
+        writers.pmap         (pmap, event)
+        writers.run_and_event(self.run_number, event, timestamp)
+        if self.monte_carlo:
+            writers.mc(mc_info, event)
+        writers.trigger(trg_type, trg_channel)
 
 
     def check_s12(self, s12sum):
