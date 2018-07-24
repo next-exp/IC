@@ -215,15 +215,22 @@ class City:
 
     def index_tables(self):
         """
-        -finds all tables in self.output_file
+        -finds all tables in self.output_file (and in output_file2 if exists)
         -checks if any columns in the tables have been marked to be indexed by writers
         -indexes those columns
         """
-        with tb.open_file(self.output_file, 'r+') as h5out:
-            for table in h5out.walk_nodes(classname='Table'):        # Walk over all tables in h5out
-                if 'columns_to_index' not in table.attrs:  continue  # Check for columns to index
-                for colname in table.attrs.columns_to_index:         # Index those columns
-                    table.colinstances[colname].create_index()
+
+        fileout_attrs = ('output_file', 'output_file2')
+        for output_file in fileout_attrs:
+            if hasattr(self, output_file):
+                with tb.open_file(getattr(self, output_file), 'r+') as h5out:
+                    # Walk over all tables in h5out
+                    for table in h5out.walk_nodes(classname='Table'):
+                        # Check for columns to index
+                        if 'columns_to_index' not in table.attrs:  continue
+                        # Index those columns
+                        for colname in table.attrs.columns_to_index:
+                            table.colinstances[colname].create_index()
 
 
     def display_IO_info(self):
