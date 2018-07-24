@@ -299,3 +299,63 @@ def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
 
                 assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
                 assert last_hit_list[nevents_per_file] - last_hit_list[nevents_per_file - 1] == nhits_in_first_event
+
+
+def test_irene_trigger_type(config_tmpdir, ICDIR, s12params):
+    PATH_IN = os.path.join(ICDIR, 'database/test_data/', '6229_000_trg_type.h5')
+    PATH_OUT = os.path.join(config_tmpdir,               'pmaps_6229_000_trg_type.h5')
+
+    nrequired  = 1
+
+    run_number = 6229
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(run_number    = run_number,
+                     files_in      = PATH_IN,
+                     file_out      = PATH_OUT,
+                     event_range   = (0, nrequired),
+                     **unpack_s12params(s12params)))
+
+    irene = Irene(**conf)
+    irene.run()
+    cnt = irene.end()
+
+    nactual = cnt.n_events_tot
+    if nrequired > 0:
+        assert nrequired == nactual
+
+    with tb.open_file(PATH_IN,  mode='r') as h5in, \
+         tb.open_file(PATH_OUT, mode='r') as h5out:
+            nrow = 0
+            trigger_in  = h5in .root.Trigger.trigger[nrow]
+            trigger_out = h5out.root.Trigger.trigger[nrow]
+            np.testing.assert_array_equal(trigger_in, trigger_out)
+
+
+def test_irene_trigger_channels(config_tmpdir, ICDIR, s12params):
+    PATH_IN = os.path.join(ICDIR, 'database/test_data/', '6229_000_trg_channels.h5')
+    PATH_OUT = os.path.join(config_tmpdir,               'pmaps_6229_000_trg_channels.h5')
+
+    nrequired  = 1
+
+    run_number = 6229
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(run_number    = run_number,
+                     files_in      = PATH_IN,
+                     file_out      = PATH_OUT,
+                     event_range   = (0, nrequired),
+                     **unpack_s12params(s12params)))
+
+    irene = Irene(**conf)
+    irene.run()
+    cnt = irene.end()
+
+    nactual = cnt.n_events_tot
+    if nrequired > 0:
+        assert nrequired == nactual
+
+    with tb.open_file(PATH_IN,  mode='r') as h5in, \
+         tb.open_file(PATH_OUT, mode='r') as h5out:
+            nrow = 0
+            trigger_in  = h5in .root.Trigger.events[nrow]
+            trigger_out = h5out.root.Trigger.events[nrow]
+            np.testing.assert_array_equal(trigger_in, trigger_out)

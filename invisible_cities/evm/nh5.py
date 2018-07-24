@@ -6,6 +6,10 @@ class RunInfo(tb.IsDescription):
     run_number = tb.Int32Col(shape=(), pos=0)
 
 
+class TriggerType(tb.IsDescription):
+    trigger_type = tb.Int32Col(shape=(), pos=0)
+
+
 class EventInfo(tb.IsDescription):
     evt_number = tb.Int32Col(shape=(), pos=0)
     timestamp  = tb.UInt64Col(shape=(), pos=1)
