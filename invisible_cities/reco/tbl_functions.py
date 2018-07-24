@@ -169,7 +169,7 @@ def get_mc_info(h5in):
     if 'generators' in h5in.root.MC:
         return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles, h5in.root.MC.generators)
     else:
-        # FIXME: deal properly with cases where 'generators' dataset is not in hdf5 file, which can happen 
+        # FIXME: deal properly with cases where 'generators' dataset is not in hdf5 file, which can happen
         return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles, h5in.root.MC.particles)
 
 
