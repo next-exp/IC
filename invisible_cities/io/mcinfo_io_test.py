@@ -61,10 +61,10 @@ def test_mc_info_writer_output_non_consecutive_events(output_tmpdir, ICDATADIR, 
             filtered_mc_info = get_mc_info(h5filtered)
             # test the content of events to be sure that they are written
             # correctly
-            hit_rows, particle_rows                   = read_mcinfo_evt(mc_info,
-                                                                        evt_to_be_read)
-            filtered_hit_rows, filtered_particle_rows = read_mcinfo_evt(filtered_mc_info,
-                                                                        evt_to_be_read)
+            hit_rows, particle_rows, generator_rows = read_mcinfo_evt(mc_info,
+                                                                      evt_to_be_read)
+            filtered_hit_rows, filtered_particle_rows, filtered_generator_rows = read_mcinfo_evt(filtered_mc_info,
+                                                                                                 evt_to_be_read)
 
             for hitr, filtered_hitr in zip(hit_rows, filtered_hit_rows):
                 assert np.allclose(hitr['hit_position'], filtered_hitr['hit_position'])
@@ -241,3 +241,33 @@ def test_pick_correct_sensor_binning(mc_sensors_nexus_data):
     last_sipm_bin_width = waveforms[last_sipm_id].bin_width
 
     assert last_sipm_bin_width == 1. * units.microsecond
+
+
+@mark.serial
+@parametrize('in_filename, out_filename',
+            (('mcfile_withgeneratorinfo_3evts_MCRD.h5', 'mcfile_withgeneratorinfo_3evts_RWF.h5'),
+             ('mcfile_withemptygeneratorinfo_3evts_MCRD.h5', 'mcfile_withemptygeneratorinfo_3evts_RWF.h5'),
+             ('mcfile_withoutgeneratorinfo_3evts_MCRD.h5', 'mcfile_withoutgeneratorinfo_3evts_RWF.h5')))
+def test_copy_mc_generator_info(output_tmpdir, ICDATADIR, in_filename, out_filename):
+    """This test is meant to cover three cases:
+    1. mcfile_withgeneratorinfo: MCRD file where 'MC' group has 'generators' dataset with non-zero dimension, equal to number of events in file. Produced with GATE version v1_03_00 or later, and from nexus file where GATE event string store contains "/Generator/IonGun/atomic_number", "/Generator/IonGun/mass_number" and "/Generator/IonGun/region" information
+    2. mcfile_withemptygeneratorinfo: MCRD file where 'MC' group has 'generators' dataset with zero dimension. Produced with GATE version v1_03_00 or later, and from nexus file where GATE event string store does NOT contain "/Generator/IonGun/atomic_number", "/Generator/IonGun/mass_number" and "/Generator/IonGun/region" information
+    3. mcfile_withoutgeneratorinfo: MCRD file where 'MC' group has NO 'generators' dataset. Produced with GATE version prior to v1_03_00
+    """
+
+    filein = os.path.join(ICDATADIR, in_filename)
+    fileout = os.path.join(output_tmpdir, out_filename)
+
+    with tb.open_file(filein) as h5in:
+        with tb.open_file(fileout, 'w') as h5out:
+
+            mc_writer = mc_info_writer(h5out)
+            mc_info = get_mc_info(h5in)
+
+            events_in = h5in.root.MC.generators[:]['evt_number']
+            for evt in events_in:
+                mc_writer(mc_info, evt)
+
+            events_out = h5out.root.MC.generators[:]['evt_number']
+
+            np.testing.assert_array_equal(events_in, events_out)

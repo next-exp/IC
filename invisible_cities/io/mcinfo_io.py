@@ -195,35 +195,31 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
     hit_rows      = []
     generator_rows = [] 
 
-    event_range = (last_row, int(1e9))
-    for iext in range(*event_range):
-        this_row = h5extents[iext]
-        if this_row['evt_number'] == event_number:
-            # the indices of the first hit and particle are 0 unless the first event
-            #  written is to be skipped: in this case they must be read from the extents
-            ihit = ipart = 0
-            if iext > 0:
-                previous_row = h5extents[iext-1]
+    this_row = h5extents[last_row]
+    if this_row['evt_number'] == event_number:
+        # the indices of the first hit and particle are 0 unless the first event
+        #  written is to be skipped: in this case they must be read from the extents
+        ihit = ipart = 0
+        if last_row > 0:
+            previous_row = h5extents[last_row-1]
 
-                ihit         = int(previous_row['last_hit']) + 1
-                ipart        = int(previous_row['last_particle']) + 1
+            ihit         = int(previous_row['last_hit']) + 1
+            ipart        = int(previous_row['last_particle']) + 1
 
-            ihit_end  = this_row['last_hit']
-            ipart_end = this_row['last_particle']
+        ihit_end  = this_row['last_hit']
+        ipart_end = this_row['last_particle']
 
-            while ihit <= ihit_end:
-                hit_rows.append(h5hits[ihit])
-                ihit += 1
+        while ihit <= ihit_end:
+            hit_rows.append(h5hits[ihit])
+            ihit += 1
 
-            while ipart <= ipart_end:
-                particle_rows.append(h5particles[ipart])
-                ipart += 1
+        while ipart <= ipart_end:
+            particle_rows.append(h5particles[ipart])
+            ipart += 1
 
-            # It is possible for the 'generators' dataset to have a different length compared to the 'extents' dataset. In particular, it may occur that the 'generators' dataset is empty. In this case, do not add any rows to 'generators'.
-            if len(h5generators) == len(h5extents):
-                generator_rows.append(h5generators[iext])
-
-            break
+        # It is possible for the 'generators' dataset to have a different length compared to the 'extents' dataset. In particular, it may occur that the 'generators' dataset is empty. In this case, do not add any rows to 'generators'.
+        if len(h5generators) == len(h5extents):
+            generator_rows.append(h5generators[last_row])
 
     return hit_rows, particle_rows, generator_rows
 
