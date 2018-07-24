@@ -12,6 +12,7 @@ import numpy  as np
 from .. io.mcinfo_io        import mc_info_writer
 from .. io.pmaps_io         import pmap_writer
 from .. io.run_and_event_io import run_and_event_writer
+from .. io.trigger_io       import trigger_writer
 
 from .  base_cities  import PmapCity
 from .  base_cities  import EventLoop
@@ -46,11 +47,13 @@ class Irene(PmapCity):
         3. compute PMAPS and write them to file
         """
 
-        write       = self.writers
-        pmtrwf      = dataVectors.pmt
-        sipmrwf     = dataVectors.sipm
-        mc_info     = dataVectors.mc
-        events_info = dataVectors.events
+        write        = self.writers
+        pmtrwf       = dataVectors.pmt
+        sipmrwf      = dataVectors.sipm
+        mc_info      = dataVectors.mc
+        events_info  = dataVectors.events
+        trg_types    = dataVectors.trg_type
+        trg_channels = dataVectors.trg_channels
 
         for evt in range(NEVT):
             self.conditional_print(evt, self.cnt.n_events_tot)
@@ -86,6 +89,11 @@ class Irene(PmapCity):
             write.run_and_event(self.run_number, event, timestamp)
             if self.monte_carlo:
                 write.mc(mc_info, event)
+            if trg_types or trg_channels:
+                trg_channel = self.trigger_channels(evt, trg_channels)
+                trg_type    = self.trigger_type    (evt, trg_types)
+                write.trigger(trg_type, trg_channel)
+
 
     def check_s12(self, s12sum):
         """Checks for ocassional empty events, characterized by null s2_energy
@@ -112,7 +120,8 @@ class Irene(PmapCity):
         writers = Namespace(
         run_and_event = run_and_event_writer(h5out),
         mc            = mc_info_writer(h5out) if self.monte_carlo else None,
-        pmap          = pmap_writer(h5out))
+        pmap          = pmap_writer(h5out),
+        trigger       = trigger_writer(h5out, len(self.pmt_active)))
         return writers
 
     def display_IO_info(self):
