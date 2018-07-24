@@ -167,8 +167,6 @@ def get_rd_vectors(h5in):
 def get_mc_info(h5in):
     """Return MC info bank"""
     if 'generators' in h5in.root.MC:
-        print("generators dtype:",h5in.root.MC.generators.dtype)
-        print("generators:",h5in.root.MC.generators)
         return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles, h5in.root.MC.generators)
     else:
         generator_table = np.zeros((0,), dtype=('<i4,<i4,<i4,S20'))
