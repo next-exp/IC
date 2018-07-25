@@ -27,20 +27,20 @@ def load_voxels(DST_file_name):
     """Return the Voxels as PD DataFrames."""
 
     dst = tables.open_file(DST_file_name,'r')
-    dst_size = len(dst.root.TrueVoxels.Voxels)
+    dst_size = len(dst.root.Voxels.Voxels)
     all_events = {}
 
-    event = dst.root.TrueVoxels.Voxels[:]['event']
-    time  = dst.root.TrueVoxels.Voxels[:]['time']
-    X     = dst.root.TrueVoxels.Voxels[:]['X']
-    Y     = dst.root.TrueVoxels.Voxels[:]['Y']
-    Z     = dst.root.TrueVoxels.Voxels[:]['Z']
-    E     = dst.root.TrueVoxels.Voxels[:]['E']
-    size  = dst.root.TrueVoxels.Voxels[:]['size']
+    event = dst.root.Voxels.Voxels[:]['event']
+    time  = dst.root.Voxels.Voxels[:]['time']
+    X     = dst.root.Voxels.Voxels[:]['X']
+    Y     = dst.root.Voxels.Voxels[:]['Y']
+    Z     = dst.root.Voxels.Voxels[:]['Z']
+    E     = dst.root.Voxels.Voxels[:]['E']
+    size  = dst.root.Voxels.Voxels[:]['size']
 
     for i in range(dst_size):
         current_event = all_events.setdefault(event[i],
-                                              VoxelCollection(event, time, []))
+                                              VoxelCollection(event, time))
         voxel = Voxel(X[i], Y[i], Z[i], E[i], size[i])
         current_event.voxels.append(voxel)
     return all_events

@@ -16,12 +16,12 @@ def test_voxels_writer(config_tmpdir, voxels_toy_data):
 
     with tb.open_file(output_file, 'w') as h5out:
         write = voxels_writer(h5out)
-        voxels = VoxelCollection(0, 1., [])
+        voxels = VoxelCollection(0, 1.)
         for xv, yv, zv, ev, sv in zip(X, Y, Z, E, size):
             v = Voxel(xv, yv, zv, ev, sv)
             voxels.voxels.append(v)
-        write(event[0],voxels.voxels)
-
+        write(voxels)
+    print(output_file)
     vdst = tb.open_file(output_file,'r')
     assert_allclose(event, vdst.root.Voxels.Voxels[:]['event'])
     assert_allclose(X,     vdst.root.Voxels.Voxels[:]['X'])

@@ -327,15 +327,16 @@ class VoxelCollection(Event):
 
     def store(self, table):
         row = table.row
-        row["event"]    = self.event
-        row["time" ]    = self.time
 
         for i, voxel in enumerate(self.voxels):
+            row["event"]    = self.event
+            row["time" ]    = self.time
             row["voxel_no"] = i
             row["X"    ] = voxel.X
             row["Y"    ] = voxel.Y
             row["Z"    ] = voxel.Z
             row["E"    ] = voxel.E
+            row["size" ] = voxel.size
 
             row.append()
 
@@ -362,16 +363,17 @@ class TrackCollection(Event):
     def store(self, table):
         row = table.row
         for i, t in enumerate(self.tracks):
-            row["event"]    = self.event
-            row["time" ]    = self.time
-            row["track_no"] = i
-
             for j, voxel in enumerate(t.voxels):
-                row["voxel_no"] = j
+                row["event"]    = self.event
+                row["time" ]    = self.time
+                row["track_len"] = t.length
+                row["track_no" ] = i
+                row["voxel_no" ] = j
                 row["X"    ] = voxel.X
                 row["Y"    ] = voxel.Y
                 row["Z"    ] = voxel.Z
                 row["E"    ] = voxel.E
+                row["size" ] = voxel.size
 
                 row.append()
 
@@ -547,7 +549,6 @@ class NtupleEvent(Event):
         row["event"  ] = self.event
         row["time"   ] = self.time
 
-        row["S1e"    ] = self.S1e
         row["S2e"    ] = self.S2e
         row["S2q"    ] = self.S2q
         row["S2ec"   ] = self.S2ec

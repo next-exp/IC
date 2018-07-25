@@ -140,6 +140,13 @@ def KrMC_pmaps_filename(ICDATADIR):
 
 
 @pytest.fixture(scope='session')
+def KrMC_hdst_filename(ICDATADIR):
+    test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_HDST.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
+
+@pytest.fixture(scope='session')
 def KrMC_pmaps_without_ipmt_filename(ICDATADIR):
     test_file = "dst_NEXT_v1_00_05_Kr_ACTIVE_0_0_7bar_PMP_10evt_new_wo_ipmt.h5"
     test_file = os.path.join(ICDATADIR, test_file)
@@ -489,3 +496,19 @@ def voxels_toy_data(ICDATADIR):
 
     voxels_filename = os.path.join(ICDATADIR, "toy_voxels.h5")
     return voxels_filename, (event, X, Y, Z, E, size)
+
+@pytest.fixture(scope='session')
+def tracks_toy_data(ICDATADIR):
+    event    = np.zeros(100)
+    time     = np.ones(100)
+    track_no  = np.zeros(100)
+    track_len = np.ones(100)*100
+    voxel_no  = np.linspace(0,99,100)
+    X     = np.linspace( 150,  250, 100)
+    Y     = np.linspace(-280, -180, 100)
+    Z     = np.linspace(   0,  99, 100)
+    E     = np.linspace( 1e3,  1e3, 100)
+    size  = np.reshape(np.repeat([10,10,10],100),(100,3))
+
+    tracks_filename = os.path.join(ICDATADIR, "toy_tracks.h5")
+    return tracks_filename, (event, time, track_no, track_len, voxel_no, X, Y, Z, E, size)

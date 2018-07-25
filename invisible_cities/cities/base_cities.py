@@ -10,6 +10,7 @@ from argparse    import Namespace
 from glob        import glob
 from time        import time
 from os.path     import expandvars
+from os.path     import isfile
 from itertools   import chain
 
 import numpy  as np
@@ -28,6 +29,7 @@ from .. core.random_sampling    import NoiseSampler as SiPMsNoiseSampler
 from .. database import load_db
 
 from .. io                      import pmaps_io    as pio
+from .. io.hits_io              import load_hits
 from .. io.dst_io               import load_dst
 from .. io.fee_io               import write_FEE_table
 from .. io.mcinfo_io            import mc_info_writer
@@ -56,6 +58,7 @@ from .. evm.event_model         import HitCollection
 from .. evm.event_model         import Hit
 from .. evm.event_model         import Cluster
 from .. evm.event_model         import Voxel
+from .. evm.event_model         import VoxelCollection
 from .. evm.pmaps               import S2
 from .. evm.nh5                 import DECONV_PARAM
 
@@ -411,6 +414,10 @@ class City:
     @staticmethod
     def get_pmaps_dicts(filename):
         return pio.load_pmaps(filename)
+
+    @staticmethod
+    def get_hits_dicts(filename):
+        return load_hits(filename)
 
 
 class RawCity(City):
@@ -912,7 +919,7 @@ class HitCity(KrCity):
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.rebin  = self.conf.rebin
-        if(os.path.isfile(self.conf.correction_map)):
+        if(isfile(self.conf.correction_map)):
             self.XYcorr = dstf.load_xy_corrections(self.conf.correction_map,
                                                     group = "XYcorrections",
                                                     node = f"GeometryE_5.0mm",
@@ -1027,13 +1034,13 @@ class HitCity(KrCity):
                     hit       = Hit(peak_no, c, z_slice, e_slice, xy_peak)
                     hitc.hits.append(hit)
 
-            x_hits = [hit.X for hit in hitc.hits]
-            y_hits = [hit.Y for hit in hitc.hits]
-            z_hits = [hit.Z for hit in hitc.hits]
-            e_hits = [hit.E for hit in hitc.hits]
-            hecorr  = e_hits * self.XYcorr(x_hits,y_hits).value * self.LTcorr(z_hits, x_hits, y_hits).value
-            for ihit,hit in enumerate(hitc.hits):
-                hit.Ec = hecorr[ihit]
+#            x_hits = [hit.X for hit in hitc.hits]
+#            y_hits = [hit.Y for hit in hitc.hits]
+#            z_hits = [hit.Z for hit in hitc.hits]
+#            e_hits = [hit.E for hit in hitc.hits]
+#            hecorr  = e_hits * self.XYcorr(x_hits,y_hits).value * self.LTcorr(z_hits, x_hits, y_hits).value
+#            for ihit,hit in enumerate(hitc.hits):
+#                hit.Ec = hecorr[ihit]
 
         return hitc
 
@@ -1052,25 +1059,83 @@ class TrackCity(HitCity):
          """
         return paf.voxelize_hits(hits, self.voxel_dimensions)
 
-class NtupleCity(HitCity):
-    """A city that reads PMAPS and writes an Ntuple for each event"""
-    parameters = tuple("voxel_dimensions blob_radius".split())
+class NtupleCity(City):
+    """A city that reads HITS and writes an Ntuple for each event"""
+    parameters = tuple("write_mc_info voxel_dimensions blob_radius".split())
 
     def __init__(self, **kwds):
         super().__init__(**kwds)
         self.voxel_dimensions  = self.conf.voxel_dimensions # type: np.ndarray
-        self.blob_radius       = self.blob_radius # type: float
+        self.blob_radius       = self.conf.blob_radius # type: float
+        self.write_mc_info     = self.conf.write_mc_info and self.monte_carlo
 
-    def create_ntuple_event(self, pmapVectors, filter_output):
+        self.cnt.init(n_events_tot                 = 0,
+                      n_empty_hitcs                = 0)
+
+    def get_mc_info_writer(self, h5out):
+        return mc_info_writer(h5out) if self.write_mc_info else None
+
+    def event_loop(self, hitcs, mc_info):
+        """actions:
+        1. loops over all hits
+        2. write dst_event
+        """
+
+        write         = self.writers
+
+        for event, hitc in hitcs.items():
+            self.conditional_print(self.cnt.n_events_tot, self.cnt.n_empty_hitcs)
+
+            # Count events in and break if necessary before filtering
+            what_next = self.event_range_step()
+            if what_next is EventLoop.skip_this_event: continue
+            if what_next is EventLoop.terminate_loop : break
+            self.cnt.n_events_tot += 1
+
+            if hitc is None:
+                self.cnt.n_empty_hitcs += 1
+                continue
+
+            # create DST event & write to file
+            evt = self.create_dst_event(hitc)
+            write.dst(evt)
+            if self.write_mc_info:
+                write.mc(mc_info, event)
+
+    def file_loop(self):
+        """
+        actions:
+        1. access pmaps (si_dicts )
+        2. access run and event info
+        3. call event_loop
+        """
+
+        for filename in self.input_files:
+            if self.event_range_finished(): break
+            print("Opening {filename}".format(**locals()), end="...\n")
+
+            try:
+                hitcs = self.get_hits_dicts(filename)
+            except (ValueError, tb.exceptions.NoSuchNodeError):
+                print("Empty file. Skipping.")
+                continue
+
+            with tb.open_file(filename) as h5in:
+                mc_info = None
+                if self.write_mc_info:
+                    # Save time when we are not interested in mc tracks
+                    mc_info = self.get_mc_info(h5in)
+
+                self.event_loop(hitcs, mc_info)
+
+    def create_dst_event(self, hitc):
         """Create an ntuple_event:
         An Ntuple event contains key information about the event.
         """
-        evt_number = pmapVectors.events
-        evt_time   = pmapVectors.timestamps
+        evt_number = hitc.event
+        evt_time   = hitc.time
 
-        hitc   = self.create_hits_event(pmapVectors, filter_output)
-
-        voxels = paf.voxelize_hits(hits, self.voxel_dimensions)
+        voxels = paf.voxelize_hits(hitc.hits, self.voxel_dimensions)
         vc = VoxelCollection(evt_number, evt_time)
         vc.voxels = voxels
 
@@ -1078,14 +1143,6 @@ class NtupleCity(HitCity):
                                 self.voxel_dimensions)
 
         ntc = NtupleEvent(evt_number, evt_time)
-
-        # Choose only the max S1 to be placed in the Ntuple.
-        S1e  = -1
-        for passed, peak in zip(filter_output.s1_peaks, pmap.s1s):
-            if not passed: continue
-            if(peak.total_energy > S1e):
-                S1e = peak.total_energy
-        ntc.S1e = S1e
 
         ntc.S2e  = np.sum([hit.E  for hit in hitc.hits])
         ntc.S2q  = np.sum([hit.Q  for hit in hitc.hits])
@@ -1119,7 +1176,7 @@ class NtupleCity(HitCity):
                     ntc.ymtrk[itrk] = sum([vox.Y*vox.E for vox in trk.voxels])/trk.E
                     ntc.zmtrk[itrk] = sum([vox.Z*vox.E for vox in trk.voxels])/trk.E
 
-        return hitc, voxels, tc, nte
+        return hitc, vc, tc, ntc
 
 class TriggerEmulationCity(PmapCity):
     """Emulates the trigger in the FPGA.
