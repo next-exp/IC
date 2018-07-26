@@ -42,7 +42,17 @@ class SensorTable(tb.IsDescription):
     channel  = tb.Int32Col(pos=0)
     sensorID = tb.Int32Col(pos=1)
 
-    
+
+class MCGeneratorInfo(tb.IsDescription):
+    """Store MC generator information as metadata using
+    Pytables.
+    """
+    evt_number    = tb.Int32Col(pos=0)
+    atomic_number = tb.Int32Col(pos=1)
+    mass_number   = tb.Int32Col(pos=2)
+    region        = tb.StringCol(20, pos=3)
+
+
 class MCExtentInfo(tb.IsDescription):
     """Store the last row of each table as metadata using
     Pytables.
