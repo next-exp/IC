@@ -166,7 +166,12 @@ def get_rd_vectors(h5in):
 
 def get_mc_info(h5in):
     """Return MC info bank"""
-    return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles)
+    if 'generators' in h5in.root.MC:
+        return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles, h5in.root.MC.generators)
+    else:
+        generator_table = np.zeros((0,), dtype=('<i4,<i4,<i4,S20'))
+        generator_table.dtype.names = ('evt_number', 'atomic_number', 'mass_number', 'region')
+        return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles, generator_table)
 
 
 def get_sensor_params_from_vectors(pmtrwf, sipmrwf):
