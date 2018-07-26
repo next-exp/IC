@@ -53,6 +53,7 @@ class MCInfo(NamedTuple):
     extents   : tb.Table
     hits      : tb.Table
     particles : tb.Table
+    generators: tb.Table
 
 
 class Waveform(NamedTuple):
