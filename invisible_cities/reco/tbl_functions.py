@@ -166,12 +166,27 @@ def get_rd_vectors(h5in):
 
 def get_mc_info(h5in):
     """Return MC info bank"""
+
+    extents = h5in.root.MC.extents
+    hits = h5in.root.MC.hits
+    particles = h5in.root.MC.particles
+
+    try:
+        h5in.root.MC.particles[0]
+    except IndexError:
+        print('Trying to access particle information: this file has sensor response only')
+        raise
+
+    if len(h5in.root.MC.hits) == 0:
+        hits = np.zeros((0,), dtype=('3<f4, <f4, <f4, S20, <i4, <i4'))
+
     if 'generators' in h5in.root.MC:
-        return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles, h5in.root.MC.generators)
+        generator_table = h5in.root.MC.generators
     else:
         generator_table = np.zeros((0,), dtype=('<i4,<i4,<i4,S20'))
         generator_table.dtype.names = ('evt_number', 'atomic_number', 'mass_number', 'region')
-        return MCInfo(h5in.root.MC.extents, h5in.root.MC.hits, h5in.root.MC.particles, generator_table)
+
+    return MCInfo(extents, hits, particles, generator_table)
 
 
 def get_sensor_params_from_vectors(pmtrwf, sipmrwf):
