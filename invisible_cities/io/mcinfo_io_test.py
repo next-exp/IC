@@ -15,6 +15,7 @@ from .. core import system_of_units as units
 
 from .. reco.tbl_functions import get_mc_info
 
+from pytest import raises
 from pytest import mark
 parametrize = mark.parametrize
 
@@ -271,3 +272,20 @@ def test_copy_mc_generator_info(output_tmpdir, ICDATADIR, in_filename, out_filen
             events_out = h5out.root.MC.generators[:]['evt_number']
 
             np.testing.assert_array_equal(events_in, events_out)
+
+
+def test_read_file_with_no_hits(nohits_sim_file):
+
+    filein = nohits_sim_file
+
+    try:
+        load_mcparticles(filein)
+    except IndexError:
+        raise
+
+def test_access_to_particles_in_sns_response_only_file_raises_IndexError(sns_only_sim_file):
+
+    filein = sns_only_sim_file
+
+    with raises(IndexError):
+        load_mcparticles(filein)
