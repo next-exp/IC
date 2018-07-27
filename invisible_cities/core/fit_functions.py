@@ -4,14 +4,54 @@ A set of functions for data fitting.
 GML November 2016
 """
 
-import numpy  as np
-import pandas as pd
+import numpy   as np
+import pandas  as pd
+import inspect as insp
 import scipy.optimize
 import scipy.stats
+
+from functools import wraps
 
 from .                    import core_functions as coref
 from .  stat_functions    import poisson_sigma
 from .. evm.ic_containers import FitFunction
+
+
+def fixed_parameters(fn, **kwargs):
+    """
+    Wrapper to fix parameters of a function
+    which can then be used in curve_fit.
+    """
+    fn_sig      = insp.signature(fn)
+    fn_args     = np.array(list(fn_sig.parameters))[1:]
+    par_gen     = (kwargs[k] if k in kwargs.keys() else np.nan for k in fn_args)
+    all_pars    = np.fromiter(par_gen, np.float)
+    active_pars = np.isnan(all_pars)
+
+    if np.all(active_pars):
+        raise ValueError(kwargs.keys() + " not parameters of " + fn.__name__)
+    elif np.count_nonzero(active_pars) > len(fn_args) - len(kwargs):
+        raise ValueError("Some parameters not found in " + fn.__name__)
+
+    @wraps(fn)
+    def fixed_fn(x, *pars):
+        all_pars[active_pars] = pars
+        ## hack to maintain spe_functions underlying decorator
+        func_value = fn(x, *all_pars)
+        try:
+            fixed_fn.n_gaussians = fn.n_gaussians
+        except AttributeError: pass
+        return func_value
+
+    ## Correct the doc string and signature for the new wrapped function
+    fixed_fn.__doc__  = fixed_fn.__name__ + str(fixed_fn.__doc__) + "\n"
+    fixed_fn.__doc__ += " with " + str(fn_args[np.invert(active_pars)]) + " fixed"
+
+    new_pars               = np.array(tuple(fn_sig.parameters.values()))
+    no_x                   = new_pars[1:]
+    new_pars               = np.insert(no_x[active_pars], 0, new_pars[0])
+    fixed_fn.__signature__ = fn_sig.replace(parameters=tuple(new_pars))
+    return fixed_fn
 
 
 def get_errors(cov):
