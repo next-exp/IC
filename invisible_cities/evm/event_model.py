@@ -191,13 +191,15 @@ class Voxel(BHit):
 
 class Cluster(BHit):
     """Represents a reconstructed cluster in the tracking plane"""
-    def __init__(self, Q, xy, xy_var, nsipm, z=ZANODE, E=NN):
+    def __init__(self, Q, xy, xy_var, nsipm, z=ZANODE, E=NN, Ql=-1, Qc=-1):
         if E == NN:
             super().__init__(xy.x, xy.y, z, Q)
         else:
             super().__init__(xy.x, xy.y, z, E)
 
         self.Q       = Q
+        self.Ql      = Ql
+        self.Qc      = Qc
         self._xy     = xy
         self._xy_var = xy_var
         self.nsipm   = nsipm
@@ -232,19 +234,28 @@ class Cluster(BHit):
 
 class Hit(Cluster):
     """Represents a reconstructed hit (cluster + z + energy)"""
-    def __init__(self, peak_number, cluster, z, s2_energy, peak_xy):
+    def __init__(self, peak_number, cluster, z, s2_energy, peak_xy,
+                s2_energy_l=-1, s2_energy_c=-1):
 
 
         super().__init__(cluster.Q,
                          cluster._xy, cluster._xy_var,
-                         cluster.nsipm, z, s2_energy)
+                         cluster.nsipm, z, s2_energy, cluster.Ql, cluster.Qc)
 
         self.peak_number = peak_number
         self.Xpeak = peak_xy.x
         self.Ypeak = peak_xy.y
+        self.energy_l = s2_energy_l
+        self.energy_c = s2_energy_c
 
     @property
     def npeak(self): return self.peak_number
+
+    @property
+    def El(self): return self.energy_l
+
+    @property
+    def Ec(self): return self.energy_c
 
     def __str__(self):
         return """<{} : npeak = {} z = {} XYpeak = {}, {} E = {} cluster ={} >""".format(self.__class__.__name__,
@@ -368,6 +379,10 @@ class HitCollection(Event):
             row["Z"    ] = hit.Z
             row["Q"    ] = hit.Q
             row["E"    ] = hit.E
+            row["Ql"   ] = hit.Ql
+            row["El"   ] = hit.El
+            row["Qc"   ] = hit.Qc
+            row["Ec"   ] = hit.Ec
             row.append()
 
     def __str__(self):
