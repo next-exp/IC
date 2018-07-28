@@ -293,6 +293,8 @@ def KrMC_hdst(ICDATADIR):
     test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_HDST.h5"
     test_file = os.path.join(ICDATADIR, test_file)
 
+    ZANODE = -9.425 * units.mm
+
     group = "RECO"
     node  = "Events"
 
@@ -415,6 +417,15 @@ def KrMC_hdst(ICDATADIR):
                 -1,   -1,   -1,
                 -1,   -1]
 
+    Zc    = [   ZANODE,   ZANODE,   ZANODE,
+                ZANODE,   ZANODE,   ZANODE,
+                ZANODE,   ZANODE,   ZANODE,
+                ZANODE,   ZANODE,   ZANODE,
+                ZANODE,   ZANODE,   ZANODE,
+                ZANODE,   ZANODE,   ZANODE,
+                ZANODE,   ZANODE,   ZANODE,
+                ZANODE,   ZANODE]
+
     Xpeak = [ 45.5945344 ,   45.5945344 ,   45.5945344 ,   45.5945344 ,
              -55.71659212,  -55.71659212,  -55.71659212,  -55.71659212,
              -55.71659212,  -55.71659212,  -55.71659212,  110.42706483,
@@ -445,7 +456,8 @@ def KrMC_hdst(ICDATADIR):
                          "Ql"   : Ql,
                          "El"   : El,
                          "Qc"   : Qc,
-                         "Ec"   : Ec})
+                         "Ec"   : Ec,
+                         "Zc"   : Zc})
 
     df_read = load_dst(test_file,
                        group = group,
