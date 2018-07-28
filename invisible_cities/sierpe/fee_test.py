@@ -1,7 +1,7 @@
 import numpy as np
 
 import pytest
-
+from scipy import signal
 from flaky import flaky
 
 from .. core import system_of_units as units
@@ -53,6 +53,73 @@ def test_fee_params():
     assert FE.f_LPF2 == 10 * units.MHZ
     assert FE.OFFSET == 2500   # offset adc
 
+def test_show_scipy_nasty_feature():
+    """
+    Scipy 1.1.0 changes shamelessly the default behaviour of signal.decimate
+    From the manual:
+
+    v 0.19
+
+    scipy.signal.decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None)[source]
+    Downsample the signal after applying an anti-aliasing filter.
+
+
+    Parameters:
+    x : ndarray
+    The signal to be downsampled, as an N-dimensional array.
+    q : int
+    The downsampling factor.
+
+    n : int, optional
+    The order of the filter (1 less than the length for ‘fir’).
+    Defaults to 8 for ‘iir’ and 30 for ‘fir’.
+
+    v 1.1
+
+    n : int, optional
+    The order of the filter (1 less than the length for ‘fir’).
+    Defaults to 8 for ‘iir’ and 20 times the downsampling factor for ‘fir’.
+
+    Thus the behaviour of n changes completely and the default is no longer valid.
+    """
+    ipmt = 0
+    spe = FE.SPE()
+    fee = FE.FEE(noise_FEEPMB_rms = 0 * units.mA, noise_DAQ_rms = 0)
+
+    spe_i = FE.spe_pulse(spe, t0 = 100 * units.ns, tmax = 200 * units.ns)
+    spe_v     = FE.signal_v_fee(fee, spe_i,ipmt)
+
+    scale = 25
+    spe_adc = signal.decimate(spe_v     * FE.v_to_adc(), scale, ftype='fir', zero_phase=False)
+    adc_to_pes     = np.sum(spe_adc    [3:7])
+
+    try:
+        assert 23 < adc_to_pes     < 23.1
+    except AssertionError:
+        pass
+
+def test_fix_scipy_nasty_feature():
+    """
+    This is fixed by setting n to the same value it has in version 0.2
+    (which was 30 by default)
+
+    """
+    ipmt = 0
+    spe = FE.SPE()
+    fee = FE.FEE(noise_FEEPMB_rms = 0 * units.mA, noise_DAQ_rms = 0)
+
+    spe_i = FE.spe_pulse(spe, t0 = 100 * units.ns, tmax = 200 * units.ns)
+    spe_v     = FE.signal_v_fee(fee, spe_i,ipmt)
+
+    scale = 25
+    spe_adc = signal.decimate(spe_v     * FE.v_to_adc(), scale, n = 30, ftype='fir', zero_phase=False)
+    adc_to_pes     = np.sum(spe_adc    [3:7])
+    print(adc_to_pes)
+
+    assert 23 < adc_to_pes     < 23.1
+
+
+
 def test_spe_to_adc():
     """Convert SPE to adc values with the current FEE Parameters must be."""
     ipmt = 0
@@ -62,10 +129,14 @@ def test_spe_to_adc():
     spe_i = FE.spe_pulse(spe, t0 = 100 * units.ns, tmax = 200 * units.ns)
     spe_v     = FE.signal_v_fee(fee, spe_i,ipmt)
     spe_v_lpf = FE.signal_v_lpf(fee, spe_i)
+
     spe_adc     = FE.daq_decimator(1000 * units.MHZ, 40 * units.MHZ, spe_v     * FE.v_to_adc())
+
     spe_adc_lpf = FE.daq_decimator(1000 * units.MHZ, 40 * units.MHZ, spe_v_lpf * FE.v_to_adc())
+
     adc_to_pes     = np.sum(spe_adc    [3:7])
     adc_to_pes_lpf = np.sum(spe_adc_lpf[3:7])
+
     assert 23 < adc_to_pes     < 23.1
     assert 24 < adc_to_pes_lpf < 24.1
 
@@ -91,4 +162,3 @@ def test_FEE():
     energy_mea2 = np.sum(signal_r2[1000:11000])
     energy_in2  = np.sum(signal_i*FE.i_to_adc())
     assert np.isclose(energy_in2, energy_mea2, rtol=5e-5)
-
