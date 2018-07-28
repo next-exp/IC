@@ -53,55 +53,10 @@ def test_fee_params():
     assert FE.f_LPF2 == 10 * units.MHZ
     assert FE.OFFSET == 2500   # offset adc
 
-def test_show_scipy_nasty_feature():
+
+def test_show_signal_decimate_signature():
     """
-    Scipy 1.1.0 changes shamelessly the default behaviour of signal.decimate
-    From the manual:
-
-    v 0.19
-
-    scipy.signal.decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None)[source]
-    Downsample the signal after applying an anti-aliasing filter.
-
-
-    Parameters:
-    x : ndarray
-    The signal to be downsampled, as an N-dimensional array.
-    q : int
-    The downsampling factor.
-
-    n : int, optional
-    The order of the filter (1 less than the length for ‘fir’).
-    Defaults to 8 for ‘iir’ and 30 for ‘fir’.
-
-    v 1.1
-
-    n : int, optional
-    The order of the filter (1 less than the length for ‘fir’).
-    Defaults to 8 for ‘iir’ and 20 times the downsampling factor for ‘fir’.
-
-    Thus the behaviour of n changes completely and the default is no longer valid.
-    """
-    ipmt = 0
-    spe = FE.SPE()
-    fee = FE.FEE(noise_FEEPMB_rms = 0 * units.mA, noise_DAQ_rms = 0)
-
-    spe_i = FE.spe_pulse(spe, t0 = 100 * units.ns, tmax = 200 * units.ns)
-    spe_v     = FE.signal_v_fee(fee, spe_i,ipmt)
-
-    scale = 25
-    spe_adc = signal.decimate(spe_v     * FE.v_to_adc(), scale, ftype='fir', zero_phase=False)
-    adc_to_pes     = np.sum(spe_adc    [3:7])
-
-    try:
-        assert 23 < adc_to_pes     < 23.1
-    except AssertionError:
-        pass
-
-def test_fix_scipy_nasty_feature():
-    """
-    This is fixed by setting n to the same value it has in version 0.2
-    (which was 30 by default)
+    This test shows explicitly the signature os signal.decimate, including the need to set n=30
 
     """
     ipmt = 0
