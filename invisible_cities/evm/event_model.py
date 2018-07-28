@@ -235,7 +235,7 @@ class Cluster(BHit):
 class Hit(Cluster):
     """Represents a reconstructed hit (cluster + z + energy)"""
     def __init__(self, peak_number, cluster, z, s2_energy, peak_xy,
-                s2_energy_l=-1, s2_energy_c=-1):
+                s2_energy_l=-1, s2_energy_c=-1, zc=ZANODE):
 
 
         super().__init__(cluster.Q,
@@ -247,6 +247,7 @@ class Hit(Cluster):
         self.Ypeak = peak_xy.y
         self.energy_l = s2_energy_l
         self.energy_c = s2_energy_c
+        self.z_c      = zc
 
     @property
     def npeak(self): return self.peak_number
@@ -256,6 +257,9 @@ class Hit(Cluster):
 
     @property
     def Ec(self): return self.energy_c
+
+    @property
+    def Zc(self): return self.z_c
 
     def __str__(self):
         return """<{} : npeak = {} z = {} XYpeak = {}, {} E = {} cluster ={} >""".format(self.__class__.__name__,
@@ -383,6 +387,7 @@ class HitCollection(Event):
             row["El"   ] = hit.El
             row["Qc"   ] = hit.Qc
             row["Ec"   ] = hit.Ec
+            row["Zc"   ] = hit.Zc
             row.append()
 
     def __str__(self):
