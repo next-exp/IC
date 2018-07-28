@@ -11,7 +11,8 @@ from .  mcinfo_io import load_mcsensor_response
 from .  mcinfo_io import mc_info_writer
 from .  mcinfo_io import read_mcinfo_evt
 
-from .. core import system_of_units as units
+from .. core            import system_of_units as units
+from ..core.exceptions  import NoParticleInfoInFile
 
 from .. reco.tbl_functions import get_mc_info
 
@@ -287,5 +288,5 @@ def test_access_to_particles_in_sns_response_only_file_raises_IndexError(sns_onl
 
     filein = sns_only_sim_file
 
-    with raises(IndexError):
+    with raises(NoParticleInfoInFile):
         load_mcparticles(filein)

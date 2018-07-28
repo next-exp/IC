@@ -67,3 +67,6 @@ class UnknownParameter(ICException):
 
 class SensorBinningNotFound(ICException):
     pass
+
+class NoParticleInfoInFile(ICException):
+    pass

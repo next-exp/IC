@@ -19,6 +19,7 @@ from argparse import Namespace
 
 from ..evm.event_model  import SensorParams
 from ..evm.event_model  import MCInfo
+from ..core.exceptions  import NoParticleInfoInFile
 
 def filters(name):
     """Return the filter corresponding to a given key.
@@ -173,9 +174,8 @@ def get_mc_info(h5in):
 
     try:
         h5in.root.MC.particles[0]
-    except IndexError:
-        print('Trying to access particle information: this file has sensor response only')
-        raise
+    except:
+        raise NoParticleInfoInFile('Trying to access particle information: this file has sensor response only')
 
     if len(h5in.root.MC.hits) == 0:
         hits = np.zeros((0,), dtype=('3<f4, <f4, <f4, S20, <i4, <i4'))
