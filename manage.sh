@@ -56,7 +56,7 @@ function install_conda {
             ;;
     esac
 
-    if which conda ; then
+    if conda --version ; then
         echo Conda already installed. Skipping conda installation.
     else
         echo Installing conda for $CONDA_OS
