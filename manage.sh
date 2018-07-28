@@ -72,7 +72,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2018-06-30
+CONDA_ENV_TAG=2018-07-28
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
@@ -90,15 +90,15 @@ dependencies:
 - networkx=2.1
 - notebook=5.5.0
 - numpy=1.14.5
-- pandas=0.23.1
-- pymysql=0.8.1
+- pandas=0.23.3
+- pymysql=0.9.2
 - pytables=3.4.4
 - pytest=3.6.2
 - scipy=1.1.0
 - sphinx=1.7.5
 - tornado=5.0.2
 - flaky=3.4.0
-- hypothesis=3.57
+- hypothesis=3.59.1
 - pytest-xdist=1.22.2
 EOF
 
