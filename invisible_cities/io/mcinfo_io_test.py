@@ -276,13 +276,14 @@ def test_copy_mc_generator_info(output_tmpdir, ICDATADIR, in_filename, out_filen
 
 
 def test_read_file_with_no_hits(nohits_sim_file):
+    """
+    This test ensures that, even if there are no true hits in a file,
+    loading the true information doesn't make the program crash.
+    """
 
     filein = nohits_sim_file
+    load_mcparticles(filein)
 
-    try:
-        load_mcparticles(filein)
-    except IndexError:
-        raise
 
 def test_access_to_particles_in_sns_response_only_file_raises_IndexError(sns_only_sim_file):
 
