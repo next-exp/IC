@@ -160,8 +160,8 @@ function run_tests_par {
     ensure_environment_matches_checked_out_version
     # Run the test suite
     STATUS=0
-    pytest -v -n ${N_PROC} -m "not serial" --no-success-flaky-report || STATUS=$?
-    pytest -v              -m      serial  --no-success-flaky-report || STATUS=$?
+    pytest -v -n ${N_PROC:-auto} -m "not serial" --no-success-flaky-report || STATUS=$?
+    pytest -v                    -m      serial  --no-success-flaky-report || STATUS=$?
     [[ $STATUS = 0 ]]
 }
 
