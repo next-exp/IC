@@ -150,7 +150,7 @@ def test_voxelize_hits_strict_gives_required_voxels_size(hits, requested_voxel_d
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
     tracks = make_track_graphs(voxels)
-    voxels_in_tracks = set().union(*(set(t.nodes_iter()) for t in tracks))
+    voxels_in_tracks = set().union(*(set(t.nodes()) for t in tracks))
     assert set(voxels) == voxels_in_tracks
 
 

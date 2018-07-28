@@ -6,63 +6,34 @@ IC stands for Invisible Cities and also for Italo Calvino, the author of the mas
 Quickstart guide
 ----------------
 
-If you have just cloned the repository for the first time, then issue
-the command
++ Clone the repository
+
++ :code:`cd` into the `IC` directory
+
++ :code:`source manage.sh work_in_python_version 3.6`
+
+The last step will, if necessary, install conda and create an
+appropriate conda environment, as well as setting environment
+variables which are needed for the correct functioning of IC.
+
+The installation steps will be skipped if conda and the required
+environment are already available, so subsequent invocations of the
+command should be much quicker than the first.
+
+You will need to perform the last two steps in every shell in which
+you want to run IC.
+
+To check your progress when you are developing, you will want to
+compile any Cython components that have changed and run the test
+suite. This can be done with
 
 .. code-block::
 
-  source manage.sh install_and_check 3.6
+   source manage.sh compile_and_test_par
 
-Where the 3.6 can be replaced with any sensible Python version you
-like. (On 2017-06-27 we dropped support for Python 3.5, so Python 3.6
-will be the only supported version until 3.7 is released and the third
-party modules we use are uploaded to conda and pip.)
-   
-If you have already done the above procedure once, then you should
-already have an `IC3.6` conda environment available, as long as
-${HOME}/miniconda3/bin (or an earlier conda installation) is in your
-`PATH`. (You may like to add the location of your conda installation
-to your shell startup file.) To start working in an IC environment you
-set up earlier issue the command
-
-.. code-block::
-
-  source manage.sh work_in_python_version 3.6
-
-(replacing 3.6 with whatever python version is relevant for your
-case.)
-
-If you wish to develop and test in a python version in which you have
-not worked on IC before, you will need to create the corresponding
-conda environment:
-
-.. code-block::
-
-  source manage.sh make_environment 3.5
-
-(replacing 3.5 with whatever python version is relevant for your
-case.) After this you will be able to work in that environment by
-selecting it as before
-
-.. code-block::
-
-  source manage.sh work_in_python_version 3.5
-
-To check your progress when you are developing you will want to
-compile Cython components and run the test suite. This can be done
-with
-
-.. code-block::
-
-   bash manage.sh compile_and_test
-
-If the test database changes, you will need to download the most
-recent version:
-
-.. code-block::
-
-   bash manage.sh download_test_db
-   
+If you check out a commit which requires an older set of dependencies,
+the :code:`compile_and_test` commands will automatically switch to an
+appropriate environment, creating it on the fly if necessary.
 
 :Travis CI: |travis|
 

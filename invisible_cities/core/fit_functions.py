@@ -295,7 +295,7 @@ def profileXY(xdata, ydata, zdata, nbinsx, nbinsy,
     bin_numbers_x = np.digitize(xdata, bin_edges_x, right=False)
     bin_numbers_y = np.digitize(ydata, bin_edges_y, right=False)
     df            = pd.DataFrame(dict(binx=bin_numbers_x, biny=bin_numbers_y, z=zdata))
-    gb            = df.groupby(("binx", "biny")).z
+    gb            = df.groupby(["binx", "biny"]).z
 
     shape     = nbinsx, nbinsy
     mean      = np.zeros(shape)
