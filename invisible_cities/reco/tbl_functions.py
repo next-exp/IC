@@ -175,7 +175,7 @@ def get_mc_info(h5in):
     try:
         h5in.root.MC.particles[0]
     except:
-        raise NoParticleInfoInFile('Trying to access particle information: this file has sensor response only')
+        raise NoParticleInfoInFile('Trying to access particle information: this file could have sensor response only.')
 
     if len(h5in.root.MC.hits) == 0:
         hits = np.zeros((0,), dtype=('3<f4, <f4, <f4, S20, <i4, <i4'))
