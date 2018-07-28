@@ -89,7 +89,7 @@ dependencies:
 - matplotlib=2.2.2
 - networkx=2.1
 - notebook=5.6.0
-- numpy=1.14.5
+- numpy=1.15.0
 - pandas=0.23.3
 - pymysql=0.9.2
 - pytables=3.4.4
