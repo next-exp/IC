@@ -216,8 +216,8 @@ def test_build_pmt_responses(KrMC_pmaps_dfs, signal_type):
     if   signal_type is S1:   df,  _, _, pmt_df,      _ = KrMC_pmaps_dfs
     elif signal_type is S2:    _, df, _,      _, pmt_df = KrMC_pmaps_dfs
 
-    df_groupby     =     df.groupby(("event", "peak"))
-    pmt_df_groupby = pmt_df.groupby(("event", "peak"))
+    df_groupby     =     df.groupby(["event", "peak"])
+    pmt_df_groupby = pmt_df.groupby(["event", "peak"])
     for (_, df_peak), (_, pmt_df_peak) in zip(df_groupby, pmt_df_groupby):
         times, pmt_r = pmpio.build_pmt_responses(df_peak, pmt_df_peak)
 
@@ -228,7 +228,7 @@ def test_build_pmt_responses(KrMC_pmaps_dfs, signal_type):
 
 def test_build_sipm_responses(KrMC_pmaps_dfs):
     _, _, df_event, _, _ = KrMC_pmaps_dfs
-    for _, df_peak in df_event.groupby(("event", "peak")):
+    for _, df_peak in df_event.groupby(["event", "peak"]):
         sipm_r = pmpio.build_sipm_responses(df_peak)
 
         assert sipm_r.all_waveforms.flatten() == approx(df_peak.ene.values)
@@ -250,8 +250,8 @@ def test_build_pmt_responses_unordered():
 
     expected_pmts = np.array([1, 3, 2, 0, 4])
     expected_enes = np.arange(10)
-    for (_, peak_pmt), (_, peak_ipmt) in zip(data_pmt .groupby(("event", "peak")),
-                                             data_ipmt.groupby(("event", "peak"))):
+    for (_, peak_pmt), (_, peak_ipmt) in zip(data_pmt .groupby(["event", "peak"]),
+                                             data_ipmt.groupby(["event", "peak"])):
         _, pmt_r = pmpio.build_pmt_responses(peak_pmt, peak_ipmt)
         assert pmt_r.ids                     == exactly(expected_pmts)
         assert pmt_r.all_waveforms.flatten() == exactly(expected_enes)
@@ -266,7 +266,7 @@ def test_build_sipm_responses_unordered():
 
     expected_sipms = np.array([1, 3, 2, 0, 4])
     expected_enes  = np.arange(10)
-    for _, peak in data.groupby(("event", "peak")):
+    for _, peak in data.groupby(["event", "peak"]):
         sipm_r = pmpio.build_sipm_responses(peak)
         assert sipm_r.ids                     == exactly(expected_sipms)
         assert sipm_r.all_waveforms.flatten() == exactly(expected_enes)

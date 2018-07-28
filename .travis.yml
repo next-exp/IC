@@ -18,7 +18,7 @@ branches:
     - /^docs\..*$/
 
 install:
-  - source manage.sh install ${IC_PYTHON_VERSION}
+  - source manage.sh work_in_python_version_no_tests ${IC_PYTHON_VERSION}
 
 script:
   - HYPOTHESIS_PROFILE=hard bash manage.sh run_tests_par 4

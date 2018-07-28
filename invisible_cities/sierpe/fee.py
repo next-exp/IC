@@ -179,14 +179,16 @@ class FEE:
         self.C1_pmt = (self.coeff_blr_pmt / self.coeff_c_pmt) * (self.C2 / np.pi)
         self.R1_pmt = 1 / (self.coeff_c_pmt * self.C1_pmt * self.f_sample * np.pi)
         self.A1_pmt = self.R1_pmt * self.Zin / (self.R1_pmt + self.Zin)  # ohms
+
         self.A2_pmt = gain / self.A1_pmt  # ohms/ohms = []
+
         self.Cr_pmt = 1 + self.C1_pmt / self.C2
         self.ZC_pmt = self.Zin / self.Cr_pmt
         self.noise_FEEPMB_rms = noise_FEEPMB_rms
         self.LSB = lsb
         self.voltsToAdc = self.LSB / units.volt
         self.DAQnoise_rms = noise_DAQ_rms
-        
+
 
     def __str__(self):
         s = """
@@ -209,14 +211,14 @@ class FEE:
          LSB = {16:7.2g} mV,
          volts to adc = {17:7.2g},
          DAQnoise_rms = {18:7.2g},
-         freq_LHPFd (PMTs) = {19:s},
-         coef_blr (PMTs)= {20:s},
+         freq_LHPFd (PMTs) = {19},
+         coef_blr (PMTs)= {20},
          freq_zero = {21:7.5g},
          coeff_c = {22:7.5g},
-         coeff_c (PMTs)= {23:s},
-         R1 (PMTs)= {24:s} ohm,
-         A1 (PMTs)= {25:s} ohm,
-         A2 (PMTs)= {26:s}
+         coeff_c (PMTs)= {23},
+         R1 (PMTs)= {24} ohm,
+         A1 (PMTs)= {25} ohm,
+         A2 (PMTs)= {26}
         )
         """.format(self.C1               / units.nF,
                    self.C2               / units.nF,
@@ -249,6 +251,7 @@ class FEE:
 
     def __repr__(self):
         return self.__str__()
+
 
 
 def noise_adc(fee, signal_in_adc):
@@ -397,4 +400,4 @@ def daq_decimator(f_sample1, f_sample2, signal_in):
     """
 
     scale = int(f_sample1 / f_sample2)
-    return signal.decimate(signal_in, scale, ftype='fir', zero_phase=False)
+    return signal.decimate(signal_in, scale, n=30, ftype='fir', zero_phase=False)
