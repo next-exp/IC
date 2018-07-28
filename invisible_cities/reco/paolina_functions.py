@@ -104,7 +104,7 @@ def voxels_from_track_graph(track: Graph) -> List[Voxel]:
 
 def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
     """Compute shortest path lengths between all nodes in a weighted graph."""
-    return nx.all_pairs_dijkstra_path_length(track_graph, weight='distance')
+    return dict(nx.all_pairs_dijkstra_path_length(track_graph, weight='distance'))
 
 
 def find_extrema_and_length(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Voxel, float]:
@@ -115,11 +115,11 @@ def find_extrema_and_length(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple
         only_voxel = next(iter(distance))
         return (only_voxel, only_voxel, 0.)
     first, last, max_distance = None, None, 0
-    for source, target in combinations(distance, 2):
-        d = distance[source][target]
+    for (voxel1, dist_from_voxel_1_to), (voxel2, _) in combinations(distance.items(), 2):
+        d = dist_from_voxel_1_to[voxel2]
         if d > max_distance:
-            first, last, max_distance = source, target, d
-    return (first, last, max_distance)
+            first, last, max_distance = voxel1, voxel2, d
+    return first, last, max_distance
 
 
 def find_extrema(track: Graph) -> Tuple[Voxel, Voxel]:

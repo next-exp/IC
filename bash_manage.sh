@@ -54,6 +54,7 @@ source_manage.sh()
                         local opts="install_and_check\
                                     install\
                                     work_in_python_version\
+                                    work_in_python_version_no_tests\
                                     make_environment\
                                     run_tests\
                                     run_tests_par\
