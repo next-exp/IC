@@ -105,8 +105,16 @@ EOF
     conda env create -f ${YML_FILENAME}
 }
 
+function make_environment_if_missing {
+    if ! conda env list | grep ${CONDA_ENV_NAME}
+    then
+        make_environment
+    fi
+}
+
 function switch_to_conda_env {
     conda deactivate # in case some other environment was already active
+    make_environment_if_missing ${CONDA_ENV_NAME}
     conda activate ${CONDA_ENV_NAME}
 }
 
