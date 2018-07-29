@@ -387,11 +387,11 @@ def test_irene_split_trigger(config_tmpdir, ICDIR, s12params):
         cnt = irene.end()
 
     #check there is a warning for unknown trigger types
-    assert len(record) == 1
+    assert len(record) >= 1
     evt_warn = 2
     trg_warn = 5
     message = "Event {} has an unknown trigger type ({})".format(evt_warn, trg_warn)
-    assert record[0].message.args[0] == message
+    assert sum(1 for r in record if r.message.args[0] == message) == 1
 
     nactual = cnt.n_events_tot
     if nrequired > 0:
