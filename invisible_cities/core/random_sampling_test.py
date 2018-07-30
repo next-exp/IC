@@ -137,7 +137,7 @@ def test_inverse_cdf_ad_hoc(domain, frequencies, percentile, true_value):
 
 @given(valid_distributions(),
        floats(min_value = 0.1, max_value = 0.9))
-def test_inverse_cdf_hypothesis_generated(distribution, percentile):
+def test_inverse_cdf_hypothesis_generated(distribution, percentile): # HERE!
     domain, freq = distribution
     cdf = cdf_from_freq(freq)
     for i, (d, cp) in enumerate(zip(domain, cdf)):
