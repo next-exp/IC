@@ -70,8 +70,8 @@ def suppress_wf(waveform, threshold, padding = 0):
     if padding > 0:
         ## pad around signal
         indices = np.argwhere(np.invert(below_thr)).flatten()
-        min_range = np.clip(indices - padding, 0, len(below_thr)-1)
-        max_range = np.clip(indices + padding, 0, len(below_thr)-1)
+        min_range = np.clip(indices - padding, 0, None)
+        max_range = np.clip(indices + padding, None, len(below_thr)-1)
         for min_indx, max_indx in zip(min_range, max_range):
             below_thr[min_indx:max_indx] = False
     wf[below_thr] = 0
