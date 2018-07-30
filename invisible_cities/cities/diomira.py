@@ -30,7 +30,7 @@ class Diomira(MonteCarloCity):
     2. the response of the trigger
     """
 
-    parameters = tuple("""trigger_type""".split())
+    parameters = tuple("""filter_padding trigger_type""".split())
 
     def __init__(self, **kwds):
         """Diomira Init:
@@ -46,7 +46,9 @@ class Diomira(MonteCarloCity):
         self.cnt.init(n_events_tot = 0,
                       nevt_out     = 0)
 
-        self.sipm_noise_cut   = conf.sipm_noise_cut
+        self.sipm_noise_cut = conf.sipm_noise_cut
+
+        self.filter_padding = conf.filter_padding
 
         # thresholds in adc counts
         self.sipms_thresholds = self.sipm_noise_cut *  self.sipm_adc_to_pes
@@ -84,7 +86,9 @@ class Diomira(MonteCarloCity):
 
             thr_with_base   = self.sipms_thresholds[:, np.newaxis]
             thr_with_base  += self.noise_sampler.baselines
-            dataSiPM        = wfm.noise_suppression(dataSiPM_noisy, thr_with_base)
+            dataSiPM        = wfm.noise_suppression(dataSiPM_noisy     ,
+                                                    thr_with_base      ,
+                                                    self.filter_padding)
 
             RWF = dataPMT.astype(np.int16)
             BLR = blrPMT.astype(np.int16)
