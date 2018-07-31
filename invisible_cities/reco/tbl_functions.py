@@ -179,6 +179,7 @@ def get_mc_info(h5in):
 
     if len(h5in.root.MC.hits) == 0:
         hits = np.zeros((0,), dtype=('3<f4, <f4, <f4, S20, <i4, <i4'))
+        hits.dtype.names = ('hit_position', 'hit_time', 'hit_energy', 'label', 'particle_indx', 'hit_indx')
 
     if 'generators' in h5in.root.MC:
         generator_table = h5in.root.MC.generators
