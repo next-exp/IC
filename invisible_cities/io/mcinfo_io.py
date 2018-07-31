@@ -233,8 +233,6 @@ def read_mcinfo(h5f, event_range=(0, int(1e9))) ->Mapping[int, Mapping[int, MCPa
     mc_info = tbl.get_mc_info(h5f)
 
     h5extents = mc_info.extents
-    h5ehits = mc_info.hits
-    h5particles = mc_info.particles
 
     events_in_file = len(h5extents)
 
