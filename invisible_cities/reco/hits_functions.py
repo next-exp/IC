@@ -34,3 +34,21 @@ def merge_NN_hits(hitc):
         for h in h_closest:
             h.energy += nn_h.E*(h.E/h_closest_etot)
     return hitc_new
+
+def hitc_corrections(hitc, EXYcor, ELTcor, QXYcor, QLTcor, ftlife=1):
+    """Returns HitEnergyMap of corrected HitCollection skipping NN hits."""
+    x_hits = [hit.X for hit in hitc.hits if hit.Q !=NN]
+    y_hits = [hit.Y for hit in hitc.hits if hit.Q !=NN]
+    z_hits = [hit.Z for hit in hitc.hits if hit.Q !=NN]
+    e_hits = [hit.E for hit in hitc.hits if hit.Q !=NN]
+    q_hits = [hit.Q for hit in hitc.hits if hit.Q !=NN]
+
+    qlt    = q_hits  * QLTcor(z_hits, x_hits, y_hits).value**(ftlife)
+    qcor   = qlt     * QXYcor(x_hits,y_hits)         .value
+    elt    = e_hits  * ELTcor(z_hits, x_hits, y_hits).value**(ftlife)
+    ecor   = elt     * EXYcor(x_hits,y_hits)         .value
+    
+    Evec   = EVector (np.array(e_hits), elt, ecor)
+    Qvec   = EVector (np.array(q_hits), qlt, qcor)
+    
+    return HitEnergyMap(Evec, Qvec)
