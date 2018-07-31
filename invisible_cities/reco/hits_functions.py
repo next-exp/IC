@@ -5,6 +5,17 @@ from .. evm.event_model import HitCollection
 
 from .. types.ic_types  import NN
 
+from typing             import NamedTuple
+
+class EVector(NamedTuple):
+    raw : float            # raw value
+    lt  : float            # corrected by lifetime
+    cor : float            # fully corrected
+                                    
+class HitEnergyMap(NamedTuple):
+    E   :  EVector
+    Q   :  EVector
+
 def merge_NN_hits(hitc):
     """ Returns a modified HitCollection instance by adding energies of NN hits to closest
     hits such that the added energy is proportional to the hit energy. If all the hits were NN
