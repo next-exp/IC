@@ -211,10 +211,10 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
             ihit_end  = this_row['last_hit']
             ipart_end = this_row['last_particle']
 
-            while ihit <= ihit_end:
-                if len(h5hits) != 0:
+            if len(h5hits) != 0:
+                while ihit <= ihit_end:
                     hit_rows.append(h5hits[ihit])
-                ihit += 1
+                    ihit += 1
 
             while ipart <= ipart_end:
                 particle_rows.append(h5particles[ipart])
