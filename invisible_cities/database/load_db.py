@@ -113,6 +113,7 @@ order by SensorID, BinEnergyPes;'''.format(abs(run_number))
     return noise, noise_bins, baselines
 
 
+@lru_cache(maxsize=10)
 def PMTLowFrequencyNoise(run_number=1e5, dbfile=DATABASE_LOCATION):
     conn = sqlite3.connect(dbfile)
     cursor = conn.cursor()
