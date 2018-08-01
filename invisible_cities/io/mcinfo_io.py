@@ -16,6 +16,7 @@ from .. evm.nh5 import MCHitInfo
 from .. evm.nh5 import MCParticleInfo
 
 from typing import Mapping
+from typing import Sequence
 
 # use Mapping (duck type) rather than dict
 
@@ -161,7 +162,7 @@ class mc_info_writer:
 
 
 def load_mchits(file_name: str,
-                event_range=(0, int(1e9))) -> Mapping[int, MCHit]:
+                event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
         mcevents    = read_mcinfo(h5in, event_range)
@@ -171,14 +172,14 @@ def load_mchits(file_name: str,
 
 
 def load_mcparticles(file_name: str,
-                     event_range=(0, int(1e9))) -> Mapping[int, MCParticle]:
+                     event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Sequence[MCParticle]]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
         return read_mcinfo(h5in, event_range)
 
 
 def load_mcsensor_response(file_name: str,
-                           event_range=(0, int(1e9))) -> Mapping[int, MCParticle]:
+                           event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Sequence[Waveform]]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
         return read_mcsns_response(h5in, event_range)
@@ -189,11 +190,11 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
     h5extents    = mctables[0]
     h5hits       = mctables[1]
     h5particles  = mctables[2]
-    h5generators = mctables[3] 
+    h5generators = mctables[3]
 
-    particle_rows = []
-    hit_rows      = []
-    generator_rows = [] 
+    particle_rows  = []
+    hit_rows       = []
+    generator_rows = []
 
     event_range = (last_row, int(1e9))
     for iext in range(*event_range):
@@ -219,7 +220,7 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
             while ipart <= ipart_end:
                 particle_rows.append(h5particles[ipart])
                 ipart += 1
-
+            
             # It is possible for the 'generators' dataset to have a different length compared to the 'extents' dataset. In particular, it may occur that the 'generators' dataset is empty. In this case, do not add any rows to 'generators'.
             if len(h5generators) == len(h5extents):
                 generator_rows.append(h5generators[last_row])
@@ -229,9 +230,9 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
     return hit_rows, particle_rows, generator_rows
 
 
-def read_mcinfo(h5f, event_range=(0, int(1e9))) ->Mapping[int, Mapping[int, MCParticle]]:
+def read_mcinfo(h5f, event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Sequence[MCParticle]]]:
     mc_info = tbl.get_mc_info(h5f)
-
+    
     h5extents = mc_info.extents
 
     events_in_file = len(h5extents)
@@ -276,7 +277,7 @@ def read_mcinfo(h5f, event_range=(0, int(1e9))) ->Mapping[int, Mapping[int, MCPa
     return all_events
 
 
-def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]])->Mapping[int, MCHit]:
+def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, Sequence[MCParticle]]]) -> Mapping[int, Sequence[MCHit]]:
     """Returns all hits in the event"""
     mchits_dict = {}
     for event_no, particle_dict in mcevents.items():
@@ -288,7 +289,7 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]])->Mappin
     return mchits_dict
 
 
-def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, Waveform]]:
+def read_mcsns_response(h5f, event_range=(0, 1e9)) -> Mapping[int, Mapping[int, Sequence[Waveform]]]:
 
     h5config = h5f.root.MC.configuration
 
