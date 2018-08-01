@@ -11,10 +11,12 @@ from .  mcinfo_io import load_mcsensor_response
 from .  mcinfo_io import mc_info_writer
 from .  mcinfo_io import read_mcinfo_evt
 
-from .. core import system_of_units as units
+from .. core            import system_of_units as units
+from ..core.exceptions  import NoParticleInfoInFile
 
 from .. reco.tbl_functions import get_mc_info
 
+from pytest import raises
 from pytest import mark
 parametrize = mark.parametrize
 
@@ -271,3 +273,21 @@ def test_copy_mc_generator_info(output_tmpdir, ICDATADIR, in_filename, out_filen
             events_out = h5out.root.MC.generators[:]['evt_number']
 
             np.testing.assert_array_equal(events_in, events_out)
+
+
+def test_read_file_with_no_hits(nohits_sim_file):
+    """
+    This test ensures that, even if there are no true hits in a file,
+    loading the true information doesn't make the program crash.
+    """
+
+    filein = nohits_sim_file
+    load_mcparticles(filein)
+
+
+def test_access_to_particles_in_sns_response_only_file_raises_IndexError(sns_only_sim_file):
+
+    filein = sns_only_sim_file
+
+    with raises(NoParticleInfoInFile):
+        load_mcparticles(filein)
