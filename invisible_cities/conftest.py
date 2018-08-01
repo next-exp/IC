@@ -74,6 +74,16 @@ def electron_MCRD_file(request, ICDATADIR):
 def krypton_MCRD_file(request, ICDATADIR):
     return os.path.join(ICDATADIR, request.param)
 
+@pytest.fixture(scope  = 'session',
+                params = ['mcfile_nohits.sim.h5'])
+def nohits_sim_file(request, ICDATADIR):
+    return os.path.join(ICDATADIR, request.param)
+
+@pytest.fixture(scope  = 'session',
+                params = ['mcfile_sns_only.sim.h5'])
+def sns_only_sim_file(request, ICDATADIR):
+    return os.path.join(ICDATADIR, request.param)
+
 
 @pytest.fixture(scope='session')
 def mc_all_hits_data(krypton_MCRD_file):

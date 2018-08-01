@@ -211,9 +211,10 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
             ihit_end  = this_row['last_hit']
             ipart_end = this_row['last_particle']
 
-            while ihit <= ihit_end:
-                hit_rows.append(h5hits[ihit])
-                ihit += 1
+            if len(h5hits) != 0:
+                while ihit <= ihit_end:
+                    hit_rows.append(h5hits[ihit])
+                    ihit += 1
 
             while ipart <= ipart_end:
                 particle_rows.append(h5particles[ipart])
@@ -232,8 +233,6 @@ def read_mcinfo(h5f, event_range=(0, int(1e9))) ->Mapping[int, Mapping[int, MCPa
     mc_info = tbl.get_mc_info(h5f)
 
     h5extents = mc_info.extents
-    h5ehits = mc_info.hits
-    h5particles = mc_info.particles
 
     events_in_file = len(h5extents)
 
@@ -313,6 +312,12 @@ def read_mcsns_response(h5f, event_range=(0, 1e9)) ->Mapping[int, Mapping[int, W
 
 
     h5extents   = h5f.root.MC.extents
+
+    try:
+        h5f.root.MC.waveforms[0]
+    except IndexError:
+        print('Error: this file has no sensor response information.')
+
     h5waveforms = h5f.root.MC.waveforms
 
     last_line_of_event = 'last_sns_data'
