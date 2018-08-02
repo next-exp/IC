@@ -50,8 +50,9 @@ class Diomira(MonteCarloCity):
 
         self.filter_padding = conf.filter_padding
 
-        # thresholds in adc counts
+        # thresholds in adc counts with baselines
         self.sipms_thresholds = self.sipm_noise_cut *  self.sipm_adc_to_pes
+        self.sipms_thresholds[:, np.newaxis] += self.noise_sampler.baselines
 
         self.trigger_filter   = TriggerFilter(self.trigger_params)
         self.trigger_type = conf.trigger_type
@@ -84,11 +85,9 @@ class Diomira(MonteCarloCity):
             dataPMT, blrPMT = self.simulate_pmt_response(evt, pmtrd)
             dataSiPM_noisy  = self.simulate_sipm_response(evt, sipmrd)
 
-            thr_with_base   = self.sipms_thresholds[:, np.newaxis]
-            thr_with_base  += self.noise_sampler.baselines
-            dataSiPM        = wfm.noise_suppression(dataSiPM_noisy     ,
-                                                    thr_with_base      ,
-                                                    self.filter_padding)
+            dataSiPM        = wfm.noise_suppression(dataSiPM_noisy       ,
+                                                    self.sipms_thresholds,
+                                                    self.filter_padding  )
 
             RWF = dataPMT.astype(np.int16)
             BLR = blrPMT.astype(np.int16)
