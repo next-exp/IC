@@ -95,23 +95,46 @@ def _build_ipmtdf_from_sumdf(sumdf):
     ipmtdf['npmt'] = -1
     return ipmtdf
 
-
 def load_pmaps(filename):
     pmap_dict = {}
     s1df, s2df, sidf, s1pmtdf, s2pmtdf = load_pmaps_as_df(filename)
-
     # Hack fix to allow loading pmaps without individual pmts
     if s1pmtdf is None: s1pmtdf = _build_ipmtdf_from_sumdf(s1df)
     if s2pmtdf is None: s2pmtdf = _build_ipmtdf_from_sumdf(s2df)
-
     event_numbers = set.union(set(s1df.event), set(s2df.event))
+    s1df_grouped   =s1df   .groupby('event')
+    s1pmtdf_grouped=s1pmtdf.groupby('event')
+    s2df_grouped   =s2df   .groupby('event')
+    s2pmtdf_grouped=s2pmtdf.groupby('event')
+    sidf_grouped   =sidf   .groupby('event')
     for event_number in event_numbers:
-        s1s = s1s_from_df(s1df   [s1df   .event == event_number],
-                          s1pmtdf[s1pmtdf.event == event_number])
-        s2s = s2s_from_df(s2df   [s2df   .event == event_number],
-                          s2pmtdf[s2pmtdf.event == event_number],
-                          sidf   [sidf   .event == event_number])
-
+        try:
+            s1indx=s1df_grouped      .groups[event_number]
+        except KeyError:
+            s1indx=[]
+        try:
+            s1pmtindx=s1pmtdf_grouped.groups[event_number]
+        except KeyError:
+            s1pmtindx=[]
+        try:
+            s2indx=s2df_grouped      .groups[event_number]
+        except KeyError:
+            s2indx=[]
+        try:
+            s2pmtindx=s2pmtdf_grouped.groups[event_number]
+        except KeyError:
+            s2pmtindx=[]
+        try:
+            siindx=sidf_grouped      .groups[event_number]
+        except KeyError:
+            siindx=[]
+        
+        s1s = s1s_from_df(s1df   .iloc   [s1indx   ],
+                          s1pmtdf.iloc   [s1pmtindx])
+        s2s = s2s_from_df(s2df   .iloc   [s2indx   ],
+                          s2pmtdf.iloc   [s2pmtindx],
+                          sidf   .iloc   [siindx   ])
+        
         pmap_dict[event_number] = PMap(s1s, s2s)
 
     return pmap_dict
