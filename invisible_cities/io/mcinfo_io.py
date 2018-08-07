@@ -223,10 +223,10 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
             while ipart <= ipart_end:
                 particle_rows.append(h5particles[ipart])
                 ipart += 1
-            
-            # It is possible for the 'generators' dataset to have a different length compared to the 'extents' dataset. In particular, it may occur that the 'generators' dataset is empty. In this case, do not add any rows to 'generators'.
-            if len(h5generators) == len(h5extents):
-                generator_rows.append(h5generators[last_row])
+
+            # It is possible for the 'generators' dataset to be empty. In this case, do not add any rows to 'generators'.
+            if len(h5generators) != 0:
+                generator_rows.append(h5generators[iext])
 
             break
 
