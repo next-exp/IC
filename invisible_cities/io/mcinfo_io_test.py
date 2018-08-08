@@ -22,37 +22,41 @@ parametrize = mark.parametrize
 
 
 @mark.serial
-@parametrize('skipped_evt, out_filename',
-            ((0, 'test_mcinfo_skip_evt0.h5'),
-             (1, 'test_mcinfo_skip_evt1.h5')))
-def test_mc_info_writer_non_consecutive_events(output_tmpdir, ICDATADIR, krypton_MCRD_file, skipped_evt, out_filename):
-    filein  = krypton_MCRD_file
+@parametrize('skipped_evt, in_filename, out_filename',
+            ((0, 'Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5', 'test_kr_mcinfo_skip_evt0.h5'),
+             (1, 'Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5', 'test_kr_mcinfo_skip_evt1.h5'),
+             (700000000, 'mcfile_withgeneratorinfo_3evts_MCRD.h5', 'test_background_mcinfo_skip_evt700000000.h5'),
+             (640000000, 'mcfile_withgeneratorinfo_3evts_MCRD.h5', 'test_background_mcinfo_skip_evt640000000.h5')))
+def test_mc_info_writer_non_consecutive_events(output_tmpdir, ICDATADIR, skipped_evt, in_filename, out_filename):
+    """This test includes two different input files, with three events each. They differ in terms of their event number ordering. In the first (Kr) file, event numbers are ordered in ascending order. In the second (background) file, event numbers are unique but with random ordering. In particular, the Kr file contains event numbers [0, 1, 2], while the background file contains event numbers [700000000, 640000000, 40197500], in this order.
+     """
+    filein = os.path.join(ICDATADIR, in_filename)
     fileout = os.path.join(output_tmpdir, out_filename)
 
     with tb.open_file(filein) as h5in:
         with tb.open_file(fileout, 'w') as h5out:
 
             mc_writer = mc_info_writer(h5out)
-            events_in = np.unique(h5in.root.MC.extents[:]['evt_number'])
+            events_in = h5in.root.MC.extents[:]['evt_number']
 
             mc_info = get_mc_info(h5in)
 
-            #Skip the desired event (there are only 3 in the file)
+            #Skip the desired event
             events_to_copy = [evt for evt in events_in if evt != skipped_evt]
 
             for evt in events_to_copy:
                 mc_writer(mc_info, evt)
 
-            events_out = np.unique(h5out.root.MC.extents[:]['evt_number'])
+            events_out = h5out.root.MC.extents[:]['evt_number']
 
             np.testing.assert_array_equal(events_to_copy, events_out)
 
 
 @mark.serial
 @parametrize('file_to_check, evt_to_be_read',
-            (('test_mcinfo_skip_evt0.h5', 1),
-             ('test_mcinfo_skip_evt1.h5', 0),
-             ('test_mcinfo_skip_evt1.h5', 2)))
+            (('test_kr_mcinfo_skip_evt0.h5', 1),
+             ('test_kr_mcinfo_skip_evt1.h5', 0),
+             ('test_kr_mcinfo_skip_evt1.h5', 2)))
 def test_mc_info_writer_output_non_consecutive_events(output_tmpdir, ICDATADIR, krypton_MCRD_file, file_to_check, evt_to_be_read):
     filein    = krypton_MCRD_file
     filecheck = os.path.join(output_tmpdir, file_to_check)
