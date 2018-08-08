@@ -50,7 +50,7 @@ def to_pes(wfs, adc_to_pes):
     return wfs / adc_to_pes.reshape(wfs.shape[0], 1)
 
 
-def suppress_wf(waveform, threshold):
+def suppress_wf(waveform, threshold, padding = 0):
     """Put zeros where the waveform is below some threshold.
 
     Parameters
@@ -66,11 +66,19 @@ def suppress_wf(waveform, threshold):
         A copy of the input waveform with values below threshold set to zero.
     """
     wf = np.copy(waveform)
-    wf[wf <= threshold] = 0
+    below_thr = wf <= threshold
+    if padding > 0:
+        ## pad around signal
+        indices = np.argwhere(np.invert(below_thr)).flatten()
+        min_range = np.clip(indices - padding, 0, None)
+        max_range = np.clip(indices + padding, None, len(below_thr)-1)
+        for min_indx, max_indx in zip(min_range, max_range):
+            below_thr[min_indx:max_indx] = False
+    wf[below_thr] = 0
     return wf
 
 
-def noise_suppression(waveforms, thresholds):
+def noise_suppression(waveforms, thresholds, padding = 0):
     """Put zeros where the waveform is below some threshold.
 
     Parameters
@@ -79,6 +87,7 @@ def noise_suppression(waveforms, thresholds):
         Waveform amplitudes (axis 1) for each sensor (axis 0).
     thresholds : int or float or sequence of ints or floats
         Cut value for each waveform (sequence) or for all (single number).
+    padding : Number of samples before and after signal to keep
 
     Returns
     -------
@@ -87,7 +96,9 @@ def noise_suppression(waveforms, thresholds):
     """
     if not hasattr(thresholds, "__iter__"):
         thresholds = np.ones(waveforms.shape[0]) * thresholds
-    suppressed_wfs = list(map(suppress_wf, waveforms, thresholds))
+    if not hasattr(padding, "__iter__"):
+        padding = np.zeros(waveforms.shape[0], dtype = np.int) + padding
+    suppressed_wfs = list(map(suppress_wf, waveforms, thresholds, padding))
     return np.array(suppressed_wfs)
 
 
