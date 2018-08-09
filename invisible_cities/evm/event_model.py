@@ -491,3 +491,54 @@ class KrEvent(Event):
         return s
 
     __repr__ =     __str__
+
+
+class NtupleEvent(Event):
+    """Represents an extended event."""
+    def __init__(self, event_number, event_time):
+        Event.__init__(self, event_number, event_time)
+
+
+        self.S2q    = 0  # S2 (SiPM plane)
+        self.S2e    = 0  # S2 (energy plane)
+        self.S2ec   = 0  # corrected S2
+
+        self.xavg   = 0  # average X
+        self.yavg   = 0  # average Y
+        self.zavg   = 0  # average Z
+        self.xmin   = 0  # minimum X-coordinate over all hits
+        self.ymin   = 0  # minimum Y-coordinate over all hits
+        self.zmin   = 0  # minimum Z-coordinate over all hits
+        self.xmax   = 0  # maximum X-coordinate over all hits
+        self.ymax   = 0  # maximum Y-coordinate over all hits
+        self.zmax   = 0  # maximum Z-coordinate over all hits
+
+    def store(self, table):
+        row = table.row
+
+        row["event"  ] = self.event
+        row["time"   ] = self.time
+
+        row["S2e"    ] = self.S2e
+        row["S2q"    ] = self.S2q
+        row["S2ec"   ] = self.S2ec
+
+        row["xavg"   ] = self.xavg
+        row["yavg"   ] = self.yavg
+        row["zavg"   ] = self.zavg
+        row["xmin"   ] = self.xmin
+        row["ymin"   ] = self.ymin
+        row["zmin"   ] = self.zmin
+        row["xmax"   ] = self.xmax
+        row["ymax"   ] = self.ymax
+        row["zmax"   ] = self.zmax
+
+        row.append()
+
+    def __str__(self):
+        s = "{0}Event\n{0}".format("#"*20 + "\n")
+        for attr in self.__dict__:
+            s += "{}: {}\n".format(attr, getattr(self, attr))
+        return s
+
+    __repr__ =     __str__
