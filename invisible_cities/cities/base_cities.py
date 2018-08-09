@@ -29,6 +29,7 @@ from .. database import load_db
 
 from .. io                      import pmaps_io    as pio
 from .. io.dst_io               import load_dst
+from .. io.hits_io              import load_hits
 from .. io.fee_io               import write_FEE_table
 from .. io.mcinfo_io            import mc_info_writer
 
@@ -50,6 +51,7 @@ from .. evm.ic_containers       import PmapVectors
 from .. evm.ic_containers       import TriggerParams
 from .. evm.event_model         import SensorParams
 from .. evm.event_model         import KrEvent
+from .. evm.event_model         import NtupleEvent
 from .. evm.event_model         import HitCollection
 from .. evm.event_model         import Hit
 from .. evm.event_model         import Cluster
@@ -409,6 +411,10 @@ class City:
     @staticmethod
     def get_pmaps_dicts(filename):
         return pio.load_pmaps(filename)
+
+    @staticmethod
+    def get_hits_dicts(filename):
+        return load_hits(filename)
 
 
 class RawCity(City):
@@ -1031,6 +1037,99 @@ class TrackCity(HitCity):
 
          """
         return paf.voxelize_hits(hits, self.voxel_dimensions)
+
+
+class NtupleCity(City):
+    """A city that reads HITS and writes an Ntuple for each event"""
+    parameters = tuple("write_mc_info voxel_dimensions blob_radius".split())
+
+    def __init__(self, **kwds):
+        super().__init__(**kwds)
+        self.write_mc_info     = self.conf.write_mc_info and self.monte_carlo
+
+        self.cnt.init(n_events_tot                 = 0,
+                      n_empty_hitcs                = 0)
+
+    def get_mc_info_writer(self, h5out):
+        return mc_info_writer(h5out) if self.write_mc_info else None
+
+    def event_loop(self, hitcs, mc_info):
+        """actions:
+        1. loops over all hits
+        2. write dst_event
+        """
+
+        write         = self.writers
+
+        for event, hitc in hitcs.items():
+            self.conditional_print(self.cnt.n_events_tot, self.cnt.n_empty_hitcs)
+
+            # Count events in and break if necessary before filtering
+            what_next = self.event_range_step()
+            if what_next is EventLoop.skip_this_event: continue
+            if what_next is EventLoop.terminate_loop : break
+            self.cnt.n_events_tot += 1
+
+            if hitc is None:
+                self.cnt.n_empty_hitcs += 1
+                continue
+
+            # create DST event & write to file
+            evt = self.create_dst_event(hitc)
+            write.dst(evt)
+            if self.write_mc_info:
+                write.mc(mc_info, event)
+
+    def file_loop(self):
+        """
+        actions:
+        1. access pmaps (si_dicts )
+        2. access run and event info
+        3. call event_loop
+        """
+
+        for filename in self.input_files:
+            if self.event_range_finished(): break
+            print("Opening {filename}".format(**locals()), end="...\n")
+
+            try:
+                hitcs = self.get_hits_dicts(filename)
+            except (ValueError, tb.exceptions.NoSuchNodeError):
+                print("Empty file. Skipping.")
+                continue
+
+            with tb.open_file(filename) as h5in:
+                mc_info = None
+                if self.write_mc_info:
+                    # Save time when we are not interested in mc tracks
+                    mc_info = self.get_mc_info(h5in)
+
+                self.event_loop(hitcs, mc_info)
+
+    def create_dst_event(self, hitc):
+        """Create an ntuple_event:
+        An Ntuple event contains key information about the event.
+        """
+        evt_number = hitc.event
+        evt_time   = hitc.time
+
+        ntc = NtupleEvent(evt_number, evt_time)
+
+        ntc.S2e  = np.sum([hit.E  for hit in hitc.hits])
+        ntc.S2q  = np.sum([hit.Q  for hit in hitc.hits])
+        ntc.S2ec = np.sum([hit.Ec for hit in hitc.hits])
+        if(ntc.S2ec > 0):
+            ntc.xavg = np.sum([hit.X*hit.Ec for hit in hitc.hits])/ntc.S2ec
+            ntc.yavg = np.sum([hit.Y*hit.Ec for hit in hitc.hits])/ntc.S2ec
+            ntc.zavg = np.sum([hit.Z*hit.Ec for hit in hitc.hits])/ntc.S2ec
+            ntc.xmin = np.min([hit.X for hit in hitc.hits])
+            ntc.ymin = np.min([hit.Y for hit in hitc.hits])
+            ntc.zmin = np.min([hit.Z for hit in hitc.hits])
+            ntc.xmax = np.max([hit.X for hit in hitc.hits])
+            ntc.ymax = np.max([hit.Y for hit in hitc.hits])
+            ntc.zmax = np.max([hit.Z for hit in hitc.hits])
+
+        return ntc
 
 
 class TriggerEmulationCity(PmapCity):
