@@ -20,17 +20,18 @@ def test_buffer_and_limits():
 
     buffer_len        = 40 ## dummy 1 mus buffer
     buffer_sample_wid = 25e-9
-    frequencies       = np.arange(15000, 20000, 500) ## subset of frequences
+    freqency_bin      = 500
+    frequencies       = np.arange(15000, 20000, frequency_bin)
     
     freq_cont, lowf, highf = lfn.buffer_and_limits(buffer_len       ,
                                                    buffer_sample_wid,
                                                    frequencies      )
 
     assert np.all(freq_cont.keywords['time_bins'] == buffer_sample_wid * np.arange(buffer_len))
-    assert np.all(np.diff(lowf) == 500)
-    assert np.all(np.diff(highf) == 500)
-    assert lowf[0] == frequencies[0] - 250
-    assert highf[-1] == frequencies[-1] + 250
+    assert np.all(np.diff(lowf) == frequency_bin)
+    assert np.all(np.diff(highf) == frequency_bin)
+    assert lowf[0] == frequencies[0] - frequency_bin / 2
+    assert highf[-1] == frequencies[-1] + frequency_bin / 2
 
 
 def test_low_frequency_noise():
@@ -46,11 +47,12 @@ def test_low_frequency_noise():
 
     assert pmt_noise.shape[1] == buffer_len
 
-    ## Which should be the same and which not depends on
-    ## the mapping whhich is a databse issue but they shouldn't
-    ## all be the same only some.
-    ## Some are different
+    ## Which pmts should have the same noise and which not
+    ## depends on the mapping which is a databse issue.
+    ## They shouldn't all be the same though as they should be
+    ## grouped by febox.
+    ## First check some are different
     assert np.any(np.diff(pmt_noise, axis = 0))
-    ## but not all
+    ## then that not all are
     assert not np.all(np.diff(pmt_noise, axis = 0))
     
