@@ -20,7 +20,7 @@ def test_buffer_and_limits():
 
     buffer_len        = 40 ## dummy 1 mus buffer
     buffer_sample_wid = 25e-9
-    freqency_bin      = 500
+    frequency_bin      = 500
     frequencies       = np.arange(15000, 20000, frequency_bin)
     
     freq_cont, lowf, highf = lfn.buffer_and_limits(buffer_len       ,
