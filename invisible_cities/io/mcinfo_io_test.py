@@ -87,31 +87,20 @@ def test_mc_info_writer_output_non_consecutive_events(output_tmpdir, ICDATADIR, 
 
 
 @mark.serial
-@parametrize('file_to_check, evt_to_be_read',
-            (('test_background_mcinfo_skip_evt700000000.h5', 640000000),
-             ('test_background_mcinfo_skip_evt640000000.h5', 700000000),
-             ('test_background_mcinfo_skip_evt640000000.h5', 40197500)))
-def test_mc_info_writer_generatoroutput_non_consecutive_events(output_tmpdir, ICDATADIR, file_to_check, evt_to_be_read):
-
-    filein = os.path.join(ICDATADIR, 'mcfile_withgeneratorinfo_3evts_MCRD.h5')
-    filecheck = os.path.join(output_tmpdir, file_to_check)
+@parametrize('file_to_check',
+            ('test_background_mcinfo_skip_evt700000000.h5',
+             'test_background_mcinfo_skip_evt640000000.h5'))
+def test_mc_info_writer_generatoroutput_non_consecutive_events(output_tmpdir, file_to_check):
+    filein = os.path.join(output_tmpdir, file_to_check)
 
     with tb.open_file(filein) as h5in:
-        with tb.open_file(filecheck) as h5filtered:
-            mc_info          = get_mc_info(h5in)
-            filtered_mc_info = get_mc_info(h5filtered)
-            # test the content of events to be sure that they are written
-            # correctly
-            hit_rows, particle_rows, generator_rows = read_mcinfo_evt(mc_info,
-                                                                      evt_to_be_read)
-            filtered_hit_rows, filtered_particle_rows, filtered_generator_rows = read_mcinfo_evt(filtered_mc_info,
-                                                                                                 evt_to_be_read)
+        mc_info          = get_mc_info(h5in)
 
-            for genr, filtered_genr in zip(generator_rows, filtered_generator_rows):
-                assert np.allclose(genr['evt_number']   , filtered_genr['evt_number'])
-                assert np.allclose(genr['atomic_number'], filtered_genr['atomic_number'])
-                assert np.allclose(genr['mass_number']  , filtered_genr['mass_number'])
-                assert             genr['region'] ==      filtered_genr['region']
+        # test the content of events to be sure that the extents rows are ion sync with generators rows
+        evt_numbers_in_extents    = h5in.root.MC.extents[:]['evt_number']
+        evt_numbers_in_generators = h5in.root.MC.generators[:]['evt_number']
+
+        np.testing.assert_array_equal(evt_numbers_in_extents, evt_numbers_in_generators)
 
 
 def test_mc_info_writer_reset(output_tmpdir, ICDATADIR, krypton_MCRD_file):
