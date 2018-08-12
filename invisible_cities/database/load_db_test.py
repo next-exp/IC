@@ -141,3 +141,28 @@ def test_database_is_being_cached(db_fun):
     else:
         assert np.all(first_call.values == second_call.values)
     assert time_second_call < 1e6 * time_first_call
+
+
+def test_frontend_mapping():
+    """ Check the mapping has the expected shape etc """
+
+    fe_mapping, _ = DB.PMTLowFrequencyNoise()
+
+    columns = ['SensorID', 'FEBox']
+
+    assert columns == list(fe_mapping)
+    assert fe_mapping.SensorID.nunique() == 12
+    assert fe_mapping.FEBox.nunique()    == 3
+
+
+def test_pmt_noise_frequencies():
+    """ Check the magnitudes and frequencies
+    are of the expected length """
+    _, frequencies = DB.PMTLowFrequencyNoise()
+
+    ## Currently simulate frequencies in range(312.5, 25000) Hz
+    freq_expected = np.arange(1, 80) * 312.5
+    ## Expected four columns: frequency, mag FE0, mag FE1, mag FE2
+    assert frequencies.shape[0] == 79
+    assert frequencies.shape[1] == 4
+    assert np.all(frequencies[:, 0] == freq_expected)

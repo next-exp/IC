@@ -5,6 +5,7 @@ import numpy  as np
 import pandas as pd
 
 from ..sierpe             import fee as FE
+from ..sierpe             import low_frequency_noise as lfn
 from .                    import wfm_functions as wfm
 
 
@@ -19,7 +20,7 @@ def charge_fluctuation(signal, single_pe_rms):
     if single_pe_rms == 0:
         ## Protection for some versions of numpy etc
         return signal
-    
+
     ## We need to convert to float to get accuracy here
     sig_fl   = signal.astype(float)
     non_zero = sig_fl > 0
@@ -45,7 +46,10 @@ def simulate_pmt_response(event, pmtrd, adc_to_pes, pe_resolution, run_number = 
     # FEE, with noise PMT
     fee  = FE.FEE(run_number,
                   noise_FEEPMB_rms=FE.NOISE_I, noise_DAQ_rms=FE.NOISE_DAQ)
-    
+    # Low frequency noise
+    buffer_length = int(FE.f_sample * pmtrd.shape[2] / FE.f_mc)
+    lowFreq = lfn.low_frequency_noise(run_number, buffer_length)
+
     NPMT = pmtrd.shape[1]
     RWF  = []
     BLRX = []
@@ -63,7 +67,7 @@ def simulate_pmt_response(event, pmtrd, adc_to_pes, pe_resolution, run_number = 
         # Effect of FEE and transform to adc counts
         signal_fee = FE.signal_v_fee(fee, signal_d, pmt) * FE.v_to_adc()
         # add noise daq including the low frequency noise
-        signal_daq = FE.noise_adc(fee, signal_fee)
+        signal_daq = FE.noise_adc(fee, signal_fee) - lowFreq(pmt)
         # signal blr is just pure MC decimated by adc in adc counts
         signal_blr = FE.signal_v_lpf(fee, signal_d) * FE.v_to_adc()
         # raw waveform stored with negative sign and offset
@@ -83,4 +87,3 @@ def simulate_sipm_response(event, sipmrd, sipms_noise_sampler, sipm_adc_to_pes,
 
     # return total signal in adc counts + noise sampled from pdf spectra
     return wfm.to_adc(sipm_fl, sipm_adc_to_pes) + sipms_noise_sampler.sample()
-

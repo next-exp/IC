@@ -111,3 +111,22 @@ order by SensorID, BinEnergyPes;'''.format(abs(run_number))
     noise = np.array(data).reshape(nsipms, nbins)
 
     return noise, noise_bins, baselines
+
+
+@lru_cache(maxsize=10)
+def PMTLowFrequencyNoise(run_number=1e5, dbfile=DATABASE_LOCATION):
+    conn = sqlite3.connect(dbfile)
+    cursor = conn.cursor()
+
+    sqlmapping = '''select SensorID, FEBox from PMTFEMapping
+    where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)
+    order by SensorID;'''.format(abs(run_number))
+    mapping = pd.read_sql_query(sqlmapping, conn)
+
+    ## Now get the frequencies and magnitudes (and ?) for each box
+    sqlmagnitudes = '''select Frequency, FE0Magnitude, FE1Magnitude, FE2Magnitude
+    from PMTFELowFrequencyNoise where MinRun <= {0}
+    and (MaxRun >= {0} or MaxRun is NULL)'''.format(abs(run_number))
+    frequencies = pd.read_sql_query(sqlmagnitudes, conn)
+
+    return mapping, frequencies.values
