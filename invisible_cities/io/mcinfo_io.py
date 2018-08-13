@@ -85,40 +85,43 @@ class mc_info_writer:
             self.reset()
 
         extents = mctables[0]
+        # Note: filtered out events do not make it to evt_number, but are included in extents dataset
         for iext in range(self.last_row, len(extents)):
             this_row = extents[iext]
-            if this_row['evt_number'] < evt_number: continue
-            if this_row['evt_number'] > evt_number: break
-            if iext == 0:
-                if self.first_file:
-                    modified_hit          = this_row['last_hit']
-                    modified_particle     = this_row['last_particle']
+            if this_row['evt_number'] == evt_number:
+                if iext == 0:
+                    if self.first_file:
+                        modified_hit          = this_row['last_hit']
+                        modified_particle     = this_row['last_particle']
+                        self.first_extent_row = False
+                        self.first_file       = False
+                    else:
+                        modified_hit          = this_row['last_hit'] + self.last_written_hit + 1
+                        modified_particle     = this_row['last_particle'] + self.last_written_particle + 1
+                        self.first_extent_row = False
+
+                elif self.first_extent_row:
+                    previous_row          = extents[iext-1]
+                    modified_hit          = this_row['last_hit'] - previous_row['last_hit'] + self.last_written_hit - 1
+                    modified_particle     = this_row['last_particle'] - previous_row['last_particle'] + self.last_written_particle - 1
                     self.first_extent_row = False
                     self.first_file       = False
                 else:
-                    modified_hit          = this_row['last_hit'] + self.last_written_hit + 1
-                    modified_particle     = this_row['last_particle'] + self.last_written_particle + 1
-                    self.first_extent_row = False
+                    previous_row      = extents[iext-1]
+                    modified_hit      = this_row['last_hit'] - previous_row['last_hit'] + self.last_written_hit
+                    modified_particle = this_row['last_particle'] - previous_row['last_particle'] + self.last_written_particle
 
-            elif self.first_extent_row:
-                previous_row          = extents[iext-1]
-                modified_hit          = this_row['last_hit'] - previous_row['last_hit'] + self.last_written_hit - 1
-                modified_particle     = this_row['last_particle'] - previous_row['last_particle'] + self.last_written_particle - 1
-                self.first_extent_row = False
-                self.first_file       = False
-            else:
-                previous_row      = extents[iext-1]
-                modified_hit      = this_row['last_hit'] - previous_row['last_hit'] + self.last_written_hit
-                modified_particle = this_row['last_particle'] - previous_row['last_particle'] + self.last_written_particle
+                modified_row                  = self.extent_table.row
+                modified_row['evt_number']    = evt_number
+                modified_row['last_hit']      = modified_hit
+                modified_row['last_particle'] = modified_particle
+                modified_row.append()
 
-            modified_row                  = self.extent_table.row
-            modified_row['evt_number']    = evt_number
-            modified_row['last_hit']      = modified_hit
-            modified_row['last_particle'] = modified_particle
-            modified_row.append()
+                self.last_written_hit      = modified_hit
+                self.last_written_particle = modified_particle
 
-            self.last_written_hit      = modified_hit
-            self.last_written_particle = modified_particle
+                break
+
         self.extent_table.flush()
 
         hits, particles, generators = read_mcinfo_evt(mctables, evt_number, self.last_row)
@@ -220,10 +223,10 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
             while ipart <= ipart_end:
                 particle_rows.append(h5particles[ipart])
                 ipart += 1
-            
-            # It is possible for the 'generators' dataset to have a different length compared to the 'extents' dataset. In particular, it may occur that the 'generators' dataset is empty. In this case, do not add any rows to 'generators'.
-            if len(h5generators) == len(h5extents):
-                generator_rows.append(h5generators[last_row])
+
+            # It is possible for the 'generators' dataset to be empty. In this case, do not add any rows to 'generators'.
+            if len(h5generators) != 0:
+                generator_rows.append(h5generators[iext])
 
             break
 
