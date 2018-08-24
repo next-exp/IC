@@ -16,7 +16,7 @@ class HitEnergyMap(NamedTuple):
     E   :  EVector
     Q   :  EVector
 
-def merge_NN_hits(hitc):
+def merge_NN_hits(hitc, same_peak=True):
     """ Returns a modified HitCollection instance by adding energies of NN hits to closest
     hits such that the added energy is proportional to the hit energy. If all the hits were NN
     the function returns empty HitCollection."""
@@ -28,8 +28,16 @@ def merge_NN_hits(hitc):
     for h in non_nn_hits:
         hitc_new.hits.append(copy(h))
     for nn_h in nn_hits:
-        z_closest      = min(hitc_new.hits , key=lambda h: np.abs(h.Z-nn_h.Z)).Z
-        h_closest      = [h for h in hitc_new.hits if h.Z==z_closest]
+        peak_num=nn_h.npeak
+        if same_peak:
+            hits_to_merge = [h for h in hitc_new.hits if h.npeak==peak_num]
+        else:
+            hits_to_merge = hitc_new.hits
+        try:
+            z_closest  = min(hits_to_merge , key=lambda h: np.abs(h.Z-nn_h.Z)).Z
+        except ValueError:
+            continue
+        h_closest      = [h for h in hits_to_merge if h.Z==z_closest]
         h_closest_etot = sum([h.E for h in h_closest])
         for h in h_closest:
             h.energy += nn_h.E*(h.E/h_closest_etot)

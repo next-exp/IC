@@ -15,15 +15,17 @@ from  pytest                     import fixture
 
 @fixture
 def toy_hitc():
-    x_peak,y_peak=1 * units.mm, 1 * units.mm
-    xs = np.array([65, 20,0, -64]) * units.mm
-    ys = np.array([63, 21,0, -62]) * units.mm
-    zs = np.array([25, 25, 20, 60]) * units.mm
-    qs = np.array([ 100, 150, NN, 200]) * units.pes
-    es = np.array([ 1000,1500, 50, 3000]) * units.pes
+    x_peaks =np.array([1, 1, 1, 1, 0]) * units.mm
+    y_peaks =np.array([1, 1, 1, 1, 0]) * units.mm
+    xs = np.array([65, 20,0, -64, 0]) * units.mm
+    ys = np.array([63, 21,0, -62, 0]) * units.mm
+    zs = np.array([25, 25, 20, 60, 25]) * units.mm
+    qs = np.array([ 100, 150, NN, 200,NN]) * units.pes
+    es = np.array([ 1000,1500, 50, 3000,100]) * units.pes
+    ns = np.array([0,0,0,0,1])
     hitc = HitCollection(0, 0)
     for i in range(len(xs)):
-        hitc.hits.append(Hit(0, Cluster(qs[i], xy(xs[i],ys[i]), xy(0,0), 0), zs[i], es[i], xy(x_peak,y_peak)))
+        hitc.hits.append(Hit(ns[i], Cluster(qs[i], xy(xs[i],ys[i]), xy(0,0), 1), zs[i], es[i], xy(x_peaks[i],y_peaks[i])))
     return hitc
 @fixture
 def toy_emap():
@@ -37,9 +39,13 @@ def toy_emap():
 
 def test_merge_NN_hits(toy_hitc):
     hitc = toy_hitc
-    hitc = merge_NN_hits(hitc)
+    hitc_same_peak = merge_NN_hits(hitc)
+    ecs_test_same_peak = [h.E for h in hitc_same_peak.hits]
+    ecs_same_peak     = np.array([ 1020,1530,3000]) * units.pes
+    hitc = merge_NN_hits(hitc, same_peak=False)
     ecs_test = [h.E for h in hitc.hits]
-    ecs      = np.array([ 1020,1530,3000]) * units.pes
+    ecs     = np.array([ 1060,1590,3000]) * units.pes
+    assert_allclose(ecs_test_same_peak  , ecs_same_peak, rtol=1e-4)
     assert_allclose(ecs_test  , ecs, rtol=1e-4)
 
 def test_hitc_corrections(toy_hitc, toy_emap, corr_toy_data):
