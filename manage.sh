@@ -91,7 +91,7 @@ dependencies:
 - notebook=5.6.0
 - numpy=1.15.0
 - pandas=0.23.3
-- seaborn-0.9.0
+- seaborn=0.9.0
 - pymysql=0.9.2
 - pytables=3.4.4
 - pytest=3.6.3
