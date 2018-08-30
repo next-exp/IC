@@ -175,14 +175,14 @@ def load_mchits(file_name: str,
 
 
 def load_mcparticles(file_name: str,
-                     event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Sequence[MCParticle]]]:
+                     event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, MCParticle]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
         return read_mcinfo(h5in, event_range)
 
 
 def load_mcsensor_response(file_name: str,
-                           event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Sequence[Waveform]]]:
+                           event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Waveform]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
         return read_mcsns_response(h5in, event_range)
@@ -280,7 +280,7 @@ def read_mcinfo(h5f, event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Seq
     return all_events
 
 
-def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, Sequence[MCParticle]]]) -> Mapping[int, Sequence[MCHit]]:
+def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]]) -> Mapping[int, Sequence[MCHit]]:
     """Returns all hits in the event"""
     mchits_dict = {}
     for event_no, particle_dict in mcevents.items():
@@ -292,7 +292,7 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, Sequence[MCParticle]]
     return mchits_dict
 
 
-def read_mcsns_response(h5f, event_range=(0, 1e9)) -> Mapping[int, Mapping[int, Sequence[Waveform]]]:
+def read_mcsns_response(h5f, event_range=(0, 1e9)) -> Mapping[int, Mapping[int, Waveform]]:
 
     h5config = h5f.root.MC.configuration
 
