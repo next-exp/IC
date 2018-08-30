@@ -83,24 +83,24 @@ function make_environment {
     cat <<EOF > ${YML_FILENAME}
 name: ${CONDA_ENV_NAME}
 dependencies:
-- python=${PYTHON_VERSION}
-- cython=0.28.4
-- jupyter=1.0.0
-- matplotlib=2.2.2
-- networkx=2.1
-- notebook=5.6.0
-- numpy=1.15.0
-- pandas=0.23.3
-- seaborn=0.9.0
-- pymysql=0.9.2
-- pytables=3.4.4
-- pytest=3.6.3
-- scipy=1.1.0
-- sphinx=1.7.6
-- tornado=5.0.2
-- flaky=3.4.0
-- hypothesis=3.59.1
-- pytest-xdist=1.22.2
+- python       = ${PYTHON_VERSION}
+- cython       = 0.28.4
+- jupyter      = 1.0.0
+- matplotlib   = 2.2.2
+- networkx     = 2.1
+- notebook     = 5.6.0
+- numpy        = 1.15.0
+- pandas       = 0.23.3
+- seaborn      = 0.9.0
+- pymysql      = 0.9.2
+- pytables     = 3.4.4
+- pytest       = 3.6.3
+- scipy        = 1.1.0
+- sphinx       = 1.7.6
+- tornado      = 5.0.2
+- flaky        = 3.4.0
+- hypothesis   = 3.59.1
+- pytest-xdist = 1.22.2
 EOF
 
     conda env create -f ${YML_FILENAME}
