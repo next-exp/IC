@@ -57,6 +57,8 @@ box_sizes = builds(np.array, lists(box_dimension,
                                    min_size = 3,
                                    max_size = 3))
 
+eps = 3e-12
+
 
 def test_voxelize_hits_should_detect_no_hits():
     with raises(NoHits):
@@ -137,7 +139,7 @@ def test_voxelize_hits_respects_voxel_dimensions(hits, requested_voxel_dimension
 def test_voxelize_hits_gives_maximum_voxels_size(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     for v in voxels:
-        assert (v.size <= requested_voxel_dimensions).all()
+        assert (v.size <= requested_voxel_dimensions + 2 * eps).all()
 
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_strict_gives_required_voxels_size(hits, requested_voxel_dimensions):
