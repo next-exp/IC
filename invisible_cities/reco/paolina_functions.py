@@ -35,8 +35,8 @@ def voxelize_hits(hits             : Sequence[BHit],
                   voxel_dimensions : np.ndarray,
                   strict_voxel_size: bool = False) -> List[Voxel]:
     """1. Hits are enclosed by a bounding box.
-       2. Boundix box is discretized (via a hitogramdd).
-       3. The energy of all the hits insidex each discreet "voxel" is added.
+       2. Bounding box is discretized (via a histogramdd).
+       3. The energy of all the hits inside each discrete "voxel" is added.
      """
     if not hits:
         raise NoHits
