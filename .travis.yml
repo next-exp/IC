@@ -7,6 +7,9 @@ matrix:
   - os: osx
   - env: IC_PYTHON_VERSION=3.7
 
+git:
+  lfs_skip_smudge: true
+
 env:
   - IC_PYTHON_VERSION=3.7
   - IC_PYTHON_VERSION=3.6
@@ -18,6 +21,9 @@ os:
 branches:
   except:
     - /^docs\..*$/
+
+before_install:
+  - GIT_SSL_NO_VERIFY=1 git lfs pull
 
 install:
   - source manage.sh work_in_python_version_no_tests ${IC_PYTHON_VERSION}
