@@ -160,8 +160,8 @@ def test_voxelize_hits_flexible_gives_correct_voxels_size(hits, requested_voxel_
         return np.isclose(n, round(n))
 
     for pos1, pos2 in combinations(positions, 2):
-        for i in range(3):
-            assert is_close_to_integer((pos1[i] - pos2[i]) / voxel_size[i])
+        for separation, size in zip(pos2 - pos1, voxel_size):
+            assert is_close_to_integer(separation / size)
 
 
 @given(bunch_of_hits, box_sizes)
