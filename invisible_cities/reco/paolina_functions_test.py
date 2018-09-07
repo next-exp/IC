@@ -157,11 +157,11 @@ def test_voxelize_hits_flexible_gives_correct_voxels_size(hits, requested_voxel_
     voxel_size = voxels[0].size
 
     def is_close_to_integer(n):
-        return np.isclose(n, round(n))
+        return np.isclose(n, np.rint(n))
 
     for pos1, pos2 in combinations(positions, 2):
-        for separation, size in zip(pos2 - pos1, voxel_size):
-            assert is_close_to_integer(separation / size)
+        separation_over_size = (pos2 - pos1) / voxel_size
+        assert is_close_to_integer(separation_over_size).all()
 
 
 @given(bunch_of_hits, box_sizes)
