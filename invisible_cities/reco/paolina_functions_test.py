@@ -57,6 +57,8 @@ box_sizes = builds(np.array, lists(box_dimension,
                                    min_size = 3,
                                    max_size = 3))
 
+eps = 3e-12 # value that works for margin
+
 
 def test_voxelize_hits_should_detect_no_hits():
     with raises(NoHits):
@@ -133,11 +135,13 @@ def test_voxelize_hits_respects_voxel_dimensions(hits, requested_voxel_dimension
         assert (np.isclose(off_by, 0   ) |
                 np.isclose(off_by, unit)).all()
 
+
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_gives_maximum_voxels_size(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     for v in voxels:
-        assert (v.size <= requested_voxel_dimensions).all()
+        assert (v.size <= requested_voxel_dimensions + 4 * eps).all()
+
 
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_strict_gives_required_voxels_size(hits, requested_voxel_dimensions):
@@ -147,13 +151,25 @@ def test_voxelize_hits_strict_gives_required_voxels_size(hits, requested_voxel_d
 
 
 @given(bunch_of_hits, box_sizes)
+def test_voxelize_hits_flexible_gives_correct_voxels_size(hits, requested_voxel_dimensions):
+    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
+    positions = [v.pos for v in voxels]
+    voxel_size = voxels[0].size
+
+    def is_close_to_integer(n):
+        return np.isclose(n, np.rint(n))
+
+    for pos1, pos2 in combinations(positions, 2):
+        separation_over_size = (pos2 - pos1) / voxel_size
+        assert is_close_to_integer(separation_over_size).all()
+
+
+@given(bunch_of_hits, box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
     tracks = make_track_graphs(voxels)
     voxels_in_tracks = set().union(*(set(t.nodes()) for t in tracks))
     assert set(voxels) == voxels_in_tracks
-
-
 
 
 @parametrize(' spec,           extrema',
