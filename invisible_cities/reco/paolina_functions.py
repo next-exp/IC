@@ -34,10 +34,9 @@ def bounding_box(seq : BHit) -> Sequence[np.ndarray]:
 def voxelize_hits(hits             : Sequence[BHit],
                   voxel_dimensions : np.ndarray,
                   strict_voxel_size: bool = False) -> List[Voxel]:
-    """1. Hits are enclosed by a bounding box.
-       2. Boundix box is discretized (via a hitogramdd).
-       3. The energy of all the hits insidex each discreet "voxel" is added.
-     """
+    # 1. Find bounding box of all hits.
+    # 2. Allocate hits to regular sub-boxes within bounding box, using histogramdd.
+    # 3. Calculate voxel energies by summing energies of hits within each sub-box.
     if not hits:
         raise NoHits
     hlo, hhi = bounding_box(hits)
@@ -65,10 +64,15 @@ def voxelize_hits(hits             : Sequence[BHit],
 
     def centres(a : np.ndarray) -> np.ndarray:
         return (a[1:] + a[:-1]) / 2
+    def   sizes(a : np.ndarray) -> np.ndarray:
+        return  a[1:] - a[:-1]
 
-    cx, cy, cz = map(centres, edges)
+    (   cx,     cy,     cz) = map(centres, edges)
+    size_x, size_y, size_z  = map(sizes  , edges)
     nz = np.nonzero(E)
-    return [Voxel(cx[x], cy[y], cz[z], E[x,y,z], voxel_dimensions) for (x,y,z) in np.stack(nz).T]
+    true_dimensions = np.array([size_x[0], size_y[0], size_z[0]])
+
+    return [Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions) for (x,y,z) in np.stack(nz).T]
 
 
 class Contiguity(Enum):
