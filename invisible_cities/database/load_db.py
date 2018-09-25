@@ -20,7 +20,6 @@ def DataPMT(run_number=1e5, db_file=DATABASE_LOCATION):
     if run_number == 0:
         run_number = runNumberForMC
 
-    dbfile = DATABASE_LOCATION
     conn = sqlite3.connect(db_file)
 
     sql = '''select pos.SensorID, map.ElecID "ChannelID", Label "PmtID",
