@@ -4,6 +4,7 @@ import numpy  as np
 import tables as tb
 
 from numpy.testing import assert_array_equal
+from numpy.testing import assert_approx_equal
 from pytest        import mark
 from pytest        import raises
 
@@ -168,4 +169,40 @@ def test_copy_sensor_table3(config_tmpdir):
         assert 'DataSiPM' in out_file.root.Sensors
         assert out_file.root.Sensors.DataSiPM[0][0] == dummy_sipm[0]
         assert out_file.root.Sensors.DataSiPM[0][1] == dummy_sipm[1]
+
+
+def test_seeds_and_bounds(file_name):
+    sipmIn = tb.open_file(file_name, 'r')
+    run_no = file_name[file_name.find('R')+1:file_name.find('R')+5]
+    run_no = int(run_no)
+
+    specsL = np.array(sipmIn.root.HIST.sipm_spe).sum(axis=0)
+    specsD = np.array(sipmIn.root.HIST.sipm_dark).sum(axis=0)
+    bins   = np.array(sipmIn.root.HIST.sipm_spe_bins)
+
+    min_stat = 10
+
+    for ich, (led, dar) in enumerate(zip(specsL, specsD)):
+        valid_bins = np.argwhere(led>=min_stat)
+        b1 = valid_bins[0][0]
+        b2 = valid_bins[-1][0]
+        pD = find_peaks_cwt(dar, np.arange(2, 20), min_snr=2)
+        if len(pD) == 0:
+            print('no peaks in dark spectrum, spec ', ich)
+            continue
+
+        gb0     = [(0, -100, 0), (1e99, 100, 10000)]
+        sd0     = (dar.sum(), 0, 2)
+        errs    = poisson_sigma(dar[pD[0]-5:pD[0]+5], default=0.1)
+        gfitRes = fitf.fit(fitf.gauss, bins[pD[0]-5:pD[0]+5], dar[pD[0]-5:pD[0]+5], sd0, sigma=errs, bounds=gb0)
         
+        ped_vals    = np.array([gfitRes.values[0], gfitRes.values[1], gfitRes.values[2]])
+        scaler_func = dark_scaler(dar[b1:b2][(bins[b1:b2]>=-5) & (bins[b1:b2]<=5)])
+
+        seeds, bounds = seeds_and_bounds('sipm', run_no, ich, scaler_func, bins[b1:b2], led[b1:b2],
+                                         ped_vals, gfitRes.errors, use_db_gain_seeds=False)
+
+        assert all(i > 0 for i in seeds)
+        assert bounds[0] == (0, 0, 0, 0.001)
+        assert bounds[1] == (10000000000.0, 10000, 10000, 10000)
+
