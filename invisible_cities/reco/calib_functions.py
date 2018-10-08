@@ -273,7 +273,7 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
                         spectra[p1pe-hpw:p1pe+hpw],
                         seed=(spectra[p1pe], bins[p1pe], 7),
                         sigma=np.sqrt(spectra[p1pe-hpw:p1pe+hpw]),
-                        bounds=[(0, -100, 0), (1e99, 100, 10000)]))
+                        bounds=[(0, -100, 0), (1e99, 100, 10000)])
         gain_seed = fgaus.values[1] - ped_vals[1]
 
         if fgaus.values[2] <= ped_vals[2]:
