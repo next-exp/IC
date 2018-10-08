@@ -127,6 +127,15 @@ def copy_sensor_table(h5in, h5out):
             datasipm.copy(newparent=group)
 
 
+def dark_scaler(dark_spectrum):
+    """
+    A function to scale dark spectrum with mu value.
+    """
+    def scaled_spectrum(x, mu):
+        return np.exp(-mu) * dark_spectrum
+    return scaled_spectrum
+
+
 def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
                      ped_errs, func='dfunc', use_db_gain_seeds=True):
 
