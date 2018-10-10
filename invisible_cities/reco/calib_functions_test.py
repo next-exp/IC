@@ -260,7 +260,6 @@ def test_seeds_and_bounds(file_name):
         b2 = valid_bins[-1][0]
         pD = find_peaks_cwt(dar, np.arange(2, 20), min_snr=2)
         if len(pD) == 0:
-            print('no peaks in dark spectrum, spec ', ich)
             continue
 
         gb0     = [(0, -100, 0), (1e99, 100, 10000)]
