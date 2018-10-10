@@ -451,7 +451,6 @@ class KrEvent(Event):
         s2_peaks = range(int(self.nS2)) if self.nS2 else [-1]
         self.fill_defaults()
 
-        print(self)
         for i in s1_peaks:
             for j in s2_peaks:
                 row["event"  ] = self.event
