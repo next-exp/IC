@@ -5,6 +5,8 @@ from argparse    import Namespace
 from glob        import glob
 from os.path     import expandvars
 from itertools   import count
+from itertools   import chain
+from itertools   import repeat
 from enum        import Enum
 
 import tables as tb
@@ -24,6 +26,7 @@ from .. reco                   import         calib_functions as  cf
 from .. reco                   import calib_sensors_functions as csf
 from .. reco                   import          peak_functions as pkf
 from .. reco                   import         pmaps_functions as pmf
+from .. reco.tbl_functions     import get_mc_info
 from .. reco.xy_algorithms     import corona
 from .. filters.s1s2_filter    import S12Selector
 from .. filters.s1s2_filter    import pmap_filter
@@ -134,8 +137,10 @@ def deconv_pmt(run_number, n_baseline, selection=None):
 
 
 def get_run_number(h5in):
-    if "runInfo" in h5in.root.Run: return h5in.root.Run.runInfo[0]['run_number']
-    else:                          return h5in.root.Run.RunInfo[0]['run_number']
+    if   "runInfo" in h5in.root.Run: return h5in.root.Run.runInfo[0]['run_number']
+    elif "RunInfo" in h5in.root.Run: return h5in.root.Run.RunInfo[0]['run_number']
+
+    raise tb.exceptions.NoSuchNodeError(f"No node runInfo or RunInfo in file {h5in}")
 
 
 class WfType(Enum):
@@ -154,17 +159,33 @@ def get_sipm_wfs(h5in, wf_type):
     else                       : raise  TypeError(f"Invalid WfType: {type(wf_type)}")
 
 
+def get_mc_info_safe(h5in, run_number):
+    if run_number <= 0:
+        try                                 : return get_mc_info(h5in)
+        except tb.exceptions.NoSuchNodeError: pass
+    return
+
+def get_trigger_info(h5in):
+    group            = h5in.root.Trigger if "Trigger" in h5in.root else ()
+    trigger_type     = chain.from_iterable(group.trigger.read()) if "trigger" in group else repeat(None)
+    trigger_channels =                     group.events          if "events"  in group else repeat(None)
+    return zip(trigger_type, trigger_channels)
+
+
 def wf_from_files(paths, wf_type):
     for path in paths:
         with tb.open_file(path, "r") as h5in:
             event_infos = h5in.root.Run.events
-            run_number  = get_run_number(h5in)
-            pmt_wfs     = get_pmt_wfs (h5in, wf_type)
-            sipm_wfs    = get_sipm_wfs(h5in, wf_type)
-            mc_tracks  = h5in.root.MC.MCTracks if run_number <= 0 else None
-            for pmt, sipm, (event_number, timestamp) in zip(pmt_wfs, sipm_wfs, event_infos[:]):
-                yield dict(pmt=pmt, sipm=sipm, mc=mc_tracks,
-                           run_number=run_number, event_number=event_number, timestamp=timestamp)
+            run_number  = get_run_number  (h5in)
+            pmt_wfs     = get_pmt_wfs     (h5in, wf_type)
+            sipm_wfs    = get_sipm_wfs    (h5in, wf_type)
+            mc_info     = get_mc_info_safe(h5in, run_number)
+            trg_info    = get_trigger_info(h5in)
+
+            for pmt, sipm, (event_number, timestamp), (trg_type, trg_chann) in zip(pmt_wfs, sipm_wfs, event_infos[:], trg_info):
+                yield dict(pmt=pmt, sipm=sipm, mc=mc_info,
+                           run_number=run_number, event_number=event_number, timestamp=timestamp,
+                           trigger_type=trg_type, trigger_channels=trg_chann)
             # NB, the monte_carlo writer is different from the others:
             # it needs to be given the WHOLE TABLE (rather than a
             # single event) at a time.
@@ -176,9 +197,9 @@ def pmap_from_files(paths):
         with tb.open_file(path, "r") as h5in:
             run_number  = get_run_number(h5in)
             event_infos = h5in.root.Run.events
-            mc_tracks   = h5in.root.MC .MCTracks if run_number <= 0 else None
+            mc_info     = get_mc_info_safe(h5in, run_number)
             for event_number, timestamp in event_infos[:]:
-                yield dict(pmap=pmaps[event_number], mc=mc_tracks,
+                yield dict(pmap=pmaps[event_number], mc=mc_info,
                            run_number=run_number, event_number=event_number, timestamp=timestamp)
             # NB, the monte_carlo writer is different from the others:
             # it needs to be given the WHOLE TABLE (rather than a
