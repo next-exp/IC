@@ -9,6 +9,7 @@ from .. core.random_sampling  import NoiseSampler         as SiPMsNoiseSampler
 from .. io  .        pmaps_io import          pmap_writer
 from .. io.        mcinfo_io  import       mc_info_writer
 from .. io  .run_and_event_io import run_and_event_writer
+from .. io  .trigger_io       import       trigger_writer
 
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
@@ -88,14 +89,16 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
 
         # Define writers...
-        write_event_info_ = run_and_event_writer(h5out)
-        write_mc_         = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
-        write_pmap_       = pmap_writer(h5out, compression=compression)
+        write_event_info_   = run_and_event_writer(h5out)
+        write_mc_           = mc_info_writer      (h5out) if run_number <= 0 else (lambda *_: None)
+        write_pmap_         = pmap_writer         (h5out, compression=compression)
+        write_trigger_info_ = trigger_writer      (h5out, get_number_of_active_pmts(run_number))
 
         # ... and make them sinks
-        write_event_info = sink(write_event_info_, args=("run_number", "event_number", "timestamp"))
-        write_mc         = sink(write_mc_        , args=(        "mc", "event_number"             ))
-        write_pmap       = sink(write_pmap_      , args=(      "pmap", "event_number"             ))
+        write_event_info   = sink(write_event_info_  , args=(   "run_number",     "event_number", "timestamp"))
+        write_mc           = sink(write_mc_          , args=(           "mc",     "event_number"             ))
+        write_pmap         = sink(write_pmap_        , args=(         "pmap",     "event_number"             ))
+        write_trigger_info = sink(write_trigger_info_, args=( "trigger_type", "trigger_channels"             ))
 
         return push(source = wf_from_files(files_in, WfType.rwf),
                     pipe   = pipe(
@@ -112,7 +115,8 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
                                 event_count_out.spy,
                                 fl.fork(write_pmap,
                                         write_mc,
-                                        write_event_info)),
+                                        write_event_info,
+                                        write_trigger_info)),
                     result = dict(events_in  = event_count_in  .future,
                                   events_out = event_count_out .future,
                                   empty_s1   = empty_indices_s1.future,
@@ -145,3 +149,8 @@ def build_pmap(run_number,
                             s1_params, s2_params, thr_sipm_s2, pmt_ids)
 
     return build_pmap
+
+
+def get_number_of_active_pmts(run_number):
+    datapmt = load_db.DataPMT(run_number)
+    return np.count_nonzero(datapmt.Active.values.astype(bool))
