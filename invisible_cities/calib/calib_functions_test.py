@@ -205,8 +205,8 @@ def test_sensor_values():
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
     scaler   = cf.dark_scaler(dark[(bins>=-5) & (bins<=5)])
     scaler2  = cf.dark_scaler(dark[bins<0])
-    spectra, p_range, min_bin, max_bin, hpw, lim_ped = cf.sensor_values('sipm', 1023, scaler_func, spec, bins, ped_vals)
-    spectra2, p_range2, min_bin2, max_bin2, hpw2, lim_ped2 = cf.sensor_values('pmt', 0, scaler_func, spec, bins, ped_vals)
+    spectra, p_range, min_bin, max_bin, hpw, lim_ped = cf.sensor_values('sipm', 1023, scaler, spec, bins, ped_vals)
+    spectra2, p_range2, min_bin2, max_bin2, hpw2, lim_ped2 = cf.sensor_values('pmt', 0, scaler2, spec, bins, ped_vals)
 
     expected_range = np.arange(4,20)
     expected_spec2 = np.array([-215.61455106, -7.61389796, 9.69755144, 56.84252052, 197.9256732, -41.23729614, 25.03486623,
