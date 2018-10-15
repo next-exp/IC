@@ -174,8 +174,8 @@ def test_copy_sensor_table3(config_tmpdir):
 
 
 def test_seeds_db():
-    gain_seed_sipm, gain_sigma_seed_sipm = seeds_db('sipm', 6317, 13)
-    gain_seed_pmt, gain_sigma_seed_pmt   = seeds_db('pmt', 6317, 5)
+    gain_seed_sipm, gain_sigma_seed_sipm = cf.seeds_db('sipm', 6317, 13)
+    gain_seed_pmt, gain_sigma_seed_pmt   = cf.seeds_db('pmt', 6317, 5)
 
     assert gain_seed_sipm       == 16.5503
     assert gain_sigma_seed_sipm == 1.65978
@@ -189,10 +189,10 @@ def test_poisson_mu_seed():
     dark     = np.array([30, 107, 258, 612, 1142, 2054, 3037, 3593, 3769, 3777, 3319, 2321, 1298, 690, 415, 192])
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
 
-    scaler   = dark_scaler(dark[(bins>=-5) & (bins<=5)])
-    scaler2  = dark_scaler(dark[bins<0])
-    mu       = poisson_mu_seed('sipm', bins, spec, ped_vals, scaler)
-    mu2      = poisson_mu_seed('pmt', bins, spec, ped_vals, scaler2)
+    scaler   = cf.dark_scaler(dark[(bins>=-5) & (bins<=5)])
+    scaler2  = cf.dark_scaler(dark[bins<0])
+    mu       = cf.poisson_mu_seed('sipm', bins, spec, ped_vals, scaler)
+    mu2      = cf.poisson_mu_seed('pmt', bins, spec, ped_vals, scaler2)
 
     np.testing.assert_approx_equal(mu, 0.0698154)
     np.testing.assert_approx_equal(mu2, 0.0950066)
@@ -203,10 +203,10 @@ def test_sensor_values():
     spec     = np.array([28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
     dark     = np.array([258, 612, 1142, 2054, 3037, 3593, 3769, 3777, 3319, 2321, 1298, 690, 415, 192])
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
-    scaler   = dark_scaler(dark[(bins>=-5) & (bins<=5)])
-    scaler2  = dark_scaler(dark[bins<0])
-    spectra, p_range, min_bin, max_bin, hpw, lim_ped = sensor_values('sipm', 1023, scaler_func, spec, bins, ped_vals)
-    spectra2, p_range2, min_bin2, max_bin2, hpw2, lim_ped2 = sensor_values('pmt', 0, scaler_func, spec, bins, ped_vals)
+    scaler   = cf.dark_scaler(dark[(bins>=-5) & (bins<=5)])
+    scaler2  = cf.dark_scaler(dark[bins<0])
+    spectra, p_range, min_bin, max_bin, hpw, lim_ped = cf.sensor_values('sipm', 1023, scaler_func, spec, bins, ped_vals)
+    spectra2, p_range2, min_bin2, max_bin2, hpw2, lim_ped2 = cf.sensor_values('pmt', 0, scaler_func, spec, bins, ped_vals)
 
     expected_range = np.arange(4,20)
     expected_spec2 = np.array([-215.61455106, -7.61389796, 9.69755144, 56.84252052, 197.9256732, -41.23729614, 25.03486623,
@@ -232,7 +232,7 @@ def test_pedestal_values():
     ped_errs = np.array([9.88752708e+02, 5.38541961e-02, 1.07169703e-01])
     lim_ped  = 10000
 
-    p_seed, p_sig_seed, p_min, p_max, p_sig_min, p_sig_max = pedestal_values(ped_vals,
+    p_seed, p_sig_seed, p_min, p_max, p_sig_min, p_sig_max = cf.pedestal_values(ped_vals,
                                                                              lim_ped, ped_errs)
 
     assert_approx_equal(p_seed, -0.14618, 5)
@@ -270,7 +270,7 @@ def test_seeds_and_bounds(file_name):
         ped_vals    = np.array([gfitRes.values[0], gfitRes.values[1], gfitRes.values[2]])
         scaler_func = dark_scaler(dar[b1:b2][(bins[b1:b2]>=-5) & (bins[b1:b2]<=5)])
 
-        seeds, bounds = seeds_and_bounds('sipm', run_no, ich, scaler_func, bins[b1:b2], led[b1:b2],
+        seeds, bounds = cf.seeds_and_bounds('sipm', run_no, ich, scaler_func, bins[b1:b2], led[b1:b2],
                                          ped_vals, gfitRes.errors, use_db_gain_seeds=False)
 
         assert all(i > 0 for i in seeds)
