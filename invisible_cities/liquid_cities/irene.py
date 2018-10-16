@@ -1,3 +1,4 @@
+import numpy  as np
 import tables as tb
 
 from .. types.ic_types import minmax
@@ -24,7 +25,6 @@ from .  components import calibrate_sipms
 from .  components import zero_suppress_wfs
 from .  components import WfType
 from .  components import wf_from_files
-from .  components import check_nonempty_indices
 
 
 @city
@@ -77,11 +77,7 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
     ### Define data filters
 
     # Filter events with zero peaks
-    empty_indices_s1 = fl.count_filter(check_nonempty_indices,
-                                       args = "s1_indices")
-    # Filter events with zero peaks
-    empty_indices_s2 = fl.count_filter(check_nonempty_indices,
-                                       args = "s2_indices")
+    empty_indices   = fl.count_filter(check_nonempty_indices, args = ("s1_indices", "s2_indices"))
 
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
@@ -108,8 +104,7 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
                                 rwf_to_cwf,
                                 cwf_to_ccwf,
                                 zero_suppress,
-                                empty_indices_s1.filter,
-                                empty_indices_s2.filter,
+                                empty_indices.filter,
                                 sipm_rwf_to_cal,
                                 compute_pmap,
                                 event_count_out.spy,
@@ -117,10 +112,9 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
                                         write_mc,
                                         write_event_info,
                                         write_trigger_info)),
-                    result = dict(events_in  = event_count_in  .future,
-                                  events_out = event_count_out .future,
-                                  empty_s1   = empty_indices_s1.future,
-                                  empty_s2   = empty_indices_s2.future))
+                    result = dict(events_in  = event_count_in .future,
+                                  events_out = event_count_out.future,
+                                  empty_pmap = empty_indices  .future))
 
 
 
@@ -154,3 +148,7 @@ def build_pmap(run_number,
 def get_number_of_active_pmts(run_number):
     datapmt = load_db.DataPMT(run_number)
     return np.count_nonzero(datapmt.Active.values.astype(bool))
+
+
+def check_nonempty_indices(s1_indices, s2_indices):
+    return s1_indices.size and s2_indices.size
