@@ -266,10 +266,6 @@ def zero_suppress_wfs(thr_csum_s1, thr_csum_s2):
 
 ####### Filters ########
 
-def check_nonempty_indices(indices):
-    return indices.size
-
-
 def peak_classifier(**params):
     selector = S12Selector(**params)
     return partial(pmap_filter, selector)
