@@ -61,9 +61,17 @@ git checkout -b new-"$BRANCH" $NEWMERGEBASE
 BRANCHHASH=`git show -s --format=%H $REMOTE/$BRANCH`
 echo BRANCHHASH: $BRANCHHASH
 
-if [ $MERGEBASECHILD == $BRANCHHASH ]; then
-	git cherry-pick $BRANCHHASH
-else
-	git cherry-pick $MERGEBASECHILD..$REMOTE/$BRANCH
-fi
+
+echo range: $MERGEBASECHILD, $BRANCHHASH
+
+TOCHERRYPICK=`git rev-list $BRANCHHASH | sed "/$MERGEBASECHILD/q" | tac`
+
+echo $TOCHERRYPICK
+
+for COMMIT in $TOCHERRYPICK; do
+	echo $COMMIT
+	git cherry-pick $COMMIT
+	git diff --name-only | xargs git add
+	git commit --amend --no-edit --
+done
 
