@@ -64,7 +64,15 @@ echo BRANCHHASH: $BRANCHHASH
 
 echo range: $MERGEBASECHILD, $BRANCHHASH
 
-TOCHERRYPICK=`git rev-list $BRANCHHASH | sed "/$MERGEBASECHILD/q" | tac`
+
+if which tac ]; then
+        TOCHERRYPICK=`git rev-list $BRANCHHASH | sed "/$MERGEBASECHILD/q" | tac`
+              else
+        TOCHERRYPICK=`git rev-list $BRANCHHASH | sed "/$MERGEBASECHILD/q" | tail -r`
+fi
+
+
+
 
 echo $TOCHERRYPICK
 
