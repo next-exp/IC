@@ -20,7 +20,7 @@ DATE=`git show -s --format=%ci $MERGEBASE`
 SUBJECT=`git show -s --format=%s $MERGEBASE`
 
 
-for COMMIT in `git rev-list origin/master`; do
+for COMMIT in `git rev-list origin/lfs-migration-master`; do
 	NEWDATE=`git show -s --format=%ci $COMMIT`
 	
 	if [ $NEWDATE != $DATE ]; then
