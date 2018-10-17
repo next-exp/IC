@@ -10,8 +10,9 @@ from scipy.signal import find_peaks_cwt
 from .. core.system_of_units_c import units
 from .. core.core_functions    import in_range
 from .. core.stat_functions    import poisson_sigma
-from .. core                   import fit_functions as fitf
-from .. database               import load_db       as DB
+from .. core                   import fit_functions    as fitf
+from .. database               import load_db          as DB
+from .. types.ic_types         import AutoNameEnumBase
 
 
 def bin_waveforms(waveforms, bins):
@@ -145,6 +146,10 @@ def dark_scaler(dark_spectrum):
         return np.exp(-mu) * dark_spectrum
     return scaled_spectrum
 
+
+class SensorType(AutoNameEnumBase):
+    SIPM = auto()
+    PMT  = auto()
 
 def seeds_db(sensor_type, run_no, n_chann):
     """
