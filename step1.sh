@@ -8,7 +8,7 @@ fi
 DSTFOLDER=$1
 
 UPSTREAM="https://github.com/jmbenlloch/IC-1.git"
-LFSOBJECTS="https://cern.ch/jobenllo/lfs_objects.tar.bz2"
+LFSOBJECTS="https://jobenllo.web.cern.ch/jobenllo/lfs_objects.tar.bz2"
 
 git clone $UPSTREAM $DSTFOLDER
 cd $DSTFOLDER/.git/lfs
