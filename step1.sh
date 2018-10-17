@@ -16,7 +16,7 @@ cd $DSTFOLDER/.git/lfs
 if which wget; then
 	wget $LFSOBJECTS
 else
-	curl $LFSOBJECTS
+        curl $LFSOBJECTS -o `basename $LFSOBJECTS`
 fi
 
 rm -r objects
