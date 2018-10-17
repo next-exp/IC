@@ -2,7 +2,7 @@
 
 if [ "$#" -ne 1 ]; then
     echo "Usage: step1.sh git_repo_path"
-	exit
+        exit
 fi
 
 DSTFOLDER=$1
@@ -14,7 +14,7 @@ git clone $UPSTREAM $DSTFOLDER
 cd $DSTFOLDER/.git/lfs
 
 if which wget; then
-	wget $LFSOBJECTS
+        wget $LFSOBJECTS
 else
         curl $LFSOBJECTS -o `basename $LFSOBJECTS`
 fi
