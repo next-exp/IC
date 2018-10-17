@@ -1,0 +1,1 @@
+Add your fork as a remote to the clone you created in step 1.
