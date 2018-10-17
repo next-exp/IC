@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$#" -ne 3 ]; then
-    echo "Usage: step3.sh repo_folder remote_name branch_name"
+    echo "Usage: step4.sh repo_folder remote_name branch_name"
 	exit
 fi
 
