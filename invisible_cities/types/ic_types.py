@@ -1,4 +1,5 @@
 from argparse import Namespace
+from enum     import Enum, auto
 
 import numpy as np
 
@@ -95,3 +96,20 @@ class minmax:
         if n == 0: return self.min
         if n == 1: return self.max
         raise IndexError
+
+
+class AutoNameEnumBase(Enum):
+    """Automatically generate Enum values from their names.
+
+        Use this as a base class to make Enums with values which automatically
+        match the member names:
+
+        class Direction(AutoNameEnumBase):
+        ...     LEFT  = auto()
+        ...     RIGHT = auto()
+        ...
+        >>> list(Direction)
+        [<Direction.LEFT: 'LEFT'>, <Direction.RIGHT: 'RIGHT'>]
+    """
+    def _generate_next_value_(name, start, count, last_values):
+        return name
