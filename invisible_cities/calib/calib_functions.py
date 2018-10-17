@@ -151,7 +151,7 @@ def seeds_db(sensor_type, run_no, n_chann):
     Take gain and sigma values of previous runs in the database
     to use them as seeds.
     """
-    if sensor_type == 'sipm':
+    if sensor_type == SensorType.SIPM:
         gain_seed       = DB.DataSiPM(run_no).adc_to_pes.iloc[n_chann]
         gain_sigma_seed = DB.DataSiPM(run_no).Sigma.iloc[n_chann]
     else:
@@ -164,7 +164,7 @@ def poisson_mu_seed(sensor_type, bins, spec, ped_vals, scaler):
     """
     Calculate poisson mu using the scaler function.
     """
-    if sensor_type == 'sipm':
+    if sensor_type == SensorType.SIPM:
         sel    = (bins>=-5) & (bins<=5)
         gdist  = fitf.gauss(bins[sel], *ped_vals)
         dscale = spec[sel].sum() / gdist.sum()
@@ -184,7 +184,7 @@ def sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals):
     """
     Define different values and ranges of the spectra depending on the sensor type.
     """
-    if sensor_type == 'sipm':
+    if sensor_type == SensorType.SIPM:
         spectra         = spec
         peak_range      = np.arange(4, 20)
         min_bin_peak    = 10
