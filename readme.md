@@ -1,9 +1,9 @@
 # How to migrate your branches to IC's LFS-enabled `master` branch
 
 1. Make sure that you are registered as a developer on https://next.ific.uv.es:8888/nextic/IC
-   and that you know your login and password.
+   and that you know your login and password. If not, contact @jmbenlloch.
 
-2.   Install the git lfs client: https://git-lfs.github.com/
+2. Install the git lfs client: https://git-lfs.github.com/
 
 3. Download the migration scripts
 
@@ -35,4 +35,5 @@
 
 9. If the process succeeds, a new branch with the name `LFS.<branch>`
    will be created in `<migration repo>`. Once you are satisfied that
-   this branch is OK, you can push it to your fork.
+   this branch is OK, you can push it to your fork. To do this you will
+   need your user and password for the gitlab server on step 1.
