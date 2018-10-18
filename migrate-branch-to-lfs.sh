@@ -78,8 +78,15 @@ echo $TOCHERRYPICK
 
 for COMMIT in $TOCHERRYPICK; do
 	echo $COMMIT
-	git cherry-pick $COMMIT
-	git diff --name-only | xargs git add
-	git commit --amend --no-edit --
+	if git cherry-pick $COMMIT; then
+		git diff --name-only | xargs git add
+		git commit --amend --no-edit --
+	else
+		for FILE in `git diff --name-only`; do
+			git show $COMMIT:$FILE > $FILE
+			git add $FILE
+		done
+		git -c core.editor=true cherry-pick --continue
+	fi
 done
 
