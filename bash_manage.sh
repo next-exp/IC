@@ -27,7 +27,7 @@ manage.sh()
     if [[ ${prev2} == "manage.sh" ]] ; then
             case "${prev}" in
                         install_and_check|install|work_in_python_version|make_environment)
-                        local versions="3.6 3.7"
+                        local versions="3.7"
                     COMPREPLY=( $(compgen -W "${versions}" -- ${cur}) )
                     return 0
                     ;;
@@ -73,7 +73,7 @@ source_manage.sh()
     if [[ ${prev2} == "manage.sh" ]] ; then
             case "${prev}" in
                         install_and_check|install|work_in_python_version|make_environment)
-                        local versions="3.6 3.7"
+                        local versions="3.7"
                     COMPREPLY=( $(compgen -W "${versions}" -- ${cur}) )
                     return 0
                     ;;

@@ -12,7 +12,7 @@ Quickstart guide
 
 + :code:`cd` into the `IC` directory
 
-+ :code:`source manage.sh work_in_python_version 3.6`
++ :code:`source manage.sh work_in_python_version 3.7`
 
 The last step will, if necessary, install conda and create an
 appropriate conda environment, as well as setting environment
