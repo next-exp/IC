@@ -10,7 +10,7 @@ DSTFOLDER=$1
 UPSTREAM="https://github.com/nextic/IC.git"
 LFSOBJECTS="https://jobenllo.web.cern.ch/jobenllo/lfs_objects.tar.bz2"
 
-git clone $UPSTREAM $DSTFOLDER
+git clone $UPSTREAM --branch lfs-migration-master $DSTFOLDER
 cd $DSTFOLDER/.git/lfs
 
 if which wget; then
