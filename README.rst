@@ -6,6 +6,8 @@ IC stands for Invisible Cities and also for Italo Calvino, the author of the mas
 Quickstart guide
 ----------------
 
++ Make sure you have `git lfs` installed (https://git-lfs.github.com/)
+
 + Clone the repository
 
 + :code:`cd` into the `IC` directory
