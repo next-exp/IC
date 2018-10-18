@@ -7,9 +7,9 @@
 
 3. Download the migration scripts
 
-   `git clone https://github.com/nextic/IC.git --single-branch --branch lfs-migration-scripts lfs-migration-scripts`
+   `git clone https://github.com/nextic/IC.git --single-branch --branch lfs-migration-scripts lfs-migration`
 
-4. `cd lfs-migration-scripts`
+4. `cd lfs-migration`
 
 5. `bash create-migration-clone.sh IC-lfs`
 
