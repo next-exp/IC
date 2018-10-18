@@ -14,6 +14,7 @@ from .. reco                   import tbl_functions   as tbl
 from .. core                   import fit_functions   as fitf
 from .. core.system_of_units_c import units
 from .. evm.nh5                import SensorTable
+from .  calib_functions        import SensorType
 
 
 def test_bin_waveforms():
@@ -173,29 +174,28 @@ def test_copy_sensor_table3(config_tmpdir):
         assert out_file.root.Sensors.DataSiPM[0][1] == dummy_sipm[1]
 
 
-def test_seeds_db():
-    gain_seed_sipm, gain_sigma_seed_sipm = cf.seeds_db('sipm', 6317, 13)
-    gain_seed_pmt, gain_sigma_seed_pmt   = cf.seeds_db('pmt', 6317, 5)
-
-    assert gain_seed_sipm       == 16.5503
-    assert gain_sigma_seed_sipm == 1.65978
-    assert gain_seed_pmt        == 22.66
-    assert gain_sigma_seed_pmt  == 9.88
+@mark.parametrize('sensor_type     , run_number, n_channel, gain_seed, gain_sigma_seed',
+                  ((SensorType.SIPM,       6217,         1,   16.5622,         2.5),
+                   (SensorType.PMT ,       6217,         5,   24.9557,         9.55162)))
+def test_seeds_db(sensor_type, run_number, n_channel, gain_seed, gain_sigma_seed):
+    result = cf.seeds_db(sensor_type, run_number, n_channel)
+    assert result == (gain_seed, gain_sigma_seed)
 
 
-def test_poisson_mu_seed():
-    bins     = np.array([-8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7])
-    spec     = np.array([28, 98, 28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
-    dark     = np.array([30, 107, 258, 612, 1142, 2054, 3037, 3593, 3769, 3777, 3319, 2321, 1298, 690, 415, 192])
+dark_sipm = np.array([612, 1142, 2054, 3037, 3593, 3769, 3777, 3319, 2321, 1298, 690])
+dark_pmt  = np.array([ 30,  107,  258,  612, 1142, 2054, 3037, 3593                 ])
+
+@mark.parametrize('     sensor_type,                    scaler,        mu',
+                  ((SensorType.SIPM, cf.dark_scaler(dark_sipm), 0.0698154),
+                   (SensorType.PMT , cf.dark_scaler(dark_pmt) , 0.0950066)))
+def test_poisson_mu_seed(sensor_type, scaler, mu):
+    bins     = np.array([-8,  -7,  -6,  -5,  -4,    -3,   -2,   -1,    0,    1,    2,    3,    4,   5,   6,   7])
+    spec     = np.array([28,  98,  28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
 
-    scaler   = cf.dark_scaler(dark[(bins>=-5) & (bins<=5)])
-    scaler2  = cf.dark_scaler(dark[bins<0])
-    mu       = cf.poisson_mu_seed('sipm', bins, spec, ped_vals, scaler)
-    mu2      = cf.poisson_mu_seed('pmt', bins, spec, ped_vals, scaler2)
+    result   = cf.poisson_mu_seed(sensor_type, bins, spec, ped_vals, scaler)
+    np.testing.assert_approx_equal(result, mu)
 
-    np.testing.assert_approx_equal(mu, 0.0698154)
-    np.testing.assert_approx_equal(mu2, 0.0950066)
 
 @mark.parametrize('     sensor_type, n_chann,                    scaler,    expected_range, min_b, max_b, half_width, lim_p',
                   ((SensorType.SIPM,    1023, cf.dark_scaler(dark_sipm),  np.arange(4 ,20),    10,    22,          5, 10000),
