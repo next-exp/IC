@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$#" -ne 3 ]; then
-    echo "Usage: step4.sh repo_folder remote_name branch_name"
+    echo "Usage: migrate-branch-to-lfs.sh repo_folder remote_name branch_name"
 	exit
 fi
 
@@ -56,7 +56,7 @@ fi
 echo NEWMERGEBASE:   $NEWMERGEBASE
 echo MERGEBASECHILD: $MERGEBASECHILD
 
-git checkout -b new-"$BRANCH" $NEWMERGEBASE
+git checkout -b LFS."$BRANCH" $NEWMERGEBASE
 
 BRANCHHASH=`git show -s --format=%H $REMOTE/$BRANCH`
 echo BRANCHHASH: $BRANCHHASH

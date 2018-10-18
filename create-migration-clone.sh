@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$#" -ne 1 ]; then
-    echo "Usage: step1.sh git_repo_path"
+    echo "Usage: create-migration-clone.sh git_repo_path"
         exit
 fi
 

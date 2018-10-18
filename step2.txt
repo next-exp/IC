@@ -1,3 +1,0 @@
-Ensure that any local branches you want to migrate to LFS have been
-pushed to your fork. Your local version of these branches should not
-be ahead of your fork.
