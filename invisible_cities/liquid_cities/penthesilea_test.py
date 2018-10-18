@@ -7,7 +7,9 @@ from pytest import mark
 from .. core.core_functions    import in_range
 from .. core.system_of_units_c import units
 from .. core.testing_utils     import assert_dataframes_close
+from .. core.testing_utils     import assert_tables_equality
 from .. core.configure         import configure
+from .. core.configure         import all as all_events
 from .. io                     import dst_io as dio
 from .. io.mcinfo_io           import load_mchits
 
@@ -169,3 +171,28 @@ def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
 
             assert last_particle_list[nevents_out_in_first_file] - last_particle_list[nevents_out_in_first_file - 1] == nparticles_in_first_event_out
             assert last_hit_list     [nevents_out_in_first_file] - last_hit_list     [nevents_out_in_first_file - 1] == nhits_in_first_event_out
+
+
+def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
+    file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
+    file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea.h5")
+    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5")
+
+    conf = configure("penthesilea invisible_cities/config/liquid_penthesilea.conf".split())
+    conf.update(dict(run_number   = -10000,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     event_range  = all_events))
+
+    penthesilea(**conf)
+
+    tables = (  "MC/extents", "MC/hits", "MC/particles", "MC/generators",
+              "RECO/Events")
+    with tb.open_file(true_output)  as true_output_file:
+        with tb.open_file(file_out) as      output_file:
+            print(true_output_file)
+            print(output_file)
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
