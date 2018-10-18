@@ -197,50 +197,34 @@ def test_poisson_mu_seed():
     np.testing.assert_approx_equal(mu, 0.0698154)
     np.testing.assert_approx_equal(mu2, 0.0950066)
 
-
-def test_sensor_values():
-    bins     = np.array([-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7])
-    spec     = np.array([28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
-    dark     = np.array([258, 612, 1142, 2054, 3037, 3593, 3769, 3777, 3319, 2321, 1298, 690, 415, 192])
+@mark.parametrize('     sensor_type, n_chann,                    scaler,    expected_range, min_b, max_b, half_width, lim_p',
+                  ((SensorType.SIPM,    1023, cf.dark_scaler(dark_sipm),  np.arange(4 ,20),    10,    22,          5, 10000),
+                   (SensorType.PMT ,       0, cf.dark_scaler(dark_pmt) ,  np.arange(10,20),    15,    50,         10, 10000)))
+def test_sensor_values(sensor_type, n_chann, scaler, expected_range, min_b, max_b, half_width, lim_p):
+    bins     = np.array([ -6,  -5,   -4,   -3,   -2,   -1,    0,    1,    2,    3,    4,   5,   6,   7])
+    spec     = np.array([ 28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
-    scaler   = cf.dark_scaler(dark[(bins>=-5) & (bins<=5)])
-    scaler2  = cf.dark_scaler(dark[bins<0])
-    spectra, p_range, min_bin, max_bin, hpw, lim_ped = cf.sensor_values('sipm', 1023, scaler, spec, bins, ped_vals)
-    spectra2, p_range2, min_bin2, max_bin2, hpw2, lim_ped2 = cf.sensor_values('pmt', 0, scaler2, spec, bins, ped_vals)
+    spectra, p_range, min_bin, max_bin, hpw, lim_ped = cf.sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals)
 
-    expected_range = np.arange(4,20)
-    expected_spec2 = np.array([-215.61455106, -7.61389796, 9.69755144, 56.84252052, 197.9256732, -41.23729614, 25.03486623,
-                               120.56759537, 297.7306255, 182.5057727, 74.29711143, 12.00648349, 69.4376878, 53.375555])
-    expected_range2 = np.arange(10,20)
-
-    np.testing.assert_array_equal(spectra, spec)
     np.testing.assert_array_equal(p_range, expected_range)
-    assert min_bin == 10
-    assert max_bin == 22
-    assert hpw == 5
-    assert lim_ped == lim_ped2
-    assert len(spectra2) == len(expected_spec2)
-
-    np.testing.assert_array_equal(p_range2, expected_range2)
-    assert min_bin2 == 15
-    assert max_bin2 == 50
-    assert hpw2 == 10
+    assert len(spectra) == len(spec)
+    assert min_bin == min_b
+    assert max_bin == max_b
+    assert hpw     == half_width
+    assert lim_ped == lim_p
 
 
 def test_pedestal_values():
-    ped_vals = np.array([6.14871401e+04, -1.46181517e-01, 5.27614635e+00])
-    ped_errs = np.array([9.88752708e+02, 5.38541961e-02, 1.07169703e-01])
-    lim_ped  = 10000
-
-    p_seed, p_sig_seed, p_min, p_max, p_sig_min, p_sig_max = cf.pedestal_values(ped_vals,
-                                                                             lim_ped, ped_errs)
-
-    assert_approx_equal(p_seed, -0.14618, 5)
-    assert_approx_equal(p_sig_seed, 5.27614, 5)
-    assert_approx_equal(p_min, -538.68814, 5)
-    assert_approx_equal(p_max, 538.39577, 5)
-    assert_approx_equal(p_sig_min, 0.001)
-    assert_approx_equal(p_sig_max, 1076.97317, 5)
+    ped_vals   = np.array([6.14871401e+04, -1.46181517e-01, 5.27614635e+00])
+    ped_errs   = np.array([9.88752708e+02,  5.38541961e-02, 1.07169703e-01])
+    ped_values = cf.pedestal_values(ped_vals, 10000, ped_errs)
+    
+    assert_approx_equal(ped_values.gain     ,   -0.14618, 5)
+    assert_approx_equal(ped_values.sigma    ,    5.27614, 5)
+    assert_approx_equal(ped_values.gain_min , -538.68814, 5)
+    assert_approx_equal(ped_values.gain_max ,  538.39577, 5)
+    assert_approx_equal(ped_values.sigma_max, 1076.97317, 5)
+    assert_approx_equal(ped_values.sigma_min,      0.001)
 
 
 def test_seeds_and_bounds(file_name):

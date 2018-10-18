@@ -13,6 +13,8 @@ from .. core.stat_functions    import poisson_sigma
 from .. core                   import fit_functions    as fitf
 from .. database               import load_db          as DB
 from .. types.ic_types         import AutoNameEnumBase
+from .. evm.ic_containers      import SensorParams
+from .. evm.ic_containers      import PedestalParams
 
 
 def bin_waveforms(waveforms, bins):
@@ -151,6 +153,7 @@ class SensorType(AutoNameEnumBase):
     SIPM = auto()
     PMT  = auto()
 
+
 def seeds_db(sensor_type, run_no, n_chann):
     """
     Take gain and sigma values of previous runs in the database
@@ -204,7 +207,7 @@ def sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals):
         max_bin_peak    = 50
         half_peak_width = 10
         lim_ped         = 10000
-    return spectra, peak_range, min_bin_peak, max_bin_peak, half_peak_width, lim_ped
+    return SensorParams(spectra, peak_range, min_bin_peak, max_bin_peak, half_peak_width, lim_ped)
 
 
 def pedestal_values(ped_vals, lim_ped, ped_errs):
@@ -218,7 +221,7 @@ def pedestal_values(ped_vals, lim_ped, ped_errs):
     ped_sig_min  = max(0.001, ped_sig_seed - lim_ped * ped_errs[2])
     ped_sig_max  = ped_sig_seed + lim_ped * ped_errs[2]
 
-    return ped_seed, ped_sig_seed, ped_min, ped_max, ped_sig_min, ped_sig_max
+    return PedestalParams(ped_seed, ped_min, ped_max, ped_sig_seed, ped_sig_min, ped_sig_max)
 
 
 def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
@@ -260,25 +263,25 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
 
     norm_seed = spec.sum()
     gain_seed, gain_sigma_seed = seeds_db(sensor_type, run_no, n_chann)
-    spectra, p_range, min_b, max_b, hpw, lim_ped = sensor_values(sensor_type, n_chann,
-                                                                 scaler, spec, bins, ped_vals)
+    sens_values = sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals)
 
     if not use_db_gain_seeds:
-        pDL  = find_peaks_cwt(spectra, p_range, min_snr=1, noise_perc=5)
-        p1pe = pDL[(bins[pDL]>min_b) & (bins[pDL]<max_b)]
+        pDL  = find_peaks_cwt(sens_values.spectra, sens_values.p_range, min_snr=1, noise_perc=5)
+        p1pe = pDL[(bins[pDL]>sens_values.min_b) & (bins[pDL]<sens_values.max_b)]
         if len(p1pe) == 0:
             try:
-                p1pe = np.argwhere(bins==(min_b+max_b)/2)[0][0]
+                p1pe = np.argwhere(bins==(sens_values.min_b+sens_values.max_b)/2)[0][0]
             except IndexError:
                 p1pe = len(bins)-1
         else:
-            p1pe = p1pe[spectra[p1pe].argmax()]
+            p1pe = p1pe[sens_values.spectra[p1pe].argmax()]
 
-        fgaus = fitf.fit(fitf.gauss, bins[p1pe-hpw:p1pe+hpw],
-                        spectra[p1pe-hpw:p1pe+hpw],
-                        seed=(spectra[p1pe], bins[p1pe], 7),
-                        sigma=np.sqrt(spectra[p1pe-hpw:p1pe+hpw]),
-                        bounds=[(0, -100, 0), (1e99, 100, 10000)])
+        fgaus = fitf.fit(fitf.gauss,
+                         bins[p1pe-sens_values.hpw:p1pe+sens_values.hpw],
+                         sens_values.spectra[p1pe-sens_values.hpw:p1pe+sens_values.hpw],
+                         seed   = (sens_values.spectra[p1pe], bins[p1pe], 7),
+                         sigma  = np.sqrt(sens_values.spectra[p1pe-sens_values.hpw:p1pe+sens_values.hpw]),
+                         bounds = [(0, -100, 0), (1e99, 100, 10000)])
         gain_seed = fgaus.values[1] - ped_vals[1]
 
         if fgaus.values[2] <= ped_vals[2]:
@@ -286,19 +289,20 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
         else:
             gain_sigma_seed = np.sqrt(fgaus.values[2]**2 - ped_vals[2]**2)
 
-    mu_seed = poisson_mu_seed(sensor_type, bins, spectra, ped_vals, scaler)
+    mu_seed = poisson_mu_seed(sensor_type, bins, sens_values.spectra, ped_vals, scaler)
     if mu_seed < 0: mu_seed = 0.001
 
-    sd0 = [norm_seed, mu_seed, gain_seed, gain_sigma_seed]
-    bd0 = [[0, 0, 0, 0.001], [1e10, 10000, 10000, 10000]]
+    sd0middle  = ()
+    bd00middle = ()
+    bd01middle = ()
 
     if 'gau' in func:
-        p_seed, p_sig_seed, p_min, p_max, p_sig_min, p_sig_max = pedestal_values(ped_vals,
-                                                                                 lim_ped, ped_errs)
-        sd0[2:2]    = p_seed, p_sig_seed
-        bd0[0][2:2] = p_min, p_sig_min
-        bd0[1][2:2] = p_max, p_sig_max
+        ped_values = pedestal_values(ped_vals, sens_values.lim_ped , ped_errs)
+        sd0middle  = (ped_values.gain        , ped_values.sigma    )
+        bd00middle = (ped_values.gain_min    , ped_values.gain_max )
+        bd01middle = (ped_values.sigma_min   , ped_values.sigma_max)
 
-    sd0 = tuple(sd0)
-    bd0 = [tuple(bd0[0]), tuple(bd0[1])]
-    return sd0, bd0
+    seed   = (norm_seed, mu_seed) + sd0middle  + (gain_seed, gain_sigma_seed)
+    bound1 = (0       ,       0)  + bd00middle + (0        ,           0.001)
+    bound2 = (1e10    ,   10000)  + bd01middle + (10000    ,           10000)
+    return seed, (bound1, bound2)
