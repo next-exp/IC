@@ -6,6 +6,7 @@ import numpy  as np
 import tables as tb
 
 from scipy.signal import find_peaks_cwt
+from enum         import auto
 
 from .. core.system_of_units_c import units
 from .. core.core_functions    import in_range
@@ -156,10 +157,10 @@ def seeds_db(sensor_type, run_no, n_chann):
     """
     if sensor_type == SensorType.SIPM:
         gain_seed       = DB.DataSiPM(run_no).adc_to_pes.iloc[n_chann]
-        gain_sigma_seed = DB.DataSiPM(run_no).Sigma.iloc[n_chann]
+        gain_sigma_seed = DB.DataSiPM(run_no).     Sigma.iloc[n_chann]
     else:
         gain_seed       = DB.DataPMT(run_no).adc_to_pes.iloc[n_chann]
-        gain_sigma_seed = DB.DataPMT(run_no).Sigma.iloc[n_chann]
+        gain_sigma_seed = DB.DataPMT(run_no).     Sigma.iloc[n_chann]
     return gain_seed, gain_sigma_seed
 
 
@@ -206,8 +207,7 @@ def sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals):
 
 
 def pedestal_values(ped_vals, lim_ped, ped_errs):
-    """
-    Define pedestal values for 'gau' functions.
+    """Define pedestal values for 'gau' functions.
     """
     ped_seed     = ped_vals[1]
     ped_min      = ped_seed - lim_ped * ped_errs[1]
@@ -221,41 +221,40 @@ def pedestal_values(ped_vals, lim_ped, ped_errs):
 
 def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
                      ped_errs, func='dfunc', use_db_gain_seeds=True):
+    """ Define the seeds and bounds to be used for calibration fits.
+
+        Parameters
+        ----------
+        sensor_type   : string
+        Input of type of sensor: sipm or pmt.
+        run_no        : int
+        Run number.
+        n_chann       : int
+        Channel number (sensor ID).
+        scaler        : callable
+        Scale function.
+        bins          : np.array
+        Number of divisions in the x axis.
+        spec          : np.array
+        Spectra, charge values of the signal.
+        ped_vals      : np.array
+        Values for the pedestal fit.
+        ped_errs      : np.array
+        Errors of the values for the pedestal fit.
+        func          : callable, optional
+        Function used for fitting. Defaults to dfunc.
+        use_db_gain_seeds : bool, optional
+        If True, seeds are taken from previous runs in database.
+        If False, peaks are found with find_peaks_cwt function.
+
+        Returns
+        -------
+        sd0 : sequence
+        Seeds for normalization, mu, gain and sigma.
+        bd0 : sequence
+        Minimum and maximum limits for the previous variables.
     """
-    Define the seeds and bounds to be used for calibration fits.
-
-    Parameters
-    ----------
-    sensor_type   : string
-    Input of type of sensor: sipm or pmt.
-    run_no        : int
-    Run number.
-    n_chann       : int
-    Channel number (sensor ID).
-    scaler        : callable
-    Scale function.
-    bins          : np.array
-    Number of divisions in the x axis.
-    spec          : np.array
-    Spectra, charge values of the signal.
-    ped_vals      : np.array
-    Values for the pedestal fit.
-    ped_errs      : np.array
-    Errors of the values for the pedestal fit.
-    func          : callable, optional
-    Function used for fitting. Defaults to dfunc.
-    use_db_gain_seeds : bool, optional
-    If True, seeds are taken from previous runs in database.
-    If False, peaks are found with find_peaks_cwt function.
-
-    Returns
-    -------
-    sd0 : sequence
-    Seeds for normalization, mu, gain and sigma.
-    bd0 : sequence
-    Minimum and maximum limits for the previous variables.
-    """
-
+    
     norm_seed = spec.sum()
     gain_seed, gain_sigma_seed = seeds_db(sensor_type, run_no, n_chann)
     sens_values = sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals)
