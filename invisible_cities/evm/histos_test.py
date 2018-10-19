@@ -147,7 +147,7 @@ def test_histogram_initialization_with_values(bins):
 def test_histogram_fill(empty_histogram):
     _, test_histogram  = empty_histogram
     histobins          =  test_histogram.bins
-    n_points           =   np.random.random_integers(5, 200, 1)
+    n_points           =   np.random.randint(5, 201)
     test_data          = [ np.random.uniform( bins[0]  * (1 + np.random.uniform()),
                                               bins[-1] * (1 + np.random.uniform()),
                                               n_points) for bins in histobins ]
@@ -168,7 +168,7 @@ def test_histogram_fill(empty_histogram):
 def test_histogram_fill_with_weights(empty_histogram):
     _, test_histogram = empty_histogram
     histobins         =  test_histogram.bins
-    n_points          =   np.random.random_integers(50, 200, 1)
+    n_points          =   np.random.randint(50, 201)
     test_data         = [ np.random.uniform( bins[0]  * (1 + np.random.uniform()),
                                              bins[-1] * (1 + np.random.uniform()),
                                              n_points) for bins in histobins ]
@@ -297,7 +297,6 @@ def test_new_histogram_in_histomanager(test_histogram):
 
     assert_histogram_equality(histogram, histogram_manager[histoname])
 
-
 @settings(suppress_health_check=(HealthCheck.too_slow,))
 @given   (histograms_lists())
 def test_fill_histograms_in_histomanager(histogram_list):
@@ -312,7 +311,7 @@ def test_fill_histograms_in_histomanager(histogram_list):
     for i, title in enumerate(titles):
         old_data_values  [title] =   np.copy(histogram_manager[title].data     )
         old_out_of_range [title] =   np.copy(histogram_manager[title].out_range)
-        n_points                 =   np.random.random_integers(5, 200, 1)
+        n_points                 =   np.random.randint(5, 201)
         test_data                = [ np.random.uniform( bins[0]  * (1 + np.random.uniform()),
                                                         bins[-1] * (1 + np.random.uniform()),
                                                         n_points)  for bins in histobins[i] ]
