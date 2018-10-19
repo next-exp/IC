@@ -1,6 +1,8 @@
 import os
 import string
 
+from keyword import iskeyword
+
 import numpy  as np
 import tables as tb
 
@@ -30,6 +32,7 @@ letters    = string.ascii_letters
 @given   (histograms_lists(), text(letters, min_size=1))
 @settings(deadline=None, max_examples=400)
 def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, group):
+    assume(not iskeyword(group))
     args, list_of_histograms = histogram_list
     histogram_manager        = HistoManager(list_of_histograms)
 
@@ -54,6 +57,7 @@ def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, gro
 @given   (histograms_lists(), text(letters, min_size=1))
 @settings(deadline=None, max_examples=400)
 def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, group):
+    assume(not iskeyword(group))
     args, list_of_histograms = histogram_list
     histogram_manager        = HistoManager(list_of_histograms[:1])
 
