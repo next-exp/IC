@@ -134,3 +134,19 @@ def assert_PMap_equality(pmp0, pmp1):
 
     for s2_0, s2_1 in zip(pmp0.s2s, pmp1.s2s):
         assert_Peak_equality(s2_0, s2_1)
+
+
+def assert_tables_equality(got_table, expected_table):
+    table_got      =      got_table[:]
+    table_expected = expected_table[:]
+    assert len(table_got) == len(table_expected)
+
+    for got, expected in zip(table_got, table_expected):
+        assert type(got) == type(expected)
+        try:
+            assert got == expected
+        except ValueError:
+            try:
+                assert np.isclose (got, expected)
+            except ValueError:
+                assert np.allclose(got, expected)

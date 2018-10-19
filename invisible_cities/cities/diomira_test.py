@@ -13,8 +13,10 @@ import numpy  as np
 from pytest import mark
 from pytest import raises
 
-from .. core                 import system_of_units as units
-from .. core.configure       import configure
+from .. core               import system_of_units as units
+from .. core.configure     import configure
+from .. core.configure     import all as all_events
+from .. core.testing_utils import assert_tables_equality
 
 from .. reco     import tbl_functions as tbl
 from .. sierpe   import fee as FEE
@@ -207,3 +209,35 @@ def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
 
                 assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
                 assert last_hit_list[nevents_per_file] - last_hit_list[nevents_per_file - 1] == nhits_in_first_event
+
+
+def test_diomira_exact_result(ICDATADIR, output_tmpdir):
+    file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5")
+    file_out    = os.path.join(output_tmpdir,                       "exact_result_diomira.h5")
+    true_output = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
+
+    conf = configure("diomira invisible_cities/config/diomira.conf".split())
+    conf.update(dict(run_number   = 0,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     trigger_type = None,
+                     event_range  = all_events))
+
+    # Set a specific seed because we want the result to be
+    # repeatible. Go back to original state after running.
+    original_random_state = np.random.get_state()
+    np.random.seed(123456789)
+    Diomira(**conf).run()
+    np.random.set_state(original_random_state)
+
+
+    tables = ("FEE/FEE"    ,
+               "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
+               "RD/pmtrwf" ,  "RD/pmtblr" , "RD/sipmrwf"  ,
+              "Run/events" , "Run/runInfo")
+    with tb.open_file(true_output)  as true_output_file:
+        with tb.open_file(file_out) as      output_file:
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)

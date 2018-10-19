@@ -15,8 +15,10 @@ import tables as tb
 from numpy.testing import assert_array_equal
 from pytest        import mark
 
-from .  sipmgain       import Sipmgain
-from .. core.configure import configure
+from .  sipmgain           import Sipmgain
+from .. core.configure     import configure
+from .. core.configure     import all as all_events
+from .. core.testing_utils import assert_tables_equality
 
 
 @mark.slow
@@ -50,3 +52,29 @@ def test_sipmgain_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
                                                            ('timestamp' , '<u8')])
 
         assert_array_equal(evts_in, evts_out)
+
+
+@mark.parametrize("proc_opt", ("subtract_mode", "subtract_median"))
+def test_sipmgain_exact_result(ICDATADIR, output_tmpdir, proc_opt):
+    file_in     = os.path.join(ICDATADIR    ,                  "sipmledpulsedata.h5")
+    file_out    = os.path.join(output_tmpdir, f"exact_result_sipmgain_{proc_opt}.h5")
+    true_output = os.path.join(ICDATADIR    , f"sipmledpulsedata_hist_{proc_opt}.h5")
+
+    conf = configure("sipmgain invisible_cities/config/sipmgain.conf".split())
+    conf.update(dict(run_number  = 5000,
+                     files_in    = file_in,
+                     file_out    = file_out,
+                     proc_mode   = proc_opt,
+                     event_range = all_events))
+
+    Sipmgain(**conf).run()
+
+    tables = ("HIST/sipm_dark", "HIST/sipm_dark_bins",
+              "HIST/sipm_spe" , "HIST/sipm_spe_bins" ,
+               "Run/events"   ,  "Run/runInfo"       )
+    with tb.open_file(true_output)  as true_output_file:
+        with tb.open_file(file_out) as      output_file:
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
