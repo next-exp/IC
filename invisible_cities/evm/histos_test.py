@@ -231,8 +231,8 @@ def test_update_errors_with_values(filled_histogram):
     assert np.allclose(test_histogram.errors, new_errors)
 
 
-@given(filled_histograms(fixed_bins=[[50, 900, 20.]]),
-       filled_histograms(fixed_bins=[[50, 900, 20.]]))
+@given(filled_histograms(fixed_bins=[[50, 900, 20]]),
+       filled_histograms(fixed_bins=[[50, 900, 20]]))
 def test_add_histograms(first_histogram, second_histogram):
     _, test_histogram1 =  first_histogram
     _, test_histogram2 = second_histogram
@@ -247,8 +247,8 @@ def test_add_histograms(first_histogram, second_histogram):
     assert             sum_histogram.title   ==         test_histogram1.title
 
 
-@given(filled_histograms(fixed_bins=[[50, 900, 20.]]),
-       filled_histograms(fixed_bins=[[50, 900, 5.]]))
+@given(filled_histograms(fixed_bins=[[50, 900, 20]]),
+       filled_histograms(fixed_bins=[[50, 900,  5]]))
 def test_add_histograms_with_incompatible_binning_raises_ValueError(first_histogram, second_histogram):
     _, test_histogram1 =  first_histogram
     _, test_histogram2 = second_histogram
@@ -257,8 +257,8 @@ def test_add_histograms_with_incompatible_binning_raises_ValueError(first_histog
         sum_histogram = test_histogram1 + test_histogram2
 
 
-@given(filled_histograms(fixed_bins=[[50, 900, 20.], [20, 180, 15]]),
-       filled_histograms(fixed_bins=[[50, 900, 20.], [20, 180, 15]]))
+@given(filled_histograms(fixed_bins=[[50, 900, 20], [20, 180, 15]]),
+       filled_histograms(fixed_bins=[[50, 900, 20], [20, 180, 15]]))
 def test_add_histograms_2d(first_histogram, second_histogram):
     _, test_histogram1 =  first_histogram
     _, test_histogram2 = second_histogram
