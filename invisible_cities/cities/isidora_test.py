@@ -68,7 +68,7 @@ def test_isidora_exact_result(ICDATADIR, output_tmpdir):
     true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.BLR.h5")
 
     conf = configure("isidora invisible_cities/config/isidora.conf".split())
-    conf.update(dict(run_number  = 0,
+    conf.update(dict(run_number  = -10000,
                      files_in    = file_in,
                      file_out    = file_out,
                      event_range = all_events))

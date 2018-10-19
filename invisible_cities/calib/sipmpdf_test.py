@@ -58,7 +58,7 @@ def test_sipmpdf_exact_result(ICDATADIR, output_tmpdir):
     true_output = os.path.join(ICDATADIR    , "sipmdarkcurrentdata_hist.h5")
 
     conf = configure("sipmpdf invisible_cities/config/sipmpdf.conf".split())
-    conf.update(dict(run_number  = 5000,
+    conf.update(dict(run_number  = 4821,
                      files_in    = file_in,
                      file_out    = file_out,
                      event_range = all_events))
@@ -82,7 +82,7 @@ def test_sipmpdf_exact_result_adc(ICDATADIR, output_tmpdir):
     true_output = os.path.join(ICDATADIR    , "sipmdarkcurrentdata_hist_adc.h5")
 
     conf = configure("sipmpdf invisible_cities/config/sipmpdf.conf".split())
-    conf.update(dict(run_number  = 5000,
+    conf.update(dict(run_number  = 4821,
                      files_in    = file_in,
                      file_out    = file_out,
                      event_range = all_events,

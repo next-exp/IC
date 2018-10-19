@@ -60,7 +60,7 @@ def test_pmtgain_exact_result(ICDATADIR, output_tmpdir, proc_opt):
     true_output = os.path.join(ICDATADIR    , f"pmtledpulsedata_hist_{proc_opt}.h5")
 
     conf = configure("pmtgain invisible_cities/config/pmtgain.conf".split())
-    conf.update(dict(run_number  = 5000,
+    conf.update(dict(run_number  = 4819,
                      files_in    = file_in,
                      file_out    = file_out,
                      proc_mode   = proc_opt,
