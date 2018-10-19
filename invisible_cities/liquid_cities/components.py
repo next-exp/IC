@@ -22,6 +22,7 @@ from .. core.system_of_units_c import units
 from .. core.exceptions        import XYRecoFail
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
+from .. core.configure         import EventRange
 from .. reco                   import         calib_functions as  cf
 from .. reco                   import calib_sensors_functions as csf
 from .. reco                   import          peak_functions as pkf
@@ -89,16 +90,18 @@ def index_tables(file_out):
 
 
 def _event_range(conf):
-    if not hasattr(conf, 'event_range'):        return None, 1
+    # event_range not specified
+    if not hasattr(conf, 'event_range'): return None, 1
     er = conf.event_range
-    if not isinstance(er, Sequence): er = (er,)
-    if len(er) == 1:                            return None, er[0]
-    if len(er) == 2:                            return tuple(er)
-    if len(er) == 0:
-        raise ValueError('event_range needs at least one value')
-    if len(er) >  2:
-        raise ValueError('event_range accepts at most 2 values but was given {}'
-                        .format(er))
+
+    # -e <stop>
+    if isinstance(er, int)             : return (er,)
+    # -e all
+    if er is EventRange.all            : return (None,)
+    # -e <start> last
+    if er[1] is EventRange.last        : return er[0], None
+    # -e <start> <stop>
+    return er
 
 
 def print_every(N):
