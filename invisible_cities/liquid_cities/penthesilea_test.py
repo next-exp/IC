@@ -26,7 +26,7 @@ def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, config_tmpdir):
 
     conf.update(dict(files_in      = PATH_IN,
                      file_out      = PATH_OUT,
-                     event_range   = (nevt_req,),
+                     event_range   = nevt_req,
                      **KrMC_hdst.config))
 
     cnt = penthesilea(**conf)
@@ -98,7 +98,7 @@ def test_penthesilea_produces_mcinfo(KrMC_pmaps_filename, KrMC_hdst, config_tmpd
 
     conf.update(dict(files_in        = PATH_IN,
                      file_out        = PATH_OUT,
-                     event_range     = (nevt_req,),
+                     event_range     = nevt_req,
                      **KrMC_hdst.config))
 
     penthesilea(**conf)
