@@ -256,6 +256,17 @@ def test_subtract_mean_diff_minmax_remains_constant(square_pmt_and_sipm_waveform
     assert np.allclose(wf_diff_bls, wf_diff_original)
 
 
+@flaky(max_runs=10, min_passes=10)
+def test_subtract_mean_mean_is_zero(square_pmt_and_sipm_waveforms):
+    _, _, pmts_fee, _, _, _, _ = square_pmt_and_sipm_waveforms
+    pmts_bls = csf.subtract_mean(pmts_fee)
+
+    # By definition, if we subtract the mean, the mean
+    # of the resulting object must be zero
+    wf_mean_bls = np.mean(pmts_bls, axis=1)
+    assert np.allclose(wf_mean_bls, 0, atol=1e-10)
+
+
 @flaky(max_runs=3)
 def test_mean_for_pmts_fee_is_unbiased(square_pmt_and_sipm_waveforms):
     _, _, pmts_fee, _, _, _, _ = square_pmt_and_sipm_waveforms
