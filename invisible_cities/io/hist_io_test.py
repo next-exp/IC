@@ -7,6 +7,7 @@ import numpy  as np
 import tables as tb
 
 from pytest import raises
+from pytest import mark
 
 from hypothesis             import assume
 from hypothesis             import given
@@ -29,6 +30,7 @@ from .. evm.histos_test     import assert_histogram_equality
 
 letters    = string.ascii_letters
 
+@mark.skip(reason="Delaying elimination of solid cities")
 @given   (histograms_lists(), text(letters, min_size=1))
 @settings(deadline=None, max_examples=400)
 def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, group):
@@ -54,6 +56,7 @@ def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, gro
             assert             histogram.labels  == saved_labels
 
 
+@mark.skip(reason="Delaying elimination of solid cities")
 @given   (histograms_lists(), text(letters, min_size=1))
 @settings(deadline=None, max_examples=400)
 def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, group):
@@ -81,6 +84,7 @@ def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, gr
             assert             histogram.labels  == saved_labels
 
 
+@mark.skip(reason="Delaying elimination of solid cities")
 @given   (histograms_lists(), text(letters, min_size=1), text(letters, min_size=1, max_size=1).filter(lambda x: x not in 'wa'))
 @settings(deadline=None)
 def test_save_histomanager_to_file_raises_ValueError(output_tmpdir, histogram_list, group, write_mode):
@@ -93,6 +97,7 @@ def test_save_histomanager_to_file_raises_ValueError(output_tmpdir, histogram_li
         save_histomanager_to_file(histogram_manager, file_out, mode=write_mode, group=group)
 
 
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(histograms_lists())
 @settings(deadline=None, max_examples=400)
 def test_get_histograms_from_file(output_tmpdir, histogram_list):

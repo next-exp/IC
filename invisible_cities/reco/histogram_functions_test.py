@@ -7,6 +7,8 @@ from hypothesis             import given
 from hypothesis             import settings
 from hypothesis.strategies  import lists
 
+from pytest import mark
+
 from .. reco                import histogram_functions as histf
 
 from .. io .hist_io         import save_histomanager_to_file
@@ -17,6 +19,7 @@ from .. evm.histos_test     import assert_histogram_equality
 from .. evm.histos_test     import histograms_lists
 from .. evm.histos_test     import bins_arrays
 
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(histograms_lists())
 @settings(deadline=None)
 def test_join_histo_managers(histogram_list):
@@ -34,6 +37,7 @@ def test_join_histo_managers(histogram_list):
         assert_histogram_equality(histogram, true_histogram)
 
 
+@mark.skip(reason="Delaying elimination of solid cities")
 @given   (histograms_lists(), histograms_lists())
 @settings(deadline=None, max_examples=700)
 def test_join_histo_managers_with_different_histograms(histogram_list1, histogram_list2):
@@ -75,6 +79,7 @@ def test_join_histo_managers_with_different_histograms(histogram_list1, histogra
             assert_histogram_equality(histogram, histo2)
 
 
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(lists(bins_arrays(), min_size=1, max_size=5))
 @settings(deadline=None)
 def test_create_histomanager_from_dicts(bins):
@@ -95,6 +100,7 @@ def test_create_histomanager_from_dicts(bins):
         assert_histogram_equality(histogram, histograms_dict[histoname])
 
 
+@mark.skip(reason="Delaying elimination of solid cities")
 @given   (histograms_lists(), histograms_lists())
 @settings(deadline=None, max_examples=250)
 def test_join_histograms_from_file(output_tmpdir, histogram_list1, histogram_list2):
@@ -116,6 +122,7 @@ def test_join_histograms_from_file(output_tmpdir, histogram_list1, histogram_lis
         assert_histogram_equality(joined_histogram_manager1[histoname], joined_histogram_manager2[histoname])
 
 
+@mark.skip(reason="Delaying elimination of solid cities")
 @given   (histograms_lists())
 @settings(deadline=None, max_examples=250)
 def test_join_histograms_from_file_and_write(output_tmpdir, histogram_list):
