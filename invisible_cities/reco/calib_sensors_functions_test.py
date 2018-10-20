@@ -267,6 +267,20 @@ def test_subtract_mean_mean_is_zero(square_pmt_and_sipm_waveforms):
     assert np.allclose(wf_mean_bls, 0, atol=1e-10)
 
 
+@flaky(max_runs=10, min_passes=10)
+def test_subtract_mean_difference_is_mean(square_pmt_and_sipm_waveforms):
+    _, _, pmts_fee, _, _, _, _ = square_pmt_and_sipm_waveforms
+    pmts_bls = csf.subtract_mean(pmts_fee)
+    means    = np.mean(pmts_fee, axis=1)
+
+    # If the mean is subtracted, the difference between
+    # the original wf and the bls one should be exactly the mean
+    # at all points
+    diffs = pmts_fee - pmts_bls
+    for mean, diff in zip(means, diffs):
+        assert np.allclose(diff, mean)
+
+
 @flaky(max_runs=3)
 def test_mean_for_pmts_fee_is_unbiased(square_pmt_and_sipm_waveforms):
     _, _, pmts_fee, _, _, _, _ = square_pmt_and_sipm_waveforms
