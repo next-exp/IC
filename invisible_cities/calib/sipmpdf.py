@@ -11,11 +11,11 @@ from functools import partial
 
 import numpy  as np
 
-from .                        import calib_functions         as cf
-from .. reco                  import calib_sensors_functions as csf
-from .. io  .         hist_io import          hist_writer
-from .. io  .run_and_event_io import run_and_event_writer
-from .. core.core_functions   import shift_to_bin_centers
+from .. reco                   import calib_functions         as cf
+from .. reco                   import calib_sensors_functions as csf
+from .. io   .         hist_io import          hist_writer
+from .. io   .run_and_event_io import run_and_event_writer
+from .. core.core_functions    import shift_to_bin_centers
 
 from .. cities.base_cities import CalibratedCity
 from .. cities.base_cities import EventLoop
@@ -110,7 +110,6 @@ class Sipmpdf(CalibratedCity):
                               h5out,
                               group_name  = 'HIST',
                               n_sensors   = self.sp.NSIPM,
-                              n_bins      = len(bin_centres),
                               bin_centres = bin_centres)
 
         if self.adc_only:

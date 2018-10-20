@@ -61,7 +61,7 @@ def test_sipmgain_exact_result(ICDATADIR, output_tmpdir, proc_opt):
     true_output = os.path.join(ICDATADIR    , f"sipmledpulsedata_hist_{proc_opt}.h5")
 
     conf = configure("sipmgain invisible_cities/config/sipmgain.conf".split())
-    conf.update(dict(run_number  = 5000,
+    conf.update(dict(run_number  = 4832,
                      files_in    = file_in,
                      file_out    = file_out,
                      proc_mode   = proc_opt,

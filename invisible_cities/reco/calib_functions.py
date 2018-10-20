@@ -110,6 +110,11 @@ def filter_limits(limits, buffer_length):
     return limits[within_buffer]
 
 
+def valid_integral_limits(sample_width, n_integrals, integral_start, integral_width, period, buffer_length):
+    corr, anti = integral_limits(sample_width, n_integrals, integral_start, integral_width, period)
+    return (filter_limits(corr, buffer_length),
+            filter_limits(anti, buffer_length))
+
 def copy_sensor_table(h5in, h5out):
     # Copy sensor table if exists (needed for Non DB calibrations)
 

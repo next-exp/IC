@@ -125,7 +125,7 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
             assert first_evt_number != last_evt_number
 
 
-@mark.parametrize('filename, first_evt',
+@mark.parametrize('filename first_evt'.split(),
              (('dst_NEXT_v0_08_09_Co56_INTERNALPORTANODE_74_0_7bar_MCRD_10000.root.h5',
                740000),
               ('NEXT_v0_08_09_Co56_2_0_7bar_MCRD_1000.root.h5',
@@ -217,7 +217,7 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
     true_output = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
 
     conf = configure("diomira invisible_cities/config/diomira.conf".split())
-    conf.update(dict(run_number   = 0,
+    conf.update(dict(run_number   = -10000,
                      files_in     = file_in,
                      file_out     = file_out,
                      trigger_type = None,

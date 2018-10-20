@@ -12,7 +12,7 @@ from functools import partial
 import numpy  as np
 
 from .. core.system_of_units_c import units
-from .                         import calib_functions         as cf
+from .. reco                   import calib_functions         as cf
 from .. reco                   import calib_sensors_functions as csf
 from .. io  .         hist_io  import          hist_writer
 from .. io  .run_and_event_io  import run_and_event_writer
@@ -124,7 +124,6 @@ class Sipmgain(CalibratedCity):
                               h5out,
                               group_name  = 'HIST',
                               n_sensors   = self.sp.NSIPM,
-                              n_bins      = len(bin_centres),
                               bin_centres = bin_centres)
 
         writers = Namespace(run_and_event = run_and_event_writer(h5out),
