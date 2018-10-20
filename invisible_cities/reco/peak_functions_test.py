@@ -79,8 +79,7 @@ def peak_indices(draw):
     return indices, peaks, stride
 
 
-@fixture
-def wf_with_indices(n_sensors=5, n_samples=500, length=None, first=None):
+def wf_with_indices_(n_sensors=5, n_samples=500, length=None, first=None):
     times = np.arange(n_samples) * 25 * units.ns
     wfs   = np.zeros((n_sensors, n_samples))
     amps  = np.random.uniform(50, 100, size=(n_sensors, 1))
@@ -93,6 +92,7 @@ def wf_with_indices(n_sensors=5, n_samples=500, length=None, first=None):
     wfs[:, indices] = gauss(x_eval, amps, 0, 1)
     return times, wfs, indices
 
+wf_with_indices = fixture(wf_with_indices_)
 
 @fixture
 def pmt_and_sipm_wfs_with_indices(n_pmt=3, n_sipm=10, n_samples_sipm=10):
@@ -101,11 +101,11 @@ def pmt_and_sipm_wfs_with_indices(n_pmt=3, n_sipm=10, n_samples_sipm=10):
     length_pmt    = np.random.randint(2, n_samples_pmt // 2)
     first_sipm    = first_pmt // 40
     length_sipm   = int(np.ceil((first_pmt + length_pmt) / 40)) - first_sipm
-    times,  pmt_wfs,  pmt_indices = wf_with_indices(n_pmt , n_samples_sipm * 40,
-                                                    length_pmt, first_pmt)
+    times,  pmt_wfs,  pmt_indices = wf_with_indices_(n_pmt , n_samples_sipm * 40,
+                                                     length_pmt, first_pmt)
 
-    _    , sipm_wfs, sipm_indices = wf_with_indices(n_sipm, n_samples_sipm,
-                                                    length_sipm, first_sipm)
+    _    , sipm_wfs, sipm_indices = wf_with_indices_(n_sipm, n_samples_sipm,
+                                                     length_sipm, first_sipm)
     return times, pmt_wfs, sipm_wfs, pmt_indices, sipm_indices
 
 
@@ -114,23 +114,23 @@ def s1_and_s2_with_indices(n_pmt=3, n_sipm=10, n_samples_sipm=40):
     n_samples_pmt_s1 = 400
     length_pmt_s1    = np.random.randint(5, 20)
 
-    times_s1, pmt_wfs_s1, pmt_indices_s1 = wf_with_indices(n_pmt,
-                                                           n_samples_pmt_s1,
-                                                           length_pmt_s1)
+    times_s1, pmt_wfs_s1, pmt_indices_s1 = wf_with_indices_(n_pmt,
+                                                            n_samples_pmt_s1,
+                                                            length_pmt_s1)
     sipm_wfs_s1 = np.zeros((n_sipm, n_samples_pmt_s1 // 40))
 
     n_samples_pmt_s2 = n_samples_sipm * 40
     first_pmt        = np.random.randint( 0, n_samples_pmt_s2 // 5)
     length_pmt_s2    = np.random.randint(40, n_samples_pmt_s2 // 2)
-    times_s2, pmt_wfs_s2, pmt_indices_s2 = wf_with_indices(n_pmt,
-                                                           n_samples_pmt_s2,
-                                                           length_pmt_s2,
-                                                           first_pmt)
+    times_s2, pmt_wfs_s2, pmt_indices_s2 = wf_with_indices_(n_pmt,
+                                                            n_samples_pmt_s2,
+                                                            length_pmt_s2,
+                                                            first_pmt)
 
     first_sipm  = first_pmt // 40
     length_sipm = int(np.ceil((first_pmt + length_pmt_s2) / 40)) - first_sipm
-    _    , sipm_wfs_s2, sipm_indices = wf_with_indices(n_sipm, n_samples_sipm,
-                                                       length_sipm, first_sipm)
+    _    , sipm_wfs_s2, sipm_indices = wf_with_indices_(n_sipm, n_samples_sipm,
+                                                        length_sipm, first_sipm)
 
     times_s2 += times_s1[-1] + np.diff(times_s1)[-1]
     times     = np.concatenate([   times_s1,    times_s2]        )
