@@ -2,7 +2,6 @@ import numpy  as np
 import tables as tb
 
 from hypothesis    import settings
-from hypothesis    import HealthCheck
 from hypothesis    import given
 
 from .. reco       import tbl_functions as tbl

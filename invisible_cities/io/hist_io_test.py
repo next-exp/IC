@@ -9,7 +9,6 @@ from pytest import raises
 from hypothesis             import assume
 from hypothesis             import given
 from hypothesis             import settings
-from hypothesis             import HealthCheck
 from hypothesis.extra.numpy import arrays
 from hypothesis.strategies  import composite
 from hypothesis.strategies  import integers
@@ -28,7 +27,6 @@ from .. evm.histos_test     import assert_histogram_equality
 
 letters    = string.ascii_letters
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given   (histograms_lists(), text(letters, min_size=1))
 def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, group):
     args, list_of_histograms = histogram_list
@@ -52,7 +50,6 @@ def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, gro
             assert             histogram.labels  == saved_labels
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given   (histograms_lists(), text(letters, min_size=1))
 def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, group):
     args, list_of_histograms = histogram_list
@@ -78,7 +75,6 @@ def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, gr
             assert             histogram.labels  == saved_labels
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given   (histograms_lists(), text(letters, min_size=1), text(letters, min_size=1, max_size=1).filter(lambda x: x not in 'wa'))
 def test_save_histomanager_to_file_raises_ValueError(output_tmpdir, histogram_list, group, write_mode):
     args, list_of_histograms = histogram_list
@@ -90,7 +86,6 @@ def test_save_histomanager_to_file_raises_ValueError(output_tmpdir, histogram_li
         save_histomanager_to_file(histogram_manager, file_out, mode=write_mode, group=group)
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow, HealthCheck.filter_too_much,))
 @given(histograms_lists())
 def test_get_histograms_from_file(output_tmpdir, histogram_list):
     args, list_of_histograms  = histogram_list

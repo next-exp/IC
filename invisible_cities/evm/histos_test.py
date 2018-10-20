@@ -7,7 +7,6 @@ from pytest import raises
 from hypothesis             import assume
 from hypothesis             import given
 from hypothesis             import settings
-from hypothesis             import HealthCheck
 from hypothesis.extra.numpy import arrays
 from hypothesis.strategies  import composite
 from hypothesis.strategies  import integers
@@ -273,7 +272,6 @@ def test_add_histograms_2d(first_histogram, second_histogram):
     assert             sum_histogram.title   ==         test_histogram1.title
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given   (histograms_lists())
 def test_histomanager_initialization_with_histograms(histogram_list):
     _, list_of_histograms = histogram_list
@@ -297,7 +295,7 @@ def test_new_histogram_in_histomanager(test_histogram):
 
     assert_histogram_equality(histogram, histogram_manager[histoname])
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
+
 @given   (histograms_lists())
 def test_fill_histograms_in_histomanager(histogram_list):
     args, list_of_histograms = histogram_list
@@ -332,7 +330,6 @@ def test_fill_histograms_in_histomanager(histogram_list):
         assert np.allclose(histogram.out_range,         test_out_of_range[histoname] + old_out_of_range[histoname])
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given   (histograms_lists())
 def test_getitem_histomanager(histogram_list):
     args, list_of_histograms = histogram_list
@@ -348,7 +345,6 @@ def test_getitem_histomanager(histogram_list):
         assert             histogram_manager.histos[histoname].title   == histogram_manager[histoname].title
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given(histograms_lists())
 def test_setitem_histomanager(histogram_list):
     args, list_of_histograms = histogram_list
