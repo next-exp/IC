@@ -18,6 +18,7 @@ from .. evm.pmaps_test       import sensor_responses
 
 
 @given(pmaps())
+@settings(deadline=None)
 def test_fill_pmap_var_1d(pmaps):
     var_dict      = defaultdict(list)
     (s1s, s2s), _ = pmaps
@@ -56,6 +57,7 @@ def test_fill_pmap_var_1d(pmaps):
 
 
 @given(pmaps())
+@settings(deadline=None)
 def test_fill_pmap_var_2d(pmaps):
     var_dict      = defaultdict(list)
     (s1s, s2s), _ = pmaps
@@ -415,6 +417,7 @@ kdst_variables = ['nS2', 'S1w'  , 'S1h', 'S1e', 'S1t', 'S2w', 'S2h', 'S2e', 'S2q
 
 
 @given(data_frames(columns=columns(kdst_variables, elements=floats(allow_nan=False))))
+@settings(deadline=None)
 def test_fill_kdst_var_1d(kdst):
     var_dict = defaultdict(list)
     monf.fill_kdst_var_1d (kdst, var_dict)
@@ -427,6 +430,7 @@ def test_fill_kdst_var_1d(kdst):
 
 
 @given(data_frames(columns=columns(kdst_variables, elements=floats(allow_nan=False))))
+@settings(deadline=None)
 def test_fill_kdst_var_2d(kdst):
     var_dict = defaultdict(list)
     monf.fill_kdst_var_1d (kdst, var_dict)
