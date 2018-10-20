@@ -53,6 +53,7 @@ def test_get_chi2_and_pvalue_when_data_equals_fit():
     assert pvalue == approx(1., rel=1e-3)
 
 
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(floats(min_value = -2500,
               max_value = +2500),
        floats(min_value = + 100,
