@@ -3,6 +3,7 @@ import numpy as np
 from flaky  import flaky
 from pytest import mark
 from pytest import fixture
+from pytest import approx
 
 from hypothesis            import given
 from hypothesis.strategies import composite
@@ -146,7 +147,7 @@ def test_inverse_cdf_hypothesis_generated(distribution, percentile):
             true_value = d
             break
     icdf = inverse_cdf(domain, cdf, percentile)
-    assert true_value == icdf
+    assert icdf == approx(true_value)
 
 
 @fixture(scope="module")
