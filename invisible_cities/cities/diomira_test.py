@@ -79,7 +79,7 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
     run_number = 0
     nrequired = 2
 
-    conf = configure('diomira invisible_cities/config/liquid_diomira.conf'.split())
+    conf = configure('diomira invisible_cities/config/diomira.conf'.split())
 
     conf.update(dict(run_number  = run_number,
                      files_in    = PATH_IN,
@@ -127,7 +127,7 @@ def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
     file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
     file_out = os.path.join(output_tmpdir, 'electrons_40keV_z250_RWF_test_mismatch.h5')
 
-    conf = configure('diomira invisible_cities/config/liquid_diomira.conf'.split())
+    conf = configure('diomira invisible_cities/config/diomira.conf'.split())
     conf.update(dict(run_number  = -4500, # Must be a run number with dead pmts
                      files_in    = file_in,
                      file_out    = file_out,
@@ -146,7 +146,7 @@ def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdi
     file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
     file_out = os.path.join(output_tmpdir, 'electrons_40keV_z250_RWF_test_trigger.h5')
 
-    conf = configure('diomira invisible_cities/config/liquid_diomira.conf'.split())
+    conf = configure('diomira invisible_cities/config/diomira.conf'.split())
     conf.update(dict(run_number   = -4500, # Must be a run number with dead pmts
                      files_in     = file_in,
                      file_out     = file_out,
@@ -165,7 +165,7 @@ def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
     nevents_per_file = 3
 
     nrequired = 10
-    conf = configure('dummy invisible_cities/config/liquid_diomira.conf'.split())
+    conf = configure('dummy invisible_cities/config/diomira.conf'.split())
     conf.update(dict(run_number   = -4734,
                      files_in     = file_in,
                      file_out     = file_out,
@@ -193,7 +193,7 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
     file_out    = os.path.join(output_tmpdir,                       "exact_result_diomira.h5")
     true_output = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
 
-    conf = configure("diomira invisible_cities/config/liquid_diomira.conf".split())
+    conf = configure("diomira invisible_cities/config/diomira.conf".split())
     conf.update(dict(run_number   = -10000,
                      files_in     = file_in,
                      file_out     = file_out,

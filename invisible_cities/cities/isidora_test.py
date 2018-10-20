@@ -24,7 +24,7 @@ def test_isidora_electrons_40keV(config_tmpdir, ICDATADIR):
 
     nrequired  = 2
 
-    conf = configure('dummy invisible_cities/config/liquid_isidora.conf'.split())
+    conf = configure('dummy invisible_cities/config/isidora.conf'.split())
     conf.update(dict(run_number   = 0,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
@@ -49,7 +49,7 @@ def test_isidora_exact_result(ICDATADIR, output_tmpdir):
     file_out    = os.path.join(output_tmpdir,                      "exact_result_isidora.h5")
     true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.BLR.h5")
 
-    conf = configure("isidora invisible_cities/config/liquid_isidora.conf".split())
+    conf = configure("isidora invisible_cities/config/isidora.conf".split())
     conf.update(dict(run_number  = -10000,
                      files_in    = file_in,
                      file_out    = file_out,

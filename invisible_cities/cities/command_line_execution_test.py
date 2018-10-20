@@ -17,12 +17,12 @@ from pytest import mark
 def test_command_line_run(city, tmpdir_factory):
     ICTDIR = getenv('ICTDIR')
     # Use the example config file included in the repository
-    config_file_name = join(ICTDIR, 'invisible_cities/config/', f'liquid_{city}.conf')
+    config_file_name = join(ICTDIR, 'invisible_cities/config/', f'{city}.conf')
     # Ensure that output does not pollute: send it to a temporary dir
     temp_dir = tmpdir_factory.mktemp('output_files')
     out_file_name = join(temp_dir, f'{city}.out')
     # The actual command that we want to test
-    command = ('liquidcity {city} {config_file_name} -o {out_file_name}'
+    command = ('city {city} {config_file_name} -o {out_file_name}'
                .format(**locals()))
     try:
         check_output(command, shell = True, stderr=STDOUT)

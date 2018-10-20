@@ -18,7 +18,7 @@ def test_phyllis_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
     PATH_OUT  = os.path.join(config_tmpdir, 'pmtledpulsedata_HIST.h5')
     nrequired = 2
 
-    conf = configure('dummy invisible_cities/config/liquid_phyllis.conf'.split())
+    conf = configure('dummy invisible_cities/config/phyllis.conf'.split())
     conf.update(dict(run_number   = 4000,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
@@ -42,7 +42,7 @@ def test_phyllis_exact_result(ICDATADIR, output_tmpdir, proc_opt):
     file_out    = os.path.join(output_tmpdir, f"exact_result_phyllis_{proc_opt}.h5")
     true_output = os.path.join(ICDATADIR    , f"pmtledpulsedata_hist_{proc_opt}.h5")
 
-    conf = configure("phyllis invisible_cities/config/liquid_phyllis.conf".split())
+    conf = configure("phyllis invisible_cities/config/phyllis.conf".split())
     conf.update(dict(run_number  = 4819,
                      files_in    = file_in,
                      file_out    = file_out,

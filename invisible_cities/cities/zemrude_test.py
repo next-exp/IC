@@ -17,7 +17,7 @@ def test_zemrude_sipmdarkcurrent(config_tmpdir, ICDATADIR):
     PATH_OUT  = os.path.join(config_tmpdir, 'sipmdarkcurrentdata_HIST.h5')
     nrequired = 2
 
-    conf = configure('dummy invisible_cities/config/liquid_zemrude.conf'.split())
+    conf = configure('dummy invisible_cities/config/zemrude.conf'.split())
     conf.update(dict(run_number  = 4000,
                      files_in    = PATH_IN,
                      file_out    = PATH_OUT,
@@ -39,7 +39,7 @@ def test_zemrude_exact_result(ICDATADIR, output_tmpdir):
     file_out    = os.path.join(output_tmpdir,            "exact_result_zemrude.h5")
     true_output = os.path.join(ICDATADIR    , "sipmdarkcurrentdata_hist_liquid.h5")
 
-    conf = configure("zemrude invisible_cities/config/liquid_zemrude.conf".split())
+    conf = configure("zemrude invisible_cities/config/zemrude.conf".split())
     conf.update(dict(run_number  = 4821,
                      files_in    = file_in,
                      file_out    = file_out,

@@ -19,7 +19,7 @@ from .  penthesilea            import penthesilea
 def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, config_tmpdir):
     PATH_IN   = KrMC_pmaps_filename
     PATH_OUT  = os.path.join(config_tmpdir,'Kr_HDST.h5')
-    conf      = configure('dummy invisible_cities/config/liquid_penthesilea.conf'.split())
+    conf      = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     nevt_req  = 10
 
     DF_TRUE =  KrMC_hdst.true
@@ -42,7 +42,7 @@ def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
 
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST_4628.h5')
     nrequired = 50
-    conf = configure('dummy invisible_cities/config/liquid_penthesilea.conf'.split())
+    conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     conf.update(dict(run_number = 4628,
                      files_in   = PATH_IN,
                      file_out   = PATH_OUT,
@@ -93,7 +93,7 @@ def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
 def test_penthesilea_produces_mcinfo(KrMC_pmaps_filename, KrMC_hdst, config_tmpdir):
     PATH_IN   = KrMC_pmaps_filename
     PATH_OUT  = os.path.join(config_tmpdir, "Kr_HDST_with_MC.h5")
-    conf      = configure('dummy invisible_cities/config/liquid_penthesilea.conf'.split())
+    conf      = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     nevt_req  = 10
 
     conf.update(dict(files_in        = PATH_IN,
@@ -129,7 +129,7 @@ def test_penthesilea_event_not_found(ICDATADIR, output_tmpdir):
     file_in   = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_irene_3evt.h5")
     file_out  = os.path.join(output_tmpdir, "test_penthesilea_event_not_found.h5")
 
-    conf = configure('dummy invisible_cities/config/liquid_penthesilea.conf'.split())
+    conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     nevt = 3
 
     conf.update(dict(run_number = 4714,
@@ -147,7 +147,7 @@ def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
     second_file = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts_1.h5")
 
     nrequired = 10
-    conf = configure('dummy invisible_cities/config/liquid_penthesilea.conf'.split())
+    conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     conf.update(dict(run_number = -4735,
                  files_in       = file_in,
                  file_out       = file_out,
@@ -178,7 +178,7 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
     file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea.h5")
     true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5")
 
-    conf = configure("penthesilea invisible_cities/config/liquid_penthesilea.conf".split())
+    conf = configure("penthesilea invisible_cities/config/penthesilea.conf".split())
     conf.update(dict(run_number   = -10000,
                      files_in     = file_in,
                      file_out     = file_out,

@@ -17,7 +17,7 @@ def test_zaira_KrMC(config_tmpdir, ICDIR):
     PATH_OUT = os.path.join(config_tmpdir,               'KrCorr.h5')
 
 
-    conf = configure('dummy invisible_cities/config/liquid_zaira.conf'.split())
+    conf = configure('dummy invisible_cities/config/zaira.conf'.split())
     conf.update(dict(files_in   = PATH_IN,
                      file_out   = PATH_OUT,
                      lifetime   = 1e6 * ns,

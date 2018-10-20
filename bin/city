@@ -9,7 +9,7 @@ _, *args  = argv
 city_name = args[0]
 
 try:
-    module_name   = f'invisible_cities.liquid_cities.{city_name}'
+    module_name   = f'invisible_cities.cities.{city_name}'
     city_function = getattr(import_module(module_name), city_name)
 
 except ModuleNotFoundError:

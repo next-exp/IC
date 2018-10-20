@@ -19,7 +19,7 @@ def test_moriana_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
     PATH_OUT  = os.path.join(config_tmpdir, 'sipmledpulsedata_HIST.h5')
     nrequired = 2
 
-    conf = configure('dummy invisible_cities/config/liquid_moriana.conf'.split())
+    conf = configure('dummy invisible_cities/config/moriana.conf'.split())
     conf.update(dict(run_number  = 4000,
                      files_in    = PATH_IN,
                      file_out    = PATH_OUT,
@@ -43,7 +43,7 @@ def test_moriana_exact_result(ICDATADIR, output_tmpdir, proc_opt):
     file_out    = os.path.join(output_tmpdir,  f"exact_result_moriana_{proc_opt}.h5")
     true_output = os.path.join(ICDATADIR    , f"sipmledpulsedata_hist_{proc_opt}.h5")
 
-    conf = configure("moriana invisible_cities/config/liquid_moriana.conf".split())
+    conf = configure("moriana invisible_cities/config/moriana.conf".split())
     conf.update(dict(run_number  = 4832,
                      files_in    = file_in,
                      file_out    = file_out,

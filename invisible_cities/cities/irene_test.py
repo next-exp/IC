@@ -84,7 +84,7 @@ def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
 
     nrequired  = 2
 
-    conf = configure('dummy invisible_cities/config/liquid_irene.conf'.split())
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number    = 0,
                      files_in      = PATH_IN,
                      file_out      = PATH_OUT,
@@ -125,7 +125,7 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
 
     nrequired = 2
 
-    conf = configure('dummy invisible_cities/config/liquid_irene.conf'.split())
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number  = 2983,
                      files_in    = PATH_IN,
                      file_out    = PATH_OUT,
@@ -190,7 +190,7 @@ def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
 
     nrequired = 10
 
-    conf = configure('dummy invisible_cities/config/liquid_irene.conf'.split())
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number   = 0,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
@@ -208,7 +208,7 @@ def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
 def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, s12params):
     "Check that PMT active correctly describes the PMT configuration of the detector"
     nrequired = 1
-    conf = configure('dummy invisible_cities/config/liquid_irene.conf'.split())
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number  =  job_info_missing_pmts.run_number,
                      files_in    =  job_info_missing_pmts. input_filename,
                      file_out    =  job_info_missing_pmts.output_filename,
@@ -253,7 +253,7 @@ def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
     nevents_per_file = 5
 
     nrequired = 10
-    conf = configure('dummy invisible_cities/config/liquid_irene.conf'.split())
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number  = -4735,
                      files_in    = file_in,
                      file_out    = file_out,
@@ -284,7 +284,7 @@ def test_irene_trigger_type(config_tmpdir, ICDATADIR, s12params):
     nrequired  = 1
 
     run_number = 6229
-    conf = configure('dummy invisible_cities/config/liquid_irene.conf'.split())
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number  = run_number,
                      files_in    = PATH_IN,
                      file_out    = PATH_OUT,
@@ -309,7 +309,7 @@ def test_irene_trigger_channels(config_tmpdir, ICDATADIR, s12params):
     nrequired  = 1
     run_number = 6229
 
-    conf = configure('dummy invisible_cities/config/liquid_irene.conf'.split())
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number  = run_number,
                      files_in    = PATH_IN,
                      file_out    = PATH_OUT,
@@ -336,7 +336,7 @@ def test_irene_split_trigger(config_tmpdir, ICDATADIR, s12params):
     nrequired  = 3
     run_number = 6229
 
-    conf = configure('dummy invisible_cities/config/liquid_irene.conf'.split())
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number     = run_number,
                      files_in       = PATH_IN,
                      file_out       = PATH_OUT1,
@@ -390,7 +390,7 @@ def test_irene_exact_result(ICDATADIR, output_tmpdir):
     file_out    = os.path.join(output_tmpdir,                        "exact_result_irene.h5")
     true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
 
-    conf = configure("irene invisible_cities/config/liquid_irene.conf".split())
+    conf = configure("irene invisible_cities/config/irene.conf".split())
     conf.update(dict(run_number   = -10000,
                      files_in     = file_in,
                      file_out     = file_out,
