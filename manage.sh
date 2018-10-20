@@ -72,7 +72,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2018-10-18
+CONDA_ENV_TAG=2018-10-20
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
@@ -102,6 +102,8 @@ dependencies:
 - flaky        = 3.4.0
 - hypothesis   = 3.68.0
 - pytest-xdist = 1.23.2
+- pip:
+  - pytest-instafail==0.4.0
 EOF
 
     conda env create -f ${YML_FILENAME}
@@ -163,15 +165,15 @@ function ensure_environment_matches_checked_out_version {
 function run_tests {
     ensure_environment_matches_checked_out_version
     # Run the test suite
-    pytest -v --no-success-flaky-report
+    pytest --instafail --no-success-flaky-report
 }
 
 function run_tests_par {
     ensure_environment_matches_checked_out_version
     # Run the test suite
     STATUS=0
-    pytest -v -n ${N_PROC:-auto} -m "not serial" --no-success-flaky-report || STATUS=$?
-    pytest -v                    -m      serial  --no-success-flaky-report || STATUS=$?
+    pytest --instafail -n ${N_PROC:-auto} -m "not serial" --no-success-flaky-report || STATUS=$?
+    pytest --instafail                    -m      serial  --no-success-flaky-report || STATUS=$?
     [[ $STATUS = 0 ]]
 }
 
