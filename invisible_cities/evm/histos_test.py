@@ -103,6 +103,7 @@ def histograms_lists(draw, number=0, dimension=0, fixed_bins=None):
 
 
 @given(bins_arrays())
+@settings(deadline=None)
 def test_histogram_initialization(bins):
     label      = [ 'Random distribution' ]
     title      = 'Test_histogram'
@@ -117,6 +118,7 @@ def test_histogram_initialization(bins):
 
 
 @given(bins_arrays())
+@settings(deadline=None)
 def test_histogram_initialization_with_values(bins):
     label     = [ 'Random distribution' ]
     title     = 'Test_histogram'
@@ -143,6 +145,7 @@ def test_histogram_initialization_with_values(bins):
 
 
 @given(empty_histograms())
+@settings(deadline=None)
 def test_histogram_fill(empty_histogram):
     _, test_histogram  = empty_histogram
     histobins          =  test_histogram.bins
@@ -164,6 +167,7 @@ def test_histogram_fill(empty_histogram):
 
 
 @given(empty_histograms())
+@settings(deadline=None)
 def test_histogram_fill_with_weights(empty_histogram):
     _, test_histogram = empty_histogram
     histobins         =  test_histogram.bins
@@ -215,6 +219,7 @@ def test_count_out_of_range():
 
 
 @given(filled_histograms())
+@settings(deadline=None)
 def test_update_errors(filled_histogram):
     _, test_histogram     = filled_histogram
     test_histogram.errors = None
@@ -223,6 +228,7 @@ def test_update_errors(filled_histogram):
 
 
 @given(filled_histograms())
+@settings(deadline=None)
 def test_update_errors_with_values(filled_histogram):
     _, test_histogram = filled_histogram
     new_errors        = np.random.uniform(0., 1000, size=test_histogram.data.shape)
@@ -232,6 +238,7 @@ def test_update_errors_with_values(filled_histogram):
 
 @given(filled_histograms(fixed_bins=[[50, 900, 20]]),
        filled_histograms(fixed_bins=[[50, 900, 20]]))
+@settings(deadline=None)
 def test_add_histograms(first_histogram, second_histogram):
     _, test_histogram1 =  first_histogram
     _, test_histogram2 = second_histogram
@@ -248,6 +255,7 @@ def test_add_histograms(first_histogram, second_histogram):
 
 @given(filled_histograms(fixed_bins=[[50, 900, 20]]),
        filled_histograms(fixed_bins=[[50, 900,  5]]))
+@settings(deadline=None)
 def test_add_histograms_with_incompatible_binning_raises_ValueError(first_histogram, second_histogram):
     _, test_histogram1 =  first_histogram
     _, test_histogram2 = second_histogram
@@ -258,6 +266,7 @@ def test_add_histograms_with_incompatible_binning_raises_ValueError(first_histog
 
 @given(filled_histograms(fixed_bins=[[50, 900, 20], [20, 180, 15]]),
        filled_histograms(fixed_bins=[[50, 900, 20], [20, 180, 15]]))
+@settings(deadline=None)
 def test_add_histograms_2d(first_histogram, second_histogram):
     _, test_histogram1 =  first_histogram
     _, test_histogram2 = second_histogram
@@ -273,6 +282,7 @@ def test_add_histograms_2d(first_histogram, second_histogram):
 
 
 @given   (histograms_lists())
+@settings(deadline=None)
 def test_histomanager_initialization_with_histograms(histogram_list):
     _, list_of_histograms = histogram_list
     histogram_manager     = HistoManager(list_of_histograms)
@@ -287,6 +297,7 @@ def test_histomanager_initialization_without_histograms():
 
 
 @given(one_of(empty_histograms(), filled_histograms()))
+@settings(deadline=None)
 def test_new_histogram_in_histomanager(test_histogram):
     _, histogram      = test_histogram
     histoname         = histogram.title
@@ -297,6 +308,7 @@ def test_new_histogram_in_histomanager(test_histogram):
 
 
 @given   (histograms_lists())
+@settings(deadline=None)
 def test_fill_histograms_in_histomanager(histogram_list):
     args, list_of_histograms = histogram_list
     titles, histobins, *_    = zip(*args)
@@ -331,6 +343,7 @@ def test_fill_histograms_in_histomanager(histogram_list):
 
 
 @given   (histograms_lists())
+@settings(deadline=None)
 def test_getitem_histomanager(histogram_list):
     args, list_of_histograms = histogram_list
     titles, histobins, *_    = zip(*args)
@@ -346,6 +359,7 @@ def test_getitem_histomanager(histogram_list):
 
 
 @given(histograms_lists())
+@settings(deadline=None)
 def test_setitem_histomanager(histogram_list):
     args, list_of_histograms = histogram_list
     titles, histobins, *_    = zip(*args)

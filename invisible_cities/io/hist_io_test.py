@@ -28,6 +28,7 @@ from .. evm.histos_test     import assert_histogram_equality
 letters    = string.ascii_letters
 
 @given   (histograms_lists(), text(letters, min_size=1))
+@settings(deadline=None, max_examples=400)
 def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, group):
     args, list_of_histograms = histogram_list
     histogram_manager        = HistoManager(list_of_histograms)
@@ -51,6 +52,7 @@ def test_save_histomanager_to_file_write_mode(output_tmpdir, histogram_list, gro
 
 
 @given   (histograms_lists(), text(letters, min_size=1))
+@settings(deadline=None, max_examples=400)
 def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, group):
     args, list_of_histograms = histogram_list
     histogram_manager        = HistoManager(list_of_histograms[:1])
@@ -76,6 +78,7 @@ def test_save_histomanager_to_file_append_mode(output_tmpdir, histogram_list, gr
 
 
 @given   (histograms_lists(), text(letters, min_size=1), text(letters, min_size=1, max_size=1).filter(lambda x: x not in 'wa'))
+@settings(deadline=None)
 def test_save_histomanager_to_file_raises_ValueError(output_tmpdir, histogram_list, group, write_mode):
     args, list_of_histograms = histogram_list
     histogram_manager        = HistoManager(list_of_histograms)
@@ -87,6 +90,7 @@ def test_save_histomanager_to_file_raises_ValueError(output_tmpdir, histogram_li
 
 
 @given(histograms_lists())
+@settings(deadline=None, max_examples=400)
 def test_get_histograms_from_file(output_tmpdir, histogram_list):
     args, list_of_histograms  = histogram_list
     histogram_manager1        = HistoManager(list_of_histograms)

@@ -18,6 +18,7 @@ from .. evm.histos_test     import histograms_lists
 from .. evm.histos_test     import bins_arrays
 
 @given(histograms_lists())
+@settings(deadline=None)
 def test_join_histo_managers(histogram_list):
     args, list_of_histograms = histogram_list
     histogram_manager        = HistoManager(list_of_histograms)
@@ -34,6 +35,7 @@ def test_join_histo_managers(histogram_list):
 
 
 @given   (histograms_lists(), histograms_lists())
+@settings(deadline=None, max_examples=700)
 def test_join_histo_managers_with_different_histograms(histogram_list1, histogram_list2):
     _, list_of_histograms1   = histogram_list1
     _, list_of_histograms2   = histogram_list2
@@ -74,6 +76,7 @@ def test_join_histo_managers_with_different_histograms(histogram_list1, histogra
 
 
 @given(lists(bins_arrays(), min_size=1, max_size=5))
+@settings(deadline=None)
 def test_create_histomanager_from_dicts(bins):
     histobins_dict   = {}
     histolabels_dict = {}
@@ -93,6 +96,7 @@ def test_create_histomanager_from_dicts(bins):
 
 
 @given   (histograms_lists(), histograms_lists())
+@settings(deadline=None, max_examples=250)
 def test_join_histograms_from_file(output_tmpdir, histogram_list1, histogram_list2):
     _, list_of_histograms1   = histogram_list1
     _, list_of_histograms2   = histogram_list2
@@ -113,6 +117,7 @@ def test_join_histograms_from_file(output_tmpdir, histogram_list1, histogram_lis
 
 
 @given   (histograms_lists())
+@settings(deadline=None, max_examples=250)
 def test_join_histograms_from_file_and_write(output_tmpdir, histogram_list):
     _, list_of_histograms   = histogram_list
     histogram_manager       = HistoManager(list_of_histograms)
