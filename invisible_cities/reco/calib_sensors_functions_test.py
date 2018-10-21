@@ -281,7 +281,7 @@ def test_subtract_mean_difference_is_mean(square_pmt_and_sipm_waveforms):
         assert np.allclose(diff, mean)
 
 
-@flaky(max_runs=3)
+@flaky(max_runs=10, min_passes=10)
 def test_mean_for_pmts_fee_is_unbiased(square_pmt_and_sipm_waveforms):
     _, _, pmts_fee, _, _, _, _ = square_pmt_and_sipm_waveforms
     pmts_bls = csf.subtract_mean(pmts_fee) # ped subtracted near zero
