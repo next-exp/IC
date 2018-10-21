@@ -289,6 +289,18 @@ def test_fit_with_errors(reduced):
     assert_allclose(f.values, pars)
 
 
+def test_fixed_parameters():
+    pars = [3.0,  2.0, 0.50]
+    x = np.arange(10.)
+    y = fitf.gauss(x, *pars)
+    e = 0.1 * y
+
+    fixed_mu = fitf.fixed_parameters(fitf.gauss, mu = pars[1])
+    seeds = np.array(pars[::2])
+    f = fitf.fit(fixed_mu, x, y, seeds * 1.2, sigma=e)
+    assert_allclose(f.values, seeds)
+
+
 @mark.parametrize(["func"],
                   ((fitf.profileX,),
                    (fitf.profileY,)))
