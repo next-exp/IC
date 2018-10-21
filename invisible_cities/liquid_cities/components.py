@@ -67,7 +67,7 @@ def city(city_function):
         conf.files_in  = sorted(glob(expandvars(conf.files_in)))
         conf.file_out  =             expandvars(conf.file_out)
 
-        conf.event_range  = _event_range(conf)
+        conf.event_range  = event_range(conf)
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
 
         result = city_function(**vars(conf))
@@ -89,7 +89,8 @@ def index_tables(file_out):
                 table.colinstances[colname].create_index()
 
 
-def _event_range(conf):
+
+def event_range(conf):
     # event_range not specified
     if not hasattr(conf, 'event_range'): return None, 1
     er = conf.event_range
