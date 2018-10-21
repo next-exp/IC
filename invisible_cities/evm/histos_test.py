@@ -3,6 +3,7 @@ import string
 import numpy  as np
 
 from pytest import raises
+from pytest import mark
 
 from hypothesis             import assume
 from hypothesis             import given
@@ -101,7 +102,7 @@ def histograms_lists(draw, number=0, dimension=0, fixed_bins=None):
 
     return args, histograms
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(bins_arrays())
 @settings(deadline=None)
 def test_histogram_initialization(bins):
@@ -116,7 +117,7 @@ def test_histogram_initialization(bins):
     assert             test_histo.labels  == label
     assert             test_histo.title   == title
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(bins_arrays())
 @settings(deadline=None)
 def test_histogram_initialization_with_values(bins):
@@ -143,7 +144,7 @@ def test_histogram_initialization_with_values(bins):
     assert             test_histo.labels  == label
     assert             test_histo.title   == title
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(empty_histograms())
 @settings(deadline=None)
 def test_histogram_fill(empty_histogram):
@@ -165,7 +166,7 @@ def test_histogram_fill(empty_histogram):
     assert np.allclose(test_histogram.errors   , test_errors      )
     assert np.allclose(test_histogram.out_range, test_out_of_range)
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(empty_histograms())
 @settings(deadline=None)
 def test_histogram_fill_with_weights(empty_histogram):
@@ -188,7 +189,7 @@ def test_histogram_fill_with_weights(empty_histogram):
     assert np.allclose(test_histogram.errors   , test_errors      )
     assert np.allclose(test_histogram.out_range, test_out_of_range)
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 def test_bin_data():
     bins           = [ np.linspace(0., 5., 6) ]
     label          = [ 'Random distribution'  ]
@@ -203,7 +204,7 @@ def test_bin_data():
     assert np.allclose(binned_data, test_data     )
     assert np.allclose(out_range  , test_out_range)
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 def test_count_out_of_range():
     bins           = [ np.linspace(0., 5., 6) ]
     label          = [ 'Random distribution'  ]
@@ -217,7 +218,7 @@ def test_count_out_of_range():
 
     assert np.allclose(out_range, test_out_range)
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(filled_histograms())
 @settings(deadline=None)
 def test_update_errors(filled_histogram):
@@ -226,7 +227,7 @@ def test_update_errors(filled_histogram):
     test_histogram.update_errors()
     assert np.allclose(test_histogram.errors, np.sqrt(test_histogram.data))
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(filled_histograms())
 @settings(deadline=None)
 def test_update_errors_with_values(filled_histogram):
@@ -235,7 +236,7 @@ def test_update_errors_with_values(filled_histogram):
     test_histogram.update_errors(new_errors)
     assert np.allclose(test_histogram.errors, new_errors)
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(filled_histograms(fixed_bins=[[50, 900, 20]]),
        filled_histograms(fixed_bins=[[50, 900, 20]]))
 @settings(deadline=None)
@@ -252,7 +253,7 @@ def test_add_histograms(first_histogram, second_histogram):
     assert             sum_histogram.labels  ==         test_histogram1.labels
     assert             sum_histogram.title   ==         test_histogram1.title
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(filled_histograms(fixed_bins=[[50, 900, 20]]),
        filled_histograms(fixed_bins=[[50, 900,  5]]))
 @settings(deadline=None)
@@ -263,7 +264,7 @@ def test_add_histograms_with_incompatible_binning_raises_ValueError(first_histog
     with raises(ValueError):
         sum_histogram = test_histogram1 + test_histogram2
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(filled_histograms(fixed_bins=[[50, 900, 20], [20, 180, 15]]),
        filled_histograms(fixed_bins=[[50, 900, 20], [20, 180, 15]]))
 @settings(deadline=None)
@@ -280,7 +281,7 @@ def test_add_histograms_2d(first_histogram, second_histogram):
     assert             sum_histogram.labels  ==         test_histogram1.labels
     assert             sum_histogram.title   ==         test_histogram1.title
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given   (histograms_lists())
 @settings(deadline=None)
 def test_histomanager_initialization_with_histograms(histogram_list):
@@ -290,12 +291,12 @@ def test_histomanager_initialization_with_histograms(histogram_list):
     for histogram in list_of_histograms:
         assert_histogram_equality(histogram, histogram_manager[histogram.title])
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 def test_histomanager_initialization_without_histograms():
     histogram_manager = HistoManager()
     assert len(histogram_manager.histos) == 0
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(one_of(empty_histograms(), filled_histograms()))
 @settings(deadline=None)
 def test_new_histogram_in_histomanager(test_histogram):
@@ -306,7 +307,7 @@ def test_new_histogram_in_histomanager(test_histogram):
 
     assert_histogram_equality(histogram, histogram_manager[histoname])
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given   (histograms_lists())
 @settings(deadline=None)
 def test_fill_histograms_in_histomanager(histogram_list):
@@ -341,7 +342,7 @@ def test_fill_histograms_in_histomanager(histogram_list):
         assert np.allclose(histogram.errors   , np.sqrt(test_data                    + old_data)                  )
         assert np.allclose(histogram.out_range,         test_out_of_range[histoname] + old_out_of_range[histoname])
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given   (histograms_lists())
 @settings(deadline=None)
 def test_getitem_histomanager(histogram_list):
@@ -357,7 +358,7 @@ def test_getitem_histomanager(histogram_list):
         assert             histogram_manager.histos[histoname].labels  == histogram_manager[histoname].labels
         assert             histogram_manager.histos[histoname].title   == histogram_manager[histoname].title
 
-
+@mark.skip(reason="Delaying elimination of solid cities")
 @given(histograms_lists())
 @settings(deadline=None)
 def test_setitem_histomanager(histogram_list):
