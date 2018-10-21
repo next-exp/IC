@@ -96,7 +96,7 @@ def oscillating_waveform_with_baseline(oscillating_waveform_wo_baseline):
 
 @fixture
 def square_pmt_and_sipm_waveforms():
-    pedestal = 5000
+    pedestal = 25000
     nsensors =    5
     fee      = FE.FEE(noise_FEEPMB_rms = 1 * FE.NOISE_I  ,
                       noise_DAQ_rms    = 1 * FE.NOISE_DAQ)
