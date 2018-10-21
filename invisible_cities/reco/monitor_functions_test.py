@@ -5,7 +5,6 @@ import numpy as np
 
 from hypothesis              import given
 from hypothesis              import settings
-from hypothesis              import HealthCheck
 from hypothesis.extra.pandas import columns, data_frames
 from hypothesis.strategies   import floats
 
@@ -19,6 +18,7 @@ from .. evm.pmaps_test       import sensor_responses
 
 
 @given(pmaps())
+@settings(deadline=None)
 def test_fill_pmap_var_1d(pmaps):
     var_dict      = defaultdict(list)
     (s1s, s2s), _ = pmaps
@@ -57,6 +57,7 @@ def test_fill_pmap_var_1d(pmaps):
 
 
 @given(pmaps())
+@settings(deadline=None)
 def test_fill_pmap_var_2d(pmaps):
     var_dict      = defaultdict(list)
     (s1s, s2s), _ = pmaps
@@ -415,8 +416,8 @@ kdst_variables = ['nS2', 'S1w'  , 'S1h', 'S1e', 'S1t', 'S2w', 'S2h', 'S2e', 'S2q
                   'Xrms', 'Yrms']
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given(data_frames(columns=columns(kdst_variables, elements=floats(allow_nan=False))))
+@settings(deadline=None)
 def test_fill_kdst_var_1d(kdst):
     var_dict = defaultdict(list)
     monf.fill_kdst_var_1d (kdst, var_dict)
@@ -428,8 +429,8 @@ def test_fill_kdst_var_1d(kdst):
         assert np.allclose(value, var_dict[var])
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given(data_frames(columns=columns(kdst_variables, elements=floats(allow_nan=False))))
+@settings(deadline=None)
 def test_fill_kdst_var_2d(kdst):
     var_dict = defaultdict(list)
     monf.fill_kdst_var_1d (kdst, var_dict)

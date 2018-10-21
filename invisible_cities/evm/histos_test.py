@@ -7,7 +7,6 @@ from pytest import raises
 from hypothesis             import assume
 from hypothesis             import given
 from hypothesis             import settings
-from hypothesis             import HealthCheck
 from hypothesis.extra.numpy import arrays
 from hypothesis.strategies  import composite
 from hypothesis.strategies  import integers
@@ -104,6 +103,7 @@ def histograms_lists(draw, number=0, dimension=0, fixed_bins=None):
 
 
 @given(bins_arrays())
+@settings(deadline=None)
 def test_histogram_initialization(bins):
     label      = [ 'Random distribution' ]
     title      = 'Test_histogram'
@@ -118,6 +118,7 @@ def test_histogram_initialization(bins):
 
 
 @given(bins_arrays())
+@settings(deadline=None)
 def test_histogram_initialization_with_values(bins):
     label     = [ 'Random distribution' ]
     title     = 'Test_histogram'
@@ -144,10 +145,11 @@ def test_histogram_initialization_with_values(bins):
 
 
 @given(empty_histograms())
+@settings(deadline=None)
 def test_histogram_fill(empty_histogram):
     _, test_histogram  = empty_histogram
     histobins          =  test_histogram.bins
-    n_points           =   np.random.random_integers(5, 200, 1)
+    n_points           =   np.random.randint(5, 201)
     test_data          = [ np.random.uniform( bins[0]  * (1 + np.random.uniform()),
                                               bins[-1] * (1 + np.random.uniform()),
                                               n_points) for bins in histobins ]
@@ -165,10 +167,11 @@ def test_histogram_fill(empty_histogram):
 
 
 @given(empty_histograms())
+@settings(deadline=None)
 def test_histogram_fill_with_weights(empty_histogram):
     _, test_histogram = empty_histogram
     histobins         =  test_histogram.bins
-    n_points          =   np.random.random_integers(50, 200, 1)
+    n_points          =   np.random.randint(50, 201)
     test_data         = [ np.random.uniform( bins[0]  * (1 + np.random.uniform()),
                                              bins[-1] * (1 + np.random.uniform()),
                                              n_points) for bins in histobins ]
@@ -216,6 +219,7 @@ def test_count_out_of_range():
 
 
 @given(filled_histograms())
+@settings(deadline=None)
 def test_update_errors(filled_histogram):
     _, test_histogram     = filled_histogram
     test_histogram.errors = None
@@ -224,6 +228,7 @@ def test_update_errors(filled_histogram):
 
 
 @given(filled_histograms())
+@settings(deadline=None)
 def test_update_errors_with_values(filled_histogram):
     _, test_histogram = filled_histogram
     new_errors        = np.random.uniform(0., 1000, size=test_histogram.data.shape)
@@ -231,8 +236,9 @@ def test_update_errors_with_values(filled_histogram):
     assert np.allclose(test_histogram.errors, new_errors)
 
 
-@given(filled_histograms(fixed_bins=[[50, 900, 20.]]),
-       filled_histograms(fixed_bins=[[50, 900, 20.]]))
+@given(filled_histograms(fixed_bins=[[50, 900, 20]]),
+       filled_histograms(fixed_bins=[[50, 900, 20]]))
+@settings(deadline=None)
 def test_add_histograms(first_histogram, second_histogram):
     _, test_histogram1 =  first_histogram
     _, test_histogram2 = second_histogram
@@ -247,8 +253,9 @@ def test_add_histograms(first_histogram, second_histogram):
     assert             sum_histogram.title   ==         test_histogram1.title
 
 
-@given(filled_histograms(fixed_bins=[[50, 900, 20.]]),
-       filled_histograms(fixed_bins=[[50, 900, 5.]]))
+@given(filled_histograms(fixed_bins=[[50, 900, 20]]),
+       filled_histograms(fixed_bins=[[50, 900,  5]]))
+@settings(deadline=None)
 def test_add_histograms_with_incompatible_binning_raises_ValueError(first_histogram, second_histogram):
     _, test_histogram1 =  first_histogram
     _, test_histogram2 = second_histogram
@@ -257,8 +264,9 @@ def test_add_histograms_with_incompatible_binning_raises_ValueError(first_histog
         sum_histogram = test_histogram1 + test_histogram2
 
 
-@given(filled_histograms(fixed_bins=[[50, 900, 20.], [20, 180, 15]]),
-       filled_histograms(fixed_bins=[[50, 900, 20.], [20, 180, 15]]))
+@given(filled_histograms(fixed_bins=[[50, 900, 20], [20, 180, 15]]),
+       filled_histograms(fixed_bins=[[50, 900, 20], [20, 180, 15]]))
+@settings(deadline=None)
 def test_add_histograms_2d(first_histogram, second_histogram):
     _, test_histogram1 =  first_histogram
     _, test_histogram2 = second_histogram
@@ -273,8 +281,8 @@ def test_add_histograms_2d(first_histogram, second_histogram):
     assert             sum_histogram.title   ==         test_histogram1.title
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given   (histograms_lists())
+@settings(deadline=None)
 def test_histomanager_initialization_with_histograms(histogram_list):
     _, list_of_histograms = histogram_list
     histogram_manager     = HistoManager(list_of_histograms)
@@ -289,6 +297,7 @@ def test_histomanager_initialization_without_histograms():
 
 
 @given(one_of(empty_histograms(), filled_histograms()))
+@settings(deadline=None)
 def test_new_histogram_in_histomanager(test_histogram):
     _, histogram      = test_histogram
     histoname         = histogram.title
@@ -298,8 +307,8 @@ def test_new_histogram_in_histomanager(test_histogram):
     assert_histogram_equality(histogram, histogram_manager[histoname])
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given   (histograms_lists())
+@settings(deadline=None)
 def test_fill_histograms_in_histomanager(histogram_list):
     args, list_of_histograms = histogram_list
     titles, histobins, *_    = zip(*args)
@@ -312,7 +321,7 @@ def test_fill_histograms_in_histomanager(histogram_list):
     for i, title in enumerate(titles):
         old_data_values  [title] =   np.copy(histogram_manager[title].data     )
         old_out_of_range [title] =   np.copy(histogram_manager[title].out_range)
-        n_points                 =   np.random.random_integers(5, 200, 1)
+        n_points                 =   np.random.randint(5, 201)
         test_data                = [ np.random.uniform( bins[0]  * (1 + np.random.uniform()),
                                                         bins[-1] * (1 + np.random.uniform()),
                                                         n_points)  for bins in histobins[i] ]
@@ -333,8 +342,8 @@ def test_fill_histograms_in_histomanager(histogram_list):
         assert np.allclose(histogram.out_range,         test_out_of_range[histoname] + old_out_of_range[histoname])
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given   (histograms_lists())
+@settings(deadline=None)
 def test_getitem_histomanager(histogram_list):
     args, list_of_histograms = histogram_list
     titles, histobins, *_    = zip(*args)
@@ -349,8 +358,8 @@ def test_getitem_histomanager(histogram_list):
         assert             histogram_manager.histos[histoname].title   == histogram_manager[histoname].title
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given(histograms_lists())
+@settings(deadline=None)
 def test_setitem_histomanager(histogram_list):
     args, list_of_histograms = histogram_list
     titles, histobins, *_    = zip(*args)

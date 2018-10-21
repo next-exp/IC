@@ -314,6 +314,7 @@ def test_correction_attributes_2d(toy_data_2d):
 
 
 @given(uniform_energy_2d())
+@settings(deadline=None)
 def test_correction_attributes_2d_unnormalized(toy_data_2d):
     X, Y, _, _, F, Fu, _, _ = toy_data_2d
     c = Correction((X, Y), F, Fu,
@@ -416,6 +417,7 @@ def test_lifetimeXYcorrection(toy_f_data):
 
 
 @given(uniform_energy_fun_data_3d())
+@settings(deadline=None)
 def test_lifetimeXYcorrection_kwargs(toy_f_data):
     Xgrid, Ygrid, LTs, u_LTs, LTs, u_LTs, LT_corr, u_LT_corr = toy_f_data
     kwargs = {"norm_strategy" :  "const",

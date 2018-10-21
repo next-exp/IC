@@ -98,8 +98,10 @@ def make_track_graphs(voxels           : Voxel,
         if neighbours(va, vb):
             voxel_graph.add_edge(va, vb, distance = np.linalg.norm(va.pos - vb.pos))
 
-    return tuple(nx.connected_component_subgraphs(voxel_graph))
+    return tuple(connected_component_subgraphs(voxel_graph))
 
+def connected_component_subgraphs(G):
+    return (G.subgraph(c).copy() for c in nx.connected_components(G))
 
 def voxels_from_track_graph(track: Graph) -> List[Voxel]:
     """Create and return a list of voxels from a track graph."""

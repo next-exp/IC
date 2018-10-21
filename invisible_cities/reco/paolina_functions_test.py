@@ -15,6 +15,7 @@ from pytest import raises
 parametrize = mark.parametrize
 
 from hypothesis            import given
+from hypothesis            import settings
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
@@ -125,6 +126,7 @@ def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
     assert (vhi >= hhi).all()
 
 
+@settings(deadline=None)
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_respects_voxel_dimensions(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=True)
