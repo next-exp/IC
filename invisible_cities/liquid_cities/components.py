@@ -23,6 +23,7 @@ from .. core.exceptions        import XYRecoFail
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
 from .. core.configure         import EventRange
+from .. core.configure         import event_range_help
 from .. reco                   import         calib_functions as  cf
 from .. reco                   import calib_sensors_functions as csf
 from .. reco                   import          peak_functions as pkf
@@ -97,17 +98,17 @@ def _check_invalid_event_range_spec(er):
 
 def event_range(conf):
     # event_range not specified
-    if not hasattr(conf, 'event_range'): return None, 1
+    if not hasattr(conf, 'event_range')           : return None, 1
     er = conf.event_range
 
-    # -e <stop>
-    if isinstance(er, int)             : return (er,)
-    # -e all
-    if er is EventRange.all            : return (None,)
-    # -e <start> last
-    if er[1] is EventRange.last        : return er[0], None
-    # -e <start> <stop>
-    return er
+    if not isinstance(er, Sequence): er = (er,)
+    if _check_invalid_event_range_spec(er):
+        message = "Invalid spec for event range. Only the following are accepted:\n" + event_range_help
+        raise ValueError(message)
+
+    if   len(er) == 1 and er[0] is EventRange.all : return (None,)
+    elif len(er) == 2 and er[1] is EventRange.last: return (er[0], None)
+    else                                          : return er
 
 
 def print_every(N):
