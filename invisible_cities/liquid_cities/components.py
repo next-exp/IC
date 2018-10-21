@@ -89,6 +89,11 @@ def index_tables(file_out):
                 table.colinstances[colname].create_index()
 
 
+def _check_invalid_event_range_spec(er):
+    return (len(er) not in (1, 2)                   or
+            (len(er) == 2 and EventRange.all in er) or
+            er[0] is EventRange.last                )
+
 
 def event_range(conf):
     # event_range not specified
