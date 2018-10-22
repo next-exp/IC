@@ -109,6 +109,13 @@ def write_config_file(file_name, contents):
         out.write(contents)
 
 
+@pytest.fixture(scope="session")
+def default_conf(config_tmpdir):
+    conf_file_name = config_tmpdir.join('test.conf')
+    write_config_file(conf_file_name, config_file_contents)
+    return conf_file_name
+
+
 # This test is run repeatedly with different specs. Each spec is a
 # sequence of command-line variable specifications. The spec should
 # contain one entry for each variable that is being set on the command
@@ -138,17 +145,14 @@ def write_config_file(file_name, contents):
                     (('files_in', '-i some_input_file',  'some_input_file'),
                      ('file_out', '-o some_output_file', 'some_output_file')),
                   ))
-def test_configure(config_tmpdir, spec):
-    conf_file_name = config_tmpdir.join('test.conf')
-    write_config_file(conf_file_name, config_file_contents)
-
+def test_configure(default_conf, spec):
     # Extract command line aruments and the corresponding desired
     # values from the test's parameter.
     extra_args   = [    arg       for (_, arg, _    ) in spec ]
     cmdline_spec = { opt : value  for (opt, _, value) in spec }
 
     # Compose the command line
-    args_base = 'program_name {conf_file_name} '.format(**locals())
+    args_base = 'program_name {default_conf} '.format(**locals())
     args_options = ' '.join(extra_args)
     args = (args_base + args_options).split()
 
