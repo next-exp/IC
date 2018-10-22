@@ -8,7 +8,8 @@ from . configure import all
 from . configure import last
 from . configure import configure
 from . configure import Configuration
-from . configure import make_config_file_reader
+from . configure import read_config_file
+from .           import system_of_units  as units
 
 from . exceptions import NoInputFiles
 from . exceptions import NoOutputFile
@@ -194,6 +195,21 @@ def test_configure_raises_SystemExit_with_multiple_mutually_exclusive_options():
     argv = f"dummy {default_conf} --no-files --full-files".split()
     with raises(SystemExit):
         conf = configure(argv)
+
+
+def test_read_config_file_special_values(config_tmpdir):
+    filename  = path.join(config_tmpdir, "test_read_config_file_special_values.conf")
+    all_units = list(vars(units).keys())
+    write_config_file(filename, f"""
+var_all    = all
+var_last   = last
+vars_units = {all_units}
+""")
+    argv = f"dummy {default_conf} -i ifile -o ofile -r runno".split()
+    conf = read_config_file(filename)
+    assert conf["var_all"   ] is all
+    assert conf["var_last"  ] is last
+    assert conf["vars_units"] == all_units
 
 
 def test_Configuration_missing_key_raises_KE():
