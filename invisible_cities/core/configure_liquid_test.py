@@ -191,6 +191,12 @@ def test_configure_does_not_take_multiple_arguments(default_conf, flag):
         conf = configure(argv)
 
 
+def test_configure_raises_SystemExit_with_multiple_mutually_exclusive_options():
+    argv = f"dummy {default_conf} --no-files --full-files".split()
+    with raises(SystemExit):
+        conf = configure(argv)
+
+
 def test_Configuration_missing_key_raises_KE():
     c = Configuration()
     with raises(KeyError):
