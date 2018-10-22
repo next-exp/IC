@@ -104,6 +104,11 @@ def join_dicts(*args):
     return accumulate
 
 
+def write_config_file(file_name, contents):
+    with open(file_name, 'w') as out:
+        out.write(contents)
+
+
 # This test is run repeatedly with different specs. Each spec is a
 # sequence of command-line variable specifications. The spec should
 # contain one entry for each variable that is being set on the command
@@ -134,10 +139,8 @@ def join_dicts(*args):
                      ('file_out', '-o some_output_file', 'some_output_file')),
                   ))
 def test_configure(config_tmpdir, spec):
-
     conf_file_name = config_tmpdir.join('test.conf')
-    with open(conf_file_name, 'w') as conf_file:
-        conf_file.write(config_file_contents)
+    write_config_file(conf_file_name, config_file_contents)
 
     # Extract command line aruments and the corresponding desired
     # values from the test's parameter.
@@ -171,11 +174,6 @@ def test_configure(config_tmpdir, spec):
     # Check that all options have the expected values
     for option in this_configuration:
         assert getattr(CFP, option) == this_configuration[option], 'option = ' + option
-
-
-def write_config_file(file_name, contents):
-    with open(file_name, 'w') as out:
-        out.write(contents)
 
 
 @pytest.fixture(scope = 'session')
