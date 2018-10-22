@@ -1,4 +1,3 @@
-from os import getenv
 from os import path
 
 from pytest import fixture
