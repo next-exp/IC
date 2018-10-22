@@ -1,9 +1,9 @@
 from os import getenv
 from os import path
 
-import pytest
-from   pytest import mark
-from   pytest import raises
+from pytest import fixture
+from pytest import mark
+from pytest import raises
 
 from . configure import all
 from . configure import last
@@ -109,7 +109,7 @@ def write_config_file(file_name, contents):
         out.write(contents)
 
 
-@pytest.fixture(scope="session")
+@fixture(scope="session")
 def default_conf(config_tmpdir):
     conf_file_name = config_tmpdir.join('test.conf')
     write_config_file(conf_file_name, config_file_contents)
@@ -220,7 +220,7 @@ def test_Configuration_as_namespace_is_read_only():
         ns.new_attribute = 'any value'
 
 
-@pytest.fixture(scope = 'session')
+@fixture(scope = 'session')
 def simple_conf_file_name(tmpdir_factory):
     dir_ = tmpdir_factory.mktemp('test_config_files')
     file_name = path.join(dir_, 'simple.conf')
