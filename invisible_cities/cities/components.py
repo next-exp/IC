@@ -5,7 +5,6 @@ from argparse    import Namespace
 from glob        import glob
 from os.path     import expandvars
 from itertools   import count
-from itertools   import chain
 from itertools   import repeat
 from enum        import Enum
 
@@ -175,11 +174,12 @@ def get_mc_info_safe(h5in, run_number):
         except tb.exceptions.NoSuchNodeError: pass
     return
 
+
 def get_trigger_info(h5in):
     group            = h5in.root.Trigger if "Trigger" in h5in.root else ()
-    trigger_type     = chain.from_iterable(group.trigger.read()) if "trigger" in group else repeat(None)
-    trigger_channels =                     group.events          if "events"  in group else repeat(None)
-    return zip(trigger_type, trigger_channels)
+    trigger_type     = group.trigger if "trigger" in group else repeat(None)
+    trigger_channels = group.events  if "events"  in group else repeat(None)
+    return trigger_type, trigger_channels
 
 
 def wf_from_files(paths, wf_type):
@@ -190,12 +190,14 @@ def wf_from_files(paths, wf_type):
             pmt_wfs     = get_pmt_wfs     (h5in, wf_type)
             sipm_wfs    = get_sipm_wfs    (h5in, wf_type)
             mc_info     = get_mc_info_safe(h5in, run_number)
-            trg_info    = get_trigger_info(h5in)
+            (trg_type ,
+             trg_chann) = get_trigger_info(h5in)
+            for pmt, sipm, (event_number, timestamp), trtype, trchann in zip(pmt_wfs, sipm_wfs, event_infos[:], trg_type, trg_chann):
+                if trtype  is not None: trtype  = trtype .fetch_all_fields()[0]
 
-            for pmt, sipm, (event_number, timestamp), (trg_type, trg_chann) in zip(pmt_wfs, sipm_wfs, event_infos[:], trg_info):
                 yield dict(pmt=pmt, sipm=sipm, mc=mc_info,
                            run_number=run_number, event_number=event_number, timestamp=timestamp,
-                           trigger_type=trg_type, trigger_channels=trg_chann)
+                           trigger_type=trtype, trigger_channels=trchann)
             # NB, the monte_carlo writer is different from the others:
             # it needs to be given the WHOLE TABLE (rather than a
             # single event) at a time.
