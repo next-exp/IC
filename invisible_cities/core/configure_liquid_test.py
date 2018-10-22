@@ -253,7 +253,7 @@ def test_config_CLI_flags(simple_conf_file_name, tmpdir_factory, name, flags, va
     infile = conf # any existing file will do as a dummy for now
     outfile = tmpdir_factory.mktemp('config-flags').join('dummy-output-file' + name)
     argv = 'dummy {conf} -i {infile} -o {outfile} {flags}'.format(**locals()).split()
-    conf_ns = configure(argv)
+    conf_ns = configure(argv).as_namespace
     assert getattr(conf_ns, name) == value
 
 
