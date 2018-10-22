@@ -14,8 +14,8 @@ from . configure import make_config_file_reader
 from . exceptions import NoInputFiles
 from . exceptions import NoOutputFile
 
-from .. cities.components  import city
-from .. cities.penthesilea import penthesilea
+from .. liquid_cities.components  import city
+from .. liquid_cities.penthesilea import penthesilea
 
 config_file_format = """
 # set_input_files
@@ -265,7 +265,7 @@ def test_config_CLI_flags(simple_conf_file_name, tmpdir_factory, name, flags, va
                   ))
 def test_config_penthesilea_counters(config_tmpdir, KrMC_pmaps_filename, flags, value, counter):
     input_filename  = KrMC_pmaps_filename
-    config_filename = 'invisible_cities/config/penthesilea.conf'
+    config_filename = 'invisible_cities/config/liquid_penthesilea.conf'
     flags_wo_spaces = flags.replace(" ", "_")
     output_filename = path.join(config_tmpdir,
                                 f'penthesilea_counters_output_{flags_wo_spaces}.h5')
