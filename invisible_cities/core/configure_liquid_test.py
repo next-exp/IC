@@ -180,6 +180,17 @@ def test_configure(default_conf, spec):
         assert getattr(CFP, option) == this_configuration[option], 'option = ' + option
 
 
+@mark.parametrize("flag", ("-i", "--input-files" ,
+                           "-o", "--output-files",
+                           "-r", "--run-number"  ,
+                           "-p", "--print-mod"   ))
+def test_configure_does_not_take_multiple_arguments(default_conf, flag):
+    iargs = " ".join(f"arg_{i}.h5" for i in range(2))
+    argv   = f"dummy {default_conf} {flag} {iargs}".split()
+    with raises(SystemExit):
+        conf = configure(argv)
+
+
 def test_Configuration_missing_key_raises_KE():
     c = Configuration()
     with raises(KeyError):
