@@ -7,6 +7,8 @@ from os.path     import expandvars
 from itertools   import count
 from itertools   import repeat
 from enum        import Enum
+from typing      import Iterator
+from typing      import Mapping
 
 import tables as tb
 import numpy  as np
@@ -37,6 +39,8 @@ from .. io.pmaps_io            import load_pmaps
 from .. types.ic_types         import xy
 from .. types.ic_types         import NN
 from .. types.ic_types         import NNN
+
+NoneType = type(None)
 
 
 def city(city_function):
@@ -186,6 +190,25 @@ def get_event_info(h5in):
     return h5in.root.Run.events
 
 
+def length_of(iterable):
+    if   isinstance(iterable, tb.table.Table  ): return iterable.nrows
+    elif isinstance(iterable, tb.earray.EArray): return iterable.shape[0]
+    elif isinstance(iterable, np.ndarray      ): return iterable.shape[0]
+    elif isinstance(iterable, NoneType        ): return None
+    elif isinstance(iterable, Iterator        ): return None
+    elif isinstance(iterable, Sequence        ): return len(iterable)
+    elif isinstance(iterable, Mapping         ): return len(iterable)
+    else:
+        raise TypeError(f"Cannot determine size of type {type(iterable)}")
+
+
+def check_lengths(*iterables):
+    lengths  = map(length_of, iterables)
+    nonnones = filter(lambda x: x is not None, lengths)
+    if np.any(np.diff(list(nonnones)) != 0):
+        raise ValueError("Input data have different sizes")
+
+
 def wf_from_files(paths, wf_type):
     for path in paths:
         with tb.open_file(path, "r") as h5in:
@@ -196,6 +219,9 @@ def wf_from_files(paths, wf_type):
             mc_info     = get_mc_info_safe(h5in, run_number)
             (trg_type ,
              trg_chann) = get_trigger_info(h5in)
+
+            check_lengths(pmt_wfs, sipm_wfs, event_info, trg_type, trg_chann)
+
             for pmt, sipm, evtinfo, trtype, trchann in zip(pmt_wfs, sipm_wfs, event_info, trg_type, trg_chann):
                 event_number, timestamp         = evtinfo.fetch_all_fields()
                 if trtype  is not None: trtype  = trtype .fetch_all_fields()[0]
@@ -215,6 +241,9 @@ def pmap_from_files(paths):
             run_number  = get_run_number(h5in)
             event_info  = get_event_info(h5in)
             mc_info     = get_mc_info_safe(h5in, run_number)
+
+            check_lengths(event_info, pmaps)
+
             for evtinfo in event_info:
                 event_number, timestamp = evtinfo.fetch_all_fields()
                 yield dict(pmap=pmaps[event_number], mc=mc_info,
