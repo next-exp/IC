@@ -182,10 +182,14 @@ def get_trigger_info(h5in):
     return trigger_type, trigger_channels
 
 
+def get_event_info(h5in):
+    return h5in.root.Run.events
+
+
 def wf_from_files(paths, wf_type):
     for path in paths:
         with tb.open_file(path, "r") as h5in:
-            event_infos = h5in.root.Run.events
+            event_infos = get_event_info  (h5in)
             run_number  = get_run_number  (h5in)
             pmt_wfs     = get_pmt_wfs     (h5in, wf_type)
             sipm_wfs    = get_sipm_wfs    (h5in, wf_type)
@@ -208,7 +212,7 @@ def pmap_from_files(paths):
         pmaps = load_pmaps(path)
         with tb.open_file(path, "r") as h5in:
             run_number  = get_run_number(h5in)
-            event_infos = h5in.root.Run.events
+            event_infos = get_event_info(h5in)
             mc_info     = get_mc_info_safe(h5in, run_number)
             for event_number, timestamp in event_infos[:]:
                 yield dict(pmap=pmaps[event_number], mc=mc_info,
