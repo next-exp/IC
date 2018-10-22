@@ -258,10 +258,10 @@ def test_config_CLI_flags(simple_conf_file_name, tmpdir_factory, name, flags, va
 
 
 @mark.parametrize('flags value counter'.split(),
-                  (('-e all'   , 10, 'n_events_tot'), # 10 events in the file
-                   ('-e   9'   ,  9, 'n_events_tot'), # [ 0,  9) -> 9
-                   ('-e 5 9'   ,  4, 'n_events_tot'), # [ 5,  9) -> 4
-                   ('-e 2 last',  8, 'n_events_tot'), # events [2, 10) -> 8
+                  (('-e all'   , 10, 'events_in'), # 10 events in the file
+                   ('-e   9'   ,  9, 'events_in'), # [ 0,  9) -> 9
+                   ('-e 5 9'   ,  4, 'events_in'), # [ 5,  9) -> 4
+                   ('-e 2 last',  8, 'events_in'), # events [2, 10) -> 8
                   ))
 def test_config_penthesilea_counters(config_tmpdir, KrMC_pmaps_filename, flags, value, counter):
     input_filename  = KrMC_pmaps_filename
