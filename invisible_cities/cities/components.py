@@ -189,14 +189,15 @@ def get_event_info(h5in):
 def wf_from_files(paths, wf_type):
     for path in paths:
         with tb.open_file(path, "r") as h5in:
-            event_infos = get_event_info  (h5in)
+            event_info  = get_event_info  (h5in)
             run_number  = get_run_number  (h5in)
             pmt_wfs     = get_pmt_wfs     (h5in, wf_type)
             sipm_wfs    = get_sipm_wfs    (h5in, wf_type)
             mc_info     = get_mc_info_safe(h5in, run_number)
             (trg_type ,
              trg_chann) = get_trigger_info(h5in)
-            for pmt, sipm, (event_number, timestamp), trtype, trchann in zip(pmt_wfs, sipm_wfs, event_infos[:], trg_type, trg_chann):
+            for pmt, sipm, evtinfo, trtype, trchann in zip(pmt_wfs, sipm_wfs, event_info, trg_type, trg_chann):
+                event_number, timestamp         = evtinfo.fetch_all_fields()
                 if trtype  is not None: trtype  = trtype .fetch_all_fields()[0]
 
                 yield dict(pmt=pmt, sipm=sipm, mc=mc_info,
@@ -212,9 +213,10 @@ def pmap_from_files(paths):
         pmaps = load_pmaps(path)
         with tb.open_file(path, "r") as h5in:
             run_number  = get_run_number(h5in)
-            event_infos = get_event_info(h5in)
+            event_info  = get_event_info(h5in)
             mc_info     = get_mc_info_safe(h5in, run_number)
-            for event_number, timestamp in event_infos[:]:
+            for evtinfo in event_info:
+                event_number, timestamp = evtinfo.fetch_all_fields()
                 yield dict(pmap=pmaps[event_number], mc=mc_info,
                            run_number=run_number, event_number=event_number, timestamp=timestamp)
             # NB, the monte_carlo writer is different from the others:
