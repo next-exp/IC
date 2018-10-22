@@ -270,5 +270,5 @@ def test_config_penthesilea_counters(config_tmpdir, KrMC_pmaps_filename, flags, 
     output_filename = path.join(config_tmpdir,
                                 f'penthesilea_counters_output_{flags_wo_spaces}.h5')
     argv = f'penthesilea {config_filename} -i {input_filename} -o {output_filename} {flags}'.split()
-    conf_ns, counters = penthesilea(**configure(argv))
+    counters = penthesilea(**configure(argv))
     assert getattr(counters, counter) == value
