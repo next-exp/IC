@@ -1,3 +1,30 @@
+"""
+-----------------------------------------------------------------------
+                                Moriana                                
+-----------------------------------------------------------------------
+
+This city produces the light and dark spectrum of SiPMs for dedicated
+calibration runs. That is achieved by slicing the SiPMs waveforms in
+regular intervals and integrating the content within each slice.
+Some slices will have only electronic noise and, therefore, their
+spectrum will be a gaussian distribution. Other slices will contain
+one or more counts. Those integrals will have a higher value, producing
+gaussian peaks at different points in the spectrum. The waveform slices
+are split into two groups: those with expected counts (light) and those
+without expected counts (dark). Each group produces a different
+spectrum.
+
+The spectra can be produced in two flavours:
+    - Using the mode   to subtract the baseline.
+    - Using the median to subtract the baseline.
+The tasks performed are:
+    - Subtract the baseline.
+    - Deconvolve the waveform.
+    - Slice the waveforms.
+    - Split into light and dark.
+    - Integrate slices.
+    - Histrogram the result.
+"""
 from operator  import add
 from functools import partial
 
