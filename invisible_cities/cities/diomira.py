@@ -1,3 +1,27 @@
+"""
+-----------------------------------------------------------------------
+                                Diomira                                
+-----------------------------------------------------------------------
+
+This city simulates the response of the different sensors within the
+detector, namely, PMTs and SiPMs. This can be summarized in the
+following tasks:
+    - Add the sensor baseline.
+    - Simulate the noise.
+    - Simulate gain fluctuations.
+    - Convert (true) photoelectrons to ADC counts.
+Besides, and only for PMTs:
+    - Emulate the signal-derivative effect of the energy plane
+      electronics.
+    - Rebin 1-ns waveforms to 25-ns waveforms to match those produced
+      by the detector.
+
+On top of that, the city can emulate the trigger algorithm of the
+detector. At the present time, only a S2 trigger is implemented, which
+processes the data in the same way as the detector and applies the same
+filters according to some predefined parameters.
+"""
+
 from functools import partial
 
 import numpy  as np
