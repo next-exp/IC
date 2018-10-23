@@ -1,3 +1,34 @@
+"""
+-----------------------------------------------------------------------
+                                Phyllis                                
+-----------------------------------------------------------------------
+
+This city produces the light and dark spectrum of PMTs for dedicated
+calibration runs. That is achieved by slicing the PMT waveforms in
+regular intervals and integrating the content within each slice.
+Some slices will have only electronic noise and, therefore, their
+spectrum will be a gaussian distribution. Other slices will contain
+one or more counts. Those integrals will have a higher value, producing
+gaussian peaks at different points in the spectrum. The waveform slices
+are split into two groups: those with expected counts (light) and those
+without expected counts (dark). Each group produces a different
+spectrum.
+
+The spectra can be produced in three flavours:
+    - Without using any deconvolution algorithm and using the mode to
+      subtract the baseline.
+    - Using the standard deconvolution algorithm to remove the effect
+      of the electronics and to subtract the baseline.
+    - Using the deconvolution algorithm with a mau to remove the effect
+      of the electronics and to subtract the baseline.
+The tasks performed are:
+    - Subtract the baseline   (only in the first case).
+    - Deconvolve the waveform ( not in the first case).
+    - Slice the waveforms.
+    - Split into light and dark.
+    - Integrate slices.
+    - Histrogram the result.
+"""
 from operator  import add
 from functools import partial
 
