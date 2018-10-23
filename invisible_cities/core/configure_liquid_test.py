@@ -8,6 +8,7 @@ from . configure import all
 from . configure import last
 from . configure import configure
 from . configure import Configuration
+from . configure import make_config_file_reader
 from . configure import read_config_file
 from .           import system_of_units  as units
 
@@ -210,6 +211,84 @@ vars_units = {all_units}
     assert conf["var_all"   ] is all
     assert conf["var_last"  ] is last
     assert conf["vars_units"] == all_units
+
+
+@fixture(scope = 'session')
+def hierarchical_configuration(tmpdir_factory):
+    "Create a dummy city configuration spread across a hierarchy of included files."
+    dir_ = tmpdir_factory.mktemp('test_config_files')
+    top_file_name = path.join(dir_, 'top_file')
+    include_1     = path.join(dir_, 'include_1')
+    include_1_1   = path.join(dir_, 'include_1_1')
+    include_2     = path.join(dir_, 'include_2')
+    write_config_file(top_file_name, """
+include('{include_1}')
+set_just_once_in_top_file = 1
+overridden_in_top_file = 'original'
+overridden_in_top_file = 'first override'
+overridden_in_top_file = 'second override'
+overridden_in_top_file = 'final override'
+include_1_overridden_by_top = 'top overrides'
+top_overridden_by_include_2 = 'replaced'
+include('{include_2}')
+overridden_in_3_places = 'four'
+""".format(**locals()))
+
+    write_config_file(include_1, """
+include('{include_1_1}')
+only_in_include_1 = 'just 1'
+include_1_overridden_by_top = 'gone'
+overridden_in_3_places = 'two'
+""".format(**locals()))
+
+    write_config_file(include_1_1, """
+only_in_include_1 = 'just 1'
+top_overridden_by_include_2 = 'i2 overrides'
+overridden_in_3_places = 'one'
+""")
+
+    write_config_file(include_2, """
+only_in_include_1 = 'just 1'
+top_overridden_by_include_2 = 'i2 overrides'
+overridden_in_3_places = 'three'
+""")
+
+    return make_config_file_reader()(top_file_name)
+
+
+def test_config_set_just_once_in_top_file(hierarchical_configuration):
+    conf = hierarchical_configuration.as_namespace
+    assert conf.set_just_once_in_top_file == 1
+
+def test_config_overridden_in_top_file_value(hierarchical_configuration):
+    conf = hierarchical_configuration.as_namespace
+    assert conf.overridden_in_top_file == 'final override'
+
+def test_config_overridden_in_top_file_history(hierarchical_configuration):
+    history = hierarchical_configuration._history['overridden_in_top_file']
+    value_history = [ i.value for i in history ]
+    assert value_history == ['original', 'first override', 'second override']
+
+def test_config_only_in_include(hierarchical_configuration):
+    conf = hierarchical_configuration.as_namespace
+    assert conf.only_in_include_1 == 'just 1'
+
+def test_config_include_overridden_by_top(hierarchical_configuration):
+    conf = hierarchical_configuration.as_namespace
+    assert conf.include_1_overridden_by_top == 'top overrides'
+
+def test_config_top_overridden_by_include(hierarchical_configuration):
+    conf = hierarchical_configuration.as_namespace
+    assert conf.top_overridden_by_include_2 == 'i2 overrides'
+
+def test_config_overridden_file_history(hierarchical_configuration):
+    history = hierarchical_configuration._history['overridden_in_3_places']
+    file_history  = [ path.basename(i.file_name) for i in history ]
+    value_history = [               i.value      for i in history ]
+
+    assert file_history  == ['include_1_1', 'include_1', 'include_2']
+    assert value_history == ['one',         'two',       'three'    ]
+    assert hierarchical_configuration.as_namespace.overridden_in_3_places == 'four'
 
 
 def test_Configuration_missing_key_raises_KE():
