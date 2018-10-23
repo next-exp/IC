@@ -197,28 +197,29 @@ def test_poisson_mu_seed(sensor_type, scaler, mu):
     np.testing.assert_approx_equal(result, mu)
 
 
-@mark.parametrize('     sensor_type, n_chann,                    scaler,    expected_range, min_b, max_b, half_width, lim_p',
-                  ((SensorType.SIPM,    1023, cf.dark_scaler(dark_sipm),  np.arange(4 ,20),    10,    22,          5, 10000),
-                   (SensorType.PMT ,       0, cf.dark_scaler(dark_pmt) ,  np.arange(10,20),    15,    50,         10, 10000)))
-def test_sensor_values(sensor_type, n_chann, scaler, expected_range, min_b, max_b, half_width, lim_p):
+@mark.parametrize('     sensor_type, n_chann,                    scaler,    expected_range, min_b, max_b, half_width, p1pe_seed, lim_p',
+                  ((SensorType.SIPM,    1023, cf.dark_scaler(dark_sipm),  np.arange(4 ,20),    10,    22,          5,         3, 10000),
+                   (SensorType.PMT ,       0, cf.dark_scaler(dark_pmt) ,  np.arange(10,20),    15,    50,         10,         7, 10000)))
+def test_sensor_values(sensor_type, n_chann, scaler, expected_range, min_b, max_b, half_width, p1pe_seed, lim_p):
     bins     = np.array([ -6,  -5,   -4,   -3,   -2,   -1,    0,    1,    2,    3,    4,   5,   6,   7])
     spec     = np.array([ 28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
-    spectra, p_range, min_bin, max_bin, hpw, lim_ped = cf.sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals)
+    spectra, p_range, min_bin, max_bin, hpw, seed, lim_ped = cf.sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals)
 
     np.testing.assert_array_equal(p_range, expected_range)
     assert len(spectra) == len(spec)
-    assert min_bin == min_b
-    assert max_bin == max_b
-    assert hpw     == half_width
-    assert lim_ped == lim_p
+    assert min_bin      == min_b
+    assert max_bin      == max_b
+    assert hpw          == half_width
+    assert seed         == p1pe_seed
+    assert lim_ped      == lim_p
 
 
 def test_pedestal_values():
     ped_vals   = np.array([6.14871401e+04, -1.46181517e-01, 5.27614635e+00])
     ped_errs   = np.array([9.88752708e+02,  5.38541961e-02, 1.07169703e-01])
     ped_values = cf.pedestal_values(ped_vals, 10000, ped_errs)
-    
+
     assert_approx_equal(ped_values.gain     ,   -0.14618, 5)
     assert_approx_equal(ped_values.sigma    ,    5.27614, 5)
     assert_approx_equal(ped_values.gain_min , -538.68814, 5)

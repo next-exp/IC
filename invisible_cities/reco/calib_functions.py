@@ -199,6 +199,7 @@ def sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals):
         min_bin_peak    = 10
         max_bin_peak    = 22
         half_peak_width = 5
+        p1pe_seed       = 3
         lim_ped         = 10000
     else:
         scale           = spec[bins<0].sum() / fitf.gauss(bins[bins<0], *ped_vals).sum()
@@ -207,8 +208,9 @@ def sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals):
         min_bin_peak    = 15
         max_bin_peak    = 50
         half_peak_width = 10
+        p1pe_seed       = 7
         lim_ped         = 10000
-    return SensorParams(spectra, peak_range, min_bin_peak, max_bin_peak, half_peak_width, lim_ped)
+    return SensorParams(spectra, peak_range, min_bin_peak, max_bin_peak, half_peak_width, p1pe_seed, lim_ped)
 
 
 def pedestal_values(ped_vals, lim_ped, ped_errs):
