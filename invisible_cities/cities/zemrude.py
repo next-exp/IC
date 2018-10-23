@@ -1,3 +1,26 @@
+"""
+-----------------------------------------------------------------------
+                                Zemrude                                
+-----------------------------------------------------------------------
+
+This city produces the spectrum of dark noise of the SiPMs. That is
+achieved by slicing the SiPM waveforms in regular intervals and
+integrating the content within each slice. Some slices will have only
+electronic noise and, therefore, their spectrum will be a gaussian
+distribution. Other slices will contain one or more dark counts.
+Those integrals will have a higher value, producing gaussian peaks at
+different points in the spectrum.
+The spectrum is produced in three flavours:
+    - Using the mode   to subtract the baseline without calibrating.
+    - Using the mode   to subtract the baseline and     calibrating.
+    - Using the median to subtract the baseline and     calibrating.
+The tasks performed are:
+    - Subtract the baseline   (with different algorithms).
+    - Calibrate the waveforms (not in the first case).
+    - Slice the waveforms.
+    - Integrate slices.
+    - Histogram the result.
+"""
 from operator  import add
 from functools import partial
 
