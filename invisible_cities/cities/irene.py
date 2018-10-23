@@ -1,3 +1,18 @@
+"""
+-----------------------------------------------------------------------
+                                 Irene                                 
+-----------------------------------------------------------------------
+
+This city finds the signal pulses within the waveforms produced by the
+detector. This includes a number of tasks:
+    - Remove the signal-derivative effect of the PMT waveforms.
+    - Calibrate PMTs and produced a PMT-summed waveform.
+    - Remove the baseline from the SiPM waveforms and calibrate them.
+    - Apply a threshold to the PMT-summed waveform.
+    - Find pulses in the PMT-summed waveform.
+    - Match the time window of the PMT pulse with those in the SiPMs.
+    - Build the PMap object.
+"""
 import numpy  as np
 import tables as tb
 
