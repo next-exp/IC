@@ -3,13 +3,12 @@
                                 Zemrude                                
 -----------------------------------------------------------------------
 
-This city produces the spectrum of dark noise of the SiPMs. That is
-achieved by slicing the SiPM waveforms in regular intervals and
-integrating the content within each slice. Some slices will have only
-electronic noise and, therefore, their spectrum will be a gaussian
-distribution. Other slices will contain one or more dark counts.
-Those integrals will have a higher value, producing gaussian peaks at
-different points in the spectrum.
+This city produces the spectrum of dark noise of the SiPMs. This is
+achieved by binning either the pe or ADC content of each raw WF sample.
+Some slices will have only electronic noise while others will contain 
+one or more dark counts. The resulting spectra give a representation
+of the SiPM charge in the absence of external light above detector
+ambient conditions.
 The spectrum is produced in three flavours:
     - Using the mode   to subtract the baseline without calibrating.
     - Using the mode   to subtract the baseline and     calibrating.

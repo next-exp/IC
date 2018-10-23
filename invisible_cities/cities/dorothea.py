@@ -3,12 +3,12 @@
                                 Dorothea                               
 -----------------------------------------------------------------------
 
-This city processes each combination of S1 and S2 signals within an
-event to produce reconstructed pointlike energy depositions. They
-consist of three dimensional coordinates with some associated global
-S1 and S2 properties. The city contains a peak/event filter, which can
-be configured to find events with a certain number of S1/S2 signals
-that satisfy certain properties. The tasks performed are:
+This city processes each combination of S1 and S2 signals previously
+selected as pmaps by irene within an event to produce reconstructed pointlike
+energy depositions. They consist of three dimensional coordinates with
+some associated global S1 and S2 properties. The city contains a peak/event
+filter, which can be configured to find events with a certain number of
+S1/S2 signals that satisfy certain properties. The tasks performed are:
     - Classify peaks according to the filter.
     - Filter out events that do not satisfy the selector conditions.
     - Compute S1 properties

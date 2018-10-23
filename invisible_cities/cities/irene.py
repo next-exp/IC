@@ -4,7 +4,8 @@
 -----------------------------------------------------------------------
 
 This city finds the signal pulses within the waveforms produced by the
-detector. This includes a number of tasks:
+detector or by diomira in the case of Monte Carlo data.
+This includes a number of tasks:
     - Remove the signal-derivative effect of the PMT waveforms.
     - Calibrate PMTs and produced a PMT-summed waveform.
     - Remove the baseline from the SiPM waveforms and calibrate them.
