@@ -1,3 +1,10 @@
+"""
+-----------------------------------------------------------------------
+                                Isidora                                
+-----------------------------------------------------------------------
+
+This city removes the signal-derivative effect of the PMT waveforms.
+"""
 from functools import partial
 
 from .  components import city
