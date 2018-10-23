@@ -1,3 +1,36 @@
+"""
+-----------------------------------------------------------------------
+                                Dorothea                               
+-----------------------------------------------------------------------
+
+This city processes each combination of S1 and S2 signals within an
+event to produce reconstructed pointlike energy depositions. They
+consist of three dimensional coordinates with some associated global
+S1 and S2 properties. The city contains a peak/event filter, which can
+be configured to find events with a certain number of S1/S2 signals
+that satisfy certain properties. The tasks performed are:
+    - Classify peaks according to the filter.
+    - Filter out events that do not satisfy the selector conditions.
+    - Compute S1 properties
+    - Compute S2 properties (for each possible S1)
+The properties of the S1 signals are:
+    - Width  (time over threshold)
+    - Energy (PMT- and time-summed amplitude over threshold)
+    - Height (maximum amplitude)
+    - Time   (waveform time at maximum amplitude)
+The properties of the S2 signals are those of the S1 signal plus:
+    - Charge (SiPM- and time-summed amplitude over threshold)
+    - Nsipm  (number of SiPMs with signal over threshold)
+    - X      (reconstructed x position using the barycenter algorithm)
+    - Y      (reconstructed y position using the barycenter algorithm)
+    - DT     (drift time, computed as S2 time - S1 time)
+    - Z      (reconstructed z position using DT / drift_v)
+    - Xrms   (standard deviation of the SiPM signal in the x coordinate)
+    - Yrms   (standard deviation of the SiPM signal in the y coordinate)
+    - Zrms   (standard deviation of the PMT  signal in the z coordinate)
+    - R      (radial coordinate from X and Y)
+    - Phi    (azimuthal coordinate from X and Y)
+"""
 from operator import attrgetter
 
 import tables as tb
