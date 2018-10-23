@@ -9,12 +9,14 @@ from pytest        import mark
 from pytest        import raises
 from scipy.signal  import find_peaks_cwt
 
-from .                         import calib_functions as cf
-from .. reco                   import tbl_functions   as tbl
-from .. core                   import fit_functions   as fitf
-from .. core.system_of_units_c import units
-from .. evm.nh5                import SensorTable
-from .  calib_functions        import SensorType
+from .                           import calib_functions as cf
+from .. reco                     import tbl_functions   as tbl
+from .. core                     import fit_functions   as fitf
+from .. core.stat_functions      import poisson_sigma
+from .. core.system_of_units_c   import units
+from .. evm.nh5                  import SensorTable
+from .  calib_functions          import SensorType
+from .. liquid_cities.components import get_run_number
 
 
 def test_bin_waveforms():
@@ -228,37 +230,75 @@ def test_pedestal_values():
     assert_approx_equal(ped_values.sigma_min,      0.001)
 
 
-def test_seeds_and_bounds(file_name):
-    sipmIn = tb.open_file(file_name, 'r')
-    run_no = file_name[file_name.find('R')+1:file_name.find('R')+5]
-    run_no = int(run_no)
+@mark.parametrize('               file_name, sensor_spe, sensor_dark,    sensor_bins , expected_run_no, expected_n_sensors',
+                (('sipmcalspectra_R6358.h5', 'sipm_spe', 'sipm_dark', 'sipm_spe_bins',            6358,               1792),
+                 ( 'pmtcalspectra_R6354.h5',  'pmt_spe',  'pmt_dark', 'pmt_dark_bins',            6354,                 12)))
+def test_valid_bins_exist( ICDATADIR, file_name, sensor_spe, sensor_dark, sensor_bins, expected_run_no, expected_n_sensors):
+    PATH_IN = os.path.join(ICDATADIR, file_name)
+    h5in    = tb.open_file(PATH_IN, 'r')
+    run_no  = get_run_number(h5in)
 
-    specsL = np.array(sipmIn.root.HIST.sipm_spe).sum(axis=0)
-    specsD = np.array(sipmIn.root.HIST.sipm_dark).sum(axis=0)
-    bins   = np.array(sipmIn.root.HIST.sipm_spe_bins)
+    specsL = np.array(getattr(h5in.root.HIST, sensor_spe)).sum(axis=0)
+    specsD = np.array(getattr(h5in.root.HIST, sensor_dark)).sum(axis=0)
+    bins   = np.array(getattr(h5in.root.HIST, sensor_bins))
 
     min_stat = 10
 
     for ich, (led, dar) in enumerate(zip(specsL, specsD)):
-        valid_bins = np.argwhere(led>=min_stat)
-        b1 = valid_bins[0][0]
-        b2 = valid_bins[-1][0]
+        b1 = 0
+        b2 = len(dar)
+        if min_stat != 0:
+            try:
+                valid_bins = np.argwhere(led>=min_stat)
+                b1 = valid_bins[ 0][0]
+                b2 = valid_bins[-1][0]
+            except IndexError:
+                continue
+
+    assert run_no      == expected_run_no
+    assert len(specsL) == expected_n_sensors
+    assert len(specsL) == len(specsD)
+    assert len(bins)   == 349
+
+    assert not (b1 == 0)
+    assert not (b2 == 0)
+
+
+def test_seeds_without_using_db(ICDATADIR):
+    PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
+    h5in    = tb.open_file(PATH_IN, 'r')
+    run_no  = get_run_number(h5in)
+
+    specsL = np.array(h5in.root.HIST.sipm_spe).sum(axis=0)
+    specsD = np.array(h5in.root.HIST.sipm_dark).sum(axis=0)
+    bins   = np.array(h5in.root.HIST.sipm_spe_bins)
+
+    min_stat = 10
+
+    for ich, (led, dar) in enumerate(zip(specsL, specsD)):
+        b1 = 0
+        b2 = len(dar)
+        if min_stat != 0:
+            try:
+                valid_bins = np.argwhere(led>=min_stat)
+                b1 = valid_bins[ 0][0]
+                b2 = valid_bins[-1][0]
+            except IndexError:
+                continue
+
         pD = find_peaks_cwt(dar, np.arange(2, 20), min_snr=2)
         if len(pD) == 0:
             continue
 
         gb0     = [(0, -100, 0), (1e99, 100, 10000)]
         sd0     = (dar.sum(), 0, 2)
-        errs    = poisson_sigma(dar[pD[0]-5:pD[0]+5], default=0.1)
-        gfitRes = fitf.fit(fitf.gauss, bins[pD[0]-5:pD[0]+5], dar[pD[0]-5:pD[0]+5], sd0, sigma=errs, bounds=gb0)
+        sel     = np.arange(pD[0]-5, pD[0]+5)
+        errs    = poisson_sigma(dar[sel], default=0.1)
+        gfitRes = fitf.fit(fitf.gauss, bins[sel], dar[sel], sd0, sigma=errs, bounds=gb0)
 
-        ped_vals    = np.array([gfitRes.values[0], gfitRes.values[1], gfitRes.values[2]])
-        scaler_func = dark_scaler(dar[b1:b2][(bins[b1:b2]>=-5) & (bins[b1:b2]<=5)])
-
-        seeds, bounds = cf.seeds_and_bounds('sipm', run_no, ich, scaler_func, bins[b1:b2], led[b1:b2],
-                                         ped_vals, gfitRes.errors, use_db_gain_seeds=False)
-
-        assert all(i > 0 for i in seeds)
-        assert bounds[0] == (0, 0, 0, 0.001)
-        assert bounds[1] == (10000000000.0, 10000, 10000, 10000)
-
+        ped_vals      = np.array([gfitRes.values[0], gfitRes.values[1], gfitRes.values[2]])
+        scaler_func   = cf.dark_scaler(dar[b1:b2][(bins[b1:b2]>=-5) & (bins[b1:b2]<=5)])
+        seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, run_no, ich, scaler_func, bins[b1:b2],
+                                            led[b1:b2], ped_vals, gfitRes.errors, use_db_gain_seeds=False)
+        assert not (all(seeds) == 0)
+        assert bounds == ((0, 0, 0, 0.001), (1e10, 10000, 10000, 10000))
