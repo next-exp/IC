@@ -62,13 +62,10 @@ from .  components import waveform_integrator
 
 @city
 def phyllis(files_in, file_out, compression, event_range, print_mod, run_number,
-            raw_data_type, proc_mode,
-            n_baseline,
+            proc_mode, n_baseline,
             min_bin, max_bin, bin_width,
             number_integrals, integral_start, integral_width, integrals_period,
             n_mau = 100):
-    raw_data_type_ = getattr(WfType, raw_data_type.lower())
-
     if   proc_mode == "gain"         : proc = pmt_deconvolver    (run_number, n_baseline       )
     elif proc_mode == "gain_mau"     : proc = pmt_deconvolver_mau(run_number, n_baseline, n_mau)
     elif proc_mode == "gain_nodeconv": proc = mode_subtractor    (run_number)
@@ -76,7 +73,7 @@ def phyllis(files_in, file_out, compression, event_range, print_mod, run_number,
 
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
-    sd          = sensor_data(files_in[0], raw_data_type_)
+    sd          = sensor_data(files_in[0], WfType.rwf)
     npmt        = np.count_nonzero(load_db.DataPMT(run_number).Active.values)
     wf_length   = sd.PMTWL
     shape       = npmt, len(bin_centres)
@@ -109,7 +106,7 @@ def phyllis(files_in, file_out, compression, event_range, print_mod, run_number,
                                       bin_centres = bin_centres)
 
         out = fl.push(
-            source = wf_from_files(files_in, raw_data_type_),
+            source = wf_from_files(files_in, WfType.rwf),
             pipe   = fl.pipe(fl.slice(*event_range, close_all=True),
                              event_count.spy,
                              print_every(print_mod),
