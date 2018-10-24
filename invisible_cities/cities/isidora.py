@@ -36,7 +36,7 @@ from .  components import deconv_pmt
 
 @city
 def isidora(files_in, file_out, compression, event_range, print_mod, run_number,
-            n_baseline, raw_data_type):
+            n_baseline):
     """
     The city of ISIDORA performs a fast processing from raw data
     (pmtrwf and sipmrwf) to BLR wavefunctions.
