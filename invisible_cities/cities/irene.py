@@ -47,8 +47,7 @@ from .  components import wf_from_files
 
 @city
 def irene(files_in, file_out, compression, event_range, print_mod, run_number,
-          n_baseline, raw_data_type,
-          n_mau, thr_mau, thr_sipm, thr_sipm_type,
+          n_baseline, n_mau, thr_mau, thr_sipm, thr_sipm_type,
           s1_lmin, s1_lmax, s1_tmin, s1_tmax, s1_rebin_stride, s1_stride, thr_csum_s1,
           s2_lmin, s2_lmax, s2_tmin, s2_tmax, s2_rebin_stride, s2_stride, thr_csum_s2, thr_sipm_s2):
     if   thr_sipm_type.lower() == "common":
