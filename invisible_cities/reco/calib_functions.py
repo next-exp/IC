@@ -208,7 +208,8 @@ def sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals):
         p1pe_seed       = 3
         lim_ped         = 10000
     elif sensor_type is SensorType.PMT:
-        scale           = spec[bins<0].sum() / fitf.gauss(bins[bins<0], *ped_vals).sum()
+        sel             = bins<0
+        scale           = spec[sel].sum() / fitf.gauss(bins[sel], *ped_vals).sum()
         spectra         = spec - fitf.gauss(bins, *ped_vals) * scale
         peak_range      = np.arange(10, 20)
         min_bin_peak    = 15

@@ -42,7 +42,7 @@ for name, attrs in (
         ('TriggerParams'  , 'trigger_channels min_number_channels charge height width'),
         ('PeakData'       , 'charge height width'),
         ('Measurement'    , 'value uncertainty'),
-        ('SensorParams'   , 'spectra, peak_range, min_bin_peak, max_bin_peak, half_peak_width, p1pe_seed, lim_ped'),
+        ('SensorParams'   , 'spectra peak_range min_bin_peak max_bin_peak half_peak_width p1pe_seed lim_ped'),
         ('PedestalParams' , 'gain gain_min gain_max sigma sigma_min sigma_max')):
     _add_namedtuple_in_this_module(name, attrs)
 
