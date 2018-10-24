@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------
-                                Phyllis                                
+                                Phyllis
 -----------------------------------------------------------------------
 
 This city produces the light and dark spectrum of PMTs for dedicated
@@ -12,7 +12,8 @@ electronics noise and dark counts giving the zero external light
 approximation whereas those in time with the pulses will contain one or
 more detected photoelectrons. The waveform integrals are split into two
 groups: those with expected photoelectrons (light) and those without
-expected photoelectrons (dark). Each group produces a different spectrum.
+expected photoelectrons (dark). Each group produces a different
+spectrum.
 
 The spectra can be produced in three flavours:
     - Without using any deconvolution algorithm and using the mode to
