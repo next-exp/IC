@@ -124,6 +124,7 @@ def valid_integral_limits(sample_width, n_integrals, integral_start, integral_wi
     return (filter_limits(corr, buffer_length),
             filter_limits(anti, buffer_length))
 
+
 def copy_sensor_table(h5in, h5out):
     # Copy sensor table if exists (needed for Non DB calibrations)
 
@@ -160,20 +161,22 @@ def seeds_db(sensor_type, run_no, n_chann):
     Take gain and sigma values of previous runs in the database
     to use them as seeds.
     """
-    if sensor_type == SensorType.SIPM:
+    if sensor_type is SensorType.SIPM:
         gain_seed       = DB.DataSiPM(run_no).adc_to_pes.iloc[n_chann]
         gain_sigma_seed = DB.DataSiPM(run_no).     Sigma.iloc[n_chann]
-    else:
+    elif sensor_type is SensorType.PMT:
         gain_seed       = DB.DataPMT(run_no).adc_to_pes.iloc[n_chann]
         gain_sigma_seed = DB.DataPMT(run_no).     Sigma.iloc[n_chann]
+    else:
+        raise ValueError("SensorType.SIPM or SensorType.PMT must be given for sensor_type")
     return gain_seed, gain_sigma_seed
 
 
-def poisson_mu_seed(sensor_type, bins, spec, ped_vals, scaler):
+def poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals):
     """
     Calculate poisson mu using the scaler function.
     """
-    if sensor_type == SensorType.SIPM:
+    if sensor_type is SensorType.SIPM:
         sel    = (bins>=-5) & (bins<=5)
         gdist  = fitf.gauss(bins[sel], *ped_vals)
         dscale = spec[sel].sum() / gdist.sum()
@@ -182,19 +185,21 @@ def poisson_mu_seed(sensor_type, bins, spec, ped_vals, scaler):
                         bins[sel],
                         spec[sel],
                         (dscale), sigma=errs).values[0]
+    elif sensor_type is SensorType.PMT:
+        dscale = spec[bins<0].sum() / fitf.gauss(bins[bins<0], *ped_vals).sum()
+        return fitf.fit(scaler,
+                        bins[bins<0],
+                        spec[bins<0],
+                        (dscale)).values[0]
+    else:
+        raise ValueError("SensorType.SIPM or SensorType.PMT must be given for sensor_type")
 
-    dscale = spec[bins<0].sum() / fitf.gauss(bins[bins<0], *ped_vals).sum()
-    return fitf.fit(scaler,
-                    bins[bins<0],
-                    spec[bins<0],
-                    (dscale)).values[0]
 
-
-def sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals):
+def sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals):
     """
     Define different values and ranges of the spectra depending on the sensor type.
     """
-    if sensor_type == SensorType.SIPM:
+    if sensor_type is SensorType.SIPM:
         spectra         = spec
         peak_range      = np.arange(4, 20)
         min_bin_peak    = 10
@@ -202,7 +207,7 @@ def sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals):
         half_peak_width = 5
         p1pe_seed       = 3
         lim_ped         = 10000
-    else:
+    elif sensor_type is SensorType.PMT:
         scale           = spec[bins<0].sum() / fitf.gauss(bins[bins<0], *ped_vals).sum()
         spectra         = spec - fitf.gauss(bins, *ped_vals) * scale
         peak_range      = np.arange(10, 20)
@@ -211,6 +216,8 @@ def sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals):
         half_peak_width = 10
         p1pe_seed       = 7
         lim_ped         = 10000
+    else:
+        raise ValueError("SensorType.SIPM or SensorType.PMT must be given for sensor_type")
     return SensorParams(spectra, peak_range, min_bin_peak, max_bin_peak, half_peak_width, p1pe_seed, lim_ped)
 
 
@@ -265,7 +272,7 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
 
     norm_seed = spec.sum()
     gain_seed, gain_sigma_seed = seeds_db(sensor_type, run_no, n_chann)
-    sens_values = sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals)
+    sens_values = sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
 
     spectra = sens_values.spectra
     p_range = sens_values.peak_range
@@ -299,7 +306,7 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
         else:
             gain_sigma_seed = np.sqrt(fgaus.values[2]**2 - ped_vals[2]**2)
 
-    mu_seed = poisson_mu_seed(sensor_type, bins, spec, ped_vals, scaler)
+    mu_seed = poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals)
     if mu_seed < 0: mu_seed = 0.001
 
     sd0middle  = ()

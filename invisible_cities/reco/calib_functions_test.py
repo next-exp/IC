@@ -195,7 +195,7 @@ def test_poisson_mu_seed(sensor_type, scaler, mu):
     spec     = np.array([28,  98,  28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
 
-    result   = cf.poisson_mu_seed(sensor_type, bins, spec, ped_vals, scaler)
+    result   = cf.poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals)
     np.testing.assert_approx_equal(result, mu)
 
 
@@ -206,7 +206,7 @@ def test_sensor_values(sensor_type, n_chann, scaler, expected_range, min_b, max_
     bins     = np.array([ -6,  -5,   -4,   -3,   -2,   -1,    0,    1,    2,    3,    4,   5,   6,   7])
     spec     = np.array([ 28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
-    spectra, p_range, min_bin, max_bin, hpw, seed, lim_ped = cf.sensor_values(sensor_type, n_chann, scaler, spec, bins, ped_vals)
+    spectra, p_range, min_bin, max_bin, hpw, seed, lim_ped = cf.sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
 
     np.testing.assert_array_equal(p_range, expected_range)
     assert len(spectra) == len(spec)
@@ -215,6 +215,20 @@ def test_sensor_values(sensor_type, n_chann, scaler, expected_range, min_b, max_
     assert hpw          == half_width
     assert seed         == p1pe_seed
     assert lim_ped      == lim_p
+
+
+@mark.parametrize('sensor_type, run_number, n_chann,                    scaler',
+                  ((      None,       6217,    1023, cf.dark_scaler(dark_sipm)),
+                   (      None,       6217,       0, cf.dark_scaler(dark_pmt))))
+def test_incorrect_sensor_type_raises_ValueError(sensor_type, run_number, n_chann, scaler):
+    bins     = np.array([ -6,  -5,   -4,   -3,   -2,   -1,    0,    1,    2,    3,    4,   5,   6,   7])
+    spec     = np.array([ 28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
+    ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
+
+    with raises(ValueError):
+        cf.       seeds_db(sensor_type, run_number, n_chann)
+        cf.poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals)
+        cf.  sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
 
 
 def test_pedestal_values():
@@ -228,40 +242,6 @@ def test_pedestal_values():
     assert_approx_equal(ped_values.gain_max ,  538.39577, 5)
     assert_approx_equal(ped_values.sigma_max, 1076.97317, 5)
     assert_approx_equal(ped_values.sigma_min,      0.001)
-
-
-@mark.parametrize('               file_name, sensor_spe, sensor_dark,    sensor_bins , expected_run_no, expected_n_sensors',
-                (('sipmcalspectra_R6358.h5', 'sipm_spe', 'sipm_dark', 'sipm_spe_bins',            6358,               1792),
-                 ( 'pmtcalspectra_R6354.h5',  'pmt_spe',  'pmt_dark', 'pmt_dark_bins',            6354,                 12)))
-def test_valid_bins_exist( ICDATADIR, file_name, sensor_spe, sensor_dark, sensor_bins, expected_run_no, expected_n_sensors):
-    PATH_IN = os.path.join(ICDATADIR, file_name)
-    h5in    = tb.open_file(PATH_IN, 'r')
-    run_no  = get_run_number(h5in)
-
-    specsL = np.array(getattr(h5in.root.HIST, sensor_spe)).sum(axis=0)
-    specsD = np.array(getattr(h5in.root.HIST, sensor_dark)).sum(axis=0)
-    bins   = np.array(getattr(h5in.root.HIST, sensor_bins))
-
-    min_stat = 10
-
-    for ich, (led, dar) in enumerate(zip(specsL, specsD)):
-        b1 = 0
-        b2 = len(dar)
-        if min_stat != 0:
-            try:
-                valid_bins = np.argwhere(led>=min_stat)
-                b1 = valid_bins[ 0][0]
-                b2 = valid_bins[-1][0]
-            except IndexError:
-                continue
-
-    assert run_no      == expected_run_no
-    assert len(specsL) == expected_n_sensors
-    assert len(specsL) == len(specsD)
-    assert len(bins)   == 349
-
-    assert not (b1 == 0)
-    assert not (b2 == 0)
 
 
 def test_seeds_without_using_db(ICDATADIR):
