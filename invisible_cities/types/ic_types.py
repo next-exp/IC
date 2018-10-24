@@ -1,5 +1,5 @@
 from argparse import Namespace
-from enum     import Enum, auto
+from enum     import Enum
 
 import numpy as np
 
