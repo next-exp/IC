@@ -3,6 +3,9 @@
                                 Phyllis
 -----------------------------------------------------------------------
 
+From ancient Greek, Φυλλίς: it was the name of a Tracian princess,
+converted into a nut tree.
+
 This city produces the light and dark spectrum of PMTs for dedicated
 calibration runs. This is achieved by selecting regions in the PMT
 waveforms where LED pulses are expected and regions which end 2

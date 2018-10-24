@@ -3,6 +3,8 @@
                                  Irene                                 
 -----------------------------------------------------------------------
 
+From ancient Greek, Εἰρήνη: Peace.
+
 This city finds the signal pulses within the waveforms produced by the
 detector or by diomira in the case of Monte Carlo data.
 This includes a number of tasks:

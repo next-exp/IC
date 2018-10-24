@@ -3,6 +3,8 @@
                                 Diomira                                
 -----------------------------------------------------------------------
 
+From Germanic, Teodomiro/Teodemaro: famous among its people.
+
 This city simulates the response of the different sensors within the
 detector, namely, PMTs and SiPMs. This can be summarized in the
 following tasks:

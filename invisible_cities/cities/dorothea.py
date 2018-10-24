@@ -3,6 +3,8 @@
                                 Dorothea
 -----------------------------------------------------------------------
 
+From ancient Greek, Δωροθέα: gift of God.
+
 This city processes each combination of S1 and S2 signals previously
 selected as pmaps by irene within an event to produce reconstructed
 pointlike energy depositions. They consist of three dimensional

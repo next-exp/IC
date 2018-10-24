@@ -3,6 +3,8 @@
                               Penthesilea
 -----------------------------------------------------------------------
 
+From ancient Greek, Πενθεσίλεια: She, who brings suffering.
+
 This city processes each S2 signal previously selected as pmaps in
 irene assuming a unique S1 within an event to produce a set of
 reconstructed energy depositions (hits). Hits consist of three

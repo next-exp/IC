@@ -3,6 +3,8 @@
                                 Zemrude
 -----------------------------------------------------------------------
 
+Unknown etymology.
+
 This city produces the spectrum of dark noise of the SiPMs. This is
 achieved by binning either the pe or ADC content of each raw WF sample.
 Some slices will have only electronic noise while others will contain 
