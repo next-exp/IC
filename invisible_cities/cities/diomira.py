@@ -60,7 +60,10 @@ from .  components import wf_from_files
 @city
 def diomira(files_in, file_out, compression, event_range, print_mod, run_number,
             sipm_noise_cut, filter_padding, trigger_type,
-            trigger_params = dict(), s2_params = dict()):
+            trigger_params = dict(), s2_params = dict(),
+            random_seed = None):
+    if random_seed is not None:
+        np.random.seed(random_seed)
 
     sd = sensor_data(files_in[0], WfType.mcrd)
 
