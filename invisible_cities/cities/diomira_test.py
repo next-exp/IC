@@ -1,11 +1,3 @@
-"""
-code: diomira_test.py
-description: test suite for diomira
-author: J.J. Gomez-Cadenas
-IC core team: Jacek Generowicz, JJGC,
-G. Martinez, J.A. Hernando, J.M Benlloch
-package: invisible cities. See release notes and licence
-"""
 import os
 import tables as tb
 import numpy  as np
@@ -13,18 +5,18 @@ import numpy  as np
 from pytest import mark
 from pytest import raises
 
-from .. core               import system_of_units as units
-from .. core.configure     import configure
-from .. core.configure     import all as all_events
-from .. core.testing_utils import assert_tables_equality
+from .. core                 import system_of_units as units
+from .. core.configure       import             all as all_events
+from .. core.configure       import configure
+from .. core.testing_utils   import assert_tables_equality
 
 from .. reco     import tbl_functions as tbl
 from .. sierpe   import fee as FEE
 
-from .  diomira  import Diomira
+from .  diomira  import diomira
 
 
-@mark.skip
+@mark.skip(reason="Table not written in liquid cities anymore")
 def test_diomira_fee_table(ICDATADIR):
     "Test that FEE table reads back correctly with expected values."
     RWF_file = os.path.join(ICDATADIR, 'electrons_40keV_z250_RWF.h5')
@@ -81,10 +73,9 @@ def test_diomira_identify_bug(ICDATADIR):
 @mark.slow
 def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
     PATH_IN  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
-    PATH_OUT = os.path.join(config_tmpdir, 'electrons_40keV_z250_RWF.h5' )
-    #PATH_OUT = os.path.join(ICDATADIR, 'electrons_40keV_z250_test_RWF.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'electrons_40keV_z250_RWF.h5')
 
-    start_evt  = Diomira.event_number_from_input_file_name(PATH_IN)
+    start_evt  = tbl.event_number_from_input_file_name(PATH_IN)
     run_number = 0
     nrequired = 2
 
@@ -95,12 +86,9 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
                      file_out    = PATH_OUT,
                      event_range = (start_evt, start_evt + nrequired)))
 
-    diomira = Diomira(**conf)
-    diomira.run()
-    cnt     = diomira.end()
-    nactual = cnt.n_events_tot
-    if nrequired > 0:
-        assert nrequired == nactual
+    cnt     = diomira(**conf)
+    nactual = cnt.events_in
+    assert nrequired == nactual
 
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
@@ -112,7 +100,7 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
             # we have to convert manually into a tuple because MCTracks[0]
             # returns an object of type numpy.void where we cannot index
             # using ranges like mctracks_in[1:]
-            mcextents_in  = tuple(h5in.root.MC.extents[0])
+            mcextents_in  = tuple(h5in .root.MC.extents[0])
             mcextents_out = tuple(h5out.root.MC.extents[0])
             #evt number is not equal if we redefine first event number
             assert mcextents_out[0] == start_evt
@@ -125,13 +113,11 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
             assert first_evt_number != last_evt_number
 
 
+@mark.skip(reason="Feature removed")
 @mark.parametrize('filename first_evt'.split(),
-             (('dst_NEXT_v0_08_09_Co56_INTERNALPORTANODE_74_0_7bar_MCRD_10000.root.h5',
-               740000),
-              ('NEXT_v0_08_09_Co56_2_0_7bar_MCRD_1000.root.h5',
-               2000),
-              ('electrons_40keV_z250_MCRD.h5',
-               0)))
+                  (('dst_NEXT_v0_08_09_Co56_INTERNALPORTANODE_74_0_7bar_MCRD_10000.root.h5', 740000),
+                   ('NEXT_v0_08_09_Co56_2_0_7bar_MCRD_1000.root.h5'                        ,   2000),
+                   ('electrons_40keV_z250_MCRD.h5'                                         ,      0)))
 def test_event_number_from_input_file_name(filename, first_evt):
     assert Diomira.event_number_from_input_file_name(filename) == first_evt
 
@@ -145,17 +131,16 @@ def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
     conf.update(dict(run_number  = -4500, # Must be a run number with dead pmts
                      files_in    = file_in,
                      file_out    = file_out,
-                     tr_channels = (18, 19),
                      event_range = (0, 1)))
+    conf["trigger_params"].update(dict(tr_channels = (18, 19)))
 
-    diomira = Diomira(**conf)
-    diomira.run()
-    cnt     = diomira.end()
+    cnt = diomira(**conf)
 
     # we are just interested in checking whether the code runs or not
-    assert cnt.n_events_tot == 1
+    assert cnt.events_in == 1
 
 
+@mark.skip(reason="Trigger not implemented in liquid cities")
 @mark.slow
 def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdir):
     file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
@@ -170,46 +155,38 @@ def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdi
                      event_range  = (0, 1)))
 
     with raises(ValueError):
-        Diomira(**conf).run()
-
+        diomira(**conf)
 
 def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
-        ICTDIR      = os.getenv('ICTDIR')
-        file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts*.MCRD.h5")
-        file_out    = os.path.join(output_tmpdir, "Kr83_nexus_v5_03_00_ACTIVE_7bar_6evts.RWF.h5")
-        second_file = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts_1.MCRD.h5")
+    file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts*.MCRD.h5")
+    file_out    = os.path.join(output_tmpdir, "Kr83_nexus_v5_03_00_ACTIVE_7bar_6evts.RWF.h5")
+    second_file = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts_1.MCRD.h5")
 
-        nevents_per_file = 3
+    nevents_per_file = 3
 
-        nrequired = 10
-        conf = configure('dummy invisible_cities/config/diomira.conf'.split())
-        conf.update(dict(run_number   = -4734,
+    nrequired = 10
+    conf = configure('dummy invisible_cities/config/diomira.conf'.split())
+    conf.update(dict(run_number   = -4734,
                      files_in     = file_in,
                      file_out     = file_out,
-                     event_range  = (0, nrequired),
-                     tr_channels = [18,19]))
+                     event_range  = (0, nrequired)))
+    conf["trigger_params"].update(dict(tr_channels = [18, 19]))
 
-        diomira = Diomira(**conf)
-        try:
-            diomira.run()
-        except IndexError:
-            raise
+    diomira(**conf)
 
-        with tb.open_file(file_out) as h5out:
-            last_particle_list = h5out.root.MC.extents[:]['last_particle']
-            last_hit_list = h5out.root.MC.extents[:]['last_hit']
+    with tb.open_file(file_out) as h5out:
+        last_particle_list = h5out.root.MC.extents[:]['last_particle']
+        last_hit_list      = h5out.root.MC.extents[:]['last_hit'     ]
 
-            assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
-            assert all(x<y for x, y in zip(last_hit_list, last_hit_list[1:]))
+        assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
+        assert all(x<y for x, y in zip(last_hit_list     , last_hit_list     [1:]))
 
-            with tb.open_file(second_file) as h5second:
+        with tb.open_file(second_file) as h5second:
+            nparticles_in_first_event = h5second.root.MC.extents[0]['last_particle'] + 1
+            nhits_in_first_event      = h5second.root.MC.extents[0]['last_hit'     ] + 1
 
-                nparticles_in_first_event = h5second.root.MC.extents[0]['last_particle'] + 1
-                nhits_in_first_event = h5second.root.MC.extents[0]['last_hit'] + 1
-
-                assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
-                assert last_hit_list[nevents_per_file] - last_hit_list[nevents_per_file - 1] == nhits_in_first_event
-
+            assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
+            assert last_hit_list     [nevents_per_file] - last_hit_list     [nevents_per_file - 1] == nhits_in_first_event
 
 def test_diomira_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5")
@@ -227,12 +204,11 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
     # repeatible. Go back to original state after running.
     original_random_state = np.random.get_state()
     np.random.seed(123456789)
-    Diomira(**conf).run()
+    diomira(**conf)
     np.random.set_state(original_random_state)
 
 
-    tables = ("FEE/FEE"    ,
-               "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
+    tables = ( "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
                "RD/pmtrwf" ,  "RD/pmtblr" , "RD/sipmrwf"  ,
               "Run/events" , "Run/runInfo")
     with tb.open_file(true_output)  as true_output_file:

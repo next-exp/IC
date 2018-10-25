@@ -1,198 +1,154 @@
-"""
-code: irene.py
-description: perform fast processing from raw data to pmaps.
-credits: see ic_authors_and_legal.rst in /doc
-
-last revised: JJGC, 12-July-2017
-"""
-from argparse import Namespace
-
 import numpy  as np
 import tables as tb
-import warnings
 
-from os.path                import expandvars
+from .. types.ic_types import minmax
+from .. database       import load_db
 
-from .. io.mcinfo_io        import mc_info_writer
-from .. io.pmaps_io         import pmap_writer
-from .. io.run_and_event_io import run_and_event_writer
-from .. io.trigger_io       import trigger_writer
+from .. reco                  import tbl_functions        as tbl
+from .. reco                  import  peak_functions      as pkf
+from .. core.random_sampling  import NoiseSampler         as SiPMsNoiseSampler
+from .. io  .        pmaps_io import          pmap_writer
+from .. io.        mcinfo_io  import       mc_info_writer
+from .. io  .run_and_event_io import run_and_event_writer
+from .. io  .trigger_io       import       trigger_writer
 
-from .. reco                import tbl_functions as tbl
+from .. dataflow            import dataflow as fl
+from .. dataflow.dataflow   import push
+from .. dataflow.dataflow   import pipe
+from .. dataflow.dataflow   import sink
 
-from .  base_cities  import PmapCity
-from .  base_cities  import EventLoop
-
-
-class Irene(PmapCity):
-    """Perform fast processing from raw data to pmaps."""
-
-    parameters = tuple("""trg1_code trg2_code split_triggers
-                       file_out2""".split())
-
-    def __init__(self, **kwds):
-        """actions:
-        1. inits base city
-        2. inits counters
-        3. gets sensor parameters
-
-        """
-        super().__init__(**kwds)
-
-        self.split_triggers = self.conf.split_triggers
-        if self.conf.split_triggers:
-            self.output_file2 = expandvars(self.conf.file_out2)
-            self.trg1_code      = self.conf.trg1_code
-            self.trg2_code      = self.conf.trg2_code
-
-        self.cnt.init(n_events_tot                 = 0,
-                      n_empty_events               = 0,
-                      n_empty_events_s2_ene_eq_0   = 0,
-                      n_empty_events_s1_indx_empty = 0,
-                      n_empty_events_s2_indx_empty = 0,
-                      n_empty_pmaps                = 0)
-
-        self.sp = self.get_sensor_params(self.input_files[0])
-
-    def run(self):
-        """The (base) run method of a city does the following chores:
-        1. Calls a display_IO_info() function (to be provided by the concrete cities)
-        2. open the output file
-        3. Writes any desired parameters to output file (must be implemented by cities)
-        4. gets the writers for the specific city.
-        5. Pass the writers to the file_loop() method.
-        6. returns the counter dictionary.
-        """
-        self.display_IO_info()
-
-        with tb.open_file(self.output_file, "w",
-                          filters = tbl.filters(self.compression)) as h5out1:
-            self.write_parameters(h5out1)
-            self.writers1 = self.get_writers(h5out1)
-            self.writers2 = None
-
-            if self.split_triggers:
-                with tb.open_file(self.output_file2, "w",
-                          filters = tbl.filters(self.compression)) as h5out2:
-                    self.write_parameters(h5out2)
-                    self.writers2 = self.get_writers(h5out2)
-                    self.file_loop()
-            else:
-                self.file_loop()
-
-    def event_loop(self, NEVT, dataVectors):
-        """actions:
-        1. loops over all the events in each file.
-        2. write MC tracks on file
-        3. write event/run to file
-        3. compute PMAPS and write them to file
-        """
-
-        write1       = self.writers1
-        write2       = self.writers2
-        pmtrwf       = dataVectors.pmt
-        sipmrwf      = dataVectors.sipm
-        mc_info      = dataVectors.mc
-        events_info  = dataVectors.events
-        trg_types    = dataVectors.trg_type
-        trg_channels = dataVectors.trg_channels
-
-        for evt in range(NEVT):
-            self.conditional_print(evt, self.cnt.n_events_tot)
-
-            what_next = self.event_range_step()
-            if what_next is EventLoop.skip_this_event: continue
-            if what_next is EventLoop.terminate_loop : break
-            self.cnt.n_events_tot += 1
-
-            # calibrated sum in PMTs
-            pmt_wfs = self.mask_pmts(pmtrwf[evt])
-            s12sum, cal_cwf, _ = self.pmt_transformation(pmt_wfs)
-
-            if not self.check_s12(s12sum): # ocasional but rare empty events
-                self.cnt.n_empty_events += 1
-                continue
-
-            # calibrated sum in SiPMs
-            sipm_wfs = self.mask_sipms(sipmrwf[evt])
-            sipmzs = self.calibrate_sipms(sipm_wfs)
-
-            # pmaps
-            pmap = self.pmaps(s12sum.s1_indx, s12sum.s2_indx,
-                              cal_cwf.ccwf, sipmzs)
-
-            if not pmap.s1s and not pmap.s2s:
-                self.cnt.n_empty_pmaps += 1
-                continue
-
-            # write stuff
-            event, timestamp = self.event_and_timestamp(evt, events_info)
-            trg_type         = self.trigger_type    (evt, trg_types)
-            trg_channel      = self.trigger_channels(evt, trg_channels)
-
-            # If there is trigger information and split is true => write 2 files
-            if self.split_triggers and trg_types:
-                if trg_type == self.trg1_code:
-                    self.write_event(write1, pmap, mc_info, event, timestamp,
-                                     trg_type, trg_channel)
-                elif trg_type == self.trg2_code:
-                    self.write_event(write2, pmap, mc_info, event, timestamp,
-                                     trg_type, trg_channel)
-                else:
-                    message = f"Event {event} has an unknown trigger type ({trg_type})"
-                    warnings.warn(message)
-            else:
-                self.write_event(write1, pmap, mc_info, event, timestamp,
-                                 trg_type, trg_channel)
+from .  components import city
+from .  components import print_every
+from .  components import deconv_pmt
+from .  components import calibrate_pmts
+from .  components import calibrate_sipms
+from .  components import zero_suppress_wfs
+from .  components import WfType
+from .  components import wf_from_files
 
 
-    def write_event(self, writers, pmap, mc_info, event, timestamp,
-                    trg_type, trg_channel):
-        writers.pmap         (pmap, event)
-        writers.run_and_event(self.run_number, event, timestamp)
-        if self.monte_carlo:
-            writers.mc(mc_info, event)
-        writers.trigger(trg_type, trg_channel)
+@city
+def irene(files_in, file_out, compression, event_range, print_mod, run_number,
+          n_baseline, raw_data_type,
+          n_mau, thr_mau, thr_sipm, thr_sipm_type,
+          s1_lmin, s1_lmax, s1_tmin, s1_tmax, s1_rebin_stride, s1_stride, thr_csum_s1,
+          s2_lmin, s2_lmax, s2_tmin, s2_tmax, s2_rebin_stride, s2_stride, thr_csum_s2, thr_sipm_s2):
+    if   thr_sipm_type.lower() == "common":
+        # In this case, the threshold is a value in pes
+        sipm_thr = thr_sipm
+
+    elif thr_sipm_type.lower() == "individual":
+        # In this case, the threshold is a percentual value
+        noise_sampler = SiPMsNoiseSampler(run_number)
+        sipm_thr      = noise_sampler.compute_thresholds(thr_sipm)
+
+    else:
+        raise ValueError(f"Unrecognized thr type: {thr_sipm_type}. "
+                          "Only valid options are 'common' and 'individual'")
+
+    #### Define data transformations
+
+    # Raw WaveForm to Corrected WaveForm
+    rwf_to_cwf       = fl.map(deconv_pmt(run_number, n_baseline),
+                              args = "pmt",
+                              out  = "cwf")
+
+    # Corrected WaveForm to Calibrated Corrected WaveForm
+    cwf_to_ccwf      = fl.map(calibrate_pmts(run_number, n_mau, thr_mau),
+                              args = "cwf",
+                              out  = ("ccwfs", "ccwfs_mau", "cwf_sum", "cwf_sum_mau"))
+
+    # Find where waveform is above threshold
+    zero_suppress    = fl.map(zero_suppress_wfs(thr_csum_s1, thr_csum_s2),
+                              args = ("cwf_sum", "cwf_sum_mau"),
+                              out  = ("s1_indices", "s2_indices", "s2_energies"))
+
+    # Remove baseline and calibrate SiPMs
+    sipm_rwf_to_cal  = fl.map(calibrate_sipms(run_number, sipm_thr),
+                              item = "sipm")
+
+    # Build the PMap
+    compute_pmap     = fl.map(build_pmap(run_number,
+                                         s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
+                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2),
+                              args = ("ccwfs", "s1_indices", "s2_indices", "sipm"),
+                              out  = "pmap")
+
+    ### Define data filters
+
+    # Filter events with zero peaks
+    empty_indices   = fl.count_filter(check_nonempty_indices, args = ("s1_indices", "s2_indices"))
+
+    event_count_in  = fl.spy_count()
+    event_count_out = fl.spy_count()
+
+    with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
+
+        # Define writers...
+        write_event_info_   = run_and_event_writer(h5out)
+        write_mc_           = mc_info_writer      (h5out) if run_number <= 0 else (lambda *_: None)
+        write_pmap_         = pmap_writer         (h5out, compression=compression)
+        write_trigger_info_ = trigger_writer      (h5out, get_number_of_active_pmts(run_number))
+
+        # ... and make them sinks
+        write_event_info   = sink(write_event_info_  , args=(   "run_number",     "event_number", "timestamp"))
+        write_mc           = sink(write_mc_          , args=(           "mc",     "event_number"             ))
+        write_pmap         = sink(write_pmap_        , args=(         "pmap",     "event_number"             ))
+        write_trigger_info = sink(write_trigger_info_, args=( "trigger_type", "trigger_channels"             ))
+
+        return push(source = wf_from_files(files_in, WfType.rwf),
+                    pipe   = pipe(
+                                fl.slice(*event_range, close_all=True),
+                                print_every(print_mod),
+                                event_count_in.spy,
+                                rwf_to_cwf,
+                                cwf_to_ccwf,
+                                zero_suppress,
+                                empty_indices.filter,
+                                sipm_rwf_to_cal,
+                                compute_pmap,
+                                event_count_out.spy,
+                                fl.fork(write_pmap,
+                                        write_mc,
+                                        write_event_info,
+                                        write_trigger_info)),
+                    result = dict(events_in  = event_count_in .future,
+                                  events_out = event_count_out.future,
+                                  empty_pmap = empty_indices  .future))
 
 
-    def check_s12(self, s12sum):
-        """Checks for ocassional empty events, characterized by null s2_energy
-        or empty index list for s1/s2
 
-        """
-        if  np.sum(s12sum.s2_ene) == 0:
-            self.cnt.n_empty_events_s2_ene_eq_0 += 1
-            return False
-        elif np.sum(s12sum.s1_indx) == 0:
-            self.cnt.n_empty_events_s1_indx_empty += 1
-            return False
-        elif np.sum(s12sum.s2_indx) == 0:
-            self.cnt.n_empty_events_s2_indx_empty += 1
-            return False
-        else:
-            return True
+def build_pmap(run_number,
+               s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
+               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2):
+    s1_params = dict(time        = minmax(min = s1_tmin,
+                                          max = s1_tmax),
+                    length       = minmax(min = s1_lmin,
+                                          max = s1_lmax),
+                    stride       = s1_stride,
+                    rebin_stride = s1_rebin_stride)
 
-    def write_parameters(self, h5out):
-        """Write deconvolution parameters to output file"""
-        self.write_deconv_params(h5out)
+    s2_params = dict(time        = minmax(min = s2_tmin,
+                                          max = s2_tmax),
+                    length       = minmax(min = s2_lmin,
+                                          max = s2_lmax),
+                    stride       = s2_stride,
+                    rebin_stride = s2_rebin_stride)
 
-    def get_writers(self, h5out):
-        writers = Namespace(
-        run_and_event = run_and_event_writer(h5out),
-        mc            = mc_info_writer(h5out) if self.monte_carlo else None,
-        pmap          = pmap_writer(h5out),
-        trigger       = trigger_writer(h5out, len(self.pmt_active)))
-        return writers
+    datapmt = load_db.DataPMT(run_number)
+    pmt_ids = datapmt.SensorID[datapmt.Active.astype(bool)].values
 
-    def display_IO_info(self):
-        super().display_IO_info()
-        print(self.sp)
-        print("""
-                 S1 parameters {}""" .format(self.s1_params))
-        print("""
-                 S2 parameters {}""" .format(self.s2_params))
-        print("""
-                 S2Si parameters
-                 threshold min charge per SiPM = {s.thr_sipm} pes
-                 threshold min charge in  S2   = {s.thr_sipm_s2} pes
-                          """.format(s=self))
+    def build_pmap(ccwf, s1_indx, s2_indx, sipmzs): # -> PMap
+        return pkf.get_pmap(ccwf, s1_indx, s2_indx, sipmzs,
+                            s1_params, s2_params, thr_sipm_s2, pmt_ids)
+
+    return build_pmap
+
+
+def get_number_of_active_pmts(run_number):
+    datapmt = load_db.DataPMT(run_number)
+    return np.count_nonzero(datapmt.Active.values.astype(bool))
+
+
+def check_nonempty_indices(s1_indices, s2_indices):
+    return s1_indices.size and s2_indices.size

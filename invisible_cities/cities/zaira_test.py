@@ -2,9 +2,10 @@ import os
 
 from pytest import mark
 
-from .. core.configure import configure
+from .. core.configure       import configure
+from .. core.system_of_units import ns
 
-from . zaira import Zaira
+from .  zaira import zaira
 
 @mark.slow
 def test_zaira_KrMC(config_tmpdir, ICDIR):
@@ -15,16 +16,15 @@ def test_zaira_KrMC(config_tmpdir, ICDIR):
     PATH_IN =  os.path.join(ICDIR, 'database/test_data', 'KrDST_MC.h5')
     PATH_OUT = os.path.join(config_tmpdir,               'KrCorr.h5')
 
-    from .. core.system_of_units import ns
 
     conf = configure('dummy invisible_cities/config/zaira.conf'.split())
-    conf.update(dict(run_number = 0,
-                     files_in   = PATH_IN,
+    conf.update(dict(files_in   = PATH_IN,
                      file_out   = PATH_OUT,
                      lifetime   = 1e6 * ns,
                      xbins      = 20,
                      ybins      = 20))
 
-    zaira = Zaira(**conf)
-    cnt = zaira.run()
-    assert cnt.n_events_tot > 0
+    cnt = zaira(**conf)
+
+    assert cnt.events_in  >  0
+    assert cnt.events_out <= cnt.events_in

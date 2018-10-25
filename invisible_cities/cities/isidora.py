@@ -1,106 +1,62 @@
-"""
-code: isidora.py
-description: performs a fast processing from raw data
-(pmtrwf and sipmrwf) to BLR wavefunctions.
-credits: see ic_authors_and_legal.rst in /doc
-
-last revised: JJGC,July-2017
-"""
-
-import sys
-
-from argparse import Namespace
-
-from glob import glob
-from time import time
 from functools import partial
+
+from .  components import city
+from .  components import print_every
+from .  components import sensor_data
+from .  components import WfType
+from .  components import   wf_from_files
 
 import tables as tb
 
-from .. core.configure         import configure
-from .. core.system_of_units_c import units
-from .. reco                   import tbl_functions as tbl
-
-from .. io.       mcinfo_io    import       mc_info_writer
-from .. io.          rwf_io    import           rwf_writer
-from .. io.run_and_event_io    import run_and_event_writer
-
-from .  base_cities import DeconvolutionCity
-from .  base_cities import EventLoop
+from .. dataflow            import dataflow as fl
+from .. dataflow.dataflow   import push
+from .. dataflow.dataflow   import pipe
+from .. dataflow.dataflow   import slice
+from .. dataflow.dataflow   import fork
+from .. dataflow.dataflow   import sink
 
 
-class Isidora(DeconvolutionCity):
+from .. reco                import tbl_functions as tbl
+from .. io.          rwf_io import           rwf_writer
+from .. io.       mcinfo_io import       mc_info_writer
+from .. io.run_and_event_io import run_and_event_writer
+
+
+from .  components import deconv_pmt
+
+
+@city
+def isidora(files_in, file_out, compression, event_range, print_mod, run_number,
+            n_baseline, raw_data_type):
     """
     The city of ISIDORA performs a fast processing from raw data
     (pmtrwf and sipmrwf) to BLR wavefunctions.
 
     """
-    def __init__(self, **kwds):
-        """Isidora Init:
-        1. inits base city
-        2. inits counters
-        3. gets sensor parameters
-        """
+    sd = sensor_data(files_in[0], WfType.rwf)
 
-        super().__init__(**kwds)
+    rwf_to_cwf = fl.map(deconv_pmt(run_number, n_baseline), args="pmt", out="cwf")
 
-        self.cnt.init(n_events_tot = 0)
-        self.sp = self.get_sensor_params(self.input_files[0])
+    with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
+        RWF        = partial(rwf_writer, h5out, group_name='BLR')
+        write_pmt  = sink(RWF(table_name='pmtcwf' , n_sensors=sd.NPMT , waveform_length=sd.PMTWL ), args="cwf" )
+        write_sipm = sink(RWF(table_name='sipmrwf', n_sensors=sd.NSIPM, waveform_length=sd.SIPMWL), args="sipm")
 
-    def event_loop(self, NEVT, dataVectors):
-        """actions:
-        1. loops over all the events in each file.
-        2. write event/run to file
-        3. compute deconvoluted functions and write them to file
-        """
-        write = self.writers
-        pmtrwf       = dataVectors.pmt
-        sipmrwf      = dataVectors.sipm
-        mc_info      = dataVectors.mc
-        events_info  = dataVectors.events
+        write_event_info_ = run_and_event_writer(h5out)
+        write_mc_         = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
 
-        for evt in range(NEVT):
-            self.conditional_print(evt, self.cnt.n_events_tot)
+        write_event_info = sink(write_event_info_, args=("run_number", "event_number", "timestamp"))
+        write_mc         = sink(write_mc_        , args=(        "mc", "event_number"             ))
 
-            what_next = self.event_range_step()
-            if what_next is EventLoop.skip_this_event: continue
-            if what_next is EventLoop.terminate_loop : break
-            self.cnt.n_events_tot += 1
+        event_count = fl.spy_count()
 
-            CWF = self.deconv_pmt(pmtrwf[evt])  # deconvolution
-
-            # write stuff
-            event, timestamp = self.event_and_timestamp(evt, events_info)
-            write.run_and_event(self.run_number, event, timestamp)
-            write.pmt (CWF)
-            write.sipm(sipmrwf[evt])
-            if self.monte_carlo:
-                write.mc(mc_info, event)
-
-    def get_writers(self, h5out):
-        RWF = partial(rwf_writer,  h5out,   group_name='BLR')
-        writers = Namespace(
-            run_and_event = run_and_event_writer(h5out),
-            pmt           = RWF(table_name='pmtcwf' , n_sensors=self.sp.NPMT , waveform_length=self.sp.PMTWL),
-            sipm          = RWF(table_name='sipmrwf' , n_sensors=self.sp.NSIPM , waveform_length=self.sp.SIPMWL),
-            mc            = mc_info_writer(h5out) if self.monte_carlo else None,
-            )
-
-        return writers
-
-    def write_parameters(self, h5out):
-        pass
-
-    def display_IO_info(self):
-        super().display_IO_info()
-        print(self.sp)
-
-    def _copy_sensor_table(self, h5in):
-        # Copy sensor table if exists (needed for GATE)
-        if 'Sensors' in h5in.root:
-            self.sensors_group = self.output_file.create_group(
-                self.output_file.root, "Sensors")
-            datapmt = h5in.root.Sensors.DataPMT
-            datapmt.copy(newparent=self.sensors_group)
-            datasipm = h5in.root.Sensors.DataSiPM
-            datasipm.copy(newparent=self.sensors_group)
+        return push(
+            source = wf_from_files(files_in, WfType.rwf),
+            pipe   = pipe(fl.slice(*event_range, close_all=True),
+                          event_count.spy,
+                          print_every(print_mod),
+                          fork((rwf_to_cwf, write_pmt       ),
+                               (            write_sipm      ),
+                               (            write_mc        ),
+                               (            write_event_info))),
+            result = dict(events_in = event_count.future))

@@ -1,13 +1,3 @@
-"""
-code: isidora_test.py
-description: test suite for isidora
-author: J.J. Gomez-Cadenas
-IC core team: Jacek Generowicz, JJGC,
-G. Martinez, J.A. Hernando, J.M Benlloch
-package: invisible cities. See release notes and licence
-last changed: 01-12-2017
-"""
-
 import os
 from collections import namedtuple
 
@@ -17,21 +7,20 @@ import numpy  as np
 from pytest import mark
 from pytest import fixture
 
-from .  isidora import Isidora
-from .. core                 import system_of_units as units
-from .. core.configure       import configure
-from .. core.configure       import all as all_events
-from .. core.testing_utils   import assert_tables_equality
-
+from .  isidora            import isidora
+from .. core               import system_of_units as units
+from .. core.configure     import             all as all_events
+from .. core.configure     import configure
+from .. core.testing_utils import assert_tables_equality
 
 @mark.slow
-def test_isidora_electrons_40keV(config_tmpdir, ICDIR):
+def test_isidora_electrons_40keV(config_tmpdir, ICDATADIR):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
 
-    PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'electrons_40keV_z250_RWF.h5')
-    PATH_OUT = os.path.join(config_tmpdir,               'electrons_40keV_z250_CWF.h5')
+    PATH_IN  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_RWF.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'electrons_40keV_z250_CWF.h5')
 
     nrequired  = 2
 
@@ -41,25 +30,18 @@ def test_isidora_electrons_40keV(config_tmpdir, ICDIR):
                      file_out     = PATH_OUT,
                      event_range  = (0, nrequired)))
 
-    isidora = Isidora(**conf)
-    isidora.run()
-    cnt = isidora.end()
-
-    nactual = cnt.n_events_tot
-    if nrequired > 0:
-        assert nrequired == nactual
+    cnt = isidora(**conf)
+    nactual = cnt.events_in
+    assert nrequired == nactual
 
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
             nrow = 0
 
             # check events numbers & timestamps
-            evts_in     = h5in .root.Run.events[:nactual]
-            evts_out_i4 = h5out.root.Run.events[:nactual]
-
-            evts_out_u8 = evts_out_i4.astype([('evt_number', '<u8'), ('timestamp', '<u8')])
-
-            np.testing.assert_array_equal(evts_in, evts_out_u8)
+            evts_in  = h5in .root.Run.events[:nactual].astype([('evt_number', '<i4'), ('timestamp', '<u8')])
+            evts_out = h5out.root.Run.events[:nactual]
+            np.testing.assert_array_equal(evts_in, evts_out)
 
 
 def test_isidora_exact_result(ICDATADIR, output_tmpdir):
@@ -73,7 +55,7 @@ def test_isidora_exact_result(ICDATADIR, output_tmpdir):
                      file_out    = file_out,
                      event_range = all_events))
 
-    Isidora(**conf).run()
+    isidora(**conf)
 
     tables = ( "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
               "BLR/pmtcwf" , "BLR/sipmrwf",

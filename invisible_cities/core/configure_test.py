@@ -1,22 +1,22 @@
-from os import getenv
 from os import path
 
-import pytest
-from   pytest import mark
-from   pytest import raises
+from pytest import fixture
+from pytest import mark
+from pytest import raises
 
 from . configure import all
 from . configure import last
 from . configure import configure
 from . configure import Configuration
 from . configure import make_config_file_reader
+from . configure import read_config_file
+from .           import system_of_units  as units
 
 from . exceptions import NoInputFiles
 from . exceptions import NoOutputFile
 
-from .. cities.base_cities import City
-from .. cities.penthesilea import Penthesilea
-
+from .. cities.components  import city
+from .. cities.penthesilea import penthesilea
 
 config_file_format = """
 # set_input_files
@@ -66,29 +66,29 @@ event_range = {event_range}
 """
 
 # The values that will be fed into the above.
-config_file_spec = dict(files_in = 'electrons_40keV_z250_RWF.h5',
-                        file_out = 'electrons_40keV_z250_PMP.h5',
-                        compression        = 'ZLIB4',
-                        run_number         = 23,
-                        nprint             = 24,
-                        nbaseline          = 26,
-                        thr_trigger        = 27,
-                        nmau               = 28,
-                        thr_mau            = 29,
-                        thr_csum           =  0.5,
-                        s1_tmin            = 31,
-                        s1_tmax            = 32,
-                        s1_stride          = 33,
-                        s1_lmin            = 34,
-                        s1_lmax            = 35,
-                        s2_tmin            = 36,
-                        s2_tmax            = 37,
-                        s2_stride          = 39,
-                        s2_lmin            = 41,
-                        s2_lmax            = 42,
-                        thr_zs             = 43,
-                        thr_sipm_s2        = 44,
-                        event_range        = (45, 46))
+config_file_spec = dict(files_in    = 'electrons_40keV_z250_RWF.h5',
+                        file_out    = 'electrons_40keV_z250_PMP.h5',
+                        compression = 'ZLIB4',
+                        run_number  = 23,
+                        nprint      = 24,
+                        nbaseline   = 26,
+                        thr_trigger = 27,
+                        nmau        = 28,
+                        thr_mau     = 29,
+                        thr_csum    = .5,
+                        s1_tmin     = 31,
+                        s1_tmax     = 32,
+                        s1_stride   = 33,
+                        s1_lmin     = 34,
+                        s1_lmax     = 35,
+                        s2_tmin     = 36,
+                        s2_tmax     = 37,
+                        s2_stride   = 39,
+                        s2_lmin     = 41,
+                        s2_lmax     = 42,
+                        thr_zs      = 43,
+                        thr_sipm_s2 = 44,
+                        event_range = (45, 46))
 
 config_file_contents = config_file_format.format(**config_file_spec)
 
@@ -103,6 +103,18 @@ def join_dicts(*args):
     for d in args:
         accumulate.update(d)
     return accumulate
+
+
+def write_config_file(file_name, contents):
+    with open(file_name, 'w') as out:
+        out.write(contents)
+
+
+@fixture(scope="session")
+def default_conf(config_tmpdir):
+    conf_file_name = config_tmpdir.join('test.conf')
+    write_config_file(conf_file_name, config_file_contents)
+    return conf_file_name
 
 
 # This test is run repeatedly with different specs. Each spec is a
@@ -134,19 +146,14 @@ def join_dicts(*args):
                     (('files_in', '-i some_input_file',  'some_input_file'),
                      ('file_out', '-o some_output_file', 'some_output_file')),
                   ))
-def test_configure(config_tmpdir, spec):
-
-    conf_file_name = config_tmpdir.join('test.conf')
-    with open(conf_file_name, 'w') as conf_file:
-        conf_file.write(config_file_contents)
-
+def test_configure(default_conf, spec):
     # Extract command line aruments and the corresponding desired
     # values from the test's parameter.
     extra_args   = [    arg       for (_, arg, _    ) in spec ]
     cmdline_spec = { opt : value  for (opt, _, value) in spec }
 
     # Compose the command line
-    args_base = 'program_name {conf_file_name} '.format(**locals())
+    args_base = 'program_name {default_conf} '.format(**locals())
     args_options = ' '.join(extra_args)
     args = (args_base + args_options).split()
 
@@ -174,12 +181,39 @@ def test_configure(config_tmpdir, spec):
         assert getattr(CFP, option) == this_configuration[option], 'option = ' + option
 
 
-def write_config_file(file_name, contents):
-    with open(file_name, 'w') as out:
-        out.write(contents)
+@mark.parametrize("flag", ("-i", "--input-files" ,
+                           "-o", "--output-files",
+                           "-r", "--run-number"  ,
+                           "-p", "--print-mod"   ))
+def test_configure_does_not_take_multiple_arguments(default_conf, flag):
+    iargs = " ".join(f"arg_{i}.h5" for i in range(2))
+    argv   = f"dummy {default_conf} {flag} {iargs}".split()
+    with raises(SystemExit):
+        conf = configure(argv)
 
 
-@pytest.fixture(scope = 'session')
+def test_configure_raises_SystemExit_with_multiple_mutually_exclusive_options():
+    argv = f"dummy {default_conf} --no-files --full-files".split()
+    with raises(SystemExit):
+        conf = configure(argv)
+
+
+def test_read_config_file_special_values(config_tmpdir):
+    filename  = path.join(config_tmpdir, "test_read_config_file_special_values.conf")
+    all_units = list(vars(units).keys())
+    write_config_file(filename, f"""
+var_all    = all
+var_last   = last
+vars_units = {all_units}
+""")
+    argv = f"dummy {default_conf} -i ifile -o ofile -r runno".split()
+    conf = read_config_file(filename)
+    assert conf["var_all"   ] is all
+    assert conf["var_last"  ] is last
+    assert conf["vars_units"] == all_units
+
+
+@fixture(scope = 'session')
 def hierarchical_configuration(tmpdir_factory):
     "Create a dummy city configuration spread across a hierarchy of included files."
     dir_ = tmpdir_factory.mktemp('test_config_files')
@@ -280,7 +314,7 @@ def test_Configuration_as_namespace_is_read_only():
         ns.new_attribute = 'any value'
 
 
-@pytest.fixture(scope = 'session')
+@fixture(scope = 'session')
 def simple_conf_file_name(tmpdir_factory):
     dir_ = tmpdir_factory.mktemp('test_config_files')
     file_name = path.join(dir_, 'simple.conf')
@@ -293,33 +327,26 @@ event_range  = 14,
     return str(file_name)
 
 
-class DummyCity(City):
+@city
+def dummy(**kwds):
+    pass
 
-    def __init__(self, **kwds):
-        super().__init__(**kwds)
-        self.cnt.n_events_tot = 10
-
-    def file_loop(self): pass
-    def get_writers(self, h5out): pass
-    def write_parameters(self, h5out): pass
-
-
-def test_config_drive_fails_without_config_file():
+def test_config_city_fails_without_config_file():
     argv = 'dummy'.split()
     with raises(SystemExit):
-        DummyCity.drive(argv)
+        dummy(**configure(argv))
 
-def test_config_drive_fails_without_input_file(simple_conf_file_name):
+def test_config_city_fails_without_input_file(simple_conf_file_name):
     argv = 'dummy {simple_conf_file_name}'.format(**locals()).split()
     with raises(NoInputFiles):
-        DummyCity.drive(argv)
+        dummy(**configure(argv))
 
-def test_config_drive_fails_without_output_file(simple_conf_file_name):
+def test_config_city_fails_without_output_file(simple_conf_file_name):
     conf   = simple_conf_file_name
     infile = conf # any existing file will do as a dummy for now
     argv = 'dummy {conf} -i {infile}'.format(**locals()).split()
     with raises(NoOutputFile):
-        DummyCity.drive(argv)
+        dummy(**configure(argv))
 
 
 @mark.parametrize(     'name             flags           value'.split(),
@@ -336,27 +363,27 @@ def test_config_drive_fails_without_output_file(simple_conf_file_name):
                    ('event_range',              '-e 31 32', [31, 32]),
                    ('event_range',   '--event-range 33 34', [33, 34]),
                   ))
-def test_config_drive_flags(simple_conf_file_name, tmpdir_factory, name, flags, value):
+def test_config_CLI_flags(simple_conf_file_name, tmpdir_factory, name, flags, value):
     conf   = simple_conf_file_name
     infile = conf # any existing file will do as a dummy for now
-    outfile = tmpdir_factory.mktemp('drive-config').join('dummy-output-file' + name)
+    outfile = tmpdir_factory.mktemp('config-flags').join('dummy-output-file' + name)
     argv = 'dummy {conf} -i {infile} -o {outfile} {flags}'.format(**locals()).split()
-    conf_ns, _ = DummyCity.drive(argv)
+    conf_ns = configure(argv).as_namespace
     assert getattr(conf_ns, name) == value
 
 
 @mark.parametrize('flags value counter'.split(),
-                  (('-e all'   , 10, 'n_events_tot'), # 10 events in the file
-                   ('-e   9'   ,  9, 'n_events_tot'), # [ 0,  9) -> 9
-                   ('-e 5 9'   ,  4, 'n_events_tot'), # [ 5,  9) -> 4
-                   ('-e 2 last',  8, 'n_events_tot'), # events [2, 10) -> 8
+                  (('-e all'   , 10, 'events_in'), # 10 events in the file
+                   ('-e   9'   ,  9, 'events_in'), # [ 0,  9) -> 9
+                   ('-e 5 9'   ,  4, 'events_in'), # [ 5,  9) -> 4
+                   ('-e 2 last',  8, 'events_in'), # events [2, 10) -> 8
                   ))
-def test_config_drive_penthesilea_counters(config_tmpdir, KrMC_pmaps_filename, flags, value, counter):
+def test_config_penthesilea_counters(config_tmpdir, KrMC_pmaps_filename, flags, value, counter):
     input_filename  = KrMC_pmaps_filename
     config_filename = 'invisible_cities/config/penthesilea.conf'
     flags_wo_spaces = flags.replace(" ", "_")
     output_filename = path.join(config_tmpdir,
                                 f'penthesilea_counters_output_{flags_wo_spaces}.h5')
     argv = f'penthesilea {config_filename} -i {input_filename} -o {output_filename} {flags}'.split()
-    conf_ns, counters = Penthesilea.drive(argv)
+    counters = penthesilea(**configure(argv))
     assert getattr(counters, counter) == value

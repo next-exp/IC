@@ -1,46 +1,35 @@
-"""
-code: irene_test.py
-description: test suite for irene
-author: J.J. Gomez-Cadenas
-IC core team: Jacek Generowicz, JJGC,
-G. Martinez, J.A. Hernando, J.M Benlloch
-package: invisible cities. See release notes and licence
-last changed: 01-12-2017
-"""
 import os
 from collections import namedtuple
 
 import tables as tb
 import numpy  as np
 
-from subprocess import check_output
-
 from pytest import mark
-from pytest import warns
 from pytest import fixture
 
 from .. core                import system_of_units as units
+from .. core.configure      import             all as all_events
 from .. core.configure      import configure
-from .. core.configure      import all as all_events
 from .. core.testing_utils  import exactly
 from .. core.testing_utils  import assert_tables_equality
 from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
-from .  irene               import Irene
+
+from .  irene import irene
 
 
 @fixture(scope='module')
 def s12params():
-    s1par = S12P(time = minmax(min   =  99 * units.mus,
-                               max   = 101 * units.mus),
+    s1par = S12P(time   = minmax(min =  99 * units.mus,
+                                 max = 101 * units.mus),
                  length = minmax(min =   4,
                                  max =  20,),
                  stride              =   4,
                  rebin_stride        =   1)
 
-    s2par = S12P(time = minmax(min   =    101 * units.mus,
-                               max   =   1199 * units.mus),
+    s2par = S12P(time   = minmax(min =    101 * units.mus,
+                                 max =   1199 * units.mus),
                  length = minmax(min =     80,
                                  max = 200000),
                  stride              =     40,
@@ -50,20 +39,20 @@ def s12params():
 
 def unpack_s12params(s12params):
     s1par, s2par = s12params
-    return dict(s1_tmin          = s1par.time.min,
-                s1_tmax          = s1par.time.max,
-                s1_lmin          = s1par.length.min,
-                s1_lmax          = s1par.length.max,
+    return dict(s1_tmin         = s1par.time.min,
+                s1_tmax         = s1par.time.max,
+                s1_lmin         = s1par.length.min,
+                s1_lmax         = s1par.length.max,
 
-                s2_tmin          = s2par.time.min,
-                s2_tmax          = s2par.time.max,
-                s2_rebin_stride  = s2par.rebin_stride,
-                s2_lmin          = s2par.length.min,
-                s2_lmax          = s2par.length.max)
+                s2_tmin         = s2par.time.min,
+                s2_tmax         = s2par.time.max,
+                s2_rebin_stride = s2par.rebin_stride,
+                s2_lmin         = s2par.length.min,
+                s2_lmax         = s2par.length.max)
 
 
 @fixture(scope='module')
-def job_info_missing_pmts(config_tmpdir, ICDIR):
+def job_info_missing_pmts(config_tmpdir, ICDATADIR):
     # Specifies a name for a data configuration file. Also, default number
     # of events set to 1.
     job_info = namedtuple("job_info",
@@ -74,8 +63,8 @@ def job_info_missing_pmts(config_tmpdir, ICDIR):
     pmt_active  = list(filter(lambda x: x not in pmt_missing, range(12)))
 
 
-    ifilename   = os.path.join(ICDIR, 'database/test_data/', 'electrons_40keV_z250_RWF.h5')
-    ofilename   = os.path.join(config_tmpdir,                'electrons_40keV_z250_pmaps_missing_PMT.h5')
+    ifilename = os.path.join(ICDATADIR    , 'electrons_40keV_z250_RWF.h5')
+    ofilename = os.path.join(config_tmpdir, 'electrons_40keV_z250_pmaps_missing_PMT.h5')
 
     return job_info(run_number, pmt_missing, pmt_active, ifilename, ofilename)
 
@@ -84,13 +73,14 @@ def job_info_missing_pmts(config_tmpdir, ICDIR):
 @mark.parametrize("thr_sipm_type thr_sipm_value".split(),
                   (("common"    , 3.5 ),
                    ("individual", 0.99)))
-def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params, thr_sipm_type, thr_sipm_value):
+def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
+                               thr_sipm_type, thr_sipm_value):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
 
-    PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'electrons_40keV_z250_RWF.h5')
-    PATH_OUT = os.path.join(config_tmpdir,               'electrons_40keV_z250_CWF.h5')
+    PATH_IN  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_RWF.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'electrons_40keV_z250_CWF.h5')
 
     nrequired  = 2
 
@@ -103,15 +93,12 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params, thr_sipm_type, t
                      thr_sipm      = thr_sipm_value,
                      **unpack_s12params(s12params)))
 
-    irene = Irene(**conf)
-    irene.run()
-    cnt = irene.end()
+    cnt = irene(**conf)
 
-    nactual = cnt.n_events_tot
-    if nrequired > 0:
-        assert nrequired == nactual
+    nactual = cnt.events_in
+    assert nrequired == nactual
 
-    with tb.open_file(PATH_IN,  mode='r') as h5in, \
+    with tb.open_file(PATH_IN , mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
             nrow = 0
             mctracks_in  = h5in .root.MC.particles[nrow]
@@ -119,11 +106,9 @@ def test_irene_electrons_40keV(config_tmpdir, ICDIR, s12params, thr_sipm_type, t
             np.testing.assert_array_equal(mctracks_in, mctracks_out)
 
             # check events numbers & timestamps
-            evts_in     = h5in .root.Run.events[:nactual]
-            evts_out_i4 = h5out.root.Run.events[:nactual]
-
-            evts_out_u8 = evts_out_i4.astype([('evt_number', '<u8'), ('timestamp', '<u8')])
-            np.testing.assert_array_equal(evts_in, evts_out_u8)
+            evts_in  = h5in .root.Run.events[:nactual].astype([('evt_number', '<i4'), ('timestamp', '<u8')])
+            evts_out = h5out.root.Run.events[:nactual]
+            np.testing.assert_array_equal(evts_in, evts_out)
 
 
 @mark.slow
@@ -141,18 +126,14 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
     nrequired = 2
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number   = 2983,
-                     files_in     = PATH_IN,
-                     file_out     = PATH_OUT,
+    conf.update(dict(run_number  = 2983,
+                     files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
                      event_range = (0, nrequired),
                      **unpack_s12params(s12params)))
 
-    irene = Irene(**conf)
-    irene.run()
-    cnt = irene.end()
-    if nrequired > 0:
-        assert nrequired == cnt.n_events_tot
-
+    cnt = irene(**conf)
+    assert nrequired == cnt.events_in
 
 
 @mark.slow # not slow itself, but depends on a slow test
@@ -170,30 +151,31 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDATADIR):
 
 
     with tb.open_file(PATH_IN, mode='r') as h5in:
-        # Only event 0 contains a valid pmap
-        evts_in = h5in.root.Run.events.cols.evt_number[:1]
-        ts_in   = h5in.root.Run.events.cols.timestamp [:1]
+        evts_in = h5in.root.Run.events.cols.evt_number[:2]
+        ts_in   = h5in.root.Run.events.cols.timestamp [:2]
 
         rundf, evtdf = read_run_and_event(PATH_OUT)
-        evts_out = evtdf.evt_number.values
-        ts_out   = evtdf.timestamp .values
+        evts_out     = evtdf.evt_number.values
+        ts_out       = evtdf.timestamp.values
+
         np.testing.assert_array_equal(evts_in, evts_out)
         np.testing.assert_array_equal(  ts_in,   ts_out)
 
-        run_number_in  = h5in.root.Run.runInfo[0][0]
+        run_number_in  = h5in.root.Run.runInfo[:][0][0]
         run_number_out = rundf.run_number[0]
+
         assert run_number_in == run_number_out
 
 
 @mark.serial
 @mark.slow
-def test_irene_output_file_structure(config_tmpdir, ICDIR):
+def test_irene_output_file_structure(config_tmpdir):
     PATH_OUT = os.path.join(config_tmpdir, 'run_2983_pmaps.h5')
 
     with tb.open_file(PATH_OUT) as h5out:
         assert "PMAPS"        in h5out.root
         assert "Run"          in h5out.root
-        assert "DeconvParams" in h5out.root
+        #assert "DeconvParams" in h5out.root # Not there in liquid city
         assert "S1"           in h5out.root.PMAPS
         assert "S2"           in h5out.root.PMAPS
         assert "S2Si"         in h5out.root.PMAPS
@@ -201,63 +183,60 @@ def test_irene_output_file_structure(config_tmpdir, ICDIR):
         assert "runInfo"      in h5out.root.Run
 
 
-def test_empty_events_issue_81(config_tmpdir, ICDIR, s12params):
+def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
     # NB: explicit PATH_OUT
-    PATH_IN = os.path.join(ICDIR, 'database/test_data/', 'irene_bug_Kr_ACTIVE_7bar_RWF.h5')
-    PATH_OUT = os.path.join(config_tmpdir,               'irene_bug_Kr_ACTIVE_7bar_CWF.h5')
+    PATH_IN  = os.path.join(ICDATADIR    , 'irene_bug_Kr_ACTIVE_7bar_RWF.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'irene_bug_Kr_ACTIVE_7bar_CWF.h5')
 
     nrequired = 10
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number   = 4714,
+    conf.update(dict(run_number   = 0,
                      files_in     = PATH_IN,
                      file_out     = PATH_OUT,
                      event_range = (0, nrequired),
                      **unpack_s12params(s12params)))
 
-    irene = Irene(**conf)
-    irene.run()
-    cnt = irene.end()
+    cnt = irene(**conf)
 
-    assert cnt.n_events_tot               == 1
-    assert cnt.n_empty_events_s2_ene_eq_0 == 1
-    assert cnt.n_empty_events             == 1
+    assert cnt.events_in           == 1
+    assert cnt.events_out          == 0
+    assert cnt.empty_pmap.n_failed == 1
 
 
-def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, config_tmpdir, ICDIR, s12params):
+@mark.skip
+def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, s12params):
     "Check that PMT active correctly describes the PMT configuration of the detector"
     nrequired = 1
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number   =  job_info_missing_pmts.run_number,
-                     files_in     =  job_info_missing_pmts. input_filename,
-                     file_out     =  job_info_missing_pmts.output_filename,
-                     event_range   = (0, nrequired),
+    conf.update(dict(run_number  =  job_info_missing_pmts.run_number,
+                     files_in    =  job_info_missing_pmts. input_filename,
+                     file_out    =  job_info_missing_pmts.output_filename,
+                     event_range = (0, nrequired),
                      **unpack_s12params(s12params))) # s12params are just dummy values in this test
-    #import pdb; pdb.set_trace()
+
     irene = Irene(**conf)
 
-    assert irene.pmt_active_list == job_info_missing_pmts.pmt_active
+    assert irene.pmt_active == job_info_missing_pmts.pmt_active
 
 
+@mark.skip
 def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
     file_in  = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_diomira_3evt.h5")
     file_out = os.path.join(output_tmpdir, "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_pmaps_3evt.h5")
 
     nrequired = 3
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number   = 4714,
-                     files_in     = file_in,
-                     file_out     = file_out,
-                     event_range  = (0, nrequired),
+    conf.update(dict(run_number  = 4714,
+                     files_in    = file_in,
+                     file_out    = file_out,
+                     event_range = (0, nrequired),
                      **unpack_s12params(s12params))) # s12params are just dummy values in this test
 
-    irene = Irene(**conf)
-    irene.run()
-    cnt = irene.end()
+    cnt = irene(**conf)
 
-    assert cnt.n_events_tot   == 3
-    assert cnt.n_empty_events == 0
-    assert cnt.n_empty_pmaps  == 1
+    assert cnt.events_in           == 3
+    assert cnt.empty_pmap.n_failed == 0
 
     with tb.open_file(file_in) as fin:
         with tb.open_file(file_out) as fout:
@@ -267,111 +246,96 @@ def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
 
 
 def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
-        ICTDIR      = os.getenv('ICTDIR')
-        file_in     = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_*.h5")
-        file_out    = os.path.join(output_tmpdir, "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_10evts.h5")
-        second_file = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_1.h5")
+    file_in     = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_*.h5")
+    file_out    = os.path.join(output_tmpdir, "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_10evts.h5")
+    second_file = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_1.h5")
 
-        nevents_per_file = 5
+    nevents_per_file = 5
 
-        nrequired = 10
-        conf = configure('dummy invisible_cities/config/irene.conf'.split())
-        conf.update(dict(run_number   = -4735,
-                     files_in     = file_in,
-                     file_out     = file_out,
-                     event_range  = (0, nrequired),
+    nrequired = 10
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(run_number  = -4735,
+                     files_in    = file_in,
+                     file_out    = file_out,
+                     event_range = (0, nrequired),
                      **unpack_s12params(s12params))) # s12params are just dummy values in this test
 
-        irene = Irene(**conf)
-        try:
-            irene.run()
-        except IndexError:
-            raise
+    irene(**conf)
 
-        with tb.open_file(file_out) as h5out:
-            last_particle_list = h5out.root.MC.extents[:]['last_particle']
-            last_hit_list = h5out.root.MC.extents[:]['last_hit']
+    with tb.open_file(file_out) as h5out:
+        last_particle_list = h5out.root.MC.extents[:]['last_particle']
+        last_hit_list      = h5out.root.MC.extents[:]['last_hit'     ]
 
-            assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
-            assert all(x<y for x, y in zip(last_hit_list, last_hit_list[1:]))
+        assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
+        assert all(x<y for x, y in zip(last_hit_list     , last_hit_list     [1:]))
 
-            with tb.open_file(second_file) as h5second:
+        with tb.open_file(second_file) as h5second:
+            nparticles_in_first_event = h5second.root.MC.extents[0]['last_particle'] + 1
+            nhits_in_first_event      = h5second.root.MC.extents[0]['last_hit'     ] + 1
 
-                nparticles_in_first_event = h5second.root.MC.extents[0]['last_particle'] + 1
-                nhits_in_first_event = h5second.root.MC.extents[0]['last_hit'] + 1
-
-                assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
-                assert last_hit_list[nevents_per_file] - last_hit_list[nevents_per_file - 1] == nhits_in_first_event
+            assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
+            assert last_hit_list     [nevents_per_file] - last_hit_list     [nevents_per_file - 1] == nhits_in_first_event
 
 
-def test_irene_trigger_type(config_tmpdir, ICDIR, s12params):
-    PATH_IN = os.path.join(ICDIR, 'database/test_data/', '6229_000_trg_type.h5')
-    PATH_OUT = os.path.join(config_tmpdir,               'pmaps_6229_000_trg_type.h5')
+def test_irene_trigger_type(config_tmpdir, ICDATADIR, s12params):
+    PATH_IN  = os.path.join(ICDATADIR    ,       '6229_000_trg_type.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'pmaps_6229_000_trg_type.h5')
 
     nrequired  = 1
 
     run_number = 6229
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number    = run_number,
-                     files_in      = PATH_IN,
-                     file_out      = PATH_OUT,
-                     event_range   = (0, nrequired),
+    conf.update(dict(run_number  = run_number,
+                     files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
+                     event_range = (0, nrequired),
                      **unpack_s12params(s12params)))
 
-    irene = Irene(**conf)
-    irene.run()
-    cnt = irene.end()
+    cnt = irene(**conf)
+    assert cnt.events_in == nrequired
 
-    nactual = cnt.n_events_tot
-    if nrequired > 0:
-        assert nrequired == nactual
-
-    with tb.open_file(PATH_IN,  mode='r') as h5in, \
+    with tb.open_file(PATH_IN , mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
-            nrow = 0
+            nrow        = 0
             trigger_in  = h5in .root.Trigger.trigger[nrow]
             trigger_out = h5out.root.Trigger.trigger[nrow]
             np.testing.assert_array_equal(trigger_in, trigger_out)
 
 
-def test_irene_trigger_channels(config_tmpdir, ICDIR, s12params):
-    PATH_IN = os.path.join(ICDIR, 'database/test_data/', '6229_000_trg_channels.h5')
-    PATH_OUT = os.path.join(config_tmpdir,               'pmaps_6229_000_trg_channels.h5')
+def test_irene_trigger_channels(config_tmpdir, ICDATADIR, s12params):
+    PATH_IN  = os.path.join(ICDATADIR    ,       '6229_000_trg_channels.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'pmaps_6229_000_trg_channels.h5')
 
     nrequired  = 1
-
     run_number = 6229
+
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number    = run_number,
-                     files_in      = PATH_IN,
-                     file_out      = PATH_OUT,
-                     event_range   = (0, nrequired),
+    conf.update(dict(run_number  = run_number,
+                     files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
+                     event_range = (0, nrequired),
                      **unpack_s12params(s12params)))
 
-    irene = Irene(**conf)
-    irene.run()
-    cnt = irene.end()
-
-    nactual = cnt.n_events_tot
-    if nrequired > 0:
-        assert nrequired == nactual
+    cnt = irene(**conf)
+    assert cnt.events_in == nrequired
 
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
-            nrow = 0
+            nrow        = 0
             trigger_in  = h5in .root.Trigger.events[nrow]
             trigger_out = h5out.root.Trigger.events[nrow]
             np.testing.assert_array_equal(trigger_in, trigger_out)
 
 
-def test_irene_split_trigger(config_tmpdir, ICDIR, s12params):
-    PATH_IN = os.path.join(ICDIR, 'database/test_data/', '6229_000_split_trigger.h5')
-    PATH_OUT1 = os.path.join(config_tmpdir,              'pmaps_6229_000_trg1.h5')
-    PATH_OUT2 = os.path.join(config_tmpdir,              'pmaps_6229_000_trg2.h5')
+@mark.skip(reason="Trigger split not implemented in liquid cities")
+def test_irene_split_trigger(config_tmpdir, ICDATADIR, s12params):
+    PATH_IN   = os.path.join(ICDATADIR    , '6229_000_split_trigger.h5')
+    PATH_OUT1 = os.path.join(config_tmpdir, 'pmaps_6229_000_trg1.h5')
+    PATH_OUT2 = os.path.join(config_tmpdir, 'pmaps_6229_000_trg2.h5')
 
     nrequired  = 3
-
     run_number = 6229
+
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number     = run_number,
                      files_in       = PATH_IN,
@@ -384,23 +348,19 @@ def test_irene_split_trigger(config_tmpdir, ICDIR, s12params):
                      **unpack_s12params(s12params)))
 
     with warns(UserWarning) as record:
-        irene = Irene(**conf)
-        irene.run()
-        cnt = irene.end()
+        cnt = irene(**conf)
+        assert cnt.events_in == nrequired
 
     #check there is a warning for unknown trigger types
     assert len(record) >= 1
+
     evt_warn = 2
     trg_warn = 5
     message = "Event {} has an unknown trigger type ({})".format(evt_warn, trg_warn)
     assert sum(1 for r in record if r.message.args[0] == message) == 1
 
-    nactual = cnt.n_events_tot
-    if nrequired > 0:
-        assert nrequired == nactual
-
     # Check events has been properly redirected to their files
-    with tb.open_file(PATH_IN,  mode='r') as h5in, \
+    with tb.open_file(PATH_IN  , mode='r') as h5in  , \
          tb.open_file(PATH_OUT1, mode='r') as h5out1, \
          tb.open_file(PATH_OUT2, mode='r') as h5out2:
             # There is only one event per file
@@ -436,14 +396,13 @@ def test_irene_exact_result(ICDATADIR, output_tmpdir):
                      file_out     = file_out,
                      event_range  = all_events))
 
-    Irene(**conf).run()
+    irene(**conf)
 
-    tables = ("DeconvParams/DeconvParams",
-                        "MC/extents"     ,      "MC/hits"   ,    "MC/particles", "MC/generators",
-                     "PMAPS/S1"          ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
-                     "PMAPS/S1Pmt"       ,   "PMAPS/S2Pmt"  ,
-                       "Run/events"      ,     "Run/runInfo",
-                   "Trigger/events"      , "Trigger/trigger")
+    tables = (     "MC/extents",      "MC/hits"   ,    "MC/particles", "MC/generators",
+                "PMAPS/S1"     ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
+                "PMAPS/S1Pmt"  ,   "PMAPS/S2Pmt"  ,
+                  "Run/events" ,     "Run/runInfo",
+              "Trigger/events" , "Trigger/trigger")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             print(true_output_file)

@@ -1,9 +1,9 @@
 import os
 
+from pytest import mark
+
 import numpy  as np
 import tables as tb
-
-from . dorothea import Dorothea
 
 from .. io.dst_io            import load_dst
 from .. core.testing_utils   import assert_dataframes_close
@@ -11,6 +11,8 @@ from .. core.testing_utils   import assert_tables_equality
 from .. core.configure       import configure
 from .. core.configure       import all as all_events
 from .. core.system_of_units import pes, mm, mus, ns
+
+from .  dorothea import dorothea
 
 
 def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps_filename, KrMC_kdst):
@@ -30,15 +32,13 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps_filename, KrMC_kdst):
                      **KrMC_kdst[0].config))
 
 
-    dorothea = Dorothea(**conf)
-    dorothea.run()
-    cnt      = dorothea.end()
-    nevt_in  = cnt.n_events_tot
-    nevt_out = cnt.n_events_selected
+    cnt      = dorothea(**conf)
+    nevt_in  = cnt.events_in
+    nevt_out = cnt.events_out
 
     if nrequired > 0:
-        assert nrequired    == nevt_in
-        assert nevt_out     == len(df_true)
+        assert nrequired == nevt_in
+        assert nevt_out  == len(df_true)
 
     dst = load_dst(PATH_OUT,
                    group = "DST",
@@ -54,9 +54,9 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST_4628.h5')
     nrequired = 50
     conf = configure('dummy invisible_cities/config/dorothea.conf'.split())
-    conf.update(dict(run_number = 4628,
-                     files_in   = PATH_IN,
-                     file_out   = PATH_OUT,
+    conf.update(dict(run_number  = 4628,
+                     files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
 
                      drift_v     =      2 * mm / mus,
                      s1_nmin     =      1,
@@ -81,19 +81,17 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
                      s2_nsipmmax =     30,
                      event_range = (0, nrequired)))
 
-    events_pass  = [ 1,  4, 10, 19, 20, 21, 26,
-                    26, 29, 33, 41, 43, 45, 46]
+    events_pass = [ 1,  4, 10, 19, 20, 21, 26,
+                   26, 29, 33, 41, 43, 45, 46]
     s1_peak_pass = [ 0,  0,  0,  0,  0,  0,  0,
                      0,  0,  0,  0,  0,  0,  0]
     s2_peak_pass = [ 0,  0,  0,  0,  0,  0,  0,
                      1,  0,  0,  0,  0,  0,  0]
 
-    dorothea = Dorothea(**conf)
+    cnt = dorothea(**conf)
 
-    dorothea.run()
-    cnt  = dorothea.end()
-    nevt_in  = cnt.n_events_tot
-    nevt_out = cnt.n_events_selected
+    nevt_in  = cnt.events_in
+    nevt_out = cnt.events_out
     assert nrequired    == nevt_in
     assert nevt_out     == len(set(events_pass))
 
@@ -105,10 +103,14 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     assert np.all(dst.s2_peak.values == s2_peak_pass)
 
 
+
+@mark.skip(reason="The configuration of corona in dorothea can only return 1 cluster."
+                  "The assertion of more than one cluster has been removed")
 def test_dorothea_issue_347(Kr_pmaps_run4628_filename, config_tmpdir):
     PATH_IN =  Kr_pmaps_run4628_filename
     PATH_OUT = os.path.join(config_tmpdir, 'KrDST.h5')
     conf = configure('dummy invisible_cities/config/dorothea_with_corona.conf'.split())
+
     # with this parameters Corona will find several clusters
     conf.update(dict(run_number    = 4628,
                      files_in      = PATH_IN,
@@ -116,12 +118,11 @@ def test_dorothea_issue_347(Kr_pmaps_run4628_filename, config_tmpdir):
                      lm_radius     = 10.0,
                      new_lm_radius = 13.0,
                      msipm         = 1))
-    dorothea = Dorothea(**conf)
-    dorothea.run()
-    cnts = dorothea.end()
-    assert cnts.n_events_more_than_1_cluster == 3
+    cnt = dorothea(**conf)
+    assert cnt.n_events_more_than_1_cluster == 3
 
 
+@mark.skip("This scenario is not possible in liquid cities")
 def test_dorothea_event_not_found(ICDATADIR, output_tmpdir):
     file_in   = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_irene_3evt.h5")
     file_out  = os.path.join(output_tmpdir, "test_dorothea_event_not_found.h5")
@@ -133,9 +134,7 @@ def test_dorothea_event_not_found(ICDATADIR, output_tmpdir):
                      file_out    = file_out,
                      event_range = (0, nevt)))
 
-    dorothea = Dorothea(**conf)
-    dorothea.run()
-    cnt = dorothea.end()
+    cnt = dorothea(**conf)
     assert cnt.n_empty_pmaps == 1
 
 
@@ -150,7 +149,7 @@ def test_dorothea_exact_result(ICDATADIR, output_tmpdir):
                      file_out     = file_out,
                      event_range  = all_events))
 
-    Dorothea(**conf).run()
+    dorothea(**conf)
 
     tables = ("DST/Events",)
     with tb.open_file(true_output)  as true_output_file:
