@@ -23,6 +23,7 @@ from .. core.system_of_units_c import units
 from .. core.exceptions        import XYRecoFail
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
+from .. core.exceptions        import InvalidInputFileStructure
 from .. core.configure         import EventRange
 from .. core.configure         import event_range_help
 from .. reco                   import         calib_functions as  cf
@@ -206,7 +207,7 @@ def check_lengths(*iterables):
     lengths  = map(length_of, iterables)
     nonnones = filter(lambda x: x is not None, lengths)
     if np.any(np.diff(list(nonnones)) != 0):
-        raise ValueError("Input data have different sizes")
+        raise InvalidInputFileStructure("Input data tables have different sizes")
 
 
 def wf_from_files(paths, wf_type):
