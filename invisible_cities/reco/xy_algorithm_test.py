@@ -36,21 +36,21 @@ def positions_and_qs(draw, min_value=1, max_value=100):
 
 @fixture(scope="session")
 def toy_sipm_signal():
-    xs = np.array([65, -64]) * units.mm
-    ys = np.array([63, -62]) * units.mm
-    qs = np.array([ 6,   5]) * units.pes
+    xs  = np.array([65, -64]) * units.mm
+    ys  = np.array([63, -62]) * units.mm
+    qs  = np.array([ 6,   5]) * units.pes
     pos = np.stack((xs, ys), axis=1)
     return pos, qs
 
 
 @fixture(scope="session")
 def toy_sipm_signal_and_inds():
-    k = 10000
-    xs = np.arange(k)
-    ys = xs + k
+    k   = 10000
+    xs  = np.arange(k)
+    ys  = xs + k
     pos = np.stack((xs, ys), axis=1)
-    qs = xs + 2*k
-    i  = np.array([0, 5, 1000, 9999])
+    qs  = xs + 2*k
+    i   = np.array([0, 5, 1000, 9999])
     return k, i, pos, qs
 
 
