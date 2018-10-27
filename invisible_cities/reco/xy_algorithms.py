@@ -54,12 +54,12 @@ def get_nearby_sipm_inds(cs, d, pos):
     return np.where(np.linalg.norm(pos - cs, axis=1) <= d)[0]
 
 
-def get_neighbours(cs, pitch):
-    """return positions of all sipms around cs,
-       irrespectively of the charge detected"""
-    x0, y0 = cs[0]
-    shift = np.array([-pitch, 0, +pitch])
-    return product(x0 + shift, y0 + shift)
+def count_masked(cs, d, datasipm, is_masked):
+    if is_masked is None: return 0
+
+    pos = np.stack([datasipm.X.values, datasipm.Y.values], axis=1)
+    indices = get_nearby_sipm_inds(cs, d, pos)
+    return np.count_nonzero(~is_masked.astype(bool)[indices])
 
 
 def have_same_position_in_space(a, b):
@@ -71,14 +71,13 @@ def is_masked(sipm, masked_sipm):
                    for m_sipm in masked_sipm)
 
 
-def corona(pos, qs,
-           Qthr           =  0 * units.pes,
-           Qlm            =  5 * units.pes,
-           lm_radius      =  0 * units.mm,
-           new_lm_radius  = 15 * units.mm,
-           msipm          =  3,
-           pitch          = 10. * units.mm,
-           masked_sipm    = ()):
+def corona(pos, qs, all_sipms,
+           Qthr            =  0 * units.pes,
+           Qlm             =  5 * units.pes,
+           lm_radius       =  0 * units.mm,
+           new_lm_radius   = 15 * units.mm,
+           msipm           =  3,
+           consider_masked = False):
     """
     corona creates a list of Clusters by
     first , identifying hottest_sipm, the sipm with max charge in qs (must be > Qlm)
@@ -151,9 +150,10 @@ def corona(pos, qs,
            new_lm_radius  =  15 * units.mm , # must be 10mm*sqrt(2) or some number slightly larger
            msipm          =  K3)
     """
-
     if not len(pos)   : raise SipmEmptyList
     if np.sum(qs) == 0: raise SipmZeroCharge
+
+    masked = all_sipms.Active.values.astype(bool) if consider_masked else None
 
     above_threshold = np.where(qs >= Qthr)[0]            # Find SiPMs with qs at least Qthr
     pos, qs = pos[above_threshold], qs[above_threshold]  # Discard SiPMs with qs less than Qthr
@@ -173,16 +173,12 @@ def corona(pos, qs,
         if qs[hottest_sipm] < Qlm: break   # largest Q remaining is negligible
 
         # find new local maximum of charge considering all SiPMs within lm_radius of hottest_sipm
-        within_lm_radius   = get_nearby_sipm_inds(pos[hottest_sipm], lm_radius, pos)
-        new_local_maximum  = barycenter(pos[within_lm_radius], qs[within_lm_radius])[0].posxy
+        within_lm_radius  = get_nearby_sipm_inds(pos[hottest_sipm], lm_radius, pos)
+        new_local_maximum = barycenter(pos[within_lm_radius], qs[within_lm_radius])[0].posxy
 
         # find the SiPMs within new_lm_radius of the new local maximum of charge
-        within_new_lm_radius = get_nearby_sipm_inds(new_local_maximum, new_lm_radius, pos)
-
-        # find any masked channel in the first ring around the new local maximum of charge
-        neighbours = get_neighbours(new_local_maximum, pitch)
-
-        n_masked_neighbours = sum(1 for neigh in neighbours if is_masked(neigh, masked_sipm))
+        within_new_lm_radius = get_nearby_sipm_inds(new_local_maximum, new_lm_radius, pos      )
+        n_masked_neighbours  = count_masked        (new_local_maximum, new_lm_radius, all_sipms, masked)
 
         # if there are at least msipms within_new_lm_radius, taking
         # into account any masked channel, get the barycenter
