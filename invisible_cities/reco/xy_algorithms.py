@@ -49,7 +49,7 @@ def discard_sipms(sis, pos, qs):
     return np.delete(pos, sis, axis=0), np.delete(qs, sis)
 
 
-def get_nearby_sipm_inds(cs, d, pos, qs):
+def get_nearby_sipm_inds(cs, d, pos):
     """return indices of sipms less than d from (xc,yc)"""
     return np.where(np.linalg.norm(pos - cs, axis=1) <= d)[0]
 
@@ -173,11 +173,11 @@ def corona(pos, qs,
         if qs[hottest_sipm] < Qlm: break   # largest Q remaining is negligible
 
         # find new local maximum of charge considering all SiPMs within lm_radius of hottest_sipm
-        within_lm_radius   = get_nearby_sipm_inds(pos[hottest_sipm], lm_radius, pos, qs)
+        within_lm_radius   = get_nearby_sipm_inds(pos[hottest_sipm], lm_radius, pos)
         new_local_maximum  = barycenter(pos[within_lm_radius], qs[within_lm_radius])[0].posxy
 
         # find the SiPMs within new_lm_radius of the new local maximum of charge
-        within_new_lm_radius = get_nearby_sipm_inds(new_local_maximum, new_lm_radius, pos, qs)
+        within_new_lm_radius = get_nearby_sipm_inds(new_local_maximum, new_lm_radius, pos)
 
         # find any masked channel in the first ring around the new local maximum of charge
         neighbours = get_neighbours(new_local_maximum, pitch)

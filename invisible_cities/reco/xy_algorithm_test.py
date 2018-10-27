@@ -216,11 +216,10 @@ def test_get_nearby_sipm_inds():
     xs  = np.array([0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4])
     ys  = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4])
     pos = np.stack((xs, ys), axis=1)
-    qs  = np.ones (100) * 10 * units.pes
     xc, yc = (2, 2)
     c = np.array((xc, yc))
     d  = 1.5
-    sis = get_nearby_sipm_inds(c, d, pos, qs)
+    sis = get_nearby_sipm_inds(c, d, pos)
     for i in range(len(xs)):
         if i in sis: assert np.sqrt((xs[i] - xc)**2 + (ys[i] - yc)**2) <= d
         else       : assert np.sqrt((xs[i] - xc)**2 + (ys[i] - yc)**2) >  d
