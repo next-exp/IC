@@ -160,14 +160,9 @@ def test_corona_min_threshold_Qthr():
 
 def test_corona_msipm(toy_sipm_signal):
     pos, qs = toy_sipm_signal
-    # this is gonna raise and error:
-    try:
+
+    with raises(ClusterEmptyList):
         cc = corona(pos, qs, msipm=2)
-        assert False # otherwise make it crahs
-    except SipmEmptyList:
-        pass
-    except ClusterEmptyList:
-        pass
 
 
 @parametrize(' Qlm,    rmax, nclusters',
