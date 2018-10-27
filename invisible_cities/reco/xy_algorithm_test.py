@@ -91,6 +91,14 @@ def test_barycenter_single_cluster_concrete_case(q):
     assert len(clusters) == 1
 
 
+@given(positions_and_qs())
+@settings(max_examples=100)
+def test_barycenter_single_cluster_generic(p_q):
+    xy, qs   = p_q
+    clusters = barycenter(xy, qs)
+    assert len(clusters) == 1
+
+
 def test_barycenter_raises_sipm_empty_list():
     with raises(SipmEmptyList):
         barycenter(np.array([]), None)
