@@ -100,14 +100,16 @@ def test_barycenter_single_cluster_generic(p_q):
     assert len(clusters) == 1
 
 
-def test_barycenter_raises_sipm_empty_list():
+@parametrize("algorithm", (barycenter, corona))
+def test_raises_sipm_empty_list(algorithm):
     with raises(SipmEmptyList):
-        barycenter(np.array([]), None)
+        algorithm(np.array([]), None)
 
 
-def test_barycenter_raises_sipm_zero_charge():
+@parametrize("algorithm", (barycenter, corona))
+def test_raises_sipm_zero_charge(algorithm):
     with raises(SipmZeroCharge):
-        barycenter(np.array([[1, 2]]), np.array([0, 0]))
+        algorithm(np.array([[1, 2]]), np.array([0, 0]))
 
 
 def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
