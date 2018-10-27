@@ -63,6 +63,18 @@ def test_barycenter(p_q):
     assert B.nsipm == len(qs)
 
 
+@parametrize("     x         y        q     expected_xy".split(),
+             (( (-1, +1), ( 0,  0), (1, 1),   ( 0, 0)  ),
+              ( ( 0,  0), (-1, +1), (1, 1),   ( 0, 0)  ),
+              ( (-1, +1), (-1, +1), (1, 1),   ( 0, 0)  ),
+              ( (-4, +3), (+2, -5), (2, 5),   ( 1,-3)  )))
+def test_barycenter_simple_cases(x, y, q, expected_xy):
+    xy = np.stack((x, y), axis=1)
+    qs = np.array(q)
+    b  = barycenter(xy, qs)[0]
+    assert np.allclose(b.posxy, expected_xy)
+
+
 def test_barycenter_raises_sipm_empty_list():
     with raises(SipmEmptyList):
         barycenter(np.array([]), None)
