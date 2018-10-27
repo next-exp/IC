@@ -11,6 +11,7 @@ from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
+from .. core.testing_utils     import assert_cluster_equality
 from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import ClusterEmptyList
@@ -68,23 +69,10 @@ def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
                         msipm         =  1,
                         Qlm           =  4.9 * units.pes,
                         Qthr          =  0)
-    c_cluster = c_clusters[0]
-    b_cluster = barycenter(pos, qs)[0]
+    b_clusters = barycenter(pos, qs)
 
-    # assert len(c_cluster)  == len(b_cluster)
-    # A cluster object has no length!
-    np.array_equal(c_cluster.posxy, b_cluster.posxy)
-    np.array_equal(c_cluster.var.XY, b_cluster.var.XY)
-    assert c_cluster.nsipm      == b_cluster.nsipm
-    assert c_cluster.Q          == b_cluster.Q
-    assert c_cluster.nsipm      == b_cluster.nsipm
-    assert c_cluster.X          == b_cluster.X
-    assert c_cluster.Y          == b_cluster.Y
-    assert c_cluster.Xrms       == b_cluster.Xrms
-    assert c_cluster.Yrms       == b_cluster.Yrms
-    assert c_cluster.XY         == b_cluster.XY
-    assert c_cluster.R          == b_cluster.R
-    assert c_cluster.Phi        == b_cluster.Phi
+    assert len(c_clusters) == len(b_clusters) == 1
+    assert_cluster_equality(c_clusters[0], b_clusters[0])
 
 
 def test_corona_multiple_clusters(toy_sipm_signal):
