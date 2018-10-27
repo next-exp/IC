@@ -34,7 +34,7 @@ def positions_and_qs(draw, min_value=1, max_value=100):
     return pos, qs
 
 
-@fixture
+@fixture(scope="session")
 def toy_sipm_signal():
     xs = np.array([65, -64]) * units.mm
     ys = np.array([63, -62]) * units.mm
@@ -43,7 +43,7 @@ def toy_sipm_signal():
     return pos, qs
 
 
-@fixture
+@fixture(scope="session")
 def toy_sipm_signal_and_inds():
     k = 10000
     xs = np.arange(k)
