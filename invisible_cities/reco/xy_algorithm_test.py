@@ -6,12 +6,14 @@ from pytest import raises
 parametrize = mark.parametrize
 
 from hypothesis             import given
+from hypothesis             import settings
 from hypothesis.strategies  import floats
 from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
 from .. core.testing_utils     import assert_cluster_equality
+from .. core.testing_utils     import float_arrays
 from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import ClusterEmptyList
@@ -73,6 +75,20 @@ def test_barycenter_simple_cases(x, y, q, expected_xy):
     qs = np.array(q)
     b  = barycenter(xy, qs)[0]
     assert np.allclose(b.posxy, expected_xy)
+
+
+@given(float_arrays(size=8, min_value=0, max_value=100, mask=np.sum))
+@settings(max_examples=10)
+def test_barycenter_single_cluster_concrete_case(q):
+    # This is a double cluster with 4 sipms separated by ~200 mm
+    x  = [-105, -105, -95, -95, 95, 95, 105, 105]
+    y  = [- 55, - 65, -55, -65, 15, 15,   5,   5]
+
+    xy = np.stack((x, y), axis=1)
+    qs = np.array(q)
+
+    clusters = barycenter(xy, qs)
+    assert len(clusters) == 1
 
 
 def test_barycenter_raises_sipm_empty_list():
