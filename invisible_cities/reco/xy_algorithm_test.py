@@ -57,7 +57,8 @@ def toy_sipm_signal_and_inds():
 
 
 @given(positions_and_qs())
-def test_barycenter(p_q):
+@settings(max_examples=100)
+def test_barycenter_generic(p_q):
     pos, qs = p_q
     B  = barycenter(pos, qs)[0]
     assert np.allclose(B.posxy, np.average(pos, weights=qs, axis=0))
