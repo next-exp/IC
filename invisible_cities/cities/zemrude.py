@@ -1,3 +1,27 @@
+"""
+-----------------------------------------------------------------------
+                                Zemrude
+-----------------------------------------------------------------------
+
+Unknown etymology.
+
+This city produces the spectrum of dark noise of the SiPMs. This is
+achieved by binning either the pe or ADC content of each raw WF sample.
+Some slices will have only electronic noise while others will contain 
+one or more dark counts. The resulting spectra give a representation
+of the SiPM charge in the absence of external light above detector
+ambient conditions.
+The spectrum is produced in three flavours:
+    - Using the mode   to subtract the baseline without calibrating.
+    - Using the mode   to subtract the baseline and     calibrating.
+    - Using the median to subtract the baseline and     calibrating.
+The tasks performed are:
+    - Subtract the baseline   (with different algorithms).
+    - Calibrate the waveforms (not in the first case).
+    - Slice the waveforms.
+    - Integrate slices.
+    - Histogram the result.
+"""
 from operator  import add
 from functools import partial
 

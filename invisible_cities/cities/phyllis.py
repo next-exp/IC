@@ -1,3 +1,38 @@
+"""
+-----------------------------------------------------------------------
+                                Phyllis
+-----------------------------------------------------------------------
+
+From ancient Greek, Φυλλίς: it was the name of a Tracian princess,
+converted into a nut tree.
+
+This city produces the light and dark spectrum of PMTs for dedicated
+calibration runs. This is achieved by selecting regions in the PMT
+waveforms where LED pulses are expected and regions which end 2
+microseconds before, respectively and integrating the content within
+each region. The regions before LED pulses should only contain
+electronics noise and dark counts giving the zero external light
+approximation whereas those in time with the pulses will contain one or
+more detected photoelectrons. The waveform integrals are split into two
+groups: those with expected photoelectrons (light) and those without
+expected photoelectrons (dark). Each group produces a different
+spectrum.
+
+The spectra can be produced in three flavours:
+    - Without using any deconvolution algorithm and using the mode to
+      subtract the baseline.
+    - Using the standard deconvolution algorithm to remove the effect
+      of the electronics and to subtract the baseline.
+    - Using the deconvolution algorithm with a mau to remove the effect
+      of the electronics and to subtract the baseline.
+The tasks performed are:
+    - Subtract the baseline   (only in the first case).
+    - Deconvolve the waveform ( not in the first case).
+    - Slice the waveforms.
+    - Split into light and dark.
+    - Integrate slices.
+    - Histrogram the result.
+"""
 from operator  import add
 from functools import partial
 
