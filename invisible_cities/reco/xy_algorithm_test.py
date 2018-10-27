@@ -1,4 +1,5 @@
-import numpy as np
+import numpy  as np
+import pandas as pd
 
 from pytest import fixture
 from pytest import mark
@@ -44,6 +45,25 @@ def toy_sipm_signal():
     pos = np.stack((xs, ys), axis=1)
     return pos, qs
 
+
+def _create_fake_datasipm(x, y, active):
+    assert len(x) == len(y) == len(active)
+    size = len(x)
+    sensorid   = np.arange(size, dtype=np.int  )
+    channelid  = np.arange(size, dtype=np.int  )
+    adc_to_pes = np.ones  (size, dtype=np.float)
+    sigma      = np.ones  (size, dtype=np.float)
+    active     =         active.astype(np.int  )
+    x          =              x.astype(np.float)
+    y          =              y.astype(np.float)
+
+    return pd.DataFrame(dict( SensorID  =   sensorid,
+                             ChannelID  =  channelid,
+                             Active     =     active,
+                             X          =          x,
+                             Y          =          y,
+                             adc_to_pes = adc_to_pes,
+                             Sigma      =      sigma))
 
 @fixture(scope="session")
 def toy_sipm_signal_and_inds():
