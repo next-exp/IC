@@ -282,8 +282,10 @@ def peak_classifier(**params):
 
 
 def compute_xy_position(qthr, qlm, lm_radius, new_lm_radius, msipm):
+    datasipm = load_db.DataSiPM(0)
+
     def compute_xy_position(xys, qs):
-        return corona(xys, qs,
+        return corona(xys, qs, datasipm,
                       Qthr           =          qthr,
                       Qlm            =           qlm,
                       lm_radius      =     lm_radius,
@@ -372,6 +374,7 @@ def hit_builder(run_number, drift_v, reco, rebin_slices):
     sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
 
     baricenter = partial(corona,
+                         all_sipms      =  datasipm,
                          Qthr           =  0 * units.pes,
                          Qlm            =  0 * units.pes,
                          lm_radius      = -1 * units.mm,
