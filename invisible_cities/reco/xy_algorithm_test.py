@@ -17,6 +17,7 @@ from .. core.testing_utils     import float_arrays
 from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import ClusterEmptyList
+from .. core.exceptions        import SipmEmptyListAboveQthr
 from .. core.exceptions        import SipmZeroCharge
 
 from .       xy_algorithms     import corona
@@ -187,6 +188,17 @@ def test_corona_Qlm_too_high_raises_ClusterEmptyList(toy_sipm_signal):
         corona(pos, qs,
                msipm          =      1,
                Qlm            =    Qlm,
+               new_lm_radius  = np.inf)
+
+
+def test_corona_Qthr_too_high_raises_SipmEmptyListAboveQthr(toy_sipm_signal):
+    pos, qs  = toy_sipm_signal
+    Qthr     = max(qs) * 1.1 * units.pes
+
+    with raises(SipmEmptyListAboveQthr):
+        corona(pos, qs,
+               msipm          =      1,
+               Qthr           =   Qthr,
                new_lm_radius  = np.inf)
 
 
