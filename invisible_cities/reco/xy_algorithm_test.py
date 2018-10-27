@@ -15,6 +15,7 @@ from hypothesis.extra.numpy import arrays
 
 from .. core.testing_utils     import assert_cluster_equality
 from .. core.testing_utils     import float_arrays
+from .. database.load_db       import DataSiPM
 from .. core.system_of_units_c import units
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import ClusterEmptyList
@@ -74,6 +75,11 @@ def toy_sipm_signal_and_inds():
     qs  = xs + 2*k
     i   = np.array([0, 5, 1000, 9999])
     return k, i, pos, qs
+
+
+@fixture(scope="session")
+def datasipm():
+    return DataSiPM(0)
 
 
 @given(positions_and_qs())
