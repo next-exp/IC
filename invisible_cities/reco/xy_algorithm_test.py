@@ -27,14 +27,14 @@ from .       xy_algorithms     import is_masked
 
 
 @composite
-def positions_and_qs(draw, min_value=0, max_value=100):
+def positions_and_qs(draw, min_value=1, max_value=100):
     size = draw(integers(min_value, max_value))
     pos  = draw(arrays(float, (size, 2), floats(0.1,1)))
     qs   = draw(arrays(float, (size,  ), floats(0.1,1)))
     return pos, qs
 
 
-@given(positions_and_qs(1))
+@given(positions_and_qs())
 def test_barycenter(p_q):
     pos, qs = p_q
     B  = barycenter(pos, qs)[0]
@@ -50,7 +50,7 @@ def test_barycenter_raises_sipm_empty_list():
 
 def test_barycenter_raises_sipm_zero_charge():
     with raises(SipmZeroCharge):
-        barycenter(np.array([1,2]), np.array([0,0]))
+        barycenter(np.array([[1, 2]]), np.array([0, 0]))
 
 
 @fixture
