@@ -1,6 +1,8 @@
 import numpy  as np
 import pandas as pd
 
+from functools import partial
+
 from pytest import fixture
 from pytest import mark
 from pytest import raises
@@ -126,21 +128,21 @@ def test_barycenter_single_cluster_generic(p_q):
     assert len(clusters) == 1
 
 
-@parametrize("algorithm", (barycenter, corona))
+@parametrize("algorithm", (barycenter, partial(corona, all_sipms=datasipm())))
 def test_raises_sipm_empty_list(algorithm):
     with raises(SipmEmptyList):
         algorithm(np.array([]), None)
 
 
-@parametrize("algorithm", (barycenter, corona))
+@parametrize("algorithm", (barycenter, partial(corona, all_sipms=datasipm())))
 def test_raises_sipm_zero_charge(algorithm):
     with raises(SipmZeroCharge):
         algorithm(np.array([[1, 2]]), np.array([0, 0]))
 
 
-def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
+def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal, datasipm):
     pos, qs = toy_sipm_signal
-    c_clusters = corona(pos, qs,
+    c_clusters = corona(pos, qs, datasipm,
                         new_lm_radius = 10 * units.m,
                         msipm         =  1,
                         Qlm           =  4.9 * units.pes,
@@ -151,20 +153,21 @@ def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
     assert_cluster_equality(c_clusters[0], b_clusters[0])
 
 
-def test_corona_multiple_clusters(toy_sipm_signal):
+def test_corona_multiple_clusters(toy_sipm_signal, datasipm):
     """notice: cluster.xy =(x,y)
                cluster.posxy = ([x],
                               [y])
     """
     pos, qs = toy_sipm_signal
-    clusters = corona(pos, qs, msipm=1, new_lm_radius=15*units.mm, Qlm=4.9*units.pes)
+    clusters = corona(pos, qs, datasipm,
+                      msipm=1, new_lm_radius=15*units.mm, Qlm=4.9*units.pes)
     assert len(clusters) == 2
     for i in range(len(pos)):
         assert np.array_equal(clusters[i].XY, pos[i])
         assert clusters[i].Q == qs[i]
 
 
-def test_corona_min_threshold_Qthr():
+def test_corona_min_threshold_Qthr(datasipm):
     """notice: cluster.XY =(x,y)
                cluster.posxy = ([x],
                               [y])
@@ -174,54 +177,53 @@ def test_corona_min_threshold_Qthr():
     qs = np.arange(100)
     pos = np.stack((xs, ys), axis=1)
 
-    clusters = corona(pos, qs,
-                    Qthr           = 99*units.pes,
-                    Qlm            = 1*units.pes,
-                    lm_radius      = 1*units.mm,
-                    new_lm_radius  = 2*units.mm,
-                    msipm          = 1)
+    clusters = corona(pos, qs, datasipm,
+                      Qthr           = 99 * units.pes,
+                      Qlm            =  1 * units.pes,
+                      lm_radius      =  1 * units.mm,
+                      new_lm_radius  =  2 * units.mm,
+                      msipm          =  1)
 
     assert len(clusters) ==   1
     assert clusters[0].Q ==  99
     assert clusters[0].XY == (990, 0)
 
 
-def test_corona_msipm(toy_sipm_signal):
+def test_corona_msipm(toy_sipm_signal, datasipm):
     pos, qs = toy_sipm_signal
-
     with raises(ClusterEmptyList):
-        cc = corona(pos, qs, msipm=2)
+        corona(pos, qs, datasipm, msipm=2)
 
 
 @parametrize(' Qlm,    rmax, nclusters',
              ((4.9,      15,         2),
               (4.9, 1000000,         1)))
-def test_corona_simple_examples(toy_sipm_signal, Qlm, rmax, nclusters):
+def test_corona_simple_examples(toy_sipm_signal, datasipm, Qlm, rmax, nclusters):
     pos, qs  = toy_sipm_signal
-    clusters = corona(pos, qs,
+    clusters = corona(pos, qs, datasipm,
                       msipm          =  1,
                       Qlm            =  Qlm * units.pes,
                       new_lm_radius  = rmax * units.mm )
     assert len(clusters) == nclusters
 
 
-def test_corona_Qlm_too_high_raises_ClusterEmptyList(toy_sipm_signal):
+def test_corona_Qlm_too_high_raises_ClusterEmptyList(toy_sipm_signal, datasipm):
     pos, qs  = toy_sipm_signal
     Qlm      = max(qs) * 1.1 * units.pes
 
     with raises(ClusterEmptyList):
-        corona(pos, qs,
+        corona(pos, qs, datasipm,
                msipm          =      1,
                Qlm            =    Qlm,
                new_lm_radius  = np.inf)
 
 
-def test_corona_Qthr_too_high_raises_SipmEmptyListAboveQthr(toy_sipm_signal):
+def test_corona_Qthr_too_high_raises_SipmEmptyListAboveQthr(toy_sipm_signal, datasipm):
     pos, qs  = toy_sipm_signal
     Qthr     = max(qs) * 1.1 * units.pes
 
     with raises(SipmEmptyListAboveQthr):
-        corona(pos, qs,
+        corona(pos, qs, datasipm,
                msipm          =      1,
                Qthr           =   Qthr,
                new_lm_radius  = np.inf)
