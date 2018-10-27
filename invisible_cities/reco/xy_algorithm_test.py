@@ -227,7 +227,7 @@ def test_get_nearby_sipm_inds():
 
 
 def test_get_neighbours():
-    pos = np.array([(35, 55)])
+    pos = np.array([(35.5, 55.5)])
 
     exp_xs = np.array([35, 35, 35, 25, 25, 25, 45, 45, 45])
     exp_ys = np.array([55, 65, 45, 55, 65, 45, 55, 65, 45])
