@@ -149,7 +149,7 @@ def test_corona_min_threshold_Qthr():
     clusters = corona(pos, qs,
                     Qthr           = 99*units.pes,
                     Qlm            = 1*units.pes,
-                    lm_radius  = 1*units.mm,
+                    lm_radius      = 1*units.mm,
                     new_lm_radius  = 2*units.mm,
                     msipm          = 1)
 
