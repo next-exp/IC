@@ -166,20 +166,15 @@ def test_corona_msipm(toy_sipm_signal):
 
 
 @parametrize(' Qlm,    rmax, nclusters',
-             ((6.1,      15, 0),
-              (4.9,      15, 2),
-              (4.9, 1000000, 1)))
+             ((4.9,      15,         2),
+              (4.9, 1000000,         1)))
 def test_corona_simple_examples(toy_sipm_signal, Qlm, rmax, nclusters):
-    pos, qs = toy_sipm_signal
-    try:
-        assert len(corona(pos, qs,
-                          msipm          =  1,
-                          Qlm            =  Qlm * units.pes,
-                          new_lm_radius  = rmax * units.mm )) == nclusters
-    except SipmEmptyList:
-        pass
-    except ClusterEmptyList:
-        pass
+    pos, qs  = toy_sipm_signal
+    clusters = corona(pos, qs,
+                      msipm          =  1,
+                      Qlm            =  Qlm * units.pes,
+                      new_lm_radius  = rmax * units.mm )
+    assert len(clusters) == nclusters
 
 
 def test_discard_sipms(toy_sipm_signal_and_inds):
