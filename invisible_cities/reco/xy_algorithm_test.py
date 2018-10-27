@@ -34,6 +34,26 @@ def positions_and_qs(draw, min_value=1, max_value=100):
     return pos, qs
 
 
+@fixture
+def toy_sipm_signal():
+    xs = np.array([65, -64]) * units.mm
+    ys = np.array([63, -62]) * units.mm
+    qs = np.array([ 6,   5]) * units.pes
+    pos = np.stack((xs, ys), axis=1)
+    return pos, qs
+
+
+@fixture
+def toy_sipm_signal_and_inds():
+    k = 10000
+    xs = np.arange(k)
+    ys = xs + k
+    pos = np.stack((xs, ys), axis=1)
+    qs = xs + 2*k
+    i  = np.array([0, 5, 1000, 9999])
+    return k, i, pos, qs
+
+
 @given(positions_and_qs())
 def test_barycenter(p_q):
     pos, qs = p_q
@@ -51,15 +71,6 @@ def test_barycenter_raises_sipm_empty_list():
 def test_barycenter_raises_sipm_zero_charge():
     with raises(SipmZeroCharge):
         barycenter(np.array([[1, 2]]), np.array([0, 0]))
-
-
-@fixture
-def toy_sipm_signal():
-    xs = np.array([65, -64]) * units.mm
-    ys = np.array([63, -62]) * units.mm
-    qs = np.array([ 6,   5]) * units.pes
-    pos = np.stack((xs, ys), axis=1)
-    return pos, qs
 
 
 def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal):
@@ -138,17 +149,6 @@ def test_corona_simple_examples(toy_sipm_signal, Qlm, rmax, nclusters):
         pass
     except ClusterEmptyList:
         pass
-
-
-@fixture
-def toy_sipm_signal_and_inds():
-    k = 10000
-    xs = np.arange(k)
-    ys = xs + k
-    pos = np.stack((xs, ys), axis=1)
-    qs = xs + 2*k
-    i  = np.array([0, 5, 1000, 9999])
-    return k, i, pos, qs
 
 
 def test_discard_sipms(toy_sipm_signal_and_inds):
