@@ -145,15 +145,14 @@ def test_corona_min_threshold_Qthr():
     ys = np.zeros (100)
     qs = np.arange(100)
     pos = np.stack((xs, ys), axis=1)
-    try:
-        clusters = corona(pos, qs,
-                        Qthr           = 99*units.pes,
-                        Qlm            = 1*units.pes,
-                        lm_radius  = 1*units.mm,
-                        new_lm_radius  = 2*units.mm,
-                        msipm          = 1)
-    except ClusterEmptyList:
-        pass
+
+    clusters = corona(pos, qs,
+                    Qthr           = 99*units.pes,
+                    Qlm            = 1*units.pes,
+                    lm_radius  = 1*units.mm,
+                    new_lm_radius  = 2*units.mm,
+                    msipm          = 1)
+
     assert len(clusters) ==   1
     assert clusters[0].Q ==  99
     assert clusters[0].XY == (990, 0)
