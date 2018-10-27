@@ -177,6 +177,17 @@ def test_corona_simple_examples(toy_sipm_signal, Qlm, rmax, nclusters):
     assert len(clusters) == nclusters
 
 
+def test_corona_Qlm_too_high_raises_ClusterEmptyList(toy_sipm_signal):
+    pos, qs  = toy_sipm_signal
+    Qlm      = max(qs) * 1.1 * units.pes
+
+    with raises(ClusterEmptyList):
+        corona(pos, qs,
+               msipm          =      1,
+               Qlm            =    Qlm,
+               new_lm_radius  = np.inf)
+
+
 def test_discard_sipms(toy_sipm_signal_and_inds):
     k, i, pos, qs = toy_sipm_signal_and_inds
     xysel, qsel = discard_sipms(i, pos, qs)
