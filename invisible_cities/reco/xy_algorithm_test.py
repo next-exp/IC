@@ -102,6 +102,24 @@ def datasipm_3x5():
     return _create_fake_datasipm(x, y, active)
 
 
+@fixture(scope="session")
+def datasipm5x5():
+    # Create fake database with this 5 x 5 grid of SiPMs:
+    # o = active, x = masked
+    #
+    # o o o o o
+    # o x x x o
+    # o x o x o
+    # o x x x o
+    # o o o o o
+    active           = np.ones  ((5, 5), dtype=bool)
+    active[1:4, 1:4] = False
+    active[  2,   2] = True
+    x                = np.tile  (np.arange(5), 5)
+    y                = np.repeat(np.arange(5), 5)
+    return _create_fake_datasipm(x, y, active.flatten())
+
+
 @given(positions_and_qs())
 @settings(max_examples=100)
 def test_barycenter_generic(p_q):
@@ -347,3 +365,32 @@ def test_masked_channels(datasipm_3x5):
                             consider_masked = True)
 
     assert len(found_clusters) == expected_nclusters
+
+
+def test_corona_finds_masked_sipms_correctly(datasipm5x5):
+    # With the appropiate parameters, this should yield a single cluster
+    # with only 25 - 8 = 17 SiPM.
+    datasipm = datasipm5x5
+
+    # For visualization purposes we use o = np.nan and then remove
+    # those values
+    x       = np.nan
+    all_xys = np.stack([datasipm.X.values, datasipm.Y.values], axis=1)
+    all_qs  = np.array([[1, 2, 3, 4, 9], # create slight asymmetry
+                        [2, x, x, x, 4], # so the barycenter doesn't
+                        [3, x, 9, x, 3], # fall exactly at the center
+                        [4, x, x, x, 2], # of the array
+                        [5, 4, 3, 2, 1]], dtype=np.float).flatten()
+
+    ok = ~np.isnan(all_qs)
+
+    c = corona(all_xys[ok], all_qs[ok], datasipm,
+               Qthr            =      0,
+               Qlm             =      6,
+                   lm_radius   =      0,
+               new_lm_radius   = np.inf, # take all sipms
+               msipm           =     25, # request all sipms
+               consider_masked =   True)
+
+    assert len(c)     ==  1
+    assert c[0].nsipm == 17
