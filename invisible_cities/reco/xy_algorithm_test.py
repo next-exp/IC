@@ -84,6 +84,24 @@ def datasipm():
     return DataSiPM(0)
 
 
+@fixture(scope="session")
+def datasipm_3x5():
+    # Create fake database with this 3 x 5 grid of SiPMs:
+    # o = active, x = masked
+    #
+    # x - - - >
+    # y | o o o
+    #   | o o x
+    #   | o o o
+    #   | o o o
+    #   v o o o
+    x         = np.tile  (np.arange(3), 5)
+    y         = np.repeat(np.arange(5), 3)
+    active    = np.ones  (15, dtype=bool)
+    active[5] = False
+    return _create_fake_datasipm(x, y, active)
+
+
 @given(positions_and_qs())
 @settings(max_examples=100)
 def test_barycenter_generic(p_q):
@@ -281,14 +299,16 @@ def test_is_masked():
     assert not is_masked(sipm_alive , pos_masked)
 
 
-def test_masked_channels():
+def test_masked_channels(datasipm_3x5):
     """
     Scheme of SiPM positions (the numbers are the SiPM charges)
-    1 1 1
-    1 6 1
-    1 1 1
-    1 5 0
-    1 1 1
+    x - - - >
+    y | 1 1 1
+      | 1 5 0
+      | 1 1 1
+      | 1 6 1
+      v 1 1 1
+
     This test is meant to fail if either
     1) in the case of an empty masked channel list,
        the actual threshold in the number of SiPMs
@@ -296,29 +316,34 @@ def test_masked_channels():
     2) the masked channel is not taken properly into account
        by the code
     """
-    xs         = np.array([0, 0, 0, 1, 1, 1, 2, 2, 0, 0, 1, 1, 2, 2])
-    ys         = np.array([0, 1, 2, 0, 1, 2, 0, 2, 3, 4, 3, 4, 3, 4])
-    qs         = np.array([1, 1, 1, 1, 5, 1, 1, 1, 1, 1, 6, 1, 1, 1])
-    pos        = np.stack((xs, ys), axis=1)
-    masked_pos = np.array([(2, 1)])
+    datasipm   = datasipm_3x5
+    x          = np.nan
+    qs         = np.array([[1, 1, 1],
+                           [1, 5, x],
+                           [1, 1, 1],
+                           [1, 6, 1],
+                           [1, 1, 1]]).flatten()
+    pos        = np.stack((datasipm.X.values, datasipm.Y.values), axis=1)
+    ok         = ~np.isnan(qs)
 
     # Corona should return 1 cluster if the masked sipm is taken into account...
     expected_nclusters = 1
-    found_clusters = corona(pos, qs,
-                            msipm         = 6              ,
-                            Qlm           = 4   * units.pes,
-                            new_lm_radius = 1.5 * units.mm ,
-                            pitch         = 1   * units.mm )
+    found_clusters = corona(pos[ok], qs[ok], datasipm,
+                            msipm           = 6              ,
+                            Qthr            = 0   * units.pes,
+                            Qlm             = 4   * units.pes,
+                            new_lm_radius   = 1.5 * units.mm ,
+                            consider_masked = False)
 
     assert len(found_clusters) == expected_nclusters
 
     # ... and two when ignored.
     expected_nclusters = 2
-    found_clusters = corona(pos, qs,
-                            msipm          = 6              ,
-                            Qlm            = 4   * units.pes,
-                            new_lm_radius  = 1.5 * units.mm ,
-                            pitch          = 1   * units.mm ,
-                            masked_sipm    = masked_pos     )
+    found_clusters = corona(pos[ok], qs[ok], datasipm,
+                            msipm           = 6              ,
+                            Qthr            = 0   * units.pes,
+                            Qlm             = 4   * units.pes,
+                            new_lm_radius   = 1.5 * units.mm ,
+                            consider_masked = True)
 
     assert len(found_clusters) == expected_nclusters
