@@ -217,3 +217,9 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
+
+
+def test_diomira_can_fix_random_seed():
+    conf = configure("diomira invisible_cities/config/diomira.conf".split())
+    conf.update(dict(random_seed = 123))
+    diomira(**conf)
