@@ -47,13 +47,10 @@ from .  components import waveform_binner
 
 @city
 def zemrude(files_in, file_out, compression, event_range, print_mod, run_number,
-            raw_data_type,
             min_bin, max_bin, bin_width):
-    raw_data_type_ = getattr(WfType, raw_data_type.lower())
-
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
-    nsipm       = sensor_data(files_in[0], raw_data_type_).NSIPM
+    nsipm       = sensor_data(files_in[0], WfType.rwf).NSIPM
     shape       = nsipm, len(bin_centres)
 
     subtract_mode         = fl.map(csf.subtract_mode            )
@@ -80,7 +77,7 @@ def zemrude(files_in, file_out, compression, event_range, print_mod, run_number,
                              bin_centres = bin_centres)
 
         out = fl.push(
-            source = wf_from_files(files_in, raw_data_type_),
+            source = wf_from_files(files_in, WfType.rwf),
             pipe   = fl.pipe(fl.slice(*event_range, close_all=True),
                              event_count.spy,
                              print_every(print_mod),
