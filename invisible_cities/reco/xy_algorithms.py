@@ -62,15 +62,6 @@ def count_masked(cs, d, datasipm, is_masked):
     return np.count_nonzero(~is_masked.astype(bool)[indices])
 
 
-def have_same_position_in_space(a, b):
-    return np.allclose(a, b)
-
-
-def is_masked(sipm, masked_sipm):
-    return any(have_same_position_in_space(sipm, m_sipm)
-                   for m_sipm in masked_sipm)
-
-
 def corona(pos, qs, all_sipms,
            Qthr            =  0 * units.pes,
            Qlm             =  5 * units.pes,
