@@ -28,6 +28,7 @@ from .       xy_algorithms     import corona
 from .       xy_algorithms     import barycenter
 from .       xy_algorithms     import discard_sipms
 from .       xy_algorithms     import get_nearby_sipm_inds
+from .       xy_algorithms     import count_masked
 
 
 @composite
@@ -80,6 +81,16 @@ def toy_sipm_signal_and_inds():
 @fixture(scope="session")
 def datasipm():
     return DataSiPM(0)
+
+
+@fixture(scope="session")
+def datasipm_all_active():
+    return DataSiPM(1)
+
+
+@fixture(scope="session")
+def datasipm_5000():
+    return DataSiPM(5000)
 
 
 @fixture(scope="session")
@@ -314,6 +325,38 @@ def test_is_masked():
 
     assert     is_masked(sipm_masked, pos_masked)
     assert not is_masked(sipm_alive , pos_masked)
+
+
+
+def test_count_masked_all_active(datasipm_all_active):
+    xy0 = np.array([0, 0], dtype=np.float)
+    is_masked = datasipm_all_active.Active.values
+
+    # All sipms are active in run number 1
+    assert count_masked(xy0, np.inf, datasipm_all_active, is_masked) == 0
+
+
+def test_count_masked_is_masked_None():
+    dummy = None
+    assert count_masked(dummy, dummy, dummy, None) == 0
+
+
+@mark.parametrize("sipm_id  radius  expected_nmasked".split(),
+                  (( 14010,      5,                1),
+                   ( 14010,     15,                1),
+                   (  1006,      5,                1),
+                   (  1006,     15,                2),
+                   ( 26062,      5,                1),
+                   ( 26062,     15,                2)))
+def test_count_masked_near_masked(datasipm_5000, sipm_id, radius, expected_nmasked):
+    sipm_indx    = np.argwhere(datasipm_5000.SensorID.values == sipm_id)[0][0]
+    masked_sipm  = datasipm_5000.iloc[sipm_indx]
+    masked_xy    = np.array([masked_sipm.X, masked_sipm.Y])
+    is_masked    = datasipm_5000.Active.values
+
+    # small smear so the search point doesn't fall exactly at sipm position
+    masked_xy   += np.random.normal(0, 0.001 * radius, size=2)
+    assert count_masked(masked_xy, radius, datasipm_5000, is_masked) == expected_nmasked
 
 
 def test_masked_channels(datasipm_3x5):
