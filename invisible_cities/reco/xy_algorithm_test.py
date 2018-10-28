@@ -28,8 +28,6 @@ from .       xy_algorithms     import corona
 from .       xy_algorithms     import barycenter
 from .       xy_algorithms     import discard_sipms
 from .       xy_algorithms     import get_nearby_sipm_inds
-from .       xy_algorithms     import have_same_position_in_space
-from .       xy_algorithms     import is_masked
 
 
 @composite
@@ -288,7 +286,7 @@ def test_get_nearby_sipm_inds():
         else       : assert np.sqrt((xs[i] - xc)**2 + (ys[i] - yc)**2) >  d
 
 
-@mark.skip("Function removed")
+@mark.skip("Functions removed")
 def test_get_neighbours():
     pos = np.array([(35.5, 55.5)])
 
@@ -306,6 +304,7 @@ def test_get_neighbours():
     assert number_of_sipm_found_correctly == 9
 
 
+@mark.skip("Function removed")
 def test_is_masked():
     pos_masked = np.array([(0, 2),
                            (2, 1)])
