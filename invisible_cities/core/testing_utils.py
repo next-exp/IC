@@ -66,6 +66,7 @@ def float_arrays(size       =   100,
                  min_value  = -1e20,
                  max_value  = +1e20,
                  mask       =  None,
+                 unique     = False,
                  **kwargs          ):
     elements = floats(min_value,
                       max_value,
@@ -74,7 +75,8 @@ def float_arrays(size       =   100,
         elements = elements.filter(mask)
     return arrays(dtype    = np.float32,
                   shape    =       size,
-                  elements =   elements)
+                  elements =   elements,
+                  unique   =     unique)
 
 
 def FLOAT_ARRAY(*args, **kwargs):
