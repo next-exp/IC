@@ -240,6 +240,7 @@ def test_corona_msipm(toy_sipm_signal, datasipm):
         corona(pos, qs, datasipm, msipm=2)
 
 
+@mark.skip
 @parametrize(' Qlm,    rmax, nclusters',
              ((4.9,      15,         2),
               (4.9, 1000000,         1)))
