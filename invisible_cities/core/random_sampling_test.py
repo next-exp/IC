@@ -25,7 +25,8 @@ sensible_sizes    =                  integers(min_value =    2,
                                               max_value =   20)
 valid_domains     = lambda size: float_arrays(min_value = -100,
                                               max_value = +100,
-                                              size      = size).map(sorted)
+                                              size      = size,
+                                              unique    = True).map(sorted)
 valid_frequencies = lambda size: float_arrays(min_value =    0,
                                               max_value =  1e4,
                                               size      = size).filter(lambda x: np.sum(x) != 0)
