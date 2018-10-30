@@ -26,11 +26,11 @@ The tasks performed are:
 from operator import attrgetter
 
 import tables as tb
-
-from .. reco                  import tbl_functions        as tbl
-from .. io  .         hits_io import          hits_writer
-from .. io  .       mcinfo_io import       mc_info_writer
-from .. io  .run_and_event_io import run_and_event_writer
+from .. core.system_of_units_c import units
+from .. reco                   import tbl_functions        as tbl
+from .. io  .         hits_io  import          hits_writer
+from .. io  .       mcinfo_io  import       mc_info_writer
+from .. io  .run_and_event_io  import run_and_event_writer
 from .. io.         kdst_io    import            kr_writer
 
 from .. dataflow            import dataflow as df
@@ -50,7 +50,8 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, run_num
                 drift_v, rebin,
                 s1_nmin, s1_nmax, s1_emin, s1_emax, s1_wmin, s1_wmax, s1_hmin, s1_hmax, s1_ethr,
                 s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax,
-                qthr, qlm, lm_radius, new_lm_radius, msipm):
+                qthr, qlm, lm_radius, new_lm_radius, msipm,
+                qlm_glob=0 * units.pes, lm_radius_glob=-1 * units.mm, new_lm_radius_glob=-1 * units.mm, msipm_glob=1):
 
     classify_peaks = df.map(peak_classifier(**locals()),
                             args = "pmap",
@@ -62,7 +63,8 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, run_num
     build_hits    = df.map(hit_builder(run_number, drift_v, reco_algo, rebin),
                            args = ("pmap", "selector_output", "event_number", "timestamp"),
                            out  = "hits"                                                 )
-    build_pointlike_event = df.map(build_pointlike_event_(run_number, drift_v, reco_algo),
+    reco_algo_glob        = compute_xy_position(qthr, qlm_glob, lm_radius_glob, new_lm_radius_glob, msipm_glob)
+    build_pointlike_event = df.map(build_pointlike_event_(run_number, drift_v, reco_algo_glob),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "pointlike_event"                                      )    
     
