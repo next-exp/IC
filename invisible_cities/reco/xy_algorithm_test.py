@@ -185,7 +185,7 @@ def test_raises_sipm_zero_charge(algorithm):
         algorithm(np.array([[1, 2]]), np.array([0, 0]))
 
 
-def test_corona_barycenter_are_same_with_one_cluster(toy_sipm_signal, datasipm):
+def test_corona_barycenter_can_be_the_same_with_one_cluster(toy_sipm_signal, datasipm):
     pos, qs = toy_sipm_signal
     c_clusters = corona(pos, qs, datasipm,
                         new_lm_radius = 10 * units.m,
