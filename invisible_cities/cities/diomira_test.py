@@ -194,7 +194,7 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
     true_output = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
 
     conf = configure("diomira invisible_cities/config/diomira.conf".split())
-    conf.update(dict(run_number   = -10000,
+    conf.update(dict(run_number   = -6340,
                      files_in     = file_in,
                      file_out     = file_out,
                      trigger_type = None,

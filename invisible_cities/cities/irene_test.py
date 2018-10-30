@@ -391,7 +391,7 @@ def test_irene_exact_result(ICDATADIR, output_tmpdir):
     true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
 
     conf = configure("irene invisible_cities/config/irene.conf".split())
-    conf.update(dict(run_number   = -10000,
+    conf.update(dict(run_number   = -6340,
                      files_in     = file_in,
                      file_out     = file_out,
                      event_range  = all_events))
