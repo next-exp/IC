@@ -134,12 +134,13 @@ def corona(pos, qs, all_sipms,
     Usage Example
     In order to create each Cluster from a 3x3 block of SiPMs (where the center SiPM has more
     charge than the others), one would call:
-    corona(pos, qs,
-           Qthr           =  K1 * units.pes,
-           Qlm            =  K2 * units.pes,
-           lm_radius      =  0  * units.mm , # must be 0
-           new_lm_radius  =  15 * units.mm , # must be 10mm*sqrt(2) or some number slightly larger
-           msipm          =  K3)
+    corona(pos, qs, all_sipms,
+           Qthr            =  K1 * units.pes,
+           Qlm             =  K2 * units.pes,
+           lm_radius       =  0  * units.mm , # must be 0
+           new_lm_radius   =  15 * units.mm , # must be 10mm*sqrt(2) or some number slightly larger
+           msipm           =  K3,
+           consider_masked = True)
     """
     if not len(pos)   : raise SipmEmptyList
     if np.sum(qs) == 0: raise SipmZeroCharge
