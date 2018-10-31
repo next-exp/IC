@@ -16,13 +16,14 @@ from .. io.mcinfo_io           import load_mchits
 from .  penthesilea            import penthesilea
 
 
-def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, config_tmpdir):
+def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, KrMC_kdst, config_tmpdir):
     PATH_IN   = KrMC_pmaps_filename
     PATH_OUT  = os.path.join(config_tmpdir,'Kr_HDST.h5')
     conf      = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     nevt_req  = 10
 
-    DF_TRUE =  KrMC_hdst.true
+    DF_TRUE_RECO =  KrMC_hdst   .true
+    DF_TRUE_DST  =  KrMC_kdst[0].true
 
     conf.update(dict(files_in      = PATH_IN,
                      file_out      = PATH_OUT,
@@ -31,11 +32,15 @@ def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, config_tmpdir):
 
     cnt = penthesilea(**conf)
     assert cnt.events_in  == nevt_req
-    assert cnt.events_out == len(set(DF_TRUE.event))
+    assert cnt.events_out == len(set(DF_TRUE_RECO.event))
+    assert cnt.events_out == len(set(DF_TRUE_DST .event))
 
-    df_penthesilea = dio.load_dst(PATH_OUT , 'RECO', 'Events')
-    assert_dataframes_close(df_penthesilea, DF_TRUE, check_types=False)
-
+    df_penthesilea_reco = dio.load_dst(PATH_OUT , 'RECO', 'Events')
+    df_penthesilea_dst  = dio.load_dst(PATH_OUT , 'DST' , 'Events')
+    assert len(set(df_penthesilea_dst .event)) == cnt.events_out
+    assert len(set(df_penthesilea_reco.event)) == cnt.events_out
+    assert_dataframes_close(df_penthesilea_reco, DF_TRUE_RECO, check_types=False)
+    assert_dataframes_close(df_penthesilea_dst , DF_TRUE_DST , check_types=False)
 
 def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     PATH_IN =  Kr_pmaps_run4628_filename
@@ -70,23 +75,38 @@ def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
                      s2_nsipmmax =     30,
                      event_range = (0, nrequired)))
 
-    events_pass = ([ 1]*21 + [ 4]*15 + [10]*16 + [19]*17 +
-                   [20]*19 + [21]*15 + [26]*23 + [29]*22 +
-                   [33]*14 + [41]*18 + [43]*18 + [45]*13 +
-                   [46]*18)
-    peak_pass   = [int(in_range(i, 119, 126))
-                   for i in range(229)]
+    events_pass_reco = ([ 1]*21 + [ 4]*15 + [10]*16 + [19]*17 +
+                        [20]*19 + [21]*15 + [26]*23 + [29]*22 +
+                        [33]*14 + [41]*18 + [43]*18 + [45]*13 +
+                        [46]*18)
+    peak_pass_reco   = [int(in_range(i, 119, 126))
+                        for i in range(229)]
 
     cnt      = penthesilea(**conf)
     nevt_in  = cnt.events_in
     nevt_out = cnt.events_out
     assert nrequired    == nevt_in
-    assert nevt_out     == len(set(events_pass))
+    assert nevt_out     == len(set(events_pass_reco))
 
-    dst = dio.load_dst(PATH_OUT, "RECO", "Events")
-    assert len(set(dst.event.values)) ==   nevt_out
-    assert  np.all(dst.event.values   == events_pass)
-    assert  np.all(dst.npeak.values   ==   peak_pass)
+    df_penthesilea_reco = dio.load_dst(PATH_OUT , 'RECO', 'Events')
+    assert len(set(df_penthesilea_reco.event.values)) ==   nevt_out
+    assert  np.all(df_penthesilea_reco.event.values   == events_pass_reco)
+    assert  np.all(df_penthesilea_reco.npeak.values   ==   peak_pass_reco)
+
+
+    events_pass_dst = [ 1,  4, 10, 19, 20, 21, 26,
+                        26, 29, 33, 41, 43, 45, 46]
+    s1_peak_pass_dst = [ 0,  0,  0,  0,  0,  0,  0,
+                         0,  0,  0,  0,  0,  0,  0]
+    s2_peak_pass_dst = [ 0,  0,  0,  0,  0,  0,  0,
+                         1,  0,  0,  0,  0,  0,  0]
+    assert nevt_out     == len(set(events_pass_dst))
+    df_penthesilea_dst  = dio.load_dst(PATH_OUT , 'DST' , 'Events')
+    assert len(set(df_penthesilea_dst.event.values)) == nevt_out
+
+    assert np.all(df_penthesilea_dst.event  .values ==  events_pass_dst)
+    assert np.all(df_penthesilea_dst.s1_peak.values == s1_peak_pass_dst)
+    assert np.all(df_penthesilea_dst.s2_peak.values == s2_peak_pass_dst)
 
 
 @mark.serial
@@ -186,8 +206,8 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
 
     penthesilea(**conf)
 
-    tables = (  "MC/extents", "MC/hits", "MC/particles", "MC/generators",
-              "RECO/Events")
+    tables = (  "MC/extents",  "MC/hits", "MC/particles", "MC/generators",
+              "RECO/Events" , "DST/Events")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             print(true_output_file)

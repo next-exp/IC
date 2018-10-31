@@ -60,7 +60,8 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, run_number
              drift_v,
              s1_nmin, s1_nmax, s1_emin, s1_emax, s1_wmin, s1_wmax, s1_hmin, s1_hmax, s1_ethr,
              s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax,
-             qthr, qlm=0 * units.pes, lm_radius=-1 * units.mm, new_lm_radius=-1 * units.mm, msipm=1):
+             global_reco_params=dict()):
+    # global_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm
     # qlm           =  0 * pes every Cluster must contain at least one SiPM with charge >= qlm
     # lm_radius     = -1 * mm  by default, use overall barycenter for KrCity
     # new_lm_radius = -1 * mm  find a new cluster by calling barycenter() on pos/qs of SiPMs within
@@ -73,7 +74,7 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, run_number
 
     pmap_select           = fl.count_filter(attrgetter("passed"), args="selector_output")
 
-    reco_algo             = compute_xy_position(qthr, qlm, lm_radius, new_lm_radius, msipm)
+    reco_algo             = compute_xy_position(**global_reco_params)
     build_pointlike_event = fl.map(build_pointlike_event_(run_number, drift_v, reco_algo),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "pointlike_event"                                       )

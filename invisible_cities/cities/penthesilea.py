@@ -26,11 +26,12 @@ The tasks performed are:
 from operator import attrgetter
 
 import tables as tb
-
-from .. reco                  import tbl_functions        as tbl
-from .. io  .         hits_io import          hits_writer
-from .. io  .       mcinfo_io import       mc_info_writer
-from .. io  .run_and_event_io import run_and_event_writer
+from .. core.system_of_units_c import units
+from .. reco                   import tbl_functions        as tbl
+from .. io  .         hits_io  import          hits_writer
+from .. io  .       mcinfo_io  import       mc_info_writer
+from .. io  .run_and_event_io  import run_and_event_writer
+from .. io.         kdst_io    import            kr_writer
 
 from .. dataflow            import dataflow as df
 from .. dataflow.dataflow   import push
@@ -42,14 +43,18 @@ from .  components import peak_classifier
 from .  components import compute_xy_position
 from .  components import pmap_from_files
 from .  components import hit_builder
-
+from .  components import build_pointlike_event  as build_pointlike_event_
 
 @city
 def penthesilea(files_in, file_out, compression, event_range, print_mod, run_number,
                 drift_v, rebin,
                 s1_nmin, s1_nmax, s1_emin, s1_emax, s1_wmin, s1_wmax, s1_hmin, s1_hmax, s1_ethr,
                 s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax,
-                qthr, qlm, lm_radius, new_lm_radius, msipm):
+                slice_reco_params  = dict(),
+                global_reco_params = dict()):
+    #  slice_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm used for hits reconstruction
+    # global_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm used for overall global (pointlike event) reconstruction
+
 
     classify_peaks = df.map(peak_classifier(**locals()),
                             args = "pmap",
@@ -57,10 +62,14 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, run_num
 
     pmap_select    = df.count_filter(attrgetter("passed"), args="selector_output")
 
-    reco_algo     = compute_xy_position(qthr, qlm, lm_radius, new_lm_radius, msipm)
-    build_hits    = df.map(hit_builder(run_number, drift_v, reco_algo, rebin),
-                           args = ("pmap", "selector_output", "event_number", "timestamp"),
-                           out  = "hits"                                                  )
+    reco_algo_slice       = compute_xy_position(**slice_reco_params)
+    build_hits            = df.map(hit_builder(run_number, drift_v, reco_algo_slice, rebin),
+                                   args = ("pmap", "selector_output", "event_number", "timestamp"),
+                                   out  = "hits"                                                 )
+    reco_algo_global      = compute_xy_position(**global_reco_params)
+    build_pointlike_event = df.map(build_pointlike_event_(run_number, drift_v, reco_algo_global),
+                                   args = ("pmap", "selector_output", "event_number", "timestamp"),
+                                   out  = "pointlike_event"                                      )
 
     event_count_in  = df.spy_count()
     event_count_out = df.spy_count()
@@ -68,11 +77,12 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, run_num
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
 
         # Define writers...
-        write_mc_        = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
+        write_mc_             = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
 
-        write_mc         = df.sink(write_mc_                  , args=(        "mc", "event_number"             ))
-        write_event_info = df.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
-        write_hits       = df.sink(         hits_writer(h5out), args="hits")
+        write_mc              = df.sink(write_mc_                  , args=(        "mc", "event_number"             ))
+        write_event_info      = df.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
+        write_hits            = df.sink(         hits_writer(h5out), args="hits")
+        write_pointlike_event = df.sink(           kr_writer(h5out), args="pointlike_event")
 
         return push(source = pmap_from_files(files_in),
                     pipe   = pipe(
@@ -82,10 +92,10 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, run_num
                         classify_peaks                        ,
                         pmap_select          .filter          ,
                         event_count_out      .spy             ,
-                        build_hits                            ,
-                        df.fork(write_hits                    ,
-                                write_mc                      ,
-                                write_event_info              )),
+                        df.fork((build_hits           , write_hits           ),
+                                (build_pointlike_event, write_pointlike_event),
+                                                        write_mc             ,
+                                                        write_event_info     )),
                     result = dict(events_in  = event_count_in .future,
                                   events_out = event_count_out.future,
                                   selection  = pmap_select    .future))
