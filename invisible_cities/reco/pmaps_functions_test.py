@@ -1,6 +1,8 @@
 import numpy as np
 
 from hypothesis            import given
+from hypothesis            import settings
+from hypothesis            import HealthCheck
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
 from hypothesis.strategies import dictionaries
@@ -79,7 +81,11 @@ def test_rebin_peak(pk, fraction):
     assert_Peak_equality(rebinned_pk, expected_pk)
 
 
-@given(dictionaries(keys=integers(min_value=-1e5, max_value=1e5), values=pmaps(), max_size=5), lists(integers(min_value=-1e5, max_value=1e5)))
+@given(dictionaries(keys     = integers(min_value=-1e5, max_value=1e5),
+                    values   = pmaps(),
+                    max_size = 5),
+       lists(integers(min_value=-1e5, max_value=1e5)))
+@settings(suppress_health_check=(HealthCheck.too_slow,))
 def test_pmap_event_id_selection(pmaps, events):
     filtered_pmaps = pmf.pmap_event_id_selection(pmaps, events)
     assert set(filtered_pmaps) == set(pmaps) & set(events)
