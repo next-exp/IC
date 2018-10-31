@@ -150,3 +150,17 @@ def assert_tables_equality(got_table, expected_table):
                 assert np.isclose (got, expected)
             except ValueError:
                 assert np.allclose(got, expected)
+
+def assert_cluster_equality(a_cluster, b_cluster):
+    assert np.allclose(a_cluster.posxy , b_cluster.posxy )
+    assert np.allclose(a_cluster.var.XY, b_cluster.var.XY)
+    assert np.allclose(a_cluster.XY    , b_cluster.XY    )
+
+    assert             a_cluster.nsipm == exactly(b_cluster.nsipm)
+    assert             a_cluster.Q     == approx (b_cluster.Q    )
+    assert             a_cluster.X     == approx (b_cluster.X    )
+    assert             a_cluster.Y     == approx (b_cluster.Y    )
+    assert             a_cluster.Xrms  == approx (b_cluster.Xrms )
+    assert             a_cluster.Yrms  == approx (b_cluster.Yrms )
+    assert             a_cluster.R     == approx (b_cluster.R    )
+    assert             a_cluster.Phi   == approx (b_cluster.Phi  )
