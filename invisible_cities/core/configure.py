@@ -141,7 +141,7 @@ class Configuration(MutableMapping):
         self._file[key] = self._current_filename
 
     def __getitem__(self, key): return self._data[key]
-    def __delitem__(self, key): raise NotImplementedError
+    def __delitem__(self, key): del self._data[key]
     def __len__    (self):      return len (self._data)
     def __iter__   (self):      return iter(self._data)
 
