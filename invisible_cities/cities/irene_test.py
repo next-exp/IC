@@ -405,8 +405,6 @@ def test_irene_exact_result(ICDATADIR, output_tmpdir):
               "Trigger/events" , "Trigger/trigger")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
-            print(true_output_file)
-            print(     output_file)
             for table in tables:
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
