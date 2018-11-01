@@ -125,7 +125,7 @@ class mc_info_writer:
         self.extent_table.flush()
 
         hits, particles, generators = read_mcinfo_evt(mctables, evt_number, self.last_row)
-        self.last_row += 1
+        self.last_row = iext + 1
 
         for h in hits:
             new_row = self.hit_table.row
