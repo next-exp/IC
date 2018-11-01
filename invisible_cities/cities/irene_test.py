@@ -427,7 +427,9 @@ def test_irene_filters_empty_pmaps(ICDATADIR, output_tmpdir):
                      s2_tmin      = 0 * units.mus,
                      s2_tmax      = 1 * units.mus))
 
-    irene(**conf)
+    cnt = irene(**conf)
+
+    assert cnt.full_pmap.n_failed == 3
 
     tables = (     "MC/extents",      "MC/hits"   ,    "MC/particles", "MC/generators",
                 "PMAPS/S1"     ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
