@@ -201,7 +201,7 @@ def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
 
     assert cnt.events_in           == 1
     assert cnt.events_out          == 0
-    assert cnt.empty_pmap.n_failed == 1
+    assert cnt.  over_thr.n_failed == 1
 
 
 @mark.skip
@@ -236,7 +236,7 @@ def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
     cnt = irene(**conf)
 
     assert cnt.events_in           == 3
-    assert cnt.empty_pmap.n_failed == 0
+    assert cnt.  over_thr.n_failed == 0
 
     with tb.open_file(file_in) as fin:
         with tb.open_file(file_out) as fout:
