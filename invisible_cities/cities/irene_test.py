@@ -151,8 +151,10 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDATADIR):
 
 
     with tb.open_file(PATH_IN, mode='r') as h5in:
-        evts_in = h5in.root.Run.events.cols.evt_number[:2]
-        ts_in   = h5in.root.Run.events.cols.timestamp [:2]
+        valid_events = (0,)
+
+        evts_in = h5in.root.Run.events.cols.evt_number[valid_events]
+        ts_in   = h5in.root.Run.events.cols.timestamp [valid_events]
 
         rundf, evtdf = read_run_and_event(PATH_OUT)
         evts_out     = evtdf.evt_number.values
