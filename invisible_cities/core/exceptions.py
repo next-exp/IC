@@ -8,6 +8,9 @@ class ICException(Exception):
 class NoInputFiles(ICException):
     """ Input files list is not defined """
 
+class InvalidInputFileStructure(ICException):
+    """There is something wrong with the input file"""
+
 class NoOutputFile(ICException):
     pass
 

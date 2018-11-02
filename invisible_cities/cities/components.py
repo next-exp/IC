@@ -5,9 +5,10 @@ from argparse    import Namespace
 from glob        import glob
 from os.path     import expandvars
 from itertools   import count
-from itertools   import chain
 from itertools   import repeat
 from enum        import Enum
+from typing      import Iterator
+from typing      import Mapping
 
 import tables as tb
 import numpy  as np
@@ -22,6 +23,7 @@ from .. core.system_of_units_c import units
 from .. core.exceptions        import XYRecoFail
 from .. core.exceptions        import NoInputFiles
 from .. core.exceptions        import NoOutputFile
+from .. core.exceptions        import InvalidInputFileStructure
 from .. core.configure         import EventRange
 from .. core.configure         import event_range_help
 from .. reco                   import         calib_functions as  cf
@@ -38,6 +40,8 @@ from .. io.pmaps_io            import load_pmaps
 from .. types.ic_types         import xy
 from .. types.ic_types         import NN
 from .. types.ic_types         import NNN
+
+NoneType = type(None)
 
 
 def city(city_function):
@@ -175,27 +179,57 @@ def get_mc_info_safe(h5in, run_number):
         except tb.exceptions.NoSuchNodeError: pass
     return
 
+
 def get_trigger_info(h5in):
     group            = h5in.root.Trigger if "Trigger" in h5in.root else ()
-    trigger_type     = chain.from_iterable(group.trigger.read()) if "trigger" in group else repeat(None)
-    trigger_channels =                     group.events          if "events"  in group else repeat(None)
-    return zip(trigger_type, trigger_channels)
+    trigger_type     = group.trigger if "trigger" in group else repeat(None)
+    trigger_channels = group.events  if "events"  in group else repeat(None)
+    return trigger_type, trigger_channels
+
+
+def get_event_info(h5in):
+    return h5in.root.Run.events
+
+
+def length_of(iterable):
+    if   isinstance(iterable, tb.table.Table  ): return iterable.nrows
+    elif isinstance(iterable, tb.earray.EArray): return iterable.shape[0]
+    elif isinstance(iterable, np.ndarray      ): return iterable.shape[0]
+    elif isinstance(iterable, NoneType        ): return None
+    elif isinstance(iterable, Iterator        ): return None
+    elif isinstance(iterable, Sequence        ): return len(iterable)
+    elif isinstance(iterable, Mapping         ): return len(iterable)
+    else:
+        raise TypeError(f"Cannot determine size of type {type(iterable)}")
+
+
+def check_lengths(*iterables):
+    lengths  = map(length_of, iterables)
+    nonnones = filter(lambda x: x is not None, lengths)
+    if np.any(np.diff(list(nonnones)) != 0):
+        raise InvalidInputFileStructure("Input data tables have different sizes")
 
 
 def wf_from_files(paths, wf_type):
     for path in paths:
         with tb.open_file(path, "r") as h5in:
-            event_infos = h5in.root.Run.events
+            event_info  = get_event_info  (h5in)
             run_number  = get_run_number  (h5in)
             pmt_wfs     = get_pmt_wfs     (h5in, wf_type)
             sipm_wfs    = get_sipm_wfs    (h5in, wf_type)
             mc_info     = get_mc_info_safe(h5in, run_number)
-            trg_info    = get_trigger_info(h5in)
+            (trg_type ,
+             trg_chann) = get_trigger_info(h5in)
 
-            for pmt, sipm, (event_number, timestamp), (trg_type, trg_chann) in zip(pmt_wfs, sipm_wfs, event_infos[:], trg_info):
+            check_lengths(pmt_wfs, sipm_wfs, event_info, trg_type, trg_chann)
+
+            for pmt, sipm, evtinfo, trtype, trchann in zip(pmt_wfs, sipm_wfs, event_info, trg_type, trg_chann):
+                event_number, timestamp         = evtinfo.fetch_all_fields()
+                if trtype  is not None: trtype  = trtype .fetch_all_fields()[0]
+
                 yield dict(pmt=pmt, sipm=sipm, mc=mc_info,
                            run_number=run_number, event_number=event_number, timestamp=timestamp,
-                           trigger_type=trg_type, trigger_channels=trg_chann)
+                           trigger_type=trtype, trigger_channels=trchann)
             # NB, the monte_carlo writer is different from the others:
             # it needs to be given the WHOLE TABLE (rather than a
             # single event) at a time.
@@ -206,9 +240,13 @@ def pmap_from_files(paths):
         pmaps = load_pmaps(path)
         with tb.open_file(path, "r") as h5in:
             run_number  = get_run_number(h5in)
-            event_infos = h5in.root.Run.events
+            event_info  = get_event_info(h5in)
             mc_info     = get_mc_info_safe(h5in, run_number)
-            for event_number, timestamp in event_infos[:]:
+
+            check_lengths(event_info, pmaps)
+
+            for evtinfo in event_info:
+                event_number, timestamp = evtinfo.fetch_all_fields()
                 yield dict(pmap=pmaps[event_number], mc=mc_info,
                            run_number=run_number, event_number=event_number, timestamp=timestamp)
             # NB, the monte_carlo writer is different from the others:
