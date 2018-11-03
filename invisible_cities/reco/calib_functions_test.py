@@ -284,5 +284,5 @@ def test_seeds_without_using_db(ICDATADIR):
                                             scaler_func, bins[p_range], led[p_range],
                                             ped_vals, gfitRes.errors,
                                             use_db_gain_seeds=False)
-        assert not (all(seeds) == 0)
+        assert all(seeds)
         assert bounds == ((0, 0, 0, 0.001), (1e10, 10000, 10000, 10000))
