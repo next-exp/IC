@@ -277,8 +277,12 @@ def test_seeds_without_using_db(ICDATADIR):
         gfitRes = fitf.fit(fitf.gauss, bins[sel], dar[sel], sd0, sigma=errs, bounds=gb0)
 
         ped_vals      = np.array([gfitRes.values[0], gfitRes.values[1], gfitRes.values[2]])
-        scaler_func   = cf.dark_scaler(dar[b1:b2][(bins[b1:b2]>=-5) & (bins[b1:b2]<=5)])
-        seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, run_no, ich, scaler_func, bins[b1:b2],
-                                            led[b1:b2], ped_vals, gfitRes.errors, use_db_gain_seeds=False)
+        p_range       = slice(b1, b2)
+        p_bins        = (bins[p_range] >= -5) & (bins[p_range] <= 5)
+        scaler_func   = cf.dark_scaler(dar[p_range][p_bins])
+        seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, run_no, ich,
+                                            scaler_func, bins[p_range], led[p_range],
+                                            ped_vals, gfitRes.errors,
+                                            use_db_gain_seeds=False)
         assert not (all(seeds) == 0)
         assert bounds == ((0, 0, 0, 0.001), (1e10, 10000, 10000, 10000))
