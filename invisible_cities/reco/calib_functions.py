@@ -310,17 +310,17 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
     mu_seed = poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals)
     if mu_seed < 0: mu_seed = 0.001
 
-    sd0middle  = ()
-    bd00middle = ()
-    bd01middle = ()
+    ped_seed      = ()
+    ped_bound_low = ()
+    ped_bound_upp = ()
 
     if 'gau' in func:
-        ped_values = pedestal_values(ped_vals, lim_ped             , ped_errs)
-        sd0middle  = (ped_values.gain        , ped_values.sigma    )
-        bd00middle = (ped_values.gain_min    , ped_values.gain_max )
-        bd01middle = (ped_values.sigma_min   , ped_values.sigma_max)
+        ped_values    = pedestal_values(ped_vals, lim_ped             , ped_errs)
+        ped_seed      = (ped_values.gain        , ped_values.sigma    )
+        ped_bound_low = (ped_values.gain_min    , ped_values.gain_max )
+        ped_bound_upp = (ped_values.sigma_min   , ped_values.sigma_max)
 
-    seed   = (norm_seed, mu_seed) + sd0middle  + (gain_seed, gain_sigma_seed)
-    bound1 = (0       ,       0)  + bd00middle + (0        ,           0.001)
-    bound2 = (1e10    ,   10000)  + bd01middle + (10000    ,           10000)
+    seed   = (norm_seed, mu_seed) + ped_seed      + (gain_seed, gain_sigma_seed)
+    bound1 = (0       ,       0)  + ped_bound_low + (0        ,           0.001)
+    bound2 = (1e10    ,   10000)  + ped_bound_upp + (10000    ,           10000)
     return seed, (bound1, bound2)
