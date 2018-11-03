@@ -176,10 +176,11 @@ def test_copy_sensor_table3(config_tmpdir):
         assert out_file.root.Sensors.DataSiPM[0][1] == dummy_sipm[1]
 
 
-@mark.parametrize('sensor_type     , run_number, n_channel, gain_seed, gain_sigma_seed',
-                  ((SensorType.SIPM,       6217,         1,   16.5622,         2.5),
-                   (SensorType.PMT ,       6217,         5,   24.9557,         9.55162)))
-def test_seeds_db(sensor_type, run_number, n_channel, gain_seed, gain_sigma_seed):
+@mark.parametrize('sensor_type     , n_channel, gain_seed, gain_sigma_seed',
+                  ((SensorType.SIPM,         1,   16.5622,         2.5),
+                   (SensorType.PMT ,         5,   24.9557,         9.55162)))
+def test_seeds_db(sensor_type, n_channel, gain_seed, gain_sigma_seed):
+    run_number = 6217
     result = cf.seeds_db(sensor_type, run_number, n_channel)
     assert result == (gain_seed, gain_sigma_seed)
 
