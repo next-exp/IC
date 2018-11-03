@@ -272,18 +272,20 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
     """
 
     norm_seed = spec.sum()
-    gain_seed, gain_sigma_seed = seeds_db(sensor_type, run_no, n_chann)
-    sens_values = sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
+    if use_db_gain_seeds:
+        gain_seed, gain_sigma_seed = seeds_db(sensor_type, run_no, n_chann)
 
-    spectra = sens_values.spectra
-    p_range = sens_values.peak_range
-    min_b   = sens_values.min_bin_peak
-    max_b   = sens_values.max_bin_peak
-    hpw     = sens_values.half_peak_width
-    p_seed  = sens_values.p1pe_seed
-    lim_ped = sens_values.lim_ped
+    else:
+        sens_values = sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
 
-    if not use_db_gain_seeds:
+        spectra = sens_values.spectra
+        p_range = sens_values.peak_range
+        min_b   = sens_values.min_bin_peak
+        max_b   = sens_values.max_bin_peak
+        hpw     = sens_values.half_peak_width
+        p_seed  = sens_values.p1pe_seed
+        lim_ped = sens_values.lim_ped
+
         pDL  = find_peaks_cwt(spectra, p_range, min_snr=1, noise_perc=5)
         p1pe = pDL[(bins[pDL]>min_b) & (bins[pDL]<max_b)]
         if len(p1pe) == 0:
