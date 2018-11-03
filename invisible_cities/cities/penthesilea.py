@@ -31,7 +31,8 @@ from .. reco                   import tbl_functions        as tbl
 from .. io  .         hits_io  import          hits_writer
 from .. io  .       mcinfo_io  import       mc_info_writer
 from .. io  .run_and_event_io  import run_and_event_writer
-from .. io.         kdst_io    import            kr_writer
+from .. io.           kdst_io  import            kr_writer
+from .. io.   event_filter_io  import  event_filter_writer
 
 from .. dataflow            import dataflow as df
 from .. dataflow.dataflow   import push
@@ -60,7 +61,8 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, run_num
                             args = "pmap",
                             out  = "selector_output")
 
-    pmap_select    = df.count_filter(attrgetter("passed"), args="selector_output")
+    pmap_passed           = df.map(attrgetter("passed"), args="selector_output", out="pmap_passed")
+    pmap_select           = df.count_filter(bool, args="pmap_passed")
 
     reco_algo_slice       = compute_xy_position(**slice_reco_params)
     build_hits            = df.map(hit_builder(run_number, drift_v, reco_algo_slice, rebin),
@@ -83,6 +85,7 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, run_num
         write_event_info      = df.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_hits            = df.sink(         hits_writer(h5out), args="hits")
         write_pointlike_event = df.sink(           kr_writer(h5out), args="pointlike_event")
+        write_pmap_filter     = df.sink( event_filter_writer(h5out, "s12_selector"), args=("event_number", "pmap_passed"))
 
         return push(source = pmap_from_files(files_in),
                     pipe   = pipe(
@@ -90,6 +93,8 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, run_num
                         print_every(print_mod)                ,
                         event_count_in       .spy             ,
                         classify_peaks                        ,
+                        pmap_passed                           ,
+                        df.branch(write_pmap_filter)          ,
                         pmap_select          .filter          ,
                         event_count_out      .spy             ,
                         df.fork((build_hits           , write_hits           ),
