@@ -93,8 +93,10 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
 
     ### Define data filters
 
-    # Filter events with zero peaks
+    # Filter events without signal over threshold
     empty_indices   = fl.count_filter(check_nonempty_indices, args = ("s1_indices", "s2_indices"))
+    # Filter events with zero peaks
+    empty_pmaps     = fl.count_filter(check_empty_pmap      , args = "pmap")
 
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
@@ -124,6 +126,7 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
                                 empty_indices.filter,
                                 sipm_rwf_to_cal,
                                 compute_pmap,
+                                empty_pmaps.filter,
                                 event_count_out.spy,
                                 fl.fork(write_pmap,
                                         write_mc,
@@ -131,7 +134,8 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
                                         write_trigger_info)),
                     result = dict(events_in  = event_count_in .future,
                                   events_out = event_count_out.future,
-                                  empty_pmap = empty_indices  .future))
+                                  over_thr   = empty_indices  .future,
+                                  full_pmap  = empty_pmaps    .future))
 
 
 
@@ -169,3 +173,7 @@ def get_number_of_active_pmts(run_number):
 
 def check_nonempty_indices(s1_indices, s2_indices):
     return s1_indices.size and s2_indices.size
+
+
+def check_empty_pmap(pmap):
+    return pmap.s1s + pmap.s2s

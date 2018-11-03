@@ -151,8 +151,10 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDATADIR):
 
 
     with tb.open_file(PATH_IN, mode='r') as h5in:
-        evts_in = h5in.root.Run.events.cols.evt_number[:2]
-        ts_in   = h5in.root.Run.events.cols.timestamp [:2]
+        valid_events = (0,)
+
+        evts_in = h5in.root.Run.events.cols.evt_number[valid_events]
+        ts_in   = h5in.root.Run.events.cols.timestamp [valid_events]
 
         rundf, evtdf = read_run_and_event(PATH_OUT)
         evts_out     = evtdf.evt_number.values
@@ -201,7 +203,7 @@ def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
 
     assert cnt.events_in           == 1
     assert cnt.events_out          == 0
-    assert cnt.empty_pmap.n_failed == 1
+    assert cnt.  over_thr.n_failed == 1
 
 
 @mark.skip
@@ -236,7 +238,7 @@ def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
     cnt = irene(**conf)
 
     assert cnt.events_in           == 3
-    assert cnt.empty_pmap.n_failed == 0
+    assert cnt.  over_thr.n_failed == 0
 
     with tb.open_file(file_in) as fin:
         with tb.open_file(file_out) as fout:
@@ -405,9 +407,38 @@ def test_irene_exact_result(ICDATADIR, output_tmpdir):
               "Trigger/events" , "Trigger/trigger")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
-            print(true_output_file)
-            print(     output_file)
             for table in tables:
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
+
+
+def test_irene_filters_empty_pmaps(ICDATADIR, output_tmpdir):
+    file_in  = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
+    file_out = os.path.join(output_tmpdir,            "test_irene_filters_empty_pmaps.h5")
+
+    conf = configure("irene invisible_cities/config/irene.conf".split())
+    conf.update(dict(run_number   = -6340,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     event_range  = all_events,
+                     # Search for peaks where there are
+                     # not any so the produced is empty
+                     s1_tmin      = 0 * units.mus,
+                     s1_tmax      = 1 * units.mus,
+                     s2_tmin      = 0 * units.mus,
+                     s2_tmax      = 1 * units.mus))
+
+    cnt = irene(**conf)
+
+    assert cnt.full_pmap.n_failed == 3
+
+    tables = (     "MC/extents",      "MC/hits"   ,    "MC/particles", "MC/generators",
+                "PMAPS/S1"     ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
+                "PMAPS/S1Pmt"  ,   "PMAPS/S2Pmt"  ,
+                  "Run/events" ,     "Run/runInfo",
+              "Trigger/events" , "Trigger/trigger")
+    with tb.open_file(file_out) as      output_file:
+        for table_name in tables:
+            table = getattr(output_file.root, table_name)
+            assert table.nrows == 0
