@@ -319,16 +319,13 @@ def peak_classifier(**params):
     return partial(pmap_filter, selector)
 
 
-def compute_xy_position(qthr, qlm, lm_radius, new_lm_radius, msipm):
+def compute_xy_position(**reco_params):
+    # `reco_params` is the set of parameters for the corona
+    # algorithm either for the full corona or for barycenter
     datasipm = load_db.DataSiPM(0)
 
     def compute_xy_position(xys, qs):
-        return corona(xys, qs, datasipm,
-                      Qthr           =          qthr,
-                      Qlm            =           qlm,
-                      lm_radius      =     lm_radius,
-                      new_lm_radius  = new_lm_radius,
-                      msipm          =         msipm)
+        return corona(xys, qs, datasipm, **reco_params)
     return compute_xy_position
 
 
