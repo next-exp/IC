@@ -197,7 +197,7 @@ def test_poisson_mu_seed(sensor_type, scaler, mu):
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
 
     result   = cf.poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals)
-    np.testing.assert_approx_equal(result, mu)
+    assert_approx_equal(result, mu)
 
 
 @mark.parametrize('     sensor_type, n_chann,                    scaler,    expected_range, min_b, max_b, half_width, p1pe_seed, lim_p',
@@ -209,7 +209,7 @@ def test_sensor_values(sensor_type, n_chann, scaler, expected_range, min_b, max_
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
     spectra, p_range, min_bin, max_bin, hpw, seed, lim_ped = cf.sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
 
-    np.testing.assert_array_equal(p_range, expected_range)
+    assert_array_equal(p_range, expected_range)
     assert len(spectra) == len(spec)
     assert min_bin      == min_b
     assert max_bin      == max_b
