@@ -245,27 +245,28 @@ def compute_seeds_from_spectrum(sens_values, bins, ped_vals):
     p_seed  = sens_values.p1pe_seed
 
     pDL  = find_peaks_cwt(spectra, p_range, min_snr=1, noise_perc=5)
-    p1pe = pDL[(bins[pDL]>min_b) & (bins[pDL]<max_b)]
-    if len(p1pe) == 0:
+    p1pe_samples = pDL[(bins[pDL]>min_b) & (bins[pDL]<max_b)]
+    if len(p1pe_samples) == 0:
         try:
-            p1pe = np.argwhere(bins==(min_b+max_b)/2)[0][0]
+            p1pe_centroid = np.argwhere(bins==(min_b+max_b)/2)[0][0]
         except IndexError:
-            p1pe = len(bins)-1
+            p1pe_centroid = len(bins)-1
     else:
-        p1pe = p1pe[spectra[p1pe].argmax()]
+        p1pe_centroid = p1pe_samples[spectra[p1pe_samples].argmax()]
 
+    fit_seed  = (spectra[p1pe_centroid], bins[p1pe_centroid], p_seed)
+    fit_sigma = np.sqrt(spectra[p1pe_centroid - hpw : p1pe_centroid + hpw])
     fgaus = fitf.fit(fitf.gauss,
-                     bins[p1pe-hpw:p1pe+hpw],
-                     spectra[p1pe-hpw:p1pe+hpw],
-                     seed   = (spectra[p1pe], bins[p1pe], p_seed),
-                     sigma  = np.sqrt(spectra[p1pe-hpw:p1pe+hpw]),
+                     bins   [p1pe_centroid - hpw : p1pe_centroid + hpw],
+                     spectra[p1pe_centroid - hpw : p1pe_centroid + hpw],
+                     seed   = fit_seed,
+                     sigma  = fit_sigma,
                      bounds = [(0, -100, 0), (1e99, 100, 10000)])
     gain_seed = fgaus.values[1] - ped_vals[1]
 
-    if fgaus.values[2] <= ped_vals[2]:
-        gain_sigma_seed = 0.5
-    else:
-        gain_sigma_seed = np.sqrt(fgaus.values[2]**2 - ped_vals[2]**2)
+    if fgaus.values[2] <= ped_vals[2]: gain_sigma_seed = 0.5
+    else                             : gain_sigma_seed = np.sqrt(fgaus.values[2]**2 - ped_vals[2]**2)
+
     return gain_seed, gain_sigma_seed
 
 
