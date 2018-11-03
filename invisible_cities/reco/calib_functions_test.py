@@ -259,13 +259,12 @@ def test_seeds_without_using_db(ICDATADIR):
     for ich, (led, dar) in enumerate(zip(specsL, specsD)):
         b1 = 0
         b2 = len(dar)
-        if min_stat != 0:
-            try:
-                valid_bins = np.argwhere(led>=min_stat)
-                b1 = valid_bins[ 0][0]
-                b2 = valid_bins[-1][0]
-            except IndexError:
-                continue
+        try:
+            valid_bins = np.argwhere(led>=min_stat)
+            b1 = valid_bins[ 0][0]
+            b2 = valid_bins[-1][0]
+        except IndexError:
+            continue
 
         pD = find_peaks_cwt(dar, np.arange(2, 20), min_snr=2)
         if len(pD) == 0:
