@@ -235,6 +235,40 @@ def pedestal_values(ped_vals, lim_ped, ped_errs):
     return PedestalParams(ped_seed, ped_min, ped_max, ped_sig_seed, ped_sig_min, ped_sig_max)
 
 
+def compute_seeds_from_spectrum(sens_values, bins, ped_vals):
+
+    spectra = sens_values.spectra
+    p_range = sens_values.peak_range
+    min_b   = sens_values.min_bin_peak
+    max_b   = sens_values.max_bin_peak
+    hpw     = sens_values.half_peak_width
+    p_seed  = sens_values.p1pe_seed
+
+    pDL  = find_peaks_cwt(spectra, p_range, min_snr=1, noise_perc=5)
+    p1pe = pDL[(bins[pDL]>min_b) & (bins[pDL]<max_b)]
+    if len(p1pe) == 0:
+        try:
+            p1pe = np.argwhere(bins==(min_b+max_b)/2)[0][0]
+        except IndexError:
+            p1pe = len(bins)-1
+    else:
+        p1pe = p1pe[spectra[p1pe].argmax()]
+
+    fgaus = fitf.fit(fitf.gauss,
+                     bins[p1pe-hpw:p1pe+hpw],
+                     spectra[p1pe-hpw:p1pe+hpw],
+                     seed   = (spectra[p1pe], bins[p1pe], p_seed),
+                     sigma  = np.sqrt(spectra[p1pe-hpw:p1pe+hpw]),
+                     bounds = [(0, -100, 0), (1e99, 100, 10000)])
+    gain_seed = fgaus.values[1] - ped_vals[1]
+
+    if fgaus.values[2] <= ped_vals[2]:
+        gain_sigma_seed = 0.5
+    else:
+        gain_sigma_seed = np.sqrt(fgaus.values[2]**2 - ped_vals[2]**2)
+    return gain_seed, gain_sigma_seed
+
+
 def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
                      ped_errs, func='dfunc', use_db_gain_seeds=True):
     """ Define the seeds and bounds to be used for calibration fits.
@@ -272,42 +306,12 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
     """
 
     norm_seed = spec.sum()
+    sens_values = sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
     if use_db_gain_seeds:
         gain_seed, gain_sigma_seed = seeds_db(sensor_type, run_no, n_chann)
 
     else:
-        sens_values = sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
-
-        spectra = sens_values.spectra
-        p_range = sens_values.peak_range
-        min_b   = sens_values.min_bin_peak
-        max_b   = sens_values.max_bin_peak
-        hpw     = sens_values.half_peak_width
-        p_seed  = sens_values.p1pe_seed
-        lim_ped = sens_values.lim_ped
-
-        pDL  = find_peaks_cwt(spectra, p_range, min_snr=1, noise_perc=5)
-        p1pe = pDL[(bins[pDL]>min_b) & (bins[pDL]<max_b)]
-        if len(p1pe) == 0:
-            try:
-                p1pe = np.argwhere(bins==(min_b+max_b)/2)[0][0]
-            except IndexError:
-                p1pe = len(bins)-1
-        else:
-            p1pe = p1pe[spectra[p1pe].argmax()]
-
-        fgaus = fitf.fit(fitf.gauss,
-                         bins[p1pe-hpw:p1pe+hpw],
-                         spectra[p1pe-hpw:p1pe+hpw],
-                         seed   = (spectra[p1pe], bins[p1pe], p_seed),
-                         sigma  = np.sqrt(spectra[p1pe-hpw:p1pe+hpw]),
-                         bounds = [(0, -100, 0), (1e99, 100, 10000)])
-        gain_seed = fgaus.values[1] - ped_vals[1]
-
-        if fgaus.values[2] <= ped_vals[2]:
-            gain_sigma_seed = 0.5
-        else:
-            gain_sigma_seed = np.sqrt(fgaus.values[2]**2 - ped_vals[2]**2)
+        gain_seed, gain_sigma_seed = compute_seeds_from_spectrum(sens_values, bins, ped_vals)
 
     mu_seed = poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals)
     if mu_seed < 0: mu_seed = 0.001
@@ -317,7 +321,7 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
     ped_bound_upp = ()
 
     if 'gau' in func:
-        ped_values    = pedestal_values(ped_vals, lim_ped             , ped_errs)
+        ped_values    = pedestal_values(ped_vals, sens_values.lim_ped , ped_errs)
         ped_seed      = (ped_values.gain        , ped_values.sigma    )
         ped_bound_low = (ped_values.gain_min    , ped_values.gain_max )
         ped_bound_upp = (ped_values.sigma_min   , ped_values.sigma_max)
