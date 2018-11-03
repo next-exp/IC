@@ -185,12 +185,12 @@ def test_seeds_db(sensor_type, n_channel, gain_seed, gain_sigma_seed):
     assert result == (gain_seed, gain_sigma_seed)
 
 
-dark_sipm = np.array([612, 1142, 2054, 3037, 3593, 3769, 3777, 3319, 2321, 1298, 690])
-dark_pmt  = np.array([ 30,  107,  258,  612, 1142, 2054, 3037, 3593                 ])
+_dark_sipm_scaler = cf.dark_scaler(np.array([612, 1142, 2054, 3037, 3593, 3769, 3777, 3319, 2321, 1298, 690]))
+_dark_pmt_scaler  = cf.dark_scaler(np.array([ 30,  107,  258,  612, 1142, 2054, 3037, 3593                 ]))
 
-@mark.parametrize('     sensor_type,                    scaler,        mu',
-                  ((SensorType.SIPM, cf.dark_scaler(dark_sipm), 0.0698154),
-                   (SensorType.PMT , cf.dark_scaler(dark_pmt) , 0.0950066)))
+@mark.parametrize('     sensor_type,            scaler,        mu',
+                  ((SensorType.SIPM, _dark_sipm_scaler, 0.0698154),
+                   (SensorType.PMT ,  _dark_pmt_scaler, 0.0950066)))
 def test_poisson_mu_seed(sensor_type, scaler, mu):
     bins     = np.array([-8,  -7,  -6,  -5,  -4,    -3,   -2,   -1,    0,    1,    2,    3,    4,   5,   6,   7])
     spec     = np.array([28,  98,  28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
