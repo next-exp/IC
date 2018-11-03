@@ -261,7 +261,7 @@ def compute_seeds_from_spectrum(sens_values, bins, ped_vals):
                      spectra[p1pe_centroid - hpw : p1pe_centroid + hpw],
                      seed   = fit_seed,
                      sigma  = fit_sigma,
-                     bounds = [(0, -100, 0), (1e99, 100, 10000)])
+                     bounds = [(0, -100, 0), (np.inf, 100, 10000)])
     gain_seed = fgaus.values[1] - ped_vals[1]
 
     if fgaus.values[2] <= ped_vals[2]: gain_sigma_seed = 0.5

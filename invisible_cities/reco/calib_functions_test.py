@@ -270,7 +270,7 @@ def test_seeds_without_using_db(ICDATADIR):
         if len(pD) == 0:
             continue
 
-        gb0     = [(0, -100, 0), (1e99, 100, 10000)]
+        gb0     = [(0, -100, 0), (np.inf, 100, 10000)]
         sd0     = (dar.sum(), 0, 2)
         sel     = np.arange(pD[0]-5, pD[0]+5)
         errs    = poisson_sigma(dar[sel], default=0.1)
