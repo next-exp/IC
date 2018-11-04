@@ -16,7 +16,7 @@ from .. core.stat_functions      import poisson_sigma
 from .. core.system_of_units_c   import units
 from .. evm.nh5                  import SensorTable
 from .  calib_functions          import SensorType
-from .. liquid_cities.components import get_run_number
+from .. cities.components        import get_run_number
 
 
 def test_bin_waveforms():
