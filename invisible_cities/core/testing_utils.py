@@ -73,7 +73,7 @@ def float_arrays(size       =   100,
                       **kwargs)
     if mask is not None:
         elements = elements.filter(mask)
-    return arrays(dtype    = np.float32,
+    return arrays(dtype    = np.float64,
                   shape    =       size,
                   elements =   elements,
                   unique   =     unique)
