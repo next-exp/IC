@@ -115,7 +115,6 @@ def test_inverse_cdf_index_ad_hoc(frequencies, percentile, true_index):
     assert icdf_i == true_index
 
 
-@mark.skip(reason='Fails unreliably and no time to investigate at present')
 @given(valid_distributions(),
        floats(min_value = 0.1, max_value = 0.9))
 def test_inverse_cdf_index_hypothesis_generated(distribution, percentile):
@@ -129,7 +128,6 @@ def test_inverse_cdf_index_hypothesis_generated(distribution, percentile):
     assert true_index == icdf_i
 
 
-@mark.skip
 @mark.parametrize("domain frequencies percentile true_value".split(),
                   ((np.arange( 10), np.linspace(0, 1,  10), 0.6,  6),
                    (np.arange(101), np.linspace(0, 1, 101), 0.6, 60)))
