@@ -181,7 +181,7 @@ class MCHit(BHit):
 
 class Voxel(BHit):
     """Represents a Voxel"""
-    def __init__(self, x,y,z, E, size, hits):
+    def __init__(self, x,y,z, E, size, hits=[]):
         super().__init__(x,y,z, E)
         self._size = size
         self.hits = hits
