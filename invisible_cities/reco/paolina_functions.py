@@ -69,10 +69,43 @@ def voxelize_hits(hits             : Sequence[BHit],
 
     (   cx,     cy,     cz) = map(centres, edges)
     size_x, size_y, size_z  = map(sizes  , edges)
+
     nz = np.nonzero(E)
     true_dimensions = np.array([size_x[0], size_y[0], size_z[0]])
 
-    return [Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions) for (x,y,z) in np.stack(nz).T]
+    hit_x = np.array([h.X for h in hits])
+    # find the bins where hits fall into; numpy.histogramdd()
+    # uses [,) intervals, except for the last one, which is [,]
+    indices_x = np.digitize(hit_x, edges[0], right=False) - 1
+    # hits on the last edge must fall inside the last bin
+    indices_x[indices_x == number_of_voxels[0]] = number_of_voxels[0] - 1
+
+    hit_y = np.array([h.Y for h in hits])
+    indices_y = np.digitize(hit_y, edges[1], right=False) - 1
+    indices_y[indices_y == number_of_voxels[1]] = number_of_voxels[1] - 1
+
+    hit_z = np.array([h.Z for h in hits])
+    indices_z = np.digitize(hit_z, edges[2], right=False) - 1
+    indices_z[indices_z == number_of_voxels[2]] = number_of_voxels[2] - 1
+
+    h_indices = [(i, j, k) for i, j, k in zip(indices_x, indices_y, indices_z)]
+    #print(h_indices)
+    voxels = []
+    for (x,y,z) in np.stack(nz).T:
+        #print(type((x, y, z)))
+        indx_comp = np.array(h_indices) == (x, y, z)
+        ok = [i[0] & i[1] & i[2] for i in indx_comp]
+        #print((x, y, z))
+        #print(ok)
+        hits = np.array(hits)
+        hits_in_bin = hits[ok]
+        #print(hits_in_bin)
+        voxels.append(Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions, hits_in_bin))  
+    
+   # voxels = [Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions) for (x,y,z) in np.stack(nz).T]
+   # for v in voxels:
+   #     print(v, v.hits)
+    return voxels
 
 
 class Contiguity(Enum):
