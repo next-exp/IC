@@ -172,6 +172,24 @@ def test_hits_energy_in_voxel_is_equal_to_voxel_energy(hits, requested_voxel_dim
     for v in voxels:
         assert sum([h.E for h in v.hits]) == v.energy
 
+def test_hits_assigned_to_correct_voxel():
+    z = 10.
+    energy = 1.
+    hits = [BHit( 5., 15., z, energy),
+            BHit(15.,  5., z, energy),
+            BHit(15., 15., z, energy),
+            BHit(15., 25., z, energy),
+            BHit(25., 15., z, energy)]
+
+    vox_size = np.array([15,15,15], dtype=np.int16)
+    voxels = voxelize_hits(hits, vox_size)
+
+    assert len(voxels) == 3
+
+    n_expected_hits = [1, 1, 3]
+    for v, nhits in zip(voxels, n_expected_hits):
+        assert len(v.hits) == nhits
+
 
 @given(bunch_of_hits, box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
