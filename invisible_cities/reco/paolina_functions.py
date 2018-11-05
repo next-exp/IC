@@ -83,8 +83,8 @@ def voxelize_hits(hits             : Sequence[BHit],
         # find the bins where hits fall into
         # numpy.histogramdd() uses [,) intervals...
         index = np.digitize(hit_coordinates[i], edges[i], right=False) - 1
-        # ...except for the last one, which is [,]: hits on the last edge
-        # must fall into the last bin
+        # ...except for the last one, which is [,]: hits on the last edge,
+        # if any, must fall into the last bin
         index[index == number_of_voxels[i]] = number_of_voxels[i] - 1
         indx_coordinates.append(index)
 
