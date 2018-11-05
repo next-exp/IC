@@ -167,6 +167,13 @@ def test_voxelize_hits_flexible_gives_correct_voxels_size(hits, requested_voxel_
 
 
 @given(bunch_of_hits, box_sizes)
+def test_hits_energy_in_voxel_is_equal_to_voxel_energy(hits, requested_voxel_dimensions):
+    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
+    for v in voxels:
+        assert sum([h.E for h in v.hits]) == v.energy
+
+
+@given(bunch_of_hits, box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
     tracks = make_track_graphs(voxels)
