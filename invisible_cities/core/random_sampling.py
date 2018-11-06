@@ -1,6 +1,7 @@
 import numpy as np
 
 from functools import partial
+from functools import lru_cache
 
 from .. database import load_db as DB
 
@@ -30,6 +31,18 @@ def inverse_cdf(x, y, percentile):
     if not y.any():
         return np.inf
     return x[inverse_cdf_index(y, percentile)]
+
+
+def pad_pdfs(bins, spectra=None):
+    bin_diff = np.count_nonzero(bins <= 0) - np.count_nonzero(bins > 0)
+    pad = abs(min(bin_diff, 0)), abs(max(bin_diff, 0))
+    if spectra is None:
+        ## We just want to extend the bins
+        return np.pad(bins, pad, 'linear_ramp',
+                      end_values=(-bins[-1], -bins[0]))
+
+    return np.apply_along_axis(np.pad, 1, spectra, pad,
+                               'constant', constant_values=0)
 
 
 class NoiseSampler:
@@ -115,3 +128,80 @@ class NoiseSampler:
         cumprobs = np.apply_along_axis(np.cumsum, 1, self.probs)
         cuts_pes = np.apply_along_axis(find_thr , 1,   cumprobs)
         return cuts_pes * pes_to_adc
+
+
+    def signal_to_noise(self, ids, charges, sample_width):
+        """
+        Find the signal to noise for the sipms in the array
+
+        Parameters
+        ----------
+        ids : array of ints
+            Array of all sipm ids with charge in the slice.
+        charges : array of floats
+            Array of charge seen by all sipm which see light
+            in the slice.
+        sample_width : int
+            The width in mus of the slice
+
+        Returns
+        -------
+        signal_to_noise : array of floats
+            An array of S/N values for the sipms in the slice.
+        """
+
+        dark_levels = self.dark_expectation(sample_width)
+
+        return charges / np.sqrt(charges + dark_levels[ids])
+
+
+    @lru_cache(maxsize=30)
+    def dark_expectation(self, sample_width):
+        """
+        Calculate for a given sample_width
+        the mean expectation to approximate
+        dark counts for all sipm channels.
+        """
+        pdfs = self.multi_sample_distributions(sample_width)
+
+        pad_xbins = pad_pdfs(self.xbins)
+
+        ## For now calculate means, could add options
+        ## for exclusion, rms etc. (put zero for inactive channels)
+        active           = self.active.flatten() != 0
+        nsipm            = np.count_nonzero(active)
+        mean_pes         = np.full(self.nsensors, 0, dtype=np.float)
+
+        mean_actives = np.average(np.repeat(pad_xbins[None, :], nsipm,  0),
+                                  axis = 1,         weights = pdfs[active])
+        mean_pes[active] = mean_actives
+        return mean_pes
+
+
+    @lru_cache(maxsize=30)
+    def multi_sample_distributions(self, sample_width):
+        """
+        Calculate the no light PDFs for a given
+        sample width.
+        Parameters
+        __________
+        sample_width : int
+            Width in microseconds of the sample for which
+            PDFs to be calculated.
+
+        Returns
+        _______
+        PDFs : numpy.ndarray shape (nsipm, xbins + padding)
+            Probabilities for each xbin recalculated for
+            the requested sample_width and padded for symmetry
+            around zero.
+        """
+        if sample_width == 1:
+            return pad_pdfs(self.xbins, self.probs)
+
+        mapping = map(np.convolve                                      ,
+                      self.multi_sample_distributions(               1),
+                      self.multi_sample_distributions(sample_width - 1),
+                      np.full(self.probs.shape[0], "same")             )
+
+        return np.array(tuple(mapping))
