@@ -169,6 +169,14 @@ def test_Peak_width(pks):
     _, peak = pks
     assert peak.width == approx(peak.times[-1] - peak.times[0])
 
+def test_Peak_width_correct():
+    nsamples = 3
+    times = np.arange(nsamples)
+    pmts  = PMTResponses(np.arange(12), np.full((12, nsamples), 1))
+    
+    peak = S1(times, pmts, SiPMResponses.build_empty_instance())
+    assert peak.width == nsamples
+    
 
 def _get_indices_above_thr(sr, thr):
     return np.where(sr.sum_over_sensors > thr)[0]
