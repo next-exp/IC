@@ -44,30 +44,39 @@ def select_peaks(peaks, time, length):
     return tuple(filter(is_valid, peaks))
 
 
-def pick_slice_and_rebin(indices, times, wfs, rebin_stride, pad_zeros=False):
+def pick_slice_and_rebin(indices, times, widths,
+                         wfs, rebin_stride, pad_zeros=False):
     slice_ = slice(indices[0], indices[-1] + 1)
-    times_ = times[   slice_]
-    wfs_   = wfs  [:, slice_]
+    times_  = times [   slice_]
+    widths_ = widths[   slice_]
+    wfs_    = wfs   [:, slice_]
     if pad_zeros:
         n_miss = indices[0] % 40
         n_wfs  = wfs.shape[0]
-        times_ = np.concatenate([np.zeros(        n_miss) , times_])
-        wfs_   = np.concatenate([np.zeros((n_wfs, n_miss)),   wfs_], axis=1)
-    times, wfs = rebin_times_and_waveforms(times_, wfs_, rebin_stride)
-    return times, wfs
+        times_  = np.concatenate([np.zeros(        n_miss) ,  times_])
+        widths_ = np.concatenate([np.zeros(        n_miss) , widths_])
+        wfs_    = np.concatenate([np.zeros((n_wfs, n_miss)),    wfs_], axis=1)
+    (times ,
+     widths,
+     wfs   ) = rebin_times_and_waveforms(times_, widths_, wfs_, rebin_stride)
+    return times, widths, wfs
 
 
-def build_pmt_responses(indices, times, ccwf, pmt_ids, rebin_stride, pad_zeros):
-    pk_times, pmt_wfs = pick_slice_and_rebin(indices, times,
-                                             ccwf   , rebin_stride,
-                                             pad_zeros = pad_zeros)
-    return pk_times, PMTResponses(pmt_ids, pmt_wfs)
+def build_pmt_responses(indices, times, widths, ccwf,
+                        pmt_ids, rebin_stride, pad_zeros):
+    (pk_times ,
+     pk_widths,
+     pmt_wfs  ) = pick_slice_and_rebin(indices, times, widths,
+                                       ccwf   , rebin_stride,
+                                       pad_zeros = pad_zeros)
+    return pk_times, pk_widths, PMTResponses(pmt_ids, pmt_wfs)
 
 
-def build_sipm_responses(indices, times, sipm_wfs, rebin_stride, thr_sipm_s2):
-    _, sipm_wfs_ = pick_slice_and_rebin(indices , times,
-                                        sipm_wfs, rebin_stride,
-                                        pad_zeros = False)
+def build_sipm_responses(indices, times, widths,
+                         sipm_wfs, rebin_stride, thr_sipm_s2):
+    _, _, sipm_wfs_ = pick_slice_and_rebin(indices , times, widths,
+                                           sipm_wfs, rebin_stride,
+                                           pad_zeros = False)
     (sipm_ids,
      sipm_wfs)   = select_wfs_above_time_integrated_thr(sipm_wfs_,
                                                         thr_sipm_s2)
@@ -75,23 +84,25 @@ def build_sipm_responses(indices, times, sipm_wfs, rebin_stride, thr_sipm_s2):
 
 
 def build_peak(indices, times,
-               ccwf, pmt_ids,
+               widths, ccwf, pmt_ids,
                rebin_stride,
                with_sipms, Pk,
                sipm_wfs    = None,
                thr_sipm_s2 = 0):
-    (pk_times,
-     pmt_r   ) = build_pmt_responses(indices, times,
+    (pk_times ,
+     pk_widths,
+     pmt_r    ) = build_pmt_responses(indices, times, widths,
                                      ccwf, pmt_ids,
                                      rebin_stride, pad_zeros = with_sipms)
     if with_sipms:
         sipm_r = build_sipm_responses(indices // 40, times // 40,
-                                      sipm_wfs, rebin_stride // 40,
+                                      widths // 40, sipm_wfs,
+                                      rebin_stride // 40,
                                       thr_sipm_s2)
     else:
         sipm_r = SiPMResponses.build_empty_instance()
 
-    return Pk(pk_times, pmt_r, sipm_r)
+    return Pk(pk_times, pk_widths, pmt_r, sipm_r)
 
 
 def find_peaks(ccwfs, index,
@@ -103,13 +114,14 @@ def find_peaks(ccwfs, index,
 
     peaks           = []
     times           = np.arange     (ccwfs.shape[1]) * 25 * units.ns
+    widths          = times
     indices_split   = split_in_peaks(index, stride)
     selected_splits = select_peaks  (indices_split, time, length)
     with_sipms      = Pk is S2 and sipm_wfs is not None
 
     for indices in selected_splits:
         pk = build_peak(indices, times,
-                        ccwfs, pmt_ids,
+                        widths, ccwfs, pmt_ids,
                         rebin_stride,
                         with_sipms, Pk,
                         sipm_wfs, thr_sipm_s2)
@@ -126,20 +138,22 @@ def get_pmap(ccwf, s1_indx, s2_indx, sipm_zs_wf,
                            **s2_params))
 
 
-def rebin_times_and_waveforms(times, waveforms, rebin_stride):
-    if rebin_stride < 2: return times, waveforms
+def rebin_times_and_waveforms(times, widths, waveforms, rebin_stride):
+    if rebin_stride < 2: return times, widths, waveforms
 
     n_bins    = int(np.ceil(len(times) / rebin_stride))
     n_sensors = waveforms.shape[0]
 
-    rebinned_times = np.zeros(            n_bins )
-    rebinned_wfs   = np.zeros((n_sensors, n_bins))
+    rebinned_times  = np.zeros(            n_bins )
+    rebinned_widths = np.zeros(            n_bins )
+    rebinned_wfs    = np.zeros((n_sensors, n_bins))
 
     for i in range(n_bins):
         s  = slice(rebin_stride * i, rebin_stride * (i + 1))
         t  = times    [   s]
         e  = waveforms[:, s]
         w  = np.sum(e, axis=0) if np.any(e) else None
-        rebinned_times[   i] = np.average(t, weights=w)
-        rebinned_wfs  [:, i] = np.sum    (e,    axis=1)
-    return rebinned_times, rebinned_wfs
+        rebinned_times [   i] = np.average(t, weights=w)
+        rebinned_widths[   i] = np.sum    (   widths[s])
+        rebinned_wfs   [:, i] = np.sum    (e,    axis=1)
+    return rebinned_times, rebinned_widths, rebinned_wfs
