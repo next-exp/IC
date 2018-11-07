@@ -55,18 +55,23 @@ def times_and_waveforms(draw):
 def rebinned_sliced_waveforms(draw):
     times, wfs = draw(times_and_waveforms())
     assume(times.size >= 5)
+    widths = np.append(np.diff(times), max(np.diff(times)))
 
-    indices     = np.arange(times.size)
-    first       = draw(integers(        0, times.size - 2))
-    last        = draw(integers(first + 1, times.size - 1))
-    slice_      = slice(first, last + 1)
-    indices     = indices[   slice_]
-    times_slice = times  [   slice_]
-    wfs_slice   = wfs    [:, slice_]
-    rebin       = draw(integers(1, 5))
-    (times_slice,
-     wfs_slice) = pf.rebin_times_and_waveforms(times_slice, wfs_slice, rebin)
-    return times, wfs, indices, times_slice, wfs_slice, rebin
+    indices      = np.arange(times.size)
+    first        = draw(integers(        0, times.size - 2))
+    last         = draw(integers(first + 1, times.size - 1))
+    slice_       = slice(first, last + 1)
+    indices      = indices[   slice_]
+    times_slice  = times  [   slice_]
+    widths_slice = widths [   slice_]
+    wfs_slice    = wfs    [:, slice_]
+    rebin        = draw(integers(1, 5))
+    (times_slice ,
+     widths_slice,
+     wfs_slice   ) = pf.rebin_times_and_waveforms(times_slice,
+                                                  widths_slice,
+                                                  wfs_slice, rebin)
+    return times, widths, wfs, indices, times_slice, widths_slice, wfs_slice, rebin
 
 
 @composite
@@ -81,6 +86,7 @@ def peak_indices(draw):
 
 def wf_with_indices_(n_sensors=5, n_samples=500, length=None, first=None):
     times = np.arange(n_samples) * 25 * units.ns
+    widths = times - times[0] / 2
     wfs   = np.zeros((n_sensors, n_samples))
     amps  = np.random.uniform(50, 100, size=(n_sensors, 1))
     if length is None:
@@ -90,7 +96,7 @@ def wf_with_indices_(n_sensors=5, n_samples=500, length=None, first=None):
     indices = np.arange(first, first + length)
     x_eval  = np.linspace(-3, 3, length)
     wfs[:, indices] = gauss(x_eval, amps, 0, 1)
-    return times, wfs, indices
+    return times, widths, wfs, indices
 
 wf_with_indices = fixture(wf_with_indices_)
 
@@ -101,12 +107,15 @@ def pmt_and_sipm_wfs_with_indices(n_pmt=3, n_sipm=10, n_samples_sipm=10):
     length_pmt    = np.random.randint(2, n_samples_pmt // 2)
     first_sipm    = first_pmt // 40
     length_sipm   = int(np.ceil((first_pmt + length_pmt) / 40)) - first_sipm
-    times,  pmt_wfs,  pmt_indices = wf_with_indices_(n_pmt , n_samples_sipm * 40,
-                                                     length_pmt, first_pmt)
+    (times      ,
+     widths     ,
+     pmt_wfs    ,
+     pmt_indices) = wf_with_indices_(n_pmt , n_samples_sipm * 40,
+                                     length_pmt, first_pmt)
 
-    _    , sipm_wfs, sipm_indices = wf_with_indices_(n_sipm, n_samples_sipm,
-                                                     length_sipm, first_sipm)
-    return times, pmt_wfs, sipm_wfs, pmt_indices, sipm_indices
+    _, _, sipm_wfs, sipm_indices = wf_with_indices_(n_sipm, n_samples_sipm,
+                                                    length_sipm, first_sipm)
+    return times, widths, pmt_wfs, sipm_wfs, pmt_indices, sipm_indices
 
 
 @fixture
@@ -114,26 +123,33 @@ def s1_and_s2_with_indices(n_pmt=3, n_sipm=10, n_samples_sipm=40):
     n_samples_pmt_s1 = 400
     length_pmt_s1    = np.random.randint(5, 20)
 
-    times_s1, pmt_wfs_s1, pmt_indices_s1 = wf_with_indices_(n_pmt,
-                                                            n_samples_pmt_s1,
-                                                            length_pmt_s1)
+    (times_s1      ,
+     widths_s1     ,
+     pmt_wfs_s1    ,
+     pmt_indices_s1) = wf_with_indices_(n_pmt,
+                                        n_samples_pmt_s1,
+                                        length_pmt_s1)
     sipm_wfs_s1 = np.zeros((n_sipm, n_samples_pmt_s1 // 40))
 
     n_samples_pmt_s2 = n_samples_sipm * 40
     first_pmt        = np.random.randint( 0, n_samples_pmt_s2 // 5)
     length_pmt_s2    = np.random.randint(40, n_samples_pmt_s2 // 2)
-    times_s2, pmt_wfs_s2, pmt_indices_s2 = wf_with_indices_(n_pmt,
-                                                            n_samples_pmt_s2,
-                                                            length_pmt_s2,
-                                                            first_pmt)
+    (times_s2      ,
+     widths_s2     ,
+     pmt_wfs_s2    ,
+     pmt_indices_s2) = wf_with_indices_(n_pmt,
+                                        n_samples_pmt_s2,
+                                        length_pmt_s2,
+                                        first_pmt)
 
     first_sipm  = first_pmt // 40
     length_sipm = int(np.ceil((first_pmt + length_pmt_s2) / 40)) - first_sipm
-    _    , sipm_wfs_s2, sipm_indices = wf_with_indices_(n_sipm, n_samples_sipm,
-                                                        length_sipm, first_sipm)
+    _, _, sipm_wfs_s2, sipm_indices = wf_with_indices_(n_sipm, n_samples_sipm,
+                                                       length_sipm, first_sipm)
 
     times_s2 += times_s1[-1] + np.diff(times_s1)[-1]
     times     = np.concatenate([   times_s1,    times_s2]        )
+    widths    = np.concatenate([  widths_s1,   widths_s2]        )
     pmt_wfs   = np.concatenate([ pmt_wfs_s1,  pmt_wfs_s2], axis=1)
     sipm_wfs  = np.concatenate([sipm_wfs_s1, sipm_wfs_s2], axis=1)
 
@@ -152,7 +168,7 @@ def s1_and_s2_with_indices(n_pmt=3, n_sipm=10, n_samples_sipm=40):
     "stride"      :  1,
     "rebin_stride": 40}
 
-    return (times, pmt_wfs, sipm_wfs,
+    return (times, widths, pmt_wfs, sipm_wfs,
             pmt_indices_s1, pmt_indices_s2, sipm_indices,
             s1_params, s2_params)
 
@@ -301,33 +317,40 @@ def test_select_peaks(peak_data, t0, t1, l0, l1):
 
 @given(rebinned_sliced_waveforms())
 def test_pick_slice_and_rebin(wfs_slice_data):
-    times, wfs, indices, times_slice, wfs_slice, rebin = wfs_slice_data
-    sliced_times, sliced_wfs = pf.pick_slice_and_rebin(indices, times,
-                                                       wfs, rebin)
+    (times, widths, wfs, indices,
+     times_slice, widths_slice, wfs_slice, rebin) = wfs_slice_data
+    sliced_times, sliced_widths, sliced_wfs = pf.pick_slice_and_rebin(indices,
+                                                                      times,
+                                                                      widths,
+                                                                      wfs,
+                                                                      rebin)
 
-    assert sliced_times == approx(times_slice)
-    assert sliced_wfs   == approx(  wfs_slice)
+    assert sliced_times  == approx( times_slice)
+    assert sliced_widths == approx(widths_slice)
+    assert sliced_wfs    == approx(   wfs_slice)
 
 
 def test_build_pmt_responses(wf_with_indices):
-    times, wfs, indices = wf_with_indices
+    times, widths, wfs, indices = wf_with_indices
     ids = np.arange(wfs.shape[0])
-    ts, pmt_r = pf.build_pmt_responses(indices, times,
-                                       wfs, ids, 1, False)
+    ts, wid, pmt_r = pf.build_pmt_responses(indices, times, widths,
+                                            wfs, ids, 1, False)
     assert ts                  == approx (times[indices])
+    assert wid                 == approx (widths[indices])
     assert pmt_r.ids           == exactly(ids)
     assert pmt_r.all_waveforms == approx (wfs[:, indices])
 
 
 def test_build_sipm_responses(wf_with_indices):
-    times, wfs, indices = wf_with_indices
+    times, widths, wfs, indices = wf_with_indices
     ids = np.arange(wfs.shape[0])
     wfs_slice       = wfs[:, indices]
     peak_integrals  = wfs_slice.sum(axis=1)
     below_thr_index = np.argmin (peak_integrals)
     # next_float doesn't work here
     thr             = peak_integrals[below_thr_index] * 1.000001
-    sipm_r          = pf.build_sipm_responses(indices, times, wfs, 1, thr)
+    sipm_r          = pf.build_sipm_responses(indices, times, widths,
+                                              wfs, 1, thr)
 
     expected_ids = np.delete(      ids, below_thr_index)
     expected_wfs = np.delete(wfs_slice, below_thr_index, axis=0)
@@ -341,7 +364,7 @@ def test_build_sipm_responses(wf_with_indices):
                    (S2, 40, True )))
 def test_build_peak_development(pmt_and_sipm_wfs_with_indices,
                                 Pk, rebin, with_sipms):
-    (times, pmt_wfs, sipm_wfs,
+    (times, widths, pmt_wfs, sipm_wfs,
      pmt_indices, sipm_indices) = pmt_and_sipm_wfs_with_indices
     pmt_ids  = np.arange( pmt_wfs.shape[0])
 
@@ -355,13 +378,17 @@ def test_build_peak_development(pmt_and_sipm_wfs_with_indices,
         indices = pmt_indices
         sipm_r = SiPMResponses.build_empty_instance()
 
-    (rebinned_times,
-     rebinned_wfs  ) = pf.rebin_times_and_waveforms(times, pmt_wfs, rebin)
-    pmt_r            = PMTResponses(pmt_ids, rebinned_wfs[:, indices])
-    expected_peak    = S2(rebinned_times[indices], pmt_r, sipm_r)
+    (rebinned_times ,
+     rebinned_widths,
+     rebinned_wfs   ) = pf.rebin_times_and_waveforms(times, widths,
+                                                     pmt_wfs, rebin)
+    pmt_r             = PMTResponses(pmt_ids, rebinned_wfs[:, indices])
+    expected_peak     = S2(rebinned_times[indices],
+                           rebinned_widths,
+                           pmt_r, sipm_r)
 
     peak = pf.build_peak(pmt_indices, times,
-                         pmt_wfs, pmt_ids,
+                         widths, pmt_wfs, pmt_ids,
                          rebin_stride = rebin,
                          with_sipms   = with_sipms,
                          Pk           = Pk,
@@ -372,7 +399,7 @@ def test_build_peak_development(pmt_and_sipm_wfs_with_indices,
 
 
 def test_find_peaks_trigger_style(pmt_and_sipm_wfs_with_indices):
-    (times, pmt_wfs, sipm_wfs,
+    (times, widths, pmt_wfs, sipm_wfs,
      pmt_indices, sipm_indices) = pmt_and_sipm_wfs_with_indices
 
     t_slice      = times[pmt_indices]
@@ -389,21 +416,23 @@ def test_find_peaks_trigger_style(pmt_and_sipm_wfs_with_indices):
                           stride, rebin_stride,
                           S2, pmt_ids)
 
-    (rebinned_times,
-     rebinned_wfs  ) = pf.rebin_times_and_waveforms(times [pmt_indices],
-                                                    wfs[:, pmt_indices],
-                                                    rebin_stride)
+    (rebinned_times ,
+     rebinned_widths,
+     rebinned_wfs   ) = pf.rebin_times_and_waveforms(times [pmt_indices],
+                                                     widths[pmt_indices],
+                                                     wfs[:, pmt_indices],
+                                                     rebin_stride)
 
     pmt_r            =  PMTResponses(pmt_ids, rebinned_wfs)
     sipm_r           = SiPMResponses.build_empty_instance()
-    expected_peak    = S2(rebinned_times, pmt_r, sipm_r)
+    expected_peak    = S2(rebinned_times, rebinned_widths, pmt_r, sipm_r)
 
     assert len(peaks) == 1
     assert_Peak_equality(peaks[0], expected_peak)
 
 
 def test_find_peaks_s1_style(pmt_and_sipm_wfs_with_indices):
-    times, pmt_wfs, _, pmt_indices, _ = pmt_and_sipm_wfs_with_indices
+    times, widths, pmt_wfs, _, pmt_indices, _ = pmt_and_sipm_wfs_with_indices
 
     pmt_ids      = np.arange(pmt_wfs.shape[0])
     t_slice      = times[pmt_indices]
@@ -419,14 +448,14 @@ def test_find_peaks_s1_style(pmt_and_sipm_wfs_with_indices):
 
     pmt_r         =  PMTResponses(pmt_ids, pmt_wfs[:, pmt_indices])
     sipm_r        = SiPMResponses.build_empty_instance()
-    expected_peak = S2(times[pmt_indices], pmt_r, sipm_r)
+    expected_peak = S2(times[pmt_indices], widths[pmt_indices], pmt_r, sipm_r)
 
     assert len(peaks) == 1
     assert_Peak_equality(peaks[0], expected_peak)
 
 
 def test_find_peaks_s2_style(pmt_and_sipm_wfs_with_indices):
-    (times, pmt_wfs, sipm_wfs,
+    (times, widths, pmt_wfs, sipm_wfs,
      pmt_indices, sipm_indices) = pmt_and_sipm_wfs_with_indices
 
     pmt_ids      = np.arange(pmt_wfs.shape[0])
@@ -445,19 +474,22 @@ def test_find_peaks_s2_style(pmt_and_sipm_wfs_with_indices):
                           thr_sipm_s2 = -1)
 
     (rebinned_times,
-     rebinned_wfs  ) = pf.rebin_times_and_waveforms(times, pmt_wfs,
-                                                    rebin_stride)
+     rebinned_widths,
+     rebinned_wfs   ) = pf.rebin_times_and_waveforms(times, widths,
+                                                     pmt_wfs, rebin_stride)
 
     pmt_r            =  PMTResponses( pmt_ids, rebinned_wfs[:, sipm_indices])
     sipm_r           = SiPMResponses(sipm_ids, sipm_wfs    [:, sipm_indices])
-    expected_peak    = S2(rebinned_times[sipm_indices], pmt_r, sipm_r)
+    expected_peak    = S2(rebinned_times [sipm_indices],
+                          rebinned_widths[sipm_indices],
+                          pmt_r, sipm_r)
 
     assert len(peaks) == 1
     assert_Peak_equality(peaks[0], expected_peak)
 
 
 def test_get_pmap(s1_and_s2_with_indices):
-    (times, pmt_wfs, sipm_wfs,
+    (times, widths, pmt_wfs, sipm_wfs,
      s1_indx, s2_indx, sipm_indices,
      s1_params, s2_params) = s1_and_s2_with_indices
     pmt_ids  = np.arange( pmt_wfs.shape[0])
@@ -469,17 +501,19 @@ def test_get_pmap(s1_and_s2_with_indices):
                        thr_sipm_s2 = -1,
                        pmt_ids     = pmt_ids)
 
-    (rebinned_times,
-     rebinned_wfs  ) = pf.rebin_times_and_waveforms(times,
-                                                    pmt_wfs,
-                                                    s2_params["rebin_stride"])
+    (rebinned_times ,
+     rebinned_widths,
+     rebinned_wfs   ) = pf.rebin_times_and_waveforms(times,
+                                                     widths,
+                                                     pmt_wfs,
+                                                     s2_params["rebin_stride"])
 
 
-    s1 = S1(times[s1_indx],
+    s1 = S1(times[s1_indx], widths[s1_indx],
             PMTResponses ( pmt_ids, pmt_wfs[:, s1_indx]),
             SiPMResponses.build_empty_instance())
 
-    s2 = S2(rebinned_times[sipm_indices],
+    s2 = S2(rebinned_times[sipm_indices], rebinned_widths[sipm_indices],
             PMTResponses ( pmt_ids, rebinned_wfs[:, sipm_indices]),
             SiPMResponses(sipm_ids,     sipm_wfs[:, sipm_indices]))
 
@@ -489,31 +523,44 @@ def test_get_pmap(s1_and_s2_with_indices):
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_sum_axis_1_does_not_change(t_and_wf, stride):
-    times, wfs = t_and_wf
-    _, rb_wfs  = pf.rebin_times_and_waveforms(times, wfs, stride)
+    times, wfs    = t_and_wf
+    widths        = [1]
+    if len(times) > 1:
+        widths = np.append(np.diff(times), max(np.diff(times)))
+    _, _, rb_wfs  = pf.rebin_times_and_waveforms(times, widths, wfs, stride)
     assert np.sum(wfs, axis=1) == approx(np.sum(rb_wfs, axis=1))
 
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_sum_axis_0_does_not_change(t_and_wf, stride):
-    times, wfs = t_and_wf
-    sum_wf     = np.stack([np.sum(wfs, axis=0)])
-    _, rb_wfs  = pf.rebin_times_and_waveforms(times,     wfs, stride)
-    _, rb_sum  = pf.rebin_times_and_waveforms(times, sum_wf , stride)
+    times, wfs    = t_and_wf
+    widths        = [1]
+    if len(times) > 1:
+        widths = np.append(np.diff(times), max(np.diff(times)))
+    sum_wf        = np.stack([np.sum(wfs, axis=0)])
+    _, _, rb_wfs  = pf.rebin_times_and_waveforms(times, widths,     wfs, stride)
+    _, _, rb_sum  = pf.rebin_times_and_waveforms(times, widths, sum_wf , stride)
     assert rb_sum[0] == approx(np.sum(rb_wfs, axis=0))
 
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_number_of_wfs_does_not_change(t_and_wf, stride):
-    times, wfs  = t_and_wf
-    _, rb_wfs = pf.rebin_times_and_waveforms(times, wfs, stride)
+    times, wfs   = t_and_wf
+    widths       = [1]
+    if len(times) > 1:
+        widths = np.append(np.diff(times), max(np.diff(times)))
+    _, _, rb_wfs = pf.rebin_times_and_waveforms(times, widths, wfs, stride)
     assert len(wfs) == len(rb_wfs)
 
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_number_of_bins_is_correct(t_and_wf, stride):
     times, wfs       = t_and_wf
-    rb_times, rb_wfs = pf.rebin_times_and_waveforms(times, wfs, stride)
+    widths           = [1]
+    if len(times) > 1:
+        widths = np.append(np.diff(times), max(np.diff(times)))
+    rb_times, _, rb_wfs = pf.rebin_times_and_waveforms(times, widths,
+                                                       wfs, stride)
     expected_n_bins  = times.size // stride
     if times.size % stride != 0:
         expected_n_bins += 1
@@ -524,8 +571,11 @@ def test_rebin_times_and_waveforms_number_of_bins_is_correct(t_and_wf, stride):
 
 @given(times_and_waveforms())
 def test_rebin_times_and_waveforms_stride_1_does_not_rebin(t_and_wf):
-    times, wfs       = t_and_wf
-    rb_times, rb_wfs = pf.rebin_times_and_waveforms(times, wfs, 1)
+    times, wfs = t_and_wf
+    widths     = [1]
+    if len(times) > 1:
+        widths = np.append(np.diff(times), max(np.diff(times)))
+    rb_times, _, rb_wfs = pf.rebin_times_and_waveforms(times, widths, wfs, 1)
 
     assert np.all(times == rb_times)
     assert wfs == approx(rb_wfs)
@@ -534,12 +584,16 @@ def test_rebin_times_and_waveforms_stride_1_does_not_rebin(t_and_wf):
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_times_are_consistent(t_and_wf, stride):
     times, wfs  = t_and_wf
-
+    widths      = [1]
+    if len(times) > 1:
+        widths = np.append(np.diff(times), max(np.diff(times)))
+    
     # The samples falling in the last bin cannot be so easily
     # compared as the other ones so I remove them.
     remain = times.size - times.size % stride
     times  = times[:remain]
     wfs    = wfs  [:remain]
-    rb_times, _ = pf.rebin_times_and_waveforms(times, np.ones_like(wfs), stride)
+    rb_times, _, _ = pf.rebin_times_and_waveforms(times, widths,
+                                                  np.ones_like(wfs), stride)
 
     assert np.sum(rb_times) * stride == approx(np.sum(times))
