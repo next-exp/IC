@@ -400,11 +400,12 @@ def test_irene_exact_result(ICDATADIR, output_tmpdir):
 
     irene(**conf)
 
-    tables = (     "MC/extents",      "MC/hits"   ,    "MC/particles", "MC/generators",
-                "PMAPS/S1"     ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
-                "PMAPS/S1Pmt"  ,   "PMAPS/S2Pmt"  ,
-                  "Run/events" ,     "Run/runInfo",
-              "Trigger/events" , "Trigger/trigger")
+    tables = (     "MC/extents"    ,      "MC/hits"      ,    "MC/particles", "MC/generators",
+                "PMAPS/S1"         ,   "PMAPS/S2"        , "PMAPS/S2Si"     ,
+                "PMAPS/S1Pmt"      ,   "PMAPS/S2Pmt"     ,
+                  "Run/events"     ,     "Run/runInfo"   ,
+              "Trigger/events"     , "Trigger/trigger"   ,
+              "Filters/s12_indices", "Filters/empty_pmap")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             for table in tables:
