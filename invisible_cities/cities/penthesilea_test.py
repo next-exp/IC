@@ -206,8 +206,9 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
 
     penthesilea(**conf)
 
-    tables = (  "MC/extents",  "MC/hits", "MC/particles", "MC/generators",
-              "RECO/Events" , "DST/Events")
+    tables = (     "MC/extents"     ,  "MC/hits", "MC/particles", "MC/generators",
+                 "RECO/Events"      , "DST/Events",
+              "Filters/s12_selector")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             print(true_output_file)

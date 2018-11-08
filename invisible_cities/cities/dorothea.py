@@ -42,6 +42,7 @@ from .. core.system_of_units_c import units
 from .. reco                   import tbl_functions as tbl
 from .. io.         kdst_io    import            kr_writer
 from .. io.run_and_event_io    import run_and_event_writer
+from .. io. event_filter_io    import  event_filter_writer
 
 from .. dataflow          import dataflow      as fl
 from .. dataflow.dataflow import push
@@ -72,7 +73,8 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, run_number
                                    args = "pmap",
                                    out  = "selector_output")
 
-    pmap_select           = fl.count_filter(attrgetter("passed"), args="selector_output")
+    pmap_passed           = fl.map(attrgetter("passed"), args="selector_output", out="pmap_passed")
+    pmap_select           = fl.count_filter(bool, args="pmap_passed")
 
     reco_algo             = compute_xy_position(**global_reco_params)
     build_pointlike_event = fl.map(build_pointlike_event_(run_number, drift_v, reco_algo),
@@ -85,8 +87,9 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, run_number
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
 
         # Define writers...
-        write_event_info      = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
-        write_pointlike_event = fl.sink(           kr_writer(h5out), args="pointlike_event")
+        write_event_info      = fl.sink(run_and_event_writer(h5out                ), args=("run_number", "event_number", "timestamp"))
+        write_pointlike_event = fl.sink(           kr_writer(h5out                ), args="pointlike_event")
+        write_pmap_filter     = fl.sink( event_filter_writer(h5out, "s12_selector"), args=("event_number", "pmap_passed"))
 
         return push(source = pmap_from_files(files_in),
                     pipe   = pipe(
@@ -94,6 +97,8 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, run_number
                         print_every(print_mod)                ,
                         event_count_in       .spy             ,
                         classify_peaks                        ,
+                        pmap_passed                           ,
+                        fl.branch(write_pmap_filter)          ,
                         pmap_select          .filter          ,
                         event_count_out      .spy             ,
                         build_pointlike_event                 ,

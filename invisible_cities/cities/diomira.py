@@ -38,6 +38,7 @@ from .. core.random_sampling    import NoiseSampler     as SiPMsNoiseSampler
 from .. io.rwf_io               import           rwf_writer
 from .. io.       mcinfo_io     import       mc_info_writer
 from .. io.run_and_event_io     import run_and_event_writer
+from .. io. event_filter_io     import  event_filter_writer
 from .. filters.trigger_filters import TriggerFilter
 from .. database                import load_db
 from .. evm.ic_containers       import TriggerParams
@@ -73,7 +74,8 @@ def diomira(files_in, file_out, compression, event_range, print_mod, run_number,
                                      args="sipm", out="sipm_sim"             )
     trigger_filter_         = select_trigger_filter(trigger_type, trigger_params, s2_params)
     emulate_trigger_        = fl.map(emulate_trigger(run_number, trigger_type, trigger_params, s2_params), args="pmt_sim", out="trigger_sim")
-    trigger_filter          = fl.count_filter(trigger_filter_, args="trigger_sim")
+    trigger_pass            = fl.map(trigger_filter_, args="trigger_sim", out="trigger_pass")
+    trigger_filter          = fl.count_filter(bool, args="trigger_pass")
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
         RWF        = partial(rwf_writer, h5out, group_name='RD')
@@ -83,9 +85,11 @@ def diomira(files_in, file_out, compression, event_range, print_mod, run_number,
 
         write_event_info_ = run_and_event_writer(h5out)
         write_mc_         = mc_info_writer      (h5out) if run_number <= 0 else (lambda *_: None)
+        write_evt_filter_ = event_filter_writer (h5out, "trigger", compression=compression)
 
-        write_event_info = fl.sink(write_event_info_, args=("run_number", "event_number", "timestamp"))
-        write_mc         = fl.sink(write_mc_        , args=(        "mc", "event_number"             ))
+        write_event_info = fl.sink(write_event_info_, args=("run_number", "event_number", "timestamp"   ))
+        write_mc         = fl.sink(write_mc_        , args=(        "mc", "event_number"                ))
+        write_evt_filter = fl.sink(write_evt_filter_, args=(              "event_number", "trigger_pass"))
 
         event_count_in = fl.spy_count()
 
@@ -96,6 +100,8 @@ def diomira(files_in, file_out, compression, event_range, print_mod, run_number,
                           print_every(print_mod)                ,
                           simulate_pmt_response_                ,
                           emulate_trigger_                      ,
+                          trigger_pass                          ,
+                          fl.branch(write_evt_filter)           ,
                           trigger_filter.filter                 ,
                           simulate_sipm_response_               ,
                           fork(write_pmt                        ,

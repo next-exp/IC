@@ -29,6 +29,7 @@ from .. io  .        pmaps_io import          pmap_writer
 from .. io.        mcinfo_io  import       mc_info_writer
 from .. io  .run_and_event_io import run_and_event_writer
 from .. io  .trigger_io       import       trigger_writer
+from .. io  .event_filter_io  import  event_filter_writer
 
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
@@ -94,9 +95,12 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
     ### Define data filters
 
     # Filter events without signal over threshold
-    empty_indices   = fl.count_filter(check_nonempty_indices, args = ("s1_indices", "s2_indices"))
+    indices_pass    = fl.map(check_nonempty_indices, args = ("s1_indices", "s2_indices"), out = "indices_pass")
+    empty_indices   = fl.count_filter(bool, args = "indices_pass")
+
     # Filter events with zero peaks
-    empty_pmaps     = fl.count_filter(check_empty_pmap      , args = "pmap")
+    pmaps_pass      = fl.map(check_empty_pmap, args = "pmap", out = "pmaps_pass")
+    empty_pmaps     = fl.count_filter(bool, args = "pmaps_pass")
 
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
@@ -108,12 +112,16 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
         write_mc_           = mc_info_writer      (h5out) if run_number <= 0 else (lambda *_: None)
         write_pmap_         = pmap_writer         (h5out, compression=compression)
         write_trigger_info_ = trigger_writer      (h5out, get_number_of_active_pmts(run_number))
+        write_indx_filter_  = event_filter_writer (h5out, "s12_indices", compression=compression)
+        write_pmap_filter_  = event_filter_writer (h5out, "empty_pmap" , compression=compression)
 
         # ... and make them sinks
-        write_event_info   = sink(write_event_info_  , args=(   "run_number",     "event_number", "timestamp"))
-        write_mc           = sink(write_mc_          , args=(           "mc",     "event_number"             ))
-        write_pmap         = sink(write_pmap_        , args=(         "pmap",     "event_number"             ))
-        write_trigger_info = sink(write_trigger_info_, args=( "trigger_type", "trigger_channels"             ))
+        write_event_info   = sink(write_event_info_  , args=(   "run_number",     "event_number", "timestamp"   ))
+        write_mc           = sink(write_mc_          , args=(           "mc",     "event_number"                ))
+        write_pmap         = sink(write_pmap_        , args=(         "pmap",     "event_number"                ))
+        write_trigger_info = sink(write_trigger_info_, args=( "trigger_type", "trigger_channels"                ))
+        write_indx_filter  = sink(write_indx_filter_ , args=(                     "event_number", "indices_pass"))
+        write_pmap_filter  = sink(write_pmap_filter_ , args=(                     "event_number",   "pmaps_pass"))
 
         return push(source = wf_from_files(files_in, WfType.rwf),
                     pipe   = pipe(
@@ -123,9 +131,13 @@ def irene(files_in, file_out, compression, event_range, print_mod, run_number,
                                 rwf_to_cwf,
                                 cwf_to_ccwf,
                                 zero_suppress,
+                                indices_pass,
+                                fl.branch(write_indx_filter),
                                 empty_indices.filter,
                                 sipm_rwf_to_cal,
                                 compute_pmap,
+                                pmaps_pass,
+                                fl.branch(write_pmap_filter),
                                 empty_pmaps.filter,
                                 event_count_out.spy,
                                 fl.fork(write_pmap,

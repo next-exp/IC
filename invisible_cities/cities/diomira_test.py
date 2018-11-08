@@ -208,9 +208,10 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
     np.random.set_state(original_random_state)
 
 
-    tables = ( "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
-               "RD/pmtrwf" ,  "RD/pmtblr" , "RD/sipmrwf"  ,
-              "Run/events" , "Run/runInfo")
+    tables = (     "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
+                   "RD/pmtrwf" ,  "RD/pmtblr" , "RD/sipmrwf"  ,
+                  "Run/events" , "Run/runInfo",
+              "Filters/trigger")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             for table in tables:

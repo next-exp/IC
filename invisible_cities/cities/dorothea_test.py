@@ -151,7 +151,8 @@ def test_dorothea_exact_result(ICDATADIR, output_tmpdir):
 
     dorothea(**conf)
 
-    tables = ("DST/Events",)
+    tables = (    "DST/Events",
+              "Filters/s12_selector")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             for table in tables:
