@@ -72,7 +72,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2018-10-20
+CONDA_ENV_TAG=2018-11-07
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
@@ -87,7 +87,7 @@ dependencies:
 # *REMEMBER TO CHANGE CONDA_ENV_TAG WHEN CHANGING VERSION NUMBERS*
 - cython       = 0.29
 - jupyter      = 1.0.0
-- matplotlib   = 3.0.0
+- matplotlib   = 3.0.1
 - networkx     = 2.2
 - notebook     = 5.7.0
 - numpy        = 1.15.2
