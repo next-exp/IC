@@ -195,7 +195,7 @@ def poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals):
         raise ValueError("SensorType.SIPM or SensorType.PMT must be given for sensor_type")
 
 
-def sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals):
+def sensor_values(sensor_type, scaler, bins, spectrum, ped_vals):
     """
     Define different values and ranges of the spectra depending on the sensor type.
     """
@@ -306,8 +306,8 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spec, ped_vals,
         Minimum and maximum limits for the previous variables.
     """
 
-    norm_seed = spec.sum()
-    sens_values = sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
+    norm_seed = spectrum.sum()
+    sens_values = sensor_values(sensor_type, scaler, bins, spectrum, ped_vals)
     if use_db_gain_seeds:
         gain_seed, gain_sigma_seed = seeds_db(sensor_type, run_no, n_chann)
 

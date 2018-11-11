@@ -200,14 +200,14 @@ def test_poisson_mu_seed(sensor_type, scaler, mu):
     assert_approx_equal(result, mu)
 
 
-@mark.parametrize('     sensor_type, n_chann,                    scaler,    expected_range, min_b, max_b, half_width, p1pe_seed, lim_p',
-                  ((SensorType.SIPM,    1023, cf.dark_scaler(dark_sipm),  np.arange(4 ,20),    10,    22,          5,         3, 10000),
-                   (SensorType.PMT ,       0, cf.dark_scaler(dark_pmt) ,  np.arange(10,20),    15,    50,         10,         7, 10000)))
-def test_sensor_values(sensor_type, n_chann, scaler, expected_range, min_b, max_b, half_width, p1pe_seed, lim_p):
+@mark.parametrize('     sensor_type,            scaler,    expected_range, min_b, max_b, half_width, p1pe_seed, lim_p',
+                  ((SensorType.SIPM, _dark_scaler_sipm,  np.arange(4 ,20),    10,    22,          5,         3, 10000),
+                   (SensorType.PMT ,  _dark_scaler_pmt,  np.arange(10,20),    15,    50,         10,         7, 10000)))
+def test_sensor_values(sensor_type, scaler, expected_range, min_b, max_b, half_width, p1pe_seed, lim_p):
     bins        = np.array([ -6,  -5,   -4,   -3,   -2,   -1,    0,    1,    2,    3,    4,   5,   6,   7])
     spec        = np.array([ 28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
     ped_vals    = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
-    sens_values = cf.sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
+    sens_values = cf.sensor_values(sensor_type, scaler, bins, spec, ped_vals)
 
     assert_array_equal(p_range, expected_range)
     assert len(sens_values.spectra) == len(spec)
@@ -229,7 +229,7 @@ def test_incorrect_sensor_type_raises_ValueError(sensor_type, run_number, n_chan
     with raises(ValueError):
         cf.       seeds_db(sensor_type, run_number, n_chann)
         cf.poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals)
-        cf.  sensor_values(sensor_type, n_chann, scaler, bins, spec, ped_vals)
+        cf.  sensor_values(sensor_type, scaler, bins, spec, ped_vals)
 
 
 def test_pedestal_values():
