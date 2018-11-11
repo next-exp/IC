@@ -266,13 +266,13 @@ def test_seeds_without_using_db(ICDATADIR):
         except IndexError:
             continue
 
-        pD = find_peaks_cwt(dar, np.arange(2, 20), min_snr=2)
-        if len(pD) == 0:
+        peaks_dark = find_peaks_cwt(dar, np.arange(2, 20), min_snr=2)
+        if len(peaks_dark) == 0:
             continue
 
         gb0     = [(0, -100, 0), (np.inf, 100, 10000)]
         sd0     = (dar.sum(), 0, 2)
-        sel     = np.arange(pD[0]-5, pD[0]+5)
+        sel     = np.arange(peaks_dark[0]-5, peaks_dark[0]+5)
         errs    = poisson_sigma(dar[sel], default=0.1)
         gfitRes = fitf.fit(fitf.gauss, bins[sel], dar[sel], sd0, sigma=errs, bounds=gb0)
 
