@@ -3,7 +3,7 @@
                                 Trude
 -----------------------------------------------------------------------
 
-Unknown etymology.
+From Germanic, Gertrud, hypocorism: female friend.
 
 This city produces the light and dark spectrum of SiPMs for dedicated
 calibration runs. This is achieved by selecting regions in the SiPM
