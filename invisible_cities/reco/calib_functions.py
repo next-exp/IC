@@ -245,7 +245,7 @@ def compute_seeds_from_spectrum(sens_values, bins, ped_vals):
     p_seed  = sens_values.p1pe_seed
 
     peaks_dark_led  = find_peaks_cwt(spectra, p_range, min_snr=1, noise_perc=5)
-    p1pe_samples    = peaks_dark_led[in_range(bins[peaks_dark_led], min_b, max_b)]
+    p1pe_samples    = peaks_dark_led[(bins[peaks_dark_led]>min_b) & (bins[peaks_dark_led]<max_b)]
     if len(p1pe_samples) == 0:
         try:
             p1pe_centroid = np.argwhere(bins==(min_b+max_b)/2)[0][0]
