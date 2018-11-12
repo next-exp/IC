@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------
-                                Zemrude
+                                Berenice
 -----------------------------------------------------------------------
 
 Unknown etymology.
@@ -46,7 +46,7 @@ from .  components import waveform_binner
 
 
 @city
-def zemrude(files_in, file_out, compression, event_range, print_mod, run_number,
+def berenice(files_in, file_out, compression, event_range, print_mod, run_number,
             min_bin, max_bin, bin_width):
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
