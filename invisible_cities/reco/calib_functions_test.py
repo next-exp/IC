@@ -209,13 +209,13 @@ def test_sensor_values(sensor_type, scaler, expected_range, min_b, max_b, half_w
     ped_vals    = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
     sens_values = cf.sensor_values(sensor_type, scaler, bins, spec, ped_vals)
 
-    assert_array_equal(p_range, expected_range)
-    assert len(sens_values.spectra) == len(spec)
-    assert     sens_values.min_bin  == min_b
-    assert     sens_values.max_bin  == max_b
-    assert     sens_values.hpw      == half_width
-    assert     sens_values.seed     == p1pe_seed
-    assert     sens_values.lim_ped  == lim_p
+    assert_array_equal(sens_values.peak_range, expected_range)
+    assert len(sens_values.spectra)        == len(spec)
+    assert     sens_values.min_bin_peak    == min_b
+    assert     sens_values.max_bin_peak    == max_b
+    assert     sens_values.half_peak_width == half_width
+    assert     sens_values.p1pe_seed       == p1pe_seed
+    assert     sens_values.lim_ped         == lim_p
 
 
 @mark.parametrize('sensor_type, run_number, n_chann,            scaler',
