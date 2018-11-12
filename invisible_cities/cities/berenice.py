@@ -3,7 +3,7 @@
                                 Berenice
 -----------------------------------------------------------------------
 
-Unknown etymology.
+From Βερενíκη, Ancient Macedonian form of the Attic Greek, Φερενíκη: she, who brings victory.
 
 This city produces the spectrum of dark noise of the SiPMs. This is
 achieved by binning either the pe or ADC content of each raw WF sample.
