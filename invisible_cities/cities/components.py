@@ -371,8 +371,10 @@ def build_pointlike_event(run_number, drift_v, reco):
             try:
                 clusters = reco(xys, qs)
             except XYRecoFail:
-                c = NNN()
-                Z, DT, Zrms = NN, NN, NN
+                c    = NNN()
+                Z    = tuple(NN for _ in evt.nS1)
+                DT   = tuple(NN for _ in evt.nS1)
+                Zrms = NN
             else:
                 c = clusters[0]
                 Z, DT = compute_z_and_dt(evt.S2t[-1], evt.S1t, drift_v)
