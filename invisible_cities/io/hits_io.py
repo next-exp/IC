@@ -80,9 +80,9 @@ def load_hits_skipping_NN(DST_file_name):
     return good_events
 
 # writers
-def hits_writer(hdf5_file, *, compression='ZLIB4'):
+def hits_writer(hdf5_file, *, group_name= 'RECO', compression='ZLIB4'):
     hits_table  = make_table(hdf5_file,
-                             group       = 'RECO',
+                             group       = group_name,
                              name        = 'Events',
                              fformat     = HitsTable,
                              description = 'Hits',
