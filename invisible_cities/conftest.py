@@ -343,14 +343,14 @@ def KrMC_hdst(ICDATADIR):
                              lm_radius      =  -1  * units.mm ,
                              new_lm_radius  =  -1  * units.mm ,
                              msipm          =   1             ),
-                         slice_corona_reco_params  =   dict(
+                         slice_cluster_reco_params  =   dict(
                              Qthr           =   2  * units.pes,
                              Qlm            =   5  * units.pes,
                              lm_radius      =   0  * units.mm ,
                              new_lm_radius  =   15 * units.mm ,
                              msipm          =   1             ),
-                         slice_1hit_per_sipm_reco_params  =   dict(
-                             Qthr           =   5  * units.pes))
+                         Qthr_sipmhit       =   5 *units.mm    )
+
 
     event = [3] * 4 + [4] * 7 + [5] * 7 + [9] * 5
     time  = [0]  * 23
