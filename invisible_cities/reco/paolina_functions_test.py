@@ -186,9 +186,13 @@ def test_hits_assigned_to_correct_voxel():
 
     assert len(voxels) == 3
 
-    n_expected_hits = [1, 1, 3]
-    for v, nhits in zip(voxels, n_expected_hits):
-        assert len(v.hits) == nhits
+    expected_hits = [(BHit( 5., 15., z, energy)),
+                     (BHit(15.,  5., z, energy)),
+                     (BHit(15., 15., z, energy),
+                      BHit(15., 25., z, energy),
+                      BHit(25., 15., z, energy))]
+    for v, hits in zip(voxels, expected_hits):
+        assert all(v.hits == hits)
 
 
 @given(bunch_of_hits, box_sizes)
