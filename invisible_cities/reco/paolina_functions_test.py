@@ -193,7 +193,7 @@ def test_voxel_hits_are_same_as_original_ones(hits, requested_voxel_dimensions):
     assert  hits_read_from_voxels_s_all == hits_s_all
 
 
-def test_hits_assigned_to_correct_voxel():
+def test_hits_on_border_are_assigned_to_correct_voxel():
     z = 10.
     energy = 1.
     hits = [BHit( 5., 15., z, energy),
