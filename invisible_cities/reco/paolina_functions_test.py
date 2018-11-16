@@ -172,6 +172,7 @@ def test_hits_energy_in_voxel_is_equal_to_voxel_energy(hits, requested_voxel_dim
     for v in voxels:
         assert sum([h.E for h in v.hits]) == v.energy
 
+
 def test_hits_assigned_to_correct_voxel():
     z = 10.
     energy = 1.
@@ -186,13 +187,13 @@ def test_hits_assigned_to_correct_voxel():
 
     assert len(voxels) == 3
 
-    expected_hits = [(BHit( 5., 15., z, energy)),
-                     (BHit(15.,  5., z, energy)),
-                     (BHit(15., 15., z, energy),
+    expected_hits = [[BHit( 5., 15., z, energy)],
+                     [BHit(15.,  5., z, energy)],
+                     [BHit(15., 15., z, energy),
                       BHit(15., 25., z, energy),
-                      BHit(25., 15., z, energy))]
+                      BHit(25., 15., z, energy)]]
     for v, hits in zip(voxels, expected_hits):
-        assert all(v.hits == hits)
+        assert v.hits == hits
 
 
 @given(bunch_of_hits, box_sizes)

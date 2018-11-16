@@ -94,9 +94,7 @@ def voxelize_hits(hits             : Sequence[BHit],
     for (x,y,z) in np.stack(nz).T:
 
         indx_comp = (h_indices == (x, y, z))
-        ok = [i[0] & i[1] & i[2] for i in indx_comp]
-        hits = np.array(hits)
-        hits_in_bin = hits[ok]
+        hits_in_bin = list(h for i, h in zip(indx_comp, hits) if all(i))
 
         voxels.append(Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions, hits_in_bin))  
 
