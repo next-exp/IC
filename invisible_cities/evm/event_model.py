@@ -1,4 +1,4 @@
-# Clsses defining the event model
+# Classes defining the event model
 
 import tables as tb
 import numpy  as np
@@ -181,9 +181,10 @@ class MCHit(BHit):
 
 class Voxel(BHit):
     """Represents a Voxel"""
-    def __init__(self, x,y,z, E, size):
+    def __init__(self, x,y,z, E, size, hits=[]):
         super().__init__(x,y,z, E)
         self._size = size
+        self.hits = hits
 
     @property
     def size(self): return self._size

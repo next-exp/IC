@@ -167,6 +167,56 @@ def test_voxelize_hits_flexible_gives_correct_voxels_size(hits, requested_voxel_
 
 
 @given(bunch_of_hits, box_sizes)
+def test_hits_energy_in_voxel_is_equal_to_voxel_energy(hits, requested_voxel_dimensions):
+    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
+    for v in voxels:
+        assert sum([h.E for h in v.hits]) == v.energy
+
+
+@given(bunch_of_hits, box_sizes)
+def test_voxel_hits_are_same_as_original_ones(hits, requested_voxel_dimensions):
+    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
+    hits_read_from_voxels = []
+    for v in voxels:
+        hits_read_from_voxels += v.hits
+
+    hits_s_x   = sorted(hits,       key=lambda h: h.X)
+    hits_s_xy  = sorted(hits_s_x,   key=lambda h: h.Y)
+    hits_s_xyz = sorted(hits_s_xy,  key=lambda h: h.Z)
+    hits_s_all = sorted(hits_s_xyz, key=lambda h: h.E)
+
+    hits_read_from_voxels_s_x   = sorted(hits_read_from_voxels,       key=lambda h: h.X)
+    hits_read_from_voxels_s_xy  = sorted(hits_read_from_voxels_s_x,   key=lambda h: h.Y)
+    hits_read_from_voxels_s_xyz = sorted(hits_read_from_voxels_s_xy,  key=lambda h: h.Z)
+    hits_read_from_voxels_s_all = sorted(hits_read_from_voxels_s_xyz, key=lambda h: h.E)
+
+    assert  hits_read_from_voxels_s_all == hits_s_all
+
+
+def test_hits_on_border_are_assigned_to_correct_voxel():
+    z = 10.
+    energy = 1.
+    hits = [BHit( 5., 15., z, energy),
+            BHit(15.,  5., z, energy),
+            BHit(15., 15., z, energy),
+            BHit(15., 25., z, energy),
+            BHit(25., 15., z, energy)]
+
+    vox_size = np.array([15,15,15], dtype=np.int16)
+    voxels = voxelize_hits(hits, vox_size)
+
+    assert len(voxels) == 3
+
+    expected_hits = [[BHit( 5., 15., z, energy)],
+                     [BHit(15.,  5., z, energy)],
+                     [BHit(15., 15., z, energy),
+                      BHit(15., 25., z, energy),
+                      BHit(25., 15., z, energy)]]
+    for v, hits in zip(voxels, expected_hits):
+        assert v.hits == hits
+
+
+@given(bunch_of_hits, box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
     tracks = make_track_graphs(voxels)
