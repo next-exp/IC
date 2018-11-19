@@ -107,7 +107,7 @@ class Contiguity(Enum):
     CORNER = 1.8
 
 
-def neighbours(va : Voxel, vb : Voxel) -> bool:
+def neighbours(va : Voxel, vb : Voxel, contiguity : Contiguity = Contiguity.CORNER) -> bool:
     return np.linalg.norm((va.pos - vb.pos) / va.size) < contiguity.value
 
 
@@ -122,7 +122,7 @@ def make_track_graphs(voxels           : Voxel,
     voxel_graph = nx.Graph()
     voxel_graph.add_nodes_from(voxels)
     for va, vb in combinations(voxels, 2):
-        if neighbours(va, vb):
+        if neighbours(va, vb, contiguity):
             voxel_graph.add_edge(va, vb, distance = np.linalg.norm(va.pos - vb.pos))
 
     return tuple(connected_component_subgraphs(voxel_graph))
