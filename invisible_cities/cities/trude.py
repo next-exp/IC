@@ -1,9 +1,9 @@
 """
 -----------------------------------------------------------------------
-                                Moriana
+                                Trude
 -----------------------------------------------------------------------
 
-Unknown etymology.
+From Germanic, Gertrud, hypocorism: female friend.
 
 This city produces the light and dark spectrum of SiPMs for dedicated
 calibration runs. This is achieved by selecting regions in the SiPM
@@ -55,7 +55,7 @@ from .  components import waveform_integrator
 
 
 @city
-def moriana(files_in, file_out, compression, event_range, print_mod, run_number,
+def trude(files_in, file_out, compression, event_range, print_mod, run_number,
             proc_mode,
             min_bin, max_bin, bin_width,
             number_integrals, integral_start, integral_width, integrals_period,

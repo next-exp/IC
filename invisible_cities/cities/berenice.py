@@ -1,9 +1,9 @@
 """
 -----------------------------------------------------------------------
-                                Zemrude
+                                Berenice
 -----------------------------------------------------------------------
 
-Unknown etymology.
+From Βερενíκη, Ancient Macedonian form of the Attic Greek, Φερενíκη: she, who brings victory.
 
 This city produces the spectrum of dark noise of the SiPMs. This is
 achieved by binning either the pe or ADC content of each raw WF sample.
@@ -46,7 +46,7 @@ from .  components import waveform_binner
 
 
 @city
-def zemrude(files_in, file_out, compression, event_range, print_mod, run_number,
+def berenice(files_in, file_out, compression, event_range, print_mod, run_number,
             min_bin, max_bin, bin_width):
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
