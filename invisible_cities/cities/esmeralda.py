@@ -26,7 +26,8 @@ from .  components import print_every
 
 from .. evm  import event_model as evm
 
-from .. reco                  import tbl_functions        as tbl
+from .. reco                   import tbl_functions        as tbl
+from .. reco.paolina_functions import voxelize_hits
 from .. io.         hits_io import          hits_writer
 from .. io.       mcinfo_io import       mc_info_writer
 from .. io.run_and_event_io import run_and_event_writer
@@ -78,11 +79,8 @@ def hits_corrector():
         pass
     return correct_hits
 
-def hits_voxelizer():
-    def voxelize_hits (hitc:evm.HitCollection)->evm.VoxelCollection:
-        """Voxelize corrected hits"""
-        pass
-    return voxelize_hits
+def hits_voxelizer(voxel_size_X : float, voxel_size_Y : float, voxel_size_Z : float):
+    return partial(voxelize_hits, voxel_dimensions = np.array([voxel_size_X, voxel_size_Y, voxel_size_Z]), strict_voxel_size = False)
 
 
 @city
