@@ -26,23 +26,39 @@ from .. dataflow.dataflow   import pipe
 from .  components import city
 from .  components import print_every
 from .  components import split_energy
-
+from .  components import get_run_number, get_event_info, get_mc_info_safe, check_lengths
 from .. evm  import event_model as evm
 
 from .. reco                   import tbl_functions        as tbl
 from .. reco.paolina_functions import voxelize_hits
 from .. io.         hits_io import          hits_writer
+from .. io.         hits_io import            load_hits
 from .. io.       mcinfo_io import       mc_info_writer
 from .. io.run_and_event_io import run_and_event_writer
 from .. io.       voxels_io import   true_voxels_writer
-from .. io.         kdst_io import            kr_writer
 
 from .. types.ic_types      import NN
 from .. types.ic_types      import xy
 
-def hits_and_kdst_from_files(paths : str )-> dict:
-    """ source generator, yields hits and global info per event, and MC whole table  """
-    pass
+def get_kdst(h5in):
+    return h5in.root.DST.Events
+
+def hits_and_kdst_from_files(paths):
+    for path in paths:
+        hits = load_hits(path)
+        with tb.open_file(path, "r") as h5in:
+            run_number  = get_run_number(h5in)
+            event_info  = get_event_info(h5in)
+            mc_info     = get_mc_info_safe(h5in, run_number)
+            kdst        = get_kdst(h5in)
+            check_lengths(event_info, hits)
+            for evtinfo in event_info:
+                event_number, timestamp = evtinfo.fetch_all_fields()                    
+                yield dict(hits = hits[event_number], mc=mc_info, kdst = kdst.read_where('event == event_number'),run_number=run_number,
+                           event_number=event_number, timestamp=timestamp)
+            # NB, the monte_carlo writer is different from the others:
+            # it needs to be given the WHOLE TABLE (rather than a
+            # single event) at a time.
 
 def merge_NN_hits(hitc : evm.HitCollection, same_peak : bool = True) -> Tuple[bool, evm.HitCollection]: 
     """ Returns a boolean flag if the event passed the filter and a modified HitCollection instance 
