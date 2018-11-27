@@ -97,6 +97,9 @@ def threshold_hits(hitc : evm.HitCollection, th : float) -> evm.HitCollection:
 def NN_hits_merger(same_peak : bool = True) -> Callable:
     return partial(merge_NN_hits, same_peak=same_peak)
 
+def hits_thresholding(th : float) -> Callable:
+    return partial(threshold_hits, th=th)
+
 def hits_corrector():
     def correct_hits  (hitc:evm.HitCollection, universal_cmap_interface)-> evm.HitCollection:
         """ corrects hits after merging of NN hits energies """
