@@ -10,12 +10,13 @@ This city is correcting hits and vixelizing them. The input is penthesilea outpu
 
 
 """
-from operator import attrgetter
-
 import tables as tb
 import numpy  as np
+from functools   import partial
 
 from typing      import Tuple
+from typing      import Callable
+
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
 from .. dataflow.dataflow   import pipe
@@ -33,6 +34,7 @@ from .. io.       voxels_io import   true_voxels_writer
 from .. io.         kdst_io import            kr_writer
 
 from .. types.ic_types      import NN
+
 
 def hits_and_kdst_from_files(paths : str )-> dict:
     """ source generator, yields hits and global info per event, and MC whole table  """
@@ -67,11 +69,8 @@ def merge_NN_hits(hitc : evm.HitCollection, same_peak : bool = True) -> Tuple[bo
             h.energy_l += nn_h.E*(h.E/h_closest_etot)
     return passed,hitc
 
-def NN_hits_merger():
-    def merge_NN_hits (hitc:evm.HitCollection, hitc_pass:HitsSelectorOutput)-> evm.HitCollection:
-        """ adds eneries of NN hits to surrounding reconstructed hits """
-        pass
-    return merge_NN_hits
+def NN_hits_merger(same_peak : bool = True) -> Callable:
+    return partial(merge_NN_hits, same_peak=same_peak)
 
 def hits_corrector():
     def correct_hits  (hitc:evm.HitCollection, universal_cmap_interface)-> evm.HitCollection:
