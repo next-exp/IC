@@ -13,6 +13,8 @@ This city is correcting hits and vixelizing them. The input is penthesilea outpu
 import tables as tb
 import numpy  as np
 from functools   import partial
+from itertools   import compress
+from copy        import deepcopy
 
 from typing      import Tuple
 from typing      import Callable
@@ -23,6 +25,7 @@ from .. dataflow.dataflow   import pipe
 
 from .  components import city
 from .  components import print_every
+from .  components import split_energy
 
 from .. evm  import event_model as evm
 
@@ -35,7 +38,7 @@ from .. io.       voxels_io import   true_voxels_writer
 from .. io.         kdst_io import            kr_writer
 
 from .. types.ic_types      import NN
-
+from .. types.ic_types      import xy
 
 def hits_and_kdst_from_files(paths : str )-> dict:
     """ source generator, yields hits and global info per event, and MC whole table  """
@@ -69,6 +72,27 @@ def merge_NN_hits(hitc : evm.HitCollection, same_peak : bool = True) -> Tuple[bo
         for h in h_closest:
             h.energy_l += nn_h.E*(h.E/h_closest_etot)
     return passed,hitc
+
+def threshold_hits(hitc : evm.HitCollection, th : float) -> evm.HitCollection:
+    """Returns HitCollection of the hits which charge is above the threshold. The energy of the hits below the threshold is distributed among the hits in the same time slice. """
+    if th<0:
+        return hitc
+    else:
+        new_hitc = evm.HitCollection(hitc.event, hitc.time)
+        for z_slice in np.unique([x.Z for x in hitc.hits]):
+            slice_hits  = [x for x in hitc.hits if x.Z == z_slice]
+            e_slice     = sum([x.E for x in slice_hits])
+            mask_thresh = np.array([x.Q>=th for x in slice_hits])
+            if sum(mask_thresh)<1:
+                hit = evm.Hit(slice_hits[0].npeak, evm.Cluster(NN, xy(0,0), xy(0,0), 0), z_slice, e_slice, xy(slice_hits[0].Xpeak,slice_hits[0].Ypeak))
+                new_hitc.hits.append(hit)
+                continue
+            hits_pass_th=list(compress(deepcopy(slice_hits), mask_thresh))
+            es = split_energy(e_slice, hits_pass_th)
+            for i,x in enumerate(hits_pass_th):
+                x.energy=es[i]
+                new_hitc.hits.append(x)
+        return new_hitc
 
 def NN_hits_merger(same_peak : bool = True) -> Callable:
     return partial(merge_NN_hits, same_peak=same_peak)
