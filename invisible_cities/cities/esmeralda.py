@@ -13,7 +13,9 @@ This city is correcting hits and vixelizing them. The input is penthesilea outpu
 from operator import attrgetter
 
 import tables as tb
+import numpy  as np
 
+from typing      import Tuple
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
 from .. dataflow.dataflow   import pipe
@@ -30,28 +32,40 @@ from .. io.run_and_event_io import run_and_event_writer
 from .. io.       voxels_io import   true_voxels_writer
 from .. io.         kdst_io import            kr_writer
 
+from .. types.ic_types      import NN
 
 def hits_and_kdst_from_files(paths : str )-> dict:
     """ source generator, yields hits and global info per event, and MC whole table  """
     pass
 
-class HitsSelectorOutput:
-    """
-    Class devoted to hold the output of the HitsSelector.
-
-    It contains:
-        - passed  : a boolean flag indicating whether the event as
-                    a whole has passed the filter.
-        - hits   :  a boolean flag indicating whether the hit has
-                    passed the filter.
-    """
-    pass
-
-def hits_selector():
-    def select_hits (hitc : evm.HitCollection)-> HitsSelectorOutput:
-        """selects events and hits that passed the filter - probably all non NN hits """ 
-        pass
-    return select_hits
+def merge_NN_hits(hitc : evm.HitCollection, same_peak : bool = True) -> Tuple[bool, evm.HitCollection]: 
+    """ Returns a boolean flag if the event passed the filter and a modified HitCollection instance 
+    by adding energies of NN hits to the closesthits such that the added energy is proportional to 
+    the hit energy. If all the hits were NN the function returns bollean=False and  None.
+    Note - the function will change El attribute in  hitc input object."""
+    nn_hits     = [h for h in hitc.hits if h.Q==NN]
+    non_nn_hits = [h for h in hitc.hits if h.Q!=NN]
+    passed = len(non_nn_hits)>0
+    if not passed:
+        return passed, None
+    for h in non_nn_hits:
+        h.energy_l = h.E
+    for nn_h in nn_hits:
+        nn_h.energy_l = 0
+        peak_num = nn_h.npeak
+        if same_peak:
+            hits_to_merge = [h for h in non_nn_hits if h.npeak==peak_num]
+        else:
+            hits_to_merge = non_nn_hits
+        try:
+            z_closest  = min(hits_to_merge , key=lambda h: np.abs(h.Z-nn_h.Z)).Z
+        except ValueError:
+            continue
+        h_closest      = [h for h in hits_to_merge if h.Z==z_closest]
+        h_closest_etot = sum([h.E for h in h_closest])
+        for h in h_closest:
+            h.energy_l += nn_h.E*(h.E/h_closest_etot)
+    return passed,hitc
 
 def NN_hits_merger():
     def merge_NN_hits (hitc:evm.HitCollection, hitc_pass:HitsSelectorOutput)-> evm.HitCollection:
