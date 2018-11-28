@@ -31,6 +31,9 @@ from .. evm  import event_model as evm
 
 from .. reco                   import tbl_functions        as tbl
 from .. reco.paolina_functions import voxelize_hits
+from .. evm.            nh5 import KrTable
+
+from .. io.        table_io import make_table
 from .. io.         hits_io import          hits_writer
 from .. io.         hits_io import            load_hits
 from .. io.       mcinfo_io import       mc_info_writer
@@ -39,6 +42,20 @@ from .. io.       voxels_io import   true_voxels_writer
 
 from .. types.ic_types      import NN
 from .. types.ic_types      import xy
+
+def kdst_writer(hdf5_file, *, compression='ZLIB4'):
+    kr_table = make_table(hdf5_file,
+                          group       = 'DST',
+                          name        = 'Events',
+                          fformat     = KrTable,
+                          description = 'KDST Events',
+                          compression = compression)
+    # Mark column to index after populating table
+    kr_table.set_attr('columns_to_index', ['event'])
+
+    def write_kr(kdst):
+        kr_table.append(kdst)
+    return write_kr
 
 def get_kdst(h5in):
     return h5in.root.DST.Events
