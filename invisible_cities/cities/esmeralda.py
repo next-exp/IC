@@ -99,11 +99,13 @@ def merge_NN_hits(hitc : evm.HitCollection, same_peak : bool = True) -> Tuple[bo
         try:
             z_closest  = min(hits_to_merge , key=lambda h: np.abs(h.Z-nn_h.Z)).Z
         except ValueError:
+            hitc.hits.remove(nn_h)
             continue
         h_closest      = [h for h in hits_to_merge if h.Z==z_closest]
         h_closest_etot = sum([h.E for h in h_closest])
         for h in h_closest:
             h.energy_l += nn_h.E*(h.E/h_closest_etot)
+        hitc.hits.remove(nn_h)
     return passed,hitc
 
 def threshold_hits(hitc : evm.HitCollection, th : float) -> evm.HitCollection:
