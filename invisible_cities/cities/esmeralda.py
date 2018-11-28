@@ -130,7 +130,7 @@ def threshold_hits(hitc : evm.HitCollection, th : float) -> evm.HitCollection:
 def NN_hits_merger(same_peak : bool = True) -> Callable:
     return partial(merge_NN_hits, same_peak=same_peak)
 
-def hits_thresholding(th : float) -> Callable:
+def hits_thresholder(th : float) -> Callable:
     return partial(threshold_hits, th=th)
 
 def hits_corrector():
@@ -139,30 +139,30 @@ def hits_corrector():
         pass
     return correct_hits
 
-def hits_voxelizer(voxel_size_X : float, voxel_size_Y : float, voxel_size_Z : float):
-    return partial(voxelize_hits, voxel_dimensions = np.array([voxel_size_X, voxel_size_Y, voxel_size_Z]), strict_voxel_size = False)
+def hits_voxelizer(voxel_size_X : float, voxel_size_Y : float, voxel_size_Z : float, strict_voxel_size : bool):
+    return partial(voxelize_hits, voxel_dimensions = np.array([voxel_size_X, voxel_size_Y, voxel_size_Z]), strict_voxel_size = strict_voxel_size)
 
 
 @city
-def esmeralda(files_in, file_out, compression, event_range, print_mod, run_number,
-              **args):
+def esmeralda(files_in, file_out, compression, event_range, print_mod, run_number, threshold, same_peak = True, voxel_sizes = dict(), strict_voxel_size = False, **kargs):
+
+    threshold_hits = fl.map(hits_thresholder(th = threshold ),
+                            args =  'hits',
+                            out  =  'thr_hits'              )
+
+    merge_NN_hits  = fl.map(NN_hits_merger(same_peak = same_peak),
+                            args =  'thr_hits',
+                            out  = ('passed'  ,'merged_hits'    ))
     
-    select_hits   = fl.map(hits_selector(**locals()),
-                           args = 'hits',
-                           out  = 'hits_selector')
+    hits_select    = fl.count_filter (args="passed")
+        
+    correct_hits   = fl.map(hits_corrector(**locals()),
+                            args = 'merged_hits',
+                            out  = 'corrected_hits'  )
     
-    hits_select   = fl.count_filter(attrgetter("passed"), args="hits_selector")
-    
-    merge_NN_hits = fl.map(NN_hits_merger(**locals()),
-                           args = ('hits', 'hits_selector'),
-                           out  = 'merged_hits')
-    
-    correct_hits  = fl.map(hits_corrector(**locals()),
-                           args = 'merged_hits',
-                           out  = 'corrected_hits')
-    voxelize_hits = fl.map(hits_voxelizer(**locals()),
-                           args = 'corrected_hits',
-                           out  = 'voxels')
+    voxelize_hits  = fl.map(hits_voxelizer(**voxel_sizes, strict_voxel_size = strict_voxel_size),
+                            args = 'corrected_hits',
+                            out  = 'voxels'        )
     
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
@@ -175,7 +175,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         write_mc_        = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
         write_mc         = fl.sink(write_mc_, args=("mc", "event_number"))
         
-        write_pointlike_event = fl.sink(kr_writer(h5out), args="pointlike_event")
+        write_pointlike_event = fl.sink(kdst_writer(h5out), args="kdst")
         write_hits            = fl.sink(hits_writer(h5out), args="hits")
         write_voxels          = fl.sink(true_voxels_writer(h5out), args='voxels')
         
@@ -184,7 +184,8 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                         fl.slice(*event_range, close_all=True),
                         print_every(print_mod)                ,
                         event_count_in       .spy             ,
-                        select_hits                           ,
+                        threshold_hits                        ,
+                        merge_NN_hits                         ,
                         hits_select          .filter          ,
                         event_count_out      .spy             ,
                         merge_NN_hits                         ,
