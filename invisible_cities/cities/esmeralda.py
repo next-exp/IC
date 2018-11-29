@@ -87,26 +87,27 @@ def merge_NN_hits(hitc : evm.HitCollection, same_peak : bool = True) -> Tuple[bo
     passed = len(non_nn_hits)>0
     if not passed:
         return passed, None
+    hitc_new = evm.HitCollection(hitc.event, hitc.time)
     for h in non_nn_hits:
-        h.energy_l = h.E
+        hnew = deepcopy(h)
+        hnew.energy_l = h.E
+        hitc_new.hits.append(hnew)
     for nn_h in nn_hits:
         nn_h.energy_l = 0
         peak_num = nn_h.npeak
         if same_peak:
-            hits_to_merge = [h for h in non_nn_hits if h.npeak==peak_num]
+            hits_to_merge = [h for h in hitc_new.hits if h.npeak==peak_num]
         else:
-            hits_to_merge = non_nn_hits
+            hits_to_merge = hitc_new.hits
         try:
             z_closest  = min(hits_to_merge , key=lambda h: np.abs(h.Z-nn_h.Z)).Z
         except ValueError:
-            hitc.hits.remove(nn_h)
             continue
         h_closest      = [h for h in hits_to_merge if h.Z==z_closest]
         h_closest_etot = sum([h.E for h in h_closest])
         for h in h_closest:
             h.energy_l += nn_h.E*(h.E/h_closest_etot)
-        hitc.hits.remove(nn_h)
-    return passed,hitc
+    return passed,hitc_new
 
 def threshold_hits(hitc : evm.HitCollection, th : float) -> evm.HitCollection:
     """Returns HitCollection of the hits which charge is above the threshold. The energy of the hits below the threshold is distributed among the hits in the same time slice. """
