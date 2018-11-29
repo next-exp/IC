@@ -31,6 +31,7 @@ from .. evm  import event_model as evm
 
 from .. reco                   import tbl_functions        as tbl
 from .. reco.paolina_functions import voxelize_hits
+from .. reco                   import hits_functions       as hif
 from .. evm.            nh5 import KrTable
 
 from .. io.        table_io import make_table
@@ -136,10 +137,27 @@ def NN_hits_merger(same_peak : bool = True) -> Callable:
 def hits_thresholder(th : float) -> Callable:
     return partial(threshold_hits, th=th)
 
-def hits_corrector():
-    def correct_hits  (hitc:evm.HitCollection, universal_cmap_interface)-> evm.HitCollection:
+def hits_corrector(map_fname: str) -> Callable:
+    maps    = hif.read_maps(filename = map_fname)
+    ltm     = maps.ltu
+    e0m     = maps.e0u
+    mapinfo = maps.mapinfo
+    xr = (mapinfo.xmin, mapinfo.xmax)
+    yr = (mapinfo.xmin, mapinfo.xmax)
+    nx = mapinfo.nx
+    ny = mapinfo.ny
+    def correct_hits  (hitc:evm.HitCollection)-> evm.HitCollection:
         """ corrects hits after merging of NN hits energies """
-        pass
+        xs   = np.array([h.X  for h in hitc.hits])
+        ys   = np.array([h.Y  for h in hitc.hits])
+        zs   = np.array([h.Z  for h in hitc.hits])
+        eus  = np.array([h.El for h in hitc.hits])
+        elts = hif.lt_xy_correction(E = eus , X = xs, Y = ys, Z = zs, LTM = ltm, xr = xr, yr = yr, nx = nx, ny = ny)
+        ecs  = hif.e0_xy_correction(E = elts, X = xs, Y = ys, Z = zs, E0M = e0m, xr = xr, yr = yr, nx = nx, ny = ny)
+        for i,h in enumerate(hitc.hits):
+            h.energy_l = elts[i]
+            h.energy_c = ecs [i]
+        return hitc
     return correct_hits
 
 def hits_voxelizer(voxel_size_X : float, voxel_size_Y : float, voxel_size_Z : float, strict_voxel_size : bool):
@@ -147,7 +165,7 @@ def hits_voxelizer(voxel_size_X : float, voxel_size_Y : float, voxel_size_Z : fl
 
 
 @city
-def esmeralda(files_in, file_out, compression, event_range, print_mod, run_number, threshold, same_peak = True, voxel_sizes = dict(), strict_voxel_size = False, **kargs):
+def esmeralda(files_in, file_out, compression, event_range, print_mod, run_number, threshold, map_fname, same_peak = True, voxel_sizes = dict(), strict_voxel_size = False):
 
     threshold_hits = fl.map(hits_thresholder(th = threshold ),
                             args =  'hits',
@@ -159,7 +177,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     
     hits_select    = fl.count_filter (args="passed")
         
-    correct_hits   = fl.map(hits_corrector(**locals()),
+    correct_hits   = fl.map(hits_corrector(map_fname = map_fname),
                             args = 'merged_hits',
                             out  = 'corrected_hits'  )
     
