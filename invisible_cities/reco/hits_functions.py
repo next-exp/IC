@@ -11,30 +11,6 @@ from typing      import TypeVar
 Array = TypeVar('Array', List, np.array)
 
 @dataclass
-class CPoint:
-    """Represent a cartesian point"""
-    X   : np.array
-    Y   : np.array
-    Z   : np.array
-
-@dataclass
-class Point(CPoint):
-    """Add polar representation"""
-    R   : np.array
-    Phi : np.array
-    
-@dataclass
-class KrEvent(Point):
-    """Adds raw energy/time"""
-    S2e  : Array
-    S1e  : Array
-    S2q  : Array
-    T    : Array  # time
-    DT   : Array  # time difference in seconds
-    E    : Array
-    Q    : Array
-
-@dataclass
 class ASectorMap:  # Map in chamber sector containing average of pars
     chi2    : DataFrame
     e0      : DataFrame
