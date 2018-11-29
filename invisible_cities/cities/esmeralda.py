@@ -161,7 +161,9 @@ def hits_corrector(map_fname: str) -> Callable:
     return correct_hits
 
 def hits_voxelizer(voxel_size_X : float, voxel_size_Y : float, voxel_size_Z : float, strict_voxel_size : bool):
-    return partial(voxelize_hits, voxel_dimensions = np.array([voxel_size_X, voxel_size_Y, voxel_size_Z]), strict_voxel_size = strict_voxel_size)
+    def voxelize_hitc (hitc : evm.HitCollection):
+        return voxelize_hits(hitc.hits ,voxel_dimensions = np.array([voxel_size_X, voxel_size_Y, voxel_size_Z]), strict_voxel_size = strict_voxel_size)
+    return voxelize_hitc
 
 
 @city
