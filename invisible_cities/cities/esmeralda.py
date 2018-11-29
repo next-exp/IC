@@ -153,7 +153,7 @@ def hits_corrector(map_fname: str) -> Callable:
         zs   = np.array([h.Z  for h in hitc.hits])
         eus  = np.array([h.El for h in hitc.hits])
         elts = hif.lt_xy_correction(E = eus , X = xs, Y = ys, Z = zs, LTM = ltm, xr = xr, yr = yr, nx = nx, ny = ny)
-        ecs  = hif.e0_xy_correction(E = elts, X = xs, Y = ys, Z = zs, E0M = e0m, xr = xr, yr = yr, nx = nx, ny = ny)
+        ecs  = hif.e0_xy_correction(E = elts, X = xs, Y = ys, E0M = e0m, xr = xr, yr = yr, nx = nx, ny = ny)
         for i,h in enumerate(hitc.hits):
             h.energy_l = elts[i]
             h.energy_c = ecs [i]
