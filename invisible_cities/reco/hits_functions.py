@@ -1,4 +1,5 @@
-import numpy as np
+import numpy  as np
+import pandas as pd
 from   pandas    import DataFrame
 from   pandas    import Series
 from dataclasses import dataclass
