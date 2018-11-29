@@ -177,7 +177,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                             args =  'thr_hits',
                             out  = ('passed'  ,'merged_hits'    ))
     
-    hits_select    = fl.count_filter (args="passed")
+    hits_select    = fl.count_filter (bool, args="passed")
         
     correct_hits   = fl.map(hits_corrector(map_fname = map_fname),
                             args = 'merged_hits',
@@ -200,7 +200,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         
         write_pointlike_event = fl.sink(kdst_writer(h5out), args="kdst")
         write_hits            = fl.sink(hits_writer(h5out), args="hits")
-        write_voxels          = fl.sink(true_voxels_writer(h5out), args='voxels')
+        write_voxels          = fl.sink(true_voxels_writer(h5out), args=('event_number', 'voxels'))
         
         return push(source = hits_and_kdst_from_files(files_in),
                     pipe   = pipe(
