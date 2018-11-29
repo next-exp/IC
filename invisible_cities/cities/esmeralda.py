@@ -10,6 +10,7 @@ This city is correcting hits and vixelizing them. The input is penthesilea outpu
 
 
 """
+import os
 import tables as tb
 import numpy  as np
 from functools   import partial
@@ -138,6 +139,7 @@ def hits_thresholder(th : float) -> Callable:
     return partial(threshold_hits, th=th)
 
 def hits_corrector(map_fname: str) -> Callable:
+    map_fname = os.path.expandvars(map_fname)
     maps    = hif.read_maps(filename = map_fname)
     ltm     = maps.ltu
     e0m     = maps.e0u
