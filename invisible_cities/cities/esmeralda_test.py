@@ -32,13 +32,13 @@ def toy_hitc():
 
 def test_merge_NN_hits(toy_hitc):
     hitc = toy_hitc
-    ens  = [h.E for h in hitc.hits]
+    ens  = [h.E for h in hitc.hits if h.Q != NN]
     passed_same_peak, hitc_same_peak = merge_NN_hits(hitc)
     els_test_same_peak = [h.El for h in hitc_same_peak.hits]
-    els_same_peak      = np.array([ 1020, 1530, 0, 3000, 0]) * units.pes
+    els_same_peak      = np.array([ 1020, 1530, 3000]) * units.pes
     passed,hitc = merge_NN_hits(hitc, same_peak=False)
     els_test = [h.El for h in hitc.hits]
-    els      = np.array([ 1060, 1590, 0, 3000, 0]) * units.pes
+    els      = np.array([ 1060, 1590, 3000]) * units.pes
     #check the El attribute changes appropriately
     assert_allclose(els_test_same_peak  , els_same_peak, rtol=1e-4)
     assert_allclose(els_test  , els, rtol=1e-4)
