@@ -172,6 +172,27 @@ def test_hits_energy_in_voxel_is_equal_to_voxel_energy(hits, requested_voxel_dim
     for v in voxels:
         assert sum([h.E for h in v.hits]) == v.energy
 
+def test_voxels_with_no_hits(ICDATADIR):
+    hit_file = os.path.join(ICDATADIR, 'test_voxels_with_no_hits.h5')
+    evt_number = 4803
+    size = 15.
+    vox_size = np.array([size,size,size],dtype=np.float16)
+
+    with tb.open_file(hit_file, mode='r') as h5in:
+
+        h5extents = h5in.root.MC.extents
+        events_in_file = len(h5extents)
+
+        for i in range(events_in_file):
+            if h5extents[i]['evt_number'] == evt_number:
+                evt_line = i
+                break
+
+        hits_dict = load_mchits(hit_file, (evt_line, evt_line+1))
+        voxels = voxelize_hits(hits_dict[evt_number], vox_size, strict_voxel_size=False)
+        for v in voxels:
+            assert sum(h.E for h in v.hits) == v.energy
+
 
 @given(bunch_of_hits, box_sizes)
 def test_voxel_hits_are_same_as_original_ones(hits, requested_voxel_dimensions):
