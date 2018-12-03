@@ -96,7 +96,7 @@ def build_peak(indices, times,
                                      rebin_stride, pad_zeros = with_sipms)
     if with_sipms:
         sipm_r = build_sipm_responses(indices // 40, times // 40,
-                                      widths // 40, sipm_wfs,
+                                      widths * 40, sipm_wfs,
                                       rebin_stride // 40,
                                       thr_sipm_s2)
     else:
@@ -114,7 +114,7 @@ def find_peaks(ccwfs, index,
 
     peaks           = []
     times           = np.arange     (ccwfs.shape[1]) * 25 * units.ns
-    widths          = times
+    widths          = np.full       (ccwfs.shape[1],   25 * units.ns)
     indices_split   = split_in_peaks(index, stride)
     selected_splits = select_peaks  (indices_split, time, length)
     with_sipms      = Pk is S2 and sipm_wfs is not None

@@ -20,7 +20,7 @@ def store_peak(pmt_table, pmti_table, si_table,
 
     for i, t in enumerate(peak.times):
         pmt_row['event' ] = event_number
-        pmt_row['peak'  ] =  peak_number
+        pmt_row['peak'  ] = peak_number
         pmt_row['time'  ] = t
         pmt_row['bwidth'] = peak.bin_widths[i]
         pmt_row['ene'   ] = peak.pmts.sum_over_sensors[i]
@@ -183,6 +183,6 @@ def s2s_from_df(s2df, s2pmtdf, sidf):
          pmt_r ) = build_pmt_responses (s2df   [s2df   .peak == peak_number],
                                         s2pmtdf[s2pmtdf.peak == peak_number])
         sipm_r   = build_sipm_responses(sidf   [sidf   .peak == peak_number])
-        s2s.append(S2(times, pmt_r, sipm_r))
+        s2s.append(S2(times, widths, pmt_r, sipm_r))
 
     return s2s
