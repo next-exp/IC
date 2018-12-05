@@ -33,9 +33,10 @@ def test_rebin_peak_collapse(pk):
     rebinned_pk  = pmf.rebin_peak(pk, rebin_factor)
 
     time_average = [np.average(pk.times, weights=pk.pmts.sum_over_sensors)]
+    widths       = [pk.width]
     pmt_r        =  PMTResponses(pk. pmts.ids, pk. pmts.sum_over_times[:, np.newaxis])
     sipm_r       = SiPMResponses(pk.sipms.ids, pk.sipms.sum_over_times[:, np.newaxis])
-    expected_pk  = type(pk)(time_average, pmt_r, sipm_r)
+    expected_pk  = type(pk)(time_average, widths, pmt_r, sipm_r)
 
     assert_Peak_equality(rebinned_pk, expected_pk)
 
@@ -65,17 +66,22 @@ def test_rebin_peak(pk, fraction):
     rebinned_pk  = pmf.rebin_peak(pk, rebin_factor)
 
     (rebinned_times,
+     rebinned_widths,
      rebinned_pmt_wfs ) = pkf.rebin_times_and_waveforms(pk.times,
+                                                        pk.bin_widths,
                                                         pk.pmts.all_waveforms,
                                                         rebin_factor)
 
-    _, rebinned_sipm_wfs = pkf.rebin_times_and_waveforms(pk.times,
-                                                         pk.sipms.all_waveforms,
-                                                         rebin_factor)
+    (_, _,
+     rebinned_sipm_wfs) = pkf.rebin_times_and_waveforms(pk.times,
+                                                        pk.bin_widths,
+                                                        pk.sipms.all_waveforms,
+                                                        rebin_factor)
 
     rebinned_pmts  =  PMTResponses(pk. pmts.ids, rebinned_pmt_wfs)
     rebinned_sipms = SiPMResponses(pk.sipms.ids, rebinned_sipm_wfs)
     expected_pk  = type(pk)(rebinned_times,
+                            rebinned_widths,
                             rebinned_pmts,
                             rebinned_sipms)
     assert_Peak_equality(rebinned_pk, expected_pk)

@@ -142,8 +142,22 @@ def load_pmaps(filename):
 
 
 def build_pmt_responses(pmtdf, ipmtdf):
-    times   =            pmtdf.time.values
-    widths  =            pmtdf.bwidth.values
+    times = pmtdf.time.values
+    try:
+        widths = pmtdf.bwidth.values
+    except AttributeError:
+        ## Old file without bin widths saved
+        ## Calculate 'fake' widths from times
+        time_diff = np.diff(times)
+        if len(time_diff) == 0:
+            widths = np.full(1, 1000)
+        elif np.all(time_diff == time_diff[0]):
+            ## S1-like
+            widths = np.full(times.shape, time_diff[0])
+        else:
+            ## S2-like, round to closest mus
+            binw = time_diff.max().round(-3)
+            widths = np.full(times.shape, binw)
     pmt_ids = pd.unique(ipmtdf.npmt.values)
     enes    =           ipmtdf.ene .values.reshape(pmt_ids.size,
                                                      times.size)
