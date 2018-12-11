@@ -20,6 +20,7 @@ from . random_sampling  import uniform_smearing
 from . random_sampling  import inverse_cdf_index
 from . random_sampling  import inverse_cdf
 from . random_sampling  import pad_pdfs
+from . random_sampling  import DarkModel
 from . random_sampling  import NoiseSampler
 
 sensible_sizes    =                  integers(min_value =    2,
@@ -290,26 +291,31 @@ def test_noise_sampler_multi_sample_distributions(noise_sampler):
     assert np.all(twomu_means > PDF_means)
 
 
-@mark.parametrize("sample_width", (2, 3, 5))
-def test_noise_sampler_dark_expectation(noise_sampler, sample_width):
+@mark.parametrize("sample_width dark_model".split(),
+                  ((2, DarkModel.mean),
+                   (3, DarkModel.threshold),
+                   (5, DarkModel.threshold)))
+def test_noise_sampler_dark_expectation(noise_sampler,
+                                        sample_width ,
+                                        dark_model   ):
     noise_sampler, *_ = noise_sampler
 
-    dark_mean = noise_sampler.dark_expectation(sample_width)
+    dark_mean = noise_sampler.dark_expectation(sample_width, dark_model)
 
     assert len(dark_mean) == noise_sampler.nsensors
     assert np.any(dark_mean)
     assert np.count_nonzero(dark_mean) == np.count_nonzero(noise_sampler.active)
 
 
-@mark.parametrize(" ids qs width expected".split(),
-                  (([  0,   1,   2], np.array([ 6, 10,  4]), 2, [2.42, 3.13, 1.96]),
-                   ([700, 701, 702], np.array([22,  4, 19]), 4, [4.63, 1.90, 4.30]),
-                   ([658, 666, 674], np.array([ 5, 15,  5]), 5, [2.16, 3.81, 2.16])))
+@mark.parametrize(" ids qs width model expected".split(),
+                  (([  0,   1,   2], np.array([ 6, 10,  4]), 2, DarkModel.mean, [2.42, 3.13, 1.96]),
+                   ([700, 701, 702], np.array([22,  4, 19]), 4, DarkModel.mean, [4.63, 1.90, 4.30]),
+                   ([658, 666, 674], np.array([ 5, 15,  5]), 5, DarkModel.threshold, [1.90, 3.60, 1.88])))
 def test_noise_sampler_signal_to_noise(noise_sampler,
-                                       ids, qs, width, expected):
+                                       ids, qs, width, model, expected):
     noise_sampler, *_ = noise_sampler
 
-    signal_to_noise = noise_sampler.signal_to_noise(ids, qs, width)
+    signal_to_noise = noise_sampler.signal_to_noise(ids, qs, width, model)
 
     assert len(signal_to_noise) == len(ids)
     assert np.allclose(np.round(signal_to_noise, 2), expected)

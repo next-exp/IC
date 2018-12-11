@@ -1,3 +1,5 @@
+from enum import Enum
+
 import numpy as np
 
 from functools import partial
@@ -5,6 +7,9 @@ from functools import lru_cache
 
 from .. database import load_db as DB
 
+class DarkModel(Enum):
+    mean      = 0
+    threshold = 1
 
 def normalize_distribution(y):
     ysum = np.sum(y)
@@ -43,6 +48,31 @@ def pad_pdfs(bins, spectra=None):
 
     return np.apply_along_axis(np.pad, 1, spectra, pad,
                                'constant', constant_values=0)
+
+
+def general_thresholds(xbins, probs, noise_cut):
+    """
+    Generalised version of NoiseSampler
+    which can use any distribution.
+
+    Parameters
+    ----------
+    xbins : array of floats
+        The positions of the bin centres in x
+    probs : array of floats
+        Probabilities for each of the x bins
+    noise_cut : float
+        Fraction of the distribution to be left behind. Default is 0.99.
+
+    Returns
+    -------
+    cuts: array of floats
+        Cuts in adc or pes.
+    """
+    find_thr = partial(inverse_cdf, xbins, percentile = noise_cut)
+    cumprobs = np.apply_along_axis(np.cumsum, 1, probs)
+    cuts     = np.apply_along_axis(find_thr , 1, cumprobs)
+    return cuts
 
 
 class NoiseSampler:
@@ -124,13 +154,12 @@ class NoiseSampler:
         cuts: array of floats
             Cuts in adc or pes.
         """
-        find_thr = partial(inverse_cdf, self.xbins, percentile = noise_cut)
-        cumprobs = np.apply_along_axis(np.cumsum, 1, self.probs)
-        cuts_pes = np.apply_along_axis(find_thr , 1,   cumprobs)
+        cuts_pes = general_thresholds(self.xbins, self.probs, noise_cut)
         return cuts_pes * pes_to_adc
 
 
-    def signal_to_noise(self, ids, charges, sample_width):
+    def signal_to_noise(self, ids, charges,
+                        sample_width, dark_model=DarkModel.threshold):
         """
         Find the signal to noise for the sipms in the array
 
@@ -143,6 +172,8 @@ class NoiseSampler:
             in the slice.
         sample_width : int
             The width in mus of the slice
+        dark_model : Enum
+            The model for dark counts, mean or threshold
 
         Returns
         -------
@@ -150,15 +181,16 @@ class NoiseSampler:
             An array of S/N values for the sipms in the slice.
         """
 
-        dark_levels = self.dark_expectation(sample_width)
+        dark_levels = self.dark_expectation(sample_width, dark_model)
 
         return charges / np.sqrt(charges + dark_levels[ids])
 
 
     @lru_cache(maxsize=30)
-    def dark_expectation(self, sample_width):
+    def dark_expectation(self, sample_width,
+                         dark_model=DarkModel.threshold):
         """
-        Calculate for a given sample_width
+        Calculate, for a given sample_width,
         the mean expectation to approximate
         dark counts for all sipm channels.
         """
@@ -166,16 +198,19 @@ class NoiseSampler:
 
         pad_xbins = pad_pdfs(self.xbins)
 
-        ## For now calculate means, could add options
-        ## for exclusion, rms etc. (put zero for inactive channels)
+        if dark_model == DarkModel.threshold:
+            dark_pes = general_thresholds(pad_xbins, pdfs, 0.99)
+            dark_pes[self.active.flatten() == 0] = 0
+            return dark_pes
+        
         active           = self.active.flatten() != 0
         nsipm            = np.count_nonzero(active)
-        mean_pes         = np.full(self.nsensors, 0, dtype=np.float)
-
-        mean_actives = np.average(np.repeat(pad_xbins[None, :], nsipm,  0),
-                                  axis = 1,         weights = pdfs[active])
-        mean_pes[active] = mean_actives
-        return mean_pes
+        dark_estimate    = np.average(np.repeat(pad_xbins[None, :], nsipm,  0),
+                                      axis = 1,         weights = pdfs[active])
+        
+        dark_pes         = np.full(self.nsensors, 0, dtype=np.float)
+        dark_pes[active] = dark_estimate
+        return dark_pes
 
 
     @lru_cache(maxsize=30)
