@@ -1,5 +1,8 @@
 import numpy as np
 
+from pytest import approx
+from pytest import mark
+
 from hypothesis            import given
 from hypothesis            import settings
 from hypothesis            import HealthCheck
@@ -10,6 +13,7 @@ from hypothesis.strategies import lists
 
 from .. evm .pmaps_test     import peaks
 from .. evm .pmaps_test     import pmaps
+from .. evm .pmaps          import S2
 from .. evm .pmaps          import  PMTResponses
 from .. evm .pmaps          import SiPMResponses
 from .. core.testing_utils  import assert_SensorResponses_equality
@@ -85,6 +89,24 @@ def test_rebin_peak(pk, fraction):
                             rebinned_pmts,
                             rebinned_sipms)
     assert_Peak_equality(rebinned_pk, expected_pk)
+
+
+@mark.parametrize("threshold", (4000, 10000))
+@given(peaks(subtype=S2))
+def test_rebin_peak_threshold(threshold, pk):
+    _, pk = pk
+
+    pk_eng      = pk.total_energy
+    pk_char     = pk.total_charge
+
+    rebinned_pk = pmf.rebin_peak(pk, threshold, pmf.RebinMethod.threshold)
+
+    assert rebinned_pk.total_energy == approx(pk_eng)
+    assert rebinned_pk.total_charge == approx(pk_char)
+    if pk_eng < threshold:
+        assert rebinned_pk.times.shape[0] == 1
+    else:
+        assert np.all(rebinned_pk.pmts.sum_over_sensors >= threshold)
 
 
 @given(dictionaries(keys     = integers(min_value=-1e5, max_value=1e5),
