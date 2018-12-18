@@ -199,6 +199,8 @@ class NoiseSampler:
         pad_xbins = pad_pdfs(self.xbins)
 
         if dark_model == DarkModel.threshold:
+            pdfs = np.apply_along_axis(normalize_distribution, 1,
+                                       self.mask(pdfs))
             dark_pes = general_thresholds(pad_xbins, pdfs, 0.99)
             dark_pes[self.active.flatten() == 0] = 0
             return dark_pes
