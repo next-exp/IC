@@ -329,4 +329,4 @@ def test_seeds_without_using_db(ICDATADIR):
                                             ped_vals, gfitRes.errors,
                                             use_db_gain_seeds=False)
         assert all(seeds)
-        assert bounds == ((0, 0, 0, 0.001), (1e10, 10000, 10000, 10000))
+        assert bounds == ((0, 0, 0, 0.001), (np.inf, 10000, 10000, 10000))

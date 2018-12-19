@@ -331,5 +331,5 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spectrum, ped_v
 
     seed   = (norm_seed, mu_seed) + ped_seed      + (gain_seed, gain_sigma_seed)
     bound1 = (0       ,       0)  + ped_bound_low + (0        ,           0.001)
-    bound2 = (1e10    ,   10000)  + ped_bound_upp + (10000    ,           10000)
+    bound2 = (np.inf  ,   10000)  + ped_bound_upp + (10000    ,           10000)
     return seed, (bound1, bound2)
