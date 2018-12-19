@@ -186,10 +186,11 @@ def poisson_mu_seed(sensor_type, scaler, bins, spectrum, ped_vals):
                         spectrum[sel],
                         dscale, sigma=errs).values[0]
     elif sensor_type is SensorType.PMT:
-        dscale = spectrum[bins<0].sum() / fitf.gauss(bins[bins<0], *ped_vals).sum()
+        sel   = bins<0
+        dscale = spectrum[sel].sum() / fitf.gauss(bins[sel], *ped_vals).sum()
         return fitf.fit(scaler,
-                        bins    [bins<0],
-                        spectrum[bins<0],
+                        bins    [sel],
+                        spectrum[sel],
                         dscale).values[0]
     else:
         raise ValueError("SensorType.SIPM or SensorType.PMT must be given for sensor_type")
