@@ -107,6 +107,10 @@ class Contiguity(Enum):
     CORNER = 1.8
 
 
+def neighbours(va : Voxel, vb : Voxel, contiguity : Contiguity = Contiguity.CORNER) -> bool:
+    return np.linalg.norm((va.pos - vb.pos) / va.size) < contiguity.value
+
+
 def make_track_graphs(voxels           : Voxel,
                       contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Graph]:
     """Create a graph where the voxels are the nodes and the edges are any
@@ -115,19 +119,18 @@ def make_track_graphs(voxels           : Voxel,
     than a contiguity factor.
     """
 
-    def neighbours(va : Voxel, vb : Voxel) -> bool:
-        return np.linalg.norm((va.pos - vb.pos) / va.size) < contiguity.value
-
     voxel_graph = nx.Graph()
     voxel_graph.add_nodes_from(voxels)
     for va, vb in combinations(voxels, 2):
-        if neighbours(va, vb):
+        if neighbours(va, vb, contiguity):
             voxel_graph.add_edge(va, vb, distance = np.linalg.norm(va.pos - vb.pos))
 
     return tuple(connected_component_subgraphs(voxel_graph))
 
+
 def connected_component_subgraphs(G):
     return (G.subgraph(c).copy() for c in nx.connected_components(G))
+
 
 def voxels_from_track_graph(track: Graph) -> List[Voxel]:
     """Create and return a list of voxels from a track graph."""
