@@ -77,8 +77,7 @@ def simulate_pmt_response(event, pmtrd, adc_to_pes, pe_resolution, run_number = 
     return np.array(RWF), np.array(BLRX)
 
 
-def simulate_sipm_response(event, sipmrd, sipms_noise_sampler, sipm_adc_to_pes,
-                           pe_resolution, run_number = 0):
+def simulate_sipm_response(event, sipmrd, sipms_noise_sampler, sipm_adc_to_pes, pe_resolution):
     """Add noise to the sipms with the NoiseSampler class and return
     the noisy waveform (in adc)."""
 
