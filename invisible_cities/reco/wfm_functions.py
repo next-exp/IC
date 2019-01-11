@@ -18,7 +18,7 @@ def to_adc(wfs, adc_to_pes):
     ----------
     wfs : 2-dim np.ndarray
         The waveform (axis 1) for each sensor (axis 0).
-    sensdf : a vector of constants
+    adc_to_pes : a vector of constants
         Contains the sensor-related information.
 
     Returns
@@ -37,7 +37,7 @@ def to_pes(wfs, adc_to_pes):
     ----------
     wfs : 2-dim np.ndarray
         The waveform (axis 1) for each sensor (axis 0).
-    sensdf : a vector of constants
+    adc_to_pes : a vector of constants
         Contains the sensor-related information.
 
     Returns
