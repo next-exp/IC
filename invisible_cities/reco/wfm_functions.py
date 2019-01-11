@@ -7,8 +7,6 @@ import math
 
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 from .. core.core_functions import define_window
 from .. sierpe              import blr
 
