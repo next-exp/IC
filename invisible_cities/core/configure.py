@@ -21,7 +21,9 @@ class EventRange(Enum):
     last = 2
 
 # to allow direct imports from other odules
-all, last = EventRange
+all  = EventRange.all
+last = EventRange.last
+
 
 def event_range(string):
     try:
