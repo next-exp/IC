@@ -111,7 +111,7 @@ def neighbours(va : Voxel, vb : Voxel, contiguity : Contiguity = Contiguity.CORN
     return np.linalg.norm((va.pos - vb.pos) / va.size) < contiguity.value
 
 
-def make_track_graphs(voxels           : Voxel,
+def make_track_graphs(voxels           : Sequence[Voxel],
                       contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Graph]:
     """Create a graph where the voxels are the nodes and the edges are any
     pair of neighbour voxel. Two voxels are considered to be
