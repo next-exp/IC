@@ -9,10 +9,14 @@ from itertools   import repeat
 from enum        import Enum
 from typing      import Iterator
 from typing      import Mapping
-
+from typing      import List
+from typing      import Dict
+from typing      import Union
 import tables as tb
 import numpy  as np
+import pandas as pd
 import inspect
+
 
 from .. dataflow               import dataflow      as fl
 from .. evm .ic_containers     import SensorData
@@ -20,6 +24,7 @@ from .. evm .event_model       import KrEvent
 from .. evm .event_model       import Hit
 from .. evm .event_model       import Cluster
 from .. evm .event_model       import HitCollection
+from .. evm .event_model       import MCInfo
 from .. core.system_of_units_c import units
 from .. core.exceptions        import XYRecoFail
 from .. core.exceptions        import NoInputFiles
@@ -39,6 +44,8 @@ from .. filters.s1s2_filter    import pmap_filter
 from .. database               import load_db
 from .. sierpe                 import blr
 from .. io.pmaps_io            import load_pmaps
+from .. io. hits_io            import load_hits
+from .. io.  dst_io            import load_dst
 from .. types.ic_types         import xy
 from .. types.ic_types         import NN
 from .. types.ic_types         import NNN
@@ -261,6 +268,23 @@ def pmap_from_files(paths):
             # it needs to be given the WHOLE TABLE (rather than a
             # single event) at a time.
 
+def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
+    """Reader of the files, yields HitsCollection, pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
+    for path in paths:
+        hits    = load_hits(path)
+        kdst_df = load_dst (path, 'DST', 'Events')
+        with tb.open_file(path, "r") as h5in:
+            run_number  = get_run_number(h5in)
+            event_info  = get_event_info(h5in)
+            mc_info     = get_mc_info_safe(h5in, run_number)
+            check_lengths(event_info, hits)
+            for evtinfo in event_info:
+                event_number, timestamp = evtinfo.fetch_all_fields()
+                yield dict(hits = hits[event_number], kdst = kdst_df.loc[kdst_df.event==event_number], mc=mc_info, run_number=run_number,
+                           event_number=event_number, timestamp=timestamp)
+            # NB, the monte_carlo writer is different from the others:
+            # it needs to be given the WHOLE TABLE (rather than a
+            # single event) at a time.
 
 def sensor_data(path, wf_type):
     with tb.open_file(path, "r") as h5in:
