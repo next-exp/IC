@@ -34,13 +34,13 @@ def test_buffer_and_limits():
     assert highf[-1] == frequencies[-1] + frequency_bin / 2
 
 
-def test_low_frequency_noise():
+def test_low_frequency_noise(dbnew):
 
     ## Variable for basic definitions
     run_no     = 6000
     buffer_len = 32000 ## 800 mus buffer
 
-    noise_func = lfn.low_frequency_noise(run_no, buffer_len)
+    noise_func = lfn.low_frequency_noise(dbnew, run_no, buffer_len)
 
     ## Get an array with all pmts
     pmt_noise = np.array(list(map(noise_func, np.arange(12))))
