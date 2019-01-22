@@ -65,10 +65,12 @@ def rebin_peak(peak, rebin_factor, model=RebinMethod.stride):
 
 def rebin_peak_to_slices(peak, slices):
 
-    times, pmt_wfs = rebin_times_and_waveforms(peak.times,
-                                               peak.bin_widths,
-                                               peak.pmts.all_waveforms,
-                                               slices = slices)
+    (times,
+     widths,
+     pmt_wfs) = rebin_times_and_waveforms(peak.times,
+                                          peak.bin_widths,
+                                          peak.pmts.all_waveforms,
+                                          slices = slices)
     
     pmt_r  = PMTResponses(peak.pmts.ids, pmt_wfs)
 
