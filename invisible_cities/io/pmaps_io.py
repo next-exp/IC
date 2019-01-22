@@ -19,10 +19,11 @@ def store_peak(pmt_table, pmti_table, si_table,
     pmti_row = pmti_table.row
 
     for i, t in enumerate(peak.times):
-        pmt_row['event'] = event_number
-        pmt_row['peak' ] =  peak_number
-        pmt_row['time' ] = t
-        pmt_row['ene'  ] = peak.pmts.sum_over_sensors[i]
+        pmt_row['event' ] = event_number
+        pmt_row['peak'  ] = peak_number
+        pmt_row['time'  ] = t
+        pmt_row['bwidth'] = peak.bin_widths[i]
+        pmt_row['ene'   ] = peak.pmts.sum_over_sensors[i]
         pmt_row.append()
 
     for pmt_id in peak.pmts.ids:
@@ -128,24 +129,39 @@ def load_pmaps(filename):
             siindx=sidf_grouped      .groups[event_number]
         except KeyError:
             siindx=[]
-        
+
         s1s = s1s_from_df(s1df   .iloc   [s1indx   ],
                           s1pmtdf.iloc   [s1pmtindx])
         s2s = s2s_from_df(s2df   .iloc   [s2indx   ],
                           s2pmtdf.iloc   [s2pmtindx],
                           sidf   .iloc   [siindx   ])
-        
+
         pmap_dict[event_number] = PMap(s1s, s2s)
 
     return pmap_dict
 
 
 def build_pmt_responses(pmtdf, ipmtdf):
-    times   =            pmtdf.time.values
+    times = pmtdf.time.values
+    try:
+        widths = pmtdf.bwidth.values
+    except AttributeError:
+        ## Old file without bin widths saved
+        ## Calculate 'fake' widths from times
+        time_diff = np.diff(times)
+        if len(time_diff) == 0:
+            widths = np.full(1, 1000)
+        elif np.all(time_diff == time_diff[0]):
+            ## S1-like
+            widths = np.full(times.shape, time_diff[0])
+        else:
+            ## S2-like, round to closest mus
+            binw = time_diff.max().round(-3)
+            widths = np.full(times.shape, binw)
     pmt_ids = pd.unique(ipmtdf.npmt.values)
     enes    =           ipmtdf.ene .values.reshape(pmt_ids.size,
                                                      times.size)
-    return times, PMTResponses(pmt_ids, enes)
+    return times, widths, PMTResponses(pmt_ids, enes)
 
 
 def build_sipm_responses(sidf):
@@ -162,9 +178,12 @@ def s1s_from_df(s1df, s1pmtdf):
     s1s = []
     peak_numbers = set(s1df.peak)
     for peak_number in peak_numbers:
-        times, pmt_r = build_pmt_responses(s1df   [s1df   .peak == peak_number],
-                                           s1pmtdf[s1pmtdf.peak == peak_number])
-        s1s.append(S1(times, pmt_r, SiPMResponses.build_empty_instance()))
+        (times ,
+         widths,
+         pmt_r ) = build_pmt_responses(s1df   [s1df   .peak == peak_number],
+                                       s1pmtdf[s1pmtdf.peak == peak_number])
+        s1s.append(S1(times, widths,
+                      pmt_r, SiPMResponses.build_empty_instance()))
 
     return s1s
 
@@ -173,9 +192,11 @@ def s2s_from_df(s2df, s2pmtdf, sidf):
     s2s = []
     peak_numbers = set(s2df.peak)
     for peak_number in peak_numbers:
-        times, pmt_r = build_pmt_responses (s2df   [s2df   .peak == peak_number],
-                                            s2pmtdf[s2pmtdf.peak == peak_number])
-        sipm_r       = build_sipm_responses(sidf   [sidf   .peak == peak_number])
-        s2s.append(S2(times, pmt_r, sipm_r))
+        (times,
+         widths,
+         pmt_r ) = build_pmt_responses (s2df   [s2df   .peak == peak_number],
+                                        s2pmtdf[s2pmtdf.peak == peak_number])
+        sipm_r   = build_sipm_responses(sidf   [sidf   .peak == peak_number])
+        s2s.append(S2(times, widths, pmt_r, sipm_r))
 
     return s2s

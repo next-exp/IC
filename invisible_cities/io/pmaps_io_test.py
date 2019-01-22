@@ -219,7 +219,7 @@ def test_build_pmt_responses(KrMC_pmaps_dfs, signal_type):
     df_groupby     =     df.groupby(["event", "peak"])
     pmt_df_groupby = pmt_df.groupby(["event", "peak"])
     for (_, df_peak), (_, pmt_df_peak) in zip(df_groupby, pmt_df_groupby):
-        times, pmt_r = pmpio.build_pmt_responses(df_peak, pmt_df_peak)
+        times, widths, pmt_r = pmpio.build_pmt_responses(df_peak, pmt_df_peak)
 
         assert times                         == approx(    df_peak.time.values)
         assert pmt_r.sum_over_sensors        == approx(    df_peak.ene .values)
@@ -252,7 +252,7 @@ def test_build_pmt_responses_unordered():
     expected_enes = np.arange(10)
     for (_, peak_pmt), (_, peak_ipmt) in zip(data_pmt .groupby(["event", "peak"]),
                                              data_ipmt.groupby(["event", "peak"])):
-        _, pmt_r = pmpio.build_pmt_responses(peak_pmt, peak_ipmt)
+        _, _, pmt_r = pmpio.build_pmt_responses(peak_pmt, peak_ipmt)
         assert pmt_r.ids                     == exactly(expected_pmts)
         assert pmt_r.all_waveforms.flatten() == exactly(expected_enes)
 

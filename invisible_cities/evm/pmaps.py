@@ -23,12 +23,13 @@ class PMap:
 
 
 class _Peak:
-    def __init__(self, times, pmts, sipms):
+    def __init__(self, times, bin_widths, pmts, sipms):
         self._check_valid_input(times, pmts, sipms)
 
-        self.times = np.asarray(times)
-        self.pmts  = pmts
-        self.sipms = sipms
+        self.times      = np.asarray(times)
+        self.bin_widths = np.asarray(bin_widths)
+        self.pmts       = pmts
+        self.sipms      = sipms
 
         i_max                   = np.argmax(self.pmts.sum_over_sensors)
         self.time_at_max_energy = self.times[i_max]
@@ -53,8 +54,7 @@ class _Peak:
         if np.size(i_above_thr) < 1:
             return 0
 
-        times_above_thr = self.times[i_above_thr]
-        return times_above_thr[-1] - times_above_thr[0]
+        return np.sum(self.bin_widths[i_above_thr])
 
     def    rms_above_threshold(self, thr):
         i_above_thr     = self.pmts.where_above_threshold(thr)

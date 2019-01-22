@@ -6,19 +6,21 @@ from ..core.core_functions import dict_filter_by_key
 def rebin_peak(peak, rebin_factor):
     if rebin_factor == 1: return peak
 
-    times, pmt_wfs = rebin_times_and_waveforms(peak.times,
-                                               peak.pmts.all_waveforms,
-                                               rebin_factor)
+    times, widths, pmt_wfs = rebin_times_and_waveforms(peak.times,
+                                                       peak.bin_widths,
+                                                       peak.pmts.all_waveforms,
+                                                       rebin_factor)
     pmt_r  = PMTResponses(peak.pmts.ids, pmt_wfs)
 
     sipm_r = SiPMResponses.build_empty_instance()
     if peak.sipms.ids.size:
-        _, sipms = rebin_times_and_waveforms(peak.times,
-                                             peak.sipms.all_waveforms,
-                                             rebin_factor)
+        _, _, sipms = rebin_times_and_waveforms(peak.times,
+                                                peak.bin_widths,
+                                                peak.sipms.all_waveforms,
+                                                rebin_factor)
         sipm_r = SiPMResponses(peak.sipms.ids, sipms)
 
-    return type(peak)(times, pmt_r, sipm_r)
+    return type(peak)(times, widths, pmt_r, sipm_r)
 
 
 def pmap_event_id_selection(data, event_ids):

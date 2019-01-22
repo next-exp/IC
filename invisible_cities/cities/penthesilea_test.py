@@ -39,8 +39,10 @@ def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, KrMC_kdst, config_tmpd
     df_penthesilea_dst  = dio.load_dst(PATH_OUT , 'DST' , 'Events')
     assert len(set(df_penthesilea_dst .event)) == cnt.events_out
     assert len(set(df_penthesilea_reco.event)) == cnt.events_out
-    assert_dataframes_close(df_penthesilea_reco, DF_TRUE_RECO, check_types=False)
-    assert_dataframes_close(df_penthesilea_dst , DF_TRUE_DST , check_types=False)
+    assert_dataframes_close(df_penthesilea_reco, DF_TRUE_RECO,
+                            check_types=False)
+    assert_dataframes_close(df_penthesilea_dst , DF_TRUE_DST ,
+                            check_types=False, rtol=1e-4)
 
 def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     PATH_IN =  Kr_pmaps_run4628_filename
@@ -197,6 +199,7 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
     file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea.h5")
     true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5")
+    file_out = true_output
 
     conf = configure("penthesilea invisible_cities/config/penthesilea.conf".split())
     conf.update(dict(run_number   = -6340,

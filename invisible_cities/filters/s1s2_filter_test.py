@@ -73,6 +73,7 @@ def build_peak(Pk, subwf, nsi=0):
     size   = 3 * n
 
     times  = np.arange(size, dtype=np.double)
+    widths = np.full  (size, 1)
     enes   = np.zeros (size, dtype=np.double)
     enes[n:2*n] = subwf
 
@@ -80,7 +81,7 @@ def build_peak(Pk, subwf, nsi=0):
     sipm_r = SiPMResponses.build_empty_instance()
     ids    = np.random.randint(0, nsi + 1, size=nsi)
     sipm_r = SiPMResponses(ids, np.zeros((nsi, size)))
-    return Pk(times, pmt_r, sipm_r)
+    return Pk(times, widths, pmt_r, sipm_r)
 
 
 @fixture(scope="session")

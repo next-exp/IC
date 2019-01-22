@@ -59,7 +59,10 @@ def peaks(draw, subtype=None, pmt_ids=None, with_sipms=True):
     times     = draw(arrays(float, nsamples,
                             floats(min_value=0, max_value=1e3),
                             unique = True))
-    args      = np.sort(times), pmt_r, sipm_r
+    bin_widths = [1]
+    if len(times) > 1:
+        bin_widths = np.append(np.diff(times), max(np.diff(times)))
+    args       = np.sort(times), bin_widths, pmt_r, sipm_r
     return args, subtype(*args)
 
 
@@ -123,19 +126,19 @@ def test_SensorResponses_raises_exception_when_shapes_dont_match(SR, size):
 
 @given(peaks())
 def test_Peak_sipms(pks):
-    (_, _, sipm_r), peak = pks
+    (_, _, _, sipm_r), peak = pks
     assert_SensorResponses_equality(sipm_r, peak.sipms)
 
 
 @given(peaks())
 def test_Peak_pmts(pks):
-    (_, pmt_r, _), peak = pks
+    (_, _, pmt_r, _), peak = pks
     assert_SensorResponses_equality(pmt_r, peak.pmts)
 
 
 @given(peaks())
 def test_Peak_times(pks):
-    (times, _, _), peak = pks
+    (times, _, _, _), peak = pks
     assert times == approx(peak.times)
 
 
@@ -164,10 +167,19 @@ def test_Peak_height(pks):
     assert peak.height == approx(peak.pmts.sum_over_sensors.max())
 
 
-@given(peaks())
-def test_Peak_width(pks):
-    _, peak = pks
-    assert peak.width == approx(peak.times[-1] - peak.times[0])
+#@given(peaks())
+#def test_Peak_width(pks):
+#    _, peak = pks
+#    assert peak.width == approx(peak.times[-1] - peak.times[0])
+
+def test_Peak_width_correct():
+    nsamples = 3
+    times  = np.arange(nsamples)
+    widths = np.full(nsamples, 1)
+    pmts   = PMTResponses(np.arange(12), np.full((12, nsamples), 1))
+
+    peak = S1(times, widths, pmts, SiPMResponses.build_empty_instance())
+    assert peak.width == nsamples
 
 
 def _get_indices_above_thr(sr, thr):
@@ -218,15 +230,17 @@ def test_Peak_charge_above_threshold(pks, thr):
 
 
 @given(peaks())
-def test_Peak_width_above_threshold_less_than_wf_min(pks):
+#def test_Peak_width_above_threshold_less_than_wf_min(pks):
+def test_Peak_width_above_threshold_with_less_than_wf_min(pks):
     _, peak = pks
     sum_wf_min = previous_float(peak.pmts.sum_over_sensors.min())
     full_width = peak.width_above_threshold(sum_wf_min)
-    assert full_width == approx(peak.times[-1] - peak.times[0])
+    assert full_width == approx(np.sum(peak.bin_widths))
 
 
 @given(peaks())
-def test_Peak_width_above_threshold_greater_than_equal_to_wf_max(pks):
+#def test_Peak_width_above_threshold_greater_than_equal_to_wf_max(pks):
+def test_Peak_width_above_threshold_max_zero(pks):
     _, peak = pks
     assert peak.width_above_threshold(peak.height) == 0
 
@@ -235,8 +249,7 @@ def test_Peak_width_above_threshold_greater_than_equal_to_wf_max(pks):
 def test_Peak_width_above_threshold(pks, thr):
     _, peak = pks
     i_above_thr     = _get_indices_above_thr(peak.pmts, thr)
-    times_above_thr = peak.times[i_above_thr]
-    expected        = (times_above_thr[-1] - times_above_thr[0]
+    expected        = (np.sum(peak.bin_widths[i_above_thr])
                        if np.size(i_above_thr) > 0
                        else 0)
     assert peak.width_above_threshold(thr) == approx(expected)
@@ -274,7 +287,8 @@ def test_Peak_raises_exception_when_shapes_dont_match(PK, sr1, sr2):
         (ids, wfs), sr1 = sr1
         _         , sr2 = sr2
         n_samples       = wfs.shape[1]
-        pk = PK(np.empty(n_samples + 1), sr1, sr2)
+        pk = PK(np.empty(n_samples + 1),
+                np.empty(n_samples + 1), sr1, sr2)
 
 
 @given(pmaps())

@@ -10,14 +10,16 @@ import pytest
 
 def test_load_dst(KrMC_kdst):
     df_read = load_dst(*KrMC_kdst[0].file_info)
-    assert_dataframes_close(df_read, KrMC_kdst[0].true, False)
+    assert_dataframes_close(df_read, KrMC_kdst[0].true,
+                            False  , rtol=1e-5)
 
 
 def test_load_dsts_single_file(KrMC_kdst):
     tbl     = KrMC_kdst[0].file_info
     df_read = load_dsts([tbl.filename], tbl.group, tbl.node)
 
-    assert_dataframes_close(df_read, KrMC_kdst[0].true, False)
+    assert_dataframes_close(df_read, KrMC_kdst[0].true,
+                            False  , rtol=1e-5)
 
 
 def test_load_dsts_double_file(KrMC_kdst):
@@ -26,7 +28,8 @@ def test_load_dsts_double_file(KrMC_kdst):
     df_read = load_dsts([tbl.filename]*2, tbl.group, tbl.node)
     df_true = pd.concat([df_true, df_true])
 
-    assert_dataframes_close(df_read, df_true, False)
+    assert_dataframes_close(df_read, df_true  ,
+                            False  , rtol=1e-5)
 
 def test_load_dsts_reads_good_kdst(ICDATADIR):
     good_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_KDST.h5"
