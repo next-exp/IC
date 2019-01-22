@@ -55,7 +55,7 @@ def voxelize_hits(hits             : Sequence[BHit],
     voxel_edges_lo -= eps
     voxel_edges_hi += eps
 
-    hit_positions = np.array([h.pos for h in hits])
+    hit_positions = np.array([h.pos for h in hits]).astype('float64')
     hit_energies  =          [h.E   for h in hits]
     E, edges = np.histogramdd(hit_positions,
                               bins    = number_of_voxels,
