@@ -199,7 +199,6 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
     file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea.h5")
     true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5")
-    file_out = true_output
 
     conf = configure("penthesilea invisible_cities/config/penthesilea.conf".split())
     conf.update(dict(run_number   = -6340,
