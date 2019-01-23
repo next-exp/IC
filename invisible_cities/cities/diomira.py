@@ -59,7 +59,7 @@ from .  components import wf_from_files
 
 
 @city
-def diomira(files_in, file_out, compression, event_range, print_mod, run_number,
+def diomira(files_in, file_out, compression, event_range, print_mod, detector_db, run_number,
             sipm_noise_cut, filter_padding, trigger_type,
             trigger_params = dict(), s2_params = dict(),
             random_seed = None):
@@ -68,12 +68,12 @@ def diomira(files_in, file_out, compression, event_range, print_mod, run_number,
 
     sd = sensor_data(files_in[0], WfType.mcrd)
 
-    simulate_pmt_response_  = fl.map(simulate_pmt_response (run_number),
+    simulate_pmt_response_  = fl.map(simulate_pmt_response (detector_db, run_number),
                                      args="pmt" , out= ("pmt_sim", "blr_sim"))
-    simulate_sipm_response_ = fl.map(simulate_sipm_response(run_number, sd.SIPMWL, sipm_noise_cut, filter_padding),
+    simulate_sipm_response_ = fl.map(simulate_sipm_response(detector_db, run_number, sd.SIPMWL, sipm_noise_cut, filter_padding),
                                      args="sipm", out="sipm_sim"             )
     trigger_filter_         = select_trigger_filter(trigger_type, trigger_params, s2_params)
-    emulate_trigger_        = fl.map(emulate_trigger(run_number, trigger_type, trigger_params, s2_params), args="pmt_sim", out="trigger_sim")
+    emulate_trigger_        = fl.map(emulate_trigger(detector_db, run_number, trigger_type, trigger_params, s2_params), args="pmt_sim", out="trigger_sim")
     trigger_pass            = fl.map(trigger_filter_, args="trigger_sim", out="trigger_pass")
     trigger_filter          = fl.count_filter(bool, args="trigger_pass")
 
@@ -120,8 +120,8 @@ def compute_pe_resolution(rms, adc_to_pes):
                      where = adc_to_pes != 0          )
 
 
-def simulate_pmt_response(run_number):
-    datapmt       = load_db.DataPMT(run_number)
+def simulate_pmt_response(detector, run_number):
+    datapmt       = load_db.DataPMT(detector, run_number)
     adc_to_pes    = np.abs(datapmt.adc_to_pes.values).astype(np.double)
     single_pe_rms = datapmt.Sigma.values.astype(np.double)
     pe_resolution = compute_pe_resolution(single_pe_rms, adc_to_pes)
@@ -129,15 +129,15 @@ def simulate_pmt_response(run_number):
     def simulate_pmt_response(pmtrd):
         rwf, blr = sf.simulate_pmt_response(0, pmtrd[np.newaxis],
                                             adc_to_pes, pe_resolution,
-                                            run_number)
+                                            detector, run_number)
         return rwf.astype(np.int16), blr.astype(np.int16)
     return simulate_pmt_response
 
 
-def simulate_sipm_response(run_number, wf_length, noise_cut, filter_padding):
-    datasipm      = load_db.DataSiPM (run_number)
-    baselines     = load_db.SiPMNoise(run_number)[-1]
-    noise_sampler = SiPMsNoiseSampler(run_number, wf_length, True)
+def simulate_sipm_response(detector, run_number, wf_length, noise_cut, filter_padding):
+    datasipm      = load_db.DataSiPM (detector, run_number)
+    baselines     = load_db.SiPMNoise(detector, run_number)[-1]
+    noise_sampler = SiPMsNoiseSampler(detector, run_number, wf_length, True)
 
     adc_to_pes    = datasipm.adc_to_pes.values
     thresholds    = noise_cut * adc_to_pes + baselines
@@ -179,7 +179,7 @@ def select_trigger_filter(trigger_type, trigger_params, s2_params):
         raise ValueError(f"Invalid trigger type: {repr(trigger_type)}")
 
 
-def emulate_trigger(run_number, trigger_type, trigger_params, s2_params):
+def emulate_trigger(detector_db, run_number, trigger_type, trigger_params, s2_params):
     if   trigger_type is None:
         def do_nothing(*args, **kwargs):
             pass
@@ -187,7 +187,7 @@ def emulate_trigger(run_number, trigger_type, trigger_params, s2_params):
     elif trigger_type == "S2":
         channels   = trigger_params["tr_channels"]
         min_height = trigger_params["min_height"]
-        datapmt    = load_db.DataPMT(run_number)
+        datapmt    = load_db.DataPMT(detector_db, run_number)
         IC_ids     = sf.convert_channel_id_to_IC_id(datapmt, channels).tolist()
         n_baseline = s2_params.pop("n_baseline")
         s2_params  = dict(time         = minmax(min = s2_params["s2_tmin"        ],
@@ -198,7 +198,7 @@ def emulate_trigger(run_number, trigger_type, trigger_params, s2_params):
                           rebin_stride =              s2_params["s2_rebin_stride"])
 
 
-        deconvolver = deconv_pmt(run_number, n_baseline, IC_ids)
+        deconvolver = deconv_pmt(detector_db, run_number, n_baseline, IC_ids)
 
         def get_indices(cwf):
             return pkf.indices_and_wf_above_threshold(cwf, thr=min_height)[0]
