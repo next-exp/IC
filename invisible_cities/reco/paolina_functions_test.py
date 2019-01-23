@@ -2,6 +2,7 @@ import os
 
 from math      import sqrt
 from functools import partial
+import random
 
 import tables as tb
 import numpy    as np
@@ -39,6 +40,7 @@ from . paolina_functions import make_track_graphs
 from . paolina_functions import voxels_from_track_graph
 from . paolina_functions import length
 from . paolina_functions import Contiguity
+from . paolina_functions import drop_voxel
 
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
@@ -443,4 +445,28 @@ def test_contiguity(proximity, contiguity, are_neighbours):
     tracks = make_track_graphs(voxels, contiguity=contiguity)
 
     assert len(tracks) == expected_number_of_tracks
+
+
+@given(bunch_of_hits, box_sizes)
+def test_energy_is_conserved_if_voxel_is_dropped(hits, requested_voxel_dimensions):
+    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
+    tot_energy = sum(v.E for v in voxels)
+    voxel_to_drop = random.choice(voxels)
+    drop_voxel(voxels, voxel_to_drop)
+    tot_energy_drop = sum(v.E for v in voxels)
+
+    if len(voxels) > 0:
+        assert tot_energy == approx(tot_energy_drop)
+    else:
+        return
+
+
+@given(bunch_of_hits, box_sizes)
+def test_voxel_is_dropped(hits, requested_voxel_dimensions):
+    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
+    n_starting_voxels = len(voxels)
+    voxel_to_drop = random.choice(voxels)
+    drop_voxel(voxels, voxel_to_drop)
+
+    assert len(voxels) == n_starting_voxels - 1
     
