@@ -149,7 +149,7 @@ def fill_pmap_var(pmap, sipm_db):
     return var
 
 
-def fill_pmap_histos(in_path, run_number, config_dict):
+def fill_pmap_histos(in_path, detector_db, run_number, config_dict):
     """
     Creates and returns an HistoManager object with the pmap histograms.
 
@@ -160,7 +160,7 @@ def fill_pmap_histos(in_path, run_number, config_dict):
     """
     var_bins, var_labels = pmap_bins(config_dict)
     histo_manager        = histf.create_histomanager_from_dicts(var_bins, var_labels)
-    SiPM_db              = dbf.DataSiPM(run_number)
+    SiPM_db              = dbf.DataSiPM(detector_db, run_number)
 
     for in_file in glob.glob(in_path):
         pmaps = load_pmaps(in_file)

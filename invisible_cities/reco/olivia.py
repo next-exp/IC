@@ -16,6 +16,7 @@ def olivia(conf):
     print(conf)
     files_in     = os.path.expandvars(conf.files_in)
     file_out     = os.path.expandvars(conf.file_out)
+    detector_db  =                    conf.detector_db
     run_number   =                int(conf.run_number)
     data_type    =                    conf.data_type
     histo_config =                    conf.histo_config
@@ -30,7 +31,7 @@ def olivia(conf):
         if   data_type == 'rwf'  :
             histo_manager = monf.fill_rwf_histos (files_in, config_dict)
         elif data_type == 'pmaps':
-            histo_manager = monf.fill_pmap_histos(files_in, run_number, config_dict)
+            histo_manager = monf.fill_pmap_histos(files_in, detector_db, run_number, config_dict)
         elif data_type == 'kdst' :
             histo_manager = monf.fill_kdst_histos(files_in, config_dict)
         save_histomanager_to_file(histo_manager, file_out)
