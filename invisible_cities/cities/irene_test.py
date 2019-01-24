@@ -16,6 +16,9 @@ from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
 
+from .. database       import load_db
+from .. database.load_db       import DetDB
+
 from .  irene import irene
 
 
@@ -85,7 +88,8 @@ def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
     nrequired  = 2
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number    = 0,
+    conf.update(dict(detector_db = DetDB.new,
+                     run_number    = 0,
                      files_in      = PATH_IN,
                      file_out      = PATH_OUT,
                      event_range   = (0, nrequired),
