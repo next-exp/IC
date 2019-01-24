@@ -2,7 +2,6 @@ import os
 
 from math      import sqrt
 from functools import partial
-import random
 
 import tables as tb
 import numpy    as np
@@ -70,8 +69,10 @@ box_sizes = builds(np.array, lists(box_dimension,
 
 eps = 3e-12 # value that works for margin
 
+fraction_zero_one = floats(min_value = 0,
+                           max_value = 1)
 min_n_of_voxels = integers(min_value = 3,
-                       max_value = 10)
+                           max_value = 10)
 
 
 def test_voxelize_hits_should_detect_no_hits():
@@ -467,7 +468,7 @@ def test_energy_is_conserved_if_voxel_is_dropped(hits, requested_voxel_dimension
         return
 
 
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits, box_sizes, min_n_of_voxels, fraction_zero_one)
 def test_voxel_is_dropped(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     n_starting_voxels = len(voxels)
@@ -477,13 +478,13 @@ def test_voxel_is_dropped(hits, requested_voxel_dimensions):
     assert len(voxels) == n_starting_voxels - 1
 
 
-@given(bunch_of_hits, box_sizes, min_n_of_voxels)
-def test_total_energy_is_conserved(hits, requested_voxel_dimensions, min_voxels):
+@given(bunch_of_hits, box_sizes, min_n_of_voxels, fraction_zero_one)
+def test_total_energy_is_conserved(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one):
 
     tot_initial_energy = sum(h.E for h in hits)
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     energies = [v.E for v in voxels]
-    e_thr = random.uniform(min(energies), max(energies))
+    e_thr = min(energies) + fraction_zero_one * (max(energies) - min(energies))
     drop_end_point_voxels(voxels, e_thr, min_voxels)
     tot_final_energy = sum(v.E for v in voxels)
 
