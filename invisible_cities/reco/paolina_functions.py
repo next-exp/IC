@@ -258,7 +258,8 @@ def drop_voxel(voxels: Sequence, the_vox: Voxel):
 
 
 def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_vxls: int):
-    """Eliminate voxels at the end-points of a track, if their energy is lower than a threshold"""
+    """Eliminate voxels at the end-points of a track, recursively,
+       if their energy is lower than a threshold"""
     while True:
         modified_voxels = 0
         trks = make_track_graphs(voxels)
