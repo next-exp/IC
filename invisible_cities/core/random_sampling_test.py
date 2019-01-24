@@ -155,12 +155,12 @@ def run_number():
     return 4714
 
 @fixture(scope="module")
-def datasipm(run_number):
-    return DataSiPM(run_number)
+def datasipm(run_number, dbnew):
+    return DataSiPM(dbnew, run_number)
 
 
 @fixture(scope="module", params=[False, True])
-def noise_sampler(request, run_number):
+def noise_sampler(request, dbnew, run_number):
     nsamples = 1000
     smear    = request.param
     thr      = 0.99
@@ -174,7 +174,7 @@ def noise_sampler(request, run_number):
     1.45  :   6,
     1.55  :   3,
     np.inf:   9}
-    return (NoiseSampler(run_number, nsamples, smear),
+    return (NoiseSampler(dbnew, run_number, nsamples, smear),
             nsamples, smear,
             thr, true_threshold_counts)
 
