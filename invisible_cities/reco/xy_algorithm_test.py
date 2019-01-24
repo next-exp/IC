@@ -79,18 +79,18 @@ def toy_sipm_signal_and_inds():
 
 
 @fixture(scope="session")
-def datasipm():
-    return DataSiPM(0)
+def datasipm(dbnew):
+    return DataSiPM(dbnew, 0)
 
 
 @fixture(scope="session")
-def datasipm_all_active():
-    return DataSiPM(1)
+def datasipm_all_active(dbnew):
+    return DataSiPM(dbnew, 1)
 
 
 @fixture(scope="session")
-def datasipm_5000():
-    return DataSiPM(5000)
+def datasipm_5000(dbnew):
+    return DataSiPM(dbnew, 5000)
 
 
 @fixture(scope="session")
@@ -173,13 +173,13 @@ def test_barycenter_single_cluster_generic(p_q):
     assert len(clusters) == 1
 
 
-@parametrize("algorithm", (barycenter, partial(corona, all_sipms=datasipm())))
+@parametrize("algorithm", (barycenter, partial(corona, all_sipms=datasipm)))
 def test_raises_sipm_empty_list(algorithm):
     with raises(SipmEmptyList):
         algorithm(np.array([]), None)
 
 
-@parametrize("algorithm", (barycenter, partial(corona, all_sipms=datasipm())))
+@parametrize("algorithm", (barycenter, partial(corona, all_sipms=datasipm)))
 def test_raises_sipm_zero_charge(algorithm):
     with raises(SipmZeroCharge):
         algorithm(np.array([[1, 2]]), np.array([0, 0]))

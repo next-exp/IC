@@ -24,7 +24,7 @@ def ndarrays_of_shape(shape, lo=-1000.0, hi=1000.0):
 
 
 @mark.slow
-def test_compare_cwf_blr():
+def test_compare_cwf_blr(dbnew):
     """Test functions cwf_from_rwf() and compare_cwf_blr().
     The test:
     1) Computes CWF from RWF (function cwf_from_rwf())
@@ -45,8 +45,8 @@ def test_compare_cwf_blr():
                           thr_trigger =     5)
 
     run_number = 0
-    DataPMT = load_db.DataPMT(run_number)
-    DataSiPM = load_db.DataSiPM(run_number)
+    DataPMT = load_db.DataPMT(dbnew, run_number)
+    DataSiPM = load_db.DataSiPM(dbnew, run_number)
 
     calib = CalibVectors(channel_id = DataPMT.ChannelID.values,
                          coeff_blr = abs(DataPMT.coeff_blr   .values),
