@@ -40,7 +40,6 @@ from . paolina_functions import make_track_graphs
 from . paolina_functions import voxels_from_track_graph
 from . paolina_functions import length
 from . paolina_functions import Contiguity
-from . paolina_functions import drop_voxel
 from . paolina_functions import drop_end_point_voxels
 
 from .. core.exceptions import NoHits
@@ -454,41 +453,22 @@ def test_contiguity(proximity, contiguity, are_neighbours):
     assert len(tracks) == expected_number_of_tracks
 
 
-@given(bunch_of_hits, box_sizes)
-def test_energy_is_conserved_if_voxel_is_dropped(hits, requested_voxel_dimensions):
-    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
-    tot_energy = sum(v.E for v in voxels)
-    voxel_to_drop = random.choice(voxels)
-    drop_voxel(voxels, voxel_to_drop)
-    tot_energy_drop = sum(v.E for v in voxels)
-
-    if len(voxels) > 0:
-        assert tot_energy == approx(tot_energy_drop)
-    else:
-        return
-
-
 @given(bunch_of_hits, box_sizes, min_n_of_voxels, fraction_zero_one)
-def test_voxel_is_dropped(hits, requested_voxel_dimensions):
-    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
-    n_starting_voxels = len(voxels)
-    voxel_to_drop = random.choice(voxels)
-    drop_voxel(voxels, voxel_to_drop)
-
-    assert len(voxels) == n_starting_voxels - 1
-
-
-@given(bunch_of_hits, box_sizes, min_n_of_voxels, fraction_zero_one)
-def test_total_energy_is_conserved(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one):
-
+def test_energy_is_conserved(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one):
     tot_initial_energy = sum(h.E for h in hits)
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
+    ini_trks = make_track_graphs(voxels)
+    ini_trk_energies = [sum(vox.E for vox in t.nodes()) for t in ini_trks]
+
     energies = [v.E for v in voxels]
     e_thr = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    drop_end_point_voxels(voxels, e_thr, min_voxels)
-    tot_final_energy = sum(v.E for v in voxels)
+    mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    tot_final_energy = sum(v.E for v in mod_voxels)
+    final_trks = make_track_graphs(mod_voxels)
+    final_trk_energies = [sum(vox.E for vox in t.nodes()) for t in final_trks]
 
     assert tot_initial_energy == approx(tot_final_energy)
+    assert np.allclose(ini_trk_energies, final_trk_energies)
 
 
 def test_tracks_with_dropped_voxels(ICDATADIR):
@@ -507,9 +487,9 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     ini_energies = [sum(vox.E for vox in t.nodes()) for t in ini_trks]
     ini_n_voxels = np.array([len(t.nodes()) for t in ini_trks])
 
-    drop_end_point_voxels(voxels, e_thr, min_voxels)
+    mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
 
-    trks = make_track_graphs(voxels)
+    trks = make_track_graphs(mod_voxels)
     n_of_tracks = len(trks)
     energies = [sum(vox.E for vox in t.nodes()) for t in trks]
     n_voxels = np.array([len(t.nodes()) for t in trks])
@@ -517,6 +497,6 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     expected_diff_n_voxels = np.array([0, 0, 2])
 
     assert initial_n_of_tracks == n_of_tracks
-    assert ini_energies == energies
+    assert np.allclose(ini_energies, energies)
     assert np.all(ini_n_voxels - n_voxels == expected_diff_n_voxels)
     

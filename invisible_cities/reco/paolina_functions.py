@@ -2,6 +2,8 @@ from functools   import reduce
 from itertools   import combinations
 from enum        import Enum
 
+import copy
+
 import numpy    as np
 import networkx as nx
 
@@ -9,7 +11,6 @@ from networkx                   import Graph
 from .. evm.event_model         import Voxel
 from .. core.exceptions         import NoHits
 from .. core.exceptions         import NoVoxels
-from .. core.exceptions         import VoxelNotInList
 from .. evm.event_model         import BHit
 from .. evm.event_model         import Voxel
 from .. evm.event_model         import Track
@@ -222,60 +223,60 @@ def make_tracks(evt_number       : float,
     return tc
 
 
-def drop_voxel(voxels: Sequence, the_vox: Voxel):
-    """Eliminate an individual voxel from a set of voxels and give its energy to the hit
-       that is closest to the barycenter of the eliminated voxel hits, provided that it
-       belongs to a neighbour voxel."""
-    ### remove voxel from list of voxels
-    try:
-        voxels.remove(the_vox)
-    except ValueError:
-        raise VoxelNotInList
-
-    if len(voxels) == 0:
-        return
-
-    pos = [h.pos for h in the_vox.hits]
-    qs = [h.E for h in the_vox.hits]
-    bary_pos = np.average(pos, weights=qs, axis=0)
-
-    ### find hit with minimum distance, only among neighbours
-    min_dist = 1e+06
-    min_hit = voxels[0].hits[0]
-    min_v = voxels[0]
-    for v in voxels:
-        if neighbours(the_vox, v):
-            for hh in v.hits:
-                dist = np.linalg.norm(bary_pos - hh.pos)
-                if dist < min_dist:
-                    min_dist = dist
-                    min_hit = hh
-                    min_v = v
-
-    ### add voxel energy to hit and to voxel, separately
-    min_hit.energy += the_vox.E
-    min_v.energy += the_vox.E
-
-
-def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_vxls: int):
+def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_vxls: int = 3) -> Sequence[Voxel]:
     """Eliminate voxels at the end-points of a track, recursively,
        if their energy is lower than a threshold"""
+
+    def drop_voxel(voxels: Sequence[Voxel], the_vox: Voxel):
+        """Eliminate an individual voxel from a set of voxels and give its energy to the hit
+           that is closest to the barycenter of the eliminated voxel hits, provided that it
+           belongs to a neighbour voxel."""
+
+        ### remove voxel from list of voxels
+        voxels.remove(the_vox)
+
+        pos = [h.pos for h in the_vox.hits]
+        qs = [h.E for h in the_vox.hits]
+        bary_pos = np.average(pos, weights=qs, axis=0)
+
+        ### find hit with minimum distance, only among neighbours
+        min_dist = 1e+06
+        min_hit = voxels[0].hits[0]
+        min_v = voxels[0]
+        for v in voxels:
+            if neighbours(the_vox, v):
+                for hh in v.hits:
+                    dist = np.linalg.norm(bary_pos - hh.pos)
+                    if dist < min_dist:
+                        min_dist = dist
+                        min_hit = hh
+                        min_v = v
+
+        ### add voxel energy to hit and to voxel, separately
+        min_hit.energy += the_vox.E
+        min_v.energy += the_vox.E
+
+
+    mod_voxels = copy.deepcopy(voxels)
+
     while True:
-        modified_voxels = 0
-        trks = make_track_graphs(voxels)
-        vxl_size = voxels[0].size
+        n_modified_voxels = 0
+        trks = make_track_graphs(mod_voxels)
+        vxl_size = mod_voxels[0].size
 
         for t in trks:
             if len(t.nodes()) < min_vxls:
                 continue
 
             extr1, extr2 = find_extrema(t)
-            if extr1.E < energy_threshold:
-                modified_voxels += 1
-                drop_voxel(voxels, extr1)
-            if extr2.E < energy_threshold:
-                modified_voxels += 1
-                drop_voxel(voxels, extr2)
+            if extr1.E < energy_threshold and len(t.nodes()) > 1:
+                n_modified_voxels += 1
+                drop_voxel(mod_voxels, extr1)
+            if extr2.E < energy_threshold and len(t.nodes()) > 1:
+                n_modified_voxels += 1
+                drop_voxel(mod_voxels, extr2)
 
-        if modified_voxels == 0:
+        if n_modified_voxels == 0:
             break
+
+    return mod_voxels
