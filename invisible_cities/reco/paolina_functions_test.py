@@ -472,27 +472,30 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimension
 
 
 def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
+
+    # Get some test data: nothing interesting to see here
     hit_file = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
     evt_number = 19
     e_thr = 5867.92
     min_voxels = 3
     size = 15.
-    vox_size = np.array([size,size,size],dtype=np.float16)
-
+    vox_size = np.array([size,size,size], dtype=np.float16)
     all_hits = load_hits(hit_file)
     hits = all_hits[evt_number].hits
     voxels = voxelize_hits(hits, vox_size, strict_voxel_size=False)
-    ini_energies = [v.E for v in voxels]
-    ini_pos      = [v.pos for v in voxels]
+
+    # This is the core of the test: collect data before/after ...
+    ante_energies  = [v.E   for v in voxels]
+    ante_positions = [v.pos for v in voxels]
     mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    post_energies  = [v.E   for v in voxels]
+    post_positions = [v.pos for v in voxels]
 
-    final_energies = [v.E for v in voxels]
-    final_pos      = [v.pos for v in voxels]
-
-    assert len(ini_energies) == len(final_energies)
-    assert np.allclose(ini_energies, final_energies)
-    assert len(ini_pos) == len(final_pos)
-    assert np.allclose(ini_pos, final_pos)
+    # ... and make sure that nothing has changed
+    assert len(ante_energies)  == len(post_energies)
+    assert len(ante_positions) == len(post_positions)
+    assert np.allclose(ante_energies,  post_energies)
+    assert np.allclose(ante_positions, post_positions)
 
 
 def test_tracks_with_dropped_voxels(ICDATADIR):
