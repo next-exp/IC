@@ -189,6 +189,9 @@ class Voxel(BHit):
     @property
     def size(self): return self._size
 
+    @property
+    def Ehits(self): return sum(h.E for h in hits)
+
 
 class Cluster(BHit):
     """Represents a reconstructed cluster in the tracking plane"""
