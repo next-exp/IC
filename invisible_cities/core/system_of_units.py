@@ -74,6 +74,9 @@ nm = nanometer
 mum = micrometer
 
 micron = micrometer
+micron2 = micrometer * micrometer
+micron3 = micron2 * micrometer
+
 barn = 1.e-28 * meter2
 millibarn = 1.e-3 * barn
 microbarn = 1.e-6 * barn
@@ -175,6 +178,9 @@ PeV = petaelectronvolt
 eV2 = eV*eV
 
 joule = electronvolt/e_SI  # joule = 6.24150 e+12 * MeV
+J     = joule
+milijoule = 1e-3 * joule
+microjoule = 1e-6 * joule
 
 #
 # Mass [E][T^2][L^-2]
@@ -194,6 +200,12 @@ mg = milligram
 # Power [E][T^-1]
 #
 watt = joule/second  # watt = 6.24150 e+3 * MeV/ns
+W    = watt
+milliwatt = 1E-3 * watt
+microwatt = 1E-6 * watt
+mW = milliwatt
+muW = microwatt
+
 
 #
 # Force [E][L^-1]
@@ -287,6 +299,10 @@ kelvin = 1
 #
 mole = 1
 mol = mole
+milimole    = 1E-3 * mole
+micromole   = 1E-6 * mole
+nanomole    = 1E-9 * mole
+picomole    = 1E-12 * mole
 
 #
 # Activity [T^-1]
