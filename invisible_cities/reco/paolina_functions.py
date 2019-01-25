@@ -254,7 +254,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
 
         ### add voxel energy to hit and to voxel, separately
         min_hit.energy += the_vox.E
-        min_v.energy += the_vox.E
+        min_v.energy   += the_vox.E
 
 
     mod_voxels = copy.deepcopy(voxels)
