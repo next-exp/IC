@@ -236,7 +236,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
         voxels.remove(the_vox)
 
         pos = [h.pos for h in the_vox.hits]
-        qs = [h.E for h in the_vox.hits]
+        qs  = [h.E for h in the_vox.hits]
         bary_pos = np.average(pos, weights=qs, axis=0)
 
         ### find hit with minimum distance, only among neighbours

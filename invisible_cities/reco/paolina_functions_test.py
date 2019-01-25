@@ -454,7 +454,7 @@ def test_contiguity(proximity, contiguity, are_neighbours):
 
 
 @given(bunch_of_hits, box_sizes, min_n_of_voxels, fraction_zero_one)
-def test_energy_is_conserved(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one):
+def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one):
     tot_initial_energy = sum(h.E for h in hits)
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     ini_trks = make_track_graphs(voxels)
