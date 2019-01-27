@@ -265,8 +265,6 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
 
         return 1
 
-
-
     mod_voxels = copy.deepcopy(voxels)
 
     while True:

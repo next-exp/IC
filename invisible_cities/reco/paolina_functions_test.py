@@ -526,4 +526,14 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     assert initial_n_of_tracks == n_of_tracks
     assert np.allclose(ini_energies, energies)
     assert np.all(ini_n_voxels - n_voxels == expected_diff_n_voxels)
-    
+
+
+def test_voxel_drop_in_short_tracks():
+    hits = [BHit(10, 10, 10, 1), BHit(26, 10, 10, 1)]
+    voxels = voxelize_hits(hits, [15,15,15], strict_voxel_size=True)
+    e_thr = sum(v.E for v in voxels) + 1.
+    min_voxels = 0
+
+    mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+
+    assert len(mod_voxels) >= 1
