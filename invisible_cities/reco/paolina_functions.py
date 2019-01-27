@@ -225,12 +225,19 @@ def make_tracks(evt_number       : float,
 
 def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_vxls: int = 3) -> Sequence[Voxel]:
     """Eliminate voxels at the end-points of a track, recursively,
-       if their energy is lower than a threshold"""
+       if their energy is lower than a threshold. Returns 1 if the voxel
+       has been deleted succesfully and 0 otherwise."""
 
-    def drop_voxel(voxels: Sequence[Voxel], the_vox: Voxel):
+    def drop_voxel(voxels: Sequence[Voxel], the_vox: Voxel) -> int:
         """Eliminate an individual voxel from a set of voxels and give its energy to the hit
            that is closest to the barycenter of the eliminated voxel hits, provided that it
            belongs to a neighbour voxel."""
+
+        ### be sure that the voxel to be eliminated has at least one neighbour
+        ### beyond itself
+        the_neighbours = np.array([neighbours(the_vox, v) for v in voxels])
+        if len(the_neighbours>0) <= 1:
+            return 0
 
         ### remove voxel from list of voxels
         voxels.remove(the_vox)
@@ -256,6 +263,9 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
         min_hit.energy += the_vox.E
         min_v.energy   += the_vox.E
 
+        return 1
+
+
 
     mod_voxels = copy.deepcopy(voxels)
 
@@ -269,12 +279,12 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
                 continue
 
             extr1, extr2 = find_extrema(t)
-            if extr1.E < energy_threshold and len(t.nodes()) > 1:
-                n_modified_voxels += 1
-                drop_voxel(mod_voxels, extr1)
-            if extr2.E < energy_threshold and len(t.nodes()) > 1:
-                n_modified_voxels += 1
-                drop_voxel(mod_voxels, extr2)
+            if extr1.E < energy_threshold:
+                n_mod = drop_voxel(mod_voxels, extr1)
+                n_modified_voxels += n_mod
+            if extr2.E < energy_threshold:
+                n_mod = drop_voxel(mod_voxels, extr2)
+                n_modified_voxels += n_mod
 
         if n_modified_voxels == 0:
             break
