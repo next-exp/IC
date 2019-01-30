@@ -14,7 +14,7 @@ from . pmaps_io  import     pmap_writer
 
 
 @city
-def writer_test_city(writer, file_out, files_in, event_range):
+def writer_test_city(writer, file_out, files_in, event_range, detector_db):
     with tb.open_file(file_out, 'w') as h5out:
         writer(h5out)
 

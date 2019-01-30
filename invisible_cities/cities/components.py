@@ -69,6 +69,11 @@ def city(city_function):
         if 'files_in' not in kwds: raise NoInputFiles
         if 'file_out' not in kwds: raise NoOutputFile
 
+        # For backward-compatibility we set NEW as the default DB in
+        # case it is not defined in the config file
+        if 'detector_db' not in kwds:
+            conf.detector_db = 'new'
+
         conf.files_in  = sorted(glob(expandvars(conf.files_in)))
         conf.file_out  =             expandvars(conf.file_out)
 
