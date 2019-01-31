@@ -179,9 +179,9 @@ def test_copy_sensor_table3(config_tmpdir):
 @mark.parametrize('sensor_type     , n_channel, gain_seed, gain_sigma_seed',
                   ((SensorType.SIPM,         1,   16.5622,         2.5),
                    (SensorType.PMT ,         5,   24.9557,         9.55162)))
-def test_seeds_db(sensor_type, n_channel, gain_seed, gain_sigma_seed):
+def test_seeds_db(sensor_type, n_channel, gain_seed, gain_sigma_seed, dbnew):
     run_number = 6217
-    result = cf.seeds_db(sensor_type, run_number, n_channel)
+    result = cf.seeds_db(sensor_type, dbnew, run_number, n_channel)
     assert result == (gain_seed, gain_sigma_seed)
 
 
@@ -221,13 +221,13 @@ def test_sensor_values(sensor_type, scaler, expected_range, min_b, max_b, half_w
 @mark.parametrize('sensor_type, run_number, n_chann,            scaler',
                   ((      None,       6217,    1023, _dark_scaler_sipm),
                    (      None,       6217,       0, _dark_scaler_pmt)))
-def test_incorrect_sensor_type_raises_ValueError(sensor_type, run_number, n_chann, scaler):
+def test_incorrect_sensor_type_raises_ValueError(sensor_type, dbnew, run_number, n_chann, scaler):
     bins     = np.array([ -6,  -5,   -4,   -3,   -2,   -1,    0,    1,    2,    3,    4,   5,   6,   7])
     spec     = np.array([ 28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
 
     with raises(ValueError):
-        cf.       seeds_db(sensor_type, run_number, n_chann)
+        cf.       seeds_db(sensor_type, dbnew, run_number, n_chann)
         cf.poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals)
         cf.  sensor_values(sensor_type, scaler, bins, spec, ped_vals)
 

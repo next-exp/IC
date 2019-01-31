@@ -158,7 +158,7 @@ function ensure_environment_matches_checked_out_version {
     fi
 
     # Ensure that the test database is present
-    if [ ! -f invisible_cities/database/localdb.sqlite3 ]; then
+    if [ ! -f invisible_cities/database/localdb.NEWDB.sqlite3 ]; then
         download_test_db
     fi
 }

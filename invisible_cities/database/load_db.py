@@ -5,22 +5,27 @@ import os
 from operator  import itemgetter
 from functools import lru_cache
 
-DATABASE_LOCATION =  os.environ['ICTDIR'] + '/invisible_cities/database/localdb.sqlite3'
 
+class DetDB:
+    new    = os.environ['ICTDIR'] + '/invisible_cities/database/localdb.NEWDB.sqlite3'
+    demopp = os.environ['ICTDIR'] + '/invisible_cities/database/localdb.DEMOPPDB.sqlite3'
 
 def tmap(*args):
     return tuple(map(*args))
+
+def get_db(db):
+    return getattr(DetDB, db, db)
 
 # Run to take always the same calibration constant, etc for MC files
 # 3012 was the first SiPM calibration after remapping.
 runNumberForMC = 3012
 
 @lru_cache(maxsize=10)
-def DataPMT(run_number=1e5, db_file=DATABASE_LOCATION):
+def DataPMT(db_file, run_number=1e5):
     if run_number == 0:
         run_number = runNumberForMC
 
-    conn = sqlite3.connect(db_file)
+    conn = sqlite3.connect(get_db(db_file))
 
     sql = '''select pos.SensorID, map.ElecID "ChannelID", Label "PmtID",
 case when msk.SensorID is NULL then 1 else 0 end "Active",
@@ -47,11 +52,11 @@ order by Active desc, pos.SensorID
     return data
 
 @lru_cache(maxsize=10)
-def DataSiPM(run_number=1e5, db_file=DATABASE_LOCATION):
+def DataSiPM(db_file, run_number=1e5):
     if run_number == 0:
         run_number = runNumberForMC
 
-    conn = sqlite3.connect(db_file)
+    conn = sqlite3.connect(get_db(db_file))
 
     sql='''select pos.SensorID, map.ElecID "ChannelID",
 case when msk.SensorID is NULL then 1 else 0 end "Active",
@@ -76,16 +81,16 @@ order by pos.SensorID'''.format(abs(run_number))
     return data
 
 @lru_cache(maxsize=10)
-def DetectorGeo(db_file=DATABASE_LOCATION):
-    conn = sqlite3.connect(db_file)
+def DetectorGeo(db_file):
+    conn = sqlite3.connect(get_db(db_file))
     sql = 'select * from DetectorGeo'
     data = pd.read_sql_query(sql, conn)
     conn.close()
     return data
 
 @lru_cache(maxsize=10)
-def SiPMNoise(run_number=1e5, db_file=DATABASE_LOCATION):
-    conn = sqlite3.connect(db_file)
+def SiPMNoise(db_file, run_number=1e5):
+    conn = sqlite3.connect(get_db(db_file))
     cursor = conn.cursor()
 
     sqlbaseline = '''select Energy from SipmBaseline
@@ -113,8 +118,8 @@ order by SensorID, BinEnergyPes;'''.format(abs(run_number))
 
 
 @lru_cache(maxsize=10)
-def PMTLowFrequencyNoise(run_number=1e5, dbfile=DATABASE_LOCATION):
-    conn = sqlite3.connect(dbfile)
+def PMTLowFrequencyNoise(db_file, run_number=1e5):
+    conn = sqlite3.connect(get_db(db_file))
     cursor = conn.cursor()
 
     sqlmapping = '''select SensorID, FEBox from PMTFEMapping

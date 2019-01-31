@@ -142,7 +142,7 @@ def spe_pulse_from_vector(spe, cnt, norm=1.):
 class FEE:
     """Complete model of Front-end electronics."""
 
-    def __init__(self, run_number = 0, gain=FEE_GAIN,
+    def __init__(self, detector_db = 'new' , run_number = 0, gain=FEE_GAIN,
                  c2=C2, c1=C1, r1=R1, zin=Zin, fsample=f_sample,
                  flpf1=f_LPF1, flpf2=f_LPF2,
                  noise_FEEPMB_rms=NOISE_I, noise_DAQ_rms=NOISE_DAQ, lsb=LSB):
@@ -172,7 +172,7 @@ class FEE:
         self.freq_zero = 1 / (self.R1 * self.C1)
         self.coeff_c = self.freq_zero / (self.f_sample * np.pi)
 
-        DataPMT = DB.DataPMT(run_number)
+        DataPMT = DB.DataPMT(detector_db, run_number)
         self.coeff_blr_pmt = DataPMT.coeff_blr.values
         self.freq_LHPFd_pmt = self.coeff_blr_pmt / np.pi
         self.coeff_c_pmt = DataPMT.coeff_c.values

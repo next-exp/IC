@@ -17,7 +17,7 @@ from .  components import city
 
 
 @city
-def zaira(files_in, file_out,
+def zaira(files_in, file_out, detector_db,
           event_range,   # not used, by config insists on sending it
           dst_group, dst_node,
           lifetime, u_lifetime,
@@ -28,10 +28,10 @@ def zaira(files_in, file_out,
           zmin = None, zmax = None,
           emin = None, emax = None):
 
-    fiducial_x     = get_x_limits(xmin, xmax)
-    fiducial_y     = get_y_limits(ymin, ymax)
-    fiducial_r     = get_r_limits(rmin, rmax)
-    fiducial_z     = get_z_limits(zmin, zmax)
+    fiducial_x     = get_x_limits(xmin, xmax, detector_db)
+    fiducial_y     = get_y_limits(ymin, ymax, detector_db)
+    fiducial_r     = get_r_limits(rmin, rmax, detector_db)
+    fiducial_z     = get_z_limits(zmin, zmax, detector_db)
     fiducial_e     = get_e_limits(emin, emax)
     lt_corrections = get_lifetime_corrections(lifetime, u_lifetime)
 
@@ -64,29 +64,29 @@ def zaira(files_in, file_out,
                      events_out = len(fid_dst))
 
 
-def get_x_limits(xmin, xmax):
-    det_geo = load_db.DetectorGeo()
+def get_x_limits(xmin, xmax, detector_db):
+    det_geo = load_db.DetectorGeo(detector_db)
     x_min   = det_geo.XMIN[0] if xmin is None else xmin
     x_max   = det_geo.XMAX[0] if xmax is None else xmax
     return x_min, x_max
 
 
-def get_y_limits(ymin, ymax):
-    det_geo = load_db.DetectorGeo()
+def get_y_limits(ymin, ymax, detector_db):
+    det_geo = load_db.DetectorGeo(detector_db)
     y_min   = det_geo.YMIN[0] if ymin is None else ymin
     y_max   = det_geo.YMAX[0] if ymax is None else ymax
     return y_min, y_max
 
 
-def get_z_limits(zmin, zmax):
-    det_geo = load_db.DetectorGeo()
+def get_z_limits(zmin, zmax, detector_db):
+    det_geo = load_db.DetectorGeo(detector_db)
     z_min   = det_geo.ZMIN[0] if zmin is None else zmin
     z_max   = det_geo.ZMAX[0] if zmax is None else zmax
     return z_min, z_max
 
 
-def get_r_limits(rmin, rmax):
-    det_geo = load_db.DetectorGeo()
+def get_r_limits(rmin, rmax, detector_db):
+    det_geo = load_db.DetectorGeo(detector_db)
     r_min   =              0  if rmin is None else rmin
     r_max   = det_geo.RMAX[0] if rmax is None else rmax
     return r_min, r_max

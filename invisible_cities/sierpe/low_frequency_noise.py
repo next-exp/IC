@@ -51,17 +51,17 @@ def buffer_and_limits(buffer_length, buffer_bin_width, FE_data):
     return freq_contribution, frequency_low, frequency_high
 
 
-def low_frequency_noise(run_number, buffer_length, buffer_bin_width=25e-9):
+def low_frequency_noise(detector_db, run_number, buffer_length, buffer_bin_width=25e-9):
     """
     Randomises frequencies, magnitudes and phases and
     returns a function that can be used to get the
     simulated low frequency noise for a particular PMT
     """
 
-    FE_mapping, FE_data = DB.PMTLowFrequencyNoise(run_number)
+    FE_mapping, FE_data = DB.PMTLowFrequencyNoise(detector_db, run_number)
 
     ## Need to protect for old runs where PMT indx != sensorID
-    sens_id       = DB.DataPMT(run_number).SensorID.values
+    sens_id       = DB.DataPMT(detector_db, run_number).SensorID.values
 
     n_febox       = FE_data.shape[1] - 1
     n_frequencies = FE_data.shape[0]

@@ -38,6 +38,7 @@ from operator import attrgetter
 
 import tables as tb
 
+from .. database       import load_db
 from .. core.system_of_units_c import units
 from .. reco                   import tbl_functions as tbl
 from .. io.         kdst_io    import            kr_writer
@@ -57,7 +58,7 @@ from .  components import build_pointlike_event  as build_pointlike_event_
 
 
 @city
-def dorothea(files_in, file_out, compression, event_range, print_mod, run_number,
+def dorothea(files_in, file_out, compression, event_range, print_mod, detector_db, run_number,
              drift_v,
              s1_nmin, s1_nmax, s1_emin, s1_emax, s1_wmin, s1_wmax, s1_hmin, s1_hmax, s1_ethr,
              s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax,
@@ -76,8 +77,8 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, run_number
     pmap_passed           = fl.map(attrgetter("passed"), args="selector_output", out="pmap_passed")
     pmap_select           = fl.count_filter(bool, args="pmap_passed")
 
-    reco_algo             = compute_xy_position(**global_reco_params)
-    build_pointlike_event = fl.map(build_pointlike_event_(run_number, drift_v, reco_algo),
+    reco_algo             = compute_xy_position(detector_db, **global_reco_params)
+    build_pointlike_event = fl.map(build_pointlike_event_(detector_db, run_number, drift_v, reco_algo),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "pointlike_event"                                       )
 

@@ -156,17 +156,17 @@ class SensorType(AutoNameEnumBase):
     PMT  = auto()
 
 
-def seeds_db(sensor_type, run_no, n_chann):
+def seeds_db(sensor_type, detector, run_no, n_chann):
     """
     Take gain and sigma values of previous runs in the database
     to use them as seeds.
     """
     if sensor_type is SensorType.SIPM:
-        gain_seed       = DB.DataSiPM(run_no).adc_to_pes.iloc[n_chann]
-        gain_sigma_seed = DB.DataSiPM(run_no).     Sigma.iloc[n_chann]
+        gain_seed       = DB.DataSiPM(detector, run_no).adc_to_pes.iloc[n_chann]
+        gain_sigma_seed = DB.DataSiPM(detector, run_no).     Sigma.iloc[n_chann]
     elif sensor_type is SensorType.PMT:
-        gain_seed       = DB.DataPMT(run_no).adc_to_pes.iloc[n_chann]
-        gain_sigma_seed = DB.DataPMT(run_no).     Sigma.iloc[n_chann]
+        gain_seed       = DB.DataPMT(detector, run_no).adc_to_pes.iloc[n_chann]
+        gain_sigma_seed = DB.DataPMT(detector, run_no).     Sigma.iloc[n_chann]
     else:
         raise ValueError("SensorType.SIPM or SensorType.PMT must be given for sensor_type")
     return gain_seed, gain_sigma_seed

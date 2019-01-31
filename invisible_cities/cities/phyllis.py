@@ -61,20 +61,20 @@ from .  components import waveform_integrator
 
 
 @city
-def phyllis(files_in, file_out, compression, event_range, print_mod, run_number,
+def phyllis(files_in, file_out, compression, event_range, print_mod, detector_db, run_number,
             proc_mode, n_baseline,
             min_bin, max_bin, bin_width,
             number_integrals, integral_start, integral_width, integrals_period,
             n_mau = 100):
-    if   proc_mode == "gain"         : proc = pmt_deconvolver    (run_number, n_baseline       )
-    elif proc_mode == "gain_mau"     : proc = pmt_deconvolver_mau(run_number, n_baseline, n_mau)
-    elif proc_mode == "gain_nodeconv": proc = mode_subtractor    (run_number)
+    if   proc_mode == "gain"         : proc = pmt_deconvolver    (detector_db, run_number, n_baseline       )
+    elif proc_mode == "gain_mau"     : proc = pmt_deconvolver_mau(detector_db, run_number, n_baseline, n_mau)
+    elif proc_mode == "gain_nodeconv": proc = mode_subtractor    (detector_db, run_number)
     else                             : raise ValueError(f"Unrecognized processing mode: {proc_mode}")
 
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
     sd          = sensor_data(files_in[0], WfType.rwf)
-    npmt        = np.count_nonzero(load_db.DataPMT(run_number).Active.values)
+    npmt        = np.count_nonzero(load_db.DataPMT(detector_db, run_number).Active.values)
     wf_length   = sd.PMTWL
     shape       = npmt, len(bin_centres)
     sampling    = fee.t_sample
@@ -127,21 +127,21 @@ def phyllis(files_in, file_out, compression, event_range, print_mod, run_number,
     return out
 
 
-def pmt_deconvolver(run_number, n_baseline):
-    deconvolute = deconv_pmt(run_number, n_baseline)
+def pmt_deconvolver(detector_db, run_number, n_baseline):
+    deconvolute = deconv_pmt(detector_db, run_number, n_baseline)
     return deconvolute
 
 
-def pmt_deconvolver_mau(run_number, n_baseline, n_mau):
-    deconvolute = pmt_deconvolver(run_number, n_baseline)
+def pmt_deconvolver_mau(detector_db, run_number, n_baseline, n_mau):
+    deconvolute = pmt_deconvolver(detector_db, run_number, n_baseline)
     def deconv_pmt_mau(rwf):
         cwf = deconvolute(rwf)
         return csf.pmt_subtract_mau(cwf, n_mau)
     return deconv_pmt_mau
 
 
-def mode_subtractor(run_number):
-    active = load_db.DataPMT(run_number).Active.values
+def mode_subtractor(detector_db, run_number):
+    active = load_db.DataPMT(detector_db, run_number).Active.values
     active = np.nonzero(active)[0].tolist()
     def subtract_mode(rwf):
         return csf.subtract_mode(rwf)[active]

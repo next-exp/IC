@@ -69,6 +69,11 @@ def city(city_function):
         if 'files_in' not in kwds: raise NoInputFiles
         if 'file_out' not in kwds: raise NoOutputFile
 
+        # For backward-compatibility we set NEW as the default DB in
+        # case it is not defined in the config file
+        if 'detector_db' not in kwds:
+            conf.detector_db = 'new'
+
         conf.files_in  = sorted(glob(expandvars(conf.files_in)))
         conf.file_out  =             expandvars(conf.file_out)
 
@@ -135,8 +140,8 @@ def print_every_alternative_implementation(N):
 
 
 # TODO: consider caching database
-def deconv_pmt(run_number, n_baseline, selection=None):
-    DataPMT    = load_db.DataPMT(run_number = run_number)
+def deconv_pmt(dbfile, run_number, n_baseline, selection=None):
+    DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
     pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist() if selection is None else selection
     coeff_c    = DataPMT.coeff_c  .values.astype(np.double)
     coeff_blr  = DataPMT.coeff_blr.values.astype(np.double)
@@ -265,8 +270,8 @@ def sensor_data(path, wf_type):
 
 ####### Transformers ########
 
-def calibrate_pmts(run_number, n_MAU, thr_MAU):
-    DataPMT    = load_db.DataPMT(run_number = run_number)
+def calibrate_pmts(dbfile, run_number, n_MAU, thr_MAU):
+    DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
     adc_to_pes = np.abs(DataPMT.adc_to_pes.values)
     adc_to_pes = adc_to_pes[adc_to_pes > 0]
 
@@ -278,8 +283,8 @@ def calibrate_pmts(run_number, n_MAU, thr_MAU):
     return calibrate_pmts
 
 
-def calibrate_sipms(run_number, thr_sipm):
-    DataSiPM   = load_db.DataSiPM(run_number)
+def calibrate_sipms(dbfile, run_number, thr_sipm):
+    DataSiPM   = load_db.DataSiPM(dbfile, run_number)
     adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
 
     def calibrate_sipms(rwf):
@@ -291,15 +296,15 @@ def calibrate_sipms(run_number, thr_sipm):
     return calibrate_sipms
 
 
-def calibrate_with_mean(run_number):
-    DataSiPM   = load_db.DataSiPM(run_number)
+def calibrate_with_mean(dbfile, run_number):
+    DataSiPM   = load_db.DataSiPM(dbfile, run_number)
     adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
     def calibrate_with_mean(wfs):
         return csf.subtract_baseline_and_calibrate(wfs, adc_to_pes)
     return calibrate_with_mean
 
-def calibrate_with_mau(run_number, n_mau_sipm):
-    DataSiPM   = load_db.DataSiPM(run_number)
+def calibrate_with_mau(dbfile, run_number, n_mau_sipm):
+    DataSiPM   = load_db.DataSiPM(dbfile, run_number)
     adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
     def calibrate_with_mau(wfs):
         return csf.subtract_baseline_mau_and_calibrate(wfs, adc_to_pes, n_mau_sipm)
@@ -319,10 +324,11 @@ def peak_classifier(**params):
     return partial(pmap_filter, selector)
 
 
-def compute_xy_position(**reco_params):
+def compute_xy_position(dbfile, **reco_params):
     # `reco_params` is the set of parameters for the corona
     # algorithm either for the full corona or for barycenter
-    datasipm = load_db.DataSiPM(0)
+#    datasipm = load_db.DataSiPM(0) ----> revisar, 
+    datasipm = load_db.DataSiPM(dbfile, 0)
 
     def compute_xy_position(xys, qs):
         return corona(xys, qs, datasipm, **reco_params)
@@ -336,8 +342,8 @@ def compute_z_and_dt(t_s2, t_s1, drift_v):
     return z, dt
 
 
-def build_pointlike_event(run_number, drift_v, reco):
-    datasipm = load_db.DataSiPM(run_number)
+def build_pointlike_event(dbfile, run_number, drift_v, reco):
+    datasipm = load_db.DataSiPM(dbfile, run_number)
     sipm_xs  = datasipm.X.values
     sipm_ys  = datasipm.Y.values
     sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
@@ -404,8 +410,8 @@ def split_energy(total_e, clusters):
     return total_e * qs / np.sum(qs)
 
 
-def hit_builder(run_number, drift_v, reco, rebin_slices):
-    datasipm = load_db.DataSiPM(run_number)
+def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices):
+    datasipm = load_db.DataSiPM(dbfile, run_number)
     sipm_xs  = datasipm.X.values
     sipm_ys  = datasipm.Y.values
     sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)

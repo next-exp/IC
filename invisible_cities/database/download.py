@@ -6,9 +6,8 @@ pymysql.install_as_MySQLdb()
 import os
 from os import path
 
-
-def loadDB(dbname='NEWDB'):
-    dbfile = path.join(os.environ['ICDIR'], 'database/localdb.sqlite3')
+def loadDB(dbname : str):
+    dbfile = path.join(os.environ['ICDIR'], 'database/localdb.'+dbname+'.sqlite3')
     try:
         os.remove(dbfile)
     except:
@@ -126,14 +125,21 @@ def loadDB(dbname='NEWDB'):
 
         # Insert all rows
         fields = '?'
-        nfields = len(data[0])
-        fields += (nfields-1) * ',?'
-        cursorSql3.executemany('INSERT INTO {0} VALUES({1})'.format(table,fields),data)
-        connSql3.commit()
-
+        try:
+            nfields = len(data[0])
+            fields += (nfields-1) * ',?'
+            cursorSql3.executemany('INSERT INTO {0} VALUES({1})'.format(table,fields),data)
+            connSql3.commit()
+        except IndexError:
+            print('Table ' +table+' is empty.')
 
 if __name__ == '__main__':
-    dbname = 'NEWDB'
+    dbname = ['NEWDB','DEMOPPDB']
     if len(sys.argv) > 1:
         dbname = sys.argv[1]
-    loadDB(dbname)
+        loadDB(dbname)
+    else:
+        for name in dbname:
+            loadDB(name)
+
+

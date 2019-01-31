@@ -656,3 +656,12 @@ def voxels_toy_data(ICDATADIR):
 
     voxels_filename = os.path.join(ICDATADIR, "toy_voxels.h5")
     return voxels_filename, (event, X, Y, Z, E, size)
+
+
+@pytest.fixture(scope='session')
+def dbnew():
+    return 'new'
+
+@pytest.fixture(scope='session')
+def dbdemopp():
+    return 'demo'

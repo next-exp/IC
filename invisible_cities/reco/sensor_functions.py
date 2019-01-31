@@ -31,7 +31,7 @@ def charge_fluctuation(signal, single_pe_rms):
     return sig_fl
 
 
-def simulate_pmt_response(event, pmtrd, adc_to_pes, pe_resolution, run_number = 0):
+def simulate_pmt_response(event, pmtrd, adc_to_pes, pe_resolution, detector_db='new', run_number = 0):
     """ Full simulation of the energy plane response
     Input:
      1) extensible array pmtrd
@@ -44,11 +44,11 @@ def simulate_pmt_response(event, pmtrd, adc_to_pes, pe_resolution, run_number = 
     # Single Photoelectron class
     spe = FE.SPE()
     # FEE, with noise PMT
-    fee  = FE.FEE(run_number,
+    fee  = FE.FEE(detector_db, run_number,
                   noise_FEEPMB_rms=FE.NOISE_I, noise_DAQ_rms=FE.NOISE_DAQ)
     # Low frequency noise
     buffer_length = int(FE.f_sample * pmtrd.shape[2] / FE.f_mc)
-    lowFreq = lfn.low_frequency_noise(run_number, buffer_length)
+    lowFreq = lfn.low_frequency_noise(detector_db, run_number, buffer_length)
 
     NPMT = pmtrd.shape[1]
     RWF  = []

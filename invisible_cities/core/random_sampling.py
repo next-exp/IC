@@ -33,7 +33,7 @@ def inverse_cdf(x, y, percentile):
 
 
 class NoiseSampler:
-    def __init__(self, run_number, sample_size=1, smear=True):
+    def __init__(self, detector, run_number, sample_size=1, smear=True):
         """Sample a histogram as if it was a PDF.
 
         Parameters
@@ -62,11 +62,11 @@ class NoiseSampler:
         """
         (self.probs,
          self.xbins,
-         self.baselines) = DB.SiPMNoise(run_number)
+         self.baselines) = DB.SiPMNoise(detector, run_number)
         self.nsamples    = sample_size
         self.smear       = smear
-        self.active      = DB.DataSiPM(run_number).Active.values[:, np.newaxis]
-        self.adc_to_pes  = DB.DataSiPM(run_number).adc_to_pes.values.astype(np.double)[:, np.newaxis]
+        self.active      = DB.DataSiPM(detector, run_number).Active.values[:, np.newaxis]
+        self.adc_to_pes  = DB.DataSiPM(detector, run_number).adc_to_pes.values.astype(np.double)[:, np.newaxis]
         self.nsensors    = self.active.size
 
         self.probs       = np.apply_along_axis(normalize_distribution, 1,

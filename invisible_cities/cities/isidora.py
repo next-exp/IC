@@ -35,8 +35,8 @@ from .  components import deconv_pmt
 
 
 @city
-def isidora(files_in, file_out, compression, event_range, print_mod, run_number,
-            n_baseline):
+def isidora(files_in, file_out, compression, event_range, print_mod,
+            detector_db, run_number, n_baseline):
     """
     The city of ISIDORA performs a fast processing from raw data
     (pmtrwf and sipmrwf) to BLR wavefunctions.
@@ -44,7 +44,7 @@ def isidora(files_in, file_out, compression, event_range, print_mod, run_number,
     """
     sd = sensor_data(files_in[0], WfType.rwf)
 
-    rwf_to_cwf = fl.map(deconv_pmt(run_number, n_baseline), args="pmt", out="cwf")
+    rwf_to_cwf = fl.map(deconv_pmt(detector_db, run_number, n_baseline), args="pmt", out="cwf")
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
         RWF        = partial(rwf_writer, h5out, group_name='BLR')

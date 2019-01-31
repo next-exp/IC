@@ -10,9 +10,9 @@ from pytest  import mark
 
 from . import load_db as DB
 
-def test_pmts_pd():
+def test_pmts_pd(dbnew):
     """Check that we retrieve the correct number of PMTs."""
-    pmts = DB.DataPMT()
+    pmts = DB.DataPMT(dbnew)
     columns =['SensorID', 'ChannelID', 'PmtID', 'Active', 'X', 'Y',
               'coeff_blr', 'coeff_c', 'adc_to_pes', 'noise_rms', 'Sigma']
     assert columns == list(pmts)
@@ -20,10 +20,10 @@ def test_pmts_pd():
     assert pmts.shape[0] == 12
 
 
-def test_pmts_MC_pd():
+def test_pmts_MC_pd(dbnew):
     """Check that we retrieve the correct number of PMTs."""
     mc_run = 0
-    pmts = DB.DataPMT(mc_run)
+    pmts = DB.DataPMT(dbnew, mc_run)
     columns =['SensorID', 'ChannelID', 'PmtID', 'Active', 'X', 'Y',
               'coeff_blr', 'coeff_c', 'adc_to_pes', 'noise_rms', 'Sigma']
     assert columns == list(pmts)
@@ -31,25 +31,25 @@ def test_pmts_MC_pd():
     assert pmts.shape[0] == 12
 
 
-def test_sipm_pd():
+def test_sipm_pd(dbnew):
     """Check that we retrieve the correct number of SiPMs."""
-    sipms = DB.DataSiPM()
+    sipms = DB.DataSiPM(dbnew)
     columns = ['SensorID', 'ChannelID', 'Active', 'X', 'Y', 'adc_to_pes', 'Sigma']
     assert columns == list(sipms)
     assert sipms.shape[0] == 1792
 
 
-def test_SiPMNoise():
+def test_SiPMNoise(dbnew):
     """Check we have noise for all SiPMs and energy of each bin."""
-    noise, energy, baseline = DB.SiPMNoise()
+    noise, energy, baseline = DB.SiPMNoise(dbnew)
     assert noise.shape[0] == baseline.shape[0]
     assert noise.shape[0] == 1792
     assert noise.shape[1] == energy.shape[0]
 
 
-def test_DetectorGeometry():
+def test_DetectorGeometry(dbnew):
     """Check Detector Geometry."""
-    geo = DB.DetectorGeo()
+    geo = DB.DetectorGeo(dbnew)
     assert geo['XMIN'][0] == -198
     assert geo['XMAX'][0] ==  198
     assert geo['YMIN'][0] == -198
@@ -59,9 +59,9 @@ def test_DetectorGeometry():
     assert geo['RMAX'][0] ==  198
 
 
-def test_mc_runs_equal_data_runs():
-    assert (DB.DataPMT (-3550).values == DB.DataPMT (3550).values).all()
-    assert (DB.DataSiPM(-3550).values == DB.DataSiPM(3550).values).all()
+def test_mc_runs_equal_data_runs(dbnew):
+    assert (DB.DataPMT (dbnew, -3550).values == DB.DataPMT (dbnew, 3550).values).all()
+    assert (DB.DataSiPM(dbnew, -3550).values == DB.DataSiPM(dbnew, 3550).values).all()
 
 
 @fixture(scope='module')
@@ -109,7 +109,7 @@ def test_db(tmpdir_factory):
 def test_sipm_noise_order(test_db):
     #Read from DB
     dbfile = test_db[0]
-    noise, bins, baselines = DB.SiPMNoise(1, dbfile)
+    noise, bins, baselines = DB.SiPMNoise(dbfile, 1)
 
     #'True' values
     sipm_noise     = test_db[1]
@@ -123,13 +123,13 @@ def test_sipm_noise_order(test_db):
 
 
 @mark.parametrize("db_fun", (DB.DataPMT, DB.DataSiPM, DB.SiPMNoise))
-def test_database_is_being_cached(db_fun):
+def test_database_is_being_cached(db_fun, dbnew):
     run_number = 3333 # a value not used by any other test
 
     t0 = time.time()
-    first_call  = db_fun(run_number)
+    first_call  = db_fun(dbnew, run_number)
     t1 = time.time()
-    second_call = db_fun(run_number)
+    second_call = db_fun(dbnew, run_number)
     t2 = time.time()
 
     time_first_call  = t1 - t0
@@ -143,10 +143,10 @@ def test_database_is_being_cached(db_fun):
     assert time_second_call < 1e6 * time_first_call
 
 
-def test_frontend_mapping():
+def test_frontend_mapping(dbnew):
     """ Check the mapping has the expected shape etc """
 
-    fe_mapping, _ = DB.PMTLowFrequencyNoise()
+    fe_mapping, _ = DB.PMTLowFrequencyNoise(dbnew)
 
     columns = ['SensorID', 'FEBox']
 
@@ -155,10 +155,10 @@ def test_frontend_mapping():
     assert fe_mapping.FEBox.nunique()    == 3
 
 
-def test_pmt_noise_frequencies():
+def test_pmt_noise_frequencies(dbnew):
     """ Check the magnitudes and frequencies
     are of the expected length """
-    _, frequencies = DB.PMTLowFrequencyNoise()
+    _, frequencies = DB.PMTLowFrequencyNoise(dbnew)
 
     ## Currently simulate frequencies in range(312.5, 25000) Hz
     freq_expected = np.arange(1, 80) * 312.5

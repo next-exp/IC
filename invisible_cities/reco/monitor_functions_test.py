@@ -19,10 +19,10 @@ from .. evm.pmaps_test       import sensor_responses
 
 @given(pmaps())
 @settings(deadline=None)
-def test_fill_pmap_var_1d(pmaps):
+def test_fill_pmap_var_1d(dbnew, pmaps):
     var_dict      = defaultdict(list)
     (s1s, s2s), _ = pmaps
-    data_sipm     = dbf.DataSiPM(4670)
+    data_sipm     = dbf.DataSiPM(dbnew, 4670)
 
     monf.fill_pmap_var_1d(s1s, var_dict, "S1", DataSiPM=None     )
     monf.fill_pmap_var_1d(s2s, var_dict, "S2", DataSiPM=data_sipm)
@@ -58,10 +58,10 @@ def test_fill_pmap_var_1d(pmaps):
 
 @given(pmaps())
 @settings(deadline=None)
-def test_fill_pmap_var_2d(pmaps):
+def test_fill_pmap_var_2d(dbnew, pmaps):
     var_dict      = defaultdict(list)
     (s1s, s2s), _ = pmaps
-    data_sipm     = dbf.DataSiPM(4670)
+    data_sipm     = dbf.DataSiPM(dbnew, 4670)
 
     monf.fill_pmap_var_1d(s1s, var_dict, "S1",      DataSiPM=None)
     monf.fill_pmap_var_1d(s2s, var_dict, "S2", DataSiPM=data_sipm)
@@ -98,10 +98,10 @@ def test_fill_pmap_var_2d(pmaps):
 
 
 @given(pmaps(pmt_ids=np.arange(0,11,1)))
-def test_fill_pmt_var(pmaps):
+def test_fill_pmt_var(dbnew, pmaps):
     var_dict    = defaultdict(list)
     (_, s2s), _ = pmaps
-    data_sipm   = dbf.DataSiPM(4670)
+    data_sipm   = dbf.DataSiPM(dbnew, 4670)
 
     monf.fill_pmt_var(s2s, var_dict)
 
@@ -183,7 +183,7 @@ def test_pmap_bins():
         assert k in variable_names
 
 
-def test_fill_pmap_histos(ICDATADIR):
+def test_fill_pmap_histos(dbnew, ICDATADIR):
     test_config_dict = {'S1_Number_bins'   : [-0.50,   10.50,   11],
                         'S1_Width_bins'    : [-0.01,    0.99,   40],
                         'S1_Height_bins'   : [    0,      10,   10],
@@ -231,7 +231,7 @@ def test_fill_pmap_histos(ICDATADIR):
 
     run_number = 4628
 
-    test_histo = monf.fill_pmap_histos(test_infile, run_number, test_config_dict)
+    test_histo = monf.fill_pmap_histos(test_infile, dbnew, run_number, test_config_dict)
 
     test_checkfile = "Kr_pmaps_histos_run4628.h5"
     test_checkfile = os.path.join(ICDATADIR, test_checkfile)

@@ -46,16 +46,16 @@ from .  components import waveform_binner
 
 
 @city
-def berenice(files_in, file_out, compression, event_range, print_mod, run_number,
-            min_bin, max_bin, bin_width):
+def berenice(files_in, file_out, compression, event_range, print_mod,
+             detector_db, run_number, min_bin, max_bin, bin_width):
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
     nsipm       = sensor_data(files_in[0], WfType.rwf).NSIPM
     shape       = nsipm, len(bin_centres)
 
     subtract_mode         = fl.map(csf.subtract_mode            )
-    calibrate_with_mode   = fl.map(mode_calibrator  (run_number))
-    calibrate_with_median = fl.map(median_calibrator(run_number))
+    calibrate_with_mode   = fl.map(mode_calibrator  (detector_db, run_number))
+    calibrate_with_median = fl.map(median_calibrator(detector_db, run_number))
 
     bin_waveforms         = fl.map(waveform_binner  (bin_edges ))
     sum_histograms        = fl.reduce(add, np.zeros(shape, dtype=np.int))
@@ -99,15 +99,15 @@ def berenice(files_in, file_out, compression, event_range, print_mod, run_number
     return out
 
 
-def mode_calibrator(run_number):
-    adc_to_pes = load_db.DataSiPM(run_number).adc_to_pes.values
+def mode_calibrator(detector_db, run_number):
+    adc_to_pes = load_db.DataSiPM(detector_db, run_number).adc_to_pes.values
     def calibrate_with_mode(wfs):
         return csf.sipm_subtract_mode_and_calibrate(wfs, adc_to_pes)
     return calibrate_with_mode
 
 
-def median_calibrator(run_number):
-    adc_to_pes = load_db.DataSiPM(run_number).adc_to_pes.values
+def median_calibrator(detector_db, run_number):
+    adc_to_pes = load_db.DataSiPM(detector_db, run_number).adc_to_pes.values
     def calibrate_with_median(wfs):
         return csf.sipm_subtract_median_and_calibrate(wfs, adc_to_pes)
     return calibrate_with_median
