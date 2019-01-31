@@ -9,11 +9,13 @@ This city is correcting hits and vixelizing them. The input is penthesilea outpu
 
 """
 import tables as tb
+import numpy  as np
 from functools   import partial
 from typing      import Tuple
 from typing      import Callable
 
 from .. reco                import tbl_functions        as tbl
+from .. reco                import paolina_functions    as plf
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
 from .. dataflow.dataflow   import pipe
@@ -31,9 +33,16 @@ def hits_threshold_and_corrector(map_fname: str, **kargs) -> Callable:
     """Wrapper of correct_hits"""
     return partial(threshold_and_correct_hits(**locals()))
 
-def track_blob_info_extractor(**kargs) -> Callable:
+def track_blob_info_extractor(vox_size, energy_threshold, min_voxels) -> Callable:
     """ Wrapper of extract_track_blob_info"""
-    return partial(extract_track_blob_info, **locals())
+    def extract_track_blob_info(hitc):
+        """This function extract relevant info about the tracks and blobs, as well as assigning new field of energy, track_id etc to the HitCollection object (NOTE: we don't want to erase any hits, just redifine some attributes. If we need to cut away some hits to apply paolina functions, it has to be on the copy of the original hits)"""
+        voxels     = plf.voxelize_hits(hitc, vox_size)
+        mod_voxels = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
+        tracks     = plf.make_track_graphs(mod_voxels)
+
+    return extract_track_blob_info
+
 
 def final_summary_maker(**kargs)-> Callable:
     """I am not sure this is a new function or goes under extract_track_blob_info. To be discussed"""
@@ -50,9 +59,11 @@ class class_to_store_info_per_track:
 class class_to_store_event_summary:
     pass
 
+
 def extract_track_blob_info(hitc : evm.HitCollection, **kargs)-> Tuple(evm.HitCollection, class_to_store_info_per_track):
     """This function extract relevant info about the tracks and blobs, as well as assigning new field of energy, track_id etc to the HitCollection object (NOTE: we don't want to erase any hits, just redifine some attributes. If we need to cut away some hits to apply paolina functions, it has to be on the copy of the original hits)"""
     raise NotImplementedError
+
 
 def make_final_summary(class_to_store_info_per_track, kdst_info_table,**kargs)-> class_to_store_event_summary:
     """I am not sure this is a new function or goes under extract_track_blob_info. To be discussed"""
@@ -75,7 +86,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                                                 args = 'hits',
                                                 out  = 'corrected_hits')
 
-    extract_track_blob_info = fl.map(track_blob_info_extractor(**locals()),
+    extract_track_blob_info = fl.map(track_blob_info_extractor(vox_size, energy_threshold, min_voxels),
                                      args = 'corrected_hits',
                                      out  = ('paolina_hits', 'topology_info'))
 
