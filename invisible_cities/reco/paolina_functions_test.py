@@ -486,10 +486,15 @@ def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
 
     # This is the core of the test: collect data before/after ...
     ante_energies  = [v.E   for v in voxels]
-    ante_positions = [v.pos for v in voxels]
+    ante_positions = [v.XYZ for v in voxels]
     mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
     post_energies  = [v.E   for v in voxels]
-    post_positions = [v.pos for v in voxels]
+    post_positions = [v.XYZ for v in voxels]
+
+    ante_energies.sort()
+    post_energies.sort()
+    ante_positions.sort()
+    post_positions.sort()
 
     # ... and make sure that nothing has changed
     assert len(ante_energies)  == len(post_energies)
@@ -522,6 +527,9 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     n_voxels = np.array([len(t.nodes()) for t in trks])
 
     expected_diff_n_voxels = np.array([0, 0, 2])
+
+    ini_energies.sort()
+    energies.sort()
 
     assert initial_n_of_tracks == n_of_tracks
     assert np.allclose(ini_energies, energies)
