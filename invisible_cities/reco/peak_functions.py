@@ -138,18 +138,21 @@ def get_pmap(ccwf, s1_indx, s2_indx, sipm_zs_wf,
                            **s2_params))
 
 
-def rebin_times_and_waveforms(times, widths, waveforms, rebin_stride):
+def rebin_times_and_waveforms(times, widths, waveforms,
+                              rebin_stride=2, slices=None):
     if rebin_stride < 2: return times, widths, waveforms
 
-    n_bins    = int(np.ceil(len(times) / rebin_stride))
+    if not slices:
+        n_bins = int(np.ceil(len(times) / rebin_stride))
+        reb    = rebin_stride
+        slices = [slice(reb * i, reb * (i + 1)) for i in range(n_bins)]
     n_sensors = waveforms.shape[0]
 
-    rebinned_times  = np.zeros(            n_bins )
-    rebinned_widths = np.zeros(            n_bins )
-    rebinned_wfs    = np.zeros((n_sensors, n_bins))
+    rebinned_times  = np.zeros(            len(slices) )
+    rebinned_widths = np.zeros(            len(slices) )
+    rebinned_wfs    = np.zeros((n_sensors, len(slices)))
 
-    for i in range(n_bins):
-        s  = slice(rebin_stride * i, rebin_stride * (i + 1))
+    for i, s in enumerate(slices):
         t  = times    [   s]
         e  = waveforms[:, s]
         w  = np.sum(e, axis=0) if np.any(e) else None
