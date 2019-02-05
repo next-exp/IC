@@ -410,7 +410,7 @@ def split_energy(total_e, clusters):
     return total_e * qs / np.sum(qs)
 
 
-def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices):
+def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices, rebin_method):
     datasipm = load_db.DataSiPM(dbfile, run_number)
     sipm_xs  = datasipm.X.values
     sipm_ys  = datasipm.Y.values
@@ -446,7 +446,7 @@ def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices):
                                                      pmap.s2s)):
             if not passed: continue
 
-            peak = pmf.rebin_peak(peak, rebin_slices)
+            peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
 
             xys     = sipm_xys[peak.sipms.ids           ]
             qs      =          peak.sipms.sum_over_times
