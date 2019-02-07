@@ -129,9 +129,16 @@ def PMTLowFrequencyNoise(db_file, run_number=1e5):
     mapping = pd.read_sql_query(sqlmapping, conn)
 
     ## Now get the frequencies and magnitudes (and ?) for each box
-    sqlmagnitudes = '''select Frequency, FE0Magnitude, FE1Magnitude, FE2Magnitude
-    from PMTFELowFrequencyNoise where MinRun <= {0}
-    and (MaxRun >= {0} or MaxRun is NULL)'''.format(abs(run_number))
+    ## Number of boxes can be different for different detectors, so we need to
+    ## find out how many columns are there in the table
+    sql = '''PRAGMA table_info('PMTFELowFrequencyNoise');'''
+    schema = pd.read_sql_query(sql, conn)
+    colnames = schema.name[schema.name.str.contains("FE")].values
+    colnames = ', '.join(colnames)
+
+    sqlmagnitudes = '''select Frequency, {0}
+    from PMTFELowFrequencyNoise where MinRun <= {1}
+    and (MaxRun >= {1} or MaxRun is NULL)'''.format(colnames, abs(run_number))
     frequencies = pd.read_sql_query(sqlmagnitudes, conn)
 
     return mapping, frequencies.values
