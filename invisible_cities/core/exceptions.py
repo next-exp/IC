@@ -73,3 +73,6 @@ class SensorBinningNotFound(ICException):
 
 class NoParticleInfoInFile(ICException):
     pass
+
+class VoxelNotInList(ICException):
+    pass
