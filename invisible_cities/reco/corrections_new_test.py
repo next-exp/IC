@@ -2,6 +2,8 @@ import numpy  as np
 from . corrections_new import maps_coefficient_getter
 from . corrections_new import read_maps
 from . corrections_new import CorrectionsDF
+from . corrections_new import e0_xy_corrections
+from . corrections_new import lt_xy_corrections
 from . corrections_new import ASectorMap
 from pytest                import fixture
 from numpy.testing         import assert_allclose
@@ -49,6 +51,15 @@ def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename)
     LT  = get_maps_coefficient_lt(xs,ys)
     assert_allclose (CE, coef_geo)
     assert_allclose (LT, coef_lt)
+
+def test_e0_xy_corrections_exact(toy_corrections, correction_map_filename):
+    maps=read_maps(correction_map_filename)
+    xs, ys, zs, es, e0_correct, lt_correct, _, _ = toy_corrections
+    e0_correct_test = e0_xy_corrections(es, xs, ys, maps)
+    lt_correct_test = lt_xy_corrections(es, xs, ys, zs, maps)
+    assert_allclose (e0_correct_test, e0_correct)
+    assert_allclose (lt_correct_test, lt_correct)
+
 def test_read_maps_returns_ASectorMap(correction_map_filename):
     maps=read_maps(correction_map_filename)
     assert type(maps)==ASectorMap
