@@ -183,6 +183,13 @@ def KrMC_pmaps_without_ipmt_dict(KrMC_pmaps_without_ipmt_filename):
 
 
 @pytest.fixture(scope='session')
+def correction_map_filename(ICDATADIR):
+    test_file = "kr_emap_xy_100_100_r_6560.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
+
+@pytest.fixture(scope='session')
 def KrMC_pmaps_example(output_tmpdir):
     output_filename  = os.path.join(output_tmpdir, "test_pmap_file.h5")
     number_of_events = 3
