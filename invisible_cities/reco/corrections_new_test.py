@@ -7,6 +7,11 @@ from . corrections_new import lt_xy_corrections
 from . corrections_new import ASectorMap
 from pytest                import fixture
 from numpy.testing         import assert_allclose
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from hypothesis.strategies import composite
+from hypothesis.strategies import lists
+from hypothesis            import given
 
 @fixture
 def toy_corrections():
@@ -64,3 +69,24 @@ def test_read_maps_returns_ASectorMap(correction_map_filename):
     maps=read_maps(correction_map_filename)
     assert type(maps)==ASectorMap
 
+@composite
+def xy_pos(draw, elements=floats(min_value=-250, max_value=250)):
+    size = draw(integers(min_value=1, max_value=10))
+    x    = draw(lists(elements,min_size=size, max_size=size))
+    y    = draw(lists(elements,min_size=size, max_size=size))
+    return (np.array(x),np.array(y))
+
+@given(xy_pos = xy_pos())
+def test_maps_coefficient_getter_gives_nans(correction_map_filename, xy_pos):
+    x,y=xy_pos
+    maps=read_maps(correction_map_filename)
+    mapinfo= maps.mapinfo
+    xmin,xmax = mapinfo.xmin,mapinfo.xmax
+    ymin,ymax = mapinfo.ymin,mapinfo.ymax
+    get_maps_coefficient_e0= maps_coefficient_getter(maps, CorrectionsDF.e0)
+    CE  = get_maps_coefficient_e0(x,y)
+    mask_x   = (x >=xmax) | (x<xmin)
+    mask_y   = (y >=ymax) | (y<ymin)
+    mask_nan = (mask_x)   | (mask_y)
+    assert all(np.isnan(CE[mask_nan]))
+    assert not any(np.isnan(CE[~mask_nan]))
