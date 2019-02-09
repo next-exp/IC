@@ -1,5 +1,11 @@
 import numpy  as np
+from . corrections_new import maps_coefficient_getter
+from . corrections_new import read_maps
+from . corrections_new import CorrectionsDF
+from . corrections_new import ASectorMap
 from pytest                import fixture
+from numpy.testing         import assert_allclose
+
 @fixture
 def toy_corrections():
     xs,ys = np.meshgrid(np.linspace(-199,199,5),np.linspace(-199,199,5))
@@ -33,3 +39,13 @@ def toy_corrections():
                                3609.30708684, 3609.30708684, 3609.30708684, 3609.30708684,
                                3609.30708684])
     return xs, ys, zs, es, e0_corrections, lt_corrections,xy_geo_matrix, xy_lt_matrix
+
+def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename):
+    maps=read_maps(correction_map_filename)
+    xs, ys, zs, es, _, _, coef_geo, coef_lt = toy_corrections
+    get_maps_coefficient_e0= maps_coefficient_getter(maps, CorrectionsDF.e0)
+    CE  = get_maps_coefficient_e0(xs,ys)
+    get_maps_coefficient_lt= maps_coefficient_getter(maps, CorrectionsDF.lt)
+    LT  = get_maps_coefficient_lt(xs,ys)
+    assert_allclose (CE, coef_geo)
+    assert_allclose (LT, coef_lt)
