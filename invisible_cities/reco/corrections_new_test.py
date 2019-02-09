@@ -49,3 +49,7 @@ def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename)
     LT  = get_maps_coefficient_lt(xs,ys)
     assert_allclose (CE, coef_geo)
     assert_allclose (LT, coef_lt)
+def test_read_maps_returns_ASectorMap(correction_map_filename):
+    maps=read_maps(correction_map_filename)
+    assert type(maps)==ASectorMap
+
