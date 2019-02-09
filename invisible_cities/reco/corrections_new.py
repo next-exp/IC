@@ -1,13 +1,13 @@
 import numpy  as np
 import pandas as pd
-from   pandas    import DataFrame
-from   pandas    import Series
-from dataclasses import dataclass
-from typing      import List
-from typing      import Tuple
-from typing      import Optional
-from typing      import TypeVar
-from .. evm.event_model         import Hit
+from   pandas      import DataFrame
+from   pandas      import Series
+from   dataclasses import dataclass
+from   typing      import Callable
+from   typing      import List
+from   enum        import auto
+from .. types.ic_types  import AutoNameEnumBase
+from .. evm.event_model import Hit
 
 @dataclass
 class ASectorMap:  # Map in chamber sector containing average of pars
@@ -16,47 +16,8 @@ class ASectorMap:  # Map in chamber sector containing average of pars
     lt      : DataFrame
     e0u     : DataFrame
     ltu     : DataFrame
-    mapinfo : Optional[Series]
-    
-def xy_correction_matrix_(X  : np.array,
-                         Y  : np.array,
-                         C  : DataFrame,
-                         xr : Tuple[int, int],
-                         yr : Tuple[int, int],
-                         nx : int,
-                         ny : int)->np.array:
-    """
-    Returns a correction matrix in XY computed from the
-    map represented by the DataFrame C:
-    """
-    vx = sizeof_xy_voxel_(xr, nx)
-    vy = sizeof_xy_voxel_(yr, ny)
-    I = get_xy_indexes_(X, Y, abs(xr[0]), abs(yr[0]), vx, vy)
-    return np.array([C[i[0]][i[1]] for i in I])
+    mapinfo : Series
 
-def sizeof_xy_voxel_(rxy : Tuple[int,int], nxy : int)->float:
-    """
-    rxy = (x0, x1) defines de interval in x (y), e.g, (x0, x1) = (-220, 220)
-    nxy is the number of bins in x (y).
-    then, the interval is shifted to positive values and divided by number of bins:
-    x0' --> abs(x0) ; x1' = x0' + x1
-    fr = x1' / n
-    """
-    x0 = abs(rxy[0])
-    x1 = rxy[1] + x0
-    fr = x1 / nxy
-    return fr
-
-def get_xy_indexes_(X  : np.array,
-                    Y  : np.array,
-                    x0 : float,
-                    y0 : float,
-                    fx : float,
-                    fy : float)->List[Tuple[int,int]]:
-    """Returns a list of pairs of ints, (x_i, y_i)"""
-    x_i = ((X + x0) / fx).astype(int)
-    y_i = ((Y + y0) / fy).astype(int)
-    return list(zip(x_i, y_i))
 
 
 def e0_xy_correction(E   : np.array,
@@ -142,6 +103,11 @@ def temporal_correction(E   : np.array,
                         nx  : int,
                         ny  : int)->np.array:
     raise NotImplementedError 
+class CorrectionsDF(AutoNameEnumBase):
+    e0      = auto()
+    lt      = auto()
+    e0u     = auto()
+    ltu     = auto()
 
 def read_maps(filename : str)->ASectorMap:
     chi2     = pd.read_hdf(filename, 'chi2')
@@ -152,6 +118,16 @@ def read_maps(filename : str)->ASectorMap:
     mapinfo  = pd.read_hdf(filename, 'mapinfo')
     return  ASectorMap(chi2, e0, lt, e0u, ltu, mapinfo)
 
+def maps_coefficient_getter(maps : ASectorMap, corrections_df : CorrectionsDF) -> Callable:
+    mapinfo = maps.mapinfo
+    binsx   = np.linspace(mapinfo.xmin,mapinfo.xmax,mapinfo.nx+1)
+    binsy   = np.linspace(mapinfo.ymin,mapinfo.ymax,mapinfo.ny+1)
+    df      = getattr(maps,corrections_df.value)
+    def get_maps_coefficient(x : np.array, y : np.array) -> np.array:
+        ix = np.digitize(x, binsx)-1
+        iy = np.digitize(y, binsy)-1
+        return np.array([df.get(j, {}).get(i, np.nan) for i, j in zip(iy,ix)])
+    return get_maps_coefficient
 def apply_all_correction(cmap:ASectorMap, hits : List[Hit]) -> List[Hit]:
     """ This function calls all three - geometric, lifetime and temporal corrections """ 
     raise NotImplementedError 
