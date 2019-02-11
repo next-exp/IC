@@ -262,15 +262,6 @@ def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float], Tup
     return (centre_of_blob_a, centre_of_blob_b) if Ea < Eb else (centre_of_blob_b, centre_of_blob_a)
 
 
-def compute_blobs(track_graph : Graph, radius : float) -> Tuple[Voxel, Voxel, List[Voxel], List[Voxel]]:
-    """Return the blobs (list of voxels) around the extrema of the track."""
-    distances = shortest_paths(track_graph)
-    a, b, _ = find_extrema_and_length(distances)
-    ba = voxels_within_radius(distances[a], radius)
-    bb = voxels_within_radius(distances[b], radius)
-    return a, b, ba, bb
-
-
 def make_tracks(evt_number       : float,
                 evt_time         : float,
                 voxels           : List[Voxel],
