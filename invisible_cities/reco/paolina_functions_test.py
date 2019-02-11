@@ -65,6 +65,7 @@ box_dimension = floats(min_value = 1,
 box_sizes = builds(np.array, lists(box_dimension,
                                    min_size = 3,
                                    max_size = 3))
+radius = floats(min_value=1, max_value=100)
 
 eps = 3e-12 # value that works for margin
 
