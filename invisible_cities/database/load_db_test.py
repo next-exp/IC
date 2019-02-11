@@ -10,40 +10,40 @@ from pytest  import mark
 
 from . import load_db as DB
 
-def test_pmts_pd(dbnew):
+def test_pmts_pd(db):
     """Check that we retrieve the correct number of PMTs."""
-    pmts = DB.DataPMT(dbnew)
+    pmts = DB.DataPMT(db.detector)
     columns =['SensorID', 'ChannelID', 'PmtID', 'Active', 'X', 'Y',
               'coeff_blr', 'coeff_c', 'adc_to_pes', 'noise_rms', 'Sigma']
     assert columns == list(pmts)
     assert pmts['PmtID'].str.startswith('PMT').all()
-    assert pmts.shape[0] == 12
+    assert pmts.shape[0] == db.npmts
 
 
-def test_pmts_MC_pd(dbnew):
+def test_pmts_MC_pd(db):
     """Check that we retrieve the correct number of PMTs."""
     mc_run = 0
-    pmts = DB.DataPMT(dbnew, mc_run)
+    pmts = DB.DataPMT(db.detector, mc_run)
     columns =['SensorID', 'ChannelID', 'PmtID', 'Active', 'X', 'Y',
               'coeff_blr', 'coeff_c', 'adc_to_pes', 'noise_rms', 'Sigma']
     assert columns == list(pmts)
     assert pmts['PmtID'].str.startswith('PMT').all()
-    assert pmts.shape[0] == 12
+    assert pmts.shape[0] == db.npmts
 
 
-def test_sipm_pd(dbnew):
+def test_sipm_pd(db):
     """Check that we retrieve the correct number of SiPMs."""
-    sipms = DB.DataSiPM(dbnew)
+    sipms = DB.DataSiPM(db.detector)
     columns = ['SensorID', 'ChannelID', 'Active', 'X', 'Y', 'adc_to_pes', 'Sigma']
     assert columns == list(sipms)
-    assert sipms.shape[0] == 1792
+    assert sipms.shape[0] == db.nsipms
 
 
-def test_SiPMNoise(dbnew):
+def test_SiPMNoise(db):
     """Check we have noise for all SiPMs and energy of each bin."""
-    noise, energy, baseline = DB.SiPMNoise(dbnew)
+    noise, energy, baseline = DB.SiPMNoise(db.detector)
     assert noise.shape[0] == baseline.shape[0]
-    assert noise.shape[0] == 1792
+    assert noise.shape[0] == db.nsipms
     assert noise.shape[1] == energy.shape[0]
 
 
@@ -59,9 +59,9 @@ def test_DetectorGeometry(dbnew):
     assert geo['RMAX'][0] ==  198
 
 
-def test_mc_runs_equal_data_runs(dbnew):
-    assert (DB.DataPMT (dbnew, -3550).values == DB.DataPMT (dbnew, 3550).values).all()
-    assert (DB.DataSiPM(dbnew, -3550).values == DB.DataSiPM(dbnew, 3550).values).all()
+def test_mc_runs_equal_data_runs(db):
+    assert (DB.DataPMT (db.detector, -3550).values == DB.DataPMT (db.detector, 3550).values).all()
+    assert (DB.DataSiPM(db.detector, -3550).values == DB.DataSiPM(db.detector, 3550).values).all()
 
 
 @fixture(scope='module')
@@ -123,13 +123,13 @@ def test_sipm_noise_order(test_db):
 
 
 @mark.parametrize("db_fun", (DB.DataPMT, DB.DataSiPM, DB.SiPMNoise))
-def test_database_is_being_cached(db_fun, dbnew):
+def test_database_is_being_cached(db_fun, db):
     run_number = 3333 # a value not used by any other test
 
     t0 = time.time()
-    first_call  = db_fun(dbnew, run_number)
+    first_call  = db_fun(db.detector, run_number)
     t1 = time.time()
-    second_call = db_fun(dbnew, run_number)
+    second_call = db_fun(db.detector, run_number)
     t2 = time.time()
 
     time_first_call  = t1 - t0
@@ -143,26 +143,28 @@ def test_database_is_being_cached(db_fun, dbnew):
     assert time_second_call < 1e6 * time_first_call
 
 
-def test_frontend_mapping(dbnew):
+def test_frontend_mapping(db):
     """ Check the mapping has the expected shape etc """
 
-    fe_mapping, _ = DB.PMTLowFrequencyNoise(dbnew)
+    run_number = 6000
+    fe_mapping, _ = DB.PMTLowFrequencyNoise(db.detector, run_number)
 
     columns = ['SensorID', 'FEBox']
 
     assert columns == list(fe_mapping)
-    assert fe_mapping.SensorID.nunique() == 12
-    assert fe_mapping.FEBox.nunique()    == 3
+    assert fe_mapping.SensorID.nunique() == db.npmts
+    assert fe_mapping.FEBox.nunique()    == db.feboxes
 
 
-def test_pmt_noise_frequencies(dbnew):
+def test_pmt_noise_frequencies(db):
     """ Check the magnitudes and frequencies
     are of the expected length """
-    _, frequencies = DB.PMTLowFrequencyNoise(dbnew)
+    run_number = 5000
+    _, frequencies = DB.PMTLowFrequencyNoise(db.detector, run_number)
 
     ## Currently simulate frequencies in range(312.5, 25000) Hz
     freq_expected = np.arange(1, 80) * 312.5
     ## Expected four columns: frequency, mag FE0, mag FE1, mag FE2
-    assert frequencies.shape[0] == 79
-    assert frequencies.shape[1] == 4
+    assert frequencies.shape[0] == db.nfreqs
+    assert frequencies.shape[1] == db.feboxes + 1
     assert np.all(frequencies[:, 0] == freq_expected)

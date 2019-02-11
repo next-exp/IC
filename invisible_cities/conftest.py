@@ -23,6 +23,7 @@ dst_data = namedtuple('dst_data', 'file_info config read true')
 pmp_dfs  = namedtuple('pmp_dfs' , 's1 s2 si, s1pmt, s2pmt')
 pmp_data = namedtuple('pmp_data', 's1 s2 si')
 mcs_data = namedtuple('mcs_data', 'pmap hdst')
+db_data  = namedtuple('db_data', 'detector npmts nsipms feboxes nfreqs')
 
 
 @pytest.fixture(scope = 'session')
@@ -659,9 +660,21 @@ def voxels_toy_data(ICDATADIR):
 
 
 @pytest.fixture(scope='session')
+def dbdemopp():
+    return 'demopp'
+
+@pytest.fixture(scope='session')
 def dbnew():
     return 'new'
 
 @pytest.fixture(scope='session')
-def dbdemopp():
-    return 'demo'
+def dbnext100():
+    return 'next100'
+
+@pytest.fixture(scope='session',
+                params=[db_data('demopp' ,  3,  256, 3, 79),
+                        db_data('new'    , 12, 1792, 3, 79),
+                        db_data('next100', 60, 6848, 8, 79)],
+               ids=["demo", "new", "next100"])
+def db(request):
+    return request.param

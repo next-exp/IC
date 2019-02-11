@@ -211,11 +211,6 @@ function download_test_db {
     python $ICDIR/database/download.py
 }
 
-function download_test_db_dev {
-    echo Downloading dev database
-    python $ICDIR/database/download.py NEWDB_dev
-}
-
 function compile_cython_components {
     python setup.py develop
 }
@@ -265,7 +260,6 @@ case $COMMAND in
     compile_and_test)                compile_and_test ;;
     compile_and_test_par)            compile_and_test_par ;;
     download_test_db)                download_test_db ;;
-    download_test_db_dev)            download_test_db_dev ;;
     clean)                           clean ;;
     show_ic_env)                     show_ic_env ;;
 
@@ -284,7 +278,6 @@ case $COMMAND in
        echo "bash   $THIS compile_and_test"
        echo "bash   $THIS compile_and_test_par"
        echo "bash   $THIS download_test_db"
-       echo "bash   $THIS download_test_db_dev"
        echo "bash   $THIS clean"
        echo "bash   $THIS show_ic_env"
        ;;
