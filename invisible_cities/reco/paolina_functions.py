@@ -185,12 +185,51 @@ def voxels_within_radius(distances : Dict[Voxel, Dict[Voxel, float]],
     return [v for (v, d) in distances.items() if d < radius]
 
 
+def blob_centre(voxel: Voxel) -> Tuple[float]:
+    """Calculate the blob position, starting from the end-point voxel."""
+    positions = [h.pos for h in voxel.hits]
+    energies  = [h.E   for h in voxel.hits]
+    if sum(energies):
+        bary_pos = np.average(positions, weights=energies, axis=0)
+    else:
+        bary_pos = voxel.pos
+
+    return bary_pos
+
+
+def hits_in_blob(track_graph : Graph, radius : float, extreme: Voxel) -> Sequence[BHit]:
+    """Returns the hits that belong to a blob."""
+    distances         = shortest_paths(track_graph)
+    dist_from_extreme = distances[extreme]
+    blob_pos          = blob_centre(extreme)
+    diag              = np.linalg.norm(extreme.size)
+
+    blob_hits = []
+    # First, consider only voxels at a certain distance from the end-point, along the track.
+    # We allow for 1 extra contiguity, because this distance is calculated between
+    # the centres of the voxels, and not the hits. In the second step we will refine the
+    # selection, using the euclidean distance between the blob position and the hits.
+    for v in track_graph.nodes():
+        voxel_distance = dist_from_extreme[v]
+        if voxel_distance < radius + diag:
+            for h in v.hits:
+                hit_distance = np.linalg.norm(blob_pos - h.pos)
+                if hit_distance < radius:
+                    blob_hits.append(h)
+
+    return blob_hits
+
+
 def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
     """Return the energies around the extrema of the track."""
     distances = shortest_paths(track_graph)
-    a, b, _ = find_extrema_and_length(distances)
-    Ea = energy_within_radius(distances[a], radius)
-    Eb = energy_within_radius(distances[b], radius)
+    a, b, _   = find_extrema_and_length(distances)
+    ha = hits_in_blob(track_graph, radius, a)
+    hb = hits_in_blob(track_graph, radius, b)
+
+    Ea = sum(h.E for h in ha)
+    Eb = sum(h.E for h in hb)
+
     return (Ea, Eb) if Ea < Eb else (Eb, Ea)
 
 
