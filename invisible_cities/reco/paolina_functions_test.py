@@ -34,6 +34,8 @@ from . paolina_functions import bounding_box
 from . paolina_functions import find_extrema
 from . paolina_functions import find_extrema_and_length
 from . paolina_functions import blob_energies
+from . paolina_functions import blob_energies_and_hits
+from . paolina_functions import blob_centres
 from . paolina_functions import voxelize_hits
 from . paolina_functions import shortest_paths
 from . paolina_functions import make_track_graphs
