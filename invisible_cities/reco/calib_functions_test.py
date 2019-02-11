@@ -289,7 +289,7 @@ def test_compute_seeds_from_spectrum(ICDATADIR):
         assert gain_sigma_seed != 0
 
 
-def test_seeds_without_using_db(ICDATADIR):
+def test_seeds_without_using_db(ICDATADIR, dbnew):
     PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
     h5in    = tb.open_file(PATH_IN, 'r')
     run_no  = get_run_number(h5in)
@@ -326,7 +326,7 @@ def test_seeds_without_using_db(ICDATADIR):
         scaler_func   = cf.dark_scaler(dar[p_range][p_bins])
         seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, run_no, ich,
                                             scaler_func, bins[p_range], led[p_range],
-                                            ped_vals, gfitRes.errors,
+                                            ped_vals, dbnew, gfitRes.errors,
                                             use_db_gain_seeds=False)
         assert all(seeds)
         assert bounds == ((0, 0, 0, 0.001), (np.inf, 10000, 10000, 10000))
