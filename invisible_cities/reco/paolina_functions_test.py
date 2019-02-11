@@ -446,6 +446,7 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimension
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     ini_trks = make_track_graphs(voxels)
     ini_trk_energies = [sum(vox.E for vox in t.nodes()) for t in ini_trks]
+    ini_trk_energies.sort()
 
     energies = [v.E for v in voxels]
     e_thr = min(energies) + fraction_zero_one * (max(energies) - min(energies))
@@ -453,6 +454,7 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimension
     tot_final_energy = sum(v.E for v in mod_voxels)
     final_trks = make_track_graphs(mod_voxels)
     final_trk_energies = [sum(vox.E for vox in t.nodes()) for t in final_trks]
+    final_trk_energies.sort()
 
     assert tot_initial_energy == approx(tot_final_energy)
     assert np.allclose(ini_trk_energies, final_trk_energies)
