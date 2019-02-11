@@ -328,22 +328,6 @@ def track_extrema():
     return tracks[0], extrema
 
 
-@parametrize('radius, expected',
-             ((0.5, (1000, 2000)), # Nothing but the endpoints
-              (1.5, (1001, 2000)), # 10 10 10 is 1   away
-              (1.9, (1001, 2001)), # 19 19 19 is 1.7 away
-              (2.1, (1003, 2001)), # 10 10 12 is 2   away
-              (3.1, (1007, 2001)), # 10 10 13 is 3   away
-              (3.5, (1007, 2003)), # 18 18 18 is 3.4 away
-              (4.5, (1015, 2003)), # 10 10 14 is 4   away
-))
-def test_blobs(track_extrema, radius, expected):
-    track, extrema = track_extrema
-    Ea, Eb = expected
-
-    assert blob_energies(track, radius) == (Ea, Eb)
-
-
 def test_voxelize_single_hit():
     hits = [BHit(1, 1, 1, 100)]
     vox_size = np.array([10,10,10], dtype=np.int16)
@@ -545,3 +529,37 @@ def test_voxel_drop_in_short_tracks():
     mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
 
     assert len(mod_voxels) >= 1
+
+
+@parametrize('radius, expected',
+             ((10., ( 20,  60)),
+              (12., ( 60,  60)),
+              (14., ( 60, 100)),
+              (16., ( 80, 120)),
+              (18., ( 80, 120)),
+              (20., ( 80, 140)),
+              (22., (100, 140))
+ ))
+def test_blobs(radius, expected):
+    hits = [BHit(105.0, 125.0, 77.7, 10),
+            BHit( 95.0, 125.0, 77.7, 10),
+            BHit( 95.0, 135.0, 77.7, 10),
+            BHit(105.0, 135.0, 77.7, 10),
+            BHit(105.0, 115.0, 77.7, 10),
+            BHit( 95.0, 115.0, 77.7, 10),
+            BHit( 95.0, 125.0, 79.5, 10),
+            BHit(105.0, 125.0, 79.5, 10),
+            BHit(105.0, 135.0, 79.5, 10),
+            BHit( 95.0, 135.0, 79.5, 10),
+            BHit( 95.0, 115.0, 79.5, 10),
+            BHit(105.0, 115.0, 79.5, 10),
+            BHit(115.0, 125.0, 79.5, 10),
+            BHit(115.0, 125.0, 85.2, 10)]
+    vox_size = np.array([15.,15.,15.],dtype=np.float16)
+    voxels = voxelize_hits(hits, vox_size)
+    tracks = make_track_graphs(voxels)
+
+    Ea, Eb = expected
+
+    assert len(tracks) == 1
+    assert blob_energies(tracks[0], radius) == (Ea, Eb)
