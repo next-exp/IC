@@ -1,7 +1,6 @@
 import numpy  as np
 from . corrections_new import maps_coefficient_getter
 from . corrections_new import read_maps
-from . corrections_new import CorrectionsDF
 from . corrections_new import e0_xy_corrections
 from . corrections_new import lt_xy_corrections
 from . corrections_new import ASectorMap
@@ -50,9 +49,9 @@ def toy_corrections():
 def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename):
     maps=read_maps(correction_map_filename)
     xs, ys, zs, es, _, _, coef_geo, coef_lt = toy_corrections
-    get_maps_coefficient_e0= maps_coefficient_getter(maps, CorrectionsDF.e0)
+    get_maps_coefficient_e0= maps_coefficient_getter(maps.mapinfo, maps.e0)
     CE  = get_maps_coefficient_e0(xs,ys)
-    get_maps_coefficient_lt= maps_coefficient_getter(maps, CorrectionsDF.lt)
+    get_maps_coefficient_lt= maps_coefficient_getter(maps.mapinfo, maps.lt)
     LT  = get_maps_coefficient_lt(xs,ys)
     assert_allclose (CE, coef_geo)
     assert_allclose (LT, coef_lt)
@@ -80,10 +79,11 @@ def xy_pos(draw, elements=floats(min_value=-250, max_value=250)):
 def test_maps_coefficient_getter_gives_nans(correction_map_filename, xy_pos):
     x,y=xy_pos
     maps=read_maps(correction_map_filename)
-    mapinfo= maps.mapinfo
+    mapinfo = maps.mapinfo
+    map_df  = maps.e0
     xmin,xmax = mapinfo.xmin,mapinfo.xmax
     ymin,ymax = mapinfo.ymin,mapinfo.ymax
-    get_maps_coefficient_e0= maps_coefficient_getter(maps, CorrectionsDF.e0)
+    get_maps_coefficient_e0= maps_coefficient_getter(mapinfo, map_df)
     CE  = get_maps_coefficient_e0(x,y)
     mask_x   = (x >=xmax) | (x<xmin)
     mask_y   = (y >=ymax) | (y<ymin)
