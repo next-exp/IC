@@ -44,6 +44,7 @@ def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, KrMC_kdst, config_tmpd
     assert_dataframes_close(df_penthesilea_dst , DF_TRUE_DST ,
                             check_types=False, rtol=1e-4)
 
+
 def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     PATH_IN =  Kr_pmaps_run4628_filename
 
@@ -109,6 +110,30 @@ def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     assert np.all(df_penthesilea_dst.event  .values ==  events_pass_dst)
     assert np.all(df_penthesilea_dst.s1_peak.values == s1_peak_pass_dst)
     assert np.all(df_penthesilea_dst.s2_peak.values == s2_peak_pass_dst)
+
+
+def test_penthesilea_threshold_rebin(ICDATADIR, output_tmpdir):
+    file_in     = os.path.join(ICDATADIR    ,            "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
+    file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea_rebin4000.h5")
+    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts_rebin4000.HDST.h5")
+
+    conf        = configure('dummy invisible_cities/config/penthesilea.conf'.split())
+    rebin_thresh = 4000
+    
+    conf.update(dict(run_number      =        -6340,
+                     files_in        =      file_in,
+                     file_out        =     file_out,
+                     event_range     =   all_events,
+                     rebin           = rebin_thresh,
+                     rebin_method    =  'threshold'))
+
+    cnt = penthesilea(**conf)
+
+    output_dst   = dio.load_dst(file_out   , 'RECO', 'Events')
+    expected_dst = dio.load_dst(true_output, 'RECO', 'Events')
+
+    assert len(set(output_dst.event)) == len(set(expected_dst.event))
+    assert_dataframes_close(output_dst, expected_dst, check_types=False)
 
 
 @mark.serial

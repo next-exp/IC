@@ -27,9 +27,10 @@ from operator import attrgetter
 
 import tables as tb
 
-from .. database       import load_db
-from .. core.system_of_units_c import units
-from .. reco                   import tbl_functions        as tbl
+from .. database               import              load_db
+from .. core.system_of_units_c import                units
+from .. reco                   import        tbl_functions as tbl
+from .. reco. pmaps_functions  import          RebinMethod
 from .. io  .         hits_io  import          hits_writer
 from .. io  .       mcinfo_io  import       mc_info_writer
 from .. io  .run_and_event_io  import run_and_event_writer
@@ -54,7 +55,8 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, detecto
                 s1_nmin, s1_nmax, s1_emin, s1_emax, s1_wmin, s1_wmax, s1_hmin, s1_hmax, s1_ethr,
                 s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax,
                 slice_reco_params  = dict(),
-                global_reco_params = dict()):
+                global_reco_params = dict(),
+                rebin_method       = 'stride'):
     #  slice_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm used for hits reconstruction
     # global_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm used for overall global (pointlike event) reconstruction
 
@@ -67,7 +69,7 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, detecto
     pmap_select           = df.count_filter(bool, args="pmap_passed")
 
     reco_algo_slice       = compute_xy_position(detector_db, **slice_reco_params)
-    build_hits            = df.map(hit_builder(detector_db, run_number, drift_v, reco_algo_slice, rebin),
+    build_hits            = df.map(hit_builder(detector_db, run_number, drift_v, reco_algo_slice, rebin, RebinMethod[rebin_method]),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "hits"                                                 )
     reco_algo_global      = compute_xy_position(detector_db, **global_reco_params)
