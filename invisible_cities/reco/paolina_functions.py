@@ -277,7 +277,7 @@ def make_tracks(evt_number       : float,
         a, b                               = blob_centres(trk, blob_radius)
         blob_a = Blob(a, hits_a, blob_radius) # type: Blob
         blob_b = Blob(b, hits_b, blob_radius)
-        blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a)
+        blobs = (blob_a, blob_b)
         track = Track(voxels_from_track_graph(trk), blobs)
         tc.tracks.append(track)
     return tc
