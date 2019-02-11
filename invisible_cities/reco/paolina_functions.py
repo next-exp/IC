@@ -273,9 +273,10 @@ def make_tracks(evt_number       : float,
     track_graphs = make_track_graphs(voxels) # type: Sequence[Graph]
 #    track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
     for trk in track_graphs:
-        a, b, voxels_a, voxels_b    = compute_blobs(trk, blob_radius)
-        blob_a = Blob(a, voxels_a) # type: Blob
-        blob_b = Blob(b, voxels_b)
+        energy_a, energy_b, hits_a, hits_b = blob_energies_and_hits(trk, blob_radius)
+        a, b                               = blob_centres(trk, blob_radius)
+        blob_a = Blob(a, hits_a, blob_radius) # type: Blob
+        blob_b = Blob(b, hits_b, blob_radius)
         blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a)
         track = Track(voxels_from_track_graph(trk), blobs)
         tc.tracks.append(track)

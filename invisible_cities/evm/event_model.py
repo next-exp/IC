@@ -292,18 +292,18 @@ class VoxelCollection:
         return self.__str__()
 
 
-class Blob(VoxelCollection):
-    """A Blob is a collection of Voxels which adds the energy of the blob. """
-    def __init__(self, a: Voxel, voxels : List[Voxel]) ->None:
-        super().__init__(voxels)
-        self.seed = a
+class Blob():
+    """A Blob is a collection of Hits which adds the energy of the blob. """
+    def __init__(self, a: Tuple[float], hits : List[BHit], radius : float) ->None:
+        super().__init__(hits)
+        self.seed   = a
+        self.radius = radius
 
     def __str__(self):
-        s =  """Blob: (number of voxels = {})\n,
-                voxels = {} \n
+        s =  """Blob: (hits = {} \n
                 seed   = {} \n
                 blob energy = {}
-        """.format(self.number_of_voxels, self.voxels, self.seed, self.E)
+        """.format(self.hits, self.seed, sum(h.E for h in hits))
 
         return  s
 
