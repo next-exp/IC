@@ -7,7 +7,7 @@ From Βερενíκη, Ancient Macedonian form of the Attic Greek, Φερενí�
 
 This city produces the spectrum of dark noise of the SiPMs. This is
 achieved by binning either the pe or ADC content of each raw WF sample.
-Some slices will have only electronic noise while others will contain 
+Some slices will have only electronic noise while others will contain
 one or more dark counts. The resulting spectra give a representation
 of the SiPM charge in the absence of external light above detector
 ambient conditions.
@@ -28,12 +28,13 @@ from functools import partial
 import numpy  as np
 import tables as tb
 
-from .. io   .         hist_io import          hist_writer
-from .. io   .run_and_event_io import run_and_event_writer
-from .. icaro.hst_functions    import shift_to_bin_centers
+from .. io   .         hist_io import             hist_writer
+from .. io   .run_and_event_io import    run_and_event_writer
+from .. icaro.hst_functions    import    shift_to_bin_centers
 from .. reco                   import           tbl_functions as tbl
+from .. reco                   import         calib_functions as cf
 from .. reco                   import calib_sensors_functions as csf
-from .. database               import load_db
+from .. database               import                 load_db
 
 from .. dataflow import dataflow as fl
 
@@ -95,6 +96,7 @@ def berenice(files_in, file_out, compression, event_range, print_mod,
         write_hist(table_name = "adc"   )(out.adc   )
         write_hist(table_name = "mode"  )(out.mode  )
         write_hist(table_name = "median")(out.median)
+        cf.copy_sensor_table(files_in[0], h5out)
 
     return out
 

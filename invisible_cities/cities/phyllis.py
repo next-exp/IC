@@ -39,14 +39,14 @@ from functools import partial
 import numpy  as np
 import tables as tb
 
-from .. database               import load_db
+from .. database               import                 load_db
 from .. reco                   import           tbl_functions as tbl
-from .. reco                   import calib_functions         as cf
+from .. reco                   import         calib_functions as cf
 from .. reco                   import calib_sensors_functions as csf
-from .. sierpe                 import fee
-from .. io   .         hist_io import          hist_writer
-from .. io   .run_and_event_io import run_and_event_writer
-from .. icaro.hst_functions    import shift_to_bin_centers
+from .. sierpe                 import                     fee
+from .. io   .         hist_io import             hist_writer
+from .. io   .run_and_event_io import    run_and_event_writer
+from .. icaro.hst_functions    import    shift_to_bin_centers
 
 from .. dataflow import dataflow as fl
 
@@ -123,6 +123,7 @@ def phyllis(files_in, file_out, compression, event_range, print_mod, detector_db
 
         write_hist(table_name = 'pmt_spe' )(out.spe )
         write_hist(table_name = 'pmt_dark')(out.dark)
+        cf.copy_sensor_table(files_in[0], h5out)
 
     return out
 
