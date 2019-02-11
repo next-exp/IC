@@ -273,13 +273,13 @@ def compute_seeds_from_spectrum(sens_values, bins, ped_vals):
 
 
 def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spectrum, ped_vals,
-                     ped_errs, func='dfunc', use_db_gain_seeds=True):
+                     detector, ped_errs, func='dfunc', use_db_gain_seeds=True):
     """ Define the seeds and bounds to be used for calibration fits.
 
         Parameters
         ----------
-        sensor_type   : string
-        Input of type of sensor: sipm or pmt.
+        sensor_type   : AutoNameEnumBase
+        Input of type of sensor: SensorType.SIPM or SensorType.PMT.
         run_no        : int
         Run number.
         n_chann       : int
@@ -292,6 +292,8 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spectrum, ped_v
         Spectra, charge values of the signal.
         ped_vals      : np.array
         Values for the pedestal fit.
+        detector      : string
+        Input for the used detector.
         ped_errs      : np.array
         Errors of the values for the pedestal fit.
         func          : callable, optional
@@ -311,7 +313,7 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spectrum, ped_v
     norm_seed = spectrum.sum()
     sens_values = sensor_values(sensor_type, scaler, bins, spectrum, ped_vals)
     if use_db_gain_seeds:
-        gain_seed, gain_sigma_seed = seeds_db(sensor_type, run_no, n_chann)
+        gain_seed, gain_sigma_seed = seeds_db(sensor_type, detector, run_no, n_chann)
 
     else:
         gain_seed, gain_sigma_seed = compute_seeds_from_spectrum(sens_values, bins, ped_vals)
