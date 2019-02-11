@@ -233,12 +233,12 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
     return (Ea, Eb) if Ea < Eb else (Eb, Ea)
 
 
-def blob_energies_and_hits(track_graph : Graph, radius : float, energy: HitEnergy = 'E') -> Tuple[float, float, Tuple[Tuple[float], Tuple[float]]]:
+def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, float, Tuple[Tuple[float], Tuple[float]]]:
     """Return the energies and the hits around the extrema of the track."""
     distances = shortest_paths(track_graph)
     a, b, _   = find_extrema_and_length(distances)
-    ha = hits_in_blob(track_graph, radius, a, energy)
-    hb = hits_in_blob(track_graph, radius, b, energy)
+    ha = hits_in_blob(track_graph, radius, a)
+    hb = hits_in_blob(track_graph, radius, b)
 
     Ea = sum(getattr(h, energy) for h in ha)
     Eb = sum(getattr(h, energy) for h in hb)
@@ -246,18 +246,18 @@ def blob_energies_and_hits(track_graph : Graph, radius : float, energy: HitEnerg
     return (Ea, Eb, ha, hb) if Ea < Eb else (Eb, Ea, hb, ha)
 
 
-def blob_centres(track_graph : Graph, radius : float, energy: HitEnergy = 'E') -> Tuple[Tuple[float], Tuple[float]]:
+def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float], Tuple[float]]:
     """Return the positions of the blobs."""
     distances = shortest_paths(track_graph)
     a, b, _   = find_extrema_and_length(distances)
-    ha = hits_in_blob(track_graph, radius, a, energy)
-    hb = hits_in_blob(track_graph, radius, b, energy)
+    ha = hits_in_blob(track_graph, radius, a)
+    hb = hits_in_blob(track_graph, radius, b)
 
     Ea = sum(getattr(h, energy) for h in ha)
     Eb = sum(getattr(h, energy) for h in hb)
 
-    centre_of_blob_a = blob_centre(a, energy)
-    centre_of_blob_b = blob_centre(b, energy)
+    centre_of_blob_a = blob_centre(a)
+    centre_of_blob_b = blob_centre(b)
 
     return (centre_of_blob_a, centre_of_blob_b) if Ea < Eb else (centre_of_blob_b, centre_of_blob_a)
 
