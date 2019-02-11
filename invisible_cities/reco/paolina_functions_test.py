@@ -563,3 +563,17 @@ def test_blobs(radius, expected):
 
     assert len(tracks) == 1
     assert blob_energies(tracks[0], radius) == (Ea, Eb)
+
+
+@given(bunch_of_hits, box_sizes, radius)
+def test_blob_hits_are_inside_radius(hits, voxel_dimensions, blob_radius):
+    voxels = voxelize_hits(hits, voxel_dimensions)
+    tracks = make_track_graphs(voxels)
+    for t in tracks:
+        Ea, Eb, hits_a, hits_b   = blob_energies_and_hits(t, blob_radius)
+        centre_a, centre_b       = blob_centres(t, blob_radius)
+
+        for h in hits_a:
+            assert np.linalg.norm(h.XYZ - centre_a) < blob_radius
+        for h in hits_b:
+            assert np.linalg.norm(h.XYZ - centre_b) < blob_radius
