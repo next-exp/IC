@@ -233,6 +233,19 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
     return (Ea, Eb) if Ea < Eb else (Eb, Ea)
 
 
+def blob_energies_and_hits(track_graph : Graph, radius : float, energy: HitEnergy = 'E') -> Tuple[float, float, Tuple[Tuple[float], Tuple[float]]]:
+    """Return the energies and the hits around the extrema of the track."""
+    distances = shortest_paths(track_graph)
+    a, b, _   = find_extrema_and_length(distances)
+    ha = hits_in_blob(track_graph, radius, a, energy)
+    hb = hits_in_blob(track_graph, radius, b, energy)
+
+    Ea = sum(getattr(h, energy) for h in ha)
+    Eb = sum(getattr(h, energy) for h in hb)
+
+    return (Ea, Eb, ha, hb) if Ea < Eb else (Eb, Ea, hb, ha)
+
+
 def compute_blobs(track_graph : Graph, radius : float) -> Tuple[Voxel, Voxel, List[Voxel], List[Voxel]]:
     """Return the blobs (list of voxels) around the extrema of the track."""
     distances = shortest_paths(track_graph)
