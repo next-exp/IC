@@ -230,7 +230,7 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
     Ea = sum(h.E for h in ha)
     Eb = sum(h.E for h in hb)
 
-    return (Ea, Eb) if Ea < Eb else (Eb, Ea)
+    return (Eb, Ea) if Ea < Eb else (Ea, Eb)
 
 
 def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, float, Tuple[Tuple[float], Tuple[float]]]:
@@ -243,7 +243,7 @@ def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, 
     Ea = sum(h.E for h in ha)
     Eb = sum(h.E for h in hb)
 
-    return (Ea, Eb, ha, hb) if Ea < Eb else (Eb, Ea, hb, ha)
+    return (Eb, Ea, hb, ha) if Ea < Eb else (Ea, Eb, ha, hb)
 
 
 def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float], Tuple[float]]:
@@ -259,7 +259,7 @@ def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float], Tup
     centre_of_blob_a = blob_centre(a)
     centre_of_blob_b = blob_centre(b)
 
-    return (centre_of_blob_a, centre_of_blob_b) if Ea < Eb else (centre_of_blob_b, centre_of_blob_a)
+    return (centre_of_blob_b, centre_of_blob_a) if Ea < Eb else (centre_of_blob_a, centre_of_blob_b)
 
 
 def make_tracks(evt_number       : float,

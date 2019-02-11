@@ -537,13 +537,13 @@ def test_voxel_drop_in_short_tracks():
 
 
 @parametrize('radius, expected',
-             ((10., ( 20,  60)),
+             ((10., ( 60,  20)),
               (12., ( 60,  60)),
-              (14., ( 60, 100)),
-              (16., ( 80, 120)),
-              (18., ( 80, 120)),
-              (20., ( 80, 140)),
-              (22., (100, 140))
+              (14., (100,  60)),
+              (16., (120,  80)),
+              (18., (120,  80)),
+              (20., (140,  80)),
+              (22., (140, 100))
  ))
 def test_blobs(radius, expected):
     hits = [BHit(105.0, 125.0, 77.7, 10),
@@ -564,10 +564,8 @@ def test_blobs(radius, expected):
     voxels = voxelize_hits(hits, vox_size)
     tracks = make_track_graphs(voxels)
 
-    Ea, Eb = expected
-
     assert len(tracks) == 1
-    assert blob_energies(tracks[0], radius) == (Ea, Eb)
+    assert blob_energies(tracks[0], radius) == expected
 
 
 @given(bunch_of_hits, box_sizes, radius)
