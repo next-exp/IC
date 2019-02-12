@@ -192,14 +192,18 @@ class Voxel(BHit):
     """Represents a Voxel"""
     def __init__(self, x,y,z, E, size, hits=[], e_type : HitEnergy = HitEnergy.E.value):
         super().__init__(x,y,z, E)
-        self._size = size
-        self.hits = hits
+        self._size  = size
+        self.hits   = hits
+        self.e_type = e_type
 
     @property
     def size(self): return self._size
 
     @property
-    def Ehits(self): return sum(getattr(h, e_type) for h in hits)
+    def Ehits(self): return sum(getattr(h, self.e_type) for h in hits)
+
+    @property
+    def Etype(self): return self.e_type
 
 
 class Cluster(BHit):
@@ -312,6 +316,10 @@ class Blob():
         self.hits   = hits
         self.energy = sum(getattr(h, e_type) for h in hits)
         self.radius = radius
+        self.e_type = e_type
+
+    @property
+    def Etype(self): return self.e_type
 
     def __str__(self):
         s =  """Blob: (hits = {} \n
