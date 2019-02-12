@@ -339,6 +339,7 @@ def test_voxelize_single_hit():
     vox_size = np.array([10,10,10], dtype=np.int16)
     assert len(voxelize_hits(hits, vox_size)) == 1
 
+
 @fixture(scope='module')
 def voxels_without_hits():
     voxel_spec = ((10,10,10,1),
@@ -360,7 +361,7 @@ def voxels_without_hits():
 
 def test_length():
     voxels = voxels_without_hits()
-    tracks  = make_track_graphs(voxels)
+    tracks = make_track_graphs(voxels)
 
     assert len(tracks) == 1
     track_length = length(tracks[0])
