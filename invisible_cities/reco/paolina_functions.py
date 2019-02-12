@@ -230,6 +230,11 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
     Ea = sum(h.E for h in ha)
     Eb = sum(h.E for h in hb)
 
+    # Consider the case where voxels are built without associated hits
+    if len(ha) == 0 and len(hb) == 0 :
+        Ea = voxel_energy_within_radius(distances[a], radius)
+        Eb = voxel_energy_within_radius(distances[b], radius)
+
     return (Eb, Ea) if Ea < Eb else (Ea, Eb)
 
 
@@ -243,6 +248,11 @@ def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, 
     Ea = sum(h.E for h in ha)
     Eb = sum(h.E for h in hb)
 
+    # Consider the case where voxels are built without associated hits
+    if len(ha) == 0 and len(hb) == 0 :
+        Ea = voxel_energy_within_radius(distances[a], radius)
+        Eb = voxel_energy_within_radius(distances[b], radius)
+
     return (Eb, Ea, hb, ha) if Ea < Eb else (Ea, Eb, ha, hb)
 
 
@@ -255,6 +265,11 @@ def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float], Tup
 
     Ea = sum(h.E for h in ha)
     Eb = sum(h.E for h in hb)
+
+    # Consider the case where voxels are built without associated hits
+    if len(ha) == 0 and len(hb) == 0 :
+        Ea = voxel_energy_within_radius(distances[a], radius)
+        Eb = voxel_energy_within_radius(distances[b], radius)
 
     centre_of_blob_a = blob_centre(a)
     centre_of_blob_b = blob_centre(b)
