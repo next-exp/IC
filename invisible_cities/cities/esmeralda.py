@@ -2,6 +2,7 @@
 -----------------------------------------------------------------------
                               Esmeralda
 -----------------------------------------------------------------------
+From Spanish esmeralda (“emerald”), as first used in the novel Notre-Dame de Paris (1831) by Victor Hugo.
 This city is correcting hits and voxelizing them. The input is penthesilea output containing hits, kdst global information and mc info. The output contains tables:
 - corrected hits
 - summary of topology analysis
