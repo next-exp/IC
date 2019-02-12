@@ -378,8 +378,8 @@ def build_pointlike_event(dbfile, run_number, drift_v, reco):
                 clusters = reco(xys, qs)
             except XYRecoFail:
                 c    = NNN()
-                Z    = tuple(NN for _ in evt.nS1)
-                DT   = tuple(NN for _ in evt.nS1)
+                Z    = tuple(NN for _ in range(0, evt.nS1))
+                DT   = tuple(NN for _ in range(0, evt.nS1))
                 Zrms = NN
             else:
                 c = clusters[0]
