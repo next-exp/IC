@@ -27,14 +27,16 @@ from hypothesis.strategies import integers
 
 from networkx.generators.random_graphs import fast_gnp_random_graph
 
-from .. evm.event_model  import BHit
+from .. evm.event_model import BHit
+from .. evm.event_model import Voxel
 
-from . paolina_functions import Voxel
 from . paolina_functions import bounding_box
+from . paolina_functions import voxel_energy_within_radius
 from . paolina_functions import find_extrema
 from . paolina_functions import find_extrema_and_length
 from . paolina_functions import blob_energies
 from . paolina_functions import blob_energies_and_hits
+from . paolina_functions import blob_centre
 from . paolina_functions import blob_centres
 from . paolina_functions import hits_in_blob
 from . paolina_functions import voxelize_hits
@@ -599,3 +601,21 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius):
         hits_b = hits_in_blob(t, blob_radius, b)
 
         assert len(hits_a) == len(hits_b) == 0
+
+        assert np.allclose(blob_centre(a), a.pos)
+        assert np.allclose(blob_centre(b), b.pos)
+
+        distances = shortest_paths(t)
+        Ea = voxel_energy_within_radius(distances[a], blob_radius)
+        Eb = voxel_energy_within_radius(distances[b], blob_radius)
+
+        if Ea < Eb:
+            assert np.allclose(blob_centres(t, blob_radius)[0], b.pos)
+            assert np.allclose(blob_centres(t, blob_radius)[1], a.pos)
+        else:
+            assert np.allclose(blob_centres(t, blob_radius)[0], a.pos)
+            assert np.allclose(blob_centres(t, blob_radius)[1], b.pos)
+
+        assert blob_energies(t, blob_radius) != (0, 0)
+
+        assert blob_energies_and_hits(t, blob_radius) != (0, 0, [], [])
