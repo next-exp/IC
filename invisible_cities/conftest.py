@@ -646,6 +646,13 @@ def Kr_pmaps_run4628_filename(ICDATADIR):
     filename = os.path.join(ICDATADIR, "Kr_pmaps_run4628.h5")
     return filename
 
+
+@pytest.fixture(scope='session')
+def Xe2nu_pmaps_mc_filename(ICDATADIR):
+    filename = os.path.join(ICDATADIR, "Xe2nu_NEW_v1_05_02_nexus_v5_03_08_ACTIVE_10.2bar_run4.0_0_pmaps.h5")
+    return filename
+
+
 @pytest.fixture(scope='session')
 def voxels_toy_data(ICDATADIR):
     event = np.zeros(100)

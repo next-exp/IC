@@ -244,3 +244,48 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
+
+
+# test for PR 628
+def test_penthesilea_xyrecofail(config_tmpdir, Xe2nu_pmaps_mc_filename):
+    PATH_IN =  Xe2nu_pmaps_mc_filename
+
+    PATH_OUT = os.path.join(config_tmpdir, 'Xe2nu_2nu_hdst.h5')
+    conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
+    conf.update(dict(run_number = -6000,
+                     files_in   = PATH_IN,
+                     file_out   = PATH_OUT,
+
+                     drift_v     =      1 * units.mm / units.mus,
+                     s1_nmin     =      1,
+                     s1_nmax     =      1,
+                     s1_emin     =      0 * units.pes,
+                     s1_emax     =   1e+6 * units.pes,
+                     s1_wmin     =      1 * units.ns,
+                     s1_wmax     =   1.e6 * units.ns,
+                     s1_hmin     =      0 * units.pes,
+                     s1_hmax     =   1e+6 * units.pes,
+                     s1_ethr     =    0.5 * units.pes,
+                     s2_nmin     =      1,
+                     s2_nmax     =    100,
+                     s2_emin     =      0 * units.pes,
+                     s2_emax     =    1e8 * units.pes,
+                     s2_wmin     =    2.5 * units.mus,
+                     s2_wmax     =     10 * units.ms,
+                     s2_hmin     =      0 * units.pes,
+                     s2_hmax     =    1e6 * units.pes,
+                     s2_ethr     =      1 * units.pes,
+                     s2_nsipmmin =      1,
+                     s2_nsipmmax =   2000,
+                     rebin       =      2,
+                     global_reco_params = dict(),
+                     slice_reco_params = dict(
+                         Qthr            =  30 * units.pes,
+                         Qlm             =  30 * units.pes,
+                         lm_radius       =  0 * units.mm ,
+                         new_lm_radius   =  0 * units.mm ,
+                         msipm = 1 ),
+                     event_range = (826, 827)))
+
+    # check it runs
+    penthesilea(**conf)
