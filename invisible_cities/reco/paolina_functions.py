@@ -178,7 +178,7 @@ def length(track: Graph) -> float:
 
 
 def energy_of_voxels_within_radius(distances : Dict[Voxel, float], radius : float) -> float:
-    return sum(v.E for (v, d) in distances.items() if d < radius)
+    return sum(v.Ehits for (v, d) in distances.items() if d < radius)
 
 
 def voxels_within_radius(distances : Dict[Voxel, float],
@@ -335,8 +335,8 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
                         min_v = v
 
         ### add voxel energy to hit and to voxel, separately
-        min_hit.energy += the_vox.E
-        min_v.energy   += the_vox.E
+        min_hit.energy += the_vox.Ehits
+        min_v.energy   += the_vox.Ehits
 
         return 1
 
