@@ -200,7 +200,7 @@ class Voxel(BHit):
     def size(self): return self._size
 
     @property
-    def Ehits(self): return sum(getattr(h, self.e_type) for h in hits)
+    def Ehits(self): return sum(getattr(h, self.e_type) for h in self.hits)
 
     @property
     def Etype(self): return self.e_type
