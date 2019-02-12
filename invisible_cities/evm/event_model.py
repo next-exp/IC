@@ -3,6 +3,8 @@
 import tables as tb
 import numpy  as np
 
+from enum import Enum
+
 from networkx                  import Graph
 from .. types.ic_types         import NN
 from .. types.ic_types         import minmax
@@ -109,6 +111,13 @@ class MCParticle:
     __repr__ =  __str__
 
 
+class HitEnergy(Enum):
+    E        = 'E'
+    Ec       = 'Ec'
+    energy   = 'energy'
+    energy_c = 'energy_c'
+
+
 class BHit:
     """Base class representing a hit"""
 
@@ -181,7 +190,7 @@ class MCHit(BHit):
 
 class Voxel(BHit):
     """Represents a Voxel"""
-    def __init__(self, x,y,z, E, size, hits=[]):
+    def __init__(self, x,y,z, E, size, hits=[], e_type : HitEnergy = HitEnergy.E.value):
         super().__init__(x,y,z, E)
         self._size = size
         self.hits = hits
@@ -190,7 +199,7 @@ class Voxel(BHit):
     def size(self): return self._size
 
     @property
-    def Ehits(self): return sum(h.E for h in hits)
+    def Ehits(self): return sum(getattr(h, e_type) for h in hits)
 
 
 class Cluster(BHit):
@@ -294,11 +303,14 @@ class VoxelCollection:
 
 class Blob():
     """A Blob is a collection of Hits with a seed and a radius. """
-    def __init__(self, seed: Tuple[float, float, float], hits : List[BHit], radius : float) ->None:
+    def __init__(self, seed: Tuple[float, float, float],
+                       hits : List[BHit],
+                       radius : float,
+                       e_type : HitEnergy = HitEnergy.E.value) ->None:
         super().__init__(hits)
         self.seed   = seed
         self.hits   = hits
-        self.energy = sum(h.E for h in hits)
+        self.energy = sum(getattr(h, e_type) for h in hits)
         self.radius = radius
 
     def __str__(self):
