@@ -36,6 +36,7 @@ from . paolina_functions import find_extrema_and_length
 from . paolina_functions import blob_energies
 from . paolina_functions import blob_energies_and_hits
 from . paolina_functions import blob_centres
+from . paolina_functions import hits_in_blob
 from . paolina_functions import voxelize_hits
 from . paolina_functions import shortest_paths
 from . paolina_functions import make_track_graphs
@@ -336,8 +337,8 @@ def test_voxelize_single_hit():
     vox_size = np.array([10,10,10], dtype=np.int16)
     assert len(voxelize_hits(hits, vox_size)) == 1
 
-
-def test_length():
+@fixture(scope='module')
+def voxels_without_hits():
     voxel_spec = ((10,10,10,1),
                   (10,10,11,1),
                   (10,10,12,1),
@@ -351,6 +352,12 @@ def test_length():
                   (10,15,15,1)
     )
     voxels = [Voxel(x,y,z, E, np.array([1,1,1])) for (x,y,z,E) in voxel_spec]
+
+    return voxels
+
+
+def test_length():
+    voxels = voxels_without_hits()
     tracks  = make_track_graphs(voxels)
 
     assert len(tracks) == 1
@@ -580,3 +587,15 @@ def test_blob_hits_are_inside_radius(hits, voxel_dimensions, blob_radius):
             assert np.linalg.norm(h.XYZ - centre_a) < blob_radius
         for h in hits_b:
             assert np.linalg.norm(h.XYZ - centre_b) < blob_radius
+
+
+@given(radius)
+def test_paolina_functions_with_voxels_without_associated_hits(blob_radius):
+    voxels = voxels_without_hits()
+    tracks = make_track_graphs(voxels)
+    for t in tracks:
+        a, b = find_extrema(t)
+        hits_a = hits_in_blob(t, blob_radius, a)
+        hits_b = hits_in_blob(t, blob_radius, b)
+
+        assert len(hits_a) == len(hits_b) == 0
