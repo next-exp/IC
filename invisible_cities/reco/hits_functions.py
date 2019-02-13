@@ -2,11 +2,15 @@ import numpy  as np
 from itertools   import compress
 from copy        import deepcopy
 from typing      import List
-from .. cities.components import split_energy
 from .. evm  import event_model as evm
-
 from .. types.ic_types      import NN
 from .. types.ic_types      import xy
+
+def split_energy(total_e, clusters):
+    if len(clusters) == 1:
+        return [total_e]
+    qs = np.array([c.Q for c in clusters])
+    return total_e * qs / np.sum(qs)
 
 def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit]: 
     """ Returns a list of the hits where the  energies of NN hits are distributed to the closest hits such that the added energy is proportional to 
