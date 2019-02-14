@@ -2,15 +2,18 @@ import os
 import numpy  as np
 import tables as tb
 import pandas as pd
-from . dst_io              import load_dst
+import time   as tm
+
 from numpy.testing import assert_allclose
 
+from . dst_io              import load_dst
 from .. core.testing_utils import assert_dataframes_equal
 from .. types.ic_types     import xy
 from .. evm.event_model    import Cluster
 from .. evm.event_model    import Hit
 from .. evm.event_model    import HitCollection
 from .  hits_io            import hits_writer
+from .  hits_io            import load_hits
 from .. types.ic_types     import NN
 
 def test_load_hits_load_events(TlMC_hits):
@@ -100,3 +103,13 @@ def test_hits_writer(config_tmpdir, hits_toy_data):
     assert_allclose(q    , dst.Q    .values)
     assert_allclose(e    , dst.E    .values)
 
+
+def test_hit_time_is_in_second(ICDATADIR):
+    output_file = os.path.join(ICDATADIR, "hits_1hit_perSiPM_30pes_6817_trigger2_v0.9.9_20190111_krth1600.0.h5")
+    the_hits = load_hits(output_file)
+
+    for evt, hit_coll in the_hits.items():
+        evt_time = hit_coll.time
+        year = int(tm.strftime("%Y", tm.localtime(evt_time)))
+
+        assert 2008 < year < 2050
