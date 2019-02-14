@@ -2,6 +2,8 @@ from enum import Enum
 
 import numpy as np
 
+from typing import Tuple
+
 from functools import partial
 from functools import lru_cache
 
@@ -38,21 +40,41 @@ def inverse_cdf(x, y, percentile):
     return x[inverse_cdf_index(y, percentile)]
 
 
-def pad_pdfs(bins, spectra=None):
-    bin_diff = np.count_nonzero(bins <= 0) - np.count_nonzero(bins > 0)
-    pad = abs(min(bin_diff, 0)), abs(max(bin_diff, 0))
-    if spectra is None:
-        ## We just want to extend the bins
-        return np.pad(bins, pad, 'linear_ramp',
-                      end_values=(-bins[-1], -bins[0]))
-
-    return np.apply_along_axis(np.pad, 1, spectra, pad,
-                               'constant', constant_values=0)
-
-
-def general_thresholds(xbins, probs, noise_cut):
+def pad_pdfs(bins : np.array,
+             spectra : np.array) -> Tuple[np.array]:
     """
-    Generalised version of NoiseSampler
+    Pads the spectra to a range of
+    bins = (-100, 100) according to
+    the bin widths.
+    """
+    bin_width = np.round(np.diff(bins)[0], 5)
+    pad = (int(abs(-100 - bins[0]) // bin_width),
+           int(abs(100 - bins[-1]) // bin_width))
+
+    bin_min     = np.round(bins[ 0] - pad[0] * bin_width, 5)
+    bin_max     = np.round(bins[-1] + pad[1] * bin_width, 5)
+    padded_bins = np.pad(bins, pad,      'linear_ramp',
+                         end_values=(bin_min, bin_max))
+
+    padded_spectra = np.apply_along_axis(np.pad, 1, spectra, pad,
+                                         'constant', constant_values=0)
+
+    return padded_bins, padded_spectra
+    ## if spectra is None:
+    ##     ## We just want to extend the bins
+    ##     return np.pad(bins, pad, 'linear_ramp',
+    ##                   end_values=(-bins[-1], -bins[0]))
+
+    ## return np.apply_along_axis(np.pad, 1, spectra, pad,
+    ##                            'constant', constant_values=0)
+
+
+def general_thresholds(xbins : np.array,
+                       probs : np.array,
+                       noise_cut : float) -> np.array:
+    """
+    Generalised version of
+    NoiseSampler.compute_thresholds
     which can use any distribution.
 
     Parameters
@@ -62,7 +84,8 @@ def general_thresholds(xbins, probs, noise_cut):
     probs : array of floats
         Probabilities for each of the x bins
     noise_cut : float
-        Fraction of the distribution to be left behind. Default is 0.99.
+        Fraction of the distribution to be left behind.
+        Default is 0.99.
 
     Returns
     -------
@@ -137,7 +160,8 @@ class NoiseSampler:
         sample = self.adc_to_pes * sample + self.baselines
         return self.mask(sample)
 
-    def compute_thresholds(self, noise_cut=0.99, pes_to_adc=1):
+    def compute_thresholds(self, noise_cut : float=0.99,
+                           pes_to_adc : float=1) -> np.array:
         """Find the energy threshold that reduces the noise population by a
         fraction of *noise_cut*.
 
@@ -158,8 +182,9 @@ class NoiseSampler:
         return cuts_pes * pes_to_adc
 
 
-    def signal_to_noise(self, ids, charges,
-                        sample_width, dark_model=DarkModel.threshold):
+    def signal_to_noise(self, ids : np.array, charges : np.array,
+                        sample_width : int,
+                        dark_model=DarkModel.threshold) -> np.array:
         """
         Find the signal to noise for the sipms in the array
 
@@ -187,8 +212,8 @@ class NoiseSampler:
 
 
     @lru_cache(maxsize=30)
-    def dark_expectation(self, sample_width,
-                         dark_model=DarkModel.threshold):
+    def dark_expectation(self, sample_width : int,
+                         dark_model=DarkModel.threshold) -> np.array:
         """
         Calculate, for a given sample_width,
         the mean expectation to approximate
@@ -196,11 +221,13 @@ class NoiseSampler:
         """
         pdfs = self.multi_sample_distributions(sample_width)
 
-        pad_xbins = pad_pdfs(self.xbins)
+        pad_xbins, _ = pad_pdfs(self.xbins, self.probs)
 
         if dark_model == DarkModel.threshold:
-            pdfs = np.apply_along_axis(normalize_distribution, 1,
-                                       self.mask(pdfs))
+            pdfs     = np.apply_along_axis(normalize_distribution,
+                                                                1,
+                                                  self.mask(pdfs))
+            
             dark_pes = general_thresholds(pad_xbins, pdfs, 0.99)
             dark_pes[self.active.flatten() == 0] = 0
             return dark_pes
@@ -216,7 +243,7 @@ class NoiseSampler:
 
 
     @lru_cache(maxsize=30)
-    def multi_sample_distributions(self, sample_width):
+    def multi_sample_distributions(self, sample_width : int) -> np.array:
         """
         Calculate the no light PDFs for a given
         sample width.
@@ -234,7 +261,7 @@ class NoiseSampler:
             around zero.
         """
         if sample_width == 1:
-            return pad_pdfs(self.xbins, self.probs)
+            return pad_pdfs(self.xbins, self.probs)[1]
 
         mapping = map(np.convolve                                      ,
                       self.multi_sample_distributions(               1),

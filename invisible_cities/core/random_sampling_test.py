@@ -132,15 +132,15 @@ def test_inverse_cdf_index_hypothesis_generated(distribution, percentile):
 
 
 @mark.parametrize("bins           expected_length ".split(),
-                  ((np.linspace(-1, 1, 20),    20 ),
-                   (np.linspace(-2, 1, 30),    40 ),
-                   (np.linspace(-1, 2, 30),    40 ),
-                   (np.linspace(-1, 0, 10),    20 ),
-                   (np.linspace( 0, 1, 10),    18 )))
+                  ((np.linspace(-1, 1, 20),    1900 ),
+                   (np.linspace(-2, 1, 30),    1933 ),
+                   (np.linspace(-1, 2, 30),    1933 ),
+                   (np.linspace(-1, 0, 10),    1801 ),
+                   (np.linspace( 0, 1, 10),    1801 )))
 def test_pad_pdfs(bins, expected_length):
     ## Dummy spectra for 2 'sensors'
-    spectra        = np.full((2, len(bins)), 0.1)
-    padded_spectra = pad_pdfs(bins, spectra)
+    spectra           = np.full((2, len(bins)), 0.1)
+    _, padded_spectra = pad_pdfs(bins, spectra)
     assert padded_spectra.shape[1] == expected_length
     
 
@@ -276,7 +276,8 @@ def test_noise_sampler_multi_sample_distributions(noise_sampler):
     noise_sampler, *_ = noise_sampler
 
     active       = noise_sampler.active.flatten() != 0
-    padded_xbins = pad_pdfs(noise_sampler.xbins)
+    padded_xbins, _ = pad_pdfs(noise_sampler.xbins,
+                               noise_sampler.probs)
 
     nsipm = np.count_nonzero(active)
     PDF_means = np.average(np.repeat(noise_sampler.xbins[None, :], nsipm, 0),
