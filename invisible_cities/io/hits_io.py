@@ -34,7 +34,7 @@ def load_hits(DST_file_name):
 
     for i in range(dst_size):
         current_event = all_events.setdefault(event[i],
-                                              HitCollection(event[i], time[i] * 1e-3))
+                                              HitCollection(event[i], time[i]))
         hit = Hit(npeak[i],
                  Cluster(Q[i], xy(X[i], Y[i]), xy(Xrms[i], Yrms[i]),
                          nsipm[i], Z[i], E[i]), Z[i], E[i], xy(Xpeak[i], Ypeak[i]))
