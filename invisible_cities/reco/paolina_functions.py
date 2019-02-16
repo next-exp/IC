@@ -98,7 +98,7 @@ def voxelize_hits(hits             : Sequence[BHit],
         indx_comp = (h_indices == (x, y, z))
         hits_in_bin = list(h for i, h in zip(indx_comp, hits) if all(i))
 
-        voxels.append(Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions, hits_in_bin))  
+        voxels.append(Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions, hits_in_bin))
 
     return voxels
 
@@ -221,7 +221,8 @@ def hits_in_blob(track_graph : Graph, radius : float, extreme: Voxel) -> Sequenc
 
 
 def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
-    """Return the energies around the extrema of the track."""
+    """Return the energies around the extrema of the track.
+       The largest energy is returned first."""
     distances = shortest_paths(track_graph)
     a, b, _   = find_extrema_and_length(distances)
     ha = hits_in_blob(track_graph, radius, a)
@@ -239,7 +240,8 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
 
 
 def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, float, Tuple[Tuple[float], Tuple[float]]]:
-    """Return the energies and the hits around the extrema of the track."""
+    """Return the energies and the hits around the extrema of the track.
+       The largest energy is returned first, as well as its hits."""
     distances = shortest_paths(track_graph)
     a, b, _   = find_extrema_and_length(distances)
     ha = hits_in_blob(track_graph, radius, a)
@@ -257,7 +259,8 @@ def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, 
 
 
 def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float], Tuple[float]]:
-    """Return the positions of the blobs."""
+    """Return the positions of the blobs.
+       The blob of largest energy is returned first."""
     distances = shortest_paths(track_graph)
     a, b, _   = find_extrema_and_length(distances)
     ha = hits_in_blob(track_graph, radius, a)
