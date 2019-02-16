@@ -294,9 +294,9 @@ class VoxelCollection:
 
 class Blob():
     """A Blob is a collection of Hits with a seed and a radius. """
-    def __init__(self, a: Tuple[float], hits : List[BHit], radius : float) ->None:
+    def __init__(self, seed: Tuple[float, float, float], hits : List[BHit], radius : float) ->None:
         super().__init__(hits)
-        self.seed   = a
+        self.seed   = seed
         self.hits   = hits
         self.energy = sum(h.E for h in hits)
         self.radius = radius
