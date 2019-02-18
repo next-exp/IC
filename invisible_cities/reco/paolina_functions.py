@@ -220,64 +220,50 @@ def hits_in_blob(track_graph : Graph, radius : float, extreme: Voxel) -> Sequenc
     return blob_hits
 
 
+def blob_energies_hits_and_centres(track_graph : Graph, radius : float) -> Tuple[float, float, Sequence[Tuple[float, float, float]], Sequence[Tuple[float, float, float]], Tuple[float, float, float], Tuple[float, float, float]]:
+    """Return the energies, the hits and the positions of the blobs.
+       For each pair of observables, the one of the blob of largest energy is returned first."""
+    distances = shortest_paths(track_graph)
+    a, b, _   = find_extrema_and_length(distances)
+    ha = hits_in_blob(track_graph, radius, a)
+    hb = hits_in_blob(track_graph, radius, b)
+
+    Ea = sum(h.E for h in ha)
+    Eb = sum(h.E for h in hb)
+
+    # Consider the case where voxels are built without associated hits
+    if len(ha) == 0 and len(hb) == 0 :
+        Ea = voxel_energy_within_radius(distances[a], radius)
+        Eb = voxel_energy_within_radius(distances[b], radius)
+
+    ca = blob_centre(a)
+    cb = blob_centre(b)
+
+    return (Eb, Ea, hb, ha, cb, ca) if Ea < Eb else (Ea, Eb, ha, hb, ca, cb)
+
+
 def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
     """Return the energies around the extrema of the track.
        The largest energy is returned first."""
-    distances = shortest_paths(track_graph)
-    a, b, _   = find_extrema_and_length(distances)
-    ha = hits_in_blob(track_graph, radius, a)
-    hb = hits_in_blob(track_graph, radius, b)
+    E1, E2, _, _, _, _ = blob_energies_hits_and_centres(track_graph, radius)
 
-    Ea = sum(h.E for h in ha)
-    Eb = sum(h.E for h in hb)
-
-    # Consider the case where voxels are built without associated hits
-    if len(ha) == 0 and len(hb) == 0 :
-        Ea = voxel_energy_within_radius(distances[a], radius)
-        Eb = voxel_energy_within_radius(distances[b], radius)
-
-    return (Eb, Ea) if Ea < Eb else (Ea, Eb)
+    return E1, E2
 
 
-def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, float, Tuple[Tuple[float], Tuple[float]]]:
+def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, float, Sequence[Tuple[float, float, float]], Sequence[Tuple[float, float, float]]]:
     """Return the energies and the hits around the extrema of the track.
        The largest energy is returned first, as well as its hits."""
-    distances = shortest_paths(track_graph)
-    a, b, _   = find_extrema_and_length(distances)
-    ha = hits_in_blob(track_graph, radius, a)
-    hb = hits_in_blob(track_graph, radius, b)
+    E1, E2, h1, h2, _, _ = blob_energies_hits_and_centres(track_graph, radius)
 
-    Ea = sum(h.E for h in ha)
-    Eb = sum(h.E for h in hb)
-
-    # Consider the case where voxels are built without associated hits
-    if len(ha) == 0 and len(hb) == 0 :
-        Ea = voxel_energy_within_radius(distances[a], radius)
-        Eb = voxel_energy_within_radius(distances[b], radius)
-
-    return (Eb, Ea, hb, ha) if Ea < Eb else (Ea, Eb, ha, hb)
+    return (E1, E2, h1, h2)
 
 
 def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float], Tuple[float]]:
     """Return the positions of the blobs.
        The blob of largest energy is returned first."""
-    distances = shortest_paths(track_graph)
-    a, b, _   = find_extrema_and_length(distances)
-    ha = hits_in_blob(track_graph, radius, a)
-    hb = hits_in_blob(track_graph, radius, b)
+    _, _, _, _, c1, c2 = blob_energies_hits_and_centres(track_graph, radius)
 
-    Ea = sum(h.E for h in ha)
-    Eb = sum(h.E for h in hb)
-
-    # Consider the case where voxels are built without associated hits
-    if len(ha) == 0 and len(hb) == 0 :
-        Ea = voxel_energy_within_radius(distances[a], radius)
-        Eb = voxel_energy_within_radius(distances[b], radius)
-
-    centre_of_blob_a = blob_centre(a)
-    centre_of_blob_b = blob_centre(b)
-
-    return (centre_of_blob_b, centre_of_blob_a) if Ea < Eb else (centre_of_blob_a, centre_of_blob_b)
+    return (c1, c2)
 
 
 def make_tracks(evt_number       : float,
