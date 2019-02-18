@@ -185,7 +185,7 @@ def voxels_within_radius(distances : Dict[Voxel, float],
     return [v for (v, d) in distances.items() if d < radius]
 
 
-def blob_centre(voxel: Voxel) -> Tuple[float]:
+def blob_centre(voxel: Voxel) -> Tuple[float, float, float]:
     """Calculate the blob position, starting from the end-point voxel."""
     positions = [h.pos for h in voxel.hits]
     energies  = [h.E   for h in voxel.hits]
@@ -259,7 +259,7 @@ def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, 
     return (E1, E2, h1, h2)
 
 
-def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float], Tuple[float]]:
+def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
     """Return the positions of the blobs.
        The blob of largest energy is returned first."""
     _, _, _, _, c1, c2 = blob_energies_hits_and_centres(track_graph, radius)
