@@ -191,6 +191,7 @@ def blob_centre(voxel: Voxel) -> Tuple[float]:
     energies  = [h.E   for h in voxel.hits]
     if sum(energies):
         bary_pos = np.average(positions, weights=energies, axis=0)
+    # Consider the case where voxels are built without associated hits
     else:
         bary_pos = voxel.pos
 
