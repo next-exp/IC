@@ -31,7 +31,7 @@ from .. evm.event_model import BHit
 from .. evm.event_model import Voxel
 
 from . paolina_functions import bounding_box
-from . paolina_functions import voxel_energy_within_radius
+from . paolina_functions import energy_of_voxels_within_radius
 from . paolina_functions import find_extrema
 from . paolina_functions import find_extrema_and_length
 from . paolina_functions import blob_energies
@@ -606,8 +606,8 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius):
         assert np.allclose(blob_centre(b), b.pos)
 
         distances = shortest_paths(t)
-        Ea = voxel_energy_within_radius(distances[a], blob_radius)
-        Eb = voxel_energy_within_radius(distances[b], blob_radius)
+        Ea = energy_of_voxels_within_radius(distances[a], blob_radius)
+        Eb = energy_of_voxels_within_radius(distances[b], blob_radius)
 
         if Ea < Eb:
             assert np.allclose(blob_centres(t, blob_radius)[0], b.pos)

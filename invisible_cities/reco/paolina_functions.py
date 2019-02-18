@@ -176,7 +176,7 @@ def length(track: Graph) -> float:
     return length
 
 
-def voxel_energy_within_radius(distances : Dict[Voxel, float], radius : float) -> float:
+def energy_of_voxels_within_radius(distances : Dict[Voxel, float], radius : float) -> float:
     return sum(v.E for (v, d) in distances.items() if d < radius)
 
 
@@ -233,8 +233,8 @@ def blob_energies_hits_and_centres(track_graph : Graph, radius : float) -> Tuple
 
     # Consider the case where voxels are built without associated hits
     if len(ha) == 0 and len(hb) == 0 :
-        Ea = voxel_energy_within_radius(distances[a], radius)
-        Eb = voxel_energy_within_radius(distances[b], radius)
+        Ea = energy_of_voxels_within_radius(distances[a], radius)
+        Eb = energy_of_voxels_within_radius(distances[b], radius)
 
     ca = blob_centre(a)
     cb = blob_centre(b)
