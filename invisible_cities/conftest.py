@@ -610,6 +610,12 @@ def TlMC_hits_skipping_NN(ICDATADIR):
     hits = load_hits_skipping_NN(hits_file_name)
     return hits
 
+@pytest.fixture(scope='session')
+def TlMC_hits_merged(ICDATADIR):
+    hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10_merged.h5"
+    hits_file_name = os.path.join(ICDATADIR, hits_file_name)
+    hits = load_hits(hits_file_name)
+    return hits
 
 @pytest.fixture(scope='session')
 def corr_toy_data(ICDATADIR):

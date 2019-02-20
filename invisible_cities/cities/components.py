@@ -30,6 +30,7 @@ from .. reco                   import         calib_functions as  cf
 from .. reco                   import calib_sensors_functions as csf
 from .. reco                   import          peak_functions as pkf
 from .. reco                   import         pmaps_functions as pmf
+from .. reco                   import          hits_functions as hif
 from .. reco.tbl_functions     import get_mc_info
 from .. reco.xy_algorithms     import corona
 from .. filters.s1s2_filter    import S12Selector
@@ -403,13 +404,6 @@ def build_pointlike_event(dbfile, run_number, drift_v, reco):
     return build_pointlike_event
 
 
-def split_energy(total_e, clusters):
-    if len(clusters) == 1:
-        return [total_e]
-    qs = np.array([c.Q for c in clusters])
-    return total_e * qs / np.sum(qs)
-
-
 def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices, rebin_method):
     datasipm = load_db.DataSiPM(dbfile, run_number)
     sipm_xs  = datasipm.X.values
@@ -461,7 +455,7 @@ def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices, rebin_method):
                     xys      = sipm_xys[peak.sipms.ids                 ]
                     qs       =          peak.sipms.time_slice(slice_no)
                     clusters = reco(xys, qs)
-                    es       = split_energy(e_slice, clusters)
+                    es       = hif.split_energy(e_slice, clusters)
                     for c, e in zip(clusters, es):
                         hit       = Hit(peak_no, c, z_slice, e, xy_peak)
                         hitc.hits.append(hit)
