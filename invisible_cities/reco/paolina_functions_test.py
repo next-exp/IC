@@ -27,13 +27,18 @@ from hypothesis.strategies import integers
 
 from networkx.generators.random_graphs import fast_gnp_random_graph
 
-from .. evm.event_model  import BHit
+from .. evm.event_model import BHit
+from .. evm.event_model import Voxel
 
-from . paolina_functions import Voxel
 from . paolina_functions import bounding_box
+from . paolina_functions import energy_of_voxels_within_radius
 from . paolina_functions import find_extrema
 from . paolina_functions import find_extrema_and_length
 from . paolina_functions import blob_energies
+from . paolina_functions import blob_energies_and_hits
+from . paolina_functions import blob_centre
+from . paolina_functions import blob_centres
+from . paolina_functions import hits_in_blob
 from . paolina_functions import voxelize_hits
 from . paolina_functions import shortest_paths
 from . paolina_functions import make_track_graphs
@@ -65,6 +70,7 @@ box_dimension = floats(min_value = 1,
 box_sizes = builds(np.array, lists(box_dimension,
                                    min_size = 3,
                                    max_size = 3))
+radius = floats(min_value=1, max_value=100)
 
 eps = 3e-12 # value that works for margin
 
@@ -328,29 +334,13 @@ def track_extrema():
     return tracks[0], extrema
 
 
-@parametrize('radius, expected',
-             ((0.5, (1000, 2000)), # Nothing but the endpoints
-              (1.5, (1001, 2000)), # 10 10 10 is 1   away
-              (1.9, (1001, 2001)), # 19 19 19 is 1.7 away
-              (2.1, (1003, 2001)), # 10 10 12 is 2   away
-              (3.1, (1007, 2001)), # 10 10 13 is 3   away
-              (3.5, (1007, 2003)), # 18 18 18 is 3.4 away
-              (4.5, (1015, 2003)), # 10 10 14 is 4   away
-))
-def test_blobs(track_extrema, radius, expected):
-    track, extrema = track_extrema
-    Ea, Eb = expected
-
-    assert blob_energies(track, radius) == (Ea, Eb)
-
-
 def test_voxelize_single_hit():
     hits = [BHit(1, 1, 1, 100)]
     vox_size = np.array([10,10,10], dtype=np.int16)
     assert len(voxelize_hits(hits, vox_size)) == 1
 
-
-def test_length():
+@fixture(scope='module')
+def voxels_without_hits():
     voxel_spec = ((10,10,10,1),
                   (10,10,11,1),
                   (10,10,12,1),
@@ -364,6 +354,12 @@ def test_length():
                   (10,15,15,1)
     )
     voxels = [Voxel(x,y,z, E, np.array([1,1,1])) for (x,y,z,E) in voxel_spec]
+
+    return voxels
+
+
+def test_length():
+    voxels = voxels_without_hits()
     tracks  = make_track_graphs(voxels)
 
     assert len(tracks) == 1
@@ -459,6 +455,7 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimension
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     ini_trks = make_track_graphs(voxels)
     ini_trk_energies = [sum(vox.E for vox in t.nodes()) for t in ini_trks]
+    ini_trk_energies.sort()
 
     energies = [v.E for v in voxels]
     e_thr = min(energies) + fraction_zero_one * (max(energies) - min(energies))
@@ -466,6 +463,7 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimension
     tot_final_energy = sum(v.E for v in mod_voxels)
     final_trks = make_track_graphs(mod_voxels)
     final_trk_energies = [sum(vox.E for vox in t.nodes()) for t in final_trks]
+    final_trk_energies.sort()
 
     assert tot_initial_energy == approx(tot_final_energy)
     assert np.allclose(ini_trk_energies, final_trk_energies)
@@ -545,3 +543,79 @@ def test_voxel_drop_in_short_tracks():
     mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
 
     assert len(mod_voxels) >= 1
+
+
+@parametrize('radius, expected',
+             ((10., ( 60,  20)),
+              (12., ( 60,  60)),
+              (14., (100,  60)),
+              (16., (120,  80)),
+              (18., (120,  80)),
+              (20., (140,  80)),
+              (22., (140, 100))
+ ))
+def test_blobs(radius, expected):
+    hits = [BHit(105.0, 125.0, 77.7, 10),
+            BHit( 95.0, 125.0, 77.7, 10),
+            BHit( 95.0, 135.0, 77.7, 10),
+            BHit(105.0, 135.0, 77.7, 10),
+            BHit(105.0, 115.0, 77.7, 10),
+            BHit( 95.0, 115.0, 77.7, 10),
+            BHit( 95.0, 125.0, 79.5, 10),
+            BHit(105.0, 125.0, 79.5, 10),
+            BHit(105.0, 135.0, 79.5, 10),
+            BHit( 95.0, 135.0, 79.5, 10),
+            BHit( 95.0, 115.0, 79.5, 10),
+            BHit(105.0, 115.0, 79.5, 10),
+            BHit(115.0, 125.0, 79.5, 10),
+            BHit(115.0, 125.0, 85.2, 10)]
+    vox_size = np.array([15.,15.,15.],dtype=np.float16)
+    voxels = voxelize_hits(hits, vox_size)
+    tracks = make_track_graphs(voxels)
+
+    assert len(tracks) == 1
+    assert blob_energies(tracks[0], radius) == expected
+
+
+@given(bunch_of_hits, box_sizes, radius)
+def test_blob_hits_are_inside_radius(hits, voxel_dimensions, blob_radius):
+    voxels = voxelize_hits(hits, voxel_dimensions)
+    tracks = make_track_graphs(voxels)
+    for t in tracks:
+        Ea, Eb, hits_a, hits_b   = blob_energies_and_hits(t, blob_radius)
+        centre_a, centre_b       = blob_centres(t, blob_radius)
+
+        for h in hits_a:
+            assert np.linalg.norm(h.XYZ - centre_a) < blob_radius
+        for h in hits_b:
+            assert np.linalg.norm(h.XYZ - centre_b) < blob_radius
+
+
+@given(radius)
+def test_paolina_functions_with_voxels_without_associated_hits(blob_radius):
+    voxels = voxels_without_hits()
+    tracks = make_track_graphs(voxels)
+    for t in tracks:
+        a, b = find_extrema(t)
+        hits_a = hits_in_blob(t, blob_radius, a)
+        hits_b = hits_in_blob(t, blob_radius, b)
+
+        assert len(hits_a) == len(hits_b) == 0
+
+        assert np.allclose(blob_centre(a), a.pos)
+        assert np.allclose(blob_centre(b), b.pos)
+
+        distances = shortest_paths(t)
+        Ea = energy_of_voxels_within_radius(distances[a], blob_radius)
+        Eb = energy_of_voxels_within_radius(distances[b], blob_radius)
+
+        if Ea < Eb:
+            assert np.allclose(blob_centres(t, blob_radius)[0], b.pos)
+            assert np.allclose(blob_centres(t, blob_radius)[1], a.pos)
+        else:
+            assert np.allclose(blob_centres(t, blob_radius)[0], a.pos)
+            assert np.allclose(blob_centres(t, blob_radius)[1], b.pos)
+
+        assert blob_energies(t, blob_radius) != (0, 0)
+
+        assert blob_energies_and_hits(t, blob_radius) != (0, 0, [], [])

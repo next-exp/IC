@@ -98,7 +98,7 @@ def voxelize_hits(hits             : Sequence[BHit],
         indx_comp = (h_indices == (x, y, z))
         hits_in_bin = list(h for i, h in zip(indx_comp, hits) if all(i))
 
-        voxels.append(Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions, hits_in_bin))  
+        voxels.append(Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions, hits_in_bin))
 
     return voxels
 
@@ -176,31 +176,98 @@ def length(track: Graph) -> float:
     return length
 
 
-def energy_within_radius(distances : Dict[Voxel, Dict[Voxel, float]], radius : float) -> float:
+def energy_of_voxels_within_radius(distances : Dict[Voxel, float], radius : float) -> float:
     return sum(v.E for (v, d) in distances.items() if d < radius)
 
 
-def voxels_within_radius(distances : Dict[Voxel, Dict[Voxel, float]],
+def voxels_within_radius(distances : Dict[Voxel, float],
                          radius : float) -> List[Voxel]:
     return [v for (v, d) in distances.items() if d < radius]
 
 
+def blob_centre(voxel: Voxel) -> Tuple[float, float, float]:
+    """Calculate the blob position, starting from the end-point voxel."""
+    positions = [h.pos for h in voxel.hits]
+    energies  = [h.E   for h in voxel.hits]
+    if sum(energies):
+        bary_pos = np.average(positions, weights=energies, axis=0)
+    # Consider the case where voxels are built without associated hits
+    else:
+        bary_pos = voxel.pos
+
+    return bary_pos
+
+
+def hits_in_blob(track_graph : Graph, radius : float, extreme: Voxel) -> Sequence[BHit]:
+    """Returns the hits that belong to a blob."""
+    distances         = shortest_paths(track_graph)
+    dist_from_extreme = distances[extreme]
+    blob_pos          = blob_centre(extreme)
+    diag              = np.linalg.norm(extreme.size)
+
+    blob_hits = []
+    # First, consider only voxels at a certain distance from the end-point, along the track.
+    # We allow for 1 extra contiguity, because this distance is calculated between
+    # the centres of the voxels, and not the hits. In the second step we will refine the
+    # selection, using the euclidean distance between the blob position and the hits.
+    for v in track_graph.nodes():
+        voxel_distance = dist_from_extreme[v]
+        if voxel_distance < radius + diag:
+            for h in v.hits:
+                hit_distance = np.linalg.norm(blob_pos - h.pos)
+                if hit_distance < radius:
+                    blob_hits.append(h)
+
+    return blob_hits
+
+
+def blob_energies_hits_and_centres(track_graph : Graph, radius : float) -> Tuple[float, float, Sequence[BHit], Sequence[BHit], Tuple[float, float, float], Tuple[float, float, float]]:
+    """Return the energies, the hits and the positions of the blobs.
+       For each pair of observables, the one of the blob of largest energy is returned first."""
+    distances = shortest_paths(track_graph)
+    a, b, _   = find_extrema_and_length(distances)
+    ha = hits_in_blob(track_graph, radius, a)
+    hb = hits_in_blob(track_graph, radius, b)
+
+    Ea = sum(h.E for h in ha)
+    Eb = sum(h.E for h in hb)
+
+    # Consider the case where voxels are built without associated hits
+    if len(ha) == 0 and len(hb) == 0 :
+        Ea = energy_of_voxels_within_radius(distances[a], radius)
+        Eb = energy_of_voxels_within_radius(distances[b], radius)
+
+    ca = blob_centre(a)
+    cb = blob_centre(b)
+
+    if Eb > Ea:
+        return (Eb, Ea, hb, ha, cb, ca)
+    else:
+        return (Ea, Eb, ha, hb, ca, cb)
+
+
 def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
-    """Return the energies around the extrema of the track."""
-    distances = shortest_paths(track_graph)
-    a, b, _ = find_extrema_and_length(distances)
-    Ea = energy_within_radius(distances[a], radius)
-    Eb = energy_within_radius(distances[b], radius)
-    return (Ea, Eb) if Ea < Eb else (Eb, Ea)
+    """Return the energies around the extrema of the track.
+       The largest energy is returned first."""
+    E1, E2, _, _, _, _ = blob_energies_hits_and_centres(track_graph, radius)
+
+    return E1, E2
 
 
-def compute_blobs(track_graph : Graph, radius : float) -> Tuple[Voxel, Voxel, List[Voxel], List[Voxel]]:
-    """Return the blobs (list of voxels) around the extrema of the track."""
-    distances = shortest_paths(track_graph)
-    a, b, _ = find_extrema_and_length(distances)
-    ba = voxels_within_radius(distances[a], radius)
-    bb = voxels_within_radius(distances[b], radius)
-    return a, b, ba, bb
+def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, float, Sequence[BHit], Sequence[BHit]]:
+    """Return the energies and the hits around the extrema of the track.
+       The largest energy is returned first, as well as its hits."""
+    E1, E2, h1, h2, _, _ = blob_energies_hits_and_centres(track_graph, radius)
+
+    return (E1, E2, h1, h2)
+
+
+def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
+    """Return the positions of the blobs.
+       The blob of largest energy is returned first."""
+    _, _, _, _, c1, c2 = blob_energies_hits_and_centres(track_graph, radius)
+
+    return (c1, c2)
 
 
 def make_tracks(evt_number       : float,
@@ -214,10 +281,11 @@ def make_tracks(evt_number       : float,
     track_graphs = make_track_graphs(voxels) # type: Sequence[Graph]
 #    track_graphs = make_track_graphs(voxels, voxel_dimensions) # type: Sequence[Graph]
     for trk in track_graphs:
-        a, b, voxels_a, voxels_b    = compute_blobs(trk, blob_radius)
-        blob_a = Blob(a, voxels_a) # type: Blob
-        blob_b = Blob(b, voxels_b)
-        blobs = (blob_a, blob_b) if blob_a.E < blob_b.E else (blob_b, blob_a)
+        energy_a, energy_b, hits_a, hits_b = blob_energies_and_hits(trk, blob_radius)
+        a, b                               = blob_centres(trk, blob_radius)
+        blob_a = Blob(a, hits_a, blob_radius) # type: Blob
+        blob_b = Blob(b, hits_b, blob_radius)
+        blobs = (blob_a, blob_b)
         track = Track(voxels_from_track_graph(trk), blobs)
         tc.tracks.append(track)
     return tc
