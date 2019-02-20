@@ -221,7 +221,7 @@ def hits_in_blob(track_graph : Graph, radius : float, extreme: Voxel) -> Sequenc
     return blob_hits
 
 
-def blob_energies_hits_and_centres(track_graph : Graph, radius : float) -> Tuple[float, float, Sequence[Tuple[float, float, float]], Sequence[Tuple[float, float, float]], Tuple[float, float, float], Tuple[float, float, float]]:
+def blob_energies_hits_and_centres(track_graph : Graph, radius : float) -> Tuple[float, float, Sequence[BHit], Sequence[BHit], Tuple[float, float, float], Tuple[float, float, float]]:
     """Return the energies, the hits and the positions of the blobs.
        For each pair of observables, the one of the blob of largest energy is returned first."""
     distances = shortest_paths(track_graph)
@@ -251,7 +251,7 @@ def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
     return E1, E2
 
 
-def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, float, Sequence[Tuple[float, float, float]], Sequence[Tuple[float, float, float]]]:
+def blob_energies_and_hits(track_graph : Graph, radius : float) -> Tuple[float, float, Sequence[BHit], Sequence[BHit]]:
     """Return the energies and the hits around the extrema of the track.
        The largest energy is returned first, as well as its hits."""
     E1, E2, h1, h2, _, _ = blob_energies_hits_and_centres(track_graph, radius)
