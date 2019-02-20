@@ -240,7 +240,10 @@ def blob_energies_hits_and_centres(track_graph : Graph, radius : float) -> Tuple
     ca = blob_centre(a)
     cb = blob_centre(b)
 
-    return (Eb, Ea, hb, ha, cb, ca) if Ea < Eb else (Ea, Eb, ha, hb, ca, cb)
+    if Eb > Ea:
+        return (Eb, Ea, hb, ha, cb, ca)
+    else:
+        return (Ea, Eb, ha, hb, ca, cb)
 
 
 def blob_energies(track_graph : Graph, radius : float) -> Tuple[float, float]:
