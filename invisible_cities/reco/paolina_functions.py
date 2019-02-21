@@ -178,7 +178,7 @@ def length(track: Graph) -> float:
 
 
 def energy_of_voxels_within_radius(distances : Dict[Voxel, float], radius : float) -> float:
-    return sum(v.Ehits for (v, d) in distances.items() if d < radius)
+    return sum(v.E for (v, d) in distances.items() if d < radius)
 
 
 def voxels_within_radius(distances : Dict[Voxel, float],
