@@ -4,10 +4,12 @@ import tables as tb
 import numpy  as np
 
 from enum import Enum
+from enum import auto
 
 from networkx                  import Graph
 from .. types.ic_types         import NN
 from .. types.ic_types         import minmax
+from .. types.ic_types         import AutoNameEnumBase
 from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
@@ -111,11 +113,11 @@ class MCParticle:
     __repr__ =  __str__
 
 
-class HitEnergy(Enum):
-    E        = 'E'
-    Ec       = 'Ec'
-    energy   = 'energy'
-    energy_c = 'energy_c'
+class HitEnergy(AutoNameEnumBase):
+    E        = auto()
+    Ec       = auto()
+    energy   = auto()
+    energy_c = auto()
 
 
 class BHit:
