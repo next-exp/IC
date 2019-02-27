@@ -255,6 +255,27 @@ def apply_all_correction_single_maps(map_e0     : ASectorMap,
 
     return total_correction_factor
 
+def apply_all_correction(maps       : ASectorMap,
+                         apply_temp : bool = True)->Callable:
+    """
+    Returns a function to get all correction factor for a
+    given hit collection when (x,y,z,time) is provided,
+    if an unique correction map is wanted to be used
+
+    Parameters
+    ----------
+    maps : AsectorMap
+        Selected correction map for doing geometric and lifetime correction
+    apply_temp : Bool
+        If True, time evolution will be taken into account
+
+    Returns
+    -------
+        A function that returns complete time correction factor
+    """
+
+    return apply_all_correction_single_maps(maps, maps, maps, apply_temp)
+
 def temporal_corrections(E : np.array, X : np.array, Y : np.array, Z : np.array, maps : ASectorMap)-> np.array:
     raise NotImplementedError
 
