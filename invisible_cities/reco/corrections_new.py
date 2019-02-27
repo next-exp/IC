@@ -5,6 +5,7 @@ from   pandas      import Series
 from   dataclasses import dataclass
 from   typing      import Callable
 from   typing      import List
+from   typing      import Optional
 from   enum        import auto
 from .. types.ic_types  import AutoNameEnumBase
 from .. evm.event_model import Hit
@@ -16,7 +17,8 @@ class ASectorMap:  # Map in chamber sector containing average of pars
     lt      : DataFrame
     e0u     : DataFrame
     ltu     : DataFrame
-    mapinfo : Series
+    mapinfo : Optional[Series]
+    t_evol  : Optional[DataFrame]
 
 def read_maps(filename : str)->ASectorMap:
     chi2     = pd.read_hdf(filename, 'chi2')
