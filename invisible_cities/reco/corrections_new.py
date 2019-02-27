@@ -144,6 +144,38 @@ def correct_lifetime_(Z : np.array, LT : np.array) -> np.array:
 
     return np.exp(Z / LT)
 
+
+def time_coefs_corr(time_evt   : np.array,
+                    times_evol : np.array,
+                    par        : np.array,
+                    par_u      : np.array)-> np.array:
+    """
+    Computes a time-dependence parameter that will correct the
+    correction coefficient for taking into account time evolution.
+
+    Parameters
+    ----------
+    time_evt : np.array
+        Array with timestamps for each hit (is the same for all hit of the same event).
+    times_evol : np.array
+        Time intervals to perform the interpolation.
+    par : np.array
+        Time evolution of a certain parameter (e.g. lt or e0).
+        Each value is associated to a times_evol one.
+    par_u : np.array
+        Time evolution of the uncertainty of a certain parameter.
+        Each value is associated to a times_evol one.
+
+    Returns
+    -------
+        An array with the computed value.
+    """
+
+    par_mean   = np.average(par, weights=par_u)
+    par_i      = np.interp(time_evt, times_evol, par)
+    par_factor = par_i/par_mean
+    return par_factor
+
 def correct_temporal(E : np.array, X : np.array, Y : np.array, **kwargs):
     raise NotImplementedError
 
