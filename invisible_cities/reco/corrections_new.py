@@ -108,8 +108,24 @@ def maps_coefficient_getter(mapinfo : Series,
         return np.array([map_df.get(j, {}).get(i, np.nan) for i, j in zip(iy,ix)])
     return get_maps_coefficient
 
-def correct_geometry_(E : np.array, CE : np.array) -> np.array:
-    return E/CE
+
+def correct_geometry_(CE : np.array) -> np.array:
+    """
+    Computes the geometric correction factor
+    for a given correction coefficient
+
+    Parameters
+    ----------
+    CE : np.array
+        Array with geometric correction coefficients
+
+    Returns
+    -------
+        An array with geometric correction factors
+    """
+
+    return 1/CE
+
 
 def correct_lifetime_(E : np.array, Z : np.array, LT : np.array) -> np.array:
     return E * np.exp(Z / LT)
