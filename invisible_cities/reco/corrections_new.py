@@ -176,8 +176,6 @@ def time_coefs_corr(time_evt   : np.array,
     par_factor = par_i/par_mean
     return par_factor
 
-def correct_temporal(E : np.array, X : np.array, Y : np.array, **kwargs):
-    raise NotImplementedError
 
 def e0_xy_corrections(E : np.array, X : np.array, Y : np.array, maps : ASectorMap)-> np.array:
     mapinfo = maps.mapinfo
@@ -275,10 +273,3 @@ def apply_all_correction(maps       : ASectorMap,
     """
 
     return apply_all_correction_single_maps(maps, maps, maps, apply_temp)
-
-def temporal_corrections(E : np.array, X : np.array, Y : np.array, Z : np.array, maps : ASectorMap)-> np.array:
-    raise NotImplementedError
-
-def apply_all_correction(cmap:ASectorMap, hits : List[Hit]) -> List[Hit]:
-    """ This function calls all three - geometric, lifetime and temporal corrections """ 
-    raise NotImplementedError 
