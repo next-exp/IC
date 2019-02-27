@@ -20,6 +20,14 @@ class ASectorMap:  # Map in chamber sector containing average of pars
     mapinfo : Optional[Series]
     t_evol  : Optional[DataFrame]
 
+@dataclass
+class FitMapValue:  # A ser of values of a FitMap
+    chi2  : float
+    e0    : float
+    lt    : float
+    e0u   : float
+    ltu   : float
+
 def read_maps(filename : str)->ASectorMap:
     chi2     = pd.read_hdf(filename, 'chi2')
     e0       = pd.read_hdf(filename, 'e0')
