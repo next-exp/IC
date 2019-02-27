@@ -36,13 +36,48 @@ def amap_max(amap : ASectorMap)->FitMapValue:
                        ltu  = amap.ltu .max().max())
 
 def read_maps(filename : str)->ASectorMap:
+
+    """
+    Read 'filename' variable and creates ASectorMap class.
+    If the map corresponds to a data run (run_number>0),
+    ASectorMap will also contain a DataFrame with time evolution information.
+
+    Parameters
+    ----------
+    filename : string
+        Name of the file that contains the correction maps.
+
+    Returns
+    -------
+    ASectorMap:
+
+@dataclass
+class ASectorMap:
+    chi2    : DataFrame            # chi2 value for each bin
+    e0      : DataFrame            # geometric map
+    lt      : DataFrame            # lifetime map
+    e0u     : DataFrame            # uncertainties of geometric map
+    ltu     : DataFrame            # uncertainties of lifetime map
+    mapinfo : Optional[Series]     # series with some info about the
+    t_evol  : Optional[DataFrame]  # time evolution of some parameters
+                                     (only for data)
+    """
+
     chi2     = pd.read_hdf(filename, 'chi2')
     e0       = pd.read_hdf(filename, 'e0')
     e0u      = pd.read_hdf(filename, 'e0u')
     lt       = pd.read_hdf(filename, 'lt')
     ltu      = pd.read_hdf(filename, 'ltu')
     mapinfo  = pd.read_hdf(filename, 'mapinfo')
-    return  ASectorMap(chi2, e0, lt, e0u, ltu, mapinfo)
+
+    if mapinfo.run_number>0:
+        t_evol = pd.read_hdf(filename, 'time_evolution')
+        maps   = ASectorMap(chi2, e0, lt, e0u, ltu, mapinfo, t_evol)
+
+    else: maps = ASectorMap(chi2, e0, lt, e0u, ltu, mapinfo, None)
+
+    return  maps
+
 
 def maps_coefficient_getter(mapinfo : Series, map_df : DataFrame) -> Callable:
     binsx   = np.linspace(mapinfo.xmin,mapinfo.xmax,mapinfo.nx+1)
