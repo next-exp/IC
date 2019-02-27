@@ -79,7 +79,27 @@ class ASectorMap:
     return  maps
 
 
-def maps_coefficient_getter(mapinfo : Series, map_df : DataFrame) -> Callable:
+def maps_coefficient_getter(mapinfo : Series,
+                            map_df  : DataFrame) -> Callable:
+    """
+    For a given correction map,
+    it returns a function that yields the values of map
+    for a given (X,Y) position.
+
+    Parameters
+    ----------
+    mapinfo : Series
+        Stores some information about the map
+        (run number, number of X-Y bins, X-Y range)
+    map_df : DataFrame
+        DataFrame of a correction map (lt or e0)
+
+    Returns
+    -------
+        A function that returns the value of the 'map_df' map
+        for a given (X,Y) position
+    """
+
     binsx   = np.linspace(mapinfo.xmin,mapinfo.xmax,mapinfo.nx+1)
     binsy   = np.linspace(mapinfo.ymin,mapinfo.ymax,mapinfo.ny+1)
     def get_maps_coefficient(x : np.array, y : np.array) -> np.array:
