@@ -28,6 +28,13 @@ class FitMapValue:  # A ser of values of a FitMap
     e0u   : float
     ltu   : float
 
+def amap_max(amap : ASectorMap)->FitMapValue:
+    return FitMapValue(chi2 = amap.chi2.max().max(),
+                       e0   = amap.e0  .max().max(),
+                       lt   = amap.lt  .max().max(),
+                       e0u  = amap.e0u .max().max(),
+                       ltu  = amap.ltu .max().max())
+
 def read_maps(filename : str)->ASectorMap:
     chi2     = pd.read_hdf(filename, 'chi2')
     e0       = pd.read_hdf(filename, 'e0')
