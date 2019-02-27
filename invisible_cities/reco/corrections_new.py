@@ -127,8 +127,22 @@ def correct_geometry_(CE : np.array) -> np.array:
     return 1/CE
 
 
-def correct_lifetime_(E : np.array, Z : np.array, LT : np.array) -> np.array:
-    return E * np.exp(Z / LT)
+def correct_lifetime_(Z : np.array, LT : np.array) -> np.array:
+    """
+    Computes the lifetime correction factor
+    for a given correction coefficient
+
+    Parameters
+    ----------
+    LT : np.array
+        Array with lifetime correction coefficients
+
+    Returns
+    -------
+        An array with lifetime correction factors
+    """
+
+    return np.exp(Z / LT)
 
 def correct_temporal(E : np.array, X : np.array, Y : np.array, **kwargs):
     raise NotImplementedError
