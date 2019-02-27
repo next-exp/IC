@@ -28,6 +28,12 @@ class FitMapValue:  # A ser of values of a FitMap
     e0u   : float
     ltu   : float
 
+class MissingArgumentError(Exception):
+    def __init__(self):
+        s  = 'You must provide a time evolution map '
+        s += 'if time correction is wanted to be applied.'
+        Exception.__init__(self, s)
+
 def amap_max(amap : ASectorMap)->FitMapValue:
     return FitMapValue(chi2 = amap.chi2.max().max(),
                        e0   = amap.e0  .max().max(),
