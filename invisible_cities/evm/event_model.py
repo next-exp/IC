@@ -192,10 +192,10 @@ class MCHit(BHit):
 
 class Voxel(BHit):
     """Represents a Voxel"""
-    def __init__(self, x,y,z, E, size, hits=[], e_type : HitEnergy = HitEnergy.energy.value):
+    def __init__(self, x,y,z, E, size, hits=None, e_type : HitEnergy = HitEnergy.energy.value):
         super().__init__(x,y,z, E)
         self._size  = size
-        self.hits   = hits
+        self.hits   = hits if hits is not None else []
         self.e_type = e_type
 
     @property
