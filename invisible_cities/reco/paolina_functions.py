@@ -37,7 +37,7 @@ def bounding_box(seq : BHit) -> Sequence[np.ndarray]:
 def voxelize_hits(hits             : Sequence[BHit],
                   voxel_dimensions : np.ndarray,
                   strict_voxel_size: bool = False,
-                  energy_type      : HitEnergy = HitEnergy.energy.value) -> List[Voxel]:
+                  energy_type      : HitEnergy = HitEnergy.energy) -> List[Voxel]:
     # 1. Find bounding box of all hits.
     # 2. Allocate hits to regular sub-boxes within bounding box, using histogramdd.
     # 3. Calculate voxel energies by summing energies of hits within each sub-box.
@@ -60,7 +60,7 @@ def voxelize_hits(hits             : Sequence[BHit],
     voxel_edges_hi += eps
 
     hit_positions = np.array([h.pos                   for h in hits]).astype('float64')
-    hit_energies  =          [getattr(h, energy_type) for h in hits]
+    hit_energies  =          [getattr(h, energy_type.value) for h in hits]
     E, edges = np.histogramdd(hit_positions,
                               bins    = number_of_voxels,
                               range   = tuple(zip(voxel_edges_lo, voxel_edges_hi)),
@@ -281,7 +281,7 @@ def make_tracks(evt_number       : float,
                 voxel_dimensions : np.ndarray,
                 contiguity       : float = 1,
                 blob_radius      : float = 30 * units.mm,
-                energy_type      : HitEnergy = HitEnergy.E.value) -> TrackCollection:
+                energy_type      : HitEnergy = HitEnergy.E) -> TrackCollection:
     """Make a track collection."""
     tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
     track_graphs = make_track_graphs(voxels) # type: Sequence[Graph]

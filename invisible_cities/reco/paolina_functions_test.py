@@ -665,8 +665,8 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
 @given(bunch_of_corrected_hits(), box_sizes, radius)
 def test_voxelize_hits_with_hit_energy_different_from_default_value(hits, requested_voxel_dimensions, blob_radius):
     with raises(AttributeError):
-        voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c.value)
-        voxels_l = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_l.value)
+        voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c)
+        voxels_l = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_l)
 
 
 @given(box_sizes, radius)
@@ -688,7 +688,7 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(requeste
             Hit(npeak, Cluster(Q, xy( 5,3), xy(var,var),nsipm), 5, energy, xy(x_peak,y_peak), energy_l, energy_c)]
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     tracks = make_track_graphs(voxels)
-    voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c.value)
+    voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c)
     tracks_c = make_track_graphs(voxels_c)
 
     energies = [sum(vox.E for vox in t.nodes()) for t in tracks]
