@@ -19,6 +19,7 @@ parametrize = mark.parametrize
 
 from hypothesis            import given
 from hypothesis            import settings
+from hypothesis.strategies import composite
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import integers
@@ -28,7 +29,10 @@ from hypothesis.strategies import integers
 from networkx.generators.random_graphs import fast_gnp_random_graph
 
 from .. evm.event_model import BHit
+from .. evm.event_model import Hit
+from .. evm.event_model import Cluster
 from .. evm.event_model import Voxel
+from .. evm.event_model import HitEnergy
 
 from . paolina_functions import bounding_box
 from . paolina_functions import energy_of_voxels_within_radius
@@ -53,6 +57,8 @@ from .. core.exceptions import NoVoxels
 from .. io.mcinfo_io    import load_mchits
 from .. io.hits_io      import load_hits
 
+from .. types.ic_types        import xy
+
 def big_enough(hits):
     lo, hi = bounding_box(hits)
     bbsize = abs(hi-lo)
@@ -63,6 +69,30 @@ ener = posn
 bunch_of_hits = lists(builds(BHit, posn, posn, posn, ener),
                       min_size =  1,
                       max_size = 30).filter(big_enough)
+
+@composite
+def hit(draw, min_value=1, max_value=100):
+    x     = draw(floats  (-10,  10))
+    y     = draw(floats  (-10,  10))
+    xvar  = draw(floats  (.01,  .5))
+    yvar  = draw(floats  (.01,  .5))
+    Q     = draw(floats  (  1, 100))
+    nsipm = draw(integers(  1,  20))
+    npeak = 0
+    z     = draw(floats  ( 50, 100))
+    E     = draw(floats  ( 50, 100))
+    E_l   = draw(floats  ( 50, 100))
+    E_c   = draw(floats  ( 50, 100))
+    x_peak= draw(floats  (-10,  10))
+    y_peak= draw(floats  (-10,  10))
+
+    return Hit(npeak,Cluster(Q,xy(x,y),xy(xvar,yvar),nsipm),z,E,xy(x_peak,y_peak), s2_energy_l=E_l, s2_energy_c=E_c)
+
+
+@composite
+def bunch_of_corrected_hits(draw):
+    list_of_hits = draw(lists(hit(), min_size=2, max_size=10))
+    return list_of_hits
 
 
 box_dimension = floats(min_value = 1,
@@ -630,3 +660,41 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
 
         assert np.allclose(blob_centre(a), a.pos)
         assert np.allclose(blob_centre(b), b.pos)
+
+
+@given(bunch_of_corrected_hits(), box_sizes, radius)
+def test_voxelize_hits_with_hit_energy_different_from_default_value(hits, requested_voxel_dimensions, blob_radius):
+    with raises(AttributeError):
+        voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c.value)
+        voxels_l = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_l.value)
+
+
+@given(box_sizes, radius)
+def test_paolina_functions_with_hit_energy_different_from_default_value(requested_voxel_dimensions, blob_radius):
+
+    npeak = 0
+    Q     = 1
+    var   = 0
+    nsipm = 1
+    energy = 5
+    energy_l = energy + 1
+    energy_c = energy + 2
+    x_peak = y_peak = 0
+    hits = [Hit(npeak, Cluster(Q, xy(-1,0), xy(var,var),nsipm), 1, energy, xy(x_peak,y_peak), energy_l, energy_c),
+            Hit(npeak, Cluster(Q, xy( 0,0), xy(var,var),nsipm), 2, energy, xy(x_peak,y_peak), energy_l, energy_c),
+            Hit(npeak, Cluster(Q, xy( 0,1), xy(var,var),nsipm), 3, energy, xy(x_peak,y_peak), energy_l, energy_c),
+            Hit(npeak, Cluster(Q, xy( 1,0), xy(var,var),nsipm), 4, energy, xy(x_peak,y_peak), energy_l, energy_c),
+            Hit(npeak, Cluster(Q, xy( 4,5), xy(var,var),nsipm), 4, energy, xy(x_peak,y_peak), energy_l, energy_c),
+            Hit(npeak, Cluster(Q, xy( 5,3), xy(var,var),nsipm), 5, energy, xy(x_peak,y_peak), energy_l, energy_c)]
+    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
+    tracks = make_track_graphs(voxels)
+    voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c.value)
+    tracks_c = make_track_graphs(voxels_c)
+
+    energies = [sum(vox.E for vox in t.nodes()) for t in tracks]
+    energies.sort()
+
+    energies_c = [sum(vox.E for vox in t.nodes()) for t in tracks_c]
+    energies_c.sort()
+
+    assert not np.allclose(energies, energies_c)
