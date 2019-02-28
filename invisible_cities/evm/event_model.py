@@ -192,7 +192,7 @@ class MCHit(BHit):
 
 class Voxel(BHit):
     """Represents a Voxel"""
-    def __init__(self, x,y,z, E, size, hits=[], e_type : HitEnergy = HitEnergy.E.value):
+    def __init__(self, x,y,z, E, size, hits=[], e_type : HitEnergy = HitEnergy.energy.value):
         super().__init__(x,y,z, E)
         self._size  = size
         self.hits   = hits
@@ -312,7 +312,7 @@ class Blob():
     def __init__(self, seed: Tuple[float, float, float],
                        hits : List[BHit],
                        radius : float,
-                       e_type : HitEnergy = HitEnergy.E.value) ->None:
+                       e_type : HitEnergy = HitEnergy.energy.value) ->None:
         super().__init__(hits)
         self.seed   = seed
         self.hits   = hits

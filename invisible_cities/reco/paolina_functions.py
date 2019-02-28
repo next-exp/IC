@@ -37,7 +37,7 @@ def bounding_box(seq : BHit) -> Sequence[np.ndarray]:
 def voxelize_hits(hits             : Sequence[BHit],
                   voxel_dimensions : np.ndarray,
                   strict_voxel_size: bool = False,
-                  energy_type      : HitEnergy = HitEnergy.E.value) -> List[Voxel]:
+                  energy_type      : HitEnergy = HitEnergy.energy.value) -> List[Voxel]:
     # 1. Find bounding box of all hits.
     # 2. Allocate hits to regular sub-boxes within bounding box, using histogramdd.
     # 3. Calculate voxel energies by summing energies of hits within each sub-box.
