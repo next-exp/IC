@@ -592,8 +592,8 @@ def test_blob_hits_are_inside_radius(hits, voxel_dimensions, blob_radius):
             assert np.linalg.norm(h.XYZ - centre_b) < blob_radius
 
 
-@given(radius)
-def test_paolina_functions_with_voxels_without_associated_hits(blob_radius):
+@given(radius, min_n_of_voxels, fraction_zero_one)
+def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_voxels, fraction_zero_one):
     voxels = voxels_without_hits()
     tracks = make_track_graphs(voxels)
     for t in tracks:
@@ -620,3 +620,13 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius):
         assert blob_energies(t, blob_radius) != (0, 0)
 
         assert blob_energies_and_hits(t, blob_radius) != (0, 0, [], [])
+
+    energies = [v.E for v in voxels]
+    e_thr = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    trks = make_track_graphs(mod_voxels)
+    for t in tracks:
+        a, b = find_extrema(t)
+
+        assert np.allclose(blob_centre(a), a.pos)
+        assert np.allclose(blob_centre(b), b.pos)
