@@ -11,6 +11,7 @@ from . corrections_new import correct_lifetime_
 from . corrections_new import time_coefs_corr
 from pytest                import fixture, mark
 from numpy.testing         import assert_allclose
+from numpy.testing         import assert_array_equal
 from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from hypothesis.strategies import composite
