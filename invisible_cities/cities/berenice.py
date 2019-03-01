@@ -65,6 +65,8 @@ def berenice(files_in, file_out, compression, event_range, print_mod,
     accumulate_mode       = sum_histograms()
     accumulate_median     = sum_histograms()
 
+    sensor_info_table     = cf.copy_sensor_table(files_in[0])
+
     event_count = fl.spy_count()
 
     with tb.open_file(file_out, 'w', filters=tbl.filters(compression)) as h5out:
@@ -96,7 +98,7 @@ def berenice(files_in, file_out, compression, event_range, print_mod,
         write_hist(table_name = "adc"   )(out.adc   )
         write_hist(table_name = "mode"  )(out.mode  )
         write_hist(table_name = "median")(out.median)
-        cf.copy_sensor_table(files_in[0], h5out)
+        sensor_info_table(h5out)
 
     return out
 

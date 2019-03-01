@@ -87,14 +87,15 @@ def phyllis(files_in, file_out, compression, event_range, print_mod, detector_db
                                               integrals_period,
                                               wf_length       )
 
-    processing       = fl.map(proc, args="pmt", out="cwf")
-    integrate_light  = fl.map(waveform_integrator(light_limits))
-    integrate_dark   = fl.map(waveform_integrator( dark_limits))
-    bin_waveforms    = fl.map(waveform_binner    (  bin_edges ))
-    sum_histograms   = fl.reduce(add, np.zeros(shape, dtype=np.int))
-    accumulate_light = sum_histograms()
-    accumulate_dark  = sum_histograms()
-    event_count      = fl.spy_count()
+    processing        = fl.map(proc, args="pmt", out="cwf")
+    integrate_light   = fl.map(waveform_integrator(light_limits))
+    integrate_dark    = fl.map(waveform_integrator( dark_limits))
+    bin_waveforms     = fl.map(waveform_binner    (  bin_edges ))
+    sum_histograms    = fl.reduce(add, np.zeros(shape, dtype=np.int))
+    accumulate_light  = sum_histograms()
+    accumulate_dark   = sum_histograms()
+    sensor_info_table = cf.copy_sensor_table(files_in[0])
+    event_count       = fl.spy_count()
 
     with tb.open_file(file_out, 'w', filters=tbl.filters(compression)) as h5out:
         write_event_info    = run_and_event_writer(h5out)
@@ -123,7 +124,7 @@ def phyllis(files_in, file_out, compression, event_range, print_mod, detector_db
 
         write_hist(table_name = 'pmt_spe' )(out.spe )
         write_hist(table_name = 'pmt_dark')(out.dark)
-        cf.copy_sensor_table(files_in[0], h5out)
+        sensor_info_table(h5out)
 
     return out
 
