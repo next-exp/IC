@@ -77,7 +77,10 @@ class ASectorMap:
     mapinfo  = pd.read_hdf(filename, 'mapinfo')
 
     if mapinfo.run_number>0:
-        t_evol = pd.read_hdf(filename, 'time_evolution')
+        try:
+            t_evol = pd.read_hdf(filename, 'time_evolution')
+        except:
+            t_evol = None
         maps   = ASectorMap(chi2, e0, lt, e0u, ltu, mapinfo, t_evol)
 
     else: maps = ASectorMap(chi2, e0, lt, e0u, ltu, mapinfo, None)
