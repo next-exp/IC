@@ -12,6 +12,8 @@ from . corrections_new import time_coefs_corr
 from . corrections_new import apply_all_correction_single_maps
 from . corrections_new import MissingArgumentError
 from . corrections_new import apply_all_correction
+from . corrections_new import amap_max
+
 from pytest                import fixture, mark
 from numpy.testing         import assert_allclose
 from numpy.testing         import assert_array_equal
