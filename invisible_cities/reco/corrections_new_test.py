@@ -21,6 +21,12 @@ def map_filename(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
+@fixture(scope='session')
+def map_filename_MC(ICDATADIR):
+    test_file = "kr_emap_xy_constant_values_RN_negat.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
 @fixture
 def toy_corrections():
     xs,ys = np.meshgrid(np.linspace(-199,199,5),np.linspace(-199,199,5))
@@ -106,3 +112,36 @@ def test_amap_max_returns_FitMapValue(map_filename):
     maps       = read_maps(map_filename)
     max_values = amap_max(maps)
     assert type(max_values)==FitMapValue
+
+def test_read_maps_when_MC_t_evol_is_none(map_filename_MC):
+    emap = read_maps(map_filename_MC)
+    assert emap.t_evol is None
+
+def test_read_maps_t_evol_table_is_correct(map_filename):
+    """
+    For this test, a map where its t_evol table correspond to single values
+    (ts=[1,1,...1], e0=[2,2,...2], ..., Yrmsu=[27,27,...27])
+    has been generated.
+    """
+
+    maps       = read_maps(map_filename)
+    map_te     = maps.t_evol
+    columns_te = map_te.columns
+    assert np.all([np.all( map_te[parameter] == i+1 )
+                   for i, parameter in zip( range(len(columns_te)), columns_te )])
+
+
+def test_read_maps_maps_are_correct(map_filename):
+    """
+    For this test, a map where its correction maps are:
+    (chi=[1,1,...1], e0=[13000,13000,...13000], e0u=[2,2,...2],
+    lt=[5000,5000,...5000], ltu=[3,3,...3])
+    has been generated.
+    """
+
+    maps = read_maps(map_filename)
+    assert np.all(maps.chi2 == 1    )
+    assert np.all(maps.e0   == 13000)
+    assert np.all(maps.e0u  == 2    )
+    assert np.all(maps.lt   == 5000 )
+    assert np.all(maps.ltu  == 3    )
