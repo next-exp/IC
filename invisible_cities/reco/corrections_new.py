@@ -186,19 +186,19 @@ def time_coefs_corr(time_evt   : np.array,
     return par_factor
 
 
-def e0_xy_corrections(E : np.array, X : np.array, Y : np.array, maps : ASectorMap)-> np.array:
+def e0_xy_corrections(X : np.array, Y : np.array, maps : ASectorMap)-> np.array:
     mapinfo = maps.mapinfo
     map_df  = maps.e0
     get_maps_coefficient= maps_coefficient_getter(mapinfo, map_df)
     CE  = get_maps_coefficient(X,Y)
-    return correct_geometry_(E,CE)
+    return correct_geometry_(CE)
 
-def lt_xy_corrections(E : np.array, X : np.array, Y : np.array, Z : np.array, maps : ASectorMap)-> np.array:
+def lt_xy_corrections(X : np.array, Y : np.array, Z : np.array, maps : ASectorMap)-> np.array:
     mapinfo = maps.mapinfo
     map_df  = maps.lt
     get_maps_coefficient= maps_coefficient_getter(mapinfo, map_df)
     LT  = get_maps_coefficient(X,Y)
-    return correct_lifetime_(E,Z,LT)
+    return correct_lifetime_(Z,LT)
 
 def apply_all_correction_single_maps(map_e0     : ASectorMap,
                                      map_lt     : ASectorMap,

@@ -4,13 +4,14 @@ from . corrections_new import read_maps
 from . corrections_new import e0_xy_corrections
 from . corrections_new import lt_xy_corrections
 from . corrections_new import ASectorMap
-from pytest                import fixture
+from pytest                import fixture, mark
 from numpy.testing         import assert_allclose
 from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from hypothesis.strategies import composite
 from hypothesis.strategies import lists
 from hypothesis            import given
+
 
 @fixture
 def toy_corrections():
@@ -56,6 +57,7 @@ def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename)
     assert_allclose (CE, coef_geo)
     assert_allclose (LT, coef_lt)
 
+@mark.skip
 def test_e0_xy_corrections_exact(toy_corrections, correction_map_filename):
     maps=read_maps(correction_map_filename)
     xs, ys, zs, es, e0_correct, lt_correct, _, _ = toy_corrections
@@ -67,6 +69,7 @@ def test_e0_xy_corrections_exact(toy_corrections, correction_map_filename):
 def test_read_maps_returns_ASectorMap(correction_map_filename):
     maps=read_maps(correction_map_filename)
     assert type(maps)==ASectorMap
+
 
 @composite
 def xy_pos(draw, elements=floats(min_value=-250, max_value=250)):
