@@ -70,7 +70,6 @@ def test_merge_NN_hits_exact(TlMC_hits, TlMC_hits_merged):
         hits_merged = merge_NN_hits(hitc.hits)
         assert len(hits_test)==len(hits_merged)
         for h1, h2 in zip(hits_test,hits_merged):
-            print(ev,'\n','hi\n',h1,'\n','h2\n',h2)
             assert h1==h2
 @given(threshs=thresholds(1,1))
 @settings(deadline=None, max_examples = 1)

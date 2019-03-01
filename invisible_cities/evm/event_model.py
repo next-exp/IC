@@ -3,9 +3,13 @@
 import tables as tb
 import numpy  as np
 
+from enum import Enum
+from enum import auto
+
 from networkx                  import Graph
 from .. types.ic_types         import NN
 from .. types.ic_types         import minmax
+from .. types.ic_types         import AutoNameEnumBase
 from .. core.exceptions        import PeakNotFound
 from .. core.exceptions        import SipmEmptyList
 from .. core.exceptions        import SipmNotFound
@@ -109,6 +113,13 @@ class MCParticle:
     __repr__ =  __str__
 
 
+class HitEnergy(AutoNameEnumBase):
+    E        = auto()
+    Ec       = auto()
+    energy   = auto()
+    energy_c = auto()
+
+
 class BHit:
     """Base class representing a hit"""
 
@@ -181,16 +192,20 @@ class MCHit(BHit):
 
 class Voxel(BHit):
     """Represents a Voxel"""
-    def __init__(self, x,y,z, E, size, hits=[]):
+    def __init__(self, x,y,z, E, size, hits=None, e_type : HitEnergy = HitEnergy.energy):
         super().__init__(x,y,z, E)
-        self._size = size
-        self.hits = hits
+        self._size  = size
+        self.hits   = hits if hits is not None else []
+        self.e_type = e_type.value
 
     @property
     def size(self): return self._size
 
     @property
-    def Ehits(self): return sum(h.E for h in hits)
+    def Ehits(self): return sum(getattr(h, self.e_type) for h in self.hits)
+
+    @property
+    def Etype(self): return self.e_type
 
 
 class Cluster(BHit):
@@ -294,12 +309,19 @@ class VoxelCollection:
 
 class Blob():
     """A Blob is a collection of Hits with a seed and a radius. """
-    def __init__(self, seed: Tuple[float, float, float], hits : List[BHit], radius : float) ->None:
+    def __init__(self, seed: Tuple[float, float, float],
+                       hits : List[BHit],
+                       radius : float,
+                       e_type : HitEnergy = HitEnergy.energy) ->None:
         super().__init__(hits)
         self.seed   = seed
         self.hits   = hits
-        self.energy = sum(h.E for h in hits)
+        self.energy = sum(getattr(h, e_type) for h in hits)
         self.radius = radius
+        self.e_type = e_type.value
+
+    @property
+    def Etype(self): return self.e_type
 
     def __str__(self):
         s =  """Blob: (hits = {} \n
