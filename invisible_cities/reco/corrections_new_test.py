@@ -1,9 +1,11 @@
+import os
 import numpy  as np
 from . corrections_new import maps_coefficient_getter
 from . corrections_new import read_maps
 from . corrections_new import e0_xy_corrections
 from . corrections_new import lt_xy_corrections
 from . corrections_new import ASectorMap
+from . corrections_new import FitMapValue
 from pytest                import fixture, mark
 from numpy.testing         import assert_allclose
 from hypothesis.strategies import floats
@@ -12,6 +14,12 @@ from hypothesis.strategies import composite
 from hypothesis.strategies import lists
 from hypothesis            import given
 
+
+@fixture(scope='session')
+def map_filename(ICDATADIR):
+    test_file = "kr_emap_xy_constant_values.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
 
 @fixture
 def toy_corrections():
@@ -93,3 +101,8 @@ def test_maps_coefficient_getter_gives_nans(correction_map_filename, xy_pos):
     mask_nan = (mask_x)   | (mask_y)
     assert all(np.isnan(CE[mask_nan]))
     assert not any(np.isnan(CE[~mask_nan]))
+
+def test_amap_max_returns_FitMapValue(map_filename):
+    maps       = read_maps(map_filename)
+    max_values = amap_max(maps)
+    assert type(max_values)==FitMapValue
