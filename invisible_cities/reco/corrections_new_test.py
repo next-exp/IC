@@ -8,6 +8,7 @@ from . corrections_new import ASectorMap
 from . corrections_new import FitMapValue
 from . corrections_new import correct_geometry_
 from . corrections_new import correct_lifetime_
+from . corrections_new import time_coefs_corr
 from pytest                import fixture, mark
 from numpy.testing         import assert_allclose
 from hypothesis.strategies import floats
@@ -164,3 +165,23 @@ def test_correct_geometry_properly(x):
 def test_correct_geometry_properly(z, lt):
     compute_corr = np.exp(z / lt)
     assert_array_equal(correct_lifetime_(z, lt),compute_corr)
+
+@given(floats(min_value = 0,
+              max_value = 1e4))
+def test_time_coefs_corr(map_filename, time):
+    """
+    In the map taken as input, none of the parameters
+    changes with time, thus all outputs of
+    time_coefs_corr function must be 1.
+    """
+
+    maps   = read_maps(map_filename)
+    map_t  = maps.t_evol
+    coef   = []
+    nums   = int((len(map_t.columns.values)-1)/2)
+    result = np.array([1]*nums)
+    for i in range(nums):
+        par   = map_t.columns.values[(2*i)+1]
+        par_u = map_t.columns.values[(2*i)+2]
+        coef += [time_coefs_corr(time, map_t['ts'], map_t[par], map_t[par_u])]
+    assert_array_equal(np.array(coef), result)
