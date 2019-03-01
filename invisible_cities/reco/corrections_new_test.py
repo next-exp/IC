@@ -9,9 +9,13 @@ from . corrections_new import FitMapValue
 from . corrections_new import correct_geometry_
 from . corrections_new import correct_lifetime_
 from . corrections_new import time_coefs_corr
+from . corrections_new import apply_all_correction_single_maps
+from . corrections_new import MissingArgumentError
 from pytest                import fixture, mark
 from numpy.testing         import assert_allclose
 from numpy.testing         import assert_array_equal
+from numpy.testing         import assert_raises
+
 from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from hypothesis.strategies import composite
@@ -186,3 +190,37 @@ def test_time_coefs_corr(map_filename, time):
         par_u = map_t.columns.values[(2*i)+2]
         coef += [time_coefs_corr(time, map_t['ts'], map_t[par], map_t[par_u])]
     assert_array_equal(np.array(coef), result)
+
+
+def test_exception_t_evolution_without_map(map_filename):
+    maps = read_maps(map_filename)
+    assert_raises(MissingArgumentError,
+                  apply_all_correction_single_maps,
+                  maps.e0, maps.lt, None, True)
+
+@given(float_arrays(size      = 1,
+                   min_value = -198,
+                   max_value = +198),
+       float_arrays(size      = 1,
+                   min_value = -198,
+                   max_value = +198),
+       float_arrays(size      = 1,
+                   min_value = 0,
+                   max_value = 5e2),
+       float_arrays(size      = 1,
+                   min_value = 0,
+                   max_value = 1e5))
+def test_apply_all_correction_single_maps_properly(map_filename, x, y, z, t):
+    """
+    Due the map taken as input, the geometric correction
+    factor must be 1, the temporal correction 1 and the
+    lifetime one: exp(Z/5000).
+    """
+    maps      = read_maps(map_filename)
+    load_corr = apply_all_correction_single_maps(maps,
+                                                 maps,
+                                                 maps,
+                                                 True)
+    corr = load_corr(x, y, z, t)
+    result = np.exp(z/5000)
+    assert corr==result
