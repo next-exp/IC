@@ -7,6 +7,7 @@ from . corrections_new import lt_xy_corrections
 from . corrections_new import ASectorMap
 from . corrections_new import FitMapValue
 from . corrections_new import correct_geometry_
+from . corrections_new import correct_lifetime_
 from pytest                import fixture, mark
 from numpy.testing         import assert_allclose
 from hypothesis.strategies import floats
@@ -16,6 +17,7 @@ from hypothesis.strategies import lists
 from hypothesis            import given
 
 from invisible_cities.core.testing_utils import random_length_float_arrays
+from invisible_cities.core.testing_utils import float_arrays
 
 
 @fixture(scope='session')
@@ -153,3 +155,12 @@ def test_read_maps_maps_are_correct(map_filename):
                                   max_value = 3e4))
 def test_correct_geometry_properly(x):
     assert_array_equal(correct_geometry_(x),(1/x))
+
+
+@given(float_arrays(min_value = 0,
+                    max_value = 530),
+       float_arrays(min_value = 1,
+                    max_value = 1e4))
+def test_correct_geometry_properly(z, lt):
+    compute_corr = np.exp(z / lt)
+    assert_array_equal(correct_lifetime_(z, lt),compute_corr)
