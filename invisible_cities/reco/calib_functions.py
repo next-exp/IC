@@ -125,59 +125,19 @@ def valid_integral_limits(sample_width, n_integrals, integral_start, integral_wi
             filter_limits(anti, buffer_length))
 
 
-def copy_sensor_table(h5in):
-    
-    dIn = tb.open_file(h5in)
-    try:
-        sensor_info = dIn.root.Sensors
-    except tb.exceptions.NoSuchNodeError:
-        sensor_info = None
+def copy_sensor_table(h5in_name : str,
+                      h5out     : tb.file.File):
 
-    def paste_sensor_table(h5out):
+    with tb.open_file(h5in_name) as dIn:
+        try:
+            sensor_info = dIn.root.Sensors
+        except tb.exceptions.NoSuchNodeError:
+            sensor_info = None
 
         if sensor_info:
             h5out.copy_node(sensor_info,
                             newparent = h5out.root,
                             recursive = True)
-        dIn.close()
-
-    return paste_sensor_table
-    ## try:
-    ##     datapmt  = dIn.root.Sensors.DataPMT
-    ## except tb.exceptions.NoSuchNodeError:
-    ##     datapmt  = None
-
-    ## try:
-    ##     datasipm = dIn.root.Sensors.DataSiPM
-    ## except tb.exceptions.NoSuchNodeError:
-    ##     datasipm = None
-    ## print('shite: ', datapmt, datasipm)
-    ## def paste_sensor_table(h5out):
-
-    ##     if datapmt or datasipm:
-    ##         group = h5out.create_group(h5out.root, "Sensors")
-    ##         if  datapmt: datapmt .copy(newparent=group)
-    ##         if datasipm: datasipm.copy(newparent=group)
-    ##     dIn.close()
-
-    ## return paste_sensor_table
-
-
-## def copy_sensor_table(h5in, h5out):
-##     # Copy sensor table if exists (needed for Non DB calibrations)
-
-##     with tb.open_file(h5in) as dIn:
-##         if 'Sensors' not in dIn.root:
-##             return
-##         group    = h5out.create_group(h5out.root, "Sensors")
-
-##         if 'DataPMT' in dIn.root.Sensors:
-##             datapmt  = dIn.root.Sensors.DataPMT
-##             datapmt.copy(newparent=group)
-
-##         if 'DataSiPM' in dIn.root.Sensors:
-##             datasipm = dIn.root.Sensors.DataSiPM
-##             datasipm.copy(newparent=group)
 
 
 def dark_scaler(dark_spectrum):

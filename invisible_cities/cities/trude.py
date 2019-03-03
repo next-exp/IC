@@ -87,7 +87,6 @@ def trude(files_in, file_out, compression, event_range, print_mod,
     sum_histograms    = fl.reduce(add, np.zeros(shape, dtype=np.int))
     accumulate_light  = sum_histograms()
     accumulate_dark   = sum_histograms()
-    sensor_info_table = cf.copy_sensor_table(files_in[0])
     event_count       = fl.spy_count()
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
@@ -117,6 +116,6 @@ def trude(files_in, file_out, compression, event_range, print_mod,
 
         write_hist(table_name = "sipm_spe" )(out.spe )
         write_hist(table_name = "sipm_dark")(out.dark)
-        sensor_info_table(h5out)
+        cf.copy_sensor_table(files_in[0], h5out)
 
     return out
