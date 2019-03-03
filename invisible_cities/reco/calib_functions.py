@@ -131,13 +131,12 @@ def copy_sensor_table(h5in_name : str,
     with tb.open_file(h5in_name) as dIn:
         try:
             sensor_info = dIn.root.Sensors
-        except tb.exceptions.NoSuchNodeError:
-            sensor_info = None
-
-        if sensor_info:
             h5out.copy_node(sensor_info,
                             newparent = h5out.root,
                             recursive = True)
+        except tb.exceptions.NoSuchNodeError:
+            sensor_info = None
+
 
 
 def dark_scaler(dark_spectrum):
