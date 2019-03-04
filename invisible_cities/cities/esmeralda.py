@@ -34,11 +34,11 @@ def hits_threshold_and_corrector(map_fname: str, **kargs) -> Callable:
     """Wrapper of correct_hits"""
     return partial(threshold_and_correct_hits(**locals()))
 
-def track_blob_info_extractor(vox_size, energy_threshold, min_voxels, blob_radius, z_factor) -> Callable:
+def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxels, blob_radius, z_factor) -> Callable:
     """ Wrapper of extract_track_blob_info"""
     def extract_track_blob_info(hitc):
         """This function extract relevant info about the tracks and blobs, as well as assigning new field of energy, track_id etc to the HitCollection object (NOTE: we don't want to erase any hits, just redifine some attributes. If we need to cut away some hits to apply paolina functions, it has to be on the copy of the original hits)"""
-        voxels     = plf.voxelize_hits(hitc.hits, vox_size)
+        voxels     = plf.voxelize_hits(hitc.hits, vox_size, energy_type)
         mod_voxels = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
         tracks     = plf.make_track_graphs(mod_voxels)
 
@@ -48,8 +48,8 @@ def track_blob_info_extractor(vox_size, energy_threshold, min_voxels, blob_radiu
 
             for v in t.nodes():
                 for h in v.hits:
-                    h.energy = h.energy/(1 - z_factor * (max_z - min_z))
-                v.energy = v.energy/(1 - z_factor * (max_z - min_z))
+                    setattr(h, energy_type.value,  getattr(h, energy_type.value) + getattr(h, energy_type.value)/(1 - z_factor * (max_z - min_z)))
+                setattr(v, 'energy', getattr(v, 'energy') + getattr(v, 'energy')/(1 - z_factor * (max_z - min_z)))
 
         c_tracks = plf.make_track_graphs(mod_voxels)
 
@@ -64,7 +64,7 @@ def track_blob_info_extractor(vox_size, energy_threshold, min_voxels, blob_radiu
                                    'eblob1', 'eblob2', 'blob_overlap'])
         for c, t in enumerate(c_tracks, 0):
             tID = c
-            energy = sum([vox.E for vox in t.nodes()])
+            energy = sum([vox.Ehits for vox in t.nodes()])
             length = plf.length(t)
             numb_of_hits = len([h for vox in t.nodes() for h in vox.hits])
             numb_of_voxels = len(t.nodes())
@@ -79,7 +79,7 @@ def track_blob_info_extractor(vox_size, energy_threshold, min_voxels, blob_radiu
             max_r = max([np.sqrt(h.X*h.X + h.Y*h.Y) for v in t.nodes() for h in v.hits])
 
             pos = [h.pos for v in t.nodes() for h in v.hits]
-            e   = [h.E   for v in t.nodes() for h in v.hits]
+            e   = [getattr(h, energy_type.value) for v in t.nodes() for h in v.hits]
             ave_pos = np.average(pos, weights=e, axis=0)
 
             extr1, extr2 = plf.find_extrema(t)
@@ -93,12 +93,12 @@ def track_blob_info_extractor(vox_size, energy_threshold, min_voxels, blob_radiu
             if len(set(hits_blob1).intersection(hits_blob2)) > 0:
                 overlap = True
 
-            df.loc[c] = [tID, energy, length, numb_of_voxels, numb_of_hits, numb_of_tracks, min_x, min_y, min_z, max_x, max_y, max_z, max_r, ave_pos[0], ave_pos[1], ave_pos[2], extr1_pos[0], extr1_pos[1], extr1_pos[2]], extr2_pos[0], extr2_pos[1], extr2_pos[2]], blob_pos1[0], blob_pos1[1], blob_pos1[2], blob_pos2[0], blob_pos2[1], blob_pos2[2], e_blob1, e_blob2, overlap]
+            df.loc[c] = [tID, energy, length, numb_of_voxels, numb_of_hits, numb_of_tracks, min_x, min_y, min_z, max_x, max_y, max_z, max_r, ave_pos[0], ave_pos[1], ave_pos[2], extr1_pos[0], extr1_pos[1], extr1_pos[2], extr2_pos[0], extr2_pos[1], extr2_pos[2], blob_pos1[0], blob_pos1[1], blob_pos1[2], blob_pos2[0], blob_pos2[1], blob_pos2[2], e_blob1, e_blob2, overlap]
 
             for vox in t.nodes():
                 for hit in vox.hits:
                     hit.track_id = tID
-                    track_hits.append(tr_hit)
+                    track_hits.append(hit)
 
 
         track_hitc = HitCollection(hitc.event, hitc.time)
@@ -151,7 +151,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                                                 args = 'hits',
                                                 out  = 'corrected_hits')
 
-    extract_track_blob_info = fl.map(track_blob_info_extractor(vox_size, energy_threshold, min_voxels, blob_radius, z_factor),
+    extract_track_blob_info = fl.map(track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxels, blob_radius, z_factor),
                                      args = 'corrected_hits',
                                      out  = ('paolina_hits', 'topology_info'))
 
