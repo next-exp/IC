@@ -208,7 +208,7 @@ function show_ic_env {
 
 function download_test_db {
     echo Downloading database
-    python $ICDIR/database/download.py
+    python $ICDIR/database/download.py $ARGUMENT
 }
 
 function compile_cython_components {
