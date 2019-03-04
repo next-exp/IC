@@ -9,6 +9,7 @@ This city is correcting hits and voxelizing them. The input is penthesilea outpu
 - mc info
 
 """
+import os
 import tables as tb
 import numpy  as np
 from functools   import partial
@@ -17,6 +18,8 @@ from typing      import Callable
 
 from .. reco                import tbl_functions        as tbl
 from .. reco                import paolina_functions    as plf
+from .. reco                import hits_functions       as hif
+from .. reco                import corrections_new      as cof
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
 from .. dataflow.dataflow   import pipe
@@ -25,14 +28,33 @@ from .  components import city
 from .  components import print_every
 from .  components import hits_and_kdst_from_files
 from .. evm  import event_model as evm
-
+from .. types.ic_types      import NN
 from .. io.         hits_io import          hits_writer
 from .. io.       mcinfo_io import       mc_info_writer
 from .. io.run_and_event_io import run_and_event_writer
 
-def hits_threshold_and_corrector(map_fname: str, **kargs) -> Callable:
+def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_peak : bool, apply_temp : bool) -> Callable:
     """Wrapper of correct_hits"""
-    return partial(threshold_and_correct_hits(**locals()))
+    map_fname=os.path.expandvars(map_fname)
+    maps=cof.read_maps(map_fname)
+    get_coef=cof.apply_all_correction(maps, apply_temp = apply_temp)    
+    def threshold_and_correct_hits(hitc : evm.HitCollection) -> evm.HitCollection:
+        """ This function threshold the hits on the charge, redistribute the energy of NN hits to the surrouding ones and applies energy correction."""
+        t = hitc.time
+        cor_hitc = HitCollection(hitc.event, t)
+        cor_hits = hif.threshold_hits(hitc.hits, threshold_charge)
+        cor_hits = hif.merge_NN_hits(cor_hits, same_peak = same_peak)
+        X  = np.array([h.X for h in cor_hits])
+        Y  = np.array([h.Y for h in cor_hits])
+        Z  = np.array([h.Z for h in cor_hits])
+        E  = np.array([h.E for h in cor_hits])
+        Ec = E * get_coef(X,Y,Z,t)
+        Ec[np.isnan(Ec)] = NN
+        for idx, hit in enumerate(cor_hits):
+            hit.energy_c = Ec[idx]
+        cor_hitc.hits = cor_hits
+        return cor_hitc
+    return threshold_and_correct_hits
 
 def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxels, blob_radius, z_factor) -> Callable:
     """ Wrapper of extract_track_blob_info"""
@@ -112,22 +134,6 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
 def final_summary_maker(**kargs)-> Callable:
     """I am not sure this is a new function or goes under extract_track_blob_info. To be discussed"""
     return partial(make_final_summary, **locals())
-
-#Function to define
-def threshold_and_correct_hits(hitc : evm.HitCollection, **kargs) -> evm.HitCollection:
-    """ This function threshold the hits on the charge, redistribute the energy of NN hits to the surrouding ones and applies energy correction."""
-    raise NotImplementedError
-
-class class_to_store_info_per_track:
-    pass
-
-class class_to_store_event_summary:
-    pass
-
-
-def extract_track_blob_info(hitc : evm.HitCollection, **kargs)-> Tuple(evm.HitCollection, class_to_store_info_per_track):
-    """This function extract relevant info about the tracks and blobs, as well as assigning new field of energy, track_id etc to the HitCollection object (NOTE: we don't want to erase any hits, just redifine some attributes. If we need to cut away some hits to apply paolina functions, it has to be on the copy of the original hits)"""
-    raise NotImplementedError
 
 
 def make_final_summary(class_to_store_info_per_track, kdst_info_table,**kargs)-> class_to_store_event_summary:
