@@ -87,14 +87,14 @@ def phyllis(files_in, file_out, compression, event_range, print_mod, detector_db
                                               integrals_period,
                                               wf_length       )
 
-    processing       = fl.map(proc, args="pmt", out="cwf")
-    integrate_light  = fl.map(waveform_integrator(light_limits))
-    integrate_dark   = fl.map(waveform_integrator( dark_limits))
-    bin_waveforms    = fl.map(waveform_binner    (  bin_edges ))
-    sum_histograms   = fl.reduce(add, np.zeros(shape, dtype=np.int))
-    accumulate_light = sum_histograms()
-    accumulate_dark  = sum_histograms()
-    event_count      = fl.spy_count()
+    processing        = fl.map(proc, args="pmt", out="cwf")
+    integrate_light   = fl.map(waveform_integrator(light_limits))
+    integrate_dark    = fl.map(waveform_integrator( dark_limits))
+    bin_waveforms     = fl.map(waveform_binner    (  bin_edges ))
+    sum_histograms    = fl.reduce(add, np.zeros(shape, dtype=np.int))
+    accumulate_light  = sum_histograms()
+    accumulate_dark   = sum_histograms()
+    event_count       = fl.spy_count()
 
     with tb.open_file(file_out, 'w', filters=tbl.filters(compression)) as h5out:
         write_event_info    = run_and_event_writer(h5out)

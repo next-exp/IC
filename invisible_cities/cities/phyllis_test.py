@@ -35,6 +35,14 @@ def test_phyllis_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
         evts_out = h5out.root.Run.events[:nrequired]
         assert_array_equal(evts_in, evts_out)
 
+        assert 'Sensors' in h5out.root        
+        ch_in_pmt   = np.array(h5in .root.Sensors.DataPMT [:])
+        ch_out_pmt  = np.array(h5out.root.Sensors.DataPMT [:])
+        ch_in_sipm  = np.array(h5in .root.Sensors.DataSiPM[:])
+        ch_out_sipm = np.array(h5out.root.Sensors.DataSiPM[:])
+        assert np.all(ch_in_pmt  ==  ch_out_pmt)
+        assert np.all(ch_in_sipm == ch_out_sipm)
+
 
 @mark.parametrize("proc_opt", ('gain', 'gain_mau', 'gain_nodeconv'))
 def test_phyllis_exact_result(ICDATADIR, output_tmpdir, proc_opt):

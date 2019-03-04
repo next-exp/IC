@@ -8,14 +8,14 @@ import tables as tb
 from scipy.signal import find_peaks_cwt
 from enum         import auto
 
-from .. core.system_of_units_c import units
-from .. core.core_functions    import in_range
-from .. core.stat_functions    import poisson_sigma
-from .. core                   import fit_functions    as fitf
-from .. database               import load_db          as DB
+from .. core.system_of_units_c import            units
+from .. core.core_functions    import         in_range
+from .. core.stat_functions    import    poisson_sigma
+from .. core                   import    fit_functions as fitf
+from .. database               import          load_db as DB
 from .. types.ic_types         import AutoNameEnumBase
-from .. evm.ic_containers      import SensorParams
-from .. evm.ic_containers      import PedestalParams
+from .. evm.ic_containers      import     SensorParams
+from .. evm.ic_containers      import   PedestalParams
 
 
 def bin_waveforms(waveforms, bins):
@@ -125,21 +125,18 @@ def valid_integral_limits(sample_width, n_integrals, integral_start, integral_wi
             filter_limits(anti, buffer_length))
 
 
-def copy_sensor_table(h5in, h5out):
-    # Copy sensor table if exists (needed for Non DB calibrations)
+def copy_sensor_table(h5in_name : str,
+                      h5out     : tb.file.File):
 
-    with tb.open_file(h5in) as dIn:
-        if 'Sensors' not in dIn.root:
-            return
-        group    = h5out.create_group(h5out.root, "Sensors")
+    with tb.open_file(h5in_name) as dIn:
+        try:
+            sensor_info = dIn.root.Sensors
+            h5out.copy_node(sensor_info,
+                            newparent = h5out.root,
+                            recursive = True)
+        except tb.exceptions.NoSuchNodeError:
+            sensor_info = None
 
-        if 'DataPMT' in dIn.root.Sensors:
-            datapmt  = dIn.root.Sensors.DataPMT
-            datapmt.copy(newparent=group)
-
-        if 'DataSiPM' in dIn.root.Sensors:
-            datasipm = dIn.root.Sensors.DataSiPM
-            datasipm.copy(newparent=group)
 
 
 def dark_scaler(dark_spectrum):
