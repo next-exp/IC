@@ -220,7 +220,10 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
                 assert_tables_equality(got, expected)
 
 
-def test_diomira_can_fix_random_seed():
+def test_diomira_can_fix_random_seed(output_tmpdir):
+    file_out    = os.path.join(output_tmpdir,                       "exact_result_diomira.h5")
+
     conf = configure("diomira invisible_cities/config/diomira.conf".split())
-    conf.update(dict(random_seed = 123))
+    conf.update(dict(random_seed = 123),
+                file_out     = file_out)
     diomira(**conf)
