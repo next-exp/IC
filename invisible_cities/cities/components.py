@@ -410,7 +410,7 @@ def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices, rebin_method):
     sipm_ys  = datasipm.Y.values
     sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
 
-    baricenter = partial(corona,
+    barycenter = partial(corona,
                          all_sipms      =  datasipm,
                          Qthr           =  0 * units.pes,
                          Qlm            =  0 * units.pes,
@@ -444,7 +444,7 @@ def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices, rebin_method):
 
             xys     = sipm_xys[peak.sipms.ids           ]
             qs      =          peak.sipms.sum_over_times
-            try              : cluster = baricenter(xys, qs)[0]
+            try              : cluster = barycenter(xys, qs)[0]
             except XYRecoFail: xy_peak = xy(NN, NN)
             else             : xy_peak = xy(cluster.X, cluster.Y)
 
