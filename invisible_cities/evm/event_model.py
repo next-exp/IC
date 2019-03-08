@@ -313,10 +313,9 @@ class Blob():
                        hits : List[BHit],
                        radius : float,
                        e_type : HitEnergy = HitEnergy.energy) ->None:
-        super().__init__(hits)
         self.seed   = seed
         self.hits   = hits
-        self.energy = sum(getattr(h, e_type) for h in hits)
+        self.energy = sum(getattr(h, e_type.value) for h in hits)
         self.radius = radius
         self.e_type = e_type.value
 
