@@ -69,6 +69,18 @@ def test_sources_invalid_input_raises_InvalidInputFileStructure(ICDATADIR, sourc
 
 
 def test_compute_xy_position_depend_on_masked_channels():
+    """
+    The channels entering the reco algorithm are the ones in a square of 3x3
+    that includes the masked channel.
+    Scheme of SiPM positions (the numbers are the SiPM charges):
+    x - - - >
+    y | 5 5 5
+      | X 7 5
+      | 5 5 5
+
+    This test is meant to fail if them compute_xy_position function
+    doesn't use the run_number parameter.
+    """
     minimum_seed_charge = 6*units.pes
     reco_parameters = {'Qthr': 2*units.pes,
                        'Qlm': minimum_seed_charge,
@@ -79,10 +91,6 @@ def test_compute_xy_position_depend_on_masked_channels():
     run_number = 6977
     find_xy_pos = compute_xy_position('new', run_number, **reco_parameters)
 
-    # masked_channel = 11009, x_pos = -65, y_pos = 15
-    # the channels entering the reco algorithm are the ones in a square of 3x3
-    # that includes the masked channel. The test is supposed to fail if the
-    # compute_xy_position function doesn't use the run_number parameter.
     xs_to_test  = np.array([-65, -65, -55, -55, -55, -45, -45, -45])
     ys_to_test  = np.array([  5,  25,   5,  15,  25,   5,  15,  25])
     xys_to_test = np.stack((xs_to_test, ys_to_test), axis=1)
