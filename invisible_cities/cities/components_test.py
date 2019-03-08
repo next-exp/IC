@@ -76,7 +76,7 @@ def test_compute_xy_position_depends_on_actual_run_number():
     x - - - >
     y | 5 5 5
       | X 7 5
-      | 5 5 5
+      v 5 5 5
 
     This test is meant to fail if them compute_xy_position function
     doesn't use the run_number parameter.
