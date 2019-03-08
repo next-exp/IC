@@ -68,7 +68,7 @@ def test_sources_invalid_input_raises_InvalidInputFileStructure(ICDATADIR, sourc
         next(s)
 
 
-def test_compute_xy_position_depend_on_masked_channels():
+def test_compute_xy_position_depends_on_actual_run_number():
     """
     The channels entering the reco algorithm are the ones in a square of 3x3
     that includes the masked channel.
