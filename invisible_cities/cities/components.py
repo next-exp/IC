@@ -328,7 +328,6 @@ def peak_classifier(**params):
 def compute_xy_position(dbfile, run_number, **reco_params):
     # `reco_params` is the set of parameters for the corona
     # algorithm either for the full corona or for barycenter
-#    datasipm = load_db.DataSiPM(0) ----> revisar, 
     datasipm = load_db.DataSiPM(dbfile, run_number)
 
     def compute_xy_position(xys, qs):
