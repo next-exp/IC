@@ -50,9 +50,11 @@ from . paolina_functions import voxels_from_track_graph
 from . paolina_functions import length
 from . paolina_functions import Contiguity
 from . paolina_functions import drop_end_point_voxels
+from . paolina_functions import make_tracks
 
-from .. core.exceptions import NoHits
-from .. core.exceptions import NoVoxels
+from .. core.exceptions        import NoHits
+from .. core.exceptions        import NoVoxels
+from .. core.system_of_units_c import units
 
 from .. io.mcinfo_io    import load_mchits
 from .. io.hits_io      import load_hits
@@ -698,3 +700,47 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(requeste
     energies_c.sort()
 
     assert not np.allclose(energies, energies_c)
+
+
+def test_make_tracks_function(ICDATADIR):
+
+    # Get some test data
+    hit_file   = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
+    evt_number = 19
+    size       = 15.
+    voxel_size = np.array([size,size,size], dtype=np.float16)
+    blob_radius = 21*units.mm
+
+    # Read the hits and voxelize
+    all_hits = load_hits(hit_file)
+
+    for evt_number, hit_coll in all_hits.items():
+        evt_hits = hit_coll.hits
+        evt_time = hit_coll.time
+        voxels   = voxelize_hits(evt_hits, voxel_size, strict_voxel_size=False, energy_type=HitEnergy.energy)
+
+        tracks   = list(make_track_graphs(voxels))
+
+        track_coll = make_tracks(evt_number, evt_time, voxels, voxel_size,
+                                 contiguity=Contiguity.CORNER,
+                                 blob_radius=blob_radius,
+                                 energy_type=HitEnergy.energy)
+        tracks_from_coll = track_coll.tracks
+
+        tracks.sort          (key=lambda x : len(x.nodes()))
+        tracks_from_coll.sort(key=lambda x : x.number_of_voxels)
+
+        # Compare the two sets of tracks
+        assert len(tracks) == len(tracks_from_coll)
+        for i in range(len(tracks)):
+            t  = tracks[i]
+            tc = tracks_from_coll[i]
+
+            assert len(t.nodes())                   == tc.number_of_voxels
+            assert sum(v.energy for v in t.nodes()) == tc.E
+
+            tc_blobs = list(tc.blobs)
+            tc_blobs.sort(key=lambda x : x.energy)
+            tc_blob_energies = (tc.blobs[0].energy, tc.blobs[1].energy)
+
+            assert np.allclose(blob_energies(t, blob_radius), tc_blob_energies)
