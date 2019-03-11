@@ -1,5 +1,7 @@
 import os
 
+import numpy as np
+
 from argparse  import Namespace
 from functools import partial
 
@@ -8,11 +10,17 @@ from pytest import raises
 
 from .. core.configure  import EventRange as ER
 from .. core.exceptions import InvalidInputFileStructure
+from .. core.exceptions import ClusterEmptyList
+
+from .. core.system_of_units_c import units
 
 from .  components import event_range
 from .  components import WfType
 from .  components import   wf_from_files
 from .  components import pmap_from_files
+from .  components import compute_xy_position
+
+from .. database import load_db
 
 
 def _create_dummy_conf_with_event_range(value):
@@ -58,3 +66,40 @@ def test_sources_invalid_input_raises_InvalidInputFileStructure(ICDATADIR, sourc
     s = source((full_filename,))
     with raises(InvalidInputFileStructure):
         next(s)
+
+
+def test_compute_xy_position_depends_on_actual_run_number():
+    """
+    The channels entering the reco algorithm are the ones in a square of 3x3
+    that includes the masked channel.
+    Scheme of SiPM positions (the numbers are the SiPM charges):
+    x - - - >
+    y | 5 5 5
+      | X 7 5
+      v 5 5 5
+
+    This test is meant to fail if them compute_xy_position function
+    doesn't use the run_number parameter.
+    """
+    minimum_seed_charge = 6*units.pes
+    reco_parameters = {'Qthr': 2*units.pes,
+                       'Qlm': minimum_seed_charge,
+                       'lm_radius': 0*units.mm,
+                       'new_lm_radius': 15 * units.mm,
+                       'msipm': 9,
+                       'consider_masked': True}
+    run_number = 6977
+    find_xy_pos = compute_xy_position('new', run_number, **reco_parameters)
+
+    xs_to_test  = np.array([-65, -65, -55, -55, -55, -45, -45, -45])
+    ys_to_test  = np.array([  5,  25,   5,  15,  25,   5,  15,  25])
+    xys_to_test = np.stack((xs_to_test, ys_to_test), axis=1)
+
+    charge         = minimum_seed_charge - 1
+    seed_charge    = minimum_seed_charge + 1
+    charge_to_test = np.array([charge, charge, charge, seed_charge, charge, charge, charge, charge])
+
+    try:
+        find_xy_pos(xys_to_test, charge_to_test)
+    except(ClusterEmptyList):
+        assert False

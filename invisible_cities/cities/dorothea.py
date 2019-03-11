@@ -77,7 +77,7 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, detector_d
     pmap_passed           = fl.map(attrgetter("passed"), args="selector_output", out="pmap_passed")
     pmap_select           = fl.count_filter(bool, args="pmap_passed")
 
-    reco_algo             = compute_xy_position(detector_db, **global_reco_params)
+    reco_algo             = compute_xy_position(detector_db, run_number, **global_reco_params)
     build_pointlike_event = fl.map(build_pointlike_event_(detector_db, run_number, drift_v, reco_algo),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "pointlike_event"                                       )

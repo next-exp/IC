@@ -68,11 +68,11 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, detecto
     pmap_passed           = df.map(attrgetter("passed"), args="selector_output", out="pmap_passed")
     pmap_select           = df.count_filter(bool, args="pmap_passed")
 
-    reco_algo_slice       = compute_xy_position(detector_db, **slice_reco_params)
+    reco_algo_slice       = compute_xy_position(detector_db, run_number, **slice_reco_params)
     build_hits            = df.map(hit_builder(detector_db, run_number, drift_v, reco_algo_slice, rebin, RebinMethod[rebin_method]),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "hits"                                                 )
-    reco_algo_global      = compute_xy_position(detector_db, **global_reco_params)
+    reco_algo_global      = compute_xy_position(detector_db, run_number, **global_reco_params)
     build_pointlike_event = df.map(build_pointlike_event_(detector_db, run_number, drift_v, reco_algo_global),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "pointlike_event"                                      )

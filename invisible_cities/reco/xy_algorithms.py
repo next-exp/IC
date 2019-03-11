@@ -126,7 +126,7 @@ def corona(pos, qs, all_sipms,
     new_lm_radius = radius, find a new cluster by calling barycenter() on pos/qs of SiPMs within
                     new_lm_radius of new_local_maximum
 
-    masked_sipm = list of positions of masked SiPMs
+    consider_masked  = true if masked SiPMs are considered
 
     returns
     c    : a list of Clusters
