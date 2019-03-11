@@ -9,9 +9,11 @@ from functools import lru_cache
 
 from .. database import load_db as DB
 
+
 class DarkModel(Enum):
     mean      = 0
     threshold = 1
+
 
 def normalize_distribution(y):
     ysum = np.sum(y)
@@ -47,12 +49,15 @@ def pad_pdfs(bins : np.array,
     bins = (-100, 100) according to
     the bin widths.
     """
-    bin_width = np.round(np.diff(bins)[0], 5)
+    ## Need to round to protect against
+    ## float accuracy.
+    n_decimals = 5
+    bin_width = np.round(np.diff(bins)[0], n_decimals)
     pad = (int(abs(-100 - bins[0]) // bin_width),
            int(abs(100 - bins[-1]) // bin_width))
 
-    bin_min     = np.round(bins[ 0] - pad[0] * bin_width, 5)
-    bin_max     = np.round(bins[-1] + pad[1] * bin_width, 5)
+    bin_min     = np.round(bins[ 0] - pad[0] * bin_width, n_decimals)
+    bin_max     = np.round(bins[-1] + pad[1] * bin_width, n_decimals)
     padded_bins = np.pad(bins, pad,      'linear_ramp',
                          end_values=(bin_min, bin_max))
 
@@ -60,13 +65,6 @@ def pad_pdfs(bins : np.array,
                                          'constant', constant_values=0)
 
     return padded_bins, padded_spectra
-    ## if spectra is None:
-    ##     ## We just want to extend the bins
-    ##     return np.pad(bins, pad, 'linear_ramp',
-    ##                   end_values=(-bins[-1], -bins[0]))
-
-    ## return np.apply_along_axis(np.pad, 1, spectra, pad,
-    ##                            'constant', constant_values=0)
 
 
 def general_thresholds(xbins : np.array,
@@ -227,16 +225,16 @@ class NoiseSampler:
             pdfs     = np.apply_along_axis(normalize_distribution,
                                                                 1,
                                                   self.mask(pdfs))
-            
+
             dark_pes = general_thresholds(pad_xbins, pdfs, 0.99)
             dark_pes[self.active.flatten() == 0] = 0
             return dark_pes
-        
+
         active           = self.active.flatten() != 0
         nsipm            = np.count_nonzero(active)
         dark_estimate    = np.average(np.repeat(pad_xbins[None, :], nsipm,  0),
                                       axis = 1,         weights = pdfs[active])
-        
+
         dark_pes         = np.full(self.nsensors, 0, dtype=np.float)
         dark_pes[active] = dark_estimate
         return dark_pes
