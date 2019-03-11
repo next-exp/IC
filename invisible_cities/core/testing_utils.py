@@ -151,6 +151,8 @@ def assert_tables_equality(got_table, expected_table):
                 assert np.isclose (got, expected)
             except ValueError:
                 assert np.allclose(got, expected)
+        except AssertionError:
+            assert all([np.allclose(got[name], expected[name], equal_nan=True) for name in got.dtype.names])
 
 def assert_cluster_equality(a_cluster, b_cluster):
     assert np.allclose(a_cluster.posxy , b_cluster.posxy )

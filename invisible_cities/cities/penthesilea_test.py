@@ -124,7 +124,7 @@ def test_penthesilea_threshold_rebin(ICDATADIR, output_tmpdir):
 
     conf        = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     rebin_thresh = 4000
-    
+
     conf.update(dict(run_number      =        -6340,
                      files_in        =      file_in,
                      file_out        =     file_out,
@@ -243,13 +243,34 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
               "Filters/s12_selector")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
-            print(true_output_file)
-            print(output_file)
             for table in tables:
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
 
+def test_penthesilea_exact_result_noS1(ICDATADIR, output_tmpdir):
+    file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_PMP.h5")
+    file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea_noS1.h5")
+    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_noS1.HDST.h5")
+
+    conf = configure("penthesilea invisible_cities/config/penthesilea.conf".split())
+    conf.update(dict(run_number   = -6340,
+                     files_in     = file_in,
+                     file_out     = file_out,
+                     event_range  = all_events,
+                     s1_nmin      = 0))
+
+    penthesilea(**conf)
+
+    tables = (     "MC/extents"     ,  "MC/hits", "MC/particles", "MC/generators",
+                 "RECO/Events"      , "DST/Events",
+              "Filters/s12_selector")
+    with tb.open_file(true_output)  as true_output_file:
+        with tb.open_file(file_out) as      output_file:
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
 
 # test for PR 628
 def test_penthesilea_xyrecofail(config_tmpdir, Xe2nu_pmaps_mc_filename):

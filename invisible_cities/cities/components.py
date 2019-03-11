@@ -430,8 +430,12 @@ def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices, rebin_method):
         # take events with exactly one s1. Otherwise, the
         # convention is to take the first peak in the S1 object
         # as reference.
-        first_s1 = np.where(selector_output.s1_peaks)[0][0]
-        s1_t     = pmap.s1s[first_s1].time_at_max_energy
+        if len(selector_output.s1_peaks) > 0:
+            first_s1 = np.where(selector_output.s1_peaks)[0][0]
+            s1_t     = pmap.s1s[first_s1].time_at_max_energy
+        else:
+            first_s2 = np.where(selector_output.s2_peaks)[0][0]
+            s1_t     = pmap.s2s[first_s2].times[0]
 
         # here hits are computed for each peak and each slice.
         # In case of an exception, a hit is still created with a NN cluster.
