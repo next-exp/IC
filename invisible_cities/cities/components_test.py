@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import tables as tb
 
 from argparse  import Namespace
 from functools import partial
@@ -16,9 +17,10 @@ from .. core.system_of_units_c import units
 
 from .  components import event_range
 from .  components import WfType
-from .  components import   wf_from_files
+from .  components import wf_from_files
 from .  components import pmap_from_files
 from .  components import compute_xy_position
+from .  components import city
 
 from .. database import load_db
 
@@ -103,3 +105,42 @@ def test_compute_xy_position_depends_on_actual_run_number():
         find_xy_pos(xys_to_test, charge_to_test)
     except(ClusterEmptyList):
         assert False
+
+
+def test_city_adds_default_detector_db(config_tmpdir):
+    default_detector_db = 'new'
+    args = {'files_in'    : 'dummy_in',
+            'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
+    @city
+    def dummy_city(files_in, file_out, event_range, detector_db):
+        with tb.open_file(file_out, 'w') as h5out:
+            pass
+        return detector_db
+
+    db = dummy_city(**args)
+    assert db == default_detector_db
+
+
+def test_city_does_not_overwrite_detector_db(config_tmpdir):
+    args = {'detector_db' : 'some_detector',
+            'files_in'    : 'dummy_in',
+            'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
+    @city
+    def dummy_city(files_in, file_out, event_range, detector_db):
+        with tb.open_file(file_out, 'w') as h5out:
+            pass
+        return detector_db
+
+    db = dummy_city(**args)
+    assert db == args['detector_db']
+
+
+def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
+    args = {'files_in'    : 'dummy_in',
+            'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
+    @city
+    def dummy_city(files_in, file_out, event_range):
+        with tb.open_file(file_out, 'w') as h5out:
+            pass
+
+    dummy_city(**args)

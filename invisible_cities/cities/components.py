@@ -12,6 +12,7 @@ from typing      import Mapping
 
 import tables as tb
 import numpy  as np
+import inspect
 
 from .. dataflow               import dataflow      as fl
 from .. evm .ic_containers     import SensorData
@@ -72,7 +73,8 @@ def city(city_function):
 
         # For backward-compatibility we set NEW as the default DB in
         # case it is not defined in the config file
-        if 'detector_db' not in kwds:
+        if 'detector_db' in inspect.getfullargspec(city_function).args and \
+           'detector_db' not in kwds:
             conf.detector_db = 'new'
 
         conf.files_in  = sorted(glob(expandvars(conf.files_in)))
