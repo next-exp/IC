@@ -2,12 +2,12 @@ from enum import Enum
 
 import numpy as np
 
-from typing import Tuple
+from typing      import Tuple
 
-from functools import partial
-from functools import lru_cache
+from functools   import   partial
+from functools   import lru_cache
 
-from .. database import load_db as DB
+from .. database import   load_db as DB
 
 
 class DarkModel(Enum):
@@ -15,34 +15,42 @@ class DarkModel(Enum):
     threshold = 1
 
 
-def normalize_distribution(y):
-    ysum = np.sum(y)
-    return y / ysum if ysum else y
+def normalize_distribution(bin_weights : np.array):
+    weight_sum = np.sum(bin_weights)
+    return bin_weights / weight_sum if weight_sum else bin_weights
 
 
-def sample_discrete_distribution(x, y, size=1):
-    if not y.any():
+def sample_discrete_distribution(bin_centres : np.array,
+                                 bin_weights : np.array,
+                                 size : int = 1) -> np.array:
+    if not bin_weights.any():
         return np.zeros(size)
-    return np.random.choice(x, p=y, size=size)
+    return np.random.choice(bin_centres,
+                            p = bin_weights,
+                            size = size)
 
 
-def uniform_smearing(max_deviation, size=1):
+def uniform_smearing(max_deviation : np.array,
+                     size : Tuple = 1) -> np.array:
     return np.random.uniform(-max_deviation,
                              +max_deviation,
                              size = size)
 
 
-def inverse_cdf_index(y, percentile):
+def inverse_cdf_index(y : np.array,
+                      percentile : float) -> int:
     return np.argwhere(y >= percentile)[0,0]
 
 
-def inverse_cdf(x, y, percentile):
+def inverse_cdf(x : np.array,
+                y : np.array,
+                percentile : float) -> float:
     if not y.any():
         return np.inf
     return x[inverse_cdf_index(y, percentile)]
 
 
-def pad_pdfs(bins : np.array,
+def pad_pdfs(bins    : np.array,
              spectra : np.array) -> Tuple[np.array]:
     """
     Pads the spectra to a range of
@@ -97,7 +105,11 @@ def general_thresholds(xbins : np.array,
 
 
 class NoiseSampler:
-    def __init__(self, detector, run_number, sample_size=1, smear=True):
+    def __init__(self,
+                 detector    : str,
+                 run_number  : int,
+                 sample_size : int = 1,
+                 smear       : bool = True):
         """Sample a histogram as if it was a PDF.
 
         Parameters
@@ -158,8 +170,8 @@ class NoiseSampler:
         sample = self.adc_to_pes * sample + self.baselines
         return self.mask(sample)
 
-    def compute_thresholds(self, noise_cut : float=0.99,
-                           pes_to_adc : float=1) -> np.array:
+    def compute_thresholds(self, noise_cut : float = 0.99,
+                           pes_to_adc : float = 1) -> np.array:
         """Find the energy threshold that reduces the noise population by a
         fraction of *noise_cut*.
 
