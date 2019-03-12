@@ -32,7 +32,7 @@ from .. types.ic_types      import NN
 from .. io.         hits_io import          hits_writer
 from .. io.       mcinfo_io import       mc_info_writer
 from .. io.run_and_event_io import run_and_event_writer
-
+from .. io.          dst_io import _store_pandas_as_tables
 def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_peak : bool, apply_temp : bool) -> Callable:
     """Wrapper of correct_hits"""
     map_fname=os.path.expandvars(map_fname)
@@ -141,10 +141,18 @@ def make_final_summary(class_to_store_info_per_track, kdst_info_table,**kargs)->
     raise NotImplementedError
 
 
-def summary_writer(hdf5_file, *, compression='ZLIB4'):
-    def write_summary(summary_info : class_to_store_event_summary):
-        raise NotImplementedError
+
+def track_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name='Tracks', descriptive_string='Track information',str_col_length=32):
+    def write_tracks(df):
+        return _store_pandas_as_tables(h5out=h5out, df=df,compression = compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
+    return write_tracks
+
+
+def summary_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name='Summary', descriptive_string='Event summary information',str_col_length=32):
+    def write_summary(df):
+        return _store_pandas_as_tables(h5out=h5out, df=df,compression = compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
     return write_summary
+
 
 @city
 def esmeralda(files_in, file_out, compression, event_range, print_mod, run_number, map_fname, **kargs):
@@ -176,7 +184,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
 
         write_mc           = fl.sink(             write_mc_, args = ("mc", "event_number"   ))
         write_hits_NN      = fl.sink(    hits_writer(h5out), args =  "NN_hits"               )
-        write_hits_paolina = fl.sink(    hits_writer(h5out), args =  "paolina_hits"          )
+        write_hits_paolina = fl.sink(    hits_writer(h5out, group_name = 'PAOLINA'), args =  "paolina_hits"          )
         write_summary      = fl.sink( summary_writer(h5out), args =  "event_info"            )
 
         return push(source = hits_and_kdst_from_files(files_in),
