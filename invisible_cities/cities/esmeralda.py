@@ -12,6 +12,7 @@ This city is correcting hits and voxelizing them. The input is penthesilea outpu
 import os
 import tables as tb
 import numpy  as np
+import pandas as pd
 from functools   import partial
 from typing      import Tuple
 from typing      import Callable
@@ -37,11 +38,11 @@ def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_
     """Wrapper of correct_hits"""
     map_fname=os.path.expandvars(map_fname)
     maps=cof.read_maps(map_fname)
-    get_coef=cof.apply_all_correction(maps, apply_temp = apply_temp)    
+    get_coef=cof.apply_all_correction(maps, apply_temp = apply_temp)
     def threshold_and_correct_hits(hitc : evm.HitCollection) -> evm.HitCollection:
         """ This function threshold the hits on the charge, redistribute the energy of NN hits to the surrouding ones and applies energy correction."""
         t = hitc.time
-        cor_hitc = HitCollection(hitc.event, t)
+        cor_hitc = evm.HitCollection(hitc.event, t)
         cor_hits = hif.threshold_hits(hitc.hits, threshold_charge)
         cor_hits = hif.merge_NN_hits(cor_hits, same_peak = same_peak)
         X  = np.array([h.X for h in cor_hits])
@@ -123,7 +124,7 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
                     track_hits.append(hit)
 
 
-        track_hitc = HitCollection(hitc.event, hitc.time)
+        track_hitc = evm.HitCollection(hitc.event, hitc.time)
         track_hitc.hits = track_hits
 
         return df, track_hitc
@@ -155,26 +156,36 @@ def summary_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name=
 
 
 @city
-def esmeralda(files_in, file_out, compression, event_range, print_mod, run_number, map_fname, **kargs):
-    
-    threshold_and_correct_hits_NN      = fl.map(hits_threshold_and_corrector(map_fname = map_fname,**locals()),
+def esmeralda(files_in, file_out, compression, event_range, print_mod, run_number,
+              cor_hits_params_NN = dict(),
+              cor_hits_params_PL = dict(),
+              paolina_params     = dict()):
+    # cor_hits_params_NN   are map_fname, threshold_charge, same_peak, apply_temp
+    # cor_hits_params_PL   are map_fname, threshold_charge, same_peak, apply_temp
+    # paolina_params       are vox_size,  energy_type, energy_threshold, min_voxels, blob_radius, z_factor
+    # energy_type parameter in paolina_params has to be translated to enum class
+    if   paolina_params['energy_type'] == 'corrected'   : paolina_params['energy_type'] = evm.HitEnergy.energy_c
+    elif paolina_params['energy_type'] == 'uncorrected' : paolina_params['energy_type'] = evm.HitEnergy.energy
+    else                                                : raise ValueError(f"Unrecognized processing mode: {paolina_params['energy_type']}")
+
+
+    threshold_and_correct_hits_NN      = fl.map(hits_threshold_and_corrector(**cor_hits_params_NN),
                                                 args = 'hits',
                                                 out  = 'NN_hits')
 
-    threshold_and_correct_hits_paolina = fl.map(hits_threshold_and_corrector(map_fname = map_fname,**locals()),
+    threshold_and_correct_hits_paolina = fl.map(hits_threshold_and_corrector(**cor_hits_params_PL),
                                                 args = 'hits',
                                                 out  = 'corrected_hits')
 
-    extract_track_blob_info = fl.map(track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxels, blob_radius, z_factor),
+    extract_track_blob_info = fl.map(track_blob_info_extractor(**paolina_params),
                                      args = 'corrected_hits',
-                                     out  = ('paolina_hits', 'topology_info'))
+                                     out  = ('topology_info', 'paolina_hits'))
 
-    make_final_summary      = fl.map(final_summary_maker(**locals()),
-                                     args = 'topology_info',
+    make_final_summary      = fl.map(make_event_summary,
+                                     args = ('event_number', 'timestamp', 'topology_info', 'paolina_hits', 'kdst'),
                                      out  = 'event_info')
 
-    event_count_in  = fl.spy_count()
-    event_count_out = fl.spy_count()
+    event_count  = fl.spy_count()
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
 
@@ -185,20 +196,22 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         write_mc           = fl.sink(             write_mc_, args = ("mc", "event_number"   ))
         write_hits_NN      = fl.sink(    hits_writer(h5out), args =  "NN_hits"               )
         write_hits_paolina = fl.sink(    hits_writer(h5out, group_name = 'PAOLINA'), args =  "paolina_hits"          )
-        write_summary      = fl.sink( summary_writer(h5out), args =  "event_info"            )
+        write_tracks       = fl.sink( track_writer(h5out=h5out), args =  "topology_info"            )
+        write_summary      = fl.sink( summary_writer(h5out=h5out), args =  "event_info"            )
 
         return push(source = hits_and_kdst_from_files(files_in),
                     pipe   = pipe(
                         fl.slice(*event_range, close_all=True)     ,
                         print_every(print_mod)                     ,
-                        event_count_in       .spy                  ,
+                        event_count       .spy                  ,
                         fl.branch(threshold_and_correct_hits_NN    ,
                                   write_hits_NN)                   ,
                         threshold_and_correct_hits_paolina         ,
                         extract_track_blob_info                    ,
                         fl.fork(write_mc                           ,
                                 write_hits_paolina                 ,
+                                write_tracks                       ,
                                 (make_final_summary, write_summary),
                                 write_event_info)),
-                    result = dict(events_in  = event_count_in .future,
-                                  events_out = event_count_out.future))
+                    result = dict(events_in  = event_count.future,
+                                  events_out = event_count.future))
