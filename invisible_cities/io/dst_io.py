@@ -29,8 +29,17 @@ def load_dsts(dst_list, group, node):
     dsts = [load_dst(filename, group, node) for filename in dst_list]
     return pd.concat(dsts)
 
+def _make_tabledef(column_types:pd.Series,str_col_length:int=32)->dict:
+    tabledef={}
+    for indx, colname in enumerate(column_types.index):
+        coltype = column_types[colname].name
+        if coltype == 'object':
+            tabledef[colname] = tb.StringCol(str_col_length, pos = indx)
+        else:
+            tabledef[colname] = tb.Col.from_type(coltype, pos = indx)
+    return tabledef
 
-def _store_pandas_as_tables(h5out:tb.file.File, df:pd.DataFrame, group_name:str, table_name:str, compression:str='ZLIB4', descriptive_string:Optional[str]=None, str_col_length:int=32)->None:
+def _store_pandas_as_tables(h5out:tb.file.File, df:pd.DataFrame, group_name:str, table_name:str, compression:str='ZLIB4', descriptive_string:[str]="", str_col_length:int=32)->None:
     if len(df) == 0:
         warnings.warn(f' dataframe is empty', UserWarning)
     if '/'+group_name not in h5out:
@@ -40,23 +49,16 @@ def _store_pandas_as_tables(h5out:tb.file.File, df:pd.DataFrame, group_name:str,
     if table_name in group:
         table=getattr(group,table_name)
     else:
-        tabledef={}
-        for indx, colname in enumerate(df.columns):
-            coltype = df[colname].dtype.name
-            try:
-                tabledef[colname] = tb.Col.from_type(coltype, pos = indx)
-            except ValueError:
-                tabledef[colname] = tb.StringCol(str_col_length, pos = indx)
-
-        if descriptive_string is None:
-            descriptive_string = ''
+        tabledef=_make_tabledef(df.dtypes)
         table = make_table(h5out,
                            group       = group_name,
                            name        = table_name,
                            fformat     = tabledef,
                            description = descriptive_string,
                            compression = compression)
+
     if not np.array_equal(df.columns,table.colnames):
+        warnings.warn(f' dataframe differs from already existing table structure', UserWarning)
         raise TableMismatch
     for indx in df.index:
         tablerow = table.row
