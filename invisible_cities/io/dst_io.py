@@ -1,13 +1,14 @@
 import tables as tb
 import pandas as pd
 import numpy  as np
-from tables import NoSuchNodeError
-from tables import HDF5ExtError
+
 import warnings
 
+from    tables             import NoSuchNodeError
+from    tables             import HDF5ExtError
 from .. core.exceptions    import TableMismatch
 from .  table_io           import make_table
-
+from    typing             import Optional
 
 def load_dst(filename, group, node):
     """load a kdst if filename, group and node correctly found"""
@@ -29,7 +30,7 @@ def load_dsts(dst_list, group, node):
     return pd.concat(dsts)
 
 
-def _store_pandas_as_tables(h5out, df, group_name, table_name, compression='ZLIB4', descriptive_string=None, str_col_length=32):
+def _store_pandas_as_tables(h5out:tb.file.File, df:pd.DataFrame, group_name:str, table_name:str, compression:str='ZLIB4', descriptive_string:Optional[str]=None, str_col_length:int=32)->None:
     if len(df) == 0:
         warnings.warn(f' dataframe is empty', UserWarning)
     if '/'+group_name not in h5out:
