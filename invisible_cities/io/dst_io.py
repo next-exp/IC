@@ -5,8 +5,9 @@ from tables import NoSuchNodeError
 from tables import HDF5ExtError
 import warnings
 
-from .. reco import tbl_functions as tbl
+from .. core.exceptions    import TableMismatch
 from .  table_io           import make_table
+
 
 def load_dst(filename, group, node):
     """load a kdst if filename, group and node correctly found"""
@@ -27,10 +28,6 @@ def load_dsts(dst_list, group, node):
     dsts = [load_dst(filename, group, node) for filename in dst_list]
     return pd.concat(dsts)
 
-class TableMismatchError(Exception):
-    def __init__(self):
-        s  = 'The table and dataframe dont match! '
-        Exception.__init__(self, s)
 
 def _store_pandas_as_tables(h5out, df, group_name, table_name, compression='ZLIB4', descriptive_string=None, str_col_length=32):
     if len(df) == 0:
@@ -59,7 +56,7 @@ def _store_pandas_as_tables(h5out, df, group_name, table_name, compression='ZLIB
                            description = descriptive_string,
                            compression = compression)
     if not np.array_equal(df.columns,table.colnames):
-        raise TableMismatchError
+        raise TableMismatch
     for indx in df.index:
         tablerow = table.row
         for colname in table.colnames:
