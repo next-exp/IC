@@ -141,3 +141,11 @@ def test_make_tabledef(empty_dataframe):
                        'bool_value' :tb.BoolCol   (             shape=(), dflt=False, pos=2),
                        'str_value'  :tb.StringCol (itemsize=32, shape=(), dflt=b''  , pos=3)}
     assert tabledef==expected_tabledef
+
+def test_store_pandas_as_tables_raises_warning_empty_dataframe(config_tmpdir, empty_dataframe):
+    filename   = config_tmpdir+'dataframe_to_table_exact.h5'
+    group_name = 'test_group'
+    table_name = 'table_name_3'
+    with tb.open_file(filename,'w') as h5out:
+        with pytest.warns(UserWarning, match='dataframe is empty'):
+            _store_pandas_as_tables(h5out, empty_dataframe, group_name, table_name)
