@@ -1,12 +1,19 @@
 import os
 import pandas as pd
-
+import tables as tb
 from ..core.testing_utils import assert_dataframes_close
 from .      dst_io        import load_dst
 from .      dst_io        import load_dsts
+from .      dst_io        import _store_pandas_as_tables
 
 import warnings
 import pytest
+import hypothesis.strategies as st
+from hypothesis.extra.pandas import columns
+from hypothesis.extra.pandas import data_frames
+from hypothesis.extra.pandas import column
+from hypothesis.extra.pandas import range_indexes
+from hypothesis              import given
 
 def test_load_dst(KrMC_kdst):
     df_read = load_dst(*KrMC_kdst[0].file_info)
@@ -59,3 +66,28 @@ def test_load_dsts_warns_if_not_existing_file(ICDATADIR):
     node  = "Events"
     with pytest.warns(UserWarning, match='does not exist'):
         load_dsts([good_file, wrong_file], group, node)
+
+
+df = data_frames(index=range_indexes(min_size=1),columns=[column('int_value', dtype=int),column('float_val',dtype='float'),column('bool_value',dtype=bool)])
+@given(df = df)
+def  test_store_pandas_as_tables_exact(config_tmpdir, df):
+    filename = config_tmpdir+'dataframe_to_table_exact.h5'
+    group_name ='test_group'
+    table_name = 'table_name_1'
+    with tb.open_file(filename,'w') as h5out:
+        _store_pandas_as_tables(h5out, df, group_name,table_name)
+    df_read = load_dst(filename, group_name, table_name)
+    assert_dataframes_close(df_read, df, False, rtol=1e-5)
+
+df2 = data_frames(index=range_indexes(min_size=1),columns=[column('int_value', dtype=int),column('float_val',dtype='float'),column('bool_value',dtype=bool)])
+@given(df1 = df, df2=df)
+def  test_store_pandas_as_tables_2df(config_tmpdir, df1, df2):
+    filename = config_tmpdir+'dataframe_to_table_exact.h5'
+    group_name ='test_group'
+    table_name = 'table_name_2'
+    with tb.open_file(filename,'w') as h5out:
+        _store_pandas_as_tables(h5out, df1, group_name,table_name)
+        _store_pandas_as_tables(h5out, df2, group_name,table_name)
+    df_read = load_dst(filename, group_name, table_name)
+    assert_dataframes_close(df_read, pd.concat([df1, df2]).reset_index(drop=True),False, rtol=1e-5)
+
