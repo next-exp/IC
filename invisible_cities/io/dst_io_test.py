@@ -1,7 +1,9 @@
 import os
+import string
 import pandas as pd
 import tables as tb
 from ..core.testing_utils import assert_dataframes_close
+from ..core.testing_utils import assert_dataframes_equal
 from ..core.exceptions    import TableMismatch
 from . dst_io             import load_dst
 from . dst_io             import load_dsts
@@ -17,6 +19,7 @@ from hypothesis.extra.pandas import columns
 from hypothesis.extra.pandas import data_frames
 from hypothesis.extra.pandas import column
 from hypothesis.extra.pandas import range_indexes
+from hypothesis.strategies   import text
 
 
 def test_load_dst(KrMC_kdst):
@@ -107,3 +110,16 @@ def test_store_pandas_as_tables_raises_exception(config_tmpdir, df1, df2):
         _store_pandas_as_tables(h5out, df1, group_name, table_name)
         with raises(TableMismatch):
             _store_pandas_as_tables(h5out, df2, group_name, table_name)
+
+strings_dataframe=data_frames(index=range_indexes(min_size=1, max_size=5), columns=[column('str_val', elements=text(alphabet=string.ascii_letters, max_size=32))])
+@given(df=strings_dataframe)
+def test_strings_store_pandas_as_tables(config_tmpdir, df):
+    filename   = config_tmpdir+'dataframe_to_table_exact.h5'
+    group_name = 'test_group'
+    table_name = 'table_name_str'
+    with tb.open_file(filename,'w') as h5out:
+        _store_pandas_as_tables(h5out, df, group_name, table_name)
+    df_read    = load_dst(filename, group_name, table_name)
+    #we have to cast from byte strings to compare with original dataframe
+    df_read.str_val=df_read.str_val.str.decode('utf-8')
+    assert_dataframes_equal(df_read, df, False)
