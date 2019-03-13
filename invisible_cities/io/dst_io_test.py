@@ -8,11 +8,13 @@ from ..core.exceptions    import TableMismatch
 from . dst_io             import load_dst
 from . dst_io             import load_dsts
 from . dst_io             import _store_pandas_as_tables
+from . dst_io             import _make_tabledef
 
 import warnings
 import pytest
 
 from pytest                  import raises
+from pytest                  import fixture
 from numpy     .testing      import assert_raises
 from hypothesis              import given
 from hypothesis.extra.pandas import columns
@@ -123,3 +125,19 @@ def test_strings_store_pandas_as_tables(config_tmpdir, df):
     #we have to cast from byte strings to compare with original dataframe
     df_read.str_val=df_read.str_val.str.decode('utf-8')
     assert_dataframes_equal(df_read, df, False)
+
+@fixture()
+def empty_dataframe(columns=['int_value', 'float_value', 'bool_value', 'str_value'], dtypes=['int32', 'float32', 'bool', 'object'], index=None):
+    assert len(columns)==len(dtypes)
+    df = pd.DataFrame(index=index)
+    for c,d in zip(columns, dtypes):
+        df[c] = pd.Series(dtype=d)
+    return df
+
+def test_make_tabledef(empty_dataframe):
+    tabledef=_make_tabledef(empty_dataframe.dtypes)
+    expected_tabledef={'int_value'  :tb.Int32Col  (             shape=(), dflt=0    , pos=0),
+                       'float_value':tb.Float32Col(             shape=(), dflt=0    , pos=1),
+                       'bool_value' :tb.BoolCol   (             shape=(), dflt=False, pos=2),
+                       'str_value'  :tb.StringCol (itemsize=32, shape=(), dflt=b''  , pos=3)}
+    assert tabledef==expected_tabledef
