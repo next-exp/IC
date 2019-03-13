@@ -45,7 +45,7 @@ def _store_pandas_as_tables(h5out, df, group_name, table_name, compression='ZLIB
             try:
                 tabledef[colname] = tb.Col.from_type(coltype, pos = indx)
             except ValueError:
-                tabledef[colname] = tb.StringCol(32, pos = indx)
+                tabledef[colname] = tb.StringCol(str_col_length, pos = indx)
 
         if descriptive_string is None:
             descriptive_string = ''
