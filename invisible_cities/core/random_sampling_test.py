@@ -19,6 +19,8 @@ from . random_sampling  import sample_discrete_distribution
 from . random_sampling  import uniform_smearing
 from . random_sampling  import inverse_cdf_index
 from . random_sampling  import inverse_cdf
+from . random_sampling  import pad_pdfs
+from . random_sampling  import DarkModel
 from . random_sampling  import NoiseSampler
 
 sensible_sizes    =                  integers(min_value =    2,
@@ -128,6 +130,30 @@ def test_inverse_cdf_index_hypothesis_generated(distribution, percentile):
     icdf_i = inverse_cdf_index(cdf, percentile)
     assert true_index == icdf_i
 
+
+@mark.parametrize("bins           expected_length ".split(),
+                  ((np.linspace(-1, 1, 20),    1900 ),
+                   (np.linspace(-2, 1, 30),    1933 ),
+                   (np.linspace(-1, 2, 30),    1933 ),
+                   (np.linspace(-1, 0, 10),    1801 ),
+                   (np.linspace( 0, 1, 10),    1801 )))
+def test_pad_pdfs(bins, expected_length):
+    ## Dummy spectra for 2 'sensors'
+    spectra           = np.full((2, len(bins)), 0.1)
+    _, padded_spectra = pad_pdfs(bins, spectra)
+    assert padded_spectra.shape[1] == expected_length
+    
+
+## @mark.parametrize("bins",
+##                   (np.arange(-1, 1, 0.01),
+##                    np.arange(-2, 1, 0.01),
+##                    np.arange(-1, 2, 0.01)))
+## def test_pad_pdfs_xbins(bins):
+##     padded_bins = pad_pdfs(bins)
+
+##     bin_diffs = np.diff(padded_bins)
+##     assert np.allclose(bin_diffs, bin_diffs[0])
+    
 
 @mark.parametrize("domain frequencies percentile true_value".split(),
                   ((np.arange( 10), np.linspace(0, 1,  10), 0.6,  6),
@@ -244,3 +270,53 @@ def test_noise_sampler_compute_thresholds(datasipm, noise_sampler, pes_to_adc, a
     assert sorted(true_threshold_counts) == sorted(threshold_counts)
     for i, truth in true_threshold_counts.items():
         assert truth == threshold_counts[i]
+
+
+def test_noise_sampler_multi_sample_distributions(noise_sampler):
+    noise_sampler, *_ = noise_sampler
+
+    active       = noise_sampler.active.flatten() != 0
+    padded_xbins, _ = pad_pdfs(noise_sampler.xbins,
+                               noise_sampler.probs)
+
+    nsipm = np.count_nonzero(active)
+    PDF_means = np.average(np.repeat(noise_sampler.xbins[None, :], nsipm, 0),
+                           axis = 1, weights = noise_sampler.probs[active])
+
+    twomu_pdfs = noise_sampler.multi_sample_distributions(2)
+
+    assert twomu_pdfs.shape[0] == noise_sampler.probs.shape[0]
+
+    twomu_means = np.average(np.repeat(padded_xbins[None, :], nsipm, 0),
+                             axis = 1, weights = twomu_pdfs[active])
+    assert np.all(twomu_means > PDF_means)
+
+
+@mark.parametrize("sample_width dark_model".split(),
+                  ((2, DarkModel.mean),
+                   (3, DarkModel.threshold),
+                   (5, DarkModel.threshold)))
+def test_noise_sampler_dark_expectation(noise_sampler,
+                                        sample_width ,
+                                        dark_model   ):
+    noise_sampler, *_ = noise_sampler
+
+    dark_mean = noise_sampler.dark_expectation(sample_width, dark_model)
+
+    assert len(dark_mean) == noise_sampler.nsensors
+    assert np.any(dark_mean)
+    assert np.count_nonzero(dark_mean) == np.count_nonzero(noise_sampler.active)
+
+
+@mark.parametrize(" ids qs width model expected".split(),
+                  (([  0,   1,   2], np.array([ 6, 10,  4]), 2, DarkModel.mean, [2.42, 3.13, 1.96]),
+                   ([700, 701, 702], np.array([22,  4, 19]), 4, DarkModel.mean, [4.63, 1.90, 4.30]),
+                   ([658, 666, 674], np.array([ 5, 15,  5]), 5, DarkModel.threshold, [1.90, 3.60, 1.88])))
+def test_noise_sampler_signal_to_noise(noise_sampler,
+                                       ids, qs, width, model, expected):
+    noise_sampler, *_ = noise_sampler
+
+    signal_to_noise = noise_sampler.signal_to_noise(ids, qs, width, model)
+
+    assert len(signal_to_noise) == len(ids)
+    assert np.allclose(np.round(signal_to_noise, 2), expected)
