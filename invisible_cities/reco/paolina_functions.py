@@ -361,7 +361,6 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
     while True:
         n_modified_voxels = 0
         trks = make_track_graphs(mod_voxels)
-        vxl_size = mod_voxels[0].size
 
         for t in trks:
             if len(t.nodes()) < min_vxls:
