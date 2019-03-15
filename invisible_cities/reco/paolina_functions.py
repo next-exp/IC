@@ -311,7 +311,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
         ### be sure that the voxel to be eliminated has at least one neighbour
         ### beyond itself
         the_neighbours = np.array([neighbours(the_vox, v) for v in voxels])
-        if len(the_neighbours>0) <= 1:
+        if len(the_neighbours[the_neighbours>0]) <= 1:
             return 0
 
         ### remove voxel from list of voxels
