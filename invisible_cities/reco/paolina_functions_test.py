@@ -671,8 +671,8 @@ def test_voxelize_hits_with_hit_energy_different_from_default_value(hits, reques
         voxels_l = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_l)
 
 
-@given(box_sizes, radius)
-def test_paolina_functions_with_hit_energy_different_from_default_value(requested_voxel_dimensions, blob_radius):
+@given(box_sizes, radius, fraction_zero_one)
+def test_paolina_functions_with_hit_energy_different_from_default_value(requested_voxel_dimensions, blob_radius, fraction_zero_one):
 
     npeak = 0
     Q     = 1
@@ -683,13 +683,14 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(requeste
     energy_c = energy + 2
     x_peak = y_peak = 0
     hits = [Hit(npeak, Cluster(Q, xy(-1,0), xy(var,var),nsipm), 1, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 0,0), xy(var,var),nsipm), 2, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 0,1), xy(var,var),nsipm), 3, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 1,0), xy(var,var),nsipm), 4, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 4,5), xy(var,var),nsipm), 4, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 5,3), xy(var,var),nsipm), 5, energy, xy(x_peak,y_peak), energy_l, energy_c)]
+            Hit(npeak, Cluster(Q, xy( 0,0), xy(var,var),nsipm), 2, energy, xy(x_peak,y_peak), energy_l, energy_c-1),
+            Hit(npeak, Cluster(Q, xy( 0,1), xy(var,var),nsipm), 3, energy, xy(x_peak,y_peak), energy_l, energy_c-2),
+            Hit(npeak, Cluster(Q, xy( 1,0), xy(var,var),nsipm), 4, energy, xy(x_peak,y_peak), energy_l, energy_c+1),
+            Hit(npeak, Cluster(Q, xy( 4,5), xy(var,var),nsipm), 4, energy, xy(x_peak,y_peak), energy_l, energy_c+2),
+            Hit(npeak, Cluster(Q, xy( 5,3), xy(var,var),nsipm), 5, energy, xy(x_peak,y_peak), energy_l, energy_c+3)]
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     tracks = make_track_graphs(voxels)
+
     voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c)
     tracks_c = make_track_graphs(voxels_c)
 
@@ -700,6 +701,11 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(requeste
     energies_c.sort()
 
     assert not np.allclose(energies, energies_c)
+
+    energies_c = [v.E for v in voxels_c]
+    e_thr = min(energies_c) + fraction_zero_one * (max(energies_c) - min(energies_c))
+    # Test that this function doesn't fail
+    mod_voxels_c = drop_end_point_voxels(voxels_c, e_thr, min_vxls=0)
 
 
 def test_make_tracks_function(ICDATADIR):
