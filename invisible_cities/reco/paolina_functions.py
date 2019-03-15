@@ -331,7 +331,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
                         min_v = v
 
             ### add voxel energy to voxel
-            setattr(min_v, e_type, getattr(min_v, e_type) + getattr(the_vox, e_type))
+            min_v.energy += the_vox.energy
 
             return 1
 
@@ -351,8 +351,8 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
                         min_v = v
 
         ### add voxel energy to hit and to voxel, separately
-        setattr(min_hit, e_type, getattr(min_hit, e_type) + getattr(the_vox, e_type))
-        setattr(min_v,   e_type, getattr(min_v, e_type)   + getattr(the_vox, e_type))
+        setattr(min_hit, e_type, getattr(min_hit, e_type) + the_vox.energy)
+        min_v.energy += the_vox.energy
 
         return 1
 
