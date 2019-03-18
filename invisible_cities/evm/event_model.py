@@ -116,8 +116,6 @@ class MCParticle:
 class HitEnergy(AutoNameEnumBase):
     E        = auto()
     Ec       = auto()
-    energy   = auto()
-    energy_c = auto()
 
 
 class BHit:
@@ -125,7 +123,7 @@ class BHit:
 
     def __init__(self, x,y,z, E):
         self.xyz      = (x,y,z)
-        self.energy   = E
+        self.E        = E
 
     @property
     def XYZ  (self): return self.xyz
@@ -142,23 +140,11 @@ class BHit:
     @property
     def Z   (self): return self.xyz[2]
 
-    @property
-    def E   (self): return self.energy
-
     def __str__(self):
         return '{}({.X}, {.Y}, {.Z}, E={.E})'.format(
             self.__class__.__name__, self, self, self, self)
 
     __repr__ =     __str__
-
-    def __eq__(self, other):
-        try:
-            return np.array_equal(self.pos, other.pos) and self.E == other.E
-        except AttributeError:
-            return False
-
-    def __hash__(self):
-        return hash((self.E, tuple(self.pos)))
 
 
 class MCHit(BHit):
@@ -168,11 +154,6 @@ class MCHit(BHit):
         self.time          = t
         self.label         = l
 
-    @property
-    def T     (self): return self.time
-
-    @property
-    def Label (self): return self.label
 
     def __str__(self):
         return '<label = {}, pos = {}, E = {}, time = {}>'.format(self.label,
@@ -180,19 +161,10 @@ class MCHit(BHit):
 
     __repr__ =     __str__
 
-    def __eq__(self, other):
-        try:
-            return np.array_equal(self.pos, other.pos) and self.E == other.E and self.time == other.time
-        except AttributeError:
-            return False
-
-    def __hash__(self):
-        return hash((self.E, self.time, self.xyz))
-
 
 class Voxel(BHit):
     """Represents a Voxel"""
-    def __init__(self, x,y,z, E, size, hits=None, e_type : HitEnergy = HitEnergy.energy):
+    def __init__(self, x,y,z, E, size, hits=None, e_type : HitEnergy = HitEnergy.E):
         super().__init__(x,y,z, E)
         self._size  = size
         self.hits   = hits if hits is not None else []
@@ -210,14 +182,13 @@ class Voxel(BHit):
 
 class Cluster(BHit):
     """Represents a reconstructed cluster in the tracking plane"""
-    def __init__(self, Q, xy, xy_var, nsipm, z=ZANODE, E=NN, Ql=-1, Qc=-1):
+    def __init__(self, Q, xy, xy_var, nsipm, z=ZANODE, E=NN, Qc=-1):
         if E == NN:
             super().__init__(xy.x, xy.y, z, Q)
         else:
             super().__init__(xy.x, xy.y, z, E)
 
         self.Q       = Q
-        self.Ql      = Ql
         self.Qc      = Qc
         self._xy     = xy
         self._xy_var = xy_var
@@ -254,31 +225,21 @@ class Cluster(BHit):
 class Hit(Cluster):
     """Represents a reconstructed hit (cluster + z + energy)"""
     def __init__(self, peak_number, cluster, z, s2_energy, peak_xy,
-                s2_energy_l=-1, s2_energy_c=-1, zc=ZANODE):
+                 s2_energy_c=-1, track_id=-1):
 
 
         super().__init__(cluster.Q,
                          cluster._xy, cluster._xy_var,
-                         cluster.nsipm, z, s2_energy, cluster.Ql, cluster.Qc)
+                         cluster.nsipm, z, s2_energy, cluster.Qc)
 
         self.peak_number = peak_number
-        self.Xpeak = peak_xy.x
-        self.Ypeak = peak_xy.y
-        self.energy_l = s2_energy_l
-        self.energy_c = s2_energy_c
-        self.z_c      = zc
+        self.Xpeak       = peak_xy.x
+        self.Ypeak       = peak_xy.y
+        self.Ec          = s2_energy_c
+        self.track_id    = track_id
 
     @property
     def npeak(self): return self.peak_number
-
-    @property
-    def El(self): return self.energy_l
-
-    @property
-    def Ec(self): return self.energy_c
-
-    @property
-    def Zc(self): return self.z_c
 
     def __str__(self):
         return """<{} : npeak = {} z = {} XYpeak = {}, {} E = {} cluster ={} >""".format(self.__class__.__name__,
@@ -312,10 +273,10 @@ class Blob():
     def __init__(self, seed: Tuple[float, float, float],
                        hits : List[BHit],
                        radius : float,
-                       e_type : HitEnergy = HitEnergy.energy) ->None:
+                       e_type : HitEnergy = HitEnergy.E) ->None:
         self.seed   = seed
         self.hits   = hits
-        self.energy = sum(getattr(h, e_type.value) for h in hits)
+        self.E      = sum(getattr(h, e_type.value) for h in hits)
         self.radius = radius
         self.e_type = e_type.value
 
@@ -398,24 +359,22 @@ class HitCollection(Event):
     def store(self, table):
         row = table.row
         for hit in self.hits:
-            row["event"] = self.event
-            row["time" ] = self.time
-            row["npeak"] = hit.npeak
-            row["Xpeak"] = hit.Xpeak
-            row["Ypeak"] = hit.Ypeak
-            row["nsipm"] = hit.nsipm
-            row["X"    ] = hit.X
-            row["Y"    ] = hit.Y
-            row["Xrms" ] = hit.Xrms
-            row["Yrms" ] = hit.Yrms
-            row["Z"    ] = hit.Z
-            row["Q"    ] = hit.Q
-            row["E"    ] = hit.E
-            row["Ql"   ] = hit.Ql
-            row["El"   ] = hit.El
-            row["Qc"   ] = hit.Qc
-            row["Ec"   ] = hit.Ec
-            row["Zc"   ] = hit.Zc
+            row["event"   ] = self.event
+            row["time"    ] = self.time
+            row["npeak"   ] = hit .npeak
+            row["Xpeak"   ] = hit .Xpeak
+            row["Ypeak"   ] = hit .Ypeak
+            row["nsipm"   ] = hit .nsipm
+            row["X"       ] = hit .X
+            row["Y"       ] = hit .Y
+            row["Xrms"    ] = hit .Xrms
+            row["Yrms"    ] = hit .Yrms
+            row["Z"       ] = hit .Z
+            row["Q"       ] = hit .Q
+            row["E"       ] = hit .E
+            row["Qc"      ] = hit .Qc
+            row["Ec"      ] = hit .Ec
+            row["track_id"] = hit .track_id
             row.append()
 
     def __str__(self):
