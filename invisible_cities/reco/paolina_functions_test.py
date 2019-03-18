@@ -664,13 +664,6 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
         assert np.allclose(blob_centre(b), b.pos)
 
 
-@given(bunch_of_corrected_hits(), box_sizes, radius)
-def test_voxelize_hits_with_hit_energy_different_from_default_value(hits, requested_voxel_dimensions, blob_radius):
-    with raises(AttributeError):
-        voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c)
-        voxels_l = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_l)
-
-
 @given(box_sizes, radius, fraction_zero_one)
 def test_paolina_functions_with_hit_energy_different_from_default_value(requested_voxel_dimensions, blob_radius, fraction_zero_one):
 
