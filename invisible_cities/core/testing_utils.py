@@ -101,7 +101,6 @@ def _compare_dataframes(assertion, df1, df2, check_types=True, **kwargs):
         col2 = df2[col]
         if check_types:
             assert col1.dtype == col2.dtype
-        print(col, col1.values - col2.values)
         assertion(col1.values, col2.values, **kwargs)
 
 

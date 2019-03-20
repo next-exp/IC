@@ -76,3 +76,6 @@ class NoParticleInfoInFile(ICException):
 
 class VoxelNotInList(ICException):
     pass
+
+class TableMismatch(ICException):
+    pass
