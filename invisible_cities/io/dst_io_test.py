@@ -26,9 +26,9 @@ from hypothesis.strategies   import text
 
 @fixture()
 def empty_dataframe(columns=['int_value', 'float_value', 'bool_value', 'str_value'], dtypes=['int32', 'float32', 'bool', 'object'], index=None):
-    assert len(columns)==len(dtypes)
+    assert len(columns) == len(dtypes)
     df = pd.DataFrame(index=index)
-    for c,d in zip(columns, dtypes):
+    for c, d in zip(columns, dtypes):
         df[c] = pd.Series(dtype=d)
     return df
 
@@ -97,20 +97,20 @@ def test_load_dsts_warns_if_not_existing_file(ICDATADIR):
 
 @given(df=dataframe)
 def test_store_pandas_as_tables_exact(config_tmpdir, df):
-    filename   = config_tmpdir+'dataframe_to_table_exact.h5'
+    filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_1'
-    with tb.open_file(filename,'w') as h5out:
+    with tb.open_file(filename, 'w') as h5out:
         _store_pandas_as_tables(h5out, df, group_name, table_name)
     df_read = load_dst(filename, group_name, table_name)
     assert_dataframes_close(df_read, df, False, rtol=1e-5)
 
 @given(df1=dataframe, df2=dataframe)
 def test_store_pandas_as_tables_2df(config_tmpdir, df1, df2):
-    filename   = config_tmpdir+'dataframe_to_table_exact.h5'
+    filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_2'
-    with tb.open_file(filename,'w') as h5out:
+    with tb.open_file(filename, 'w') as h5out:
         _store_pandas_as_tables(h5out, df1, group_name, table_name)
         _store_pandas_as_tables(h5out, df2, group_name, table_name)
     df_read = load_dst(filename, group_name, table_name)
@@ -118,38 +118,38 @@ def test_store_pandas_as_tables_2df(config_tmpdir, df1, df2):
 
 @given(df1=dataframe, df2=dataframe_diff)
 def test_store_pandas_as_tables_raises_exception(config_tmpdir, df1, df2):
-    filename   = config_tmpdir+'dataframe_to_table_exact.h5'
+    filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_2'
-    with tb.open_file(filename,'w') as h5out:
+    with tb.open_file(filename, 'w') as h5out:
         _store_pandas_as_tables(h5out, df1, group_name, table_name)
         with raises(TableMismatch):
             _store_pandas_as_tables(h5out, df2, group_name, table_name)
 
 @given(df=strings_dataframe)
 def test_strings_store_pandas_as_tables(config_tmpdir, df):
-    filename   = config_tmpdir+'dataframe_to_table_exact.h5'
+    filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_str'
-    with tb.open_file(filename,'w') as h5out:
+    with tb.open_file(filename, 'w') as h5out:
         _store_pandas_as_tables(h5out, df, group_name, table_name)
     df_read    = load_dst(filename, group_name, table_name)
     #we have to cast from byte strings to compare with original dataframe
-    df_read.str_val=df_read.str_val.str.decode('utf-8')
+    df_read.str_val = df_read.str_val.str.decode('utf-8')
     assert_dataframes_equal(df_read, df, False)
 
 def test_make_tabledef(empty_dataframe):
-    tabledef=_make_tabledef(empty_dataframe.dtypes)
-    expected_tabledef={'int_value'  :tb.Int32Col  (             shape=(), dflt=0    , pos=0),
-                       'float_value':tb.Float32Col(             shape=(), dflt=0    , pos=1),
-                       'bool_value' :tb.BoolCol   (             shape=(), dflt=False, pos=2),
-                       'str_value'  :tb.StringCol (itemsize=32, shape=(), dflt=b''  , pos=3)}
-    assert tabledef==expected_tabledef
+    tabledef = _make_tabledef(empty_dataframe.dtypes)
+    expected_tabledef = {'int_value'   : tb.Int32Col  (             shape=(), dflt=0    , pos=0),
+                         'float_value' : tb.Float32Col(             shape=(), dflt=0    , pos=1),
+                         'bool_value'  : tb.BoolCol   (             shape=(), dflt=False, pos=2),
+                         'str_value'   : tb.StringCol (itemsize=32, shape=(), dflt=b''  , pos=3)}
+    assert tabledef == expected_tabledef
 
 def test_store_pandas_as_tables_raises_warning_empty_dataframe(config_tmpdir, empty_dataframe):
-    filename   = config_tmpdir+'dataframe_to_table_exact.h5'
+    filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_3'
-    with tb.open_file(filename,'w') as h5out:
+    with tb.open_file(filename, 'w') as h5out:
         with pytest.warns(UserWarning, match='dataframe is empty'):
             _store_pandas_as_tables(h5out, empty_dataframe, group_name, table_name)
