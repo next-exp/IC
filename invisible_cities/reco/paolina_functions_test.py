@@ -19,7 +19,6 @@ parametrize = mark.parametrize
 
 from hypothesis            import given
 from hypothesis            import settings
-from hypothesis            import assume
 from hypothesis.strategies import composite
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
@@ -75,22 +74,20 @@ bunch_of_hits = lists(builds(BHit, posn, posn, posn, ener),
 
 @composite
 def hit(draw, min_value=1, max_value=100):
-    x     = draw(floats  (-10,  10))
-    y     = draw(floats  (-10,  10))
-    xvar  = draw(floats  (.01,  .5))
-    yvar  = draw(floats  (.01,  .5))
-    Q     = draw(floats  (  1, 100))
-    nsipm = draw(integers(  1,  20))
-    npeak = 0
-    z     = draw(floats  ( 50, 100))
-    E     = draw(floats  ( 50, 100))
-    E_l   = draw(floats  ( 50, 100))
-    E_c   = draw(floats  ( 50, 100))
-    assume(not np.isclose(E_c, E))
-    x_peak= draw(floats  (-10,  10))
-    y_peak= draw(floats  (-10,  10))
+    x      = draw(floats  (-10,  10))
+    y      = draw(floats  (-10,  10))
+    xvar   = draw(floats  (.01,  .5))
+    yvar   = draw(floats  (.01,  .5))
+    Q      = draw(floats  (  1, 100))
+    nsipm  = draw(integers(  1,  20))
+    npeak  = 0
+    z      = draw(floats  ( 50, 100))
+    E      = draw(floats  ( 50, 100))
+    E_c    = draw(floats  ( 50, 100))
+    x_peak = draw(floats  (-10,  10))
+    y_peak = draw(floats  (-10,  10))
 
-    return Hit(npeak,Cluster(Q,xy(x,y),xy(xvar,yvar),nsipm),z,E,xy(x_peak,y_peak), s2_energy_l=E_l, s2_energy_c=E_c)
+    return Hit(npeak,Cluster(Q,xy(x,y),xy(xvar,yvar),nsipm),z,E,xy(x_peak,y_peak),s2_energy_c=E_c)
 
 
 @composite
@@ -669,37 +666,32 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
 @given(bunch_of_corrected_hits(), box_sizes, radius, fraction_zero_one)
 def test_paolina_functions_with_hit_energy_different_from_default_value(hits, requested_voxel_dimensions, blob_radius, fraction_zero_one):
 
-    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
-    tracks = make_track_graphs(voxels)
+    energy_type = HitEnergy.energy_c
 
-    voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c)
-    tracks_c = make_track_graphs(voxels_c)
+    voxels   = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
+    voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
 
-    energies = [sum(vox.E for vox in t.nodes()) for t in tracks]
-    energies.sort()
+    # The first assertion is needed for the test to keep being meaningful,
+    # in case we change the default value of energy_type to energy_c.
+    assert voxels[0].Etype   != voxels_c[0].Etype
+    assert voxels_c[0].Etype == energy_type.value
 
-    energies_c = [sum(vox.E for vox in t.nodes()) for t in tracks_c]
-    energies_c.sort()
-
-    assert not np.allclose(energies, energies_c)
+    for voxel in voxels_c:
+        assert np.isclose(voxel.energy, sum(getattr(h, energy_type.value) for h in voxel.hits))
 
     energies_c = [v.E for v in voxels_c]
     e_thr = min(energies_c) + fraction_zero_one * (max(energies_c) - min(energies_c))
     # Test that this function doesn't fail
     mod_voxels_c = drop_end_point_voxels(voxels_c, e_thr, min_vxls=0)
 
-    for voxel in mod_voxels_c:
-        assert     np.isclose(voxel.energy, sum(h.energy_c for h in voxel.hits))
-        assert not np.isclose(voxel.energy, sum(h.energy   for h in voxel.hits))
-
 
 def test_make_tracks_function(ICDATADIR):
 
     # Get some test data
-    hit_file   = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
-    evt_number = 19
-    size       = 15.
-    voxel_size = np.array([size,size,size], dtype=np.float16)
+    hit_file    = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
+    evt_number  = 19
+    size        = 15.
+    voxel_size  = np.array([size,size,size], dtype=np.float16)
     blob_radius = 21*units.mm
 
     # Read the hits and voxelize
