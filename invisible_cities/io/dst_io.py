@@ -42,13 +42,11 @@ def _make_tabledef(column_types:pd.Series,str_col_length:int=32)->dict:
 def _store_pandas_as_tables(h5out:tb.file.File, df:pd.DataFrame, group_name:str, table_name:str, compression:str='ZLIB4', descriptive_string:[str]="", str_col_length:int=32)->None:
     if len(df) == 0:
         warnings.warn(f'dataframe is empty', UserWarning)
-    if '/'+group_name not in h5out:
+    if group_name not in h5out.root:
         group = h5out.create_group(h5out.root,group_name)
-    else:
-        group = getattr(h5out.root,group_name)
-    if table_name in group:
-        table=getattr(group,table_name)
-    else:
+
+    group = getattr(h5out.root,group_name)
+    if table_name not in group:
         tabledef=_make_tabledef(df.dtypes)
         table = make_table(h5out,
                            group       = group_name,
@@ -57,6 +55,7 @@ def _store_pandas_as_tables(h5out:tb.file.File, df:pd.DataFrame, group_name:str,
                            description = descriptive_string,
                            compression = compression)
 
+    table=getattr(group,table_name)
     if not np.array_equal(df.columns,table.colnames):
         raise TableMismatch(f'dataframe differs from already existing table structure')
     for indx in df.index:
