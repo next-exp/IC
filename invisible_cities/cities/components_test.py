@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import tables as tb
+import pandas as pd
 
 from argparse  import Namespace
 from functools import partial
@@ -21,6 +22,7 @@ from .  components import wf_from_files
 from .  components import pmap_from_files
 from .  components import compute_xy_position
 from .  components import city
+from .  components import hits_and_kdst_from_files
 
 from .. database import load_db
 
@@ -144,3 +146,17 @@ def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
             pass
 
     dummy_city(**args)
+
+def test_hits_and_kdst_from_files(ICDATADIR):
+    event_number = 1
+    timestamp    = 0.
+    num_hits     = 13
+    keys = ['hits', 'mc', 'kdst', 'run_number', 'event_number', 'timestamp']
+    file_in     = os.path.join(ICDATADIR    ,  'Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5')
+    generator = hits_and_kdst_from_files([file_in])
+    output = next(generator)
+    assert set(keys) == set(output.keys())
+    assert output['event_number']   == event_number
+    assert output['timestamp']      == timestamp
+    assert len(output['hits'].hits) == num_hits
+    assert type(output['kdst'])     == pd.DataFrame
