@@ -688,6 +688,10 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
     # Test that this function doesn't fail
     mod_voxels_c = drop_end_point_voxels(voxels_c, e_thr, min_vxls=0)
 
+    for voxel in mod_voxels_c:
+        assert     np.isclose(voxel.energy, sum(h.energy_c for h in voxel.hits))
+        assert not np.isclose(voxel.energy, sum(h.energy   for h in voxel.hits))
+
 
 def test_make_tracks_function(ICDATADIR):
 
