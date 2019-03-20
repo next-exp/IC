@@ -19,6 +19,7 @@ parametrize = mark.parametrize
 
 from hypothesis            import given
 from hypothesis            import settings
+from hypothesis            import assume
 from hypothesis.strategies import composite
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
@@ -85,6 +86,7 @@ def hit(draw, min_value=1, max_value=100):
     E     = draw(floats  ( 50, 100))
     E_l   = draw(floats  ( 50, 100))
     E_c   = draw(floats  ( 50, 100))
+    assume(not np.isclose(E_c, E))
     x_peak= draw(floats  (-10,  10))
     y_peak= draw(floats  (-10,  10))
 
@@ -664,23 +666,9 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
         assert np.allclose(blob_centre(b), b.pos)
 
 
-@given(box_sizes, radius, fraction_zero_one)
-def test_paolina_functions_with_hit_energy_different_from_default_value(requested_voxel_dimensions, blob_radius, fraction_zero_one):
+@given(bunch_of_corrected_hits(), box_sizes, radius, fraction_zero_one)
+def test_paolina_functions_with_hit_energy_different_from_default_value(hits, requested_voxel_dimensions, blob_radius, fraction_zero_one):
 
-    npeak = 0
-    Q     = 1
-    var   = 0
-    nsipm = 1
-    energy = 5
-    energy_l = energy + 1
-    energy_c = energy + 2
-    x_peak = y_peak = 0
-    hits = [Hit(npeak, Cluster(Q, xy(-1,0), xy(var,var),nsipm), 1, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 0,0), xy(var,var),nsipm), 2, energy, xy(x_peak,y_peak), energy_l, energy_c-1),
-            Hit(npeak, Cluster(Q, xy( 0,1), xy(var,var),nsipm), 3, energy, xy(x_peak,y_peak), energy_l, energy_c-2),
-            Hit(npeak, Cluster(Q, xy( 1,0), xy(var,var),nsipm), 4, energy, xy(x_peak,y_peak), energy_l, energy_c+1),
-            Hit(npeak, Cluster(Q, xy( 4,5), xy(var,var),nsipm), 4, energy, xy(x_peak,y_peak), energy_l, energy_c+2),
-            Hit(npeak, Cluster(Q, xy( 5,3), xy(var,var),nsipm), 5, energy, xy(x_peak,y_peak), energy_l, energy_c+3)]
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     tracks = make_track_graphs(voxels)
 
