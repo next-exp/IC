@@ -311,7 +311,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
         ### be sure that the voxel to be eliminated has at least one neighbour
         ### beyond itself
         the_neighbours = np.array([neighbours(the_vox, v) for v in voxels])
-        if len(the_neighbours>0) <= 1:
+        if len(the_neighbours[the_neighbours>0]) <= 1:
             return 0
 
         ### remove voxel from list of voxels
@@ -331,7 +331,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
                         min_v = v
 
             ### add voxel energy to voxel
-            setattr(min_v, e_type, getattr(min_v, e_type) + getattr(the_vox, e_type))
+            min_v.energy += the_vox.energy
 
             return 1
 
@@ -351,8 +351,8 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
                         min_v = v
 
         ### add voxel energy to hit and to voxel, separately
-        setattr(min_hit, e_type, getattr(min_hit, e_type) + getattr(the_vox, e_type))
-        setattr(min_v,   e_type, getattr(min_v, e_type)   + getattr(the_vox, e_type))
+        setattr(min_hit, e_type, getattr(min_hit, e_type) + the_vox.energy)
+        min_v.energy += the_vox.energy
 
         return 1
 
@@ -361,7 +361,6 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
     while True:
         n_modified_voxels = 0
         trks = make_track_graphs(mod_voxels)
-        vxl_size = mod_voxels[0].size
 
         for t in trks:
             if len(t.nodes()) < min_vxls:

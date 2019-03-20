@@ -74,21 +74,20 @@ bunch_of_hits = lists(builds(BHit, posn, posn, posn, ener),
 
 @composite
 def hit(draw, min_value=1, max_value=100):
-    x     = draw(floats  (-10,  10))
-    y     = draw(floats  (-10,  10))
-    xvar  = draw(floats  (.01,  .5))
-    yvar  = draw(floats  (.01,  .5))
-    Q     = draw(floats  (  1, 100))
-    nsipm = draw(integers(  1,  20))
-    npeak = 0
-    z     = draw(floats  ( 50, 100))
-    E     = draw(floats  ( 50, 100))
-    E_l   = draw(floats  ( 50, 100))
-    E_c   = draw(floats  ( 50, 100))
-    x_peak= draw(floats  (-10,  10))
-    y_peak= draw(floats  (-10,  10))
+    x      = draw(floats  (-10,  10))
+    y      = draw(floats  (-10,  10))
+    xvar   = draw(floats  (.01,  .5))
+    yvar   = draw(floats  (.01,  .5))
+    Q      = draw(floats  (  1, 100))
+    nsipm  = draw(integers(  1,  20))
+    npeak  = 0
+    z      = draw(floats  ( 50, 100))
+    E      = draw(floats  ( 50, 100))
+    E_c    = draw(floats  ( 50, 100))
+    x_peak = draw(floats  (-10,  10))
+    y_peak = draw(floats  (-10,  10))
 
-    return Hit(npeak,Cluster(Q,xy(x,y),xy(xvar,yvar),nsipm),z,E,xy(x_peak,y_peak), s2_energy_l=E_l, s2_energy_c=E_c)
+    return Hit(npeak,Cluster(Q,xy(x,y),xy(xvar,yvar),nsipm),z,E,xy(x_peak,y_peak),s2_energy_c=E_c)
 
 
 @composite
@@ -664,51 +663,47 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
         assert np.allclose(blob_centre(b), b.pos)
 
 
-@given(bunch_of_corrected_hits(), box_sizes, radius)
-def test_voxelize_hits_with_hit_energy_different_from_default_value(hits, requested_voxel_dimensions, blob_radius):
-    with raises(AttributeError):
-        voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c)
-        voxels_l = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_l)
+@given(bunch_of_corrected_hits(), box_sizes, radius, fraction_zero_one)
+def test_paolina_functions_with_hit_energy_different_from_default_value(hits, requested_voxel_dimensions, blob_radius, fraction_zero_one):
 
+    energy_type = HitEnergy.energy_c
 
-@given(box_sizes, radius)
-def test_paolina_functions_with_hit_energy_different_from_default_value(requested_voxel_dimensions, blob_radius):
+    voxels   = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
+    voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
 
-    npeak = 0
-    Q     = 1
-    var   = 0
-    nsipm = 1
-    energy = 5
-    energy_l = energy + 1
-    energy_c = energy + 2
-    x_peak = y_peak = 0
-    hits = [Hit(npeak, Cluster(Q, xy(-1,0), xy(var,var),nsipm), 1, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 0,0), xy(var,var),nsipm), 2, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 0,1), xy(var,var),nsipm), 3, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 1,0), xy(var,var),nsipm), 4, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 4,5), xy(var,var),nsipm), 4, energy, xy(x_peak,y_peak), energy_l, energy_c),
-            Hit(npeak, Cluster(Q, xy( 5,3), xy(var,var),nsipm), 5, energy, xy(x_peak,y_peak), energy_l, energy_c)]
-    voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
-    tracks = make_track_graphs(voxels)
-    voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=HitEnergy.energy_c)
-    tracks_c = make_track_graphs(voxels_c)
+    # The first assertion is needed for the test to keep being meaningful,
+    # in case we change the default value of energy_type to energy_c.
+    assert voxels[0].Etype   != voxels_c[0].Etype
+    assert voxels_c[0].Etype == energy_type.value
 
-    energies = [sum(vox.E for vox in t.nodes()) for t in tracks]
-    energies.sort()
+    for voxel in voxels_c:
+        assert np.isclose(voxel.energy, sum(getattr(h, energy_type.value) for h in voxel.hits))
 
-    energies_c = [sum(vox.E for vox in t.nodes()) for t in tracks_c]
-    energies_c.sort()
+    energies_c = [v.E for v in voxels_c]
+    e_thr = min(energies_c) + fraction_zero_one * (max(energies_c) - min(energies_c))
+    # Test that this function doesn't fail
+    mod_voxels_c = drop_end_point_voxels(voxels_c, e_thr, min_vxls=0)
 
-    assert not np.allclose(energies, energies_c)
+    tot_energy     = sum(getattr(h, energy_type.value) for v in voxels_c     for h in v.hits) 
+    tot_mod_energy = sum(getattr(h, energy_type.value) for v in mod_voxels_c for h in v.hits) 
+
+    assert np.isclose(tot_energy, tot_mod_energy)
+
+    tot_default_energy     = sum(h.energy for v in voxels_c     for h in v.hits)
+    tot_mod_default_energy = sum(h.energy for v in mod_voxels_c for h in v.hits)
+
+    # We don't want to modify the default energy of hits, if the voxels are made with energy_c
+    if len(mod_voxels_c) < len(voxels_c):
+        assert tot_default_energy > tot_mod_default_energy
 
 
 def test_make_tracks_function(ICDATADIR):
 
     # Get some test data
-    hit_file   = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
-    evt_number = 19
-    size       = 15.
-    voxel_size = np.array([size,size,size], dtype=np.float16)
+    hit_file    = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
+    evt_number  = 19
+    size        = 15.
+    voxel_size  = np.array([size,size,size], dtype=np.float16)
     blob_radius = 21*units.mm
 
     # Read the hits and voxelize
