@@ -56,6 +56,10 @@ decimeter2 = decimeter * decimeter
 decimeter3 = decimeter * decimeter2
 liter = decimeter3
 l = liter
+ml  = 1e-3 * l
+mul = 1e-6 * l
+nl  = 1e-9 * l
+pl  = 1e-12 * l
 
 meter = 1000. * millimeter
 meter2 = meter * meter
@@ -125,6 +129,7 @@ second = 1.e+9 * nanosecond
 millisecond = 1.e-3 * second
 microsecond = 1.e-6 * second
 picosecond = 1.e-12 * second
+femtosecond = 1.e-15 * second
 year = 3.1536e+7 * second
 day = 864e2 * second
 minute = 60 * second
@@ -133,6 +138,7 @@ hour = 60 * minute
 s = second
 ms = millisecond
 ps = picosecond
+fs = femtosecond
 mus = microsecond
 ns = nanosecond
 
@@ -181,6 +187,14 @@ joule = electronvolt/e_SI  # joule = 6.24150 e+12 * MeV
 J     = joule
 milijoule = 1e-3 * joule
 microjoule = 1e-6 * joule
+nanojoule = 1e-9 * joule
+picojoule = 1e-12 * joule
+femtojoule = 1e-15 * joule
+mJ  = milijoule
+muJ = microjoule
+nJ  = nanojoule
+pJ  = picojoule
+fJ  = femtojoule
 
 #
 # Mass [E][T^2][L^-2]
