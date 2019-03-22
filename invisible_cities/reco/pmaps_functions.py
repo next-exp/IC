@@ -2,7 +2,7 @@ from enum import Enum
 
 import numpy as np
 
-from typing import List
+from typing import List, Union
 
 from ..evm.pmaps           import                     _Peak
 from ..evm.pmaps           import              PMTResponses
