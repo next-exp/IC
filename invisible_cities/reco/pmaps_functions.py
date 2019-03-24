@@ -2,7 +2,7 @@ from enum import Enum
 
 import numpy as np
 
-from typing import List
+from typing import List, Union
 
 from ..evm.pmaps           import                     _Peak
 from ..evm.pmaps           import              PMTResponses
@@ -44,7 +44,7 @@ def get_threshold_slices(pmt_sum   : np.array,
     return slices
 
 
-def rebin_peak(peak : _Peak, rebin_factor : int or float,
+def rebin_peak(peak : _Peak, rebin_factor : Union[int, float],
                model=RebinMethod.stride) -> _Peak:
     """
     Rebin a peak either using a set stride of
