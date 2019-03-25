@@ -37,7 +37,7 @@ def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit
             hits_to_correct.append([h,nn_h.E*(h.E/en_tot)])
 
     for h, en in hits_to_correct:
-        h.energy += en
+        h.E += en
     return non_nn_hits
 
 def threshold_hits(hits : List[evm.Hit], th : float) -> List[evm.Hit]:
@@ -57,6 +57,6 @@ def threshold_hits(hits : List[evm.Hit], th : float) -> List[evm.Hit]:
             hits_pass_th=list(compress(deepcopy(slice_hits), mask_thresh))
             es = split_energy(e_slice, hits_pass_th)
             for i,x in enumerate(hits_pass_th):
-                x.energy=es[i]
+                x.E=es[i]
                 new_hits.append(x)
         return new_hits
