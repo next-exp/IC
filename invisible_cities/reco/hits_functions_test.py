@@ -7,6 +7,7 @@ from   .. evm.event_model        import Hit
 from   .. evm.event_model        import Cluster
 from   .. types.ic_types         import xy
 from   .. core.system_of_units_c import units
+from   .. core.testing_utils     import assert_hit_equality
 from   .. types.ic_types         import NN
 from   .. cities.penthesilea     import penthesilea
 from   .. io                     import hits_io          as hio
@@ -57,7 +58,7 @@ def test_merge_NN_not_modify_input(hits):
     after_len = len(hits)
     assert before_len == after_len
     for h1, h2 in zip(hits, hits_org):
-        assert h1== h2
+        assert_hit_equality(h1, h2)
 
 @given(list_of_hits())
 def test_merge_hits_energy_conserved(hits):
@@ -68,9 +69,10 @@ def test_merge_NN_hits_exact(TlMC_hits, TlMC_hits_merged):
     for ev, hitc in TlMC_hits.items():
         hits_test  = TlMC_hits_merged[ev].hits
         hits_merged = merge_NN_hits(hitc.hits)
-        assert len(hits_test)==len(hits_merged)
-        for h1, h2 in zip(hits_test,hits_merged):
-            assert h1==h2
+        assert len(hits_test) == len(hits_merged)
+        for h1, h2 in zip(hits_test, hits_merged):
+            print(h1.Xrms, h1.Yrms, h2.Xrms, h2.Yrms)
+            assert_hit_equality(h1, h2)
 @given(threshs=thresholds(1,1))
 @settings(deadline=None, max_examples = 1)
 @mark.slow
@@ -123,7 +125,7 @@ def test_threshold_hits_not_modify_input(hits, th):
     after_len = len(hits)
     assert before_len == after_len
     for h1, h2 in zip(hits, hits_org):
-        assert h1== h2
+        assert_hit_equality(h1, h2)
 
 @given(list_of_hits(), floats())
 def test_threshold_hits_energy_conserved(hits,th):

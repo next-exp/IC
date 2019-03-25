@@ -8,6 +8,7 @@ from .. core.core_functions    import in_range
 from .. core.system_of_units_c import units
 from .. core.testing_utils     import assert_dataframes_close
 from .. core.testing_utils     import assert_tables_equality
+from .. core.testing_utils     import assert_MChit_equality
 from .. core.configure         import configure
 from .. core.configure         import all as all_events
 from .. io                     import dst_io as dio
@@ -172,7 +173,7 @@ def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
         penthesilea_hits = penthesilea_evts[evt_no]
 
         assert len(penthesilea_hits) == len(true_hits)
-        assert all(p_hit == t_hit for p_hit, t_hit in zip(penthesilea_hits, true_hits))
+        (assert_MChit_equality(p_hit, t_hit) for p_hit, t_hit in zip(penthesilea_hits, true_hits))
 
 
 @mark.skip("This scenario is not possible in liquid cities")
