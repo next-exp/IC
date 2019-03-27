@@ -224,7 +224,7 @@ def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
             assert last_particle_list[nevents_out_in_first_file] - last_particle_list[nevents_out_in_first_file - 1] == nparticles_in_first_event_out
             assert last_hit_list     [nevents_out_in_first_file] - last_hit_list     [nevents_out_in_first_file - 1] == nhits_in_first_event_out
 
-@mark.skip("Temporar skip till we decide on Hit class attributes")
+
 def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
     file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea.h5")
