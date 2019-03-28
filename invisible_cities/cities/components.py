@@ -17,38 +17,39 @@ import numpy  as np
 import pandas as pd
 import inspect
 
-
-from .. dataflow               import dataflow      as fl
-from .. evm .ic_containers     import SensorData
-from .. evm .event_model       import KrEvent
-from .. evm .event_model       import Hit
-from .. evm .event_model       import Cluster
-from .. evm .event_model       import HitCollection
-from .. evm .event_model       import MCInfo
-from .. core.system_of_units_c import units
-from .. core.exceptions        import XYRecoFail
-from .. core.exceptions        import NoInputFiles
-from .. core.exceptions        import NoOutputFile
-from .. core.exceptions        import InvalidInputFileStructure
-from .. core.configure         import EventRange
-from .. core.configure         import event_range_help
-from .. reco                   import         calib_functions as  cf
-from .. reco                   import calib_sensors_functions as csf
-from .. reco                   import          peak_functions as pkf
-from .. reco                   import         pmaps_functions as pmf
-from .. reco                   import          hits_functions as hif
-from .. reco.tbl_functions     import get_mc_info
-from .. reco.xy_algorithms     import corona
-from .. filters.s1s2_filter    import S12Selector
-from .. filters.s1s2_filter    import pmap_filter
-from .. database               import load_db
-from .. sierpe                 import blr
-from .. io.pmaps_io            import load_pmaps
-from .. io. hits_io            import hits_from_df
-from .. io.  dst_io            import load_dst
-from .. types.ic_types         import xy
-from .. types.ic_types         import NN
-from .. types.ic_types         import NNN
+from .. dataflow                import                  dataflow as  fl
+from .. evm  .ic_containers     import                SensorData
+from .. evm  .event_model       import                   KrEvent
+from .. evm  .event_model       import                       Hit
+from .. evm  .event_model       import                   Cluster
+from .. evm  .event_model       import             HitCollection
+from .. core .system_of_units_c import                     units
+from .. core .exceptions        import                XYRecoFail
+from .. core .exceptions        import              NoInputFiles
+from .. core .exceptions        import              NoOutputFile
+from .. core .exceptions        import InvalidInputFileStructure
+from .. core .configure         import                EventRange
+from .. core .configure         import          event_range_help
+from .. core .random_sampling   import              NoiseSampler as siN
+from .. reco                    import           calib_functions as  cf
+from .. reco                    import   calib_sensors_functions as csf
+from .. reco                    import            peak_functions as pkf
+from .. reco                    import           pmaps_functions as pmf
+from .. reco                    import            hits_functions as hif
+from .. reco.tbl_functions      import               get_mc_info
+from .. reco.xy_algorithms      import                    corona
+from .. filters.s1s2_filter     import               S12Selector
+from .. filters.s1s2_filter     import               pmap_filter
+from .. database                import                   load_db
+from .. sierpe                  import                       blr
+from .. io   .pmaps_io          import                load_pmaps
+from .. io   .hits_io           import              hits_from_df
+from .. io   .dst_io            import                  load_dst
+from .. types.ic_types          import                        xy
+from .. types.ic_types          import                        NN
+from .. types.ic_types          import                       NNN
+## from .. types.ic_types          import          AutoNameEnumBase
+from .. evm.pmaps               import                SiPMCharge
 
 NoneType = type(None)
 
@@ -390,11 +391,43 @@ def compute_z_and_dt(t_s2, t_s1, drift_v):
     return z, dt
 
 
-def build_pointlike_event(dbfile, run_number, drift_v, reco):
-    datasipm = load_db.DataSiPM(dbfile, run_number)
-    sipm_xs  = datasipm.X.values
-    sipm_ys  = datasipm.Y.values
-    sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
+## class SiPMCharge(AutoNameEnumBase):
+##     raw = auto()
+##     sn  = auto()
+
+
+## def get_sipm_charge_array(sipms  : _SensorResponse,
+##                           bin_widths : np.array,
+##                           sipm_noise : NoiseSampler,
+##                           charge_type: SiPMCharge) -> np.array:
+
+##     if charge_type == SiPMCharge.raw:
+##         if isinstance(bin_widths, np.float32):
+##             return sipms.sum_over_times
+##         return sipms.all_waveforms.T
+
+##     ids = sipms.ids
+##     if isinstance(bin_widths, np.float32):
+##         charges    = sipms.sum_over_times
+##         sample_wid = int(np.ceil(np.round(bin_widths) / units.mus))
+##         return sipm_noise.signal_to_noise(ids, charges, sample_wid)
+
+##     sample_widths = np.ceil(np.round(bin_widths) / units.mus)).astype(int)
+##     mapping = map(sipm_noise.signal_to_noise,
+##                   np.repeat(ids[None, :], len(bin_widths), 0),
+##                   sipms.all_waveforms.T,
+##                   sample_widths)
+##     return np.array(tuple(mapping))
+
+
+def build_pointlike_event(dbfile, run_number, drift_v,
+                          reco, charge_type = SiPMCharge.raw):
+    datasipm   = load_db.DataSiPM(dbfile, run_number)
+    sipm_xs    = datasipm.X.values
+    sipm_ys    = datasipm.Y.values
+    sipm_xys   = np.stack((sipm_xs, sipm_ys), axis=1)
+
+    sipm_noise = siN(dbfile, run_number).signal_to_noise
 
     def build_pointlike_event(pmap, selector_output, event_number, timestamp):
         evt = KrEvent(event_number, timestamp * 1e-3)
@@ -421,7 +454,9 @@ def build_pointlike_event(dbfile, run_number, drift_v, reco):
             evt.S2t.append(peak.time_at_max_energy)
 
             xys = sipm_xys[peak.sipms.ids           ]
-            qs  =          peak.sipms.sum_over_times
+            ## qs  = get_sipm_charge_array(peak.sipms, peak.width,
+            ##                             sipm_noise, charge_type)
+            qs  = peak.get_sipm_charge_array(sipm_noise, charge_type, True)
             try:
                 clusters = reco(xys, qs)
             except XYRecoFail:
@@ -451,11 +486,15 @@ def build_pointlike_event(dbfile, run_number, drift_v, reco):
     return build_pointlike_event
 
 
-def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices, rebin_method):
+def hit_builder(dbfile, run_number, drift_v, reco,
+                rebin_slices, rebin_method,
+                charge_type = SiPMCharge.raw):
     datasipm = load_db.DataSiPM(dbfile, run_number)
     sipm_xs  = datasipm.X.values
     sipm_ys  = datasipm.Y.values
     sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
+
+    sipm_noise = siN(dbfile, run_number).signal_to_noise
 
     barycenter = partial(corona,
                          all_sipms      =  datasipm,
@@ -476,7 +515,7 @@ def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices, rebin_method):
         # take events with exactly one s1. Otherwise, the
         # convention is to take the first peak in the S1 object
         # as reference.
-        if np.any(selector_output.s1_peaks):
+        if len(selector_output.s1_peaks) > 0:
             first_s1 = np.where(selector_output.s1_peaks)[0][0]
             s1_t     = pmap.s1s[first_s1].time_at_max_energy
         else:
@@ -493,25 +532,30 @@ def hit_builder(dbfile, run_number, drift_v, reco, rebin_slices, rebin_method):
 
             peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
 
-            xys     = sipm_xys[peak.sipms.ids           ]
-            qs      =          peak.sipms.sum_over_times
+            xys  = sipm_xys[peak.sipms.ids]
+            ## qs   = get_sipm_charge_array(peak.sipms, peak.width,
+            ##                              sipm_noise, charge_type)
+            qs   = peak.get_sipm_charge_array(sipm_noise, charge_type, True)
             try              : cluster = barycenter(xys, qs)[0]
             except XYRecoFail: xy_peak = xy(NN, NN)
             else             : xy_peak = xy(cluster.X, cluster.Y)
 
-            for slice_no, t_slice in enumerate(peak.times):
+            sipm_charge = peak.get_sipm_charge_array(sipm_noise ,
+                                                     charge_type)
+            for slice_no, (t_slice, qs) in enumerate(zip(peak.times ,
+                                                         sipm_charge)):
                 z_slice = (t_slice - s1_t) * units.ns * drift_v
                 e_slice = peak.pmts.sum_over_sensors[slice_no]
                 try:
-                    xys      = sipm_xys[peak.sipms.ids                 ]
-                    qs       =          peak.sipms.time_slice(slice_no)
+                    xys      = sipm_xys[peak.sipms.ids]
                     clusters = reco(xys, qs)
                     es       = hif.split_energy(e_slice, clusters)
                     for c, e in zip(clusters, es):
                         hit       = Hit(peak_no, c, z_slice, e, xy_peak)
                         hitc.hits.append(hit)
                 except XYRecoFail:
-                    hit = Hit(peak_no, empty_cluster(), z_slice, e_slice, xy_peak)
+                    hit = Hit(peak_no, empty_cluster(), z_slice,
+                              e_slice, xy_peak)
                     hitc.hits.append(hit)
 
         return hitc

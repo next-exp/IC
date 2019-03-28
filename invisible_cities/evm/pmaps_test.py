@@ -3,26 +3,31 @@ import numpy as np
 from pytest import approx
 from pytest import raises
 from pytest import mark
+from pytest import fixture
 
-from hypothesis             import assume
-from hypothesis             import given
-from hypothesis.strategies  import integers
-from hypothesis.strategies  import floats
-from hypothesis.strategies  import sampled_from
-from hypothesis.strategies  import composite
-from hypothesis.extra.numpy import arrays
+from hypothesis                import       assume
+from hypothesis                import        given
+from hypothesis                import     settings
+from hypothesis.strategies     import     integers
+from hypothesis.strategies     import       floats
+from hypothesis.strategies     import sampled_from
+from hypothesis.strategies     import    composite
+from hypothesis.extra.numpy    import       arrays
 
-from .. core.core_functions import weighted_mean_and_std
-from .. core.testing_utils  import exactly
-from .. core.testing_utils  import assert_SensorResponses_equality
-from .. core.testing_utils  import assert_Peak_equality
-from .. core.testing_utils  import previous_float
+from .. core.core_functions    import           weighted_mean_and_std
+from .. core.random_sampling   import                    NoiseSampler
+from .. core.system_of_units_c import                           units
+from .. core.testing_utils     import                         exactly
+from .. core.testing_utils     import assert_SensorResponses_equality
+from .. core.testing_utils     import            assert_Peak_equality
+from .. core.testing_utils     import                  previous_float
 
 from .  pmaps import  PMTResponses
 from .  pmaps import SiPMResponses
-from .  pmaps import S1
-from .  pmaps import S2
-from .  pmaps import PMap
+from .  pmaps import            S1
+from .  pmaps import            S2
+from .  pmaps import          PMap
+from .  pmaps import    SiPMCharge
 
 
 wf_min =   0
@@ -45,7 +50,7 @@ def sensor_responses(draw, n_samples=None, subtype=None, ids=None):
 
 @composite
 def peaks(draw, subtype=None, pmt_ids=None, with_sipms=True):
-    nsamples      = draw(integers(1, 50))
+    nsamples      = draw(integers(1, 20))
     _, pmt_r      = draw(sensor_responses(nsamples,  PMTResponses, pmt_ids))
     sipm_r        = SiPMResponses.build_empty_instance()
     assume(pmt_r.sum_over_sensors[ 0] != 0)
@@ -57,12 +62,15 @@ def peaks(draw, subtype=None, pmt_ids=None, with_sipms=True):
         _, sipm_r = draw(sensor_responses(nsamples, SiPMResponses))
 
     times     = draw(arrays(float, nsamples,
-                            floats(min_value=0, max_value=1e3),
-                            unique = True))
-    bin_widths = [1]
+                            floats(min_value=0, max_value=1e5),
+                            unique = True).map(sorted))
+    
+    bin_widths = np.array([25])
     if len(times) > 1:
-        bin_widths = np.append(np.diff(times), max(np.diff(times)))
-    args       = np.sort(times), bin_widths, pmt_r, sipm_r
+        time_differences = np.diff(times)
+        bin_widths = np.append(time_differences, max(time_differences))
+    assume(np.all(bin_widths > 25 * units.ns))
+    args       = times, bin_widths, pmt_r, sipm_r
     return args, subtype(*args)
 
 
@@ -305,3 +313,39 @@ def test_PMap_s2s(pmps):
     assert len(pmp.s2s) == len(s2s)
     for kept_s2, true_s2 in zip(pmp.s2s, s2s):
         assert_Peak_equality(kept_s2, true_s2)
+
+
+
+@fixture(scope='module')
+def noise_func():
+    return NoiseSampler('new', 6400).signal_to_noise
+
+
+@mark.parametrize("charge_type",
+                  (SiPMCharge.raw, SiPMCharge.sn))
+@given(s2_peak=peaks(subtype=S2))
+@settings(deadline=None, max_examples=1)
+def test_get_sipm_charge_array(charge_type,
+                               s2_peak    ,
+                               noise_func ):
+    _, pk = s2_peak
+    charge_arr = pk.get_sipm_charge_array(noise_func ,
+                                          charge_type,
+                                          False      )
+
+    assert charge_arr.shape[0] == pk.sipms.all_waveforms.shape[1]
+    assert charge_arr.shape[1] == pk.sipms.all_waveforms.shape[0]
+
+@mark.parametrize("charge_type",
+                  (SiPMCharge.raw, SiPMCharge.sn))
+@given(s2_peak=peaks(subtype=S2))
+@settings(deadline=None, max_examples=1)
+def test_get_sipm_charge_array_single(charge_type,
+                                      s2_peak    ,
+                                      noise_func ):
+    _, pk = s2_peak
+    charge_arr = pk.get_sipm_charge_array(noise_func ,
+                                          charge_type,
+                                          True       )
+
+    assert charge_arr.shape == pk.sipms.ids.shape
