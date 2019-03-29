@@ -220,7 +220,7 @@ def test_voxelize_hits_flexible_gives_correct_voxels_size(hits, requested_voxel_
 def test_hits_energy_in_voxel_is_equal_to_voxel_energy(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     for v in voxels:
-        assert sum(h.E for h in v.hits) == v.energy
+        assert sum(h.E for h in v.hits) == v.E
 
 def test_voxels_with_no_hits(ICDATADIR):
     hit_file = os.path.join(ICDATADIR, 'test_voxels_with_no_hits.h5')
@@ -241,7 +241,7 @@ def test_voxels_with_no_hits(ICDATADIR):
         hits_dict = load_mchits(hit_file, (evt_line, evt_line+1))
         voxels = voxelize_hits(hits_dict[evt_number], vox_size, strict_voxel_size=False)
         for v in voxels:
-            assert sum(h.E for h in v.hits) == v.energy
+            assert sum(h.E for h in v.hits) == v.E
 
 
 @given(bunch_of_hits, box_sizes)
@@ -284,7 +284,7 @@ def test_hits_on_border_are_assigned_to_correct_voxel():
                       BHit(15., 25., z, energy),
                       BHit(25., 15., z, energy)]]
     for v, hits in zip(voxels, expected_hits):
-        assert v.hits == hits
+        (assert_bhit_equality(p_hit, t_hit) for v_hit, e_hit in zip(v.hits, hits))
 
 
 @given(bunch_of_hits, box_sizes)
@@ -666,7 +666,7 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
 @given(bunch_of_corrected_hits(), box_sizes, radius, fraction_zero_one)
 def test_paolina_functions_with_hit_energy_different_from_default_value(hits, requested_voxel_dimensions, blob_radius, fraction_zero_one):
 
-    energy_type = HitEnergy.energy_c
+    energy_type = HitEnergy.Ec
 
     voxels   = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
@@ -677,7 +677,7 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
     assert voxels_c[0].Etype == energy_type.value
 
     for voxel in voxels_c:
-        assert np.isclose(voxel.energy, sum(getattr(h, energy_type.value) for h in voxel.hits))
+        assert np.isclose(voxel.E, sum(getattr(h, energy_type.value) for h in voxel.hits))
 
     energies_c = [v.E for v in voxels_c]
     e_thr = min(energies_c) + fraction_zero_one * (max(energies_c) - min(energies_c))
@@ -689,8 +689,8 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
 
     assert np.isclose(tot_energy, tot_mod_energy)
 
-    tot_default_energy     = sum(h.energy for v in voxels_c     for h in v.hits)
-    tot_mod_default_energy = sum(h.energy for v in mod_voxels_c for h in v.hits)
+    tot_default_energy     = sum(h.E for v in voxels_c     for h in v.hits)
+    tot_mod_default_energy = sum(h.E for v in mod_voxels_c for h in v.hits)
 
     # We don't want to modify the default energy of hits, if the voxels are made with energy_c
     if len(mod_voxels_c) < len(voxels_c):
@@ -712,14 +712,14 @@ def test_make_tracks_function(ICDATADIR):
     for evt_number, hit_coll in all_hits.items():
         evt_hits = hit_coll.hits
         evt_time = hit_coll.time
-        voxels   = voxelize_hits(evt_hits, voxel_size, strict_voxel_size=False, energy_type=HitEnergy.energy)
+        voxels   = voxelize_hits(evt_hits, voxel_size, strict_voxel_size=False, energy_type=HitEnergy.E)
 
         tracks   = list(make_track_graphs(voxels))
 
         track_coll = make_tracks(evt_number, evt_time, voxels, voxel_size,
                                  contiguity=Contiguity.CORNER,
                                  blob_radius=blob_radius,
-                                 energy_type=HitEnergy.energy)
+                                 energy_type=HitEnergy.E)
         tracks_from_coll = track_coll.tracks
 
         tracks.sort          (key=lambda x : len(x.nodes()))
@@ -732,10 +732,10 @@ def test_make_tracks_function(ICDATADIR):
             tc = tracks_from_coll[i]
 
             assert len(t.nodes())                   == tc.number_of_voxels
-            assert sum(v.energy for v in t.nodes()) == tc.E
+            assert sum(v.E for v in t.nodes()) == tc.E
 
             tc_blobs = list(tc.blobs)
-            tc_blobs.sort(key=lambda x : x.energy)
-            tc_blob_energies = (tc.blobs[0].energy, tc.blobs[1].energy)
+            tc_blobs.sort(key=lambda x : x.E)
+            tc_blob_energies = (tc.blobs[0].E, tc.blobs[1].E)
 
             assert np.allclose(blob_energies(t, blob_radius), tc_blob_energies)

@@ -37,7 +37,7 @@ def bounding_box(seq : BHit) -> Sequence[np.ndarray]:
 def voxelize_hits(hits             : Sequence[BHit],
                   voxel_dimensions : np.ndarray,
                   strict_voxel_size: bool = False,
-                  energy_type      : HitEnergy = HitEnergy.energy) -> List[Voxel]:
+                  energy_type      : HitEnergy = HitEnergy.E) -> List[Voxel]:
     # 1. Find bounding box of all hits.
     # 2. Allocate hits to regular sub-boxes within bounding box, using histogramdd.
     # 3. Calculate voxel energies by summing energies of hits within each sub-box.
@@ -331,7 +331,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
                         min_v = v
 
             ### add voxel energy to voxel
-            min_v.energy += the_vox.energy
+            min_v.E += the_vox.E
 
             return 1
 
@@ -351,8 +351,8 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
                         min_v = v
 
         ### add voxel energy to hit and to voxel, separately
-        setattr(min_hit, e_type, getattr(min_hit, e_type) + the_vox.energy)
-        min_v.energy += the_vox.energy
+        setattr(min_hit, e_type, getattr(min_hit, e_type) + the_vox.E)
+        min_v.E += the_vox.E
 
         return 1
 

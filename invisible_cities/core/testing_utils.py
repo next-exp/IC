@@ -165,3 +165,24 @@ def assert_cluster_equality(a_cluster, b_cluster):
     assert             a_cluster.Yrms  == approx (b_cluster.Yrms )
     assert             a_cluster.R     == approx (b_cluster.R    )
     assert             a_cluster.Phi   == approx (b_cluster.Phi  )
+
+def assert_bhit_equality(a_hit, b_hit):
+    assert np.allclose(a_hit.pos , b_hit.pos)
+    assert np.allclose(a_hit.XYZ , b_hit.XYZ)
+
+    assert  a_hit.E  == approx (b_hit.E)
+    assert  a_hit.X  == approx (b_hit.X)
+    assert  a_hit.Y  == approx (b_hit.Y)
+    assert  a_hit.Z  == approx (b_hit.Z)
+
+def assert_MChit_equality(a_hit, b_hit):
+    assert_bhit_equality   (a_hit, b_hit)
+    assert  a_hit.time  == approx (b_hit.time)
+
+def assert_hit_equality(a_hit, b_hit):
+    assert_bhit_equality   (a_hit, b_hit)
+    assert_cluster_equality(a_hit, b_hit)
+    assert a_hit.Ec           == approx (b_hit.Ec         )
+    assert a_hit.Xpeak        == approx (b_hit.Xpeak      )
+    assert a_hit.Ypeak        == approx (b_hit.Ypeak      )
+    assert a_hit.peak_number  == exactly(b_hit.peak_number)

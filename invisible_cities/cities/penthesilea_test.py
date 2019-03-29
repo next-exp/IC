@@ -8,6 +8,7 @@ from .. core.core_functions    import in_range
 from .. core.system_of_units_c import units
 from .. core.testing_utils     import assert_dataframes_close
 from .. core.testing_utils     import assert_tables_equality
+from .. core.testing_utils     import assert_MChit_equality
 from .. core.configure         import configure
 from .. core.configure         import all as all_events
 from .. io                     import dst_io as dio
@@ -15,6 +16,9 @@ from .. io.mcinfo_io           import load_mchits
 
 from .  penthesilea            import penthesilea
 
+
+#in order not to fail direct comparation tests when changing hit attribute we compare only the columns that penthesilea is using
+columns = ['event', 'time', 'npeak', 'Xpeak', 'Ypeak', 'nsipm', 'X', 'Y', 'Xrms', 'Yrms', 'Z', 'Q', 'E']
 
 def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, KrMC_kdst, config_tmpdir):
     PATH_IN   = KrMC_pmaps_filename
@@ -39,10 +43,11 @@ def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, KrMC_kdst, config_tmpd
     df_penthesilea_dst  = dio.load_dst(PATH_OUT , 'DST' , 'Events')
     assert len(set(df_penthesilea_dst .event)) == cnt.events_out
     assert len(set(df_penthesilea_reco.event)) == cnt.events_out
-    assert_dataframes_close(df_penthesilea_reco, DF_TRUE_RECO,
-                            check_types=False)
-    assert_dataframes_close(df_penthesilea_dst , DF_TRUE_DST ,
-                            check_types=False, rtol=1e-4)
+
+    assert_dataframes_close(df_penthesilea_reco[columns], DF_TRUE_RECO[columns],
+                            check_types=False           , rtol=1e-4            )
+    assert_dataframes_close(df_penthesilea_dst          , DF_TRUE_DST          ,
+                            check_types=False           , rtol=1e-4            )
 
 
 def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
@@ -133,7 +138,7 @@ def test_penthesilea_threshold_rebin(ICDATADIR, output_tmpdir):
     expected_dst = dio.load_dst(true_output, 'RECO', 'Events')
 
     assert len(set(output_dst.event)) == len(set(expected_dst.event))
-    assert_dataframes_close(output_dst, expected_dst, check_types=False)
+    assert_dataframes_close(output_dst[columns], expected_dst[columns], check_types=False)
 
 
 @mark.serial
@@ -168,7 +173,7 @@ def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
         penthesilea_hits = penthesilea_evts[evt_no]
 
         assert len(penthesilea_hits) == len(true_hits)
-        assert all(p_hit == t_hit for p_hit, t_hit in zip(penthesilea_hits, true_hits))
+        (assert_MChit_equality(p_hit, t_hit) for p_hit, t_hit in zip(penthesilea_hits, true_hits))
 
 
 @mark.skip("This scenario is not possible in liquid cities")
