@@ -2,6 +2,7 @@ import numpy  as np
 
 from pytest                 import approx
 from numpy.testing          import assert_array_equal
+from numpy.testing          import assert_equal
 from numpy.testing          import assert_allclose
 from hypothesis.strategies  import integers
 from hypothesis.strategies  import floats
@@ -140,17 +141,23 @@ def assert_PMap_equality(pmp0, pmp1):
 def assert_tables_equality(got_table, expected_table):
     table_got      =      got_table[:]
     table_expected = expected_table[:]
-    assert len(table_got) == len(table_expected)
+    assert len(table_got      ) == len(table_expected      )
+    assert len(table_got.dtype) == len(table_expected.dtype)
 
-    for got, expected in zip(table_got, table_expected):
-        assert type(got) == type(expected)
-        try:
-            assert got == expected
-        except ValueError:
+    if table_got.dtype.names is not None:
+        for col_name in table_got.dtype.names:
+            got      = table_got[col_name]
+            expected = table_got[col_name]
+            assert type(got) == type(expected)
             try:
-                assert np.isclose (got, expected)
-            except ValueError:
-                assert np.allclose(got, expected)
+                assert_allclose(got, expected)
+            except TypeError:
+                assert_equal   (got, expected)
+    else:
+        try:
+            assert_allclose(got_table, expected_table)
+        except TypeError:
+            assert_equal   (got_table, expected_table)
 
 def assert_cluster_equality(a_cluster, b_cluster):
     assert np.allclose(a_cluster.posxy , b_cluster.posxy )
