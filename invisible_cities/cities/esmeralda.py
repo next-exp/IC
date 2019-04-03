@@ -18,6 +18,7 @@ import warnings
 from functools   import partial
 from typing      import Tuple
 from typing      import Callable
+from typing      import Optional
 
 from .. reco                import tbl_functions        as tbl
 from .. reco                import paolina_functions    as plf
@@ -36,6 +37,7 @@ from .. types.      ic_types import xy
 from .. io.         hits_io  import          hits_writer
 from .. io.       mcinfo_io  import       mc_info_writer
 from .. io.run_and_event_io  import run_and_event_writer
+from .. io. event_filter_io  import  event_filter_writer
 from .. io.          dst_io  import _store_pandas_as_tables
 
 
@@ -49,6 +51,8 @@ def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_
         t = hitc.time
         thr_hits = hif.threshold_hits(hitc.hits, threshold_charge     )
         mrg_hits = hif.merge_NN_hits ( thr_hits, same_peak = same_peak)
+        if len(mrg_hits) == 0:
+            return None
         X  = np.array([h.X for h in mrg_hits])
         Y  = np.array([h.Y for h in mrg_hits])
         Z  = np.array([h.Z for h in mrg_hits])
@@ -63,6 +67,19 @@ def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_
         new_hitc.hits = cor_hits
         return new_hitc
     return threshold_and_correct_hits
+
+
+def events_filter(allow_nans : bool) -> Callable:
+    def filter_events(hitc : Optional[evm.HitCollection]) -> bool:
+        if hitc == None:
+            return False
+        elif allow_nans == False:
+            nans = np.isnan([h.Ec for h in hitc.hits])
+            return not(any(nans))
+        else:
+            return True
+    return filter_events
+
 
 def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxels, blob_radius) -> Callable:
     """ Wrapper of extract_track_blob_info"""
@@ -219,6 +236,17 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                                                 args = 'hits',
                                                 out  = 'corrected_hits')
 
+    filter_events_NN      = fl.map(events_filter(allow_nans = True),
+                                   args = 'NN_hits',
+                                   out  = 'NN_hits_passed')
+
+    filter_events_paolina = fl.map(events_filter(allow_nans = False),
+                              args = 'corrected_hits',
+                              out  = 'paolina_hits_passed')
+
+    hits_passed_NN        = fl.count_filter(bool, args =      "NN_hits_passed")
+    hits_passed_paolina   = fl.count_filter(bool, args = "paolina_hits_passed")
+
     extract_track_blob_info = fl.map(track_blob_info_extractor(**paolina_params),
                                      args = 'corrected_hits',
                                      out  = ('topology_info', 'paolina_hits'))
@@ -227,7 +255,8 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                                      args = ('event_number', 'timestamp', 'topology_info', 'paolina_hits', 'kdst'),
                                      out  = 'event_info')
 
-    event_count  = fl.spy_count()
+    event_count_in  = fl.spy_count()
+    event_count_out = fl.spy_count()
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
 
@@ -235,25 +264,34 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_mc_        = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
 
-        write_mc           = fl.sink(             write_mc_, args = ("mc", "event_number"   ))
-        write_hits_NN      = fl.sink(    hits_writer(h5out), args =  "NN_hits"               )
-        write_hits_paolina = fl.sink(    hits_writer(h5out, group_name = 'PAOLINA'), args =  "paolina_hits"          )
-        write_tracks       = fl.sink( track_writer(h5out=h5out), args =  "topology_info"            )
-        write_summary      = fl.sink( summary_writer(h5out=h5out), args =  "event_info"            )
+        write_mc             = fl.sink(    write_mc_                                      , args = ("mc", "event_number"))
+        write_hits_NN        = fl.sink(    hits_writer     (h5out)                        , args =  "NN_hits"            )
+        write_hits_paolina   = fl.sink(    hits_writer     (h5out, group_name = 'PAOLINA'), args =  "paolina_hits"       )
+        write_tracks         = fl.sink(   track_writer     (h5out=h5out)                  , args =  "topology_info"      )
+        write_summary        = fl.sink( summary_writer     (h5out=h5out)                  , args =  "event_info"         )
+        write_paolina_filter = fl.sink( event_filter_writer(h5out, "paolina_select")      , args = ("event_number", "paolina_hits_passed"))
+        write_NN_filter      = fl.sink( event_filter_writer(h5out,      "NN_select")      , args = ("event_number",      "NN_hits_passed"))
 
         return push(source = hits_and_kdst_from_files(files_in),
                     pipe   = pipe(
                         fl.slice(*event_range, close_all=True)     ,
                         print_every(print_mod)                     ,
-                        event_count       .spy                  ,
+                        event_count_in           .spy              ,
                         fl.branch(threshold_and_correct_hits_NN    ,
+                                  filter_events_NN                 ,
+                                  fl.branch(write_NN_filter)       ,
+                                  hits_passed_NN .filter           ,
                                   write_hits_NN)                   ,
                         threshold_and_correct_hits_paolina         ,
+                        filter_events_paolina                      ,
+                        fl.branch(write_paolina_filter)            ,
+                        hits_passed_paolina      .filter           ,
+                        event_count_out          .spy              ,
                         extract_track_blob_info                    ,
                         fl.fork(write_mc                           ,
                                 write_hits_paolina                 ,
                                 write_tracks                       ,
                                 (make_final_summary, write_summary),
-                                write_event_info)),
-                    result = dict(events_in  = event_count.future,
-                                  events_out = event_count.future))
+                                write_event_info))                 ,
+                    result = dict(events_in  = event_count_in .future,
+                                  events_out = event_count_out.future))
