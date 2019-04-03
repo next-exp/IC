@@ -190,6 +190,13 @@ def correction_map_filename(ICDATADIR):
 
 
 @pytest.fixture(scope='session')
+def KrMC_hdst_filename(ICDATADIR):
+    test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_HDST.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
+
+@pytest.fixture(scope='session')
 def KrMC_pmaps_example(output_tmpdir):
     output_filename  = os.path.join(output_tmpdir, "test_pmap_file.h5")
     number_of_events = 3
