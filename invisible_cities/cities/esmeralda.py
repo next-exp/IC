@@ -31,11 +31,14 @@ from .  components import city
 from .  components import print_every
 from .  components import hits_and_kdst_from_files
 from .. evm  import event_model as evm
-from .. types.ic_types      import NN
-from .. io.         hits_io import          hits_writer
-from .. io.       mcinfo_io import       mc_info_writer
-from .. io.run_and_event_io import run_and_event_writer
-from .. io.          dst_io import _store_pandas_as_tables
+from .. types.      ic_types import NN
+from .. types.      ic_types import xy
+from .. io.         hits_io  import          hits_writer
+from .. io.       mcinfo_io  import       mc_info_writer
+from .. io.run_and_event_io  import run_and_event_writer
+from .. io.          dst_io  import _store_pandas_as_tables
+
+
 def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_peak : bool, apply_temp : bool) -> Callable:
     """Wrapper of correct_hits"""
     map_fname=os.path.expandvars(map_fname)
@@ -44,19 +47,21 @@ def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_
     def threshold_and_correct_hits(hitc : evm.HitCollection) -> evm.HitCollection:
         """ This function threshold the hits on the charge, redistribute the energy of NN hits to the surrouding ones and applies energy correction."""
         t = hitc.time
-        cor_hitc = evm.HitCollection(hitc.event, t)
-        cor_hits = hif.threshold_hits(hitc.hits, threshold_charge)
-        cor_hits = hif.merge_NN_hits(cor_hits, same_peak = same_peak)
-        X  = np.array([h.X for h in cor_hits])
-        Y  = np.array([h.Y for h in cor_hits])
-        Z  = np.array([h.Z for h in cor_hits])
-        E  = np.array([h.E for h in cor_hits])
+        thr_hits = hif.threshold_hits(hitc.hits, threshold_charge     )
+        mrg_hits = hif.merge_NN_hits ( thr_hits, same_peak = same_peak)
+        X  = np.array([h.X for h in mrg_hits])
+        Y  = np.array([h.Y for h in mrg_hits])
+        Z  = np.array([h.Z for h in mrg_hits])
+        E  = np.array([h.E for h in mrg_hits])
         Ec = E * get_coef(X,Y,Z,t)
-        Ec[np.isnan(Ec)] = NN
-        for idx, hit in enumerate(cor_hits):
-            hit.energy_c = Ec[idx]
-        cor_hitc.hits = cor_hits
-        return cor_hitc
+        #Ec[np.isnan(Ec)] = NN
+        cor_hits = []
+        for idx, hit in enumerate(mrg_hits):
+            hit = evm.Hit(hit.npeak, evm.Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm), hit.Z, hit.E, xy(hit.Xpeak, hit.Ypeak), s2_energy_c = Ec[idx])
+            cor_hits.append(hit)
+        new_hitc       = evm.HitCollection(hitc.event, t)
+        new_hitc.hits = cor_hits
+        return new_hitc
     return threshold_and_correct_hits
 
 def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxels, blob_radius) -> Callable:
