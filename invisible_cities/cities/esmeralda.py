@@ -95,7 +95,7 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
 
 
         track_hits = []
-        df = pd.DataFrame(columns=['trackID', 'energy', 'length', 'numb_of_voxels',
+        df = pd.DataFrame(columns=['event', 'trackID', 'energy', 'length', 'numb_of_voxels',
                                    'numb_of_hits', 'numb_of_tracks', 'x_min', 'y_min', 'z_min',
                                    'x_max', 'y_max', 'z_max', 'r_max', 'x_ave', 'y_ave', 'z_ave',
                                    'extreme1_x', 'extreme1_y', 'extreme1_z',
@@ -134,7 +134,7 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
             if len(set(hits_blob1).intersection(hits_blob2)) > 0:
                 overlap = True
 
-            df.loc[c] = [tID, energy, length, numb_of_voxels, numb_of_hits, numb_of_tracks, min_x, min_y, min_z, max_x, max_y, max_z, max_r, ave_pos[0], ave_pos[1], ave_pos[2], extr1_pos[0], extr1_pos[1], extr1_pos[2], extr2_pos[0], extr2_pos[1], extr2_pos[2], blob_pos1[0], blob_pos1[1], blob_pos1[2], blob_pos2[0], blob_pos2[1], blob_pos2[2], e_blob1, e_blob2, overlap]
+            df.loc[c] = [hitc.event, tID, energy, length, numb_of_voxels, numb_of_hits, numb_of_tracks, min_x, min_y, min_z, max_x, max_y, max_z, max_r, ave_pos[0], ave_pos[1], ave_pos[2], extr1_pos[0], extr1_pos[1], extr1_pos[2], extr2_pos[0], extr2_pos[1], extr2_pos[2], blob_pos1[0], blob_pos1[1], blob_pos1[2], blob_pos2[0], blob_pos2[1], blob_pos2[2], e_blob1, e_blob2, overlap]
 
             for vox in t.nodes():
                 for hit in vox.hits:
@@ -152,7 +152,7 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
 
 def make_event_summary(event_number, timestamp, topology_info, paolina_hits, kdst) -> pd.DataFrame:
     """Compute the quantities to be placed in the final event summary"""
-    es = pd.DataFrame(columns=['event_number', 'timestamp', 'S1e', 'S1t',
+    es = pd.DataFrame(columns=['event', 'time', 'S1e', 'S1t',
                                'nS2', 'ntrks', 'nhits', 'S2e0', 'S2ec',
                                'S2q0', 'S2qc', 'x_avg', 'y_avg', 'z_avg',
                                'r_avg', 'x_min', 'y_min', 'z_min', 'r_min',
