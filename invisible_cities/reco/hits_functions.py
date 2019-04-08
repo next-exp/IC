@@ -40,7 +40,7 @@ def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit
         h.E += en
     return non_nn_hits
 
-def threshold_hits(hits : List[evm.Hit], th : float) -> List[evm.Hit]:
+def threshold_hits(hits : List[evm.Hit], th : float, on_corrected : bool=False) -> List[evm.Hit]:
     """Returns list of the hits which charge is above the threshold. The energy of the hits below the threshold is distributed among the hits in the same time slice. """
     if th==0:
         return hits
@@ -49,14 +49,17 @@ def threshold_hits(hits : List[evm.Hit], th : float) -> List[evm.Hit]:
         for z_slice in np.unique([x.Z for x in hits]):
             slice_hits  = [x for x in hits if x.Z == z_slice]
             e_slice     = sum([x.E for x in slice_hits])
-            mask_thresh = np.array([x.Q>=th for x in slice_hits])
-            if sum(mask_thresh)<1:
+            if on_corrected:
+                mask_thresh = np.array([x.Qc >= th for x in slice_hits])
+            else:
+                mask_thresh = np.array([x.Q  >= th for x in slice_hits])
+            if sum(mask_thresh) < 1:
                 hit = evm.Hit(slice_hits[0].npeak, evm.Cluster(NN, xy(0,0), xy(0,0), 0), z_slice, e_slice, xy(slice_hits[0].Xpeak,slice_hits[0].Ypeak))
                 new_hits.append(hit)
                 continue
-            hits_pass_th=list(compress(deepcopy(slice_hits), mask_thresh))
+            hits_pass_th = list(compress(deepcopy(slice_hits), mask_thresh))
             es = split_energy(e_slice, hits_pass_th)
             for i,x in enumerate(hits_pass_th):
-                x.E=es[i]
+                x.E = es[i]
                 new_hits.append(x)
         return new_hits
