@@ -182,10 +182,10 @@ def make_event_summary(event_number : int, timestamp : int, topology_info : pd.D
     nhits = len(paolina_hits.hits)
 
     S2e0 = np.sum(kdst.S2e.values)
-    S2ec = sum([h.Ec for h in paolina_hits.hits])
+    S2ec = max(-1, sum([h.Ec for h in paolina_hits.hits]))
 
     S2q0 = np.sum(kdst.S2q.values)
-    S2qc = sum([h.Qc for h in paolina_hits.hits])
+    S2qc = max(-1, sum([h.Qc for h in paolina_hits.hits]))
 
     x_avg = sum([h.X*h.E for h in paolina_hits.hits])
     y_avg = sum([h.Y*h.E for h in paolina_hits.hits])
