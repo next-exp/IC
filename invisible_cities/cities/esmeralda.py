@@ -138,8 +138,13 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
             overlap = False
             if len(set(hits_blob1).intersection(hits_blob2)) > 0:
                 overlap = True
+            list_of_vars = [hitc.event, tID, energy, length, numb_of_voxels, numb_of_hits, numb_of_tracks, min_x, min_y, min_z, max_x, max_y, max_z, max_r, ave_pos[0], ave_pos[1], ave_pos[2], extr1_pos[0], extr1_pos[1], extr1_pos[2], extr2_pos[0], extr2_pos[1], extr2_pos[2], blob_pos1[0], blob_pos1[1], blob_pos1[2], blob_pos2[0], blob_pos2[1], blob_pos2[2], e_blob1, e_blob2, overlap, vox_size_x, vox_size_y, vox_size_z]
 
-            df.loc[c] = [hitc.event, tID, energy, length, numb_of_voxels, numb_of_hits, numb_of_tracks, min_x, min_y, min_z, max_x, max_y, max_z, max_r, ave_pos[0], ave_pos[1], ave_pos[2], extr1_pos[0], extr1_pos[1], extr1_pos[2], extr2_pos[0], extr2_pos[1], extr2_pos[2], blob_pos1[0], blob_pos1[1], blob_pos1[2], blob_pos2[0], blob_pos2[1], blob_pos2[2], e_blob1, e_blob2, overlap, vox_size_x, vox_size_y, vox_size_z]
+            df.loc[c] = list_of_vars
+            try:
+                types_dict
+            except NameError:
+                types_dict = dict(zip(df.columns, [type(x) for x in list_of_vars]))
 
             for vox in t.nodes():
                 for hit in vox.hits:
@@ -149,6 +154,8 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
 
         track_hitc = evm.HitCollection(hitc.event, hitc.time)
         track_hitc.hits = track_hits
+        #change dtype of columns to match type of variables
+        df = df.apply(lambda x : x.astype(types_dict[x.name]))
 
         return df, track_hitc
 
@@ -200,10 +207,15 @@ def make_event_summary(event_number, timestamp, topology_info, paolina_hits, kds
     z_max = max([h.Z for h in paolina_hits.hits])
     r_max = max([(h.X**2 + h.Y**2)**0.5 for h in paolina_hits.hits])
 
-    es.loc[0] = [event_number, timestamp, S1e, S1t, nS2, ntrks, nhits, S2e0,
-                S2ec, S2q0, S2qc, x_avg, y_avg, z_avg, r_avg, x_min, y_min,
-                z_min, r_min, x_max, y_max, z_max, r_max]
-    
+    list_of_vars  = [event_number, int(timestamp), S1e, S1t, nS2, ntrks, nhits, S2e0,
+                     S2ec, S2q0, S2qc, x_avg, y_avg, z_avg, r_avg, x_min, y_min,
+                     z_min, r_min, x_max, y_max, z_max, r_max]
+
+    es.loc[0] = list_of_vars
+    #change dtype of columns to match type of variables
+    types_dict = dict(zip(es.columns, [type(x) for x in list_of_vars]))
+    es = es.apply(lambda x : x.astype(types_dict[x.name]))
+
     return es
 
 
