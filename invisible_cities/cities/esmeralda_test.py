@@ -80,11 +80,16 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
     assert nevt_req     == nevt_in
     assert nevt_out     == len(set(events_pass_paolina))
 
-    df_hits_NN          =  dio.load_dst(PATH_OUT, 'RECO'   , 'Events')
-    df_hits_paolina     =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Events')
+    df_hits_NN          =  dio.load_dst(PATH_OUT, 'RECO'   , 'Events' )
+    df_hits_paolina     =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Events' )
+    df_tracks_paolina   =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Tracks' )
+    df_summary_paolina  =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
 
     assert set(df_hits_NN     .event.unique()) ==  set(events_pass_NN     )
     assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
+
+    assert set(df_hits_paolina.event.unique()) ==  set(df_tracks_paolina  .event.unique())
+    assert set(df_hits_paolina.event.unique()) ==  set(df_summary_paolina.event.unique())
 
 
 @mark.serial
