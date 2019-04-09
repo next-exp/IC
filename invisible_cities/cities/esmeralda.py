@@ -81,11 +81,11 @@ def events_filter(allow_nans : bool) -> Callable:
     return filter_events
 
 
-def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxels, blob_radius) -> Callable:
+def track_blob_info_extractor(vox_size : [float, float, float], energy_type : evm.HitEnergy, strict_vox_size : bool, energy_threshold : float, min_voxels : int, blob_radius : float) -> Callable:
     """ Wrapper of extract_track_blob_info"""
     def extract_track_blob_info(hitc):
         """This function extract relevant info about the tracks and blobs, as well as assigning new field of energy, track_id etc to the HitCollection object (NOTE: we don't want to erase any hits, just redifine some attributes. If we need to cut away some hits to apply paolina functions, it has to be on the copy of the original hits)"""
-        voxels     = plf.voxelize_hits(hitc.hits, vox_size, energy_type)
+        voxels     = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, energy_type)
         mod_voxels = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
         tracks     = plf.make_track_graphs(mod_voxels)
 
@@ -162,7 +162,7 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
     return extract_track_blob_info
 
 
-def make_event_summary(event_number, timestamp, topology_info, paolina_hits, kdst) -> pd.DataFrame:
+def make_event_summary(event_number : int, timestamp : int, topology_info : pd.DataFrame, paolina_hits : evm.HitCollection, kdst : pd.DataFrame) -> pd.DataFrame:
     """Compute the quantities to be placed in the final event summary"""
     es = pd.DataFrame(columns=['event', 'time', 'S1e', 'S1t',
                                'nS2', 'ntrks', 'nhits', 'S2e0', 'S2ec',
@@ -182,10 +182,10 @@ def make_event_summary(event_number, timestamp, topology_info, paolina_hits, kds
     nhits = len(paolina_hits.hits)
 
     S2e0 = np.sum(kdst.S2e.values)
-    S2ec = sum([h.E for h in paolina_hits.hits])
+    S2ec = sum([h.Ec for h in paolina_hits.hits])
 
     S2q0 = np.sum(kdst.S2q.values)
-    S2qc = sum([h.Q for h in paolina_hits.hits])
+    S2qc = sum([h.Qc for h in paolina_hits.hits])
 
     x_avg = sum([h.X*h.E for h in paolina_hits.hits])
     y_avg = sum([h.Y*h.E for h in paolina_hits.hits])
