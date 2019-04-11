@@ -36,10 +36,12 @@ from .. core   .configure         import                EventRange
 from .. core   .configure         import          event_range_help
 from .. core   .random_sampling   import              NoiseSampler
 from .. reco                      import           calib_functions as  cf
+from .. reco                      import          sensor_functions as  sf
 from .. reco                      import   calib_sensors_functions as csf
 from .. reco                      import            peak_functions as pkf
 from .. reco                      import           pmaps_functions as pmf
 from .. reco                      import            hits_functions as hif
+from .. reco                      import             wfm_functions as wfm
 from .. reco   .xy_algorithms     import                    corona
 from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import               pmap_filter
@@ -471,6 +473,32 @@ def zero_suppress_wfs(thr_csum_s1, thr_csum_s2):
         return (pkf.indices_and_wf_above_threshold(ccwf_sum_mau, thr_csum_s1).indices,
                 pkf.indices_and_wf_above_threshold(ccwf_sum    , thr_csum_s2).indices)
     return ccwfs_to_zs
+
+
+def compute_pe_resolution(rms, adc_to_pes):
+    return np.divide(rms                              ,
+                     adc_to_pes                       ,
+                     out   = np.zeros_like(adc_to_pes),
+                     where = adc_to_pes != 0          )
+
+
+def simulate_sipm_response(detector, run_number, wf_length, noise_cut, filter_padding):
+    datasipm      = load_db.DataSiPM (detector, run_number)
+    baselines     = load_db.SiPMNoise(detector, run_number)[-1]
+    noise_sampler = NoiseSampler(detector, run_number, wf_length, True)
+
+    adc_to_pes    = datasipm.adc_to_pes.values
+    thresholds    = noise_cut * adc_to_pes + baselines
+    single_pe_rms = datasipm.Sigma.values.astype(np.double)
+    pe_resolution = compute_pe_resolution(single_pe_rms, adc_to_pes)
+
+    def simulate_sipm_response(sipmrd):
+        wfs = sf.simulate_sipm_response(0, sipmrd[np.newaxis],
+                                        noise_sampler, adc_to_pes,
+                                        pe_resolution)
+        return wfm.noise_suppression(wfs, thresholds, filter_padding)
+    return simulate_sipm_response
+
 
 ####### Filters ########
 
