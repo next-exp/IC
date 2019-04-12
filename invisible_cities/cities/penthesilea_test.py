@@ -125,12 +125,42 @@ def test_penthesilea_threshold_rebin(ICDATADIR, output_tmpdir):
     conf        = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     rebin_thresh = 4000
 
-    conf.update(dict(run_number      =        -6340,
-                     files_in        =      file_in,
-                     file_out        =     file_out,
-                     event_range     =   all_events,
-                     rebin           = rebin_thresh,
-                     rebin_method    =  'threshold'))
+    conf.update(dict(run_number   =        -6340,
+                     files_in     =      file_in,
+                     file_out     =     file_out,
+                     event_range  =   all_events,
+                     rebin        = rebin_thresh,
+                     rebin_method =  'threshold'))
+
+    cnt = penthesilea(**conf)
+
+    output_dst   = dio.load_dst(file_out   , 'RECO', 'Events')
+    expected_dst = dio.load_dst(true_output, 'RECO', 'Events')
+
+    assert len(set(output_dst.event)) == len(set(expected_dst.event))
+    assert_dataframes_close(output_dst[columns], expected_dst[columns], check_types=False)
+
+
+def test_penthesilea_signal_to_noise(ICDATADIR, output_tmpdir):
+    file_in     = os.path.join(ICDATADIR    ,            "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
+    file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea_SN.h5")
+    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts_SN.HDST.h5")
+
+    conf        = configure('dummy invisible_cities/config/penthesilea.conf'.split())
+
+    reco_params = dict(Qthr          =  2           ,
+                       Qlm           =  6           ,
+                       lm_radius     =  0 * units.mm,
+                       new_lm_radius = 15 * units.mm,
+                       msipm         =  1           )
+
+    conf.update(dict(run_number        =       -6340,
+                     files_in          =     file_in,
+                     file_out          =    file_out,
+                     event_range       =  all_events,
+                     rebin             =           2,
+                     sipm_charge_type  =        'sn',
+                     slice_reco_params = reco_params))
 
     cnt = penthesilea(**conf)
 

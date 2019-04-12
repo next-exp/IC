@@ -48,7 +48,6 @@ from .. io   .dst_io            import                  load_dst
 from .. types.ic_types          import                        xy
 from .. types.ic_types          import                        NN
 from .. types.ic_types          import                       NNN
-## from .. types.ic_types          import          AutoNameEnumBase
 from .. evm.pmaps               import                SiPMCharge
 
 NoneType = type(None)
@@ -391,35 +390,6 @@ def compute_z_and_dt(t_s2, t_s1, drift_v):
     return z, dt
 
 
-## class SiPMCharge(AutoNameEnumBase):
-##     raw = auto()
-##     sn  = auto()
-
-
-## def get_sipm_charge_array(sipms  : _SensorResponse,
-##                           bin_widths : np.array,
-##                           sipm_noise : NoiseSampler,
-##                           charge_type: SiPMCharge) -> np.array:
-
-##     if charge_type == SiPMCharge.raw:
-##         if isinstance(bin_widths, np.float32):
-##             return sipms.sum_over_times
-##         return sipms.all_waveforms.T
-
-##     ids = sipms.ids
-##     if isinstance(bin_widths, np.float32):
-##         charges    = sipms.sum_over_times
-##         sample_wid = int(np.ceil(np.round(bin_widths) / units.mus))
-##         return sipm_noise.signal_to_noise(ids, charges, sample_wid)
-
-##     sample_widths = np.ceil(np.round(bin_widths) / units.mus)).astype(int)
-##     mapping = map(sipm_noise.signal_to_noise,
-##                   np.repeat(ids[None, :], len(bin_widths), 0),
-##                   sipms.all_waveforms.T,
-##                   sample_widths)
-##     return np.array(tuple(mapping))
-
-
 def build_pointlike_event(dbfile, run_number, drift_v,
                           reco, charge_type = SiPMCharge.raw):
     datasipm   = load_db.DataSiPM(dbfile, run_number)
@@ -454,9 +424,7 @@ def build_pointlike_event(dbfile, run_number, drift_v,
             evt.S2t.append(peak.time_at_max_energy)
 
             xys = sipm_xys[peak.sipms.ids           ]
-            ## qs  = get_sipm_charge_array(peak.sipms, peak.width,
-            ##                             sipm_noise, charge_type)
-            qs  = peak.get_sipm_charge_array(sipm_noise, charge_type, True)
+            qs  = peak.sipm_charge_array(sipm_noise, charge_type, True)
             try:
                 clusters = reco(xys, qs)
             except XYRecoFail:
@@ -515,7 +483,7 @@ def hit_builder(dbfile, run_number, drift_v, reco,
         # take events with exactly one s1. Otherwise, the
         # convention is to take the first peak in the S1 object
         # as reference.
-        if len(selector_output.s1_peaks) > 0:
+        if np.any(selector_output.s1_peaks):
             first_s1 = np.where(selector_output.s1_peaks)[0][0]
             s1_t     = pmap.s1s[first_s1].time_at_max_energy
         else:
@@ -533,15 +501,13 @@ def hit_builder(dbfile, run_number, drift_v, reco,
             peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
 
             xys  = sipm_xys[peak.sipms.ids]
-            ## qs   = get_sipm_charge_array(peak.sipms, peak.width,
-            ##                              sipm_noise, charge_type)
-            qs   = peak.get_sipm_charge_array(sipm_noise, charge_type, True)
+            qs   = peak.sipm_charge_array(sipm_noise, charge_type, True)
             try              : cluster = barycenter(xys, qs)[0]
             except XYRecoFail: xy_peak = xy(NN, NN)
             else             : xy_peak = xy(cluster.X, cluster.Y)
 
-            sipm_charge = peak.get_sipm_charge_array(sipm_noise ,
-                                                     charge_type)
+            sipm_charge = peak.sipm_charge_array(sipm_noise ,
+                                                 charge_type)
             for slice_no, (t_slice, qs) in enumerate(zip(peak.times ,
                                                          sipm_charge)):
                 z_slice = (t_slice - s1_t) * units.ns * drift_v

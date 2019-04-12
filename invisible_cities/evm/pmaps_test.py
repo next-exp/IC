@@ -22,6 +22,8 @@ from .. core.testing_utils     import assert_SensorResponses_equality
 from .. core.testing_utils     import            assert_Peak_equality
 from .. core.testing_utils     import                  previous_float
 
+from invisible_cities.database import load_db as DB
+
 from .  pmaps import  PMTResponses
 from .  pmaps import SiPMResponses
 from .  pmaps import            S1
@@ -61,15 +63,15 @@ def peaks(draw, subtype=None, pmt_ids=None, with_sipms=True):
     if with_sipms:
         _, sipm_r = draw(sensor_responses(nsamples, SiPMResponses))
 
-    times     = draw(arrays(float, nsamples,
-                            floats(min_value=0, max_value=1e5),
-                            unique = True).map(sorted))
-    
-    bin_widths = np.array([25])
+    times      = draw(arrays(float, nsamples,
+                             floats(min_value=0, max_value=1e3),
+                             unique = True).map(sorted))
+
+    bin_widths = np.array([1])
     if len(times) > 1:
         time_differences = np.diff(times)
         bin_widths = np.append(time_differences, max(time_differences))
-    assume(np.all(bin_widths > 25 * units.ns))
+
     args       = times, bin_widths, pmt_r, sipm_r
     return args, subtype(*args)
 
@@ -321,31 +323,50 @@ def noise_func():
     return NoiseSampler('new', 6400).signal_to_noise
 
 
+@fixture(scope='module')
+def s2_peak():
+    times      = np.arange(0, 20 * units.mus, 1 * units.mus)
+    bin_widths = np.full(len(times), 1 * units.mus)
+
+    pmt_ids  =    DB.DataPMT ('new', 6400).SensorID.values
+    n_sipms = len(DB.DataSiPM('new', 6400).SensorID.values)
+    sipm_ids = np.arange(n_sipms)
+
+    pmts  = PMTResponses(pmt_ids,
+                         np.random.uniform(0, 100,
+                                           (len(pmt_ids), len(times))))
+
+    sipms = SiPMResponses(sipm_ids,
+                          np.random.uniform(0, 10,
+                                            (len(sipm_ids), len(times))))
+
+    return S2(times, bin_widths, pmts, sipms)
+
+
 @mark.parametrize("charge_type",
                   (SiPMCharge.raw, SiPMCharge.sn))
-@given(s2_peak=peaks(subtype=S2))
-@settings(deadline=None, max_examples=1)
-def test_get_sipm_charge_array(charge_type,
-                               s2_peak    ,
-                               noise_func ):
-    _, pk = s2_peak
-    charge_arr = pk.get_sipm_charge_array(noise_func ,
-                                          charge_type,
-                                          False      )
+def test_sipm_charge_array(charge_type,
+                           s2_peak    ,
+                           noise_func ):
+    charge_arr = s2_peak.sipm_charge_array(noise_func ,
+                                           charge_type,
+                                           False      )
 
-    assert charge_arr.shape[0] == pk.sipms.all_waveforms.shape[1]
-    assert charge_arr.shape[1] == pk.sipms.all_waveforms.shape[0]
+    all_wf = s2_peak.sipms.all_waveforms
+    assert np.array(charge_arr).shape[0] == all_wf.shape[1]
+    assert np.array(charge_arr).shape[1] == all_wf.shape[0]
+    assert np.count_nonzero(charge_arr) == np.count_nonzero(all_wf)
+
 
 @mark.parametrize("charge_type",
                   (SiPMCharge.raw, SiPMCharge.sn))
-@given(s2_peak=peaks(subtype=S2))
-@settings(deadline=None, max_examples=1)
-def test_get_sipm_charge_array_single(charge_type,
-                                      s2_peak    ,
-                                      noise_func ):
-    _, pk = s2_peak
-    charge_arr = pk.get_sipm_charge_array(noise_func ,
-                                          charge_type,
-                                          True       )
+def test_sipm_charge_array_single(charge_type,
+                                  s2_peak    ,
+                                  noise_func ):
+    charge_arr = s2_peak.sipm_charge_array(noise_func ,
+                                           charge_type,
+                                           True       )
 
-    assert charge_arr.shape == pk.sipms.ids.shape
+    assert charge_arr.shape == s2_peak.sipms.ids.shape
+    orig_zeros = np.count_nonzero(s2_peak.sipms.sum_over_times)
+    assert np.count_nonzero(charge_arr) == orig_zeros
