@@ -146,8 +146,8 @@ def assert_tables_equality(got_table, expected_table):
 
     if table_got.dtype.names is not None:
         for col_name in table_got.dtype.names:
-            got      = table_got[col_name]
-            expected = table_got[col_name]
+            got      = table_got     [col_name]
+            expected = table_expected[col_name]
             assert type(got) == type(expected)
             try:
                 assert_allclose(got, expected)
