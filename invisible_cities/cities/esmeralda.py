@@ -46,6 +46,10 @@ def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_
     map_fname=os.path.expandvars(map_fname)
     maps=cof.read_maps(map_fname)
     get_coef=cof.apply_all_correction(maps, apply_temp = apply_temp, norm_strat = norm_strat)
+    if maps.t_evol is not None:
+        time_to_Z = cof.get_df_to_z_converter(maps)
+    else:
+        time_to_Z = lambda x: x
     def threshold_and_correct_hits(hitc : evm.HitCollection) -> evm.HitCollection:
         """ This function threshold the hits on the charge, redistribute the energy of NN hits to the surrouding ones and applies energy correction."""
         t = hitc.time
@@ -58,10 +62,11 @@ def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_
         Z  = np.array([h.Z for h in mrg_hits])
         E  = np.array([h.E for h in mrg_hits])
         Ec = E * get_coef(X,Y,Z,t)
+        Zc = time_to_Z(Z)
         #Ec[np.isnan(Ec)] = NN
         cor_hits = []
         for idx, hit in enumerate(mrg_hits):
-            hit = evm.Hit(hit.npeak, evm.Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm), hit.Z, hit.E, xy(hit.Xpeak, hit.Ypeak), s2_energy_c = Ec[idx])
+            hit = evm.Hit(hit.npeak, evm.Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm), Zc[idx], hit.E, xy(hit.Xpeak, hit.Ypeak), s2_energy_c = Ec[idx])
             cor_hits.append(hit)
         new_hitc      = evm.HitCollection(hitc.event, t)
         new_hitc.hits = cor_hits
