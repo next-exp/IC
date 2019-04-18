@@ -57,13 +57,12 @@ def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_
         mrg_hits = hif.merge_NN_hits ( thr_hits, same_peak = same_peak)
         if len(mrg_hits) == 0:
             return None
-        X  = np.array([h.X for h in mrg_hits])
-        Y  = np.array([h.Y for h in mrg_hits])
-        Z  = np.array([h.Z for h in mrg_hits])
-        E  = np.array([h.E for h in mrg_hits])
+        X  = np.fromiter((h.X for h in mrg_hits), float)
+        Y  = np.fromiter((h.Y for h in mrg_hits), float)
+        Z  = np.fromiter((h.Z for h in mrg_hits), float)
+        E  = np.fromiter((h.E for h in mrg_hits), float)
         Ec = E * get_coef(X,Y,Z,t)
         Zc = time_to_Z(Z)
-        #Ec[np.isnan(Ec)] = NN
         cor_hits = []
         for idx, hit in enumerate(mrg_hits):
             hit = evm.Hit(hit.npeak, evm.Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm), Zc[idx], hit.E, xy(hit.Xpeak, hit.Ypeak), s2_energy_c = Ec[idx])
