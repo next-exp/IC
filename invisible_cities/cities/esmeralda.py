@@ -236,32 +236,29 @@ def summary_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name=
 
 @city
 def esmeralda(files_in, file_out, compression, event_range, print_mod, run_number,
-              cor_hits_params_NN = dict(),
-              cor_hits_params_PL = dict(),
-              paolina_params     = dict()):
+              cor_hits_params = dict(),
+              paolina_params  = dict()):
     # cor_hits_params_NN   are map_fname, threshold_charge, same_peak, apply_temp, to_kr_scale
     # cor_hits_params_PL   are map_fname, threshold_charge, same_peak, apply_temp, to_kr_scale
     # paolina_params       are vox_size,  energy_type, energy_threshold, min_voxels, blob_radius, z_factor
     # energy_type parameter in paolina_params has to be translated to enum class
-    if   paolina_params['energy_type'] == 'corrected'   : paolina_params['energy_type'] = evm.HitEnergy.Ec
-    elif paolina_params['energy_type'] == 'uncorrected' : paolina_params['energy_type'] = evm.HitEnergy.E
-    else                                                : raise ValueError(f"Unrecognized processing mode: {paolina_params['energy_type']}")
+    if   paolina_params ['energy_type'] == 'corrected'   : energy_type = evm.HitEnergy.Ec
+    elif paolina_params ['energy_type'] == 'uncorrected' : energy_type = evm.HitEnergy.E
+    else                                                 : raise ValueError(f"Unrecognized processing mode: {paolina_params['energy_type']}")
 
-    if     cor_hits_params_NN['norm_strat'] == 'max' : cor_hits_params_NN['norm_strat'] = cof.norm_strategy.max
-    elif   cor_hits_params_NN['norm_strat'] == 'mean': cor_hits_params_NN['norm_strat'] = cof.norm_strategy.mean
-    elif   cor_hits_params_NN['norm_strat'] == 'kr'  : cor_hits_params_NN['norm_strat'] = cof.norm_strategy.kr
-    else                                             : raise ValueError(f"Unrecognized processing mode: {cor_hits_params_NN['norm_strat']}")
+    if   cor_hits_params['norm_strat']  == 'max'         : norm_strat  = cof.norm_strategy.max
+    elif cor_hits_params['norm_strat']  == 'mean'        : norm_strat  = cof.norm_strategy.mean
+    elif cor_hits_params['norm_strat']  == 'kr'          : norm_strat  = cof.norm_strategy.kr
+    else                                                 : raise ValueError(f"Unrecognized processing mode: {cor_hits_params['norm_strat']}")
 
-    if     cor_hits_params_PL['norm_strat'] == 'max' : cor_hits_params_PL['norm_strat'] = cof.norm_strategy.max
-    elif   cor_hits_params_PL['norm_strat'] == 'mean': cor_hits_params_PL['norm_strat'] = cof.norm_strategy.mean
-    elif   cor_hits_params_PL['norm_strat'] == 'kr'  : cor_hits_params_PL['norm_strat'] = cof.norm_strategy.kr
-    else                                             : raise ValueError(f"Unrecognized processing mode: {cor_hits_params_PL['norm_strat']}")
+    cor_hits_params_   = {value : cor_hits_params.get(value) for value in ['map_fname', 'same_peak'      , 'apply_temp'      ]}
+    paolina_params_    = {value : paolina_params .get(value) for value in ['vox_size' , 'strict_vox_size', 'energy_threshold', 'min_voxels', 'blob_radius']}
 
-    threshold_and_correct_hits_NN      = fl.map(hits_threshold_and_corrector(**cor_hits_params_NN),
+    threshold_and_correct_hits_NN      = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_NN'    ], norm_strat = norm_strat),
                                                 args = 'hits',
                                                 out  = 'NN_hits')
 
-    threshold_and_correct_hits_paolina = fl.map(hits_threshold_and_corrector(**cor_hits_params_PL),
+    threshold_and_correct_hits_paolina = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_paolina'], norm_strat = norm_strat),
                                                 args = 'hits',
                                                 out  = 'corrected_hits')
 
@@ -276,7 +273,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     hits_passed_NN        = fl.count_filter(bool, args =      "NN_hits_passed")
     hits_passed_paolina   = fl.count_filter(bool, args = "paolina_hits_passed")
 
-    extract_track_blob_info = fl.map(track_blob_info_extractor(**paolina_params),
+    extract_track_blob_info = fl.map(track_blob_info_extractor(**paolina_params_, energy_type = energy_type),
                                      args = 'corrected_hits',
                                      out  = ('topology_info', 'paolina_hits'))
 
@@ -310,15 +307,15 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                                   filter_events_NN                 ,
                                   fl.branch(write_NN_filter)       ,
                                   hits_passed_NN .filter           ,
-                                  write_hits_NN)                   ,
+                                  fl.fork(write_mc                 ,
+                                          write_hits_NN)          ),
                         threshold_and_correct_hits_paolina         ,
                         filter_events_paolina                      ,
                         fl.branch(write_paolina_filter)            ,
                         hits_passed_paolina      .filter           ,
                         event_count_out          .spy              ,
                         extract_track_blob_info                    ,
-                        fl.fork(write_mc                           ,
-                                write_hits_paolina                 ,
+                        fl.fork(write_hits_paolina                 ,
                                 write_tracks                       ,
                                 (make_final_summary, write_summary),
                                 write_event_info))                 ,
