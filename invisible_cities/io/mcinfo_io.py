@@ -235,7 +235,7 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
 
 def read_mcinfo(h5f, event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Sequence[MCParticle]]]:
     mc_info = tbl.get_mc_info(h5f)
-    
+
     h5extents = mc_info.extents
 
     events_in_file = len(h5extents)
@@ -290,6 +290,65 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]]) -> Mapp
             hits.extend(particle.hits)
         mchits_dict[event_no] = hits
     return mchits_dict
+
+
+def read_mchit_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
+                     event_number: int, last_row=0) -> ([tb.Table], [tb.Table], [tb.Table]):
+    h5extents    = mctables[0]
+    h5hits       = mctables[1]
+
+    hit_rows       = []
+
+    event_range = (last_row, int(1e9))
+    for iext in range(*event_range):
+        this_row = h5extents[iext]
+        if this_row['evt_number'] == event_number:
+            # the indices of the first hit and particle are 0 unless the first event
+            #  written is to be skipped: in this case they must be read from the extents
+            ihit = 0
+            if iext > 0:
+                previous_row = h5extents[iext-1]
+                ihit         = int(previous_row['last_hit']) + 1
+
+            ihit_end  = this_row['last_hit']
+
+            if len(h5hits) != 0:
+                while ihit <= ihit_end:
+                    hit_rows.append(h5hits[ihit])
+                    ihit += 1
+
+            break
+
+    return hit_rows
+
+
+def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
+    """Returns all hits in the event"""
+    mc_info = tbl.get_mc_info(h5f)
+    h5extents = mc_info.extents
+    events_in_file = len(h5extents)
+
+    all_events = {}
+
+    for iext in range(*event_range):
+        if iext >= events_in_file:
+            break
+
+        current_event  = {}
+        evt_number     = h5extents[iext]['evt_number']
+        hit_rows = read_mchit_evt(mc_info, evt_number, iext)
+
+        hits = []
+        for h5hit in hit_rows:
+            hit = MCHit(h5hit['hit_position'],
+                        h5hit['hit_time'],
+                        h5hit['hit_energy'],
+                        h5hit['label'].decode('utf-8','ignore'))
+            hits.append(hit)
+
+        all_events[evt_number] = hits
+
+    return all_events
 
 
 def read_mcsns_response(h5f, event_range=(0, 1e9)) -> Mapping[int, Mapping[int, Waveform]]:
