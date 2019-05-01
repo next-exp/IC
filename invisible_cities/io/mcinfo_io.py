@@ -168,8 +168,7 @@ def load_mchits(file_name: str,
                 event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
-        mcevents    = read_mcinfo(h5in, event_range)
-        mchits_dict = compute_mchits_dict(mcevents)
+        mchits_dict = read_mchit_info(h5in, event_range)
 
     return mchits_dict
 
