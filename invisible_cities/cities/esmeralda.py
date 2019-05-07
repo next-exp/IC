@@ -89,6 +89,10 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
         mod_voxels = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
         tracks     = plf.make_track_graphs(mod_voxels)
 
+        vox_size_x = voxels[0].size[0]
+        vox_size_y = voxels[0].size[1]
+        vox_size_z = voxels[0].size[2]
+
         for t in tracks:
             min_z = min([h.Z for v in t.nodes() for h in v.hits])
             max_z = max([h.Z for v in t.nodes() for h in v.hits])
@@ -102,7 +106,8 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
                                    'extreme2_x', 'extreme2_y', 'extreme2_z',
                                    'blob1_x', 'blob1_y', 'blob1_z',
                                    'blob2_x', 'blob2_y', 'blob2_z',
-                                   'eblob1', 'eblob2', 'blob_overlap'])
+                                   'eblob1', 'eblob2', 'blob_overlap',
+                                   'vox_size_x', 'vox_size_y', 'vox_size_z'])
         for c, t in enumerate(tracks, 0):
             tID = c
             energy = sum([vox.Ehits for vox in t.nodes()])
@@ -134,7 +139,7 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
             if len(set(hits_blob1).intersection(hits_blob2)) > 0:
                 overlap = True
 
-            df.loc[c] = [hitc.event, tID, energy, length, numb_of_voxels, numb_of_hits, numb_of_tracks, min_x, min_y, min_z, max_x, max_y, max_z, max_r, ave_pos[0], ave_pos[1], ave_pos[2], extr1_pos[0], extr1_pos[1], extr1_pos[2], extr2_pos[0], extr2_pos[1], extr2_pos[2], blob_pos1[0], blob_pos1[1], blob_pos1[2], blob_pos2[0], blob_pos2[1], blob_pos2[2], e_blob1, e_blob2, overlap]
+            df.loc[c] = [hitc.event, tID, energy, length, numb_of_voxels, numb_of_hits, numb_of_tracks, min_x, min_y, min_z, max_x, max_y, max_z, max_r, ave_pos[0], ave_pos[1], ave_pos[2], extr1_pos[0], extr1_pos[1], extr1_pos[2], extr2_pos[0], extr2_pos[1], extr2_pos[2], blob_pos1[0], blob_pos1[1], blob_pos1[2], blob_pos2[0], blob_pos2[1], blob_pos2[2], e_blob1, e_blob2, overlap, vox_size_x, vox_size_y, vox_size_z]
 
             for vox in t.nodes():
                 for hit in vox.hits:
