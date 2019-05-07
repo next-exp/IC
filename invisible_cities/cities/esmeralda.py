@@ -59,7 +59,7 @@ def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_
         return cor_hitc
     return threshold_and_correct_hits
 
-def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxels, blob_radius, z_factor) -> Callable:
+def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxels, blob_radius) -> Callable:
     """ Wrapper of extract_track_blob_info"""
     def extract_track_blob_info(hitc):
         """This function extract relevant info about the tracks and blobs, as well as assigning new field of energy, track_id etc to the HitCollection object (NOTE: we don't want to erase any hits, just redifine some attributes. If we need to cut away some hits to apply paolina functions, it has to be on the copy of the original hits)"""
@@ -71,12 +71,6 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
             min_z = min([h.Z for v in t.nodes() for h in v.hits])
             max_z = max([h.Z for v in t.nodes() for h in v.hits])
 
-            for v in t.nodes():
-                for h in v.hits:
-                    setattr(h, energy_type.value,  getattr(h, energy_type.value) + getattr(h, energy_type.value)/(1 - z_factor * (max_z - min_z)))
-                setattr(v, 'energy', getattr(v, 'energy') + getattr(v, 'energy')/(1 - z_factor * (max_z - min_z)))
-
-        c_tracks = plf.make_track_graphs(mod_voxels)
 
         track_hits = []
         df = pd.DataFrame(columns=['trackID', 'energy', 'length', 'numb_of_voxels',
@@ -87,13 +81,13 @@ def track_blob_info_extractor(vox_size, energy_type, energy_threshold, min_voxel
                                    'blob1_x', 'blob1_y', 'blob1_z',
                                    'blob2_x', 'blob2_y', 'blob2_z',
                                    'eblob1', 'eblob2', 'blob_overlap'])
-        for c, t in enumerate(c_tracks, 0):
+        for c, t in enumerate(tracks, 0):
             tID = c
             energy = sum([vox.Ehits for vox in t.nodes()])
             length = plf.length(t)
             numb_of_hits = len([h for vox in t.nodes() for h in vox.hits])
             numb_of_voxels = len(t.nodes())
-            numb_of_tracks = len(c_tracks)
+            numb_of_tracks = len(tracks   )
 
             min_x = min([h.X for v in t.nodes() for h in v.hits])
             max_x = max([h.X for v in t.nodes() for h in v.hits])
@@ -207,8 +201,8 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     # cor_hits_params_PL   are map_fname, threshold_charge, same_peak, apply_temp
     # paolina_params       are vox_size,  energy_type, energy_threshold, min_voxels, blob_radius, z_factor
     # energy_type parameter in paolina_params has to be translated to enum class
-    if   paolina_params['energy_type'] == 'corrected'   : paolina_params['energy_type'] = evm.HitEnergy.energy_c
-    elif paolina_params['energy_type'] == 'uncorrected' : paolina_params['energy_type'] = evm.HitEnergy.energy
+    if   paolina_params['energy_type'] == 'corrected'   : paolina_params['energy_type'] = evm.HitEnergy.Ec
+    elif paolina_params['energy_type'] == 'uncorrected' : paolina_params['energy_type'] = evm.HitEnergy.E
     else                                                : raise ValueError(f"Unrecognized processing mode: {paolina_params['energy_type']}")
 
 
