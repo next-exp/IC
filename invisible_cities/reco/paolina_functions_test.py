@@ -566,6 +566,20 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     assert np.allclose(ini_energies, energies)
     assert np.all(ini_n_voxels - n_voxels == expected_diff_n_voxels)
 
+def test_drop_voxels_deterministic(ICDATADIR):
+    hit_file   = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
+    evt_number = 19
+    e_thr      = 5867.92
+    min_voxels = 3
+    vox_size   = [15.] * 3
+
+    all_hits     = load_hits(hit_file)
+    hits         = all_hits[evt_number].hits
+    voxels       = voxelize_hits(hits, vox_size, strict_voxel_size=False)
+    mod_voxels   = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = False), e_thr, min_voxels)
+    mod_voxels_r = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = True ), e_thr, min_voxels)
+    for v1, v2 in zip(sorted(mod_voxels, key = lambda v:v.E), sorted(mod_voxels_r, key = lambda v:v.E)):
+        assert np.isclose(v1.E, v2.E)
 
 def test_voxel_drop_in_short_tracks():
     hits = [BHit(10, 10, 10, 1), BHit(26, 10, 10, 1)]
