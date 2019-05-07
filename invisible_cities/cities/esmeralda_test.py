@@ -25,13 +25,14 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
                          map_fname         = correction_map_MC_filename,
                          threshold_charge  = 6  * units.pes            ,
                          same_peak         = True                      ,
+                         norm_strat        = 'kr'                      ,
                          apply_temp        = False)                    ,
                      cor_hits_params_PL    = dict(
                          map_fname         = correction_map_MC_filename,
                          threshold_charge  = 30 * units.pes            ,
                          same_peak         = True                      ,
+                         norm_strat        = 'kr'                      ,
                          apply_temp        = False)                   ))
-
     esmeralda(**conf)
 
     with tb.open_file(PATH_OUT) as h5out:
@@ -65,11 +66,13 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
                          map_fname         = correction_map_MC_filename,
                          threshold_charge  = 150  * units.pes          ,
                          same_peak         = True                      ,
+                         norm_strat        = 'kr'                      ,
                          apply_temp        = False)                    ,
                      cor_hits_params_PL    = dict(
                          map_fname         = correction_map_MC_filename,
                          threshold_charge  = 200 * units.pes           ,
                          same_peak         = True                      ,
+                         norm_strat        = 'kr'                      ,
                          apply_temp        = False)                   ))
     cnt = esmeralda(**conf)
 
@@ -106,11 +109,13 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
                          map_fname         = correction_map_MC_filename,
                          threshold_charge  = 15   * units.pes          ,
                          same_peak         = True                      ,
+                         norm_strat        = 'kr'                      ,
                          apply_temp        = False)                    ,
                      cor_hits_params_PL    = dict(
                          map_fname         = correction_map_MC_filename,
                          threshold_charge  = 10  * units.pes           ,
                          same_peak         = True                      ,
+                         norm_strat        = 'kr'                      ,
                          apply_temp        = False)                   ))
     cnt = esmeralda(**conf)
 
