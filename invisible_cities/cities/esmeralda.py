@@ -41,11 +41,11 @@ from .. io. event_filter_io  import  event_filter_writer
 from .. io.          dst_io  import _store_pandas_as_tables
 
 
-def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_peak : bool, apply_temp : bool) -> Callable:
+def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_peak : bool, apply_temp : bool, norm_strat : cof.norm_strategy) -> Callable:
     """Wrapper of correct_hits"""
     map_fname=os.path.expandvars(map_fname)
     maps=cof.read_maps(map_fname)
-    get_coef=cof.apply_all_correction(maps, apply_temp = apply_temp)
+    get_coef=cof.apply_all_correction(maps, apply_temp = apply_temp, norm_strat = norm_strat)
     def threshold_and_correct_hits(hitc : evm.HitCollection) -> evm.HitCollection:
         """ This function threshold the hits on the charge, redistribute the energy of NN hits to the surrouding ones and applies energy correction."""
         t = hitc.time
@@ -63,7 +63,7 @@ def hits_threshold_and_corrector(map_fname: str, threshold_charge : float, same_
         for idx, hit in enumerate(mrg_hits):
             hit = evm.Hit(hit.npeak, evm.Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm), hit.Z, hit.E, xy(hit.Xpeak, hit.Ypeak), s2_energy_c = Ec[idx])
             cor_hits.append(hit)
-        new_hitc       = evm.HitCollection(hitc.event, t)
+        new_hitc      = evm.HitCollection(hitc.event, t)
         new_hitc.hits = cor_hits
         return new_hitc
     return threshold_and_correct_hits
@@ -236,14 +236,23 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
               cor_hits_params_NN = dict(),
               cor_hits_params_PL = dict(),
               paolina_params     = dict()):
-    # cor_hits_params_NN   are map_fname, threshold_charge, same_peak, apply_temp
-    # cor_hits_params_PL   are map_fname, threshold_charge, same_peak, apply_temp
+    # cor_hits_params_NN   are map_fname, threshold_charge, same_peak, apply_temp, to_kr_scale
+    # cor_hits_params_PL   are map_fname, threshold_charge, same_peak, apply_temp, to_kr_scale
     # paolina_params       are vox_size,  energy_type, energy_threshold, min_voxels, blob_radius, z_factor
     # energy_type parameter in paolina_params has to be translated to enum class
     if   paolina_params['energy_type'] == 'corrected'   : paolina_params['energy_type'] = evm.HitEnergy.Ec
     elif paolina_params['energy_type'] == 'uncorrected' : paolina_params['energy_type'] = evm.HitEnergy.E
     else                                                : raise ValueError(f"Unrecognized processing mode: {paolina_params['energy_type']}")
 
+    if     cor_hits_params_NN['norm_strat'] == 'max' : cor_hits_params_NN['norm_strat'] = cof.norm_strategy.max
+    elif   cor_hits_params_NN['norm_strat'] == 'mean': cor_hits_params_NN['norm_strat'] = cof.norm_strategy.mean
+    elif   cor_hits_params_NN['norm_strat'] == 'kr'  : cor_hits_params_NN['norm_strat'] = cof.norm_strategy.kr
+    else                                             : raise ValueError(f"Unrecognized processing mode: {cor_hits_params_NN['norm_strat']}")
+
+    if     cor_hits_params_PL['norm_strat'] == 'max' : cor_hits_params_PL['norm_strat'] = cof.norm_strategy.max
+    elif   cor_hits_params_PL['norm_strat'] == 'mean': cor_hits_params_PL['norm_strat'] = cof.norm_strategy.mean
+    elif   cor_hits_params_PL['norm_strat'] == 'kr'  : cor_hits_params_PL['norm_strat'] = cof.norm_strategy.kr
+    else                                             : raise ValueError(f"Unrecognized processing mode: {cor_hits_params_PL['norm_strat']}")
 
     threshold_and_correct_hits_NN      = fl.map(hits_threshold_and_corrector(**cor_hits_params_NN),
                                                 args = 'hits',
