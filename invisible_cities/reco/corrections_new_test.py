@@ -243,8 +243,19 @@ def test_get_normalization_factor_raises_exception_when_no_valid_norm(map_filena
     assert_raises(ValueError,
                   get_normalization_factor,
                   map_e, None)
+
+def test__apply_all_correction_single_maps_raises_exception_when_no_map(map_filename):
+    map_e = read_maps(map_filename)
+    assert_raises(TimeEvolutionTableMissing,
                   apply_all_correction_single_maps,
-                  maps.e0, maps.lt, None, True)
+                  map_e, map_e, None)
+
+def test_apply_all_correction_single_maps_raises_exception_when_invalid_map(map_filename_MC):
+    map_e = read_maps(map_filename_MC)
+    assert_raises(TimeEvolutionTableMissing,
+                  apply_all_correction_single_maps,
+                  map_e, map_e, map_e,
+                  apply_temp = True)
 
 @given(float_arrays(size      = 1,
                    min_value = -198,
