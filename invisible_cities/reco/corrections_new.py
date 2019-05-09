@@ -354,8 +354,11 @@ def apply_all_correction_single_maps(map_e0         : ASectorMap,
 
     return total_correction_factor
 
-def apply_all_correction(maps       : ASectorMap,
-                         apply_temp : bool = True)->Callable:
+def apply_all_correction(maps           : ASectorMap                         ,
+                         apply_temp     : bool            = True             ,
+                         norm_strat     : norm_strategy   = norm_strategy.max,
+                         norm_value     : Optional[float] = None
+                         )->Callable:
     """
     Returns a function to get all correction factor for a
     given hit collection when (x,y,z,time) is provided,
@@ -364,13 +367,23 @@ def apply_all_correction(maps       : ASectorMap,
     Parameters
     ----------
     maps : AsectorMap
-        Selected correction map for doing geometric and lifetime correction
+        Selected correction map for doing geometric and lifetime correction.
     apply_temp : Bool
-        If True, time evolution will be taken into account
+        If True, time evolution will be taken into account.
+    norm_strat : AutoNameEnumBase
+        Provides the desired normalization to be used.
+    norm_value : Float(optional)
+        If norm_strat is selected to be custom, user must provide the
+        desired scale.
+    krscale_output : Bool
+        If true, the returned factor will take into account the scaling
+        from pes to the Kr energy scale.
 
     Returns
     -------
         A function that returns complete time correction factor
     """
 
-    return apply_all_correction_single_maps(maps, maps, maps, apply_temp)
+    return apply_all_correction_single_maps(maps, maps, maps,
+                                            apply_temp, norm_strat,
+                                            norm_value)
