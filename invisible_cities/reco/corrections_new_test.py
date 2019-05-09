@@ -87,15 +87,6 @@ def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename)
     assert_allclose (CE, coef_geo)
     assert_allclose (LT, coef_lt)
 
-@mark.skip
-def test_e0_xy_corrections_exact(toy_corrections, correction_map_filename):
-    maps=read_maps(correction_map_filename)
-    xs, ys, zs, es, e0_correct, lt_correct, _, _ = toy_corrections
-    e0_correct_test = e0_xy_corrections(es, xs, ys, maps)
-    lt_correct_test = lt_xy_corrections(es, xs, ys, zs, maps)
-    assert_allclose (e0_correct_test, e0_correct)
-    assert_allclose (lt_correct_test, lt_correct)
-
 def test_read_maps_returns_ASectorMap(correction_map_filename):
     maps=read_maps(correction_map_filename)
     assert type(maps)==ASectorMap
@@ -124,10 +115,6 @@ def test_maps_coefficient_getter_gives_nans(correction_map_filename, xy_pos):
     assert all(np.isnan(CE[mask_nan]))
     assert not any(np.isnan(CE[~mask_nan]))
 
-def test_amap_max_returns_FitMapValue(map_filename):
-    maps       = read_maps(map_filename)
-    max_values = amap_max(maps)
-    assert type(max_values)==FitMapValue
 
 def test_read_maps_when_MC_t_evol_is_none(map_filename_MC):
     emap = read_maps(map_filename_MC)
