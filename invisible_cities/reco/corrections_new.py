@@ -163,8 +163,7 @@ def time_coefs_corr(time_evt   : np.array,
     -------
         An array with the computed value.
     """
-
-    par_mean   = np.average(par, weights=par_u)
+    par_mean   = np.average(par, weights = 1/par_u)
     par_i      = np.interp(time_evt, times_evol, par)
     par_factor = par_i/par_mean
     return par_factor
