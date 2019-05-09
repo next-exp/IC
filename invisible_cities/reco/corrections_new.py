@@ -185,6 +185,32 @@ def time_coefs_corr(time_evt   : np.array,
     par_factor = par_i/par_mean
     return par_factor
 
+def get_df_to_z_converter(map_te: ASectorMap) -> Callable:
+    """
+    For given map, it returns a function that provides the conversion
+    from drift time to z position using the mean drift velocity.
+
+    Parameters
+    ----------
+    map_te : AsectorMap
+        Correction map with time evolution of some kdst parameters.
+
+    Returns
+    -------
+    A function that returns z converted array for a given drift time input
+    array.
+    """
+    try:
+        assert map_te.t_evol is not None
+    except(AttributeError , AssertionError):
+        raise TimeEvolutionTableMissing("No temp_map table provided in the map")
+
+    dv_vs_time = map_te.t_evol.dv
+    dv         = np.mean(dv_vs_time)
+    def df_to_z_converter(dt):
+        return dt*dv
+
+    return df_to_z_converter
 
 def e0_xy_corrections(X : np.array, Y : np.array, maps : ASectorMap)-> np.array:
     mapinfo = maps.mapinfo
