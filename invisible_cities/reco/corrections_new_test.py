@@ -172,17 +172,15 @@ def test_time_coefs_corr(map_filename, time):
     time_coefs_corr function must be 1.
     """
 
-    maps   = read_maps(map_filename)
-    map_t  = maps.t_evol
-    coef   = []
-    nums   = int((len(map_t.columns.values)-1)/2)
-    result = np.array([1]*nums)
-    for i in range(nums):
-        par   = map_t.columns.values[(2*i)+1]
-        par_u = map_t.columns.values[(2*i)+2]
-        coef += [time_coefs_corr(time, map_t['ts'], map_t[par], map_t[par_u])]
-    assert_array_equal(np.array(coef), result)
+    maps    = read_maps(map_filename)
+    map_t   = maps.t_evol
+    columns = map_t.columns
+    # Error columns end with u
+    err_columns   = [c for c in columns[1:]  if c[-1]=='u' ]
+    value_columns = [c for c in  columns[1:] if c not in err_columns ]
 
+    for col_value, col_err in zip(value_columns, err_columns):
+        assert_allclose(time_coefs_corr(time, map_t['ts'], map_t[col_value], map_t[col_err]), 1)
 
 def test_exception_t_evolution_without_map(map_filename):
     maps = read_maps(map_filename)
