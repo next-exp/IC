@@ -185,6 +185,27 @@ def test_time_coefs_corr(map_filename, time):
 def test_exception_t_evolution_without_map(map_filename):
     maps = read_maps(map_filename)
     assert_raises(MissingArgumentError,
+@given(float_arrays(size      = 1000,
+                    min_value = 0,
+                    max_value = 550))
+def test_get_df_to_z_converter_dv_known(map_filename, z):
+    z           = np.array(z)
+    map_z       = read_maps(map_filename)
+    z_converter = get_df_to_z_converter(map_z)
+    dv_mean     = np.mean(map_z.t_evol.dv)
+    assert_array_equal(z_converter(z), z * dv_mean)
+
+def test_get_df_to_z_converter_raises_exception_when_no_map(map_filename):
+    map_e = read_maps(map_filename)
+    assert_raises(TimeEvolutionTableMissing,
+                  get_df_to_z_converter,
+                  None)
+
+def test_get_df_to_z_converter_raises_exception_when_invalid_map(map_filename_MC):
+    map_e = read_maps(map_filename_MC)
+    assert_raises(TimeEvolutionTableMissing,
+                  get_df_to_z_converter,
+                  map_e)
                   apply_all_correction_single_maps,
                   maps.e0, maps.lt, None, True)
 
