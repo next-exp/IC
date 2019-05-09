@@ -79,7 +79,7 @@ def toy_corrections(correction_map_filename):
 
 def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename):
     maps=read_maps(correction_map_filename)
-    xs, ys, zs, es, _, _, coef_geo, coef_lt = toy_corrections
+    xs, ys, zs, _, coef_geo, coef_lt, _ = toy_corrections
     get_maps_coefficient_e0= maps_coefficient_getter(maps.mapinfo, maps.e0)
     CE  = get_maps_coefficient_e0(xs,ys)
     get_maps_coefficient_lt= maps_coefficient_getter(maps.mapinfo, maps.lt)
