@@ -310,3 +310,13 @@ def test_correction_single_maps_equiv_to_all_correction(map_filename,
     corr_uniq = load_corr_uniq(x, y, z, t)
     corr_diff = load_corr_diff(x, y, z, t)
     assert corr_uniq == corr_diff
+
+def test_corrections_exact(toy_corrections, correction_map_filename):
+    maps=read_maps(correction_map_filename)
+    xs, ys, zs, ts, _, _, factor = toy_corrections
+    get_factor = apply_all_correction(maps       = maps,
+                                      apply_temp = True,
+                                      norm_strat = norm_strategy.custom,
+                                      norm_value = 1.)
+    fac = get_factor(xs, ys, zs, ts)
+    assert_allclose (factor, fac, atol = 1e-13)
