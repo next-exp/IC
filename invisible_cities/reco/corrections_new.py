@@ -9,6 +9,7 @@ from   typing      import List
 from   typing      import Optional
 from   enum        import auto
 
+from .. core            import system_of_units      as units
 from .. core.exceptions import TimeEvolutionTableMissing
 from .. types.ic_types  import AutoNameEnumBase
 from .. evm.event_model import Hit
@@ -239,6 +240,46 @@ class norm_strategy(AutoNameEnumBase):
     max    = auto()
     kr     = auto()
     custom = auto()
+
+def get_normalization_factor(map_e0    : ASectorMap,
+                             norm_strat: norm_strategy   = norm_strategy.max,
+                             norm_value: Optional[float] = None
+                             ) -> float:
+    """
+    For given map, it returns a factor that provides the conversion
+    from pes time to kr energy scale using the selected normalization
+    strategy.
+
+    Parameters
+    ----------
+    map_e0 : AsectorMap
+        Correction map for geometric corrections.
+    norm_strat : norm_strategy
+        Normalization strategy used when correcting the energy.
+    norm_value : float (Optional)
+        Normalization scale when custom strategy is selected.
+
+    Returns
+    -------
+    Factor for the kr energy scale conversion.
+    """
+    if norm_strat is norm_strategy.max:
+        norm_value =  map_e0.e0.max().max()
+    elif norm_strat is norm_strategy.mean:
+        norm_value = np.mean(np.mean(map_e0.e0))
+    elif norm_strat is norm_strategy.kr:
+        norm_value = 41.5575 * units.keV
+    elif norm_strat is norm_strategy.custom:
+        if norm_value is None:
+            s  = "If custom strategy is selected for normalization"
+            s += " user must specify the norm_value"
+            raise ValueError(s)
+    else:
+        s  = "None of the current available normalization"
+        s += " strategies was selected"
+        raise ValueError(s)
+
+    return norm_value
     """
     For a map for each correction, it returns a function
     that provides a correction factor for a
