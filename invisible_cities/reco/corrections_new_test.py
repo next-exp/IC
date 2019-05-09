@@ -2,17 +2,15 @@ import os
 import numpy  as np
 from . corrections_new import maps_coefficient_getter
 from . corrections_new import read_maps
-from . corrections_new import e0_xy_corrections
-from . corrections_new import lt_xy_corrections
 from . corrections_new import ASectorMap
-from . corrections_new import FitMapValue
 from . corrections_new import correct_geometry_
 from . corrections_new import correct_lifetime_
 from . corrections_new import time_coefs_corr
+from . corrections_new import get_df_to_z_converter
+from . corrections_new import norm_strategy
+from . corrections_new import get_normalization_factor
 from . corrections_new import apply_all_correction_single_maps
-from . corrections_new import MissingArgumentError
 from . corrections_new import apply_all_correction
-from . corrections_new import amap_max
 
 from pytest                import fixture, mark
 from numpy.testing         import assert_allclose
@@ -27,7 +25,8 @@ from hypothesis            import given
 
 from invisible_cities.core.testing_utils import random_length_float_arrays
 from invisible_cities.core.testing_utils import float_arrays
-
+from invisible_cities.core.exceptions    import TimeEvolutionTableMissing
+from invisible_cities.core               import system_of_units            as units
 
 @fixture(scope='session')
 def map_filename(ICDATADIR):
