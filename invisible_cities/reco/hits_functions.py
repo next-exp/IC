@@ -31,7 +31,7 @@ def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit
             z_closest  = min(abs(h.Z-nn_h.Z) for h in hits_to_merge)
         except ValueError:
             continue
-        h_closest = [h for h in hits_to_merge if abs(h.Z-nn_h.Z)==z_closest]
+        h_closest = [h for h in hits_to_merge if np.isclose(abs(h.Z-nn_h.Z), z_closest)]
         en_tot = sum([h.E for h in h_closest])
         for h in h_closest:
             hits_to_correct.append([h,nn_h.E*(h.E/en_tot)])
