@@ -42,9 +42,10 @@ def map_filename_MC(ICDATADIR):
 
 @fixture
 def toy_corrections(correction_map_filename):
-    xs,ys = np.meshgrid(np.linspace(-199,199,5),np.linspace(-199,199,5))
-    xs=xs.flatten(); ys=ys.flatten()
-    zs = np.ones(25)
+    xs, ys = np.meshgrid(np.linspace(-199,199,5), np.linspace(-199,199,5))
+    xs     = xs.flatten()
+    ys     = ys.flatten()
+    zs     = np.ones(25)
 
     ts         = np.array([1.54513805e+09, 1.54514543e+09, 1.54515280e+09, 1.54516018e+09,
                            1.54516755e+09, 1.54517493e+09, 1.54518230e+09, 1.54518968e+09,
@@ -78,7 +79,7 @@ def toy_corrections(correction_map_filename):
     return xs, ys, zs, ts, e0coef, ltcoef, correction
 
 def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename):
-    maps=read_maps(correction_map_filename)
+    maps = read_maps(correction_map_filename)
     xs, ys, zs, _, coef_geo, coef_lt, _ = toy_corrections
     get_maps_coefficient_e0= maps_coefficient_getter(maps.mapinfo, maps.e0)
     CE  = get_maps_coefficient_e0(xs,ys)
@@ -88,9 +89,8 @@ def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename)
     assert_allclose (LT, coef_lt)
 
 def test_read_maps_returns_ASectorMap(correction_map_filename):
-    maps=read_maps(correction_map_filename)
+    maps = read_maps(correction_map_filename)
     assert type(maps)==ASectorMap
-
 
 @composite
 def xy_pos(draw, elements=floats(min_value=-250, max_value=250)):
@@ -101,20 +101,19 @@ def xy_pos(draw, elements=floats(min_value=-250, max_value=250)):
 
 @given(xy_pos = xy_pos())
 def test_maps_coefficient_getter_gives_nans(correction_map_filename, xy_pos):
-    x,y=xy_pos
-    maps=read_maps(correction_map_filename)
-    mapinfo = maps.mapinfo
-    map_df  = maps.e0
+    x,y       = xy_pos
+    maps      = read_maps(correction_map_filename)
+    mapinfo   = maps.mapinfo
+    map_df    = maps.e0
     xmin,xmax = mapinfo.xmin,mapinfo.xmax
     ymin,ymax = mapinfo.ymin,mapinfo.ymax
     get_maps_coefficient_e0= maps_coefficient_getter(mapinfo, map_df)
-    CE  = get_maps_coefficient_e0(x,y)
-    mask_x   = (x >=xmax) | (x<xmin)
-    mask_y   = (y >=ymax) | (y<ymin)
-    mask_nan = (mask_x)   | (mask_y)
+    CE        = get_maps_coefficient_e0(x,y)
+    mask_x    = (x >=xmax) | (x<xmin)
+    mask_y    = (y >=ymax) | (y<ymin)
+    mask_nan  = (mask_x)   | (mask_y)
     assert all(np.isnan(CE[mask_nan]))
     assert not any(np.isnan(CE[~mask_nan]))
-
 
 def test_read_maps_when_MC_t_evol_is_none(map_filename_MC):
     emap = read_maps(map_filename_MC)
@@ -161,7 +160,7 @@ def test_correct_geometry_properly(x):
                     max_value = 1e4))
 def test_correct_geometry_properly(z, lt):
     compute_corr = np.exp(z / lt)
-    assert_array_equal(correct_lifetime_(z, lt),compute_corr)
+    assert_array_equal(correct_lifetime_(z, lt), compute_corr)
 
 @given(floats(min_value = 0,
               max_value = 1e4))
@@ -228,7 +227,7 @@ def test_get_normalization_factor_custom_norm(correction_map_filename, custom_va
 
 def test_get_normalization_factor_krscale(correction_map_filename):
     map_e     = read_maps(correction_map_filename)
-    factor = get_normalization_factor(map_e, norm_strategy.kr)
+    factor    = get_normalization_factor(map_e, norm_strategy.kr)
     kr_energy = 41.5575 * units.keV
     assert factor == kr_energy
 
@@ -300,23 +299,22 @@ def test_apply_all_correction_single_maps_properly(map_filename, x, y, z, t):
                     max_value = 1e5))
 def test_correction_single_maps_equiv_to_all_correction(map_filename,
                                                         x, y, z, t):
-    maps = read_maps(map_filename)
-
+    maps           = read_maps(map_filename)
     load_corr_uniq = apply_all_correction(maps, True)
     load_corr_diff = apply_all_correction_single_maps(map_e0     = maps,
                                                       map_lt     = maps,
                                                       map_te     = maps,
                                                       apply_temp = True)
-    corr_uniq = load_corr_uniq(x, y, z, t)
-    corr_diff = load_corr_diff(x, y, z, t)
+    corr_uniq      = load_corr_uniq(x, y, z, t)
+    corr_diff      = load_corr_diff(x, y, z, t)
     assert corr_uniq == corr_diff
 
 def test_corrections_exact(toy_corrections, correction_map_filename):
-    maps=read_maps(correction_map_filename)
+    maps       = read_maps(correction_map_filename)
     xs, ys, zs, ts, _, _, factor = toy_corrections
     get_factor = apply_all_correction(maps       = maps,
                                       apply_temp = True,
                                       norm_strat = norm_strategy.custom,
                                       norm_value = 1.)
-    fac = get_factor(xs, ys, zs, ts)
+    fac        = get_factor(xs, ys, zs, ts)
     assert_allclose (factor, fac, atol = 1e-13)
