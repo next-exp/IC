@@ -276,14 +276,15 @@ def test_apply_all_correction_single_maps_properly(map_filename, x, y, z, t):
     lifetime one: exp(Z/5000).
     """
     maps      = read_maps(map_filename)
-    load_corr = apply_all_correction_single_maps(maps,
-                                                 maps,
-                                                 maps,
-                                                 True)
-    corr = load_corr(x, y, z, t)
+    norm      = get_normalization_factor (maps, norm_strategy.max)
+    load_corr = apply_all_correction_single_maps(map_e0     = maps,
+                                                 map_lt     = maps,
+                                                 map_te     = maps,
+                                                 apply_temp = True,
+                                                 norm_strat = norm_strategy.max)
+    corr   = load_corr(x, y, z, t)
     result = np.exp(z/5000)
-    assert corr==result
-
+    assert_allclose (corr, result)
 
 @given(float_arrays(size      = 1,
                     min_value = -198,
@@ -302,10 +303,10 @@ def test_correction_single_maps_equiv_to_all_correction(map_filename,
     maps = read_maps(map_filename)
 
     load_corr_uniq = apply_all_correction(maps, True)
-    load_corr_diff = apply_all_correction_single_maps(maps,
-                                                      maps,
-                                                      maps,
-                                                      True)
+    load_corr_diff = apply_all_correction_single_maps(map_e0     = maps,
+                                                      map_lt     = maps,
+                                                      map_te     = maps,
+                                                      apply_temp = True)
     corr_uniq = load_corr_uniq(x, y, z, t)
     corr_diff = load_corr_diff(x, y, z, t)
     assert corr_uniq == corr_diff
