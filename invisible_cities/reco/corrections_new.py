@@ -233,6 +233,12 @@ def apply_all_correction_single_maps(map_e0     : ASectorMap,
                                      map_lt     : ASectorMap,
                                      map_te     : Optional[ASectorMap] = None,
                                      apply_temp : bool                 = True) -> Callable:
+
+class norm_strategy(AutoNameEnumBase):
+    mean   = auto()
+    max    = auto()
+    kr     = auto()
+    custom = auto()
     """
     For a map for each correction, it returns a function
     that provides a correction factor for a
