@@ -79,3 +79,6 @@ class VoxelNotInList(ICException):
 
 class TableMismatch(ICException):
     pass
+
+class TimeEvolutionTableMissing(ICException):
+    pass
