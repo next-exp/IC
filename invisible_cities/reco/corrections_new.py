@@ -280,6 +280,14 @@ def get_normalization_factor(map_e0    : ASectorMap,
         raise ValueError(s)
 
     return norm_value
+
+def apply_all_correction_single_maps(map_e0         : ASectorMap,
+                                     map_lt         : ASectorMap,
+                                     map_te         : Optional[ASectorMap] = None,
+                                     apply_temp     : bool                 = True,
+                                     norm_strat     : norm_strategy        = norm_strategy.max,
+                                     norm_value     : Optional[float]      = None
+                                     ) -> Callable:
     """
     For a map for each correction, it returns a function
     that provides a correction factor for a
@@ -288,24 +296,30 @@ def get_normalization_factor(map_e0    : ASectorMap,
     Parameters
     ----------
     map_e0 : AsectorMap
-        Correction map for geometric orrections.
+        Correction map for geometric corrections.
     map_lt : AsectorMap
-        Correction map for lifetime orrections.
+        Correction map for lifetime corrections.
     map_te : AsectorMap (optional)
         Correction map with time evolution of some kdst parameters.
     apply_temp : Bool
         If True, time evolution will be taken into account.
-
+    norm_strat : AutoNameEnumBase
+        Provides the desired normalization to be used.
+    norm_value : Float(optional)
+        If norm_strat is selected to be custom, user must provide the
+        desired scale.
+    krscale_output : Bool
+        If true, the returned factor will take into account the scaling
+        from pes to the Kr energy scale.
     Returns
     -------
         A function that returns time correction factor without passing a map.
     """
 
+    normalization   = get_normalization_factor(map_e0, norm_strat, norm_value)
 
     get_xy_corr_fun = maps_coefficient_getter(map_e0.mapinfo, map_e0.e0)
     get_lt_corr_fun = maps_coefficient_getter(map_lt.mapinfo, map_lt.lt)
-
-    max_e0 = amap_max(map_e0).e0
 
     if apply_temp:
         try:
@@ -313,6 +327,17 @@ def get_normalization_factor(map_e0    : ASectorMap,
         except(AttributeError , AssertionError):
             raise TimeEvolutionTableMissing("apply_temp is true while temp_map is not provided")
 
+        evol_table      = map_te.t_evol
+        temp_correct_e0 = lambda t : time_coefs_corr(t,
+                                                     evol_table.ts,
+                                                     evol_table.e0,
+                                                     evol_table.e0u)
+        temp_correct_lt = lambda t : time_coefs_corr(t,
+                                                     evol_table.ts,
+                                                     evol_table['lt'],
+                                                     evol_table.ltu)
+        e0evol_vs_t     = temp_correct_e0
+        ltevol_vs_t     = temp_correct_lt
 
     else:
         e0evol_vs_t = lambda x : np.ones_like(x)
@@ -322,9 +347,9 @@ def get_normalization_factor(map_e0    : ASectorMap,
                                 y : np.array,
                                 z : np.array,
                                 t : np.array)-> np.array:
-        geo_factor = correct_geometry_(get_xy_corr_fun(x,y)/max_e0*e0evol_vs_t(t))
-        lt_factor  = correct_lifetime_(z, get_lt_corr_fun(x,y)*ltevol_vs_t(t))
-        factor     = geo_factor*lt_factor
+        geo_factor = correct_geometry_(get_xy_corr_fun(x,y) * e0evol_vs_t(t))
+        lt_factor  = correct_lifetime_(z, get_lt_corr_fun(x,y) * ltevol_vs_t(t))
+        factor     = geo_factor * lt_factor * normalization
         return factor
 
     return total_correction_factor
