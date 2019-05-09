@@ -14,6 +14,7 @@ from .. core.exceptions import TimeEvolutionTableMissing
 from .. types.ic_types  import AutoNameEnumBase
 from .. evm.event_model import Hit
 
+
 @dataclass
 class ASectorMap:  # Map in chamber sector containing average of pars
     chi2    : DataFrame
@@ -23,27 +24,6 @@ class ASectorMap:  # Map in chamber sector containing average of pars
     ltu     : DataFrame
     mapinfo : Optional[Series]
     t_evol  : Optional[DataFrame]
-
-@dataclass
-class FitMapValue:  # A ser of values of a FitMap
-    chi2  : float
-    e0    : float
-    lt    : float
-    e0u   : float
-    ltu   : float
-
-class MissingArgumentError(Exception):
-    def __init__(self):
-        s  = 'You must provide a time evolution map '
-        s += 'if time correction is wanted to be applied.'
-        Exception.__init__(self, s)
-
-def amap_max(amap : ASectorMap)->FitMapValue:
-    return FitMapValue(chi2 = amap.chi2.max().max(),
-                       e0   = amap.e0  .max().max(),
-                       lt   = amap.lt  .max().max(),
-                       e0u  = amap.e0u .max().max(),
-                       ltu  = amap.ltu .max().max())
 
 def read_maps(filename : str)->ASectorMap:
 
@@ -216,24 +196,6 @@ def get_df_to_z_converter(map_te: ASectorMap) -> Callable:
 
     return df_to_z_converter
 
-def e0_xy_corrections(X : np.array, Y : np.array, maps : ASectorMap)-> np.array:
-    mapinfo = maps.mapinfo
-    map_df  = maps.e0
-    get_maps_coefficient= maps_coefficient_getter(mapinfo, map_df)
-    CE  = get_maps_coefficient(X,Y)
-    return correct_geometry_(CE)
-
-def lt_xy_corrections(X : np.array, Y : np.array, Z : np.array, maps : ASectorMap)-> np.array:
-    mapinfo = maps.mapinfo
-    map_df  = maps.lt
-    get_maps_coefficient= maps_coefficient_getter(mapinfo, map_df)
-    LT  = get_maps_coefficient(X,Y)
-    return correct_lifetime_(Z,LT)
-
-def apply_all_correction_single_maps(map_e0     : ASectorMap,
-                                     map_lt     : ASectorMap,
-                                     map_te     : Optional[ASectorMap] = None,
-                                     apply_temp : bool                 = True) -> Callable:
 
 class norm_strategy(AutoNameEnumBase):
     mean   = auto()
