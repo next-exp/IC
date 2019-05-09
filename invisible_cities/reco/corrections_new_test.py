@@ -182,9 +182,6 @@ def test_time_coefs_corr(map_filename, time):
     for col_value, col_err in zip(value_columns, err_columns):
         assert_allclose(time_coefs_corr(time, map_t['ts'], map_t[col_value], map_t[col_err]), 1)
 
-def test_exception_t_evolution_without_map(map_filename):
-    maps = read_maps(map_filename)
-    assert_raises(MissingArgumentError,
 @given(float_arrays(size      = 1000,
                     min_value = 0,
                     max_value = 550))
@@ -206,6 +203,46 @@ def test_get_df_to_z_converter_raises_exception_when_invalid_map(map_filename_MC
     assert_raises(TimeEvolutionTableMissing,
                   get_df_to_z_converter,
                   map_e)
+
+def test_get_normalization_factor_max_norm(correction_map_filename):
+    map_e  = read_maps(correction_map_filename)
+    factor = get_normalization_factor(map_e, norm_strategy.max)
+    norm   = map_e.e0.max().max()
+    assert factor == norm
+
+def test_get_normalization_factor_mean_norm(correction_map_filename):
+    map_e  = read_maps(correction_map_filename)
+    factor = get_normalization_factor(map_e, norm_strategy.mean)
+    norm   = np.mean(np.mean(map_e.e0))
+    assert factor == norm
+
+@given(floats(min_value = 1,
+              max_value = 1e4))
+def test_get_normalization_factor_custom_norm(correction_map_filename, custom_vaule):
+    map_e  = read_maps(correction_map_filename)
+    factor = get_normalization_factor(map_e,
+                                      norm_strategy.custom,
+                                      custom_vaule)
+    norm   = custom_vaule
+    assert factor == norm
+
+def test_get_normalization_factor_krscale(correction_map_filename):
+    map_e     = read_maps(correction_map_filename)
+    factor = get_normalization_factor(map_e, norm_strategy.kr)
+    kr_energy = 41.5575 * units.keV
+    assert factor == kr_energy
+
+def test_get_normalization_factor_custom_norm_raises_exception_when_no_value(map_filename):
+    map_e = read_maps(map_filename)
+    assert_raises(ValueError,
+                  get_normalization_factor,
+                  map_e, norm_strategy.custom)
+
+def test_get_normalization_factor_raises_exception_when_no_valid_norm(map_filename):
+    map_e = read_maps(map_filename)
+    assert_raises(ValueError,
+                  get_normalization_factor,
+                  map_e, None)
                   apply_all_correction_single_maps,
                   maps.e0, maps.lt, None, True)
 
