@@ -301,9 +301,6 @@ def get_normalization_factor(map_e0    : ASectorMap,
         A function that returns time correction factor without passing a map.
     """
 
-    if apply_temp and map_te is None:
-        raise MissingArgumentError
-        pass
 
     get_xy_corr_fun = maps_coefficient_getter(map_e0.mapinfo, map_e0.e0)
     get_lt_corr_fun = maps_coefficient_getter(map_lt.mapinfo, map_lt.lt)
@@ -311,18 +308,12 @@ def get_normalization_factor(map_e0    : ASectorMap,
     max_e0 = amap_max(map_e0).e0
 
     if apply_temp:
-        if map_te.mapinfo.run_number>0:
-            evol_table      = map_te.t_evol
-            temp_correct_e0 = lambda t : time_coefs_corr(t,
-                                                         evol_table.ts,
-                                                         evol_table.e0,
-                                                         evol_table.e0u)
-            temp_correct_lt = lambda t : time_coefs_corr(t,
-                                                         evol_table.ts,
-                                                         evol_table['lt'],
-                                                         evol_table.ltu)
-            e0evol_vs_t     = temp_correct_e0
-            ltevol_vs_t     = temp_correct_lt
+        try:
+            assert map_te.t_evol is not None
+        except(AttributeError , AssertionError):
+            raise TimeEvolutionTableMissing("apply_temp is true while temp_map is not provided")
+
+
     else:
         e0evol_vs_t = lambda x : np.ones_like(x)
         ltevol_vs_t = lambda x : np.ones_like(x)
