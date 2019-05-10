@@ -41,7 +41,7 @@ def map_filename_MC(ICDATADIR):
     return test_file
 
 @fixture
-def toy_corrections():
+def toy_corrections(correction_map_filename):
     xs,ys = np.meshgrid(np.linspace(-199,199,5),np.linspace(-199,199,5))
     xs=xs.flatten(); ys=ys.flatten()
     zs = np.ones(25)
