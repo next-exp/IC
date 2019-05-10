@@ -85,9 +85,9 @@ def events_filter(allow_nans : bool) -> Callable:
     return filter_events
 
 
-def track_blob_info_extractor(vox_size : [float, float, float], energy_type : evm.HitEnergy, strict_vox_size : bool, energy_threshold : float, min_voxels : int, blob_radius : float) -> Callable:
+def track_blob_info_creator_extractor(vox_size : [float, float, float], energy_type : evm.HitEnergy, strict_vox_size : bool, energy_threshold : float, min_voxels : int, blob_radius : float) -> Callable:
     """ Wrapper of extract_track_blob_info"""
-    def extract_track_blob_info(hitc):
+    def create_extract_track_blob_info(hitc):
         """This function extract relevant info about the tracks and blobs, as well as assigning new field of energy, track_id etc to the HitCollection object (NOTE: we don't want to erase any hits, just redifine some attributes. If we need to cut away some hits to apply paolina functions, it has to be on the copy of the original hits)"""
         voxels     = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, energy_type)
         mod_voxels = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
@@ -162,7 +162,7 @@ def track_blob_info_extractor(vox_size : [float, float, float], energy_type : ev
 
         return df, track_hitc
 
-    return extract_track_blob_info
+    return create_extract_track_blob_info
 
 
 def make_event_summary(event_number : int, timestamp : int, topology_info : pd.DataFrame, paolina_hits : evm.HitCollection, kdst : pd.DataFrame) -> pd.DataFrame:
@@ -262,24 +262,24 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                                                 args = 'hits',
                                                 out  = 'corrected_hits')
 
-    filter_events_NN      = fl.map(events_filter(allow_nans = True),
-                                   args = 'NN_hits',
-                                   out  = 'NN_hits_passed')
+    filter_events_NN                   = fl.map(events_filter(allow_nans = True),
+                                                args = 'NN_hits',
+                                                out  = 'NN_hits_passed')
 
-    filter_events_paolina = fl.map(events_filter(allow_nans = False),
-                              args = 'corrected_hits',
-                              out  = 'paolina_hits_passed')
+    filter_events_paolina              = fl.map(events_filter(allow_nans = False),
+                                                args = 'corrected_hits',
+                                                out  = 'paolina_hits_passed')
 
-    hits_passed_NN        = fl.count_filter(bool, args =      "NN_hits_passed")
-    hits_passed_paolina   = fl.count_filter(bool, args = "paolina_hits_passed")
+    hits_passed_NN                     = fl.count_filter(bool, args =      "NN_hits_passed")
+    hits_passed_paolina                = fl.count_filter(bool, args = "paolina_hits_passed")
 
-    extract_track_blob_info = fl.map(track_blob_info_extractor(**paolina_params_, energy_type = energy_type),
-                                     args = 'corrected_hits',
-                                     out  = ('topology_info', 'paolina_hits'))
+    create_extract_track_blob_info     = fl.map(track_blob_info_creator_extractor(**paolina_params_, energy_type = energy_type),
+                                                args = 'corrected_hits',
+                                                out  = ('topology_info', 'paolina_hits'))
 
-    make_final_summary      = fl.map(make_event_summary,
-                                     args = ('event_number', 'timestamp', 'topology_info', 'paolina_hits', 'kdst'),
-                                     out  = 'event_info')
+    make_final_summary                 = fl.map(make_event_summary,
+                                                args = ('event_number', 'timestamp', 'topology_info', 'paolina_hits', 'kdst'),
+                                                out  = 'event_info')
 
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
@@ -314,7 +314,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                         fl.branch(write_paolina_filter)            ,
                         hits_passed_paolina      .filter           ,
                         event_count_out          .spy              ,
-                        extract_track_blob_info                    ,
+                        create_extract_track_blob_info             ,
                         fl.fork(write_hits_paolina                 ,
                                 write_tracks                       ,
                                 (make_final_summary, write_summary),
