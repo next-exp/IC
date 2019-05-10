@@ -97,10 +97,8 @@ def track_blob_info_creator_extractor(vox_size : [float, float, float], energy_t
         vox_size_y = voxels[0].size[1]
         vox_size_z = voxels[0].size[2]
 
-        for t in tracks:
-            min_z = min([h.Z for v in t.nodes() for h in v.hits])
-            max_z = max([h.Z for v in t.nodes() for h in v.hits])
-
+        #sort tracks in energy
+        tracks     = sorted(tracks, key = lambda t: sum([vox.Ehits for vox in t.nodes()]), reverse = True)
 
         track_hits = []
         df = pd.DataFrame(columns=['event', 'trackID', 'energy', 'length', 'numb_of_voxels',
