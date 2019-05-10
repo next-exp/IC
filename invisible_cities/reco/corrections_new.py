@@ -1,5 +1,6 @@
 import numpy  as np
 import pandas as pd
+
 from   pandas      import DataFrame
 from   pandas      import Series
 from   dataclasses import dataclass
@@ -7,8 +8,12 @@ from   typing      import Callable
 from   typing      import List
 from   typing      import Optional
 from   enum        import auto
+
+from .. core            import system_of_units      as units
+from .. core.exceptions import TimeEvolutionTableMissing
 from .. types.ic_types  import AutoNameEnumBase
 from .. evm.event_model import Hit
+
 
 @dataclass
 class ASectorMap:  # Map in chamber sector containing average of pars
@@ -19,27 +24,6 @@ class ASectorMap:  # Map in chamber sector containing average of pars
     ltu     : DataFrame
     mapinfo : Optional[Series]
     t_evol  : Optional[DataFrame]
-
-@dataclass
-class FitMapValue:  # A ser of values of a FitMap
-    chi2  : float
-    e0    : float
-    lt    : float
-    e0u   : float
-    ltu   : float
-
-class MissingArgumentError(Exception):
-    def __init__(self):
-        s  = 'You must provide a time evolution map '
-        s += 'if time correction is wanted to be applied.'
-        Exception.__init__(self, s)
-
-def amap_max(amap : ASectorMap)->FitMapValue:
-    return FitMapValue(chi2 = amap.chi2.max().max(),
-                       e0   = amap.e0  .max().max(),
-                       lt   = amap.lt  .max().max(),
-                       e0u  = amap.e0u .max().max(),
-                       ltu  = amap.ltu .max().max())
 
 def read_maps(filename : str)->ASectorMap:
 
@@ -179,31 +163,92 @@ def time_coefs_corr(time_evt   : np.array,
     -------
         An array with the computed value.
     """
-
-    par_mean   = np.average(par, weights=par_u)
+    par_mean   = np.average(par, weights = 1/par_u)
     par_i      = np.interp(time_evt, times_evol, par)
     par_factor = par_i/par_mean
     return par_factor
 
+def get_df_to_z_converter(map_te: ASectorMap) -> Callable:
+    """
+    For given map, it returns a function that provides the conversion
+    from drift time to z position using the mean drift velocity.
 
-def e0_xy_corrections(X : np.array, Y : np.array, maps : ASectorMap)-> np.array:
-    mapinfo = maps.mapinfo
-    map_df  = maps.e0
-    get_maps_coefficient= maps_coefficient_getter(mapinfo, map_df)
-    CE  = get_maps_coefficient(X,Y)
-    return correct_geometry_(CE)
+    Parameters
+    ----------
+    map_te : AsectorMap
+        Correction map with time evolution of some kdst parameters.
 
-def lt_xy_corrections(X : np.array, Y : np.array, Z : np.array, maps : ASectorMap)-> np.array:
-    mapinfo = maps.mapinfo
-    map_df  = maps.lt
-    get_maps_coefficient= maps_coefficient_getter(mapinfo, map_df)
-    LT  = get_maps_coefficient(X,Y)
-    return correct_lifetime_(Z,LT)
+    Returns
+    -------
+    A function that returns z converted array for a given drift time input
+    array.
+    """
+    try:
+        assert map_te.t_evol is not None
+    except(AttributeError , AssertionError):
+        raise TimeEvolutionTableMissing("No temp_map table provided in the map")
 
-def apply_all_correction_single_maps(map_e0     : ASectorMap,
-                                     map_lt     : ASectorMap,
-                                     map_te     : Optional[ASectorMap] = None,
-                                     apply_temp : bool                 = True) -> Callable:
+    dv_vs_time = map_te.t_evol.dv
+    dv         = np.mean(dv_vs_time)
+    def df_to_z_converter(dt):
+        return dt*dv
+
+    return df_to_z_converter
+
+
+class norm_strategy(AutoNameEnumBase):
+    mean   = auto()
+    max    = auto()
+    kr     = auto()
+    custom = auto()
+
+def get_normalization_factor(map_e0    : ASectorMap,
+                             norm_strat: norm_strategy   = norm_strategy.max,
+                             norm_value: Optional[float] = None
+                             ) -> float:
+    """
+    For given map, it returns a factor that provides the conversion
+    from pes time to kr energy scale using the selected normalization
+    strategy.
+
+    Parameters
+    ----------
+    map_e0 : AsectorMap
+        Correction map for geometric corrections.
+    norm_strat : norm_strategy
+        Normalization strategy used when correcting the energy.
+    norm_value : float (Optional)
+        Normalization scale when custom strategy is selected.
+
+    Returns
+    -------
+    Factor for the kr energy scale conversion.
+    """
+    if norm_strat is norm_strategy.max:
+        norm_value =  map_e0.e0.max().max()
+    elif norm_strat is norm_strategy.mean:
+        norm_value = np.mean(np.mean(map_e0.e0))
+    elif norm_strat is norm_strategy.kr:
+        norm_value = 41.5575 * units.keV
+    elif norm_strat is norm_strategy.custom:
+        if norm_value is None:
+            s  = "If custom strategy is selected for normalization"
+            s += " user must specify the norm_value"
+            raise ValueError(s)
+    else:
+        s  = "None of the current available normalization"
+        s += " strategies was selected"
+        raise ValueError(s)
+
+    return norm_value
+
+def apply_all_correction_single_maps(map_e0         : ASectorMap,
+                                     map_lt         : ASectorMap,
+                                     map_te         : Optional[ASectorMap] = None,
+                                     apply_temp     : bool                 = True,
+                                     norm_strat     : norm_strategy        = norm_strategy.max,
+                                     norm_value     : Optional[float]      = None
+                                     ) -> Callable:
     """
     For a map for each correction, it returns a function
     that provides a correction factor for a
@@ -212,41 +257,49 @@ def apply_all_correction_single_maps(map_e0     : ASectorMap,
     Parameters
     ----------
     map_e0 : AsectorMap
-        Correction map for geometric orrections.
+        Correction map for geometric corrections.
     map_lt : AsectorMap
-        Correction map for lifetime orrections.
+        Correction map for lifetime corrections.
     map_te : AsectorMap (optional)
         Correction map with time evolution of some kdst parameters.
     apply_temp : Bool
         If True, time evolution will be taken into account.
-
+    norm_strat : AutoNameEnumBase
+        Provides the desired normalization to be used.
+    norm_value : Float(optional)
+        If norm_strat is selected to be custom, user must provide the
+        desired scale.
+    krscale_output : Bool
+        If true, the returned factor will take into account the scaling
+        from pes to the Kr energy scale.
     Returns
     -------
         A function that returns time correction factor without passing a map.
     """
 
-    if apply_temp and map_te is None:
-        raise MissingArgumentError
-        pass
+    normalization   = get_normalization_factor(map_e0, norm_strat, norm_value)
 
     get_xy_corr_fun = maps_coefficient_getter(map_e0.mapinfo, map_e0.e0)
     get_lt_corr_fun = maps_coefficient_getter(map_lt.mapinfo, map_lt.lt)
 
-    max_e0 = amap_max(map_e0).e0
-
     if apply_temp:
-        if map_te.mapinfo.run_number>0:
-            evol_table      = map_te.t_evol
-            temp_correct_e0 = lambda t : time_coefs_corr(t,
-                                                         evol_table.ts,
-                                                         evol_table.e0,
-                                                         evol_table.e0u)
-            temp_correct_lt = lambda t : time_coefs_corr(t,
-                                                         evol_table.ts,
-                                                         evol_table['lt'],
-                                                         evol_table.ltu)
-            e0evol_vs_t     = temp_correct_e0
-            ltevol_vs_t     = temp_correct_lt
+        try:
+            assert map_te.t_evol is not None
+        except(AttributeError , AssertionError):
+            raise TimeEvolutionTableMissing("apply_temp is true while temp_map is not provided")
+
+        evol_table      = map_te.t_evol
+        temp_correct_e0 = lambda t : time_coefs_corr(t,
+                                                     evol_table.ts,
+                                                     evol_table.e0,
+                                                     evol_table.e0u)
+        temp_correct_lt = lambda t : time_coefs_corr(t,
+                                                     evol_table.ts,
+                                                     evol_table['lt'],
+                                                     evol_table.ltu)
+        e0evol_vs_t     = temp_correct_e0
+        ltevol_vs_t     = temp_correct_lt
+
     else:
         e0evol_vs_t = lambda x : np.ones_like(x)
         ltevol_vs_t = lambda x : np.ones_like(x)
@@ -255,15 +308,18 @@ def apply_all_correction_single_maps(map_e0     : ASectorMap,
                                 y : np.array,
                                 z : np.array,
                                 t : np.array)-> np.array:
-        geo_factor = correct_geometry_(get_xy_corr_fun(x,y)/max_e0*e0evol_vs_t(t))
-        lt_factor  = correct_lifetime_(z, get_lt_corr_fun(x,y)*ltevol_vs_t(t))
-        factor     = geo_factor*lt_factor
+        geo_factor = correct_geometry_(get_xy_corr_fun(x,y) * e0evol_vs_t(t))
+        lt_factor  = correct_lifetime_(z, get_lt_corr_fun(x,y) * ltevol_vs_t(t))
+        factor     = geo_factor * lt_factor * normalization
         return factor
 
     return total_correction_factor
 
-def apply_all_correction(maps       : ASectorMap,
-                         apply_temp : bool = True)->Callable:
+def apply_all_correction(maps           : ASectorMap                         ,
+                         apply_temp     : bool            = True             ,
+                         norm_strat     : norm_strategy   = norm_strategy.max,
+                         norm_value     : Optional[float] = None
+                         )->Callable:
     """
     Returns a function to get all correction factor for a
     given hit collection when (x,y,z,time) is provided,
@@ -272,13 +328,23 @@ def apply_all_correction(maps       : ASectorMap,
     Parameters
     ----------
     maps : AsectorMap
-        Selected correction map for doing geometric and lifetime correction
+        Selected correction map for doing geometric and lifetime correction.
     apply_temp : Bool
-        If True, time evolution will be taken into account
+        If True, time evolution will be taken into account.
+    norm_strat : AutoNameEnumBase
+        Provides the desired normalization to be used.
+    norm_value : Float(optional)
+        If norm_strat is selected to be custom, user must provide the
+        desired scale.
+    krscale_output : Bool
+        If true, the returned factor will take into account the scaling
+        from pes to the Kr energy scale.
 
     Returns
     -------
         A function that returns complete time correction factor
     """
 
-    return apply_all_correction_single_maps(maps, maps, maps, apply_temp)
+    return apply_all_correction_single_maps(maps, maps, maps,
+                                            apply_temp, norm_strat,
+                                            norm_value)

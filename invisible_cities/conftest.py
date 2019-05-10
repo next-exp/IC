@@ -184,7 +184,7 @@ def KrMC_pmaps_without_ipmt_dict(KrMC_pmaps_without_ipmt_filename):
 
 @pytest.fixture(scope='session')
 def correction_map_filename(ICDATADIR):
-    test_file = "kr_emap_xy_100_100_r_6560.h5"
+    test_file = "kr_emap_xy_100_100_r_6573_time.h5"
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
