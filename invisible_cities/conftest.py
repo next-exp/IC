@@ -201,9 +201,24 @@ def KrMC_hdst_filename(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
+
 @pytest.fixture(scope='session')
 def KrMC_hdst_filename_toy(ICDATADIR):
     test_file = "toy_MC_HDST.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
+
+@pytest.fixture(scope='session')
+def esmeralda_tracks(ICDATADIR):
+    test_file = "esmeralda_tracks.hdf5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
+
+@pytest.fixture(scope='session')
+def data_hdst(ICDATADIR):
+    test_file = "test_hits_th_1pes.h5"
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
