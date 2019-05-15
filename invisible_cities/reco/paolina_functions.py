@@ -321,12 +321,12 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
         qs  = [getattr(h, e_type) for h in the_vox.hits]
 
         if len(pos) == 0:
-            min_dist  = min([np.linalg.norm(bary_pos-v.pos) for v in voxels  if neighbours(the_vox, v)])
-            min_v     = [v for v in voxels  if (neighbours(the_vox, v) and np.isclose(np.linalg.norm(bary_pos-v.pos), min_dist))]
+            min_dist  = min([np.linalg.norm(the_vox.pos-v.pos) for v in voxels  if neighbours(the_vox, v)])
+            min_v     = [v for v in voxels  if (neighbours(the_vox, v) and np.isclose(np.linalg.norm(the_vox.pos-v.pos), min_dist))]
 
             ### add dropped voxel energy to closest voxels, proportional to the  voxels energy
             sum_en_v = sum(v.E for v in min_v)
-            for v in min_h_v:
+            for v in min_v:
                 v.E += the_vox.E/sum_en_v * v.E
 
             return 1
