@@ -2,7 +2,8 @@
 Tests for fit_functions
 """
 
-import numpy as np
+import numpy   as np
+import inspect as insp
 
 from pytest        import mark
 from pytest        import approx
@@ -287,6 +288,38 @@ def test_fit_with_errors(reduced):
     fit_range = (50, 150) if reduced else None
     f = fitf.fit(fitf.gauss, x, y, pars * 1.2, fit_range=fit_range, sigma=e, maxfev=10000)
     assert_allclose(f.values, pars)
+
+
+@mark.parametrize(["func", "known_pars"],
+                  ((fitf.gauss, {'mu' : 10, 'sigma' : 2}),
+                  (fitf.expo, {'const' : 22})))
+def test_number_fixed_parameters(func, known_pars):
+    fixed_p        = fitf.fixed_parameters(func, **known_pars)
+    npars_original = len(insp.signature(func).parameters)
+    npars_new      = len(insp.signature(fixed_p).parameters)
+
+    assert npars_new == npars_original - len(known_pars)
+
+
+def test_fixed_parameters():
+    pars = [3.0,  2.0, 0.50]
+    x = np.arange(10.)
+    y = fitf.gauss(x, *pars)
+    e = 0.1 * y
+
+    fixed_mu = fitf.fixed_parameters(fitf.gauss, mu = pars[1])
+    seeds = np.array(pars[::2])
+    f = fitf.fit(fixed_mu, x, y, seeds * 1.2, sigma=e)
+    assert_allclose(f.values, seeds)
+
+
+@mark.parametrize("pars",
+                  ({'amp' : 2, 'mu' : 0, 'sigma' : 2},
+                   {'fake1' : 2},
+                   {'fake1' : 1, 'mu' : 0}))
+def test_fix_wrong_parameters_raises_error(pars):
+    with raises(ValueError):
+        fixed_mu = fitf.fixed_parameters(fitf.gauss, **pars)
 
 
 @mark.parametrize(["func"],
