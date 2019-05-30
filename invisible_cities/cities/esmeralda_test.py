@@ -11,6 +11,7 @@ from .. core.configure         import all         as all_events
 from .. io                     import dst_io      as dio
 from .  esmeralda              import esmeralda
 from .. core.testing_utils     import assert_dataframes_close
+from .. core.testing_utils     import assert_tables_equality
 
 @mark.serial
 def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
@@ -97,7 +98,7 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
                      event_range                  = nevt_req                  ,
                      cor_hits_params              = dict(
                          map_fname                = correction_map_MC_filename,
-                         threshold_charge_NN      = 15   * units.pes          ,
+                         threshold_charge_NN      = 20   * units.pes          ,
                          threshold_charge_paolina = 20   * units.pes          ,
                          same_peak                = True                      ,
                          norm_strat               = 'kr'                      ,
@@ -152,3 +153,40 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     columns2 = df_tracks_exact.columns
     assert(sorted(columns1) == sorted(columns2))
     assert_dataframes_close (df_tracks[sorted(columns1)], df_tracks_exact[sorted(columns2)])
+
+
+def test_esmeralda_exact_result(ICDATADIR, KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
+    file_in   = KrMC_hdst_filename
+    file_out  = os.path.join(config_tmpdir, "exact_Kr_tracks_with_MC.h5")
+    conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
+    true_out  =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
+    nevt_req  = all_events
+    conf.update(dict(files_in                     = file_in                   ,
+                     file_out                     = file_out                  ,
+                     event_range                  = nevt_req                  ,
+                     cor_hits_params              = dict(
+                         map_fname                = correction_map_MC_filename,
+                         threshold_charge_NN      = 10   * units.pes          ,
+                         threshold_charge_paolina = 20   * units.pes          ,
+                         same_peak                = True                      ,
+                         norm_strat               = 'kr'                      ,
+                         apply_temp               = False                    ),
+                     paolina_params               = dict(
+                         vox_size                 = [15 * units.mm] * 3       ,
+                         energy_type              = 'corrected'               ,
+                         strict_vox_size          = False                     ,
+                         energy_threshold         = 0 * units.keV             ,
+                         min_voxels               = 2                         ,
+                         blob_radius              = 21 * units.mm           )))
+
+    cnt = esmeralda(**conf)
+    tables = ( "MC/extents"  , "MC/hits"       , "MC/particles"     , "MC/generators"         ,
+               "RECO/Events" , "PAOLINA/Events", "PAOLINA/Tracks"   , "PAOLINA/Summary"       ,
+               "Run/events"  , "Run/runInfo"   , "Filters/NN_select", "Filters/paolina_select")
+
+    with tb.open_file(true_out)  as true_output_file:
+        with tb.open_file(file_out) as      output_file:
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
