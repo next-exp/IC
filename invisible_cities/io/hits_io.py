@@ -1,5 +1,7 @@
 from typing                import Dict
+
 import numpy               as     np
+import pandas              as     pd
 
 from . dst_io              import load_dst
 from ..evm.event_model     import Hit
@@ -10,6 +12,44 @@ from .  table_io           import make_table
 from .. evm .nh5           import HitsTable
 from .. types.ic_types     import NN
 
+
+def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCollection]:
+    """
+    Function that transforms pandas DataFrame dst to HitCollection
+    ------
+    Parameters
+    ------
+    dst : pd.DataFrame
+        DataFrame with obligatory columns :
+                event, time, npeak, nsipm, X, Y, Xrms, Yrms, Z,  Q, E
+        If Qc, Ec, track_id are not inside dst the default value is set to -1
+        If Xpeak, Ypeak not in dst the default value is -1000
+    ------
+    Returns
+    ------
+    Dictionary {event_number : HitCollection}
+    """
+    all_events = {}
+    for (event, time) , hits_df in dst.groupby(['event', 'time']):
+        #pandas is not consistent with numpy dtypes so we have to change it by hand
+        event = np.int32(event)
+        hits  = []
+        for i, row in hits_df.iterrows():
+            if skip_NN and row.Q == NN:
+                continue
+            hit = Hit(row.npeak,
+                      Cluster(row.Q, xy(row.X, row.Y), xy(row.Xrms**2, row.Yrms**2),
+                              row.nsipm, row.Z, row.E, Qc = getattr(row, 'Qc', -1)),
+                      row.Z, row.E, xy(getattr(row, 'Xpeak', -1000) , getattr(row, 'Ypeak', -1000)),
+                      s2_energy_c = getattr(row, 'Ec', -1), track_id = getattr(row, 'track_id', -1)) 
+
+            hits.append(hit)
+
+        if len(hits)>0:
+            all_events.update({event : HitCollection(event, time)})
+            all_events[event].hits.extend(hits)
+
+    return all_events
 
 # reader
 def load_hits(DST_file_name : str, group_name : str = 'RECO', table_name : str = 'Events', skip_NN : bool = False
@@ -32,31 +72,9 @@ def load_hits(DST_file_name : str, group_name : str = 'RECO', table_name : str =
     ------
     Dictionary {event_number : HitCollection}
     """
-
-    dst = load_dst(DST_file_name,'RECO','Events')
-    all_events = {}
-
-    for (event, time) , hits_df in dst.groupby(['event', 'time']):
-        #pandas is not consistent with numpy dtypes so we have to change it by hand
-        event = np.int32(event)
-        hits  = []
-        for i, row in hits_df.iterrows():
-            if skip_NN and row.Q == NN:
-                continue
-            hit = Hit(row.npeak,
-                      Cluster(row.Q, xy(row.X, row.Y), xy(row.Xrms**2, row.Yrms**2),
-                              row.nsipm, row.Z, row.E, Qc = getattr(row, 'Qc', -1)),
-                      row.Z, row.E, xy(getattr(row, 'Xpeak', -1000) , getattr(row, 'Ypeak', -1000)),
-                      s2_energy_c = getattr(row, 'Ec', -1), track_id = getattr(row, 'track_id', -1)) 
-
-            hits.append(hit)
-
-        if len(hits)>0:
-            all_events.update({event : HitCollection(event, time)})
-            all_events[event].hits.extend(hits)
-
-    return all_events
-
+    dst = load_dst(DST_file_name, group_name, table_name)
+    hits_dict = hits_from_df (dst, skip_NN)
+    return hits_dict
 
 def load_hits_skipping_NN(DST_file_name : str, group_name : str = 'RECO', table_name : str = 'Events'
                           )-> Dict[int, HitCollection]:
