@@ -188,6 +188,40 @@ def correction_map_filename(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
+@pytest.fixture(scope='session')
+def correction_map_MC_filename(ICDATADIR):
+    test_file = "kr_emap_xy_100_100_mc.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
+
+@pytest.fixture(scope='session')
+def KrMC_hdst_filename(ICDATADIR):
+    test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_HDST.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
+
+@pytest.fixture(scope='session')
+def KrMC_hdst_filename_toy(ICDATADIR):
+    test_file = "toy_MC_HDST.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
+
+@pytest.fixture(scope='session')
+def esmeralda_tracks(ICDATADIR):
+    test_file = "esmeralda_tracks.hdf5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
+
+@pytest.fixture(scope='session')
+def data_hdst(ICDATADIR):
+    test_file = "test_hits_th_1pes.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
 
 @pytest.fixture(scope='session')
 def KrMC_pmaps_example(output_tmpdir):
