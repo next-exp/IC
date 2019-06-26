@@ -142,7 +142,7 @@ def rebin_times_and_waveforms(times, widths, waveforms,
                               rebin_stride=2, slices=None):
     if rebin_stride < 2: return times, widths, waveforms
 
-    if not slices:
+    if slices is None:
         n_bins = int(np.ceil(len(times) / rebin_stride))
         reb    = rebin_stride
         slices = [slice(reb * i, reb * (i + 1)) for i in range(n_bins)]
@@ -153,9 +153,9 @@ def rebin_times_and_waveforms(times, widths, waveforms,
     rebinned_wfs    = np.zeros((n_sensors, len(slices)))
 
     for i, s in enumerate(slices):
-        t  = times    [   s]
-        e  = waveforms[:, s]
-        w  = np.sum(e, axis=0) if np.any(e) else None
+        t = times    [   s]
+        e = waveforms[:, s]
+        w = np.sum(e, axis=0).clip(0) if np.any(e) else None
         rebinned_times [   i] = np.average(t, weights=w)
         rebinned_widths[   i] = np.sum    (   widths[s])
         rebinned_wfs   [:, i] = np.sum    (e,    axis=1)
