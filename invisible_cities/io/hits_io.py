@@ -73,7 +73,10 @@ def load_hits(DST_file_name : str, group_name : str = 'RECO', table_name : str =
     Dictionary {event_number : HitCollection}
     """
     dst = load_dst(DST_file_name, group_name, table_name)
-    hits_dict = hits_from_df (dst, skip_NN)
+    hits_dict = {}
+    # Check dst is defined and non-empty
+    if dst is not None and len(dst):
+        hits_dict = hits_from_df (dst, skip_NN)
     return hits_dict
 
 def load_hits_skipping_NN(DST_file_name : str, group_name : str = 'RECO', table_name : str = 'Events'
