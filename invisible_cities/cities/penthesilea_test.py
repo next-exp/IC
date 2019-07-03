@@ -316,3 +316,17 @@ def test_penthesilea_xyrecofail(config_tmpdir, Xe2nu_pmaps_mc_filename):
 
     # check it runs
     penthesilea(**conf)
+
+
+def test_penthesilea_empty_input_file(config_tmpdir, ICDATADIR):
+    # Penthesilea must run on an empty file without raising any exception
+    # The input file has the complete structure of a PMAP but no events.
+
+    PATH_IN  = os.path.join(ICDATADIR    , 'empty_pmaps.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'empty_hdst.h5')
+
+    conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
+    conf.update(dict(files_in      = PATH_IN,
+                     file_out      = PATH_OUT))
+
+    penthesilea(**conf)

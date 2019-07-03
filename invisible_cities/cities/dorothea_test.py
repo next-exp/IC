@@ -159,3 +159,17 @@ def test_dorothea_exact_result(ICDATADIR, output_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
+
+
+def test_dorothea_empty_input_file(config_tmpdir, ICDATADIR):
+    # Dorothea must run on an empty file without raising any exception
+    # The input file has the complete structure of a PMAP but no events.
+
+    PATH_IN  = os.path.join(ICDATADIR    , 'empty_pmaps.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'empty_kdst.h5')
+
+    conf = configure('dummy invisible_cities/config/dorothea.conf'.split())
+    conf.update(dict(files_in      = PATH_IN,
+                     file_out      = PATH_OUT))
+
+    dorothea(**conf)
