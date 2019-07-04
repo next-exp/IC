@@ -190,3 +190,17 @@ def test_esmeralda_exact_result(ICDATADIR, KrMC_hdst_filename, correction_map_MC
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
+
+
+def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
+    # Esmeralda must run on an empty file without raising any exception
+    # The input file has the complete structure of a PMAP but no events.
+
+    PATH_IN  = os.path.join(ICDATADIR    , 'empty_hdst.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'empty_voxels.h5')
+
+    conf = configure('dummy invisible_cities/config/esmeralda.conf'.split())
+    conf.update(dict(files_in      = PATH_IN,
+                     file_out      = PATH_OUT))
+
+    esmeralda(**conf)

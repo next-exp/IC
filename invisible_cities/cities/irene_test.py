@@ -447,3 +447,17 @@ def test_irene_filters_empty_pmaps(ICDATADIR, output_tmpdir):
         for table_name in tables:
             table = getattr(output_file.root, table_name)
             assert table.nrows == 0
+
+
+def test_irene_empty_input_file(config_tmpdir, ICDATADIR):
+    # Irene must run on an empty file without raising any exception
+    # The input file has the complete structure of a PMAP but no events.
+
+    PATH_IN  = os.path.join(ICDATADIR    , 'empty_rwf.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'empty_pmaps.h5')
+
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(files_in      = PATH_IN,
+                     file_out      = PATH_OUT))
+
+    irene(**conf)

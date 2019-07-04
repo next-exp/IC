@@ -228,13 +228,16 @@ def check_lengths(*iterables):
 def wf_from_files(paths, wf_type):
     for path in paths:
         with tb.open_file(path, "r") as h5in:
-            event_info  = get_event_info  (h5in)
-            run_number  = get_run_number  (h5in)
-            pmt_wfs     = get_pmt_wfs     (h5in, wf_type)
-            sipm_wfs    = get_sipm_wfs    (h5in, wf_type)
-            mc_info     = get_mc_info_safe(h5in, run_number)
-            (trg_type ,
-             trg_chann) = get_trigger_info(h5in)
+            try:
+                event_info  = get_event_info  (h5in)
+                run_number  = get_run_number  (h5in)
+                pmt_wfs     = get_pmt_wfs     (h5in, wf_type)
+                sipm_wfs    = get_sipm_wfs    (h5in, wf_type)
+                mc_info     = get_mc_info_safe(h5in, run_number)
+                (trg_type ,
+                 trg_chann) = get_trigger_info(h5in)
+            except tb.exceptions.NoSuchNodeError:
+                continue
 
             check_lengths(pmt_wfs, sipm_wfs, event_info, trg_type, trg_chann)
 
@@ -252,11 +255,20 @@ def wf_from_files(paths, wf_type):
 
 def pmap_from_files(paths):
     for path in paths:
-        pmaps = load_pmaps(path)
+        try:
+            pmaps = load_pmaps(path)
+        except tb.exceptions.NoSuchNodeError:
+            continue
+
         with tb.open_file(path, "r") as h5in:
-            run_number  = get_run_number(h5in)
-            event_info  = get_event_info(h5in)
-            mc_info     = get_mc_info_safe(h5in, run_number)
+            try:
+                run_number  = get_run_number(h5in)
+                event_info  = get_event_info(h5in)
+                mc_info     = get_mc_info_safe(h5in, run_number)
+            except tb.exceptions.NoSuchNodeError:
+                continue
+            except IndexError:
+                continue
 
             check_lengths(event_info, pmaps)
 
@@ -271,13 +283,22 @@ def pmap_from_files(paths):
 def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields HitsCollection, pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
     for path in paths:
-        hits    = load_hits(path)
-        kdst_df = load_dst (path, 'DST', 'Events')
+        try:
+            hits    = load_hits(path)
+            kdst_df = load_dst (path, 'DST', 'Events')
+        except tb.exceptions.NoSuchNodeError:
+            continue
+
         with tb.open_file(path, "r") as h5in:
-            run_number  = get_run_number(h5in)
-            event_info  = get_event_info(h5in)
-            mc_info     = get_mc_info_safe(h5in, run_number)
+            try:
+                run_number  = get_run_number(h5in)
+                event_info  = get_event_info(h5in)
+                mc_info     = get_mc_info_safe(h5in, run_number)
+            except (tb.exceptions.NoSuchNodeError, IndexError):
+                continue
+
             check_lengths(event_info, hits)
+
             for evtinfo in event_info:
                 event_number, timestamp = evtinfo.fetch_all_fields()
                 yield dict(hits = hits[event_number], kdst = kdst_df.loc[kdst_df.event==event_number], mc=mc_info, run_number=run_number,
