@@ -86,7 +86,7 @@ class MCParticleInfo(tb.IsDescription):
     final_volume   = tb. StringCol(20, pos=7)
     momentum       = tb.Float32Col(    pos=8, shape=3)
     kin_energy     = tb.Float32Col(    pos=9)
-    creator_proc   = tb. StringCol(20, pos=10)
+    creator_proc   = tb. StringCol(100, pos=10)
 
 
 class SENSOR_WF(tb.IsDescription):
