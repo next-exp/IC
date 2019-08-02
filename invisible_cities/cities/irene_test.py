@@ -82,8 +82,8 @@ def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
 
-    PATH_IN  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_RWF.h5')
-    PATH_OUT = os.path.join(config_tmpdir, 'electrons_40keV_z250_CWF.h5')
+    PATH_IN  = os.path.join(ICDATADIR    , 'electrons_40keV_ACTIVE_10evts_RWF.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'electrons_40keV_ACTIVE_10evts_CWF.h5')
 
     nrequired  = 2
 
