@@ -76,17 +76,17 @@ class MCHitInfo(tb.IsDescription):
 class MCParticleInfo(tb.IsDescription):
     """Stores the simulated particles as metadata using Pytables.
     """
-    particle_indx  = tb.  Int16Col(    pos=0)
-    particle_name  = tb. StringCol(20, pos=1)
-    primary        = tb.  Int16Col(    pos=2)
-    mother_indx    = tb.  Int16Col(    pos=3)
-    initial_vertex = tb.Float32Col(    pos=4, shape=4)
-    final_vertex   = tb.Float32Col(    pos=5, shape=4)
-    initial_volume = tb. StringCol(20, pos=6)
-    final_volume   = tb. StringCol(20, pos=7)
-    momentum       = tb.Float32Col(    pos=8, shape=3)
-    kin_energy     = tb.Float32Col(    pos=9)
-    creator_proc   = tb. StringCol(20, pos=10)
+    particle_indx  = tb.  Int16Col(     pos= 0)
+    particle_name  = tb. StringCol( 20, pos= 1)
+    primary        = tb.  Int16Col(     pos= 2)
+    mother_indx    = tb.  Int16Col(     pos= 3)
+    initial_vertex = tb.Float32Col(     pos= 4, shape=4)
+    final_vertex   = tb.Float32Col(     pos= 5, shape=4)
+    initial_volume = tb. StringCol( 20, pos= 6)
+    final_volume   = tb. StringCol( 20, pos= 7)
+    momentum       = tb.Float32Col(     pos= 8, shape=3)
+    kin_energy     = tb.Float32Col(     pos= 9)
+    creator_proc   = tb. StringCol(100, pos=10)
 
 
 class SENSOR_WF(tb.IsDescription):
