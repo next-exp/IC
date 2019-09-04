@@ -32,8 +32,9 @@ def cut_and_redistribute_df(cut_condition : str,
     '''
     def cut_and_redistribute(df : pd.DataFrame) -> pd.DataFrame:
         pass_df = df.query(cut_condition)
+        pass_df._is_copy = False
         for redist_variable in variables:
-            pass_df[f'{redist_variable}'] = pass_df[redist_variable] * (df[redist_variable].sum() / pass_df[redist_variable].sum())
+            pass_df[redist_variable] = pass_df[redist_variable] * (df[redist_variable].sum() / pass_df[redist_variable].sum())
         return pass_df
 
     return cut_and_redistribute
@@ -64,10 +65,9 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
                          else True
                          for xi, yi in zip(x, y)]
         pass_df = df[mask_xy]
-
+        pass_df._is_copy = False
         for redist_variable in variables:
             pass_df[f'{redist_variable}'] = pass_df[redist_variable] * (df[redist_variable].sum() / pass_df[redist_variable].sum())
-
         return pass_df
 
     return drop_isolated_sensors
@@ -106,18 +106,13 @@ def deconvolutionInput(sampleWidth : List[float],
 
         Hs, edges   = (np.histogramdd(data, bins=allbins, range=ranges, normed=False, weights=weight)
                        if interMethod is not None else
-                       np.histogramdd(data, bins=nbin, range=ranges, normed=False, weights=weight))
+                       np.histogramdd(data, bins=nbin   , range=ranges, normed=False, weights=weight))
 
         interPoints = np.meshgrid(*(shift_to_bin_centers(edge) for edge in edges), indexing='ij')
         interPoints = tuple      (interP.flatten() for interP in interPoints)
 
         if interMethod is not None:
-            if interMethod is 'cubic' and Hs.ndim == 3:
-                Hs = np.zeros(nbin)
-                for iH in range(nbin[2]):
-                    Hs[:,:,iH], _  = interpolateSignal(Hs[:,:,iH], interPoints[:2], edges[:2], nbin[:2], interMethod)
-            else:
-                Hs, interPoints    = interpolateSignal(Hs        , interPoints    , edges    , nbin    , interMethod)
+            Hs, interPoints    = interpolateSignal(Hs        , interPoints    , edges    , nbin    , interMethod)
 
         return Hs, interPoints
 
@@ -181,7 +176,6 @@ def deconvolve(iterationNumber : int,
                iterationThr    : float,
                sampleWidth     : List[float],
                bin_size        : List[float],
-               psf_min         : List[float]=[50, 50, 50],
                interMethod     : Optional[str]=None
                ) -> Callable:
     """
@@ -198,7 +192,6 @@ def deconvolve(iterationNumber : int,
         iterationNumber : Number of Lucy-Richardson iterations
         sampleWidth     : Sampling size of the sensors.
         bin_size        : Size of the interpolated bins.
-        psf_min         : Minimum range in each dimension of the PSF that will be used.
         interMethod     : Interpolation method.
 
     Returns
@@ -215,35 +208,9 @@ def deconvolve(iterationNumber : int,
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
         interSignal, interPos = deconvInput(data, weight)
-        mask   = np.full (interSignal.shape, True)
-        ranges = np.array([bin_size[i] * len(set(d)) for i, d in enumerate(interPos)])
-
-        for i, rang in enumerate(ranges):
-            pmin = psf_min[i]
-            if rang < 2*pmin:
-                pad_dim       = np.array(tuple((0,0) for _ in ranges))
-                pad_dim[i][0] = np.floor((2*pmin - rang) / 2)
-                pad_dim[i][1] = np.ceil ((2*pmin - rang) / 2)
-                pad_dim       = tuple(pad_dim)
-                interSignal   = np.pad(interSignal, pad_width=pad_dim, mode='constant')
-                mask          = np.pad(mask       , pad_width=pad_dim, mode='constant', constant_values=False)
-                psf = psf[in_range(psf[varName[i]], -pmin  , pmin  )]
-            else:
-                psf = psf[in_range(psf[varName[i]], -rang/2, rang/2)]
-
-        psf_min_range = np.array([psf[varName[i]].max() - psf[varName[i]].min() for i in range(len(ranges))])
-        psf_deco      = psf.factor.values.reshape(tuple(psf[var].nunique() for var in varName[:len(ranges)]))
-
-        for rang, pmin in zip(ranges[ranges > psf_min_range], psf_min_range[ranges > psf_min_range]):
-            pad_dim       = np.array(tuple((0,0) for _ in ranges))
-            pad_dim[i][0] = np.floor((rang - pmin) / 2)
-            pad_dim[i][1] = np.ceil ((rang - pmin) / 2)
-            pad_dim       = tuple(pad_dim)
-            psf_deco      = np.pad  (psf_deco, pad_width=pad_dim, mode='constant')
-
-        deconv_image = np.nan_to_num(richardson_lucy(interSignal, psf_deco,
-                                                     iterationNumber, iterationThr))
-        deconv_image = deconv_image[mask].reshape(tuple(len(set(d)) for d in interPos))
+        psf_deco      = psf.factor.values.reshape(tuple(psf[var].nunique() for var in varName[:len(data)]))
+        deconv_image  = np.nan_to_num(richardson_lucy(interSignal, psf_deco,
+                                                      iterationNumber, iterationThr))
 
         return deconv_image.flatten(), interPos
 
