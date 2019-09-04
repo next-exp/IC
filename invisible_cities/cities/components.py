@@ -283,6 +283,35 @@ def pmap_from_files(paths):
             # it needs to be given the WHOLE TABLE (rather than a
             # single event) at a time.
 
+def hdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, MCInfo, int, float]]]:
+    """Reader of the files, yields HitsCollection, pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
+    for path in paths:
+        try:
+            hdst_df    = load_dst (path,    'RECO',  'Events')
+            summary_df = load_dst (path, 'PAOLINA', 'Summary')
+        except tb.exceptions.NoSuchNodeError:
+            continue
+
+        with tb.open_file(path, "r") as h5in:
+            try:
+                run_number  = get_run_number(h5in)
+                event_info  = get_event_info(h5in)
+                mc_info     = get_mc_info_safe(h5in, run_number)
+            except (tb.exceptions.NoSuchNodeError, IndexError):
+                continue
+
+            check_lengths(event_info, summary_df.event.unique())
+
+            for evtinfo in event_info:
+                event_number, timestamp = evtinfo.fetch_all_fields()
+                yield dict(hdst    = hdst_df   .loc[hdst_df   .event==event_number],
+                           summary = summary_df.loc[summary_df.event==event_number],
+                           mc=mc_info, run_number=run_number,
+                           event_number=event_number, timestamp=timestamp)
+            # NB, the monte_carlo writer is different from the others:
+            # it needs to be given the WHOLE TABLE (rather than a
+            # single event) at a time.
+
 def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields HitsCollection, pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
     for path in paths:
