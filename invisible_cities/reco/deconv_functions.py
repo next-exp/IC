@@ -33,8 +33,9 @@ def cut_and_redistribute_df(cut_condition : str,
     def cut_and_redistribute(df : pd.DataFrame) -> pd.DataFrame:
         pass_df = df.query(cut_condition)
         pass_df._is_copy = False
-        for redist_variable in variables:
-            pass_df[redist_variable] = pass_df[redist_variable] * (df[redist_variable].sum() / pass_df[redist_variable].sum())
+        with np.errstate(divide='ignore'):
+            for redist_variable in variables:
+                pass_df[redist_variable] = pass_df[redist_variable] * np.divide(df[redist_variable].sum(), pass_df[redist_variable].sum())
         return pass_df
 
     return cut_and_redistribute
@@ -66,8 +67,9 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
                          for xi, yi in zip(x, y)]
         pass_df = df[mask_xy]
         pass_df._is_copy = False
-        for redist_variable in variables:
-            pass_df[f'{redist_variable}'] = pass_df[redist_variable] * (df[redist_variable].sum() / pass_df[redist_variable].sum())
+        with np.errstate(divide='ignore'):
+            for redist_variable in variables:
+                pass_df[f'{redist_variable}'] = pass_df[redist_variable] * np.divide(df[redist_variable].sum(), pass_df[redist_variable].sum())
         return pass_df
 
     return drop_isolated_sensors
@@ -212,7 +214,7 @@ def deconvolve(iterationNumber : int,
         deconv_image  = np.nan_to_num(richardson_lucy(interSignal, psf_deco,
                                                       iterationNumber, iterationThr))
 
-        return deconv_image.flatten(), interPos
+        return deconv_image, interPos
 
     return deconvolve
 
@@ -262,13 +264,13 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
     else:
         convolve_method = convolve
 
-    image = image.astype(np.float)
-    psf = psf.astype(np.float)
-    im_deconv = 0.5 * np.ones(image.shape)
-    s = slice(None, None, -1)
+    image      = image.astype(np.float)
+    psf        = psf.astype(np.float)
+    im_deconv  = 0.5 * np.ones(image.shape)
+    s          = slice(None, None, -1)
     psf_mirror = psf[(s,) * psf.ndim]
-    eps = np.finfo(image.dtype).eps
-    ref_image = image/image.max()
+    eps        = np.finfo(image.dtype).eps
+    ref_image  = image/image.max()
 
     for i in range(iterations):
         x = convolve_method(im_deconv, psf, 'same')
@@ -276,7 +278,8 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
         relative_blur = image / x
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
-        rel_diff = np.sum(np.nan_to_num(((im_deconv/im_deconv.max() - ref_image)**2)/ref_image))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            rel_diff = np.sum(np.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
         if rel_diff < iter_thr:
             break
 

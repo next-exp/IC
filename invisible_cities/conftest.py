@@ -222,6 +222,11 @@ def data_hdst(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
+@pytest.fixture(scope='session')
+def data_hdst_deconvolved(ICDATADIR):
+    test_file = "test_hits_th_1pes_deconvolution.npz"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
 
 @pytest.fixture(scope='session')
 def KrMC_pmaps_example(output_tmpdir):
