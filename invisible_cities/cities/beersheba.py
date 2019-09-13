@@ -17,6 +17,7 @@ import pandas as pd
 
 from scipy.stats import multivariate_normal
 from numpy       import sqrt
+from numpy       import nan_to_num
 
 
 from typing      import Tuple
@@ -38,6 +39,9 @@ from .. reco.deconv_functions import find_nearest
 from .. reco.deconv_functions import cut_and_redistribute_df
 from .. reco.deconv_functions import drop_isolated_sensors
 from .. reco.deconv_functions import deconvolve
+from .. reco.deconv_functions import richardson_lucy
+
+from .. core.core_functions   import weighted_mean_and_std
 
 from .. io.       mcinfo_io   import mc_info_writer
 from .. io.run_and_event_io   import run_and_event_writer
@@ -49,11 +53,12 @@ def deconvolve_signal(psf_fname       : str,
                       iterationThr    : float,
                       sampleWidth     : List[float],
                       bin_size        : List[float],
-                      psf_min         : List[float]=[50, 50, 50],
-                      trans_diff      : float=1.,
+                      diffusion       : Tuple[float]=(1., 1., 0.3),
+                      iterationGauss  : int=0,
                       energy_type     : str='Ec',
                       deconv_mode     : str='joint',
-                      interMethod     : Optional[str]=None):
+                      n_dim           : int=2,
+                      interMethod     : str=None):
 
     """
     Applies Lucy Richardson deconvolution to SiPM response with a
@@ -64,13 +69,14 @@ def deconvolve_signal(psf_fname       : str,
     psf_fname       : Point-spread function.
     ecut            : Cut in relative value to the max voxel over the deconvolution output.
     iterationNumber : Number of Lucy-Richardson iterations
+    iterationGauss  : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
     iterationThr    : Stopping threshold (difference between iterations).
     sampleWidth     : Sampling size of the sensors.
     bin_size        : Size of the interpolated bins.
-    psf_min         : Minimum range in each dimension of the PSF that will be used.
     energy_type     : Energy type ('E' or 'Ec', see Esmeralda) used for assignment.
     deconv_mode     : 'joint' or 'separate', 1 or 2 step deconvolution, see description later.
-    trans_diff      : Transverse diffusion coefficient for 'separate' mode.
+    diffusion       : Diffusion coefficients in each dimension for 'separate' mode.
+    n_dim           : Number of dimensions to apply the method (2 or 3).
     interMethod     : Interpolation method.
 
     Returns
@@ -80,8 +86,8 @@ def deconvolve_signal(psf_fname       : str,
     """
 
     psfs          = pd.read_hdf(psf_fname)
-    deconvolution = deconvolve(iterationNumber, iterationThr, sampleWidth, bin_size, psf_min, interMethod)
-    deconv_diffus = deconvolve(iterationNumber, iterationThr,    bin_size, bin_size, psf_min, interMethod=None)
+    deconvolution = deconvolve(iterationNumber, iterationThr, sampleWidth[:n_dim], bin_size[:n_dim], interMethod)
+    dimensions    = ['X', 'Y', 'Z'][:n_dim]
 
     def create_deconvolution_df(hits, deconvE, pos):
         df = pd.DataFrame(columns=['event', 'npeak', 'X', 'Y', 'Z', 'E'])
@@ -89,10 +95,10 @@ def deconvolve_signal(psf_fname       : str,
         ene         = deconvE[selDeconv]
         df['event'] = [hits.event.unique()[0]] * len(ene)
         df['npeak'] = [hits.npeak.unique()[0]] * len(ene)
-        df['Z']     = [hits.Z    .unique()[0]] * len(ene)
-        df['E']     = ene
+        df['Z']     = [hits.Z    .unique()[0]] * len(ene) if n_dim == 2 else pos[2][selDeconv]
         df['X']     = pos[0][selDeconv]
         df['Y']     = pos[1][selDeconv]
+        df['E']     = ene
 
         return df
 
@@ -101,6 +107,25 @@ def deconvolve_signal(psf_fname       : str,
 
         return df
 
+    def deconvolve_hits(df, z):
+        if   deconv_mode == 'joint':
+            psf = psfs[(psfs.z == find_nearest(psfs.z,                 z)) &
+                       (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
+                       (psfs.y == find_nearest(psfs.y, df.Ypeak.unique())) ]
+            deconvImage, pos = deconvolution(tuple(df[v].values for v in dimensions), df.Q.values, psf)
+        elif deconv_mode == 'separate':
+            psf_z0 = psfs[(psfs.z == find_nearest(psfs.z,                 0)) &
+                          (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
+                          (psfs.y == find_nearest(psfs.y, df.Ypeak.unique())) ]
+            deconvImage, pos = deconvolution(tuple(df[v].values for v in dimensions), df.Q.values, psf_z0)
+            g   = multivariate_normal(tuple(0. for _ in range(n_dim)), tuple(diff * sqrt(z/10) for diff in diffusion[:n_dim])).pdf(list(zip(*tuple(psf_z0[f'{v.lower()}r'].values for v in dimensions))))
+            psf = g.reshape(tuple(psf_z0[f'{v.lower()}r'].nunique() for v in dimensions))
+            deconvImage      = nan_to_num(richardson_lucy(deconvImage, psf, iterationGauss, iterationThr))
+        else:
+            raise TypeError(f'Mode "{deconv_mode}" unsuported')
+
+        return create_deconvolution_df(df, deconvImage.flatten(), pos)
+
     def apply_deconvolution(df):
         deco_dst = []
         for peak in sorted(set(df.npeak)):
@@ -108,21 +133,9 @@ def deconvolve_signal(psf_fname       : str,
             hits          = df[df.npeak == peak]
             hits._is_copy = False
             hits['Q']     = hits.Q/hits.Q.sum()
-            for z in sorted(set(hits.Z)):
-                h   = hits[hits.Z == z]
-                if   deconv_mode == 'joint':
-                    psf = psfs[psfs.z == find_nearest(psfs.z, z)]
-                    deconvImage, pos = deconvolution((h.X.values, h.Y.values), h.Q.values, psf)
-                elif deconv_mode == 'separate':
-                    psf_z0 = psfs[psfs.z == find_nearest(psfs.z, 0)]
-                    deconvImage, pos = deconvolution((h.X.values, h.Y.values), h.Q.values, psf_z0)
-                    g = multivariate_normal((0., 0.), (trans_diff * sqrt(z/10), trans_diff * sqrt(z/10))).pdf(list(zip(psf_z0.xr.values, psf_z0.yr.values)))
-                    psf_z0.factor = g
-                    deconvImage, pos = deconv_diffus((pos[0], pos[1]), deconvImage, psf_z0)
-                else:
-                    raise TypeError(f'Mode "{deconv_mode}" unsuported')
-                deco_df.append(create_deconvolution_df(h, deconvImage, pos))
-            deco_dst.append(distribute_energy(pd.concat(deco_df, ignore_index=True), hits))
+            deconvolved_hits = (deconvolve_hits(hits, weighted_mean_and_std(hits.Z, hits.E)[0]) if n_dim == 3 else
+                                pd.concat([deconvolve_hits(hits[hits.Z == z], z) for z in hits.Z.unique()], ignore_index=True))
+            deco_dst.append(distribute_energy(deconvolved_hits, hits))
 
         return pd.concat(deco_dst, ignore_index=True)
 
@@ -234,8 +247,6 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
             Sampling of the sensors in each dimension (usuallly the pitch).
         bin_size        : list[float]
             Bin size (mm) of the deconvolved image.
-        psf_min         : list[float]
-            Minimum range (mm) of the PSF that will be used.
         energy_type     : str ('E', 'Ec')
             Marks which energy from Esmeralda (E = uncorrected, Ec = corrected)
             should be assigned to the deconvolved track.
@@ -244,10 +255,16 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
                both EL and diffusion spread aproximated to a Z range.
             - 'separate' deconvolves twice, first using the EL PSF, then using
                a gaussian PSF based on the exact Z position of the slice.
-        trans_diff      : float
-            Transverse diffusion coefficient (mm/sqrt(cm)) used if deconv_mode is 'separate'
+        diffusion       : tuple(float)
+            Diffusion coefficients in each dimmension (mm/sqrt(cm))
+            used if deconv_mode is 'separate'
+        n_dim           : int
+            Number of dimensions used in deconvolution, either 2 or 3:
+            n_dim = 2 -> slice by slice XY deconvolution.
+            n_dim = 3 -> XYZ deconvolution.
         interMethod     : str (None, 'linear', 'cubic')
             Sensor interpolation method. If None, no interpolation will be applied.
+            'cubic' not supported for 3D deconvolution.
 
     ----------
     Input
