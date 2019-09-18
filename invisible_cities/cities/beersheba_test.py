@@ -37,6 +37,7 @@ def test_beersheba_contains_all_tables(ICDIR, ICDATADIR, config_tmpdir):
                                          diffusion       = (1.0, 1.0),
                                          deconv_mode     =    'joint',
                                          n_dim           =          2,
+                                         cut_type        =      'abs',
                                          interMethod     = 'cubic')))
     beersheba(**conf)
 
@@ -75,6 +76,7 @@ def test_beersheba_exact_result(ICDIR, ICDATADIR, config_tmpdir):
                                          diffusion       = (1.0, 1.0),
                                          deconv_mode     =    'joint',
                                          n_dim           =          2,
+                                         cut_type        =      'rel',
                                          interMethod     = 'cubic')))
     beersheba(**conf)
 
@@ -102,18 +104,19 @@ def test_beersheba_exact_result3d(ICDIR, ICDATADIR, config_tmpdir):
                      file_out                     = PATH_OUT                  ,
                      event_range                  = nevt_req                  ,
                      deconv_params     = dict(
-                                         q_cut           =         10,
-                                         drop_dist       = [10., 10.],
+                                         q_cut           =              10,
+                                         drop_dist       =      [10., 10.],
                                          psf_fname       = f'{ICDIR}database/test_data/PSF_dst_sum_collapsed.h5',
-                                         ecut            =       1e-3,
-                                         iterationNumber =         10,
-                                         iterationThr    =       0.01,
-                                         sampleWidth     = [10., 10., 2.],
-                                         bin_size        = [ 1.,  1., 1.],
-                                         energy_type     =        'E',
+                                         ecut            =            1e-3,
+                                         iterationNumber =              10,
+                                         iterationThr    =            0.01,
+                                         sampleWidth     =  [10., 10., 2.],
+                                         bin_size        =  [ 1.,  1., 1.],
+                                         energy_type     =             'E',
                                          diffusion       = (1.0, 1.0, 0.3),
-                                         deconv_mode     =    'joint',
-                                         n_dim           =          3,
+                                         deconv_mode     =         'joint',
+                                         n_dim           =               3,
+                                         cut_type        =           'rel',
                                          interMethod     = 'linear')))
     beersheba(**conf)
 
@@ -152,6 +155,7 @@ def test_beersheba_empty_input_file(ICDIR, config_tmpdir, ICDATADIR):
                                          diffusion       = (1.0, 1.0),
                                          deconv_mode     =    'joint',
                                          n_dim           =          2,
+                                         cut_type        =      'abs',
                                          interMethod     = 'cubic')))
 
     beersheba(**conf)

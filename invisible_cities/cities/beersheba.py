@@ -58,6 +58,7 @@ def deconvolve_signal(psf_fname       : str,
                       energy_type     : str='Ec',
                       deconv_mode     : str='joint',
                       n_dim           : int=2,
+                      cut_type        : str='abs',
                       interMethod     : str=None):
 
     """
@@ -77,6 +78,9 @@ def deconvolve_signal(psf_fname       : str,
     deconv_mode     : 'joint' or 'separate', 1 or 2 step deconvolution, see description later.
     diffusion       : Diffusion coefficients in each dimension for 'separate' mode.
     n_dim           : Number of dimensions to apply the method (2 or 3).
+    cut_type        : Cut mode to the deconvolution output ('abs' or 'rel') using ecut
+                      'abs': cut on the absolute value of the hits.
+                      'rel': cut on the relative value (to the max) of the hits.
     interMethod     : Interpolation method.
 
     Returns
@@ -91,6 +95,12 @@ def deconvolve_signal(psf_fname       : str,
 
     def create_deconvolution_df(hits, deconvE, pos):
         df = pd.DataFrame(columns=['event', 'npeak', 'X', 'Y', 'Z', 'E'])
+        if   cut_type == 'abs':
+            selDeconv   = deconvE > ecut
+        elif cut_type == 'rel':
+            selDeconv   = deconvE/deconvE.max() > ecut
+        else:
+            raise TypeError(f'Cut type "{cut_type}" unsupported')
         selDeconv   = deconvE/deconvE.max()>ecut
         ene         = deconvE[selDeconv]
         df['event'] = [hits.event.unique()[0]] * len(ene)
@@ -122,7 +132,7 @@ def deconvolve_signal(psf_fname       : str,
             psf = g.reshape(tuple(psf_z0[f'{v.lower()}r'].nunique() for v in dimensions))
             deconvImage      = nan_to_num(richardson_lucy(deconvImage, psf, iterationGauss, iterationThr))
         else:
-            raise TypeError(f'Mode "{deconv_mode}" unsuported')
+            raise TypeError(f'Mode "{deconv_mode}" unsupported')
 
         return create_deconvolution_df(df, deconvImage.flatten(), pos)
 
