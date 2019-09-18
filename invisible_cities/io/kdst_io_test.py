@@ -11,6 +11,7 @@ from ..io.dst_io          import load_dst
 from . kdst_io            import kr_writer
 from . kdst_io            import xy_correction_writer
 from . kdst_io            import xy_lifetime_writer
+from . kdst_io            import psf_writer
 from ..evm.event_model    import KrEvent
 
 
@@ -77,3 +78,31 @@ def test_xy_writer(config_tmpdir, corr_toy_data, writer):
     assert_allclose(F, dst.factor     .values)
     assert_allclose(U, dst.uncertainty.values)
     assert_allclose(N, dst.nevt       .values)
+
+
+def test_psf_writer(config_tmpdir):
+    output_file = os.path.join(config_tmpdir, "test_psf.h5")
+
+    xr, yr, zr = np.linspace(-50, 50, 101), np.linspace(-20, 20, 101), np.linspace(20, 30, 11)
+    x, y, z    = 3, 4, 5
+    factors    = np.linspace(0, 1, 101*101*11).reshape(101, 101, 11)
+    nevt       = np.linspace(0, 101*101*11 -1, 101*101*11).reshape(101, 101, 11)
+
+    with tb.open_file(output_file, 'w') as h5out:
+        write = psf_writer(h5out)
+        write(xr, yr, zr, x, y, z, factors, nevt)
+
+    psf = load_dst(output_file,
+                   group = 'PSF',
+                   node  = 'PSFs')
+
+    xx, yy, zz = np.meshgrid(xr, yr, zr, indexing='ij')
+
+    assert_allclose(xx               .flatten() , psf.xr    .values)
+    assert_allclose(yy               .flatten() , psf.yr    .values)
+    assert_allclose(zz               .flatten() , psf.zr    .values)
+    assert_allclose(factors          .flatten() , psf.factor.values)
+    assert_allclose(nevt             .flatten() , psf.nevt  .values)
+    assert_allclose([x] * len(factors.flatten()), psf.x     .values)
+    assert_allclose([y] * len(factors.flatten()), psf.y     .values)
+    assert_allclose([z] * len(factors.flatten()), psf.z     .values)
