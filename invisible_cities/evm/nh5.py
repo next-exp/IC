@@ -248,3 +248,14 @@ class VoxelsTable(tb.IsDescription):
 class EventPassedFilter(tb.IsDescription):
     event  = tb.Int32Col(pos=0)
     passed = tb. BoolCol(pos=1)
+
+
+class PSFfactors(tb.IsDescription):
+    xr     = tb.Float32Col(pos=0)
+    yr     = tb.Float32Col(pos=1)
+    zr     = tb.Float32Col(pos=2)
+    x      = tb.Float32Col(pos=3)
+    y      = tb.Float32Col(pos=4)
+    z      = tb.Float32Col(pos=5)
+    factor = tb.Float32Col(pos=6)
+    nevt   = tb. UInt32Col(pos=7)
