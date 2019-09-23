@@ -1,18 +1,24 @@
 import os
 import numpy  as np
+import pandas as pd
 import tables as tb
 
-from glob    import glob
-from os.path import expandvars
+from glob          import glob
+from os.path       import expandvars
+from numpy.testing import assert_allclose
 
 from .  mcinfo_io import load_mchits
+from .  mcinfo_io import load_mchits_df
+from .  mcinfo_io import load_mchits_fromstr
 from .  mcinfo_io import load_mcparticles
+from .  mcinfo_io import load_mcparticles_df
 from .  mcinfo_io import load_mcsensor_response
+from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import mc_info_writer
 from .  mcinfo_io import read_mcinfo_evt
 
 from .. core            import system_of_units as units
-from ..core.exceptions  import NoParticleInfoInFile
+from .. core.exceptions import NoParticleInfoInFile
 
 from .. reco.tbl_functions import get_mc_info
 
@@ -193,6 +199,34 @@ def test_load_mchits(mc_particle_and_hits_nexus_data):
     assert np.allclose(t, ht)
 
 
+def test_load_mchits_df(mc_particle_and_hits_nexus_data):
+    efile, _, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
+
+    with tb.open_file(efile) as h5in:
+        extents = pd.read_hdf(efile, 'MC/extents')
+        hit_df  = load_mchits_df(h5in, extents)
+
+    evt = 0
+    assert np.allclose(X, hit_df.loc[evt].x   .values)
+    assert np.allclose(Y, hit_df.loc[evt].y   .values)
+    assert np.allclose(Z, hit_df.loc[evt].z   .values)
+    assert np.allclose(E, hit_df.loc[evt].E   .values)
+    assert np.allclose(t, hit_df.loc[evt].time.values)
+
+
+def test_load_mchits_fromstr(mc_particle_and_hits_nexus_data):
+    efile, _, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
+
+    hit_df = load_mchits_fromstr(efile)
+
+    evt = 0
+    assert np.allclose(X, hit_df.loc[evt].x   .values)
+    assert np.allclose(Y, hit_df.loc[evt].y   .values)
+    assert np.allclose(Z, hit_df.loc[evt].z   .values)
+    assert np.allclose(E, hit_df.loc[evt].E   .values)
+    assert np.allclose(t, hit_df.loc[evt].time.values)
+
+
 def test_load_mcparticles(mc_particle_and_hits_nexus_data):
     efile, name, vi, vf, p, Ep, nhits, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
 
@@ -218,6 +252,27 @@ def test_load_mcparticles(mc_particle_and_hits_nexus_data):
     assert np.allclose(t, ht)
 
 
+def test_load_mcparticles_df(mc_particle_and_hits_nexus_data):
+    efile, name, vi, vf, p, k_eng, *_ = mc_particle_and_hits_nexus_data
+
+    mcparticle_df = load_mcparticles_df(efile)
+
+    evt  = 0
+    p_id = 1
+    particle = mcparticle_df.loc[evt].loc[p_id]
+    assert particle.pname == name
+    assert np.isclose(particle.k_eng, k_eng)
+
+    ini_vtx = particle[['ini_x', 'ini_y', 'ini_z', 'ini_t']]
+    assert_allclose(ini_vtx.tolist(), vi)
+
+    fin_vtx = particle[['fin_x', 'fin_y', 'fin_z', 'fin_t']]
+    assert_allclose(fin_vtx.tolist(), vf)
+
+    ini_mom = particle[['ini_px', 'ini_py', 'ini_pz']]
+    assert_allclose(ini_mom.tolist(), p)
+
+
 def test_load_sensors_data(mc_sensors_nexus_data):
     efile, pmt0_first, pmt0_last, pmt0_tot_samples, sipm_id, sipm = mc_sensors_nexus_data
 
@@ -239,6 +294,34 @@ def test_load_sensors_data(mc_sensors_nexus_data):
     samples = list(zip(bins, wvf.charges))
 
     assert np.allclose(samples, sipm)
+
+
+def test_load_mcsensor_response_df(mc_sensors_nexus_data):
+    efile, pmt0_first, pmt0_last, pmt0_tot_samples, sipm_id, sipm = mc_sensors_nexus_data
+
+    ## Should be generalised for other detectors but data
+    ## available at the moment is for new.
+    ## Should consider adding to test data!
+    list_evt, _, _, wfs = load_mcsensor_response_df(efile, 'new', -6400)
+
+    ## Check first pmt
+    pmt0_id   = 0
+    wf        = wfs.loc[list_evt[0]].loc[pmt0_id]
+    n_samp    = len(wf)
+    indx0     = (wf.index[0], wf.iloc[0].charge)
+    indx_last = (wf.index[n_samp - 1], wf.iloc[n_samp - 1].charge)
+
+    assert n_samp    == pmt0_tot_samples
+    assert indx0     == pmt0_first
+    assert indx_last == pmt0_last
+
+    ## Check chosen SiPM
+    sipm_wf = wfs.loc[list_evt[0]].loc[sipm_id]
+    bin_q   = [(sipm_wf.index[i], sipm_wf.iloc[i].charge)
+               for i in range(len(sipm_wf))]
+
+    assert np.all(bin_q == sipm)
+
 
 
 def test_read_last_sensor_response(mc_sensors_nexus_data):

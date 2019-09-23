@@ -1,6 +1,7 @@
 
 import tables as tb
 import numpy  as np
+import pandas as pd
 
 from .. reco            import tbl_functions as tbl
 from .. core            import system_of_units as units
@@ -15,8 +16,11 @@ from .. evm.nh5 import MCExtentInfo
 from .. evm.nh5 import MCHitInfo
 from .. evm.nh5 import MCParticleInfo
 
+from .. database import load_db as DB
+
 from typing import Mapping
 from typing import Sequence
+from typing import Tuple
 
 # use Mapping (duck type) rather than dict
 
@@ -173,6 +177,59 @@ def load_mchits(file_name: str,
     return mchits_dict
 
 
+def load_mchits_fromstr(file_name : str) -> pd.DataFrame:
+    """
+    Opens file and calls load_mchits_df
+    file_name : str
+                The name of the file to be read
+    """
+    extents = pd.read_hdf(file_name, 'MC/extents')
+    with tb.open_file(file_name) as h5in:
+        hits = load_mchits_df(h5in, extents)
+
+    return hits
+
+
+def load_mchits_df(h5in    : tb.file.File,
+                   extents : pd.DataFrame) -> pd.DataFrame:
+    """
+    Loads the MC hit information into a pandas DataFrame.
+    h5in    : pytables file
+              A file already read into a pytables object
+    extents : pd.DataFrame
+              The extents table from the file which gives
+              information about the event tracture.
+    """
+
+    hits_tb  = h5in.root.MC.hits
+
+    # Generating hits DataFrame
+    hits = pd.DataFrame({'hit_id'      : hits_tb.col('hit_indx'),
+                         'particle_id' : hits_tb.col('particle_indx'),
+                         'label'       : hits_tb.col('label').astype('U13'),
+                         'time'        : hits_tb.col('hit_time'),
+                         'x'           : hits_tb.col('hit_position')[:, 0],
+                         'y'           : hits_tb.col('hit_position')[:, 1],
+                         'z'           : hits_tb.col('hit_position')[:, 2],
+                         'E'           : hits_tb.col('hit_energy')})
+
+    evt_hit_df = extents[['last_hit', 'evt_number']]
+    evt_hit_df.set_index('last_hit', inplace = True)
+
+    hits = hits.merge(evt_hit_df          ,
+                      left_index  =   True,
+                      right_index =   True,
+                      how         = 'left')
+    hits.rename(columns={"evt_number": "event_id"}, inplace = True)
+    hits.event_id.fillna(method='bfill', inplace = True)
+    hits.event_id = hits.event_id.astype(int)
+
+    # Setting the indexes
+    hits.set_index(['event_id', 'particle_id', 'hit_id'], inplace=True)
+
+    return hits
+
+
 def load_mcparticles(file_name: str,
                      event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, MCParticle]]:
 
@@ -180,11 +237,118 @@ def load_mcparticles(file_name: str,
         return read_mcinfo(h5in, event_range)
 
 
+def load_mcparticles_df(iFileName: str) -> pd.DataFrame:
+    """
+    A reader for the MC particle output based
+    on pandas DataFrames.
+
+    file_name: string
+               Name of the file to be read
+    """
+    # Loading data extents table: event structure
+    extents = pd.read_hdf(iFileName, 'MC/extents')
+
+    with tb.open_file(iFileName ,mode='r') as iFile:
+        p_tb = iFile.root.MC.particles
+
+        # Generating parts DataFrame
+        parts = pd.DataFrame({'pid'     : p_tb.col('particle_indx'),
+                              'pname'   : p_tb.col('particle_name').astype('U20'),
+                              'primary' : p_tb.col('primary').astype('bool'),
+                              'mid'     : p_tb.col('mother_indx'),
+                              'ini_x'   : p_tb.col('initial_vertex')[:, 0],
+                              'ini_y'   : p_tb.col('initial_vertex')[:, 1],
+                              'ini_z'   : p_tb.col('initial_vertex')[:, 2],
+                              'ini_t'   : p_tb.col('initial_vertex')[:, 3],
+                              'fin_x'   : p_tb.col('final_vertex')[:, 0],
+                              'fin_y'   : p_tb.col('final_vertex')[:, 1],
+                              'fin_z'   : p_tb.col('final_vertex')[:, 2],
+                              'fin_t'   : p_tb.col('final_vertex')[:, 3],
+                              'ini_vol' : p_tb.col('initial_volume').astype('U20'),
+                              'fin_vol' : p_tb.col('final_volume').astype('U20'),
+                              'ini_px'  : p_tb.col('momentum')[:, 0],
+                              'ini_py'  : p_tb.col('momentum')[:, 1],
+                              'ini_pz'  : p_tb.col('momentum')[:, 2],
+                              'k_eng'   : p_tb.col('kin_energy'),
+                              'c_proc'  : p_tb.col('creator_proc').astype('U20')})
+
+        # Adding event info
+        evt_part_df = extents[['last_particle', 'evt_number']]
+        evt_part_df.set_index('last_particle', inplace = True)
+        parts = parts.merge(evt_part_df         ,
+                            left_index  =   True,
+                            right_index =   True,
+                            how         = 'left')
+        parts.rename(columns={"evt_number": "event_id"}, inplace = True)
+        parts.event_id.fillna(method='bfill', inplace = True)
+        parts.event_id = parts.event_id.astype(int)
+
+        # Setting the indexes
+        parts.set_index(['event_id', 'pid'], inplace=True)
+
+    return parts
+
+
 def load_mcsensor_response(file_name: str,
                            event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Waveform]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
         return read_mcsns_response(h5in, event_range)
+
+
+def get_sensor_binning(file_name : str) -> Tuple:
+    """
+    Looks in the configuration table of the
+    input file and extracts the binning used
+    for both types of sensitive detector.
+    """
+    config   = pd.read_hdf(file_name, 'MC/configuration')
+    bins     = config[config.param_key.str.contains('time_binning')]
+    pmt_bin  = bins.param_value[bins.param_key.str.contains('Pmt')].iloc[0]
+    pmt_bin  = float(pmt_bin.split()[0]) * units_dict[pmt_bin.split()[1]]
+    sipm_bin = bins.param_value[bins.param_key.str.contains('SiPM')].iloc[0]
+    sipm_bin = float(sipm_bin.split()[0]) * units_dict[sipm_bin.split()[1]]
+
+    return pmt_bin, sipm_bin
+
+
+def load_mcsensor_response_df(file_name : str,
+                              db_file   : str,
+                              run_no    : int) -> Tuple:
+    """
+    A reader for the MC sensor output based
+    on pandas DataFrames.
+
+    file_name: string
+               Name of the file to be read
+    db_file  : string
+               Name of the detector database to be accessed
+    run_no   : int
+               Run number for database access
+    """
+    pmt_ids = DB.DataPMT(db_file, run_no).SensorID
+
+    pmt_bin, sipm_bin = get_sensor_binning(file_name)
+
+    extents  = pd.read_hdf(file_name, 'MC/extents')
+
+    sns      = pd.read_hdf(file_name, 'MC/waveforms')
+    evt_sns  = extents[['last_sns_data', 'evt_number']]
+    evt_sns.set_index('last_sns_data', inplace = True)
+
+    sns = sns.merge(evt_sns             ,
+                    left_index  =   True,
+                    right_index =   True,
+                    how         = 'left')
+    sns.evt_number.fillna(method='bfill', inplace = True)
+
+    sns['times'] = sns[sns.sensor_id.isin(pmt_ids)].time_bin * pmt_bin
+    sns.times.fillna(sns.time_bin * sipm_bin, inplace = True)
+
+    sns.evt_number = sns.evt_number.astype(int)
+    sns.set_index(['evt_number', 'sensor_id', 'time_bin'], inplace = True)
+
+    return extents.evt_number.unique(), pmt_bin, sipm_bin, sns
 
 
 def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_number: int, last_row=0,
