@@ -292,7 +292,7 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]]) -> Mapp
 
 
 def read_mchit_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
-                     event_number: int, last_row=0) -> ([tb.Table], [tb.Table], [tb.Table]):
+                     event_number: int, last_row=0) -> [tb.Table]:
     h5extents    = mctables[0]
     h5hits       = mctables[1]
 
