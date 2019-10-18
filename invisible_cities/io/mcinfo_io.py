@@ -187,8 +187,8 @@ def load_mcsensor_response(file_name: str,
         return read_mcsns_response(h5in, event_range)
 
 
-def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
-                     event_number: int, last_row=0) -> ([tb.Table], [tb.Table], [tb.Table]):
+def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_number: int, last_row=0,
+                     return_only_hits=False) -> ([tb.Table], [tb.Table], [tb.Table]):
     h5extents    = mctables[0]
     h5hits       = mctables[1]
     h5particles  = mctables[2]
@@ -209,15 +209,19 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
                 previous_row = h5extents[iext-1]
 
                 ihit         = int(previous_row['last_hit']) + 1
-                ipart        = int(previous_row['last_particle']) + 1
+                if not return_only_hits:
+                    ipart        = int(previous_row['last_particle']) + 1
 
             ihit_end  = this_row['last_hit']
-            ipart_end = this_row['last_particle']
+            if not return_only_hits:
+                ipart_end = this_row['last_particle']
 
             if len(h5hits) != 0:
                 while ihit <= ihit_end:
                     hit_rows.append(h5hits[ihit])
                     ihit += 1
+
+            if return_only_hits: break
 
             while ipart <= ipart_end:
                 particle_rows.append(h5particles[ipart])
@@ -291,36 +295,6 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]]) -> Mapp
     return mchits_dict
 
 
-def read_mchit_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
-                     event_number: int, last_row=0) -> [tb.Table]:
-    h5extents    = mctables[0]
-    h5hits       = mctables[1]
-
-    hit_rows       = []
-
-    event_range = (last_row, int(1e9))
-    for iext in range(*event_range):
-        this_row = h5extents[iext]
-        if this_row['evt_number'] == event_number:
-            # the indices of the first hit and particle are 0 unless the first event
-            #  written is to be skipped: in this case they must be read from the extents
-            ihit = 0
-            if iext > 0:
-                previous_row = h5extents[iext-1]
-                ihit         = int(previous_row['last_hit']) + 1
-
-            ihit_end  = this_row['last_hit']
-
-            if len(h5hits) != 0:
-                while ihit <= ihit_end:
-                    hit_rows.append(h5hits[ihit])
-                    ihit += 1
-
-            break
-
-    return hit_rows
-
-
 def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
     """Returns all hits in the event"""
     mc_info = tbl.get_mc_info(h5f)
@@ -335,7 +309,7 @@ def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCH
 
         current_event  = {}
         evt_number     = h5extents[iext]['evt_number']
-        hit_rows = read_mchit_evt(mc_info, evt_number, iext)
+        hit_rows, _, _ = read_mcinfo_evt(mc_info, evt_number, iext, True)
 
         hits = []
         for h5hit in hit_rows:
