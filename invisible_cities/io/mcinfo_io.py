@@ -213,9 +213,6 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_n
                     ipart        = int(previous_row['last_particle']) + 1
 
             ihit_end  = this_row['last_hit']
-            if not return_only_hits:
-                ipart_end = this_row['last_particle']
-
             if len(h5hits) != 0:
                 while ihit <= ihit_end:
                     hit_rows.append(h5hits[ihit])
@@ -223,6 +220,7 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_n
 
             if return_only_hits: break
 
+            ipart_end = this_row['last_particle']
             while ipart <= ipart_end:
                 particle_rows.append(h5particles[ipart])
                 ipart += 1
