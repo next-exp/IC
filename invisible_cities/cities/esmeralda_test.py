@@ -46,6 +46,7 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
         assert "Run/runInfo"             in h5out.root
         assert "Filters/NN_select"       in h5out.root
         assert "Filters/paolina_select"  in h5out.root
+        assert "DST"                     in h5out.root
 
 
 @mark.serial
@@ -155,7 +156,8 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     assert_dataframes_close (df_tracks[sorted(columns1)], df_tracks_exact[sorted(columns2)])
 
 
-def test_esmeralda_exact_result(ICDATADIR, KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
+#The old test file should contain all tables the same except PAOLINA/Summary
+def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
     file_in   = KrMC_hdst_filename
     file_out  = os.path.join(config_tmpdir, "exact_Kr_tracks_with_MC.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
@@ -181,7 +183,7 @@ def test_esmeralda_exact_result(ICDATADIR, KrMC_hdst_filename, correction_map_MC
 
     cnt = esmeralda(**conf)
     tables = ( "MC/extents"  , "MC/hits"       , "MC/particles"     , "MC/generators"         ,
-               "RECO/Events" , "PAOLINA/Events", "PAOLINA/Tracks"   , "PAOLINA/Summary"       ,
+               "RECO/Events" , "PAOLINA/Events", "PAOLINA/Tracks"   ,
                "Run/events"  , "Run/runInfo"   , "Filters/NN_select", "Filters/paolina_select")
 
     with tb.open_file(true_out)  as true_output_file:
@@ -190,6 +192,25 @@ def test_esmeralda_exact_result(ICDATADIR, KrMC_hdst_filename, correction_map_MC
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
+
+    #The PAOLINA/Summary should contain this columns, and they should stay the same
+    columns = ['event', 'time',   'S2ec',  'S2qc', 'ntrks', 'nhits',
+               'x_avg', 'y_avg', 'z_avg', 'r_avg', 'x_min', 'y_min',
+               'z_min', 'r_min', 'x_max', 'y_max', 'z_max', 'r_max']
+
+    summary_out  = dio.load_dst(file_out, 'PAOLINA', 'Summary')
+    summary_true = dio.load_dst(true_out, 'PAOLINA', 'Summary')
+    assert_dataframes_close(summary_out[columns], summary_true[columns])
+
+    # PAOLINA/Summary should contain only columns
+    assert sorted(summary_out.columns) == sorted(columns)
+
+    #Finally lets confirm Esmeralda contains all KDST table from Penthesilea file
+    with tb.open_file(file_in)  as true_output_file:
+        with tb.open_file(file_out) as      output_file:
+            got      =      output_file.root.DST.Events
+            expected = true_output_file.root.DST.Events
+            assert_tables_equality(got, expected)
 
 
 def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
