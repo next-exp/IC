@@ -188,7 +188,7 @@ def load_mcsensor_response(file_name: str,
 
 
 def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_number: int, last_row=0,
-                     return_only_hits=False) -> ([tb.Table], [tb.Table], [tb.Table]):
+                     return_only_hits: bool=False) -> ([tb.Table], [tb.Table], [tb.Table]):
     h5extents    = mctables[0]
     h5hits       = mctables[1]
     h5particles  = mctables[2]
