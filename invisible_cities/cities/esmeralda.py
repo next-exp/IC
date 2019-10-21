@@ -252,8 +252,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
 def make_event_summary(event_number  : int              ,
                        timestamp     : int              ,
                        topology_info : pd.DataFrame     ,
-                       paolina_hits  : evm.HitCollection,
-                       kdst          : pd.DataFrame
+                       paolina_hits  : evm.HitCollection
                        ) -> pd.DataFrame:
     """
     For a given event number, timestamp, topology info dataframe, paolina hits and kdst information returns a 
@@ -277,27 +276,16 @@ def make_event_summary(event_number  : int              ,
     ----------
     DataFrame containing relevant per event information.
     """
-    es = pd.DataFrame(columns=['event', 'time', 'S1e', 'S1t',
-                               'nS2', 'ntrks', 'nhits', 'S2e0', 'S2ec',
-                               'S2q0', 'S2qc', 'x_avg', 'y_avg', 'z_avg',
-                               'r_avg', 'x_min', 'y_min', 'z_min', 'r_min',
-                               'x_max', 'y_max', 'z_max', 'r_max'])
+    es = pd.DataFrame(columns=['event', 'time', 'S2ec', 'S2qc', 'ntrks',
+                               'nhits', 'x_avg', 'y_avg', 'z_avg','r_avg',
+                               'x_min', 'y_min', 'z_min', 'r_min','x_max',
+                               'y_max', 'z_max', 'r_max'])
 
-    if(len(kdst.s1_peak.unique()) != 1):
-        warnings.warn("Number of recorded S1 energies differs from 1 in event {}.Choosing first S1".format(event_number), UserWarning)
-
-    S1e = kdst.S1e.values[0]
-    S1t = kdst.S1t.values[0]
-
-    nS2 = kdst.nS2.values[0]
 
     ntrks = len(topology_info.index)
     nhits = len(paolina_hits.hits)
 
-    S2e0 = np.sum(kdst.S2e.values)
     S2ec = max(-1, sum([h.Ec for h in paolina_hits.hits]))
-
-    S2q0 = np.sum(kdst.S2q.values)
     S2qc = max(-1, sum([h.Qc for h in paolina_hits.hits]))
 
     x_avg = sum([h.X*h.Ec for h in paolina_hits.hits])
@@ -320,8 +308,8 @@ def make_event_summary(event_number  : int              ,
     z_max = max([h.Z for h in paolina_hits.hits])
     r_max = max([(h.X**2 + h.Y**2)**0.5 for h in paolina_hits.hits])
 
-    list_of_vars  = [event_number, int(timestamp), S1e, S1t, nS2, ntrks, nhits, S2e0,
-                     S2ec, S2q0, S2qc, x_avg, y_avg, z_avg, r_avg, x_min, y_min,
+    list_of_vars  = [event_number, int(timestamp), S2ec, S2qc, ntrks, nhits,
+                     x_avg, y_avg, z_avg, r_avg, x_min, y_min,
                      z_min, r_min, x_max, y_max, z_max, r_max]
 
     es.loc[0] = list_of_vars
@@ -348,6 +336,14 @@ def summary_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name=
     def write_summary(df):
         return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string, str_col_length = str_col_length)
     return write_summary
+
+def kdst_from_df_writer(h5out, compression='ZLIB4', group_name='DST', table_name='Events', descriptive_string='KDST Events', str_col_length=32):
+    """
+    For a given open table returns a writer for KDST dataframe info
+    """
+    def write_kdst(df):
+        return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string, str_col_length = str_col_length)
+    return write_kdst
 
 
 @city
@@ -454,7 +450,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                                                 out  = ('topology_info', 'paolina_hits'))
 
     make_final_summary                 = fl.map(make_event_summary,
-                                                args = ('event_number', 'timestamp', 'topology_info', 'paolina_hits', 'kdst'),
+                                                args = ('event_number', 'timestamp', 'topology_info', 'paolina_hits'),
                                                 out  = 'event_info')
 
     event_count_in  = fl.spy_count()
@@ -473,27 +469,29 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         write_summary        = fl.sink( summary_writer     (h5out=h5out)                  , args =  "event_info"         )
         write_paolina_filter = fl.sink( event_filter_writer(h5out, "paolina_select")      , args = ("event_number", "paolina_hits_passed"))
         write_NN_filter      = fl.sink( event_filter_writer(h5out,      "NN_select")      , args = ("event_number",      "NN_hits_passed"))
+        write_kdst_table     = fl.sink( kdst_from_df_writer(h5out)                        , args =  "kdst"               )
 
-        return push(source = hits_and_kdst_from_files(files_in),
-                    pipe   = pipe(
-                        fl.slice(*event_range, close_all=True)     ,
-                        print_every(print_mod)                     ,
-                        event_count_in           .spy              ,
-                        fl.branch(threshold_and_correct_hits_NN    ,
-                                  filter_events_NN                 ,
-                                  fl.branch(write_NN_filter)       ,
-                                  hits_passed_NN .filter           ,
-                                  fl.fork(write_mc                 ,
-                                          write_hits_NN)          ),
-                        threshold_and_correct_hits_paolina         ,
-                        filter_events_paolina                      ,
-                        fl.branch(write_paolina_filter)            ,
-                        hits_passed_paolina      .filter           ,
-                        event_count_out          .spy              ,
-                        create_extract_track_blob_info             ,
-                        fl.fork(write_hits_paolina                 ,
-                                write_tracks                       ,
-                                (make_final_summary, write_summary),
-                                write_event_info))                 ,
-                    result = dict(events_in  = event_count_in .future,
-                                  events_out = event_count_out.future))
+        return  push(source = hits_and_kdst_from_files(files_in),
+                     pipe   = pipe(
+                         fl.slice(*event_range, close_all=True)     ,
+                         print_every(print_mod)                     ,
+                         event_count_in           .spy              ,
+                         fl.branch(write_kdst_table)                ,
+                         fl.branch(threshold_and_correct_hits_NN    ,
+                                   filter_events_NN                 ,
+                                   fl.branch(write_NN_filter)       ,
+                                   hits_passed_NN .filter           ,
+                                   fl.fork(write_mc                 ,
+                                           write_hits_NN)          ),
+                         threshold_and_correct_hits_paolina         ,
+                         filter_events_paolina                      ,
+                         fl.branch(write_paolina_filter)            ,
+                         hits_passed_paolina      .filter           ,
+                         event_count_out          .spy              ,
+                         create_extract_track_blob_info             ,
+                         fl.fork(write_hits_paolina                 ,
+                                 write_tracks                       ,
+                                 (make_final_summary, write_summary),
+                                 write_event_info))                 ,
+                     result = dict(events_in  = event_count_in .future,
+                                   events_out = event_count_out.future))
