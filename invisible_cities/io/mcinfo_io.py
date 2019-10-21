@@ -168,8 +168,7 @@ def load_mchits(file_name: str,
                 event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
 
     with tb.open_file(file_name, mode='r') as h5in:
-        mcevents    = read_mcinfo(h5in, event_range)
-        mchits_dict = compute_mchits_dict(mcevents)
+        mchits_dict = read_mchit_info(h5in, event_range)
 
     return mchits_dict
 
@@ -188,8 +187,8 @@ def load_mcsensor_response(file_name: str,
         return read_mcsns_response(h5in, event_range)
 
 
-def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
-                     event_number: int, last_row=0) -> ([tb.Table], [tb.Table], [tb.Table]):
+def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_number: int, last_row=0,
+                     return_only_hits: bool=False) -> ([tb.Table], [tb.Table], [tb.Table]):
     h5extents    = mctables[0]
     h5hits       = mctables[1]
     h5particles  = mctables[2]
@@ -210,16 +209,18 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
                 previous_row = h5extents[iext-1]
 
                 ihit         = int(previous_row['last_hit']) + 1
-                ipart        = int(previous_row['last_particle']) + 1
+                if not return_only_hits:
+                    ipart        = int(previous_row['last_particle']) + 1
 
             ihit_end  = this_row['last_hit']
-            ipart_end = this_row['last_particle']
-
             if len(h5hits) != 0:
                 while ihit <= ihit_end:
                     hit_rows.append(h5hits[ihit])
                     ihit += 1
 
+            if return_only_hits: break
+
+            ipart_end = this_row['last_particle']
             while ipart <= ipart_end:
                 particle_rows.append(h5particles[ipart])
                 ipart += 1
@@ -235,7 +236,7 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table),
 
 def read_mcinfo(h5f, event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Sequence[MCParticle]]]:
     mc_info = tbl.get_mc_info(h5f)
-    
+
     h5extents = mc_info.extents
 
     events_in_file = len(h5extents)
@@ -290,6 +291,35 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]]) -> Mapp
             hits.extend(particle.hits)
         mchits_dict[event_no] = hits
     return mchits_dict
+
+
+def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
+    """Returns all hits in the event"""
+    mc_info = tbl.get_mc_info(h5f)
+    h5extents = mc_info.extents
+    events_in_file = len(h5extents)
+
+    all_events = {}
+
+    for iext in range(*event_range):
+        if iext >= events_in_file:
+            break
+
+        current_event  = {}
+        evt_number     = h5extents[iext]['evt_number']
+        hit_rows, _, _ = read_mcinfo_evt(mc_info, evt_number, iext, True)
+
+        hits = []
+        for h5hit in hit_rows:
+            hit = MCHit(h5hit['hit_position'],
+                        h5hit['hit_time'],
+                        h5hit['hit_energy'],
+                        h5hit['label'].decode('utf-8','ignore'))
+            hits.append(hit)
+
+        all_events[evt_number] = hits
+
+    return all_events
 
 
 def read_mcsns_response(h5f, event_range=(0, 1e9)) -> Mapping[int, Mapping[int, Waveform]]:
