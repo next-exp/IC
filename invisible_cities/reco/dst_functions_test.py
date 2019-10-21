@@ -1,3 +1,5 @@
+import os
+
 from operator    import mul
 from operator    import truediv
 from collections import namedtuple
@@ -13,10 +15,13 @@ from hypothesis.strategies   import integers
 from hypothesis.strategies   import lists
 from hypothesis.extra.pandas import columns, data_frames
 
+from .. io.dst_io            import load_dst
 from .  corrections          import Correction
 from .  dst_functions        import load_xy_corrections
 from .  dst_functions        import load_lifetime_xy_corrections
 from .  dst_functions        import dst_event_id_selection
+from .  dst_functions        import load_event_summary
+from .. core.testing_utils   import assert_dataframes_equal
 
 normalization_data = namedtuple("normalization_data", "node kwargs op")
 
@@ -86,3 +91,13 @@ def test_dst_event_id_selection_2():
     df_real_filt = dst_event_id_selection(df_data, [1, 2, 6, 10])
 
     assert np.all(df_real_filt.reset_index(drop=True) == df_filt_data.reset_index(drop=True))
+
+
+def test_load_event_summary_equal_to_old_summary(ICDATADIR):
+    old_esmeralda   =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
+    kdst_esmeralda =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST.h5")
+
+    summary_df_old    = load_dst          (old_esmeralda, 'PAOLINA', 'Summary')
+    summary_df_reader = load_event_summary(kdst_esmeralda)
+    columns = sorted(summary_df_old.columns)
+    assert_dataframes_equal(summary_df_old[columns], summary_df_reader[columns])
