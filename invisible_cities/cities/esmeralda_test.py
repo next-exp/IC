@@ -4,7 +4,8 @@ import tables as tb
 import pandas as pd
 
 from pytest                    import mark
-
+from  . components             import get_event_info
+from  . components             import length_of
 from .. core.system_of_units_c import units
 from .. core.configure         import configure
 from .. core.configure         import all         as all_events
@@ -87,6 +88,10 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
     assert set(df_hits_paolina.event.unique()) ==  set(df_tracks_paolina  .event.unique())
     assert set(df_hits_paolina.event.unique()) ==  set(df_summary_paolina.event.unique())
 
+    with tb.open_file(PATH_OUT)  as h5out:
+        event_info = get_event_info(h5out)
+        assert length_of(event_info) == nevt_req
+
 
 @mark.serial
 def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_MC_filename, config_tmpdir):
@@ -120,6 +125,9 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
     assert set(df_hits_NN     .event.unique()) ==  set(events_pass_NN     )
     assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
 
+    with tb.open_file(PATH_OUT)  as h5out:
+        event_info = get_event_info(h5out)
+        assert length_of(event_info) == nevt_req
 
 @mark.serial
 def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
@@ -182,9 +190,8 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
                          blob_radius              = 21 * units.mm           )))
 
     cnt = esmeralda(**conf)
-    tables = ( "MC/extents"  , "MC/hits"       , "MC/particles"     , "MC/generators"         ,
-               "RECO/Events" , "PAOLINA/Events", "PAOLINA/Tracks"   ,
-               "Run/events"  , "Run/runInfo"   , "Filters/NN_select", "Filters/paolina_select")
+    tables = ( "RECO/Events"      , "PAOLINA/Events"        , "PAOLINA/Tracks",
+               "Filters/NN_select", "Filters/paolina_select"                  )
 
     with tb.open_file(true_out)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
@@ -205,12 +212,15 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
     # PAOLINA/Summary should contain only columns
     assert sorted(summary_out.columns) == sorted(columns)
 
-    #Finally lets confirm Esmeralda contains all KDST table from Penthesilea file
+    #Finally lets confirm Esmeralda contains KDST, RUN and MC table from Penthesilea file
+    tables_in = ( "MC/extents"  , "MC/hits"       , "MC/particles"  , "MC/generators",
+                  "DST/Events"  , "Run/events"    , "Run/runInfo"                    )
     with tb.open_file(file_in)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
-            got      =      output_file.root.DST.Events
-            expected = true_output_file.root.DST.Events
-            assert_tables_equality(got, expected)
+            for table in tables_in:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
 
 
 def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
