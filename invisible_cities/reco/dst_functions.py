@@ -1,4 +1,5 @@
 import numpy  as np
+import pandas as pd
 
 from .  corrections import Correction
 from .  corrections import LifetimeXYCorrection
@@ -72,3 +73,21 @@ def dst_event_id_selection(data, event_ids):
     else:
         print(r'DST does not have an "event" field. Data returned is unfiltered.')
         return data
+
+
+def load_event_summary(filename : str) -> pd.DataFrame :
+    summary = load_dst(filename, 'PAOLINA', 'Summary')
+    kdst    = load_dst(filename, 'DST'    , 'Events' )
+    print(kdst.columns)
+    if(len(kdst.s1_peak.unique()) != 1):
+        warnings.warn("Number of recorded S1 energies differs from 1 in event {}.Choosing first S1".format(event_number), UserWarning)
+    kdst_to_merge = kdst[['event', 'S1e', 'S1t', 'nS2', 'S2e', 'S2q']].groupby('event').agg({'S1e':lambda x:x.values[0],
+                                                                                             'S1t':lambda x:x.values[0],
+                                                                                             'nS2':lambda x:x.values[0],
+                                                                                             'S2e' : np.sum,
+                                                                                             'S2q' : np.sum}).reset_index()
+    kdst_to_merge.columns = ['event', 'S1e', 'S1t', 'nS2', 'S2e0', 'S2q0']
+    print(kdst_to_merge.columns)
+    extended_summary  = summary.merge(kdst_to_merge,
+                                      on='event', how='left')
+    return extended_summary
