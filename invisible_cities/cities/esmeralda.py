@@ -50,7 +50,6 @@ def hits_threshold_and_corrector(map_fname        : str  ,
                                  threshold_charge : float,
                                  same_peak        : bool ,
                                  apply_temp       : bool ,
-                                 norm_strat       : cof.norm_strategy
                                  ) -> Callable:
     """
     For a given correction map and hit threshold/ merging parameters returns a function that applies thresholding, merging and
@@ -83,7 +82,7 @@ def hits_threshold_and_corrector(map_fname        : str  ,
     """
     map_fname = os.path.expandvars(map_fname)
     maps      = cof.read_maps(map_fname)
-    get_coef  = cof.apply_all_correction(maps, apply_temp = apply_temp, norm_strat = norm_strat)
+    get_coef  = cof.apply_all_correction(maps, apply_temp = apply_temp, norm_strat = cof.norm_strategy.kr)
     if maps.t_evol is not None:
         time_to_Z = cof.get_df_to_z_converter(maps)
     else:
@@ -418,19 +417,14 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     elif paolina_params ['energy_type'] == 'uncorrected' : energy_type = evm.HitEnergy.E
     else                                                 : raise ValueError(f"Unrecognized processing mode: {paolina_params['energy_type']}")
 
-    if   cor_hits_params['norm_strat']  == 'max'         : norm_strat  = cof.norm_strategy.max
-    elif cor_hits_params['norm_strat']  == 'mean'        : norm_strat  = cof.norm_strategy.mean
-    elif cor_hits_params['norm_strat']  == 'kr'          : norm_strat  = cof.norm_strategy.kr
-    else                                                 : raise ValueError(f"Unrecognized processing mode: {cor_hits_params['norm_strat']}")
-
     cor_hits_params_   = {value : cor_hits_params.get(value) for value in ['map_fname', 'same_peak'      , 'apply_temp'      ]}
     paolina_params_    = {value : paolina_params .get(value) for value in ['vox_size' , 'strict_vox_size', 'energy_threshold', 'min_voxels', 'blob_radius']}
 
-    threshold_and_correct_hits_NN      = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_NN'    ], norm_strat = norm_strat),
+    threshold_and_correct_hits_NN      = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_NN'    ]),
                                                 args = 'hits',
                                                 out  = 'NN_hits')
 
-    threshold_and_correct_hits_paolina = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_paolina'], norm_strat = norm_strat),
+    threshold_and_correct_hits_paolina = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_paolina']),
                                                 args = 'hits',
                                                 out  = 'corrected_hits')
 

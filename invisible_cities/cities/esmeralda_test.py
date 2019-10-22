@@ -28,7 +28,6 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
                          threshold_charge_NN      = 6  * units.pes            ,
                          threshold_charge_paolina = 30 * units.pes            ,
                          same_peak                = True                      ,
-                         norm_strat               = 'kr'                      ,
                          apply_temp               = False                   )))
     esmeralda(**conf)
 
@@ -65,7 +64,6 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
                          threshold_charge_NN      = 150  * units.pes          ,
                          threshold_charge_paolina = 200  * units.pes          ,
                          same_peak                = True                      ,
-                         norm_strat               = 'kr'                      ,
                          apply_temp               = False                    )))
 
     cnt = esmeralda(**conf)
@@ -107,7 +105,6 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
                          threshold_charge_NN      = 20   * units.pes          ,
                          threshold_charge_paolina = 20   * units.pes          ,
                          same_peak                = True                      ,
-                         norm_strat               = 'kr'                      ,
                          apply_temp               = False                    )))
 
     cnt = esmeralda(**conf)
@@ -145,7 +142,6 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
                          threshold_charge_NN      = 10   * units.pes       ,
                          threshold_charge_paolina = 30   * units.pes       ,
                          same_peak                = True                   ,
-                         norm_strat               = 'kr'                   ,
                          apply_temp               = False                 ),
                      paolina_params               = dict(
                          vox_size                 = [15 * units.mm] * 3    ,
@@ -179,7 +175,6 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
                          threshold_charge_NN      = 10   * units.pes          ,
                          threshold_charge_paolina = 20   * units.pes          ,
                          same_peak                = True                      ,
-                         norm_strat               = 'kr'                      ,
                          apply_temp               = False                    ),
                      paolina_params               = dict(
                          vox_size                 = [15 * units.mm] * 3       ,
