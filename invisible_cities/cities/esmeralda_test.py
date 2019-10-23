@@ -207,9 +207,10 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
                 assert_tables_equality(got, expected)
 
     #The PAOLINA/Summary should contain this columns, and they should stay the same
-    columns = ['event', 'time',   'S2ec',  'S2qc', 'ntrks', 'nhits',
-               'x_avg', 'y_avg', 'z_avg', 'r_avg', 'x_min', 'y_min',
-               'z_min', 'r_min', 'x_max', 'y_max', 'z_max', 'r_max']
+    columns = ['event', 'S2ec' ,  'S2qc', 'ntrks', 'nhits',
+               'x_avg', 'y_avg', 'z_avg', 'r_avg',
+               'x_min', 'y_min', 'z_min', 'r_min',
+               'x_max', 'y_max', 'z_max', 'r_max']
 
     summary_out  = dio.load_dst(file_out, 'PAOLINA', 'Summary')
     summary_true = dio.load_dst(true_out, 'PAOLINA', 'Summary')

@@ -275,11 +275,10 @@ def make_event_summary(event_number  : int              ,
     ----------
     DataFrame containing relevant per event information.
     """
-    es = pd.DataFrame(columns=['event', 'time', 'S2ec', 'S2qc', 'ntrks',
-                               'nhits', 'x_avg', 'y_avg', 'z_avg','r_avg',
-                               'x_min', 'y_min', 'z_min', 'r_min','x_max',
-                               'y_max', 'z_max', 'r_max'])
-
+    es = pd.DataFrame(columns=['event', 'S2ec' ,  'S2qc', 'ntrks', 'nhits',
+                               'x_avg', 'y_avg', 'z_avg', 'r_avg',
+                               'x_min', 'y_min', 'z_min', 'r_min',
+                               'x_max', 'y_max', 'z_max', 'r_max'])
 
     ntrks = len(topology_info.index)
     nhits = len(paolina_hits.hits)
@@ -307,7 +306,7 @@ def make_event_summary(event_number  : int              ,
     z_max = max([h.Z for h in paolina_hits.hits])
     r_max = max([(h.X**2 + h.Y**2)**0.5 for h in paolina_hits.hits])
 
-    list_of_vars  = [event_number, int(timestamp), S2ec, S2qc, ntrks, nhits,
+    list_of_vars  = [event_number, S2ec, S2qc, ntrks, nhits,
                      x_avg, y_avg, z_avg, r_avg, x_min, y_min,
                      z_min, r_min, x_max, y_max, z_max, r_max]
 
