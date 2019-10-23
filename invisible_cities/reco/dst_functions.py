@@ -76,9 +76,20 @@ def dst_event_id_selection(data, event_ids):
 
 
 def load_event_summary(filename : str) -> pd.DataFrame :
-    summary = load_dst(filename, 'PAOLINA', 'Summary')
-    kdst    = load_dst(filename, 'DST'    , 'Events' )
-    print(kdst.columns)
+    """ Merges information from DST/Events, RUN/events and PAOLINA/Summary table into one DataFrame.
+    Parameters
+    ----------
+    filename      : str
+        .h5 ouput of Esmeralda
+    Returns
+    -------
+    merged_DF : pandas DataFrame
+        Extended summary information
+    """
+    summary    = load_dst(filename, 'PAOLINA', 'Summary')
+    kdst       = load_dst(filename, 'DST'    , 'Events' )
+    event_info = load_dst(filename, 'Run'    , 'events' )
+
     if(len(kdst.s1_peak.unique()) != 1):
         warnings.warn("Number of recorded S1 energies differs from 1 in event {}.Choosing first S1".format(event_number), UserWarning)
     kdst_to_merge = kdst[['event', 'S1e', 'S1t', 'nS2', 'S2e', 'S2q']].groupby('event').agg({'S1e':lambda x:x.values[0],
@@ -86,8 +97,8 @@ def load_event_summary(filename : str) -> pd.DataFrame :
                                                                                              'nS2':lambda x:x.values[0],
                                                                                              'S2e' : np.sum,
                                                                                              'S2q' : np.sum}).reset_index()
-    kdst_to_merge.columns = ['event', 'S1e', 'S1t', 'nS2', 'S2e0', 'S2q0']
-    print(kdst_to_merge.columns)
+    kdst_to_merge.rename(columns={"S2e": "S2e0", "S2q":  "S2q0"}, inplace=True)
+    event_info   .rename(columns={"evt_number": "event", "timestamp": "time"}, inplace=True)
     extended_summary  = summary.merge(kdst_to_merge,
                                       on='event', how='left')
-    return extended_summary
+    return extended_summary.merge(event_info, on='event', how='left')

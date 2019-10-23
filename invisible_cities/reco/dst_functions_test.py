@@ -100,4 +100,4 @@ def test_load_event_summary_equal_to_old_summary(ICDATADIR):
     summary_df_old    = load_dst          (old_esmeralda, 'PAOLINA', 'Summary')
     summary_df_reader = load_event_summary(kdst_esmeralda)
     columns = sorted(summary_df_old.columns)
-    assert_dataframes_equal(summary_df_old[columns], summary_df_reader[columns])
+    assert_dataframes_equal(summary_df_old[columns], summary_df_reader[columns], check_types=False)
