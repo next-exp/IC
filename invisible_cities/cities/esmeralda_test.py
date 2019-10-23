@@ -86,9 +86,14 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
     assert set(df_hits_paolina.event.unique()) ==  set(df_tracks_paolina  .event.unique())
     assert set(df_hits_paolina.event.unique()) ==  set(df_summary_paolina.event.unique())
 
+    #assert event number in EventInfo and MC/Extents iqual to nevt_req
     with tb.open_file(PATH_OUT)  as h5out:
         event_info = get_event_info(h5out)
         assert length_of(event_info) == nevt_req
+
+    with tb.open_file(PATH_OUT)  as h5out:
+        MC_num_evs = h5out.root.MC.extents[:]['evt_number']
+        assert len(MC_num_evs) == nevt_req
 
 
 @mark.serial
@@ -122,9 +127,15 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
     assert set(df_hits_NN     .event.unique()) ==  set(events_pass_NN     )
     assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
 
+    #assert event number in EventInfo and MC/Extents iqual to nevt_req
     with tb.open_file(PATH_OUT)  as h5out:
         event_info = get_event_info(h5out)
         assert length_of(event_info) == nevt_req
+
+    with tb.open_file(PATH_OUT)  as h5out:
+        MC_num_evs = h5out.root.MC.extents[:]['evt_number']
+        assert len(MC_num_evs) == nevt_req
+
 
 @mark.serial
 def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
