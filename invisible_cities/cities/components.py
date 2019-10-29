@@ -44,7 +44,7 @@ from .. filters.s1s2_filter    import pmap_filter
 from .. database               import load_db
 from .. sierpe                 import blr
 from .. io.pmaps_io            import load_pmaps
-from .. io. hits_io            import load_hits
+from .. io. hits_io            import hits_from_df
 from .. io.  dst_io            import load_dst
 from .. types.ic_types         import xy
 from .. types.ic_types         import NN
@@ -284,8 +284,8 @@ def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCol
     """Reader of the files, yields HitsCollection, pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
     for path in paths:
         try:
-            hits    = load_hits(path)
-            kdst_df = load_dst (path, 'DST', 'Events')
+            hits_df = load_dst (path, 'RECO', 'Events')
+            kdst_df = load_dst (path, 'DST' , 'Events')
         except tb.exceptions.NoSuchNodeError:
             continue
 
@@ -297,10 +297,11 @@ def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCol
             except (tb.exceptions.NoSuchNodeError, IndexError):
                 continue
 
-            check_lengths(event_info, hits)
+            check_lengths(event_info, hits_df.event.unique())
 
             for evtinfo in event_info:
                 event_number, timestamp = evtinfo.fetch_all_fields()
+                hits = hits_from_df(hits_df.loc[hits_df.event == event_number])
                 yield dict(hits = hits[event_number], kdst = kdst_df.loc[kdst_df.event==event_number], mc=mc_info, run_number=run_number,
                            event_number=event_number, timestamp=timestamp)
             # NB, the monte_carlo writer is different from the others:
