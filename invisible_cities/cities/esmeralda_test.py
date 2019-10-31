@@ -242,3 +242,34 @@ def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
                      file_out      = PATH_OUT))
 
     esmeralda(**conf)
+
+#if the first analyzed events has no overlap in blob buggy esmeralda will cast all overlap energy to integers    
+@mark.serial
+def test_esmeralda_blob_overlap_bug(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
+    PATH_IN   = data_hdst
+    PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda.h5")
+    conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
+    nevt_req  = 4, 8
+
+    conf.update(dict(files_in                     = PATH_IN                ,
+                     file_out                     = PATH_OUT               ,
+                     event_range                  = nevt_req               ,
+                     run_number                   = 6822                   ,
+                     cor_hits_params              = dict(
+                         map_fname                = correction_map_filename,
+                         threshold_charge_NN      = 10   * units.pes       ,
+                         threshold_charge_paolina = 30   * units.pes       ,
+                         same_peak                = True                   ,
+                         apply_temp               = False                 ),
+                     paolina_params               = dict(
+                         vox_size                 = [15 * units.mm] * 3    ,
+                         energy_type              = 'corrected'            ,
+                         strict_vox_size          = False                  ,
+                         energy_threshold         = 0 * units.keV          ,
+                         min_voxels               = 2                      ,
+                         blob_radius              = 21 * units.mm)        ))
+    cnt = esmeralda(**conf)
+
+    df_tracks           =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Tracks')
+    assert df_tracks['ovlp_blob_energy'].dtype == float
+
