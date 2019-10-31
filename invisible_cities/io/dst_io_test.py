@@ -2,6 +2,7 @@ import os
 import string
 import pandas as pd
 import tables as tb
+import numpy  as np
 from ..core.testing_utils import assert_dataframes_close
 from ..core.testing_utils import assert_dataframes_equal
 from ..core.exceptions    import TableMismatch
@@ -61,10 +62,12 @@ def test_load_dsts_double_file(KrMC_kdst):
     tbl     = KrMC_kdst[0].file_info
     df_true = KrMC_kdst[0].true
     df_read = load_dsts([tbl.filename]*2, tbl.group, tbl.node)
-    df_true = pd.concat([df_true, df_true])
+    df_true = pd.concat([df_true, df_true], ignore_index=True)
 
     assert_dataframes_close(df_read, df_true  ,
                             False  , rtol=1e-5)
+    #assert index number unique (important for saving it to pytable)
+    assert all(~df_read.index.duplicated())
 
 def test_load_dsts_reads_good_kdst(ICDATADIR):
     good_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_KDST.h5"
