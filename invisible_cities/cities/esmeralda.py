@@ -49,7 +49,7 @@ from .. io.          dst_io  import _store_pandas_as_tables
 def hits_threshold_and_corrector(map_fname        : str  ,
                                  threshold_charge : float,
                                  same_peak        : bool ,
-                                 apply_temp       : bool ,
+                                 apply_temp       : bool
                                  ) -> Callable:
     """
     For a given correction map and hit threshold/ merging parameters returns a function that applies thresholding, merging and
@@ -91,8 +91,6 @@ def hits_threshold_and_corrector(map_fname        : str  ,
         t = hitc.time
         thr_hits = hif.threshold_hits(hitc.hits, threshold_charge     )
         mrg_hits = hif.merge_NN_hits ( thr_hits, same_peak = same_peak)
-        if len(mrg_hits) == 0:
-            return None
         X  = np.fromiter((h.X for h in mrg_hits), float)
         Y  = np.fromiter((h.Y for h in mrg_hits), float)
         Z  = np.fromiter((h.Z for h in mrg_hits), float)
@@ -109,22 +107,6 @@ def hits_threshold_and_corrector(map_fname        : str  ,
         return new_hitc
     return threshold_and_correct_hits
 
-
-def events_filter(allow_nans : bool) -> Callable:
-    """
-    Filter for Esmeralda flow. The flow stops if:
-        1. there are no hits
-        2. there are hits with NaN energy and allow_nans is set to False
-    """
-    def filter_events(hitc : Optional[evm.HitCollection]) -> bool:
-        if hitc == None:
-            return False
-        elif allow_nans == False:
-            nans = np.isnan([h.Ec for h in hitc.hits])
-            return not(any(nans))
-        else:
-            return True
-    return filter_events
 
 
 def track_blob_info_creator_extractor(vox_size         : [float, float, float],
@@ -163,20 +145,16 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
     A function that from a given HitCollection returns a pandas DataFrame with per track information.
     """
     def create_extract_track_blob_info(hitc):
-        voxels     = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, energy_type)
-        mod_voxels = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
-        tracks     = plf.make_track_graphs(mod_voxels)
-
-        vox_size_x = voxels[0].size[0]
-        vox_size_y = voxels[0].size[1]
-        vox_size_z = voxels[0].size[2]
-
-        def get_track_energy(track):
-            return sum([vox.Ehits for vox in track.nodes()])
-        #sort tracks in energy
-        tracks     = sorted(tracks, key = get_track_energy, reverse = True)
-
-        track_hits = []
+        #track_hits is a new Hitcollection object that contains hits belonging to tracks, and hits that couldnt be corrected
+        track_hitc = evm.HitCollection(hitc.event, hitc.time)
+        out_of_map = any(np.isnan([h.Ec for h in hitc.hits]))
+        if out_of_map:
+            #add nan hits to track_hits, the track_id will be -1
+            track_hitc.hits.extend([h for h in hitc.hits if np.isnan   (getattr(h, energy_type.value))])
+            hits_without_nan       = [h for h in hitc.hits if np.isfinite(getattr(h, energy_type.value))]
+            #create new Hitcollection object but keep the name hitc
+            hitc      = evm.HitCollection(hitc.event, hitc.time)
+            hitc.hits = hits_without_nan
         df = pd.DataFrame(columns=['event', 'trackID', 'energy', 'length', 'numb_of_voxels',
                                    'numb_of_hits', 'numb_of_tracks', 'x_min', 'y_min', 'z_min',
                                    'x_max', 'y_max', 'z_max', 'r_max', 'x_ave', 'y_ave', 'z_ave',
@@ -186,63 +164,78 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                                    'blob2_x', 'blob2_y', 'blob2_z',
                                    'eblob1', 'eblob2', 'ovlp_blob_energy',
                                    'vox_size_x', 'vox_size_y', 'vox_size_z'])
-        for c, t in enumerate(tracks, 0):
-            tID = c
-            energy = get_track_energy(t)
-            length = plf.length(t)
-            numb_of_hits = len([h for vox in t.nodes() for h in vox.hits])
-            numb_of_voxels = len(t.nodes())
-            numb_of_tracks = len(tracks   )
 
-            min_x = min([h.X for v in t.nodes() for h in v.hits])
-            max_x = max([h.X for v in t.nodes() for h in v.hits])
-            min_y = min([h.Y for v in t.nodes() for h in v.hits])
-            max_y = max([h.Y for v in t.nodes() for h in v.hits])
-            min_z = min([h.Z for v in t.nodes() for h in v.hits])
-            max_z = max([h.Z for v in t.nodes() for h in v.hits])
-            max_r = max([np.sqrt(h.X*h.X + h.Y*h.Y) for v in t.nodes() for h in v.hits])
+        if len(hitc.hits)>0:
+            voxels     = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, energy_type)
+            mod_voxels = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
+            tracks     = plf.make_track_graphs(mod_voxels)
 
-            pos = [h.pos for v in t.nodes() for h in v.hits]
-            e   = [getattr(h, energy_type.value) for v in t.nodes() for h in v.hits]
-            ave_pos = np.average(pos, weights=e, axis=0)
+            vox_size_x = voxels[0].size[0]
+            vox_size_y = voxels[0].size[1]
+            vox_size_z = voxels[0].size[2]
+            del(voxels)
+            def get_track_energy(track):
+                return sum([vox.Ehits for vox in track.nodes()])
+            #sort tracks in energy
+            tracks     = sorted(tracks, key = get_track_energy, reverse = True)
 
-            extr1, extr2 = plf.find_extrema(t)
-            extr1_pos = extr1.XYZ
-            extr2_pos = extr2.XYZ
+            track_hits = []
+            for c, t in enumerate(tracks, 0):
+                tID = c
+                energy = get_track_energy(t)
+                length = plf.length(t)
+                numb_of_hits = len([h for vox in t.nodes() for h in vox.hits])
+                numb_of_voxels = len(t.nodes())
+                numb_of_tracks = len(tracks   )
 
-            blob_pos1, blob_pos2 = plf.blob_centres(t, blob_radius)
+                min_x = min([h.X for v in t.nodes() for h in v.hits])
+                max_x = max([h.X for v in t.nodes() for h in v.hits])
+                min_y = min([h.Y for v in t.nodes() for h in v.hits])
+                max_y = max([h.Y for v in t.nodes() for h in v.hits])
+                min_z = min([h.Z for v in t.nodes() for h in v.hits])
+                max_z = max([h.Z for v in t.nodes() for h in v.hits])
+                max_r = max([np.sqrt(h.X*h.X + h.Y*h.Y) for v in t.nodes() for h in v.hits])
 
-            e_blob1, e_blob2, hits_blob1, hits_blob2 = plf.blob_energies_and_hits(t, blob_radius)
-            overlap = float(sum([h.Ec for h in set(hits_blob1).intersection(hits_blob2)]))
-            list_of_vars = [hitc.event, tID, energy, length, numb_of_voxels,
-                            numb_of_hits, numb_of_tracks,
-                            min_x, min_y, min_z, max_x, max_y, max_z, max_r,
-                            ave_pos[0], ave_pos[1], ave_pos[2],
-                            extr1_pos[0], extr1_pos[1], extr1_pos[2],
-                            extr2_pos[0], extr2_pos[1], extr2_pos[2],
-                            blob_pos1[0], blob_pos1[1], blob_pos1[2],
-                            blob_pos2[0], blob_pos2[1], blob_pos2[2],
-                            e_blob1, e_blob2, overlap,
-                            vox_size_x, vox_size_y, vox_size_z]
+                pos = [h.pos for v in t.nodes() for h in v.hits]
+                e   = [getattr(h, energy_type.value) for v in t.nodes() for h in v.hits]
+                ave_pos = np.average(pos, weights=e, axis=0)
 
-            df.loc[c] = list_of_vars
-            try:
-                types_dict
-            except NameError:
-                types_dict = dict(zip(df.columns, [type(x) for x in list_of_vars]))
+                extr1, extr2 = plf.find_extrema(t)
+                extr1_pos = extr1.XYZ
+                extr2_pos = extr2.XYZ
 
-            for vox in t.nodes():
-                for hit in vox.hits:
-                    hit.track_id = tID
-                    track_hits.append(hit)
+                blob_pos1, blob_pos2 = plf.blob_centres(t, blob_radius)
+
+                e_blob1, e_blob2, hits_blob1, hits_blob2 = plf.blob_energies_and_hits(t, blob_radius)
+                overlap = float(sum([h.Ec for h in set(hits_blob1).intersection(hits_blob2)]))
+                list_of_vars = [hitc.event, tID, energy, length, numb_of_voxels,
+                                numb_of_hits, numb_of_tracks,
+                                min_x, min_y, min_z, max_x, max_y, max_z, max_r,
+                                ave_pos[0], ave_pos[1], ave_pos[2],
+                                extr1_pos[0], extr1_pos[1], extr1_pos[2],
+                                extr2_pos[0], extr2_pos[1], extr2_pos[2],
+                                blob_pos1[0], blob_pos1[1], blob_pos1[2],
+                                blob_pos2[0], blob_pos2[1], blob_pos2[2],
+                                e_blob1, e_blob2, overlap,
+                                vox_size_x, vox_size_y, vox_size_z]
+
+                df.loc[c] = list_of_vars
+                try:
+                    types_dict
+                except NameError:
+                    types_dict = dict(zip(df.columns, [type(x) for x in list_of_vars]))
+
+                for vox in t.nodes():
+                    for hit in vox.hits:
+                        hit.track_id = tID
+                        track_hits.append(hit)
 
 
-        track_hitc = evm.HitCollection(hitc.event, hitc.time)
-        track_hitc.hits = track_hits
-        #change dtype of columns to match type of variables
-        df = df.apply(lambda x : x.astype(types_dict[x.name]))
+                track_hitc.hits.extend(track_hits)
+                #change dtype of columns to match type of variables
+                df = df.apply(lambda x : x.astype(types_dict[x.name]))
 
-        return df, track_hitc
+        return df, track_hitc, out_of_map
 
     return create_extract_track_blob_info
 
