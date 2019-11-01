@@ -95,7 +95,7 @@ def test_dst_event_id_selection_2():
 
 def test_load_event_summary_equal_to_old_summary(ICDATADIR):
     old_esmeralda   =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
-    kdst_esmeralda =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST.h5")
+    kdst_esmeralda =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST_no_filter.h5")
 
     summary_df_old    = load_dst          (old_esmeralda, 'PAOLINA', 'Summary')
     summary_df_reader = load_event_summary(kdst_esmeralda)
