@@ -44,9 +44,10 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
         assert "Run"                     in h5out.root
         assert "Run/events"              in h5out.root
         assert "Run/runInfo"             in h5out.root
-        assert "Filters/NN_select"       in h5out.root
-        assert "Filters/paolina_select"  in h5out.root
-        assert "DST"                     in h5out.root
+        assert "Filters/low_th_select"   in h5out.root
+        assert "Filters/high_th_select"  in h5out.root
+        assert "Filters/topology_select" in h5out.root
+        assert "DST/Events"              in h5out.root
 
 
 @mark.serial
@@ -68,19 +69,19 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
 
     cnt = esmeralda(**conf)
 
-    events_pass_NN      =  [0, 1, 2, 3, 4, 5, 6]
+    events_pass_low_th  =  [0, 1, 2, 3, 4, 5, 6]
     events_pass_paolina =  [3, 4, 5, 6]
     nevt_in             =  cnt.events_in
     nevt_out            =  cnt.events_out
     assert nevt_req     == nevt_in
     assert nevt_out     == len(set(events_pass_paolina))
 
-    df_hits_NN          =  dio.load_dst(PATH_OUT, 'RECO'   , 'Events' )
+    df_hits_low_th      =  dio.load_dst(PATH_OUT, 'RECO'   , 'Events' )
     df_hits_paolina     =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Events' )
     df_tracks_paolina   =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Tracks' )
     df_summary_paolina  =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
 
-    assert set(df_hits_NN     .event.unique()) ==  set(events_pass_NN     )
+    assert set(df_hits_low_th .event.unique()) ==  set(events_pass_low_th )
     assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
 
     assert set(df_hits_paolina.event.unique()) ==  set(df_tracks_paolina  .event.unique())
@@ -114,17 +115,17 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
 
     cnt = esmeralda(**conf)
 
-    events_pass_NN      =  [0, 1, 2, 3, 4, 5, 6, 7]
-    events_pass_paolina =  [0, 1, 2, 4, 5, 6, 7]
+    events_pass_low_th  =  [0, 1, 2, 3, 4, 5, 6, 7]
+    events_pass_paolina =  [0, 1, 2, 3, 4, 5, 6, 7]
     nevt_in             =  cnt.events_in
     nevt_out            =  cnt.events_out
     assert nevt_req     == nevt_in
     assert nevt_out     == len(set(events_pass_paolina))
 
-    df_hits_NN          =  dio.load_dst(PATH_OUT, 'RECO'   , 'Events')
+    df_hits_low_th      =  dio.load_dst(PATH_OUT, 'RECO'   , 'Events')
     df_hits_paolina     =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Events')
 
-    assert set(df_hits_NN     .event.unique()) ==  set(events_pass_NN     )
+    assert set(df_hits_low_th     .event.unique()) ==  set(events_pass_low_th     )
     assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
 
     #assert event number in EventInfo and MC/Extents iqual to nevt_req
@@ -167,9 +168,15 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     df_tracks_exact     =  pd.read_hdf(esmeralda_tracks, key = 'Tracks')
     columns1 = df_tracks      .columns
     columns2 = df_tracks_exact.columns
+    #some events are not in df_tracks_exact
+    events = df_tracks_exact.event.unique()
     assert(sorted(columns1) == sorted(columns2))
-    assert_dataframes_close (df_tracks[sorted(columns1)], df_tracks_exact[sorted(columns2)])
-
+    df_tracks_cut  = df_tracks[df_tracks.event.isin(events)]
+    assert_dataframes_close (df_tracks_cut[sorted(columns1)], df_tracks_exact[sorted(columns2)])
+    #make sure out_of_map is true for events not in df_tracks_exact
+    diff_events = list(set(df_tracks.event.unique()).difference(events))
+    df_summary = dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
+    assert all(df_summary[df_summary.event.isin(diff_events)]['out_of_map'])
 
 #The old test file should contain all tables the same except PAOLINA/Summary
 def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
@@ -196,8 +203,8 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
                          blob_radius              = 21 * units.mm           )))
 
     cnt = esmeralda(**conf)
-    tables = ( "RECO/Events"      , "PAOLINA/Events"        , "PAOLINA/Tracks",
-               "Filters/NN_select", "Filters/paolina_select"                  )
+    tables = ( "RECO/Events"      , "PAOLINA/Events"        , "PAOLINA/Tracks")
+
 
     with tb.open_file(true_out)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
@@ -216,8 +223,8 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
     summary_true = dio.load_dst(true_out, 'PAOLINA', 'Summary')
     assert_dataframes_close(summary_out[columns], summary_true[columns])
 
-    # PAOLINA/Summary should contain only columns
-    assert sorted(summary_out.columns) == sorted(columns)
+    # PAOLINA/Summary should contain only columns plus out_of_map flag
+    assert sorted(summary_out.columns) == sorted(columns + ['out_of_map'] )
 
     #Finally lets confirm Esmeralda contains KDST, RUN and MC table from Penthesilea file
     tables_in = ( "MC/extents"  , "MC/hits"       , "MC/particles"  , "MC/generators",
