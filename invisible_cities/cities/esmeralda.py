@@ -241,9 +241,9 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
 
 
 def make_event_summary(event_number  : int              ,
-                       timestamp     : int              ,
                        topology_info : pd.DataFrame     ,
-                       paolina_hits  : evm.HitCollection
+                       paolina_hits  : evm.HitCollection,
+                       out_of_map    : bool
                        ) -> pd.DataFrame:
     """
     For a given event number, timestamp, topology info dataframe, paolina hits and kdst information returns a 
@@ -270,7 +270,8 @@ def make_event_summary(event_number  : int              ,
     es = pd.DataFrame(columns=['event', 'S2ec' ,  'S2qc', 'ntrks', 'nhits',
                                'x_avg', 'y_avg', 'z_avg', 'r_avg',
                                'x_min', 'y_min', 'z_min', 'r_min',
-                               'x_max', 'y_max', 'z_max', 'r_max'])
+                               'x_max', 'y_max', 'z_max', 'r_max',
+                               'out_of_map'])
 
     ntrks = len(topology_info.index)
     nhits = len(paolina_hits.hits)
@@ -300,7 +301,8 @@ def make_event_summary(event_number  : int              ,
 
     list_of_vars  = [event_number, S2ec, S2qc, ntrks, nhits,
                      x_avg, y_avg, z_avg, r_avg, x_min, y_min,
-                     z_min, r_min, x_max, y_max, z_max, r_max]
+                     z_min, r_min, x_max, y_max, z_max, r_max,
+                     out_of_map]
 
     es.loc[0] = list_of_vars
     #change dtype of columns to match type of variables
