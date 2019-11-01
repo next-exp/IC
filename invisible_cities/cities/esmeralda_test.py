@@ -128,6 +128,10 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
     assert set(df_hits_low_th     .event.unique()) ==  set(events_pass_low_th     )
     assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
 
+    summary_table       =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
+    #assert event with nan energy labeled in summary_table
+    events_energy = df_hits_paolina.groupby('event')['Ec'].apply(pd.Series.sum, skipna=False)
+    np.testing.assert_array_equal( summary_table['out_of_map'], np.isnan(events_energy.values))
     #assert event number in EventInfo and MC/Extents iqual to nevt_req
     with tb.open_file(PATH_OUT)  as h5out:
         event_info = get_event_info(h5out)
