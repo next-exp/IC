@@ -363,9 +363,9 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     cor_hits_params              : dict
         map_fname                : string (filepath)
             filename of the map
-        threshold_charge_NN      : float
+        threshold_charge_low     : float
             minimum pes for a RECO hit
-        threshold_charge_paolina : float
+        threshold_charge_high    : float
             minimum pes for a PAOLINA hit
         same_peak                : bool
             if True energy of NN hits is assigned only to the hits from the same peak
@@ -413,32 +413,36 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     cor_hits_params_   = {value : cor_hits_params.get(value) for value in ['map_fname', 'same_peak'      , 'apply_temp'      ]}
     paolina_params_    = {value : paolina_params .get(value) for value in ['vox_size' , 'strict_vox_size', 'energy_threshold', 'min_voxels', 'blob_radius']}
 
-    threshold_and_correct_hits_NN      = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_NN'    ]),
-                                                args = 'hits',
-                                                out  = 'NN_hits')
+    threshold_and_correct_hits_low  = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_NN'     ]),
+                                             args = 'hits',
+                                             out  = 'cor_low_th_hits')
 
-    threshold_and_correct_hits_paolina = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_paolina']),
-                                                args = 'hits',
-                                                out  = 'corrected_hits')
+    threshold_and_correct_hits_high = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_paolina']),
+                                             args = 'hits',
+                                             out  = 'cor_high_th_hits')
 
-    filter_events_NN                   = fl.map(events_filter(allow_nans = True),
-                                                args = 'NN_hits',
-                                                out  = 'NN_hits_passed')
+    filter_events_low_th            = fl.map(lambda x : len(x.hits) > 0,
+                                             args = 'cor_low_th_hits',
+                                             out  = 'low_th_hits_passed')
 
-    filter_events_paolina              = fl.map(events_filter(allow_nans = False),
-                                                args = 'corrected_hits',
-                                                out  = 'paolina_hits_passed')
+    filter_events_high_th           = fl.map(lambda x : len(x.hits) > 0,
+                                             args = 'cor_high_th_hits',
+                                             out  = 'high_th_hits_passed')
 
-    hits_passed_NN                     = fl.count_filter(bool, args =      "NN_hits_passed")
-    hits_passed_paolina                = fl.count_filter(bool, args = "paolina_hits_passed")
+    hits_passed_low_th              = fl.count_filter(bool, args = "low_th_hits_passed")
+    hits_passed_high_th             = fl.count_filter(bool, args = "high_th_hits_passed")
 
-    create_extract_track_blob_info     = fl.map(track_blob_info_creator_extractor(**paolina_params_, energy_type = energy_type),
-                                                args = 'corrected_hits',
-                                                out  = ('topology_info', 'paolina_hits'))
+    create_extract_track_blob_info  = fl.map(track_blob_info_creator_extractor(**paolina_params_, energy_type = energy_type),
+                                             args = 'cor_high_th_hits',
+                                             out  = ('topology_info', 'paolina_hits', 'out_of_map'))
+    filter_events_topology          = fl.map(lambda x : len(x) > 0,
+                                             args = 'topology_info',
+                                             out  = 'topology_passed')
+    events_passed_topology          = fl.count_filter(bool, args = "topology_passed")
 
-    make_final_summary                 = fl.map(make_event_summary,
-                                                args = ('event_number', 'timestamp', 'topology_info', 'paolina_hits'),
-                                                out  = 'event_info')
+    make_final_summary              = fl.map(make_event_summary,
+                                             args = ('event_number', 'topology_info', 'paolina_hits', 'out_of_map'),
+                                             out  = 'event_info')
 
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
@@ -449,36 +453,40 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_mc_        = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
 
-        write_mc             = fl.sink(    write_mc_                                      , args = ("mc", "event_number"))
-        write_hits_NN        = fl.sink(    hits_writer     (h5out)                        , args =  "NN_hits"            )
-        write_hits_paolina   = fl.sink(    hits_writer     (h5out, group_name = 'PAOLINA'), args =  "paolina_hits"       )
-        write_tracks         = fl.sink(   track_writer     (h5out=h5out)                  , args =  "topology_info"      )
-        write_summary        = fl.sink( summary_writer     (h5out=h5out)                  , args =  "event_info"         )
-        write_paolina_filter = fl.sink( event_filter_writer(h5out, "paolina_select")      , args = ("event_number", "paolina_hits_passed"))
-        write_NN_filter      = fl.sink( event_filter_writer(h5out,      "NN_select")      , args = ("event_number",      "NN_hits_passed"))
-        write_kdst_table     = fl.sink( kdst_from_df_writer(h5out)                        , args =  "kdst"               )
+        write_mc              = fl.sink(    write_mc_                                      , args = ("mc", "event_number"))
+        write_hits_low_th     = fl.sink(    hits_writer     (h5out)                        , args =  "cor_low_th_hits"    )
+        write_hits_paolina    = fl.sink(    hits_writer     (h5out, group_name = 'PAOLINA'), args =  "paolina_hits"       )
+        write_tracks          = fl.sink(   track_writer     (h5out=h5out)                  , args =  "topology_info"      )
+        write_summary         = fl.sink( summary_writer     (h5out=h5out)                  , args =  "event_info"         )
+        write_high_th_filter  = fl.sink( event_filter_writer(h5out, "high_th_select" )     , args = ("event_number", "high_th_hits_passed"))
+        write_low_th_filter   = fl.sink( event_filter_writer(h5out, "low_th_select"  )     , args = ("event_number", "low_th_hits_passed" ))
+        write_topology_filter = fl.sink( event_filter_writer(h5out, "topology_select")     , args = ("event_number", "topology_passed"    ))
+        write_kdst_table      = fl.sink( kdst_from_df_writer(h5out)                        , args =  "kdst"               )
 
         return  push(source = hits_and_kdst_from_files(files_in),
                      pipe   = pipe(
                          fl.slice(*event_range, close_all=True)       ,
                          print_every(print_mod)                       ,
-                         event_count_in           .spy                ,
+                         event_count_in        .spy                   ,
                          fl.branch(fl.fork(write_kdst_table           ,
                                            write_event_info           ,
                                            write_mc                 )),
-                         fl.branch(threshold_and_correct_hits_NN      ,
-                                   filter_events_NN                   ,
-                                   fl.branch(write_NN_filter)         ,
-                                   hits_passed_NN .filter             ,
-                                   write_hits_NN                     ),
-                         threshold_and_correct_hits_paolina           ,
-                         filter_events_paolina                        ,
-                         fl.branch(write_paolina_filter)              ,
-                         hits_passed_paolina      .filter             ,
-                         event_count_out          .spy                ,
+                         fl.branch(threshold_and_correct_hits_low     ,
+                                   filter_events_low_th               ,
+                                   fl.branch(write_low_th_filter)     ,
+                                   hits_passed_low_th.filter          ,
+                                   write_hits_low_th                 ),
+                         threshold_and_correct_hits_high              ,
+                         filter_events_high_th                        ,
+                         fl.branch(write_high_th_filter)              ,
+                         hits_passed_high_th   .filter                ,
                          create_extract_track_blob_info               ,
-                         fl.fork(write_hits_paolina                   ,
-                                 write_tracks                         ,
+                         filter_events_topology                       , 
+                         fl.branch(write_hits_paolina)                ,
+                         events_passed_topology.filter                ,
+                         event_count_out       .spy                   ,
+                         fl.branch(write_topology_filter)             ,
+                         fl.fork( write_tracks                        ,
                                  (make_final_summary, write_summary))),
 
                      result = dict(events_in  = event_count_in .future,
