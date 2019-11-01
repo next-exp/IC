@@ -92,13 +92,16 @@ def load_event_summary(filename : str) -> pd.DataFrame :
 
     if(len(kdst.s1_peak.unique()) != 1):
         warnings.warn("Number of recorded S1 energies differs from 1 in event {}.Choosing first S1".format(event_number), UserWarning)
+    #per event we extract S1 energy, time and nS2 information, sum of S2 energy and charge
     kdst_to_merge = kdst[['event', 'S1e', 'S1t', 'nS2', 'S2e', 'S2q']].groupby('event').agg({'S1e':lambda x:x.values[0],
                                                                                              'S1t':lambda x:x.values[0],
                                                                                              'nS2':lambda x:x.values[0],
                                                                                              'S2e' : np.sum,
                                                                                              'S2q' : np.sum}).reset_index()
+    #have to rename columns to match old event summary style
     kdst_to_merge.rename(columns={"S2e": "S2e0", "S2q":  "S2q0"}, inplace=True)
     event_info   .rename(columns={"evt_number": "event", "timestamp": "time"}, inplace=True)
+    #merge event_info, kdst info and summary into one dataframe
     extended_summary  = summary.merge(kdst_to_merge,
                                       on='event', how='left')
     return extended_summary.merge(event_info, on='event', how='left')
