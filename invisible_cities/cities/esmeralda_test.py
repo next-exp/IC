@@ -14,7 +14,7 @@ from .  esmeralda              import esmeralda
 from .. core.testing_utils     import assert_dataframes_close
 from .. core.testing_utils     import assert_tables_equality
 
-@mark.serial
+
 def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
     PATH_IN   = KrMC_hdst_filename
     PATH_OUT  = os.path.join(config_tmpdir, "Kr_tracks_with_MC.h5")
@@ -50,7 +50,7 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
         assert "DST/Events"              in h5out.root
 
 
-@mark.serial
+
 def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_filename, config_tmpdir):
     PATH_IN   = KrMC_hdst_filename_toy
     PATH_OUT  = os.path.join(config_tmpdir, "Kr_tracks_with_MC_filtered.h5")
@@ -97,7 +97,7 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
         assert len(MC_num_evs) == nevt_req
 
 
-@mark.serial
+
 def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_MC_filename, config_tmpdir):
     PATH_IN   = KrMC_hdst_filename_toy
     PATH_OUT  = os.path.join(config_tmpdir, "Kr_tracks_with_MC_out_of_map.h5")
@@ -142,7 +142,7 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
         assert len(MC_num_evs) == nevt_req
 
 
-@mark.serial
+
 def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
     PATH_IN   = data_hdst
     PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda.h5")
