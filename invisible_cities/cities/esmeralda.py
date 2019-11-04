@@ -110,7 +110,6 @@ def hits_threshold_and_corrector(map_fname        : str  ,
 
 
 def track_blob_info_creator_extractor(vox_size         : [float, float, float],
-                                      energy_type      : evm.HitEnergy        ,
                                       strict_vox_size  : bool                 ,
                                       energy_threshold : float                ,
                                       min_voxels       : int                  ,
@@ -123,12 +122,6 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
     ----------
     vox_size         : [float, float, float]
         (maximum) size of voxels for track reconstruction
-    energy_type      : HitEnergy
-        class HitEnergy(AutoNameEnumBase):
-            E        = auto()
-            Ec       = auto()
-        energy attribute to use for voxelization/ tracks
-
     strict_vox_size  : bool
         if False allows per event adaptive voxel size,
         smaller of equal thatn vox_size
@@ -150,8 +143,8 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
         out_of_map = any(np.isnan([h.Ec for h in hitc.hits]))
         if out_of_map:
             #add nan hits to track_hits, the track_id will be -1
-            track_hitc.hits.extend([h for h in hitc.hits if np.isnan   (getattr(h, energy_type.value))])
-            hits_without_nan       = [h for h in hitc.hits if np.isfinite(getattr(h, energy_type.value))]
+            track_hitc.hits.extend  ([h for h in hitc.hits if np.isnan   (h.Ec)])
+            hits_without_nan       = [h for h in hitc.hits if np.isfinite(h.Ec)]
             #create new Hitcollection object but keep the name hitc
             hitc      = evm.HitCollection(hitc.event, hitc.time)
             hitc.hits = hits_without_nan
@@ -166,7 +159,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                                    'vox_size_x', 'vox_size_y', 'vox_size_z'])
 
         if len(hitc.hits)>0:
-            voxels     = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, energy_type)
+            voxels     = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, evm.HitEnergy.Ec)
             mod_voxels = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
             tracks     = plf.make_track_graphs(mod_voxels)
 
@@ -197,7 +190,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                 max_r = max([np.sqrt(h.X*h.X + h.Y*h.Y) for v in t.nodes() for h in v.hits])
 
                 pos = [h.pos for v in t.nodes() for h in v.hits]
-                e   = [getattr(h, energy_type.value) for v in t.nodes() for h in v.hits]
+                e   = [h.Ec for v in t.nodes() for h in v.hits]
                 ave_pos = np.average(pos, weights=e, axis=0)
 
                 extr1, extr2 = plf.find_extrema(t)
@@ -378,8 +371,6 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     paolina_params               :dict
         vox_size                 : [float, float, float]
             (maximum) size of voxels for track reconstruction
-        energy_type              : 'corrected' ot 'uncorrected'
-            energy attribute to use for voxelization/ tracks
         strict_vox_size          : bool
             if False allows per event adaptive voxel size,
             smaller of equal thatn vox_size
@@ -406,12 +397,8 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
 
 """
 
-    if   paolina_params ['energy_type'] == 'corrected'   : energy_type = evm.HitEnergy.Ec
-    elif paolina_params ['energy_type'] == 'uncorrected' : energy_type = evm.HitEnergy.E
-    else                                                 : raise ValueError(f"Unrecognized processing mode: {paolina_params['energy_type']}")
 
     cor_hits_params_   = {value : cor_hits_params.get(value) for value in ['map_fname', 'same_peak'      , 'apply_temp'      ]}
-    paolina_params_    = {value : paolina_params .get(value) for value in ['vox_size' , 'strict_vox_size', 'energy_threshold', 'min_voxels', 'blob_radius']}
 
     threshold_and_correct_hits_low  = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_NN'     ]),
                                              args = 'hits',
@@ -432,7 +419,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     hits_passed_low_th              = fl.count_filter(bool, args = "low_th_hits_passed")
     hits_passed_high_th             = fl.count_filter(bool, args = "high_th_hits_passed")
 
-    create_extract_track_blob_info  = fl.map(track_blob_info_creator_extractor(**paolina_params_, energy_type = energy_type),
+    create_extract_track_blob_info  = fl.map(track_blob_info_creator_extractor(**paolina_params),
                                              args = 'cor_high_th_hits',
                                              out  = ('topology_info', 'paolina_hits', 'out_of_map'))
     filter_events_topology          = fl.map(lambda x : len(x) > 0,

@@ -161,7 +161,6 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
                          apply_temp               = False                 ),
                      paolina_params               = dict(
                          vox_size                 = [15 * units.mm] * 3    ,
-                         energy_type              = 'corrected'            ,
                          strict_vox_size          = False                  ,
                          energy_threshold         = 0 * units.keV          ,
                          min_voxels               = 2                      ,
@@ -200,7 +199,6 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
                          apply_temp               = False                    ),
                      paolina_params               = dict(
                          vox_size                 = [15 * units.mm] * 3       ,
-                         energy_type              = 'corrected'               ,
                          strict_vox_size          = False                     ,
                          energy_threshold         = 0 * units.keV             ,
                          min_voxels               = 2                         ,
@@ -274,7 +272,6 @@ def test_esmeralda_blob_overlap_bug(data_hdst, esmeralda_tracks, correction_map_
                          apply_temp               = False                 ),
                      paolina_params               = dict(
                          vox_size                 = [15 * units.mm] * 3    ,
-                         energy_type              = 'corrected'            ,
                          strict_vox_size          = False                  ,
                          energy_threshold         = 0 * units.keV          ,
                          min_voxels               = 2                      ,
@@ -301,7 +298,6 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
                          apply_temp               = False                    ),
                      paolina_params               = dict(
                          vox_size                 = [15 * units.mm] * 3       ,
-                         energy_type              = 'corrected'               ,
                          strict_vox_size          = False                     ,
                          energy_threshold         = 0 * units.keV             ,
                          min_voxels               = 2                         ,
