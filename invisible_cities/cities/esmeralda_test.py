@@ -25,7 +25,7 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
                      event_range                  = nevt_req                  ,
                      cor_hits_params              = dict(
                          map_fname                = correction_map_MC_filename,
-                         threshold_charge_NN      = 6  * units.pes            ,
+                         threshold_charge_reco    = 6  * units.pes            ,
                          threshold_charge_paolina = 30 * units.pes            ,
                          same_peak                = True                      ,
                          apply_temp               = False                   )))
@@ -62,7 +62,7 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
                      event_range                  = nevt_req                  ,
                      cor_hits_params              = dict(
                          map_fname                = correction_map_MC_filename,
-                         threshold_charge_NN      = 150  * units.pes          ,
+                         threshold_charge_reco    = 150  * units.pes          ,
                          threshold_charge_paolina = 200  * units.pes          ,
                          same_peak                = True                      ,
                          apply_temp               = False                    )))
@@ -108,7 +108,7 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
                      event_range                  = nevt_req                  ,
                      cor_hits_params              = dict(
                          map_fname                = correction_map_MC_filename,
-                         threshold_charge_NN      = 20   * units.pes          ,
+                         threshold_charge_reco    = 20   * units.pes          ,
                          threshold_charge_paolina = 20   * units.pes          ,
                          same_peak                = True                      ,
                          apply_temp               = False                    )))
@@ -155,7 +155,7 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
                      run_number                   = 6822                   ,
                      cor_hits_params              = dict(
                          map_fname                = correction_map_filename,
-                         threshold_charge_NN      = 10   * units.pes       ,
+                         threshold_charge_reco    = 10   * units.pes       ,
                          threshold_charge_paolina = 30   * units.pes       ,
                          same_peak                = True                   ,
                          apply_temp               = False                 ),
@@ -193,7 +193,7 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
                      event_range                  = nevt_req                  ,
                      cor_hits_params              = dict(
                          map_fname                = correction_map_MC_filename,
-                         threshold_charge_NN      = 10   * units.pes          ,
+                         threshold_charge_reco    = 10   * units.pes          ,
                          threshold_charge_paolina = 20   * units.pes          ,
                          same_peak                = True                      ,
                          apply_temp               = False                    ),
@@ -266,7 +266,7 @@ def test_esmeralda_blob_overlap_bug(data_hdst, esmeralda_tracks, correction_map_
                      run_number                   = 6822                   ,
                      cor_hits_params              = dict(
                          map_fname                = correction_map_filename,
-                         threshold_charge_NN      = 10   * units.pes       ,
+                         threshold_charge_reco    = 10   * units.pes       ,
                          threshold_charge_paolina = 30   * units.pes       ,
                          same_peak                = True                   ,
                          apply_temp               = False                 ),
@@ -292,7 +292,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
                      event_range                  = nevt_req                  ,
                      cor_hits_params              = dict(
                          map_fname                = correction_map_MC_filename,
-                         threshold_charge_NN      = 10   * units.pes          ,
+                         threshold_charge_reco    = 10   * units.pes          ,
                          threshold_charge_paolina = 20   * units.pes          ,
                          same_peak                = True                      ,
                          apply_temp               = False                    ),
