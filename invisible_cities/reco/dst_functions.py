@@ -1,9 +1,12 @@
+import warnings
 import numpy  as np
 import pandas as pd
-
+from typing import Union
+from typing import List
 from .  corrections import Correction
 from .  corrections import LifetimeXYCorrection
 from .. io.dst_io   import load_dst
+from .. io.dst_io   import load_dsts
 
 
 def load_z_corrections(filename):
@@ -74,8 +77,7 @@ def dst_event_id_selection(data, event_ids):
         print(r'DST does not have an "event" field. Data returned is unfiltered.')
         return data
 
-
-def load_event_summary(filename : str) -> pd.DataFrame :
+def load_paolina_summary_(filename : str) -> pd.DataFrame:
     """ Merges information from DST/Events, RUN/events and PAOLINA/Summary table into one DataFrame.
     Parameters
     ----------
@@ -90,18 +92,38 @@ def load_event_summary(filename : str) -> pd.DataFrame :
     kdst       = load_dst(filename, 'DST'    , 'Events' )
     event_info = load_dst(filename, 'Run'    , 'events' )
 
-    if(len(kdst.s1_peak.unique()) != 1):
-        warnings.warn("Number of recorded S1 energies differs from 1 in event {}.Choosing first S1".format(event_number), UserWarning)
+    def get_s1_info(df_series):
+        if(len(df_series.unique()) != 1):
+            warnings.warn("Number of recorded S1 energies differs from 1 per event.Choosing first S1", UserWarning)
+        return df_series.iloc[0]
     #per event we extract S1 energy, time and nS2 information, sum of S2 energy and charge
-    kdst_to_merge = kdst[['event', 'S1e', 'S1t', 'nS2', 'S2e', 'S2q']].groupby('event').agg({'S1e':lambda x:x.values[0],
-                                                                                             'S1t':lambda x:x.values[0],
-                                                                                             'nS2':lambda x:x.values[0],
-                                                                                             'S2e' : np.sum,
-                                                                                             'S2q' : np.sum}).reset_index()
+    kdst_to_merge = kdst.loc[:,['event', 'S1e', 'S1t', 'nS2', 'S2e', 'S2q']].groupby('event').agg({'S1e' : get_s1_info,
+                                                                                                   'S1t' : get_s1_info,
+                                                                                                   'nS2' : get_s1_info,
+                                                                                                   'S2e' : np.sum,
+                                                                                                   'S2q' : np.sum}).reset_index()
     #have to rename columns to match old event summary style
     kdst_to_merge.rename(columns={"S2e": "S2e0", "S2q":  "S2q0"}, inplace=True)
     event_info   .rename(columns={"evt_number": "event", "timestamp": "time"}, inplace=True)
     #merge event_info, kdst info and summary into one dataframe
     extended_summary  = summary.merge(kdst_to_merge,
-                                      on='event', how='left')
-    return extended_summary.merge(event_info, on='event', how='left')
+                                      on='event', how='left').merge(event_info,
+                                                                    on='event', how='left')
+    return extended_summary
+
+
+def load_paolina_summary(filenames : Union[str, List[str]]) -> pd.DataFrame :
+    """ Merges information from DST/Events, RUN/events and PAOLINA/Summary table into one DataFrame.
+    Parameters
+    ----------
+    filename      : str or List[str]
+        .h5 ouput of Esmeralda
+    Returns
+    -------
+    merged_DF : pandas DataFrame
+        Extended summary information
+    """
+    if not isinstance(filenames, list):
+        return load_paolina_summary_(filenames)
+    else:
+        return pd.concat([load_paolina_summary_(filename) for filename in filenames], ignore_index=True)
