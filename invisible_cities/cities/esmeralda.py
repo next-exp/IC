@@ -311,7 +311,7 @@ def track_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name='T
     For a given open table returns a writer for topology info dataframe
     """
     def write_tracks(df):
-        return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string, str_col_length = str_col_length)
+        return _store_pandas_as_tables(h5out=h5out, df=df, compression=compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
     return write_tracks
 
 
@@ -320,7 +320,7 @@ def summary_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name=
     For a given open table returns a writer for summary info dataframe
     """
     def write_summary(df):
-        return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string, str_col_length = str_col_length)
+        return _store_pandas_as_tables(h5out=h5out, df=df, compression=compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
     return write_summary
 
 def kdst_from_df_writer(h5out, compression='ZLIB4', group_name='DST', table_name='Events', descriptive_string='KDST Events', str_col_length=32):
@@ -328,7 +328,7 @@ def kdst_from_df_writer(h5out, compression='ZLIB4', group_name='DST', table_name
     For a given open table returns a writer for KDST dataframe info
     """
     def write_kdst(df):
-        return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string, str_col_length = str_col_length)
+        return _store_pandas_as_tables(h5out=h5out, df=df, compression=compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
     return write_kdst
 
 
@@ -399,13 +399,13 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
 """
 
 
-    cor_hits_params_   = {value : cor_hits_params.get(value) for value in ['map_fname', 'same_peak'      , 'apply_temp'      ]}
+    cor_hits_params_   = {value : cor_hits_params.get(value) for value in ['map_fname', 'same_peak', 'apply_temp']}
 
-    threshold_and_correct_hits_low  = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_reco'   ]),
+    threshold_and_correct_hits_low  = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_reco'   ], **cor_hits_params_),
                                              args = 'hits',
                                              out  = 'cor_low_th_hits')
 
-    threshold_and_correct_hits_high = fl.map(hits_threshold_and_corrector(**cor_hits_params_, threshold_charge = cor_hits_params['threshold_charge_paolina']),
+    threshold_and_correct_hits_high = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_paolina'], **cor_hits_params_),
                                              args = 'hits',
                                              out  = 'cor_high_th_hits')
 
@@ -417,8 +417,8 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                                              args = 'cor_high_th_hits',
                                              out  = 'high_th_hits_passed')
 
-    hits_passed_low_th              = fl.count_filter(bool, args = "low_th_hits_passed")
-    hits_passed_high_th             = fl.count_filter(bool, args = "high_th_hits_passed")
+    hits_passed_low_th              = fl.count_filter(bool, args="low_th_hits_passed")
+    hits_passed_high_th             = fl.count_filter(bool, args="high_th_hits_passed")
 
     create_extract_track_blob_info  = fl.map(track_blob_info_creator_extractor(**paolina_params),
                                              args = 'cor_high_th_hits',
@@ -426,7 +426,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     filter_events_topology          = fl.map(lambda x : len(x) > 0,
                                              args = 'topology_info',
                                              out  = 'topology_passed')
-    events_passed_topology          = fl.count_filter(bool, args = "topology_passed")
+    events_passed_topology          = fl.count_filter(bool, args="topology_passed")
 
     make_final_summary              = fl.map(make_event_summary,
                                              args = ('event_number', 'topology_info', 'out_of_map'),
@@ -435,21 +435,21 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
 
-    with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
+    with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
 
         # Define writers...
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_mc_        = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
 
-        write_mc              = fl.sink(    write_mc_                                      , args = ("mc", "event_number"))
-        write_hits_low_th     = fl.sink(    hits_writer     (h5out)                        , args =  "cor_low_th_hits"    )
-        write_hits_paolina    = fl.sink(    hits_writer     (h5out, group_name = 'PAOLINA'), args =  "paolina_hits"       )
-        write_tracks          = fl.sink(   track_writer     (h5out=h5out)                  , args =  "topology_info"      )
-        write_summary         = fl.sink( summary_writer     (h5out=h5out)                  , args =  "event_info"         )
-        write_high_th_filter  = fl.sink( event_filter_writer(h5out, "high_th_select" )     , args = ("event_number", "high_th_hits_passed"))
-        write_low_th_filter   = fl.sink( event_filter_writer(h5out, "low_th_select"  )     , args = ("event_number", "low_th_hits_passed" ))
-        write_topology_filter = fl.sink( event_filter_writer(h5out, "topology_select")     , args = ("event_number", "topology_passed"    ))
-        write_kdst_table      = fl.sink( kdst_from_df_writer(h5out)                        , args =  "kdst"               )
+        write_mc              = fl.sink(    write_mc_                                    , args=("mc", "event_number"))
+        write_hits_low_th     = fl.sink(    hits_writer     (h5out)                      , args="cor_low_th_hits"    )
+        write_hits_paolina    = fl.sink(    hits_writer     (h5out, group_name='PAOLINA'), args="paolina_hits"       )
+        write_tracks          = fl.sink(   track_writer     (h5out=h5out)                , args="topology_info"      )
+        write_summary         = fl.sink( summary_writer     (h5out=h5out)                , args="event_info"         )
+        write_high_th_filter  = fl.sink( event_filter_writer(h5out, "high_th_select" )   , args=("event_number", "high_th_hits_passed"))
+        write_low_th_filter   = fl.sink( event_filter_writer(h5out, "low_th_select"  )   , args=("event_number", "low_th_hits_passed" ))
+        write_topology_filter = fl.sink( event_filter_writer(h5out, "topology_select")   , args=("event_number", "topology_passed"    ))
+        write_kdst_table      = fl.sink( kdst_from_df_writer(h5out)                      , args="kdst"               )
 
         return  push(source = hits_and_kdst_from_files(files_in),
                      pipe   = pipe(
@@ -477,5 +477,5 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                          fl.fork( write_tracks                        ,
                                  (make_final_summary, write_summary))),
 
-                     result = dict(events_in  = event_count_in .future,
-                                   events_out = event_count_out.future))
+                     result = dict(events_in =event_count_in .future ,
+                                   events_out=event_count_out.future ))
