@@ -91,8 +91,6 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
     with tb.open_file(PATH_OUT)  as h5out:
         event_info = get_event_info(h5out)
         assert length_of(event_info) == nevt_req
-
-    with tb.open_file(PATH_OUT)  as h5out:
         MC_num_evs = h5out.root.MC.extents[:]['evt_number']
         assert len(MC_num_evs) == nevt_req
 
@@ -228,7 +226,7 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
     tables_in = ( "MC/extents"  , "MC/hits"       , "MC/particles"  , "MC/generators",
                   "DST/Events"  , "Run/events"    , "Run/runInfo"                    )
     with tb.open_file(file_in)  as true_output_file:
-        with tb.open_file(file_out) as      output_file:
+        with tb.open_file(file_out) as  output_file:
             for table in tables_in:
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
@@ -273,7 +271,7 @@ def test_esmeralda_blob_overlap_bug(data_hdst, esmeralda_tracks, correction_map_
                          blob_radius              = 21 * units.mm)        ))
     cnt = esmeralda(**conf)
 
-    df_tracks           =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Tracks')
+    df_tracks = dio.load_dst(PATH_OUT, 'PAOLINA', 'Tracks')
     assert df_tracks['ovlp_blob_energy'].dtype == float
 
 def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
