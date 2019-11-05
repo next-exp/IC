@@ -125,22 +125,13 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
     df_hits_low_th      =  dio.load_dst(PATH_OUT, 'RECO'   , 'Events')
     df_hits_paolina     =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Events')
 
-    assert set(df_hits_low_th     .event.unique()) ==  set(events_pass_low_th     )
+    assert set(df_hits_low_th .event.unique()) ==  set(events_pass_low_th )
     assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
 
     summary_table       =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
     #assert event with nan energy labeled in summary_table
-    events_energy = df_hits_paolina.groupby('event')['Ec'].apply(pd.Series.sum, skipna=False)
-    np.testing.assert_array_equal( summary_table['out_of_map'], np.isnan(events_energy.values))
-    #assert event number in EventInfo and MC/Extents iqual to nevt_req
-    with tb.open_file(PATH_OUT)  as h5out:
-        event_info = get_event_info(h5out)
-        assert length_of(event_info) == nevt_req
-
-    with tb.open_file(PATH_OUT)  as h5out:
-        MC_num_evs = h5out.root.MC.extents[:]['evt_number']
-        assert len(MC_num_evs) == nevt_req
-
+    events_energy       =  df_hits_paolina.groupby('event').Ec.apply(pd.Series.sum, skipna=False)
+    np.testing.assert_array_equal(summary_table.out_of_map, np.isnan(events_energy.values))
 
 
 def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
@@ -177,10 +168,11 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     assert_dataframes_close (df_tracks_cut[columns2], df_tracks_exact[columns2])
     #make sure out_of_map is true for events not in df_tracks_exact
     diff_events = list(set(df_tracks.event.unique()).difference(events))
-    df_summary = dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
+    df_summary  = dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
     assert all(df_summary[df_summary.event.isin(diff_events)].loc[:,'out_of_map'])
 
-#The old test file should contain all tables the same except PAOLINA/Summary
+#This test reuses old Esmeralda file showing that the only changes are in the table structures and not in data values.
+#To be removed in the future
 def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
     file_in   = KrMC_hdst_filename
     file_out  = os.path.join(config_tmpdir, "exact_Kr_tracks_with_MC.h5")
@@ -208,7 +200,7 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
 
 
     with tb.open_file(true_out)  as true_output_file:
-        with tb.open_file(file_out) as      output_file:
+        with tb.open_file(file_out) as   output_file:
             for table in tables:
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
@@ -251,13 +243,12 @@ def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
     PATH_OUT = os.path.join(config_tmpdir, 'empty_voxels.h5')
 
     conf = configure('dummy invisible_cities/config/esmeralda.conf'.split())
-    conf.update(dict(files_in      = PATH_IN,
-                     file_out      = PATH_OUT))
+    conf.update(dict(files_in = PATH_IN,
+                     file_out = PATH_OUT))
 
     esmeralda(**conf)
 
 #if the first analyzed events has no overlap in blob buggy esmeralda will cast all overlap energy to integers    
-@mark.serial
 def test_esmeralda_blob_overlap_bug(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
     PATH_IN   = data_hdst
     PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda.h5")
@@ -315,7 +306,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
               "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
 
     with tb.open_file(true_out)  as true_output_file:
-        with tb.open_file(file_out) as      output_file:
+        with tb.open_file(file_out) as   output_file:
             for table in tables:
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
