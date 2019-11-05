@@ -149,8 +149,8 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
             hitc      = evm.HitCollection(hitc.event, hitc.time)
             hitc.hits = hits_without_nan
         df = pd.DataFrame(columns=['event', 'trackID', 'energy', 'length', 'numb_of_voxels',
-                                   'numb_of_hits', 'numb_of_tracks', 'x_min', 'y_min', 'z_min',
-                                   'x_max', 'y_max', 'z_max', 'r_max', 'x_ave', 'y_ave', 'z_ave',
+                                   'numb_of_hits', 'numb_of_tracks', 'x_min', 'y_min', 'z_min', 'r_min',
+                                   'x_max', 'y_max', 'z_max', 'r_max', 'x_ave', 'y_ave', 'z_ave', 'r_ave',
                                    'extreme1_x', 'extreme1_y', 'extreme1_z',
                                    'extreme2_x', 'extreme2_y', 'extreme2_z',
                                    'blob1_x', 'blob1_y', 'blob1_z',
@@ -177,22 +177,25 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                 tID = c
                 energy = get_track_energy(t)
                 length = plf.length(t)
-                numb_of_hits = len([h for vox in t.nodes() for h in vox.hits])
+                numb_of_hits   = len([h for vox in t.nodes() for h in vox.hits])
                 numb_of_voxels = len(t.nodes())
                 numb_of_tracks = len(tracks   )
 
-                min_x = min([h.X for v in t.nodes() for h in v.hits])
-                max_x = max([h.X for v in t.nodes() for h in v.hits])
-                min_y = min([h.Y for v in t.nodes() for h in v.hits])
-                max_y = max([h.Y for v in t.nodes() for h in v.hits])
-                min_z = min([h.Z for v in t.nodes() for h in v.hits])
-                max_z = max([h.Z for v in t.nodes() for h in v.hits])
-                max_r = max([np.sqrt(h.X*h.X + h.Y*h.Y) for v in t.nodes() for h in v.hits])
+                pos   = [h.pos for v in t.nodes() for h in v.hits]
+                min_x = min(pos, key = lambda x : x[0])[0]
+                max_x = max(pos, key = lambda x : x[0])[0]
+                min_y = min(pos, key = lambda x : x[1])[1]
+                max_y = max(pos, key = lambda x : x[1])[1]
+                min_z = min(pos, key = lambda x : x[2])[2]
+                max_z = max(pos, key = lambda x : x[2])[2]
 
-                pos = [h.pos for v in t.nodes() for h in v.hits]
-                e   = [h.Ec for v in t.nodes() for h in v.hits]
+                r     = list(map(lambda x: (x[0]**2 + x[1]**2)**0.5, pos))
+                max_r = max(r)
+                min_r = min(r)
+
+                e     = [h.Ec for v in t.nodes() for h in v.hits]
                 ave_pos = np.average(pos, weights=e, axis=0)
-
+                ave_r   = np.average(r  , weights=e, axis=0)
                 extr1, extr2 = plf.find_extrema(t)
                 extr1_pos = extr1.XYZ
                 extr2_pos = extr2.XYZ
@@ -200,15 +203,12 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                 blob_pos1, blob_pos2 = plf.blob_centres(t, blob_radius)
 
                 e_blob1, e_blob2, hits_blob1, hits_blob2 = plf.blob_energies_and_hits(t, blob_radius)
-                overlap = float(sum([h.Ec for h in set(hits_blob1).intersection(hits_blob2)]))
+                overlap = float(sum(h.Ec for h in set(hits_blob1).intersection(set(hits_blob2))))
                 list_of_vars = [hitc.event, tID, energy, length, numb_of_voxels,
                                 numb_of_hits, numb_of_tracks,
-                                min_x, min_y, min_z, max_x, max_y, max_z, max_r,
-                                ave_pos[0], ave_pos[1], ave_pos[2],
-                                extr1_pos[0], extr1_pos[1], extr1_pos[2],
-                                extr2_pos[0], extr2_pos[1], extr2_pos[2],
-                                blob_pos1[0], blob_pos1[1], blob_pos1[2],
-                                blob_pos2[0], blob_pos2[1], blob_pos2[2],
+                                min_x, min_y, min_z, min_r, max_x, max_y, max_z, max_r,
+                                *ave_pos, ave_r, *extr1_pos,
+                                *extr2_pos, *blob_pos1, *blob_pos2,
                                 e_blob1, e_blob2, overlap,
                                 vox_size_x, vox_size_y, vox_size_z]
 
@@ -235,7 +235,6 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
 
 def make_event_summary(event_number  : int              ,
                        topology_info : pd.DataFrame     ,
-                       paolina_hits  : evm.HitCollection,
                        out_of_map    : bool
                        ) -> pd.DataFrame:
     """
@@ -267,30 +266,32 @@ def make_event_summary(event_number  : int              ,
                                'out_of_map'])
 
     ntrks = len(topology_info.index)
-    nhits = len(paolina_hits.hits)
-
-    S2ec = max(-1, sum([h.Ec for h in paolina_hits.hits]))
-    S2qc = max(-1, sum([h.Qc for h in paolina_hits.hits]))
-
-    x_avg = sum([h.X*h.Ec for h in paolina_hits.hits])
-    y_avg = sum([h.Y*h.Ec for h in paolina_hits.hits])
-    z_avg = sum([h.Z*h.Ec for h in paolina_hits.hits])
-    r_avg = sum([(h.X**2 + h.Y**2)**0.5*h.Ec for h in paolina_hits.hits])
+    S2ec  = max(-1, sum(topology_info.energy))
+    #once charge correction gets implemented we probably want to add it to tracks dataframe too
+    try:
+        S2qc  = max(-1, sum(topology_info.charge))
+    except AttributeError:
+        S2qc  = -1
+    x_avg = sum(topology_info.x_ave * topology_info.energy)
+    y_avg = sum(topology_info.y_ave * topology_info.energy)
+    z_avg = sum(topology_info.z_ave * topology_info.energy)
+    r_avg = sum(topology_info.r_ave * topology_info.energy)
     if(S2ec > 0):
         x_avg /= S2ec
         y_avg /= S2ec
         z_avg /= S2ec
         r_avg /= S2ec
+    nhits = sum(topology_info.numb_of_hits)
 
-    x_min = min([h.X for h in paolina_hits.hits])
-    y_min = min([h.Y for h in paolina_hits.hits])
-    z_min = min([h.Z for h in paolina_hits.hits])
-    r_min = min([(h.X**2 + h.Y**2)**0.5 for h in paolina_hits.hits])
+    x_min = min(topology_info.x_min)
+    y_min = min(topology_info.y_min)
+    z_min = min(topology_info.z_min)
+    r_min = min(topology_info.r_min)
 
-    x_max = max([h.X for h in paolina_hits.hits])
-    y_max = max([h.Y for h in paolina_hits.hits])
-    z_max = max([h.Z for h in paolina_hits.hits])
-    r_max = max([(h.X**2 + h.Y**2)**0.5 for h in paolina_hits.hits])
+    x_max = max(topology_info.x_max)
+    y_max = max(topology_info.y_max)
+    z_max = max(topology_info.z_max)
+    r_max = max(topology_info.r_max)
 
     list_of_vars  = [event_number, S2ec, S2qc, ntrks, nhits,
                      x_avg, y_avg, z_avg, r_avg, x_min, y_min,
@@ -428,7 +429,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     events_passed_topology          = fl.count_filter(bool, args = "topology_passed")
 
     make_final_summary              = fl.map(make_event_summary,
-                                             args = ('event_number', 'topology_info', 'paolina_hits', 'out_of_map'),
+                                             args = ('event_number', 'topology_info', 'out_of_map'),
                                              out  = 'event_info')
 
     event_count_in  = fl.spy_count()
