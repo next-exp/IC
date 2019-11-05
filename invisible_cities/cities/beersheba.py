@@ -101,7 +101,6 @@ def deconvolve_signal(psf_fname       : str,
             selDeconv   = deconvE/deconvE.max() > ecut
         else:
             raise TypeError(f'Cut type "{cut_type}" unsupported')
-        selDeconv   = deconvE/deconvE.max()>ecut
         ene         = deconvE[selDeconv]
         df['event'] = [hits.event.unique()[0]] * len(ene)
         df['npeak'] = [hits.npeak.unique()[0]] * len(ene)
@@ -128,7 +127,7 @@ def deconvolve_signal(psf_fname       : str,
                           (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
                           (psfs.y == find_nearest(psfs.y, df.Ypeak.unique())) ]
             deconvImage, pos = deconvolution(tuple(df[v].values for v in dimensions), df.Q.values, psf_z0)
-            g   = multivariate_normal(tuple(0. for _ in range(n_dim)), tuple(diff * sqrt(z/10) for diff in diffusion[:n_dim])).pdf(list(zip(*tuple(psf_z0[f'{v.lower()}r'].values for v in dimensions))))
+            g   = multivariate_normal(tuple(0. for _ in range(n_dim)), tuple((diff * sqrt(z/10))**2 for diff in diffusion[:n_dim])).pdf(list(zip(*tuple(psf_z0[f'{v.lower()}r'].values for v in dimensions))))
             psf = g.reshape(tuple(psf_z0[f'{v.lower()}r'].nunique() for v in dimensions))
             deconvImage      = nan_to_num(richardson_lucy(deconvImage, psf, iterationGauss, iterationThr))
         else:
