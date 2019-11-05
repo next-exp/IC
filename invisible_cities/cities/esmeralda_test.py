@@ -173,13 +173,12 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     columns2 = df_tracks_exact.columns
     #some events are not in df_tracks_exact
     events = df_tracks_exact.event.unique()
-    assert(sorted(columns1) == sorted(columns2))
     df_tracks_cut  = df_tracks[df_tracks.event.isin(events)]
-    assert_dataframes_close (df_tracks_cut[sorted(columns1)], df_tracks_exact[sorted(columns2)])
+    assert_dataframes_close (df_tracks_cut[columns2], df_tracks_exact[columns2])
     #make sure out_of_map is true for events not in df_tracks_exact
     diff_events = list(set(df_tracks.event.unique()).difference(events))
     df_summary = dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
-    assert all(df_summary[df_summary.event.isin(diff_events)]['out_of_map'])
+    assert all(df_summary[df_summary.event.isin(diff_events)].loc[:,'out_of_map'])
 
 #The old test file should contain all tables the same except PAOLINA/Summary
 def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
@@ -205,7 +204,7 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
                          blob_radius              = 21 * units.mm           )))
 
     cnt = esmeralda(**conf)
-    tables = ( "RECO/Events"      , "PAOLINA/Events"        , "PAOLINA/Tracks")
+    tables = ( "RECO/Events"      , "PAOLINA/Events")
 
 
     with tb.open_file(true_out)  as true_output_file:
@@ -227,6 +226,11 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
 
     # PAOLINA/Summary should contain only columns plus out_of_map flag
     assert sorted(summary_out.columns) == sorted(columns + ['out_of_map'] )
+
+    #PAOLINA/Tracks table has additional r_min and r_ave columns, so the tables are not equal
+    tracks_out   = dio.load_dst(file_out, 'PAOLINA', 'Tracks')
+    tracks_true  = dio.load_dst(true_out, 'PAOLINA', 'Tracks')
+    assert_dataframes_close(tracks_out[tracks_true.columns], tracks_true)
 
     #Finally lets confirm Esmeralda contains KDST, RUN and MC table from Penthesilea file
     tables_in = ( "MC/extents"  , "MC/hits"       , "MC/particles"  , "MC/generators",
