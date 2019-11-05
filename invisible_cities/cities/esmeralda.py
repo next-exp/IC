@@ -167,15 +167,13 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
             vox_size_y = voxels[0].size[1]
             vox_size_z = voxels[0].size[2]
             del(voxels)
-            def get_track_energy(track):
-                return sum([vox.Ehits for vox in track.nodes()])
             #sort tracks in energy
-            tracks     = sorted(tracks, key = get_track_energy, reverse = True)
+            tracks     = sorted(tracks, key=plf.get_track_energy, reverse=True)
 
             track_hits = []
             for c, t in enumerate(tracks, 0):
                 tID = c
-                energy = get_track_energy(t)
+                energy = plf.get_track_energy(t)
                 length = plf.length(t)
                 numb_of_hits   = len([h for vox in t.nodes() for h in vox.hits])
                 numb_of_voxels = len(t.nodes())
