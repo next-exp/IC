@@ -16,11 +16,12 @@ from hypothesis.strategies   import lists
 from hypothesis.extra.pandas import columns, data_frames
 
 from .. io.dst_io            import load_dst
+from .. io.dst_io            import load_dsts
 from .  corrections          import Correction
 from .  dst_functions        import load_xy_corrections
 from .  dst_functions        import load_lifetime_xy_corrections
 from .  dst_functions        import dst_event_id_selection
-from .  dst_functions        import load_event_summary
+from .  dst_functions        import load_paolina_summary
 from .. core.testing_utils   import assert_dataframes_equal
 
 normalization_data = namedtuple("normalization_data", "node kwargs op")
@@ -93,11 +94,19 @@ def test_dst_event_id_selection_2():
     assert np.all(df_real_filt.reset_index(drop=True) == df_filt_data.reset_index(drop=True))
 
 
-def test_load_event_summary_equal_to_old_summary(ICDATADIR):
-    old_esmeralda   =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
-    kdst_esmeralda =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST_no_filter.h5")
+def test_load_paolina_summary_equal_to_old_summary(ICDATADIR):
+    old_esmeralda     = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
+    kdst_esmeralda    = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST_no_filter.h5")
+    summary_df_old    = load_dst            (old_esmeralda, 'PAOLINA', 'Summary')
+    summary_df_reader = load_paolina_summary(kdst_esmeralda)
+    columns = sorted(summary_df_old.columns)
+    assert_dataframes_equal(summary_df_old[columns], summary_df_reader[columns], check_types=False)
 
-    summary_df_old    = load_dst          (old_esmeralda, 'PAOLINA', 'Summary')
-    summary_df_reader = load_event_summary(kdst_esmeralda)
+
+def test_load_paolina_summary_loads_multiple_file(ICDATADIR):
+    old_esmeralda     = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
+    kdst_esmeralda    = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST_no_filter.h5")
+    summary_df_old    = load_dsts           ([old_esmeralda,  old_esmeralda  ], 'PAOLINA', 'Summary')
+    summary_df_reader = load_paolina_summary([kdst_esmeralda, kdst_esmeralda])
     columns = sorted(summary_df_old.columns)
     assert_dataframes_equal(summary_df_old[columns], summary_df_reader[columns], check_types=False)
