@@ -180,20 +180,13 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                 numb_of_tracks = len(tracks   )
 
                 pos   = [h.pos for v in t.nodes() for h in v.hits]
-                min_x = min(pos, key = lambda x : x[0])[0]
-                max_x = max(pos, key = lambda x : x[0])[0]
-                min_y = min(pos, key = lambda x : x[1])[1]
-                max_y = max(pos, key = lambda x : x[1])[1]
-                min_z = min(pos, key = lambda x : x[2])[2]
-                max_z = max(pos, key = lambda x : x[2])[2]
-
-                r     = list(map(lambda x: (x[0]**2 + x[1]**2)**0.5, pos))
-                max_r = max(r)
-                min_r = min(r)
+                x, y, z = map(np.array, zip(*pos))
+                r = np.sqrt(x**2 + y**2)
 
                 e     = [h.Ec for v in t.nodes() for h in v.hits]
                 ave_pos = np.average(pos, weights=e, axis=0)
                 ave_r   = np.average(r  , weights=e, axis=0)
+
                 extr1, extr2 = plf.find_extrema(t)
                 extr1_pos = extr1.XYZ
                 extr2_pos = extr2.XYZ
@@ -204,7 +197,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                 overlap = float(sum(h.Ec for h in set(hits_blob1).intersection(set(hits_blob2))))
                 list_of_vars = [hitc.event, tID, energy, length, numb_of_voxels,
                                 numb_of_hits, numb_of_tracks,
-                                min_x, min_y, min_z, min_r, max_x, max_y, max_z, max_r,
+                                min(x), min(y), min(z), min(r), max(x), max(y), max(z), max(r),
                                 *ave_pos, ave_r, *extr1_pos,
                                 *extr2_pos, *blob_pos1, *blob_pos2,
                                 e_blob1, e_blob2, overlap,
@@ -266,19 +259,13 @@ def make_event_summary(event_number  : int              ,
     ntrks = len(topology_info.index)
     S2ec  = max(-1, sum(topology_info.energy))
     #once charge correction gets implemented we probably want to add it to tracks dataframe too
-    try:
-        S2qc  = max(-1, sum(topology_info.charge))
-    except AttributeError:
-        S2qc  = -1
-    x_avg = sum(topology_info.x_ave * topology_info.energy)
-    y_avg = sum(topology_info.y_ave * topology_info.energy)
-    z_avg = sum(topology_info.z_ave * topology_info.energy)
-    r_avg = sum(topology_info.r_ave * topology_info.energy)
-    if(S2ec > 0):
-        x_avg /= S2ec
-        y_avg /= S2ec
-        z_avg /= S2ec
-        r_avg /= S2ec
+    S2qc = max(-1, sum(topology_info.charge)) if hasattr(topology_info, "charge") else -1
+
+    x_avg = np.average(topology_info.x_ave, weights = topology_info.energy)
+    y_avg = np.average(topology_info.y_ave, weights = topology_info.energy)
+    z_avg = np.average(topology_info.z_ave, weights = topology_info.energy)
+    r_avg = np.average(topology_info.r_ave, weights = topology_info.energy)
+
     nhits = sum(topology_info.numb_of_hits)
 
     x_min = min(topology_info.x_min)
