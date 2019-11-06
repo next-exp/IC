@@ -9,10 +9,11 @@ from   typing      import List
 from   typing      import Optional
 from   enum        import auto
 
-from .. core            import system_of_units      as units
-from .. core.exceptions import TimeEvolutionTableMissing
-from .. types.ic_types  import AutoNameEnumBase
-from .. evm.event_model import Hit
+from .. core.core_functions import in_range
+from .. core                import system_of_units      as units
+from .. core.exceptions     import TimeEvolutionTableMissing
+from .. types.ic_types      import AutoNameEnumBase
+from .. evm.event_model     import Hit
 
 
 @dataclass
@@ -93,12 +94,20 @@ def maps_coefficient_getter(mapinfo : Series,
         for a given (X,Y) position
     """
 
-    binsx   = np.linspace(mapinfo.xmin,mapinfo.xmax,mapinfo.nx+1)
-    binsy   = np.linspace(mapinfo.ymin,mapinfo.ymax,mapinfo.ny+1)
+    binsx   = np.linspace(mapinfo.xmin, mapinfo.xmax, mapinfo.nx + 1)
+    binsy   = np.linspace(mapinfo.ymin, mapinfo.ymax, mapinfo.ny + 1)
+
     def get_maps_coefficient(x : np.array, y : np.array) -> np.array:
-        ix = np.digitize(x, binsx)-1
-        iy = np.digitize(y, binsy)-1
-        return np.array([map_df.get(j, {}).get(i, np.nan) for i, j in zip(iy,ix)])
+        ix = np.digitize(x, binsx) - 1
+        iy = np.digitize(y, binsy) - 1
+
+        valid   = in_range(x, mapinfo.xmin, mapinfo.xmax)
+        valid  &= in_range(y, mapinfo.ymin, mapinfo.ymax)
+        output  = np.full(len(valid), np.nan, dtype=np.float)
+
+        output[valid] = map_df.values[iy[valid], ix[valid]]
+        return output
+
     return get_maps_coefficient
 
 
@@ -168,6 +177,7 @@ def time_coefs_corr(time_evt   : np.array,
     par_factor = par_i/par_mean
     return par_factor
 
+
 def get_df_to_z_converter(map_te: ASectorMap) -> Callable:
     """
     For given map, it returns a function that provides the conversion
@@ -201,6 +211,7 @@ class norm_strategy(AutoNameEnumBase):
     max    = auto()
     kr     = auto()
     custom = auto()
+
 
 def get_normalization_factor(map_e0    : ASectorMap,
                              norm_strat: norm_strategy   = norm_strategy.max,
@@ -241,6 +252,7 @@ def get_normalization_factor(map_e0    : ASectorMap,
         raise ValueError(s)
 
     return norm_value
+
 
 def apply_all_correction_single_maps(map_e0         : ASectorMap,
                                      map_lt         : ASectorMap,
