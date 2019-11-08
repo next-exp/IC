@@ -24,6 +24,7 @@ from .. evm    .event_model       import                       Hit
 from .. evm    .event_model       import                   Cluster
 from .. evm    .event_model       import             HitCollection
 from .. evm    .event_model       import                    MCInfo
+from .. evm    .pmaps             import                SiPMCharge
 from .. core   .system_of_units_c import                     units
 from .. core   .exceptions        import                XYRecoFail
 from .. core   .exceptions        import              NoInputFiles
@@ -51,7 +52,6 @@ from .. io     .dst_io            import                  load_dst
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
 from .. types  .ic_types          import                       NNN
-from .. evm.pmaps                 import                SiPMCharge
 
 NoneType = type(None)
 
