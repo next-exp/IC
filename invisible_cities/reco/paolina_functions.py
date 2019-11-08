@@ -378,3 +378,6 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
             break
 
     return mod_voxels
+
+def get_track_energy(track):
+    return sum([vox.Ehits for vox in track.nodes()])

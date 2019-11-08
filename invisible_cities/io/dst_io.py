@@ -27,7 +27,7 @@ def load_dst(filename, group, node):
 
 def load_dsts(dst_list, group, node):
     dsts = [load_dst(filename, group, node) for filename in dst_list]
-    return pd.concat(dsts)
+    return pd.concat(dsts, ignore_index=True)
 
 def _make_tabledef(column_types : pd.Series, str_col_length : int=32) -> dict:
     tabledef = {}

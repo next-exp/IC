@@ -51,6 +51,7 @@ from . paolina_functions import length
 from . paolina_functions import Contiguity
 from . paolina_functions import drop_end_point_voxels
 from . paolina_functions import make_tracks
+from . paolina_functions import get_track_energy
 
 from .. core.exceptions        import NoHits
 from .. core.exceptions        import NoVoxels
@@ -739,3 +740,12 @@ def test_make_tracks_function(ICDATADIR):
             tc_blob_energies = (tc.blobs[0].E, tc.blobs[1].E)
 
             assert np.allclose(blob_energies(t, blob_radius), tc_blob_energies)
+
+
+@given(bunch_of_hits, box_sizes)
+def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
+    voxels = voxelize_hits    (hits  , voxel_dimensions)
+    tracks = make_track_graphs(voxels)
+    # assert sum of track energy equal to sum of hits energies
+    assert_almost_equal(sum(get_track_energy(track) for track in tracks), sum(h.E for h in hits))
+
