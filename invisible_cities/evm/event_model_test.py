@@ -39,7 +39,7 @@ def event_input(draw):
 
 
 @composite
-def voxel_input(draw, min_value=0, max_value=100):
+def voxel_input(draw):
     x     = draw(floats(  1,   5))
     y     = draw(floats(-10,  10))
     z     = draw(floats(.01,  .5))
@@ -48,7 +48,7 @@ def voxel_input(draw, min_value=0, max_value=100):
     return x, y, z, E, size
 
 @composite
-def cluster_input(draw, min_value=0, max_value=100):
+def cluster_input(draw):
     x     = draw(floats  (  1,   5))
     y     = draw(floats  (-10,  10))
     xvar  = draw(floats  (.01,  .5))
@@ -59,7 +59,7 @@ def cluster_input(draw, min_value=0, max_value=100):
 
 
 @composite
-def hit_input(draw, min_value=0, max_value=100):
+def hit_input(draw):
     z           = draw(floats  (.1,  .9))
     s2_energy   = draw(floats  (50, 100))
     peak_number = draw(integers( 1,  20))
@@ -92,7 +92,7 @@ def test_event(test_class, event_pars):
     assert evt.time  == time
 
 
-@given(cluster_input(1))
+@given(cluster_input())
 def test_cluster(ci):
     Q, x, y, xvar, yvar, nsipm = ci
     xrms = np.sqrt(xvar)
@@ -121,7 +121,7 @@ def test_hitenergy_value(value):
     assert getattr(HitEnergy, value).value == value
 
 
-@given(cluster_input(1), hit_input(1))
+@given(cluster_input(), hit_input())
 def test_hit(ci, hi):
     Q, x, y, xvar, yvar, nsipm        = ci
     peak_number, E, z, x_peak, y_peak = hi
@@ -143,7 +143,7 @@ def test_hit(ci, hi):
     np.allclose(h.pos      , np.array(xyz), rtol=1e-4)
 
 
-@given(voxel_input(1))
+@given(voxel_input())
 def test_voxel(vi):
     x, y, z, E, size = vi
     xyz = x, y, z
