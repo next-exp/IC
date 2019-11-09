@@ -501,7 +501,7 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimension
 
     energies = [v.E for v in voxels]
     e_thr = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
     tot_final_energy = sum(v.E for v in mod_voxels)
     final_trks = make_track_graphs(mod_voxels)
     final_trk_energies = [sum(vox.E for vox in t.nodes()) for t in final_trks]
@@ -527,7 +527,7 @@ def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
     # This is the core of the test: collect data before/after ...
     ante_energies  = [v.E   for v in voxels]
     ante_positions = [v.XYZ for v in voxels]
-    mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
     post_energies  = [v.E   for v in voxels]
     post_positions = [v.XYZ for v in voxels]
 
@@ -559,7 +559,7 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     ini_energies = [sum(vox.E for vox in t.nodes()) for t in ini_trks]
     ini_n_voxels = np.array([len(t.nodes()) for t in ini_trks])
 
-    mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
 
     trks = make_track_graphs(mod_voxels)
     n_of_tracks = len(trks)
@@ -582,11 +582,12 @@ def test_drop_voxels_deterministic(ICDATADIR):
     min_voxels = 3
     vox_size   = [15.] * 3
 
-    all_hits     = load_hits(hit_file)
-    hits         = all_hits[evt_number].hits
-    voxels       = voxelize_hits(hits, vox_size, strict_voxel_size=False)
-    mod_voxels   = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = False), e_thr, min_voxels)
-    mod_voxels_r = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = True ), e_thr, min_voxels)
+    all_hits        = load_hits(hit_file)
+    hits            = all_hits[evt_number].hits
+    voxels          = voxelize_hits(hits, vox_size, strict_voxel_size=False)
+    mod_voxels  , _ = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = False), e_thr, min_voxels)
+    mod_voxels_r, _ = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = True ), e_thr, min_voxels)
+
     for v1, v2 in zip(sorted(mod_voxels, key = lambda v:v.E), sorted(mod_voxels_r, key = lambda v:v.E)):
         assert np.isclose(v1.E, v2.E)
 
@@ -596,7 +597,7 @@ def test_voxel_drop_in_short_tracks():
     e_thr = sum(v.E for v in voxels) + 1.
     min_voxels = 0
 
-    mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
 
     assert len(mod_voxels) >= 1
 
@@ -678,7 +679,7 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
 
     energies = [v.E for v in voxels]
     e_thr = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    mod_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
     trks = make_track_graphs(mod_voxels)
     for t in tracks:
         a, b = find_extrema(t)
@@ -707,10 +708,10 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
     energies_c = [v.E for v in voxels_c]
     e_thr = min(energies_c) + fraction_zero_one * (max(energies_c) - min(energies_c))
     # Test that this function doesn't fail
-    mod_voxels_c = drop_end_point_voxels(voxels_c, e_thr, min_vxls=0)
+    mod_voxels_c, _ = drop_end_point_voxels(voxels_c, e_thr, min_vxls=0)
 
-    tot_energy     = sum(getattr(h, energy_type.value) for v in voxels_c     for h in v.hits) 
-    tot_mod_energy = sum(getattr(h, energy_type.value) for v in mod_voxels_c for h in v.hits) 
+    tot_energy     = sum(getattr(h, energy_type.value) for v in voxels_c     for h in v.hits)
+    tot_mod_energy = sum(getattr(h, energy_type.value) for v in mod_voxels_c for h in v.hits)
 
     assert np.isclose(tot_energy, tot_mod_energy)
 
@@ -772,4 +773,3 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     tracks = make_track_graphs(voxels)
     # assert sum of track energy equal to sum of hits energies
     assert_almost_equal(sum(get_track_energy(track) for track in tracks), sum(h.E for h in hits))
-
