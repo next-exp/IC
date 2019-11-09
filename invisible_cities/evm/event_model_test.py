@@ -4,6 +4,8 @@ from numpy.testing import assert_equal
 from pytest        import mark
 
 from hypothesis             import given
+from hypothesis.strategies  import just
+from hypothesis.strategies  import one_of
 from hypothesis.strategies  import floats
 from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
@@ -65,7 +67,10 @@ def hit_input(draw):
     peak_number = draw(integers( 1,  20))
     x_peak      = draw(floats (-10., 2.))
     y_peak      = draw(floats (-20., 5.))
-    return peak_number, s2_energy, z, x_peak, y_peak
+    s2_energy_c = draw(one_of(just(-1), floats  (50, 100)))
+    track_id    = draw(one_of(just(-1), integers( 0,  10)))
+    Ep          = draw(one_of(just(-1), floats  (50, 100)))
+    return peak_number, s2_energy, z, x_peak, y_peak, s2_energy_c, track_id, Ep
 
 
 @given(sensor_params_input())
@@ -123,24 +128,27 @@ def test_hitenergy_value(value):
 
 @given(cluster_input(), hit_input())
 def test_hit(ci, hi):
-    Q, x, y, xvar, yvar, nsipm        = ci
-    peak_number, E, z, x_peak, y_peak = hi
+    Q, x, y, xvar, yvar, nsipm                            = ci
+    peak_number, E, z, x_peak, y_peak, s2ec, track_id, ep = hi
     xyz = x, y, z
 
     c = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
-    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak))
+    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, ep)
 
     assert h.peak_number == peak_number
     assert h.npeak       == peak_number
 
-    np.isclose (h.X        , x ,            rtol=1e-4)
-    np.isclose (h.Y        , y ,            rtol=1e-4)
-    np.isclose (h.Z        , z,             rtol=1e-4)
-    np.isclose (h.E        , E,             rtol=1e-4)
-    np.isclose (h.Xpeak    , x_peak,        rtol=1e-4)
-    np.isclose (h.Ypeak    , y_peak,        rtol=1e-4)
-    np.allclose(h.XYZ      , xyz,           rtol=1e-4)
-    np.allclose(h.pos      , np.array(xyz), rtol=1e-4)
+    np.isclose (h.X       , x       , rtol=1e-4)
+    np.isclose (h.Y       , y       , rtol=1e-4)
+    np.isclose (h.Z       , z       , rtol=1e-4)
+    np.isclose (h.E       , E       , rtol=1e-4)
+    np.isclose (h.Xpeak   , x_peak  , rtol=1e-4)
+    np.isclose (h.Ypeak   , y_peak  , rtol=1e-4)
+    np.allclose(h.XYZ     , xyz     , rtol=1e-4)
+    np.allclose(h.pos     , xyz     , rtol=1e-4)
+    np.allclose(h.Ec      , s2ec    , rtol=1e-4)
+    np.allclose(h.track_id, track_id, rtol=1e-4)
+    np.allclose(h.Ep      , ep      , rtol=1e-4)
 
 
 @given(voxel_input())
