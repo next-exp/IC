@@ -149,12 +149,12 @@ def test_voxel(vi):
     xyz = x, y, z
     v = Voxel(x, y, z, E, size)
 
-    np.allclose(v.XYZ, xyz          , rtol=1e-4)
-    np.allclose(v.pos, np.array(xyz), rtol=1e-4)
-    np.isclose (v.E  , E            , rtol=1e-4)
-    np.isclose (v.X  , x            , rtol=1e-4)
-    np.isclose (v.Y  , y            , rtol=1e-4)
-    np.isclose (v.Z  , z            , rtol=1e-4)
+    np.allclose(v.XYZ, xyz, rtol=1e-4)
+    np.allclose(v.pos, xyz, rtol=1e-4)
+    np.isclose (v.E  , E  , rtol=1e-4)
+    np.isclose (v.X  , x  , rtol=1e-4)
+    np.isclose (v.Y  , y  , rtol=1e-4)
+    np.isclose (v.Z  , z  , rtol=1e-4)
 
 
 def test_hit_collection_empty():
