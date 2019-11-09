@@ -270,7 +270,7 @@ class VoxelCollection:
         return self.__str__()
 
 
-class Blob():
+class Blob:
     """A Blob is a collection of Hits with a seed and a radius. """
     def __init__(self, seed: Tuple[float, float, float],
                        hits : List[BHit],
