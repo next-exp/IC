@@ -18,6 +18,7 @@ from .       event_model import Cluster
 from .       event_model import Hit
 from .       event_model import Voxel
 from .       event_model import HitCollection
+from .       event_model import HitEnergy
 from .       event_model import KrEvent
 
 
@@ -113,6 +114,11 @@ def test_cluster(ci):
     np.isclose (c.R   ,     r, rtol=1e-4)
     np.isclose (c.Phi ,     phi, rtol=1e-4)
     np.allclose(c.posxy ,   pos, rtol=1e-4)
+
+
+@mark.parametrize("value", "E Ec Ep".split())
+def test_hitenergy_value(value):
+    assert getattr(HitEnergy, value).value == value
 
 
 @given(cluster_input(1), hit_input(1))
