@@ -18,7 +18,6 @@ from .       event_model import Cluster
 from .       event_model import Hit
 from .       event_model import Voxel
 from .       event_model import HitCollection
-from .       event_model import HitCollection
 from .       event_model import KrEvent
 
 
@@ -36,6 +35,7 @@ def event_input(draw):
     evt_no = draw(integers())
     time   = draw(floats  (allow_nan=False))
     return evt_no, time
+
 
 @composite
 def voxel_input(draw, min_value=0, max_value=100):
@@ -81,7 +81,6 @@ def test_sensor_params(sensor_pars):
 @mark.parametrize("test_class",
                   (Event,
                    HitCollection,
-                   HitCollection,
                    KrEvent))
 @given(event_input())
 def test_event(test_class, event_pars):
@@ -90,7 +89,6 @@ def test_event(test_class, event_pars):
 
     assert evt.event == evt_no
     assert evt.time  == time
-
 
 
 @given(cluster_input(1))
@@ -138,6 +136,7 @@ def test_hit(ci, hi):
     np.allclose(h.XYZ      , xyz,           rtol=1e-4)
     np.allclose(h.pos      , np.array(xyz), rtol=1e-4)
 
+
 @given(voxel_input(1))
 def test_voxel(vi):
     x, y, z, E, size = vi
@@ -152,11 +151,8 @@ def test_voxel(vi):
     np.isclose (v.Z    , z ,                 rtol=1e-4)
 
 
-@mark.parametrize("test_class",
-                  (HitCollection,
-                   HitCollection))
-def test_hit_collection_empty(test_class):
-    hc = test_class(-1, -1)
+def test_hit_collection_empty():
+    hc = HitCollection(-1, -1)
     assert hc.hits == []
 
 
