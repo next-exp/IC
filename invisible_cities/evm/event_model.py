@@ -116,6 +116,7 @@ class MCParticle:
 class HitEnergy(AutoNameEnumBase):
     E        = auto()
     Ec       = auto()
+    Ep       = auto()
 
 
 class BHit:
