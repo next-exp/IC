@@ -39,9 +39,14 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
                 continue
             hit = Hit(row.npeak,
                       Cluster(row.Q, xy(row.X, row.Y), xy(row.Xrms**2, row.Yrms**2),
-                              row.nsipm, row.Z, row.E, Qc = getattr(row, 'Qc', -1)),
-                      row.Z, row.E, xy(getattr(row, 'Xpeak', -1000) , getattr(row, 'Ypeak', -1000)),
-                      s2_energy_c = getattr(row, 'Ec', -1), track_id = getattr(row, 'track_id', -1)) 
+                              row.nsipm, row.Z, row.E,
+                              Qc = getattr(row, 'Qc', -1)),       # for backwards compatibility
+                      row.Z, row.E,
+                      xy(getattr(row, 'Xpeak', -1000),            # for backwards compatibility
+                         getattr(row, 'Ypeak', -1000)),           # for backwards compatibility
+                      s2_energy_c = getattr(row, 'Ec'      , -1), # for backwards compatibility
+                      track_id    = getattr(row, 'track_id', -1), # for backwards compatibility
+                      Ep          = getattr(row, "Ep"      , -1)) # for backwards compatibility
 
             hits.append(hit)
 
