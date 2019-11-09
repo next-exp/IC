@@ -104,16 +104,16 @@ def test_cluster(ci):
     c      = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
 
     assert c.nsipm == nsipm
-    np.isclose (c.Q   ,     Q, rtol=1e-4)
-    np.isclose (c.X   ,     x, rtol=1e-4)
-    np.isclose (c.Y   ,     y, rtol=1e-4)
-    np.isclose (c.Xrms,     xrms, rtol=1e-3)
-    np.isclose (c.Yrms,     yrms, rtol=1e-3)
-    np.isclose (c.var.XY,   varar, rtol=1e-4)
-    np.allclose(c.XY,       xyar, rtol=1e-4)
-    np.isclose (c.R   ,     r, rtol=1e-4)
-    np.isclose (c.Phi ,     phi, rtol=1e-4)
-    np.allclose(c.posxy ,   pos, rtol=1e-4)
+    np.isclose (c.Q     , Q    , rtol=1e-4)
+    np.isclose (c.X     , x    , rtol=1e-4)
+    np.isclose (c.Y     , y    , rtol=1e-4)
+    np.isclose (c.Xrms  , xrms , rtol=1e-4)
+    np.isclose (c.Yrms  , yrms , rtol=1e-4)
+    np.isclose (c.var.XY, varar, rtol=1e-4)
+    np.allclose(c.XY    , xyar , rtol=1e-4)
+    np.isclose (c.R     , r    , rtol=1e-4)
+    np.isclose (c.Phi   , phi  , rtol=1e-4)
+    np.allclose(c.posxy , pos  , rtol=1e-4)
 
 
 @mark.parametrize("value", "E Ec Ep".split())
@@ -149,12 +149,12 @@ def test_voxel(vi):
     xyz = x, y, z
     v = Voxel(x, y, z, E, size)
 
-    np.allclose(v.XYZ  , xyz,                rtol=1e-4)
-    np.allclose(v.pos , np.array(xyz),       rtol=1e-4)
-    np.isclose (v.E    , E,                  rtol=1e-4)
-    np.isclose (v.X    , x ,                 rtol=1e-4)
-    np.isclose (v.Y    , y ,                 rtol=1e-4)
-    np.isclose (v.Z    , z ,                 rtol=1e-4)
+    np.allclose(v.XYZ, xyz          , rtol=1e-4)
+    np.allclose(v.pos, np.array(xyz), rtol=1e-4)
+    np.isclose (v.E  , E            , rtol=1e-4)
+    np.isclose (v.X  , x            , rtol=1e-4)
+    np.isclose (v.Y  , y            , rtol=1e-4)
+    np.isclose (v.Z  , z            , rtol=1e-4)
 
 
 def test_hit_collection_empty():
