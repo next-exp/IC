@@ -354,9 +354,9 @@ class TrackCollection(Event):
 
 class HitCollection(Event):
     """A Collection of hits"""
-    def __init__(self, event_number, event_time):
+    def __init__(self, event_number, event_time, hits=None):
         Event.__init__(self, event_number, event_time)
-        self.hits = []
+        self.hits = [] if hits is None else hits
 
     def store(self, table):
         row = table.row
