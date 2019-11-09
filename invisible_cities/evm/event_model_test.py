@@ -5,6 +5,7 @@ from pytest        import mark
 
 from hypothesis             import given
 from hypothesis.strategies  import just
+from hypothesis.strategies  import lists
 from hypothesis.strategies  import one_of
 from hypothesis.strategies  import floats
 from hypothesis.strategies  import integers
@@ -71,6 +72,16 @@ def hit_input(draw):
     track_id    = draw(one_of(just(-1), integers( 0,  10)))
     Ep          = draw(one_of(just(-1), floats  (50, 100)))
     return peak_number, s2_energy, z, x_peak, y_peak, s2_energy_c, track_id, Ep
+
+
+@composite
+def hits(draw):
+    Q, x, y, xvar, yvar, nsipm                            = draw(cluster_input())
+    peak_number, E, z, x_peak, y_peak, s2ec, track_id, ep = draw(    hit_input())
+
+    c = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
+    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, ep)
+    return h
 
 
 @given(sensor_params_input())
@@ -168,6 +179,12 @@ def test_voxel(vi):
 def test_hit_collection_empty():
     hc = HitCollection(-1, -1)
     assert hc.hits == []
+
+
+@given(lists(hits()))
+def test_hit_collection_nonempty(hits):
+    hc = HitCollection(-1, -1, hits=hits)
+    assert hc.hits == hits
 
 
 def test_kr_event_attributes():

@@ -45,9 +45,8 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
 
             hits.append(hit)
 
-        if len(hits)>0:
-            all_events.update({event : HitCollection(event, time)})
-            all_events[event].hits.extend(hits)
+        if len(hits):
+            all_events[event] = HitCollection(event, time, hits=hits)
 
     return all_events
 
