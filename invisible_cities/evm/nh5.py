@@ -233,6 +233,7 @@ class HitsTable(tb.IsDescription):
     Qc       = tb.Float64Col(pos=13)
     Ec       = tb.Float64Col(pos=14)
     track_id = tb.  Int32Col(pos=15)
+    Ep       = tb.Float64Col(pos=16)
 
 
 class VoxelsTable(tb.IsDescription):

@@ -377,6 +377,7 @@ class HitCollection(Event):
             row["Qc"      ] = hit .Qc
             row["Ec"      ] = hit .Ec
             row["track_id"] = hit .track_id
+            row["Ep"      ] = hit .Ep
             row.append()
 
     def __str__(self):
