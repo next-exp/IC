@@ -16,38 +16,6 @@ from .. sierpe   import fee as FEE
 from .  diomira  import diomira
 
 
-@mark.skip(reason="Table not written in liquid cities anymore")
-def test_diomira_fee_table(ICDATADIR):
-    "Test that FEE table reads back correctly with expected values."
-    RWF_file = os.path.join(ICDATADIR, 'electrons_40keV_z250_RWF.h5')
-
-    with tb.open_file(RWF_file, 'r') as e40rwf:
-        fee = tbl.read_FEE_table(e40rwf.root.FEE.FEE)
-        feep = fee.fee_param
-        eps = 1e-04
-        # Ignoring PEP8 to improve readability by making symmetry explicit.
-        assert len(fee.adc_to_pes)    == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee.coeff_blr)     == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee.coeff_c)       == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee.pmt_noise_rms) == e40rwf.root.RD.pmtrwf.shape[1]
-        assert feep.NBITS == FEE.NBITS
-        assert abs(feep.FEE_GAIN - FEE.FEE_GAIN)           < eps
-        assert abs(feep.LSB - FEE.LSB)                     < eps
-        assert abs(feep.NOISE_I - FEE.NOISE_I)             < eps
-        assert abs(feep.NOISE_DAQ - FEE.NOISE_DAQ)         < eps
-        assert abs(feep.C2/units.nF - FEE.C2/units.nF)     < eps
-        assert abs(feep.C1/units.nF - FEE.C1/units.nF)     < eps
-        assert abs(feep.R1/units.ohm - FEE.R1/units.ohm)   < eps
-        assert abs(feep.ZIN/units.ohm - FEE.Zin/units.ohm) < eps
-        assert abs(feep.t_sample - FEE.t_sample)           < eps
-        assert abs(feep.f_sample - FEE.f_sample)           < eps
-        assert abs(feep.f_mc - FEE.f_mc)                   < eps
-        assert abs(feep.f_LPF1 - FEE.f_LPF1)               < eps
-        assert abs(feep.f_LPF2 - FEE.f_LPF2)               < eps
-        assert abs(feep.OFFSET - FEE.OFFSET)               < eps
-        assert abs(feep.CEILING - FEE.CEILING)             < eps
-
-
 def test_diomira_identify_bug(ICDATADIR):
     """Read a one-event file in which the energy of PMTs is equal to zero and
     asset it must be son. This test would fail for a normal file where there
