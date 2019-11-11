@@ -103,22 +103,6 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     assert np.all(dst.s2_peak.values == s2_peak_pass)
 
 
-@mark.skip("This scenario is not possible in liquid cities")
-def test_dorothea_event_not_found(ICDATADIR, output_tmpdir):
-    file_in   = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_irene_3evt.h5")
-    file_out  = os.path.join(output_tmpdir, "test_dorothea_event_not_found.h5")
-
-    conf = configure('dummy invisible_cities/config/dorothea.conf'.split())
-    nevt = 3
-
-    conf.update(dict(files_in    = file_in,
-                     file_out    = file_out,
-                     event_range = (0, nevt)))
-
-    cnt = dorothea(**conf)
-    assert cnt.n_empty_pmaps == 1
-
-
 def test_dorothea_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
     file_out    = os.path.join(output_tmpdir,                      "exact_result_dorothea.h5")
