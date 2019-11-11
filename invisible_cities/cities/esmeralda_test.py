@@ -247,7 +247,7 @@ def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
     esmeralda(**conf)
 
 #if the first analyzed events has no overlap in blob buggy esmeralda will cast all overlap energy to integers    
-def test_esmeralda_blob_overlap_bug(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
+def test_esmeralda_blob_overlap_bug(data_hdst, correction_map_filename, config_tmpdir):
     PATH_IN   = data_hdst
     PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
@@ -309,3 +309,41 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
+
+
+#test showing that all events that pass charge threshold are contained in hits output
+def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
+    PATH_IN   = data_hdst
+    PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda.h5")
+    conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
+    nevt_req  = 8
+    th_p      = 30 * units.pes
+    conf.update(dict(files_in                     = PATH_IN                ,
+                     file_out                     = PATH_OUT               ,
+                     event_range                  = nevt_req               ,
+                     run_number                   = 6822                   ,
+                     cor_hits_params              = dict(
+                         map_fname                = correction_map_filename,
+                         threshold_charge_reco    = 10   * units.pes       ,
+                         threshold_charge_paolina = th_p                   ,
+                         same_peak                = True                   ,
+                         apply_temp               = False                 ),
+                     paolina_params               = dict(
+                         vox_size                 = [15 * units.mm] * 3    ,
+                         strict_vox_size          = False                  ,
+                         energy_threshold         = 20 * units.keV         ,
+                         min_voxels               = 2                      ,
+                         blob_radius              = 21 * units.mm)        ))
+    cnt = esmeralda(**conf)
+
+    df_tracks           =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Tracks')
+    df_phits            =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Events')
+    df_in_hits          =  dio.load_dst(PATH_IN ,    'RECO', 'Events')
+
+    num_pass_th_in_hits = sum(df_in_hits.Q > th_p)
+    num_pass_th_p_hits  = len(df_phits)
+
+    assert num_pass_th_in_hits == num_pass_th_p_hits
+
+    num_paolina_hits   = sum(df_phits.Ep>0)
+    assert num_paolina_hits < num_pass_th_p_hits
