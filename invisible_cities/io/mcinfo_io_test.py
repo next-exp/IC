@@ -207,11 +207,11 @@ def test_load_mchits_df(mc_particle_and_hits_nexus_data):
         hit_df  = load_mchits_df(h5in, extents)
 
     evt = 0
-    assert np.allclose(X, hit_df.loc[evt].x   .values)
-    assert np.allclose(Y, hit_df.loc[evt].y   .values)
-    assert np.allclose(Z, hit_df.loc[evt].z   .values)
-    assert np.allclose(E, hit_df.loc[evt].E   .values)
-    assert np.allclose(t, hit_df.loc[evt].time.values)
+    assert np.allclose(X, hit_df.loc[evt].x     .values)
+    assert np.allclose(Y, hit_df.loc[evt].y     .values)
+    assert np.allclose(Z, hit_df.loc[evt].z     .values)
+    assert np.allclose(E, hit_df.loc[evt].energy.values)
+    assert np.allclose(t, hit_df.loc[evt].time  .values)
 
 
 def test_load_mchits_fromstr(mc_particle_and_hits_nexus_data):
@@ -220,11 +220,11 @@ def test_load_mchits_fromstr(mc_particle_and_hits_nexus_data):
     hit_df = load_mchits_fromstr(efile)
 
     evt = 0
-    assert np.allclose(X, hit_df.loc[evt].x   .values)
-    assert np.allclose(Y, hit_df.loc[evt].y   .values)
-    assert np.allclose(Z, hit_df.loc[evt].z   .values)
-    assert np.allclose(E, hit_df.loc[evt].E   .values)
-    assert np.allclose(t, hit_df.loc[evt].time.values)
+    assert np.allclose(X, hit_df.loc[evt].x     .values)
+    assert np.allclose(Y, hit_df.loc[evt].y     .values)
+    assert np.allclose(Z, hit_df.loc[evt].z     .values)
+    assert np.allclose(E, hit_df.loc[evt].energy.values)
+    assert np.allclose(t, hit_df.loc[evt].time  .values)
 
 
 def test_load_mcparticles(mc_particle_and_hits_nexus_data):
@@ -260,17 +260,21 @@ def test_load_mcparticles_df(mc_particle_and_hits_nexus_data):
     evt  = 0
     p_id = 1
     particle = mcparticle_df.loc[evt].loc[p_id]
-    assert particle.pname == name
-    assert np.isclose(particle.k_eng, k_eng)
+    assert particle.particle_name == name
+    assert np.isclose(particle.kin_energy, k_eng)
 
-    ini_vtx = particle[['ini_x', 'ini_y', 'ini_z', 'ini_t']]
-    assert_allclose(ini_vtx.tolist(), vi)
+    init_vtx = particle[['initial_x', 'initial_y',
+                         'initial_z', 'initial_t']]
+    assert_allclose(init_vtx.tolist(), vi)
 
-    fin_vtx = particle[['fin_x', 'fin_y', 'fin_z', 'fin_t']]
+    fin_vtx = particle[['final_x', 'final_y',
+                        'final_z', 'final_t']]
     assert_allclose(fin_vtx.tolist(), vf)
 
-    ini_mom = particle[['ini_px', 'ini_py', 'ini_pz']]
-    assert_allclose(ini_mom.tolist(), p)
+    init_mom = particle[['initial_momentum_x',
+                         'initial_momentum_y',
+                         'initial_momentum_z']]
+    assert_allclose(init_mom.tolist(), p)
 
 
 def test_load_sensors_data(mc_sensors_nexus_data):

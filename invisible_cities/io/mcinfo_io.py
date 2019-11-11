@@ -211,7 +211,7 @@ def load_mchits_df(h5in    : tb.file.File,
                          'x'           : hits_tb.col('hit_position')[:, 0],
                          'y'           : hits_tb.col('hit_position')[:, 1],
                          'z'           : hits_tb.col('hit_position')[:, 2],
-                         'E'           : hits_tb.col('hit_energy')})
+                         'energy'      : hits_tb.col('hit_energy')})
 
     evt_hit_df = extents[['last_hit', 'evt_number']]
     evt_hit_df.set_index('last_hit', inplace = True)
@@ -252,25 +252,25 @@ def load_mcparticles_df(iFileName: str) -> pd.DataFrame:
         p_tb = iFile.root.MC.particles
 
         # Generating parts DataFrame
-        parts = pd.DataFrame({'pid'     : p_tb.col('particle_indx'),
-                              'pname'   : p_tb.col('particle_name').astype('U20'),
-                              'primary' : p_tb.col('primary').astype('bool'),
-                              'mid'     : p_tb.col('mother_indx'),
-                              'ini_x'   : p_tb.col('initial_vertex')[:, 0],
-                              'ini_y'   : p_tb.col('initial_vertex')[:, 1],
-                              'ini_z'   : p_tb.col('initial_vertex')[:, 2],
-                              'ini_t'   : p_tb.col('initial_vertex')[:, 3],
-                              'fin_x'   : p_tb.col('final_vertex')[:, 0],
-                              'fin_y'   : p_tb.col('final_vertex')[:, 1],
-                              'fin_z'   : p_tb.col('final_vertex')[:, 2],
-                              'fin_t'   : p_tb.col('final_vertex')[:, 3],
-                              'ini_vol' : p_tb.col('initial_volume').astype('U20'),
-                              'fin_vol' : p_tb.col('final_volume').astype('U20'),
-                              'ini_px'  : p_tb.col('momentum')[:, 0],
-                              'ini_py'  : p_tb.col('momentum')[:, 1],
-                              'ini_pz'  : p_tb.col('momentum')[:, 2],
-                              'k_eng'   : p_tb.col('kin_energy'),
-                              'c_proc'  : p_tb.col('creator_proc').astype('U20')})
+        parts = pd.DataFrame({'particle_id'       : p_tb.col('particle_indx'),
+                              'particle_name'     : p_tb.col('particle_name').astype('U20'),
+                              'primary'           : p_tb.col('primary').astype('bool'),
+                              'mother_id'         : p_tb.col('mother_indx'),
+                              'initial_x'         : p_tb.col('initial_vertex')[:, 0],
+                              'initial_y'         : p_tb.col('initial_vertex')[:, 1],
+                              'initial_z'         : p_tb.col('initial_vertex')[:, 2],
+                              'initial_t'         : p_tb.col('initial_vertex')[:, 3],
+                              'final_x'           : p_tb.col('final_vertex')[:, 0],
+                              'final_y'           : p_tb.col('final_vertex')[:, 1],
+                              'final_z'           : p_tb.col('final_vertex')[:, 2],
+                              'final_t'           : p_tb.col('final_vertex')[:, 3],
+                              'initial_volume'    : p_tb.col('initial_volume').astype('U20'),
+                              'final_volume'      : p_tb.col('final_volume').astype('U20'),
+                              'initial_momentum_x': p_tb.col('momentum')[:, 0],
+                              'initial_momentum_y': p_tb.col('momentum')[:, 1],
+                              'initial_momentum_z': p_tb.col('momentum')[:, 2],
+                              'kin_energy'        : p_tb.col('kin_energy'),
+                              'creator_proc'      : p_tb.col('creator_proc').astype('U20')})
 
         # Adding event info
         evt_part_df = extents[['last_particle', 'evt_number']]
@@ -284,7 +284,7 @@ def load_mcparticles_df(iFileName: str) -> pd.DataFrame:
         parts.event_id = parts.event_id.astype(int)
 
         # Setting the indexes
-        parts.set_index(['event_id', 'pid'], inplace=True)
+        parts.set_index(['event_id', 'particle_id'], inplace=True)
 
     return parts
 
