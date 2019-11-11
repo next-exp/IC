@@ -211,22 +211,6 @@ def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
 
 
 @mark.skip
-def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, s12params):
-    "Check that PMT active correctly describes the PMT configuration of the detector"
-    nrequired = 1
-    conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number  =  job_info_missing_pmts.run_number,
-                     files_in    =  job_info_missing_pmts. input_filename,
-                     file_out    =  job_info_missing_pmts.output_filename,
-                     event_range = (0, nrequired),
-                     **unpack_s12params(s12params))) # s12params are just dummy values in this test
-
-    irene = Irene(**conf)
-
-    assert irene.pmt_active == job_info_missing_pmts.pmt_active
-
-
-@mark.skip
 def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
     file_in  = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_diomira_3evt.h5")
     file_out = os.path.join(output_tmpdir, "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_pmaps_3evt.h5")
