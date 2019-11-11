@@ -80,16 +80,6 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
             last_evt_number  = h5out.root.MC.extents[-1][0]
             assert first_evt_number != last_evt_number
 
-
-@mark.skip(reason="Feature removed")
-@mark.parametrize('filename first_evt'.split(),
-                  (('dst_NEXT_v0_08_09_Co56_INTERNALPORTANODE_74_0_7bar_MCRD_10000.root.h5', 740000),
-                   ('NEXT_v0_08_09_Co56_2_0_7bar_MCRD_1000.root.h5'                        ,   2000),
-                   ('electrons_40keV_z250_MCRD.h5'                                         ,      0)))
-def test_event_number_from_input_file_name(filename, first_evt):
-    assert Diomira.event_number_from_input_file_name(filename) == first_evt
-
-
 @mark.slow
 def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
     file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
