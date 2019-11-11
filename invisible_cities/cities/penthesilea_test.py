@@ -176,23 +176,6 @@ def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
         (assert_MChit_equality(p_hit, t_hit) for p_hit, t_hit in zip(penthesilea_hits, true_hits))
 
 
-@mark.skip("This scenario is not possible in liquid cities")
-def test_penthesilea_event_not_found(ICDATADIR, output_tmpdir):
-    file_in   = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_irene_3evt.h5")
-    file_out  = os.path.join(output_tmpdir, "test_penthesilea_event_not_found.h5")
-
-    conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
-    nevt = 3
-
-    conf.update(dict(run_number = 4714,
-                     files_in    = file_in,
-                     file_out    = file_out,
-                     event_range = (0, nevt)))
-
-    cnt = penthesilea(**conf)
-    assert cnt.n_empty_pmaps == 1
-
-
 def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts_*.h5")
     file_out    = os.path.join(output_tmpdir, "Tl_v1_00_05_nexus_v5_02_08_7bar_hits.h5")
