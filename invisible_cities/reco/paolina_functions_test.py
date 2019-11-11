@@ -375,16 +375,16 @@ def test_voxelize_single_hit():
 @fixture(scope='module')
 def voxels_without_hits():
     voxel_spec = ((10,10,10,1),
-                  (10,10,11,1),
-                  (10,10,12,1),
-                  (10,10,13,1),
-                  (10,10,14,1),
-                  (10,10,15,1),
-                  (10,11,15,1),
-                  (10,12,15,1),
-                  (10,13,15,1),
-                  (10,14,15,1),
-                  (10,15,15,1)
+                  (10,10,11,2),
+                  (10,10,12,2),
+                  (10,10,13,2),
+                  (10,10,14,2),
+                  (10,10,15,2),
+                  (10,11,15,2),
+                  (10,12,15,2),
+                  (10,13,15,2),
+                  (10,14,15,2),
+                  (10,15,15,2)
     )
     voxels = [Voxel(x,y,z, E, np.array([1,1,1])) for (x,y,z,E) in voxel_spec]
 
@@ -566,6 +566,20 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     assert np.allclose(ini_energies, energies)
     assert np.all(ini_n_voxels - n_voxels == expected_diff_n_voxels)
 
+def test_drop_voxels_deterministic(ICDATADIR):
+    hit_file   = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
+    evt_number = 19
+    e_thr      = 5867.92
+    min_voxels = 3
+    vox_size   = [15.] * 3
+
+    all_hits     = load_hits(hit_file)
+    hits         = all_hits[evt_number].hits
+    voxels       = voxelize_hits(hits, vox_size, strict_voxel_size=False)
+    mod_voxels   = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = False), e_thr, min_voxels)
+    mod_voxels_r = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = True ), e_thr, min_voxels)
+    for v1, v2 in zip(sorted(mod_voxels, key = lambda v:v.E), sorted(mod_voxels_r, key = lambda v:v.E)):
+        assert np.isclose(v1.E, v2.E)
 
 def test_voxel_drop_in_short_tracks():
     hits = [BHit(10, 10, 10, 1), BHit(26, 10, 10, 1)]

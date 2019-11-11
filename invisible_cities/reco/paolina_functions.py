@@ -310,49 +310,45 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
 
         ### be sure that the voxel to be eliminated has at least one neighbour
         ### beyond itself
-        the_neighbours = np.array([neighbours(the_vox, v) for v in voxels])
-        if len(the_neighbours[the_neighbours>0]) <= 1:
+        the_neighbours = (neighbours(the_vox, v) for v in voxels)
+        if sum(the_neighbours) <= 1:
             return 0
 
         ### remove voxel from list of voxels
         voxels.remove(the_vox)
+        the_neighbour_voxels = [v for v in voxels if neighbours(the_vox, v)]
 
         pos = [h.pos              for h in the_vox.hits]
         qs  = [getattr(h, e_type) for h in the_vox.hits]
 
+        #if there are no hits associated to voxels the pos will be an empty list
         if len(pos) == 0:
-            min_dist = 1e+06
-            min_v = voxels[0]
-            for v in voxels:
-                if neighbours(the_vox, v):
-                    dist = np.linalg.norm(the_vox.pos - v.pos)
-                    if dist < min_dist:
-                        min_dist = dist
-                        min_v = v
+            min_dist  = min(np.linalg.norm(the_vox.pos-v.pos) for v in the_neighbour_voxels)
+            min_v     = [v for v in the_neighbour_voxels if  np.isclose(np.linalg.norm(the_vox.pos-v.pos), min_dist)]
 
-            ### add voxel energy to voxel
-            min_v.E += the_vox.E
+            ### add dropped voxel energy to closest voxels, proportional to the  voxels energy
+            sum_en_v = sum(v.E for v in min_v)
+            for v in min_v:
+                v.E += the_vox.E/sum_en_v * v.E
 
             return 1
 
         bary_pos = np.average(pos, weights=qs, axis=0)
 
         ### find hit with minimum distance, only among neighbours
-        min_dist = 1e+06
-        min_hit = voxels[0].hits[0]
-        min_v = voxels[0]
-        for v in voxels:
-            if neighbours(the_vox, v):
-                for hh in v.hits:
-                    dist = np.linalg.norm(bary_pos - hh.pos)
-                    if dist < min_dist:
-                        min_dist = dist
-                        min_hit = hh
-                        min_v = v
 
-        ### add voxel energy to hit and to voxel, separately
-        setattr(min_hit, e_type, getattr(min_hit, e_type) + the_vox.E)
-        min_v.E += the_vox.E
+        min_dist = min(np.linalg.norm(bary_pos-hh.pos) for v in the_neighbour_voxels for hh in v.hits)
+        min_h_v  = [(h, v) for v in the_neighbour_voxels for h in v.hits if np.isclose(np.linalg.norm(bary_pos-h.pos), min_dist)]
+        min_hs   = set(h for (h,v) in min_h_v)
+        min_vs   = set(v for (h,v) in min_h_v)
+
+        ### add dropped voxel energy to closest hits/voxels, proportional to the hits/voxels energy
+        sum_en_h = sum(getattr(h, e_type) for h in min_hs)
+        sum_en_v = sum(v.E                for v in min_vs)
+        for h in min_hs:
+            setattr(h, e_type, getattr(h, e_type) + getattr(h, e_type) * the_vox.E/sum_en_h)
+        for v in min_vs:
+            v.E += the_vox.E/sum_en_v * v.E
 
         return 1
 
