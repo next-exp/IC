@@ -302,12 +302,11 @@ def test_esmeralda_bug_duplicate_hits(data_hdst, esmeralda_tracks, correction_ma
 
 
 #test showing that all events that pass charge threshold are contained in hits output
-@mark.skip("Not implemented yet")
 def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
     PATH_IN   = data_hdst
-    PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda.h5")
+    PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda_drop_voxels.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
-    nevt_req  = 8
+    nevt_req  = all_events
     th_p      = 30 * units.pes
     conf.update(dict(files_in                     = PATH_IN                ,
                      file_out                     = PATH_OUT               ,
@@ -327,14 +326,17 @@ def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, corre
                          blob_radius              = 21 * units.mm)        ))
     cnt = esmeralda(**conf)
 
-    df_tracks           =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Tracks')
-    df_phits            =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Events')
-    df_in_hits          =  dio.load_dst(PATH_IN ,    'RECO', 'Events')
+    df_tracks           =  dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
+    df_phits            =  dio.load_dst(PATH_OUT,   'CHITS' , 'highTh')
+    df_in_hits          =  dio.load_dst(PATH_IN ,    'RECO' , 'Events')
 
-    num_pass_th_in_hits = sum(df_in_hits.Q > th_p)
+    num_pass_th_in_hits = sum(df_in_hits.Q >= th_p)
     num_pass_th_p_hits  = len(df_phits)
-
     assert num_pass_th_in_hits == num_pass_th_p_hits
 
+
     num_paolina_hits   = sum(df_phits.Ep>0)
-    assert num_paolina_hits < num_pass_th_p_hits
+    assert num_paolina_hits <= num_pass_th_p_hits
+
+    #check that the sum of Ep and Ec energies is the same
+    assert np.nansum(df_phits.Ec) == np.nansum(df_phits.Ep)
