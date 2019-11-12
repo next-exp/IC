@@ -511,6 +511,22 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimension
     assert np.allclose(ini_trk_energies, final_trk_energies)
 
 
+@mark.parametrize("energy_type", HitEnergy)
+@given(hits                       = bunch_of_corrected_hits(),
+       requested_voxel_dimensions = box_sizes,
+       min_voxels                 = min_n_of_voxels,
+       fraction_zero_one          = fraction_zero_one)
+def test_dropped_voxels_have_nan_energy(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one, energy_type):
+    voxels            = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
+    energies          = [v.E for v in voxels]
+    e_thr             = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    _, dropped_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    for voxel in dropped_voxels:
+        assert np.isnan(voxel.E)
+        for hit in voxel.hits:
+            assert np.isnan(getattr(hit, energy_type.value))
+
+
 def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
 
     # Get some test data: nothing interesting to see here
