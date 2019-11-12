@@ -687,11 +687,12 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
         assert np.allclose(blob_centre(b), b.pos)
 
 
-@given(bunch_of_corrected_hits(), box_sizes, radius, fraction_zero_one)
-def test_paolina_functions_with_hit_energy_different_from_default_value(hits, requested_voxel_dimensions, blob_radius, fraction_zero_one):
-
-    energy_type = HitEnergy.Ec
-
+@mark.parametrize("energy_type", (HitEnergy.Ec, HitEnergy.Ep))
+@given(hits                       = bunch_of_corrected_hits(),
+       requested_voxel_dimensions = box_sizes,
+       blob_radius                = radius,
+       fraction_zero_one          = fraction_zero_one)
+def test_paolina_functions_with_hit_energy_different_from_default_value(hits, requested_voxel_dimensions, blob_radius, fraction_zero_one, energy_type):
     voxels   = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     voxels_c = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
 
