@@ -116,6 +116,7 @@ class MCParticle:
 class HitEnergy(AutoNameEnumBase):
     E        = auto()
     Ec       = auto()
+    Ep       = auto()
 
 
 class BHit:
@@ -225,7 +226,7 @@ class Cluster(BHit):
 class Hit(Cluster):
     """Represents a reconstructed hit (cluster + z + energy)"""
     def __init__(self, peak_number, cluster, z, s2_energy, peak_xy,
-                 s2_energy_c=-1, track_id=-1):
+                 s2_energy_c=-1, track_id=-1, Ep=-1):
 
 
         super().__init__(cluster.Q,
@@ -237,13 +238,14 @@ class Hit(Cluster):
         self.Ypeak       = peak_xy.y
         self.Ec          = s2_energy_c
         self.track_id    = track_id
+        self.Ep          = Ep
 
     @property
     def npeak(self): return self.peak_number
 
     def __str__(self):
-        return """<{} : npeak = {} z = {} XYpeak = {}, {} E = {} cluster ={} >""".format(self.__class__.__name__,
-                    self.npeak, self.Z, self.Xpeak, self.Ypeak, self.E, super().__str__())
+        return """<{} : npeak = {} z = {} XYpeak = {}, {} E = {} Ec = {} Ep = {} trackid = {} cluster ={} >""".format(self.__class__.__name__,
+                    self.npeak, self.Z, self.Xpeak, self.Ypeak, self.E, self.Ec, self.Ep, self.track_id, super().__str__())
 
     __repr__ =     __str__
 
@@ -268,7 +270,7 @@ class VoxelCollection:
         return self.__str__()
 
 
-class Blob():
+class Blob:
     """A Blob is a collection of Hits with a seed and a radius. """
     def __init__(self, seed: Tuple[float, float, float],
                        hits : List[BHit],
@@ -352,9 +354,9 @@ class TrackCollection(Event):
 
 class HitCollection(Event):
     """A Collection of hits"""
-    def __init__(self, event_number, event_time):
+    def __init__(self, event_number, event_time, hits=None):
         Event.__init__(self, event_number, event_time)
-        self.hits = []
+        self.hits = [] if hits is None else hits
 
     def store(self, table):
         row = table.row
@@ -375,6 +377,7 @@ class HitCollection(Event):
             row["Qc"      ] = hit .Qc
             row["Ec"      ] = hit .Ec
             row["track_id"] = hit .track_id
+            row["Ep"      ] = hit .Ep
             row.append()
 
     def __str__(self):
