@@ -87,8 +87,17 @@ def hit(draw, min_value=1, max_value=100):
     E_c    = draw(floats  ( 50, 100))
     x_peak = draw(floats  (-10,  10))
     y_peak = draw(floats  (-10,  10))
+    track  = draw(integers(  0,  10))
+    E_p    = draw(floats  ( 50, 100))
 
-    return Hit(npeak,Cluster(Q,xy(x,y),xy(xvar,yvar),nsipm),z,E,xy(x_peak,y_peak),s2_energy_c=E_c)
+    return Hit(npeak,
+               Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm),
+               z,
+               E,
+               xy(x_peak, y_peak),
+               s2_energy_c = E_c,
+               track_id    = track,
+               Ep          = E_p)
 
 
 @composite
