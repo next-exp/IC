@@ -213,11 +213,9 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                         hit.track_id = tID
                         track_hits.append(hit)
 
-
-                track_hitc.hits.extend(track_hits)
-                #change dtype of columns to match type of variables
-                df = df.apply(lambda x : x.astype(types_dict[x.name]))
-
+            #change dtype of columns to match type of variables
+            df = df.apply(lambda x : x.astype(types_dict[x.name]))
+            track_hitc.hits.extend(track_hits)
         return df, track_hitc, out_of_map
 
     return create_extract_track_blob_info
