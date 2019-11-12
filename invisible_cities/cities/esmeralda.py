@@ -251,11 +251,11 @@ def make_event_summary(event_number  : int              ,
     ----------
     DataFrame containing relevant per event information.
     """
-    es = pd.DataFrame(columns=['event', 'S2ec' ,  'S2qc', 'ntrks', 'nhits',
-                               'x_avg', 'y_avg', 'z_avg', 'r_avg',
-                               'x_min', 'y_min', 'z_min', 'r_min',
-                               'x_max', 'y_max', 'z_max', 'r_max',
-                               'out_of_map'])
+    es = pd.DataFrame(columns=['event', 'evt_energy' ,  'evt_charge', 'evt_ntrks', 'evt_nhits',
+                               'evt_x_avg', 'evt_y_avg', 'evt_z_avg', 'evt_r_avg',
+                               'evt_x_min', 'evt_y_min', 'evt_z_min', 'evt_r_min',
+                               'evt_x_max', 'evt_y_max', 'evt_z_max', 'evt_r_max',
+                               'evt_out_of_map'])
 
     ntrks = len(topology_info.index)
     S2ec  = max(-1, sum(topology_info.energy))
