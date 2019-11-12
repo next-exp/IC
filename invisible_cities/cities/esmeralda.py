@@ -152,11 +152,11 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
     def create_extract_track_blob_info(hitc):
         #track_hits is a new Hitcollection object that contains hits belonging to tracks, and hits that couldnt be corrected
         track_hitc = evm.HitCollection(hitc.event, hitc.time)
-        out_of_map = any(np.isnan([h.Ec for h in hitc.hits]))
+        out_of_map = any(np.isnan([h.Ep for h in hitc.hits]))
         if out_of_map:
             #add nan hits to track_hits, the track_id will be -1
-            track_hitc.hits.extend  ([h for h in hitc.hits if np.isnan   (h.Ec)])
-            hits_without_nan       = [h for h in hitc.hits if np.isfinite(h.Ec)]
+            track_hitc.hits.extend  ([h for h in hitc.hits if np.isnan   (h.Ep)])
+            hits_without_nan       = [h for h in hitc.hits if np.isfinite(h.Ep)]
             #create new Hitcollection object but keep the name hitc
             hitc      = evm.HitCollection(hitc.event, hitc.time)
             hitc.hits = hits_without_nan
@@ -171,10 +171,13 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                                    'vox_size_x', 'vox_size_y', 'vox_size_z'])
 
         if len(hitc.hits)>0:
-            voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, evm.HitEnergy.Ec)
+            voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, evm.HitEnergy.Ep)
             (    mod_voxels,
              dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
             tracks           = plf.make_track_graphs(mod_voxels)
+
+            for v in dropped_voxels:
+                track_hitc.hits.extend(v.hits)
 
             vox_size_x = voxels[0].size[0]
             vox_size_y = voxels[0].size[1]
@@ -195,7 +198,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                 x, y, z = map(np.array, zip(*pos))
                 r = np.sqrt(x**2 + y**2)
 
-                e     = [h.Ec for v in t.nodes() for h in v.hits]
+                e     = [h.Ep for v in t.nodes() for h in v.hits]
                 ave_pos = np.average(pos, weights=e, axis=0)
                 ave_r   = np.average(r  , weights=e, axis=0)
                 extr1, extr2 = plf.find_extrema(t)
@@ -205,7 +208,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                 blob_pos1, blob_pos2 = plf.blob_centres(t, blob_radius)
 
                 e_blob1, e_blob2, hits_blob1, hits_blob2 = plf.blob_energies_and_hits(t, blob_radius)
-                overlap = float(sum(h.Ec for h in set(hits_blob1).intersection(set(hits_blob2))))
+                overlap = float(sum(h.Ep for h in set(hits_blob1).intersection(set(hits_blob2))))
                 list_of_vars = [hitc.event, tID, energy, length, numb_of_voxels,
                                 numb_of_hits, numb_of_tracks,
                                 min(x), min(y), min(z), min(r), max(x), max(y), max(z), max(r),
