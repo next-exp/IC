@@ -8,6 +8,7 @@ import numpy    as np
 import networkx as nx
 
 from itertools import combinations
+from functools import cmp_to_key
 
 from numpy.testing import assert_almost_equal
 
@@ -525,6 +526,53 @@ def test_dropped_voxels_have_nan_energy(hits, requested_voxel_dimensions, min_vo
         assert np.isnan(voxel.E)
         for hit in voxel.hits:
             assert np.isnan(getattr(hit, energy_type.value))
+
+
+@mark.parametrize("energy_type", HitEnergy)
+@given(hits                       = bunch_of_corrected_hits(),
+       requested_voxel_dimensions = box_sizes,
+       min_voxels                 = min_n_of_voxels,
+       fraction_zero_one          = fraction_zero_one)
+def test_drop_end_point_voxels_doesnt_modify_other_energy_types(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one, energy_type):
+    def compare_voxels(v1, v2):
+        if v1.X != v2.X: return -1 if v1.X < v2.X else +1
+        if v1.Y != v2.Y: return -1 if v1.Y < v2.Y else +1
+        if v1.Z != v2.Z: return -1 if v1.Z < v2.Z else +1
+        return 0
+
+    def energy_from_hits(voxel, e_type):
+        return [getattr(hit, e_type) for hit in voxel.hits]
+
+    voxels     = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
+    voxels     = sorted(voxels, key=cmp_to_key(compare_voxels))
+    energies   = [v.E for v in voxels]
+    e_thr      = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    mod, drop  = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    new_voxels = sorted(mod + drop, key=cmp_to_key(compare_voxels))
+
+    for e_type in HitEnergy:
+        if e_type is energy_type: continue
+
+        for v_before, v_after in zip(voxels, new_voxels):
+            for h_before, h_after in zip(v_before.hits, v_after.hits):
+                #assert sum(energy_from_hits(v_before, e_type.value)) == sum(energy_from_hits(v_after, e_type.value))
+                assert np.isclose(getattr(h_before, e_type.value), getattr(h_after, e_type.value))
+
+
+@mark.parametrize("energy_type", HitEnergy)
+@given(hits                       = bunch_of_corrected_hits(),
+       requested_voxel_dimensions = box_sizes,
+       min_voxels                 = min_n_of_voxels,
+       fraction_zero_one          = fraction_zero_one)
+def test_drop_end_point_voxels_constant_number_of_voxels_and_hits(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one, energy_type):
+    voxels           = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
+    energies         = [v.E for v in voxels]
+    e_thr            = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    new_voxels       = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    (mod_voxels,
+     dropped_voxels) = new_voxels
+    assert len(mod_voxels) + len(dropped_voxels) == len(voxels)
+    assert sum(1 for vs in new_voxels for v in vs for h in v.hits) == len(hits)
 
 
 def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
