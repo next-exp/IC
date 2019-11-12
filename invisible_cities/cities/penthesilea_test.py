@@ -11,7 +11,6 @@ from .. core.testing_utils     import assert_tables_equality
 from .. core.testing_utils     import assert_MChit_equality
 from .. core.configure         import configure
 from .. core.configure         import all as all_events
-from .. reco.dst_functions     import load_dst
 from .. io                     import dst_io as dio
 from .. io.mcinfo_io           import load_mchits
 
@@ -240,7 +239,7 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
     penthesilea(**conf)
 
     tables = (     "MC/extents"     ,  "MC/hits", "MC/particles", "MC/generators",
-                  "DST/Events",
+                 "RECO/Events"      , "DST/Events",
               "Filters/s12_selector")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
@@ -248,14 +247,6 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
-
-    group, table = "RECO/Events".split("/")
-    got      = load_dst(file_out   , group, table)
-    expected = load_dst(true_output, group, table)
-
-    del got["Ep"]
-    assert_dataframes_close(got, expected)
-
 
 def test_penthesilea_exact_result_noS1(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_PMP.h5")
@@ -273,7 +264,7 @@ def test_penthesilea_exact_result_noS1(ICDATADIR, output_tmpdir):
     penthesilea(**conf)
 
     tables = (     "MC/extents"     ,  "MC/hits", "MC/particles", "MC/generators",
-                  "DST/Events",
+                 "RECO/Events"      , "DST/Events",
               "Filters/s12_selector")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
@@ -281,14 +272,6 @@ def test_penthesilea_exact_result_noS1(ICDATADIR, output_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
-
-    group, table = "RECO/Events".split("/")
-    got      = load_dst(file_out   , group, table)
-    expected = load_dst(true_output, group, table)
-
-    del got["Ep"]
-    assert_dataframes_close(got, expected)
-
 
 # test for PR 628
 def test_penthesilea_xyrecofail(config_tmpdir, Xe2nu_pmaps_mc_filename):

@@ -13,7 +13,6 @@ from .. io                     import dst_io      as dio
 from .  esmeralda              import esmeralda
 from .. core.testing_utils     import assert_dataframes_close
 from .. core.testing_utils     import assert_tables_equality
-from .. reco.dst_functions     import load_dst
 
 
 def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
@@ -195,14 +194,15 @@ def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_ma
                          blob_radius              = 21 * units.mm           )))
 
     cnt = esmeralda(**conf)
+    tables = ( "RECO/Events"      , "PAOLINA/Events")
 
-    for node in ("PAOLINA/Events", "RECO/Events"):
-        group, table = node.split("/")
-        got      = load_dst(file_out, group, table)
-        expected = load_dst(true_out, group, table)
 
-        del got["Ep"]
-        assert_dataframes_close(got, expected)
+    with tb.open_file(true_out)  as true_output_file:
+        with tb.open_file(file_out) as   output_file:
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
 
     #The PAOLINA/Summary should contain this columns, and they should stay the same
     columns = ['event', 'S2ec' ,  'S2qc', 'ntrks', 'nhits',
@@ -246,7 +246,7 @@ def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
 
     esmeralda(**conf)
 
-#if the first analyzed events has no overlap in blob buggy esmeralda will cast all overlap energy to integers
+#if the first analyzed events has no overlap in blob buggy esmeralda will cast all overlap energy to integers    
 def test_esmeralda_blob_overlap_bug(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
     PATH_IN   = data_hdst
     PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda.h5")
@@ -299,7 +299,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
     cnt = esmeralda(**conf)
 
     tables = ["MC/extents", "MC/hits", "MC/particles",
-              "PAOLINA/Summary", "PAOLINA/Tracks",
+              "PAOLINA/Events", "PAOLINA/Summary", "PAOLINA/Tracks", "RECO/Events",
               "Run/events", "Run/runInfo", "DST/Events",
               "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
 
@@ -309,11 +309,3 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
-
-    for node in ("PAOLINA/Events", "RECO/Events"):
-        group, table = node.split("/")
-        got      = load_dst(file_out, group, table)
-        expected = load_dst(true_out, group, table)
-
-        del got["Ep"]
-        assert_dataframes_close(got, expected)
