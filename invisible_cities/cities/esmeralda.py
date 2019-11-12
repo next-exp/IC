@@ -284,7 +284,7 @@ def make_event_summary(event_number  : int              ,
     return es
 
 
-def track_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name='Tracks', descriptive_string='Track information', str_col_length=32):
+def track_writer(h5out, compression='ZLIB4', group_name='Tracking', table_name='Tracks', descriptive_string='Track information', str_col_length=32):
     """
     For a given open table returns a writer for topology info dataframe
     """
@@ -293,7 +293,7 @@ def track_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name='T
     return write_tracks
 
 
-def summary_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name='Summary', descriptive_string='Event summary information', str_col_length=32):
+def summary_writer(h5out, compression='ZLIB4', group_name='Summary', table_name='Events', descriptive_string='Event summary information', str_col_length=32):
     """
     For a given open table returns a writer for summary info dataframe
     """
@@ -419,9 +419,11 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_mc_        = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
 
+        write_hits_low_th     = fl.sink(    hits_writer     (h5out, group_name='CHITS', table_name='lowTh'),
+                                            args="cor_low_th_hits")
+        write_hits_paolina    = fl.sink(    hits_writer     (h5out, group_name='CHITS', table_name='highTh' ),
+                                            args="paolina_hits"   )
         write_mc              = fl.sink(    write_mc_                                    , args=("mc", "event_number"))
-        write_hits_low_th     = fl.sink(    hits_writer     (h5out)                      , args="cor_low_th_hits"    )
-        write_hits_paolina    = fl.sink(    hits_writer     (h5out, group_name='PAOLINA'), args="paolina_hits"       )
         write_tracks          = fl.sink(   track_writer     (h5out=h5out)                , args="topology_info"      )
         write_summary         = fl.sink( summary_writer     (h5out=h5out)                , args="event_info"         )
         write_high_th_filter  = fl.sink( event_filter_writer(h5out, "high_th_select" )   , args=("event_number", "high_th_hits_passed"))
