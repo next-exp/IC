@@ -169,68 +169,6 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     df_summary  = dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
     assert all(df_summary[df_summary.event.isin(diff_events)].loc[:,'out_of_map'])
 
-#This test reuses old Esmeralda file showing that the only changes are in the table structures and not in data values.
-#To be removed in the future
-def test_esmeralda_exact_result_old(ICDATADIR, KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
-    file_in   = KrMC_hdst_filename
-    file_out  = os.path.join(config_tmpdir, "exact_Kr_tracks_with_MC.h5")
-    conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
-    true_out  =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
-    nevt_req  = all_events
-    conf.update(dict(files_in                     = file_in                   ,
-                     file_out                     = file_out                  ,
-                     event_range                  = nevt_req                  ,
-                     cor_hits_params              = dict(
-                         map_fname                = correction_map_MC_filename,
-                         threshold_charge_reco    = 10   * units.pes          ,
-                         threshold_charge_paolina = 20   * units.pes          ,
-                         same_peak                = True                      ,
-                         apply_temp               = False                    ),
-                     paolina_params               = dict(
-                         vox_size                 = [15 * units.mm] * 3       ,
-                         strict_vox_size          = False                     ,
-                         energy_threshold         = 0 * units.keV             ,
-                         min_voxels               = 2                         ,
-                         blob_radius              = 21 * units.mm           )))
-
-    cnt = esmeralda(**conf)
-    tables = ( "RECO/Events"      , "PAOLINA/Events")
-
-
-    with tb.open_file(true_out)  as true_output_file:
-        with tb.open_file(file_out) as   output_file:
-            for table in tables:
-                got      = getattr(     output_file.root, table)
-                expected = getattr(true_output_file.root, table)
-                assert_tables_equality(got, expected)
-
-    #The PAOLINA/Summary should contain this columns, and they should stay the same
-    columns = ['event', 'S2ec' ,  'S2qc', 'ntrks', 'nhits',
-               'x_avg', 'y_avg', 'z_avg', 'r_avg',
-               'x_min', 'y_min', 'z_min', 'r_min',
-               'x_max', 'y_max', 'z_max', 'r_max']
-
-    summary_out  = dio.load_dst(file_out, 'PAOLINA', 'Summary')
-    summary_true = dio.load_dst(true_out, 'PAOLINA', 'Summary')
-    assert_dataframes_close(summary_out[columns], summary_true[columns])
-
-    # PAOLINA/Summary should contain only columns plus out_of_map flag
-    assert sorted(summary_out.columns) == sorted(columns + ['out_of_map'] )
-
-    #PAOLINA/Tracks table has additional r_min and r_ave columns, so the tables are not equal
-    tracks_out   = dio.load_dst(file_out, 'PAOLINA', 'Tracks')
-    tracks_true  = dio.load_dst(true_out, 'PAOLINA', 'Tracks')
-    assert_dataframes_close(tracks_out[tracks_true.columns], tracks_true)
-
-    #Finally lets confirm Esmeralda contains KDST, RUN and MC table from Penthesilea file
-    tables_in = ( "MC/extents"  , "MC/hits"       , "MC/particles"  , "MC/generators",
-                  "DST/Events"  , "Run/events"    , "Run/runInfo"                    )
-    with tb.open_file(file_in)  as true_output_file:
-        with tb.open_file(file_out) as  output_file:
-            for table in tables_in:
-                got      = getattr(     output_file.root, table)
-                expected = getattr(true_output_file.root, table)
-                assert_tables_equality(got, expected)
 
 
 def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
