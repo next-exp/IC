@@ -339,6 +339,10 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
         for v in min_vs:
             v.E += the_vox.E/sum_en_v * v.E
 
+    def nan_energy(voxel):
+        voxel.E = np.nan
+        for hit in voxel.hits:
+            setattr(hit, e_type, np.nan)
 
     mod_voxels     = copy.deepcopy(voxels)
     dropped_voxels = []
@@ -361,6 +365,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
                         mod_voxels    .remove(extreme)
                         dropped_voxels.append(extreme)
                         drop_voxel(mod_voxels, extreme)
+                        nan_energy(extreme)
                         modified = True
 
     return mod_voxels, dropped_voxels
