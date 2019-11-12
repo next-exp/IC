@@ -259,32 +259,21 @@ def make_event_summary(event_number  : int              ,
     ntrks = len(topology_info.index)
     nhits = len(paolina_hits.hits)
 
-    S2ec = max(-1, sum([h.Ec for h in paolina_hits.hits]))
-    S2qc = max(-1, sum([h.Qc for h in paolina_hits.hits]))
+    S2ec = max(-1, sum(h.Ec for h in paolina_hits.hits))
+    S2qc = max(-1, sum(h.Qc for h in paolina_hits.hits))
 
-    x_avg = sum([h.X*h.Ec for h in paolina_hits.hits])
-    y_avg = sum([h.Y*h.Ec for h in paolina_hits.hits])
-    z_avg = sum([h.Z*h.Ec for h in paolina_hits.hits])
-    r_avg = sum([(h.X**2 + h.Y**2)**0.5*h.Ec for h in paolina_hits.hits])
-    if(S2ec > 0):
-        x_avg /= S2ec
-        y_avg /= S2ec
-        z_avg /= S2ec
-        r_avg /= S2ec
+    pos   = [h.pos for h in paolina_hits.hits]
+    x, y, z = map(np.array, zip(*pos))
+    r = np.sqrt(x**2 + y**2)
 
-    x_min = min([h.X for h in paolina_hits.hits])
-    y_min = min([h.Y for h in paolina_hits.hits])
-    z_min = min([h.Z for h in paolina_hits.hits])
-    r_min = min([(h.X**2 + h.Y**2)**0.5 for h in paolina_hits.hits])
+    e     = [h.Ec  for h in paolina_hits.hits]
+    ave_pos = np.average(pos, weights=e, axis=0)
+    ave_r   = np.average(r  , weights=e, axis=0)
 
-    x_max = max([h.X for h in paolina_hits.hits])
-    y_max = max([h.Y for h in paolina_hits.hits])
-    z_max = max([h.Z for h in paolina_hits.hits])
-    r_max = max([(h.X**2 + h.Y**2)**0.5 for h in paolina_hits.hits])
 
     list_of_vars  = [event_number, S2ec, S2qc, ntrks, nhits,
-                     x_avg, y_avg, z_avg, r_avg, x_min, y_min,
-                     z_min, r_min, x_max, y_max, z_max, r_max,
+                     *ave_pos, ave_r,
+                     min(x), min(y), min(z), min(r), max(x), max(y), max(z), max(r),
                      out_of_map]
 
     es.loc[0] = list_of_vars
