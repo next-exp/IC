@@ -107,6 +107,18 @@ def hits_threshold_and_corrector(map_fname        : str  ,
         return new_hitc
     return threshold_and_correct_hits
 
+def copy_Ec_to_Ep_hit_attribute_(hitc : evm.HitCollection) -> evm.HitCollection:
+    """
+    The functions copies values of Ec attributes into Ep attributes. Takes as input HitCollection and returns a copy.
+
+    """
+    mod_hits = []
+    for hit in hitc.hits:
+        hit = evm.Hit(hit.npeak, evm.Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm),
+                      hit.Z, hit.E, xy(hit.Xpeak, hit.Ypeak), s2_energy_c=hit.Ec, Ep =hit.Ec)
+        mod_hits.append(hit)
+    mod_hitc = evm.HitCollection(hitc.event, hitc.time, hits=mod_hits)
+    return mod_hitc
 
 
 def track_blob_info_creator_extractor(vox_size         : [float, float, float],
