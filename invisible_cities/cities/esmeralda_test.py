@@ -36,11 +36,11 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
         assert "MC/extents"              in h5out.root
         assert "MC/hits"                 in h5out.root
         assert "MC/particles"            in h5out.root
-        assert "PAOLINA"                 in h5out.root
-        assert "PAOLINA/Events"          in h5out.root
-        assert "PAOLINA/Summary"         in h5out.root
-        assert "PAOLINA/Tracks"          in h5out.root
-        assert "RECO/Events"             in h5out.root
+        assert "Tracking/Tracks"         in h5out.root
+        assert "Summary/Events"          in h5out.root
+        assert "CHITS"                   in h5out.root
+        assert "CHITS/highTh"            in h5out.root
+        assert "CHITS/lowTh"             in h5out.root
         assert "Run"                     in h5out.root
         assert "Run/events"              in h5out.root
         assert "Run/runInfo"             in h5out.root
@@ -76,10 +76,10 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
     assert nevt_req     == nevt_in
     assert nevt_out     == len(set(events_pass_paolina))
 
-    df_hits_low_th      =  dio.load_dst(PATH_OUT, 'RECO'   , 'Events' )
-    df_hits_paolina     =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Events' )
-    df_tracks_paolina   =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Tracks' )
-    df_summary_paolina  =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
+    df_hits_low_th      =  dio.load_dst(PATH_OUT, 'CHITS'   , 'lowTh' )
+    df_hits_paolina     =  dio.load_dst(PATH_OUT, 'CHITS'   , 'highTh')
+    df_tracks_paolina   =  dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
+    df_summary_paolina  =  dio.load_dst(PATH_OUT, 'Summary' , 'Events')
 
     assert set(df_hits_low_th .event.unique()) ==  set(events_pass_low_th )
     assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
@@ -120,13 +120,13 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
     assert nevt_req     == nevt_in
     assert nevt_out     == len(set(events_pass_paolina))
 
-    df_hits_low_th      =  dio.load_dst(PATH_OUT, 'RECO'   , 'Events')
-    df_hits_paolina     =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Events')
+    df_hits_low_th      =  dio.load_dst(PATH_OUT, 'CHITS', 'lowTh' )
+    df_hits_paolina     =  dio.load_dst(PATH_OUT, 'CHITS', 'highTh')
 
     assert set(df_hits_low_th .event.unique()) ==  set(events_pass_low_th )
     assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
 
-    summary_table       =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
+    summary_table       =  dio.load_dst(PATH_OUT, 'Summary', 'Events')
     #assert event with nan energy labeled in summary_table
     events_energy       =  df_hits_paolina.groupby('event').Ec.apply(pd.Series.sum, skipna=False)
     np.testing.assert_array_equal(summary_table.evt_out_of_map, np.isnan(events_energy.values))
@@ -156,7 +156,7 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
                          blob_radius              = 21 * units.mm)        ))
     cnt = esmeralda(**conf)
 
-    df_tracks           =  dio.load_dst(PATH_OUT, 'PAOLINA', 'Tracks')
+    df_tracks           =  dio.load_dst(PATH_OUT, 'Tracking', 'Tracks' )
     df_tracks_exact     =  pd.read_hdf(esmeralda_tracks, key = 'Tracks')
     columns1 = df_tracks      .columns
     columns2 = df_tracks_exact.columns
@@ -166,7 +166,7 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     assert_dataframes_close (df_tracks_cut[columns2], df_tracks_exact[columns2])
     #make sure out_of_map is true for events not in df_tracks_exact
     diff_events = list(set(df_tracks.event.unique()).difference(events))
-    df_summary  = dio.load_dst(PATH_OUT, 'PAOLINA', 'Summary')
+    df_summary  = dio.load_dst(PATH_OUT, 'Summary', 'Events')
     assert all(df_summary[df_summary.event.isin(diff_events)].loc[:,'evt_out_of_map'])
 
 
@@ -208,7 +208,7 @@ def test_esmeralda_blob_overlap_bug(data_hdst, correction_map_filename, config_t
                          blob_radius              = 21 * units.mm)        ))
     cnt = esmeralda(**conf)
 
-    df_tracks = dio.load_dst(PATH_OUT, 'PAOLINA', 'Tracks')
+    df_tracks = dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
     assert df_tracks['ovlp_blob_energy'].dtype == float
 
 def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
@@ -235,20 +235,25 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
 
     cnt = esmeralda(**conf)
 
-    tables = ["MC/extents", "MC/hits", "MC/particles",
-              "PAOLINA/Events", "PAOLINA/Tracks", "RECO/Events",
-              "Run/events", "Run/runInfo", "DST/Events",
-              "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
+    tables    = ["MC/extents", "MC/hits", "MC/particles",
+                 "PAOLINA/Events", "PAOLINA/Tracks", "RECO/Events",
+                 "Run/events", "Run/runInfo", "DST/Events",
+                 "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
+
+    tables_rnm = ["MC/extents", "MC/hits", "MC/particles",
+                  "CHITS/highTh", "Tracking/Tracks", "CHITS/lowTh",
+                  "Run/events", "Run/runInfo", "DST/Events",
+                  "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
 
     with tb.open_file(true_out)  as true_output_file:
         with tb.open_file(file_out) as   output_file:
-            for table in tables:
-                got      = getattr(     output_file.root, table)
-                expected = getattr(true_output_file.root, table)
+            for table1, table2  in zip(tables_rnm, tables):
+                got      = getattr(     output_file.root, table1)
+                expected = getattr(true_output_file.root, table2)
                 assert_tables_equality(got, expected)
     #paolina summary has different column names
     df_summary_old  = dio.load_dst(true_out, 'PAOLINA', 'Summary')
-    df_summary_new  = dio.load_dst(file_out, 'PAOLINA', 'Summary')
+    df_summary_new  = dio.load_dst(file_out, 'Summary', 'Events' )
 
     #new_summary will have evt_ before column names, so lets rename it
     df_summary_new.columns = df_summary_old.columns
