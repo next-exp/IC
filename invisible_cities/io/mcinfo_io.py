@@ -342,11 +342,12 @@ def load_mcsensor_response_df(file_name : str,
                     how         = 'left')
     sns.evt_number.fillna(method='bfill', inplace = True)
 
-    sns['times'] = sns[sns.sensor_id.isin(pmt_ids)].time_bin * pmt_bin
-    sns.times.fillna(sns.time_bin * sipm_bin, inplace = True)
+    sns['time'] = sns[sns.sensor_id.isin(pmt_ids)].time_bin * pmt_bin
+    sns.time.fillna(sns.time_bin * sipm_bin, inplace = True)
 
     sns.evt_number = sns.evt_number.astype(int)
-    sns.set_index(['evt_number', 'sensor_id', 'time_bin'], inplace = True)
+    sns.rename(columns = {'evt_number': 'event_id'}, inplace = True)
+    sns.set_index(['event_id', 'sensor_id', 'time_bin'], inplace = True)
 
     return extents.evt_number.unique(), pmt_bin, sipm_bin, sns
 
