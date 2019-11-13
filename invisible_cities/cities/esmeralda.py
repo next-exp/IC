@@ -411,8 +411,12 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     hits_passed_low_th              = fl.count_filter(bool, args="low_th_hits_passed")
     hits_passed_high_th             = fl.count_filter(bool, args="high_th_hits_passed")
 
-    create_extract_track_blob_info  = fl.map(track_blob_info_creator_extractor(**paolina_params),
+    copy_Ec_to_Ep_hit_attribute     = fl.map(copy_Ec_to_Ep_hit_attribute_,
                                              args = 'cor_high_th_hits',
+                                             out  = 'cor_Ep_high_th_hits')
+
+    create_extract_track_blob_info  = fl.map(track_blob_info_creator_extractor(**paolina_params),
+                                             args = 'cor_Ep_high_th_hits',
                                              out  = ('topology_info', 'paolina_hits', 'out_of_map'))
     filter_events_topology          = fl.map(lambda x : len(x) > 0,
                                              args = 'topology_info',
@@ -461,6 +465,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                          filter_events_high_th                        ,
                          fl.branch(write_high_th_filter)              ,
                          hits_passed_high_th   .filter                ,
+                         copy_Ec_to_Ep_hit_attribute                  ,
                          create_extract_track_blob_info               ,
                          filter_events_topology                       ,
                          fl.branch(write_hits_paolina)                ,
