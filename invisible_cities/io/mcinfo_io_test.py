@@ -13,6 +13,7 @@ from .  mcinfo_io import read_mchits_df
 from .  mcinfo_io import load_mcparticles
 from .  mcinfo_io import load_mcparticles_df
 from .  mcinfo_io import read_mcparticles_df
+from .  mcinfo_io import get_sensor_binning
 from .  mcinfo_io import load_mcsensor_response
 from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import mc_info_writer
@@ -326,6 +327,18 @@ def test_load_sensors_data(mc_sensors_nexus_data):
     samples = list(zip(bins, wvf.charges))
 
     assert np.allclose(samples, sipm)
+
+
+def test_get_sensor_binning(mc_sensors_nexus_data):
+    fullsim_data, *_ = mc_sensors_nexus_data
+
+    sensor_binning = 100 * units.nanosecond, 1 * units.microsecond
+
+    binning = get_sensor_binning(fullsim_data)
+
+    assert len(binning) == 2
+    assert binning[0] in sensor_binning
+    assert binning[1] in sensor_binning
 
 
 def test_load_mcsensor_response_df(mc_sensors_nexus_data):
