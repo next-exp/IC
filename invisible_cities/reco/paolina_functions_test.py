@@ -639,6 +639,7 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     assert np.allclose(ini_energies, energies)
     assert np.all(ini_n_voxels - n_voxels == expected_diff_n_voxels)
 
+
 def test_drop_voxels_deterministic(ICDATADIR):
     hit_file   = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
     evt_number = 19
@@ -655,6 +656,7 @@ def test_drop_voxels_deterministic(ICDATADIR):
     for v1, v2 in zip(sorted(mod_voxels, key = lambda v:v.E), sorted(mod_voxels_r, key = lambda v:v.E)):
         assert np.isclose(v1.E, v2.E)
 
+
 def test_voxel_drop_in_short_tracks():
     hits = [BHit(10, 10, 10, 1), BHit(26, 10, 10, 1)]
     voxels = voxelize_hits(hits, [15,15,15], strict_voxel_size=True)
@@ -664,6 +666,30 @@ def test_voxel_drop_in_short_tracks():
     mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
 
     assert len(mod_voxels) >= 1
+
+
+def test_drop_voxels_voxel_energy_is_sum_of_hits():
+    def make_hit(x, y, z, e):
+        return Hit(peak_number = 0,
+                   cluster     = Cluster(0, xy(x, y), xy(0, 0), 1),
+                   z           = z,
+                   s2_energy   = e,
+                   peak_xy     = xy(0, 0),
+                   Ep          = e)
+
+    # Create a track with an extreme to be dropped and two hits at the same
+    # distance from the barycenter of the the voxel to be dropped with
+    # different energies in the hits *and* in the voxels
+    voxels = [Voxel( 0,  0, 0, 0.1, size=5, e_type=HitEnergy.Ep, hits = [make_hit( 0,  0, 0, 0.1)                          ]),
+              Voxel( 5, -5, 0, 1.0, size=5, e_type=HitEnergy.Ep, hits = [make_hit( 5, -5, 0, 0.7), make_hit( 5, -8, 0, 0.3)]),
+              Voxel( 5,  5, 0, 1.5, size=5, e_type=HitEnergy.Ep, hits = [make_hit( 5,  5, 0, 0.9), make_hit( 5,  8, 0, 0.6)]),
+              Voxel(10,  0, 0, 2.0, size=5, e_type=HitEnergy.Ep, hits = [make_hit(10,  5, 0, 1.2), make_hit(11,  5, 0, 0.8)]),
+              Voxel(15,  0, 0, 2.5, size=5, e_type=HitEnergy.Ep, hits = [make_hit(15,  0, 0, 1.8), make_hit(11,  0, 0, 0.7)]),
+              Voxel(20,  0, 0, 3.0, size=5, e_type=HitEnergy.Ep, hits = [make_hit(20,  0, 0, 1.5), make_hit(11,  0, 0, 1.5)])]
+
+    modified_voxels, _ = drop_end_point_voxels(voxels, energy_threshold = 0.5, min_vxls = 1)
+    for v in modified_voxels:
+        assert np.isclose(v.E, sum(h.Ep for h in v.hits))
 
 
 @parametrize('radius, expected',
