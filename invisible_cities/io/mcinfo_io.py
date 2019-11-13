@@ -177,20 +177,20 @@ def load_mchits(file_name: str,
     return mchits_dict
 
 
-def load_mchits_fromstr(file_name : str) -> pd.DataFrame:
+def load_mchits_df(file_name : str) -> pd.DataFrame:
     """
-    Opens file and calls load_mchits_df
+    Opens file and calls read_mchits_df
     file_name : str
                 The name of the file to be read
     """
     extents = pd.read_hdf(file_name, 'MC/extents')
     with tb.open_file(file_name) as h5in:
-        hits = load_mchits_df(h5in, extents)
+        hits = read_mchits_df(h5in, extents)
 
     return hits
 
 
-def load_mchits_df(h5in    : tb.file.File,
+def read_mchits_df(h5in    : tb.file.File,
                    extents : pd.DataFrame) -> pd.DataFrame:
     """
     Loads the MC hit information into a pandas DataFrame.
@@ -237,7 +237,21 @@ def load_mcparticles(file_name: str,
         return read_mcinfo(h5in, event_range)
 
 
-def load_mcparticles_df(iFileName: str) -> pd.DataFrame:
+def load_mcparticles_df(file_name: str) -> pd.DataFrame:
+    """
+    Opens file and calls read_mcparticles_df
+    file_name : str
+                The name of the file to be read
+    """
+    extents = pd.read_hdf(file_name, 'MC/extents')
+    with tb.open_file(file_name, mode='r') as h5in:
+        particles = read_mcparticles_df(h5in, extents)
+
+    return particles
+
+
+def read_mcparticles_df(h5in    : tb.file.File,
+                        extents : pd.DataFrame) -> pd.DataFrame:
     """
     A reader for the MC particle output based
     on pandas DataFrames.
@@ -245,46 +259,42 @@ def load_mcparticles_df(iFileName: str) -> pd.DataFrame:
     file_name: string
                Name of the file to be read
     """
-    # Loading data extents table: event structure
-    extents = pd.read_hdf(iFileName, 'MC/extents')
+    p_tb = h5in.root.MC.particles
 
-    with tb.open_file(iFileName ,mode='r') as iFile:
-        p_tb = iFile.root.MC.particles
+    # Generating parts DataFrame
+    parts = pd.DataFrame({'particle_id'       : p_tb.col('particle_indx'),
+                          'particle_name'     : p_tb.col('particle_name').astype('U20'),
+                          'primary'           : p_tb.col('primary').astype('bool'),
+                          'mother_id'         : p_tb.col('mother_indx'),
+                          'initial_x'         : p_tb.col('initial_vertex')[:, 0],
+                          'initial_y'         : p_tb.col('initial_vertex')[:, 1],
+                          'initial_z'         : p_tb.col('initial_vertex')[:, 2],
+                          'initial_t'         : p_tb.col('initial_vertex')[:, 3],
+                          'final_x'           : p_tb.col('final_vertex')[:, 0],
+                          'final_y'           : p_tb.col('final_vertex')[:, 1],
+                          'final_z'           : p_tb.col('final_vertex')[:, 2],
+                          'final_t'           : p_tb.col('final_vertex')[:, 3],
+                          'initial_volume'    : p_tb.col('initial_volume').astype('U20'),
+                          'final_volume'      : p_tb.col('final_volume').astype('U20'),
+                          'initial_momentum_x': p_tb.col('momentum')[:, 0],
+                          'initial_momentum_y': p_tb.col('momentum')[:, 1],
+                          'initial_momentum_z': p_tb.col('momentum')[:, 2],
+                          'kin_energy'        : p_tb.col('kin_energy'),
+                          'creator_proc'      : p_tb.col('creator_proc').astype('U20')})
 
-        # Generating parts DataFrame
-        parts = pd.DataFrame({'particle_id'       : p_tb.col('particle_indx'),
-                              'particle_name'     : p_tb.col('particle_name').astype('U20'),
-                              'primary'           : p_tb.col('primary').astype('bool'),
-                              'mother_id'         : p_tb.col('mother_indx'),
-                              'initial_x'         : p_tb.col('initial_vertex')[:, 0],
-                              'initial_y'         : p_tb.col('initial_vertex')[:, 1],
-                              'initial_z'         : p_tb.col('initial_vertex')[:, 2],
-                              'initial_t'         : p_tb.col('initial_vertex')[:, 3],
-                              'final_x'           : p_tb.col('final_vertex')[:, 0],
-                              'final_y'           : p_tb.col('final_vertex')[:, 1],
-                              'final_z'           : p_tb.col('final_vertex')[:, 2],
-                              'final_t'           : p_tb.col('final_vertex')[:, 3],
-                              'initial_volume'    : p_tb.col('initial_volume').astype('U20'),
-                              'final_volume'      : p_tb.col('final_volume').astype('U20'),
-                              'initial_momentum_x': p_tb.col('momentum')[:, 0],
-                              'initial_momentum_y': p_tb.col('momentum')[:, 1],
-                              'initial_momentum_z': p_tb.col('momentum')[:, 2],
-                              'kin_energy'        : p_tb.col('kin_energy'),
-                              'creator_proc'      : p_tb.col('creator_proc').astype('U20')})
+    # Adding event info
+    evt_part_df = extents[['last_particle', 'evt_number']]
+    evt_part_df.set_index('last_particle', inplace = True)
+    parts = parts.merge(evt_part_df         ,
+                        left_index  =   True,
+                        right_index =   True,
+                        how         = 'left')
+    parts.rename(columns={"evt_number": "event_id"}, inplace = True)
+    parts.event_id.fillna(method='bfill', inplace = True)
+    parts.event_id = parts.event_id.astype(int)
 
-        # Adding event info
-        evt_part_df = extents[['last_particle', 'evt_number']]
-        evt_part_df.set_index('last_particle', inplace = True)
-        parts = parts.merge(evt_part_df         ,
-                            left_index  =   True,
-                            right_index =   True,
-                            how         = 'left')
-        parts.rename(columns={"evt_number": "event_id"}, inplace = True)
-        parts.event_id.fillna(method='bfill', inplace = True)
-        parts.event_id = parts.event_id.astype(int)
-
-        # Setting the indexes
-        parts.set_index(['event_id', 'particle_id'], inplace=True)
+    # Setting the indexes
+    parts.set_index(['event_id', 'particle_id'], inplace=True)
 
     return parts
 

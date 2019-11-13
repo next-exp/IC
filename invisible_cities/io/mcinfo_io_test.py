@@ -9,9 +9,10 @@ from numpy.testing import assert_allclose
 
 from .  mcinfo_io import load_mchits
 from .  mcinfo_io import load_mchits_df
-from .  mcinfo_io import load_mchits_fromstr
+from .  mcinfo_io import read_mchits_df
 from .  mcinfo_io import load_mcparticles
 from .  mcinfo_io import load_mcparticles_df
+from .  mcinfo_io import read_mcparticles_df
 from .  mcinfo_io import load_mcsensor_response
 from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import mc_info_writer
@@ -199,12 +200,12 @@ def test_load_mchits(mc_particle_and_hits_nexus_data):
     assert np.allclose(t, ht)
 
 
-def test_load_mchits_df(mc_particle_and_hits_nexus_data):
+def test_read_mchits_df(mc_particle_and_hits_nexus_data):
     efile, _, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
 
     with tb.open_file(efile) as h5in:
         extents = pd.read_hdf(efile, 'MC/extents')
-        hit_df  = load_mchits_df(h5in, extents)
+        hit_df  = read_mchits_df(h5in, extents)
 
     evt = 0
     assert np.allclose(X, hit_df.loc[evt].x     .values)
@@ -214,10 +215,10 @@ def test_load_mchits_df(mc_particle_and_hits_nexus_data):
     assert np.allclose(t, hit_df.loc[evt].time  .values)
 
 
-def test_load_mchits_fromstr(mc_particle_and_hits_nexus_data):
+def test_load_mchits_df(mc_particle_and_hits_nexus_data):
     efile, _, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
 
-    hit_df = load_mchits_fromstr(efile)
+    hit_df = load_mchits_df(efile)
 
     evt = 0
     assert np.allclose(X, hit_df.loc[evt].x     .values)
@@ -256,6 +257,33 @@ def test_load_mcparticles_df(mc_particle_and_hits_nexus_data):
     efile, name, vi, vf, p, k_eng, *_ = mc_particle_and_hits_nexus_data
 
     mcparticle_df = load_mcparticles_df(efile)
+
+    evt  = 0
+    p_id = 1
+    particle = mcparticle_df.loc[evt].loc[p_id]
+    assert particle.particle_name == name
+    assert np.isclose(particle.kin_energy, k_eng)
+
+    init_vtx = particle[['initial_x', 'initial_y',
+                         'initial_z', 'initial_t']]
+    assert_allclose(init_vtx.tolist(), vi)
+
+    fin_vtx = particle[['final_x', 'final_y',
+                        'final_z', 'final_t']]
+    assert_allclose(fin_vtx.tolist(), vf)
+
+    init_mom = particle[['initial_momentum_x',
+                         'initial_momentum_y',
+                         'initial_momentum_z']]
+    assert_allclose(init_mom.tolist(), p)
+
+
+def test_read_mcparticles_df(mc_particle_and_hits_nexus_data):
+    efile, name, vi, vf, p, k_eng, *_ = mc_particle_and_hits_nexus_data
+
+    with tb.open_file(efile) as h5in:
+        extents       = pd.read_hdf(efile, 'MC/extents')
+        mcparticle_df = read_mcparticles_df(h5in, extents)
 
     evt  = 0
     p_id = 1
