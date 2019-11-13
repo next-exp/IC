@@ -337,7 +337,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
         for h in min_hs:
             setattr(h, e_type, getattr(h, e_type) + getattr(h, e_type) * the_vox.E/sum_en_h)
         for v in min_vs:
-            v.E += the_vox.E/sum_en_v * v.E
+            v.E = sum(getattr(h, e_type) for h in v.hits)
 
     def nan_energy(voxel):
         voxel.E = np.nan
