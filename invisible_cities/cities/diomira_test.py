@@ -104,11 +104,20 @@ def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdi
     file_out = os.path.join(output_tmpdir, 'electrons_40keV_z250_RWF_test_trigger.h5')
 
     conf = configure('diomira invisible_cities/config/diomira.conf'.split())
-    conf.update(dict(run_number   = -4500, # Must be a run number with dead pmts
-                     files_in     = file_in,
-                     file_out     = file_out,
-                     trigger_type = "S2",
-                     tr_channels  = (0,), # This is a masked PMT for this run
+    conf.update(dict(run_number     = -4500, # Must be a run number with dead pmts
+                     files_in       = file_in,
+                     file_out       = file_out,
+                     trigger_type   = "S2",
+                     trigger_params = dict(
+                        tr_channels         = (0,),  # This is a masked PMT for this run
+                        min_number_channels = 1   ,
+                        data_mc_ratio       = 1   ,
+                        min_height          = 0   ,
+                        max_height          = 1e6 ,
+                        min_charge          = 0   ,
+                        max_charge          = 1e6 ,
+                        min_width           = 0   ,
+                        max_width           = 1e6 ),
                      event_range  = (0, 1)))
 
     with raises(ValueError):
