@@ -98,7 +98,6 @@ def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
     assert cnt.events_in == 1
 
 
-@mark.skip(reason="Trigger not implemented in liquid cities")
 @mark.slow
 def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdir):
     file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')

@@ -210,7 +210,6 @@ def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
     assert cnt.  over_thr.n_failed == 1
 
 
-@mark.skip
 def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
     file_in  = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_diomira_3evt.h5")
     file_out = os.path.join(output_tmpdir, "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_pmaps_3evt.h5")
