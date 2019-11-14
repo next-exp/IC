@@ -25,6 +25,7 @@ filters according to some predefined parameters.
 """
 
 from functools import partial
+from itertools import compress
 
 import numpy  as np
 import tables as tb
@@ -197,6 +198,9 @@ def emulate_trigger(detector_db, run_number, trigger_type, trigger_params, s2_pa
                                                 max = s2_params["s2_lmax"        ]),
                           rebin_stride =              s2_params["s2_rebin_stride"])
 
+        for channel in channels:
+            if channel not in compress(datapmt.ChannelID, datapmt.Active.values):
+                raise ValueError("Cannot trigger on a masked PMT")
 
         deconvolver = deconv_pmt(detector_db, run_number, n_baseline, IC_ids)
 
