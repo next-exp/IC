@@ -20,9 +20,6 @@ def TriggerFilter(trigger_params):
 
         for channel_no, s2s in peak_data.items():
             for peak_number, peak in enumerate(s2s):
-                # print(peak.width)
-                # print(peak.total_energy)
-                # print(peak.height)
                 if         min_width  < peak.width        <= max_width:
                     if     min_charge < peak.total_energy <= max_charge:
                         if min_height < peak.height <= max_height:
