@@ -558,6 +558,21 @@ def test_drop_end_point_voxels_doesnt_modify_other_energy_types(hits, requested_
        requested_voxel_dimensions = box_sizes,
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
+def test_drop_voxels_voxel_energy_is_sum_of_hits_general(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one, energy_type):
+    voxels        = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
+    energies      = [v.E for v in voxels]
+    e_thr         = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    for v in mod_voxels:
+        assert np.isclose(v.E, sum(getattr(h, energy_type.value) for h in v.hits))
+
+
+
+@mark.parametrize("energy_type", HitEnergy)
+@given(hits                       = bunch_of_corrected_hits(),
+       requested_voxel_dimensions = box_sizes,
+       min_voxels                 = min_n_of_voxels,
+       fraction_zero_one          = fraction_zero_one)
 def test_drop_end_point_voxels_constant_number_of_voxels_and_hits(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one, energy_type):
     voxels           = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
     energies         = [v.E for v in voxels]
