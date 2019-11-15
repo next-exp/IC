@@ -289,8 +289,8 @@ def make_event_summary(event_number  : int              ,
     ntrks = len(topology_info.index)
     nhits = len(paolina_hits.hits)
 
-    S2ec = max(-1, sum(h.Ec for h in paolina_hits.hits))
-    S2qc = max(-1, sum(h.Qc for h in paolina_hits.hits))
+    S2ec = sum(h.Ec for h in paolina_hits.hits)
+    S2qc = -1 #not implemented yet
 
     pos   = [h.pos for h in paolina_hits.hits]
     x, y, z = map(np.array, zip(*pos))
