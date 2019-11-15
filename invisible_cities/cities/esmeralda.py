@@ -46,6 +46,27 @@ from .. io.run_and_event_io  import run_and_event_writer
 from .. io. event_filter_io  import  event_filter_writer
 from .. io.          dst_io  import _store_pandas_as_tables
 
+types_dict_summary = {'event'     : np.int32  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
+                      'evt_ntrks' : int       , 'evt_nhits'  : int       , 'evt_x_avg'     : np.float64,
+                      'evt_y_avg' : np.float64, 'evt_z_avg'  : np.float64, 'evt_r_avg'     : np.float64,
+                      'evt_x_min' : np.float64, 'evt_y_min'  : np.float64, 'evt_z_min'     : np.float64,
+                      'evt_r_min' : np.float64, 'evt_x_max'  : np.float64, 'evt_y_max'     : np.float64,
+                      'evt_z_max' : np.float64, 'evt_r_max'  : np.float64, 'evt_out_of_map': bool      }
+
+types_dict_tracks = {'event'           : np.int32  , 'trackID'       : np.int    , 'energy'      : np.float64,
+                     'length'          : np.float64, 'numb_of_voxels': np.int    , 'numb_of_hits': np.int    ,
+                     'numb_of_tracks'  : np.int    , 'x_min'         : np.float64, 'y_min'       : np.float64,
+                     'z_min'           : np.float64, 'r_min'         : np.float64, 'x_max'       : np.float64,
+                     'y_max'           : np.float64, 'z_max'         : np.float64, 'r_max'       : np.float64,
+                     'x_ave'           : np.float64, 'y_ave'         : np.float64, 'z_ave'       : np.float64,
+                     'r_ave'           : np.float64, 'extreme1_x'    : np.float64, 'extreme1_y'  : np.float64,
+                     'extreme1_z'      : np.float64, 'extreme2_x'    : np.float64, 'extreme2_y'  : np.float64,
+                     'extreme2_z'      : np.float64, 'blob1_x'       : np.float64, 'blob1_y'     : np.float64,
+                     'blob1_z'         : np.float64, 'blob2_x'       : np.float64, 'blob2_y'     : np.float64,
+                     'blob2_z'         : np.float64, 'eblob1'        : np.float64, 'eblob2'      : np.float64,
+                     'vox_size_x'      : np.float64, 'vox_size_y'    : np.float64, 'vox_size_z'  : np.float64,
+                     'ovlp_blob_energy': np.float64}
+
 def hits_threshold_and_corrector(map_fname        : str  ,
                                  threshold_charge : float,
                                  same_peak        : bool ,
@@ -218,10 +239,6 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                                 vox_size_x, vox_size_y, vox_size_z]
 
                 df.loc[c] = list_of_vars
-                try:
-                    types_dict
-                except NameError:
-                    types_dict = dict(zip(df.columns, [type(x) for x in list_of_vars]))
 
                 for vox in t.nodes():
                     for hit in vox.hits:
@@ -229,7 +246,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                         track_hits.append(hit)
 
             #change dtype of columns to match type of variables
-            df = df.apply(lambda x : x.astype(types_dict[x.name]))
+            df = df.apply(lambda x : x.astype(types_dict_tracks[x.name]))
             track_hitc.hits.extend(track_hits)
         return df, track_hitc, out_of_map
 
@@ -291,9 +308,7 @@ def make_event_summary(event_number  : int              ,
 
     es.loc[0] = list_of_vars
     #change dtype of columns to match type of variables
-    types_dict = dict(zip(es.columns, [type(x) for x in list_of_vars]))
-    es = es.apply(lambda x : x.astype(types_dict[x.name]))
-
+    es = es.apply(lambda x : x.astype(types_dict_summary[x.name]))
     return es
 
 
