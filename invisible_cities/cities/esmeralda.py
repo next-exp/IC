@@ -20,6 +20,7 @@ import numpy  as np
 import pandas as pd
 import warnings
 
+from collections import OrderedDict
 from functools   import partial
 from typing      import Tuple
 from typing      import Callable
@@ -46,26 +47,26 @@ from .. io.run_and_event_io  import run_and_event_writer
 from .. io. event_filter_io  import  event_filter_writer
 from .. io.          dst_io  import _store_pandas_as_tables
 
-types_dict_summary = {'event'     : np.int32  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
-                      'evt_ntrks' : int       , 'evt_nhits'  : int       , 'evt_x_avg'     : np.float64,
-                      'evt_y_avg' : np.float64, 'evt_z_avg'  : np.float64, 'evt_r_avg'     : np.float64,
-                      'evt_x_min' : np.float64, 'evt_y_min'  : np.float64, 'evt_z_min'     : np.float64,
-                      'evt_r_min' : np.float64, 'evt_x_max'  : np.float64, 'evt_y_max'     : np.float64,
-                      'evt_z_max' : np.float64, 'evt_r_max'  : np.float64, 'evt_out_of_map': bool      }
+types_dict_summary = OrderedDict({'event'     : np.int32  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
+                                  'evt_ntrks' : np.int    , 'evt_nhits'  : np.int    , 'evt_x_avg'     : np.float64,
+                                  'evt_y_avg' : np.float64, 'evt_z_avg'  : np.float64, 'evt_r_avg'     : np.float64,
+                                  'evt_x_min' : np.float64, 'evt_y_min'  : np.float64, 'evt_z_min'     : np.float64,
+                                  'evt_r_min' : np.float64, 'evt_x_max'  : np.float64, 'evt_y_max'     : np.float64,
+                                  'evt_z_max' : np.float64, 'evt_r_max'  : np.float64, 'evt_out_of_map': bool      })
 
-types_dict_tracks = {'event'           : np.int32  , 'trackID'       : np.int    , 'energy'      : np.float64,
-                     'length'          : np.float64, 'numb_of_voxels': np.int    , 'numb_of_hits': np.int    ,
-                     'numb_of_tracks'  : np.int    , 'x_min'         : np.float64, 'y_min'       : np.float64,
-                     'z_min'           : np.float64, 'r_min'         : np.float64, 'x_max'       : np.float64,
-                     'y_max'           : np.float64, 'z_max'         : np.float64, 'r_max'       : np.float64,
-                     'x_ave'           : np.float64, 'y_ave'         : np.float64, 'z_ave'       : np.float64,
-                     'r_ave'           : np.float64, 'extreme1_x'    : np.float64, 'extreme1_y'  : np.float64,
-                     'extreme1_z'      : np.float64, 'extreme2_x'    : np.float64, 'extreme2_y'  : np.float64,
-                     'extreme2_z'      : np.float64, 'blob1_x'       : np.float64, 'blob1_y'     : np.float64,
-                     'blob1_z'         : np.float64, 'blob2_x'       : np.float64, 'blob2_y'     : np.float64,
-                     'blob2_z'         : np.float64, 'eblob1'        : np.float64, 'eblob2'      : np.float64,
-                     'vox_size_x'      : np.float64, 'vox_size_y'    : np.float64, 'vox_size_z'  : np.float64,
-                     'ovlp_blob_energy': np.float64}
+types_dict_tracks = OrderedDict({'event'           : np.int32  , 'trackID'       : np.int    , 'energy'      : np.float64,
+                                 'length'          : np.float64, 'numb_of_voxels': np.int    , 'numb_of_hits': np.int    ,
+                                 'numb_of_tracks'  : np.int    , 'x_min'         : np.float64, 'y_min'       : np.float64,
+                                 'z_min'           : np.float64, 'r_min'         : np.float64, 'x_max'       : np.float64,
+                                 'y_max'           : np.float64, 'z_max'         : np.float64, 'r_max'       : np.float64,
+                                 'x_ave'           : np.float64, 'y_ave'         : np.float64, 'z_ave'       : np.float64,
+                                 'r_ave'           : np.float64, 'extreme1_x'    : np.float64, 'extreme1_y'  : np.float64,
+                                 'extreme1_z'      : np.float64, 'extreme2_x'    : np.float64, 'extreme2_y'  : np.float64,
+                                 'extreme2_z'      : np.float64, 'blob1_x'       : np.float64, 'blob1_y'     : np.float64,
+                                 'blob1_z'         : np.float64, 'blob2_x'       : np.float64, 'blob2_y'     : np.float64,
+                                 'blob2_z'         : np.float64, 'eblob1'        : np.float64, 'eblob2'      : np.float64,
+                                 'ovlp_blob_energy': np.float64,
+                                 'vox_size_x'      : np.float64, 'vox_size_y'    : np.float64, 'vox_size_z'  : np.float64})
 
 def hits_threshold_and_corrector(map_fname        : str  ,
                                  threshold_charge : float,
@@ -181,16 +182,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
             #create new Hitcollection object but keep the name hitc
             hitc      = evm.HitCollection(hitc.event, hitc.time)
             hitc.hits = hits_without_nan
-        df = pd.DataFrame(columns=['event', 'trackID', 'energy', 'length', 'numb_of_voxels',
-                                   'numb_of_hits', 'numb_of_tracks', 'x_min', 'y_min', 'z_min', 'r_min',
-                                   'x_max', 'y_max', 'z_max', 'r_max', 'x_ave', 'y_ave', 'z_ave', 'r_ave',
-                                   'extreme1_x', 'extreme1_y', 'extreme1_z',
-                                   'extreme2_x', 'extreme2_y', 'extreme2_z',
-                                   'blob1_x', 'blob1_y', 'blob1_z',
-                                   'blob2_x', 'blob2_y', 'blob2_z',
-                                   'eblob1', 'eblob2', 'ovlp_blob_energy',
-                                   'vox_size_x', 'vox_size_y', 'vox_size_z'])
-
+        df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
         if len(hitc.hits)>0:
             voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, evm.HitEnergy.Ep)
             (    mod_voxels,
@@ -280,11 +272,7 @@ def make_event_summary(event_number  : int              ,
     ----------
     DataFrame containing relevant per event information.
     """
-    es = pd.DataFrame(columns=['event', 'evt_energy' ,  'evt_charge', 'evt_ntrks', 'evt_nhits',
-                               'evt_x_avg', 'evt_y_avg', 'evt_z_avg', 'evt_r_avg',
-                               'evt_x_min', 'evt_y_min', 'evt_z_min', 'evt_r_min',
-                               'evt_x_max', 'evt_y_max', 'evt_z_max', 'evt_r_max',
-                               'evt_out_of_map'])
+    es = pd.DataFrame(columns=list(types_dict_summary.keys()))
 
     ntrks = len(topology_info.index)
     nhits = len(paolina_hits.hits)
