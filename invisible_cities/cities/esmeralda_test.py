@@ -258,7 +258,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
 
     #new_summary will have evt_ before column names, so lets rename it
     df_summary_new.columns = df_summary_old.columns
-    assert_dataframes_close(df_summary_old, df_summary_new)
+    assert_dataframes_close(df_summary_old, df_summary_new, check_types=False)
 
     #compare Hits table without newly added Ep
     df_hits_paolina_new = dio.load_dst(file_out, 'CHITS'  , 'highTh')
