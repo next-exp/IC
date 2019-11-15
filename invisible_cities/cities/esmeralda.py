@@ -159,9 +159,10 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                                    'vox_size_x', 'vox_size_y', 'vox_size_z'])
 
         if len(hitc.hits)>0:
-            voxels     = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, evm.HitEnergy.Ec)
-            mod_voxels = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
-            tracks     = plf.make_track_graphs(mod_voxels)
+            voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, evm.HitEnergy.Ec)
+            (    mod_voxels,
+             dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
+            tracks           = plf.make_track_graphs(mod_voxels)
 
             vox_size_x = voxels[0].size[0]
             vox_size_y = voxels[0].size[1]
@@ -229,7 +230,7 @@ def make_event_summary(event_number  : int              ,
                        out_of_map    : bool
                        ) -> pd.DataFrame:
     """
-    For a given event number, timestamp, topology info dataframe, paolina hits and kdst information returns a 
+    For a given event number, timestamp, topology info dataframe, paolina hits and kdst information returns a
     dataframe with the whole event summary.
 
     Parameters
@@ -454,7 +455,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                          fl.branch(write_high_th_filter)              ,
                          hits_passed_high_th   .filter                ,
                          create_extract_track_blob_info               ,
-                         filter_events_topology                       , 
+                         filter_events_topology                       ,
                          fl.branch(write_hits_paolina)                ,
                          events_passed_topology.filter                ,
                          event_count_out       .spy                   ,
