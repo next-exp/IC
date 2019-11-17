@@ -319,18 +319,17 @@ def test_PMap_s2s(pmps):
 
 
 @fixture(scope='module')
-def noise_func():
+def signal_to_noise_6400():
     return NoiseSampler('new', 6400).signal_to_noise
 
 
 @fixture(scope='module')
 def s2_peak():
-    times      = np.arange(0, 20 * units.mus, 1 * units.mus)
-    bin_widths = np.full(len(times), 1 * units.mus)
+    times      = np.arange(20) * units.mus
+    bin_widths = np.full_like(times, units.mus)
 
-    pmt_ids  =    DB.DataPMT ('new', 6400).SensorID.values
-    n_sipms = len(DB.DataSiPM('new', 6400).SensorID.values)
-    sipm_ids = np.arange(n_sipms)
+    pmt_ids  = DB.DataPMT ('new', 6400).SensorID.values
+    sipm_ids = DB.DataSiPM('new', 6400).index.values
 
     pmts  = PMTResponses(pmt_ids,
                          np.random.uniform(0, 100,
@@ -343,29 +342,26 @@ def s2_peak():
     return S2(times, bin_widths, pmts, sipms)
 
 
-@mark.parametrize("charge_type",
-                  (SiPMCharge.raw, SiPMCharge.sn))
-def test_sipm_charge_array(charge_type,
-                           s2_peak    ,
-                           noise_func ):
-    charge_arr = s2_peak.sipm_charge_array(noise_func ,
-                                           charge_type,
-                                           False      )
+@mark.parametrize("charge_type", SiPMCharge)
+def test_sipm_charge_array(charge_type         ,
+                           s2_peak             ,
+                           signal_to_noise_6400):
+    charge_arr = s2_peak.sipm_charge_array(signal_to_noise_6400,
+                                           charge_type         ,
+                                           single_point = False)
 
     all_wf = s2_peak.sipms.all_waveforms
-    assert np.array(charge_arr).shape[0] == all_wf.shape[1]
-    assert np.array(charge_arr).shape[1] == all_wf.shape[0]
+    assert np.array(charge_arr).shape   == all_wf.T.shape
     assert np.count_nonzero(charge_arr) == np.count_nonzero(all_wf)
 
 
-@mark.parametrize("charge_type",
-                  (SiPMCharge.raw, SiPMCharge.sn))
-def test_sipm_charge_array_single(charge_type,
-                                  s2_peak    ,
-                                  noise_func ):
-    charge_arr = s2_peak.sipm_charge_array(noise_func ,
-                                           charge_type,
-                                           True       )
+@mark.parametrize("charge_type", SiPMCharge)
+def test_sipm_charge_array_single(charge_type         ,
+                                  s2_peak             ,
+                                  signal_to_noise_6400):
+    charge_arr = s2_peak.sipm_charge_array(signal_to_noise_6400,
+                                           charge_type         ,
+                                           single_point =  True)
 
     assert charge_arr.shape == s2_peak.sipms.ids.shape
     orig_zeros = np.count_nonzero(s2_peak.sipms.sum_over_times)

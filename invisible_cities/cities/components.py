@@ -32,7 +32,7 @@ from .. core   .exceptions        import              NoOutputFile
 from .. core   .exceptions        import InvalidInputFileStructure
 from .. core   .configure         import                EventRange
 from .. core   .configure         import          event_range_help
-from .. core   .random_sampling   import              NoiseSampler as siN
+from .. core   .random_sampling   import              NoiseSampler
 from .. reco                      import           calib_functions as  cf
 from .. reco                      import   calib_sensors_functions as csf
 from .. reco                      import            peak_functions as pkf
@@ -400,7 +400,7 @@ def build_pointlike_event(dbfile, run_number, drift_v,
     sipm_ys    = datasipm.Y.values
     sipm_xys   = np.stack((sipm_xs, sipm_ys), axis=1)
 
-    sipm_noise = siN(dbfile, run_number).signal_to_noise
+    sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
 
     def build_pointlike_event(pmap, selector_output, event_number, timestamp):
         evt = KrEvent(event_number, timestamp * 1e-3)
@@ -427,7 +427,8 @@ def build_pointlike_event(dbfile, run_number, drift_v,
             evt.S2t.append(peak.time_at_max_energy)
 
             xys = sipm_xys[peak.sipms.ids           ]
-            qs  = peak.sipm_charge_array(sipm_noise, charge_type, True)
+            qs  = peak.sipm_charge_array(sipm_noise, charge_type,
+                                         single_point = True)
             try:
                 clusters = reco(xys, qs)
             except XYRecoFail:
@@ -465,7 +466,7 @@ def hit_builder(dbfile, run_number, drift_v, reco,
     sipm_ys  = datasipm.Y.values
     sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
 
-    sipm_noise = siN(dbfile, run_number).signal_to_noise
+    sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
 
     barycenter = partial(corona,
                          all_sipms      =  datasipm,
@@ -504,13 +505,15 @@ def hit_builder(dbfile, run_number, drift_v, reco,
             peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
 
             xys  = sipm_xys[peak.sipms.ids]
-            qs   = peak.sipm_charge_array(sipm_noise, charge_type, True)
+            qs   = peak.sipm_charge_array(sipm_noise, charge_type,
+                                          single_point = True)
             try              : cluster = barycenter(xys, qs)[0]
             except XYRecoFail: xy_peak = xy(NN, NN)
             else             : xy_peak = xy(cluster.X, cluster.Y)
 
-            sipm_charge = peak.sipm_charge_array(sipm_noise ,
-                                                 charge_type)
+            sipm_charge = peak.sipm_charge_array(sipm_noise        ,
+                                                 charge_type       ,
+                                                 single_point=False)
             for slice_no, (t_slice, qs) in enumerate(zip(peak.times ,
                                                          sipm_charge)):
                 z_slice = (t_slice - s1_t) * units.ns * drift_v

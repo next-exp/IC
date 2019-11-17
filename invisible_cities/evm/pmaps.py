@@ -10,8 +10,8 @@ from .. types.ic_types         import      AutoNameEnumBase
 
 
 class SiPMCharge(AutoNameEnumBase):
-    raw = auto()
-    sn  = auto()
+    raw             = auto()
+    signal_to_noise = auto()
 
 
 class PMap:
@@ -111,7 +111,7 @@ class S2(_Peak):
     def sipm_charge_array(self, noise_func, charge_type,
                           single_point=False):
 
-        if charge_type == SiPMCharge.raw:
+        if charge_type is SiPMCharge.raw:
             if single_point:
                 return self.sipms.sum_over_times
             return self.sipms.all_waveforms.T
@@ -124,12 +124,13 @@ class S2(_Peak):
             sample_wid = int(np.ceil(np.round(self.width) / units.mus))
             return noise_func(self.sipms.ids, charges, sample_wid)
 
-        sample_widths = np.ceil(np.round(self.bin_widths) / units.mus)
-        mapping       = map(noise_func,
-                            np.repeat(self.sipms.ids[None, :],
-                                      len(self.bin_widths), 0),
-                            self.sipms.all_waveforms.T,
-                            sample_widths.astype(int))
+        sample_widths    = np.ceil(np.round(self.bin_widths) / units.mus)
+        id_sample_repeat = np.repeat(self.sipms.ids[np.newaxis],
+                                     len(self.bin_widths),    0)
+        mapping          = map(noise_func                ,
+                               id_sample_repeat          ,
+                               self.sipms.all_waveforms.T,
+                               sample_widths.astype(int) )
         return tuple(mapping)
 
 
