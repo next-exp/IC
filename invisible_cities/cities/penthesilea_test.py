@@ -154,13 +154,13 @@ def test_penthesilea_signal_to_noise(ICDATADIR, output_tmpdir):
                        new_lm_radius = 15 * units.mm,
                        msipm         =  1           )
 
-    conf.update(dict(run_number        =       -6340,
-                     files_in          =     file_in,
-                     file_out          =    file_out,
-                     event_range       =  all_events,
-                     rebin             =           2,
-                     sipm_charge_type  =        'sn',
-                     slice_reco_params = reco_params))
+    conf.update(dict(run_number        =             -6340,
+                     files_in          =           file_in,
+                     file_out          =          file_out,
+                     event_range       =        all_events,
+                     rebin             =                 2,
+                     sipm_charge_type  = 'signal_to_noise',
+                     slice_reco_params =      reco_params))
 
     cnt = penthesilea(**conf)
 

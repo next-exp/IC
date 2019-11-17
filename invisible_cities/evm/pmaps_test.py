@@ -346,23 +346,27 @@ def s2_peak():
 def test_sipm_charge_array(charge_type         ,
                            s2_peak             ,
                            signal_to_noise_6400):
-    charge_arr = s2_peak.sipm_charge_array(signal_to_noise_6400,
+    charge_tpl = s2_peak.sipm_charge_array(signal_to_noise_6400,
                                            charge_type         ,
                                            single_point = False)
 
-    all_wf = s2_peak.sipms.all_waveforms
-    assert np.array(charge_arr).shape   == all_wf.T.shape
-    assert np.count_nonzero(charge_arr) == np.count_nonzero(all_wf)
+    all_wf     = s2_peak.sipms.all_waveforms
+    orig_zeros = np.count_nonzero(all_wf)
+    charge_arr = np.array(charge_tpl)
+    calc_zeros = np.count_nonzero(charge_arr)
+    assert charge_arr.shape == all_wf.T.shape
+    assert calc_zeros       == orig_zeros
 
 
 @mark.parametrize("charge_type", SiPMCharge)
 def test_sipm_charge_array_single(charge_type         ,
                                   s2_peak             ,
                                   signal_to_noise_6400):
-    charge_arr = s2_peak.sipm_charge_array(signal_to_noise_6400,
+    charge_tpl = s2_peak.sipm_charge_array(signal_to_noise_6400,
                                            charge_type         ,
                                            single_point =  True)
 
-    assert charge_arr.shape == s2_peak.sipms.ids.shape
+    assert charge_tpl.shape == s2_peak.sipms.ids.shape
     orig_zeros = np.count_nonzero(s2_peak.sipms.sum_over_times)
-    assert np.count_nonzero(charge_arr) == orig_zeros
+    calc_zeros = np.count_nonzero(charge_tpl)
+    assert calc_zeros == orig_zeros
