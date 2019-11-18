@@ -395,11 +395,11 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
 
     cor_hits_params_   = {value : cor_hits_params.get(value) for value in ['map_fname', 'same_peak', 'apply_temp']}
 
-    threshold_and_correct_hits_low  = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_reco'   ], **cor_hits_params_),
+    threshold_and_correct_hits_low  = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_low' ], **cor_hits_params_),
                                              args = 'hits',
                                              out  = 'cor_low_th_hits')
 
-    threshold_and_correct_hits_high = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_paolina'], **cor_hits_params_),
+    threshold_and_correct_hits_high = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_high'], **cor_hits_params_),
                                              args = 'hits',
                                              out  = 'cor_high_th_hits')
 
