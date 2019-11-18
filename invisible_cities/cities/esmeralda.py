@@ -6,12 +6,16 @@ From Spanish esmeralda (“emerald”), as first used in the novel Notre-Dame de
 This city corrects hits energy and extracts topology information.
 The input is penthesilea output containing hits, kdst global information and mc info.
 The city outputs :
-    - RECO corrected hits table, according to the given map and hits threshold and merging parameters
+    - CHITS corrected hits table,
+        - lowTh  - contains corrected hits table that passed h.Q >= charge_threshold_low constrain
+        - highTh - contains corrected hits table that passed h.Q >= charge_threshold_high constrain.
+                   it also contains:
+                   - Ep field that is the energy of a hit after applying drop_end_point_voxel algorithm.
+                   - track_id denoting to which track from Tracking/Tracks dataframe the hit belong to 
     - MC info (if run number <=0)
-    - PAOLINA Summary of topological anlaysis containing:
-        - corrected (paolina) hits, hits table after performing paolina drop_voxels
-        - summary of per track information
-        - summary of per event information
+    - Tracking/Tracks - summary of per track information
+    - Summary/events  - summary of per event information
+    - DST/Events      - copy of kdst information from penthesilea
 """
 
 import os
