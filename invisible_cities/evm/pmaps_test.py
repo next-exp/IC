@@ -1,9 +1,10 @@
 import numpy as np
 
-from pytest import approx
-from pytest import raises
-from pytest import mark
-from pytest import fixture
+from numpy.testing import assert_allclose
+from pytest        import          approx
+from pytest        import          raises
+from pytest        import            mark
+from pytest        import         fixture
 
 from hypothesis                import       assume
 from hypothesis                import        given
@@ -329,23 +330,42 @@ def s2_peak():
     bin_widths = np.full_like(times, units.mus)
 
     pmt_ids  = DB.DataPMT ('new', 6400).SensorID.values
-    sipm_ids = DB.DataSiPM('new', 6400).index.values
+    sipm_ids = DB.DataSiPM('new', 6400).index   .values
 
+    np.random.seed(22)
     pmts  = PMTResponses(pmt_ids,
                          np.random.uniform(0, 100,
-                                           (len(pmt_ids), len(times))))
+                                           (len(pmt_ids),
+                                            len(times))))
 
     sipms = SiPMResponses(sipm_ids,
                           np.random.uniform(0, 10,
-                                            (len(sipm_ids), len(times))))
+                                            (len(sipm_ids),
+                                             len(times))))
 
     return S2(times, bin_widths, pmts, sipms)
 
 
+@fixture(scope='function')
+def expected_values1():
+    channel  = 2
+    slice_   = slice(3, 8)
+    exp_vals = {SiPMCharge.raw            : [6.705,
+                                             3.593,
+                                             5.163,
+                                             1.565,
+                                             9.815],
+                SiPMCharge.signal_to_noise: [2.392,
+                                             1.667,
+                                             2.071,
+                                             0.950,
+                                             2.992]}
+    return channel, slice_, exp_vals
 @mark.parametrize("charge_type", SiPMCharge)
 def test_sipm_charge_array(charge_type         ,
                            s2_peak             ,
-                           signal_to_noise_6400):
+                           signal_to_noise_6400,
+                           expected_values1    ):
     charge_tpl = s2_peak.sipm_charge_array(signal_to_noise_6400,
                                            charge_type         ,
                                            single_point = False)
@@ -357,11 +377,30 @@ def test_sipm_charge_array(charge_type         ,
     assert charge_arr.shape == all_wf.T.shape
     assert calc_zeros       == orig_zeros
 
+    channel, slice_, exp_vals = expected_values1
+    calc_slice = charge_tpl[channel][slice_]
+    assert_allclose(calc_slice, exp_vals[charge_type], atol=5e-4)
 
+
+@fixture(scope='function')
+def expected_values2():
+    slice_ = slice(3, 8)
+    exp_vals = {SiPMCharge.raw            : [ 99.647,
+                                              93.818,
+                                              81.385,
+                                              92.464,
+                                             125.260],
+                SiPMCharge.signal_to_noise: [  9.665,
+                                               9.393,
+                                               8.709,
+                                               9.340,
+                                              10.994]}
+    return slice_, exp_vals
 @mark.parametrize("charge_type", SiPMCharge)
 def test_sipm_charge_array_single(charge_type         ,
                                   s2_peak             ,
-                                  signal_to_noise_6400):
+                                  signal_to_noise_6400,
+                                  expected_values2    ):
     charge_tpl = s2_peak.sipm_charge_array(signal_to_noise_6400,
                                            charge_type         ,
                                            single_point =  True)
@@ -370,3 +409,6 @@ def test_sipm_charge_array_single(charge_type         ,
     orig_zeros = np.count_nonzero(s2_peak.sipms.sum_over_times)
     calc_zeros = np.count_nonzero(charge_tpl)
     assert calc_zeros == orig_zeros
+
+    slice_, exp_vals = expected_values2
+    assert_allclose(charge_tpl[slice_], exp_vals[charge_type], atol=5e-4)
