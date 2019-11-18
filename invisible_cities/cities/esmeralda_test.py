@@ -3,7 +3,6 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
-from pytest                    import mark
 from  . components             import get_event_info
 from  . components             import length_of
 from .. core.system_of_units_c import units
@@ -158,7 +157,6 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
 
     df_tracks           =  dio.load_dst(PATH_OUT, 'Tracking', 'Tracks' )
     df_tracks_exact     =  pd.read_hdf(esmeralda_tracks, key = 'Tracks')
-    columns1 = df_tracks      .columns
     columns2 = df_tracks_exact.columns
     #some events are not in df_tracks_exact
     events = df_tracks_exact.event.unique()
@@ -167,7 +165,7 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     #make sure out_of_map is true for events not in df_tracks_exact
     diff_events = list(set(df_tracks.event.unique()).difference(events))
     df_summary  = dio.load_dst(PATH_OUT, 'Summary', 'Events')
-    assert all(df_summary[df_summary.event.isin(diff_events)].loc[:,'evt_out_of_map'])
+    assert np.all(df_summary[df_summary.event.isin(diff_events)].loc[:,'evt_out_of_map'])
 
 
 def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
@@ -263,7 +261,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
     #compare Hits table without newly added Ep
     df_hits_paolina_new = dio.load_dst(file_out, 'CHITS'  , 'highTh')
     df_hits_paolina_old = dio.load_dst(true_out, 'PAOLINA', 'Events')
-    columns = df_hits_paolina_old.columns.drop('Ep')
+    columns = df_hits_paolina_old.columns
     assert_dataframes_close(df_hits_paolina_new[columns], df_hits_paolina_new[columns])
 
     #Ep should be set to Ec since voxel dropping threshold is 0
@@ -326,7 +324,6 @@ def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, corre
                          blob_radius           = 21 * units.mm)        ))
     cnt = esmeralda(**conf)
 
-    df_tracks           =  dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
     df_phits            =  dio.load_dst(PATH_OUT,   'CHITS' , 'highTh')
     df_in_hits          =  dio.load_dst(PATH_IN ,    'RECO' , 'Events')
 
@@ -335,7 +332,7 @@ def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, corre
     assert num_pass_th_in_hits == num_pass_th_p_hits
 
 
-    num_paolina_hits   = sum(df_phits.Ep>0)
+    num_paolina_hits   = sum(np.isfinite(df_phits.Ep))
     assert num_paolina_hits <= num_pass_th_p_hits
 
     #check that the sum of Ep and Ec energies is the same

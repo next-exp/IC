@@ -18,13 +18,9 @@ import os
 import tables as tb
 import numpy  as np
 import pandas as pd
-import warnings
 
 from collections import OrderedDict
-from functools   import partial
-from typing      import Tuple
 from typing      import Callable
-from typing      import Optional
 
 from .. reco                import tbl_functions        as tbl
 from .. reco                import paolina_functions    as plf
@@ -39,7 +35,6 @@ from .  components import city
 from .  components import print_every
 from .  components import hits_and_kdst_from_files
 
-from .. types.      ic_types import NN
 from .. types.      ic_types import xy
 from .. io.         hits_io  import          hits_writer
 from .. io.       mcinfo_io  import       mc_info_writer
@@ -137,7 +132,7 @@ def copy_Ec_to_Ep_hit_attribute_(hitc : evm.HitCollection) -> evm.HitCollection:
     mod_hits = []
     for hit in hitc.hits:
         hit = evm.Hit(hit.npeak, evm.Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm),
-                      hit.Z, hit.E, xy(hit.Xpeak, hit.Ypeak), s2_energy_c=hit.Ec, Ep =hit.Ec)
+                      hit.Z, hit.E, xy(hit.Xpeak, hit.Ypeak), s2_energy_c=hit.Ec, Ep=hit.Ec)
         mod_hits.append(hit)
     mod_hitc = evm.HitCollection(hitc.event, hitc.time, hits=mod_hits)
     return mod_hitc
@@ -174,7 +169,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
     def create_extract_track_blob_info(hitc):
         #track_hits is a new Hitcollection object that contains hits belonging to tracks, and hits that couldnt be corrected
         track_hitc = evm.HitCollection(hitc.event, hitc.time)
-        out_of_map = any(np.isnan([h.Ep for h in hitc.hits]))
+        out_of_map = np.any(np.isnan([h.Ep for h in hitc.hits]))
         if out_of_map:
             #add nan hits to track_hits, the track_id will be -1
             track_hitc.hits.extend  ([h for h in hitc.hits if np.isnan   (h.Ep)])
@@ -352,9 +347,9 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         map_fname                : string (filepath)
             filename of the map
         threshold_charge_low     : float
-            minimum pes for a RECO hit
+            minimum pes for a lowTh hit
         threshold_charge_high    : float
-            minimum pes for a PAOLINA hit
+            minimum pes for a highTh hit
         same_peak                : bool
             if True energy of NN hits is assigned only to the hits from the same peak
         apply_temp               : bool
