@@ -210,23 +210,6 @@ def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
     assert cnt.  over_thr.n_failed == 1
 
 
-@mark.skip
-def test_irene_electrons_40keV_pmt_active_is_correctly_set(job_info_missing_pmts, s12params):
-    "Check that PMT active correctly describes the PMT configuration of the detector"
-    nrequired = 1
-    conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number  =  job_info_missing_pmts.run_number,
-                     files_in    =  job_info_missing_pmts. input_filename,
-                     file_out    =  job_info_missing_pmts.output_filename,
-                     event_range = (0, nrequired),
-                     **unpack_s12params(s12params))) # s12params are just dummy values in this test
-
-    irene = Irene(**conf)
-
-    assert irene.pmt_active == job_info_missing_pmts.pmt_active
-
-
-@mark.skip
 def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
     file_in  = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_diomira_3evt.h5")
     file_out = os.path.join(output_tmpdir, "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_pmaps_3evt.h5")
@@ -331,64 +314,6 @@ def test_irene_trigger_channels(config_tmpdir, ICDATADIR, s12params):
             trigger_in  = h5in .root.Trigger.events[nrow]
             trigger_out = h5out.root.Trigger.events[nrow]
             np.testing.assert_array_equal(trigger_in, trigger_out)
-
-
-@mark.skip(reason="Trigger split not implemented in liquid cities")
-def test_irene_split_trigger(config_tmpdir, ICDATADIR, s12params):
-    PATH_IN   = os.path.join(ICDATADIR    , '6229_000_split_trigger.h5')
-    PATH_OUT1 = os.path.join(config_tmpdir, 'pmaps_6229_000_trg1.h5')
-    PATH_OUT2 = os.path.join(config_tmpdir, 'pmaps_6229_000_trg2.h5')
-
-    nrequired  = 3
-    run_number = 6229
-
-    conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number     = run_number,
-                     files_in       = PATH_IN,
-                     file_out       = PATH_OUT1,
-                     file_out2      = PATH_OUT2,
-                     split_triggers = True,
-                     trg1_code      = 1,
-                     trg2_code      = 9,
-                     event_range    = (0, nrequired),
-                     **unpack_s12params(s12params)))
-
-    with warns(UserWarning) as record:
-        cnt = irene(**conf)
-        assert cnt.events_in == nrequired
-
-    #check there is a warning for unknown trigger types
-    assert len(record) >= 1
-
-    evt_warn = 2
-    trg_warn = 5
-    message = "Event {} has an unknown trigger type ({})".format(evt_warn, trg_warn)
-    assert sum(1 for r in record if r.message.args[0] == message) == 1
-
-    # Check events has been properly redirected to their files
-    with tb.open_file(PATH_IN  , mode='r') as h5in  , \
-         tb.open_file(PATH_OUT1, mode='r') as h5out1, \
-         tb.open_file(PATH_OUT2, mode='r') as h5out2:
-            # There is only one event per file
-            assert h5out1.root.Trigger.events.shape[0] == 1
-            assert h5out2.root.Trigger.events.shape[0] == 1
-
-            # Event number and trigger type are correct
-            evt1 = 0
-            evt2 = 2
-            trigger_in1  = h5in  .root.Trigger.events[evt1]
-            trigger_in2  = h5in  .root.Trigger.events[evt2]
-            trigger_out1 = h5out1.root.Trigger.events[0]
-            trigger_out2 = h5out2.root.Trigger.events[0]
-            np.testing.assert_array_equal(trigger_in1, trigger_out1)
-            np.testing.assert_array_equal(trigger_in2, trigger_out2)
-
-            evt_in1  = h5in  .root.Run.events[evt1][0]
-            evt_in2  = h5in  .root.Run.events[evt2][0]
-            evt_out1 = h5out1.root.Run.events[0][0]
-            evt_out2 = h5out2.root.Run.events[0][0]
-            np.testing.assert_array_equal(evt_in1, evt_out1)
-            np.testing.assert_array_equal(evt_in2, evt_out2)
 
 
 def test_irene_exact_result(ICDATADIR, output_tmpdir):

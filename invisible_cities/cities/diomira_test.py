@@ -16,38 +16,6 @@ from .. sierpe   import fee as FEE
 from .  diomira  import diomira
 
 
-@mark.skip(reason="Table not written in liquid cities anymore")
-def test_diomira_fee_table(ICDATADIR):
-    "Test that FEE table reads back correctly with expected values."
-    RWF_file = os.path.join(ICDATADIR, 'electrons_40keV_z250_RWF.h5')
-
-    with tb.open_file(RWF_file, 'r') as e40rwf:
-        fee = tbl.read_FEE_table(e40rwf.root.FEE.FEE)
-        feep = fee.fee_param
-        eps = 1e-04
-        # Ignoring PEP8 to improve readability by making symmetry explicit.
-        assert len(fee.adc_to_pes)    == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee.coeff_blr)     == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee.coeff_c)       == e40rwf.root.RD.pmtrwf.shape[1]
-        assert len(fee.pmt_noise_rms) == e40rwf.root.RD.pmtrwf.shape[1]
-        assert feep.NBITS == FEE.NBITS
-        assert abs(feep.FEE_GAIN - FEE.FEE_GAIN)           < eps
-        assert abs(feep.LSB - FEE.LSB)                     < eps
-        assert abs(feep.NOISE_I - FEE.NOISE_I)             < eps
-        assert abs(feep.NOISE_DAQ - FEE.NOISE_DAQ)         < eps
-        assert abs(feep.C2/units.nF - FEE.C2/units.nF)     < eps
-        assert abs(feep.C1/units.nF - FEE.C1/units.nF)     < eps
-        assert abs(feep.R1/units.ohm - FEE.R1/units.ohm)   < eps
-        assert abs(feep.ZIN/units.ohm - FEE.Zin/units.ohm) < eps
-        assert abs(feep.t_sample - FEE.t_sample)           < eps
-        assert abs(feep.f_sample - FEE.f_sample)           < eps
-        assert abs(feep.f_mc - FEE.f_mc)                   < eps
-        assert abs(feep.f_LPF1 - FEE.f_LPF1)               < eps
-        assert abs(feep.f_LPF2 - FEE.f_LPF2)               < eps
-        assert abs(feep.OFFSET - FEE.OFFSET)               < eps
-        assert abs(feep.CEILING - FEE.CEILING)             < eps
-
-
 def test_diomira_identify_bug(ICDATADIR):
     """Read a one-event file in which the energy of PMTs is equal to zero and
     asset it must be son. This test would fail for a normal file where there
@@ -112,16 +80,6 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
             last_evt_number  = h5out.root.MC.extents[-1][0]
             assert first_evt_number != last_evt_number
 
-
-@mark.skip(reason="Feature removed")
-@mark.parametrize('filename first_evt'.split(),
-                  (('dst_NEXT_v0_08_09_Co56_INTERNALPORTANODE_74_0_7bar_MCRD_10000.root.h5', 740000),
-                   ('NEXT_v0_08_09_Co56_2_0_7bar_MCRD_1000.root.h5'                        ,   2000),
-                   ('electrons_40keV_z250_MCRD.h5'                                         ,      0)))
-def test_event_number_from_input_file_name(filename, first_evt):
-    assert Diomira.event_number_from_input_file_name(filename) == first_evt
-
-
 @mark.slow
 def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
     file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
@@ -140,18 +98,26 @@ def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
     assert cnt.events_in == 1
 
 
-@mark.skip(reason="Trigger not implemented in liquid cities")
 @mark.slow
 def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdir):
     file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
     file_out = os.path.join(output_tmpdir, 'electrons_40keV_z250_RWF_test_trigger.h5')
 
     conf = configure('diomira invisible_cities/config/diomira.conf'.split())
-    conf.update(dict(run_number   = -4500, # Must be a run number with dead pmts
-                     files_in     = file_in,
-                     file_out     = file_out,
-                     trigger_type = "S2",
-                     tr_channels  = (0,), # This is a masked PMT for this run
+    conf.update(dict(run_number     = -4500, # Must be a run number with dead pmts
+                     files_in       = file_in,
+                     file_out       = file_out,
+                     trigger_type   = "S2",
+                     trigger_params = dict(
+                        tr_channels         = (0,),  # This is a masked PMT for this run
+                        min_number_channels = 1   ,
+                        data_mc_ratio       = 1   ,
+                        min_height          = 0   ,
+                        max_height          = 1e6 ,
+                        min_charge          = 0   ,
+                        max_charge          = 1e6 ,
+                        min_width           = 0   ,
+                        max_width           = 1e6 ),
                      event_range  = (0, 1)))
 
     with raises(ValueError):

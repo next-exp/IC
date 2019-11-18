@@ -54,12 +54,12 @@ def test_get_chi2_and_pvalue_when_data_equals_fit():
     assert pvalue == approx(1., rel=1e-3)
 
 
-@mark.skip(reason="Delaying elimination of solid cities")
+@flaky(max_runs=5, min_passes=4)
 @given(floats(min_value = -2500,
               max_value = +2500),
        floats(min_value = + 100,
               max_value = + 300))
-@settings(max_examples=500)
+@settings(max_examples=100)
 def test_get_chi2_and_pvalue_gauss_errors(mean, sigma):
     Nevt  = int(1e6)
     ydata = np.random.normal(mean, sigma, Nevt)
