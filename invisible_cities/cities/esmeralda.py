@@ -6,24 +6,25 @@ From Spanish esmeralda (“emerald”), as first used in the novel Notre-Dame de
 This city corrects hits energy and extracts topology information.
 The input is penthesilea output containing hits, kdst global information and mc info.
 The city outputs :
-    - RECO corrected hits table, according to the given map and hits threshold and merging parameters
+    - CHITS corrected hits table,
+        - lowTh  - contains corrected hits table that passed h.Q >= charge_threshold_low constrain
+        - highTh - contains corrected hits table that passed h.Q >= charge_threshold_high constrain.
+                   it also contains:
+                   - Ep field that is the energy of a hit after applying drop_end_point_voxel algorithm.
+                   - track_id denoting to which track from Tracking/Tracks dataframe the hit belong to 
     - MC info (if run number <=0)
-    - PAOLINA Summary of topological anlaysis containing:
-        - corrected (paolina) hits, hits table after performing paolina drop_voxels
-        - summary of per track information
-        - summary of per event information
+    - Tracking/Tracks - summary of per track information
+    - Summary/events  - summary of per event information
+    - DST/Events      - copy of kdst information from penthesilea
 """
 
 import os
 import tables as tb
 import numpy  as np
 import pandas as pd
-import warnings
 
-from functools   import partial
-from typing      import Tuple
+from collections import OrderedDict
 from typing      import Callable
-from typing      import Optional
 
 from .. reco                import tbl_functions        as tbl
 from .. reco                import paolina_functions    as plf
@@ -38,13 +39,33 @@ from .  components import city
 from .  components import print_every
 from .  components import hits_and_kdst_from_files
 
-from .. types.      ic_types import NN
 from .. types.      ic_types import xy
 from .. io.         hits_io  import          hits_writer
 from .. io.       mcinfo_io  import       mc_info_writer
 from .. io.run_and_event_io  import run_and_event_writer
 from .. io. event_filter_io  import  event_filter_writer
 from .. io.          dst_io  import _store_pandas_as_tables
+
+types_dict_summary = OrderedDict({'event'     : np.int32  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
+                                  'evt_ntrks' : np.int    , 'evt_nhits'  : np.int    , 'evt_x_avg'     : np.float64,
+                                  'evt_y_avg' : np.float64, 'evt_z_avg'  : np.float64, 'evt_r_avg'     : np.float64,
+                                  'evt_x_min' : np.float64, 'evt_y_min'  : np.float64, 'evt_z_min'     : np.float64,
+                                  'evt_r_min' : np.float64, 'evt_x_max'  : np.float64, 'evt_y_max'     : np.float64,
+                                  'evt_z_max' : np.float64, 'evt_r_max'  : np.float64, 'evt_out_of_map': bool      })
+
+types_dict_tracks = OrderedDict({'event'           : np.int32  , 'trackID'       : np.int    , 'energy'      : np.float64,
+                                 'length'          : np.float64, 'numb_of_voxels': np.int    , 'numb_of_hits': np.int    ,
+                                 'numb_of_tracks'  : np.int    , 'x_min'         : np.float64, 'y_min'       : np.float64,
+                                 'z_min'           : np.float64, 'r_min'         : np.float64, 'x_max'       : np.float64,
+                                 'y_max'           : np.float64, 'z_max'         : np.float64, 'r_max'       : np.float64,
+                                 'x_ave'           : np.float64, 'y_ave'         : np.float64, 'z_ave'       : np.float64,
+                                 'r_ave'           : np.float64, 'extreme1_x'    : np.float64, 'extreme1_y'  : np.float64,
+                                 'extreme1_z'      : np.float64, 'extreme2_x'    : np.float64, 'extreme2_y'  : np.float64,
+                                 'extreme2_z'      : np.float64, 'blob1_x'       : np.float64, 'blob1_y'     : np.float64,
+                                 'blob1_z'         : np.float64, 'blob2_x'       : np.float64, 'blob2_y'     : np.float64,
+                                 'blob2_z'         : np.float64, 'eblob1'        : np.float64, 'eblob2'      : np.float64,
+                                 'ovlp_blob_energy': np.float64,
+                                 'vox_size_x'      : np.float64, 'vox_size_y'    : np.float64, 'vox_size_z'  : np.float64})
 
 def hits_threshold_and_corrector(map_fname        : str  ,
                                  threshold_charge : float,
@@ -107,6 +128,17 @@ def hits_threshold_and_corrector(map_fname        : str  ,
         return new_hitc
     return threshold_and_correct_hits
 
+def copy_Ec_to_Ep_hit_attribute_(hitc : evm.HitCollection) -> evm.HitCollection:
+    """
+    The functions copies values of Ec attributes into Ep attributes. Takes as input HitCollection and returns a copy.
+    """
+    mod_hits = []
+    for hit in hitc.hits:
+        hit = evm.Hit(hit.npeak, evm.Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm),
+                      hit.Z, hit.E, xy(hit.Xpeak, hit.Ypeak), s2_energy_c=hit.Ec, Ep=hit.Ec)
+        mod_hits.append(hit)
+    mod_hitc = evm.HitCollection(hitc.event, hitc.time, hits=mod_hits)
+    return mod_hitc
 
 
 def track_blob_info_creator_extractor(vox_size         : [float, float, float],
@@ -140,29 +172,23 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
     def create_extract_track_blob_info(hitc):
         #track_hits is a new Hitcollection object that contains hits belonging to tracks, and hits that couldnt be corrected
         track_hitc = evm.HitCollection(hitc.event, hitc.time)
-        out_of_map = any(np.isnan([h.Ec for h in hitc.hits]))
+        out_of_map = np.any(np.isnan([h.Ep for h in hitc.hits]))
         if out_of_map:
             #add nan hits to track_hits, the track_id will be -1
-            track_hitc.hits.extend  ([h for h in hitc.hits if np.isnan   (h.Ec)])
-            hits_without_nan       = [h for h in hitc.hits if np.isfinite(h.Ec)]
+            track_hitc.hits.extend  ([h for h in hitc.hits if np.isnan   (h.Ep)])
+            hits_without_nan       = [h for h in hitc.hits if np.isfinite(h.Ep)]
             #create new Hitcollection object but keep the name hitc
             hitc      = evm.HitCollection(hitc.event, hitc.time)
             hitc.hits = hits_without_nan
-        df = pd.DataFrame(columns=['event', 'trackID', 'energy', 'length', 'numb_of_voxels',
-                                   'numb_of_hits', 'numb_of_tracks', 'x_min', 'y_min', 'z_min', 'r_min',
-                                   'x_max', 'y_max', 'z_max', 'r_max', 'x_ave', 'y_ave', 'z_ave', 'r_ave',
-                                   'extreme1_x', 'extreme1_y', 'extreme1_z',
-                                   'extreme2_x', 'extreme2_y', 'extreme2_z',
-                                   'blob1_x', 'blob1_y', 'blob1_z',
-                                   'blob2_x', 'blob2_y', 'blob2_z',
-                                   'eblob1', 'eblob2', 'ovlp_blob_energy',
-                                   'vox_size_x', 'vox_size_y', 'vox_size_z'])
-
+        df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
         if len(hitc.hits)>0:
-            voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, evm.HitEnergy.Ec)
+            voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, evm.HitEnergy.Ep)
             (    mod_voxels,
              dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
             tracks           = plf.make_track_graphs(mod_voxels)
+
+            for v in dropped_voxels:
+                track_hitc.hits.extend(v.hits)
 
             vox_size_x = voxels[0].size[0]
             vox_size_y = voxels[0].size[1]
@@ -179,15 +205,13 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                 numb_of_hits   = len([h for vox in t.nodes() for h in vox.hits])
                 numb_of_voxels = len(t.nodes())
                 numb_of_tracks = len(tracks   )
-
                 pos   = [h.pos for v in t.nodes() for h in v.hits]
                 x, y, z = map(np.array, zip(*pos))
                 r = np.sqrt(x**2 + y**2)
 
-                e     = [h.Ec for v in t.nodes() for h in v.hits]
+                e     = [h.Ep for v in t.nodes() for h in v.hits]
                 ave_pos = np.average(pos, weights=e, axis=0)
                 ave_r   = np.average(r  , weights=e, axis=0)
-
                 extr1, extr2 = plf.find_extrema(t)
                 extr1_pos = extr1.XYZ
                 extr2_pos = extr2.XYZ
@@ -195,7 +219,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                 blob_pos1, blob_pos2 = plf.blob_centres(t, blob_radius)
 
                 e_blob1, e_blob2, hits_blob1, hits_blob2 = plf.blob_energies_and_hits(t, blob_radius)
-                overlap = float(sum(h.Ec for h in set(hits_blob1).intersection(set(hits_blob2))))
+                overlap = float(sum(h.Ep for h in set(hits_blob1).intersection(set(hits_blob2))))
                 list_of_vars = [hitc.event, tID, energy, length, numb_of_voxels,
                                 numb_of_hits, numb_of_tracks,
                                 min(x), min(y), min(z), min(r), max(x), max(y), max(z), max(r),
@@ -205,21 +229,15 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                                 vox_size_x, vox_size_y, vox_size_z]
 
                 df.loc[c] = list_of_vars
-                try:
-                    types_dict
-                except NameError:
-                    types_dict = dict(zip(df.columns, [type(x) for x in list_of_vars]))
 
                 for vox in t.nodes():
                     for hit in vox.hits:
                         hit.track_id = tID
                         track_hits.append(hit)
 
-
-                track_hitc.hits.extend(track_hits)
-                #change dtype of columns to match type of variables
-                df = df.apply(lambda x : x.astype(types_dict[x.name]))
-
+            #change dtype of columns to match type of variables
+            df = df.apply(lambda x : x.astype(types_dict_tracks[x.name]))
+            track_hitc.hits.extend(track_hits)
         return df, track_hitc, out_of_map
 
     return create_extract_track_blob_info
@@ -227,6 +245,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
 
 def make_event_summary(event_number  : int              ,
                        topology_info : pd.DataFrame     ,
+                       paolina_hits  : evm.HitCollection,
                        out_of_map    : bool
                        ) -> pd.DataFrame:
     """
@@ -251,48 +270,35 @@ def make_event_summary(event_number  : int              ,
     ----------
     DataFrame containing relevant per event information.
     """
-    es = pd.DataFrame(columns=['event', 'S2ec' ,  'S2qc', 'ntrks', 'nhits',
-                               'x_avg', 'y_avg', 'z_avg', 'r_avg',
-                               'x_min', 'y_min', 'z_min', 'r_min',
-                               'x_max', 'y_max', 'z_max', 'r_max',
-                               'out_of_map'])
+    es = pd.DataFrame(columns=list(types_dict_summary.keys()))
 
     ntrks = len(topology_info.index)
-    S2ec  = max(-1, sum(topology_info.energy))
-    #once charge correction gets implemented we probably want to add it to tracks dataframe too
-    S2qc = max(-1, sum(topology_info.charge)) if hasattr(topology_info, "charge") else -1
+    nhits = len(paolina_hits.hits)
 
-    x_avg = np.average(topology_info.x_ave, weights = topology_info.energy)
-    y_avg = np.average(topology_info.y_ave, weights = topology_info.energy)
-    z_avg = np.average(topology_info.z_ave, weights = topology_info.energy)
-    r_avg = np.average(topology_info.r_ave, weights = topology_info.energy)
+    S2ec = sum(h.Ec for h in paolina_hits.hits)
+    S2qc = -1 #not implemented yet
 
-    nhits = sum(topology_info.numb_of_hits)
+    pos   = [h.pos for h in paolina_hits.hits]
+    x, y, z = map(np.array, zip(*pos))
+    r = np.sqrt(x**2 + y**2)
 
-    x_min = min(topology_info.x_min)
-    y_min = min(topology_info.y_min)
-    z_min = min(topology_info.z_min)
-    r_min = min(topology_info.r_min)
+    e     = [h.Ec  for h in paolina_hits.hits]
+    ave_pos = np.average(pos, weights=e, axis=0)
+    ave_r   = np.average(r  , weights=e, axis=0)
 
-    x_max = max(topology_info.x_max)
-    y_max = max(topology_info.y_max)
-    z_max = max(topology_info.z_max)
-    r_max = max(topology_info.r_max)
 
     list_of_vars  = [event_number, S2ec, S2qc, ntrks, nhits,
-                     x_avg, y_avg, z_avg, r_avg, x_min, y_min,
-                     z_min, r_min, x_max, y_max, z_max, r_max,
+                     *ave_pos, ave_r,
+                     min(x), min(y), min(z), min(r), max(x), max(y), max(z), max(r),
                      out_of_map]
 
     es.loc[0] = list_of_vars
     #change dtype of columns to match type of variables
-    types_dict = dict(zip(es.columns, [type(x) for x in list_of_vars]))
-    es = es.apply(lambda x : x.astype(types_dict[x.name]))
-
+    es = es.apply(lambda x : x.astype(types_dict_summary[x.name]))
     return es
 
 
-def track_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name='Tracks', descriptive_string='Track information', str_col_length=32):
+def track_writer(h5out, compression='ZLIB4', group_name='Tracking', table_name='Tracks', descriptive_string='Track information', str_col_length=32):
     """
     For a given open table returns a writer for topology info dataframe
     """
@@ -301,7 +307,7 @@ def track_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name='T
     return write_tracks
 
 
-def summary_writer(h5out, compression='ZLIB4', group_name='PAOLINA', table_name='Summary', descriptive_string='Event summary information', str_col_length=32):
+def summary_writer(h5out, compression='ZLIB4', group_name='Summary', table_name='Events', descriptive_string='Event summary information', str_col_length=32):
     """
     For a given open table returns a writer for summary info dataframe
     """
@@ -344,9 +350,9 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         map_fname                : string (filepath)
             filename of the map
         threshold_charge_low     : float
-            minimum pes for a RECO hit
+            minimum pes for a lowTh hit
         threshold_charge_high    : float
-            minimum pes for a PAOLINA hit
+            minimum pes for a highTh hit
         same_peak                : bool
             if True energy of NN hits is assigned only to the hits from the same peak
         apply_temp               : bool
@@ -387,11 +393,11 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
 
     cor_hits_params_   = {value : cor_hits_params.get(value) for value in ['map_fname', 'same_peak', 'apply_temp']}
 
-    threshold_and_correct_hits_low  = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_reco'   ], **cor_hits_params_),
+    threshold_and_correct_hits_low  = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_low' ], **cor_hits_params_),
                                              args = 'hits',
                                              out  = 'cor_low_th_hits')
 
-    threshold_and_correct_hits_high = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_paolina'], **cor_hits_params_),
+    threshold_and_correct_hits_high = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_high'], **cor_hits_params_),
                                              args = 'hits',
                                              out  = 'cor_high_th_hits')
 
@@ -406,8 +412,12 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     hits_passed_low_th              = fl.count_filter(bool, args="low_th_hits_passed")
     hits_passed_high_th             = fl.count_filter(bool, args="high_th_hits_passed")
 
-    create_extract_track_blob_info  = fl.map(track_blob_info_creator_extractor(**paolina_params),
+    copy_Ec_to_Ep_hit_attribute     = fl.map(copy_Ec_to_Ep_hit_attribute_,
                                              args = 'cor_high_th_hits',
+                                             out  = 'cor_Ep_high_th_hits')
+
+    create_extract_track_blob_info  = fl.map(track_blob_info_creator_extractor(**paolina_params),
+                                             args = 'cor_Ep_high_th_hits',
                                              out  = ('topology_info', 'paolina_hits', 'out_of_map'))
     filter_events_topology          = fl.map(lambda x : len(x) > 0,
                                              args = 'topology_info',
@@ -415,7 +425,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     events_passed_topology          = fl.count_filter(bool, args="topology_passed")
 
     make_final_summary              = fl.map(make_event_summary,
-                                             args = ('event_number', 'topology_info', 'out_of_map'),
+                                             args = ('event_number', 'topology_info', 'paolina_hits', 'out_of_map'),
                                              out  = 'event_info')
 
     event_count_in  = fl.spy_count()
@@ -427,9 +437,11 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_mc_        = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
 
+        write_hits_low_th     = fl.sink(    hits_writer     (h5out, group_name='CHITS', table_name='lowTh'),
+                                            args="cor_low_th_hits")
+        write_hits_paolina    = fl.sink(    hits_writer     (h5out, group_name='CHITS', table_name='highTh' ),
+                                            args="paolina_hits"   )
         write_mc              = fl.sink(    write_mc_                                    , args=("mc", "event_number"))
-        write_hits_low_th     = fl.sink(    hits_writer     (h5out)                      , args="cor_low_th_hits"    )
-        write_hits_paolina    = fl.sink(    hits_writer     (h5out, group_name='PAOLINA'), args="paolina_hits"       )
         write_tracks          = fl.sink(   track_writer     (h5out=h5out)                , args="topology_info"      )
         write_summary         = fl.sink( summary_writer     (h5out=h5out)                , args="event_info"         )
         write_high_th_filter  = fl.sink( event_filter_writer(h5out, "high_th_select" )   , args=("event_number", "high_th_hits_passed"))
@@ -454,6 +466,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                          filter_events_high_th                        ,
                          fl.branch(write_high_th_filter)              ,
                          hits_passed_high_th   .filter                ,
+                         copy_Ec_to_Ep_hit_attribute                  ,
                          create_extract_track_blob_info               ,
                          filter_events_topology                       ,
                          fl.branch(write_hits_paolina)                ,
