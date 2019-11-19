@@ -233,39 +233,19 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
 
     cnt = esmeralda(**conf)
 
-    tables    = ["MC/extents", "MC/hits", "MC/particles",
-                 "PAOLINA/Tracks", "RECO/Events",
-                 "Run/events", "Run/runInfo", "DST/Events",
-                 "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
 
-    tables_rnm = ["MC/extents", "MC/hits", "MC/particles",
-                  "Tracking/Tracks", "CHITS/lowTh",
-                  "Run/events", "Run/runInfo", "DST/Events",
-                  "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
+    tables = ["MC/extents", "MC/hits", "MC/particles",
+              "Tracking/Tracks", "CHITS/lowTh", "CHITS/highTh",
+              "Run/events", "Run/runInfo", "DST/Events", "Summary/Events",
+              "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
 
     with tb.open_file(true_out)  as true_output_file:
         with tb.open_file(file_out) as   output_file:
-            for table1, table2  in zip(tables_rnm, tables):
-                got      = getattr(     output_file.root, table1)
-                expected = getattr(true_output_file.root, table2)
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
 
-    #paolina summary has different column names
-    df_summary_old  = dio.load_dst(true_out, 'PAOLINA', 'Summary')
-    df_summary_new  = dio.load_dst(file_out, 'Summary', 'Events' )
-
-    #new_summary will have evt_ before column names, so lets rename it
-    df_summary_new.columns = df_summary_old.columns
-    assert_dataframes_close(df_summary_old, df_summary_new, check_types=False)
-
-    #compare Hits table without newly added Ep
-    df_hits_paolina_new = dio.load_dst(file_out, 'CHITS'  , 'highTh')
-    df_hits_paolina_old = dio.load_dst(true_out, 'PAOLINA', 'Events')
-    columns = df_hits_paolina_old.columns
-    assert_dataframes_close(df_hits_paolina_new[columns], df_hits_paolina_new[columns])
-
-    #Ep should be set to Ec since voxel dropping threshold is 0
-    np.testing.assert_array_equal(df_hits_paolina_new.Ec, df_hits_paolina_new.Ep)
 
 
 #test showing that all events that pass charge threshold are contained in hits output
