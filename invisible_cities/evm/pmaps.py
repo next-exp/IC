@@ -2,8 +2,16 @@ from textwrap import dedent
 
 import numpy as np
 
+from enum import auto
+
 from .. core.system_of_units_c import units
 from .. core.core_functions    import weighted_mean_and_std
+from .. types.ic_types         import      AutoNameEnumBase
+
+
+class SiPMCharge(AutoNameEnumBase):
+    raw             = auto()
+    signal_to_noise = auto()
 
 
 class PMap:
@@ -98,7 +106,32 @@ class _Peak:
             raise ValueError(msg)
 
 class S1(_Peak): pass
-class S2(_Peak): pass
+class S2(_Peak):
+
+    def sipm_charge_array(self, noise_func, charge_type,
+                          single_point=False):
+
+        if charge_type is SiPMCharge.raw:
+            if single_point:
+                return self.sipms.sum_over_times
+            return self.sipms.all_waveforms.T
+
+        ## Should generalise to use base sample width rather
+        ## than mus in case of electronics changes in the
+        ## future.
+        if single_point:
+            charges    = self.sipms.sum_over_times
+            sample_wid = int(np.ceil(np.round(self.width) / units.mus))
+            return noise_func(self.sipms.ids, charges, sample_wid)
+
+        sample_widths    = np.ceil(np.round(self.bin_widths) / units.mus)
+        id_sample_repeat = np.repeat(self.sipms.ids[np.newaxis],
+                                     len(self.bin_widths),    0)
+        mapping          = map(noise_func                ,
+                               id_sample_repeat          ,
+                               self.sipms.all_waveforms.T,
+                               sample_widths.astype(int) )
+        return tuple(mapping)
 
 
 class _SensorResponses:

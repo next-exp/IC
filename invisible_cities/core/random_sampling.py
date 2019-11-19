@@ -2,12 +2,14 @@ from enum import Enum
 
 import numpy as np
 
-from typing      import Tuple
+from scipy.signal import fftconvolve
 
-from functools   import   partial
-from functools   import lru_cache
+from typing       import       Tuple
 
-from .. database import   load_db as DB
+from functools    import     partial
+from functools    import   lru_cache
+
+from .. database  import     load_db as DB
 
 
 class DarkModel(Enum):
@@ -216,6 +218,9 @@ class NoiseSampler:
             An array of S/N values for the sipms in the slice.
         """
 
+        if sample_width < 1:
+            error_msg = 'Unphysical sample width = {}'.format(sample_width)
+            raise ValueError(error_msg)
         dark_levels = self.dark_expectation(sample_width, dark_model)
 
         return charges / np.sqrt(charges + dark_levels[ids])
@@ -273,7 +278,7 @@ class NoiseSampler:
         if sample_width == 1:
             return pad_pdfs(self.xbins, self.probs)[1]
 
-        mapping = map(np.convolve                                      ,
+        mapping = map(fftconvolve                                      ,
                       self.multi_sample_distributions(               1),
                       self.multi_sample_distributions(sample_width - 1),
                       np.full(self.probs.shape[0], "same")             )

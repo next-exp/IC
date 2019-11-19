@@ -1,9 +1,10 @@
 import numpy as np
 
-from flaky  import flaky
-from pytest import mark
+from flaky  import   flaky
+from pytest import    mark
 from pytest import fixture
-from pytest import approx
+from pytest import  approx
+from pytest import  raises
 
 from hypothesis            import given
 from hypothesis.strategies import composite
@@ -142,7 +143,7 @@ def test_pad_pdfs(bins, expected_length):
     spectra           = np.full((2, len(bins)), 0.1)
     _, padded_spectra = pad_pdfs(bins, spectra)
     assert padded_spectra.shape[1] == expected_length
-    
+
 
 ## @mark.parametrize("bins",
 ##                   (np.arange(-1, 1, 0.01),
@@ -153,7 +154,7 @@ def test_pad_pdfs(bins, expected_length):
 
 ##     bin_diffs = np.diff(padded_bins)
 ##     assert np.allclose(bin_diffs, bin_diffs[0])
-    
+
 
 @mark.parametrize("domain frequencies percentile true_value".split(),
                   ((np.arange( 10), np.linspace(0, 1,  10), 0.6,  6),
@@ -320,3 +321,13 @@ def test_noise_sampler_signal_to_noise(noise_sampler,
 
     assert len(signal_to_noise) == len(ids)
     assert np.allclose(np.round(signal_to_noise, 2), expected)
+
+
+def test_signal_to_noise_zero_sample_raises_error(noise_sampler):
+
+    noise_sampler, *_ = noise_sampler
+    ids = [1000, 1010, 1023]
+    qs  = np.array([0.2, 1, 1.03])
+    with raises(ValueError):
+
+        noise_sampler.signal_to_noise(ids, qs, 0)
