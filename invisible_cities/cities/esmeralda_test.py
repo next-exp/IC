@@ -165,7 +165,7 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     #make sure out_of_map is true for events not in df_tracks_exact
     diff_events = list(set(df_tracks.event.unique()).difference(events))
     df_summary  = dio.load_dst(PATH_OUT, 'Summary', 'Events')
-    assert np.all(df_summary[df_summary.event.isin(diff_events)].loc[:,'evt_out_of_map'])
+    assert np.all(df_summary.loc[df_summary.event.isin(diff_events),'evt_out_of_map'])
 
 
 def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
@@ -269,7 +269,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
 
 
 #test showing that all events that pass charge threshold are contained in hits output
-def test_esmeralda_bug_duplicate_hits(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
+def test_esmeralda_bug_duplicate_hits(data_hdst, correction_map_filename, config_tmpdir):
     PATH_IN   = data_hdst
     PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda_drop_voxels.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
@@ -331,7 +331,7 @@ def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, corre
     num_pass_th_p_hits  = len(df_phits)
     assert num_pass_th_in_hits == num_pass_th_p_hits
 
-
+    #the number of finite Ep should be equal to Ec if no voxels were dropped.
     num_paolina_hits   = sum(np.isfinite(df_phits.Ep))
     assert num_paolina_hits <= num_pass_th_p_hits
 

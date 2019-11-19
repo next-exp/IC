@@ -131,7 +131,6 @@ def hits_threshold_and_corrector(map_fname        : str  ,
 def copy_Ec_to_Ep_hit_attribute_(hitc : evm.HitCollection) -> evm.HitCollection:
     """
     The functions copies values of Ec attributes into Ep attributes. Takes as input HitCollection and returns a copy.
-
     """
     mod_hits = []
     for hit in hitc.hits:
