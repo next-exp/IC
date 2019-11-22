@@ -110,6 +110,16 @@ def test_in_range_right_close_interval(data):
     assert all(output)
 
 
+@mark.parametrize("              left                right".split(),
+                  ((            "open",             "open"),
+                   (          "closed", core.Interval.open),
+                   (core.Interval.open,           "closed")))
+@given(data=sorted_unique_arrays)
+def test_in_range_raises_ValueError_when_invalid_argument(data, left, right):
+    with raises(ValueError):
+        output = core.in_range(data, left=left, right=right)
+
+
 @mark.parametrize(" first  second       norm_mode        expected".split(),
                   ((  1  ,    2  , core.NormMode.first ,   -1    ),
                    (  4  ,    2  , core.NormMode.second,    1    ),
