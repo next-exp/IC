@@ -59,7 +59,7 @@ def relative_difference(x, y, *, norm_mode=NormMode.first):
         raise TypeError(f"Unrecognized relative difference option: {norm_mode}")
 
 
-def in_range(data, minval=-np.inf, maxval=np.inf):
+def in_range(data, minval=-np.inf, maxval=np.inf, left="closed", right="open"):
     """
     Find values in range [minval, maxval).
 
@@ -71,6 +71,10 @@ def in_range(data, minval=-np.inf, maxval=np.inf):
         Range minimum. Defaults to -inf.
     maxval : int or float, optional
         Range maximum. Defaults to +inf.
+    left   : {"open", "close"}
+        Use close (default) or open  interval on the lower bound
+    right  : {"open", "close"}
+        Use open  (default) or close interval on the upper bound
 
     Returns
     -------
@@ -78,7 +82,9 @@ def in_range(data, minval=-np.inf, maxval=np.inf):
         Boolean array with the same dimension as the input. Contains True
         for those values of data in the input range and False for the others.
     """
-    return (minval <= data) & (data < maxval)
+    lower_bound = data >= minval if left  == "closed" else data > minval
+    upper_bound = data <= maxval if right == "closed" else data < maxval
+    return lower_bound & upper_bound
 
 
 def weighted_mean_and_var(data       : Sequence,
