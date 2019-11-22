@@ -40,6 +40,7 @@ def test_timefunc(capfd):
     time_measured = float(time_measured)
     np.isclose(time, time_measured)
 
+
 def test_flat():
     inner_len = 12
     outer_len =  5
@@ -49,11 +50,14 @@ def test_flat():
         for j in range(inner_len):
             assert flattened[j + i * inner_len] == nested_list[i][j]
 
+
 def test_lrange():
     assert core.lrange(10) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
+
 def test_trange():
     assert core.trange(10) == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+
 
 @given(random_length_float_arrays())
 def test_in_range_infinite(data):
