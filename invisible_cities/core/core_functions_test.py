@@ -83,7 +83,7 @@ def test_in_range_right_shape(data):
 @given(sorted_unique_arrays)
 def test_in_range_left_open_interval(data):
     # right doesn't matter because it's infinite
-    output = core.in_range(data, minval=data[0], maxval=np.inf, left="open")
+    output = core.in_range(data, minval=data[0], maxval=np.inf, left=core.Interval.open)
     assert not output[0]
     assert all(output[1:])
 
@@ -91,7 +91,7 @@ def test_in_range_left_open_interval(data):
 @given(sorted_unique_arrays)
 def test_in_range_right_open_interval(data):
     # left doesn't matter because it's infinite
-    output = core.in_range(data, minval=-np.inf, maxval=data[-1], right="open")
+    output = core.in_range(data, minval=-np.inf, maxval=data[-1], right=core.Interval.open)
     assert not output[-1]
     assert all(output[:-1])
 
@@ -99,14 +99,14 @@ def test_in_range_right_open_interval(data):
 @given(sorted_unique_arrays)
 def test_in_range_left_close_interval(data):
     # right doesn't matter because it's infinite
-    output = core.in_range(data, minval=data[0], maxval=np.inf, left="closed")
+    output = core.in_range(data, minval=data[0], maxval=np.inf, left=core.Interval.closed)
     assert all(output)
 
 
 @given(sorted_unique_arrays)
 def test_in_range_right_close_interval(data):
     # left doesn't matter because it's infinite
-    output = core.in_range(data, minval=-np.inf, maxval=data[-1], right="closed")
+    output = core.in_range(data, minval=-np.inf, maxval=data[-1], right=core.Interval.closed)
     assert all(output)
 
 
