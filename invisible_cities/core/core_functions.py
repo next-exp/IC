@@ -9,12 +9,19 @@ import numpy as np
 
 from typing import Sequence
 
+from .. types.ic_types import AutoNameEnumBase
+
 
 class NormMode(enum.Enum):
     first   = 0
     second  = 1
     sumof   = 3
     mean    = 4
+
+
+class Interval(AutoNameEnumBase):
+    open   = enum.auto()
+    closed = enum.auto()
 
 
 def merge_two_dicts(a,b):
@@ -59,7 +66,7 @@ def relative_difference(x, y, *, norm_mode=NormMode.first):
         raise TypeError(f"Unrecognized relative difference option: {norm_mode}")
 
 
-def in_range(data, minval=-np.inf, maxval=np.inf, left="closed", right="open"):
+def in_range(data, minval=-np.inf, maxval=np.inf, left=Interval.closed, right=Interval.open):
     """
     Find values in range [minval, maxval).
 
@@ -82,8 +89,10 @@ def in_range(data, minval=-np.inf, maxval=np.inf, left="closed", right="open"):
         Boolean array with the same dimension as the input. Contains True
         for those values of data in the input range and False for the others.
     """
-    lower_bound = data >= minval if left  == "closed" else data > minval
-    upper_bound = data <= maxval if right == "closed" else data < maxval
+    if left not in Interval or right not in Interval:
+        raise ValueError("left and right must be an instance of Interval")
+    lower_bound = data >= minval if left  is Interval.closed else data > minval
+    upper_bound = data <= maxval if right is Interval.closed else data < maxval
     return lower_bound & upper_bound
 
 
