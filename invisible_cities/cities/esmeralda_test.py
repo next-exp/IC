@@ -331,6 +331,7 @@ def test_esmeralda_filters_long_events(data_hdst, esmeralda_tracks, correction_m
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = 9
     all_hits  = 601
+    nhits_max = 50
     paolina_events = {3021898, 3021914, 3021930, 3020951, 3020961}
     conf.update(dict(files_in                  = PATH_IN                ,
                      file_out                  = PATH_OUT               ,
@@ -348,16 +349,21 @@ def test_esmeralda_filters_long_events(data_hdst, esmeralda_tracks, correction_m
                          energy_threshold      = 20 * units.keV         ,
                          min_voxels            = 2                      ,
                          blob_radius           = 21 * units.mm          ,
-                         max_num_hits          = 50                    )))
+                         max_num_hits          = nhits_max            )))
     cnt = esmeralda(**conf)
 
     summary = dio.load_dst(PATH_OUT, 'Summary' , 'Events')
     tracks  = dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
     hits    = dio.load_dst(PATH_OUT,   'CHITS' , 'highTh')
 
-    #assert only paolina_events inside tracks and summary
+    #assert only paolina_events inside tracks
     assert set(tracks .event.unique()) == paolina_events
-    assert set(summary.event.unique()) == paolina_events
+    #assert all events in summary table
+    assert summary.event.nunique() == nevt_req
+    #assert ntrk is 0 for non_paolina events
+    assert np.all(summary[ summary.event.isin(paolina_events)].evt_ntrks >  0        )
+    assert np.all(summary[~summary.event.isin(paolina_events)].evt_ntrks == 0        )
+    assert np.all(summary[~summary.event.isin(paolina_events)].evt_nhits >  nhits_max)
     #assert all hits and events are in hits table
     assert len(hits) == 601
     assert hits.event.nunique() == nevt_req
