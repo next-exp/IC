@@ -477,12 +477,11 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                          copy_Ec_to_Ep_hit_attribute                  ,
                          create_extract_track_blob_info               ,
                          filter_events_topology                       ,
+                         fl.branch(make_final_summary, write_summary) ,
                          fl.branch(write_topology_filter)             ,
                          fl.branch(write_hits_paolina)                ,
                          events_passed_topology.filter                ,
                          event_count_out       .spy                   ,
-                         fl.fork( write_tracks                        ,
-                                 (make_final_summary, write_summary))),
-
+                         write_tracks                                ),
                      result = dict(events_in =event_count_in .future ,
                                    events_out=event_count_out.future ))
