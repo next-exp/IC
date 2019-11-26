@@ -362,8 +362,6 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         apply_temp               : bool
             whether to apply temporal corrections
             must be set to False if no temporal correction dataframe exists in map file
-        norm_strat               : 'max', 'mean' or 'kr'
-           strategy to normalize the energy
 
     paolina_params               :dict
         vox_size                 : [float, float, float]
@@ -378,6 +376,8 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
             after min_voxel number of voxels is reached no dropping will happen.
         blob_radius             : float
             radius of blob
+        max_num_hits            : int
+            maximum number of hits allowed per event to run paolina functions.
     ----------
     Input
     ----------
@@ -385,12 +385,16 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     ----------
     Output
     ----------
-    RECO    : corrected hits table, according to the given map and hits threshold and merging parameters
-    MC info : (if run number <=0)
-    PAOLINA : Summary of topological anlaysis containing:
-        Events  : corrected (paolina) hits, hits table after performing paolina drop_voxels
-        Tracks  : summary  of per track topological information
-        Summary : summary of per event information
+    - CHITS corrected hits table,
+        - lowTh  - contains corrected hits table that passed h.Q >= charge_threshold_low constrain
+        - highTh - contains corrected hits table that passed h.Q >= charge_threshold_high constrain.
+                   it also contains:
+                   - Ep field that is the energy of a hit after applying drop_end_point_voxel algorithm.
+                   - track_id denoting to which track from Tracking/Tracks dataframe the hit belong to 
+    - MC info (if run number <=0)
+    - Tracking/Tracks - summary of per track information
+    - Summary/events  - summary of per event information
+    - DST/Events      - copy of kdst information from penthesilea
 
 """
 
@@ -473,10 +477,10 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                          copy_Ec_to_Ep_hit_attribute                  ,
                          create_extract_track_blob_info               ,
                          filter_events_topology                       ,
+                         fl.branch(write_topology_filter)             ,
                          fl.branch(write_hits_paolina)                ,
                          events_passed_topology.filter                ,
                          event_count_out       .spy                   ,
-                         fl.branch(write_topology_filter)             ,
                          fl.fork( write_tracks                        ,
                                  (make_final_summary, write_summary))),
 
