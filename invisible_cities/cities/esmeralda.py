@@ -145,7 +145,8 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                                       strict_vox_size  : bool                 ,
                                       energy_threshold : float                ,
                                       min_voxels       : int                  ,
-                                      blob_radius      : float
+                                      blob_radius      : float                ,
+                                      max_num_hits     : int
                                      ) -> Callable:
     """
     For a given paolina parameters returns a function that extract tracks / blob information from a HitCollection.
@@ -170,6 +171,9 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
     A function that from a given HitCollection returns a pandas DataFrame with per track information.
     """
     def create_extract_track_blob_info(hitc):
+        df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
+        if len(hitc.hits)>max_num_hits:
+            return df, hitc, True
         #track_hits is a new Hitcollection object that contains hits belonging to tracks, and hits that couldnt be corrected
         track_hitc = evm.HitCollection(hitc.event, hitc.time)
         out_of_map = np.any(np.isnan([h.Ep for h in hitc.hits]))
@@ -180,7 +184,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
             #create new Hitcollection object but keep the name hitc
             hitc      = evm.HitCollection(hitc.event, hitc.time)
             hitc.hits = hits_without_nan
-        df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
+
         if len(hitc.hits)>0:
             voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, evm.HitEnergy.Ep)
             (    mod_voxels,
