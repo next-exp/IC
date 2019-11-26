@@ -324,3 +324,44 @@ def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, corre
 
     #check that the sum of Ep and Ec energies is the same
     assert np.nansum(df_phits.Ec) == np.nansum(df_phits.Ep)
+
+def test_esmeralda_filters_long_events(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
+    PATH_IN   = data_hdst
+    PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda_drop_voxels.h5")
+    conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
+    nevt_req  = 9
+    all_hits  = 601
+    paolina_events = {3021898, 3021914, 3021930, 3020951, 3020961}
+    conf.update(dict(files_in                  = PATH_IN                ,
+                     file_out                  = PATH_OUT               ,
+                     event_range               = nevt_req               ,
+                     run_number                = 6822                   ,
+                     cor_hits_params           = dict(
+                         map_fname             = correction_map_filename,
+                         threshold_charge_low  = 10   * units.pes       ,
+                         threshold_charge_high = 30   * units.pes       ,
+                         same_peak             = True                   ,
+                         apply_temp            = False                 ),
+                     paolina_params            = dict(
+                         vox_size              = [15 * units.mm] * 3    ,
+                         strict_vox_size       = False                  ,
+                         energy_threshold      = 20 * units.keV         ,
+                         min_voxels            = 2                      ,
+                         blob_radius           = 21 * units.mm          ,
+                         max_num_hits          = 50                    )))
+    cnt = esmeralda(**conf)
+
+    summary = dio.load_dst(PATH_OUT, 'Summary' , 'Events')
+    tracks  = dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
+    hits    = dio.load_dst(PATH_OUT,   'CHITS' , 'highTh')
+
+    #assert only paolina_events inside tracks and summary
+    assert set(tracks .event.unique()) == paolina_events
+    assert set(summary.event.unique()) == paolina_events
+    #assert all hits and events are in hits table
+    assert len(hits) == 601
+    assert hits.event.nunique() == nevt_req
+    topology_filter = dio.load_dst(PATH_OUT, 'Filters', 'topology_select')
+    assert len(topology_filter) == nevt_req
+    assert np.all(topology_filter[ topology_filter.event.isin(paolina_events)].passed == 1)
+    assert np.all(topology_filter[~topology_filter.event.isin(paolina_events)].passed == 0)
