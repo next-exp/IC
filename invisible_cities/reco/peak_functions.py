@@ -62,6 +62,10 @@ def pick_slice_and_rebin(indices, times, widths,
     return times, widths, wfs
 
 
+def filter_negative_slices(waveforms):
+    return np.sum(waveforms, axis = 0) >= 0
+
+
 def build_pmt_responses(indices, times, widths, ccwf,
                         pmt_ids, rebin_stride, pad_zeros):
     (pk_times ,
@@ -69,17 +73,20 @@ def build_pmt_responses(indices, times, widths, ccwf,
      pmt_wfs  ) = pick_slice_and_rebin(indices, times, widths,
                                        ccwf   , rebin_stride,
                                        pad_zeros = pad_zeros)
-    return pk_times, pk_widths, PMTResponses(pmt_ids, pmt_wfs)
+    slice_mask  = filter_negative_slices(pmt_wfs)
+    return (slice_mask, pk_times[slice_mask], pk_widths[slice_mask],
+            PMTResponses(pmt_ids, pmt_wfs[:, slice_mask]))
 
 
 def build_sipm_responses(indices, times, widths,
-                         sipm_wfs, rebin_stride, thr_sipm_s2):
+                         sipm_wfs, rebin_stride,
+                         thr_sipm_s2, mask):
     _, _, sipm_wfs_ = pick_slice_and_rebin(indices , times, widths,
                                            sipm_wfs, rebin_stride,
                                            pad_zeros = False)
     (sipm_ids,
-     sipm_wfs)   = select_wfs_above_time_integrated_thr(sipm_wfs_,
-                                                        thr_sipm_s2)
+     sipm_wfs) = select_wfs_above_time_integrated_thr(sipm_wfs_[:, mask],
+                                                      thr_sipm_s2)
     return SiPMResponses(sipm_ids, sipm_wfs)
 
 
@@ -89,7 +96,8 @@ def build_peak(indices, times,
                with_sipms, Pk,
                sipm_wfs    = None,
                thr_sipm_s2 = 0):
-    (pk_times ,
+    (mask     ,
+     pk_times ,
      pk_widths,
      pmt_r    ) = build_pmt_responses(indices, times, widths,
                                      ccwf, pmt_ids,
@@ -98,7 +106,7 @@ def build_peak(indices, times,
         sipm_r = build_sipm_responses(indices // 40, times // 40,
                                       widths * 40, sipm_wfs,
                                       rebin_stride // 40,
-                                      thr_sipm_s2)
+                                      thr_sipm_s2, mask)
     else:
         sipm_r = SiPMResponses.build_empty_instance()
 

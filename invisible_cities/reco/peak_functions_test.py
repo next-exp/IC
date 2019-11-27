@@ -333,8 +333,8 @@ def test_pick_slice_and_rebin(wfs_slice_data):
 def test_build_pmt_responses(wf_with_indices):
     times, widths, wfs, indices = wf_with_indices
     ids = np.arange(wfs.shape[0])
-    ts, wid, pmt_r = pf.build_pmt_responses(indices, times, widths,
-                                            wfs, ids, 1, False)
+    _, ts, wid, pmt_r = pf.build_pmt_responses(indices, times, widths,
+                                               wfs, ids, 1, False)
     assert ts                  == approx (times[indices])
     assert wid                 == approx (widths[indices])
     assert pmt_r.ids           == exactly(ids)
@@ -349,8 +349,9 @@ def test_build_sipm_responses(wf_with_indices):
     below_thr_index = np.argmin (peak_integrals)
     # next_float doesn't work here
     thr             = peak_integrals[below_thr_index] * 1.000001
+    mask            = np.full(indices.shape, True)
     sipm_r          = pf.build_sipm_responses(indices, times, widths,
-                                              wfs, 1, thr)
+                                              wfs, 1, thr, mask)
 
     expected_ids = np.delete(      ids, below_thr_index)
     expected_wfs = np.delete(wfs_slice, below_thr_index, axis=0)
