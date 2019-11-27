@@ -325,9 +325,9 @@ def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, corre
     #check that the sum of Ep and Ec energies is the same
     assert np.nansum(df_phits.Ec) == np.nansum(df_phits.Ep)
 
-def test_esmeralda_filters_long_events(data_hdst, esmeralda_tracks, correction_map_filename, config_tmpdir):
+def test_esmeralda_filters_events_with_too_many_hits(data_hdst, correction_map_filename, config_tmpdir):
     PATH_IN   = data_hdst
-    PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda_drop_voxels.h5")
+    PATH_OUT  = os.path.join(config_tmpdir, "esmeralda_filters_long_events.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = 9
     all_hits  = 601
@@ -358,15 +358,19 @@ def test_esmeralda_filters_long_events(data_hdst, esmeralda_tracks, correction_m
 
     #assert only paolina_events inside tracks
     assert set(tracks .event.unique()) == paolina_events
+
     #assert all events in summary table
     assert summary.event.nunique() == nevt_req
     #assert ntrk is 0 for non_paolina events
     assert np.all(summary[ summary.event.isin(paolina_events)].evt_ntrks >  0        )
     assert np.all(summary[~summary.event.isin(paolina_events)].evt_ntrks == 0        )
     assert np.all(summary[~summary.event.isin(paolina_events)].evt_nhits >  nhits_max)
+
     #assert all hits and events are in hits table
     assert len(hits) == 601
     assert hits.event.nunique() == nevt_req
+
+    #assert all events in topology filter with corresponding bool
     topology_filter = dio.load_dst(PATH_OUT, 'Filters', 'topology_select')
     assert len(topology_filter) == nevt_req
     assert np.all(topology_filter[ topology_filter.event.isin(paolina_events)].passed == 1)
