@@ -145,7 +145,8 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                                       strict_vox_size  : bool                 ,
                                       energy_threshold : float                ,
                                       min_voxels       : int                  ,
-                                      blob_radius      : float
+                                      blob_radius      : float                ,
+                                      max_num_hits     : int
                                      ) -> Callable:
     """
     For a given paolina parameters returns a function that extract tracks / blob information from a HitCollection.
@@ -170,6 +171,9 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
     A function that from a given HitCollection returns a pandas DataFrame with per track information.
     """
     def create_extract_track_blob_info(hitc):
+        df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
+        if len(hitc.hits) > max_num_hits:
+            return df, hitc, True
         #track_hits is a new Hitcollection object that contains hits belonging to tracks, and hits that couldnt be corrected
         track_hitc = evm.HitCollection(hitc.event, hitc.time)
         out_of_map = np.any(np.isnan([h.Ep for h in hitc.hits]))
@@ -180,8 +184,8 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
             #create new Hitcollection object but keep the name hitc
             hitc      = evm.HitCollection(hitc.event, hitc.time)
             hitc.hits = hits_without_nan
-        df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
-        if len(hitc.hits)>0:
+
+        if len(hitc.hits) > 0:
             voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, evm.HitEnergy.Ep)
             (    mod_voxels,
              dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
@@ -358,8 +362,6 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         apply_temp               : bool
             whether to apply temporal corrections
             must be set to False if no temporal correction dataframe exists in map file
-        norm_strat               : 'max', 'mean' or 'kr'
-           strategy to normalize the energy
 
     paolina_params               :dict
         vox_size                 : [float, float, float]
@@ -374,6 +376,8 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
             after min_voxel number of voxels is reached no dropping will happen.
         blob_radius             : float
             radius of blob
+        max_num_hits            : int
+            maximum number of hits allowed per event to run paolina functions.
     ----------
     Input
     ----------
@@ -381,12 +385,16 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
     ----------
     Output
     ----------
-    RECO    : corrected hits table, according to the given map and hits threshold and merging parameters
-    MC info : (if run number <=0)
-    PAOLINA : Summary of topological anlaysis containing:
-        Events  : corrected (paolina) hits, hits table after performing paolina drop_voxels
-        Tracks  : summary  of per track topological information
-        Summary : summary of per event information
+    - CHITS corrected hits table,
+        - lowTh  - contains corrected hits table that passed h.Q >= charge_threshold_low constrain
+        - highTh - contains corrected hits table that passed h.Q >= charge_threshold_high constrain.
+                   it also contains:
+                   - Ep field that is the energy of a hit after applying drop_end_point_voxel algorithm.
+                   - track_id denoting to which track from Tracking/Tracks dataframe the hit belong to 
+    - MC info (if run number <=0)
+    - Tracking/Tracks - summary of per track information
+    - Summary/events  - summary of per event information
+    - DST/Events      - copy of kdst information from penthesilea
 
 """
 
@@ -469,12 +477,11 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                          copy_Ec_to_Ep_hit_attribute                  ,
                          create_extract_track_blob_info               ,
                          filter_events_topology                       ,
+                         fl.branch(make_final_summary, write_summary) ,
+                         fl.branch(write_topology_filter)             ,
                          fl.branch(write_hits_paolina)                ,
                          events_passed_topology.filter                ,
                          event_count_out       .spy                   ,
-                         fl.branch(write_topology_filter)             ,
-                         fl.fork( write_tracks                        ,
-                                 (make_final_summary, write_summary))),
-
+                         write_tracks                                ),
                      result = dict(events_in =event_count_in .future ,
                                    events_out=event_count_out.future ))

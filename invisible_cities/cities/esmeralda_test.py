@@ -27,7 +27,7 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
                          threshold_charge_low  = 6  * units.pes            ,
                          threshold_charge_high = 30 * units.pes            ,
                          same_peak             = True                      ,
-                         apply_temp            = False                   )))
+                         apply_temp            = False                    )))
     esmeralda(**conf)
 
     with tb.open_file(PATH_OUT) as h5out:
@@ -152,7 +152,8 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
                          strict_vox_size       = False                  ,
                          energy_threshold      = 0 * units.keV          ,
                          min_voxels            = 2                      ,
-                         blob_radius           = 21 * units.mm)        ))
+                         blob_radius           = 21 * units.mm          ,
+                         max_num_hits          = 10000                 )))
     cnt = esmeralda(**conf)
 
     df_tracks           =  dio.load_dst(PATH_OUT, 'Tracking', 'Tracks' )
@@ -184,7 +185,7 @@ def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
 #if the first analyzed events has no overlap in blob buggy esmeralda will cast all overlap energy to integers
 def test_esmeralda_blob_overlap_bug(data_hdst, correction_map_filename, config_tmpdir):
     PATH_IN   = data_hdst
-    PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda.h5")
+    PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda_bug.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = 4, 8
 
@@ -194,7 +195,7 @@ def test_esmeralda_blob_overlap_bug(data_hdst, correction_map_filename, config_t
                      run_number                = 6822                   ,
                      cor_hits_params           = dict(
                          map_fname             = correction_map_filename,
-                         threshold_charge_low  =  10   * units.pes       ,
+                         threshold_charge_low  = 10   * units.pes       ,
                          threshold_charge_high = 30   * units.pes       ,
                          same_peak             = True                   ,
                          apply_temp            = False                 ),
@@ -203,7 +204,9 @@ def test_esmeralda_blob_overlap_bug(data_hdst, correction_map_filename, config_t
                          strict_vox_size       = False                  ,
                          energy_threshold      = 0 * units.keV          ,
                          min_voxels            = 2                      ,
-                         blob_radius           = 21 * units.mm)        ))
+                         blob_radius           = 21 * units.mm          ,
+                         max_num_hits          = 10000                 )))
+
     cnt = esmeralda(**conf)
 
     df_tracks = dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
@@ -229,7 +232,8 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
                          strict_vox_size       = False                     ,
                          energy_threshold      = 0 * units.keV             ,
                          min_voxels            = 2                         ,
-                         blob_radius           = 21 * units.mm           )))
+                         blob_radius           = 21 * units.mm             ,
+                         max_num_hits          = 10000                    )))
 
     cnt = esmeralda(**conf)
 
@@ -251,7 +255,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
 #test showing that all events that pass charge threshold are contained in hits output
 def test_esmeralda_bug_duplicate_hits(data_hdst, correction_map_filename, config_tmpdir):
     PATH_IN   = data_hdst
-    PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda_drop_voxels.h5")
+    PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda_drop_voxels_bug.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = 1
     conf.update(dict(files_in                  = PATH_IN                ,
@@ -267,9 +271,11 @@ def test_esmeralda_bug_duplicate_hits(data_hdst, correction_map_filename, config
                      paolina_params            = dict(
                          vox_size              = [15 * units.mm] * 3    ,
                          strict_vox_size       = False                  ,
-                         energy_threshold      = 0 * units.keV         ,
+                         energy_threshold      = 0 * units.keV          ,
                          min_voxels            = 2                      ,
-                         blob_radius           = 21 * units.mm)        ))
+                         blob_radius           = 21 * units.mm          ,
+                         max_num_hits          = 10000                 )))
+
     cnt = esmeralda(**conf)
 
     df_tracks = dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
@@ -301,7 +307,8 @@ def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, corre
                          strict_vox_size       = False                  ,
                          energy_threshold      = 20 * units.keV         ,
                          min_voxels            = 2                      ,
-                         blob_radius           = 21 * units.mm)        ))
+                         blob_radius           = 21 * units.mm          ,
+                         max_num_hits          = 10000                 )))
     cnt = esmeralda(**conf)
 
     df_phits            =  dio.load_dst(PATH_OUT,   'CHITS' , 'highTh')
@@ -317,3 +324,54 @@ def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, corre
 
     #check that the sum of Ep and Ec energies is the same
     assert np.nansum(df_phits.Ec) == np.nansum(df_phits.Ep)
+
+def test_esmeralda_filters_events_with_too_many_hits(data_hdst, correction_map_filename, config_tmpdir):
+    PATH_IN   = data_hdst
+    PATH_OUT  = os.path.join(config_tmpdir, "esmeralda_filters_long_events.h5")
+    conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
+    nevt_req  = 9
+    all_hits  = 601
+    nhits_max = 50
+    paolina_events = {3021898, 3021914, 3021930, 3020951, 3020961}
+    conf.update(dict(files_in                  = PATH_IN                ,
+                     file_out                  = PATH_OUT               ,
+                     event_range               = nevt_req               ,
+                     run_number                = 6822                   ,
+                     cor_hits_params           = dict(
+                         map_fname             = correction_map_filename,
+                         threshold_charge_low  = 10   * units.pes       ,
+                         threshold_charge_high = 30   * units.pes       ,
+                         same_peak             = True                   ,
+                         apply_temp            = False                 ),
+                     paolina_params            = dict(
+                         vox_size              = [15 * units.mm] * 3    ,
+                         strict_vox_size       = False                  ,
+                         energy_threshold      = 20 * units.keV         ,
+                         min_voxels            = 2                      ,
+                         blob_radius           = 21 * units.mm          ,
+                         max_num_hits          = nhits_max            )))
+    cnt = esmeralda(**conf)
+
+    summary = dio.load_dst(PATH_OUT, 'Summary' , 'Events')
+    tracks  = dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
+    hits    = dio.load_dst(PATH_OUT,   'CHITS' , 'highTh')
+
+    #assert only paolina_events inside tracks
+    assert set(tracks .event.unique()) == paolina_events
+
+    #assert all events in summary table
+    assert summary.event.nunique() == nevt_req
+    #assert ntrk is 0 for non_paolina events
+    assert np.all(summary[ summary.event.isin(paolina_events)].evt_ntrks >  0        )
+    assert np.all(summary[~summary.event.isin(paolina_events)].evt_ntrks == 0        )
+    assert np.all(summary[~summary.event.isin(paolina_events)].evt_nhits >  nhits_max)
+
+    #assert all hits and events are in hits table
+    assert len(hits) == 601
+    assert hits.event.nunique() == nevt_req
+
+    #assert all events in topology filter with corresponding bool
+    topology_filter = dio.load_dst(PATH_OUT, 'Filters', 'topology_select')
+    assert len(topology_filter) == nevt_req
+    assert np.all(topology_filter[ topology_filter.event.isin(paolina_events)].passed == 1)
+    assert np.all(topology_filter[~topology_filter.event.isin(paolina_events)].passed == 0)
