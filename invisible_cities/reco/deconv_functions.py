@@ -48,18 +48,17 @@ def cut_and_redistribute_df(cut_condition : str,
     '''
     def cut_and_redistribute(df : pd.DataFrame) -> pd.DataFrame:
         pass_df = df.query(cut_condition)
+        if not len(pass_df): return pass_df
+
         with np.errstate(divide='ignore'):
-            #print(variables)
-            #columns  = pass_df.loc[:, variables]
-            #print(columns)
-            #columns *= np.divide(df.loc[:, variables].sum(), columns)
-            #print('2')
-            #print(columns)
-            for redist_variable in variables:
-                pass_df.loc[:, redist_variable] = pass_df.loc[:, redist_variable] * np.divide(df.loc[:, redist_variable].sum(), pass_df.loc[:, redist_variable].sum())
+            columns  =      pass_df.loc[:, variables]
+            columns *= np.divide(df.loc[:, variables].sum().values, columns.sum())
+            pass_df.loc[:, variables] = columns
+
         return pass_df
 
     return cut_and_redistribute
+
 
 def drop_isolated_sensors(distance  : List[float]=[10., 10.],
                           variables : List[str  ]=[        ]) -> Callable:
@@ -95,8 +94,10 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
             return df.loc[[False]*len(df)]
 
         with np.errstate(divide='ignore'):
-            for redist_variable in variables:
-                pass_df.loc[:, f'{redist_variable}'] = pass_df.loc[:, redist_variable] * np.divide(df.loc[:, redist_variable].sum(), pass_df.loc[:, redist_variable].sum())
+            columns  = pass_df.loc[:, variables]
+            columns *= np.divide(df.loc[:, variables].sum().values, columns.sum())
+            pass_df.loc[:, variables] = columns
+
         return pass_df
 
     return drop_isolated_sensors

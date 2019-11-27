@@ -26,8 +26,7 @@ def test_create_deconvolution_df(ICDATADIR):
                                                   CutType.abs, ecut, 3) for _, t in true_dst.groupby('event')])
     true_dst = true_dst.loc[true_dst.E > ecut, :].reset_index(drop=True)
 
-    for c in true_dst.columns:
-        assert np.allclose(new_dst.loc[:, c].values, true_dst.loc[:, c].values)
+    assert_dataframes_close(new_dst, true_dst)
 
 
 def test_distribute_energy(ICDATADIR):

@@ -24,6 +24,8 @@ from .. reco.deconv_functions import InterpolationMethod
 
 from .. core.core_functions   import in_range
 from .. core.core_functions   import shift_to_bin_centers
+from .. core.testing_utils    import assert_dataframes_close
+
 from ..   io.dst_io           import load_dst
 
 from scipy.stats             import multivariate_normal
@@ -37,24 +39,20 @@ def dst(draw, dimension=[3,10]):
 
     return pd.DataFrame({k:v for k, v in zip(columns, values)})
 
+
 @given(dst())
 def test_cut_and_redistribute_df(df):
     cut_var       = random.choice (df.columns)
     redist_var    = random.choices(df.columns, k=3)
-    print(cut_var)
-    cut_condition = f'{cut_var} > {df[cut_var].mean()}'
-    print(cut_condition)
+    cut_val       = round(df[cut_var].mean(), 3)
+    cut_condition = f'{cut_var} > {cut_val:.3f}'
     cut_function  = cut_and_redistribute_df(cut_condition, redist_var)
     df_cut        = cut_function(df)
-    df_cut_manual = df.loc[df[cut_var] > df[cut_var].mean(), :]
-    assert len(df_cut) == len(df_cut_manual)
+    df_cut_manual = df.loc[df[cut_var].values > cut_val, :]
+    for var in redist_var:
+        df_cut_manual.loc[:, var] = df_cut_manual.loc[:, var] * df.loc[:, var].sum() /  df_cut_manual.loc[:, var].sum()
+    assert_dataframes_close(df_cut, df_cut_manual)
 
-    if len(df_cut):
-        for c in df_cut.columns:
-            if c in redist_var:
-                assert np.allclose(df_cut[c].values, df_cut_manual[c].values * df[c].values.sum() / df_cut_manual[c].values.sum())
-            else:
-                assert np.allclose(df_cut[c].values, df_cut_manual[c].values)
 
 def test_drop_isolated_sensors():
     size          = 20
@@ -73,6 +71,7 @@ def test_drop_isolated_sensors():
         n_neighbours = len(df_cut[in_range(df_cut.X, row.X - dist[0], row.X + dist[0]) &
                                   in_range(df_cut.Y, row.Y - dist[1], row.Y + dist[1])])
         assert n_neighbours > 1
+
 
 def test_interpolate_signal():
     ref_interpolation = np.array([0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   ,
