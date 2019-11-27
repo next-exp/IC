@@ -1,3 +1,5 @@
+import numexpr
+
 import numpy  as np
 import pandas as pd
 
@@ -6,11 +8,25 @@ from typing  import Tuple
 from typing  import Optional
 from typing  import Callable
 
+from enum    import auto
+
 from scipy        import interpolate
-from scipy.signal import fftconvolve, convolve
+from scipy.signal import fftconvolve
+from scipy.signal import convolve
+from scipy.spatial.distance import cdist
 
 from ..core .core_functions import shift_to_bin_centers
 from ..core .core_functions import in_range
+
+from .. types.ic_types      import AutoNameEnumBase
+
+
+class InterpolationMethod(AutoNameEnumBase):
+    nearest = auto()
+    linear  = auto()
+    cubic   = auto()
+    none    = auto()
+
 
 def cut_and_redistribute_df(cut_condition : str,
                             variables     : List[str]=[]) -> Callable:
@@ -32,10 +48,15 @@ def cut_and_redistribute_df(cut_condition : str,
     '''
     def cut_and_redistribute(df : pd.DataFrame) -> pd.DataFrame:
         pass_df = df.query(cut_condition)
-        pass_df._is_copy = False
         with np.errstate(divide='ignore'):
+            #print(variables)
+            #columns  = pass_df.loc[:, variables]
+            #print(columns)
+            #columns *= np.divide(df.loc[:, variables].sum(), columns)
+            #print('2')
+            #print(columns)
             for redist_variable in variables:
-                pass_df[redist_variable] = pass_df[redist_variable] * np.divide(df[redist_variable].sum(), pass_df[redist_variable].sum())
+                pass_df.loc[:, redist_variable] = pass_df.loc[:, redist_variable] * np.divide(df.loc[:, redist_variable].sum(), pass_df.loc[:, redist_variable].sum())
         return pass_df
 
     return cut_and_redistribute
@@ -50,7 +71,7 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
     df      : GroupBy ('event' and 'npeak') dataframe
 
     Initialization parameters:
-        distance  : Distance to check for other sensros. Usually equal to sensor pitch.
+        distance  : Distance to check for other sensors. Usually equal to sensor pitch.
         variables : List with variables to be redistributed.
 
     Returns
@@ -62,22 +83,28 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
     def drop_isolated_sensors(df : pd.DataFrame) -> pd.DataFrame:
         x       = df.X.values
         y       = df.Y.values
-        mask_xy = [False if np.ma.masked_equal(np.sqrt((x - xi)**2 + (y - yi)**2), 0.0, copy=False).min() > dist
-                         else True
-                         for xi, yi in zip(x, y)]
-        pass_df = df[mask_xy]
-        pass_df._is_copy = False
+        xy      = np.column_stack((x,y))
+
+        dr2     = cdist(xy, xy) # compute all square distances
+
+        if np.any(dr2>0):
+            closest = np.apply_along_axis(lambda d: d[d > 0].min(), 1, dr2) # find closest that it's not itself
+            mask_xy = closest <= dist # take those with at least one neighbour
+            pass_df = df.loc[mask_xy, :]
+        else:
+            return df.loc[[False]*len(df)]
+
         with np.errstate(divide='ignore'):
             for redist_variable in variables:
-                pass_df[f'{redist_variable}'] = pass_df[redist_variable] * np.divide(df[redist_variable].sum(), pass_df[redist_variable].sum())
+                pass_df.loc[:, f'{redist_variable}'] = pass_df.loc[:, redist_variable] * np.divide(df.loc[:, redist_variable].sum(), pass_df.loc[:, redist_variable].sum())
         return pass_df
 
     return drop_isolated_sensors
 
 
-def deconvolutionInput(sampleWidth : List[float],
-                       bin_size    : List[float],
-                       interMethod : Optional[str]=None
+def deconvolution_input(sample_width : List[float],
+                        bin_size     : List[float],
+                        inter_method : InterpolationMethod = InterpolationMethod.cubic
                        ) -> Callable:
     """
     Prepares the given data for deconvolution. This involves interpolation of
@@ -89,69 +116,79 @@ def deconvolutionInput(sampleWidth : List[float],
     weight      : Sensor charge for each point.
 
     Initialization parameters:
-        sampleWidth : Sampling size of the sensors.
-        bin_size    : Size of the interpolated bins.
-        interMethod : Interpolation method.
+        sample_width : Sampling size of the sensors.
+        bin_size     : Size of the interpolated bins.
+        inter_method : Interpolation method.
 
     Returns
     ----------
     Hs          : Charge input for deconvolution.
-    interPoints : Coordinates of the deconvolution input.
+    inter_points : Coordinates of the deconvolution input.
     """
 
-    def deconvolutionInput(data        : Tuple[np.ndarray, ...],
-                           weight      : np.ndarray
+    def deconvolution_input(data        : Tuple[np.ndarray, ...],
+                            weight      : np.ndarray
                            ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
-        ranges  = [[data[i].min() - 1.5 * sw, data[i].max() + 1.5 * sw] for i, sw   in enumerate(sampleWidth)]
-        allbins = [int(np.diff(rang)/sampleWidth[i])                    for i, rang in enumerate(     ranges)]
-        nbin    = [int(np.diff(rang)/bin_size[i])                       for i, rang in enumerate(     ranges)]
 
-        Hs, edges   = (np.histogramdd(data, bins=allbins, range=ranges, normed=False, weights=weight)
-                       if interMethod is not None else
-                       np.histogramdd(data, bins=nbin   , range=ranges, normed=False, weights=weight))
+        ranges  = [[data[i].min() - 1.5 * sw, data[i].max() + 1.5 * sw]             for i, sw   in enumerate(sample_width)]
+        nbin    = [np.ceil(np.diff(rang)/bin_size[i]).astype('int')[0]              for i, rang in enumerate(  ranges    )]
 
-        interPoints = np.meshgrid(*(shift_to_bin_centers(edge) for edge in edges), indexing='ij')
-        interPoints = tuple      (interP.flatten() for interP in interPoints)
+        if inter_method is not InterpolationMethod.none:
+            allbins = [np.linspace(*rang, np.ceil(np.diff(rang)/sample_width[i])+1) for i, rang in enumerate(  ranges[:2])]
+            if len(data) == 3:
+                mean_diff  = np.diff(data[2]).mean()
+                unique_z   = np.unique(data[2])
+                bins_z     = np.zeros(unique_z.size + 3)
+                bins_z[2:-2] = shift_to_bin_centers(unique_z)
+                bins_z[ :2 ] = data[2].min() - np.array([1.5, 0.5]) * mean_diff
+                bins_z[-2: ] = data[2].max() + np.array([0.5, 1.5]) * mean_diff
+                allbins.append(bins_z)
 
-        if interMethod is not None:
-            Hs, interPoints    = interpolateSignal(Hs        , interPoints    , edges    , nbin    , interMethod)
+            Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
+        else:
+            Hs, edges = np.histogramdd(data, bins=nbin   , normed=False, weights=weight, range=ranges)
 
-        return Hs, interPoints
+        inter_points = np.meshgrid(*(shift_to_bin_centers(edge) for edge in edges), indexing='ij')
+        inter_points = tuple      (inter_p.flatten() for inter_p in inter_points)
+        if inter_method is not InterpolationMethod.none:
+            Hs, inter_points = interpolate_signal(Hs, inter_points, edges, nbin, inter_method)
 
-    return deconvolutionInput
+        return Hs, inter_points
+
+    return deconvolution_input
 
 
-def interpolateSignal(Hs          : np.ndarray,
-                      interPoints : Tuple[np.ndarray, ...],
-                      edges       : Tuple[np.ndarray, ...],
-                      nbin        : List[int],
-                      interMethod : Optional[str]=None
-                      ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
+def interpolate_signal(Hs           : np.ndarray,
+                       inter_points : Tuple[np.ndarray, ...],
+                       edges        : Tuple[np.ndarray, ...],
+                       nbin         : List[int],
+                       inter_method : InterpolationMethod = InterpolationMethod.cubic
+                       ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
     """
     Interpolates an n-dimensional distribution along N points. Interpolation
     has a lower limit equal to 0.
 
     Parameters
     ----------
-    Hs          : Distribution weights to be interpolated.
-    interPoints : Distribution coordinates to be interpolated.
-    edges       : Edges of the coordinates.
-    nbin        : Number of points to be interpolated in each dimension.
-    interMethod : Interpolation method.
+    Hs           : Distribution weights to be interpolated.
+    inter_points : Distribution coordinates to be interpolated.
+    edges        : Edges of the coordinates.
+    nbin         : Number of points to be interpolated in each dimension.
+    inter_method : Interpolation method.
 
     Returns
     ----------
-    H1        : Interpolated distribution weights.
-    newPoints : Interpolated coordinates.
+    H1         : Interpolated distribution weights.
+    new_points : Interpolated coordinates.
     """
-    newPoints   = np.meshgrid(*(shift_to_bin_centers(np.linspace(np.min(edge), np.max(edge), nbin[i]+1)) for i, edge in enumerate(edges)), indexing='ij')
-    newPoints   = tuple      (newP.flatten() for newP in newPoints)
+    new_points   = np.meshgrid(*(shift_to_bin_centers(np.linspace(np.min(edge), np.max(edge), nbin[i]+1)) for i, edge in enumerate(edges)), indexing='ij')
+    new_points   = tuple      (new_p.flatten() for new_p in new_points)
 
-    H1 = interpolate.griddata(interPoints, Hs.flatten(), newPoints, method=interMethod)
+    H1 = interpolate.griddata(inter_points, Hs.flatten(), new_points, method=inter_method.value)
     H1 = np.nan_to_num       (H1.reshape(nbin))
-    H1 = np.where            (H1<0, 0, H1)
+    H1 = np.clip             (H1, 0, None)
 
-    return H1, newPoints
+    return H1, new_points
 
 
 def find_nearest(array : np.ndarray,
@@ -174,11 +211,11 @@ def find_nearest(array : np.ndarray,
     return array[idx]
 
 
-def deconvolve(iterationNumber : int,
-               iterationThr    : float,
-               sampleWidth     : List[float],
-               bin_size        : List[float],
-               interMethod     : Optional[str]=None
+def deconvolve(n_iterations  : int,
+               iteration_tol : float,
+               sample_width  : List[float],
+               bin_size      : List[float],
+               inter_method  : InterpolationMethod = InterpolationMethod.cubic
                ) -> Callable:
     """
     Deconvolves a given set of data (sensor position and its response)
@@ -191,30 +228,31 @@ def deconvolve(iterationNumber : int,
     psf         : Point-spread function.
 
     Initialization parameters:
-        iterationNumber : Number of Lucy-Richardson iterations
-        sampleWidth     : Sampling size of the sensors.
-        bin_size        : Size of the interpolated bins.
-        interMethod     : Interpolation method.
+        n_iterations : Number of Lucy-Richardson iterations
+        sample_width : Sampling size of the sensors.
+        bin_size     : Size of the interpolated bins.
+        inter_method : Interpolation method.
 
     Returns
     ----------
     deconv_image : Deconvolved image.
-    interPos     : Coordinates of the deconvolved image.
+    inter_pos     : Coordinates of the deconvolved image.
     """
-    varName = np.array(['xr', 'yr', 'zr'])
-    deconvInput = deconvolutionInput(sampleWidth, bin_size, interMethod)
+    var_name     = np.array(['xr', 'yr', 'zr'])
+    deconv_input = deconvolution_input(sample_width, bin_size, inter_method)
 
-    def deconvolve(data            : Tuple[np.ndarray, ...],
-                   weight          : np.ndarray,
-                   psf             : pd.DataFrame
+    def deconvolve(data   : Tuple[np.ndarray, ...],
+                   weight : np.ndarray,
+                   psf    : pd.DataFrame
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
-        interSignal, interPos = deconvInput(data, weight)
-        psf_deco      = psf.factor.values.reshape(tuple(psf[var].nunique() for var in varName[:len(data)]))
-        deconv_image  = np.nan_to_num(richardson_lucy(interSignal, psf_deco,
-                                                      iterationNumber, iterationThr))
+        inter_signal, inter_pos = deconv_input(data, weight)
+        columns       = var_name[:len(data)]
+        psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
+        deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco,
+                                                      n_iterations, iteration_tol))
 
-        return deconv_image, interPos
+        return deconv_image, inter_pos
 
     return deconvolve
 
@@ -253,7 +291,7 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
     # complexity O(N log(N)) for each dimension and the direct method does
     # straight arithmetic (and is O(n*k) to add n elements k times)
     direct_time = np.prod(image.shape + psf.shape)
-    fft_time =  np.sum([n*np.log(n) for n in image.shape + psf.shape])
+    fft_time    = np.sum([n*np.log(n) for n in image.shape + psf.shape])
 
     # see whether the fourier transform convolution method or the direct
     # convolution method is faster (discussed in scikit-image PR #1792)

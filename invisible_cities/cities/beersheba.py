@@ -12,6 +12,7 @@ The city outputs :
     - SUMMARY summary of per event information
 """
 
+import numpy  as np
 import tables as tb
 import pandas as pd
 
@@ -19,11 +20,12 @@ from scipy.stats import multivariate_normal
 from numpy       import sqrt
 from numpy       import nan_to_num
 
-
 from typing      import Tuple
 from typing      import List
 from typing      import Callable
 from typing      import Optional
+
+from enum        import auto
 
 from .  components import city
 from .  components import print_every
@@ -40,6 +42,7 @@ from .. reco.deconv_functions import cut_and_redistribute_df
 from .. reco.deconv_functions import drop_isolated_sensors
 from .. reco.deconv_functions import deconvolve
 from .. reco.deconv_functions import richardson_lucy
+from .. reco.deconv_functions import InterpolationMethod
 
 from .. core.core_functions   import weighted_mean_and_std
 
@@ -47,19 +50,33 @@ from .. io.       mcinfo_io   import mc_info_writer
 from .. io.run_and_event_io   import run_and_event_writer
 from .. io.          dst_io   import _store_pandas_as_tables
 
+from .. evm.event_model       import HitEnergy
+
+from .. types.ic_types        import AutoNameEnumBase
+
+
+class CutType          (AutoNameEnumBase):
+    abs = auto()
+    rel = auto()
+
+class DeconvolutionMode(AutoNameEnumBase):
+    joint    = auto()
+    separate = auto()
+
+
 def deconvolve_signal(psf_fname       : str,
-                      ecut            : float,
-                      iterationNumber : int,
-                      iterationThr    : float,
-                      sampleWidth     : List[float],
+                      e_cut            : float,
+                      n_iterations    : int,
+                      iteration_tol   : float,
+                      sample_width    : List[float],
                       bin_size        : List[float],
                       diffusion       : Tuple[float]=(1., 1., 0.3),
-                      iterationGauss  : int=0,
+                      n_iterations_g  : int=0,
                       energy_type     : str='Ec',
                       deconv_mode     : str='joint',
                       n_dim           : int=2,
                       cut_type        : str='abs',
-                      interMethod     : str=None):
+                      inter_method    : str='cubic'):
 
     """
     Applies Lucy Richardson deconvolution to SiPM response with a
@@ -68,87 +85,98 @@ def deconvolve_signal(psf_fname       : str,
     Parameters
     ----------
     psf_fname       : Point-spread function.
-    ecut            : Cut in relative value to the max voxel over the deconvolution output.
-    iterationNumber : Number of Lucy-Richardson iterations
-    iterationGauss  : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
-    iterationThr    : Stopping threshold (difference between iterations).
-    sampleWidth     : Sampling size of the sensors.
+    e_cut            : Cut in relative value to the max voxel over the deconvolution output.
+    n_iterations    : Number of Lucy-Richardson iterations
+    n_iterations_g  : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
+    iteration_tol   : Stopping threshold (difference between iterations).
+    sample_width    : Sampling size of the sensors.
     bin_size        : Size of the interpolated bins.
     energy_type     : Energy type ('E' or 'Ec', see Esmeralda) used for assignment.
     deconv_mode     : 'joint' or 'separate', 1 or 2 step deconvolution, see description later.
     diffusion       : Diffusion coefficients in each dimension for 'separate' mode.
     n_dim           : Number of dimensions to apply the method (2 or 3).
-    cut_type        : Cut mode to the deconvolution output ('abs' or 'rel') using ecut
+    cut_type        : Cut mode to the deconvolution output ('abs' or 'rel') using e_cut
                       'abs': cut on the absolute value of the hits.
                       'rel': cut on the relative value (to the max) of the hits.
-    interMethod     : Interpolation method.
+    inter_method    : Interpolation method.
 
     Returns
     ----------
     apply_deconvolution : Function that takes hits and returns the
     deconvolved data.
     """
+    dimensions    = np.array(['X', 'Y', 'Z'][:n_dim])
+    sample_width  = np.array(sample_width   [:n_dim])
+    bin_size      = np.array(bin_size       [:n_dim])
+    diffusion     = np.array(diffusion      [:n_dim])
 
     psfs          = pd.read_hdf(psf_fname)
-    deconvolution = deconvolve(iterationNumber, iterationThr, sampleWidth[:n_dim], bin_size[:n_dim], interMethod)
-    dimensions    = ['X', 'Y', 'Z'][:n_dim]
+    deconvolution = deconvolve(n_iterations, iteration_tol, sample_width, bin_size, InterpolationMethod(inter_method))
 
-    def create_deconvolution_df(hits, deconvE, pos):
-        df = pd.DataFrame(columns=['event', 'npeak', 'X', 'Y', 'Z', 'E'])
-        if   cut_type == 'abs':
-            selDeconv   = deconvE > ecut
-        elif cut_type == 'rel':
-            selDeconv   = deconvE/deconvE.max() > ecut
-        else:
-            raise TypeError(f'Cut type "{cut_type}" unsupported')
-        ene         = deconvE[selDeconv]
-        df['event'] = [hits.event.unique()[0]] * len(ene)
-        df['npeak'] = [hits.npeak.unique()[0]] * len(ene)
-        df['Z']     = [hits.Z    .unique()[0]] * len(ene) if n_dim == 2 else pos[2][selDeconv]
-        df['X']     = pos[0][selDeconv]
-        df['Y']     = pos[1][selDeconv]
-        df['E']     = ene
-
-        return df
-
-    def distribute_energy(df, hdst):
-        df['E'] = df['E'] / df['E'].sum() * hdst[energy_type].sum()
-
-        return df
+    e_type        = HitEnergy(energy_type)
+    cut_mode      = CutType(cut_type)
+    deco_mode     = DeconvolutionMode(deconv_mode)
 
     def deconvolve_hits(df, z):
-        if   deconv_mode == 'joint':
-            psf = psfs[(psfs.z == find_nearest(psfs.z,                 z)) &
-                       (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
-                       (psfs.y == find_nearest(psfs.y, df.Ypeak.unique())) ]
-            deconvImage, pos = deconvolution(tuple(df[v].values for v in dimensions), df.Q.values, psf)
-        elif deconv_mode == 'separate':
-            psf_z0 = psfs[(psfs.z == find_nearest(psfs.z,                 0)) &
-                          (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
-                          (psfs.y == find_nearest(psfs.y, df.Ypeak.unique())) ]
-            deconvImage, pos = deconvolution(tuple(df[v].values for v in dimensions), df.Q.values, psf_z0)
-            g   = multivariate_normal(tuple(0. for _ in range(n_dim)), tuple((diff * sqrt(z/10))**2 for diff in diffusion[:n_dim])).pdf(list(zip(*tuple(psf_z0[f'{v.lower()}r'].values for v in dimensions))))
-            psf = g.reshape(tuple(psf_z0[f'{v.lower()}r'].nunique() for v in dimensions))
-            deconvImage      = nan_to_num(richardson_lucy(deconvImage, psf, iterationGauss, iterationThr))
-        else:
-            raise TypeError(f'Mode "{deconv_mode}" unsupported')
+        if   deco_mode is DeconvolutionMode.joint:
+            psf = psfs.loc[(psfs.z == find_nearest(psfs.z,                 z)) &
+                           (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
+                           (psfs.y == find_nearest(psfs.y, df.Ypeak.unique()))  , :]
+            deconv_image, pos = deconvolution(tuple(df.loc[:, v].values for v in dimensions), df.Q.values, psf)
+        elif deco_mode is DeconvolutionMode.separate:
+            psf_z0 = psfs.loc[(psfs.z == find_nearest(psfs.z,                 0)) &
+                              (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
+                              (psfs.y == find_nearest(psfs.y, df.Ypeak.unique()))  , :]
+            deconv_image, pos = deconvolution(tuple(df.loc[:, v].values for v in dimensions), df.Q.values, psf_z0)
 
-        return create_deconvolution_df(df, deconvImage.flatten(), pos)
+            dist     = multivariate_normal(np.zeros(n_dim), diffusion**2 * z / 10)
+            cols     = tuple(f"{v.lower()}r" for v in dimensions)
+            psf_cols = psf_z0.loc[:, cols]
+            gaus     = dist.pdf(psf_cols.values)
+            psf      = gaus.reshape(psf_cols.nunique())
+
+            deconv_image = nan_to_num(richardson_lucy(deconv_image, psf, n_iterations_g, iteration_tol))
+
+        return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_mode, e_cut, n_dim)
 
     def apply_deconvolution(df):
         deco_dst = []
-        for peak in sorted(set(df.npeak)):
-            deco_df = []
-            hits          = df[df.npeak == peak]
-            hits._is_copy = False
-            hits['Q']     = hits.Q/hits.Q.sum()
-            deconvolved_hits = (deconvolve_hits(hits, weighted_mean_and_std(hits.Z, hits.E)[0]) if n_dim == 3 else
-                                pd.concat([deconvolve_hits(hits[hits.Z == z], z) for z in hits.Z.unique()], ignore_index=True))
-            deco_dst.append(distribute_energy(deconvolved_hits, hits))
+        for peak, hits in df.groupby("npeak"):
+            hits.loc[:, "Q"] = hits.Q/hits.Q.sum()
+            if n_dim == 3:
+                deconvolved_hits =            deconvolve_hits(hits, weighted_mean_and_std(hits.Z, hits.E)[0])
+            else :
+                deconvolved_hits = pd.concat([deconvolve_hits(hits.loc[hits.Z == z, :], z) for z in hits.Z.unique()], ignore_index=True)
+
+            distribute_energy(deconvolved_hits, hits, e_type)
+            deco_dst.append(deconvolved_hits)
 
         return pd.concat(deco_dst, ignore_index=True)
 
     return apply_deconvolution
+
+
+def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
+    df  = pd.DataFrame(columns=['event', 'npeak', 'X', 'Y', 'Z', 'E'])
+
+    if   cut_type is CutType.abs:
+        sel_deconv = deconv_e > e_cut
+    elif cut_type is CutType.rel:
+        sel_deconv = deconv_e / deconv_e.max() > e_cut
+
+    ene         = deconv_e[sel_deconv]
+    df['event'] = [hits.event.unique()[0]] * len(ene)
+    df['npeak'] = [hits.npeak.unique()[0]] * len(ene)
+    df['Z']     = [hits.Z    .unique()[0]] * len(ene) if n_dim == 2 else pos[2][sel_deconv]
+    df['X']     = pos[0][sel_deconv]
+    df['Y']     = pos[1][sel_deconv]
+    df['E']     = ene
+
+    return df
+
+
+def distribute_energy(df, hdst, e_type):
+    df['E'] = df.E / df.E.sum() * hdst.loc[:, e_type.value].sum()
 
 
 def cut_over_Q(q_cut, redist_var):
@@ -199,21 +227,21 @@ def drop_isolated(distance, redist_var):
     return drop_isolated
 
 
-def deconv_writer(h5out, compression='ZLIB4', group_name='DECO', table_name='Events', descriptive_string='Deconvolved hits', str_col_length=32):
+def deconv_writer(h5out, compression='ZLIB4', group_name='DECO', table_name='Events', descriptive_string='Deconvolved hits'):
     """
     For a given open table returns a writer for deconvolution hits dataframe
     """
     def write_deconv(df):
-        return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string, str_col_length = str_col_length)
+        return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string)
     return write_deconv
 
 
-def summary_writer(h5out, compression='ZLIB4', group_name='SUMMARY', table_name='Events', descriptive_string='Event summary information', str_col_length=32):
+def summary_writer(h5out, compression='ZLIB4', group_name='SUMMARY', table_name='Events', descriptive_string='Event summary information'):
     """
     For a given open table returns a writer for summary info dataframe
     """
     def write_summary(df):
-        return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string, str_col_length = str_col_length)
+        return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string)
     return write_summary
 
 
@@ -245,14 +273,14 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
             Distance to check if a SiPM is isolated
         psf_fname       : string (filepath)
             Filename of the psf
-        ecut            : float
+        e_cut            : float
             Cut over the deconvolution output, arbitrary units (order 1e-3)
-        iterationNumber : int
-            Number of iterations to be applied if the iterationThr criteria
+        n_iterations : int
+            Number of iterations to be applied if the iteration_tol criteria
             is not fulfilled before.
-        iterationThr    : float
+        iteration_tol    : float
             Stopping threshold (difference between iterations). I
-        sampleWidth     : list[float]
+        sample_width     : list[float]
             Sampling of the sensors in each dimension (usuallly the pitch).
         bin_size        : list[float]
             Bin size (mm) of the deconvolved image.
@@ -271,7 +299,7 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
             Number of dimensions used in deconvolution, either 2 or 3:
             n_dim = 2 -> slice by slice XY deconvolution.
             n_dim = 3 -> XYZ deconvolution.
-        interMethod     : str (None, 'linear', 'cubic')
+        inter_method     : str (None, 'linear', 'cubic')
             Sensor interpolation method. If None, no interpolation will be applied.
             'cubic' not supported for 3D deconvolution.
 
@@ -286,18 +314,15 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
     MC info : (if run number <=0)
     SUMMARY : Table with the summary from Esmeralda.
 """
-
-    deconv_params_   = {k : v for k, v in deconv_params.items() if k not in ['q_cut', 'drop_dist']}
-
-    cut_sensors       = fl.map(cut_over_Q   (deconv_params['q_cut'    ], ['E', 'Ec']),
+    cut_sensors       = fl.map(cut_over_Q   (deconv_params.pop("q_cut"), ['E', 'Ec']),
                                args = 'hdst',
                                out  = 'hdst_cut')
 
-    drop_sensors      = fl.map(drop_isolated(deconv_params['drop_dist'], ['E', 'Ec']),
+    drop_sensors      = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
                                args = 'hdst_cut',
                                out  = 'hdst_drop')
 
-    deconvolve_events = fl.map(deconvolve_signal(**deconv_params_),
+    deconvolve_events = fl.map(deconvolve_signal(**deconv_params),
                                args = 'hdst_drop',
                                out  = 'deconv_dst')
 

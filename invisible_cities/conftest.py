@@ -35,6 +35,9 @@ def ICDIR():
 def ICDATADIR(ICDIR):
     return os.path.join(ICDIR, "database/test_data/")
 
+@pytest.fixture(scope = 'session')
+def PSFDIR(ICDIR):
+    return os.path.join(ICDIR, "database/test_data/PSF_dst_sum_collapsed.h5")
 
 @pytest.fixture(scope = 'session')
 def irene_diomira_chain_tmpdir(tmpdir_factory):

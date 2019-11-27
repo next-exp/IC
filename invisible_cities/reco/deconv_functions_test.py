@@ -16,10 +16,11 @@ from hypothesis.extra.numpy  import arrays
 
 from .. reco.deconv_functions import cut_and_redistribute_df
 from .. reco.deconv_functions import drop_isolated_sensors
-from .. reco.deconv_functions import interpolateSignal
-from .. reco.deconv_functions import deconvolutionInput
+from .. reco.deconv_functions import interpolate_signal
+from .. reco.deconv_functions import deconvolution_input
 from .. reco.deconv_functions import deconvolve
 from .. reco.deconv_functions import richardson_lucy
+from .. reco.deconv_functions import InterpolationMethod
 
 from .. core.core_functions   import in_range
 from .. core.core_functions   import shift_to_bin_centers
@@ -40,14 +41,15 @@ def dst(draw, dimension=[3,10]):
 def test_cut_and_redistribute_df(df):
     cut_var       = random.choice (df.columns)
     redist_var    = random.choices(df.columns, k=3)
+    print(cut_var)
     cut_condition = f'{cut_var} > {df[cut_var].mean()}'
+    print(cut_condition)
     cut_function  = cut_and_redistribute_df(cut_condition, redist_var)
     df_cut        = cut_function(df)
-    df_cut_manual = df[df[cut_var] > df[cut_var].mean()]
-
+    df_cut_manual = df.loc[df[cut_var] > df[cut_var].mean(), :]
     assert len(df_cut) == len(df_cut_manual)
 
-    if (len(df_cut)) != 0:
+    if len(df_cut):
         for c in df_cut.columns:
             if c in redist_var:
                 assert np.allclose(df_cut[c].values, df_cut_manual[c].values * df[c].values.sum() / df_cut_manual[c].values.sum())
@@ -56,7 +58,7 @@ def test_cut_and_redistribute_df(df):
 
 def test_drop_isolated_sensors():
     size          = 20
-    dist          = [10., 10.]
+    dist          = [10.1, 10.1]
     x, y          = random.choices(np.linspace(-200, 200, 41), k=size), random.choices(np.linspace(-200, 200, 41), k=size)
     q             = np.random.uniform(0,  20, size)
     e             = np.random.uniform(0, 200, size)
@@ -64,14 +66,15 @@ def test_drop_isolated_sensors():
     drop_function = drop_isolated_sensors(dist, ['E'])
     df_cut        = drop_function(df)
 
-    if len(df_cut > 0):
+    if len(df_cut) > 0:
         assert np.isclose(df_cut.E.sum(), df.E.sum())
 
     for row in df_cut.itertuples(index=False):
-        n_neighbours = len(df_cut[in_range(df_cut.X, row.X - dist[0], row.X + dist[0] + 1e-8) & in_range(df_cut.Y, row.Y - dist[1], row.Y + dist[1] + 1e-8)])
+        n_neighbours = len(df_cut[in_range(df_cut.X, row.X - dist[0], row.X + dist[0]) &
+                                  in_range(df_cut.Y, row.Y - dist[1], row.Y + dist[1])])
         assert n_neighbours > 1
 
-def test_interpolateSignal():
+def test_interpolate_signal():
     ref_interpolation = np.array([0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   ,
                                   0.   , 0.   , 0.   , 0.   , 0.17 , 0.183, 0.188, 0.195, 0.202,
                                   0.2  , 0.2  , 0.19 , 0.181, 0.169, 0.   , 0.   , 0.308, 0.328,
@@ -97,14 +100,17 @@ def test_interpolateSignal():
     values = g.pdf(list(zip(points[0], points[1]))) # Value of g at the known coordinates.
     n_interpolation = 12 #How many points to interpolate
 
-    out_inter = interpolateSignal(values, points, (np.linspace(-0.05, 1.05, 6), np.linspace(-0.05, 1.05, 6)), [n_interpolation, n_interpolation], 'cubic')
+    out_interpolation = interpolate_signal(values, points, (np.linspace(-0.05, 1.05, 6), np.linspace(-0.05, 1.05, 6)), [n_interpolation, n_interpolation], InterpolationMethod.cubic)
+    inter_charge      = out_interpolation[0].flatten()
+    inter_position    = out_interpolation[1]
+    ref_position = shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1))
 
-    assert np.allclose(ref_interpolation, np.around(out_inter[0].flatten(), decimals=3))
-    assert np.allclose(shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1)), sorted(set(out_inter[1][0])))
-    assert np.allclose(shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1)), sorted(set(out_inter[1][1])))
+    assert np.allclose(ref_interpolation, np.around(inter_charge, decimals=3))
+    assert np.allclose(ref_position     , sorted(set(inter_position[0])))
+    assert np.allclose(ref_position     , sorted(set(inter_position[1])))
 
 
-def test_deconvolutionInput(data_hdst, data_hdst_deconvolved):
+def test_deconvolution_input(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load(data_hdst_deconvolved)
     hdst              = load_dst(data_hdst, 'RECO', 'Events')
 
@@ -112,7 +118,7 @@ def test_deconvolutionInput(data_hdst, data_hdst_deconvolved):
     h = h.groupby(['X', 'Y']).Q.sum().reset_index()
     h = h[h.Q>40]
 
-    interpolator = deconvolutionInput([10., 10.], [1., 1.], 'cubic')
+    interpolator = deconvolution_input([10., 10.], [1., 1.], InterpolationMethod.cubic)
     inter        = interpolator((h.X, h.Y), h.Q)
 
     assert np.allclose(ref_interpolation['e_inter'], inter[0])
@@ -121,7 +127,7 @@ def test_deconvolutionInput(data_hdst, data_hdst_deconvolved):
 
 
 def test_deconvolve(data_hdst, data_hdst_deconvolved):
-    ref_interpolation = np.load(data_hdst_deconvolved)
+    ref_interpolation = np.load (data_hdst_deconvolved)
     hdst              = load_dst(data_hdst, 'RECO', 'Events')
 
     h = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
@@ -129,7 +135,7 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
     h = h.groupby(['X', 'Y']).Q.sum().reset_index()
     h = h[h.Q>40]
 
-    deconvolutor = deconvolve(15, 0.01, [10., 10.], [1., 1.], interMethod='cubic')
+    deconvolutor = deconvolve(15, 0.01, [10., 10.], [1., 1.], inter_method=InterpolationMethod.cubic)
 
     x, y   = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
     xx, yy = np.meshgrid(x, y)
@@ -150,13 +156,13 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
 
 
 def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
-    ref_interpolation = np.load(data_hdst_deconvolved)
+    ref_interpolation = np.load (data_hdst_deconvolved)
     hdst              = load_dst(data_hdst, 'RECO', 'Events')
     h = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z = h.Z.mean()
     h = h.groupby(['X', 'Y']).Q.sum().reset_index()
     h = h[h.Q>40]
-    interpolator = deconvolutionInput([10., 10.], [1., 1.], 'cubic')
+    interpolator = deconvolution_input([10., 10.], [1., 1.], InterpolationMethod.cubic)
     inter = interpolator((h.X, h.Y), h.Q)
 
     x, y = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
@@ -169,6 +175,6 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf   = pd.DataFrame(psf)
 
-    deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T, 15, 0.0001)
+    deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T, iterations=15, iter_thr=0.0001)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
