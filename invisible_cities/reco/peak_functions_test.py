@@ -359,6 +359,18 @@ def test_build_sipm_responses(wf_with_indices):
     assert sipm_r.all_waveforms == approx (expected_wfs)
 
 
+def test_build_sipm_responses_mask(wf_with_indices):
+    times, widths, wfs, indices = wf_with_indices
+    ids       = np.arange(wfs.shape[0])
+    wfs_slice = wfs[:, indices]
+    mask      = np.full(indices.shape, True)
+    mask[-1]  = False
+    sipm_r    = pf.build_sipm_responses(indices, times, widths,
+                                        wfs, 1, 0.1, mask)
+
+    assert sipm_r.all_waveforms == approx(wfs_slice[:, mask])
+
+
 @mark.parametrize("Pk rebin with_sipms".split(),
                   ((S1,  1, False),
                    (S2,  1, False),
@@ -588,7 +600,7 @@ def test_rebin_times_and_waveforms_times_are_consistent(t_and_wf, stride):
     widths      = [1]
     if len(times) > 1:
         widths = np.append(np.diff(times), max(np.diff(times)))
-    
+
     # The samples falling in the last bin cannot be so easily
     # compared as the other ones so I remove them.
     remain = times.size - times.size % stride
