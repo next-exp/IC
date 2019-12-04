@@ -102,6 +102,9 @@ def build_peak(indices, times,
      pmt_r    ) = build_pmt_responses(indices, times, widths,
                                      ccwf, pmt_ids,
                                      rebin_stride, pad_zeros = with_sipms)
+    if not np.any(mask):
+        return None
+
     if with_sipms:
         sipm_r = build_sipm_responses(indices // 40, times // 40,
                                       widths * 40, sipm_wfs,
@@ -133,7 +136,8 @@ def find_peaks(ccwfs, index,
                         rebin_stride,
                         with_sipms, Pk,
                         sipm_wfs, thr_sipm_s2)
-        peaks.append(pk)
+        if pk is not None:
+            peaks.append(pk)
     return peaks
 
 
