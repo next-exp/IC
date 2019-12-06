@@ -83,7 +83,7 @@ def test_in_range_right_shape(data):
 @given(sorted_unique_arrays)
 def test_in_range_left_open_interval(data):
     # right doesn't matter because it's infinite
-    output = core.in_range(data, minval=data[0], maxval=np.inf, left=core.Interval.open)
+    output = core.in_range(data, minval=data[0], maxval=np.inf, left_closed=False)
     assert not output[0]
     assert all(output[1:])
 
@@ -91,7 +91,7 @@ def test_in_range_left_open_interval(data):
 @given(sorted_unique_arrays)
 def test_in_range_right_open_interval(data):
     # left doesn't matter because it's infinite
-    output = core.in_range(data, minval=-np.inf, maxval=data[-1], right=core.Interval.open)
+    output = core.in_range(data, minval=-np.inf, maxval=data[-1], right_closed=False)
     assert not output[-1]
     assert all(output[:-1])
 
@@ -99,25 +99,15 @@ def test_in_range_right_open_interval(data):
 @given(sorted_unique_arrays)
 def test_in_range_left_close_interval(data):
     # right doesn't matter because it's infinite
-    output = core.in_range(data, minval=data[0], maxval=np.inf, left=core.Interval.closed)
+    output = core.in_range(data, minval=data[0], maxval=np.inf, left_closed=True)
     assert all(output)
 
 
 @given(sorted_unique_arrays)
 def test_in_range_right_close_interval(data):
     # left doesn't matter because it's infinite
-    output = core.in_range(data, minval=-np.inf, maxval=data[-1], right=core.Interval.closed)
+    output = core.in_range(data, minval=-np.inf, maxval=data[-1], right_closed=True)
     assert all(output)
-
-
-@mark.parametrize("              left                right".split(),
-                  ((            "open",             "open"),
-                   (          "closed", core.Interval.open),
-                   (core.Interval.open,           "closed")))
-@given(data=sorted_unique_arrays)
-def test_in_range_raises_ValueError_when_invalid_argument(data, left, right):
-    with raises(ValueError):
-        output = core.in_range(data, left=left, right=right)
 
 
 @mark.parametrize(" first  second       norm_mode        expected".split(),
