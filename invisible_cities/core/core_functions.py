@@ -63,7 +63,7 @@ def relative_difference(x, y, *, norm_mode=NormMode.first):
 
 def in_range(data, minval=-np.inf, maxval=np.inf, left_closed=True, right_closed=False):
     """
-    Find values in range [minval, maxval).
+    Find values from minval to maxval.
 
     Parameters
     ---------
@@ -73,16 +73,16 @@ def in_range(data, minval=-np.inf, maxval=np.inf, left_closed=True, right_closed
         Range minimum. Defaults to -inf.
     maxval : int or float, optional
         Range maximum. Defaults to +inf.
-    left   : {"open", "close"}
-        Use close (default) or open  interval on the lower bound
-    right  : {"open", "close"}
-        Use open  (default) or close interval on the upper bound
+    left_closed   : bool
+        Closed semi-interval if True (default); open if false.
+    right_closed  : {"open", "close"}
+        Closed semi-interval if True; open if false (default).
 
     Returns
     -------
     selection : np.ndarray
         Boolean array with the same dimension as the input. Contains True
-        for those values of data in the input range and False for the others.
+        for those values of data within the input range and False for the rest.
     """
     lower_bound = data >= minval if left_closed  else data > minval
     upper_bound = data <= maxval if right_closed else data < maxval
