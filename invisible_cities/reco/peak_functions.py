@@ -36,22 +36,23 @@ def split_in_peaks(indices, stride):
     return np.split(indices, where + 1)
 
 
-def select_peaks(peaks, time, length):
+def select_peaks(peaks, time, length, pmt_sample_f=25*units.ns):
     def is_valid(indices):
-        return (time  .contains(indices[ 0] * 25 * units.ns) and
-                time  .contains(indices[-1] * 25 * units.ns) and
+        return (time  .contains(indices[ 0] * pmt_sample_f) and
+                time  .contains(indices[-1] * pmt_sample_f) and
                 length.contains(indices[-1] + 1 - indices[0]))
     return tuple(filter(is_valid, peaks))
 
 
 def pick_slice_and_rebin(indices, times, widths,
-                         wfs, rebin_stride, pad_zeros=False):
+                         wfs, rebin_stride, pad_zeros=False,
+                         sipm_pmt_bin_ratio=40):
     slice_ = slice(indices[0], indices[-1] + 1)
     times_  = times [   slice_]
     widths_ = widths[   slice_]
     wfs_    = wfs   [:, slice_]
     if pad_zeros:
-        n_miss = indices[0] % 40
+        n_miss = indices[0] % sipm_pmt_bin_ratio
         n_wfs  = wfs.shape[0]
         times_  = np.concatenate([np.zeros(        n_miss) ,  times_])
         widths_ = np.concatenate([np.zeros(        n_miss) , widths_])
@@ -63,12 +64,14 @@ def pick_slice_and_rebin(indices, times, widths,
 
 
 def build_pmt_responses(indices, times, widths, ccwf,
-                        pmt_ids, rebin_stride, pad_zeros):
+                        pmt_ids, rebin_stride, pad_zeros,
+                        sipm_pmt_bin_ratio):
     (pk_times ,
      pk_widths,
      pmt_wfs  ) = pick_slice_and_rebin(indices, times, widths,
                                        ccwf   , rebin_stride,
-                                       pad_zeros = pad_zeros)
+                                       pad_zeros = pad_zeros,
+                                       sipm_pmt_bin_ratio = sipm_pmt_bin_ratio)
     return pk_times, pk_widths, PMTResponses(pmt_ids, pmt_wfs)
 
 
@@ -87,17 +90,23 @@ def build_peak(indices, times,
                widths, ccwf, pmt_ids,
                rebin_stride,
                with_sipms, Pk,
-               sipm_wfs    = None,
-               thr_sipm_s2 = 0):
+               pmt_sample_f  = 25 * units.ns,
+               sipm_sample_f =  1 * units.mus,
+               sipm_wfs      = None,
+               thr_sipm_s2   = 0):
+    sipm_pmt_bin_ratio = int(sipm_sample_f/pmt_sample_f)
     (pk_times ,
      pk_widths,
      pmt_r    ) = build_pmt_responses(indices, times, widths,
                                      ccwf, pmt_ids,
-                                     rebin_stride, pad_zeros = with_sipms)
+                                     rebin_stride, pad_zeros = with_sipms,
+                                     sipm_pmt_bin_ratio = sipm_pmt_bin_ratio)
     if with_sipms:
-        sipm_r = build_sipm_responses(indices // 40, times // 40,
-                                      widths * 40, sipm_wfs,
-                                      rebin_stride // 40,
+        sipm_r = build_sipm_responses(indices // sipm_pmt_bin_ratio,
+                                      times // sipm_pmt_bin_ratio,
+                                      widths * sipm_pmt_bin_ratio,
+                                      sipm_wfs,
+                                      rebin_stride // sipm_pmt_bin_ratio,
                                       thr_sipm_s2)
     else:
         sipm_r = SiPMResponses.build_empty_instance()
@@ -109,14 +118,16 @@ def find_peaks(ccwfs, index,
                time, length,
                stride, rebin_stride,
                Pk, pmt_ids,
+               pmt_sample_f =25*units.ns,
+               sipm_sample_f= 1*units.mus,
                sipm_wfs=None, thr_sipm_s2=0):
     ccwfs = np.array(ccwfs, ndmin=2)
 
     peaks           = []
-    times           = np.arange     (ccwfs.shape[1]) * 25 * units.ns
-    widths          = np.full       (ccwfs.shape[1],   25 * units.ns)
+    times           = np.arange     (ccwfs.shape[1]) * pmt_sample_f
+    widths          = np.full       (ccwfs.shape[1],   pmt_sample_f)
     indices_split   = split_in_peaks(index, stride)
-    selected_splits = select_peaks  (indices_split, time, length)
+    selected_splits = select_peaks  (indices_split, time, length, pmt_sample_f)
     with_sipms      = Pk is S2 and sipm_wfs is not None
 
     for indices in selected_splits:
@@ -124,17 +135,23 @@ def find_peaks(ccwfs, index,
                         widths, ccwfs, pmt_ids,
                         rebin_stride,
                         with_sipms, Pk,
+                        pmt_sample_f, sipm_sample_f,
                         sipm_wfs, thr_sipm_s2)
         peaks.append(pk)
     return peaks
 
 
 def get_pmap(ccwf, s1_indx, s2_indx, sipm_zs_wf,
-             s1_params, s2_params, thr_sipm_s2, pmt_ids):
-    return PMap(find_peaks(ccwf, s1_indx, Pk=S1, pmt_ids=pmt_ids, **s1_params),
+             s1_params, s2_params, thr_sipm_s2, pmt_ids,
+             pmt_sample_f, sipm_sample_f):
+    return PMap(find_peaks(ccwf, s1_indx, Pk=S1, pmt_ids=pmt_ids,
+                           pmt_sample_f=pmt_sample_f,
+                           **s1_params),
                 find_peaks(ccwf, s2_indx, Pk=S2, pmt_ids=pmt_ids,
                            sipm_wfs    = sipm_zs_wf,
                            thr_sipm_s2 = thr_sipm_s2,
+                           pmt_sample_f  = pmt_sample_f,
+                           sipm_sample_f = sipm_sample_f,
                            **s2_params))
 
 

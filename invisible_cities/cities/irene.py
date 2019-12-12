@@ -22,6 +22,7 @@ import tables as tb
 from .. types.ic_types import minmax
 from .. database       import load_db
 
+from .. core.system_of_units_c import units
 from .. reco                  import tbl_functions        as tbl
 from .. reco                  import  peak_functions      as pkf
 from .. core.random_sampling  import NoiseSampler         as SiPMsNoiseSampler
@@ -51,7 +52,8 @@ from .  components import wf_from_files
 def irene(files_in, file_out, compression, event_range, print_mod, detector_db, run_number,
           n_baseline, n_mau, thr_mau, thr_sipm, thr_sipm_type,
           s1_lmin, s1_lmax, s1_tmin, s1_tmax, s1_rebin_stride, s1_stride, thr_csum_s1,
-          s2_lmin, s2_lmax, s2_tmin, s2_tmax, s2_rebin_stride, s2_stride, thr_csum_s2, thr_sipm_s2):
+          s2_lmin, s2_lmax, s2_tmin, s2_tmax, s2_rebin_stride, s2_stride, thr_csum_s2, thr_sipm_s2,
+          pmt_sample_f=25*units.ns, sipm_sample_f=1*units.mus):
     if   thr_sipm_type.lower() == "common":
         # In this case, the threshold is a value in pes
         sipm_thr = thr_sipm
@@ -87,7 +89,7 @@ def irene(files_in, file_out, compression, event_range, print_mod, detector_db, 
                               item = "sipm")
 
     # Build the PMap
-    compute_pmap     = fl.map(build_pmap(detector_db, run_number,
+    compute_pmap     = fl.map(build_pmap(detector_db, run_number, pmt_sample_f, sipm_sample_f,
                                          s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
                                          s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2),
                               args = ("ccwfs", "s1_indices", "s2_indices", "sipm"),
@@ -152,7 +154,7 @@ def irene(files_in, file_out, compression, event_range, print_mod, detector_db, 
 
 
 
-def build_pmap(detector_db, run_number,
+def build_pmap(detector_db, run_number, pmt_sample_f, sipm_sample_f,
                s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
                s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2):
     s1_params = dict(time        = minmax(min = s1_tmin,
@@ -174,7 +176,8 @@ def build_pmap(detector_db, run_number,
 
     def build_pmap(ccwf, s1_indx, s2_indx, sipmzs): # -> PMap
         return pkf.get_pmap(ccwf, s1_indx, s2_indx, sipmzs,
-                            s1_params, s2_params, thr_sipm_s2, pmt_ids)
+                            s1_params, s2_params, thr_sipm_s2, pmt_ids,
+                            pmt_sample_f, sipm_sample_f)
 
     return build_pmap
 
