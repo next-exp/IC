@@ -36,7 +36,7 @@ def test_rwf_writer(config_tmpdir, group_name):
             group = h5test.root
         else:
             group = getattr(h5test.root, group_name)
-    
+
 
         assert table_name in group
 
