@@ -4,13 +4,15 @@ import pandas as pd
 from typing import Tuple
 from typing import List
 
-from ..core.core_functions import shift_to_bin_centers
+from ..     core.core_functions import shift_to_bin_centers
+from ..     core.core_functions import in_range
+from .. database                import load_db
 
-def createPSF(pos    : Tuple[np.ndarray, ...],
-              charge : np.ndarray,
-              nbins  : int,
-              ranges : List[List[float]]
-              ) -> Tuple[np.ndarray, np.ndarray, List[np.ndarray]] :
+def create_psf(pos    : Tuple[np.ndarray, ...],
+               charge : np.ndarray,
+               nbins  : int,
+               ranges : List[List[float]]
+               ) -> Tuple[np.ndarray, np.ndarray, List[np.ndarray]] :
     """
     Computes the point-spread (PSF) function of a given dataset.
 
@@ -31,14 +33,91 @@ def createPSF(pos    : Tuple[np.ndarray, ...],
     entries, edges = np.histogramdd(pos, nbins, range=ranges, normed=False)
     sumC   , edges = np.histogramdd(pos, nbins, range=ranges, normed=False, weights=charge)
     with np.errstate(divide='ignore', invalid='ignore'):
-        psf = np.nan_to_num(sumC/entries)
+        psf = np.nan_to_num(sumC / entries)
 
-    return psf, entries, [shift_to_bin_centers(edge) for edge in edges]
+    centers = [shift_to_bin_centers(edge) for edge in edges]
+
+    return psf, entries, centers
 
 
-def hdst_PSF_processing(dsts        : pd.DataFrame,
+def add_variable_weighted_mean(df        : pd.DataFrame,
+                               varMean   : str,
+                               varWeight : str
+                               ) -> pd.DataFrame :
+    """
+    Adds the average of a variable weighted by another to a
+    grouped hits DST 'df' (grouped using groupby, by event id).
+
+    Parameters
+    ----------
+    df        : dataframe (groupby by event and npeak to do it peak by peak)
+    varMean   : variable to be averaged.
+    varWeight : variable to be uses as the weight.
+    """
+    mean, weight = df.loc[:, (varMean, varWeight)].values.T
+    df[varMean + 'peak'] =  np.average(mean, weights=weight)
+
+
+def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
+                                      var         : List[str],
+                                      ranges      : List[List[float]],
+                                      sampleWidth : List[float],
+                                      database    : pd.DataFrame
+                                      ) -> pd.DataFrame :
+    """
+    Adds empty sensors to the hDST
+
+    Parameters
+    ----------
+    df  : dataframe (groupby by event and npeak to do it peak by peak)
+    var : dimensions to be considered.
+
+    Returns
+    ----------
+    df  : dst with empty sipm hits.
+    """
+    delta_x = np.diff(ranges[0])[0]/2
+    delta_y = np.diff(ranges[1])[0]/2
+
+    sel_x  = in_range(database.X, df.Xpeak.unique()[0] - delta_x,  df.Xpeak.unique()[0] + delta_x)
+    sel_y  = in_range(database.Y, df.Ypeak.unique()[0] - delta_y,  df.Ypeak.unique()[0] + delta_y)
+
+    sensors = database[sel_x & sel_y]
+
+    fill_dummy = np.zeros(len(sensors))
+    pd_dict = {}
+    pd_dict['event'   ] = np.full(len(sensors), df.event.unique())
+    pd_dict['time'    ] = np.full(len(sensors), df.time .unique())
+    pd_dict['npeak'   ] = np.full(len(sensors), df.npeak.unique())
+    pd_dict['Xpeak'   ] = np.full(len(sensors), df.Xpeak.unique())
+    pd_dict['Ypeak'   ] = np.full(len(sensors), df.Ypeak.unique())
+    pd_dict['nsipm'   ] = fill_dummy
+    pd_dict['X'       ] = sensors.X
+    pd_dict['Y'       ] = sensors.Y
+    pd_dict['Xrms'    ] = fill_dummy
+    pd_dict['Yrms'    ] = fill_dummy
+    pd_dict['Z'       ] = np.full(len(sensors), df.    Z.min())
+    pd_dict['Q'       ] = fill_dummy
+    pd_dict['E'       ] = fill_dummy
+    pd_dict['Qc'      ] = fill_dummy
+    pd_dict['Ec'      ] = fill_dummy
+    pd_dict['track_id'] = fill_dummy
+    pd_dict['Ep'      ] = fill_dummy
+
+    df2 = pd.DataFrame(pd_dict)
+    df_out = df.merge(df2, on=list(df), how='outer')
+    df_out.drop_duplicates(subset=['X', 'Y'], inplace=True, keep='first')
+    df_out['NormQ'] = df_out.Q/df_out.Q.sum()
+    df_out['nsipm'] = np.full(len(df_out), len(df))
+
+    return df_out
+
+
+def hdst_psf_processing(dsts        : pd.DataFrame,
                         ranges      : List[List[float]],
-                        sampleWidth : List[float]
+                        sampleWidth : List[float],
+                        detector_db : str,
+                        run_number  : int
                         ) -> pd.DataFrame :
     """
     Adds the necessary info to a hits DST to create the PSF, namely the relative position and the normalized Q.
@@ -53,79 +132,16 @@ def hdst_PSF_processing(dsts        : pd.DataFrame,
     ----------
     hdst        : hits after processing to create PSF.
     """
-    def AddVariableWeightedMean(df        : pd.DataFrame,
-                                varMean   : str,
-                                varWeight : str
-                                ) -> pd.DataFrame :
-        """
-        Adds the average of a variable weighted by another to a
-        grouped hits DST 'df' (grouped using groupby, by event id).
-
-        Parameters
-        ----------
-        df        : groupby by event and npeak.
-        varMean   : variable to be averaged.
-        varWeight : variable to be uses as the weight.
-
-        Returns
-        ----------
-        df        : dst with the weighted average.
-        """
-        df[varMean + 'peak'] =  (df[varMean]*df[varWeight]).sum()/df[varWeight].sum()
-        return(df)
-
-    def AddEmptySensors(df  : pd.DataFrame,
-                        var : List[str]
-                        ) -> pd.DataFrame :
-        """
-        Adds empty sensors to the hDST
-
-        Parameters
-        ----------
-        df  : groupby by event and npeak.
-        var : dimensions to be considered.
-
-        Returns
-        ----------
-        df  : dst with empty sipm hits.
-        """
-        distance = (np.diff(ranges)/2).flatten()
-        means    = [int(df[f'{v}peak'].mean()) for v in var[:len(ranges)]]
-        means    = [mean - mean%sampleWidth[i]  for i, mean in enumerate(   means)]
-        varrange = [[means[i] - d, means[i] + d + sampleWidth[i]]                   for i,    d in enumerate(distance)]
-        allbins  = [int(np.diff(rang)/sampleWidth[i])              for i, rang in enumerate(varrange)]
-        Hs, edges   = np.histogramdd(tuple(df[v].values for v in var[:len(ranges)]), bins=allbins, range=varrange, normed=False, weights=df['Q'])
-        interPoints = np.meshgrid(*(shift_to_bin_centers(edge) for edge in edges), indexing='ij')
-        if len(ranges) < 3:
-            interPoints.append(np.array([df['Z'].min()] * len(interPoints[0].flatten())))
-
-        pd_dict1 = {f'{v     }' : interPoints[i].flatten() for i, v in enumerate(var)}
-        pd_dict2 = {f'{var[i]}peak' : [df[f'{var[i]}peak'].mean()] * len(interP.flatten())
-                    for i, interP in enumerate(interPoints[:len(ranges)])}
-
-        pd_dict3 = {}
-        pd_dict3['Q'] = Hs.flatten()
-        pd_dict3['NormQ'] = Hs.flatten() / Hs.sum()
-        pd_dict3['E'] = pd_dict3['NormQ'] * df['E'].sum()
-        pd_dict3['nsipm'] = [len(df)] * len(Hs.flatten())
-        pd_dict4 = {k : [df[k].min()] * len(interPoints[0].flatten()) for k in ['event', 'time', 'npeak']}
-        pd_dict  = {**pd_dict1, **pd_dict2, **pd_dict3, **pd_dict4}
-
-        return pd.DataFrame(pd_dict).sort_values(['event', 'npeak', 'E'], ascending=[1, 1, 0]).reindex(list(df.columns).append('NormQ'), axis=1)
-
     groupedDST = dsts.groupby(['event', 'npeak'], as_index=False)
+    sipm_db    = load_db.DataSiPM(detector_db, run_number)
     if len(ranges) >= 3:
-        hdst          = groupedDST.apply(AddVariableWeightedMean, 'Z', 'E')
-        hdst          = hdst.groupby(['event', 'npeak'], as_index=False).apply(AddEmptySensors, ['X', 'Y', 'Z']).reset_index(drop=True)
+        hdst          = groupedDST.apply(add_variable_weighted_mean, 'Z', 'E')
+        hdst          = hdst.groupby(['event', 'npeak'], as_index=False).apply(add_empty_sensors_and_normalize_q, ['X', 'Y', 'Z'], ranges, sampleWidth, sipm_db).reset_index(drop=True)
         hdst['RelZ']  = hdst.Z - hdst.Zpeak
     else:
-        hdst          = groupedDST.apply(AddEmptySensors, ['X', 'Y', 'Z']).reset_index(drop=True)
-        #hdst          = dsts
-        #print(hdst)
-        hdst['Zpeak'] = [hdst.Z.min()] * len(hdst)
-        hdst['RelZ']  = [0           ] * len(hdst)
-
-    hdst._is_copy = False
+        hdst          = groupedDST.apply(add_empty_sensors_and_normalize_q, ['X', 'Y', 'Z'], ranges, sampleWidth, sipm_db).reset_index(drop=True)
+        hdst['Zpeak'] = np.full (len(hdst), hdst.Z.min())
+        hdst['RelZ' ] = np.zeros(len(hdst))
 
     hdst['RelX' ]      = hdst.X - hdst.Xpeak
     hdst['RelY' ]      = hdst.Y - hdst.Ypeak

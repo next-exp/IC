@@ -83,10 +83,11 @@ def test_xy_writer(config_tmpdir, corr_toy_data, writer):
 def test_psf_writer(config_tmpdir):
     output_file = os.path.join(config_tmpdir, "test_psf.h5")
 
-    xr, yr, zr = np.linspace(-50, 50, 101), np.linspace(-20, 20, 101), np.linspace(20, 30, 11)
+    xdim, ydim, zdim = 101, 101, 11
+    xr, yr, zr = np.linspace(-50, 50, xdim), np.linspace(-20, 20, ydim), np.linspace(20, 30, zdim)
     x, y, z    = 3, 4, 5
-    factors    = np.linspace(0, 1, 101*101*11).reshape(101, 101, 11)
-    nevt       = np.linspace(0, 101*101*11 -1, 101*101*11).reshape(101, 101, 11)
+    factors    = np.linspace(0, 1, xdim*ydim*zdim   ).reshape(xdim, ydim, zdim)
+    nevt       = np.arange  (0,    xdim*ydim*zdim, 1).reshape(xdim, ydim, zdim)
 
     with tb.open_file(output_file, 'w') as h5out:
         write = psf_writer(h5out)
@@ -98,11 +99,11 @@ def test_psf_writer(config_tmpdir):
 
     xx, yy, zz = np.meshgrid(xr, yr, zr, indexing='ij')
 
-    assert_allclose(xx               .flatten() , psf.xr    .values)
-    assert_allclose(yy               .flatten() , psf.yr    .values)
-    assert_allclose(zz               .flatten() , psf.zr    .values)
-    assert_allclose(factors          .flatten() , psf.factor.values)
-    assert_allclose(nevt             .flatten() , psf.nevt  .values)
-    assert_allclose([x] * len(factors.flatten()), psf.x     .values)
-    assert_allclose([y] * len(factors.flatten()), psf.y     .values)
-    assert_allclose([z] * len(factors.flatten()), psf.z     .values)
+    assert_allclose(xx            .flatten(), psf.xr    .values)
+    assert_allclose(yy            .flatten(), psf.yr    .values)
+    assert_allclose(zz            .flatten(), psf.zr    .values)
+    assert_allclose(factors       .flatten(), psf.factor.values)
+    assert_allclose(nevt          .flatten(), psf.nevt  .values)
+    assert_allclose(np.full(factors.size, x), psf.x     .values)
+    assert_allclose(np.full(factors.size, y), psf.y     .values)
+    assert_allclose(np.full(factors.size, z), psf.z     .values)
