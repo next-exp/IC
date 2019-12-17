@@ -337,7 +337,7 @@ def test_build_pmt_responses(wf_with_indices):
     times, widths, wfs, indices = wf_with_indices
     ids = np.arange(wfs.shape[0])
     ts, wid, pmt_r = pf.build_pmt_responses(indices, times, widths,
-                                            wfs, ids, 1, False)
+                                            wfs, ids, 1, False, 40)
     assert ts                  == approx (times[indices])
     assert wid                 == approx (widths[indices])
     assert pmt_r.ids           == exactly(ids)
@@ -498,11 +498,14 @@ def test_get_pmap(s1_and_s2_with_indices):
     pmt_ids  = np.arange( pmt_wfs.shape[0])
     sipm_ids = np.arange(sipm_wfs.shape[0])
 
-
+    pmt_sample_f  = 25 * units.ns
+    sipm_sample_f = 1  * units.mus
     pmap = pf.get_pmap(pmt_wfs, s1_indx, s2_indx, sipm_wfs,
                        s1_params, s2_params,
                        thr_sipm_s2 = -1,
-                       pmt_ids     = pmt_ids)
+                       pmt_ids     = pmt_ids,
+                       pmt_sample_f  = pmt_sample_f ,
+                       sipm_sample_f = sipm_sample_f)
 
     (rebinned_times ,
      rebinned_widths,
