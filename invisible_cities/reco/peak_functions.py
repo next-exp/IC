@@ -156,6 +156,7 @@ def rebin_times_and_waveforms(times, widths, waveforms,
         t = times    [   s]
         e = waveforms[:, s]
         w = np.sum(e, axis=0).clip(0) if np.any(e) else None
+        if not np.any(w): w = None
         rebinned_times [   i] = np.average(t, weights=w)
         rebinned_widths[   i] = np.sum    (   widths[s])
         rebinned_wfs   [:, i] = np.sum    (e,    axis=1)
