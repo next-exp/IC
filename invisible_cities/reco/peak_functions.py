@@ -152,12 +152,15 @@ def rebin_times_and_waveforms(times, widths, waveforms,
     rebinned_widths = np.zeros(            len(slices) )
     rebinned_wfs    = np.zeros((n_sensors, len(slices)))
 
-    for i, s in enumerate(slices):
-        t = times    [   s]
-        e = waveforms[:, s]
-        w = np.sum(e, axis=0).clip(0) if np.any(e) else None
-        if not np.any(w): w = None
+    for i, sl in enumerate(slices):
+        t = times    [   sl]
+        e = waveforms[:, sl]
+        ## Weight with the charge sum per slice
+        ## if positive and unweighted if all
+        ## negative.
+        s = np.sum(e, axis=0).clip(0)
+        w = s if np.any(s) else None
         rebinned_times [   i] = np.average(t, weights=w)
-        rebinned_widths[   i] = np.sum    (   widths[s])
+        rebinned_widths[   i] = np.sum    (  widths[sl])
         rebinned_wfs   [:, i] = np.sum    (e,    axis=1)
     return rebinned_times, rebinned_widths, rebinned_wfs
