@@ -603,6 +603,8 @@ def test_rebin_times_and_waveforms_times_are_consistent(t_and_wf, stride):
 
 
 def test_rebin_times_and_waveforms_negative_bins(ICDATADIR):
+    # Tests that rebin doesn't raise an error
+    # even with multiple adjacent negative bins
     pmap_file = os.path.join(ICDATADIR, 'pmaps_negative_bins.h5')
     pmaps     = load_pmaps(pmap_file)
     s2        = pmaps[48490].s2s[0]
