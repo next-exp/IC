@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 from pytest import approx
@@ -22,6 +24,7 @@ from ..evm .pmaps             import SiPMResponses
 from ..evm .pmaps             import S1
 from ..evm .pmaps             import S2
 from ..evm .pmaps             import PMap
+from ..io  .pmaps_io          import load_pmaps
 from ..types.ic_types_c       import minmax
 from .                        import peak_functions as pf
 
@@ -597,3 +600,14 @@ def test_rebin_times_and_waveforms_times_are_consistent(t_and_wf, stride):
                                                   np.ones_like(wfs), stride)
 
     assert np.sum(rb_times) * stride == approx(np.sum(times))
+
+
+def test_rebin_times_and_waveforms_negative_bins(ICDATADIR):
+    # Tests that rebin doesn't raise an error
+    # even with multiple adjacent negative bins
+    pmap_file = os.path.join(ICDATADIR, 'pmaps_negative_bins.h5')
+    pmaps     = load_pmaps(pmap_file)
+    s2        = pmaps[48490].s2s[0]
+    rebinned_info = pf.rebin_times_and_waveforms(s2.times             ,
+                                                 s2.bin_widths        ,
+                                                 s2.pmts.all_waveforms)

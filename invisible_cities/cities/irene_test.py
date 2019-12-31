@@ -16,8 +16,9 @@ from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
 
-from .. database       import load_db
-from .. database.load_db       import DetDB
+from .. database            import load_db
+from .. database.load_db    import DetDB
+from .. io      .pmaps_io   import load_pmaps
 
 from .  irene import irene
 
@@ -386,3 +387,31 @@ def test_irene_empty_input_file(config_tmpdir, ICDATADIR):
                      file_out      = PATH_OUT))
 
     irene(**conf)
+
+
+def test_irene_sequential_times(config_tmpdir, ICDATADIR):
+
+    PATH_IN  = os.path.join(ICDATADIR    , 'single_evt_nonseqtime_rwf.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'test_pmaps.h5')
+
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+    conf.update(dict(files_in    = PATH_IN           ,
+                     file_out    = PATH_OUT          ,
+                     run_number  =   6351            ,
+                     n_baseline  =  48000            ,
+                     thr_sipm    =      1 * units.pes,
+                     s1_tmin     =      0 * units.mus,
+                     s1_tmax     =    640 * units.mus,
+                     s1_lmin     =      5            ,
+                     s1_lmax     =     30            ,
+                     s2_tmin     =    645 * units.mus,
+                     s2_tmax     =   1300 * units.mus,
+                     s2_lmin     =     80            ,
+                     s2_lmax     = 200000            ,
+                     thr_sipm_s2 =      5 * units.pes))
+
+    irene(**conf)
+
+    pmaps_out = load_pmaps(PATH_OUT)
+
+    assert np.all(np.diff(pmaps_out[3348].s2s[1].times) > 0)
