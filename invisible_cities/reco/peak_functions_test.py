@@ -498,14 +498,14 @@ def test_get_pmap(s1_and_s2_with_indices):
     pmt_ids  = np.arange( pmt_wfs.shape[0])
     sipm_ids = np.arange(sipm_wfs.shape[0])
 
-    pmt_sample_f  = 25 * units.ns
-    sipm_sample_f = 1  * units.mus
+    pmt_samp_wid  = 25 * units.ns
+    sipm_samp_wid = 1  * units.mus
     pmap = pf.get_pmap(pmt_wfs, s1_indx, s2_indx, sipm_wfs,
                        s1_params, s2_params,
                        thr_sipm_s2 = -1,
                        pmt_ids     = pmt_ids,
-                       pmt_sample_f  = pmt_sample_f ,
-                       sipm_sample_f = sipm_sample_f)
+                       pmt_samp_wid  = pmt_samp_wid ,
+                       sipm_samp_wid = sipm_samp_wid)
 
     (rebinned_times ,
      rebinned_widths,
