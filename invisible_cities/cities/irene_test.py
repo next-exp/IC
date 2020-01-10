@@ -4,6 +4,7 @@ from collections import namedtuple
 import tables as tb
 import numpy  as np
 
+from pytest import raises
 from pytest import mark
 from pytest import fixture
 
@@ -389,6 +390,7 @@ def test_irene_empty_input_file(config_tmpdir, ICDATADIR):
     irene(**conf)
 
 
+
 def test_irene_sequential_times(config_tmpdir, ICDATADIR):
 
     PATH_IN  = os.path.join(ICDATADIR    , 'single_evt_nonseqtime_rwf.h5')
@@ -415,3 +417,59 @@ def test_irene_sequential_times(config_tmpdir, ICDATADIR):
     pmaps_out = load_pmaps(PATH_OUT)
 
     assert np.all(np.diff(pmaps_out[3348].s2s[1].times) > 0)
+
+def test_error_when_different_sample_widths(ICDATADIR, config_tmpdir):
+    ## Tests that ValueError message is correct
+    PATH_IN  = os.path.join(ICDATADIR,                   'run_2983.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'r2983_pmaps_diffparams.h5')
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+
+    pmt_samp_wid  = 25 * units.ns
+    sipm_samp_wid =  2 * units.mus
+    conf.update(dict(run_number    = 2983,
+                     files_in      = PATH_IN,
+                     file_out      = PATH_OUT,
+                     pmt_samp_wid  = pmt_samp_wid,
+                     sipm_samp_wid = sipm_samp_wid))
+
+    msg  = "Shapes don't match!\n"
+    msg += "times has length 6\n"
+    msg += "pmts  has length 6 \n"
+    msg += "sipms has length 3\n"
+
+    with raises(ValueError) as error:
+        irene(**conf)
+    assert str(error.value) == msg
+
+
+def test_irene_other_sample_widths(ICDATADIR, config_tmpdir):
+    ## Tests irene works when running with other sample frequencies
+    file_in     = os.path.join(ICDATADIR,               'run_2983.h5')
+    file_out    = os.path.join(config_tmpdir, 'r2983_pmaps_output.h5')
+    true_output = os.path.join(ICDATADIR, 'run_2983_pmaps_2evts_sfreq_5ns_200ns.h5')
+    conf = configure('dummy invisible_cities/config/irene.conf'.split())
+
+    pmt_samp_wid  = 5  * units.ns
+    sipm_samp_wid = 0.2 * units.mus
+    n_events = 2
+
+    conf.update(dict(run_number    = 2983,
+                     files_in      = file_in,
+                     file_out      = file_out,
+                     event_range   = (0, n_events),
+                     pmt_samp_wid  = pmt_samp_wid,
+                     sipm_samp_wid = sipm_samp_wid))
+    irene(**conf)
+
+    tables = (  "PMAPS/S1"         ,   "PMAPS/S2"        , "PMAPS/S2Si"     ,
+                "PMAPS/S1Pmt"      ,   "PMAPS/S2Pmt"     ,
+                  "Run/events"     ,     "Run/runInfo"   ,
+              "Trigger/events"     , "Trigger/trigger"   ,
+              "Filters/s12_indices", "Filters/empty_pmap")
+    with tb.open_file(true_output)  as true_output_file:
+        with tb.open_file(file_out) as      output_file:
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
+
