@@ -103,6 +103,7 @@ dependencies:
 - flaky        = 3.4.0
 - hypothesis   = 3.68.0
 - pytest-xdist = 1.23.2
+- coverage     = 4.5.4
 - pip:
   - pytest-instafail==0.4.0
 EOF
