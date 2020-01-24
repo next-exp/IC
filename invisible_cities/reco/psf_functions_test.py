@@ -38,7 +38,7 @@ def test_add_empty_sensors_and_normalize_q(ICDATADIR):
     hdst           = load_dst(PATH_IN, 'RECO', 'Events')
     group          = hdst.groupby(['event'], as_index=False)
     sipm_db        = load_db.DataSiPM('new', 0)
-    hdst_processed = group.apply(add_empty_sensors_and_normalize_q, ['X', 'Y'], [[-50, 50], [-50, 50]], [10, 10], sipm_db).reset_index(drop=True)
+    hdst_processed = group.apply(add_empty_sensors_and_normalize_q, ['X', 'Y'], [[-50, 50], [-50, 50]], sipm_db).reset_index(drop=True)
     hdst_psf       = pd.read_hdf(PATH_TEST)
 
     assert hdst_processed.NormQ.sum() == 1.0 * hdst.event.nunique()
@@ -52,7 +52,7 @@ def test_hdst_psf_processing(ICDATADIR):
     PATH_TEST      = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_psf.h5")
 
     hdst           = load_dst(PATH_IN, 'RECO', 'Events')
-    hdst_processed = hdst_psf_processing(hdst, [[-50, 50], [-50, 50]], [10, 10], 'new', 0)
+    hdst_processed = hdst_psf_processing(hdst, [[-50, 50], [-50, 50]], 'new', 0)
     hdst_psf       = pd.read_hdf(PATH_TEST)
 
     assert_dataframes_close(hdst_psf, hdst_processed)

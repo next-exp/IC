@@ -55,13 +55,12 @@ def add_variable_weighted_mean(df        : pd.DataFrame,
     varWeight : variable to be uses as the weight.
     """
     mean, weight = df.loc[:, (varMean, varWeight)].values.T
-    df[varMean + 'peak'] =  np.average(mean, weights=weight)
+    df.loc[:, varMean + 'peak'] = np.average(mean, weights=weight)
 
 
 def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
                                       var         : List[str],
                                       ranges      : List[List[float]],
-                                      sampleWidth : List[float],
                                       database    : pd.DataFrame
                                       ) -> pd.DataFrame :
     """
@@ -85,28 +84,23 @@ def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
     sensors = database[sel_x & sel_y]
 
     fill_dummy = np.zeros(len(sensors))
-    pd_dict = {}
-    pd_dict['event'   ] = np.full(len(sensors), df.event.unique())
-    pd_dict['time'    ] = np.full(len(sensors), df.time .unique())
-    pd_dict['npeak'   ] = np.full(len(sensors), df.npeak.unique())
-    pd_dict['Xpeak'   ] = np.full(len(sensors), df.Xpeak.unique())
-    pd_dict['Ypeak'   ] = np.full(len(sensors), df.Ypeak.unique())
-    pd_dict['nsipm'   ] = fill_dummy
+    pd_dict    = {}
+
+    variables  = ['event', 'time', 'npeak']
+    variables.extend([f'{v}peak' for v in var])
+
+    for v in variables:
+        pd_dict[v] = np.full(len(sensors), df.loc[:,v].unique())
     pd_dict['X'       ] = sensors.X
     pd_dict['Y'       ] = sensors.Y
-    pd_dict['Xrms'    ] = fill_dummy
-    pd_dict['Yrms'    ] = fill_dummy
-    pd_dict['Z'       ] = np.full(len(sensors), df.    Z.min())
-    pd_dict['Q'       ] = fill_dummy
-    pd_dict['E'       ] = fill_dummy
-    pd_dict['Qc'      ] = fill_dummy
-    pd_dict['Ec'      ] = fill_dummy
-    pd_dict['track_id'] = fill_dummy
-    pd_dict['Ep'      ] = fill_dummy
+    pd_dict['Z'       ] = np.full(len(sensors), df.loc[:,    'Z'].min())
+    for col in df.columns.values:
+        if col not in pd_dict.keys():
+            pd_dict[col]  = fill_dummy
 
     df2 = pd.DataFrame(pd_dict)
     df_out = df.merge(df2, on=list(df), how='outer')
-    df_out.drop_duplicates(subset=['X', 'Y'], inplace=True, keep='first')
+    df_out.drop_duplicates(subset=var, inplace=True, keep='first')
     df_out['NormQ'] = df_out.Q/df_out.Q.sum()
     df_out['nsipm'] = np.full(len(df_out), len(df))
 
@@ -115,7 +109,6 @@ def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
 
 def hdst_psf_processing(dsts        : pd.DataFrame,
                         ranges      : List[List[float]],
-                        sampleWidth : List[float],
                         detector_db : str,
                         run_number  : int
                         ) -> pd.DataFrame :
@@ -126,7 +119,6 @@ def hdst_psf_processing(dsts        : pd.DataFrame,
     ----------
     dsts        : hits (1 SiPM per hit).
     ranges      : range of the PSF in each dimension.
-    sampleWidth : Sampling distance of the hits.
 
     Returns
     ----------
@@ -136,10 +128,10 @@ def hdst_psf_processing(dsts        : pd.DataFrame,
     sipm_db    = load_db.DataSiPM(detector_db, run_number)
     if len(ranges) >= 3:
         hdst          = groupedDST.apply(add_variable_weighted_mean, 'Z', 'E')
-        hdst          = hdst.groupby(['event', 'npeak'], as_index=False).apply(add_empty_sensors_and_normalize_q, ['X', 'Y', 'Z'], ranges, sampleWidth, sipm_db).reset_index(drop=True)
+        hdst          = hdst.groupby(['event', 'npeak'], as_index=False).apply(add_empty_sensors_and_normalize_q, ['X', 'Y', 'Z'], ranges, sipm_db).reset_index(drop=True)
         hdst['RelZ']  = hdst.Z - hdst.Zpeak
     else:
-        hdst          = groupedDST.apply(add_empty_sensors_and_normalize_q, ['X', 'Y', 'Z'], ranges, sampleWidth, sipm_db).reset_index(drop=True)
+        hdst          = groupedDST.apply(add_empty_sensors_and_normalize_q, ['X', 'Y'], ranges, sipm_db).reset_index(drop=True)
         hdst['Zpeak'] = np.full (len(hdst), hdst.Z.min())
         hdst['RelZ' ] = np.zeros(len(hdst))
 
