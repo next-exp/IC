@@ -22,7 +22,7 @@ def rwf_writer(h5out           : tb.file.File          ,
     group_name      : str
                       Name of the group in h5in.root
                       Known options: RD, BLR
-                      Setting to root will save directly in root
+                      Setting to None will save directly in root
     table_name      : str
                       Name of the table
                       Known options: pmtrwf, pmtcwf, sipmrwf
@@ -33,19 +33,18 @@ def rwf_writer(h5out           : tb.file.File          ,
     waveform_length : int
                       Number of samples per sensor
     """
-    if group_name is 'root':
+    if   group_name is None:
         rwf_group = h5out.root
+    elif group_name in h5out.root:
+        rwf_group = getattr           (h5out.root, group_name)
     else:
-        try:
-            rwf_group = getattr           (h5out.root, group_name)
-        except tb.NoSuchNodeError:
-            rwf_group = h5out.create_group(h5out.root, group_name)
+        rwf_group = h5out.create_group(h5out.root, group_name)
 
-    rwf_table = h5out.create_earray(rwf_group,
-                                   table_name,
-                                   atom    = tb.Int16Atom(),
-                                   shape   = (0, n_sensors, waveform_length),
-                                   filters = tbl.filters(compression))
+    rwf_table = h5out.create_earray(rwf_group                                ,
+                                    table_name                               ,
+                                    atom    =                  tb.Int16Atom(),
+                                    shape   = (0, n_sensors, waveform_length),
+                                    filters =        tbl.filters(compression))
     def write_rwf(waveform : np.ndarray) -> None:
         """
         Writes raw waveform arrays to file.
