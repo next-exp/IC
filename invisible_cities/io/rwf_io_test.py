@@ -3,13 +3,12 @@ import os
 import numpy  as np
 import tables as tb
 
-from numpy.testing import assert_allclose
-from pytest        import            mark
+from pytest   import       mark
 
-from . rwf_io      import rwf_writer
+from . rwf_io import rwf_writer
 
 
-@mark.parametrize("group_name", ('root', 'RD', 'BLR'))
+@mark.parametrize("group_name", (None, 'RD', 'BLR'))
 def test_rwf_writer(config_tmpdir, group_name):
 
     nevt       =       3
@@ -28,11 +27,11 @@ def test_rwf_writer(config_tmpdir, group_name):
                                  n_sensors       =    nsensor,
                                  waveform_length =    nsample)
 
-        for sens in test_data:
-            rwf_writer_(sens)
+        for evt in test_data:
+            rwf_writer_(evt)
 
     with tb.open_file(ofile) as h5test:
-        if group_name is 'root':
+        if group_name is None:
             group = h5test.root
         else:
             group = getattr(h5test.root, group_name)
@@ -42,4 +41,4 @@ def test_rwf_writer(config_tmpdir, group_name):
 
         table = getattr(group, table_name)
         assert table.shape == (nevt, nsensor, nsample)
-        assert_allclose(test_data, table.read())
+        assert np.all(test_data == table.read())
