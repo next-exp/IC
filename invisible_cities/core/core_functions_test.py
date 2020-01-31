@@ -18,12 +18,16 @@ from hypothesis.strategies  import sampled_from
 from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
-sane_floats = partial(floats, allow_nan=False, allow_infinity=False)
-
 from .testing_utils import random_length_float_arrays
 from .              import core_functions   as core
 from .              import core_functions_c as core_c
 from .              import  fit_functions   as fitf
+
+
+sane_floats          = partial(floats, allow_nan=False, allow_infinity=False)
+sorted_unique_arrays = random_length_float_arrays(min_length = 1, max_length = 10)
+sorted_unique_arrays = sorted_unique_arrays.map(np.sort)
+sorted_unique_arrays = sorted_unique_arrays.filter(lambda x: np.all(np.diff(x) > 0))
 
 
 def test_timefunc(capfd):
@@ -36,6 +40,7 @@ def test_timefunc(capfd):
     time_measured = float(time_measured)
     np.isclose(time, time_measured)
 
+
 def test_flat():
     inner_len = 12
     outer_len =  5
@@ -45,11 +50,14 @@ def test_flat():
         for j in range(inner_len):
             assert flattened[j + i * inner_len] == nested_list[i][j]
 
+
 def test_lrange():
     assert core.lrange(10) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
+
 def test_trange():
     assert core.trange(10) == (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+
 
 @given(random_length_float_arrays())
 def test_in_range_infinite(data):
@@ -70,6 +78,36 @@ def test_in_range_positives():
 @given(random_length_float_arrays(max_length = 100))
 def test_in_range_right_shape(data):
     assert core.in_range(data, -1., 1.).shape == data.shape
+
+
+@given(sorted_unique_arrays)
+def test_in_range_left_open_interval(data):
+    # right doesn't matter because it's infinite
+    output = core.in_range(data, minval=data[0], maxval=np.inf, left_closed=False)
+    assert not output[0]
+    assert all(output[1:])
+
+
+@given(sorted_unique_arrays)
+def test_in_range_right_open_interval(data):
+    # left doesn't matter because it's infinite
+    output = core.in_range(data, minval=-np.inf, maxval=data[-1], right_closed=False)
+    assert not output[-1]
+    assert all(output[:-1])
+
+
+@given(sorted_unique_arrays)
+def test_in_range_left_close_interval(data):
+    # right doesn't matter because it's infinite
+    output = core.in_range(data, minval=data[0], maxval=np.inf, left_closed=True)
+    assert all(output)
+
+
+@given(sorted_unique_arrays)
+def test_in_range_right_close_interval(data):
+    # left doesn't matter because it's infinite
+    output = core.in_range(data, minval=-np.inf, maxval=data[-1], right_closed=True)
+    assert all(output)
 
 
 @mark.parametrize(" first  second       norm_mode        expected".split(),
