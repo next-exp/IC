@@ -65,7 +65,8 @@ def test_create_psf(ICDATADIR):
     hdst           = pd.read_hdf(PATH_IN)
     psf            = np.load(PATH_TEST)
 
-    psf_val, entries, binss = create_psf((hdst.RelX, hdst.RelY), hdst.NormQ, [100, 100], [[-50, 50], [-50, 50]])
+    bin_edges = [np.linspace(-50, 50, 101) for i in range(2)]
+    psf_val, entries, binss = create_psf((hdst.RelX, hdst.RelY), hdst.NormQ, bin_edges)
 
     np.testing.assert_allclose(psf['psf'    ], psf_val)
     np.testing.assert_allclose(psf['entries'], entries)

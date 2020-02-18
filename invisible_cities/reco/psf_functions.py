@@ -8,20 +8,18 @@ from ..     core.core_functions import shift_to_bin_centers
 from ..     core.core_functions import in_range
 from .. database                import load_db
 
-def create_psf(pos    : Tuple[np.ndarray, ...],
-               charge : np.ndarray,
-               nbins  : List[int],
-               ranges : List[List[float]]
+def create_psf(pos       : Tuple[np.ndarray, ...],
+               charge    : np.ndarray,
+               bin_edges : List[np.ndarray],
                ) -> Tuple[np.ndarray, np.ndarray, List[np.ndarray]] :
     """
     Computes the point-spread (PSF) function of a given dataset.
 
     Parameters
     ----------
-    pos    : Hits relative position. Only tested for 2D.
-    charge : Hits SiPM charge normalized to the total peak charge.
-    nbins  : The number of bins in each dimension.
-    ranges : Range of the PSF in each dimension.
+    pos       : Hits relative position. Only tested for 2D.
+    charge    : Hits SiPM charge normalized to the total peak charge.
+    bin_edges : Bin edges for the PSF in each dimension.
 
     Returns
     ----------
@@ -29,17 +27,15 @@ def create_psf(pos    : Tuple[np.ndarray, ...],
     entries     : Number of entries per bin in the PSF.:
     bin_centers : Bin centers of the PSF.
     """
-    if not len(pos) == len(nbins) == len(ranges):
-        raise ValueError         ("Parameter dimensions do not match")
-    if len(pos) > 2:
-        raise NotImplementedError(f'{len(pos)}-dimensional PSF not yet implemented')
+    if not len(pos) == len(bin_edges) : raise ValueError         ("Parameter dimensions do not match")
+    if len(pos) > 2 :                   raise NotImplementedError(f'{len(pos)}-dimensional PSF not yet implemented')
 
-    entries, edges = np.histogramdd(pos, nbins, range=ranges, normed=False)
-    sumC   , edges = np.histogramdd(pos, nbins, range=ranges, normed=False, weights=charge)
+    entries, _ = np.histogramdd(pos, bin_edges, normed=False)
+    sumC   , _ = np.histogramdd(pos, bin_edges, normed=False, weights=charge)
     with np.errstate(divide='ignore', invalid='ignore'):
         psf = np.nan_to_num(sumC / entries)
 
-    centers = [shift_to_bin_centers(edge) for edge in edges]
+    centers = [shift_to_bin_centers(edge) for edge in bin_edges]
 
     return psf, entries, centers
 
