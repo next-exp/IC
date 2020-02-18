@@ -70,12 +70,14 @@ def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
 
     Parameters
     ----------
-    df  : dataframe (groupby by event and npeak to do it peak by peak)
-    var : dimensions to be considered.
+    df       : dataframe (Containing a single event and npeak)
+    var      : dimensions to be considered.
+    ranges   : list with the ranges, in each dim, to which empty sensors will be added.
+    database : dataframe containing the SiPM database of the detector.
 
     Returns
     ----------
-    df  : dst with empty sipm hits.
+    df_out   : dst with empty sipm hits.
     """
     delta_x = np.diff(ranges[0])[0]/2
     delta_y = np.diff(ranges[1])[0]/2
@@ -121,6 +123,8 @@ def hdst_psf_processing(dsts        : pd.DataFrame,
     ----------
     dsts        : hits (1 SiPM per hit).
     ranges      : range of the PSF in each dimension.
+    detector_db : name of the detector database to be used
+    run_number  : run number of the input data.
 
     Returns
     ----------
