@@ -93,20 +93,20 @@ def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
     variables  = ['event', 'time', 'npeak']
     variables.extend([f'{v}peak' for v in var])
 
-    for v in variables:
-        pd_dict[v] = np.full(len(sensors), df.loc[:,v].unique())
     pd_dict['X'       ] = sensors.X
     pd_dict['Y'       ] = sensors.Y
-    pd_dict['Z'       ] = np.full(len(sensors), df.loc[:,    'Z'].min())
+    pd_dict['Z'       ] = df.loc[:,'Z'].min()
+    for v in variables:
+        pd_dict[v] = df.loc[:,v].unique()[0]
     for col in df.columns.values:
         if col not in pd_dict.keys():
-            pd_dict[col]  = fill_dummy
+            pd_dict[col]  = 0.
 
     df2 = pd.DataFrame(pd_dict)
     df_out = df.merge(df2, on=list(df), how='outer')
     df_out.drop_duplicates(subset=var, inplace=True, keep='first')
-    df_out['NormQ'] = df_out.Q/df_out.Q.sum()
-    df_out['nsipm'] = np.full(len(df_out), len(df))
+    df_out['NormQ'] = df_out.Q / df_out.Q.sum()
+    df_out['nsipm'] = len(df)
 
     return df_out
 
