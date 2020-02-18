@@ -20,8 +20,8 @@ def test_add_variable_weighted_mean(ICDATADIR):
     x_mean    = np.average(hdst.loc[:, 'X'], weights=hdst.loc[:, 'E'])
     y_mean    = np.average(hdst.loc[:, 'Y'], weights=hdst.loc[:, 'E'])
 
-    add_variable_weighted_mean(hdst, 'X', 'E')
-    add_variable_weighted_mean(hdst, 'Y', 'E')
+    add_variable_weighted_mean(hdst, 'X', 'E', 'Xpeak')
+    add_variable_weighted_mean(hdst, 'Y', 'E', 'Ypeak')
 
     assert np.allclose(x_mean, hdst.Xpeak.unique())
     assert np.allclose(y_mean, hdst.Ypeak.unique())
