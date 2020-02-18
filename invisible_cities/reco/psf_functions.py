@@ -40,10 +40,10 @@ def create_psf(pos       : Tuple[np.ndarray, ...],
     return psf, entries, centers
 
 
-def add_variable_weighted_mean(df        : pd.DataFrame,
-                               varMean   : str,
-                               varWeight : str,
-                               meanName  : str,
+def add_variable_weighted_mean(df         : pd.DataFrame,
+                               var_mean   : str,
+                               var_weight : str,
+                               mean_name  : str,
                                ) -> pd.DataFrame :
     """
     Adds the average of a variable weighted by another to a
@@ -52,12 +52,12 @@ def add_variable_weighted_mean(df        : pd.DataFrame,
     Parameters
     ----------
     df        : dataframe (groupby by event and npeak to do it peak by peak)
-    varMean   : variable to be averaged.
-    varWeight : variable to be used as the weight.
-    meanName  : Name of the column containing the average.
+    var_mean   : variable to be averaged.
+    var_weight : variable to be used as the weight.
+    mean_name  : Name of the column containing the average.
     """
-    mean, weight = df.loc[:, (varMean, varWeight)].values.T
-    df.loc[:, meanName] = np.average(mean, weights=weight)
+    mean, weight = df.loc[:, (var_mean, var_weight)].values.T
+    df.loc[:, mean_name] = np.average(mean, weights=weight)
 
 
 def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
