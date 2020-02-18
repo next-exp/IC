@@ -10,7 +10,7 @@ from .. database                import load_db
 
 def create_psf(pos    : Tuple[np.ndarray, ...],
                charge : np.ndarray,
-               nbins  : int,
+               nbins  : List[int],
                ranges : List[List[float]]
                ) -> Tuple[np.ndarray, np.ndarray, List[np.ndarray]] :
     """
@@ -29,6 +29,10 @@ def create_psf(pos    : Tuple[np.ndarray, ...],
     entries     : Number of entries per bin in the PSF.:
     bin_centers : Bin centers of the PSF.
     """
+    if not len(pos) == len(nbins) == len(ranges):
+        raise ValueError         ("Parameter dimensions do not match")
+    if len(pos) > 2:
+        raise NotImplementedError(f'{len(pos)}-dimensional PSF not yet implemented')
 
     entries, edges = np.histogramdd(pos, nbins, range=ranges, normed=False)
     sumC   , edges = np.histogramdd(pos, nbins, range=ranges, normed=False, weights=charge)
@@ -124,18 +128,17 @@ def hdst_psf_processing(dsts        : pd.DataFrame,
     ----------
     hdst        : hits after processing to create PSF.
     """
-    groupedDST = dsts.groupby(['event', 'npeak'], as_index=False)
-    sipm_db    = load_db.DataSiPM(detector_db, run_number)
-    if len(ranges) >= 3:
-        hdst          = groupedDST.apply(add_variable_weighted_mean, 'Z', 'E')
-        hdst          = hdst.groupby(['event', 'npeak'], as_index=False).apply(add_empty_sensors_and_normalize_q, ['X', 'Y', 'Z'], ranges, sipm_db).reset_index(drop=True)
-        hdst['RelZ']  = hdst.Z - hdst.Zpeak
-    else:
-        hdst          = groupedDST.apply(add_empty_sensors_and_normalize_q, ['X', 'Y'], ranges, sipm_db).reset_index(drop=True)
-        hdst['Zpeak'] = np.full (len(hdst), hdst.Z.min())
-        hdst['RelZ' ] = np.zeros(len(hdst))
+    if len(ranges) > 2: raise NotImplementedError(f'{len(pos)}-dimensional PSF not yet implemented')
 
-    hdst['RelX' ]      = hdst.X - hdst.Xpeak
-    hdst['RelY' ]      = hdst.Y - hdst.Ypeak
+    groupedDST    = dsts.groupby(['event', 'npeak'], as_index=False)
+    sipm_db       = load_db.DataSiPM(detector_db, run_number)
+    hdst          = groupedDST.apply(add_empty_sensors_and_normalize_q,
+                                     ['X', 'Y']     , ranges, sipm_db)
+    hdst['Zpeak'] = hdst.Z.min()
+    hdst['RelX' ] = hdst.X - hdst.Xpeak
+    hdst['RelY' ] = hdst.Y - hdst.Ypeak
+    hdst['RelZ' ] = 0.
+
+    hdst.reset_index(inplace=True, drop=True)
 
     return hdst
