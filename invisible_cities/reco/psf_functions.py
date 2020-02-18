@@ -35,7 +35,7 @@ def create_psf(pos       : Tuple[np.ndarray, ...],
     with np.errstate(divide='ignore', invalid='ignore'):
         psf = np.nan_to_num(sumC / entries)
 
-    centers = [shift_to_bin_centers(edge) for edge in bin_edges]
+    centers = np.asarray([shift_to_bin_centers(edge) for edge in bin_edges])
 
     return psf, entries, centers
 
