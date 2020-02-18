@@ -30,8 +30,8 @@ def create_psf(pos       : Tuple[np.ndarray, ...],
     if not len(pos) == len(bin_edges) : raise ValueError         ("Parameter dimensions do not match")
     if len(pos) > 2 :                   raise NotImplementedError(f'{len(pos)}-dimensional PSF not yet implemented')
 
-    entries, _ = np.histogramdd(pos, bin_edges, normed=False)
-    sumC   , _ = np.histogramdd(pos, bin_edges, normed=False, weights=charge)
+    entries, _ = np.histogramdd(pos, bin_edges)
+    sumC   , _ = np.histogramdd(pos, bin_edges, weights=charge)
     with np.errstate(divide='ignore', invalid='ignore'):
         psf = np.nan_to_num(sumC / entries)
 
