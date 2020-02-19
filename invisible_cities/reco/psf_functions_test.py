@@ -26,24 +26,34 @@ def test_add_variable_weighted_mean(ICDATADIR):
     assert np.allclose(x_mean, hdst.Xpeak.unique())
     assert np.allclose(y_mean, hdst.Ypeak.unique())
 
-    hdst_psf  = pd.read_hdf(PATH_TEST)
-
-    assert_dataframes_close(hdst_psf, hdst)
-
 
 def test_add_empty_sensors_and_normalize_q(ICDATADIR):
-    PATH_IN   = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
-    PATH_TEST = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_psf_empty_sensors.h5")
-
+    PATH_IN        = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
     hdst           = load_dst(PATH_IN, 'RECO', 'Events')
     group          = hdst.groupby(['event'], as_index=False)
-    sipm_db        = load_db.DataSiPM('new', 0)
-    hdst_processed = group.apply(add_empty_sensors_and_normalize_q, ['X', 'Y'], [[-50, 50], [-50, 50]], sipm_db).reset_index(drop=True)
-    hdst_psf       = pd.read_hdf(PATH_TEST)
+    hdst_processed = group.apply(add_empty_sensors_and_normalize_q    ,
+                                 var      = ['X', 'Y']                ,
+                                 ranges   = [[-50, 50], [-50, 50]]    ,
+                                 database = load_db.DataSiPM('new', 0))
+    hdst_processed.reset_index(inplace=True, drop=True)
 
-    assert hdst_processed.NormQ.sum() == 1.0 * hdst.event.nunique()
+    assert np.allclose(hdst_processed.groupby('event').NormQ.sum().values, 1.0)
     assert hdst_processed.E.sum()     == hdst.E.sum()
     assert hdst_processed.Q.sum()     == hdst.Q.sum()
+
+
+def test_add_empty_sensors_and_normalize_q_file(ICDATADIR):
+    PATH_IN        = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
+    PATH_TEST      = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_psf_empty_sensors.h5")
+    hdst           = load_dst(PATH_IN, 'RECO', 'Events')
+    group          = hdst.groupby(['event'], as_index=False)
+    hdst_processed = group.apply(add_empty_sensors_and_normalize_q    ,
+                                 var      = ['X', 'Y']                ,
+                                 ranges   = [[-50, 50], [-50, 50]]    ,
+                                 database = load_db.DataSiPM('new', 0))
+    hdst_processed.reset_index(inplace=True, drop=True)
+    hdst_psf       = pd.read_hdf(PATH_TEST)
+
     assert_dataframes_close(hdst_psf, hdst_processed)
 
 
@@ -52,7 +62,10 @@ def test_hdst_psf_processing(ICDATADIR):
     PATH_TEST      = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_psf.h5")
 
     hdst           = load_dst(PATH_IN, 'RECO', 'Events')
-    hdst_processed = hdst_psf_processing(hdst, [[-50, 50], [-50, 50]], 'new', 0)
+    hdst_processed = hdst_psf_processing(hdst                                ,
+                                         ranges      = [[-50, 50], [-50, 50]],
+                                         detector_db = 'new'                 ,
+                                         run_number  = 0                     )
     hdst_psf       = pd.read_hdf(PATH_TEST)
 
     assert_dataframes_close(hdst_psf, hdst_processed)
