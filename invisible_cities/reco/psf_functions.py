@@ -6,7 +6,6 @@ from typing import List
 
 from ..     core.core_functions import shift_to_bin_centers
 from ..     core.core_functions import in_range
-from .. database                import load_db
 
 def create_psf(pos       : Tuple[np.ndarray, ...],
                charge    : np.ndarray,
@@ -87,7 +86,6 @@ def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
 
     sensors = database[sel_x & sel_y]
 
-    fill_dummy = np.zeros(len(sensors))
     pd_dict    = {}
 
     variables  = ['event', 'time', 'npeak']
@@ -128,7 +126,7 @@ def hdst_psf_processing(dsts        : pd.DataFrame,
     ----------
     hdst        : hits after processing to create PSF.
     """
-    if len(ranges) > 2: raise NotImplementedError(f'{len(pos)}-dimensional PSF not yet implemented')
+    if len(ranges) > 2: raise NotImplementedError(f'{len(ranges)}-dimensional PSF not yet implemented')
 
     groupedDST    = dsts.groupby(['event', 'npeak'], as_index=False)
     hdst          = groupedDST.apply(add_empty_sensors_and_normalize_q,

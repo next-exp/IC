@@ -14,7 +14,6 @@ from ..     core.testing_utils   import assert_dataframes_close
 
 def test_add_variable_weighted_mean(ICDATADIR):
     PATH_IN   = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
-    PATH_TEST = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_psf_means.h5")
 
     hdst      = load_dst(PATH_IN, 'RECO', 'Events')
     x_mean    = np.average(hdst.loc[:, 'X'], weights=hdst.loc[:, 'E'])
