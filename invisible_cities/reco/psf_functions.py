@@ -93,9 +93,9 @@ def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
     variables  = ['event', 'time', 'npeak']
     variables.extend([f'{v}peak' for v in var])
 
-    pd_dict['X'       ] = sensors.X
-    pd_dict['Y'       ] = sensors.Y
-    pd_dict['Z'       ] = df.loc[:,'Z'].min()
+    pd_dict['X'] = sensors.X
+    pd_dict['Y'] = sensors.Y
+    pd_dict['Z'] = df.loc[:,'Z'].min()
     for v in variables:
         pd_dict[v] = df.loc[:,v].unique()[0]
     for col in df.columns.values:
