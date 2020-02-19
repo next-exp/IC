@@ -62,10 +62,9 @@ def test_hdst_psf_processing(ICDATADIR):
     PATH_TEST      = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_psf.h5")
 
     hdst           = load_dst(PATH_IN, 'RECO', 'Events')
-    hdst_processed = hdst_psf_processing(hdst                                ,
-                                         ranges      = [[-50, 50], [-50, 50]],
-                                         detector_db = 'new'                 ,
-                                         run_number  = 0                     )
+    hdst_processed = hdst_psf_processing(hdst                                 ,
+                                         ranges   = [[-50, 50], [-50, 50]]    ,
+                                         database = load_db.DataSiPM('new', 0))
     hdst_psf       = pd.read_hdf(PATH_TEST)
 
     assert_dataframes_close(hdst_psf, hdst_processed)

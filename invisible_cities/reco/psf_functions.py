@@ -113,8 +113,7 @@ def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
 
 def hdst_psf_processing(dsts        : pd.DataFrame,
                         ranges      : List[List[float]],
-                        detector_db : str,
-                        run_number  : int
+                        database    : pd.DataFrame
                         ) -> pd.DataFrame :
     """
     Adds the necessary info to a hits DST to create the PSF, namely the relative position and the normalized Q.
@@ -123,8 +122,7 @@ def hdst_psf_processing(dsts        : pd.DataFrame,
     ----------
     dsts        : hits (1 SiPM per hit).
     ranges      : range of the PSF in each dimension.
-    detector_db : name of the detector database to be used
-    run_number  : run number of the input data.
+    database    : dataframe containing the SiPM database of the detector.
 
     Returns
     ----------
@@ -133,9 +131,8 @@ def hdst_psf_processing(dsts        : pd.DataFrame,
     if len(ranges) > 2: raise NotImplementedError(f'{len(pos)}-dimensional PSF not yet implemented')
 
     groupedDST    = dsts.groupby(['event', 'npeak'], as_index=False)
-    sipm_db       = load_db.DataSiPM(detector_db, run_number)
     hdst          = groupedDST.apply(add_empty_sensors_and_normalize_q,
-                                     ['X', 'Y']     , ranges, sipm_db)
+                                     ['X', 'Y']     , ranges, database)
     hdst['Zpeak'] = hdst.Z.min()
     hdst['RelX' ] = hdst.X - hdst.Xpeak
     hdst['RelY' ] = hdst.Y - hdst.Ypeak
