@@ -115,7 +115,7 @@ def test_deconvolution_input(data_hdst, data_hdst_deconvolved):
 
     h = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     h = h.groupby(['X', 'Y']).Q.sum().reset_index()
-    h = h[h.Q>40]
+    h = h[h.Q > 40]
 
     interpolator = deconvolution_input([10., 10.], [1., 1.], InterpolationMethod.cubic)
     inter        = interpolator((h.X, h.Y), h.Q)
@@ -132,7 +132,7 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
     h = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z = h.Z.mean()
     h = h.groupby(['X', 'Y']).Q.sum().reset_index()
-    h = h[h.Q>40]
+    h = h[h.Q > 40]
 
     deconvolutor = deconvolve(15, 0.01, [10., 10.], [1., 1.], inter_method=InterpolationMethod.cubic)
 

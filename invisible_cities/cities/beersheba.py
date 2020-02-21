@@ -65,7 +65,7 @@ class DeconvolutionMode(AutoNameEnumBase):
 
 
 def deconvolve_signal(psf_fname       : str,
-                      e_cut            : float,
+                      e_cut           : float,
                       n_iterations    : int,
                       iteration_tol   : float,
                       sample_width    : List[float],
@@ -85,7 +85,7 @@ def deconvolve_signal(psf_fname       : str,
     Parameters
     ----------
     psf_fname       : Point-spread function.
-    e_cut            : Cut in relative value to the max voxel over the deconvolution output.
+    e_cut           : Cut in relative value to the max voxel over the deconvolution output.
     n_iterations    : Number of Lucy-Richardson iterations
     n_iterations_g  : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
     iteration_tol   : Stopping threshold (difference between iterations).
@@ -267,39 +267,39 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
          Has to be negative for MC runs
 
     deconv_params : dict
-        q_cut           : float
+        q_cut         : float
             Minimum charge (pes) on a hit (SiPM)
-        drop_dist       : float
+        drop_dist     : float
             Distance to check if a SiPM is isolated
-        psf_fname       : string (filepath)
+        psf_fname     : string (filepath)
             Filename of the psf
-        e_cut            : float
+        e_cut         : float
             Cut over the deconvolution output, arbitrary units (order 1e-3)
-        n_iterations : int
+        n_iterations  : int
             Number of iterations to be applied if the iteration_tol criteria
             is not fulfilled before.
-        iteration_tol    : float
+        iteration_tol : float
             Stopping threshold (difference between iterations). I
-        sample_width     : list[float]
+        sample_width  : list[float]
             Sampling of the sensors in each dimension (usuallly the pitch).
-        bin_size        : list[float]
+        bin_size      : list[float]
             Bin size (mm) of the deconvolved image.
-        energy_type     : str ('E', 'Ec')
+        energy_type   : str ('E', 'Ec')
             Marks which energy from Esmeralda (E = uncorrected, Ec = corrected)
             should be assigned to the deconvolved track.
-        deconv_mode     : str ('joint', 'separate')
+        deconv_mode   : str ('joint', 'separate')
             - 'joint' deconvolves once using a PSF based on Z that includes
                both EL and diffusion spread aproximated to a Z range.
             - 'separate' deconvolves twice, first using the EL PSF, then using
                a gaussian PSF based on the exact Z position of the slice.
-        diffusion       : tuple(float)
+        diffusion     : tuple(float)
             Diffusion coefficients in each dimmension (mm/sqrt(cm))
             used if deconv_mode is 'separate'
-        n_dim           : int
+        n_dim         : int
             Number of dimensions used in deconvolution, either 2 or 3:
             n_dim = 2 -> slice by slice XY deconvolution.
             n_dim = 3 -> XYZ deconvolution.
-        inter_method     : str (None, 'linear', 'cubic')
+        inter_method  : str (None, 'linear', 'cubic')
             Sensor interpolation method. If None, no interpolation will be applied.
             'cubic' not supported for 3D deconvolution.
 
@@ -314,7 +314,7 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
     MC info : (if run number <=0)
     SUMMARY : Table with the summary from Esmeralda.
 """
-    cut_sensors       = fl.map(cut_over_Q   (deconv_params.pop("q_cut"), ['E', 'Ec']),
+    cut_sensors       = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
                                args = 'hdst',
                                out  = 'hdst_cut')
 
@@ -330,26 +330,24 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
     event_count_out = fl.spy_count()
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
-
         # Define writers
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_mc_        = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
 
-        write_mc             = fl.sink(                   write_mc_, args = ("mc", "event_number"))
-        write_deconv         = fl.sink(  deconv_writer(h5out=h5out), args =  "deconv_dst"         )
-        write_summary        = fl.sink( summary_writer(h5out=h5out), args =  "summary"            )
+        write_mc         = fl.sink(                   write_mc_, args = ("mc", "event_number"))
+        write_deconv     = fl.sink(  deconv_writer(h5out=h5out), args =  "deconv_dst"         )
+        write_summary    = fl.sink( summary_writer(h5out=h5out), args =  "summary"            )
         return push(source = hdst_from_files(files_in),
-                    pipe   = pipe(
-                        fl.slice(*event_range, close_all=True),
-                        print_every(print_mod)                ,
-                        event_count_in           .spy         ,
-                        cut_sensors                           ,
-                        drop_sensors                          ,
-                        deconvolve_events                     ,
-                        event_count_out          .spy         ,
-                        fl.fork(write_mc        ,
-                                write_deconv    ,
-                                write_summary   ,
-                                write_event_info))                 ,
+                    pipe   = pipe(fl.slice(*event_range, close_all=True),
+                                  print_every(print_mod)                ,
+                                  event_count_in.spy                    ,
+                                  cut_sensors                           ,
+                                  drop_sensors                          ,
+                                  deconvolve_events                     ,
+                                  event_count_out.spy                   ,
+                                  fl.fork(write_mc        ,
+                                          write_deconv    ,
+                                          write_summary   ,
+                                          write_event_info))            ,
                     result = dict(events_in  = event_count_in .future,
                                   events_out = event_count_out.future))
