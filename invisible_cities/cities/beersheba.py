@@ -72,11 +72,11 @@ def deconvolve_signal(psf_fname       : str,
                       bin_size        : List[float],
                       diffusion       : Tuple[float]=(1., 1., 0.3),
                       n_iterations_g  : int=0,
-                      energy_type     : str='Ec',
-                      deconv_mode     : str='joint',
+                      energy_type     : HitEnergy=HitEnergy.Ec,
+                      deconv_mode     : DeconvolutionMode=DeconvolutionMode.joint,
                       n_dim           : int=2,
-                      cut_type        : str='abs',
-                      inter_method    : str='cubic'):
+                      cut_type        : CutType=CutType.abs,
+                      inter_method    : InterpolationMethod=InterpolationMethod.cubic):
 
     """
     Applies Lucy Richardson deconvolution to SiPM response with a
@@ -111,19 +111,15 @@ def deconvolve_signal(psf_fname       : str,
     diffusion     = np.array(diffusion      [:n_dim])
 
     psfs          = pd.read_hdf(psf_fname)
-    deconvolution = deconvolve(n_iterations, iteration_tol, sample_width, bin_size, InterpolationMethod(inter_method))
-
-    e_type        = HitEnergy(energy_type)
-    cut_mode      = CutType(cut_type)
-    deco_mode     = DeconvolutionMode(deconv_mode)
+    deconvolution = deconvolve(n_iterations, iteration_tol, sample_width, bin_size, inter_method)
 
     def deconvolve_hits(df, z):
-        if   deco_mode is DeconvolutionMode.joint:
+        if   deconv_mode is DeconvolutionMode.joint:
             psf = psfs.loc[(psfs.z == find_nearest(psfs.z,                 z)) &
                            (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
                            (psfs.y == find_nearest(psfs.y, df.Ypeak.unique()))  , :]
             deconv_image, pos = deconvolution(tuple(df.loc[:, v].values for v in dimensions), df.Q.values, psf)
-        elif deco_mode is DeconvolutionMode.separate:
+        elif deconv_mode is DeconvolutionMode.separate:
             psf_z0 = psfs.loc[(psfs.z == find_nearest(psfs.z,                 0)) &
                               (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
                               (psfs.y == find_nearest(psfs.y, df.Ypeak.unique()))  , :]
@@ -137,7 +133,7 @@ def deconvolve_signal(psf_fname       : str,
 
             deconv_image = nan_to_num(richardson_lucy(deconv_image, psf, n_iterations_g, iteration_tol))
 
-        return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_mode, e_cut, n_dim)
+        return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
 
     def apply_deconvolution(df):
         deco_dst = []
@@ -148,7 +144,7 @@ def deconvolve_signal(psf_fname       : str,
             else :
                 deconvolved_hits = pd.concat([deconvolve_hits(hits.loc[hits.Z == z, :], z) for z in hits.Z.unique()], ignore_index=True)
 
-            distribute_energy(deconvolved_hits, hits, e_type)
+            distribute_energy(deconvolved_hits, hits, energy_type)
             deco_dst.append(deconvolved_hits)
 
         return pd.concat(deco_dst, ignore_index=True)
@@ -175,8 +171,8 @@ def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
     return df
 
 
-def distribute_energy(df, hdst, e_type):
-    df['E'] = df.E / df.E.sum() * hdst.loc[:, e_type.value].sum()
+def distribute_energy(df, hdst, energy_type):
+    df['E'] = df.E / df.E.sum() * hdst.loc[:, energy_type.value].sum()
 
 
 def cut_over_Q(q_cut, redist_var):
@@ -321,6 +317,11 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
     drop_sensors      = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
                                args = 'hdst_cut',
                                out  = 'hdst_drop')
+
+    deconv_params['cut_type'    ] = CutType            (deconv_params['cut_type'    ])
+    deconv_params['deconv_mode' ] = DeconvolutionMode  (deconv_params['deconv_mode' ])
+    deconv_params['energy_type' ] = HitEnergy          (deconv_params['energy_type' ])
+    deconv_params['inter_method'] = InterpolationMethod(deconv_params['inter_method'])
 
     deconvolve_events = fl.map(deconvolve_signal(**deconv_params),
                                args = 'hdst_drop',
