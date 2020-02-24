@@ -141,8 +141,8 @@ def deconvolution_input(sample_width : List[float],
                 unique_z   = np.unique(data[2])
                 bins_z     = np.zeros(unique_z.size + 3)
                 bins_z[2:-2] = shift_to_bin_centers(unique_z)
-                bins_z[ :2 ] = data[2].min() - np.array([1.5, 0.5]) * mean_diff
-                bins_z[-2: ] = data[2].max() + np.array([0.5, 1.5]) * mean_diff
+                bins_z[ :2 ] = data[2].min() - np.asarray([1.5, 0.5]) * mean_diff
+                bins_z[-2: ] = data[2].max() + np.asarray([0.5, 1.5]) * mean_diff
                 allbins.append(bins_z)
 
             Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
@@ -239,7 +239,7 @@ def deconvolve(n_iterations  : int,
     deconv_image : Deconvolved image.
     inter_pos     : Coordinates of the deconvolved image.
     """
-    var_name     = np.array(['xr', 'yr', 'zr'])
+    var_name     = np.asarray(['xr', 'yr', 'zr'])
     deconv_input = deconvolution_input(sample_width, bin_size, inter_method)
 
     def deconvolve(data   : Tuple[np.ndarray, ...],

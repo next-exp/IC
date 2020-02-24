@@ -105,10 +105,10 @@ def deconvolve_signal(psf_fname       : str,
     apply_deconvolution : Function that takes hits and returns the
     deconvolved data.
     """
-    dimensions    = np.array(['X', 'Y', 'Z'][:n_dim])
-    sample_width  = np.array(sample_width           )
-    bin_size      = np.array(bin_size               )
-    diffusion     = np.array(diffusion              )
+    dimensions    = np.asarray(['X', 'Y', 'Z'][:n_dim])
+    sample_width  = np.asarray(sample_width           )
+    bin_size      = np.asarray(bin_size               )
+    diffusion     = np.asarray(diffusion              )
 
     psfs          = pd.read_hdf(psf_fname)
     deconvolution = deconvolve(n_iterations, iteration_tol, sample_width, bin_size, inter_method)
