@@ -119,7 +119,7 @@ def deconvolve_signal(psf_fname       : str,
         psf = psfs.loc[(psfs.z == find_nearest(psfs.z, zz)) &
                        (psfs.x == find_nearest(psfs.x, xx)) &
                        (psfs.y == find_nearest(psfs.y, yy)) , :]
-        deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.Q.values, psf)
+        deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf)
         if deconv_mode is DeconvolutionMode.separate:
             dist     = multivariate_normal(np.zeros(n_dim), diffusion**2 * z / 10)
             cols     = tuple(f"{v.lower()}r" for v in dimensions)
@@ -131,19 +131,15 @@ def deconvolve_signal(psf_fname       : str,
 
         return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
 
+    def apply_deconvolution_groupby(df):
+        new_df = df.copy()
+        new_df.loc[:, "NormQ"] = new_df.Q / new_df.Q.sum()
+        deconvolved_hits = pd.concat([deconvolve_hits(df_z, z) for z, df_z in new_df.groupby("Z")])
+        distribute_energy(deconvolved_hits, new_df, energy_type)
+        return deconvolved_hits
+
     def apply_deconvolution(df):
-        deco_dst = []
-        for peak, hits in df.groupby("npeak"):
-            hits.loc[:, "Q"] = hits.Q/hits.Q.sum()
-            if n_dim == 3:
-                deconvolved_hits =            deconvolve_hits(hits, weighted_mean_and_std(hits.Z, hits.E)[0])
-            else :
-                deconvolved_hits = pd.concat([deconvolve_hits(hits.loc[hits.Z == z, :], z) for z in hits.Z.unique()], ignore_index=True)
-
-            distribute_energy(deconvolved_hits, hits, energy_type)
-            deco_dst.append(deconvolved_hits)
-
-        return pd.concat(deco_dst, ignore_index=True)
+        return df.groupby(['npeak']).apply(apply_deconvolution_groupby).reset_index(drop=True)
 
     return apply_deconvolution
 
