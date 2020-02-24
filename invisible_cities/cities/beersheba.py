@@ -94,7 +94,7 @@ def deconvolve_signal(psf_fname       : str,
     energy_type     : Energy type ('E' or 'Ec', see Esmeralda) used for assignment.
     deconv_mode     : 'joint' or 'separate', 1 or 2 step deconvolution, see description later.
     diffusion       : Diffusion coefficients in each dimension for 'separate' mode.
-    n_dim           : Number of dimensions to apply the method (2 or 3).
+    n_dim           : Number of dimensions to apply the method (usually 2).
     cut_type        : Cut mode to the deconvolution output ('abs' or 'rel') using e_cut
                       'abs': cut on the absolute value of the hits.
                       'rel': cut on the relative value (to the max) of the hits.
@@ -106,9 +106,9 @@ def deconvolve_signal(psf_fname       : str,
     deconvolved data.
     """
     dimensions    = np.array(['X', 'Y', 'Z'][:n_dim])
-    sample_width  = np.array(sample_width   [:n_dim])
-    bin_size      = np.array(bin_size       [:n_dim])
-    diffusion     = np.array(diffusion      [:n_dim])
+    sample_width  = np.array(sample_width           )
+    bin_size      = np.array(bin_size               )
+    diffusion     = np.array(diffusion              )
 
     psfs          = pd.read_hdf(psf_fname)
     deconvolution = deconvolve(n_iterations, iteration_tol, sample_width, bin_size, inter_method)
@@ -292,9 +292,9 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
             Diffusion coefficients in each dimmension (mm/sqrt(cm))
             used if deconv_mode is 'separate'
         n_dim         : int
-            Number of dimensions used in deconvolution, either 2 or 3:
+            Number of dimensions used in deconvolution, currently only 2 max:
             n_dim = 2 -> slice by slice XY deconvolution.
-            n_dim = 3 -> XYZ deconvolution.
+            n_dim = 3 -> XYZ deconvolution (in the works).
         inter_method  : str (None, 'linear', 'cubic')
             Sensor interpolation method. If None, no interpolation will be applied.
             'cubic' not supported for 3D deconvolution.
@@ -310,6 +310,18 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
     MC info : (if run number <=0)
     SUMMARY : Table with the summary from Esmeralda.
 """
+
+    deconv_params['cut_type'    ] = CutType            (deconv_params['cut_type'    ])
+    deconv_params['deconv_mode' ] = DeconvolutionMode  (deconv_params['deconv_mode' ])
+    deconv_params['energy_type' ] = HitEnergy          (deconv_params['energy_type' ])
+    deconv_params['inter_method'] = InterpolationMethod(deconv_params['inter_method'])
+
+    for p in ['sample_width', 'bin_size', 'diffusion']:
+        if len(deconv_params[p]) != deconv_params['n_dim']:
+            raise ValueError         ("Parameter {p} dimensions do not match n-dim parameter")
+    if deconv_params['n_dim'] > 2:
+        raise     NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
+
     cut_sensors       = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
                                args = 'hdst',
                                out  = 'hdst_cut')
@@ -317,11 +329,6 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
     drop_sensors      = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
                                args = 'hdst_cut',
                                out  = 'hdst_drop')
-
-    deconv_params['cut_type'    ] = CutType            (deconv_params['cut_type'    ])
-    deconv_params['deconv_mode' ] = DeconvolutionMode  (deconv_params['deconv_mode' ])
-    deconv_params['energy_type' ] = HitEnergy          (deconv_params['energy_type' ])
-    deconv_params['inter_method'] = InterpolationMethod(deconv_params['inter_method'])
 
     deconvolve_events = fl.map(deconvolve_signal(**deconv_params),
                                args = 'hdst_drop',
