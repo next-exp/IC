@@ -114,15 +114,16 @@ def deconvolve_signal(psf_fname       : str,
     deconvolution = deconvolve(n_iterations, iteration_tol, sample_width, bin_size, inter_method)
 
     def deconvolve_hits(df, z):
+        x, y = df.Xpeak.unique(), df.Ypeak.unique()
         if   deconv_mode is DeconvolutionMode.joint:
-            psf = psfs.loc[(psfs.z == find_nearest(psfs.z,                 z)) &
-                           (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
-                           (psfs.y == find_nearest(psfs.y, df.Ypeak.unique()))  , :]
+            psf = psfs.loc[(psfs.z == find_nearest(psfs.z, z)) &
+                           (psfs.x == find_nearest(psfs.x, x)) &
+                           (psfs.y == find_nearest(psfs.y, y)) , :]
             deconv_image, pos = deconvolution(tuple(df.loc[:, v].values for v in dimensions), df.Q.values, psf)
         elif deconv_mode is DeconvolutionMode.separate:
-            psf_z0 = psfs.loc[(psfs.z == find_nearest(psfs.z,                 0)) &
-                              (psfs.x == find_nearest(psfs.x, df.Xpeak.unique())) &
-                              (psfs.y == find_nearest(psfs.y, df.Ypeak.unique()))  , :]
+            psf_z0 = psfs.loc[(psfs.z == find_nearest(psfs.z, 0)) &
+                              (psfs.x == find_nearest(psfs.x, x)) &
+                              (psfs.y == find_nearest(psfs.y, y)) , :]
             deconv_image, pos = deconvolution(tuple(df.loc[:, v].values for v in dimensions), df.Q.values, psf_z0)
 
             dist     = multivariate_normal(np.zeros(n_dim), diffusion**2 * z / 10)
