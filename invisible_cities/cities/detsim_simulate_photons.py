@@ -31,7 +31,7 @@ def pes_at_sensors(xs         : np.array,
                    y_sensors  : np.array,
                    z_sensors  : float   ,
                    psf : Callable) -> np.array:
-    """compute the photons that reach each sensor, based on
+    """compute the pes that reach each sensor, based on
     the sensor psf"""
 
     dxs = xs[:, np.newaxis] - x_sensors
