@@ -324,16 +324,14 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
     if deconv_params['n_dim'] > 2:
         raise     NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
 
-    cut_sensors       = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
-                               args = 'hdst',
-                               out  = 'hdst_cut')
+    cut_sensors       = fl.map(cut_over_Q       (deconv_params.pop("q_cut")    , ['E', 'Ec']),
+                               item = 'hdst')
 
-    drop_sensors      = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
-                               args = 'hdst_cut',
-                               out  = 'hdst_drop')
+    drop_sensors      = fl.map(drop_isolated    (deconv_params.pop("drop_dist"), ['E', 'Ec']),
+                               item = 'hdst')
 
     deconvolve_events = fl.map(deconvolve_signal(**deconv_params),
-                               args = 'hdst_drop',
+                               args = 'hdst',
                                out  = 'deconv_dst')
 
     event_count_in  = fl.spy_count()
