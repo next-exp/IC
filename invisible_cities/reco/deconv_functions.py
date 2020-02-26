@@ -135,7 +135,7 @@ def deconvolution_input(sample_width : List[float],
         nbin    = [np.ceil(np.diff(rang)/bin_size[i]).astype('int')[0]              for i, rang in enumerate(  ranges    )]
 
         if inter_method is not InterpolationMethod.none:
-            allbins = [np.linspace(*rang, np.ceil(np.diff(rang)/sample_width[i])+1) for i, rang in enumerate(  ranges[:2])]
+            allbins = [np.linspace(*rang, int(np.ceil(np.diff(rang)/sample_width[i])+1)) for i, rang in enumerate(  ranges[:2])]
             if len(data) == 3:
                 mean_diff  = np.diff(data[2]).mean()
                 unique_z   = np.unique(data[2])
