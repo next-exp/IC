@@ -220,16 +220,26 @@ def deconv_writer(h5out, compression='ZLIB4', group_name='DECO', table_name='Eve
     For a given open table returns a writer for deconvolution hits dataframe
     """
     def write_deconv(df):
-        return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string)
+        return _store_pandas_as_tables(h5out              = h5out             ,
+                                       df                 = df                ,
+                                       compression        = compression       ,
+                                       group_name         = 'DECO'            ,
+                                       table_name         = 'Events'          ,
+                                       descriptive_string = 'Deconvolved hits')
     return write_deconv
 
 
-def summary_writer(h5out, compression='ZLIB4', group_name='SUMMARY', table_name='Events', descriptive_string='Event summary information'):
+def summary_writer(h5out, compression='ZLIB4'):
     """
     For a given open table returns a writer for summary info dataframe
     """
     def write_summary(df):
-        return _store_pandas_as_tables(h5out = h5out, df = df, compression = compression, group_name = group_name, table_name = table_name, descriptive_string = descriptive_string)
+        return _store_pandas_as_tables(h5out              = h5out                      ,
+                                       df                 = df                         ,
+                                       compression        = compression                ,
+                                       group_name         = 'SUMMARY'                  ,
+                                       table_name         = 'Events'                   ,
+                                       descriptive_string = 'Event summary information')
     return write_summary
 
 
