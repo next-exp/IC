@@ -1,9 +1,9 @@
-import numpy  as np
+import numpy as np
 
 ##################################
 ######### WAVEFORMS ##############
 ##################################
-def bincounter(xs : np.array, 
+def bincounter(xs : np.array,
                dx : float =1.,
                x0 : float =0.):
     ixs = ((xs - x0) // dx).astype(int)
@@ -14,8 +14,8 @@ def create_waveform(times : np.array,
                     pes   : np.array,
                     bins  : np.array,
                     wf_bin_time : float,
-                    nsamples    : float) -> np.array:
-    wf   = np.zeros(len(bins))
+                    nsamples    : int) -> np.array:
+    wf = np.zeros(len(bins))
 
     if np.sum(pes)==0:
         return wf
@@ -36,7 +36,7 @@ def create_sensor_waveforms(times   : np.array,
                             pes_at_sensors : np.array,
                             wf_buffer_time : float,
                             wf_bin_time    : float,
-                            nsamples : float,
+                            nsamples : int,
                             poisson  : bool =False) -> np.array:
     bins = np.arange(0, wf_buffer_time, wf_bin_time)
     wfs = np.array([create_waveform(times, pes, bins, wf_bin_time, nsamples) for pes in pes_at_sensors])
