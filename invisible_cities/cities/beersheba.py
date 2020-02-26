@@ -164,7 +164,7 @@ def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
 
 
 def distribute_energy(df, hdst, energy_type):
-    df['E'] = df.E / df.E.sum() * hdst.loc[:, energy_type.value].sum()
+    df.loc[:, 'E'] = df.E / df.E.sum() * hdst.loc[:, energy_type.value].sum()
 
 
 def cut_over_Q(q_cut, redist_var):
