@@ -54,7 +54,8 @@ def test_cut_and_redistribute_df(df):
 def test_drop_isolated_sensors():
     size          = 20
     dist          = [10.1, 10.1]
-    x, y          = random.choices(np.linspace(-200, 200, 41), k=size), random.choices(np.linspace(-200, 200, 41), k=size)
+    x             = random.choices(np.linspace(-200, 200, 41), k=size)
+    y             = random.choices(np.linspace(-200, 200, 41), k=size)
     q             = np.random.uniform(0,  20, size)
     e             = np.random.uniform(0, 200, size)
     df            = pd.DataFrame({'X':x, 'Y':y, 'Q':q, 'E':e})
@@ -96,7 +97,10 @@ def test_interpolate_signal():
     values = g.pdf(list(zip(points[0], points[1]))) # Value of g at the known coordinates.
     n_interpolation = 12 #How many points to interpolate
 
-    out_interpolation = interpolate_signal(values, points, (np.linspace(-0.05, 1.05, 6), np.linspace(-0.05, 1.05, 6)), [n_interpolation, n_interpolation], InterpolationMethod.cubic)
+    out_interpolation = interpolate_signal(values, points,
+                                           (np.linspace(-0.05, 1.05, 6), np.linspace(-0.05, 1.05, 6)),
+                                           [n_interpolation, n_interpolation],
+                                           InterpolationMethod.cubic)
     inter_charge      = out_interpolation[0].flatten()
     inter_position    = out_interpolation[1]
     ref_position = shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1))
@@ -171,6 +175,7 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf   = pd.DataFrame(psf)
 
-    deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T, iterations=15, iter_thr=0.0001)
+    deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T,
+                           iterations=15, iter_thr=0.0001)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
