@@ -83,15 +83,14 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
         x       = df.X.values
         y       = df.Y.values
         xy      = np.column_stack((x,y))
-
         dr2     = cdist(xy, xy) # compute all square distances
 
-        if np.any(dr2>0):
-            closest = np.apply_along_axis(lambda d: d[d > 0].min(), 1, dr2) # find closest that it's not itself
-            mask_xy = closest <= dist # take those with at least one neighbour
-            pass_df = df.loc[mask_xy, :]
-        else:
-            return df.loc[[False]*len(df)]
+        if not np.any(dr2>0):
+            return df.iloc[:0]
+
+        closest = np.apply_along_axis(lambda d: d[d > 0].min(), 1, dr2) # find closest that it's not itself
+        mask_xy = closest <= dist # take those with at least one neighbour
+        pass_df = df.loc[mask_xy, :]
 
         with np.errstate(divide='ignore'):
             columns  = pass_df.loc[:, variables]
