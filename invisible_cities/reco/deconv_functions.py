@@ -130,11 +130,10 @@ def deconvolution_input(sample_width : List[float],
                             weight      : np.ndarray
                            ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
-        ranges  = [[data[i].min() - 1.5 * sw, data[i].max() + 1.5 * sw]             for i, sw   in enumerate(sample_width)]
-        nbin    = [np.ceil(np.diff(rang)/bin_size[i]).astype('int')[0]              for i, rang in enumerate(  ranges    )]
-
+        ranges = [[coord.min() - 1.5 * sw, coord.max() + 1.5 * sw]     for coord,   sw in zip(data      , sample_width)]
+        nbin   = [np.ceil(np.diff(rang)/bs).astype('int')[0]           for bs   , rang in zip(bin_size  ,       ranges)]
         if inter_method is not InterpolationMethod.none:
-            allbins = [np.linspace(*rang, int(np.ceil(np.diff(rang)/sample_width[i])+1)) for i, rang in enumerate(  ranges[:2])]
+            allbins = [np.linspace(*rang, np.ceil(np.diff(rang)/sw)+1) for rang ,   sw in zip(ranges[:2], sample_width)]
             if len(data) == 3:
                 mean_diff  = np.diff(data[2]).mean()
                 unique_z   = np.unique(data[2])
@@ -181,7 +180,7 @@ def interpolate_signal(Hs           : np.ndarray,
     H1         : Interpolated distribution weights.
     new_points : Interpolated coordinates.
     """
-    new_points   = np.meshgrid(*(shift_to_bin_centers(np.linspace(np.min(edge), np.max(edge), nbin[i]+1)) for i, edge in enumerate(edges)), indexing='ij')
+    new_points   = np.meshgrid(*(shift_to_bin_centers(np.linspace(np.min(edge), np.max(edge), n + 1)) for n, edge in zip(nbin, edges)), indexing='ij')
     new_points   = tuple      (new_p.flatten() for new_p in new_points)
 
     H1 = interpolate.griddata(inter_points, Hs.flatten(), new_points, method=inter_method.value)
