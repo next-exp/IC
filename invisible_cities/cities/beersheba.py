@@ -131,15 +131,15 @@ def deconvolve_signal(psf_fname       : str,
 
         return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
 
-    def apply_deconvolution_groupby(df):
-        new_df = df.copy()
-        new_df.loc[:, "NormQ"] = new_df.Q / new_df.Q.sum()
-        deconvolved_hits = pd.concat([deconvolve_hits(df_z, z) for z, df_z in new_df.groupby("Z")])
-        distribute_energy(deconvolved_hits, new_df, energy_type)
-        return deconvolved_hits
-
     def apply_deconvolution(df):
-        return df.groupby(['npeak']).apply(apply_deconvolution_groupby).reset_index(drop=True)
+        deco_dst = []
+        df.loc[:, "NormQ"] = df.groupby(["event", "npeak"]).Q.transform(lambda q: q / q.sum())
+        for peak, hits in df.groupby("npeak"):
+            deconvolved_hits = pd.concat([deconvolve_hits(df_z, z) for z, df_z in hits.groupby("Z")], ignore_index=True)
+            distribute_energy(deconvolved_hits, hits, energy_type)
+            deco_dst.append(deconvolved_hits)
+
+        return pd.concat(deco_dst, ignore_index=True)
 
     return apply_deconvolution
 
