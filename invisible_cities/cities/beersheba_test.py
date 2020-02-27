@@ -38,7 +38,7 @@ def test_distribute_energy(ICDATADIR):
     distribute_energy(true_dst2, true_dst1, HitEnergy.E)
 
     assert np.allclose(true_dst2.E.values/true_dst2.E.sum(), true_dst3.E.values/true_dst3.E.sum())
-    assert true_dst1.E.sum() == true_dst2.E.sum()
+    assert np.isclose (true_dst1.E.sum(), true_dst2.E.sum())
 
 
 def test_beersheba_contains_all_tables(ICDIR, ICDATADIR, PSFDIR, config_tmpdir):
