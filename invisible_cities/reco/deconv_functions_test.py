@@ -40,8 +40,8 @@ from scipy.stats              import multivariate_normal
                             column('C', dtype=float, elements=floats(1, 1e3, allow_nan=False, allow_infinity=False))],
                      index=range_indexes(min_size=2, max_size=10)))
 def test_cut_and_redistribute_df(df):
-    cut_var       = random.choice (df.columns)
-    redist_var    = random.choices(df.columns, k=3)
+    cut_var       = 'A'
+    redist_var    = ['B', 'C']
     cut_val       = round(df[cut_var].mean(), 3)
     cut_condition = f'{cut_var} > {cut_val:.3f}'
     cut_function  = cut_and_redistribute_df(cut_condition, redist_var)
