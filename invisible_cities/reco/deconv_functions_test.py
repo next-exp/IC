@@ -8,11 +8,15 @@ import pandas as pd
 from hypothesis              import given
 from hypothesis              import reproduce_failure
 from hypothesis.strategies   import text
+from hypothesis.strategies   import integers
 from hypothesis.strategies   import floats
 from hypothesis.strategies   import tuples
 from hypothesis.strategies   import composite
 from hypothesis.strategies   import lists
 from hypothesis.extra.numpy  import arrays
+from hypothesis.extra.pandas import data_frames
+from hypothesis.extra.pandas import column
+from hypothesis.extra.pandas import range_indexes
 
 from .. reco.deconv_functions import cut_and_redistribute_df
 from .. reco.deconv_functions import drop_isolated_sensors
@@ -28,19 +32,13 @@ from .. core.testing_utils    import assert_dataframes_close
 
 from ..   io.dst_io           import load_dst
 
-from scipy.stats             import multivariate_normal
-
-characters = string.ascii_letters
-
-@composite
-def dst(draw, dimension=[3,10]):
-    columns = draw(lists(text(characters, min_size=5), min_size=dimension[0], max_size=dimension[1], unique=True))
-    values  = draw(lists(arrays(float, 100, floats(1, 1e3, allow_nan=False, allow_infinity=False)), min_size=len(columns), max_size=len(columns)))
-
-    return pd.DataFrame({k:v for k, v in zip(columns, values)})
+from scipy.stats              import multivariate_normal
 
 
-@given(dst())
+@given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3, allow_nan=False, allow_infinity=False)),
+                            column('B', dtype=float, elements=floats(1, 1e3, allow_nan=False, allow_infinity=False)),
+                            column('C', dtype=float, elements=floats(1, 1e3, allow_nan=False, allow_infinity=False))],
+                     index=range_indexes(min_size=2, max_size=10)))
 def test_cut_and_redistribute_df(df):
     cut_var       = random.choice (df.columns)
     redist_var    = random.choices(df.columns, k=3)
