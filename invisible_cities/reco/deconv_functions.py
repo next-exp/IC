@@ -134,15 +134,6 @@ def deconvolution_input(sample_width : List[float],
         nbin   = [np.ceil(np.diff(rang)/bs).astype('int')[0]           for bs   , rang in zip(bin_size  ,       ranges)]
         if inter_method is not InterpolationMethod.none:
             allbins = [np.linspace(*rang, np.ceil(np.diff(rang)/sw)+1) for rang ,   sw in zip(ranges[:2], sample_width)]
-            if len(data) == 3:
-                mean_diff  = np.diff(data[2]).mean()
-                unique_z   = np.unique(data[2])
-                bins_z     = np.zeros(unique_z.size + 3)
-                bins_z[2:-2] = shift_to_bin_centers(unique_z)
-                bins_z[ :2 ] = data[2].min() - np.asarray([1.5, 0.5]) * mean_diff
-                bins_z[-2: ] = data[2].max() + np.asarray([0.5, 1.5]) * mean_diff
-                allbins.append(bins_z)
-
             Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
         else:
             Hs, edges = np.histogramdd(data, bins=nbin   , normed=False, weights=weight, range=ranges)
