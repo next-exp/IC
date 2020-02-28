@@ -22,7 +22,7 @@ def create_xy_function(array : np.array,
     ymin, ymax, dy = yaxis
     def function(x, y, z=0):
         x = np.clip(x, xmin, xmax-0.1*dx)
-        y = np.clip(y, ymin, ymax-0.1*dx)
+        y = np.clip(y, ymin, ymax-0.1*dy)
         ix = ((x-xmin)//dx).astype(int)
         iy = ((y-ymin)//dy).astype(int)
         return array[ix, iy]
