@@ -58,7 +58,7 @@ from .. core.exceptions    import NoHits
 from .. core.exceptions    import NoVoxels
 from .. core.testing_utils import assert_bhit_equality
 
-from .. io.mcinfo_io    import load_mchits
+from .. io.mcinfo_io    import load_mchits_df
 from .. io.hits_io      import load_hits
 
 from .. types.ic_types        import xy
@@ -239,20 +239,15 @@ def test_voxels_with_no_hits(ICDATADIR):
     size = 15.
     vox_size = np.array([size,size,size],dtype=np.float16)
 
-    with tb.open_file(hit_file, mode='r') as h5in:
-
-        h5extents = h5in.root.MC.extents
-        events_in_file = len(h5extents)
-
-        for i in range(events_in_file):
-            if h5extents[i]['evt_number'] == evt_number:
-                evt_line = i
-                break
-
-        hits_dict = load_mchits(hit_file, (evt_line, evt_line+1))
-        voxels = voxelize_hits(hits_dict[evt_number], vox_size, strict_voxel_size=False)
-        for v in voxels:
-            assert sum(h.E for h in v.hits) == v.E
+    hits_df  = load_mchits_df(hit_file)
+    ## Patch to BHits, temporary?
+    evt_hits = hits_df.loc[evt_number][['x', 'y', 'z', 'energy']].values
+    bhit_seq = [BHit(*hit) for hit in evt_hits]
+    voxels = voxelize_hits(bhit_seq                 ,
+                           vox_size                 ,
+                           strict_voxel_size = False)
+    for v in voxels:
+        assert sum(h.E for h in v.hits) == v.E
 
 
 @given(bunch_of_hits, box_sizes)
