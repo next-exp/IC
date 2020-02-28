@@ -4,6 +4,8 @@ import tables as tb
 
 from pytest import mark
 
+from pandas.testing import assert_frame_equal
+
 from .. core                 import system_of_units as units
 from .. core.core_functions  import in_range
 from .. core.testing_utils   import assert_dataframes_close
@@ -12,7 +14,7 @@ from .. core.testing_utils   import assert_MChit_equality
 from .. core.configure       import configure
 from .. core.configure       import all as all_events
 from .. io                   import dst_io as dio
-from .. io.mcinfo_io         import load_mchits
+from .. io.mcinfo_io         import load_mchits_df
 
 from .  penthesilea          import penthesilea
 
@@ -195,16 +197,15 @@ def test_penthesilea_produces_mcinfo(KrMC_pmaps_filename, KrMC_hdst, config_tmpd
 @mark.serial
 def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
     penthesilea_output_path = os.path.join(config_tmpdir,'Kr_HDST_with_MC.h5')
-    penthesilea_evts        = load_mchits(penthesilea_output_path)
+    penthesilea_evts        = load_mchits_df(penthesilea_output_path)
     true_evts               = KrMC_true_hits.hdst
 
-    assert sorted(penthesilea_evts) == sorted(true_evts)
-    for evt_no, true_hits in true_evts.items():
-        penthesilea_hits = penthesilea_evts[evt_no]
-
-        assert len(penthesilea_hits) == len(true_hits)
-        for p_hit, t_hit in zip(penthesilea_hits, true_hits):
-            assert_MChit_equality(p_hit, t_hit)
+    assert np.all(penthesilea_evts.index.levels[0] == true_evts.index.levels[0])
+    for evt_no in true_evts.index.levels[0]:
+        penthesilea_evt = penthesilea_evts.loc[evt_no]
+        true_evt        = true_evts       .loc[evt_no]
+        assert len(penthesilea_evt) == len(true_evt)
+        assert_frame_equal(penthesilea_evt, true_evt)
 
 
 def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
