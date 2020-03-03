@@ -17,13 +17,11 @@ import tables as tb
 import pandas as pd
 
 from scipy.stats import multivariate_normal
-from numpy       import sqrt
 from numpy       import nan_to_num
 
 from typing      import Tuple
 from typing      import List
 from typing      import Callable
-from typing      import Optional
 
 from enum        import auto
 
@@ -43,8 +41,6 @@ from .. reco.deconv_functions import drop_isolated_sensors
 from .. reco.deconv_functions import deconvolve
 from .. reco.deconv_functions import richardson_lucy
 from .. reco.deconv_functions import InterpolationMethod
-
-from .. core.core_functions   import weighted_mean_and_std
 
 from .. io.       mcinfo_io   import mc_info_writer
 from .. io.run_and_event_io   import run_and_event_writer

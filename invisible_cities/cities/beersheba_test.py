@@ -3,11 +3,6 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
-from pytest                    import mark
-
-from .. core.system_of_units_c import units
-from .. core.configure         import configure
-from .. core.configure         import all         as all_events
 from .. io                     import dst_io      as dio
 from .  beersheba              import beersheba
 from .  beersheba              import create_deconvolution_df

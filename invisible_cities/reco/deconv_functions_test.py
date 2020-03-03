@@ -1,19 +1,10 @@
-import os
-import string
 import random
 import numpy  as np
 import pandas as pd
 
 
 from hypothesis              import given
-from hypothesis              import reproduce_failure
-from hypothesis.strategies   import text
-from hypothesis.strategies   import integers
 from hypothesis.strategies   import floats
-from hypothesis.strategies   import tuples
-from hypothesis.strategies   import composite
-from hypothesis.strategies   import lists
-from hypothesis.extra.numpy  import arrays
 from hypothesis.extra.pandas import data_frames
 from hypothesis.extra.pandas import column
 from hypothesis.extra.pandas import range_indexes

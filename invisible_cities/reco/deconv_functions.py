@@ -1,11 +1,8 @@
-import numexpr
-
 import numpy  as np
 import pandas as pd
 
 from typing  import List
 from typing  import Tuple
-from typing  import Optional
 from typing  import Callable
 
 from enum    import auto
@@ -16,7 +13,6 @@ from scipy.signal import convolve
 from scipy.spatial.distance import cdist
 
 from ..core .core_functions import shift_to_bin_centers
-from ..core .core_functions import in_range
 
 from .. types.ic_types      import AutoNameEnumBase
 
