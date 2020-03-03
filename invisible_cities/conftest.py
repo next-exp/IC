@@ -7,7 +7,6 @@ from pandas      import DataFrame
 from collections import namedtuple
 
 from . core .system_of_units_c import units
-from . core .configure         import all
 from . evm  . pmaps_test       import pmaps
 from . io   . pmaps_io         import load_pmaps_as_df
 from . io   . pmaps_io         import load_pmaps
@@ -743,10 +742,10 @@ def db(request):
 
 @pytest.fixture(scope='function')
 def deconvolution_config(ICDIR, ICDATADIR, PSFDIR, config_tmpdir):
-    PATH_IN     = os.path.join(ICDATADIR    , "exact_Kr_tracks_with_MC.h5")
-    PATH_OUT    = os.path.join(config_tmpdir,            "beersheba_MC.h5")
-    config_path = os.path.join(ICDIR        ,      "config/beersheba.conf")
-    nevt_req    = all
+    PATH_IN     = os.path.join(ICDATADIR    ,    "test_Xe2nu_NEW_v1.2.0_cdst.5_62.h5")
+    PATH_OUT    = os.path.join(config_tmpdir,                       "beersheba_MC.h5")
+    config_path = os.path.join(ICDIR        ,                 "config/beersheba.conf")
+    nevt_req    = 3
     conf        = dict(files_in      = PATH_IN ,
                        file_out      = PATH_OUT,
                        event_range   = nevt_req,

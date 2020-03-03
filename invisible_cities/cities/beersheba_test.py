@@ -56,7 +56,7 @@ def test_beersheba_contains_all_tables(deconvolution_config):
 
 
 def test_beersheba_exact_result(ICDATADIR, deconvolution_config):
-    true_out         = os.path.join(ICDATADIR    , "exact_Kr_deconvolution_with_MC.h5")
+    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution.h5")
     conf, PATH_OUT   = deconvolution_config
     conf['deconv_params']['cut_type'] = 'rel'
     beersheba(**conf)
