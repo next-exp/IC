@@ -148,13 +148,12 @@ def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
     elif cut_type is CutType.rel:
         sel_deconv = deconv_e / deconv_e.max() > e_cut
 
-    ene         = deconv_e[sel_deconv]
-    df['event'] = [hits.event.unique()[0]] * len(ene)
-    df['npeak'] = [hits.npeak.unique()[0]] * len(ene)
-    df['Z']     = [hits.Z    .unique()[0]] * len(ene) if n_dim == 2 else pos[2][sel_deconv]
+    df['E']     = deconv_e[sel_deconv]
+    df['event'] = hits.event.unique()[0]
+    df['npeak'] = hits.npeak.unique()[0]
+    df['Z']     = hits.Z    .unique()[0] if n_dim == 2 else pos[2][sel_deconv]
     df['X']     = pos[0][sel_deconv]
     df['Y']     = pos[1][sel_deconv]
-    df['E']     = ene
 
     return df
 
