@@ -215,6 +215,19 @@ def drop_isolated(distance, redist_var):
     return drop_isolated
 
 
+def events_filter_no_hits() -> Callable:
+    """
+    Filter for Beersheba flow. The flow stops if:
+        1. there are no hits (after droping isolated sensors)
+    """
+    def filter_events(df) -> bool:
+        if len(df) > 0:
+            return True
+        else:
+            return False
+    return filter_events
+
+
 def deconv_writer(h5out, compression='ZLIB4', group_name='DECO', table_name='Events', descriptive_string='Deconvolved hits'):
     """
     For a given open table returns a writer for deconvolution hits dataframe
@@ -324,18 +337,20 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
     if deconv_params['n_dim'] > 2:
         raise     NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
 
-    cut_sensors       = fl.map(cut_over_Q       (deconv_params.pop("q_cut")    , ['E', 'Ec']),
-                               item = 'hdst')
+    cut_sensors           = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
+                                   item = 'hdst')
+    drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
+                                   item = 'hdst')
+    filter_events_no_hits = fl.map(events_filter_no_hits(),
+                                   args = 'hdst',
+                                   out  = 'hdst_passed_no_hits')
+    deconvolve_events     = fl.map(deconvolve_signal(**deconv_params),
+                                   args = 'hdst',
+                                   out  = 'deconv_dst')
 
-    drop_sensors      = fl.map(drop_isolated    (deconv_params.pop("drop_dist"), ['E', 'Ec']),
-                               item = 'hdst')
-
-    deconvolve_events = fl.map(deconvolve_signal(**deconv_params),
-                               args = 'hdst',
-                               out  = 'deconv_dst')
-
-    event_count_in  = fl.spy_count()
-    event_count_out = fl.spy_count()
+    event_count_in        = fl.spy_count()
+    event_count_out       = fl.spy_count()
+    events_passed_no_hits = fl.count_filter(bool, args = "hdst_passed_no_hits")
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
         # Define writers
@@ -351,6 +366,8 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
                                   event_count_in.spy                    ,
                                   cut_sensors                           ,
                                   drop_sensors                          ,
+                                  filter_events_no_hits                 ,
+                                  events_passed_no_hits    .filter      ,
                                   deconvolve_events                     ,
                                   event_count_out.spy                   ,
                                   fl.fork(write_mc        ,
