@@ -171,7 +171,9 @@ def interpolate_signal(Hs           : np.ndarray,
     H1         : Interpolated distribution weights.
     new_points : Interpolated coordinates.
     """
-    new_points   = np.meshgrid(*(shift_to_bin_centers(np.linspace(np.min(edge), np.max(edge), n + 1)) for n, edge in zip(nbin, edges)), indexing='ij')
+    coords = (shift_to_bin_centers(np.linspace(np.min(edge), np.max(edge), n + 1))
+              for n, edge in zip(nbin, edges))
+    new_points   = np.meshgrid(*coords, indexing='ij')
     new_points   = tuple      (new_p.flatten() for new_p in new_points)
 
     H1 = interpolate.griddata(inter_points, Hs.flatten(), new_points, method=inter_method.value)
