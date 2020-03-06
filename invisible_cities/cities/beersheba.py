@@ -133,14 +133,14 @@ def deconvolve_signal(psf_fname       : str,
         if   deconv_mode is DeconvolutionMode.joint:
             pass
         elif deconv_mode is DeconvolutionMode.separate:
-            dist     = multivariate_normal(np.zeros(n_dim), diffusion**2 * z * units.mm / units.cm) #Z is in mm in cdst
-            cols     = tuple(f"{v.lower()}r" for v in dimensions)
-            psf_cols = psf.loc[:, cols]
-            gaus     = dist.pdf(psf_cols.values)
-            psf      = gaus.reshape(psf_cols.nunique())
+            dist         = multivariate_normal(np.zeros(n_dim), diffusion**2 * z * units.mm / units.cm) #Z is in mm in cdst
+            cols         = tuple(f"{v.lower()}r" for v in dimensions)
+            psf_cols     = psf.loc[:, cols]
+            gaus         = dist.pdf(psf_cols.values)
+            psf          = gaus.reshape(psf_cols.nunique())
+            deconv_image = nan_to_num(richardson_lucy(deconv_image, psf, n_iterations_g, iteration_tol))
         else:
             raise ValueError(f'deconv_mode {deconv_mode} is not a valid deconvolution mode.')
-            deconv_image = nan_to_num(richardson_lucy(deconv_image, psf, n_iterations_g, iteration_tol))
 
         return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
 
