@@ -40,14 +40,15 @@ def test_beersheba_contains_all_tables(deconvolution_config):
     conf, PATH_OUT = deconvolution_config
     beersheba(**conf)
     with tb.open_file(PATH_OUT) as h5out:
-        assert "MC"           in h5out.root
-        assert "MC/extents"   in h5out.root
-        assert "MC/hits"      in h5out.root
-        assert "MC/particles" in h5out.root
-        assert "DECO/Events"  in h5out.root
-        assert "Run"          in h5out.root
-        assert "Run/events"   in h5out.root
-        assert "Run/runInfo"  in h5out.root
+        assert "MC"             in h5out.root
+        assert "MC/extents"     in h5out.root
+        assert "MC/hits"        in h5out.root
+        assert "MC/particles"   in h5out.root
+        assert "DECO/Events"    in h5out.root
+        assert "Summary/Events" in h5out.root
+        assert "Run"            in h5out.root
+        assert "Run/events"     in h5out.root
+        assert "Run/runInfo"    in h5out.root
 
 
 def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
@@ -55,9 +56,10 @@ def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
     conf, PATH_OUT   = deconvolution_config
     beersheba(**conf)
 
-    tables = ( "MC/extents"  , "MC/hits"     , "MC/particles" , "MC/generators",
-               "DECO/Events" ,
-               "Run/events"  , "Run/runInfo" )
+    tables = ( "MC/extents"    , "MC/hits"     , "MC/particles" , "MC/generators",
+               "DECO/Events"   ,
+               "Summary/Events",
+               "Run/events"    , "Run/runInfo" )
 
     with tb.open_file(true_out)  as true_output_file:
         with tb.open_file(PATH_OUT) as      output_file:
@@ -75,9 +77,10 @@ def test_beersheba_exact_result_separate(ICDATADIR, deconvolution_config):
     conf['deconv_params']['n_iterations_g'] = 50
     beersheba(**conf)
 
-    tables = ( "MC/extents"  , "MC/hits"     , "MC/particles" , "MC/generators",
-               "DECO/Events" ,
-               "Run/events"  , "Run/runInfo" )
+    tables = ( "MC/extents"    , "MC/hits"     , "MC/particles" , "MC/generators",
+               "DECO/Events"   ,
+               "Summary/Events",
+               "Run/events"    , "Run/runInfo" )
 
     with tb.open_file(true_out)  as true_output_file:
         with tb.open_file(PATH_OUT) as      output_file:
