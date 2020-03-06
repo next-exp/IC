@@ -195,7 +195,9 @@ def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
         sel_deconv = deconv_e > e_cut
     elif cut_type is CutType.rel:
         sel_deconv = deconv_e / deconv_e.max() > e_cut
-
+    else:
+        raise ValueError(f'cut_type {cut_type} is not a valid cut type.')
+        
     df['E']     = deconv_e[sel_deconv]
     df['event'] = hits.event.unique()[0]
     df['npeak'] = hits.npeak.unique()[0]
