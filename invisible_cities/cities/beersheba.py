@@ -27,7 +27,7 @@ from enum        import auto
 
 from .  components import city
 from .  components import print_every
-from .  components import hdst_from_files
+from .  components import cdst_from_files
 
 from .. reco                  import tbl_functions           as tbl
 from .. dataflow              import dataflow                as fl
@@ -203,7 +203,7 @@ def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
     return df
 
 
-def distribute_energy(df, hdst, energy_type):
+def distribute_energy(df, cdst, energy_type):
     '''
     Assign the energy of a dataframe (cdst) to another dataframe (deconvolved),
     distributing it according to the charge fraction of each deconvolution hit.
@@ -211,10 +211,10 @@ def distribute_energy(df, hdst, energy_type):
     Parameters
     ----------
     df          : Deconvolved dataframe with a single S2 (npeak)
-    hdst        : Dataframe with the sensor response (usually a cdst)
+    cdst        : Dataframe with the sensor response (usually a cdst)
     energy_type : HitEnergy with which 'type' of energy should be assigned.
     '''
-    df.loc[:, 'E'] = df.E / df.E.sum() * hdst.loc[:, energy_type.value].sum()
+    df.loc[:, 'E'] = df.E / df.E.sum() * cdst.loc[:, energy_type.value].sum()
 
 
 def cut_over_Q(q_cut, redist_var):
@@ -235,9 +235,9 @@ def cut_over_Q(q_cut, redist_var):
     cut = cut_and_redistribute_df(f"Q > {q_cut}", redist_var)
 
     def cut_over_Q(df):
-        hdst = df.groupby(['event', 'npeak']).apply(cut).reset_index(drop=True)
+        cdst = df.groupby(['event', 'npeak']).apply(cut).reset_index(drop=True)
 
-        return hdst
+        return cdst
 
     return cut_over_Q
 
@@ -388,19 +388,19 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
         raise     NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
 
     cut_sensors           = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
-                                   item = 'hdst')
+                                   item = 'cdst')
     drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
-                                   item = 'hdst')
+                                   item = 'cdst')
     filter_events_no_hits = fl.map(events_filter_no_hits(),
-                                   args = 'hdst',
-                                   out  = 'hdst_passed_no_hits')
+                                   args = 'cdst',
+                                   out  = 'cdst_passed_no_hits')
     deconvolve_events     = fl.map(deconvolve_signal(**deconv_params),
-                                   args = 'hdst',
+                                   args = 'cdst',
                                    out  = 'deconv_dst')
 
     event_count_in        = fl.spy_count()
     event_count_out       = fl.spy_count()
-    events_passed_no_hits = fl.count_filter(bool, args = "hdst_passed_no_hits")
+    events_passed_no_hits = fl.count_filter(bool, args = "cdst_passed_no_hits")
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
         # Define writers
@@ -410,7 +410,7 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
         write_mc         = fl.sink(                   write_mc_, args = ("mc", "event_number"))
         write_deconv     = fl.sink(  deconv_writer(h5out=h5out), args =  "deconv_dst"         )
         write_summary    = fl.sink( summary_writer(h5out=h5out), args =  "summary"            )
-        return push(source = hdst_from_files(files_in),
+        return push(source = cdst_from_files(files_in),
                     pipe   = pipe(fl.slice(*event_range, close_all=True),
                                   print_every(print_mod)                ,
                                   event_count_in.spy                    ,

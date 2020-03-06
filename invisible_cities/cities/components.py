@@ -283,11 +283,11 @@ def pmap_from_files(paths):
             # it needs to be given the WHOLE TABLE (rather than a
             # single event) at a time.
 
-def hdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, MCInfo, int, float]]]:
+def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields HitsCollection, pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
     for path in paths:
         try:
-            hdst_df    = load_dst (path,   'CHITS', 'lowTh')
+            cdst_df    = load_dst (path,   'CHITS', 'lowTh')
             summary_df = load_dst (path, 'Summary', 'Events')
         except tb.exceptions.NoSuchNodeError:
             continue
@@ -297,15 +297,15 @@ def hdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
                 run_number  = get_run_number(h5in)
                 event_info  = get_event_info(h5in)
                 evts, _     = zip(*event_info[:])
-                bool_mask   = np.in1d(evts, hdst_df.event.unique())
+                bool_mask   = np.in1d(evts, cdst_df.event.unique())
                 event_info  = event_info[bool_mask]
                 mc_info     = get_mc_info_safe(h5in, run_number)
             except (tb.exceptions.NoSuchNodeError, IndexError):
                 continue
-            check_lengths(event_info, hdst_df.event.unique())
+            check_lengths(event_info, cdst_df.event.unique())
             for evtinfo in event_info:
                 event_number, timestamp = evtinfo
-                yield dict(hdst    = hdst_df   .loc[hdst_df   .event==event_number],
+                yield dict(cdst    = cdst_df   .loc[cdst_df   .event==event_number],
                            summary = summary_df.loc[summary_df.event==event_number],
                            mc=mc_info, run_number=run_number,
                            event_number=event_number, timestamp=timestamp)
