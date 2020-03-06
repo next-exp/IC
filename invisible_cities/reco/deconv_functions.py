@@ -224,7 +224,7 @@ def deconvolve(n_iterations  : int,
     deconv_image : Deconvolved image.
     inter_pos     : Coordinates of the deconvolved image.
     """
-    var_name     = np.asarray(['xr', 'yr', 'zr'])
+    var_name     = np.array(['xr', 'yr', 'zr'])
     deconv_input = deconvolution_input(sample_width, bin_size, inter_method)
 
     def deconvolve(data   : Tuple[np.ndarray, ...],

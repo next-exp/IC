@@ -63,7 +63,7 @@ def test_drop_isolated_sensors():
 
 
 def test_interpolate_signal():
-    ref_interpolation = np.asarray([0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   ,
+    ref_interpolation = np.array([0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   ,
                                   0.   , 0.   , 0.   , 0.   , 0.17 , 0.183, 0.188, 0.195, 0.202,
                                   0.2  , 0.2  , 0.19 , 0.181, 0.169, 0.   , 0.   , 0.308, 0.328,
                                   0.344, 0.353, 0.363, 0.365, 0.356, 0.345, 0.327, 0.305, 0.   ,
