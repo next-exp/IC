@@ -128,7 +128,8 @@ def deconvolve_signal(psf_fname       : str,
                        (psfs.x == find_nearest(psfs.x, xx)) &
                        (psfs.y == find_nearest(psfs.y, yy)) , :]
         deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf)
-        if  deconv_mode is DeconvolutionMode.joint:
+
+        if   deconv_mode is DeconvolutionMode.joint:
             pass
         elif deconv_mode is DeconvolutionMode.separate:
             dist     = multivariate_normal(np.zeros(n_dim), diffusion**2 * z / 10)
