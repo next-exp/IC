@@ -82,11 +82,11 @@ def test_interpolate_signal():
 
     g = multivariate_normal((0.5, 0.5), (0.05, 0.5))
 
-    grid_x, grid_y = np.mgrid[0:1:12j, 0:1:12j] #Grid for interpolation
-    points = np.meshgrid(np.linspace(0, 1, 6), np.linspace(0, 1, 6)) # Coordinates where g is known
-    points = (points[0].flatten(), points[1].flatten())
-    values = g.pdf(list(zip(points[0], points[1]))) # Value of g at the known coordinates.
-    n_interpolation = 12 #How many points to interpolate
+    grid_x, grid_y  = np.mgrid[0:1:12j, 0:1:12j] # Grid for interpolation
+    points          = np.meshgrid(np.linspace(0, 1, 6), np.linspace(0, 1, 6)) # Coordinates where g is known
+    points          = (points[0].flatten(), points[1].flatten())
+    values          = g.pdf(list(zip(points[0], points[1]))) # Value of g at the known coordinates.
+    n_interpolation = 12 # How many points to interpolate
 
     out_interpolation = interpolate_signal(values, points,
                                            (np.linspace(-0.05, 1.05, 6), np.linspace(-0.05, 1.05, 6)),
@@ -94,7 +94,7 @@ def test_interpolate_signal():
                                            InterpolationMethod.cubic)
     inter_charge      = out_interpolation[0].flatten()
     inter_position    = out_interpolation[1]
-    ref_position = shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1))
+    ref_position      = shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1))
 
     assert np.allclose(ref_interpolation, np.around(inter_charge, decimals=3))
     assert np.allclose(ref_position     , sorted(set(inter_position[0])))
@@ -149,22 +149,25 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
 def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load (data_hdst_deconvolved)
     hdst              = load_dst(data_hdst, 'RECO', 'Events')
+
     h = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z = h.Z.mean()
     h = h.groupby(['X', 'Y']).Q.sum().reset_index()
     h = h[h.Q>40]
+
     interpolator = deconvolution_input([10., 10.], [1., 1.], InterpolationMethod.cubic)
     inter = interpolator((h.X, h.Y), h.Q)
 
-    x, y = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
+    x , y  = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
     xx, yy = np.meshgrid(x, y)
     xx, yy = xx.flatten(), yy.flatten()
-    psf = {}
+
+    psf           = {}
     psf['factor'] = multivariate_normal([0., 0.], [1.027 * np.sqrt(z/10)] * 2).pdf(list(zip(xx, yy)))
     psf['xr']     = xx
     psf['yr']     = yy
-    psf['zr']     = [z] * len(xx)
-    psf   = pd.DataFrame(psf)
+    psf['zr']     = z
+    psf           = pd.DataFrame(psf)
 
     deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T,
                            iterations=15, iter_thr=0.0001)
