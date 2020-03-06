@@ -284,7 +284,8 @@ def pmap_from_files(paths):
             # single event) at a time.
 
 def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, MCInfo, int, float]]]:
-    """Reader of the files, yields HitsCollection, pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
+    """Reader of the files, yields collected hits,
+       pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
     for path in paths:
         try:
             cdst_df    = load_dst (path,   'CHITS', 'lowTh')
