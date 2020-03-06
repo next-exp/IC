@@ -197,7 +197,7 @@ def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
         sel_deconv = deconv_e / deconv_e.max() > e_cut
     else:
         raise ValueError(f'cut_type {cut_type} is not a valid cut type.')
-        
+
     df['E']     = deconv_e[sel_deconv]
     df['event'] = hits.event.unique()[0]
     df['npeak'] = hits.npeak.unique()[0]
@@ -239,7 +239,7 @@ def cut_over_Q(q_cut, redist_var):
     '''
     cut = cut_and_redistribute_df(f"Q > {q_cut}", redist_var)
 
-    def cut_over_Q(df):
+    def cut_over_Q(df):  # df shall be an event cdst
         cdst = df.groupby(['event', 'npeak']).apply(cut).reset_index(drop=True)
 
         return cdst
@@ -262,7 +262,7 @@ def drop_isolated(distance, redist_var):
     """
     drop = drop_isolated_sensors(distance, redist_var)
 
-    def drop_isolated(df):
+    def drop_isolated(df): # df shall be an event cdst
         df = df.groupby(['event', 'npeak']).apply(drop).reset_index(drop=True)
 
         return df
