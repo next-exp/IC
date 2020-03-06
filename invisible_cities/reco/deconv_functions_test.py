@@ -26,9 +26,9 @@ from ..   io.dst_io           import load_dst
 from scipy.stats              import multivariate_normal
 
 
-@given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3, allow_nan=False, allow_infinity=False)),
-                            column('B', dtype=float, elements=floats(1, 1e3, allow_nan=False, allow_infinity=False)),
-                            column('C', dtype=float, elements=floats(1, 1e3, allow_nan=False, allow_infinity=False))],
+@given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3)),
+                            column('B', dtype=float, elements=floats(1, 1e3)),
+                            column('C', dtype=float, elements=floats(1, 1e3))],
                      index=range_indexes(min_size=2, max_size=10)))
 def test_cut_and_redistribute_df(df):
     cut_var       = 'A'
