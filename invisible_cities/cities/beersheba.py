@@ -29,27 +29,28 @@ from .  components import city
 from .  components import print_every
 from .  components import cdst_from_files
 
-from .. reco                  import tbl_functions           as tbl
-from .. dataflow              import dataflow                as fl
+from .. reco                   import tbl_functions           as tbl
+from .. dataflow               import dataflow                as fl
 
-from .. dataflow.dataflow     import push
-from .. dataflow.dataflow     import pipe
+from .. dataflow.dataflow      import push
+from .. dataflow.dataflow      import pipe
 
-from .. reco.deconv_functions import find_nearest
-from .. reco.deconv_functions import cut_and_redistribute_df
-from .. reco.deconv_functions import drop_isolated_sensors
-from .. reco.deconv_functions import deconvolve
-from .. reco.deconv_functions import richardson_lucy
-from .. reco.deconv_functions import InterpolationMethod
+from .. reco.deconv_functions  import find_nearest
+from .. reco.deconv_functions  import cut_and_redistribute_df
+from .. reco.deconv_functions  import drop_isolated_sensors
+from .. reco.deconv_functions  import deconvolve
+from .. reco.deconv_functions  import richardson_lucy
+from .. reco.deconv_functions  import InterpolationMethod
 
-from .. io.       mcinfo_io   import mc_info_writer
-from .. io.run_and_event_io   import run_and_event_writer
-from .. io.          dst_io   import _store_pandas_as_tables
+from .. io.       mcinfo_io    import mc_info_writer
+from .. io.run_and_event_io    import run_and_event_writer
+from .. io.          dst_io    import _store_pandas_as_tables
 
-from .. evm.event_model       import HitEnergy
+from .. evm.event_model        import HitEnergy
 
-from .. types.ic_types        import AutoNameEnumBase
+from .. types.ic_types         import AutoNameEnumBase
 
+from .. core.system_of_units_c import units
 
 class CutType          (AutoNameEnumBase):
     abs = auto()
@@ -132,7 +133,7 @@ def deconvolve_signal(psf_fname       : str,
         if   deconv_mode is DeconvolutionMode.joint:
             pass
         elif deconv_mode is DeconvolutionMode.separate:
-            dist     = multivariate_normal(np.zeros(n_dim), diffusion**2 * z / 10)
+            dist     = multivariate_normal(np.zeros(n_dim), diffusion**2 * z * units.mm / units.cm) #Z is in mm in cdst
             cols     = tuple(f"{v.lower()}r" for v in dimensions)
             psf_cols = psf.loc[:, cols]
             gaus     = dist.pdf(psf_cols.values)
