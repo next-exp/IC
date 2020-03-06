@@ -270,14 +270,12 @@ def drop_isolated(distance, redist_var):
     return drop_isolated
 
 
-def events_filter_no_hits() -> Callable:
+def check_nonempty_dataframe(df) -> bool:
     """
     Filter for Beersheba flow. The flow stops if:
         1. there are no hits (after droping isolated sensors)
     """
-    def check_nonempty_dataframe(df) -> bool:
-        return len(df) > 0
-    return check_nonempty_dataframe
+    return len(df) > 0
 
 
 def deconv_writer(h5out, compression='ZLIB4'):
@@ -395,7 +393,7 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
                                    item = 'cdst')
     drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
                                    item = 'cdst')
-    filter_events_no_hits = fl.map(events_filter_no_hits(),
+    filter_events_no_hits = fl.map(check_nonempty_dataframe,
                                    args = 'cdst',
                                    out  = 'cdst_passed_no_hits')
     deconvolve_events     = fl.map(deconvolve_signal(**deconv_params),
