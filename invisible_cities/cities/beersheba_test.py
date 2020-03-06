@@ -50,10 +50,9 @@ def test_beersheba_contains_all_tables(deconvolution_config):
         assert "Run/runInfo"  in h5out.root
 
 
-def test_beersheba_exact_result(ICDATADIR, deconvolution_config):
-    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution.h5")
+def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
+    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_joint.h5")
     conf, PATH_OUT   = deconvolution_config
-    conf['deconv_params']['cut_type'] = 'rel'
     beersheba(**conf)
 
     tables = ( "MC/extents"  , "MC/hits"     , "MC/particles" , "MC/generators",
@@ -65,6 +64,28 @@ def test_beersheba_exact_result(ICDATADIR, deconvolution_config):
             for table in tables:
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
+
+
+def test_beersheba_exact_result_separate(ICDATADIR, deconvolution_config):
+    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_separate.h5")
+    conf, PATH_OUT   = deconvolution_config
+    conf['deconv_params']['deconv_mode'   ] = 'separate'
+    conf['deconv_params']['n_iterations'  ] = 50
+    conf['deconv_params']['n_iterations_g'] = 50
+    beersheba(**conf)
+
+    tables = ( "MC/extents"  , "MC/hits"     , "MC/particles" , "MC/generators",
+               "DECO/Events" ,
+               "Run/events"  , "Run/runInfo" )
+
+    with tb.open_file(true_out)  as true_output_file:
+        with tb.open_file(PATH_OUT) as      output_file:
+            for table in tables:
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                print(got)
+                print(expected)
                 assert_tables_equality(got, expected)
 
 
