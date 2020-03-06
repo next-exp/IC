@@ -293,7 +293,7 @@ def deconv_writer(h5out, compression='ZLIB4'):
                                        table_name         = 'Events'          ,
                                        descriptive_string = 'Deconvolved hits')
     return write_deconv
-    
+
 
 @city
 def beersheba(files_in, file_out, compression, event_range, print_mod, run_number,
@@ -374,7 +374,7 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
 
     for p in ['sample_width', 'bin_size', 'diffusion']:
         if len(deconv_params[p]) != deconv_params['n_dim']:
-            raise ValueError         ("Parameter {p} dimensions do not match n-dim parameter")
+            raise ValueError         ("Parameter {p} dimensions do not match n_dim parameter")
     if deconv_params['n_dim'] > 2:
         raise     NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
 
