@@ -156,8 +156,9 @@ def deconvolve_signal(psf_fname       : str,
         Dataframe with the deconvolved event.
         '''
         deco_dst = []
-        df.loc[:, "NormQ"] = df.groupby(["event", "npeak"]).Q.transform(lambda q: q / q.sum())
+        df.loc[:, "NormQ"] = np.nan
         for peak, hits in df.groupby("npeak"):
+            hits.loc[:, "NormQ"] = hits.loc[:, 'Q'] / hits.loc[:, 'Q'].sum()
             deconvolved_hits = pd.concat([deconvolve_hits(df_z, z) for z, df_z in hits.groupby("Z")], ignore_index=True)
             distribute_energy(deconvolved_hits, hits, energy_type)
             deco_dst.append(deconvolved_hits)
