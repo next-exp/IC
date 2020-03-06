@@ -67,12 +67,12 @@ def deconvolve_signal(psf_fname       : str,
                       sample_width    : List[float],
                       bin_size        : List[float],
                       diffusion       : Tuple[float]=(1., 1., 0.3),
-                      n_iterations_g  : int=0,
                       energy_type     : HitEnergy=HitEnergy.Ec,
                       deconv_mode     : DeconvolutionMode=DeconvolutionMode.joint,
                       n_dim           : int=2,
                       cut_type        : CutType=CutType.abs,
-                      inter_method    : InterpolationMethod=InterpolationMethod.cubic):
+                      inter_method    : InterpolationMethod=InterpolationMethod.cubic,
+                      n_iterations_g  : int=0):
 
     """
     Applies Lucy Richardson deconvolution to SiPM response with a
@@ -83,7 +83,6 @@ def deconvolve_signal(psf_fname       : str,
     psf_fname       : Point-spread function.
     e_cut           : Cut in relative value to the max voxel over the deconvolution output.
     n_iterations    : Number of Lucy-Richardson iterations
-    n_iterations_g  : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
     iteration_tol   : Stopping threshold (difference between iterations).
     sample_width    : Sampling size of the sensors.
     bin_size        : Size of the interpolated bins.
@@ -95,6 +94,7 @@ def deconvolve_signal(psf_fname       : str,
                       'abs': cut on the absolute value of the hits.
                       'rel': cut on the relative value (to the max) of the hits.
     inter_method    : Interpolation method.
+    n_iterations_g  : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
 
     Returns
     ----------
@@ -329,41 +329,43 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
          Has to be negative for MC runs
 
     deconv_params : dict
-        q_cut         : float
+        q_cut          : float
             Minimum charge (pes) on a hit (SiPM)
-        drop_dist     : float
+        drop_dist      : float
             Distance to check if a SiPM is isolated
-        psf_fname     : string (filepath)
+        psf_fname      : string (filepath)
             Filename of the psf
-        e_cut         : float
+        e_cut          : float
             Cut over the deconvolution output, arbitrary units (order 1e-3)
-        n_iterations  : int
+        n_iterations   : int
             Number of iterations to be applied if the iteration_tol criteria
             is not fulfilled before.
-        iteration_tol : float
+        iteration_tol  : float
             Stopping threshold (difference between iterations). I
-        sample_width  : list[float]
+        sample_width   : list[float]
             Sampling of the sensors in each dimension (usuallly the pitch).
-        bin_size      : list[float]
+        bin_size       : list[float]
             Bin size (mm) of the deconvolved image.
-        energy_type   : str ('E', 'Ec')
+        energy_type    : str ('E', 'Ec')
             Marks which energy from Esmeralda (E = uncorrected, Ec = corrected)
             should be assigned to the deconvolved track.
-        deconv_mode   : str ('joint', 'separate')
+        deconv_mode    : str ('joint', 'separate')
             - 'joint' deconvolves once using a PSF based on Z that includes
                both EL and diffusion spread aproximated to a Z range.
             - 'separate' deconvolves twice, first using the EL PSF, then using
                a gaussian PSF based on the exact Z position of the slice.
-        diffusion     : tuple(float)
+        diffusion      : tuple(float)
             Diffusion coefficients in each dimmension (mm/sqrt(cm))
             used if deconv_mode is 'separate'
-        n_dim         : int
+        n_dim          : int
             Number of dimensions used in deconvolution, currently only 2 max:
             n_dim = 2 -> slice by slice XY deconvolution.
             n_dim = 3 -> XYZ deconvolution (in the works).
-        inter_method  : str (None, 'linear', 'cubic')
+        inter_method   : str (None, 'linear', 'cubic')
             Sensor interpolation method. If None, no interpolation will be applied.
             'cubic' not supported for 3D deconvolution.
+        n_iterations_g : int
+            Number of Lucy-Richardson iterations for gaussian in 'separate mode'
 
     ----------
     Input
