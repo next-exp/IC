@@ -740,7 +740,7 @@ def dbnext100():
 def db(request):
     return request.param
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='function') # Needs to be function as the config dict is modified when running
 def deconvolution_config(ICDIR, ICDATADIR, PSFDIR, config_tmpdir):
     PATH_IN     = os.path.join(ICDATADIR    ,    "test_Xe2nu_NEW_v1.2.0_cdst.5_62.h5")
     PATH_OUT    = os.path.join(config_tmpdir,                       "beersheba_MC.h5")
