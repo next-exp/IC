@@ -128,15 +128,19 @@ def deconvolution_input(sample_width : List[float],
 
         ranges = [[coord.min() - 1.5 * sw, coord.max() + 1.5 * sw]     for coord,   sw in zip(data      , sample_width)]
         nbin   = [np.ceil(np.diff(rang)/bs).astype('int')[0]           for bs   , rang in zip(bin_size  ,       ranges)]
-        if inter_method is not InterpolationMethod.none:
+
+        if inter_method in (InterpolationMethod.linear, InterpolationMethod.cubic, InterpolationMethod.nearest):
             allbins = [np.linspace(*rang, np.ceil(np.diff(rang)/sw)+1) for rang ,   sw in zip(ranges[:2], sample_width)]
             Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
-        else:
+        elif inter_method is InterpolationMethod.none:
             Hs, edges = np.histogramdd(data, bins=nbin   , normed=False, weights=weight, range=ranges)
+        else:
+            raise ValueError(f'inter_method {inter_method} is not a valid interpolatin mode.')
 
         inter_points = np.meshgrid(*(shift_to_bin_centers(edge) for edge in edges), indexing='ij')
         inter_points = tuple      (inter_p.flatten() for inter_p in inter_points)
-        if inter_method is not InterpolationMethod.none:
+
+        if inter_method in (InterpolationMethod.linear, InterpolationMethod.cubic, InterpolationMethod.nearest):
             Hs, inter_points = interpolate_signal(Hs, inter_points, edges, nbin, inter_method)
 
         return Hs, inter_points
