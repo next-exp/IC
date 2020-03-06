@@ -275,12 +275,12 @@ def events_filter_no_hits() -> Callable:
     Filter for Beersheba flow. The flow stops if:
         1. there are no hits (after droping isolated sensors)
     """
-    def filter_events(df) -> bool:
+    def check_nonempty_dataframe(df) -> bool:
         if len(df) > 0:
             return True
         else:
             return False
-    return filter_events
+    return check_nonempty_dataframe
 
 
 def deconv_writer(h5out, compression='ZLIB4'):
