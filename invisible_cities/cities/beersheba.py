@@ -226,7 +226,7 @@ def events_filter_no_hits() -> Callable:
     return filter_events
 
 
-def deconv_writer(h5out, compression='ZLIB4', group_name='DECO', table_name='Events', descriptive_string='Deconvolved hits'):
+def deconv_writer(h5out, compression='ZLIB4'):
     """
     For a given open table returns a writer for deconvolution hits dataframe
     """
