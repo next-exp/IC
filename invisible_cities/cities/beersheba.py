@@ -110,6 +110,18 @@ def deconvolve_signal(psf_fname       : str,
     deconvolution = deconvolve(n_iterations, iteration_tol, sample_width, bin_size, inter_method)
 
     def deconvolve_hits(df, z):
+        '''
+        Given an slice, applies deconvolution using the PSF
+        associated to the passed z.
+
+        Parameters
+        ----------
+        df : Original input dataframe for the deconvolution (single slice cdst)
+        z  : Longitudinal position of the slice.
+        Returns
+        ----------
+        Dataframe with the deconvolved slice.
+        '''
         xx, yy = df.Xpeak.unique(), df.Ypeak.unique()
         zz     = z if deconv_mode is DeconvolutionMode.joint else 0
         psf = psfs.loc[(psfs.z == find_nearest(psfs.z, zz)) &
@@ -131,6 +143,18 @@ def deconvolve_signal(psf_fname       : str,
         return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
 
     def apply_deconvolution(df):
+        '''
+        Given an event cdst, it iterates through its S2s and applies deconvolution
+        to each S2.
+
+        Parameters
+        ----------
+        df : Original input dataframe for the deconvolution (event cdst)
+
+        Returns
+        ----------
+        Dataframe with the deconvolved event.
+        '''
         deco_dst = []
         df.loc[:, "NormQ"] = df.groupby(["event", "npeak"]).Q.transform(lambda q: q / q.sum())
         for peak, hits in df.groupby("npeak"):
@@ -144,6 +168,24 @@ def deconvolve_signal(psf_fname       : str,
 
 
 def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
+    '''
+    Given the output of the deconvolution, it cuts the low energy voxels and
+    creates a dataframe object with the resulting output.
+
+    Parameters
+    ----------
+    hits     : Original input dataframe for the deconvolution (S2 cdst)
+    deconv_e : Deconvolution energy distribution (n-dim array)
+    pos      : Position of the deconvolved hits.
+    cut_type : CutType object with the cut mode.
+    e_cut    : Value for the energy cut.
+    n_dim    : Number of dimensions of the deconvolution (tipically 2 as of now)
+
+    Returns
+    ----------
+    df       : Dataframe with the deconvolution input after energy cutting.
+    '''
+
     df  = pd.DataFrame(columns=['event', 'npeak', 'X', 'Y', 'Z', 'E'])
 
     if   cut_type is CutType.abs:
@@ -162,6 +204,16 @@ def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
 
 
 def distribute_energy(df, hdst, energy_type):
+    '''
+    Assign the energy of a dataframe (cdst) to another dataframe (deconvolved),
+    distributing it according to the charge fraction of each deconvolution hit.
+
+    Parameters
+    ----------
+    df          : Deconvolved dataframe with a single S2 (npeak)
+    hdst        : Dataframe with the sensor response (usually a cdst)
+    energy_type : HitEnergy with which 'type' of energy should be assigned.
+    '''
     df.loc[:, 'E'] = df.E / df.E.sum() * hdst.loc[:, energy_type.value].sum()
 
 

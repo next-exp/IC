@@ -82,7 +82,7 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
         dr2     = cdist(xy, xy) # compute all square distances
 
         if not np.any(dr2>0):
-            return df.iloc[:0]
+            return df.iloc[:0] # Empty dataframe
 
         closest = np.apply_along_axis(lambda d: d[d > 0].min(), 1, dr2) # find closest that it's not itself
         mask_xy = closest <= dist # take those with at least one neighbour
