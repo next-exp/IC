@@ -276,10 +276,7 @@ def events_filter_no_hits() -> Callable:
         1. there are no hits (after droping isolated sensors)
     """
     def check_nonempty_dataframe(df) -> bool:
-        if len(df) > 0:
-            return True
-        else:
-            return False
+        return len(df) > 0
     return check_nonempty_dataframe
 
 
