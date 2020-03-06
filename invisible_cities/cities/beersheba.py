@@ -29,6 +29,8 @@ from .  components import city
 from .  components import print_every
 from .  components import cdst_from_files
 
+from .  esmeralda  import summary_writer
+
 from .. reco                   import tbl_functions           as tbl
 from .. dataflow               import dataflow                as fl
 
@@ -51,6 +53,7 @@ from .. evm.event_model        import HitEnergy
 from .. types.ic_types         import AutoNameEnumBase
 
 from .. core.system_of_units_c import units
+
 
 class CutType          (AutoNameEnumBase):
     abs = auto()
@@ -290,21 +293,7 @@ def deconv_writer(h5out, compression='ZLIB4'):
                                        table_name         = 'Events'          ,
                                        descriptive_string = 'Deconvolved hits')
     return write_deconv
-
-
-def summary_writer(h5out, compression='ZLIB4'):
-    """
-    For a given open table returns a writer for summary info dataframe
-    """
-    def write_summary(df):
-        return _store_pandas_as_tables(h5out              = h5out                      ,
-                                       df                 = df                         ,
-                                       compression        = compression                ,
-                                       group_name         = 'SUMMARY'                  ,
-                                       table_name         = 'Events'                   ,
-                                       descriptive_string = 'Event summary information')
-    return write_summary
-
+    
 
 @city
 def beersheba(files_in, file_out, compression, event_range, print_mod, run_number,
