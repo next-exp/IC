@@ -32,7 +32,6 @@ from .. core.system_of_units_c import                units
 from .. reco                   import        tbl_functions as tbl
 from .. reco.  pmaps_functions import          RebinMethod
 from .. io  .          hits_io import          hits_writer
-from .. io  .        mcinfo_io import       mc_info_writer
 from .. io  . run_and_event_io import run_and_event_writer
 from .. io  .          kdst_io import            kr_writer
 from .. io  .  event_filter_io import  event_filter_writer
@@ -43,11 +42,13 @@ from .. dataflow.dataflow import     push
 from .. dataflow.dataflow import     pipe
 
 from .  components import                  city
+from .  components import          copy_mc_info
 from .  components import           print_every
 from .  components import       peak_classifier
 from .  components import   compute_xy_position
 from .  components import       pmap_from_files
 from .  components import           hit_builder
+from .  components import               collect
 from .  components import build_pointlike_event as build_pointlike_event_
 
 @city
@@ -82,31 +83,35 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, detecto
     event_count_in  = df.spy_count()
     event_count_out = df.spy_count()
 
+    evtnum_collect = collect()
+
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
 
         # Define writers...
-        write_mc_             = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
-
-        write_mc              = df.sink(write_mc_                  , args=(        "mc", "event_number"             ))
         write_event_info      = df.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_hits            = df.sink(         hits_writer(h5out), args="hits")
         write_pointlike_event = df.sink(           kr_writer(h5out), args="pointlike_event")
         write_pmap_filter     = df.sink( event_filter_writer(h5out, "s12_selector"), args=("event_number", "pmap_passed"))
 
-        return push(source = pmap_from_files(files_in),
-                    pipe   = pipe(
-                        df.slice(*event_range, close_all=True),
-                        print_every(print_mod)                ,
-                        event_count_in       .spy             ,
-                        classify_peaks                        ,
-                        pmap_passed                           ,
-                        df.branch(write_pmap_filter)          ,
-                        pmap_select          .filter          ,
-                        event_count_out      .spy             ,
-                        df.fork((build_hits           , write_hits           ),
-                                (build_pointlike_event, write_pointlike_event),
-                                                        write_mc             ,
-                                                        write_event_info     )),
-                    result = dict(events_in  = event_count_in .future,
-                                  events_out = event_count_out.future,
-                                  selection  = pmap_select    .future))
+        result = push(source = pmap_from_files(files_in),
+                      pipe   = pipe(df.slice(*event_range, close_all=True)                ,
+                                    print_every(print_mod)                                ,
+                                    event_count_in.spy                                    ,
+                                    classify_peaks                                        ,
+                                    pmap_passed                                           ,
+                                    df.branch(write_pmap_filter)                          ,
+                                    pmap_select          .filter                          ,
+                                    event_count_out      .spy                             ,
+                                    df.branch("event_number", evtnum_collect.sink)        ,
+                                    df.fork((build_hits           , write_hits           ),
+                                            (build_pointlike_event, write_pointlike_event),
+                                                                    write_event_info    )),
+                      result = dict(events_in   = event_count_in .future,
+                                    events_out  = event_count_out.future,
+                                    evtnum_list = evtnum_collect .future,
+                                    selection   = pmap_select    .future))
+
+        if run_number <= 0:
+            copy_mc_info(files_in, h5out, result.evtnum_list)
+
+        return result
