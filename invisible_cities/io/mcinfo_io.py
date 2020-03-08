@@ -6,6 +6,7 @@ import pandas as pd
 from .. reco            import tbl_functions as tbl
 from .. core            import system_of_units as units
 from .. core.exceptions import SensorBinningNotFound
+from .. core.exceptions import NoParticleInfoInFile
 
 from .. evm.event_model import MCParticle
 from .. evm.event_model import MCHit
@@ -21,6 +22,8 @@ from .. database import load_db as DB
 from typing import Mapping
 from typing import Sequence
 from typing import Tuple
+from typing import List
+from typing import Type
 
 # use Mapping (duck type) rather than dict
 
@@ -166,6 +169,34 @@ class mc_info_writer:
             new_row['region']        = g[3]
             new_row.append()
         self.generator_table.flush()
+
+
+def copy_mc_info(h5in : tb.File, writer : Type[mc_info_writer], which_events : List[int]=None):
+    """Copy from the input file to the output file the MC info of certain events.
+
+    Parameters
+    ----------
+    h5in  : tb.File
+        Input h5 file.
+    writer : instance of class mcinfo_io.mc_info_writer
+        MC info writer to h5 file.
+    which_events : None or list of ints
+        List of IDs (i.e. event numbers) that identify the events to be copied
+        to the output file. If None, all events in the input file are copied.
+    """
+    try:
+        if which_events is None:
+            which_events = h5in.root.MC.extents.cols.evt_number[:]
+        mcinfo = tbl.get_mc_info(h5in)
+        for n in which_events:
+            writer(mctables=mcinfo, evt_number=n)
+    except tb.exceptions.NoSuchNodeError:
+        raise tb.exceptions.NoSuchNodeError(f"No MC info in file {h5in}.")
+    except IndexError:
+        raise IndexError(f"No event {n} in file {h5in}.")
+    except NoParticleInfoInFile as err:
+        print(f"Warning: {h5in}", err)
+        pass
 
 
 def load_mchits(file_name: str,
