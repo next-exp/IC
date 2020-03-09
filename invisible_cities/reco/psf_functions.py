@@ -118,7 +118,7 @@ def hdst_psf_processing(dsts     : pd.DataFrame,
 
     Parameters
     ----------
-    dsts        : hits (1 SiPM per hit).
+    dsts        : penthesilea hits (1 SiPM per hit) integrated in time.
     ranges      : range of the PSF in each dimension.
     database    : dataframe containing the SiPM database of the detector.
 
