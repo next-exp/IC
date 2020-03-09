@@ -6,16 +6,16 @@ import tables as tb
 from pandas      import DataFrame
 from collections import namedtuple
 
-from . core .system_of_units_c import units
-from . evm  . pmaps_test       import pmaps
-from . io   . pmaps_io         import load_pmaps_as_df
-from . io   . pmaps_io         import load_pmaps
-from . io   . pmaps_io         import pmap_writer
-from . io   .   dst_io         import load_dst
-from . io   .  hits_io         import load_hits
-from . io   .  hits_io         import load_hits_skipping_NN
-from . io   . mcinfo_io        import load_mchits
-from . types.ic_types          import NN
+from . core              import system_of_units as units
+from . evm  . pmaps_test import pmaps
+from . io   . pmaps_io   import load_pmaps_as_df
+from . io   . pmaps_io   import load_pmaps
+from . io   . pmaps_io   import pmap_writer
+from . io   .   dst_io   import load_dst
+from . io   .  hits_io   import load_hits
+from . io   .  hits_io   import load_hits_skipping_NN
+from . io   .mcinfo_io   import load_mchits
+from . types.ic_types    import NN
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
 dst_data = namedtuple('dst_data', 'file_info config read true')

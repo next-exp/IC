@@ -53,7 +53,7 @@ from .. evm.event_model        import HitEnergy
 
 from .. types.ic_types         import AutoNameEnumBase
 
-from .. core.system_of_units_c import units
+from .. core                   import system_of_units as units
 
 
 class CutType          (AutoNameEnumBase):

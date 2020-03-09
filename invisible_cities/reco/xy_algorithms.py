@@ -1,18 +1,17 @@
 import sys
 import numpy as np
 
-from .. core.core_functions    import weighted_mean_and_var
-from .. core.system_of_units_c import units
-from .. core.exceptions        import SipmEmptyList
-from .. core.exceptions        import SipmZeroCharge
-from .. core.exceptions        import SipmEmptyListAboveQthr
-from .. core.exceptions        import SipmZeroChargeAboveQthr
-from .. core.exceptions        import ClusterEmptyList
+from .. core.core_functions  import weighted_mean_and_var
+from .. core                 import system_of_units as units
+from .. core.exceptions      import SipmEmptyList
+from .. core.exceptions      import SipmZeroCharge
+from .. core.exceptions      import SipmEmptyListAboveQthr
+from .. core.exceptions      import SipmZeroChargeAboveQthr
+from .. core.exceptions      import ClusterEmptyList
 
-from .. types.ic_types         import xy
-from .. evm.event_model        import Cluster
+from .. types.ic_types       import xy
+from .. evm.event_model      import Cluster
 
-from .. core.system_of_units_c import units
 
 from itertools import product
 

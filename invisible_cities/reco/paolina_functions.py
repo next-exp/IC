@@ -7,17 +7,17 @@ import copy
 import numpy    as np
 import networkx as nx
 
-from networkx                   import Graph
-from .. evm.event_model         import Voxel
-from .. core.exceptions         import NoHits
-from .. core.exceptions         import NoVoxels
-from .. evm.event_model         import BHit
-from .. evm.event_model         import Voxel
-from .. evm.event_model         import Track
-from .. evm.event_model         import Blob
-from .. evm.event_model         import TrackCollection
-from .. evm.event_model         import HitEnergy
-from .. core.system_of_units_c  import units
+from networkx           import Graph
+from .. evm.event_model import Voxel
+from .. core.exceptions import NoHits
+from .. core.exceptions import NoVoxels
+from .. evm.event_model import BHit
+from .. evm.event_model import Voxel
+from .. evm.event_model import Track
+from .. evm.event_model import Blob
+from .. evm.event_model import TrackCollection
+from .. evm.event_model import HitEnergy
+from .. core            import system_of_units as units
 
 from typing import Sequence
 from typing import List

@@ -3,15 +3,15 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
-from  . components             import get_event_info
-from  . components             import length_of
-from .. core.system_of_units_c import units
-from .. core.configure         import configure
-from .. core.configure         import all         as all_events
-from .. io                     import dst_io      as dio
-from .  esmeralda              import esmeralda
-from .. core.testing_utils     import assert_dataframes_close
-from .. core.testing_utils     import assert_tables_equality
+from  . components           import get_event_info
+from  . components           import length_of
+from .. core                 import system_of_units as units
+from .. core.configure       import configure
+from .. core.configure       import all         as all_events
+from .. io                   import dst_io      as dio
+from .  esmeralda            import esmeralda
+from .. core.testing_utils   import assert_dataframes_close
+from .. core.testing_utils   import assert_tables_equality
 
 
 def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):

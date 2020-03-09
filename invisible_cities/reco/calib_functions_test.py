@@ -9,14 +9,14 @@ from pytest        import mark
 from pytest        import raises
 from scipy.signal  import find_peaks_cwt
 
-from .                         import calib_functions as cf
-from .. reco                   import   tbl_functions as tbl
-from .. core                   import   fit_functions as fitf
-from .. core.stat_functions    import   poisson_sigma
-from .. core.system_of_units_c import           units
-from .. evm.nh5                import     SensorTable
-from .  calib_functions        import      SensorType
-from .. cities.components      import  get_run_number
+from .                       import calib_functions as cf
+from .. reco                 import   tbl_functions as tbl
+from .. core                 import   fit_functions as fitf
+from .. core                 import system_of_units as units
+from .. core.stat_functions  import   poisson_sigma
+from .. evm.nh5              import     SensorTable
+from .  calib_functions      import      SensorType
+from .. cities.components    import  get_run_number
 
 
 def test_bin_waveforms():

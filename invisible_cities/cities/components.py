@@ -25,7 +25,7 @@ from .. evm    .event_model       import                   Cluster
 from .. evm    .event_model       import             HitCollection
 from .. evm    .event_model       import                    MCInfo
 from .. evm    .pmaps             import                SiPMCharge
-from .. core   .system_of_units_c import                     units
+from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail
 from .. core   .exceptions        import              NoInputFiles
 from .. core   .exceptions        import              NoOutputFile

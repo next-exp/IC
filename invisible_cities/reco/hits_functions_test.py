@@ -1,29 +1,31 @@
 import os
-import numpy                     as     np
-from   numpy.testing             import assert_allclose
-from   numpy.testing             import assert_almost_equal
-from   numpy.testing             import assert_raises
-from   .. core.configure         import configure
-from   .. evm.event_model        import Hit
-from   .. evm.event_model        import Cluster
-from   .. types.ic_types         import xy
-from   .. core.system_of_units_c import units
-from   .. core.testing_utils     import assert_hit_equality
-from   .. types.ic_types         import NN
-from   .. cities.penthesilea     import penthesilea
-from   .. io                     import hits_io          as hio
-from   .  hits_functions         import merge_NN_hits
-from   .  hits_functions         import threshold_hits
-from  pytest                     import fixture
-from  pytest                     import mark
-from hypothesis                  import given
-from hypothesis                  import settings
-from hypothesis.strategies       import lists
-from hypothesis.strategies       import floats
-from hypothesis.strategies       import integers
-from copy                        import deepcopy
-from hypothesis                  import assume
-from hypothesis.strategies       import composite
+import numpy as np
+
+from numpy.testing import assert_allclose
+from numpy.testing import assert_almost_equal
+from numpy.testing import assert_raises
+
+from   .. core.configure       import configure
+from   .. evm.event_model      import Hit
+from   .. evm.event_model      import Cluster
+from   .. types.ic_types       import xy
+from   .. core                 import system_of_units as units
+from   .. core.testing_utils   import assert_hit_equality
+from   .. types.ic_types       import NN
+from   .. cities.penthesilea   import penthesilea
+from   .. io                   import hits_io          as hio
+from   .  hits_functions       import merge_NN_hits
+from   .  hits_functions       import threshold_hits
+from  pytest                   import fixture
+from  pytest                   import mark
+from hypothesis                import given
+from hypothesis                import settings
+from hypothesis.strategies     import lists
+from hypothesis.strategies     import floats
+from hypothesis.strategies     import integers
+from copy                      import deepcopy
+from hypothesis                import assume
+from hypothesis.strategies     import composite
 
 @composite
 def hit(draw, min_value=1, max_value=100):

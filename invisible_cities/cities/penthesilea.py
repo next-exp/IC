@@ -28,7 +28,7 @@ from operator import attrgetter
 import tables as tb
 
 from .. database               import              load_db
-from .. core.system_of_units_c import                units
+from .. core                   import      system_of_units as units
 from .. reco                   import        tbl_functions as tbl
 from .. reco.  pmaps_functions import          RebinMethod
 from .. io  .          hits_io import          hits_writer

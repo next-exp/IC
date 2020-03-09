@@ -13,20 +13,20 @@ from hypothesis.strategies    import floats
 from hypothesis.strategies    import integers
 from hypothesis.extra.numpy   import arrays
 
-from ..core.testing_utils     import exactly
-from ..core.testing_utils     import previous_float
-from ..core.testing_utils     import assert_Peak_equality
-from ..core.testing_utils     import assert_PMap_equality
-from ..core.system_of_units_c import units
-from ..core.fit_functions     import gauss
-from ..evm .pmaps             import PMTResponses
-from ..evm .pmaps             import SiPMResponses
-from ..evm .pmaps             import S1
-from ..evm .pmaps             import S2
-from ..evm .pmaps             import PMap
-from ..io  .pmaps_io          import load_pmaps
-from ..types.ic_types         import minmax
-from .                        import peak_functions as pf
+from ..core.testing_utils   import exactly
+from ..core.testing_utils   import previous_float
+from ..core.testing_utils   import assert_Peak_equality
+from ..core.testing_utils   import assert_PMap_equality
+from ..core                 import system_of_units as units
+from ..core.fit_functions   import gauss
+from ..evm .pmaps           import PMTResponses
+from ..evm .pmaps           import SiPMResponses
+from ..evm .pmaps           import S1
+from ..evm .pmaps           import S2
+from ..evm .pmaps           import PMap
+from ..io  .pmaps_io        import load_pmaps
+from ..types.ic_types       import minmax
+from .                      import peak_functions as pf
 
 
 wf_min =   0

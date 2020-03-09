@@ -13,8 +13,7 @@ from pytest import raises
 from .. core.configure  import EventRange as ER
 from .. core.exceptions import InvalidInputFileStructure
 from .. core.exceptions import ClusterEmptyList
-
-from .. core.system_of_units_c import units
+from .. core            import system_of_units as units
 
 from .  components import event_range
 from .  components import collect

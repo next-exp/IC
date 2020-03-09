@@ -15,13 +15,13 @@ from hypothesis.strategies     import sampled_from
 from hypothesis.strategies     import    composite
 from hypothesis.extra.numpy    import       arrays
 
-from .. core.core_functions    import           weighted_mean_and_std
-from .. core.random_sampling   import                    NoiseSampler
-from .. core.system_of_units_c import                           units
-from .. core.testing_utils     import                         exactly
-from .. core.testing_utils     import assert_SensorResponses_equality
-from .. core.testing_utils     import            assert_Peak_equality
-from .. core.testing_utils     import                  previous_float
+from .. core.core_functions  import           weighted_mean_and_std
+from .. core.random_sampling import                    NoiseSampler
+from .. core                 import                 system_of_units as units
+from .. core.testing_utils   import                         exactly
+from .. core.testing_utils   import assert_SensorResponses_equality
+from .. core.testing_utils   import            assert_Peak_equality
+from .. core.testing_utils   import                  previous_float
 
 from invisible_cities.database import load_db as DB
 
