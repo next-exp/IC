@@ -1,16 +1,17 @@
 import os
 import numpy  as np
-from . corrections_new import maps_coefficient_getter
-from . corrections_new import read_maps
-from . corrections_new import ASectorMap
-from . corrections_new import correct_geometry_
-from . corrections_new import correct_lifetime_
-from . corrections_new import time_coefs_corr
-from . corrections_new import get_df_to_z_converter
-from . corrections_new import norm_strategy
-from . corrections_new import get_normalization_factor
-from . corrections_new import apply_all_correction_single_maps
-from . corrections_new import apply_all_correction
+
+from . corrections import maps_coefficient_getter
+from . corrections import read_maps
+from . corrections import ASectorMap
+from . corrections import correct_geometry_
+from . corrections import correct_lifetime_
+from . corrections import time_coefs_corr
+from . corrections import get_df_to_z_converter
+from . corrections import norm_strategy
+from . corrections import get_normalization_factor
+from . corrections import apply_all_correction_single_maps
+from . corrections import apply_all_correction
 
 from pytest                import fixture, mark
 from numpy.testing         import assert_allclose
