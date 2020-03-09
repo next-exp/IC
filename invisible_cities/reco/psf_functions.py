@@ -59,10 +59,10 @@ def add_variable_weighted_mean(df         : pd.DataFrame,
     df.loc[:, mean_name] = np.average(mean, weights=weight)
 
 
-def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
-                                      var         : List[str],
-                                      ranges      : List[List[float]],
-                                      database    : pd.DataFrame
+def add_empty_sensors_and_normalize_q(df       : pd.DataFrame,
+                                      var      : List[str],
+                                      ranges   : List[List[float]],
+                                      database : pd.DataFrame
                                       ) -> pd.DataFrame :
     """
     Adds empty sensors to the hDST
@@ -109,9 +109,9 @@ def add_empty_sensors_and_normalize_q(df          : pd.DataFrame,
     return df_out
 
 
-def hdst_psf_processing(dsts        : pd.DataFrame,
-                        ranges      : List[List[float]],
-                        database    : pd.DataFrame
+def hdst_psf_processing(dsts     : pd.DataFrame,
+                        ranges   : List[List[float]],
+                        database : pd.DataFrame
                         ) -> pd.DataFrame :
     """
     Adds the necessary info to a hits DST to create the PSF, namely the relative position and the normalized Q.

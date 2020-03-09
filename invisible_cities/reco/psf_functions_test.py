@@ -13,11 +13,11 @@ from ..     core.testing_utils   import assert_dataframes_close
 
 
 def test_add_variable_weighted_mean(ICDATADIR):
-    PATH_IN   = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
+    PATH_IN = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
 
-    hdst      = load_dst(PATH_IN, 'RECO', 'Events')
-    x_mean    = np.average(hdst.loc[:, 'X'], weights=hdst.loc[:, 'E'])
-    y_mean    = np.average(hdst.loc[:, 'Y'], weights=hdst.loc[:, 'E'])
+    hdst    = load_dst(PATH_IN, 'RECO', 'Events')
+    x_mean  = np.average(hdst.loc[:, 'X'], weights=hdst.loc[:, 'E'])
+    y_mean  = np.average(hdst.loc[:, 'Y'], weights=hdst.loc[:, 'E'])
 
     add_variable_weighted_mean(hdst, 'X', 'E', 'Xpeak')
     add_variable_weighted_mean(hdst, 'Y', 'E', 'Ypeak')
@@ -29,7 +29,7 @@ def test_add_variable_weighted_mean(ICDATADIR):
 def test_add_empty_sensors_and_normalize_q(ICDATADIR):
     PATH_IN        = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
     hdst           = load_dst(PATH_IN, 'RECO', 'Events')
-    group          = hdst.groupby(['event'], as_index=False)
+    group          = hdst.groupby('event', as_index=False)
     hdst_processed = group.apply(add_empty_sensors_and_normalize_q    ,
                                  var      = ['X', 'Y']                ,
                                  ranges   = [[-50, 50], [-50, 50]]    ,
