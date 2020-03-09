@@ -7,6 +7,7 @@ from hypothesis.strategies        import floats
 from hypothesis.strategies        import integers
 from hypothesis.     extra.pandas import data_frames
 from hypothesis.     extra.pandas import column
+from hypothesis.     extra.pandas import range_indexes
 from . testing_utils              import all_elements_close
 from . testing_utils              import assert_tables_equality
 
@@ -31,7 +32,8 @@ def test_all_elements_close_par(mu, sigma):
 
 @given(data_frames([column('A', dtype=int  ),
                     column('B', dtype=float),
-                    column('C', dtype=str  )]))
+                    column('C', dtype=str  )],
+                   index = range_indexes(max_size=5)))
 def test_assert_tables_equality(df):
     table = df.to_records(index=False)
     assert_tables_equality(table, table)
