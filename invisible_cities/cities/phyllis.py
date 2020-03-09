@@ -46,7 +46,7 @@ from .. reco                   import calib_sensors_functions as csf
 from .. sierpe                 import                     fee
 from .. io   .         hist_io import             hist_writer
 from .. io   .run_and_event_io import    run_and_event_writer
-from .. icaro.hst_functions    import    shift_to_bin_centers
+from .. core .core_functions   import    shift_to_bin_centers
 
 from .. dataflow import dataflow as fl
 

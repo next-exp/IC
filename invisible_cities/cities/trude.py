@@ -37,7 +37,7 @@ import tables as tb
 from .. core.system_of_units_c import                   units
 from .. io.         hist_io    import             hist_writer
 from .. io.run_and_event_io    import    run_and_event_writer
-from .. icaro.hst_functions    import    shift_to_bin_centers
+from .. core.core_functions    import    shift_to_bin_centers
 from .. database               import                 load_db
 from .. reco                   import           tbl_functions as tbl
 from .. reco                   import         calib_functions as cf
