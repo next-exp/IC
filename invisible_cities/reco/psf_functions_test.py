@@ -37,8 +37,8 @@ def test_add_empty_sensors_and_normalize_q(ICDATADIR):
     hdst_processed.reset_index(inplace=True, drop=True)
 
     assert np.allclose(hdst_processed.groupby('event').NormQ.sum().values, 1.0)
-    assert hdst_processed.E.sum()     == hdst.E.sum()
-    assert hdst_processed.Q.sum()     == hdst.Q.sum()
+    assert np. isclose(hdst_processed.E.sum(), hdst.E.sum())
+    assert np. isclose(hdst_processed.Q.sum(), hdst.Q.sum())
 
 
 def test_add_empty_sensors_and_normalize_q_file(ICDATADIR):
@@ -79,6 +79,6 @@ def test_create_psf(ICDATADIR):
     bin_edges = [np.linspace(-50, 50, 101) for i in range(2)]
     psf_val, entries, binss = create_psf((hdst.RelX, hdst.RelY), hdst.NormQ, bin_edges)
 
-    np.testing.assert_allclose(psf['psf'    ], psf_val)
-    np.testing.assert_allclose(psf['entries'], entries)
-    np.testing.assert_allclose(psf['bins'   ],   binss)
+    assert np.allclose(psf['psf'    ], psf_val)
+    assert np.allclose(psf['entries'], entries)
+    assert np.allclose(psf['bins'   ],   binss)
