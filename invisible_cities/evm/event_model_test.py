@@ -12,8 +12,8 @@ from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
-from .. types.ic_types_c import xy
-from .. types.ic_types_c import minmax
+from .. types.ic_types   import xy
+from .. types.ic_types   import minmax
 from .       event_model import SensorParams
 from .       event_model import Event
 

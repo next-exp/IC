@@ -25,7 +25,7 @@ from ..evm .pmaps             import S1
 from ..evm .pmaps             import S2
 from ..evm .pmaps             import PMap
 from ..io  .pmaps_io          import load_pmaps
-from ..types.ic_types_c       import minmax
+from ..types.ic_types         import minmax
 from .                        import peak_functions as pf
 
 
@@ -593,7 +593,7 @@ def test_rebin_times_and_waveforms_times_are_consistent(t_and_wf, stride):
     widths      = [1]
     if len(times) > 1:
         widths = np.append(np.diff(times), max(np.diff(times)))
-    
+
     # The samples falling in the last bin cannot be so easily
     # compared as the other ones so I remove them.
     remain = times.size - times.size % stride
