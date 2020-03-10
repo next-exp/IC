@@ -870,7 +870,7 @@ def test_make_tracks_function(ICDATADIR):
 
 
 @given(bunch_of_hits, box_sizes)
-def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
+def test_make_voxel_graph_keeps_energy_consistence(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
     tracks = make_track_graphs(voxels)
     # assert sum of track energy equal to sum of hits energies
