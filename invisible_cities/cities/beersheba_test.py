@@ -29,6 +29,16 @@ def test_create_deconvolution_df(ICDATADIR):
 
     assert_dataframes_close(new_dst, true_dst)
 
+def test_create_deconvolution_df_cuttype(ICDATADIR):
+    true_in  = os.path.join(ICDATADIR, "exact_Kr_deconvolution_with_MC.h5")
+    true_dst = dio.load_dst(true_in, 'DECO', 'Events')
+    ecut     = 1e-2
+
+    with raises(ValueError):
+        create_deconvolution_df(true_dst, true_dst.E.values,
+                                (true_dst.X.values, true_dst.Y.values, true_dst.Z.values),
+                                'check', ecut, 3)
+
 
 def test_distribute_energy(ICDATADIR):
     true_in   = os.path.join(ICDATADIR, "exact_Kr_deconvolution_with_MC.h5")
