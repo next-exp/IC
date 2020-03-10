@@ -3,6 +3,8 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
+from pytest                    import raises
+
 from .. io                     import dst_io      as dio
 from .  beersheba              import beersheba
 from .  beersheba              import create_deconvolution_df
@@ -92,6 +94,12 @@ def test_beersheba_exact_result_separate(ICDATADIR, deconvolution_config):
                 assert_tables_equality(got, expected)
 
 
-def test_beersheba_empty_input_file(deconvolution_config):
-    conf, PATH_OUT = deconvolution_config
-    beersheba(**conf)
+@mark.parametrize("ndim", (1, 3))
+def test_beersheba_param_dim(ICDATADIR, deconvolution_config, ndim):
+    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_joint.h5")
+    conf, PATH_OUT   = deconvolution_config
+
+    conf['deconv_params']['n_dim'  ] = ndim
+
+    with raises(ValueError):
+        beersheba(**conf)
