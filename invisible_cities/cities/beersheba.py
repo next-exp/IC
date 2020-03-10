@@ -113,6 +113,15 @@ def deconvolve_signal(psf_fname       : str,
     psfs          = pd.read_hdf(psf_fname)
     deconvolution = deconvolve(n_iterations, iteration_tol, sample_width, bin_size, inter_method)
 
+    if energy_type  not in HitEnergy          :
+        raise ValueError(f'energy_type {energy_type} is not a valid energy type.')
+    if inter_method not in InterpolationMethod:
+        raise ValueError(f'inter_method {inter_method} is not a valid interpolation method.')
+    if cut_type     not in CutType            :
+        raise ValueError(f'cut_type {cut_type} is not a valid cut type.')
+    if deconv_mode  not in DeconvolutionMode  :
+        raise ValueError(f'deconv_mode {deconv_mode} is not a valid deconvolution mode.')
+
     def deconvolve_hits(df, z):
         '''
         Given an slice, applies deconvolution using the PSF
@@ -142,8 +151,6 @@ def deconvolve_signal(psf_fname       : str,
             gaus         = dist.pdf(psf_cols.values)
             psf          = gaus.reshape(psf_cols.nunique())
             deconv_image = nan_to_num(richardson_lucy(deconv_image, psf, n_iterations_g, iteration_tol))
-        else:
-            raise ValueError(f'deconv_mode {deconv_mode} is not a valid deconvolution mode.')
 
         return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
 
