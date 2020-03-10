@@ -21,4 +21,4 @@ install:
   - source manage.sh work_in_python_version_no_tests ${IC_PYTHON_VERSION}
 
 script:
-  - HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests
+  - HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par
