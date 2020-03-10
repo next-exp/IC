@@ -137,3 +137,12 @@ def test_deconvolve_signal_enums(ICDATADIR, deconvolution_config, param_name):
 
     with raises(ValueError):
         deconv = deconvolve_signal(**conf_dict)
+
+
+def test_beersheba_expandvar(ICDATADIR, deconvolution_config):
+    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_joint.h5")
+    conf, PATH_OUT   = deconvolution_config
+
+    conf['deconv_params']['psf_fname'] = '$ICDIR/database/test_data/PSF_dst_sum_collapsed.h5'
+
+    beersheba(**conf)
