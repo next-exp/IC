@@ -14,9 +14,6 @@ import re
 import numpy as np
 import tables as tb
 
-from ..evm.event_model   import MCInfo
-from ..core.exceptions   import NoParticleInfoInFile
-
 
 def filters(name):
     """Return the filter corresponding to a given key.
@@ -81,31 +78,6 @@ def get_vectors(h5f):
         sipmrwf = h5f.root.RD.sipmrwf
 
     return pmtrwf, pmtblr, sipmrwf
-
-
-def get_mc_info(h5in):
-    """Return MC info bank"""
-
-    extents = h5in.root.MC.extents
-    hits = h5in.root.MC.hits
-    particles = h5in.root.MC.particles
-
-    try:
-        h5in.root.MC.particles[0]
-    except:
-        raise NoParticleInfoInFile('Trying to access particle information: this file could have sensor response only.')
-
-    if len(h5in.root.MC.hits) == 0:
-        hits = np.zeros((0,), dtype=('3<f4, <f4, <f4, S20, <i4, <i4'))
-        hits.dtype.names = ('hit_position', 'hit_time', 'hit_energy', 'label', 'particle_indx', 'hit_indx')
-
-    if 'generators' in h5in.root.MC:
-        generator_table = h5in.root.MC.generators
-    else:
-        generator_table = np.zeros((0,), dtype=('<i4,<i4,<i4,S20'))
-        generator_table.dtype.names = ('evt_number', 'atomic_number', 'mass_number', 'region')
-
-    return MCInfo(extents, hits, particles, generator_table)
 
 
 def event_number_from_input_file_name(filename):
