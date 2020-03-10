@@ -3,14 +3,18 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
+from pytest                    import mark
 from pytest                    import raises
 
 from .. io                     import dst_io      as dio
 from .  beersheba              import beersheba
 from .  beersheba              import create_deconvolution_df
 from .  beersheba              import distribute_energy
+from .  beersheba              import deconvolve_signal
 from .  beersheba              import CutType
-from .. evm.event_model        import HitEnergy
+from .  beersheba              import DeconvolutionMode
+from .. reco.deconv_functions  import InterpolationMethod
+from .. evm .event_model       import HitEnergy
 from .. core.testing_utils     import assert_dataframes_close
 from .. core.testing_utils     import assert_tables_equality
 
@@ -103,3 +107,23 @@ def test_beersheba_param_dim(ICDATADIR, deconvolution_config, ndim):
 
     with raises(ValueError):
         beersheba(**conf)
+
+
+@mark.parametrize("param_name", ('cut_type', 'deconv_mode', 'energy_type', 'inter_method'))
+def test_deconvolve_signal_enums(ICDATADIR, deconvolution_config, param_name):
+    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_joint.h5")
+    conf, PATH_OUT   = deconvolution_config
+    conf_dict        = conf['deconv_params']
+
+    conf_dict.pop("q_cut")
+    conf_dict.pop("drop_dist")
+
+    conf_dict['cut_type'    ] = CutType            (conf_dict['cut_type'    ])
+    conf_dict['deconv_mode' ] = DeconvolutionMode  (conf_dict['deconv_mode' ])
+    conf_dict['energy_type' ] = HitEnergy          (conf_dict['energy_type' ])
+    conf_dict['inter_method'] = InterpolationMethod(conf_dict['inter_method'])
+
+    conf_dict[param_name]     = 'check'
+
+    with raises(ValueError):
+        deconv = deconvolve_signal(**conf_dict)
