@@ -38,7 +38,7 @@ def test_cut_and_redistribute_df(df):
     cut_condition = f'{cut_var} > {cut_val:.3f}'
     cut_function  = cut_and_redistribute_df(cut_condition, redist_var)
     df_cut        = cut_function(df)
-    df_cut_manual = df.loc[df[cut_var].values > cut_val, :]
+    df_cut_manual = df.loc[df[cut_var].values > cut_val, :].copy()
     df_cut_manual.loc[:, redist_var] = df_cut_manual.loc[:, redist_var] * df.loc[:, redist_var].sum() /  df_cut_manual.loc[:, redist_var].sum()
     assert_dataframes_close(df_cut, df_cut_manual)
 

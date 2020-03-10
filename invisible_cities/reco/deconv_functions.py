@@ -43,7 +43,7 @@ def cut_and_redistribute_df(cut_condition : str,
     pass_df : dataframe after applying the cut and redistribution.
     '''
     def cut_and_redistribute(df : pd.DataFrame) -> pd.DataFrame:
-        pass_df = df.query(cut_condition)
+        pass_df = df.query(cut_condition).copy()
         if not len(pass_df): return pass_df
 
         with np.errstate(divide='ignore'):
@@ -86,7 +86,7 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
 
         closest = np.apply_along_axis(lambda d: d[d > 0].min(), 1, dr2) # find closest that it's not itself
         mask_xy = closest <= dist # take those with at least one neighbour
-        pass_df = df.loc[mask_xy, :]
+        pass_df = df.loc[mask_xy, :].copy()
 
         with np.errstate(divide='ignore'):
             columns  = pass_df.loc[:, variables]
