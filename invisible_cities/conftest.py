@@ -39,11 +39,6 @@ def PSFDIR(ICDIR):
     return os.path.join(ICDIR, "database/test_data/PSF_dst_sum_collapsed.h5")
 
 @pytest.fixture(scope = 'session')
-def irene_diomira_chain_tmpdir(tmpdir_factory):
-    return tmpdir_factory.mktemp('irene_diomira_tests')
-
-
-@pytest.fixture(scope = 'session')
 def config_tmpdir(tmpdir_factory):
     return tmpdir_factory.mktemp('configure_tests')
 
@@ -56,15 +51,6 @@ def output_tmpdir(tmpdir_factory):
 @pytest.fixture(scope='session')
 def example_blr_wfs_filename(ICDATADIR):
     return os.path.join(ICDATADIR, "blr_examples.h5")
-
-
-@pytest.fixture(scope  = 'session',
-                params = ['electrons_40keV_z25_RWF.h5',
-                          'electrons_511keV_z250_RWF.h5',
-                          'electrons_1250keV_z250_RWF.h5',
-                          'electrons_2500keV_z250_RWF.h5'])
-def electron_RWF_file(request, ICDATADIR):
-    return os.path.join(ICDATADIR, request.param)
 
 
 @pytest.fixture(scope  = 'session',
@@ -175,12 +161,6 @@ def KrMC_pmaps_without_ipmt_dfs(KrMC_pmaps_without_ipmt_filename):
 @pytest.fixture(scope='session')
 def KrMC_pmaps_dict(KrMC_pmaps_filename):
     dict_pmaps, evt_numbers = _get_pmaps_dict_and_event_numbers(KrMC_pmaps_filename)
-    return dict_pmaps, evt_numbers
-
-
-@pytest.fixture(scope='session')
-def KrMC_pmaps_without_ipmt_dict(KrMC_pmaps_without_ipmt_filename):
-    dict_pmaps, evt_numbers = _get_pmaps_dict_and_event_numbers(KrMC_pmaps_without_ipmt_filename)
     return dict_pmaps, evt_numbers
 
 
@@ -664,17 +644,6 @@ def TlMC_hits_merged(ICDATADIR):
     hits_file_name = os.path.join(ICDATADIR, hits_file_name)
     hits = load_hits(hits_file_name)
     return hits
-
-@pytest.fixture(scope='session')
-def corr_toy_data(ICDATADIR):
-    x = np.arange( 100, 200)
-    y = np.arange(-200,   0)
-    E = np.arange( 1e4, 1e4 + x.size*y.size).reshape(x.size, y.size)
-    U = np.arange( 1e2, 1e2 + x.size*y.size).reshape(x.size, y.size)
-    N = np.ones_like(U)
-
-    corr_filename = os.path.join(ICDATADIR, "toy_corr.h5")
-    return corr_filename, (x, y, E, U, N)
 
 
 @pytest.fixture(scope='session')

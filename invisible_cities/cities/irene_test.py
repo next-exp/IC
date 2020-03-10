@@ -54,24 +54,6 @@ def unpack_s12params(s12params):
                 s2_lmax         = s2par.length.max)
 
 
-@fixture(scope='module')
-def job_info_missing_pmts(config_tmpdir, ICDATADIR):
-    # Specifies a name for a data configuration file. Also, default number
-    # of events set to 1.
-    job_info = namedtuple("job_info",
-                          "run_number pmt_missing pmt_active input_filename output_filename")
-
-    run_number  = 3366
-    pmt_missing = [11]
-    pmt_active  = list(filter(lambda x: x not in pmt_missing, range(12)))
-
-
-    ifilename = os.path.join(ICDATADIR    , 'electrons_40keV_z25_RWF.h5')
-    ofilename = os.path.join(config_tmpdir, 'electrons_40keV_z25_pmaps_missing_PMT.h5')
-
-    return job_info(run_number, pmt_missing, pmt_active, ifilename, ofilename)
-
-
 @mark.slow
 @mark.parametrize("thr_sipm_type thr_sipm_value".split(),
                   (("common"    , 3.5 ),
