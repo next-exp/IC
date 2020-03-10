@@ -8,7 +8,6 @@ from .. core.random_sampling import NoiseSampler as SiPMsNoiseSampler
 from .. sierpe               import blr
 from .. database             import load_db
 
-from .                   import tbl_functions as tbl
 from .                   import wfm_functions as wfm
 from .  sensor_functions import convert_channel_id_to_IC_id
 from .  sensor_functions import simulate_pmt_response
@@ -27,7 +26,7 @@ def test_cwf_blr(dbnew, electron_MCRD_file):
 
     with tb.open_file(electron_MCRD_file, 'r') as h5in:
         event = 0
-        _, pmtrd, _ = tbl.get_rd_vectors(h5in)
+        pmtrd = h5in.root.pmtrd
         dataPMT, BLR = simulate_pmt_response(event, pmtrd, adc_to_pes, single_pe_rms)
         RWF = dataPMT.astype(np.int16)
 
