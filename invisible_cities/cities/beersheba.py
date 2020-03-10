@@ -16,6 +16,7 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
+from os   .path  import expandvars
 from scipy.stats import multivariate_normal
 from numpy       import nan_to_num
 
@@ -378,6 +379,8 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
     deconv_params['deconv_mode' ] = DeconvolutionMode  (deconv_params['deconv_mode' ])
     deconv_params['energy_type' ] = HitEnergy          (deconv_params['energy_type' ])
     deconv_params['inter_method'] = InterpolationMethod(deconv_params['inter_method'])
+
+    deconv_params['psf_fname'   ] = expandvars(deconv_params['psf_fname'])
 
     for p in ['sample_width', 'bin_size', 'diffusion']:
         if len(deconv_params[p]) != deconv_params['n_dim']:
