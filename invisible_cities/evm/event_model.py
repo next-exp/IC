@@ -16,35 +16,6 @@ from typing import NamedTuple
 ZANODE = -9.425 * units.mm
 
 
-class SensorParams:
-    """Transient class storing sensor parameters."""
-    def __init__(self, npmt, pmtwl, nsipm, sipmwl):
-       self.npmt   = npmt
-       self.pmtwl  = pmtwl
-       self.nsipm  = nsipm
-       self.sipmwl = sipmwl
-
-    @property
-    def NPMT  (self): return self.npmt
-
-    @property
-    def PMTWL (self): return self.pmtwl
-
-    @property
-    def NSIPM (self): return self.nsipm
-
-    @property
-    def SIPMWL(self): return self.sipmwl
-
-    def __str__(self):
-       s = "{0}SensorParams\n{0}".format("#"*20 + "\n")
-       for attr in self.__dict__:
-           s += "{}: {}\n".format(attr, getattr(self, attr))
-       return s
-
-    __repr__ = __str__
-
-
 class MCInfo(NamedTuple):
     """Transient class storing the tables of MC true info"""
     extents   : tb.Table
