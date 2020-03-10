@@ -12,7 +12,6 @@ from pytest import raises
 
 from .. core.configure  import EventRange as ER
 from .. core.exceptions import InvalidInputFileStructure
-from .. core.exceptions import ClusterEmptyList
 from .. core            import system_of_units as units
 
 from .  components import event_range
@@ -104,10 +103,8 @@ def test_compute_xy_position_depends_on_actual_run_number():
     seed_charge    = minimum_seed_charge + 1
     charge_to_test = np.array([charge, charge, charge, seed_charge, charge, charge, charge, charge])
 
-    try:
-        find_xy_pos(xys_to_test, charge_to_test)
-    except(ClusterEmptyList):
-        assert False
+    find_xy_pos(xys_to_test, charge_to_test)
+
 
 
 def test_city_adds_default_detector_db(config_tmpdir):
