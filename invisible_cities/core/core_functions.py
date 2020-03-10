@@ -3,7 +3,8 @@ Core functions
 This module includes utility functions.
 """
 import time
-import enum
+
+from enum import auto
 
 import numpy as np
 
@@ -12,11 +13,11 @@ from typing import Sequence
 from .. types.ic_types import AutoNameEnumBase
 
 
-class NormMode(enum.Enum):
-    first   = 0
-    second  = 1
-    sumof   = 3
-    mean    = 4
+class NormMode(AutoNameEnumBase):
+    first   = auto()
+    second  = auto()
+    sumof   = auto()
+    mean    = auto()
 
 
 def merge_two_dicts(a,b):

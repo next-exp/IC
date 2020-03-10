@@ -1,5 +1,4 @@
 import os
-import tables as tb
 
 from importlib import import_module
 from pytest import mark

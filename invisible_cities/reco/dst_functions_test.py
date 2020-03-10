@@ -1,12 +1,5 @@
-from operator    import mul
-from operator    import truediv
-from collections import namedtuple
-
 import numpy  as np
 import pandas as pd
-
-from pytest import fixture
-from pytest import mark
 
 from hypothesis              import given
 from hypothesis.strategies   import integers

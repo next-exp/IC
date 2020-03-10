@@ -4,7 +4,6 @@ from pytest                       import mark
 from flaky                        import flaky
 from hypothesis                   import given
 from hypothesis.strategies        import floats
-from hypothesis.strategies        import integers
 from hypothesis.     extra.pandas import data_frames
 from hypothesis.     extra.pandas import column
 from hypothesis.     extra.pandas import range_indexes
@@ -41,4 +40,4 @@ def test_assert_tables_equality(df):
 def test_assert_tables_equality_withNaN():
     table = np.array([('Rex', 9, 81.0), ('Fido', 3, np.nan)],
                      dtype=[('name', 'U10'), ('age', 'i4'), ('weight', 'f4')])
-    assert_tables_equality(table, table)             
+    assert_tables_equality(table, table)

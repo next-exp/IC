@@ -3,18 +3,11 @@
 import tables as tb
 import numpy  as np
 
-from enum import Enum
 from enum import auto
 
-from networkx                import Graph
-from .. types.ic_types       import NN
-from .. types.ic_types       import minmax
-from .. types.ic_types       import AutoNameEnumBase
-from .. core.exceptions      import PeakNotFound
-from .. core.exceptions      import SipmEmptyList
-from .. core.exceptions      import SipmNotFound
-from .. core.core_functions  import loc_elem_1d
-from .. core                 import system_of_units as units
+from .. types.ic_types import NN
+from .. types.ic_types import AutoNameEnumBase
+from .. core           import system_of_units as units
 
 from typing import List
 from typing import Tuple

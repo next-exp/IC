@@ -5,13 +5,10 @@ import numpy  as np
 from pytest import mark
 from pytest import raises
 
-from .. core                 import system_of_units as units
-from .. core.configure       import             all as all_events
-from .. core.configure       import configure
-from .. core.testing_utils   import assert_tables_equality
-
-from .. reco     import tbl_functions as tbl
-from .. sierpe   import fee as FEE
+from .. core.configure     import                    all as all_events
+from .. core.configure     import              configure
+from .. core.testing_utils import assert_tables_equality
+from .. reco               import          tbl_functions as tbl
 
 from .  diomira  import diomira
 

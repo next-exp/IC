@@ -1,17 +1,15 @@
-import os
 import tables as tb
 import numpy  as np
 import pandas as pd
+
 from pytest import mark
 
-from .. core                 import system_of_units as units
 from .. core.random_sampling import NoiseSampler as SiPMsNoiseSampler
+from .. sierpe               import blr
+from .. database             import load_db
 
-from .           import tbl_functions as tbl
-from .           import wfm_functions as wfm
-from .. sierpe   import fee as FEE
-from .. sierpe   import blr
-from .. database import load_db
+from .                   import tbl_functions as tbl
+from .                   import wfm_functions as wfm
 from .  sensor_functions import convert_channel_id_to_IC_id
 from .  sensor_functions import simulate_pmt_response
 

@@ -1,13 +1,9 @@
-import os
-
 from collections import namedtuple
-from itertools   import starmap
 
 import numpy  as np
 import tables as tb
 
 from pytest import fixture
-from pytest import approx
 from pytest import mark
 from flaky  import flaky
 

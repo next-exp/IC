@@ -1,7 +1,6 @@
 import numpy as np
 
-from numpy.testing import assert_equal
-from pytest        import mark
+from pytest import mark
 
 from hypothesis             import given
 from hypothesis.strategies  import just
@@ -10,10 +9,8 @@ from hypothesis.strategies  import one_of
 from hypothesis.strategies  import floats
 from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
-from hypothesis.extra.numpy import arrays
 
 from .. types.ic_types   import xy
-from .. types.ic_types   import minmax
 from .       event_model import SensorParams
 from .       event_model import Event
 

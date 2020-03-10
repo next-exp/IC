@@ -1,15 +1,12 @@
 import os
-from collections import namedtuple
 
 import tables as tb
 import numpy  as np
 
 from pytest import mark
-from pytest import fixture
 
 from .  isidora            import isidora
-from .. core               import system_of_units as units
-from .. core.configure     import             all as all_events
+from .. core.configure     import all as all_events
 from .. core.configure     import configure
 from .. core.testing_utils import assert_tables_equality
 

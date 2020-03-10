@@ -1,13 +1,11 @@
 import os
 import numpy  as np
 import tables as tb
-import pandas as pd
 import time   as tm
 
 from numpy.testing import assert_allclose
 
 from . dst_io              import load_dst
-from .. core.testing_utils import assert_dataframes_equal
 from .. types.ic_types     import xy
 from .. evm.event_model    import Cluster
 from .. evm.event_model    import Hit

@@ -1,5 +1,4 @@
 import os
-from collections import namedtuple
 
 import tables as tb
 import numpy  as np
@@ -17,7 +16,6 @@ from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
 
-from .. database            import load_db
 from .. database.load_db    import DetDB
 from .. io      .pmaps_io   import load_pmaps
 
@@ -472,4 +470,3 @@ def test_irene_other_sample_widths(ICDATADIR, config_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
-

@@ -1,7 +1,6 @@
-import numpy  as np
 import tables as tb
 
-from .. reco       import tbl_functions as tbl
+from .. reco import tbl_functions as tbl
 
 
 def hist_writer(file,

@@ -2,9 +2,6 @@
 This module includes functions to manipulate waveforms.
 authors: J.J. Gomez-Cadenas, G. Martinez
 """
-
-import math
-
 import numpy as np
 
 from .. core.core_functions import define_window

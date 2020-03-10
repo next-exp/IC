@@ -22,7 +22,6 @@ from numpy       import nan_to_num
 
 from typing      import Tuple
 from typing      import List
-from typing      import Callable
 
 from enum        import auto
 

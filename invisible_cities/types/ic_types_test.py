@@ -4,7 +4,6 @@ import numpy as np
 
 from . ic_types          import minmax
 from . ic_types          import xy
-from . ic_types          import Counters
 from . ic_types          import NN
 from . ic_types          import NNN
 

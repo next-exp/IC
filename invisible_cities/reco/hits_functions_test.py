@@ -1,9 +1,7 @@
 import os
-import numpy as np
 
-from numpy.testing import assert_allclose
+from pytest        import mark
 from numpy.testing import assert_almost_equal
-from numpy.testing import assert_raises
 
 from   .. core.configure       import configure
 from   .. evm.event_model      import Hit
@@ -16,8 +14,6 @@ from   .. cities.penthesilea   import penthesilea
 from   .. io                   import hits_io          as hio
 from   .  hits_functions       import merge_NN_hits
 from   .  hits_functions       import threshold_hits
-from  pytest                   import fixture
-from  pytest                   import mark
 from hypothesis                import given
 from hypothesis                import settings
 from hypothesis.strategies     import lists

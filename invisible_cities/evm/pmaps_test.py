@@ -8,7 +8,6 @@ from pytest        import         fixture
 
 from hypothesis                import       assume
 from hypothesis                import        given
-from hypothesis                import     settings
 from hypothesis.strategies     import     integers
 from hypothesis.strategies     import       floats
 from hypothesis.strategies     import sampled_from

@@ -44,12 +44,9 @@ from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import               pmap_filter
 from .. database                  import                   load_db
 from .. sierpe                    import                       blr
-from .. reco                      import             tbl_functions as tbl
 from .. io                        import                 mcinfo_io
 from .. io     .pmaps_io          import                load_pmaps
 from .. io     .hits_io           import              hits_from_df
-from .. io     .dst_io            import                  load_dst
-from .. io     .hits_io           import                 load_hits
 from .. io     .dst_io            import                  load_dst
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN

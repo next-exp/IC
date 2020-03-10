@@ -5,7 +5,6 @@ from   pandas      import DataFrame
 from   pandas      import Series
 from   dataclasses import dataclass
 from   typing      import Callable
-from   typing      import List
 from   typing      import Optional
 from   enum        import auto
 
@@ -13,7 +12,6 @@ from .. core.core_functions import in_range
 from .. core                import system_of_units      as units
 from .. core.exceptions     import TimeEvolutionTableMissing
 from .. types.ic_types      import AutoNameEnumBase
-from .. evm.event_model     import Hit
 
 
 @dataclass

@@ -27,8 +27,6 @@ from .  components import hits_and_kdst_from_files
 
 from .. dataflow   import dataflow as fl
 
-from .. database   import load_db
-
 
 def _create_dummy_conf_with_event_range(value):
     return Namespace(event_range = value)

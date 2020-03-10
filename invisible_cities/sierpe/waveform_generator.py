@@ -4,15 +4,12 @@ Waveform Generator
 Generates toy PMT and SiPM waveforms
 """
 
-import numpy        as np
-import scipy.signal as signal
+import numpy as np
 
 from .       import fee as FE
 from .  fee  import FEE
-from .. core import system_of_units as units
 
 from typing import NamedTuple
-from typing import Tuple
 
 
 class Point(NamedTuple):

@@ -1,5 +1,3 @@
-import pytest
-
 import numpy as np
 
 from numpy.testing import assert_allclose
@@ -22,7 +20,7 @@ def test_buffer_and_limits():
     buffer_sample_wid = 25e-9
     frequency_bin      = 500
     frequencies       = np.arange(15000, 20000, frequency_bin)
-    
+
     freq_cont, lowf, highf = lfn.buffer_and_limits(buffer_len       ,
                                                    buffer_sample_wid,
                                                    frequencies      )
@@ -55,4 +53,3 @@ def test_low_frequency_noise(dbnew):
     assert np.any(np.diff(pmt_noise, axis = 0))
     ## then that not all are
     assert not np.all(np.diff(pmt_noise, axis = 0))
-    

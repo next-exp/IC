@@ -13,7 +13,7 @@ from . corrections import get_normalization_factor
 from . corrections import apply_all_correction_single_maps
 from . corrections import apply_all_correction
 
-from pytest                import fixture, mark
+from pytest                import fixture
 from numpy.testing         import assert_allclose
 from numpy.testing         import assert_array_equal
 from numpy.testing         import assert_raises

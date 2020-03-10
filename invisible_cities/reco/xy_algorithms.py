@@ -13,9 +13,6 @@ from .. types.ic_types       import xy
 from .. evm.event_model      import Cluster
 
 
-from itertools import product
-
-
 def find_algorithm(algoname):
     if algoname in sys.modules[__name__].__dict__:
         return getattr(sys.modules[__name__], algoname)
