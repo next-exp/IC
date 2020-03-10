@@ -1,6 +1,5 @@
 from .  table_io import make_table
 from .. evm.nh5  import KrTable
-from .. evm.nh5  import XYfactors
 from .. evm.nh5  import PSFfactors
 
 
@@ -18,45 +17,6 @@ def kr_writer(hdf5_file, *, compression='ZLIB4'):
         kr_event.store(kr_table)
     return write_kr
 
-
-def xy_writer(hdf5_file, **kwargs):
-    xy_table = make_table(hdf5_file,
-                          fformat = XYfactors,
-                          **kwargs)
-
-    def write_xy(xs, ys, fs, us, ns):
-        row = xy_table.row
-        for i, x in enumerate(xs):
-            for j, y in enumerate(ys):
-                row["x"]           = x
-                row["y"]           = y
-                row["factor"]      = fs[i,j]
-                row["uncertainty"] = us[i,j]
-                row["nevt"]        = ns[i,j]
-                row.append()
-    return write_xy
-
-
-def xy_correction_writer(hdf5_file, * ,
-                         group       = "Corrections",
-                         table_name  = "XYcorrections",
-                         compression = 'ZLIB4'):
-    return xy_writer(hdf5_file,
-                     group        = group,
-                     name         = table_name,
-                     description  = "XY corrections",
-                     compression  = compression)
-
-
-def xy_lifetime_writer(hdf5_file, * ,
-                       group       = "Corrections",
-                       table_name  = "LifetimeXY",
-                       compression = 'ZLIB4'):
-    return xy_writer(hdf5_file,
-                     group        = group,
-                     name         = table_name,
-                     description  = "XY-dependent lifetime values",
-                     compression  = compression)
 
 def psf_writer(hdf5_file, **kwargs):
     psf_table = make_table(hdf5_file,
