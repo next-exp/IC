@@ -17,9 +17,9 @@ import pandas as pd
 
 from argparse import Namespace
 
-from ..evm.event_model  import SensorParams
-from ..evm.event_model  import MCInfo
-from ..core.exceptions  import NoParticleInfoInFile
+from ..evm.ic_containers import SensorParams
+from ..evm.event_model   import MCInfo
+from ..core.exceptions   import NoParticleInfoInFile
 
 def filters(name):
     """Return the filter corresponding to a given key.
@@ -122,7 +122,7 @@ def get_vectors(h5f):
 
     if 'sipmrwf' in h5f.root.RD:
         sipmrwf = h5f.root.RD.sipmrwf
-        
+
     return pmtrwf, pmtblr, sipmrwf
 
 
