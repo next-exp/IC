@@ -34,7 +34,8 @@ def test_timefunc(capfd):
     # We run a function with a defined time duration (sleep) and we check
     # the decorator prints a correct measurement.
     time = 0.12
-    result = core.timefunc(sleep)(time)
+    core.timefunc(sleep)(time)
+
     out, err = capfd.readouterr()
     time_measured = re.search('\d+\.\d+', out).group(0)
     time_measured = float(time_measured)

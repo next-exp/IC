@@ -216,7 +216,6 @@ def test_compute_seeds_from_spectrum(ICDATADIR):
 
     PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
     h5in    = tb.open_file(PATH_IN, 'r')
-    run_no  = get_run_number(h5in)
 
     specsL = np.array(h5in.root.HIST.sipm_spe).sum(axis=0)
     specsD = np.array(h5in.root.HIST.sipm_dark).sum(axis=0)

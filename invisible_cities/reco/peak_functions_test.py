@@ -611,6 +611,6 @@ def test_rebin_times_and_waveforms_negative_bins(ICDATADIR):
     pmap_file = os.path.join(ICDATADIR, 'pmaps_negative_bins.h5')
     pmaps     = load_pmaps(pmap_file)
     s2        = pmaps[48490].s2s[0]
-    rebinned_info = pf.rebin_times_and_waveforms(s2.times             ,
-                                                 s2.bin_widths        ,
-                                                 s2.pmts.all_waveforms)
+    pf.rebin_times_and_waveforms(s2.times             ,
+                                 s2.bin_widths        ,
+                                 s2.pmts.all_waveforms)

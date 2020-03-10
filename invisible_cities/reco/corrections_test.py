@@ -193,7 +193,6 @@ def test_get_df_to_z_converter_dv_known(map_filename, z):
     assert_array_equal(z_converter(z), z * dv_mean)
 
 def test_get_df_to_z_converter_raises_exception_when_no_map(map_filename):
-    map_e = read_maps(map_filename)
     assert_raises(TimeEvolutionTableMissing,
                   get_df_to_z_converter,
                   None)
@@ -276,7 +275,6 @@ def test_apply_all_correction_single_maps_properly(map_filename, x, y, z, t):
     lifetime one: exp(Z/5000).
     """
     maps      = read_maps(map_filename)
-    norm      = get_normalization_factor (maps, norm_strategy.max)
     load_corr = apply_all_correction_single_maps(map_e0     = maps,
                                                  map_lt     = maps,
                                                  map_te     = maps,

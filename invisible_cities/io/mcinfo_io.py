@@ -511,7 +511,6 @@ def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCH
         if iext >= events_in_file:
             break
 
-        current_event  = {}
         evt_number     = h5extents[iext]['evt_number']
         hit_rows, _, _ = read_mcinfo_evt(mc_info, evt_number, iext, True)
 

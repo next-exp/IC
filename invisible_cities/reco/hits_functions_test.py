@@ -56,8 +56,11 @@ def thresholds(draw, min_value=1, max_value=1):
 def test_merge_NN_not_modify_input(hits):
     hits_org    = deepcopy(hits)
     before_len  = len(hits)
-    hits_merged = merge_NN_hits(hits)
+
+    merge_NN_hits(hits)
+
     after_len   = len(hits)
+
     assert before_len == after_len
     for h1, h2 in zip(hits, hits_org):
         assert_hit_equality(h1, h2)
@@ -95,7 +98,9 @@ def test_threshold_hits_with_penthesilea(config_tmpdir, Kr_pmaps_run4628_filenam
                          lm_radius     = 0 * units.mm ,
                          new_lm_radius = 0 * units.mm ,
                          msipm         = 1      )))
-    cnt = penthesilea (**conf)
+
+    penthesilea (**conf)
+
     PATH_OUT_th2 = os.path.join(config_tmpdir, 'KrDST_4628_th2.h5')
     conf.update(dict(run_number = 4628,
                      files_in   = PATH_IN,
@@ -107,7 +112,9 @@ def test_threshold_hits_with_penthesilea(config_tmpdir, Kr_pmaps_run4628_filenam
                          lm_radius     = 0 * units.mm ,
                          new_lm_radius = 0 * units.mm ,
                          msipm         = 1      )))
-    cnt = penthesilea (**conf)
+
+    penthesilea (**conf)
+
     hits_pent_th1 = hio.load_hits(PATH_OUT_th1)
     hits_pent_th2 = hio.load_hits(PATH_OUT_th2)
     ev_num = 1
@@ -121,7 +128,9 @@ def test_threshold_hits_with_penthesilea(config_tmpdir, Kr_pmaps_run4628_filenam
 def test_threshold_hits_not_modify_input(hits, th):
     hits_org    = deepcopy(hits)
     before_len  = len(hits)
-    hits_thresh = threshold_hits(hits,th)
+
+    threshold_hits(hits,th)
+
     after_len   = len(hits)
     assert before_len == after_len
     for h1, h2 in zip(hits, hits_org):

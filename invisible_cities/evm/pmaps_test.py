@@ -130,8 +130,8 @@ def test_SensorResponses_sum_over_sensors(srs):
 @given(size=integers(1, 10))
 def test_SensorResponses_raises_exception_when_shapes_dont_match(SR, size):
     with raises(ValueError):
-        sr = SR(np.empty(size),
-                np.empty((size + 1, 1)))
+        SR(np.empty(size),
+           np.empty((size + 1, 1)))
 
 
 @given(peaks())
@@ -297,8 +297,8 @@ def test_Peak_raises_exception_when_shapes_dont_match(PK, sr1, sr2):
         (ids, wfs), sr1 = sr1
         _         , sr2 = sr2
         n_samples       = wfs.shape[1]
-        pk = PK(np.empty(n_samples + 1),
-                np.empty(n_samples + 1), sr1, sr2)
+        PK(np.empty(n_samples + 1),
+           np.empty(n_samples + 1), sr1, sr2)
 
 
 @given(pmaps())

@@ -17,13 +17,12 @@ from .  sensor_functions import simulate_pmt_response
 def test_cwf_blr(dbnew, electron_MCRD_file):
     """Check that CWF -> (deconv) (RWF) == BLR within 1 %. """
 
-    run_number = 0
-    DataPMT = load_db.DataPMT(dbnew, run_number)
-    pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist()
-    channel_id = DataPMT.ChannelID.values
-    coeff_blr = abs(DataPMT.coeff_blr.values)
-    coeff_c = abs(DataPMT.coeff_c .values)
-    adc_to_pes = abs(DataPMT.adc_to_pes.values)
+    run_number    = 0
+    DataPMT       = load_db.DataPMT(dbnew, run_number)
+    pmt_active    = np.nonzero(DataPMT.Active.values)[0].tolist()
+    coeff_blr     = abs(DataPMT.coeff_blr.values)
+    coeff_c       = abs(DataPMT.coeff_c .values)
+    adc_to_pes    = abs(DataPMT.adc_to_pes.values)
     single_pe_rms = abs(DataPMT.Sigma.values)
 
     with tb.open_file(electron_MCRD_file, 'r') as h5in:

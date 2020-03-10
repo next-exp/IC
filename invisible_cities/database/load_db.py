@@ -121,7 +121,6 @@ order by SensorID, BinEnergyPes;'''.format(abs(run_number))
 @lru_cache(maxsize=10)
 def PMTLowFrequencyNoise(db_file, run_number=1e5):
     conn = sqlite3.connect(get_db(db_file))
-    cursor = conn.cursor()
 
     sqlmapping = '''select SensorID, FEBox from PMTFEMapping
     where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL)

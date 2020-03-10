@@ -36,10 +36,10 @@ def test_load_hits_double_ratio_e_q_equals_one(TlMC_hits):
 
         Emax.append(np.max(E))
         Qmax.append(np.max(Q))
-        pop = E.pop(np.argmax(E))
-        pop = Q.pop(np.argmax(Q))
-        Ein.extend(E)
-        Qin.extend(Q)
+        E   .pop   (np.argmax(E))
+        Q   .pop   (np.argmax(Q))
+        Ein .extend(E)
+        Qin .extend(Q)
 
 
     r1 = np.mean(Emax)/np.mean(Qmax)
@@ -63,10 +63,10 @@ def test_load_hits_double_ratio_e_q_equals_one_skipping_NN(TlMC_hits_skipping_NN
 
         Emax.append(np.max(E))
         Qmax.append(np.max(Q))
-        pop = E.pop(np.argmax(E))
-        pop = Q.pop(np.argmax(Q))
-        Ein.extend(E)
-        Qin.extend(Q)
+        E   .pop   (np.argmax(E))
+        Q   .pop   (np.argmax(Q))
+        Ein .extend(E)
+        Qin .extend(Q)
 
 
     r1 = np.mean(Emax)/np.mean(Qmax)

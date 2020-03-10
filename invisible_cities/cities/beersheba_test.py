@@ -111,9 +111,8 @@ def test_beersheba_exact_result_separate(ICDATADIR, deconvolution_config):
 
 
 @mark.parametrize("ndim", (1, 3))
-def test_beersheba_param_dim(ICDATADIR, deconvolution_config, ndim):
-    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_joint.h5")
-    conf, PATH_OUT   = deconvolution_config
+def test_beersheba_param_dim(deconvolution_config, ndim):
+    conf, _ = deconvolution_config
 
     conf['deconv_params']['n_dim'  ] = ndim
 
@@ -122,10 +121,9 @@ def test_beersheba_param_dim(ICDATADIR, deconvolution_config, ndim):
 
 
 @mark.parametrize("param_name", ('cut_type', 'deconv_mode', 'energy_type', 'inter_method'))
-def test_deconvolve_signal_enums(ICDATADIR, deconvolution_config, param_name):
-    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_joint.h5")
-    conf, PATH_OUT   = deconvolution_config
-    conf_dict        = conf['deconv_params']
+def test_deconvolve_signal_enums(deconvolution_config, param_name):
+    conf, _   = deconvolution_config
+    conf_dict = conf['deconv_params']
 
     conf_dict.pop("q_cut")
     conf_dict.pop("drop_dist")
@@ -138,12 +136,11 @@ def test_deconvolve_signal_enums(ICDATADIR, deconvolution_config, param_name):
     conf_dict[param_name]     = param_name
 
     with raises(ValueError):
-        deconv = deconvolve_signal(**conf_dict)
+        deconvolve_signal(**conf_dict)
 
 
-def test_beersheba_expandvar(ICDATADIR, deconvolution_config):
-    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_joint.h5")
-    conf, PATH_OUT   = deconvolution_config
+def test_beersheba_expandvar(deconvolution_config):
+    conf, _ = deconvolution_config
 
     conf['deconv_params']['psf_fname'] = '$ICDIR/database/test_data/PSF_dst_sum_collapsed.h5'
 

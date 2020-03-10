@@ -116,7 +116,7 @@ def test_city_adds_default_detector_db(config_tmpdir):
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
     @city
     def dummy_city(files_in, file_out, event_range, detector_db):
-        with tb.open_file(file_out, 'w') as h5out:
+        with tb.open_file(file_out, 'w'):
             pass
         return detector_db
 
@@ -130,7 +130,7 @@ def test_city_does_not_overwrite_detector_db(config_tmpdir):
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
     @city
     def dummy_city(files_in, file_out, event_range, detector_db):
-        with tb.open_file(file_out, 'w') as h5out:
+        with tb.open_file(file_out, 'w'):
             pass
         return detector_db
 
@@ -143,7 +143,7 @@ def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
     @city
     def dummy_city(files_in, file_out, event_range):
-        with tb.open_file(file_out, 'w') as h5out:
+        with tb.open_file(file_out, 'w'):
             pass
 
     dummy_city(**args)

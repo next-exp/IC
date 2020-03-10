@@ -132,7 +132,7 @@ def test_penthesilea_threshold_rebin(ICDATADIR, output_tmpdir):
                      rebin        = rebin_thresh,
                      rebin_method =  'threshold'))
 
-    cnt = penthesilea(**conf)
+    penthesilea(**conf)
 
     output_dst   = dio.load_dst(file_out   , 'RECO', 'Events')
     expected_dst = dio.load_dst(true_output, 'RECO', 'Events')
@@ -162,7 +162,7 @@ def test_penthesilea_signal_to_noise(ICDATADIR, output_tmpdir):
                      sipm_charge_type  = 'signal_to_noise',
                      slice_reco_params =      reco_params))
 
-    cnt = penthesilea(**conf)
+    penthesilea(**conf)
 
     output_dst   = dio.load_dst(file_out   , 'RECO', 'Events')
     expected_dst = dio.load_dst(true_output, 'RECO', 'Events')

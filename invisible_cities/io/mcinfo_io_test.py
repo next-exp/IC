@@ -103,8 +103,6 @@ def test_mc_info_writer_generatoroutput_non_consecutive_events(output_tmpdir, fi
     filein = os.path.join(output_tmpdir, file_to_check)
 
     with tb.open_file(filein) as h5in:
-        mc_info          = get_mc_info(h5in)
-
         # test the content of events to be sure that the extents rows are ion sync with generators rows
         evt_numbers_in_extents    = h5in.root.MC.extents[:]['evt_number']
         evt_numbers_in_generators = h5in.root.MC.generators[:]['evt_number']
