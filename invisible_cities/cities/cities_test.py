@@ -5,7 +5,7 @@ from importlib import import_module
 from pytest import mark
 from .. core.configure      import configure
 
-cities = "irene dorothea penthesilea esmeralda".split()
+cities = "irene dorothea penthesilea esmeralda beersheba".split()
 
 @mark.parametrize("city", cities)
 def test_city_empty_input_file(config_tmpdir, ICDATADIR, city):
