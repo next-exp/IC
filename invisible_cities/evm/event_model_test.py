@@ -22,15 +22,6 @@ from .       event_model import KrEvent
 
 
 @composite
-def sensor_params_input(draw):
-    npmt   = draw(integers())
-    pmtwl  = draw(integers())
-    nsipm  = draw(integers())
-    sipmwl = draw(integers())
-    return npmt, pmtwl, nsipm, sipmwl
-
-
-@composite
 def event_input(draw):
     evt_no = draw(integers())
     time   = draw(floats  (allow_nan=False))
