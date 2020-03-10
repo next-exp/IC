@@ -2,10 +2,8 @@ import os
 import tables as tb
 
 from pytest import mark
-from pytest import fixture
 
 from .. cities.components import city
-from .. core  .configure  import configure
 
 from . hits_io   import     hits_writer
 from . kdst_io   import       kr_writer
@@ -20,15 +18,6 @@ def writer_test_city(writer, file_out, files_in, event_range, detector_db):
 
     def get_writers     (self, h5out): pass
     def write_parameters(self, h5out): pass
-
-
-@fixture(scope="session")
-def init_city(ICDIR, config_tmpdir):
-    conf = configure(('city ' + ICDIR +  'config/city.conf').split())
-    file_out = os.path.join(config_tmpdir, "empty_file.h5")
-    conf.update(dict(file_out = file_out))
-    city = DummyCity(**conf)
-    return city, file_out
 
 
 @mark.parametrize("         writer  group      node      column        thing".split(),
