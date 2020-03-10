@@ -121,6 +121,8 @@ def deconvolution_input(sample_width : List[float],
     Hs          : Charge input for deconvolution.
     inter_points : Coordinates of the deconvolution input.
     """
+    if inter_method not in InterpolationMethod:
+        raise ValueError(f'inter_method {inter_method} is not a valid interpolation method.')
 
     def deconvolution_input(data        : Tuple[np.ndarray, ...],
                             weight      : np.ndarray
