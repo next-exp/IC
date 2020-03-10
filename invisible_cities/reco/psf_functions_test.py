@@ -2,6 +2,9 @@ import os
 import numpy  as np
 import pandas as pd
 
+from pytest                      import mark
+from pytest                      import raises
+
 from ..     reco.psf_functions   import hdst_psf_processing
 from ..     reco.psf_functions   import add_variable_weighted_mean
 from ..     reco.psf_functions   import add_empty_sensors_and_normalize_q
@@ -82,3 +85,21 @@ def test_create_psf(ICDATADIR):
     assert np.allclose(psf['psf'    ], psf_val)
     assert np.allclose(psf['entries'], entries)
     assert np.allclose(psf['bins'   ],   binss)
+
+@mark.parametrize('ndim', (1, 3))
+def test_create_psf_fails_param_dim(ICDATADIR, ndim):
+    PATH_IN        = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_psf.h5")
+    hdst           = pd.read_hdf(PATH_IN)
+    bin_edges      = [np.linspace(-50, 50, 101) for i in range(ndim)]
+
+    with raises(ValueError):
+        psf_val, entries, binss = create_psf((hdst.RelX, hdst.RelY), hdst.NormQ, bin_edges)
+
+
+def test_create_psf_fails_ndim(ICDATADIR):
+    PATH_IN        = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_psf.h5")
+    hdst           = pd.read_hdf(PATH_IN)
+    bin_edges      = [np.linspace(-50, 50, 101) for i in range(3)]
+
+    with raises(NotImplementedError):
+        psf_val, entries, binss = create_psf((hdst.RelX, hdst.RelY, hdst.RelY), hdst.NormQ, bin_edges)
