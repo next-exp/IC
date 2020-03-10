@@ -188,7 +188,7 @@ def copy_mc_info(h5in : tb.File, writer : Type[mc_info_writer], which_events : L
     try:
         if which_events is None:
             which_events = h5in.root.MC.extents.cols.evt_number[:]
-        mcinfo = tbl.get_mc_info(h5in)
+        mcinfo = get_mc_info(h5in)
         for n in which_events:
             writer(mctables=mcinfo, evt_number=n)
     except tb.exceptions.NoSuchNodeError:
@@ -470,7 +470,7 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_n
 
 
 def read_mcinfo(h5f, event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Sequence[MCParticle]]]:
-    mc_info = tbl.get_mc_info(h5f)
+    mc_info = get_mc_info(h5f)
 
     h5extents = mc_info.extents
 
@@ -530,7 +530,7 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]]) -> Mapp
 
 def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
     """Returns all hits in the event"""
-    mc_info = tbl.get_mc_info(h5f)
+    mc_info = get_mc_info(h5f)
     h5extents = mc_info.extents
     events_in_file = len(h5extents)
 

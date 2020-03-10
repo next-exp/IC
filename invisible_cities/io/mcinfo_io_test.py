@@ -19,11 +19,10 @@ from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import mc_info_writer
 from .  mcinfo_io import copy_mc_info
 from .  mcinfo_io import read_mcinfo_evt
+from .  mcinfo_io import get_mc_info
 
 from .. core            import system_of_units as units
 from .. core.exceptions import NoParticleInfoInFile
-
-from .. reco.tbl_functions import get_mc_info
 
 from pytest import raises
 from pytest import mark

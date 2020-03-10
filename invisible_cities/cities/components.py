@@ -38,7 +38,6 @@ from .. reco                      import   calib_sensors_functions as csf
 from .. reco                      import            peak_functions as pkf
 from .. reco                      import           pmaps_functions as pmf
 from .. reco                      import            hits_functions as hif
-from .. reco   .tbl_functions     import               get_mc_info
 from .. reco   .xy_algorithms     import                    corona
 from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import               pmap_filter
@@ -226,7 +225,7 @@ def get_sipm_wfs(h5in, wf_type):
 
 def get_mc_info_safe(h5in, run_number):
     if run_number <= 0:
-        try                                 : return get_mc_info(h5in)
+        try                                 : return mcinfo_io.get_mc_info(h5in)
         except tb.exceptions.NoSuchNodeError: pass
     return
 
