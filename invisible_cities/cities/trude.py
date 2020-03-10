@@ -35,7 +35,7 @@ import numpy  as np
 import tables as tb
 
 from .. core                 import         system_of_units as units
-from .. io.         hist_io  import             hist_writer
+from .. io.    histogram_io  import             hist_writer
 from .. io.run_and_event_io  import    run_and_event_writer
 from .. core.core_functions  import    shift_to_bin_centers
 from .. reco                 import           tbl_functions as tbl
