@@ -2,6 +2,7 @@ import random
 import numpy  as np
 import pandas as pd
 
+from pytest                  import raises
 
 from hypothesis              import given
 from hypothesis.strategies   import floats
@@ -115,6 +116,11 @@ def test_deconvolution_input(data_hdst, data_hdst_deconvolved):
     assert np.allclose(ref_interpolation['e_inter'], inter[0])
     assert np.allclose(ref_interpolation['x_inter'], inter[1][0])
     assert np.allclose(ref_interpolation['y_inter'], inter[1][1])
+
+
+def test_deconvolution_input_interpolation_method(data_hdst, data_hdst_deconvolved):
+    with raises(ValueError):
+        deconvolution_input([10., 10.], [1., 1.], 'check')
 
 
 def test_deconvolve(data_hdst, data_hdst_deconvolved):
