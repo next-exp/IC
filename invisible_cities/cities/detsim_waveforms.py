@@ -22,8 +22,7 @@ def create_waveform(times : np.ndarray,
     the waveform bins. The counts (N) in a given time bin (T) are distributed in the waveform
     such as the nsamples posterior to T would have N/nsamples counts (included T).
     """
-
-
+    
     wf = np.zeros(len(bins))
 
     if np.sum(pes)==0:
