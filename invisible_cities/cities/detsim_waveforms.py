@@ -3,13 +3,6 @@ import numpy as np
 ##################################
 ######### WAVEFORMS ##############
 ##################################
-def bincounter(xs : np.array,
-               dx : float =1.,
-               x0 : float =0.):
-    ixs = ((xs - x0) // dx).astype(int)
-    return np.unique(ixs, return_counts=True)
-
-
 def create_waveform(times : np.array,
                     pes   : np.array,
                     bins  : np.array,
@@ -22,13 +15,16 @@ def create_waveform(times : np.array,
     if nsamples==0:
         t = np.repeat(times, pes)
         t = np.clip  (t, 0, bins[-1])
-        indexes, counts = bincounter(t, wf_bin_time)
+        indexes = np.digitize(t, bins)-1
+        indexes, counts = np.unique(indexes, return_counts=True)
         wf[indexes] = counts
         return wf
 
     t = np.repeat(times, pes)
     t = np.clip  (t, 0, bins[-nsamples])
-    indexes, counts = bincounter(t, wf_bin_time)
+
+    indexes = np.digitize(t, bins)-1
+    indexes, counts = np.unique(indexes, return_counts=True)
 
     spread_pes = np.repeat(counts[:, np.newaxis]/nsamples, nsamples, axis=1)
     for index, counts in zip(indexes, spread_pes):
