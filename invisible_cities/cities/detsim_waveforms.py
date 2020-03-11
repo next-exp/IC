@@ -13,14 +13,16 @@ def create_waveform(times : np.array,
         return wf
     if nsamples==0:
         t = np.repeat(times, pes)
-        t = np.clip  (t, 0, bins[-1])
+        sel = (bins[0]<=t) & (t<=bins[-1])
+        t = t[sel]
         indexes = np.digitize(t, bins)-1
         indexes, counts = np.unique(indexes, return_counts=True)
         wf[indexes] = counts
         return wf
 
     t = np.repeat(times, pes)
-    t = np.clip  (t, 0, bins[-nsamples])
+    sel = (bins[0]<=t) & (t<=bins[-1])
+    t = np.clip  (t[sel], bins[0], bins[-nsamples])
 
     indexes = np.digitize(t, bins)-1
     indexes, counts = np.unique(indexes, return_counts=True)
