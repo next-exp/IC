@@ -27,7 +27,7 @@ def create_waveform(times : np.array,
     indexes = np.digitize(t, bins)-1
     indexes, counts = np.unique(indexes, return_counts=True)
 
-    spread_pes = np.repeat(counts[:, np.newaxis]/nsamples, nsamples, axis=1)
+    spread_counts = np.repeat(counts[:, np.newaxis]/nsamples, nsamples, axis=1)
     for index, counts in zip(indexes, spread_pes):
         wf[index:index+nsamples] = wf[index:index+nsamples] + counts
     return wf
