@@ -2,6 +2,7 @@ import random
 import numpy  as np
 import pandas as pd
 
+from pytest                  import mark
 from pytest                  import raises
 
 from hypothesis              import given
@@ -118,9 +119,10 @@ def test_deconvolution_input(data_hdst, data_hdst_deconvolved):
     assert np.allclose(ref_interpolation['y_inter'], inter[1][1])
 
 
-def test_deconvolution_input_interpolation_method(data_hdst, data_hdst_deconvolved):
+@mark.parametrize("interp_method", InterpolationMethod.__members__)
+def test_deconvolution_input_interpolation_method(data_hdst, data_hdst_deconvolved, interp_method):
     with raises(ValueError):
-        deconvolution_input([10., 10.], [1., 1.], 'check')
+        deconvolution_input([10., 10.], [1., 1.], interp_method)
 
 
 def test_deconvolve(data_hdst, data_hdst_deconvolved):

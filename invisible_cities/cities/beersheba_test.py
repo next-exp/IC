@@ -29,7 +29,9 @@ def test_create_deconvolution_df(ICDATADIR):
 
     assert_dataframes_close(new_dst, true_dst)
 
-def test_create_deconvolution_df_cuttype(ICDATADIR):
+
+@mark.parametrize("cut_type", CutType.__members__)
+def test_create_deconvolution_df_cuttype(ICDATADIR, cut_type):
     true_in  = os.path.join(ICDATADIR, "exact_Kr_deconvolution_with_MC.h5")
     true_dst = dio.load_dst(true_in, 'DECO', 'Events')
     ecut     = 1e-2
@@ -37,7 +39,7 @@ def test_create_deconvolution_df_cuttype(ICDATADIR):
     with raises(ValueError):
         create_deconvolution_df(true_dst, true_dst.E.values,
                                 (true_dst.X.values, true_dst.Y.values, true_dst.Z.values),
-                                'check', ecut, 3)
+                                cut_type, ecut, 3)
 
 
 def test_distribute_energy(ICDATADIR):
@@ -133,7 +135,7 @@ def test_deconvolve_signal_enums(ICDATADIR, deconvolution_config, param_name):
     conf_dict['energy_type' ] = HitEnergy          (conf_dict['energy_type' ])
     conf_dict['inter_method'] = InterpolationMethod(conf_dict['inter_method'])
 
-    conf_dict[param_name]     = 'check'
+    conf_dict[param_name]     = param_name
 
     with raises(ValueError):
         deconv = deconvolve_signal(**conf_dict)
