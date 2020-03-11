@@ -6,7 +6,7 @@ import tables as tb
 from pandas      import DataFrame
 from collections import namedtuple
 
-from . core.system_of_units_c import units
+from . core .system_of_units_c import units
 from . evm  . pmaps_test       import pmaps
 from . io   . pmaps_io         import load_pmaps_as_df
 from . io   . pmaps_io         import load_pmaps
@@ -16,7 +16,6 @@ from . io   .  hits_io         import load_hits
 from . io   .  hits_io         import load_hits_skipping_NN
 from . io   . mcinfo_io        import load_mchits
 from . types.ic_types          import NN
-
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
 dst_data = namedtuple('dst_data', 'file_info config read true')
@@ -35,6 +34,9 @@ def ICDIR():
 def ICDATADIR(ICDIR):
     return os.path.join(ICDIR, "database/test_data/")
 
+@pytest.fixture(scope = 'session')
+def PSFDIR(ICDIR):
+    return os.path.join(ICDIR, "database/test_data/PSF_dst_sum_collapsed.h5")
 
 @pytest.fixture(scope = 'session')
 def irene_diomira_chain_tmpdir(tmpdir_factory):
@@ -222,6 +224,11 @@ def data_hdst(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
+@pytest.fixture(scope='session')
+def data_hdst_deconvolved(ICDATADIR):
+    test_file = "test_hits_th_1pes_deconvolution.npz"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
 
 @pytest.fixture(scope='session')
 def KrMC_pmaps_example(output_tmpdir):
@@ -732,3 +739,32 @@ def dbnext100():
                ids=["demo", "new", "next100"])
 def db(request):
     return request.param
+
+@pytest.fixture(scope='function') # Needs to be function as the config dict is modified when running
+def deconvolution_config(ICDIR, ICDATADIR, PSFDIR, config_tmpdir):
+    PATH_IN     = os.path.join(ICDATADIR    ,    "test_Xe2nu_NEW_v1.2.0_cdst.5_62.h5")
+    PATH_OUT    = os.path.join(config_tmpdir,                       "beersheba_MC.h5")
+    config_path = os.path.join(ICDIR        ,                 "config/beersheba.conf")
+    nevt_req    = 3
+    conf        = dict(files_in      = PATH_IN ,
+                       file_out      = PATH_OUT,
+                       event_range   = nevt_req,
+                       compression   = 'ZLIB4',
+                       print_mod     = 1000,
+                       run_number    = 0,
+                       deconv_params = dict(q_cut         =         10,
+                                            drop_dist     = [10., 10.],
+                                            psf_fname     =     PSFDIR,
+                                            e_cut         =       1e-3,
+                                            n_iterations  =         10,
+                                            iteration_tol =       0.01,
+                                            sample_width  = [10., 10.],
+                                            bin_size      = [ 1.,  1.],
+                                            energy_type   =        'E',
+                                            diffusion     = (1.0, 1.0),
+                                            deconv_mode   =    'joint',
+                                            n_dim         =          2,
+                                            cut_type      =      'abs',
+                                            inter_method  =    'cubic'))
+
+    return conf, PATH_OUT
