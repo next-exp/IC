@@ -6,7 +6,6 @@ import numpy as np
 def create_waveform(times : np.array,
                     pes   : np.array,
                     bins  : np.array,
-                    wf_bin_time : float,
                     nsamples    : int) -> np.array:
     wf = np.zeros(len(bins))
 
@@ -35,11 +34,11 @@ def create_waveform(times : np.array,
 def create_sensor_waveforms(times   : np.array,
                             pes_at_sensors : np.array,
                             wf_buffer_time : float,
-                            wf_bin_time    : float,
+                            bin_width    : float,
                             nsamples : int,
                             poisson  : bool =False) -> np.array:
-    bins = np.arange(0, wf_buffer_time, wf_bin_time)
-    wfs = np.array([create_waveform(times, pes, bins, wf_bin_time, nsamples) for pes in pes_at_sensors])
+    bins = np.arange(0, wf_buffer_time, bin_width)
+    wfs = np.array([create_waveform(times, pes, bins, nsamples) for pes in pes_at_sensors])
 
     if poisson:
         wfs = np.random.poisson(wfs)
