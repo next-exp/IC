@@ -69,7 +69,7 @@ def create_sensor_waveforms(times   : np.ndarray,
     """
 
     bins = np.arange(0, wf_buffer_time, bin_width)
-    wfs = np.array([create_waveform(times, pes, bins, nsamples) for pes in pes_at_sensors])
+    wfs = np.stack([create_waveform(times, pes, bins, nsamples) for pes in pes_at_sensors])
 
     if poisson:
         wfs = np.random.poisson(wfs)
