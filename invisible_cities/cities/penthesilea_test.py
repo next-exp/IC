@@ -203,7 +203,8 @@ def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
         penthesilea_hits = penthesilea_evts[evt_no]
 
         assert len(penthesilea_hits) == len(true_hits)
-        (assert_MChit_equality(p_hit, t_hit) for p_hit, t_hit in zip(penthesilea_hits, true_hits))
+        for p_hit, t_hit in zip(penthesilea_hits, true_hits):
+            assert_MChit_equality(p_hit, t_hit)
 
 
 def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
