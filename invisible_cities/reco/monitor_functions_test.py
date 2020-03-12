@@ -5,6 +5,7 @@ import numpy as np
 
 from hypothesis              import given
 from hypothesis              import settings
+from hypothesis              import HealthCheck
 from hypothesis.extra.pandas import columns, data_frames
 from hypothesis.strategies   import floats
 
@@ -417,7 +418,7 @@ kdst_variables = ['nS2', 'S1w'  , 'S1h', 'S1e', 'S1t', 'S2w', 'S2h', 'S2e', 'S2q
 
 
 @given(data_frames(columns=columns(kdst_variables, elements=floats(allow_nan=False))))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.too_slow,))
 def test_fill_kdst_var_1d(kdst):
     var_dict = defaultdict(list)
     monf.fill_kdst_var_1d (kdst, var_dict)
@@ -430,7 +431,7 @@ def test_fill_kdst_var_1d(kdst):
 
 
 @given(data_frames(columns=columns(kdst_variables, elements=floats(allow_nan=False))))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.too_slow,))
 def test_fill_kdst_var_2d(kdst):
     var_dict = defaultdict(list)
     monf.fill_kdst_var_1d (kdst, var_dict)
