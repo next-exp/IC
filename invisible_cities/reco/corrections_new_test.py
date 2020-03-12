@@ -158,7 +158,7 @@ def test_correct_geometry_properly(x):
                     max_value = 530),
        float_arrays(min_value = 1,
                     max_value = 1e4))
-def test_correct_geometry_properly(z, lt):
+def test_correct_lifetime_properly(z, lt):
     compute_corr = np.exp(z / lt)
     assert_array_equal(correct_lifetime_(z, lt), compute_corr)
 

@@ -57,6 +57,7 @@ from . paolina_functions import get_track_energy
 from .. core.exceptions        import NoHits
 from .. core.exceptions        import NoVoxels
 from .. core.system_of_units_c import units
+from .. core.testing_utils     import assert_bhit_equality
 
 from .. io.mcinfo_io    import load_mchits
 from .. io.hits_io      import load_hits
@@ -295,7 +296,8 @@ def test_hits_on_border_are_assigned_to_correct_voxel():
                       BHit(15., 25., z, energy),
                       BHit(25., 15., z, energy)]]
     for v, hits in zip(voxels, expected_hits):
-        (assert_bhit_equality(p_hit, t_hit) for v_hit, e_hit in zip(v.hits, hits))
+        for v_hit, e_hit in zip(v.hits, hits):
+            assert_bhit_equality(v_hit, e_hit)
 
 
 @given(bunch_of_hits, box_sizes)
@@ -779,8 +781,9 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
     energies = [v.E for v in voxels]
     e_thr = min(energies) + fraction_zero_one * (max(energies) - min(energies))
     mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
+
     trks = make_track_graphs(mod_voxels)
-    for t in tracks:
+    for t in trks:
         a, b = find_extrema(t)
 
         assert np.allclose(blob_centre(a), a.pos)
@@ -867,7 +870,7 @@ def test_make_tracks_function(ICDATADIR):
 
 
 @given(bunch_of_hits, box_sizes)
-def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
+def test_make_voxel_graph_keeps_energy_consistence(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
     tracks = make_track_graphs(voxels)
     # assert sum of track energy equal to sum of hits energies
