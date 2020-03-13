@@ -17,4 +17,4 @@ def test_create_waveform():
     # test
     waveform = create_waveform(times, pes, bins, wf_bin_time, nsamples)
 
-    assert (waveform == expected).all()
+    assert np.all(waveform == expected)
