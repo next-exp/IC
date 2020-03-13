@@ -52,15 +52,78 @@ def get_sipm_psf_from_file(filename : str)->Callable:
     xr, yr, factor = psf["xr"], psf["yr"], psf["factor"]
 
     #create binning
-    xbins, ybins = np.unique(xr), np.unique(yr)
-    dx = (xbins[-1] - xbins[0])/(len(xbins)-1)
-    dy = (ybins[-1] - ybins[0])/(len(ybins)-1)
-    xbins = np.append(xbins-dx/2., xbins[-1]+dx/2.)
-    ybins = np.append(ybins-dy/2., ybins[-1]+dy/2.)
+    xcenters, ycenters = np.unique(xr), np.unique(yr)
+    xbins = binedges_from_bincenters(xcenters)
+    ybins = binedges_from_bincenters(ycenters)
 
     #histogram
     psf, _ = np.histogramdd((xr, yr), weights=factor, bins=(xbins, ybins))
-    xaxis = (np.min(xbins), np.max(xbins), dx)
-    yaxis = (np.min(ybins), np.max(ybins), dy)
+    xaxis = (np.min(xbins), np.max(xbins), xbins[1]-xbins[0])
+    yaxis = (np.min(ybins), np.max(ybins), ybins[1]-ybins[0])
 
     return create_xy_function(psf, xaxis, yaxis)
+
+
+
+##################################
+######### LIGTH TABLE ############
+##################################
+def binedges_from_bincenters(bincenters):
+    ds = np.diff(bincenters)
+    if ~np.all(ds == ds[0]):
+        raise Exception("Bin distances must be equal")
+
+    d = ds[0]
+    return np.arange(bincenters[0]-d/2., bincenters[-1]+d/2.+d, d)
+
+
+def create_xyz_function(array, xaxis, yaxis, zaxis):
+    xmin, xmax, dx = xaxis
+    ymin, ymax, dy = yaxis
+    zmin, zmax, dz = zaxis
+    def function(x, y, z):
+        x = np.clip(x, xmin, xmax-0.1*dx)
+        y = np.clip(y, ymin, ymax-0.1*dx)
+        z = np.clip(z, zmin, zmax-0.1*dz)
+        ix = ((x-xmin)//dx).astype(int)
+        iy = ((y-ymin)//dy).astype(int)
+        iz = ((z-zmin)//dz).astype(int)
+        return array[ix, iy, iz]
+    return function
+
+
+def get_ligthtables(filename: str)->Callable:
+    ##### Load LT ######
+    with tb.open_file(filename) as h5file:
+        LT = h5file.root.LightTable.table.read()
+
+    #### XYZ binning #####
+    x, y, z = LT["x"], LT["y"], LT["z"]
+
+    xcenters, ycenters, zcenters = np.unique(x), np.unique(y), np.unique(z)
+    xbins = binedges_from_bincenters(xcenters)
+    ybins = binedges_from_bincenters(ycenters)
+    zbins = binedges_from_bincenters(zcenters)
+
+    xaxis = np.min(xbins), np.max(xbins), np.diff(xbins)[0]
+    yaxis = np.min(ybins), np.max(ybins), np.diff(ybins)[0]
+    zaxis = np.min(zbins), np.max(zbins), np.diff(zbins)[0]
+
+    ###### CREATE XYZ FUNCTION FOR EACH SENSOR ######
+    func_per_sensor = []
+    sensors = ["FIBER_SENSOR_10000", "FIBER_SENSOR_10001"]
+    for sensor in sensors:
+        w = LT[sensor]
+
+        H, _ = np.histogramdd((x, y, z), weights=w, bins=[xbins, ybins, zbins])
+        fxyz = create_xyz_function(H, xaxis, yaxis, zaxis)
+
+        func_per_sensor.append(fxyz)
+
+    ###### CREATE XYZ CALLABLE FOR LIST OF XYZ FUNCTIONS #####
+    def merge_list_of_functions(list_of_functions):
+        def merged(x, y, z):
+            return [f(x, y, z) for f in list_of_functions]
+        return merged
+
+    return merge_list_of_functions(func_per_sensor)
