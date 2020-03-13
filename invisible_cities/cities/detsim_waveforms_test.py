@@ -1,6 +1,6 @@
 import numpy as np
 
-from invisible_cities.cities.detsim_waveforms import *
+from invisible_cities.cities.detsim_waveforms import create_waveform
 
 
 
