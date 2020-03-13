@@ -34,14 +34,14 @@ def empty_dataframe(columns=['int_value', 'float_value', 'bool_value', 'str_valu
     return df
 
 
-dataframe         = data_frames(index=range_indexes(min_size=1, max_size=5), columns=[column('int_value' , dtype = int    ),
-                                                                                      column('float_val' , dtype = float  ),
-                                                                                      column('bool_value', dtype = bool   )])
+dataframe          = data_frames(index=range_indexes(min_size=1, max_size=5), columns=[column('int_value' , dtype = int    ),
+                                                                                       column('float_val' , dtype = float  ),
+                                                                                       column('bool_value', dtype = bool   )])
 
-dataframe_diff    = data_frames(index=range_indexes(min_size=1, max_size=5), columns=[column('int_value' , dtype = int    ),
+dataframe_diff     = data_frames(index=range_indexes(min_size=1, max_size=5), columns=[column('int_value' , dtype = int    ),
                                                                                       column('float_val' , dtype = float)])
 
-strings_dataframe = data_frames(index=range_indexes(min_size=1, max_size=5), columns=[column('str_val', elements=text(alphabet=string.ascii_letters, max_size=32))])
+strings_dataframe  = data_frames(index=range_indexes(min_size=1, max_size=5), columns=[column('str_val', elements=text(alphabet=string.ascii_letters, min_size=10, max_size=32))])
 
 
 def test_load_dst(KrMC_kdst):
@@ -156,3 +156,23 @@ def test_store_pandas_as_tables_raises_warning_empty_dataframe(config_tmpdir, em
     with tb.open_file(filename, 'w') as h5out:
         with pytest.warns(UserWarning, match='dataframe is empty'):
             store_pandas_as_tables(h5out, empty_dataframe, group_name, table_name)
+
+@given(df=strings_dataframe)
+def test_store_pandas_as_tables_raises_warning_long_string(config_tmpdir, df):
+    filename   = config_tmpdir + 'dataframe_to_table_long_string.h5'
+    group_name = 'test_group'
+    table_name = 'table_name_lstr'
+    with tb.open_file(filename, 'w') as h5out:
+        with pytest.warns(UserWarning, match='dataframe contains strings longer than allowed'):
+            store_pandas_as_tables(h5out, df, group_name, table_name, str_col_length=1)
+
+
+@given(df=dataframe)
+def test_store_pandas_as_tables_raises_TableMismatch_inconsistent_types(config_tmpdir, df):
+    filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
+    group_name = 'test_group'
+    table_name = 'table_name_inttype'
+    with tb.open_file(filename, 'w') as h5out:
+        store_pandas_as_tables(h5out, df, group_name, table_name)
+        with raises(TableMismatch, match='dataframe numeric types not consistent with the table existing ones'):
+            store_pandas_as_tables(h5out, df.astype(float), group_name, table_name)
