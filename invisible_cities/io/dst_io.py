@@ -85,6 +85,7 @@ def store_pandas_as_tables(h5out              : tb.file.File ,
         warnings.warn(f'dataframe is empty', UserWarning)
     else:
         _check_castability(arr, data_types)
-        arr = arr.astype(data_types)
+        columns = list(data_types.names)
+        arr = arr[columns].astype(data_types)
         table.append(arr)
         table.flush()
