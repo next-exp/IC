@@ -1,11 +1,12 @@
 import numpy as np
+from warnings import warn
 
 ##################################
 ######### WAVEFORMS ##############
 ##################################
-def create_waveform(times : np.ndarray,
-                    pes   : np.ndarray,
-                    bins  : np.ndarray,
+def create_waveform(times    : np.ndarray,
+                    pes      : np.ndarray,
+                    bins     : np.ndarray,
                     nsamples : int) -> np.ndarray:
     """
     This function builds a waveform from a set of (buffer_time, pes) values.
@@ -21,10 +22,13 @@ def create_waveform(times : np.ndarray,
     nsamples: an integer that controlls the distribution of the photoelectrons in each of
     the waveform bins. The counts (N) in a given time bin (T) are distributed in the waveform
     such as the nsamples posterior to T would have N/nsamples counts (included T).
-    nsamples must be >=1.
+    nsamples must be >=1 an <len(bins).
     """
     if nsamples<1:
         raise Exception("nsamples<1. nsamples must be >= 1")
+    if nsamples>len(bins):
+        warn("nsamples > number of bins. Shrinking it to number of bins")
+        nsamples = len(bins)
 
     wf = np.zeros(len(bins))
     if np.sum(pes)==0:
@@ -43,12 +47,12 @@ def create_waveform(times : np.ndarray,
     return wf
 
 
-def create_sensor_waveforms(times   : np.ndarray,
+def create_sensor_waveforms(times          : np.ndarray,
                             pes_at_sensors : np.ndarray,
                             wf_buffer_time : float,
-                            bin_width    : float,
-                            nsamples : int,
-                            poisson  : bool =False) -> np.ndarray:
+                            bin_width      : float,
+                            nsamples       : int,
+                            poisson        : bool =False) -> np.ndarray:
     """
     This function calls recursively to create_waveform. See create_waveform for
     an explanation of the arguments not explained below.
