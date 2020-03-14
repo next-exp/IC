@@ -21,19 +21,13 @@ def create_waveform(times : np.ndarray,
     nsamples: an integer that controlls the distribution of the photoelectrons in each of
     the waveform bins. The counts (N) in a given time bin (T) are distributed in the waveform
     such as the nsamples posterior to T would have N/nsamples counts (included T).
+    nsamples must be >=1.
     """
-    
-    wf = np.zeros(len(bins))
+    if nsamples<1:
+        raise Exception("nsamples<1. nsamples must be >= 1")
 
+    wf = np.zeros(len(bins))
     if np.sum(pes)==0:
-        return wf
-    if nsamples==0:
-        t = np.repeat(times, pes)
-        sel = (bins[0]<=t) & (t<=bins[-1])
-        t = t[sel]
-        indexes = np.digitize(t, bins)-1
-        indexes, counts = np.unique(indexes, return_counts=True)
-        wf[indexes] = counts
         return wf
 
     t = np.repeat(times, pes)
