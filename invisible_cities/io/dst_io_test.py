@@ -106,7 +106,7 @@ def test_store_pandas_as_tables_exact(config_tmpdir, df):
     with tb.open_file(filename, 'w') as h5out:
         store_pandas_as_tables(h5out, df, group_name, table_name)
     df_read = load_dst(filename, group_name, table_name)
-    assert_dataframes_close(df_read, df, False, rtol=1e-5)
+    assert_dataframes_close(df_read, df)
 
 @given(df1=dataframe, df2=dataframe)
 def test_store_pandas_as_tables_2df(config_tmpdir, df1, df2):
@@ -117,7 +117,7 @@ def test_store_pandas_as_tables_2df(config_tmpdir, df1, df2):
         store_pandas_as_tables(h5out, df1, group_name, table_name)
         store_pandas_as_tables(h5out, df2, group_name, table_name)
     df_read = load_dst(filename, group_name, table_name)
-    assert_dataframes_close(df_read, pd.concat([df1, df2]).reset_index(drop=True), False, rtol=1e-5)
+    assert_dataframes_close(df_read, pd.concat([df1, df2]).reset_index(drop=True))
 
 @given(df1=dataframe, df2=dataframe_diff)
 def test_store_pandas_as_tables_raises_exception(config_tmpdir, df1, df2):
@@ -139,10 +139,10 @@ def test_strings_store_pandas_as_tables(config_tmpdir, df):
     df_read    = load_dst(filename, group_name, table_name)
     #we have to cast from byte strings to compare with original dataframe
     df_read.str_val = df_read.str_val.str.decode('utf-8')
-    assert_dataframes_equal(df_read, df, False)
+    assert_dataframes_equal(df_read, df)
 
 def test_make_tabledef(empty_dataframe):
-    tabledef = _make_tabledef(empty_dataframe.dtypes)
+    tabledef = _make_tabledef(empty_dataframe.to_records(index=False).dtype, 32)
     expected_tabledef = {'int_value'   : tb.Int32Col  (             shape=(), dflt=0    , pos=0),
                          'float_value' : tb.Float32Col(             shape=(), dflt=0    , pos=1),
                          'bool_value'  : tb.BoolCol   (             shape=(), dflt=False, pos=2),
