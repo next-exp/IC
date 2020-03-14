@@ -152,6 +152,14 @@ def print_every_alternative_implementation(N):
     return print_every_loop
 
 
+def collect():
+    """Return a future/sink pair for collecting streams into a list."""
+    def append(l,e):
+        l.append(e)
+        return l
+    return fl.reduce(append, initial=[])()
+
+
 # TODO: consider caching database
 def deconv_pmt(dbfile, run_number, n_baseline, selection=None):
     DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
