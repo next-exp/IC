@@ -176,3 +176,15 @@ def test_store_pandas_as_tables_raises_TableMismatch_inconsistent_types(config_t
         store_pandas_as_tables(h5out, df, group_name, table_name)
         with raises(TableMismatch, match='dataframe numeric types not consistent with the table existing ones'):
             store_pandas_as_tables(h5out, df.astype(float), group_name, table_name)
+
+@given(df1=dataframe, df2=dataframe)
+def test_store_pandas_as_tables_unordered_df(config_tmpdir, df1, df2):
+    filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
+    group_name = 'test_group'
+    table_name = 'table_name_unordered'
+    with tb.open_file(filename, 'w') as h5out:
+        store_pandas_as_tables(h5out, df1, group_name, table_name)
+        df2 = df2[['bool_value', 'int_value', 'float_val']]
+        store_pandas_as_tables(h5out, df2, group_name, table_name)
+    df_read = load_dst(filename, group_name, table_name)
+    assert_dataframes_equal(df_read, pd.concat([df1, df2], sort=True).reset_index(drop=True))
