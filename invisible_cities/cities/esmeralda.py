@@ -11,7 +11,7 @@ The city outputs :
         - highTh - contains corrected hits table that passed h.Q >= charge_threshold_high constrain.
                    it also contains:
                    - Ep field that is the energy of a hit after applying drop_end_point_voxel algorithm.
-                   - track_id denoting to which track from Tracking/Tracks dataframe the hit belong to 
+                   - track_id denoting to which track from Tracking/Tracks dataframe the hit belong to
     - MC info (if run number <=0)
     - Tracking/Tracks - summary of per track information
     - Summary/events  - summary of per event information
@@ -37,14 +37,17 @@ from .. dataflow.dataflow   import pipe
 
 from .  components import city
 from .  components import print_every
+from .  components import collect
+from .  components import copy_mc_info
 from .  components import hits_and_kdst_from_files
 
 from .. types.      ic_types import xy
-from .. io.         hits_io  import          hits_writer
-from .. io.       mcinfo_io  import       mc_info_writer
-from .. io.run_and_event_io  import run_and_event_writer
-from .. io. event_filter_io  import  event_filter_writer
-from .. io.          dst_io  import _store_pandas_as_tables
+
+from .. io.         hits_io import hits_writer
+from .. io.run_and_event_io import run_and_event_writer
+from .. io. event_filter_io import event_filter_writer
+from .. io.          dst_io import _store_pandas_as_tables
+
 
 types_dict_summary = OrderedDict({'event'     : np.int32  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
                                   'evt_ntrks' : np.int    , 'evt_nhits'  : np.int    , 'evt_x_avg'     : np.float64,
@@ -390,7 +393,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         - highTh - contains corrected hits table that passed h.Q >= charge_threshold_high constrain.
                    it also contains:
                    - Ep field that is the energy of a hit after applying drop_end_point_voxel algorithm.
-                   - track_id denoting to which track from Tracking/Tracks dataframe the hit belong to 
+                   - track_id denoting to which track from Tracking/Tracks dataframe the hit belong to
     - MC info (if run number <=0)
     - Tracking/Tracks - summary of per track information
     - Summary/events  - summary of per event information
@@ -443,13 +446,12 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
 
         # Define writers...
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
-        write_mc_        = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
 
         write_hits_low_th     = fl.sink(    hits_writer     (h5out, group_name='CHITS', table_name='lowTh'),
                                             args="cor_low_th_hits")
         write_hits_paolina    = fl.sink(    hits_writer     (h5out, group_name='CHITS', table_name='highTh' ),
                                             args="paolina_hits"   )
-        write_mc              = fl.sink(    write_mc_                                    , args=("mc", "event_number"))
+
         write_tracks          = fl.sink(   track_writer     (h5out=h5out)                , args="topology_info"      )
         write_summary         = fl.sink( summary_writer     (h5out=h5out)                , args="event_info"         )
         write_high_th_filter  = fl.sink( event_filter_writer(h5out, "high_th_select" )   , args=("event_number", "high_th_hits_passed"))
@@ -457,31 +459,38 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
         write_topology_filter = fl.sink( event_filter_writer(h5out, "topology_select")   , args=("event_number", "topology_passed"    ))
         write_kdst_table      = fl.sink( kdst_from_df_writer(h5out)                      , args="kdst"               )
 
-        return  push(source = hits_and_kdst_from_files(files_in),
-                     pipe   = pipe(
-                         fl.slice(*event_range, close_all=True)       ,
-                         print_every(print_mod)                       ,
-                         event_count_in        .spy                   ,
-                         fl.branch(fl.fork(write_kdst_table           ,
-                                           write_event_info           ,
-                                           write_mc                 )),
-                         fl.branch(threshold_and_correct_hits_low     ,
-                                   filter_events_low_th               ,
-                                   fl.branch(write_low_th_filter)     ,
-                                   hits_passed_low_th.filter          ,
-                                   write_hits_low_th                 ),
-                         threshold_and_correct_hits_high              ,
-                         filter_events_high_th                        ,
-                         fl.branch(write_high_th_filter)              ,
-                         hits_passed_high_th   .filter                ,
-                         copy_Ec_to_Ep_hit_attribute                  ,
-                         create_extract_track_blob_info               ,
-                         filter_events_topology                       ,
-                         fl.branch(make_final_summary, write_summary) ,
-                         fl.branch(write_topology_filter)             ,
-                         fl.branch(write_hits_paolina)                ,
-                         events_passed_topology.filter                ,
-                         event_count_out       .spy                   ,
-                         write_tracks                                ),
-                     result = dict(events_in =event_count_in .future ,
-                                   events_out=event_count_out.future ))
+        evtnum_collect = collect()
+
+        result = push(source = hits_and_kdst_from_files(files_in),
+                      pipe   = pipe(fl.slice(*event_range, close_all=True)        ,
+                                    print_every(print_mod)                        ,
+                                    event_count_in        .spy                    ,
+                                    fl.branch(fl.fork(write_kdst_table            ,
+                                                      write_event_info          )),
+                                    fl.branch("event_number", evtnum_collect.sink),
+                                    fl.branch(threshold_and_correct_hits_low      ,
+                                              filter_events_low_th                ,
+                                              fl.branch(write_low_th_filter)      ,
+                                              hits_passed_low_th.filter           ,
+                                              write_hits_low_th                  ),
+                                    threshold_and_correct_hits_high               ,
+                                    filter_events_high_th                         ,
+                                    fl.branch(write_high_th_filter)               ,
+                                    hits_passed_high_th   .filter                 ,
+                                    copy_Ec_to_Ep_hit_attribute                   ,
+                                    create_extract_track_blob_info                ,
+                                    filter_events_topology                        ,
+                                    fl.branch(make_final_summary, write_summary)  ,
+                                    fl.branch(write_topology_filter)              ,
+                                    fl.branch(write_hits_paolina)                 ,
+                                    events_passed_topology.filter                 ,
+                                    event_count_out       .spy                    ,
+                                    write_tracks                                 ),
+                      result = dict(events_in  =event_count_in .future,
+                                    events_out =event_count_out.future,
+                                    evtnum_list=evtnum_collect .future))
+
+        if run_number <= 0:
+            copy_mc_info(files_in, h5out, result.evtnum_list)
+
+        return result
