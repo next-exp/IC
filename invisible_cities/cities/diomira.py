@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------
-                                Diomira                                
+                                Diomira
 -----------------------------------------------------------------------
 
 From Germanic, Teodomiro/Teodemaro: famous among its people.
@@ -37,7 +37,6 @@ from .. reco                    import    wfm_functions as wfm
 from .. sierpe                  import fee              as FE
 from .. core.random_sampling    import NoiseSampler     as SiPMsNoiseSampler
 from .. io.rwf_io               import           rwf_writer
-from .. io.       mcinfo_io     import       mc_info_writer
 from .. io.run_and_event_io     import run_and_event_writer
 from .. io. event_filter_io     import  event_filter_writer
 from .. filters.trigger_filters import TriggerFilter
@@ -47,12 +46,11 @@ from .. evm.pmaps               import S2
 from .. types.ic_types          import minmax
 
 from .. dataflow          import dataflow as fl
-from .. dataflow.dataflow import push
-from .. dataflow.dataflow import pipe
-from .. dataflow.dataflow import fork
 
 from .  components import city
 from .  components import print_every
+from .  components import collect
+from .  components import copy_mc_info
 from .  components import sensor_data
 from .  components import deconv_pmt
 from .  components import WfType
@@ -85,33 +83,38 @@ def diomira(files_in, file_out, compression, event_range, print_mod, detector_db
         write_sipm = fl.sink(RWF(table_name='sipmrwf', n_sensors=sd.NSIPM, waveform_length=sd.SIPMWL                    ), args="sipm_sim")
 
         write_event_info_ = run_and_event_writer(h5out)
-        write_mc_         = mc_info_writer      (h5out) if run_number <= 0 else (lambda *_: None)
         write_evt_filter_ = event_filter_writer (h5out, "trigger", compression=compression)
 
         write_event_info = fl.sink(write_event_info_, args=("run_number", "event_number", "timestamp"   ))
-        write_mc         = fl.sink(write_mc_        , args=(        "mc", "event_number"                ))
         write_evt_filter = fl.sink(write_evt_filter_, args=(              "event_number", "trigger_pass"))
 
         event_count_in = fl.spy_count()
 
-        return push(
-            source = wf_from_files(files_in, WfType.mcrd),
-            pipe   = pipe(fl.slice(*event_range, close_all=True),
-                          event_count_in.spy                    ,
-                          print_every(print_mod)                ,
-                          simulate_pmt_response_                ,
-                          emulate_trigger_                      ,
-                          trigger_pass                          ,
-                          fl.branch(write_evt_filter)           ,
-                          trigger_filter.filter                 ,
-                          simulate_sipm_response_               ,
-                          fork(write_pmt                        ,
-                               write_blr                        ,
-                               write_sipm                       ,
-                               write_mc                         ,
-                               write_event_info)                ),
-            result = dict(events_in     = event_count_in.future,
-                          events_filter = trigger_filter.future))
+        evtnum_collect = collect()
+
+        result = fl.push(source = wf_from_files(files_in, WfType.mcrd),
+                         pipe   = fl.pipe(fl.slice(*event_range, close_all=True)        ,
+                                          event_count_in.spy                            ,
+                                          print_every(print_mod)                        ,
+                                          simulate_pmt_response_                        ,
+                                          emulate_trigger_                              ,
+                                          trigger_pass                                  ,
+                                          fl.branch(write_evt_filter)                   ,
+                                          trigger_filter.filter                         ,
+                                          simulate_sipm_response_                       ,
+                                          fl.branch("event_number", evtnum_collect.sink),
+                                          fl.fork(write_pmt                             ,
+                                                  write_blr                             ,
+                                                  write_sipm                            ,
+                                                  write_event_info)                     ),
+                         result = dict(events_in     = event_count_in.future,
+                                       evtnum_list   = evtnum_collect.future,
+                                       events_filter = trigger_filter.future))
+
+        if run_number <= 0:
+            copy_mc_info(files_in, h5out, result.evtnum_list)
+
+        return result
 
 
 def compute_pe_resolution(rms, adc_to_pes):
