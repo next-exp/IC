@@ -17,6 +17,8 @@ from .. core.exceptions import ClusterEmptyList
 from .. core.system_of_units_c import units
 
 from .  components import event_range
+from .  components import collect
+from .  components import copy_mc_info
 from .  components import WfType
 from .  components import wf_from_files
 from .  components import pmap_from_files
@@ -24,7 +26,9 @@ from .  components import compute_xy_position
 from .  components import city
 from .  components import hits_and_kdst_from_files
 
-from .. database import load_db
+from .. dataflow   import dataflow as fl
+
+from .. database   import load_db
 
 
 def _create_dummy_conf_with_event_range(value):
@@ -151,7 +155,7 @@ def test_hits_and_kdst_from_files(ICDATADIR):
     event_number = 1
     timestamp    = 0.
     num_hits     = 13
-    keys = ['hits', 'mc', 'kdst', 'run_number', 'event_number', 'timestamp']
+    keys = ['hits', 'kdst', 'run_number', 'event_number', 'timestamp']
     file_in     = os.path.join(ICDATADIR    ,  'Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5')
     generator = hits_and_kdst_from_files([file_in])
     output = next(generator)
@@ -160,3 +164,29 @@ def test_hits_and_kdst_from_files(ICDATADIR):
     assert output['timestamp']      == timestamp
     assert len(output['hits'].hits) == num_hits
     assert type(output['kdst'])     == pd.DataFrame
+
+
+def test_collect():
+    the_source    = list(range(0,10))
+    the_collector = collect()
+    the_result    = fl.push(source = the_source,
+                            pipe   = fl.pipe(the_collector.sink),
+                            result = the_collector.future)
+    assert the_source == the_result
+
+
+def test_copy_mc_info_noMC(ICDATADIR, config_tmpdir):
+    file_in  = os.path.join(ICDATADIR, 'run_2983.h5')
+    file_out = os.path.join(config_tmpdir, 'dummy_out.h5')
+    with tb.open_file(file_out, "w") as h5out:
+        copy_mc_info([file_in], h5out, [])
+
+@mark.xfail
+def test_copy_mc_info_repeated_event_numbers(ICDATADIR, config_tmpdir):
+    file_in  = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.sim.h5")
+    file_out = os.path.join(config_tmpdir, "dummy_out.h5")
+
+    with tb.open_file(file_out, 'w') as h5out:
+        copy_mc_info([file_in, file_in], h5out, [0,1,0,9])
+        events_in_h5out = h5out.root.MC.extents.cols.evt_number[:]
+        assert events_in_h5out.tolist() == [0,1,0,9]
