@@ -17,6 +17,7 @@ from .  mcinfo_io import get_sensor_binning
 from .  mcinfo_io import load_mcsensor_response
 from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import mc_info_writer
+from .  mcinfo_io import copy_mc_info
 from .  mcinfo_io import read_mcinfo_evt
 
 from .. core            import system_of_units as units
@@ -175,6 +176,43 @@ def test_mc_info_writer_filter_first_event_of_first_file(output_tmpdir, ICDATADI
         assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
         assert all(x<y for x, y in zip(last_hit_list, last_hit_list[1:]))
 
+
+def test_copy_mc_info_which_events_is_none(ICDATADIR, config_tmpdir):
+    file_in  = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.sim.h5")
+    file_out = os.path.join(config_tmpdir, "dummy_out.h5")
+
+    with tb.open_file(file_out, 'w') as h5out:
+        writer = mc_info_writer(h5out)
+        with tb.open_file(file_in, 'r') as h5in:
+            copy_mc_info(h5in, writer)
+            events_in_h5in  = h5in .root.MC.extents.cols.evt_number[:]
+            events_in_h5out = h5out.root.MC.extents.cols.evt_number[:]
+            assert all(events_in_h5in == events_in_h5out)
+
+
+def test_copy_mc_info_which_events_is_subset(ICDATADIR, config_tmpdir):
+    file_in  = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.sim.h5")
+    file_out = os.path.join(config_tmpdir, "dummy_out.h5")
+    which_events = [0, 3, 6, 9]
+
+    with tb.open_file(file_out, 'w') as h5out:
+        writer = mc_info_writer(h5out)
+        with tb.open_file(file_in, 'r') as h5in:
+            copy_mc_info(h5in, writer, which_events)
+            events_in_h5out = h5out.root.MC.extents.cols.evt_number[:]
+            assert events_in_h5out.tolist() == which_events
+
+
+def test_copy_mc_info_which_events_out_of_range(ICDATADIR, config_tmpdir):
+    file_in  = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.sim.h5")
+    file_out = os.path.join(config_tmpdir, "dummy_out.h5")
+    which_events = [10]
+
+    with tb.open_file(file_out, 'w') as h5out:
+        writer = mc_info_writer(h5out)
+        with tb.open_file(file_in, 'r') as h5in:
+            with raises(IndexError):
+                copy_mc_info(h5in, writer, which_events)
 
 
 def test_load_mchits_correct_number_of_hits(mc_all_hits_data):
