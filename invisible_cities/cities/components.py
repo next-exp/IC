@@ -44,6 +44,8 @@ from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import               pmap_filter
 from .. database                  import                   load_db
 from .. sierpe                    import                       blr
+from .. reco                      import             tbl_functions as tbl
+from .. io                        import                 mcinfo_io
 from .. io     .pmaps_io          import                load_pmaps
 from .. io     .hits_io           import              hits_from_df
 from .. io     .dst_io            import                  load_dst
@@ -158,6 +160,32 @@ def collect():
         l.append(e)
         return l
     return fl.reduce(append, initial=[])()
+
+
+def copy_mc_info(files_in : List[str], h5out: tb.File, event_numbers: List[int]) -> None:
+    """Copy to an output file the MC info of a list of selected events.
+
+    Parameters
+    ----------
+    files_in : List of strings
+        Name of the input files.
+    file_out : tables.File
+        The output h5 file.
+    event_numbers : List[int]
+        List of event numbers for which the MC info is copied to the output file.
+    """
+
+    writer = mcinfo_io.mc_info_writer(h5out)
+
+    for f in files_in:
+        with tb.open_file(f, "r") as h5in:
+            try:
+                event_numbers_in_file = h5in.root.MC.extents.cols.evt_number[:]
+                event_numbers_to_copy = list(evt for evt in event_numbers \
+                                             if evt in event_numbers_in_file)
+                mcinfo_io.copy_mc_info(h5in, writer, event_numbers_to_copy)
+            except tb.exceptions.NoSuchNodeError:
+                continue
 
 
 # TODO: consider caching database
