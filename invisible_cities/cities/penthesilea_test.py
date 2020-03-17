@@ -200,12 +200,7 @@ def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
     penthesilea_evts        = load_mchits_df(penthesilea_output_path)
     true_evts               = KrMC_true_hits.hdst
 
-    assert np.all(penthesilea_evts.index.levels[0] == true_evts.index.levels[0])
-    for evt_no in true_evts.index.levels[0]:
-        penthesilea_evt = penthesilea_evts.loc[evt_no]
-        true_evt        = true_evts       .loc[evt_no]
-        assert len(penthesilea_evt) == len(true_evt)
-        assert_frame_equal(penthesilea_evt, true_evt)
+    assert_frame_equal(penthesilea_evts, true_evts)
 
 
 def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
