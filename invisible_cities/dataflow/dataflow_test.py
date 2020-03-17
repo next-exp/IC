@@ -147,60 +147,6 @@ def test_count():
     assert count.future.result() == len(the_source)
 
 
-def test_collect_into_list():
-
-    # 'collect_into_list' stores an argument in a list without
-    # changing what is seen downstream.
-
-    out = []
-
-    the_source    = list(range(0,10))
-    the_collector = df.collect_into_list()
-    the_sink      = df.sink(out.append)
-
-    df.push(source = the_source,
-            pipe   = df.pipe(the_collector.spy,
-                             the_sink         ))
-
-    print(the_collector.future.result())
-
-    assert the_source                    == out
-    assert the_collector.future.result() == out
-
-
-def test_collect_into_list_dict():
-
-    # the typical use case of 'collect_into_list' in a city:
-    # collect the value of an argument from a dictionary yielded by the source.
-
-    def the_source(N):
-        for i in range(0,N):
-            yield dict(event_number=i, data=i*i)
-
-    the_collector_i  = df.collect_into_list(arg="event_number")
-    the_collector_ii = df.collect_into_list(arg="data")
-
-    list_i  = []; the_sink_i  = df.sink(list_i .append)
-    list_ii = []; the_sink_ii = df.sink(list_ii.append)
-
-    df.push(source = the_source(10),
-            pipe   = df.pipe(the_collector_i .spy,
-                             the_collector_ii.spy,
-                             df.fork(("event_number", the_sink_i ),
-                                     ("data"        , the_sink_ii))))
-
-    assert the_collector_i .future.result() == list_i
-    assert the_collector_ii.future.result() == list_ii
-
-
-def test_collect_into_list_multiple_args():
-
-    # 'collect_into_list' only accepts one argument
-
-    with raises(ValueError):
-        df.collect_into_list(arg=("event_number", "data"))
-
-
 def test_push_futures():
 
     # 'push' provides a higher-level interface to using such futures:

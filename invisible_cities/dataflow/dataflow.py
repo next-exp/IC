@@ -239,19 +239,6 @@ def spy_count():
     return FutureSpy(future = pair.future, spy = branch(pair.sink))
 
 
-def collect_into_list(arg=None):
-    def _append(l,e):
-        l.append(e)
-        return l
-    pair = reduce(_append, initial=[])()
-    if arg is None:
-        return FutureSpy(future = pair.future, spy = branch(pair.sink))
-    elif _exactly_one(arg):
-        return FutureSpy(future = pair.future, spy = branch(arg, pair.sink))
-    else:
-        raise ValueError("dataflow.collect_into_list only accepts one argument")
-
-
 def stop_when(predicate):
     @sink
     def stop_when_loop(item):
