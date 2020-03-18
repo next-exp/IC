@@ -58,6 +58,7 @@ from .. core.exceptions    import NoHits
 from .. core.exceptions    import NoVoxels
 from .. core.testing_utils import assert_bhit_equality
 
+from .. io.mcinfo_io    import cast_mchits_to_dict
 from .. io.mcinfo_io    import load_mchits_df
 from .. io.hits_io      import load_hits
 
@@ -239,13 +240,12 @@ def test_voxels_with_no_hits(ICDATADIR):
     size = 15.
     vox_size = np.array([size,size,size],dtype=np.float16)
 
-    hits_df  = load_mchits_df(hit_file)
-    ## Patch to BHits, temporary?
-    evt_hits = hits_df.loc[evt_number][['x', 'y', 'z', 'energy']].values
-    bhit_seq = [BHit(*hit) for hit in evt_hits]
-    voxels = voxelize_hits(bhit_seq                 ,
-                           vox_size                 ,
-                           strict_voxel_size = False)
+    hits_df   = load_mchits_df(hit_file)
+    hits_dict = cast_mchits_to_dict(hits_df)
+    hit_seq   = hits_dict[evt_number]
+    voxels    = voxelize_hits(hit_seq                  ,
+                              vox_size                 ,
+                              strict_voxel_size = False)
     for v in voxels:
         assert sum(h.E for h in v.hits) == v.E
 
