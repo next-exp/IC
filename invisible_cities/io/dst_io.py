@@ -39,9 +39,14 @@ def _make_tabledef(column_types : pd.Series, str_col_length : int=32) -> dict:
             tabledef[colname] = tb.Col.from_type(coltype, pos=indx)
     return tabledef
 
-def _store_pandas_as_tables(h5out : tb.file.File, df : pd.DataFrame, group_name : str, table_name : str, compression : str='ZLIB4', descriptive_string : [str]="", str_col_length : int=32) -> None:
-    if len(df) == 0:
-        warnings.warn(f'dataframe is empty', UserWarning)
+def store_pandas_as_tables(h5out              : tb.file.File ,
+                           df                 : pd.DataFrame ,
+                           group_name         : str          ,
+                           table_name         : str          ,
+                           compression        : str = 'ZLIB4',
+                           descriptive_string : str = ""     ,
+                           str_col_length     : int = 32
+                           ) -> None:
     if group_name not in h5out.root:
         group = h5out.create_group(h5out.root, group_name)
 

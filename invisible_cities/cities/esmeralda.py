@@ -46,7 +46,7 @@ from .. types.      ic_types import xy
 from .. io.         hits_io import hits_writer
 from .. io.run_and_event_io import run_and_event_writer
 from .. io. event_filter_io import event_filter_writer
-from .. io.          dst_io import _store_pandas_as_tables
+from .. io.          dst_io import store_pandas_as_tables
 
 
 types_dict_summary = OrderedDict({'event'     : np.int32  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
@@ -310,7 +310,7 @@ def track_writer(h5out, compression='ZLIB4', group_name='Tracking', table_name='
     For a given open table returns a writer for topology info dataframe
     """
     def write_tracks(df):
-        return _store_pandas_as_tables(h5out=h5out, df=df, compression=compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
+        return store_pandas_as_tables(h5out=h5out, df=df, compression=compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
     return write_tracks
 
 
@@ -319,7 +319,7 @@ def summary_writer(h5out, compression='ZLIB4', group_name='Summary', table_name=
     For a given open table returns a writer for summary info dataframe
     """
     def write_summary(df):
-        return _store_pandas_as_tables(h5out=h5out, df=df, compression=compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
+        return store_pandas_as_tables(h5out=h5out, df=df, compression=compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
     return write_summary
 
 def kdst_from_df_writer(h5out, compression='ZLIB4', group_name='DST', table_name='Events', descriptive_string='KDST Events', str_col_length=32):
@@ -327,7 +327,7 @@ def kdst_from_df_writer(h5out, compression='ZLIB4', group_name='DST', table_name
     For a given open table returns a writer for KDST dataframe info
     """
     def write_kdst(df):
-        return _store_pandas_as_tables(h5out=h5out, df=df, compression=compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
+        return store_pandas_as_tables(h5out=h5out, df=df, compression=compression, group_name=group_name, table_name=table_name, descriptive_string=descriptive_string, str_col_length=str_col_length)
     return write_kdst
 
 

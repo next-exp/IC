@@ -8,7 +8,7 @@ from ..core.testing_utils import assert_dataframes_equal
 from ..core.exceptions    import TableMismatch
 from . dst_io             import load_dst
 from . dst_io             import load_dsts
-from . dst_io             import _store_pandas_as_tables
+from . dst_io             import store_pandas_as_tables
 from . dst_io             import _make_tabledef
 
 import warnings
@@ -104,7 +104,7 @@ def test_store_pandas_as_tables_exact(config_tmpdir, df):
     group_name = 'test_group'
     table_name = 'table_name_1'
     with tb.open_file(filename, 'w') as h5out:
-        _store_pandas_as_tables(h5out, df, group_name, table_name)
+        store_pandas_as_tables(h5out, df, group_name, table_name)
     df_read = load_dst(filename, group_name, table_name)
     assert_dataframes_close(df_read, df, False, rtol=1e-5)
 
@@ -114,8 +114,8 @@ def test_store_pandas_as_tables_2df(config_tmpdir, df1, df2):
     group_name = 'test_group'
     table_name = 'table_name_2'
     with tb.open_file(filename, 'w') as h5out:
-        _store_pandas_as_tables(h5out, df1, group_name, table_name)
-        _store_pandas_as_tables(h5out, df2, group_name, table_name)
+        store_pandas_as_tables(h5out, df1, group_name, table_name)
+        store_pandas_as_tables(h5out, df2, group_name, table_name)
     df_read = load_dst(filename, group_name, table_name)
     assert_dataframes_close(df_read, pd.concat([df1, df2]).reset_index(drop=True), False, rtol=1e-5)
 
@@ -125,9 +125,9 @@ def test_store_pandas_as_tables_raises_exception(config_tmpdir, df1, df2):
     group_name = 'test_group'
     table_name = 'table_name_2'
     with tb.open_file(filename, 'w') as h5out:
-        _store_pandas_as_tables(h5out, df1, group_name, table_name)
+        store_pandas_as_tables(h5out, df1, group_name, table_name)
         with raises(TableMismatch):
-            _store_pandas_as_tables(h5out, df2, group_name, table_name)
+            store_pandas_as_tables(h5out, df2, group_name, table_name)
 
 @given(df=strings_dataframe)
 def test_strings_store_pandas_as_tables(config_tmpdir, df):
@@ -135,7 +135,7 @@ def test_strings_store_pandas_as_tables(config_tmpdir, df):
     group_name = 'test_group'
     table_name = 'table_name_str'
     with tb.open_file(filename, 'w') as h5out:
-        _store_pandas_as_tables(h5out, df, group_name, table_name)
+        store_pandas_as_tables(h5out, df, group_name, table_name)
     df_read    = load_dst(filename, group_name, table_name)
     #we have to cast from byte strings to compare with original dataframe
     df_read.str_val = df_read.str_val.str.decode('utf-8')
@@ -155,4 +155,4 @@ def test_store_pandas_as_tables_raises_warning_empty_dataframe(config_tmpdir, em
     table_name = 'table_name_3'
     with tb.open_file(filename, 'w') as h5out:
         with pytest.warns(UserWarning, match='dataframe is empty'):
-            _store_pandas_as_tables(h5out, empty_dataframe, group_name, table_name)
+            store_pandas_as_tables(h5out, empty_dataframe, group_name, table_name)
