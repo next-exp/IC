@@ -47,7 +47,7 @@ from .. reco.deconv_functions  import InterpolationMethod
 
 from .. io.       mcinfo_io    import mc_info_writer
 from .. io.run_and_event_io    import run_and_event_writer
-from .. io.          dst_io    import _store_pandas_as_tables
+from .. io.          dst_io    import store_pandas_as_tables
 
 from .. evm.event_model        import HitEnergy
 
@@ -294,12 +294,12 @@ def deconv_writer(h5out, compression='ZLIB4'):
     For a given open table returns a writer for deconvolution hits dataframe
     """
     def write_deconv(df):
-        return _store_pandas_as_tables(h5out              = h5out             ,
-                                       df                 = df                ,
-                                       compression        = compression       ,
-                                       group_name         = 'DECO'            ,
-                                       table_name         = 'Events'          ,
-                                       descriptive_string = 'Deconvolved hits')
+        return store_pandas_as_tables(h5out              = h5out             ,
+                                      df                 = df                ,
+                                      compression        = compression       ,
+                                      group_name         = 'DECO'            ,
+                                      table_name         = 'Events'          ,
+                                      descriptive_string = 'Deconvolved hits')
     return write_deconv
 
 
