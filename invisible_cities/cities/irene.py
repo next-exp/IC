@@ -27,7 +27,6 @@ from .. reco                   import peak_functions       as pkf
 from .. core.random_sampling   import NoiseSampler         as SiPMsNoiseSampler
 from .. core.system_of_units_c import units
 from .. io  .pmaps_io          import          pmap_writer
-from .. io  .mcinfo_io         import       mc_info_writer
 from .. io  .run_and_event_io  import run_and_event_writer
 from .. io  .trigger_io        import       trigger_writer
 from .. io  .event_filter_io   import  event_filter_writer
@@ -39,6 +38,8 @@ from .. dataflow.dataflow   import sink
 
 from .  components import city
 from .  components import print_every
+from .  components import collect
+from .  components import copy_mc_info
 from .  components import deconv_pmt
 from .  components import calibrate_pmts
 from .  components import calibrate_sipms
@@ -108,11 +109,12 @@ def irene(files_in, file_out, compression, event_range, print_mod, detector_db, 
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
 
+    evtnum_collect  = collect()
+
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
 
         # Define writers...
         write_event_info_   = run_and_event_writer(h5out)
-        write_mc_           = mc_info_writer      (h5out) if run_number <= 0 else (lambda *_: None)
         write_pmap_         = pmap_writer         (h5out, compression=compression)
         write_trigger_info_ = trigger_writer      (h5out, get_number_of_active_pmts(detector_db, run_number))
         write_indx_filter_  = event_filter_writer (h5out, "s12_indices", compression=compression)
@@ -120,38 +122,41 @@ def irene(files_in, file_out, compression, event_range, print_mod, detector_db, 
 
         # ... and make them sinks
         write_event_info   = sink(write_event_info_  , args=(   "run_number",     "event_number", "timestamp"   ))
-        write_mc           = sink(write_mc_          , args=(           "mc",     "event_number"                ))
         write_pmap         = sink(write_pmap_        , args=(         "pmap",     "event_number"                ))
         write_trigger_info = sink(write_trigger_info_, args=( "trigger_type", "trigger_channels"                ))
         write_indx_filter  = sink(write_indx_filter_ , args=(                     "event_number", "indices_pass"))
         write_pmap_filter  = sink(write_pmap_filter_ , args=(                     "event_number",   "pmaps_pass"))
 
-        return push(source = wf_from_files(files_in, WfType.rwf),
-                    pipe   = pipe(
-                                fl.slice(*event_range, close_all=True),
-                                print_every(print_mod),
-                                event_count_in.spy,
-                                rwf_to_cwf,
-                                cwf_to_ccwf,
-                                zero_suppress,
-                                indices_pass,
-                                fl.branch(write_indx_filter),
-                                empty_indices.filter,
-                                sipm_rwf_to_cal,
-                                compute_pmap,
-                                pmaps_pass,
-                                fl.branch(write_pmap_filter),
-                                empty_pmaps.filter,
-                                event_count_out.spy,
-                                fl.fork(write_pmap,
-                                        write_mc,
-                                        write_event_info,
-                                        write_trigger_info)),
-                    result = dict(events_in  = event_count_in .future,
-                                  events_out = event_count_out.future,
-                                  over_thr   = empty_indices  .future,
-                                  full_pmap  = empty_pmaps    .future))
+        result = push(source = wf_from_files(files_in, WfType.rwf),
+                      pipe   = pipe(fl.slice(*event_range, close_all=True),
+                                    print_every(print_mod),
+                                    event_count_in.spy,
+                                    rwf_to_cwf,
+                                    cwf_to_ccwf,
+                                    zero_suppress,
+                                    indices_pass,
+                                    fl.branch(write_indx_filter),
+                                    empty_indices.filter,
+                                    sipm_rwf_to_cal,
+                                    compute_pmap,
+                                    pmaps_pass,
+                                    fl.branch(write_pmap_filter),
+                                    empty_pmaps.filter,
+                                    event_count_out.spy,
+                                    fl.branch("event_number", evtnum_collect.sink),
+                                    fl.fork(write_pmap,
+                                            write_event_info,
+                                            write_trigger_info)),
+                      result = dict(events_in   = event_count_in .future,
+                                    events_out  = event_count_out.future,
+                                    evtnum_list = evtnum_collect .future,
+                                    over_thr    = empty_indices  .future,
+                                    full_pmap   = empty_pmaps    .future))
 
+        if run_number <= 0:
+            copy_mc_info(files_in, h5out, result.evtnum_list)
+
+        return result
 
 
 def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,

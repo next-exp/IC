@@ -44,6 +44,8 @@ from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import               pmap_filter
 from .. database                  import                   load_db
 from .. sierpe                    import                       blr
+from .. reco                      import             tbl_functions as tbl
+from .. io                        import                 mcinfo_io
 from .. io     .pmaps_io          import                load_pmaps
 from .. io     .hits_io           import              hits_from_df
 from .. io     .dst_io            import                  load_dst
@@ -152,6 +154,40 @@ def print_every_alternative_implementation(N):
     return print_every_loop
 
 
+def collect():
+    """Return a future/sink pair for collecting streams into a list."""
+    def append(l,e):
+        l.append(e)
+        return l
+    return fl.reduce(append, initial=[])()
+
+
+def copy_mc_info(files_in : List[str], h5out: tb.File, event_numbers: List[int]) -> None:
+    """Copy to an output file the MC info of a list of selected events.
+
+    Parameters
+    ----------
+    files_in : List of strings
+        Name of the input files.
+    file_out : tables.File
+        The output h5 file.
+    event_numbers : List[int]
+        List of event numbers for which the MC info is copied to the output file.
+    """
+
+    writer = mcinfo_io.mc_info_writer(h5out)
+
+    for f in files_in:
+        with tb.open_file(f, "r") as h5in:
+            try:
+                event_numbers_in_file = h5in.root.MC.extents.cols.evt_number[:]
+                event_numbers_to_copy = list(evt for evt in event_numbers \
+                                             if evt in event_numbers_in_file)
+                mcinfo_io.copy_mc_info(h5in, writer, event_numbers_to_copy)
+            except tb.exceptions.NoSuchNodeError:
+                continue
+
+
 # TODO: consider caching database
 def deconv_pmt(dbfile, run_number, n_baseline, selection=None):
     DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
@@ -236,7 +272,6 @@ def wf_from_files(paths, wf_type):
                 run_number  = get_run_number  (h5in)
                 pmt_wfs     = get_pmt_wfs     (h5in, wf_type)
                 sipm_wfs    = get_sipm_wfs    (h5in, wf_type)
-                mc_info     = get_mc_info_safe(h5in, run_number)
                 (trg_type ,
                  trg_chann) = get_trigger_info(h5in)
             except tb.exceptions.NoSuchNodeError:
@@ -248,12 +283,9 @@ def wf_from_files(paths, wf_type):
                 event_number, timestamp         = evtinfo.fetch_all_fields()
                 if trtype  is not None: trtype  = trtype .fetch_all_fields()[0]
 
-                yield dict(pmt=pmt, sipm=sipm, mc=mc_info,
-                           run_number=run_number, event_number=event_number, timestamp=timestamp,
+                yield dict(pmt=pmt, sipm=sipm, run_number=run_number,
+                           event_number=event_number, timestamp=timestamp,
                            trigger_type=trtype, trigger_channels=trchann)
-            # NB, the monte_carlo writer is different from the others:
-            # it needs to be given the WHOLE TABLE (rather than a
-            # single event) at a time.
 
 
 def pmap_from_files(paths):
@@ -267,7 +299,6 @@ def pmap_from_files(paths):
             try:
                 run_number  = get_run_number(h5in)
                 event_info  = get_event_info(h5in)
-                mc_info     = get_mc_info_safe(h5in, run_number)
             except tb.exceptions.NoSuchNodeError:
                 continue
             except IndexError:
@@ -277,11 +308,9 @@ def pmap_from_files(paths):
 
             for evtinfo in event_info:
                 event_number, timestamp = evtinfo.fetch_all_fields()
-                yield dict(pmap=pmaps[event_number], mc=mc_info,
-                           run_number=run_number, event_number=event_number, timestamp=timestamp)
-            # NB, the monte_carlo writer is different from the others:
-            # it needs to be given the WHOLE TABLE (rather than a
-            # single event) at a time.
+                yield dict(pmap=pmaps[event_number], run_number=run_number,
+                           event_number=event_number, timestamp=timestamp)
+
 
 def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields collected hits,
@@ -315,7 +344,8 @@ def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
             # single event) at a time.
 
 def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
-    """Reader of the files, yields HitsCollection, pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
+    """Reader of the files, yields HitsCollection, pandas DataFrame with
+    kdst info, run_number, event_number and timestamp."""
     for path in paths:
         try:
             hits_df = load_dst (path, 'RECO', 'Events')
@@ -327,7 +357,6 @@ def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCol
             try:
                 run_number  = get_run_number(h5in)
                 event_info  = get_event_info(h5in)
-                mc_info     = get_mc_info_safe(h5in, run_number)
             except (tb.exceptions.NoSuchNodeError, IndexError):
                 continue
 
@@ -336,11 +365,12 @@ def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCol
             for evtinfo in event_info:
                 event_number, timestamp = evtinfo.fetch_all_fields()
                 hits = hits_from_df(hits_df.loc[hits_df.event == event_number])
-                yield dict(hits = hits[event_number], kdst = kdst_df.loc[kdst_df.event==event_number], mc=mc_info, run_number=run_number,
-                           event_number=event_number, timestamp=timestamp)
-            # NB, the monte_carlo writer is different from the others:
-            # it needs to be given the WHOLE TABLE (rather than a
-            # single event) at a time.
+                yield dict(hits = hits[event_number],
+                           kdst = kdst_df.loc[kdst_df.event==event_number],
+                           run_number = run_number,
+                           event_number = event_number,
+                           timestamp = timestamp)
+
 
 def sensor_data(path, wf_type):
     with tb.open_file(path, "r") as h5in:
