@@ -1,13 +1,25 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
 
-*.pyc
-*.o
-*.so
+# C extensions
 *.c
-.cache
-*.egg-info
-*.*~
-environment?.?.yml
+*.so
+
+# Distribution / packaging
+build/
+*.egg-info/
+environment-*.yml
+miniconda.sh
+
+# Unit test / coverage reports
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Backup files
+*~
+
+# macOS
 .DS_Store
-doc/.DS_Store
-doc/build
-invisible_cities/cities/.ipynb_checkpoints
