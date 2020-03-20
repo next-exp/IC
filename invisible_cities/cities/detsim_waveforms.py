@@ -24,7 +24,7 @@ def create_waveform(times    : np.ndarray,
     nsamples must be >=1 an <len(bins).
     """
     if (nsamples<1) or (nsamples>len(bins)):
-        raise ValueError("nsamples must lay betwen 1 and len(bins) (not inclusive)")
+        raise ValueError("nsamples must lay betwen 1 and len(bins) (inclusive)")
 
     wf = np.zeros(len(bins))
     if np.sum(pes)==0:
