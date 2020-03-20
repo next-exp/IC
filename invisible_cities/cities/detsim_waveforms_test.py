@@ -27,20 +27,37 @@ def test_create_waveform():
 
 
 @composite
-def times_and_pes_from_bins(draw, bins):
-    min, max = bins[0], bins[-1]
+def times_pes_bins_nsamples(draw):
+    bins=np.arange(0, 10)
 
-    times = draw(lists(integers(min_value=min, max_value=max), min_size=1))
+    times = draw(lists(integers(min_value=bins[0], max_value=bins[-1]), min_size=1))
     pes   = draw(lists(integers(min_value=0), min_size=len(times), max_size=len(times)))
-    return times, pes, bins
+    nsamples = draw(integers())
+    return times, pes, bins, nsamples
 
-@given(times_and_pes_from_bins(bins=np.arange(0, 10)),
-       integers())
-def test_create_waveform_Exception_Warning_Sum(times_and_pes, nsamples):
-    times, pes, bins = times_and_pes
+
+@given(times_pes_bins_nsamples())
+def test_create_waveform_Exception(times_pes_bins_nsamples):
+    times, pes, bins, nsamples = times_pes_bins_nsamples
 
     if (nsamples<1) or (nsamples>len(bins)):
         pytest.raises(ValueError,  create_waveform, times, pes, bins, nsamples)
-    else:
+
+
+@given(times_pes_bins_nsamples())
+def test_create_waveform_Sum(times_pes_bins_nsamples):
+    times, pes, bins, nsamples = times_pes_bins_nsamples
+
+    if (1<=nsamples) and (nsamples<=len(bins)):
         waveform = create_waveform(times, pes, bins, nsamples)
         assert np.allclose(np.sum(pes), np.sum(waveform))
+
+
+@given(times_pes_bins_nsamples())
+def test_create_waveform_0pes(times_pes_bins_nsamples):
+    times, pes, bins, nsamples = times_pes_bins_nsamples
+
+    if (1<=nsamples) and (nsamples<=len(bins)):
+        if np.sum(pes) == 0:
+            waveform = create_waveform(times, pes, bins, nsamples)
+            assert  np.all(waveform == np.zeros(len(bins)))
