@@ -39,10 +39,8 @@ def times_and_pes_from_bins(draw, bins):
 def test_create_waveform_Exception_Warning_Sum(times_and_pes, nsamples):
     times, pes, bins = times_and_pes
 
-    if nsamples<1:
-        pytest.raises(Exception,  create_waveform, times, pes, bins, nsamples)
-    elif nsamples>len(bins):
-        pytest.warns(UserWarning, create_waveform, times, pes, bins, nsamples)
+    if (nsamples<1) or (nsamples>len(bins)):
+        pytest.raises(ValueError,  create_waveform, times, pes, bins, nsamples)
     else:
         waveform = create_waveform(times, pes, bins, nsamples)
         assert np.allclose(np.sum(pes), np.sum(waveform))

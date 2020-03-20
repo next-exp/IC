@@ -1,5 +1,4 @@
 import numpy as np
-from warnings import warn
 
 ##################################
 ######### WAVEFORMS ##############
@@ -24,11 +23,8 @@ def create_waveform(times    : np.ndarray,
     such as the nsamples posterior to T would have N/nsamples counts (included T).
     nsamples must be >=1 an <len(bins).
     """
-    if nsamples<1:
-        raise Exception("nsamples<1. nsamples must be >= 1")
-    if nsamples>len(bins):
-        warn("nsamples > number of bins. Shrinking it to number of bins")
-        nsamples = len(bins)
+    if (nsamples<1) or (nsamples>len(bins)):
+        raise ValueError("nsamples must lay betwen 1 and len(bins) (not inclusive)")
 
     wf = np.zeros(len(bins))
     if np.sum(pes)==0:
