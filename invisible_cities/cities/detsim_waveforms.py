@@ -28,9 +28,9 @@ def create_waveform(times    : np.ndarray,
     if (nsamples<1) or (nsamples>len(bins)):
         raise ValueError("nsamples must lay betwen 1 and len(bins) (inclusive)")
 
-    wf = np.zeros(len(bins)-1)
+    wf = np.zeros(len(bins)-1 + nsamples-1)
     if np.sum(pes)==0:
-        return wf
+        return wf[:len(bins)-1]
 
     t = np.repeat(times, pes)
     sel = in_range(t, bins[0], bins[-1])
@@ -38,11 +38,10 @@ def create_waveform(times    : np.ndarray,
     indexes = np.digitize(t[sel], bins)-1
     indexes, counts = np.unique(indexes, return_counts=True)
 
-    spread_counts = np.repeat(counts[:-nsamples+1, np.newaxis]/nsamples, nsamples, axis=1)
+    spread_counts = np.repeat(counts[:, np.newaxis]/nsamples, nsamples, axis=1)
     for index, counts in zip(indexes, spread_counts):
         wf[index:index+nsamples] += counts
-    wf[-nsamples+1:] += counts[-nsamples+1:]
-    return wf
+    return wf[:len(bins)-1]
 
 
 def create_sensor_waveforms(times          : np.ndarray,
