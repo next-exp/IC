@@ -16,9 +16,9 @@ def test_create_waveform():
     bins = np.arange(0., 10. + bin_width, bin_width)
     nsamples = 2
     times = np.array([1, 2, 5, 6, 9, 10])
-    pes   = np.array([2, 2, 2, 4, 1,  3])
+    pes   = np.array([2, 2, 2, 4, 2,  3])
 
-    expected = np.array([0, 1, 2, 1, 0, 1, 3, 2, 0, 2, 2], dtype=float)
+    expected = np.array([0, 1, 2, 1, 0, 1, 3, 2, 0, 1], dtype=float)
 
     # test
     waveform = create_waveform(times, pes, bins, nsamples)
@@ -48,7 +48,7 @@ def test_create_waveform_Exception(times_pes_bins_nsamples):
 def test_create_waveform_Sum(times_pes_bins_nsamples):
     times, pes, bins, nsamples = times_pes_bins_nsamples
 
-    if (1<=nsamples) and (nsamples<=len(bins)):
+    if nsamples==1:
         waveform = create_waveform(times, pes, bins, nsamples)
         assert np.allclose(np.sum(pes), np.sum(waveform))
 
