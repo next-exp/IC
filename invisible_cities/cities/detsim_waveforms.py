@@ -1,5 +1,7 @@
 import numpy as np
 
+from invisible_cities.core.core_functions import in_range
+
 ##################################
 ######### WAVEFORMS ##############
 ##################################
@@ -26,20 +28,20 @@ def create_waveform(times    : np.ndarray,
     if (nsamples<1) or (nsamples>len(bins)):
         raise ValueError("nsamples must lay betwen 1 and len(bins) (inclusive)")
 
-    wf = np.zeros(len(bins))
+    wf = np.zeros(len(bins)-1)
     if np.sum(pes)==0:
         return wf
 
     t = np.repeat(times, pes)
-    sel = (bins[0]<=t) & (t<=bins[-1])
-    t = np.clip  (t[sel], bins[0], bins[-nsamples])
+    sel = in_range(t, bins[0], bins[-1])
 
-    indexes = np.digitize(t, bins)-1
+    indexes = np.digitize(t[sel], bins)-1
     indexes, counts = np.unique(indexes, return_counts=True)
 
-    spread_counts = np.repeat(counts[:, np.newaxis]/nsamples, nsamples, axis=1)
+    spread_counts = np.repeat(counts[:-nsamples+1, np.newaxis]/nsamples, nsamples, axis=1)
     for index, counts in zip(indexes, spread_counts):
         wf[index:index+nsamples] += counts
+    wf[-nsamples+1:] += counts[-nsamples+1:]
     return wf
 
 
@@ -61,7 +63,7 @@ def create_sensor_waveforms(times          : np.ndarray,
     poisson: a bool. This must be set to True to poisson distribute each bin count.
     """
 
-    bins = np.arange(0, wf_buffer_time, bin_width)
+    bins = np.arange(0, wf_buffer_time + bin_width, bin_width)
     wfs = np.stack([create_waveform(times, pes, bins, nsamples) for pes in pes_at_sensors])
 
     if poisson:
