@@ -113,10 +113,7 @@ def get_ligthtables(filename: str)->Callable:
     xbins = binedges_from_bincenters(xcenters)
     ybins = binedges_from_bincenters(ycenters)
     zbins = binedges_from_bincenters(zcenters)
-
-    xaxis = np.min(xbins), np.max(xbins), np.diff(xbins)[0]
-    yaxis = np.min(ybins), np.max(ybins), np.diff(ybins)[0]
-    zaxis = np.min(zbins), np.max(zbins), np.diff(zbins)[0]
+    bins  = [xbins, ybins, zbins]
 
     ###### CREATE XYZ FUNCTION FOR EACH SENSOR ######
     func_per_sensor = []
@@ -124,8 +121,8 @@ def get_ligthtables(filename: str)->Callable:
     for sensor in sensors:
         w = LT[sensor]
 
-        H, _ = np.histogramdd((x, y, z), weights=w, bins=[xbins, ybins, zbins])
-        fxyz = create_xyz_function(H, xaxis, yaxis, zaxis)
+        H, _ = np.histogramdd((x, y, z), weights=w, bins=bins)
+        fxyz = create_xyz_function(H, bins)
 
         func_per_sensor.append(fxyz)
 
