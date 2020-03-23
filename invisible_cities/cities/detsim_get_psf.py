@@ -68,7 +68,12 @@ def get_psf_from_krmap(filename : str,
     dy   = (ymax - ymin)/ float(ny)
     e0map  = factor * np.nan_to_num(np.array(maps.e0), 0.)
 
-    return create_xy_function(e0map, (xmin, xmax, dx), (ymin, ymax, dy))
+    xbins = np.arange(xmin, xmax+dx, dx)
+    ybins = np.arange(ymin, ymax+dy, dy)
+    zbins = np.array([0, 1])
+
+    H = e0map[:, :, np.newaxis]
+    return create_xyz_function(H, [xbins, ybins, zbins])
 
 
 def get_sipm_psf_from_file(filename : str)->Callable:
@@ -84,14 +89,13 @@ def get_sipm_psf_from_file(filename : str)->Callable:
     xcenters, ycenters = np.unique(xr), np.unique(yr)
     xbins = binedges_from_bincenters(xcenters)
     ybins = binedges_from_bincenters(ycenters)
+    zbins = np.array([0, 1])
 
     #histogram
     psf, _ = np.histogramdd((xr, yr), weights=factor, bins=(xbins, ybins))
-    xaxis = (np.min(xbins), np.max(xbins), xbins[1]-xbins[0])
-    yaxis = (np.min(ybins), np.max(ybins), ybins[1]-ybins[0])
 
-    return create_xy_function(psf, xaxis, yaxis)
-
+    H = psf[:, :, np.newaxis]
+    return create_xyz_function(H, [xbins, ybins, zbins])
 
 
 ##################################
