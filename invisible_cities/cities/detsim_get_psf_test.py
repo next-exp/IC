@@ -40,9 +40,9 @@ def test_create_xyz_function(extent_and_function):
 
     #test create_function
     H, _ = np.histogramdd((x, y, z), weights=f, bins=bins)
-    callable = create_xyz_function(H, bins)
+    fxyz = create_xyz_function(H, bins)
 
-    assert np.all(f == callable(x, y, z))
+    assert np.all(f == fxyz(x, y, z))
 
 
 ####################################
