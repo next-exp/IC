@@ -25,7 +25,7 @@ def extent_and_function():
     zbins = np.arange(zmin, zmax+dz, dz)
     bins = [xbins, ybins, zbins]
 
-    func = lambda x, y, z: - x**2
+    func = lambda x, y, z: -x**2 + 5*y**3 - z
 
     return bins, func
 
