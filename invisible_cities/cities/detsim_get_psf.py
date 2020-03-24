@@ -2,7 +2,8 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
-from typing import Tuple, Callable
+from typing import Tuple
+from typing import Callable
 
 from invisible_cities.reco.corrections_new import read_maps
 
