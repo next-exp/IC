@@ -22,10 +22,10 @@ def create_xyz_function(H, bins):
         raise Exception("bins and array shapes not consistent")
 
     def function(x, y, z):
-        if not len(x)==len(y)==len(z):
+        if not x.shape==y.shape==z.shape:
             raise Exception("x, y and z must have same size")
 
-        out = np.full(len(x), np.nan)
+        out = np.zeros(x.shape)
         #select values inside bin extremes
         selx = in_range(x, xbins[0], xbins[-1])
         sely = in_range(y, ybins[0], ybins[-1])
