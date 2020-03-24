@@ -1,4 +1,5 @@
 import numpy  as np
+import pandas as pd
 
 from pytest                 import approx
 from numpy.testing          import assert_array_equal
@@ -106,11 +107,18 @@ def _compare_dataframes(assertion, df1, df2, check_types=True, **kwargs):
 
 
 def assert_dataframes_equal(df1, df2, check_types=True, **kwargs):
-    _compare_dataframes(assert_array_equal, df1, df2, check_types, **kwargs)
+    pd.testing.assert_frame_equal(df1.sort_index(axis=1), df2.sort_index(axis=1), check_names=True, check_dtype=check_types, check_exact=True, **kwargs)
 
+def assert_dataframes_close(df1, df2, check_types=True, rtol=None, atol=None, **kwargs):
+    if rtol:
+        check_less_precise = int(np.log10(1./rtol))
+    elif atol:
+        check_less_precise = int(np.log10(atol))
+    else:
+        check_less_precise = True
 
-def assert_dataframes_close(df1, df2, check_types=True, **kwargs):
-    _compare_dataframes(assert_allclose, df1, df2, check_types, **kwargs)
+    pd.testing.assert_frame_equal(df1.sort_index(axis=1), df2.sort_index(axis=1), 
+    check_names=True, check_dtype=check_types, check_less_precise = check_less_precise)
 
 
 def assert_SensorResponses_equality(sr0, sr1):
