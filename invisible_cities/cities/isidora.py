@@ -70,6 +70,7 @@ def isidora(files_in, file_out, compression, event_range, print_mod,
                                     evtnum_list = evtnum_collect.future))
 
         if run_number <= 0:
-            copy_mc_info(files_in, h5out, result.evtnum_list)
+            copy_mc_info(files_in, h5out, result.evtnum_list,
+                         detector_db, run_number)
 
         return result

@@ -350,7 +350,8 @@ def kdst_from_df_writer(h5out, compression='ZLIB4'):
 
 
 @city
-def esmeralda(files_in, file_out, compression, event_range, print_mod, run_number,
+def esmeralda(files_in, file_out, compression, event_range, print_mod,
+              detector_db, run_number,
               cor_hits_params = dict(),
               paolina_params  = dict()):
     """
@@ -509,6 +510,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                                     evtnum_list=evtnum_collect .future))
 
         if run_number <= 0:
-            copy_mc_info(files_in, h5out, result.evtnum_list)
+            copy_mc_info(files_in, h5out, result.evtnum_list,
+                         detector_db, run_number)
 
         return result
