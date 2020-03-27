@@ -2,6 +2,7 @@ import os
 
 import tables as tb
 import numpy  as np
+import pandas as pd
 
 from pytest import raises
 from pytest import mark
@@ -15,6 +16,8 @@ from .. core.testing_utils  import assert_tables_equality
 from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
+from .. io.mcinfo_io        import load_mcparticles_df
+from .. io.mcinfo_io        import load_mchits_df
 
 from .. database.load_db    import DetDB
 from .. io      .pmaps_io   import load_pmaps
@@ -64,8 +67,10 @@ def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
     # since they are in general test-specific
     # NB: avoid taking defaults for run number (test-specific)
 
-    PATH_IN  = os.path.join(ICDATADIR    , 'electrons_40keV_ACTIVE_10evts_RWF.h5')
-    PATH_OUT = os.path.join(config_tmpdir, 'electrons_40keV_ACTIVE_10evts_CWF.h5')
+    PATH_IN  = os.path.join(ICDATADIR                             ,
+                            'electrons_40keV_ACTIVE_10evts_RWF.h5')
+    PATH_OUT = os.path.join(config_tmpdir                         ,
+                            'electrons_40keV_ACTIVE_10evts_CWF.h5')
 
     nrequired  = 2
 
@@ -84,12 +89,11 @@ def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
     nactual = cnt.events_in
     assert nrequired == nactual
 
+    mcparticles_in  = load_mcparticles_df( PATH_IN)
+    mcparticles_out = load_mcparticles_df(PATH_OUT)
+    pd.testing.assert_frame_equal(mcparticles_in, mcparticles_out)
     with tb.open_file(PATH_IN , mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
-            nrow = 0
-            mctracks_in  = h5in .root.MC.particles[nrow]
-            mctracks_out = h5out.root.MC.particles[nrow]
-            np.testing.assert_array_equal(mctracks_in, mctracks_out)
 
             # check events numbers & timestamps
             evts_in  = h5in .root.Run.events[:nactual].astype([('evt_number', '<i4'), ('timestamp', '<u8')])
@@ -217,9 +221,10 @@ def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
 
 
 def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
-    file_in     = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_*.h5")
-    file_out    = os.path.join(output_tmpdir, "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_10evts.h5")
-    second_file = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_1.h5")
+    file_in     = os.path.join(ICDATADIR                                       ,
+                               "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_*.h5")
+    file_out    = os.path.join(output_tmpdir                                   ,
+                               "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_10evts.h5")
 
     nevents_per_file = 5
 
@@ -233,19 +238,28 @@ def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
 
     irene(**conf)
 
-    with tb.open_file(file_out) as h5out:
-        last_particle_list = h5out.root.MC.extents[:]['last_particle']
-        last_hit_list      = h5out.root.MC.extents[:]['last_hit'     ]
+    first_file  = os.path.join(ICDATADIR                                       ,
+                               "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_0.h5")
+    second_file = os.path.join(ICDATADIR                                       ,
+                               "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_1.h5")
 
-        assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
-        assert all(x<y for x, y in zip(last_hit_list     , last_hit_list     [1:]))
+    particles_in1 = load_mcparticles_df( first_file)
+    hits_in1      = load_mchits_df     ( first_file)
+    particles_in2 = load_mcparticles_df(second_file)
+    hits_in2      = load_mchits_df     (second_file)
+    particles_out = load_mcparticles_df(   file_out)
+    hits_out      = load_mchits_df     (   file_out)
 
-        with tb.open_file(second_file) as h5second:
-            nparticles_in_first_event = h5second.root.MC.extents[0]['last_particle'] + 1
-            nhits_in_first_event      = h5second.root.MC.extents[0]['last_hit'     ] + 1
+    # back to front cos the events are that way for some reason
+    evt_in  = np.concatenate([hits_in2.index.levels[0],
+                              hits_in1.index.levels[0]])
+    evt_out = hits_out.index.levels[0]
+    assert all(evt_in == evt_out)
 
-            assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
-            assert last_hit_list     [nevents_per_file] - last_hit_list     [nevents_per_file - 1] == nhits_in_first_event
+    all_hit_in      = pd.concat([hits_in1     ,      hits_in2])
+    pd.testing.assert_frame_equal(all_hit_in, hits_out)
+    all_particle_in = pd.concat([particles_in1, particles_in2])
+    pd.testing.assert_frame_equal(all_particle_in, particles_out)
 
 
 def test_irene_trigger_type(config_tmpdir, ICDATADIR, s12params):
@@ -311,8 +325,13 @@ def test_irene_exact_result(ICDATADIR, output_tmpdir):
 
     irene(**conf)
 
-    tables = (     "MC/extents"    ,      "MC/hits"      ,    "MC/particles", "MC/generators",
-                "PMAPS/S1"         ,   "PMAPS/S2"        , "PMAPS/S2Si"     ,
+    ## tables = (     "MC/extents"    ,      "MC/hits"      ,    "MC/particles", "MC/generators",
+    ##             "PMAPS/S1"         ,   "PMAPS/S2"        , "PMAPS/S2Si"     ,
+    ##             "PMAPS/S1Pmt"      ,   "PMAPS/S2Pmt"     ,
+    ##               "Run/events"     ,     "Run/runInfo"   ,
+    ##           "Trigger/events"     , "Trigger/trigger"   ,
+    ##           "Filters/s12_indices", "Filters/empty_pmap")
+    tables = (  "PMAPS/S1"         ,   "PMAPS/S2"        , "PMAPS/S2Si"     ,
                 "PMAPS/S1Pmt"      ,   "PMAPS/S2Pmt"     ,
                   "Run/events"     ,     "Run/runInfo"   ,
               "Trigger/events"     , "Trigger/trigger"   ,
@@ -326,8 +345,9 @@ def test_irene_exact_result(ICDATADIR, output_tmpdir):
 
 
 def test_irene_filters_empty_pmaps(ICDATADIR, output_tmpdir):
-    file_in  = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
-    file_out = os.path.join(output_tmpdir,            "test_irene_filters_empty_pmaps.h5")
+    file_in  = os.path.join(ICDATADIR                                     ,
+                            "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
+    file_out = os.path.join(output_tmpdir, "test_irene_filters_empty_pmaps.h5")
 
     conf = configure("irene invisible_cities/config/irene.conf".split())
     conf.update(dict(run_number   = -6340,
@@ -345,8 +365,12 @@ def test_irene_filters_empty_pmaps(ICDATADIR, output_tmpdir):
 
     assert cnt.full_pmap.n_failed == 3
 
-    tables = (     "MC/extents",      "MC/hits"   ,    "MC/particles", "MC/generators",
-                "PMAPS/S1"     ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
+    ## tables = (     "MC/extents",      "MC/hits"   ,    "MC/particles", "MC/generators",
+    ##             "PMAPS/S1"     ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
+    ##             "PMAPS/S1Pmt"  ,   "PMAPS/S2Pmt"  ,
+    ##               "Run/events" ,     "Run/runInfo",
+    ##           "Trigger/events" , "Trigger/trigger")
+    tables = (  "PMAPS/S1"     ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
                 "PMAPS/S1Pmt"  ,   "PMAPS/S2Pmt"  ,
                   "Run/events" ,     "Run/runInfo",
               "Trigger/events" , "Trigger/trigger")
