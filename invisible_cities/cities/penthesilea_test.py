@@ -1,6 +1,7 @@
 import os
 import numpy  as np
 import tables as tb
+import pandas as pd
 
 from pytest import mark
 
@@ -15,6 +16,7 @@ from .. core.configure       import configure
 from .. core.configure       import all as all_events
 from .. io                   import dst_io as dio
 from .. io.mcinfo_io         import load_mchits_df
+from .. io.mcinfo_io         import load_mcparticles_df
 
 from .  penthesilea          import penthesilea
 
@@ -189,7 +191,6 @@ def test_penthesilea_produces_mcinfo(KrMC_pmaps_filename, KrMC_hdst, config_tmpd
 
     with tb.open_file(PATH_OUT) as h5out:
         assert "MC"           in h5out.root
-        assert "MC/extents"   in h5out.root
         assert "MC/hits"      in h5out.root
         assert "MC/particles" in h5out.root
 
@@ -204,9 +205,10 @@ def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
 
 
 def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
-    file_in     = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts_*.h5")
-    file_out    = os.path.join(output_tmpdir, "Tl_v1_00_05_nexus_v5_02_08_7bar_hits.h5")
-    second_file = os.path.join(ICDATADIR    , "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts_1.h5")
+    file_in     = os.path.join(ICDATADIR                                       ,
+                               "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts_*.h5")
+    file_out    = os.path.join(output_tmpdir                            ,
+                               "Tl_v1_00_05_nexus_v5_02_08_7bar_hits.h5")
 
     nrequired = 10
     conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
@@ -217,28 +219,41 @@ def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
 
     penthesilea(**conf)
 
-    with tb.open_file(file_out) as h5out:
-        last_particle_list = h5out.root.MC.extents[:]['last_particle']
-        last_hit_list      = h5out.root.MC.extents[:]['last_hit'     ]
+    first_file  = os.path.join(ICDATADIR    ,
+                               "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts_0.h5")
+    second_file = os.path.join(ICDATADIR    ,
+                               "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts_1.h5")
 
-        assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
-        assert all(x<y for x, y in zip(last_hit_list     , last_hit_list     [1:]))
+    particles_in1 = load_mcparticles_df( first_file)
+    hits_in1      = load_mchits_df     ( first_file)
+    particles_in2 = load_mcparticles_df(second_file)
+    hits_in2      = load_mchits_df     (second_file)
+    particles_out = load_mcparticles_df(   file_out)
+    hits_out      = load_mchits_df     (   file_out)
 
-        with tb.open_file(second_file) as h5second:
-            first_event_out = 4
-            nparticles_in_first_event_out = h5second.root.MC.extents[first_event_out]['last_particle'] - h5second.root.MC.extents[first_event_out - 1]['last_particle']
-            nhits_in_first_event_out      = h5second.root.MC.extents[first_event_out]['last_hit']      - h5second.root.MC.extents[first_event_out - 1]['last_hit'     ]
+    # back to front beacause that's how the events are.
+    evt_in  = np.concatenate([hits_in2.index.levels[0],
+                              hits_in1.index.levels[0]])
+    first_event_out = 4
+    evt_out = hits_out.index.levels[0]
+    print(evt_in, evt_out)
+    assert all(evt_in[first_event_out:] == evt_out)
 
-            nevents_out_in_first_file = 5
-
-            assert last_particle_list[nevents_out_in_first_file] - last_particle_list[nevents_out_in_first_file - 1] == nparticles_in_first_event_out
-            assert last_hit_list     [nevents_out_in_first_file] - last_hit_list     [nevents_out_in_first_file - 1] == nhits_in_first_event_out
+    all_hit_in      = pd.concat([hits_in1     ,      hits_in2])
+    pd.testing.assert_frame_equal(all_hit_in.loc[evt_in[first_event_out:]],
+                                  hits_out                                )
+    all_particle_in = pd.concat([particles_in1, particles_in2])
+    pd.testing.assert_frame_equal(all_particle_in.loc[evt_in[first_event_out:]],
+                                  particles_out                                )
 
 
 def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
-    file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
-    file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea.h5")
-    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5")
+    file_in     = os.path.join(ICDATADIR                                     ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
+    file_out    = os.path.join(output_tmpdir                ,
+                               "exact_result_penthesilea.h5")
+    true_output = os.path.join(ICDATADIR                                      ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5")
 
     conf = configure("penthesilea invisible_cities/config/penthesilea.conf".split())
     conf.update(dict(run_number   = -6340,
@@ -248,9 +263,10 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
 
     penthesilea(**conf)
 
-    tables = (     "MC/extents"     ,  "MC/hits", "MC/particles", "MC/generators",
-                 "RECO/Events"      , "DST/Events",
-              "Filters/s12_selector")
+    ## tables = (     "MC/extents"     ,  "MC/hits", "MC/particles", "MC/generators",
+    ##              "RECO/Events"      , "DST/Events",
+    ##           "Filters/s12_selector")
+    tables = ("RECO/Events", "DST/Events", "Filters/s12_selector")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             for table in tables:
@@ -259,9 +275,12 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
                 assert_tables_equality(got, expected)
 
 def test_penthesilea_exact_result_noS1(ICDATADIR, output_tmpdir):
-    file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_PMP.h5")
-    file_out    = os.path.join(output_tmpdir,               "exact_result_penthesilea_noS1.h5")
-    true_output = os.path.join(ICDATADIR    ,   "Kr83_nexus_v5_03_00_ACTIVE_7bar_noS1.HDST.h5")
+    file_in     = os.path.join(ICDATADIR                                      ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_PMP.h5")
+    file_out    = os.path.join(output_tmpdir                     ,
+                               "exact_result_penthesilea_noS1.h5")
+    true_output = os.path.join(ICDATADIR                                     ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_noS1.HDST.h5")
 
     conf = configure("penthesilea invisible_cities/config/penthesilea.conf".split())
     conf.update(dict(run_number   =      -6340,
@@ -273,9 +292,10 @@ def test_penthesilea_exact_result_noS1(ICDATADIR, output_tmpdir):
 
     penthesilea(**conf)
 
-    tables = (     "MC/extents"     ,  "MC/hits", "MC/particles", "MC/generators",
-                 "RECO/Events"      , "DST/Events",
-              "Filters/s12_selector")
+    ## tables = (     "MC/extents"     ,  "MC/hits", "MC/particles", "MC/generators",
+    ##              "RECO/Events"      , "DST/Events",
+    ##           "Filters/s12_selector")
+    tables = ("RECO/Events", "DST/Events", "Filters/s12_selector")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             for table in tables:
