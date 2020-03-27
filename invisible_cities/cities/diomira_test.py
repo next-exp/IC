@@ -1,16 +1,20 @@
 import os
 import tables as tb
 import numpy  as np
+import pandas as pd
 
 from pytest import mark
 from pytest import raises
 
-from .. core.configure     import                    all as all_events
-from .. core.configure     import              configure
-from .. core.testing_utils import assert_tables_equality
-from .. reco               import          tbl_functions as tbl
+from .. core.configure     import                       all as all_events
+from .. core.configure     import                 configure
+from .. core.testing_utils import    assert_tables_equality
+from .. reco               import             tbl_functions as tbl
+from .. io  .mcinfo_io     import get_event_numbers_in_file
+from .. io  .mcinfo_io     import            load_mchits_df
+from .. io  .mcinfo_io     import       load_mcparticles_df
 
-from .  diomira  import diomira
+from .  diomira import diomira
 
 
 def test_diomira_identify_bug(ICDATADIR):
@@ -55,27 +59,21 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
     nactual = cnt.events_in
     assert nrequired == nactual
 
-    with tb.open_file(PATH_IN,  mode='r') as h5in, \
-         tb.open_file(PATH_OUT, mode='r') as h5out:
+    with tb.open_file(PATH_OUT, mode='r') as h5out:
             # check event & run number
             assert h5out.root.Run.runInfo[0]['run_number'] == run_number
             assert h5out.root.Run.events [0]['evt_number'] == start_evt
 
-            # check mcextents
-            # we have to convert manually into a tuple because MCTracks[0]
-            # returns an object of type numpy.void where we cannot index
-            # using ranges like mctracks_in[1:]
-            mcextents_in  = tuple(h5in .root.MC.extents[0])
-            mcextents_out = tuple(h5out.root.MC.extents[0])
-            #evt number is not equal if we redefine first event number
-            assert mcextents_out[0] == start_evt
-            for e in zip(mcextents_in[1:], mcextents_out[1:]):
-                np.testing.assert_array_equal(e[0],e[1])
+            evts_in  = get_event_numbers_in_file(PATH_IN )
+            evts_out = get_event_numbers_in_file(PATH_OUT)
+            assert len(evts_out) == nrequired
+            assert all(evts_in[:nrequired] == evts_out)
 
-            # check event number is different for each event
-            first_evt_number = h5out.root.MC.extents[ 0][0]
-            last_evt_number  = h5out.root.MC.extents[-1][0]
-            assert first_evt_number != last_evt_number
+            hits_in  = load_mchits_df(PATH_IN )
+            hits_out = load_mchits_df(PATH_OUT)
+            pd.testing.assert_frame_equal(hits_in.loc[0:nrequired-1],
+                                          hits_out                  )
+
 
 @mark.slow
 def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
@@ -121,9 +119,10 @@ def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdi
         diomira(**conf)
 
 def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
-    file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts*.MCRD.h5")
-    file_out    = os.path.join(output_tmpdir, "Kr83_nexus_v5_03_00_ACTIVE_7bar_6evts.RWF.h5")
-    second_file = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts_1.MCRD.h5")
+    file_in     = os.path.join(ICDATADIR                                       ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts*.MCRD.h5")
+    file_out    = os.path.join(output_tmpdir                                 ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_6evts.RWF.h5")
 
     nevents_per_file = 3
 
@@ -137,24 +136,36 @@ def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
 
     diomira(**conf)
 
-    with tb.open_file(file_out) as h5out:
-        last_particle_list = h5out.root.MC.extents[:]['last_particle']
-        last_hit_list      = h5out.root.MC.extents[:]['last_hit'     ]
+    first_file  = os.path.join(ICDATADIR                                      ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5")
+    second_file = os.path.join(ICDATADIR                                       ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts_1.MCRD.h5")
 
-        assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
-        assert all(x<y for x, y in zip(last_hit_list     , last_hit_list     [1:]))
+    particles_in1 = load_mcparticles_df( first_file)
+    hits_in1      = load_mchits_df     ( first_file)
+    particles_in2 = load_mcparticles_df(second_file)
+    hits_in2      = load_mchits_df     (second_file)
+    particles_out = load_mcparticles_df(   file_out)
+    hits_out      = load_mchits_df     (   file_out)
 
-        with tb.open_file(second_file) as h5second:
-            nparticles_in_first_event = h5second.root.MC.extents[0]['last_particle'] + 1
-            nhits_in_first_event      = h5second.root.MC.extents[0]['last_hit'     ] + 1
+    evt_in  = np.concatenate([hits_in1.index.levels[0],
+                              hits_in2.index.levels[0]])
+    evt_out = hits_out.index.levels[0]
+    assert all(evt_in == evt_out)
 
-            assert last_particle_list[nevents_per_file] - last_particle_list[nevents_per_file - 1] == nparticles_in_first_event
-            assert last_hit_list     [nevents_per_file] - last_hit_list     [nevents_per_file - 1] == nhits_in_first_event
+    all_hit_in      = pd.concat([hits_in1     ,      hits_in2])
+    pd.testing.assert_frame_equal(all_hit_in, hits_out)
+    all_particle_in = pd.concat([particles_in1, particles_in2])
+    pd.testing.assert_frame_equal(all_particle_in, particles_out)
+
 
 def test_diomira_exact_result(ICDATADIR, output_tmpdir):
-    file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5")
-    file_out    = os.path.join(output_tmpdir,                       "exact_result_diomira.h5")
-    true_output = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
+    file_in     = os.path.join(ICDATADIR                                      ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5")
+    file_out    = os.path.join(output_tmpdir                                  ,
+                               "exact_result_diomira.h5"                      )
+    true_output = os.path.join(ICDATADIR                                      ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5" )
 
     conf = configure("diomira invisible_cities/config/diomira.conf".split())
     conf.update(dict(run_number   = -6340,
@@ -170,9 +181,11 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
     diomira(**conf)
     np.random.set_state(original_random_state)
 
-
-    tables = (     "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
-                   "RD/pmtrwf" ,  "RD/pmtblr" , "RD/sipmrwf"  ,
+    ## tables = (     "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
+    ##                "RD/pmtrwf" ,  "RD/pmtblr" , "RD/sipmrwf"  ,
+    ##               "Run/events" , "Run/runInfo",
+    ##           "Filters/trigger")
+    tables = (     "RD/pmtrwf" ,  "RD/pmtblr" , "RD/sipmrwf"  ,
                   "Run/events" , "Run/runInfo",
               "Filters/trigger")
     with tb.open_file(true_output)  as true_output_file:
@@ -184,7 +197,7 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
 
 
 def test_diomira_can_fix_random_seed(output_tmpdir):
-    file_out    = os.path.join(output_tmpdir,                       "exact_result_diomira.h5")
+    file_out    = os.path.join(output_tmpdir, "exact_result_diomira.h5")
 
     conf = configure("diomira invisible_cities/config/diomira.conf".split())
     conf.update(dict(random_seed = 123),
