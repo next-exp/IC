@@ -40,9 +40,11 @@ def test_isidora_electrons_40keV(config_tmpdir, ICDATADIR):
 
 
 def test_isidora_exact_result(ICDATADIR, output_tmpdir):
-    file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
-    file_out    = os.path.join(output_tmpdir,                      "exact_result_isidora.h5")
-    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.BLR.h5")
+    file_in     = os.path.join(ICDATADIR                                     ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
+    file_out    = os.path.join(output_tmpdir, "exact_result_isidora.h5")
+    true_output = os.path.join(ICDATADIR                                     ,
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.BLR.h5")
 
     conf = configure("isidora invisible_cities/config/isidora.conf".split())
     conf.update(dict(run_number  = -6340,
@@ -52,8 +54,10 @@ def test_isidora_exact_result(ICDATADIR, output_tmpdir):
 
     isidora(**conf)
 
-    tables = ( "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
-              "BLR/pmtcwf" , "BLR/sipmrwf",
+    ## tables = ( "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
+    ##           "BLR/pmtcwf" , "BLR/sipmrwf",
+    ##           "Run/events" , "Run/runInfo")
+    tables = ("BLR/pmtcwf" , "BLR/sipmrwf",
               "Run/events" , "Run/runInfo")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
