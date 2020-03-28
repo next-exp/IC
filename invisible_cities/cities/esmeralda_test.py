@@ -9,6 +9,7 @@ from .. core                 import system_of_units as units
 from .. core.configure       import configure
 from .. core.configure       import all         as all_events
 from .. io                   import dst_io      as dio
+from .. io.mcinfo_io         import load_mchits_df
 from .  esmeralda            import esmeralda
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
@@ -32,7 +33,6 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
 
     with tb.open_file(PATH_OUT) as h5out:
         assert "MC"                      in h5out.root
-        assert "MC/extents"              in h5out.root
         assert "MC/hits"                 in h5out.root
         assert "MC/particles"            in h5out.root
         assert "Tracking/Tracks"         in h5out.root
@@ -90,7 +90,7 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
     with tb.open_file(PATH_OUT)  as h5out:
         event_info = get_event_info(h5out)
         assert length_of(event_info) == nevt_req
-        MC_num_evs = h5out.root.MC.extents[:]['evt_number']
+        MC_num_evs = load_mchits_df(PATH_OUT).index.levels[0]
         assert len(MC_num_evs) == nevt_req
 
 
@@ -241,8 +241,11 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
     esmeralda(**conf)
 
 
-    tables = ["MC/extents", "MC/hits", "MC/particles",
-              "Tracking/Tracks", "CHITS/lowTh", "CHITS/highTh",
+    ## tables = ["MC/extents", "MC/hits", "MC/particles",
+    ##           "Tracking/Tracks", "CHITS/lowTh", "CHITS/highTh",
+    ##           "Run/events", "Run/runInfo", "DST/Events", "Summary/Events",
+    ##           "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
+    tables = ["Tracking/Tracks", "CHITS/lowTh", "CHITS/highTh",
               "Run/events", "Run/runInfo", "DST/Events", "Summary/Events",
               "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
 
