@@ -31,7 +31,7 @@ def test_compare_cwf_blr(dbnew):
     2) Computes the difference between CWF and BLR (compare_cwf_blr())
     3) Asserts that the differences are small.
     For 10 events and 12 PMTs per event, all differences are less than 0.1 %
-    Input file (needed in repository): electrons_40keV_z250_RWF.h5
+    Input file (needed in repository): electrons_40keV_z25_RWF.h5
     """
 
     RWF_file = path.join(os.environ['ICDIR'],

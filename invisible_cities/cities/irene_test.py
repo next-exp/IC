@@ -68,8 +68,8 @@ def job_info_missing_pmts(config_tmpdir, ICDATADIR):
     pmt_active  = list(filter(lambda x: x not in pmt_missing, range(12)))
 
 
-    ifilename = os.path.join(ICDATADIR    , 'electrons_40keV_z250_RWF.h5')
-    ofilename = os.path.join(config_tmpdir, 'electrons_40keV_z250_pmaps_missing_PMT.h5')
+    ifilename = os.path.join(ICDATADIR    , 'electrons_40keV_z25_RWF.h5')
+    ofilename = os.path.join(config_tmpdir, 'electrons_40keV_z25_pmaps_missing_PMT.h5')
 
     return job_info(run_number, pmt_missing, pmt_active, ifilename, ofilename)
 

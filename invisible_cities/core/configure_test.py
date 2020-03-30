@@ -66,8 +66,8 @@ event_range = {event_range}
 """
 
 # The values that will be fed into the above.
-config_file_spec = dict(files_in    = 'electrons_40keV_z250_RWF.h5',
-                        file_out    = 'electrons_40keV_z250_PMP.h5',
+config_file_spec = dict(files_in    = 'electrons_40keV_z25_RWF.h5',
+                        file_out    = 'electrons_40keV_z25_PMP.h5',
                         compression = 'ZLIB4',
                         run_number  = 23,
                         nprint      = 24,
