@@ -59,7 +59,7 @@ def example_blr_wfs_filename(ICDATADIR):
 
 
 @pytest.fixture(scope  = 'session',
-                params = ['electrons_40keV_z250_RWF.h5',
+                params = ['electrons_40keV_z25_RWF.h5',
                           'electrons_511keV_z250_RWF.h5',
                           'electrons_1250keV_z250_RWF.h5',
                           'electrons_2500keV_z250_RWF.h5'])
