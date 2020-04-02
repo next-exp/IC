@@ -47,6 +47,7 @@ from .. reco.deconv_functions  import InterpolationMethod
 from .. io.       mcinfo_io    import mc_info_writer
 from .. io.run_and_event_io    import run_and_event_writer
 from .. io.          dst_io    import store_pandas_as_tables
+from .. io.          dst_io    import load_dst
 
 from .. evm.event_model        import HitEnergy
 
@@ -110,7 +111,7 @@ def deconvolve_signal(psf_fname       : str,
     bin_size      = np.asarray(bin_size               )
     diffusion     = np.asarray(diffusion              )
 
-    psfs          = pd.read_hdf(psf_fname)
+    psfs          = load_dst(psf_fname, 'PSF', 'PSFs')
     deconvolution = deconvolve(n_iterations, iteration_tol, sample_width, bin_size, inter_method)
 
     if energy_type  not in HitEnergy          :
