@@ -100,6 +100,12 @@ def test_load_dsts_warns_if_not_existing_file(ICDATADIR):
     with pytest.warns(UserWarning, match='does not exist'):
         load_dsts([good_file, wrong_file], group, node)
 
+def test_load_dst_converts_from_bytes(ICDATADIR, fixed_dataframe):
+    filename = os.path.join(ICDATADIR, 'Kr83_full_nexus_v5_03_01_ACTIVE_7bar_1evt.sim.h5')
+    config = load_dst(filename, 'MC', 'configuration')
+    for column in config.columns:
+        assert all(config[column].apply(type) != bytes)
+
 @given(df=dataframe)
 def test_store_pandas_as_tables_exact(config_tmpdir, df):
     filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
@@ -139,8 +145,6 @@ def test_strings_store_pandas_as_tables(config_tmpdir, df):
     with tb.open_file(filename, 'w') as h5out:
         store_pandas_as_tables(h5out, df, group_name, table_name)
     df_read    = load_dst(filename, group_name, table_name)
-    #we have to cast from byte strings to compare with original dataframe
-    df_read.str_val = df_read.str_val.str.decode('utf-8')
     assert_dataframes_equal(df_read, df)
 
 def test_make_tabledef(empty_dataframe):
