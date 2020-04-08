@@ -1,7 +1,7 @@
 import os
 import string
-
 import pytest
+import re
 
 import pandas as pd
 import tables as tb
@@ -32,6 +32,9 @@ def empty_dataframe(columns=['int_value', 'float_value', 'bool_value', 'str_valu
         df[c] = pd.Series(dtype=d)
     return df
 
+@fixture()
+def fixed_dataframe():
+    return pd.DataFrame({'int':[0, 1], 'float':[10., 20.], 'string':['aa', 'bb']})
 
 dataframe          = data_frames(index=range_indexes(min_size=1, max_size=5), columns=[column('int_value' , dtype = int    ),
                                                                                        column('float_val' , dtype = float  ),
@@ -187,3 +190,35 @@ def test_store_pandas_as_tables_unordered_df(config_tmpdir, df1, df2):
         store_pandas_as_tables(h5out, df2, group_name, table_name)
     df_read = load_dst(filename, group_name, table_name)
     assert_dataframes_equal(df_read, pd.concat([df1, df2], sort=True).reset_index(drop=True))
+
+
+def test_store_pandas_as_tables_index(config_tmpdir, fixed_dataframe):
+    df = fixed_dataframe
+    filename   = config_tmpdir + 'dataframe_to_table_index.h5'
+    group_name = 'test_group'
+    table_name = 'table_name'
+    columns_to_index = ['int', 'float']
+    with tb.open_file(filename, 'w') as h5out:
+        store_pandas_as_tables(h5out, df, group_name, table_name, columns_to_index=columns_to_index)
+        table = h5out.root[group_name][table_name]
+        assert set(columns_to_index) == set(table.attrs.columns_to_index)
+
+def test_store_pandas_as_tables_index_error(config_tmpdir, fixed_dataframe):
+    df = fixed_dataframe
+    filename   = config_tmpdir + 'dataframe_to_table_index.h5'
+    group_name = 'test_group'
+    table_name = 'table_name'
+    columns_to_index = ['float_']
+    with tb.open_file(filename, 'w') as h5out:
+        with raises(KeyError, match=(re.escape(f"columns {columns_to_index} not present in the dataframe"))):
+            store_pandas_as_tables(h5out, df, group_name, table_name, columns_to_index=columns_to_index)
+
+def test_store_pandas_as_tables_no_index(config_tmpdir, fixed_dataframe):
+    df = fixed_dataframe
+    filename   = config_tmpdir + 'dataframe_to_table_index.h5'
+    group_name = 'test_group'
+    table_name = 'table_name'
+    with tb.open_file(filename, 'w') as h5out:
+        store_pandas_as_tables(h5out, df, group_name, table_name)
+        table = h5out.root[group_name][table_name]
+        assert 'columns_to_index' not in table.attrs
