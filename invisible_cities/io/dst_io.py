@@ -13,13 +13,18 @@ from    typing          import Optional
 from    typing          import Sequence
 
 
+def _decode_str_columns(df):
+    to_string = lambda x: x.str.decode('utf-8') if x.dtype == np.object else x
+    df        = df.apply(to_string)
+    return df
+
 def load_dst(filename, group, node):
     """load a kdst if filename, group and node correctly found"""
     try:
         with tb.open_file(filename) as h5in:
             try:
                 table = getattr(getattr(h5in.root, group), node).read()
-                return pd.DataFrame.from_records(table)
+                return _decode_str_columns(pd.DataFrame.from_records(table))
             except NoSuchNodeError:
                 warnings.warn(f' not of kdst type: file= {filename} ', UserWarning)
     except HDF5ExtError:
