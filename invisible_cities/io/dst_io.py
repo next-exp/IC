@@ -67,6 +67,19 @@ def store_pandas_as_tables(h5out              : tb.file.File ,
                            str_col_length     : int = 32     ,
                            columns_to_index   : Optional[Sequence[str]] = None
                            ) -> None:
+    """ The function writes a dataframe to open pytables file.
+    Parameters:
+    h5out              : open pytable file for writing
+    df                 : DataFrame to be written
+    group_name         : group name where table is to be saved)
+                         (group is created if doesnt exist)
+    table_name         : table name
+                         (table is created if doesnt exist)
+    compression        : compression type
+    descriptive_string : table description
+    str_col_length     : maximum length in characters of strings
+    columns_to_index   : list of columns to be flagged for indexing
+    """
     if group_name not in h5out.root:
         group = h5out.create_group(h5out.root, group_name)
     group = getattr(h5out.root, group_name)
