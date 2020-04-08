@@ -44,7 +44,7 @@ def mode(wfs, axis=0):
 def zero_masked(fn):
     """
     protection for mean and median
-    so that we get the correct answer in case of 
+    so that we get the correct answer in case of
     zero suppressed data
     """
     @wraps(fn)
@@ -90,7 +90,6 @@ def subtract_baseline(wfs, *, bls_mode=BlsMode.mean):
     elif bls_mode is BlsMode.scipymode: return wfs - scipy_mode(wfs, axis=1)
     else:
         raise TypeError(f"Unrecognized baseline subtraction option: {bls_mode}")
-    return bls
 
 
 def calibrate_wfs(wfs, adc_to_pes):

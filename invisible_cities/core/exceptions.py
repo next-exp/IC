@@ -14,18 +14,6 @@ class InvalidInputFileStructure(ICException):
 class NoOutputFile(ICException):
     pass
 
-class UnknownRWF(ICException):
-    pass
-
-class UnknownDST(ICException):
-    pass
-
-class ParameterNotSet(ICException):
-    pass
-
-class PeakNotFound(ICException):
-    pass
-
 class XYRecoFail(ICException):
     pass
 
@@ -36,12 +24,6 @@ class SipmEmptyListAboveQthr(XYRecoFail):
     pass
 
 class ClusterEmptyList(XYRecoFail):
-    pass
-
-class PmtNotFound(ICException):
-    pass
-
-class SipmNotFound(XYRecoFail):
     pass
 
 class SipmZeroCharge(XYRecoFail):
@@ -56,25 +38,10 @@ class NoHits(ICException):
 class NoVoxels(ICException):
     pass
 
-class InconsistentS12dIpmtd(ICException):
-    pass
-
-class NegativeThresholdNotAllowed(ICException):
-    pass
-
-class InitializedEmptyPmapObject(ICException):
-    pass
-
-class UnknownParameter(ICException):
-    pass
-
 class SensorBinningNotFound(ICException):
     pass
 
 class NoParticleInfoInFile(ICException):
-    pass
-
-class VoxelNotInList(ICException):
     pass
 
 class TableMismatch(ICException):

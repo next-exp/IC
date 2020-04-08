@@ -4,17 +4,17 @@ import tables as tb
 
 from pytest import mark
 
-from .. core.core_functions    import in_range
-from .. core.system_of_units_c import units
-from .. core.testing_utils     import assert_dataframes_close
-from .. core.testing_utils     import assert_tables_equality
-from .. core.testing_utils     import assert_MChit_equality
-from .. core.configure         import configure
-from .. core.configure         import all as all_events
-from .. io                     import dst_io as dio
-from .. io.mcinfo_io           import load_mchits
+from .. core                 import system_of_units as units
+from .. core.core_functions  import in_range
+from .. core.testing_utils   import assert_dataframes_close
+from .. core.testing_utils   import assert_tables_equality
+from .. core.testing_utils   import assert_MChit_equality
+from .. core.configure       import configure
+from .. core.configure       import all as all_events
+from .. io                   import dst_io as dio
+from .. io.mcinfo_io         import load_mchits
 
-from .  penthesilea            import penthesilea
+from .  penthesilea          import penthesilea
 
 
 #in order not to fail direct comparation tests when changing hit attribute we compare only the columns that penthesilea is using
@@ -132,7 +132,7 @@ def test_penthesilea_threshold_rebin(ICDATADIR, output_tmpdir):
                      rebin        = rebin_thresh,
                      rebin_method =  'threshold'))
 
-    cnt = penthesilea(**conf)
+    penthesilea(**conf)
 
     output_dst   = dio.load_dst(file_out   , 'RECO', 'Events')
     expected_dst = dio.load_dst(true_output, 'RECO', 'Events')
@@ -162,7 +162,7 @@ def test_penthesilea_signal_to_noise(ICDATADIR, output_tmpdir):
                      sipm_charge_type  = 'signal_to_noise',
                      slice_reco_params =      reco_params))
 
-    cnt = penthesilea(**conf)
+    penthesilea(**conf)
 
     output_dst   = dio.load_dst(file_out   , 'RECO', 'Events')
     expected_dst = dio.load_dst(true_output, 'RECO', 'Events')

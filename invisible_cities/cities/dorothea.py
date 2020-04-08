@@ -38,12 +38,10 @@ from operator import attrgetter
 
 import tables as tb
 
-from .. database       import load_db
-from .. core.system_of_units_c import units
-from .. reco                   import tbl_functions as tbl
-from .. io.         kdst_io    import            kr_writer
-from .. io.run_and_event_io    import run_and_event_writer
-from .. io. event_filter_io    import  event_filter_writer
+from .. reco                import        tbl_functions as tbl
+from .. io.         kdst_io import            kr_writer
+from .. io.run_and_event_io import run_and_event_writer
+from .. io. event_filter_io import  event_filter_writer
 
 from .. dataflow          import dataflow      as fl
 from .. dataflow.dataflow import push

@@ -8,14 +8,14 @@ import tables as tb
 from scipy.signal import find_peaks_cwt
 from enum         import auto
 
-from .. core.system_of_units_c import            units
-from .. core.core_functions    import         in_range
-from .. core.stat_functions    import    poisson_sigma
-from .. core                   import    fit_functions as fitf
-from .. database               import          load_db as DB
-from .. types.ic_types         import AutoNameEnumBase
-from .. evm.ic_containers      import     SensorParams
-from .. evm.ic_containers      import   PedestalParams
+from .. core                 import  system_of_units as units
+from .. core.core_functions  import         in_range
+from .. core.stat_functions  import    poisson_sigma
+from .. core                 import    fit_functions as fitf
+from .. database             import          load_db as DB
+from .. types.ic_types       import AutoNameEnumBase
+from .. evm.ic_containers    import     SensorParams
+from .. evm.ic_containers    import   PedestalParams
 
 
 def bin_waveforms(waveforms, bins):

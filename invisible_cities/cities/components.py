@@ -25,7 +25,7 @@ from .. evm    .event_model       import                   Cluster
 from .. evm    .event_model       import             HitCollection
 from .. evm    .event_model       import                    MCInfo
 from .. evm    .pmaps             import                SiPMCharge
-from .. core   .system_of_units_c import                     units
+from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail
 from .. core   .exceptions        import              NoInputFiles
 from .. core   .exceptions        import              NoOutputFile
@@ -38,18 +38,14 @@ from .. reco                      import   calib_sensors_functions as csf
 from .. reco                      import            peak_functions as pkf
 from .. reco                      import           pmaps_functions as pmf
 from .. reco                      import            hits_functions as hif
-from .. reco   .tbl_functions     import               get_mc_info
 from .. reco   .xy_algorithms     import                    corona
 from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import               pmap_filter
 from .. database                  import                   load_db
 from .. sierpe                    import                       blr
-from .. reco                      import             tbl_functions as tbl
 from .. io                        import                 mcinfo_io
 from .. io     .pmaps_io          import                load_pmaps
 from .. io     .hits_io           import              hits_from_df
-from .. io     .dst_io            import                  load_dst
-from .. io     .hits_io           import                 load_hits
 from .. io     .dst_io            import                  load_dst
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
@@ -229,7 +225,7 @@ def get_sipm_wfs(h5in, wf_type):
 
 def get_mc_info_safe(h5in, run_number):
     if run_number <= 0:
-        try                                 : return get_mc_info(h5in)
+        try                                 : return mcinfo_io.get_mc_info(h5in)
         except tb.exceptions.NoSuchNodeError: pass
     return
 

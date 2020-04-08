@@ -15,25 +15,6 @@ class EventInfo(tb.IsDescription):
     timestamp  = tb.UInt64Col(shape=(), pos=1)
 
 
-class DetectorGeometry(tb.IsDescription):
-    """Store geometry information for the detector."""
-    x_det = tb.Float32Col(pos=1, shape=2)  # xmin, xmax
-    y_det = tb.Float32Col(pos=2, shape=2)  # ymin, ymax
-    z_det = tb.Float32Col(pos=3, shape=2)  # zmin, zmax
-    r_det = tb.Float32Col(pos=4)  # radius
-
-
-class DataSensor(tb.IsDescription):
-    """Store metadata information for the SiPMs (position, gain,
-    calibration-constant, mask).
-    """
-    channel    = tb.  Int32Col(pos=0) # electronic channel
-    position   = tb.Float32Col(pos=1, shape=3)
-    coeff      = tb.Float64Col(pos=2)
-    adc_to_pes = tb.Float32Col(pos=3)
-    noise_rms  = tb.Float32Col(pos=4)
-
-
 class SensorTable(tb.IsDescription):
     """
     Stores the Sensors group, mimicking what is saved
@@ -89,14 +70,6 @@ class MCParticleInfo(tb.IsDescription):
     creator_proc   = tb. StringCol(100, pos=10)
 
 
-class SENSOR_WF(tb.IsDescription):
-    """Describe a true waveform (zero supressed)."""
-    event    = tb.UInt32Col (pos=0)
-    ID       = tb.UInt32Col (pos=1)
-    time_mus = tb.Float32Col(pos=2)
-    ene_pes  = tb.Float32Col(pos=3)
-
-
 class FEE(tb.IsDescription):
     """Store the parameters used by the EP simulation as metadata."""
     OFFSET        = tb.  Int16Col(pos= 1)  # displaces the baseline (e.g, 700)
@@ -117,12 +90,6 @@ class FEE(tb.IsDescription):
     f_mc          = tb.Float32Col(pos=16)  # sampling frequency in MC (1ns)
     f_LPF1        = tb.Float32Col(pos=17)  # LPF
     f_LPF2        = tb.Float32Col(pos=18)  # LPF
-
-
-class DECONV_PARAM(tb.IsDescription):
-    N_BASELINE             = tb.Int32Col(pos=0)
-    THR_TRIGGER            = tb.Int16Col(pos=1)
-    ACCUM_DISCHARGE_LENGTH = tb.Int16Col(pos=2)
 
 
 class S12(tb.IsDescription):
@@ -194,26 +161,6 @@ class KrTable(tb.IsDescription):
     Phi     = tb.Float64Col(pos=22)
     Xrms    = tb.Float64Col(pos=23)
     Yrms    = tb.Float64Col(pos=24)
-
-
-class XYfactors(tb.IsDescription):
-    x            = tb.Float32Col(pos=0)
-    y            = tb.Float32Col(pos=1)
-    factor       = tb.Float32Col(pos=2)
-    uncertainty  = tb.Float32Col(pos=3)
-    nevt         = tb. UInt32Col(pos=4)
-
-
-class Zfactors(tb.IsDescription):
-    z            = tb.Float32Col(pos=0)
-    factor       = tb.Float32Col(pos=1)
-    uncertainty  = tb.Float32Col(pos=2)
-
-
-class Tfactors(tb.IsDescription):
-    t            = tb.Float32Col(pos=0)
-    factor       = tb.Float32Col(pos=1)
-    uncertainty  = tb.Float32Col(pos=2)
 
 
 class HitsTable(tb.IsDescription):

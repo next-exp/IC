@@ -4,11 +4,11 @@ import numpy  as np
 
 import warnings
 
-from    tables             import NoSuchNodeError
-from    tables             import HDF5ExtError
-from .. core.exceptions    import TableMismatch
-from .  table_io           import make_table
-from    typing             import Optional
+from    tables          import NoSuchNodeError
+from    tables          import HDF5ExtError
+from .. core.exceptions import TableMismatch
+from .  table_io        import make_table
+
 
 def load_dst(filename, group, node):
     """load a kdst if filename, group and node correctly found"""

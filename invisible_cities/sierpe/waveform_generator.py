@@ -4,15 +4,12 @@ Waveform Generator
 Generates toy PMT and SiPM waveforms
 """
 
-import numpy        as np
-import scipy.signal as signal
+import numpy as np
 
-from .                         import fee as FE
-from .  fee                    import FEE
-from .. core.system_of_units_c import units
+from .       import fee as FE
+from .  fee  import FEE
 
 from typing import NamedTuple
-from typing import Tuple
 
 
 class Point(NamedTuple):
@@ -116,7 +113,6 @@ def simulate_pmt_response(fee : FEE, wf : np.ndarray) -> WaveformPmt:
     signal_i   = FE.spe_pulse_from_vector(spe, wf)                  # signal_i in current units
     signal_d   = FE.daq_decimator(FE.f_mc, FE.f_sample, signal_i)   # Decimate (DAQ decimation)
     signal_fee = FE.signal_v_fee(fee, signal_d, -1) * FE.v_to_adc() # Effect of FEE and transform to adc counts
-    signal_daq = FE.noise_adc(fee, signal_fee)                      # add noise daq
     signal_blr = FE.signal_v_lpf(fee, signal_d) * FE.v_to_adc()     # signal blr is just pure MC decimated by adc in adc counts
 
     return WaveformPmt(signal_blr.astype(int), signal_fee.astype(int))

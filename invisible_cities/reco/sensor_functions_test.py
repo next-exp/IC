@@ -1,17 +1,14 @@
-import os
 import tables as tb
 import numpy  as np
 import pandas as pd
+
 from pytest import mark
 
-from .. core                 import system_of_units as units
 from .. core.random_sampling import NoiseSampler as SiPMsNoiseSampler
+from .. sierpe               import blr
+from .. database             import load_db
 
-from .           import tbl_functions as tbl
-from .           import wfm_functions as wfm
-from .. sierpe   import fee as FEE
-from .. sierpe   import blr
-from .. database import load_db
+from .                   import wfm_functions as wfm
 from .  sensor_functions import convert_channel_id_to_IC_id
 from .  sensor_functions import simulate_pmt_response
 
@@ -19,18 +16,17 @@ from .  sensor_functions import simulate_pmt_response
 def test_cwf_blr(dbnew, electron_MCRD_file):
     """Check that CWF -> (deconv) (RWF) == BLR within 1 %. """
 
-    run_number = 0
-    DataPMT = load_db.DataPMT(dbnew, run_number)
-    pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist()
-    channel_id = DataPMT.ChannelID.values
-    coeff_blr = abs(DataPMT.coeff_blr.values)
-    coeff_c = abs(DataPMT.coeff_c .values)
-    adc_to_pes = abs(DataPMT.adc_to_pes.values)
+    run_number    = 0
+    DataPMT       = load_db.DataPMT(dbnew, run_number)
+    pmt_active    = np.nonzero(DataPMT.Active.values)[0].tolist()
+    coeff_blr     = abs(DataPMT.coeff_blr.values)
+    coeff_c       = abs(DataPMT.coeff_c .values)
+    adc_to_pes    = abs(DataPMT.adc_to_pes.values)
     single_pe_rms = abs(DataPMT.Sigma.values)
 
     with tb.open_file(electron_MCRD_file, 'r') as h5in:
         event = 0
-        _, pmtrd, _ = tbl.get_rd_vectors(h5in)
+        pmtrd = h5in.root.pmtrd
         dataPMT, BLR = simulate_pmt_response(event, pmtrd, adc_to_pes, single_pe_rms)
         RWF = dataPMT.astype(np.int16)
 

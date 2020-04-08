@@ -1,5 +1,4 @@
 import numpy        as np
-import scipy.signal as signal
 
 from functools import reduce
 from operator  import add
@@ -145,7 +144,7 @@ def test_subtract_baseline_valid_options_sanity_check(gaussian_sipm_signal, bls_
 def test_subtract_baseline_raises_TypeError(wrong_bls_mode):
     dummy = np.empty((2, 2))
     with raises(TypeError):
-        bls = csf.subtract_baseline(dummy, bls_mode=wrong_bls_mode)
+        csf.subtract_baseline(dummy, bls_mode=wrong_bls_mode)
 
 
 def test_calibrate_wfs(gaussian_sipm_signal_wo_baseline):

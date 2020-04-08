@@ -23,9 +23,7 @@ import tables as tb
 from .. dataflow          import dataflow as fl
 from .. dataflow.dataflow import push
 from .. dataflow.dataflow import pipe
-from .. dataflow.dataflow import slice
 from .. dataflow.dataflow import fork
-from .. dataflow.dataflow import branch
 from .. dataflow.dataflow import sink
 
 from .. reco                import tbl_functions as tbl

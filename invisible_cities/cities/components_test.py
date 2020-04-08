@@ -12,9 +12,7 @@ from pytest import raises
 
 from .. core.configure  import EventRange as ER
 from .. core.exceptions import InvalidInputFileStructure
-from .. core.exceptions import ClusterEmptyList
-
-from .. core.system_of_units_c import units
+from .. core            import system_of_units as units
 
 from .  components import event_range
 from .  components import collect
@@ -27,8 +25,6 @@ from .  components import city
 from .  components import hits_and_kdst_from_files
 
 from .. dataflow   import dataflow as fl
-
-from .. database   import load_db
 
 
 def _create_dummy_conf_with_event_range(value):
@@ -107,10 +103,8 @@ def test_compute_xy_position_depends_on_actual_run_number():
     seed_charge    = minimum_seed_charge + 1
     charge_to_test = np.array([charge, charge, charge, seed_charge, charge, charge, charge, charge])
 
-    try:
-        find_xy_pos(xys_to_test, charge_to_test)
-    except(ClusterEmptyList):
-        assert False
+    find_xy_pos(xys_to_test, charge_to_test)
+
 
 
 def test_city_adds_default_detector_db(config_tmpdir):
@@ -119,7 +113,7 @@ def test_city_adds_default_detector_db(config_tmpdir):
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
     @city
     def dummy_city(files_in, file_out, event_range, detector_db):
-        with tb.open_file(file_out, 'w') as h5out:
+        with tb.open_file(file_out, 'w'):
             pass
         return detector_db
 
@@ -133,7 +127,7 @@ def test_city_does_not_overwrite_detector_db(config_tmpdir):
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
     @city
     def dummy_city(files_in, file_out, event_range, detector_db):
-        with tb.open_file(file_out, 'w') as h5out:
+        with tb.open_file(file_out, 'w'):
             pass
         return detector_db
 
@@ -146,7 +140,7 @@ def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
     @city
     def dummy_city(files_in, file_out, event_range):
-        with tb.open_file(file_out, 'w') as h5out:
+        with tb.open_file(file_out, 'w'):
             pass
 
     dummy_city(**args)

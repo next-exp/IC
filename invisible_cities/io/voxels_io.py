@@ -1,7 +1,6 @@
 
 import tables
 
-from .  dst_io             import load_dst
 from .. io.table_io        import make_table
 from .. evm.event_model    import Voxel
 from .. evm.event_model    import VoxelCollection

@@ -4,9 +4,9 @@ import numpy as np
 
 from enum import auto
 
-from .. core.system_of_units_c import units
-from .. core.core_functions    import weighted_mean_and_std
-from .. types.ic_types         import      AutoNameEnumBase
+from .. core                 import       system_of_units as units
+from .. core.core_functions  import weighted_mean_and_std
+from .. types.ic_types       import      AutoNameEnumBase
 
 
 class SiPMCharge(AutoNameEnumBase):

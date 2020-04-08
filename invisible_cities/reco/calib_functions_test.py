@@ -9,14 +9,14 @@ from pytest        import mark
 from pytest        import raises
 from scipy.signal  import find_peaks_cwt
 
-from .                         import calib_functions as cf
-from .. reco                   import   tbl_functions as tbl
-from .. core                   import   fit_functions as fitf
-from .. core.stat_functions    import   poisson_sigma
-from .. core.system_of_units_c import           units
-from .. evm.nh5                import     SensorTable
-from .  calib_functions        import      SensorType
-from .. cities.components      import  get_run_number
+from .                       import calib_functions as cf
+from .. reco                 import   tbl_functions as tbl
+from .. core                 import   fit_functions as fitf
+from .. core                 import system_of_units as units
+from .. core.stat_functions  import   poisson_sigma
+from .. evm.nh5              import     SensorTable
+from .  calib_functions      import      SensorType
+from .. cities.components    import  get_run_number
 
 
 def test_bin_waveforms():
@@ -216,7 +216,6 @@ def test_compute_seeds_from_spectrum(ICDATADIR):
 
     PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
     h5in    = tb.open_file(PATH_IN, 'r')
-    run_no  = get_run_number(h5in)
 
     specsL = np.array(h5in.root.HIST.sipm_spe).sum(axis=0)
     specsD = np.array(h5in.root.HIST.sipm_dark).sum(axis=0)

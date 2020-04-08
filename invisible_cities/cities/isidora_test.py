@@ -1,15 +1,12 @@
 import os
-from collections import namedtuple
 
 import tables as tb
 import numpy  as np
 
 from pytest import mark
-from pytest import fixture
 
 from .  isidora            import isidora
-from .. core               import system_of_units as units
-from .. core.configure     import             all as all_events
+from .. core.configure     import all as all_events
 from .. core.configure     import configure
 from .. core.testing_utils import assert_tables_equality
 
@@ -36,8 +33,6 @@ def test_isidora_electrons_40keV(config_tmpdir, ICDATADIR):
 
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
-            nrow = 0
-
             # check events numbers & timestamps
             evts_in  = h5in .root.Run.events[:nactual].astype([('evt_number', '<i4'), ('timestamp', '<u8')])
             evts_out = h5out.root.Run.events[:nactual]

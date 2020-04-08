@@ -1,5 +1,4 @@
 import os
-from collections import namedtuple
 
 import tables as tb
 import numpy  as np
@@ -17,7 +16,6 @@ from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
 
-from .. database            import load_db
 from .. database.load_db    import DetDB
 from .. io      .pmaps_io   import load_pmaps
 
@@ -54,24 +52,6 @@ def unpack_s12params(s12params):
                 s2_rebin_stride = s2par.rebin_stride,
                 s2_lmin         = s2par.length.min,
                 s2_lmax         = s2par.length.max)
-
-
-@fixture(scope='module')
-def job_info_missing_pmts(config_tmpdir, ICDATADIR):
-    # Specifies a name for a data configuration file. Also, default number
-    # of events set to 1.
-    job_info = namedtuple("job_info",
-                          "run_number pmt_missing pmt_active input_filename output_filename")
-
-    run_number  = 3366
-    pmt_missing = [11]
-    pmt_active  = list(filter(lambda x: x not in pmt_missing, range(12)))
-
-
-    ifilename = os.path.join(ICDATADIR    , 'electrons_40keV_z25_RWF.h5')
-    ofilename = os.path.join(config_tmpdir, 'electrons_40keV_z25_pmaps_missing_PMT.h5')
-
-    return job_info(run_number, pmt_missing, pmt_active, ifilename, ofilename)
 
 
 @mark.slow
@@ -472,4 +452,3 @@ def test_irene_other_sample_widths(ICDATADIR, config_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
-

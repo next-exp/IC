@@ -8,20 +8,19 @@ from pytest        import         fixture
 
 from hypothesis                import       assume
 from hypothesis                import        given
-from hypothesis                import     settings
 from hypothesis.strategies     import     integers
 from hypothesis.strategies     import       floats
 from hypothesis.strategies     import sampled_from
 from hypothesis.strategies     import    composite
 from hypothesis.extra.numpy    import       arrays
 
-from .. core.core_functions    import           weighted_mean_and_std
-from .. core.random_sampling   import                    NoiseSampler
-from .. core.system_of_units_c import                           units
-from .. core.testing_utils     import                         exactly
-from .. core.testing_utils     import assert_SensorResponses_equality
-from .. core.testing_utils     import            assert_Peak_equality
-from .. core.testing_utils     import                  previous_float
+from .. core.core_functions  import           weighted_mean_and_std
+from .. core.random_sampling import                    NoiseSampler
+from .. core                 import                 system_of_units as units
+from .. core.testing_utils   import                         exactly
+from .. core.testing_utils   import assert_SensorResponses_equality
+from .. core.testing_utils   import            assert_Peak_equality
+from .. core.testing_utils   import                  previous_float
 
 from invisible_cities.database import load_db as DB
 
@@ -131,8 +130,8 @@ def test_SensorResponses_sum_over_sensors(srs):
 @given(size=integers(1, 10))
 def test_SensorResponses_raises_exception_when_shapes_dont_match(SR, size):
     with raises(ValueError):
-        sr = SR(np.empty(size),
-                np.empty((size + 1, 1)))
+        SR(np.empty(size),
+           np.empty((size + 1, 1)))
 
 
 @given(peaks())
@@ -298,8 +297,8 @@ def test_Peak_raises_exception_when_shapes_dont_match(PK, sr1, sr2):
         (ids, wfs), sr1 = sr1
         _         , sr2 = sr2
         n_samples       = wfs.shape[1]
-        pk = PK(np.empty(n_samples + 1),
-                np.empty(n_samples + 1), sr1, sr2)
+        PK(np.empty(n_samples + 1),
+           np.empty(n_samples + 1), sr1, sr2)
 
 
 @given(pmaps())

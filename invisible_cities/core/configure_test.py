@@ -189,13 +189,13 @@ def test_configure_does_not_take_multiple_arguments(default_conf, flag):
     iargs = " ".join(f"arg_{i}.h5" for i in range(2))
     argv   = f"dummy {default_conf} {flag} {iargs}".split()
     with raises(SystemExit):
-        conf = configure(argv)
+        configure(argv)
 
 
 def test_configure_raises_SystemExit_with_multiple_mutually_exclusive_options():
     argv = f"dummy {default_conf} --no-files --full-files".split()
     with raises(SystemExit):
-        conf = configure(argv)
+        configure(argv)
 
 
 def test_read_config_file_special_values(config_tmpdir):
@@ -206,7 +206,7 @@ var_all    = all
 var_last   = last
 vars_units = {all_units}
 """)
-    argv = f"dummy {default_conf} -i ifile -o ofile -r runno".split()
+
     conf = read_config_file(filename)
     assert conf["var_all"   ] is all
     assert conf["var_last"  ] is last

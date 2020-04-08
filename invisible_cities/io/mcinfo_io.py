@@ -11,6 +11,7 @@ from .. core.exceptions import NoParticleInfoInFile
 from .. evm.event_model import MCParticle
 from .. evm.event_model import MCHit
 from .. evm.event_model import Waveform
+from .. evm.event_model import MCInfo
 
 from .. evm.nh5 import MCGeneratorInfo
 from .. evm.nh5 import MCExtentInfo
@@ -187,7 +188,7 @@ def copy_mc_info(h5in : tb.File, writer : Type[mc_info_writer], which_events : L
     try:
         if which_events is None:
             which_events = h5in.root.MC.extents.cols.evt_number[:]
-        mcinfo = tbl.get_mc_info(h5in)
+        mcinfo = get_mc_info(h5in)
         for n in which_events:
             writer(mctables=mcinfo, evt_number=n)
     except tb.exceptions.NoSuchNodeError:
@@ -393,6 +394,32 @@ def load_mcsensor_response_df(file_name : str,
     return extents.evt_number.unique(), pmt_bin, sipm_bin, sns
 
 
+def get_mc_info(h5in):
+    """Return MC info bank"""
+
+    extents   = h5in.root.MC.extents
+    hits      = h5in.root.MC.hits
+    particles = h5in.root.MC.particles
+
+    try:
+        h5in.root.MC.particles[0]
+    except:
+        raise NoParticleInfoInFile('Trying to access particle information: this file could have sensor response only.')
+
+    if len(h5in.root.MC.hits) == 0:
+        hits = np.zeros((0,), dtype=('3<f4, <f4, <f4, S20, <i4, <i4'))
+        hits.dtype.names = ('hit_position', 'hit_time', 'hit_energy', 'label', 'particle_indx', 'hit_indx')
+
+    if 'generators' in h5in.root.MC:
+        generator_table = h5in.root.MC.generators
+    else:
+        generator_table = np.zeros((0,), dtype=('<i4,<i4,<i4,S20'))
+        generator_table.dtype.names = ('evt_number', 'atomic_number', 'mass_number', 'region')
+
+    return MCInfo(extents, hits, particles, generator_table)
+
+
+
 def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_number: int, last_row=0,
                      return_only_hits: bool=False) -> ([tb.Table], [tb.Table], [tb.Table]):
     h5extents    = mctables[0]
@@ -440,8 +467,10 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_n
     return hit_rows, particle_rows, generator_rows
 
 
+
+
 def read_mcinfo(h5f, event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Sequence[MCParticle]]]:
-    mc_info = tbl.get_mc_info(h5f)
+    mc_info = get_mc_info(h5f)
 
     h5extents = mc_info.extents
 
@@ -501,7 +530,7 @@ def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]]) -> Mapp
 
 def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
     """Returns all hits in the event"""
-    mc_info = tbl.get_mc_info(h5f)
+    mc_info = get_mc_info(h5f)
     h5extents = mc_info.extents
     events_in_file = len(h5extents)
 
@@ -511,7 +540,6 @@ def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCH
         if iext >= events_in_file:
             break
 
-        current_event  = {}
         evt_number     = h5extents[iext]['evt_number']
         hit_rows, _, _ = read_mcinfo_evt(mc_info, evt_number, iext, True)
 

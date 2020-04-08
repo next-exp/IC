@@ -29,7 +29,7 @@ from typing      import Callable
 from .. reco                import tbl_functions        as tbl
 from .. reco                import paolina_functions    as plf
 from .. reco                import hits_functions       as hif
-from .. reco                import corrections_new      as cof
+from .. reco                import corrections          as cof
 from .. evm                 import event_model          as evm
 from .. dataflow            import dataflow             as fl
 from .. dataflow.dataflow   import push

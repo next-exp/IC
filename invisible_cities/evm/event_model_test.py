@@ -1,7 +1,6 @@
 import numpy as np
 
-from numpy.testing import assert_equal
-from pytest        import mark
+from pytest import mark
 
 from hypothesis             import given
 from hypothesis.strategies  import just
@@ -10,11 +9,8 @@ from hypothesis.strategies  import one_of
 from hypothesis.strategies  import floats
 from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
-from hypothesis.extra.numpy import arrays
 
-from .. types.ic_types_c import xy
-from .. types.ic_types_c import minmax
-from .       event_model import SensorParams
+from .. types.ic_types   import xy
 from .       event_model import Event
 
 from .       event_model import Cluster
@@ -23,15 +19,6 @@ from .       event_model import Voxel
 from .       event_model import HitCollection
 from .       event_model import HitEnergy
 from .       event_model import KrEvent
-
-
-@composite
-def sensor_params_input(draw):
-    npmt   = draw(integers())
-    pmtwl  = draw(integers())
-    nsipm  = draw(integers())
-    sipmwl = draw(integers())
-    return npmt, pmtwl, nsipm, sipmwl
 
 
 @composite
@@ -82,17 +69,6 @@ def hits(draw):
     c = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
     h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, ep)
     return h
-
-
-@given(sensor_params_input())
-def test_sensor_params(sensor_pars):
-    npmt, pmtwl, nsipm, sipmwl = sensor_pars
-    sp =  SensorParams(*sensor_pars)
-
-    assert sp.npmt   == sp.NPMT   == npmt
-    assert sp.nsipm  == sp.NSIPM  == nsipm
-    assert sp.pmtwl  == sp.PMTWL  == pmtwl
-    assert sp.sipmwl == sp.SIPMWL == sipmwl
 
 
 @mark.parametrize("test_class",

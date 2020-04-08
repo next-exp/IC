@@ -3,15 +3,15 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
-from  . components             import get_event_info
-from  . components             import length_of
-from .. core.system_of_units_c import units
-from .. core.configure         import configure
-from .. core.configure         import all         as all_events
-from .. io                     import dst_io      as dio
-from .  esmeralda              import esmeralda
-from .. core.testing_utils     import assert_dataframes_close
-from .. core.testing_utils     import assert_tables_equality
+from  . components           import get_event_info
+from  . components           import length_of
+from .. core                 import system_of_units as units
+from .. core.configure       import configure
+from .. core.configure       import all         as all_events
+from .. io                   import dst_io      as dio
+from .  esmeralda            import esmeralda
+from .. core.testing_utils   import assert_dataframes_close
+from .. core.testing_utils   import assert_tables_equality
 
 
 def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):
@@ -154,7 +154,8 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
                          min_voxels            = 2                      ,
                          blob_radius           = 21 * units.mm          ,
                          max_num_hits          = 10000                 )))
-    cnt = esmeralda(**conf)
+
+    esmeralda(**conf)
 
     df_tracks           =  dio.load_dst(PATH_OUT, 'Tracking', 'Tracks' )
     df_tracks_exact     =  pd.read_hdf(esmeralda_tracks, key = 'Tracks')
@@ -207,7 +208,7 @@ def test_esmeralda_blob_overlap_bug(data_hdst, correction_map_filename, config_t
                          blob_radius           = 21 * units.mm          ,
                          max_num_hits          = 10000                 )))
 
-    cnt = esmeralda(**conf)
+    esmeralda(**conf)
 
     df_tracks = dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
     assert df_tracks['ovlp_blob_energy'].dtype == float
@@ -235,7 +236,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
                          blob_radius           = 21 * units.mm             ,
                          max_num_hits          = 10000                    )))
 
-    cnt = esmeralda(**conf)
+    esmeralda(**conf)
 
 
     tables = ["MC/extents", "MC/hits", "MC/particles",
@@ -276,7 +277,7 @@ def test_esmeralda_bug_duplicate_hits(data_hdst, correction_map_filename, config
                          blob_radius           = 21 * units.mm          ,
                          max_num_hits          = 10000                 )))
 
-    cnt = esmeralda(**conf)
+    esmeralda(**conf)
 
     df_tracks = dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
     df_phits  = dio.load_dst(PATH_OUT, 'CHITS'   , 'highTh')
@@ -309,7 +310,7 @@ def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, corre
                          min_voxels            = 2                      ,
                          blob_radius           = 21 * units.mm          ,
                          max_num_hits          = 10000                 )))
-    cnt = esmeralda(**conf)
+    esmeralda(**conf)
 
     df_phits            =  dio.load_dst(PATH_OUT,   'CHITS' , 'highTh')
     df_in_hits          =  dio.load_dst(PATH_IN ,    'RECO' , 'Events')
@@ -330,7 +331,6 @@ def test_esmeralda_filters_events_with_too_many_hits(data_hdst, correction_map_f
     PATH_OUT  = os.path.join(config_tmpdir, "esmeralda_filters_long_events.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = 9
-    all_hits  = 601
     nhits_max = 50
     paolina_events = {3021898, 3021914, 3021930, 3020951, 3020961}
     conf.update(dict(files_in                  = PATH_IN                ,
@@ -350,7 +350,8 @@ def test_esmeralda_filters_events_with_too_many_hits(data_hdst, correction_map_f
                          min_voxels            = 2                      ,
                          blob_radius           = 21 * units.mm          ,
                          max_num_hits          = nhits_max            )))
-    cnt = esmeralda(**conf)
+
+    esmeralda(**conf)
 
     summary = dio.load_dst(PATH_OUT, 'Summary' , 'Events')
     tracks  = dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')

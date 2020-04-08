@@ -3,8 +3,6 @@ import os
 import tables as tb
 import numpy  as np
 
-from pytest import mark
-
 from .  berenice           import berenice
 from .. core.configure     import configure
 from .. core.configure     import       all as all_events
@@ -33,7 +31,7 @@ def test_berenice_sipmdarkcurrent(config_tmpdir, ICDATADIR):
         evts_out = h5out.root.Run.events[:nrequired]
         assert_array_equal(evts_in, evts_out)
 
-        assert 'Sensors' in h5out.root        
+        assert 'Sensors' in h5out.root
         ch_in_pmt   = np.array(h5in .root.Sensors.DataPMT [:])
         ch_out_pmt  = np.array(h5out.root.Sensors.DataPMT [:])
         ch_in_sipm  = np.array(h5in .root.Sensors.DataSiPM[:])

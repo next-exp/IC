@@ -19,11 +19,10 @@ from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import mc_info_writer
 from .  mcinfo_io import copy_mc_info
 from .  mcinfo_io import read_mcinfo_evt
+from .  mcinfo_io import get_mc_info
 
 from .. core            import system_of_units as units
 from .. core.exceptions import NoParticleInfoInFile
-
-from .. reco.tbl_functions import get_mc_info
 
 from pytest import raises
 from pytest import mark
@@ -103,8 +102,6 @@ def test_mc_info_writer_generatoroutput_non_consecutive_events(output_tmpdir, fi
     filein = os.path.join(output_tmpdir, file_to_check)
 
     with tb.open_file(filein) as h5in:
-        mc_info          = get_mc_info(h5in)
-
         # test the content of events to be sure that the extents rows are ion sync with generators rows
         evt_numbers_in_extents    = h5in.root.MC.extents[:]['evt_number']
         evt_numbers_in_generators = h5in.root.MC.generators[:]['evt_number']

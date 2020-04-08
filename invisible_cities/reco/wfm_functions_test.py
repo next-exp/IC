@@ -6,21 +6,12 @@ import tables as tb
 
 from pytest import mark
 
-from hypothesis             import given
-from hypothesis.strategies  import floats
-from hypothesis.extra.numpy import arrays
-
 from .. database import load_db
 
 from .        import tbl_functions    as tbl
 from .        import wfm_functions    as wfm
 from .. evm.ic_containers import CalibVectors
 from .. evm.ic_containers import DeconvParams
-
-
-def ndarrays_of_shape(shape, lo=-1000.0, hi=1000.0):
-    return arrays('float64', shape=shape,
-                  elements=floats(min_value=lo, max_value=hi))
 
 
 @mark.slow

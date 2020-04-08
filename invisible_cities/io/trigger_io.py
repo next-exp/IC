@@ -1,6 +1,5 @@
 from functools import partial
 
-import numpy  as np
 import tables as tb
 
 from .. evm                import nh5     as table_formats

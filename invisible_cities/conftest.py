@@ -6,16 +6,16 @@ import tables as tb
 from pandas      import DataFrame
 from collections import namedtuple
 
-from . core .system_of_units_c import units
-from . evm  . pmaps_test       import pmaps
-from . io   . pmaps_io         import load_pmaps_as_df
-from . io   . pmaps_io         import load_pmaps
-from . io   . pmaps_io         import pmap_writer
-from . io   .   dst_io         import load_dst
-from . io   .  hits_io         import load_hits
-from . io   .  hits_io         import load_hits_skipping_NN
-from . io   . mcinfo_io        import load_mchits
-from . types.ic_types          import NN
+from . core              import system_of_units as units
+from . evm  . pmaps_test import pmaps
+from . io   . pmaps_io   import load_pmaps_as_df
+from . io   . pmaps_io   import load_pmaps
+from . io   . pmaps_io   import pmap_writer
+from . io   .   dst_io   import load_dst
+from . io   .  hits_io   import load_hits
+from . io   .  hits_io   import load_hits_skipping_NN
+from . io   .mcinfo_io   import load_mchits
+from . types.ic_types    import NN
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
 dst_data = namedtuple('dst_data', 'file_info config read true')
@@ -39,11 +39,6 @@ def PSFDIR(ICDIR):
     return os.path.join(ICDIR, "database/test_data/PSF_dst_sum_collapsed.h5")
 
 @pytest.fixture(scope = 'session')
-def irene_diomira_chain_tmpdir(tmpdir_factory):
-    return tmpdir_factory.mktemp('irene_diomira_tests')
-
-
-@pytest.fixture(scope = 'session')
 def config_tmpdir(tmpdir_factory):
     return tmpdir_factory.mktemp('configure_tests')
 
@@ -56,15 +51,6 @@ def output_tmpdir(tmpdir_factory):
 @pytest.fixture(scope='session')
 def example_blr_wfs_filename(ICDATADIR):
     return os.path.join(ICDATADIR, "blr_examples.h5")
-
-
-@pytest.fixture(scope  = 'session',
-                params = ['electrons_40keV_z25_RWF.h5',
-                          'electrons_511keV_z250_RWF.h5',
-                          'electrons_1250keV_z250_RWF.h5',
-                          'electrons_2500keV_z250_RWF.h5'])
-def electron_RWF_file(request, ICDATADIR):
-    return os.path.join(ICDATADIR, request.param)
 
 
 @pytest.fixture(scope  = 'session',
@@ -175,12 +161,6 @@ def KrMC_pmaps_without_ipmt_dfs(KrMC_pmaps_without_ipmt_filename):
 @pytest.fixture(scope='session')
 def KrMC_pmaps_dict(KrMC_pmaps_filename):
     dict_pmaps, evt_numbers = _get_pmaps_dict_and_event_numbers(KrMC_pmaps_filename)
-    return dict_pmaps, evt_numbers
-
-
-@pytest.fixture(scope='session')
-def KrMC_pmaps_without_ipmt_dict(KrMC_pmaps_without_ipmt_filename):
-    dict_pmaps, evt_numbers = _get_pmaps_dict_and_event_numbers(KrMC_pmaps_without_ipmt_filename)
     return dict_pmaps, evt_numbers
 
 
@@ -665,17 +645,6 @@ def TlMC_hits_merged(ICDATADIR):
     hits = load_hits(hits_file_name)
     return hits
 
-@pytest.fixture(scope='session')
-def corr_toy_data(ICDATADIR):
-    x = np.arange( 100, 200)
-    y = np.arange(-200,   0)
-    E = np.arange( 1e4, 1e4 + x.size*y.size).reshape(x.size, y.size)
-    U = np.arange( 1e2, 1e2 + x.size*y.size).reshape(x.size, y.size)
-    N = np.ones_like(U)
-
-    corr_filename = os.path.join(ICDATADIR, "toy_corr.h5")
-    return corr_filename, (x, y, E, U, N)
-
 
 @pytest.fixture(scope='session')
 def hits_toy_data(ICDATADIR):
@@ -744,7 +713,6 @@ def db(request):
 def deconvolution_config(ICDIR, ICDATADIR, PSFDIR, config_tmpdir):
     PATH_IN     = os.path.join(ICDATADIR    ,    "test_Xe2nu_NEW_v1.2.0_cdst.5_62.h5")
     PATH_OUT    = os.path.join(config_tmpdir,                       "beersheba_MC.h5")
-    config_path = os.path.join(ICDIR        ,                 "config/beersheba.conf")
     nevt_req    = 3
     conf        = dict(files_in      = PATH_IN ,
                        file_out      = PATH_OUT,

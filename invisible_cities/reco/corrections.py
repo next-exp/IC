@@ -1,192 +1,360 @@
-from functools import partial
-from itertools import product
+import numpy  as np
+import pandas as pd
 
-import numpy as np
-from scipy.interpolate import griddata
+from   pandas      import DataFrame
+from   pandas      import Series
+from   dataclasses import dataclass
+from   typing      import Callable
+from   typing      import Optional
+from   enum        import auto
 
-from ..core               import fit_functions as fitf
-from ..core.exceptions    import ParameterNotSet
-from .. evm.ic_containers import Measurement
-
-
-opt_nearest = {"interp_method": "nearest"}
-opt_linear  = {"interp_method": "linear" ,
-               "default_f"    :     1    ,
-               "default_u"    :     0    }
-opt_cubic   = {"interp_method":  "cubic" ,
-               "default_f"    :     1    ,
-               "default_u"    :     0    }
+from .. core.core_functions import in_range
+from .. core                import system_of_units      as units
+from .. core.exceptions     import TimeEvolutionTableMissing
+from .. types.ic_types      import AutoNameEnumBase
 
 
-class Correction:
+@dataclass
+class ASectorMap:  # Map in chamber sector containing average of pars
+    chi2    : DataFrame
+    e0      : DataFrame
+    lt      : DataFrame
+    e0u     : DataFrame
+    ltu     : DataFrame
+    mapinfo : Optional[Series]
+    t_evol  : Optional[DataFrame]
+
+def read_maps(filename : str)->ASectorMap:
+
     """
-    Interface for accessing any kind of corrections.
+    Read 'filename' variable and creates ASectorMap class.
+    If the map corresponds to a data run (run_number>0),
+    ASectorMap will also contain a DataFrame with time evolution information.
 
     Parameters
     ----------
-    xs : np.ndarray
-        Array of coordinates corresponding to each correction.
-    fs : np.ndarray
-        Array of corrections or the values used for computing them.
-    us : np.ndarray
-        Array of uncertainties or the values used for computing them.
-    norm_strategy : False or string
-        Flag to set the normalization option. Accepted values:
-        - False:    Do not normalize.
-        - "max":    Normalize to maximum energy encountered.
-        - "index":  Normalize to the energy placed to index (i,j).
-    default_f, default_u : floats
-        Default correction and uncertainty for missing values (where fs = 0).
+    filename : string
+        Name of the file that contains the correction maps.
+
+    Returns
+    -------
+    ASectorMap:
+
+@dataclass
+class ASectorMap:
+    chi2    : DataFrame            # chi2 value for each bin
+    e0      : DataFrame            # geometric map
+    lt      : DataFrame            # lifetime map
+    e0u     : DataFrame            # uncertainties of geometric map
+    ltu     : DataFrame            # uncertainties of lifetime map
+    mapinfo : Optional[Series]     # series with some info about the
+    t_evol  : Optional[DataFrame]  # time evolution of some parameters
+                                     (only for data)
     """
 
-    def __init__(self,
-                 xs, fs, us,
-                   norm_strategy = None,
-                   norm_opts     = {},
-                 interp_method   = "nearest",
-                 default_f       = 0,
-                 default_u       = 0):
+    chi2     = pd.read_hdf(filename, 'chi2')
+    e0       = pd.read_hdf(filename, 'e0')
+    e0u      = pd.read_hdf(filename, 'e0u')
+    lt       = pd.read_hdf(filename, 'lt')
+    ltu      = pd.read_hdf(filename, 'ltu')
+    mapinfo  = pd.read_hdf(filename, 'mapinfo')
 
-        self._xs = [np.array( x, dtype=float) for x in xs]
-        self._fs =  np.array(fs, dtype=float)
-        self._us =  np.array(us, dtype=float)
+    if mapinfo.run_number>0:
+        try:
+            t_evol = pd.read_hdf(filename, 'time_evolution')
+        except:
+            t_evol = None
+        maps   = ASectorMap(chi2, e0, lt, e0u, ltu, mapinfo, t_evol)
 
-        self.norm_strategy   =   norm_strategy
-        self.norm_opts       =   norm_opts
-        self.interp_method   = interp_method
-        self.default_f       = default_f
-        self.default_u       = default_u
+    else: maps = ASectorMap(chi2, e0, lt, e0u, ltu, mapinfo, None)
 
-        self._normalize        (  norm_strategy,
-                                  norm_opts    )
-        self._init_interpolator(interp_method  , default_f, default_u)
-
-    def __call__(self, *xs):
-        """
-        Compute the correction factor.
-
-        Parameters
-        ----------
-        *x: Sequence of nd.arrays
-             Each array is one coordinate. The number of coordinates must match
-             that of the `xs` array in the init method.
-        """
-        # In order for this to work well both for arrays and scalars
-        arrays = len(np.shape(xs)) > 1
-        if arrays:
-            xs = np.stack(xs, axis=1)
-
-        value  = self._get_value      (xs).flatten()
-        uncert = self._get_uncertainty(xs).flatten()
-        return (Measurement(value   , uncert   ) if arrays else
-                Measurement(value[0], uncert[0]))
-
-    def _init_interpolator(self, method, default_f, default_u):
-        coordinates           = np.array(list(product(*self._xs)))
-        self._get_value       = partial(griddata,
-                                        coordinates,
-                                        self._fs.flatten(),
-                                        method     = method,
-                                        fill_value = default_f)
-
-        self._get_uncertainty = partial(griddata,
-                                        coordinates,
-                                        self._us.flatten(),
-                                        method     = method,
-                                        fill_value = default_u)
-
-    def _normalize(self, strategy, opts):
-        if not strategy            : return
-
-        elif   strategy == "const" :
-            if "value" not in opts:
-                raise ParameterNotSet("Normalization strategy 'const' requires"
-                                      "the normalization option 'value'")
-            f_ref = opts["value"]
-            u_ref = 0
-
-        elif   strategy == "max"   :
-            flat_index = np.argmax(self._fs)
-            mult_index = np.unravel_index(flat_index, self._fs.shape)
-            f_ref = self._fs[mult_index]
-            u_ref = self._us[mult_index]
-
-        elif   strategy == "center":
-            index = tuple(i // 2 for i in self._fs.shape)
-            f_ref = self._fs[index]
-            u_ref = self._us[index]
-
-        elif   strategy == "index" :
-            if "index" not in opts:
-                raise ParameterNotSet("Normalization strategy 'index' requires"
-                                      "the normalization option 'index'")
-            index = opts["index"]
-            f_ref = self._fs[index]
-            u_ref = self._us[index]
-
-        else:
-            raise ValueError("Normalization strategy not recognized: {}".format(strategy))
-
-        assert f_ref > 0, "Invalid reference value."
-
-        valid    = (self._fs > 0) & (self._us > 0)
-        valid_fs = self._fs[valid].copy()
-        valid_us = self._us[valid].copy()
-
-        # Redefine and propagate uncertainties as:
-        # u(F) = F sqrt(u(F)**2/F**2 + u(Fref)**2/Fref**2)
-        self._fs[ valid]  = f_ref / valid_fs
-        self._us[ valid]  = np.sqrt((valid_us / valid_fs)**2 +
-                                    (   u_ref / f_ref   )**2 )
-        self._us[ valid] *= self._fs[valid]
-
-        # Set invalid to defaults
-        self._fs[~valid]  = self.default_f
-        self._us[~valid]  = self.default_u
-
-    def __eq__(self, other):
-        for i, x in enumerate(self._xs):
-            if not np.allclose(x, other._xs[i]):
-                return False
-
-        if not np.allclose(self._fs, other._fs):
-            return False
-
-        if not np.allclose(self._us, other._us):
-            return False
-
-        return True
+    return  maps
 
 
-class Fcorrection:
-    def __init__(self, f, u_f, pars):
-        self._f   = lambda *x:   f(*x, *pars)
-        self._u_f = lambda *x: u_f(*x, *pars)
+def maps_coefficient_getter(mapinfo : Series,
+                            map_df  : DataFrame) -> Callable:
+    """
+    For a given correction map,
+    it returns a function that yields the values of map
+    for a given (X,Y) position.
 
-    def __call__(self, *x):
-        return Measurement(self._f(*x), self._u_f(*x))
+    Parameters
+    ----------
+    mapinfo : Series
+        Stores some information about the map
+        (run number, number of X-Y bins, X-Y range)
+    map_df : DataFrame
+        DataFrame of a correction map (lt or e0)
+
+    Returns
+    -------
+        A function that returns the value of the 'map_df' map
+        for a given (X,Y) position
+    """
+
+    binsx   = np.linspace(mapinfo.xmin, mapinfo.xmax, mapinfo.nx + 1)
+    binsy   = np.linspace(mapinfo.ymin, mapinfo.ymax, mapinfo.ny + 1)
+
+    def get_maps_coefficient(x : np.array, y : np.array) -> np.array:
+        ix = np.digitize(x, binsx) - 1
+        iy = np.digitize(y, binsy) - 1
+
+        valid   = in_range(x, mapinfo.xmin, mapinfo.xmax)
+        valid  &= in_range(y, mapinfo.ymin, mapinfo.ymax)
+        output  = np.full(len(valid), np.nan, dtype=np.float)
+
+        output[valid] = map_df.values[iy[valid], ix[valid]]
+        return output
+
+    return get_maps_coefficient
 
 
-def LifetimeCorrection(LT, u_LT):
-    fun   = lambda z, LT, u_LT=0: fitf.expo(z, 1, LT)
-    u_fun = lambda z, LT, u_LT  : z * u_LT / LT**2 * fun(z, LT)
-    return Fcorrection(fun, u_fun, (LT, u_LT))
+def correct_geometry_(CE : np.array) -> np.array:
+    """
+    Computes the geometric correction factor
+    for a given correction coefficient
+
+    Parameters
+    ----------
+    CE : np.array
+        Array with geometric correction coefficients
+
+    Returns
+    -------
+        An array with geometric correction factors
+    """
+
+    return 1/CE
 
 
-def LifetimeXYCorrection(pars, u_pars, xs, ys, **kwargs):
-    LTs = Correction((xs, ys), pars, u_pars, **kwargs)
-    return (lambda z, x, y: LifetimeCorrection(*LTs(x, y))(z))
+def correct_lifetime_(Z : np.array, LT : np.array) -> np.array:
+    """
+    Computes the lifetime correction factor
+    for a given correction coefficient
+
+    Parameters
+    ----------
+    LT : np.array
+        Array with lifetime correction coefficients
+
+    Returns
+    -------
+        An array with lifetime correction factors
+    """
+
+    return np.exp(Z / LT)
 
 
-def LifetimeRCorrection(pars, u_pars):
-    def LTfun(z, r, a, b, c, u_a, u_b, u_c):
-        LT = a - b * r * np.exp(r / c)
-        return fitf.expo(z, 1, LT)
+def time_coefs_corr(time_evt   : np.array,
+                    times_evol : np.array,
+                    par        : np.array,
+                    par_u      : np.array)-> np.array:
+    """
+    Computes a time-dependence parameter that will correct the
+    correction coefficient for taking into account time evolution.
 
-    def u_LTfun(z, r, a, b, c, u_a, u_b, u_c):
-        LT   = a - b * r * np.exp(r / c)
-        u_LT = (u_a**2 + u_b**2 * np.exp(2 * r / c) +
-                u_c**2 *   b**2 * r**2 * np.exp(2 * r / c) / c**4)**0.5
-        return z * u_LT / LT**2 * LTfun(z, r, a, b, c, u_a, u_b, u_c)
+    Parameters
+    ----------
+    time_evt : np.array
+        Array with timestamps for each hit (is the same for all hit of the same event).
+    times_evol : np.array
+        Time intervals to perform the interpolation.
+    par : np.array
+        Time evolution of a certain parameter (e.g. lt or e0).
+        Each value is associated to a times_evol one.
+    par_u : np.array
+        Time evolution of the uncertainty of a certain parameter.
+        Each value is associated to a times_evol one.
 
-    return Fcorrection(LTfun, u_LTfun, np.concatenate([pars, u_pars]))
+    Returns
+    -------
+        An array with the computed value.
+    """
+    par_mean   = np.average(par, weights = 1/par_u)
+    par_i      = np.interp(time_evt, times_evol, par)
+    par_factor = par_i/par_mean
+    return par_factor
+
+
+def get_df_to_z_converter(map_te: ASectorMap) -> Callable:
+    """
+    For given map, it returns a function that provides the conversion
+    from drift time to z position using the mean drift velocity.
+
+    Parameters
+    ----------
+    map_te : AsectorMap
+        Correction map with time evolution of some kdst parameters.
+
+    Returns
+    -------
+    A function that returns z converted array for a given drift time input
+    array.
+    """
+    try:
+        assert map_te.t_evol is not None
+    except(AttributeError , AssertionError):
+        raise TimeEvolutionTableMissing("No temp_map table provided in the map")
+
+    dv_vs_time = map_te.t_evol.dv
+    dv         = np.mean(dv_vs_time)
+    def df_to_z_converter(dt):
+        return dt*dv
+
+    return df_to_z_converter
+
+
+class norm_strategy(AutoNameEnumBase):
+    mean   = auto()
+    max    = auto()
+    kr     = auto()
+    custom = auto()
+
+
+def get_normalization_factor(map_e0    : ASectorMap,
+                             norm_strat: norm_strategy   = norm_strategy.max,
+                             norm_value: Optional[float] = None
+                             ) -> float:
+    """
+    For given map, it returns a factor that provides the conversion
+    from pes time to kr energy scale using the selected normalization
+    strategy.
+
+    Parameters
+    ----------
+    map_e0 : AsectorMap
+        Correction map for geometric corrections.
+    norm_strat : norm_strategy
+        Normalization strategy used when correcting the energy.
+    norm_value : float (Optional)
+        Normalization scale when custom strategy is selected.
+
+    Returns
+    -------
+    Factor for the kr energy scale conversion.
+    """
+    if norm_strat is norm_strategy.max:
+        norm_value =  map_e0.e0.max().max()
+    elif norm_strat is norm_strategy.mean:
+        norm_value = np.mean(np.mean(map_e0.e0))
+    elif norm_strat is norm_strategy.kr:
+        norm_value = 41.5575 * units.keV
+    elif norm_strat is norm_strategy.custom:
+        if norm_value is None:
+            s  = "If custom strategy is selected for normalization"
+            s += " user must specify the norm_value"
+            raise ValueError(s)
+    else:
+        s  = "None of the current available normalization"
+        s += " strategies was selected"
+        raise ValueError(s)
+
+    return norm_value
+
+
+def apply_all_correction_single_maps(map_e0         : ASectorMap,
+                                     map_lt         : ASectorMap,
+                                     map_te         : Optional[ASectorMap] = None,
+                                     apply_temp     : bool                 = True,
+                                     norm_strat     : norm_strategy        = norm_strategy.max,
+                                     norm_value     : Optional[float]      = None
+                                     ) -> Callable:
+    """
+    For a map for each correction, it returns a function
+    that provides a correction factor for a
+    given hit collection when (x,y,z,time) is provided.
+
+    Parameters
+    ----------
+    map_e0 : AsectorMap
+        Correction map for geometric corrections.
+    map_lt : AsectorMap
+        Correction map for lifetime corrections.
+    map_te : AsectorMap (optional)
+        Correction map with time evolution of some kdst parameters.
+    apply_temp : Bool
+        If True, time evolution will be taken into account.
+    norm_strat : AutoNameEnumBase
+        Provides the desired normalization to be used.
+    norm_value : Float(optional)
+        If norm_strat is selected to be custom, user must provide the
+        desired scale.
+    krscale_output : Bool
+        If true, the returned factor will take into account the scaling
+        from pes to the Kr energy scale.
+    Returns
+    -------
+        A function that returns time correction factor without passing a map.
+    """
+
+    normalization   = get_normalization_factor(map_e0, norm_strat, norm_value)
+
+    get_xy_corr_fun = maps_coefficient_getter(map_e0.mapinfo, map_e0.e0)
+    get_lt_corr_fun = maps_coefficient_getter(map_lt.mapinfo, map_lt.lt)
+
+    if apply_temp:
+        try:
+            assert map_te.t_evol is not None
+        except(AttributeError , AssertionError):
+            raise TimeEvolutionTableMissing("apply_temp is true while temp_map is not provided")
+
+        evol_table      = map_te.t_evol
+        temp_correct_e0 = lambda t : time_coefs_corr(t,
+                                                     evol_table.ts,
+                                                     evol_table.e0,
+                                                     evol_table.e0u)
+        temp_correct_lt = lambda t : time_coefs_corr(t,
+                                                     evol_table.ts,
+                                                     evol_table['lt'],
+                                                     evol_table.ltu)
+        e0evol_vs_t     = temp_correct_e0
+        ltevol_vs_t     = temp_correct_lt
+
+    else:
+        e0evol_vs_t = lambda x : np.ones_like(x)
+        ltevol_vs_t = lambda x : np.ones_like(x)
+
+    def total_correction_factor(x : np.array,
+                                y : np.array,
+                                z : np.array,
+                                t : np.array)-> np.array:
+        geo_factor = correct_geometry_(get_xy_corr_fun(x,y) * e0evol_vs_t(t))
+        lt_factor  = correct_lifetime_(z, get_lt_corr_fun(x,y) * ltevol_vs_t(t))
+        factor     = geo_factor * lt_factor * normalization
+        return factor
+
+    return total_correction_factor
+
+def apply_all_correction(maps           : ASectorMap                         ,
+                         apply_temp     : bool            = True             ,
+                         norm_strat     : norm_strategy   = norm_strategy.max,
+                         norm_value     : Optional[float] = None
+                         )->Callable:
+    """
+    Returns a function to get all correction factor for a
+    given hit collection when (x,y,z,time) is provided,
+    if an unique correction map is wanted to be used
+
+    Parameters
+    ----------
+    maps : AsectorMap
+        Selected correction map for doing geometric and lifetime correction.
+    apply_temp : Bool
+        If True, time evolution will be taken into account.
+    norm_strat : AutoNameEnumBase
+        Provides the desired normalization to be used.
+    norm_value : Float(optional)
+        If norm_strat is selected to be custom, user must provide the
+        desired scale.
+    krscale_output : Bool
+        If true, the returned factor will take into account the scaling
+        from pes to the Kr energy scale.
+
+    Returns
+    -------
+        A function that returns complete time correction factor
+    """
+
+    return apply_all_correction_single_maps(maps, maps, maps,
+                                            apply_temp, norm_strat,
+                                            norm_value)

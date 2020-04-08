@@ -25,7 +25,6 @@ from hypothesis.strategies import lists
 from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from hypothesis.strategies import builds
-from hypothesis.strategies import integers
 
 from networkx.generators.random_graphs import fast_gnp_random_graph
 
@@ -54,10 +53,10 @@ from . paolina_functions import drop_end_point_voxels
 from . paolina_functions import make_tracks
 from . paolina_functions import get_track_energy
 
-from .. core.exceptions        import NoHits
-from .. core.exceptions        import NoVoxels
-from .. core.system_of_units_c import units
-from .. core.testing_utils     import assert_bhit_equality
+from .. core               import system_of_units as units
+from .. core.exceptions    import NoHits
+from .. core.exceptions    import NoVoxels
+from .. core.testing_utils import assert_bhit_equality
 
 from .. io.mcinfo_io    import load_mchits
 from .. io.hits_io      import load_hits

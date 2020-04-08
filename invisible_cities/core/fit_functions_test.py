@@ -319,7 +319,7 @@ def test_fixed_parameters():
                    {'fake1' : 1, 'mu' : 0}))
 def test_fix_wrong_parameters_raises_error(pars):
     with raises(ValueError):
-        fixed_mu = fitf.fixed_parameters(fitf.gauss, **pars)
+        fitf.fixed_parameters(fitf.gauss, **pars)
 
 
 @mark.parametrize(["func"],

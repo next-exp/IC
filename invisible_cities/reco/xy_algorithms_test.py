@@ -15,20 +15,20 @@ from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
-from .. core.testing_utils     import assert_cluster_equality
-from .. core.testing_utils     import float_arrays
-from .. database.load_db       import DataSiPM
-from .. core.system_of_units_c import units
-from .. core.exceptions        import SipmEmptyList
-from .. core.exceptions        import ClusterEmptyList
-from .. core.exceptions        import SipmEmptyListAboveQthr
-from .. core.exceptions        import SipmZeroCharge
+from .. core.testing_utils   import assert_cluster_equality
+from .. core.testing_utils   import float_arrays
+from .. database.load_db     import DataSiPM
+from .. core                 import system_of_units as units
+from .. core.exceptions      import SipmEmptyList
+from .. core.exceptions      import ClusterEmptyList
+from .. core.exceptions      import SipmEmptyListAboveQthr
+from .. core.exceptions      import SipmZeroCharge
 
-from .       xy_algorithms     import corona
-from .       xy_algorithms     import barycenter
-from .       xy_algorithms     import discard_sipms
-from .       xy_algorithms     import get_nearby_sipm_inds
-from .       xy_algorithms     import count_masked
+from .       xy_algorithms   import corona
+from .       xy_algorithms   import barycenter
+from .       xy_algorithms   import discard_sipms
+from .       xy_algorithms   import get_nearby_sipm_inds
+from .       xy_algorithms   import count_masked
 
 
 @composite
@@ -296,37 +296,6 @@ def test_get_nearby_sipm_inds():
     for i in range(len(xs)):
         if i in sis: assert np.sqrt((xs[i] - xc)**2 + (ys[i] - yc)**2) <= d
         else       : assert np.sqrt((xs[i] - xc)**2 + (ys[i] - yc)**2) >  d
-
-
-@mark.skip("Functions removed")
-def test_get_neighbours():
-    pos = np.array([(35.5, 55.5)])
-
-    exp_xs = np.array([35, 35, 35, 25, 25, 25, 45, 45, 45])
-    exp_ys = np.array([55, 65, 45, 55, 65, 45, 55, 65, 45])
-    expected_neighbours = np.stack((exp_xs, exp_ys), axis=1)
-
-    found_neighbours = get_neighbours(pos, pitch = 10. * units.mm)
-
-    number_of_sipm_found_correctly = 0
-    for found in found_neighbours:
-        assert any(have_same_position_in_space(found, expected) for expected in expected_neighbours)
-        number_of_sipm_found_correctly += 1
-
-    assert number_of_sipm_found_correctly == 9
-
-
-@mark.skip("Function removed")
-def test_is_masked():
-    pos_masked = np.array([(0, 2),
-                           (2, 1)])
-
-    sipm_masked = [(0, 2)]
-    sipm_alive  = [(3, 2)]
-
-    assert     is_masked(sipm_masked, pos_masked)
-    assert not is_masked(sipm_alive , pos_masked)
-
 
 
 def test_count_masked_all_active(datasipm_all_active):

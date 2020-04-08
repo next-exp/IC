@@ -1,13 +1,11 @@
 import os
 import numpy  as np
 import tables as tb
-import pandas as pd
 import time   as tm
 
 from numpy.testing import assert_allclose
 
 from . dst_io              import load_dst
-from .. core.testing_utils import assert_dataframes_equal
 from .. types.ic_types     import xy
 from .. evm.event_model    import Cluster
 from .. evm.event_model    import Hit
@@ -38,10 +36,10 @@ def test_load_hits_double_ratio_e_q_equals_one(TlMC_hits):
 
         Emax.append(np.max(E))
         Qmax.append(np.max(Q))
-        pop = E.pop(np.argmax(E))
-        pop = Q.pop(np.argmax(Q))
-        Ein.extend(E)
-        Qin.extend(Q)
+        E   .pop   (np.argmax(E))
+        Q   .pop   (np.argmax(Q))
+        Ein .extend(E)
+        Qin .extend(Q)
 
 
     r1 = np.mean(Emax)/np.mean(Qmax)
@@ -65,10 +63,10 @@ def test_load_hits_double_ratio_e_q_equals_one_skipping_NN(TlMC_hits_skipping_NN
 
         Emax.append(np.max(E))
         Qmax.append(np.max(Q))
-        pop = E.pop(np.argmax(E))
-        pop = Q.pop(np.argmax(Q))
-        Ein.extend(E)
-        Qin.extend(Q)
+        E   .pop   (np.argmax(E))
+        Q   .pop   (np.argmax(Q))
+        Ein .extend(E)
+        Qin .extend(Q)
 
 
     r1 = np.mean(Emax)/np.mean(Qmax)

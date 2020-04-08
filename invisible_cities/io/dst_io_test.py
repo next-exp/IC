@@ -1,8 +1,11 @@
 import os
 import string
+
+import pytest
+
 import pandas as pd
 import tables as tb
-import numpy  as np
+
 from ..core.testing_utils import assert_dataframes_close
 from ..core.testing_utils import assert_dataframes_equal
 from ..core.exceptions    import TableMismatch
@@ -11,14 +14,10 @@ from . dst_io             import load_dsts
 from . dst_io             import store_pandas_as_tables
 from . dst_io             import _make_tabledef
 
-import warnings
-import pytest
 
 from pytest                  import raises
 from pytest                  import fixture
-from numpy     .testing      import assert_raises
 from hypothesis              import given
-from hypothesis.extra.pandas import columns
 from hypothesis.extra.pandas import data_frames
 from hypothesis.extra.pandas import column
 from hypothesis.extra.pandas import range_indexes

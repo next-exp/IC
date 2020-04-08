@@ -1,7 +1,5 @@
 import os
 
-from pytest import mark
-
 import numpy  as np
 import tables as tb
 

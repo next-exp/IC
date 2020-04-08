@@ -1,4 +1,3 @@
-from argparse import Namespace
 from enum     import Enum
 
 import numpy as np
@@ -10,18 +9,6 @@ class NNN:
 
     def __getattr__(self, _):
         return NN
-
-
-class Counters(Namespace):
-
-    def set(self, **kwds):
-        for name, value in kwds.items():
-            setattr(self, name, value)
-
-    def init(self, **kwds):
-        for name, value in kwds.items():
-            assert name not in self
-            setattr(self, name, value)
 
 
 class xy:
@@ -74,7 +61,7 @@ class minmax:
     def center(self): return (self.max + self.min) / 2
 
     def contains(self, x):
-        return self.min <= x < self.max
+        return self.min <= x <= self.max
 
     def __mul__(self, factor):
         return minmax(self.min * factor, self.max * factor)

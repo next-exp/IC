@@ -1,553 +1,319 @@
-from collections import namedtuple
+import os
+import numpy  as np
 
-import numpy as np
+from . corrections import maps_coefficient_getter
+from . corrections import read_maps
+from . corrections import ASectorMap
+from . corrections import correct_geometry_
+from . corrections import correct_lifetime_
+from . corrections import time_coefs_corr
+from . corrections import get_df_to_z_converter
+from . corrections import norm_strategy
+from . corrections import get_normalization_factor
+from . corrections import apply_all_correction_single_maps
+from . corrections import apply_all_correction
 
-from .. core                import fit_functions as fitf
-from .. core.exceptions     import ParameterNotSet
-from .. core.stat_functions import poisson_sigma
-from .. core.core_functions import shift_to_bin_centers
-from .. reco.corrections    import Correction
-from .. reco.corrections    import Fcorrection
-from .. reco.corrections    import LifetimeCorrection
-from .. reco.corrections    import LifetimeRCorrection
-from .. reco.corrections    import LifetimeXYCorrection
-from .. reco.corrections    import opt_nearest
-from .. reco.corrections    import opt_linear
-from .. reco.corrections    import opt_cubic
+from pytest                import fixture
+from numpy.testing         import assert_allclose
+from numpy.testing         import assert_array_equal
+from numpy.testing         import assert_raises
 
-from numpy.testing import assert_allclose
-from pytest        import fixture
-from pytest        import mark
-from pytest        import raises
-from flaky         import flaky
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from hypothesis.strategies import composite
+from hypothesis.strategies import lists
+from hypothesis            import given
 
-from hypothesis             import given
-from hypothesis             import settings
-from hypothesis.strategies  import floats
-from hypothesis.strategies  import integers
-from hypothesis.strategies  import composite
-from hypothesis.extra.numpy import arrays
+from invisible_cities.core.testing_utils import random_length_float_arrays
+from invisible_cities.core.testing_utils import float_arrays
+from invisible_cities.core.exceptions    import TimeEvolutionTableMissing
+from invisible_cities.core               import system_of_units            as units
 
+@fixture(scope='session')
+def map_filename(ICDATADIR):
+    test_file = "kr_emap_xy_constant_values.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
 
-data_1d = namedtuple("data_1d",   "X   E Eu Xdata       Edata")
-data_2d = namedtuple("data_2d",   "X Y E Eu Xdata Ydata Edata")
-
-FField_1d = namedtuple("Ffield1d", "X   P Pu F Fu fun u_fun")
-FField_2d = namedtuple("Ffield2d", "X Y P Pu F Fu fun u_fun")
-EField_1d = namedtuple("Efield1d", "X   E Eu F Fu imax"     )
-EField_2d = namedtuple("Efield2d", "X Y E Eu F Fu imax jmax")
-
-
-@composite
-def uniform_energy_1d(draw):
-    size  = draw(integers(min_value= 2  , max_value=10 ))
-    X0    = draw(floats  (min_value=-100, max_value=100))
-    dX    = draw(floats  (min_value= 0.1, max_value=100))
-    X     = np.arange(size) * dX + X0
-    E     = draw(arrays(float, size, floats(min_value=1e+3, max_value=2e+3)))
-    u_rel = draw(arrays(float, size, floats(min_value=1e-2, max_value=2e-1)))
-    Eu    = E * u_rel
-
-    i_max = np.argmax(E)
-    e_max = E [i_max]
-    u_max = Eu[i_max]
-
-    F     = E.max()/E
-    Fu    = F * (Eu**2 / E**2 + u_max**2 / e_max**2)**0.5
-
-    return EField_1d(X, E, Eu, F, Fu, i_max)
-
-
-@composite
-def uniform_energy_2d(draw):
-    x_size  = draw(integers(min_value=2   , max_value=10 ))
-    y_size  = draw(integers(min_value=2   , max_value=10 ))
-    X0      = draw(floats  (min_value=-100, max_value=100))
-    Y0      = draw(floats  (min_value=-100, max_value=100))
-    dX      = draw(floats  (min_value= 0.1, max_value=100))
-    dY      = draw(floats  (min_value= 0.1, max_value=100))
-    X       = np.arange(x_size) * dX + X0
-    Y       = np.arange(y_size) * dY + Y0
-    E       = draw(arrays(float, (x_size, y_size), floats(min_value = 1e+3,
-                                                          max_value = 2e+3)))
-    u_rel   = draw(arrays(float, (x_size, y_size), floats(min_value = 1e-2,
-                                                          max_value = 2e-1)))
-    Eu      = E * u_rel
-
-    i_max = draw(integers(min_value=0, max_value=x_size - 1))
-    j_max = draw(integers(min_value=0, max_value=y_size - 1))
-    e_max = E [i_max, j_max]
-    u_max = Eu[i_max, j_max]
-
-    F     = e_max / E
-    Fu    = F * (Eu**2 / E**2 + u_max**2 / e_max**2)**0.5
-
-    return EField_2d(X, Y, E, Eu, F.flatten(), Fu.flatten(), i_max, j_max)
-
-
-@composite
-def uniform_energy_fun_data_1d(draw):
-    fun   = lambda z, LT, u_LT: fitf.expo(z, 1, LT)
-    u_fun = lambda z, LT, u_LT: z * u_LT / LT**2 * fun(z, LT, u_LT)
-    LT    = draw(floats(min_value=1e+2, max_value=1e+3))
-    u_LT  = draw(floats(min_value=1e+1, max_value=1e+1))
-    Z     = np.linspace(0, 600, 100)
-    F     =   fun(Z, LT, u_LT)
-    u_F   = u_fun(Z, LT, u_LT)
-    return FField_1d(Z, LT, u_LT, F, u_F, fun, u_fun)
-
-
-@composite
-def uniform_energy_fun_data_2d(draw):
-    def fun(z, r, a, b, c, u_a, u_b, u_c):
-        LT = a - b * r * np.exp(r / c)
-        return fitf.expo(z, 1, LT)
-
-    def u_fun(z, r, a, b, c, u_a, u_b, u_c):
-        LT   = a - b * r * np.exp(r / c)
-        u_LT = (u_a**2 + u_b**2 * np.exp(2 * r / c) +
-                u_c**2 * b**2 * r**2 * np.exp(2 * r / c) / c**4)**0.5
-        return z * u_LT / LT**2 * fun(z, r, a, b, c, u_a, u_b, u_c)
-
-    a     = draw(floats(min_value=1e+2, max_value=1e+3));u_a = 0.1 * a
-    b     = draw(floats(min_value=1e-2, max_value=1e-1));u_b = 0.1 * b
-    c     = draw(floats(min_value=1e+3, max_value=5e+3));u_c = 0.1 * c
-    Z     = np.linspace(0, 600, 100)
-    R     = np.linspace(0, 200, 100)
-    F     =   fun(Z, R, a, b, c, u_a, u_b, u_c)
-    u_F   = u_fun(Z, R, a, b, c, u_a, u_b, u_c)
-    return FField_2d(Z, R, (a, b, c), (u_a, u_b, u_c), F, u_F, fun, u_fun)
-
-
-@composite
-def uniform_energy_fun_data_3d(draw):
-    x_size  = draw(integers(min_value= 2  , max_value=10 ))
-    y_size  = draw(integers(min_value= 2  , max_value=10 ))
-    X0      = draw(floats  (min_value=-100, max_value=100))
-    Y0      = draw(floats  (min_value=-100, max_value=100))
-    dX      = draw(floats  (min_value= 0.1, max_value=100))
-    dY      = draw(floats  (min_value= 0.1, max_value=100))
-    X       = np.arange(x_size) * dX + X0
-    Y       = np.arange(y_size) * dY + Y0
-
-    LTs     = draw(arrays(float, (x_size, y_size), floats(min_value = 1e+2,
-                                                          max_value = 1e+3)))
-    u_LTs   = LTs * 0.1
-
-    LTc     = Correction((X, Y), LTs, u_LTs,
-                         **opt_nearest)
-
-    def LT_corr(z, x, y):
-        return np.exp(z / LTc(x, y).value)
-
-    def u_LT_corr(z, x, y):
-        ltc = LTc(x, y)
-        return z * ltc.uncertainty / ltc.value**2 * np.exp(z / ltc.value)
-
-    return FField_2d(X, Y, LTs, u_LTs, LTs, u_LTs, LT_corr, u_LT_corr)
-
+@fixture(scope='session')
+def map_filename_MC(ICDATADIR):
+    test_file = "kr_emap_xy_constant_values_RN_negat.h5"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
 
 @fixture
-def gauss_data_1d():
-    mean = lambda z: 1e4 * np.exp(-z / 1000)
-    Nevt = 100000
-    Zevt = np.random.uniform(0, 500, size=Nevt)
-    Eevt = np.random.normal(mean(Zevt), mean(Zevt)**0.5)
-    prof = fitf.profileX(Zevt, Eevt, 50, (0, 500))
-    return data_1d(*prof, Zevt, Eevt)
-
-
-@fixture
-def gauss_data_2d():
-    mean = lambda x, y: 1e4 * np.exp(-(x**2 + y**2) / 400**2)
-    Nevt = 100000
-    Xevt = np.random.uniform(-200, 200, size=Nevt)
-    Yevt = np.random.uniform(-200, 200, size=Nevt)
-    Eevt = np.random.normal(mean(Xevt, Yevt), mean(Xevt, Yevt)**0.5)
-    prof = fitf.profileXY(Xevt, Yevt, Eevt, 50, 50, (-200, 200), (-200, 200))
-    return data_2d(*prof, Xevt, Yevt, Eevt)
-
-
-#--------------------------------------------------------
-#--------------------------------------------------------
-@mark.parametrize("strategy options".split(),
-                  (("const", {}),
-                   ("index", {}),
-                   ("const", {"wrong_option": None}),
-                   ("index", {"wrong_option": None})))
-def test_correction_raises_exception_when_input_is_incomplete(strategy, options):
-    data = np.arange(5)
-    with raises(ParameterNotSet):
-        Correction((data,), data, data,
-                   norm_strategy = strategy,
-                   norm_opts     = options,
-                   **opt_nearest)
-
-
-def test_correction_raises_exception_when_data_is_invalid():
-    x   = np.arange(  0, 10)
-    y   = np.arange(-10,  0)
-    z   = np.zeros ((x.size, y.size))
-    u_z = np.ones  ((x.size, y.size))
-    with raises(AssertionError):
-        Correction((x, y), z, u_z,
-                   norm_strategy =  "index",
-                   norm_opts     = {"index": (0, 0)},
-                   **opt_nearest)
-
-
-@given(uniform_energy_1d())
-def test_correction_attributes_1d(toy_data_1d):
-    X, E, Eu, F, Fu, _ = toy_data_1d
-    correct  = Correction((X,), E, Eu,
-                          norm_strategy = "max",
-                          **opt_nearest)
-    assert_allclose(correct._xs[0], X ) # correct.xs is a list of axis
-    assert_allclose(correct._fs   , F )
-    assert_allclose(correct._us   , Fu)
-
-
-@given(uniform_energy_1d())
-def test_correction_attributes_1d_unnormalized(toy_data_1d):
-    X, _, _, F, Fu, _ = toy_data_1d
-    c = Correction((X,), F, Fu,
-                   norm_strategy = None,
-                   **opt_nearest)
-    assert_allclose(c._fs, F )
-    assert_allclose(c._us, Fu)
-
-
-@settings(max_examples=1)
-@given(uniform_energy_1d())
-def test_correction_call_scalar_values_1d(toy_data_1d):
-    X, E, Eu, F, Fu, _ = toy_data_1d
-    correct  = Correction((X,), E, Eu,
-                          norm_strategy = "max",
-                          **opt_nearest)
-    F_corrected, U_corrected = correct(X[0])
-    assert F_corrected == F [0]
-    assert U_corrected == Fu[0]
-
-
-@given(uniform_energy_1d())
-def test_correction_call_1d(toy_data_1d):
-    X, E, Eu, F, Fu, _ = toy_data_1d
-    correct  = Correction((X,), E, Eu,
-                          norm_strategy = "max",
-                          **opt_nearest)
-    F_corrected, U_corrected = correct(X)
-    assert_allclose(F_corrected, F )
-    assert_allclose(U_corrected, Fu)
-
-
-@given(uniform_energy_1d())
-def test_correction_normalization_1d_to_max(toy_data_1d):
-    X, E, Eu, *_, i_max = toy_data_1d
-    correct  = Correction((X,), E, Eu,
-                          norm_strategy = "max",
-                          **opt_nearest)
-
-    x_test = X
-    corrected_E = E * correct(x_test).value
-    assert_allclose(corrected_E, np.max(E))
-
-
-@given(uniform_energy_1d(),
-       floats  (min_value=1e-8, max_value=1e8))
-def test_correction_normalization_1d_to_const(toy_data_1d, norm_value):
-    X, E, Eu, _, _, _ = toy_data_1d
-    c = Correction((X,), E, Eu,
-                   norm_strategy = "const",
-                   norm_opts     = {"value": norm_value},
-                   **opt_nearest)
-
-    assert_allclose(c._fs, norm_value / E)
-    assert_allclose(c._us, norm_value / E**2 * Eu)
-
-
-@given(uniform_energy_1d())
-def test_correction_normalization_to_center_1d(toy_data_1d):
-    X, E, Eu, *_ = toy_data_1d
-    c = Correction((X,), E, Eu,
-                   norm_strategy = "center")
-
-    norm_index = X.size // 2
-    norm_value = E [norm_index]
-    norm_uncer = Eu[norm_index]
-    prop_uncer = (Eu / E)**2 + (norm_uncer / norm_value)**2
-    prop_uncer = prop_uncer**0.5 * norm_value / E
-
-    assert_allclose(c._fs, norm_value / E)
-    assert_allclose(c._us, prop_uncer    )
-
-
-@given(uniform_energy_2d())
-def test_correction_normalization_to_center_2d(toy_data_2d):
-    X, Y, E, Eu, *_ = toy_data_2d
-    c = Correction((X, Y), E, Eu,
-                   norm_strategy = "center")
-
-    norm_index = X.size // 2, Y.size // 2
-    norm_value = E [norm_index]
-    norm_uncer = Eu[norm_index]
-    prop_uncer = (Eu / E)**2 + (norm_uncer / norm_value)**2
-    prop_uncer = prop_uncer**0.5 * norm_value / E
-
-    assert_allclose(c._fs, norm_value / E)
-    assert_allclose(c._us, prop_uncer    )
-
-
-#--------------------------------------------------------
-
-@given(uniform_energy_2d())
-def test_correction_attributes_2d(toy_data_2d):
-    X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
-    correct = Correction((X, Y), E, Eu,
-                         norm_strategy =  "index",
-                         norm_opts     = {"index": (i_max, j_max)},
-                         **opt_nearest)
-
-    # attributes of the Correction class are 2d arrays,
-    # so they must be flatten for comparison
-    assert_allclose(correct._fs.flatten(), F )
-    assert_allclose(correct._us.flatten(), Fu)
-
-
-@given(uniform_energy_2d())
-@settings(deadline=None)
-def test_correction_attributes_2d_unnormalized(toy_data_2d):
-    X, Y, _, _, F, Fu, _, _ = toy_data_2d
-    c = Correction((X, Y), F, Fu,
-                   norm_strategy = None,
-                   **opt_nearest)
-
-    assert_allclose(c._fs, F )
-    assert_allclose(c._us, Fu)
-
-
-@settings(max_examples=1)
-@given(uniform_energy_2d())
-def test_correction_call_scalar_values_2d(toy_data_2d):
-    X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
-    correct = Correction((X,Y), E, Eu,
-                         norm_strategy =  "index",
-                         norm_opts     = {"index": (i_max, j_max)},
-                         **opt_nearest)
-
-    F_corrected, U_corrected = correct(X[0], Y[0])
-    assert F_corrected == F [0]
-    assert U_corrected == Fu[0]
-
-
-@given(uniform_energy_2d())
-def test_correction_normalization_2d_to_max(toy_data_2d):
-    X, Y, E, Eu, *_, i_max = toy_data_2d
-    correct  = Correction((X, Y), E, Eu,
-                          norm_strategy = "max")
-
-    x_test      = np.repeat(X, Y.size)
-    y_test      = np.tile  (Y, X.size)
-    corrected_E = E.flatten() * correct(x_test, y_test).value
-    assert_allclose(corrected_E, np.max(E))
-
-
-@given(uniform_energy_2d())
-def test_correction_call_2d(toy_data_2d):
-    X, Y, E, Eu, F, Fu, i_max, j_max = toy_data_2d
-    correct = Correction((X, Y), E, Eu,
-                         norm_strategy =  "index",
-                         norm_opts     = {"index": (i_max, j_max)},
-                         **opt_nearest)
-
-    # create a collection of (x,y) point such that the
-    # x coordinates are stored in X_sample and the y coordinates in Y_sample
-    X_sample = np.array([x for x in X for _ in Y])
-    Y_sample = np.array([y for _ in X for y in Y])
-
-    F_corrected, U_corrected = correct(X_sample, Y_sample)
-    assert_allclose(F_corrected, F )
-    assert_allclose(U_corrected, Fu)
-
-
-#--------------------------------------------------------
-
-@given(uniform_energy_fun_data_1d())
-def test_fcorrection(toy_f_data):
-    Z, LT, u_LT, F, u_F, fun, u_fun = toy_f_data
-    correct = Fcorrection(fun, u_fun, (LT, u_LT))
-    f_corrected, u_corrected = correct(Z)
-
-    assert_allclose(  F, f_corrected)
-    assert_allclose(u_F, u_corrected)
-
-
-@given(uniform_energy_fun_data_1d())
-def test_lifetimecorrection(toy_f_data):
-    Z, LT, u_LT, F, u_F, fun, u_fun = toy_f_data
-    correct = LifetimeCorrection(LT, u_LT)
-    f_corrected, u_corrected = correct(Z)
-
-    assert_allclose(  F, f_corrected)
-    assert_allclose(u_F, u_corrected)
-
-
-@given(uniform_energy_fun_data_2d())
-def test_lifetimeRcorrection(toy_f_data):
-    Z, R, pars, u_pars, F, u_F, fun, u_fun = toy_f_data
-    correct = LifetimeRCorrection(pars, u_pars)
-    f_corrected, u_corrected = correct(Z, R)
-
-    assert_allclose(  F, f_corrected)
-    assert_allclose(u_F, u_corrected)
-
-
-@given(uniform_energy_fun_data_3d())
-def test_lifetimeXYcorrection(toy_f_data):
-    Xgrid, Ygrid, LTs, u_LTs, LTs, u_LTs, LT_corr, u_LT_corr = toy_f_data
-
-    X       = np.repeat  (Xgrid, Ygrid.size)
-    Y       = np.tile    (Ygrid, Xgrid.size)
-    Z       = np.linspace(0, 50, X    .size)
-    F, u_F  = LT_corr(Z, X, Y), u_LT_corr(Z, X, Y)
-    correct = LifetimeXYCorrection(LTs, u_LTs, Xgrid, Ygrid, **opt_nearest)
-    f_corrected, u_corrected = correct(Z, X, Y)
-
-    assert_allclose(  F, f_corrected)
-    assert_allclose(u_F, u_corrected)
-
-
-@given(uniform_energy_fun_data_3d())
-@settings(deadline=None)
-def test_lifetimeXYcorrection_kwargs(toy_f_data):
-    Xgrid, Ygrid, LTs, u_LTs, LTs, u_LTs, LT_corr, u_LT_corr = toy_f_data
-    kwargs = {"norm_strategy" :  "const",
-              "norm_opts"     : {"value": 1},
-              **opt_nearest}
-
-    X       = np.repeat  (Xgrid, Ygrid.size)
-    Y       = np.tile    (Ygrid, Xgrid.size)
-    Z       = np.linspace(0, 50, X    .size)
-    F, u_F  = LT_corr(Z, X, Y), u_LT_corr(Z, X, Y)
-
-    # These input values are chosen because they
-    # effectively cancel the normalization.
-    correct = LifetimeXYCorrection(1 / LTs, u_LTs / LTs**2,
-                                   Xgrid, Ygrid, **kwargs)
-    f_corrected, u_corrected = correct(Z, X, Y)
-
-    assert_allclose(  F, f_corrected)
-    assert_allclose(u_F, u_corrected)
-
-
-#--------------------------------------------------------
-
-
-@mark.slow
-@flaky(max_runs=5, min_passes=4)
-def test_corrections_1d(gauss_data_1d):
-    Z, E, Eu, Zevt, Eevt = gauss_data_1d
-
-    correct = Correction((Z,), E, Eu,
-                         norm_strategy = "max",
-                         **opt_nearest)
-    Eevt   *= correct(Zevt).value
-
-    mean = np.mean(Eevt)
-    std  = np.std (Eevt)
-
-    y, x = np.histogram(Eevt, np.linspace(mean - 3 * std,
-                                          mean + 3 * std,
-                                          100))
-    x     = shift_to_bin_centers(x)
-    sigma = poisson_sigma(y)
-    f     = fitf.fit(fitf.gauss, x, y, (1e5, mean, std), sigma=sigma)
-
-    assert 0.75 < f.chi2 < 1.5
-
-
-@mark.slow
-@flaky(max_runs=5, min_passes=4)
-def test_corrections_2d(gauss_data_2d):
-    X, Y, E, Eu, Xevt, Yevt, Eevt = gauss_data_2d
-    correct = Correction((X, Y), E, Eu,
-                         norm_strategy =  "index",
-                         norm_opts     = {"index": (25, 25)},
-                         **opt_nearest)
-    Eevt   *= correct(Xevt, Yevt)[0]
-
-    mean = np.mean(Eevt)
-    std  = np.std (Eevt)
-
-    y, x = np.histogram(Eevt, np.linspace(mean - 3 * std,
-                                          mean + 3 * std,
-                                          100))
-    x     = shift_to_bin_centers(x)
-    sigma = poisson_sigma(y)
-    f     = fitf.fit(fitf.gauss, x, y, (1e5, mean, std), sigma=sigma)
-
-    assert 0.75 < f.chi2 < 1.5
-
-
-def test_corrections_linear_interpolation():
-    # This is the function f(x,y) = x + y on a square grid. Because the
-    # interpolation is linear, any point with coordinates (x, y) should
-    # yield exactly f(x, y).
-    xmin, xmax  = 10, 20
-    ymin, ymax  = 20, 30
-    grid_x      = np.arange(xmin, xmax+1)
-    grid_y      = np.arange(ymin, ymax+1)
-    grid_points = np.array([(i, j) for i in grid_x\
-                                   for j in grid_y])
-
-    grid_fun    = np.sum
-    grid_values = np.apply_along_axis(grid_fun, 1, grid_points)
-    grid_uncert = np.apply_along_axis(grid_fun, 1, grid_points)/10
-
-    correct = Correction((grid_x, grid_y),
-                         grid_values,
-                         grid_uncert,
-                         **opt_linear)
-
-    x_test  = np.random.uniform(xmin, xmax, size=100)
-    y_test  = np.random.uniform(ymin, ymax, size=100)
-    xy_test = np.stack([x_test, y_test], axis=1)
-
-    correction      = correct(x_test, y_test)
-    expected_values = np.apply_along_axis(grid_fun, 1, xy_test)
-    expected_uncert = expected_values/10
-
-    assert np.allclose(correction.value      , expected_values)
-    assert np.allclose(correction.uncertainty, expected_uncert)
-
-
-def test_corrections_cubic_interpolation():
-    # This is the function f(x,y) = x + y on a square grid. Because the
-    # interpolation is cubic, any point with coordinates (x, y) should
-    # yield exactly f(x, y). This test should probably contain a more
-    # complicated function.
-    xmin, xmax  = 10, 20
-    ymin, ymax  = 20, 30
-    grid_x      = np.arange(xmin, xmax + 1)
-    grid_y      = np.arange(ymin, ymax + 1)
-    grid_points = np.array([(i, j) for i in grid_x\
-                                   for j in grid_y])
-
-    grid_fun    = np.sum
-    grid_values = np.apply_along_axis(grid_fun, 1, grid_points)
-    grid_uncert = np.apply_along_axis(grid_fun, 1, grid_points)/10
-
-    correct = Correction((grid_x, grid_y),
-                         grid_values,
-                         grid_uncert,
-                         **opt_cubic)
-
-    x_test  = np.random.uniform(xmin, xmax, size=100)
-    y_test  = np.random.uniform(ymin, ymax, size=100)
-    xy_test = np.stack([x_test, y_test], axis=1)
-
-    correction      = correct(x_test, y_test)
-    expected_values = np.apply_along_axis(grid_fun, 1, xy_test)
-    expected_uncert = expected_values/10
-
-    assert np.allclose(correction.value      , expected_values)
-    assert np.allclose(correction.uncertainty, expected_uncert)
+def toy_corrections(correction_map_filename):
+    xs, ys = np.meshgrid(np.linspace(-199,199,5), np.linspace(-199,199,5))
+    xs     = xs.flatten()
+    ys     = ys.flatten()
+    zs     = np.ones(25)
+
+    ts         = np.array([1.54513805e+09, 1.54514543e+09, 1.54515280e+09, 1.54516018e+09,
+                           1.54516755e+09, 1.54517493e+09, 1.54518230e+09, 1.54518968e+09,
+                           1.54519705e+09, 1.54520443e+09, 1.54521180e+09, 1.54521918e+09,
+                           1.54522655e+09, 1.54523393e+09, 1.54524130e+09, 1.54524868e+09,
+                           1.54525605e+09, 1.54526343e+09, 1.54527080e+09, 1.54527818e+09,
+                           1.54528555e+09, 1.54529293e+09, 1.54530030e+09, 1.54530768e+09,
+                           1.54531505e+09])
+    e0coef     = np.array([10632.51025668, 10632.51025668,  8198.00693508, 10632.51025668,
+                           10632.51025668, 10632.51025668, 12083.6205191 , 12215.5218439 ,
+                           11031.20482006, 10632.51025668, 10632.51025668, 12250.67984846,
+                           12662.43500038, 11687.13986784,  7881.16756887, 10632.51025668,
+                           11005.19041964, 11454.06577668, 10605.04377619, 10632.51025668,
+                           10632.51025668, 10632.51025668, 10632.51025668, 10632.51025668,
+                           10632.51025668])
+    ltcoef     = np.array([3611.42910617, 3611.42910617, 2383.13016371, 3611.42910617,
+                           3611.42910617, 3611.42910617, 4269.56836159, 4289.18987023,
+                           4165.14681987, 3611.42910617, 3611.42910617, 3815.34850334,
+                           3666.44326169, 3680.6402539 , 2513.42432537, 3611.42910617,
+                           3552.99407017, 3514.83760875, 3348.95744382, 3611.42910617,
+                           3611.42910617, 3611.42910617, 3611.42910617, 3611.42910617,
+                           3611.42910617])
+    correction = np.array([9.416792493e-05, 9.413238325e-05, 1.220993888e-04, 9.413193693e-05,
+                           9.411739173e-05, 9.409713667e-05, 8.279152513e-05, 8.189972046e-05,
+                           9.070379578e-05, 9.408888204e-05, 9.407901934e-05, 8.167086609e-05,
+                           7.900813579e-05, 8.560232940e-05, 1.269748871e-04, 9.407975724e-05,
+                           9.084074259e-05, 8.729552081e-05, 9.426779280e-05, 9.404039796e-05,
+                           9.402650568e-05, 9.402980196e-05, 9.405365918e-05, 9.401772495e-05,
+                           9.398598283e-05])
+
+    return xs, ys, zs, ts, e0coef, ltcoef, correction
+
+def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename):
+    maps = read_maps(correction_map_filename)
+    xs, ys, zs, _, coef_geo, coef_lt, _ = toy_corrections
+    get_maps_coefficient_e0= maps_coefficient_getter(maps.mapinfo, maps.e0)
+    CE  = get_maps_coefficient_e0(xs,ys)
+    get_maps_coefficient_lt= maps_coefficient_getter(maps.mapinfo, maps.lt)
+    LT  = get_maps_coefficient_lt(xs,ys)
+    assert_allclose (CE, coef_geo)
+    assert_allclose (LT, coef_lt)
+
+def test_read_maps_returns_ASectorMap(correction_map_filename):
+    maps = read_maps(correction_map_filename)
+    assert type(maps)==ASectorMap
+
+@composite
+def xy_pos(draw, elements=floats(min_value=-250, max_value=250)):
+    size = draw(integers(min_value=1, max_value=10))
+    x    = draw(lists(elements,min_size=size, max_size=size))
+    y    = draw(lists(elements,min_size=size, max_size=size))
+    return (np.array(x),np.array(y))
+
+@given(xy_pos = xy_pos())
+def test_maps_coefficient_getter_gives_nans(correction_map_filename, xy_pos):
+    x,y       = xy_pos
+    maps      = read_maps(correction_map_filename)
+    mapinfo   = maps.mapinfo
+    map_df    = maps.e0
+    xmin,xmax = mapinfo.xmin,mapinfo.xmax
+    ymin,ymax = mapinfo.ymin,mapinfo.ymax
+    get_maps_coefficient_e0= maps_coefficient_getter(mapinfo, map_df)
+    CE        = get_maps_coefficient_e0(x,y)
+    mask_x    = (x >=xmax) | (x<xmin)
+    mask_y    = (y >=ymax) | (y<ymin)
+    mask_nan  = (mask_x)   | (mask_y)
+    assert all(np.isnan(CE[mask_nan]))
+    assert not any(np.isnan(CE[~mask_nan]))
+
+def test_read_maps_when_MC_t_evol_is_none(map_filename_MC):
+    emap = read_maps(map_filename_MC)
+    assert emap.t_evol is None
+
+def test_read_maps_t_evol_table_is_correct(map_filename):
+    """
+    For this test, a map where its t_evol table correspond to single values
+    (ts=[1,1,...1], e0=[2,2,...2], ..., Yrmsu=[27,27,...27])
+    has been generated.
+    """
+
+    maps       = read_maps(map_filename)
+    map_te     = maps.t_evol
+    columns_te = map_te.columns
+    assert np.all([np.all( map_te[parameter] == i+1 )
+                   for i, parameter in zip( range(len(columns_te)), columns_te )])
+
+
+def test_read_maps_maps_are_correct(map_filename):
+    """
+    For this test, a map where its correction maps are:
+    (chi=[1,1,...1], e0=[13000,13000,...13000], e0u=[2,2,...2],
+    lt=[5000,5000,...5000], ltu=[3,3,...3])
+    has been generated.
+    """
+
+    maps = read_maps(map_filename)
+    assert np.all(maps.chi2 == 1    )
+    assert np.all(maps.e0   == 13000)
+    assert np.all(maps.e0u  == 2    )
+    assert np.all(maps.lt   == 5000 )
+    assert np.all(maps.ltu  == 3    )
+
+@given(random_length_float_arrays(min_value = 0,
+                                  max_value = 3e4))
+def test_correct_geometry_properly(x):
+    assert_array_equal(correct_geometry_(x),(1/x))
+
+
+@given(float_arrays(min_value = 0,
+                    max_value = 530),
+       float_arrays(min_value = 1,
+                    max_value = 1e4))
+def test_correct_lifetime_properly(z, lt):
+    compute_corr = np.exp(z / lt)
+    assert_array_equal(correct_lifetime_(z, lt), compute_corr)
+
+@given(floats(min_value = 0,
+              max_value = 1e4))
+def test_time_coefs_corr(map_filename, time):
+    """
+    In the map taken as input, none of the parameters
+    changes with time, thus all outputs of
+    time_coefs_corr function must be 1.
+    """
+
+    maps    = read_maps(map_filename)
+    map_t   = maps.t_evol
+    columns = map_t.columns
+    # Error columns end with u
+    err_columns   = [c for c in columns[1:]  if c[-1]=='u' ]
+    value_columns = [c for c in  columns[1:] if c not in err_columns ]
+
+    for col_value, col_err in zip(value_columns, err_columns):
+        assert_allclose(time_coefs_corr(time, map_t['ts'], map_t[col_value], map_t[col_err]), 1)
+
+@given(float_arrays(size      = 1000,
+                    min_value = 0,
+                    max_value = 550))
+def test_get_df_to_z_converter_dv_known(map_filename, z):
+    z           = np.array(z)
+    map_z       = read_maps(map_filename)
+    z_converter = get_df_to_z_converter(map_z)
+    dv_mean     = np.mean(map_z.t_evol.dv)
+    assert_array_equal(z_converter(z), z * dv_mean)
+
+def test_get_df_to_z_converter_raises_exception_when_no_map(map_filename):
+    assert_raises(TimeEvolutionTableMissing,
+                  get_df_to_z_converter,
+                  None)
+
+def test_get_df_to_z_converter_raises_exception_when_invalid_map(map_filename_MC):
+    map_e = read_maps(map_filename_MC)
+    assert_raises(TimeEvolutionTableMissing,
+                  get_df_to_z_converter,
+                  map_e)
+
+def test_get_normalization_factor_max_norm(correction_map_filename):
+    map_e  = read_maps(correction_map_filename)
+    factor = get_normalization_factor(map_e, norm_strategy.max)
+    norm   = map_e.e0.max().max()
+    assert factor == norm
+
+def test_get_normalization_factor_mean_norm(correction_map_filename):
+    map_e  = read_maps(correction_map_filename)
+    factor = get_normalization_factor(map_e, norm_strategy.mean)
+    norm   = np.mean(np.mean(map_e.e0))
+    assert factor == norm
+
+@given(floats(min_value = 1,
+              max_value = 1e4))
+def test_get_normalization_factor_custom_norm(correction_map_filename, custom_vaule):
+    map_e  = read_maps(correction_map_filename)
+    factor = get_normalization_factor(map_e,
+                                      norm_strategy.custom,
+                                      custom_vaule)
+    norm   = custom_vaule
+    assert factor == norm
+
+def test_get_normalization_factor_krscale(correction_map_filename):
+    map_e     = read_maps(correction_map_filename)
+    factor    = get_normalization_factor(map_e, norm_strategy.kr)
+    kr_energy = 41.5575 * units.keV
+    assert factor == kr_energy
+
+def test_get_normalization_factor_custom_norm_raises_exception_when_no_value(map_filename):
+    map_e = read_maps(map_filename)
+    assert_raises(ValueError,
+                  get_normalization_factor,
+                  map_e, norm_strategy.custom)
+
+def test_get_normalization_factor_raises_exception_when_no_valid_norm(map_filename):
+    map_e = read_maps(map_filename)
+    assert_raises(ValueError,
+                  get_normalization_factor,
+                  map_e, None)
+
+def test__apply_all_correction_single_maps_raises_exception_when_no_map(map_filename):
+    map_e = read_maps(map_filename)
+    assert_raises(TimeEvolutionTableMissing,
+                  apply_all_correction_single_maps,
+                  map_e, map_e, None)
+
+def test_apply_all_correction_single_maps_raises_exception_when_invalid_map(map_filename_MC):
+    map_e = read_maps(map_filename_MC)
+    assert_raises(TimeEvolutionTableMissing,
+                  apply_all_correction_single_maps,
+                  map_e, map_e, map_e,
+                  apply_temp = True)
+
+@given(float_arrays(size      = 1,
+                   min_value = -198,
+                   max_value = +198),
+       float_arrays(size      = 1,
+                   min_value = -198,
+                   max_value = +198),
+       float_arrays(size      = 1,
+                   min_value = 0,
+                   max_value = 5e2),
+       float_arrays(size      = 1,
+                   min_value = 0,
+                   max_value = 1e5))
+def test_apply_all_correction_single_maps_properly(map_filename, x, y, z, t):
+    """
+    Due the map taken as input, the geometric correction
+    factor must be 1, the temporal correction 1 and the
+    lifetime one: exp(Z/5000).
+    """
+    maps      = read_maps(map_filename)
+    load_corr = apply_all_correction_single_maps(map_e0     = maps,
+                                                 map_lt     = maps,
+                                                 map_te     = maps,
+                                                 apply_temp = True,
+                                                 norm_strat = norm_strategy.max)
+    corr   = load_corr(x, y, z, t)
+    result = np.exp(z/5000)
+    assert_allclose (corr, result)
+
+@given(float_arrays(size      = 1,
+                    min_value = -198,
+                    max_value = +198),
+       float_arrays(size      = 1,
+                    min_value = -198,
+                    max_value = +198),
+       float_arrays(size      = 1,
+                    min_value = 0,
+                    max_value = 5e2),
+       float_arrays(size      = 1,
+                    min_value = 0,
+                    max_value = 1e5))
+def test_correction_single_maps_equiv_to_all_correction(map_filename,
+                                                        x, y, z, t):
+    maps           = read_maps(map_filename)
+    load_corr_uniq = apply_all_correction(maps, True)
+    load_corr_diff = apply_all_correction_single_maps(map_e0     = maps,
+                                                      map_lt     = maps,
+                                                      map_te     = maps,
+                                                      apply_temp = True)
+    corr_uniq      = load_corr_uniq(x, y, z, t)
+    corr_diff      = load_corr_diff(x, y, z, t)
+    assert corr_uniq == corr_diff
+
+def test_corrections_exact(toy_corrections, correction_map_filename):
+    maps       = read_maps(correction_map_filename)
+    xs, ys, zs, ts, _, _, factor = toy_corrections
+    get_factor = apply_all_correction(maps       = maps,
+                                      apply_temp = True,
+                                      norm_strat = norm_strategy.custom,
+                                      norm_value = 1.)
+    fac        = get_factor(xs, ys, zs, ts)
+    assert_allclose (factor, fac, atol = 1e-13)
