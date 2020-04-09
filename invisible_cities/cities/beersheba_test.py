@@ -59,7 +59,6 @@ def test_beersheba_contains_all_tables(deconvolution_config):
     beersheba(**conf)
     with tb.open_file(PATH_OUT) as h5out:
         assert "MC"             in h5out.root
-        assert "MC/extents"     in h5out.root
         assert "MC/hits"        in h5out.root
         assert "MC/particles"   in h5out.root
         assert "DECO/Events"    in h5out.root
@@ -74,8 +73,11 @@ def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
     conf, PATH_OUT   = deconvolution_config
     beersheba(**conf)
 
-    tables = ( "MC/extents"    , "MC/hits"     , "MC/particles" , "MC/generators",
-               "DECO/Events"   ,
+    ## tables = ( "MC/extents"    , "MC/hits"     , "MC/particles" , "MC/generators",
+    ##            "DECO/Events"   ,
+    ##            "Summary/Events",
+    ##            "Run/events"    , "Run/runInfo" )
+    tables = ( "DECO/Events"   ,
                "Summary/Events",
                "Run/events"    , "Run/runInfo" )
 
@@ -95,8 +97,11 @@ def test_beersheba_exact_result_separate(ICDATADIR, deconvolution_config):
     conf['deconv_params']['n_iterations_g'] = 50
     beersheba(**conf)
 
-    tables = ( "MC/extents"    , "MC/hits"     , "MC/particles" , "MC/generators",
-               "DECO/Events"   ,
+    ## tables = ( "MC/extents"    , "MC/hits"     , "MC/particles" , "MC/generators",
+    ##            "DECO/Events"   ,
+    ##            "Summary/Events",
+    ##            "Run/events"    , "Run/runInfo" )
+    tables = ( "DECO/Events"   ,
                "Summary/Events",
                "Run/events"    , "Run/runInfo" )
 
