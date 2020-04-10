@@ -9,6 +9,9 @@ from    tables          import HDF5ExtError
 from .. core.exceptions import TableMismatch
 from .  table_io        import make_table
 
+from    typing          import Optional
+from    typing          import Sequence
+
 
 def load_dst(filename, group, node):
     """load a kdst if filename, group and node correctly found"""
@@ -61,7 +64,8 @@ def store_pandas_as_tables(h5out              : tb.file.File ,
                            table_name         : str          ,
                            compression        : str = 'ZLIB4',
                            descriptive_string : str = ""     ,
-                           str_col_length     : int = 32
+                           str_col_length     : int = 32     ,
+                           columns_to_index   : Optional[Sequence[str]] = None
                            ) -> None:
     if group_name not in h5out.root:
         group = h5out.create_group(h5out.root, group_name)
@@ -89,3 +93,10 @@ def store_pandas_as_tables(h5out              : tb.file.File ,
         arr = arr[columns].astype(data_types)
         table.append(arr)
         table.flush()
+
+    if columns_to_index is not None:
+        if set(columns_to_index).issubset(set(df.columns)):
+            table.set_attr('columns_to_index', columns_to_index)
+        else:
+            not_found = list(set(columns_to_index).difference(set(df.columns)))
+            raise KeyError(f'columns {not_found} not present in the dataframe')
