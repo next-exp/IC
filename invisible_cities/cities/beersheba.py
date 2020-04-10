@@ -299,7 +299,8 @@ def deconv_writer(h5out, compression='ZLIB4'):
                          compression        = compression       ,
                          group_name         = 'DECO'            ,
                          table_name         = 'Events'          ,
-                         descriptive_string = 'Deconvolved hits')
+                         descriptive_string = 'Deconvolved hits',
+                         columns_to_index   = ['event']         )
     return write_deconv
 
 
