@@ -9,6 +9,14 @@ from    tables          import HDF5ExtError
 from .. core.exceptions import TableMismatch
 from .  table_io        import make_table
 
+from    typing          import Optional
+from    typing          import Sequence
+
+
+def _decode_str_columns(df):
+    to_string = lambda x: x.str.decode('utf-8') if x.dtype == np.object else x
+    df        = df.apply(to_string)
+    return df
 
 def load_dst(filename, group, node):
     """load a kdst if filename, group and node correctly found"""
@@ -16,7 +24,7 @@ def load_dst(filename, group, node):
         with tb.open_file(filename) as h5in:
             try:
                 table = getattr(getattr(h5in.root, group), node).read()
-                return pd.DataFrame.from_records(table)
+                return _decode_str_columns(pd.DataFrame.from_records(table))
             except NoSuchNodeError:
                 warnings.warn(f' not of kdst type: file= {filename} ', UserWarning)
     except HDF5ExtError:
@@ -55,14 +63,28 @@ def _check_castability(arr : np.ndarray, table_types : np.dtype):
             raise TableMismatch(f'dataframe numeric types not consistent with the table existing ones')
 
 
-def store_pandas_as_tables(h5out              : tb.file.File ,
-                           df                 : pd.DataFrame ,
-                           group_name         : str          ,
-                           table_name         : str          ,
-                           compression        : str = 'ZLIB4',
-                           descriptive_string : str = ""     ,
-                           str_col_length     : int = 32
-                           ) -> None:
+def df_writer(h5out              : tb.file.File ,
+              df                 : pd.DataFrame ,
+              group_name         : str          ,
+              table_name         : str          ,
+              compression        : str = 'ZLIB4',
+              descriptive_string : str = ""     ,
+              str_col_length     : int = 32     ,
+              columns_to_index   : Optional[Sequence[str]] = None
+              ) -> None:
+    """ The function writes a dataframe to open pytables file.
+    Parameters:
+    h5out              : open pytable file for writing
+    df                 : DataFrame to be written
+    group_name         : group name where table is to be saved)
+                         (group is created if doesnt exist)
+    table_name         : table name
+                         (table is created if doesnt exist)
+    compression        : compression type
+    descriptive_string : table description
+    str_col_length     : maximum length in characters of strings
+    columns_to_index   : list of columns to be flagged for indexing
+    """
     if group_name not in h5out.root:
         group = h5out.create_group(h5out.root, group_name)
     group = getattr(h5out.root, group_name)
@@ -89,3 +111,10 @@ def store_pandas_as_tables(h5out              : tb.file.File ,
         arr = arr[columns].astype(data_types)
         table.append(arr)
         table.flush()
+
+    if columns_to_index is not None:
+        if set(columns_to_index).issubset(set(df.columns)):
+            table.set_attr('columns_to_index', columns_to_index)
+        else:
+            not_found = list(set(columns_to_index).difference(set(df.columns)))
+            raise KeyError(f'columns {not_found} not present in the dataframe')
