@@ -315,7 +315,8 @@ def track_writer(h5out, compression='ZLIB4'):
                          compression        = compression        ,
                          group_name         = 'Tracking'         ,
                          table_name         = 'Tracks'           ,
-                         descriptive_string = 'Track information')
+                         descriptive_string = 'Track information',
+                         columns_to_index   = ['event']          )
     return write_tracks
 
 
@@ -329,7 +330,8 @@ def summary_writer(h5out, compression='ZLIB4'):
                          compression        = compression                ,
                          group_name         = 'Summary'                  ,
                          table_name         = 'Events'                   ,
-                         descriptive_string = 'Event summary information')
+                         descriptive_string = 'Event summary information',
+                         columns_to_index   = ['event']                  )
     return write_summary
 
 def kdst_from_df_writer(h5out, compression='ZLIB4'):
@@ -342,7 +344,8 @@ def kdst_from_df_writer(h5out, compression='ZLIB4'):
                          compression        = compression  ,
                          group_name         = 'DST'        ,
                          table_name         = 'Events'     ,
-                         descriptive_string = 'KDST Events')
+                         descriptive_string = 'KDST Events',
+                         columns_to_index   = ['event']    )
     return write_kdst
 
 
