@@ -63,15 +63,15 @@ def _check_castability(arr : np.ndarray, table_types : np.dtype):
             raise TableMismatch(f'dataframe numeric types not consistent with the table existing ones')
 
 
-def store_pandas_as_tables(h5out              : tb.file.File ,
-                           df                 : pd.DataFrame ,
-                           group_name         : str          ,
-                           table_name         : str          ,
-                           compression        : str = 'ZLIB4',
-                           descriptive_string : str = ""     ,
-                           str_col_length     : int = 32     ,
-                           columns_to_index   : Optional[Sequence[str]] = None
-                           ) -> None:
+def df_writer(h5out              : tb.file.File ,
+              df                 : pd.DataFrame ,
+              group_name         : str          ,
+              table_name         : str          ,
+              compression        : str = 'ZLIB4',
+              descriptive_string : str = ""     ,
+              str_col_length     : int = 32     ,
+              columns_to_index   : Optional[Sequence[str]] = None
+              ) -> None:
     """ The function writes a dataframe to open pytables file.
     Parameters:
     h5out              : open pytable file for writing

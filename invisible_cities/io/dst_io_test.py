@@ -11,7 +11,7 @@ from ..core.testing_utils import assert_dataframes_equal
 from ..core.exceptions    import TableMismatch
 from . dst_io             import load_dst
 from . dst_io             import load_dsts
-from . dst_io             import store_pandas_as_tables
+from . dst_io             import df_writer
 from . dst_io             import _make_tabledef
 
 
@@ -114,46 +114,46 @@ def test_load_dst_converts_from_bytes(ICDATADIR, fixed_dataframe):
 
 
 @given(df=dataframe)
-def test_store_pandas_as_tables_exact(config_tmpdir, df):
+def test_df_writer_exact(config_tmpdir, df):
     filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_1'
     with tb.open_file(filename, 'w') as h5out:
-        store_pandas_as_tables(h5out, df, group_name, table_name)
+        df_writer(h5out, df, group_name, table_name)
     df_read = load_dst(filename, group_name, table_name)
     assert_dataframes_close(df_read, df)
 
 
 @given(df1=dataframe, df2=dataframe)
-def test_store_pandas_as_tables_2df(config_tmpdir, df1, df2):
+def test_df_writer_2df(config_tmpdir, df1, df2):
     filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_2'
     with tb.open_file(filename, 'w') as h5out:
-        store_pandas_as_tables(h5out, df1, group_name, table_name)
-        store_pandas_as_tables(h5out, df2, group_name, table_name)
+        df_writer(h5out, df1, group_name, table_name)
+        df_writer(h5out, df2, group_name, table_name)
     df_read = load_dst(filename, group_name, table_name)
     assert_dataframes_close(df_read, pd.concat([df1, df2]).reset_index(drop=True))
 
 
 @given(df1=dataframe, df2=dataframe_diff)
-def test_store_pandas_as_tables_raises_exception(config_tmpdir, df1, df2):
+def test_df_writer_raises_exception(config_tmpdir, df1, df2):
     filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_2'
     with tb.open_file(filename, 'w') as h5out:
-        store_pandas_as_tables(h5out, df1, group_name, table_name)
+        df_writer(h5out, df1, group_name, table_name)
         with raises(TableMismatch):
-            store_pandas_as_tables(h5out, df2, group_name, table_name)
+            df_writer(h5out, df2, group_name, table_name)
 
 
 @given(df=strings_dataframe)
-def test_strings_store_pandas_as_tables(config_tmpdir, df):
+def test_strings_df_writer(config_tmpdir, df):
     filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_str'
     with tb.open_file(filename, 'w') as h5out:
-        store_pandas_as_tables(h5out, df, group_name, table_name)
+        df_writer(h5out, df, group_name, table_name)
     df_read    = load_dst(filename, group_name, table_name)
     assert_dataframes_equal(df_read, df)
 
@@ -167,62 +167,62 @@ def test_make_tabledef(empty_dataframe):
     assert tabledef == expected_tabledef
 
 
-def test_store_pandas_as_tables_raises_warning_empty_dataframe(config_tmpdir, empty_dataframe):
+def test_df_writer_raises_warning_empty_dataframe(config_tmpdir, empty_dataframe):
     filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_3'
     with tb.open_file(filename, 'w') as h5out:
         with pytest.warns(UserWarning, match='dataframe is empty'):
-            store_pandas_as_tables(h5out, empty_dataframe, group_name, table_name)
+            df_writer(h5out, empty_dataframe, group_name, table_name)
 
 
 @given(df=strings_dataframe)
-def test_store_pandas_as_tables_raises_warning_long_string(config_tmpdir, df):
+def test_df_writer_raises_warning_long_string(config_tmpdir, df):
     filename   = config_tmpdir + 'dataframe_to_table_long_string.h5'
     group_name = 'test_group'
     table_name = 'table_name_lstr'
     with tb.open_file(filename, 'w') as h5out:
         with pytest.warns(UserWarning, match='dataframe contains strings longer than allowed'):
-            store_pandas_as_tables(h5out, df, group_name, table_name, str_col_length=1)
+            df_writer(h5out, df, group_name, table_name, str_col_length=1)
 
 
 @given(df=dataframe)
-def test_store_pandas_as_tables_raises_TableMismatch_inconsistent_types(config_tmpdir, df):
+def test_df_writer_raises_TableMismatch_inconsistent_types(config_tmpdir, df):
     filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_inttype'
     with tb.open_file(filename, 'w') as h5out:
-        store_pandas_as_tables(h5out, df, group_name, table_name)
+        df_writer(h5out, df, group_name, table_name)
         with raises(TableMismatch, match='dataframe numeric types not consistent with the table existing ones'):
-            store_pandas_as_tables(h5out, df.astype(float), group_name, table_name)
+            df_writer(h5out, df.astype(float), group_name, table_name)
 
 
 @given(df1=dataframe, df2=dataframe)
-def test_store_pandas_as_tables_unordered_df(config_tmpdir, df1, df2):
+def test_df_writer_unordered_df(config_tmpdir, df1, df2):
     filename   = config_tmpdir + 'dataframe_to_table_exact.h5'
     group_name = 'test_group'
     table_name = 'table_name_unordered'
     with tb.open_file(filename, 'w') as h5out:
-        store_pandas_as_tables(h5out, df1, group_name, table_name)
+        df_writer(h5out, df1, group_name, table_name)
         df2 = df2[['bool_value', 'int_value', 'float_val']]
-        store_pandas_as_tables(h5out, df2, group_name, table_name)
+        df_writer(h5out, df2, group_name, table_name)
     df_read = load_dst(filename, group_name, table_name)
     assert_dataframes_equal(df_read, pd.concat([df1, df2], sort=True).reset_index(drop=True))
 
 
-def test_store_pandas_as_tables_index(config_tmpdir, fixed_dataframe):
+def test_df_writer_index(config_tmpdir, fixed_dataframe):
     df = fixed_dataframe
     filename   = config_tmpdir + 'dataframe_to_table_index.h5'
     group_name = 'test_group'
     table_name = 'table_name'
     columns_to_index = ['int', 'float']
     with tb.open_file(filename, 'w') as h5out:
-        store_pandas_as_tables(h5out, df, group_name, table_name, columns_to_index=columns_to_index)
+        df_writer(h5out, df, group_name, table_name, columns_to_index=columns_to_index)
         table = h5out.root[group_name][table_name]
         assert set(columns_to_index) == set(table.attrs.columns_to_index)
 
 
-def test_store_pandas_as_tables_index_error(config_tmpdir, fixed_dataframe):
+def test_df_writer_index_error(config_tmpdir, fixed_dataframe):
     df = fixed_dataframe
     filename   = config_tmpdir + 'dataframe_to_table_index.h5'
     group_name = 'test_group'
@@ -230,15 +230,15 @@ def test_store_pandas_as_tables_index_error(config_tmpdir, fixed_dataframe):
     columns_to_index = ['float_']
     with tb.open_file(filename, 'w') as h5out:
         with raises(KeyError, match=(re.escape(f"columns {columns_to_index} not present in the dataframe"))):
-            store_pandas_as_tables(h5out, df, group_name, table_name, columns_to_index=columns_to_index)
+            df_writer(h5out, df, group_name, table_name, columns_to_index=columns_to_index)
 
 
-def test_store_pandas_as_tables_no_index(config_tmpdir, fixed_dataframe):
+def test_df_writer_no_index(config_tmpdir, fixed_dataframe):
     df = fixed_dataframe
     filename   = config_tmpdir + 'dataframe_to_table_index.h5'
     group_name = 'test_group'
     table_name = 'table_name'
     with tb.open_file(filename, 'w') as h5out:
-        store_pandas_as_tables(h5out, df, group_name, table_name)
+        df_writer(h5out, df, group_name, table_name)
         table = h5out.root[group_name][table_name]
         assert 'columns_to_index' not in table.attrs

@@ -10,7 +10,7 @@ from . kdst_io   import       kr_writer
 from . mcinfo_io import  mc_info_writer
 from . pmaps_io  import     pmap_writer
 
-from . dst_io    import  store_pandas_as_tables
+from . dst_io    import  df_writer
 
 @city
 def writer_test_city(writer, file_out, files_in, event_range, detector_db):
@@ -21,9 +21,9 @@ def writer_test_city(writer, file_out, files_in, event_range, detector_db):
     def write_parameters(self, h5out): pass
 
 
-def df_writer_(h5out):
+def _df_writer(h5out):
     df = pd.DataFrame(columns=['event', 'some_value'], dtype=int)
-    return store_pandas_as_tables(h5out, df, 'DUMMY', 'dummy', columns_to_index=['event'])
+    return df_writer(h5out, df, 'DUMMY', 'dummy', columns_to_index=['event'])
 
 
 @mark.parametrize("         writer  group      node      column        thing".split(),
@@ -33,7 +33,7 @@ def df_writer_(h5out):
                    (   pmap_writer, "PMAPS", "S1"      , "event"     , "s1"  ),
                    (   pmap_writer, "PMAPS", "S2"      , "event"     , "s2"  ),
                    (   pmap_writer, "PMAPS", "S2Si"    , "event"     , "s2si"),
-                   (    df_writer_, "DUMMY", "dummy"   , "event"     , 'df'  )])
+                   (    _df_writer, "DUMMY", "dummy"   , "event"     , 'df'  )])
 def test_table_is_indexed(tmpdir_factory, writer, group, node, column, thing):
     tmpdir = tmpdir_factory.mktemp('indexation')
     file_out = os.path.join(tmpdir, f"empty_table_containing_{thing}.h5")
