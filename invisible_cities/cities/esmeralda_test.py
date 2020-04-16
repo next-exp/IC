@@ -163,7 +163,9 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     #some events are not in df_tracks_exact
     events = df_tracks_exact.event.unique()
     df_tracks_cut  = df_tracks[df_tracks.event.isin(events)]
-    assert_dataframes_close (df_tracks_cut[columns2], df_tracks_exact[columns2])
+
+    assert_dataframes_close (df_tracks_cut[columns2]  .reset_index(drop=True),
+                             df_tracks_exact[columns2].reset_index(drop=True))
     #make sure out_of_map is true for events not in df_tracks_exact
     diff_events = list(set(df_tracks.event.unique()).difference(events))
     df_summary  = dio.load_dst(PATH_OUT, 'Summary', 'Events')
