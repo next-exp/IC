@@ -27,7 +27,7 @@ def test_create_deconvolution_df(ICDATADIR):
                                                   CutType.abs, ecut, 3) for _, t in true_dst.groupby('event')])
     true_dst = true_dst.loc[true_dst.E > ecut, :].reset_index(drop=True)
 
-    assert_dataframes_close(new_dst, true_dst)
+    assert_dataframes_close(new_dst .reset_index(drop=True), true_dst.reset_index(drop=True))
 
 
 @mark.parametrize("cut_type", CutType.__members__)
