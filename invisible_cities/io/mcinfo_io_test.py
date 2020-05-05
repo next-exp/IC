@@ -17,10 +17,8 @@ from .  mcinfo_io import get_sensor_types
 from .  mcinfo_io import get_mc_tbl_list
 from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import MCTableType
-from .  mcinfo_io import mc_info_writer
 from .  mcinfo_io import copy_mc_info
 from .  mcinfo_io import read_mcinfo_evt
-from .  mcinfo_io import get_mc_info
 from .  mcinfo_io import read_mc_tables
 from .  mcinfo_io import mc_writer
 from .  mcinfo_io import _read_mchit_info
@@ -32,151 +30,6 @@ from pytest import fixture
 from pytest import mark
 from pytest import raises
 parametrize = mark.parametrize
-
-
-@mark.serial
-@parametrize('skipped_evt, in_filename, out_filename',
-            ((0, 'Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5', 'test_kr_mcinfo_skip_evt0.h5'),
-             (1, 'Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5', 'test_kr_mcinfo_skip_evt1.h5'),
-             (700000000, 'mcfile_withgeneratorinfo_3evts_MCRD.h5', 'test_background_mcinfo_skip_evt700000000.h5'),
-             (640000000, 'mcfile_withgeneratorinfo_3evts_MCRD.h5', 'test_background_mcinfo_skip_evt640000000.h5')))
-def test_mc_info_writer_non_consecutive_events(output_tmpdir, ICDATADIR, skipped_evt, in_filename, out_filename):
-    """This test includes two different input files, with three events each. They differ in terms of their event number ordering. In the first (Kr) file, event numbers are ordered in ascending order. In the second (background) file, event numbers are unique but with random ordering. In particular, the Kr file contains event numbers [0, 1, 2], while the background file contains event numbers [700000000, 640000000, 40197500], in this order.
-     """
-    filein = os.path.join(ICDATADIR, in_filename)
-    fileout = os.path.join(output_tmpdir, out_filename)
-
-    with tb.open_file(filein) as h5in:
-        with tb.open_file(fileout, 'w') as h5out:
-
-            mc_writer = mc_info_writer(h5out)
-            events_in = h5in.root.MC.extents[:]['evt_number']
-
-            mc_info = get_mc_info(h5in)
-
-            #Skip the desired event
-            events_to_copy = [evt for evt in events_in if evt != skipped_evt]
-
-            for evt in events_to_copy:
-                mc_writer(mc_info, evt)
-
-            events_out = h5out.root.MC.extents[:]['evt_number']
-
-            np.testing.assert_array_equal(events_to_copy, events_out)
-
-
-@mark.serial
-@parametrize('file_to_check, evt_to_be_read',
-            (('test_kr_mcinfo_skip_evt0.h5', 1),
-             ('test_kr_mcinfo_skip_evt1.h5', 0),
-             ('test_kr_mcinfo_skip_evt1.h5', 2)))
-def test_mc_info_writer_output_non_consecutive_events(output_tmpdir, ICDATADIR, krypton_MCRD_file, file_to_check, evt_to_be_read):
-    filein    = krypton_MCRD_file
-    filecheck = os.path.join(output_tmpdir, file_to_check)
-
-    with tb.open_file(filein) as h5in:
-        with tb.open_file(filecheck) as h5filtered:
-            mc_info          = get_mc_info(h5in)
-            filtered_mc_info = get_mc_info(h5filtered)
-            # test the content of events to be sure that they are written
-            # correctly
-            hit_rows, particle_rows, generator_rows = read_mcinfo_evt(mc_info,
-                                                                      evt_to_be_read)
-            filtered_hit_rows, filtered_particle_rows, filtered_generator_rows = read_mcinfo_evt(filtered_mc_info,
-                                                                                                 evt_to_be_read)
-
-            for hitr, filtered_hitr in zip(hit_rows, filtered_hit_rows):
-                assert np.allclose(hitr['hit_position'], filtered_hitr['hit_position'])
-                assert np.allclose(hitr['hit_time']    , filtered_hitr['hit_time'])
-                assert np.allclose(hitr['hit_energy']  , filtered_hitr['hit_energy'])
-                assert             hitr['label']      == filtered_hitr['label']
-
-            for partr, filtered_partr in zip(particle_rows, filtered_particle_rows):
-                assert np.allclose(partr['initial_vertex'] , filtered_partr['initial_vertex'])
-                assert np.allclose(partr['final_vertex']   , filtered_partr['final_vertex'])
-                assert np.allclose(partr['momentum']       , filtered_partr['momentum'])
-                assert np.allclose(partr['kin_energy']     , filtered_partr['kin_energy'])
-                assert             partr['particle_name'] == filtered_partr['particle_name']
-
-
-@mark.serial
-@parametrize('file_to_check',
-            ('test_background_mcinfo_skip_evt700000000.h5',
-             'test_background_mcinfo_skip_evt640000000.h5'))
-def test_mc_info_writer_generatoroutput_non_consecutive_events(output_tmpdir, file_to_check):
-    filein = os.path.join(output_tmpdir, file_to_check)
-
-    with tb.open_file(filein) as h5in:
-        # test the content of events to be sure that the extents rows are ion sync with generators rows
-        evt_numbers_in_extents    = h5in.root.MC.extents[:]['evt_number']
-        evt_numbers_in_generators = h5in.root.MC.generators[:]['evt_number']
-
-        np.testing.assert_array_equal(evt_numbers_in_extents, evt_numbers_in_generators)
-
-
-def test_mc_info_writer_reset(output_tmpdir, ICDATADIR, krypton_MCRD_file):
-    filein  = os.path.join(ICDATADIR, krypton_MCRD_file)
-    fileout = os.path.join(output_tmpdir, "test_mc_info_writer_reset.h5")
-
-    with tb.open_file(filein) as h5in:
-        with tb.open_file(fileout, 'w') as h5out:
-
-            mc_writer  = mc_info_writer(h5out)
-            events_in  = np.unique(h5in.root.MC.extents[:]['evt_number'])
-
-            assert mc_writer.last_row              == 0
-
-            mc_writer(get_mc_info(h5in), events_in[0])
-            assert mc_writer.last_row              == 1
-
-            mc_writer.reset()
-            assert mc_writer.last_row              == 0
-
-
-def test_mc_info_writer_automatic_reset(output_tmpdir, ICDATADIR, krypton_MCRD_file, electron_MCRD_file):
-    fileout = os.path.join(output_tmpdir, "test_mc_info_writer_automatic_reset.h5")
-
-    with tb.open_file(fileout, "w") as h5out:
-        mc_writer = mc_info_writer(h5out)
-
-        with tb.open_file(krypton_MCRD_file) as h5in:
-            events_in = np.unique(h5in.root.MC.extents[:]['evt_number'])
-            mc_writer(get_mc_info(h5in), events_in[0])
-
-        # This would not be possible without automatic reset
-        with tb.open_file(electron_MCRD_file) as h5in:
-            events_in  = np.unique(h5in.root.MC.extents[:]['evt_number'])
-            mc_writer(get_mc_info(h5in), events_in[0])
-
-        assert h5out.root.MC.extents  [:].size ==  2
-        assert h5out.root.MC.hits     [:].size == 12
-        assert h5out.root.MC.particles[:].size ==  3
-
-
-def test_mc_info_writer_filter_first_event_of_first_file(output_tmpdir, ICDATADIR):
-    files_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_02_08_ACTIVE_7bar_RWF.*.h5")
-    input_files  = sorted(glob(expandvars(files_in)))
-
-    file_out     = os.path.join(output_tmpdir, "Kr83_nexus_v5_02_08_ACTIVE_7bar_RWF_all.h5")
-
-    with tb.open_file(file_out, "w") as h5out:
-        mc_writer = mc_info_writer(h5out)
-
-        skip_evt = True
-        for filename in input_files:
-            with tb.open_file(filename) as h5in:
-                events_in = np.unique(h5in.root.MC.extents[:]['evt_number'])
-                for evt in events_in:
-                    if skip_evt:
-                        skip_evt = False
-                        continue
-                    mc_writer(get_mc_info(h5in), evt)
-
-        last_particle_list = h5out.root.MC.extents[:]['last_particle']
-        last_hit_list = h5out.root.MC.extents[:]['last_hit']
-
-        assert all(x<y for x, y in zip(last_particle_list, last_particle_list[1:]))
-        assert all(x<y for x, y in zip(last_hit_list, last_hit_list[1:]))
 
 
 def test_copy_mc_info_which_events_is_none(ICDATADIR, config_tmpdir):
@@ -527,36 +380,6 @@ def test_load_mcsensor_response_df_new(new_format_mcsensor_data):
     assert np.all(wfs.loc[evt_no].index == sns_list)
     assert np.all(wfs.loc[evt_no].charge == charge_list)
     assert np.all(wfs.loc[evt_no].time == time_list)
-
-
-@mark.serial
-@parametrize('in_filename, out_filename',
-            (('mcfile_withgeneratorinfo_3evts_MCRD.h5', 'mcfile_withgeneratorinfo_3evts_RWF.h5'),
-             ('mcfile_withemptygeneratorinfo_3evts_MCRD.h5', 'mcfile_withemptygeneratorinfo_3evts_RWF.h5'),
-             ('mcfile_withoutgeneratorinfo_3evts_MCRD.h5', 'mcfile_withoutgeneratorinfo_3evts_RWF.h5')))
-def test_copy_mc_generator_info(output_tmpdir, ICDATADIR, in_filename, out_filename):
-    """This test is meant to cover three cases:
-    1. mcfile_withgeneratorinfo: MCRD file where 'MC' group has 'generators' dataset with non-zero dimension, equal to number of events in file. Produced with GATE version v1_03_00 or later, and from nexus file where GATE event string store contains "/Generator/IonGun/atomic_number", "/Generator/IonGun/mass_number" and "/Generator/IonGun/region" information
-    2. mcfile_withemptygeneratorinfo: MCRD file where 'MC' group has 'generators' dataset with zero dimension. Produced with GATE version v1_03_00 or later, and from nexus file where GATE event string store does NOT contain "/Generator/IonGun/atomic_number", "/Generator/IonGun/mass_number" and "/Generator/IonGun/region" information
-    3. mcfile_withoutgeneratorinfo: MCRD file where 'MC' group has NO 'generators' dataset. Produced with GATE version prior to v1_03_00
-    """
-
-    filein = os.path.join(ICDATADIR, in_filename)
-    fileout = os.path.join(output_tmpdir, out_filename)
-
-    with tb.open_file(filein) as h5in:
-        with tb.open_file(fileout, 'w') as h5out:
-
-            mc_writer = mc_info_writer(h5out)
-            mc_info = get_mc_info(h5in)
-
-            events_in = mc_info.generators[:]['evt_number']
-            for evt in events_in:
-                mc_writer(mc_info, evt)
-
-            events_out = h5out.root.MC.generators[:]['evt_number']
-
-            np.testing.assert_array_equal(events_in, events_out)
 
 
 def test_get_sensor_types(new_format_mcsensor_data):
