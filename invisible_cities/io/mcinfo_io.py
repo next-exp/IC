@@ -223,57 +223,94 @@ def is_oldformat_file(file_name : str) -> bool:
 def load_mchits_df(file_name : str) -> pd.DataFrame:
     """
     Opens file and calls read_mchits_df
+
+    parameters
+    ----------
     file_name : str
                 The name of the file to be read
-    """
-    extents = pd.read_hdf(file_name, 'MC/extents')
-    with tb.open_file(file_name) as h5in:
-        hits = read_mchits_df(h5in, extents)
 
+    returns
+    -------
+    hits : pd.DataFrame
+           DataFrame with the information stored in file
+           about the energy deposits in the ACTIVE volume
+           in nexus simulations.
+    """
+    if is_oldformat_file(file_name):
+        ## Is this a pre-Feb 2020 file?
+        return load_mchits_dfold(file_name)
+    else:
+        return load_mchits_dfnew(file_name)
+
+
+def load_mchits_dfnew(file_name : str) -> pd.DataFrame:
+    """
+    Returns MC hit information for 2020-- format files
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing MC info
+
+    returns
+    -------
+    hits : pd.DataFrame
+           DataFrame with the information stored in file
+           about the energy deposits in the ACTIVE volume
+           in nexus simulations.
+    """
+    hits = load_dst(file_name, 'MC', 'hits')
+    hits.set_index(['event_id', 'particle_id', 'hit_id'],
+                    inplace=True)
     return hits
 
 
-def read_mchits_df(h5in    : tb.file.File,
-                   extents : pd.DataFrame) -> pd.DataFrame:
+def load_mchits_dfold(file_name : str) -> pd.DataFrame:
     """
     Loads the MC hit information into a pandas DataFrame.
-    h5in    : pytables file
-              A file already read into a pytables object
-    extents : pd.DataFrame
-              The extents table from the file which gives
-              information about the event tracture.
+    For pre-2020 format files
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing MC info
+    
+    returns
+    -------
+    hits : pd.DataFrame
+           DataFrame with the information stored in file
+           about the energy deposits in the ACTIVE volume
+           in nexus simulations.
     """
+    extents = load_dst(file_name, 'MC', 'extents')
+    with tb.open_file(file_name) as h5in:
+        hits_tb = h5in.root.MC.hits
 
-    hits_tb  = h5in.root.MC.hits
+        # Generating hits DataFrame
+        hits = pd.DataFrame({'hit_id'     : hits_tb.col('hit_indx')           ,
+                             'particle_id': hits_tb.col('particle_indx')      ,
+                             'x'          : hits_tb.col('hit_position')[:, 0] ,
+                             'y'          : hits_tb.col('hit_position')[:, 1] ,
+                             'z'          : hits_tb.col('hit_position')[:, 2] ,
+                             'time'       : hits_tb.col('hit_time')           ,
+                             'energy'     : hits_tb.col('hit_energy')         ,
+                             'label'      : hits_tb.col('label').astype('U13')})
 
-    # Generating hits DataFrame
-    hits = pd.DataFrame({'hit_id'      : hits_tb.col('hit_indx'),
-                         'particle_id' : hits_tb.col('particle_indx'),
-                         'label'       : hits_tb.col('label').astype('U13'),
-                         'time'        : hits_tb.col('hit_time'),
-                         'x'           : hits_tb.col('hit_position')[:, 0],
-                         'y'           : hits_tb.col('hit_position')[:, 1],
-                         'z'           : hits_tb.col('hit_position')[:, 2],
-                         'energy'      : hits_tb.col('hit_energy')})
+        evt_hit_df = extents[['last_hit', 'evt_number']]
+        evt_hit_df.set_index('last_hit', inplace=True)
 
-    evt_hit_df = extents[['last_hit', 'evt_number']]
-    evt_hit_df.set_index('last_hit', inplace = True)
+        hits = hits.merge(evt_hit_df          ,
+                          left_index  =   True,
+                          right_index =   True,
+                          how         = 'left')
+        hits.rename(columns={"evt_number": "event_id"}, inplace=True)
+        hits.event_id.fillna(method='bfill', inplace=True)
+        hits.event_id = hits.event_id.astype(int)
 
-    hits = hits.merge(evt_hit_df          ,
-                      left_index  =   True,
-                      right_index =   True,
-                      how         = 'left')
-    hits.rename(columns={"evt_number": "event_id"}, inplace = True)
-    hits.event_id.fillna(method='bfill', inplace = True)
-    hits.event_id = hits.event_id.astype(int)
+        # Setting the indexes
+        hits.set_index(['event_id', 'particle_id', 'hit_id'], inplace=True)
 
-    # Setting the indexes
-    hits.set_index(['event_id', 'particle_id', 'hit_id'], inplace=True)
-
-    return hits
-
-
-
+        return hits
 
 
 def load_mcparticles_df(file_name: str) -> pd.DataFrame:
