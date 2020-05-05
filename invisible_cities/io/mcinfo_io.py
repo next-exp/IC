@@ -321,29 +321,42 @@ def read_mc_tables(file_in : str                        ,
     return tbl_dict
 
 
-def copy_mc_info(h5in : tb.File, writer : Type[mc_info_writer], which_events : List[int]=None):
-    """Copy from the input file to the output file the MC info of certain events.
+def copy_mc_info(file_in      : str                       ,
+                 writer       : Type[mc_writer]           ,
+                 which_events : Optional[List[int]] = None,
+                 db_file      : Optional[str]       = None,
+                 run_number   : Optional[int]       = None) -> None:
+    """
+    Copy from the input file to the output file the MC info of certain events.
 
     Parameters
     ----------
-    h5in  : tb.File
-        Input h5 file.
-    writer : instance of class mcinfo_io.mc_info_writer
+    file_in      : str
+        Input file name.
+    writer       : instance of class mcinfo_io.mc_info_writer
         MC info writer to h5 file.
     which_events : None or list of ints
         List of IDs (i.e. event numbers) that identify the events to be copied
         to the output file. If None, all events in the input file are copied.
+    db_file      : None or str
+        Name of the database to be used.
+        Only required in cas of old format MC file
+    run_number   : None or int
+        Run number to be used for database access.
+        Only required in case of old format MC file
     """
     try:
         if which_events is None:
-            which_events = h5in.root.MC.extents.cols.evt_number[:]
-        mcinfo = get_mc_info(h5in)
-        for n in which_events:
-            writer(mctables=mcinfo, evt_number=n)
+            which_events = get_event_numbers_in_file(file_in)
+        tbl_dict = read_mc_tables(file_in, which_events, db_file, run_number)
+        if MCTableType.event_mapping not in tbl_dict.keys():
+            new_key = MCTableType.event_mapping
+            tbl_dict[new_key] = pd.DataFrame(which_events, columns=['event_id'])
+        writer(tbl_dict)
     except tb.exceptions.NoSuchNodeError:
-        raise tb.exceptions.NoSuchNodeError(f"No MC info in file {h5in}.")
+        raise tb.exceptions.NoSuchNodeError(f"No MC info in file {file_in}.")
     except IndexError:
-        raise IndexError(f"No event {n} in file {h5in}.")
+        raise IndexError(f"No events {which_events} in file {file_in}.")
     except NoParticleInfoInFile as err:
         print(f"Warning: {h5in}", err)
         pass
@@ -528,6 +541,8 @@ def load_mcevent_mapping(file_name : str) -> pd.DataFrame:
 
     """
     return load_dst(file_name, 'MC', 'event_mapping')
+
+
 def load_mchits_df(file_name : str) -> pd.DataFrame:
     """
     Opens file and calls read_mchits_df
@@ -643,6 +658,8 @@ def cast_mchits_to_dict(hits_df: pd.DataFrame) -> Mapping[int, List[MCHit]]:
                                *hit.iloc[0, 3:].values)
                          for _, hit in evt_hits.groupby(level=2)]
     return hit_dict
+
+
 def load_mcparticles_df(file_name: str) -> pd.DataFrame:
     """
     Opens file and calls read_mcparticles_df
@@ -1040,8 +1057,6 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_n
             break
 
     return hit_rows, particle_rows, generator_rows
-
-
 
 
 def _read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
