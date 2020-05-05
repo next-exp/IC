@@ -338,63 +338,107 @@ def cast_mchits_to_dict(hits_df: pd.DataFrame) -> Mapping[int, List[MCHit]]:
 def load_mcparticles_df(file_name: str) -> pd.DataFrame:
     """
     Opens file and calls read_mcparticles_df
+
+    parameters
+    ----------
     file_name : str
                 The name of the file to be read
-    """
-    extents = pd.read_hdf(file_name, 'MC/extents')
-    with tb.open_file(file_name, mode='r') as h5in:
-        particles = read_mcparticles_df(h5in, extents)
 
+    returns
+    -------
+    parts : pd.DataFrame
+            DataFrame containing MC particle information.
+    """
+    if is_oldformat_file(file_name):
+        return load_mcparticles_dfold(file_name)
+    else:
+        return load_mcparticles_dfnew(file_name)
+
+
+def load_mcparticles_dfnew(file_name: str) -> pd.DataFrame:
+    """
+    Loads MC particle info from file into a pd.DataFrame
+
+    parameters
+    ----------
+    file_name : str
+                Name of file containing MC info.
+
+    returns
+    -------
+    particles : pd.DataFrame
+                DataFrame containg the MC particle info
+                stored in file_name.
+    """
+    particles         = load_dst(file_name, 'MC', 'particles')
+    particles.primary = particles.primary.astype('bool')
+    particles.set_index(['event_id', 'particle_id'], inplace=True)
     return particles
 
 
-def read_mcparticles_df(h5in    : tb.file.File,
-                        extents : pd.DataFrame) -> pd.DataFrame:
+def load_mcparticles_dfold(file_name: str) -> pd.DataFrame:
     """
     A reader for the MC particle output based
     on pandas DataFrames.
 
+    parameters
+    ----------
     file_name: string
                Name of the file to be read
+
+    returns
+    -------
+    parts : pd.DataFrame
+            DataFrame containing the MC particle info
+            contained in file_name.
     """
-    p_tb = h5in.root.MC.particles
+    extents = load_dst(file_name, 'MC', 'extents')
+    with tb.open_file(file_name, mode='r') as h5in:
+        p_tb = h5in.root.MC.particles
 
-    # Generating parts DataFrame
-    parts = pd.DataFrame({'particle_id'       : p_tb.col('particle_indx'),
-                          'particle_name'     : p_tb.col('particle_name').astype('U20'),
-                          'primary'           : p_tb.col('primary').astype('bool'),
-                          'mother_id'         : p_tb.col('mother_indx'),
-                          'initial_x'         : p_tb.col('initial_vertex')[:, 0],
-                          'initial_y'         : p_tb.col('initial_vertex')[:, 1],
-                          'initial_z'         : p_tb.col('initial_vertex')[:, 2],
-                          'initial_t'         : p_tb.col('initial_vertex')[:, 3],
-                          'final_x'           : p_tb.col('final_vertex')[:, 0],
-                          'final_y'           : p_tb.col('final_vertex')[:, 1],
-                          'final_z'           : p_tb.col('final_vertex')[:, 2],
-                          'final_t'           : p_tb.col('final_vertex')[:, 3],
-                          'initial_volume'    : p_tb.col('initial_volume').astype('U20'),
-                          'final_volume'      : p_tb.col('final_volume').astype('U20'),
-                          'initial_momentum_x': p_tb.col('momentum')[:, 0],
-                          'initial_momentum_y': p_tb.col('momentum')[:, 1],
-                          'initial_momentum_z': p_tb.col('momentum')[:, 2],
-                          'kin_energy'        : p_tb.col('kin_energy'),
-                          'creator_proc'      : p_tb.col('creator_proc').astype('U20')})
+        # Generating parts DataFrame
+        parts = pd.DataFrame({'particle_id'       : p_tb.col('particle_indx'),
+                              'particle_name'     : p_tb.col('particle_name').astype('U20'),
+                              'primary'           : p_tb.col('primary').astype('bool'),
+                              'mother_id'         : p_tb.col('mother_indx'),
+                              'initial_x'         : p_tb.col('initial_vertex')[:, 0],
+                              'initial_y'         : p_tb.col('initial_vertex')[:, 1],
+                              'initial_z'         : p_tb.col('initial_vertex')[:, 2],
+                              'initial_t'         : p_tb.col('initial_vertex')[:, 3],
+                              'final_x'           : p_tb.col('final_vertex')[:, 0],
+                              'final_y'           : p_tb.col('final_vertex')[:, 1],
+                              'final_z'           : p_tb.col('final_vertex')[:, 2],
+                              'final_t'           : p_tb.col('final_vertex')[:, 3],
+                              'initial_volume'    : p_tb.col('initial_volume').astype('U20'),
+                              'final_volume'      : p_tb.col('final_volume').astype('U20'),
+                              'initial_momentum_x': p_tb.col('momentum')[:, 0],
+                              'initial_momentum_y': p_tb.col('momentum')[:, 1],
+                              'initial_momentum_z': p_tb.col('momentum')[:, 2],
+                              'kin_energy'        : p_tb.col('kin_energy'),
+                              'creator_proc'      : p_tb.col('creator_proc').astype('U20')})
 
-    # Adding event info
-    evt_part_df = extents[['last_particle', 'evt_number']]
-    evt_part_df.set_index('last_particle', inplace = True)
-    parts = parts.merge(evt_part_df         ,
-                        left_index  =   True,
-                        right_index =   True,
-                        how         = 'left')
-    parts.rename(columns={"evt_number": "event_id"}, inplace = True)
-    parts.event_id.fillna(method='bfill', inplace = True)
-    parts.event_id = parts.event_id.astype(int)
+        # Adding event info
+        evt_part_df = extents[['last_particle', 'evt_number']]
+        evt_part_df.set_index('last_particle', inplace=True)
+        parts = parts.merge(evt_part_df         ,
+                            left_index  =   True,
+                            right_index =   True,
+                            how         = 'left')
+        parts.rename(columns={"evt_number": "event_id"}, inplace=True)
+        parts.event_id.fillna(method='bfill', inplace=True)
+        parts.event_id = parts.event_id.astype(int)
 
-    # Setting the indexes
-    parts.set_index(['event_id', 'particle_id'], inplace=True)
+        ## Add columns present in new format
+        missing_columns = ['final_momentum_x','final_momentum_y',
+                           'final_momentum_z',          'length']
+        parts = parts.reindex(parts.columns.tolist() + missing_columns, axis=1)
 
-    return parts
+        # Setting the indexes
+        parts.set_index(['event_id', 'particle_id'], inplace=True)
+
+        return parts
+
+
 
 
 
