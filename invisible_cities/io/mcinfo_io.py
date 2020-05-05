@@ -1,39 +1,35 @@
-
-import tables as tb
 import numpy  as np
+import tables as tb
 import pandas as pd
 
-from .. reco            import tbl_functions as tbl
-from .. core            import system_of_units as units
-from .. core.exceptions import SensorBinningNotFound
+from enum      import auto
+from functools import partial
+
+from .. reco            import        tbl_functions as   tbl
+from .. core            import      system_of_units as units
 from .. core.exceptions import NoParticleInfoInFile
 
-from .. evm.event_model import MCParticle
-from .. evm.event_model import MCHit
-from .. evm.event_model import Waveform
-from .. evm.event_model import MCInfo
-
-from .. evm.nh5 import MCGeneratorInfo
-from .. evm.nh5 import MCExtentInfo
-from .. evm.nh5 import MCHitInfo
-from .. evm.nh5 import MCParticleInfo
-from enum      import auto
-
-from .. database import load_db as DB
-
-from typing import Mapping
+from .. evm.event_model import                MCHit
+from .. evm.event_model import               MCInfo
+from .. evm.nh5         import      MCGeneratorInfo
+from .. evm.nh5         import         MCExtentInfo
+from .. evm.nh5         import            MCHitInfo
+from .. evm.nh5         import       MCParticleInfo
+from .. database        import              load_db as    DB
+from .  dst_io          import             load_dst
+from .  dst_io          import            df_writer
 from .. types.ic_types  import     AutoNameEnumBase
+
+from typing import Callable
+from typing import     Dict
+from typing import     List
+from typing import  Mapping
+from typing import Optional
 from typing import Sequence
-from typing import Tuple
-from typing import List
-from typing import Type
+from typing import     Type
+from typing import    Union
 
-# use Mapping (duck type) rather than dict
 
-units_dict = {'picosecond' : units.picosecond,  'ps' : units.picosecond,
-              'nanosecond' : units.nanosecond,  'ns' : units.nanosecond,
-              'microsecond': units.microsecond, 'mus': units.microsecond,
-              'millisecond': units.millisecond, 'ms' : units.millisecond}
 class MCTableType(AutoNameEnumBase):
     configuration    = auto()
     events           = auto()
