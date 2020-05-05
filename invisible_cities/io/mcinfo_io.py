@@ -286,6 +286,33 @@ def _get_list_of_events_new(h5in : tb.file.File) -> np.ndarray:
     if len(evt_list) == 0:
         raise tb.exceptions.NoSuchNodeError
     return np.unique(np.concatenate(evt_list)).astype(int)
+
+
+def load_mcconfiguration(file_name : str) -> pd.DataFrame:
+    """
+    Load the MC.configuration table from file into
+    a pd.DataFrame
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file with MC info
+
+    returns
+    -------
+    config     : pd.DataFrame
+                 DataFrame with all nexus configuration
+                 parameters
+    """
+    config           = load_dst(file_name, 'MC', 'configuration')
+    if is_oldformat_file(file_name):
+        binning_keys = config.param_key.str.contains('binning')
+        ## Split value and unit in binning rows and combin into
+        ## standard unit value using system_of_units
+        new_names    = config[binning_keys].param_key.str.split(
+            '/', expand=True).apply(lambda x: x[2] + '_binning', axis=1)
+        config.loc[binning_keys, 'param_key'] = new_names
+    return config
 def load_mchits_df(file_name : str) -> pd.DataFrame:
     """
     Opens file and calls read_mchits_df
