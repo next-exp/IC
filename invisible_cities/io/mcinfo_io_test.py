@@ -23,8 +23,9 @@ from .  mcinfo_io import read_mc_tables
 from .  mcinfo_io import mc_writer
 from .  mcinfo_io import _read_mchit_info
 
-from .. core            import system_of_units as units
-from .. core.exceptions import NoParticleInfoInFile
+from .. core               import system_of_units as units
+from .. core.exceptions    import NoParticleInfoInFile
+from .. core.testing_utils import assert_MChit_equality
 
 from pytest import fixture
 from pytest import mark
@@ -223,20 +224,6 @@ def test_load_mchits_df(mc_particle_and_hits_nexus_data):
     assert_load_hits_good(efile, X, Y, Z, E, t)
 
 
-def test_cast_mchits_to_dict(mc_particle_and_hits_nexus_data):
-    efile, _, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
-
-    mchits_df   = load_mchits_df(efile)
-    mchits_dict = cast_mchits_to_dict(mchits_df)
-
-    with tb.open_file(efile) as h5in:
-        old_mchit_dict = _read_mchit_info(h5in)
-
-    assert np.all(mchits_dict.keys() == old_mchit_dict.keys())
-    for old_hts, new_hts in zip(old_mchit_dict.values(), mchits_dict.values()):
-        assert np.all(old_hts == new_hts)
-
-
 def test_load_mchits_df_newformat(mc_particle_and_hits_nexus_data_new):
     efile, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_nexus_data_new
     assert_load_hits_good(efile, X, Y, Z, E, t)
@@ -263,6 +250,21 @@ def test_cast_mchits_to_dict(mc_particle_and_hits_nexus_data):
                      for h in hit_dict[evt]]
         evt_xyztE = evt_hits[['x', 'y', 'z', 'time', 'energy']]
         assert_allclose(evt_xyztE.values, hits_evt)
+
+
+def test_cast_mchits_to_dict_same_as_old(mc_particle_and_hits_nexus_data):
+    efile, _, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
+
+    mchits_df   = load_mchits_df(efile)
+    mchits_dict = cast_mchits_to_dict(mchits_df)
+    
+    with tb.open_file(efile) as h5in:
+        old_mchit_dict = _read_mchit_info(h5in)
+    
+    assert np.all(mchits_dict.keys() == old_mchit_dict.keys())
+    for old_hts, new_hts in zip(old_mchit_dict.values(), mchits_dict.values()):
+        for old_hit, new_hit in zip(old_hts, new_hts):
+            assert_MChit_equality(old_hit, new_hit)
 
 
 def test_load_mcparticles_df(mc_particle_and_hits_nexus_data):
