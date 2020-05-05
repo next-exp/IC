@@ -232,6 +232,25 @@ def is_oldformat_file(file_name : str) -> bool:
         return hasattr(h5in.root, 'MC/extents')
 
 
+def get_mc_tbl_list(file_name: str) -> List[MCTableType]:
+    """
+    Returns a list of the tables in
+    the MC group of a given file
+
+    parameters
+    ----------
+    file_name : str
+                Name of the input file
+
+    returns
+    -------
+    tbl_list : List[MCTableType]
+               A list of the MC tables which are present
+               in the input file.
+    """
+    with tb.open_file(file_name, 'r') as h5in:
+        mc_group = h5in.root.MC
+        return [MCTableType[tbl.name] for tbl in mc_group]
 
 
 def load_mchits_df(file_name : str) -> pd.DataFrame:
