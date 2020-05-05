@@ -17,10 +17,12 @@ from .. evm.nh5 import MCGeneratorInfo
 from .. evm.nh5 import MCExtentInfo
 from .. evm.nh5 import MCHitInfo
 from .. evm.nh5 import MCParticleInfo
+from enum      import auto
 
 from .. database import load_db as DB
 
 from typing import Mapping
+from .. types.ic_types  import     AutoNameEnumBase
 from typing import Sequence
 from typing import Tuple
 from typing import List
@@ -32,6 +34,18 @@ units_dict = {'picosecond' : units.picosecond,  'ps' : units.picosecond,
               'nanosecond' : units.nanosecond,  'ns' : units.nanosecond,
               'microsecond': units.microsecond, 'mus': units.microsecond,
               'millisecond': units.millisecond, 'ms' : units.millisecond}
+class MCTableType(AutoNameEnumBase):
+    configuration    = auto()
+    events           = auto()
+    event_mapping    = auto()
+    extents          = auto()
+    generators       = auto()
+    hits             = auto()
+    particles        = auto()
+    sensor_positions = auto()
+    sns_positions    = auto()
+    sns_response     = auto()
+    waveforms        = auto()
 
 
 class mc_info_writer:
