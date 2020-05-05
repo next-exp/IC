@@ -182,6 +182,80 @@ class mc_info_writer:
         self.generator_table.flush()
 
 
+def read_mc_tables(file_in : str                        ,
+                   evt_arr : Optional[np.ndarray] = None,
+                   db_file : Optional[str]        = None,
+                   run_no  : Optional[int]        = None) -> Dict:
+    """
+    Reads all the MC tables present in
+    file_in and stores the Dataframes for
+    each into a dictionary.
+
+    parameters
+    ----------
+    file_in: str
+             Name of the input file
+    evt_arr: optional np.ndarray
+             list of events or None. default None for
+             all events.
+    db_file: optional str
+             Name of the database to be used.
+             Only required for old format MC files
+    run_no : optional int
+             Run number for database access
+             Only required for old format MC files
+
+    returns
+    -------
+    tbl_dict : Dict
+               A dictionary with key type MCTableType
+               and values of type pd.DataFrame
+               containing the MC info for all tables
+               sorted into new format in the case
+               of an old format MC file.
+    """
+    mctbls = get_mc_tbl_list(file_in)
+    if evt_arr is None:
+        evt_arr = get_event_numbers_in_file(file_in)
+    if (len(evt_arr) > 0 and
+        len(np.intersect1d(evt_arr, get_event_numbers_in_file(file_in))) == 0):
+        raise IndexError
+    tbl_dict = {}
+    for tbl in mctbls:
+        if   tbl is MCTableType.hits                 :
+            hits = load_mchits_df(file_in).reset_index()
+            tbl_dict[tbl] = hits[hits.event_id.isin(evt_arr)]
+        elif tbl is MCTableType.particles            :
+            parts = load_mcparticles_df(file_in).reset_index()
+            tbl_dict[tbl] = parts[parts.event_id.isin(evt_arr)]
+        elif tbl is MCTableType.extents              :
+            pass
+        elif (tbl is MCTableType.sns_response or
+              tbl is MCTableType.waveforms      )    :
+            sns = load_mcsensor_response_df(file_in, return_raw=True)
+            tbl_key = MCTableType.sns_response
+            tbl_dict[tbl_key] = sns[sns.event_id.isin(evt_arr)]
+        elif (tbl is MCTableType.sensor_positions or
+              tbl is MCTableType.sns_positions      ):
+            pos = load_mcsensor_positions(file_in, db_file, run_no)
+            tbl_key = MCTableType.sns_positions
+            tbl_dict[tbl_key] = pos
+        elif tbl is MCTableType.generators           :
+            gen = load_mcgenerators(file_in)
+            tbl_dict[tbl] = gen[gen.evt_number.isin(evt_arr)]
+        elif tbl is MCTableType.configuration        :
+            config = load_mcconfiguration(file_in)
+            tbl_dict[tbl] = config
+        elif tbl is MCTableType.events               :
+            pass
+        elif tbl is MCTableType.event_mapping        :
+            evt_map = load_mcevent_mapping(file_in)
+            tbl_dict[tbl] = evt_map[evt_map.event_id.isin(evt_arr)]
+        else                                         :
+            raise TypeError("MC table has no reader")
+    return tbl_dict
+
+
 def copy_mc_info(h5in : tb.File, writer : Type[mc_info_writer], which_events : List[int]=None):
     """Copy from the input file to the output file the MC info of certain events.
 
