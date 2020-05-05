@@ -529,9 +529,28 @@ def sensor_binning_new(file_name : str) -> pd.DataFrame:
         lambda x: float(x[0]) * getattr(units, x[1]), axis=1)
     return bins[~bins.index.duplicated()]
 
-    """
 
+def get_sensor_types(file_name : str) -> pd.DataFrame:
     """
+    returns a DataFrame linking sensor_ids to
+    sensor type names.
+    !! Only valid for new format data, otherwise use
+    !! database.
+
+    parameters
+    ----------
+    file_name : str
+                name of the file with nexus sensor info.
+
+    returns
+    -------
+    sns_pos : pd.DataFrame
+              Sensor position info for the MC sensors
+              which saw light in this simulation.
+    """
+    sns_pos = load_dst(file_name, 'MC', 'sns_positions').copy()
+    sns_pos.drop(['x', 'y', 'z'], axis=1, inplace=True)
+    return sns_pos
 
 
 def load_mcsensor_response_df(file_name  : str                   ,
