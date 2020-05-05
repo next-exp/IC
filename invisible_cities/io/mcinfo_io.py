@@ -529,44 +529,87 @@ def sensor_binning_new(file_name : str) -> pd.DataFrame:
         lambda x: float(x[0]) * getattr(units, x[1]), axis=1)
     return bins[~bins.index.duplicated()]
 
-def load_mcsensor_response_df(file_name : str,
-                              db_file   : str,
-                              run_no    : int) -> Tuple:
+    """
+
+    """
+
+
+def load_mcsensor_response_df(file_name  : str                   ,
+                              return_raw : Optional[bool] = False,
+                              db_file    : Optional[ str] =  None,
+                              run_no     : Optional[ int] =  None
+                              ) -> pd.DataFrame:
     """
     A reader for the MC sensor output based
     on pandas DataFrames.
 
-    file_name: string
-               Name of the file to be read
-    db_file  : string
-               Name of the detector database to be accessed
-    run_no   : int
-               Run number for database access
+    parameters
+    ----------
+    file_name  : string
+                 Name of the file to be read
+    return_raw : bool
+                 Return without conversion of time_bin to
+                 time if True
+    db_file    : None orstring
+                 Name of the detector database to be accessed.
+                 Only required for pre-2020 format files.
+    run_no     : None or int
+                 Run number for database access.
+                 Only required for pre-2020 format files.
+
+    returns
+    -------
+    sns_resp : pd.DataFrame
+               DataFrame containing the sensor response info
+               contained in file_name
     """
-    pmt_ids = DB.DataPMT(db_file, run_no).SensorID
+    if is_oldformat_file(file_name):
+        sns_resp = load_mcsensors_dfold(file_name)
+        if return_raw:
+            return sns_resp
+        assert(db_file), "Database name required for this file"
+        assert( run_no), "Run number required for database access"
+        return convert_timebin_to_time(sns_resp                          ,
+                                       get_sensor_binning     (file_name),
+                                       load_mcsensor_positions(file_name,
+                                                               db_file  ,
+                                                               run_no   ))
+    else:
+        sns_resp = load_dst(file_name, 'MC', 'sns_response')
+        if return_raw:
+            return sns_resp
+        return convert_timebin_to_time(sns_resp                          ,
+                                       get_sensor_binning     (file_name),
+                                       load_mcsensor_positions(file_name))
 
-    pmt_bin, sipm_bin = get_sensor_binning(file_name)
 
-    extents  = pd.read_hdf(file_name, 'MC/extents')
+def load_mcsensors_dfold(file_name : str) -> pd.DataFrame:
+    """
+    Load MC sensor info for pre-2020 format files
 
-    sns      = pd.read_hdf(file_name, 'MC/waveforms')
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing MC info.
+
+    returns
+    -------
+    sns       : pd.DataFrame
+                DataFrame containing the sensor response info
+                contained in file_name
+    """
+    extents  = load_dst(file_name, 'MC', 'extents')
+    sns      = load_dst(file_name, 'MC', 'waveforms')
     evt_sns  = extents[['last_sns_data', 'evt_number']]
-    evt_sns.set_index('last_sns_data', inplace = True)
-
-    sns = sns.merge(evt_sns             ,
-                    left_index  =   True,
-                    right_index =   True,
-                    how         = 'left')
-    sns.evt_number.fillna(method='bfill', inplace = True)
-
-    sns['time'] = sns[sns.sensor_id.isin(pmt_ids)].time_bin * pmt_bin
-    sns.time.fillna(sns.time_bin * sipm_bin, inplace = True)
-
+    evt_sns.set_index('last_sns_data', inplace=True)
+    sns      = sns.merge(evt_sns             ,
+                         left_index  =   True,
+                         right_index =   True,
+                         how         = 'left')
+    sns.evt_number.fillna(method='bfill', inplace=True)
     sns.evt_number = sns.evt_number.astype(int)
-    sns.rename(columns = {'evt_number': 'event_id'}, inplace = True)
-    sns.set_index(['event_id', 'sensor_id', 'time_bin'], inplace = True)
-
-    return extents.evt_number.unique(), pmt_bin, sipm_bin, sns
+    sns.rename(columns = {'evt_number': 'event_id'}, inplace=True)
+    return sns
 
 
 def get_mc_info(h5in):
@@ -593,6 +636,36 @@ def get_mc_info(h5in):
 
     return MCInfo(extents, hits, particles, generator_table)
 
+
+def convert_timebin_to_time(sns_resp : pd.DataFrame,
+                            sns_bins : pd.DataFrame,
+                            sns_pos  : pd.DataFrame) -> pd.DataFrame:
+    """
+    Convert the time bin to an event time.
+
+    parameters
+    ----------
+    sns_resp : pd.DataFrame
+               MC sensor response information as saved in the file.
+    sns_bins : pd.DataFrame
+               MC sensor bin sample width information
+    sns_pos  : pd.DataFrame
+               Sensor position and type information.
+
+    returns
+    -------
+    sns_merge : pd.DataFrame
+                Merge of the parameter information with sensor
+                response information but with event time info
+                instead of time_bin info.
+    """
+    sns_pos.set_index('sensor_name', inplace=True)
+    sns_merge = sns_resp.merge(sns_pos.join(sns_bins), on='sensor_id')
+    sns_merge['time'] = sns_merge.bin_width * sns_merge.time_bin
+    sns_merge.drop(['x', 'y', 'z', 'time_bin', 'bin_width'],
+                   axis=1, inplace=True)
+    sns_merge.set_index(['event_id', 'sensor_id'], inplace=True)
+    return sns_merge
 
 
 def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_number: int, last_row=0,
