@@ -200,6 +200,22 @@ def copy_mc_info(h5in : tb.File, writer : Type[mc_info_writer], which_events : L
         pass
 
 
+def is_oldformat_file(file_name : str) -> bool:
+    """
+    Checks if the file type is pre 2020 or not
+
+    parameters
+    ----------
+    file_name : str
+                File name of the input file
+
+    return
+    ------
+    bool: True if MC.extents table found: pre-2020 format
+          False if MC.extents not found : 2020-- format
+    """
+    with tb.open_file(file_name) as h5in:
+        return hasattr(h5in.root, 'MC/extents')
 
 
 
