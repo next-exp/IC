@@ -354,6 +354,23 @@ def load_mcsensor_positions(file_name : str,
     else:
         sns_pos = load_dst(file_name, 'MC', 'sns_positions'   )
     return sns_pos
+
+
+def load_mcgenerators(file_name : str) -> pd.DataFrame:
+    """
+    Load the generator information to a pd.DataFrame
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing MC info.
+
+    returns
+    -------
+    pd.DataFrame with the generator information
+    available for the MC events in the file.
+    """
+    return load_dst(file_name, 'MC', 'generators')
 def load_mchits_df(file_name : str) -> pd.DataFrame:
     """
     Opens file and calls read_mchits_df
