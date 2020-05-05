@@ -313,6 +313,28 @@ def load_mchits_dfold(file_name : str) -> pd.DataFrame:
         return hits
 
 
+def cast_mchits_to_dict(hits_df: pd.DataFrame) -> Mapping[int, List[MCHit]]:
+    """
+    Casts the mchits dataframe to an
+    old style mapping.
+
+    paramerters
+    -----------
+    hits_df : pd.DataFrame
+              DataFrame containing event deposit information
+
+    returns
+    -------
+    hit_dict : Mapping
+               The same hit information cast into a dictionary
+               using MCHit objects.
+    """
+    hit_dict = {}
+    for evt, evt_hits in hits_df.groupby(level=0):
+        hit_dict[evt] = [MCHit( hit.iloc[0, :3].values,
+                               *hit.iloc[0, 3:].values)
+                         for _, hit in evt_hits.groupby(level=2)]
+    return hit_dict
 def load_mcparticles_df(file_name: str) -> pd.DataFrame:
     """
     Opens file and calls read_mcparticles_df
@@ -509,7 +531,7 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_n
 
 
 
-def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
+def _read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
     """Returns all hits in the event"""
     mc_info = get_mc_info(h5f)
     h5extents = mc_info.extents
