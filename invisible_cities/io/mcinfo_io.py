@@ -439,26 +439,95 @@ def load_mcparticles_dfold(file_name: str) -> pd.DataFrame:
         return parts
 
 
-
-
-
-
-
-def get_sensor_binning(file_name : str) -> Tuple:
+def get_sensor_binning(file_name : str) -> pd.DataFrame:
     """
     Looks in the configuration table of the
     input file and extracts the binning used
     for both types of sensitive detector.
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing MC info.
+
+    returns
+    -------
+    bins      : pd.DataFrame
+                DataFrame containing the sensor types
+                and the sampling width (binning) used
+                in full simulation.
     """
-    config   = pd.read_hdf(file_name, 'MC/configuration')
-    bins     = config[config.param_key.str.contains('time_binning')]
-    pmt_bin  = bins.param_value[bins.param_key.str.contains('Pmt')].iloc[0]
-    pmt_bin  = float(pmt_bin.split()[0]) * units_dict[pmt_bin.split()[1]]
-    sipm_bin = bins.param_value[bins.param_key.str.contains('SiPM')].iloc[0]
-    sipm_bin = float(sipm_bin.split()[0]) * units_dict[sipm_bin.split()[1]]
+    if is_oldformat_file(file_name):
+        return sensor_binning_old(file_name)
+    else:
+        return sensor_binning_new(file_name)
 
-    return pmt_bin, sipm_bin
 
+def sensor_binning_old(file_name : str) -> pd.DataFrame:
+    """
+    Returns the correct sampling used in nexus fullsim
+    in the case of a pre-2020 format file.
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing MC info.
+
+    returns
+    -------
+    bins      : pd.DataFrame
+                DataFrame containing the sensor types
+                and the sampling width (binning) used
+                in full simulation.
+    """
+    # Is a pre-Feb 2020 MC file
+    config         = load_dst(file_name, 'MC',
+                              'configuration').set_index('param_key')
+    bins           = config[config.index.str.contains('binning')]
+    bins.columns   = ['bin_width']
+    bins.index     = bins.index.rename('sns_name')
+    ## Protect against badly written old files
+    bins           = bins[bins.index.str.contains('Geom')]
+    ##
+    bins.index     = bins.index.str.split('/', expand=True).levels[2]
+    bins.bin_width = bins.bin_width.str.split(expand=True).apply(
+        lambda x: float(x[0]) * getattr(units, x[1]), axis=1)
+    return bins
+
+
+def sensor_binning_new(file_name : str) -> pd.DataFrame:
+    """
+    Returns the correct sampling used in nexus fullsim
+    in the case of a 2020-- format file.
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing MC info.
+
+    returns
+    -------
+    bins      : pd.DataFrame
+                DataFrame containing the sensor types
+                and the sampling width (binning) used
+                in full simulation.
+    """
+    sns_names      = load_dst(file_name, 'MC', 'sns_positions').sensor_name
+    if len(sns_names) == 0:
+        return pd.DataFrame(index=['sns_name'], columns=['bin_width'])
+    config         = load_dst(file_name, 'MC',
+                              'configuration').set_index('param_key')
+    ## In the configuration table the binning is named
+    ## <sensor type>_binning, adjust to search.
+    sns_binnings   = [nm + '_binning' for nm in sns_names.unique()]
+    bins           = config.loc[sns_binnings].copy()
+    bins.drop('file_index', axis=1, inplace=True, errors='ignore')
+    bins.columns   = ['bin_width']
+    bins.index     = bins.index.rename('sns_name')
+    bins.index     = bins.index.str.strip('_binning')
+    bins.bin_width = bins.bin_width.str.split(expand=True).apply(
+        lambda x: float(x[0]) * getattr(units, x[1]), axis=1)
+    return bins[~bins.index.duplicated()]
 
 def load_mcsensor_response_df(file_name : str,
                               db_file   : str,
