@@ -182,6 +182,71 @@ class mc_info_writer:
         self.generator_table.flush()
 
 
+def mc_writer(h5out : tb.file.File) -> Callable:
+    """
+    Writes the MC tables to the output file.
+
+    parameters
+    ----------
+    h5out : pytables file
+            the file to which the MC info is to be written
+
+    returns
+    -------
+    write_mctables : Callable
+        Function which writes to the file.
+    """
+    mcwriter_ = partial(df_writer         ,
+                        h5out      = h5out,
+                        group_name =  'MC')
+    def write_mctables(table_dict : Dict):
+        """
+        Writer function
+
+        parameters
+        ----------
+        table_dict : Dict
+                     Dictionary with key MCTableType
+                     and value pd.DataFrame with the
+                     information from the input file
+                     which has to be written.
+        """
+        first_indx = check_last_merge_index(h5out) + 1
+        for key, tbl in table_dict.items():
+            if (key is MCTableType.configuration or
+                key is MCTableType.event_mapping   ):
+                try:
+                    orig_indx = tbl.file_index.unique()
+                    new_indx  = np.arange(first_indx                 ,
+                                          first_indx + len(orig_indx))
+                    tbl.file_index.replace(orig_indx, new_indx, inplace=True)
+                except AttributeError:
+                    tbl['file_index'] = first_indx
+            mcwriter_(df=tbl, table_name=key.name)
+    return write_mctables
+
+
+def check_last_merge_index(h5out : tb.file.File) -> int:
+    """
+    Get the last file index used to index merged files
+    in the configuration table and mapping
+
+    parameters
+    ----------
+    h5out: pytables file
+           the file for output
+
+    returns
+    -------
+    indx: int
+          integer for the last saved file index
+    """
+    if 'MC' in h5out.root:
+        if 'event_mapping' in h5out.root.MC:
+            return h5out.root.MC.event_mapping.cols.file_index[-1]
+    return -1
+
+
 def read_mc_tables(file_in : str                        ,
                    evt_arr : Optional[np.ndarray] = None,
                    db_file : Optional[str]        = None,
