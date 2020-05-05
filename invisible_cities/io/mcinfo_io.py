@@ -253,6 +253,43 @@ def get_mc_tbl_list(file_name: str) -> List[MCTableType]:
         return [MCTableType[tbl.name] for tbl in mc_group]
 
 
+def get_event_numbers_in_file(file_name: str) -> np.ndarray:
+    """
+    Get a list of the event numbers in the file
+    based on the MC tables
+
+    parameters
+    ----------
+    file_name : str
+                File name of the input file
+
+    returns
+    -------
+    evt_arr   : np.ndarray
+                numpy array containing the list of all
+                event numbers in file.
+    """
+    with tb.open_file(file_name, 'r') as h5in:
+        if is_oldformat_file(file_name):
+            evt_list = h5in.root.MC.extents.cols.evt_number[:]
+        else:
+            evt_list = _get_list_of_events_new(h5in)
+        return evt_list
+
+
+def _get_list_of_events_new(h5in : tb.file.File) -> np.ndarray:
+    mc_tbls  = ['hits', 'particles', 'sns_response']
+    def try_unique_evt_itr(group, itr):
+        for elem in itr:
+            try:
+                yield np.unique(getattr(group, elem).cols.event_id)
+            except tb.exceptions.NoSuchNodeError:
+                pass
+
+    evt_list = list(try_unique_evt_itr(h5in.root.MC, mc_tbls))
+    if len(evt_list) == 0:
+        raise tb.exceptions.NoSuchNodeError
+    return np.unique(np.concatenate(evt_list)).astype(int)
 def load_mchits_df(file_name : str) -> pd.DataFrame:
     """
     Opens file and calls read_mchits_df
