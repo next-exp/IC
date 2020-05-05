@@ -371,6 +371,24 @@ def load_mcgenerators(file_name : str) -> pd.DataFrame:
     available for the MC events in the file.
     """
     return load_dst(file_name, 'MC', 'generators')
+
+
+def load_mcevent_mapping(file_name : str) -> pd.DataFrame:
+    """
+    Load the event mapping information into a pd.DataFrame
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing MC info.
+
+    returns
+    -------
+    pd.DataFrame with the mapping information between
+    configurations and files in case of a merged file.
+
+    """
+    return load_dst(file_name, 'MC', 'event_mapping')
 def load_mchits_df(file_name : str) -> pd.DataFrame:
     """
     Opens file and calls read_mchits_df
