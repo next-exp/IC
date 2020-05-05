@@ -200,13 +200,8 @@ def copy_mc_info(h5in : tb.File, writer : Type[mc_info_writer], which_events : L
         pass
 
 
-def load_mchits(file_name: str,
-                event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
 
-    with tb.open_file(file_name, mode='r') as h5in:
-        mchits_dict = read_mchit_info(h5in, event_range)
 
-    return mchits_dict
 
 
 def load_mchits_df(file_name : str) -> pd.DataFrame:
@@ -262,11 +257,7 @@ def read_mchits_df(h5in    : tb.file.File,
     return hits
 
 
-def load_mcparticles(file_name: str,
-                     event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, MCParticle]]:
 
-    with tb.open_file(file_name, mode='r') as h5in:
-        return read_mcinfo(h5in, event_range)
 
 
 def load_mcparticles_df(file_name: str) -> pd.DataFrame:
@@ -331,11 +322,7 @@ def read_mcparticles_df(h5in    : tb.file.File,
     return parts
 
 
-def load_mcsensor_response(file_name: str,
-                           event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Waveform]]:
 
-    with tb.open_file(file_name, mode='r') as h5in:
-        return read_mcsns_response(h5in, event_range)
 
 
 def get_sensor_binning(file_name : str) -> Tuple:
@@ -469,65 +456,6 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_n
 
 
 
-def read_mcinfo(h5f, event_range=(0, int(1e9))) -> Mapping[int, Mapping[int, Sequence[MCParticle]]]:
-    mc_info = get_mc_info(h5f)
-
-    h5extents = mc_info.extents
-
-    events_in_file = len(h5extents)
-
-    all_events = {}
-
-    for iext in range(*event_range):
-        if iext >= events_in_file:
-            break
-
-        current_event           = {}
-        evt_number              = h5extents[iext]['evt_number']
-        hit_rows, particle_rows, generator_rows = read_mcinfo_evt(mc_info, evt_number, iext)
-
-        for h5particle in particle_rows:
-            this_particle = h5particle['particle_indx']
-            current_event[this_particle] = MCParticle(h5particle['particle_name'].decode('utf-8','ignore'),
-                                                      h5particle['primary'],
-                                                      h5particle['mother_indx'],
-                                                      h5particle['initial_vertex'],
-                                                      h5particle['final_vertex'],
-                                                      h5particle['initial_volume'].decode('utf-8','ignore'),
-                                                      h5particle['final_volume'].decode('utf-8','ignore'),
-                                                      h5particle['momentum'],
-                                                      h5particle['kin_energy'],
-                                                      h5particle['creator_proc'].decode('utf-8','ignore'))
-
-        for h5hit in hit_rows:
-            ipart            = h5hit['particle_indx']
-            current_particle = current_event[ipart]
-
-            hit = MCHit(h5hit['hit_position'],
-                        h5hit['hit_time'],
-                        h5hit['hit_energy'],
-                        h5hit['label'].decode('utf-8','ignore'))
-
-            current_particle.hits.append(hit)
-
-        evt_number             = h5extents[iext]['evt_number']
-        all_events[evt_number] = current_event
-
-    return all_events
-
-
-def compute_mchits_dict(mcevents:Mapping[int, Mapping[int, MCParticle]]) -> Mapping[int, Sequence[MCHit]]:
-    """Returns all hits in the event"""
-    mchits_dict = {}
-    for event_no, particle_dict in mcevents.items():
-        hits = []
-        for particle_no in particle_dict.keys():
-            particle = particle_dict[particle_no]
-            hits.extend(particle.hits)
-        mchits_dict[event_no] = hits
-    return mchits_dict
-
-
 def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
     """Returns all hits in the event"""
     mc_info = get_mc_info(h5f)
@@ -552,88 +480,5 @@ def read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCH
             hits.append(hit)
 
         all_events[evt_number] = hits
-
-    return all_events
-
-
-def read_mcsns_response(h5f, event_range=(0, 1e9)) -> Mapping[int, Mapping[int, Waveform]]:
-
-    h5config = h5f.root.MC.configuration
-
-    bin_width_PMT  = None
-    bin_width_SiPM = None
-    for row in h5config:
-        param_name = row['param_key'].decode('utf-8','ignore')
-        if param_name.find('time_binning') >= 0:
-            param_value = row['param_value'].decode('utf-8','ignore')
-            numb, unit  = param_value.split()
-            if param_name.find('Pmt') > 0:
-                bin_width_PMT = float(numb) * units_dict[unit]
-            elif param_name.find('SiPM') >= 0:
-                bin_width_SiPM = float(numb) * units_dict[unit]
-
-
-    if bin_width_PMT is None:
-        raise SensorBinningNotFound
-    if bin_width_SiPM is None:
-        raise SensorBinningNotFound
-
-
-    h5extents   = h5f.root.MC.extents
-
-    try:
-        h5f.root.MC.waveforms[0]
-    except IndexError:
-        print('Error: this file has no sensor response information.')
-
-    h5waveforms = h5f.root.MC.waveforms
-
-    last_line_of_event = 'last_sns_data'
-    events_in_file     = len(h5extents)
-
-    all_events = {}
-
-    iwvf = 0
-    if event_range[0] > 0:
-        iwvf = h5extents[event_range[0]-1][last_line_of_event] + 1
-
-    for iext in range(*event_range):
-        if iext >= events_in_file:
-            break
-
-        current_event = {}
-
-        iwvf_end          = h5extents[iext][last_line_of_event]
-        current_sensor_id = h5waveforms[iwvf]['sensor_id']
-        time_bins         = []
-        charges           = []
-        while iwvf <= iwvf_end:
-            wvf_row   = h5waveforms[iwvf]
-            sensor_id = wvf_row['sensor_id']
-
-            if sensor_id == current_sensor_id:
-                time_bins.append(wvf_row['time_bin'])
-                charges.  append(wvf_row['charge'])
-            else:
-                bin_width = bin_width_PMT if current_sensor_id < 1000 else bin_width_SiPM
-                times     = np.array(time_bins) * bin_width
-
-                current_event[current_sensor_id] = Waveform(times, charges, bin_width)
-
-                time_bins = []
-                charges   = []
-                time_bins.append(wvf_row['time_bin'])
-                charges.append(wvf_row['charge'])
-
-                current_sensor_id = sensor_id
-
-            iwvf += 1
-
-        bin_width = bin_width_PMT if current_sensor_id < 1000 else bin_width_SiPM
-        times     = np.array(time_bins) * bin_width
-        current_event[current_sensor_id] = Waveform(times, charges, bin_width)
-
-        evt_number             = h5extents[iext]['evt_number']
-        all_events[evt_number] = current_event
 
     return all_events
