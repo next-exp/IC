@@ -313,6 +313,47 @@ def load_mcconfiguration(file_name : str) -> pd.DataFrame:
             '/', expand=True).apply(lambda x: x[2] + '_binning', axis=1)
         config.loc[binning_keys, 'param_key'] = new_names
     return config
+
+
+def load_mcsensor_positions(file_name : str,
+                            db_file   : Optional[str] = None,
+                            run_no    : Optional[int] = None) -> pd.DataFrame:
+    """
+    Load the sensor positions stored in the MC group
+    into a pd.DataFrame
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing MC info
+    db_file   : None or str
+                Name of the database to be used.
+                Only required for pre-2020 format files
+    run_no    : None or int
+                Run number to be used for database access.
+                Only required for pre-2020 format files
+
+    returns
+    -------
+    sns_pos   : pd.DataFrame
+                DataFrame containing information about
+                the positions and types of sensors in
+                the MC simulation.
+    """
+    if is_oldformat_file(file_name):
+        sns_pos = load_dst(file_name, 'MC', 'sensor_positions')
+        if sns_pos.shape[0] > 0:
+            ## Add a column to the DataFrame so all info
+            ## is present like in the new format
+            sns_names = get_sensor_binning(file_name).index
+            pmt_ids   = DB.DataPMT(db_file, run_no).SensorID
+            pmt_name  = sns_names.str.contains('Pmt')
+            pmt_pos   = sns_pos.sensor_id.isin(pmt_ids)
+            sns_pos.loc[pmt_pos, 'sensor_name'] = sns_names[pmt_name][0]
+            sns_pos.sensor_name.fillna(sns_names[~pmt_name][0], inplace=True)
+    else:
+        sns_pos = load_dst(file_name, 'MC', 'sns_positions'   )
+    return sns_pos
 def load_mchits_df(file_name : str) -> pd.DataFrame:
     """
     Opens file and calls read_mchits_df
