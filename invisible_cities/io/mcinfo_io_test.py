@@ -257,10 +257,10 @@ def test_cast_mchits_to_dict_same_as_old(mc_particle_and_hits_nexus_data):
 
     mchits_df   = load_mchits_df(efile)
     mchits_dict = cast_mchits_to_dict(mchits_df)
-    
+
     with tb.open_file(efile) as h5in:
         old_mchit_dict = _read_mchit_info(h5in)
-    
+
     assert np.all(mchits_dict.keys() == old_mchit_dict.keys())
     for old_hts, new_hts in zip(old_mchit_dict.values(), mchits_dict.values()):
         for old_hit, new_hit in zip(old_hts, new_hts):

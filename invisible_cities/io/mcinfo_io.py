@@ -459,7 +459,7 @@ def load_mchits_dfold(file_name : str) -> pd.DataFrame:
     ----------
     file_name : str
                 Name of the file containing MC info
-    
+
     returns
     -------
     hits : pd.DataFrame
@@ -727,6 +727,7 @@ def get_sensor_types(file_name : str) -> pd.DataFrame:
     sensor type names.
     !! Only valid for new format data, otherwise use
     !! database.
+    raises exception if old format file used
 
     parameters
     ----------
@@ -739,6 +740,8 @@ def get_sensor_types(file_name : str) -> pd.DataFrame:
               Sensor position info for the MC sensors
               which saw light in this simulation.
     """
+    if is_oldformat_file(file_name):
+        raise TypeError('Old format files not valid for get_sensor_types')
     sns_pos = load_dst(file_name, 'MC', 'sns_positions').copy()
     sns_pos.drop(['x', 'y', 'z'], axis=1, inplace=True)
     return sns_pos
