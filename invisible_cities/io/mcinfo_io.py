@@ -321,8 +321,8 @@ def load_mcconfiguration(file_name : str) -> pd.DataFrame:
     config           = load_dst(file_name, 'MC', 'configuration')
     if is_oldformat_file(file_name):
         binning_keys = config.param_key.str.contains('binning')
-        ## Split value and unit in binning rows and combin into
-        ## standard unit value using system_of_units
+        ## Change the binning parameter names so that
+        ## they match the format used in 2020 files
         new_names    = config[binning_keys].param_key.str.split(
             '/', expand=True).apply(lambda x: x[2] + '_binning', axis=1)
         config.loc[binning_keys, 'param_key'] = new_names
@@ -677,6 +677,8 @@ def sensor_binning_old(file_name : str) -> pd.DataFrame:
     bins           = bins[bins.index.str.contains('Geom')]
     ##
     bins.index     = bins.index.str.split('/', expand=True).levels[2]
+    ## Combine value and unit in configuration to get
+    ## binning in standard units.
     bins.bin_width = bins.bin_width.str.split(expand=True).apply(
         lambda x: float(x[0]) * getattr(units, x[1]), axis=1)
     return bins
@@ -712,6 +714,8 @@ def sensor_binning_new(file_name : str) -> pd.DataFrame:
     bins.columns   = ['bin_width']
     bins.index     = bins.index.rename('sns_name')
     bins.index     = bins.index.str.strip('_binning')
+    ## Combine value and unit in configuration to get
+    ## binning in standard units.
     bins.bin_width = bins.bin_width.str.split(expand=True).apply(
         lambda x: float(x[0]) * getattr(units, x[1]), axis=1)
     return bins[~bins.index.duplicated()]
