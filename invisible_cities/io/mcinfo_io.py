@@ -5,6 +5,8 @@ import pandas as pd
 from enum      import auto
 from functools import partial
 
+import warnings
+
 from .. reco            import        tbl_functions as   tbl
 from .. core            import      system_of_units as units
 from .. core.exceptions import NoParticleInfoInFile
@@ -356,10 +358,14 @@ def load_mcsensor_positions(file_name : str,
     if is_oldformat_file(file_name):
         sns_pos = load_dst(file_name, 'MC', 'sensor_positions')
         if sns_pos.shape[0] > 0:
+            if db_file is None or run_no is None:
+                warnings.warn(f' Database and file number needed', UserWarning)
+                return pd.DataFrame(columns=['sensor_id', 'sensor_name',
+                                             'x', 'y', 'z'])
             ## Add a column to the DataFrame so all info
             ## is present like in the new format
-            sns_names = get_sensor_binning(file_name).index
             pmt_ids   = DB.DataPMT(db_file, run_no).SensorID
+            sns_names = get_sensor_binning(file_name).index
             pmt_name  = sns_names.str.contains('Pmt')
             pmt_pos   = sns_pos.sensor_id.isin(pmt_ids)
             sns_pos.loc[pmt_pos, 'sensor_name'] = sns_names[pmt_name][0]
