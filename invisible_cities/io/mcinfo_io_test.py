@@ -90,9 +90,12 @@ def test_copy_mc_info_which_events_out_of_range(ICDATADIR, config_tmpdir):
 
     with tb.open_file(file_out, 'w') as h5out:
         writer = mc_writer(h5out)
-        with raises(IndexError):
-            copy_mc_info(file_in, writer, which_events      ,
-                         db_file = 'new', run_number = -6400)
+        copy_mc_info(file_in, writer, which_events      ,
+                     db_file = 'new', run_number = -6400)
+
+    ## Check that we can read the output but it's empty
+    hits = load_mchits_df(file_out)
+    assert hits.shape == (0, 6)
 
 
 def test_read_mc_tables(mc_particle_and_hits_nexus_data_new):
