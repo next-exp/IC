@@ -146,9 +146,6 @@ def read_mc_tables(file_in : str                        ,
     mctbls = get_mc_tbl_list(file_in)
     if evt_arr is None:
         evt_arr = get_event_numbers_in_file(file_in)
-    if (len(evt_arr) > 0 and
-        len(np.intersect1d(evt_arr, get_event_numbers_in_file(file_in))) == 0):
-        raise IndexError
     tbl_dict = {}
     for tbl in mctbls:
         if   tbl is MCTableType.hits                 :
