@@ -25,12 +25,12 @@ from .  mcinfo_io import _read_mchit_info
 
 from .. core               import system_of_units as units
 from .. core.exceptions    import NoParticleInfoInFile
+from .. core.testing_utils import assert_dataframes_equal
 from .. core.testing_utils import assert_MChit_equality
 
 from pytest import fixture
 from pytest import mark
 from pytest import raises
-parametrize = mark.parametrize
 
 
 def test_copy_mc_info_which_events_is_none(ICDATADIR, config_tmpdir):
@@ -96,6 +96,37 @@ def test_copy_mc_info_which_events_out_of_range(ICDATADIR, config_tmpdir):
     ## Check that we can read the output but it's empty
     hits = load_mchits_df(file_out)
     assert hits.shape == (0, 6)
+
+
+@mark.parametrize("fn_oldformat fn_newformat".split(),
+                  (("nexus_scint.oldformat.sim.h5"         ,
+                    "nexus_scint.newformat.sim.h5"         ),
+                   ("nexus_new_kr83m_fast.oldformat.sim.h5",
+                    "nexus_new_kr83m_fast.newformat.sim.h5"),
+                   ("nexus_new_kr83m_full.oldformat.sim.h5",
+                    "nexus_new_kr83m_full.newformat.sim.h5")))
+def test_copy_mc_info_same_results(ICDATADIR   , config_tmpdir,
+                                   fn_oldformat,  fn_newformat):
+    file_in_old  = os.path.join(ICDATADIR    ,    fn_oldformat)
+    file_in_new  = os.path.join(ICDATADIR    ,    fn_newformat)
+    file_out_old = os.path.join(config_tmpdir, "tmpOut_old.h5")
+    file_out_new = os.path.join(config_tmpdir, "tmpOut_new.h5")
+
+    with tb.open_file(file_out_old, 'w') as h5out:
+        writer = mc_writer(h5out)
+        copy_mc_info(file_in_old, writer, db_file='new', run_number=-6400)
+    with tb.open_file(file_out_new, 'w') as h5out:
+        writer = mc_writer(h5out)
+        copy_mc_info(file_in_new, writer)
+
+    old_tbls = read_mc_tables(file_out_old)
+    new_tbls = read_mc_tables(file_out_new)
+    assert len(old_tbls) == len(new_tbls)
+    for key in new_tbls.keys():
+        if key is not MCTableType.configuration:
+            print(key)
+            assert_dataframes_equal(new_tbls[key], old_tbls[key],
+                                    check_types=False)
 
 
 def test_read_mc_tables(mc_particle_and_hits_nexus_data_new):
