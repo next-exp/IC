@@ -206,21 +206,13 @@ def copy_mc_info(file_in      : str                       ,
         Run number to be used for database access.
         Only required in case of old format MC file
     """
-    try:
-        if which_events is None:
-            which_events = get_event_numbers_in_file(file_in)
-        tbl_dict = read_mc_tables(file_in, which_events, db_file, run_number)
-        if MCTableType.event_mapping not in tbl_dict.keys():
-            new_key = MCTableType.event_mapping
-            tbl_dict[new_key] = pd.DataFrame(which_events, columns=['event_id'])
-        writer(tbl_dict)
-    except tb.exceptions.NoSuchNodeError:
-        raise tb.exceptions.NoSuchNodeError(f"No MC info in file {file_in}.")
-    except IndexError:
-        raise IndexError(f"No events {which_events} in file {file_in}.")
-    except NoParticleInfoInFile as err:
-        print(f"Warning: {h5in}", err)
-        pass
+    if which_events is None:
+        which_events = get_event_numbers_in_file(file_in)
+    tbl_dict = read_mc_tables(file_in, which_events, db_file, run_number)
+    if MCTableType.event_mapping not in tbl_dict.keys():
+        new_key = MCTableType.event_mapping
+        tbl_dict[new_key] = pd.DataFrame(which_events, columns=['event_id'])
+    writer(tbl_dict)
 
 
 def is_oldformat_file(file_name : str) -> bool:
