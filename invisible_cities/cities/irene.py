@@ -19,7 +19,6 @@ This includes a number of tasks:
 import numpy  as np
 import tables as tb
 
-from .. types.ic_types import minmax
 from .. database       import load_db
 
 from .. reco                  import tbl_functions        as tbl
@@ -46,7 +45,10 @@ from .  components import calibrate_sipms
 from .  components import zero_suppress_wfs
 from .  components import WfType
 from .  components import wf_from_files
-
+from .  components import check_empty_pmap
+from .  components import check_nonempty_indices
+from .  components import get_number_of_active_pmts
+from .  components import build_pmap
 
 
 @city
@@ -157,44 +159,3 @@ def irene(files_in, file_out, compression, event_range, print_mod, detector_db, 
             copy_mc_info(files_in, h5out, result.evtnum_list)
 
         return result
-
-
-def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
-               s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2):
-    s1_params = dict(time        = minmax(min = s1_tmin,
-                                          max = s1_tmax),
-                    length       = minmax(min = s1_lmin,
-                                          max = s1_lmax),
-                    stride       = s1_stride,
-                    rebin_stride = s1_rebin_stride)
-
-    s2_params = dict(time        = minmax(min = s2_tmin,
-                                          max = s2_tmax),
-                    length       = minmax(min = s2_lmin,
-                                          max = s2_lmax),
-                    stride       = s2_stride,
-                    rebin_stride = s2_rebin_stride)
-
-    datapmt = load_db.DataPMT(detector_db, run_number)
-    pmt_ids = datapmt.SensorID[datapmt.Active.astype(bool)].values
-
-    def build_pmap(ccwf, s1_indx, s2_indx, sipmzs): # -> PMap
-        return pkf.get_pmap(ccwf, s1_indx, s2_indx, sipmzs,
-                            s1_params, s2_params, thr_sipm_s2, pmt_ids,
-                            pmt_samp_wid, sipm_samp_wid)
-
-    return build_pmap
-
-
-def get_number_of_active_pmts(detector_db, run_number):
-    datapmt = load_db.DataPMT(detector_db, run_number)
-    return np.count_nonzero(datapmt.Active.values.astype(bool))
-
-
-def check_nonempty_indices(s1_indices, s2_indices):
-    return s1_indices.size and s2_indices.size
-
-
-def check_empty_pmap(pmap):
-    return pmap.s1s + pmap.s2s
