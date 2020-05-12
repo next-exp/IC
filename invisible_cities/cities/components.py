@@ -18,6 +18,8 @@ import pandas as pd
 import inspect
 
 from .. dataflow                  import                  dataflow as  fl
+from .. dataflow.dataflow         import                      sink
+from .. dataflow.dataflow         import                      pipe
 from .. evm    .ic_containers     import                SensorData
 from .. evm    .event_model       import                   KrEvent
 from .. evm    .event_model       import                       Hit
@@ -47,6 +49,8 @@ from .. io                        import                 mcinfo_io
 from .. io     .pmaps_io          import                load_pmaps
 from .. io     .hits_io           import              hits_from_df
 from .. io     .dst_io            import                  load_dst
+from .. io     .event_filter_io   import       event_filter_writer
+from .. io     .pmaps_io          import               pmap_writer
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
 from .. types  .ic_types          import                       NNN
@@ -643,3 +647,52 @@ def waveform_integrator(limits):
     def integrate_wfs(wfs):
         return cf.spaced_integrals(wfs, limits)[:, ::2]
     return integrate_wfs
+
+
+# Compound components
+def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
+                  s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
+                  s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2,
+                  h5out, compression, sipm_rwf_to_cal=None):
+
+    # Filter events without signal over threshold
+    indices_pass    = fl.map(check_nonempty_indices,
+                             args = ("s1_indices", "s2_indices"),
+                             out = "indices_pass")
+    empty_indices   = fl.count_filter(bool, args = "indices_pass")
+
+    # Build the PMap
+    compute_pmap     = fl.map(build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
+                                         s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
+                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2),
+                              args = ("ccwfs", "s1_indices", "s2_indices", "sipm"),
+                              out  = "pmap")
+
+    # Filter events with zero peaks
+    pmaps_pass      = fl.map(check_empty_pmap, args = "pmap", out = "pmaps_pass")
+    empty_pmaps     = fl.count_filter(bool, args = "pmaps_pass")
+
+    # Define writers...
+    write_pmap_         = pmap_writer         (h5out, compression=compression)
+    write_indx_filter_  = event_filter_writer (h5out, "s12_indices", compression=compression)
+    write_pmap_filter_  = event_filter_writer (h5out, "empty_pmap" , compression=compression)
+
+    # ... and make them sinks
+    write_pmap         = sink(write_pmap_        , args=(        "pmap", "event_number"))
+    write_indx_filter  = sink(write_indx_filter_ , args=("event_number", "indices_pass"))
+    write_pmap_filter  = sink(write_pmap_filter_ , args=("event_number",   "pmaps_pass"))
+
+    fn_list = (indices_pass,
+               fl.branch(write_indx_filter),
+               empty_indices.filter,
+               sipm_rwf_to_cal,
+               compute_pmap,
+               pmaps_pass,
+               fl.branch(write_pmap_filter),
+               empty_pmaps.filter,
+               fl.branch(write_pmap))
+
+    # Filter out simp_rwf_to_cal if it is not set
+    compute_pmaps = pipe(*filter(None, fn_list))
+
+    return compute_pmaps, empty_indices, empty_pmaps
