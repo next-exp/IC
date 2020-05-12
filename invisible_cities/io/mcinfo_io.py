@@ -641,6 +641,9 @@ def get_sensor_binning(file_name : str) -> pd.DataFrame:
     """
     config         = load_mcconfiguration(file_name).set_index('param_key')
     bins           = config[config.index.str.contains('binning')].copy()
+    if bins.empty:
+        warnings.warn(f' No binning info available.', UserWarning)
+        return pd.DataFrame(columns=['sns_name', 'bin_width'])
     bins.drop('file_index', axis=1, inplace=True, errors='ignore')
     bins.columns   = ['bin_width']
     bins.index     = bins.index.rename('sns_name')
