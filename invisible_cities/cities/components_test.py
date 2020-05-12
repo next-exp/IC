@@ -9,6 +9,7 @@ from functools import partial
 
 from pytest import mark
 from pytest import raises
+from pytest import warns
 
 from .. core.configure  import EventRange as ER
 from .. core.exceptions import InvalidInputFileStructure
@@ -173,7 +174,9 @@ def test_copy_mc_info_noMC(ICDATADIR, config_tmpdir):
     file_in  = os.path.join(ICDATADIR, 'run_2983.h5')
     file_out = os.path.join(config_tmpdir, 'dummy_out.h5')
     with tb.open_file(file_out, "w") as h5out:
-        copy_mc_info([file_in], h5out, [], 'new', -6400)
+        with warns(UserWarning):
+            copy_mc_info([file_in], h5out, [], 'new', -6400)
+
 
 @mark.xfail
 def test_copy_mc_info_repeated_event_numbers(ICDATADIR, config_tmpdir):
