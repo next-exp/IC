@@ -289,7 +289,8 @@ def _get_list_of_events_new(h5in : tb.file.File) -> np.ndarray:
 
     evt_list = list(try_unique_evt_itr(h5in.root.MC, mc_tbls))
     if len(evt_list) == 0:
-        raise tb.exceptions.NoSuchNodeError
+        raise AttributeError("At least one of MC/hits, MC/particles, \
+        MC/sns_response must be present to use get_list_of_events.")
     return np.unique(np.concatenate(evt_list)).astype(int)
 
 
