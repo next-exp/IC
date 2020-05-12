@@ -611,8 +611,8 @@ def load_mcparticles_dfold(file_name: str) -> pd.DataFrame:
         parts.event_id = parts.event_id.astype(int)
 
         ## Add columns present in new format
-        missing_columns = ['final_momentum_x','final_momentum_y',
-                           'final_momentum_z',          'length']
+        missing_columns = ['final_momentum_x', 'final_momentum_y',
+                           'final_momentum_z', 'length', 'final_proc']
         parts = parts.reindex(parts.columns.tolist() + missing_columns, axis=1)
 
         # Setting the indexes
