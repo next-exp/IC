@@ -360,6 +360,10 @@ def load_mcsensor_positions(file_name : str,
             pmt_pos   = sns_pos.sensor_id.isin(pmt_ids)
             sns_pos.loc[pmt_pos, 'sensor_name'] = sns_names[pmt_name][0]
             sns_pos.sensor_name.fillna(sns_names[~pmt_name][0], inplace=True)
+        else:
+            ## So the column names and shape are the same as 2020 format
+            new_cols = sns_pos.columns.tolist() + ['sensor_name']
+            sns_pos = sns_pos.reindex(new_cols, axis=1)
     else:
         sns_pos = load_dst(file_name, 'MC', 'sns_positions'   )
     return sns_pos
