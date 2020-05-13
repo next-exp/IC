@@ -215,6 +215,11 @@ def copy_mc_info(file_in      : str                       ,
     writer(tbl_dict)
 
 
+def check_mc_present(file_name : str) -> bool:
+    with tb.open_file(file_name) as h5in:
+        return hasattr(h5in.root, 'MC')
+
+
 def is_oldformat_file(file_name : str) -> bool:
     """
     Checks if the file type is pre 2020 or not
