@@ -189,14 +189,15 @@ def copy_mc_info(files_in     : List[str],
     writer = mcinfo_io.mc_writer(h5out)
 
     for f in files_in:
-        try:
+        if mcinfo_io.check_mc_present(f):
             event_numbers_in_file = mcinfo_io.get_event_numbers_in_file(f)
             event_numbers_to_copy = list(evt for evt in event_numbers \
                                          if evt in event_numbers_in_file)
             mcinfo_io.copy_mc_info(f, writer, event_numbers_to_copy,
                                    db_file, run_number)
-        except tb.exceptions.NoSuchNodeError:
-            warnings.warn(f' File does not contain MC tables', UserWarning)
+        else:
+            warnings.warn(f' File does not contain MC tables.\
+             Use positve run numbers for data', UserWarning)
             continue
 
 
