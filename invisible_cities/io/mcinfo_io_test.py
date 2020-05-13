@@ -123,9 +123,15 @@ def test_copy_mc_info_same_results(ICDATADIR   , config_tmpdir,
     new_tbls = read_mc_tables(file_out_new)
     assert len(old_tbls) == len(new_tbls)
     for key in new_tbls.keys():
-        if key is not MCTableType.configuration:
-            print(key)
-            assert_dataframes_equal(new_tbls[key], old_tbls[key],
+        if key is MCTableType.configuration:
+            assert 'file_index' in old_tbls[key].columns
+            assert 'file_index' in new_tbls[key].columns
+        else:
+            ## Check dummy columns in old style (mcparticles)
+            old_notnan = old_tbls[key].notna().all()
+            assert new_tbls[key].notna().all().sum() == new_tbls[key].shape[1]
+            assert_dataframes_equal(new_tbls[key].loc[:, old_notnan],
+                                    old_tbls[key].loc[:, old_notnan],
                                     check_types=False)
 
 
