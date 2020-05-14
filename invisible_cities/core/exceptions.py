@@ -49,3 +49,6 @@ class TableMismatch(ICException):
 
 class TimeEvolutionTableMissing(ICException):
     pass
+
+class MCEventNotFound(ICException):
+    """ Requested event missing from input file """
