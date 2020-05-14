@@ -54,7 +54,6 @@ from .. io     .hits_io           import              hits_from_df
 from .. io     .dst_io            import                  load_dst
 from .. io     .event_filter_io   import       event_filter_writer
 from .. io     .pmaps_io          import               pmap_writer
-from .. io     .hits_io           import                 load_hits
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
 from .. types  .ic_types          import                       NNN
