@@ -25,7 +25,6 @@ from .. reco                  import tbl_functions        as tbl
 from .. reco                  import peak_functions       as pkf
 from .. core. random_sampling import NoiseSampler         as SiPMsNoiseSampler
 from .. core                  import system_of_units      as units
-from .. io  .        pmaps_io import          pmap_writer
 from .. io  .run_and_event_io import run_and_event_writer
 from .. io  .      trigger_io import       trigger_writer
 from .. io  . event_filter_io import  event_filter_writer
