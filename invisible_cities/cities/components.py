@@ -258,7 +258,7 @@ def check_nonempty_indices(s1_indices, s2_indices):
 
 
 def check_empty_pmap(pmap):
-    return pmap.s1s + pmap.s2s
+    return bool(pmap.s1s) or bool(pmap.s2s)
 
 
 def length_of(iterable):
