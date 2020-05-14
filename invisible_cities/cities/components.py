@@ -30,6 +30,7 @@ from .. evm    .event_model       import                    MCInfo
 from .. evm    .pmaps             import                SiPMCharge
 from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail
+from .. core   .exceptions        import           MCEventNotFound
 from .. core   .exceptions        import              NoInputFiles
 from .. core   .exceptions        import              NoOutputFile
 from .. core   .exceptions        import InvalidInputFileStructure
@@ -187,17 +188,21 @@ def copy_mc_info(files_in     : List[str],
 
     writer = mcinfo_io.mc_writer(h5out)
 
+    copied_events = []
     for f in files_in:
         if mcinfo_io.check_mc_present(f):
             event_numbers_in_file = mcinfo_io.get_event_numbers_in_file(f)
-            event_numbers_to_copy = list(evt for evt in event_numbers \
-                                         if evt in event_numbers_in_file)
+            event_numbers_to_copy = np.intersect1d(event_numbers        ,
+                                                   event_numbers_in_file)
             mcinfo_io.copy_mc_info(f, writer, event_numbers_to_copy,
                                    db_file, run_number)
+            copied_events.extend(event_numbers_to_copy)
         else:
             warnings.warn(f' File does not contain MC tables.\
              Use positve run numbers for data', UserWarning)
             continue
+    if len(np.setdiff1d(event_numbers, copied_events)) != 0:
+        raise MCEventNotFound(f' Some events not found in MC tables')
 
 
 # TODO: consider caching database
