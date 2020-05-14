@@ -7,16 +7,11 @@ from functools import partial
 
 import warnings
 
-from .. reco            import        tbl_functions as   tbl
 from .. core            import      system_of_units as units
 from .. core.exceptions import NoParticleInfoInFile
 
 from .. evm.event_model import                MCHit
 from .. evm.event_model import               MCInfo
-from .. evm.nh5         import      MCGeneratorInfo
-from .. evm.nh5         import         MCExtentInfo
-from .. evm.nh5         import            MCHitInfo
-from .. evm.nh5         import       MCParticleInfo
 from .. database        import              load_db as    DB
 from .  dst_io          import             load_dst
 from .  dst_io          import            df_writer
@@ -29,7 +24,6 @@ from typing import  Mapping
 from typing import Optional
 from typing import Sequence
 from typing import     Type
-from typing import    Union
 
 
 class MCTableType(AutoNameEnumBase):
