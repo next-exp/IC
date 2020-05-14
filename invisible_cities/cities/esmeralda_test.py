@@ -9,7 +9,7 @@ from .. core                 import system_of_units as units
 from .. core.configure       import configure
 from .. core.configure       import all         as all_events
 from .. io                   import dst_io      as dio
-from .. io.mcinfo_io         import load_mchits_df
+from .. io.mcinfo_io         import get_event_numbers_in_file
 from .  esmeralda            import esmeralda
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
@@ -90,7 +90,7 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
     with tb.open_file(PATH_OUT)  as h5out:
         event_info = get_event_info(h5out)
         assert length_of(event_info) == nevt_req
-        MC_num_evs = load_mchits_df(PATH_OUT).index.levels[0]
+        MC_num_evs = get_event_numbers_in_file(PATH_OUT)
         assert len(MC_num_evs) == nevt_req
 
 
