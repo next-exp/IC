@@ -5,8 +5,6 @@ import pandas as pd
 
 from pytest import mark
 
-from pandas.testing import assert_frame_equal
-
 from .. core                 import system_of_units as units
 from .. core.core_functions  import in_range
 from .. core.testing_utils   import assert_dataframes_close
@@ -201,7 +199,7 @@ def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
     penthesilea_evts        = load_mchits_df(penthesilea_output_path)
     true_evts               = KrMC_true_hits.hdst
 
-    assert_frame_equal(penthesilea_evts, true_evts)
+    assert_dataframes_close(penthesilea_evts, true_evts)
 
 
 def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
@@ -236,15 +234,14 @@ def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
                               hits_in1.index.levels[0]])
     first_event_out = 4
     evt_out = hits_out.index.levels[0]
-    print(evt_in, evt_out)
     assert all(evt_in[first_event_out:] == evt_out)
 
     all_hit_in      = pd.concat([hits_in1     ,      hits_in2])
-    pd.testing.assert_frame_equal(all_hit_in.loc[evt_in[first_event_out:]],
-                                  hits_out                                )
+    assert_dataframes_close(all_hit_in.loc[evt_in[first_event_out:]],
+                            hits_out                                )
     all_particle_in = pd.concat([particles_in1, particles_in2])
-    pd.testing.assert_frame_equal(all_particle_in.loc[evt_in[first_event_out:]],
-                                  particles_out                                )
+    assert_dataframes_close(all_particle_in.loc[evt_in[first_event_out:]],
+                            particles_out                                )
 
 
 def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):

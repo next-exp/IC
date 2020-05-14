@@ -8,6 +8,7 @@ from pytest import raises
 
 from .. core.configure     import                       all as all_events
 from .. core.configure     import                 configure
+from .. core.testing_utils import   assert_dataframes_close
 from .. core.testing_utils import    assert_tables_equality
 from .. reco               import             tbl_functions as tbl
 from .. io  .mcinfo_io     import get_event_numbers_in_file
@@ -71,8 +72,8 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
 
             hits_in  = load_mchits_df(PATH_IN )
             hits_out = load_mchits_df(PATH_OUT)
-            pd.testing.assert_frame_equal(hits_in.loc[0:nrequired-1],
-                                          hits_out                  )
+            assert_dataframes_close(hits_in.loc[0:nrequired-1],
+                                    hits_out                  )
 
 
 @mark.slow
@@ -154,9 +155,9 @@ def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
     assert all(evt_in == evt_out)
 
     all_hit_in      = pd.concat([hits_in1     ,      hits_in2])
-    pd.testing.assert_frame_equal(all_hit_in, hits_out)
+    assert_dataframes_close(all_hit_in, hits_out)
     all_particle_in = pd.concat([particles_in1, particles_in2])
-    pd.testing.assert_frame_equal(all_particle_in, particles_out)
+    assert_dataframes_close(all_particle_in, particles_out)
 
 
 def test_diomira_exact_result(ICDATADIR, output_tmpdir):

@@ -12,6 +12,7 @@ from .. core                import system_of_units as units
 from .. core.configure      import             all as all_events
 from .. core.configure      import configure
 from .. core.testing_utils  import exactly
+from .. core.testing_utils  import assert_dataframes_close
 from .. core.testing_utils  import assert_tables_equality
 from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
@@ -91,7 +92,7 @@ def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
 
     mcparticles_in  = load_mcparticles_df( PATH_IN)
     mcparticles_out = load_mcparticles_df(PATH_OUT)
-    pd.testing.assert_frame_equal(mcparticles_in, mcparticles_out)
+    assert_dataframes_close(mcparticles_in, mcparticles_out)
     with tb.open_file(PATH_IN , mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
 
@@ -257,9 +258,9 @@ def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
     assert all(evt_in == evt_out)
 
     all_hit_in      = pd.concat([hits_in1     ,      hits_in2])
-    pd.testing.assert_frame_equal(all_hit_in, hits_out)
+    assert_dataframes_close(all_hit_in, hits_out)
     all_particle_in = pd.concat([particles_in1, particles_in2])
-    pd.testing.assert_frame_equal(all_particle_in, particles_out)
+    assert_dataframes_close(all_particle_in, particles_out)
 
 
 def test_irene_trigger_type(config_tmpdir, ICDATADIR, s12params):
