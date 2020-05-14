@@ -493,9 +493,7 @@ def simulate_sipm_response(detector, run_number, wf_length, noise_cut, filter_pa
     pe_resolution = compute_pe_resolution(single_pe_rms, adc_to_pes)
 
     def simulate_sipm_response(sipmrd):
-        wfs = sf.simulate_sipm_response(0, sipmrd[np.newaxis],
-                                        noise_sampler, adc_to_pes,
-                                        pe_resolution)
+        wfs = sf.simulate_sipm_response(sipmrd, noise_sampler, adc_to_pes, pe_resolution)
         return wfm.noise_suppression(wfs, thresholds, filter_padding)
     return simulate_sipm_response
 
