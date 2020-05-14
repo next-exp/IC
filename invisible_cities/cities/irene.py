@@ -16,13 +16,9 @@ This includes a number of tasks:
     - Match the time window of the PMT pulse with those in the SiPMs.
     - Build the PMap object.
 """
-import numpy  as np
 import tables as tb
 
-from .. database       import load_db
-
 from .. reco                  import tbl_functions        as tbl
-from .. reco                  import peak_functions       as pkf
 from .. core.random_sampling  import NoiseSampler         as SiPMsNoiseSampler
 from .. core                  import system_of_units      as units
 from .. io  .run_and_event_io import run_and_event_writer

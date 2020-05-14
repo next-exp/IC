@@ -701,9 +701,9 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     empty_pmaps     = fl.count_filter(bool, args = "pmaps_pass")
 
     # Define writers...
-    write_pmap_         = pmap_writer         (h5out, compression=compression)
-    write_indx_filter_  = event_filter_writer (h5out, "s12_indices", compression=compression)
-    write_pmap_filter_  = event_filter_writer (h5out, "empty_pmap" , compression=compression)
+    write_pmap_         = pmap_writer        (h5out,                compression=compression)
+    write_indx_filter_  = event_filter_writer(h5out, "s12_indices", compression=compression)
+    write_pmap_filter_  = event_filter_writer(h5out, "empty_pmap" , compression=compression)
 
     # ... and make them sinks
     write_pmap         = sink(write_pmap_        , args=(        "pmap", "event_number"))

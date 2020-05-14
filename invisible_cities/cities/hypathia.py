@@ -20,8 +20,6 @@ import tables as tb
 
 from functools import partial
 
-from .. database       import load_db
-
 from .. reco                  import sensor_functions     as sf
 from .. reco                  import tbl_functions        as tbl
 from .. reco                  import peak_functions       as pkf
@@ -45,10 +43,7 @@ from .  components import zero_suppress_wfs
 from .  components import WfType
 from .  components import sensor_data
 from .  components import wf_from_files
-from .  components import check_empty_pmap
-from .  components import check_nonempty_indices
 from .  components import get_number_of_active_pmts
-from .  components import build_pmap
 from .  components import compute_and_write_pmaps
 from .  components import simulate_sipm_response
 from .  components import calibrate_sipms

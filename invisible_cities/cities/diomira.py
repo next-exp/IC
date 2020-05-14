@@ -33,7 +33,6 @@ import tables as tb
 from .. reco                    import    tbl_functions as tbl
 from .. reco                    import sensor_functions as sf
 from .. reco                    import   peak_functions as pkf
-from .. reco                    import    wfm_functions as wfm
 from .. sierpe                  import fee              as FE
 from .. io.rwf_io               import           rwf_writer
 from .. io.run_and_event_io     import run_and_event_writer
