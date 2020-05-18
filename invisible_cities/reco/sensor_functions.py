@@ -77,12 +77,12 @@ def simulate_pmt_response(event, pmtrd, adc_to_pes, pe_resolution, detector_db='
     return np.array(RWF), np.array(BLRX)
 
 
-def simulate_sipm_response(event, sipmrd, sipms_noise_sampler, sipm_adc_to_pes, pe_resolution):
+def simulate_sipm_response(sipmrd, sipms_noise_sampler, sipm_adc_to_pes, pe_resolution):
     """Add noise to the sipms with the NoiseSampler class and return
     the noisy waveform (in adc)."""
 
     ## Fluctuate according to charge resolution
-    sipm_fl = np.array(tuple(map(charge_fluctuation, sipmrd[event], pe_resolution)))
+    sipm_fl = np.array(tuple(map(charge_fluctuation, sipmrd, pe_resolution)))
 
     # return total signal in adc counts + noise sampled from pdf spectra
     return wfm.to_adc(sipm_fl, sipm_adc_to_pes) + sipms_noise_sampler.sample()

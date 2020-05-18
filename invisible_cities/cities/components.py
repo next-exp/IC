@@ -18,6 +18,8 @@ import pandas as pd
 import inspect
 
 from .. dataflow                  import                  dataflow as  fl
+from .. dataflow.dataflow         import                      sink
+from .. dataflow.dataflow         import                      pipe
 from .. evm    .ic_containers     import                SensorData
 from .. evm    .event_model       import                   KrEvent
 from .. evm    .event_model       import                       Hit
@@ -34,10 +36,12 @@ from .. core   .configure         import                EventRange
 from .. core   .configure         import          event_range_help
 from .. core   .random_sampling   import              NoiseSampler
 from .. reco                      import           calib_functions as  cf
+from .. reco                      import          sensor_functions as  sf
 from .. reco                      import   calib_sensors_functions as csf
 from .. reco                      import            peak_functions as pkf
 from .. reco                      import           pmaps_functions as pmf
 from .. reco                      import            hits_functions as hif
+from .. reco                      import             wfm_functions as wfm
 from .. reco   .xy_algorithms     import                    corona
 from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import               pmap_filter
@@ -47,9 +51,12 @@ from .. io                        import                 mcinfo_io
 from .. io     .pmaps_io          import                load_pmaps
 from .. io     .hits_io           import              hits_from_df
 from .. io     .dst_io            import                  load_dst
+from .. io     .event_filter_io   import       event_filter_writer
+from .. io     .pmaps_io          import               pmap_writer
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
 from .. types  .ic_types          import                       NNN
+from .. types  .ic_types          import                    minmax
 
 NoneType = type(None)
 
@@ -241,6 +248,19 @@ def get_event_info(h5in):
     return h5in.root.Run.events
 
 
+def get_number_of_active_pmts(detector_db, run_number):
+    datapmt = load_db.DataPMT(detector_db, run_number)
+    return np.count_nonzero(datapmt.Active.values.astype(bool))
+
+
+def check_nonempty_indices(s1_indices, s2_indices):
+    return s1_indices.size and s2_indices.size
+
+
+def check_empty_pmap(pmap):
+    return bool(pmap.s1s) or bool(pmap.s2s)
+
+
 def length_of(iterable):
     if   isinstance(iterable, tb.table.Table  ): return iterable.nrows
     elif isinstance(iterable, tb.earray.EArray): return iterable.shape[0]
@@ -379,6 +399,34 @@ def sensor_data(path, wf_type):
 
 ####### Transformers ########
 
+def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
+               s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
+               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2):
+    s1_params = dict(time        = minmax(min = s1_tmin,
+                                          max = s1_tmax),
+                    length       = minmax(min = s1_lmin,
+                                          max = s1_lmax),
+                    stride       = s1_stride,
+                    rebin_stride = s1_rebin_stride)
+
+    s2_params = dict(time        = minmax(min = s2_tmin,
+                                          max = s2_tmax),
+                    length       = minmax(min = s2_lmin,
+                                          max = s2_lmax),
+                    stride       = s2_stride,
+                    rebin_stride = s2_rebin_stride)
+
+    datapmt = load_db.DataPMT(detector_db, run_number)
+    pmt_ids = datapmt.SensorID[datapmt.Active.astype(bool)].values
+
+    def build_pmap(ccwf, s1_indx, s2_indx, sipmzs): # -> PMap
+        return pkf.get_pmap(ccwf, s1_indx, s2_indx, sipmzs,
+                            s1_params, s2_params, thr_sipm_s2, pmt_ids,
+                            pmt_samp_wid, sipm_samp_wid)
+
+    return build_pmap
+
+
 def calibrate_pmts(dbfile, run_number, n_MAU, thr_MAU):
     DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
     adc_to_pes = np.abs(DataPMT.adc_to_pes.values)
@@ -425,6 +473,30 @@ def zero_suppress_wfs(thr_csum_s1, thr_csum_s2):
         return (pkf.indices_and_wf_above_threshold(ccwf_sum_mau, thr_csum_s1).indices,
                 pkf.indices_and_wf_above_threshold(ccwf_sum    , thr_csum_s2).indices)
     return ccwfs_to_zs
+
+
+def compute_pe_resolution(rms, adc_to_pes):
+    return np.divide(rms                              ,
+                     adc_to_pes                       ,
+                     out   = np.zeros_like(adc_to_pes),
+                     where = adc_to_pes != 0          )
+
+
+def simulate_sipm_response(detector, run_number, wf_length, noise_cut, filter_padding):
+    datasipm      = load_db.DataSiPM (detector, run_number)
+    baselines     = load_db.SiPMNoise(detector, run_number)[-1]
+    noise_sampler = NoiseSampler(detector, run_number, wf_length, True)
+
+    adc_to_pes    = datasipm.adc_to_pes.values
+    thresholds    = noise_cut * adc_to_pes + baselines
+    single_pe_rms = datasipm.Sigma.values.astype(np.double)
+    pe_resolution = compute_pe_resolution(single_pe_rms, adc_to_pes)
+
+    def simulate_sipm_response(sipmrd):
+        wfs = sf.simulate_sipm_response(sipmrd, noise_sampler, adc_to_pes, pe_resolution)
+        return wfm.noise_suppression(wfs, thresholds, filter_padding)
+    return simulate_sipm_response
+
 
 ####### Filters ########
 
@@ -601,3 +673,52 @@ def waveform_integrator(limits):
     def integrate_wfs(wfs):
         return cf.spaced_integrals(wfs, limits)[:, ::2]
     return integrate_wfs
+
+
+# Compound components
+def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
+                  s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
+                  s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2,
+                  h5out, compression, sipm_rwf_to_cal=None):
+
+    # Filter events without signal over threshold
+    indices_pass    = fl.map(check_nonempty_indices,
+                             args = ("s1_indices", "s2_indices"),
+                             out = "indices_pass")
+    empty_indices   = fl.count_filter(bool, args = "indices_pass")
+
+    # Build the PMap
+    compute_pmap     = fl.map(build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
+                                         s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
+                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2),
+                              args = ("ccwfs", "s1_indices", "s2_indices", "sipm"),
+                              out  = "pmap")
+
+    # Filter events with zero peaks
+    pmaps_pass      = fl.map(check_empty_pmap, args = "pmap", out = "pmaps_pass")
+    empty_pmaps     = fl.count_filter(bool, args = "pmaps_pass")
+
+    # Define writers...
+    write_pmap_         = pmap_writer        (h5out,                compression=compression)
+    write_indx_filter_  = event_filter_writer(h5out, "s12_indices", compression=compression)
+    write_pmap_filter_  = event_filter_writer(h5out, "empty_pmap" , compression=compression)
+
+    # ... and make them sinks
+    write_pmap         = sink(write_pmap_        , args=(        "pmap", "event_number"))
+    write_indx_filter  = sink(write_indx_filter_ , args=("event_number", "indices_pass"))
+    write_pmap_filter  = sink(write_pmap_filter_ , args=("event_number",   "pmaps_pass"))
+
+    fn_list = (indices_pass,
+               fl.branch(write_indx_filter),
+               empty_indices.filter,
+               sipm_rwf_to_cal,
+               compute_pmap,
+               pmaps_pass,
+               fl.branch(write_pmap_filter),
+               empty_pmaps.filter,
+               fl.branch(write_pmap))
+
+    # Filter out simp_rwf_to_cal if it is not set
+    compute_pmaps = pipe(*filter(None, fn_list))
+
+    return compute_pmaps, empty_indices, empty_pmaps
