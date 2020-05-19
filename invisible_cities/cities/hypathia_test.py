@@ -27,8 +27,7 @@ def test_hypathia_exact_result(ICDATADIR, output_tmpdir):
     hypathia(**conf)
     np.random.set_state(original_random_state)
 
-    tables = (     "MC/extents"    ,      "MC/hits"      ,    "MC/particles", "MC/generators",
-                "PMAPS/S1"         ,   "PMAPS/S2"        , "PMAPS/S2Si"     ,
+    tables = (  "PMAPS/S1"         ,   "PMAPS/S2"        , "PMAPS/S2Si"     ,
                 "PMAPS/S1Pmt"      ,   "PMAPS/S2Pmt"     ,
                   "Run/events"     ,     "Run/runInfo"   ,
               "Trigger/events"     , "Trigger/trigger"   ,
