@@ -762,6 +762,7 @@ def load_mcsensors_dfold(file_name : str) -> pd.DataFrame:
                          how         = 'left')
     sns.evt_number.fillna(method='bfill', inplace=True)
     sns.evt_number = sns.evt_number.astype(int)
+    sns.index      = sns.index.astype(int)
     sns.rename(columns = {'evt_number': 'event_id'}, inplace=True)
     return sns
 
