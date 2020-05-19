@@ -16,6 +16,7 @@ from .  mcinfo_io import get_sensor_binning
 from .  mcinfo_io import get_sensor_types
 from .  mcinfo_io import get_mc_tbl_list
 from .  mcinfo_io import is_oldformat_file
+from .  mcinfo_io import load_mcsensor_positions
 from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import MCTableType
 from .  mcinfo_io import copy_mc_info
@@ -32,6 +33,7 @@ from .. core.testing_utils import assert_MChit_equality
 from pytest import fixture
 from pytest import mark
 from pytest import raises
+from pytest import warns
 
 
 def test_get_mc_tbl_list_bad_MC_table(ICDATADIR):
@@ -249,6 +251,13 @@ def test_mc_writer_oldformat_correct_output(mc_sensors_nexus_data,
     assert MCTableType.particles     in saved_tbls
     assert MCTableType.sns_positions in saved_tbls
     assert MCTableType.sns_response  in saved_tbls
+
+
+def test_load_mcsensor_positions_old_nodb(ICDATADIR):
+    file_in = os.path.join(ICDATADIR, "nexus_scint.oldformat.sim.h5")
+
+    with warns(UserWarning, match='Database and file number needed'):
+        load_mcsensor_positions(file_in)
 
 
 @fixture(scope = 'module')
