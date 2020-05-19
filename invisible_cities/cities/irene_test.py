@@ -184,9 +184,9 @@ def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
     nrequired = 10
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(run_number   = 0,
-                     files_in     = PATH_IN,
-                     file_out     = PATH_OUT,
+    conf.update(dict(run_number  = 6400,
+                     files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
                      event_range = (0, nrequired),
                      **unpack_s12params(s12params)))
 
