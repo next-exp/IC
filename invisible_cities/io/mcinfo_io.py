@@ -646,7 +646,7 @@ def get_sensor_binning(file_name : str) -> pd.DataFrame:
                 in full simulation.
     """
     config         = load_mcconfiguration(file_name).set_index('param_key')
-    bins           = config[config.index.str.contains('binning')].copy()
+    bins           = config[config.index.str.contains('binning')]
     if bins.empty:
         warnings.warn(f' No binning info available.', UserWarning)
         return pd.DataFrame(columns=['sns_name', 'bin_width'])
@@ -683,7 +683,7 @@ def get_sensor_types(file_name : str) -> pd.DataFrame:
     """
     if is_oldformat_file(file_name):
         raise TypeError('Old format files not valid for get_sensor_types')
-    sns_pos = load_dst(file_name, 'MC', 'sns_positions').copy()
+    sns_pos = load_dst(file_name, 'MC', 'sns_positions')
     sns_pos.drop(['x', 'y', 'z'], axis=1, inplace=True)
     return sns_pos
 
