@@ -15,6 +15,7 @@ from .  mcinfo_io import get_event_numbers_in_file
 from .  mcinfo_io import get_sensor_binning
 from .  mcinfo_io import get_sensor_types
 from .  mcinfo_io import get_mc_tbl_list
+from .  mcinfo_io import is_oldformat_file
 from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import MCTableType
 from .  mcinfo_io import copy_mc_info
@@ -56,6 +57,14 @@ def test_get_event_numbers_in_file_raises_error_bad_file(ICDATADIR):
 
     with raises(AttributeError):
         get_event_numbers_in_file(file_in)
+
+
+def test_is_oldformat_file(ICDATADIR):
+    file_in_old = os.path.join(ICDATADIR, "nexus_scint.oldformat.sim.h5")
+    file_in_new = os.path.join(ICDATADIR, "nexus_scint.newformat.sim.h5")
+
+    assert     is_oldformat_file(file_in_old)
+    assert not is_oldformat_file(file_in_new)
 
 
 def test_copy_mc_info_which_events_is_none(ICDATADIR, config_tmpdir):
