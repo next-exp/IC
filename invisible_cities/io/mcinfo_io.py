@@ -80,7 +80,10 @@ def mc_writer(h5out : tb.file.File) -> Callable:
                     tbl.file_index.replace(orig_indx, new_indx, inplace=True)
                 except AttributeError:
                     tbl['file_index'] = first_indx
-            mcwriter_(df=tbl, table_name=key.name)
+            col_indx = 'event' if hasattr(tbl, 'event') else None
+            str_len  = 300 if key is MCTableType.configuration else 100
+            mcwriter_(df             =     tbl, table_name       = key.name,
+                      str_col_length = str_len, columns_to_index = col_indx)
     return write_mctables
 
 
