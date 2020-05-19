@@ -40,6 +40,24 @@ def test_get_mc_tbl_list_bad_MC_table(ICDATADIR):
         get_mc_tbl_list(file_in)
 
 
+def test_get_event_numbers_in_file_correct(ICDATADIR):
+    file_in = os.path.join(ICDATADIR                                       ,
+                           "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.MCRD.h5")
+
+    with tb.open_file(file_in) as h5in:
+        true_evt_numbers = h5in.root.Run.events.cols.evt_number[:]
+
+    read_evt_numbers = get_event_numbers_in_file(file_in)
+    assert all(read_evt_numbers == true_evt_numbers)
+
+
+def test_get_event_numbers_in_file_raises_error_bad_file(ICDATADIR):
+    file_in = os.path.join(ICDATADIR, "bad_mc_tables.h5")
+
+    with raises(AttributeError):
+        get_event_numbers_in_file(file_in)
+
+
 def test_copy_mc_info_which_events_is_none(ICDATADIR, config_tmpdir):
     file_in  = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.sim.h5")
     file_out = os.path.join(config_tmpdir, "dummy_out.h5")
