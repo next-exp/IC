@@ -95,7 +95,7 @@ def test_copy_mc_info_which_events_out_of_range(ICDATADIR, config_tmpdir):
 
     ## Check that we can read the output but it's empty
     hits = load_mchits_df(file_out)
-    assert hits.shape == (0, 6)
+    assert hits.empty
 
 
 @mark.parametrize("fn_oldformat fn_newformat".split(),
@@ -105,8 +105,33 @@ def test_copy_mc_info_which_events_out_of_range(ICDATADIR, config_tmpdir):
                     "nexus_new_kr83m_fast.newformat.sim.h5"),
                    ("nexus_new_kr83m_full.oldformat.sim.h5",
                     "nexus_new_kr83m_full.newformat.sim.h5")))
-def test_copy_mc_info_same_results(ICDATADIR   , config_tmpdir,
-                                   fn_oldformat,  fn_newformat):
+def test_read_mc_tables_same_old_new(ICDATADIR   , config_tmpdir,
+                                     fn_oldformat,  fn_newformat):
+    file_in_old  = os.path.join(ICDATADIR, fn_oldformat)
+    file_in_new  = os.path.join(ICDATADIR, fn_newformat)
+
+    old_tbls = read_mc_tables(file_in_old, db_file='new', run_no=-6400)
+    new_tbls = read_mc_tables(file_in_new)
+    assert np.all(old_tbls.keys() == new_tbls.keys())
+    for key in new_tbls.keys():
+        if key is not MCTableType.configuration:
+            ## Check dummy columns in old style (mcparticles)
+            old_notnan = old_tbls[key].notna().all()
+            assert new_tbls[key].notna().all().sum() == new_tbls[key].shape[1]
+            assert_dataframes_equal(new_tbls[key].loc[:, old_notnan],
+                                    old_tbls[key].loc[:, old_notnan],
+                                    check_types=False)
+
+
+@mark.parametrize("fn_oldformat fn_newformat".split(),
+                  (("nexus_scint.oldformat.sim.h5"         ,
+                    "nexus_scint.newformat.sim.h5"         ),
+                   ("nexus_new_kr83m_fast.oldformat.sim.h5",
+                    "nexus_new_kr83m_fast.newformat.sim.h5"),
+                   ("nexus_new_kr83m_full.oldformat.sim.h5",
+                    "nexus_new_kr83m_full.newformat.sim.h5")))
+def test_copy_mc_info_same_result_old_new(ICDATADIR   , config_tmpdir,
+                                          fn_oldformat,  fn_newformat):
     file_in_old  = os.path.join(ICDATADIR    ,    fn_oldformat)
     file_in_new  = os.path.join(ICDATADIR    ,    fn_newformat)
     file_out_old = os.path.join(config_tmpdir, "tmpOut_old.h5")
@@ -121,7 +146,7 @@ def test_copy_mc_info_same_results(ICDATADIR   , config_tmpdir,
 
     old_tbls = read_mc_tables(file_out_old)
     new_tbls = read_mc_tables(file_out_new)
-    assert len(old_tbls) == len(new_tbls)
+    assert np.all(old_tbls.keys() == new_tbls.keys())
     for key in new_tbls.keys():
         if key is MCTableType.configuration:
             assert 'file_index' in old_tbls[key].columns
@@ -135,7 +160,7 @@ def test_copy_mc_info_same_results(ICDATADIR   , config_tmpdir,
                                     check_types=False)
 
 
-def test_read_mc_tables(mc_particle_and_hits_nexus_data_new):
+def test_read_mc_tables_correct_shape(mc_particle_and_hits_nexus_data_new):
     file_in, *_ = mc_particle_and_hits_nexus_data_new
 
     input_tbls  = get_mc_tbl_list          (file_in)
@@ -152,7 +177,8 @@ def test_read_mc_tables(mc_particle_and_hits_nexus_data_new):
         assert shp == tbl_dict[tbl].shape
 
 
-def test_mc_writer(mc_particle_and_hits_nexus_data_new, config_tmpdir):
+def test_mc_writer_contains_all_tables(mc_particle_and_hits_nexus_data_new,
+                                       config_tmpdir):
     file_in, *_ = mc_particle_and_hits_nexus_data_new
     file_out    = os.path.join(config_tmpdir, 'dummy_out.h5')
 
@@ -168,7 +194,8 @@ def test_mc_writer(mc_particle_and_hits_nexus_data_new, config_tmpdir):
     assert np.all(input_tbls == saved_tbls)
 
 
-def test_mc_writer_oldformat(mc_sensors_nexus_data, config_tmpdir):
+def test_mc_writer_oldformat_correct_output(mc_sensors_nexus_data,
+                                            config_tmpdir):
     file_in, *_ = mc_sensors_nexus_data
     file_out    = os.path.join(config_tmpdir, 'dummy_out.h5')
 
@@ -259,7 +286,7 @@ def mc_particle_and_hits_nexus_data_new(ICDATADIR):
     return efile, name, vi, vf, p, k_eng, X, Y, Z, E, t
 
 
-def test_load_mchits_df(mc_particle_and_hits_nexus_data):
+def test_load_mchits_df_oldformat(mc_particle_and_hits_nexus_data):
     efile, _, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
     assert_load_hits_good(efile, X, Y, Z, E, t)
 
@@ -307,7 +334,7 @@ def test_cast_mchits_to_dict_same_as_old(mc_particle_and_hits_nexus_data):
             assert_MChit_equality(old_hit, new_hit)
 
 
-def test_load_mcparticles_df(mc_particle_and_hits_nexus_data):
+def test_load_mcparticles_df_oldformat(mc_particle_and_hits_nexus_data):
     efile, name, vi, vf, p, k_eng, *_ = mc_particle_and_hits_nexus_data
     assert_load_particles_good(efile, name, vi, vf, p, k_eng)
 
