@@ -33,6 +33,13 @@ from pytest import mark
 from pytest import raises
 
 
+def test_get_mc_tbl_list_bad_MC_table(ICDATADIR):
+    file_in = os.path.join(ICDATADIR, "bad_mc_tables.h5")
+
+    with raises(KeyError):
+        get_mc_tbl_list(file_in)
+
+
 def test_copy_mc_info_which_events_is_none(ICDATADIR, config_tmpdir):
     file_in  = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.sim.h5")
     file_out = os.path.join(config_tmpdir, "dummy_out.h5")
