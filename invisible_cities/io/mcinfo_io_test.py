@@ -8,6 +8,7 @@ from os.path       import expandvars
 from numpy.testing import assert_allclose
 
 from .. database  import load_db
+from .  dst_io    import load_dst
 from .  mcinfo_io import load_mchits_df
 from .  mcinfo_io import cast_mchits_to_dict
 from .  mcinfo_io import load_mcparticles_df
@@ -260,6 +261,20 @@ def test_load_mcsensor_positions_old_nodb(ICDATADIR):
         load_mcsensor_positions(file_in)
 
 
+@mark.parametrize('file_name dbfile run_no'.split(),
+                  (("nexus_new_kr83m_full.oldformat.sim.h5", 'new', -6400),
+                   ("nexus_new_kr83m_full.newformat.sim.h5",  None,  None)))
+def test_load_mcsensor_positions_sensors_present(ICDATADIR, file_name,
+                                                 dbfile   ,    run_no):
+    file_in = os.path.join(ICDATADIR, file_name)
+
+    sensor_resp   = load_mcsensor_response_df(file_in, return_raw=True)
+    sensor_pos    = load_mcsensor_positions(file_in, dbfile, run_no)
+    all_sensorids = sensor_pos.sensor_id.unique()
+
+    assert sensor_resp.sensor_id.isin(all_sensorids).all()
+
+
 @fixture(scope = 'module')
 def mc_particle_and_hits_nexus_data_new(ICDATADIR):
     X = [-395.8089294433594 , -395.08221435546875, -394.3164367675781 ,
@@ -447,6 +462,36 @@ def check_get_sensor_binning_asserts(file_name, sensor_binning):
     assert isinstance(binning, pd.DataFrame)
     assert len(binning) == len(sensor_binning)
     assert np.all(np.isin(binning.bin_width.values, sensor_binning))
+
+
+@fixture(scope='module')
+def fullsim_responses(ICDATADIR):
+    file_in = file_in = os.path.join(ICDATADIR                              ,
+                                     'nexus_new_kr83m_full.newformat.sim.h5')
+
+    resp_df    = load_dst(file_in, 'MC', 'sns_response')
+    event_ids  = resp_df.event_id .unique()
+    sensor_ids = resp_df.sensor_id.unique()
+    time_bins  = resp_df.time_bin .values
+    sns_charge = resp_df.charge   .values
+    return event_ids, sensor_ids, time_bins, sns_charge
+
+
+@mark.parametrize('file_name',
+                  ("nexus_new_kr83m_full.oldformat.sim.h5",
+                   "nexus_new_kr83m_full.newformat.sim.h5"))
+def test_load_mcsensor_response_df_raw(ICDATADIR, fullsim_responses, file_name):
+    file_in = os.path.join(ICDATADIR, file_name)
+    evts, sensors, time_bins, charges = fullsim_responses
+
+    sns_resp = load_mcsensor_response_df(file_in, return_raw=True)
+
+    expected_cols = ['event_id', 'sensor_id','time_bin', 'charge']
+    assert sns_resp.columns  .isin(expected_cols).all()
+    assert sns_resp.event_id .isin(evts)         .all()
+    assert sns_resp.sensor_id.isin(sensors)      .all()
+    assert all(sns_resp.time_bin.values == time_bins)
+    assert all(sns_resp.charge  .values == charges  )
 
 
 def test_load_mcsensor_response_df_old(mc_sensors_nexus_data):
