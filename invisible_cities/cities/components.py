@@ -244,13 +244,6 @@ def get_sipm_wfs(h5in, wf_type):
     else                       : raise  TypeError(f"Invalid WfType: {type(wf_type)}")
 
 
-def get_mc_info_safe(h5in, run_number):
-    if run_number <= 0:
-        try                                 : return mcinfo_io.get_mc_info(h5in)
-        except tb.exceptions.NoSuchNodeError: pass
-    return
-
-
 def get_trigger_info(h5in):
     group            = h5in.root.Trigger if "Trigger" in h5in.root else ()
     trigger_type     = group.trigger if "trigger" in group else repeat(None)
