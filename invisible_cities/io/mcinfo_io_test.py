@@ -3,11 +3,8 @@ import numpy  as np
 import pandas as pd
 import tables as tb
 
-from glob          import glob
-from os.path       import expandvars
 from numpy.testing import assert_allclose
 
-from .. database  import load_db
 from .  dst_io    import load_dst
 from .  mcinfo_io import load_mchits_df
 from .  mcinfo_io import cast_mchits_to_dict
@@ -21,13 +18,11 @@ from .  mcinfo_io import load_mcsensor_positions
 from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import MCTableType
 from .  mcinfo_io import copy_mc_info
-from .  mcinfo_io import read_mcinfo_evt
 from .  mcinfo_io import read_mc_tables
 from .  mcinfo_io import mc_writer
 from .  mcinfo_io import _read_mchit_info
 
 from .. core               import system_of_units as units
-from .. core.exceptions    import NoParticleInfoInFile
 from .. core.testing_utils import assert_dataframes_equal
 from .. core.testing_utils import assert_MChit_equality
 
@@ -200,7 +195,6 @@ def test_copy_mc_info_same_result_old_new(ICDATADIR   , config_tmpdir,
 def test_read_mc_tables_correct_shape(mc_particle_and_hits_nexus_data_new):
     file_in, *_ = mc_particle_and_hits_nexus_data_new
 
-    input_tbls  = get_mc_tbl_list          (file_in)
     all_evt     = get_event_numbers_in_file(file_in)
 
     shape_dict  = {}
