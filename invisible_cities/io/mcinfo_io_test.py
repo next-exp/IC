@@ -57,6 +57,20 @@ def mc_particle_and_hits_nexus_data(ICDATADIR):
     return efile, name, vi, vf, p, Ep, nhits, X, Y, Z, E, t
 
 
+@fixture(scope='module')
+def mc_sensors_nexus_data(ICDATADIR):
+    pmt0_first       = (0, 1)
+    pmt0_last        = (670, 1)
+    pmt0_tot_samples = 54
+
+    sipm_id = 13016
+    sipm    = [(63, 3), (64, 2), (65, 1)]
+
+    efile = os.path.join(ICDATADIR, 'Kr83_full_nexus_v5_03_01_ACTIVE_7bar_1evt.sim.h5')
+
+    return efile, pmt0_first, pmt0_last, pmt0_tot_samples, sipm_id, sipm
+
+
 def test_get_mc_tbl_list_bad_MC_table(ICDATADIR):
     file_in = os.path.join(ICDATADIR, "bad_mc_tables.h5")
 
