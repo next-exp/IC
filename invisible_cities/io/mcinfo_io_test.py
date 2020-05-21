@@ -421,9 +421,14 @@ def assert_load_particles_good(efile, name, vi, vf, p, k_eng):
 
 @fixture(scope = 'module')
 def new_format_mcsensor_data(ICDATADIR):
-    sensor_binning = (0.003 * units.mus,
-                      0.010 * units.mus,
-                      0.001 * units.mus)
+    sensor_binning = pd.DataFrame([0.003 * units.mus,
+                                   0.010 * units.mus,
+                                   0.001 * units.mus],
+                                  columns=['bin_width'],
+                                  index=pd.Series(['FIBER_SENSOR',
+                                                   'PmtR11410'   ,
+                                                   'TP_SiPM'     ],
+                                                  name='sns_name'))
     evt_no         = 1280
     sns_list       = [20005  , 20016  , 57  , 51  ]
     charge_list    = [    1  ,     1  ,  1  ,  1  ]
@@ -434,7 +439,11 @@ def new_format_mcsensor_data(ICDATADIR):
 
 @fixture(scope = 'module')
 def old_format_mcsensor_data(mc_sensors_nexus_data):
-    sensor_binning = 100 * units.nanosecond, 1 * units.microsecond
+    sensor_binning = pd.DataFrame([100 * units.nanosecond ,
+                                     1 * units.microsecond],
+                                  columns=['bin_width'],
+                                  index=pd.Series(['PmtR11410', 'SiPM'],
+                                                  name='sns_name'      ))
     return mc_sensors_nexus_data[0], sensor_binning
 
 
@@ -453,9 +462,7 @@ def test_get_sensor_binning_new_format(new_format_mcsensor_data):
 def check_get_sensor_binning_asserts(file_name, sensor_binning):
     binning = get_sensor_binning(file_name)
 
-    assert isinstance(binning, pd.DataFrame)
-    assert len(binning) == len(sensor_binning)
-    assert np.all(np.isin(binning.bin_width.values, sensor_binning))
+    assert_dataframes_equal(binning, sensor_binning)
 
 
 @fixture(scope='module')
