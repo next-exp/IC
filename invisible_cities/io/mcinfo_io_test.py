@@ -32,6 +32,31 @@ from pytest import raises
 from pytest import warns
 
 
+@fixture(scope='module')
+def mc_particle_and_hits_nexus_data(ICDATADIR):
+    X     = [ -4.37347144e-02,  -2.50248108e-02,
+              -3.25887166e-02, -3.25617939e-02 ]
+    Y     = [ -1.37645766e-01,  -1.67959690e-01,
+              -1.80502057e-01, -1.80206522e-01 ]
+    Z     = [  2.49938721e+02,   2.49911240e+02,
+               2.49915543e+02,  2.49912308e+02 ]
+    E     = [ 0.02225098,  0.00891293,  0.00582698,  0.0030091 ]
+    t     = [ 0.00139908,  0.00198319,  0.00226054,  0.00236114 ]
+
+    vi    = np.array([        0.,          0.,          250.,          0.])
+    vf    = np.array([-3.25617939e-02,  -1.80206522e-01,
+                       2.49912308e+02,   2.36114440e-03])
+
+    p     = np.array([-0.05745485, -0.18082699, -0.08050126])
+
+    efile = os.path.join(ICDATADIR, 'electrons_40keV_z250_MCRD.h5')
+    Ep    = 0.04
+    name  = 'e-'
+    nhits = 4
+
+    return efile, name, vi, vf, p, Ep, nhits, X, Y, Z, E, t
+
+
 def test_get_mc_tbl_list_bad_MC_table(ICDATADIR):
     file_in = os.path.join(ICDATADIR, "bad_mc_tables.h5")
 
