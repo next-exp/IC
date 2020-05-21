@@ -1,5 +1,6 @@
 import time
 import sqlite3
+import pytest
 
 from os.path import join
 
@@ -145,6 +146,8 @@ def test_database_is_being_cached(db_fun, db):
 
 def test_frontend_mapping(db):
     """ Check the mapping has the expected shape etc """
+    if db.detector == "next100":
+        pytest.skip("NEXT100 not implemented yet")
 
     run_number = 6000
     fe_mapping, _ = DB.PMTLowFrequencyNoise(db.detector, run_number)
@@ -159,6 +162,8 @@ def test_frontend_mapping(db):
 def test_pmt_noise_frequencies(db):
     """ Check the magnitudes and frequencies
     are of the expected length """
+    if db.detector == "next100":
+        pytest.skip("NEXT100 not implemented yet")
     run_number = 5000
     _, frequencies = DB.PMTLowFrequencyNoise(db.detector, run_number)
 

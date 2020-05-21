@@ -670,7 +670,7 @@ def dbnext100():
 @pytest.fixture(scope='session',
                 params=[db_data('demopp' ,  3,  256, 3, 79),
                         db_data('new'    , 12, 1792, 3, 79),
-                        db_data('next100', 60, 6848, 8, 79)],
+                        db_data('next100', 60, 3584, 0, 0)],
                ids=["demo", "new", "next100"])
 def db(request):
     return request.param
