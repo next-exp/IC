@@ -1,5 +1,7 @@
 import os
 
+from dataclasses   import dataclass
+
 from pytest        import mark
 from numpy.testing import assert_almost_equal
 
@@ -14,6 +16,7 @@ from   .. cities.penthesilea   import penthesilea
 from   .. io                   import hits_io          as hio
 from   .  hits_functions       import merge_NN_hits
 from   .  hits_functions       import threshold_hits
+from   .  hits_functions       import number_of_hits_per_blob
 from hypothesis                import given
 from hypothesis                import settings
 from hypothesis.strategies     import lists
@@ -151,3 +154,52 @@ def test_threshold_hits_all_larger_than_th(hits, th):
     hits_thresh_cor  = threshold_hits(hits, th, on_corrected = True)
     assert (h.Q  > th or h.Q == NN for h in hits_thresh    )
     assert (h.Qc > th or h.Q == NN for h in hits_thresh_cor)
+
+@dataclass
+class hits_test:
+    Ec : float
+    X  : float
+    Y  : float
+    Z  : float
+
+@dataclass
+class hitsc_test:
+    hits : list
+
+def test_number_of_hits_per_blob_exact_result():
+    nh1_test    = 100
+    nh2_test    = 100
+    eb1_test    = 10
+    eb2_test    = 20
+    blob_pos1   =  1,  1,  1
+    blob_pos2   = -1, -1, -1
+    hitc_testl  = [hits_test(eb1_test, *blob_pos1)] * nh1_test
+    hitc_testl += [hits_test(eb2_test, *blob_pos2)] * nh2_test
+    hitc_test   = hitsc_test(hitc_testl)
+    blob_radius = 0.5
+    nh1, nh2, eb1, eb2 = number_of_hist_per_blob(hitc_test,
+                                                 blob_pos1,
+                                                 blob_pos2,
+                                                 blob_radius)
+    assert nh1 == nh1_test
+    assert nh2 == nh2_test
+    assert eb1 == nh1_test * eb1_test
+    assert eb2 == nh2_test * eb2_test
+
+def test_number_of_hits_per_blob_number_of_outputs_when_flagged():
+    nh1_test    = 100
+    nh2_test    = 100
+    eb1_test    = 10
+    eb2_test    = 20
+    blob_pos1   =  1,  1,  1
+    blob_pos2   = -1, -1, -1
+    hitc_testl  = [hits_test(eb1_test, *blob_pos1)] * nh1_test
+    hitc_testl += [hits_test(eb2_test, *blob_pos2)] * nh2_test
+    hitc_test   = hitsc_test(hitc_testl)
+    blob_radius = 0.5
+    result =  number_of_hist_per_blob(hitc_test,
+                                      blob_pos1,
+                                      blob_pos2,
+                                      blob_radius,
+                                      energy_out = False)
+    assert len(result) == 2
