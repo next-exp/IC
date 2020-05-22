@@ -219,7 +219,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
     file_in   = KrMC_hdst_filename
     file_out  = os.path.join(config_tmpdir, "exact_Kr_tracks_with_MC.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
-    true_out  =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST_no_filter.h5")
+    true_out  =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST_no_filter.NEWMC.h5")
     nevt_req  = all_events
     conf.update(dict(files_in                  = file_in                   ,
                      file_out                  = file_out                  ,
@@ -241,17 +241,16 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
     esmeralda(**conf)
 
 
-    ## tables = ["MC/extents", "MC/hits", "MC/particles",
-    ##           "Tracking/Tracks", "CHITS/lowTh", "CHITS/highTh",
-    ##           "Run/events", "Run/runInfo", "DST/Events", "Summary/Events",
-    ##           "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
     tables = ["Tracking/Tracks", "CHITS/lowTh", "CHITS/highTh",
               "Run/events", "Run/runInfo", "DST/Events", "Summary/Events",
-              "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
+              "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select",
+              "MC/event_mapping", "MC/generators",
+              "MC/hits"         ,  "MC/particles"]
 
     with tb.open_file(true_out)  as true_output_file:
         with tb.open_file(file_out) as   output_file:
             for table in tables:
+                assert hasattr(output_file.root, table)
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)

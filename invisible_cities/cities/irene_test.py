@@ -316,7 +316,7 @@ def test_irene_trigger_channels(config_tmpdir, ICDATADIR, s12params):
 def test_irene_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
     file_out    = os.path.join(output_tmpdir,                        "exact_result_irene.h5")
-    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
+    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.NEWMC.PMP.h5")
 
     conf = configure("irene invisible_cities/config/irene.conf".split())
     conf.update(dict(run_number   = -6340,
@@ -326,20 +326,17 @@ def test_irene_exact_result(ICDATADIR, output_tmpdir):
 
     irene(**conf)
 
-    ## tables = (     "MC/extents"    ,      "MC/hits"      ,    "MC/particles", "MC/generators",
-    ##             "PMAPS/S1"         ,   "PMAPS/S2"        , "PMAPS/S2Si"     ,
-    ##             "PMAPS/S1Pmt"      ,   "PMAPS/S2Pmt"     ,
-    ##               "Run/events"     ,     "Run/runInfo"   ,
-    ##           "Trigger/events"     , "Trigger/trigger"   ,
-    ##           "Filters/s12_indices", "Filters/empty_pmap")
     tables = (  "PMAPS/S1"         ,   "PMAPS/S2"        , "PMAPS/S2Si"     ,
                 "PMAPS/S1Pmt"      ,   "PMAPS/S2Pmt"     ,
                   "Run/events"     ,     "Run/runInfo"   ,
               "Trigger/events"     , "Trigger/trigger"   ,
-              "Filters/s12_indices", "Filters/empty_pmap")
+              "Filters/s12_indices", "Filters/empty_pmap",
+              "MC/event_mapping"   , "MC/generators"     ,
+              "MC/hits"            ,  "MC/particles"     )
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             for table in tables:
+                assert hasattr(output_file.root, table)
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
@@ -366,15 +363,12 @@ def test_irene_filters_empty_pmaps(ICDATADIR, output_tmpdir):
 
     assert cnt.full_pmap.n_failed == 3
 
-    ## tables = (     "MC/extents",      "MC/hits"   ,    "MC/particles", "MC/generators",
-    ##             "PMAPS/S1"     ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
-    ##             "PMAPS/S1Pmt"  ,   "PMAPS/S2Pmt"  ,
-    ##               "Run/events" ,     "Run/runInfo",
-    ##           "Trigger/events" , "Trigger/trigger")
-    tables = (  "PMAPS/S1"     ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
-                "PMAPS/S1Pmt"  ,   "PMAPS/S2Pmt"  ,
-                  "Run/events" ,     "Run/runInfo",
-              "Trigger/events" , "Trigger/trigger")
+    tables = (  "PMAPS/S1"      ,   "PMAPS/S2"     , "PMAPS/S2Si"     ,
+                "PMAPS/S1Pmt"   ,   "PMAPS/S2Pmt"  ,
+                  "Run/events"  ,     "Run/runInfo",
+              "Trigger/events"  , "Trigger/trigger",
+              "MC/event_mapping", "MC/generators"  ,
+              "MC/hits"         ,  "MC/particles"  )
     with tb.open_file(file_out) as      output_file:
         for table_name in tables:
             table = getattr(output_file.root, table_name)

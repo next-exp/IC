@@ -250,7 +250,7 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
     file_out    = os.path.join(output_tmpdir                ,
                                "exact_result_penthesilea.h5")
     true_output = os.path.join(ICDATADIR                                      ,
-                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5")
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.NEWMC.HDST.h5")
 
     conf = configure("penthesilea invisible_cities/config/penthesilea.conf".split())
     conf.update(dict(run_number   = -6340,
@@ -260,13 +260,12 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
 
     penthesilea(**conf)
 
-    ## tables = (     "MC/extents"     ,  "MC/hits", "MC/particles", "MC/generators",
-    ##              "RECO/Events"      , "DST/Events",
-    ##           "Filters/s12_selector")
-    tables = ("RECO/Events", "DST/Events", "Filters/s12_selector")
+    tables = ("RECO/Events"     , "DST/Events"   , "Filters/s12_selector",
+              "MC/event_mapping", "MC/generators", "MC/hits", "MC/particles")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             for table in tables:
+                assert hasattr(output_file.root, table)
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
@@ -277,7 +276,7 @@ def test_penthesilea_exact_result_noS1(ICDATADIR, output_tmpdir):
     file_out    = os.path.join(output_tmpdir                     ,
                                "exact_result_penthesilea_noS1.h5")
     true_output = os.path.join(ICDATADIR                                     ,
-                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_noS1.HDST.h5")
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_noS1.NEWMC.HDST.h5")
 
     conf = configure("penthesilea invisible_cities/config/penthesilea.conf".split())
     conf.update(dict(run_number   =      -6340,
@@ -289,13 +288,12 @@ def test_penthesilea_exact_result_noS1(ICDATADIR, output_tmpdir):
 
     penthesilea(**conf)
 
-    ## tables = (     "MC/extents"     ,  "MC/hits", "MC/particles", "MC/generators",
-    ##              "RECO/Events"      , "DST/Events",
-    ##           "Filters/s12_selector")
-    tables = ("RECO/Events", "DST/Events", "Filters/s12_selector")
+    tables = ("RECO/Events"     , "DST/Events"   , "Filters/s12_selector",
+              "MC/event_mapping", "MC/generators", "MC/hits", "MC/particles")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             for table in tables:
+                assert hasattr(output_file.root, table)
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
