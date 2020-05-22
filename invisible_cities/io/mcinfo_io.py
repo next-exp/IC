@@ -650,7 +650,9 @@ def get_sensor_binning(file_name : str) -> pd.DataFrame:
     if bins.empty:
         warnings.warn(f' No binning info available.', UserWarning)
         return pd.DataFrame(columns=['sns_name', 'bin_width'])
+    ## Drop duplicates in case of merged file
     bins           = bins.drop('file_index', axis=1, errors='ignore')
+    bins           = bins.loc[~bins.index.duplicated()]
     bins.columns   = ['bin_width']
     bins.index     = bins.index.rename('sns_name')
     bins.index     = bins.index.str.strip('_binning')
