@@ -48,6 +48,8 @@ from .. io.run_and_event_io import run_and_event_writer
 from .. io. event_filter_io import event_filter_writer
 from .. io.          dst_io import df_writer
 
+from .. reco.hits_functions import number_of_hits_per_blob
+
 
 types_dict_summary = OrderedDict({'event'     : np.int32  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
                                   'evt_ntrks' : np.int    , 'evt_nhits'  : np.int    , 'evt_x_avg'     : np.float64,
@@ -56,19 +58,22 @@ types_dict_summary = OrderedDict({'event'     : np.int32  , 'evt_energy' : np.fl
                                   'evt_r_min' : np.float64, 'evt_x_max'  : np.float64, 'evt_y_max'     : np.float64,
                                   'evt_z_max' : np.float64, 'evt_r_max'  : np.float64, 'evt_out_of_map': bool      })
 
-types_dict_tracks = OrderedDict({'event'           : np.int32  , 'trackID'       : np.int    , 'energy'      : np.float64,
-                                 'length'          : np.float64, 'numb_of_voxels': np.int    , 'numb_of_hits': np.int    ,
-                                 'numb_of_tracks'  : np.int    , 'x_min'         : np.float64, 'y_min'       : np.float64,
-                                 'z_min'           : np.float64, 'r_min'         : np.float64, 'x_max'       : np.float64,
-                                 'y_max'           : np.float64, 'z_max'         : np.float64, 'r_max'       : np.float64,
-                                 'x_ave'           : np.float64, 'y_ave'         : np.float64, 'z_ave'       : np.float64,
-                                 'r_ave'           : np.float64, 'extreme1_x'    : np.float64, 'extreme1_y'  : np.float64,
-                                 'extreme1_z'      : np.float64, 'extreme2_x'    : np.float64, 'extreme2_y'  : np.float64,
-                                 'extreme2_z'      : np.float64, 'blob1_x'       : np.float64, 'blob1_y'     : np.float64,
-                                 'blob1_z'         : np.float64, 'blob2_x'       : np.float64, 'blob2_y'     : np.float64,
-                                 'blob2_z'         : np.float64, 'eblob1'        : np.float64, 'eblob2'      : np.float64,
+types_dict_tracks = OrderedDict({'event'           : np.int32  , 'trackID'        : np.int    , 'energy'      : np.float64,
+                                 'length'          : np.float64, 'numb_of_voxels' : np.int    , 'numb_of_hits': np.int    ,
+                                 'numb_of_tracks'  : np.int    , 'x_min'          : np.float64, 'y_min'       : np.float64,
+                                 'z_min'           : np.float64, 'r_min'          : np.float64, 'x_max'       : np.float64,
+                                 'y_max'           : np.float64, 'z_max'          : np.float64, 'r_max'       : np.float64,
+                                 'x_ave'           : np.float64, 'y_ave'          : np.float64, 'z_ave'       : np.float64,
+                                 'r_ave'           : np.float64, 'extreme1_x'     : np.float64, 'extreme1_y'  : np.float64,
+                                 'extreme1_z'      : np.float64, 'extreme2_x'     : np.float64, 'extreme2_y'  : np.float64,
+                                 'extreme2_z'      : np.float64, 'blob1_x'        : np.float64, 'blob1_y'     : np.float64,
+                                 'blob1_z'         : np.float64, 'blob2_x'        : np.float64, 'blob2_y'     : np.float64,
+                                 'blob2_z'         : np.float64, 'eblob1'         : np.float64, 'eblob2'      : np.float64,
                                  'ovlp_blob_energy': np.float64,
-                                 'vox_size_x'      : np.float64, 'vox_size_y'    : np.float64, 'vox_size_z'  : np.float64})
+                                 'nhits_blob1_hth' : np.int    , 'nhits_blob2_hth': np.int    ,
+                                 'nhits_blob1_lth' : np.int    , 'nhits_blob2_lth': np.int    ,
+                                 'eblob1_lth'      : np.float64, 'eblob2_lth'     : np.float64,
+                                 'vox_size_x'      : np.float64, 'vox_size_y'     : np.float64, 'vox_size_z'  : np.float64})
 
 def hits_threshold_and_corrector(map_fname        : str  ,
                                  threshold_charge : float,
@@ -173,7 +178,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
     ----------
     A function that from a given HitCollection returns a pandas DataFrame with per track information.
     """
-    def create_extract_track_blob_info(hitc):
+    def create_extract_track_blob_info(hitc, hitc_low):
         df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
         if len(hitc.hits) > max_num_hits:
             return df, hitc, True
@@ -227,12 +232,27 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
 
                 e_blob1, e_blob2, hits_blob1, hits_blob2 = plf.blob_energies_and_hits(t, blob_radius)
                 overlap = float(sum(h.Ep for h in set(hits_blob1).intersection(set(hits_blob2))))
+
+                low_th_hits = number_of_hits_per_blob(hitc_low,
+                                                      blob_pos1,
+                                                      blob_pos2,
+                                                      blob_radius)
+                nh1_low_th, nh2_low_th, eb1_low_th, eb2_low_th = low_th_hits
+
+                nh1_high_th, nh2_high_th = number_of_hits_per_blob(hitc,
+                                                                   blob_pos1,
+                                                                   blob_pos2,
+                                                                   blob_radius,
+                                                                   energy_out = False)
+
                 list_of_vars = [hitc.event, tID, energy, length, numb_of_voxels,
                                 numb_of_hits, numb_of_tracks,
                                 min(x), min(y), min(z), min(r), max(x), max(y), max(z), max(r),
                                 *ave_pos, ave_r, *extr1_pos,
                                 *extr2_pos, *blob_pos1, *blob_pos2,
                                 e_blob1, e_blob2, overlap,
+                                nh1_high_th, nh2_high_th,
+                                nh1_low_th, nh2_low_th, eb1_low_th, eb2_low_th,
                                 vox_size_x, vox_size_y, vox_size_z]
 
                 df.loc[c] = list_of_vars
@@ -446,7 +466,7 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod, run_numbe
                                              out  = 'cor_Ep_high_th_hits')
 
     create_extract_track_blob_info  = fl.map(track_blob_info_creator_extractor(**paolina_params),
-                                             args = 'cor_Ep_high_th_hits',
+                                             args = ('cor_Ep_high_th_hits', 'cor_low_th_hits'),
                                              out  = ('topology_info', 'paolina_hits', 'out_of_map'))
     filter_events_topology          = fl.map(lambda x : len(x) > 0,
                                              args = 'topology_info',
