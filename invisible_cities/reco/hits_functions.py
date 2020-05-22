@@ -2,6 +2,7 @@ import numpy  as np
 from itertools   import compress
 from copy        import deepcopy
 from typing      import List
+from typing      import Tuple
 from .. evm  import event_model as evm
 from .. types.ic_types      import NN
 from .. types.ic_types      import xy
@@ -63,3 +64,52 @@ def threshold_hits(hits : List[evm.Hit], th : float, on_corrected : bool=False) 
                 x.E = es[i]
                 new_hits.append(x)
         return new_hits
+
+def number_of_hits_per_blob(hitc       : evm.HitCollection,
+                            blob_pos1  : Tuple[float, float, float],
+                            blob_pos2  : Tuple[float, float, float],
+                            blob_radius: float,
+                            energy_out : bool = True
+                            )-> Tuple[float, float, float, float]:
+    """
+    The functions computes the number of hits per blob and (if required) the
+    blob energy for a given hit collection taking the euclidian distance.
+    Parameters
+    ----------
+    hitc       : evm.HitCollection
+        Colection of hits
+    blob_pos1  : Tuple[float, float, float]
+        x, y, z tuple for the blob 1 position
+    blob_pos2  : Tuple[float, float, float]
+        x, y, z tuple for the blob 2 position
+    blob_radius: float
+        radius for the blob definition
+    energy_out : bool
+        if true, it also returns the blob energies
+
+    Returns
+    A tuple with the number of hits for both blobs and, if asked,
+    the energy of the blobs.
+    """
+    nhits1     = 0
+    eb1        = 0.
+    nhits2     = 0
+    eb2        = 0.
+
+    for hit in hitc.hits:
+        e_h   = hit.Ec if not np.isnan(hit.Ec) and hit.Ec>0 else 0.
+        pos_h = np.array([hit.X, hit.Y, hit.Z])
+        dist1 = np.linalg.norm(pos_h - blob_pos1)
+        dist2 = np.linalg.norm(pos_h - blob_pos2)
+
+        if dist1 <= blob_radius:
+            nhits1 += 1
+            eb1    += e_h
+        if dist2 <= blob_radius:
+            nhits2 += 1
+            eb2    += e_h
+
+    if energy_out:
+        return nhits1, nhits2, eb1, eb2
+    else:
+        return nhits1, nhits2
