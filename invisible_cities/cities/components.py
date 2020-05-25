@@ -10,6 +10,7 @@ from enum        import Enum
 from typing      import Callable
 from typing      import Iterator
 from typing      import Mapping
+from typing      import Generator
 from typing      import List
 from typing      import Dict
 from typing      import Tuple
@@ -335,6 +336,61 @@ def check_lengths(*iterables):
     nonnones = filter(lambda x: x is not None, lengths)
     if np.any(np.diff(list(nonnones)) != 0):
         raise InvalidInputFileStructure("Input data tables have different sizes")
+
+
+def mcsensors_from_file(paths     : List[str],
+                        db_file   :      str ,
+                        run_number:      int ) -> Generator:
+    """
+    Loads the nexus MC sensor information into
+    a pandas DataFrame using the IC function
+    load_mcsensor_response_df.
+    Returns info event by event as a
+    generator in the structure expected by
+    the dataflow.
+
+    paths      : List of strings
+                 List of input file names to be read
+    db_file    : string
+                 Name of detector database to be used
+    run_number : int
+                 Run number for database
+    """
+
+    pmt_ids  = load_db.DataPMT (db_file, run_number).SensorID
+
+    for file_name in paths:
+        sns_resp = mcinfo_io.load_mcsensor_response_df(file_name              ,
+                                                       return_raw = False     ,
+                                                       db_file    = db_file   ,
+                                                       run_no     = run_number)
+        sns_bins = mcinfo_io.get_sensor_binning(file_name)
+        if sns_resp.empty or sns_bins.empty:
+            raise MCEventNotFound(f'Sensor response info not in file {file_name}')
+        elif sns_bins.shape[0] != 2:
+          warnings.warn(f' File contains wrong number (not 2) of sensor types.\
+          Simulation should be for NEW, NEXT100 or DEMOPP', UserWarning)
+        ## Source only valid for NEW, NEXT100 & DEMOPP
+        ## and for flexible geometries with Pmt/SiPM separation of sensors
+        PMT_name_indx = sns_bins.index.str.contains('Pmt')
+        pmt_binwid    = sns_bins.bin_width[ PMT_name_indx]
+        sipm_binwid   = sns_bins.bin_width[~PMT_name_indx]
+
+        ## MC uses dummy timestamp for now
+        ## Only in case of evt splitting will be non zero
+        timestamp = 0
+
+        for evt in sns_resp.index.levels[0]:
+            pmt_indx  = sns_resp.loc[evt].index.isin(pmt_ids)
+            pmt_resp  = sns_resp.loc[evt][ pmt_indx]
+            sipm_resp = sns_resp.loc[evt][~pmt_indx]
+
+            yield dict(evt         = evt                ,
+                       timestamp   = timestamp          ,
+                       pmt_binwid  = pmt_binwid .iloc[0],
+                       sipm_binwid = sipm_binwid.iloc[0],
+                       pmt_resp    = pmt_resp           ,
+                       sipm_resp   = sipm_resp          )
 
 
 def wf_from_files(paths, wf_type):
