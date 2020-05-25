@@ -46,37 +46,6 @@ class Event:
     __repr__ = __str__
 
 
-class MCParticle:
-    """A MC Particle """
-
-    def __init__(self, particle_name, primary,
-                 mother_indx,
-                 initial_vertex, final_vertex,
-                 initial_volume, final_volume,
-                 momentum, energy, creator_proc):
-        self.name           = particle_name
-        self.primary        = primary
-        self.mother_indx    = mother_indx
-        self.initial_vertex = initial_vertex
-        self.final_vertex   = final_vertex
-        self.initial_volume = initial_volume
-        self.final_volume   = final_volume
-        self.p              = momentum
-        self.E              = energy
-        self.process        = creator_proc
-        self.hits           = []
-
-    def __str__(self):
-        return f""" MCParticle: name = {self.name}
-                    initial volume = {self.initial_volume}, final volume = {self.final_volume}
-                    kinetic energy = {self.E} MeV
-                    mother = {self.mother_indx}, creator process = {self.process}
-                    number of hits = {len(self.hits)}
-                    \n"""
-
-    __repr__ =  __str__
-
-
 class HitEnergy(AutoNameEnumBase):
     E        = auto()
     Ec       = auto()

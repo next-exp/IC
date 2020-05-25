@@ -7,7 +7,6 @@ from .. cities.components import city
 
 from . hits_io   import     hits_writer
 from . kdst_io   import       kr_writer
-from . mcinfo_io import  mc_info_writer
 from . pmaps_io  import     pmap_writer
 
 from . dst_io    import  df_writer
@@ -29,7 +28,6 @@ def _df_writer(h5out):
 @mark.parametrize("         writer  group      node      column        thing".split(),
                   [(   hits_writer, "RECO" , "Events"  , "event"     , "hits"),
                    (     kr_writer, "DST"  , "Events"  , "event"     , "kr"  ),
-                   (mc_info_writer, "MC"   , "extents" , "evt_number", "mc"  ),
                    (   pmap_writer, "PMAPS", "S1"      , "event"     , "s1"  ),
                    (   pmap_writer, "PMAPS", "S2"      , "event"     , "s2"  ),
                    (   pmap_writer, "PMAPS", "S2Si"    , "event"     , "s2si"),

@@ -9,6 +9,7 @@ from .. core                 import system_of_units as units
 from .. core.configure       import configure
 from .. core.configure       import all         as all_events
 from .. io                   import dst_io      as dio
+from .. io.mcinfo_io         import get_event_numbers_in_file
 from .  esmeralda            import esmeralda
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
@@ -32,7 +33,6 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
 
     with tb.open_file(PATH_OUT) as h5out:
         assert "MC"                      in h5out.root
-        assert "MC/extents"              in h5out.root
         assert "MC/hits"                 in h5out.root
         assert "MC/particles"            in h5out.root
         assert "Tracking/Tracks"         in h5out.root
@@ -90,7 +90,7 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
     with tb.open_file(PATH_OUT)  as h5out:
         event_info = get_event_info(h5out)
         assert length_of(event_info) == nevt_req
-        MC_num_evs = h5out.root.MC.extents[:]['evt_number']
+        MC_num_evs = get_event_numbers_in_file(PATH_OUT)
         assert len(MC_num_evs) == nevt_req
 
 
@@ -219,7 +219,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
     file_in   = KrMC_hdst_filename
     file_out  = os.path.join(config_tmpdir, "exact_Kr_tracks_with_MC.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
-    true_out  =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST_no_filter.h5")
+    true_out  =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST_no_filter.NEWMC.h5")
     nevt_req  = all_events
     conf.update(dict(files_in                  = file_in                   ,
                      file_out                  = file_out                  ,
@@ -241,14 +241,16 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
     esmeralda(**conf)
 
 
-    tables = ["MC/extents", "MC/hits", "MC/particles",
-              "Tracking/Tracks", "CHITS/lowTh", "CHITS/highTh",
+    tables = ["Tracking/Tracks", "CHITS/lowTh", "CHITS/highTh",
               "Run/events", "Run/runInfo", "DST/Events", "Summary/Events",
-              "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select"]
+              "Filters/low_th_select", "Filters/high_th_select", "Filters/topology_select",
+              "MC/event_mapping", "MC/generators",
+              "MC/hits"         ,  "MC/particles"]
 
     with tb.open_file(true_out)  as true_output_file:
         with tb.open_file(file_out) as   output_file:
             for table in tables:
+                assert hasattr(output_file.root, table)
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)

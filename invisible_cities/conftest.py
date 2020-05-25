@@ -14,7 +14,7 @@ from . io   . pmaps_io   import pmap_writer
 from . io   .   dst_io   import load_dst
 from . io   .  hits_io   import load_hits
 from . io   .  hits_io   import load_hits_skipping_NN
-from . io   .mcinfo_io   import load_mchits
+from . io   .mcinfo_io   import load_mchits_df
 from . types.ic_types    import NN
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
@@ -81,40 +81,6 @@ def mc_all_hits_data(krypton_MCRD_file):
     evt_number     = 2
     efile          = krypton_MCRD_file
     return efile, number_of_hits, evt_number
-
-@pytest.fixture(scope='session')
-def mc_particle_and_hits_nexus_data(ICDATADIR):
-    X     = [ -4.37347144e-02,  -2.50248108e-02, -3.25887166e-02, -3.25617939e-02 ]
-    Y     = [ -1.37645766e-01,  -1.67959690e-01, -1.80502057e-01, -1.80206522e-01 ]
-    Z     = [  2.49938721e+02,   2.49911240e+02,  2.49915543e+02,  2.49912308e+02 ]
-    E     = [ 0.02225098,  0.00891293,  0.00582698,  0.0030091 ]
-    t     = [ 0.00139908,  0.00198319,  0.00226054,  0.00236114 ]
-
-    vi    = np.array([        0.,          0.,          250.,          0.])
-    vf    = np.array([-3.25617939e-02,  -1.80206522e-01,   2.49912308e+02,   2.36114440e-03])
-
-    p     = np.array([-0.05745485, -0.18082699, -0.08050126])
-
-    efile = os.path.join(ICDATADIR, 'electrons_40keV_z250_MCRD.h5')
-    Ep    = 0.04
-    name  = 'e-'
-    nhits = 4
-
-    return efile, name, vi, vf, p, Ep, nhits, X, Y, Z, E, t
-
-
-@pytest.fixture(scope='session')
-def mc_sensors_nexus_data(ICDATADIR):
-    pmt0_first       = (0, 1)
-    pmt0_last        = (670, 1)
-    pmt0_tot_samples = 54
-
-    sipm_id = 13016
-    sipm    = [(63, 3), (64, 2), (65, 1)]
-
-    efile = os.path.join(ICDATADIR, 'Kr83_full_nexus_v5_03_01_ACTIVE_7bar_1evt.sim.h5')
-
-    return efile, pmt0_first, pmt0_last, pmt0_tot_samples, sipm_id, sipm
 
 
 def _get_pmaps_dict_and_event_numbers(filename):
@@ -618,8 +584,8 @@ def KrMC_hdst(ICDATADIR):
 def KrMC_true_hits(KrMC_pmaps_filename, KrMC_hdst):
     pmap_filename = KrMC_pmaps_filename
     hdst_filename = KrMC_hdst .file_info.filename
-    pmap_mctracks = load_mchits(pmap_filename)
-    hdst_mctracks = load_mchits(hdst_filename)
+    pmap_mctracks = load_mchits_df(pmap_filename)
+    hdst_mctracks = load_mchits_df(hdst_filename)
     return mcs_data(pmap_mctracks, hdst_mctracks)
 
 

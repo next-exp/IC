@@ -26,6 +26,8 @@ from typing      import List
 from enum        import auto
 
 from .  components import city
+from .  components import collect
+from .  components import copy_mc_info
 from .  components import print_every
 from .  components import cdst_from_files
 
@@ -44,7 +46,6 @@ from .. reco.deconv_functions  import deconvolve
 from .. reco.deconv_functions  import richardson_lucy
 from .. reco.deconv_functions  import InterpolationMethod
 
-from .. io.       mcinfo_io    import mc_info_writer
 from .. io.run_and_event_io    import run_and_event_writer
 from .. io.          dst_io    import df_writer
 from .. io.          dst_io    import load_dst
@@ -305,7 +306,7 @@ def deconv_writer(h5out, compression='ZLIB4'):
 
 
 @city
-def beersheba(files_in, file_out, compression, event_range, print_mod, run_number,
+def beersheba(files_in, file_out, compression, event_range, print_mod, detector_db, run_number,
               deconv_params = dict()):
     """
     The city corrects Penthesilea hits energy and extracts topology information.
@@ -404,28 +405,35 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, run_numbe
     event_count_out       = fl.spy_count()
     events_passed_no_hits = fl.count_filter(bool, args = "cdst_passed_no_hits")
 
+    evtnum_collect        = collect()
+
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
         # Define writers
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
-        write_mc_        = mc_info_writer(h5out) if run_number <= 0 else (lambda *_: None)
-
-        write_mc         = fl.sink(                   write_mc_, args = ("mc", "event_number"))
         write_deconv     = fl.sink(  deconv_writer(h5out=h5out), args =  "deconv_dst"         )
         write_summary    = fl.sink( summary_writer(h5out=h5out), args =  "summary"            )
-        return push(source = cdst_from_files(files_in),
-                    pipe   = pipe(fl.slice(*event_range, close_all=True)    ,
-                                  print_every(print_mod)                    ,
-                                  event_count_in.spy                        ,
-                                  cut_sensors                               ,
-                                  drop_sensors                              ,
-                                  filter_events_no_hits                     ,
-                                  events_passed_no_hits    .filter          ,
-                                  deconvolve_events                         ,
-                                  event_count_out.spy                       ,
-                                  fl.fork(write_mc        ,
-                                          write_deconv    ,
-                                          write_summary   ,
-                                          write_event_info))                ,
-                    result = dict(events_in   = event_count_in       .future,
-                                  events_out  = event_count_out      .future,
-                                  events_pass = events_passed_no_hits.future))
+        result = push(source = cdst_from_files(files_in),
+                      pipe   = pipe(fl.slice(*event_range, close_all=True)    ,
+                                    print_every(print_mod)                    ,
+                                    event_count_in.spy                        ,
+                                    cut_sensors                               ,
+                                    drop_sensors                              ,
+                                    filter_events_no_hits                     ,
+                                    events_passed_no_hits    .filter          ,
+                                    deconvolve_events                         ,
+                                    event_count_out.spy                       ,
+                                    fl.branch("event_number"     ,
+                                              evtnum_collect.sink)            ,
+                                    fl.fork(write_deconv    ,
+                                            write_summary   ,
+                                            write_event_info))                ,
+                      result = dict(events_in   = event_count_in       .future,
+                                    events_out  = event_count_out      .future,
+                                    evtnum_list = evtnum_collect       .future,
+                                    events_pass = events_passed_no_hits.future))
+
+        if run_number <= 0:
+            copy_mc_info(files_in, h5out, result.evtnum_list,
+                         detector_db, run_number)
+
+        return result

@@ -16,6 +16,7 @@ import tables as tb
 import numpy  as np
 import pandas as pd
 import inspect
+import warnings
 
 from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
@@ -29,6 +30,7 @@ from .. evm    .event_model       import                    MCInfo
 from .. evm    .pmaps             import                SiPMCharge
 from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail
+from .. core   .exceptions        import           MCEventNotFound
 from .. core   .exceptions        import              NoInputFiles
 from .. core   .exceptions        import              NoOutputFile
 from .. core   .exceptions        import InvalidInputFileStructure
@@ -165,8 +167,13 @@ def collect():
     return fl.reduce(append, initial=[])()
 
 
-def copy_mc_info(files_in : List[str], h5out: tb.File, event_numbers: List[int]) -> None:
-    """Copy to an output file the MC info of a list of selected events.
+def copy_mc_info(files_in     : List[str],
+                 h5out        : tb.File  ,
+                 event_numbers: List[int],
+                 db_file      :      str ,
+                 run_number   :      int ) -> None:
+    """
+    Copy to an output file the MC info of a list of selected events.
 
     Parameters
     ----------
@@ -175,20 +182,27 @@ def copy_mc_info(files_in : List[str], h5out: tb.File, event_numbers: List[int])
     file_out : tables.File
         The output h5 file.
     event_numbers : List[int]
-        List of event numbers for which the MC info is copied to the output file.
+        List of event numbers for which the MC info is copied
+        to the output file.
     """
 
-    writer = mcinfo_io.mc_info_writer(h5out)
+    writer = mcinfo_io.mc_writer(h5out)
 
+    copied_events = []
     for f in files_in:
-        with tb.open_file(f, "r") as h5in:
-            try:
-                event_numbers_in_file = h5in.root.MC.extents.cols.evt_number[:]
-                event_numbers_to_copy = list(evt for evt in event_numbers \
-                                             if evt in event_numbers_in_file)
-                mcinfo_io.copy_mc_info(h5in, writer, event_numbers_to_copy)
-            except tb.exceptions.NoSuchNodeError:
-                continue
+        if mcinfo_io.check_mc_present(f):
+            event_numbers_in_file = mcinfo_io.get_event_numbers_in_file(f)
+            event_numbers_to_copy = np.intersect1d(event_numbers        ,
+                                                   event_numbers_in_file)
+            mcinfo_io.copy_mc_info(f, writer, event_numbers_to_copy,
+                                   db_file, run_number)
+            copied_events.extend(event_numbers_to_copy)
+        else:
+            warnings.warn(f' File does not contain MC tables.\
+             Use positve run numbers for data', UserWarning)
+            continue
+    if len(np.setdiff1d(event_numbers, copied_events)) != 0:
+        raise MCEventNotFound(f' Some events not found in MC tables')
 
 
 # TODO: consider caching database
@@ -228,13 +242,6 @@ def get_sipm_wfs(h5in, wf_type):
     if   wf_type is WfType.rwf : return h5in.root.RD.sipmrwf
     elif wf_type is WfType.mcrd: return h5in.root.   sipmrd
     else                       : raise  TypeError(f"Invalid WfType: {type(wf_type)}")
-
-
-def get_mc_info_safe(h5in, run_number):
-    if run_number <= 0:
-        try                                 : return mcinfo_io.get_mc_info(h5in)
-        except tb.exceptions.NoSuchNodeError: pass
-    return
 
 
 def get_trigger_info(h5in):
@@ -345,7 +352,6 @@ def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
                 evts, _     = zip(*event_info[:])
                 bool_mask   = np.in1d(evts, cdst_df.event.unique())
                 event_info  = event_info[bool_mask]
-                mc_info     = get_mc_info_safe(h5in, run_number)
             except (tb.exceptions.NoSuchNodeError, IndexError):
                 continue
             check_lengths(event_info, cdst_df.event.unique())
@@ -353,7 +359,7 @@ def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
                 event_number, timestamp = evtinfo
                 yield dict(cdst    = cdst_df   .loc[cdst_df   .event==event_number],
                            summary = summary_df.loc[summary_df.event==event_number],
-                           mc=mc_info, run_number=run_number,
+                           run_number=run_number,
                            event_number=event_number, timestamp=timestamp)
             # NB, the monte_carlo writer is different from the others:
             # it needs to be given the WHOLE TABLE (rather than a
