@@ -4,6 +4,7 @@ import tables as tb
 from functools import  partial
 from typing    import Callable
 from typing    import     List
+from typing    import Optional
 from typing    import    Tuple
 
 from .. reco             import        tbl_functions as tbl
@@ -62,28 +63,45 @@ def rwf_writer(h5out           : tb.file.File          ,
 
 class EventMap(tb.IsDescription):
     """
-    Maps the output event number and
-    the original nexus event number
-    NEEDS TO BE REVIEWED FOR INTEGRATION
+    Map between event index and original
+    event.
     """
     evt_number = tb.Int32Col(shape=(), pos=0)
     nexus_evt  = tb.Int32Col(shape=(), pos=1)
 
 
 def buffer_writer(h5out, *,
-                  run_number : int          ,
-                  n_sens_eng : int          ,
-                  n_sens_trk : int          ,
-                  length_eng : int          ,
-                  length_trk : int          ,
-                  group_name : str =    None,
-                  compression: str = 'ZLIB4'
-                  ) -> Callable[[int, List, List, List], None]:
+                  run_number :          int           ,
+                  n_sens_eng :          int           ,
+                  n_sens_trk :          int           ,
+                  length_eng :          int           ,
+                  length_trk :          int           ,
+                  group_name : Optional[str] =    None,
+                  compression: Optional[str] = 'ZLIB4'
+                  ) -> Callable[[int, List, List], None]:
     """
     Generalised buffer writer which defines a raw waveform writer
-    for each type of sensor as well as an event info writer
-    with written event, timestamp and a mapping to the
-    nexus event number in case of event splitting.
+    for each type of sensor as well as an event info writer.
+    Each call gives a list of 'triggers' to be written as
+    separate events in the output.
+
+    parameters
+    ----------
+    run_number  : int
+                  Run number to be saved in runInfo.
+    n_sens_eng  : int
+                  Number of sensors in the energy plane.
+    n_sens_trk  : int
+                  Number of sensors in the tracking plane.
+    length_eng  : int
+                  Number of samples per waveform for energy plane.
+    length_trk  : int
+                  Number of samples per waveform for tracking plane.
+    group_name  : Optional[str] default None
+                  Group name within root where waveforms to be saved.
+                  Default directly in root
+    compression : Optional[str] default 'ZLIB4'
+                  Compression level for output file.
     """
 
     eng_writer = rwf_writer(h5out,
@@ -113,6 +131,19 @@ def buffer_writer(h5out, *,
     def write_buffers(nexus_evt  :        int ,
                       timestamps : List[  int],
                       events     : List[Tuple]) -> None:
+        """
+        Write run info and event waveforms to file.
+        
+        parameters
+        ----------
+        nexus_evt  :  int
+                     Event number from MC output file.
+        timestamps : List[int]
+                     List of event times
+        events     : List[Tuple]
+                     List of tuples containing the energy and
+                     tracking plane info for each identified 'trigger'.
+        """
 
         for i, (t_stamp, (eng, trk)) in enumerate(zip(timestamps, events)):
             ## The exact way to log MC event splitting
