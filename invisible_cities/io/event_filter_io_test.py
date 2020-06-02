@@ -58,7 +58,7 @@ def multiple_filter_tables_file_different_lengths(ICDATADIR):
 
 @fixture(scope="session")
 def multiple_filter_tables(request):
-    return request.getfuncargvalue(request.param)
+    return request.getfixturevalue(request.param)
 
 
 @mark.parametrize("table_names",
