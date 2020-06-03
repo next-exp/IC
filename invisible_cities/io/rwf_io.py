@@ -10,6 +10,7 @@ from typing    import    Tuple
 from .. evm .nh5         import           MCEventMap
 from .. reco             import        tbl_functions as tbl
 from .  run_and_event_io import run_and_event_writer
+from .  table_io         import           make_table
 
 
 def rwf_writer(h5out           : tb.file.File          ,
@@ -121,11 +122,8 @@ def buffer_writer(h5out, *,
                                                  compression=compression),
                             run_number = run_number                      )
 
-    evt_group = getattr(h5out.root, 'Run')
-    nexus_map = h5out.create_table(evt_group, "eventMap", MCEventMap,
-                                   "event & nexus evt \
-                                    for each index",
-                                   tbl.filters(compression))
+    nexus_map = make_table(h5out, 'Run', 'eventMap', MCEventMap,
+                           "event & nexus evt for each index", compression)
 
     def write_buffers(nexus_evt  :        int ,
                       timestamps : List[  int],
