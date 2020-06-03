@@ -7,6 +7,7 @@ from typing    import     List
 from typing    import Optional
 from typing    import    Tuple
 
+from .. evm .nh5         import           MCEventMap
 from .. reco             import        tbl_functions as tbl
 from .  run_and_event_io import run_and_event_writer
 
@@ -59,15 +60,6 @@ def rwf_writer(h5out           : tb.file.File          ,
         """
         rwf_table.append(waveform.reshape(1, n_sensors, waveform_length))
     return write_rwf
-
-
-class EventMap(tb.IsDescription):
-    """
-    Map between event index and original
-    event.
-    """
-    evt_number = tb.Int32Col(shape=(), pos=0)
-    nexus_evt  = tb.Int32Col(shape=(), pos=1)
 
 
 def buffer_writer(h5out, *,
@@ -130,7 +122,7 @@ def buffer_writer(h5out, *,
                             run_number = run_number                      )
 
     evt_group = getattr(h5out.root, 'Run')
-    nexus_map = h5out.create_table(evt_group, "eventMap", EventMap,
+    nexus_map = h5out.create_table(evt_group, "eventMap", MCEventMap,
                                    "event & nexus evt \
                                     for each index",
                                    tbl.filters(compression))
