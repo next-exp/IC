@@ -102,6 +102,13 @@ def buffer_writer(h5out, *,
                   Default directly in root
     compression : Optional[str] default 'ZLIB4'
                   Compression level for output file.
+
+    returns
+    -------
+    write_buffers : Callable
+                    A function which takes event information
+                    for the tracking and energy planes and
+                    the event timestamps and saves to file.
     """
 
     eng_writer = rwf_writer(h5out,
