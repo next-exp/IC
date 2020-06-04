@@ -46,7 +46,7 @@ class MCExtentInfo(tb.IsDescription):
 class MCEventMap(tb.IsDescription):
     """Map between event index and original event."""
     evt_number = tb.Int32Col(shape=(), pos=0)
-    nexus_evt  = tb.Int32Col(shape=(), pos=1)
+    sub_evt    = tb.Int32Col(shape=(), pos=1)
 
 
 class MCHitInfo(tb.IsDescription):

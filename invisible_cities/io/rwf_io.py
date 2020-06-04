@@ -147,8 +147,8 @@ def buffer_writer(h5out, *,
             ## still to be decided.
             run_and_event(event_number=nexus_evt, timestamp=t_stamp)
             mrow = nexus_map.row
-            mrow["evt_number"]  = i
-            mrow["nexus_evt"]   = nexus_evt
+            mrow["evt_number"] = nexus_evt
+            mrow[   "sub_evt"] = i
             mrow.append()
             ##
 
