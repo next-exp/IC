@@ -43,6 +43,12 @@ class MCExtentInfo(tb.IsDescription):
     last_particle = tb.UInt64Col(pos=2)
 
 
+class MCEventMap(tb.IsDescription):
+    """Map between event index and original event."""
+    evt_number = tb.Int32Col(shape=(), pos=0)
+    sub_evt    = tb.Int32Col(shape=(), pos=1)
+
+
 class MCHitInfo(tb.IsDescription):
     """Stores the simulated hits as metadata using Pytables.
     """
