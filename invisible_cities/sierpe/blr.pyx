@@ -3,7 +3,6 @@ cimport numpy as np
 from scipy import signal as SGN
 
 cpdef deconvolve_signal(double [:] signal_daq,
-                        int    n_baseline             = 28000,
                         double coeff_clean            = 2.905447E-06,
                         double coeff_blr              = 1.632411E-03,
                         double thr_trigger            =     5,
@@ -17,12 +16,9 @@ cpdef deconvolve_signal(double [:] signal_daq,
     In this version the recovered signal and the accumulator are
     always being charged. At the same time, the accumulator is being
     discharged when there is no signal. This avoids runoffs
-    The baseline is computed using a window of 700 mus (by default)
-    which should be good for Na and Kr
     """
 
     cdef double coef = coeff_blr
-    cdef int nm = n_baseline
     cdef double thr_acum = thr_trigger / coef
     cdef int len_signal_daq = len(signal_daq)
 
@@ -30,15 +26,6 @@ cpdef deconvolve_signal(double [:] signal_daq,
     cdef double [:] acum     = np.zeros(len_signal_daq, dtype=np.double)
 
     cdef int j
-    cdef double baseline = 0
-
-    for j in range(0,nm):
-        baseline += signal_daq[j]
-    baseline /= nm
-
-    # reverse sign of signal and subtract baseline
-    for j in range(0,len_signal_daq):
-        signal_daq[j] = baseline - signal_daq[j]
 
     # compute noise
     cdef double noise =  0
@@ -84,48 +71,3 @@ cpdef deconvolve_signal(double [:] signal_daq,
                 j = 0
     # return recovered signal
     return np.asarray(signal_r)
-
-
-cpdef deconv_pmt(np.ndarray[np.int16_t, ndim=2] pmtrwf,
-                 double [:]                     coeff_c,
-                 double [:]                     coeff_blr,
-                 list                           pmt_active             =    [],
-                 int                            n_baseline             = 28000,
-                 double                         thr_trigger            =     5,
-                 int                            accum_discharge_length =  5000):
-    """
-    Deconvolve all the PMTs in the event.
-    :param pmtrwf: array of PMTs holding the raw waveform
-    :param coeff_c:     cleaning coefficient
-    :param coeff_blr:   deconvolution coefficient
-    :param pmt_active:  list of active PMTs (by id number). An empt list
-                        implies that all PMTs are active
-    :param n_baseline:  number of samples taken to compute baseline
-    :param thr_trigger: threshold to start the BLR process
-    
-    :returns: an array with deconvoluted PMTs. If PMT is not active
-              wvfs are removed.
-    """
-
-    cdef int NPMT = pmtrwf.shape[0]
-    cdef int NWF  = pmtrwf.shape[1]
-    cdef double [:, :] signal_i = pmtrwf.astype(np.double)
-    cdef double [:]    signal_r = np.zeros(NWF, dtype=np.double)
-    CWF = []
-
-    cdef list PMT = list(range(NPMT))
-    if len(pmt_active) > 0:
-        PMT = pmt_active
-
-    cdef int pmt
-    for pmt in PMT:
-        signal_r = deconvolve_signal(signal_i[pmt],
-                                     n_baseline             = n_baseline,
-                                     coeff_clean            = coeff_c[pmt],
-                                     coeff_blr              = coeff_blr[pmt],
-                                     thr_trigger            = thr_trigger,
-                                     accum_discharge_length = accum_discharge_length)
-
-        CWF.append(signal_r)
-
-    return np.array(CWF)
