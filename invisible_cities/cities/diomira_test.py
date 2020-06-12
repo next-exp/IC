@@ -10,10 +10,14 @@ from .. core.configure     import                       all as all_events
 from .. core.configure     import                 configure
 from .. core.testing_utils import   assert_dataframes_close
 from .. core.testing_utils import    assert_tables_equality
+from .. database           import                   load_db
 from .. reco               import             tbl_functions as tbl
 from .. io  .mcinfo_io     import get_event_numbers_in_file
 from .. io  .mcinfo_io     import            load_mchits_df
 from .. io  .mcinfo_io     import       load_mcparticles_df
+
+from .. core                import fit_functions as fitf
+from .. core.core_functions import shift_to_bin_centers
 
 from .  diomira import diomira
 
@@ -204,3 +208,40 @@ def test_diomira_can_fix_random_seed(output_tmpdir):
     conf.update(dict(random_seed = 123),
                 file_out     = file_out)
     diomira(**conf)
+
+
+## to run the following test, use the --runslow option with pytest
+@mark.veryslow
+def test_diomira_reproduces_singlepe(ICDATADIR, output_tmpdir):
+    file_in  = os.path.join(ICDATADIR    ,     'single_pe_pmts.h5')
+    file_out = os.path.join(output_tmpdir, 'single_pe_elec_sim.h5')
+
+    run_no = 7951
+    nevt   =  400
+    conf   = configure("diomira invisible_cities/config/diomira.conf".split())
+    conf.update(dict(files_in     = file_in ,
+                     file_out     = file_out,
+                     run_number   =   run_no,
+                     event_range  =     nevt,
+                     print_mod    =      100,
+                     trigger_type =     None,
+                     random_seed  =     1847))
+    diomira(**conf)
+
+    pmt_gain = load_db.DataPMT('new', run_no).adc_to_pes.values
+    with tb.open_file(file_out) as h5saved:
+        pmt_signal  = h5saved.root.RD.pmtblr
+
+        pmt_sum_adc = np.sum(h5saved.root.RD.pmtblr, axis=2)
+        
+        bins        = np.arange(-50, 50, 0.5)
+        bin_centres = np.repeat(shift_to_bin_centers(bins)[np.newaxis, :],
+                                len(pmt_gain), 0)
+        gain_diff   = pmt_gain[:, np.newaxis] - pmt_sum_adc.T
+        histos      = [np.histogram(diffs, bins=bins)[0] for diffs in gain_diff]
+        seeds       = [(x.sum(), x.mean(), x.std(ddof=1)) for x in histos]
+        fits        = tuple(map(fitf.fit, [fitf.gauss]*len(pmt_gain),
+                                bin_centres, histos, seeds))
+        ## show the mean is within error of reproducing 1 pe ADC
+        for fit_res in fits:
+            assert np.abs(fit_res.values[1]) < fit_res.errors[1]
