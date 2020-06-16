@@ -330,7 +330,7 @@ def test_std_handle_empty_empty_input():
     assert np.isnan(core.std_handle_empty([]))
 
 
-@given(arrays(float, 10, floats(min_value=-1e5, max_value=1e5)))
+@given(arrays(float, 10, elements=floats(min_value=-1e5, max_value=1e5)))
 def test_shift_to_bin_centers(x):
     x_shifted = core.shift_to_bin_centers(x)
     truth     = [np.mean(x[i:i+2]) for i in range(x.size-1)]

@@ -19,7 +19,7 @@ def arrays_of_positive_numbers(draw):
     _strategies     = {int: integers, float: floats}
     _type, strategy = draw(sampled_from(list(_strategies.items())))
     size            = draw(integers(1, 10))
-    return draw(arrays(_type, size, strategy(0, 100)))
+    return draw(arrays(_type, size, elements=strategy(0, 100)))
 
 
 @mark.parametrize("mean", np.linspace(0.1, 3, 3))

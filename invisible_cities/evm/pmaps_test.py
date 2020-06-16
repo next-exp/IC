@@ -41,9 +41,9 @@ def sensor_responses(draw, n_samples=None, subtype=None, ids=None):
     n_sensors   = draw(integers(1,  5)) if       ids is None else len(ids)
     n_samples   = draw(integers(1, 50)) if n_samples is None else n_samples
     shape       = n_sensors, n_samples
-    all_wfs     = draw(arrays(float,     shape, floats  (wf_min, wf_max)))
+    all_wfs     = draw(arrays(float,     shape, elements = floats  (wf_min, wf_max)))
     if     ids is None:
-        ids     = draw(arrays(  int, n_sensors, integers(0, 1e3), unique=True))
+        ids     = draw(arrays(  int, n_sensors, elements = integers(0, 1e3), unique=True))
     if subtype is None:
         subtype = draw(sampled_from((PMTResponses, SiPMResponses)))
     args        = np.sort(ids), all_wfs
@@ -64,7 +64,7 @@ def peaks(draw, subtype=None, pmt_ids=None, with_sipms=True):
         _, sipm_r = draw(sensor_responses(nsamples, SiPMResponses))
 
     times      = draw(arrays(float, nsamples,
-                             floats(min_value=0, max_value=1e3),
+                             elements = floats(min_value=0, max_value=1e3),
                              unique = True).map(sorted))
 
     bin_widths = np.array([1])
