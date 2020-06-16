@@ -37,7 +37,7 @@ def test_timefunc(capfd):
     core.timefunc(sleep)(time)
 
     out, err = capfd.readouterr()
-    time_measured = re.search('\d+\.\d+', out).group(0)
+    time_measured = re.search(r'\d+\.\d+', out).group(0)
     time_measured = float(time_measured)
     np.isclose(time, time_measured)
 
