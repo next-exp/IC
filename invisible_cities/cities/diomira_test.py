@@ -170,7 +170,7 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
     file_out    = os.path.join(output_tmpdir                                  ,
                                "exact_result_diomira.h5"                      )
     true_output = os.path.join(ICDATADIR                                      ,
-                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5" )
+                               "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.CRWF.h5")
 
     conf = configure("diomira invisible_cities/config/diomira.conf".split())
     conf.update(dict(run_number   = -6340,
@@ -186,12 +186,8 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
     diomira(**conf)
     np.random.set_state(original_random_state)
 
-    ## tables = (     "MC/extents",  "MC/hits"   , "MC/particles", "MC/generators",
-    ##                "RD/pmtrwf" ,  "RD/pmtblr" , "RD/sipmrwf"  ,
-    ##               "Run/events" , "Run/runInfo",
-    ##           "Filters/trigger")
-    tables = (     "RD/pmtrwf" ,  "RD/pmtblr" , "RD/sipmrwf"  ,
-                  "Run/events" , "Run/runInfo",
+    tables = ("RD/pmtrwf"      ,  "RD/pmtblr" , "RD/sipmrwf",
+              "Run/events"     , "Run/runInfo",
               "Filters/trigger")
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
