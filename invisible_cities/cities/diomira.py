@@ -159,7 +159,7 @@ def simulate_pmt_response(detector, run_number):
         rwf, blr = sf.simulate_pmt_response(0, pmtrd[np.newaxis],
                                             adc_to_pes, pe_resolution,
                                             detector, run_number)
-        return rwf.astype(np.int16), blr.astype(np.int16)
+        return np.round(rwf).astype(np.int16), np.round(blr).astype(np.int16)
     return simulate_pmt_response
 
 
