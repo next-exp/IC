@@ -29,7 +29,7 @@ f_mc = 1 / (1 * units.ns)
 f_LPF1 =  3 * units.MHZ
 f_LPF2 = 10 * units.MHZ
 ADC_TO_PES_LPF = 24.1  # After LPF, comes out from spe area
-ADC_TO_PES     = 18.71
+ADC_TO_PES     = 16.241
 OFFSET = 2500  # offset adc
 CEILING = 4096  # ceiling of adc
 
