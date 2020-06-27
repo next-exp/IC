@@ -22,3 +22,11 @@ install:
 
 script:
   - HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par
+
+
+before_install:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install git-lfs; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then git lfs install;      fi
+
+before_script:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then git lfs pull; fi
