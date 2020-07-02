@@ -1,3 +1,9 @@
+# To override the default python version:
+#
+#   nix-shell shell.nix --argstr py-version 36
+#
+{ py-version ? "37" }:
+
 # To update `commit-id` go to https://status.nixos.org/, which lists the latest
 # commit that passes all the tests for any release. Unless there is an
 # overriding reason, pick the latest stable NixOS release, at the time of
@@ -6,7 +12,7 @@ let
   commit-id = "f1a79c86358c5464c64b4fad00fca07a10e62a74";
   nixpkgs-url = "https://github.com/nixos/nixpkgs/archive/${commit-id}.tar.gz";
   pkgs = import (builtins.fetchTarball { url = nixpkgs-url; }) {};
-  python = pkgs.python37;
+  python = builtins.getAttr ("python" + py-version) pkgs;
   pypkgs = python.pkgs;
   local = {
     # pytest-instafail was unavailable in nixpkgs at time of writing
@@ -23,31 +29,34 @@ let
 
   command = pkgs.writeShellScriptBin;
 
+  mkPkgList = (ps: [
+      ps.cython
+      ps.jupyter
+      ps.jupyterlab
+      ps.matplotlib
+      ps.networkx
+      ps.notebook
+      ps.numpy
+      ps.pandas
+      ps.seaborn
+      ps.pymysql
+      ps.tables
+      ps.scipy
+      ps.sphinx
+      ps.tornado
+      ps.pytest
+      ps.flaky
+      ps.hypothesis
+      ps.pytest_xdist
+      local.pytest-instafail
+    ]);
+
 in
 
 pkgs.mkShell {
   pname = "invisible-cities";
-  buildInputs = [
+  buildInputs = (mkPkgList pypkgs) ++ [
     pkgs.git
-    pypkgs.cython
-    pypkgs.jupyter
-    pypkgs.jupyterlab
-    pypkgs.matplotlib
-    pypkgs.networkx
-    pypkgs.notebook
-    pypkgs.numpy
-    pypkgs.pandas
-    pypkgs.seaborn
-    pypkgs.pymysql
-    pypkgs.tables
-    pypkgs.scipy
-    pypkgs.sphinx
-    pypkgs.tornado
-    pypkgs.pytest
-    pypkgs.flaky
-    pypkgs.hypothesis
-    pypkgs.pytest_xdist
-    local.pytest-instafail
 
     (command "ic-compile"  "python setup.py build_ext --inplace")
     (command "ic-test"     "pytest --instafail --no-success-flaky-report")
