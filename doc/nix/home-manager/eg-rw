@@ -1,0 +1,14 @@
+Imagine this is some real configuration file for some real package.
+
+Home manager makes this file available in your home directory via a symbolic
+link to
+
+  $HOME/my-home-manager/eg-rw
+
+This is more flexible than the read-only version:
+
++ You can tweak its contents without having to rerun `home-manager switch`.
++ External programs can modify this configuration file.
+
+This more flexible, but less safe: third parties may modify your configuration
+without you noticing.

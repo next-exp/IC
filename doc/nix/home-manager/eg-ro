@@ -1,0 +1,15 @@
+Imagine this is some real configuration file for some real package.
+
+Home manager makes this file available in your home directory in read-only form.
+The only way to modify it is to change its contents by editing
+
+  $HOME/my-home-manager/eg-ro
+
+followed by
+
+  home-manager switch
+
+Consequently, external programs will be prevented from modifying this
+configuration file.
+
+This is very inflexible, but very safe.
