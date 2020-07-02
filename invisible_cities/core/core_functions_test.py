@@ -37,7 +37,7 @@ def test_timefunc(capfd):
     core.timefunc(sleep)(time)
 
     out, err = capfd.readouterr()
-    time_measured = re.search('\d+\.\d+', out).group(0)
+    time_measured = re.search(r'\d+\.\d+', out).group(0)
     time_measured = float(time_measured)
     np.isclose(time, time_measured)
 
@@ -330,7 +330,7 @@ def test_std_handle_empty_empty_input():
     assert np.isnan(core.std_handle_empty([]))
 
 
-@given(arrays(float, 10, floats(min_value=-1e5, max_value=1e5)))
+@given(arrays(float, 10, elements=floats(min_value=-1e5, max_value=1e5)))
 def test_shift_to_bin_centers(x):
     x_shifted = core.shift_to_bin_centers(x)
     truth     = [np.mean(x[i:i+2]) for i in range(x.size-1)]

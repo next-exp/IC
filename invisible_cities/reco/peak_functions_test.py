@@ -36,21 +36,21 @@ wf_max = 100
 @composite
 def waveforms(draw):
     n_samples = draw(integers(1, 50))
-    return draw(arrays(float, n_samples, floats(wf_min, wf_max)))
+    return draw(arrays(float, n_samples, elements=floats(wf_min, wf_max)))
 
 
 @composite
 def multiple_waveforms(draw):
     n_sensors = draw(integers(1, 10))
     n_samples = draw(integers(1, 50))
-    return draw(arrays(float, (n_sensors, n_samples), floats(wf_min, wf_max)))
+    return draw(arrays(float, (n_sensors, n_samples), elements=floats(wf_min, wf_max)))
 
 
 @composite
 def times_and_waveforms(draw):
     waveforms = draw(multiple_waveforms())
     n_samples = waveforms.shape[1]
-    times     = draw(arrays(float, n_samples, floats(0, 10*n_samples), unique=True))
+    times     = draw(arrays(float, n_samples, elements=floats(0, 10*n_samples), unique=True))
     return times, waveforms
 
 
@@ -80,7 +80,7 @@ def rebinned_sliced_waveforms(draw):
 @composite
 def peak_indices(draw):
     size    = draw(integers(10, 50))
-    indices = draw(arrays(int, size, integers(0, 5 * size), unique=True))
+    indices = draw(arrays(int, size, elements=integers(0, 5 * size), unique=True))
     indices = np.sort(indices)
     stride  = draw(integers(1, 5))
     peaks   = np.split(indices, 1 + np.where(np.diff(indices) > stride)[0])

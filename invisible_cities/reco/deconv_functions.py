@@ -121,7 +121,7 @@ def deconvolution_input(sample_width : List[float],
     Hs          : Charge input for deconvolution.
     inter_points : Coordinates of the deconvolution input.
     """
-    if inter_method not in InterpolationMethod:
+    if not isinstance(inter_method, InterpolationMethod):
         raise ValueError(f'inter_method {inter_method} is not a valid interpolation method.')
 
     def deconvolution_input(data        : Tuple[np.ndarray, ...],
@@ -132,7 +132,7 @@ def deconvolution_input(sample_width : List[float],
         nbin   = [np.ceil(np.diff(rang)/bs).astype('int')[0]           for bs   , rang in zip(bin_size  ,       ranges)]
 
         if inter_method in (InterpolationMethod.linear, InterpolationMethod.cubic, InterpolationMethod.nearest):
-            allbins = [np.linspace(*rang, np.ceil(np.diff(rang)/sw)+1) for rang ,   sw in zip(ranges[:2], sample_width)]
+            allbins = [np.linspace(*rang, np.int(np.ceil(np.diff(rang)/sw)+1)) for rang ,   sw in zip(ranges[:2], sample_width)]
             Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
         elif inter_method is InterpolationMethod.none:
             Hs, edges = np.histogramdd(data, bins=nbin   , normed=False, weights=weight, range=ranges)

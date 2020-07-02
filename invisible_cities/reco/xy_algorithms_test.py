@@ -34,8 +34,8 @@ from .       xy_algorithms   import count_masked
 @composite
 def positions_and_qs(draw, min_value=1, max_value=100):
     size = draw(integers(min_value, max_value))
-    pos  = draw(arrays(float, (size, 2), floats(0.1,1)))
-    qs   = draw(arrays(float, (size,  ), floats(0.1,1)))
+    pos  = draw(arrays(float, (size, 2), elements = floats(0.1,1)))
+    qs   = draw(arrays(float, (size,  ), elements = floats(0.1,1)))
     return pos, qs
 
 

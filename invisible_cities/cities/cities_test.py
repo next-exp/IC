@@ -6,6 +6,7 @@ from .. core.configure      import configure
 
 cities = "irene dorothea penthesilea esmeralda beersheba".split()
 
+@mark.filterwarnings("ignore::UserWarning")
 @mark.parametrize("city", cities)
 def test_city_empty_input_file(config_tmpdir, ICDATADIR, city):
     # All cities run in Canfranc must run on an empty file

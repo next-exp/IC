@@ -397,8 +397,8 @@ def voxels_without_hits():
     return voxels
 
 
-def test_length():
-    voxels = voxels_without_hits()
+def test_length(voxels_without_hits):
+    voxels = voxels_without_hits
     tracks = make_track_graphs(voxels)
 
     assert len(tracks) == 1
@@ -743,9 +743,9 @@ def test_blob_hits_are_inside_radius(hits, voxel_dimensions, blob_radius):
             assert np.linalg.norm(h.XYZ - centre_b) < blob_radius
 
 
-@given(radius, min_n_of_voxels, fraction_zero_one)
-def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_voxels, fraction_zero_one):
-    voxels = voxels_without_hits()
+@given(blob_radius=radius, min_voxels=min_n_of_voxels, fraction_zero_one=fraction_zero_one)
+def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_voxels, fraction_zero_one, voxels_without_hits):
+    voxels = voxels_without_hits
     tracks = make_track_graphs(voxels)
     for t in tracks:
         a, b = find_extrema(t)

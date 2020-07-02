@@ -17,7 +17,6 @@ from hypothesis            import settings
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
 from . testing_utils       import float_arrays
-from . testing_utils       import FLOAT_ARRAY
 from . testing_utils       import random_length_float_arrays
 
 from .                import core_functions as core
@@ -356,9 +355,13 @@ def test_profile1D_uniform_distribution_std(func):
     assert np.allclose(ye, rms, rtol=0.1)
 
 
-@mark.parametrize("func xdata ydata".split(),
-                  ((fitf.profileX, FLOAT_ARRAY(100, -1e3, 1e3), FLOAT_ARRAY(100, -1e3, 1e3)),
-                   (fitf.profileY, FLOAT_ARRAY(100, -1e3, 1e3), FLOAT_ARRAY(100, -1e3, 1e3))))
+@given(xdata = float_arrays(size       =  100,
+                            min_value  = -1e3,
+                            max_value  = +1e3),
+       ydata = float_arrays(size       =  100,
+                            min_value  = -1e3,
+                            max_value  = +1e3))
+@mark.parametrize("func", (fitf.profileX, fitf.profileY))
 def test_profile1D_custom_range(func, xdata, ydata):
     xrange     = (-100, 100)
     kw         = "yrange" if func.__name__.endswith("Y") else "xrange"
@@ -367,14 +370,17 @@ def test_profile1D_custom_range(func, xdata, ydata):
     assert np.all(core.in_range(xp, *xrange))
 
 
-@mark.parametrize("func xdata ydata xrange".split(),
+
+@given(xdata = float_arrays(size       =  100,
+                            min_value  = -100,
+                            max_value  =  100),
+       ydata = float_arrays(size       =  100,
+                            min_value  = -500,
+                            max_value  =    0))
+@mark.parametrize("func  xrange".split(),
                   ((fitf.profileX,
-                    FLOAT_ARRAY(100, -100, 100),
-                    FLOAT_ARRAY(100, -500,   0),
                     (-100, 100)),
                    (fitf.profileY,
-                    FLOAT_ARRAY(100, -100, 100),
-                    FLOAT_ARRAY(100, -500,   0),
                     (-500, 0))))
 def test_profile1D_full_range_x(func, xdata, ydata, xrange):
     xp, yp, ye = func(xdata, ydata)
@@ -394,26 +400,22 @@ def test_profile1D_one_bin_missing_x(func, xdata, ydata):
     assert xp.size == 99
 
 
-@mark.parametrize("func xdata ydata".split(),
-                  ((fitf.profileX,
-                    FLOAT_ARRAY(100, min_value=-1e10, max_value=+1e10),
-                    FLOAT_ARRAY(100, min_value=-1e10, max_value=+1e10)),
-                   (fitf.profileY,
-                    FLOAT_ARRAY(100, min_value=-1e10, max_value=+1e10),
-                    FLOAT_ARRAY(100, min_value=-1e10, max_value=+1e10))))
+@given(xdata = float_arrays(size       =  100,
+                            min_value  = -1e10,
+                            max_value  = +1e10),
+       ydata = float_arrays(size       =  100,
+                            min_value  = -1e10,
+                            max_value  = +1e10))
+@mark.parametrize("func", (fitf.profileX, fitf.profileY))
 def test_number_of_bins_matches(func, xdata, ydata):
     N = 50
     xp, yp, ye = func(xdata, ydata, N, drop_nan=False)
     assert xp.size == yp.size == ye.size == N
 
 
-@mark.parametrize("func xdata ydata".split(),
-                  ((fitf.profileX,
-                    FLOAT_ARRAY(100),
-                    FLOAT_ARRAY(100)),
-                   (fitf.profileY,
-                    FLOAT_ARRAY(100),
-                    FLOAT_ARRAY(100))))
+@given(xdata = float_arrays(size       =  100),
+       ydata = float_arrays(size       =  100))
+@mark.parametrize("func", (fitf.profileX, fitf.profileY))
 def test_empty_dataset_yields_nans(func, xdata, ydata):
     N = 50
     empty = np.array([])
