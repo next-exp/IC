@@ -1,44 +1,45 @@
 IC: Invisible Cities
 ==============================================
 
-IC stands for Invisible Cities and also for Italo Calvino, the author of the master piece. 
+IC stands for Invisible Cities and also for Italo Calvino, the author of the master piece.
 
 Quickstart guide
 ----------------
 
-+ Make sure you have `git lfs` installed (https://git-lfs.github.com/)
++ Make sure that `Nix is installed <doc/nix/install-nix/README.md>`_ on your machine
+
++ Make sure that `home-manager is installed <doc/nix/home-manager/README.md>`_ for your user
 
 + Clone the repository
 
-+ :code:`cd` into the `IC` directory
++ :code:`cd` into the `IC` directory you have just cloned
 
-+ :code:`source manage.sh work_in_python_version 3.7`
++ :code:`direnv allow`
 
-The last step will, if necessary, install conda and create an
-appropriate conda environment, as well as setting environment
-variables which are needed for the correct functioning of IC.
++ :code:`ic-test-par`
 
-The installation steps will be skipped if conda and the required
-environment are already available, so subsequent invocations of the
-command should be much quicker than the first.
+The last step launches an exhaustive set of IC tests. If these pass, you can be
+confident that everything has been configured as it should.
 
-You will need to perform the last two steps in every shell in which
-you want to run IC.
+The :code:`cd /path/to/IC` step is the only one you will have to repeat, on a
+machine on which these steps have already been carried out, in order to resume
+work on IC.
 
-To check your progress when you are developing, you will want to
-compile any Cython components that have changed and run the test
-suite. This can be done with
+To check your progress when you are developing, you will want to compile any
+Cython components that have changed and run the test suite. This can be done
+with
 
 .. code-block::
 
-   source manage.sh compile_and_test_par
+   ic-compile && ic-test-par
 
-If you check out a commit which requires an older set of dependencies,
-the :code:`compile_and_test` commands will automatically switch to an
-appropriate environment, creating it on the fly if necessary.
+If you check out a commit which requires an older set of dependencies, Nix,
+`home-manager` and `direnv` will together ensure that you automatically switch
+to an appropriate environment, creating it on the fly if necessary, without you
+having do do anything at all, other than maybe waiting for downloads of older
+packages to complete.
 
 :Travis CI: |travis|
 
 .. |travis| image:: https://img.shields.io/travis/nextic/IC.png
         :target: https://travis-ci.org/nextic/IC
-
