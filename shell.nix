@@ -14,9 +14,10 @@ let
   pkgs = import (builtins.fetchTarball { url = nixpkgs-url; }) {};
   python = builtins.getAttr ("python" + py-version) pkgs;
   pypkgs = python.pkgs;
-  local = {
-    # pytest-instafail was unavailable in nixpkgs at time of writing
-    pytest-instafail = pypkgs.buildPythonPackage rec {
+
+  # pytest-instafail was unavailable in nixpkgs at time of writing
+  mk-pytest-instafail = pypkgs:
+    pypkgs.buildPythonPackage rec {
       pname = "pytest-instafail";
       version = "0.4.2";
       src = pypkgs.fetchPypi {
@@ -25,7 +26,7 @@ let
       };
       buildInputs = [ pypkgs.pytest ];
     };
-  };
+
 
   command = pkgs.writeShellScriptBin;
 
@@ -48,7 +49,7 @@ let
       ps.flaky
       ps.hypothesis
       ps.pytest_xdist
-      local.pytest-instafail
+      (mk-pytest-instafail ps)
     ]);
 
 in
