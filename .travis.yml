@@ -7,7 +7,8 @@ matrix:
   - os: osx
 
 env:
-  - IC_PYTHON_VERSION=3.7
+  - NIX_PY_VERSION=37
+  - NIX_PY_VERSION=38
 
 os:
   - linux
@@ -22,7 +23,7 @@ install:
   - . $HOME/.nix-profile/etc/profile.d/nix.sh
 
 script:
-  - nix-shell --command 'HYPOTHESIS_PROFILE=travis-ci ic-test-par'
+  - nix-shell --pure --argstr py-version $NIX_PY_VERSION --command 'HYPOTHESIS_PROFILE=travis-ci ic-test-par'
 
 # CACHING. See https://nixos.wiki/wiki/Nix_on_Travis
 
