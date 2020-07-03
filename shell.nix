@@ -1,8 +1,8 @@
 # To override the default python version:
 #
-#   nix-shell shell.nix --argstr py-version 36
+#   nix-shell shell.nix --argstr py 36
 #
-{ py-version ? "37" }:
+{ py ? "37" }:
 
 # To update `commit-id` go to https://status.nixos.org/, which lists the latest
 # commit that passes all the tests for any release. Unless there is an
@@ -12,7 +12,7 @@ let
   commit-id = "f1a79c86358c5464c64b4fad00fca07a10e62a74";
   nixpkgs-url = "https://github.com/nixos/nixpkgs/archive/${commit-id}.tar.gz";
   pkgs = import (builtins.fetchTarball { url = nixpkgs-url; }) {};
-  python = builtins.getAttr ("python" + py-version) pkgs;
+  python = builtins.getAttr ("python" + py) pkgs;
   pypkgs = python.pkgs;
 
   # pytest-instafail was unavailable in nixpkgs at time of writing
