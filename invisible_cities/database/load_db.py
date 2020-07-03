@@ -10,6 +10,7 @@ class DetDB:
     new     = os.environ['ICTDIR'] + '/invisible_cities/database/localdb.NEWDB.sqlite3'
     demopp  = os.environ['ICTDIR'] + '/invisible_cities/database/localdb.DEMOPPDB.sqlite3'
     next100 = os.environ['ICTDIR'] + '/invisible_cities/database/localdb.NEXT100DB.sqlite3'
+    flex100 = os.environ['ICTDIR'] + '/invisible_cities/database/localdb.Flex100DB.sqlite3'
 
 def tmap(*args):
     return tuple(map(*args))
