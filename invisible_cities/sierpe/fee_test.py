@@ -74,7 +74,7 @@ def test_show_signal_decimate_signature():
     assert 23 < adc_to_pes     < 23.1
 
 
-
+@pytest.mark.skip('Skipped as uses outdated functions not used in code')
 def test_spe_to_adc():
     """Convert SPE to adc values with the current FEE Parameters must be."""
     ipmt = 0
