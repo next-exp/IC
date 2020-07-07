@@ -17,6 +17,7 @@ HM_DIR=$HOME/my-home-manager
 
 # Download and unpack the home-manager config template
 cd /tmp
+# TODO: update this URL when this branch gets merged
 curl -L https://github.com/jacg/IC/tarball/manage-with-nix > IC.tgz
 nix-shell -p pkgs.gnutar --run "tar xvf IC.tgz --wildcards '*/nix/home-manager' --strip-components=3"
 mv home-manager $HM_DIR
@@ -68,6 +69,7 @@ home-manager switch
 
    ```shell
    cd /tmp
+   # TODO: update this URL when this branch gets merged
    curl -L https://github.com/jacg/IC/tarball/manage-with-nix > IC.tgz
    nix-shell -p pkgs.gnutar --run "tar xvf IC.tgz --wildcards '*/nix/home-manager' --strip-components=3"
    mv home-manager $HM_DIR
