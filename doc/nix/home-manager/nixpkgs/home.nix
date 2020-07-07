@@ -35,6 +35,11 @@ with pkgs;
   # details. Replace these with your own real-world cases.
   home.file.".example-read-only" .source =      ../eg-ro;
   home.file.".example-read-write".source = link ../eg-rw;
+  # The previous two lines are just examples, which you can adapt to your own
+  # needs. The next line is vital: it ensures that home-manager will be able to
+  # find its configuration file (that's the file in which these words are
+  # written) in the standard location.
+  home.file.".config/nixpkgs".source = link ../nixpkgs;
 
   # We've only scratched the surface of possibilities in home-manager ...
 

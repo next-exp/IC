@@ -21,10 +21,6 @@ curl -L https://github.com/jacg/IC/tarball/manage-with-nix > IC.tgz
 nix-shell -p pkgs.gnutar --run "tar xvf IC.tgz --wildcards '*/nix/home-manager' --strip-components=3"
 mv home-manager $HM_DIR
 
-# Tell home-manager where its config lives
-mkdir -p $HOME/.config/nixpkgs
-ln -s $HM_DIR/nixpkgs/home.nix $HOME/.config/nixpkgs/home.nix
-
 # Bootstrap your personal home-manager installation and configuration
 cd $HM_DIR
 nix-shell bootstrap-home-manager
@@ -104,15 +100,6 @@ home-manager switch
    This step should be performed any time you change the version of
    `home-manager` you want to use. The `home-manager` version is specified in
    `sources.nix`.
-
-4. Make sure that `home-manager` can find its configuration file in its default location.
-
-   Create a symlink which makes your `home.nix` file appear at `$HOME/.config/nixpkgs/home.nix`.
-
-   ```shell
-   mkdir -p $HOME/.config/nixpkgs
-   ln -s $HM_DIR/nixpkgs/home.nix $HOME/.config/nixpkgs/home.nix
-   ```
 
 Home-manager should now be ready to use by this user.
 
