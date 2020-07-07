@@ -76,7 +76,7 @@ def loadDB(dbname : str):
 
 
 if __name__ == '__main__':
-    dbname = ['NEWDB', 'DEMOPPDB', 'NEXT100DB']
+    dbname = ['NEWDB', 'DEMOPPDB', 'NEXT100DB', 'Flex100DB']
     if len(sys.argv) > 1:
         dbname = sys.argv[1]
         loadDB(dbname)

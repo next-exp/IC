@@ -667,11 +667,16 @@ def dbnew():
 def dbnext100():
     return 'next100'
 
+@pytest.fixture(scope='session')
+def dbflex100():
+    return 'flex100'
+
 @pytest.fixture(scope='session',
                 params=[db_data('demopp' ,  3,  256, 3, 79),
                         db_data('new'    , 12, 1792, 3, 79),
-                        db_data('next100', 60, 3584, 0, 0)],
-               ids=["demo", "new", "next100"])
+                        db_data('next100', 60, 3584, 0, 0),
+                        db_data('flex100', 60, 3062, 0, 0)],
+               ids=["demo", "new", "next100", "flex100"])
 def db(request):
     return request.param
 
