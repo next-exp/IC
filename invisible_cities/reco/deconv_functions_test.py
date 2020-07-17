@@ -64,23 +64,22 @@ def test_drop_isolated_sensors():
         assert n_neighbours > 1
 
 
-@mark.skip(reason="scipy griddata interpolation gives different result in current version and form")
 def test_interpolate_signal():
-    ref_interpolation = np.array([0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   ,
+    ref_interpolation = np.array([0.   , 0.   , 0.   , 0.   , 0.   , 0    , 0.   , 0.   , 0.   ,
                                   0.   , 0.   , 0.   , 0.   , 0.17 , 0.183, 0.188, 0.195, 0.202,
-                                  0.2  , 0.2  , 0.19 , 0.181, 0.169, 0.   , 0.   , 0.308, 0.328,
-                                  0.344, 0.353, 0.363, 0.365, 0.356, 0.345, 0.327, 0.305, 0.   ,
-                                  0.   , 0.501, 0.531, 0.569, 0.583, 0.596, 0.598, 0.583, 0.566,
-                                  0.533, 0.496, 0.   , 0.   , 0.693, 0.752, 0.784, 0.819, 0.836,
-                                  0.833, 0.82 , 0.794, 0.752, 0.688, 0.   , 0.   , 0.813, 0.882,
-                                  0.922, 0.958, 0.976, 0.975, 0.958, 0.927, 0.88 , 0.813, 0.   ,
-                                  0.   , 0.812, 0.876, 0.929, 0.958, 0.974, 0.975, 0.959, 0.923,
-                                  0.88 , 0.822, 0.   , 0.   , 0.688, 0.752, 0.8  , 0.822, 0.831,
-                                  0.833, 0.819, 0.789, 0.753, 0.693, 0.   , 0.   , 0.496, 0.535,
-                                  0.567, 0.587, 0.597, 0.591, 0.581, 0.57 , 0.532, 0.504, 0.   ,
-                                  0.   , 0.305, 0.326, 0.346, 0.356, 0.362, 0.363, 0.356, 0.342,
-                                  0.33 , 0.31 , 0.   , 0.   , 0.168, 0.18 , 0.189, 0.198, 0.202,
-                                  0.199, 0.195, 0.192, 0.181, 0.174, 0.   , 0.   , 0.   , 0.   ,
+                                  0.201, 0.202, 0.188, 0.181, 0.168, 0.   , 0.   , 0.308, 0.328,
+                                  0.344, 0.354, 0.362, 0.365, 0.357, 0.347, 0.326, 0.308, 0.   ,
+                                  0.   , 0.5  , 0.531, 0.569, 0.585, 0.593, 0.592, 0.58 , 0.566,
+                                  0.543, 0.514, 0.   , 0.   , 0.693, 0.751, 0.786, 0.825, 0.833,
+                                  0.827, 0.816, 0.79 , 0.757, 0.703, 0.   , 0.   , 0.818, 0.886,
+                                  0.924, 0.957, 0.965, 0.973, 0.963, 0.925, 0.882, 0.818, 0.   ,
+                                  0.   , 0.82 , 0.884, 0.93 , 0.958, 0.969, 0.965, 0.954, 0.928,
+                                  0.883, 0.818, 0.   , 0.   , 0.698, 0.752, 0.793, 0.819, 0.832,
+                                  0.836, 0.826, 0.794, 0.752, 0.699, 0.   , 0.   , 0.509, 0.535,
+                                  0.57 , 0.582, 0.6  , 0.592, 0.585, 0.568, 0.536, 0.51 , 0.   ,
+                                  0.   , 0.311, 0.328, 0.347, 0.36 , 0.359, 0.361, 0.356, 0.343,
+                                  0.328, 0.312, 0.0  , 0.0  , 0.169, 0.182, 0.196, 0.196, 0.201,
+                                  0.197, 0.194, 0.192, 0.182, 0.169, 0.   , 0.   , 0.   , 0.   ,
                                   0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   , 0.   ])
 
     g = multivariate_normal((0.5, 0.5), (0.05, 0.5))
@@ -99,12 +98,12 @@ def test_interpolate_signal():
     inter_position    = out_interpolation[1]
     ref_position      = shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1))
 
+    print(list(np.around(inter_charge, decimals=3)))
     assert np.allclose(ref_interpolation, np.around(inter_charge, decimals=3))
     assert np.allclose(ref_position     , sorted(set(inter_position[0])))
     assert np.allclose(ref_position     , sorted(set(inter_position[1])))
 
 
-@mark.skip(reason="scipy griddata interpolation gives different result in current version and form")
 def test_deconvolution_input(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load(data_hdst_deconvolved)
     hdst              = load_dst(data_hdst, 'RECO', 'Events')
