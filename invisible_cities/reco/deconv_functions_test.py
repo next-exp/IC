@@ -98,7 +98,6 @@ def test_interpolate_signal():
     inter_position    = out_interpolation[1]
     ref_position      = shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1))
 
-    print(list(np.around(inter_charge, decimals=3)))
     assert np.allclose(ref_interpolation, np.around(inter_charge, decimals=3))
     assert np.allclose(ref_position     , sorted(set(inter_position[0])))
     assert np.allclose(ref_position     , sorted(set(inter_position[1])))
@@ -126,7 +125,6 @@ def test_deconvolution_input_interpolation_method(data_hdst, data_hdst_deconvolv
         deconvolution_input([10., 10.], [1., 1.], interp_method)
 
 
-@mark.skip(reason="scipy griddata interpolation gives different result in current version and form")
 def test_deconvolve(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load (data_hdst_deconvolved)
     hdst              = load_dst(data_hdst, 'RECO', 'Events')
@@ -156,7 +154,6 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
     assert np.allclose(ref_interpolation['y_deco'], deco[1][1])
 
 
-@mark.skip(reason="scipy griddata interpolation gives different result in current version and form")
 def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load (data_hdst_deconvolved)
     hdst              = load_dst(data_hdst, 'RECO', 'Events')

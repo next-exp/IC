@@ -68,7 +68,6 @@ def test_beersheba_contains_all_tables(deconvolution_config):
         assert "Run/runInfo"    in h5out.root
 
 
-@mark.skip(reason="scipy griddata interpolation gives different result in current version and form")
 def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
     true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_joint.NEWMC.h5")
     conf, PATH_OUT   = deconvolution_config
@@ -89,7 +88,6 @@ def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
                 assert_tables_equality(got, expected)
 
 
-@mark.skip(reason="scipy griddata interpolation gives different result in current version and form")
 def test_beersheba_exact_result_separate(ICDATADIR, deconvolution_config):
     true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_separate.NEWMC.h5")
     conf, PATH_OUT   = deconvolution_config
