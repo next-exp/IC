@@ -1,11 +1,13 @@
-import numpy as np
+import numpy  as np
+import tables as tb
 
 import pytest
 from scipy import signal
 from flaky import flaky
 
-from .. core import system_of_units as units
-from .       import fee             as FE
+from .. core     import system_of_units as units
+from .. database import load_db
+from .           import fee             as FE
 
 def signal_i_th():
     """Generates a "theoretical" current signal (signal_i)"""
@@ -72,6 +74,28 @@ def test_show_signal_decimate_signature():
     print(adc_to_pes)
 
     assert 23 < adc_to_pes     < 23.1
+
+
+def test_signal_maintained(electron_MCRD_file):
+    """Test that there is no appreciable charge loss in daq_decimate"""
+    detector_db = 'new'
+    run_number  = -7951
+    pmt_id      = 0
+    with tb.open_file(electron_MCRD_file) as h5in:
+        evt0_pmt   = h5in.root.pmtrd[0]
+        adc_to_pes = load_db.DataPMT(detector_db, run_number).adc_to_pes.values
+        spe        = FE.SPE()
+        fee        = FE.FEE(detector_db, run_number,
+                            noise_FEEPMB_rms = FE.NOISE_I  ,
+                            noise_DAQ_rms    = FE.NOISE_DAQ)
+
+        cc         = adc_to_pes[pmt_id] / FE.ADC_TO_PES
+        signal_i   = FE.spe_pulse_from_vector(spe, evt0_pmt[pmt_id], norm=cc)
+        signal_d   = FE.daq_decimator(FE.f_mc, FE.f_sample, signal_i)
+        signal_blr = FE.signal_v_lpf(fee, signal_d) * FE.v_to_adc()
+
+        input_adc = adc_to_pes[pmt_id] * np.sum(evt0_pmt[pmt_id])
+        assert np.isclose(np.sum(signal_blr), input_adc, rtol=2e-4)
 
 
 @pytest.mark.skip('Skipped as uses outdated functions not used in code')
