@@ -29,7 +29,7 @@ f_mc = 1 / (1 * units.ns)
 f_LPF1 =  3 * units.MHZ
 f_LPF2 = 10 * units.MHZ
 ADC_TO_PES_LPF = 24.1  # After LPF, comes out from spe area
-ADC_TO_PES     = 18.71
+ADC_TO_PES     = 16.241
 OFFSET = 2500  # offset adc
 CEILING = 4096  # ceiling of adc
 
@@ -399,5 +399,13 @@ def daq_decimator(f_sample1, f_sample2, signal_in):
     Includes anti-aliasing filter
     """
 
+    ## The default 30 point FIR filter with Hamming window of order
+    ## 20 * scale is used as an acceptable compromise between charge
+    ## losses and speed as approved by V. Herrero. A slightly better
+    ## charge conservation (~0.001% loss vs ~0.01%) is achieved using:
+    ## signal.decimate(signal_i, scale,
+    ##                 ftype=signal.dlti(*signal.butter(1, 0.8/scale)),
+    ##                 zero_phase=True)
+    ## but for an order 35 increase in processing time.
     scale = int(f_sample1 / f_sample2)
-    return signal.decimate(signal_in, scale, n=30, ftype='fir', zero_phase=False)
+    return signal.decimate(signal_in, scale, ftype='fir', zero_phase=True)
