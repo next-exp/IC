@@ -54,11 +54,31 @@ def test_load_dst(KrMC_kdst):
                             False  , rtol=1e-5)
 
 
+def test_load_dst_event_list(KrMC_kdst):
+    event_list = [0, 4, 7]
+    df_read    = load_dst(*KrMC_kdst[0].file_info, evt_list=event_list)
+    df_check   = KrMC_kdst[0].true
+    df_check   = df_check[df_check.event.isin(event_list)].reset_index(drop=True)
+    assert_dataframes_close(df_read, df_check,
+                            False  , rtol=1e-5)
+
+
 def test_load_dsts_single_file(KrMC_kdst):
     tbl     = KrMC_kdst[0].file_info
     df_read = load_dsts([tbl.filename], tbl.group, tbl.node)
 
     assert_dataframes_close(df_read, KrMC_kdst[0].true,
+                            False  , rtol=1e-5)
+
+
+def test_load_dsts_single_file_event_list(KrMC_kdst):
+    event_list = [0, 4, 7]
+    tbl        = KrMC_kdst[0].file_info
+    df_read    = load_dsts([tbl.filename], tbl.group, tbl.node, evt_list=event_list)
+    df_check   = KrMC_kdst[0].true
+    df_check   = df_check[df_check.event.isin(event_list)].reset_index(drop=True)
+
+    assert_dataframes_close(df_read, df_check,
                             False  , rtol=1e-5)
 
 
