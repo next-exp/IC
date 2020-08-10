@@ -4,7 +4,6 @@ import pandas as pd
 
 from typing import Callable
 
-from invisible_cities.reco.corrections     import read_maps
 from invisible_cities.core.core_functions  import in_range
 
 from invisible_cities.core import system_of_units as units
