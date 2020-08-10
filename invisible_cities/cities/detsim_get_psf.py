@@ -1,10 +1,13 @@
 import numpy  as np
 import tables as tb
+import pandas as pd
 
 from typing import Callable
 
 from invisible_cities.reco.corrections     import read_maps
 from invisible_cities.core.core_functions  import in_range
+
+from invisible_cities.core import system_of_units as units
 
 ###################################
 ############# UTILS ###############
@@ -106,18 +109,12 @@ def binedges_from_bincenters(bincenters: np.ndarray)->np.ndarray:
 
     return binedges
 
-# def binedges_from_bincenters(bincenters):
-#     ds = np.diff(bincenters)
-#     if not np.allclose(ds, ds[0]):
-#         raise Exception("Bin distances must be equal")
-#
-#     d = ds[0]
-#     return np.arange(bincenters[0]-d/2., bincenters[-1]+d/2.+d, d)
-
 ##################################
 ############# PSF ################
 ##################################
-def get_psf(filename : str)->Callable:
+def get_psf(filename : str,
+            drift_velocity_EL : float = 2.5,
+            wf_sipm_bin_width : float = 100):
     """
     From PSF filename, returns a function of distance to SIPMs
 
@@ -125,30 +122,41 @@ def get_psf(filename : str)->Callable:
         :filename: str
             path to the PSF h5 file
     Returns:
-        :psf: function
-            for an array :d: of shape (nsensors, nhits) whose
-            values are the distances of sensor-i to hit-j, it return
-            the psf values for each distance. The output will be
-            an array of size (nsensors, nhits, npartitions) being npartitions
-            the number of EL-partitions
+        :get_psf_values: function
+
+        :info:
     """
+    PSF    = pd.read_hdf(filename, "/LightTable")
+    Config = pd.read_hdf(filename, "/Config")
+    EL_dz = float(Config.loc["EL_GAP"])        * units.mm
+    pitch = float(Config.loc["pitch_z"].value) * units.mm
+    npartitions = int(EL_dz/pitch)
 
-    with tb.open_file(filename) as h5file:
-        PSF = h5file.root.LightTable.table.read()
-        info = dict(h5file.root.Config.table.read())
+    distance_bins    = np.sort(PSF.index.values)
+    psf_max_distance = np.max(distance_bins)
+    PSF = PSF.values
+    ELtimes = np.arange(pitch/2., EL_dz, pitch)/drift_velocity_EL
 
-    PSF  = np.sort(PSF, order="index")
-    bins = binedges_from_bincenters(PSF["index"])
-    PSF = np.array(PSF.tolist())[:, 1:]
+    ELtimepartitions_bins = np.arange(0, ELtimes[-1] + wf_sipm_bin_width, wf_sipm_bin_width)
+    n_time_bins = len(ELtimepartitions_bins)-1
+    indexes    = np.digitize(ELtimes, ELtimepartitions_bins)-1
+    _, indexes = np.unique(indexes, return_index=True)
 
-    def psf(d):
-        out = np.zeros((*d.shape, PSF.shape[1]), dtype="float32")
-        sel = in_range(d, bins[0], bins[-1])
-        idxs = np.digitize(d[sel], bins)-1
-        out[sel] = PSF[idxs]
-        return out            #(nsensors, nhits, npartitions)
+    splitted_PSF = np.split(PSF, indexes[1:], axis=1)
 
-    return psf, info
+    effective_PSF = [np.sum(cols, axis=1, keepdims=True)*(1/npartitions) for cols in splitted_PSF]
+    effective_PSF  = np.hstack(effective_PSF)
+
+    def get_psf_values(distances):
+        psf = np.zeros((len(distances), n_time_bins))
+        sel = distances<=psf_max_distance
+        indexes  = np.digitize(distances[sel], distance_bins)-1
+        psf[sel] = effective_PSF[indexes]
+        return psf
+
+    info = (EL_dz, pitch, npartitions, n_time_bins)
+    return get_psf_values, info
+
 
 
 ##################################
