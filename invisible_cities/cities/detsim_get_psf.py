@@ -19,7 +19,7 @@ def create_xyz_function(H    : np.ndarray,
 
     Parameters:
         :H: np.ndarray
-            3D histogram
+            3D array
         :bins: list[np.ndarray, np.ndarray, np.ndarray]
             list with the bin edges of :H:. The i-element corresponds
             with the bin edges of the i-axis of :H:.
@@ -58,7 +58,7 @@ def create_xy_function(H    : np.ndarray,
 
     Parameters:
         :H: np.ndarray
-            2D histogram
+            2D array
         :bins: list[np.ndarray, np.ndarray]
             list with the bin edges of :H:. The i-element corresponds
             with the bin edges of the i-axis of :H:.
@@ -162,7 +162,7 @@ def get_psf(filename : str,
 ##################################
 ######### LIGTH TABLE ############
 ##################################
-def get_ligthtables(filename: str,
+def get_lighttables(filename: str,
                     signal  : str)->Callable:
     """
     From LT filename, returns a function of x,y,z for S1 LTs and x,y for S2
