@@ -120,8 +120,8 @@ def binedges_from_bincenters(bincenters: np.ndarray)->np.ndarray:
 ############# PSF ################
 ##################################
 def get_psf(filename : str,
-            drift_velocity_EL : float = 2.5,
-            wf_sipm_bin_width : float = 100):
+            drift_velocity_EL : float = 2.5 * units.mm/units.mus,
+            wf_sipm_bin_width : float = 1   * units.mus):
     """
     From PSF filename, returns a function of distance to SIPMs
 
