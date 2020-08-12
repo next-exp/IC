@@ -73,7 +73,7 @@ def create_xy_function(H    : np.ndarray,
 
     def function(x, y):
         if not x.shape==y.shape:
-            raise Exception("x, y and z must have same size")
+            raise Exception("x and y must have same size")
 
         out = np.zeros(x.shape)
         #select values inside bin extremes
@@ -101,6 +101,12 @@ def binedges_from_bincenters(bincenters: np.ndarray)->np.ndarray:
         :binedges: np.ndarray
             bin edges
     """
+    if len(bincenters.shape)==1 and bincenters.shape[0]!=0:
+        if ~np.all(np.sort(bincenters) == bincenters):
+            raise Exception("Unordered bin centers")
+    else:
+        raise Exception("Inconsistent array shape")
+
     binedges = np.zeros(len(bincenters)+1)
 
     binedges[1:-1] = (bincenters[1:] + bincenters[:-1])/2.
