@@ -50,6 +50,7 @@ def create_xyz_function(H    : np.ndarray,
         return out
     return function
 
+
 def create_xy_function(H    : np.ndarray,
                        bins : list)->Callable:
     """Given a 2D array and a list of bins for
@@ -108,6 +109,7 @@ def binedges_from_bincenters(bincenters: np.ndarray)->np.ndarray:
 
     return binedges
 
+
 ##################################
 ############# PSF ################
 ##################################
@@ -155,7 +157,6 @@ def get_psf(filename : str,
 
     info = (EL_dz, pitch, npartitions, n_time_bins)
     return get_psf_values, info
-
 
 
 ##################################
