@@ -214,11 +214,9 @@ def get_lighttables(filename: str,
             func_per_sensor.append(fxyz)
 
         ###### CREATE XYZ CALLABLE FOR LIST OF XYZ FUNCTIONS #####
-        def merge_list_of_functions(list_of_functions):
-            def merged(x, y, z):
-                return np.array([f(x, y, z) for f in list_of_functions]).T
-            return merged
-        return merge_list_of_functions(func_per_sensor)
+        def merged(x, y, z):
+            return np.array([f(x, y, z) for f in func_per_sensor]).T
+        return merged
 
     elif signal == "S2":
         #### XYZ binning #####
@@ -238,8 +236,6 @@ def get_lighttables(filename: str,
             func_per_sensor.append(fxy)
 
         ###### CREATE XY CALLABLE FOR LIST OF XY FUNCTIONS #####
-        def merge_list_of_functions(list_of_functions):
-            def merged(x, y):
-                return np.array([f(x, y) for f in list_of_functions]).T
-            return merged
-        return merge_list_of_functions(func_per_sensor)
+        def merged(x, y):
+            return np.array([f(x, y) for f in func_per_sensor]).T
+        return merged
