@@ -14,7 +14,7 @@ from invisible_cities.cities.detsim_get_psf import create_xyz_function
 from invisible_cities.cities.detsim_get_psf import create_xy_function
 from invisible_cities.cities.detsim_get_psf import binedges_from_bincenters
 from invisible_cities.cities.detsim_get_psf import create_effective_psf
-
+from invisible_cities.cities.detsim_get_psf import get_lighttables
 
 def test_create_xy_function():
 
@@ -131,3 +131,22 @@ def test_create_effective_psf(detsim_sipm_psf):
     # test null values for long distances
     distances = np.array([200])
     assert np.all(psf(distances) == np.zeros((len(distances), n_time_bins)))
+
+
+@fixture(scope = "session")
+def detsim_lighttables(request, ICDATADIR):
+    s1lt = os.path.join(ICDATADIR, "detsim_S1LT_next100.h5")
+    s2lt = os.path.join(ICDATADIR, "detsim_S2LT_next100.h5")
+    return dict((("S1", s1lt), ("S2", s2lt)))
+
+
+def test_get_lighttables(detsim_lighttables):
+
+    LT = get_lighttables(detsim_lighttables["S1"], "S1")
+    assert inspect.isfunction(LT)
+    assert len(inspect.getfullargspec(LT).args) == 3
+
+
+    LT = get_lighttables(detsim_lighttables["S2"], "S2")
+    assert inspect.isfunction(LT)
+    assert len(inspect.getfullargspec(LT).args) == 2
