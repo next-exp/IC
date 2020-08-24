@@ -119,9 +119,9 @@ def binedges_from_bincenters(bincenters: np.ndarray)->np.ndarray:
 ##################################
 ############# PSF ################
 ##################################
-def get_psf(filename : str,
-            drift_velocity_EL : float = 2.5 * units.mm/units.mus,
-            wf_sipm_bin_width : float = 1   * units.mus):
+def create_effective_psf(filename : str,
+                         drift_velocity_EL : float = 2.5 * units.mm/units.mus,
+                         wf_sipm_bin_width : float = 1   * units.mus):
     """
     From PSF filename, returns a function of distance to SIPMs
 
@@ -154,14 +154,16 @@ def get_psf(filename : str,
     effective_PSF = [np.sum(cols, axis=1, keepdims=True)*(1/npartitions) for cols in splitted_PSF]
     effective_PSF  = np.hstack(effective_PSF)
 
-    def get_psf_values(distances):
+    def get_psf_values(distances): # add protection against negative distances?
         psf = np.zeros((len(distances), n_time_bins))
         sel = distances<=psf_max_distance
         indexes  = np.digitize(distances[sel], distance_bins)-1
         psf[sel] = effective_PSF[indexes]
         return psf
 
-    info = (EL_dz, pitch, npartitions, n_time_bins)
+    s2_sipm_nsamples = np.max((int(pitch // wf_sipm_bin_width), 1))
+
+    info = (n_time_bins, s2_sipm_nsamples)
     return get_psf_values, info
 
 
