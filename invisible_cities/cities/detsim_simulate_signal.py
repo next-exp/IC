@@ -1,11 +1,9 @@
 import numpy as np
-import numexpr as ne
 
 from typing import Tuple
 from typing import Callable
 
 from scipy.stats  import rv_continuous
-from scipy.sparse import csr_matrix
 
 ##################################
 ############## PES ###############
@@ -38,68 +36,6 @@ def pes_at_pmts(LT      : Callable  ,
     return pes.T
 
 
-def pes_at_sipms(PSF        : Callable,
-                 datasipm   : np.ndarray,
-                 sipm_frame : float,
-                 photons    : np.ndarray,
-                 xs         : np.ndarray,
-                 ys         : np.ndarray)->Tuple[csr_matrix, np.ndarray]:
-    """Compute the pes generated in each framed SIPM from photons generated at some point
-
-    Parameters:
-        :PSF: function
-            The PSF in functional form
-        :datasipm: pd.Dataframe
-            sipm data from database (load_db.DataSiPM)
-        :sipm_frame: float
-            just SIPMs inside a square between ((xmin, ymin)-sipm_frame, (xmax, ymax)+sipm_frame) will
-            be considered. Recomended value is the PSF maximum distance, but it can be lower if PSF
-            maximum distance is irrelevantly large.
-        :photons: np.ndarray
-            The photons generated at each hit (in the active volume
-            for the S1 and in the EL for S2)
-        :xs, ys, zs: np.ndarray
-            hit position (zs=None for S2)
-    Returns:
-        :pes: np.ndarray
-            photoelectrons at framed SIPM produced by each hit.
-            Shape is (nsensors, nhits)
-        :sipm_ids: np.ndarray
-            SIPM ids (from database indexes) of considered SIPMs
-    """
-    xsensors, ysensors = datasipm["X"].values, datasipm["Y"].values
-
-    ######### TP FRAMING #############
-    xmin, xmax = np.min(xs), np.max(xs)
-    ymin, ymax = np.min(ys), np.max(ys)
-
-    x1, x2 = xmin - sipm_frame , xmax + sipm_frame
-    y1, y2 = ymin - sipm_frame , ymax + sipm_frame
-
-    selx = (x1<xsensors) & (xsensors<x2)
-    sely = (y1<ysensors) & (ysensors<y2)
-    sel = selx & sely
-
-    seldatasipm = datasipm[sel]
-    sipmids = seldatasipm.index.values
-    xsensors, ysensors = seldatasipm["X"].values, seldatasipm["Y"].values
-
-    ########## PES at SIPMS###############
-    xdistance = xs[:, np.newaxis] - xsensors
-    ydistance = ys[:, np.newaxis] - ysensors
-    # distances = (xdistance**2 + ydistance**2)**0.5
-    distances = ne.evaluate("(xdistance**2 + ydistance**2)**0.5")
-
-    psf = PSF(distances.T)
-    nsensors, nhits, npartitions = psf.shape
-    psf = csr_matrix(np.reshape(psf, (nsensors, nhits*npartitions)))
-    pes = csr_matrix(np.repeat(photons, npartitions))
-
-    pes = psf.multiply(pes)
-    pes.data = np.random.poisson(pes.data/npartitions)
-    return pes, sipmids
-
-
 ##################################
 ############## TIMES #############
 ##################################
@@ -115,7 +51,7 @@ class S1_TIMES(rv_continuous):
 
 generate_S1_time = S1_TIMES()
 
-def generate_S1_times_from_pes(S1pes_at_pmts:np.ndarray)->list:
+def generate_S1_times_from_pes(S1pes_at_pmts : np.ndarray)->list:
     """Given the S1pes_at_pmts, this function returns the times at which the pes
     are be distributed (see generate_S1_time function).
     It returns a list whose elements are the times at which the photoelectrons in that PMT
