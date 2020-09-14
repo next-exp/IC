@@ -39,6 +39,8 @@ from .. dataflow               import dataflow                as fl
 from .. dataflow.dataflow      import push
 from .. dataflow.dataflow      import pipe
 
+from .. database.load_db       import DataSiPM
+
 from .. reco.deconv_functions  import find_nearest
 from .. reco.deconv_functions  import cut_and_redistribute_df
 from .. reco.deconv_functions  import drop_isolated_sensors
@@ -66,7 +68,8 @@ class DeconvolutionMode(AutoNameEnumBase):
     separate = auto()
 
 
-def deconvolve_signal(psf_fname       : str,
+def deconvolve_signal(det_db          : pd.DataFrame,
+                      psf_fname       : str,
                       e_cut           : float,
                       n_iterations    : int,
                       iteration_tol   : float,
@@ -86,6 +89,7 @@ def deconvolve_signal(psf_fname       : str,
 
     Parameters
     ----------
+    det_db          : Detector database.
     psf_fname       : Point-spread function.
     e_cut           : Cut in relative value to the max voxel over the deconvolution output.
     n_iterations    : Number of Lucy-Richardson iterations
@@ -113,7 +117,10 @@ def deconvolve_signal(psf_fname       : str,
     diffusion     = np.asarray(diffusion              )
 
     psfs          = load_dst(psf_fname, 'PSF', 'PSFs')
-    deconvolution = deconvolve(n_iterations, iteration_tol, sample_width, bin_size, inter_method)
+    det_grid      = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
+                     for var, bs in zip(dimensions, bin_size)]
+    deconvolution = deconvolve(n_iterations, iteration_tol,
+                               sample_width, det_grid       , inter_method)
 
     if not isinstance(energy_type , HitEnergy          ):
         raise ValueError(f'energy_type {energy_type} is not a valid energy type.')
@@ -397,7 +404,7 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, detector_
     filter_events_no_hits = fl.map(check_nonempty_dataframe,
                                    args = 'cdst',
                                    out  = 'cdst_passed_no_hits')
-    deconvolve_events     = fl.map(deconvolve_signal(**deconv_params),
+    deconvolve_events     = fl.map(deconvolve_signal(DataSiPM(detector_db, run_number), **deconv_params),
                                    args = 'cdst',
                                    out  = 'deconv_dst')
 
@@ -409,9 +416,9 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, detector_
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
         # Define writers
-        write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
-        write_deconv     = fl.sink(  deconv_writer(h5out=h5out), args =  "deconv_dst"         )
-        write_summary    = fl.sink( summary_writer(h5out=h5out), args =  "summary"            )
+        write_event_info = fl.sink(run_and_event_writer (h5out), args = ("run_number", "event_number", "timestamp"))
+        write_deconv     = fl.sink(  deconv_writer(h5out=h5out), args =  "deconv_dst")
+        write_summary    = fl.sink( summary_writer(h5out=h5out), args =  "summary"   )
         result = push(source = cdst_from_files(files_in),
                       pipe   = pipe(fl.slice(*event_range, close_all=True)    ,
                                     print_every(print_mod)                    ,
