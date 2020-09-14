@@ -232,8 +232,11 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     h      = h.groupby(['X', 'Y']).Q.sum().reset_index()
     h      = h[h.Q > 40]
 
-    deconvolutor = deconvolve(15, 0.01, [10., 10.], [9., 9.], inter_method=InterpolationMethod.cubic)
+    det_db   = DataSiPM('new', 0)
+    det_grid = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
+               for var, bs in zip(['X', 'Y'], [9., 9.])]
 
+    deconvolutor = deconvolve(15, 0.01, [10., 10.], det_grid, inter_method=InterpolationMethod.cubic)
     x, y   = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
     xx, yy = np.meshgrid(x, y)
     xx, yy = xx.flatten(), yy.flatten()
