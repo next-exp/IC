@@ -181,3 +181,32 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
                            iterations=15, iter_thr=0.0001)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
+
+
+def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
+    hdst   = load_dst(data_hdst, 'RECO', 'Events')
+    h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
+    z      = h.Z.mean()
+    h      = h.groupby(['X', 'Y']).Q.sum().reset_index()
+    h      = h[h.Q > 40]
+
+    deconvolutor = deconvolve(15, 0.01, [10., 10.], [9., 9.], inter_method=InterpolationMethod.cubic)
+
+    x, y   = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
+    xx, yy = np.meshgrid(x, y)
+    xx, yy = xx.flatten(), yy.flatten()
+
+    psf           = {}
+    psf['factor'] = multivariate_normal([0., 0.], [1.027 * np.sqrt(z/10)] * 2).pdf(list(zip(xx, yy)))
+    psf['xr']     = xx
+    psf['yr']     = yy
+    psf['zr']     = [z] * len(xx)
+    psf           = pd.DataFrame(psf)
+
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+
+    check_x = np.diff(np.sort(np.unique(deco[1][0]), axis=None))
+    check_y = np.diff(np.sort(np.unique(deco[1][1]), axis=None))
+
+    assert(np.all(check_x % 9 == 0))
+    assert(np.all(check_y % 9 == 0))
