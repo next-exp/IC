@@ -220,11 +220,11 @@ def deconvolve(n_iterations  : int,
     psf         : Point-spread function.
 
     Initialization parameters:
-        n_iterations : Number of Lucy-Richardson iterations
-        sample_width : Sampling size of the sensors.
-        bin_size     : Size of the interpolated bins.
-        det_grid     : xy-coordinates of the detector grid, to interpolate on them
-        inter_method : Interpolation method.
+        n_iterations  : Number of Lucy-Richardson iterations
+        iteration_tol : Stopping threshold (difference between iterations).
+        sample_width  : Sampling size of the sensors.
+        det_grid      : xy-coordinates of the detector grid, to interpolate on them
+        inter_method  : Interpolation method.
 
     Returns
     ----------
