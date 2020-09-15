@@ -7,12 +7,13 @@ from typing  import Callable
 
 from enum    import auto
 
-from scipy        import interpolate
-from scipy.signal import fftconvolve
-from scipy.signal import convolve
+from scipy                  import interpolate
+from scipy.signal           import fftconvolve
+from scipy.signal           import convolve
 from scipy.spatial.distance import cdist
 
 from ..core .core_functions import shift_to_bin_centers
+from ..core .core_functions import in_range
 
 from .. types.ic_types      import AutoNameEnumBase
 
@@ -98,8 +99,8 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
     return drop_isolated_sensors
 
 
-def deconvolution_input(sample_width : List[float],
-                        bin_size     : List[float],
+def deconvolution_input(sample_width : List[float     ],
+                        det_grid     : List[np.ndarray],
                         inter_method : InterpolationMethod = InterpolationMethod.cubic
                        ) -> Callable:
     """
@@ -113,7 +114,7 @@ def deconvolution_input(sample_width : List[float],
 
     Initialization parameters:
         sample_width : Sampling size of the sensors.
-        bin_size     : Size of the interpolated bins.
+        det_grid     : xy-coordinates of the detector grid, to interpolate on them
         inter_method : Interpolation method.
 
     Returns
@@ -128,14 +129,13 @@ def deconvolution_input(sample_width : List[float],
                             weight      : np.ndarray
                            ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
-        ranges = [[coord.min() - 1.5 * sw, coord.max() + 1.5 * sw]     for coord,   sw in zip(data      , sample_width)]
-        nbin   = [np.ceil(np.diff(rang)/bs).astype('int')[0]           for bs   , rang in zip(bin_size  ,       ranges)]
-
+        ranges = [[coord.min() - 1.5 * sw, coord.max() + 1.5 * sw] for coord, sw in zip(data, sample_width)]
         if inter_method in (InterpolationMethod.linear, InterpolationMethod.cubic, InterpolationMethod.nearest):
-            allbins = [np.linspace(*rang, np.int(np.ceil(np.diff(rang)/sw)+1)) for rang ,   sw in zip(ranges[:2], sample_width)]
+            allbins   = [np.arange(rang[0], rang[1] + np.finfo(np.float32).eps, sw) for rang, sw in zip(ranges, sample_width)]
             Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
         elif inter_method is InterpolationMethod.none:
-            Hs, edges = np.histogramdd(data, bins=nbin   , normed=False, weights=weight, range=ranges)
+            allbins   = [grid[in_range(grid, *rang)] for rang, grid in zip(ranges, det_grid)]
+            Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
         else:
             raise ValueError(f'inter_method {inter_method} is not a valid interpolatin mode.')
 
@@ -143,7 +143,7 @@ def deconvolution_input(sample_width : List[float],
         inter_points = tuple      (inter_p.flatten() for inter_p in inter_points)
 
         if inter_method in (InterpolationMethod.linear, InterpolationMethod.cubic, InterpolationMethod.nearest):
-            Hs, inter_points = interpolate_signal(Hs, inter_points, edges, nbin, inter_method)
+            Hs, inter_points = interpolate_signal(Hs, inter_points, ranges, det_grid, inter_method)
 
         return Hs, inter_points
 
@@ -152,8 +152,8 @@ def deconvolution_input(sample_width : List[float],
 
 def interpolate_signal(Hs           : np.ndarray,
                        inter_points : Tuple[np.ndarray, ...],
-                       edges        : Tuple[np.ndarray, ...],
-                       nbin         : List[int],
+                       edges        : List [np.ndarray     ],
+                       det_grid     : List [np.ndarray     ],
                        inter_method : InterpolationMethod = InterpolationMethod.cubic
                        ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
     """
@@ -165,7 +165,7 @@ def interpolate_signal(Hs           : np.ndarray,
     Hs           : Distribution weights to be interpolated.
     inter_points : Distribution coordinates to be interpolated.
     edges        : Edges of the coordinates.
-    nbin         : Number of points to be interpolated in each dimension.
+    det_grid     : xy-coordinates of the detector grid, to interpolate on them
     inter_method : Interpolation method.
 
     Returns
@@ -173,13 +173,11 @@ def interpolate_signal(Hs           : np.ndarray,
     H1         : Interpolated distribution weights.
     new_points : Interpolated coordinates.
     """
-    coords = (shift_to_bin_centers(np.linspace(np.min(edge), np.max(edge), n + 1))
-              for n, edge in zip(nbin, edges))
+    coords       = [grid[in_range(grid, *edge)] for edge, grid in zip(edges, det_grid)]
     new_points   = np.meshgrid(*coords, indexing='ij')
     new_points   = tuple      (new_p.flatten() for new_p in new_points)
-
     H1 = interpolate.griddata(inter_points, Hs.flatten(), new_points, method=inter_method.value)
-    H1 = np.nan_to_num       (H1.reshape(nbin))
+    H1 = np.nan_to_num       (H1.reshape([len(c) for c in coords]))
     H1 = np.clip             (H1, 0, None)
 
     return H1, new_points
@@ -208,7 +206,7 @@ def find_nearest(array : np.ndarray,
 def deconvolve(n_iterations  : int,
                iteration_tol : float,
                sample_width  : List[float],
-               bin_size      : List[float],
+               det_grid      : List[np.ndarray],
                inter_method  : InterpolationMethod = InterpolationMethod.cubic
                ) -> Callable:
     """
@@ -222,10 +220,11 @@ def deconvolve(n_iterations  : int,
     psf         : Point-spread function.
 
     Initialization parameters:
-        n_iterations : Number of Lucy-Richardson iterations
-        sample_width : Sampling size of the sensors.
-        bin_size     : Size of the interpolated bins.
-        inter_method : Interpolation method.
+        n_iterations  : Number of Lucy-Richardson iterations
+        iteration_tol : Stopping threshold (difference between iterations).
+        sample_width  : Sampling size of the sensors.
+        det_grid      : xy-coordinates of the detector grid, to interpolate on them
+        inter_method  : Interpolation method.
 
     Returns
     ----------
@@ -233,7 +232,7 @@ def deconvolve(n_iterations  : int,
     inter_pos     : Coordinates of the deconvolved image.
     """
     var_name     = np.array(['xr', 'yr', 'zr'])
-    deconv_input = deconvolution_input(sample_width, bin_size, inter_method)
+    deconv_input = deconvolution_input(sample_width, det_grid, inter_method)
 
     def deconvolve(data   : Tuple[np.ndarray, ...],
                    weight : np.ndarray,

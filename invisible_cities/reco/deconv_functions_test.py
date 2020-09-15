@@ -2,30 +2,32 @@ import random
 import numpy  as np
 import pandas as pd
 
-from pytest                  import mark
-from pytest                  import raises
+from pytest                       import mark
+from pytest                       import raises
 
-from hypothesis              import given
-from hypothesis.strategies   import floats
-from hypothesis.extra.pandas import data_frames
-from hypothesis.extra.pandas import column
-from hypothesis.extra.pandas import range_indexes
+from hypothesis                   import given
+from hypothesis.strategies        import floats
+from hypothesis.extra.pandas      import data_frames
+from hypothesis.extra.pandas      import column
+from hypothesis.extra.pandas      import range_indexes
 
-from .. reco.deconv_functions import cut_and_redistribute_df
-from .. reco.deconv_functions import drop_isolated_sensors
-from .. reco.deconv_functions import interpolate_signal
-from .. reco.deconv_functions import deconvolution_input
-from .. reco.deconv_functions import deconvolve
-from .. reco.deconv_functions import richardson_lucy
-from .. reco.deconv_functions import InterpolationMethod
+from .. reco    .deconv_functions import cut_and_redistribute_df
+from .. reco    .deconv_functions import drop_isolated_sensors
+from .. reco    .deconv_functions import interpolate_signal
+from .. reco    .deconv_functions import deconvolution_input
+from .. reco    .deconv_functions import deconvolve
+from .. reco    .deconv_functions import richardson_lucy
+from .. reco    .deconv_functions import InterpolationMethod
 
-from .. core.core_functions   import in_range
-from .. core.core_functions   import shift_to_bin_centers
-from .. core.testing_utils    import assert_dataframes_close
+from .. core    .core_functions   import in_range
+from .. core    .core_functions   import shift_to_bin_centers
+from .. core    .testing_utils    import assert_dataframes_close
 
-from ..   io.dst_io           import load_dst
+from .. io      .dst_io           import load_dst
 
-from scipy.stats              import multivariate_normal
+from .. database.load_db          import DataSiPM
+
+from scipy.stats                  import multivariate_normal
 
 
 @given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3)),
@@ -84,34 +86,37 @@ def test_interpolate_signal():
 
     g = multivariate_normal((0.5, 0.5), (0.05, 0.5))
 
-    grid_x, grid_y  = np.mgrid[0:1:12j, 0:1:12j] # Grid for interpolation
     points          = np.meshgrid(np.linspace(0, 1, 6), np.linspace(0, 1, 6)) # Coordinates where g is known
     points          = (points[0].flatten(), points[1].flatten())
     values          = g.pdf(list(zip(points[0], points[1]))) # Value of g at the known coordinates.
     n_interpolation = 12 # How many points to interpolate
+    grid            = shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1))# Grid for interpolation
 
     out_interpolation = interpolate_signal(values, points,
-                                           (np.linspace(-0.05, 1.05, 6), np.linspace(-0.05, 1.05, 6)),
-                                           [n_interpolation, n_interpolation],
+                                           [[-0.05, 1.05], [-0.05, 1.05]],
+                                           [grid, grid],
                                            InterpolationMethod.cubic)
     inter_charge      = out_interpolation[0].flatten()
     inter_position    = out_interpolation[1]
     ref_position      = shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1))
 
     assert np.allclose(ref_interpolation, np.around(inter_charge, decimals=3))
-    assert np.allclose(ref_position     , sorted(set(inter_position[0])))
-    assert np.allclose(ref_position     , sorted(set(inter_position[1])))
+    assert np.allclose(grid             , sorted(set(inter_position[0])))
+    assert np.allclose(grid             , sorted(set(inter_position[1])))
 
 
 def test_deconvolution_input(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load(data_hdst_deconvolved)
-    hdst              = load_dst(data_hdst, 'RECO', 'Events')
 
-    h = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
-    h = h.groupby(['X', 'Y']).Q.sum().reset_index()
-    h = h[h.Q > 40]
+    hdst   = load_dst(data_hdst, 'RECO', 'Events')
+    h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
+    h      = h.groupby(['X', 'Y']).Q.sum().reset_index()
+    h      = h[h.Q > 40]
 
-    interpolator = deconvolution_input([10., 10.], [1., 1.], InterpolationMethod.cubic)
+    det_db   = DataSiPM('new', 0)
+    det_grid = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
+               for var, bs in zip(['X', 'Y'], [1., 1.])]
+    interpolator = deconvolution_input([10., 10.], det_grid, InterpolationMethod.cubic)
     inter        = interpolator((h.X, h.Y), h.Q)
 
     assert np.allclose(ref_interpolation['e_inter'], inter[0])
@@ -127,14 +132,17 @@ def test_deconvolution_input_interpolation_method(data_hdst, data_hdst_deconvolv
 
 def test_deconvolve(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load (data_hdst_deconvolved)
-    hdst              = load_dst(data_hdst, 'RECO', 'Events')
 
-    h = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
-    z = h.Z.mean()
-    h = h.groupby(['X', 'Y']).Q.sum().reset_index()
-    h = h[h.Q > 40]
+    hdst   = load_dst(data_hdst, 'RECO', 'Events')
+    h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
+    z      = h.Z.mean()
+    h      = h.groupby(['X', 'Y']).Q.sum().reset_index()
+    h      = h[h.Q > 40]
 
-    deconvolutor = deconvolve(15, 0.01, [10., 10.], [1., 1.], inter_method=InterpolationMethod.cubic)
+    det_db   = DataSiPM('new', 0)
+    det_grid = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
+               for var, bs in zip(['X', 'Y'], [1., 1.])]
+    deconvolutor = deconvolve(15, 0.01, [10., 10.], det_grid, inter_method=InterpolationMethod.cubic)
 
     x, y   = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
     xx, yy = np.meshgrid(x, y)
@@ -156,15 +164,19 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
 
 def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load (data_hdst_deconvolved)
-    hdst              = load_dst(data_hdst, 'RECO', 'Events')
 
-    h = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
-    z = h.Z.mean()
-    h = h.groupby(['X', 'Y']).Q.sum().reset_index()
-    h = h[h.Q>40]
+    hdst   = load_dst(data_hdst, 'RECO', 'Events')
+    h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
+    z      = h.Z.mean()
+    h      = h.groupby(['X', 'Y']).Q.sum().reset_index()
+    h      = h[h.Q>40]
 
-    interpolator = deconvolution_input([10., 10.], [1., 1.], InterpolationMethod.cubic)
-    inter = interpolator((h.X, h.Y), h.Q)
+    det_db   = DataSiPM('new', 0)
+    det_grid = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
+               for var, bs in zip(['X', 'Y'], [1., 1.])]
+
+    interpolator = deconvolution_input([10., 10.], det_grid, InterpolationMethod.cubic)
+    inter        = interpolator((h.X, h.Y), h.Q)
 
     x , y  = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
     xx, yy = np.meshgrid(x, y)
@@ -181,3 +193,65 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
                            iterations=15, iter_thr=0.0001)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
+
+
+def test_grid_binning(data_hdst, data_hdst_deconvolved):
+    hdst   = load_dst(data_hdst, 'RECO', 'Events')
+    h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
+    z      = h.Z.mean()
+    h      = h.groupby(['X', 'Y']).Q.sum().reset_index()
+    h      = h[h.Q > 40]
+
+    det_db   = DataSiPM('new', 0)
+    det_grid = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
+               for var, bs in zip(['X', 'Y'], [9., 9.])]
+
+    deconvolutor = deconvolve(15, 0.01, [10., 10.], det_grid, inter_method=InterpolationMethod.cubic)
+
+    x, y   = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
+    xx, yy = np.meshgrid(x, y)
+    xx, yy = xx.flatten(), yy.flatten()
+
+    psf           = {}
+    psf['factor'] = multivariate_normal([0., 0.], [1.027 * np.sqrt(z/10)] * 2).pdf(list(zip(xx, yy)))
+    psf['xr']     = xx
+    psf['yr']     = yy
+    psf['zr']     = [z] * len(xx)
+    psf           = pd.DataFrame(psf)
+
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+
+    assert np.all((deco[1][0] - det_db['X'].min() + 9/2) % 9 == 0)
+    assert np.all((deco[1][1] - det_db['Y'].min() + 9/2) % 9 == 0)
+
+
+def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
+    hdst   = load_dst(data_hdst, 'RECO', 'Events')
+    h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
+    z      = h.Z.mean()
+    h      = h.groupby(['X', 'Y']).Q.sum().reset_index()
+    h      = h[h.Q > 40]
+
+    det_db   = DataSiPM('new', 0)
+    det_grid = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
+               for var, bs in zip(['X', 'Y'], [9., 9.])]
+
+    deconvolutor = deconvolve(15, 0.01, [10., 10.], det_grid, inter_method=InterpolationMethod.cubic)
+    x, y   = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
+    xx, yy = np.meshgrid(x, y)
+    xx, yy = xx.flatten(), yy.flatten()
+
+    psf           = {}
+    psf['factor'] = multivariate_normal([0., 0.], [1.027 * np.sqrt(z/10)] * 2).pdf(list(zip(xx, yy)))
+    psf['xr']     = xx
+    psf['yr']     = yy
+    psf['zr']     = [z] * len(xx)
+    psf           = pd.DataFrame(psf)
+
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+
+    check_x = np.diff(np.sort(np.unique(deco[1][0]), axis=None))
+    check_y = np.diff(np.sort(np.unique(deco[1][1]), axis=None))
+
+    assert(np.all(check_x % 9 == 0))
+    assert(np.all(check_y % 9 == 0))

@@ -17,6 +17,7 @@ from .. reco.deconv_functions  import InterpolationMethod
 from .. evm .event_model       import HitEnergy
 from .. core.testing_utils     import assert_dataframes_close
 from .. core.testing_utils     import assert_tables_equality
+from .. database.load_db       import DataSiPM
 
 
 def test_create_deconvolution_df(ICDATADIR):
@@ -139,7 +140,7 @@ def test_deconvolve_signal_enums(deconvolution_config, param_name):
     conf_dict[param_name]     = param_name
 
     with raises(ValueError):
-        deconvolve_signal(**conf_dict)
+        deconvolve_signal(DataSiPM('new'), **conf_dict)
 
 
 def test_beersheba_expandvar(deconvolution_config):
