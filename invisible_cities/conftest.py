@@ -74,6 +74,11 @@ def nohits_sim_file(request, ICDATADIR):
 def sns_only_sim_file(request, ICDATADIR):
     return os.path.join(ICDATADIR, request.param)
 
+@pytest.fixture(scope  = 'session',
+                params = ['Kr83_full_nexus_v5_03_01_ACTIVE_7bar_1evt.sim.h5'])
+def full_sim_file(request, ICDATADIR):
+    return os.path.join(ICDATADIR, request.param)
+
 
 @pytest.fixture(scope='session')
 def mc_all_hits_data(krypton_MCRD_file):

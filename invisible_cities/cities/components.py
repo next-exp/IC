@@ -7,10 +7,12 @@ from os.path     import expandvars
 from itertools   import count
 from itertools   import repeat
 from enum        import Enum
+from typing      import Callable
 from typing      import Iterator
 from typing      import Mapping
 from typing      import List
 from typing      import Dict
+from typing      import Tuple
 from typing      import Union
 import tables as tb
 import numpy  as np
@@ -37,6 +39,7 @@ from .. core   .exceptions        import InvalidInputFileStructure
 from .. core   .configure         import                EventRange
 from .. core   .configure         import          event_range_help
 from .. core   .random_sampling   import              NoiseSampler
+from .. detsim                    import          buffer_functions as  bf
 from .. reco                      import           calib_functions as  cf
 from .. reco                      import          sensor_functions as  sf
 from .. reco                      import   calib_sensors_functions as csf
@@ -203,6 +206,53 @@ def copy_mc_info(files_in     : List[str],
             continue
     if len(np.setdiff1d(event_numbers, copied_events)) != 0:
         raise MCEventNotFound(f' Some events not found in MC tables')
+
+
+def wf_binner(max_buffer: int) -> Callable:
+    """
+    Returns a function to be used to convert the raw
+    input MC sensor info into data binned according to
+    a set bin width, effectively
+    padding with zeros inbetween the separate signals.
+
+    Parameters
+    ----------
+    max_buffer : float
+                 Maximum event time to be considered in nanoseconds
+    """
+    def bin_sensors(sensors  : pd.DataFrame,
+                    bin_width: float       ,
+                    t_min    : float       ,
+                    t_max    : float       ) -> Tuple[np.ndarray, pd.Series]:
+        return bf.bin_sensors(sensors, bin_width, t_min, t_max, max_buffer)
+    return bin_sensors
+
+
+def signal_finder(buffer_len   : float,
+                  bin_width    : float,
+                  bin_threshold:   int) -> Callable:
+    """
+    Decides where there is signal-like
+    charge according to the configuration
+    and the PMT sum in order to give
+    a useful position for buffer selection.
+    Currently simple threshold on binned charge.
+
+    Parameters
+    ----------
+    buffer_len    : float
+                    Configured buffer length in mus
+    bin_width     : float
+                    Sampling width for sensors
+    bin_threshold : int
+                    PE threshold for selection
+    """
+    # The stand_off is the minumum number of samples
+    # necessary between candidate triggers.
+    stand_off = int(buffer_len / bin_width)
+    def find_signal(wfs: pd.Series) -> List[int]:
+        return bf.find_signal_start(wfs, bin_threshold, stand_off)
+    return find_signal
 
 
 # TODO: consider caching database
