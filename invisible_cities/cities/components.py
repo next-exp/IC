@@ -385,12 +385,12 @@ def mcsensors_from_file(paths     : List[str],
             pmt_resp  = sns_resp.loc[evt][ pmt_indx]
             sipm_resp = sns_resp.loc[evt][~pmt_indx]
 
-            yield dict(evt         = evt                ,
-                       timestamp   = timestamp          ,
-                       pmt_binwid  = pmt_binwid .iloc[0],
-                       sipm_binwid = sipm_binwid.iloc[0],
-                       pmt_resp    = pmt_resp           ,
-                       sipm_resp   = sipm_resp          )
+            yield dict(event_number = evt                ,
+                       timestamp    = timestamp          ,
+                       pmt_binwid   = pmt_binwid .iloc[0],
+                       sipm_binwid  = sipm_binwid.iloc[0],
+                       pmt_resp     = pmt_resp           ,
+                       sipm_resp    = sipm_resp          )
 
 
 def wf_from_files(paths, wf_type):
