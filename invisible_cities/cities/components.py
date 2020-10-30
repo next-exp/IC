@@ -369,17 +369,21 @@ def mcsensors_from_file(paths     : List[str],
         ## Only in case of evt splitting will be non zero
         timestamp = 0
 
-        for evt in sns_resp.index.levels[0]:
-            pmt_indx  = sns_resp.loc[evt].index.isin(pmt_ids)
-            pmt_resp  = sns_resp.loc[evt][ pmt_indx]
-            sipm_resp = sns_resp.loc[evt][~pmt_indx]
+        for evt in mcinfo_io.get_event_numbers_in_file(file_name):
+            try:
+                ## Assumes two types of sensor, all non pmt
+                ## assumed to be sipms. NEW, NEXT100 and DEMOPP safe
+                ## Flex with this structure too.
+                pmt_indx  = sns_resp.loc[evt].index.isin(pmt_ids)
+                pmt_resp  = sns_resp.loc[evt][ pmt_indx]
+                sipm_resp = sns_resp.loc[evt][~pmt_indx]
+            except KeyError:
+                pmt_resp = sipm_resp = pd.DataFrame(columns=sns_resp.columns)
 
-            yield dict(event_number = evt                ,
-                       timestamp    = timestamp          ,
-                       pmt_binwid   = pmt_binwid .iloc[0],
-                       sipm_binwid  = sipm_binwid.iloc[0],
-                       pmt_resp     = pmt_resp           ,
-                       sipm_resp    = sipm_resp          )
+            yield dict(event_number = evt      ,
+                       timestamp    = timestamp,
+                       pmt_resp     = pmt_resp ,
+                       sipm_resp    = sipm_resp)
 
 
 def wf_from_files(paths, wf_type):

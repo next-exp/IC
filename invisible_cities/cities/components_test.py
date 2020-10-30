@@ -191,20 +191,12 @@ def test_copy_mc_info_repeated_event_numbers(ICDATADIR, config_tmpdir):
         assert events_in_h5out.tolist() == [0,1,0,9]
 
 
-def test_mcsensors_from_file_invalid_input_raises(ICDATADIR):
-    file_in = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.oldformat.sim.h5")
-
-    s = mcsensors_from_file((file_in,), db_file='new', run_number=-6400)
-    with raises(MCEventNotFound):
-        next(s)
-
-
-def test_mcsensors_from_file_raises_warning_flex3type(ICDATADIR):
-    file_in = os.path.join(ICDATADIR, "NextFlex_mc_sensors.h5")
-
-    s = mcsensors_from_file((file_in,), db_file='new', run_number=-6400)
-    with warns(UserWarning):
-        next(s)
+def test_mcsensors_from_file_fast_returns_empty(ICDATADIR):
+    file_in = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.h5")
+    sns_gen = mcsensors_from_file([file_in], 'new', -7951)
+    first_evt = next(sns_gen)
+    assert first_evt[ 'pmt_resp'].empty
+    assert first_evt['sipm_resp'].empty
 
 
 def test_mcsensors_from_file_correct_yield(ICDATADIR):
