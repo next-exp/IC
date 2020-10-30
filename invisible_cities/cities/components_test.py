@@ -13,7 +13,6 @@ from pytest import warns
 
 from .. core.configure  import EventRange as ER
 from .. core.exceptions import InvalidInputFileStructure
-from .. core.exceptions import           MCEventNotFound
 from .. core            import system_of_units as units
 
 from .  components import event_range

@@ -3,11 +3,11 @@ import os
 import numpy  as np
 import tables as tb
 
-from .. core                    import           system_of_units as units
-from .. core    .configure      import                 configure
-from .. core    .testing_utils  import    assert_tables_equality
-from .. database                import                   load_db
-from .. io      .mcinfo_io      import load_mcsensor_response_df
+from .. core                   import           system_of_units as units
+from .. core    .configure     import                 configure
+from .. core    .testing_utils import    assert_tables_equality
+from .. database               import                   load_db
+from .. io      .mcinfo_io     import load_mcsensor_response_df
 
 from .  buffy import buffy
 
@@ -24,7 +24,7 @@ def test_buffy_kr(config_tmpdir, full_sim_file):
 
     sipm_ids      = load_db.DataSiPM('new', -6400).SensorID.values
 
-    conf     = configure('buffy invisible_cities/config/buffy.conf'.split())
+    conf = configure('buffy invisible_cities/config/buffy.conf'.split())
     conf.update(dict(files_in      = file_in      ,
                      file_out      = file_out     ,
                      buffer_length = buffer_length))
@@ -70,6 +70,29 @@ def test_buffy_kr(config_tmpdir, full_sim_file):
         assert np.all(sipm_integ[sipm_nonzero] == sns_sums[sns_sums.index > 12])
 
 
+def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
+    file_in  = os.path.join(ICDATADIR, 'nexus_new_kr83m_fast.oldformat.sim.h5')
+    file_out = os.path.join(config_tmpdir, 'filtered_empty.buffers.h5')
+
+    nevt = 2
+    conf = configure('buffy invisible_cities/config/buffy.conf'.split())
+    conf.update(dict(files_in=file_in, file_out=file_out, event_range=nevt))
+
+    buffy_result = buffy(**conf)
+
+    assert buffy_result.events_in            == nevt
+    assert buffy_result.events_resp.n_passed == 0
+    with tb.open_file(file_out) as h5out:
+        assert h5out.root.Run.events.shape == (0,)
+
+        assert hasattr(h5out.root        ,         'Filters')
+        assert hasattr(h5out.root.Filters, 'detected_events')
+
+        evt_filter = h5out.root.Filters.detected_events.read()
+        assert len(evt_filter) == nevt
+        assert not np.any(evt_filter['passed'])
+
+
 def test_buffy_exact_result(config_tmpdir, ICDATADIR):
     file_in     = os.path.join(ICDATADIR                              ,
                                'nexus_new_kr83m_full.newformat.sim.h5')
@@ -112,7 +135,7 @@ def test_buffy_splits_event(config_tmpdir, ICDATADIR):
     sns_sums   = sns_resp.groupby('sensor_id').charge.sum()
     pmt_integ  = sns_sums[sns_sums.index < 12].values
     sipm_integ = sns_sums[sns_sums.index > 12].values
-    with tb.open_file(file_in) as h5in, tb.open_file(file_out) as h5out:
+    with tb.open_file(file_out) as h5out:
         assert len(h5out.root.Run.events[:]) == 2
         assert np.all(h5out.root.Run.events.cols.evt_number[:] == evt)
 
