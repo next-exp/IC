@@ -1,4 +1,5 @@
 import numpy  as np
+import tables as tb
 import pandas as pd
 
 from typing import Callable
@@ -89,8 +90,13 @@ def get_n_sensors(detector_db: str, run_number: int) -> Tuple[int, int]:
 
 
 def pmt_and_sipm_bin_width(file_name: str) -> Tuple[float, float]:
-    """returns pmt and sipm bin widths as set in nexus"""
+    """
+    returns pmt and sipm bin widths as set in nexus.
+    Assumes Pmt + SiPM as in NEW, NEXT100 & DEMO.
+    """
     sns_bins = get_sensor_binning(file_name)
+    if sns_bins.empty or np.any(sns_bins.bin_width <= 0):
+        raise tb.NoSuchNodeError('No useful binning info found')
     pmt_wid  = sns_bins.bin_width[sns_bins.index.str.contains( 'Pmt')].iloc[0]
     sipm_wid = sns_bins.bin_width[sns_bins.index.str.contains('SiPM')].iloc[0]
     return pmt_wid, sipm_wid
