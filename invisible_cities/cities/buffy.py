@@ -30,6 +30,7 @@ from .. detsim.sensor_utils     import          get_n_sensors
 from .. detsim.sensor_utils     import           sensor_order
 from .. detsim.sensor_utils     import pmt_and_sipm_bin_width
 from .. detsim.sensor_utils     import          trigger_times
+from .. io    .event_filter_io  import    event_filter_writer
 from .. io    .rwf_io           import          buffer_writer
 from .. reco                    import          tbl_functions as tbl
 
@@ -77,17 +78,22 @@ def buffy(files_in     , file_out   , compression      , event_range,
                                out  = "evt_times"                        )
 
     calculate_buffers = fl.map(buffer_calculator(buffer_length, pre_trigger,
-                                                  pmt_wid      ,    sipm_wid),
+                                                  pmt_wid     ,    sipm_wid),
                                 args = ("pulses",
                                         "pmt_bins" ,  "pmt_bin_wfs",
-                                        "sipm_bins", "sipm_bin_wfs"),
-                                out  = "buffers")
+                                        "sipm_bins", "sipm_bin_wfs")        ,
+                                out  = "buffers"                            )
 
     order_sensors     = fl.map(sensor_order(detector_db, run_number,
                                             nsamp_pmt  , nsamp_sipm) ,
                                args = ("pmt_bin_wfs", "sipm_bin_wfs",
                                        "buffers")                    ,
                                out  = "ordered_buffers"              )
+
+    filter_events     = fl.map(lambda x, y : not any([x.empty, y.empty]),
+                               args = ('pmt_resp' , 'sipm_resp')        ,
+                               out  = 'event_passed'                    )
+    events_with_resp  = fl.count_filter(bool, args="event_passed")
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
         buffer_writer_ = fl.sink(buffer_writer(h5out                  ,
@@ -99,17 +105,23 @@ def buffy(files_in     , file_out   , compression      , event_range,
                                  args = ("event_number", "evt_times"  ,
                                          "ordered_buffers"            ))
 
+        write_filter   = fl.sink(event_filter_writer(h5out, "detected_events"),
+                                 args=("event_number", "event_passed")       )
+
         event_count_in = fl.spy_count()
 
         evtnum_collect = collect()
 
         result = fl.push(source = mcsensors_from_file(files_in   ,
                                                       detector_db,
-                                                      run_number )         ,
+                                                      run_number )           ,
                          pipe   = fl.pipe(fl.slice(*event_range  ,
                                                    close_all=True)      ,
                                           event_count_in.spy            ,
                                           print_every(print_mod)        ,
+                                          filter_events                 ,
+                                          fl.branch(write_filter)       ,
+                                          events_with_resp.filter       ,
                                           extract_tminmax               ,
                                           bin_pmt_wf                    ,
                                           bin_sipm_wf                   ,
@@ -119,9 +131,10 @@ def buffy(files_in     , file_out   , compression      , event_range,
                                           order_sensors                 ,
                                           fl.branch("event_number"      ,
                                                     evtnum_collect.sink),
-                                          buffer_writer_                )  ,
-                         result = dict(events_in   = event_count_in.future,
-                                       evtnum_list = evtnum_collect.future))
+                                          buffer_writer_                )    ,
+                         result = dict(events_in   = event_count_in.future  ,
+                                       events_resp = events_with_resp.future,
+                                       evtnum_list = evtnum_collect.future  ))
 
         copy_mc_info(files_in, h5out, result.evtnum_list,
                      detector_db, run_number)
