@@ -15,9 +15,15 @@ separated from each other by more than a buffer width the nexus event
 can be split into multiple data-like triggers.
 """
 
-import numpy  as np
+import pandas as pd
 import tables as tb
 
+import warnings
+
+from typing import Callable
+from typing import     List
+
+from .. core                    import        system_of_units as units
 from .. detsim.buffer_functions import      buffer_calculator
 from .. detsim.sensor_utils     import   first_and_last_times
 from .. detsim.sensor_utils     import          get_n_sensors
@@ -44,25 +50,22 @@ def buffy(files_in     , file_out   , compression      , event_range,
           buffer_length, pre_trigger, trigger_threshold):
 
     npmt, nsipm       = get_n_sensors(detector_db, run_number)
-    pmt_wid, sipm_wid = pmt_and_sipm_bin_width(files_in[0])
+    pmt_wid, sipm_wid = pmt_and_sipm_bin_width_safe_(files_in)
     nsamp_pmt         = int(buffer_length /  pmt_wid)
     nsamp_sipm        = int(buffer_length / sipm_wid)
 
-    extract_tminmax   = fl.map(first_and_last_times                ,
-                               args = ("pmt_resp"   ,  "sipm_resp",
-                                       "pmt_binwid", "sipm_binwid"),
-                               out  = ("min_time", "max_time"))
+    extract_tminmax   = fl.map(first_and_last_times_(pmt_wid, sipm_wid),
+                               args = ("pmt_resp", "sipm_resp")        ,
+                               out  = ("min_time",  "max_time")        )
 
     bin_calculation   = wf_binner(max_time)
-    bin_pmt_wf        = fl.map(bin_calculation                   ,
-                               args = ("pmt_resp",  "pmt_binwid",
-                                       "min_time",    "max_time"),
-                               out  = ("pmt_bins", "pmt_bin_wfs"))
+    bin_pmt_wf        = fl.map(binning_set_width(bin_calculation, pmt_wid),
+                               args = ("pmt_resp", "min_time", "max_time"),
+                               out  = ("pmt_bins", "pmt_bin_wfs")         )
 
-    bin_sipm_wf       = fl.map(bin_calculation                    ,
-                               args = ("sipm_resp", "sipm_binwid",
-                                       "min_time" ,    "max_time"),
-                               out  = ("sipm_bins", "sipm_bin_wfs"))
+    bin_sipm_wf       = fl.map(binning_set_width(bin_calculation, sipm_wid),
+                               args = ("sipm_resp", "min_time", "max_time"),
+                               out  = ("sipm_bins", "sipm_bin_wfs")        )
 
     find_signal       = fl.map(signal_finder(buffer_length, pmt_wid,
                                              trigger_threshold     ),
@@ -124,3 +127,30 @@ def buffy(files_in     , file_out   , compression      , event_range,
                      detector_db, run_number)
 
         return result
+
+
+def first_and_last_times_(pmt_binwid: float, sipm_binwid: float):
+    def get_event_time_extremes(pmt_resp : pd.DataFrame,
+                                sipm_resp: pd.DataFrame):
+        return first_and_last_times(pmt_resp  , sipm_resp  ,
+                                    pmt_binwid, sipm_binwid)
+    return get_event_time_extremes
+
+
+def binning_set_width(binning_fnc: Callable, bin_width: float):
+    def bin_calculation_(sensors: pd.DataFrame,
+                         t_min  : float       ,
+                         t_max  : float       ):
+        return binning_fnc(sensors, bin_width, t_min, t_max)
+    return bin_calculation_
+
+
+def pmt_and_sipm_bin_width_safe_(files_in: List[str]):
+    for fn in files_in:
+        try:
+            pmt_wid, sipm_wid = pmt_and_sipm_bin_width(fn)
+            return pmt_wid, sipm_wid
+        except (tb.HDF5ExtError, tb.NoSuchNodeError) as e:
+            warnings.warn(f' no useful bin widths: {0}'.format(e), UserWarning)
+            continue
+    return 25 * units.ns, 1 * units.mus
