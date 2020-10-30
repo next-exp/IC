@@ -357,24 +357,13 @@ def mcsensors_from_file(paths     : List[str],
                  Run number for database
     """
 
-    pmt_ids  = load_db.DataPMT (db_file, run_number).SensorID
+    pmt_ids  = load_db.DataPMT(db_file, run_number).SensorID
 
     for file_name in paths:
         sns_resp = mcinfo_io.load_mcsensor_response_df(file_name              ,
                                                        return_raw = False     ,
                                                        db_file    = db_file   ,
                                                        run_no     = run_number)
-        sns_bins = mcinfo_io.get_sensor_binning(file_name)
-        if sns_resp.empty or sns_bins.empty:
-            raise MCEventNotFound(f'Sensor response info not in file {file_name}')
-        elif sns_bins.shape[0] != 2:
-          warnings.warn(f' File contains wrong number (not 2) of sensor types.\
-          Simulation should be for NEW, NEXT100 or DEMOPP', UserWarning)
-        ## Source only valid for NEW, NEXT100 & DEMOPP
-        ## and for flexible geometries with Pmt/SiPM separation of sensors
-        PMT_name_indx = sns_bins.index.str.contains('Pmt')
-        pmt_binwid    = sns_bins.bin_width[ PMT_name_indx]
-        sipm_binwid   = sns_bins.bin_width[~PMT_name_indx]
 
         ## MC uses dummy timestamp for now
         ## Only in case of evt splitting will be non zero
