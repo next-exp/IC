@@ -13,7 +13,6 @@ from pytest import warns
 
 from .. core.configure  import EventRange as ER
 from .. core.exceptions import InvalidInputFileStructure
-from .. core.exceptions import           MCEventNotFound
 from .. core            import system_of_units as units
 
 from .  components import event_range
@@ -191,48 +190,34 @@ def test_copy_mc_info_repeated_event_numbers(ICDATADIR, config_tmpdir):
         assert events_in_h5out.tolist() == [0,1,0,9]
 
 
-def test_mcsensors_from_file_invalid_input_raises(ICDATADIR):
-    file_in = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.oldformat.sim.h5")
-
-    s = mcsensors_from_file((file_in,), db_file='new', run_number=-6400)
-    with raises(MCEventNotFound):
-        next(s)
-
-
-def test_mcsensors_from_file_raises_warning_flex3type(ICDATADIR):
-    file_in = os.path.join(ICDATADIR, "NextFlex_mc_sensors.h5")
-
-    s = mcsensors_from_file((file_in,), db_file='new', run_number=-6400)
-    with warns(UserWarning):
-        next(s)
+def test_mcsensors_from_file_fast_returns_empty(ICDATADIR):
+    file_in = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.h5")
+    sns_gen = mcsensors_from_file([file_in], 'new', -7951)
+    first_evt = next(sns_gen)
+    assert first_evt[ 'pmt_resp'].empty
+    assert first_evt['sipm_resp'].empty
 
 
 def test_mcsensors_from_file_correct_yield(ICDATADIR):
     evt_no         =    0
     timestamp      =    0
-    pmt_binwid     =    1 * units.ns
-    sipm_binwid    =    1 * units.mus
     npmts_hit      =   12
     total_pmthits  = 4303
     nsipms_hit     =  313
     total_sipmhits =  389
-    keys           = ['evt'        , 'timestamp', 'pmt_binwid',
-                      'sipm_binwid', 'pmt_resp' ,  'sipm_resp']
-    
+    keys           = ['event_number', 'timestamp', 'pmt_resp', 'sipm_resp']
+
     file_in   = os.path.join(ICDATADIR, "nexus_new_kr83m_full.newformat.sim.h5")
     sns_gen   = mcsensors_from_file([file_in], 'new', -7951)
     first_evt = next(sns_gen)
-    
+
     assert set(keys) == set(first_evt.keys())
-    
-    assert      first_evt[        'evt']                 == evt_no
-    assert      first_evt[  'timestamp']                 == timestamp
-    assert      first_evt[ 'pmt_binwid']                 == pmt_binwid
-    assert      first_evt['sipm_binwid']                 == sipm_binwid
-    assert type(first_evt[   'pmt_resp'])                == pd.DataFrame
-    assert type(first_evt[  'sipm_resp'])                == pd.DataFrame
-    assert  len(first_evt[   'pmt_resp'].index.unique()) == npmts_hit
-    assert      first_evt[   'pmt_resp'].shape[0]        == total_pmthits
-    assert  len(first_evt[  'sipm_resp'].index.unique()) == nsipms_hit
-    assert      first_evt[  'sipm_resp'].shape[0]        == total_sipmhits
-    
+
+    assert      first_evt['event_number']                 == evt_no
+    assert      first_evt[   'timestamp']                 == timestamp
+    assert type(first_evt[    'pmt_resp'])                == pd.DataFrame
+    assert type(first_evt[   'sipm_resp'])                == pd.DataFrame
+    assert  len(first_evt[    'pmt_resp'].index.unique()) == npmts_hit
+    assert      first_evt[    'pmt_resp'].shape[0]        == total_pmthits
+    assert  len(first_evt[   'sipm_resp'].index.unique()) == nsipms_hit
+    assert      first_evt[   'sipm_resp'].shape[0]        == total_sipmhits
