@@ -30,8 +30,7 @@ from .  components import collect
 from .  components import copy_mc_info
 from .  components import print_every
 from .  components import cdst_from_files
-
-from .  esmeralda  import summary_writer
+from .  components import summary_writer
 
 from .. reco                   import tbl_functions           as tbl
 from .. dataflow               import dataflow                as fl
