@@ -21,8 +21,9 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
     ------
     dst : pd.DataFrame
         DataFrame with obligatory columns :
-                event, time, npeak, nsipm, X, Y, Xrms, Yrms, Z,  Q, E
-        If Qc, Ec, track_id are not inside dst the default value is set to -1
+                event, npeak, X, Y, Z,  Q, E
+        If time, nsipm, Xrms, Yrms, Qc, Ec, track_id are not
+        inside dst the default value is set to -1
         If Xpeak, Ypeak not in dst the default value is -1000
     ------
     Returns
@@ -30,23 +31,47 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
     Dictionary {event_number : HitCollection}
     """
     all_events = {}
-    for (event, time) , hits_df in dst.groupby(['event', 'time']):
+    times = getattr(dst, 'time', [-1]*len(dst))
+    for (event, time) , df in dst.groupby(['event', times]):
         #pandas is not consistent with numpy dtypes so we have to change it by hand
         event = np.int32(event)
         hits  = []
-        for i, row in hits_df.iterrows():
-            if skip_NN and row.Q == NN:
+        for i, row in df.iterrows():
+            Q = getattr(row,'Q', row.E)
+            if skip_NN and Q == NN:
                 continue
-            hit = Hit(row.npeak,
-                      Cluster(row.Q, xy(row.X, row.Y), xy(row.Xrms**2, row.Yrms**2),
-                              row.nsipm, row.Z, row.E,
-                              Qc = getattr(row, 'Qc', -1)),       # for backwards compatibility
-                      row.Z, row.E,
-                      xy(getattr(row, 'Xpeak', -1000),            # for backwards compatibility
-                         getattr(row, 'Ypeak', -1000)),           # for backwards compatibility
-                      s2_energy_c = getattr(row, 'Ec'      , -1), # for backwards compatibility
-                      track_id    = getattr(row, 'track_id', -1), # for backwards compatibility
-                      Ep          = getattr(row, "Ep"      , -1)) # for backwards compatibility
+            if hasattr(row, 'Xrms'):
+                Xrms  = row.Xrms
+                Xrms2 = Xrms**2
+            else:
+                Xrms = Xrms2 = -1
+            if hasattr(row, 'Yrms'):
+                Yrms  = row.Yrms
+                Yrms2 = Yrms**2
+            else:
+                Yrms = Yrms2 = -1
+            nsipm   = getattr(row, 'nsipm'   , -1   )     # for backwards compatibility
+            Qc      = getattr(row, 'Qc'      , -1   )     # for backwards compatibility
+            Xpeak   = getattr(row, 'Xpeak'   , -1000)     # for backwards compatibility
+            Ypeak   = getattr(row, 'Ypeak'   , -1000)     # for backwards compatibility
+            Ec      = getattr(row, 'Ec'      , -1   )     # for backwards compatibility
+            trackID = getattr(row, 'track_id', -1   )     # for backwards compatibility
+            Ep      = getattr(row, "Ep"      , -1   )     # for backwards compatibility
+
+            hit = Hit(row.npeak            ,
+                      Cluster(Q               ,
+                              xy(row.X, row.Y),
+                              xy(Xrms2, Yrms2),
+                              nsipm = nsipm   ,
+                              z     = row.Z   ,
+                              E     = row.E   ,
+                              Qc    = Qc      ),
+                      row.Z                ,
+                      row.E                ,
+                      xy(Xpeak, Ypeak)     ,
+                      s2_energy_c = Ec     ,
+                      track_id    = trackID,
+                      Ep          = Ep     )
 
             hits.append(hit)
 
