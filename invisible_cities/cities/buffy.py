@@ -23,26 +23,23 @@ import warnings
 from typing import Callable
 from typing import     List
 
-from .. core                    import        system_of_units as units
-from .. detsim.buffer_functions import      buffer_calculator
-from .. detsim.sensor_utils     import   first_and_last_times
-from .. detsim.sensor_utils     import          get_n_sensors
-from .. detsim.sensor_utils     import           sensor_order
-from .. detsim.sensor_utils     import pmt_and_sipm_bin_width
-from .. detsim.sensor_utils     import          trigger_times
-from .. io    .event_filter_io  import    event_filter_writer
-from .. io    .rwf_io           import          buffer_writer
-from .. reco                    import          tbl_functions as tbl
+from .. core                   import        system_of_units as units
+from .. detsim.sensor_utils    import   first_and_last_times
+from .. detsim.sensor_utils    import          get_n_sensors
+from .. detsim.sensor_utils    import           sensor_order
+from .. detsim.sensor_utils    import pmt_and_sipm_bin_width
+from .. io    .event_filter_io import    event_filter_writer
+from .. reco                   import          tbl_functions as tbl
 
-from .. dataflow   import            dataflow as fl
+from .. dataflow   import                   dataflow as fl
 
-from .  components import                city
-from .  components import             collect
-from .  components import        copy_mc_info
-from .  components import mcsensors_from_file
-from .  components import         print_every
-from .  components import       signal_finder
-from .  components import           wf_binner
+from .  components import                       city
+from .  components import                    collect
+from .  components import               copy_mc_info
+from .  components import calculate_and_save_buffers
+from .  components import        mcsensors_from_file
+from .  components import                print_every
+from .  components import                  wf_binner
 
 
 @city
@@ -68,22 +65,6 @@ def buffy(files_in     , file_out   , compression      , event_range,
                                args = ("sipm_resp", "min_time", "max_time"),
                                out  = ("sipm_bins", "sipm_bin_wfs")        )
 
-    find_signal       = fl.map(signal_finder(buffer_length, pmt_wid,
-                                             trigger_threshold     ),
-                               args = "pmt_bin_wfs"                 ,
-                               out  = "pulses"                      )
-
-    event_times       = fl.map(trigger_times                             ,
-                               args = ("pulses", "timestamp", "pmt_bins"),
-                               out  = "evt_times"                        )
-
-    calculate_buffers = fl.map(buffer_calculator(buffer_length, pre_trigger,
-                                                  pmt_wid     ,    sipm_wid),
-                                args = ("pulses",
-                                        "pmt_bins" ,  "pmt_bin_wfs",
-                                        "sipm_bins", "sipm_bin_wfs")        ,
-                                out  = "buffers"                            )
-
     order_sensors     = fl.map(sensor_order(detector_db, run_number,
                                             nsamp_pmt  , nsamp_sipm) ,
                                args = ("pmt_bin_wfs", "sipm_bin_wfs",
@@ -96,14 +77,18 @@ def buffy(files_in     , file_out   , compression      , event_range,
     events_with_resp  = fl.count_filter(bool, args="event_passed")
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
-        buffer_writer_ = fl.sink(buffer_writer(h5out                  ,
-                                               run_number = run_number,
-                                               n_sens_eng = npmt      ,
-                                               n_sens_trk = nsipm     ,
-                                               length_eng = nsamp_pmt ,
-                                               length_trk = nsamp_sipm),
-                                 args = ("event_number", "evt_times"  ,
-                                         "ordered_buffers"            ))
+        buffer_calculation = calculate_and_save_buffers(buffer_length    ,
+                                                        pre_trigger      ,
+                                                        pmt_wid          ,
+                                                        sipm_wid         ,
+                                                        trigger_threshold,
+                                                        h5out            ,
+                                                        run_number       ,
+                                                        npmt             ,
+                                                        nsipm            ,
+                                                        nsamp_pmt        ,
+                                                        nsamp_sipm       ,
+                                                        order_sensors    )
 
         write_filter   = fl.sink(event_filter_writer(h5out, "detected_events"),
                                  args=("event_number", "event_passed")       )
@@ -125,13 +110,9 @@ def buffy(files_in     , file_out   , compression      , event_range,
                                           extract_tminmax               ,
                                           bin_pmt_wf                    ,
                                           bin_sipm_wf                   ,
-                                          find_signal                   ,
-                                          event_times                   ,
-                                          calculate_buffers             ,
-                                          order_sensors                 ,
                                           fl.branch("event_number"      ,
                                                     evtnum_collect.sink),
-                                          buffer_writer_                )    ,
+                                          buffer_calculation            )   ,
                          result = dict(events_in   = event_count_in.future  ,
                                        events_resp = events_with_resp.future,
                                        evtnum_list = evtnum_collect.future  ))
