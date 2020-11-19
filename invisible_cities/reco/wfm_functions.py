@@ -5,6 +5,7 @@ authors: J.J. Gomez-Cadenas, G. Martinez
 import numpy as np
 
 from .. core.core_functions import define_window
+from .. reco                import calib_sensors_functions as csf
 from .. sierpe              import blr
 
 def to_adc(wfs, adc_to_pes):
@@ -102,10 +103,13 @@ def cwf_from_rwf(pmtrwf, event_list, calib_vectors, deconv_params):
 
     CWF=[]
     for event in event_list:
-        CWF.append(blr.deconv_pmt(pmtrwf[event], calib_vectors.coeff_c,
-                             calib_vectors.coeff_blr,
-                             n_baseline=deconv_params.n_baseline,
-                             thr_trigger=deconv_params.thr_trigger))
+        pmt_evt = pmtrwf[event]
+        ZWF     = csf.means(pmt_evt[:, :deconv_params.n_baseline]) - pmt_evt
+        rep_thr = np.repeat(deconv_params.thr_trigger, ZWF.shape[0])
+        CWF.append(np.array(tuple(map(blr.deconvolve_signal, ZWF,
+                                      calib_vectors.coeff_c     ,
+                                      calib_vectors.coeff_blr   ,
+                                      rep_thr                   ))))
     return CWF
 
 
