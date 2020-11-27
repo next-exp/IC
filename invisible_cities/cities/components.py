@@ -41,6 +41,7 @@ from .. core   .configure         import                EventRange
 from .. core   .configure         import          event_range_help
 from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
+from .. detsim .sensor_utils      import             trigger_times
 from .. reco                      import           calib_functions as  cf
 from .. reco                      import          sensor_functions as  sf
 from .. reco                      import   calib_sensors_functions as csf
@@ -59,6 +60,7 @@ from .. io     .hits_io           import              hits_from_df
 from .. io     .dst_io            import                  load_dst
 from .. io     .event_filter_io   import       event_filter_writer
 from .. io     .pmaps_io          import               pmap_writer
+from .. io     .rwf_io            import             buffer_writer
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
 from .. types  .ic_types          import                       NNN
@@ -826,3 +828,52 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     compute_pmaps = pipe(*filter(None, fn_list))
 
     return compute_pmaps, empty_indices, empty_pmaps
+
+
+def calculate_and_save_buffers(buffer_length    : float        ,
+                               pre_trigger      : float        ,
+                               pmt_wid          : float        ,
+                               sipm_wid         : float        ,
+                               trigger_threshold: int          ,
+                               h5out            : tb.File      ,
+                               run_number       : int          ,
+                               npmt             : int          ,
+                               nsipm            : int          ,
+                               nsamp_pmt        : int          ,
+                               nsamp_sipm       : int          ,
+                               order_sensors    : Callable=None):
+    find_signal       = fl.map(signal_finder(buffer_length, pmt_wid,
+                                             trigger_threshold     ),
+                               args = "pmt_bin_wfs"                 ,
+                               out  = "pulses"                      )
+
+    event_times       = fl.map(trigger_times                             ,
+                               args = ("pulses", "timestamp", "pmt_bins"),
+                               out  = "evt_times"                        )
+
+    calculate_buffers = fl.map(bf.buffer_calculator(buffer_length, pre_trigger,
+                                                    pmt_wid     ,    sipm_wid),
+                               args = ("pulses",
+                                       "pmt_bins" ,  "pmt_bin_wfs",
+                                       "sipm_bins", "sipm_bin_wfs")        ,
+                               out  = "buffers"                            )
+
+    saved_buffers = "buffers" if order_sensors is None else "ordered_buffers"
+    buffer_writer_    = sink(buffer_writer(h5out                  ,
+                                           run_number = run_number,
+                                           n_sens_eng = npmt      ,
+                                           n_sens_trk = nsipm     ,
+                                           length_eng = nsamp_pmt ,
+                                           length_trk = nsamp_sipm),
+                             args = ("event_number", "evt_times"  ,
+                                     saved_buffers                ))
+
+    fn_list = (find_signal      ,
+               event_times      ,
+               calculate_buffers,
+               order_sensors    ,
+               buffer_writer_   )
+
+    # Filter out order_sensors if it is not set
+    buffer_definition = pipe(*filter(None, fn_list))
+    return buffer_definition
