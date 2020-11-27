@@ -3,7 +3,6 @@ import os
 import numpy  as np
 import tables as tb
 
-from pytest   import       fixture
 from pytest   import          mark
 
 from . rwf_io import    rwf_writer
