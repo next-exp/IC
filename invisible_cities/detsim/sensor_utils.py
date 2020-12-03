@@ -11,6 +11,20 @@ from .. database.load_db   import           DataSiPM
 from .. io      .mcinfo_io import get_sensor_binning
 
 
+def create_timestamp(event_number: int or float,
+                     rate        : float       ) -> float:
+    """
+    Calculates timestamp for a given Event Number and Rate.
+
+    :param event_number: Value of the current event.
+    :param rate: Value of the rate.
+    :return: Calculated timestamp
+    """
+    period = 1 / rate
+    timestamp = event_number * period + np.random.uniform(0, period)
+    return timestamp
+
+
 def trigger_times(trigger_indx: List[int] ,
                   event_time  :      float,
                   time_bins   : np.ndarray) -> List[float]:
