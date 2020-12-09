@@ -11,6 +11,7 @@ from . sensor_utils import          get_n_sensors
 from . sensor_utils import           sensor_order
 from . sensor_utils import pmt_and_sipm_bin_width
 from . sensor_utils import          trigger_times
+from . sensor_utils import       create_timestamp
 
 
 def test_trigger_times():
@@ -97,3 +98,12 @@ def test_pmt_and_sipm_bin_width(full_sim_file):
     pmt_binwid, sipm_binwid = pmt_and_sipm_bin_width(file_in)
     assert pmt_binwid  == expected_pmtwid
     assert sipm_binwid == expected_sipmwid
+
+
+@mark.parametrize("event_number, rate",
+                  [(1234,  0.5), (-539, 0.4), (40,  0.9), (99,   3),
+                   (-800,  1.1), (4321,  -1), (-1, -0.3), ( 1, -40),
+                   (-100, -200), (-987,   1), (-3, -0.1), (.1,  12)])
+def test_create_timestamp(event_number, rate):
+    timestamp = create_timestamp(event_number, rate)
+    assert abs(timestamp) == timestamp

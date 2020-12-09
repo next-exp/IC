@@ -21,7 +21,7 @@ def create_timestamp(event_number: int or float,
     :return: Calculated timestamp
     """
     period = 1 / rate
-    timestamp = event_number * period + np.random.uniform(0, period)
+    timestamp = abs(event_number * period) + np.random.uniform(0, period)
     return timestamp
 
 
