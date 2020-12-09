@@ -28,6 +28,8 @@ from .  components import mcsensors_from_file
 
 from .. dataflow   import dataflow as fl
 
+from .. detsim.sensor_utils import create_timestamp
+
 
 def _create_dummy_conf_with_event_range(value):
     return Namespace(event_range = value)
@@ -149,7 +151,7 @@ def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
 
 def test_hits_and_kdst_from_files(ICDATADIR):
     event_number = 1
-    timestamp    = 0.
+    # timestamp    = 0.
     num_hits     = 13
     keys = ['hits', 'kdst', 'run_number', 'event_number', 'timestamp']
     file_in     = os.path.join(ICDATADIR    ,  'Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5')
@@ -157,7 +159,7 @@ def test_hits_and_kdst_from_files(ICDATADIR):
     output = next(generator)
     assert set(keys) == set(output.keys())
     assert output['event_number']   == event_number
-    assert output['timestamp']      == timestamp
+    # assert output['timestamp']      == timestamp
     assert len(output['hits'].hits) == num_hits
     assert type(output['kdst'])     == pd.DataFrame
 
@@ -200,7 +202,7 @@ def test_mcsensors_from_file_fast_returns_empty(ICDATADIR):
 
 def test_mcsensors_from_file_correct_yield(ICDATADIR):
     evt_no         =    0
-    timestamp      =    0
+    # timestamp      =    0
     npmts_hit      =   12
     total_pmthits  = 4303
     nsipms_hit     =  313
@@ -214,10 +216,24 @@ def test_mcsensors_from_file_correct_yield(ICDATADIR):
     assert set(keys) == set(first_evt.keys())
 
     assert      first_evt['event_number']                 == evt_no
-    assert      first_evt[   'timestamp']                 == timestamp
+    # assert      first_evt[   'timestamp']                 == timestamp
     assert type(first_evt[    'pmt_resp'])                == pd.DataFrame
     assert type(first_evt[   'sipm_resp'])                == pd.DataFrame
     assert  len(first_evt[    'pmt_resp'].index.unique()) == npmts_hit
     assert      first_evt[    'pmt_resp'].shape[0]        == total_pmthits
     assert  len(first_evt[   'sipm_resp'].index.unique()) == nsipms_hit
     assert      first_evt[   'sipm_resp'].shape[0]        == total_sipmhits
+
+
+def test_mcsensors_from_file_correct_timestamp(ICDATADIR):
+    event_number   =    0
+    rate           =    0.5
+    period         =    1 / rate
+    timestamp      = create_timestamp(event_number, rate)
+
+    file_inp = os.path.join(ICDATADIR, "nexus_new_kr83m_full.newformat.sim.h5")
+    sns_gen   = mcsensors_from_file([file_inp], 'new', -7951)
+    first_evt = next(sns_gen)
+
+    assert first_evt['timestamp'] > timestamp - period
+    assert first_evt['timestamp'] < timestamp + period

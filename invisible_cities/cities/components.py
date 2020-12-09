@@ -42,6 +42,7 @@ from .. core   .configure         import          event_range_help
 from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
 from .. detsim .sensor_utils      import             trigger_times
+from .. detsim .sensor_utils      import          create_timestamp
 from .. reco                      import           calib_functions as  cf
 from .. reco                      import          sensor_functions as  sf
 from .. reco                      import   calib_sensors_functions as csf
@@ -366,11 +367,13 @@ def mcsensors_from_file(paths     : List[str],
                                                        db_file    = db_file   ,
                                                        run_no     = run_number)
 
-        ## MC uses dummy timestamp for now
-        ## Only in case of evt splitting will be non zero
-        timestamp = 0
+        ## MC uses dummy rate for timestamp for now
+        rate = 0.5
 
         for evt in mcinfo_io.get_event_numbers_in_file(file_name):
+
+            timestamp = create_timestamp(evt, rate)
+
             try:
                 ## Assumes two types of sensor, all non pmt
                 ## assumed to be sipms. NEW, NEXT100 and DEMOPP safe
