@@ -342,7 +342,8 @@ def check_lengths(*iterables):
 
 def mcsensors_from_file(paths     : List[str],
                         db_file   :      str ,
-                        run_number:      int ) -> Generator:
+                        run_number:      int ,
+                        rate      :    float ) -> Generator:
     """
     Loads the nexus MC sensor information into
     a pandas DataFrame using the IC function
@@ -366,9 +367,6 @@ def mcsensors_from_file(paths     : List[str],
                                                        return_raw = False     ,
                                                        db_file    = db_file   ,
                                                        run_no     = run_number)
-
-        ## MC uses dummy rate for timestamp for now
-        rate = 0.5
 
         for evt in mcinfo_io.get_event_numbers_in_file(file_name):
 

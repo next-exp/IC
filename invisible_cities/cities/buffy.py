@@ -45,7 +45,7 @@ from .  components import                  wf_binner
 @city
 def buffy(files_in     , file_out   , compression      , event_range,
           print_mod    , detector_db, run_number       , max_time   ,
-          buffer_length, pre_trigger, trigger_threshold):
+          buffer_length, pre_trigger, trigger_threshold, rate       ):
 
     npmt, nsipm       = get_n_sensors(detector_db, run_number)
     pmt_wid, sipm_wid = pmt_and_sipm_bin_width_safe_(files_in)
@@ -99,7 +99,8 @@ def buffy(files_in     , file_out   , compression      , event_range,
 
         result = fl.push(source = mcsensors_from_file(files_in   ,
                                                       detector_db,
-                                                      run_number )           ,
+                                                      run_number ,
+                                                      rate       )           ,
                          pipe   = fl.pipe(fl.slice(*event_range  ,
                                                    close_all=True)      ,
                                           event_count_in.spy            ,
