@@ -100,10 +100,18 @@ def test_pmt_and_sipm_bin_width(full_sim_file):
     assert sipm_binwid == expected_sipmwid
 
 
-@mark.parametrize("event_number, rate",
-                  [(1234,  0.5), (-539, 0.4), (40,  0.9), (99,   3),
-                   (-800,  1.1), (4321,  -1), (-1, -0.3), ( 1, -40),
-                   (-100, -200), (-987,   1), (-3, -0.1), (.1,  12)])
-def test_create_timestamp(event_number, rate):
-    timestamp = create_timestamp(event_number, rate)
-    assert abs(timestamp) == timestamp
+def test_create_timestamp_greater_with_greater_arguments():
+    """
+    Value of timestamp must be always positive and 
+    greater with greater arguments.
+    """
+    evt_no_1 = 10
+    rate_1   = 0.5
+    evt_no_2 = 100
+    rate_2   = 0.6
+
+    timestamp_1 = create_timestamp(evt_no_1, rate_1)
+    timestamp_2 = create_timestamp(evt_no_2, rate_2)
+    assert abs(timestamp_1) == timestamp_1
+    assert timestamp_1      <  timestamp_2
+    assert abs(timestamp_2) == timestamp_2
