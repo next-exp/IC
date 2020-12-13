@@ -1,4 +1,17 @@
 import numpy  as np
+import pandas as pd
+
+cimport cython
+cimport numpy as np
+
+from libc.math cimport            sqrt
+from libc.math cimport           floor
+from libc.math cimport round as cround
+
+
+
+from ..         core import system_of_units as   units
+from  . light_tables import read_lighttable as read_lt
 
 cdef class LightTable:
     """
@@ -25,3 +38,119 @@ cdef class LightTable:
             return np.asarray(<np.double_t[:self.zbins_.shape[0]]> pointer)
         else:
             return np.zeros(self.zbins_.shape[0])
+
+
+def get_el_bins(el_pitch, el_gap):
+    """
+    Returns the array of bins position given the bin distance and the total gap
+    """
+    return np.arange(el_pitch/2., el_gap, el_pitch).astype(np.double)
+
+cdef class LT_SiPM(LightTable):
+    """
+    A class to handle reading of sipm distance-based light table. Inherits from base class LightTable
+
+    Attributes:
+    -----------
+       el_gap_width  : double
+             width of the EL gap
+       active_radius : double
+             active radius of full detector volume
+       num_sensors   : int
+             number of sipm sensors
+       snsx          : numpy array of doubles
+             x position of sensors
+       snsy          : numpy array of doubles
+             y position of sensors
+
+    Parameters (keyword):
+    -----------
+        fname         : string
+              filename of the light table
+        sipm_database : pandas dataframe
+              dataframe containing information about sensor positions
+        el_gap_width  : float
+              optionally set new EL gap width
+        active_radius : float
+              optionally set new active radius
+
+    """
+
+    cdef readonly:
+        double [:] snsx
+        double [:] snsy
+    cdef:
+        double [:, ::1] values
+        double psf_bin
+        double max_zel
+        double max_psf
+        double max_psf2
+        double inv_bin
+        double active_r2
+
+    def __init__(self, *, fname, sipm_database, el_gap_width=None, active_radius=None):
+        lt_df, config_df, el_gap, active_r = read_lt(fname, 'PSF', el_gap_width, active_radius)
+        lt_df.set_index('dist_xy', inplace=True)
+        self.el_gap_width  = el_gap
+        self.active_radius = active_r
+        self.active_r2 = active_r**2 # compute this once to speed up the get_values_ calls
+
+        el_pitch  = float(config_df.loc["pitch_z"].value) * units.mm
+        self.zbins_    = get_el_bins(el_pitch, el_gap)
+        self.values    = np.array(lt_df.values/len(self.zbins_), order='C', dtype=np.double)
+        self.psf_bin   = float(lt_df.index[1]-lt_df.index[0]) * units.mm #index of psf is the distance to the sensor in mm
+        self.inv_bin   = 1./self.psf_bin # compute this once to speed up the get_values_ calls
+
+        self.snsx        = sipm_database.X.values.astype(np.double)
+        self.snsy        = sipm_database.Y.values.astype(np.double)
+        self.max_zel     = el_gap
+        self.max_psf     = max(lt_df.index.values)
+        self.max_psf2    = self.max_psf**2
+        self.num_sensors = len(sipm_database)
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    @cython.cdivision(True)
+    @cython.initializedcheck(False)
+    cdef double* get_values_(self, const double x, const double y, const int sns_id):
+        cdef:
+            double dist
+            double aux
+            unsigned int psf_bin_id
+            double xsipm
+            double ysipm
+            double tmp_x
+            double tmp_y
+            double*  values
+        if sns_id >= self.num_sensors:
+            return NULL
+        xsipm = self.snsx[sns_id]
+        ysipm = self.snsy[sns_id]
+        tmp_x = x-xsipm; tmp_y = y-ysipm
+        dist = tmp_x*tmp_x + tmp_y*tmp_y
+        if dist>self.max_psf2:
+            return NULL
+        if x*x+y*y>=self.active_r2:
+            return NULL
+        aux = sqrt(dist)*self.inv_bin
+        bin_id = <int> floor(aux)
+        values = &self.values[bin_id, 0]
+        return values
+
+    def get_values(self, const double x, const double y, const int sns_id):
+        """
+        Retrive values from the light tables for all z partitions.
+
+        Parameters:
+        -----------
+        x, y   : doubles
+            electron position at EL plane
+        sns_id : int
+            internal sensor id in range [0, num_sensors)
+            sensors are ordered by sipm_database raws
+
+        Returns:
+        --------
+        array of values over EL gap partitions
+        """
+        return super().get_values(x, y, sns_id)
