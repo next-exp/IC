@@ -154,3 +154,121 @@ cdef class LT_SiPM(LightTable):
         array of values over EL gap partitions
         """
         return super().get_values(x, y, sns_id)
+
+
+cdef class LT_PMT(LightTable):
+    """
+    A class to handle reading of PMTs light table. Inherits from base class LightTable
+
+    Attributes:
+    -----------
+       el_gap_width  : double
+             width of the EL gap
+       active_radius : double
+             active radius of full detector volume
+       num_sensors   : int
+             number of sipm sensors
+
+    Parameters (keyword):
+    -----------
+        fname         : string
+              filename of the light table
+        el_gap_width  : float
+              optionally set new EL gap width
+        active_radius : float
+              optionally set new active radius
+
+    """
+
+    cdef:
+        double [:, :, :, ::1] values
+        double max_zel
+        double max_psf
+        double max_psf2
+        double inv_binx
+        double inv_biny
+        double xmin
+        double ymin
+        double active_r2
+
+    def __init__(self, *, fname, el_gap_width=None, active_radius=None):
+        lt_df, config_df, el_gap, active_r = read_lt(fname, 'LT', el_gap_width, active_radius)
+        self.el_gap_width  = el_gap
+        self.active_radius = active_r
+        self.active_r2 = active_r**2 # compute this once to speed up the get_values_ calls
+
+        sensor = config_df.loc["sensor"].value
+        #remove column total from the list of columns
+        columns = [col for col in lt_df.columns if ((sensor in col) and ("total" not in col))]
+        el_pitch    = el_gap #hardcoded for this specific table
+        bin_x = float(config_df.loc["pitch_x"].value) * units.mm
+        bin_y = float(config_df.loc["pitch_y"].value) * units.mm
+
+        self.zbins_ = get_el_bins(el_pitch, el_gap)
+        values_aux, (xmin, xmax), (ymin, ymax)  = self.__extend_lt_bounds(lt_df, config_df, columns, bin_x, bin_y)
+        lenz = len(self.zbins)
+        # add dimension for z partitions (1 in case of this table)
+        self.values = np.asarray(np.repeat(values_aux, lenz, axis=-1), dtype=np.double, order='C')
+        self.xmin = xmin
+        self.ymin = ymin
+        # calculate inverse to speed up calls of get_values_
+        self.inv_binx    = 1./bin_x
+        self.inv_biny    = 1./bin_y
+        self.num_sensors = len(columns)
+
+    def __extend_lt_bounds(self, lt_df, config_df, columns, bin_x, bin_y):
+        """
+        Extend light tables values up to a full active_radius volume, using nearest interpolation method.
+        The resulting tensor has shape of num_bins_x, num_bins_y.
+        """
+        from scipy.interpolate import griddata
+        xtable   = lt_df.x.values
+        ytable   = lt_df.y.values
+        xmin_, xmax_ = xtable.min(), xtable.max()
+        ymin_, ymax_ = ytable.min(), ytable.max()
+        # extend min, max to go one bin-width over the active volume
+        xmin, xmax = xmin_-np.ceil((self.active_radius-np.abs(xmin_))/bin_x)*bin_x, xmax_+np.ceil((self.active_radius-np.abs(xmax_))/bin_x)*bin_x
+        ymin, ymax = ymin_-np.ceil((self.active_radius-np.abs(ymin_))/bin_y)*bin_y, ymax_+np.ceil((self.active_radius-np.abs(ymax_))/bin_y)*bin_y
+        #create new centers that extend over full active volume
+        x          = np.arange(xmin, xmax+bin_x/2., bin_x).astype(np.double)
+        y          = np.arange(ymin, ymax+bin_y/2., bin_y).astype(np.double)
+        #interpolate missing values using nearest method from scipy
+        xx, yy     = np.meshgrid(x, y)
+        values_aux = (np.concatenate([griddata((xtable, ytable), lt_df[column], (yy, xx), method='nearest')[..., None]
+                                      for column in columns],axis=-1)[..., None]).astype(np.double)
+        return values_aux, (xmin, xmax), (ymin, ymax)
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    @cython.cdivision(True)
+    @cython.initializedcheck(False)
+    cdef double* get_values_(self, const double x, const double y, const int sns_id):
+        cdef:
+            double*  values
+            int xindx, yindx
+        if (x*x+y*y)>=self.active_r2 :
+            return NULL
+        if sns_id >= self.num_sensors:
+            return NULL
+        xindx = <int> cround((x-self.xmin)*self.inv_binx)
+        yindx = <int> cround((y-self.ymin)*self.inv_biny)
+        values = &self.values[xindx, yindx, sns_id, 0]
+        return values
+
+    def get_values(self, const double x, const double y, const int sns_id):
+        """
+        Retrive values from the light tables for all z partitions.
+
+        Parameters:
+        -----------
+        x, y   : doubles
+            electron position at EL plane
+        sns_id : int
+            internal sensor id in range [0, num_sensors)
+            sensors are ordered by columns of light table file
+
+        Returns:
+        --------
+        array of values over EL gap partitions
+        """
+        return super().get_values(x, y, sns_id)
