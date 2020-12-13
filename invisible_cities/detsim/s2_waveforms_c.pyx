@@ -8,6 +8,23 @@ cimport numpy as np
 from libc.math cimport ceil
 from libc.math cimport floor
 
+
+cdef double[:] spread_histogram(const double[:] histogram, int nsmear_left, int nsmear_right):
+    """Spreads histogram values uniformly nsmear_left bins to the left and nsmear_right to the right"""
+    cdef int nsamples = nsmear_left + nsmear_right
+    cdef int l = len(histogram)
+    cdef double [:] spreaded = np.zeros(l + nsamples-1)
+    cdef int h, i, aux
+    cdef double v
+    for h in range(nsmear_left, l):
+        if histogram[h]>0:
+            v = histogram[h]/nsamples
+            aux = h-nsmear_left
+            for i in range(nsamples):
+                spreaded[aux + i] += v
+    return spreaded[:l]
+
+
 @cython.cdivision(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -84,5 +101,16 @@ def create_wfs(double [:] xs           ,
                         continue
                     signal = lt_factors_p[elindx] * ph_p
                     wfs[snsindx, tindx] += signal
+
+    #smearing factor in case time_bs_sns is larger than sns_time_bin
+    #used in S2 simulation on pmts
+    cdef int nsmear = <int> ceil(time_bs_sns)
+    cdef int nsmear_r, nsmear_l
+    if nsmear>1:
+        nsmear_l  = <int> (nsmear/2)
+        nsmear_r = nsmear - nsmear_l
+        for snsindx in range(nsens):
+            wfs[snsindx] = spread_histogram(wfs[snsindx], nsmear_l, nsmear_r)
+
     return np.asarray(wfs)
 
