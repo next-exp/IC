@@ -183,32 +183,37 @@ def copy_mc_info(files_in     : List[str],
 
     Parameters
     ----------
-    files_in : List of strings
-        Name of the input files.
-    file_out : tables.File
-        The output h5 file.
-    event_numbers : List[int]
-        List of event numbers for which the MC info is copied
-        to the output file.
+    files_in     : List of strings
+                   Name of the input files.
+    h5out        : tables.File
+                   The output h5 file.
+    event_numbers: List[int]
+                   List of event numbers for which the MC info is copied
+                   to the output file.
+    db_file      : str
+                   Name of database to be used where necessary to
+                   read the MC info (used for pre-2020 format files)
+    run_number   : int
+                   Run number for database (used for pre-2020 format files)
     """
 
     writer = mcinfo_io.mc_writer(h5out)
 
-    copied_events = []
+    copied_events   = []
     for f in files_in:
         if mcinfo_io.check_mc_present(f):
-            event_numbers_in_file = mcinfo_io.get_event_numbers_in_file(f)
-            event_numbers_to_copy = np.intersect1d(event_numbers        ,
-                                                   event_numbers_in_file)
-            mcinfo_io.copy_mc_info(f, writer, event_numbers_to_copy,
+            evt_copied  = mcinfo_io.safe_copy_nexus_eventmap(h5out        ,
+                                                             event_numbers,
+                                                             f            )
+            mcinfo_io.copy_mc_info(f, writer, evt_copied['nexus_evt'],
                                    db_file, run_number)
-            copied_events.extend(event_numbers_to_copy)
+            copied_events.extend(evt_copied['evt_number'])
         else:
-            warnings.warn(f' File does not contain MC tables.\
+            warnings.warn('File does not contain MC tables.\
              Use positve run numbers for data', UserWarning)
             continue
     if len(np.setdiff1d(event_numbers, copied_events)) != 0:
-        raise MCEventNotFound(f' Some events not found in MC tables')
+        raise MCEventNotFound('Some events not found in MC tables')
 
 
 def wf_binner(max_buffer: int) -> Callable:
@@ -368,7 +373,7 @@ def mcsensors_from_file(paths     : List[str],
 
         ## MC uses dummy timestamp for now
         ## Only in case of evt splitting will be non zero
-        timestamp = 0
+        timestamp     = 0
 
         for evt in mcinfo_io.get_event_numbers_in_file(file_name):
             try:
@@ -831,6 +836,7 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
 
 
 def calculate_and_save_buffers(buffer_length    : float        ,
+                               max_time         : int          ,
                                pre_trigger      : float        ,
                                pmt_wid          : float        ,
                                sipm_wid         : float        ,
@@ -859,12 +865,14 @@ def calculate_and_save_buffers(buffer_length    : float        ,
                                out  = "buffers"                            )
 
     saved_buffers = "buffers" if order_sensors is None else "ordered_buffers"
+    max_subevt    =  max_time // buffer_length + 1
     buffer_writer_    = sink(buffer_writer(h5out                  ,
                                            run_number = run_number,
                                            n_sens_eng = npmt      ,
                                            n_sens_trk = nsipm     ,
                                            length_eng = nsamp_pmt ,
-                                           length_trk = nsamp_sipm),
+                                           length_trk = nsamp_sipm,
+                                           max_subevt = max_subevt),
                              args = ("event_number", "evt_times"  ,
                                      saved_buffers                ))
 

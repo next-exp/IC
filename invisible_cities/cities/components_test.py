@@ -205,7 +205,7 @@ def test_mcsensors_from_file_correct_yield(ICDATADIR):
     total_pmthits  = 4303
     nsipms_hit     =  313
     total_sipmhits =  389
-    keys           = ['event_number', 'timestamp', 'pmt_resp', 'sipm_resp']
+    keys           = ['event_number', 'timestamp', 'pmt_resp' , 'sipm_resp']
 
     file_in   = os.path.join(ICDATADIR, "nexus_new_kr83m_full.newformat.sim.h5")
     sns_gen   = mcsensors_from_file([file_in], 'new', -7951)
