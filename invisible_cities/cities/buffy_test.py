@@ -106,7 +106,8 @@ def test_buffy_exact_result(config_tmpdir, ICDATADIR):
     buffy(**conf)
 
     tables = ("MC/hits"        , "MC/particles", "MC/sns_positions",
-              "MC/sns_response", "pmtrd"       , "sipmrd"          )
+              "MC/sns_response", "Run/events"  , "Run/eventMap"    ,
+              "pmtrd"          , "sipmrd"      )
     with tb.open_file(true_output)  as true_output_file:
         with tb.open_file(file_out) as      output_file:
             for table in tables:
@@ -127,9 +128,12 @@ def test_buffy_splits_event(config_tmpdir, ICDATADIR):
                      file_out      = file_out       ,
                      event_range   = (evt, evt + 1) ,
                      buffer_length = 100 * units.mus,
-                     pre_trigger   =  10 * units.mus))
+                     pre_trigger   =  10 * units.mus,
+                     max_time      = 900 * units.mus))
 
     buffy(**conf)
+
+    out_evts   = [10, 11]
 
     sns_resp   = load_mcsensor_response_df(file_in).loc[evt]
     sns_sums   = sns_resp.groupby('sensor_id').charge.sum()
@@ -137,7 +141,10 @@ def test_buffy_splits_event(config_tmpdir, ICDATADIR):
     sipm_integ = sns_sums[sns_sums.index > 12].values
     with tb.open_file(file_out) as h5out:
         assert len(h5out.root.Run.events[:]) == 2
-        assert np.all(h5out.root.Run.events.cols.evt_number[:] == evt)
+        assert np.all(h5out.root.Run.events  .cols.evt_number[:] == out_evts)
+
+        assert np.all(h5out.root.Run.eventMap.cols.evt_number[:] == out_evts)
+        assert np.all(h5out.root.Run.eventMap.cols.nexus_evt [:] ==     evt )
 
         assert len(h5out.root.pmtrd [:]) == 2
         assert len(h5out.root.sipmrd[:]) == 2
