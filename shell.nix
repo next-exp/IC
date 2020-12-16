@@ -2,7 +2,7 @@
 #
 #   nix-shell shell.nix --argstr py 36
 #
-{ py ? "37"
+{ py ? "38"
 , nixpkgs-commit-id ? "b94726217f7cdc02ddf277b65553762d520da196"
 }:
 
