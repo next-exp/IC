@@ -26,6 +26,7 @@ in
   # configuring Git for you? Adapt the following to your needs:
   programs.git = {
     enable = true;
+    lfs.enable = true;
   # Local .gitconfig files may override these settings:
   #   userName = "Fulana Menganez-Perenganez";
   #   userEmail = "fulana@ific.es";
@@ -33,7 +34,6 @@ in
   #     lg  = "log --graph --decorate --oneline";
   #     lga = "log --graph --decorate --oneline --all";
   #   };
-  #   lfs.enable = true;
   };
 
   # This is how to get home-manager to place your version-controlled
