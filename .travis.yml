@@ -23,7 +23,7 @@ install:
   - . $HOME/.nix-profile/etc/profile.d/nix.sh
 
 script:
-  - nix-shell --pure --argstr py-version $NIX_PY_VERSION --command 'HYPOTHESIS_PROFILE=travis-ci ic-test-par'
+  - nix-shell --pure --argstr py $NIX_PY_VERSION --command 'HYPOTHESIS_PROFILE=travis-ci ic-test-par'
 
 # CACHING. See https://nixos.wiki/wiki/Nix_on_Travis
 
