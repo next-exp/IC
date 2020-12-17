@@ -1,13 +1,20 @@
-{ config, pkgs, ... }:
+{ config
+, pkgs ? import (fetchTarball "nixpkgs=https://github.com/NixOS/nixpkgs-channels/archive/2f6440eb09b7e6e3322720ac91ce7e2cdeb413f9.tar.gz") {}
+, ... }:
 let
+  sources = (pkgs.callPackage ../sources.nix { pkgs = pkgs; });
   link = config.lib.file.mkOutOfStoreSymlink;
 in
-with pkgs;
 {
   home.packages = [
-    (pkgs.callPackage ../sources.nix {}).home-manager
+    sources.home-manager
     # Add and remove packages in this list to suit your needs.
-    bat # git-aware, intelligent, helpful, colourful version of `cat`
+    pkgs.bat # git-aware, intelligent, helpful, colourful version of `cat`
+    pkgs.fd  # better find
+    pkgs.ripgrep # better grep / grep-find
+    pkgs.ripgrep-all # Enable ripgrep in PDFs, ebooks, doc, zip, tar.gz, etc.
+    pkgs.du-dust # better du
+    pkgs.tldr # simplified man-pages
   ];
 
   # Some programs require/permit more intricate configuration
@@ -42,5 +49,4 @@ with pkgs;
   home.file.".config/nixpkgs".source = link ../nixpkgs;
 
   # We've only scratched the surface of possibilities in home-manager ...
-
 }
