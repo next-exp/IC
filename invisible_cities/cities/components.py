@@ -62,6 +62,7 @@ from .. io     .dst_io            import                  load_dst
 from .. io     .event_filter_io   import       event_filter_writer
 from .. io     .pmaps_io          import               pmap_writer
 from .. io     .rwf_io            import             buffer_writer
+from .. io     .mcinfo_io         import            load_mchits_df
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
 from .. types  .ic_types          import                       NNN
@@ -504,6 +505,23 @@ def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCol
                            run_number = run_number,
                            event_number = event_number,
                            timestamp = timestamp)
+
+
+def MC_hits_from_files(files_in : List[str]) -> Generator:
+    for filename in files_in:
+        try:
+            hits_df = load_mchits_df(filename)
+        except tb.exceptions.NoSuchNodeError:
+            continue
+        for evt, hits in hits_df.groupby(level=0):
+            yield dict(event_number = evt,
+                       x            = hits.x     .values,
+                       y            = hits.y     .values,
+                       z            = hits.z     .values,
+                       energy       = hits.energy.values,
+                       time         = hits.time  .values,
+                       label        = hits.label .values,
+                       timestamp    = 0)
 
 
 def sensor_data(path, wf_type):
