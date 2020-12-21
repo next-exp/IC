@@ -56,16 +56,16 @@ def _check_castability(arr : np.ndarray, table_types : np.dtype):
     arr_types = arr.dtype
 
     if set(arr_types.names) != set(table_types.names):
-        raise TableMismatch(f'dataframe differs from already existing table structure')
+        raise TableMismatch('dataframe differs from already existing table structure')
 
     for name in arr_types.names:
         if arr_types[name].name == 'object':
             max_str_length = max(map(len, arr[name]))
             if max_str_length > table_types[name].itemsize:
-                warnings.warn(f'dataframe contains strings longer than allowed', UserWarning)
+                warnings.warn('dataframe contains strings longer than allowed', UserWarning)
 
         elif not np.can_cast(arr_types[name], table_types[name], casting='same_kind'):
-            raise TableMismatch(f'dataframe numeric types not consistent with the table existing ones')
+            raise TableMismatch('dataframe numeric types not consistent with the table existing ones')
 
 
 def df_writer(h5out              : tb.file.File ,
