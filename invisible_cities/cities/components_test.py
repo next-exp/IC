@@ -11,9 +11,10 @@ from pytest import mark
 from pytest import raises
 from pytest import warns
 
-from .. core.configure  import EventRange as ER
-from .. core.exceptions import InvalidInputFileStructure
-from .. core            import system_of_units as units
+from .. core.configure     import EventRange as ER
+from .. core.exceptions    import InvalidInputFileStructure
+from .. core.testing_utils import    assert_tables_equality
+from .. core               import system_of_units as units
 
 from .  components import event_range
 from .  components import collect
@@ -190,6 +191,25 @@ def test_copy_mc_info_repeated_event_numbers(ICDATADIR, config_tmpdir):
         assert events_in_h5out.tolist() == [0,1,0,9]
 
 
+def test_copy_mc_info_split_nexus_events(ICDATADIR, config_tmpdir):
+    file_in  = os.path.join(ICDATADIR                                       ,
+                            "nexus_new_kr83m_full.newformat.splitbuffers.h5")
+    file_out = os.path.join(config_tmpdir, "dummy_out.h5")
+
+    with tb.open_file(file_out, 'w') as h5out:
+        copy_mc_info([file_in], h5out, [0, 10, 11], 'new', -6400)
+
+    tables = ("MC/hits"        , "MC/particles", "MC/sns_positions",
+              "MC/sns_response", "Run/eventMap")
+    with tb.open_file(file_in) as h5in, tb.open_file(file_out) as h5out:
+        for table in tables:
+            assert hasattr(h5out.root, table)
+            got      = getattr(h5out.root, table)
+            expected = getattr(h5in .root, table)
+            assert_tables_equality(got, expected)
+
+
+
 def test_mcsensors_from_file_fast_returns_empty(ICDATADIR):
     file_in = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.h5")
     sns_gen = mcsensors_from_file([file_in], 'new', -7951)
@@ -205,7 +225,7 @@ def test_mcsensors_from_file_correct_yield(ICDATADIR):
     total_pmthits  = 4303
     nsipms_hit     =  313
     total_sipmhits =  389
-    keys           = ['event_number', 'timestamp', 'pmt_resp', 'sipm_resp']
+    keys           = ['event_number', 'timestamp', 'pmt_resp' , 'sipm_resp']
 
     file_in   = os.path.join(ICDATADIR, "nexus_new_kr83m_full.newformat.sim.h5")
     sns_gen   = mcsensors_from_file([file_in], 'new', -7951)

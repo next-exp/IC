@@ -78,6 +78,7 @@ def buffy(files_in     , file_out   , compression      , event_range,
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
         buffer_calculation = calculate_and_save_buffers(buffer_length    ,
+                                                        max_time         ,
                                                         pre_trigger      ,
                                                         pmt_wid          ,
                                                         sipm_wid         ,

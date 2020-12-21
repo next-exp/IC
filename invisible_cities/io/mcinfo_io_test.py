@@ -9,6 +9,7 @@ from .  dst_io    import load_dst
 from .  mcinfo_io import load_mchits_df
 from .  mcinfo_io import cast_mchits_to_dict
 from .  mcinfo_io import load_mcparticles_df
+from .  mcinfo_io import load_eventnumbermap
 from .  mcinfo_io import get_event_numbers_in_file
 from .  mcinfo_io import get_sensor_binning
 from .  mcinfo_io import get_sensor_types
@@ -18,6 +19,7 @@ from .  mcinfo_io import load_mcsensor_positions
 from .  mcinfo_io import load_mcsensor_response_df
 from .  mcinfo_io import MCTableType
 from .  mcinfo_io import copy_mc_info
+from .  mcinfo_io import safe_copy_nexus_eventmap
 from .  mcinfo_io import read_mc_tables
 from .  mcinfo_io import mc_writer
 from .  mcinfo_io import _read_mchit_info
@@ -25,6 +27,7 @@ from .  mcinfo_io import _read_mchit_info
 from .. core               import system_of_units as units
 from .. core.testing_utils import assert_dataframes_equal
 from .. core.testing_utils import assert_MChit_equality
+from .. core.testing_utils import assert_tables_equality
 
 from pytest import fixture
 from pytest import mark
@@ -102,6 +105,76 @@ def test_is_oldformat_file(ICDATADIR):
 
     assert     is_oldformat_file(file_in_old)
     assert not is_oldformat_file(file_in_new)
+
+
+def test_safe_copy_nexus_eventmap(config_tmpdir, ICDATADIR):
+    file_in  = os.path.join(ICDATADIR                                  ,
+                            'nexus_new_kr83m_full.newformat.buffers.h5')
+    file_out = os.path.join(config_tmpdir, 'evtMapCopy.h5')
+
+    expected_evts = np.array([[0, 0], [13, 1]])
+    with tb.open_file(file_out, 'w') as h5out:
+        copied_evts = safe_copy_nexus_eventmap(h5out, expected_evts[:, 0],
+                                               file_in)
+
+        assert len(copied_evts['evt_number']) == len(expected_evts)
+        assert np.all(copied_evts['nexus_evt'] == expected_evts[:, 1])
+
+    with tb.open_file(file_in) as h5orig, tb.open_file(file_out) as h5out:
+        assert hasattr(h5out.root.Run, 'eventMap')
+        assert_tables_equality(h5out .root.Run.eventMap,
+                               h5orig.root.Run.eventMap)
+
+
+def test_safe_copy_nexus_eventmap_split(config_tmpdir, ICDATADIR):
+    file_in  = os.path.join(ICDATADIR                                       ,
+                            'nexus_new_kr83m_full.newformat.splitbuffers.h5')
+    file_out = os.path.join(config_tmpdir, 'evtMapCopy.h5')
+
+    expected_evts = np.array([[0, 0], [10, 1], [11, 1]])
+    with tb.open_file(file_out, 'w') as h5out:
+        copied_evts = safe_copy_nexus_eventmap(h5out, expected_evts[:, 0],
+                                               file_in)
+
+        assert len(copied_evts['evt_number']) == len(expected_evts)
+        assert np.all(copied_evts['nexus_evt'] == expected_evts[:, 1])
+
+    with tb.open_file(file_in) as h5orig, tb.open_file(file_out) as h5out:
+        assert hasattr(h5out.root.Run, 'eventMap')
+        assert_tables_equality(h5out .root.Run.eventMap,
+                               h5orig.root.Run.eventMap)
+
+
+def test_safe_copy_nexus_eventmap_partial(config_tmpdir, ICDATADIR):
+    file_in  = os.path.join(ICDATADIR                                       ,
+                            'nexus_new_kr83m_full.newformat.splitbuffers.h5')
+    file_out = os.path.join(config_tmpdir, 'evtMapCopy.h5')
+
+    expected_evts = np.array([[0, 0], [11, 1]])
+    with tb.open_file(file_out, 'w') as h5out:
+        copied_evts = safe_copy_nexus_eventmap(h5out, expected_evts[:, 0],
+                                               file_in)
+
+        assert len(copied_evts['evt_number']) == len(expected_evts)
+        assert np.all(copied_evts['nexus_evt'] == expected_evts[:, 1])
+
+    evtmap_orig = load_eventnumbermap(file_in )
+    evtmap_copy = load_eventnumbermap(file_out)
+    assert evtmap_copy is not None
+    assert len(evtmap_copy) < len(evtmap_orig)
+    assert np.all(evtmap_copy.evt_number == expected_evts[:, 0])
+    assert np.all(evtmap_copy.nexus_evt  == expected_evts[:, 1])
+
+
+def test_safe_copy_nexus_eventmap_notable(config_tmpdir, ICDATADIR):
+    file_in  = os.path.join(ICDATADIR, 'electrons_40keV_z250_MCRD.h5')
+    file_out = os.path.join(config_tmpdir, 'noEventMap.h5')
+
+    evts = [1, 3, 4, 5]
+    with tb.open_file(file_out, 'w') as h5out:
+        event_numbers = safe_copy_nexus_eventmap(h5out, evts, file_in)
+
+        assert np.all(event_numbers['nexus_evt'] == evts)
 
 
 def test_copy_mc_info_which_events_is_none(ICDATADIR, config_tmpdir):

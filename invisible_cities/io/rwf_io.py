@@ -63,6 +63,12 @@ def rwf_writer(h5out           : tb.file.File          ,
     return write_rwf
 
 
+def ic_event_number_base(max_subevt: int) -> Callable:
+    def generate_evt_number(nexus_event: int) -> int:
+        return nexus_event * max_subevt
+    return generate_evt_number
+
+
 def buffer_writer(h5out, *,
                   run_number :          int           ,
                   n_sens_eng :          int           ,
@@ -70,7 +76,8 @@ def buffer_writer(h5out, *,
                   length_eng :          int           ,
                   length_trk :          int           ,
                   group_name : Optional[str] =    None,
-                  compression: Optional[str] = 'ZLIB4'
+                  compression: Optional[str] = 'ZLIB4',
+                  max_subevt : Optional[int] =      10
                   ) -> Callable[[int, List, List], None]:
     """
     Generalised buffer writer which defines a raw waveform writer
@@ -125,9 +132,10 @@ def buffer_writer(h5out, *,
     nexus_map = make_table(h5out, 'Run', 'eventMap', MCEventMap,
                            "event & nexus evt for each index", compression)
 
-    def write_buffers(nexus_evt  :        int ,
-                      timestamps : List[  int],
-                      events     : List[Tuple]) -> None:
+    evt_number_generator = ic_event_number_base(max_subevt)
+    def write_buffers(nexus_evt :        int ,
+                      timestamps: List[  int],
+                      events    : List[Tuple]) -> None:
         """
         Write run info and event waveforms to file.
         
@@ -141,14 +149,14 @@ def buffer_writer(h5out, *,
                      List of tuples containing the energy and
                      tracking plane info for each identified 'trigger'.
         """
-
+        event_number_base = evt_number_generator(nexus_evt)
         for i, (t_stamp, (eng, trk)) in enumerate(zip(timestamps, events)):
-            ## The exact way to log MC event splitting
-            ## still to be decided.
-            run_and_event(event_number=nexus_evt, timestamp=t_stamp)
+            ## Save event number and log nexus event number.
+            event_number = event_number_base + i
+            run_and_event(event_number=event_number, timestamp=t_stamp)
             mrow = nexus_map.row
-            mrow["evt_number"] = nexus_evt
-            mrow[   "sub_evt"] = i
+            mrow["evt_number"] = event_number
+            mrow[ "nexus_evt"] = nexus_evt
             mrow.append()
             ##
 

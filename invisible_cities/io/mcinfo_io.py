@@ -108,6 +108,44 @@ def check_last_merge_index(h5out : tb.file.File) -> int:
     return -1
 
 
+def safe_copy_nexus_eventmap(h5out  : tb.file.File,
+                             evt_arr: np.ndarray  ,
+                             file_in: str         ) -> Mapping:
+    """
+    Copies the nexus event map and returns the array
+    of nexus event_ids to be used to copy the MC tables.
+
+    parameters
+    ----------
+    h5out  : tb.file
+             Output file for eventMap table if found.
+    evt_arr: np.ndarray
+             Array of event numbers to copy
+    file_in: str
+             Name of input file where the eventMap should be sought.
+
+    returns
+    -------
+    Mapping : 
+            'evt_number': the evt_number copied to the output;
+            'nexus_evt' : the nexus event_ids copied to the output.
+    """
+    evt_map = load_eventnumbermap(file_in)
+    try:
+        evt_mask = evt_map.evt_number.isin(evt_arr)
+        df_writer(h5out, evt_map[evt_mask], 'Run', 'eventMap')
+        return evt_map[evt_mask].to_dict('list')
+    except AttributeError:
+        ## Invoked when the eventMap table not found
+        ## which occurs for pre-2020 MC files and
+        ## at the first processing stage from nexus
+        ## since the eventMap is constructed event
+        ## by event in that case. No copy and return the
+        ## parts of the original arrays found.
+        mc_events = np.intersect1d(evt_arr, get_event_numbers_in_file(file_in))
+        return dict(evt_number=mc_events, nexus_evt=mc_events)
+
+
 def read_mc_tables(file_in : str                        ,
                    evt_arr : Optional[np.ndarray] = None,
                    db_file : Optional[str]        = None,
@@ -296,6 +334,23 @@ def _get_list_of_events_new(h5in : tb.file.File) -> np.ndarray:
     return np.unique(np.concatenate(evt_list)).astype(int)
 
 
+def load_eventnumbermap(file_name: str) -> pd.DataFrame:
+    """
+    Load the nexus to IC event map to a pd.DataFrame
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing info.
+
+    returns
+    -------
+    pd.DataFrame with the mapping info between
+    nexus and IC event_ids.
+    """
+    return load_dst(file_name, 'Run', 'eventMap')
+
+
 def load_mcconfiguration(file_name : str) -> pd.DataFrame:
     """
     Load the MC.configuration table from file into
@@ -351,7 +406,7 @@ def load_mcsensor_positions(file_name : str,
         sns_pos = load_dst(file_name, 'MC', 'sensor_positions')
         if sns_pos.shape[0] > 0:
             if db_file is None or run_no is None:
-                warnings.warn(f' Database and file number needed', UserWarning)
+                warnings.warn(' Database and file number needed', UserWarning)
                 return pd.DataFrame(columns=['sensor_id', 'sensor_name',
                                              'x', 'y', 'z'])
             ## Add a column to the DataFrame so all info
@@ -648,7 +703,7 @@ def get_sensor_binning(file_name : str) -> pd.DataFrame:
     config         = load_mcconfiguration(file_name).set_index('param_key')
     bins           = config[config.index.str.contains('binning')]
     if bins.empty:
-        warnings.warn(f' No binning info available.', UserWarning)
+        warnings.warn(' No binning info available.', UserWarning)
         return pd.DataFrame(columns=['sns_name', 'bin_width'])
     ## Drop duplicates in case of merged file
     bins           = bins.drop('file_index', axis=1, errors='ignore')
