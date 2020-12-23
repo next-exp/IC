@@ -22,13 +22,13 @@ def test_true_voxels_writer(config_tmpdir, voxels_toy_data):
             voxels.voxels.append(v)
         write(event[0],voxels.voxels)
 
-    vdst = tb.open_file(output_file,'r')
-    assert_allclose(event, vdst.root.TrueVoxels.Voxels[:]['event'])
-    assert_allclose(X,     vdst.root.TrueVoxels.Voxels[:]['X'])
-    assert_allclose(Y,     vdst.root.TrueVoxels.Voxels[:]['Y'])
-    assert_allclose(Z,     vdst.root.TrueVoxels.Voxels[:]['Z'])
-    assert_allclose(E,     vdst.root.TrueVoxels.Voxels[:]['E'])
-    assert_allclose(size,  vdst.root.TrueVoxels.Voxels[:]['size'])
+    with tb.open_file(output_file) as vdst:
+        assert_allclose(event, vdst.root.TrueVoxels.Voxels[:]['event'])
+        assert_allclose(X,     vdst.root.TrueVoxels.Voxels[:]['X'])
+        assert_allclose(Y,     vdst.root.TrueVoxels.Voxels[:]['Y'])
+        assert_allclose(Z,     vdst.root.TrueVoxels.Voxels[:]['Z'])
+        assert_allclose(E,     vdst.root.TrueVoxels.Voxels[:]['E'])
+        assert_allclose(size,  vdst.root.TrueVoxels.Voxels[:]['size'])
 
 def test_load_voxels(config_tmpdir, voxels_toy_data):
 
