@@ -1,16 +1,13 @@
 import os
 import pytest
 import numpy  as np
-import tables as tb
 
 from pandas      import DataFrame
 from collections import namedtuple
 
 from . core              import system_of_units as units
-from . evm  . pmaps_test import pmaps
 from . io   . pmaps_io   import load_pmaps_as_df
 from . io   . pmaps_io   import load_pmaps
-from . io   . pmaps_io   import pmap_writer
 from . io   .   dst_io   import load_dst
 from . io   .  hits_io   import load_hits
 from . io   .  hits_io   import load_hits_skipping_NN
@@ -180,21 +177,6 @@ def data_hdst_deconvolved(ICDATADIR):
     test_file = "test_hits_th_1pes_deconvolution.npz"
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
-
-@pytest.fixture(scope='session')
-def KrMC_pmaps_example(output_tmpdir):
-    output_filename  = os.path.join(output_tmpdir, "test_pmap_file.h5")
-    number_of_events = 3
-    event_numbers    = np.random.choice(2 * number_of_events, size=number_of_events, replace=False)
-    event_numbers    = sorted(event_numbers)
-    pmt_ids          = np.arange(3) * 2
-    pmap_generator   = pmaps(pmt_ids)
-    true_pmaps       = [pmap_generator.example()[1] for _ in range(number_of_events)]
-
-    with tb.open_file(output_filename, "w") as output_file:
-        write = pmap_writer(output_file)
-        list(map(write, true_pmaps, event_numbers))
-    return output_filename, dict(zip(event_numbers, true_pmaps))
 
 
 @pytest.fixture(scope='session')
