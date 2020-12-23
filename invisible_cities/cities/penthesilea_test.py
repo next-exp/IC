@@ -10,7 +10,6 @@ from .. core                 import system_of_units as units
 from .. core.core_functions  import in_range
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
-from .. core.testing_utils   import assert_MChit_equality
 from .. core.configure       import configure
 from .. core.configure       import all as all_events
 from .. io                   import dst_io as dio

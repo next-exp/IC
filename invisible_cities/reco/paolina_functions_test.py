@@ -3,7 +3,6 @@ import os
 from math      import sqrt
 from functools import partial
 
-import tables as tb
 import numpy    as np
 import networkx as nx
 

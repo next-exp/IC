@@ -66,7 +66,7 @@ def multiple_filter_tables(request):
                    ("a_filter", "b_filter"),
                    ("a_filter", "b_filter", "c_filter")))
 def test_event_filter_writer_creates_group_and_tables(config_tmpdir, table_names):
-    filename = os.path.join(config_tmpdir, f"test_event_filter_writer_creates_group_and_table.h5")
+    filename = os.path.join(config_tmpdir, "test_event_filter_writer_creates_group_and_table.h5")
 
     with tb.open_file(filename, "w") as file:
         # do nothing but create the tables
@@ -80,7 +80,7 @@ def test_event_filter_writer_creates_group_and_tables(config_tmpdir, table_names
 
 
 def test_event_filter_writer_writes_data_correctly(config_tmpdir):
-    filename = os.path.join(config_tmpdir, f"test_event_filter_writer_writes_data_correctly.h5")
+    filename = os.path.join(config_tmpdir, "test_event_filter_writer_writes_data_correctly.h5")
     n_evt    = 10
     evt_nos  = np.random.randint(0, 10000, size=n_evt)
     passed   = np.random.randint(0,     2, size=n_evt).astype(bool)

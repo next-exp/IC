@@ -98,7 +98,6 @@ def test_interpolate_signal():
                                            InterpolationMethod.cubic)
     inter_charge      = out_interpolation[0].flatten()
     inter_position    = out_interpolation[1]
-    ref_position      = shift_to_bin_centers(np.linspace(-0.05, 1.05, n_interpolation + 1))
 
     assert np.allclose(ref_interpolation, np.around(inter_charge, decimals=3))
     assert np.allclose(grid             , sorted(set(inter_position[0])))

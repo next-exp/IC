@@ -3,10 +3,11 @@ import os
 import tables as tb
 import numpy  as np
 
+from numpy.testing import assert_array_equal
+
 from .  berenice           import berenice
 from .. core.configure     import configure
 from .. core.configure     import       all as all_events
-from .. core.testing_utils import assert_array_equal
 from .. core.testing_utils import assert_tables_equality
 
 

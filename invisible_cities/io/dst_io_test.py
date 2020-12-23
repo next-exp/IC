@@ -130,8 +130,8 @@ def test_load_dsts_warns_if_not_existing_file(ICDATADIR):
 def test_load_dst_converts_from_bytes(ICDATADIR, fixed_dataframe):
     filename = os.path.join(ICDATADIR, 'Kr83_full_nexus_v5_03_01_ACTIVE_7bar_1evt.sim.h5')
     config = load_dst(filename, 'MC', 'configuration')
-    for column in config.columns:
-        assert all(config[column].apply(type) != bytes)
+    for col in config.columns:
+        assert all(config[col].apply(type) != bytes)
 
 
 @given(df=dataframe)

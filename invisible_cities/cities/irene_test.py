@@ -229,8 +229,6 @@ def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
     file_out    = os.path.join(output_tmpdir                                   ,
                                "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_10evts.h5")
 
-    nevents_per_file = 5
-
     nrequired = 10
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
     conf.update(dict(run_number  = -4735,
