@@ -120,7 +120,6 @@ def test_spe_to_adc():
     assert 24 < adc_to_pes_lpf < 24.1
 
 @flaky(max_runs=3, min_passes=1)
-@pytest.mark.feetest
 def test_FEE():
     """
     1. starts from a "theoretical function " signal_i =signal_i_th()
