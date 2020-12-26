@@ -89,7 +89,7 @@ def event_number_from_input_file_name(filename):
     # (?P<nevts>\d+)    -> Matches number of events and save it with name 'nevts'
     # \..*              -> Matches a dot and the rest of the name
     # Sample name: 'dst_NEXT_v0_08_09_Co56_INTERNALPORTANODE_74_0_7bar_MCRD_10000.root.h5'
-    pattern = re.compile('NEXT_v\d[_\d+]+[_\w]+?_(?P<fnumber>\d+)_[_\w]+?_(?P<nevts>\d+)\..*',
+    pattern = re.compile(r'NEXT_v\d[_\d+]+[_\w]+?_(?P<fnumber>\d+)_[_\w]+?_(?P<nevts>\d+)\..*',
                          re.IGNORECASE)
     match = pattern.search(filename)
     # If string does not match the pattern, return 0 as default
