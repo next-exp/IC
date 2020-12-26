@@ -1,5 +1,7 @@
 import os
 
+import warnings
+
 import numpy  as np
 import tables as tb
 
@@ -213,86 +215,93 @@ def test_pedestal_values():
 
 
 def test_compute_seeds_from_spectrum(ICDATADIR):
-
     PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
-    h5in    = tb.open_file(PATH_IN, 'r')
+    # Suppress warnings from division by zero in some bins.
+    with warnings.catch_warnings(), tb.open_file(PATH_IN) as h5in:
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        specsL   = np.array(h5in.root.HIST.sipm_spe ).sum(axis=0)
+        specsD   = np.array(h5in.root.HIST.sipm_dark).sum(axis=0)
+        bins     = np.array(h5in.root.HIST.sipm_spe_bins)
+        min_stat = 10
 
-    specsL = np.array(h5in.root.HIST.sipm_spe).sum(axis=0)
-    specsD = np.array(h5in.root.HIST.sipm_dark).sum(axis=0)
-    bins   = np.array(h5in.root.HIST.sipm_spe_bins)
+        for ich, (led, dar) in enumerate(zip(specsL, specsD)):
+            b1 = 0
+            b2 = len(dar)
+            try:
+                valid_bins = np.argwhere(led>=min_stat)
+                b1 = valid_bins[ 0][0]
+                b2 = valid_bins[-1][0]
+            except IndexError:
+                continue
 
-    min_stat = 10
+            peaks_dark = find_peaks_cwt(dar, np.arange(2, 20), min_snr=2)
+            if len(peaks_dark) == 0:
+                continue
 
-    for ich, (led, dar) in enumerate(zip(specsL, specsD)):
-        b1 = 0
-        b2 = len(dar)
-        try:
-            valid_bins = np.argwhere(led>=min_stat)
-            b1 = valid_bins[ 0][0]
-            b2 = valid_bins[-1][0]
-        except IndexError:
-            continue
+            gb0     = [(0, -100, 0), (np.inf, 100, 10000)]
+            sd0     = (dar.sum(), 0, 2)
+            sel     = np.arange(peaks_dark[0]-5, peaks_dark[0]+5)
+            errs    = poisson_sigma(dar[sel], default=0.1)
+            gfitRes = fitf.fit(fitf.gauss, bins[sel], dar[sel],
+                                sd0, sigma=errs, bounds=gb0)
 
-        peaks_dark = find_peaks_cwt(dar, np.arange(2, 20), min_snr=2)
-        if len(peaks_dark) == 0:
-            continue
+            ped_vals    = np.array([gfitRes.values[0], gfitRes.values[1],
+                                    gfitRes.values[2]])
+            p_range     = slice(b1, b2)
+            p_bins      = (bins[p_range] >= -5) & (bins[p_range] <= 5)
+            scaler_func = cf.dark_scaler(dar[p_range][p_bins])
+            sens_values = cf.sensor_values(SensorType.SIPM, scaler_func,
+                                           bins[p_range], led[p_range],
+                                           ped_vals)
 
-        gb0     = [(0, -100, 0), (np.inf, 100, 10000)]
-        sd0     = (dar.sum(), 0, 2)
-        sel     = np.arange(peaks_dark[0]-5, peaks_dark[0]+5)
-        errs    = poisson_sigma(dar[sel], default=0.1)
-        gfitRes = fitf.fit(fitf.gauss, bins[sel], dar[sel], sd0, sigma=errs, bounds=gb0)
+            gain_seed, gain_sigma_seed = cf.compute_seeds_from_spectrum(sens_values, bins[p_range], ped_vals)
 
-        ped_vals    = np.array([gfitRes.values[0], gfitRes.values[1], gfitRes.values[2]])
-        p_range     = slice(b1, b2)
-        p_bins      = (bins[p_range] >= -5) & (bins[p_range] <= 5)
-        scaler_func = cf.dark_scaler(dar[p_range][p_bins])
-        sens_values = cf.sensor_values(SensorType.SIPM, scaler_func, bins[p_range], led[p_range], ped_vals)
-
-        gain_seed, gain_sigma_seed = cf.compute_seeds_from_spectrum(sens_values, bins[p_range], ped_vals)
-
-        assert gain_seed       != 0
-        assert gain_sigma_seed != 0
+            assert gain_seed       != 0
+            assert gain_sigma_seed != 0
 
 
 def test_seeds_without_using_db(ICDATADIR, dbnew):
     PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
-    h5in    = tb.open_file(PATH_IN, 'r')
-    run_no  = get_run_number(h5in)
+    # Suppress warnings from division by zero in some bins.
+    with warnings.catch_warnings(), tb.open_file(PATH_IN) as h5in:
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        run_no  = get_run_number(h5in)
 
-    specsL = np.array(h5in.root.HIST.sipm_spe).sum(axis=0)
-    specsD = np.array(h5in.root.HIST.sipm_dark).sum(axis=0)
-    bins   = np.array(h5in.root.HIST.sipm_spe_bins)
+        specsL   = np.array(h5in.root.HIST.sipm_spe).sum(axis=0)
+        specsD   = np.array(h5in.root.HIST.sipm_dark).sum(axis=0)
+        bins     = np.array(h5in.root.HIST.sipm_spe_bins)
+        min_stat = 10
 
-    min_stat = 10
+        for ich, (led, dar) in enumerate(zip(specsL, specsD)):
+            b1 = 0
+            b2 = len(dar)
+            try:
+                valid_bins = np.argwhere(led>=min_stat)
+                b1 = valid_bins[ 0][0]
+                b2 = valid_bins[-1][0]
+            except IndexError:
+                continue
 
-    for ich, (led, dar) in enumerate(zip(specsL, specsD)):
-        b1 = 0
-        b2 = len(dar)
-        try:
-            valid_bins = np.argwhere(led>=min_stat)
-            b1 = valid_bins[ 0][0]
-            b2 = valid_bins[-1][0]
-        except IndexError:
-            continue
+            peaks_dark = find_peaks_cwt(dar, np.arange(2, 20), min_snr=2)
+            if len(peaks_dark) == 0:
+                continue
 
-        peaks_dark = find_peaks_cwt(dar, np.arange(2, 20), min_snr=2)
-        if len(peaks_dark) == 0:
-            continue
+            gb0     = [(0, -100, 0), (np.inf, 100, 10000)]
+            sd0     = (dar.sum(), 0, 2)
+            sel     = np.arange(peaks_dark[0]-5, peaks_dark[0]+5)
+            errs    = poisson_sigma(dar[sel], default=0.1)
+            gfitRes = fitf.fit(fitf.gauss, bins[sel], dar[sel], sd0,
+                               sigma=errs, bounds=gb0)
 
-        gb0     = [(0, -100, 0), (np.inf, 100, 10000)]
-        sd0     = (dar.sum(), 0, 2)
-        sel     = np.arange(peaks_dark[0]-5, peaks_dark[0]+5)
-        errs    = poisson_sigma(dar[sel], default=0.1)
-        gfitRes = fitf.fit(fitf.gauss, bins[sel], dar[sel], sd0, sigma=errs, bounds=gb0)
-
-        ped_vals      = np.array([gfitRes.values[0], gfitRes.values[1], gfitRes.values[2]])
-        p_range       = slice(b1, b2)
-        p_bins        = (bins[p_range] >= -5) & (bins[p_range] <= 5)
-        scaler_func   = cf.dark_scaler(dar[p_range][p_bins])
-        seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, run_no, ich,
-                                            scaler_func, bins[p_range], led[p_range],
-                                            ped_vals, dbnew, gfitRes.errors,
-                                            use_db_gain_seeds=False)
-        assert all(seeds)
-        assert bounds == ((0, 0, 0, 0.001), (np.inf, 10000, 10000, 10000))
+            ped_vals      = np.array([gfitRes.values[0], gfitRes.values[1],
+                                      gfitRes.values[2]])
+            p_range       = slice(b1, b2)
+            p_bins        = (bins[p_range] >= -5) & (bins[p_range] <= 5)
+            scaler_func   = cf.dark_scaler(dar[p_range][p_bins])
+            seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, run_no, ich,
+                                                scaler_func, bins[p_range],
+                                                led[p_range], ped_vals, dbnew,
+                                                gfitRes.errors,
+                                                use_db_gain_seeds=False)
+            assert all(seeds)
+            assert bounds == ((0, 0, 0, 0.001), (np.inf, 10000, 10000, 10000))
