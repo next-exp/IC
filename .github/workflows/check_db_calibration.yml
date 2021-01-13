@@ -1,0 +1,42 @@
+# This workflow will check the consistency between MySQL and SQLite databases
+
+name: Calibration check
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+        - '**.sqlite3'
+  pull_request:
+    branches: [ master ]
+    paths:
+        - '**.sqlite3'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
+
+    steps:
+    - uses: actions/checkout@v2
+    - id: files
+      uses: jitterbit/get-changed-files@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Get LFS files
+      run: |
+        git lfs pull
+    - name: Install dependencies
+      run: |
+        pip install pymysql numpy
+    - name: Check database
+      run: |
+        python invisible_cities/database/check_gain_update.py ${{ steps.files.outputs.all }}
+      env:
+        PYTHONPATH: "."
+
