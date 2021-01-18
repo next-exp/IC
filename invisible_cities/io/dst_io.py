@@ -108,9 +108,7 @@ def df_writer(h5out              : tb.file.File ,
         table = getattr(group, table_name)
 
     data_types = table.dtype
-    if len(arr) == 0:
-        warnings.warn(f'dataframe is empty', UserWarning)
-    else:
+    if len(arr) != 0:
         _check_castability(arr, data_types)
         columns = list(data_types.names)
         arr = arr[columns].astype(data_types)
