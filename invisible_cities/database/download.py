@@ -6,6 +6,11 @@ import os
 import re
 from os import path
 
+# Absolute imports to allow usage as standalone program:
+# python invisible_cities/database/download.py
+from invisible_cities.database.db_connection import connect_sqlite
+from invisible_cities.database.db_connection import connect_mysql
+
 
 tables = ['DetectorGeo','PmtBlr','ChannelGain','ChannelMapping','ChannelMask',
           'PmtNoiseRms','ChannelPosition','SipmBaseline', 'SipmNoisePDF',
@@ -58,21 +63,17 @@ def loadDB(dbname : str):
     except:
         pass
 
-    connSqlite = sqlite3.connect(dbfile)
-    connMySql  = pymysql.connect(host="neutrinos1.ific.uv.es",
-                                user='nextreader',passwd='readonly', db=dbname)
-
-    cursorMySql  = connMySql .cursor()
-    cursorSqlite = connSqlite.cursor()
+    conn_sqlite, cursor_sqlite = connect_sqlite(dbfile)
+    conn_mysql , cursor_mysql  = connect_mysql (dbname)
 
     for table in tables:
         print("Downloading table {}".format(table))
 
         # Create table
-        create_table_sqlite(cursorSqlite, cursorMySql, table)
+        create_table_sqlite(cursor_sqlite, cursor_mysql, table)
 
         # Copy data
-        copy_all_rows(connSqlite, cursorSqlite, cursorMySql, table)
+        copy_all_rows(conn_sqlite, cursor_sqlite, cursor_mysql, table)
 
 
 if __name__ == '__main__':
