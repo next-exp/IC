@@ -82,8 +82,10 @@ def mc_writer(h5out : tb.file.File) -> Callable:
                     tbl['file_index'] = first_indx
             col_indx = 'event' if hasattr(tbl, 'event') else None
             str_len  = 300 if key is MCTableType.configuration else 100
-            mcwriter_(df             =     tbl, table_name       = key.name,
-                      str_col_length = str_len, columns_to_index = col_indx)
+            mcwriter_(df               =      tbl,
+                      table_name       = key.name,
+                      str_col_length   = str_len ,
+                      columns_to_index = col_indx)
     return write_mctables
 
 
@@ -130,7 +132,11 @@ def safe_copy_nexus_eventmap(h5out  : tb.file.File,
             'evt_number': the evt_number copied to the output;
             'nexus_evt' : the nexus event_ids copied to the output.
     """
-    evt_map = load_eventnumbermap(file_in)
+    # Suppress warning raised when table not
+    # present since case dealt with in try except.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        evt_map = load_eventnumbermap(file_in)
     try:
         evt_mask = evt_map.evt_number.isin(evt_arr)
         df_writer(h5out, evt_map[evt_mask], 'Run', 'eventMap')
