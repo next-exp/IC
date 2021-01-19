@@ -3,7 +3,7 @@
 #   nix-shell shell.nix --argstr py 36
 #
 { py ? "37"
-, nixpkgs-commit-id ? "f1a79c86358c5464c64b4fad00fca07a10e62a74"
+, nixpkgs-commit-id ? "88f00e7e12d2669583fffd3f33aae01101464386"
 }:
 
 # To update `nixpkgs-commit-id` go to https://status.nixos.org/, which lists the
