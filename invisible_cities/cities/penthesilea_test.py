@@ -1,4 +1,5 @@
 import os
+import warnings
 import numpy  as np
 import tables as tb
 import pandas as pd
@@ -354,4 +355,8 @@ def test_penthesilea_empty_input_file(config_tmpdir, ICDATADIR):
     conf.update(dict(files_in      = PATH_IN,
                      file_out      = PATH_OUT))
 
-    penthesilea(**conf)
+    # Warning expected since no MC tables present.
+    # Suppress since irrelevant in test.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        penthesilea(**conf)

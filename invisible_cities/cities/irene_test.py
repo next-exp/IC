@@ -1,5 +1,7 @@
 import os
 
+import warnings
+
 import tables as tb
 import numpy  as np
 import pandas as pd
@@ -386,7 +388,11 @@ def test_irene_empty_input_file(config_tmpdir, ICDATADIR):
     conf.update(dict(files_in      = PATH_IN,
                      file_out      = PATH_OUT))
 
-    irene(**conf)
+    # Warning expected since no MC tables present.
+    # Suppress since irrelevant in test.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        irene(**conf)
 
 
 
