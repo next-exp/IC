@@ -2,7 +2,6 @@ import numpy  as np
 import pandas as pd
 
 from pytest                 import approx
-from numpy.testing          import assert_array_equal
 from numpy.testing          import assert_equal
 from numpy.testing          import assert_allclose
 from hypothesis.strategies  import integers

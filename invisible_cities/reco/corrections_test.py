@@ -149,8 +149,8 @@ def test_read_maps_maps_are_correct(map_filename):
     assert np.all(maps.lt   == 5000 )
     assert np.all(maps.ltu  == 3    )
 
-@given(random_length_float_arrays(min_value = 0,
-                                  max_value = 3e4))
+@given(random_length_float_arrays(min_value = 1e-4,
+                                  max_value = 3e4 ))
 def test_correct_geometry_properly(x):
     assert_array_equal(correct_geometry_(x),(1/x))
 

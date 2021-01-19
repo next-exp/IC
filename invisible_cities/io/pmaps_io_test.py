@@ -5,6 +5,9 @@ from collections import defaultdict
 from pytest import mark
 from pytest import approx
 
+from hypothesis import given
+from hypothesis import strategies as stg
+
 import tables as tb
 import numpy  as np
 import pandas as pd
@@ -14,6 +17,7 @@ from ..core.testing_utils import assert_dataframes_equal
 from ..core.testing_utils import exactly
 from ..evm .pmaps         import S1
 from ..evm .pmaps         import S2
+from ..evm .pmaps_test    import pmaps    as pmap_gen
 from .                    import pmaps_io as pmpio
 
 
@@ -198,16 +202,23 @@ def test_load_pmaps_as_df_without_ipmt(KrMC_pmaps_without_ipmt_filename, KrMC_pm
     assert read_dfs[4] is None
 
 
-def test_load_pmaps(KrMC_pmaps_example):
-    filename, true_pmaps = KrMC_pmaps_example
-    read_pmaps = pmpio.load_pmaps(filename)
+@given(stg.data())
+def test_load_pmaps(output_tmpdir, data):
+    pmap_filename  = os.path.join(output_tmpdir, "test_pmap_file.h5")
+    event_numbers  = [2, 4, 6]
+    pmt_ids        = [1, 6, 8]
+    pmap_generator = pmap_gen(pmt_ids)
+    true_pmaps     = [data.draw(pmap_generator)[1] for _ in event_numbers]
 
-    assert len(read_pmaps)       == len(true_pmaps)
-    assert     read_pmaps.keys() ==     true_pmaps.keys()
-    for evt_number in true_pmaps:
-        read_pmap = read_pmaps[evt_number]
-        true_pmap = true_pmaps[evt_number]
+    with tb.open_file(pmap_filename, "w") as output_file:
+        write = pmpio.pmap_writer(output_file)
+        list(map(write, true_pmaps, event_numbers))
 
+    read_pmaps = pmpio.load_pmaps(pmap_filename)
+
+    assert len(read_pmaps) == len(true_pmaps)
+    assert np.all(list(read_pmaps.keys()) == event_numbers)
+    for true_pmap, read_pmap in zip(true_pmaps, read_pmaps.values()):
         assert_PMap_equality(read_pmap, true_pmap)
 
 

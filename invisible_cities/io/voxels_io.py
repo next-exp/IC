@@ -31,22 +31,22 @@ def true_voxels_writer(hdf5_file, *, compression='ZLIB4'):
     return write_voxels
 
 def load_voxels(DST_file_name):
-    """Return the Voxels as PD DataFrames."""
+    """Return the Voxels as dictionary."""
 
-    dst = tables.open_file(DST_file_name,'r')
-    dst_size = len(dst.root.TrueVoxels.Voxels)
-    all_events = {}
+    with tables.open_file(DST_file_name) as dst:
+        dst_size = len(dst.root.TrueVoxels.Voxels)
+        all_events = {}
 
-    event = dst.root.TrueVoxels.Voxels[:]['event']
-    X     = dst.root.TrueVoxels.Voxels[:]['X']
-    Y     = dst.root.TrueVoxels.Voxels[:]['Y']
-    Z     = dst.root.TrueVoxels.Voxels[:]['Z']
-    E     = dst.root.TrueVoxels.Voxels[:]['E']
-    size  = dst.root.TrueVoxels.Voxels[:]['size']
+        event = dst.root.TrueVoxels.Voxels[:]['event']
+        X     = dst.root.TrueVoxels.Voxels[:]['X']
+        Y     = dst.root.TrueVoxels.Voxels[:]['Y']
+        Z     = dst.root.TrueVoxels.Voxels[:]['Z']
+        E     = dst.root.TrueVoxels.Voxels[:]['E']
+        size  = dst.root.TrueVoxels.Voxels[:]['size']
 
-    for i in range(dst_size):
-        current_event = all_events.setdefault(event[i],
-                                              VoxelCollection([]))
-        voxel = Voxel(X[i], Y[i], Z[i], E[i], size[i])
-        current_event.voxels.append(voxel)
+        for i in range(dst_size):
+            current_event = all_events.setdefault(event[i],
+                                                  VoxelCollection([]))
+            voxel = Voxel(X[i], Y[i], Z[i], E[i], size[i])
+            current_event.voxels.append(voxel)
     return all_events

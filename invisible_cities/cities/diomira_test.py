@@ -129,8 +129,6 @@ def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
     file_out    = os.path.join(output_tmpdir                                 ,
                                "Kr83_nexus_v5_03_00_ACTIVE_7bar_6evts.RWF.h5")
 
-    nevents_per_file = 3
-
     nrequired = 10
     conf = configure('dummy invisible_cities/config/diomira.conf'.split())
     conf.update(dict(run_number   = -4734,
@@ -226,8 +224,6 @@ def test_diomira_reproduces_singlepe(ICDATADIR, output_tmpdir):
 
     pmt_gain = load_db.DataPMT('new', run_no).adc_to_pes.values
     with tb.open_file(file_out) as h5saved:
-        pmt_signal  = h5saved.root.RD.pmtblr
-
         pmt_sum_adc = np.sum(h5saved.root.RD.pmtblr, axis=2)
         
         bins        = np.arange(-50, 50, 0.5)

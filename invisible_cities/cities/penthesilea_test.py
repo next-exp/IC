@@ -1,4 +1,5 @@
 import os
+import warnings
 import numpy  as np
 import tables as tb
 import pandas as pd
@@ -9,7 +10,6 @@ from .. core                 import system_of_units as units
 from .. core.core_functions  import in_range
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
-from .. core.testing_utils   import assert_MChit_equality
 from .. core.configure       import configure
 from .. core.configure       import all as all_events
 from .. io                   import dst_io as dio
@@ -354,4 +354,8 @@ def test_penthesilea_empty_input_file(config_tmpdir, ICDATADIR):
     conf.update(dict(files_in      = PATH_IN,
                      file_out      = PATH_OUT))
 
-    penthesilea(**conf)
+    # Warning expected since no MC tables present.
+    # Suppress since irrelevant in test.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        penthesilea(**conf)

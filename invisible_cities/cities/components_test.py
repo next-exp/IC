@@ -213,7 +213,8 @@ def test_copy_mc_info_split_nexus_events(ICDATADIR, config_tmpdir):
 def test_mcsensors_from_file_fast_returns_empty(ICDATADIR):
     file_in = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.h5")
     sns_gen = mcsensors_from_file([file_in], 'new', -7951)
-    first_evt = next(sns_gen)
+    with warns(UserWarning, match='No binning info available.'):
+        first_evt = next(sns_gen)
     assert first_evt[ 'pmt_resp'].empty
     assert first_evt['sipm_resp'].empty
 

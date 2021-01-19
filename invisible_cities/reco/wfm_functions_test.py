@@ -15,7 +15,7 @@ from .. evm.ic_containers import DeconvParams
 
 
 @mark.slow
-def test_compare_cwf_blr(dbnew):
+def test_compare_cwf_blr(dbnew, ICDATADIR):
     """Test functions cwf_from_rwf() and compare_cwf_blr().
     The test:
     1) Computes CWF from RWF (function cwf_from_rwf())
@@ -25,29 +25,27 @@ def test_compare_cwf_blr(dbnew):
     Input file (needed in repository): electrons_40keV_z25_RWF.h5
     """
 
-    RWF_file = path.join(os.environ['ICDIR'],
-                         'database/test_data/electrons_40keV_z25_RWF.h5')
-    h5rwf = tb.open_file(RWF_file,'r')
-    pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
-    NEVT, NPMT, PMTWL = pmtrwf.shape
-
-
     deconv = DeconvParams(n_baseline  = 45000,
                           thr_trigger =     5)
 
     run_number = 0
-    DataPMT = load_db.DataPMT(dbnew, run_number)
-    DataSiPM = load_db.DataSiPM(dbnew, run_number)
+    DataPMT    = load_db.DataPMT (dbnew, run_number)
+    DataSiPM   = load_db.DataSiPM(dbnew, run_number)
 
-    calib = CalibVectors(channel_id = DataPMT.ChannelID.values,
-                         coeff_blr = abs(DataPMT.coeff_blr   .values),
-                         coeff_c = abs(DataPMT.coeff_c   .values),
-                         adc_to_pes = DataPMT.adc_to_pes.values,
-                         adc_to_pes_sipm = DataSiPM.adc_to_pes.values,
-                         pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist())
+    calib = CalibVectors(channel_id      =     DataPMT .ChannelID .values ,
+                         coeff_blr       = abs(DataPMT .coeff_blr .values),
+                         coeff_c         = abs(DataPMT .coeff_c   .values),
+                         adc_to_pes      =     DataPMT .adc_to_pes.values ,
+                         adc_to_pes_sipm =     DataSiPM.adc_to_pes.values ,
+                         pmt_active      = np.nonzero(DataPMT.Active.values)[0])
 
-    CWF = wfm.cwf_from_rwf(pmtrwf, range(NEVT), calib, deconv)
-    diff = wfm.compare_cwf_blr(CWF, pmtblr,
-                               event_list=range(NEVT), window_size=300)
+    RWF_file = path.join(ICDATADIR, 'electrons_40keV_z25_RWF.h5')
+    with tb.open_file(RWF_file) as h5rwf:
+        pmtrwf, pmtblr, sipmrwf = tbl.get_vectors(h5rwf)
+        NEVT, NPMT, PMTWL = pmtrwf.shape
+
+        CWF = wfm.cwf_from_rwf(pmtrwf, range(NEVT), calib, deconv)
+        diff = wfm.compare_cwf_blr(CWF, pmtblr,
+                                   event_list=range(NEVT), window_size=300)
 
     assert max(diff) < 0.15

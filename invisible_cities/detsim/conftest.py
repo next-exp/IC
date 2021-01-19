@@ -1,18 +1,13 @@
 import os
 
-import numpy  as np
 import pandas as pd
 import tables as tb
 
 from pytest import fixture
-from pytest import    mark
 
-from .. core               import           system_of_units as units
 from .. database           import                   load_db
 from .. io      .mcinfo_io import        get_sensor_binning
 from .. io      .mcinfo_io import load_mcsensor_response_df
-
-from .  buffer_functions   import               bin_sensors
 
 
 @fixture(scope="module")

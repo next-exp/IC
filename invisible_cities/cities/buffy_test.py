@@ -1,5 +1,7 @@
 import os
 
+import warnings
+
 import numpy  as np
 import tables as tb
 
@@ -78,7 +80,11 @@ def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
     conf = configure('buffy invisible_cities/config/buffy.conf'.split())
     conf.update(dict(files_in=file_in, file_out=file_out, event_range=nevt))
 
-    buffy_result = buffy(**conf)
+    # Warning expected since no MC tables present.
+    # Suppress since irrelevant in test.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        buffy_result = buffy(**conf)
 
     assert buffy_result.events_in            == nevt
     assert buffy_result.events_resp.n_passed == 0
