@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pytest import mark
@@ -274,7 +276,13 @@ def test_fit_sum_of_gaussians(kwargs):
     x = shift_to_bin_centers(np.linspace(-20.5, 200.5, 221, endpoint=False))
     y = fit_function(x, *true_parameters)
     e = poisson_sigma(y, default=1e-3)
-    f = fitf.fit(fit_function, x, y, seed, sigma=e)
+    # Suppress warning that can be raised when
+    # covariance matrix not calculated properly.
+    # Not relevant for test.
+    with warnings.catch_warnings():
+        from scipy.optimize import OptimizeWarning
+        warnings.simplefilter("ignore", category=OptimizeWarning)
+        f = fitf.fit(fit_function, x, y, seed, sigma=e)
 
     assert np.allclose(f.values, true_parameters, rtol=0.05, atol=0.05)
 
