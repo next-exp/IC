@@ -127,10 +127,7 @@ cdef class LT_SiPM(LightTable):
         self.max_psf2    = self.max_psf**2
         self.num_sensors = len(sipm_database)
 
-    @cython.boundscheck(False)
     @cython.wraparound(False)
-    @cython.cdivision(True)
-    @cython.initializedcheck(False)
     cdef double* get_values_(self, const double x, const double y, const int sns_id):
         cdef:
             double dist
@@ -257,10 +254,7 @@ cdef class LT_PMT(LightTable):
                                       for column in columns],axis=-1)[..., None]).astype(np.double)
         return values_aux, (xmin, xmax), (ymin, ymax)
 
-    @cython.boundscheck(False)
     @cython.wraparound(False)
-    @cython.cdivision(True)
-    @cython.initializedcheck(False)
     cdef double* get_values_(self, const double x, const double y, const int sns_id):
         cdef:
             double*  values
