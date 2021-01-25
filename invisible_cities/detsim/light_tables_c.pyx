@@ -1,3 +1,22 @@
+"""
+This is a module to read the light tables files. Since this depends on the format of the table itself,
+the table-specific class should inherit from the base LightTable class, providing:
+
+ - get_values_ method, that depends on the x, y position in the EL plane and the internal sensor_id
+   the output of the method is a pointer to array of all the values across EL gap for a given x, y bin
+   if there are no values for a given x, y, sensor the result is a NULL pointer
+
+ - zbins_  property,  is an  array of positions corresponding to the EL gap partitions
+
+ - num_sensors attribute,  total number of sensors
+
+
+LT_SiPM and LT_PMT are designed for currently availabel light tables for sipms and pmts;
+should be revisited once the format for the lt is fixed and standardized.
+
+"""
+
+
 import numpy  as np
 import pandas as pd
 
