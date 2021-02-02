@@ -25,9 +25,6 @@ cdef double[:] spread_histogram(const double[:] histogram, int nsmear_left, int 
     return spreaded[:l]
 
 
-@cython.cdivision(True)
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def create_wfs(double [:] xs           ,
                double [:] ys           ,
                double [:] ts           ,
