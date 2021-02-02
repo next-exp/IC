@@ -114,3 +114,15 @@ def test_LTs_non_physical_sensor(get_dfs):
     values = lt.get_values(xs, ys,  pmt_id)
     assert all(values==0)
 
+
+from .light_tables import create_lighttable_function
+@given(xs=floats(min_value=-500, max_value=500),
+       ys=floats(min_value=-500, max_value=500))
+def test_light_tables_pmt_equal(get_dfs, xs, ys):
+    fname, lt_df, lt_conf = get_dfs['lt']
+    lt_c  = LT_PMT(fname=fname)
+    s2_lt = create_lighttable_function(fname)
+    pmts_ids  = np.arange(lt_c.num_sensors)
+    vals_lt_c = np.concatenate([lt_c.get_values(xs,ys, pmtid)for pmtid in pmts_ids]).flatten()
+    vals_lt   = s2_lt(np.array([xs]), np.array([ys])).flatten()
+    np.testing.assert_allclose(vals_lt_c, vals_lt)
