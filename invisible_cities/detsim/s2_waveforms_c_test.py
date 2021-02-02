@@ -76,6 +76,7 @@ def test_create_wfs_tmin(get_dfs, xs, ys, ts, ps):
        ys=arrays(np.float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
        ts=arrays(np.float, 10, elements = floats  (min_value =    2*mus, max_value = 100*mus)),
        ps=arrays(np.int32, 10, elements = integers(min_value =    10   , max_value = 100    )))
+@settings(deadline=None, max_examples=100)
 def test_integrated_signal_pmts(get_dfs, xs, ys, ts, ps):
     fname, lt_df, lt_conf = get_dfs['lt']
     el_drift_velocity = 2.5 * mm/mus
@@ -94,6 +95,7 @@ def test_integrated_signal_pmts(get_dfs, xs, ys, ts, ps):
        ys=arrays(np.float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
        ts=arrays(np.float, 10, elements = floats  (min_value =    2*mus, max_value = 100*mus)),
        ps=arrays(np.int32, 10, elements = integers(min_value =    10   , max_value = 100    )))
+@settings(deadline=None, max_examples=100)
 def test_integrated_signal_sipms(get_dfs, xs, ys, ts, ps):
     datasipm = DataSiPM('new')
     fname, psf_df, psf_conf = get_dfs['psf']
@@ -113,6 +115,7 @@ def test_integrated_signal_sipms(get_dfs, xs, ys, ts, ps):
        ys=floats  (min_value = -500*mm , max_value = 500*mm ),
        ts=floats  (min_value =    2*mus, max_value = 10 *mus),
        ps=integers(min_value =   10    , max_value = 100   ))
+@settings(deadline=None, max_examples=100)
 def test_time_distribution_pmts(get_dfs, xs, ys, ts, ps):
     fname, lt_df, lt_conf = get_dfs['lt']
     lt = LT_PMT(fname=fname)
@@ -137,6 +140,7 @@ def test_time_distribution_pmts(get_dfs, xs, ys, ts, ps):
        ys=floats  (min_value = -10*mm , max_value = 10 *mm ),
        ts=floats  (min_value =   2*mus, max_value = 10 *mus),
        ps=integers(min_value =  2000  , max_value = 3000   ))
+@settings(deadline=None, max_examples=100)
 def test_time_distribution_sipms(get_dfs, xs, ys, ts, ps):
     datasipm = DataSiPM('new')
     #select central sipms only that will see the signal
