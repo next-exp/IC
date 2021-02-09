@@ -25,4 +25,4 @@ jobs:
     - name: Install IC
       run: nix-shell --argstr py ${{ matrix.python-version }}
     - name: Run tests
-      run: nix-shell --argstr py ${{ matrix.python-version }} --run "HYPOTHESIS_PROFILE=travis-ci ic-test-par"
+      run: nix-shell --argstr py ${{ matrix.python-version }} --run ic-test-par
