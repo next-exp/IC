@@ -19,18 +19,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install Nix
+      uses: cachix/install-nix-action@v12
     - name: Get LFS files
       run: git lfs pull
-    # - name: Fix Conda permissions on macOS
-    #   run: sudo chown -R $UID $CONDA
-    #   if: runner.os == 'macOS'
     - name: Install IC
-      run: |
-        source $CONDA/etc/profile.d/conda.sh
-        source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
+      run: nix-shell
     - name: Run tests
-      run: |
-        source $CONDA/etc/profile.d/conda.sh
-        source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
-        HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par
-
+      run: nix-shell --run "HYPOTHESIS_PROFILE=travis-ci ic-test-par"
