@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7]
+        python-version: [37, 38]
         platform: [ubuntu-18.04, macos-latest]
     runs-on: ${{ matrix.platform }}
 
@@ -23,6 +23,6 @@ jobs:
     - name: Get LFS files
       run: git lfs pull
     - name: Install IC
-      run: nix-shell
+      run: nix-shell --argstr py ${{ matrix.python-version }}
     - name: Run tests
-      run: nix-shell --run "HYPOTHESIS_PROFILE=travis-ci ic-test-par"
+      run: nix-shell --argstr py ${{ matrix.python-version }} --run "HYPOTHESIS_PROFILE=travis-ci ic-test-par"
