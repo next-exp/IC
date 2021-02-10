@@ -42,6 +42,7 @@ from .. core   .configure         import          event_range_help
 from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
 from .. detsim .sensor_utils      import             trigger_times
+from .. detsim .sensor_utils      import          create_timestamp
 from .. reco                      import           calib_functions as  cf
 from .. reco                      import          sensor_functions as  sf
 from .. reco                      import   calib_sensors_functions as csf
@@ -346,7 +347,8 @@ def check_lengths(*iterables):
 
 def mcsensors_from_file(paths     : List[str],
                         db_file   :      str ,
-                        run_number:      int ) -> Generator:
+                        run_number:      int ,
+                        rate      :    float ) -> Generator:
     """
     Loads the nexus MC sensor information into
     a pandas DataFrame using the IC function
@@ -361,7 +363,13 @@ def mcsensors_from_file(paths     : List[str],
                  Name of detector database to be used
     run_number : int
                  Run number for database
+    rate       : float
+                 Rate value in base unit (ns^-1) to generate timestamps
     """
+
+    if rate == 0:
+        warnings.warn("Zero rate is unphysical, using set period of 1 ms instead", 
+                      category=UserWarning)
 
     pmt_ids  = load_db.DataPMT(db_file, run_number).SensorID
 
@@ -371,11 +379,10 @@ def mcsensors_from_file(paths     : List[str],
                                                        db_file    = db_file   ,
                                                        run_no     = run_number)
 
-        ## MC uses dummy timestamp for now
-        ## Only in case of evt splitting will be non zero
-        timestamp     = 0
-
         for evt in mcinfo_io.get_event_numbers_in_file(file_name):
+
+            timestamp = create_timestamp(evt, rate) / units.ms
+
             try:
                 ## Assumes two types of sensor, all non pmt
                 ## assumed to be sipms. NEW, NEXT100 and DEMOPP safe

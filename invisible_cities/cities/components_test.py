@@ -211,8 +211,9 @@ def test_copy_mc_info_split_nexus_events(ICDATADIR, config_tmpdir):
 
 
 def test_mcsensors_from_file_fast_returns_empty(ICDATADIR):
+    rate = 0.5
     file_in = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.h5")
-    sns_gen = mcsensors_from_file([file_in], 'new', -7951)
+    sns_gen = mcsensors_from_file([file_in], 'new', -7951, rate)
     with warns(UserWarning, match='No binning info available.'):
         first_evt = next(sns_gen)
     assert first_evt[ 'pmt_resp'].empty
@@ -221,7 +222,7 @@ def test_mcsensors_from_file_fast_returns_empty(ICDATADIR):
 
 def test_mcsensors_from_file_correct_yield(ICDATADIR):
     evt_no         =    0
-    timestamp      =    0
+    rate           =    0.5
     npmts_hit      =   12
     total_pmthits  = 4303
     nsipms_hit     =  313
@@ -229,13 +230,13 @@ def test_mcsensors_from_file_correct_yield(ICDATADIR):
     keys           = ['event_number', 'timestamp', 'pmt_resp' , 'sipm_resp']
 
     file_in   = os.path.join(ICDATADIR, "nexus_new_kr83m_full.newformat.sim.h5")
-    sns_gen   = mcsensors_from_file([file_in], 'new', -7951)
+    sns_gen   = mcsensors_from_file([file_in], 'new', -7951, rate)
     first_evt = next(sns_gen)
 
     assert set(keys) == set(first_evt.keys())
 
     assert      first_evt['event_number']                 == evt_no
-    assert      first_evt[   'timestamp']                 == timestamp
+    assert      first_evt[   'timestamp']                 >= evt_no / rate
     assert type(first_evt[    'pmt_resp'])                == pd.DataFrame
     assert type(first_evt[   'sipm_resp'])                == pd.DataFrame
     assert  len(first_evt[    'pmt_resp'].index.unique()) == npmts_hit

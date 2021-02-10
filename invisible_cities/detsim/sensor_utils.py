@@ -5,10 +5,37 @@ import pandas as pd
 from typing import Callable
 from typing import     List
 from typing import    Tuple
+from typing import    Union
+
+from .. core import system_of_units as units
 
 from .. database.load_db   import            DataPMT
 from .. database.load_db   import           DataSiPM
 from .. io      .mcinfo_io import get_sensor_binning
+
+
+def create_timestamp(event_number: Union[int, float],
+                     rate        :            float ) -> float:
+    """
+    Calculates timestamp for a given Event Number and Rate.
+
+    Parameters
+    ----------
+    event_number : Union[int, float]
+                   ID value of the current event.
+    rate         : float
+                   Value of the rate.
+
+    Returns
+    -------
+    Calculated timestamp : float
+    """
+    try:
+        period = 1 / rate
+        timestamp = abs(event_number * period) + np.random.uniform(0, period)
+    except ZeroDivisionError:
+        timestamp = event_number * 1 * units.ms
+    return timestamp
 
 
 def trigger_times(trigger_indx: List[int] ,

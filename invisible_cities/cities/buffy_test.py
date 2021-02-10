@@ -100,6 +100,8 @@ def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
 
 
 def test_buffy_exact_result(config_tmpdir, ICDATADIR):
+    np.random.seed(27)
+
     file_in     = os.path.join(ICDATADIR                              ,
                                'nexus_new_kr83m_full.newformat.sim.h5')
     file_out    = os.path.join(config_tmpdir, 'exact_result.buffers.h5')

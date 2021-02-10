@@ -11,6 +11,7 @@ from . sensor_utils import          get_n_sensors
 from . sensor_utils import           sensor_order
 from . sensor_utils import pmt_and_sipm_bin_width
 from . sensor_utils import          trigger_times
+from . sensor_utils import       create_timestamp
 
 
 def test_trigger_times():
@@ -97,3 +98,20 @@ def test_pmt_and_sipm_bin_width(full_sim_file):
     pmt_binwid, sipm_binwid = pmt_and_sipm_bin_width(file_in)
     assert pmt_binwid  == expected_pmtwid
     assert sipm_binwid == expected_sipmwid
+
+
+def test_create_timestamp_greater_with_greater_eventnumber():
+    """
+    Value of timestamp must be always positive and 
+    greater with greater event numbers.
+    """
+    evt_no_1 = 10
+    rate_1   = 0.5
+    evt_no_2 = 100
+    rate_2   = 0.6
+
+    timestamp_1 = create_timestamp(evt_no_1, rate_1)
+    timestamp_2 = create_timestamp(evt_no_2, rate_2)
+    assert abs(timestamp_1) == timestamp_1
+    assert timestamp_1      <  timestamp_2
+    assert abs(timestamp_2) == timestamp_2
