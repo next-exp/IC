@@ -1,8 +1,8 @@
 # To override the default python version:
 #
-#   nix-shell shell.nix --argstr py 36
+#   nix-shell shell.nix --argstr py 37
 #
-{ py ? "37"
+{ py ? "38"
 , nixpkgs-commit-id ? "8e78c2cfbae71720869c35b6710d652bf28b37cc"
 }:
 
