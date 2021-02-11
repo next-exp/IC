@@ -28,18 +28,6 @@ let
       buildInputs = [ pypkgs.pytest ];
     };
 
-  # pytest-order was unavailable in nixpkgs at time of writing (not to be
-  # confused with pytest-orderING, of which this is a fork)
-  mk-pytest-order = pypkgs:
-    pypkgs.buildPythonPackage rec {
-      pname = "pytest-order";
-      version = "0.9.3";
-      src = pypkgs.fetchPypi {
-        inherit pname version;
-        sha256 = "1qd9zfpcbzm43knkg3ap22wssqabc2wn5ynlgg661xg6r6g6iy4k";
-      };
-      buildInputs = [ pypkgs.pytest ];
-    };
 
   command = pkgs.writeShellScriptBin;
 
@@ -63,7 +51,6 @@ let
       ps.hypothesis
       ps.pytest_xdist
       (mk-pytest-instafail ps)
-      (mk-pytest-order     ps)
     ]);
 
 in
@@ -77,7 +64,10 @@ pkgs.mkShell {
     (command "ic-test"     "pytest --instafail --no-success-flaky-report")
     (command "ic-test-par" ''
       N_PROC=$1
-      pytest --instafail -n ''${N_PROC:-auto} --no-success-flaky-report
+      STATUS=0
+      pytest --instafail -n ''${N_PROC:-auto} -m "not serial" --no-success-flaky-report || STATUS=$?
+      pytest --instafail                      -m      serial  --no-success-flaky-report || STATUS=$?
+      [[ $STATUS = 0 ]]
     '')
     (command "ic-clean" ''
       echo "Cleaning IC generated files:"
