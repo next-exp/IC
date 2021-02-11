@@ -50,6 +50,7 @@ let
       ps.flaky
       ps.hypothesis
       ps.pytest_xdist
+      ps.pytest-dependency
       (mk-pytest-instafail ps)
     ]);
 
@@ -64,10 +65,7 @@ pkgs.mkShell {
     (command "ic-test"     "pytest --instafail --no-success-flaky-report")
     (command "ic-test-par" ''
       N_PROC=$1
-      STATUS=0
-      pytest --instafail -n ''${N_PROC:-auto} -m "not serial" --no-success-flaky-report || STATUS=$?
-      pytest --instafail                      -m      serial  --no-success-flaky-report || STATUS=$?
-      [[ $STATUS = 0 ]]
+      pytest --instafail -n ''${N_PROC:-auto} --no-success-flaky-report
     '')
     (command "ic-clean" ''
       echo "Cleaning IC generated files:"
