@@ -105,7 +105,7 @@ def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
 
 
 @mark.slow
-@mark.serial
+@mark.order('last')
 def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
     """Run Irene. Write an output file."""
 
@@ -130,7 +130,7 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
 
 
 @mark.slow # not slow itself, but depends on a slow test
-@mark.serial
+@mark.order('last')
 def test_irene_runinfo_run_2983(config_tmpdir, ICDATADIR):
     """Read back the file written by previous test. Check runinfo."""
 
@@ -162,7 +162,7 @@ def test_irene_runinfo_run_2983(config_tmpdir, ICDATADIR):
         assert run_number_in == run_number_out
 
 
-@mark.serial
+@mark.order('last')
 @mark.slow
 def test_irene_output_file_structure(config_tmpdir):
     PATH_OUT = os.path.join(config_tmpdir, 'run_2983_pmaps.h5')

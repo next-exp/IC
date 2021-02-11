@@ -173,7 +173,6 @@ def test_penthesilea_signal_to_noise(ICDATADIR, output_tmpdir):
     assert_dataframes_close(output_dst[columns], expected_dst[columns], check_types=False)
 
 
-@mark.serial
 def test_penthesilea_produces_mcinfo(KrMC_pmaps_filename, KrMC_hdst, config_tmpdir):
     PATH_IN   = KrMC_pmaps_filename
     PATH_OUT  = os.path.join(config_tmpdir, "Kr_HDST_with_MC.h5")
@@ -193,7 +192,7 @@ def test_penthesilea_produces_mcinfo(KrMC_pmaps_filename, KrMC_hdst, config_tmpd
         assert "MC/particles" in h5out.root
 
 
-@mark.serial
+@mark.order(after='test_penthesilea_produces_mcinfo')
 def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
     penthesilea_output_path = os.path.join(config_tmpdir,'Kr_HDST_with_MC.h5')
     penthesilea_evts        = load_mchits_df(penthesilea_output_path)
