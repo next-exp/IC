@@ -23,3 +23,6 @@ miniconda.sh
 
 # macOS
 .DS_Store
+
+# nix-direnv environment caching
+.direnv

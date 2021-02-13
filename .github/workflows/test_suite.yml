@@ -12,25 +12,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7]
-        #platform: [ubuntu-18.04, macos-latest]
-        platform: [ubuntu-18.04]
+        python-version: [37, 38]
+        platform: [ubuntu-18.04, macos-latest]
     runs-on: ${{ matrix.platform }}
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install Nix
+      uses: cachix/install-nix-action@v12
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
     - name: Get LFS files
       run: git lfs pull
-    # - name: Fix Conda permissions on macOS
-    #   run: sudo chown -R $UID $CONDA
-    #   if: runner.os == 'macOS'
     - name: Install IC
-      run: |
-        source $CONDA/etc/profile.d/conda.sh
-        source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
+      run: nix-shell --argstr py ${{ matrix.python-version }}
     - name: Run tests
-      run: |
-        source $CONDA/etc/profile.d/conda.sh
-        source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
-        HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par
-
+      run: nix-shell --argstr py ${{ matrix.python-version }} --run "PYTEST_ADDOPTS=--color=yes ic-test-par"
