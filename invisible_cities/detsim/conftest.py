@@ -8,6 +8,7 @@ from pytest import fixture
 from .. database           import                   load_db
 from .. io      .mcinfo_io import        get_sensor_binning
 from .. io      .mcinfo_io import load_mcsensor_response_df
+from .. io      .dst_io    import                  load_dst
 
 
 @fixture(scope="module")
@@ -42,3 +43,15 @@ def binned_waveforms(ICDATADIR):
     pmt_wf  = pd.read_hdf(binned_file,  'pmtwfs')
     sipm_wf = pd.read_hdf(binned_file, 'sipmwfs')
     return pmt_bins, pmt_wf, sipm_bins, sipm_wf
+
+@fixture(scope='session')
+def get_dfs(ICDATADIR):
+    psffname = os.path.join(ICDATADIR, 'NEXT_NEW.tracking.S2.SiPM.LightTable.h5')
+    ltfname  = os.path.join(ICDATADIR, 'NEXT_NEW.energy.S2.PmtR11410.LightTable.h5')
+    psf_df   = load_dst(psffname, 'PSF', 'LightTable').set_index('dist_xy')
+    lt_df    = load_dst( ltfname,  'LT', 'LightTable').set_index(['x', 'y'])
+    psf_conf = load_dst(psffname, 'PSF', 'Config'    ).set_index('parameter')
+    lt_conf  = load_dst( ltfname,  'LT', 'Config'    ).set_index('parameter')
+    return  {'psf':(psffname, psf_df, psf_conf),
+             'lt' : (ltfname, lt_df, lt_conf)}
+
