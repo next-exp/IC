@@ -335,3 +335,53 @@ def test_shift_to_bin_centers(x):
     x_shifted = core.shift_to_bin_centers(x)
     truth     = [np.mean(x[i:i+2]) for i in range(x.size-1)]
     npt.assert_allclose(x_shifted, truth, rtol=1e-6, atol=1e-6)
+
+
+def test_binedges_from_bincenters():
+
+    centers = np.array([1, 2, 3, 4])
+
+    #no range
+    binedges = core.binedges_from_bincenters(centers)
+    expected = np.array([1, 1.5, 2.5, 3.5, 4])
+    np.testing.assert_allclose(binedges, expected)
+
+    #range
+    binedges = core.binedges_from_bincenters(centers, range=(-10, 10))
+    expected = np.array([-10, 1.5, 2.5, 3.5, 10])
+    np.testing.assert_allclose(binedges, expected)
+
+
+def test_binedges_from_bincenters_exceptions():
+
+    # no range
+    centers = np.array([2, 1, 2])
+    with raises(ValueError, match="unsorted or repeated bin centers"):
+        core.binedges_from_bincenters(centers)
+
+    centers = np.array([1, 2, 3, 4, 3])
+    with raises(ValueError, match="unsorted or repeated bin centers"):
+        core.binedges_from_bincenters(centers)
+
+    # range
+    centers = np.array([1, 2, 3, 4])
+    range = (2, 1)
+    with raises(ValueError, match="lower edge must be lower than higher"):
+        core.binedges_from_bincenters(centers, range=range)
+
+    range = (1, 2)
+    with raises(ValueError, match="bincenters out of range bounds"):
+        core.binedges_from_bincenters(centers, range=range)
+
+
+@given(x = arrays(np.float, 100, elements=floats(min_value=-500, max_value=500)),
+       value = floats(min_value=-500, max_value=500))
+def test_find_nearest(x, value):
+
+    nearest = core.find_nearest(x, value)
+
+    diff = np.abs(x-value)
+    dmin = np.min(diff)
+
+    idx = np.argwhere(dmin==diff)[0]
+    assert x[idx] == nearest

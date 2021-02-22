@@ -9,6 +9,7 @@ from enum import auto
 import numpy as np
 
 from typing import Sequence
+from typing import Tuple
 
 from .. types.ic_types import AutoNameEnumBase
 
@@ -310,3 +311,47 @@ def shift_to_bin_centers(x):
     Return bin centers, given bin lower edges.
     """
     return x[:-1] + np.diff(x) * 0.5
+
+
+def binedges_from_bincenters(bincenters: np.ndarray,
+                             range     : Tuple = None)->np.ndarray:
+    """
+    computes bin-edges from bin-centers.
+    Parameters:
+        :bincenters: np.ndarray
+            bin centers
+        :range: np.ndarray
+            tuple with the lowest and higher bin edge, respectively
+    Returns:
+        :binedges: np.ndarray
+            bin edges
+    """
+    if np.any(bincenters[:-1] >= bincenters[1:]):
+        raise ValueError("unsorted or repeated bin centers")
+    if range is None:
+        range = (bincenters[0], bincenters[-1])
+    else:
+        if not (range[0]<range[1]):
+            raise ValueError("lower edge must be lower than higher")
+        if (range[0]>bincenters[0]) or (bincenters[-1]>range[-1]):
+            raise ValueError("bincenters out of range bounds")
+
+    binedges = np.zeros(len(bincenters)+1)
+
+    binedges[1:-1] = (bincenters[1:] + bincenters[:-1])/2.
+
+    binedges[0]  = range[0]
+    binedges[-1] = range[-1]
+
+    return binedges
+
+
+def find_nearest(array : np.ndarray,
+                 value : float) ->float:
+    """Finds nearest element of an array
+    Caution: if two elements are at same distance,
+    it returns the first in the input array. Also,
+    if input array contains a nan, it returns nan.
+    """
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
