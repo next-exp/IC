@@ -55,6 +55,7 @@ def find_signal_start(wfs          : Union[pd.Series, np.ndarray],
         eng_sum = wfs.sum()
     indices = indices_and_wf_above_threshold(eng_sum,
                                              bin_threshold).indices
+    if len(indices) == 0: return []
     ## Just using this and the stand_off for now
     ## taking first above sum threshold.
     ## !! To-do: make more robust with min int? or similar
