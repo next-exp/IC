@@ -72,6 +72,13 @@ def test_detsim_filter_empty_waveforms(ICDATADIR, output_tmpdir):
                      physics_params = physics_params))
     result = detsim(**conf)
 
+    assert result.events_in   == 2
+    assert result.evtnum_list == [1]
+
+    with tb.open_file(PATH_OUT, mode="r") as h5out:
+        filters = h5out.root.Filters.signal.read()
+        np.testing.assert_array_equal(filters["passed"], [False, True])
+
 
 def test_detsim_empty_input_file(ICDATADIR, output_tmpdir):
 
