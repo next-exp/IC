@@ -59,6 +59,20 @@ def test_detsim_filter_active_hits(ICDATADIR, output_tmpdir):
         np.testing.assert_array_equal(filters["passed"], [False, True])
 
 
+def test_detsim_filter_empty_waveforms(ICDATADIR, output_tmpdir):
+    # the first event radious is slighty above NEW active radious of 208.0 mm
+    PATH_IN  = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.emptywfs.h5")
+    PATH_OUT = os.path.join(output_tmpdir, "detsim_test.h5")
+    conf = configure('detsim $ICTDIR/invisible_cities/config/detsim.conf'.split())
+    physics_params = conf["physics_params"]
+    physics_params["transverse_diffusion"] = 0 * units.mm / units.cm**0.5
+    conf.update(dict(files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
+                     run_number  = 0,
+                     physics_params = physics_params))
+    result = detsim(**conf)
+
+
 def test_detsim_empty_input_file(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "empty_mcfile.h5")
