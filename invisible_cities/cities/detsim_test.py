@@ -60,7 +60,7 @@ def test_detsim_filter_active_hits(ICDATADIR, output_tmpdir):
 
 
 def test_detsim_filter_empty_waveforms(ICDATADIR, output_tmpdir):
-    # the first event radious is slighty above NEW active radious of 208.0 mm
+    # the first event radius is slighty above NEW active radius of 208.0 mm
     PATH_IN  = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.emptywfs.h5")
     PATH_OUT = os.path.join(output_tmpdir, "detsim_test.h5")
     conf = configure('detsim $ICTDIR/invisible_cities/config/detsim.conf'.split())

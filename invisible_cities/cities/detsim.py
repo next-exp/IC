@@ -185,37 +185,37 @@ def detsim(*, files_in, file_out, event_range, print_mod, compression,
     evtnum_collect = collect()
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
-        buffer_calculation = calculate_and_save_buffers(buffer_params["length"]     ,
-                                                        buffer_params["max_time"]   ,
-                                                        buffer_params["pre_trigger"],
-                                                        buffer_params["pmt_width"]  ,
-                                                        buffer_params["sipm_width"] ,
-                                                        buffer_params["trigger_thr"],
-                                                        h5out        ,
-                                                        run_number   ,
-                                                        len(datapmt) ,
-                                                        len(datasipm),
-                                                        int(buffer_params["length"] / buffer_params["pmt_width"]),
-                                                        int(buffer_params["length"] / buffer_params["sipm_width"]))
+        buffer_calculation = calculate_and_save_buffers( buffer_params["length"]
+                                                       , buffer_params["max_time"]
+                                                       , buffer_params["pre_trigger"]
+                                                       , buffer_params["pmt_width"]
+                                                       , buffer_params["sipm_width"]
+                                                       , buffer_params["trigger_thr"]
+                                                       , h5out
+                                                       , run_number
+                                                       , len(datapmt)
+                                                       , len(datasipm)
+                                                       , int(buffer_params["length"] / buffer_params["pmt_width"])
+                                                       , int(buffer_params["length"] / buffer_params["sipm_width"]))
 
         write_nohits_filter   = fl.sink(event_filter_writer(h5out, "active_hits"), args=("event_number", "passed_active"))
         result = fl.push(source= MC_hits_from_files(files_in),
-                         pipe  = fl.pipe(fl.slice(*event_range, close_all=True),
-                                         event_count_in.spy    ,
-                                         print_every(print_mod),
-                                         select_s1_candidate_hits,
-                                         select_active_hits,
-                                         filter_events_no_active_hits,
-                                         fl.branch(write_nohits_filter),
-                                         events_passed_active_hits.filter,
-                                         simulate_electrons,
-                                         get_buffer_times_and_length,
-                                         create_pmt_waveforms,
-                                         create_sipm_waveforms,
-                                         get_bin_edges,
-                                         buffer_calculation,
-                                         "event_number"     ,
-                                         evtnum_collect.sink),
+                         pipe  = fl.pipe( fl.slice(*event_range, close_all=True)
+                                        , event_count_in.spy
+                                        , print_every(print_mod)
+                                        , select_s1_candidate_hits
+                                        , select_active_hits
+                                        , filter_events_no_active_hits
+                                        , fl.branch(write_nohits_filter)
+                                        , events_passed_active_hits.filter
+                                        , simulate_electrons
+                                        , get_buffer_times_and_length
+                                        , create_pmt_waveforms
+                                        , create_sipm_waveforms
+                                        , get_bin_edges
+                                        , buffer_calculation
+                                        , "event_number"
+                                        , evtnum_collect.sink),
                          result = dict(events_in     = event_count_in.future,
                                        evtnum_list   = evtnum_collect.future))
 
