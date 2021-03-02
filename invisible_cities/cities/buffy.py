@@ -77,19 +77,19 @@ def buffy(files_in     , file_out   , compression      , event_range,
     events_with_resp  = fl.count_filter(bool, args="event_passed")
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
-        buffer_calculation = calculate_and_save_buffers(buffer_length    ,
-                                                        max_time         ,
-                                                        pre_trigger      ,
-                                                        pmt_wid          ,
-                                                        sipm_wid         ,
-                                                        trigger_threshold,
-                                                        h5out            ,
-                                                        run_number       ,
-                                                        npmt             ,
-                                                        nsipm            ,
-                                                        nsamp_pmt        ,
-                                                        nsamp_sipm       ,
-                                                        order_sensors    )
+        buffer_calculation = calculate_and_save_buffers( buffer_length
+                                                       , max_time
+                                                       , pre_trigger
+                                                       , pmt_wid
+                                                       , sipm_wid
+                                                       , trigger_threshold
+                                                       , h5out
+                                                       , run_number
+                                                       , npmt
+                                                       , nsipm
+                                                       , nsamp_pmt
+                                                       , nsamp_sipm
+                                                       , order_sensors)
 
         write_filter   = fl.sink(event_filter_writer(h5out, "detected_events"),
                                  args=("event_number", "event_passed")       )
@@ -101,20 +101,19 @@ def buffy(files_in     , file_out   , compression      , event_range,
         result = fl.push(source = mcsensors_from_file(files_in   ,
                                                       detector_db,
                                                       run_number ,
-                                                      rate       )           ,
-                         pipe   = fl.pipe(fl.slice(*event_range  ,
-                                                   close_all=True)      ,
-                                          event_count_in.spy            ,
-                                          print_every(print_mod)        ,
-                                          filter_events                 ,
-                                          fl.branch(write_filter)       ,
-                                          events_with_resp.filter       ,
-                                          extract_tminmax               ,
-                                          bin_pmt_wf                    ,
-                                          bin_sipm_wf                   ,
-                                          fl.branch("event_number"      ,
-                                                    evtnum_collect.sink),
-                                          buffer_calculation            )   ,
+                                                      rate       ),
+                         pipe   = fl.pipe( fl.slice(*event_range, close_all=True)
+                                         , event_count_in.spy
+                                         , print_every(print_mod)
+                                         , filter_events
+                                         , fl.branch(write_filter)
+                                         , events_with_resp.filter
+                                         , extract_tminmax
+                                         , bin_pmt_wf
+                                         , bin_sipm_wf
+                                         , buffer_calculation
+                                         , "event_number"
+                                         , evtnum_collect.sink),
                          result = dict(events_in   = event_count_in.future  ,
                                        events_resp = events_with_resp.future,
                                        evtnum_list = evtnum_collect.future  ))

@@ -369,7 +369,7 @@ def mcsensors_from_file(paths     : List[str],
     """
 
     if rate == 0:
-        warnings.warn("Zero rate is unphysical, using set period of 1 ms instead", 
+        warnings.warn("Zero rate is unphysical, using set period of 1 ms instead",
                       category=UserWarning)
 
     pmt_ids  = load_db.DataPMT(db_file, run_number).SensorID
@@ -878,6 +878,13 @@ def calculate_and_save_buffers(buffer_length    : float        ,
                                args = "pmt_bin_wfs"                 ,
                                out  = "pulses"                      )
 
+    filter_events_signal = fl.map(lambda x: len(x) > 0,
+                                  args= 'pulses',
+                                  out = 'passed_signal')
+    events_passed_signal = fl.count_filter(bool, args='passed_signal')
+    write_signal_filter  = fl.sink(event_filter_writer(h5out, "signal"),
+                                   args=('event_number', 'passed_signal'))
+
     event_times       = fl.map(trigger_times                             ,
                                args = ("pulses", "timestamp", "pmt_bins"),
                                out  = "evt_times"                        )
@@ -891,22 +898,25 @@ def calculate_and_save_buffers(buffer_length    : float        ,
 
     saved_buffers = "buffers" if order_sensors is None else "ordered_buffers"
     max_subevt    =  max_time // buffer_length + 1
-    buffer_writer_    = sink(buffer_writer(h5out                  ,
-                                           run_number = run_number,
-                                           n_sens_eng = npmt      ,
-                                           n_sens_trk = nsipm     ,
-                                           length_eng = nsamp_pmt ,
-                                           length_trk = nsamp_sipm,
-                                           max_subevt = max_subevt),
+    buffer_writer_    = sink(buffer_writer( h5out
+                                          , run_number = run_number
+                                          , n_sens_eng = npmt
+                                          , n_sens_trk = nsipm
+                                          , length_eng = nsamp_pmt
+                                          , length_trk = nsamp_sipm
+                                          , max_subevt = max_subevt),
                              args = ("event_number", "evt_times"  ,
                                      saved_buffers                ))
 
-    fn_list = (find_signal      ,
-               event_times      ,
-               calculate_buffers,
-               order_sensors    ,
-               buffer_writer_   )
+    find_signal_and_write_buffers = ( find_signal
+                                    , filter_events_signal
+                                    , fl.branch(write_signal_filter)
+                                    , events_passed_signal.filter
+                                    , event_times
+                                    , calculate_buffers
+                                    , order_sensors
+                                    , fl.branch(buffer_writer_))
 
     # Filter out order_sensors if it is not set
-    buffer_definition = pipe(*filter(None, fn_list))
+    buffer_definition = pipe(*filter(None, find_signal_and_write_buffers))
     return buffer_definition

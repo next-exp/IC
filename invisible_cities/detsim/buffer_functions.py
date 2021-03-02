@@ -40,8 +40,8 @@ def bin_sensors(sensors   : pd.DataFrame,
     return bins[:-1], bin_sensors
 
 
-## !! to-do: clarify for non-pmt versions of next
-## !! to-do: Check on integral instead of only threshold?
+# TODO: clarify for non-pmt versions of next
+# TODO: Check on integral instead of only threshold?
 def find_signal_start(wfs          : Union[pd.Series, np.ndarray],
                       bin_threshold: float                       ,
                       stand_off    : int                         ) -> List[int]:
@@ -55,9 +55,10 @@ def find_signal_start(wfs          : Union[pd.Series, np.ndarray],
         eng_sum = wfs.sum()
     indices = indices_and_wf_above_threshold(eng_sum,
                                              bin_threshold).indices
-    ## Just using this and the stand_off for now
-    ## taking first above sum threshold.
-    ## !! To-do: make more robust with min int? or similar
+    if len(indices) == 0: return []
+    # Just using this and the stand_off for now
+    # taking first above sum threshold.
+    # TODO: make more robust with min int? or similar
     all_indx = split_in_peaks(indices, stand_off)
     return [pulse[0] for pulse in all_indx]
 
