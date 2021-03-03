@@ -359,3 +359,30 @@ def test_penthesilea_empty_input_file(config_tmpdir, ICDATADIR):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
         penthesilea(**conf)
+
+
+
+def test_penthesilea_global_xyreco_bias(config_tmpdir, ICDATADIR):
+    # Make sure the global_reco_params are used for the columns Xpeak/Ypeak
+    # This is done by running over an event that has many spurious sipm hits
+    # and only one sipm with signal over the threshold. If the threshold
+    # is used, the reconstructed position will match the sipm position.
+    # If the threshold is not used the position will be biased.
+
+    PATH_IN  = os.path.join(ICDATADIR    , 'fake_pmap_nothreshold_barycenter_bias.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'fake_hdst_nothreshold_barycenter_bias.h5')
+
+    conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
+    conf.update(dict(files_in    = PATH_IN ,
+                     file_out    = PATH_OUT,
+                     rebin       =      100,
+                     run_number  =     7000,
+                     s2_nsipmmax =      200))
+
+    conf["global_reco_params"].update(dict(Qthr=5))
+
+    penthesilea(**conf)
+
+    output_dst = dio.load_dst(PATH_OUT, 'RECO', 'Events')
+    assert np.all(output_dst.Xpeak == -5)
+    assert np.all(output_dst.Ypeak == -5)
