@@ -725,6 +725,7 @@ def build_pointlike_event(dbfile, run_number, drift_v,
 
 def hit_builder(dbfile, run_number, drift_v, reco,
                 rebin_slices, rebin_method,
+                global_reco_params,
                 charge_type = SiPMCharge.raw):
     datasipm = load_db.DataSiPM(dbfile, run_number)
     sipm_xs  = datasipm.X.values
@@ -733,13 +734,7 @@ def hit_builder(dbfile, run_number, drift_v, reco,
 
     sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
 
-    barycenter = partial(corona,
-                         all_sipms      =  datasipm,
-                         Qthr           =  0 * units.pes,
-                         Qlm            =  0 * units.pes,
-                         lm_radius      = -1 * units.mm,
-                         new_lm_radius  = -1 * units.mm,
-                         msipm          =  1)
+    barycenter = partial(corona, all_sipms = datasipm, **global_reco_params)
 
     def empty_cluster():
         return Cluster(NN, xy(0,0), xy(0,0), 0)
