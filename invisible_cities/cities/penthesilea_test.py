@@ -373,11 +373,12 @@ def test_penthesilea_global_xyreco_bias(config_tmpdir, ICDATADIR):
     PATH_OUT = os.path.join(config_tmpdir, 'fake_hdst_nothreshold_barycenter_bias.h5')
 
     conf = configure('dummy invisible_cities/config/penthesilea.conf'.split())
-    conf.update(dict(files_in    = PATH_IN ,
-                     file_out    = PATH_OUT,
-                     rebin       =      100,
-                     run_number  =     7000,
-                     s2_nsipmmax =      200))
+    conf.update(dict( files_in    = PATH_IN
+                    , file_out    = PATH_OUT
+                    , rebin       =  100
+                    , run_number  = 7000
+                    , s2_nsipmmax =  200
+                    ))
 
     conf["global_reco_params"].update(dict(Qthr=5))
 
