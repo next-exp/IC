@@ -16,7 +16,7 @@ from .. core.testing_utils   import assert_tables_equality
 def test_detsim_contains_all_tables(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "nexus_new_kr83m_fast.newformat.sim.h5")
-    PATH_OUT = os.path.join(output_tmpdir, "detsim_test.h5")
+    PATH_OUT = os.path.join(output_tmpdir, "contain_all_tables.buffers.h5")
     conf = configure('detsim $ICTDIR/invisible_cities/config/detsim.conf'.split())
     conf.update(dict(files_in      = PATH_IN,
                      file_out      = PATH_OUT,
@@ -44,7 +44,7 @@ def test_detsim_contains_all_tables(ICDATADIR, output_tmpdir):
 def test_detsim_filter_active_hits(ICDATADIR, output_tmpdir):
     # the first event in test file labels are set to NO_ACTIVE
     PATH_IN  = os.path.join(ICDATADIR    , "nexus_new_kr83m_fast.newformat.sim.noactive.h5")
-    PATH_OUT = os.path.join(output_tmpdir, "detsim_test.h5")
+    PATH_OUT = os.path.join(output_tmpdir, "filtered_active_hits.buffers.h5")
     conf = configure('detsim $ICTDIR/invisible_cities/config/detsim.conf'.split())
     conf.update(dict(files_in    = PATH_IN,
                      file_out    = PATH_OUT,
@@ -62,7 +62,7 @@ def test_detsim_filter_active_hits(ICDATADIR, output_tmpdir):
 def test_detsim_filter_empty_waveforms(ICDATADIR, output_tmpdir):
     # the first event radius is slighty above NEW active radius of 208.0 mm
     PATH_IN  = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.emptywfs.h5")
-    PATH_OUT = os.path.join(output_tmpdir, "detsim_test.h5")
+    PATH_OUT = os.path.join(output_tmpdir, "filtered_empty_waveforms.buffers.h5")
     conf = configure('detsim $ICTDIR/invisible_cities/config/detsim.conf'.split())
     physics_params = conf["physics_params"]
     physics_params["transverse_diffusion"] = 0 * units.mm / units.cm**0.5
@@ -83,7 +83,7 @@ def test_detsim_filter_empty_waveforms(ICDATADIR, output_tmpdir):
 def test_detsim_empty_input_file(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "empty_mcfile.h5")
-    PATH_OUT = os.path.join(output_tmpdir, "detsim_test.h5")
+    PATH_OUT = os.path.join(output_tmpdir, "empty_imput_file.buffers.h5")
     conf = configure('detsim $ICTDIR/invisible_cities/config/detsim.conf'.split())
     conf.update(dict(files_in    = PATH_IN,
                      file_out    = PATH_OUT,
@@ -97,7 +97,7 @@ def test_detsim_empty_input_file(ICDATADIR, output_tmpdir):
 def test_detsim_exact(ICDATADIR, output_tmpdir):
 
     PATH_IN   = os.path.join(ICDATADIR    , "nexus_new_kr83m_fast.newformat.sim.h5")
-    PATH_OUT  = os.path.join(output_tmpdir, "detsim_test.h5")
+    PATH_OUT  = os.path.join(output_tmpdir, "exact_tables.buffers.h5")
     PATH_TRUE = os.path.join(ICDATADIR    , "detsim_new_kr83m_fast.newformat.sim.h5")
     conf = configure('detsim $ICTDIR/invisible_cities/config/detsim.conf'.split())
     conf.update(dict(files_in      = PATH_IN,
@@ -131,7 +131,7 @@ def test_detsim_exact(ICDATADIR, output_tmpdir):
 def test_detsim_exact_time_translation(ICDATADIR, output_tmpdir):
 
     PATH_IN   = os.path.join(ICDATADIR    , "nexus_new_kr83m_fast.newformat.sim.h5")
-    PATH_OUT  = os.path.join(output_tmpdir, "detsim_test.h5")
+    PATH_OUT  = os.path.join(output_tmpdir, "exact_time_translation.buffers.h5")
     # modified input file: time --> time + 10 micro-seconds
     modified_testfile = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.time10mus.h5")
 
@@ -181,7 +181,7 @@ def test_detsim_buffer_times(ICDATADIR, output_tmpdir):
     """
 
     PATH_IN   = os.path.join(ICDATADIR    , "nexus_new_kr83m_fast.newformat.sim.h5")
-    PATH_OUT  = os.path.join(output_tmpdir, "detsim_test.h5")
+    PATH_OUT  = os.path.join(output_tmpdir, "buffer_times.buffers.h5")
 
     # run over test file
     conf = configure('detsim $ICTDIR/invisible_cities/config/detsim.conf'.split())
