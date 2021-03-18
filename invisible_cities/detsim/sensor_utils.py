@@ -1,6 +1,7 @@
 import numpy  as np
 import tables as tb
 import pandas as pd
+import warnings
 
 from typing import Callable
 from typing import     List
@@ -14,28 +15,50 @@ from .. database.load_db   import           DataSiPM
 from .. io      .mcinfo_io import get_sensor_binning
 
 
-def create_timestamp(event_number: Union[int, float],
-                     rate        :            float ) -> float:
+def create_timestamp(rate: float) -> float:
     """
-    Calculates timestamp for a given Event Number and Rate.
+    Get rate value safely: It raises warning if rate <= 0 and
+    it sets a physical rate value in Hz.
 
     Parameters
     ----------
-    event_number : Union[int, float]
-                   ID value of the current event.
-    rate         : float
-                   Value of the rate.
+    rate : float
+           Value of the rate in Hz.
 
     Returns
     -------
-    Calculated timestamp : float
+    Function to calculate timestamp for the given rate with 
+    event_number as parameter.
     """
-    try:
-        period = 1 / rate
+
+    if rate == 0:
+        warnings.warn("Zero rate is unphysical, using default "
+                      "rate = 0.5 Hz instead")
+        rate = 0.5 * units.hertz
+    elif rate < 0:
+        warnings.warn(f"Negative rate is unphysical, using "
+                      f"rate = {abs(rate):.2f} Hz instead")
+        rate = abs(rate)
+
+    def create_timestamp_(event_number: Union[int, float]) -> float:
+        """
+        Calculates timestamp for a given Event Number and Rate.
+    
+        Parameters
+        ----------
+        event_number : Union[int, float]
+                       ID value of the current event.
+    
+        Returns
+        -------
+        Calculated timestamp : float
+        """
+
+        period = 1. / rate
         timestamp = abs(event_number * period) + np.random.uniform(0, period)
-    except ZeroDivisionError:
-        timestamp = event_number * 1 * units.ms
-    return timestamp
+        return timestamp
+
+    return create_timestamp_
 
 
 def trigger_times(trigger_indx: List[int] ,
