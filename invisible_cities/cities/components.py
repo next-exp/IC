@@ -414,9 +414,7 @@ def mcsensors_from_file(paths     : List[str],
                  Rate value in base unit (ns^-1) to generate timestamps
     """
 
-    if rate == 0:
-        warnings.warn("Zero rate is unphysical, using set period of 1 ms instead",
-                      category=UserWarning)
+    timestamp = create_timestamp(rate)
 
     pmt_ids  = load_db.DataPMT(db_file, run_number).SensorID
 
@@ -427,8 +425,6 @@ def mcsensors_from_file(paths     : List[str],
                                                        run_no     = run_number)
 
         for evt in mcinfo_io.get_event_numbers_in_file(file_name):
-
-            timestamp = create_timestamp(evt, rate) / units.ms
 
             try:
                 ## Assumes two types of sensor, all non pmt
@@ -441,7 +437,7 @@ def mcsensors_from_file(paths     : List[str],
                 pmt_resp = sipm_resp = pd.DataFrame(columns=sns_resp.columns)
 
             yield dict(event_number = evt      ,
-                       timestamp    = timestamp,
+                       timestamp    = timestamp(evt),
                        pmt_resp     = pmt_resp ,
                        sipm_resp    = sipm_resp)
 
