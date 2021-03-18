@@ -553,7 +553,8 @@ def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCol
                            timestamp = timestamp)
 
 
-def MC_hits_from_files(files_in : List[str]) -> Generator:
+def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
+    timestamp = create_timestamp(rate)
     for filename in files_in:
         try:
             hits_df = load_mchits_df(filename)
@@ -567,7 +568,7 @@ def MC_hits_from_files(files_in : List[str]) -> Generator:
                        energy       = hits.energy.values,
                        time         = hits.time  .values,
                        label        = hits.label .values,
-                       timestamp    = 0)
+                       timestamp    = timestamp(evt))
 
 
 def sensor_data(path, wf_type):
