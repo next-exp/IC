@@ -338,6 +338,7 @@ class KrEvent(Event):
         self.S2e   = []
         self.S2q   = [] # Charge in the S2Si
         self.S2t   = [] # time
+        self.qmax  = []
 
         self.Nsipm = [] # number of SiPMs in S2Si
         self.DT    = [] # drift time
@@ -360,6 +361,7 @@ class KrEvent(Event):
                 setattr(self, "S2" + attribute, [np.nan])
 
             self.Nsipm = 0
+            self.qmax  = 0
             for attribute in ["X", "Y", "R", "Phi", "Xrms", "Yrms", "Zrms"]:
                 setattr(self, attribute, [np.nan])
 
@@ -393,6 +395,7 @@ class KrEvent(Event):
                 row["S2e"    ] = self.S2e  [j]
                 row["S2q"    ] = self.S2q  [j]
                 row["S2t"    ] = self.S2t  [j]
+                row["qmax"   ] = self.qmax [j]
 
                 row["Nsipm"  ] = self.Nsipm[j]
                 row["DT"     ] = self.DT   [j][i]

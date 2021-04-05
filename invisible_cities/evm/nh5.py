@@ -140,17 +140,18 @@ class KrTable(tb.IsDescription):
     S2e     = tb.Float64Col(pos=12)
     S2q     = tb.Float64Col(pos=13)
     S2t     = tb.Float64Col(pos=14)
+    qmax    = tb.Float64Col(pos=15)
 
-    Nsipm   = tb. UInt16Col(pos=15)
-    DT      = tb.Float64Col(pos=16)
-    Z       = tb.Float64Col(pos=17)
-    Zrms    = tb.Float64Col(pos=18)
-    X       = tb.Float64Col(pos=19)
-    Y       = tb.Float64Col(pos=20)
-    R       = tb.Float64Col(pos=21)
-    Phi     = tb.Float64Col(pos=22)
-    Xrms    = tb.Float64Col(pos=23)
-    Yrms    = tb.Float64Col(pos=24)
+    Nsipm   = tb. UInt16Col(pos=16)
+    DT      = tb.Float64Col(pos=17)
+    Z       = tb.Float64Col(pos=18)
+    Zrms    = tb.Float64Col(pos=19)
+    X       = tb.Float64Col(pos=20)
+    Y       = tb.Float64Col(pos=21)
+    R       = tb.Float64Col(pos=22)
+    Phi     = tb.Float64Col(pos=23)
+    Xrms    = tb.Float64Col(pos=24)
+    Yrms    = tb.Float64Col(pos=25)
 
 
 class HitsTable(tb.IsDescription):

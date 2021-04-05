@@ -760,6 +760,7 @@ def build_pointlike_event(dbfile, run_number, drift_v,
             evt.DT   .append(DT)
             evt.Z    .append(Z)
             evt.Zrms .append(Zrms)
+            evt.qmax .append(max(qs))
 
         return evt
 
