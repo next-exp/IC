@@ -68,73 +68,6 @@ def test_map():
     assert result == list(map(the_operation, the_source))
 
 
-
-def test_flatmap():
-
-    # Flatmap accepts a function which returns an iterable.
-    # While using map with such a function would result in entire
-    # iterables being sent downstream as separate elements,
-    # flatmap concatenates the contents of these iterables producing one
-    # long stream of the individual elements contained in those iterables.
-    # Equivalent to
-    # for incoming_item in upstream:
-    #     for outgoing_item in make_sequence(incoming_item):
-    #         send_downstream(outgoing_item)
-
-    the_operation = range
-    ranges = df.flatmap(the_operation)
-
-    the_source = list(range(1,11))
-
-    result = []
-    the_sink = df.sink(result.append)
-
-    df.push(source = the_source,
-            pipe   = ranges(the_sink))
-
-    expected = []
-    for s in the_source:
-        for item in the_operation(s):
-            expected.append(item)
-
-    assert result == expected
-
-
-
-def test_flatmap_args_out():
-
-    # A more complex case, taking and producing multiple values
-
-    def repeat_numbers(a, b):
-        return [(b, str(b)*i) for i in range(1, a+1)]
-
-    the_operation = df.flatmap( repeat_numbers
-                              , args = list("ab")
-                              , out  = list("cd")
-                              )
-
-    the_source = [ dict(a=1, b=4)
-                 , dict(a=2, b=5)
-                 , dict(a=3, b=6)
-                 ]
-
-    result_a = []
-    result_b = []
-    def collect(a, b):
-        result_a.append(a)
-        result_b.append(b)
-
-    the_sink = df.sink(collect, args=list("cd"))
-
-    df.push(source = the_source,
-            pipe   = the_operation(the_sink))
-
-    expected_a = [4, 5, 5, 6, 6, 6]
-    expected_b = ["4", "5", "55", "6", "66", "666"]
-    assert result_a == expected_a
-    assert result_b == expected_b
-
-
 def test_pipe():
 
     # The basic syntax requires any element of a pipeline to be passed
@@ -194,6 +127,71 @@ def test_filter():
             pipe   = df.pipe(odd, the_sink))
 
     assert result == list(filter(the_predicate, the_source))
+
+
+def test_flatmap():
+
+    # Flatmap accepts a function which returns an iterable.
+    # While using map with such a function would result in entire
+    # iterables being sent downstream as separate elements,
+    # flatmap concatenates the contents of these iterables producing one
+    # long stream of the individual elements contained in those iterables.
+    # Equivalent to
+    # for incoming_item in upstream:
+    #     for outgoing_item in make_sequence(incoming_item):
+    #         send_downstream(outgoing_item)
+
+    the_operation = range
+    ranges = df.flatmap(the_operation)
+
+    the_source = list(range(1,11))
+
+    result = []
+    the_sink = df.sink(result.append)
+
+    df.push(source = the_source,
+            pipe   = ranges(the_sink))
+
+    expected = []
+    for s in the_source:
+        for item in the_operation(s):
+            expected.append(item)
+
+    assert result == expected
+
+
+def test_flatmap_args_out():
+
+    # A more complex case, taking and producing multiple values
+
+    def repeat_numbers(a, b):
+        return [(b, str(b)*i) for i in range(1, a+1)]
+
+    the_operation = df.flatmap( repeat_numbers
+                              , args = list("ab")
+                              , out  = list("cd")
+                              )
+
+    the_source = [ dict(a=1, b=4)
+                 , dict(a=2, b=5)
+                 , dict(a=3, b=6)
+                 ]
+
+    result_a = []
+    result_b = []
+    def collect(a, b):
+        result_a.append(a)
+        result_b.append(b)
+
+    the_sink = df.sink(collect, args=list("cd"))
+
+    df.push(source = the_source,
+            pipe   = the_operation(the_sink))
+
+    expected_a = [ 4 ,  5 ,   5 ,  6 ,   6 ,    6 ]
+    expected_b = ["4", "5", "55", "6", "66", "666"]
+    assert result_a == expected_a
+    assert result_b == expected_b
 
 
 def test_count():

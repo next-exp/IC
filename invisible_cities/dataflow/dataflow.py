@@ -82,6 +82,43 @@ def map(op=None, *, args=None, out=None, item=None):
     return coroutine(map_loop)
 
 
+def flatmap(op=None, *, args=None, out=None, item=None):
+    if item is not None:
+        if args is not None or out is not None:
+            raise ValueError("dataflow.flatmap: use of `item` parameter excludes both `args` and `out`")
+        assert args is None and out is None
+        args = out = item
+
+    if args is None and out is None:
+        def flatmap_loop(target):
+            with closing(target):
+                while True:
+                    for result in op((yield)):
+                        target.send(result)
+    else:
+        if _exactly_one(args):
+            args = args,
+
+        merged_output = _exactly_one(out)
+        if merged_output:
+            out = out,
+
+        def flatmap_loop(target):
+            with closing(target):
+                while True:
+                    data   = yield
+                    values = (data[arg] for arg in args)
+                    for result in op(*values):
+                        if merged_output:
+                            result = result,
+
+                        for name, value in zip(out, result):
+                            data[name] = value
+                        target.send(data)
+
+    return coroutine(flatmap_loop)
+
+
 def filter(predicate, *, args=None):
     if args is None:
         def filter_loop(target):
