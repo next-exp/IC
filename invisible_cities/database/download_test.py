@@ -8,6 +8,7 @@ from pytest import mark
 
 from . import download as db
 
+@mark.skip(reason='server timeouts cause too many spurious test failures')
 @mark.parametrize('dbname', 'DEMOPPDB NEWDB NEXT100DB Flex100DB'.split())
 def test_create_table_sqlite(dbname, output_tmpdir):
     dbfile = os.path.join(output_tmpdir, 'db.sqlite3')
