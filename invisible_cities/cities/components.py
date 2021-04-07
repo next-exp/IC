@@ -42,7 +42,6 @@ from .. core   .configure         import          event_range_help
 from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
 from .. detsim .sensor_utils      import             trigger_times
-from .. detsim .sensor_utils      import          create_timestamp
 from .. reco                      import           calib_functions as  cf
 from .. reco                      import          sensor_functions as  sf
 from .. reco                      import   calib_sensors_functions as csf
@@ -112,6 +111,53 @@ def city(city_function):
         index_tables(conf.file_out)
         return result
     return proxy
+
+
+def create_timestamp(rate: float) -> float:
+    """
+    Get rate value safely: It raises warning if rate <= 0 and
+    it sets a physical rate value in Hz.
+
+    Parameters
+    ----------
+    rate : float
+           Value of the rate in Hz.
+
+    Returns
+    -------
+    Function to calculate timestamp for the given rate with 
+    event_number as parameter.
+    """
+
+    if rate == 0:
+        warnings.warn("Zero rate is unphysical, using default "
+                      "rate = 0.5 Hz instead", stacklevel=2)
+        rate = 0.5 * units.hertz
+    elif rate < 0:
+        warnings.warn(f"Negative rate is unphysical, using "
+                      f"rate = {abs(rate) / units.hertz} Hz instead",
+                      stacklevel=2)
+        rate = abs(rate)
+
+    def create_timestamp_(event_number: Union[int, float]) -> float:
+        """
+        Calculates timestamp for a given Event Number and Rate.
+    
+        Parameters
+        ----------
+        event_number : Union[int, float]
+                       ID value of the current event.
+    
+        Returns
+        -------
+        Calculated timestamp : float
+        """
+
+        period = 1. / rate
+        timestamp = abs(event_number * period) + np.random.uniform(0, period)
+        return timestamp
+
+    return create_timestamp_
 
 
 def index_tables(file_out):
