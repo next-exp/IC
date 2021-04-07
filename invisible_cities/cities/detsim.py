@@ -121,7 +121,7 @@ def bin_edges_getter(pmt_width, sipm_width):
 @city
 def detsim(*, files_in, file_out, event_range, print_mod, compression,
            detector_db, run_number, s1_lighttable, s2_lighttable, sipm_psf,
-           buffer_params, physics_params):
+           buffer_params, physics_params, rate):
 
     physics_params_ = physics_params.copy()
 
@@ -199,7 +199,7 @@ def detsim(*, files_in, file_out, event_range, print_mod, compression,
                                                        , int(buffer_params["length"] / buffer_params["sipm_width"]))
 
         write_nohits_filter   = fl.sink(event_filter_writer(h5out, "active_hits"), args=("event_number", "passed_active"))
-        result = fl.push(source= MC_hits_from_files(files_in),
+        result = fl.push(source= MC_hits_from_files(files_in, rate),
                          pipe  = fl.pipe( fl.slice(*event_range, close_all=True)
                                         , event_count_in.spy
                                         , print_every(print_mod)

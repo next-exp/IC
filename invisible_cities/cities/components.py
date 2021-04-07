@@ -42,7 +42,6 @@ from .. core   .configure         import          event_range_help
 from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
 from .. detsim .sensor_utils      import             trigger_times
-from .. detsim .sensor_utils      import          create_timestamp
 from .. reco                      import           calib_functions as  cf
 from .. reco                      import          sensor_functions as  sf
 from .. reco                      import   calib_sensors_functions as csf
@@ -112,6 +111,53 @@ def city(city_function):
         index_tables(conf.file_out)
         return result
     return proxy
+
+
+def create_timestamp(rate: float) -> float:
+    """
+    Get rate value safely: It raises warning if rate <= 0 and
+    it sets a physical rate value in Hz.
+
+    Parameters
+    ----------
+    rate : float
+           Value of the rate in Hz.
+
+    Returns
+    -------
+    Function to calculate timestamp for the given rate with 
+    event_number as parameter.
+    """
+
+    if rate == 0:
+        warnings.warn("Zero rate is unphysical, using default "
+                      "rate = 0.5 Hz instead", stacklevel=2)
+        rate = 0.5 * units.hertz
+    elif rate < 0:
+        warnings.warn(f"Negative rate is unphysical, using "
+                      f"rate = {abs(rate) / units.hertz} Hz instead",
+                      stacklevel=2)
+        rate = abs(rate)
+
+    def create_timestamp_(event_number: Union[int, float]) -> float:
+        """
+        Calculates timestamp for a given Event Number and Rate.
+    
+        Parameters
+        ----------
+        event_number : Union[int, float]
+                       ID value of the current event.
+    
+        Returns
+        -------
+        Calculated timestamp : float
+        """
+
+        period = 1. / rate
+        timestamp = abs(event_number * period) + np.random.uniform(0, period)
+        return timestamp
+
+    return create_timestamp_
 
 
 def index_tables(file_out):
@@ -368,9 +414,7 @@ def mcsensors_from_file(paths     : List[str],
                  Rate value in base unit (ns^-1) to generate timestamps
     """
 
-    if rate == 0:
-        warnings.warn("Zero rate is unphysical, using set period of 1 ms instead",
-                      category=UserWarning)
+    timestamp = create_timestamp(rate)
 
     pmt_ids  = load_db.DataPMT(db_file, run_number).SensorID
 
@@ -381,8 +425,6 @@ def mcsensors_from_file(paths     : List[str],
                                                        run_no     = run_number)
 
         for evt in mcinfo_io.get_event_numbers_in_file(file_name):
-
-            timestamp = create_timestamp(evt, rate) / units.ms
 
             try:
                 ## Assumes two types of sensor, all non pmt
@@ -395,7 +437,7 @@ def mcsensors_from_file(paths     : List[str],
                 pmt_resp = sipm_resp = pd.DataFrame(columns=sns_resp.columns)
 
             yield dict(event_number = evt      ,
-                       timestamp    = timestamp,
+                       timestamp    = timestamp(evt),
                        pmt_resp     = pmt_resp ,
                        sipm_resp    = sipm_resp)
 
@@ -507,7 +549,8 @@ def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCol
                            timestamp = timestamp)
 
 
-def MC_hits_from_files(files_in : List[str]) -> Generator:
+def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
+    timestamp = create_timestamp(rate)
     for filename in files_in:
         try:
             hits_df = load_mchits_df(filename)
@@ -521,7 +564,7 @@ def MC_hits_from_files(files_in : List[str]) -> Generator:
                        energy       = hits.energy.values,
                        time         = hits.time  .values,
                        label        = hits.label .values,
-                       timestamp    = 0)
+                       timestamp    = timestamp(evt))
 
 
 def sensor_data(path, wf_type):

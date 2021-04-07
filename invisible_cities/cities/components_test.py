@@ -26,6 +26,7 @@ from .  components import compute_xy_position
 from .  components import city
 from .  components import hits_and_kdst_from_files
 from .  components import mcsensors_from_file
+from .  components import create_timestamp
 
 from .. dataflow   import dataflow as fl
 
@@ -243,3 +244,40 @@ def test_mcsensors_from_file_correct_yield(ICDATADIR):
     assert      first_evt[    'pmt_resp'].shape[0]        == total_pmthits
     assert  len(first_evt[   'sipm_resp'].index.unique()) == nsipms_hit
     assert      first_evt[   'sipm_resp'].shape[0]        == total_sipmhits
+
+
+def test_create_timestamp_greater_with_greater_eventnumber():
+    """
+    Value of timestamp must be always positive and 
+    greater with greater event numbers.
+    """
+
+    rate_1   =   0.5
+    rate_2   =   0.6
+    evt_no_1 =  10.
+    evt_no_2 = 100.
+
+    timestamp_1 = create_timestamp(rate_1)
+    timestamp_2 = create_timestamp(rate_2)
+
+    assert     timestamp_1(evt_no_1)  <  timestamp_2(evt_no_2)
+
+
+@mark.filterwarnings("ignore:Zero rate"    )
+@mark.filterwarnings("ignore:Negative rate")
+def test_create_timestamp_physical_rate():
+    """
+    Check the rate is always physical.
+    """
+
+    rate_1   =   0.   * units.hertz
+    rate_2   = - 0.42 * units.hertz
+    evt_no_1 =  11.
+    evt_no_2 = 111.
+
+    timestamp_1 = create_timestamp(rate_1)
+    timestamp_2 = create_timestamp(rate_2)
+
+    assert timestamp_1(evt_no_1) >= 0
+    assert timestamp_2(evt_no_2) >= 0
+
