@@ -2,6 +2,7 @@
 JJGC August 2016
 """
 import argparse
+import numpy
 import sys
 import os
 
@@ -89,6 +90,8 @@ def make_config_file_reader():
 
     builtins = __builtins__.copy()
     builtins.update(vars(units))
+    builtins["np"] = numpy
+
     # TODO: move setting of extra 'builtins' elsewhere
     builtins['all']  = EventRange.all
     builtins['last'] = EventRange.last
