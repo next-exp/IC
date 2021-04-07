@@ -387,3 +387,14 @@ def test_config_penthesilea_counters(config_tmpdir, KrMC_pmaps_filename, flags, 
     argv = f'penthesilea {config_filename} -i {input_filename} -o {output_filename} {flags}'.split()
     counters = penthesilea(**configure(argv))
     assert getattr(counters, counter) == value
+
+
+def test_configure_numpy(config_tmpdir):
+    config_filename = config_tmpdir.join("conf_with_numpy.conf")
+    config_contents = "a_numpy_array = np.linspace(0, 1, 3)\n"
+    write_config_file(config_filename, config_contents)
+
+    argv    = f"some_city {config_filename}".split()
+    conf_ns = configure(argv).as_namespace
+    assert hasattr(conf_ns, "a_numpy_array")
+    assert conf_ns.a_numpy_array.tolist() == [0, 0.5, 1]
