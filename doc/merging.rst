@@ -1,10 +1,10 @@
 How to merge a branch after approving the PR
-============================================
+=========================
 
 Requirements
 --------------
 
-- A remote called *upstream* pointing at the central IC repository.
+- A remote called ``upstream`` pointing at the central IC repository.
 
 - A remote configured for the author of the PR.
 
@@ -14,23 +14,23 @@ Requirements
 Steps
 -------
 
-#. Fetch *upstream/master*.
+#. Fetch ``upstream/master``.
 
-#. Reset or rebase your master branch to *upstream/master*.
+#. Reset or rebase your master branch to ``upstream/master``.
 
 #. Fetch the branch of the approved PR.
 
 #. Create and check out a local branch on top of the PR branch.
 
-#. Make sure the branch of the approved PR is rebased onto *upstream/master*. If not:
+#. Make sure the branch of the approved PR is rebased onto ``upstream/master``. If not:
 
-   * Rebase the branch onto *upstream/master*. If there are conflicts, ask the author to resolve them, unless they are obvious.
+   * Rebase the branch onto ``upstream/master``. If there are conflicts, ask the author to resolve them, unless they are obvious.
 
    * Push to the branch of the PR and wait until the tests finish.
 
-#. Checkout your local *master*.
+#. Checkout your local ``master``.
 
-#. Merge the PR branch into your local *master*, making sure that the merge commit conforms to our requirements. Here are the steps needed to make the merge happen:
+#. Merge the PR branch into your local ``master``, making sure that the merge commit conforms to our requirements. Here are the steps needed to make the merge happen:
 
    * Disallow fast forward merging: we want an explicit merge commit for each PR.
 
@@ -51,6 +51,6 @@ Steps
 
    * Ensure that Git records the reviewer of the PR as the author of the merge commit.
 
-#. Push the merge commit to *upstream/master*.
+#. Push the merge commit to ``upstream/master``.
 
 #. Delete the local branch you created in step 4.
