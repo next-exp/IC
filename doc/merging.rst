@@ -1,4 +1,4 @@
-How to merge a branch after approving the PR
+How to merge approved PRs
 =========================
 
 Requirements
