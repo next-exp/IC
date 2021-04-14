@@ -16,7 +16,7 @@ Steps
 
 #. Fetch ``upstream/master``.
 
-#. Reset or rebase your master branch to ``upstream/master``.
+#. Reset or rebase your master branch to ``upstream/master`` (make sure your local `master` and `upstream/master` are pointing to the same commit).
 
 #. Fetch the branch of the approved PR.
 
