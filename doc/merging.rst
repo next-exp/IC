@@ -8,7 +8,7 @@ Requirements
 
 - A remote configured for the author of the PR.
 
-- After the PR is approved, make sure the merge should be done (asking the authors if they didn't get in touch with you).
+- After the PR is approved, make sure that it is ready to be merged (asking the authors if they didn't get in touch with you).
 
 
 Steps
@@ -34,7 +34,7 @@ Steps
 
    * Disallow fast forward merging: we want an explicit merge commit for each PR.
 
-   * Edit the commit message as described above so that it has the following format:
+   * Edit the commit message so that it has the following format:
 
    <PR number>  <PR title>
 
@@ -49,7 +49,7 @@ Steps
    <Reviewer comment> (comment the reviewer left on GitHub)
 
 
-   * Ensure that Git records the reviewer of the PR as the author of the merge commit.
+   * Set the reviewer as the author of merge commit.
 
 #. Push the merge commit to ``upstream/master``.
 
