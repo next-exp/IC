@@ -549,6 +549,27 @@ def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCol
                            timestamp = timestamp)
 
 
+def dst_from_files(paths: List[str], group: str, node:str) -> Iterator[Dict[str,Union[pd.DataFrame, int, np.ndarray]]]:
+    """
+    Reader for a generic dst.
+    """
+    for path in paths:
+        try:
+            df = load_dst(path, group, node)
+            with tb.open_file(path, "r") as h5in:
+                run_number  = get_run_number(h5in)
+                evt_numbers = get_event_info(h5in).col("evt_number")
+                timestamps  = get_event_info(h5in).col("timestamp")
+        except (tb.exceptions.NoSuchNodeError, IndexError):
+            continue
+
+        yield dict( dst           = df
+                  , run_number    = run_number
+                  , event_numbers = evt_numbers
+                  , timestamps    = timestamps
+                  )
+
+
 def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
     timestamp = create_timestamp(rate)
     for filename in files_in:

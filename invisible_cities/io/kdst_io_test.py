@@ -8,7 +8,6 @@ from numpy.testing import assert_allclose
 from ..core.testing_utils import assert_dataframes_equal
 from ..io.dst_io          import load_dst
 from . kdst_io            import kr_writer
-from . kdst_io            import psf_writer
 
 from ..evm.event_model    import KrEvent
 
@@ -46,32 +45,3 @@ def test_Kr_writer(config_tmpdir, KrMC_kdst):
 
     dst = load_dst(filename, group = tbl.group, node = tbl.node)
     assert_dataframes_equal(dst, df, False)
-
-
-def test_psf_writer(config_tmpdir):
-    output_file = os.path.join(config_tmpdir, "test_psf.h5")
-
-    xdim, ydim, zdim = 101, 101, 11
-    xr, yr, zr = np.linspace(-50, 50, xdim), np.linspace(-20, 20, ydim), np.linspace(20, 30, zdim)
-    x, y, z    = 3, 4, 5
-    factors    = np.linspace(0, 1, xdim*ydim*zdim   ).reshape(xdim, ydim, zdim)
-    nevt       = np.arange  (0,    xdim*ydim*zdim, 1).reshape(xdim, ydim, zdim)
-
-    with tb.open_file(output_file, 'w') as h5out:
-        write = psf_writer(h5out)
-        write(xr, yr, zr, x, y, z, factors, nevt)
-
-    psf = load_dst(output_file,
-                   group = 'PSF',
-                   node  = 'PSFs')
-
-    xx, yy, zz = np.meshgrid(xr, yr, zr, indexing='ij')
-
-    assert_allclose(xx            .flatten(), psf.xr    .values)
-    assert_allclose(yy            .flatten(), psf.yr    .values)
-    assert_allclose(zz            .flatten(), psf.zr    .values)
-    assert_allclose(factors       .flatten(), psf.factor.values)
-    assert_allclose(nevt          .flatten(), psf.nevt  .values)
-    assert_allclose(np.full(factors.size, x), psf.x     .values)
-    assert_allclose(np.full(factors.size, y), psf.y     .values)
-    assert_allclose(np.full(factors.size, z), psf.z     .values)
