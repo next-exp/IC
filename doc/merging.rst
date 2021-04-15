@@ -14,6 +14,8 @@ Requirements
 Steps
 -------
 
+(Detailed execution instructions below)
+
 #. Fetch ``upstream/master``.
 
 #. Reset or rebase your master branch to ``upstream/master`` (make sure your local `master` and `upstream/master` are pointing to the same commit).
