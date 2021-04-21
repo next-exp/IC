@@ -67,7 +67,7 @@ Detailed mechanics
 
 #. **CLI:** ``git fetch <author's remote> <PR branchname>`` **Magit:** ``f o <author's remote> RET <PR branchname> RET``.
 
-#. **CLI:** ``git checkout -b <PR branchname> upstream/<PR branchname>`` **Magit:** ``b c upstream RET <PR branchname> RET``
+#. **CLI:** ``git checkout -b <PR branchname> <author's remote>/<PR branchname>`` **Magit:** ``b c <author's remote> RET <PR branchname> RET``
 
 #.
 
