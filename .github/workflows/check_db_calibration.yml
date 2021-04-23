@@ -33,7 +33,7 @@ jobs:
         git lfs pull
     - name: Install dependencies
       run: |
-        pip install pymysql numpy
+        pip install pymysql numpy pytest
     - name: Check database
       run: |
         python invisible_cities/database/check_gain_update.py ${{ steps.files.outputs.all }}
