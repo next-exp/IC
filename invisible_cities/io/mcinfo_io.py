@@ -128,7 +128,7 @@ def safe_copy_nexus_eventmap(h5out  : tb.file.File,
 
     returns
     -------
-    Mapping : 
+    Mapping :
             'evt_number': the evt_number copied to the output;
             'nexus_evt' : the nexus event_ids copied to the output.
     """
@@ -325,19 +325,24 @@ def get_event_numbers_in_file(file_name: str) -> np.ndarray:
 
 
 def _get_list_of_events_new(h5in : tb.file.File) -> np.ndarray:
-    mc_tbls  = ['hits', 'particles', 'sns_response']
-    def try_unique_evt_itr(group, itr):
-        for elem in itr:
-            try:
-                yield np.unique(getattr(group, elem).cols.event_id)
-            except tb.exceptions.NoSuchNodeError:
-                pass
-
-    evt_list = list(try_unique_evt_itr(h5in.root.MC, mc_tbls))
-    if len(evt_list) == 0:
-        raise AttributeError("At least one of MC/hits, MC/particles, \
-        MC/sns_response must be present to use get_list_of_events.")
-    return np.unique(np.concatenate(evt_list)).astype(int)
+    """
+    This function relies on the assumption that, if the particles table exists,
+    it includes all the events of the file. At the same time,
+    if that table doesn't exists, all the events are assumed to have
+    generated some sensor response, therefore to appear in the sns_response table.
+    Events that don't generate sensor response and don't have any saved particle
+    are assumed to be irrelevant for the analysis.
+    """
+    def get_event_ids_table(tablename):
+        try:
+            evt_list = getattr(h5in.root.MC, tablename).cols.event_id
+        except tb.exceptions.NoSuchNodeError:
+            raise AttributeError('Trying to get event number from MC corrupted file.')
+        return np.unique(evt_list).astype(int)
+    evt_list = get_event_ids_table('particles')
+    if len(evt_list):
+        return evt_list
+    return get_event_ids_table('sns_response')
 
 
 def load_eventnumbermap(file_name: str) -> pd.DataFrame:
