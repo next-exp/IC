@@ -141,7 +141,7 @@ def test_buffy_splits_event(config_tmpdir, ICDATADIR):
 
     buffy(**conf)
 
-    out_evts   = [10, 11]
+    out_evts   = [9, 10]
 
     sns_resp   = load_mcsensor_response_df(file_in).loc[evt]
     sns_sums   = sns_resp.groupby('sensor_id').charge.sum()

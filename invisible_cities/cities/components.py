@@ -20,6 +20,7 @@ import numpy  as np
 import pandas as pd
 import inspect
 import warnings
+import math
 
 from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
@@ -920,6 +921,27 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     return compute_pmaps, empty_indices, empty_pmaps
 
 
+def check_max_time(max_time: Union[int, float], buffer_length: float) -> Union[int, float]:
+    """
+    `max_time` must be greater than `buffer_length`. If not, raise warning 
+        and set `max_time` == `buffer_length`.
+
+    :param max_time: Maximal length of the event that will be taken into 
+        account starting from the first detected signal, all signals after 
+        that are simply lost.
+    :param buffer_length: Length of buffers.
+    :return: `max_time` if `max_time` >= `buffer_length`, else `buffer_length`.
+    """
+
+    if max_time < buffer_length:
+        warnings.warn("`max_time` shorter than `buffer_length`, "
+                      "setting `max_time` to `buffer_length`", 
+                      stacklevel=2)
+        return buffer_length
+    else:
+        return max_time
+
+
 def calculate_and_save_buffers(buffer_length    : float        ,
                                max_time         : int          ,
                                pre_trigger      : float        ,
@@ -957,7 +979,7 @@ def calculate_and_save_buffers(buffer_length    : float        ,
                                out  = "buffers"                            )
 
     saved_buffers = "buffers" if order_sensors is None else "ordered_buffers"
-    max_subevt    =  max_time // buffer_length + 1
+    max_subevt    =  math.ceil(max_time / buffer_length)
     buffer_writer_    = sink(buffer_writer( h5out
                                           , run_number = run_number
                                           , n_sens_eng = npmt
