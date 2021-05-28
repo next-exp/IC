@@ -125,7 +125,7 @@ def create_timestamp(rate: float) -> float:
 
     Returns
     -------
-    Function to calculate timestamp for the given rate with 
+    Function to calculate timestamp for the given rate with
     event_number as parameter.
     """
 
@@ -142,12 +142,12 @@ def create_timestamp(rate: float) -> float:
     def create_timestamp_(event_number: Union[int, float]) -> float:
         """
         Calculates timestamp for a given Event Number and Rate.
-    
+
         Parameters
         ----------
         event_number : Union[int, float]
                        ID value of the current event.
-    
+
         Returns
         -------
         Calculated timestamp : float
@@ -323,6 +323,33 @@ def deconv_pmt(dbfile, run_number, n_baseline,
         CWF = pedestal_function(RWF[:, :n_baseline]) - RWF
         return np.array(tuple(map(blr.deconvolve_signal, CWF[pmt_active],
                                   coeff_c              , coeff_blr      )))
+    return deconv_pmt
+
+
+def deconv_pmt_fpga(dbfile     : str
+                   ,run_number : int
+                   ,selection  : List[int] = None
+                   ) -> Callable:
+    '''
+    Apply deconvolution as done in the FPGA.
+
+    Parameters
+    ----------
+    dbfile     : Database to be used
+    run_number : Run number of the database
+    selection  : List of PMT IDs to apply deconvolution to.
+
+    Returns
+    ----------
+    deconv_pmt : Function that will apply the deconvolution.
+    '''
+    DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
+    pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist() if selection is None else selection
+    coeff_c    = DataPMT.coeff_c  .values.astype(np.double)[pmt_active]
+    coeff_blr  = DataPMT.coeff_blr.values.astype(np.double)[pmt_active]
+    def deconv_pmt(RWF):
+        return zip(*map(blr.deconvolve_signal_fpga, RWF[pmt_active],
+                        coeff_c                   , coeff_blr      ))
     return deconv_pmt
 
 
