@@ -186,3 +186,22 @@ class VoxelsTable(tb.IsDescription):
 class EventPassedFilter(tb.IsDescription):
     event  = tb.Int32Col(pos=0)
     passed = tb. BoolCol(pos=1)
+
+
+class TriggerTable(tb.IsDescription):
+    event         = tb.UInt32Col(pos= 0)
+    pmt           = tb.UInt32Col(pos= 1)
+    trigger_time  = tb.UInt32Col(pos= 2)
+    q             = tb.UInt32Col(pos= 3)
+    width         = tb.UInt32Col(pos= 4)
+    height        = tb.UInt32Col(pos= 5)
+    valid_q       = tb.BoolCol  (pos= 6)
+    valid_w       = tb.BoolCol  (pos= 7)
+    valid_h       = tb.BoolCol  (pos= 8)
+    valid_peak    = tb.BoolCol  (pos= 9)
+    valid_all     = tb.BoolCol  (pos=10)
+    baseline      = tb.Int32Col (pos=11)
+    max_height    = tb.Int32Col (pos=12)
+    n_coinc       = tb.Int32Col (pos=13)
+    closest_ttime = tb.Int32Col (pos=14)
+    closest_pmt   = tb.Int32Col (pos=15)
