@@ -704,8 +704,6 @@ def deconvolution_config(ICDIR, ICDATADIR, PSFDIR, config_tmpdir):
 
     return conf, PATH_OUT
 
-<<<<<<< HEAD
-=======
 
 @pytest.fixture(scope='function') # Needs to be function as the config dict is modified when running
 def trigger_config(ICDIR, ICDATADIR, config_tmpdir):
@@ -741,7 +739,6 @@ def trigger_config(ICDIR, ICDATADIR, config_tmpdir):
     return conf, PATH_OUT
 
 
->>>>>>> f8fa2343... fixup! Add related tests
 ## To make very slow tests only run with specific option
 def pytest_addoption(parser):
     parser.addoption(

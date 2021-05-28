@@ -19,7 +19,7 @@ def test_valdrada_contains_all_tables(trigger_config):
 
 
 def test_valdrada_exact_result_multipeak(ICDATADIR, trigger_config):
-    true_out         = os.path.join(ICDATADIR, "test_trigger_fpga_multipeak.h5")
+    true_out          = os.path.join(ICDATADIR, "exact_result_multipeak_valdrada.h5")
     conf, PATH_OUT   = trigger_config
     valdrada(**conf)
 
@@ -36,7 +36,7 @@ def test_valdrada_exact_result_multipeak(ICDATADIR, trigger_config):
 
 
 def test_valdrada_exact_result(ICDATADIR, trigger_config):
-    true_out          = os.path.join(ICDATADIR, "test_trigger_fpga.h5")
+    true_out          = os.path.join(ICDATADIR, "exact_result_valdrada.h5")
     conf, PATH_OUT    = trigger_config
     conf['trigger_config']['multipeak'] = None
     valdrada(**conf)
