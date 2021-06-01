@@ -49,7 +49,7 @@ within range of the trigger configuration:
  - valid_w    : If peak is within width range.
  - valid_h    : If peak is within height range.
  - valid_peak : Only if 'multipeak' is active, True if there isn't a post-trigger
-               candidate with the configuration parametersself.
+               candidate with the configuration parameters.
  - valid_all  : boolean and of previous valid flags.
 
  Finally, a series of coincidence-related values are also given:
