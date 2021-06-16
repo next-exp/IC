@@ -23,6 +23,7 @@ from . components import copy_mc_info
 from . components import collect
 from . components import calculate_and_save_buffers
 from . components import MC_hits_from_files
+from . components import check_max_time
 
 from .. reco     import tbl_functions as tbl
 from .. database import load_db       as db
@@ -123,7 +124,10 @@ def detsim(*, files_in, file_out, event_range, print_mod, compression,
            detector_db, run_number, s1_lighttable, s2_lighttable, sipm_psf,
            buffer_params, physics_params, rate):
 
+    buffer_params_  = buffer_params .copy()
     physics_params_ = physics_params.copy()
+
+    buffer_params_["max_time"] = check_max_time(buffer_params_["max_time"], buffer_params_["length"])
 
     ws    = physics_params_.pop("ws")
     el_dv = physics_params_.pop("el_drift_velocity")
@@ -151,19 +155,19 @@ def detsim(*, files_in, file_out, event_range, print_mod, compression,
                                 args = ('x_a', 'y_a', 'z_a', 'time_a', 'energy_a'),
                                 out  = ('x_ph', 'y_ph', 'z_ph', 'times_ph', 'nphotons'))
 
-    get_buffer_info = buffer_times_and_length_getter(buffer_params["pmt_width"],
-                                                     buffer_params["sipm_width"],
+    get_buffer_info = buffer_times_and_length_getter(buffer_params_["pmt_width"],
+                                                     buffer_params_["sipm_width"],
                                                      el_gap, el_dv,
-                                                     buffer_params["max_time"])
+                                                     buffer_params_["max_time"])
     get_buffer_times_and_length = fl.map(get_buffer_info,
                                          args = ('time', 'times_ph'),
                                          out = ('tmin', 'buffer_length'))
 
-    create_pmt_s1_waveforms = fl.map(s1_waveforms_creator(s1_lighttable, ws, buffer_params["pmt_width"]),
+    create_pmt_s1_waveforms = fl.map(s1_waveforms_creator(s1_lighttable, ws, buffer_params_["pmt_width"]),
                                      args = ('x_a', 'y_a', 'z_a', 'time_a', 'energy_a', 'tmin', 'buffer_length'),
                                      out = 's1_pmt_waveforms')
 
-    create_pmt_s2_waveforms = fl.map(s2_waveform_creator(buffer_params["pmt_width"], lt_pmt, el_dv),
+    create_pmt_s2_waveforms = fl.map(s2_waveform_creator(buffer_params_["pmt_width"], lt_pmt, el_dv),
                                      args = ('x_ph', 'y_ph', 'times_ph', 'nphotons', 'tmin', 'buffer_length'),
                                      out = 's2_pmt_waveforms')
 
@@ -173,11 +177,11 @@ def detsim(*, files_in, file_out, event_range, print_mod, compression,
 
     create_pmt_waveforms = fl.pipe(create_pmt_s1_waveforms, create_pmt_s2_waveforms, sum_pmt_waveforms)
 
-    create_sipm_waveforms = fl.map(s2_waveform_creator(buffer_params["sipm_width"], lt_sipm, el_dv),
+    create_sipm_waveforms = fl.map(s2_waveform_creator(buffer_params_["sipm_width"], lt_sipm, el_dv),
                                    args = ('x_ph', 'y_ph', 'times_ph', 'nphotons', 'tmin', 'buffer_length'),
                                    out = 'sipm_bin_wfs')
 
-    get_bin_edges  = fl.map(bin_edges_getter(buffer_params["pmt_width"], buffer_params["sipm_width"]),
+    get_bin_edges  = fl.map(bin_edges_getter(buffer_params_["pmt_width"], buffer_params_["sipm_width"]),
                             args = ('pmt_bin_wfs', 'sipm_bin_wfs'),
                             out = ('pmt_bins', 'sipm_bins'))
 
@@ -185,18 +189,18 @@ def detsim(*, files_in, file_out, event_range, print_mod, compression,
     evtnum_collect = collect()
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
-        buffer_calculation = calculate_and_save_buffers( buffer_params["length"]
-                                                       , buffer_params["max_time"]
-                                                       , buffer_params["pre_trigger"]
-                                                       , buffer_params["pmt_width"]
-                                                       , buffer_params["sipm_width"]
-                                                       , buffer_params["trigger_thr"]
+        buffer_calculation = calculate_and_save_buffers( buffer_params_["length"]
+                                                       , buffer_params_["max_time"]
+                                                       , buffer_params_["pre_trigger"]
+                                                       , buffer_params_["pmt_width"]
+                                                       , buffer_params_["sipm_width"]
+                                                       , buffer_params_["trigger_thr"]
                                                        , h5out
                                                        , run_number
                                                        , len(datapmt)
                                                        , len(datasipm)
-                                                       , int(buffer_params["length"] / buffer_params["pmt_width"])
-                                                       , int(buffer_params["length"] / buffer_params["sipm_width"]))
+                                                       , int(buffer_params_["length"] / buffer_params_["pmt_width"])
+                                                       , int(buffer_params_["length"] / buffer_params_["sipm_width"]))
 
         write_nohits_filter   = fl.sink(event_filter_writer(h5out, "active_hits"), args=("event_number", "passed_active"))
         result = fl.push(source= MC_hits_from_files(files_in, rate),

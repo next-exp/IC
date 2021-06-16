@@ -27,6 +27,7 @@ from .  components import city
 from .  components import hits_and_kdst_from_files
 from .  components import mcsensors_from_file
 from .  components import create_timestamp
+from .  components import check_max_time
 
 from .. dataflow   import dataflow as fl
 
@@ -280,4 +281,25 @@ def test_create_timestamp_physical_rate():
 
     assert timestamp_1(evt_no_1) >= 0
     assert timestamp_2(evt_no_2) >= 0
+
+
+
+@mark.filterwarnings("ignore:`max_time` shorter than `buffer_length`")
+def test_check_max_time_eg_buffer_length():
+    """
+    Check if `max_time` is always equal or greater
+        than `buffer_length` and filter warnings.
+    """
+    
+    max_time_1      =  10 * units.ms
+    buffer_length_1 = 800 * units.mus
+
+    max_time_2      = 600 * units.mus
+    buffer_length_2 = 700 * units.mus
+
+    max_time_1 = check_max_time(max_time_1, buffer_length_1)
+    max_time_2 = check_max_time(max_time_2, buffer_length_2)
+    
+    assert max_time_1 >  buffer_length_1
+    assert max_time_2 == buffer_length_2
 

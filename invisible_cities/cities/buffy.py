@@ -40,6 +40,7 @@ from .  components import calculate_and_save_buffers
 from .  components import        mcsensors_from_file
 from .  components import                print_every
 from .  components import                  wf_binner
+from .  components import             check_max_time
 
 
 @city
@@ -47,6 +48,7 @@ def buffy(files_in     , file_out   , compression      , event_range,
           print_mod    , detector_db, run_number       , max_time   ,
           buffer_length, pre_trigger, trigger_threshold, rate       ):
 
+    max_time          = check_max_time(max_time, buffer_length)
     npmt, nsipm       = get_n_sensors(detector_db, run_number)
     pmt_wid, sipm_wid = pmt_and_sipm_bin_width_safe_(files_in)
     nsamp_pmt         = int(buffer_length /  pmt_wid)
