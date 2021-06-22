@@ -46,34 +46,29 @@ def _make_tables(hdf5_file, n_sensors, compression="ZLIB4"):
 
 def trigger_dst_writer(hdf5_file, **kwargs):#{
     trigger_table = make_table(hdf5_file,
-                           group       = "Trigger",
-                           name        = "DST"    ,
-                           fformat     = table_formats.TriggerTable,
-                           description = "Simulated trigger data",
-                           compression = 'ZLIB4')
+                               group       = "Trigger",
+                               name        = "DST"    ,
+                               fformat     = table_formats.TriggerTable,
+                               description = "Simulated trigger data",
+                               compression = 'ZLIB4')
     def write_trigger(trigger_info):#{
-        [event       , pmt          ,
-        trigger_time , charge       , width      , height    ,
-        valid_q      , valid_w      , valid_h    , valid_peak,
-        mean_baseline, max_height   ,
-        n_coinc      , closest_ttime, closest_pmt] = trigger_info
         row = trigger_table.row
-        row["event"        ] = event
-        row["pmt"          ] = pmt
-        row["trigger_time" ] = trigger_time
-        row["q"            ] = charge
-        row["width"        ] = width
-        row["height"       ] = height
-        row["valid_q"      ] = valid_q
-        row["valid_w"      ] = valid_w
-        row["valid_h"      ] = valid_h
-        row["valid_peak"   ] = valid_peak
-        row["valid_all"    ] = (valid_q + valid_w + valid_h + valid_peak) == 4
-        row["baseline"     ] = mean_baseline
-        row["max_height"   ] = max_height
-        row["n_coinc"      ] = n_coinc
-        row["closest_ttime"] = closest_ttime
-        row["closest_pmt"  ] = closest_pmt
+        row["event"        ] = trigger_info.event
+        row["pmt"          ] = trigger_info.pmt
+        row["trigger_time" ] = trigger_info.trigger_time
+        row["q"            ] = trigger_info.q
+        row["width"        ] = trigger_info.width
+        row["height"       ] = trigger_info.height
+        row["valid_q"      ] = trigger_info.valid_q
+        row["valid_w"      ] = trigger_info.valid_w
+        row["valid_h"      ] = trigger_info.valid_h
+        row["valid_peak"   ] = trigger_info.valid_peak
+        row["valid_all"    ] = trigger_info.valid_all
+        row["baseline"     ] = trigger_info.baseline
+        row["max_height"   ] = trigger_info.max_height
+        row["n_coinc"      ] = trigger_info.n_coinc
+        row["closest_ttime"] = trigger_info.closest_ttime
+        row["closest_pmt"  ] = trigger_info.closest_pmt
         row.append()
 
     def write_triggers(triggers):
