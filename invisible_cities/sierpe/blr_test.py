@@ -4,17 +4,20 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
-from pytest import fixture
-from pytest import mark
-from flaky  import flaky
+from pytest                    import fixture
+from pytest                    import mark
+from flaky                     import flaky
+from hypothesis                import given
+from hypothesis                import settings
+from hypothesis.strategies     import integers
 
 from .. reco import calib_sensors_functions as csf
 from .       import blr
 
 
 deconv_params      = namedtuple("deconv_params",
-                           "coeff_clean coeff_blr "
-                           "thr_trigger accum_discharge_length")
+                                "coeff_clean coeff_blr "
+                                "thr_trigger accum_discharge_length")
 deconv_fpga_params = namedtuple("deconv_params",
                                 "coeff_clean coeff_blr "
                                 "thr_trigger base_window")
@@ -163,13 +166,12 @@ def test_deconv_pmt_ad_hoc_signals_dead_sensors(ad_hoc_blr_signals):
     np.allclose(blr_wfs, evt_true_blr_wfs[pmt_active])
 
 
+@settings(max_examples=1, deadline=1000)
+@given   (evt_no=integers(0, 9))
 @mark.slow
-def test_deconv_pmt_fpga_ad_hoc_signals_all(ad_hoc_blr_fpga_signals):
+def test_deconv_pmt_fpga_ad_hoc_signals_all(evt_no, ad_hoc_blr_fpga_signals):
     all_rwfs, all_true_blr_wfs, all_true_baseline, params = ad_hoc_blr_fpga_signals
 
-    # This test takes long, so we pick a random event.
-    # Its exhaustiveness relies on repeated test runs.
-    evt_no            = np.random.choice(all_rwfs.shape[0])
     evt_rwfs          = all_rwfs         [evt_no]
     evt_true_blr_wfs  = all_true_blr_wfs [evt_no]
     evt_true_baseline = all_true_baseline[evt_no]
@@ -184,8 +186,10 @@ def test_deconv_pmt_fpga_ad_hoc_signals_all(ad_hoc_blr_fpga_signals):
     assert np.allclose(baseline, evt_true_baseline)
 
 
+@settings(max_examples=1, deadline=1000)
+@given   (evt_no=integers(0, 9))
 @mark.slow
-def test_deconv_pmt_fpga_ad_hoc_signals_dead_sensors(ad_hoc_blr_fpga_signals):
+def test_deconv_pmt_fpga_ad_hoc_signals_dead_sensors(evt_no, ad_hoc_blr_fpga_signals):
     all_rwfs, all_true_blr_wfs, all_true_baseline, params = ad_hoc_blr_fpga_signals
 
     n_evts, n_pmts, _ = all_rwfs.shape
@@ -193,9 +197,6 @@ def test_deconv_pmt_fpga_ad_hoc_signals_dead_sensors(ad_hoc_blr_fpga_signals):
     n_alive           = np.random.randint(1, n_pmts - 1)
     pmt_active        = np.random.choice(pmt_active, size=n_alive, replace=False)
 
-    # This test takes long, so we pick a random event.
-    # Its exhaustiveness relies on repeated test runs.
-    evt_no            = np.random.choice(all_rwfs.shape[0])
     evt_rwfs          = all_rwfs         [evt_no]
     evt_true_blr_wfs  = all_true_blr_wfs [evt_no]
     evt_true_baseline = all_true_baseline[evt_no]
@@ -210,11 +211,11 @@ def test_deconv_pmt_fpga_ad_hoc_signals_dead_sensors(ad_hoc_blr_fpga_signals):
     assert np.allclose(baseline, evt_true_baseline[pmt_active])
 
 
-def test_moving_average_baseline():
+@given(thr=integers(2, 100), window=integers(10, 5000))
+def test_moving_average_baseline(thr, window):
     samples = 10000
-    thr     = np.random.randint(2, 100)
-    window  = np.random.randint(10, samples//2)
-    wvf     = np.random.randint(0, thr-1, samples, dtype=np.int16)
+    np.random.seed(1234)
+    wvf     = np.random.randint(0 , thr-1, samples, dtype=np.int16)
 
     _, baseline = blr.deconvolve_signal_fpga(wvf, 1e-6, 1e-3, thr, window)
 
