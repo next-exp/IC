@@ -30,16 +30,19 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
     Dictionary {event_number : HitCollection}
     """
     all_events = {}
-    for (event, time) , hits_df in dst.groupby(['event', 'time']):
+    for (event, time) , hits_df in dst.groupby(['event', getattr(dst, 'time', [-1]*len(dst))]):
         #pandas is not consistent with numpy dtypes so we have to change it by hand
         event = np.int32(event)
         hits  = []
         for i, row in hits_df.iterrows():
-            if skip_NN and row.Q == NN:
+            if skip_NN and getattr(row, 'Q', -1) == NN:
                 continue
             hit = Hit(row.npeak,
-                      Cluster(row.Q, xy(row.X, row.Y), xy(row.Xrms**2, row.Yrms**2),
-                              row.nsipm, row.Z, row.E,
+                      Cluster(getattr(row, 'Q', row.E),
+                              xy(row.X, row.Y),
+                              xy(getattr(row, 'Xrms', 0)**2, getattr(row, 'Yrms', 0)**2),
+                              getattr(row, 'nsipm', -1),
+                              row.Z, row.E,
                               Qc = getattr(row, 'Qc', -1)),       # for backwards compatibility
                       row.Z, row.E,
                       xy(getattr(row, 'Xpeak', -1000),            # for backwards compatibility
