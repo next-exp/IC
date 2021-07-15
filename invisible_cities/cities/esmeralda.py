@@ -37,7 +37,6 @@ from .  components import print_every
 from .  components import collect
 from .  components import copy_mc_info
 from .  components import hits_and_kdst_from_files
-from .  components import Efield_copier
 from .  components import compute_and_write_tracks_info
 
 from .. types.      ic_types import xy
@@ -190,23 +189,13 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod,
                                              out  = 'cor_low_th_hits')
 
     threshold_and_correct_hits_high = fl.map(hits_threshold_and_corrector(threshold_charge=cor_hits_params['threshold_charge_high'], **cor_hits_params_),
-                                             args = 'hits',
-                                             out  = 'cor_high_th_hits')
+                                             item = 'hits')
 
     filter_events_low_th            = fl.map(lambda x : len(x.hits) > 0,
                                              args = 'cor_low_th_hits',
                                              out  = 'low_th_hits_passed')
 
-    filter_events_high_th           = fl.map(lambda x : len(x.hits) > 0,
-                                             args = 'cor_high_th_hits',
-                                             out  = 'high_th_hits_passed')
-
     hits_passed_low_th              = fl.count_filter(bool, args="low_th_hits_passed")
-    hits_passed_high_th             = fl.count_filter(bool, args="high_th_hits_passed")
-
-    copy_Efield                     = fl.map(Efield_copier(evm.HitEnergy.Ec),
-                                             args = 'cor_high_th_hits',
-                                             out  = 'Ep_hits')
 
     event_count_in  = fl.spy_count()
     event_count_out = fl.count()
@@ -218,13 +207,18 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod,
 
         write_hits_low_th     = fl.sink(    hits_writer     (h5out, group_name='CHITS', table_name='lowTh'),
                                             args="cor_low_th_hits")
+        write_hits_paolina    = fl.sink(    hits_writer     (h5out, group_name="CHITS", table_name="highTh" ),
+                                            args="paolina_hits"   )
+        write_hits_paolina_   = fl.branch(write_hits_paolina)
 
-        write_high_th_filter  = fl.sink( event_filter_writer(h5out, "high_th_select" )   , args=("event_number", "high_th_hits_passed"))
         write_low_th_filter   = fl.sink( event_filter_writer(h5out, "low_th_select"  )   , args=("event_number", "low_th_hits_passed" ))
         write_kdst_table      = fl.sink( kdst_from_df_writer(h5out)                      , args="kdst"               )
 
 
-        compute_tracks = compute_and_write_tracks_info(paolina_params, h5out)
+        compute_tracks = compute_and_write_tracks_info(paolina_params, h5out,
+                                                       hit_type = evm.HitEnergy.Ec,
+                                                       filter_hits_table_name = "high_th_select",
+                                                       write_paolina_hits = write_hits_paolina_)
 
         evtnum_collect = collect()
 
@@ -241,10 +235,6 @@ def esmeralda(files_in, file_out, compression, event_range, print_mod,
                                               hits_passed_low_th.filter           ,
                                               write_hits_low_th                  ),
                                     threshold_and_correct_hits_high               ,
-                                    filter_events_high_th                         ,
-                                    fl.branch(write_high_th_filter)               ,
-                                    hits_passed_high_th   .filter                 ,
-                                    copy_Efield                                   ,
                                     compute_tracks                                ,
                                     "event_number"                                ,
                                     event_count_out       .sink                   ),
