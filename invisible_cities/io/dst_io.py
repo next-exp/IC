@@ -18,28 +18,34 @@ def _decode_str_columns(df):
     df        = df.apply(to_string)
     return df
 
-def load_dst(filename, group, node, evt_list=None):
+def load_dst(filename, group, node, evt_list=None, ignore_errors=False):
     """load a kdst if filename, group and node correctly found"""
-    try:
+
+    def read_dst_(filename, group, node, evt_list):
         with tb.open_file(filename) as h5in:
-            try:
-                table  = getattr(getattr(h5in.root, group), node)
-                if evt_list is None:
-                    values = table.read()
-                else:
-                    events = table.read(field='event')
-                    values = table.read_coordinates(np.where(np.isin(events, evt_list)))
-                return _decode_str_columns(pd.DataFrame.from_records(values, columns=table.colnames))
-            except NoSuchNodeError:
-                warnings.warn(f' not of kdst type: file= {filename} ', UserWarning)
-    except HDF5ExtError:
-        warnings.warn(f' corrupted: file = {filename} ', UserWarning)
-    except IOError:
-        warnings.warn(f' does not exist: file = {filename} ', UserWarning)
+            table  = getattr(getattr(h5in.root, group), node)
+            if evt_list is None:
+                values = table.read()
+            else:
+                events = table.read(field='event')
+                values = table.read_coordinates(np.where(np.isin(events, evt_list)))
+            return _decode_str_columns(pd.DataFrame.from_records(values, columns=table.colnames))
+
+    if ignore_errors:
+        try:
+            return read_dst_(filename, group, node, evt_list)
+        except NoSuchNodeError:
+            warnings.warn(f' not of kdst type: file= {filename} ', UserWarning)
+        except HDF5ExtError:
+            warnings.warn(f' corrupted: file = {filename} ', UserWarning)
+        except IOError:
+            warnings.warn(f' does not exist: file = {filename} ', UserWarning)
+    else:
+        return read_dst_(filename, group, node, evt_list)
 
 
-def load_dsts(dst_list, group, node, evt_list=None):
-    dsts = [load_dst(filename, group, node, evt_list) for filename in dst_list]
+def load_dsts(dst_list, group, node, evt_list=None, ignore_errors=False):
+    dsts = [load_dst(filename, group, node, evt_list, ignore_errors) for filename in dst_list]
     return pd.concat(dsts, ignore_index=True)
 
 def _make_tabledef(column_types : np.dtype, str_col_length : int) -> dict:

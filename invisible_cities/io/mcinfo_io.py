@@ -132,16 +132,12 @@ def safe_copy_nexus_eventmap(h5out  : tb.file.File,
             'evt_number': the evt_number copied to the output;
             'nexus_evt' : the nexus event_ids copied to the output.
     """
-    # Suppress warning raised when table not
-    # present since case dealt with in try except.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=UserWarning)
-        evt_map = load_eventnumbermap(file_in)
     try:
+        evt_map = load_eventnumbermap(file_in)
         evt_mask = evt_map.evt_number.isin(evt_arr)
         df_writer(h5out, evt_map[evt_mask], 'Run', 'eventMap')
         return evt_map[evt_mask].to_dict('list')
-    except AttributeError:
+    except (AttributeError, tb.exceptions.NoSuchNodeError):
         ## Invoked when the eventMap table not found
         ## which occurs for pre-2020 MC files and
         ## at the first processing stage from nexus

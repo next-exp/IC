@@ -112,7 +112,7 @@ def test_load_dsts_warns_not_of_kdst_type(ICDATADIR):
     group = "DST"
     node  = "Events"
     with pytest.warns(UserWarning, match='not of kdst type'):
-        load_dsts([good_file, wrong_file], group, node)
+        load_dsts([good_file, wrong_file], group, node, ignore_errors=True)
 
 
 def test_load_dsts_warns_if_not_existing_file(ICDATADIR):
@@ -124,7 +124,7 @@ def test_load_dsts_warns_if_not_existing_file(ICDATADIR):
     group = "DST"
     node  = "Events"
     with pytest.warns(UserWarning, match='does not exist'):
-        load_dsts([good_file, wrong_file], group, node)
+        load_dsts([good_file, wrong_file], group, node, ignore_errors=True)
 
 
 def test_load_dst_converts_from_bytes(ICDATADIR, fixed_dataframe):
