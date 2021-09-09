@@ -131,7 +131,7 @@ def create_timestamp(rate: float) -> float:
 
     Returns
     -------
-    Function to calculate timestamp for the given rate with 
+    Function to calculate timestamp for the given rate with
     event_number as parameter.
     """
 
@@ -148,12 +148,12 @@ def create_timestamp(rate: float) -> float:
     def create_timestamp_(event_number: Union[int, float]) -> float:
         """
         Calculates timestamp for a given Event Number and Rate.
-    
+
         Parameters
         ----------
         event_number : Union[int, float]
                        ID value of the current event.
-    
+
         Returns
         -------
         Calculated timestamp : float
@@ -506,6 +506,8 @@ def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
         except tb.exceptions.NoSuchNodeError:
             continue
 
+        kdst_df = load_dst (path, 'DST', 'Events', ignore_errors=True)
+
         with tb.open_file(path, "r") as h5in:
             try:
                 run_number  = get_run_number(h5in)
@@ -518,8 +520,11 @@ def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
             check_lengths(event_info, cdst_df.event.unique())
             for evtinfo in event_info:
                 event_number, timestamp = evtinfo
-                yield dict(cdst    = cdst_df   .loc[cdst_df   .event==event_number],
-                           summary = summary_df.loc[summary_df.event==event_number],
+                this_event = lambda df: df.event==event_number
+                yield dict(cdst    = cdst_df   .loc[this_event],
+                           summary = summary_df.loc[this_event],
+                           kdst    = kdst_df   .loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
+                                                                else None,
                            run_number=run_number,
                            event_number=event_number, timestamp=timestamp)
             # NB, the monte_carlo writer is different from the others:
@@ -958,11 +963,11 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
 
 def check_max_time(max_time: Union[int, float], buffer_length: float) -> Union[int, float]:
     """
-    `max_time` must be greater than `buffer_length`. If not, raise warning 
+    `max_time` must be greater than `buffer_length`. If not, raise warning
         and set `max_time` == `buffer_length`.
 
-    :param max_time: Maximal length of the event that will be taken into 
-        account starting from the first detected signal, all signals after 
+    :param max_time: Maximal length of the event that will be taken into
+        account starting from the first detected signal, all signals after
         that are simply lost.
     :param buffer_length: Length of buffers.
     :return: `max_time` if `max_time` >= `buffer_length`, else `buffer_length`.
@@ -970,7 +975,7 @@ def check_max_time(max_time: Union[int, float], buffer_length: float) -> Union[i
 
     if max_time < buffer_length:
         warnings.warn("`max_time` shorter than `buffer_length`, "
-                      "setting `max_time` to `buffer_length`", 
+                      "setting `max_time` to `buffer_length`",
                       stacklevel=2)
         return buffer_length
     else:
