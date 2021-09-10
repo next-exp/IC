@@ -96,3 +96,25 @@ def test_isaura_conserves_energy(ICDATADIR, output_tmpdir):
 
     np.testing.assert_allclose(dhits_energy, dtracks_energy)
     np.testing.assert_allclose(dhits_energy, devents_energy)
+
+
+def test_isaura_copy_kdst(ICDATADIR, output_tmpdir):
+
+    PATH_IN  = os.path.join(ICDATADIR    , "test_deconv_NEW_v1.2.0_bg.h5")
+    PATH_OUT = os.path.join(output_tmpdir, "test_isaura_dst.h5")
+    n_evts = 2
+    conf = configure('isaura $ICTDIR/invisible_cities/config/isaura.conf'.split())
+    conf.update(dict(files_in    = PATH_IN ,
+                     file_out    = PATH_OUT,
+                     run_number  = 8515    ,
+                     event_range = n_evts  ))
+
+    isaura(**conf)
+
+    expected_events = [3, 90]
+
+    with tb.open_file(PATH_OUT) as output_file:
+        assert hasattr(output_file.root, "/DST/Events")
+
+        got_events = output_file.root.DST.Events.read()["event"]
+        assert expected_events == got_events.tolist()
