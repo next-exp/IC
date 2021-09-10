@@ -28,7 +28,7 @@ from .  components import compute_and_write_tracks_info
 from ..  evm.event_model import HitEnergy
 
 from ..  io.run_and_event_io import run_and_event_writer
-
+from ..  io.         kdst_io import kdst_from_df_writer
 
 
 
@@ -83,9 +83,12 @@ def isaura(files_in, file_out, compression, event_range, print_mod,
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
 
+    filter_out_none = fl.filter(lambda x: x is not None, args = "kdst")
+
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
 
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
+        write_kdst_table = fl.sink( kdst_from_df_writer(h5out), args= "kdst")
 
         evtnum_collect = collect()
 
@@ -98,7 +101,8 @@ def isaura(files_in, file_out, compression, event_range, print_mod,
                                     fl.branch("event_number", evtnum_collect.sink),
                                     compute_tracks                                ,
                                     event_count_out       .spy                    ,
-                                    write_event_info                              ),
+                                    fl.fork(write_event_info,
+                                            (filter_out_none, write_kdst_table)) ),
                       result = dict(events_in  =event_count_in .future,
                                     events_out =event_count_out.future,
                                     evtnum_list=evtnum_collect .future))

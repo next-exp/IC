@@ -50,6 +50,7 @@ from .. reco.deconv_functions  import InterpolationMethod
 from .. io.run_and_event_io    import run_and_event_writer
 from .. io.          dst_io    import df_writer
 from .. io.          dst_io    import load_dst
+from .. io.          kdst_io   import kdst_from_df_writer
 
 from .. evm.event_model        import HitEnergy
 
@@ -311,6 +312,7 @@ def deconv_writer(h5out, compression='ZLIB4'):
     return write_deconv
 
 
+
 @city
 def beersheba(files_in, file_out, compression, event_range, print_mod, detector_db, run_number,
               deconv_params = dict()):
@@ -411,6 +413,8 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, detector_
     event_count_out       = fl.spy_count()
     events_passed_no_hits = fl.count_filter(bool, args = "cdst_passed_no_hits")
 
+    filter_out_none       = fl.filter(lambda x: x is not None, args = "kdst")
+
     evtnum_collect        = collect()
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
@@ -418,6 +422,8 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, detector_
         write_event_info = fl.sink(run_and_event_writer (h5out), args = ("run_number", "event_number", "timestamp"))
         write_deconv     = fl.sink(  deconv_writer(h5out=h5out), args =  "deconv_dst")
         write_summary    = fl.sink( summary_writer(h5out=h5out), args =  "summary"   )
+        write_kdst_table = fl.sink(  kdst_from_df_writer(h5out), args =  "kdst"      )
+
         result = push(source = cdst_from_files(files_in),
                       pipe   = pipe(fl.slice(*event_range, close_all=True)    ,
                                     print_every(print_mod)                    ,
@@ -432,6 +438,7 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, detector_
                                               evtnum_collect.sink)            ,
                                     fl.fork(write_deconv    ,
                                             write_summary   ,
+                                            (filter_out_none, write_kdst_table),
                                             write_event_info))                ,
                       result = dict(events_in   = event_count_in       .future,
                                     events_out  = event_count_out      .future,

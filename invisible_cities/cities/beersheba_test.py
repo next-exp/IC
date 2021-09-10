@@ -149,3 +149,20 @@ def test_beersheba_expandvar(deconvolution_config):
     conf['deconv_params']['psf_fname'] = '$ICDIR/database/test_data/PSF_dst_sum_collapsed.h5'
 
     beersheba(**conf)
+
+
+def test_beersheba_copy_kdst(deconvolution_config, ICDATADIR):
+    PATH_IN = os.path.join(ICDATADIR, "test_cdst_NEW_v1.2.0_bg.h5")
+    conf, PATH_OUT = deconvolution_config
+    conf["files_in"]   = PATH_IN
+    conf["run_number"] = 8515
+
+    expected_events = [3, 90, 152]
+
+    beersheba(**conf)
+
+    with tb.open_file(PATH_OUT) as output_file:
+        assert hasattr(output_file.root, "DST/Events")
+
+        got_events = output_file.root.DST.Events.read()["event"]
+        assert expected_events == got_events.tolist()
