@@ -608,6 +608,8 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
         except tb.exceptions.NoSuchNodeError:
             continue
 
+        kdst_df = load_dst(path, 'DST', 'Events', ignore_errors=True)
+
         with tb.open_file(path, "r") as h5in:
             try:
                 run_number  = get_run_number(h5in)
@@ -616,14 +618,18 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
 
             event_info = load_dst(path, 'Run', 'events')
             for evt in dhits_df.event.unique():
+                this_event = lambda df: df.event==evt
                 timestamp = event_info[event_info.evt_number==evt].timestamp.values[0]
-                dhits = hits_from_df(dhits_df.loc[dhits_df.event==evt])
+                dhits = hits_from_df(dhits_df.loc[this_event])
+                kdst  =               kdst_df.loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
+                                                              else None
                 ### It makes no sense to use the 'io.hits_io.hits_from_df' function here
                 ### (as well as in 'hits_and_kdst_from_files') since the majority of the
                 ### 'evm.Hit' parameters don't appear in the dst (particularly running
                 ### Isaura) and must be set to -1. This proceure should be revisited and
                 ### rethought in the near future, with the aim of changing the event model.
                 yield dict(hits         = dhits[evt],
+                           kdst         = kdst      ,
                            run_number   = run_number,
                            event_number = evt       ,
                            timestamp    = timestamp )
