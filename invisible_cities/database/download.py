@@ -12,11 +12,6 @@ from invisible_cities.database.db_connection import connect_sqlite
 from invisible_cities.database.db_connection import connect_mysql
 
 
-tables = ['DetectorGeo','PmtBlr','ChannelGain','ChannelMapping','ChannelMask',
-          'PmtNoiseRms','ChannelPosition','SipmBaseline', 'SipmNoisePDF',
-          'PMTFEMapping', 'PMTFELowFrequencyNoise']
-
-
 def create_table_sqlite(cursorSqlite, cursorMySql, table):
     cursorMySql.execute('show create table {}'.format(table))
     data = cursorMySql.fetchone()
@@ -55,7 +50,7 @@ def copy_all_rows(connSqlite, cursorSqlite, cursorMySql, table):
         print('Table ' +table+' is empty.')
 
 
-def loadDB(dbname : str):
+def loadDB(dbname : str, tables : list):
     print("Cloning database {}".format(dbname))
     dbfile = path.join(os.environ['ICDIR'], 'database/localdb.'+dbname+'.sqlite3')
     try:
@@ -77,12 +72,18 @@ def loadDB(dbname : str):
 
 
 if __name__ == '__main__':
-    dbname = ['NEWDB', 'DEMOPPDB', 'NEXT100DB', 'Flex100DB']
+
+    dbnames = ['NEWDB', 'DEMOPPDB', 'NEXT100DB', 'Flex100DB']
+    tables  = ['DetectorGeo','PmtBlr','ChannelGain','ChannelMapping','ChannelMask',
+               'PmtNoiseRms','ChannelPosition','SipmBaseline', 'SipmNoisePDF',
+               'PMTFEMapping', 'PMTFELowFrequencyNoise']
+    table_dict = dict.fromkeys(dbnames, tables)
+
+    table_dict["NEXT100DB"] += ["Activity", "Efficiency"]
+
     if len(sys.argv) > 1:
         dbname = sys.argv[1]
-        loadDB(dbname)
+        loadDB(dbname, table_dict[dbname])
     else:
-        for name in dbname:
-            loadDB(name)
-
-
+        for dbname, tables in table_dict.items():
+            loadDB(dbname, tables)
