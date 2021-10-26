@@ -4,7 +4,8 @@ import pytest
 
 from os.path import join
 
-import numpy as np
+import numpy  as np
+import pandas as pd
 
 from pytest  import fixture
 from pytest  import mark
@@ -178,3 +179,46 @@ def test_pmt_noise_frequencies(db):
     assert frequencies.shape[0] == db.nfreqs
     assert frequencies.shape[1] == db.feboxes + 1
     assert np.all(frequencies[:, 0] == freq_expected)
+
+
+def test_RadioactivityData_max_version():
+    '''Check that RadioactivityData returns by default the data with maximum Version number'''
+
+    db_file = "next100"
+
+    # test unique (G4Volume, Isotope)
+    activity, efficiency = DB.RadioactivityData(db_file)
+    assert np.all(activity  .groupby(["G4Volume", "Isotope"]).count() == 1)
+    assert np.all(efficiency.groupby(["G4Volume", "Isotope"]).count() == 1)
+
+    conn = sqlite3.connect(DB.get_db(db_file))
+
+
+    for table, table_name, column in zip((      activity ,    efficiency ),
+                                         (     "Activity",   "Efficiency"),
+                                         ("TotalActivity", "MCEfficiency")):
+        for (g4volume, isotope), req in table.groupby(["G4Volume", "Isotope"]):
+            query = f"SELECT * FROM {table_name} WHERE G4Volume = '{g4volume}' AND Isotope = '{isotope}'"
+            all_versions = pd.read_sql_query(query, conn)
+            max_version  = all_versions[all_versions.Version == all_versions.Version.max()]
+            np.testing.assert_allclose(req[column], max_version[column])
+
+
+@mark.parametrize("version", (0, 1, 2))
+def test_RadioactivityData_get_version(version):
+    '''Check that RadioactivityData returns the desired version of data'''
+
+    db_file = "next100"
+    activity, efficiency = DB.RadioactivityData(db_file, version=version)
+
+    conn = sqlite3.connect(DB.get_db(db_file))
+
+    for table, table_name, column in zip((      activity ,    efficiency ),
+                                         (     "Activity",   "Efficiency"),
+                                         ("TotalActivity", "MCEfficiency")):
+        for (g4volume, isotope), req in table.groupby(["G4Volume", "Isotope"]):
+            query = f"SELECT * FROM {table_name} WHERE G4Volume = '{g4volume}' AND Isotope = '{isotope}'"
+            all_versions    = pd.read_sql_query(query, conn)
+            leq_version     = all_versions[all_versions.Version <= version]
+            closest_version = leq_version [ leq_version.Version == leq_version.Version.max()]
+            np.testing.assert_allclose(req[column], closest_version[column])
