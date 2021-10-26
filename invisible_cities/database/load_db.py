@@ -142,3 +142,24 @@ def PMTLowFrequencyNoise(db_file, run_number=1e5):
     frequencies = pd.read_sql_query(sqlmagnitudes, conn)
 
     return mapping, frequencies.values
+
+
+@lru_cache(maxsize=10)
+def RadioactivityData(db_file, version=None):
+
+    conn = sqlite3.connect(get_db(db_file))
+
+    if version is None:
+        version = pd.read_sql_query("SELECT MAX(Version) FROM Activity", conn).loc[0, "MAX(Version)"]
+
+    query = '''SELECT G4Volume, Isotope, {0}, MAX(Version)
+               FROM {1}
+               WHERE Version <= {2}
+               GROUP BY G4Volume, Isotope
+            '''
+    activity   = pd.read_sql_query(query.format("TotalActivity",   "Activity", version), conn)
+    efficiency = pd.read_sql_query(query.format( "MCEfficiency", "Efficiency", version), conn)
+    conn.close()
+
+    return ( activity  .drop(columns="MAX(Version)")
+           , efficiency.drop(columns="MAX(Version)"))
