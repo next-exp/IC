@@ -60,7 +60,7 @@ function install_conda {
         echo Conda already installed. Skipping conda installation.
     else
         echo Installing conda for $CONDA_OS
-        CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-py${PYTHON_VERSION//.}_4.8.2-${CONDA_OS}-x86_64.sh"
+        CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-py${PYTHON_VERSION//.}_4.9.2-${CONDA_OS}-x86_64.sh"
         if which wget; then
             wget ${CONDA_URL} -O miniconda.sh
         else
