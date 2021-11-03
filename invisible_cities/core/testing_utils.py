@@ -116,7 +116,7 @@ def assert_dataframes_close(df1, df2, check_types=True, rtol=None, atol=None, **
     else:
         check_less_precise = True
 
-    pd.testing.assert_frame_equal(df1.sort_index(axis=1), df2.sort_index(axis=1), 
+    pd.testing.assert_frame_equal(df1.sort_index(axis=0).sort_index(axis=1), df2.sort_index(axis=0).sort_index(axis=1), 
     check_names=True, check_dtype=check_types, check_less_precise = check_less_precise)
 
 
