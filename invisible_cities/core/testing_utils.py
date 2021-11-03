@@ -146,6 +146,9 @@ def assert_PMap_equality(pmp0, pmp1):
 
 
 def assert_tables_equality(got_table, expected_table):
+
+    if len(got_table) == 0: return True
+
     table_got      =      got_table[:]
     table_expected = expected_table[:]
     assert len(table_got      ) == len(table_expected      )
