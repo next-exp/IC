@@ -290,7 +290,7 @@ def test_mean_for_pmts_fee_is_unbiased(square_pmt_and_sipm_waveforms):
 
 def test_areas_pmts_are_close(square_pmt_and_sipm_waveforms):
     _, nsensors, _, _, pmts_BLR, _, _ = square_pmt_and_sipm_waveforms
-    adc_to_pes           = np.full(nsensors, 100, dtype=np.float)
+    adc_to_pes           = np.full(nsensors, 100, dtype=float)
     ccwfs, _, cwf_sum, _ = csf.calibrate_pmts(pmts_BLR, adc_to_pes)
     sums                 = np.sum(ccwfs, axis=1)
     assert all_elements_close(sums, t_rel=1e-2)
@@ -298,7 +298,7 @@ def test_areas_pmts_are_close(square_pmt_and_sipm_waveforms):
 
 def test_area_of_sum_equals_sum_of_areas_pmts(square_pmt_and_sipm_waveforms):
     _, nsensors, _, _, pmts_BLR, _, _ = square_pmt_and_sipm_waveforms
-    adc_to_pes           = np.full(nsensors, 100, dtype=np.float)
+    adc_to_pes           = np.full(nsensors, 100, dtype=float)
     ccwfs, _, cwf_sum, _ = csf.calibrate_pmts(pmts_BLR, adc_to_pes)
     stot                 = np.sum(cwf_sum)
     sums                 = np.sum(ccwfs, axis=1)
@@ -308,7 +308,7 @@ def test_area_of_sum_equals_sum_of_areas_pmts(square_pmt_and_sipm_waveforms):
 
 def test_area_of_sum_equals_sum_of_areas_sipms(square_pmt_and_sipm_waveforms):
     _, nsensors, _, _, _, sipms_wfm, _ = square_pmt_and_sipm_waveforms
-    adc_to_pes = np.full(nsensors, 100, dtype=np.float)
+    adc_to_pes = np.full(nsensors, 100, dtype=float)
     cwfs       = csf.calibrate_sipms(sipms_wfm, adc_to_pes, thr=10, bls_mode=csf.BlsMode.mode)
     stot       = np.sum(cwfs[0]) * nsensors
     sums       = np.sum(cwfs, axis=1)

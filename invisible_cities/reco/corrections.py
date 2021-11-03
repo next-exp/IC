@@ -101,7 +101,7 @@ def maps_coefficient_getter(mapinfo : Series,
 
         valid   = in_range(x, mapinfo.xmin, mapinfo.xmax)
         valid  &= in_range(y, mapinfo.ymin, mapinfo.ymax)
-        output  = np.full(len(valid), np.nan, dtype=np.float)
+        output  = np.full(len(valid), np.nan, dtype=float)
 
         output[valid] = map_df.values[iy[valid], ix[valid]]
         return output

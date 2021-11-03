@@ -59,7 +59,7 @@ def berenice(files_in, file_out, compression, event_range, print_mod,
     calibrate_with_median = fl.map(median_calibrator(detector_db, run_number))
 
     bin_waveforms         = fl.map(waveform_binner  (bin_edges ))
-    sum_histograms        = fl.reduce(add, np.zeros(shape, dtype=np.int))
+    sum_histograms        = fl.reduce(add, np.zeros(shape, dtype=int))
 
     accumulate_adc        = sum_histograms()
     accumulate_mode       = sum_histograms()

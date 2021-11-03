@@ -252,7 +252,7 @@ class NoiseSampler:
         dark_estimate    = np.average(np.repeat(pad_xbins[None, :], nsipm,  0),
                                       axis = 1,         weights = pdfs[active])
 
-        dark_pes         = np.full(self.nsensors, 0, dtype=np.float)
+        dark_pes         = np.full(self.nsensors, 0, dtype=float)
         dark_pes[active] = dark_estimate
         return dark_pes
 

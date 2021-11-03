@@ -374,7 +374,7 @@ def test_binedges_from_bincenters_exceptions():
         core.binedges_from_bincenters(centers, range=range)
 
 
-@given(x = arrays(np.float, 100, elements=floats(min_value=-500, max_value=500)),
+@given(x = arrays(float, 100, elements=floats(min_value=-500, max_value=500)),
        value = floats(min_value=-500, max_value=500))
 def test_find_nearest(x, value):
 

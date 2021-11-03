@@ -93,7 +93,7 @@ def noise_suppression(waveforms, thresholds, padding = 0):
     if not hasattr(thresholds, "__iter__"):
         thresholds = np.ones(waveforms.shape[0]) * thresholds
     if not hasattr(padding, "__iter__"):
-        padding = np.zeros(waveforms.shape[0], dtype = np.int) + padding
+        padding = np.zeros(waveforms.shape[0], dtype = int) + padding
     suppressed_wfs = list(map(suppress_wf, waveforms, thresholds, padding))
     return np.array(suppressed_wfs)
 

@@ -125,8 +125,8 @@ def waveform_generator(fee : FEE, wfp : WfmPar, nsensors=5, pedestal=1024,
         waveforms.
 
     """
-    wfm_blr  = np.zeros((nsensors,  int(wfp.t_tot / FE.t_sample)), dtype=np.int)
-    wfm_fee  = np.zeros((nsensors,  int(wfp.t_tot / FE.t_sample)), dtype=np.int)
+    wfm_blr  = np.zeros((nsensors,  int(wfp.t_tot / FE.t_sample)), dtype=int)
+    wfm_fee  = np.zeros((nsensors,  int(wfp.t_tot / FE.t_sample)), dtype=int)
     ped  = np.ones( int(wfp.t_tot / FE.t_sample)) * pedestal
 
     for i in range(nsensors):

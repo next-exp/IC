@@ -69,10 +69,10 @@ def test_generate_s1_times_from_pes():
 
 
 @settings(max_examples=500)
-@given(hit_times = arrays(np.float, 10, elements=floats(min_value=0)))
+@given(hit_times = arrays(float, 10, elements=floats(min_value=0)))
 def test_generate_s1_times_from_pes_higher_times(hit_times):
 
-    s1_pes_at_pmts = np.ones((1, 10), dtype=np.int) # just 1 pmt
+    s1_pes_at_pmts = np.ones((1, 10), dtype=int) # just 1 pmt
     s1_times = generate_s1_times_from_pes(s1_pes_at_pmts, hit_times)[0]
 
     assert np.all(s1_times>=hit_times)
