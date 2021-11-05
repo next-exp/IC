@@ -92,7 +92,7 @@ dependencies:
 - matplotlib   = 3.4.3
 - networkx     = 2.6.3
 - notebook     = 6.4.5
-- numpy        = 1.21.2
+- numpy        = 1.20.3
 - pandas       = 1.3.4
 - seaborn      = 0.11.2
 - pymysql      = 1.0.2
