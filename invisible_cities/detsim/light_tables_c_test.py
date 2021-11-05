@@ -18,6 +18,8 @@ from hypothesis.strategies     import floats
 from hypothesis.strategies     import integers
 
 
+few_examples = settings(deadline=None, max_examples=100)
+
 def test_LT_SiPM_optional_arguments(get_dfs):
     datasipm = DataSiPM('new')
     fname, psf_df, psf_conf = get_dfs['psf']
@@ -31,6 +33,7 @@ def test_LT_SiPM_optional_arguments(get_dfs):
         assert lt.el_gap_width  == 2
         assert lt.active_radius == 150
 
+@few_examples
 @given(xs=floats(min_value=-500, max_value=500),
        ys=floats(min_value=-500, max_value=500),
        sipm_indx=integers(min_value=0, max_value=1500))
@@ -57,7 +60,7 @@ def test_LT_SiPM_values(get_dfs, xs, ys, sipm_indx):
     np.testing.assert_allclose(values, ltvals)
 
 
-
+@few_examples
 @given(xs=floats(min_value=-500, max_value=500),
        ys=floats(min_value=-500, max_value=500),
        pmt_indx=integers(min_value=0, max_value=11))
@@ -78,6 +81,7 @@ def test_LT_PMTs_values(get_dfs, xs, ys, pmt_indx):
     np.testing.assert_allclose(values, ltvals)
 
 
+@few_examples
 @given(xs=floats(min_value=-500, max_value=500),
        ys=floats(min_value=-500, max_value=500),
        pmt_indx=integers(min_value=0, max_value=11))
@@ -116,6 +120,7 @@ def test_LTs_non_physical_sensor(get_dfs):
 
 
 from .light_tables import create_lighttable_function
+@few_examples
 @given(xs=floats(min_value=-500, max_value=500),
        ys=floats(min_value=-500, max_value=500))
 def test_light_tables_pmt_equal(get_dfs, xs, ys):

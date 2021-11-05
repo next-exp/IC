@@ -23,6 +23,7 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import composite
 from hypothesis.strategies import lists
 from hypothesis            import given
+from hypothesis            import settings
 
 from invisible_cities.core.testing_utils import random_length_float_arrays
 from invisible_cities.core.testing_utils import float_arrays
@@ -79,6 +80,9 @@ def toy_corrections(correction_map_filename):
 
     return xs, ys, zs, ts, e0coef, ltcoef, correction
 
+
+few_examples = settings(deadline=None, max_examples=100)
+
 def test_maps_coefficient_getter_exact(toy_corrections, correction_map_filename):
     maps = read_maps(correction_map_filename)
     xs, ys, zs, _, coef_geo, coef_lt, _ = toy_corrections
@@ -100,6 +104,7 @@ def xy_pos(draw, elements=floats(min_value=-250, max_value=250)):
     y    = draw(lists(elements,min_size=size, max_size=size))
     return (np.array(x),np.array(y))
 
+@few_examples
 @given(xy_pos = xy_pos())
 def test_maps_coefficient_getter_gives_nans(correction_map_filename, xy_pos):
     x,y       = xy_pos
@@ -163,6 +168,7 @@ def test_correct_lifetime_properly(z, lt):
     compute_corr = np.exp(z / lt)
     assert_array_equal(correct_lifetime_(z, lt), compute_corr)
 
+@few_examples
 @given(floats(min_value = 0,
               max_value = 1e4))
 def test_time_coefs_corr(map_filename, time):
@@ -182,6 +188,7 @@ def test_time_coefs_corr(map_filename, time):
     for col_value, col_err in zip(value_columns, err_columns):
         assert_allclose(time_coefs_corr(time, map_t['ts'], map_t[col_value], map_t[col_err]), 1)
 
+@few_examples
 @given(float_arrays(size      = 1000,
                     min_value = 0,
                     max_value = 550))
@@ -215,6 +222,7 @@ def test_get_normalization_factor_mean_norm(correction_map_filename):
     norm   = np.mean(np.mean(map_e.e0))
     assert factor == norm
 
+@few_examples
 @given(floats(min_value = 1,
               max_value = 1e4))
 def test_get_normalization_factor_custom_norm(correction_map_filename, custom_vaule):
@@ -256,6 +264,7 @@ def test_apply_all_correction_single_maps_raises_exception_when_invalid_map(map_
                   map_e, map_e, map_e,
                   apply_temp = True)
 
+@few_examples
 @given(float_arrays(size      = 1,
                    min_value = -198,
                    max_value = +198),
@@ -284,6 +293,7 @@ def test_apply_all_correction_single_maps_properly(map_filename, x, y, z, t):
     result = np.exp(z/5000)
     assert_allclose (corr, result)
 
+@few_examples
 @given(float_arrays(size      = 1,
                     min_value = -198,
                     max_value = +198),

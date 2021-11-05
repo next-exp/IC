@@ -20,9 +20,12 @@ from hypothesis.strategies     import integers
 from hypothesis.extra.numpy    import arrays
 
 
-@given(xs=arrays(float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
-       ys=arrays(float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
-       ts=arrays(float, 10, elements = floats  (min_value =    2*mus, max_value = 100*mus)),
+few_examples = settings(deadline=None, max_examples=100)
+
+@few_examples
+@given(xs=arrays(   float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
+       ys=arrays(   float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
+       ts=arrays(   float, 10, elements = floats  (min_value =    2*mus, max_value = 100*mus)),
        ps=arrays(np.int32, 10, elements = integers(min_value =    10   , max_value = 100    )))
 def test_create_wfs_sipms_shape(get_dfs, xs, ys, ts, ps):
     datasipm = DataSiPM('new')
@@ -37,9 +40,10 @@ def test_create_wfs_sipms_shape(get_dfs, xs, ys, ts, ps):
     assert waveform.shape ==  (n_sensors, buffer_length//sensor_time_bin)
 
 
-@given(xs=arrays(float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
-       ys=arrays(float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
-       ts=arrays(float, 10, elements = floats  (min_value =    2*mus, max_value = 100*mus)),
+@few_examples
+@given(xs=arrays(   float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
+       ys=arrays(   float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
+       ts=arrays(   float, 10, elements = floats  (min_value =    2*mus, max_value = 100*mus)),
        ps=arrays(np.int32, 10, elements = integers(min_value =    10   , max_value = 100    )))
 def test_create_wfs_pmts_shape(get_dfs, xs, ys, ts, ps):
     fname, lt_df, lt_conf = get_dfs['lt']
@@ -53,9 +57,10 @@ def test_create_wfs_pmts_shape(get_dfs, xs, ys, ts, ps):
     assert waveform.shape == (n_sensors, buffer_length//sensor_time_bin)
 
 
-@given(xs=arrays(float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
-       ys=arrays(float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
-       ts=arrays(float, 10, elements = floats  (min_value =    2*mus, max_value = 200*mus)),
+@few_examples
+@given(xs=arrays(   float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
+       ys=arrays(   float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
+       ts=arrays(   float, 10, elements = floats  (min_value =    2*mus, max_value = 200*mus)),
        ps=arrays(np.int32, 10, elements = integers(min_value =    10   , max_value = 100    )))
 def test_create_wfs_tmin(get_dfs, xs, ys, ts, ps):
     datasipm = DataSiPM('new')
@@ -72,11 +77,11 @@ def test_create_wfs_tmin(get_dfs, xs, ys, ts, ps):
     np.testing.assert_allclose(waveform_sh, waveform)
 
 
-@given(xs=arrays(float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
-       ys=arrays(float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
-       ts=arrays(float, 10, elements = floats  (min_value =    2*mus, max_value = 100*mus)),
+@few_examples
+@given(xs=arrays(   float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
+       ys=arrays(   float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
+       ts=arrays(   float, 10, elements = floats  (min_value =    2*mus, max_value = 100*mus)),
        ps=arrays(np.int32, 10, elements = integers(min_value =    10   , max_value = 100    )))
-@settings(deadline=None, max_examples=100)
 def test_integrated_signal_pmts(get_dfs, xs, ys, ts, ps):
     fname, lt_df, lt_conf = get_dfs['lt']
     el_drift_velocity = 2.5 * mm/mus
@@ -91,11 +96,11 @@ def test_integrated_signal_pmts(get_dfs, xs, ys, ts, ps):
         assert np.isclose(waveform[i].sum(),summed_sig)
 
 
-@given(xs=arrays(float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
-       ys=arrays(float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
-       ts=arrays(float, 10, elements = floats  (min_value =    2*mus, max_value = 100*mus)),
+@few_examples
+@given(xs=arrays(   float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
+       ys=arrays(   float, 10, elements = floats  (min_value = -500*mm , max_value = 500*mm )),
+       ts=arrays(   float, 10, elements = floats  (min_value =    2*mus, max_value = 100*mus)),
        ps=arrays(np.int32, 10, elements = integers(min_value =    10   , max_value = 100    )))
-@settings(deadline=None, max_examples=100)
 def test_integrated_signal_sipms(get_dfs, xs, ys, ts, ps):
     datasipm = DataSiPM('new')
     fname, psf_df, psf_conf = get_dfs['psf']
@@ -111,11 +116,11 @@ def test_integrated_signal_sipms(get_dfs, xs, ys, ts, ps):
         assert np.isclose(waveform[i].sum(),summed_sig)
 
 
+@few_examples
 @given(xs=floats  (min_value = -500*mm , max_value = 500*mm ),
        ys=floats  (min_value = -500*mm , max_value = 500*mm ),
        ts=floats  (min_value =    2*mus, max_value = 10 *mus),
        ps=integers(min_value =   10    , max_value = 100   ))
-@settings(deadline=None, max_examples=100)
 def test_time_distribution_pmts(get_dfs, xs, ys, ts, ps):
     fname, lt_df, lt_conf = get_dfs['lt']
     lt = LT_PMT(fname=fname)
@@ -136,11 +141,11 @@ def test_time_distribution_pmts(get_dfs, xs, ys, ts, ps):
         np.testing.assert_allclose(waveform[i, tindx_min:tindx_max], expected_wf)
 
 
+@few_examples
 @given(xs=floats  (min_value = -10*mm , max_value = 10 *mm ),
        ys=floats  (min_value = -10*mm , max_value = 10 *mm ),
        ts=floats  (min_value =   2*mus, max_value = 10 *mus),
        ps=integers(min_value =  2000  , max_value = 3000   ))
-@settings(deadline=None, max_examples=100)
 def test_time_distribution_sipms(get_dfs, xs, ys, ts, ps):
     datasipm = DataSiPM('new')
     #select central sipms only that will see the signal
