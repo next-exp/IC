@@ -1216,7 +1216,6 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
             for c, t in enumerate(tracks, 0):
                 tID = c
                 energy = plf.get_track_energy(t)
-                length = plf.length(t)
                 numb_of_hits   = len([h for vox in t.nodes() for h in vox.hits])
                 numb_of_voxels = len(t.nodes())
                 numb_of_tracks = len(tracks   )
@@ -1227,13 +1226,13 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                 e     = [h.Ep for v in t.nodes() for h in v.hits]
                 ave_pos = np.average(pos, weights=e, axis=0)
                 ave_r   = np.average(r  , weights=e, axis=0)
-                extr1, extr2 = plf.find_extrema(t)
+                distances = plf.shortest_paths(t)
+                extr1, extr2, length = plf.find_extrema_and_length(distances)
                 extr1_pos = extr1.XYZ
                 extr2_pos = extr2.XYZ
 
-                blob_pos1, blob_pos2 = plf.blob_centres(t, blob_radius)
+                e_blob1, e_blob2, hits_blob1, hits_blob2, blob_pos1, blob_pos2 = plf.blob_energies_hits_and_centres(t, blob_radius)
 
-                e_blob1, e_blob2, hits_blob1, hits_blob2 = plf.blob_energies_and_hits(t, blob_radius)
                 overlap = float(sum(h.Ep for h in set(hits_blob1).intersection(set(hits_blob2))))
                 list_of_vars = [hitc.event, tID, energy, length, numb_of_voxels,
                                 numb_of_hits, numb_of_tracks,
