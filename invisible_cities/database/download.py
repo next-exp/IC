@@ -73,13 +73,15 @@ def loadDB(dbname : str, tables : list):
 
 if __name__ == '__main__':
 
-    dbnames = ['NEWDB', 'DEMOPPDB', 'NEXT100DB', 'Flex100DB']
-    tables  = ['DetectorGeo','PmtBlr','ChannelGain','ChannelMapping','ChannelMask',
-               'PmtNoiseRms','ChannelPosition','SipmBaseline', 'SipmNoisePDF',
-               'PMTFEMapping', 'PMTFELowFrequencyNoise']
+    dbnames        = ('NEWDB', 'DEMOPPDB', 'NEXT100DB', 'Flex100DB')
+    common_tables  = ('DetectorGeo','PmtBlr','ChannelGain','ChannelMapping','ChannelMask',
+                      'PmtNoiseRms','ChannelPosition','SipmBaseline', 'SipmNoisePDF',
+                      'PMTFEMapping', 'PMTFELowFrequencyNoise')
+    extended       = dict(NEXT100DB = ("Activity", "Efficiency")) 
 
-    table_dict = dict.fromkeys(dbnames, tuple(tables))
-    table_dict["NEXT100DB"] += ("Activity", "Efficiency")
+    table_dict = dict.fromkeys(dbnames, commmon_tables)
+    for dbname, extra in extended.items():
+        table_dict[dbname] += extra
 
     if len(sys.argv) > 1:
         dbname = sys.argv[1]
