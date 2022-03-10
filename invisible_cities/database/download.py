@@ -78,8 +78,8 @@ if __name__ == '__main__':
                'PmtNoiseRms','ChannelPosition','SipmBaseline', 'SipmNoisePDF',
                'PMTFEMapping', 'PMTFELowFrequencyNoise']
 
-    table_dict = {dbname : list(tables) for dbname in dbnames}
-    table_dict["NEXT100DB"] += ["Activity", "Efficiency"]
+    table_dict = dict.fromkeys(dbnames, tuple(tables))
+    table_dict["NEXT100DB"] += ("Activity", "Efficiency")
 
     if len(sys.argv) > 1:
         dbname = sys.argv[1]
