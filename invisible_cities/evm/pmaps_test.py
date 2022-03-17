@@ -280,9 +280,12 @@ def test_Peak_width_above_threshold_max_zero(pks):
 def test_Peak_width_above_threshold(pks, thr):
     _, peak = pks
     i_above_thr     = _get_indices_above_thr(peak.pmts, thr)
-    expected        = (np.sum(peak.bin_widths[i_above_thr])
-                       if np.size(i_above_thr) > 0
-                       else 0)
+    if np.size(i_above_thr)>0:
+        imin = i_above_thr[0]
+        imax = i_above_thr[-1]
+        expected = np.sum(peak.bin_widths[imin:imax+1])
+    else:
+        expected = 0
     assert peak.width_above_threshold(thr) == approx(expected)
 
 

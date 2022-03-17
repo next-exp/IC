@@ -85,12 +85,12 @@ def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
                      s2_nsipmmax =     30,
                      event_range = (0, nrequired)))
 
-    events_pass_reco = ([ 1]*21 + [ 4]*15 + [10]*16 + [19]*17 +
-                        [20]*19 + [21]*15 + [26]*23 + [29]*22 +
-                        [33]*14 + [41]*18 + [43]*18 + [45]*13 +
-                        [46]*18)
-    peak_pass_reco   = [int(in_range(i, 119, 126))
-                        for i in range(229)]
+    events_pass_reco = ([ 1]*21 + [ 4]*15 + [10]*16 + [15]*19 +
+                        [19]*17 + [20]*19 + [21]*15 + [26]*23 +
+                        [29]*22 + [33]*14 + [41]*18 + [43]*18 +
+                        [45]*13 + [46]*18)
+    peak_pass_reco   = [int(in_range(i, 138, 145))
+                        for i in range(248)]
 
     cnt      = penthesilea(**conf)
     nevt_in  = cnt.events_in
@@ -104,11 +104,11 @@ def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     assert  np.all(df_penthesilea_reco.npeak.values   ==   peak_pass_reco)
 
 
-    events_pass_dst = [ 1,  4, 10, 19, 20, 21, 26,
+    events_pass_dst = [ 1,  4, 10, 15, 19, 20, 21, 26,
                         26, 29, 33, 41, 43, 45, 46]
-    s1_peak_pass_dst = [ 0,  0,  0,  0,  0,  0,  0,
+    s1_peak_pass_dst = [ 0,  0,  0,  0,  0,  0,  0, 0,
                          0,  0,  0,  0,  0,  0,  0]
-    s2_peak_pass_dst = [ 0,  0,  0,  0,  0,  0,  0,
+    s2_peak_pass_dst = [ 0,  0,  0,  0,  0,  0,  0, 0,
                          1,  0,  0,  0,  0,  0,  0]
     assert nevt_out     == len(set(events_pass_dst))
     df_penthesilea_dst  = dio.load_dst(PATH_OUT , 'DST' , 'Events')
