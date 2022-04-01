@@ -43,7 +43,7 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps_filename, KrMC_kdst):
                    node  = "Events")
     assert len(set(dst.event)) == nevt_out
 
-    assert_dataframes_close(dst, df_true, False, rtol=1e-2)
+    assert_dataframes_close(dst, df_true, check_dtype=False, rtol=1e-2)
 
 
 def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):

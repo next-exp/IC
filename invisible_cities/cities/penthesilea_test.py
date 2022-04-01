@@ -47,9 +47,9 @@ def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, KrMC_kdst, config_tmpd
     assert len(set(df_penthesilea_reco.event)) == cnt.events_out
 
     assert_dataframes_close(df_penthesilea_reco[columns], DF_TRUE_RECO[columns],
-                            check_types=False           , rtol=1e-4            )
+                            check_dtype=False           , rtol=1e-4            )
     assert_dataframes_close(df_penthesilea_dst          , DF_TRUE_DST          ,
-                            check_types=False           , rtol=1e-4            )
+                            check_dtype=False           , rtol=1e-4            )
 
 
 def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
@@ -140,7 +140,7 @@ def test_penthesilea_threshold_rebin(ICDATADIR, output_tmpdir):
     expected_dst = dio.load_dst(true_output, 'RECO', 'Events')
 
     assert len(set(output_dst.event)) == len(set(expected_dst.event))
-    assert_dataframes_close(output_dst[columns], expected_dst[columns], check_types=False)
+    assert_dataframes_close(output_dst[columns], expected_dst[columns], check_dtype=False)
 
 
 def test_penthesilea_signal_to_noise(ICDATADIR, output_tmpdir):
@@ -170,7 +170,7 @@ def test_penthesilea_signal_to_noise(ICDATADIR, output_tmpdir):
     expected_dst = dio.load_dst(true_output, 'RECO', 'Events')
 
     assert len(set(output_dst.event)) == len(set(expected_dst.event))
-    assert_dataframes_close(output_dst[columns], expected_dst[columns], check_types=False)
+    assert_dataframes_close(output_dst[columns], expected_dst[columns], check_dtype=False)
 
 
 @mark.serial

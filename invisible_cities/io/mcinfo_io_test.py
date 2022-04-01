@@ -264,7 +264,7 @@ def test_read_mc_tables_same_old_new(ICDATADIR   , config_tmpdir,
             assert new_tbls[key].notna().all().sum() == new_tbls[key].shape[1]
             assert_dataframes_equal(new_tbls[key].loc[:, old_notnan],
                                     old_tbls[key].loc[:, old_notnan],
-                                    check_types=False)
+                                    check_dtype=False)
 
 
 @mark.parametrize("fn_oldformat fn_newformat".split(),
@@ -301,7 +301,7 @@ def test_copy_mc_info_same_result_old_new(ICDATADIR   , config_tmpdir,
             assert new_tbls[key].notna().all().sum() == new_tbls[key].shape[1]
             assert_dataframes_equal(new_tbls[key].loc[:, old_notnan],
                                     old_tbls[key].loc[:, old_notnan],
-                                    check_types=False)
+                                    check_dtype=False)
 
 
 def test_read_mc_tables_correct_shape(mc_particle_and_hits_nexus_data_new):
