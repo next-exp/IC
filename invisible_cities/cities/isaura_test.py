@@ -2,6 +2,8 @@ import os
 import numpy  as np
 import tables as tb
 
+from pytest import mark
+
 from .  isaura         import isaura
 from .. core.configure import configure
 from .. core.configure import all             as all_events
@@ -10,6 +12,7 @@ from .. io.dst_io      import load_dst
 from .. core.testing_utils   import assert_tables_equality
 
 
+@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
 def test_isaura_contains_all_tables(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "test_Xe2nu_NEW_exact_deconvolution_joint.NEWMC.h5")
@@ -46,6 +49,8 @@ def test_isaura_empty_input_file(ICDATADIR, output_tmpdir):
     assert result.events_in   == 0
     assert result.evtnum_list == []
 
+
+@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
 def test_isaura_exact(ICDATADIR, output_tmpdir):
 
     PATH_IN   = os.path.join(ICDATADIR    , "exact_Kr_deconvolution_with_MC.h5")
@@ -73,6 +78,8 @@ def test_isaura_exact(ICDATADIR, output_tmpdir):
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(obtained, expected)
 
+
+@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
 def test_isaura_conserves_energy(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "exact_Kr_deconvolution_with_MC.h5")
