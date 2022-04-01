@@ -1094,6 +1094,7 @@ def make_event_summary(event_number  : int              ,
     DataFrame containing relevant per event information.
     """
     es = pd.DataFrame(columns=list(types_dict_summary.keys()))
+    if len(paolina_hits.hits) == 0: return es
 
     ntrks = len(topology_info.index)
     nhits = len(paolina_hits.hits)
