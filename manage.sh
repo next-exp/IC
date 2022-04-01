@@ -96,7 +96,7 @@ dependencies:
 - pandas       = 1.3.4
 - seaborn      = 0.11.2
 - pymysql      = 1.0.2
-- pytables     = 3.6.1
+- pytables     = 3.7.0
 - pytest       = 6.2.4
 - scipy        = 1.7.1
 - sphinx       = 4.2.0
