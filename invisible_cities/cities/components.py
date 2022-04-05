@@ -1199,7 +1199,7 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
 
         hit_energies = np.array([getattr(h, HitEnergy.Ep.value) for h in hitc.hits])
 
-        if len(hitc.hits) > 0 and (hit_energies>0).all():
+        if len(hitc.hits) > 0 and (hit_energies>0).any():
             voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, HitEnergy.Ep)
             (    mod_voxels,
              dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
