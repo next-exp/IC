@@ -177,7 +177,7 @@ def test_Peak_height(pks):
     assert peak.height == approx(peak.pmts.sum_over_sensors.max())
 
 
-def test_peak_width_signal_positive():
+def test_Peak_width_signal_positive():
     nsamples = 3
     times  = np.arange(nsamples)
     widths = np.full(nsamples, 1)
@@ -187,7 +187,7 @@ def test_peak_width_signal_positive():
     assert peak.width == nsamples
 
 
-def test_peak_width_signal_not_positive():
+def test_Peak_width_signal_not_positive():
     nsamples = 10
     times  = np.arange(nsamples)
     widths = np.full(nsamples, 1)
@@ -200,7 +200,7 @@ def test_peak_width_signal_not_positive():
     assert peak.width == nsamples
 
 
-def test_peak_width_signal_limits():
+def test_Peak_width_signal_limits():
     nsamples = 10
     times  = np.arange(nsamples)
     widths = np.full(nsamples, 1)
@@ -210,7 +210,7 @@ def test_peak_width_signal_limits():
 
     pmts = PMTResponses(np.arange(1), signal)
     peak = S1(times, widths, pmts, SiPMResponses.build_empty_instance())
-    assert peak.width == (nsamples-2)
+    assert peak.width == nsamples - 2
 
 
 def _get_indices_above_thr(sr, thr):
@@ -280,7 +280,7 @@ def test_Peak_width_above_threshold_max_zero(pks):
 def test_Peak_width_above_threshold(pks, thr):
     _, peak = pks
     i_above_thr     = _get_indices_above_thr(peak.pmts, thr)
-    if np.size(i_above_thr)>0:
+    if np.size(i_above_thr) > 0:
         imin = i_above_thr[0]
         imax = i_above_thr[-1]
         expected = np.sum(peak.bin_widths[imin:imax+1])
