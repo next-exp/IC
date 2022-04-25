@@ -79,7 +79,7 @@ def hits_threshold_and_corrector(map_fname        : str  ,
     """
     map_fname = os.path.expandvars(map_fname)
     maps      = cof.read_maps(map_fname)
-    get_coef  = cof.apply_all_correction(maps, apply_temp = apply_temp, norm_strat = cof.norm_strategy.kr)
+    get_coef  = cof.apply_all_correction(maps, apply_temp = apply_temp, norm_strat = NormStrategy.kr)
     if maps.t_evol is not None:
         time_to_Z = cof.get_df_to_z_converter(maps)
     else:
