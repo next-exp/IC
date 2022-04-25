@@ -9,8 +9,8 @@ from .. io.dst_io            import load_dst
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
 from .. core.configure       import configure
-from .. core.configure       import all as all_events
 from .. core.system_of_units import pes, mm, mus, ns
+from .. types.symbols        import all_events
 
 from .  dorothea import dorothea
 

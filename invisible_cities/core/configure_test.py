@@ -4,8 +4,6 @@ from pytest import fixture
 from pytest import mark
 from pytest import raises
 
-from . configure import all
-from . configure import last
 from . configure import configure
 from . configure import Configuration
 from . configure import make_config_file_reader
@@ -15,8 +13,13 @@ from .           import system_of_units  as units
 from . exceptions import NoInputFiles
 from . exceptions import NoOutputFile
 
+from .. types .symbols     import EventRange
 from .. cities.components  import city
 from .. cities.penthesilea import penthesilea
+
+all  = EventRange.all
+last = EventRange.last
+
 
 config_file_format = """
 # set_input_files

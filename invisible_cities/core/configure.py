@@ -7,7 +7,6 @@ import sys
 import os
 
 from os.path import basename
-from enum    import Enum
 
 from collections     import namedtuple
 from collections     import defaultdict
@@ -16,15 +15,7 @@ from collections.abc import MutableMapping
 from .        log_config      import logger
 from . import system_of_units as     units
 
-
-class EventRange(Enum):
-    all  = 1
-    last = 2
-
-# to allow direct imports from other odules
-all  = EventRange.all
-last = EventRange.last
-
+from ..types.symbols import EventRange
 
 def event_range(string):
     try:

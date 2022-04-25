@@ -6,14 +6,13 @@ import numpy  as np
 import tables as tb
 
 from scipy.signal import find_peaks_cwt
-from enum         import auto
 
 from .. core                 import  system_of_units as units
 from .. core.core_functions  import         in_range
 from .. core.stat_functions  import    poisson_sigma
 from .. core                 import    fit_functions as fitf
 from .. database             import          load_db as DB
-from .. types.ic_types       import AutoNameEnumBase
+from .. types.symbols        import       SensorType
 from .. evm.ic_containers    import     SensorParams
 from .. evm.ic_containers    import   PedestalParams
 
@@ -146,11 +145,6 @@ def dark_scaler(dark_spectrum):
     def scaled_spectrum(x, mu):
         return np.exp(-mu) * dark_spectrum
     return scaled_spectrum
-
-
-class SensorType(AutoNameEnumBase):
-    SIPM = auto()
-    PMT  = auto()
 
 
 def seeds_db(sensor_type, detector, run_no, n_chann):

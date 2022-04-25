@@ -11,10 +11,10 @@ from .. core.core_functions  import in_range
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
 from .. core.configure       import configure
-from .. core.configure       import all as all_events
 from .. io                   import dst_io as dio
 from .. io.mcinfo_io         import load_mchits_df
 from .. io.mcinfo_io         import load_mcparticles_df
+from .. types.symbols        import all_events
 
 from .  penthesilea          import penthesilea
 

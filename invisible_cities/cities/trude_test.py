@@ -9,8 +9,8 @@ from pytest import mark
 
 from .  trude              import trude
 from .. core.configure     import configure
-from .. core.configure     import       all as all_events
 from .. core.testing_utils import assert_tables_equality
+from .. types.symbols      import all_events
 
 
 @mark.slow

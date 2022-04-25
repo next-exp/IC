@@ -6,7 +6,6 @@ from glob            import glob
 from os.path         import expandvars
 from itertools       import count
 from itertools       import repeat
-from enum            import Enum
 from typing          import Callable
 from typing          import Iterator
 from typing          import Mapping
@@ -72,6 +71,7 @@ from .. types  .ic_types          import                       NNN
 from .. types  .ic_types          import                    minmax
 from .. types  .ic_types          import        types_dict_summary
 from .. types  .ic_types          import         types_dict_tracks
+from .. types  .symbols           import                    WfType
 
 NoneType = type(None)
 
@@ -337,11 +337,6 @@ def get_run_number(h5in):
     elif "RunInfo" in h5in.root.Run: return h5in.root.Run.RunInfo[0]['run_number']
 
     raise tb.exceptions.NoSuchNodeError(f"No node runInfo or RunInfo in file {h5in}")
-
-
-class WfType(Enum):
-    rwf  = 0
-    mcrd = 1
 
 
 def get_pmt_wfs(h5in, wf_type):

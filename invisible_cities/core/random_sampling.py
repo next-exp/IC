@@ -1,5 +1,3 @@
-from enum import Enum
-
 import numpy as np
 
 from scipy.signal import fftconvolve
@@ -11,10 +9,7 @@ from functools    import   lru_cache
 
 from .. database  import     load_db as DB
 
-
-class DarkModel(Enum):
-    mean      = 0
-    threshold = 1
+from ..types.symbols import DarkModel
 
 
 def normalize_distribution(bin_weights : np.array):

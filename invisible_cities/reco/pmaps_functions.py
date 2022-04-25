@@ -1,5 +1,3 @@
-from enum import Enum
-
 import numpy as np
 
 from typing import List, Union
@@ -9,11 +7,7 @@ from ..evm.pmaps           import              PMTResponses
 from ..evm.pmaps           import             SiPMResponses
 from . peak_functions      import rebin_times_and_waveforms
 from ..core.core_functions import        dict_filter_by_key
-
-
-class RebinMethod(Enum):
-    stride    = 0
-    threshold = 1
+from ..types.symbols       import               RebinMethod
 
 
 def get_even_slices(bins : int, stride : int) -> List[slice]:

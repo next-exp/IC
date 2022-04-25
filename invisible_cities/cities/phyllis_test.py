@@ -9,8 +9,8 @@ from pytest import mark
 
 from .  phyllis            import phyllis
 from .. core.configure     import configure
-from .. core.configure     import       all as all_events
 from .. core.testing_utils import assert_tables_equality
+from .. types.symbols      import all_events
 
 
 @mark.parametrize("proc_opt", ('gain', 'gain_maw', 'gain_nodeconv'))

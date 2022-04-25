@@ -6,8 +6,8 @@ from pytest import mark
 
 from .  isaura         import isaura
 from .. core.configure import configure
-from .. core.configure import all             as all_events
 from .. io.dst_io      import load_dst
+from .. types.symbols  import all_events
 
 from .. core.testing_utils   import assert_tables_equality
 

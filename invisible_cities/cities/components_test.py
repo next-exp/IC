@@ -11,10 +11,10 @@ from pytest import mark
 from pytest import raises
 from pytest import warns
 
-from .. core.configure     import EventRange as ER
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.testing_utils import    assert_tables_equality
 from .. core               import system_of_units as units
+from .. types.symbols      import EventRange as ER
 
 from .  components import event_range
 from .  components import collect

@@ -7,10 +7,9 @@ import tables as tb
 from .. cities.detsim  import detsim
 from .. core           import system_of_units as units
 from .. core.configure import configure
-from .. core.configure import all             as all_events
 from .. io.dst_io      import load_dst
-
-from .. core.testing_utils   import assert_tables_equality
+from .. types.symbols  import all_events
+from .. core.testing_utils import assert_tables_equality
 
 
 def test_detsim_contains_all_tables(ICDATADIR, output_tmpdir):

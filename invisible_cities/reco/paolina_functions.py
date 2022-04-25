@@ -1,6 +1,5 @@
 from functools   import reduce
 from itertools   import combinations
-from enum        import Enum
 
 import copy
 
@@ -17,6 +16,7 @@ from .. evm.event_model import Blob
 from .. evm.event_model import TrackCollection
 from .. evm.event_model import HitEnergy
 from .. core            import system_of_units as units
+from .. types.symbols   import Contiguity
 
 from typing import Sequence
 from typing import List
@@ -102,12 +102,6 @@ def voxelize_hits(hits             : Sequence[BHit],
         voxels.append(Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions, hits_in_bin, energy_type))
 
     return voxels
-
-
-class Contiguity(Enum):
-    FACE   = 1.2
-    EDGE   = 1.5
-    CORNER = 1.8
 
 
 def neighbours(va : Voxel, vb : Voxel, contiguity : Contiguity = Contiguity.CORNER) -> bool:

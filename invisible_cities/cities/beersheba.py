@@ -23,8 +23,6 @@ from numpy       import nan_to_num
 from typing      import Tuple
 from typing      import List
 
-from enum        import auto
-
 from .  components import city
 from .  components import collect
 from .  components import copy_mc_info
@@ -54,18 +52,10 @@ from .. io.          kdst_io   import kdst_from_df_writer
 
 from .. evm.event_model        import HitEnergy
 
-from .. types.ic_types         import AutoNameEnumBase
+from .. types.symbols          import CutType
+from .. types.symbols          import DeconvolutionMode
 
 from .. core                   import system_of_units as units
-
-
-class CutType          (AutoNameEnumBase):
-    abs = auto()
-    rel = auto()
-
-class DeconvolutionMode(AutoNameEnumBase):
-    joint    = auto()
-    separate = auto()
 
 
 def deconvolve_signal(det_db          : pd.DataFrame,

@@ -5,8 +5,6 @@ from typing  import List
 from typing  import Tuple
 from typing  import Callable
 
-from enum    import auto
-
 from scipy                  import interpolate
 from scipy.signal           import fftconvolve
 from scipy.signal           import convolve
@@ -15,14 +13,7 @@ from scipy.spatial.distance import cdist
 from ..core .core_functions import shift_to_bin_centers
 from ..core .core_functions import in_range
 
-from .. types.ic_types      import AutoNameEnumBase
-
-
-class InterpolationMethod(AutoNameEnumBase):
-    nearest = auto()
-    linear  = auto()
-    cubic   = auto()
-    none    = auto()
+from .. types.symbols       import InterpolationMethod
 
 
 def cut_and_redistribute_df(cut_condition : str,

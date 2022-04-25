@@ -6,9 +6,9 @@ import numpy  as np
 from pytest import mark
 
 from .  isidora            import isidora
-from .. core.configure     import all as all_events
 from .. core.configure     import configure
 from .. core.testing_utils import assert_tables_equality
+from .. types.symbols      import all_events
 
 @mark.slow
 def test_isidora_electrons_40keV(config_tmpdir, ICDATADIR):

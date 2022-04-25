@@ -1,5 +1,3 @@
-from enum import Enum
-
 import numpy        as np
 import scipy.signal as signal
 import scipy.stats  as stats
@@ -8,12 +6,7 @@ from functools import wraps
 
 from .. core.core_functions import to_col_vector
 
-
-class BlsMode(Enum):
-    mean      = 0
-    median    = 1
-    scipymode = 2
-    mode      = 3
+from ..types.symbols import BlsMode
 
 
 def mask_sensors(wfs, active):

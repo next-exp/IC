@@ -7,12 +7,12 @@ from  . components           import get_event_info
 from  . components           import length_of
 from .. core                 import system_of_units as units
 from .. core.configure       import configure
-from .. core.configure       import all         as all_events
 from .. io                   import dst_io      as dio
 from .. io.mcinfo_io         import get_event_numbers_in_file
 from .  esmeralda            import esmeralda
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
+from .. types.symbols        import all_events
 
 
 def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_filename, config_tmpdir):

@@ -6,7 +6,6 @@ import pandas as pd
 from pytest import mark
 from pytest import raises
 
-from .. core.configure     import                       all as all_events
 from .. core.configure     import                 configure
 from .. core.testing_utils import   assert_dataframes_close
 from .. core.testing_utils import    assert_tables_equality
@@ -18,6 +17,8 @@ from .. io  .mcinfo_io     import       load_mcparticles_df
 
 from .. core                import fit_functions as fitf
 from .. core.core_functions import shift_to_bin_centers
+
+from .. types.symbols       import all_events
 
 from .  diomira import diomira
 
