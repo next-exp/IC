@@ -52,7 +52,7 @@ def rebin_peak(peak : _Peak, rebin_factor : Union[int, float],
     rebin_factor : int or float
         The rebin stride for RebinMethod.stride (int)
         or the rebin threshold for RebinMethod.threshold (float)
-    model : Enum
+    model : RebinMethod
         The model to be used, stride for set bin width
         threshold for minimum pmt sum charge.
 

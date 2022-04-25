@@ -269,8 +269,7 @@ def seeds_and_bounds(sensor_type, run_no, n_chann, scaler, bins, spectrum, ped_v
 
         Parameters
         ----------
-        sensor_type   : AutoNameEnumBase
-        Input of type of sensor: SensorType.SIPM or SensorType.PMT.
+        sensor_type   : SensorType (SensorType.SIPM or SensorType.PMT).
         run_no        : int
         Run number.
         n_chann       : int

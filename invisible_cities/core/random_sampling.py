@@ -204,7 +204,7 @@ class NoiseSampler:
             in the slice.
         sample_width : int
             The width in mus of the slice
-        dark_model : Enum
+        dark_model : DarkModel (mean or threshold)
             The model for dark counts, mean or threshold
 
         Returns

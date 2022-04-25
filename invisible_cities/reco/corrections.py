@@ -216,7 +216,7 @@ def get_normalization_factor(map_e0    : ASectorMap,
     ----------
     map_e0 : AsectorMap
         Correction map for geometric corrections.
-    norm_strat : norm_strategy
+    norm_strat : NormStrategy
         Normalization strategy used when correcting the energy.
     norm_value : float (Optional)
         Normalization scale when custom strategy is selected.
@@ -266,7 +266,7 @@ def apply_all_correction_single_maps(map_e0         : ASectorMap,
         Correction map with time evolution of some kdst parameters.
     apply_temp : Bool
         If True, time evolution will be taken into account.
-    norm_strat : AutoNameEnumBase
+    norm_strat : NormStrategy
         Provides the desired normalization to be used.
     norm_value : Float(optional)
         If norm_strat is selected to be custom, user must provide the
@@ -333,7 +333,7 @@ def apply_all_correction(maps           : ASectorMap                        ,
         Selected correction map for doing geometric and lifetime correction.
     apply_temp : Bool
         If True, time evolution will be taken into account.
-    norm_strat : AutoNameEnumBase
+    norm_strat : NormStrategy
         Provides the desired normalization to be used.
     norm_value : Float(optional)
         If norm_strat is selected to be custom, user must provide the
