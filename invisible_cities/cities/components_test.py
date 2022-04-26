@@ -249,7 +249,7 @@ def test_mcsensors_from_file_correct_yield(ICDATADIR):
 
 def test_create_timestamp_greater_with_greater_eventnumber():
     """
-    Value of timestamp must be always positive and 
+    Value of timestamp must be always positive and
     greater with greater event numbers.
     """
 
@@ -290,7 +290,7 @@ def test_check_max_time_eg_buffer_length():
     Check if `max_time` is always equal or greater
         than `buffer_length` and filter warnings.
     """
-    
+
     max_time_1      =  10 * units.ms
     buffer_length_1 = 800 * units.mus
 
@@ -299,7 +299,6 @@ def test_check_max_time_eg_buffer_length():
 
     max_time_1 = check_max_time(max_time_1, buffer_length_1)
     max_time_2 = check_max_time(max_time_2, buffer_length_2)
-    
+
     assert max_time_1 >  buffer_length_1
     assert max_time_2 == buffer_length_2
-
