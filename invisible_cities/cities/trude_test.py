@@ -11,10 +11,12 @@ from .  trude              import trude
 from .. core.configure     import configure
 from .. core.testing_utils import assert_tables_equality
 from .. types.symbols      import all_events
+from .. types.symbols      import SiPMCalibMode
 
 
 @mark.slow
-@mark.parametrize("proc_opt", ('subtract_mode', 'subtract_median'))
+@mark.parametrize("proc_opt", ( SiPMCalibMode.subtract_mode
+                              , SiPMCalibMode.subtract_median))
 def test_trude_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
     PATH_IN   = os.path.join(ICDATADIR    , 'sipmledpulsedata.h5')
     PATH_OUT  = os.path.join(config_tmpdir, 'sipmledpulsedata_HIST.h5')
@@ -37,7 +39,7 @@ def test_trude_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
         evts_out = h5out.root.Run.events[:nrequired]
         assert_array_equal(evts_in, evts_out)
 
-        assert 'Sensors' in h5out.root        
+        assert 'Sensors' in h5out.root
         ch_in_pmt   = np.array(h5in .root.Sensors.DataPMT [:])
         ch_out_pmt  = np.array(h5out.root.Sensors.DataPMT [:])
         ch_in_sipm  = np.array(h5in .root.Sensors.DataSiPM[:])
@@ -46,11 +48,12 @@ def test_trude_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
         assert np.all(ch_in_sipm == ch_out_sipm)
 
 
-@mark.parametrize("proc_opt", ("subtract_mode", "subtract_median"))
+@mark.parametrize("proc_opt", ( SiPMCalibMode.subtract_mode
+                              , SiPMCalibMode.subtract_median))
 def test_trude_exact_result(ICDATADIR, output_tmpdir, proc_opt):
-    file_in     = os.path.join(ICDATADIR    ,                  "sipmledpulsedata.h5")
-    file_out    = os.path.join(output_tmpdir,  f"exact_result_trude_{proc_opt}.h5")
-    true_output = os.path.join(ICDATADIR    , f"sipmledpulsedata_hist_{proc_opt}.h5")
+    file_in     = os.path.join(ICDATADIR    ,                       "sipmledpulsedata.h5")
+    file_out    = os.path.join(output_tmpdir,    f"exact_result_trude_{proc_opt.name}.h5")
+    true_output = os.path.join(ICDATADIR    , f"sipmledpulsedata_hist_{proc_opt.name}.h5")
 
     conf = configure("trude invisible_cities/config/trude.conf".split())
     conf.update(dict(run_number  = 4832,

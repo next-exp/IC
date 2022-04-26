@@ -97,6 +97,15 @@ class SensorType(AutoNameEnumBase):
     PMT  = auto()
 
 
+class SiPMCalibMode(AutoNameEnumBase):
+    subtract_mode             = auto()
+    subtract_median           = auto()
+    subtract_mode_calibrate   = auto()
+    subtract_mean_calibrate   = auto()
+    subtract_median_calibrate = auto()
+    subtract_mode_zs          = auto()
+
+
 class SiPMCharge(AutoNameEnumBase):
     raw             = auto()
     signal_to_noise = auto()

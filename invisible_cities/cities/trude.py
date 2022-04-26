@@ -42,6 +42,7 @@ from .. reco                 import           tbl_functions as tbl
 from .. reco                 import         calib_functions as cf
 from .. reco                 import calib_sensors_functions as csf
 from .. types.symbols        import                  WfType
+from .. types.symbols        import           SiPMCalibMode
 
 from .. dataflow import dataflow as fl
 
@@ -60,7 +61,7 @@ def trude(files_in, file_out, compression, event_range, print_mod,
             min_bin, max_bin, bin_width,
             number_integrals, integral_start, integral_width, integrals_period,
             n_maw = 100):
-    if proc_mode not in ("subtract_mode", "subtract_median"):
+    if proc_mode not in SiPMCalibMode:
         raise ValueError(f"Unrecognized processing mode: {proc_mode}")
 
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
