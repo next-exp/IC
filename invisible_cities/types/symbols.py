@@ -1,5 +1,6 @@
 from enum import auto
 from enum import Enum
+from enum import EnumMeta
 
 from . ic_types import AutoNameEnumBase
 
@@ -98,3 +99,14 @@ class SiPMCharge(AutoNameEnumBase):
 class WfType(AutoNameEnumBase):
     rwf  = auto()
     mcrd = auto()
+
+
+ALL_SYMBOLS = {}
+for etype in dict(locals()).values():
+    if not isinstance(etype, EnumMeta): continue
+    if etype is EnumMeta              : continue
+    if etype is Enum                  : continue
+    if etype is AutoNameEnumBase      : continue
+
+    for symbol in etype:
+        ALL_SYMBOLS[symbol.name] = symbol

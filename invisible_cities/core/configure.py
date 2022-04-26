@@ -15,16 +15,16 @@ from collections.abc import MutableMapping
 from .        log_config      import logger
 from . import system_of_units as     units
 
-from ..types.symbols import EventRange
+from ..types.symbols import ALL_SYMBOLS
+
 
 def event_range(string):
     try:
         return int(string)
     except ValueError:
-        if string.lower() == 'all' : return EventRange.all
-        if string.lower() == 'last': return EventRange.last
-        # TODO Improve the message in the ValueError
-        raise ValueError("`--event-range` must be an int, 'all' or 'last'")
+        if string not in ALL_SYMBOLS:
+            raise ValueError("`--event-range` must be an int, all or last")
+        return ALL_SYMBOLS[string]
 
 
 event_range_help = """<stop> | <start> <stop> | all | <start> last"""
@@ -81,11 +81,9 @@ def make_config_file_reader():
 
     builtins = __builtins__.copy()
     builtins.update(vars(units))
+    builtins.update(ALL_SYMBOLS)
     builtins["np"] = numpy
 
-    # TODO: move setting of extra 'builtins' elsewhere
-    builtins['all']  = EventRange.all
-    builtins['last'] = EventRange.last
     globals_ = {'__builtins__': builtins}
     config = Configuration()
     def read_included_file(file_name):
