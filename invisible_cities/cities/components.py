@@ -1094,6 +1094,7 @@ def make_event_summary(event_number  : int              ,
     DataFrame containing relevant per event information.
     """
     es = pd.DataFrame(columns=list(types_dict_summary.keys()))
+    if len(paolina_hits.hits) == 0: return es
 
     ntrks = len(topology_info.index)
     nhits = len(paolina_hits.hits)
@@ -1196,7 +1197,9 @@ def track_blob_info_creator_extractor(vox_size         : [float, float, float],
             hitc      = HitCollection(hitc.event, hitc.time)
             hitc.hits = hits_without_nan
 
-        if len(hitc.hits) > 0:
+        hit_energies = np.array([getattr(h, HitEnergy.Ep.value) for h in hitc.hits])
+
+        if len(hitc.hits) > 0 and (hit_energies>0).any():
             voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, HitEnergy.Ep)
             (    mod_voxels,
              dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
