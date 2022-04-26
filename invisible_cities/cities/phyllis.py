@@ -47,11 +47,11 @@ from .. sierpe                 import                     fee
 from .. io   .    histogram_io import             hist_writer
 from .. io   .run_and_event_io import    run_and_event_writer
 from .. core .core_functions   import    shift_to_bin_centers
+from .. types.symbols          import                  WfType
 
 from .. dataflow import dataflow as fl
 
 from .  components import city
-from .  components import WfType
 from .  components import print_every
 from .  components import sensor_data
 from .  components import wf_from_files

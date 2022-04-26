@@ -17,13 +17,14 @@ from .. reco    .deconv_functions import interpolate_signal
 from .. reco    .deconv_functions import deconvolution_input
 from .. reco    .deconv_functions import deconvolve
 from .. reco    .deconv_functions import richardson_lucy
-from .. reco    .deconv_functions import InterpolationMethod
 
 from .. core    .core_functions   import in_range
 from .. core    .core_functions   import shift_to_bin_centers
 from .. core    .testing_utils    import assert_dataframes_close
 
 from .. io      .dst_io           import load_dst
+
+from .. types   .symbols          import InterpolationMethod
 
 from .. database.load_db          import DataSiPM
 

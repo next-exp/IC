@@ -43,15 +43,14 @@ from .. reco.deconv_functions  import cut_and_redistribute_df
 from .. reco.deconv_functions  import drop_isolated_sensors
 from .. reco.deconv_functions  import deconvolve
 from .. reco.deconv_functions  import richardson_lucy
-from .. reco.deconv_functions  import InterpolationMethod
 
 from .. io.run_and_event_io    import run_and_event_writer
 from .. io.          dst_io    import df_writer
 from .. io.          dst_io    import load_dst
 from .. io.          kdst_io   import kdst_from_df_writer
 
-from .. evm.event_model        import HitEnergy
-
+from .. types.symbols          import HitEnergy
+from .. types.symbols          import InterpolationMethod
 from .. types.symbols          import CutType
 from .. types.symbols          import DeconvolutionMode
 

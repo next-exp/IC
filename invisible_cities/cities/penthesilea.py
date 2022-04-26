@@ -28,16 +28,16 @@ from operator import attrgetter
 import tables as tb
 
 from .. reco                   import        tbl_functions as tbl
-from .. reco.  pmaps_functions import          RebinMethod
 from .. io  .          hits_io import          hits_writer
 from .. io  . run_and_event_io import run_and_event_writer
 from .. io  .          kdst_io import            kr_writer
 from .. io  .  event_filter_io import  event_filter_writer
-from .. evm .            pmaps import           SiPMCharge
 
 from .. dataflow          import dataflow as df
 from .. dataflow.dataflow import     push
 from .. dataflow.dataflow import     pipe
+from .. types.symbols     import RebinMethod
+from .. types.symbols     import SiPMCharge
 
 from .  components import                  city
 from .  components import          copy_mc_info

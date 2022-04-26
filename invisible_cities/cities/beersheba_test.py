@@ -11,13 +11,13 @@ from .  beersheba              import beersheba
 from .  beersheba              import create_deconvolution_df
 from .  beersheba              import distribute_energy
 from .  beersheba              import deconvolve_signal
-from .  beersheba              import CutType
-from .  beersheba              import DeconvolutionMode
-from .. reco.deconv_functions  import InterpolationMethod
-from .. evm .event_model       import HitEnergy
 from .. core.testing_utils     import assert_dataframes_close
 from .. core.testing_utils     import assert_tables_equality
 from .. database.load_db       import DataSiPM
+from .. types.symbols          import HitEnergy
+from .. types.symbols          import DeconvolutionMode
+from .. types.symbols          import InterpolationMethod
+from .. types.symbols          import CutType
 
 
 def test_create_deconvolution_df(ICDATADIR):

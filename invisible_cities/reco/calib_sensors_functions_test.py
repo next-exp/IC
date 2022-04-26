@@ -16,6 +16,7 @@ from .. core    import core_functions          as cf
 from .. sierpe  import fee                     as FE
 from .. sierpe  import waveform_generator      as wfg
 
+from .. types.symbols import BlsMode
 
 @fixture
 def toy_sipm_signal():
@@ -29,7 +30,7 @@ def toy_sipm_signal():
 
     # subtract baseline and convert to pes
     signal_pes = csf.subtract_baseline_and_calibrate(signal_adc, adc_to_pes,
-                                                     bls_mode = csf.BlsMode.mode)
+                                                     bls_mode = BlsMode.mode)
 
     over_common_thr     = signal_pes > common_threshold
     over_individual_thr = signal_pes > individual_thresholds[:, np.newaxis]
@@ -122,7 +123,7 @@ def square_pmt_and_sipm_waveforms():
 def test_subtract_baseline_mode_yield_compatible_result_for_gaussian_signal(gaussian_sipm_signal):
     signal, _ = gaussian_sipm_signal
     n_1sigma = []
-    for bls_mode in csf.BlsMode:
+    for bls_mode in BlsMode:
         bls   = csf.subtract_baseline(signal, bls_mode=bls_mode)
         n_1sigma.append(np.count_nonzero(cf.in_range(bls, -3, 3)))
 
@@ -130,7 +131,7 @@ def test_subtract_baseline_mode_yield_compatible_result_for_gaussian_signal(gaus
 
 
 @flaky(max_runs=2)
-@mark.parametrize("bls_mode", csf.BlsMode)
+@mark.parametrize("bls_mode", BlsMode)
 def test_subtract_baseline_valid_options_sanity_check(gaussian_sipm_signal, bls_mode):
     signal, _ = gaussian_sipm_signal
     bls       = csf.subtract_baseline(signal, bls_mode=bls_mode)
@@ -206,7 +207,7 @@ def test_calibrate_sipms_stat(oscillating_waveform_with_baseline,
      baseline )              = oscillating_waveform_with_baseline
     #n_maw                    = n_samples // 500
 
-    ccwfs = csf.calibrate_sipms(wfs, adc_to_pes, nsigma * noise_sigma, bls_mode=csf.BlsMode.mode)
+    ccwfs = csf.calibrate_sipms(wfs, adc_to_pes, nsigma * noise_sigma, bls_mode=BlsMode.mode)
 
     number_of_zeros = np.count_nonzero(ccwfs == 0)
     assert number_of_zeros > fraction * ccwfs.size
@@ -218,7 +219,7 @@ def test_calibrate_sipms_common_threshold(toy_sipm_signal):
      common_threshold, _) = toy_sipm_signal
 
     zs_wf = csf.calibrate_sipms(signal_adc, adc_to_pes,
-                                common_threshold, bls_mode=csf.BlsMode.mode)
+                                common_threshold, bls_mode=BlsMode.mode)
 
     for actual, expected in zip(zs_wf, signal_zs_common_threshold):
         assert actual == approx(expected)
@@ -232,7 +233,7 @@ def test_calibrate_sipms_individual_thresholds(toy_sipm_signal):
 
     zs_wf = csf.calibrate_sipms(signal_adc, adc_to_pes,
                                 individual_thresholds,
-                                bls_mode=csf.BlsMode.mode)
+                                bls_mode=BlsMode.mode)
     for actual, expected in zip(zs_wf, signal_zs_individual_thresholds):
         assert actual == approx(expected)
 
@@ -309,7 +310,7 @@ def test_area_of_sum_equals_sum_of_areas_pmts(square_pmt_and_sipm_waveforms):
 def test_area_of_sum_equals_sum_of_areas_sipms(square_pmt_and_sipm_waveforms):
     _, nsensors, _, _, _, sipms_wfm, _ = square_pmt_and_sipm_waveforms
     adc_to_pes = np.full(nsensors, 100, dtype=float)
-    cwfs       = csf.calibrate_sipms(sipms_wfm, adc_to_pes, thr=10, bls_mode=csf.BlsMode.mode)
+    cwfs       = csf.calibrate_sipms(sipms_wfm, adc_to_pes, thr=10, bls_mode=BlsMode.mode)
     stot       = np.sum(cwfs[0]) * nsensors
     sums       = np.sum(cwfs, axis=1)
     stot2      = reduce(add, sums)
@@ -318,20 +319,20 @@ def test_area_of_sum_equals_sum_of_areas_sipms(square_pmt_and_sipm_waveforms):
 
 def test_mean_for_square_waveform_is_biased(square_pmt_and_sipm_waveforms):
     _, _, _, _, _, sipms_wfm, sipms_noped = square_pmt_and_sipm_waveforms
-    sipms_mean = csf.subtract_baseline(sipms_wfm, bls_mode=csf.BlsMode.mean)
+    sipms_mean = csf.subtract_baseline(sipms_wfm, bls_mode=BlsMode.mean)
     diffs      = sipms_noped - sipms_mean
     assert np.mean(diffs) > 2000
 
 
 def test_median_for_square_waveform_has_small_bias(square_pmt_and_sipm_waveforms):
     _, _, _, _, _, sipms_wfm, sipms_noped = square_pmt_and_sipm_waveforms
-    sipms_median = csf.subtract_baseline(sipms_wfm, bls_mode=csf.BlsMode.median)
+    sipms_median = csf.subtract_baseline(sipms_wfm, bls_mode=BlsMode.median)
     diffs        = sipms_noped - sipms_median
     assert np.mean(diffs) < 10
 
 
 def test_mode_for_square_waveform_has_no_bias(square_pmt_and_sipm_waveforms):
     _, _, _, _, _, sipms_wfm, sipms_noped = square_pmt_and_sipm_waveforms
-    sipms_mode = csf.subtract_baseline(sipms_wfm, bls_mode=csf.BlsMode.mode)
+    sipms_mode = csf.subtract_baseline(sipms_wfm, bls_mode=BlsMode.mode)
     diffs      = sipms_noped - sipms_mode
     assert np.mean(diffs) == approx(0)

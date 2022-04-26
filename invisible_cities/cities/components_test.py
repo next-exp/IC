@@ -14,12 +14,12 @@ from pytest import warns
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.testing_utils import    assert_tables_equality
 from .. core               import system_of_units as units
+from .. types.symbols      import WfType
 from .. types.symbols      import EventRange as ER
 
 from .  components import event_range
 from .  components import collect
 from .  components import copy_mc_info
-from .  components import WfType
 from .  components import wf_from_files
 from .  components import pmap_from_files
 from .  components import compute_xy_position

@@ -14,9 +14,9 @@ from .. evm.event_model import BHit
 from .. evm.event_model import Track
 from .. evm.event_model import Blob
 from .. evm.event_model import TrackCollection
-from .. evm.event_model import HitEnergy
 from .. core            import system_of_units as units
 from .. types.symbols   import Contiguity
+from .. types.symbols   import HitEnergy
 
 from typing import Sequence
 from typing import List

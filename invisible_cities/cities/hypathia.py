@@ -20,13 +20,14 @@ import tables as tb
 
 from functools import partial
 
-from .. reco                  import sensor_functions     as sf
-from .. reco                  import tbl_functions        as tbl
-from .. reco                  import peak_functions       as pkf
-from .. core. random_sampling import NoiseSampler         as SiPMsNoiseSampler
-from .. core                  import system_of_units      as units
-from .. io  .run_and_event_io import run_and_event_writer
-from .. io  .      trigger_io import       trigger_writer
+from .. reco                   import sensor_functions     as sf
+from .. reco                   import tbl_functions        as tbl
+from .. reco                   import peak_functions       as pkf
+from .. core . random_sampling import NoiseSampler         as SiPMsNoiseSampler
+from .. core                   import system_of_units      as units
+from .. io   .run_and_event_io import run_and_event_writer
+from .. io   .      trigger_io import       trigger_writer
+from .. types.symbols          import WfType
 
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
@@ -38,7 +39,6 @@ from .  components import print_every
 from .  components import collect
 from .  components import copy_mc_info
 from .  components import zero_suppress_wfs
-from .  components import WfType
 from .  components import sensor_data
 from .  components import wf_from_files
 from .  components import get_number_of_active_pmts

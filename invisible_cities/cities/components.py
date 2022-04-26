@@ -29,16 +29,13 @@ from .. evm    .event_model       import                   KrEvent
 from .. evm    .event_model       import                       Hit
 from .. evm    .event_model       import                   Cluster
 from .. evm    .event_model       import             HitCollection
-from .. evm    .event_model       import                 HitEnergy
 from .. evm    .event_model       import                    MCInfo
-from .. evm    .pmaps             import                SiPMCharge
 from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail
 from .. core   .exceptions        import           MCEventNotFound
 from .. core   .exceptions        import              NoInputFiles
 from .. core   .exceptions        import              NoOutputFile
 from .. core   .exceptions        import InvalidInputFileStructure
-from .. core   .configure         import                EventRange
 from .. core   .configure         import          event_range_help
 from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
@@ -72,6 +69,10 @@ from .. types  .ic_types          import                    minmax
 from .. types  .ic_types          import        types_dict_summary
 from .. types  .ic_types          import         types_dict_tracks
 from .. types  .symbols           import                    WfType
+from .. types  .symbols           import                   BlsMode
+from .. types  .symbols           import                EventRange
+from .. types  .symbols           import                 HitEnergy
+from .. types  .symbols           import                SiPMCharge
 
 NoneType = type(None)
 
@@ -690,7 +691,7 @@ def calibrate_sipms(dbfile, run_number, thr_sipm):
         return csf.calibrate_sipms(rwf,
                                    adc_to_pes = adc_to_pes,
                                    thr        = thr_sipm,
-                                   bls_mode   = csf.BlsMode.mode)
+                                   bls_mode   = BlsMode.mode)
 
     return calibrate_sipms
 
