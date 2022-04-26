@@ -11,9 +11,10 @@ from .  phyllis            import phyllis
 from .. core.configure     import configure
 from .. core.testing_utils import assert_tables_equality
 from .. types.symbols      import all_events
+from .. types.symbols      import PMTCalibMode
 
 
-@mark.parametrize("proc_opt", ('gain', 'gain_maw', 'gain_nodeconv'))
+@mark.parametrize("proc_opt", PMTCalibMode)
 def test_phyllis_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
     PATH_IN   = os.path.join(ICDATADIR    , 'pmtledpulsedata.h5')
     PATH_OUT  = os.path.join(config_tmpdir, 'pmtledpulsedata_HIST.h5')
@@ -45,11 +46,11 @@ def test_phyllis_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
         assert np.all(ch_in_sipm == ch_out_sipm)
 
 
-@mark.parametrize("proc_opt", ('gain', 'gain_maw', 'gain_nodeconv'))
+@mark.parametrize("proc_opt", PMTCalibMode)
 def test_phyllis_exact_result(ICDATADIR, output_tmpdir, proc_opt):
-    file_in     = os.path.join(ICDATADIR    ,                  "pmtledpulsedata.h5")
-    file_out    = os.path.join(output_tmpdir, f"exact_result_phyllis_{proc_opt}.h5")
-    true_output = os.path.join(ICDATADIR    , f"pmtledpulsedata_hist_{proc_opt}.h5")
+    file_in     = os.path.join(ICDATADIR    ,                       "pmtledpulsedata.h5")
+    file_out    = os.path.join(output_tmpdir, f"exact_result_phyllis_{proc_opt.name}.h5")
+    true_output = os.path.join(ICDATADIR    , f"pmtledpulsedata_hist_{proc_opt.name}.h5")
 
     conf = configure("phyllis invisible_cities/config/phyllis.conf".split())
     conf.update(dict(run_number  = 4819,

@@ -81,6 +81,12 @@ class NormMode(AutoNameEnumBase):
     mean   = auto()
 
 
+class PMTCalibMode(AutoNameEnumBase):
+    gain          = auto()
+    gain_maw      = auto()
+    gain_nodeconv = auto()
+
+
 class RebinMethod(AutoNameEnumBase):
     stride    = auto()
     threshold = auto()
