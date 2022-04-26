@@ -96,6 +96,12 @@ class SiPMCharge(AutoNameEnumBase):
     signal_to_noise = auto()
 
 
+
+class SiPMThreshold(AutoNameEnumBase):
+    common     = auto()
+    individual = auto()
+
+
 class WfType(AutoNameEnumBase):
     rwf  = auto()
     mcrd = auto()
