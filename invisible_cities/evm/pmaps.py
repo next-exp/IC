@@ -61,8 +61,9 @@ class _Peak:
         i_above_thr = self.pmts.where_above_threshold(thr)
         if np.size(i_above_thr) < 1:
             return 0
-
-        return np.sum(self.bin_widths[i_above_thr])
+        imin = i_above_thr[0]
+        imax = i_above_thr[-1]
+        return np.sum(self.bin_widths[imin:imax+1])
 
     def    rms_above_threshold(self, thr):
         i_above_thr     = self.pmts.where_above_threshold(thr)

@@ -79,11 +79,11 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
                      s2_nsipmmax =     30,
                      event_range = (0, nrequired)))
 
-    events_pass = [ 1,  4, 10, 19, 20, 21, 26,
+    events_pass = [ 1,  4, 10, 15, 19, 20, 21, 26,
                    26, 29, 33, 41, 43, 45, 46]
-    s1_peak_pass = [ 0,  0,  0,  0,  0,  0,  0,
+    s1_peak_pass = [ 0,  0,  0,  0,  0,  0,  0, 0,
                      0,  0,  0,  0,  0,  0,  0]
-    s2_peak_pass = [ 0,  0,  0,  0,  0,  0,  0,
+    s2_peak_pass = [ 0,  0,  0,  0,  0,  0,  0, 0,
                      1,  0,  0,  0,  0,  0,  0]
 
     cnt = dorothea(**conf)
