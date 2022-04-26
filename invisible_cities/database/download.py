@@ -71,16 +71,17 @@ def loadDB(dbname : str, tables : list):
         copy_all_rows(conn_sqlite, cursor_sqlite, cursor_mysql, table)
 
 
+dbnames        = ('NEWDB', 'DEMOPPDB', 'NEXT100DB', 'Flex100DB')
+common_tables  = ('DetectorGeo','PmtBlr','ChannelGain','ChannelMapping','ChannelMask',
+                  'PmtNoiseRms','ChannelPosition','SipmBaseline', 'SipmNoisePDF',
+                  'PMTFEMapping', 'PMTFELowFrequencyNoise')
+extended       = dict(NEXT100DB = ("Activity", "Efficiency"))
+
+table_dict = dict.fromkeys(dbnames, common_tables)
+for dbname, extra in extended.items():
+    table_dict[dbname] += extra
+
 if __name__ == '__main__':
-
-    dbnames = ['NEWDB', 'DEMOPPDB', 'NEXT100DB', 'Flex100DB']
-    tables  = ['DetectorGeo','PmtBlr','ChannelGain','ChannelMapping','ChannelMask',
-               'PmtNoiseRms','ChannelPosition','SipmBaseline', 'SipmNoisePDF',
-               'PMTFEMapping', 'PMTFELowFrequencyNoise']
-    table_dict = dict.fromkeys(dbnames, tables)
-
-    table_dict["NEXT100DB"] += ["Activity", "Efficiency"]
-
     if len(sys.argv) > 1:
         dbname = sys.argv[1]
         loadDB(dbname, table_dict[dbname])
