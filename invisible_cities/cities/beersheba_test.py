@@ -95,7 +95,7 @@ def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
 def test_beersheba_exact_result_separate(ICDATADIR, deconvolution_config):
     true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_separate.NEWMC.h5")
     conf, PATH_OUT   = deconvolution_config
-    conf['deconv_params']['deconv_mode'   ] = 'separate'
+    conf['deconv_params']['deconv_mode'   ] = DeconvolutionMode.separate
     conf['deconv_params']['n_iterations'  ] = 50
     conf['deconv_params']['n_iterations_g'] = 50
     beersheba(**conf)
