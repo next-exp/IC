@@ -60,7 +60,7 @@ def rebin_peak(peak : _Peak, rebin_factor : Union[int, float],
     -------
     The rebinned version of the peak
     """
-    if model == RebinMethod.threshold:
+    if model is RebinMethod.threshold:
         slices = get_threshold_slices(peak.pmts.sum_over_sensors,
                                       rebin_factor)
     else:

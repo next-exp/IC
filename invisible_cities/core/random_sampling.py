@@ -233,7 +233,7 @@ class NoiseSampler:
 
         pad_xbins, _ = pad_pdfs(self.xbins, self.probs)
 
-        if dark_model == DarkModel.threshold:
+        if dark_model is DarkModel.threshold:
             pdfs     = np.apply_along_axis(normalize_distribution,
                                                                 1,
                                                   self.mask(pdfs))
