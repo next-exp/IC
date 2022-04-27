@@ -124,7 +124,7 @@ def deconvolution_input(sample_width : List[float     ],
         if inter_method in (InterpolationMethod.linear, InterpolationMethod.cubic, InterpolationMethod.nearest):
             allbins   = [np.arange(rang[0], rang[1] + np.finfo(np.float32).eps, sw) for rang, sw in zip(ranges, sample_width)]
             Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
-        elif inter_method is InterpolationMethod.none:
+        elif inter_method is InterpolationMethod.nointerpolation:
             allbins   = [grid[in_range(grid, *rang)] for rang, grid in zip(ranges, det_grid)]
             Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
         else:

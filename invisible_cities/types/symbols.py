@@ -47,10 +47,10 @@ class HitEnergy(AutoNameEnumBase):
 
 
 class InterpolationMethod(AutoNameEnumBase):
-    nearest = auto()
-    linear  = auto()
-    cubic   = auto()
-    none    = auto()
+    nearest         = auto()
+    linear          = auto()
+    cubic           = auto()
+    nointerpolation = auto()
 
 
 class MCTableType(AutoNameEnumBase):

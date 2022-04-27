@@ -92,7 +92,7 @@ def deconvolve_signal(det_db          : pd.DataFrame,
     cut_type        : Cut mode to the deconvolution output (`abs` or `rel`) using e_cut
                       `abs`: cut on the absolute value of the hits.
                       `rel`: cut on the relative value (to the max) of the hits.
-    inter_method    : Interpolation method (`none`, `nearest`, `linear` or `cubic`).
+    inter_method    : Interpolation method (`nointerpolation`, `nearest`, `linear` or `cubic`).
     n_iterations_g  : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
 
     Returns
@@ -355,7 +355,7 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, detector_
             Number of dimensions used in deconvolution, currently only 2 max:
             n_dim = 2 -> slice by slice XY deconvolution.
             n_dim = 3 -> XYZ deconvolution (in the works).
-        inter_method   : InterpolationMethod (`none`, `nearest`, `linear` or `cubic`)
+        inter_method   : InterpolationMethod (`nointerpolation`, `nearest`, `linear` or `cubic`)
             Sensor interpolation method. If None, no interpolation will be applied.
             'cubic' not supported for 3D deconvolution.
         n_iterations_g : int
