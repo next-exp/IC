@@ -69,10 +69,10 @@ def sensor_order(detector_db: str, run_number : int,
     def ordering(sensor_order : pd.Int64Index  ,
                  sensor_resp  : np.ndarray     ,
                  sensor_shape : Tuple[int, int]) -> np.ndarray:
-        sensors = np.zeros(sensor_shape, np.int)
+        sensors = np.zeros(sensor_shape, int)
         sensors[sensor_order] = sensor_resp
         return sensors
-        
+
     def order_and_pad(pmt_resp    : pd.Series                          ,
                       sipm_resp   : pd.Series                          ,
                       evt_buffers : List[Tuple[np.ndarray, np.ndarray]]

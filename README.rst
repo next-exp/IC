@@ -1,7 +1,7 @@
 IC: Invisible Cities
 ==============================================
 
-IC stands for Invisible Cities and also for Italo Calvino, the author of the master piece. 
+IC stands for Invisible Cities and also for Italo Calvino, the author of the master piece.
 
 Quickstart guide
 ----------------
@@ -12,7 +12,7 @@ Quickstart guide
 
 + :code:`cd` into the `IC` directory
 
-+ :code:`source manage.sh work_in_python_version 3.7`
++ :code:`source manage.sh work_in_python_version 3.8`
 
 The last step will, if necessary, install conda and create an
 appropriate conda environment, as well as setting environment
@@ -41,4 +41,3 @@ appropriate environment, creating it on the fly if necessary.
 
 .. |travis| image:: https://img.shields.io/travis/nextic/IC.png
         :target: https://travis-ci.org/nextic/IC
-

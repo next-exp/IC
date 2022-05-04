@@ -14,7 +14,7 @@ from    typing          import Sequence
 
 
 def _decode_str_columns(df):
-    to_string = lambda x: x.astype(bytes).str.decode('utf-8') if x.dtype == np.object else x
+    to_string = lambda x: x.astype(bytes).str.decode('utf-8') if x.dtype == object else x
     df        = df.apply(to_string)
     return df
 

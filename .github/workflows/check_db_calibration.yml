@@ -15,10 +15,10 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-20.04]
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.8]
 
     steps:
     - uses: actions/checkout@v2
@@ -39,4 +39,3 @@ jobs:
         python invisible_cities/database/check_gain_update.py ${{ steps.files.outputs.all }}
       env:
         PYTHONPATH: "."
-

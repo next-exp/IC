@@ -55,6 +55,7 @@ def test_add_empty_sensors_and_normalize_q_file(ICDATADIR):
                                  database = load_db.DataSiPM('new', 0))
     hdst_processed.reset_index(inplace=True, drop=True)
     hdst_psf       = pd.read_hdf(PATH_TEST)
+    hdst_psf       = hdst_psf.astype(hdst_processed.dtypes) # since pandas update (1.0.3->1.3.4)
 
     assert_dataframes_close(hdst_psf, hdst_processed)
 
@@ -68,6 +69,7 @@ def test_hdst_psf_processing(ICDATADIR):
                                          ranges   = [[-50, 50], [-50, 50]]    ,
                                          database = load_db.DataSiPM('new', 0))
     hdst_psf       = pd.read_hdf(PATH_TEST)
+    hdst_psf       = hdst_psf.astype(hdst_processed.dtypes) # since pandas update (1.0.3->1.3.4)
 
     assert_dataframes_close(hdst_psf, hdst_processed)
 

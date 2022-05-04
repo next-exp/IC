@@ -300,8 +300,8 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
     else:
         convolve_method = convolve
 
-    image      = image.astype(np.float)
-    psf        = psf.astype(np.float)
+    image      = image.astype(float)
+    psf        = psf.astype(float)
     im_deconv  = 0.5 * np.ones(image.shape)
     s          = slice(None, None, -1)
     psf_mirror = psf[(s,) * psf.ndim] ### Allow for n-dim mirroring.

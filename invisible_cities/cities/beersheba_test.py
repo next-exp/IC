@@ -55,6 +55,7 @@ def test_distribute_energy(ICDATADIR):
     assert np.isclose (true_dst1.E.sum(), true_dst2.E.sum())
 
 
+@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
 def test_beersheba_contains_all_tables(deconvolution_config):
     conf, PATH_OUT = deconvolution_config
     beersheba(**conf)
@@ -69,6 +70,7 @@ def test_beersheba_contains_all_tables(deconvolution_config):
         assert "Run/runInfo"    in h5out.root
 
 
+@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
 def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
     true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_joint.NEWMC.h5")
     conf, PATH_OUT   = deconvolution_config
@@ -89,6 +91,7 @@ def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
                 assert_tables_equality(got, expected)
 
 
+@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
 def test_beersheba_exact_result_separate(ICDATADIR, deconvolution_config):
     true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_separate.NEWMC.h5")
     conf, PATH_OUT   = deconvolution_config
@@ -143,6 +146,7 @@ def test_deconvolve_signal_enums(deconvolution_config, param_name):
         deconvolve_signal(DataSiPM('new'), **conf_dict)
 
 
+@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
 def test_beersheba_expandvar(deconvolution_config):
     conf, _ = deconvolution_config
 

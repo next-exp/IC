@@ -44,4 +44,4 @@ def test_Kr_writer(config_tmpdir, KrMC_kdst):
         dump_df(write, df)
 
     dst = load_dst(filename, group = tbl.group, node = tbl.node)
-    assert_dataframes_equal(dst, df, False)
+    assert_dataframes_equal(dst, df, check_dtype=False)

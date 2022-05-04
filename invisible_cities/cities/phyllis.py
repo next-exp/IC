@@ -91,7 +91,7 @@ def phyllis(files_in, file_out, compression, event_range, print_mod, detector_db
     integrate_light   = fl.map(waveform_integrator(light_limits))
     integrate_dark    = fl.map(waveform_integrator( dark_limits))
     bin_waveforms     = fl.map(waveform_binner    (  bin_edges ))
-    sum_histograms    = fl.reduce(add, np.zeros(shape, dtype=np.int))
+    sum_histograms    = fl.reduce(add, np.zeros(shape, dtype=int))
     accumulate_light  = sum_histograms()
     accumulate_dark   = sum_histograms()
     event_count       = fl.spy_count()

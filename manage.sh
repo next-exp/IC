@@ -60,7 +60,7 @@ function install_conda {
         echo Conda already installed. Skipping conda installation.
     else
         echo Installing conda for $CONDA_OS
-        CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-py${PYTHON_VERSION//.}_4.8.2-${CONDA_OS}-x86_64.sh"
+        CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-py${PYTHON_VERSION//.}_4.9.2-${CONDA_OS}-x86_64.sh"
         if which wget; then
             wget ${CONDA_URL} -O miniconda.sh
         else
@@ -73,7 +73,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2020-06-16
+CONDA_ENV_TAG=2022-04-13
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
@@ -86,27 +86,27 @@ name: ${CONDA_ENV_NAME}
 dependencies:
 - python       = ${PYTHON_VERSION}
 # *REMEMBER TO CHANGE CONDA_ENV_TAG WHEN CHANGING VERSION NUMBERS*
-- cython       = 0.29
+- cython       = 0.29.24
 - jupyter      = 1.0.0
-- jupyterlab   = 1.2.6
-- matplotlib   = 3.1.3
-- networkx     = 2.4
-- notebook     = 6.0.3
-- numpy        = 1.18.1
-- pandas       = 1.0.3
-- seaborn      = 0.10.1
-- pymysql      = 0.9.2
-- pytables     = 3.6.1
-- pytest       = 5.4.2
-- scipy        = 1.4.1
-- sphinx       = 3.0.4
-- tornado      = 6.0.4
-- flaky        = 3.6.1
-- hypothesis   = 5.16.1
-- pytest-xdist = 1.32.0
-- coverage     = 5.0
-- pip          = 20.0.2
-- setuptools   = 47.1.1
+- jupyterlab   = 3.2.1
+- matplotlib   = 3.4.3
+- networkx     = 2.6.3
+- notebook     = 6.4.5
+- numpy        = 1.20.3
+- pandas       = 1.3.4
+- seaborn      = 0.11.2
+- pymysql      = 1.0.2
+- pytables     = 3.7.0
+- pytest       = 6.2.4
+- scipy        = 1.7.1
+- sphinx       = 4.2.0
+- tornado      = 6.1
+- flaky        = 3.7.0
+- hypothesis   = 6.14.1
+- pytest-xdist = 2.3.0
+- coverage     = 5.5
+- pip          = 21.2.4
+- setuptools   = 58.0.4
 - pip:
   - pytest-instafail==0.4.2
 EOF

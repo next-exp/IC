@@ -52,7 +52,7 @@ strings_dataframe = data_frames(index=range_indexes(min_size=1, max_size=5), col
 def test_load_dst(KrMC_kdst):
     df_read = load_dst(*KrMC_kdst[0].file_info)
     assert_dataframes_close(df_read, KrMC_kdst[0].true,
-                            False  , rtol=1e-5)
+                            check_dtype=False, rtol=1e-5)
 
 
 def test_load_dst_event_list(KrMC_kdst):
@@ -61,7 +61,7 @@ def test_load_dst_event_list(KrMC_kdst):
     df_check   = KrMC_kdst[0].true
     df_check   = df_check[df_check.event.isin(event_list)].reset_index(drop=True)
     assert_dataframes_close(df_read, df_check,
-                            False  , rtol=1e-5)
+                            check_dtype=False, rtol=1e-5)
 
 
 def test_load_dsts_single_file(KrMC_kdst):
@@ -69,7 +69,7 @@ def test_load_dsts_single_file(KrMC_kdst):
     df_read = load_dsts([tbl.filename], tbl.group, tbl.node)
 
     assert_dataframes_close(df_read, KrMC_kdst[0].true,
-                            False  , rtol=1e-5)
+                            check_dtype=False, rtol=1e-5)
 
 
 def test_load_dsts_single_file_event_list(KrMC_kdst):
@@ -80,7 +80,7 @@ def test_load_dsts_single_file_event_list(KrMC_kdst):
     df_check   = df_check[df_check.event.isin(event_list)].reset_index(drop=True)
 
     assert_dataframes_close(df_read, df_check,
-                            False  , rtol=1e-5)
+                            check_dtype=False, rtol=1e-5)
 
 
 def test_load_dsts_double_file(KrMC_kdst):
@@ -89,8 +89,8 @@ def test_load_dsts_double_file(KrMC_kdst):
     df_read = load_dsts([tbl.filename]*2, tbl.group, tbl.node)
     df_true = pd.concat([df_true, df_true], ignore_index=True)
 
-    assert_dataframes_close(df_read, df_true  ,
-                            False  , rtol=1e-5)
+    assert_dataframes_close(df_read, df_true ,
+                            check_dtype=False, rtol=1e-5)
     #assert index number unique (important for saving it to pytable)
     assert all(~df_read.index.duplicated())
 

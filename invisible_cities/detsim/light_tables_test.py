@@ -14,6 +14,8 @@ from hypothesis.strategies  import floats
 from hypothesis.extra.numpy import arrays
 
 
+few_examples = settings(deadline=None, max_examples=100)
+
 @fixture(scope='session')
 def lighttable_filenames(ICDATADIR):
     s1ltfname = os.path.join(ICDATADIR, 'NEXT_NEW.energy.S1.PmtR11410.LightTable.h5')
@@ -22,6 +24,7 @@ def lighttable_filenames(ICDATADIR):
              's2': s2ltfname}
 
 
+@few_examples
 @given(xs=floats(min_value=-500, max_value=500),
        ys=floats(min_value=-500, max_value=500),
        zs=floats(min_value=-500, max_value=500))
@@ -51,6 +54,7 @@ def test_get_lt_values_s1(lighttable_filenames, xs, ys, zs):
     np.testing.assert_allclose(S1_LT(np.array([xs]), np.array([ys]), np.array([zs])), expected)
 
 
+@few_examples
 @given(xs=floats(min_value=-500, max_value=500),
        ys=floats(min_value=-500, max_value=500))
 def test_get_lt_values_s2(lighttable_filenames, xs, ys):

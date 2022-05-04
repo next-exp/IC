@@ -377,9 +377,11 @@ def load_mcconfiguration(file_name : str) -> pd.DataFrame:
     config           = load_dst(file_name, 'MC', 'configuration')
     if is_oldformat_file(file_name):
         config.param_key = config.param_key.str.replace(r'.*Pmt.*\_binning.*' ,
-                                                        'PmtR11410_binning'  )
+                                                        'PmtR11410_binning'   ,
+                                                        regex=True)
         config.param_key = config.param_key.str.replace(r'.*SiPM.*\_binning.*',
-                                                        'SiPM_binning'       )
+                                                        'SiPM_binning'        ,
+                                                        regex=True)
         config           = config.drop_duplicates('param_key').reset_index(drop=True)
     return config
 

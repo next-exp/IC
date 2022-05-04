@@ -51,13 +51,13 @@ def toy_sipm_signal():
 def _create_fake_datasipm(x, y, active):
     assert len(x) == len(y) == len(active)
     size = len(x)
-    sensorid   = np.arange(size, dtype=np.int  )
-    channelid  = np.arange(size, dtype=np.int  )
-    adc_to_pes = np.ones  (size, dtype=np.float)
-    sigma      = np.ones  (size, dtype=np.float)
-    active     =         active.astype(np.int  )
-    x          =              x.astype(np.float)
-    y          =              y.astype(np.float)
+    sensorid   = np.arange(size, dtype=int  )
+    channelid  = np.arange(size, dtype=int  )
+    adc_to_pes = np.ones  (size, dtype=float)
+    sigma      = np.ones  (size, dtype=float)
+    active     =         active.astype(int  )
+    x          =              x.astype(float)
+    y          =              y.astype(float)
 
     return pd.DataFrame(dict( SensorID  =   sensorid,
                              ChannelID  =  channelid,
@@ -299,7 +299,7 @@ def test_get_nearby_sipm_inds():
 
 
 def test_count_masked_all_active(datasipm_all_active):
-    xy0 = np.array([0, 0], dtype=np.float)
+    xy0 = np.array([0, 0], dtype=float)
     is_masked = datasipm_all_active.Active.values
 
     # All sipms are active in run number 1
@@ -392,7 +392,7 @@ def test_corona_finds_masked_sipms_correctly(datasipm5x5):
                         [2, x, x, x, 4], # so the barycenter doesn't
                         [3, x, 9, x, 3], # fall exactly at the center
                         [4, x, x, x, 2], # of the array
-                        [5, 4, 3, 2, 1]], dtype=np.float).flatten()
+                        [5, 4, 3, 2, 1]], dtype=float).flatten()
 
     ok = ~np.isnan(all_qs)
 
