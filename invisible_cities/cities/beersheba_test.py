@@ -135,12 +135,7 @@ def test_deconvolve_signal_enums(deconvolution_config, param_name):
     conf_dict.pop("q_cut")
     conf_dict.pop("drop_dist")
 
-    conf_dict['cut_type'    ] = CutType            (conf_dict['cut_type'    ])
-    conf_dict['deconv_mode' ] = DeconvolutionMode  (conf_dict['deconv_mode' ])
-    conf_dict['energy_type' ] = HitEnergy          (conf_dict['energy_type' ])
-    conf_dict['inter_method'] = InterpolationMethod(conf_dict['inter_method'])
-
-    conf_dict[param_name]     = param_name
+    conf_dict[param_name] = conf_dict[param_name].name
 
     with raises(ValueError):
         deconvolve_signal(DataSiPM('new'), **conf_dict)
