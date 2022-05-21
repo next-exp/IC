@@ -7,9 +7,9 @@ def hist_writer(file,
                 *,
                 group_name  : 'options: HIST, HIST2D',
                 table_name  : 'options: pmt, pmtMAU, sipm, sipmMAU',
-                compression = 'ZLIB4',
                 n_sensors   : 'number of pmts or sipms',
-                bin_centres : 'np.array of bin centres'):
+                bin_centres : 'np.array of bin centres',
+                compression = None):
     try:                       hist_group = getattr          (file.root, group_name)
     except tb.NoSuchNodeError: hist_group = file.create_group(file.root, group_name)
 

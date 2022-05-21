@@ -4,7 +4,7 @@ from .. evm.nh5  import KrTable
 from .. io.dst_io import df_writer
 
 
-def kr_writer(hdf5_file, *, compression='ZLIB4'):
+def kr_writer(hdf5_file, *, compression=None):
     kr_table = make_table(hdf5_file,
                           group       = 'DST',
                           name        = 'Events',
@@ -19,7 +19,7 @@ def kr_writer(hdf5_file, *, compression='ZLIB4'):
     return write_kr
 
 
-def kdst_from_df_writer(h5out, compression='ZLIB4'):
+def kdst_from_df_writer(h5out, compression=None):
     """
     For a given open table returns a writer for KDST dataframe info
     """

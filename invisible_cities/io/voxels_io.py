@@ -6,7 +6,7 @@ from .. evm.event_model    import Voxel
 from .. evm.event_model    import VoxelCollection
 from .. evm.nh5            import VoxelsTable
 
-def true_voxels_writer(hdf5_file, *, compression='ZLIB4'):
+def true_voxels_writer(hdf5_file, *, compression=None):
 
     voxels_table  = make_table(hdf5_file,
                              group       = 'TrueVoxels',

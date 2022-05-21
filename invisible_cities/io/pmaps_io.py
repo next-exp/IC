@@ -54,12 +54,12 @@ def store_pmap(tables, pmap, event_number):
         store_peak(s2_table, s2i_table, si_table, s2, peak_number, event_number)
 
 
-def pmap_writer(file, *, compression="ZLIB4"):
-    tables = _make_tables(file, compression=compression)
+def pmap_writer(file, *, compression=None):
+    tables = _make_tables(file, compression)
     return partial(store_pmap, tables)
 
 
-def _make_tables(hdf5_file, *, compression="ZLIB4"):
+def _make_tables(hdf5_file, compression):
     compr       = tbl_filters(compression)
     pmaps_group = hdf5_file.create_group(hdf5_file.root, 'PMAPS')
     make_table  = partial(hdf5_file.create_table, pmaps_group, filters=compr)

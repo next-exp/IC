@@ -56,7 +56,7 @@ def test_make_tables(output_tmpdir):
     output_filename = os.path.join(output_tmpdir, "make_tables.h5")
 
     with tb.open_file(output_filename, "w") as h5f:
-        pmpio._make_tables(h5f)
+        pmpio._make_tables(h5f, None)
 
         assert "PMAPS" in h5f.root
         for tablename in ("S1", "S2", "S2Si", "S1Pmt", "S2Pmt"):
@@ -75,7 +75,7 @@ def test_store_peak_s1(output_tmpdir, KrMC_pmaps_dict):
         if not pmap.s1s: continue
 
         with tb.open_file(output_filename, "w") as h5f:
-            s1_table, _, _, s1i_table, _ = pmpio._make_tables(h5f)
+            s1_table, _, _, s1i_table, _ = pmpio._make_tables(h5f, None)
 
             peak = pmap.s1s[peak_number]
             pmpio.store_peak(s1_table, s1i_table, None,
@@ -105,7 +105,7 @@ def test_store_peak_s2(output_tmpdir, KrMC_pmaps_dict):
         if not pmap.s2s: continue
 
         with tb.open_file(output_filename, "w") as h5f:
-            _, s2_table, si_table, _, s2i_table = pmpio._make_tables(h5f)
+            _, s2_table, si_table, _, s2i_table = pmpio._make_tables(h5f, None)
 
             peak = pmap.s2s[peak_number]
             pmpio.store_peak(s2_table, s2i_table, si_table,
@@ -140,7 +140,7 @@ def test_store_pmap(output_tmpdir, KrMC_pmaps_dict):
     pmaps, _        = KrMC_pmaps_dict
     evt_numbers_set = np.random.randint(100, 200, size=len(pmaps))
     with tb.open_file(output_filename, "w") as h5f:
-        tables = pmpio._make_tables(h5f)
+        tables = pmpio._make_tables(h5f, None)
         for evt_number, pmap in zip(evt_numbers_set, pmaps.values()):
             pmpio.store_pmap(tables, pmap, evt_number)
         h5f.flush()

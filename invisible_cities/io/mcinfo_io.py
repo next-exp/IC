@@ -40,7 +40,7 @@ class MCTableType(AutoNameEnumBase):
     waveforms        = auto()
 
 
-def mc_writer(h5out : tb.file.File) -> Callable:
+def mc_writer(h5out : tb.file.File, *, compression=None) -> Callable:
     """
     Writes the MC tables to the output file.
 
@@ -54,9 +54,10 @@ def mc_writer(h5out : tb.file.File) -> Callable:
     write_mctables : Callable
         Function which writes to the file.
     """
-    mcwriter_ = partial(df_writer         ,
-                        h5out      = h5out,
-                        group_name =  'MC')
+    mcwriter_ = partial(df_writer                ,
+                        h5out       =       h5out,
+                        group_name  =        'MC',
+                        compression = compression)
     def write_mctables(table_dict : Dict):
         """
         Writer function

@@ -5,10 +5,10 @@ from .. evm      import nh5        as table_formats
 from .  table_io import make_table
 
 
-def event_filter_writer(file, filter_name, *, compression='ZLIB4'):
+def event_filter_writer(file, filter_name, *, compression=None):
     table = make_table(file,
                        group       = "Filters",
-                        name        = filter_name,
+                        name       = filter_name,
                        fformat     = table_formats.EventPassedFilter,
                        description = "Event has passed filter flag",
                        compression = compression)
