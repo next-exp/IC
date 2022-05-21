@@ -105,7 +105,7 @@ def irene(files_in, file_out, compression, event_range, print_mod, detector_db, 
                                          s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
                                          s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
                                          thr_sipm_s2,
-                                         h5out, compression, sipm_rwf_to_cal)
+                                         h5out, sipm_rwf_to_cal)
 
         result = push(source = wf_from_files(files_in, WfType.rwf),
                       pipe   = pipe(fl.slice(*event_range, close_all=True),

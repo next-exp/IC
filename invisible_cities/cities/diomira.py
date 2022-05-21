@@ -107,9 +107,7 @@ def diomira(files_in    , file_out      , compression   ,
                                  args="sipm_sim")
 
         write_event_info_ = run_and_event_writer(h5out)
-        write_evt_filter_ = event_filter_writer (h5out                    ,
-                                                 "trigger"                ,
-                                                 compression = compression)
+        write_evt_filter_ = event_filter_writer (h5out, "trigger")
 
         write_event_info = fl.sink(write_event_info_,
                                    args=("run_number", "event_number",

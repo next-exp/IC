@@ -128,7 +128,6 @@ def eutropia( files_in, file_out, compression, event_range
 
         df_writer(h5out, result
                  , "PSF", "PSFs"
-                 , compression = compression
                  , descriptive_string = f"PSF with {bin_size_xy} mm bin size"
                  )
 
