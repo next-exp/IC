@@ -175,7 +175,7 @@ class Event_Mixer():
 
         # write data to output file
         # empty space in current output file
-        nidle = self.nevents_per_file - self.nevents_in_file
+        nidle = int(self.nevents_per_file - self.nevents_in_file)
         if (nidle >= nevents):
             self.events = self.events_
             self._select_data()
@@ -209,8 +209,8 @@ class Event_Mixer():
             # write new file(s) (the loop avoids recursive calling of self._write_data)
             for fidx in np.arange(0, np.ceil((nevents-nidle)/self.nevents_per_file).astype(int)):
 
-                init = nidle + self.nevents_per_file* fidx
-                last = nidle + self.nevents_per_file*(fidx+1) # notice that len(self.events_) == nevents
+                init = int(nidle + self.nevents_per_file* fidx)
+                last = int(nidle + self.nevents_per_file*(fidx+1)) # notice that len(self.events_) == nevents
 
                 self.events = self.events_[init:last].copy()
 
