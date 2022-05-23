@@ -109,6 +109,8 @@ class Event_Mixer():
             written_nevents = 0
             for filename in filenames:
 
+                self.events_ = load_dst(filename, *self.tables["events"])
+                if len(self.events_) == 0: continue
                 self._read_data(filename, isotope, g4volume)
 
                 # write nevts to output files
@@ -134,10 +136,7 @@ class Event_Mixer():
 
         for key, table in self.tables.items():
 
-            if   (key  == "events"):
-                setattr(self, key + "_", load_dst(filename, *table))
-
-            elif (key == "eventMap"):
+            if (key == "eventMap"):
                 setattr(self, key + "_", load_dst(filename, *table).set_index("evt_number"))
 
             elif (key in ("dst", "tracking", "summary")):
