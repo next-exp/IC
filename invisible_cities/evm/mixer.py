@@ -379,7 +379,7 @@ def _check_enough_nevents(nevent_df : pd.DataFrame, eff_df : pd.DataFrame):
     indexes   = ["G4Volume", "Isotope"]
     nevent_df = nevent_df.set_index(indexes)
     eff_df    =    eff_df.set_index(indexes)
-    sel       = (eff_df.nreco >= nevent_df.nevts)
+    sel       = pd.Series.ge(eff_df.nreco, nevent_df.nevts)
 
     if sel.all(): return # enough events
     else:                # not enought events
