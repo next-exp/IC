@@ -11,7 +11,7 @@ class TriggerType(tb.IsDescription):
 
 
 class EventInfo(tb.IsDescription):
-    evt_number = tb.Int32Col(shape=(), pos=0)
+    evt_number = tb. Int64Col(shape=(), pos=0)
     timestamp  = tb.UInt64Col(shape=(), pos=1)
 
 
@@ -28,9 +28,9 @@ class MCGeneratorInfo(tb.IsDescription):
     """Store MC generator information as metadata using
     Pytables.
     """
-    evt_number    = tb.Int32Col(pos=0)
-    atomic_number = tb.Int32Col(pos=1)
-    mass_number   = tb.Int32Col(pos=2)
+    evt_number    = tb. Int64Col(pos=0)
+    atomic_number = tb. Int32Col(pos=1)
+    mass_number   = tb. Int32Col(pos=2)
     region        = tb.StringCol(20, pos=3)
 
 
@@ -38,15 +38,15 @@ class MCExtentInfo(tb.IsDescription):
     """Store the last row of each table as metadata using
     Pytables.
     """
-    evt_number    = tb.Int32Col(pos=0)
+    evt_number    = tb. Int64Col(pos=0)
     last_hit      = tb.UInt64Col(pos=1)
     last_particle = tb.UInt64Col(pos=2)
 
 
 class MCEventMap(tb.IsDescription):
     """Map between event index and original event."""
-    evt_number = tb.Int32Col(shape=(), pos=0)
-    nexus_evt  = tb.Int32Col(shape=(), pos=1)
+    evt_number = tb.Int64Col(shape=(), pos=0)
+    nexus_evt  = tb.Int64Col(shape=(), pos=1)
 
 
 class MCHitInfo(tb.IsDescription):
@@ -89,7 +89,7 @@ class S12(tb.IsDescription):
     running over the number of peaks found
     time and energy of the peak.
     """
-    event  = tb.  Int32Col(pos=0)
+    event  = tb.  Int64Col(pos=0)
     peak   = tb.  UInt8Col(pos=2) # peak number
     time   = tb.Float32Col(pos=3) # time in ns
     bwidth = tb.Float32Col(pos=4) # bin width in ns
@@ -103,7 +103,7 @@ class S12Pmt(tb.IsDescription):
     npmt gives the pmt sensor id
     time and energy of the peak.
     """
-    event  = tb.  Int32Col(pos=0)
+    event  = tb.  Int64Col(pos=0)
     peak   = tb.  UInt8Col(pos=2) # peak number
     npmt   = tb.  UInt8Col(pos=3) # pmt number (in order of IC db 26/8/2017: equal to SensorID)
     ene    = tb.Float32Col(pos=5) # energy in pes
@@ -116,14 +116,14 @@ class S2Si(tb.IsDescription):
     nsipm gives the SiPM number
     only energies are stored (times are defined in S2)
     """
-    event = tb.  Int32Col(pos=0)
+    event = tb.  Int64Col(pos=0)
     peak  = tb.  UInt8Col(pos=2) # peak number
     nsipm = tb.  Int16Col(pos=3) # sipm number
     ene   = tb.Float32Col(pos=5) # energy in pes
 
 
 class KrTable(tb.IsDescription):
-    event   = tb.  Int32Col(pos= 0)
+    event   = tb.  Int64Col(pos= 0)
     time    = tb.Float64Col(pos= 1)
     s1_peak = tb. UInt16Col(pos= 2)
     s2_peak = tb. UInt16Col(pos= 3)
@@ -155,7 +155,7 @@ class KrTable(tb.IsDescription):
 
 
 class HitsTable(tb.IsDescription):
-    event    = tb.  Int32Col(pos=0)
+    event    = tb.  Int64Col(pos=0)
     time     = tb.Float64Col(pos=1)
     npeak    = tb. UInt16Col(pos=2)
     Xpeak    = tb.Float64Col(pos=3)
@@ -175,7 +175,7 @@ class HitsTable(tb.IsDescription):
 
 
 class VoxelsTable(tb.IsDescription):
-    event    = tb.  Int32Col(pos=0)
+    event    = tb.  Int64Col(pos=0)
     X        = tb.Float64Col(pos=1)
     Y        = tb.Float64Col(pos=2)
     Z        = tb.Float64Col(pos=3)
@@ -184,5 +184,5 @@ class VoxelsTable(tb.IsDescription):
 
 
 class EventPassedFilter(tb.IsDescription):
-    event  = tb.Int32Col(pos=0)
+    event  = tb.Int64Col(pos=0)
     passed = tb. BoolCol(pos=1)
