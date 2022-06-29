@@ -297,14 +297,13 @@ def check_nonempty_dataframe(df) -> bool:
     return len(df) > 0
 
 
-def deconv_writer(h5out, compression='ZLIB4'):
+def deconv_writer(h5out):
     """
     For a given open table returns a writer for deconvolution hits dataframe
     """
     def write_deconv(df):
         return df_writer(h5out              = h5out             ,
                          df                 = df                ,
-                         compression        = compression       ,
                          group_name         = 'DECO'            ,
                          table_name         = 'Events'          ,
                          descriptive_string = 'Deconvolved hits',

@@ -922,7 +922,7 @@ def waveform_integrator(limits):
 def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                   s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
                   s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2,
-                  h5out, compression, sipm_rwf_to_cal=None):
+                  h5out, sipm_rwf_to_cal=None):
 
     # Filter events without signal over threshold
     indices_pass    = fl.map(check_nonempty_indices,
@@ -942,9 +942,9 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     empty_pmaps     = fl.count_filter(bool, args = "pmaps_pass")
 
     # Define writers...
-    write_pmap_         = pmap_writer        (h5out,                compression=compression)
-    write_indx_filter_  = event_filter_writer(h5out, "s12_indices", compression=compression)
-    write_pmap_filter_  = event_filter_writer(h5out, "empty_pmap" , compression=compression)
+    write_pmap_         = pmap_writer        (h5out,              )
+    write_indx_filter_  = event_filter_writer(h5out, "s12_indices")
+    write_pmap_filter_  = event_filter_writer(h5out, "empty_pmap" )
 
     # ... and make them sinks
     write_pmap         = sink(write_pmap_        , args=(        "pmap", "event_number"))
@@ -1123,14 +1123,13 @@ def make_event_summary(event_number  : int              ,
 
 
 
-def track_writer(h5out, compression='ZLIB4'):
+def track_writer(h5out):
     """
     For a given open table returns a writer for topology info dataframe
     """
     def write_tracks(df):
         return df_writer(h5out              = h5out              ,
                          df                 = df                 ,
-                         compression        = compression        ,
                          group_name         = 'Tracking'         ,
                          table_name         = 'Tracks'           ,
                          descriptive_string = 'Track information',
@@ -1138,14 +1137,13 @@ def track_writer(h5out, compression='ZLIB4'):
     return write_tracks
 
 
-def summary_writer(h5out, compression='ZLIB4'):
+def summary_writer(h5out):
     """
     For a given open table returns a writer for summary info dataframe
     """
     def write_summary(df):
         return df_writer(h5out              = h5out                      ,
                          df                 = df                         ,
-                         compression        = compression                ,
                          group_name         = 'Summary'                  ,
                          table_name         = 'Events'                   ,
                          descriptive_string = 'Event summary information',

@@ -19,12 +19,12 @@ def store_trigger(tables, trg_type, trg_channels):
         trg_channels_array.append(trg_channels.reshape(new_shape))
 
 
-def trigger_writer(file, n_sensors, compression="ZLIB4"):
-    tables = _make_tables(file, n_sensors, compression=compression)
+def trigger_writer(file, n_sensors, compression=None):
+    tables = _make_tables(file, n_sensors, compression)
     return partial(store_trigger, tables)
 
 
-def _make_tables(hdf5_file, n_sensors, compression="ZLIB4"):
+def _make_tables(hdf5_file, n_sensors, compression):
     compr         = tbl_filters(compression)
     trigger_group = hdf5_file.create_group(hdf5_file.root, 'Trigger')
     make_table    = partial(hdf5_file.create_table, trigger_group, filters=compr)

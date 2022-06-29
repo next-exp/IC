@@ -11,6 +11,11 @@ from .  table_io        import make_table
 
 from    typing          import Optional
 from    typing          import Sequence
+from    typing          import Union
+
+
+# Temporary. Will be fixed in the future
+NoneType = type(None)
 
 
 def _decode_str_columns(df):
@@ -78,10 +83,11 @@ def df_writer(h5out              : tb.file.File ,
               df                 : pd.DataFrame ,
               group_name         : str          ,
               table_name         : str          ,
-              compression        : str = 'ZLIB4',
               descriptive_string : str = ""     ,
               str_col_length     : int = 32     ,
-              columns_to_index   : Optional[Sequence[str]] = None
+              columns_to_index   : Optional[Sequence[str]] = None,
+              *,
+              compression        : Optional[Union[str, NoneType]] = None,
               ) -> None:
     """ The function writes a dataframe to open pytables file.
     Parameters:

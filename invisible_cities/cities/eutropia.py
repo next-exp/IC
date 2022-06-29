@@ -45,6 +45,7 @@ from .. core    .core_functions   import in_range
 from .. database.load_db          import DataSiPM
 from .. io      .dst_io           import df_writer
 from .. io      .run_and_event_io import run_and_event_writer
+from .. reco                      import tbl_functions as tbl
 from .. reco    .psf_functions    import create_psf
 from .. reco    .psf_functions    import hdst_psf_processing
 
@@ -104,7 +105,7 @@ def eutropia( files_in, file_out, compression, event_range
 
     accumulate_psf = fl.reduce(combine_psfs, None)()
 
-    with tb.open_file(file_out, "w") as h5out:
+    with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
         write_event_info = fl.sink( run_and_event_writer(h5out)
                                   , args = ("run_number", "event_number", "timestamp")
                                   )
@@ -127,7 +128,6 @@ def eutropia( files_in, file_out, compression, event_range
 
         df_writer(h5out, result
                  , "PSF", "PSFs"
-                 , compression = compression
                  , descriptive_string = f"PSF with {bin_size_xy} mm bin size"
                  )
 

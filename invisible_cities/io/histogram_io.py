@@ -7,9 +7,9 @@ def hist_writer(file,
                 *,
                 group_name  : 'options: HIST, HIST2D',
                 table_name  : 'options: pmt, pmtMAU, sipm, sipmMAU',
-                compression = 'ZLIB4',
                 n_sensors   : 'number of pmts or sipms',
-                bin_centres : 'np.array of bin centres'):
+                bin_centres : 'np.array of bin centres',
+                compression = None):
     try:                       hist_group = getattr          (file.root, group_name)
     except tb.NoSuchNodeError: hist_group = file.create_group(file.root, group_name)
 
@@ -22,7 +22,12 @@ def hist_writer(file,
                                     filters = tbl.filters(compression))
 
     ## The bins can be written just once at definition of the writer
-    file.create_array(hist_group, table_name+'_bins', bin_centres)
+    file.create_carray( hist_group
+                      , table_name + '_bins'
+                      , tb.Float64Atom()
+                      , filters = tbl.filters(compression)
+                      , obj     = bin_centres)
+
 
     def write_hist(histo : 'np.array of histograms, one for each sensor'):
         hist_table.append(histo.reshape(1, n_sensors, n_bins))

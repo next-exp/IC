@@ -130,7 +130,7 @@ def load_hits_skipping_NN(DST_file_name : str, group_name : str = 'RECO', table_
 
 
 # writers
-def hits_writer(hdf5_file, group_name='RECO', table_name='Events', *, compression='ZLIB4'):
+def hits_writer(hdf5_file, group_name='RECO', table_name='Events', *, compression=None):
     hits_table  = make_table(hdf5_file,
                              group       = group_name,
                              name        = table_name,

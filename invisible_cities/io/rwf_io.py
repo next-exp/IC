@@ -5,6 +5,7 @@ from functools import  partial
 from typing    import Callable
 from typing    import     List
 from typing    import Optional
+from typing    import    Union
 from typing    import    Tuple
 
 from .. evm .nh5         import           MCEventMap
@@ -13,13 +14,18 @@ from .  run_and_event_io import run_and_event_writer
 from .  table_io         import           make_table
 
 
-def rwf_writer(h5out           : tb.file.File          ,
+# Temporary. Will be fixed in the future
+NoneType = type(None)
+
+
+def rwf_writer(h5out           : tb.file.File,
                *,
-               group_name      :          str          ,
-               table_name      :          str          ,
-               compression     :          str = 'ZLIB4',
-               n_sensors       :          int          ,
-               waveform_length :          int          ) -> Callable:
+               group_name      : str         ,
+               table_name      : str         ,
+               n_sensors       : int         ,
+               waveform_length : int         ,
+               compression     : Optional[Union[str, NoneType]] = None,
+              ) -> Callable:
     """
     Defines group and table where raw waveforms
     will be written.
@@ -138,7 +144,7 @@ def buffer_writer(h5out, *,
                       events    : List[Tuple]) -> None:
         """
         Write run info and event waveforms to file.
-        
+
         parameters
         ----------
         nexus_evt  :  int

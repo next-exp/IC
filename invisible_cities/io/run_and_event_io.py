@@ -20,7 +20,7 @@ def _make_run_event_tables(hdf5_file, compression):
     return run_tables
 
 
-def run_and_event_writer(file, *, compression='ZLIB4'):
+def run_and_event_writer(file, *, compression=None):
     run_tables = _make_run_event_tables(file, compression)
     def write_run_and_event(run_number, event_number, timestamp):
         run_table_dumper  (run_tables[0],   run_number)

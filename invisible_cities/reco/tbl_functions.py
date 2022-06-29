@@ -32,6 +32,8 @@ def filters(name):
     filt : tb.filters.Filter
         Filter mode instance.
     """
+    if name is None: return None
+
     try:
         level, lib = {"NOCOMPR": (0,  None)        ,
                       "ZLIB1"  : (1, 'zlib')       ,
