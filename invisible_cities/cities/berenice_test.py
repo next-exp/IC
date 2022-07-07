@@ -28,7 +28,7 @@ def test_berenice_sipmdarkcurrent(config_tmpdir, ICDATADIR):
     with tb.open_file(PATH_IN , mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
 
-        evts_in  = h5in .root.Run.events[:nrequired].astype([('evt_number', '<i4'), ('timestamp', '<u8')])
+        evts_in  = h5in .root.Run.events[:nrequired]
         evts_out = h5out.root.Run.events[:nrequired]
         assert_array_equal(evts_in, evts_out)
 
