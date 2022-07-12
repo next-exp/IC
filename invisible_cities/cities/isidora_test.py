@@ -34,7 +34,7 @@ def test_isidora_electrons_40keV(config_tmpdir, ICDATADIR):
     with tb.open_file(PATH_IN,  mode='r') as h5in, \
          tb.open_file(PATH_OUT, mode='r') as h5out:
             # check events numbers & timestamps
-            evts_in  = h5in .root.Run.events[:nactual].astype([('evt_number', '<i4'), ('timestamp', '<u8')])
+            evts_in  = h5in .root.Run.events[:nactual]
             evts_out = h5out.root.Run.events[:nactual]
             np.testing.assert_array_equal(evts_in, evts_out)
 
