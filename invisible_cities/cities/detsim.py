@@ -14,6 +14,7 @@ This city outputs:
 """
 
 import os
+import warnings
 import numpy  as np
 import tables as tb
 
@@ -42,6 +43,20 @@ from .. detsim.light_tables_c     import LT_SiPM
 from .. detsim.light_tables_c     import LT_PMT
 from .. detsim.s2_waveforms_c     import create_wfs
 from .. detsim.detsim_waveforms   import s1_waveforms_creator
+
+
+def filter_hits_after_max_time(max_time):
+    """
+    Function that filters and warns about delayed hits
+    (hits at times larger that max_time configuration parameter)
+    """
+    def select_hits(x, y, z, energy, time, label, event_number):
+        sel = ((time - min(time)) < max_time)
+        if sel.all(): return x, y, z, energy, time, label
+        else:
+            warnings.warn(f"Delayed hits at event {event_number}")
+            return x[sel], y[sel], z[sel], energy[sel], time[sel], label[sel]
+    return select_hits
 
 
 @check_annotations
@@ -157,6 +172,10 @@ def detsim( *
     lt_sipm  = LT_SiPM(fname=os.path.expandvars(sipm_psf), sipm_database=datasipm)
     el_gap   = lt_sipm.el_gap_width
 
+    filter_delayed_hits = fl.map(filter_hits_after_max_time(buffer_params_["max_time"]),
+                                 args = ('x', 'y', 'z', 'energy', 'time', 'label', 'event_number'),
+                                 out  = ('x', 'y', 'z', 'energy', 'time', 'label'))
+
     select_s1_candidate_hits = fl.map(hits_selector(False),
                                 item = ('x', 'y', 'z', 'energy', 'time', 'label'))
 
@@ -228,6 +247,7 @@ def detsim( *
                          pipe  = fl.pipe( fl.slice(*event_range, close_all=True)
                                         , event_count_in.spy
                                         , print_every(print_mod)
+                                        , filter_delayed_hits
                                         , select_s1_candidate_hits
                                         , select_active_hits
                                         , filter_events_no_active_hits
