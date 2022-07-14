@@ -201,7 +201,7 @@ def detsim( *
                                          out = ('tmin', 'buffer_length'))
 
     create_pmt_s1_waveforms = fl.map(s1_waveforms_creator(s1_lighttable, ws, buffer_params_["pmt_width"]),
-                                     args = ('x_a', 'y_a', 'z_a', 'time_a', 'energy_a', 'tmin', 'buffer_length'),
+                                     args = ('x', 'y', 'z', 'time', 'energy', 'tmin', 'buffer_length'),
                                      out = 's1_pmt_waveforms')
 
     create_pmt_s2_waveforms = fl.map(s2_waveform_creator(buffer_params_["pmt_width"], lt_pmt, el_dv),
