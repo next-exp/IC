@@ -1,13 +1,20 @@
-from os import path
+from os   import path
+from enum import Enum
+
+import numpy as np
 
 from pytest import fixture
 from pytest import mark
 from pytest import raises
+from pytest import warns
 
 from . configure import configure
 from . configure import Configuration
 from . configure import make_config_file_reader
 from . configure import read_config_file
+from . configure import type_check
+from . configure import compare_signature_to_values
+from . configure import check_annotations
 from .           import system_of_units  as units
 
 from . exceptions import NoInputFiles
@@ -16,6 +23,14 @@ from . exceptions import NoOutputFile
 from .. types .symbols     import EventRange
 from .. cities.components  import city
 from .. cities.penthesilea import penthesilea
+
+from typing import Sequence
+from typing import Mapping
+from typing import Optional
+from typing import Tuple
+from typing import List
+from typing import Union
+
 
 all  = EventRange.all
 last = EventRange.last
@@ -401,3 +416,240 @@ def test_configure_numpy(config_tmpdir):
     conf_ns = configure(argv).as_namespace
     assert hasattr(conf_ns, "a_numpy_array")
     assert conf_ns.a_numpy_array.tolist() == [0, 0.5, 1]
+
+
+@mark.parametrize( "value type".split()
+                 , ( (  0, int)
+                   , ( "", str)
+                   , ( [], List)
+                   , ( [], Sequence)
+                   , ( (), Tuple)
+                   , ( (), Sequence)
+                   , (all, EventRange)))
+def test_type_check_simple(value, type):
+    assert type_check(value, type)
+
+
+@mark.parametrize(          "value  type".split()
+                 , ( (           0, float)
+                   , (np.arange(1), Sequence)))
+def test_type_check_special_cases(value, type):
+    assert type_check(value, type)
+
+
+@mark.parametrize( "value type".split()
+                 , ( ("", int)
+                   , ( 0, str)
+                   , ( 0, List)
+                   , ( 0, Sequence)
+                   , ("", Tuple)
+                   , ("", EventRange)))
+def test_type_check_wrong_type(value, type):
+    assert not type_check(value, type)
+
+
+@mark.parametrize("value", (1, "", all))
+def test_type_check_union(value):
+    type = Union[int, str, EventRange]
+    assert type_check(value, type)
+
+
+@mark.parametrize("value", (1.0, (), [], {}))
+def test_type_check_union_wrong_type(value):
+    type = Union[int, str, EventRange]
+    assert not type_check(value, type)
+
+
+@mark.parametrize("nvalues", (1, 5))
+def test_type_check_sequence(nvalues):
+    type  = Sequence[int]
+    value = list(range(nvalues))
+    assert type_check(value, type)
+
+
+def test_type_check_sequence_wrong_type_all():
+    type  = Sequence[str]
+    value = list(range(5))
+    assert not type_check(value, type)
+
+
+def test_type_check_sequence_wrong_type_one():
+    type  = Sequence[str]
+    value = ["0", 1, "2"]
+    assert not type_check(value, type)
+
+
+def test_type_check_tuple():
+    type  = Tuple[int, str, EventRange]
+    value = (1, "", all)
+    assert type_check(value, type)
+
+
+def test_type_check_tuple_wrong_type():
+    type  = Tuple[int, str, EventRange]
+    value = (all, "", 1)
+    assert not type_check(value, type)
+
+
+def test_type_check_mapping():
+    type  = Mapping[str, int]
+    value = dict(a=1)
+    assert type_check(value, type)
+
+
+def test_type_check_mapping_many_values():
+    type  = Mapping[str, int]
+    value = dict(a=1, b=2, c=3)
+    assert type_check(value, type)
+
+
+def test_type_check_mapping_wrong_type():
+    type  = Mapping[str, int]
+    value = dict(a="1")
+    assert not type_check(value, type)
+
+
+def test_type_check_optional():
+    type  = Optional[int]
+    value = 1
+    assert type_check(value, type)
+
+
+@mark.parametrize("value", (1, ("", all)))
+def test_type_check_nested_types(value):
+    type = Optional[Union[int, Tuple[str, EventRange]]]
+
+    assert type_check(value, type)
+
+
+@mark.parametrize("outer_type", (Sequence, List))
+@mark.parametrize("inner_type value".split(), ( (int  , [1 ])
+                                              , (str  , [""])
+                                              , (float, [1.])
+                                              , (dict , [{}])
+                                              ))
+def test_type_check_subscripted_generics(outer_type, inner_type, value):
+    type = outer_type[inner_type]
+
+    type_check(value, type)
+
+
+def test_compare_signature_to_values_positional_only():
+    class D(Enum):
+        member = 0
+
+    def f(a: int, b:float, c:str, d: D):
+        return
+
+    pos_values = (1, 2.0, "a_str", D.member)
+    compare_signature_to_values(f, pos_values, {})
+
+
+def test_compare_signature_to_values_keyword_only():
+    class D(Enum):
+        member = 0
+
+    def f(a: int, b:float, c:str, d: D):
+        return
+
+    kwd_values = dict(a = 1, b = 2.0, c = "a_str", d = D.member)
+    compare_signature_to_values(f, (), kwd_values)
+
+
+def test_compare_signature_to_values_combined():
+    class D(Enum):
+        member = 0
+
+    def f(a: int, b:float, c:str, d: D):
+        return
+
+    pos_values = (1, 2.0)
+    kwd_values = dict(c = "a_str", d = D.member)
+    compare_signature_to_values(f, pos_values, kwd_values)
+
+
+def test_compare_signature_to_values_duck_match():
+    def f(a: int, b:float):
+        return
+
+    values = dict(a = int(1), b = int(2))
+    compare_signature_to_values(f, (), values)
+
+
+@mark.parametrize("seq", (list, tuple, np.array))
+def test_compare_signature_to_values_sequences(seq):
+    def f(a: Sequence):
+        return
+
+    values = (seq([0, 1, 2]),)
+    compare_signature_to_values(f, values, {})
+
+
+def test_compare_signature_to_values_missing_without_default():
+    def f(a: int, b:int, c:int):
+        return
+
+    pos_values = (1,)
+    for arg_name in "bc":
+        kwd_values = {arg_name: 1}
+        match_str  = "The function .* is missing an argument .* of type .*"
+        with raises(ValueError, match=match_str):
+            compare_signature_to_values(f, pos_values, kwd_values)
+
+
+@mark.parametrize("mode", "positional keyword".split())
+def test_compare_signature_to_values_missing_with_default(mode):
+    def f(a: int = 1, b:int = 2):
+        return
+
+    pos_values = (1,) if mode == "positional" else ()
+    kwd_values = {}   if mode == "positional" else dict(b = 1)
+    compare_signature_to_values(f, pos_values, kwd_values)
+
+
+def test_compare_signature_to_values_unused_arguments():
+    def f(a: int):
+        return
+
+    values    = dict(a=1, b=2)
+    match_str = "Argument .* is not being used by .*"
+    with warns(UserWarning, match=match_str):
+        compare_signature_to_values(f, (), values)
+
+
+@mark.parametrize("mode", "positional keyword".split())
+@mark.parametrize("type1 value".split(), ( (int  ,       0)
+                                         , (str  ,     "a")
+                                         , (list ,     [1])
+                                         , (dict , {2:"a"})
+                                         , (tuple,    (3,))
+                                         , (set  ,   {4,})))
+@mark.parametrize("type2", (int, str, list, dict, tuple, set))
+def test_compare_signature_to_values_raises(mode, type1, value, type2):
+    if type1 is type2: return
+
+    def f(a : type1):
+        pass
+
+    pos_values = (type2(),) if mode == "positional" else ()
+    kwd_values = {}         if mode == "positional" else dict(a = type2())
+
+    match_str = "The function .* expects an argument .* of type .*"
+    with raises(ValueError, match=match_str):
+        compare_signature_to_values(f, pos_values, kwd_values)
+
+
+@mark.parametrize("do_check", (True, False))
+def test_check_annotations(do_check):
+    def f(a: int):
+        return
+
+    if do_check:
+        # Type annotations are checked, raises an error
+        f         = check_annotations(f)
+        match_str = "The function .* expects an argument .* of type .*"
+        with raises(ValueError, match=match_str):
+            f(a = "the wrong type")
+    else:
+        # Type annotations not checked. Test passes
+        f(a = "the wrong type")
