@@ -62,6 +62,7 @@ from .. io     .pmaps_io          import               pmap_writer
 from .. io     .rwf_io            import             buffer_writer
 from .. io     .mcinfo_io         import            load_mchits_df
 from .. io     .dst_io            import                 df_writer
+from .. types  .ic_types          import                  NoneType
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
 from .. types  .ic_types          import                       NNN
@@ -74,8 +75,6 @@ from .. types  .symbols           import             SiPMThreshold
 from .. types  .symbols           import                EventRange
 from .. types  .symbols           import                 HitEnergy
 from .. types  .symbols           import                SiPMCharge
-
-NoneType = type(None)
 
 
 def city(city_function):

@@ -42,6 +42,7 @@ from .. database                import load_db
 from .. evm.ic_containers       import TriggerParams
 from .. evm.pmaps               import S2
 from .. types.ic_types          import minmax
+from .. types.ic_types          import NoneType
 from .. types.symbols           import WfType
 
 from .. dataflow          import dataflow as fl
