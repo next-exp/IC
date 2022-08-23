@@ -25,6 +25,7 @@ from . components import calculate_and_save_buffers
 from . components import MC_hits_from_files
 from . components import check_max_time
 
+from .. core.configure import check_annotations
 from .. reco     import tbl_functions as tbl
 from .. database import load_db       as db
 from .. dataflow import dataflow      as fl
@@ -40,6 +41,7 @@ from .. detsim.s2_waveforms_c     import create_wfs
 from .. detsim.detsim_waveforms   import s1_waveforms_creator
 
 
+@check_annotations
 def hits_selector(active_only: bool=True):
     """
     Filtering function that selects hits. (see :active_only: description)
@@ -60,6 +62,7 @@ def hits_selector(active_only: bool=True):
     return select_hits
 
 
+@check_annotations
 def ielectron_simulator(*, wi: float, fano_factor: float, lifetime: float,
                         transverse_diffusion: float, longitudinal_diffusion: float, drift_velocity:float,
                         el_gain: float, conde_policarpo_factor: float):

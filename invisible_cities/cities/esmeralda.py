@@ -24,6 +24,7 @@ import numpy  as np
 
 from typing      import Callable
 
+from .. core.configure      import check_annotations
 from .. reco                import tbl_functions        as tbl
 from .. reco                import hits_functions       as hif
 from .. reco                import corrections          as cof
@@ -48,6 +49,7 @@ from .. io.run_and_event_io import run_and_event_writer
 from .. io. event_filter_io import event_filter_writer
 
 
+@check_annotations
 def hits_threshold_and_corrector(map_fname        : str  ,
                                  threshold_charge : float,
                                  same_peak        : bool ,

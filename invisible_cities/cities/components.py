@@ -37,6 +37,7 @@ from .. core   .exceptions        import              NoInputFiles
 from .. core   .exceptions        import              NoOutputFile
 from .. core   .exceptions        import InvalidInputFileStructure
 from .. core   .configure         import          event_range_help
+from .. core   .configure         import         check_annotations
 from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
 from .. detsim .sensor_utils      import             trigger_times
@@ -114,12 +115,13 @@ def city(city_function):
         conf.event_range  = event_range(conf)
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
 
-        result = city_function(**vars(conf))
+        result = check_annotations(city_function)(**vars(conf))
         index_tables(conf.file_out)
         return result
     return proxy
 
 
+@check_annotations
 def create_timestamp(rate: float) -> float:
     """
     Get rate value safely: It raises warning if rate <= 0 and
@@ -245,6 +247,7 @@ def collect():
     return fl.reduce(append, initial=[])()
 
 
+@check_annotations
 def copy_mc_info(files_in     : List[str],
                  h5out        : tb.File  ,
                  event_numbers: List[int],
@@ -288,6 +291,7 @@ def copy_mc_info(files_in     : List[str],
         raise MCEventNotFound('Some events not found in MC tables')
 
 
+@check_annotations
 def wf_binner(max_buffer: int) -> Callable:
     """
     Returns a function to be used to convert the raw
@@ -308,6 +312,7 @@ def wf_binner(max_buffer: int) -> Callable:
     return bin_sensors
 
 
+@check_annotations
 def signal_finder(buffer_len   : float,
                   bin_width    : float,
                   bin_threshold:   int) -> Callable:
@@ -411,6 +416,7 @@ def check_lengths(*iterables):
         raise InvalidInputFileStructure("Input data tables have different sizes")
 
 
+@check_annotations
 def mcsensors_from_file(paths     : List[str],
                         db_file   :      str ,
                         run_number:      int ,
@@ -509,6 +515,7 @@ def pmap_from_files(paths):
                            event_number=event_number, timestamp=timestamp)
 
 
+@check_annotations
 def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields collected hits,
        pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
@@ -544,6 +551,8 @@ def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
             # it needs to be given the WHOLE TABLE (rather than a
             # single event) at a time.
 
+
+@check_annotations
 def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields HitsCollection, pandas DataFrame with
     kdst info, run_number, event_number and timestamp."""
@@ -573,6 +582,7 @@ def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCol
                            timestamp = timestamp)
 
 
+@check_annotations
 def dst_from_files(paths: List[str], group: str, node:str) -> Iterator[Dict[str,Union[pd.DataFrame, int, np.ndarray]]]:
     """
     Reader for a generic dst.
@@ -594,6 +604,7 @@ def dst_from_files(paths: List[str], group: str, node:str) -> Iterator[Dict[str,
                   )
 
 
+@check_annotations
 def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
     timestamp = create_timestamp(rate)
     for filename in files_in:
@@ -612,6 +623,7 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
                        timestamp    = timestamp(evt))
 
 
+@check_annotations
 def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields HitsCollection, pandas DataFrame with
     run_number, event_number and timestamp."""
@@ -980,6 +992,7 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     return compute_pmaps, empty_indices, empty_pmaps
 
 
+@check_annotations
 def check_max_time(max_time: float, buffer_length: float) -> Union[int, float]:
     """
     `max_time` must be greater than `buffer_length`. If not, raise warning
@@ -1004,6 +1017,7 @@ def check_max_time(max_time: float, buffer_length: float) -> Union[int, float]:
         return max_time
 
 
+@check_annotations
 def calculate_and_save_buffers(buffer_length    : float        ,
                                max_time         : float        ,
                                pre_trigger      : float        ,
@@ -1065,6 +1079,8 @@ def calculate_and_save_buffers(buffer_length    : float        ,
     buffer_definition = pipe(*filter(None, find_signal_and_write_buffers))
     return buffer_definition
 
+
+@check_annotations
 def Efield_copier(energy_type: HitEnergy):
     def copy_Efield(hitc : HitCollection) -> HitCollection:
         mod_hits = []
@@ -1082,6 +1098,7 @@ def Efield_copier(energy_type: HitEnergy):
     return copy_Efield
 
 
+@check_annotations
 def make_event_summary(event_number  : int              ,
                        topology_info : pd.DataFrame     ,
                        paolina_hits  : HitCollection,
@@ -1167,6 +1184,7 @@ def summary_writer(h5out):
     return write_summary
 
 
+@check_annotations
 def track_blob_info_creator_extractor(vox_size         : [float, float, float],
                                       strict_vox_size  : bool                 ,
                                       energy_threshold : float                ,

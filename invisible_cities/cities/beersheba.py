@@ -30,6 +30,8 @@ from .  components import print_every
 from .  components import cdst_from_files
 from .  components import summary_writer
 
+from .. core.configure         import check_annotations
+
 from .. reco                   import tbl_functions           as tbl
 from .. dataflow               import dataflow                as fl
 
@@ -57,6 +59,7 @@ from .. types.symbols          import DeconvolutionMode
 from .. core                   import system_of_units as units
 
 
+@check_annotations
 def deconvolve_signal(det_db          : pd.DataFrame,
                       psf_fname       : str,
                       e_cut           : float,
