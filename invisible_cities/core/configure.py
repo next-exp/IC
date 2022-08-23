@@ -78,7 +78,7 @@ def make_config_file_reader():
     the given file and any files it includes, and return a
     corresponding instance of Configuration.
     """
-
+    # https://docs.python.org/3/reference/executionmodel.html#builtins-and-restricted-execution
     builtins = __builtins__.copy()
     builtins.update(vars(units))
     builtins.update(ALL_SYMBOLS)
