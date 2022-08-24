@@ -1099,8 +1099,8 @@ def Efield_copier(energy_type: HitEnergy):
 
 
 @check_annotations
-def make_event_summary(event_number  : int              ,
-                       topology_info : pd.DataFrame     ,
+def make_event_summary(event_number  : int          ,
+                       topology_info : pd.DataFrame ,
                        paolina_hits  : HitCollection,
                        out_of_map    : bool
                        ) -> pd.DataFrame:
@@ -1111,7 +1111,6 @@ def make_event_summary(event_number  : int              ,
     Parameters
     ----------
     event_number  : int
-    timestamp     : long int
     topology_info : DataFrame
         Dataframe containing track information,
         output of track_blob_info_creator_extractor

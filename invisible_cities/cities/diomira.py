@@ -47,7 +47,7 @@ from .. types.ic_types          import minmax
 from .. types.ic_types          import NoneType
 from .. types.symbols           import WfType
 
-from .. dataflow          import dataflow as fl
+from .. dataflow import dataflow as fl
 
 from .  components import city
 from .  components import print_every
