@@ -796,7 +796,7 @@ def compute_z_and_dt(t_s2, t_s1, drift_v):
 
 
 def build_pointlike_event(dbfile, run_number, drift_v,
-                          reco, charge_type = SiPMCharge.raw):
+                          reco, charge_type):
     datasipm   = load_db.DataSiPM(dbfile, run_number)
     sipm_xs    = datasipm.X.values
     sipm_ys    = datasipm.Y.values
@@ -863,8 +863,7 @@ def build_pointlike_event(dbfile, run_number, drift_v,
 
 def hit_builder(dbfile, run_number, drift_v, reco,
                 rebin_slices, rebin_method,
-                global_reco_params,
-                charge_type = SiPMCharge.raw):
+                global_reco_params, charge_type):
     datasipm = load_db.DataSiPM(dbfile, run_number)
     sipm_xs  = datasipm.X.values
     sipm_ys  = datasipm.Y.values
@@ -1031,7 +1030,7 @@ def calculate_and_save_buffers(buffer_length    : float        ,
                                nsipm            : int          ,
                                nsamp_pmt        : int          ,
                                nsamp_sipm       : int          ,
-                               order_sensors    : Callable=None):
+                               order_sensors    : Union[NoneType, Callable]):
     find_signal       = fl.map(signal_finder(buffer_length, pmt_wid,
                                              trigger_threshold     ),
                                args = "pmt_bin_wfs"                 ,
