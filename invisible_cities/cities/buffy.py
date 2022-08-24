@@ -24,6 +24,8 @@ from typing import Callable
 from typing import     List
 
 from .. core                   import        system_of_units as units
+from .. core  .configure       import         EventRangeType
+from .. core  .configure       import         OneOrManyFiles
 from .. detsim.sensor_utils    import   first_and_last_times
 from .. detsim.sensor_utils    import          get_n_sensors
 from .. detsim.sensor_utils    import           sensor_order
@@ -44,9 +46,19 @@ from .  components import             check_max_time
 
 
 @city
-def buffy(files_in     , file_out   , compression      , event_range,
-          print_mod    , detector_db, run_number       , max_time   ,
-          buffer_length, pre_trigger, trigger_threshold, rate       ):
+def buffy( files_in          : OneOrManyFiles
+         , file_out          : str
+         , compression       : str
+         , event_range       : EventRangeType
+         , print_mod         : int
+         , detector_db       : str
+         , run_number        : int
+         , max_time          : float
+         , buffer_length     : float
+         , pre_trigger       : float
+         , trigger_threshold : float
+         , rate              : float
+         ):
 
     max_time          = check_max_time(max_time, buffer_length)
     npmt, nsipm       = get_n_sensors(detector_db, run_number)

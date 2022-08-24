@@ -24,6 +24,8 @@ import numpy  as np
 
 from typing      import Callable
 
+from .. core.configure      import EventRangeType
+from .. core.configure      import OneOrManyFiles
 from .. core.configure      import check_annotations
 from .. reco                import tbl_functions        as tbl
 from .. reco                import hits_functions       as hif
@@ -109,10 +111,16 @@ def hits_threshold_and_corrector(map_fname        : str  ,
 
 
 @city
-def esmeralda(files_in, file_out, compression, event_range, print_mod,
-              detector_db, run_number,
-              cor_hits_params = dict(),
-              paolina_params  = dict()):
+def esmeralda( files_in        : OneOrManyFiles
+             , file_out        : str
+             , compression     : str
+             , event_range     : EventRangeType
+             , print_mod       : int
+             , detector_db     : str
+             , run_number      : int
+             , cor_hits_params : dict
+             , paolina_params  : dict
+             ):
     """
     The city corrects Penthesilea hits energy and extracts topology information.
     ----------

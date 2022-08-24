@@ -35,6 +35,8 @@ import numpy  as np
 import tables as tb
 
 from .. core                 import         system_of_units as units
+from .. core.configure       import          EventRangeType
+from .. core.configure       import          OneOrManyFiles
 from .. io.    histogram_io  import             hist_writer
 from .. io.run_and_event_io  import    run_and_event_writer
 from .. core.core_functions  import    shift_to_bin_centers
@@ -55,12 +57,22 @@ from .  components import waveform_integrator
 
 
 @city
-def trude(files_in, file_out, compression, event_range, print_mod,
-            detector_db, run_number,
-            proc_mode,
-            min_bin, max_bin, bin_width,
-            number_integrals, integral_start, integral_width, integrals_period,
-            n_maw = 100):
+def trude( files_in         : OneOrManyFiles
+         , file_out         : str
+         , compression      : str
+         , event_range      : EventRangeType
+         , print_mod        : int
+         , detector_db      : str
+         , run_number       : int
+         , proc_mode        : SiPMCalibMode
+         , min_bin          : float
+         , max_bin          : float
+         , bin_width        : float
+         , number_integrals : int
+         , integral_start   : float
+         , integral_width   : float
+         , integrals_period : float
+         ):
     if proc_mode not in SiPMCalibMode:
         raise ValueError(f"Unrecognized processing mode: {proc_mode}")
 

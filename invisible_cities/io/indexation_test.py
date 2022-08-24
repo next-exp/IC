@@ -4,6 +4,8 @@ import pandas as pd
 from pytest import mark
 
 from .. cities.components import city
+from .. core.configure import OneOrManyFiles
+from .. core.configure import EventRangeType
 
 from . hits_io   import     hits_writer
 from . kdst_io   import       kr_writer
@@ -11,8 +13,18 @@ from . pmaps_io  import     pmap_writer
 
 from . dst_io    import  df_writer
 
+from typing import Callable
+from typing import Any
+
+
+# type annotations needed
 @city
-def writer_test_city(writer, file_out, files_in, event_range, detector_db):
+def writer_test_city( writer      : Callable
+                    , file_out    : str
+                    , files_in    : OneOrManyFiles
+                    , event_range : EventRangeType
+                    , detector_db : str
+                    ):
     with tb.open_file(file_out, 'w') as h5out:
         writer(h5out)
 

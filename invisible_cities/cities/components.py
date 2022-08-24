@@ -14,6 +14,7 @@ from typing          import List
 from typing          import Dict
 from typing          import Tuple
 from typing          import Union
+from typing          import Optional
 import tables as tb
 import numpy  as np
 import pandas as pd
@@ -1185,11 +1186,11 @@ def summary_writer(h5out):
 
 
 @check_annotations
-def track_blob_info_creator_extractor(vox_size         : [float, float, float],
-                                      strict_vox_size  : bool                 ,
-                                      energy_threshold : float                ,
-                                      min_voxels       : int                  ,
-                                      blob_radius      : float                ,
+def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, float],
+                                      strict_vox_size  : bool                      ,
+                                      energy_threshold : float                     ,
+                                      min_voxels       : int                       ,
+                                      blob_radius      : float                     ,
                                       max_num_hits     : int
                                      ) -> Callable:
     """

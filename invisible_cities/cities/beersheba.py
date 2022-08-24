@@ -22,6 +22,9 @@ from numpy       import nan_to_num
 
 from typing      import Tuple
 from typing      import List
+from typing      import Union
+from typing      import Sequence
+from typing      import Optional
 
 from .  components import city
 from .  components import collect
@@ -30,6 +33,8 @@ from .  components import print_every
 from .  components import cdst_from_files
 from .  components import summary_writer
 
+from .. core.configure         import EventRangeType
+from .. core.configure         import OneOrManyFiles
 from .. core.configure         import check_annotations
 
 from .. reco                   import tbl_functions           as tbl
@@ -67,13 +72,13 @@ def deconvolve_signal(det_db          : pd.DataFrame,
                       iteration_tol   : float,
                       sample_width    : List[float],
                       bin_size        : List[float],
-                      diffusion       : Tuple[float]=(1., 1., 0.3),
-                      energy_type     : HitEnergy=HitEnergy.Ec,
-                      deconv_mode     : DeconvolutionMode=DeconvolutionMode.joint,
-                      n_dim           : int=2,
-                      cut_type        : CutType=CutType.abs,
-                      inter_method    : InterpolationMethod=InterpolationMethod.cubic,
-                      n_iterations_g  : int=0):
+                      diffusion       : Optional[Tuple[float, float, float]]=(1., 1., 0.3),
+                      energy_type     : Optional[HitEnergy]=HitEnergy.Ec,
+                      deconv_mode     : Optional[DeconvolutionMode]=DeconvolutionMode.joint,
+                      n_dim           : Optional[int]=2,
+                      cut_type        : Optional[CutType]=CutType.abs,
+                      inter_method    : Optional[InterpolationMethod]=InterpolationMethod.cubic,
+                      n_iterations_g  : Optional[int]=0):
 
     """
     Applies Lucy Richardson deconvolution to SiPM response with a
@@ -305,8 +310,15 @@ def deconv_writer(h5out):
 
 
 @city
-def beersheba(files_in, file_out, compression, event_range, print_mod, detector_db, run_number,
-              deconv_params = dict()):
+def beersheba( files_in      : OneOrManyFiles
+             , file_out      : str
+             , compression   : str
+             , event_range   : EventRangeType
+             , print_mod     : int
+             , detector_db   : str
+             , run_number    : int
+             , deconv_params : dict
+             ):
     """
     The city corrects Penthesilea hits energy and extracts topology information.
     ----------

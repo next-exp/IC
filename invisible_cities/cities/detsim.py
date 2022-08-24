@@ -26,6 +26,9 @@ from . components import MC_hits_from_files
 from . components import check_max_time
 
 from .. core.configure import check_annotations
+from .. core.configure import EventRangeType
+from .. core.configure import OneOrManyFiles
+
 from .. reco     import tbl_functions as tbl
 from .. database import load_db       as db
 from .. dataflow import dataflow      as fl
@@ -123,9 +126,21 @@ def bin_edges_getter(pmt_width, sipm_width):
 
 
 @city
-def detsim(*, files_in, file_out, event_range, print_mod, compression,
-           detector_db, run_number, s1_lighttable, s2_lighttable, sipm_psf,
-           buffer_params, physics_params, rate):
+def detsim( *
+          , files_in       : OneOrManyFiles
+          , file_out       : str
+          , event_range    : EventRangeType
+          , print_mod      : int
+          , compression    : str
+          , detector_db    : str
+          , run_number     : int
+          , s1_lighttable  : str
+          , s2_lighttable  : str
+          , sipm_psf       : str
+          , buffer_params  : dict
+          , physics_params : dict
+          , rate           : float
+          ):
 
     buffer_params_  = buffer_params .copy()
     physics_params_ = physics_params.copy()
@@ -202,8 +217,11 @@ def detsim(*, files_in, file_out, event_range, print_mod, compression,
                                                        , run_number
                                                        , len(datapmt)
                                                        , len(datasipm)
-                                                       , int(buffer_params_["length"] / buffer_params_["pmt_width"])
-                                                       , int(buffer_params_["length"] / buffer_params_["sipm_width"]))
+                                                       , int(buffer_params_["length"] /
+                                                         buffer_params_["pmt_width"])
+                                                       , int(buffer_params_["length"] /
+                                                         buffer_params_["sipm_width"])
+                                                       , order_sensors = None)
 
         write_nohits_filter   = fl.sink(event_filter_writer(h5out, "active_hits"), args=("event_number", "passed_active"))
         result = fl.push(source= MC_hits_from_files(files_in, rate),

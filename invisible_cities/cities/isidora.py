@@ -25,6 +25,8 @@ from .. dataflow.dataflow import pipe
 from .. dataflow.dataflow import fork
 from .. dataflow.dataflow import sink
 
+from .. core.configure      import EventRangeType
+from .. core.configure      import OneOrManyFiles
 from .. reco                import tbl_functions as tbl
 from .. io.          rwf_io import           rwf_writer
 from .. io.run_and_event_io import run_and_event_writer
@@ -33,8 +35,15 @@ from .. types.symbols       import WfType
 
 
 @city
-def isidora(files_in, file_out, compression, event_range, print_mod,
-            detector_db, run_number, n_baseline):
+def isidora( files_in     : OneOrManyFiles
+           , file_out     : str
+           , compression  : str
+           , event_range  : EventRangeType
+           , print_mod    : int
+           , detector_db  : str
+           , run_number   : int
+           , n_baseline   : int
+           ):
     """
     The city of ISIDORA performs a fast processing from raw data
     (pmtrwf and sipmrwf) to BLR wavefunctions.

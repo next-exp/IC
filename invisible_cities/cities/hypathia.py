@@ -20,6 +20,8 @@ import tables as tb
 
 from functools import partial
 
+from .. core.configure         import EventRangeType
+from .. core.configure         import OneOrManyFiles
 from .. reco                   import sensor_functions     as sf
 from .. reco                   import tbl_functions        as tbl
 from .. reco                   import peak_functions       as pkf
@@ -28,6 +30,7 @@ from .. core                   import system_of_units      as units
 from .. io   .run_and_event_io import run_and_event_writer
 from .. io   .      trigger_io import       trigger_writer
 from .. types.symbols          import WfType
+from .. types.symbols          import SiPMThreshold
 
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
@@ -49,11 +52,30 @@ from .  components import get_actual_sipm_thr
 
 
 @city
-def hypathia(files_in, file_out, compression, event_range, print_mod, detector_db, run_number,
-             sipm_noise_cut, filter_padding, thr_sipm, thr_sipm_type, pmt_wfs_rebin, pmt_pe_rms,
-             s1_lmin, s1_lmax, s1_tmin, s1_tmax, s1_rebin_stride, s1_stride, thr_csum_s1,
-             s2_lmin, s2_lmax, s2_tmin, s2_tmax, s2_rebin_stride, s2_stride, thr_csum_s2, thr_sipm_s2,
-             pmt_samp_wid=25*units.ns, sipm_samp_wid=1*units.mus):
+def hypathia( files_in        : OneOrManyFiles
+            , file_out        : str
+            , compression     : str
+            , event_range     : EventRangeType
+            , print_mod       : int
+            , detector_db     : str
+            , run_number      : int
+            , sipm_noise_cut  : float
+            , filter_padding  : int
+            , thr_sipm        : float
+            , thr_sipm_type   : SiPMThreshold
+            , pmt_wfs_rebin   : int
+            , pmt_pe_rms      : float
+            , s1_lmin         : int  , s1_lmax     : int
+            , s1_tmin         : float, s1_tmax     : float
+            , s1_rebin_stride : int  , s1_stride   : int
+            , thr_csum_s1     : float
+            , s2_lmin         : int  , s2_lmax     : int
+            , s2_tmin         : float, s2_tmax     : float
+            , s2_rebin_stride : int  , s2_stride   : int
+            , thr_csum_s2     : float, thr_sipm_s2 : float
+            , pmt_samp_wid    : float
+            , sipm_samp_wid   : float
+            ):
 
     sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
 
