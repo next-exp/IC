@@ -15,6 +15,8 @@ from .. io                   import dst_io as dio
 from .. io.mcinfo_io         import load_mchits_df
 from .. io.mcinfo_io         import load_mcparticles_df
 from .. types.symbols        import all_events
+from .. types.symbols        import RebinMethod
+from .. types.symbols        import SiPMCharge
 
 from .  penthesilea          import penthesilea
 
@@ -127,12 +129,12 @@ def test_penthesilea_threshold_rebin(ICDATADIR, output_tmpdir):
     conf        = configure('dummy invisible_cities/config/penthesilea.conf'.split())
     rebin_thresh = 4000
 
-    conf.update(dict(run_number   =        -6340,
-                     files_in     =      file_in,
-                     file_out     =     file_out,
-                     event_range  =   all_events,
-                     rebin        = rebin_thresh,
-                     rebin_method =  'threshold'))
+    conf.update(dict(run_number   =                 -6340,
+                     files_in     =               file_in,
+                     file_out     =              file_out,
+                     event_range  =            all_events,
+                     rebin        =          rebin_thresh,
+                     rebin_method = RebinMethod.threshold))
 
     penthesilea(**conf)
 
@@ -156,13 +158,13 @@ def test_penthesilea_signal_to_noise(ICDATADIR, output_tmpdir):
                        new_lm_radius = 15 * units.mm,
                        msipm         =  1           )
 
-    conf.update(dict(run_number        =             -6340,
-                     files_in          =           file_in,
-                     file_out          =          file_out,
-                     event_range       =        all_events,
-                     rebin             =                 2,
-                     sipm_charge_type  = 'signal_to_noise',
-                     slice_reco_params =      reco_params))
+    conf.update(dict(run_number        =                      -6340,
+                     files_in          =                    file_in,
+                     file_out          =                   file_out,
+                     event_range       =                 all_events,
+                     rebin             =                          2,
+                     sipm_charge_type  = SiPMCharge.signal_to_noise,
+                     slice_reco_params =                reco_params))
 
     penthesilea(**conf)
 
