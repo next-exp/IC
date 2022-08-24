@@ -16,6 +16,7 @@ from .. core.testing_utils import    assert_tables_equality
 from .. core               import system_of_units as units
 from .. types.symbols      import WfType
 from .. types.symbols      import EventRange as ER
+from .. types.symbols      import XYReco
 
 from .  components import event_range
 from .  components import collect
@@ -98,7 +99,8 @@ def test_compute_xy_position_depends_on_actual_run_number():
                        'msipm': 9,
                        'consider_masked': True}
     run_number = 6977
-    find_xy_pos = compute_xy_position('new', run_number, **reco_parameters)
+    find_xy_pos = compute_xy_position( 'new', run_number
+                                     , XYReco.corona, **reco_parameters)
 
     xs_to_test  = np.array([-65, -65, -55, -55, -55, -45, -45, -45])
     ys_to_test  = np.array([  5,  25,   5,  15,  25,   5,  15,  25])

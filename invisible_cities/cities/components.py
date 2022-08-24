@@ -51,6 +51,7 @@ from .. reco                      import            hits_functions as hif
 from .. reco                      import             wfm_functions as wfm
 from .. reco                      import         paolina_functions as plf
 from .. reco   .xy_algorithms     import                    corona
+from .. reco   .xy_algorithms     import                barycenter
 from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import               pmap_filter
 from .. database                  import                   load_db
@@ -77,6 +78,7 @@ from .. types  .symbols           import             SiPMThreshold
 from .. types  .symbols           import                EventRange
 from .. types  .symbols           import                 HitEnergy
 from .. types  .symbols           import                SiPMCharge
+from .. types  .symbols           import                    XYReco
 
 
 def city(city_function):
@@ -778,13 +780,17 @@ def peak_classifier(**params):
     return partial(pmap_filter, selector)
 
 
-def compute_xy_position(dbfile, run_number, **reco_params):
-    # `reco_params` is the set of parameters for the corona
-    # algorithm either for the full corona or for barycenter
-    datasipm = load_db.DataSiPM(dbfile, run_number)
+def compute_xy_position(dbfile, run_number, algo, **reco_params):
+    if algo is XYReco.corona:
+        datasipm    = load_db.DataSiPM(dbfile, run_number)
+        reco_params = dict(all_sipms = datasipm, **reco_params)
+        algorithm   = corona
+    else:
+        algorithm   = barycenter
 
     def compute_xy_position(xys, qs):
-        return corona(xys, qs, datasipm, **reco_params)
+        return algorithm(xys, qs, **reco_params)
+
     return compute_xy_position
 
 
