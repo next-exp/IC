@@ -293,7 +293,7 @@ def copy_mc_info(files_in     : List[str],
 
 
 @check_annotations
-def wf_binner(max_buffer: int) -> Callable:
+def wf_binner(max_buffer: float) -> Callable:
     """
     Returns a function to be used to convert the raw
     input MC sensor info into data binned according to
