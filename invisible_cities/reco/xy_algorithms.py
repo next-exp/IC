@@ -18,7 +18,9 @@ from typing import Optional
 
 
 @check_annotations
-def barycenter(pos : np.ndarray, qs : np.ndarray):
+def barycenter( pos : np.ndarray
+              , qs  : np.ndarray
+              , Qthr: Optional[float] = 0 * units.pes):
     """pos = column np.array --> (matrix n x 2)
        ([x1, y1],
         [x2, y2]
@@ -26,9 +28,12 @@ def barycenter(pos : np.ndarray, qs : np.ndarray):
         [xs, ys])
        qs = vector (q1, q2...qs) --> (1xn)
     """
+    above_threshold = np.where(qs >= Qthr)[0]
+    pos, qs = pos[above_threshold], qs[above_threshold]
 
-    if not len(pos)   : raise SipmEmptyList
-    if np.sum(qs) == 0: raise SipmZeroCharge
+    if not len(pos)   : raise SipmEmptyListAboveQthr
+    if np.sum(qs) == 0: raise SipmZeroChargeAboveQthr
+
     mu, var = weighted_mean_and_var(pos, qs, axis=0)
     # For uniformity of interface, all xy algorithms should return a
     # list of clusters. barycenter always returns a single clusters,
