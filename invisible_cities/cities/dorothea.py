@@ -46,6 +46,7 @@ from .. io.         kdst_io import            kr_writer
 from .. io.run_and_event_io import run_and_event_writer
 from .. io. event_filter_io import  event_filter_writer
 from .. types.symbols       import           SiPMCharge
+from .. types.symbols       import               XYReco
 
 from .. dataflow          import dataflow      as fl
 from .. dataflow.dataflow import push
@@ -64,29 +65,29 @@ from typing import Optional
 
 
 @city
-def dorothea( files_in          : OneOrManyFiles
-            , file_out          : str
-            , compression       : str
-            , event_range       : EventRangeType
-            , print_mod         : int
-            , detector_db       : str
-            , run_number        : int
-            , drift_v           : float
-            , s1_nmin           :   int, s1_nmax          :   int
-            , s1_emin           : float, s1_emax          : float
-            , s1_wmin           : float, s1_wmax          : float
-            , s1_hmin           : float, s1_hmax          : float
-            , s1_ethr           : float
-            , s2_nmin           :   int, s2_nmax          :   int
-            , s2_emin           : float, s2_emax          : float
-            , s2_wmin           : float, s2_wmax          : float
-            , s2_hmin           : float, s2_hmax          : float
-            , s2_ethr           : float
-            , s2_nsipmmin       :   int, s2_nsipmmax      :   int
-            , global_reco_params:  dict
-            , sipm_charge_type  : SiPMCharge
-            , include_mc        : Optional[bool] = False
-            ):
+def dorothea( files_in         :  OneOrManyFiles
+            , file_out         :  str
+            , compression      :  str
+            , event_range      :  EventRangeType
+            , print_mod        :  int
+            , detector_db      :  str
+            , run_number       :  int
+            , drift_v          :  float
+            , s1_nmin          :    int, s1_nmax           :   int
+            , s1_emin          :  float, s1_emax           : float
+            , s1_wmin          :  float, s1_wmax           : float
+            , s1_hmin          :  float, s1_hmax           : float
+            , s1_ethr          :  float
+            , s2_nmin          :    int, s2_nmax           :   int
+            , s2_emin          :  float, s2_emax           : float
+            , s2_wmin          :  float, s2_wmax           : float
+            , s2_hmin          :  float, s2_hmax           : float
+            , s2_ethr          :  float
+            , s2_nsipmmin      :    int, s2_nsipmmax       :   int
+            , global_reco_algo : XYReco, global_reco_params:  dict
+            , sipm_charge_type : SiPMCharge
+            , include_mc       : Optional[bool] = False
+):
     # global_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm
     # qlm           =  0 * pes every Cluster must contain at least one SiPM with charge >= qlm
     # lm_radius     = -1 * mm  by default, use overall barycenter for KrCity
@@ -101,7 +102,8 @@ def dorothea( files_in          : OneOrManyFiles
     pmap_passed           = fl.map(attrgetter("passed"), args="selector_output", out="pmap_passed")
     pmap_select           = fl.count_filter(bool, args="pmap_passed")
 
-    reco_algo             = compute_xy_position(detector_db, run_number, **global_reco_params)
+    reco_algo             = compute_xy_position( detector_db, run_number
+                                               , global_reco_algo, **global_reco_params)
     build_pointlike_event = fl.map(build_pointlike_event_( detector_db, run_number, drift_v
                                                          , reco_algo, sipm_charge_type),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
