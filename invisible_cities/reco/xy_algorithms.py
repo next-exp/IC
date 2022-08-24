@@ -95,10 +95,6 @@ def corona(pos, qs, all_sipms,
                 ***In general lm_radius should typically be set to 0, or some value slightly
                 larger than pitch or pitch*sqrt(2).***
 
-                ***If lm_radius is set to a negative number, the algorithm will simply return
-                the overall barycenter all the SiPms above threshold.***
-
-
                 ---------
                     This kwarg has some physical motivation. It exists to try to partially
                 compensate problem that the NEW tracking plane is not continuous even though light
@@ -138,6 +134,9 @@ def corona(pos, qs, all_sipms,
            msipm           =  K3,
            consider_masked = True)
     """
+    assert     lm_radius >= 0,     "lm_radius must be non-negative"
+    assert new_lm_radius >= 0, "new_lm_radius must be non-negative"
+
     if not len(pos)   : raise SipmEmptyList
     if np.sum(qs) == 0: raise SipmZeroCharge
 
@@ -148,10 +147,6 @@ def corona(pos, qs, all_sipms,
 
     if not len(pos)   : raise SipmEmptyListAboveQthr
     if np.sum(qs) == 0: raise SipmZeroChargeAboveQthr
-
-    # if lm_radius or new_lm_radius is negative, just call overall barycenter
-    if lm_radius < 0 or new_lm_radius < 0:
-        return barycenter(pos, qs)
 
     c  = []
     # While there are more local maxima
