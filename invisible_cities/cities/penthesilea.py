@@ -39,7 +39,8 @@ from .. dataflow          import dataflow as df
 from .. dataflow.dataflow import     push
 from .. dataflow.dataflow import     pipe
 from .. types.symbols     import RebinMethod
-from .. types.symbols     import SiPMCharge
+from .. types.symbols     import  SiPMCharge
+from .. types.symbols     import      XYReco
 
 from .  components import                  city
 from .  components import          copy_mc_info
@@ -54,26 +55,28 @@ from .  components import build_pointlike_event as build_pointlike_event_
 from typing import Optional
 
 @city
-def penthesilea( files_in          : OneOrManyFiles
-               , file_out          : str
-               , compression       : str
-               , event_range       : EventRangeType
-               , print_mod         : int
-               , detector_db       : str
-               , run_number        : int
-               , drift_v           : float
-               , rebin             : int
-               , s1_nmin           :   int, s1_nmax     :   int
-               , s1_emin           : float, s1_emax     : float
-               , s1_wmin           : float, s1_wmax     : float
-               , s1_hmin           : float, s1_hmax     : float
-               , s1_ethr           : float
-               , s2_nmin           :   int, s2_nmax     :   int
-               , s2_emin           : float, s2_emax     : float
-               , s2_wmin           : float, s2_wmax     : float
-               , s2_hmin           : float, s2_hmax     : float
-               , s2_ethr           : float
-               , s2_nsipmmin       :   int, s2_nsipmmax :   int
+def penthesilea( files_in           : OneOrManyFiles
+               , file_out           : str
+               , compression        : str
+               , event_range        : EventRangeType
+               , print_mod          : int
+               , detector_db        : str
+               , run_number         : int
+               , drift_v            : float
+               , rebin              : int
+               , s1_nmin            :   int, s1_nmax     :   int
+               , s1_emin            : float, s1_emax     : float
+               , s1_wmin            : float, s1_wmax     : float
+               , s1_hmin            : float, s1_hmax     : float
+               , s1_ethr            : float
+               , s2_nmin            :   int, s2_nmax     :   int
+               , s2_emin            : float, s2_emax     : float
+               , s2_wmin            : float, s2_wmax     : float
+               , s2_hmin            : float, s2_hmax     : float
+               , s2_ethr            : float
+               , s2_nsipmmin        :   int, s2_nsipmmax :   int
+               , slice_reco_algo    : XYReco
+               , global_reco_algo   : XYReco
                , slice_reco_params  : dict
                , global_reco_params : dict
                , rebin_method       : RebinMethod
@@ -82,6 +85,8 @@ def penthesilea( files_in          : OneOrManyFiles
 
     #  slice_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm used for hits reconstruction
     # global_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm used for overall global (pointlike event) reconstruction
+    slice_reco  = compute_xy_position(detector_db, run_number,  slice_reco_algo, ** slice_reco_params)
+    global_reco = compute_xy_position(detector_db, run_number, global_reco_algo, **global_reco_params)
 
 
     classify_peaks = df.map(peak_classifier(**locals()),
@@ -91,17 +96,14 @@ def penthesilea( files_in          : OneOrManyFiles
     pmap_passed           = df.map(attrgetter("passed"), args="selector_output", out="pmap_passed")
     pmap_select           = df.count_filter(bool, args="pmap_passed")
 
-    reco_algo_slice       = compute_xy_position(detector_db, run_number, **slice_reco_params)
     build_hits            = df.map(hit_builder(detector_db, run_number, drift_v,
-                                               reco_algo_slice, rebin,
-                                               rebin_method,
-                                               global_reco_params,
+                                               rebin, rebin_method,
+                                               global_reco, slice_reco,
                                                sipm_charge_type),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "hits"                                                 )
-    reco_algo_global      = compute_xy_position(detector_db, run_number, **global_reco_params)
     build_pointlike_event = df.map(build_pointlike_event_( detector_db, run_number, drift_v
-                                                         , reco_algo_global, sipm_charge_type),
+                                                         , global_reco, sipm_charge_type),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "pointlike_event"                                      )
 
