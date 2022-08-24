@@ -117,6 +117,11 @@ class SiPMThreshold(AutoNameEnumBase):
     individual = auto()
 
 
+class XYReco(AutoNameEnumBase):
+    barycenter = auto()
+    corona     = auto()
+
+
 class WfType(AutoNameEnumBase):
     rwf  = auto()
     mcrd = auto()
