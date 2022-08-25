@@ -17,6 +17,19 @@ from .. evm.event_model      import Cluster
 from typing import Optional
 
 
+def threshold_check(pos, qs, thr):
+    if not len(pos)   : raise SipmEmptyList
+    if np.sum(qs) == 0: raise SipmZeroCharge
+
+    above_threshold = np.where(qs >= thr)[0]
+    pos, qs = pos[above_threshold], qs[above_threshold]
+
+    if not len(pos)   : raise SipmEmptyListAboveQthr
+    if np.sum(qs) == 0: raise SipmZeroChargeAboveQthr
+
+    return pos, qs
+
+
 @check_annotations
 def barycenter( pos : np.ndarray
               , qs  : np.ndarray
@@ -28,12 +41,7 @@ def barycenter( pos : np.ndarray
         [xs, ys])
        qs = vector (q1, q2...qs) --> (1xn)
     """
-    above_threshold = np.where(qs >= Qthr)[0]
-    pos, qs = pos[above_threshold], qs[above_threshold]
-
-    if not len(pos)   : raise SipmEmptyListAboveQthr
-    if np.sum(qs) == 0: raise SipmZeroChargeAboveQthr
-
+    pos, qs = threshold_check(pos, qs, Qthr)
     mu, var = weighted_mean_and_var(pos, qs, axis=0)
     # For uniformity of interface, all xy algorithms should return a
     # list of clusters. barycenter always returns a single clusters,
@@ -140,16 +148,8 @@ def corona( pos             : np.ndarray
     assert     lm_radius >= 0,     "lm_radius must be non-negative"
     assert new_lm_radius >= 0, "new_lm_radius must be non-negative"
 
-    if not len(pos)   : raise SipmEmptyList
-    if np.sum(qs) == 0: raise SipmZeroCharge
-
-    masked = all_sipms.Active.values.astype(bool) if consider_masked else None
-
-    above_threshold = np.where(qs >= Qthr)[0]            # Find SiPMs with qs at least Qthr
-    pos, qs = pos[above_threshold], qs[above_threshold]  # Discard SiPMs with qs less than Qthr
-
-    if not len(pos)   : raise SipmEmptyListAboveQthr
-    if np.sum(qs) == 0: raise SipmZeroChargeAboveQthr
+    pos, qs = threshold_check(pos, qs, Qthr)
+    masked  = all_sipms.Active.values.astype(bool) if consider_masked else None
 
     c  = []
     # While there are more local maxima
