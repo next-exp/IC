@@ -867,35 +867,46 @@ def build_pointlike_event(dbfile, run_number, drift_v,
     return build_pointlike_event
 
 
-def hit_builder(dbfile, run_number, drift_v, reco,
-                rebin_slices, rebin_method,
-                global_reco_params, charge_type):
+def get_s1_time(pmap, selector_output):
+    # in order to compute z one needs to define one S1
+    # for time reference. By default the filter will only
+    # take events with exactly one s1. Otherwise, the
+    # convention is to take the first peak in the S1 object
+    # as reference.
+    if np.any(selector_output.s1_peaks):
+        first_s1 = np.where(selector_output.s1_peaks)[0][0]
+        s1_t     = pmap.s1s[first_s1].time_at_max_energy
+    else:
+        first_s2 = np.where(selector_output.s2_peaks)[0][0]
+        s1_t     = pmap.s2s[first_s2].times[0]
+
+    return s1_t
+
+
+def try_global_reco(reco, xys, qs):
+    try              : cluster = reco(xys, qs)[0]
+    except XYRecoFail: return xy.empty()
+    else             : return xy(cluster.X, cluster.Y)
+
+
+def sipm_positions(dbfile, run_number):
     datasipm = load_db.DataSiPM(dbfile, run_number)
     sipm_xs  = datasipm.X.values
     sipm_ys  = datasipm.Y.values
     sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
+    return sipm_xys
 
+
+def hit_builder(dbfile, run_number, drift_v,
+                rebin_slices, rebin_method,
+                global_reco, slice_reco,
+                charge_type):
+    sipm_xys   = sipm_positions(dbfile, run_number)
     sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
-
-    barycenter = partial(corona, all_sipms = datasipm, **global_reco_params)
-
-    def empty_cluster():
-        return Cluster(NN, xy(0,0), xy(0,0), 0)
 
     def build_hits(pmap, selector_output, event_number, timestamp):
         hitc = HitCollection(event_number, timestamp * 1e-3)
-
-        # in order to compute z one needs to define one S1
-        # for time reference. By default the filter will only
-        # take events with exactly one s1. Otherwise, the
-        # convention is to take the first peak in the S1 object
-        # as reference.
-        if np.any(selector_output.s1_peaks):
-            first_s1 = np.where(selector_output.s1_peaks)[0][0]
-            s1_t     = pmap.s1s[first_s1].time_at_max_energy
-        else:
-            first_s2 = np.where(selector_output.s2_peaks)[0][0]
-            s1_t     = pmap.s2s[first_s2].times[0]
+        s1_t = get_s1_time(pmap, selector_output)
 
         # here hits are computed for each peak and each slice.
         # In case of an exception, a hit is still created with a NN cluster.
@@ -910,26 +921,25 @@ def hit_builder(dbfile, run_number, drift_v, reco,
             xys  = sipm_xys[peak.sipms.ids]
             qs   = peak.sipm_charge_array(sipm_noise, charge_type,
                                           single_point = True)
-            try              : cluster = barycenter(xys, qs)[0]
-            except XYRecoFail: xy_peak = xy(NN, NN)
-            else             : xy_peak = xy(cluster.X, cluster.Y)
+            xy_peak = try_global_reco(global_reco, xys, qs)
 
             sipm_charge = peak.sipm_charge_array(sipm_noise        ,
                                                  charge_type       ,
                                                  single_point=False)
+
             for slice_no, (t_slice, qs) in enumerate(zip(peak.times ,
                                                          sipm_charge)):
                 z_slice = (t_slice - s1_t) * units.ns * drift_v
                 e_slice = peak.pmts.sum_over_sensors[slice_no]
                 try:
                     xys      = sipm_xys[peak.sipms.ids]
-                    clusters = reco(xys, qs)
+                    clusters = slice_reco(xys, qs)
                     es       = hif.split_energy(e_slice, clusters)
                     for c, e in zip(clusters, es):
-                        hit       = Hit(peak_no, c, z_slice, e, xy_peak)
+                        hit  = Hit(peak_no, c, z_slice, e, xy_peak)
                         hitc.hits.append(hit)
                 except XYRecoFail:
-                    hit = Hit(peak_no, empty_cluster(), z_slice,
+                    hit = Hit(peak_no, Cluster.empty(), z_slice,
                               e_slice, xy_peak)
                     hitc.hits.append(hit)
 
