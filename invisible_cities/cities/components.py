@@ -81,6 +81,7 @@ from .. types  .symbols           import                SiPMCharge
 from .. types  .symbols           import                    XYReco
 
 
+
 def city(city_function):
     @wraps(city_function)
     def proxy(**kwds):
@@ -942,6 +943,67 @@ def hit_builder(dbfile, run_number, drift_v,
                     hit = Hit(peak_no, Cluster.empty(), z_slice,
                               e_slice, xy_peak)
                     hitc.hits.append(hit)
+
+        return hitc
+    return build_hits
+
+
+def sipms_as_hits(dbfile, run_number, drift_v,
+                  rebin_slices, rebin_method,
+                  q_thr,
+                  global_reco, charge_type):
+
+    sipm_xys   = sipm_positions(dbfile, run_number)
+    sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
+    epsilon    = np.finfo(np.float64).eps
+
+    def make_cluster(q, x, y):
+        return Cluster(q, xy(x, y), xy(0,0), 1)
+
+    def build_hits(pmap, selector_output, event_number, timestamp):
+        hitc = HitCollection(event_number, timestamp * 1e-3)
+        s1_t = get_s1_time(pmap, selector_output)
+
+        for peak_no, (passed, peak) in enumerate(zip(selector_output.s2_peaks,
+                                                     pmap.s2s)):
+            if not passed: continue
+
+            peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
+
+            xys  = sipm_xys[peak.sipms.ids]
+            qs   = peak.sipm_charge_array(sipm_noise, charge_type,
+                                          single_point = True)
+
+            xy_peak = try_global_reco(global_reco, xys, qs)
+
+            sipm_charge = peak.sipm_charge_array(sipm_noise        ,
+                                                 charge_type       ,
+                                                 single_point=False)
+
+            slice_zs = (peak.times - s1_t) * units.ns * drift_v
+            slice_es = peak.pmts.sum_over_sensors
+            xys      = sipm_xys[peak.sipms.ids]
+
+            for (slice_z, slice_e, sipm_qs) in zip(slice_zs, slice_es, sipm_charge):
+                over_thr = sipm_qs >= q_thr
+                if np.any(over_thr):
+                    sipm_qs  = sipm_qs[over_thr]
+                    sipm_xy  = xys[over_thr]
+                    sipm_es  = sipm_qs * slice_e / (np.sum(sipm_qs) + epsilon)
+
+                    for q, e, (x, y) in zip(sipm_qs, sipm_es, sipm_xy):
+                        hitc.hits.append( Hit( peak_no
+                                             , make_cluster(q, x, y)
+                                             , slice_z
+                                             , e
+                                             , xy_peak))
+
+                else:
+                    hitc.hits.append( Hit( peak_no
+                                         , Cluster.empty()
+                                         , slice_z
+                                         , slice_e
+                                         , xy_peak))
 
         return hitc
     return build_hits
