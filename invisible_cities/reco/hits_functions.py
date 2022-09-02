@@ -12,8 +12,8 @@ def split_energy(total_e, clusters):
     qs = np.array([c.Q for c in clusters])
     return total_e * qs / np.sum(qs)
 
-def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit]: 
-    """ Returns a list of the hits where the  energies of NN hits are distributed to the closest hits such that the added energy is proportional to 
+def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit]:
+    """ Returns a list of the hits where the  energies of NN hits are distributed to the closest hits such that the added energy is proportional to
     the hit energy. If all the hits were NN the function returns empty list. """
     nn_hits     = [h for h in hits if h.Q==NN]
     non_nn_hits = [deepcopy(h) for h in hits if h.Q!=NN]
