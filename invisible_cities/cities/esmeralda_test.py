@@ -20,15 +20,12 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
     PATH_OUT  = os.path.join(config_tmpdir, "Kr_tracks_with_MC.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = all_events
-    conf.update(dict(files_in                  = PATH_IN                   ,
-                     file_out                  = PATH_OUT                  ,
-                     event_range               = nevt_req                  ,
-                     cor_hits_params           = dict(
-                         map_fname             = correction_map_MC_filename,
-                         threshold_charge_low  = 6  * units.pes            ,
-                         threshold_charge_high = 30 * units.pes            ,
-                         same_peak             = True                      ,
-                         apply_temp            = False                    )))
+    conf.update(dict( files_in    = PATH_IN
+                    , file_out    = PATH_OUT
+                    , event_range = nevt_req
+                    , threshold   = 30 * units.pes
+                    , same_peak   = True))
+
     esmeralda(**conf)
 
     with tb.open_file(PATH_OUT) as h5out:
@@ -56,15 +53,11 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = 8
 
-    conf.update(dict(files_in                  = PATH_IN                   ,
-                     file_out                  = PATH_OUT                  ,
-                     event_range               = nevt_req                  ,
-                     cor_hits_params           = dict(
-                         map_fname             = correction_map_MC_filename,
-                         threshold_charge_low  = 150  * units.pes          ,
-                         threshold_charge_high = 200  * units.pes          ,
-                         same_peak             = True                      ,
-                         apply_temp            = False                    )))
+    conf.update(dict( files_in    = PATH_IN
+                    , file_out    = PATH_OUT
+                    , event_range = nevt_req
+                    , threshold   = 200 * units.pes
+                    , same_peak   = True))
 
     cnt = esmeralda(**conf)
 
@@ -100,15 +93,11 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
     PATH_OUT  = os.path.join(config_tmpdir, "Kr_tracks_with_MC_out_of_map.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = 8
-    conf.update(dict(files_in                  = PATH_IN                   ,
-                     file_out                  = PATH_OUT                  ,
-                     event_range               = nevt_req                  ,
-                     cor_hits_params           = dict(
-                         map_fname             = correction_map_MC_filename,
-                         threshold_charge_low  = 20   * units.pes          ,
-                         threshold_charge_high = 20   * units.pes          ,
-                         same_peak             = True                      ,
-                         apply_temp            = False                    )))
+    conf.update(dict( files_in    = PATH_IN
+                    , file_out    = PATH_OUT
+                    , event_range = nevt_req
+                    , threshold   = 20 * units.pes
+                    , same_peak   = True))
 
     cnt = esmeralda(**conf)
 
@@ -137,23 +126,18 @@ def test_esmeralda_tracks_exact(data_hdst, esmeralda_tracks, correction_map_file
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = all_events
 
-    conf.update(dict(files_in                  = PATH_IN                ,
-                     file_out                  = PATH_OUT               ,
-                     event_range               = nevt_req               ,
-                     run_number                = 6822                   ,
-                     cor_hits_params           = dict(
-                         map_fname             = correction_map_filename,
-                         threshold_charge_low  = 10   * units.pes       ,
-                         threshold_charge_high = 30   * units.pes       ,
-                         same_peak             = True                   ,
-                         apply_temp            = False                 ),
-                     paolina_params            = dict(
-                         vox_size              = [15 * units.mm] * 3    ,
-                         strict_vox_size       = False                  ,
-                         energy_threshold      = 0 * units.keV          ,
-                         min_voxels            = 2                      ,
-                         blob_radius           = 21 * units.mm          ,
-                         max_num_hits          = 10000                 )))
+    conf.update(dict( files_in       = PATH_IN
+                    , file_out       = PATH_OUT
+                    , event_range    = nevt_req
+                    , run_number     = 6822
+                    , threshold      = 30 * units.pes
+                    , same_peak      = True
+                    , paolina_params = dict( vox_size         = [15 * units.mm] * 3
+                                           , strict_vox_size  = False
+                                           , energy_threshold = 0 * units.keV
+                                           , min_voxels       = 2
+                                           , blob_radius      = 21 * units.mm
+                                           , max_num_hits     = 10000)))
 
     esmeralda(**conf)
 
@@ -192,23 +176,18 @@ def test_esmeralda_blob_overlap_bug(data_hdst, correction_map_filename, config_t
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = 4, 8
 
-    conf.update(dict(files_in                  = PATH_IN                ,
-                     file_out                  = PATH_OUT               ,
-                     event_range               = nevt_req               ,
-                     run_number                = 6822                   ,
-                     cor_hits_params           = dict(
-                         map_fname             = correction_map_filename,
-                         threshold_charge_low  = 10   * units.pes       ,
-                         threshold_charge_high = 30   * units.pes       ,
-                         same_peak             = True                   ,
-                         apply_temp            = False                 ),
-                     paolina_params            = dict(
-                         vox_size              = [15 * units.mm] * 3    ,
-                         strict_vox_size       = False                  ,
-                         energy_threshold      = 0 * units.keV          ,
-                         min_voxels            = 2                      ,
-                         blob_radius           = 21 * units.mm          ,
-                         max_num_hits          = 10000                 )))
+    conf.update(dict( files_in       = PATH_IN
+                    , file_out       = PATH_OUT
+                    , event_range    = nevt_req
+                    , run_number     = 6822
+                    , threshold      = 30 * units.pes
+                    , same_peak      = True
+                    , paolina_params = dict( vox_size         = [15 * units.mm] * 3
+                                           , strict_vox_size  = False
+                                           , energy_threshold = 0 * units.keV
+                                           , min_voxels       = 2
+                                           , blob_radius      = 21 * units.mm
+                                           , max_num_hits     = 10000)))
 
     esmeralda(**conf)
 
@@ -221,22 +200,17 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     true_out  =  os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_KDST_no_filter.NEWMC.h5")
     nevt_req  = all_events
-    conf.update(dict(files_in                  = file_in                   ,
-                     file_out                  = file_out                  ,
-                     event_range               = nevt_req                  ,
-                     cor_hits_params           = dict(
-                         map_fname             = correction_map_MC_filename,
-                         threshold_charge_low  = 10   * units.pes          ,
-                         threshold_charge_high = 20   * units.pes          ,
-                         same_peak             = True                      ,
-                         apply_temp            = False                    ),
-                     paolina_params            = dict(
-                         vox_size              = [15 * units.mm] * 3       ,
-                         strict_vox_size       = False                     ,
-                         energy_threshold      = 0 * units.keV             ,
-                         min_voxels            = 2                         ,
-                         blob_radius           = 21 * units.mm             ,
-                         max_num_hits          = 10000                    )))
+    conf.update(dict( files_in       = file_in
+                    , file_out       = file_out
+                    , event_range    = nevt_req
+                    , threshold      = 20 * units.pes
+                    , same_peak      = True
+                    , paolina_params = dict( vox_size         = [15 * units.mm] * 3
+                                           , strict_vox_size  = False
+                                           , energy_threshold = 0 * units.keV
+                                           , min_voxels       = 2
+                                           , blob_radius      = 21 * units.mm
+                                           , max_num_hits     = 10000)))
 
     esmeralda(**conf)
 
@@ -263,23 +237,18 @@ def test_esmeralda_bug_duplicate_hits(data_hdst, correction_map_filename, config
     PATH_OUT  = os.path.join(config_tmpdir, "exact_tracks_esmeralda_drop_voxels_bug.h5")
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = 1
-    conf.update(dict(files_in                  = PATH_IN                ,
-                     file_out                  = PATH_OUT               ,
-                     event_range               = nevt_req               ,
-                     run_number                = 6822                   ,
-                     cor_hits_params           = dict(
-                         map_fname             = correction_map_filename,
-                         threshold_charge_low  = 10   * units.pes       ,
-                         threshold_charge_high = 30   * units.pes       ,
-                         same_peak             = True                   ,
-                         apply_temp            = False                 ),
-                     paolina_params            = dict(
-                         vox_size              = [15 * units.mm] * 3    ,
-                         strict_vox_size       = False                  ,
-                         energy_threshold      = 0 * units.keV          ,
-                         min_voxels            = 2                      ,
-                         blob_radius           = 21 * units.mm          ,
-                         max_num_hits          = 10000                 )))
+    conf.update(dict( files_in       = PATH_IN
+                    , file_out       = PATH_OUT
+                    , event_range    = nevt_req
+                    , run_number     = 6822
+                    , threshold      = 30 * units.pes
+                    , same_peak      = True
+                    , paolina_params = dict( vox_size         = [15 * units.mm] * 3
+                                           , strict_vox_size  = False
+                                           , energy_threshold = 0 * units.keV
+                                           , min_voxels       = 2
+                                           , blob_radius      = 21 * units.mm
+                                           , max_num_hits     = 10000)))
 
     esmeralda(**conf)
 
@@ -297,23 +266,18 @@ def test_esmeralda_all_hits_after_drop_voxels(data_hdst, esmeralda_tracks, corre
     conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
     nevt_req  = all_events
     th_p      = 30 * units.pes
-    conf.update(dict(files_in                  = PATH_IN                ,
-                     file_out                  = PATH_OUT               ,
-                     event_range               = nevt_req               ,
-                     run_number                = 6822                   ,
-                     cor_hits_params           = dict(
-                         map_fname             = correction_map_filename,
-                         threshold_charge_low  = 10   * units.pes       ,
-                         threshold_charge_high = th_p                   ,
-                         same_peak             = True                   ,
-                         apply_temp            = False                 ),
-                     paolina_params            = dict(
-                         vox_size              = [15 * units.mm] * 3    ,
-                         strict_vox_size       = False                  ,
-                         energy_threshold      = 20 * units.keV         ,
-                         min_voxels            = 2                      ,
-                         blob_radius           = 21 * units.mm          ,
-                         max_num_hits          = 10000                 )))
+    conf.update(dict( files_in       = PATH_IN
+                    , file_out       = PATH_OUT
+                    , event_range    = nevt_req
+                    , run_number     = 6822
+                    , threshold      = th_p
+                    , same_peak      = True
+                    , paolina_params = dict( vox_size         = [15 * units.mm] * 3
+                                           , strict_vox_size  = False
+                                           , energy_threshold = 20 * units.keV
+                                           , min_voxels       = 2
+                                           , blob_radius      = 21 * units.mm
+                                           , max_num_hits     = 10000)))
     esmeralda(**conf)
 
     df_phits            =  dio.load_dst(PATH_OUT,   'CHITS' , 'highTh')
@@ -337,23 +301,18 @@ def test_esmeralda_filters_events_with_too_many_hits(data_hdst, correction_map_f
     nevt_req  = 9
     nhits_max = 50
     paolina_events = {3021898, 3021914, 3021930, 3020951, 3020961}
-    conf.update(dict(files_in                  = PATH_IN                ,
-                     file_out                  = PATH_OUT               ,
-                     event_range               = nevt_req               ,
-                     run_number                = 6822                   ,
-                     cor_hits_params           = dict(
-                         map_fname             = correction_map_filename,
-                         threshold_charge_low  = 10   * units.pes       ,
-                         threshold_charge_high = 30   * units.pes       ,
-                         same_peak             = True                   ,
-                         apply_temp            = False                 ),
-                     paolina_params            = dict(
-                         vox_size              = [15 * units.mm] * 3    ,
-                         strict_vox_size       = False                  ,
-                         energy_threshold      = 20 * units.keV         ,
-                         min_voxels            = 2                      ,
-                         blob_radius           = 21 * units.mm          ,
-                         max_num_hits          = nhits_max            )))
+    conf.update(dict( files_in       = PATH_IN
+                    , file_out       = PATH_OUT
+                    , event_range    = nevt_req
+                    , run_number     = 6822
+                    , threshold      = 30 * units.pes
+                    , same_peak      = True
+                    , paolina_params = dict( vox_size         = [15 * units.mm] * 3
+                                           , strict_vox_size  = False
+                                           , energy_threshold = 20 * units.keV
+                                           , min_voxels       = 2
+                                           , blob_radius      = 21 * units.mm
+                                           , max_num_hits     = nhits_max)))
 
     esmeralda(**conf)
 
