@@ -48,18 +48,30 @@ def threshold_hits(hits : List[evm.Hit], th : float, on_corrected : bool=False) 
         new_hits=[]
         for z_slice in np.unique([x.Z for x in hits]):
             slice_hits  = [x for x in hits if x.Z == z_slice]
-            e_slice     = sum([x.E for x in slice_hits])
+            raw_es      = np.array([x.E  for x in slice_hits])
+            cor_es      = np.array([x.Ec for x in slice_hits])
+            raw_e_slice = np.   sum(raw_es)
+            cor_e_slice = np.nansum(cor_es) + np.finfo(np.float64).eps
+
             if on_corrected:
                 mask_thresh = np.array([x.Qc >= th for x in slice_hits])
             else:
                 mask_thresh = np.array([x.Q  >= th for x in slice_hits])
             if sum(mask_thresh) < 1:
-                hit = evm.Hit(slice_hits[0].npeak, evm.Cluster.empty(), z_slice, e_slice, xy(slice_hits[0].Xpeak,slice_hits[0].Ypeak))
+                hit = evm.Hit( slice_hits[0].npeak
+                             , evm.Cluster.empty()
+                             , z_slice
+                             , raw_e_slice
+                             , xy(slice_hits[0].Xpeak, slice_hits[0].Ypeak)
+                             , s2_energy_c = cor_e_slice)
                 new_hits.append(hit)
                 continue
             hits_pass_th = list(compress(deepcopy(slice_hits), mask_thresh))
-            es = split_energy(e_slice, hits_pass_th)
-            for i,x in enumerate(hits_pass_th):
-                x.E = es[i]
-                new_hits.append(x)
+
+            raw_es_new = split_energy(raw_e_slice, hits_pass_th)
+            cor_es_new = split_energy(cor_e_slice, hits_pass_th)
+            for hit, raw_e, cor_e in zip(hits_pass_th, raw_es_new, cor_es_new):
+                hit.E  = raw_e
+                hit.Ec = cor_e
+                new_hits.append(hit)
         return new_hits
