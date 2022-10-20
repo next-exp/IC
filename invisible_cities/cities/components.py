@@ -1361,3 +1361,50 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                 create_extract_track_blob_info              ,
                 filter_events_topology                      ,
                 fl.branch(fl.fork(*fork_pipes)))
+
+
+@check_annotations
+def hits_merger(same_peak : bool) -> Callable:
+    def merge_hits(hc : HitCollection) -> HitCollection:
+        merged_hits = hif.merge_NN_hits(hc.hits, same_peak)
+        return HitCollection(hc.event, hc.time, merged_hits)
+
+    return merge_hits
+
+
+@check_annotations
+def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
+    """
+    Applies a threshold to hits and redistributes the charge/energy.
+
+    Parameters
+    ----------
+    threshold_charge : float
+        minimum pes of a hit
+    same_peak        : bool
+        whether to reassign NN hits' energy only to the hits from the same peak
+
+    Returns
+    ----------
+    A function that takes HitCollection as input and returns another object with
+    only non NN hits of charge above threshold_charge.
+    The energy of NN hits is redistributed among neighbors.
+    """
+
+    def threshold_hits(hitc : HitCollection) -> HitCollection:
+        t = hitc.time
+        thr_hits = hif.threshold_hits(hitc.hits, threshold_charge     )
+        mrg_hits = hif.merge_NN_hits ( thr_hits, same_peak = same_peak)
+
+        cor_hits = []
+        for hit in mrg_hits:
+            cluster = Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm)
+            xypos   = xy(hit.Xpeak, hit.Ypeak)
+            hit     = Hit(hit.npeak, cluster, hit.Z, hit.E, xypos, hit.Ec)
+            cor_hits.append(hit)
+
+        new_hitc      = HitCollection(hitc.event, t)
+        new_hitc.hits = cor_hits
+        return new_hitc
+
+    return threshold_hits
