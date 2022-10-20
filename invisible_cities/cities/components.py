@@ -1346,18 +1346,18 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     write_no_hits_filter  = fl.sink( event_filter_writer(h5out, filter_hits_table_name), args=("event_number", "hits_passed"))
 
 
-    fn_list = (filter_events_nohits                        ,
-               fl.branch(write_no_hits_filter)             ,
-               hits_passed.              filter            ,
-               copy_Efield                                 ,
-               create_extract_track_blob_info              ,
-               filter_events_topology                      ,
-               fl.branch(make_final_summary, write_summary),
-               fl.branch(write_topology_filter)            ,
-               write_paolina_hits                          ,
-               events_passed_topology.   filter            ,
-               fl.branch(write_tracks)                     )
+    make_and_write_summary  = make_final_summary, write_summary
+    select_and_write_tracks = events_passed_topology.filter, write_tracks
 
-    compute_tracks = pipe(*filter(None, fn_list))
+    fork_pipes = filter(None, ( make_and_write_summary
+                              , write_topology_filter
+                              , write_paolina_hits
+                              , select_and_write_tracks))
 
-    return compute_tracks
+    return pipe(filter_events_nohits                        ,
+                fl.branch(write_no_hits_filter)             ,
+                hits_passed.              filter            ,
+                copy_Efield                                 ,
+                create_extract_track_blob_info              ,
+                filter_events_topology                      ,
+                fl.branch(fl.fork(*fork_pipes)))
