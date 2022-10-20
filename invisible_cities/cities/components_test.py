@@ -160,7 +160,7 @@ def test_hits_and_kdst_from_files(ICDATADIR):
     num_hits     = 13
     keys = ['hits', 'kdst', 'run_number', 'event_number', 'timestamp']
     file_in     = os.path.join(ICDATADIR    ,  'Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.HDST.h5')
-    generator = hits_and_kdst_from_files([file_in])
+    generator = hits_and_kdst_from_files([file_in], "RECO", "Events")
     output = next(generator)
     assert set(keys) == set(output.keys())
     assert output['event_number']   == event_number

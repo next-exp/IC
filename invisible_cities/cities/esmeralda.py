@@ -151,7 +151,7 @@ def esmeralda( files_in       : OneOrManyFiles
         collect_evts = "event_number", fl.fork( event_number_collector.sink
                                               , event_count_out       .sink)
 
-        result = push(source = hits_and_kdst_from_files(files_in),
+        result = push(source = hits_and_kdst_from_files(files_in, "RECO", "Events"),
                       pipe   = pipe( fl.slice(*event_range, close_all=True)
                                    , print_every(print_mod)
                                    , event_count_in.spy

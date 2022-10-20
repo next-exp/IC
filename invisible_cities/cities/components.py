@@ -557,12 +557,14 @@ def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
 
 
 @check_annotations
-def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
+def hits_and_kdst_from_files( paths : List[str]
+                            , group : str
+                            , node  : str ) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields HitsCollection, pandas DataFrame with
     kdst info, run_number, event_number and timestamp."""
     for path in paths:
         try:
-            hits_df = load_dst (path, 'RECO', 'Events')
+            hits_df = load_dst (path, group, node)
             kdst_df = load_dst (path, 'DST' , 'Events')
         except tb.exceptions.NoSuchNodeError:
             continue
