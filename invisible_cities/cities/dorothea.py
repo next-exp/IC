@@ -34,6 +34,7 @@ The properties of the S2 signals are those of the S1 signal plus:
     - R      (radial coordinate from X and Y)
     - Phi    (azimuthal coordinate from X and Y)
 """
+
 from operator import attrgetter
 
 import tables as tb
@@ -48,6 +49,8 @@ from .. dataflow.dataflow import push
 from .. dataflow.dataflow import pipe
 
 from .  components import city
+from .  components import collect 
+from .  components import copy_mc_info 
 from .  components import print_every
 from .  components import pmap_from_files
 from .  components import peak_classifier
@@ -60,7 +63,9 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, detector_d
              drift_v,
              s1_nmin, s1_nmax, s1_emin, s1_emax, s1_wmin, s1_wmax, s1_hmin, s1_hmax, s1_ethr,
              s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax,
+             include_mc = False,
              global_reco_params=dict()):
+
     # global_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm
     # qlm           =  0 * pes every Cluster must contain at least one SiPM with charge >= qlm
     # lm_radius     = -1 * mm  by default, use overall barycenter for KrCity
@@ -82,6 +87,8 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, detector_d
 
     event_count_in        = fl.spy_count()
     event_count_out       = fl.spy_count()
+    
+    evtnum_collect        = collect() 
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
 
@@ -90,19 +97,27 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, detector_d
         write_pointlike_event = fl.sink(           kr_writer(h5out                ), args="pointlike_event")
         write_pmap_filter     = fl.sink( event_filter_writer(h5out, "s12_selector"), args=("event_number", "pmap_passed"))
 
-        return push(source = pmap_from_files(files_in),
-                    pipe   = pipe(
-                        fl.slice(*event_range, close_all=True),
-                        print_every(print_mod)                ,
-                        event_count_in       .spy             ,
-                        classify_peaks                        ,
-                        pmap_passed                           ,
-                        fl.branch(write_pmap_filter)          ,
-                        pmap_select          .filter          ,
-                        event_count_out      .spy             ,
-                        build_pointlike_event                 ,
-                        fl.fork(write_pointlike_event         ,
-                                write_event_info              )),
-                    result = dict(events_in  = event_count_in .future,
-                                  events_out = event_count_out.future,
-                                  selection  = pmap_select    .future))
+        result = push(source = pmap_from_files(files_in),
+                      pipe   = pipe(fl.slice(*event_range, close_all=True),
+                                    print_every(print_mod)                ,
+                                    event_count_in       .spy             ,
+                                    classify_peaks                        ,
+                                    pmap_passed                           ,
+                                    fl.branch(write_pmap_filter)          ,
+                                    pmap_select          .filter          ,
+                                    event_count_out      .spy             ,
+                                    build_pointlike_event                 ,
+                                    fl.branch("event_number", evtnum_collect.sink), 
+                                    fl.fork(write_pointlike_event         ,
+                                        write_event_info              )),
+                      result = dict(events_in   = event_count_in .future,
+                                    events_out  = event_count_out.future,
+                                    evtnum_list = evtnum_collect .future, 
+                                    selection   = pmap_select    .future))
+                      
+        if run_number <= 0 and include_mc == True: 
+            
+            copy_mc_info(files_in, h5out, result.evtnum_list,
+                         detector_db, run_number)
+            
+        return result
