@@ -30,6 +30,7 @@ from .  components import city
 from .  components import collect
 from .  components import copy_mc_info
 from .  components import print_every
+from .  components import hits_thresholder
 from .  components import cdst_from_files
 from .  components import summary_writer
 
@@ -317,6 +318,8 @@ def beersheba( files_in      : OneOrManyFiles
              , print_mod     : int
              , detector_db   : str
              , run_number    : int
+             , threshold     : float
+             , same_peak     : bool
              , deconv_params : dict
              ):
     """
@@ -337,6 +340,10 @@ def beersheba( files_in      : OneOrManyFiles
     run_number  : int
          Has to be negative for MC runs
 
+    threshold     : float
+        Threshold to be applied to all SiPMs.
+    same_peak     : bool
+        Whether to reassign NN hits within the same peak.
     deconv_params : dict
         q_cut          : float
             Minimum charge (pes) on a hit (SiPM)
@@ -388,6 +395,8 @@ def beersheba( files_in      : OneOrManyFiles
     SUMMARY : Table with the summary from Esmeralda.
 """
 
+    threshold_hits  = fl.map(hits_thresholder(threshold, same_peak), item="hits")
+
     deconv_params['psf_fname'   ] = expandvars(deconv_params['psf_fname'])
 
     for p in ['sample_width', 'bin_size', 'diffusion']:
@@ -397,19 +406,19 @@ def beersheba( files_in      : OneOrManyFiles
         raise     NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
 
     cut_sensors           = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
-                                   item = 'cdst')
+                                   item = 'hits')
     drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
-                                   item = 'cdst')
+                                   item = 'hits')
     filter_events_no_hits = fl.map(check_nonempty_dataframe,
-                                   args = 'cdst',
-                                   out  = 'cdst_passed_no_hits')
+                                   args = 'hits',
+                                   out  = 'hits_passed_no_hits')
     deconvolve_events     = fl.map(deconvolve_signal(DataSiPM(detector_db, run_number), **deconv_params),
-                                   args = 'cdst',
+                                   args = 'hits',
                                    out  = 'deconv_dst')
 
     event_count_in        = fl.spy_count()
     event_count_out       = fl.spy_count()
-    events_passed_no_hits = fl.count_filter(bool, args = "cdst_passed_no_hits")
+    events_passed_no_hits = fl.count_filter(bool, args = "hits_passed_no_hits")
 
     filter_out_none       = fl.filter(lambda x: x is not None, args = "kdst")
 
@@ -426,6 +435,7 @@ def beersheba( files_in      : OneOrManyFiles
                       pipe   = pipe(fl.slice(*event_range, close_all=True)    ,
                                     print_every(print_mod)                    ,
                                     event_count_in.spy                        ,
+                                    threshold_hits                            ,
                                     cut_sensors                               ,
                                     drop_sensors                              ,
                                     filter_events_no_hits                     ,
