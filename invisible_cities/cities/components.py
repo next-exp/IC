@@ -525,8 +525,7 @@ def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
        pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
     for path in paths:
         try:
-            cdst_df    = load_dst (path,   'CHITS', 'lowTh')
-            summary_df = load_dst (path, 'Summary', 'Events')
+            cdst_df    = load_dst (path,   'RECO', 'Events')
         except tb.exceptions.NoSuchNodeError:
             continue
 
@@ -545,8 +544,7 @@ def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
             for evtinfo in event_info:
                 event_number, timestamp = evtinfo
                 this_event = lambda df: df.event==event_number
-                yield dict(cdst    = cdst_df   .loc[this_event],
-                           summary = summary_df.loc[this_event],
+                yield dict(hits    = cdst_df   .loc[this_event],
                            kdst    = kdst_df   .loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
                                                                 else None,
                            run_number=run_number,
