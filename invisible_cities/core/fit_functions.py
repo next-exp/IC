@@ -109,6 +109,11 @@ def get_chi2_and_pvalue(ydata, yfit, ndf, sigma=None):
 # ###########################################################
 # Functions
 def gauss(x, area, mu, sigma):
+    """
+    Gaussian function. Defined as A/sqrt(2 pi)/sigma exp(-(x-mu)**2/2/sigma**2),
+    where A is the of the area (integral) of the function from -inf to +inf.
+    The amplitude of the curve at x=mu is given by A/sqrt(2 pi)/sigma.
+    """
     if sigma <= 0.:
         return np.inf
     return area/(2*np.pi)**.5/sigma * np.exp(-0.5*(x-mu)**2./sigma**2.)
