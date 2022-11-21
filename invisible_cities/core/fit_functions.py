@@ -108,10 +108,10 @@ def get_chi2_and_pvalue(ydata, yfit, ndf, sigma=None):
 
 # ###########################################################
 # Functions
-def gauss(x, amp, mu, sigma):
+def gauss(x, area, mu, sigma):
     if sigma <= 0.:
         return np.inf
-    return amp/(2*np.pi)**.5/sigma * np.exp(-0.5*(x-mu)**2./sigma**2.)
+    return area/(2*np.pi)**.5/sigma * np.exp(-0.5*(x-mu)**2./sigma**2.)
 
 
 def polynom(x, *coeffs):
