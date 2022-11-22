@@ -3,6 +3,7 @@ import os
 import numpy  as np
 import tables as tb
 
+from pytest                  import mark
 from .. io.dst_io            import load_dst
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
@@ -101,24 +102,38 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     assert np.all(dst.s2_peak.values == s2_peak_pass)
 
 
-def test_dorothea_exact_result(ICDATADIR, output_tmpdir):
-    file_in     = os.path.join(ICDATADIR    ,  "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
-    file_out    = os.path.join(output_tmpdir,                      "exact_result_dorothea.h5")
-    true_output = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.KDST.h5")
+@mark.parametrize("include_mc", (False, True))
+def test_dorothea_exact_result(ICDATADIR, output_tmpdir,  include_mc): 
+
+    tables      = ("DST/Events", "Filters/s12_selector", "Run/runInfo")
+    
+    file_in     = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
+    true_output = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.KDSTwithMC.h5")
+
+    if include_mc:
+
+        file_out = os.path.join(output_tmpdir, 'dorothea_exact_result_with_MC.h5')
+        tables   = tables + ("MC/hits", "MC/particles")
+
+    else:
+
+        file_out = os.path.join(output_tmpdir, 'dorothea_exact_result_without_MC.h5')
 
     conf = configure("dorothea invisible_cities/config/dorothea.conf".split())
     conf.update(dict(run_number   = -6340,
                      files_in     = file_in,
                      file_out     = file_out,
-                     event_range  = all_events))
+                     event_range  = all_events,
+                     include_mc   = include_mc))
 
     dorothea(**conf)
 
-    tables = (    "DST/Events",
-              "Filters/s12_selector")
     with tb.open_file(true_output)  as true_output_file:
+
         with tb.open_file(file_out) as      output_file:
+
             for table in tables:
+                
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
