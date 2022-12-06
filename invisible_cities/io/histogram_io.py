@@ -6,7 +6,7 @@ from .. reco import tbl_functions as tbl
 def hist_writer(file,
                 *,
                 group_name  : 'options: HIST, HIST2D',
-                table_name  : 'options: pmt, pmtMAU, sipm, sipmMAU',
+                table_name  : 'options: pmt, pmtMAW, sipm, sipmMAW',
                 n_sensors   : 'number of pmts or sipms',
                 bin_centres : 'np.array of bin centres',
                 compression = None):

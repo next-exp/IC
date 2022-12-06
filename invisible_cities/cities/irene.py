@@ -45,7 +45,7 @@ from .  components import compute_and_write_pmaps
 
 @city
 def irene(files_in, file_out, compression, event_range, print_mod, detector_db, run_number,
-          n_baseline, n_mau, thr_mau, thr_sipm, thr_sipm_type,
+          n_baseline, n_maw, thr_maw, thr_sipm, thr_sipm_type,
           s1_lmin, s1_lmax, s1_tmin, s1_tmax, s1_rebin_stride, s1_stride, thr_csum_s1,
           s2_lmin, s2_lmax, s2_tmin, s2_tmax, s2_rebin_stride, s2_stride, thr_csum_s2, thr_sipm_s2,
           pmt_samp_wid=25*units.ns, sipm_samp_wid=1*units.mus):
@@ -70,13 +70,13 @@ def irene(files_in, file_out, compression, event_range, print_mod, detector_db, 
                               out  = "cwf")
 
     # Corrected WaveForm to Calibrated Corrected WaveForm
-    cwf_to_ccwf      = fl.map(calibrate_pmts(detector_db, run_number, n_mau, thr_mau),
+    cwf_to_ccwf      = fl.map(calibrate_pmts(detector_db, run_number, n_maw, thr_maw),
                               args = "cwf",
-                              out  = ("ccwfs", "ccwfs_mau", "cwf_sum", "cwf_sum_mau"))
+                              out  = ("ccwfs", "ccwfs_maw", "cwf_sum", "cwf_sum_maw"))
 
     # Find where waveform is above threshold
     zero_suppress    = fl.map(zero_suppress_wfs(thr_csum_s1, thr_csum_s2),
-                              args = ("cwf_sum", "cwf_sum_mau"),
+                              args = ("cwf_sum", "cwf_sum_maw"),
                               out  = ("s1_indices", "s2_indices", "s2_energies"))
 
     # Remove baseline and calibrate SiPMs
