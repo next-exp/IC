@@ -32,12 +32,16 @@ def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit
         except ValueError:
             continue
         h_closest = [h for h in hits_to_merge if np.isclose(abs(h.Z-nn_h.Z), z_closest)]
-        en_tot = sum([h.E for h in h_closest])
-        for h in h_closest:
-            hits_to_correct.append([h,nn_h.E*(h.E/en_tot)])
 
-    for h, en in hits_to_correct:
-        h.E += en
+        total_raw_energy = sum(h.E  for h in h_closest)
+        total_cor_energy = sum(h.Ec for h in h_closest)
+        for h in h_closest:
+            hits_to_correct.append([h, nn_h.E * h.E / total_raw_energy, nn_h.Ec * h.Ec / total_cor_energy])
+
+    for h, raw_e, cor_e in hits_to_correct:
+        h.E  += raw_e
+        h.Ec += cor_e
+
     return non_nn_hits
 
 def threshold_hits(hits : List[evm.Hit], th : float, on_corrected : bool=False) -> List[evm.Hit]:
