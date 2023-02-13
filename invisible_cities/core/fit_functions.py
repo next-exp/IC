@@ -19,7 +19,7 @@ from functools import wraps
 from .                    import core_functions as coref
 from .  stat_functions    import poisson_sigma
 from .. evm.ic_containers import FitFunction
-from .. database.load_db  import DB
+from .. database          import load_db  as DB
 from .. types.ic_types import FitPar
 from .. types.ic_types import FitResult
 from .. types.ic_types import NN
