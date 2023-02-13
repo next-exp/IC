@@ -46,7 +46,7 @@ from pandas import DataFrame
 def icaro(files_in, file_out, compression, event_range,
           detector_db, run_number, bootstrap, quality_ranges,
           band_sel_params, map_params,
-          r_fid, nStimeprofile, x_range, y_range):
+          r_fid, nStimeprofile):
 
 
     quality_check_before = fl.map(quality_check(quality_ranges),
@@ -62,11 +62,11 @@ def icaro(files_in, file_out, compression, event_range,
 
     map_builder_map      = fl.map(map_builder(detector_db, run_number, map_params),
                                   args = "kr_data",
-                                  out  = ("map_info", "map")                      )
+                                  out  = ("map_info", "map"))
 
     add_krevol_map       = fl.map(add_krevol(r_fid, nStimeprofile),
                                   args = ("map", "kr_data", "kr_mask"),
-                                  out  = "evolution"           )
+                                  out  = "evolution")
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
 
@@ -88,6 +88,12 @@ def icaro(files_in, file_out, compression, event_range,
                                                  write_mapinfo_sink             )),
                        result = None)
 
+def map_builder(detector_db, run_number, map_params):
+
+    def map_builder(kr_data):
+        raise NotImplementedError("Map builder not yet implemented")
+
+    return map_builder
 
 def add_krevol(r_fid        : float,
                nStimeprofile: int):
