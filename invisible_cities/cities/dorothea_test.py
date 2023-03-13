@@ -127,10 +127,9 @@ def test_dorothea_contains_all_tables(ICDATADIR, output_tmpdir,  include_mc):
         assert "Filters/s12_selector" in h5out.root
         assert "DST"                  in h5out.root
         assert "DST/Events"           in h5out.root
-        if include_mc:
-            assert "MC"               in h5out.root
-            assert "MC/hits"          in h5out.root
-            assert "MC/particles"     in h5out.root
+        assert not ("MC"              in h5out.root) ^ include_mc
+        assert not ("MC/hits"         in h5out.root) ^ include_mc
+        assert not ("MC/particles"    in h5out.root) ^ include_mc
 
 
 @mark.parametrize("include_mc", (False, True))
