@@ -49,8 +49,8 @@ from .. dataflow.dataflow import push
 from .. dataflow.dataflow import pipe
 
 from .  components import city
-from .  components import collect 
-from .  components import copy_mc_info 
+from .  components import collect
+from .  components import copy_mc_info
 from .  components import print_every
 from .  components import pmap_from_files
 from .  components import peak_classifier
@@ -87,8 +87,8 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, detector_d
 
     event_count_in        = fl.spy_count()
     event_count_out       = fl.spy_count()
-    
-    evtnum_collect        = collect() 
+
+    evtnum_collect        = collect()
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
 
@@ -106,18 +106,17 @@ def dorothea(files_in, file_out, compression, event_range, print_mod, detector_d
                                     fl.branch(write_pmap_filter)          ,
                                     pmap_select          .filter          ,
                                     event_count_out      .spy             ,
-                                    build_pointlike_event                 , 
-                                    fl.fork(("event_number", evtnum_collect.sink), 
+                                    build_pointlike_event                 ,
+                                    fl.fork(("event_number", evtnum_collect.sink),
                                             write_pointlike_event,
                                             write_event_info))           ,
                       result = dict(events_in   = event_count_in .future,
                                     events_out  = event_count_out.future,
-                                    evtnum_list = evtnum_collect .future, 
+                                    evtnum_list = evtnum_collect .future,
                                     selection   = pmap_select    .future))
-                      
-        if run_number <= 0 and include_mc: 
-            
+
+        if run_number <= 0 and include_mc:
             copy_mc_info(files_in, h5out, result.evtnum_list,
                          detector_db, run_number)
-            
+
         return result

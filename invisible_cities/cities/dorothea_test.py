@@ -104,14 +104,14 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
 
 
 @mark.parametrize("include_mc", (False, True))
-def test_dorothea_contains_all_tables(ICDATADIR, output_tmpdir,  include_mc):
+def test_dorothea_contains_all_tables(ICDATADIR, output_tmpdir, include_mc):
 
     label       = "with" if include_mc else "without"
     file_out    = os.path.join(output_tmpdir, f"dorothea_KDST_{label}_MC.h5")
     file_in     = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
 
     conf = configure('dorothea invisible_cities/config/dorothea.conf'.split())
-    conf.update(dict(run_number  = -6340, 
+    conf.update(dict(run_number  = -6340,
                      files_in    = file_in,
                      file_out    = file_out,
                      event_range = all_events,
@@ -133,8 +133,7 @@ def test_dorothea_contains_all_tables(ICDATADIR, output_tmpdir,  include_mc):
 
 
 @mark.parametrize("include_mc", (False, True))
-def test_dorothea_exact_result(ICDATADIR, output_tmpdir,  include_mc): 
-
+def test_dorothea_exact_result(ICDATADIR, output_tmpdir, include_mc):
     tables = ("DST/Events", "Filters/s12_selector", "Run/events", "Run/runInfo")
     if include_mc: tables += ("MC/hits", "MC/particles")
 
@@ -142,7 +141,7 @@ def test_dorothea_exact_result(ICDATADIR, output_tmpdir,  include_mc):
     file_out    = os.path.join(output_tmpdir, f"dorothea_exact_result_{label}_MC.h5")
     file_in     = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
     true_output = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.KDSTwithMC.h5")
- 
+
     conf = configure("dorothea invisible_cities/config/dorothea.conf".split())
     conf.update(dict(run_number   = -6340,
                      files_in     = file_in,
