@@ -59,7 +59,7 @@ def trude(files_in, file_out, compression, event_range, print_mod,
             proc_mode,
             min_bin, max_bin, bin_width,
             number_integrals, integral_start, integral_width, integrals_period,
-            n_mau = 100):
+            n_maw = 100):
     if proc_mode not in ("subtract_mode", "subtract_median"):
         raise ValueError(f"Unrecognized processing mode: {proc_mode}")
 

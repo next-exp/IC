@@ -36,9 +36,9 @@ nprint = {nprint}
 nbaseline   = {nbaseline}
 thr_trigger = {thr_trigger}
 
-# set_mau
-nmau    = {nmau}
-thr_mau = {thr_mau}
+# set_maw
+n_maw   = {n_maw}
+thr_maw = {thr_maw}
 
 # set_csum
 thr_csum = {thr_csum}
@@ -73,8 +73,8 @@ config_file_spec = dict(files_in    = 'electrons_40keV_z25_RWF.h5',
                         nprint      = 24,
                         nbaseline   = 26,
                         thr_trigger = 27,
-                        nmau        = 28,
-                        thr_mau     = 29,
+                        n_maw       = 28,
+                        thr_maw     = 29,
                         thr_csum    = .5,
                         s1_tmin     = 31,
                         s1_tmax     = 32,

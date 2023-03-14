@@ -674,7 +674,7 @@ def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
     return build_pmap
 
 
-def calibrate_pmts(dbfile, run_number, n_MAU, thr_MAU):
+def calibrate_pmts(dbfile, run_number, n_maw, thr_maw):
     DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
     adc_to_pes = np.abs(DataPMT.adc_to_pes.values)
     adc_to_pes = adc_to_pes[adc_to_pes > 0]
@@ -682,8 +682,8 @@ def calibrate_pmts(dbfile, run_number, n_MAU, thr_MAU):
     def calibrate_pmts(cwf):# -> CCwfs:
         return csf.calibrate_pmts(cwf,
                                   adc_to_pes = adc_to_pes,
-                                  n_MAU      = n_MAU,
-                                  thr_MAU    = thr_MAU)
+                                  n_maw      = n_maw,
+                                  thr_maw    = thr_maw)
     return calibrate_pmts
 
 
@@ -707,17 +707,17 @@ def calibrate_with_mean(dbfile, run_number):
         return csf.subtract_baseline_and_calibrate(wfs, adc_to_pes)
     return calibrate_with_mean
 
-def calibrate_with_mau(dbfile, run_number, n_mau_sipm):
+def calibrate_with_maw(dbfile, run_number, n_maw_sipm):
     DataSiPM   = load_db.DataSiPM(dbfile, run_number)
     adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
-    def calibrate_with_mau(wfs):
-        return csf.subtract_baseline_mau_and_calibrate(wfs, adc_to_pes, n_mau_sipm)
-    return calibrate_with_mau
+    def calibrate_with_maw(wfs):
+        return csf.subtract_baseline_maw_and_calibrate(wfs, adc_to_pes, n_maw_sipm)
+    return calibrate_with_maw
 
 
 def zero_suppress_wfs(thr_csum_s1, thr_csum_s2):
-    def ccwfs_to_zs(ccwf_sum, ccwf_sum_mau):
-        return (pkf.indices_and_wf_above_threshold(ccwf_sum_mau, thr_csum_s1).indices,
+    def ccwfs_to_zs(ccwf_sum, ccwf_sum_maw):
+        return (pkf.indices_and_wf_above_threshold(ccwf_sum_maw, thr_csum_s1).indices,
                 pkf.indices_and_wf_above_threshold(ccwf_sum    , thr_csum_s2).indices)
     return ccwfs_to_zs
 

@@ -108,38 +108,38 @@ def subtract_baseline_and_calibrate(sipm_wfs, adc_to_pes, *, bls_mode=BlsMode.me
     return calibrate_wfs(bls, adc_to_pes)
 
 
-def calibrate_pmts(cwfs, adc_to_pes, n_MAU=100, thr_MAU=3):
+def calibrate_pmts(cwfs, adc_to_pes, n_maw=100, thr_maw=3):
     """
     This function is called for PMT waveforms that have
     already been baseline restored and pedestal subtracted.
     It computes the calibrated waveforms and its sensor sum.
     It also computes the calibrated waveforms and sensor
     sum for elements of the waveforms above some value
-    (thr_MAU) over a MAU that follows the waveform. These
+    (thr_maw) over a MAW that follows the waveform. These
     are useful to suppress oscillatory noise and thus can
     be applied for S1 searches (the calibrated version
-    without the MAU should be applied for S2 searches).
+    without the MAW should be applied for S2 searches).
     """
-    MAU         = np.full(n_MAU, 1 / n_MAU)
-    mau         = signal.lfilter(MAU, 1, cwfs, axis=1)
+    window      = np.full(n_maw, 1 / n_maw)
+    maw         = signal.lfilter(window, 1, cwfs, axis=1)
 
     # ccwfs stands for calibrated corrected waveforms
     ccwfs       = calibrate_wfs(cwfs, adc_to_pes)
-    ccwfs_mau   = np.where(cwfs >= mau + thr_MAU, ccwfs, 0)
+    ccwfs_maw   = np.where(cwfs >= maw + thr_maw, ccwfs, 0)
 
     cwf_sum     = np.sum(ccwfs    , axis=0)
-    cwf_sum_mau = np.sum(ccwfs_mau, axis=0)
-    return ccwfs, ccwfs_mau, cwf_sum, cwf_sum_mau
+    cwf_sum_maw = np.sum(ccwfs_maw, axis=0)
+    return ccwfs, ccwfs_maw, cwf_sum, cwf_sum_maw
 
 
-def pmt_subtract_mau(cwfs, n_MAU=100):
+def pmt_subtract_maw(cwfs, n_maw=100):
     """
-    Subtract a MAU from the input waveforms.
+    Subtract a MAW from the input waveforms.
     """
-    MAU         = np.full(n_MAU, 1 / n_MAU)
-    mau         = signal.lfilter(MAU, 1, cwfs, axis=1)
+    window = np.full(n_maw, 1 / n_maw)
+    maw    = signal.lfilter(window, 1, cwfs, axis=1)
 
-    return cwfs - mau
+    return cwfs - maw
 
 
 def calibrate_sipms(sipm_wfs, adc_to_pes, thr, *, bls_mode=BlsMode.mode):

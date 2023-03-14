@@ -140,7 +140,7 @@ def test_subtract_baseline_valid_options_sanity_check(gaussian_sipm_signal, bls_
 
 @mark.parametrize("wrong_bls_mode",
                   (0, "0", 1, "1", None, "None",
-                   "mean", "mau", "BlsMode.mean", "BlsMode.mau"))
+                   "mean", "maw", "BlsMode.mean", "BlsMode.maw"))
 def test_subtract_baseline_raises_TypeError(wrong_bls_mode):
     dummy = np.empty((2, 2))
     with raises(TypeError):
@@ -175,24 +175,24 @@ def test_calibrate_pmts_stat(oscillating_waveform_wo_baseline,
                              nsigma, fraction):
     (wfs, adc_to_pes,
      n_samples, noise_sigma) = oscillating_waveform_wo_baseline
-    n_mau                    = n_samples // 500
+    n_maw                    = n_samples // 500
 
-    (ccwfs  , ccwfs_mau  ,
-     cwf_sum, cwf_sum_mau) = csf.calibrate_pmts(wfs, adc_to_pes,
-                                                n_mau, nsigma * noise_sigma)
+    (ccwfs  , ccwfs_maw  ,
+     cwf_sum, cwf_sum_maw) = csf.calibrate_pmts(wfs, adc_to_pes,
+                                                n_maw, nsigma * noise_sigma)
 
     # Because there is only one waveform, the sum and the
     # waveform itself must be the same.
     assert ccwfs    .size == cwf_sum    .size
-    assert ccwfs_mau.size == cwf_sum_mau.size
+    assert ccwfs_maw.size == cwf_sum_maw.size
 
     assert ccwfs    [0] == approx(cwf_sum)
-    assert ccwfs_mau[0] == approx(cwf_sum_mau)
+    assert ccwfs_maw[0] == approx(cwf_sum_maw)
 
     assert wfs[0] / adc_to_pes[0] == approx(cwf_sum)
 
-    number_of_zeros = np.count_nonzero(cwf_sum_mau == 0)
-    assert number_of_zeros > fraction * cwf_sum_mau.size
+    number_of_zeros = np.count_nonzero(cwf_sum_maw == 0)
+    assert number_of_zeros > fraction * cwf_sum_maw.size
 
 
 @mark.parametrize("nsigma fraction".split(),
@@ -204,7 +204,7 @@ def test_calibrate_sipms_stat(oscillating_waveform_with_baseline,
     (wfs, adc_to_pes,
      n_samples, noise_sigma,
      baseline )              = oscillating_waveform_with_baseline
-    #n_mau                    = n_samples // 500
+    #n_maw                    = n_samples // 500
 
     ccwfs = csf.calibrate_sipms(wfs, adc_to_pes, nsigma * noise_sigma, bls_mode=csf.BlsMode.mode)
 

@@ -23,7 +23,7 @@ The spectra can be produced in three flavours:
       subtract the baseline.
     - Using the standard deconvolution algorithm to remove the effect
       of the electronics and to subtract the baseline.
-    - Using the deconvolution algorithm with a mau to remove the effect
+    - Using the deconvolution algorithm with a MAW to remove the effect
       of the electronics and to subtract the baseline.
 The tasks performed are:
     - Subtract the baseline   (only in the first case).
@@ -65,9 +65,9 @@ def phyllis(files_in, file_out, compression, event_range, print_mod, detector_db
             proc_mode, n_baseline,
             min_bin, max_bin, bin_width,
             number_integrals, integral_start, integral_width, integrals_period,
-            n_mau = 100):
+            n_maw = 100):
     if   proc_mode == "gain"         : proc = pmt_deconvolver    (detector_db, run_number, n_baseline       )
-    elif proc_mode == "gain_mau"     : proc = pmt_deconvolver_mau(detector_db, run_number, n_baseline, n_mau)
+    elif proc_mode == "gain_maw"     : proc = pmt_deconvolver_maw(detector_db, run_number, n_baseline, n_maw)
     elif proc_mode == "gain_nodeconv": proc = mode_subtractor    (detector_db, run_number)
     else                             : raise ValueError(f"Unrecognized processing mode: {proc_mode}")
 
@@ -133,12 +133,12 @@ def pmt_deconvolver(detector_db, run_number, n_baseline):
     return deconvolute
 
 
-def pmt_deconvolver_mau(detector_db, run_number, n_baseline, n_mau):
+def pmt_deconvolver_maw(detector_db, run_number, n_baseline, n_maw):
     deconvolute = pmt_deconvolver(detector_db, run_number, n_baseline)
-    def deconv_pmt_mau(rwf):
+    def deconv_pmt_maw(rwf):
         cwf = deconvolute(rwf)
-        return csf.pmt_subtract_mau(cwf, n_mau)
-    return deconv_pmt_mau
+        return csf.pmt_subtract_maw(cwf, n_maw)
+    return deconv_pmt_maw
 
 
 def mode_subtractor(detector_db, run_number):
