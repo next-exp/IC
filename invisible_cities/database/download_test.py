@@ -20,7 +20,7 @@ def test_create_table_sqlite(dbname, output_tmpdir):
     table = 'PmtBlr'
 
     connSqlite = sqlite3.connect(dbfile)
-    connMySql  = pymysql.connect(host="neutrinos1.ific.uv.es",
+    connMySql  = pymysql.connect(host="next.ific.uv.es",
                                  user='nextreader',passwd='readonly', db=dbname)
 
     cursorMySql  = connMySql .cursor()
@@ -41,7 +41,7 @@ def test_table_assignment(dbname):
 
 @mark.parametrize('dbname', db.dbnames)
 def test_tables_exist(dbname):
-    connMySql  = pymysql.connect(host="neutrinos1.ific.uv.es",
+    connMySql  = pymysql.connect(host="next.ific.uv.es",
                                  user='nextreader',passwd='readonly', db=dbname)
 
     cursor    = connMySql.cursor()
