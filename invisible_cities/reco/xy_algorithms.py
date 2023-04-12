@@ -25,8 +25,7 @@ def barycenter(pos : np.ndarray, qs : np.ndarray):
         ...
         [xs, ys])
        qs = vector (q1, q2...qs) --> (1xn)
-
-        """
+    """
 
     if not len(pos)   : raise SipmEmptyList
     if np.sum(qs) == 0: raise SipmZeroCharge
@@ -35,8 +34,6 @@ def barycenter(pos : np.ndarray, qs : np.ndarray):
     # list of clusters. barycenter always returns a single clusters,
     # but we still want it in a list.
     return [Cluster(np.sum(qs), xy(*mu), xy(*var), len(qs))]
-
-    #return [Cluster(sum(qs), XY(*mu), var, len(qs))]
 
 
 def discard_sipms(sis, pos, qs):
@@ -69,9 +66,9 @@ def corona( pos             : np.ndarray
     """
     corona creates a list of Clusters by
     first , identifying hottest_sipm, the sipm with max charge in qs (must be > Qlm)
-    second, calling barycenter() on the pos and qs SiPMs within lm_radius of hottest_sipm to
+    second, calling barycenter on the SiPMs within lm_radius of hottest_sipm to
             find new_local_maximum.
-    third , calling barycenter() on all SiPMs within new_lm_radius of new_local_maximum
+    third , calling barycenter on all SiPMs within new_lm_radius of new_local_maximum
     fourth, recording the Cluster found by barycenter if the cluster contains at least msipm
     fifth , removing (nondestructively) the sipms contributing to that Cluster
     sixth , repeating 1-5 until there are no more SiPMs of charge > Qlm
@@ -102,7 +99,7 @@ def corona( pos             : np.ndarray
                 can be emitted by the EL at any (x,y). When lm_radius < pitch, the search for SiPMs
                 that might contribute pos and charge to a new Cluster is always centered about
                 the position of hottest_sipm. That is, SiPMs within new_lm_radius of
-                hottest_sipm are taken into account by barycenter(). In contrast, when
+                hottest_sipm are taken into account by barycenter. In contrast, when
                 lm_radius = pitch or pitch*sqrt(2) the search for SiPMs contributing to the new
                 cluster can be centered at any (x,y). Consider the case where at a local maximum
                 there are four nearly equally 'hot' SiPMs. new_local_maximum would yield a pos,
@@ -116,7 +113,7 @@ def corona( pos             : np.ndarray
                     lm_radius can always be set to 0 mm, but setting it to 15 mm (slightly larger
                 than 10mm * sqrt(2)), should not hurt.
 
-    new_lm_radius = radius, find a new cluster by calling barycenter() on pos/qs of SiPMs within
+    new_lm_radius = radius, find a new cluster by calling barycenter on SiPMs within
                     new_lm_radius of new_local_maximum
 
     consider_masked  = true if masked SiPMs are considered
