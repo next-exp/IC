@@ -16,11 +16,6 @@ from .. evm.event_model      import Cluster
 
 from typing import Optional
 
-def find_algorithm(algoname):
-    if algoname in sys.modules[__name__].__dict__:
-        return getattr(sys.modules[__name__], algoname)
-    else:
-        raise ValueError("The algorithm <{}> does not exist".format(algoname))
 
 @check_annotations
 def barycenter(pos : np.ndarray, qs : np.ndarray):
