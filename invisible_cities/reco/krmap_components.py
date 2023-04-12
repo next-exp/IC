@@ -1,7 +1,9 @@
 import numpy          as np
 import pandas         as pd
+import scipy.stats    as stats
 
-from   typing         import Tuple
+from typing                               import Tuple
+from invisible_cities.core.core_functions import shift_to_bin_centers
 
 
 def get_number_of_bins(dst    : pd.DataFrame,
@@ -67,3 +69,42 @@ def get_XY_bins(n_bins   : int,
                   # and make one np.linspace(...) for each of them.
 
     return xbins, ybins
+
+
+def get_binned_data(dst  : pd.DataFrame,
+                    bins : Tuple[np.array, np.array]):
+
+    '''This function distributes all the events in the DST into the selected
+    bins, and updates the DST in order to include the X, Y bin index of its
+    corresponding bin.
+
+      Parameters
+    --------------
+    dst  : pd.DataFrame
+         Krypton dataframe.
+    bins : Tuple[np.array, np.array]
+         Bins used to compute the map.
+
+       Returns
+    -------------
+    counts : np.array
+         Total number of events falling into each bin
+    bin_centers : list
+         List contaning np.arrays with the center of the bins
+
+
+    '''
+
+    counts, bin_edges, bin_index = stats.binned_statistic_dd((dst.X, dst.Y), dst.S2e, bins = bins,
+                                                             statistic = 'count', expand_binnumbers = True)
+
+
+    bin_centers  = [shift_to_bin_centers(axis) for axis in bin_edges] # Not necessary... maybe it's dropped in next version
+    bin_index   -= 1
+    # dst.assign(xbin_index=bin_index[0], ybin_index=bin_index[1]) pd.assign is not working for me... i also tried with
+                                                                 # dst = dst.assign(**{xbinindex:bin_index[0], .....})
+                                                                 # but i can't get the dst to update with the new cols
+    dst['xbin_index'] = bin_index[0]
+    dst['ybin_index'] = bin_index[1]
+
+    return counts
