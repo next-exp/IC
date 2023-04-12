@@ -7,6 +7,51 @@ from typing                               import Tuple
 from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
 
 
+class KrMap():
+
+    ''' Class for the Kr Map container.
+
+        x_bins  (1D-array of floats)  : bins in coordinate X
+        y_bins  (1D-array of floats)  : bins in coordinate Y
+        counts  (2D-array of ints)    : number of events in every X,Y bin of the map
+        e0      (2D-array of floats)  : energy correction for every X,Y bin of the map
+        ue0     (2D-array of floats)  : uncertainty for EO
+        lt      (2D-array of floats)  : lifetime correction for every X,Y bin of the map
+        ult     (2D-array of floats)  : uncertainty for lt
+        cov     (2D-array of floats)  : non-diag covariance matrix element
+        pval    (2D-array of floats)  : pvalue
+        res_std (2D-array of floats)  : std for residuals
+        valid   (2D-array of boolean) : success in the bin'''
+
+
+    def __init__(self,
+                 x_bins : np.array,
+                 y_bins : np.array,
+                 counts : np.array):
+
+        shape        = (len(x_bins)-1, len(y_bins)-1)
+
+        self.x_bins   = x_bins
+        self.y_bins   = y_bins
+        self.counts   = counts
+        self.e0       = np.zeros(shape=shape, dtype=float)
+        self.ue0      = np.zeros(shape=shape, dtype=float)
+        self.lt       = np.zeros(shape=shape, dtype=float)
+        self.ult      = np.zeros(shape=shape, dtype=float)
+        self.cov      = np.zeros(shape=shape, dtype=float)
+        self.pval     = np.zeros(shape=shape, dtype=float)
+        self.res_std  = np.zeros(shape=shape, dtype=float)
+        self.valid    = np.zeros(shape=shape, dtype= bool)
+
+
+
+    def __str__(self):
+        return '''{}(\nx_bins={.x_bins},\ny_bins={.y_bins},\ncounts={.counts},\ne0={.e0},\nue0={.ue0},\nlt={.lt},\nult={.ult},\ncov={.cov},\npval = {.pval},\nres = {.res_std})'''.format(self.__class__.__name__, self, self, self, self, self, self, self, self, self, self)
+
+    __repr__ = __str__
+
+
+
 def get_number_of_bins(dst    : pd.DataFrame,
                        thr    : int = 1e6,
                        n_bins : int = None)->int: #Similar to ICAROS
