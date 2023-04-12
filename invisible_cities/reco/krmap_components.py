@@ -230,3 +230,13 @@ def get_inner_core(bins_x, bins_y, r_max = None):
                                                     # its center doesn't). I believe this way it would be included.
 
     return mask
+
+
+def valid_bin_counter(correction_map, r_max = None):
+
+    core_mask     = get_inner_core(correction_map.x_bins, correction_map.y_bins, r_max) # Select inner part (avoid corners)
+    inner_count   = core_mask.sum() # Total number of inner bins
+    successful    = np.where(core_mask, correction_map.valid,  0) # Succesful bins among the inner bins
+    success_count = np.count_nonzero(successful) # Number of successful bins
+
+    return success_count, inner_count
