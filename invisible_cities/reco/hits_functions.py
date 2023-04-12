@@ -54,7 +54,7 @@ def threshold_hits(hits : List[evm.Hit], th : float, on_corrected : bool=False) 
             else:
                 mask_thresh = np.array([x.Q  >= th for x in slice_hits])
             if sum(mask_thresh) < 1:
-                hit = evm.Hit(slice_hits[0].npeak, evm.Cluster(NN, xy(0,0), xy(0,0), 0), z_slice, e_slice, xy(slice_hits[0].Xpeak,slice_hits[0].Ypeak))
+                hit = evm.Hit(slice_hits[0].npeak, evm.Cluster.empty(), z_slice, e_slice, xy(slice_hits[0].Xpeak,slice_hits[0].Ypeak))
                 new_hits.append(hit)
                 continue
             hits_pass_th = list(compress(deepcopy(slice_hits), mask_thresh))
