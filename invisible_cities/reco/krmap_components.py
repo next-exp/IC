@@ -1,6 +1,7 @@
 import numpy          as np
 import pandas         as pd
 import scipy.stats    as stats
+import scipy.optimize as so
 
 from typing                               import Tuple
 from invisible_cities.core.core_functions import shift_to_bin_centers
@@ -133,3 +134,45 @@ def linear_function(DT, E0, LT):
     E   = E0 - LT * (DT - dt0)
     return E
 
+
+def lifetime_fit_linear(DT : np.array,
+                        E  : np.array):
+
+    '''This function performs the linear lifetime fit. It returns the parameters, errors,
+    non-diagonal element in cov matrix and a success variable of the fit.'''
+
+    par     = np.nan  * np.ones(2)
+    err     = np.nan  * np.ones(2)
+
+    par, var, _, _, ier = so.curve_fit(linear_function, DT, E, full_output=True)
+
+    err[0] = np.sqrt(var[0, 0])
+    err[1] = np.sqrt(var[1, 1])
+    cov    = var
+
+    success = True if ier in [1, 2, 3, 4] else False # See scipy.optimize.curve_fit documentation
+
+    return par, err, cov[0,1], success
+
+
+def lifetime_fit(DT      : np.array,
+                 E       : np.array,
+                 fittype : str):
+
+    ''' Performs the kind of unbined lifetime fit that fittype specifies. Rudimentary.
+
+    Parameters:
+        DT      : np.array
+            Drift Time of selected events.
+        E       : np.array
+            Energies of selected events.
+        fittype : str.
+            Desired fit: can be either 'icaros' (linear fit w/ np.polyfit), 'linear' (linear fit w/ scipy.optimize) or 'exp' (expo fit w/ scipy.optimize).'''
+
+    # if fittype == 'icaros':
+
+    #     return lifetime_fit_icaros(DT, E)
+
+    if fittype == 'linear':
+
+        return lifetime_fit_linear(DT, E)
