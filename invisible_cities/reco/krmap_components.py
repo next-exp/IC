@@ -108,3 +108,28 @@ def get_binned_data(dst  : pd.DataFrame,
     dst['ybin_index'] = bin_index[1]
 
     return counts
+
+
+def linear_function(DT, E0, LT):
+
+    '''Given the DriftTime, and the geometrical (E0) and lifetime (LT)
+    corrections, this function computes the energy.
+
+    Parameters:
+        DT  : np.array
+            Drift Time of selected events.
+        E0  : np.array
+            E0 correction factor.
+        LT  : np.array
+            Lifetime correction factor.
+
+    Returns:
+        E   : np.array
+            Energies
+    '''
+
+    dt0 = 680 # Middle point of chamber. FUTURE: taken from the database
+
+    E   = E0 - LT * (DT - dt0)
+    return E
+
