@@ -284,3 +284,32 @@ def maps_coefficient_getter(kr_map, map_variable='e0'):
         return output
 
     return get_maps_coefficient
+
+
+
+def apply_correction_factors(dst, kr_map, function):
+
+    """
+        Computes the corrected energy given a certain kr map and
+        the corresponding function.
+        Parameters
+        ----------
+        dst : pd.Dataframe
+            Dataframe containing the data
+        kr_map : Kr_Map object
+            Map where the corrections are stored
+        function : Callable
+            Function to calculate the energy based on DT and correction factors
+
+        Returns
+        -------
+        Ecorr : pd.Series
+            Array containing the corrected energy
+        """
+
+    corr_factors_e0 = maps_coefficient_getter(kr_map, 'e0')(dst.X, dst.Y)
+    corr_factors_lt = maps_coefficient_getter(kr_map, 'lt')(dst.X, dst.Y)
+
+    Ecorr = function(dst.DT, corr_factors_e0, corr_factors_lt)
+
+    return Ecorr
