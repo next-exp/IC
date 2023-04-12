@@ -9,6 +9,7 @@ from .. core.exceptions      import SipmZeroCharge
 from .. core.exceptions      import SipmEmptyListAboveQthr
 from .. core.exceptions      import SipmZeroChargeAboveQthr
 from .. core.exceptions      import ClusterEmptyList
+from .. core.configure       import check_annotations
 
 from .. types.ic_types       import xy
 from .. evm.event_model      import Cluster
@@ -21,6 +22,7 @@ def find_algorithm(algoname):
     else:
         raise ValueError("The algorithm <{}> does not exist".format(algoname))
 
+@check_annotations
 def barycenter(pos : np.ndarray, qs : np.ndarray):
     """pos = column np.array --> (matrix n x 2)
        ([x1, y1],
@@ -59,6 +61,7 @@ def count_masked(cs, d, datasipm, is_masked):
     return np.count_nonzero(~is_masked.astype(bool)[indices])
 
 
+@check_annotations
 def corona( pos             : np.ndarray
           , qs              : np.ndarray
           , all_sipms       : pd.DataFrame
