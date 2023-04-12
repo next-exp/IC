@@ -122,7 +122,7 @@ class Cluster(BHit):
         self.nsipm   = nsipm
 
     def empty():
-        return Cluster(NN, xy.zero(), xy.zero(), 0)
+        return Cluster(NN, xy.empty(), xy.zero(), 0)
 
     @property
     def posxy (self): return self._xy.pos
