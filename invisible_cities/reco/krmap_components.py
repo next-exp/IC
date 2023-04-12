@@ -185,3 +185,26 @@ def lifetime_fit(DT      : np.array,
 
         return lifetime_fit_linear(DT, E)
 
+
+def calculate_residuals_in_bin(dst, par, fittype):
+
+    '''This function computes the corrected energy based on the correction
+    parameters coming from a previous fit, and then calculates the residuals,
+    comparing with the measured value. The dst is updated so it contains these
+    residuals. Ultimately, the function returns a single std value of the resi-
+    duals in order to have an idea of their distribution.'''
+
+    fit_function = function_(fittype=fittype)
+    res = dst.S2e - fit_function(dst.DT, *par)
+    series = pd.Series(res, index=dst.index)
+    dst['residuals'] = series.values
+    std = res.std()
+    return std
+
+
+def calculate_pval(residuals):
+
+    pval = stats.shapiro(residuals)[1] if (len(residuals) > 10) else 0.
+
+    return pval
+
