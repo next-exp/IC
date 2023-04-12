@@ -1,5 +1,6 @@
 import sys
-import numpy as np
+import numpy  as np
+import pandas as pd
 
 from .. core.core_functions  import weighted_mean_and_var
 from .. core                 import system_of_units as units
@@ -12,6 +13,7 @@ from .. core.exceptions      import ClusterEmptyList
 from .. types.ic_types       import xy
 from .. evm.event_model      import Cluster
 
+from typing import Optional
 
 def find_algorithm(algoname):
     if algoname in sys.modules[__name__].__dict__:
@@ -19,8 +21,7 @@ def find_algorithm(algoname):
     else:
         raise ValueError("The algorithm <{}> does not exist".format(algoname))
 
-
-def barycenter(pos, qs):
+def barycenter(pos : np.ndarray, qs : np.ndarray):
     """pos = column np.array --> (matrix n x 2)
        ([x1, y1],
         [x2, y2]
@@ -58,13 +59,15 @@ def count_masked(cs, d, datasipm, is_masked):
     return np.count_nonzero(~is_masked.astype(bool)[indices])
 
 
-def corona(pos, qs, all_sipms,
-           Qthr            =  0 * units.pes,
-           Qlm             =  5 * units.pes,
-           lm_radius       =  0 * units.mm,
-           new_lm_radius   = 15 * units.mm,
-           msipm           =  3,
-           consider_masked = False):
+def corona( pos             : np.ndarray
+          , qs              : np.ndarray
+          , all_sipms       : pd.DataFrame
+          , Qthr            : float
+          , Qlm             : float
+          , lm_radius       : float
+          , new_lm_radius   : float
+          , msipm           : int
+          , consider_masked : Optional[bool] = False):
     """
     corona creates a list of Clusters by
     first , identifying hottest_sipm, the sipm with max charge in qs (must be > Qlm)
