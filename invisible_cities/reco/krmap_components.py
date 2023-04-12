@@ -4,7 +4,7 @@ import scipy.stats    as stats
 import scipy.optimize as so
 
 from typing                               import Tuple
-from invisible_cities.core.core_functions import shift_to_bin_centers
+from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
 
 
 def get_number_of_bins(dst    : pd.DataFrame,
@@ -208,3 +208,25 @@ def calculate_pval(residuals):
 
     return pval
 
+
+def get_inner_core(bins_x, bins_y, r_max = None):
+
+    r_fid      = r_max if r_max != None else max(max(abs(bins_x)), max(abs(bins_y))) # Either select it or take it from the binning given
+
+    binsizes_x = bins_x[1:] - bins_x[:-1] # Compute bin sizes
+    binsizes_y = bins_y[1:] - bins_y[:-1]
+    bin_size   = min(max(binsizes_x), max(binsizes_y))
+
+    centers    = [shift_to_bin_centers(axis) for axis in (bins_x, bins_y)] # Compute bin centers
+
+    xx, yy     = np.meshgrid(*centers)
+    r          = np.sqrt(xx**2 + yy**2) # Define r based on the bin grid
+
+    mask       = in_range(r, 0, r_fid + bin_size/2) # Select the allowed r values:
+                                                    # Those falling within the r_max. Since the binning doesn't have to be
+                                                    # the same in X and Y, the additional bin_size/2 makes sure that you're
+                                                    # choosing all the pixels that are partially into the chosen r_max (You
+                                                    # can have a corner of a bin that falls into the r_max region, but maybe
+                                                    # its center doesn't). I believe this way it would be included.
+
+    return mask
