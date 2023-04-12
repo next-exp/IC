@@ -135,6 +135,14 @@ def linear_function(DT, E0, LT):
     return E
 
 
+def function_(fittype):
+
+    if fittype == 'linear':
+        return linear_function
+
+    # Additional types to be included
+
+
 def lifetime_fit_linear(DT : np.array,
                         E  : np.array):
 
@@ -176,3 +184,4 @@ def lifetime_fit(DT      : np.array,
     if fittype == 'linear':
 
         return lifetime_fit_linear(DT, E)
+
