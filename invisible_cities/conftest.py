@@ -214,12 +214,8 @@ def KrMC_kdst(ICDATADIR):
                          s2_ethr       =      1 * units.pes,
                          s2_nsipmmin   =      2,
                          s2_nsipmmax   =   1000,
-                         global_reco_params =   dict(
-                             Qthr           =   1 * units.pes,
-                             Qlm            =   0 * units.pes,
-                             lm_radius      =  -1 * units.mm,
-                             new_lm_radius  =  -1 * units.mm,
-                             msipm          =   1           )     )
+                         global_reco_algo   = ALL_SYMBOLS["barycenter"],
+                         global_reco_params = dict(Qthr = 1 * units.pes))
 
     event    = [0, 1, 2, 3, 4, 5, 6, 7, 9]
     time     = [0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -358,12 +354,9 @@ def KrMC_hdst(ICDATADIR):
                          s2_ethr       =      1 * units.pes,
                          s2_nsipmmin   =      2,
                          s2_nsipmmax   =   1000,
-                         global_reco_params =   dict(
-                             Qthr           =   1  * units.pes,
-                             Qlm            =   0  * units.pes,
-                             lm_radius      =  -1  * units.mm ,
-                             new_lm_radius  =  -1  * units.mm ,
-                             msipm          =   1             ),
+                         global_reco_algo   = ALL_SYMBOLS["barycenter"],
+                         global_reco_params = dict(Qthr = 1 * units.pes),
+                         slice_reco_algo    = ALL_SYMBOLS["corona"],
                          slice_reco_params  =   dict(
                              Qthr           =   2  * units.pes,
                              Qlm            =   5  * units.pes,
