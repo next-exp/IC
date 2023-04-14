@@ -42,6 +42,7 @@ from .. database                import load_db
 from .. evm.ic_containers       import TriggerParams
 from .. evm.pmaps               import S2
 from .. types.ic_types          import minmax
+from .. types.symbols           import WfType
 
 from .. dataflow          import dataflow as fl
 
@@ -51,7 +52,6 @@ from .  components import collect
 from .  components import copy_mc_info
 from .  components import sensor_data
 from .  components import deconv_pmt
-from .  components import WfType
 from .  components import wf_from_files
 from .  components import simulate_sipm_response
 from .  components import compute_pe_resolution

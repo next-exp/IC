@@ -47,11 +47,12 @@ from .. sierpe                 import                     fee
 from .. io   .    histogram_io import             hist_writer
 from .. io   .run_and_event_io import    run_and_event_writer
 from .. core .core_functions   import    shift_to_bin_centers
+from .. types.symbols          import                  WfType
+from .. types.symbols          import            PMTCalibMode
 
 from .. dataflow import dataflow as fl
 
 from .  components import city
-from .  components import WfType
 from .  components import print_every
 from .  components import sensor_data
 from .  components import wf_from_files
@@ -66,10 +67,10 @@ def phyllis(files_in, file_out, compression, event_range, print_mod, detector_db
             min_bin, max_bin, bin_width,
             number_integrals, integral_start, integral_width, integrals_period,
             n_maw = 100):
-    if   proc_mode == "gain"         : proc = pmt_deconvolver    (detector_db, run_number, n_baseline       )
-    elif proc_mode == "gain_maw"     : proc = pmt_deconvolver_maw(detector_db, run_number, n_baseline, n_maw)
-    elif proc_mode == "gain_nodeconv": proc = mode_subtractor    (detector_db, run_number)
-    else                             : raise ValueError(f"Unrecognized processing mode: {proc_mode}")
+    if   proc_mode is PMTCalibMode.gain         : proc = pmt_deconvolver    (detector_db, run_number, n_baseline       )
+    elif proc_mode is PMTCalibMode.gain_maw     : proc = pmt_deconvolver_maw(detector_db, run_number, n_baseline, n_maw)
+    elif proc_mode is PMTCalibMode.gain_nodeconv: proc = mode_subtractor    (detector_db, run_number)
+    else                                        : raise ValueError(f"Unrecognized processing mode: {proc_mode}")
 
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)

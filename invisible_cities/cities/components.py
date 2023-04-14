@@ -6,7 +6,6 @@ from glob            import glob
 from os.path         import expandvars
 from itertools       import count
 from itertools       import repeat
-from enum            import Enum
 from typing          import Callable
 from typing          import Iterator
 from typing          import Mapping
@@ -30,16 +29,13 @@ from .. evm    .event_model       import                   KrEvent
 from .. evm    .event_model       import                       Hit
 from .. evm    .event_model       import                   Cluster
 from .. evm    .event_model       import             HitCollection
-from .. evm    .event_model       import                 HitEnergy
 from .. evm    .event_model       import                    MCInfo
-from .. evm    .pmaps             import                SiPMCharge
 from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail
 from .. core   .exceptions        import           MCEventNotFound
 from .. core   .exceptions        import              NoInputFiles
 from .. core   .exceptions        import              NoOutputFile
 from .. core   .exceptions        import InvalidInputFileStructure
-from .. core   .configure         import                EventRange
 from .. core   .configure         import          event_range_help
 from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
@@ -72,6 +68,12 @@ from .. types  .ic_types          import                       NNN
 from .. types  .ic_types          import                    minmax
 from .. types  .ic_types          import        types_dict_summary
 from .. types  .ic_types          import         types_dict_tracks
+from .. types  .symbols           import                    WfType
+from .. types  .symbols           import                   BlsMode
+from .. types  .symbols           import             SiPMThreshold
+from .. types  .symbols           import                EventRange
+from .. types  .symbols           import                 HitEnergy
+from .. types  .symbols           import                SiPMCharge
 
 NoneType = type(None)
 
@@ -219,6 +221,23 @@ def print_every_alternative_implementation(N):
     return print_every_loop
 
 
+def get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number):
+    if   thr_sipm_type is SiPMThreshold.common:
+        # In this case, the threshold is a value in pes
+        sipm_thr = thr_sipm
+
+    elif thr_sipm_type is SiPMThreshold.individual:
+        # In this case, the threshold is a percentual value
+        noise_sampler = NoiseSampler(detector_db, run_number)
+        sipm_thr      = noise_sampler.compute_thresholds(thr_sipm)
+
+    else:
+        raise ValueError(f"Unrecognized thr type: {thr_sipm_type}. "
+                          "Only valid options are `common` and `individual`")
+
+    return sipm_thr
+
+
 def collect():
     """Return a future/sink pair for collecting streams into a list."""
     def append(l,e):
@@ -337,11 +356,6 @@ def get_run_number(h5in):
     elif "RunInfo" in h5in.root.Run: return h5in.root.Run.RunInfo[0]['run_number']
 
     raise tb.exceptions.NoSuchNodeError(f"No node runInfo or RunInfo in file {h5in}")
-
-
-class WfType(Enum):
-    rwf  = 0
-    mcrd = 1
 
 
 def get_pmt_wfs(h5in, wf_type):
@@ -695,7 +709,7 @@ def calibrate_sipms(dbfile, run_number, thr_sipm):
         return csf.calibrate_sipms(rwf,
                                    adc_to_pes = adc_to_pes,
                                    thr        = thr_sipm,
-                                   bls_mode   = csf.BlsMode.mode)
+                                   bls_mode   = BlsMode.mode)
 
     return calibrate_sipms
 

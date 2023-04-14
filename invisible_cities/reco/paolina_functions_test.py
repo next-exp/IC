@@ -31,7 +31,6 @@ from .. evm.event_model import BHit
 from .. evm.event_model import Hit
 from .. evm.event_model import Cluster
 from .. evm.event_model import Voxel
-from .. evm.event_model import HitEnergy
 
 from . paolina_functions import bounding_box
 from . paolina_functions import energy_of_voxels_within_radius
@@ -47,7 +46,6 @@ from . paolina_functions import shortest_paths
 from . paolina_functions import make_track_graphs
 from . paolina_functions import voxels_from_track_graph
 from . paolina_functions import length
-from . paolina_functions import Contiguity
 from . paolina_functions import drop_end_point_voxels
 from . paolina_functions import make_tracks
 from . paolina_functions import get_track_energy
@@ -61,7 +59,10 @@ from .. io.mcinfo_io    import cast_mchits_to_dict
 from .. io.mcinfo_io    import load_mchits_df
 from .. io.hits_io      import load_hits
 
-from .. types.ic_types        import xy
+from .. types.ic_types import xy
+from .. types.symbols  import Contiguity
+from .. types.symbols  import HitEnergy
+
 
 def big_enough(hits):
     lo, hi = bounding_box(hits)

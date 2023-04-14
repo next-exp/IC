@@ -6,12 +6,11 @@ from   pandas      import Series
 from   dataclasses import dataclass
 from   typing      import Callable
 from   typing      import Optional
-from   enum        import auto
 
 from .. core.core_functions import in_range
 from .. core                import system_of_units      as units
 from .. core.exceptions     import TimeEvolutionTableMissing
-from .. types.ic_types      import AutoNameEnumBase
+from .. types.symbols       import NormStrategy
 
 
 @dataclass
@@ -204,15 +203,8 @@ def get_df_to_z_converter(map_te: ASectorMap) -> Callable:
     return df_to_z_converter
 
 
-class norm_strategy(AutoNameEnumBase):
-    mean   = auto()
-    max    = auto()
-    kr     = auto()
-    custom = auto()
-
-
 def get_normalization_factor(map_e0    : ASectorMap,
-                             norm_strat: norm_strategy   = norm_strategy.max,
+                             norm_strat: NormStrategy    = NormStrategy.max,
                              norm_value: Optional[float] = None
                              ) -> float:
     """
@@ -224,7 +216,7 @@ def get_normalization_factor(map_e0    : ASectorMap,
     ----------
     map_e0 : AsectorMap
         Correction map for geometric corrections.
-    norm_strat : norm_strategy
+    norm_strat : NormStrategy
         Normalization strategy used when correcting the energy.
     norm_value : float (Optional)
         Normalization scale when custom strategy is selected.
@@ -233,13 +225,13 @@ def get_normalization_factor(map_e0    : ASectorMap,
     -------
     Factor for the kr energy scale conversion.
     """
-    if norm_strat is norm_strategy.max:
+    if norm_strat is NormStrategy.max:
         norm_value =  map_e0.e0.max().max()
-    elif norm_strat is norm_strategy.mean:
+    elif norm_strat is NormStrategy.mean:
         norm_value = np.mean(np.mean(map_e0.e0))
-    elif norm_strat is norm_strategy.kr:
+    elif norm_strat is NormStrategy.kr:
         norm_value = 41.5575 * units.keV
-    elif norm_strat is norm_strategy.custom:
+    elif norm_strat is NormStrategy.custom:
         if norm_value is None:
             s  = "If custom strategy is selected for normalization"
             s += " user must specify the norm_value"
@@ -256,7 +248,7 @@ def apply_all_correction_single_maps(map_e0         : ASectorMap,
                                      map_lt         : ASectorMap,
                                      map_te         : Optional[ASectorMap] = None,
                                      apply_temp     : bool                 = True,
-                                     norm_strat     : norm_strategy        = norm_strategy.max,
+                                     norm_strat     : NormStrategy         = NormStrategy.max,
                                      norm_value     : Optional[float]      = None
                                      ) -> Callable:
     """
@@ -274,7 +266,7 @@ def apply_all_correction_single_maps(map_e0         : ASectorMap,
         Correction map with time evolution of some kdst parameters.
     apply_temp : Bool
         If True, time evolution will be taken into account.
-    norm_strat : AutoNameEnumBase
+    norm_strat : NormStrategy
         Provides the desired normalization to be used.
     norm_value : Float(optional)
         If norm_strat is selected to be custom, user must provide the
@@ -325,9 +317,9 @@ def apply_all_correction_single_maps(map_e0         : ASectorMap,
 
     return total_correction_factor
 
-def apply_all_correction(maps           : ASectorMap                         ,
-                         apply_temp     : bool            = True             ,
-                         norm_strat     : norm_strategy   = norm_strategy.max,
+def apply_all_correction(maps           : ASectorMap                        ,
+                         apply_temp     : bool            = True            ,
+                         norm_strat     : NormStrategy    = NormStrategy.max,
                          norm_value     : Optional[float] = None
                          )->Callable:
     """
@@ -341,7 +333,7 @@ def apply_all_correction(maps           : ASectorMap                         ,
         Selected correction map for doing geometric and lifetime correction.
     apply_temp : Bool
         If True, time evolution will be taken into account.
-    norm_strat : AutoNameEnumBase
+    norm_strat : NormStrategy
         Provides the desired normalization to be used.
     norm_value : Float(optional)
         If norm_strat is selected to be custom, user must provide the

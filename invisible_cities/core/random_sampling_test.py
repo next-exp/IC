@@ -14,6 +14,7 @@ from hypothesis.strategies import floats
 from . testing_utils    import float_arrays
 from . core_functions   import in_range
 from ..database.load_db import DataSiPM
+from ..types.symbols    import DarkModel
 
 from . random_sampling  import normalize_distribution
 from . random_sampling  import sample_discrete_distribution
@@ -21,7 +22,6 @@ from . random_sampling  import uniform_smearing
 from . random_sampling  import inverse_cdf_index
 from . random_sampling  import inverse_cdf
 from . random_sampling  import pad_pdfs
-from . random_sampling  import DarkModel
 from . random_sampling  import NoiseSampler
 
 sensible_sizes    =                  integers(min_value =    2,

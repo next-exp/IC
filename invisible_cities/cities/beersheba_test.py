@@ -11,13 +11,13 @@ from .  beersheba              import beersheba
 from .  beersheba              import create_deconvolution_df
 from .  beersheba              import distribute_energy
 from .  beersheba              import deconvolve_signal
-from .  beersheba              import CutType
-from .  beersheba              import DeconvolutionMode
-from .. reco.deconv_functions  import InterpolationMethod
-from .. evm .event_model       import HitEnergy
 from .. core.testing_utils     import assert_dataframes_close
 from .. core.testing_utils     import assert_tables_equality
 from .. database.load_db       import DataSiPM
+from .. types.symbols          import HitEnergy
+from .. types.symbols          import DeconvolutionMode
+from .. types.symbols          import InterpolationMethod
+from .. types.symbols          import CutType
 
 
 def test_create_deconvolution_df(ICDATADIR):
@@ -95,7 +95,7 @@ def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
 def test_beersheba_exact_result_separate(ICDATADIR, deconvolution_config):
     true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_separate.NEWMC.h5")
     conf, PATH_OUT   = deconvolution_config
-    conf['deconv_params']['deconv_mode'   ] = 'separate'
+    conf['deconv_params']['deconv_mode'   ] = DeconvolutionMode.separate
     conf['deconv_params']['n_iterations'  ] = 50
     conf['deconv_params']['n_iterations_g'] = 50
     beersheba(**conf)
@@ -135,12 +135,7 @@ def test_deconvolve_signal_enums(deconvolution_config, param_name):
     conf_dict.pop("q_cut")
     conf_dict.pop("drop_dist")
 
-    conf_dict['cut_type'    ] = CutType            (conf_dict['cut_type'    ])
-    conf_dict['deconv_mode' ] = DeconvolutionMode  (conf_dict['deconv_mode' ])
-    conf_dict['energy_type' ] = HitEnergy          (conf_dict['energy_type' ])
-    conf_dict['inter_method'] = InterpolationMethod(conf_dict['inter_method'])
-
-    conf_dict[param_name]     = param_name
+    conf_dict[param_name] = conf_dict[param_name].name
 
     with raises(ValueError):
         deconvolve_signal(DataSiPM('new'), **conf_dict)

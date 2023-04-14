@@ -1,5 +1,3 @@
-from enum import Enum
-
 import numpy as np
 
 from typing import List, Union
@@ -9,11 +7,7 @@ from ..evm.pmaps           import              PMTResponses
 from ..evm.pmaps           import             SiPMResponses
 from . peak_functions      import rebin_times_and_waveforms
 from ..core.core_functions import        dict_filter_by_key
-
-
-class RebinMethod(Enum):
-    stride    = 0
-    threshold = 1
+from ..types.symbols       import               RebinMethod
 
 
 def get_even_slices(bins : int, stride : int) -> List[slice]:
@@ -58,7 +52,7 @@ def rebin_peak(peak : _Peak, rebin_factor : Union[int, float],
     rebin_factor : int or float
         The rebin stride for RebinMethod.stride (int)
         or the rebin threshold for RebinMethod.threshold (float)
-    model : Enum
+    model : RebinMethod
         The model to be used, stride for set bin width
         threshold for minimum pmt sum charge.
 
@@ -66,7 +60,7 @@ def rebin_peak(peak : _Peak, rebin_factor : Union[int, float],
     -------
     The rebinned version of the peak
     """
-    if model == RebinMethod.threshold:
+    if model is RebinMethod.threshold:
         slices = get_threshold_slices(peak.pmts.sum_over_sensors,
                                       rebin_factor)
     else:

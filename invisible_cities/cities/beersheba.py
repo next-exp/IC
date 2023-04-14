@@ -23,8 +23,6 @@ from numpy       import nan_to_num
 from typing      import Tuple
 from typing      import List
 
-from enum        import auto
-
 from .  components import city
 from .  components import collect
 from .  components import copy_mc_info
@@ -45,27 +43,18 @@ from .. reco.deconv_functions  import cut_and_redistribute_df
 from .. reco.deconv_functions  import drop_isolated_sensors
 from .. reco.deconv_functions  import deconvolve
 from .. reco.deconv_functions  import richardson_lucy
-from .. reco.deconv_functions  import InterpolationMethod
 
 from .. io.run_and_event_io    import run_and_event_writer
 from .. io.          dst_io    import df_writer
 from .. io.          dst_io    import load_dst
 from .. io.          kdst_io   import kdst_from_df_writer
 
-from .. evm.event_model        import HitEnergy
-
-from .. types.ic_types         import AutoNameEnumBase
+from .. types.symbols          import HitEnergy
+from .. types.symbols          import InterpolationMethod
+from .. types.symbols          import CutType
+from .. types.symbols          import DeconvolutionMode
 
 from .. core                   import system_of_units as units
-
-
-class CutType          (AutoNameEnumBase):
-    abs = auto()
-    rel = auto()
-
-class DeconvolutionMode(AutoNameEnumBase):
-    joint    = auto()
-    separate = auto()
 
 
 def deconvolve_signal(det_db          : pd.DataFrame,
@@ -96,14 +85,14 @@ def deconvolve_signal(det_db          : pd.DataFrame,
     iteration_tol   : Stopping threshold (difference between iterations).
     sample_width    : Sampling size of the sensors.
     bin_size        : Size of the interpolated bins.
-    energy_type     : Energy type ('E' or 'Ec', see Esmeralda) used for assignment.
-    deconv_mode     : 'joint' or 'separate', 1 or 2 step deconvolution, see description later.
+    energy_type     : Energy type (`E` or `Ec`, see Esmeralda) used for assignment.
+    deconv_mode     : `joint` or `separate`, 1 or 2 step deconvolution, see description later.
     diffusion       : Diffusion coefficients in each dimension for 'separate' mode.
     n_dim           : Number of dimensions to apply the method (usually 2).
-    cut_type        : Cut mode to the deconvolution output ('abs' or 'rel') using e_cut
-                      'abs': cut on the absolute value of the hits.
-                      'rel': cut on the relative value (to the max) of the hits.
-    inter_method    : Interpolation method.
+    cut_type        : Cut mode to the deconvolution output (`abs` or `rel`) using e_cut
+                      `abs`: cut on the absolute value of the hits.
+                      `rel`: cut on the relative value (to the max) of the hits.
+    inter_method    : Interpolation method (`nointerpolation`, `nearest`, `linear` or `cubic`).
     n_iterations_g  : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
 
     Returns
@@ -351,22 +340,22 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, detector_
             Sampling of the sensors in each dimension (usuallly the pitch).
         bin_size       : list[float]
             Bin size (mm) of the deconvolved image.
-        energy_type    : str ('E', 'Ec')
+        energy_type    : HitEnergy (`E` or `Ec`)
             Marks which energy from Esmeralda (E = uncorrected, Ec = corrected)
             should be assigned to the deconvolved track.
-        deconv_mode    : str ('joint', 'separate')
-            - 'joint' deconvolves once using a PSF based on Z that includes
+        deconv_mode    : DeconvolutionMode (`joint` or `separate`)
+            - joint deconvolves once using a PSF based on Z that includes
                both EL and diffusion spread aproximated to a Z range.
-            - 'separate' deconvolves twice, first using the EL PSF, then using
+            - separate deconvolves twice, first using the EL PSF, then using
                a gaussian PSF based on the exact Z position of the slice.
         diffusion      : tuple(float)
             Diffusion coefficients in each dimmension (mm/sqrt(cm))
-            used if deconv_mode is 'separate'
+            used if deconv_mode is `separate`
         n_dim          : int
             Number of dimensions used in deconvolution, currently only 2 max:
             n_dim = 2 -> slice by slice XY deconvolution.
             n_dim = 3 -> XYZ deconvolution (in the works).
-        inter_method   : str (None, 'linear', 'cubic')
+        inter_method   : InterpolationMethod (`nointerpolation`, `nearest`, `linear` or `cubic`)
             Sensor interpolation method. If None, no interpolation will be applied.
             'cubic' not supported for 3D deconvolution.
         n_iterations_g : int
@@ -383,11 +372,6 @@ def beersheba(files_in, file_out, compression, event_range, print_mod, detector_
     MC info : (if run number <=0)
     SUMMARY : Table with the summary from Esmeralda.
 """
-
-    deconv_params['cut_type'    ] = CutType            (deconv_params['cut_type'    ])
-    deconv_params['deconv_mode' ] = DeconvolutionMode  (deconv_params['deconv_mode' ])
-    deconv_params['energy_type' ] = HitEnergy          (deconv_params['energy_type' ])
-    deconv_params['inter_method'] = InterpolationMethod(deconv_params['inter_method'])
 
     deconv_params['psf_fname'   ] = expandvars(deconv_params['psf_fname'])
 

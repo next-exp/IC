@@ -14,7 +14,6 @@ from .  components import print_every
 from .  components import collect
 from .  components import copy_mc_info
 from .  components import sensor_data
-from .  components import WfType
 from .  components import wf_from_files
 from .  components import deconv_pmt
 
@@ -29,7 +28,7 @@ from .. dataflow.dataflow import sink
 from .. reco                import tbl_functions as tbl
 from .. io.          rwf_io import           rwf_writer
 from .. io.run_and_event_io import run_and_event_writer
-
+from .. types.symbols       import WfType
 
 
 

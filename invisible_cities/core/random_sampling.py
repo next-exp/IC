@@ -1,5 +1,3 @@
-from enum import Enum
-
 import numpy as np
 
 from scipy.signal import fftconvolve
@@ -11,10 +9,7 @@ from functools    import   lru_cache
 
 from .. database  import     load_db as DB
 
-
-class DarkModel(Enum):
-    mean      = 0
-    threshold = 1
+from ..types.symbols import DarkModel
 
 
 def normalize_distribution(bin_weights : np.array):
@@ -209,7 +204,7 @@ class NoiseSampler:
             in the slice.
         sample_width : int
             The width in mus of the slice
-        dark_model : Enum
+        dark_model : DarkModel (mean or threshold)
             The model for dark counts, mean or threshold
 
         Returns
@@ -238,7 +233,7 @@ class NoiseSampler:
 
         pad_xbins, _ = pad_pdfs(self.xbins, self.probs)
 
-        if dark_model == DarkModel.threshold:
+        if dark_model is DarkModel.threshold:
             pdfs     = np.apply_along_axis(normalize_distribution,
                                                                 1,
                                                   self.mask(pdfs))

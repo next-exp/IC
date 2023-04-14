@@ -11,13 +11,13 @@ from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
 
 from .. types.ic_types   import xy
-from .       event_model import Event
+from .. types.symbols    import HitEnergy
 
+from .       event_model import Event
 from .       event_model import Cluster
 from .       event_model import Hit
 from .       event_model import Voxel
 from .       event_model import HitCollection
-from .       event_model import HitEnergy
 from .       event_model import KrEvent
 
 

@@ -28,16 +28,16 @@ from operator import attrgetter
 import tables as tb
 
 from .. reco                   import        tbl_functions as tbl
-from .. reco.  pmaps_functions import          RebinMethod
 from .. io  .          hits_io import          hits_writer
 from .. io  . run_and_event_io import run_and_event_writer
 from .. io  .          kdst_io import            kr_writer
 from .. io  .  event_filter_io import  event_filter_writer
-from .. evm .            pmaps import           SiPMCharge
 
 from .. dataflow          import dataflow as df
 from .. dataflow.dataflow import     push
 from .. dataflow.dataflow import     pipe
+from .. types.symbols     import RebinMethod
+from .. types.symbols     import SiPMCharge
 
 from .  components import                  city
 from .  components import          copy_mc_info
@@ -56,8 +56,8 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, detecto
                 s2_nmin, s2_nmax, s2_emin, s2_emax, s2_wmin, s2_wmax, s2_hmin, s2_hmax, s2_ethr, s2_nsipmmin, s2_nsipmmax,
                 slice_reco_params  = dict(),
                 global_reco_params = dict(),
-                rebin_method       = 'stride',
-                sipm_charge_type   = 'raw'):
+                rebin_method       = RebinMethod.stride,
+                sipm_charge_type   = SiPMCharge.raw):
     #  slice_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm used for hits reconstruction
     # global_reco_params are qth, qlm, lm_radius, new_lm_radius, msipm used for overall global (pointlike event) reconstruction
 
@@ -72,9 +72,9 @@ def penthesilea(files_in, file_out, compression, event_range, print_mod, detecto
     reco_algo_slice       = compute_xy_position(detector_db, run_number, **slice_reco_params)
     build_hits            = df.map(hit_builder(detector_db, run_number, drift_v,
                                                reco_algo_slice, rebin,
-                                               RebinMethod[rebin_method],
+                                               rebin_method,
                                                global_reco_params,
-                                               SiPMCharge[sipm_charge_type]),
+                                               sipm_charge_type),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "hits"                                                 )
     reco_algo_global      = compute_xy_position(detector_db, run_number, **global_reco_params)
