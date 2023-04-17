@@ -25,7 +25,7 @@ from .  components import copy_mc_info
 from .  components import dhits_from_files
 from .  components import compute_and_write_tracks_info
 
-from ..  evm.event_model import HitEnergy
+from .. types.symbols import HitEnergy
 
 from ..  io.run_and_event_io import run_and_event_writer
 from ..  io.         kdst_io import kdst_from_df_writer

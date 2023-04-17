@@ -18,11 +18,11 @@ This includes a number of tasks:
 """
 import tables as tb
 
-from .. reco                  import tbl_functions        as tbl
-from .. core.random_sampling  import NoiseSampler         as SiPMsNoiseSampler
-from .. core                  import system_of_units      as units
-from .. io  .run_and_event_io import run_and_event_writer
-from .. io  .trigger_io       import       trigger_writer
+from .. reco                   import tbl_functions        as tbl
+from .. core                   import system_of_units      as units
+from .. io   .run_and_event_io import run_and_event_writer
+from .. io   .trigger_io       import       trigger_writer
+from .. types.symbols          import WfType
 
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
@@ -37,10 +37,10 @@ from .  components import deconv_pmt
 from .  components import calibrate_pmts
 from .  components import calibrate_sipms
 from .  components import zero_suppress_wfs
-from .  components import WfType
 from .  components import wf_from_files
 from .  components import get_number_of_active_pmts
 from .  components import compute_and_write_pmaps
+from .  components import get_actual_sipm_thr
 
 
 @city
@@ -49,18 +49,8 @@ def irene(files_in, file_out, compression, event_range, print_mod, detector_db, 
           s1_lmin, s1_lmax, s1_tmin, s1_tmax, s1_rebin_stride, s1_stride, thr_csum_s1,
           s2_lmin, s2_lmax, s2_tmin, s2_tmax, s2_rebin_stride, s2_stride, thr_csum_s2, thr_sipm_s2,
           pmt_samp_wid=25*units.ns, sipm_samp_wid=1*units.mus):
-    if   thr_sipm_type.lower() == "common":
-        # In this case, the threshold is a value in pes
-        sipm_thr = thr_sipm
 
-    elif thr_sipm_type.lower() == "individual":
-        # In this case, the threshold is a percentual value
-        noise_sampler = SiPMsNoiseSampler(detector_db, run_number)
-        sipm_thr      = noise_sampler.compute_thresholds(thr_sipm)
-
-    else:
-        raise ValueError(f"Unrecognized thr type: {thr_sipm_type}. "
-                          "Only valid options are 'common' and 'individual'")
+    sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
 
     #### Define data transformations
 

@@ -22,6 +22,8 @@ from .. core.testing_utils   import assert_SensorResponses_equality
 from .. core.testing_utils   import            assert_Peak_equality
 from .. core.testing_utils   import                  previous_float
 
+from .. types.symbols        import SiPMCharge
+
 from invisible_cities.database import load_db as DB
 
 from .  pmaps import  PMTResponses
@@ -29,7 +31,6 @@ from .  pmaps import SiPMResponses
 from .  pmaps import            S1
 from .  pmaps import            S2
 from .  pmaps import          PMap
-from .  pmaps import    SiPMCharge
 
 
 wf_min =   0

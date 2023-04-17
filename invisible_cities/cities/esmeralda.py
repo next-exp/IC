@@ -40,6 +40,7 @@ from .  components import hits_and_kdst_from_files
 from .  components import compute_and_write_tracks_info
 
 from .. types.      ic_types import xy
+from .. types.       symbols import NormStrategy
 
 from .. io.         hits_io import hits_writer
 from .. io.         kdst_io import kdst_from_df_writer
@@ -67,13 +68,8 @@ def hits_threshold_and_corrector(map_fname        : str  ,
     apply_temp       : bool
         whether to apply temporal corrections
         must be set to False if no temporal correction dataframe exists in map file
-    norm_strat       :  norm_strategy
-    class norm_strategy(AutoNameEnumBase):
-        mean   = auto()
-        max    = auto()
-        kr     = auto()
-        custom = auto()
-    strategy to normalize the energy
+    norm_strat       :  NormStrategy (mean, max, kr or custom)
+        strategy to normalize the energy
 
 
     Returns
@@ -83,7 +79,7 @@ def hits_threshold_and_corrector(map_fname        : str  ,
     """
     map_fname = os.path.expandvars(map_fname)
     maps      = cof.read_maps(map_fname)
-    get_coef  = cof.apply_all_correction(maps, apply_temp = apply_temp, norm_strat = cof.norm_strategy.kr)
+    get_coef  = cof.apply_all_correction(maps, apply_temp = apply_temp, norm_strat = NormStrategy.kr)
     if maps.t_evol is not None:
         time_to_Z = cof.get_df_to_z_converter(maps)
     else:

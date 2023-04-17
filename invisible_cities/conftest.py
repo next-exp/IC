@@ -13,6 +13,8 @@ from . io   .  hits_io   import load_hits
 from . io   .  hits_io   import load_hits_skipping_NN
 from . io   .mcinfo_io   import load_mchits_df
 from . types.ic_types    import NN
+from . types.symbols     import ALL_SYMBOLS
+
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
 dst_data = namedtuple('dst_data', 'file_info config read true')
@@ -682,20 +684,20 @@ def deconvolution_config(ICDIR, ICDATADIR, PSFDIR, config_tmpdir):
                        compression   = 'ZLIB4',
                        print_mod     = 1000,
                        run_number    = 0,
-                       deconv_params = dict(q_cut         =         10,
-                                            drop_dist     = [10., 10.],
-                                            psf_fname     =     PSFDIR,
-                                            e_cut         =       1e-3,
-                                            n_iterations  =         10,
-                                            iteration_tol =       0.01,
-                                            sample_width  = [10., 10.],
-                                            bin_size      = [ 1.,  1.],
-                                            energy_type   =        'E',
-                                            diffusion     = (1.0, 1.0),
-                                            deconv_mode   =    'joint',
-                                            n_dim         =          2,
-                                            cut_type      =      'abs',
-                                            inter_method  =    'cubic'))
+                       deconv_params = dict(q_cut         =                   10,
+                                            drop_dist     =           [10., 10.],
+                                            psf_fname     =               PSFDIR,
+                                            e_cut         =                 1e-3,
+                                            n_iterations  =                   10,
+                                            iteration_tol =                 0.01,
+                                            sample_width  =           [10., 10.],
+                                            bin_size      =           [ 1.,  1.],
+                                            energy_type   =     ALL_SYMBOLS['E'],
+                                            diffusion     =           (1.0, 1.0),
+                                            deconv_mode   = ALL_SYMBOLS['joint'],
+                                            n_dim         =                    2,
+                                            cut_type      = ALL_SYMBOLS[  'abs'],
+                                            inter_method  = ALL_SYMBOLS['cubic']))
 
     return conf, PATH_OUT
 

@@ -2,7 +2,6 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
-from enum      import auto
 from functools import partial
 
 import warnings
@@ -15,7 +14,7 @@ from .. evm.event_model import               MCInfo
 from .. database        import              load_db as    DB
 from .  dst_io          import             load_dst
 from .  dst_io          import            df_writer
-from .. types.ic_types  import     AutoNameEnumBase
+from .. types.symbols   import          MCTableType
 
 from typing import Callable
 from typing import     Dict
@@ -24,20 +23,6 @@ from typing import  Mapping
 from typing import Optional
 from typing import Sequence
 from typing import     Type
-
-
-class MCTableType(AutoNameEnumBase):
-    configuration    = auto()
-    events           = auto()
-    event_mapping    = auto()
-    extents          = auto()
-    generators       = auto()
-    hits             = auto()
-    particles        = auto()
-    sensor_positions = auto()
-    sns_positions    = auto()
-    sns_response     = auto()
-    waveforms        = auto()
 
 
 def mc_writer(h5out : tb.file.File, *, compression=None) -> Callable:

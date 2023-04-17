@@ -3,10 +3,8 @@
 import tables as tb
 import numpy  as np
 
-from enum import auto
-
 from .. types.ic_types import NN
-from .. types.ic_types import AutoNameEnumBase
+from .. types.symbols  import HitEnergy
 from .. core           import system_of_units as units
 
 from typing import List
@@ -44,12 +42,6 @@ class Event:
        return s
 
     __repr__ = __str__
-
-
-class HitEnergy(AutoNameEnumBase):
-    E        = auto()
-    Ec       = auto()
-    Ep       = auto()
 
 
 class BHit:

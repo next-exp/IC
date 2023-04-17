@@ -17,7 +17,7 @@ from .. core                 import   fit_functions as fitf
 from .. core                 import system_of_units as units
 from .. core.stat_functions  import   poisson_sigma
 from .. evm.nh5              import     SensorTable
-from .  calib_functions      import      SensorType
+from .. types.symbols        import      SensorType
 from .. cities.components    import  get_run_number
 
 

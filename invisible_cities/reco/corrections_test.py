@@ -8,7 +8,6 @@ from . corrections import correct_geometry_
 from . corrections import correct_lifetime_
 from . corrections import time_coefs_corr
 from . corrections import get_df_to_z_converter
-from . corrections import norm_strategy
 from . corrections import get_normalization_factor
 from . corrections import apply_all_correction_single_maps
 from . corrections import apply_all_correction
@@ -25,10 +24,13 @@ from hypothesis.strategies import lists
 from hypothesis            import given
 from hypothesis            import settings
 
+from ..types.symbols import NormStrategy
+
 from invisible_cities.core.testing_utils import random_length_float_arrays
 from invisible_cities.core.testing_utils import float_arrays
 from invisible_cities.core.exceptions    import TimeEvolutionTableMissing
 from invisible_cities.core               import system_of_units            as units
+
 
 @fixture(scope='session')
 def map_filename(ICDATADIR):
@@ -212,13 +214,13 @@ def test_get_df_to_z_converter_raises_exception_when_invalid_map(map_filename_MC
 
 def test_get_normalization_factor_max_norm(correction_map_filename):
     map_e  = read_maps(correction_map_filename)
-    factor = get_normalization_factor(map_e, norm_strategy.max)
+    factor = get_normalization_factor(map_e, NormStrategy.max)
     norm   = map_e.e0.max().max()
     assert factor == norm
 
 def test_get_normalization_factor_mean_norm(correction_map_filename):
     map_e  = read_maps(correction_map_filename)
-    factor = get_normalization_factor(map_e, norm_strategy.mean)
+    factor = get_normalization_factor(map_e, NormStrategy.mean)
     norm   = np.mean(np.mean(map_e.e0))
     assert factor == norm
 
@@ -228,14 +230,14 @@ def test_get_normalization_factor_mean_norm(correction_map_filename):
 def test_get_normalization_factor_custom_norm(correction_map_filename, custom_vaule):
     map_e  = read_maps(correction_map_filename)
     factor = get_normalization_factor(map_e,
-                                      norm_strategy.custom,
+                                      NormStrategy.custom,
                                       custom_vaule)
     norm   = custom_vaule
     assert factor == norm
 
 def test_get_normalization_factor_krscale(correction_map_filename):
     map_e     = read_maps(correction_map_filename)
-    factor    = get_normalization_factor(map_e, norm_strategy.kr)
+    factor    = get_normalization_factor(map_e, NormStrategy.kr)
     kr_energy = 41.5575 * units.keV
     assert factor == kr_energy
 
@@ -243,7 +245,7 @@ def test_get_normalization_factor_custom_norm_raises_exception_when_no_value(map
     map_e = read_maps(map_filename)
     assert_raises(ValueError,
                   get_normalization_factor,
-                  map_e, norm_strategy.custom)
+                  map_e, NormStrategy.custom)
 
 def test_get_normalization_factor_raises_exception_when_no_valid_norm(map_filename):
     map_e = read_maps(map_filename)
@@ -288,7 +290,7 @@ def test_apply_all_correction_single_maps_properly(map_filename, x, y, z, t):
                                                  map_lt     = maps,
                                                  map_te     = maps,
                                                  apply_temp = True,
-                                                 norm_strat = norm_strategy.max)
+                                                 norm_strat = NormStrategy.max)
     corr   = load_corr(x, y, z, t)
     result = np.exp(z/5000)
     assert_allclose (corr, result)
@@ -323,7 +325,7 @@ def test_corrections_exact(toy_corrections, correction_map_filename):
     xs, ys, zs, ts, _, _, factor = toy_corrections
     get_factor = apply_all_correction(maps       = maps,
                                       apply_temp = True,
-                                      norm_strat = norm_strategy.custom,
+                                      norm_strat = NormStrategy.custom,
                                       norm_value = 1.)
     fac        = get_factor(xs, ys, zs, ts)
     assert_allclose (factor, fac, atol = 1e-13)

@@ -11,15 +11,15 @@ from pytest import mark
 from pytest import raises
 from pytest import warns
 
-from .. core.configure     import EventRange as ER
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.testing_utils import    assert_tables_equality
 from .. core               import system_of_units as units
+from .. types.symbols      import WfType
+from .. types.symbols      import EventRange as ER
 
 from .  components import event_range
 from .  components import collect
 from .  components import copy_mc_info
-from .  components import WfType
 from .  components import wf_from_files
 from .  components import pmap_from_files
 from .  components import compute_xy_position
@@ -249,7 +249,7 @@ def test_mcsensors_from_file_correct_yield(ICDATADIR):
 
 def test_create_timestamp_greater_with_greater_eventnumber():
     """
-    Value of timestamp must be always positive and 
+    Value of timestamp must be always positive and
     greater with greater event numbers.
     """
 
@@ -290,7 +290,7 @@ def test_check_max_time_eg_buffer_length():
     Check if `max_time` is always equal or greater
         than `buffer_length` and filter warnings.
     """
-    
+
     max_time_1      =  10 * units.ms
     buffer_length_1 = 800 * units.mus
 
@@ -299,7 +299,6 @@ def test_check_max_time_eg_buffer_length():
 
     max_time_1 = check_max_time(max_time_1, buffer_length_1)
     max_time_2 = check_max_time(max_time_2, buffer_length_2)
-    
+
     assert max_time_1 >  buffer_length_1
     assert max_time_2 == buffer_length_2
-

@@ -11,7 +11,6 @@ from pytest import mark
 from pytest import fixture
 
 from .. core                import system_of_units as units
-from .. core.configure      import             all as all_events
 from .. core.configure      import configure
 from .. core.testing_utils  import exactly
 from .. core.testing_utils  import assert_dataframes_close
@@ -21,6 +20,8 @@ from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
 from .. io.mcinfo_io        import load_mcparticles_df
 from .. io.mcinfo_io        import load_mchits_df
+from .. types.symbols       import all_events
+from .. types.symbols       import SiPMThreshold
 
 from .. database.load_db    import DetDB
 from .. io      .pmaps_io   import load_pmaps
@@ -62,8 +63,8 @@ def unpack_s12params(s12params):
 
 @mark.slow
 @mark.parametrize("thr_sipm_type thr_sipm_value".split(),
-                  (("common"    , 3.5 ),
-                   ("individual", 0.99)))
+                  ((SiPMThreshold.common    , 3.5 ),
+                   (SiPMThreshold.individual, 0.99)))
 def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
                                thr_sipm_type, thr_sipm_value):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT

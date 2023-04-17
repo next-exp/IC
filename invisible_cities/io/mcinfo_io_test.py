@@ -17,7 +17,6 @@ from .  mcinfo_io import get_mc_tbl_list
 from .  mcinfo_io import is_oldformat_file
 from .  mcinfo_io import load_mcsensor_positions
 from .  mcinfo_io import load_mcsensor_response_df
-from .  mcinfo_io import MCTableType
 from .  mcinfo_io import copy_mc_info
 from .  mcinfo_io import safe_copy_nexus_eventmap
 from .  mcinfo_io import read_mc_tables
@@ -28,6 +27,8 @@ from .. core               import system_of_units as units
 from .. core.testing_utils import assert_dataframes_equal
 from .. core.testing_utils import assert_MChit_equality
 from .. core.testing_utils import assert_tables_equality
+
+from .. types.symbols import MCTableType
 
 from pytest import fixture
 from pytest import mark

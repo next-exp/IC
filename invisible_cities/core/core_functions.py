@@ -4,22 +4,12 @@ This module includes utility functions.
 """
 import time
 
-from enum import auto
-
 import numpy as np
 
 from typing import Sequence
 from typing import Tuple
 
-from .. types.ic_types import AutoNameEnumBase
-
-
-class NormMode(AutoNameEnumBase):
-    first   = auto()
-    second  = auto()
-    sumof   = auto()
-    mean    = auto()
-
+from ..types.symbols import NormMode
 
 def timefunc(f):
     """

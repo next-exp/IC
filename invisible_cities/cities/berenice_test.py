@@ -7,8 +7,8 @@ from numpy.testing import assert_array_equal
 
 from .  berenice           import berenice
 from .. core.configure     import configure
-from .. core.configure     import       all as all_events
 from .. core.testing_utils import assert_tables_equality
+from .. types.symbols      import all_events
 
 
 def test_berenice_sipmdarkcurrent(config_tmpdir, ICDATADIR):
