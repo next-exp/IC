@@ -293,44 +293,6 @@ def valid_bin_counter(correction_map, r_max = None):
 # ========================================================= NOT USED FOR THE MAP CORE ==============================================================
 # ==================================================================================================================================================
 
-def maps_coefficient_getter(kr_map, map_variable='e0'):
-
-    """
-    For a given krypton map, it returns a function that yields
-    the values of map for a given (X,Y) position.
-    Parameters
-    ----------
-    kr_map : Kr_Map object
-        Map where corrections are stored
-
-    map_variable : str
-        Any kr_map attribute: 'e0', 'lt'...
-    Returns
-    -------
-        A function that returns the value of the kr_map
-        for a given (X,Y) position
-    """
-
-
-    binsx   = kr_map.x_bins
-    binsy   = kr_map.y_bins
-
-    def get_maps_coefficient(x : np.array, y : np.array) -> np.array:
-
-        ix = np.digitize(x, binsx) - 1
-        iy = np.digitize(y, binsy) - 1
-
-        valid   = in_range(x, min(binsx), max(binsx)) & in_range(y, min(binsy), max(binsy))
-
-        output  = np.full(len(valid), np.nan, dtype=float)
-
-        output[valid] = getattr(kr_map, map_variable)[iy[valid], ix[valid]]
-
-        return output
-
-    return get_maps_coefficient
-
-
 
 def apply_correction_factors(dst, kr_map, function):
 
