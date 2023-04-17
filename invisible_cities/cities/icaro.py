@@ -9,6 +9,7 @@
 import numpy as np
 import pandas as pd
 import tables as tb
+import warnings
 
 from .. reco                import tbl_functions as tbl
 from .. reco.corrections    import ASectorMap
@@ -34,8 +35,6 @@ from .  components import print_numberofevents
 from .  components import dst_from_files
 from .  components import quality_check
 from .  components import kr_selection
-from .  components import map_builder
-from .  components import add_krevol
 
 from typing import Tuple
 from typing import List
