@@ -992,6 +992,9 @@ def check_max_time(max_time: float, buffer_length: float) -> Union[int, float]:
     :param buffer_length: Length of buffers.
     :return: `max_time` if `max_time` >= `buffer_length`, else `buffer_length`.
     """
+    if max_time % units.mus:
+        message = "Invalid value for max_time, it has to be a multiple of 1 mus"
+        raise ValueError(message)
 
     if max_time < buffer_length:
         warnings.warn("`max_time` shorter than `buffer_length`, "
