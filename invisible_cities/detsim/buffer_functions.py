@@ -18,7 +18,7 @@ def bin_sensors(sensors   : pd.DataFrame,
                 bin_width : float       ,
                 t_min     : float       ,
                 t_max     : float       ,
-                max_buffer: int         ) -> Tuple[np.ndarray, pd.Series]:
+                max_buffer: float       ) -> Tuple[np.ndarray, pd.Series]:
     """
     Raw data binning function.
 
