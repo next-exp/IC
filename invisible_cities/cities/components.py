@@ -981,7 +981,7 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     return compute_pmaps, empty_indices, empty_pmaps
 
 
-def check_max_time(max_time: Union[int, float], buffer_length: float) -> Union[int, float]:
+def check_max_time(max_time: float, buffer_length: float) -> Union[int, float]:
     """
     `max_time` must be greater than `buffer_length`. If not, raise warning
         and set `max_time` == `buffer_length`.
@@ -992,6 +992,9 @@ def check_max_time(max_time: Union[int, float], buffer_length: float) -> Union[i
     :param buffer_length: Length of buffers.
     :return: `max_time` if `max_time` >= `buffer_length`, else `buffer_length`.
     """
+    if max_time % units.mus:
+        message = "Invalid value for max_time, it has to be a multiple of 1 mus"
+        raise ValueError(message)
 
     if max_time < buffer_length:
         warnings.warn("`max_time` shorter than `buffer_length`, "
@@ -1003,7 +1006,7 @@ def check_max_time(max_time: Union[int, float], buffer_length: float) -> Union[i
 
 
 def calculate_and_save_buffers(buffer_length    : float        ,
-                               max_time         : int          ,
+                               max_time         : float        ,
                                pre_trigger      : float        ,
                                pmt_wid          : float        ,
                                sipm_wid         : float        ,

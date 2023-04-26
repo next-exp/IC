@@ -302,3 +302,15 @@ def test_check_max_time_eg_buffer_length():
 
     assert max_time_1 >  buffer_length_1
     assert max_time_2 == buffer_length_2
+
+def test_check_max_time_units():
+    """
+    Check if `check_max_time` rejects values of `max_time`
+        that are not multiples of 1 mus.
+    """
+    max_time      = 1000.5 * units.mus
+    buffer_length = 800 * units.mus
+
+    with raises(ValueError):
+        check_max_time(max_time, buffer_length)
+
