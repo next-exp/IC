@@ -6,6 +6,8 @@ from   pandas      import Series
 from   dataclasses import dataclass
 from   typing      import Callable
 from   typing      import Optional
+from   typing      import Tuple
+
 
 from .. core.core_functions import in_range
 from .. core                import system_of_units      as units
@@ -350,3 +352,41 @@ def apply_all_correction(maps           : ASectorMap                        ,
     return apply_all_correction_single_maps(maps, maps, maps,
                                             apply_temp, norm_strat,
                                             norm_value)
+
+def add_mapinfo(asm        : ASectorMap,
+                xr         : Tuple[float, float],
+                yr         : Tuple[float, float],
+                nx         : int,
+                ny         : int,
+                run_number : int) -> ASectorMap:
+    """
+    Add metadata to a ASectorMap
+
+        Parameters
+        ----------
+            asm
+                ASectorMap object.
+            xr, yr
+                Ranges in (x, y) defining the map.
+            nx, ny
+                Number of bins in (x, y) defining the map.
+            run_number
+                run number defining the map.
+
+        Returns
+        -------
+            A new ASectorMap containing metadata (in the variable mapinfo)
+
+    """
+    mapinfo = pd.Series([*xr, *yr, nx, ny, run_number],
+                         index=['xmin','xmax',
+                                'ymin','ymax',
+                                'nx'  , 'ny' ,
+                                'run_number'])
+
+    return ASectorMap(chi2    = asm.chi2,
+                      e0      = asm.e0  ,
+                      lt      = asm.lt  ,
+                      e0u     = asm.e0u ,
+                      ltu     = asm.ltu ,
+                      mapinfo = mapinfo )

@@ -4,6 +4,10 @@ A set of functions for data fitting.
 GML November 2016
 """
 
+import logging
+import warnings
+log = logging.getLogger(__name__)
+
 import numpy   as np
 import pandas  as pd
 import inspect as insp
@@ -15,6 +19,13 @@ from functools import wraps
 from .                    import core_functions as coref
 from .  stat_functions    import poisson_sigma
 from .. evm.ic_containers import FitFunction
+from .. database          import load_db  as DB
+from .. types.ic_types import FitPar
+from .. types.ic_types import FitResult
+from .. types.ic_types import NN
+from .. core.core_functions import shift_to_bin_centers
+
+from typing import Tuple
 
 
 def fixed_parameters(fn, **kwargs):
@@ -356,3 +367,190 @@ def profileXY(xdata, ydata, zdata, nbinsx, nbinsy,
     deviation[indices_x - 1, indices_y - 1] = np.where(notnan, deviation_.values, 0)
 
     return bin_centers_x, bin_centers_y, mean, deviation
+
+
+def profile1d(z : np.array,
+              e : np.array,
+              nbins_z : int,
+              range_z : np.array)->Tuple[float, float, float]:
+    """Adds an extra layer to profileX, returning only valid points"""
+    x, y, yu     = profileX(z, e, nbins_z, range_z)
+    valid_points = ~np.isnan(yu)
+    x    = x [valid_points]
+    y    = y [valid_points]
+    yu   = yu[valid_points]
+    return x, y, yu
+
+
+def sigmoid(x          : np.array,
+            scale      : float,
+            inflection : float,
+            slope      : float,
+            offset     : float)->np.array:
+
+    return scale / ( 1 + np.exp( - slope * ( x - inflection ) ) ) + offset
+
+
+def compute_drift_v(zdata    : np.array,
+                    nbins    : int                               = 35,
+                    zrange   : Tuple[float, float]               = (500, 640),
+                    seed     : Tuple[float, float, float, float] = None,
+                    detector : str                               = 'new')->Tuple[float, float]:
+    """
+    Computes the drift velocity for a given distribution
+    using the sigmoid function to get the cathode edge.
+    Parameters
+    ----------
+    zdata: array_like
+        Values of Z coordinate.
+    nbins: int (optional)
+        The number of bins in the z coordinate for the binned fit.
+    zrange: length-2 tuple (optional)
+        Fix the range in z.
+    seed: length-4 tuple (optional)
+        Seed for the fit.
+    detector: string (optional)
+        Used to get the cathode position from DB.
+    plot_fit: boolean (optional)
+        Flag for plotting the results.
+    Returns
+    -------
+    dv: float
+        Drift velocity.
+    dvu: float
+        Drift velocity uncertainty.
+    """
+
+    y, x = np.histogram(zdata, nbins, zrange)
+    x    = shift_to_bin_centers(x)
+
+    if seed is None: seed = np.max(y), np.mean(zrange), 0.5, np.min(y)
+
+    z_cathode = DB.DetectorGeo(detector).ZMAX[0]
+    try:
+        f = fit(sigmoid, x, y, seed, sigma=poisson_sigma(y), fit_range=zrange)
+        dv  = z_cathode/f.values[1]
+        dvu = dv / f.values[1] * f.errors[1]
+    except RuntimeError:
+        print("WARNING: Sigmoid fit for dv computation fails. NaN value will be set in its place.")
+        dv, dvu = np.nan, np.nan
+
+    return dv, dvu
+
+
+def expo_seed(x, y, eps=1e-12):
+    """
+    Estimate the seed for a exponential fit to the input data.
+    """
+    x, y  = zip(*sorted(zip(x, y)))
+    const = y[0]
+    slope = (x[-1] - x[0]) / np.log(y[-1] / (y[0] + eps))
+    seed  = const, slope
+    return seed
+
+
+def fit_lifetime_profile(z : np.array,
+                         e : np.array,
+                         nbins_z : int,
+                         range_z : Tuple[float,float])->Tuple[FitPar, FitPar, FitResult]:
+    """
+    Make a profile of the input data and fit it to an exponential
+    function.
+    Parameters
+    ----------
+        z
+            Array of z values.
+        e
+            Array of energy values.
+        nbins_z
+            Number of bins in Z for the profile fit.
+        range_z
+            Range in Z for fit.
+    Returns
+    -------
+        A Tuple with:
+            FitPar : Fit parameters (arrays of fitted values and errors, fit function)
+            FitPar : Fit parameters (duplicated to make it compatible with fit_liftime_unbined)
+            FirResults: Fit results (lt, e0, errors, chi2)
+    @dataclass
+    class ProfilePar:
+        x  : np.array
+        y  : np.array
+        xu : np.array
+        yu : np.array
+    @dataclass
+    class FitPar(ProfilePar):
+        f     : FitFunction
+    @dataclass
+    class FitResult:
+        par  : np.array
+        err  : np.array
+        chi2 : float
+        valid : bool
+    """
+
+    logging.debug(' fit_liftime_profile')
+    logging.debug(f' len (z) ={len(z)}, len (e) ={len(e)} ')
+    logging.debug(f' nbins_z ={nbins_z}, range_z ={range_z} ')
+    fp    = None
+    valid = True
+    c2    = NN
+    par   = NN  * np.ones(2)
+    err   = NN  * np.ones(2)
+
+    x, y, yu  = profile1d(z, e, nbins_z, range_z)
+    xu        = np.diff(x) * 0.5
+    seed      = expo_seed(x, y)
+
+    logging.debug(f' after profile: len (x) ={len(x)}, len (y) ={len(y)} ')
+    try:
+        f      = fit(expo, x, y, seed, sigma=yu)
+        c2     = f.chi2
+        par    = np.array(f.values)
+        par[1] = - par[1]
+        err    = np.array(f.errors)
+
+        logging.debug(f' e0z ={par[0]} +- {err[0]} ')
+        logging.debug(f' lt ={par[1]} +- {err[1]} ')
+        logging.debug(f' c2 ={c2} ')
+        fp = FitPar(x  = x,
+                    y  = y,
+                    xu = xu,
+                    yu = yu,
+                    f  = f.fn)
+    except:
+        warnings.warn(f' fit failed for seed  = {seed} in fit_lifetime_profile', UserWarning)
+        valid = False
+        raise
+
+    fr = FitResult(par = par,
+                   err = err,
+                   chi2 = c2,
+                   valid = valid)
+
+    return fp, fp, fr
+
+
+def gauss_seed(x, y, sigma_rel=0.05):
+    """
+    Estimate the seed for a gaussian fit to the input data.
+    """
+    y_max  = np.argmax(y) # highest bin
+    x_max  = x[y_max]
+    sigma  = sigma_rel * x_max
+    amp    = y_max * (2 * np.pi)**0.5 * sigma * np.diff(x)[0]
+    seed   = amp, x_max, sigma
+    return seed
+
+
+def quick_gauss_fit(data, bins):
+    """
+    Histogram input data and fit it to a gaussian with the parameters
+    automatically estimated.
+    """
+    y, x  = np.histogram(data, bins)
+    x     = shift_to_bin_centers(x)
+    seed  = gauss_seed(x, y)
+    f     = fit(gauss, x, y, seed)
+    assert np.all(f.values != seed)
+    return f

@@ -1,9 +1,41 @@
 from enum        import Enum
 from collections import OrderedDict
-
+from collections import namedtuple
+from dataclasses import dataclass
+from ..evm.ic_containers import FitFunction
 import numpy as np
 
 NN= -999999  # No Number, a trick to aovid nans in data structs
+
+Measurement = namedtuple('Measurement', 'value uncertainty')
+
+
+@dataclass
+class MasksContainer:
+    s1   : np.array
+    s2   : np.array
+    band : np.array
+
+
+@dataclass
+class ProfilePar:
+    x  : np.array
+    y  : np.array
+    xu : np.array
+    yu : np.array
+
+
+@dataclass
+class FitPar(ProfilePar):
+    f     : FitFunction
+
+
+@dataclass
+class FitResult:
+    par   : np.array
+    err   : np.array
+    chi2  : float
+    valid : bool
 
 
 class NNN:
