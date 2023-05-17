@@ -192,6 +192,11 @@ def detsim( *
                                 args = ('x_a', 'y_a', 'z_a', 'time_a', 'energy_a'),
                                 out  = ('x_ph', 'y_ph', 'z_ph', 'times_ph', 'nphotons'))
 
+    count_photons = fl.map(lambda x: np.sum(x) > 0,
+                           args= 'nphotons',
+                           out = 'enough_photons')
+    dark_events   = fl.count_filter(bool, args='enough_photons')
+
     get_buffer_info = buffer_times_and_length_getter(buffer_params_["pmt_width"],
                                                      buffer_params_["sipm_width"],
                                                      el_gap, el_dv,
@@ -243,6 +248,7 @@ def detsim( *
                                                        , order_sensors = None)
 
         write_nohits_filter   = fl.sink(event_filter_writer(h5out, "active_hits"), args=("event_number", "passed_active"))
+        write_dark_evt_filter = fl.sink(event_filter_writer(h5out, "dark_events"), args=("event_number", "enough_photons"))
         result = fl.push(source= MC_hits_from_files(files_in, rate),
                          pipe  = fl.pipe( fl.slice(*event_range, close_all=True)
                                         , event_count_in.spy
@@ -254,6 +260,9 @@ def detsim( *
                                         , fl.branch(write_nohits_filter)
                                         , events_passed_active_hits.filter
                                         , simulate_electrons
+                                        , count_photons
+                                        , fl.branch(write_dark_evt_filter)
+                                        , dark_events.filter
                                         , get_buffer_times_and_length
                                         , create_pmt_waveforms
                                         , create_sipm_waveforms
@@ -262,7 +271,8 @@ def detsim( *
                                         , "event_number"
                                         , evtnum_collect.sink),
                          result = dict(events_in     = event_count_in.future,
-                                       evtnum_list   = evtnum_collect.future))
+                                       evtnum_list   = evtnum_collect.future,
+                                       dark_events   = dark_events   .future))
 
         copy_mc_info(files_in, h5out, result.evtnum_list,
                      detector_db, run_number)
