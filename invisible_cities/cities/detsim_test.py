@@ -58,6 +58,24 @@ def test_detsim_filter_active_hits(ICDATADIR, output_tmpdir):
         np.testing.assert_array_equal(filters["passed"], [False, True])
 
 
+def test_detsim_filter_dark_events(ICDATADIR, output_tmpdir):
+    # this file contains delayed hits that are filtered out
+    # leaving a very low energy hit that does not produce electrons
+    # this test shows that without filtering out these events the city crashes
+    PATH_IN  = os.path.join(ICDATADIR    , "nexus_not_enough_energy.h5")
+    PATH_OUT = os.path.join(output_tmpdir, "filtered_dark_events.h5")
+    conf = configure('detsim $ICTDIR/invisible_cities/config/detsim.conf'.split())
+    conf.update(dict(files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
+                     run_number  = 0))
+    conf["buffer_params"]["max_time"] = 3 * units.ms
+
+    result = detsim(**conf)
+
+    assert result.events_in   == 1
+    assert result.evtnum_list == []
+
+
 def test_detsim_filter_empty_waveforms(ICDATADIR, output_tmpdir):
     # the first event radius is slighty above NEW active radius of 208.0 mm
     PATH_IN  = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.emptywfs.h5")
