@@ -75,6 +75,10 @@ def test_detsim_filter_dark_events(ICDATADIR, output_tmpdir):
     assert result.events_in   == 1
     assert result.evtnum_list == []
 
+    with tb.open_file(PATH_OUT, mode="r") as h5out:
+        filters = h5out.root.Filters.dark_events.read()
+        np.testing.assert_array_equal(filters["passed"], [False])
+
 
 def test_detsim_filter_empty_waveforms(ICDATADIR, output_tmpdir):
     # the first event radius is slighty above NEW active radius of 208.0 mm
