@@ -12,10 +12,7 @@ from .. evm .nh5         import           MCEventMap
 from .. reco             import        tbl_functions as tbl
 from .  run_and_event_io import run_and_event_writer
 from .  table_io         import           make_table
-
-
-# Temporary. Will be fixed in the future
-NoneType = type(None)
+from .. types.ic_types   import             NoneType
 
 
 def rwf_writer(h5out           : tb.file.File,

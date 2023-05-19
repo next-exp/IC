@@ -111,7 +111,7 @@ def test_compute_xy_position_depends_on_actual_run_number():
     find_xy_pos(xys_to_test, charge_to_test)
 
 
-
+@mark.skip(reason="there should not be a default detector db")
 def test_city_adds_default_detector_db(config_tmpdir):
     default_detector_db = 'new'
     args = {'files_in'    : 'dummy_in',
@@ -126,6 +126,7 @@ def test_city_adds_default_detector_db(config_tmpdir):
     assert db == default_detector_db
 
 
+@mark.skip(reason="there should not be a default detector db")
 def test_city_does_not_overwrite_detector_db(config_tmpdir):
     args = {'detector_db' : 'some_detector',
             'files_in'    : 'dummy_in',
@@ -140,6 +141,7 @@ def test_city_does_not_overwrite_detector_db(config_tmpdir):
     assert db == args['detector_db']
 
 
+@mark.skip(reason="there should not be a default detector db")
 def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
     args = {'files_in'    : 'dummy_in',
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}

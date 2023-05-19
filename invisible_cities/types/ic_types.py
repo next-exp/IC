@@ -5,6 +5,7 @@ import numpy as np
 
 NN= -999999  # No Number, a trick to aovid nans in data structs
 
+NoneType = type(None)
 
 class NNN:
 

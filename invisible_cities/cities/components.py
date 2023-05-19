@@ -14,6 +14,7 @@ from typing          import List
 from typing          import Dict
 from typing          import Tuple
 from typing          import Union
+from typing          import Optional
 import tables as tb
 import numpy  as np
 import pandas as pd
@@ -37,6 +38,7 @@ from .. core   .exceptions        import              NoInputFiles
 from .. core   .exceptions        import              NoOutputFile
 from .. core   .exceptions        import InvalidInputFileStructure
 from .. core   .configure         import          event_range_help
+from .. core   .configure         import         check_annotations
 from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
 from .. detsim .sensor_utils      import             trigger_times
@@ -62,6 +64,7 @@ from .. io     .pmaps_io          import               pmap_writer
 from .. io     .rwf_io            import             buffer_writer
 from .. io     .mcinfo_io         import            load_mchits_df
 from .. io     .dst_io            import                 df_writer
+from .. types  .ic_types          import                  NoneType
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
 from .. types  .ic_types          import                       NNN
@@ -74,8 +77,6 @@ from .. types  .symbols           import             SiPMThreshold
 from .. types  .symbols           import                EventRange
 from .. types  .symbols           import                 HitEnergy
 from .. types  .symbols           import                SiPMCharge
-
-NoneType = type(None)
 
 
 def city(city_function):
@@ -115,12 +116,13 @@ def city(city_function):
         conf.event_range  = event_range(conf)
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
 
-        result = city_function(**vars(conf))
+        result = check_annotations(city_function)(**vars(conf))
         index_tables(conf.file_out)
         return result
     return proxy
 
 
+@check_annotations
 def create_timestamp(rate: float) -> float:
     """
     Get rate value safely: It raises warning if rate <= 0 and
@@ -246,6 +248,7 @@ def collect():
     return fl.reduce(append, initial=[])()
 
 
+@check_annotations
 def copy_mc_info(files_in     : List[str],
                  h5out        : tb.File  ,
                  event_numbers: List[int],
@@ -289,7 +292,8 @@ def copy_mc_info(files_in     : List[str],
         raise MCEventNotFound('Some events not found in MC tables')
 
 
-def wf_binner(max_buffer: int) -> Callable:
+@check_annotations
+def wf_binner(max_buffer: float) -> Callable:
     """
     Returns a function to be used to convert the raw
     input MC sensor info into data binned according to
@@ -309,6 +313,7 @@ def wf_binner(max_buffer: int) -> Callable:
     return bin_sensors
 
 
+@check_annotations
 def signal_finder(buffer_len   : float,
                   bin_width    : float,
                   bin_threshold:   int) -> Callable:
@@ -412,6 +417,7 @@ def check_lengths(*iterables):
         raise InvalidInputFileStructure("Input data tables have different sizes")
 
 
+@check_annotations
 def mcsensors_from_file(paths     : List[str],
                         db_file   :      str ,
                         run_number:      int ,
@@ -510,6 +516,7 @@ def pmap_from_files(paths):
                            event_number=event_number, timestamp=timestamp)
 
 
+@check_annotations
 def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields collected hits,
        pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
@@ -545,6 +552,8 @@ def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, M
             # it needs to be given the WHOLE TABLE (rather than a
             # single event) at a time.
 
+
+@check_annotations
 def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields HitsCollection, pandas DataFrame with
     kdst info, run_number, event_number and timestamp."""
@@ -574,6 +583,7 @@ def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCol
                            timestamp = timestamp)
 
 
+@check_annotations
 def dst_from_files(paths: List[str], group: str, node:str) -> Iterator[Dict[str,Union[pd.DataFrame, int, np.ndarray]]]:
     """
     Reader for a generic dst.
@@ -595,6 +605,7 @@ def dst_from_files(paths: List[str], group: str, node:str) -> Iterator[Dict[str,
                   )
 
 
+@check_annotations
 def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
     timestamp = create_timestamp(rate)
     for filename in files_in:
@@ -613,6 +624,7 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
                        timestamp    = timestamp(evt))
 
 
+@check_annotations
 def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields HitsCollection, pandas DataFrame with
     run_number, event_number and timestamp."""
@@ -784,7 +796,7 @@ def compute_z_and_dt(t_s2, t_s1, drift_v):
 
 
 def build_pointlike_event(dbfile, run_number, drift_v,
-                          reco, charge_type = SiPMCharge.raw):
+                          reco, charge_type):
     datasipm   = load_db.DataSiPM(dbfile, run_number)
     sipm_xs    = datasipm.X.values
     sipm_ys    = datasipm.Y.values
@@ -851,8 +863,7 @@ def build_pointlike_event(dbfile, run_number, drift_v,
 
 def hit_builder(dbfile, run_number, drift_v, reco,
                 rebin_slices, rebin_method,
-                global_reco_params,
-                charge_type = SiPMCharge.raw):
+                global_reco_params, charge_type):
     datasipm = load_db.DataSiPM(dbfile, run_number)
     sipm_xs  = datasipm.X.values
     sipm_ys  = datasipm.Y.values
@@ -981,6 +992,7 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     return compute_pmaps, empty_indices, empty_pmaps
 
 
+@check_annotations
 def check_max_time(max_time: float, buffer_length: float) -> Union[int, float]:
     """
     `max_time` must be greater than `buffer_length`. If not, raise warning
@@ -1005,6 +1017,7 @@ def check_max_time(max_time: float, buffer_length: float) -> Union[int, float]:
         return max_time
 
 
+@check_annotations
 def calculate_and_save_buffers(buffer_length    : float        ,
                                max_time         : float        ,
                                pre_trigger      : float        ,
@@ -1017,7 +1030,7 @@ def calculate_and_save_buffers(buffer_length    : float        ,
                                nsipm            : int          ,
                                nsamp_pmt        : int          ,
                                nsamp_sipm       : int          ,
-                               order_sensors    : Callable=None):
+                               order_sensors    : Union[NoneType, Callable]):
     find_signal       = fl.map(signal_finder(buffer_length, pmt_wid,
                                              trigger_threshold     ),
                                args = "pmt_bin_wfs"                 ,
@@ -1066,6 +1079,8 @@ def calculate_and_save_buffers(buffer_length    : float        ,
     buffer_definition = pipe(*filter(None, find_signal_and_write_buffers))
     return buffer_definition
 
+
+@check_annotations
 def Efield_copier(energy_type: HitEnergy):
     def copy_Efield(hitc : HitCollection) -> HitCollection:
         mod_hits = []
@@ -1083,8 +1098,9 @@ def Efield_copier(energy_type: HitEnergy):
     return copy_Efield
 
 
-def make_event_summary(event_number  : int              ,
-                       topology_info : pd.DataFrame     ,
+@check_annotations
+def make_event_summary(event_number  : int          ,
+                       topology_info : pd.DataFrame ,
                        paolina_hits  : HitCollection,
                        out_of_map    : bool
                        ) -> pd.DataFrame:
@@ -1095,7 +1111,6 @@ def make_event_summary(event_number  : int              ,
     Parameters
     ----------
     event_number  : int
-    timestamp     : long int
     topology_info : DataFrame
         Dataframe containing track information,
         output of track_blob_info_creator_extractor
@@ -1168,11 +1183,12 @@ def summary_writer(h5out):
     return write_summary
 
 
-def track_blob_info_creator_extractor(vox_size         : [float, float, float],
-                                      strict_vox_size  : bool                 ,
-                                      energy_threshold : float                ,
-                                      min_voxels       : int                  ,
-                                      blob_radius      : float                ,
+@check_annotations
+def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, float],
+                                      strict_vox_size  : bool                      ,
+                                      energy_threshold : float                     ,
+                                      min_voxels       : int                       ,
+                                      blob_radius      : float                     ,
                                       max_num_hits     : int
                                      ) -> Callable:
     """

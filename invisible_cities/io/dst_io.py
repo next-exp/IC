@@ -8,14 +8,11 @@ from    tables          import NoSuchNodeError
 from    tables          import HDF5ExtError
 from .. core.exceptions import TableMismatch
 from .  table_io        import make_table
+from .. types.ic_types  import NoneType
 
 from    typing          import Optional
 from    typing          import Sequence
 from    typing          import Union
-
-
-# Temporary. Will be fixed in the future
-NoneType = type(None)
 
 
 def _decode_str_columns(df):

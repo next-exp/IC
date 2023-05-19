@@ -42,6 +42,8 @@ from .. cities  .components       import city
 from .. cities  .components       import dst_from_files
 from .. core                      import system_of_units as units
 from .. core    .core_functions   import in_range
+from .. core    .configure        import EventRangeType
+from .. core    .configure        import OneOrManyFiles
 from .. database.load_db          import DataSiPM
 from .. io      .dst_io           import df_writer
 from .. io      .run_and_event_io import run_and_event_writer
@@ -50,17 +52,23 @@ from .. reco    .psf_functions    import create_psf
 from .. reco    .psf_functions    import hdst_psf_processing
 
 from typing import Sequence
+from typing import Optional
+from typing import Tuple
 
 
 @city
-def eutropia( files_in, file_out, compression, event_range
-            , detector_db, run_number
+def eutropia( files_in    : OneOrManyFiles
+            , file_out    : str
+            , compression : str
+            , event_range : EventRangeType
+            , detector_db : str
+            , run_number  : int
             , xrange      : Sequence[float]
             , yrange      : Sequence[float]
             , zbins       : Sequence[float]
             , xsectors    : Sequence[float]
             , ysectors    : Sequence[float]
-            , bin_size_xy : float           = 1 * units.mm
+            , bin_size_xy : float
             ):
     sipms   = DataSiPM(detector_db, run_number)
     ranges  = xrange  , yrange
@@ -191,7 +199,7 @@ def df_builder( x       : Sequence[float]
               , z       : Sequence[float]
               , factors : Sequence[float]
               , entries : Sequence[float]
-              , centers :(Sequence[float], Sequence[float])
+              , centers : Tuple[Sequence[float], Sequence[float]]
               ):
     xr, yr = centers
     xr, yr = np.meshgrid(xr, yr, indexing="ij")

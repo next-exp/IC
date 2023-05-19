@@ -47,6 +47,8 @@ from .. sierpe                 import                     fee
 from .. io   .    histogram_io import             hist_writer
 from .. io   .run_and_event_io import    run_and_event_writer
 from .. core .core_functions   import    shift_to_bin_centers
+from .. core .configure        import          EventRangeType
+from .. core .configure        import          OneOrManyFiles
 from .. types.symbols          import                  WfType
 from .. types.symbols          import            PMTCalibMode
 
@@ -60,13 +62,28 @@ from .  components import waveform_binner
 from .  components import deconv_pmt
 from .  components import waveform_integrator
 
+from typing import Optional
+
 
 @city
-def phyllis(files_in, file_out, compression, event_range, print_mod, detector_db, run_number,
-            proc_mode, n_baseline,
-            min_bin, max_bin, bin_width,
-            number_integrals, integral_start, integral_width, integrals_period,
-            n_maw = 100):
+def phyllis( files_in         : OneOrManyFiles
+           , file_out         : str
+           , compression      : str
+           , event_range      : EventRangeType
+           , print_mod        : int
+           , detector_db      : str
+           , run_number       : int
+           , proc_mode        : PMTCalibMode
+           , n_baseline       : int
+           , min_bin          : float
+           , max_bin          : float
+           , bin_width        : float
+           , number_integrals : int
+           , integral_start   : float
+           , integral_width   : float
+           , integrals_period : float
+           , n_maw            : Optional[int] = 100
+           ):
     if   proc_mode is PMTCalibMode.gain         : proc = pmt_deconvolver    (detector_db, run_number, n_baseline       )
     elif proc_mode is PMTCalibMode.gain_maw     : proc = pmt_deconvolver_maw(detector_db, run_number, n_baseline, n_maw)
     elif proc_mode is PMTCalibMode.gain_nodeconv: proc = mode_subtractor    (detector_db, run_number)

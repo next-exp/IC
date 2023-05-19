@@ -28,9 +28,11 @@ from functools import partial
 import numpy  as np
 import tables as tb
 
+from .. core .configure        import          EventRangeType
+from .. core .configure        import          OneOrManyFiles
+from .. core .core_functions   import    shift_to_bin_centers
 from .. io   .    histogram_io import             hist_writer
 from .. io   .run_and_event_io import    run_and_event_writer
-from .. core .core_functions   import    shift_to_bin_centers
 from .. reco                   import           tbl_functions as tbl
 from .. reco                   import         calib_functions as cf
 from .. reco                   import calib_sensors_functions as csf
@@ -47,8 +49,17 @@ from .  components import waveform_binner
 
 
 @city
-def berenice(files_in, file_out, compression, event_range, print_mod,
-             detector_db, run_number, min_bin, max_bin, bin_width):
+def berenice( files_in    : OneOrManyFiles
+            , file_out    : str
+            , compression : str
+            , event_range : EventRangeType
+            , print_mod   : int
+            , detector_db : str
+            , run_number  : int
+            , min_bin     : float
+            , max_bin     : float
+            , bin_width   : float
+            ):
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
     nsipm       = sensor_data(files_in[0], WfType.rwf).NSIPM

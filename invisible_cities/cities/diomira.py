@@ -30,6 +30,8 @@ from itertools import compress
 import numpy  as np
 import tables as tb
 
+from .. core.configure          import EventRangeType
+from .. core.configure          import OneOrManyFiles
 from .. reco                    import    tbl_functions as tbl
 from .. reco                    import sensor_functions as sf
 from .. reco                    import   peak_functions as pkf
@@ -42,9 +44,10 @@ from .. database                import load_db
 from .. evm.ic_containers       import TriggerParams
 from .. evm.pmaps               import S2
 from .. types.ic_types          import minmax
+from .. types.ic_types          import NoneType
 from .. types.symbols           import WfType
 
-from .. dataflow          import dataflow as fl
+from .. dataflow import dataflow as fl
 
 from .  components import city
 from .  components import print_every
@@ -56,13 +59,25 @@ from .  components import wf_from_files
 from .  components import simulate_sipm_response
 from .  components import compute_pe_resolution
 
+from typing import Union
+from typing import Optional
+
 
 @city
-def diomira(files_in    , file_out      , compression   ,
-            event_range , print_mod     , detector_db   ,
-            run_number  , sipm_noise_cut, filter_padding,
-            trigger_type, trigger_params = dict(),
-            s2_params = dict(), random_seed = None):
+def diomira( files_in       : OneOrManyFiles
+           , file_out       : str
+           , compression    : str
+           , event_range    : EventRangeType
+           , print_mod      : int
+           , detector_db    : str
+           , run_number     : int
+           , sipm_noise_cut : float
+           , filter_padding : int
+           , trigger_type   : Union[NoneType, str]
+           , trigger_params : Optional[dict]                 = dict()
+           , s2_params      : Optional[dict]                 = dict()
+           , random_seed    : Optional[Union[NoneType, int]] = None
+           ):
     if random_seed is not None:
         np.random.seed(random_seed)
 

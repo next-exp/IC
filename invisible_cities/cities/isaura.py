@@ -13,6 +13,8 @@ The city outputs :
 
 import tables as tb
 
+from .. core.configure      import EventRangeType
+from .. core.configure      import OneOrManyFiles
 from .. reco                import tbl_functions        as tbl
 from .. dataflow            import dataflow             as fl
 from .. dataflow.dataflow   import push
@@ -33,9 +35,15 @@ from ..  io.         kdst_io import kdst_from_df_writer
 
 
 @city
-def isaura(files_in, file_out, compression, event_range, print_mod,
-              detector_db, run_number,
-              paolina_params = dict()):
+def isaura( files_in       : OneOrManyFiles
+          , file_out       : str
+          , compression    : str
+          , event_range    : EventRangeType
+          , print_mod      : int
+          , detector_db    : str
+          , run_number     : int
+          , paolina_params : dict
+          ):
     """
     The city extracts topology information.
     ----------
