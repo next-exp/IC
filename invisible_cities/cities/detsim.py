@@ -45,7 +45,8 @@ from .. detsim.s2_waveforms_c     import create_wfs
 from .. detsim.detsim_waveforms   import s1_waveforms_creator
 
 
-def filter_hits_after_max_time(max_time):
+@check_annotations
+def filter_hits_after_max_time(max_time : float):
     """
     Function that filters and warns about delayed hits
     (hits at times larger that max_time configuration parameter)
