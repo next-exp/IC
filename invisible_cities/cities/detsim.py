@@ -14,6 +14,7 @@ This city outputs:
 """
 
 import os
+import warnings
 import numpy  as np
 import tables as tb
 
@@ -42,6 +43,21 @@ from .. detsim.light_tables_c     import LT_SiPM
 from .. detsim.light_tables_c     import LT_PMT
 from .. detsim.s2_waveforms_c     import create_wfs
 from .. detsim.detsim_waveforms   import s1_waveforms_creator
+
+
+@check_annotations
+def filter_hits_after_max_time(max_time : float):
+    """
+    Function that filters and warns about delayed hits
+    (hits at times larger that max_time configuration parameter)
+    """
+    def select_hits(x, y, z, energy, time, label, event_number):
+        sel = ((time - min(time)) < max_time)
+        if sel.all(): return x, y, z, energy, time, label
+        else:
+            warnings.warn(f"Delayed hits at event {event_number}")
+            return x[sel], y[sel], z[sel], energy[sel], time[sel], label[sel]
+    return select_hits
 
 
 @check_annotations
@@ -157,6 +173,10 @@ def detsim( *
     lt_sipm  = LT_SiPM(fname=os.path.expandvars(sipm_psf), sipm_database=datasipm)
     el_gap   = lt_sipm.el_gap_width
 
+    filter_delayed_hits = fl.map(filter_hits_after_max_time(buffer_params_["max_time"]),
+                                 args = ('x', 'y', 'z', 'energy', 'time', 'label', 'event_number'),
+                                 out  = ('x', 'y', 'z', 'energy', 'time', 'label'))
+
     select_s1_candidate_hits = fl.map(hits_selector(False),
                                 item = ('x', 'y', 'z', 'energy', 'time', 'label'))
 
@@ -173,6 +193,11 @@ def detsim( *
                                 args = ('x_a', 'y_a', 'z_a', 'time_a', 'energy_a'),
                                 out  = ('x_ph', 'y_ph', 'z_ph', 'times_ph', 'nphotons'))
 
+    count_photons = fl.map(lambda x: np.sum(x) > 0,
+                           args= 'nphotons',
+                           out = 'enough_photons')
+    dark_events   = fl.count_filter(bool, args='enough_photons')
+
     get_buffer_info = buffer_times_and_length_getter(buffer_params_["pmt_width"],
                                                      buffer_params_["sipm_width"],
                                                      el_gap, el_dv,
@@ -182,7 +207,7 @@ def detsim( *
                                          out = ('tmin', 'buffer_length'))
 
     create_pmt_s1_waveforms = fl.map(s1_waveforms_creator(s1_lighttable, ws, buffer_params_["pmt_width"]),
-                                     args = ('x_a', 'y_a', 'z_a', 'time_a', 'energy_a', 'tmin', 'buffer_length'),
+                                     args = ('x', 'y', 'z', 'time', 'energy', 'tmin', 'buffer_length'),
                                      out = 's1_pmt_waveforms')
 
     create_pmt_s2_waveforms = fl.map(s2_waveform_creator(buffer_params_["pmt_width"], lt_pmt, el_dv),
@@ -224,16 +249,21 @@ def detsim( *
                                                        , order_sensors = None)
 
         write_nohits_filter   = fl.sink(event_filter_writer(h5out, "active_hits"), args=("event_number", "passed_active"))
+        write_dark_evt_filter = fl.sink(event_filter_writer(h5out, "dark_events"), args=("event_number", "enough_photons"))
         result = fl.push(source= MC_hits_from_files(files_in, rate),
                          pipe  = fl.pipe( fl.slice(*event_range, close_all=True)
                                         , event_count_in.spy
                                         , print_every(print_mod)
+                                        , filter_delayed_hits
                                         , select_s1_candidate_hits
                                         , select_active_hits
                                         , filter_events_no_active_hits
                                         , fl.branch(write_nohits_filter)
                                         , events_passed_active_hits.filter
                                         , simulate_electrons
+                                        , count_photons
+                                        , fl.branch(write_dark_evt_filter)
+                                        , dark_events.filter
                                         , get_buffer_times_and_length
                                         , create_pmt_waveforms
                                         , create_sipm_waveforms
@@ -242,7 +272,8 @@ def detsim( *
                                         , "event_number"
                                         , evtnum_collect.sink),
                          result = dict(events_in     = event_count_in.future,
-                                       evtnum_list   = evtnum_collect.future))
+                                       evtnum_list   = evtnum_collect.future,
+                                       dark_events   = dark_events   .future))
 
         copy_mc_info(files_in, h5out, result.evtnum_list,
                      detector_db, run_number)
