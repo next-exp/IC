@@ -520,41 +520,6 @@ def pmap_from_files(paths):
 
 
 @check_annotations
-def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, MCInfo, int, float]]]:
-    """Reader of the files, yields collected hits,
-       pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
-    for path in paths:
-        try:
-            cdst_df    = load_dst (path,   'RECO', 'Events')
-        except tb.exceptions.NoSuchNodeError:
-            continue
-
-        kdst_df = load_dst (path, 'DST', 'Events', ignore_errors=True)
-
-        with tb.open_file(path, "r") as h5in:
-            try:
-                run_number  = get_run_number(h5in)
-                event_info  = get_event_info(h5in)
-                evts, _     = zip(*event_info[:])
-                bool_mask   = np.in1d(evts, cdst_df.event.unique())
-                event_info  = event_info[bool_mask]
-            except (tb.exceptions.NoSuchNodeError, IndexError):
-                continue
-            check_lengths(event_info, cdst_df.event.unique())
-            for evtinfo in event_info:
-                event_number, timestamp = evtinfo
-                this_event = lambda df: df.event==event_number
-                yield dict(hits    = cdst_df   .loc[this_event],
-                           kdst    = kdst_df   .loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
-                                                                else None,
-                           run_number=run_number,
-                           event_number=event_number, timestamp=timestamp)
-            # NB, the monte_carlo writer is different from the others:
-            # it needs to be given the WHOLE TABLE (rather than a
-            # single event) at a time.
-
-
-@check_annotations
 def hits_and_kdst_from_files( paths : List[str]
                             , group : str
                             , node  : str ) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
