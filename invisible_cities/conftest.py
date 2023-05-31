@@ -606,6 +606,20 @@ def Th228_pmaps(ICDATADIR):
 
 
 @pytest.fixture(scope="session")
+def Th228_hits(ICDATADIR):
+    filename = "228Th_10evt_hits.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
+def Th228_tracks(ICDATADIR):
+    filename = "228Th_10evt_tracks.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
 def next100_mc_krmap(ICDATADIR):
     filename = "map_NEXT100_MC.h5"
     filename = os.path.join(ICDATADIR, filename)
@@ -655,6 +669,29 @@ def sophronia_config(Th228_pmaps, next100_mc_krmap):
                    , corrections_file   = next100_mc_krmap
                    , apply_temp         = False
                    )
+    return config
+
+
+
+@pytest.fixture(scope="function")
+def esmeralda_config(Th228_hits):
+    config = dict( files_in    = Th228_hits
+                 , compression = "ZLIB4"
+                 , event_range = 8
+                 , run_number  = 0
+                 , detector_db = "next100"
+                 , print_mod   = 1
+                 , threshold   = 30 * units.pes
+                 , same_peak   = True
+                 , fiducial_r  = 474 * units.mm
+                 , paolina_params  = dict(
+                      vox_size         = [15 * units.mm] * 3,
+                      strict_vox_size  = True               ,
+                      energy_threshold = 20 * units.keV     ,
+                      min_voxels       = 3                  ,
+                      blob_radius      = 21 * units.mm      ,
+          		      max_num_hits     = 30000              ))
+
     return config
 
 
