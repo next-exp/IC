@@ -36,11 +36,9 @@ def test_esmeralda_contains_all_tables(KrMC_hdst_filename, correction_map_MC_fil
         assert "Summary/Events"          in h5out.root
         assert "CHITS"                   in h5out.root
         assert "CHITS/highTh"            in h5out.root
-        assert "CHITS/lowTh"             in h5out.root
         assert "Run"                     in h5out.root
         assert "Run/events"              in h5out.root
         assert "Run/runInfo"             in h5out.root
-        assert "Filters/low_th_select"   in h5out.root
         assert "Filters/high_th_select"  in h5out.root
         assert "Filters/topology_select" in h5out.root
         assert "DST/Events"              in h5out.root
@@ -68,12 +66,10 @@ def test_esmeralda_filters_events(KrMC_hdst_filename_toy, correction_map_MC_file
     assert nevt_req     == nevt_in
     assert nevt_out     == len(set(events_pass_paolina))
 
-    df_hits_low_th      =  dio.load_dst(PATH_OUT, 'CHITS'   , 'lowTh' )
     df_hits_paolina     =  dio.load_dst(PATH_OUT, 'CHITS'   , 'highTh')
     df_tracks_paolina   =  dio.load_dst(PATH_OUT, 'Tracking', 'Tracks')
     df_summary_paolina  =  dio.load_dst(PATH_OUT, 'Summary' , 'Events')
 
-    assert set(df_hits_low_th .event.unique()) ==  set(events_pass_low_th )
     assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
 
     assert set(df_hits_paolina.event.unique()) ==  set(df_tracks_paolina  .event.unique())
@@ -101,22 +97,19 @@ def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_M
 
     cnt = esmeralda(**conf)
 
-    events_pass_low_th  =  [0, 1, 2, 3, 4, 5, 6, 7]
-    events_pass_paolina =  [0, 1, 2, 3, 4, 5, 6, 7]
-    nevt_in             =  cnt.events_in
-    nevt_out            =  cnt.events_out
-    assert nevt_req     == nevt_in
-    assert nevt_out     == len(set(events_pass_paolina))
+    events_pass =  [0, 1, 2, 3, 4, 5, 6, 7]
+    nevt_in     =  cnt.events_in
+    nevt_out    =  cnt.events_out
+    assert nevt_req == nevt_in
+    assert nevt_out == len(set(events_pass))
 
-    df_hits_low_th      =  dio.load_dst(PATH_OUT, 'CHITS', 'lowTh' )
-    df_hits_paolina     =  dio.load_dst(PATH_OUT, 'CHITS', 'highTh')
+    df_hits =  dio.load_dst(PATH_OUT, 'CHITS', 'highTh')
 
-    assert set(df_hits_low_th .event.unique()) ==  set(events_pass_low_th )
-    assert set(df_hits_paolina.event.unique()) ==  set(events_pass_paolina)
+    assert set(df_hits.event.unique()) ==  set(events_pass)
 
-    summary_table       =  dio.load_dst(PATH_OUT, 'Summary', 'Events')
+    summary_table =  dio.load_dst(PATH_OUT, 'Summary', 'Events')
     #assert event with nan energy labeled in summary_table
-    events_energy       =  df_hits_paolina.groupby('event').Ec.apply(pd.Series.sum, skipna=False)
+    events_energy =  df_hits.groupby('event').Ec.apply(pd.Series.sum, skipna=False)
     np.testing.assert_array_equal(summary_table.evt_out_of_map, np.isnan(events_energy.values))
 
 
@@ -224,7 +217,7 @@ def test_esmeralda_exact_result_all_events(ICDATADIR, KrMC_hdst_filename, correc
     with tb.open_file(true_out)  as true_output_file:
         with tb.open_file(file_out) as   output_file:
             for table in tables:
-                assert hasattr(output_file.root, table)
+                assert hasattr(output_file.root, table), table
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
