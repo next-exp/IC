@@ -53,7 +53,7 @@ def thresholds(draw, min_value=1, max_value=1):
     return th1, th2
 
 @given(list_of_hits())
-def test_merge_NN_not_modify_input(hits):
+def test_merge_NN_does_not_modify_input(hits):
     hits_org    = deepcopy(hits)
     before_len  = len(hits)
 
@@ -125,7 +125,7 @@ def test_threshold_hits_with_penthesilea(config_tmpdir, Kr_pmaps_run4628_filenam
 
 
 @given(list_of_hits(), floats())
-def test_threshold_hits_not_modify_input(hits, th):
+def test_threshold_hits_does_not_modify_input(hits, th):
     hits_org    = deepcopy(hits)
     before_len  = len(hits)
 
