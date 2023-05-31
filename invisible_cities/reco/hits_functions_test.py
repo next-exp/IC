@@ -137,17 +137,16 @@ def test_threshold_hits_does_not_modify_input(hits, th):
         assert_hit_equality(h1, h2)
 
 
-@given(list_of_hits(), floats())
-def test_threshold_hits_energy_conserved(hits, th):
-    hits_thresh   = threshold_hits(hits, th)
-    assert_almost_equal(sum((h.E for h in hits)), sum((h.E for h in hits_thresh  )))
-    hits_thresh_c = threshold_hits(hits, th, on_corrected = True)
-    assert_almost_equal(sum((h.E for h in hits)), sum((h.E for h in hits_thresh_c)))
+@mark.parametrize("on_corrected", (False, True))
+@given(hits=list_of_hits(), th=floats())
+def test_threshold_hits_energy_conserved(hits, th, on_corrected):
+    hits_thresh = threshold_hits(hits, th, on_corrected=on_corrected)
+    assert_almost_equal(sum((h.E  for h in hits)), sum((h.E  for h in hits_thresh)))
 
 
-@given(list_of_hits(), floats())
-def test_threshold_hits_all_larger_than_th(hits, th):
-    hits_thresh      = threshold_hits(hits, th                     )
-    hits_thresh_cor  = threshold_hits(hits, th, on_corrected = True)
-    assert (h.Q  > th or h.Q == NN for h in hits_thresh    )
-    assert (h.Qc > th or h.Q == NN for h in hits_thresh_cor)
+@mark.parametrize("on_corrected", (False, True))
+@given(hits=list_of_hits(), th=floats())
+def test_threshold_hits_all_larger_than_th(hits, th, on_corrected):
+    hits_thresh  = threshold_hits(hits, th, on_corrected = on_corrected)
+    assert (h.Q  > th or h.Q  == NN for h in hits_thresh)
+    assert (h.Qc > th or h.Qc == NN for h in hits_thresh)
