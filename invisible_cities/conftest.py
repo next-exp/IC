@@ -598,6 +598,66 @@ def TlMC_hits_merged(ICDATADIR):
     return hits
 
 
+@pytest.fixture(scope="session")
+def Th228_pmaps(ICDATADIR):
+    filename = "228Th_10evt_pmaps.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
+def next100_mc_krmap(ICDATADIR):
+    filename = "map_NEXT100_MC.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="function")
+def sophronia_config(Th228_pmaps, next100_mc_krmap):
+    config   = dict( files_in    = Th228_pmaps
+                   , compression = "ZLIB4"
+                   , event_range = 10
+                   , run_number  = 0
+                   , detector_db = "next100"
+                   , print_mod   = 1
+                   , drift_v     = 0.84 * units.mm / units.mus
+                   , s1_params   = dict(
+                        s1_nmin     =    1            ,
+                        s1_nmax     =    5            ,
+                        s1_emin     =    5 * units.pes,
+                        s1_emax     =  1e4 * units.pes,
+                        s1_wmin     =   75 * units.ns ,
+                        s1_wmax     =    2 * units.mus,
+                        s1_hmin     =    2 * units.pes,
+                        s1_hmax     =  1e4 * units.pes,
+                        s1_ethr     =    0 * units.pes,
+                   )
+                   , s2_params   = dict(
+                        s2_nmin     =    1            ,
+                        s2_nmax     =    5            ,
+                        s2_emin     =  1e2 * units.pes,
+                        s2_emax     =  1e9 * units.pes,
+                        s2_wmin     =  0.5 * units.mus,
+                        s2_wmax     =  1e3 * units.ms ,
+                        s2_hmin     =  1e2 * units.pes,
+                        s2_hmax     =  1e9 * units.pes,
+                        s2_nsipmmin =    1            ,
+                        s2_nsipmmax = 3000            ,
+                        s2_ethr     =    0 * units.pes,
+                   )
+                   , rebin              = 1
+                   , rebin_method       = ALL_SYMBOLS["stride"]
+                   , sipm_charge_type   = ALL_SYMBOLS["raw"]
+                   , q_thr              = 5 * units.pes
+                   , global_reco_algo   = ALL_SYMBOLS["barycenter"]
+                   , global_reco_params = dict(Qthr = 20 * units.pes)
+                   , same_peak          = True
+                   , corrections_file   = next100_mc_krmap
+                   , apply_temp         = False
+                   )
+    return config
+
+
 @pytest.fixture(scope='session')
 def hits_toy_data(ICDATADIR):
     npeak  = np.array   ([0]*25 + [1]*30 + [2]*35 + [3]*10)
