@@ -34,11 +34,12 @@ def hit(draw, min_value=1, max_value=100):
     npeak  = 0
     z      = draw(floats  ( 50, 100))
     E      = draw(floats  ( 50, 100))
+    Ec     = draw(floats  ( 50, 100))
     x_peak = draw(floats  (  1,   5))
     y_peak = draw(floats  (-10,  10))
     Qc     = draw(floats  (  0, 100).map(lambda x: -1 if Q==NN else x))
     assume(abs(Qc - Q) > 1e-3)
-    return Hit(npeak,Cluster(Q, xy(x, y), xy(xvar, yvar), nsipm,  Qc=Qc), z, E, xy(x_peak, y_peak))
+    return Hit(npeak,Cluster(Q, xy(x, y), xy(xvar, yvar), nsipm,  Qc=Qc), z, E, xy(x_peak, y_peak), s2_energy_c=Ec)
 
 @composite
 def list_of_hits(draw):
@@ -68,7 +69,8 @@ def test_merge_NN_does_not_modify_input(hits):
 @given(list_of_hits())
 def test_merge_hits_energy_conserved(hits):
     hits_merged = merge_NN_hits(hits)
-    assert_almost_equal(sum((h.E for h in hits)), sum((h.E for h in hits_merged)))
+    assert_almost_equal(sum((h.E  for h in hits)), sum((h.E  for h in hits_merged)))
+    assert_almost_equal(sum((h.Ec for h in hits)), sum((h.Ec for h in hits_merged)))
 
 def test_merge_NN_hits_exact(TlMC_hits, TlMC_hits_merged):
     for ev, hitc in TlMC_hits.items():
@@ -142,6 +144,7 @@ def test_threshold_hits_does_not_modify_input(hits, th):
 def test_threshold_hits_energy_conserved(hits, th, on_corrected):
     hits_thresh = threshold_hits(hits, th, on_corrected=on_corrected)
     assert_almost_equal(sum((h.E  for h in hits)), sum((h.E  for h in hits_thresh)))
+    assert_almost_equal(sum((h.Ec for h in hits)), sum((h.Ec for h in hits_thresh)))
 
 
 @mark.parametrize("on_corrected", (False, True))
