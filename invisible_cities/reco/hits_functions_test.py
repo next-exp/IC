@@ -44,7 +44,7 @@ def hit(draw, min_value=1, max_value=100):
 @composite
 def list_of_hits(draw):
     list_of_hits = draw(lists(hit(), min_size=2, max_size=10))
-    assume(sum((h.Q > 0 for h in list_of_hits)) >= 1)
+    assume(sum((h.Q > 0 for h in list_of_hits if h.Q != NN)) >= 1)
     return list_of_hits
 
 @composite
