@@ -72,6 +72,12 @@ def test_merge_hits_energy_conserved(hits):
     assert_almost_equal(sum((h.E  for h in hits)), sum((h.E  for h in hits_merged)))
     assert_almost_equal(sum((h.Ec for h in hits)), sum((h.Ec for h in hits_merged)))
 
+@given(list_of_hits())
+def test_merge_nn_hits_does_not_leave_nn_hits(hits):
+    hits_merged = merge_NN_hits(hits)
+    for hit in hits_merged:
+        assert hit.Q != NN
+
 
 @given(list_of_hits(), floats())
 def test_threshold_hits_does_not_modify_input(hits, th):
