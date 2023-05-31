@@ -677,6 +677,8 @@ def deconvolution_config(ICDIR, ICDATADIR, PSFDIR, config_tmpdir):
                        compression   = 'ZLIB4',
                        print_mod     = 1000,
                        run_number    = 0,
+                       threshold     = 6 * units.pes,
+                       same_peak     = True,
                        deconv_params = dict(q_cut         =                   10,
                                             drop_dist     =           [10., 10.],
                                             psf_fname     =               PSFDIR,
