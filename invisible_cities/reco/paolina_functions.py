@@ -136,7 +136,16 @@ def voxels_from_track_graph(track: Graph) -> List[Voxel]:
 
 def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
     """Compute shortest path lengths between all nodes in a weighted graph."""
-    return dict(nx.all_pairs_dijkstra_path_length(track_graph, weight='distance'))
+    def voxel_pos(x):
+        return x[0].pos.tolist()
+
+    distances = dict(nx.all_pairs_dijkstra_path_length(track_graph, weight='distance'))
+
+    # sort the output so the result is reproducible
+    distances = { v1 : {v2:d for v2, d in sorted(dmap.items(), key=voxel_pos)}
+                  for v1, dmap in sorted(distances.items(), key=voxel_pos)}
+    return distances
+
 
 
 def find_extrema_and_length(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Voxel, float]:
