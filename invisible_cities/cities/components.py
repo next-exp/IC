@@ -1277,17 +1277,17 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
             voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, HitEnergy.Ep)
             (    mod_voxels,
              dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
-            tracks           = plf.make_track_graphs(mod_voxels)
 
             for v in dropped_voxels:
                 track_hitc.hits.extend(v.hits)
+
+            tracks = plf.make_track_graphs(mod_voxels)
+            tracks = sorted(tracks, key=plf.get_track_energy, reverse=True)
 
             vox_size_x = voxels[0].size[0]
             vox_size_y = voxels[0].size[1]
             vox_size_z = voxels[0].size[2]
             del(voxels)
-            #sort tracks in energy
-            tracks     = sorted(tracks, key=plf.get_track_energy, reverse=True)
 
             track_hits = []
             for c, t in enumerate(tracks, 0):
