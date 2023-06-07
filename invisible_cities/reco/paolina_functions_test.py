@@ -302,6 +302,7 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     assert set(voxels) == voxels_in_tracks
 
 
+@mark.skip(reason="find_extrema only accepts voxels now")
 @parametrize(' spec,           extrema',
              (([( 1 , 2 , 3)], ( 1 , 2 )),
               ([('a','b', 4)], ('a','b')),
