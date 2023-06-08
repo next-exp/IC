@@ -34,8 +34,8 @@ def ICDATADIR(ICDIR):
     return os.path.join(ICDIR, "database/test_data/")
 
 @pytest.fixture(scope = 'session')
-def PSFDIR(ICDIR):
-    return os.path.join(ICDIR, "database/test_data/PSF_dst_sum_collapsed.h5")
+def PSFDIR(ICDATADIR):
+    return os.path.join(ICDATADIR, "NEXT100_PSF_kr83m.h5")
 
 @pytest.fixture(scope = 'session')
 def config_tmpdir(tmpdir_factory):
@@ -620,6 +620,20 @@ def Th228_tracks(ICDATADIR):
 
 
 @pytest.fixture(scope="session")
+def Th228_deco(ICDATADIR):
+    filename = "228Th_10evt_deco.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
+def Th228_deco_separate(ICDATADIR):
+    filename = "228Th_10evt_deco_separate.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
 def next100_mc_krmap(ICDATADIR):
     filename = "map_NEXT100_MC.h5"
     filename = os.path.join(ICDATADIR, filename)
@@ -763,35 +777,42 @@ def dbflex100():
 def db(request):
     return request.param
 
-@pytest.fixture(scope='function') # Needs to be function as the config dict is modified when running
-def deconvolution_config(ICDIR, ICDATADIR, PSFDIR, config_tmpdir):
-    PATH_IN     = os.path.join(ICDATADIR    ,    "test_Xe2nu_NEW_v1.2.0_cdst.5_62.h5")
-    PATH_OUT    = os.path.join(config_tmpdir,                       "beersheba_MC.h5")
-    nevt_req    = 3
-    conf        = dict(files_in      = PATH_IN ,
-                       file_out      = PATH_OUT,
-                       event_range   = nevt_req,
-                       compression   = 'ZLIB4',
-                       print_mod     = 1000,
-                       run_number    = 0,
-                       threshold     = 6 * units.pes,
-                       same_peak     = True,
-                       deconv_params = dict(q_cut         =                   10,
-                                            drop_dist     =           [10., 10.],
-                                            psf_fname     =               PSFDIR,
-                                            e_cut         =                 1e-3,
-                                            n_iterations  =                   10,
-                                            iteration_tol =                 0.01,
-                                            sample_width  =           [10., 10.],
-                                            bin_size      =           [ 1.,  1.],
-                                            energy_type   =     ALL_SYMBOLS['E'],
-                                            diffusion     =           (1.0, 1.0),
-                                            deconv_mode   = ALL_SYMBOLS['joint'],
-                                            n_dim         =                    2,
-                                            cut_type      = ALL_SYMBOLS[  'abs'],
-                                            inter_method  = ALL_SYMBOLS['cubic']))
 
-    return conf, PATH_OUT
+@pytest.fixture(scope='function')
+def beersheba_config(Th228_hits, PSFDIR):
+    config = dict( files_in      = Th228_hits
+                 , event_range   = 80
+                 , compression   = 'ZLIB4'
+                 , detector_db   = "next100"
+                 , print_mod     = 1
+                 , run_number    = 0
+                 , threshold     = 5 * units.pes
+                 , same_peak     = True
+                 , deconv_params = dict( q_cut         = 10
+                                       , drop_dist     = [16.0] * 2
+                                       , psf_fname     = PSFDIR
+                                       , e_cut         = 12e-3
+                                       , n_iterations  = 100
+                                       , iteration_tol = 1e-10
+                                       , sample_width  = [15.55] * 2
+                                       , bin_size      = [ 1.,  1.]
+                                       , diffusion     = (1.0, 0.2)
+                                       , n_dim         = 2
+                                       , energy_type   = ALL_SYMBOLS['Ec']
+                                       , deconv_mode   = ALL_SYMBOLS['joint']
+                                       , cut_type      = ALL_SYMBOLS[  'abs']
+                                       , inter_method  = ALL_SYMBOLS['cubic']))
+    return config
+
+
+@pytest.fixture(scope='function')
+def beersheba_config_separate(beersheba_config):
+    beersheba_config["deconv_params"].update(dict( deconv_mode    = ALL_SYMBOLS["separate"]
+                                                 , n_iterations   = 50
+                                                 , n_iterations_g = 50))
+
+    return beersheba_config
+
 
 ## To make very slow tests only run with specific option
 def pytest_addoption(parser):
