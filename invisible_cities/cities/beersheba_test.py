@@ -113,31 +113,6 @@ def test_beersheba_only_ndim_2_is_valid(beersheba_config, ndim, config_tmpdir):
         beersheba(**beersheba_config)
 
 
-@mark.skip(reason = "This is handled by other means now")
-@mark.parametrize("param_name", ('cut_type', 'deconv_mode', 'energy_type', 'inter_method'))
-def test_deconvolve_signal_enums(deconvolution_config, param_name):
-    conf, _   = deconvolution_config
-    conf_dict = conf['deconv_params']
-
-    conf_dict.pop("q_cut")
-    conf_dict.pop("drop_dist")
-
-    conf_dict[param_name] = conf_dict[param_name].name
-
-    with raises(ValueError):
-        deconvolve_signal(DataSiPM('new'), **conf_dict)
-
-
-@mark.skip(reason = "This should be handled by other means")
-@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
-def test_beersheba_expandvar(deconvolution_config):
-    conf, _ = deconvolution_config
-
-    conf['deconv_params']['psf_fname'] = '$ICDIR/database/test_data/PSF_dst_sum_collapsed.h5'
-
-    beersheba(**conf)
-
-
 def test_beersheba_copies_kdst(beersheba_config, Th228_hits, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "beersheba_copies_kdst.h5")
     beersheba_config.update(dict( file_out    = path_out
