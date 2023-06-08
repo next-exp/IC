@@ -18,6 +18,10 @@ The city outputs :
     - DST/Events      - copy of kdst information from penthesilea
 """
 
+#TODO: revisit summary. out_of_map field is outdated
+
+
+
 import tables as tb
 
 from .. core.configure      import EventRangeType

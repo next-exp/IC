@@ -302,28 +302,6 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     assert set(voxels) == voxels_in_tracks
 
 
-@mark.skip(reason="find_extrema only accepts voxels now")
-@parametrize(' spec,           extrema',
-             (([( 1 , 2 , 3)], ( 1 , 2 )),
-              ([('a','b', 4)], ('a','b')),
-              ([( 1 , 2 , 3),
-                ( 2 , 3 , 1)], ( 1 , 3 )),
-              ([( 1 , 2 , 3),
-                ( 1 , 3 , 1),
-                ( 1 , 4 , 2),
-                ( 1 , 5 , 1)], ( 2 , 4 )),
-              ([( 1 , 2 , 1),
-                ( 1 , 3 , 1),
-                ( 1 , 4 , 2),
-                ( 1 , 5 , 2)], ( 4 , 5 )),))
-def test_find_extrema(spec, extrema):
-    weighted_graph = nx.Graph([(a,b, dict(distance=d)) for (a,b,d) in spec])
-    found = find_extrema_and_length(shortest_paths(weighted_graph))
-    a, b = extrema
-    assert a in found
-    assert b in found
-
-
 @given(builds(Voxel, posn, posn, posn, ener, box_sizes))
 def test_find_extrema_single_voxel(voxel):
     g = nx.Graph()
