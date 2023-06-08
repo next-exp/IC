@@ -51,7 +51,8 @@ from .. reco.deconv_functions  import richardson_lucy
 from .. io.run_and_event_io    import run_and_event_writer
 from .. io.          dst_io    import df_writer
 from .. io.          dst_io    import load_dst
-from .. io.          kdst_io   import kdst_from_df_writer
+from .. io.         hits_io    import hits_writer
+from .. io.         kdst_io    import kdst_from_df_writer
 
 from .. types.symbols          import HitEnergy
 from .. types.symbols          import InterpolationMethod
@@ -447,15 +448,17 @@ def beersheba( files_in      : OneOrManyFiles
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
         # Define writers
-        write_event_info = fl.sink(run_and_event_writer (h5out), args = ("run_number", "event_number", "timestamp"))
-        write_deconv     = fl.sink(  deconv_writer(h5out=h5out), args =  "deconv_dst")
-        write_kdst_table = fl.sink(  kdst_from_df_writer(h5out), args =  "kdst"      )
+        write_event_info    = fl.sink(run_and_event_writer(h5out), args = ("run_number", "event_number", "timestamp"))
+        write_deconv        = fl.sink(       deconv_writer(h5out), args =  "deconv_dst")
+        write_kdst_table    = fl.sink( kdst_from_df_writer(h5out), args =  "kdst"      )
+        write_thr_hits      = fl.sink(         hits_writer(h5out, "CHITS", "lowTh"), args = "hits")
 
         result = push(source = hits_and_kdst_from_files(files_in, "RECO", "Events"),
                       pipe   = pipe(fl.slice(*event_range, close_all=True)    ,
                                     print_every(print_mod)                    ,
                                     event_count_in.spy                        ,
                                     threshold_hits                            ,
+                                    fl.branch(write_thr_hits)                 ,
                                     hitc_to_df                                ,
                                     cut_sensors                               ,
                                     drop_sensors                              ,
