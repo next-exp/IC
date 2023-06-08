@@ -52,6 +52,7 @@ from .. io.run_and_event_io    import run_and_event_writer
 from .. io.          dst_io    import df_writer
 from .. io.          dst_io    import load_dst
 from .. io.         hits_io    import hits_writer
+from .. io. event_filter_io    import event_filter_writer
 from .. io.         kdst_io    import kdst_from_df_writer
 
 from .. types.symbols          import HitEnergy
@@ -452,6 +453,7 @@ def beersheba( files_in      : OneOrManyFiles
         write_deconv        = fl.sink(       deconv_writer(h5out), args =  "deconv_dst")
         write_kdst_table    = fl.sink( kdst_from_df_writer(h5out), args =  "kdst"      )
         write_thr_hits      = fl.sink(         hits_writer(h5out, "CHITS", "lowTh"), args = "hits")
+        write_nohits_filter = fl.sink( event_filter_writer(h5out, "nohits"), args=("event_number", "hits_passed_no_hits"))
 
         result = push(source = hits_and_kdst_from_files(files_in, "RECO", "Events"),
                       pipe   = pipe(fl.slice(*event_range, close_all=True)    ,
@@ -463,7 +465,8 @@ def beersheba( files_in      : OneOrManyFiles
                                     cut_sensors                               ,
                                     drop_sensors                              ,
                                     filter_events_no_hits                     ,
-                                    events_passed_no_hits    .filter          ,
+                                    fl.branch(write_nohits_filter)            ,
+                                    events_passed_no_hits.filter              ,
                                     deconvolve_events                         ,
                                     event_count_out.spy                       ,
                                     fl.branch("event_number"     ,
