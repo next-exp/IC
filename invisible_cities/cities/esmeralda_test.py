@@ -95,36 +95,6 @@ def test_esmeralda_filters_events_threshold(esmeralda_config, config_tmpdir):
     assert  df_events .evt_number.drop_duplicates().tolist() == evt_pass
 
 
-@mark.skip(reason="Esmeralda doesn't produce out_of_map hits anymore")
-def test_esmeralda_with_out_of_map_hits(KrMC_hdst_filename_toy, correction_map_MC_filename, config_tmpdir):
-    PATH_IN   = KrMC_hdst_filename_toy
-    PATH_OUT  = os.path.join(config_tmpdir, "Kr_tracks_with_MC_out_of_map.h5")
-    conf      = configure('dummy invisible_cities/config/esmeralda.conf'.split())
-    nevt_req  = 8
-    conf.update(dict( files_in    = PATH_IN
-                    , file_out    = PATH_OUT
-                    , event_range = nevt_req
-                    , threshold   = 20 * units.pes
-                    , same_peak   = True))
-
-    cnt = esmeralda(**conf)
-
-    events_pass =  [0, 1, 2, 3, 4, 5, 6, 7]
-    nevt_in     =  cnt.events_in
-    nevt_out    =  cnt.events_out
-    assert nevt_req == nevt_in
-    assert nevt_out == len(set(events_pass))
-
-    df_hits =  dio.load_dst(PATH_OUT, 'CHITS', 'highTh')
-
-    assert set(df_hits.event.unique()) ==  set(events_pass)
-
-    summary_table =  dio.load_dst(PATH_OUT, 'Summary', 'Events')
-    #assert event with nan energy labeled in summary_table
-    events_energy =  df_hits.groupby('event').Ec.apply(pd.Series.sum, skipna=False)
-    np.testing.assert_array_equal(summary_table.evt_out_of_map, np.isnan(events_energy.values))
-
-
 def test_esmeralda_exact_result(esmeralda_config, Th228_tracks, config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "esmeralda_exact_result.h5")
     esmeralda_config["file_out"] = path_out
@@ -146,21 +116,6 @@ def test_esmeralda_exact_result(esmeralda_config, Th228_tracks, config_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
-
-
-@mark.skip(reason="This should be a general test, not specific to esmeralda")
-def test_esmeralda_empty_input_file(config_tmpdir, ICDATADIR):
-    # Esmeralda must run on an empty file without raising any exception
-    # The input file has the complete structure of a PMAP but no events.
-
-    PATH_IN  = os.path.join(ICDATADIR    , 'empty_hdst.h5')
-    PATH_OUT = os.path.join(config_tmpdir, 'empty_voxels.h5')
-
-    conf = configure('dummy invisible_cities/config/esmeralda.conf'.split())
-    conf.update(dict(files_in = PATH_IN,
-                     file_out = PATH_OUT))
-
-    esmeralda(**conf)
 
 
 #if the first analyzed events has no overlap in blob buggy esmeralda will cast all overlap energy to integers
