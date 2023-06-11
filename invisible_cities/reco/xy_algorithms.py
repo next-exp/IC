@@ -15,9 +15,13 @@ from .. types.ic_types       import xy
 from .. evm.event_model      import Cluster
 
 from typing import Optional
+from typing import Sequence
+from typing import Tuple
 
 
-def threshold_check(pos, qs, thr):
+def threshold_check( pos : np.ndarray # (n, 2)
+                   ,  qs : np.ndarray # (n,)
+                   , thr : float) -> Tuple[np.ndarray, np.ndarray]:
     if not len(pos)   : raise SipmEmptyList
     if np.sum(qs) == 0: raise SipmZeroCharge
 
@@ -31,8 +35,8 @@ def threshold_check(pos, qs, thr):
 
 
 @check_annotations
-def barycenter( pos : np.ndarray
-              , qs  : np.ndarray
+def barycenter( pos : np.ndarray # (n, 2)
+              , qs  : np.ndarray # (n,)
               , Qthr: Optional[float] = 0 * units.pes):
     """pos = column np.array --> (matrix n x 2)
        ([x1, y1],
@@ -67,15 +71,15 @@ def count_masked(cs, d, datasipm, is_masked):
 
 
 @check_annotations
-def corona( pos             : np.ndarray
-          , qs              : np.ndarray
+def corona( pos             : np.ndarray # (n, 2)
+          , qs              : np.ndarray # (n,)
           , all_sipms       : pd.DataFrame
           , Qthr            : float
           , Qlm             : float
           , lm_radius       : float
           , new_lm_radius   : float
           , msipm           : int
-          , consider_masked : Optional[bool] = False):
+          , consider_masked : Optional[bool] = False) -> Sequence[Cluster]:
     """
     corona creates a list of Clusters by
     first , identifying hottest_sipm, the sipm with max charge in qs (must be > Qlm)
