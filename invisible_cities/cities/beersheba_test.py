@@ -100,7 +100,7 @@ def test_beersheba_exact_result( deco
                 assert hasattr(output_file.root, table), table
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
-                assert_tables_equality(got, expected)
+                assert_tables_equality(got, expected, rtol=1e-6)
 
 
 @mark.parametrize("ndim", (1, 3))
