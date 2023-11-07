@@ -37,6 +37,7 @@ from .  components import print_every
 from .  components import collect
 from .  components import copy_mc_info
 from .  components import hits_and_kdst_from_files
+from .  components import hits_corrector
 from .  components import hits_thresholder
 from .  components import compute_and_write_tracks_info
 
@@ -57,17 +58,19 @@ def hit_dropper(radius : float):
 
 
 @city
-def esmeralda( files_in       : OneOrManyFiles
-             , file_out       : str
-             , compression    : str
-             , event_range    : EventRangeType
-             , print_mod      : int
-             , detector_db    : str
-             , run_number     : int
-             , threshold      : float
-             , same_peak      : bool
-             , fiducial_r     : float
-             , paolina_params : dict
+def esmeralda( files_in         : OneOrManyFiles
+             , file_out         : str
+             , compression      : str
+             , event_range      : EventRangeType
+             , print_mod        : int
+             , detector_db      : str
+             , run_number       : int
+             , threshold        : float
+             , same_peak        : bool
+             , fiducial_r       : float
+             , paolina_params   : dict
+             , corrections_file : str
+             , apply_temp       : bool
              ):
     """
     The city applies a threshold to sipm hits and extracts
@@ -107,6 +110,10 @@ def esmeralda( files_in       : OneOrManyFiles
             radius of blob
         max_num_hits            : int
             maximum number of hits allowed per event to run paolina functions.
+        corrections_file        : str
+            path to the corrections file
+        apply_temp              : bool
+            whether to apply temporal corrections
 
     Input
     ----------
@@ -126,10 +133,11 @@ def esmeralda( files_in       : OneOrManyFiles
     - DST/Events      - kdst information
     """
 
+    correct_hits       = fl.map(hits_corrector(corrections_file, apply_temp), item="hits")
     drop_external_hits = fl.map(hit_dropper(fiducial_r), item="hits")
-    threshold_hits  = fl.map(hits_thresholder(threshold, same_peak), item="hits")
-    event_count_in  = fl.spy_count()
-    event_count_out = fl.count()
+    threshold_hits     = fl.map(hits_thresholder(threshold, same_peak), item="hits")
+    event_count_in     = fl.spy_count()
+    event_count_out    = fl.count()
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
 
@@ -159,6 +167,7 @@ def esmeralda( files_in       : OneOrManyFiles
                       pipe   = pipe( fl.slice(*event_range, close_all=True)
                                    , print_every(print_mod)
                                    , event_count_in.spy
+                                   , correct_hits
                                    , drop_external_hits
                                    , threshold_hits
                                    , compute_tracks
