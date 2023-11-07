@@ -14,7 +14,6 @@ from typing          import List
 from typing          import Dict
 from typing          import Tuple
 from typing          import Union
-from typing          import Optional
 from typing          import Any
 
 import tables as tb
@@ -83,7 +82,6 @@ from .. types  .symbols           import                   BlsMode
 from .. types  .symbols           import             SiPMThreshold
 from .. types  .symbols           import                EventRange
 from .. types  .symbols           import                 HitEnergy
-from .. types  .symbols           import                SiPMCharge
 from .. types  .symbols           import                    XYReco
 from .. types  .symbols           import              NormStrategy
 
