@@ -24,31 +24,28 @@ The tasks performed are:
       according to the charge recorded in the tracking plane.
 """
 
-import os
-
 from operator import attrgetter
 
 import tables as tb
 
-from .. core.configure         import       EventRangeType
-from .. core.configure         import       OneOrManyFiles
-from .. core.configure         import    check_annotations
+from .. core.configure import    EventRangeType
+from .. core.configure import    OneOrManyFiles
+from .. core.configure import check_annotations
+from .. reco           import     tbl_functions as tbl
+
 from .. evm .event_model       import        HitCollection
-from .. reco                   import        tbl_functions as tbl
-from .. reco.corrections       import            read_maps
-from .. reco.corrections       import apply_all_correction
-from .. reco.corrections       import get_df_to_z_converter
 from .. io  .          hits_io import          hits_writer
 from .. io  . run_and_event_io import run_and_event_writer
 from .. io  .          kdst_io import            kr_writer
 from .. io  .  event_filter_io import  event_filter_writer
 
-from .. dataflow          import     dataflow as df
-from .. types.ic_types    import           NN
-from .. types.symbols     import  RebinMethod
-from .. types.symbols     import   SiPMCharge
-from .. types.symbols     import       XYReco
-from .. types.symbols     import NormStrategy
+from .. dataflow import dataflow as df
+
+
+from .. types.symbols  import RebinMethod
+from .. types.symbols  import  SiPMCharge
+from .. types.symbols  import      XYReco
+from .. types.ic_types import          NN
 
 from .  components import                  city
 from .  components import          copy_mc_info
@@ -60,42 +57,7 @@ from .  components import         sipms_as_hits
 from .  components import           hits_merger
 from .  components import               collect
 from .  components import build_pointlike_event as pointlike_event_builder
-
-from typing import Callable
-
-
-@check_annotations
-def hits_corrector(map_fname : str, apply_temp : bool) -> Callable:
-    """
-    Applies energy correction map and converts drift time to z.
-
-    Parameters
-    ----------
-    map_fname  : string (filepath)
-        filename of the map
-    apply_temp : bool
-        whether to apply temporal corrections
-        must be set to False if no temporal correction dataframe exists in map file
-
-    Returns
-    ----------
-    A function that takes a HitCollection as input and returns
-    the same object with modified Ec and Z fields.
-    """
-    map_fname = os.path.expandvars(map_fname)
-    maps      = read_maps(map_fname)
-    get_coef  = apply_all_correction(maps, apply_temp = apply_temp, norm_strat = NormStrategy.kr)
-    time_to_Z = (get_df_to_z_converter(maps) if maps.t_evol is not None else
-                 lambda x: x)
-
-    def correct(hitc : HitCollection) -> HitCollection:
-        for hit in hitc.hits:
-            corr    = get_coef([hit.X], [hit.Y], [hit.Z], hitc.time)[0]
-            hit.Ec  = hit.E * corr
-            hit.xyz = (hit.X, hit.Y, time_to_Z(hit.Z)) # ugly, but temporary
-        return hitc
-
-    return correct
+from .  components import        hits_corrector
 
 
 @check_annotations
