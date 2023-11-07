@@ -15,12 +15,14 @@ from typing          import Dict
 from typing          import Tuple
 from typing          import Union
 from typing          import Optional
+
 import tables as tb
 import numpy  as np
 import pandas as pd
 import inspect
 import warnings
 import math
+import os
 
 from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
@@ -50,6 +52,9 @@ from .. reco                      import           pmaps_functions as pmf
 from .. reco                      import            hits_functions as hif
 from .. reco                      import             wfm_functions as wfm
 from .. reco                      import         paolina_functions as plf
+from .. reco   .corrections       import                 read_maps
+from .. reco   .corrections       import      apply_all_correction
+from .. reco   .corrections       import     get_df_to_z_converter
 from .. reco   .xy_algorithms     import                    corona
 from .. reco   .xy_algorithms     import                barycenter
 from .. filters.s1s2_filter       import               S12Selector
@@ -80,6 +85,7 @@ from .. types  .symbols           import                EventRange
 from .. types  .symbols           import                 HitEnergy
 from .. types  .symbols           import                SiPMCharge
 from .. types  .symbols           import                    XYReco
+from .. types  .symbols           import              NormStrategy
 
 
 
@@ -1442,3 +1448,37 @@ def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
         return new_hitc
 
     return threshold_hits
+
+
+@check_annotations
+def hits_corrector(map_fname : str, apply_temp : bool) -> Callable:
+    """
+    Applies energy correction map and converts drift time to z.
+
+    Parameters
+    ----------
+    map_fname  : string (filepath)
+        filename of the map
+    apply_temp : bool
+        whether to apply temporal corrections
+        must be set to False if no temporal correction dataframe exists in map file
+
+    Returns
+    ----------
+    A function that takes a HitCollection as input and returns
+    the same object with modified Ec and Z fields.
+    """
+    map_fname = os.path.expandvars(map_fname)
+    maps      = read_maps(map_fname)
+    get_coef  = apply_all_correction(maps, apply_temp = apply_temp, norm_strat = NormStrategy.kr)
+    time_to_Z = (get_df_to_z_converter(maps) if maps.t_evol is not None else
+                 lambda x: x)
+
+    def correct(hitc : HitCollection) -> HitCollection:
+        for hit in hitc.hits:
+            corr    = get_coef([hit.X], [hit.Y], [hit.Z], hitc.time)[0]
+            hit.Ec  = hit.E * corr
+            hit.xyz = (hit.X, hit.Y, time_to_Z(hit.Z)) # ugly, but temporary
+        return hitc
+
+    return correct
