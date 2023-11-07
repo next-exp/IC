@@ -15,6 +15,7 @@ from typing          import Dict
 from typing          import Tuple
 from typing          import Union
 from typing          import Optional
+from typing          import Any
 
 import tables as tb
 import numpy  as np
@@ -1482,3 +1483,7 @@ def hits_corrector(map_fname : str, apply_temp : bool) -> Callable:
         return hitc
 
     return correct
+
+
+def identity(x : Any) -> Any:
+    return x
