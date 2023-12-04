@@ -148,10 +148,10 @@ def esmeralda( files_in         : OneOrManyFiles
         write_event_info   = fl.sink( run_and_event_writer(h5out)
                                     , args = "run_number event_number timestamp".split())
 
-        write_paolina_hits = fl.sink(hits_writer( h5out
-                                                , group_name = "CHITS"
-                                                , table_name = "highTh")
-                                    , args = "Ep_hits")
+        write_paolina_hits = fl.sink( hits_writer( h5out
+                                                 , group_name = "CHITS"
+                                                 , table_name = "highTh")
+                                    , args = "paolina_hits") # from within compute_tracks
 
         write_kdst         = fl.sink( kdst_from_df_writer(h5out)
                                     , args = "kdst")
