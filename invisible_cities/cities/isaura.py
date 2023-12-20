@@ -98,7 +98,7 @@ def isaura( files_in       : OneOrManyFiles
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_kdst_table = fl.sink( kdst_from_df_writer(h5out), args= "kdst")
 
-        write_hits = fl.sink(hits_writer(h5out, "CHITS", "lowTh"), args="hits")
+        write_hits = fl.sink(hits_writer(h5out, "DECO", "Events"), args="hits")
 
         evtnum_collect = collect()
 
