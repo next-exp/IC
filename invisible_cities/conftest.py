@@ -34,8 +34,8 @@ def ICDATADIR(ICDIR):
     return os.path.join(ICDIR, "database/test_data/")
 
 @pytest.fixture(scope = 'session')
-def PSFDIR(ICDIR):
-    return os.path.join(ICDIR, "database/test_data/PSF_dst_sum_collapsed.h5")
+def PSFDIR(ICDATADIR):
+    return os.path.join(ICDATADIR, "NEXT100_PSF_kr83m.h5")
 
 @pytest.fixture(scope = 'session')
 def config_tmpdir(tmpdir_factory):
@@ -214,12 +214,8 @@ def KrMC_kdst(ICDATADIR):
                          s2_ethr       =      1 * units.pes,
                          s2_nsipmmin   =      2,
                          s2_nsipmmax   =   1000,
-                         global_reco_params =   dict(
-                             Qthr           =   1 * units.pes,
-                             Qlm            =   0 * units.pes,
-                             lm_radius      =  -1 * units.mm,
-                             new_lm_radius  =  -1 * units.mm,
-                             msipm          =   1           )     )
+                         global_reco_algo   = ALL_SYMBOLS["barycenter"],
+                         global_reco_params = dict(Qthr = 1 * units.pes))
 
     event    = [0, 1, 2, 3, 4, 5, 6, 7, 9]
     time     = [0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -358,12 +354,9 @@ def KrMC_hdst(ICDATADIR):
                          s2_ethr       =      1 * units.pes,
                          s2_nsipmmin   =      2,
                          s2_nsipmmax   =   1000,
-                         global_reco_params =   dict(
-                             Qthr           =   1  * units.pes,
-                             Qlm            =   0  * units.pes,
-                             lm_radius      =  -1  * units.mm ,
-                             new_lm_radius  =  -1  * units.mm ,
-                             msipm          =   1             ),
+                         global_reco_algo   = ALL_SYMBOLS["barycenter"],
+                         global_reco_params = dict(Qthr = 1 * units.pes),
+                         slice_reco_algo    = ALL_SYMBOLS["corona"],
                          slice_reco_params  =   dict(
                              Qthr           =   2  * units.pes,
                              Qlm            =   5  * units.pes,
@@ -385,43 +378,43 @@ def KrMC_hdst(ICDATADIR):
              7, 9, 2, 7, 2, 4]
 
     X     = [137.02335083, 136.05361214, 155, 137.50739563,
-             139.44340629, 135, 0.,
+             139.44340629, 135, NN,
              -136.91523372, -138.31812254, -137.40236334, -139.36096871,
              -136.614188  , -135.        , -155.        , -137.13894421,
-             -135.        ,    0.,
+             -135.        ,    NN,
              96.69981723,  97.48205345,  96.84759934, 115.        ,
              96.87320369, 115.        , 101.92102321,  97.29559249,
-             43.04750178, 46.37438754, 45.18567591, 45.30916066,  0,
+             43.04750178, 46.37438754, 45.18567591, 45.30916066,  NN,
              -56.51582522, -56.16605278, -54.00613888, -55.77326839,
-             -54.43059006, -52.08436199, -54.76790039,   0.,
+             -54.43059006, -52.08436199, -54.76790039,   NN,
              106.9129152 , 108.02149081, 125.        , 111.23591207,
              95.        , 109.36687514, 125.        , -35.        ,
-             0,
+             NN,
              -66.81829731, -60.99443543, -65.21616666, -56.82709265,
              -85.        , -66.38902019, -67.16981495,
              146.62612941, 145.98052086, 144.56275403, 146.57670316,
-             165.        , 143.75471749,   0.,
+             165.        , 143.75471749,   NN,
              112.68567761, 113.05236723,  95.        , 112.18326138,
              95.        , 111.13948562]
 
     Y     = [123.3554201 , 124.21305414, 130.32028088, 125.13468301,
-             125.723091  , 105.        ,   0.,
+             125.723091  , 105.        ,   NN,
              -102.20454509,  -85.      , -101.19527484,  -85.    ,
              -98.18372292, -115.       ,  -97.50736874,  -97.65435292,
-             -115.        ,    0.,
+             -115.        ,   NN,
              97.83535504,  96.71162732, 115.        ,  99.94110169,
              96.96828871,  91.9964654 ,  96.47442012,  97.41483565,
              -135.46032693, -135.78741482, -135.45706672, -136.84192389,
-             0,
+             NN,
              -91.93474203, -92.22587474, -75.        , -91.79293263,
-             -92.05845326, -75.        , -93.17777252,   0,
+             -92.05845326, -75.        , -93.17777252,   NN,
              60.37973152, 55.49979777, 58.7016448 , 56.05515802,
              52.82336998, 57.04430991, 61.02136179, 65.        ,
-             0.,
+             NN,
              131.35172348, 115.        , 131.55083652, 116.93600131,
              125.        , 131.38450477, 127.55032531,
              86.4185202 , 85.50276576, 85.08681108, 85.63406367,
-             92.12569852, 87.37079899,  0.,
+             92.12569852, 87.37079899,  NN,
              -41.26775923, -43.95642973, -42.01248503, -43.6128179 ,
              -39.43319563, -41.83429664]
 
@@ -605,6 +598,117 @@ def TlMC_hits_merged(ICDATADIR):
     return hits
 
 
+@pytest.fixture(scope="session")
+def Th228_pmaps(ICDATADIR):
+    filename = "228Th_10evt_pmaps.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
+def Th228_hits(ICDATADIR):
+    filename = "228Th_10evt_hits.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
+def Th228_tracks(ICDATADIR):
+    filename = "228Th_10evt_tracks.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
+def Th228_deco(ICDATADIR):
+    filename = "228Th_10evt_deco.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
+def Th228_deco_separate(ICDATADIR):
+    filename = "228Th_10evt_deco_separate.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
+def next100_mc_krmap(ICDATADIR):
+    filename = "map_NEXT100_MC.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="function")
+def sophronia_config(Th228_pmaps, next100_mc_krmap):
+    config   = dict( files_in    = Th228_pmaps
+                   , compression = "ZLIB4"
+                   , event_range = 10
+                   , run_number  = 0
+                   , detector_db = "next100"
+                   , print_mod   = 1
+                   , drift_v     = 0.84 * units.mm / units.mus
+                   , s1_params   = dict(
+                        s1_nmin     =    1            ,
+                        s1_nmax     =    5            ,
+                        s1_emin     =    5 * units.pes,
+                        s1_emax     =  1e4 * units.pes,
+                        s1_wmin     =   75 * units.ns ,
+                        s1_wmax     =    2 * units.mus,
+                        s1_hmin     =    2 * units.pes,
+                        s1_hmax     =  1e4 * units.pes,
+                        s1_ethr     =    0 * units.pes,
+                   )
+                   , s2_params   = dict(
+                        s2_nmin     =    1            ,
+                        s2_nmax     =    5            ,
+                        s2_emin     =  1e2 * units.pes,
+                        s2_emax     =  1e9 * units.pes,
+                        s2_wmin     =  0.5 * units.mus,
+                        s2_wmax     =  1e3 * units.ms ,
+                        s2_hmin     =  1e2 * units.pes,
+                        s2_hmax     =  1e9 * units.pes,
+                        s2_nsipmmin =    1            ,
+                        s2_nsipmmax = 3000            ,
+                        s2_ethr     =    0 * units.pes,
+                   )
+                   , rebin              = 1
+                   , rebin_method       = ALL_SYMBOLS["stride"]
+                   , sipm_charge_type   = ALL_SYMBOLS["raw"]
+                   , q_thr              = 5 * units.pes
+                   , global_reco_algo   = ALL_SYMBOLS["barycenter"]
+                   , global_reco_params = dict(Qthr = 20 * units.pes)
+                   , same_peak          = True
+                   , corrections_file   = next100_mc_krmap
+                   , apply_temp         = False
+                   )
+    return config
+
+
+
+@pytest.fixture(scope="function")
+def esmeralda_config(Th228_hits):
+    config = dict( files_in    = Th228_hits
+                 , compression = "ZLIB4"
+                 , event_range = 8
+                 , run_number  = 0
+                 , detector_db = "next100"
+                 , print_mod   = 1
+                 , threshold   = 30 * units.pes
+                 , same_peak   = True
+                 , fiducial_r  = 474 * units.mm
+                 , paolina_params  = dict(
+                      vox_size         = [15 * units.mm] * 3,
+                      strict_vox_size  = True               ,
+                      energy_threshold = 20 * units.keV     ,
+                      min_voxels       = 3                  ,
+                      blob_radius      = 21 * units.mm      ,
+          		      max_num_hits     = 30000              ))
+
+    return config
+
+
 @pytest.fixture(scope='session')
 def hits_toy_data(ICDATADIR):
     npeak  = np.array   ([0]*25 + [1]*30 + [2]*35 + [3]*10)
@@ -673,33 +777,42 @@ def dbflex100():
 def db(request):
     return request.param
 
-@pytest.fixture(scope='function') # Needs to be function as the config dict is modified when running
-def deconvolution_config(ICDIR, ICDATADIR, PSFDIR, config_tmpdir):
-    PATH_IN     = os.path.join(ICDATADIR    ,    "test_Xe2nu_NEW_v1.2.0_cdst.5_62.h5")
-    PATH_OUT    = os.path.join(config_tmpdir,                       "beersheba_MC.h5")
-    nevt_req    = 3
-    conf        = dict(files_in      = PATH_IN ,
-                       file_out      = PATH_OUT,
-                       event_range   = nevt_req,
-                       compression   = 'ZLIB4',
-                       print_mod     = 1000,
-                       run_number    = 0,
-                       deconv_params = dict(q_cut         =                   10,
-                                            drop_dist     =           [10., 10.],
-                                            psf_fname     =               PSFDIR,
-                                            e_cut         =                 1e-3,
-                                            n_iterations  =                   10,
-                                            iteration_tol =                 0.01,
-                                            sample_width  =           [10., 10.],
-                                            bin_size      =           [ 1.,  1.],
-                                            energy_type   =     ALL_SYMBOLS['E'],
-                                            diffusion     =           (1.0, 1.0),
-                                            deconv_mode   = ALL_SYMBOLS['joint'],
-                                            n_dim         =                    2,
-                                            cut_type      = ALL_SYMBOLS[  'abs'],
-                                            inter_method  = ALL_SYMBOLS['cubic']))
 
-    return conf, PATH_OUT
+@pytest.fixture(scope='function')
+def beersheba_config(Th228_hits, PSFDIR):
+    config = dict( files_in      = Th228_hits
+                 , event_range   = 80
+                 , compression   = 'ZLIB4'
+                 , detector_db   = "next100"
+                 , print_mod     = 1
+                 , run_number    = 0
+                 , threshold     = 5 * units.pes
+                 , same_peak     = True
+                 , deconv_params = dict( q_cut         = 10
+                                       , drop_dist     = [16.0] * 2
+                                       , psf_fname     = PSFDIR
+                                       , e_cut         = 12e-3
+                                       , n_iterations  = 100
+                                       , iteration_tol = 1e-10
+                                       , sample_width  = [15.55] * 2
+                                       , bin_size      = [ 1.,  1.]
+                                       , diffusion     = (1.0, 0.2)
+                                       , n_dim         = 2
+                                       , energy_type   = ALL_SYMBOLS['Ec']
+                                       , deconv_mode   = ALL_SYMBOLS['joint']
+                                       , cut_type      = ALL_SYMBOLS[  'abs']
+                                       , inter_method  = ALL_SYMBOLS['cubic']))
+    return config
+
+
+@pytest.fixture(scope='function')
+def beersheba_config_separate(beersheba_config):
+    beersheba_config["deconv_params"].update(dict( deconv_mode    = ALL_SYMBOLS["separate"]
+                                                 , n_iterations   = 50
+                                                 , n_iterations_g = 50))
+
+    return beersheba_config
+
 
 ## To make very slow tests only run with specific option
 def pytest_addoption(parser):

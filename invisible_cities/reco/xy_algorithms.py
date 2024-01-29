@@ -1,5 +1,6 @@
 import sys
-import numpy as np
+import numpy  as np
+import pandas as pd
 
 from .. core.core_functions  import weighted_mean_and_var
 from .. core                 import system_of_units as units
@@ -8,37 +9,44 @@ from .. core.exceptions      import SipmZeroCharge
 from .. core.exceptions      import SipmEmptyListAboveQthr
 from .. core.exceptions      import SipmZeroChargeAboveQthr
 from .. core.exceptions      import ClusterEmptyList
+from .. core.configure       import check_annotations
 
 from .. types.ic_types       import xy
 from .. evm.event_model      import Cluster
 
-
-def find_algorithm(algoname):
-    if algoname in sys.modules[__name__].__dict__:
-        return getattr(sys.modules[__name__], algoname)
-    else:
-        raise ValueError("The algorithm <{}> does not exist".format(algoname))
+from typing import Optional
 
 
-def barycenter(pos, qs):
+def threshold_check(pos, qs, thr):
+    if not len(pos)   : raise SipmEmptyList
+    if np.sum(qs) == 0: raise SipmZeroCharge
+
+    above_threshold = np.where(qs >= thr)[0]
+    pos, qs = pos[above_threshold], qs[above_threshold]
+
+    if not len(pos)   : raise SipmEmptyListAboveQthr
+    if np.sum(qs) == 0: raise SipmZeroChargeAboveQthr
+
+    return pos, qs
+
+
+@check_annotations
+def barycenter( pos : np.ndarray
+              , qs  : np.ndarray
+              , Qthr: Optional[float] = 0 * units.pes):
     """pos = column np.array --> (matrix n x 2)
        ([x1, y1],
         [x2, y2]
         ...
         [xs, ys])
        qs = vector (q1, q2...qs) --> (1xn)
-
-        """
-
-    if not len(pos)   : raise SipmEmptyList
-    if np.sum(qs) == 0: raise SipmZeroCharge
+    """
+    pos, qs = threshold_check(pos, qs, Qthr)
     mu, var = weighted_mean_and_var(pos, qs, axis=0)
     # For uniformity of interface, all xy algorithms should return a
     # list of clusters. barycenter always returns a single clusters,
     # but we still want it in a list.
     return [Cluster(np.sum(qs), xy(*mu), xy(*var), len(qs))]
-
-    #return [Cluster(sum(qs), XY(*mu), var, len(qs))]
 
 
 def discard_sipms(sis, pos, qs):
@@ -58,19 +66,22 @@ def count_masked(cs, d, datasipm, is_masked):
     return np.count_nonzero(~is_masked.astype(bool)[indices])
 
 
-def corona(pos, qs, all_sipms,
-           Qthr            =  0 * units.pes,
-           Qlm             =  5 * units.pes,
-           lm_radius       =  0 * units.mm,
-           new_lm_radius   = 15 * units.mm,
-           msipm           =  3,
-           consider_masked = False):
+@check_annotations
+def corona( pos             : np.ndarray
+          , qs              : np.ndarray
+          , all_sipms       : pd.DataFrame
+          , Qthr            : float
+          , Qlm             : float
+          , lm_radius       : float
+          , new_lm_radius   : float
+          , msipm           : int
+          , consider_masked : Optional[bool] = False):
     """
     corona creates a list of Clusters by
     first , identifying hottest_sipm, the sipm with max charge in qs (must be > Qlm)
-    second, calling barycenter() on the pos and qs SiPMs within lm_radius of hottest_sipm to
+    second, calling barycenter on the SiPMs within lm_radius of hottest_sipm to
             find new_local_maximum.
-    third , calling barycenter() on all SiPMs within new_lm_radius of new_local_maximum
+    third , calling barycenter on all SiPMs within new_lm_radius of new_local_maximum
     fourth, recording the Cluster found by barycenter if the cluster contains at least msipm
     fifth , removing (nondestructively) the sipms contributing to that Cluster
     sixth , repeating 1-5 until there are no more SiPMs of charge > Qlm
@@ -95,17 +106,13 @@ def corona(pos, qs, all_sipms,
                 ***In general lm_radius should typically be set to 0, or some value slightly
                 larger than pitch or pitch*sqrt(2).***
 
-                ***If lm_radius is set to a negative number, the algorithm will simply return
-                the overall barycenter all the SiPms above threshold.***
-
-
                 ---------
                     This kwarg has some physical motivation. It exists to try to partially
                 compensate problem that the NEW tracking plane is not continuous even though light
                 can be emitted by the EL at any (x,y). When lm_radius < pitch, the search for SiPMs
                 that might contribute pos and charge to a new Cluster is always centered about
                 the position of hottest_sipm. That is, SiPMs within new_lm_radius of
-                hottest_sipm are taken into account by barycenter(). In contrast, when
+                hottest_sipm are taken into account by barycenter. In contrast, when
                 lm_radius = pitch or pitch*sqrt(2) the search for SiPMs contributing to the new
                 cluster can be centered at any (x,y). Consider the case where at a local maximum
                 there are four nearly equally 'hot' SiPMs. new_local_maximum would yield a pos,
@@ -119,7 +126,7 @@ def corona(pos, qs, all_sipms,
                     lm_radius can always be set to 0 mm, but setting it to 15 mm (slightly larger
                 than 10mm * sqrt(2)), should not hurt.
 
-    new_lm_radius = radius, find a new cluster by calling barycenter() on pos/qs of SiPMs within
+    new_lm_radius = radius, find a new cluster by calling barycenter on SiPMs within
                     new_lm_radius of new_local_maximum
 
     consider_masked  = true if masked SiPMs are considered
@@ -138,20 +145,11 @@ def corona(pos, qs, all_sipms,
            msipm           =  K3,
            consider_masked = True)
     """
-    if not len(pos)   : raise SipmEmptyList
-    if np.sum(qs) == 0: raise SipmZeroCharge
+    assert     lm_radius >= 0,     "lm_radius must be non-negative"
+    assert new_lm_radius >= 0, "new_lm_radius must be non-negative"
 
-    masked = all_sipms.Active.values.astype(bool) if consider_masked else None
-
-    above_threshold = np.where(qs >= Qthr)[0]            # Find SiPMs with qs at least Qthr
-    pos, qs = pos[above_threshold], qs[above_threshold]  # Discard SiPMs with qs less than Qthr
-
-    if not len(pos)   : raise SipmEmptyListAboveQthr
-    if np.sum(qs) == 0: raise SipmZeroChargeAboveQthr
-
-    # if lm_radius or new_lm_radius is negative, just call overall barycenter
-    if lm_radius < 0 or new_lm_radius < 0:
-        return barycenter(pos, qs)
+    pos, qs = threshold_check(pos, qs, Qthr)
+    masked  = all_sipms.Active.values.astype(bool) if consider_masked else None
 
     c  = []
     # While there are more local maxima

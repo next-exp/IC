@@ -51,6 +51,7 @@ from .. reco                      import            hits_functions as hif
 from .. reco                      import             wfm_functions as wfm
 from .. reco                      import         paolina_functions as plf
 from .. reco   .xy_algorithms     import                    corona
+from .. reco   .xy_algorithms     import                barycenter
 from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import               pmap_filter
 from .. database                  import                   load_db
@@ -77,6 +78,8 @@ from .. types  .symbols           import             SiPMThreshold
 from .. types  .symbols           import                EventRange
 from .. types  .symbols           import                 HitEnergy
 from .. types  .symbols           import                SiPMCharge
+from .. types  .symbols           import                    XYReco
+
 
 
 def city(city_function):
@@ -517,49 +520,14 @@ def pmap_from_files(paths):
 
 
 @check_annotations
-def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, MCInfo, int, float]]]:
-    """Reader of the files, yields collected hits,
-       pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
-    for path in paths:
-        try:
-            cdst_df    = load_dst (path,   'CHITS', 'lowTh')
-            summary_df = load_dst (path, 'Summary', 'Events')
-        except tb.exceptions.NoSuchNodeError:
-            continue
-
-        kdst_df = load_dst (path, 'DST', 'Events', ignore_errors=True)
-
-        with tb.open_file(path, "r") as h5in:
-            try:
-                run_number  = get_run_number(h5in)
-                event_info  = get_event_info(h5in)
-                evts, _     = zip(*event_info[:])
-                bool_mask   = np.in1d(evts, cdst_df.event.unique())
-                event_info  = event_info[bool_mask]
-            except (tb.exceptions.NoSuchNodeError, IndexError):
-                continue
-            check_lengths(event_info, cdst_df.event.unique())
-            for evtinfo in event_info:
-                event_number, timestamp = evtinfo
-                this_event = lambda df: df.event==event_number
-                yield dict(cdst    = cdst_df   .loc[this_event],
-                           summary = summary_df.loc[this_event],
-                           kdst    = kdst_df   .loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
-                                                                else None,
-                           run_number=run_number,
-                           event_number=event_number, timestamp=timestamp)
-            # NB, the monte_carlo writer is different from the others:
-            # it needs to be given the WHOLE TABLE (rather than a
-            # single event) at a time.
-
-
-@check_annotations
-def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
+def hits_and_kdst_from_files( paths : List[str]
+                            , group : str
+                            , node  : str ) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields HitsCollection, pandas DataFrame with
     kdst info, run_number, event_number and timestamp."""
     for path in paths:
         try:
-            hits_df = load_dst (path, 'RECO', 'Events')
+            hits_df = load_dst (path, group, node)
             kdst_df = load_dst (path, 'DST' , 'Events')
         except tb.exceptions.NoSuchNodeError:
             continue
@@ -778,13 +746,17 @@ def peak_classifier(**params):
     return partial(pmap_filter, selector)
 
 
-def compute_xy_position(dbfile, run_number, **reco_params):
-    # `reco_params` is the set of parameters for the corona
-    # algorithm either for the full corona or for barycenter
-    datasipm = load_db.DataSiPM(dbfile, run_number)
+def compute_xy_position(dbfile, run_number, algo, **reco_params):
+    if algo is XYReco.corona:
+        datasipm    = load_db.DataSiPM(dbfile, run_number)
+        reco_params = dict(all_sipms = datasipm, **reco_params)
+        algorithm   = corona
+    else:
+        algorithm   = barycenter
 
     def compute_xy_position(xys, qs):
-        return corona(xys, qs, datasipm, **reco_params)
+        return algorithm(xys, qs, **reco_params)
+
     return compute_xy_position
 
 
@@ -861,35 +833,46 @@ def build_pointlike_event(dbfile, run_number, drift_v,
     return build_pointlike_event
 
 
-def hit_builder(dbfile, run_number, drift_v, reco,
-                rebin_slices, rebin_method,
-                global_reco_params, charge_type):
+def get_s1_time(pmap, selector_output):
+    # in order to compute z one needs to define one S1
+    # for time reference. By default the filter will only
+    # take events with exactly one s1. Otherwise, the
+    # convention is to take the first peak in the S1 object
+    # as reference.
+    if np.any(selector_output.s1_peaks):
+        first_s1 = np.where(selector_output.s1_peaks)[0][0]
+        s1_t     = pmap.s1s[first_s1].time_at_max_energy
+    else:
+        first_s2 = np.where(selector_output.s2_peaks)[0][0]
+        s1_t     = pmap.s2s[first_s2].times[0]
+
+    return s1_t
+
+
+def try_global_reco(reco, xys, qs):
+    try              : cluster = reco(xys, qs)[0]
+    except XYRecoFail: return xy.empty()
+    else             : return xy(cluster.X, cluster.Y)
+
+
+def sipm_positions(dbfile, run_number):
     datasipm = load_db.DataSiPM(dbfile, run_number)
     sipm_xs  = datasipm.X.values
     sipm_ys  = datasipm.Y.values
     sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
+    return sipm_xys
 
+
+def hit_builder(dbfile, run_number, drift_v,
+                rebin_slices, rebin_method,
+                global_reco, slice_reco,
+                charge_type):
+    sipm_xys   = sipm_positions(dbfile, run_number)
     sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
-
-    barycenter = partial(corona, all_sipms = datasipm, **global_reco_params)
-
-    def empty_cluster():
-        return Cluster(NN, xy(0,0), xy(0,0), 0)
 
     def build_hits(pmap, selector_output, event_number, timestamp):
         hitc = HitCollection(event_number, timestamp * 1e-3)
-
-        # in order to compute z one needs to define one S1
-        # for time reference. By default the filter will only
-        # take events with exactly one s1. Otherwise, the
-        # convention is to take the first peak in the S1 object
-        # as reference.
-        if np.any(selector_output.s1_peaks):
-            first_s1 = np.where(selector_output.s1_peaks)[0][0]
-            s1_t     = pmap.s1s[first_s1].time_at_max_energy
-        else:
-            first_s2 = np.where(selector_output.s2_peaks)[0][0]
-            s1_t     = pmap.s2s[first_s2].times[0]
+        s1_t = get_s1_time(pmap, selector_output)
 
         # here hits are computed for each peak and each slice.
         # In case of an exception, a hit is still created with a NN cluster.
@@ -904,28 +887,88 @@ def hit_builder(dbfile, run_number, drift_v, reco,
             xys  = sipm_xys[peak.sipms.ids]
             qs   = peak.sipm_charge_array(sipm_noise, charge_type,
                                           single_point = True)
-            try              : cluster = barycenter(xys, qs)[0]
-            except XYRecoFail: xy_peak = xy(NN, NN)
-            else             : xy_peak = xy(cluster.X, cluster.Y)
+            xy_peak = try_global_reco(global_reco, xys, qs)
 
             sipm_charge = peak.sipm_charge_array(sipm_noise        ,
                                                  charge_type       ,
                                                  single_point=False)
+
             for slice_no, (t_slice, qs) in enumerate(zip(peak.times ,
                                                          sipm_charge)):
                 z_slice = (t_slice - s1_t) * units.ns * drift_v
                 e_slice = peak.pmts.sum_over_sensors[slice_no]
                 try:
                     xys      = sipm_xys[peak.sipms.ids]
-                    clusters = reco(xys, qs)
+                    clusters = slice_reco(xys, qs)
                     es       = hif.split_energy(e_slice, clusters)
                     for c, e in zip(clusters, es):
-                        hit       = Hit(peak_no, c, z_slice, e, xy_peak)
+                        hit  = Hit(peak_no, c, z_slice, e, xy_peak)
                         hitc.hits.append(hit)
                 except XYRecoFail:
-                    hit = Hit(peak_no, empty_cluster(), z_slice,
+                    hit = Hit(peak_no, Cluster.empty(), z_slice,
                               e_slice, xy_peak)
                     hitc.hits.append(hit)
+
+        return hitc
+    return build_hits
+
+
+def sipms_as_hits(dbfile, run_number, drift_v,
+                  rebin_slices, rebin_method,
+                  q_thr,
+                  global_reco, charge_type):
+
+    sipm_xys   = sipm_positions(dbfile, run_number)
+    sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
+    epsilon    = np.finfo(np.float64).eps
+
+    def make_cluster(q, x, y):
+        return Cluster(q, xy(x, y), xy(0,0), 1)
+
+    def build_hits(pmap, selector_output, event_number, timestamp):
+        hitc = HitCollection(event_number, timestamp * 1e-3)
+        s1_t = get_s1_time(pmap, selector_output)
+
+        for peak_no, (passed, peak) in enumerate(zip(selector_output.s2_peaks,
+                                                     pmap.s2s)):
+            if not passed: continue
+
+            peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
+
+            xys  = sipm_xys[peak.sipms.ids]
+            qs   = peak.sipm_charge_array(sipm_noise, charge_type,
+                                          single_point = True)
+
+            xy_peak = try_global_reco(global_reco, xys, qs)
+
+            sipm_charge = peak.sipm_charge_array(sipm_noise        ,
+                                                 charge_type       ,
+                                                 single_point=False)
+
+            slice_zs = (peak.times - s1_t) * units.ns * drift_v
+            slice_es = peak.pmts.sum_over_sensors
+            xys      = sipm_xys[peak.sipms.ids]
+
+            for (slice_z, slice_e, sipm_qs) in zip(slice_zs, slice_es, sipm_charge):
+                over_thr = sipm_qs >= q_thr
+                if np.any(over_thr):
+                    sipm_qs  = sipm_qs[over_thr]
+                    sipm_xy  = xys[over_thr]
+                    sipm_es  = sipm_qs * slice_e / (np.sum(sipm_qs) + epsilon)
+
+                    for q, e, (x, y) in zip(sipm_qs, sipm_es, sipm_xy):
+                        hitc.hits.append( Hit( peak_no
+                                             , make_cluster(q, x, y)
+                                             , slice_z
+                                             , e
+                                             , xy_peak))
+
+                else:
+                    hitc.hits.append( Hit( peak_no
+                                         , Cluster.empty()
+                                         , slice_z
+                                         , slice_e
+                                         , xy_peak))
 
         return hitc
     return build_hits
@@ -1234,17 +1277,17 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
             voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, HitEnergy.Ep)
             (    mod_voxels,
              dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
-            tracks           = plf.make_track_graphs(mod_voxels)
 
             for v in dropped_voxels:
                 track_hitc.hits.extend(v.hits)
+
+            tracks = plf.make_track_graphs(mod_voxels)
+            tracks = sorted(tracks, key=plf.get_track_energy, reverse=True)
 
             vox_size_x = voxels[0].size[0]
             vox_size_y = voxels[0].size[1]
             vox_size_z = voxels[0].size[2]
             del(voxels)
-            #sort tracks in energy
-            tracks     = sorted(tracks, key=plf.get_track_energy, reverse=True)
 
             track_hits = []
             for c, t in enumerate(tracks, 0):
@@ -1330,18 +1373,65 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     write_no_hits_filter  = fl.sink( event_filter_writer(h5out, filter_hits_table_name), args=("event_number", "hits_passed"))
 
 
-    fn_list = (filter_events_nohits                        ,
-               fl.branch(write_no_hits_filter)             ,
-               hits_passed.              filter            ,
-               copy_Efield                                 ,
-               create_extract_track_blob_info              ,
-               filter_events_topology                      ,
-               fl.branch(make_final_summary, write_summary),
-               fl.branch(write_topology_filter)            ,
-               write_paolina_hits                          ,
-               events_passed_topology.   filter            ,
-               fl.branch(write_tracks)                     )
+    make_and_write_summary  = make_final_summary, write_summary
+    select_and_write_tracks = events_passed_topology.filter, write_tracks
 
-    compute_tracks = pipe(*filter(None, fn_list))
+    fork_pipes = filter(None, ( make_and_write_summary
+                              , write_topology_filter
+                              , write_paolina_hits
+                              , select_and_write_tracks))
 
-    return compute_tracks
+    return pipe(filter_events_nohits                        ,
+                fl.branch(write_no_hits_filter)             ,
+                hits_passed.              filter            ,
+                copy_Efield                                 ,
+                create_extract_track_blob_info              ,
+                filter_events_topology                      ,
+                fl.branch(fl.fork(*fork_pipes)))
+
+
+@check_annotations
+def hits_merger(same_peak : bool) -> Callable:
+    def merge_hits(hc : HitCollection) -> HitCollection:
+        merged_hits = hif.merge_NN_hits(hc.hits, same_peak)
+        return HitCollection(hc.event, hc.time, merged_hits)
+
+    return merge_hits
+
+
+@check_annotations
+def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
+    """
+    Applies a threshold to hits and redistributes the charge/energy.
+
+    Parameters
+    ----------
+    threshold_charge : float
+        minimum pes of a hit
+    same_peak        : bool
+        whether to reassign NN hits' energy only to the hits from the same peak
+
+    Returns
+    ----------
+    A function that takes HitCollection as input and returns another object with
+    only non NN hits of charge above threshold_charge.
+    The energy of NN hits is redistributed among neighbors.
+    """
+
+    def threshold_hits(hitc : HitCollection) -> HitCollection:
+        t = hitc.time
+        thr_hits = hif.threshold_hits(hitc.hits, threshold_charge     )
+        mrg_hits = hif.merge_NN_hits ( thr_hits, same_peak = same_peak)
+
+        cor_hits = []
+        for hit in mrg_hits:
+            cluster = Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm)
+            xypos   = xy(hit.Xpeak, hit.Ypeak)
+            hit     = Hit(hit.npeak, cluster, hit.Z, hit.E, xypos, hit.Ec)
+            cor_hits.append(hit)
+
+        new_hitc      = HitCollection(hitc.event, t)
+        new_hitc.hits = cor_hits
+        return new_hitc
+
+    return threshold_hits

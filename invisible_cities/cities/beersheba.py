@@ -9,7 +9,6 @@ The input is esmeralda output containing hits, kdst global information and mc in
 The city outputs :
     - DECO deconvolved hits table
     - MC info (if run number <=0)
-    - SUMMARY summary of per event information
 """
 
 import numpy  as np
@@ -20,18 +19,16 @@ from os   .path  import expandvars
 from scipy.stats import multivariate_normal
 from numpy       import nan_to_num
 
-from typing      import Tuple
-from typing      import List
-from typing      import Union
-from typing      import Sequence
-from typing      import Optional
+from typing import Tuple
+from typing import List
+from typing import Optional
 
 from .  components import city
 from .  components import collect
 from .  components import copy_mc_info
 from .  components import print_every
-from .  components import cdst_from_files
-from .  components import summary_writer
+from .  components import hits_thresholder
+from .  components import hits_and_kdst_from_files
 
 from .. core.configure         import EventRangeType
 from .. core.configure         import OneOrManyFiles
@@ -54,7 +51,9 @@ from .. reco.deconv_functions  import richardson_lucy
 from .. io.run_and_event_io    import run_and_event_writer
 from .. io.          dst_io    import df_writer
 from .. io.          dst_io    import load_dst
-from .. io.          kdst_io   import kdst_from_df_writer
+from .. io.         hits_io    import hits_writer
+from .. io. event_filter_io    import event_filter_writer
+from .. io.         kdst_io    import kdst_from_df_writer
 
 from .. types.symbols          import HitEnergy
 from .. types.symbols          import InterpolationMethod
@@ -62,6 +61,31 @@ from .. types.symbols          import CutType
 from .. types.symbols          import DeconvolutionMode
 
 from .. core                   import system_of_units as units
+
+
+# Temporary. The removal of the event model will fix this.
+from collections import defaultdict
+def hitc_to_df_(hitc):
+    columns = defaultdict(list)
+    for hit in hitc.hits:
+        columns["event"   ].append(hitc.event)
+        columns["time"    ].append(hitc.time)
+        columns["npeak"   ].append(hit .npeak)
+        columns["Xpeak"   ].append(hit .Xpeak)
+        columns["Ypeak"   ].append(hit .Ypeak)
+        columns["nsipm"   ].append(hit .nsipm)
+        columns["X"       ].append(hit .X)
+        columns["Y"       ].append(hit .Y)
+        columns["Xrms"    ].append(hit .Xrms)
+        columns["Yrms"    ].append(hit .Yrms)
+        columns["Z"       ].append(hit .Z)
+        columns["Q"       ].append(hit .Q)
+        columns["E"       ].append(hit .E)
+        columns["Qc"      ].append(hit .Qc)
+        columns["Ec"      ].append(hit .Ec)
+        columns["track_id"].append(hit .track_id)
+        columns["Ep"      ].append(hit .Ep)
+    return pd.DataFrame(columns)
 
 
 @check_annotations
@@ -317,6 +341,8 @@ def beersheba( files_in      : OneOrManyFiles
              , print_mod     : int
              , detector_db   : str
              , run_number    : int
+             , threshold     : float
+             , same_peak     : bool
              , deconv_params : dict
              ):
     """
@@ -337,6 +363,10 @@ def beersheba( files_in      : OneOrManyFiles
     run_number  : int
          Has to be negative for MC runs
 
+    threshold     : float
+        Threshold to be applied to all SiPMs.
+    same_peak     : bool
+        Whether to reassign NN hits within the same peak.
     deconv_params : dict
         q_cut          : float
             Minimum charge (pes) on a hit (SiPM)
@@ -385,8 +415,10 @@ def beersheba( files_in      : OneOrManyFiles
     ----------
     DECO    : Deconvolved hits table
     MC info : (if run number <=0)
-    SUMMARY : Table with the summary from Esmeralda.
 """
+
+    threshold_hits  = fl.map(hits_thresholder(threshold, same_peak), item="hits")
+    hitc_to_df      = fl.map(hitc_to_df_, item="hits")
 
     deconv_params['psf_fname'   ] = expandvars(deconv_params['psf_fname'])
 
@@ -397,19 +429,19 @@ def beersheba( files_in      : OneOrManyFiles
         raise     NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
 
     cut_sensors           = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
-                                   item = 'cdst')
+                                   item = 'hits')
     drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
-                                   item = 'cdst')
+                                   item = 'hits')
     filter_events_no_hits = fl.map(check_nonempty_dataframe,
-                                   args = 'cdst',
-                                   out  = 'cdst_passed_no_hits')
+                                   args = 'hits',
+                                   out  = 'hits_passed_no_hits')
     deconvolve_events     = fl.map(deconvolve_signal(DataSiPM(detector_db, run_number), **deconv_params),
-                                   args = 'cdst',
+                                   args = 'hits',
                                    out  = 'deconv_dst')
 
     event_count_in        = fl.spy_count()
     event_count_out       = fl.spy_count()
-    events_passed_no_hits = fl.count_filter(bool, args = "cdst_passed_no_hits")
+    events_passed_no_hits = fl.count_filter(bool, args = "hits_passed_no_hits")
 
     filter_out_none       = fl.filter(lambda x: x is not None, args = "kdst")
 
@@ -417,25 +449,29 @@ def beersheba( files_in      : OneOrManyFiles
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
         # Define writers
-        write_event_info = fl.sink(run_and_event_writer (h5out), args = ("run_number", "event_number", "timestamp"))
-        write_deconv     = fl.sink(  deconv_writer(h5out=h5out), args =  "deconv_dst")
-        write_summary    = fl.sink( summary_writer(h5out=h5out), args =  "summary"   )
-        write_kdst_table = fl.sink(  kdst_from_df_writer(h5out), args =  "kdst"      )
+        write_event_info    = fl.sink(run_and_event_writer(h5out), args = ("run_number", "event_number", "timestamp"))
+        write_deconv        = fl.sink(       deconv_writer(h5out), args =  "deconv_dst")
+        write_kdst_table    = fl.sink( kdst_from_df_writer(h5out), args =  "kdst"      )
+        write_thr_hits      = fl.sink(         hits_writer(h5out, "CHITS", "lowTh"), args = "hits")
+        write_nohits_filter = fl.sink( event_filter_writer(h5out, "nohits"), args=("event_number", "hits_passed_no_hits"))
 
-        result = push(source = cdst_from_files(files_in),
+        result = push(source = hits_and_kdst_from_files(files_in, "RECO", "Events"),
                       pipe   = pipe(fl.slice(*event_range, close_all=True)    ,
                                     print_every(print_mod)                    ,
                                     event_count_in.spy                        ,
+                                    threshold_hits                            ,
+                                    fl.branch(write_thr_hits)                 ,
+                                    hitc_to_df                                ,
                                     cut_sensors                               ,
                                     drop_sensors                              ,
                                     filter_events_no_hits                     ,
-                                    events_passed_no_hits    .filter          ,
+                                    fl.branch(write_nohits_filter)            ,
+                                    events_passed_no_hits.filter              ,
                                     deconvolve_events                         ,
                                     event_count_out.spy                       ,
                                     fl.branch("event_number"     ,
                                               evtnum_collect.sink)            ,
                                     fl.fork(write_deconv    ,
-                                            write_summary   ,
                                             (filter_out_none, write_kdst_table),
                                             write_event_info))                ,
                       result = dict(events_in   = event_count_in       .future,

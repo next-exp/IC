@@ -18,6 +18,12 @@ class xy:
         self.x = x
         self.y = y
 
+    def empty():
+        return xy(NN, NN)
+
+    def zero():
+        return xy(0, 0)
+
     @property
     def pos(self): return np.stack(([self.x], [self.y]), axis=1)
 
