@@ -66,6 +66,7 @@ def test_isaura_exact(ICDATADIR, output_tmpdir):
 
     tables = ["Tracking/Tracks"    ,
               "Summary/Events"     ,
+              "DECO/Events"        ,
               "Run/events"         , "Run/runInfo"            ,
               "MC/event_mapping"   , "MC/generators"          ,
               "MC/hits"            ,  "MC/particles"          ,
