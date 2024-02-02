@@ -73,7 +73,7 @@ def test_beersheba_contains_all_tables(beersheba_config, config_tmpdir):
 
 
 @mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
-@mark.parametrize("deco", DeconvolutionMode.__members__)
+@mark.parametrize("deco", DeconvolutionMode)
 @mark.slow
 def test_beersheba_exact_result( deco
                                , beersheba_config
@@ -84,7 +84,7 @@ def test_beersheba_exact_result( deco
     config   = beersheba_config if deco is DeconvolutionMode.joint else beersheba_config_separate
     true_out = Th228_deco       if deco is DeconvolutionMode.joint else Th228_deco_separate
 
-    path_out = os.path.join(config_tmpdir, f"beersheba_exact_result_{deco}.h5")
+    path_out = os.path.join(config_tmpdir, f"beersheba_exact_result_{deco.name}.h5")
     config.update(dict(file_out = path_out))
 
     beersheba(**config)
