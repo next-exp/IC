@@ -87,6 +87,9 @@ def hitc_to_df_(hitc):
         columns["Ep"      ].append(hit .Ep)
     return pd.DataFrame(columns)
 
+def event_info_adder(timestamp : float, dst : pd.DataFrame):
+    return dst.assign(time=timestamp/1e3, nsipm=0, Xrms=0, Yrms=0)
+
 
 @check_annotations
 def deconvolve_signal(det_db          : pd.DataFrame,
@@ -202,6 +205,7 @@ def deconvolve_signal(det_db          : pd.DataFrame,
         for peak, hits in df.groupby("npeak"):
             hits.loc[:, "NormQ"] = hits.loc[:, 'Q'] / hits.loc[:, 'Q'].sum()
             deconvolved_hits = pd.concat([deconvolve_hits(df_z, z) for z, df_z in hits.groupby("Z")], ignore_index=True)
+            deconvolved_hits = deconvolved_hits.assign(npeak=peak, Xpeak=hits.Xpeak.iloc[0], Ypeak=hits.Ypeak.iloc[0])
             distribute_energy(deconvolved_hits, hits, energy_type)
             deco_dst.append(deconvolved_hits)
 
@@ -439,6 +443,8 @@ def beersheba( files_in      : OneOrManyFiles
                                    args = 'hits',
                                    out  = 'deconv_dst')
 
+    add_event_info        = fl.map(event_info_adder, args=("timestamp", "deconv_dst"), out="deconv_dst")
+
     event_count_in        = fl.spy_count()
     event_count_out       = fl.spy_count()
     events_passed_no_hits = fl.count_filter(bool, args = "hits_passed_no_hits")
@@ -468,6 +474,7 @@ def beersheba( files_in      : OneOrManyFiles
                                     fl.branch(write_nohits_filter)            ,
                                     events_passed_no_hits.filter              ,
                                     deconvolve_events                         ,
+                                    add_event_info                            ,
                                     event_count_out.spy                       ,
                                     fl.branch("event_number"     ,
                                               evtnum_collect.sink)            ,
