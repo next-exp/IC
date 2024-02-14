@@ -174,8 +174,8 @@ def esmeralda( files_in         : OneOrManyFiles
                                    , correct_hits
                                    , drop_external_hits
                                    , threshold_hits
-                                   , compute_tracks
-                                   , fl.fork( write_kdst
+                                   , fl.fork( compute_tracks
+                                            , write_kdst
                                             , write_event_info
                                             , collect_evts
                                             )),
