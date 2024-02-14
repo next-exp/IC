@@ -149,7 +149,8 @@ def sophronia( files_in           : OneOrManyFiles
         write_hits_filter     = df.sink(  event_filter_writer(h5out, "valid_hit")
                                        , args = "event_number enough_valid_hits".split())
 
-        hits_branch         = make_hits, merge_nn_hits, correct_hits, write_hits
+        hits_branch         = ( make_hits, enough_valid_hits, df.branch(write_hits_filter)
+                              , hits_select.filter, merge_nn_hits, correct_hits, write_hits)
         kdst_branch         = build_pointlike_event, write_pointlike_event
         collect_evt_numbers = "event_number", event_number_collector.sink
 
@@ -163,10 +164,6 @@ def sophronia( files_in           : OneOrManyFiles
                                          , df.branch(write_pmap_filter)
                                          , pmap_select    .filter
                                          , event_count_out.spy
-                                         , make_hits
-                                         , enough_valid_hits
-                                         , df.branch(write_hits_filter)
-                                         , hits_select.filter
                                          , df.fork( kdst_branch
                                                   , hits_branch
                                                   , collect_evt_numbers
