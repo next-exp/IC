@@ -138,6 +138,10 @@ function work_in_python_version {
     run_tests_par
 }
 
+function export_city_command_completion {
+    source $ICTDIR/bin/city-completion
+}
+
 function work_in_python_version_no_tests {
     if ! which conda >> /dev/null
     then
@@ -151,6 +155,7 @@ function work_in_python_version_no_tests {
 
     python_version_env
     compile_cython_components
+    export_city_command_completion
 }
 
 function ensure_environment_matches_checked_out_version {
