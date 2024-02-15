@@ -81,73 +81,102 @@ def corona( pos             : np.ndarray # (n, 2)
           , msipm           : int
           , consider_masked : Optional[bool] = False) -> Sequence[Cluster]:
     """
-    corona creates a list of Clusters by
-    first , identifying hottest_sipm, the sipm with max charge in qs (must be > Qlm)
-    second, calling barycenter on the SiPMs within lm_radius of hottest_sipm to
-            find new_local_maximum.
-    third , calling barycenter on all SiPMs within new_lm_radius of new_local_maximum
-    fourth, recording the Cluster found by barycenter if the cluster contains at least msipm
-    fifth , removing (nondestructively) the sipms contributing to that Cluster
-    sixth , repeating 1-5 until there are no more SiPMs of charge > Qlm
+    Creates a list of clusters with the following steps:
+    - identifying the SiPM with highest charge (which must be > `Qlm`)
+    - obtaining the barycenter from the SiPMs within `lm_radius` of
+      the SiPM with highest charge to locate the local maximum of the
+      charge distribution
+    - obtaining the barycenter from the SiPMs within `new_lm_radius`
+      of the new local maximum
+    - creating a cluster from the SiPMs neighbouring the barycenter of
+      the new local maximum, provided it contains at least `msipm`
+    - discarding (non-destructively) the sipms that formed the cluster
+    - repeating the previous steps until there are no more SiPMs with
+      charge higher than `Qlm`
 
-    arguments:
-    pos   = column np.array --> (matrix n x 2)
-            ([x1, y1],
-             [x2, y2],
-             ...     ,
-             [xs, ys])
-    qs    = vector (q1, q2...qs) --> (1xn)
-    Qthr  = charge threshold, ignore all SiPMs with less than Qthr pes
-    Qlm   = charge threshold, every Cluster must contain at least one SiPM with charge >= Qlm
-    msipm = minimum number of SiPMs in a Cluster
-    pitch = distance between SiPMs
-    lm_radius = radius, find new_local_maximum by taking the barycenter of SiPMs within
-                lm_radius of the max sipm. new_local_maximum is new in the sense that the
-                prev loc max was the position of hottest_sipm. (Then allow all SiPMs with
-                new_local_maximum of new_local_maximum to contribute to the pos and q of the
-                new cluster).
+    Parameters
+    ----------
+    pos : np.ndarray with shape (nx2)
+        SiPM positions. The first and second columns corresponds to
+        the x and y positions, respectively
 
-                ***In general lm_radius should typically be set to 0, or some value slightly
-                larger than pitch or pitch*sqrt(2).***
+    qs : np.ndarray with shape (n,)
+        SiPM charges
 
-                ---------
-                    This kwarg has some physical motivation. It exists to try to partially
-                compensate problem that the NEW tracking plane is not continuous even though light
-                can be emitted by the EL at any (x,y). When lm_radius < pitch, the search for SiPMs
-                that might contribute pos and charge to a new Cluster is always centered about
-                the position of hottest_sipm. That is, SiPMs within new_lm_radius of
-                hottest_sipm are taken into account by barycenter. In contrast, when
-                lm_radius = pitch or pitch*sqrt(2) the search for SiPMs contributing to the new
-                cluster can be centered at any (x,y). Consider the case where at a local maximum
-                there are four nearly equally 'hot' SiPMs. new_local_maximum would yield a pos,
-                pos1, between these hot SiPMs. Searching for SiPMs that contribute to this
-                cluster within new_lm_radius of pos1 might be better than searching searching for
-                SiPMs  within new_lm_radius of hottest_sipm.
-                    We should be aware that setting lm_radius to some distance greater than pitch,
-                we allow new_local_maximum to assume any (x,y) but we also create the effect that
-                depending on where new_local_maximum is, more or fewer SiPMs will be
-                within new_lm_radius. This effect does not exist when lm_radius = 0
-                    lm_radius can always be set to 0 mm, but setting it to 15 mm (slightly larger
-                than 10mm * sqrt(2)), should not hurt.
+    Qthr : float
+        Charge threshold to apply to all SiPMs. SiPMs with lower
+        charge are ignored
 
-    new_lm_radius = radius, find a new cluster by calling barycenter on SiPMs within
-                    new_lm_radius of new_local_maximum
+    Qlm : float
+        Charge threshold to find a local maximum
 
-    consider_masked  = true if masked SiPMs are considered
+    msipm : int
+        Minimum number of SiPMs in a cluster (see `consider_masked`)
 
-    returns
-    c    : a list of Clusters
+    pitch : float
+        Distance between contiguous SiPMs in each axis
 
-    Usage Example
-    In order to create each Cluster from a 3x3 block of SiPMs (where the center SiPM has more
-    charge than the others), one would call:
+    lm_radius : float
+        Distance from the SiPM with highest charge with which a new
+        local maximum is estimated (see Notes)
+
+    new_lm_radius : float
+        Radius used for the calculation of the barycenter from the new
+        local maximum (see Notes)
+
+    consider_masked : bool
+        Whether to consider masked SiPMs in the clustering
+        algorithm. It affects particularly `msipm`. If `True`,
+        clusters might contain less than `msipm` SiPMs, if any of
+        those is a masked sensor.
+
+    Returns
+    -------
+    clusters : List[Cluster]
+        The list of clusters based on the SiPM pattern
+
+    Notes
+    -----
+    The algorithm follows the following logic:
+    Find a new local maximum by taking the barycenter of the SiPMs
+    within a distance `lm_radius` of the SiPM with highest
+    charge. ***In general `lm_radius` should typically be set to 0, or
+    some value slightly larger than pitch, such as pitch * sqrt(2).***
+    This kwarg has some physical motivation. It exists to try to
+    partially compensate the problem that the tracking plane is not
+    continuous even though light can be emitted by the EL from any
+    (x,y). When `lm_radius` < pitch, the search for SiPMs that might
+    contribute pos and charge to a new cluster is always centered
+    about the position of hottest sipm. In contrast, when `lm_radius
+    >= pitch`, the search for SiPMs contributing to the new cluster
+    can be centered at any (x,y). Consider the case where there are
+    four SiPMs with nearly equal charge around a local maximum. The
+    new local maximum would yield a position, pos1, somewhere among
+    these SiPMs. Searching for SiPMs that contribute to this cluster
+    within `new_lm_radius` from pos1 might be better than searching
+    for SiPMs within `new_lm_radius` from the SiPM with highest
+    charge. We should be aware that setting `lm_radius` to some
+    distance greater than the pitch, we allow `new_local_maximum` to
+    assume any (x,y) but we also create the effect that depending on
+    where `new_local_maximum` is, more or fewer SiPMs will be within
+    `new_lm_radius`. This effect does not exist when `lm_radius` is 0.
+    . Find a new cluster by calling barycenter on SiPMs within
+    `new_lm_radius` of the new local maximum (see `lm_radius`).
+
+    Example
+    -------
+
+    # In order to create Clusters in NEW from 3x3 blocks of SiPMs with
+    # a minimum of 3 SiPMs and 5 pes for the SiPM with highest charge
+    # in each cluster, one could call:
     corona(pos, qs, all_sipms,
-           Qthr            =  K1 * units.pes,
-           Qlm             =  K2 * units.pes,
-           lm_radius       =  0  * units.mm , # must be 0
-           new_lm_radius   =  15 * units.mm , # must be 10mm*sqrt(2) or some number slightly larger
-           msipm           =  K3,
+           Qthr            =  1 * units.pes,
+           Qlm             =  5 * units.pes,
+           lm_radius       =  15 * units.mm,
+           new_lm_radius   =  15 * units.mm, # slightly longer than the pitch
+           msipm           =  3,
            consider_masked = True)
+
     """
     assert     lm_radius >= 0,     "lm_radius must be non-negative"
     assert new_lm_radius >= 0, "new_lm_radius must be non-negative"
@@ -174,8 +203,8 @@ def corona( pos             : np.ndarray # (n, 2)
         # into account any masked channel, get the barycenter
         if len(within_new_lm_radius) >= msipm - n_masked_neighbours:
             c.extend(barycenter(pos[within_new_lm_radius], qs[within_new_lm_radius]))
+            # delete the SiPMs contributing to this cluster
 
-        # delete the SiPMs contributing to this cluster
         pos, qs = discard_sipms(within_new_lm_radius, pos, qs)
 
     if not len(c): raise ClusterEmptyList
