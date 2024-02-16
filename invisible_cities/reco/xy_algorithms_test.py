@@ -188,7 +188,7 @@ def test_raises_sipm_empty_list(algorithm):
 @parametrize("algorithm", (barycenter, corona_default))
 def test_raises_sipm_zero_charge(algorithm):
     with raises(SipmZeroCharge):
-        algorithm(np.array([[1, 2]]), np.array([0, 0]))
+        algorithm(np.array([[1, 2], [3, 4]]), np.array([0, 0]))
 
 
 def test_corona_barycenter_can_be_the_same_with_one_cluster(toy_sipm_signal, datasipm):
