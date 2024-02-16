@@ -83,6 +83,9 @@ function make_environment {
 
     cat <<EOF > ${YML_FILENAME}
 name: ${CONDA_ENV_NAME}
+channels:
+- conda-forge
+- defaults
 dependencies:
 - python       = ${PYTHON_VERSION}
 # *REMEMBER TO CHANGE CONDA_ENV_TAG WHEN CHANGING VERSION NUMBERS*
