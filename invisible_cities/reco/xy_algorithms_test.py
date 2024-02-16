@@ -252,16 +252,19 @@ def test_corona_msipm(toy_sipm_signal, datasipm):
               , msipm=2)
 
 
-@mark.skip
 @parametrize(' Qlm,    rmax, nclusters',
              ((4.9,      15,         2),
               (4.9, 1000000,         1)))
 def test_corona_simple_examples(toy_sipm_signal, datasipm, Qlm, rmax, nclusters):
     pos, qs  = toy_sipm_signal
     clusters = corona(pos, qs, datasipm,
-                      msipm          =  1,
-                      Qlm            =  Qlm * units.pes,
-                      new_lm_radius  = rmax * units.mm )
+                      Qthr            =  0,
+                      Qlm             =  Qlm * units.pes,
+                      lm_radius       =  0,
+                      new_lm_radius   = rmax * units.mm,
+                      msipm           =  1,
+                      consider_masked = False
+                      )
     assert len(clusters) == nclusters
 
 
