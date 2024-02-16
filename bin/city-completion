@@ -1,15 +1,19 @@
 #/usr/bin/env bash
 
 _city_completions () {
-  for fullpath in `ls $ICTDIR/invisible_cities/cities/*.py`; do
-    cityname=$(basename $fullpath)
-    if [[ $cityname == *"test"* ]]; then continue; fi
-    if [[ $cityname == *"components"* ]]; then continue; fi
-    if [[ $cityname == "__"* ]]; then continue; fi
-    if [[ $cityname == *"~" ]]; then continue; fi
-    cityname=${cityname/.py/}
-    COMPREPLY+=("$cityname")
-  done
+  PREV_WORD=${COMP_WORDS[COMP_CWORD-1]}
+
+  if [[ ${PREV_WORD} == "city" ]]; then
+    for fullpath in `ls $ICTDIR/invisible_cities/cities/*.py`; do
+      cityname=$(basename $fullpath)
+      if [[ $cityname == *"test"* ]]; then continue; fi
+      if [[ $cityname == *"components"* ]]; then continue; fi
+      if [[ $cityname == "__"* ]]; then continue; fi
+      if [[ $cityname == *"~" ]]; then continue; fi
+      cityname=${cityname/.py/}
+      COMPREPLY+=("$cityname")
+    done
+  fi
 }
 
-complete -F _city_completions city
+complete -o default -F _city_completions city
