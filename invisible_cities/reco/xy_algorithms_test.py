@@ -206,9 +206,9 @@ def test_corona_barycenter_can_be_the_same_with_one_cluster(toy_sipm_signal, dat
 
 
 def test_corona_multiple_clusters(toy_sipm_signal, datasipm):
-    """notice: cluster.xy =(x,y)
+    """notice: cluster.XY    = (x,y)
                cluster.posxy = ([x],
-                              [y])
+                                [y])
     """
     pos, qs = toy_sipm_signal
     clusters = corona(pos, qs, datasipm,

@@ -22,6 +22,25 @@ from typing import Tuple
 def threshold_check( pos : np.ndarray # (n, 2)
                    ,  qs : np.ndarray # (n,)
                    , thr : float) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Applies a charge threshold while performing basic checks on the
+    input data. It ensures that
+      - The position and charge arrays are non-empty
+      - The sum of the charge array is not zero
+      - The above hold still after applying the charge threshold
+
+    Parameters
+    ----------
+    pos : np.array with shape (n, 2)
+        SiPM positions. The first and second columns correspond to the
+        x and y positions, respectively
+
+    qs : np.array with shape (n,)
+        SiPM charges
+
+    thr : float
+        Threshold to apply to the SiPM charges
+    """
     if not len(pos)   : raise SipmEmptyList
     if np.sum(qs) == 0: raise SipmZeroCharge
 
@@ -38,29 +57,50 @@ def threshold_check( pos : np.ndarray # (n, 2)
 def barycenter( pos : np.ndarray # (n, 2)
               , qs  : np.ndarray # (n,)
               , Qthr: Optional[float] = 0 * units.pes):
-    """pos = column np.array --> (matrix n x 2)
-       ([x1, y1],
-        [x2, y2]
-        ...
-        [xs, ys])
-       qs = vector (q1, q2...qs) --> (1xn)
+    """
+    Computes the center of gravity (weighted average) of an array of
+    SiPMs.
+
+    Parameters
+    ----------
+    pos : np.ndarray with shape (n,2)
+        SiPM positions. The first and second columns correspond to the
+        x and y positions, respectively
+
+    qs : np.array with shape (n,)
+        SiPM charges
+
+    Qthr : float
+        Threshold to apply to the SiPM charges. SiPMs with lower
+        charge are ignored
+
+    Notes
+    -----
+    In order to maintain a uniform interface, all xy algorithms return
+    a list of clusters. This function returns a single cluster, but we
+    wrap in a list to maintain the same interface.
     """
     pos, qs = threshold_check(pos, qs, Qthr)
     mu, var = weighted_mean_and_var(pos, qs, axis=0)
-    # For uniformity of interface, all xy algorithms should return a
-    # list of clusters. barycenter always returns a single clusters,
-    # but we still want it in a list.
     return [Cluster(np.sum(qs), xy(*mu), xy(*var), len(qs))]
 
 
-def discard_sipms(sis, pos, qs):
-    return np.delete(pos, sis, axis=0), np.delete(qs, sis)
+def discard_sipms( indices : np.ndarray   # shape (n,)
+                 , pos     : np.ndarray   # shape (n, 2)
+                 , qs      : np.ndarray): # shape (n,)
+    """
+    Removes entries in `pos` and `qs` at positions `indices`.
+    """
+    return np.delete(pos, indices, axis=0), np.delete(qs, indices)
 
-
-def get_nearby_sipm_inds(cs, d, pos):
-    """return indices of sipms less than d from (xc,yc)"""
-    return np.where(np.linalg.norm(pos - cs, axis=1) <= d)[0]
-
+def get_nearby_sipm_inds( center : np.ndarray   # shape (2,)
+                        , d      : float
+                        , pos    : np.ndarray): # shape (n, 2)
+    """
+    Returns the indices of the SiPMs that fall within a transverse
+    distance `d` of `center`.
+    """
+    return np.where(np.linalg.norm(pos - center, axis=1) <= d)[0]
 
 def count_masked(cs, d, datasipm, is_masked):
     if is_masked is None: return 0
@@ -103,18 +143,15 @@ def corona( pos             : np.ndarray # (n, 2)
     qs : np.ndarray with shape (n,)
         SiPM charges
 
+    all_sipms : pd.DataFrame
+        Database entry with the SiPM information
+
     Qthr : float
         Charge threshold to apply to all SiPMs. SiPMs with lower
         charge are ignored
 
     Qlm : float
         Charge threshold to find a local maximum
-
-    msipm : int
-        Minimum number of SiPMs in a cluster (see `consider_masked`)
-
-    pitch : float
-        Distance between contiguous SiPMs in each axis
 
     lm_radius : float
         Distance from the SiPM with highest charge with which a new
@@ -124,7 +161,10 @@ def corona( pos             : np.ndarray # (n, 2)
         Radius used for the calculation of the barycenter from the new
         local maximum (see Notes)
 
-    consider_masked : bool
+    msipm : int
+        Minimum number of SiPMs in a cluster (see `consider_masked`)
+
+    consider_masked : bool, optional (defaults to False)
         Whether to consider masked SiPMs in the clustering
         algorithm. It affects particularly `msipm`. If `True`,
         clusters might contain less than `msipm` SiPMs, if any of
