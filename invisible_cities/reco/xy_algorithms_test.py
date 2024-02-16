@@ -322,12 +322,7 @@ def test_count_masked_all_active(datasipm_all_active):
     is_masked = datasipm_all_active.Active.values
 
     # All sipms are active in run number 1
-    assert count_masked(xy0, np.inf, datasipm_all_active, is_masked) == 0
-
-
-def test_count_masked_is_masked_None():
-    dummy = None
-    assert count_masked(dummy, dummy, dummy, None) == 0
+    assert count_masked(xy0, np.inf, datasipm_all_active) == 0
 
 
 @mark.parametrize("sipm_id  radius  expected_nmasked".split(),
@@ -341,11 +336,10 @@ def test_count_masked_near_masked(datasipm_5000, sipm_id, radius, expected_nmask
     sipm_indx    = np.argwhere(datasipm_5000.SensorID.values == sipm_id)[0][0]
     masked_sipm  = datasipm_5000.iloc[sipm_indx]
     masked_xy    = np.array([masked_sipm.X, masked_sipm.Y])
-    is_masked    = datasipm_5000.Active.values
 
     # small smear so the search point doesn't fall exactly at sipm position
     masked_xy   += np.random.normal(0, 0.001 * radius, size=2)
-    assert count_masked(masked_xy, radius, datasipm_5000, is_masked) == expected_nmasked
+    assert count_masked(masked_xy, radius, datasipm_5000) == expected_nmasked
 
 
 def test_masked_channels(datasipm_3x5):

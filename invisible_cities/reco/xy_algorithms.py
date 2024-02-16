@@ -102,12 +102,19 @@ def get_nearby_sipm_inds( center : np.ndarray   # shape (2,)
     """
     return np.where(np.linalg.norm(pos - center, axis=1) <= d)[0]
 
-def count_masked(cs, d, datasipm, is_masked):
-    if is_masked is None: return 0
-
-    pos = np.stack([datasipm.X.values, datasipm.Y.values], axis=1)
-    indices = get_nearby_sipm_inds(cs, d, pos)
-    return np.count_nonzero(~is_masked.astype(bool)[indices])
+def count_masked( center    : np.ndarray   # shape (2,)
+                , d         : float
+                , all_sipms : pd.DataFrame
+                ):
+    """
+    Count the number of masked (inactive) SiPMs within a distance `d`
+    of `center`. Note that, unlike `get_nearby_sipm_inds`, this
+    function is meant to be called with *all* SiPMs.
+    """
+    pos     =  all_sipms.filter(list("XY"))
+    masked  = ~all_sipms.Active.values.astype(bool) # True if masked
+    indices = get_nearby_sipm_inds(center, d, pos)
+    return masked[indices].sum()
 
 
 @check_annotations
@@ -222,7 +229,6 @@ def corona( pos             : np.ndarray # (n, 2)
     assert new_lm_radius >= 0, "new_lm_radius must be non-negative"
 
     pos, qs = threshold_check(pos, qs, Qthr)
-    masked  = all_sipms.Active.values.astype(bool) if consider_masked else None
 
     c  = []
     # While there are more local maxima
@@ -237,7 +243,7 @@ def corona( pos             : np.ndarray # (n, 2)
 
         # find the SiPMs within new_lm_radius of the new local maximum of charge
         within_new_lm_radius = get_nearby_sipm_inds(new_local_maximum, new_lm_radius, pos      )
-        n_masked_neighbours  = count_masked        (new_local_maximum, new_lm_radius, all_sipms, masked)
+        n_masked_neighbours  = count_masked        (new_local_maximum, new_lm_radius, all_sipms) if consider_masked else 0
 
         # if there are at least msipms within_new_lm_radius, taking
         # into account any masked channel, get the barycenter
