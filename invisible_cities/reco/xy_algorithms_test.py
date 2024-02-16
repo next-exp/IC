@@ -191,7 +191,11 @@ def test_raises_sipm_zero_charge(algorithm):
         algorithm(np.array([[1, 2], [3, 4]]), np.array([0, 0]))
 
 
-def test_corona_barycenter_can_be_the_same_with_one_cluster(toy_sipm_signal, datasipm):
+def test_corona_converges_to_barycenter(toy_sipm_signal, datasipm):
+    """
+    Demonstrate that in the case where `new_lm_radius` is infinite,
+    corona converges to a simple `barycenter`.
+    """
     pos, qs = toy_sipm_signal
     c_clusters = corona(pos, qs, datasipm,
                             lm_radius =  0,
