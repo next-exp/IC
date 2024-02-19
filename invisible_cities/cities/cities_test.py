@@ -6,6 +6,7 @@ from itertools import chain
 import tables as tb
 
 from pytest import mark
+from pytest import raises
 
 from .. core.configure      import configure
 
@@ -57,3 +58,23 @@ def test_city_output_file_is_compressed(config_tmpdir, ICDATADIR, city):
 
             except tb.NoSuchNodeError:
                 continue
+
+
+@mark.filterwarnings("ignore::UserWarning")
+@mark.parametrize("city", all_cities)
+def test_city_missing_detector_db(city):
+    # use default config file
+    config_file = 'dummy invisible_cities/config/{}.conf'.format(city)
+    conf = configure(config_file.split())
+
+    # delete the detector_db key from the config
+    del conf['detector_db']
+
+    # collect relevant city information for running
+    module_name   = f'invisible_cities.cities.{city}'
+    city_function = getattr(import_module(module_name), city)
+
+    # check that the test provides the
+    # required value error for missing detector_db
+    with raises(ValueError, match=r"The function `(\w+)` is missing an argument `detector_db`"):
+    	city_function(**conf)
