@@ -109,9 +109,9 @@ def isaura( files_in       : OneOrManyFiles
                                     print_every(print_mod)                        ,
                                     event_count_in        .spy                    ,
                                     fl.branch("event_number", evtnum_collect.sink),
-                                    compute_tracks                                ,
                                     event_count_out       .spy                    ,
-                                    fl.fork( write_event_info
+                                    fl.fork( compute_tracks
+                                           , write_event_info
                                            , write_hits
                                            , (filter_out_none, write_kdst_table)) ),
                       result = dict(events_in  =event_count_in .future,
