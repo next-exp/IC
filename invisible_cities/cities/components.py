@@ -1393,13 +1393,14 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                               , write_paolina_hits
                               , select_and_write_tracks))
 
-    return pipe(filter_events_nohits                        ,
-                fl.branch(write_no_hits_filter)             ,
-                hits_passed.              filter            ,
-                copy_Efield                                 ,
-                create_extract_track_blob_info              ,
-                filter_events_topology                      ,
-                fl.branch(fl.fork(*fork_pipes)))
+    return pipe( filter_events_nohits
+               , fl.branch(write_no_hits_filter)
+               , hits_passed.filter
+               , copy_Efield
+               , create_extract_track_blob_info
+               , filter_events_topology
+               , fl.fork(*fork_pipes)
+               )
 
 
 @check_annotations
