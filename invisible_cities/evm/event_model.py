@@ -4,6 +4,7 @@ import tables as tb
 import numpy  as np
 
 from .. types.ic_types import NN
+from .. types.ic_types import xy
 from .. types.symbols  import HitEnergy
 from .. core           import system_of_units as units
 
@@ -119,6 +120,9 @@ class Cluster(BHit):
         self._xy     = xy
         self._xy_var = xy_var
         self.nsipm   = nsipm
+
+    def empty():
+        return Cluster(NN, xy.empty(), xy.zero(), 0)
 
     @property
     def posxy (self): return self._xy.pos

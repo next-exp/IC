@@ -173,21 +173,32 @@ def test_barycenter_single_cluster_generic(p_q):
     assert len(clusters) == 1
 
 
-@parametrize("algorithm", (barycenter, partial(corona, all_sipms=datasipm)))
+corona_default = partial( corona
+                        , all_sipms = DataSiPM("new", 0)
+                        , Qthr = 0., Qlm = 0.
+                        , lm_radius = 0., new_lm_radius = 0.
+                        , msipm = 0, consider_masked = False)
+
+@parametrize("algorithm", (barycenter, corona_default))
 def test_raises_sipm_empty_list(algorithm):
     with raises(SipmEmptyList):
-        algorithm(np.array([]), None)
+        algorithm(np.array([]), np.array([]))
 
 
-@parametrize("algorithm", (barycenter, partial(corona, all_sipms=datasipm)))
+@parametrize("algorithm", (barycenter, corona_default))
 def test_raises_sipm_zero_charge(algorithm):
     with raises(SipmZeroCharge):
-        algorithm(np.array([[1, 2]]), np.array([0, 0]))
+        algorithm(np.array([[1, 2], [3, 4]]), np.array([0, 0]))
 
 
-def test_corona_barycenter_can_be_the_same_with_one_cluster(toy_sipm_signal, datasipm):
+def test_corona_converges_to_barycenter(toy_sipm_signal, datasipm):
+    """
+    Demonstrate that in the case where `new_lm_radius` is infinite,
+    corona converges to a simple `barycenter`.
+    """
     pos, qs = toy_sipm_signal
     c_clusters = corona(pos, qs, datasipm,
+                            lm_radius =  0,
                         new_lm_radius = 10 * units.m,
                         msipm         =  1,
                         Qlm           =  4.9 * units.pes,
@@ -199,13 +210,15 @@ def test_corona_barycenter_can_be_the_same_with_one_cluster(toy_sipm_signal, dat
 
 
 def test_corona_multiple_clusters(toy_sipm_signal, datasipm):
-    """notice: cluster.xy =(x,y)
+    """notice: cluster.XY    = (x,y)
                cluster.posxy = ([x],
-                              [y])
+                                [y])
     """
     pos, qs = toy_sipm_signal
     clusters = corona(pos, qs, datasipm,
-                      msipm=1, new_lm_radius=15*units.mm, Qlm=4.9*units.pes)
+                      Qthr = 0, Qlm=4.9*units.pes,
+                      lm_radius = 0, new_lm_radius=15*units.mm,
+                      msipm = 1)
     assert len(clusters) == 2
     for i in range(len(pos)):
         assert np.array_equal(clusters[i].XY, pos[i])
@@ -237,19 +250,25 @@ def test_corona_min_threshold_Qthr(datasipm):
 def test_corona_msipm(toy_sipm_signal, datasipm):
     pos, qs = toy_sipm_signal
     with raises(ClusterEmptyList):
-        corona(pos, qs, datasipm, msipm=2)
+        corona( pos, qs, datasipm
+              , Qthr=0, Qlm=5 * units.pes
+              , lm_radius=0, new_lm_radius=15 * units.mm
+              , msipm=2)
 
 
-@mark.skip
 @parametrize(' Qlm,    rmax, nclusters',
              ((4.9,      15,         2),
               (4.9, 1000000,         1)))
 def test_corona_simple_examples(toy_sipm_signal, datasipm, Qlm, rmax, nclusters):
     pos, qs  = toy_sipm_signal
     clusters = corona(pos, qs, datasipm,
-                      msipm          =  1,
-                      Qlm            =  Qlm * units.pes,
-                      new_lm_radius  = rmax * units.mm )
+                      Qthr            =  0,
+                      Qlm             =  Qlm * units.pes,
+                      lm_radius       =  0,
+                      new_lm_radius   = rmax * units.mm,
+                      msipm           =  1,
+                      consider_masked = False
+                      )
     assert len(clusters) == nclusters
 
 
@@ -259,9 +278,11 @@ def test_corona_Qlm_too_high_raises_ClusterEmptyList(toy_sipm_signal, datasipm):
 
     with raises(ClusterEmptyList):
         corona(pos, qs, datasipm,
-               msipm          =      1,
+               Qthr           =      0,
                Qlm            =    Qlm,
-               new_lm_radius  = np.inf)
+                   lm_radius  =      0,
+               new_lm_radius  = np.inf,
+               msipm          =      1)
 
 
 def test_corona_Qthr_too_high_raises_SipmEmptyListAboveQthr(toy_sipm_signal, datasipm):
@@ -270,9 +291,11 @@ def test_corona_Qthr_too_high_raises_SipmEmptyListAboveQthr(toy_sipm_signal, dat
 
     with raises(SipmEmptyListAboveQthr):
         corona(pos, qs, datasipm,
-               msipm          =      1,
-               Qthr           =   Qthr,
-               new_lm_radius  = np.inf)
+               Qthr           =          Qthr,
+               Qlm            = 5 * units.pes,
+               msipm          =             1,
+                   lm_radius  =             0,
+               new_lm_radius  =        np.inf)
 
 
 def test_discard_sipms(toy_sipm_signal_and_inds):
@@ -303,12 +326,7 @@ def test_count_masked_all_active(datasipm_all_active):
     is_masked = datasipm_all_active.Active.values
 
     # All sipms are active in run number 1
-    assert count_masked(xy0, np.inf, datasipm_all_active, is_masked) == 0
-
-
-def test_count_masked_is_masked_None():
-    dummy = None
-    assert count_masked(dummy, dummy, dummy, None) == 0
+    assert count_masked(xy0, np.inf, datasipm_all_active) == 0
 
 
 @mark.parametrize("sipm_id  radius  expected_nmasked".split(),
@@ -322,11 +340,10 @@ def test_count_masked_near_masked(datasipm_5000, sipm_id, radius, expected_nmask
     sipm_indx    = np.argwhere(datasipm_5000.SensorID.values == sipm_id)[0][0]
     masked_sipm  = datasipm_5000.iloc[sipm_indx]
     masked_xy    = np.array([masked_sipm.X, masked_sipm.Y])
-    is_masked    = datasipm_5000.Active.values
 
     # small smear so the search point doesn't fall exactly at sipm position
     masked_xy   += np.random.normal(0, 0.001 * radius, size=2)
-    assert count_masked(masked_xy, radius, datasipm_5000, is_masked) == expected_nmasked
+    assert count_masked(masked_xy, radius, datasipm_5000) == expected_nmasked
 
 
 def test_masked_channels(datasipm_3x5):
@@ -359,10 +376,11 @@ def test_masked_channels(datasipm_3x5):
     # Corona should return 1 cluster if the masked sipm is taken into account...
     expected_nclusters = 1
     found_clusters = corona(pos[ok], qs[ok], datasipm,
-                            msipm           = 6              ,
                             Qthr            = 0   * units.pes,
                             Qlm             = 4   * units.pes,
+                                lm_radius   = 0   * units.mm ,
                             new_lm_radius   = 1.5 * units.mm ,
+                            msipm           = 6              ,
                             consider_masked = False)
 
     assert len(found_clusters) == expected_nclusters
@@ -370,10 +388,11 @@ def test_masked_channels(datasipm_3x5):
     # ... and two when ignored.
     expected_nclusters = 2
     found_clusters = corona(pos[ok], qs[ok], datasipm,
-                            msipm           = 6              ,
                             Qthr            = 0   * units.pes,
                             Qlm             = 4   * units.pes,
+                                lm_radius   = 0   * units.mm ,
                             new_lm_radius   = 1.5 * units.mm ,
+                            msipm           = 6              ,
                             consider_masked = True)
 
     assert len(found_clusters) == expected_nclusters
