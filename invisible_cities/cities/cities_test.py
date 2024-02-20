@@ -9,9 +9,9 @@ from pytest import mark
 
 from .. core.configure      import configure
 
-some_cities = "irene dorothea penthesilea esmeralda beersheba".split()
+some_cities = "irene dorothea sophronia esmeralda beersheba".split()
 all_cities  = """beersheba berenice buffy detsim diomira dorothea esmeralda
-                 eutropia hypathia irene isaura isidora penthesilea phyllis
+                 eutropia hypathia irene isaura isidora phyllis sophronia
                  trude""".split()
 
 @mark.filterwarnings("ignore::UserWarning")
