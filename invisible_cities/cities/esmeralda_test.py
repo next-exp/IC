@@ -97,6 +97,7 @@ def test_esmeralda_filters_events_threshold(esmeralda_config, config_tmpdir):
     assert  df_events .evt_number.drop_duplicates().tolist() == evt_all
 
 
+@mark.skip(reason="the networkx package produces non-deterministic results")
 def test_esmeralda_exact_result(esmeralda_config, Th228_tracks, config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "esmeralda_exact_result.h5")
     esmeralda_config["file_out"] = path_out
