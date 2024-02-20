@@ -76,11 +76,13 @@ def test_esmeralda_filters_events_threshold(esmeralda_config, config_tmpdir):
 
     cnt = esmeralda(**esmeralda_config)
 
+    evt_all        = [400078, 400270]
+    evt_all_nexus  = [200039, 200135]
     evt_pass       = [400078]
     evt_pass_nexus = [200039]
     assert cnt.events_in   == 2
-    assert cnt.events_out  == 1
-    assert cnt.evtnum_list == evt_pass
+    assert cnt.events_out  == 2
+    assert cnt.evtnum_list == evt_all
 
     df_hits    = dio.load_dst(path_out, 'CHITS'   , 'highTh')
     df_tracks  = dio.load_dst(path_out, 'Tracking', 'Tracks')
@@ -91,8 +93,8 @@ def test_esmeralda_filters_events_threshold(esmeralda_config, config_tmpdir):
     assert  df_hits   .event     .drop_duplicates().tolist() == evt_pass
     assert  df_tracks .event     .drop_duplicates().tolist() == evt_pass
     assert  df_summary.event     .drop_duplicates().tolist() == evt_pass
-    assert  df_mc     .event_id  .drop_duplicates().tolist() == evt_pass_nexus
-    assert  df_events .evt_number.drop_duplicates().tolist() == evt_pass
+    assert  df_mc     .event_id  .drop_duplicates().tolist() == evt_all_nexus
+    assert  df_events .evt_number.drop_duplicates().tolist() == evt_all
 
 
 def test_esmeralda_exact_result(esmeralda_config, Th228_tracks, config_tmpdir):
