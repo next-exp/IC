@@ -9,16 +9,16 @@ from pytest import mark
 
 from .. core.configure      import configure
 
-some_cities = "irene dorothea sophronia esmeralda beersheba".split()
-all_cities  = """beersheba berenice buffy detsim diomira dorothea esmeralda
-                 eutropia hypathia irene isaura isidora phyllis sophronia
-                 trude""".split()
+online_cities = "irene dorothea sophronia esmeralda beersheba".split()
+all_cities    = """beersheba berenice buffy detsim diomira dorothea esmeralda
+                   eutropia hypathia irene isaura isidora phyllis sophronia
+                   trude""".split()
 
 @mark.filterwarnings("ignore::UserWarning")
-@mark.parametrize("city", some_cities)
+@mark.parametrize("city", online_cities)
 def test_city_empty_input_file(config_tmpdir, ICDATADIR, city):
-    # All cities run in Canfranc must run on an empty file
-    # without raising any exception
+    # All cities run in the online reconstruction chain must run on an
+    # empty file without raising any exception
 
     PATH_IN  = os.path.join(ICDATADIR    , 'empty_file.h5')
     PATH_OUT = os.path.join(config_tmpdir, 'empty_output.h5')
