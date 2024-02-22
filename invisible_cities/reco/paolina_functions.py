@@ -289,8 +289,10 @@ def make_tracks(evt_number       : float,
     return tc
 
 
-def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_vxls: int = 3,
-                          contiguity: Contiguity = Contiguity.CORNER) -> Sequence[Voxel]:
+def drop_end_point_voxels(voxels           : Sequence[Voxel],
+                          energy_threshold : float,
+                          min_vxls         : int = 3,
+                          contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Voxel]:
     """Eliminate voxels at the end-points of a track, recursively,
        if their energy is lower than a threshold. Returns 1 if the voxel
        has been deleted succesfully and 0 otherwise."""
