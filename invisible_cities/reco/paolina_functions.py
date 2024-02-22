@@ -272,12 +272,12 @@ def make_tracks(evt_number       : float,
                 evt_time         : float,
                 voxels           : List[Voxel],
                 voxel_dimensions : np.ndarray,
-                contiguity       : float = 1,
+                contiguity       : Contiguity = Contiguity.CORNER,
                 blob_radius      : float = 30 * units.mm,
                 energy_type      : HitEnergy = HitEnergy.E) -> TrackCollection:
     """Make a track collection."""
     tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
-    track_graphs = make_track_graphs(voxels) # type: Sequence[Graph]
+    track_graphs = make_track_graphs(voxels, contiguity) # type: Sequence[Graph]
     for trk in track_graphs:
         energy_a, energy_b, hits_a, hits_b = blob_energies_and_hits(trk, blob_radius)
         a, b                               = blob_centres(trk, blob_radius)
@@ -289,18 +289,21 @@ def make_tracks(evt_number       : float,
     return tc
 
 
-def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_vxls: int = 3) -> Sequence[Voxel]:
+def drop_end_point_voxels(voxels           : Sequence[Voxel],
+                          energy_threshold : float,
+                          min_vxls         : int = 3,
+                          contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Voxel]:
     """Eliminate voxels at the end-points of a track, recursively,
        if their energy is lower than a threshold. Returns 1 if the voxel
        has been deleted succesfully and 0 otherwise."""
 
     e_type = voxels[0].Etype
 
-    def drop_voxel(voxels: Sequence[Voxel], the_vox: Voxel) -> int:
+    def drop_voxel(voxels: Sequence[Voxel], the_vox: Voxel, contiguity: Contiguity = Contiguity.CORNER) -> int:
         """Eliminate an individual voxel from a set of voxels and give its energy to the hit
            that is closest to the barycenter of the eliminated voxel hits, provided that it
            belongs to a neighbour voxel."""
-        the_neighbour_voxels = [v for v in voxels if neighbours(the_vox, v)]
+        the_neighbour_voxels = [v for v in voxels if neighbours(the_vox, v, contiguity)]
 
         pos = [h.pos              for h in the_vox.hits]
         qs  = [getattr(h, e_type) for h in the_vox.hits]
@@ -343,7 +346,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
     modified = True
     while modified:
         modified = False
-        trks = make_track_graphs(mod_voxels)
+        trks = make_track_graphs(mod_voxels, contiguity)
 
         for t in trks:
             if len(t.nodes()) < min_vxls:
@@ -353,7 +356,7 @@ def drop_end_point_voxels(voxels: Sequence[Voxel], energy_threshold: float, min_
                 if extreme.E < energy_threshold:
                     ### be sure that the voxel to be eliminated has at least one neighbour
                     ### beyond itself
-                    n_neighbours = sum(neighbours(extreme, v) for v in mod_voxels)
+                    n_neighbours = sum(neighbours(extreme, v, contiguity) for v in mod_voxels)
                     if n_neighbours > 1:
                         mod_voxels    .remove(extreme)
                         dropped_voxels.append(extreme)
