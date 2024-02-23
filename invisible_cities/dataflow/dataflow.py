@@ -332,13 +332,15 @@ def slice(*args, close_all=False):
     if step  is None: step  = 1
     if stop  is None: stopper = it.count()
     else            : stopper = range((stop - start + step - 1) // step)
+
     @coroutine
     def slice_loop(target):
         with closing(target):
-            for _ in range(start)             : yield
+            if stop is not None and start >= stop : yield
+            for _ in range(start)                 : yield
             for _ in stopper:
                 target.send((yield))
-                for _ in range(step - 1)      : yield
+                for _ in range(step - 1)          : yield
             if close_all: raise StopPipeline
             while True:
                 yield
