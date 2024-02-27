@@ -120,3 +120,8 @@ def test_get_number_of_bins_returns_int(nevents, thr, n_bins):
 
     assert type( icarcomp.get_number_of_bins(n_bins=n_bins) ) == int
     assert type( icarcomp.get_number_of_bins(nevents, thr) )  == int
+
+
+def test_get_binned_data_correct_output():
+
+    return
