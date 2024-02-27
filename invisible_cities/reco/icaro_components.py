@@ -181,3 +181,32 @@ def selection_in_band(z         : np.array,
     # To be implemented
 
     return  [True] * len(z)
+
+
+def get_number_of_bins(nevents : Optional[int] = None,
+                       thr     : Optional[int] = 1e6,
+                       n_bins  : Optional[int] = None)->int:
+    """
+    Computes the number of XY bins to be used in the creation
+    of correction map regarding the number of selected events.
+    Parameters
+    ---------
+    nevents: int (optional)
+        Total number of provided events for the map computation.
+    thr: int (optional)
+        Event threshold to use 50x50 or 100x100 binning.
+    n_bins: int (optional)
+        The number of bins to use can be chosen a priori. If given,
+        the returned number of bins is the one provided by the user.
+        However, if no number of bins is given in advance, this will
+        automatically select a value depending on the amount of events
+        contained in the dst and the threshold.
+    Returns
+    ---------
+    n_bins: int
+        Number of bins in each direction (X,Y) (square map).
+    """
+
+    if    n_bins != None: return n_bins;
+    elif  nevents < thr: return 50;
+    else: return  100;
