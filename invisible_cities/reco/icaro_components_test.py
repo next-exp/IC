@@ -84,3 +84,39 @@ def test_selection_nS_mask_and_checking_range_assertion(ns1, lim1, lim2):
                           icarcomp.selection_nS_mask_and_checking,
                           data,  icarcomp.type_of_signal.nS1, None,
                           [min_eff, max_eff], icarcomp.Strictness.stop_proccess)
+
+
+@given(integers(min_value = 0,
+                max_value = 1e10),
+       integers(min_value = 0,
+                max_value = 1e10),
+       integers(min_value = 1,
+                max_value = 1e4))
+def test_get_number_of_bins_performance_default_value(nevents, thr, n_bins):
+    bins = icarcomp.get_number_of_bins(nevents, thr, n_bins)
+
+    assert bins == n_bins
+
+
+@given(integers(min_value = 0,
+                max_value = 1e10),
+       integers(min_value = 0,
+                max_value = 1e10))
+def test_get_number_of_bins_with_thresholds(nevents, thr):
+    bins = icarcomp.get_number_of_bins(nevents, thr)
+
+    if nevents < thr:
+        assert bins == 50
+    if nevents >= thr:
+        assert bins == 100
+
+@given(integers(min_value = 0,
+                max_value = 1e10),
+       integers(min_value = 0,
+                max_value = 1e10),
+       integers(min_value = 1,
+                max_value = 1e4))
+def test_get_number_of_bins_returns_int(nevents, thr, n_bins):
+
+    assert type( icarcomp.get_number_of_bins(n_bins=n_bins) ) == int
+    assert type( icarcomp.get_number_of_bins(nevents, thr) )  == int
