@@ -1,5 +1,6 @@
-import numpy  as np
-import pandas as pd
+import numpy        as np
+import pandas       as pd
+import scipy.stats  as stats
 
 from   typing       import Tuple, Optional
 
@@ -210,3 +211,67 @@ def get_number_of_bins(nevents : Optional[int] = None,
     if    n_bins != None: return n_bins;
     elif  nevents < thr: return 50;
     else: return  100;
+
+
+def get_binned_data(dst  : pd.DataFrame,
+                    bins : Tuple[np.array, np.array]):
+
+    '''
+    This function distributes all the events in the DST into the selected
+    bins. Given a certain binning, it computes which events fall into each
+    square of the grid formed by the bins arrays. binned_statistic_2d returns
+    counts (matrix here each matrix element is the number of events falling
+    into that specific bin) and bin_indexes (a 2-D array labeling each event
+    with the bin it belongs). Then counts is flattened into 1-D, bin_indexes
+    is transformed into 1-D using the number of bins on each axis.
+
+      Parameters
+    --------------
+    dst  : pd.DataFrame
+         Krypton dataframe.
+    bins : Tuple[np.array, np.array]
+         Bins used to compute the map.
+
+      Returns
+    -------------
+    counts     : np.array
+         Total number of events falling into each bin
+    bin_labels : np.array
+         1D bin label for each event
+
+      Further info:
+    -----------------
+    Why set expand_binnumbers to True (2D binning) if then we transform it to 1D?
+    Because even though expand_binnumbers = False returns 1-D labels, it also adds
+    two additional bins (per axis), taking into account out-of-range events which
+    dont fall into the the binning passed to the binned_statistic_2d function. But
+    since the dst is going to be previously selected and filtered with the desired
+    binning, it's not convenient to use that. Maybe a visual example is more useful:
+
+    2x2 binning (4 bins), natural index values shown both as 1D and 2D:
+
+    || 0 | 1 ||          || (0, 0) | (0, 1) ||
+    || 2 | 3 || (1D)  =  || (1, 0) | (1, 1) || (2D)
+
+    Using expand_binnumbers = False, the 1D index values instead of (0, ..., 3)
+    would be (0, ..., 15):
+
+    || 0 | 1 | 2 | 3 ||
+    || 4 | 5 | 6 | 7 ||  The bins that we "care about" (inner part) have indexes
+    || 8 | 9 |10 |11 ||  5, 6, 9, 10 which I believe is not convenient at all.
+    ||12 |13 |14 |15 ||  This creates (nx+2)*(ny+2) bins.
+    '''
+
+    n_xbins    = len(bins[0])-1
+    n_ybins    = len(bins[1])-1
+
+    counts, _, _, bin_indexes = stats.binned_statistic_2d(x=dst.X, y=dst.Y, values=None,
+                                                          bins=bins, statistic = 'count',
+                                                          expand_binnumbers = True)
+
+    counts       = counts.flatten()
+    bin_indexes -= 1
+    bin_labels   = np.ravel_multi_index(bin_indexes, dims=(n_xbins, n_ybins),
+                                        mode='clip', order = 'F')
+
+    return counts, bin_labels
