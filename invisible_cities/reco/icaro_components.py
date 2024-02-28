@@ -266,8 +266,8 @@ def get_binned_data(dst  : pd.DataFrame,
     n_ybins    = len(bins[1])-1
 
     counts, _, _, bin_indexes = stats.binned_statistic_2d(x=dst.X, y=dst.Y, values=None,
-                                                          bins=bins, statistic = 'count',
-                                                          expand_binnumbers = True)
+                                                          bins=bins, statistic='count',
+                                                          expand_binnumbers=True)
 
     counts       = counts.flatten()
     bin_indexes -= 1
@@ -275,6 +275,7 @@ def get_binned_data(dst  : pd.DataFrame,
                                         mode='clip', order = 'F')
 
     return counts, bin_labels
+
 
 def update_dst(dst        : pd.DataFrame,
                bin_labels : np.array):
