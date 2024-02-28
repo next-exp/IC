@@ -176,6 +176,16 @@ def get_par_name_from_fittype(fittype):
     return par_name
 
 
+def  create_df_krmap(fittype):
+
+    par_name = get_par_name_from_fittype(fittype)
+    u_par_name = 'u' + par_name
+
+    columns = ['bin', 'counts', 'e0', 'ue0', par_name, u_par_name, 'covariance', 'res_std', 'pval', 'in_active', 'has_min_counts', 'fit_success', 'valid']
+
+    return pd.DataFrame(columns = columns)
+
+
 def get_number_of_bins(nevents : Optional[int] = None,
                        thr     : Optional[int] = 1e6,
                        n_bins  : Optional[int] = None)->int:
