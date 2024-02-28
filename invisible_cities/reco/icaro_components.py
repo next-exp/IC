@@ -5,8 +5,10 @@ import numpy        as np
 import pandas       as pd
 import scipy.stats  as stats
 
-from   typing        import Tuple, Optional
-from ..types.symbols import KrFitFunction
+from   typing              import Tuple, Optional
+from ..types.symbols       import KrFitFunction
+from ..core.core_functions import shift_to_bin_centers
+
 
 from .  corrections         import ASectorMap
 from .  corrections         import apply_geo_correction
@@ -226,13 +228,13 @@ def  create_df_kr_map(fittype : KrFitFunction,
     geom_comb = itertools.product(b_center[1], b_center[0])
     r_values  = np.array([np.sqrt(x**2+y**2)for x, y in itertools.product(b_center[1], b_center[0])])
 
-    kr_map.dataframe['bin']            = bin_index
-    kr_map.dataframe['counts']         = counts
-    kr_map.dataframe['R']              = r_values
-    kr_map.dataframe[['Y', 'X']]       = pd.DataFrame(geom_comb)
-    kr_map.dataframe['in_active']      = kr_map.dataframe['R']      <= r_max
-    kr_map.dataframe['has_min_counts'] = kr_map.dataframe['counts'] >= n_min
-    kr_map.dataframe['valid']          = False
+    kr_map['bin']            = bin_index
+    kr_map['counts']         = counts
+    kr_map['R']              = r_values
+    kr_map[['Y', 'X']]       = pd.DataFrame(geom_comb)
+    kr_map['in_active']      = kr_map['R']      <= r_max
+    kr_map['has_min_counts'] = kr_map['counts'] >= n_min
+    kr_map['valid']          = False
 
     return kr_map
 
