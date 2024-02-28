@@ -275,3 +275,27 @@ def get_binned_data(dst  : pd.DataFrame,
                                         mode='clip', order = 'F')
 
     return counts, bin_labels
+
+def update_dst(dst        : pd.DataFrame,
+               bin_labels : np.array):
+
+    '''This function makes a copy of the kdst and updates it, labelling each
+    event with its corresponding bin in the map.
+
+      Parameters
+    --------------
+    dst  : pd.DataFrame
+         Krypton dataframe.
+    bin_labels : np.array
+         1-D array with the bin index for each event
+
+       Returns
+    -------------
+    updated_dst : pd.DataFrame
+        Bin-labelled dst.'''
+
+    updated_dst = copy.deepcopy(dst)
+
+    updated_dst['bin_index']  = bin_labels
+
+    return updated_dst
