@@ -1,9 +1,12 @@
 import copy
+import itertools
+
 import numpy        as np
 import pandas       as pd
 import scipy.stats  as stats
 
-from   typing       import Tuple, Optional
+from   typing        import Tuple, Optional
+from ..types.symbols import KrFitFunction
 
 from .  corrections         import ASectorMap
 from .  corrections         import apply_geo_correction
@@ -176,14 +179,64 @@ def get_par_name_from_fittype(fittype):
     return par_name
 
 
-def  create_df_krmap(fittype):
+def  create_df_kr_map(fittype : KrFitFunction,
+                      bins    : Tuple[np.array, np.array],
+                      counts  : np.array,
+                      n_min   : int,
+                      r_max   : float):
+    '''
+    This function creates the dataframe in which the map parameters are stored.
 
-    par_name = get_par_name_from_fittype(fittype)
+    Parameters
+    ----------
+
+    fittype : KrFitFunction
+        Chosen fit function for map computation
+    bins : Tuple[np.array, np.array]
+        Tuple containing bins in both axis
+    counts : np.array
+        Number of events falling into each bin
+    n_min : int
+        Min number of events per bin required to perform fits
+    r_max : float
+        Radius defining the active area of the detector
+
+    Returns
+    -------
+
+    kr_map : pd.DataFrame
+        Kr map dataframe with all the info prior to the fits: bin label, events
+        per bin, bin in/outside the active volume, bin position (X, Y, R), etc.
+    '''
+
+
+    par_name   = get_par_name_from_fittype(fittype)
     u_par_name = 'u' + par_name
 
-    columns = ['bin', 'counts', 'e0', 'ue0', par_name, u_par_name, 'covariance', 'res_std', 'pval', 'in_active', 'has_min_counts', 'fit_success', 'valid']
+    columns    = ['bin', 'counts', 'e0', 'ue0', par_name, u_par_name, 'covariance', 'res_std',
+                  'pval', 'in_active', 'has_min_counts', 'fit_success', 'valid', 'R', 'X', 'Y']
 
-    return pd.DataFrame(columns = columns)
+    kr_map  = pd.DataFrame(columns = columns)
+
+    n_xbins   = len(bins[0])-1
+    n_ybins   = len(bins[1])-1
+    b_center  = [shift_to_bin_centers(axis) for axis in bins]
+
+    bin_index = range(n_xbins*n_ybins)
+    geom_comb = itertools.product(b_center[1], b_center[0])
+    r_values  = np.array([np.sqrt(x**2+y**2)for x, y in itertools.product(b_center[1], b_center[0])])
+
+    kr_map.dataframe['bin']            = bin_index
+    kr_map.dataframe['counts']         = counts
+    kr_map.dataframe['R']              = r_values
+    kr_map.dataframe[['Y', 'X']]       = pd.DataFrame(geom_comb)
+    kr_map.dataframe['in_active']      = kr_map.dataframe['R']      <= r_max
+    kr_map.dataframe['has_min_counts'] = kr_map.dataframe['counts'] >= n_min
+    kr_map.dataframe['valid']          = False
+
+    return kr_map
+
+
 
 
 def get_number_of_bins(nevents : Optional[int] = None,
