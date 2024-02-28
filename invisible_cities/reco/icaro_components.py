@@ -214,6 +214,32 @@ def get_number_of_bins(nevents : Optional[int] = None,
     else: return  100;
 
 
+def get_XY_bins(n_bins   : int,
+                XYrange  : Tuple[float, float]):
+
+
+    """
+    Returns the bins that will be used to make the map. It asumes both directions
+    X, Y will have the same range and number of bins.
+
+    Parameters
+    ---------
+    dst: int
+        Number of bins to use per axis
+    XYrange: Tuple[float, float]
+        Limits (mm) of X and Y for the map computation
+
+    Returns
+    ---------
+    bins: Tuple[np.array, np.array]
+        Bins in each direction (X,Y) (square map).
+    """
+
+    bins = np.linspace(*XYrange, n_bins+1)
+
+    return bins, bins
+
+
 def get_binned_data(dst  : pd.DataFrame,
                     bins : Tuple[np.array, np.array]):
 
