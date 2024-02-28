@@ -61,7 +61,6 @@ def selection_nS_mask_and_checking(dst        : pd.DataFrame                    
     return mask
 
 
-<<<<<<< HEAD
 def band_selector_and_check(dst         : pd.DataFrame,
                             boot_map    : ASectorMap,
                             norm_strat  : NormStrategy              = NormStrategy.max,
@@ -74,20 +73,6 @@ def band_selector_and_check(dst         : pd.DataFrame,
                             eff_interval: Tuple[float, float]       = [0,1]           ,
                             strictness : Strictness = Strictness.stop_proccess
                             )->np.array:
-=======
-def band_selector_and_check(dst       : pd.DataFrame,
-                            boot_map   : ASectorMap,
-                            norm_strat : NormStrategy              = NormStrategy.max,
-                            input_mask : np.array                  = None,
-                            range_Z    : Tuple[np.array, np.array] = (10, 550),
-                            range_E    : Tuple[np.array, np.array] = (10.0e+3,14e+3),
-                            nbins_z    : int                       = 50,
-                            nbins_e    : int                       = 50,
-                            nsigma_sel : float                     = 3.5,
-                            eff_min   : float                      = 0.4,
-                            eff_max   : float                      = 0.6
-                           )->np.array:
->>>>>>> 8e1bd3cc (Add band_selector_and_check function)
     """
     This function returns a selection of the events that
     are inside the Kr E vz Z band, and checks
@@ -183,6 +168,12 @@ def selection_in_band(z         : np.array,
     # To be implemented
 
     return  [True] * len(z)
+
+
+def get_par_name_from_fittype(fittype):
+
+    par_name  = 'dedt'  if fittype == KrFitFunction.linear else 'lt'
+    return par_name
 
 
 def get_number_of_bins(nevents : Optional[int] = None,
