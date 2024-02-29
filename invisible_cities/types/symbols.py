@@ -41,8 +41,9 @@ all_events = EventRange.all # particularly helpful
 
 
 class KrFitFunction(AutoNameEnumBase):
-    expo   = auto()
-    linear = auto()
+    expo    = auto()
+    linear  = auto()
+    log_lin = auto()
 
 
 class HitEnergy(AutoNameEnumBase):
