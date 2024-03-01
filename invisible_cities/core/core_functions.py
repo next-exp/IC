@@ -9,7 +9,11 @@ import numpy as np
 from typing import Sequence
 from typing import Tuple
 
+from . exceptions import ValueOutOfRange
+
 from ..types.symbols import NormMode
+from ..types.symbols import Strictness
+
 
 def timefunc(f):
     """
@@ -76,6 +80,43 @@ def in_range(data, minval=-np.inf, maxval=np.inf, left_closed=True, right_closed
     upper_bound = data <= maxval if right_closed else data < maxval
     return lower_bound & upper_bound
 
+
+def check_if_values_in_interval(data         : np.array,
+                                minval       : float   ,
+                                maxval       : float   ,
+                                display_name : str = '',
+                                strictness   : Strictness = Strictness.stop_proccess,
+                                **kwargs)->bool:
+    """
+    Checks whether input values are all inside the interval (minval, maxval).
+
+    Parameters
+    ----------
+    data : np.array
+        Input array to check.
+    minval: float
+        Lower limit of the interval.
+    maxval: float
+        Upper limit of the interval.
+    display_name: string
+        Name for the message to print if exception raises.
+    strictness: Strictness
+        If 'warning', function returns a False if the criteria
+        is not match. If 'stop_proccess' it raises an exception.
+    Returns
+    ----------
+        True if values are in the interval. False if not and strictness
+        is set to 'warning'. Otherwise, it raises an exception.
+    """
+    if in_range(data, minval, maxval, **kwargs).all():
+        return True;
+
+    elif strictness is Strictness.warning:
+        return False
+    else:
+        raise ValueOutOfRange(f' Variable {display_name} is out of bounds ({minval}, {maxval})')
+
+    return
 
 def weighted_mean_and_var(data       : Sequence,
                           weights    : Sequence,
