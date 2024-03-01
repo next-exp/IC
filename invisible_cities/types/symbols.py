@@ -67,6 +67,10 @@ class MCTableType(AutoNameEnumBase):
     waveforms        = auto()
 
 
+class Strictness(AutoNameEnumBase):
+    warning       = auto()
+    stop_proccess = auto()
+
 class NormStrategy(AutoNameEnumBase):
     mean   = auto()
     max    = auto()
