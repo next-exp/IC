@@ -3,15 +3,9 @@ import pandas as pd
 
 from   typing       import Tuple, Optional
 
-from .  corrections         import ASectorMap
-from .  corrections         import apply_geo_correction
-
 from .. types.symbols       import type_of_signal
 from .. types.symbols       import Strictness
-from .. types.symbols       import NormStrategy
 from .. core.core_functions import check_if_values_in_interval
-from .. core.core_functions import in_range
-from .. core.fit_functions  import fit
 
 
 def selection_nS_mask_and_checking(dst        : pd.DataFrame                         ,
