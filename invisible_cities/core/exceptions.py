@@ -55,3 +55,6 @@ class MCEventNotFound(ICException):
 
 class SensorIDMismatch(ICException):
     pass
+
+class ValueOutOfRange(ICException):
+    pass
