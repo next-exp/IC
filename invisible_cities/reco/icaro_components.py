@@ -185,7 +185,7 @@ def  create_df_kr_map(fittype : KrFitFunction,
                       bins    : Tuple[np.array, np.array],
                       counts  : np.array,
                       n_min   : int,
-                      r_max   : float):
+                      r_max   : float)->pd.DataFrame:
     '''
     This function creates the dataframe in which the map parameters are stored.
 
@@ -234,6 +234,7 @@ def  create_df_kr_map(fittype : KrFitFunction,
     kr_map[['Y', 'X']]       = pd.DataFrame(geom_comb)
     kr_map['in_active']      = kr_map['R']      <= r_max
     kr_map['has_min_counts'] = kr_map['counts'] >= n_min
+    kr_map['fit_success']    = False
     kr_map['valid']          = False
 
     return kr_map
