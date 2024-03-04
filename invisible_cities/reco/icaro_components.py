@@ -361,26 +361,19 @@ def get_binned_data(dst  : pd.DataFrame,
     return counts, bin_labels
 
 
-def update_dst(dst        : pd.DataFrame,
-               bin_labels : np.array):
+def get_fit_function_lt(fittype):
 
-    '''This function makes a copy of the kdst and updates it, labelling each
-    event with its corresponding bin in the map.
 
-      Parameters
-    --------------
-    dst  : pd.DataFrame
-         Krypton dataframe.
-    bin_labels : np.array
-         1-D array with the bin index for each event
+    if   fittype is KrFitFunction.linear:
 
-       Returns
-    -------------
-    updated_dst : pd.DataFrame
-        Bin-labelled dst.'''
+        return lin_function
 
-    updated_dst = copy.deepcopy(dst)
+    elif fittype is KrFitFunction.expo:
 
-    updated_dst['bin_index']  = bin_labels
+        return expo_function
 
-    return updated_dst
+    elif fittype is KrFitFunction.log_lin:
+
+        return lin_function
+
+
