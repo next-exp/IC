@@ -40,12 +40,6 @@ class EventRange(AutoNameEnumBase):
 all_events = EventRange.all # particularly helpful
 
 
-class KrFitFunction(AutoNameEnumBase):
-    expo    = auto()
-    linear  = auto()
-    log_lin = auto()
-
-
 class HitEnergy(AutoNameEnumBase):
     E  = auto()
     Ec = auto()
@@ -57,6 +51,12 @@ class InterpolationMethod(AutoNameEnumBase):
     linear          = auto()
     cubic           = auto()
     nointerpolation = auto()
+
+
+class KrFitFunction(AutoNameEnumBase):
+    expo    = auto()
+    linear  = auto()
+    log_lin = auto()
 
 
 class MCTableType(AutoNameEnumBase):
