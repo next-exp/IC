@@ -501,4 +501,39 @@ def get_fit_function_lt(fittype):
         return lin_function, lin_seed
 
 
+def prepare_data(fittype, dst):
+
+    '''
+    Prepare the data for fitting based on the specified fit type.
+
+    Parameters
+    ----------
+    fittype : KrFitFunction
+        The type of fit function to prepare data for (e.g., linear, exponential, log-linear).
+    dst : pd.DataFrame
+        The DataFrame containing the data to be prepared for fitting.
+
+    Returns
+    -------
+    x_data : np.array
+        The independent variable data prepared for fitting.
+    y_data : np.array
+        The dependent variable data prepared for fitting.
+    '''
+
+    if fittype is KrFitFunction.linear:
+        # If the fit type is linear, return DT (time differences) as x_data and S2e (energy) as y_data
+        return dst.DT, dst.S2e
+
+    elif fittype is KrFitFunction.expo:
+        # If the fit type is exponential, return DT (time differences) as x_data and S2e (energy) as y_data
+        return dst.DT, dst.S2e
+
+    elif fittype is KrFitFunction.log_lin:
+        # If the fit type is log-linear, return DT (time differences) as x_data and -log(S2e) as y_data
+        return dst.DT, -np.log(dst.S2e)
+
+
+
+
 
