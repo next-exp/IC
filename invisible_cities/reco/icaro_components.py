@@ -616,5 +616,27 @@ def calculate_residuals(dst     : pd.DataFrame,
     return res, std
 
 
+def calculate_pval(residuals):
+
+    '''
+    Calculate the p-value for the Shapiro-Wilk normality test of residuals.
+
+    Parameters
+    ----------
+    residuals : np.array
+        Residuals from the fitted model.
+
+    Returns
+    -------
+    pval : float
+        p-value for the Shapiro-Wilk normality test.
+    '''
+
+    pval = stats.shapiro(residuals)[1] if (len(residuals) > 10) else 0.
+
+    return pval
+
+
+
 
 
