@@ -11,6 +11,7 @@ from . corrections import get_df_to_z_converter
 from . corrections import get_normalization_factor
 from . corrections import apply_all_correction_single_maps
 from . corrections import apply_all_correction
+from . corrections import apply_geo_correction
 
 from pytest                import fixture
 from numpy.testing         import assert_allclose
@@ -265,6 +266,23 @@ def test_apply_all_correction_single_maps_raises_exception_when_invalid_map(map_
                   apply_all_correction_single_maps,
                   map_e, map_e, map_e,
                   apply_temp = True)
+
+@few_examples
+@given(float_arrays(size      = 1,
+                   min_value = -198,
+                   max_value = +198),
+       float_arrays(size      = 1,
+                   min_value = -198,
+                   max_value = +198))
+def test_apply_geo_correction_properly(map_filename, x, y):
+    """
+    Due the map taken as input, the geometric correction
+    factor must be 1.
+    """
+    maps      = read_maps(map_filename)
+    load_corr = apply_geo_correction(map_e0     = maps, norm_strat = NormStrategy.max)
+    corr   = load_corr(x, y)
+    assert_allclose (corr, np.ones_like(corr))
 
 @few_examples
 @given(float_arrays(size      = 1,
