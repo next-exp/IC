@@ -361,6 +361,30 @@ def get_binned_data(dst  : pd.DataFrame,
     return counts, bin_labels
 
 
+def lin_function(x, a, b):
+
+    '''
+    Linear function for fitting data.
+
+    Parameters
+    ----------
+    x : np.array
+        Independent variable.
+    a : float
+        Intercept parameter.
+    b : float
+        Slope parameter.
+
+    Returns
+    -------
+    y : np.array
+        Dependent variable values.
+    '''
+
+    y = a + b*x
+    return y
+
+
 def get_fit_function_lt(fittype):
 
 
