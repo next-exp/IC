@@ -471,17 +471,34 @@ def expo_seed(x, y, eps=1e-12):
 
 def get_fit_function_lt(fittype):
 
+    '''
+    Retrieve the fitting function and seed function based on the
+    specified fittype.
 
-    if   fittype is KrFitFunction.linear:
+    Parameters
+    ----------
+    fittype : KrFitFunction
+        The type of fit function to retrieve (e.g., linear, exponential, log-linear).
 
-        return lin_function
+    Returns
+    -------
+    fit_function  : function
+        The fitting function corresponding to the specified fit type.
+    seed_function : function
+        The seed function corresponding to the specified fit type.
+    '''
+
+    if fittype is KrFitFunction.linear:
+        # If the fit type is linear, return the linear fitting function and seed function
+        return lin_function, lin_seed
 
     elif fittype is KrFitFunction.expo:
-
-        return expo_function
+        # If the fit type is exponential, return the exponential fitting function and seed function
+        return expo_function, expo_seed
 
     elif fittype is KrFitFunction.log_lin:
+        # If the fit type is log-linear, return the linear fitting function and seed function
+        return lin_function, lin_seed
 
-        return lin_function
 
 
