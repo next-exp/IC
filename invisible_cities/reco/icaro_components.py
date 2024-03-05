@@ -439,6 +439,35 @@ def expo_function(x, const, mean):
     return y
 
 
+def expo_seed(x, y, eps=1e-12):
+
+    '''
+    Estimate the seed for an exponential fit.
+
+    Parameters
+    ----------
+    x : np.array
+        Independent variable.
+    y : np.array
+        Dependent variable.
+    eps : float, optional
+        Small value added to prevent division by zero, default is 1e-12.
+
+    Returns
+    -------
+    seed : tuple
+        Seed parameters (constant, mean) for the exponential fit.
+    '''
+
+    x, y = zip(*sorted(zip(x, y)))
+
+    const = y[0]
+    slope = (x[-1] - x[0]) / np.log(y[-1] / (y[0] + eps))
+
+    seed = const, slope
+
+    return seed
+
 
 def get_fit_function_lt(fittype):
 
