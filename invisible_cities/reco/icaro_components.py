@@ -588,7 +588,7 @@ def transform_parameters(fittype    : KrFitFunction,
 
 def calculate_residuals(dst     : pd.DataFrame,
                         fittype : KrFitFunction,
-                        par     : list[float, float]):
+                        par     : list):
 
     '''
     Calculate residuals and their standard deviation for the fitted data.
