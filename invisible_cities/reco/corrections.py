@@ -243,6 +243,41 @@ def get_normalization_factor(map_e0    : ASectorMap,
 
     return norm_value
 
+def apply_geo_correction(map_e0         : ASectorMap,
+                         norm_strat     : NormStrategy         = NormStrategy.max,
+                         norm_value     : Optional[float]      = None
+                        ) -> Callable:
+    """
+    For a map for each correction, it returns a function
+    that provides a geometric only correction factor for a
+    given hit collection when (x,y,z,time) is provided.
+
+    Parameters
+    ----------
+    map_e0 : AsectorMap
+        Correction map for geometric corrections.
+    norm_strat : NormStrategy
+        Provides the desired normalization to be used.
+    norm_value : Float(optional)
+        If norm_strat is selected to be custom, user must provide the
+        desired scale.
+    Returns
+    -------
+        A function that returns geometric correction factor without passing a map.
+    """
+
+    normalization   = get_normalization_factor(map_e0, norm_strat, norm_value)
+    get_xy_corr_fun = maps_coefficient_getter(map_e0.mapinfo, map_e0.e0)
+
+    def geo_correction_factor(x : np.array,
+                                y : np.array)-> np.array:
+        geo_factor = correct_geometry_(get_xy_corr_fun(x,y))
+        factor     = geo_factor * normalization
+        return factor
+
+    return geo_correction_factor
+
+
 
 def apply_all_correction_single_maps(map_e0         : ASectorMap,
                                      map_lt         : ASectorMap,
