@@ -40,10 +40,9 @@ from typing import Tuple
 from typing import List
 from pandas import DataFrame
 
-from .. reco.krmap_components import KrMap
-from .. reco.krmap_components import get_number_of_bins, get_XY_bins, get_binned_data
-from .. reco.krmap_components import lifetime_fit
-from .. reco.krmap_components import calculate_residuals_in_bin, calculate_pval, valid_bin_counter
+from .. reco.icaro_components import KrFitFunction
+from .. reco.icaro_components import get_number_of_bins, get_XY_bins, get_binned_data
+from .. reco.icaro_components import create_df_kr_map, fit_and_fill_map, valid_bin_counter
 
 
 
@@ -94,86 +93,61 @@ def icaro(files_in, file_out, compression, event_range,
                        result = None)
 
 
-def map_builder(detector_db, run_number, map_params):
+def map_builder(detector_db, run_number, *map_params):
 
-    def compute_map(dst     : pd.DataFrame,
-                    n_bins  : int = None,
-                    fittype : str = 'linear',
-                    n_min   : int = 50):
+    def compute_map(dst          : pd.DataFrame,
+                    fittype      : KrFitFunction = KrFitFunction.log_lin,
+                    n_bins       : int = None,
+                    n_min_in_bin : int = 50,
+                    n_min_in_dst : Optional[int] = 1e6,
+                    r_max        : float = 492):
 
         '''
-        Given a dataframe with data, some bining and a fittype,
-        it initializes the Kr_Map object and computes the correction
-        factors.
+        Function to compute map through fit_and_fill_map and other auxiliary functions.
 
         Parameters
         ----------
         dst : pd.DataFrame
             data to compute the map with
-        n_bins : int, default None
-            Number of bins wanted for map computation. If no value is chosen, it
-            automatically converts into 50 or 100 depending on number of events
         fittype : str
             Kind of fit to perform.
-        n_min : float
+        n_bins : int, default None
+            Number of bins wanted for map computation. If no value is chosen, it
+            automatically converts into 50 or 100 depending on n_min_in_dst parameter
+        n_min_in_bin : int
             Minimum number of events in bin to perform the fit. Default = 50
-
+        n_min_in_dst : int = 1e6
+            Event threshold in dst to determine auto-binning
+        r_max : float
+            Maximum R value (temporary). Default = 492
 
         Returns
         -------
-        correction_map : Kr_Map object
-
-            A Kr_Map object containing the info of the map: binning, E0,
-            LT, etc.
+        kr_map : pd.DataFrame
+            Map dataframe containing the obtained parameters: E0, LT, uncertainties, etc.
         '''
 
-        nbins  = get_number_of_bins(dst, n_bins = n_bins) # Get number of bins used
-        bins   = get_XY_bins(nbins)                       # Get the actual bin arrays
-        counts = get_binned_data(dst, bins) # Divide the data into bins in get the event count per bin
 
-        correction_map = KrMap(x_bins = bins[0], y_bins = bins[1], counts = counts) # Initialize map class
+        n_bins  = get_number_of_bins(n_events     = len(dst.index),
+                                     n_min_in_dst = n_min_in_dst,
+                                     n_bins       = n_bins)
+        bins    = get_XY_bins       (n_bins       = n_bins)
 
-        correction_map.valid = counts >= n_min
+        counts, bin_labels = get_binned_data(dst = dst, bins = bins)
+        dst['bin_index']   = bin_labels
 
-        r, c = counts.shape
+        kr_map             = create_df_kr_map(fittype      = fittype,
+                                              bins         = bins,
+                                              counts       = counts,
+                                              n_min_in_bin = n_min_in_bin,
+                                              r_max        = r_max)
 
-        for i in range(r):
-            for j in range(c):
+        kr_map = kr_map.apply(lambda map_bin: fit_and_fill_map(map_bin = map_bin,
+                                                               dst     = dst,
+                                                               fittype = fittype),
+                              axis = 1)
 
-                dst_bin = dst.query(f'xbin_index == {i} & ybin_index == {j}')
-
-                if (not correction_map.valid[i, j]):
-
-                    warnings.warn(f'Cannot fit: events in bin[{i}][{j}] ={correction_map.counts[i,j]} < {n_min}', UserWarning)
-
-                    correction_map.e0     [i,j]  = np.nan
-                    correction_map.ue0    [i,j]  = np.nan
-                    correction_map.lt     [i,j]  = np.nan
-                    correction_map.ult    [i,j]  = np.nan
-                    correction_map.cov    [i,j]  = np.nan
-                    correction_map.res_std[i,j]  = np.nan
-                    correction_map.pval   [i,j]  = np.nan
-
-                else:
-
-                    par, err, cov, success = lifetime_fit(dst_bin.DT, dst_bin.S2e, fittype)
-
-                    correction_map.e0     [i,j]  = par[0]
-                    correction_map.ue0    [i,j]  = err[0]
-                    correction_map.lt     [i,j]  = par[1]
-                    correction_map.ult    [i,j]  = err[1]
-                    correction_map.cov    [i,j]  = cov
-                    correction_map.res_std[i,j]  = calculate_residuals_in_bin(dst_bin, par, fittype)
-                    correction_map.pval   [i,j]  = calculate_pval(dst_bin.residuals)
-                    correction_map.valid  [i,j] &= success
-
-        success_count, inner_count = valid_bin_counter(correction_map, r_max = None)
-
-        if success_count/inner_count <= 0.9:
-
-            warnings.warn(f"{inner_count-success_count} inner bins are not valid. Only {success_count/inner_count*100:.1f}% are successful.", UserWarning)
-
-        return correction_map
+        return kr_map
 
     return compute_map
 
