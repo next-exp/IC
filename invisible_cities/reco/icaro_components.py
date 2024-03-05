@@ -385,6 +385,36 @@ def lin_function(x, a, b):
     return y
 
 
+def lin_seed(x, y):
+
+    '''
+    Estimate the seed for a linear fit.
+
+    Parameters
+    ----------
+    x : np.array
+        Independent variable.
+    y : np.array
+        Dependent variable.
+
+    Returns
+    -------
+    seed : tuple
+        Seed parameters (intercept, slope) for the linear fit.
+    '''
+
+
+    x0, x1 = x.min(), x.max()
+    y0, y1 = y.min(), y.max()
+
+    b = (y1 - y0) / (x1 - x0)
+    a = y0 - b * x0
+
+    seed = a, b
+
+    return seed
+
+
 def expo_function(x, const, mean):
 
     '''
