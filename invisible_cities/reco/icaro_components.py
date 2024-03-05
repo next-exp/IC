@@ -385,6 +385,31 @@ def lin_function(x, a, b):
     return y
 
 
+def expo_function(x, const, mean):
+
+    '''
+    Exponential function for fitting decay data.
+
+    Parameters
+    ----------
+    x : np.array
+        Independent variable.
+    const : float
+        Constant scaling parameter.
+    mean : float
+        Mean parameter controlling the rate of decay.
+
+    Returns
+    -------
+    y : np.array
+        Dependent variable values (e.g., decayed energy).
+    '''
+
+    y = const * np.exp(-x / mean)
+    return y
+
+
+
 def get_fit_function_lt(fittype):
 
 
