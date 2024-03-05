@@ -1,4 +1,5 @@
 import copy
+import warnings
 import itertools
 
 import numpy        as np
@@ -637,6 +638,38 @@ def calculate_pval(residuals):
     return pval
 
 
+def valid_bin_counter(map_df, validity_parameter=0.9):
+
+    '''
+    Count the number of valid bins in the map DataFrame and issue a warning
+    if the validity threshold is not met.
+
+    Parameters
+    ----------
+    map_df : pd.DataFrame
+        DataFrame containing map data.
+    validity_parameter : float
+        Threshold for the ratio of valid bins (default set to 0.9).
+
+    Returns
+    -------
+    valid_per : float
+        Percentage of valid bins.
+    '''
+
+    inside = len(map_df[map_df['in_volume'] == True])
+    valid  = len(map_df[map_df['valid']     == True])
+
+    valid_per = valid / inside * 100
+
+    if valid_per <= validity_parameter:
+        # If the percentage of valid bins is below the threshold, issue a warning
+        warnings.warn(f"{inside-valid} inner bins are not valid. {valid_per:.1f}% are successful.", UserWarning)
+    else:
+        # If the percentage of valid bins meets the threshold, print a message
+        print(f"{inside-valid} inner bins are not valid. {valid_per:.1f}% are successful.")
+
+    return valid_per
 
 
 
