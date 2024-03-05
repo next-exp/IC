@@ -9,6 +9,7 @@ import scipy.stats  as stats
 from   typing              import Tuple, Optional
 from ..types.symbols       import KrFitFunction
 from ..core.core_functions import shift_to_bin_centers
+from ..core.fit_functions  import fit
 from .. evm.ic_containers  import FitFunction
 
 from .  corrections         import ASectorMap
@@ -672,4 +673,81 @@ def valid_bin_counter(map_df, validity_parameter=0.9):
     return valid_per
 
 
+def fit_and_fill_map(map_bin : pd.DataFrame,
+                     dst     : pd.DataFrame,
+                     fittype : KrFitFunction):
 
+    '''
+    This function is the core of the map computation. It's the one in charge of looping
+    over all the bins, performing the calculations of the lifetime fits and filling the
+    krypton map dataframe with all the obtained parameters.
+
+    Basically, it's applied to the dataframe, and bin by bin, it checks if the conditions
+    for the map computation are met. If it's the case, it will call the corresponding fit
+    function specified in the fittype parameter, calculate all the different map values
+    and fill the dataframe with them.
+
+      Parameters
+    --------------
+    map_bin : pd.DataFrame
+         KrMap dataframe
+    dst     : pd.DataFrame
+         kdst dataframe.
+    fittype : str
+         Type of fit to perform.
+
+       Returns
+    -------------
+    kr_map : pd.DataFrame
+         DataFrame containing map parameters.
+    '''
+
+
+    try:
+
+        if not map_bin['in_active'] or not map_bin['has_min_counts']:
+
+            return map_bin
+
+
+        else:
+
+            k        = map_bin.bin
+
+            dst_bin  = dst.query(f'bin_index == {k}')
+
+            fit_func, seed = get_fit_function_lt(fittype = fittype)
+            x, y           = prepare_data       (fittype = fittype,
+                                                 dst     = dst_bin)
+
+            fit_output, infodict, mesg, ier = fit(func  = fit_func,
+                                                   x    = x,
+                                                   y    = y,
+                                                   seed = seed(x, y),
+                                                   full_output=True)
+
+            par, err, cov = transform_parameters(fittype    = fittype,
+                                                 fit_output = fit_output)
+
+            res, std = calculate_residuals(dst     = dst_bin,
+                                           fittype = KrFitFunction.log_lin,
+                                           par     = par)
+
+            name  = get_par_name_from_fittype(fittype = fittype)
+            uname = 'u' + name
+
+            map_bin['e0']          = par[0]
+            map_bin['ue0']         = err[0]
+            map_bin[name]          = par[1]
+            map_bin[uname]         = err[1]
+            map_bin['covariance']  = cov
+            map_bin['res_std']     = std
+            map_bin['pval']        = calculate_pval(res)
+            map_bin['fit_success'] = True if ier in [1, 2, 3, 4] else False
+            map_bin['valid']       = map_bin['fit_success'] & map_bin['has_min_counts'] & map_bin['in_active']
+
+            return map_bin
+
+    except Exception as e:
+        print(f"Error processing bin{map_bin.bin}: {str(e)}")
+        return map_bin
