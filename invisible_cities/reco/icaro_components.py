@@ -3,8 +3,12 @@ import pandas as pd
 
 from   typing       import Tuple, Optional
 
+from .  corrections         import ASectorMap
+from .  corrections         import apply_geo_correction
+
 from .. types.symbols       import type_of_signal
 from .. types.symbols       import Strictness
+from .. types.symbols       import NormStrategy
 from .. core.core_functions import check_if_values_in_interval
 
 
@@ -55,6 +59,7 @@ def selection_nS_mask_and_checking(dst        : pd.DataFrame                    
     return mask
 
 
+<<<<<<< HEAD
 def band_selector_and_check(dst         : pd.DataFrame,
                             boot_map    : ASectorMap,
                             norm_strat  : NormStrategy              = NormStrategy.max,
@@ -67,6 +72,20 @@ def band_selector_and_check(dst         : pd.DataFrame,
                             eff_interval: Tuple[float, float]       = [0,1]           ,
                             strictness : Strictness = Strictness.stop_proccess
                             )->np.array:
+=======
+def band_selector_and_check(dst       : pd.DataFrame,
+                            boot_map   : ASectorMap,
+                            norm_strat : NormStrategy              = NormStrategy.max,
+                            input_mask : np.array                  = None,
+                            range_Z    : Tuple[np.array, np.array] = (10, 550),
+                            range_E    : Tuple[np.array, np.array] = (10.0e+3,14e+3),
+                            nbins_z    : int                       = 50,
+                            nbins_e    : int                       = 50,
+                            nsigma_sel : float                     = 3.5,
+                            eff_min   : float                      = 0.4,
+                            eff_max   : float                      = 0.6
+                           )->np.array:
+>>>>>>> 8e1bd3cc (Add band_selector_and_check function)
     """
     This function returns a selection of the events that
     are inside the Kr E vz Z band, and checks
