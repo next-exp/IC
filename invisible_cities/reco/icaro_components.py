@@ -3,9 +3,15 @@ import pandas as pd
 
 from   typing       import Tuple, Optional
 
+from .  corrections         import ASectorMap
+from .  corrections         import apply_geo_correction
+
 from .. types.symbols       import type_of_signal
 from .. types.symbols       import Strictness
+from .. types.symbols       import NormStrategy
 from .. core.core_functions import check_if_values_in_interval
+from .. core.core_functions import in_range
+from .. core.fit_functions  import fit
 
 
 def selection_nS_mask_and_checking(dst        : pd.DataFrame                         ,
@@ -53,3 +59,79 @@ def selection_nS_mask_and_checking(dst        : pd.DataFrame                    
                                 right_closed = True)
 
     return mask
+
+
+def band_selector_and_check(dst         : pd.DataFrame,
+                            boot_map    : ASectorMap,
+                            norm_strat  : NormStrategy              = NormStrategy.max,
+                            input_mask  : np.array                  = None            ,
+                            range_Z     : Tuple[np.array, np.array] = (10, 1300)      ,
+                            range_E     : Tuple[np.array, np.array] = (10.0e+3,14e+3) ,
+                            nbins_z     : int                       = 50              ,
+                            nbins_e     : int                       = 50              ,
+                            nsigma_sel  : float                     = 3.5             ,
+                            eff_interval: Tuple[float, float]       = [0,1]           ,
+                            strictness : Strictness = Strictness.stop_proccess
+                            )->np.array:
+    """
+    This function returns a selection of the events that
+    are inside the Kr E vz Z band, and checks
+    if the selection efficiency is correct.
+
+    Parameters
+    ----------
+    dst : pd.DataFrame
+        Krypton dataframe.
+    boot_map: str
+        Name of bootstrap map file.
+    norm_strt: norm_strategy
+        Provides the desired normalization to be used.
+    mask_input: np.array
+        Mask of the previous selection cut.
+    range_Z: Tuple[np.array, np.array]
+        Range in Z-axis
+    range_E: Tuple[np.array, np.array]
+        Range in Energy-axis
+    nbins_z: int
+        Number of bins in Z-axis
+    nbins_e: int
+        Number of bins in energy-axis
+    nsigma_sel: float
+        Number of sigmas to set the band width
+    eff_interval
+        Limits of the range where selection efficiency
+        is considered correct.
+    Returns
+    ----------
+        A  mask corresponding to the selection made.
+    """
+    if input_mask is None:
+        input_mask = [True] * len(dst)
+    else: pass;
+
+    emaps = apply_geo_correction(boot_map, norm_strat  = norm_strat)
+    E0    = dst[input_mask].S2e.values * emaps(dst[input_mask].X.values,
+                                               dst[input_mask].Y.values)
+
+    sel_krband = np.zeros_like(input_mask)
+    sel_krband[input_mask] = selection_in_band(dst[input_mask].Z,
+                                               E0,
+                                               range_z = range_Z,
+                                               range_e = range_E,
+                                               nbins_z = nbins_z,
+                                               nbins_e = nbins_e,
+                                               nsigma  = nsigma_sel)
+
+    effsel   = dst[sel_krband].event.nunique()/dst[input_mask].event.nunique()
+
+    check_if_values_in_interval(data         = np.array(effsel)  ,
+                                minval       = eff_interval[0]   ,
+                                maxval       = eff_interval[1]   ,
+                                display_name = "Z-band selection",
+                                strictness   = strictness        ,
+                                right_closed = True)
+
+    return sel_krband
+
+
+
