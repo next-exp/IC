@@ -183,11 +183,11 @@ def get_par_name_from_fittype(fittype):
     return par_name
 
 
-def  create_df_kr_map(fittype : KrFitFunction,
-                      bins    : Tuple[np.array, np.array],
-                      counts  : np.array,
-                      n_min   : int,
-                      r_max   : float)->pd.DataFrame:
+def create_df_kr_map(fittype : KrFitFunction,
+                     bins    : Tuple[np.array, np.array],
+                     counts  : np.array,
+                     n_min   : int,
+                     r_max   : float)->pd.DataFrame:
     '''
     This function creates the dataframe in which the map parameters are stored.
 
@@ -658,7 +658,7 @@ def valid_bin_counter(map_df, validity_parameter=0.9):
         Percentage of valid bins.
     '''
 
-    inside = len(map_df[map_df['in_volume'] == True])
+    inside = len(map_df[map_df['in_active'] == True])
     valid  = len(map_df[map_df['valid']     == True])
 
     valid_per = valid / inside * 100
@@ -705,10 +705,7 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
 
     try:
 
-        if not map_bin['in_active'] or not map_bin['has_min_counts']:
-
-            return map_bin
-
+        if not map_bin['in_active'] or not map_bin['has_min_counts']: return map_bin
 
         else:
 
@@ -730,16 +727,13 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
                                                  fit_output = fit_output)
 
             res, std = calculate_residuals(dst     = dst_bin,
-                                           fittype = KrFitFunction.log_lin,
+                                           fittype = fittype,
                                            par     = par)
-
-            name  = get_par_name_from_fittype(fittype = fittype)
-            uname = 'u' + name
 
             map_bin['e0']          = par[0]
             map_bin['ue0']         = err[0]
-            map_bin[name]          = par[1]
-            map_bin[uname]         = err[1]
+            map_bin['lt']          = par[1]
+            map_bin['ult']         = err[1]
             map_bin['covariance']  = cov
             map_bin['res_std']     = std
             map_bin['pval']        = calculate_pval(res)

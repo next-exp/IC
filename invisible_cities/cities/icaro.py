@@ -128,7 +128,7 @@ def map_builder(detector_db, run_number, *map_params):
         '''
 
 
-        n_bins  = get_number_of_bins(n_events     = len(dst.index),
+        n_bins  = get_number_of_bins(n_events     = dst.index.nunique(),
                                      n_min_in_dst = n_min_in_dst,
                                      n_bins       = n_bins)
         bins    = get_XY_bins       (n_bins       = n_bins)
