@@ -134,4 +134,37 @@ def band_selector_and_check(dst         : pd.DataFrame,
     return sel_krband
 
 
+def selection_in_band(z         : np.array,
+                      e         : np.array,
+                      range_z   : Tuple[float, float],
+                      range_e   : Tuple[float, float],
+                      nbins_z   : int     = 50,
+                      nbins_e   : int     = 100,
+                      nsigma    : float   = 3.5) ->np.array:
+    """
+    This function returns a mask for the selection of the events that are inside the Kr E vz Z
 
+    Parameters
+    ----------
+    z: np.array
+        axial (z) values
+    e: np.array
+        energy values
+    range_z: Tuple[np.array, np.array]
+        Range in Z-axis
+    range_e: Tuple[np.array, np.array]
+        Range in Energy-axis
+    nbins_z: int
+        Number of bins in Z-axis
+    nbins_e: int
+        Number of bins in energy-axis
+    nsigma: float
+        Number of sigmas to set the band width
+    Returns
+    ----------
+        A  mask corresponding to the selection made.
+    """
+
+    # To be implemented
+
+    return  [True] * len(z)
