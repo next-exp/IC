@@ -1,7 +1,8 @@
 import numpy  as np
 import pandas as pd
 
-from   typing       import Tuple, Optional
+from   typing               import Tuple, Optional
+from   sklearn.linear_model import RANSACRegressor
 
 from .  corrections         import ASectorMap
 from .  corrections         import apply_geo_correction
@@ -9,9 +10,12 @@ from .  corrections         import apply_geo_correction
 from .. types.symbols       import type_of_signal
 from .. types.symbols       import Strictness
 from .. types.symbols       import NormStrategy
+from .. types.symbols       import KrFitFunction
 from .. core.core_functions import check_if_values_in_interval
 from .. core.core_functions import in_range
+from .. core.fit_functions  import profileX
 from .. core.fit_functions  import fit
+from .  krmap_functions     import get_function_and_seed_lt
 
 
 def selection_nS_mask_and_checking(dst        : pd.DataFrame                         ,
@@ -134,4 +138,44 @@ def band_selector_and_check(dst         : pd.DataFrame,
     return sel_krband
 
 
+def selection_in_band(z         : np.array,
+                      e         : np.array,
+                      range_z   : Tuple[float, float],
+                      range_e   : Tuple[float, float],
+                      nsigma    : float   = 3.5) ->np.array:
+    """
+    This function returns a mask for the selection of the events that are inside the Kr E vz Z
+
+    Parameters
+    ----------
+    z: np.array
+        axial (z) values
+    e: np.array
+        energy values
+    range_z: Tuple[np.array, np.array]
+        Range in Z-axis
+    range_e: Tuple[np.array, np.array]
+        Range in Energy-axis
+    nsigma: float
+        Number of sigmas to set the band width
+    Returns
+    ----------
+        A  mask corresponding to the selection made.
+    """
+    # Reshapes and flattens are needed for RANSAC function
+
+    z_sel = z[in_range(z, *range_z)]
+    e_sel = e[in_range(e, *range_e)]
+
+    res_fit      = RANSACRegressor().fit(z_sel.reshape(-1,1),
+                                         np.log(e_sel).reshape(-1, 1))
+    sigma        = sigma_estimation(dt_sel, np.log(e_sel), res_fit)
+
+    prefict_fun  = lambda z: res_fit.predict(z.reshape(-1, 1)).flatten()
+    upper_band   = lambda z: prefict_fun(z) + nsigma * sigma
+    lower_band   = lambda z: prefict_fun(z) - nsigma * sigma
+
+    sel_inband   = in_range(np.log(e), lower_band(z), upper_band(z))
+
+    return  sel_inband
 
