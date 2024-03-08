@@ -207,11 +207,7 @@ def create_df_kr_map(fittype : KrFitFunction,
         per bin, bin in/outside the active volume, bin position (X, Y, R), etc.
     '''
 
-
-    par_name   = get_par_name_from_fittype(fittype)
-    u_par_name = 'u' + par_name
-
-    columns    = ['bin', 'counts', 'e0', 'ue0', par_name, u_par_name, 'covariance', 'res_std', 'chi2',
+    columns    = ['bin', 'counts', 'e0', 'ue0', 'lt', 'ult', 'covariance', 'res_std', 'chi2',
                   'pval', 'in_active', 'has_min_counts', 'fit_success', 'valid', 'R', 'X', 'Y']
 
     kr_map  = pd.DataFrame(columns = columns)
