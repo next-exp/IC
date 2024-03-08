@@ -240,7 +240,7 @@ def create_df_kr_map(fittype : KrFitFunction,
 
 def get_number_of_bins(nevents : Optional[int] = None,
                        thr     : Optional[int] = 1e6,
-                       n_bins  : Optional[int] = None)->int:
+                       n_bins  : Optional[np.array] = None)->np.array:
     """
     Computes the number of XY bins to be used in the creation
     of correction map regarding the number of selected events.
@@ -263,8 +263,8 @@ def get_number_of_bins(nevents : Optional[int] = None,
     """
 
     if    n_bins != None: return n_bins;
-    elif  nevents < thr: return 50;
-    else: return  100;
+    elif  nevents < thr: return np.array([50, 50]);
+    else: return  np.array([100, 100]);
 
 
 def get_XY_bins(n_bins   : int,
