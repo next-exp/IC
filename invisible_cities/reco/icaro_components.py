@@ -576,9 +576,8 @@ def transform_parameters(fittype    : KrFitFunction,
         return par, err, cov
 
 
-def calculate_residuals(dst     : pd.DataFrame,
-                        fittype : KrFitFunction,
-                        par     : list):
+def calculate_residuals(x, y,  fit_output):
+
 
     '''
     Calculate residuals and their standard deviation for the fitted data.
@@ -600,9 +599,9 @@ def calculate_residuals(dst     : pd.DataFrame,
         Standard deviation of residuals.
     '''
 
-    function = expo_function if fittype == KrFitFunction.log_lin else lin_function
+    function = fit_output.fn
 
-    res = dst.S2e - function(dst.DT, *par)
+    res = y - function(x)
     std = res.std()
 
     return res, std
