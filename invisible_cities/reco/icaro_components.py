@@ -9,7 +9,7 @@ import scipy.stats  as stats
 from   typing              import Tuple, Optional
 from ..types.symbols       import KrFitFunction
 from ..core.core_functions import shift_to_bin_centers
-from ..core.fit_functions  import fit
+from ..core.fit_functions  import fit, get_chi2_and_pvalue
 from .. evm.ic_containers  import FitFunction
 
 from .  corrections         import ASectorMap
@@ -715,9 +715,9 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
             par, err, cov = transform_parameters(fittype    = fittype,
                                                  fit_output = fit_output)
 
-            res, std = calculate_residuals(dst     = dst_bin,
-                                           fittype = fittype,
-                                           par     = par)
+            res, std = calculate_residuals(x, y, fit_output) # Still considering this
+
+            chi2, pval = get_chi2_and_pvalue(y, fit_output.fn(x), len(x)-len(par), std)
 
             map_bin['e0']          = par[0]
             map_bin['ue0']         = err[0]
@@ -725,7 +725,8 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
             map_bin['ult']         = err[1]
             map_bin['covariance']  = cov
             map_bin['res_std']     = std
-            map_bin['pval']        = calculate_pval(res)
+            map_bin['chi2']        = chi2
+            map_bin['pval']        = pval
             map_bin['fit_success'] = True if ier in [1, 2, 3, 4] else False
             map_bin['valid']       = map_bin['fit_success'] & map_bin['has_min_counts'] & map_bin['in_active']
 
