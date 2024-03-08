@@ -177,12 +177,6 @@ def selection_in_band(z         : np.array,
     return  [True] * len(z)
 
 
-def get_par_name_from_fittype(fittype):
-
-    par_name  = 'dedt'  if fittype == KrFitFunction.linear else 'lt'
-    return par_name
-
-
 def create_df_kr_map(fittype : KrFitFunction,
                      bins    : Tuple[np.array, np.array],
                      counts  : np.array,
