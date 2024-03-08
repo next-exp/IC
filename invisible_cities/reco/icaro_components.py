@@ -267,7 +267,7 @@ def get_number_of_bins(nevents : Optional[int] = None,
     else: return  np.array([100, 100]);
 
 
-def get_XY_bins(n_bins   : int,
+def get_XY_bins(n_bins   : np.array,
                 XYrange  : Tuple[float, float]):
 
 
@@ -288,9 +288,9 @@ def get_XY_bins(n_bins   : int,
         Bins in each direction (X,Y) (square map).
     """
 
-    bins = np.linspace(*XYrange, n_bins+1)
-
-    return bins, bins
+    bins_x = np.linspace(*XYrange, n_bins[0]+1)
+    bins_y = np.linspace(*XYrange, n_bins[1]+1)
+    return bins_x, bins_y
 
 
 def get_binned_data(dst  : pd.DataFrame,
