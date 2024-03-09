@@ -2,15 +2,16 @@ import numpy         as np
 import numpy.testing as npt
 import pandas        as pd
 
-from hypothesis.strategies import integers
-from hypothesis.strategies import floats
-from hypothesis            import given
+from hypothesis.extra.numpy import arrays
+from hypothesis.strategies  import integers
+from hypothesis.strategies  import floats
+from hypothesis             import given
 
 
-from .. core.testing_utils import assert_dataframes_equal
-from .. core               import core_functions   as core
+from .. core.testing_utils  import assert_dataframes_equal
+from .. core                import core_functions   as core
 
-from .                     import icaro_components as icarcomp
+from .                      import icaro_components as icarcomp
 
 @given(integers(min_value = 1,
                 max_value = 1e4))
@@ -90,12 +91,14 @@ def test_selection_nS_mask_and_checking_range_assertion(ns1, lim1, lim2):
                 max_value = 1e10),
        integers(min_value = 0,
                 max_value = 1e10),
-       integers(min_value = 1,
-                max_value = 1e4))
+       arrays  (dtype = np.int64,
+                shape = (2,),
+                elements = integers(min_value = 1,
+                                    max_value = 1e4)))
 def test_get_number_of_bins_performance_default_value(nevents, thr, n_bins):
     bins = icarcomp.get_number_of_bins(nevents, thr, n_bins)
 
-    assert bins == n_bins
+    npt.assert_array_equal(bins, n_bins)
 
 
 @given(integers(min_value = 0,
@@ -106,22 +109,42 @@ def test_get_number_of_bins_with_thresholds(nevents, thr):
     bins = icarcomp.get_number_of_bins(nevents, thr)
 
     if nevents < thr:
-        assert bins == 50
+        npt.assert_array_equal(bins, np.array([50, 50]))
     if nevents >= thr:
-        assert bins == 100
+        npt.assert_array_equal(bins, np.array([100, 100]))
+
 
 @given(integers(min_value = 0,
                 max_value = 1e10),
        integers(min_value = 0,
                 max_value = 1e10),
-       integers(min_value = 1,
-                max_value = 1e4))
-def test_get_number_of_bins_returns_int(nevents, thr, n_bins):
+       arrays  (dtype = np.int64,
+                shape = (2,),
+                elements = integers(min_value = 1,
+                                    max_value = 1e4)))
+def test_get_number_of_bins_returns_type(nevents, thr, n_bins):
 
-    assert type( icarcomp.get_number_of_bins(n_bins=n_bins) ) == int
-    assert type( icarcomp.get_number_of_bins(nevents, thr) )  == int
+    assert type(icarcomp.get_number_of_bins(nevents, thr) ) == np.ndarray
+    assert type(icarcomp.get_number_of_bins(n_bins=n_bins)) == np.ndarray
 
 
 def test_get_binned_data_correct_output():
 
     return
+
+
+@given(floats(min_value = 0,
+              max_value = 10),
+       floats(min_value = 1000,
+              max_value = 1600),
+       floats(min_value = 1e3,
+              max_value = 1e5),
+       floats(min_value = 1e3,
+              max_value = 1e6))
+def test_expo_seed_output_values(zmin, zmax, elt, e0):
+    x = np.array( [ zmin, zmax ] )
+    y = e0 * np.exp( - x / elt )
+    e0_test, elt_test = icarcomp.expo_seed(x, y)
+    npt.assert_allclose(e0_test,    e0, rtol=0.01)
+    npt.assert_allclose(elt_test, -elt, rtol=0.01)
+
