@@ -258,7 +258,7 @@ def get_number_of_bins(nevents : Optional[int] = None,
         Number of bins in each direction (X,Y) (square map).
     """
 
-    if    n_bins != None: return n_bins;
+    if    n_bins is not None: return n_bins;
     elif  nevents < thr: return np.array([50, 50]);
     else: return  np.array([100, 100]);
 
