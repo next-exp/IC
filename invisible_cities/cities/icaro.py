@@ -100,7 +100,8 @@ def map_builder(detector_db, run_number, *map_params):
                     n_bins       : int = None,
                     n_min_in_bin : int = 50,
                     n_min_in_dst : Optional[int] = 1e6,
-                    r_max        : float = 492):
+                    r_max        : float = 492,
+                    XYrange      : Tuple[float, float] = [492, 492]):
 
         '''
         Function to compute map through fit_and_fill_map and other auxiliary functions.
@@ -120,6 +121,8 @@ def map_builder(detector_db, run_number, *map_params):
             Event threshold in dst to determine auto-binning
         r_max : float
             Maximum R value (temporary). Default = 492
+        XYrange : Tuple = [492, 492]
+            Range to consider for the map computation
 
         Returns
         -------
@@ -128,19 +131,19 @@ def map_builder(detector_db, run_number, *map_params):
         '''
 
 
-        n_bins  = get_number_of_bins(n_events     = dst.index.nunique(),
-                                     n_min_in_dst = n_min_in_dst,
-                                     n_bins       = n_bins)
-        bins    = get_XY_bins       (n_bins       = n_bins)
+        n_bins  = get_number_of_bins(n_events = dst.event.nunique(),
+                                     thr      = n_min_in_dst,
+                                     n_bins   = n_bins)
+        bins    = get_XY_bins       (n_bins   = n_bins,
+                                     XYrange  = XYrange)
 
         counts, bin_labels = get_binned_data(dst = dst, bins = bins)
         dst['bin_index']   = bin_labels
 
-        kr_map             = create_df_kr_map(fittype      = fittype,
-                                              bins         = bins,
-                                              counts       = counts,
-                                              n_min_in_bin = n_min_in_bin,
-                                              r_max        = r_max)
+        kr_map             = create_df_kr_map(bins   = bins,
+                                              counts = counts,
+                                              n_min  = n_min_in_bin,
+                                              r_max  = r_max)
 
         kr_map = kr_map.apply(lambda map_bin: fit_and_fill_map(map_bin = map_bin,
                                                                dst     = dst,

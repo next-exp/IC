@@ -177,11 +177,10 @@ def selection_in_band(z         : np.array,
     return  [True] * len(z)
 
 
-def create_df_kr_map(fittype : KrFitFunction,
-                     bins    : Tuple[np.array, np.array],
-                     counts  : np.array,
-                     n_min   : int,
-                     r_max   : float)->pd.DataFrame:
+def create_df_kr_map(bins   : Tuple[np.array, np.array],
+                     counts : np.array,
+                     n_min  : int,
+                     r_max  : float)->pd.DataFrame:
     '''
     This function creates the dataframe in which the map parameters are stored.
 
@@ -203,8 +202,9 @@ def create_df_kr_map(fittype : KrFitFunction,
     -------
 
     kr_map : pd.DataFrame
-        Kr map dataframe with all the info prior to the fits: bin label, events
-        per bin, bin in/outside the active volume, bin position (X, Y, R), etc.
+        Kr map dataframe with all the info prior to the fits: bin label,
+        events per bin, bin in/outside the active volume, bin position
+        (X, Y, R), etc.
     '''
 
     columns    = ['bin', 'counts', 'e0', 'ue0', 'lt', 'ult', 'covariance', 'res_std', 'chi2',
@@ -268,13 +268,12 @@ def get_XY_bins(n_bins   : np.array,
 
 
     """
-    Returns the bins that will be used to make the map. It asumes both directions
-    X, Y will have the same range and number of bins.
+    Returns the bins that will be used to make the map.
 
     Parameters
     ---------
-    dst: int
-        Number of bins to use per axis
+    b_nins: np.array
+        array of len = 2 containing the number of bins in X and Y
     XYrange: Tuple[float, float]
         Limits (mm) of X and Y for the map computation
 
@@ -377,7 +376,8 @@ def lin_function(x, a, b):
     return y
 
 
-def lin_seed(x, y):
+def lin_seed(x : np.array,
+             y : np.array):
 
     '''
     Estimate the seed for a linear fit.
@@ -407,10 +407,12 @@ def lin_seed(x, y):
     return seed
 
 
-def expo_function(x, const, mean):
+def expo_function(x     : np.array,
+                  const : float,
+                  mean  : float):
 
     '''
-    Exponential function for fitting decay data.
+    Exponential function.
 
     Parameters
     ----------
@@ -419,28 +421,30 @@ def expo_function(x, const, mean):
     const : float
         Constant scaling parameter.
     mean : float
-        Mean parameter controlling the rate of decay.
+        Lifetime parameter.
 
     Returns
     -------
     y : np.array
-        Dependent variable values (e.g., decayed energy).
+        Dependent variable values.
     '''
 
     y = const * np.exp(-x / mean)
     return y
 
 
-def expo_seed(x, y, eps=1e-12):
+def expo_seed(x   : pd.Series,
+              y   : pd.Series,
+              eps : Optional[float] = 1e-12):
 
     '''
     Estimate the seed for an exponential fit.
 
     Parameters
     ----------
-    x : np.array
+    x : pd.Series
         Independent variable.
-    y : np.array
+    y : pd.Series
         Dependent variable.
     eps : float, optional
         Small value added to prevent division by zero, default is 1e-12.
@@ -451,17 +455,16 @@ def expo_seed(x, y, eps=1e-12):
         Seed parameters (constant, mean) for the exponential fit.
     '''
 
-    x, y = zip(*sorted(zip(x, y)))
+    x, y  = zip(*sorted(zip(x, y)))
 
     const = y[0]
     slope = (x[-1] - x[0]) / np.log(y[-1] / (y[0] + eps))
-
-    seed = const, slope
+    seed  = const, slope
 
     return seed
 
 
-def get_fit_function_lt(fittype):
+def get_fit_function_lt(fittype : KrFitFunction):
 
     '''
     Retrieve the fitting function and seed function based on the
@@ -481,22 +484,26 @@ def get_fit_function_lt(fittype):
     '''
 
     if fittype is KrFitFunction.linear:
-        # If the fit type is linear, return the linear fitting function and seed function
         return lin_function, lin_seed
 
     elif fittype is KrFitFunction.expo:
-        # If the fit type is exponential, return the exponential fitting function and seed function
         return expo_function, expo_seed
 
     elif fittype is KrFitFunction.log_lin:
-        # If the fit type is log-linear, return the linear fitting function and seed function
         return lin_function, lin_seed
 
 
-def prepare_data(fittype, dst):
+def prepare_data(fittype : KrFitFunction,
+                 dst     : pd.DataFrame):
 
     '''
     Prepare the data for fitting based on the specified fit type.
+
+    NOTES: Since x axis (DT) is never altered, maybe we can just
+    return the y values. However, when we implement the binned fit,
+    the profile could be done here (?) so it would make sense to
+    always provide both x and y. We could rename parameters and have
+    fittype (binned / unbinned) and fitfunction (lin, expo, log-lin...)
 
     Parameters
     ----------
@@ -507,22 +514,19 @@ def prepare_data(fittype, dst):
 
     Returns
     -------
-    x_data : np.array
+    x_data : pd.Series
         The independent variable data prepared for fitting.
-    y_data : np.array
+    y_data : pd.Series
         The dependent variable data prepared for fitting.
     '''
 
     if fittype is KrFitFunction.linear:
-        # If the fit type is linear, return DT (time differences) as x_data and S2e (energy) as y_data
         return dst.DT, dst.S2e
 
     elif fittype is KrFitFunction.expo:
-        # If the fit type is exponential, return DT (time differences) as x_data and S2e (energy) as y_data
         return dst.DT, dst.S2e
 
     elif fittype is KrFitFunction.log_lin:
-        # If the fit type is log-linear, return DT (time differences) as x_data and -log(S2e) as y_data
         return dst.DT, -np.log(dst.S2e)
 
 
@@ -530,14 +534,16 @@ def transform_parameters(fittype    : KrFitFunction,
                          fit_output : FitFunction):
 
     '''
-    Transform the parameters obtained from the fitting output based on the specified fittype.
+    Transform the parameters obtained from the fitting output based on the
+    specified fittype.
 
     Parameters
     ----------
     fittype : KrFitFunction
         The type of fit function used (e.g., linear, exponential, log-linear).
     fit_output : FitFunction
-        Output from IC's fit containing the parameter values, errors, and covariance matrix.
+        Output from IC's fit containing the parameter values, errors, and
+        covariance matrix.
 
     Returns
     -------
@@ -576,20 +582,21 @@ def transform_parameters(fittype    : KrFitFunction,
         return par, err, cov
 
 
-def calculate_residuals(x, y,  fit_output):
-
+def calculate_residuals(x          : pd.Series,
+                        y          : pd.Series,
+                        fit_output : FitFunction):
 
     '''
     Calculate residuals and their standard deviation for the fitted data.
 
     Parameters
     ----------
-    dst : pd.DataFrame
-        DataFrame containing the data.
-    fittype : KrFitFunction
-        The type of fit function used (e.g., linear, exponential, log-linear).
-    par : list
-        Fitted parameters.
+    x : pd.Series
+        Independent variable
+    y : pd.Series
+        Dependent variable
+    fit_output : FitFunction
+        Container for IC's fit function result
 
     Returns
     -------
@@ -607,7 +614,7 @@ def calculate_residuals(x, y,  fit_output):
     return res, std
 
 
-def calculate_pval(residuals):
+def calculate_pval(residuals : np.array):
 
     '''
     Calculate the p-value for the Shapiro-Wilk normality test of residuals.
@@ -628,7 +635,8 @@ def calculate_pval(residuals):
     return pval
 
 
-def valid_bin_counter(map_df, validity_parameter=0.9):
+def valid_bin_counter(map_df             : pd.DataFrame,
+                      validity_parameter : Optional[float] = 0.9):
 
     '''
     Count the number of valid bins in the map DataFrame and issue a warning
@@ -691,7 +699,6 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
          DataFrame containing map parameters.
     '''
 
-
     try:
 
         if not map_bin['in_active'] or not map_bin['has_min_counts']: return map_bin
@@ -706,18 +713,18 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
             x, y           = prepare_data       (fittype = fittype,
                                                  dst     = dst_bin)
 
-            fit_output, infodict, mesg, ier = fit(func  = fit_func,
-                                                   x    = x,
-                                                   y    = y,
-                                                   seed = seed(x, y),
-                                                   full_output=True)
+            fit_output, _, _, ier = fit(func        = fit_func,
+                                        x           = x,
+                                        y           = y,
+                                        seed        = seed(x, y),
+                                        full_output = True)
 
             par, err, cov = transform_parameters(fittype    = fittype,
                                                  fit_output = fit_output)
 
-            res, std = calculate_residuals(x, y, fit_output) # Still considering this
+            res, std      = calculate_residuals(x, y, fit_output) # Still considering this
 
-            chi2, pval = get_chi2_and_pvalue(y, fit_output.fn(x), len(x)-len(par), std)
+            chi2, pval    = get_chi2_and_pvalue(y, fit_output.fn(x), len(x)-len(par), std)
 
             map_bin['e0']          = par[0]
             map_bin['ue0']         = err[0]
