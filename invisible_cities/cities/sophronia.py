@@ -58,6 +58,9 @@ from .  components import           hits_merger
 from .  components import               collect
 from .  components import build_pointlike_event as pointlike_event_builder
 from .  components import        hits_corrector
+from .  components import              identity
+
+from typing import Optional
 
 
 @check_annotations
@@ -83,8 +86,8 @@ def sophronia( files_in           : OneOrManyFiles
              , q_thr              : float
              , sipm_charge_type   : SiPMCharge
              , same_peak          : bool
-             , corrections_file   : str
-             , apply_temp         : bool
+             , corrections_file   : Optional[str]  = None
+             , apply_temp         : Optional[bool] = None
              ):
 
     global_reco = compute_xy_position( detector_db
@@ -124,7 +127,7 @@ def sophronia( files_in           : OneOrManyFiles
     merge_nn_hits  = df.map( hits_merger(same_peak)
                            , item = "hits")
 
-    correct_hits   = df.map( hits_corrector(corrections_file, apply_temp)
+    correct_hits   = df.map( hits_corrector(corrections_file, apply_temp) if corrections_file is not None else identity
                            , item = "hits")
 
     build_pointlike_event = df.map( pointlike_event_builder( detector_db
