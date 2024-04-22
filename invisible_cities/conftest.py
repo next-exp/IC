@@ -779,7 +779,7 @@ def db(request):
 
 
 @pytest.fixture(scope='function')
-def beersheba_config(Th228_hits, PSFDIR):
+def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
     config = dict( files_in      = Th228_hits
                  , event_range   = 80
                  , compression   = 'ZLIB4'
@@ -801,7 +801,9 @@ def beersheba_config(Th228_hits, PSFDIR):
                                        , energy_type   = ALL_SYMBOLS['Ec']
                                        , deconv_mode   = ALL_SYMBOLS['joint']
                                        , cut_type      = ALL_SYMBOLS[  'abs']
-                                       , inter_method  = ALL_SYMBOLS['cubic']))
+                                       , inter_method  = ALL_SYMBOLS['cubic'])
+                 , corrections_file = next100_mc_krmap
+                 , apply_temp       = False )
     return config
 
 
