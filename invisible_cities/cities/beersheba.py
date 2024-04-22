@@ -27,8 +27,10 @@ from .  components import city
 from .  components import collect
 from .  components import copy_mc_info
 from .  components import print_every
+from .  components import hits_corrector
 from .  components import hits_thresholder
 from .  components import hits_and_kdst_from_files
+from .  components import identity
 
 from .. core.configure         import EventRangeType
 from .. core.configure         import OneOrManyFiles
@@ -338,16 +340,18 @@ def deconv_writer(h5out):
 
 
 @city
-def beersheba( files_in      : OneOrManyFiles
-             , file_out      : str
-             , compression   : str
-             , event_range   : EventRangeType
-             , print_mod     : int
-             , detector_db   : str
-             , run_number    : int
-             , threshold     : float
-             , same_peak     : bool
-             , deconv_params : dict
+def beersheba( files_in         : OneOrManyFiles
+             , file_out         : str
+             , compression      : str
+             , event_range      : EventRangeType
+             , print_mod        : int
+             , detector_db      : str
+             , run_number       : int
+             , threshold        : float
+             , same_peak        : bool
+             , deconv_params    : dict
+             , corrections_file : str
+             , apply_temp       : bool
              ):
     """
     The city corrects Penthesilea hits energy and extracts topology information.
@@ -419,7 +423,11 @@ def beersheba( files_in      : OneOrManyFiles
     ----------
     DECO    : Deconvolved hits table
     MC info : (if run number <=0)
-"""
+    """
+
+    if corrections_file is None: correct_hits = identity
+    else                       : correct_hits = hits_corrector(corrections_file, apply_temp)
+    correct_hits       = fl.map( correct_hits, item="hits")
 
     threshold_hits  = fl.map(hits_thresholder(threshold, same_peak), item="hits")
     hitc_to_df      = fl.map(hitc_to_df_, item="hits")
@@ -465,6 +473,7 @@ def beersheba( files_in      : OneOrManyFiles
                       pipe   = pipe(fl.slice(*event_range, close_all=True)    ,
                                     print_every(print_mod)                    ,
                                     event_count_in.spy                        ,
+                                    correct_hits                              ,
                                     threshold_hits                            ,
                                     fl.branch(write_thr_hits)                 ,
                                     hitc_to_df                                ,
