@@ -688,7 +688,7 @@ def sophronia_config(Th228_pmaps, next100_mc_krmap):
 
 
 @pytest.fixture(scope="function")
-def esmeralda_config(Th228_hits):
+def esmeralda_config(Th228_hits, next100_mc_krmap):
     config = dict( files_in    = Th228_hits
                  , compression = "ZLIB4"
                  , event_range = 8
@@ -704,7 +704,10 @@ def esmeralda_config(Th228_hits):
                       energy_threshold = 20 * units.keV     ,
                       min_voxels       = 3                  ,
                       blob_radius      = 21 * units.mm      ,
-          		      max_num_hits     = 30000              ))
+          	      max_num_hits     = 30000              )
+                 , corrections_file   = next100_mc_krmap
+                 , apply_temp         = False
+                 )
 
     return config
 
