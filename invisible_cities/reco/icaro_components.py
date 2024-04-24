@@ -18,7 +18,8 @@ from .  corrections         import apply_geo_correction
 from .. types.symbols       import type_of_signal
 from .. types.symbols       import Strictness
 from .. types.symbols       import NormStrategy
-from .. core.core_functions import check_if_values_in_interval
+from .. core.core_functions import check_if_values_in_interval, in_range
+
 
 
 def selection_nS_mask_and_checking(dst        : pd.DataFrame                         ,
@@ -288,8 +289,8 @@ def get_XY_bins(n_bins   : np.array,
     return bins_x, bins_y
 
 
-def get_binned_data(dst  : pd.DataFrame,
-                    bins : Tuple[np.array, np.array]):
+def get_bin_counts_and_event_bin_id(dst  : pd.DataFrame,
+                                    bins : Tuple[np.array, np.array]):
 
     '''
     This function distributes all the events in the DST into the selected
@@ -699,46 +700,95 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
          DataFrame containing map parameters.
     '''
 
-    try:
 
-        if not map_bin['in_active'] or not map_bin['has_min_counts']: return map_bin
+    if not map_bin['in_active'] or not map_bin['has_min_counts']: return map_bin
 
-        else:
+    k        = map_bin.bin
 
-            k        = map_bin.bin
+    dst_bin  = dst.query(f'bin_index == {k}')
 
-            dst_bin  = dst.query(f'bin_index == {k}')
+    fit_func, seed = get_fit_function_lt(fittype = fittype)
+    x, y           = prepare_data       (fittype = fittype,
+                                            dst     = dst_bin)
 
-            fit_func, seed = get_fit_function_lt(fittype = fittype)
-            x, y           = prepare_data       (fittype = fittype,
-                                                 dst     = dst_bin)
+    fit_output, _, _, ier = fit(func        = fit_func,
+                                x           = x,
+                                y           = y,
+                                seed        = seed(x, y),
+                                full_output = True)
 
-            fit_output, _, _, ier = fit(func        = fit_func,
-                                        x           = x,
-                                        y           = y,
-                                        seed        = seed(x, y),
-                                        full_output = True)
+    par, err, cov = transform_parameters(fittype    = fittype,
+                                            fit_output = fit_output)
 
-            par, err, cov = transform_parameters(fittype    = fittype,
-                                                 fit_output = fit_output)
+    res, std = calculate_residuals(x, y, fit_output) # Still considering this
+    chi2, _  = get_chi2_and_pvalue(y, fit_output.fn(x), len(x)-len(par), std)
+    pval     = calculate_pval(res)
 
-            res, std      = calculate_residuals(x, y, fit_output) # Still considering this
+    map_bin['e0']          = par[0]
+    map_bin['ue0']         = err[0]
+    map_bin['lt']          = par[1]
+    map_bin['ult']         = err[1]
+    map_bin['covariance']  = cov
+    map_bin['res_std']     = std
+    map_bin['chi2']        = chi2
+    map_bin['pval']        = pval
+    map_bin['fit_success'] = True if ier in [1, 2, 3, 4] else False
+    map_bin['valid']       = map_bin['fit_success'] & map_bin['has_min_counts'] & map_bin['in_active']
 
-            chi2, pval    = get_chi2_and_pvalue(y, fit_output.fn(x), len(x)-len(par), std)
+    return map_bin
 
-            map_bin['e0']          = par[0]
-            map_bin['ue0']         = err[0]
-            map_bin['lt']          = par[1]
-            map_bin['ult']         = err[1]
-            map_bin['covariance']  = cov
-            map_bin['res_std']     = std
-            map_bin['chi2']        = chi2
-            map_bin['pval']        = pval
-            map_bin['fit_success'] = True if ier in [1, 2, 3, 4] else False
-            map_bin['valid']       = map_bin['fit_success'] & map_bin['has_min_counts'] & map_bin['in_active']
 
-            return map_bin
+def find_outliers(maps    : pd.DataFrame,
+                  x2range : Tuple[float, float] = (0, 2)):
+    '''
+    For a given maps and deserved range, it returns a mask where values are
+    within the interval.
 
-    except Exception as e:
-        print(f"Error processing bin{map_bin.bin}: {str(e)}")
-        return map_bin
+    Parameters
+    ---------
+    maps: pd.DataFrame
+        Map to check the outliers
+    x2range : Tuple[float, float]
+        Range for chi2
+
+    Returns
+    ---------
+    mask: pd.Series
+        Mask.
+    '''
+
+    mask = in_range(maps.chi2, *x2range)
+    return mask
+
+
+def regularize_map(maps    : pd.DataFrame,
+                   x2range : Tuple[float, float]):
+
+    '''
+    Given a certain chi2 range, this function checks which bins are outside that
+    range and substitutes the (probably wrong) values of the map (e0, lt, etc) for
+    the mean value of the whole map.
+
+    Parameters
+    ---------
+    maps: pd.DataFrame
+        Map to check the outliers
+    x2range : Tuple[float, float]
+        Range for chi2
+
+    Returns
+    ---------
+    new_map: pd.DataFrame
+        Regularized map.'''
+
+    new_map   = copy.deepcopy(maps)
+
+    outliers  = maps.in_active
+    outliers &= np.logical_not(find_outliers(new_map, x2range))
+
+    new_map['e0'] [outliers] = np.nanmean(maps['e0'])
+    new_map['lt'] [outliers] = np.nanmean(maps['lt'])
+    new_map['ue0'][outliers] = np.nanmean(maps['ue0'])
+    new_map['ult'][outliers] = np.nanmean(maps['ult'])
+
+    return new_map

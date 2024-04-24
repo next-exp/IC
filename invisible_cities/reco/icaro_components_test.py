@@ -128,7 +128,22 @@ def test_get_number_of_bins_returns_type(nevents, thr, n_bins):
     assert type(icarcomp.get_number_of_bins(n_bins=n_bins)) == np.ndarray
 
 
-def test_get_binned_data_correct_output():
+@given(arrays  (dtype = int,
+                shape = (2,),
+                elements = integers(min_value = 1,
+                                    max_value = 1e4)),
+       arrays  (dtype = np.float64,
+                shape = (2,),
+                elements = floats(min_value = -1e4,
+                                  max_value =  1e4)))
+def test_get_XY_bins_n(n_bins, XYrange):
+    bins_x, bins_y = icarcomp.get_XY_bins(n_bins, XYrange)
+
+    assert len(bins_x) == int(n_bins[0]) +1
+    assert len(bins_y) == int(n_bins[1]) +1
+
+
+def test_get_bin_counts_and_event_id_correct_output():
 
     return
 
