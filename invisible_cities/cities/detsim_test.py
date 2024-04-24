@@ -266,8 +266,10 @@ def test_detsim_buffer_times(ICDATADIR, output_tmpdir):
 def test_detsim_hits_without_strings(ICDATADIR, output_tmpdir):
     PATH_IN  = os.path.join(ICDATADIR    , "nexus_next100_nostrings.h5")
     PATH_OUT = os.path.join(output_tmpdir, "detsim_nostrings.h5")
-    conf = configure('detsim $ICTDIR/invisible_cities/config/detsim.conf'.split())
+    conf = configure('detsim $ICTDIR/invisible_cities/config/detsim_next100.conf'.split())
     conf.update(dict(files_in    = PATH_IN,
                      file_out    = PATH_OUT,
                      run_number  = 0))
     result = detsim(**conf)
+
+    assert result.evtnum_list == [0, 1]
