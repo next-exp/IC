@@ -64,6 +64,7 @@ from .. io     .event_filter_io   import       event_filter_writer
 from .. io     .pmaps_io          import               pmap_writer
 from .. io     .rwf_io            import             buffer_writer
 from .. io     .mcinfo_io         import            load_mchits_df
+from .. io     .mcinfo_io         import          load_mcstringmap
 from .. io     .dst_io            import                 df_writer
 from .. types  .ic_types          import                  NoneType
 from .. types  .ic_types          import                        xy
@@ -615,15 +616,37 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
             hits_df = load_mchits_df(filename)
         except tb.exceptions.NoSuchNodeError:
             continue
-        for evt, hits in hits_df.groupby(level=0):
-            yield dict(event_number = evt,
-                       x            = hits.x     .values,
-                       y            = hits.y     .values,
-                       z            = hits.z     .values,
-                       energy       = hits.energy.values,
-                       time         = hits.time  .values,
-                       label        = hits.label .values,
-                       timestamp    = timestamp(evt))
+
+        strings = False
+        try:
+            map_df = load_mcstringmap(filename)
+        except:
+            strings = True
+
+        if strings:
+            for evt, hits in hits_df.groupby(level=0):
+                yield dict(event_number = evt,
+                           x            = hits.x     .values,
+                           y            = hits.y     .values,
+                           z            = hits.z     .values,
+                           energy       = hits.energy.values,
+                           time         = hits.time  .values,
+                           label        = hits.label .values,
+                           timestamp    = timestamp(evt),
+                           name         = "",
+                           name_id      = 0)
+        else:
+            for evt, hits in hits_df.groupby(level=0):
+                yield dict(event_number = evt,
+                           x            = hits.x     .values,
+                           y            = hits.y     .values,
+                           z            = hits.z     .values,
+                           energy       = hits.energy.values,
+                           time         = hits.time  .values,
+                           label        = hits.label .values,
+                           timestamp    = timestamp(evt),
+                           name         = map_df.name.values,
+                           name_id      = map_df.name_id.values)
 
 
 @check_annotations

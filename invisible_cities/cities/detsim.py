@@ -73,10 +73,20 @@ def hits_selector(active_only: bool=True):
         :select_hits: Callable
             function that select the hits depending on :active_only: parameter
     """
-    def select_hits(x, y, z, energy, time, label):
-        sel = (label == "ACTIVE")
-        if not active_only:
-            sel =  sel | (label == "BUFFER")
+    def select_hits(x, y, z, energy, time, label, name, name_id):
+        if len(label) == 0:
+            return [], [], [], [], [], []
+        if type(label[0]) == str:
+            sel = (label == "ACTIVE")
+            if not active_only:
+                sel =  sel | (label == "BUFFER")
+        else:
+            active_id = name_id[name == "ACTIVE"][0]
+            sel = (label == active_id)
+            if not active_only:
+                buffer_id = name_id[name == "BUFFER"][0]
+                sel =  sel | (label == buffer_id)
+
         return x[sel], y[sel], z[sel], energy[sel], time[sel], label[sel]
     return select_hits
 
@@ -178,10 +188,10 @@ def detsim( *
                                  out  = ('x', 'y', 'z', 'energy', 'time', 'label'))
 
     select_s1_candidate_hits = fl.map(hits_selector(False),
-                                item = ('x', 'y', 'z', 'energy', 'time', 'label'))
+                                item = ('x', 'y', 'z', 'energy', 'time', 'label', 'name', 'name_id'))
 
     select_active_hits = fl.map(hits_selector(True),
-                                args = ('x', 'y', 'z', 'energy', 'time', 'label'),
+                                args = ('x', 'y', 'z', 'energy', 'time', 'label', 'name', 'name_id'),
                                 out = ('x_a', 'y_a', 'z_a', 'energy_a', 'time_a', 'labels_a'))
 
     filter_events_no_active_hits = fl.map(lambda x:np.any(x),
