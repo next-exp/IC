@@ -52,7 +52,6 @@ from .  components import           hit_builder
 from .  components import               collect
 from .  components import build_pointlike_event as build_pointlike_event_
 
-from typing import Optional
 
 @city
 def penthesilea( files_in           : OneOrManyFiles

@@ -11,10 +11,8 @@ from .. io                 import dst_io      as dio
 from .  beersheba          import beersheba
 from .  beersheba          import create_deconvolution_df
 from .  beersheba          import distribute_energy
-from .  beersheba          import deconvolve_signal
 from .. core.testing_utils import assert_dataframes_close
 from .. core.testing_utils import assert_tables_equality
-from .. database.load_db   import DataSiPM
 from .. types.symbols      import HitEnergy
 from .. types.symbols      import DeconvolutionMode
 from .. types.symbols      import CutType
