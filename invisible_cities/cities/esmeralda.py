@@ -1,26 +1,36 @@
 """
 -----------------------------------------------------------------------
-                              Esmeralda
+                            Esmeralda
 -----------------------------------------------------------------------
-From Spanish esmeralda (“emerald”), as first used in the novel Notre-Dame de Paris (1831) by Victor Hugo.
-This city corrects hits energy and extracts topology information.
-The input is penthesilea output containing hits, kdst global information and mc info.
-The city outputs :
-    - CHITS corrected hits table,
-        - lowTh  - contains corrected hits table that passed h.Q >= charge_threshold_low constrain
-        - highTh - contains corrected hits table that passed h.Q >= charge_threshold_high constrain.
-                   it also contains:
-                   - Ep field that is the energy of a hit after applying drop_end_point_voxel algorithm.
-                   - track_id denoting to which track from Tracking/Tracks dataframe the hit belong to
-    - MC info (if run number <=0)
-    - Tracking/Tracks - summary of per track information
-    - Summary/events  - summary of per event information
-    - DST/Events      - copy of kdst information from penthesilea
+
+From the spanish "esmeralda" (emerald), as first used in the novel
+Notre-Dame de Paris (1831) by Victor Hugo.
+
+This city performs three main tasks:
+ - Applies a threshold to the hits
+ - Applies energy corrections to the hits
+ - Finds tracks
+
+This city reads hDSTs produced by Sophronia and produces tracks and
+corrected hits. It also produces a summary of the event topology and
+copies the kDST from the input to the output file.
+The steps performed by Esmeralda are:
+  - Apply geometrical and lifetime corrections
+  - Fiducialize hits: remove external hits that cannot be corrected
+    accurately
+  - Apply a high charge threshold to the input hits
+    - If this leaves behind a slice with no hits, a fake (NN) hit is
+      temporarily created.
+  - Merge NN-hits: The NN-hits' energy is reassigned to the closest
+    non-NN-hits
+  - Voxelizes surviving hits
+  - Finds tracks by optimizing the path that connects all voxels
+  - Drops low energy voxels in the track extrema
+  - Obtains the blobs energy
+  - Produces a topology summary of the event
 """
 
 #TODO: revisit summary. out_of_map field is outdated
-
-
 
 import tables as tb
 
@@ -45,8 +55,6 @@ from .  components import identity
 from .. io.         hits_io import hits_writer
 from .. io.         kdst_io import kdst_from_df_writer
 from .. io.run_and_event_io import run_and_event_writer
-
-from typing import Optional
 
 
 def hit_dropper(radius : float):
