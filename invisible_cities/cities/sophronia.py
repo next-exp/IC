@@ -5,23 +5,29 @@
 
 From ancient Greek: sensible, prudent.
 
-This city processes each S2 signal previously selected as pmaps in
-irene assuming a unique S1 within an event to produce a set of
-reconstructed energy depositions (hits). Hits consist of three
-dimensional coordinates with associated energy (PMT signal) and charge
-(SiPM signal). The city contains a peak/event filter, which can be
+This city processes each S2 signal previously selected as pmaps
+assuming a unique S1 within an event to produce a set of reconstructed
+energy depositions (hits). Hits consist of three dimensional
+coordinates with associated energy (PMT signal) and charge (SiPM
+signal). The city contains a peak/event filter, which can be
 configured to find events with a certain number of S1/S2 signals that
 satisfy certain properties. Currently, the city is designed to accept
 only 1 S1 signal and will take the first S1 signal even if the filter
-is configured to take more than 1 S1. Besides hits, the city also
-stores the global (x, y) position of each S2 signal.
+is configured to take more than 1 S1. If 0 S1 signals are allowed, the
+first slice of the S2 peak will be taken as the t0 of the
+event. Besides hits, the city also stores the global (x, y) position
+of each S2 signal and produces the same output as Dorothea.
 The tasks performed are:
-    - Classify peaks according to the filter.
-    - Filter out events that do not satisfy the selector conditions.
-    - Rebin S2 signals.
-    - Compute a set of hits for each slice in the rebinned S2 signal.
-    - If there are more than one hit per slice, share the energy
-      according to the charge recorded in the tracking plane.
+ - Classify peaks according to the filter.
+ - Filter out events that do not satisfy the selector conditions.
+ - Rebin S2 signals.
+ - Compute a set of hits for each slice in the rebinned S2 signal.
+ - If there are more than one hit per slice, share the energy according
+   to the charge recorded in the tracking plane.
+ - If the slice has PMT signal, but does not have SiPM signals,
+   create a fake (NN) hit.
+ - Merge the NN-hits with their neighbours
+ - (Optional) apply energy corrections to the hits
 """
 
 from operator import attrgetter
