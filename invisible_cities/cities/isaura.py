@@ -2,13 +2,11 @@
 -----------------------------------------------------------------------
                               Isaura
 -----------------------------------------------------------------------
+
 From ancient greek, Ισαυρία: an ancient rugged region in Asia Minor.
-This city computes tracks and extracts topology information.
-The input is beersheba deconvoluted hits and mc info.
-The city outputs :
-    - MC info (if run number <=0)
-    - Tracking/Tracks - summary of per track information
-    - Summary/events  - summary of per event information
+
+This city computes tracks from the deconvolved hits (dDST) and
+extracts topology information. It produces the same output as Esmeralda.
 """
 
 import tables as tb
