@@ -3,9 +3,9 @@ import tables as tb
 
 from pytest import mark
 
-from .. core.testing_utils import assert_tables_equality
-from .  sophronia          import sophronia
-
+from .. core.testing_utils   import assert_tables_equality
+from .. core.system_of_units import pes
+from .  sophronia            import sophronia
 
 def test_sophronia_runs(sophronia_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, 'sophronia_runs.h5')
@@ -84,6 +84,24 @@ def test_sophronia_filters_pmaps(sophronia_config, config_tmpdir):
     assert cnt.selection.n_failed == 2
 
 
-@mark.skip(reason = "need a new test file for this")
-def test_sophronia_filters_events_with_only_nn_hits():
-    pass
+def test_sophronia_filters_events_with_only_nn_hits(config_tmpdir, sophronia_config):
+    """
+    Run with a high q threshold so all hits are NN-hits.
+    Check that these events are filtered out.
+    """
+    path_out = os.path.join(config_tmpdir, 'test_sophronia_filters_events_with_only_nn_hits.h5')
+    config   = dict(**sophronia_config)
+    config.update(dict( file_out    = path_out
+                      , q_thr       = 1e4 * pes
+                      , event_range = 1 ))
+
+    sophronia(**config)
+
+    with tb.open_file(path_out) as output_file:
+        # Check that the event passes the s12_selector, which is
+        # applied earlier. Then check it doesn't pass the valid_hit
+        # filter, which checks that there are at least 1 non-NN hit.
+        # Each entry in these tables has the form
+        # (event_number, passed_flag)
+        assert     output_file.root.Filters.s12_selector[0][1]
+        assert not output_file.root.Filters.valid_hit   [0][1]
