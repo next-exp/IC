@@ -1341,6 +1341,12 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
     return create_extract_track_blob_info
 
 
+def sort_hits(hitc):
+    # sort hits in z, then in x, then in y
+    sorted_hits = sorted(hitc.hits, key=lambda h: (h.Z, h.X, h.Y))
+    return HitCollection(hitc.event, hitc.time, sorted_hits)
+
+
 def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name='hits_select',
                                   write_paolina_hits=None):
@@ -1359,6 +1365,8 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     create_extract_track_blob_info = fl.map(track_blob_info_creator_extractor(**paolina_params),
                                             args = 'Ep_hits',
                                             out  = ('topology_info', 'paolina_hits', 'out_of_map'))
+
+    sort_hits_ = fl.map(sort_hits, item="paolina_hits")
 
     # Filter empty topology events
     filter_events_topology         = fl.map(lambda x : len(x) > 0,
@@ -1393,6 +1401,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                , hits_passed.filter
                , copy_Efield
                , create_extract_track_blob_info
+               , sort_hits_
                , filter_events_topology
                , fl.fork(*fork_pipes)
                )
