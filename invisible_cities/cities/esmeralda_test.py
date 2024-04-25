@@ -1,12 +1,8 @@
 import os
 import numpy  as np
 import tables as tb
-import pandas as pd
-
-from pytest import mark
 
 from .. core                 import system_of_units as units
-from .. core.configure       import configure
 from .. io                   import dst_io      as dio
 from .  esmeralda            import esmeralda
 from .. core.testing_utils   import assert_tables_equality
@@ -79,7 +75,7 @@ def test_esmeralda_filters_events_threshold(esmeralda_config, config_tmpdir):
     evt_all        = [400078, 400270]
     evt_all_nexus  = [200039, 200135]
     evt_pass       = [400078]
-    evt_pass_nexus = [200039]
+    #evt_pass_nexus = [200039]
     assert cnt.events_in   == 2
     assert cnt.events_out  == 2
     assert cnt.evtnum_list == evt_all
