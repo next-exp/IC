@@ -1,14 +1,40 @@
 """
 -----------------------------------------------------------------------
-                              Beersheba
+                               Beersheba
 -----------------------------------------------------------------------
-Beersheba, a city suspended from the heavens, inhabited only by idealists.
-This city interpolates corrected hits and applies Lucy-Richardson deconvolution
-to the interpolated signal.
-The input is esmeralda output containing hits, kdst global information and mc info.
-The city outputs :
-    - DECO deconvolved hits table
-    - MC info (if run number <=0)
+Beersheba, a city suspended from the heavens, inhabited only by
+idealists.
+
+This city applies a Lucy-Rihcardson (LR) algorithm to reconstruct the
+electron cloud density.
+
+It reads hDSTs produced by Sophronia and produces deconvolved
+hits. The LR deconvolution finds the (discretized) charge distribution
+that generates the input image based on the PSF of the system. Each
+bin in the charge distribution is interpreted as a (deconvolved)
+hit.
+The workflow of Beersheba can be summarized as:
+  - Apply geometrical and lifetime corrections
+  - Apply a low charge threshold to the input hits. If this leaves
+    behind a slice with no hits, a fake hit (NN-hit) is temporarily
+    created.
+  - Merge NN-hits: The NN-hits' energy is reassigned to the closest
+    non-NN-hits
+  - Apply a second charge threshold with a slightly different energy
+    redistribution
+  - Drops isolated sensors (*)
+  - Normalizes charge within each S2 peak
+  - For each slice
+    - Interpolates the hits to obtain a continuous image (real_image)
+    - Generate a flat charge distribution as a seed
+    - Do the following until a maximum number of iterations is reached
+      or the difference between consecutive images is smaller than a
+      threshold
+      - Convolve the charge distribution with the PSF (new_image)
+      - Update the charge distribution according to the difference
+        between new_image and real_image
+      - Clean up the image by applying a cut on the fraction of energy
+        of the resulting charge-distribution hits
 """
 
 import numpy  as np
