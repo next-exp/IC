@@ -618,7 +618,9 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
             continue
 
         strings = False
-        if type(hits_df.iloc[0].label) is not str:
+
+        l_type = hits_df.dtypes['label']
+        if l_type == np.int32 :
             map_df = load_mcstringmap(filename)
         else:
             strings = True
@@ -634,7 +636,7 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
                        label        = hits.label .values,
                        timestamp    = timestamp(evt),
                        name         = map_df.name.values if not strings else "",
-                       name_id      = map_df.name_id.values if not strings else 0)
+                       name_id      = map_df.index.values if not strings else 0)
 
 
 @check_annotations
