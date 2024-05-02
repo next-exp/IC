@@ -74,18 +74,17 @@ def hits_selector(active_only: bool=True):
             function that select the hits depending on :active_only: parameter
     """
     def select_hits(x, y, z, energy, time, label, name, name_id):
-        if len(label) == 0:
-            return [], [], [], [], [], []
-        if type(label[0]) == str:
-            sel = (label == "ACTIVE")
-            if not active_only:
-                sel =  sel | (label == "BUFFER")
+
+        if label.dtype == np.int32 :
+            active = name_id[name == "ACTIVE"][0]
+            buff   = name_id[name == "BUFFER"][0]
         else:
-            active_id = name_id[name == "ACTIVE"][0]
-            sel = (label == active_id)
-            if not active_only:
-                buffer_id = name_id[name == "BUFFER"][0]
-                sel =  sel | (label == buffer_id)
+            active = 'ACTIVE'
+            buff   = 'BUFFER'
+
+        sel = (label == active)
+        if not active_only:
+            sel =  sel | (label == buff)
 
         return x[sel], y[sel], z[sel], energy[sel], time[sel], label[sel]
     return select_hits

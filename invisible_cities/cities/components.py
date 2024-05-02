@@ -620,7 +620,7 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
         strings = False
 
         l_type = hits_df.dtypes['label']
-        if l_type == np.int32 :
+        if l_type == np.int32:
             map_df = load_mcstringmap(filename)
         else:
             strings = True
