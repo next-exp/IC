@@ -966,4 +966,6 @@ def load_mcstringmap(file_name : str) -> pd.DataFrame:
     -------
     pd.DataFrame with the int-string pairs within the file.
     """
-    return pd.read_hdf(file_name, 'MC/string_map')
+    map_df = pd.read_hdf(file_name, 'MC/string_map')
+    map_df.set_index('name_id', inplace=True)
+    return map_df
