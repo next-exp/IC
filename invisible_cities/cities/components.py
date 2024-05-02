@@ -618,35 +618,23 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
             continue
 
         strings = False
-        try:
+        if type(hits_df.iloc[0].label) is not str:
             map_df = load_mcstringmap(filename)
-        except:
+        else:
             strings = True
 
-        if strings:
-            for evt, hits in hits_df.groupby(level=0):
-                yield dict(event_number = evt,
-                           x            = hits.x     .values,
-                           y            = hits.y     .values,
-                           z            = hits.z     .values,
-                           energy       = hits.energy.values,
-                           time         = hits.time  .values,
-                           label        = hits.label .values,
-                           timestamp    = timestamp(evt),
-                           name         = "",
-                           name_id      = 0)
-        else:
-            for evt, hits in hits_df.groupby(level=0):
-                yield dict(event_number = evt,
-                           x            = hits.x     .values,
-                           y            = hits.y     .values,
-                           z            = hits.z     .values,
-                           energy       = hits.energy.values,
-                           time         = hits.time  .values,
-                           label        = hits.label .values,
-                           timestamp    = timestamp(evt),
-                           name         = map_df.name.values,
-                           name_id      = map_df.name_id.values)
+
+        for evt, hits in hits_df.groupby(level=0):
+            yield dict(event_number = evt,
+                       x            = hits.x     .values,
+                       y            = hits.y     .values,
+                       z            = hits.z     .values,
+                       energy       = hits.energy.values,
+                       time         = hits.time  .values,
+                       label        = hits.label .values,
+                       timestamp    = timestamp(evt),
+                       name         = map_df.name.values if not strings else "",
+                       name_id      = map_df.name_id.values if not strings else 0)
 
 
 @check_annotations
