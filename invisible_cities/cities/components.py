@@ -617,14 +617,8 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
         except tb.exceptions.NoSuchNodeError:
             continue
 
-        strings = False
-
         l_type = hits_df.dtypes['label']
-        if l_type == np.int32:
-            map_df = load_mcstringmap(filename)
-        else:
-            strings = True
-
+        map_df = load_mcstringmap(filename) if l_type == np.int32 else None
 
         for evt, hits in hits_df.groupby(level=0):
             yield dict(event_number = evt,
@@ -635,8 +629,8 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
                        time         = hits.time  .values,
                        label        = hits.label .values,
                        timestamp    = timestamp(evt),
-                       name         = map_df.name.values if not strings else "",
-                       name_id      = map_df.index.values if not strings else 0)
+                       name         = map_df.name .values if map_df is not None else "",
+                       name_id      = map_df.index.values if map_df is not None else  0)
 
 
 @check_annotations

@@ -75,7 +75,7 @@ def hits_selector(active_only: bool=True):
     """
     def select_hits(x, y, z, energy, time, label, name, name_id):
 
-        if label.dtype == np.int32 :
+        if label.dtype == np.int32:
             active = name_id[name == "ACTIVE"][0]
             buff   = name_id[name == "BUFFER"][0]
         else:

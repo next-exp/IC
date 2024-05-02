@@ -271,7 +271,7 @@ def test_detsim_hits_without_strings(ICDATADIR, output_tmpdir):
                      file_out    = PATH_OUT,
                      run_number  = 0))
     result = detsim(**conf)
-
-    pd.read_hdf(PATH_OUT, 'MC/string_map')
-
     assert result.evtnum_list == [0, 1]
+
+    df = pd.read_hdf(PATH_OUT, 'MC/string_map')
+    assert not df.empty
