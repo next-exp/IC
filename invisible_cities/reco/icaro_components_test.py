@@ -43,8 +43,8 @@ def test_lin_function_output_values(x_min, x_max, a, b):
 def sample_dataframe():
 
     data = {
-        'DT' : [1, 2, 3, 4, 5],
-        'S2e': [10, 20, 30, 40, 50]
+        'DT' : [10, 20, 30, 40, 50],
+        'S2e': [50, 45, 42, 41, 41]
     }
     return pd.DataFrame(data)
 
