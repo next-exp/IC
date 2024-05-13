@@ -4,6 +4,7 @@ import pandas       as pd
 from   typing              import Optional
 from ..types.symbols       import KrFitFunction
 
+
 def lin_seed(x : np.array,
              y : np.array):
 
@@ -102,3 +103,32 @@ def prepare_data(fittype : KrFitFunction,
 
     elif fittype is KrFitFunction.log_lin:
         return dst.DT, -np.log(dst.S2e)
+
+
+def get_fit_function_lt(fittype : KrFitFunction):
+
+    '''
+    Retrieve the fitting function and seed function based on the
+    specified fittype.
+
+    Parameters
+    ----------
+    fittype : KrFitFunction
+        The type of fit function to retrieve (e.g., linear, exponential, log-linear).
+
+    Returns
+    -------
+    fit_function  : function
+        The fitting function corresponding to the specified fit type.
+    seed_function : function
+        The seed function corresponding to the specified fit type.
+    '''
+
+    if fittype is KrFitFunction.linear:
+        return lambda x, a, b: a + b * x, lin_seed
+
+    elif fittype is KrFitFunction.expo:
+        return lambda x, const, mean: const * np.exp(-x / mean), expo_seed
+
+    elif fittype is KrFitFunction.log_lin:
+        return lambda x, a, b: a + b * x, lin_seed
