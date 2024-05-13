@@ -64,6 +64,7 @@ from .. io     .event_filter_io   import       event_filter_writer
 from .. io     .pmaps_io          import               pmap_writer
 from .. io     .rwf_io            import             buffer_writer
 from .. io     .mcinfo_io         import            load_mchits_df
+from .. io     .mcinfo_io         import          load_mcstringmap
 from .. io     .dst_io            import                 df_writer
 from .. types  .ic_types          import                  NoneType
 from .. types  .ic_types          import                        xy
@@ -615,6 +616,10 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
             hits_df = load_mchits_df(filename)
         except tb.exceptions.NoSuchNodeError:
             continue
+
+        l_type = hits_df.dtypes['label']
+        map_df = load_mcstringmap(filename) if l_type == np.int32 else None
+
         for evt, hits in hits_df.groupby(level=0):
             yield dict(event_number = evt,
                        x            = hits.x     .values,
@@ -623,7 +628,9 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
                        energy       = hits.energy.values,
                        time         = hits.time  .values,
                        label        = hits.label .values,
-                       timestamp    = timestamp(evt))
+                       timestamp    = timestamp(evt),
+                       name         = map_df.name .values if map_df is not None else "",
+                       name_id      = map_df.index.values if map_df is not None else  0)
 
 
 @check_annotations

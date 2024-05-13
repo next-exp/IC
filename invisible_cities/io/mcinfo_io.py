@@ -200,6 +200,9 @@ def read_mc_tables(file_in : str                        ,
         elif tbl is MCTableType.event_mapping        :
             evt_map = load_mcevent_mapping(file_in)
             tbl_dict[tbl] = evt_map[evt_map.event_id.isin(evt_arr)]
+        elif tbl is MCTableType.string_map           :
+            str_map = load_mcstringmap(file_in)
+            tbl_dict[tbl] = str_map
         else                                         :
             raise TypeError("MC table has no reader")
     return tbl_dict
@@ -948,3 +951,21 @@ def _read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MC
         all_events[evt_number] = hits
 
     return all_events
+
+
+def load_mcstringmap(file_name : str) -> pd.DataFrame:
+    """
+    Load the map between ints and strings to a pd.DataFrame
+
+    parameters
+    ----------
+    file_name : str
+                Name of the file containing MC info.
+
+    returns
+    -------
+    pd.DataFrame with the int-string pairs within the file.
+    """
+    map_df = pd.read_hdf(file_name, 'MC/string_map')
+    map_df.set_index('name_id', inplace=True)
+    return map_df
