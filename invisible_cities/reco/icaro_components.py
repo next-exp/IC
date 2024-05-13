@@ -5,6 +5,7 @@ from   typing              import Optional
 from ..types.symbols       import KrFitFunction
 from .. evm.ic_containers  import FitFunction
 
+
 def lin_seed(x : np.array,
              y : np.array):
 
@@ -34,7 +35,6 @@ def lin_seed(x : np.array,
     seed = a, b
 
     return seed
-
 
 
 def expo_seed(x   : np.array,
