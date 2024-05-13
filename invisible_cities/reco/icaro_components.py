@@ -3,7 +3,7 @@ import pandas       as pd
 
 from   typing              import Optional
 from ..types.symbols       import KrFitFunction
-
+from .. evm.ic_containers  import FitFunction
 
 def lin_seed(x : np.array,
              y : np.array):
@@ -132,3 +132,55 @@ def get_fit_function_lt(fittype : KrFitFunction):
 
     elif fittype is KrFitFunction.log_lin:
         return lambda x, a, b: a + b * x, lin_seed
+
+
+def transform_parameters(fittype    : KrFitFunction,
+                         fit_output : FitFunction):
+
+    '''
+    Transform the parameters obtained from the fitting output based on the
+    specified fittype.
+
+    Parameters
+    ----------
+    fittype : KrFitFunction
+        The type of fit function used (e.g., linear, exponential, log-linear).
+    fit_output : FitFunction
+        Output from IC's fit containing the parameter values, errors, and
+        covariance matrix.
+
+    Returns
+    -------
+    par : list
+        Transformed parameter values.
+    err : list
+        Transformed parameter errors.
+    cov : float
+        Transformed covariance value.
+    '''
+
+    par = fit_output.values
+    err = fit_output.errors
+    cov = fit_output.cov[0, 1]
+
+    if fittype == KrFitFunction.log_lin:
+
+        a, b = par
+        u_a, u_b = err
+
+        E0 = np.exp(-a)
+        s_E0 = np.abs(E0 * u_a)
+
+        lt = 1 / b
+        s_lt = np.abs(lt**2 * u_b)
+
+        cov = E0 * lt**2 * cov # Not sure about this
+
+        par = [E0, lt]
+        err = [s_E0, s_lt]
+
+        return par, err, cov
+
+    else:
+
+        return par, err, cov
