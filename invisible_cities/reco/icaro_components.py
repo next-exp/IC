@@ -1,7 +1,8 @@
 import numpy        as np
+import pandas       as pd
 
 from   typing              import Optional
-
+from ..types.symbols       import KrFitFunction
 
 def lin_seed(x : np.array,
              y : np.array):
@@ -65,3 +66,39 @@ def expo_seed(x   : np.array,
 
     return seed
 
+
+def prepare_data(fittype : KrFitFunction,
+                 dst     : pd.DataFrame):
+
+    '''
+    Prepare the data for fitting based on the specified fit type.
+
+    NOTES: Since x axis (DT) is never altered, maybe we can just
+    return the y values. However, when we implement the binned fit,
+    the profile could be done here (?) so it would make sense to
+    always provide both x and y. We could rename parameters and have
+    fittype (binned / unbinned) and fitfunction (lin, expo, log-lin...)
+
+    Parameters
+    ----------
+    fittype : KrFitFunction
+        The type of fit function to prepare data for (e.g., linear, exponential, log-linear).
+    dst : pd.DataFrame
+        The DataFrame containing the data to be prepared for fitting.
+
+    Returns
+    -------
+    x_data : pd.Series
+        The independent variable data prepared for fitting.
+    y_data : pd.Series
+        The dependent variable data prepared for fitting.
+    '''
+
+    if fittype is KrFitFunction.linear:
+        return dst.DT, dst.S2e
+
+    elif fittype is KrFitFunction.expo:
+        return dst.DT, dst.S2e
+
+    elif fittype is KrFitFunction.log_lin:
+        return dst.DT, -np.log(dst.S2e)
