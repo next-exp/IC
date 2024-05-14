@@ -32,6 +32,8 @@ from .  components import hits_and_kdst_from_files
 from .  components import mcsensors_from_file
 from .  components import create_timestamp
 from .  components import check_max_time
+from .  components import write_city_configuration
+from .  components import copy_cities_configuration
 
 from .. dataflow   import dataflow as fl
 
@@ -452,3 +454,53 @@ def test_read_wrong_pmt_ids(ICDATADIR):
     sns_gen = mcsensors_from_file([file_in], 'next100', run_number, rate)
     with raises(SensorIDMismatch):
         next(sns_gen)
+
+
+def test_write_city_configuration(config_tmpdir):
+    filename  = os.path.join(config_tmpdir, "test_write_configuration.h5")
+    city_name = "acity"
+    args      = dict(
+        a = 1,
+        b = 2.3,
+        c = "a_string",
+        d = "two strings".split(),
+        e = [1,2,3],
+        f = np.linspace(0, 1, 5),
+    )
+    write_city_configuration(filename, city_name, args)
+    with tb.open_file(filename, "r") as file:
+        assert "config"  in file.root
+        assert city_name in file.root.config
+
+    df = pd.read_hdf(filename, "/config/" + city_name).set_index("variable")
+    for var, value in args.items():
+        assert var in df.index
+        assert str(value) == df.value.loc[var]
+
+
+def test_copy_cities_configuration(config_tmpdir):
+    filename1  = os.path.join(config_tmpdir, "test_copy_cities_configuration_1.h5")
+    filename2  = os.path.join(config_tmpdir, "test_copy_cities_configuration_2.h5")
+    city_name1 = "acity"
+    city_name2 = "bcity"
+    args       = dict(
+        a = 1,
+        b = 2.3,
+        c = "a_string",
+    )
+    write_city_configuration(filename1, city_name1, args)
+    write_city_configuration(filename2, city_name2, args)
+
+    copy_cities_configuration(filename1, filename2)
+    with tb.open_file(filename2, "r") as file:
+        assert "config"   in file.root
+        assert city_name1 in file.root.config
+        assert city_name2 in file.root.config
+
+    df1 = pd.read_hdf(filename1, "/config/" + city_name1).set_index("variable")
+    df2 = pd.read_hdf(filename2, "/config/" + city_name2).set_index("variable")
+    for var, value in args.items():
+        assert var in df1.index
+        assert var in df2.index
+        assert str(value) == df1.value.loc[var]
+        assert str(value) == df2.value.loc[var]
