@@ -131,23 +131,40 @@ def assert_PMap_equality(pmp0, pmp1):
 def assert_tables_equality(got_table, expected_table, rtol=1e-7, atol=0):
     table_got      =      got_table[:]
     table_expected = expected_table[:]
-    assert len(table_got      ) == len(table_expected      )
-    assert len(table_got.dtype) == len(table_expected.dtype)
+    # we keep both names to be as generic as possible
+    names          = got_table.name, expected_table.name
+
+    assert len(table_got      ) == len(table_expected      ), f"Tables {names} have different lengths"
+    assert len(table_got.dtype) == len(table_expected.dtype), f"Tables {names} have different widths"
 
     if table_got.dtype.names is not None:
         for col_name in table_got.dtype.names:
+            assert col_name in table_expected.dtype.names, f"Column {col_name} missing in {expected_table.name}"
+
             got      = table_got     [col_name]
             expected = table_expected[col_name]
-            assert type(got) == type(expected)
+            assert got.dtype.kind == expected.dtype.kind, f"Tables {names} have different types ({got.dtype} {expected.dtype}) for column {col_name}"
+
             try:
-                assert_allclose(got, expected, rtol=rtol, atol=atol)
-            except TypeError:
-                assert_equal   (got, expected)
+                is_float = got.dtype.kind == 'f'
+                if   is_float: assert_allclose(got, expected, rtol=rtol, atol=atol)
+                else         : assert_equal   (got, expected)
+            except:
+                print(f"Mismatch in column {col_name} of tables {names}")
+                raise
     else:
+        got      = table_got
+        expected = table_expected
+        assert got.dtype == expected.dtype, f"Tables {names} have different types ({got.dtype} {expected.dtype})"
+
         try:
-            assert_allclose(got_table, expected_table, rtol=rtol, atol=atol)
-        except TypeError:
-            assert_equal   (got_table, expected_table)
+            is_float = got.dtype.kind == 'f'
+            if   is_float: assert_allclose(got, expected, rtol=rtol, atol=atol)
+            else         : assert_equal   (got, expected)
+        except:
+            print(f"Mismatch in tables {names}")
+            raise
+
 
 def assert_cluster_equality(a_cluster, b_cluster):
     assert np.allclose(a_cluster.posxy , b_cluster.posxy )
