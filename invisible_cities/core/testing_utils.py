@@ -87,11 +87,6 @@ def FLOAT_ARRAY(*args, **kwargs):
 def random_length_float_arrays(min_length =     0,
                                max_length =   100,
                                **kwargs          ):
-    lengths = integers(min_length,
-                       max_length)
-
-    return lengths.flatmap(lambda n: float_arrays(       n,
-                                                  **kwargs))
 
 
 def _compare_dataframes(assertion, df1, df2, check_types=True, **kwargs):
@@ -103,6 +98,8 @@ def _compare_dataframes(assertion, df1, df2, check_types=True, **kwargs):
         if check_types:
             assert col1.dtype == col2.dtype
         assertion(col1.values, col2.values, **kwargs)
+    lengths = integers(min_length, max_length)
+    return lengths.flatmap(lambda n: float_arrays(n, **kwargs))
 
 
 def assert_dataframes_equal(df1, df2, **kwargs):
