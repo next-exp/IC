@@ -1,4 +1,5 @@
 import pytest
+
 import numpy          as np
 import numpy.testing  as npt
 import pandas         as pd
@@ -9,6 +10,7 @@ from hypothesis.strategies  import floats
 
 from .. reco                import icaro_components as icarcomp
 from ..types.symbols        import KrFitFunction
+from .. evm.ic_containers   import FitFunction
 
 
 @given(floats(min_value = 0,
@@ -94,3 +96,41 @@ def test_get_fit_function_lt():
 
         assert fit_function.__name__  == expected_fit_function.__name__
         assert seed_function.__name__ == expected_seed_function.__name__
+
+
+@pytest.mark.parametrize("fittype", [KrFitFunction.linear, KrFitFunction.expo, KrFitFunction.log_lin])
+@given(floats(min_value=1,  max_value=1e5),
+       floats(min_value=10, max_value=1e5))
+def test_transform_parameters(fittype, a, b):
+
+    errors = 0.2*np.array([a, b])
+
+    if fittype == KrFitFunction.log_lin:
+
+        fit_output = FitFunction(values=[a, b], errors=errors, cov=np.array([[0.04, 0.02], [0.02, 0.04]]),
+                                 fn=None, chi2=None, pvalue=None)
+
+        transformed_par, transformed_err, transformed_cov = icarcomp.transform_parameters(fittype, fit_output)
+
+        E0_expected   = np.exp(-a)
+        s_E0_expected = np.abs(E0_expected * errors[0])
+        lt_expected   = 1 / b
+        s_lt_expected = np.abs(lt_expected**2 * errors[1])
+        cov_expected  = E0_expected * lt_expected**2 * 0.02
+
+
+        npt.assert_allclose(transformed_par, [  E0_expected,   lt_expected], rtol=0.01)
+        npt.assert_allclose(transformed_err, [s_E0_expected, s_lt_expected], rtol=0.01)
+        assert np.isclose(transformed_cov, cov_expected, rtol=0.01)
+
+    else:
+
+        fit_output = FitFunction(values=[a, b], errors=errors, cov=np.array([[0.04, 0.02], [0.02, 0.04]]),
+                                 fn=None, chi2=None, pvalue=None)
+
+        transformed_par, transformed_err, transformed_cov = icarcomp.transform_parameters(fittype, fit_output)
+
+        npt.assert_allclose(transformed_par, [a, b], rtol=0.01)
+        npt.assert_allclose(transformed_err, errors, rtol=0.01)
+
+        assert np.isclose(transformed_cov, 0.02, rtol=0.01)
