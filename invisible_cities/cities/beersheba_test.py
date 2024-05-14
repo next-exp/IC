@@ -3,21 +3,19 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
-from pytest                    import mark
-from pytest                    import raises
+from pytest                import mark
+from pytest                import raises
 
-from .. io                     import dst_io      as dio
-from .  beersheba              import beersheba
-from .  beersheba              import create_deconvolution_df
-from .  beersheba              import distribute_energy
-from .  beersheba              import deconvolve_signal
-from .. core.testing_utils     import assert_dataframes_close
-from .. core.testing_utils     import assert_tables_equality
-from .. database.load_db       import DataSiPM
-from .. types.symbols          import HitEnergy
-from .. types.symbols          import DeconvolutionMode
-from .. types.symbols          import InterpolationMethod
-from .. types.symbols          import CutType
+from .. core               import system_of_units as units
+from .. io                 import dst_io      as dio
+from .  beersheba          import beersheba
+from .  beersheba          import create_deconvolution_df
+from .  beersheba          import distribute_energy
+from .. core.testing_utils import assert_dataframes_close
+from .. core.testing_utils import assert_tables_equality
+from .. types.symbols      import HitEnergy
+from .. types.symbols      import DeconvolutionMode
+from .. types.symbols      import CutType
 
 
 def test_create_deconvolution_df(ICDATADIR):
@@ -27,7 +25,8 @@ def test_create_deconvolution_df(ICDATADIR):
     new_dst  = pd.concat([create_deconvolution_df(t, t.E.values, (t.X.values, t.Y.values, t.Z.values),
                                                   CutType.abs, ecut, 3) for _, t in true_dst.groupby('event')])
     true_dst = true_dst.loc[true_dst.E > ecut, :].reset_index(drop=True)
-
+    # compare only existing columns
+    true_dst = true_dst.loc[:, new_dst.columns.values.tolist()]
     assert_dataframes_close(new_dst .reset_index(drop=True), true_dst.reset_index(drop=True))
 
 
@@ -56,112 +55,101 @@ def test_distribute_energy(ICDATADIR):
 
 
 @mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
-def test_beersheba_contains_all_tables(deconvolution_config):
-    conf, PATH_OUT = deconvolution_config
-    beersheba(**conf)
-    with tb.open_file(PATH_OUT) as h5out:
-        assert "MC"             in h5out.root
-        assert "MC/hits"        in h5out.root
-        assert "MC/particles"   in h5out.root
-        assert "DECO/Events"    in h5out.root
-        assert "Summary/Events" in h5out.root
-        assert "Run"            in h5out.root
-        assert "Run/events"     in h5out.root
-        assert "Run/runInfo"    in h5out.root
+def test_beersheba_contains_all_tables(beersheba_config, config_tmpdir):
+    path_out = os.path.join(config_tmpdir, "beersheba_contains_all_tables.h5")
+    beersheba_config.update(dict( file_out    = path_out
+                                , event_range = 1))
+
+    beersheba(**beersheba_config)
+
+    nodes = ( "MC", "MC/hits", "MC/particles"
+            , "CHITS", "CHITS/lowTh"
+            , "DECO", "DECO/Events"
+            , "Run", "Run/events", "Run/runInfo")
+    with tb.open_file(path_out) as h5out:
+        for node in nodes:
+            assert node in h5out.root
 
 
 @mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
-def test_beersheba_exact_result_joint(ICDATADIR, deconvolution_config):
-    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_joint.NEWMC.h5")
-    conf, PATH_OUT   = deconvolution_config
-    beersheba(**conf)
+@mark.parametrize("deco", DeconvolutionMode)
+@mark.slow
+def test_beersheba_exact_result( deco
+                               , beersheba_config
+                               , beersheba_config_separate
+                               , Th228_deco
+                               , Th228_deco_separate
+                               , config_tmpdir):
+    config   = beersheba_config if deco is DeconvolutionMode.joint else beersheba_config_separate
+    true_out = Th228_deco       if deco is DeconvolutionMode.joint else Th228_deco_separate
 
-    tables = ("DECO/Events"     ,
-              "Summary/Events"  ,
-              "Run/events"      , "Run/runInfo"  ,
-              "MC/event_mapping", "MC/generators",
-              "MC/hits"         ,  "MC/particles")
+    path_out = os.path.join(config_tmpdir, f"beersheba_exact_result_{deco.name}.h5")
+    config.update(dict(file_out = path_out))
 
-    with tb.open_file(true_out)  as true_output_file:
-        with tb.open_file(PATH_OUT) as      output_file:
+    beersheba(**config)
+
+    tables = ( "DECO/Events"
+             , "CHITS/lowTh"
+             , "Run/events", "Run/runInfo"
+             , "MC/event_mapping", "MC/configuration", "MC/hits", "MC/particles")
+
+    with     tb.open_file(true_out) as true_output_file:
+        with tb.open_file(path_out) as      output_file:
             for table in tables:
-                assert hasattr(output_file.root, table)
+                assert hasattr(output_file.root, table), table
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
-                assert_tables_equality(got, expected)
-
-
-@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
-def test_beersheba_exact_result_separate(ICDATADIR, deconvolution_config):
-    true_out         = os.path.join(ICDATADIR, "test_Xe2nu_NEW_exact_deconvolution_separate.NEWMC.h5")
-    conf, PATH_OUT   = deconvolution_config
-    conf['deconv_params']['deconv_mode'   ] = DeconvolutionMode.separate
-    conf['deconv_params']['n_iterations'  ] = 50
-    conf['deconv_params']['n_iterations_g'] = 50
-    beersheba(**conf)
-
-    tables = ("DECO/Events"     ,
-              "Summary/Events"  ,
-              "Run/events"      , "Run/runInfo"  ,
-              "MC/event_mapping", "MC/generators",
-              "MC/hits"         ,  "MC/particles")
-
-    with tb.open_file(true_out)  as true_output_file:
-        with tb.open_file(PATH_OUT) as      output_file:
-            for table in tables:
-                assert hasattr(output_file.root, table)
-                got      = getattr(     output_file.root, table)
-                expected = getattr(true_output_file.root, table)
-                print(got)
-                print(expected)
-                assert_tables_equality(got, expected)
+                assert_tables_equality(got, expected, rtol=1e-6)
 
 
 @mark.parametrize("ndim", (1, 3))
-def test_beersheba_param_dim(deconvolution_config, ndim):
-    conf, _ = deconvolution_config
-
-    conf['deconv_params']['n_dim'  ] = ndim
-
-    with raises(ValueError):
-        beersheba(**conf)
-
-
-@mark.parametrize("param_name", ('cut_type', 'deconv_mode', 'energy_type', 'inter_method'))
-def test_deconvolve_signal_enums(deconvolution_config, param_name):
-    conf, _   = deconvolution_config
-    conf_dict = conf['deconv_params']
-
-    conf_dict.pop("q_cut")
-    conf_dict.pop("drop_dist")
-
-    conf_dict[param_name] = conf_dict[param_name].name
+def test_beersheba_only_ndim_2_is_valid(beersheba_config, ndim, config_tmpdir):
+    path_out = os.path.join(config_tmpdir, "beersheba_only_ndim_2_is_valid.h5")
+    beersheba_config.update(dict(file_out = path_out))
+    beersheba_config['deconv_params'].update(dict(n_dim = ndim))
 
     with raises(ValueError):
-        deconvolve_signal(DataSiPM('new'), **conf_dict)
+        beersheba(**beersheba_config)
 
 
-@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
-def test_beersheba_expandvar(deconvolution_config):
-    conf, _ = deconvolution_config
+def test_beersheba_copies_kdst(beersheba_config, Th228_hits, config_tmpdir):
+    path_out = os.path.join(config_tmpdir, "beersheba_copies_kdst.h5")
+    beersheba_config.update(dict( file_out    = path_out
+                                , event_range =        2))
+    expected_events = [400062, 400064]
 
-    conf['deconv_params']['psf_fname'] = '$ICDIR/database/test_data/PSF_dst_sum_collapsed.h5'
+    beersheba(**beersheba_config)
 
-    beersheba(**conf)
+    got_events = dio.load_dst(path_out, "DST", "Events").event.drop_duplicates().tolist()
+    assert expected_events == got_events
 
 
-def test_beersheba_copy_kdst(deconvolution_config, ICDATADIR):
-    PATH_IN = os.path.join(ICDATADIR, "test_cdst_NEW_v1.2.0_bg.h5")
-    conf, PATH_OUT = deconvolution_config
-    conf["files_in"]   = PATH_IN
-    conf["run_number"] = 8515
+def test_beersheba_thresholds_hits(beersheba_config, config_tmpdir):
+    path_out  = os.path.join(config_tmpdir, "beersheba_thresholds_hits.h5")
+    threshold = 15 * units.pes
+    beersheba_config.update(dict( file_out    = path_out
+                                , event_range = 1
+                                , threshold   = threshold))
 
-    expected_events = [3, 90, 152]
+    beersheba(**beersheba_config)
 
-    beersheba(**conf)
+    df = dio.load_dst(path_out, "CHITS", "lowTh")
+    assert np.all(df.Q >= threshold)
 
-    with tb.open_file(PATH_OUT) as output_file:
-        assert hasattr(output_file.root, "DST/Events")
 
-        got_events = output_file.root.DST.Events.read()["event"]
-        assert expected_events == got_events.tolist()
+def test_beersheba_filters_empty_dfs(beersheba_config, config_tmpdir):
+    path_out = os.path.join(config_tmpdir, "beersheba_filters_empty_dfs.h5")
+    q_cut    = 1e8 * units.pes
+    beersheba_config.update(dict( file_out    = path_out
+                                , event_range = 1))
+    beersheba_config["deconv_params"].update(dict(q_cut = q_cut))
+
+    cnt = beersheba(**beersheba_config)
+
+    assert cnt.events_in            == 1
+    assert cnt.events_out           == 0
+    assert cnt.events_pass.n_passed == 0
+    assert cnt.events_pass.n_failed == 1
+
+    df = dio.load_dst(path_out, "Filters", "nohits")
+    assert df.passed.tolist() == [False]

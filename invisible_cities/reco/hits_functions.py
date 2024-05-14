@@ -12,8 +12,8 @@ def split_energy(total_e, clusters):
     qs = np.array([c.Q for c in clusters])
     return total_e * qs / np.sum(qs)
 
-def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit]: 
-    """ Returns a list of the hits where the  energies of NN hits are distributed to the closest hits such that the added energy is proportional to 
+def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit]:
+    """ Returns a list of the hits where the  energies of NN hits are distributed to the closest hits such that the added energy is proportional to
     the hit energy. If all the hits were NN the function returns empty list. """
     nn_hits     = [h for h in hits if h.Q==NN]
     non_nn_hits = [deepcopy(h) for h in hits if h.Q!=NN]
@@ -32,12 +32,16 @@ def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit
         except ValueError:
             continue
         h_closest = [h for h in hits_to_merge if np.isclose(abs(h.Z-nn_h.Z), z_closest)]
-        en_tot = sum([h.E for h in h_closest])
-        for h in h_closest:
-            hits_to_correct.append([h,nn_h.E*(h.E/en_tot)])
 
-    for h, en in hits_to_correct:
-        h.E += en
+        total_raw_energy = sum(h.E  for h in h_closest)
+        total_cor_energy = sum(h.Ec for h in h_closest)
+        for h in h_closest:
+            hits_to_correct.append([h, nn_h.E * h.E / total_raw_energy, nn_h.Ec * h.Ec / total_cor_energy])
+
+    for h, raw_e, cor_e in hits_to_correct:
+        h.E  += raw_e
+        h.Ec += cor_e
+
     return non_nn_hits
 
 def threshold_hits(hits : List[evm.Hit], th : float, on_corrected : bool=False) -> List[evm.Hit]:
@@ -48,18 +52,30 @@ def threshold_hits(hits : List[evm.Hit], th : float, on_corrected : bool=False) 
         new_hits=[]
         for z_slice in np.unique([x.Z for x in hits]):
             slice_hits  = [x for x in hits if x.Z == z_slice]
-            e_slice     = sum([x.E for x in slice_hits])
+            raw_es      = np.array([x.E  for x in slice_hits])
+            cor_es      = np.array([x.Ec for x in slice_hits])
+            raw_e_slice = np.   sum(raw_es)
+            cor_e_slice = np.nansum(cor_es) + np.finfo(np.float64).eps
+
             if on_corrected:
                 mask_thresh = np.array([x.Qc >= th for x in slice_hits])
             else:
                 mask_thresh = np.array([x.Q  >= th for x in slice_hits])
             if sum(mask_thresh) < 1:
-                hit = evm.Hit(slice_hits[0].npeak, evm.Cluster.empty(), z_slice, e_slice, xy(slice_hits[0].Xpeak,slice_hits[0].Ypeak))
+                hit = evm.Hit( slice_hits[0].npeak
+                             , evm.Cluster(NN, xy(0,0), xy(0,0), 0)
+                             , z_slice
+                             , raw_e_slice
+                             , xy(slice_hits[0].Xpeak, slice_hits[0].Ypeak)
+                             , s2_energy_c = cor_e_slice)
                 new_hits.append(hit)
                 continue
             hits_pass_th = list(compress(deepcopy(slice_hits), mask_thresh))
-            es = split_energy(e_slice, hits_pass_th)
-            for i,x in enumerate(hits_pass_th):
-                x.E = es[i]
-                new_hits.append(x)
+
+            raw_es_new = split_energy(raw_e_slice, hits_pass_th)
+            cor_es_new = split_energy(cor_e_slice, hits_pass_th)
+            for hit, raw_e, cor_e in zip(hits_pass_th, raw_es_new, cor_es_new):
+                hit.E  = raw_e
+                hit.Ec = cor_e
+                new_hits.append(hit)
         return new_hits

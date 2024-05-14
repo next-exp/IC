@@ -2,13 +2,11 @@
 -----------------------------------------------------------------------
                               Isaura
 -----------------------------------------------------------------------
+
 From ancient greek, Ισαυρία: an ancient rugged region in Asia Minor.
-This city computes tracks and extracts topology information.
-The input is beersheba deconvoluted hits and mc info.
-The city outputs :
-    - MC info (if run number <=0)
-    - Tracking/Tracks - summary of per track information
-    - Summary/events  - summary of per event information
+
+This city computes tracks from the deconvolved hits (dDST) and
+extracts topology information. It produces the same output as Esmeralda.
 """
 
 import tables as tb
@@ -30,6 +28,7 @@ from .  components import compute_and_write_tracks_info
 from .. types.symbols import HitEnergy
 
 from ..  io.run_and_event_io import run_and_event_writer
+from ..  io.         hits_io import hits_writer
 from ..  io.         kdst_io import kdst_from_df_writer
 
 
@@ -94,9 +93,10 @@ def isaura( files_in       : OneOrManyFiles
     filter_out_none = fl.filter(lambda x: x is not None, args = "kdst")
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
-
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_kdst_table = fl.sink( kdst_from_df_writer(h5out), args= "kdst")
+
+        write_hits = fl.sink(hits_writer(h5out, "DECO", "Events"), args="paolina_hits") # from within compute_tracks
 
         evtnum_collect = collect()
 
@@ -107,10 +107,11 @@ def isaura( files_in       : OneOrManyFiles
                                     print_every(print_mod)                        ,
                                     event_count_in        .spy                    ,
                                     fl.branch("event_number", evtnum_collect.sink),
-                                    compute_tracks                                ,
                                     event_count_out       .spy                    ,
-                                    fl.fork(write_event_info,
-                                            (filter_out_none, write_kdst_table)) ),
+                                    fl.fork( compute_tracks
+                                           , write_event_info
+                                           , write_hits
+                                           , (filter_out_none, write_kdst_table)) ),
                       result = dict(events_in  =event_count_in .future,
                                     events_out =event_count_out.future,
                                     evtnum_list=evtnum_collect .future))

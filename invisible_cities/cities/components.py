@@ -14,13 +14,14 @@ from typing          import List
 from typing          import Dict
 from typing          import Tuple
 from typing          import Union
-from typing          import Optional
+from typing          import Any
+
 import tables as tb
 import numpy  as np
 import pandas as pd
-import inspect
 import warnings
 import math
+import os
 
 from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
@@ -50,6 +51,9 @@ from .. reco                      import           pmaps_functions as pmf
 from .. reco                      import            hits_functions as hif
 from .. reco                      import             wfm_functions as wfm
 from .. reco                      import         paolina_functions as plf
+from .. reco   .corrections       import                 read_maps
+from .. reco   .corrections       import      apply_all_correction
+from .. reco   .corrections       import     get_df_to_z_converter
 from .. reco   .xy_algorithms     import                    corona
 from .. reco   .xy_algorithms     import                barycenter
 from .. filters.s1s2_filter       import               S12Selector
@@ -78,8 +82,9 @@ from .. types  .symbols           import                   BlsMode
 from .. types  .symbols           import             SiPMThreshold
 from .. types  .symbols           import                EventRange
 from .. types  .symbols           import                 HitEnergy
-from .. types  .symbols           import                SiPMCharge
 from .. types  .symbols           import                    XYReco
+from .. types  .symbols           import              NormStrategy
+
 
 
 def city(city_function):
@@ -107,11 +112,6 @@ def city(city_function):
         if 'files_in' not in kwds: raise NoInputFiles
         if 'file_out' not in kwds: raise NoOutputFile
 
-        # For backward-compatibility we set NEW as the default DB in
-        # case it is not defined in the config file
-        if 'detector_db' in inspect.getfullargspec(city_function).args and \
-           'detector_db' not in kwds:
-            conf.detector_db = 'new'
 
         conf.files_in  = sorted(glob(expandvars(conf.files_in)))
         conf.file_out  =             expandvars(conf.file_out)
@@ -520,49 +520,14 @@ def pmap_from_files(paths):
 
 
 @check_annotations
-def cdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[pd.DataFrame, MCInfo, int, float]]]:
-    """Reader of the files, yields collected hits,
-       pandas DataFrame with kdst info, mc_info, run_number, event_number and timestamp"""
-    for path in paths:
-        try:
-            cdst_df    = load_dst (path,   'CHITS', 'lowTh')
-            summary_df = load_dst (path, 'Summary', 'Events')
-        except tb.exceptions.NoSuchNodeError:
-            continue
-
-        kdst_df = load_dst (path, 'DST', 'Events', ignore_errors=True)
-
-        with tb.open_file(path, "r") as h5in:
-            try:
-                run_number  = get_run_number(h5in)
-                event_info  = get_event_info(h5in)
-                evts, _     = zip(*event_info[:])
-                bool_mask   = np.in1d(evts, cdst_df.event.unique())
-                event_info  = event_info[bool_mask]
-            except (tb.exceptions.NoSuchNodeError, IndexError):
-                continue
-            check_lengths(event_info, cdst_df.event.unique())
-            for evtinfo in event_info:
-                event_number, timestamp = evtinfo
-                this_event = lambda df: df.event==event_number
-                yield dict(cdst    = cdst_df   .loc[this_event],
-                           summary = summary_df.loc[this_event],
-                           kdst    = kdst_df   .loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
-                                                                else None,
-                           run_number=run_number,
-                           event_number=event_number, timestamp=timestamp)
-            # NB, the monte_carlo writer is different from the others:
-            # it needs to be given the WHOLE TABLE (rather than a
-            # single event) at a time.
-
-
-@check_annotations
-def hits_and_kdst_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
+def hits_and_kdst_from_files( paths : List[str]
+                            , group : str
+                            , node  : str ) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
     """Reader of the files, yields HitsCollection, pandas DataFrame with
     kdst info, run_number, event_number and timestamp."""
     for path in paths:
         try:
-            hits_df = load_dst (path, 'RECO', 'Events')
+            hits_df = load_dst (path, group, node)
             kdst_df = load_dst (path, 'DST' , 'Events')
         except tb.exceptions.NoSuchNodeError:
             continue
@@ -954,6 +919,67 @@ def hit_builder(dbfile, run_number, drift_v,
     return build_hits
 
 
+def sipms_as_hits(dbfile, run_number, drift_v,
+                  rebin_slices, rebin_method,
+                  q_thr,
+                  global_reco, charge_type):
+
+    sipm_xys   = sipm_positions(dbfile, run_number)
+    sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
+    epsilon    = np.finfo(np.float64).eps
+
+    def make_cluster(q, x, y):
+        return Cluster(q, xy(x, y), xy(0,0), 1)
+
+    def build_hits(pmap, selector_output, event_number, timestamp):
+        hitc = HitCollection(event_number, timestamp * 1e-3)
+        s1_t = get_s1_time(pmap, selector_output)
+
+        for peak_no, (passed, peak) in enumerate(zip(selector_output.s2_peaks,
+                                                     pmap.s2s)):
+            if not passed: continue
+
+            peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
+
+            xys  = sipm_xys[peak.sipms.ids]
+            qs   = peak.sipm_charge_array(sipm_noise, charge_type,
+                                          single_point = True)
+
+            xy_peak = try_global_reco(global_reco, xys, qs)
+
+            sipm_charge = peak.sipm_charge_array(sipm_noise        ,
+                                                 charge_type       ,
+                                                 single_point=False)
+
+            slice_zs = (peak.times - s1_t) * units.ns * drift_v
+            slice_es = peak.pmts.sum_over_sensors
+            xys      = sipm_xys[peak.sipms.ids]
+
+            for (slice_z, slice_e, sipm_qs) in zip(slice_zs, slice_es, sipm_charge):
+                over_thr = sipm_qs >= q_thr
+                if np.any(over_thr):
+                    sipm_qs  = sipm_qs[over_thr]
+                    sipm_xy  = xys[over_thr]
+                    sipm_es  = sipm_qs * slice_e / (np.sum(sipm_qs) + epsilon)
+
+                    for q, e, (x, y) in zip(sipm_qs, sipm_es, sipm_xy):
+                        hitc.hits.append( Hit( peak_no
+                                             , make_cluster(q, x, y)
+                                             , slice_z
+                                             , e
+                                             , xy_peak))
+
+                else:
+                    hitc.hits.append( Hit( peak_no
+                                         , Cluster.empty()
+                                         , slice_z
+                                         , slice_e
+                                         , xy_peak))
+
+        return hitc
+    return build_hits
+
+
 def waveform_binner(bins):
     def bin_waveforms(wfs):
         return cf.bin_waveforms(wfs, bins)
@@ -1257,17 +1283,17 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
             voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, HitEnergy.Ep)
             (    mod_voxels,
              dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
-            tracks           = plf.make_track_graphs(mod_voxels)
 
             for v in dropped_voxels:
                 track_hitc.hits.extend(v.hits)
+
+            tracks = plf.make_track_graphs(mod_voxels)
+            tracks = sorted(tracks, key=plf.get_track_energy, reverse=True)
 
             vox_size_x = voxels[0].size[0]
             vox_size_y = voxels[0].size[1]
             vox_size_z = voxels[0].size[2]
             del(voxels)
-            #sort tracks in energy
-            tracks     = sorted(tracks, key=plf.get_track_energy, reverse=True)
 
             track_hits = []
             for c, t in enumerate(tracks, 0):
@@ -1314,6 +1340,12 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
     return create_extract_track_blob_info
 
 
+def sort_hits(hitc):
+    # sort hits in z, then in x, then in y
+    sorted_hits = sorted(hitc.hits, key=lambda h: (h.Z, h.X, h.Y))
+    return HitCollection(hitc.event, hitc.time, sorted_hits)
+
+
 def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name='hits_select',
                                   write_paolina_hits=None):
@@ -1332,6 +1364,8 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     create_extract_track_blob_info = fl.map(track_blob_info_creator_extractor(**paolina_params),
                                             args = 'Ep_hits',
                                             out  = ('topology_info', 'paolina_hits', 'out_of_map'))
+
+    sort_hits_ = fl.map(sort_hits, item="paolina_hits")
 
     # Filter empty topology events
     filter_events_topology         = fl.map(lambda x : len(x) > 0,
@@ -1353,18 +1387,105 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     write_no_hits_filter  = fl.sink( event_filter_writer(h5out, filter_hits_table_name), args=("event_number", "hits_passed"))
 
 
-    fn_list = (filter_events_nohits                        ,
-               fl.branch(write_no_hits_filter)             ,
-               hits_passed.              filter            ,
-               copy_Efield                                 ,
-               create_extract_track_blob_info              ,
-               filter_events_topology                      ,
-               fl.branch(make_final_summary, write_summary),
-               fl.branch(write_topology_filter)            ,
-               write_paolina_hits                          ,
-               events_passed_topology.   filter            ,
-               fl.branch(write_tracks)                     )
+    make_and_write_summary  = make_final_summary, write_summary
+    select_and_write_tracks = events_passed_topology.filter, write_tracks
 
-    compute_tracks = pipe(*filter(None, fn_list))
+    fork_pipes = filter(None, ( make_and_write_summary
+                              , write_topology_filter
+                              , write_paolina_hits
+                              , select_and_write_tracks))
 
-    return compute_tracks
+    return pipe( filter_events_nohits
+               , fl.branch(write_no_hits_filter)
+               , hits_passed.filter
+               , copy_Efield
+               , create_extract_track_blob_info
+               , sort_hits_
+               , filter_events_topology
+               , fl.fork(*fork_pipes)
+               )
+
+
+@check_annotations
+def hits_merger(same_peak : bool) -> Callable:
+    def merge_hits(hc : HitCollection) -> HitCollection:
+        merged_hits = hif.merge_NN_hits(hc.hits, same_peak)
+        return HitCollection(hc.event, hc.time, merged_hits)
+
+    return merge_hits
+
+
+@check_annotations
+def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
+    """
+    Applies a threshold to hits and redistributes the charge/energy.
+
+    Parameters
+    ----------
+    threshold_charge : float
+        minimum pes of a hit
+    same_peak        : bool
+        whether to reassign NN hits' energy only to the hits from the same peak
+
+    Returns
+    ----------
+    A function that takes HitCollection as input and returns another object with
+    only non NN hits of charge above threshold_charge.
+    The energy of NN hits is redistributed among neighbors.
+    """
+
+    def threshold_hits(hitc : HitCollection) -> HitCollection:
+        t = hitc.time
+        thr_hits = hif.threshold_hits(hitc.hits, threshold_charge     )
+        mrg_hits = hif.merge_NN_hits ( thr_hits, same_peak = same_peak)
+
+        cor_hits = []
+        for hit in mrg_hits:
+            cluster = Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm)
+            xypos   = xy(hit.Xpeak, hit.Ypeak)
+            hit     = Hit(hit.npeak, cluster, hit.Z, hit.E, xypos, hit.Ec)
+            cor_hits.append(hit)
+
+        new_hitc      = HitCollection(hitc.event, t)
+        new_hitc.hits = cor_hits
+        return new_hitc
+
+    return threshold_hits
+
+
+@check_annotations
+def hits_corrector(map_fname : str, apply_temp : bool) -> Callable:
+    """
+    Applies energy correction map and converts drift time to z.
+
+    Parameters
+    ----------
+    map_fname  : string (filepath)
+        filename of the map
+    apply_temp : bool
+        whether to apply temporal corrections
+        must be set to False if no temporal correction dataframe exists in map file
+
+    Returns
+    ----------
+    A function that takes a HitCollection as input and returns
+    the same object with modified Ec and Z fields.
+    """
+    map_fname = os.path.expandvars(map_fname)
+    maps      = read_maps(map_fname)
+    get_coef  = apply_all_correction(maps, apply_temp = apply_temp, norm_strat = NormStrategy.kr)
+    time_to_Z = (get_df_to_z_converter(maps) if maps.t_evol is not None else
+                 lambda x: x)
+
+    def correct(hitc : HitCollection) -> HitCollection:
+        for hit in hitc.hits:
+            corr    = get_coef([hit.X], [hit.Y], [hit.Z], hitc.time)[0]
+            hit.Ec  = hit.E * corr
+            hit.xyz = (hit.X, hit.Y, time_to_Z(hit.Z)) # ugly, but temporary
+        return hitc
+
+    return correct
+
+
+def identity(x : Any) -> Any:
+    return x

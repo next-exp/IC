@@ -44,7 +44,7 @@ def _df_writer(h5out):
 def test_table_is_indexed(tmpdir_factory, writer, group, node, column, thing):
     tmpdir = tmpdir_factory.mktemp('indexation')
     file_out = os.path.join(tmpdir, f"empty_table_containing_{thing}.h5")
-    writer_test_city(writer=writer, file_out=file_out, files_in='dummy')
+    writer_test_city(writer=writer, file_out=file_out, files_in='dummy', detector_db = 'new')
     with tb.open_file(file_out, 'r') as h5out:
         table = getattr(getattr(h5out.root, group), node)
         assert getattr(table.cols, column).is_indexed
