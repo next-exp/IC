@@ -203,6 +203,30 @@ def index_tables(file_out):
                 table.colinstances[colname].create_index()
 
 
+def write_city_configuration( filename : str
+                            , city_name: str
+                            , args     : dict):
+    args = {k: str(v) for k,v in args.items()}
+
+    with tb.open_file(filename, "a") as file:
+        df = (pd.Series(args)
+                .to_frame()
+                .reset_index()
+                .rename(columns={"index": "variable", 0: "value"}))
+        df_writer(file, df, "config", city_name, f"configuration for {city_name}", str_col_length=300)
+
+
+def copy_cities_configuration( file_in : str, file_out : str):
+    with tb.open_file(file_in, "r") as fin:
+        if "config" not in fin.root: return
+
+        with tb.open_file(file_out, "a") as fout:
+            if "config" not in fout.root:
+                fout.create_group(fout.root, "config")
+            for table in fin.root.config:
+                fin.copy_node(table, fout.root.config, recursive=True)
+
+
 def _check_invalid_event_range_spec(er):
     return (len(er) not in (1, 2)                   or
             (len(er) == 2 and EventRange.all in er) or
