@@ -10,11 +10,11 @@ from pytest import raises
 
 from .. core.configure      import configure
 
-online_cities = "irene dorothea sophronia esmeralda beersheba".split()
-all_cities_with_event_range = online_cities + """
-  berenice buffy detsim diomira hypathia isaura isidora phyllis trude
-  """.split()
-all_cities  = sorted(all_cities_with_event_range + ["eutropia"])
+online_cities  = "irene dorothea sophronia esmeralda beersheba isaura".split()
+mc_cities      = "buffy detsim diomira hypathia".split()
+other_cities   = "berenice isidora phyllis trude eutropia".split()
+all_cities     = sorted(online_cities + mc_cities + other_cities)
+all_cities_with_event_range = sorted(set(all_cities).difference(set(["eutropia"])))
 
 
 @mark.filterwarnings("ignore::UserWarning")
