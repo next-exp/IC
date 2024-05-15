@@ -87,6 +87,28 @@ def test_city_output_file_is_compressed(config_tmpdir, ICDATADIR, city):
 
 @mark.filterwarnings("ignore::UserWarning")
 @mark.parametrize("city", all_cities)
+def test_city_output_contains_configuration(config_tmpdir, city):
+    file_out    = os.path.join(config_tmpdir, f"{city}_configuration.h5")
+    config_file = 'dummy invisible_cities/config/{}.conf'.format(city)
+
+    conf = configure(config_file.split())
+    conf.update(dict( file_out    = file_out
+                    , event_range = 0))
+
+    module_name   = f'invisible_cities.cities.{city}'
+    city_function = getattr(import_module(module_name), city)
+
+    city_function(**conf)
+
+    with tb.open_file(file_out) as file:
+        assert "config" in file.root
+        assert city     in file.root.config
+        table = getattr(file.root.config, city)
+        assert len(table[:]) > 0
+
+
+@mark.filterwarnings("ignore::UserWarning")
+@mark.parametrize("city", all_cities)
 def test_city_missing_detector_db(city):
     # use default config file
     config_file = 'dummy invisible_cities/config/{}.conf'.format(city)
