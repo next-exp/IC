@@ -62,21 +62,27 @@ def test_city_output_file_is_compressed(config_tmpdir, ICDATADIR, city):
     config_file = 'dummy invisible_cities/config/{}.conf'.format(city)
 
     conf = configure(config_file.split())
-    conf.update(dict(file_out = file_out))
+    conf.update(dict( file_out    = file_out
+                    , event_range = 0))
 
     module_name   = f'invisible_cities.cities.{city}'
     city_function = getattr(import_module(module_name), city)
 
     city_function(**conf)
 
+    checked_nodes = 0
     with tb.open_file(file_out) as file:
         for node in chain([file], file.walk_nodes()):
             try:
                 assert (node.filters.complib   is not None and
                         node.filters.complevel > 0)
+                checked_nodes += 1
 
             except tb.NoSuchNodeError:
                 continue
+
+    # ensure that we didn't pass the test because there were no nodes checked
+    assert checked_nodes > 2
 
 
 @mark.filterwarnings("ignore::UserWarning")
