@@ -2,6 +2,7 @@
 
 _city_completions () {
   PREV_WORD=${COMP_WORDS[COMP_CWORD-1]}
+  CURR_WORD=${COMP_WORDS[COMP_CWORD]}
 
   if [[ ${PREV_WORD} == "city" ]]; then
     for fullpath in `ls $ICTDIR/invisible_cities/cities/*.py`; do
@@ -10,6 +11,8 @@ _city_completions () {
       if [[ $cityname == *"components"* ]]; then continue; fi
       if [[ $cityname == "__"* ]]; then continue; fi
       if [[ $cityname == *"~" ]]; then continue; fi
+      if [[ $cityname != "${CURR_WORD}"* ]]; then continue; fi
+
       cityname=${cityname/.py/}
       COMPREPLY+=("$cityname")
     done
