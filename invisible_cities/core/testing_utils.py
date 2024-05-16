@@ -128,18 +128,21 @@ def assert_PMap_equality(pmp0, pmp1):
         assert_Peak_equality(s2_0, s2_1)
 
 
+def _get_table_name(t):
+    return t.name if hasattr(t, "name") else "unknown"
+
 def assert_tables_equality(got_table, expected_table, rtol=1e-7, atol=0):
     table_got      =      got_table[:]
     table_expected = expected_table[:]
     # we keep both names to be as generic as possible
-    names          = got_table.name, expected_table.name
+    names          = _get_table_name(got_table), _get_table_name(expected_table)
 
     assert len(table_got      ) == len(table_expected      ), f"Tables {names} have different lengths"
     assert len(table_got.dtype) == len(table_expected.dtype), f"Tables {names} have different widths"
 
     if table_got.dtype.names is not None:
         for col_name in table_got.dtype.names:
-            assert col_name in table_expected.dtype.names, f"Column {col_name} missing in {expected_table.name}"
+            assert col_name in table_expected.dtype.names, f"Column {col_name} missing in {names[1]}"
 
             got      = table_got     [col_name]
             expected = table_expected[col_name]
