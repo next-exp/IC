@@ -206,10 +206,10 @@ def df_builder( x       : Sequence[float]
     xr, yr = np.meshgrid(xr, yr, indexing="ij")
     xr, yr = np.ravel(xr), np.ravel(yr)
 
-    return pd.DataFrame(dict( xr=xr, yr=yr, zr=0
+    return pd.DataFrame(dict( xr=xr, yr=yr, zr=0.
                             , x =x , y =y , z =z
                             , factor = factors.flatten()
-                            , nevt   = entries.flatten()
+                            , nevt   = entries.flatten().astype(np.uint)
                             ))
 
 
