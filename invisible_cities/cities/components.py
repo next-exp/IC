@@ -638,10 +638,7 @@ def dst_from_files(paths: List[str], group: str, node:str) -> Iterator[Dict[str,
 def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
     timestamp = create_timestamp(rate)
     for filename in files_in:
-        try:
-            hits_df = load_mchits_df(filename)
-        except tb.exceptions.NoSuchNodeError:
-            continue
+        hits_df = load_mchits_df(filename)
 
         l_type = hits_df.dtypes['label']
         map_df = load_mcstringmap(filename) if l_type == np.int32 else None
