@@ -23,6 +23,7 @@ from .. core               import system_of_units as units
 from .. evm.event_model    import Cluster
 from .. evm.event_model    import Hit
 from .. evm.event_model    import HitCollection
+from .. reco.xy_algorithms import barycenter
 from .. types.ic_types     import xy
 from .. types.symbols      import WfType
 from .. types.symbols      import EventRange as ER
@@ -43,6 +44,7 @@ from .  components import check_max_time
 from .  components import hits_corrector
 from .  components import write_city_configuration
 from .  components import copy_cities_configuration
+from .  components import try_global_reco
 
 from .. dataflow   import dataflow as fl
 
@@ -475,6 +477,7 @@ def test_check_max_time_units():
     with raises(ValueError):
         check_max_time(max_time, buffer_length)
 
+
 def test_read_wrong_pmt_ids(ICDATADIR):
     """
     The input file of this test contains sensor IDs that are not present in the database.
@@ -572,6 +575,18 @@ def test_hits_corrector_invalid_normalization_options_raises( correction_map_fil
                                                             , norm_value):
     with raises(ValueError):
         hits_corrector(correction_map_filename, False, norm_strat, norm_value)
+
+
+@mark.parametrize( "pos qs thr".split()
+                 , ( ([     ], [ ], 0) # no hits
+                   , ([[1,1]], [1], 2) # no hits above threshold
+                   ))
+def test_try_global_reco_creates_empty_cluster(pos, qs, thr):
+    pos, qs = np.array(pos), np.array(qs)
+    reco = lambda *args: barycenter(*args, Qthr=thr)
+    out  = try_global_reco(reco, pos, qs)
+    assert out.x == xy.empty().x
+    assert out.y == xy.empty().y
 
 
 def test_write_city_configuration(config_tmpdir):
