@@ -250,7 +250,14 @@ def deconvolve_signal(det_db           : pd.DataFrame,
     return apply_deconvolution
 
 
-def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
+@check_annotations
+def create_deconvolution_df( hits     : pd.DataFrame
+                           , deconv_e : np.ndarray
+                           , pos      : Tuple[np.ndarray, ...]
+                           , cut_type : CutType
+                           , e_cut    : float
+                           , n_dim    : int
+                           ) -> pd.DataFrame:
     '''
     Given the output of the deconvolution, it cuts the low energy voxels and
     creates a dataframe object with the resulting output.
@@ -271,12 +278,8 @@ def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
 
     df  = pd.DataFrame(columns=['event', 'npeak', 'X', 'Y', 'Z', 'E'])
 
-    if   cut_type is CutType.abs:
-        sel_deconv = deconv_e > e_cut
-    elif cut_type is CutType.rel:
-        sel_deconv = deconv_e / deconv_e.max() > e_cut
-    else:
-        raise ValueError(f'cut_type {cut_type} is not a valid cut type.')
+    if   cut_type is CutType.abs: sel_deconv = deconv_e                  > e_cut
+    else                        : sel_deconv = deconv_e / deconv_e.max() > e_cut
 
     df['E']     = deconv_e[sel_deconv]
     df['event'] = hits.event.unique()[0]
