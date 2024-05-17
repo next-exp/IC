@@ -107,6 +107,23 @@ def test_beersheba_exact_result( deco
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected, rtol=1e-6)
 
+@mark.parametrize( "updates"
+                 , ( dict(sample_width = [1]), dict(sample_width = [1,1,1])
+                   , dict(bin_size     = [1]), dict(bin_size     = [1,1,1])
+                   , dict(diffusion    = [1]), dict(diffusion    = [1,1,1])
+                    ))
+def test_beersheba_checks_dimensions(config_tmpdir, beersheba_config, updates):
+    # check that if these quantities do not have the correct number of
+    # dimensions (2), the city raises an error
+    par = next(iter(updates))
+    n   = len(updates[par])
+    path_out = os.path.join(config_tmpdir, f"beersheba_only_check_dims_{par}_{n}.h5")
+    beersheba_config.update(dict(file_out = path_out))
+    beersheba_config['deconv_params'].update(updates)
+
+    with raises(ValueError, match="Parameter .* dimensions do not match n_dim parameter"):
+        beersheba(**beersheba_config)
+
 
 @ignore_warning.no_config_group
 @ignore_warning.str_length

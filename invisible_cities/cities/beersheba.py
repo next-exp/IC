@@ -491,9 +491,10 @@ def beersheba( files_in         : OneOrManyFiles
 
     for p in ['sample_width', 'bin_size', 'diffusion']:
         if len(deconv_params[p]) != deconv_params['n_dim']:
-            raise ValueError         (f"Parameter {p} dimensions do not match n_dim parameter")
+            raise ValueError(f"Parameter {p} dimensions do not match n_dim parameter")
+
     if deconv_params['n_dim'] > 2:
-        raise     NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
+        raise NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
 
     cut_sensors           = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
                                    item = 'hits')
