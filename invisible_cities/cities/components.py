@@ -1212,7 +1212,6 @@ def Efield_copier(energy_type: HitEnergy):
 def make_event_summary(event_number  : int          ,
                        topology_info : pd.DataFrame ,
                        paolina_hits  : HitCollection,
-                       out_of_map    : bool
                        ) -> pd.DataFrame:
     """
     For a given event number, timestamp, topology info dataframe, paolina hits and kdst information returns a
@@ -1256,7 +1255,7 @@ def make_event_summary(event_number  : int          ,
     list_of_vars  = [event_number, S2ec, S2qc, ntrks, nhits,
                      *ave_pos, ave_r,
                      min(x), min(y), min(z), min(r), max(x), max(y), max(z), max(r),
-                     out_of_map]
+                     False] # out_of_map
 
     es.loc[0] = list_of_vars
     #change dtype of columns to match type of variables
@@ -1328,17 +1327,9 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
         if len(hitc.hits) > max_num_hits:
             return df, hitc, True
         #track_hits is a new Hitcollection object that contains hits belonging to tracks, and hits that couldnt be corrected
-        track_hitc = HitCollection(hitc.event, hitc.time)
-        out_of_map = np.any(np.isnan([h.Ep for h in hitc.hits]))
-        if out_of_map:
-            #add nan hits to track_hits, the track_id will be -1
-            track_hitc.hits.extend  ([h for h in hitc.hits if np.isnan   (h.Ep)])
-            hits_without_nan       = [h for h in hitc.hits if np.isfinite(h.Ep)]
-            #create new Hitcollection object but keep the name hitc
-            hitc      = HitCollection(hitc.event, hitc.time)
-            hitc.hits = hits_without_nan
-
+        track_hitc   = HitCollection(hitc.event, hitc.time)
         hit_energies = np.array([getattr(h, HitEnergy.Ep.value) for h in hitc.hits])
+        assert not np.isnan(hit_energies).any()
 
         if len(hitc.hits) > 0 and (hit_energies>0).any():
             voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, HitEnergy.Ep)
@@ -1396,7 +1387,7 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
             #change dtype of columns to match type of variables
             df = df.apply(lambda x : x.astype(types_dict_tracks[x.name]))
             track_hitc.hits.extend(track_hits)
-        return df, track_hitc, out_of_map
+        return df, track_hitc
 
     return create_extract_track_blob_info
 
@@ -1424,7 +1415,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     # Create tracks and compute topology-related information
     create_extract_track_blob_info = fl.map(track_blob_info_creator_extractor(**paolina_params),
                                             args = 'Ep_hits',
-                                            out  = ('topology_info', 'paolina_hits', 'out_of_map'))
+                                            out  = ('topology_info', 'paolina_hits'))
 
     sort_hits_ = fl.map(sort_hits, item="paolina_hits")
 
@@ -1436,7 +1427,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
 
     # Create table with summary information
     make_final_summary             = fl.map(make_event_summary,
-                                            args = ('event_number', 'topology_info', 'paolina_hits', 'out_of_map'),
+                                            args = ('event_number', 'topology_info', 'paolina_hits'),
                                             out  = 'event_info')
 
 
