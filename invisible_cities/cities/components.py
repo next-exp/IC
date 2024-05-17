@@ -761,21 +761,6 @@ def calibrate_sipms(dbfile, run_number, thr_sipm):
     return calibrate_sipms
 
 
-def calibrate_with_mean(dbfile, run_number):
-    DataSiPM   = load_db.DataSiPM(dbfile, run_number)
-    adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
-    def calibrate_with_mean(wfs):
-        return csf.subtract_baseline_and_calibrate(wfs, adc_to_pes)
-    return calibrate_with_mean
-
-def calibrate_with_maw(dbfile, run_number, n_maw_sipm):
-    DataSiPM   = load_db.DataSiPM(dbfile, run_number)
-    adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
-    def calibrate_with_maw(wfs):
-        return csf.subtract_baseline_maw_and_calibrate(wfs, adc_to_pes, n_maw_sipm)
-    return calibrate_with_maw
-
-
 def zero_suppress_wfs(thr_csum_s1, thr_csum_s2):
     def ccwfs_to_zs(ccwf_sum, ccwf_sum_maw):
         return (pkf.indices_and_wf_above_threshold(ccwf_sum_maw, thr_csum_s1).indices,
