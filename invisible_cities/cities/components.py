@@ -696,11 +696,11 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
                            timestamp    = timestamp )
 
 
-def sensor_data(path, wf_type):
+@check_annotations
+def sensor_data(path : str, wf_type : WfType):
     with tb.open_file(path, "r") as h5in:
-        if   wf_type is WfType.rwf :   (pmt_wfs, sipm_wfs) = (h5in.root.RD .pmtrwf,   h5in.root.RD .sipmrwf)
-        elif wf_type is WfType.mcrd:   (pmt_wfs, sipm_wfs) = (h5in.root.    pmtrd ,   h5in.root.    sipmrd )
-        else                       :   raise TypeError(f"Invalid WfType: {type(wf_type)}")
+        if   wf_type is WfType.rwf:   (pmt_wfs, sipm_wfs) = (h5in.root.RD .pmtrwf,   h5in.root.RD .sipmrwf)
+        else                      :   (pmt_wfs, sipm_wfs) = (h5in.root.    pmtrd ,   h5in.root.    sipmrd )
         _, NPMT ,  PMTWL =  pmt_wfs.shape
         _, NSIPM, SIPMWL = sipm_wfs.shape
         return SensorData(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
