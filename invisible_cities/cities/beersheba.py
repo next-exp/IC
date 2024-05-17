@@ -187,15 +187,6 @@ def deconvolve_signal(det_db           : pd.DataFrame,
                                **satellite_params,
                                inter_method = inter_method)
 
-    if not isinstance(energy_type , HitEnergy          ):
-        raise ValueError(f'energy_type {energy_type} is not a valid energy type.')
-    if not isinstance(inter_method, InterpolationMethod):
-        raise ValueError(f'inter_method {inter_method} is not a valid interpolation method.')
-    if not isinstance(cut_type    , CutType            ):
-        raise ValueError(f'cut_type {cut_type} is not a valid cut type.')
-    if not isinstance(deconv_mode , DeconvolutionMode  ):
-        raise ValueError(f'deconv_mode {deconv_mode} is not a valid deconvolution mode.')
-
     def deconvolve_hits(df, z):
         '''
         Given an slice, applies deconvolution using the PSF
