@@ -119,3 +119,16 @@ def test_eutropia_exact_result(ICDATADIR, output_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
+
+
+def test_eutropia_skips_bad_files(ICDATADIR, config_tmpdir):
+    PATH_IN  = os.path.join(ICDATADIR    , 'empty_file.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'test_eutropia_skips_bad_files.h5')
+
+    config_file = 'dummy invisible_cities/config/eutropia.conf'
+    conf = configure(config_file.split())
+    conf.update(dict(files_in = PATH_IN,
+                     file_out = PATH_OUT))
+
+    # just check that it doesn't complain
+    eutropia(**conf)
