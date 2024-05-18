@@ -45,6 +45,7 @@ from .  components import hits_corrector
 from .  components import write_city_configuration
 from .  components import copy_cities_configuration
 from .  components import try_global_reco
+from .  components import length_of
 
 from .. dataflow   import dataflow as fl
 
@@ -587,6 +588,12 @@ def test_try_global_reco_creates_empty_cluster(pos, qs, thr):
     out  = try_global_reco(reco, pos, qs)
     assert out.x == xy.empty().x
     assert out.y == xy.empty().y
+
+
+@mark.parametrize("t", (int, float, object))
+def test_length_of_incorrect_type(t):
+    with raises(TypeError, match="Cannot determine size of .*"):
+        length_of(t())
 
 
 def test_write_city_configuration(config_tmpdir):
