@@ -46,6 +46,7 @@ from .  components import write_city_configuration
 from .  components import copy_cities_configuration
 from .  components import try_global_reco
 from .  components import length_of
+from .  components import get_run_number
 
 from .. dataflow   import dataflow as fl
 
@@ -594,6 +595,17 @@ def test_try_global_reco_creates_empty_cluster(pos, qs, thr):
 def test_length_of_incorrect_type(t):
     with raises(TypeError, match="Cannot determine size of .*"):
         length_of(t())
+
+
+def test_get_run_number_raises(ICDATADIR, config_tmpdir):
+    filename = os.path.join(config_tmpdir, "test_get_run_number_raises.h5")
+    with tb.open_file(filename, "a") as file:
+        with raises(tb.exceptions.NoSuchNodeError, match="No node runInfo or RunInfo .*"):
+            get_run_number(file)
+
+        file.create_group(file.root, "Run")
+        with raises(tb.exceptions.NoSuchNodeError, match="No node runInfo or RunInfo .*"):
+            get_run_number(file)
 
 
 def test_write_city_configuration(config_tmpdir):
