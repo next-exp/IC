@@ -413,15 +413,16 @@ def get_run_number(h5in):
     raise tb.exceptions.NoSuchNodeError(f"No node runInfo or RunInfo in file {h5in}")
 
 
-def get_pmt_wfs(h5in, wf_type):
-    if   wf_type is WfType.rwf : return h5in.root.RD.pmtrwf
-    elif wf_type is WfType.mcrd: return h5in.root.   pmtrd
-    else                       : raise  TypeError(f"Invalid WfType: {type(wf_type)}")
+@check_annotations
+def get_pmt_wfs(h5in : tb.File, wf_type : WfType):
+    if   wf_type is WfType.rwf: return h5in.root.RD.pmtrwf
+    else                      : return h5in.root.   pmtrd
 
-def get_sipm_wfs(h5in, wf_type):
-    if   wf_type is WfType.rwf : return h5in.root.RD.sipmrwf
-    elif wf_type is WfType.mcrd: return h5in.root.   sipmrd
-    else                       : raise  TypeError(f"Invalid WfType: {type(wf_type)}")
+
+@check_annotations
+def get_sipm_wfs(h5in : tb.File, wf_type : WfType):
+    if   wf_type is WfType.rwf: return h5in.root.RD.sipmrwf
+    else                      : return h5in.root.   sipmrd
 
 
 def get_trigger_info(h5in):
