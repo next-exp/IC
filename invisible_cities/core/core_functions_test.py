@@ -111,6 +111,31 @@ def test_in_range_right_close_interval(data):
     assert all(output)
 
 
+@given(random_length_float_arrays(min_length = 1,
+                                  min_value  = 0,
+                                  max_value  = 100))
+def test_check_if_values_in_interval_when_all_fall_inside(data):
+    assert core.check_if_values_in_interval(data, 0, 100, left_closed=True, right_closed=True)
+
+
+@given(random_length_float_arrays(min_length = 1,
+                                  min_value  = 0,
+                                  max_value  = 100))
+def test_check_if_values_in_interval_when_some_fall_outside_warning(data):
+    minvalue =np.min(data)
+    assert not core.check_if_values_in_interval(data, minvalue+1, 100, strictness=core.Strictness.warning)
+
+
+@given(random_length_float_arrays(min_length = 1,
+                                  min_value  = 0,
+                                  max_value  = 100))
+def test_check_if_values_in_interval_when_some_fall_outside_exception(data):
+    minvalue =np.min(data)
+    npt.assert_raises(core.ValueOutOfRange,
+                      core.check_if_values_in_interval,
+                      data, minvalue+1, 100, strictness=core.Strictness.stop_proccess)
+
+
 @mark.parametrize(" first  second       norm_mode        expected".split(),
                   ((  1  ,    2  , core.NormMode.first ,   -1    ),
                    (  4  ,    2  , core.NormMode.second,    1    ),
