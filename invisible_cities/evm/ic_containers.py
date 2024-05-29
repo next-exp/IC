@@ -25,7 +25,7 @@ for name, attrs in (
         ('CalibVectors'   , 'channel_id coeff_blr coeff_c adc_to_pes adc_to_pes_sipm pmt_active'),
         ('S12Params'      , 'time stride length rebin_stride'),
         ('ZsWf'           , 'indices energies'),
-        ('FitFunction'    , 'fn values errors chi2 pvalue cov'),
+        ('FitFunction'    , 'fn values errors chi2 pvalue cov infodict mesg ier'),
         ('TriggerParams'  , 'trigger_channels min_number_channels charge height width'),
         ('SensorParams'   , 'spectra peak_range min_bin_peak max_bin_peak half_peak_width p1pe_seed lim_ped'),
         ('PedestalParams' , 'gain gain_min gain_max sigma sigma_min sigma_max')):
