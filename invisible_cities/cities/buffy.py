@@ -62,7 +62,13 @@ def buffy( files_in          : OneOrManyFiles
 
     max_time          = check_max_time(max_time, buffer_length)
     npmt, nsipm       = get_n_sensors(detector_db, run_number)
-    pmt_wid, sipm_wid = pmt_and_sipm_bin_width_safe_(files_in)
+    try:
+        pmt_wid, sipm_wid = pmt_and_sipm_bin_width_safe_(files_in)
+    except tb.exceptions.NoSuchNodeError:
+        return dict(events_in   = 0,
+                    events_resp = 0,
+                    evtnum_list = [])
+
     nsamp_pmt         = int(buffer_length /  pmt_wid)
     nsamp_sipm        = int(buffer_length / sipm_wid)
 
@@ -162,4 +168,5 @@ def pmt_and_sipm_bin_width_safe_(files_in: List[str]):
         except (tb.HDF5ExtError, tb.NoSuchNodeError) as e:
             warnings.warn(f' no useful bin widths: {0}'.format(e), UserWarning)
             continue
-    return 25 * units.ns, 1 * units.mus
+
+    raise tb.NoSuchNodeError
