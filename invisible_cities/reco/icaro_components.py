@@ -61,6 +61,9 @@ def expo_seed(x   : np.array,
 
     x, y  = zip(*sorted(zip(x, y)))
 
+    if y[-1] / (y[0] + eps) <= 0:
+        raise ValueError("Only possible to compute log for positive numbers.")
+
     const = y[0]
     slope = (x[-1] - x[0]) / np.log(y[-1] / (y[0] + eps))
     seed  = const, slope
