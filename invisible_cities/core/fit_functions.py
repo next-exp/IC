@@ -133,7 +133,7 @@ def power(x, const, pow_):
 
 # ###########################################################
 # Tools
-def fit(func, x, y, seed=(), fit_range=None, full_output=False, **kwargs):
+def fit(func, x, y, seed=(), fit_range=None, **kwargs):
     """
     Fit x, y data to a generic relation of already defined
     python functions.
@@ -159,14 +159,6 @@ def fit(func, x, y, seed=(), fit_range=None, full_output=False, **kwargs):
     -------
     fitted_fun : extended function (contains values and errors)
         Fitted function.
-    infodict   : dict (optional)
-        If full_output = True. A dictionary of optional outputs with the keys.
-    msg        : str (optional)
-        If full_output = True. A string message giving information about the
-        solution.
-    ier        : int (optional)
-        If full_output = True. An integer flag. If it is equal to 1, 2, 3 or 4,
-        the solution was found.
 
 
     Examples
@@ -192,8 +184,7 @@ def fit(func, x, y, seed=(), fit_range=None, full_output=False, **kwargs):
 
     kwargs['absolute_sigma'] = "sigma" in kwargs
 
-    if full_output: vals, cov, infodict, mesg, ier = scipy.optimize.curve_fit(func, x, y, seed, full_output=full_output, **kwargs)
-    else          : vals, cov                      = scipy.optimize.curve_fit(func, x, y, seed, **kwargs)
+    vals, cov, infodict, mesg, ier = scipy.optimize.curve_fit(func, x, y, seed, full_output=True, **kwargs)
 
     fitf       = lambda x: func(x, *vals)
     fitx       = fitf(x)
@@ -201,9 +192,9 @@ def fit(func, x, y, seed=(), fit_range=None, full_output=False, **kwargs):
     ndof       = len(y) - len(vals)
     chi2, pval = get_chi2_and_pvalue(y, fitx, ndof, sigma_r)
 
-    if full_output: return FitFunction(fitf, vals, errors, chi2, pval, cov), infodict, mesg, ier
-    else          : return FitFunction(fitf, vals, errors, chi2, pval, cov)
-
+    return FitFunction(fitf, vals, errors, chi2, pval, cov, infodict, mesg, ier)
+    # It could be like this or grouping the last 3 things into the a single category
+    # like "fit_info" or something like that (I prefer it as it is)
 
 def profileX(xdata, ydata, nbins=100,
              xrange=None, yrange=None,
