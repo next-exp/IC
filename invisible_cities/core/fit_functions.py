@@ -157,8 +157,9 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
 
     Returns
     -------
-    fitted_fun : extended function (contains values and errors)
-        Fitted function.
+    fitted_fun : FitFunction
+    Extended function containing fit parameters (fitf, vals, errors, chi2, pval,
+    cov) and full_output from curve_fit and leastsq (infodict, mesg and ier).
 
 
     Examples
@@ -193,8 +194,7 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
     chi2, pval = get_chi2_and_pvalue(y, fitx, ndof, sigma_r)
 
     return FitFunction(fitf, vals, errors, chi2, pval, cov, infodict, mesg, ier)
-    # It could be like this or grouping the last 3 things into the a single category
-    # like "fit_info" or something like that (I prefer it as it is)
+
 
 def profileX(xdata, ydata, nbins=100,
              xrange=None, yrange=None,
