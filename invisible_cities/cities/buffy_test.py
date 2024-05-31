@@ -89,6 +89,34 @@ def test_buffy_no_file_without_sns_response(config_tmpdir, ICDATADIR):
             assert False
 
 
+def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
+    file_in  = os.path.join(ICDATADIR, 'nexus_new_kr83m_*.oldformat.sim.h5')
+    #file_in  = os.path.join(ICDATADIR, 'nexus_new_kr83m_full.oldformat.sim.h5')
+    file_out = os.path.join(config_tmpdir, 'filtered_empty.buffers.h5')
+
+    nevt     = 4
+    n_passed = 2
+    conf = configure('buffy invisible_cities/config/buffy.conf'.split())
+    conf.update(dict(files_in=file_in, file_out=file_out, event_range=nevt))
+
+    # Exception expected since no MC sensor response is present.
+    # Suppress since irrelevant in test.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        buffy_result = buffy(**conf)
+
+    print(buffy_result.events_in, buffy_result.events_resp.n_passed)
+    assert buffy_result.events_in            == nevt
+    assert buffy_result.events_resp.n_passed == n_passed
+    with tb.open_file(file_out) as h5out:
+
+        assert hasattr(h5out.root        ,         'Filters')
+        assert hasattr(h5out.root.Filters, 'detected_events')
+
+        evt_filter = h5out.root.Filters.detected_events.read()
+        assert len(evt_filter) == nevt
+
+
 def test_buffy_exact_result(config_tmpdir, ICDATADIR):
     np.random.seed(27)
 
