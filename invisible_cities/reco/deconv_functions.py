@@ -4,16 +4,78 @@ import pandas as pd
 from typing  import List
 from typing  import Tuple
 from typing  import Callable
+from typing import Optional
 
 from scipy                  import interpolate
 from scipy.signal           import fftconvolve
 from scipy.signal           import convolve
 from scipy.spatial.distance import cdist
+from scipy import ndimage as ndi
 
 from ..core .core_functions import shift_to_bin_centers
 from ..core .core_functions import in_range
 
 from .. types.symbols       import InterpolationMethod
+from .. types.symbols       import CutType
+
+
+
+import warnings
+
+
+def isolate_satellites(df : np.ndarray, dist : int = 2, size : int = 10) -> np.ndarray:
+    '''
+    An adaptation to the scikit-image (v0.24.0) function below:
+    https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/misc.py#L59-L151
+    
+    Identifies satellite energy depositions within deconvolution image by size
+    and proximity to other depositions.
+
+    In practice, input array is a set of boolean 'pixels' that it then categorises as 
+    satellite or non-satellite bundles based on given parameters.
+    
+    Parameters
+    ----------
+    df    : masked array containing pixels above energy cut
+    dist  : Maximum distance between two pixels to be considered part of the same deposit.
+    size  : Minimum number of pixels per deposit under which it will be labelled as a satellite deposit.
+
+    Returns
+    ----------
+    array : masked array of all satellite deposits
+
+    
+    '''
+    try:
+        array = data.copy().astype(bool)
+    except:
+        print("Please ensure the array passed through is boolean compatible.")
+    if size == 0:
+        warning.warn(f'Satellite size set to zero. No satellites will be removed')
+        return array # will cause the result to be identical to the input
+
+
+    # label the deposits within the array
+    footprint = ndi.generate_binary_structure(array.ndim, dist)
+    ccs = np.zeros_like(array, dtype=np.int32)
+    ndi.label(array, footprint, output=ccs)
+    
+    # count the bins of each labelled deposits
+    try:
+        component_sizes = np.bincount(ccs.ravel())
+    except ValueError:
+        raise ValueError("Negative value labels are not supported.")
+
+    # check if no-satellites within deposit
+    if len(component_sizes) == 2:
+        return array
+    
+    # apply size check and mask
+    too_small = component_sizes < size
+    too_small_mask = too_small[ccs]
+    array[too_small_mask] = 0
+
+    return array
 
 
 def cut_and_redistribute_df(cut_condition : str,
@@ -227,20 +289,26 @@ def deconvolve(n_iterations  : int,
 
     def deconvolve(data   : Tuple[np.ndarray, ...],
                    weight : np.ndarray,
-                   psf    : pd.DataFrame
+                   psf    : pd.DataFrame,
+                   satellite_iter  : int,
+                   satellite_dist  : int,
+                   satellite_size  : int,
+                   e_cut  : float,
+                   cut_type : Optional[CutType]=CutType.abs
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
         inter_signal, inter_pos = deconv_input(data, weight)
         columns       = var_name[:len(data)]
         psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
-        deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco,
-                                                      n_iterations, iteration_tol))
+        deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco, satellite_iter,
+                                                      satellite_dist, satellite_size, e_cut,
+                                                      cut_type, n_iterations, iteration_tol))
 
         return deconv_image, inter_pos
 
     return deconvolve
 
-def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
+def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, e_cut, cut_type, iterations=50, iter_thr=0.):
     """Richardson-Lucy deconvolution (modification from scikit-image package).
 
     The modification adds a value=0 protection, the possibility to stop iterating
@@ -304,6 +372,28 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
         np.place(x, x==0, eps) ### Protection against 0 value
         relative_blur = image / x
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
+
+        # after every iteration, kill satellites
+        if (i > satellite_iter):
+            # apply mask to a copy
+            im_vis = im_deconv.copy()
+            # set based on relative or absolute cut
+            if cut_type == CutType.abs:
+                vis_mask = im_vis
+            elif cut_type == CutType.rel:
+                vis_mask = im_vis / im_vis.max()
+            else:
+                raise ValueError(f'cut_type {cut_type} is not a valid cut type.')
+
+            # apply the mask cut
+            im_vis[vis_mask < e_cut] = 0
+            im_vis[vis_mask >= e_cut] = 1
+            # create mask that removes satellites
+            satellite_mask = isolate_satellites(im_vis, satellite_dist, satellite_size)
+            # remove only satellite regions!
+            deconv_mask = (im_vis + satellite_mask) % 2 == 0
+            # apply mask
+            im_deconv[~deconv_mask] = 0
 
         with np.errstate(divide='ignore', invalid='ignore'):
             rel_diff = np.nansum(np.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
