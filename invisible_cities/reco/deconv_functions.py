@@ -15,6 +15,49 @@ from ..core .core_functions import in_range
 
 from .. types.symbols       import InterpolationMethod
 
+## Just here for testing, remove after finished testing
+import matplotlib.pyplot as plt
+from matplotlib import colors
+
+
+def remove_small_objects(data, min_size = 10, connectivity = 2):
+    '''
+    An adapted function from scikit-image
+    https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/misc.py#L59-L151
+    Pulled in here because of package mismatches (scikit-image breaks my conda env, this is easier I think)
+    set min_size to 10-ish (testing), as per-iteration you wouldn't expect more than 4 pixels (interpolated) to be formed by a satellite
+    connectivity set to 2 to catch diagonals
+    '''
+    try:
+        array = data.copy().astype(bool)
+    except:
+        print("Please ensure the array passed through is boolean compatible.")
+    # Not connections if satellite size is zero
+    if min_size == 0:
+        return array
+
+
+    # label the blobs within the array
+    footprint = ndi.generate_binary_structure(array.ndim, connectivity)
+    ccs = np.zeros_like(array, dtype=np.int32)
+    ndi.label(array, footprint, output=ccs)
+    
+    # count the bins of each labelled blob
+    try:
+        component_sizes = np.bincount(ccs.ravel())
+    except ValueError:
+        raise ValueError("Negative value labels are not supported.")
+
+    # check if no-satellites
+    if len(component_sizes) == 2:
+        return array
+    
+    too_small = component_sizes < min_size
+    too_small_mask = too_small[ccs]
+    array[too_small_mask] = 0
+
+    return array
+
 
 def cut_and_redistribute_df(cut_condition : str,
                             variables     : List[str]=[]) -> Callable:
@@ -299,11 +342,30 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
     eps        = np.finfo(image.dtype).eps ### Protection against 0 value
     ref_image  = image/image.max()
 
+    # variable controlling how regularly iterations are broken up
+    iteration_no = 50
     for i in range(iterations):
         x = convolve_method(im_deconv, psf, 'same')
         np.place(x, x==0, eps) ### Protection against 0 value
         relative_blur = image / x
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
+
+        # after every iteration, kill satellites (size 1)
+        if (i > iteration_no):
+            im_vis = im_deconv.copy()
+            im_vis[im_vis < 9e-3] = 0
+            im_vis[im_vis >= 9e-3] = 1
+
+
+
+            # create mask
+            satellite_mask = remove_small_objects(im_vis)
+            # remove only satellite regions!
+            deconv_mask = (im_vis + satellite_mask) % 2 == 0
+
+            # apply mask
+            im_deconv[~deconv_mask] = 0
+            
 
         with np.errstate(divide='ignore', invalid='ignore'):
             rel_diff = np.nansum(np.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
