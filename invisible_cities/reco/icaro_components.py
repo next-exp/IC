@@ -4,6 +4,7 @@ import pandas       as pd
 from   typing              import Optional
 from ..types.symbols       import KrFitFunction
 from .. evm.ic_containers  import FitFunction
+from .. core.fit_functions import polynom, expo
 
 
 def lin_seed(x : np.array,
@@ -122,11 +123,12 @@ def get_fit_function_lt(fittype : KrFitFunction):
         The seed function corresponding to the specified fit type.
     '''
 
-    if fittype is KrFitFunction.linear:
-        return lambda x, a, b: a + b * x, lin_seed
+    linear_function  = lambda x, y0, slope: polynom( x, y0, slope)
+    expo_function    = lambda x, e0, lt:    expo   (-x, e0, lt)
 
-    elif fittype is KrFitFunction.expo:
-        return lambda x, const, mean: const * np.exp(-x / mean), expo_seed
+    if   fittype is KrFitFunction.linear:  return linear_function, lin_seed
+    elif fittype is KrFitFunction.log_lin: return linear_function, lin_seed
+    elif fittype is KrFitFunction.expo:    return expo_function,   expo_seed
 
     elif fittype is KrFitFunction.log_lin:
         return lambda x, a, b: a + b * x, lin_seed
