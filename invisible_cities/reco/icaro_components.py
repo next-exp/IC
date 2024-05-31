@@ -71,11 +71,11 @@ def expo_seed(x   : np.array,
     return seed
 
 
-def prepare_data(fittype : KrFitFunction,
-                 dst     : pd.DataFrame):
+def select_fit_variables(fittype : KrFitFunction,
+                         dst     : pd.DataFrame):
 
     '''
-    Prepare the data for fitting based on the specified fit type.
+    Select the data for fitting based on the specified fit type.
 
     NOTES: Since x axis (DT) is never altered, maybe we can just
     return the y values. However, when we implement the binned fit,
@@ -98,14 +98,9 @@ def prepare_data(fittype : KrFitFunction,
         The dependent variable data prepared for fitting.
     '''
 
-    if fittype is KrFitFunction.linear:
-        return dst.DT, dst.S2e
-
-    elif fittype is KrFitFunction.expo:
-        return dst.DT, dst.S2e
-
-    elif fittype is KrFitFunction.log_lin:
-        return dst.DT, -np.log(dst.S2e)
+    if   fittype is KrFitFunction.linear : return dst.DT, dst.S2e
+    elif fittype is KrFitFunction.expo   : return dst.DT, dst.S2e
+    elif fittype is KrFitFunction.log_lin: return dst.DT, -np.log(dst.S2e)
 
 
 def get_fit_function_lt(fittype : KrFitFunction):
