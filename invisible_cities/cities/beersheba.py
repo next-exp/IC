@@ -129,6 +129,9 @@ def deconvolve_signal(det_db          : pd.DataFrame,
                       iteration_tol   : float,
                       sample_width    : List[float],
                       bin_size        : List[float],
+                      satellite_iter  : int,
+                      satellite_dist  : int,
+                      satellite_size  : int,
                       diffusion       : Optional[Tuple[float, float, float]]=(1., 1., 0.3),
                       energy_type     : Optional[HitEnergy]=HitEnergy.Ec,
                       deconv_mode     : Optional[DeconvolutionMode]=DeconvolutionMode.joint,
@@ -150,6 +153,9 @@ def deconvolve_signal(det_db          : pd.DataFrame,
     iteration_tol   : Stopping threshold (difference between iterations).
     sample_width    : Sampling size of the sensors.
     bin_size        : Size of the interpolated bins.
+    satellite_iter  : Number of iterations to wait until applying the satellite killer.
+    satellite_dist  : Minimum distance between clouds that signify a satellite.
+    satellite_size  : Minimum cloud size (below this, will be removed).
     energy_type     : Energy type (`E` or `Ec`, see Esmeralda) used for assignment.
     deconv_mode     : `joint` or `separate`, 1 or 2 step deconvolution, see description later.
     diffusion       : Diffusion coefficients in each dimension for 'separate' mode.
@@ -203,7 +209,9 @@ def deconvolve_signal(det_db          : pd.DataFrame,
         psf = psfs.loc[(psfs.z == find_nearest(psfs.z, zz)) &
                        (psfs.x == find_nearest(psfs.x, xx)) &
                        (psfs.y == find_nearest(psfs.y, yy)) , :]
-        deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf)
+
+        
+        deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf, satellite_iter, satellite_dist, satellite_size, e_cut, cut_type)
 
         if   deconv_mode is DeconvolutionMode.joint:
             pass
@@ -421,6 +429,12 @@ def beersheba( files_in         : OneOrManyFiles
             Sampling of the sensors in each dimension (usuallly the pitch).
         bin_size       : list[float]
             Bin size (mm) of the deconvolved image.
+        satellite_iter : int
+            Number of iterations to wait until applying the satellite killer.
+        satellite_dist : int
+            Minimum distance between clouds that signify a satellite.
+        satellite_size : int
+            Minimum cloud size (below this value, clouds will be removed).
         energy_type    : HitEnergy (`E` or `Ec`)
             Marks which energy from Esmeralda (E = uncorrected, Ec = corrected)
             should be assigned to the deconvolved track.
