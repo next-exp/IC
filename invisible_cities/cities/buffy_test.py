@@ -105,7 +105,6 @@ def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
         warnings.simplefilter("ignore", category=UserWarning)
         buffy_result = buffy(**conf)
 
-    print(buffy_result.events_in, buffy_result.events_resp.n_passed)
     assert buffy_result.events_in            == nevt
     assert buffy_result.events_resp.n_passed == n_passed
     with tb.open_file(file_out) as h5out:
