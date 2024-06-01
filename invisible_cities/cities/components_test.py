@@ -11,6 +11,7 @@ from pytest import mark
 from pytest import raises
 from pytest import warns
 
+from .. core.configure     import configure
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.testing_utils import    assert_tables_equality
 from .. core               import system_of_units as units
@@ -32,6 +33,7 @@ from .  components import check_max_time
 
 from .. dataflow   import dataflow as fl
 
+from typing import Union
 
 def _create_dummy_conf_with_event_range(value):
     return Namespace(event_range = value)
@@ -76,6 +78,67 @@ def test_sources_invalid_input_raises_InvalidInputFileStructure(ICDATADIR, sourc
     s = source((full_filename,))
     with raises(InvalidInputFileStructure):
         next(s)
+
+
+def write_config_file(filename, **kwargs):
+    with open(filename, "w") as f:
+        for k, v in kwargs.items():
+            f.write(f"{k} = {repr(v)}\n")
+
+
+@mark.parametrize( "case_ files_in expected".split()
+                 , ( ( 0
+                     , "electrons_511keV_z250_RWF.h5"  # a single file without wildcard
+                     , "electrons_511keV_z250_RWF.h5")
+                   , ( 1
+                     , "electrons_*keV_z250_RWF.h5"   # a single wildcard leading to three files
+                     , ["electrons_511keV_z250_RWF.h5" , "electrons_1250keV_z250_RWF.h5", "electrons_2500keV_z250_RWF.h5"])
+                   , ( 2
+                     , [ "electrons_511keV_z250_RWF.h5", "electrons_1250keV_z250_RWF.h5"] # a list of two files without wildcards
+                     , [ "electrons_511keV_z250_RWF.h5", "electrons_1250keV_z250_RWF.h5"] )
+                   , ( 3
+                     , [ "electrons_5*keV_z250_RWF.h5", "electrons_1*keV_z250_RWF.h5"] # a list of wildcards leading to n files
+                     , [ "electrons_511keV_z250_RWF.h5", "electrons_1250keV_z250_RWF.h5"] )
+                   )
+                 )
+def test_city_files_in(case_, files_in, expected, config_tmpdir, ICDATADIR):
+    """
+    Check that all possible files_in inputs are handled properly:
+    - a single file
+    - a single wildcard
+    - a list of files
+    - a list of wildcards
+    """
+    # need to prepend ICDATADIR here to avoid the mess in the parametrization
+    if isinstance(files_in, str): files_in =  os.path.join(ICDATADIR, files_in)
+    else                        : files_in = [os.path.join(ICDATADIR, f) for f in files_in]
+    if isinstance(expected, str): expected = [os.path.join(ICDATADIR, expected)] # always a list for simplicity
+    else                        : expected = [os.path.join(ICDATADIR, f) for f in expected]
+
+    # - files_in, file_out and event range are mandatory city arguments
+    # - cities must be annotated, but we keep it simple.
+    # - we need to open the output file so it exists because the city
+    # attempts to create an index there
+    @city
+    def dummy_city( files_in    : Union[str, list]
+                  , file_out    : str
+                  , event_range : tuple):
+        with tb.open_file(file_out, "w"): pass
+        return files_in
+
+    config_file = os.path.join(config_tmpdir, f"test_city_files_in_case_{case_}.conf")
+    file_out    = os.path.join(config_tmpdir, f"test_city_files_in_case_{case_}.h5"  )
+
+    write_config_file( config_file
+                     , files_in    = files_in
+                     , file_out    = file_out
+                     , event_range = 0
+                     )
+
+    conf = configure(f"dummy {config_file}".split())
+
+    result = dummy_city(**conf)
+    assert sorted(result) == sorted(expected)
 
 
 def test_compute_xy_position_depends_on_actual_run_number():
@@ -317,4 +380,3 @@ def test_check_max_time_units():
 
     with raises(ValueError):
         check_max_time(max_time, buffer_length)
-
