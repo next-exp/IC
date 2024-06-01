@@ -112,9 +112,13 @@ def city(city_function):
         if 'files_in' not in kwds: raise NoInputFiles
         if 'file_out' not in kwds: raise NoOutputFile
 
+        # always a sequence, so we can generalize the code below
+        if isinstance(conf.files_in, str):
+            conf.files_in = [conf.files_in]
 
-        conf.files_in  = sorted(glob(expandvars(conf.files_in)))
-        conf.file_out  =             expandvars(conf.file_out)
+        globbed_files = map(glob, map(expandvars, conf.files_in))
+        conf.files_in = sorted(f for fs in globbed_files for f in fs)
+        conf.file_out = expandvars(conf.file_out)
 
         conf.event_range  = event_range(conf)
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
