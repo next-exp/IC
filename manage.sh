@@ -98,7 +98,7 @@ dependencies:
 - pymysql      = 1.0.2
 - pytables     = 3.7.0
 - pytest       = 6.2.4
-- scipy        = 1.7.1
+- scipy        = 1.9.3
 - sphinx       = 4.2.0
 - tornado      = 6.1
 - flaky        = 3.7.0
