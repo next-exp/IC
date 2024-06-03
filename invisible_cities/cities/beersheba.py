@@ -203,7 +203,16 @@ def deconvolve_signal(det_db          : pd.DataFrame,
         psf = psfs.loc[(psfs.z == find_nearest(psfs.z, zz)) &
                        (psfs.x == find_nearest(psfs.x, xx)) &
                        (psfs.y == find_nearest(psfs.y, yy)) , :]
-        deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf)
+
+        relevant_z_slice = 272.41895625000006
+        # this is an explicit test for looking at particular slices
+        if (z == relevant_z_slice):
+            z_flag = True
+        else:
+            z_flag = False
+
+        
+        deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf, z_flag)
 
         if   deconv_mode is DeconvolutionMode.joint:
             pass
