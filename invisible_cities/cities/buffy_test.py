@@ -75,6 +75,10 @@ def test_buffy_kr(config_tmpdir, full_sim_file):
 
 
 def test_buffy_no_file_without_sns_response(config_tmpdir, ICDATADIR):
+    """
+    Check that if a file has no sensor response, the code raises an exception
+    and no output file is created.
+    """
     file_in  = os.path.join(ICDATADIR, 'nexus_new_kr83m_fast.oldformat.sim.h5')
     file_out = os.path.join(config_tmpdir, 'test_buffy_no_file_without_sns_response.h5')
 
