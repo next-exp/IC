@@ -109,11 +109,14 @@ def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
     assert buffy_result.events_resp.n_passed == n_passed
     with tb.open_file(file_out) as h5out:
 
+        assert h5out.root.Run.events.shape == (2,)
+
         assert hasattr(h5out.root        ,         'Filters')
         assert hasattr(h5out.root.Filters, 'detected_events')
 
         evt_filter = h5out.root.Filters.detected_events.read()
         assert len(evt_filter) == nevt
+        assert len(evt_filter[evt_filter['passed'] == True]) == 2
 
 
 def test_buffy_exact_result(config_tmpdir, ICDATADIR):

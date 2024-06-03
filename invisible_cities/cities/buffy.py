@@ -23,6 +23,8 @@ import warnings
 from typing import Callable
 from typing import     List
 
+from argparse import Namespace
+
 from .. core                   import        system_of_units as units
 from .. core  .configure       import         EventRangeType
 from .. core  .configure       import         OneOrManyFiles
@@ -65,9 +67,9 @@ def buffy( files_in          : OneOrManyFiles
     try:
         pmt_wid, sipm_wid = pmt_and_sipm_bin_width_safe_(files_in)
     except tb.exceptions.NoSuchNodeError:
-        return dict(events_in   = 0,
-                    events_resp = 0,
-                    evtnum_list = [])
+        return Namespace(events_in   = 0,
+                         events_resp = 0,
+                         evtnum_list = [])
 
     nsamp_pmt         = int(buffer_length /  pmt_wid)
     nsamp_sipm        = int(buffer_length / sipm_wid)
