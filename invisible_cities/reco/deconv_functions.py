@@ -9,6 +9,7 @@ from scipy                  import interpolate
 from scipy.signal           import fftconvolve
 from scipy.signal           import convolve
 from scipy.spatial.distance import cdist
+from scipy import ndimage as ndi
 
 from ..core .core_functions import shift_to_bin_centers
 from ..core .core_functions import in_range
