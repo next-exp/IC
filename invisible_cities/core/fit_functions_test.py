@@ -18,10 +18,12 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import floats
 from . testing_utils       import float_arrays
 from . testing_utils       import random_length_float_arrays
+from .. evm.ic_containers  import FitFunction
 
 from .                import core_functions as core
 from .                import  fit_functions as fitf
 from . stat_functions import poisson_sigma
+
 
 
 def test_get_errors():
@@ -287,6 +289,26 @@ def test_fit_with_errors(reduced):
     fit_range = (50, 150) if reduced else None
     f = fitf.fit(fitf.gauss, x, y, pars * 1.2, fit_range=fit_range, sigma=e, maxfev=10000)
     assert_allclose(f.values, pars)
+
+
+@mark.parametrize("full_output", (False, True))
+def test_fit_returns_curve_fit_full_output(full_output):
+    pars = np.array([1e3, 1e2, 1e1])
+    x = np.linspace(100, 300, 100)
+    y = fitf.gauss(x, *pars)
+    e = 0.1 * y
+
+    result = fitf.fit(fitf.gauss, x, y, pars * 1.2, sigma=e, maxfev=10000, full_output=full_output)
+
+    if not full_output:
+        assert type(result) == FitFunction
+
+    else:
+        assert len(result)     == 4
+        assert type(result[0]) == FitFunction
+        assert type(result[1]) == dict
+        assert type(result[2]) == str
+        assert type(result[3]) == int
 
 
 @mark.parametrize(["func", "known_pars"],

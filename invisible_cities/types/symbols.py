@@ -53,6 +53,12 @@ class InterpolationMethod(AutoNameEnumBase):
     nointerpolation = auto()
 
 
+class KrFitFunction(AutoNameEnumBase):
+    expo    = auto()
+    linear  = auto()
+    log_lin = auto()
+
+
 class MCTableType(AutoNameEnumBase):
     configuration    = auto()
     events           = auto()
@@ -67,6 +73,14 @@ class MCTableType(AutoNameEnumBase):
     waveforms        = auto()
     string_map       = auto()
 
+
+class Strictness(AutoNameEnumBase):
+    warning       = auto()
+    stop_proccess = auto()
+
+class type_of_signal(AutoNameEnumBase):
+    nS1 = auto()
+    nS2 = auto()
 
 class NormStrategy(AutoNameEnumBase):
     mean   = auto()
