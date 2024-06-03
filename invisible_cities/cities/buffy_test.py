@@ -5,6 +5,8 @@ import warnings
 import numpy  as np
 import tables as tb
 
+from pytest import raises
+
 from .. core                   import           system_of_units as units
 from .. core    .configure     import                 configure
 from .. core    .testing_utils import    assert_tables_equality
@@ -74,7 +76,7 @@ def test_buffy_kr(config_tmpdir, full_sim_file):
 
 def test_buffy_no_file_without_sns_response(config_tmpdir, ICDATADIR):
     file_in  = os.path.join(ICDATADIR, 'nexus_new_kr83m_fast.oldformat.sim.h5')
-    file_out = os.path.join(config_tmpdir, 'no_file.h5')
+    file_out = os.path.join(config_tmpdir, 'test_buffy_no_file_without_sns_response.h5')
 
     nevt = 2
     conf = configure('buffy invisible_cities/config/buffy.conf'.split())
@@ -90,17 +92,20 @@ def test_buffy_no_file_without_sns_response(config_tmpdir, ICDATADIR):
 
 
 def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
-    file_in  = os.path.join(ICDATADIR, 'nexus_new_kr83m_*.oldformat.sim.h5')
-    #file_in  = os.path.join(ICDATADIR, 'nexus_new_kr83m_full.oldformat.sim.h5')
-    file_out = os.path.join(config_tmpdir, 'filtered_empty.buffers.h5')
+    """
+    Check that events without sensor response are filtered out.
+    We use a fast simulation file to mimic events with no sensor response.
+    """
+    files_in = os.path.join(ICDATADIR, 'nexus_new_kr83m_*.oldformat.sim.h5')
+    file_out = os.path.join(config_tmpdir, 'test_buffy_filters_empty.h5')
 
     nevt     = 4
     n_passed = 2
     conf = configure('buffy invisible_cities/config/buffy.conf'.split())
-    conf.update(dict(files_in=file_in, file_out=file_out, event_range=nevt))
+    conf.update(dict(files_in=files_in, file_out=file_out, event_range=nevt))
 
-    # Exception expected since no MC sensor response is present.
-    # Suppress since irrelevant in test.
+    # Exception expected since no MC sensor response is present
+    # in one of the files. Suppress since irrelevant in test.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
         buffy_result = buffy(**conf)
