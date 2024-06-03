@@ -135,8 +135,7 @@ def phyllis( files_in         : OneOrManyFiles
 
             result = dict(events_in   = event_count     .future,
                           spe         = accumulate_light.future,
-                          dark        = accumulate_dark .future,
-                          event_count =      event_count.future)
+                          dark        = accumulate_dark .future)
         )
 
         write_hist(table_name = 'pmt_spe' )(out.spe )
