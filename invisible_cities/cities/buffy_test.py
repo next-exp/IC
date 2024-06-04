@@ -86,13 +86,10 @@ def test_buffy_no_file_without_sns_response(config_tmpdir, ICDATADIR):
     conf = configure('buffy invisible_cities/config/buffy.conf'.split())
     conf.update(dict(files_in=file_in, file_out=file_out, event_range=nevt))
 
-    try:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
         buffy(**conf)
-    except:
-        if not os.path.exists(file_out):
-            assert True
-        else:
-            assert False
+    assert not os.path.exists(file_out)
 
 
 def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
