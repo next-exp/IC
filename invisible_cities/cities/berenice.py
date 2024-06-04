@@ -101,8 +101,7 @@ def berenice( files_in    : OneOrManyFiles
             result = dict(events_in   = event_count      .future,
                           adc         = accumulate_adc   .future,
                           mode        = accumulate_mode  .future,
-                          median      = accumulate_median.future,
-                          event_count =       event_count.future))
+                          median      = accumulate_median.future))
 
         write_hist(table_name = "adc"   )(out.adc   )
         write_hist(table_name = "mode"  )(out.mode  )
