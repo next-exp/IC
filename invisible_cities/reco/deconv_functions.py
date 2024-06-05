@@ -21,13 +21,15 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 
 
-def remove_small_objects(data, min_size = 10, connectivity = 2):
+def isolate_satellites(data, min_size = 10, connectivity = 2):
     '''
     An adapted function from scikit-image
     https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/misc.py#L59-L151
     Pulled in here because of package mismatches (scikit-image breaks my conda env, this is easier I think)
     set min_size to 10-ish (testing), as per-iteration you wouldn't expect more than 4 pixels (interpolated) to be formed by a satellite
     connectivity set to 2 to catch diagonals
+
+    Separates blobs below a certain size that are distinct.
     '''
     try:
         array = data.copy().astype(bool)
@@ -345,8 +347,9 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0., z_flag = False):
     ref_image  = image/image.max()
 
     # variable controlling how regularly iterations are broken up
-    iteration_no = 50
+    iteration_no = 9999 # set this stupid high to disable
     for i in range(iterations):
+        
         if (z_flag == True):
             from matplotlib.colors import LogNorm
             im_vis = im_deconv.copy()
@@ -361,6 +364,7 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0., z_flag = False):
             plt.colorbar()
             plt.savefig('/home/e78368jw/Documents/NEXT_CODE/next_misc/energy_topology_study/plots_dodgy_events/dodgy_event_z_slice/im_deconv_' + str(i) + '.png')
             plt.close()
+
         x = convolve_method(im_deconv, psf, 'same')
         np.place(x, x==0, eps) ### Protection against 0 value
         relative_blur = image / x
@@ -375,7 +379,7 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0., z_flag = False):
 
 
             # create mask
-            satellite_mask = remove_small_objects(im_vis)
+            satellite_mask = isolate_satellites(im_vis)
             # remove only satellite regions!
             deconv_mask = (im_vis + satellite_mask) % 2 == 0
 
