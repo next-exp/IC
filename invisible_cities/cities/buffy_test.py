@@ -6,6 +6,8 @@ import numpy  as np
 import tables as tb
 
 from pytest import raises
+from pytest import mark
+from pytest import param
 
 from .. core                   import           system_of_units as units
 from .. core    .configure     import                 configure
@@ -123,6 +125,31 @@ def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
         evt_filter = h5out.root.Filters.detected_events.read()
         assert len(evt_filter) == nevt
         assert len(evt_filter[evt_filter['passed'] == True]) == 2
+
+
+@mark.parametrize("fn_first fn_second".split(),
+                  (param("nexus_new_kr83m_fast.oldformat.sim.h5",
+                         "nexus_new_kr83m_full.oldformat.sim.h5", marks=mark.xfail),
+                  ("nexus_new_kr83m_full.oldformat.sim.h5",
+                   "nexus_new_kr83m_fast.oldformat.sim.h5")))
+def test_buffy_empty_file(config_tmpdir, ICDATADIR, fn_first, fn_second):
+    """
+    Check that the code works even if the first file to be read has
+    no sensor response.
+    """
+    file_in_first  = os.path.join(ICDATADIR,  fn_first)
+    file_in_second = os.path.join(ICDATADIR, fn_second)
+    file_out       = os.path.join(config_tmpdir, 'test_buffy_empty_file.h5')
+
+    nevt = 4
+    conf = configure('buffy invisible_cities/config/buffy.conf'.split())
+    conf.update(dict(files_in=[file_in_first, file_in_second], file_out=file_out, event_range=nevt))
+
+    # Exception expected since no MC sensor response is present
+    # in one of the files. Suppress since irrelevant in test.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        buffy(**conf)
 
 
 def test_buffy_exact_result(config_tmpdir, ICDATADIR):
