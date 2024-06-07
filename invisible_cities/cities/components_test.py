@@ -83,6 +83,12 @@ def test_sources_invalid_input_raises_InvalidInputFileStructure(ICDATADIR, sourc
 def write_config_file(filename, **kwargs):
     with open(filename, "w") as f:
         for k, v in kwargs.items():
+            # Using repr will format strings and containers with
+            # strings correctly (i.e. with quotes). The file will
+            # look something like
+            # files_in   = ["file_1", "file_2"]
+            # file_out   = "an_output_file"
+            # run_number = 12345
             f.write(f"{k} = {repr(v)}\n")
 
 
