@@ -87,17 +87,17 @@ def write_config_file(filename, **kwargs):
 
 
 @mark.parametrize( "case_ files_in expected".split()
-                 , ( ( 0
-                     , "electrons_511keV_z250_RWF.h5"  # a single file without wildcard
+                 , ( ( 0 # a single file without wildcard
+                     , "electrons_511keV_z250_RWF.h5"
                      , "electrons_511keV_z250_RWF.h5")
-                   , ( 1
-                     , "electrons_*keV_z250_RWF.h5"   # a single wildcard leading to three files
+                   , ( 1 # a single wildcard leading to three files
+                     , "electrons_*keV_z250_RWF.h5"
                      , ["electrons_511keV_z250_RWF.h5" , "electrons_1250keV_z250_RWF.h5", "electrons_2500keV_z250_RWF.h5"])
-                   , ( 2
-                     , [ "electrons_511keV_z250_RWF.h5", "electrons_1250keV_z250_RWF.h5"] # a list of two files without wildcards
+                   , ( 2 # a list of two files without wildcards
+                     , [ "electrons_511keV_z250_RWF.h5", "electrons_1250keV_z250_RWF.h5"]
                      , [ "electrons_511keV_z250_RWF.h5", "electrons_1250keV_z250_RWF.h5"] )
-                   , ( 3
-                     , [ "electrons_5*keV_z250_RWF.h5", "electrons_1*keV_z250_RWF.h5"] # a list of wildcards leading to n files
+                   , ( 3 # a list of wildcards leading to n files
+                     , [ "electrons_5*keV_z250_RWF.h5", "electrons_1*keV_z250_RWF.h5"]
                      , [ "electrons_511keV_z250_RWF.h5", "electrons_1250keV_z250_RWF.h5"] )
                    )
                  )
