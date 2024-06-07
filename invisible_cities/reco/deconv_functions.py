@@ -19,6 +19,7 @@ from .. types.symbols       import InterpolationMethod
 import warnings
 
 ## Just here for testing, remove after finished testing
+from matplotlib import cm
 import matplotlib.pyplot as plt
 from matplotlib import colors
 
@@ -287,17 +288,38 @@ def deconvolve(n_iterations  : int,
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
         inter_signal, inter_pos = deconv_input(data, weight)
+
+        if (z_flag == True):
+            #q = plt.scatter(data[0],data[1],c = weight) # plot the real stuff here
+            #plt.colorbar(q)
+            #plt.title('SiPM output')
+            #plt.xlabel('x (mm)')
+            #plt.ylabel('y (mm)')
+            #plt.show()
+            
+            my_cmap = cm.get_cmap("viridis").with_extremes(under = "white")
+
+            r = plt.scatter(inter_pos[0], inter_pos[1], c = inter_signal, vmin = 1e-3, cmap=my_cmap)
+            #np.save('inter_pos_0.npy', inter_pos[0])
+            #np.save('inter_pos_1.npy', inter_pos[1])
+            #np.save('inter_sig.npy', inter_signal)
+            plt.colorbar(r)
+            plt.xlabel('x (mm)')
+            plt.ylabel('y (mm)')
+            plt.title('Interp output')
+            plt.show()
+
         columns       = var_name[:len(data)]
         psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
-        deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco, satellite_iter,
+        deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, inter_pos, psf_deco, satellite_iter,
                                                       satellite_dist, satellite_size, e_cut,
                                                       n_iterations, iteration_tol, z_flag))
 
         return deconv_image, inter_pos
 
     return deconvolve
-
-def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, e_cut, iterations=50, iter_thr=0., z_flag = False):
+                           # \/\/\/ added for visualising 
+def richardson_lucy(image, inter_pos, psf, satellite_iter, satellite_dist, satellite_size, e_cut, iterations=50, iter_thr=0., z_flag = False):
     """Richardson-Lucy deconvolution (modification from scikit-image package).
 
     The modification adds a value=0 protection, the possibility to stop iterating
@@ -359,20 +381,24 @@ def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, 
     # variable controlling how regularly iterations are broken up
     iteration_no = satellite_iter
     for i in range(iterations):
-        #if (z_flag == True):
-        #    from matplotlib.colors import LogNorm
-        #    im_vis = im_deconv.copy()
-        #    im_vis[im_vis < 9e-3] = 0
-        #    im_vis[im_vis >= 9e-3] = 1
-        #    plt.imshow(im_vis, origin = 'lower') #, extent = [inter_pos[0].min(), inter_pos[0].max(), inter_pos[1].min(), inter_pos[1].max()])
-        #    plt.xlabel('x (mm)')
-        #    plt.ylabel('y (mm)')
-        #    #plt.imshow(im_deconv, norm=LogNorm(vmin = im_deconv.min(), vmax = im_deconv.max()))
-        #    #plt.imshow(im_deconv)
-        #    plt.title(str(i) + "th iteration across Z slice")
-        #    plt.colorbar()
-        #    plt.savefig('/home/e78368jw/Documents/NEXT_CODE/next_misc/energy_topology_study/plots_dodgy_events/dodgy_event_z_slice/im_deconv_' + str(i) + '.png')
-        #    plt.close()
+        if (z_flag == True):
+            from matplotlib.colors import LogNorm
+            im_vis = im_deconv.copy()
+            im_vis[im_vis < 9e-3] = 0
+            im_vis[im_vis >= 9e-3] = 1
+
+            my_cmap = cm.get_cmap("binary").with_extremes(under = "white")
+
+
+            r = plt.scatter(inter_pos[0], inter_pos[1], c = im_vis, vmin = 1e-3, cmap=my_cmap)
+            plt.colorbar(r)
+            plt.xlabel('x (mm)')
+            plt.ylabel('y (mm)')
+            #plt.imshow(im_deconv, norm=LogNorm(vmin = im_deconv.min(), vmax = im_deconv.max()))
+            #plt.imshow(im_deconv)
+            plt.title(str(i) + "th iteration across Z slice")
+            plt.savefig('/home/e78368jw/Documents/NEXT_CODE/next_misc/energy_topology_study/plots_dodgy_events/dodgy_event_z_slice/im_deconv_' + str(i) + '.png')
+            plt.close()
         x = convolve_method(im_deconv, psf, 'same')
         np.place(x, x==0, eps) ### Protection against 0 value
         relative_blur = image / x
@@ -403,4 +429,7 @@ def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, 
 
         ref_image = im_deconv/im_deconv.max()
 
+    # documentation tags
+    #if (z_flag == True):
+    #    np.save('inter_post_deco.npy', im_deconv)
     return im_deconv
