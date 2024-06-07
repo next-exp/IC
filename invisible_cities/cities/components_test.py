@@ -105,6 +105,9 @@ def write_config_file(filename, **kwargs):
                    , ( 3 # a list of wildcards leading to n files
                      , [ "electrons_5*keV_z250_RWF.h5", "electrons_1*keV_z250_RWF.h5"]
                      , [ "electrons_511keV_z250_RWF.h5", "electrons_1250keV_z250_RWF.h5"] )
+                   , ( 4 # a single file plus a wildcard that overlaps with the previous file
+                     , ["electrons_511keV_z250_RWF.h5", "electrons_*keV_z250_RWF.h5"]
+                     , ["electrons_511keV_z250_RWF.h5" , "electrons_1250keV_z250_RWF.h5", "electrons_2500keV_z250_RWF.h5"] )
                    )
                  )
 def test_city_files_in(case_, files_in, expected, config_tmpdir, ICDATADIR):
@@ -114,6 +117,7 @@ def test_city_files_in(case_, files_in, expected, config_tmpdir, ICDATADIR):
     - a single wildcard
     - a list of files
     - a list of wildcards
+    - a list of a file plus a wildcard with overlap
     """
     # need to prepend ICDATADIR here to avoid the mess in the parametrization
     if isinstance(files_in, str): files_in =  os.path.join(ICDATADIR, files_in)
