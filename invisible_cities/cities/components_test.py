@@ -110,6 +110,7 @@ def write_config_file(filename, **kwargs):
                      , ["electrons_511keV_z250_RWF.h5" , "electrons_1250keV_z250_RWF.h5", "electrons_2500keV_z250_RWF.h5"] )
                    )
                  )
+@mark.filterwarnings("ignore:files_in contains repeated values")
 def test_city_files_in(case_, files_in, expected, config_tmpdir, ICDATADIR):
     """
     Check that all possible files_in inputs are handled properly:
