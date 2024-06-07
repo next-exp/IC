@@ -16,12 +16,16 @@ from ..core .core_functions import in_range
 
 from .. types.symbols       import InterpolationMethod
 
+import warnings
+
 ## Just here for testing, remove after finished testing
 import matplotlib.pyplot as plt
 from matplotlib import colors
 
 
-def isolate_satellites(data, min_size = 10, connectivity = 2):
+
+
+def isolate_satellites(data, connectivity = 2, min_size = 10):
     '''
     An adapted function from scikit-image
     https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/misc.py#L59-L151
@@ -37,7 +41,8 @@ def isolate_satellites(data, min_size = 10, connectivity = 2):
         print("Please ensure the array passed through is boolean compatible.")
     # Not connections if satellite size is zero
     if min_size == 0:
-        return array
+        warning.warn(f'Satellite size set to zero. No satellites will be removed')
+        return array # will cause the result to be identical to the input
 
 
     # label the blobs within the array
@@ -274,20 +279,25 @@ def deconvolve(n_iterations  : int,
     def deconvolve(data   : Tuple[np.ndarray, ...],
                    weight : np.ndarray,
                    psf    : pd.DataFrame,
+                   satellite_iter  : int,
+                   satellite_dist  : int,
+                   satellite_size  : int,
+                   e_cut  : float,
                    z_flag : bool
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
         inter_signal, inter_pos = deconv_input(data, weight)
         columns       = var_name[:len(data)]
         psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
-        deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco,
+        deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco, satellite_iter,
+                                                      satellite_dist, satellite_size, e_cut,
                                                       n_iterations, iteration_tol, z_flag))
 
         return deconv_image, inter_pos
 
     return deconvolve
 
-def richardson_lucy(image, psf, iterations=50, iter_thr=0., z_flag = False):
+def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, e_cut, iterations=50, iter_thr=0., z_flag = False):
     """Richardson-Lucy deconvolution (modification from scikit-image package).
 
     The modification adds a value=0 protection, the possibility to stop iterating
@@ -347,24 +357,22 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0., z_flag = False):
     ref_image  = image/image.max()
 
     # variable controlling how regularly iterations are broken up
-    iteration_no = 9999 # set this stupid high to disable
+    iteration_no = satellite_iter
     for i in range(iterations):
-        
-        if (z_flag == True):
-            from matplotlib.colors import LogNorm
-            im_vis = im_deconv.copy()
-            im_vis[im_vis < 9e-3] = 0
-            im_vis[im_vis >= 9e-3] = 1
-            plt.imshow(im_vis, origin = 'lower') #, extent = [inter_pos[0].min(), inter_pos[0].max(), inter_pos[1].min(), inter_pos[1].max()])
-            plt.xlabel('x (mm)')
-            plt.ylabel('y (mm)')
-            #plt.imshow(im_deconv, norm=LogNorm(vmin = im_deconv.min(), vmax = im_deconv.max()))
-            #plt.imshow(im_deconv)
-            plt.title(str(i) + "th iteration across Z slice")
-            plt.colorbar()
-            plt.savefig('/home/e78368jw/Documents/NEXT_CODE/next_misc/energy_topology_study/plots_dodgy_events/dodgy_event_z_slice/im_deconv_' + str(i) + '.png')
-            plt.close()
-
+        #if (z_flag == True):
+        #    from matplotlib.colors import LogNorm
+        #    im_vis = im_deconv.copy()
+        #    im_vis[im_vis < 9e-3] = 0
+        #    im_vis[im_vis >= 9e-3] = 1
+        #    plt.imshow(im_vis, origin = 'lower') #, extent = [inter_pos[0].min(), inter_pos[0].max(), inter_pos[1].min(), inter_pos[1].max()])
+        #    plt.xlabel('x (mm)')
+        #    plt.ylabel('y (mm)')
+        #    #plt.imshow(im_deconv, norm=LogNorm(vmin = im_deconv.min(), vmax = im_deconv.max()))
+        #    #plt.imshow(im_deconv)
+        #    plt.title(str(i) + "th iteration across Z slice")
+        #    plt.colorbar()
+        #    plt.savefig('/home/e78368jw/Documents/NEXT_CODE/next_misc/energy_topology_study/plots_dodgy_events/dodgy_event_z_slice/im_deconv_' + str(i) + '.png')
+        #    plt.close()
         x = convolve_method(im_deconv, psf, 'same')
         np.place(x, x==0, eps) ### Protection against 0 value
         relative_blur = image / x
@@ -372,14 +380,15 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0., z_flag = False):
 
         # after every iteration, kill satellites (size 1)
         if (i > iteration_no):
+            # apply mask to a copy
             im_vis = im_deconv.copy()
-            im_vis[im_vis < 9e-3] = 0
-            im_vis[im_vis >= 9e-3] = 1
+            im_vis[im_vis < e_cut] = 0
+            im_vis[im_vis >= e_cut] = 1
 
 
 
             # create mask
-            satellite_mask = isolate_satellites(im_vis)
+            satellite_mask = isolate_satellites(im_vis, satellite_dist, satellite_size)
             # remove only satellite regions!
             deconv_mask = (im_vis + satellite_mask) % 2 == 0
 
