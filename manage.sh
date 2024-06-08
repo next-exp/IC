@@ -73,7 +73,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2022-04-13
+CONDA_ENV_TAG=2024-06-08
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
