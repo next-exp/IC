@@ -112,9 +112,18 @@ def city(city_function):
         if 'files_in' not in kwds: raise NoInputFiles
         if 'file_out' not in kwds: raise NoOutputFile
 
+        # always a sequence, so we can generalize the code below
+        if isinstance(conf.files_in, str):
+            conf.files_in = [conf.files_in]
 
-        conf.files_in  = sorted(glob(expandvars(conf.files_in)))
-        conf.file_out  =             expandvars(conf.file_out)
+        globbed_files = map(glob, map(expandvars, conf.files_in))
+        globbed_files = sorted(f for fs in globbed_files for f in fs)
+        if len(set(globbed_files)) != len(globbed_files):
+            warnings.warn("files_in contains repeated values. Ignoring duplicate files.", UserWarning)
+            globbed_files = sorted(set(globbed_files))
+
+        conf.files_in = globbed_files
+        conf.file_out = expandvars(conf.file_out)
 
         conf.event_range  = event_range(conf)
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
