@@ -99,7 +99,8 @@ def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
     Check that events without sensor response are filtered out.
     We use a fast simulation file to mimic events with no sensor response.
     """
-    files_in = os.path.join(ICDATADIR, 'nexus_new_kr83m_*.oldformat.sim.h5')
+    files_in = [os.path.join(ICDATADIR, 'nexus_new_kr83m_full.oldformat.sim.h5'),
+                os.path.join(ICDATADIR, 'nexus_new_kr83m_fast.oldformat.sim.h5')]
     file_out = os.path.join(config_tmpdir, 'test_buffy_filters_empty.h5')
 
     nevt     = 4
