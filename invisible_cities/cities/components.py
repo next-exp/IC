@@ -117,10 +117,10 @@ def city(city_function):
             conf.files_in = [conf.files_in]
 
         globbed_files = map(glob, map(expandvars, conf.files_in))
-        globbed_files = sorted(f for fs in globbed_files for f in fs)
+        globbed_files = list(f for fs in globbed_files for f in fs)
         if len(set(globbed_files)) != len(globbed_files):
             warnings.warn("files_in contains repeated values. Ignoring duplicate files.", UserWarning)
-            globbed_files = sorted(set(globbed_files))
+            globbed_files = [f for i, f in enumerate(globbed_files) if f not in globbed_files[:i]]
 
         conf.files_in = globbed_files
         conf.file_out = expandvars(conf.file_out)

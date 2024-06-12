@@ -152,6 +152,36 @@ def test_city_files_in(case_, files_in, expected, config_tmpdir, ICDATADIR):
     assert sorted(result) == sorted(expected)
 
 
+@mark.parametrize("order", ((0,1), (1,0)))
+def test_city_keeps_input_file_ordering(ICDATADIR, config_tmpdir, order):
+    files_in = [ os.path.join(ICDATADIR, "electrons_511keV_z250_RWF.h5")
+               , os.path.join(ICDATADIR, "electrons_1250keV_z250_RWF.h5") ]
+    files_in = [files_in[i] for i in order]
+
+    @city
+    def dummy_city( files_in    : Union[str, list]
+                  , file_out    : str
+                  , event_range : tuple):
+        with tb.open_file(file_out, "w"): pass
+        return files_in
+
+    config_file = os.path.join(config_tmpdir, f"test_city_keeps_input_file_ordering.conf")
+    file_out    = os.path.join(config_tmpdir, f"test_city_keeps_input_file_ordering.h5"  )
+
+    write_config_file( config_file
+                     , files_in    = files_in
+                     , file_out    = file_out
+                     , event_range = 0
+                     )
+
+    conf = configure(f"dummy {config_file}".split())
+
+    result = dummy_city(**conf)
+
+    # no sorting: ensure that the files keep their original ordering
+    assert result == files_in
+
+
 def test_compute_xy_position_depends_on_actual_run_number():
     """
     The channels entering the reco algorithm are the ones in a square of 3x3
