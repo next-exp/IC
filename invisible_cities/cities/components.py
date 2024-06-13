@@ -466,8 +466,8 @@ def mcsensors_from_file(paths     : List[str],
 
         sns_pos_tbl = 'MC/sensor_positions' if is_oldformat_file(file_name) else 'MC/sns_positions'
 
-        nexus_sns_pos       = pd.read_hdf(file_name, sns_pos_tbl)
-        nexus_pmt_ids       = nexus_sns_pos[nexus_sns_pos.sensor_id < 100].sensor_id ## sensors with IDs below 100 are PMTs, the rest are SiPMs
+        nexus_sns_pos = pd.read_hdf(file_name, sns_pos_tbl)
+        nexus_pmt_ids = nexus_sns_pos[nexus_sns_pos.sensor_id < 100].sensor_id ## sensors with IDs below 100 are PMTs, the rest are SiPMs
 
         if not nexus_pmt_ids.isin(pmt_ids).all():
             raise SensorIDMismatch('Some PMT IDs in nexus file do not appear in database')
