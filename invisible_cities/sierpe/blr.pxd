@@ -33,3 +33,9 @@ cpdef deconvolve_signal(double [:] signal_daq,
                         double     coeff_blr       = *,
                         double     thr_trigger     = *,
                         int accum_discharge_length = *)
+
+cpdef deconvolve_signal_fpga(short [:] signal_daq
+                            ,double    coeff_clean = *
+                            ,double    coeff_blr   = *
+                            ,double    thr_trigger = *
+                            ,size_t    base_window = *)

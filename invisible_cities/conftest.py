@@ -52,6 +52,11 @@ def example_blr_wfs_filename(ICDATADIR):
     return os.path.join(ICDATADIR, "blr_examples.h5")
 
 
+@pytest.fixture(scope='session')
+def example_blr_fpga_wfs_filename(ICDATADIR):
+    return os.path.join(ICDATADIR, "blr_fpga_examples.h5")
+
+
 @pytest.fixture(scope  = 'session',
                 params = ['electrons_40keV_z250_MCRD.h5'])
 def electron_MCRD_file(request, ICDATADIR):
@@ -817,6 +822,41 @@ def beersheba_config_separate(beersheba_config):
                                                  , n_iterations_g = 50))
 
     return beersheba_config
+
+
+
+@pytest.fixture(scope='function') # Needs to be function as the config dict is modified when running
+def trigger_config(ICDIR, ICDATADIR, config_tmpdir):
+    PATH_IN     = os.path.join(ICDATADIR    ,    "blr_fpga_examples.h5")
+    PATH_OUT    = os.path.join(config_tmpdir,     "trigger_city_out.h5")
+    nevt_req    = 10
+    conf        = dict(files_in       = PATH_IN ,
+                       file_out       = PATH_OUT,
+                       event_range    = nevt_req,
+                       compression    = 'ZLIB4',
+                       print_mod      = 1000,
+                       run_number     = 8093,
+                       trigger_config = dict(coincidence_window = 64
+                                            ,discard_width      = 40
+                                            ,multipeak          = dict(q_min      = 100000
+                                                                      ,time_min   = 2  *units.mus
+                                                                      ,time_after = 800*units.mus)),
+                       channel_config = {0 : dict(q_min           = 5000
+                                                 ,q_max           = 50000
+                                                 ,time_min        = 2 *units.mus
+                                                 ,time_max        = 40*units.mus
+                                                 ,baseline_dev    = 10
+                                                 ,amp_max         = 1000
+                                                 ,pulse_valid_ext = 50*units.ns)
+                                        ,2 : dict(q_min           = 5000
+                                                 ,q_max           = 50000
+                                                 ,time_min        = 2 *units.mus
+                                                 ,time_max        = 40*units.mus
+                                                 ,baseline_dev    = 10
+                                                 ,amp_max         = 1000
+                                                 ,pulse_valid_ext = 50*units.ns)})
+
+    return conf, PATH_OUT
 
 
 ## To make very slow tests only run with specific option

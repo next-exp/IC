@@ -2,19 +2,25 @@ from collections import namedtuple
 
 import numpy  as np
 import tables as tb
+import pandas as pd
 
-from pytest import fixture
-from pytest import mark
-from flaky  import flaky
+from pytest                    import fixture
+from pytest                    import mark
+from flaky                     import flaky
+from hypothesis                import given
+from hypothesis                import settings
+from hypothesis.strategies     import integers
 
 from .. reco import calib_sensors_functions as csf
 from .       import blr
 
 
-deconv_params = namedtuple("deconv_params",
-                           "coeff_clean coeff_blr "
-                           "thr_trigger accum_discharge_length")
-
+deconv_params      = namedtuple("deconv_params",
+                                "coeff_clean coeff_blr "
+                                "thr_trigger accum_discharge_length")
+deconv_fpga_params = namedtuple("deconv_params",
+                                "coeff_clean coeff_blr "
+                                "thr_trigger base_window")
 
 @fixture(scope="session")
 def sin_wf_params():
@@ -54,6 +60,20 @@ def ad_hoc_blr_signals(example_blr_wfs_filename):
         return rwf, blrwf, attrs.n_baseline, params
 
 
+@fixture(scope="session")
+def ad_hoc_blr_fpga_signals(example_blr_fpga_wfs_filename):
+    with tb.open_file(example_blr_fpga_wfs_filename) as file:
+        rwf    = file.root.RD.pmtrwf[:]
+        blrwf  = file.root.BLR[:]
+        base   = file.root.Baseline[:]
+        attrs  = file.root.BLR.attrs
+        params = deconv_fpga_params(attrs.coeff_c    ,
+                                    attrs.coeff_blr  ,
+                                    attrs.thr_trigger,
+                                    attrs.base_window)
+        return rwf, blrwf, base, params
+
+
 def test_deconvolve_signal_positive_integral(sin_wf, sin_wf_params):
     # The RWF should have null integral because contains roughly
     # the same number of positive and negative samples.
@@ -90,7 +110,7 @@ def test_deconvolve_signal_ad_hoc_signals(ad_hoc_blr_signals):
 
     rwf         = all_rwfs        [evt_no, pmt_no]
     true_blr_wf = all_true_blr_wfs[evt_no, pmt_no]
-    
+
     cwf         = np.mean(rwf[:n_baseline]) - rwf
     blr_wf = blr.deconvolve_signal(cwf,
                                    coeff_clean            = params.coeff_clean[pmt_no],
@@ -144,3 +164,62 @@ def test_deconv_pmt_ad_hoc_signals_dead_sensors(ad_hoc_blr_signals):
                                   rep_thr              , rep_acc             )))
 
     np.allclose(blr_wfs, evt_true_blr_wfs[pmt_active])
+
+
+@settings(max_examples=1, deadline=1000)
+@given   (evt_no=integers(0, 9))
+@mark.slow
+def test_deconv_pmt_fpga_ad_hoc_signals_all(evt_no, ad_hoc_blr_fpga_signals):
+    all_rwfs, all_true_blr_wfs, all_true_baseline, params = ad_hoc_blr_fpga_signals
+
+    evt_rwfs          = all_rwfs         [evt_no]
+    evt_true_blr_wfs  = all_true_blr_wfs [evt_no]
+    evt_true_baseline = all_true_baseline[evt_no]
+
+    rep_thr  = np.repeat(params.thr_trigger, evt_rwfs.shape[0])
+    rep_base = np.repeat(params.base_window, evt_rwfs.shape[0])
+    blr_wfs, baseline = zip(*map(blr.deconvolve_signal_fpga, evt_rwfs        ,
+                                 params.coeff_clean        , params.coeff_blr,
+                                 rep_thr                   , rep_base        ))
+
+    assert np.allclose(blr_wfs , evt_true_blr_wfs )
+    assert np.allclose(baseline, evt_true_baseline)
+
+
+@settings(max_examples=1, deadline=1000)
+@given   (evt_no=integers(0, 9))
+@mark.slow
+def test_deconv_pmt_fpga_ad_hoc_signals_dead_sensors(evt_no, ad_hoc_blr_fpga_signals):
+    all_rwfs, all_true_blr_wfs, all_true_baseline, params = ad_hoc_blr_fpga_signals
+
+    n_evts, n_pmts, _ = all_rwfs.shape
+    pmt_active        = np.arange(n_pmts)
+    n_alive           = np.random.randint(1, n_pmts - 1)
+    pmt_active        = np.random.choice(pmt_active, size=n_alive, replace=False)
+
+    evt_rwfs          = all_rwfs         [evt_no]
+    evt_true_blr_wfs  = all_true_blr_wfs [evt_no]
+    evt_true_baseline = all_true_baseline[evt_no]
+
+    rep_thr  = np.repeat(params.thr_trigger, len(pmt_active))
+    rep_base = np.repeat(params.base_window, len(pmt_active))
+    blr_wfs, baseline = zip(*map(blr.deconvolve_signal_fpga    , evt_rwfs        [pmt_active],
+                                 params.coeff_clean[pmt_active], params.coeff_blr[pmt_active],
+                                 rep_thr                       , rep_base                    ))
+
+    assert np.allclose(blr_wfs , evt_true_blr_wfs [pmt_active])
+    assert np.allclose(baseline, evt_true_baseline[pmt_active])
+
+
+@given(thr=integers(2, 100), window=integers(10, 5000))
+def test_moving_average_baseline(thr, window):
+    samples = 10000
+    np.random.seed(1234)
+    wvf     = np.random.randint(0 , thr-1, samples, dtype=np.int16)
+
+    _, baseline = blr.deconvolve_signal_fpga(wvf, 1e-6, 1e-3, thr, window)
+
+    rolling = pd.Series(wvf).rolling(window=window).mean().values.astype(np.int16)
+
+    assert np.allclose(rolling[window:], baseline[window:])
+    assert np.allclose(np.repeat(wvf[:window].mean().astype(np.int16), window), baseline[:window])

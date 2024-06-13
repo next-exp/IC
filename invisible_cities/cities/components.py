@@ -370,6 +370,33 @@ def deconv_pmt(dbfile, run_number, n_baseline,
     return deconv_pmt
 
 
+def deconv_pmt_fpga(dbfile     : str
+                   ,run_number : int
+                   ,selection  : List[int] = None
+                   ) -> Callable:
+    '''
+    Apply deconvolution as done in the FPGA.
+
+    Parameters
+    ----------
+    dbfile     : Database to be used
+    run_number : Run number of the database
+    selection  : List of PMT IDs to apply deconvolution to.
+
+    Returns
+    ----------
+    deconv_pmt : Function that will apply the deconvolution.
+    '''
+    DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
+    pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist() if selection is None else selection
+    coeff_c    = DataPMT.coeff_c  .values.astype(np.double)[pmt_active]
+    coeff_blr  = DataPMT.coeff_blr.values.astype(np.double)[pmt_active]
+    def deconv_pmt(RWF):
+        return zip(*map(blr.deconvolve_signal_fpga, RWF[pmt_active],
+                        coeff_c                   , coeff_blr      ))
+    return deconv_pmt
+
+
 def get_run_number(h5in):
     if   "runInfo" in h5in.root.Run: return h5in.root.Run.runInfo[0]['run_number']
     elif "RunInfo" in h5in.root.Run: return h5in.root.Run.RunInfo[0]['run_number']
