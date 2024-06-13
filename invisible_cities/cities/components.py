@@ -464,15 +464,15 @@ def mcsensors_from_file(paths     : List[str],
                                                        db_file    = db_file   ,
                                                        run_no     = run_number)
 
-        sns_pos_tbl = 'MC/sensor_positions' if is_oldformat_file(file_name) else 'MC/sns_positions'
+        if not is_oldformat_file(file_name):
 
-        nexus_sns_pos = pd.read_hdf(file_name, sns_pos_tbl)
-        sns_labels    = np.array([name.casefold() for name in nexus_sns_pos.sensor_name.values])
-        pmt_condition = np.argwhere(['Pmt'.casefold() in lbl for lbl in sns_labels]).flatten()
-        nexus_pmt_ids = nexus_sns_pos.sensor_id.values[pmt_condition]
+            nexus_sns_pos = pd.read_hdf(file_name, 'MC/sns_positions')
+            sns_labels    = np.array([name.casefold() for name in nexus_sns_pos.sensor_name.values])
+            pmt_condition = np.argwhere(['Pmt'.casefold() in lbl for lbl in sns_labels]).flatten()
+            nexus_pmt_ids = nexus_sns_pos.sensor_id.values[pmt_condition]
 
-        if not all(x in pmt_ids for x in nexus_pmt_ids):
-            raise SensorIDMismatch('Some PMT IDs in nexus file do not appear in database')
+            if not all(x in pmt_ids for x in nexus_pmt_ids):
+                raise SensorIDMismatch('Some PMT IDs in nexus file do not appear in database')
 
 
         for evt in mcinfo_io.get_event_numbers_in_file(file_name):
