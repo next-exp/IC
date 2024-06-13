@@ -52,3 +52,6 @@ class TimeEvolutionTableMissing(ICException):
 
 class MCEventNotFound(ICException):
     """ Requested event missing from input file """
+
+class SensorIDMismatch(ICException):
+    pass

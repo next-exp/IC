@@ -13,6 +13,7 @@ from pytest import warns
 
 from .. core.configure     import configure
 from .. core.exceptions    import InvalidInputFileStructure
+from .. core.exceptions    import          SensorIDMismatch
 from .. core.testing_utils import    assert_tables_equality
 from .. core               import system_of_units as units
 from .. types.symbols      import WfType
@@ -421,3 +422,16 @@ def test_check_max_time_units():
 
     with raises(ValueError):
         check_max_time(max_time, buffer_length)
+
+def test_read_wrong_pmt_ids(ICDATADIR):
+    """
+    The input file of this test contains sensor IDs that are not present in the database.
+    This should raise an error and this test check that it is actually raised.
+    """
+    file_in    = os.path.join(ICDATADIR, "nexus_next100_full_wrong_PMT_IDs.h5")
+    run_number = 0
+    rate       = 0.5
+
+    sns_gen = mcsensors_from_file([file_in], 'next100', run_number, rate)
+    with raises(SensorIDMismatch):
+        next(sns_gen)

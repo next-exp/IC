@@ -38,6 +38,7 @@ from .. core   .exceptions        import           MCEventNotFound
 from .. core   .exceptions        import              NoInputFiles
 from .. core   .exceptions        import              NoOutputFile
 from .. core   .exceptions        import InvalidInputFileStructure
+from .. core   .exceptions        import          SensorIDMismatch
 from .. core   .configure         import          event_range_help
 from .. core   .configure         import         check_annotations
 from .. core   .random_sampling   import              NoiseSampler
@@ -69,6 +70,7 @@ from .. io     .pmaps_io          import               pmap_writer
 from .. io     .rwf_io            import             buffer_writer
 from .. io     .mcinfo_io         import            load_mchits_df
 from .. io     .mcinfo_io         import          load_mcstringmap
+from .. io     .mcinfo_io         import         is_oldformat_file
 from .. io     .dst_io            import                 df_writer
 from .. types  .ic_types          import                  NoneType
 from .. types  .ic_types          import                        xy
@@ -461,6 +463,15 @@ def mcsensors_from_file(paths     : List[str],
                                                        return_raw = False     ,
                                                        db_file    = db_file   ,
                                                        run_no     = run_number)
+
+        if not is_oldformat_file(file_name):
+            nexus_sns_pos = pd.read_hdf(file_name, 'MC/sns_positions')
+            pmt_condition = nexus_sns_pos.sensor_name.str.casefold().str.contains('pmt')
+            nexus_pmt_ids = nexus_sns_pos[pmt_condition].sensor_id
+
+            if not nexus_pmt_ids.isin(pmt_ids).all():
+                raise SensorIDMismatch('Some PMT IDs in nexus file do not appear in database')
+
 
         for evt in mcinfo_io.get_event_numbers_in_file(file_name):
 
