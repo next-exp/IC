@@ -125,7 +125,7 @@ def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
 
         evt_filter = h5out.root.Filters.detected_events.read()
         assert len(evt_filter) == nevt
-        assert len(evt_filter[evt_filter['passed'] == True]) == 2
+        assert np.count_nonzero(evt_filter['passed']) == 2
 
 
 @mark.parametrize("fn_first fn_second".split(),
