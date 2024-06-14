@@ -131,7 +131,8 @@ def city(city_function):
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
 
         result = check_annotations(city_function)(**vars(conf))
-        index_tables(conf.file_out)
+        if os.path.exists(conf.file_out):
+            index_tables(conf.file_out)
         return result
     return proxy
 
@@ -190,8 +191,6 @@ def index_tables(file_out):
     -checks if any columns in the tables have been marked to be indexed by writers
     -indexes those columns
     """
-    if not os.path.exists(file_out):
-        return
     with tb.open_file(file_out, 'r+') as h5out:
         for table in h5out.walk_nodes(classname='Table'):        # Walk over all tables in h5out
             if 'columns_to_index' not in table.attrs:  continue  # Check for columns to index
