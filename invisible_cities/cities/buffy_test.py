@@ -90,8 +90,11 @@ def test_buffy_no_file_without_sns_response(config_tmpdir, ICDATADIR):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
-        buffy(**conf)
+        buffy_result = buffy(**conf)
     assert not os.path.exists(file_out)
+    assert buffy_result.events_in   == 0
+    assert buffy_result.events_resp == 0
+    assert buffy_result.evtnum_list == []
 
 
 def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
