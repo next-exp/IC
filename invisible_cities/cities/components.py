@@ -131,7 +131,8 @@ def city(city_function):
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
 
         result = check_annotations(city_function)(**vars(conf))
-        index_tables(conf.file_out)
+        if os.path.exists(conf.file_out):
+            index_tables(conf.file_out)
         return result
     return proxy
 
