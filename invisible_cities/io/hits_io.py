@@ -34,7 +34,7 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
     times = getattr(dst, 'time', [-1]*len(dst))
     for (event, time) , df in dst.groupby(['event', times]):
         #pandas is not consistent with numpy dtypes so we have to change it by hand
-        event = np.int32(event)
+        event = np.int64(event)
         hits  = []
         for i, row in df.iterrows():
             Q = getattr(row,'Q', row.E)
