@@ -18,10 +18,12 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import floats
 from . testing_utils       import float_arrays
 from . testing_utils       import random_length_float_arrays
+from .. evm.ic_containers  import FitFunction
 
 from .                import core_functions as core
 from .                import  fit_functions as fitf
 from . stat_functions import poisson_sigma
+
 
 
 def test_get_errors():
