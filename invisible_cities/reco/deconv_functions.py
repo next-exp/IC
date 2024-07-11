@@ -318,13 +318,13 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
     psf        = xp.asarray(psf, dtype=float)
     im_deconv  = 0.5 * xp.ones(image.shape)
     s          = slice(None, None, -1)
-    psf_mirror = psf[(s,) * psf.ndim]
-    eps        = xp.finfo(image.dtype).eps
-    ref_image  = image / image.max()
+    psf_mirror = psf[(s,) * psf.ndim] ### Allow for n-dim mirroring.
+    eps        = xp.finfo(image.dtype).eps ### Protection against 0 value
+    ref_image  = image/image.max()
 
     for _ in range(iterations):
         x = convolve_method(im_deconv, psf, 'same')
-        xp.place(x, x == 0, eps)
+        xp.place(x, x==0, eps) ### Protection against 0 value
         relative_blur = image / x
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
