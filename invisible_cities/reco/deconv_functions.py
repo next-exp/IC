@@ -18,7 +18,6 @@ try:
     import cupyx as cpx
     from cupyx.scipy.signal  import convolve
     from cupyx.scipy.signal  import fftconvolve 
-    from cupyx.scipy.ndimage import convolve
 
     if cp.cuda.runtime.getDeviceCount():
         USING_GPU = True
@@ -315,45 +314,34 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
         xp = np
 
     # Convert image and psf to the appropriate array type (float)
-    image = xp.asarray(image, dtype=xp.float32)
-    psf = xp.asarray(psf, dtype=xp.float32)
-
-    # Initialize im_deconv
-    im_deconv = 0.5 * xp.ones(image.shape, dtype=xp.float32)
-
-    # Allow for n-dimensional mirroring
-    s = slice(None, None, -1)
+    image      = xp.asarray(image, dtype=float)
+    psf        = xp.asarray(psf, dtype=float)
+    im_deconv  = 0.5 * xp.ones(image.shape)
+    s          = slice(None, None, -1)
     psf_mirror = psf[(s,) * psf.ndim]
+    eps        = xp.finfo(image.dtype).eps
+    ref_image  = image / image.max()
 
-    # Protection against 0 value
-    eps = xp.finfo(image.dtype).eps
-
-    # Normalize the reference image
-    ref_image = image / image.max()
-    
     for _ in range(iterations):
-        x = convolve_method(im_deconv, psf, mode='same')
+        x = convolve_method(im_deconv, psf, 'same')
         xp.place(x, x == 0, eps)
         relative_blur = image / x
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
-        im_deconv_max = im_deconv.max()
-        im_deconv_ratio = im_deconv / im_deconv_max
-
         # This is needed because Cupy does not have a full errstate implementation
         if USING_GPU:
-            rel_diff_array = (im_deconv_ratio - ref_image) ** 2
+            rel_diff_array = (im_deconv/im_deconv.max() - ref_image) ** 2
             with cpx.errstate():
-                rel_diff_array = xp.where(ref_image != 0, rel_diff_array / ref_image, 0)
+                rel_diff_array = xp.where(ref_image != 0, xp.divide(rel_diff_array, ref_image), 0)
             rel_diff = xp.sum(rel_diff_array)
         else:
             with np.errstate(divide='ignore', invalid='ignore'):
-                rel_diff = xp.sum(((im_deconv_ratio - ref_image) ** 2) / ref_image)
+                rel_diff = xp.sum(xp.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
         
         if rel_diff < iter_thr:
             break
 
-        ref_image = im_deconv_ratio
+        ref_image = im_deconv/im_deconv.max()
 
     if USING_GPU:
         im_deconv = cp.asnumpy(im_deconv)
