@@ -338,7 +338,7 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
             with np.errstate(divide='ignore', invalid='ignore'):
                 rel_diff = xp.sum(xp.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
         
-        if rel_diff < iter_thr:
+        if rel_diff < iter_thr: ### Break if a given threshold is reached.
             break
 
         ref_image = im_deconv/im_deconv.max()
