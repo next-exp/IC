@@ -210,13 +210,14 @@ def deconvolve_signal(det_db          : pd.DataFrame,
                        (psfs.x == find_nearest(psfs.x, xx)) &
                        (psfs.y == find_nearest(psfs.y, yy)) , :]
 
-        relevant_z_slice = 272.41895625000006
+        #relevant_z_slice = 272.41895625000006
         # this is an explicit test for looking at particular slices
-        if (z == relevant_z_slice):
-            z_flag = True
-        else:
-            z_flag = False
-
+        #if (z == relevant_z_slice):
+        #    z_flag = True
+        #else:
+        #    z_flag = False
+        #### NOTE DEFINE PRINTABILITY HERE
+        z_flag = True
         
         deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf, satellite_iter, satellite_dist, satellite_size, e_cut, z_flag)
 

@@ -299,15 +299,15 @@ def deconvolve(n_iterations  : int,
             
             my_cmap = cm.get_cmap("viridis").with_extremes(under = "white")
 
-            r = plt.scatter(inter_pos[0], inter_pos[1], c = inter_signal, vmin = 1e-3, cmap=my_cmap)
+            #r = plt.scatter(inter_pos[0], inter_pos[1], c = inter_signal, vmin = 1e-3, cmap=my_cmap)
             #np.save('inter_pos_0.npy', inter_pos[0])
             #np.save('inter_pos_1.npy', inter_pos[1])
             #np.save('inter_sig.npy', inter_signal)
-            plt.colorbar(r)
-            plt.xlabel('x (mm)')
-            plt.ylabel('y (mm)')
-            plt.title('Interp output')
-            plt.show()
+            #plt.colorbar(r)
+            #plt.xlabel('x (mm)')
+            #plt.ylabel('y (mm)')
+            #plt.title('Interp output')
+            #plt.show()
 
         columns       = var_name[:len(data)]
         psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
@@ -390,15 +390,15 @@ def richardson_lucy(image, inter_pos, psf, satellite_iter, satellite_dist, satel
             my_cmap = cm.get_cmap("binary").with_extremes(under = "white")
 
 
-            r = plt.scatter(inter_pos[0], inter_pos[1], c = im_vis, vmin = 1e-3, cmap=my_cmap)
-            plt.colorbar(r)
-            plt.xlabel('x (mm)')
-            plt.ylabel('y (mm)')
+            #r = plt.scatter(inter_pos[0], inter_pos[1], c = im_vis, vmin = 1e-3, cmap=my_cmap)
+            #plt.colorbar(r)
+            #plt.xlabel('x (mm)')
+            #plt.ylabel('y (mm)')
             #plt.imshow(im_deconv, norm=LogNorm(vmin = im_deconv.min(), vmax = im_deconv.max()))
             #plt.imshow(im_deconv)
-            plt.title(str(i) + "th iteration across Z slice")
-            plt.savefig('/home/e78368jw/Documents/NEXT_CODE/next_misc/energy_topology_study/plots_dodgy_events/dodgy_event_z_slice/im_deconv_' + str(i) + '.png')
-            plt.close()
+            #plt.title(str(i) + "th iteration across Z slice")
+            #plt.savefig('/home/e78368jw/Documents/NEXT_CODE/next_misc/energy_topology_study/plots_dodgy_events/dodgy_event_z_slice/im_deconv_' + str(i) + '.png')
+            #plt.close()
         x = convolve_method(im_deconv, psf, 'same')
         np.place(x, x==0, eps) ### Protection against 0 value
         relative_blur = image / x
