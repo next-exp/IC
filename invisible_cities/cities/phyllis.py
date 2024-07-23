@@ -40,7 +40,7 @@ import numpy  as np
 import tables as tb
 
 from .. database               import                 load_db
-from .. reco                   import           tbl_functions as tbl
+from .. core                   import           tbl_functions as tbl
 from .. reco                   import         calib_functions as cf
 from .. reco                   import calib_sensors_functions as csf
 from .. sierpe                 import                     fee

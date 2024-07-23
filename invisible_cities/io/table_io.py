@@ -1,5 +1,5 @@
 
-from .. reco import tbl_functions as tbl
+from .. core import tbl_functions as tbl
 
 def make_table(hdf5_file,
                group, name, fformat, description, compression = None):

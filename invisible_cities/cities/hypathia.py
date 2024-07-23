@@ -22,7 +22,7 @@ from functools import partial
 
 from .. core.configure         import EventRangeType
 from .. core.configure         import OneOrManyFiles
-from .. reco                   import tbl_functions        as tbl
+from .. core                   import tbl_functions        as tbl
 from .. reco                   import peak_functions       as pkf
 from .. core . random_sampling import NoiseSampler         as SiPMsNoiseSampler
 from .. core                   import system_of_units      as units

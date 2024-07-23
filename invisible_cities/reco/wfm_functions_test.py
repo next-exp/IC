@@ -8,7 +8,7 @@ from pytest import mark
 
 from .. database import load_db
 
-from .        import tbl_functions    as tbl
+from .. core  import tbl_functions    as tbl
 from .        import wfm_functions    as wfm
 from .. evm.ic_containers import CalibVectors
 from .. evm.ic_containers import DeconvParams

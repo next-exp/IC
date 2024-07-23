@@ -29,7 +29,7 @@ import tables as tb
 
 from .. core.configure         import       EventRangeType
 from .. core.configure         import       OneOrManyFiles
-from .. reco                   import        tbl_functions as tbl
+from .. core                   import       tbl_functions as tbl
 from .. io  .          hits_io import          hits_writer
 from .. io  . run_and_event_io import run_and_event_writer
 from .. io  .          kdst_io import            kr_writer

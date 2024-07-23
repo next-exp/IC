@@ -32,7 +32,7 @@ import tables as tb
 
 from .. core.configure          import EventRangeType
 from .. core.configure          import OneOrManyFiles
-from .. reco                    import    tbl_functions as tbl
+from .. core                    import    tbl_functions as tbl
 from .. reco                    import   peak_functions as pkf
 from .. sierpe                  import fee              as FE
 from .. io.rwf_io               import           rwf_writer
