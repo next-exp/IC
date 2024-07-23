@@ -43,9 +43,9 @@ from .. core   .configure         import          event_range_help
 from .. core   .configure         import         check_annotations
 from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
+from .. detsim                    import          sensor_functions as  sf
 from .. detsim .sensor_utils      import             trigger_times
 from .. reco                      import           calib_functions as  cf
-from .. reco                      import          sensor_functions as  sf
 from .. reco                      import   calib_sensors_functions as csf
 from .. reco                      import            peak_functions as pkf
 from .. reco                      import           pmaps_functions as pmf
