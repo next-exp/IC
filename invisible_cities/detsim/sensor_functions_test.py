@@ -10,7 +10,7 @@ from .. database             import load_db
 
 from .  sensor_functions import convert_channel_id_to_IC_id
 from .  sensor_functions import simulate_pmt_response
-from .. reco             import calib_sensors_functions as csf
+from .. calib            import calib_sensors_functions as csf
 from .. reco             import wfm_functions as wfm
 
 
