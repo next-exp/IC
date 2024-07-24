@@ -219,7 +219,7 @@ def deconvolve_signal(det_db          : pd.DataFrame,
         #### NOTE DEFINE PRINTABILITY HERE
         z_flag = True
         
-        deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf, satellite_iter, satellite_dist, satellite_size, e_cut, z_flag)
+        deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf, satellite_iter, satellite_dist, satellite_size, e_cut, z_flag, cut_type)
 
         if   deconv_mode is DeconvolutionMode.joint:
             pass

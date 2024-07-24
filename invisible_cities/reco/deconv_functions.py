@@ -4,6 +4,7 @@ import pandas as pd
 from typing  import List
 from typing  import Tuple
 from typing  import Callable
+from typing import Optional
 
 from scipy                  import interpolate
 from scipy.signal           import fftconvolve
@@ -15,6 +16,9 @@ from ..core .core_functions import shift_to_bin_centers
 from ..core .core_functions import in_range
 
 from .. types.symbols       import InterpolationMethod
+from .. types.symbols       import CutType
+
+
 
 import warnings
 
@@ -284,7 +288,8 @@ def deconvolve(n_iterations  : int,
                    satellite_dist  : int,
                    satellite_size  : int,
                    e_cut  : float,
-                   z_flag : bool
+                   z_flag : bool,
+                   cut_type : Optional[CutType]=CutType.abs
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
         inter_signal, inter_pos = deconv_input(data, weight)
@@ -313,13 +318,13 @@ def deconvolve(n_iterations  : int,
         psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
         deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, inter_pos, psf_deco, satellite_iter,
                                                       satellite_dist, satellite_size, e_cut,
-                                                      n_iterations, iteration_tol, z_flag))
+                                                      cut_type, n_iterations, iteration_tol, z_flag))
 
         return deconv_image, inter_pos
 
     return deconvolve
                            # \/\/\/ added for visualising 
-def richardson_lucy(image, inter_pos, psf, satellite_iter, satellite_dist, satellite_size, e_cut, iterations=50, iter_thr=0., z_flag = False):
+def richardson_lucy(image, inter_pos, psf, satellite_iter, satellite_dist, satellite_size, e_cut, cut_type, iterations=50, iter_thr=0., z_flag = False):
     """Richardson-Lucy deconvolution (modification from scikit-image package).
 
     The modification adds a value=0 protection, the possibility to stop iterating
@@ -381,13 +386,13 @@ def richardson_lucy(image, inter_pos, psf, satellite_iter, satellite_dist, satel
     # variable controlling how regularly iterations are broken up
     iteration_no = satellite_iter
     for i in range(iterations):
-        if (z_flag == True):
-            from matplotlib.colors import LogNorm
-            im_vis = im_deconv.copy()
-            im_vis[im_vis < 9e-3] = 0
-            im_vis[im_vis >= 9e-3] = 1
+        #if (z_flag == True):
+        #    from matplotlib.colors import LogNorm
+        #    im_vis = im_deconv.copy()
+        #    im_vis[im_vis < 9e-3] = 0
+        #    im_vis[im_vis >= 9e-3] = 1
 
-            my_cmap = cm.get_cmap("binary").with_extremes(under = "white")
+        #    my_cmap = cm.get_cmap("binary").with_extremes(under = "white")
 
 
             #r = plt.scatter(inter_pos[0], inter_pos[1], c = im_vis, vmin = 1e-3, cmap=my_cmap)
@@ -408,8 +413,16 @@ def richardson_lucy(image, inter_pos, psf, satellite_iter, satellite_dist, satel
         if (i > iteration_no):
             # apply mask to a copy
             im_vis = im_deconv.copy()
-            im_vis[im_vis < e_cut] = 0
-            im_vis[im_vis >= e_cut] = 1
+            # set based on relative or absolute cut
+            if cut_type == CutType.abs:
+                vis_mask = im_vis
+            elif cut_type == CutType.rel:
+                vis_mask = im_vis / im_vis.max()
+            else:
+                raise ValueError(f'cut_type {cut_type} is not a valid cut type.')
+            # apply the mask cut
+            im_vis[vis_mask < e_cut] = 0
+            im_vis[vis_mask >= e_cut] = 1
 
 
 
