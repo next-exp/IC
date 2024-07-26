@@ -10,6 +10,23 @@ from scipy.signal           import fftconvolve
 from scipy.signal           import convolve
 from scipy.spatial.distance import cdist
 
+# Check if there is a GPU available
+USING_GPU = False
+
+try:
+    import cupy  as cp
+    import cupyx as cpx
+    from cupyx.scipy.signal  import convolve
+    from cupyx.scipy.signal  import fftconvolve 
+
+    if cp.cuda.runtime.getDeviceCount():
+        USING_GPU = True
+        print("GPUs available:", cp.cuda.runtime.getDeviceCount())
+    else:
+        raise ImportError
+except ImportError:
+    print("GPUs not available")
+
 from ..core .core_functions import shift_to_bin_centers
 from ..core .core_functions import in_range
 
@@ -291,25 +308,42 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
     else:
         convolve_method = convolve
 
-    image      = image.astype(float)
-    psf        = psf.astype(float)
-    im_deconv  = 0.5 * np.ones(image.shape)
+    if USING_GPU:
+        xp = cp
+    else:
+        xp = np
+
+    # Convert image and psf to the appropriate array type (float)
+    image      = xp.asarray(image, dtype=float)
+    psf        = xp.asarray(psf, dtype=float)
+    im_deconv  = 0.5 * xp.ones(image.shape)
     s          = slice(None, None, -1)
     psf_mirror = psf[(s,) * psf.ndim] ### Allow for n-dim mirroring.
-    eps        = np.finfo(image.dtype).eps ### Protection against 0 value
+    eps        = xp.finfo(image.dtype).eps ### Protection against 0 value
     ref_image  = image/image.max()
 
-    for i in range(iterations):
+    for _ in range(iterations):
         x = convolve_method(im_deconv, psf, 'same')
-        np.place(x, x==0, eps) ### Protection against 0 value
+        xp.place(x, x==0, eps) ### Protection against 0 value
         relative_blur = image / x
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
-        with np.errstate(divide='ignore', invalid='ignore'):
-            rel_diff = np.sum(np.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
+        # This is needed because Cupy does not have a full errstate implementation
+        if USING_GPU:
+            rel_diff_array = (im_deconv/im_deconv.max() - ref_image) ** 2
+            with cpx.errstate():
+                rel_diff_array = xp.where(ref_image != 0, xp.divide(rel_diff_array, ref_image), 0)
+            rel_diff = xp.sum(rel_diff_array)
+        else:
+            with np.errstate(divide='ignore', invalid='ignore'):
+                rel_diff = xp.sum(xp.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
+        
         if rel_diff < iter_thr: ### Break if a given threshold is reached.
             break
 
         ref_image = im_deconv/im_deconv.max()
+
+    if USING_GPU:
+        im_deconv = cp.asnumpy(im_deconv)
 
     return im_deconv
