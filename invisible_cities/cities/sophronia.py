@@ -37,7 +37,7 @@ import tables as tb
 from .. core.configure import    EventRangeType
 from .. core.configure import    OneOrManyFiles
 from .. core.configure import check_annotations
-from .. reco           import     tbl_functions as tbl
+from .. core           import     tbl_functions as tbl
 
 from .. evm .event_model       import        HitCollection
 from .. io  .          hits_io import          hits_writer

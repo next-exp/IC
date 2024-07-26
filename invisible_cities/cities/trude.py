@@ -40,9 +40,9 @@ from .. core.configure       import          OneOrManyFiles
 from .. io.    histogram_io  import             hist_writer
 from .. io.run_and_event_io  import    run_and_event_writer
 from .. core.core_functions  import    shift_to_bin_centers
-from .. reco                 import           tbl_functions as tbl
-from .. reco                 import         calib_functions as cf
-from .. reco                 import calib_sensors_functions as csf
+from .. core                 import           tbl_functions as tbl
+from .. calib                import         calib_functions as cf
+from .. calib                import calib_sensors_functions as csf
 from .. types.symbols        import                  WfType
 from .. types.symbols        import           SiPMCalibMode
 

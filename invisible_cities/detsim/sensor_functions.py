@@ -4,9 +4,9 @@ JJGC January 2017
 import numpy  as np
 import pandas as pd
 
-from ..sierpe             import fee as FE
-from ..sierpe             import low_frequency_noise as lfn
-from .                    import wfm_functions as wfm
+from .. sierpe            import fee as FE
+from .. sierpe            import low_frequency_noise as lfn
+from .. reco              import wfm_functions as wfm
 
 
 def convert_channel_id_to_IC_id(data_frame, channel_ids):

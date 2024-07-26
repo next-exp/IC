@@ -8,10 +8,10 @@ from .. core.random_sampling import NoiseSampler as SiPMsNoiseSampler
 from .. sierpe               import blr
 from .. database             import load_db
 
-from .                   import wfm_functions as wfm
 from .  sensor_functions import convert_channel_id_to_IC_id
 from .  sensor_functions import simulate_pmt_response
-from .. reco             import calib_sensors_functions as csf
+from .. calib            import calib_sensors_functions as csf
+from .. reco             import wfm_functions as wfm
 
 
 def test_cwf_blr(dbnew, electron_MCRD_file):

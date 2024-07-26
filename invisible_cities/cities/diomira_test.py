@@ -10,11 +10,12 @@ from .. core.configure     import                 configure
 from .. core.testing_utils import   assert_dataframes_close
 from .. core.testing_utils import    assert_tables_equality
 from .. database           import                   load_db
-from .. reco               import             tbl_functions as tbl
+
 from .. io  .mcinfo_io     import get_event_numbers_in_file
 from .. io  .mcinfo_io     import            load_mchits_df
 from .. io  .mcinfo_io     import       load_mcparticles_df
 
+from .. core                import tbl_functions as tbl
 from .. core                import fit_functions as fitf
 from .. core.core_functions import shift_to_bin_centers
 

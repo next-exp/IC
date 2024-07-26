@@ -10,7 +10,7 @@ from .. evm .pmaps         import S1
 from .. evm .pmaps         import S2
 from .. evm .pmaps         import PMap
 from .. evm                import nh5     as table_formats
-from .. reco.tbl_functions import filters as tbl_filters
+from .. core.tbl_functions import filters as tbl_filters
 
 
 def store_peak(pmt_table, pmti_table, si_table,

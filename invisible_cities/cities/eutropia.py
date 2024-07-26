@@ -44,10 +44,11 @@ from .. core                      import system_of_units as units
 from .. core    .core_functions   import in_range
 from .. core    .configure        import EventRangeType
 from .. core    .configure        import OneOrManyFiles
+from .. core                      import tbl_functions as tbl
 from .. database.load_db          import DataSiPM
 from .. io      .dst_io           import df_writer
 from .. io      .run_and_event_io import run_and_event_writer
-from .. reco                      import tbl_functions as tbl
+
 from .. reco    .psf_functions    import create_psf
 from .. reco    .psf_functions    import hdst_psf_processing
 

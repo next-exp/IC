@@ -9,7 +9,7 @@ from typing    import    Union
 from typing    import    Tuple
 
 from .. evm .nh5         import           MCEventMap
-from .. reco             import        tbl_functions as tbl
+from .. core             import        tbl_functions as tbl
 from .  run_and_event_io import run_and_event_writer
 from .  table_io         import           make_table
 from .. types.ic_types   import             NoneType

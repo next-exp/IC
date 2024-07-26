@@ -5,7 +5,7 @@ authors: J.J. Gomez-Cadenas, G. Martinez
 import numpy as np
 
 from .. core.core_functions import define_window
-from .. reco                import calib_sensors_functions as csf
+from .. calib               import calib_sensors_functions as csf
 from .. sierpe              import blr
 
 def to_adc(wfs, adc_to_pes):
