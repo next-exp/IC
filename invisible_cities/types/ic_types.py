@@ -118,7 +118,7 @@ class AutoNameEnumBase(Enum):
 
 
 
-types_dict_summary = OrderedDict({'event'     : np.int32  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
+types_dict_summary = OrderedDict({'event'     : np.int64  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
                                   'evt_ntrks' : int       , 'evt_nhits'  : int       , 'evt_x_avg'     : np.float64,
                                   'evt_y_avg' : np.float64, 'evt_z_avg'  : np.float64, 'evt_r_avg'     : np.float64,
                                   'evt_x_min' : np.float64, 'evt_y_min'  : np.float64, 'evt_z_min'     : np.float64,
@@ -128,7 +128,7 @@ types_dict_summary = OrderedDict({'event'     : np.int32  , 'evt_energy' : np.fl
 
 
 
-types_dict_tracks = OrderedDict({'event'           : np.int32  , 'trackID'       : int       , 'energy'      : np.float64,
+types_dict_tracks = OrderedDict({'event'           : np.int64  , 'trackID'       : int       , 'energy'      : np.float64,
                                  'length'          : np.float64, 'numb_of_voxels': int       , 'numb_of_hits': int       ,
                                  'numb_of_tracks'  : int       , 'x_min'         : np.float64, 'y_min'       : np.float64,
                                  'z_min'           : np.float64, 'r_min'         : np.float64, 'x_max'       : np.float64,
