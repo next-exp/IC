@@ -26,12 +26,16 @@ def lin_seed(x : np.array,
         Seed parameters (intercept, slope) for the linear fit.
     '''
 
-
     x0, x1 = x.min(), x.max()
     y0, y1 = y.min(), y.max()
 
-    b = (y1 - y0) / (x1 - x0)
-    a = y0 - b * x0
+    if x1 == x0: # If same x value, set slope to 0 and use the mean value of y as interceipt
+        b = 0
+        a = y.mean()
+
+    else:
+        b = (y1 - y0) / (x1 - x0)
+        a = y0 - b * x0
 
     seed = a, b
 
