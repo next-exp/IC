@@ -43,8 +43,7 @@ def lin_seed(x : np.array,
 
 
 def expo_seed(x   : np.array,
-              y   : np.array,
-              eps : Optional[float] = 1e-12):
+              y   : np.array):
 
     '''
     Estimate the seed for an exponential fit.
@@ -55,8 +54,6 @@ def expo_seed(x   : np.array,
         Independent variable.
     y : np.array
         Dependent variable.
-    eps : float, optional
-        Small value added to prevent division by zero, default is 1e-12.
 
     Returns
     -------
@@ -64,14 +61,16 @@ def expo_seed(x   : np.array,
         Seed parameters (constant, mean) for the exponential fit.
     '''
 
-    x, y  = zip(*sorted(zip(x, y)))
+    x, y = zip(*sorted(zip(x, y)))
+
     const = y[0]
 
-    if y[-1] / (y[0] + eps) <= 0: slope = 0
-    else: slope = (x[-1] - x[0]) / np.log(y[-1] / (y[0] + eps))
+    if const <= 0 or y[-1] <= 0:
+        raise ValueError("y data must be > 0")
 
-    seed  = const, slope
+    lt = -x[-1] / np.log(y[-1] / const)
 
+    seed = const, lt
     return seed
 
 

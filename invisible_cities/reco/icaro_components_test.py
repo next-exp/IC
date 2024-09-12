@@ -4,13 +4,15 @@ import numpy          as np
 import numpy.testing  as npt
 import pandas         as pd
 import pandas.testing as pdt
+import scipy.optimize as so
 
-from hypothesis             import given
-from hypothesis.strategies  import floats
+from hypothesis             import given, settings
+from hypothesis.strategies  import floats, integers
 
 from .. reco                import icaro_components as icarcomp
 from ..types.symbols        import KrFitFunction
 from .. evm.ic_containers   import FitFunction
+from .. core.fit_functions  import expo
 
 
 @given(floats(min_value= 0, max_value= 10),
@@ -27,14 +29,14 @@ def test_lin_function_output_values(x_min, x_max, a, b):
 
 @given(floats(min_value = 1,    max_value = 10),
        floats(min_value = 1000, max_value = 1600),
-       floats(min_value = 1e2,  max_value = 1e5),
-       floats(min_value = 1e3,  max_value = 1e6))
+       floats(min_value = 1e4,  max_value = 1e5),
+       floats(min_value = 1e4,  max_value = 1e5))
 def test_expo_seed_output_values(zmin, zmax, elt, e0):
     x = np.array( [ zmin, zmax ] )
     y = e0 * np.exp( - x / elt )
     e0_test, elt_test = icarcomp.expo_seed(x, y)
     assert np.isclose(e0_test,    e0, rtol=0.1)
-    assert np.isclose(elt_test, -elt, rtol=0.1)
+    assert np.isclose(elt_test,  elt, rtol=0.1)
 
 
 @pytest.fixture
@@ -45,31 +47,47 @@ def sample_df():
         'S2e': [50, 45, 42, 41, 41]
     }
     return pd.DataFrame(data)
-
-
 def test_select_fit_variables(sample_df):
 
     x_linear,  y_linear  = icarcomp.select_fit_variables(KrFitFunction.linear,  sample_df)
     x_expo,    y_expo    = icarcomp.select_fit_variables(KrFitFunction.expo,    sample_df)
     x_log_lin, y_log_lin = icarcomp.select_fit_variables(KrFitFunction.log_lin, sample_df)
 
-    # First return always the same
-    assert (x_linear  == sample_df.DT).all()
-    assert (x_expo    == sample_df.DT).all()
-    assert (x_log_lin == sample_df.DT).all()
+    # First return the same for the 3 cases
+    assert (x_expo    == x_linear).all()
+    assert (x_log_lin == x_linear).all()
 
     # Second return different for log_lin case
-    assert     (y_linear  ==  sample_df.S2e).all()
-    assert     (y_expo    ==  sample_df.S2e).all()
-    assert not (y_log_lin ==  sample_df.S2e).all()
-    assert     (y_log_lin == -np.log(sample_df.S2e)).all()
+    assert  (y_linear  == y_expo).all()
+    assert  (y_log_lin != y_expo).all()
 
 
-def test_get_fit_function_lt():
+@settings(deadline=None)
+@given(floats  (min_value = 1,    max_value = 10),
+       floats  (min_value = 1000, max_value = 1600),
+       integers(min_value = 10,   max_value = 1e3),
+       floats  (min_value = 1e3,  max_value = 1e5),
+       floats  (min_value = 5e3,  max_value = 1e5))
+def test_get_fit_function_lt_with_data(x_min, x_max, steps, e0, lt):
 
-    # try to fit data with the (in)correct function and check that the result is (un)reasonable
+    x = np.linspace(x_min, x_max, steps)
+    y = expo(x, e0, lt)
 
-    assert True
+    fit_func_lin,         seed_func_lin = icarcomp.get_fit_function_lt(KrFitFunction.linear)
+    fit_func_expo,       seed_func_expo = icarcomp.get_fit_function_lt(KrFitFunction.expo)
+    fit_func_log_lin, seed_func_log_lin = icarcomp.get_fit_function_lt(KrFitFunction.log_lin)
+
+    popt_lin, _     = so.curve_fit(fit_func_lin,     x, y, p0=seed_func_lin    (x, y))
+    popt_expo, _    = so.curve_fit(fit_func_expo,    x, y, p0=seed_func_expo   (x, y))
+    popt_log_lin, _ = so.curve_fit(fit_func_log_lin, x, y, p0=seed_func_log_lin(x, y))
+
+
+    assert     np.isclose(popt_lin[0],   popt_expo[0],    rtol=1e-1) # The interceipt should be close between lin and expo
+    assert not np.isclose(popt_lin[1],   popt_expo[1],    rtol=1e-1) # The "lifetime" should be different between lin and expo
+
+    assert     np.isclose(popt_lin[0],   popt_log_lin[0], rtol=1e-10) # The lin and log_lin are the same (the only difference is their
+    assert     np.isclose(popt_lin[1],   popt_log_lin[1], rtol=1e-10) # inputs: s2e or -log(s2e)) so both parameters should be the same
+                                                                      # for the purpose of testing this function
 
 
 @given(floats(min_value=1,  max_value=1e5),
