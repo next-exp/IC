@@ -122,8 +122,8 @@ def get_fit_function_lt(fittype : KrFitFunction):
         The seed function corresponding to the specified fit type.
     '''
 
-    linear_function  = lambda x, y0, slope: polynom( x, y0, slope)
-    expo_function    = lambda x, e0, lt:    expo   (-x, e0, lt)
+    linear_function  = lambda x, y0, slope: polynom(x, y0, slope)
+    expo_function    = lambda x, e0, lt:    expo   (x, e0, -lt)
 
     if   fittype is KrFitFunction.linear:  return linear_function, lin_seed
     elif fittype is KrFitFunction.log_lin: return linear_function, lin_seed
@@ -134,6 +134,8 @@ def transform_parameters(fit_output : FitFunction):
 
     '''
     Transform the parameters obtained from the fitting output into EO and LT.
+    When using log_lin fit, we need to convert the intermediate variables into
+    the actual physical magnitudes involved in the process.
 
     Parameters
     ----------
