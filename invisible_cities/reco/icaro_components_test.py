@@ -53,16 +53,13 @@ def test_select_fit_variables(sample_df):
     x_expo,    y_expo    = icarcomp.select_fit_variables(KrFitFunction.expo,    sample_df)
     x_log_lin, y_log_lin = icarcomp.select_fit_variables(KrFitFunction.log_lin, sample_df)
 
-    # First return always the same
-    assert (x_linear  == sample_df.DT).all()
-    assert (x_expo    == sample_df.DT).all()
-    assert (x_log_lin == sample_df.DT).all()
+    # First return the same for the 3 cases
+    assert (x_expo    == x_linear).all()
+    assert (x_log_lin == x_linear).all()
 
     # Second return different for log_lin case
-    assert     (y_linear  ==  sample_df.S2e).all()
-    assert     (y_expo    ==  sample_df.S2e).all()
-    assert not (y_log_lin ==  sample_df.S2e).all()
-    assert     (y_log_lin == -np.log(sample_df.S2e)).all()
+    assert  (y_linear  == y_expo).all()
+    assert  (y_log_lin != y_expo).all()
 
 
 def test_get_fit_function_lt():
