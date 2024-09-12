@@ -21,8 +21,8 @@ def test_lin_function_output_values(x_min, x_max, a, b):
     x = np.array([x_min, x_max])
     y = a + b * x
     a_test, b_test = icarcomp.lin_seed(x, y)
-    npt.assert_allclose(a_test, a)
-    npt.assert_allclose(b_test, b)
+    assert np.isclose(a_test, a)
+    assert np.isclose(b_test, b)
 
 
 @given(floats(min_value = 1,    max_value = 10),
@@ -33,8 +33,8 @@ def test_expo_seed_output_values(zmin, zmax, elt, e0):
     x = np.array( [ zmin, zmax ] )
     y = e0 * np.exp( - x / elt )
     e0_test, elt_test = icarcomp.expo_seed(x, y)
-    npt.assert_allclose(e0_test,    e0, rtol=0.1)
-    npt.assert_allclose(elt_test, -elt, rtol=0.1)
+    assert np.isclose(e0_test,    e0, rtol=0.1)
+    assert np.isclose(elt_test, -elt, rtol=0.1)
 
 
 @pytest.fixture
