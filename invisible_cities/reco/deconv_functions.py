@@ -295,7 +295,6 @@ def deconvolve(n_iterations  : int,
                    satellite_dist  : int,
                    satellite_size  : int,
                    e_cut  : float,
-                   z_flag : bool,
                    cut_type : Optional[CutType]=CutType.abs
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
