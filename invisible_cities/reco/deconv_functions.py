@@ -22,47 +22,57 @@ from .. types.symbols       import CutType
 
 import warnings
 
-## Just here for testing, remove after finished testing
 
-
-
-
-def isolate_satellites(data, connectivity = 2, min_size = 10):
+def isolate_satellites(df : np.ndarray, dist : int = 2, size : int = 10) -> np.ndarray:
     '''
-    An adapted function from scikit-image
+    An adaptation to the scikit-image (v0.24.0) function below:
     https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/misc.py#L59-L151
-    Pulled in here because of package mismatches (scikit-image breaks my conda env, this is easier I think)
-    set min_size to 10-ish (testing), as per-iteration you wouldn't expect more than 4 pixels (interpolated) to be formed by a satellite
-    connectivity set to 2 to catch diagonals
+    
+    Identifies satellite energy depositions within deconvolution image by size
+    and proximity to other depositions.
 
-    Separates blobs below a certain size that are distinct.
+    In practice, input array is a set of boolean 'pixels' that it then categorises as 
+    satellite or non-satellite bundles based on given parameters.
+    
+    Parameters
+    ----------
+    df    : masked array containing pixels above energy cut
+    dist  : Maximum distance between two pixels to be considered part of the same deposit.
+    size  : Minimum number of pixels per deposit under which it will be labelled as a satellite deposit.
+
+    Returns
+    ----------
+    array : masked array of all satellite deposits
+
+    
     '''
     try:
         array = data.copy().astype(bool)
     except:
         print("Please ensure the array passed through is boolean compatible.")
     # Not connections if satellite size is zero
-    if min_size == 0:
+    if size == 0:
         warning.warn(f'Satellite size set to zero. No satellites will be removed')
         return array # will cause the result to be identical to the input
 
 
-    # label the blobs within the array
-    footprint = ndi.generate_binary_structure(array.ndim, connectivity)
+    # label the deposits within the array
+    footprint = ndi.generate_binary_structure(array.ndim, dist)
     ccs = np.zeros_like(array, dtype=np.int32)
     ndi.label(array, footprint, output=ccs)
     
-    # count the bins of each labelled blob
+    # count the bins of each labelled deposits
     try:
         component_sizes = np.bincount(ccs.ravel())
     except ValueError:
         raise ValueError("Negative value labels are not supported.")
 
-    # check if no-satellites
+    # check if no-satellites within deposit
     if len(component_sizes) == 2:
         return array
     
-    too_small = component_sizes < min_size
+    # apply size check and mask
+    too_small = component_sizes < size
     too_small_mask = too_small[ccs]
     array[too_small_mask] = 0
 
@@ -362,7 +372,7 @@ def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, 
     ref_image  = image/image.max()
 
     # variable controlling how regularly iterations are broken up
-    iteration_no = satellite_iter
+    
     for i in range(iterations):
         x = convolve_method(im_deconv, psf, 'same')
         np.place(x, x==0, eps) ### Protection against 0 value
@@ -370,7 +380,7 @@ def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, 
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
         # after every iteration, kill satellites
-        if (i > iteration_no):
+        if (i > satellite_iter):
             # apply mask to a copy
             im_vis = im_deconv.copy()
             # set based on relative or absolute cut
