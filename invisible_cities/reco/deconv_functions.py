@@ -306,7 +306,7 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
         with np.errstate(divide='ignore', invalid='ignore'):
-            rel_diff = np.sum(np.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
+            rel_diff = np.sum(np.nan_to_num(np.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image)))
         if rel_diff < iter_thr: ### Break if a given threshold is reached.
             break
 
