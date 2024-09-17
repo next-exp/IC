@@ -25,6 +25,7 @@ from .. core    .testing_utils    import assert_dataframes_close
 from .. io      .dst_io           import load_dst
 
 from .. types   .symbols          import InterpolationMethod
+from .. types   .symbols          import CutType
 
 from .. database.load_db          import DataSiPM
 
@@ -155,7 +156,9 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
+                                 satellite_iter = 9999, satellite_dist = 2, satellite_size = 10,
+                                 e_cut = 0.2, cut_type = CutType.rel)
 
     assert np.allclose(ref_interpolation['e_deco'], deco[0].flatten())
     assert np.allclose(ref_interpolation['x_deco'], deco[1][0])
@@ -190,6 +193,7 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T,
+                           satellite_iter = 9999, satellite_dist = 2, satellite_size= 10, e_cut = 0.2, cut_type = CutType.rel,
                            iterations=15, iter_thr=0.0001)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
@@ -219,7 +223,9 @@ def test_grid_binning(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
+                                 satellite_iter = 9999, satellite_dist = 2, satellite_size = 10,
+                                 e_cut = 0.2, cut_type = CutType.rel)
 
     assert np.all((deco[1][0] - det_db['X'].min() + 9/2) % 9 == 0)
     assert np.all((deco[1][1] - det_db['Y'].min() + 9/2) % 9 == 0)
@@ -248,7 +254,9 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
+                                 satellite_iter = 9999, satellite_dist = 2, satellite_size = 10,
+                                 e_cut = 0.2, cut_type = CutType.rel)
 
     check_x = np.diff(np.sort(np.unique(deco[1][0]), axis=None))
     check_y = np.diff(np.sort(np.unique(deco[1][1]), axis=None))
