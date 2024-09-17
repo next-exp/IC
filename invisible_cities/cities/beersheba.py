@@ -221,7 +221,7 @@ def deconvolve_signal(det_db          : pd.DataFrame,
             psf_cols     = psf.loc[:, cols]
             gaus         = dist.pdf(psf_cols.values)
             psf          = gaus.reshape(psf_cols.nunique())
-            deconv_image = nan_to_num(richardson_lucy(deconv_image, psf, n_iterations_g, iteration_tol))
+            deconv_image = nan_to_num(richardson_lucy(deconv_image, psf, satellite_iter, satellite_dist, satellite_size, e_cut, cut_type, n_iterations_g, iteration_tol))
 
         return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
 
