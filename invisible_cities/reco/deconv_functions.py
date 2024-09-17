@@ -50,7 +50,6 @@ def isolate_satellites(df : np.ndarray, dist : int = 2, size : int = 10) -> np.n
         array = data.copy().astype(bool)
     except:
         print("Please ensure the array passed through is boolean compatible.")
-    # Not connections if satellite size is zero
     if size == 0:
         warning.warn(f'Satellite size set to zero. No satellites will be removed')
         return array # will cause the result to be identical to the input
@@ -299,8 +298,6 @@ def deconvolve(n_iterations  : int,
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
         inter_signal, inter_pos = deconv_input(data, weight)
-
-
         columns       = var_name[:len(data)]
         psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
         deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco, satellite_iter,
@@ -370,8 +367,6 @@ def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, 
     eps        = np.finfo(image.dtype).eps ### Protection against 0 value
     ref_image  = image/image.max()
 
-    # variable controlling how regularly iterations are broken up
-    
     for i in range(iterations):
         x = convolve_method(im_deconv, psf, 'same')
         np.place(x, x==0, eps) ### Protection against 0 value
@@ -393,15 +388,12 @@ def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, 
             # apply the mask cut
             im_vis[vis_mask < e_cut] = 0
             im_vis[vis_mask >= e_cut] = 1
-
             # create mask that removes satellites
             satellite_mask = isolate_satellites(im_vis, satellite_dist, satellite_size)
             # remove only satellite regions!
             deconv_mask = (im_vis + satellite_mask) % 2 == 0
-
             # apply mask
             im_deconv[~deconv_mask] = 0
-            
 
         with np.errstate(divide='ignore', invalid='ignore'):
             rel_diff = np.nansum(np.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
