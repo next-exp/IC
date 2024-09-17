@@ -108,6 +108,8 @@ cdef class LT_SiPM(LightTable):
         double active_r2
 
     def __init__(self, *, fname, sipm_database, el_gap_width=None, active_radius=None, data_mc_ratio=1):
+        if data_mc_ratio <= 0: raise ValueError("LT_SiPM: data_mc_ratio must be greater than 0")
+
         lt_df, config_df, el_gap, active_r = read_lt(fname, 'PSF', el_gap_width, active_radius)
         lt_df.set_index('dist_xy', inplace=True)
         self.el_gap_width  = el_gap
@@ -208,6 +210,8 @@ cdef class LT_PMT(LightTable):
         double active_r2
 
     def __init__(self, *, fname, el_gap_width=None, active_radius=None, data_mc_ratio=1):
+        if data_mc_ratio <= 0: raise ValueError("LT_PMT: data_mc_ratio must be greater than 0")
+
         lt_df, config_df, el_gap, active_r = read_lt(fname, 'LT', el_gap_width, active_radius)
         self.el_gap_width  = el_gap
         self.active_radius = active_r
