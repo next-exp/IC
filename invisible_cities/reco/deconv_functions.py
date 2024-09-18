@@ -23,7 +23,7 @@ from .. types.symbols       import CutType
 import warnings
 
 
-def isolate_satellites(ecut_arr : np.ndarray, dist : int = 2, size : int = 10) -> np.ndarray:
+def isolate_satellites(ecut_arr : np.ndarray, size : int = 10) -> np.ndarray:
     '''
     An adaptation to the scikit-image (v0.24.0) function below:
     https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/misc.py#L59-L151
@@ -37,7 +37,6 @@ def isolate_satellites(ecut_arr : np.ndarray, dist : int = 2, size : int = 10) -
     Parameters
     ----------
     ecut_arr    : masked array containing pixels above energy cut
-    dist        : Maximum distance between two pixels to be considered part of the same deposit.
     size        : Minimum number of pixels per deposit under which it will be labelled as a satellite deposit.
 
     Returns
@@ -53,9 +52,10 @@ def isolate_satellites(ecut_arr : np.ndarray, dist : int = 2, size : int = 10) -
     if size == 0:
         warning.warn(f'Satellite size set to zero. No satellites will be removed')
         return array # will cause the result to be identical to the input
-
+    # connectivity hardcoded to 2 to include diagonals
+    connectivity = 2
     # label the deposits within the array
-    footprint = ndi.generate_binary_structure(array.ndim, dist)
+    footprint = ndi.generate_binary_structure(array.ndim, connectivity) 
     ccs, _ = ndi.label(array, footprint)
     # count the bins of each labelled deposits
     component_sizes = np.bincount(ccs.ravel())
@@ -284,7 +284,6 @@ def deconvolve(n_iterations  : int,
                    weight          : np.ndarray,
                    psf             : pd.DataFrame,
                    satellite_iter  : int,
-                   satellite_dist  : int,
                    satellite_size  : int,
                    e_cut           : float,
                    cut_type        : Optional[CutType]=CutType.abs
@@ -294,14 +293,14 @@ def deconvolve(n_iterations  : int,
         columns       = var_name[:len(data)]
         psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
         deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco, satellite_iter,
-                                                      satellite_dist, satellite_size, e_cut,
-                                                      cut_type, n_iterations, iteration_tol))
+                                                      satellite_size, e_cut, cut_type, 
+                                                      n_iterations, iteration_tol))
 
         return deconv_image, inter_pos
 
     return deconvolve
 
-def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, e_cut, cut_type, iterations=50, iter_thr=0.):
+def richardson_lucy(image, psf, satellite_iter, satellite_size, e_cut, cut_type, iterations=50, iter_thr=0.):
     """Richardson-Lucy deconvolution (modification from scikit-image package).
 
     The modification adds a value=0 protection, the possibility to stop iterating
@@ -379,7 +378,7 @@ def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, 
             # apply the mask cut
             im_vis = np.where(vis_mask < e_cut, 0, 1)
             # create mask that removes satellites
-            satellite_mask = isolate_satellites(im_vis, satellite_dist, satellite_size)
+            satellite_mask = isolate_satellites(im_vis, satellite_size)
             # remove only satellite regions!
             deconv_mask = (im_vis + satellite_mask) % 2 == 0
             # apply mask

@@ -157,7 +157,7 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_dist = 2, satellite_size = 10,
+                                 satellite_iter = 9999, satellite_max_size = 10,
                                  e_cut = 0.2, cut_type = CutType.rel)
 
     assert np.allclose(ref_interpolation['e_deco'], deco[0].flatten())
@@ -193,7 +193,7 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T,
-                           satellite_iter = 9999, satellite_dist = 2, satellite_size= 10, e_cut = 0.2, cut_type = CutType.rel,
+                           satellite_iter = 9999, satellite_size= 10, e_cut = 0.2, cut_type = CutType.rel,
                            iterations=15, iter_thr=0.0001)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
@@ -224,7 +224,7 @@ def test_grid_binning(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_dist = 2, satellite_size = 10,
+                                 satellite_iter = 9999, satellite_max_size = 10,
                                  e_cut = 0.2, cut_type = CutType.rel)
 
     assert np.all((deco[1][0] - det_db['X'].min() + 9/2) % 9 == 0)
@@ -255,7 +255,7 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_dist = 2, satellite_size = 10,
+                                 satellite_iter = 9999, satellite_max_size = 10, 
                                  e_cut = 0.2, cut_type = CutType.rel)
 
     check_x = np.diff(np.sort(np.unique(deco[1][0]), axis=None))
