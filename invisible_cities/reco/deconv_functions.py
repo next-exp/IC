@@ -10,7 +10,7 @@ from scipy                  import interpolate
 from scipy.signal           import fftconvolve
 from scipy.signal           import convolve
 from scipy.spatial.distance import cdist
-from scipy import ndimage as ndi
+from scipy                  import ndimage as ndi
 
 from ..core .core_functions import shift_to_bin_centers
 from ..core .core_functions import in_range
@@ -23,7 +23,7 @@ from .. types.symbols       import CutType
 import warnings
 
 
-def isolate_satellites(df : np.ndarray, dist : int = 2, size : int = 10) -> np.ndarray:
+def isolate_satellites(ecut_arr : np.ndarray, dist : int = 2, size : int = 10) -> np.ndarray:
     '''
     An adaptation to the scikit-image (v0.24.0) function below:
     https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/misc.py#L59-L151
@@ -36,36 +36,29 @@ def isolate_satellites(df : np.ndarray, dist : int = 2, size : int = 10) -> np.n
     
     Parameters
     ----------
-    df    : masked array containing pixels above energy cut
-    dist  : Maximum distance between two pixels to be considered part of the same deposit.
-    size  : Minimum number of pixels per deposit under which it will be labelled as a satellite deposit.
+    ecut_arr    : masked array containing pixels above energy cut
+    dist        : Maximum distance between two pixels to be considered part of the same deposit.
+    size        : Minimum number of pixels per deposit under which it will be labelled as a satellite deposit.
 
     Returns
     ----------
-    array : masked array of all satellite deposits
+    array       : masked array of all satellite deposits
 
     
     '''
     try:
-        array = data.copy().astype(bool)
+        array = ecut_arr.copy().astype(bool)
     except:
-        print("Please ensure the array passed through is boolean compatible.")
+        raise TypeError("Please ensure the array passed through is boolean compatible.")
     if size == 0:
         warning.warn(f'Satellite size set to zero. No satellites will be removed')
         return array # will cause the result to be identical to the input
 
-
     # label the deposits within the array
     footprint = ndi.generate_binary_structure(array.ndim, dist)
-    ccs = np.zeros_like(array, dtype=np.int32)
-    ndi.label(array, footprint, output=ccs)
-    
+    ccs, _ = ndi.label(array, footprint)
     # count the bins of each labelled deposits
-    try:
-        component_sizes = np.bincount(ccs.ravel())
-    except ValueError:
-        raise ValueError("Negative value labels are not supported.")
-
+    component_sizes = np.bincount(ccs.ravel())
     # check if no-satellites within deposit
     if len(component_sizes) == 2:
         return array
@@ -287,14 +280,14 @@ def deconvolve(n_iterations  : int,
     var_name     = np.array(['xr', 'yr', 'zr'])
     deconv_input = deconvolution_input(sample_width, det_grid, inter_method)
 
-    def deconvolve(data   : Tuple[np.ndarray, ...],
-                   weight : np.ndarray,
-                   psf    : pd.DataFrame,
+    def deconvolve(data            : Tuple[np.ndarray, ...],
+                   weight          : np.ndarray,
+                   psf             : pd.DataFrame,
                    satellite_iter  : int,
                    satellite_dist  : int,
                    satellite_size  : int,
-                   e_cut  : float,
-                   cut_type : Optional[CutType]=CutType.abs
+                   e_cut           : float,
+                   cut_type        : Optional[CutType]=CutType.abs
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
         inter_signal, inter_pos = deconv_input(data, weight)
@@ -374,20 +367,17 @@ def richardson_lucy(image, psf, satellite_iter, satellite_dist, satellite_size, 
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
         # after every iteration, kill satellites
-        if (i > satellite_iter):
+        if i > satellite_iter:
             # apply mask to a copy
             im_vis = im_deconv.copy()
             # set based on relative or absolute cut
-            if cut_type == CutType.abs:
+            if cut_type is CutType.abs:
                 vis_mask = im_vis
-            elif cut_type == CutType.rel:
+            elif cut_type is CutType.rel:
                 vis_mask = im_vis / im_vis.max()
-            else:
-                raise ValueError(f'cut_type {cut_type} is not a valid cut type.')
 
             # apply the mask cut
-            im_vis[vis_mask < e_cut] = 0
-            im_vis[vis_mask >= e_cut] = 1
+            im_vis = np.where(vis_mask < e_cut, 0, 1)
             # create mask that removes satellites
             satellite_mask = isolate_satellites(im_vis, satellite_dist, satellite_size)
             # remove only satellite regions!
