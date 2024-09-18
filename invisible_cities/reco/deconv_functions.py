@@ -284,7 +284,6 @@ def deconvolve(n_iterations  : int,
                    weight          : np.ndarray,
                    psf             : pd.DataFrame,
                    satellite_iter  : int,
-                   satellite_dist  : int,
                    satellite_size  : int,
                    e_cut           : float,
                    cut_type        : Optional[CutType]=CutType.abs
