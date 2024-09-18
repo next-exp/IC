@@ -130,7 +130,6 @@ def deconvolve_signal(det_db          : pd.DataFrame,
                       sample_width    : List[float],
                       bin_size        : List[float],
                       satellite_iter  : Optional[int] = 9999,
-                      satellite_dist  : Optional[int] = 2,
                       satellite_size  : Optional[int] = 15,
                       diffusion       : Optional[Tuple[float, float, float]]=(1., 1., 0.3),
                       energy_type     : Optional[HitEnergy]=HitEnergy.Ec,
@@ -154,7 +153,6 @@ def deconvolve_signal(det_db          : pd.DataFrame,
     sample_width    : Sampling size of the sensors.
     bin_size        : Size of the interpolated bins.
     satellite_iter  : Number of iterations to wait until applying the satellite killer.
-    satellite_dist  : Minimum distance between clouds that signify a satellite.
     satellite_size  : Maximum size of satellite deposit, above which they are considered 'real'.
     energy_type     : Energy type (`E` or `Ec`, see Esmeralda) used for assignment.
     deconv_mode     : `joint` or `separate`, 1 or 2 step deconvolution, see description later.
@@ -212,7 +210,7 @@ def deconvolve_signal(det_db          : pd.DataFrame,
 
         
         deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf, 
-                                          satellite_iter, satellite_dist, satellite_size, e_cut, cut_type)
+                                          satellite_iter, satellite_size, e_cut, cut_type)
 
         if   deconv_mode is DeconvolutionMode.joint:
             pass
@@ -223,7 +221,7 @@ def deconvolve_signal(det_db          : pd.DataFrame,
             gaus         = dist.pdf(psf_cols.values)
             psf          = gaus.reshape(psf_cols.nunique())
             deconv_image = nan_to_num(richardson_lucy(deconv_image, psf, 
-                                      satellite_iter, satellite_dist, satellite_size, 
+                                      satellite_iter, satellite_size, 
                                       e_cut, cut_type, n_iterations_g, iteration_tol))
 
         return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
@@ -434,8 +432,6 @@ def beersheba( files_in         : OneOrManyFiles
             Bin size (mm) of the deconvolved image.
         satellite_iter : int
             Number of iterations to wait until applying the satellite killer.
-        satellite_dist : int
-            Minimum distance between clouds that signify a satellite.
         satellite_size : int
             Maximum size of satellite deposit, above which they are considered 'real'.
         energy_type    : HitEnergy (`E` or `Ec`)
@@ -545,4 +541,3 @@ def beersheba( files_in         : OneOrManyFiles
                          detector_db, run_number)
 
         return result
-        
