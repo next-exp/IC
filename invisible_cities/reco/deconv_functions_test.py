@@ -17,6 +17,7 @@ from .. reco    .deconv_functions import interpolate_signal
 from .. reco    .deconv_functions import deconvolution_input
 from .. reco    .deconv_functions import deconvolve
 from .. reco    .deconv_functions import richardson_lucy
+from .. reco    .deconv_functions import generate_satellite_mask
 
 from .. core    .core_functions   import in_range
 from .. core    .core_functions   import shift_to_bin_centers
@@ -263,3 +264,21 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
 
     assert(np.all(check_x % 9 == 0))
     assert(np.all(check_y % 9 == 0))
+
+
+def test_removing_satellites(sat_arr, sat_arr_removed):
+    hdst_rel           = np.load(sat_arr)
+    hdst_abs           = np.load(sat_arr)
+    hdst_nosat         = np.load(sat_arr_removed)
+    e_cut              = 0.5
+    ctype_rel          = CutType.rel
+    ctype_abs          = CutType.abs
+    satellite_max_size = 3
+
+    rel_mask = generate_satellite_mask(hdst_rel, satellite_max_size, e_cut, ctype_rel)
+    hdst_rel[rel_mask] = 0
+    assert(np.array_equal(hdst_rel, hdst_nosat))
+
+    abs_mask = generate_satellite_mask(hdst_abs, satellite_max_size, e_cut, ctype_abs)
+    hdst_abs[abs_mask] = 0
+    assert(np.array_equal(hdst_abs, hdst_nosat))

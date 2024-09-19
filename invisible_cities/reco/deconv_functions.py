@@ -72,12 +72,13 @@ def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
     component_sizes = np.bincount(ccs.ravel())
     # check if no satellites within deposit
     if len(component_sizes) == 2:
-        return im_mask
+        # Return a fully False array, so that no objects get removed
+        return np.full(im_deconv.shape, False)
 
     
     # create boolean array for each label of satellite & non-satellite
     too_small = component_sizes < satellite_max_size
-    # apply boolean array to labelled array to hold satellites as true
+    # apply boolean array to labelled array to hold satellites as True
     too_small_mask = too_small[ccs]
     # return mask to remove satellites
     return too_small_mask
