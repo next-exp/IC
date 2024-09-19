@@ -261,9 +261,13 @@ def deconvolve(n_iterations  : int,
 
     Parameters
     ----------
-    data        : Sensor (hits) position points.
-    weight      : Sensor charge for each point.
-    psf         : Point-spread function.
+    data                : Sensor (hits) position points.
+    weight              : Sensor charge for each point.
+    psf                 : Point-spread function.
+    satellite_iter      : Iteration no. when satellite killer starts being used.
+    satellite_max_size  : Maximum size of satellite deposit, above which they are considered 'real'.
+    e_cut               : Value for the energy cut.
+    cut_type            : CutType object with the cut mode.
 
     Initialization parameters:
         n_iterations  : Number of Lucy-Richardson iterations
@@ -280,27 +284,27 @@ def deconvolve(n_iterations  : int,
     var_name     = np.array(['xr', 'yr', 'zr'])
     deconv_input = deconvolution_input(sample_width, det_grid, inter_method)
 
-    def deconvolve(data            : Tuple[np.ndarray, ...],
-                   weight          : np.ndarray,
-                   psf             : pd.DataFrame,
-                   satellite_iter  : int,
-                   satellite_size  : int,
-                   e_cut           : float,
-                   cut_type        : Optional[CutType]=CutType.abs
+    def deconvolve(data                : Tuple[np.ndarray, ...],
+                   weight              : np.ndarray,
+                   psf                 : pd.DataFrame,
+                   satellite_iter      : int,
+                   satellite_max_size  : int,
+                   e_cut               : float,
+                   cut_type            : Optional[CutType]=CutType.abs
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
         inter_signal, inter_pos = deconv_input(data, weight)
         columns       = var_name[:len(data)]
         psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
         deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco, satellite_iter,
-                                                      satellite_size, e_cut, cut_type, 
+                                                      satellite_max_size, e_cut, cut_type, 
                                                       n_iterations, iteration_tol))
 
         return deconv_image, inter_pos
 
     return deconvolve
 
-def richardson_lucy(image, psf, satellite_iter, satellite_size, e_cut, cut_type, iterations=50, iter_thr=0.):
+def richardson_lucy(image, psf, satellite_iter, satellite_max_size, e_cut, cut_type, iterations=50, iter_thr=0.):
     """Richardson-Lucy deconvolution (modification from scikit-image package).
 
     The modification adds a value=0 protection, the possibility to stop iterating
@@ -309,14 +313,23 @@ def richardson_lucy(image, psf, satellite_iter, satellite_size, e_cut, cut_type,
 
     Parameters
     ----------
-    image : ndarray
+    image               : ndarray
        Input degraded image (can be N dimensional).
-    psf : ndarray
+    psf                 : ndarray
        The point spread function.
-    iterations : int, optional
+    satellite_iter      : int
+       Iteration no. when satellite killer starts being used.
+    satellite_max_size  : int
+        Maximum size of satellite deposit, above which they are considered 'real'.
+    e_cut               : float
+        Cut over the deconvolution output, arbitrary units (order 1e-3)
+    cut_type            : Cut mode to the deconvolution output (`abs` or `rel`) using e_cut
+                          `abs`: cut on the absolute value of the hits.
+                          `rel`: cut on the relative value (to the max) of the hits.
+    iterations          : int, optional
        Number of iterations. This parameter plays the role of
        regularisation.
-    iter_thr : float, optional
+    iter_thr            : float, optional
        Threshold on the relative difference between iterations to stop iterating.
 
     Returns
