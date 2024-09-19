@@ -23,52 +23,66 @@ from .. types.symbols       import CutType
 import warnings
 
 
-def isolate_satellites(ecut_arr : np.ndarray, size : int = 10) -> np.ndarray:
+
+def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
     '''
-    An adaptation to the scikit-image (v0.24.0) function below:
-    https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/misc.py#L59-L151
-    
-    Identifies satellite energy depositions within deconvolution image by size
+    An adaptation to the scikit-image (v0.24.0) function [1], identifies 
+    satellite energy depositions within deconvolution image by size
     and proximity to other depositions.
 
     In practice, input array is a set of boolean 'pixels' that it then categorises as 
     satellite or non-satellite bundles based on given parameters.
+
+    Returns the mask required to remove satellites as done in `richardson_lucy()`
     
     Parameters
     ----------
-    ecut_arr    : masked array containing pixels above energy cut
-    size        : Minimum number of pixels per deposit under which it will be labelled as a satellite deposit.
+    im_deconv                 : Deconvoluted 2D array
+    satellite_max_size        : Maximum size of satellite deposit, above which they are considered 'real'.
+    e_cut                     : Cut over the deconvolution output, arbitrary units or percentage
+    cut_type                  : Cut mode to the deconvolution output (`abs` or `rel`) using e_cut
+                                `abs`: cut on the absolute value of the hits.
+                                `rel`: cut on the relative value (to the max) of the hits.
 
     Returns
     ----------
-    array       : masked array of all satellite deposits
+    array       : boolean mask of all labelled satellite deposits
 
+    References
+    ----------
+    .. [1] https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/misc.py#L59-L151
     
     '''
-    try:
-        array = ecut_arr.copy().astype(bool)
-    except:
-        raise TypeError("Please ensure the array passed through is boolean compatible.")
-    if size == 0:
-        warning.warn(f'Satellite size set to zero. No satellites will be removed')
-        return array # will cause the result to be identical to the input
-    # connectivity hardcoded to 2 to include diagonals
-    connectivity = 2
-    # label the deposits within the array
-    footprint = ndi.generate_binary_structure(array.ndim, connectivity) 
-    ccs, _ = ndi.label(array, footprint)
-    # count the bins of each labelled deposits
-    component_sizes = np.bincount(ccs.ravel())
-    # check if no-satellites within deposit
-    if len(component_sizes) == 2:
-        return array
-    
-    # apply size check and mask
-    too_small = component_sizes < size
-    too_small_mask = too_small[ccs]
-    array[too_small_mask] = 0
 
-    return array
+    # apply mask to copy
+    im_mask = im_deconv.copy()
+
+    if cut_type is CutType.abs:
+        vis_mask = im_mask
+    elif cut_type is CutType.rel:
+        vis_mask = im_mask / im_mask.max()
+    
+    im_mask = np.where(vis_mask < e_cut, 0, 1)
+
+    # label deposits within the array
+    # hardcoded to include diagonals in the grouping stage (2)
+    footprint = ndi.generate_binary_structure(im_mask.ndim, 2)
+    ccs, _ = ndi.label(im_mask, footprint)
+    # count the bins of each labelled deposit
+    component_sizes = np.bincount(ccs.ravel())
+    # check if no satellites within deposit
+    if len(component_sizes) == 2:
+        # Return a fully False array, so that no objects get removed
+        return np.full(im_deconv.shape, False)
+
+    
+    # create boolean array for each label of satellite & non-satellite
+    too_small = component_sizes < satellite_max_size
+    # apply boolean array to labelled array to hold satellites as True
+    too_small_mask = too_small[ccs]
+    # return mask to remove satellites
+    return too_small_mask
+    
 
 
 def cut_and_redistribute_df(cut_condition : str,
@@ -380,23 +394,11 @@ def richardson_lucy(image, psf, satellite_iter, satellite_max_size, e_cut, cut_t
 
         # after every iteration, kill satellites
         if i > satellite_iter:
-            # apply mask to a copy
-            im_vis = im_deconv.copy()
-            # set based on relative or absolute cut
-            if cut_type is CutType.abs:
-                vis_mask = im_vis
-            elif cut_type is CutType.rel:
-                vis_mask = im_vis / im_vis.max()
-
-            # apply the mask cut
-            im_vis = np.where(vis_mask < e_cut, 0, 1)
-            # create mask that removes satellites
-            satellite_mask = isolate_satellites(im_vis, satellite_size)
-            # remove only satellite regions!
-            deconv_mask = (im_vis + satellite_mask) % 2 == 0
-            # apply mask
-            im_deconv[~deconv_mask] = 0
-
+            # generate satellite killing mask
+            sat_mask = generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type)
+            # remove satellites
+            im_deconv[sat_mask] = 0
+        
         with np.errstate(divide='ignore', invalid='ignore'):
             rel_diff = np.nansum(np.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
         if rel_diff < iter_thr: ### Break if a given threshold is reached.
