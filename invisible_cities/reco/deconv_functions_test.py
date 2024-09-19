@@ -193,8 +193,8 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T,
-                           satellite_iter = 9999, satellite_size= 10, e_cut = 0.2, cut_type = CutType.rel,
-                           iterations=15, iter_thr=0.0001)
+                           satellite_iter = 9999, satellite_max_size= 10, e_cut = 0.2, 
+                           cut_type = CutType.rel, iterations=15, iter_thr=0.0001)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
 
