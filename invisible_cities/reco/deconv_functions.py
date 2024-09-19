@@ -4,7 +4,7 @@ import pandas as pd
 from typing  import List
 from typing  import Tuple
 from typing  import Callable
-from typing import Optional
+from typing  import Optional
 
 from scipy                  import interpolate
 from scipy.signal           import fftconvolve
@@ -19,19 +19,19 @@ from .. types.symbols       import InterpolationMethod
 from .. types.symbols       import CutType
 
 
-
-import warnings
-
-
-
 def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
     '''
     An adaptation to the scikit-image (v0.24.0) function [1], identifies 
     satellite energy depositions within deconvolution image by size
     and proximity to other depositions.
 
-    In practice, input array is a set of boolean 'pixels' that it then categorises as 
-    satellite or non-satellite bundles based on given parameters.
+    The function takes a deconvolution z-slice, applies a mask based on the `e_cut` and `cut_type` to only
+    allow 0s and 1s for values passing the energy cut. 
+    It then uses the scipy ndimage library to identify different 'clusters' of 1s within the slice, and 
+    checks if these clusters are below the size considered for satellite deposits (`satellite_max_size`).
+    These satellite deposits are highlighted in a new mask, that is returned and used to remove them.
+    The method is described in more detail here:
+    https://gist.github.com/jwaiton/fd14f43e8da28a49c9c49d43eb00f53f
 
     Returns the mask required to remove satellites as done in `richardson_lucy()`
     
