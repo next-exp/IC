@@ -185,6 +185,18 @@ def data_hdst_deconvolved(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
+@pytest.fixture(scope='session')
+def sat_arr(ICDATADIR):
+    test_file = "satellite_array.npy"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
+@pytest.fixture(scope='session')
+def sat_arr_removed(ICDATADIR):
+    test_file = "satelliteless_array.npy"
+    test_file = os.path.join(ICDATADIR, test_file)
+    return test_file
+
 
 @pytest.fixture(scope='session')
 def KrMC_kdst(ICDATADIR):
