@@ -4,7 +4,7 @@ import pandas as pd
 from typing  import List
 from typing  import Tuple
 from typing  import Callable
-from typing import Optional
+from typing  import Optional
 
 from scipy                  import interpolate
 from scipy.signal           import fftconvolve
@@ -17,11 +17,6 @@ from ..core .core_functions import in_range
 
 from .. types.symbols       import InterpolationMethod
 from .. types.symbols       import CutType
-
-
-
-import warnings
-
 
 
 def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
