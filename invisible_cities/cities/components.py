@@ -124,6 +124,9 @@ def city(city_function):
             warnings.warn("files_in contains repeated values. Ignoring duplicate files.", UserWarning)
             globbed_files = [f for i, f in enumerate(globbed_files) if f not in globbed_files[:i]]
 
+        if len(globbed_files) == 0:
+            raise NoInputFiles("The input file pattern did not match any files")
+
         conf.files_in = globbed_files
         conf.file_out = expandvars(conf.file_out)
 
