@@ -14,6 +14,7 @@ from pytest import warns
 from .. core.configure     import configure
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.exceptions    import          SensorIDMismatch
+from .. core.exceptions    import              NoInputFiles
 from .. core.testing_utils import    assert_tables_equality
 from .. core               import system_of_units as units
 from .. types.symbols      import WfType
@@ -193,7 +194,7 @@ def test_city_fails_if_input_file_pattern_does_not_match_any_files(config_tmpdir
                   , event_range : tuple):
         pass
 
-    with raises(Exception):
+    with raises(NoInputFiles, match="The input file pattern did not match any files"):
         dummy_city(files_in=files_in, file_out=file_out, event_range=(0, 1))
 
 
