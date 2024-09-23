@@ -45,10 +45,6 @@ from os   .path  import expandvars
 from scipy.stats import multivariate_normal
 from numpy       import nan_to_num
 
-from typing import Tuple
-from typing import List
-from typing import Optional
-
 from .  components import city
 from .  components import collect
 from .  components import copy_mc_info
@@ -91,6 +87,9 @@ from .. types.symbols          import DeconvolutionMode
 
 from .. core                   import system_of_units as units
 
+from typing import Tuple
+from typing import List
+from typing import Optional
 from typing import Union
 
 
