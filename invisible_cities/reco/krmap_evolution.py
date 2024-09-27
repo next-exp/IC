@@ -1,7 +1,10 @@
 import numpy  as np
 
+from   typing               import List, Tuple, Callable, Optional
+from   pandas               import DataFrame
+
 from .. core.fit_functions  import fit, gauss
-from .. core.core_functions import shift_to_bin_centers
+from .. core.core_functions import in_range, shift_to_bin_centers
 
 
 def sigmoid(x          : np.array,
@@ -153,3 +156,34 @@ def get_number_of_time_bins(nStimeprofile : int,
     ntimebins = np.max([ntimebins, 1])
 
     return ntimebins
+
+
+def get_time_series_df(ntimebins  : int,
+                       time_range : Tuple[float, float],
+                       dst        : DataFrame)->Tuple[np.array, List[np.array]]:
+
+    '''
+    Given a dst this function returns a time series (ts) and a list of masks which are used to divide
+    the event in time intervals.
+
+    Parameters
+    ----------
+        ntimebins : int
+            Number of time bins
+        time_range : Tuple
+            Time range
+        dst : pd.DataFrame
+            DataFrame
+
+    Returns
+    -------
+        A Tuple with:
+            np.array       : The time series
+            List[np.array] : The list of masks to get the events for each time series.
+    '''
+
+    modified_right_limit = np.nextafter(time_range[-1], np.inf)
+    time_bins            = np.linspace(time_range[0], modified_right_limit, ntimebins+1)
+    masks                = np.array([in_range(dst['time'].to_numpy(), time_bins[i], time_bins[i + 1]) for i in range(ntimebins)])
+
+    return shift_to_bin_centers(time_bins), masks
