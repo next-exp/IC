@@ -1,10 +1,12 @@
 import numpy  as np
 
-from   typing               import List, Tuple, Callable, Optional
+
+from   typing               import List, Tuple, Optional
 from   pandas               import DataFrame
 
 from .. core.fit_functions  import fit, gauss
 from .. core.core_functions import in_range, shift_to_bin_centers
+from .. database            import load_db  as  DB
 
 
 def sigmoid(x          : np.array,
@@ -187,3 +189,58 @@ def get_time_series_df(ntimebins  : int,
     masks                = np.array([in_range(dst['time'].to_numpy(), time_bins[i], time_bins[i + 1]) for i in range(ntimebins)])
 
     return shift_to_bin_centers(time_bins), masks
+
+
+def compute_drift_v(zdata    : np.array,
+                    nbins    : int,
+                    zrange   : Tuple[float, float],
+                    seed     : Tuple[float, float, float, float],
+                    detector : str)->Tuple[float, float]:
+
+    '''
+    Computes the drift velocity for a given distribution
+    using the sigmoid function to get the cathode edge.
+
+    Parameters
+    ----------
+    zdata: array_like
+        Values of Z coordinate.
+    nbins: int (optional)
+        The number of bins in the z coordinate for the binned fit.
+    zrange: length-2 tuple (optional)
+        Fix the range in z.
+    seed: length-4 tuple (optional)
+        Seed for the fit.
+    detector: string (optional)
+        Used to get the cathode position from DB.
+
+    Returns
+    -------
+    dv: float
+        Drift velocity.
+    dvu: float
+        Drift velocity uncertainty.
+    '''
+
+    y, x = np.histogram(zdata, nbins, zrange)
+    x    = shift_to_bin_centers(x)
+
+    if seed is None: seed = np.max(y), np.mean(zrange), 0.5, np.min(y)
+
+    # At the moment there is not NEXT-100 DB so this won't work for that geometry
+    z_cathode = DB.DetectorGeo(detector).ZMAX[0]
+
+    try:
+        f   = fit(sigmoid, x, y, seed, sigma = poisson_sigma(y), fit_range = zrange)
+
+        par = f.values
+        err = f.errors
+
+        dv  = z_cathode/par[1]
+        dvu = dv/par[1] * err[1]
+
+    except RuntimeError:
+        print("WARNING: Sigmoid fit for dv computation fails. NaN value will be set in its place.")
+        dv, dvu = np.nan, np.nan
+
+    return dv, dvu
