@@ -32,3 +32,34 @@ def sigmoid(x          : np.array,
     sigmoid = scale / (1 + np.exp(-slope * (x - inflection))) + offset
 
     return sigmoid
+
+
+def gauss_seed(x         : np.array,
+               y         : np.array,
+               sigma_rel : Optional[int] = 0.05):
+
+    '''
+    This function estimates the seed for a gaussian fit.
+
+    Parameters
+    ----------
+    x: np.array
+        Data to fit.
+    y: int
+        Number of bins for the histogram.
+    sigma_rel (Optional): int
+        Relative error, default 5%.
+
+    Returns
+    -------
+    seed: List
+        List with the seed estimation.
+    '''
+
+    y_max  = np.argmax(y)
+    x_max  = x[y_max]
+    sigma  = sigma_rel * x_max
+    amp    = y_max * (2 * np.pi)**0.5 * sigma * np.diff(x)[0]
+    seed   = amp, x_max, sigma
+
+    return seed
