@@ -1,5 +1,8 @@
 import numpy  as np
 
+from .. core.fit_functions  import fit, gauss
+from .. core.core_functions import shift_to_bin_centers
+
 
 def sigmoid(x          : np.array,
             scale      : float,
@@ -52,8 +55,8 @@ def gauss_seed(x         : np.array,
 
     Returns
     -------
-    seed: List
-        List with the seed estimation.
+    seed: Tuple
+        Tuple with the seed estimation.
     '''
 
     y_max  = np.argmax(y)
@@ -93,3 +96,31 @@ def resolution(values : np.array,
     ures = res * (u_mu**2/mu**2 + u_sigma**2/sigma**2)**0.5
 
     return res, ures
+
+
+def quick_gauss_fit(data : np.array,
+                    bins : int):
+
+    '''
+    This function histograms input data and then fits it to a Gaussian.
+
+    Parameters
+    ----------
+    data: np.array
+        Data to fit.
+    bins: int
+        Number of bins for the histogram.
+
+    Returns
+    -------
+    fit_output: FitFunction
+        Object containing the fit results
+    '''
+
+    y, x  = np.histogram(data, bins)
+    x     = shift_to_bin_centers(x)
+    seed  = gauss_seed(x, y)
+
+    fit_result = fit(gauss, x, y, seed)
+
+    return fit_result
