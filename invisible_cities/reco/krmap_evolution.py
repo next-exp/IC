@@ -1,18 +1,20 @@
 import numpy  as np
 import pandas as pd
 
-from   typing               import List, Tuple, Optional, Callable
-from   pandas               import DataFrame
+from   typing                 import List, Tuple, Optional, Callable
+from   pandas                 import DataFrame
 
-from .. types.symbols       import NormStrategy
-from .. core.fit_functions  import fit, gauss
-from .. core.core_functions import in_range, shift_to_bin_centers
-from .. reco.corrections    import get_normalization_factor
-from .. reco.corrections    import correct_geometry_
-from .. reco.corrections    import maps_coefficient_getter
-from .. core.stat_functions import poisson_sigma
-from .. database            import load_db  as  DB
-
+from .. types.symbols         import NormStrategy
+from .. types.symbols         import KrFitFunction # Won't work until previous PR are approved
+from .. core.fit_functions    import fit, gauss
+from .. core.core_functions   import in_range, shift_to_bin_centers
+from .. reco.corrections      import get_normalization_factor
+from .. reco.corrections      import correct_geometry_
+from .. reco.corrections      import maps_coefficient_getter
+from .. reco.corrections      import apply_all_correction
+from .. core.stat_functions   import poisson_sigma
+from .. database              import load_db  as  DB
+from .. reco.icaro_components import get_fit_function_lt
 
 def sigmoid(x          : np.array,
             scale      : float,
@@ -277,3 +279,128 @@ def e0_xy_correction(map        : pd.DataFrame,
         return correct_geometry_(get_xy_corr_fun(x,y))*normalization
 
     return geo_correction_factor
+
+
+def computing_kr_parameters(data       : DataFrame,
+                            ts         : float,
+                            emaps      : pd.DataFrame,
+                            fittype    : KrFitFunction,
+                            nbins_dv   : int,
+                            zrange_dv  : List[float, float],
+                            detector   : str,
+                            norm_strat : NormStrategy,
+                            norm_value : float)->DataFrame: # REVISAR NORM_STRAT Y NORM_VALUE
+
+    '''
+    Computes some average parameters (e0, lt, drift v, energy
+    resolution, S1w, S1h, S1e, S2w, S2h, S2e, S2q, Nsipm, 'Xrms, Yrms)
+    for a given krypton distribution.
+
+    Parameters
+    ----------
+    data: DataFrame
+        Kdst distribution to analyze.
+    ts: float
+        Central time of the distribution.
+    emaps: correction map
+        Allows geometrical correction of the energy.
+    fittype: KrFitFunction
+        Kind of fit to perform
+    nbins_dv: int
+        Number of bins in Z-coordinate to use in the histogram for the
+        drift velocity calculation.
+    zrange_dv: List
+        Range in Z-coordinate to use in the histogram for the drift
+        velocity calculation.
+    detector: string
+        Used to get the cathode position from DB for the drift velocity
+        computation.
+    norm_strat: NormStrategy
+        Normalization strategy to follow.
+    norm_value: float
+        Energy value to normalize to.
+
+    Returns
+    -------
+    pars: DataFrame
+        Each column corresponds to the average value of a different parameter.
+    '''
+
+    # Computing E0, LT
+
+    geo_correction_factor = e0_xy_correction(map        = emaps,
+                                             norm_strat = norm_strat) # PREGUNTAR POR ESTRATEGIA
+
+    fit_func, seed = get_fit_function_lt(fittype)
+
+    x           = data.DT,
+    y           = data.S2e.to_numpy()*geo_correction_factor(data.X.to_numpy(), data.Y.to_numpy())
+
+    fit_output, _, _, _ = fit(func        = fit_func, # Misma funcion que en el ajuste del mapa
+                              x           = x,
+                              y           = y,
+                              seed        = seed(x, y),
+                              full_output = False)
+
+    e0,  lt  = fit_output.values
+    e0u, ltu = fit_output.errors
+
+    # Computing Drift Velocity
+
+    dv, dvu  = compute_drift_v(zdata    = data.Z.to_numpy(),
+                               nbins    = nbins_dv,
+                               zrange   = zrange_dv,
+                               detector = detector)
+
+    # Computing Resolution
+
+    tot_corr_factor = apply_all_correction(maps       = emaps,
+                                           apply_temp = False,
+                                           norm_strat = norm_strat,
+                                           norm_value = norm_value)
+
+    nbins = int((len(data.S2e))**0.5) # Binning as a function of nevts. Should we change it?
+
+    f = quick_gauss_fit(data.S2e.to_numpy()*tot_corr_factor(data.X.   to_numpy(),
+                                                            data.Y.   to_numpy(),
+                                                            data.Z.   to_numpy(),
+                                                            data.time.to_numpy()),
+                        bins = nbins)
+
+    par, err     = f.values, f.errors
+    res, err_res = resolution(values = par,
+                              errors = err)
+
+    # Averages of parameters
+
+    parameters = ['S1w', 'S1h', 'S1e',
+                  'S2w', 'S2h', 'S2e', 'S2q',
+                  'Nsipm', 'Xrms', 'Yrms']
+
+    mean_d, var_d = {}, {}
+
+    for parameter in parameters:
+
+        data_value        = getattr(data, parameter)
+        mean_d[parameter] = np.mean(data_value)
+        var_d [parameter] = (np.var(data_value)/len(data_value))**0.5
+
+    # Creating parameter evolution table
+
+    evol = DataFrame({'ts'   : [ts]             ,
+                      'e0'   : [e0]             , 'e0u'   : [e0u]           ,
+                      'lt'   : [lt]             , 'ltu'   : [ltu]           ,
+                      'dv'   : [dv]             , 'dvu'   : [dvu]           ,
+                      'resol': [res]            , 'resolu': [err_res]       ,
+                      's1w'  : [mean_d['S1w']]  , 's1wu'  : [var_d['S1w']]  ,
+                      's1h'  : [mean_d['S1h']]  , 's1hu'  : [var_d['S1h']]  ,
+                      's1e'  : [mean_d['S1e']]  , 's1eu'  : [var_d['S1e']]  ,
+                      's2w'  : [mean_d['S2w']]  , 's2wu'  : [var_d['S2w']]  ,
+                      's2h'  : [mean_d['S2h']]  , 's2hu'  : [var_d['S2h']]  ,
+                      's2e'  : [mean_d['S2e']]  , 's2eu'  : [var_d['S2e']]  ,
+                      's2q'  : [mean_d['S2q']]  , 's2qu'  : [var_d['S2q']]  ,
+                      'Nsipm': [mean_d['Nsipm']], 'Nsipmu': [var_d['Nsipm']],
+                      'Xrms' : [mean_d['Xrms']] , 'Xrmsu' : [var_d['Xrms']] ,
+                      'Yrms' : [mean_d['Yrms']] , 'Yrmsu' : [var_d['Yrms']]})
+
+    return evol
