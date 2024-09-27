@@ -536,3 +536,65 @@ def cut_effs_evolution(masks_time : List[np.array],
                                            Bandeff = nBand / nS2)
 
     return evol_table_updated
+
+
+def add_krevol(r_fid         : float,   # Esto sería para meter en la ciudad de ICARO, flow.map(funcion, args, out) etc
+               nStimeprofile : int,
+               **map_params):      # PREGUNTA: Pongo aquí explícitamente todos los argumentos? O se pueden meter con un diccionario?
+
+    '''
+    Adds the time evolution dataframe to the map.
+
+    Parameters
+    ---------
+    r_fid: float
+        Maximum radius for fiducial sample.
+    nStimeprofile: int
+        Number of seconds for each time bin.
+    map_params: dict
+        Dictionary containing the config file variables.
+
+    Returns
+    ---------
+    Function which takes as input map, kr_data, and kr_mask
+    and returns the time evolution.
+    '''
+
+    def add_krevol(map,      kdst,      mask_s1, # Más de lo mismo con la pregunta anterior
+                   mask_s2,  mask_band, fittype,
+                   nbins_dv, zrange_dv, detector):
+
+        fid_sel   = (kdst.R < r_fid)  & mask_s1 & mask_s2 & mask_band
+        dstf      = kdst[fid_sel]
+        min_time  = dstf.time.min()
+        max_time  = dstf.time.max()
+
+        ntimebins      = get_number_of_time_bins(nStimeprofile = nStimeprofile,
+                                                 tstart        = min_time,
+                                                 tfinal        = max_time)
+
+        ts, masks_time = get_time_series_df(ntimebins          = ntimebins,
+                                            time_range         = (min_time, max_time),
+                                            dst                = kdst)
+
+        masks_timef    = [mask[fid_sel] for mask in masks_time]
+
+        evol_table     = kr_time_evolution(ts                  = ts,
+                                           masks_time          = masks_timef,
+                                           dst                 = dstf,
+                                           emaps               = map,
+                                           fittype             = fittype,
+                                           nbins_dv            = nbins_dv,
+                                           zrange_dv           = zrange_dv,
+                                           detector            = detector)
+
+        evol_table_eff = cut_effs_evolution(masks_time         = masks_time,
+                                            data               = kdst,
+                                            mask_s1            = mask_s1,
+                                            mask_s2            = mask_s2,
+                                            mask_band          = mask_band,
+                                            evol_table         = evol_table)
+
+        return evol_table_eff
+
+    return add_krevol
