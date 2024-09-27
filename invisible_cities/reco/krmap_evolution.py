@@ -63,3 +63,33 @@ def gauss_seed(x         : np.array,
     seed   = amp, x_max, sigma
 
     return seed
+
+
+def resolution(values : np.array,
+               errors : np.array):
+
+    '''
+    Computes the resolution (FWHM) from the Gaussian parameters.
+
+    Parameters
+    ----------
+    values: np.array
+        Gaussian parameters: amplitude, center, and sigma.
+    errors: np.array
+        Uncertainties for the Gaussian parmeters.
+
+    Returns
+    -------
+    res: float
+        Resolution.
+    ures: float
+        Uncertainty of resolution.
+    '''
+
+    amp  ,   mu,   sigma = values
+    u_amp, u_mu, u_sigma = errors
+
+    res  = 235.48 * sigma/mu
+    ures = res * (u_mu**2/mu**2 + u_sigma**2/sigma**2)**0.5
+
+    return res, ures
