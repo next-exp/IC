@@ -14,7 +14,8 @@ from .. reco.corrections      import maps_coefficient_getter
 from .. reco.corrections      import apply_all_correction
 from .. core.stat_functions   import poisson_sigma
 from .. database              import load_db  as  DB
-from .. reco.icaro_components import get_fit_function_lt
+from .. reco.icaro_components import get_fit_function_lt # Won't work until previous PR are approved
+
 
 def sigmoid(x          : np.array,
             scale      : float,
@@ -477,3 +478,61 @@ def kr_time_evolution(ts         : np.array[float],
     evol_pars = pd.concat(frames, ignore_index=True)
 
     return evol_pars
+
+
+def cut_effs_evolution(masks_time : List[np.array],
+                       dst        : pd.DataFrame,
+                       mask_s1    : np.array,
+                       mask_s2    : np.array,
+                       mask_band  : np.array,
+                       evol_table : pd.DataFrame):
+
+    '''
+    Computes the efficiencies in time evolution for different time slices.
+    Returns the input DataFrame updated with S1eff, S2eff, Bandeff.
+
+    Parameters
+    ----------
+    masks_time: list of time masks
+        Masks which divide the data into time slices.
+    data: pd.DataFrame
+        kdst data.
+    mask_s1: np.array
+        Mask of S1 cut.
+    mask_s2: np.array
+        Mask of S2 cut.
+    mask_band: np.array
+        Mask of band cut.
+    evol_table: pd.DataFrame
+        Table of Kr evolution parameters.
+
+    Returns
+    -------
+    evol_table_updated: pd.DataFrame
+        Kr evolution parameters table updated with efficiencies.
+    '''
+
+    len_ts = len(masks_time)
+
+    n0     = np.zeros(len_ts)
+    nS1    = np.zeros(len_ts)
+    nS2    = np.zeros(len_ts)
+    nBand  = np.zeros(len_ts)
+
+    for index in range(len_ts):
+
+        time_mask    = masks_time[index]
+        nS1mask      = time_mask & mask_s1
+        nS2mask      = nS1mask   & mask_s2
+        nBandmask    = nS2mask   & mask_band
+
+        n0   [index] = dst[time_mask].event.nunique()
+        nS1  [index] = dst[nS1mask]  .event.nunique()
+        nS2  [index] = dst[nS2mask]  .event.nunique()
+        nBand[index] = dst[nBandmask].event.nunique()
+
+    evol_table_updated = evol_table.assign(S1eff   = nS1   / n0,
+                                           S2eff   = nS2   / nS1,
+                                           Bandeff = nBand / nS2)
+
+    return evol_table_updated
