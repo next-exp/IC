@@ -1,11 +1,16 @@
 import numpy  as np
+import pandas as pd
 
-
-from   typing               import List, Tuple, Optional
+from   typing               import List, Tuple, Optional, Callable
 from   pandas               import DataFrame
 
+from .. types.symbols       import NormStrategy
 from .. core.fit_functions  import fit, gauss
 from .. core.core_functions import in_range, shift_to_bin_centers
+from .. reco.corrections    import get_normalization_factor
+from .. reco.corrections    import correct_geometry_
+from .. reco.corrections    import maps_coefficient_getter
+from .. core.stat_functions import poisson_sigma
 from .. database            import load_db  as  DB
 
 
@@ -244,3 +249,31 @@ def compute_drift_v(zdata    : np.array,
         dv, dvu = np.nan, np.nan
 
     return dv, dvu
+
+
+def e0_xy_correction(map        : pd.DataFrame,
+                     norm_strat : NormStrategy)->Callable:
+
+    '''
+    Provides the function to compute only the geometrical corrections.
+
+    Parameters
+    ----------
+    map: pd.DataFrame
+        Map containing the corrections.
+    norm_strat:
+        Normalization strategy used when correcting the energy.
+
+    Returns
+    -------
+        A function to compute geometrical corrections given a hit's X,Y position.
+    '''
+
+    normalization   = get_normalization_factor(map        , norm_strat)
+    get_xy_corr_fun = maps_coefficient_getter (map.mapinfo, map.e0)
+
+    def geo_correction_factor(x : np.array,
+                              y : np.array):
+        return correct_geometry_(get_xy_corr_fun(x,y))*normalization
+
+    return geo_correction_factor
