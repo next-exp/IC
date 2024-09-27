@@ -404,3 +404,76 @@ def computing_kr_parameters(data       : DataFrame,
                       'Yrms' : [mean_d['Yrms']] , 'Yrmsu' : [var_d['Yrms']]})
 
     return evol
+
+
+def kr_time_evolution(ts         : np.array[float],
+                      masks_time : List[np.array],
+                      dst        : pd.DataFrame,
+                      emaps      : pd.DataFrame,
+                      fittype    : KrFitFunction,
+                      nbins_dv   : int,
+                      zrange_dv  : Tuple[float, float],
+                      detector   : str,
+                      norm_strat : NormStrategy,
+                      norm_value : float)->DataFrame:
+
+
+    '''
+    Computes some average parameters (e0, lt, drift v,
+    S1w, S1h, S1e, S2w, S2h, S2e, S2q, Nsipm, 'Xrms, Yrms)
+    for a given krypton distribution and for different time slices.
+    Returns a DataFrame.
+
+    Parameters
+    ----------
+    ts: np.array
+        Sequence of central times for the different time slices.
+    masks_time: list of boolean lists
+        Allows dividing the distribution into time slices.
+    data: DataFrame
+        Kdst distribution to analyze.
+    emaps: correction map
+        Allows geometrical correction of the energy.
+    fittype: KrFitFunction
+        Kind of fit to perform.
+    nbins_dv: int
+        Number of bins in Z-coordinate for doing the histogram to compute
+        the drift velocity.
+    zrange_dv: int
+        Range in Z-coordinate for doing the histogram to compute the drift
+        velocity.
+    detector: string
+        Used to get the cathode position from DB for the drift velocity
+        computation.
+    norm_strat: NormStrategy
+        Normalization strategy to follow.
+    norm_value: float
+        Energy value to normalize to.
+
+    Returns
+    -------
+    evol_pars: pd.DataFrame
+        Dataframe containing the parameters evolution. Each column corresponds
+        to the average value for a given parameter. Each row corresponds to the
+        parameters for a given time slice.
+    '''
+
+    frames = []
+
+    for index in range(len(masks_time)):
+
+        sel_dst = dst[masks_time[index]]
+        pars    = computing_kr_parameters(data       = sel_dst,
+                                          ts         = ts[index],
+                                          emaps      = emaps,
+                                          fittype    = fittype,
+                                          nbins_dv   = nbins_dv,
+                                          zrange_dv  = zrange_dv,
+                                          detector   = detector,
+                                          norm_strat = norm_strat,
+                                          norm_value = norm_value)
+        frames.append(pars)
+
+    evol_pars = pd.concat(frames, ignore_index=True)
+
+    return evol_pars
