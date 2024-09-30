@@ -61,16 +61,16 @@ def expo_seed(x   : np.array,
         Seed parameters (constant, mean) for the exponential fit.
     '''
 
-    x, y    = zip(*sorted(zip(x, y)))
-    const   = y[0]
-    y_range = y[-1] - y[0]
-    x_range = x[-1] - x[0]
+    x, y = zip(*sorted(zip(x, y)))
 
-    if    y_range <= 0 and x_range >= 0: slope = 0
-    else: slope = x_range / np.log(y[-1] / y[0])
+    const = y[0]
 
-    seed  = const, slope
-    # Maybe a raise or print to warn about problems
+    if const <= 0 or y[-1] <= 0:
+        raise ValueError("y data must be > 0")
+
+    lt = -x[-1] / np.log(y[-1] / const)
+
+    seed = const, lt
     return seed
 
 
