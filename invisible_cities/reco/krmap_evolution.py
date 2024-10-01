@@ -72,6 +72,11 @@ def gauss_seed(x         : np.array,
         Tuple with the seed estimation.
     '''
 
+    # Looks for the higher Y value and takes its corresponding X value
+    # as the center of the Gaussian. Based on the "sigma_rel" parameter,
+    # applies some error to that X value and provides the estimation for the
+    # amplitude, the center and the sigma.
+
     y_max  = np.argmax(y)
     x_max  = x[y_max]
     sigma  = sigma_rel * x_max
@@ -85,7 +90,7 @@ def resolution(values : np.array,
                errors : np.array):
 
     '''
-    Computes the resolution (FWHM) from the Gaussian parameters.
+    Computes the resolution (% FWHM) from the Gaussian parameters.
 
     Parameters
     ----------
@@ -174,7 +179,7 @@ def get_time_series_df(ntimebins  : int,
 
     '''
     Given a dst this function returns a time series (ts) and a list of masks which are used to divide
-    the event in time intervals.
+    the dst in time intervals.
 
     Parameters
     ----------
