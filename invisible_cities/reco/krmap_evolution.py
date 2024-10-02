@@ -441,7 +441,7 @@ def kr_time_evolution(ts         : np.array[float],
 
     '''
     Computes some average parameters (e0, lt, drift v,
-    S1w, S1h, S1e, S2w, S2h, S2e, S2q, Nsipm, 'Xrms, Yrms)
+    S1w, S1h, S1e, S2w, S2h, S2e, S2q, Nsipm, Xrms, Yrms)
     for a given krypton distribution and for different time slices.
     Returns a DataFrame.
 
@@ -451,7 +451,7 @@ def kr_time_evolution(ts         : np.array[float],
         Sequence of central times for the different time slices.
     masks_time: list of boolean lists
         Allows dividing the distribution into time slices.
-    data: DataFrame
+    dst: DataFrame
         Kdst distribution to analyze.
     emaps: correction map
         Allows geometrical correction of the energy.
@@ -460,42 +460,56 @@ def kr_time_evolution(ts         : np.array[float],
     nbins_dv: int
         Number of bins in Z-coordinate for doing the histogram to compute
         the drift velocity.
-    zrange_dv: int
+    zrange_dv: Tuple
         Range in Z-coordinate for doing the histogram to compute the drift
         velocity.
     detector: string
         Used to get the cathode position from DB for the drift velocity
         computation.
-    norm_strat: NormStrategy
-        Normalization strategy to follow.
-    norm_value: float
-        Energy value to normalize to.
 
     Returns
     -------
     evol_pars: pd.DataFrame
-        Dataframe containing the parameters evolution. Each column corresponds
+        DataFrame containing the parameters evolution. Each column corresponds
         to the average value for a given parameter. Each row corresponds to the
         parameters for a given time slice.
     '''
 
-    frames = []
+    # Create a DataFrame with the time slices (ts)
+    mask_time_df = pd.DataFrame({'ts': ts})
 
-    for index in range(len(masks_time)):
+    def compute_parameters(row, masks_time, dst, emaps, fittype, nbins_dv, zrange_dv, detector):
+        idx  = row.name
+        mask = masks_time[idx]
+        time = row['ts']
 
-        sel_dst = dst[masks_time[index]]
-        pars    = computing_kr_parameters(data       = sel_dst,
-                                          ts         = ts[index],
-                                          emaps      = emaps,
-                                          fittype    = fittype,
-                                          nbins_dv   = nbins_dv,
-                                          zrange_dv  = zrange_dv,
-                                          detector   = detector,
-                                          norm_strat = norm_strat,
-                                          norm_value = norm_value)
-        frames.append(pars)
+        # Select the data for the given mask
+        sel_dst = dst[mask]
 
-    evol_pars = pd.concat(frames, ignore_index=True)
+        # Compute the krypton parameters using the selected data
+        pars = computing_kr_parameters(data      = sel_dst,
+                                       ts        = time,
+                                       emaps     = emaps,
+                                       fittype   = fittype,
+                                       nbins_dv  = nbins_dv,
+                                       zrange_dv = zrange_dv,
+                                       detector  = detector)
+
+
+
+        if pars is None or pars.empty:
+            return pd.Series(np.nan)  # Return nan Series if no parameters found
+
+        if isinstance(pars, pd.DataFrame) and len(pars) == 1:
+            pars = pars.iloc[0]  # Convert single-row DataFrame to Series
+
+        return pd.Series(pars)
+
+
+    # Apply the function to the previous df and compute krypton parameters for each time slice
+    evol_pars = mask_time_df.apply(lambda row: compute_parameters(row, masks_time, dst, emaps,
+                                                                  fittype, nbins_dv, zrange_dv, detector),
+                                   axis=1)
 
     return evol_pars
 
