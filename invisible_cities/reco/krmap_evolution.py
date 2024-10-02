@@ -326,6 +326,11 @@ def computing_kr_parameters(data       : DataFrame,
         Each column corresponds to the average value of a different parameter.
     '''
 
+    #effs1, effs2, effbans = efficiencies(data, masks)
+
+    #data = data[np.logical_and(masks)]
+
+
     # Computing E0, LT
 
     fit_func, seed = get_fit_function_lt(fittype)
@@ -484,10 +489,20 @@ def kr_time_evolution(ts         : np.array[float],
         time = row['ts']
 
         # Select the data for the given mask
+        # nS1mask      = time_mask & mask_s1
+        # nS2mask      = nS1mask   & mask_s2
+        # nBandmask    = nS2mask   & mask_band
+        # ntot  = dst[mask].nunique()
+        # ns1   = dst[mask & masks_s1].nunique()
+        # ns2   = dst[mask & mask_s1 & mask_s2]. unique()
+        # nband = dst[mask & mask_s1 & mask_s2 & mask_band].unique()
+
+
         sel_dst = dst[mask]
 
         # Compute the krypton parameters using the selected data
         pars = computing_kr_parameters(data      = sel_dst,
+                                 #      masks     = masks,
                                        ts        = time,
                                        emaps     = emaps,
                                        fittype   = fittype,
