@@ -364,9 +364,10 @@ def computing_kr_parameters(data       : DataFrame,
 
     # Computing Drift Velocity
 
-    dv, dvu  = compute_drift_v(zdata    = data.Z.to_numpy(),
+    dv, dvu  = compute_drift_v(zdata    = data.DT.to_numpy(),
                                nbins    = nbins_dv,
                                zrange   = zrange_dv,
+                               seed     = None,
                                detector = detector)
 
     # Computing Resolution
