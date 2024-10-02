@@ -373,9 +373,7 @@ def computing_kr_parameters(data       : DataFrame,
     # Computing Resolution
 
     tot_corr_factor = apply_all_correction(maps       = emaps,
-                                           apply_temp = False,
-                                           norm_strat = norm_strat,
-                                           norm_value = norm_value)
+                                           apply_temp = False)
 
     nbins = int((len(data.S2e))**0.5) # Binning as a function of nevts. Should we change it?
 
@@ -420,6 +418,14 @@ def computing_kr_parameters(data       : DataFrame,
                       'Nsipm': [mean_d['Nsipm']], 'Nsipmu': [var_d['Nsipm']],
                       'Xrms' : [mean_d['Xrms']] , 'Xrmsu' : [var_d['Xrms']] ,
                       'Yrms' : [mean_d['Yrms']] , 'Yrmsu' : [var_d['Yrms']]})
+
+    # PARA METER CUT_EFFS_EVOLUTION: Esta función sólamente se aplica a la dst filtrada, y por lo tanto
+    # no hay una colección de máscaras. Aquí sólo se mete el timestamp que hace referencia al tiempo del
+    # rango temporal escogido para el tratamiento de la evolución temporal. Esto va dentro del bucle de
+    # kr_time_evolution. Si queremos meter la evolución de eficiencias de cortes, yo la metería en esa
+    # función y no en esta (aunque aquí en un primer momento pueda parecer más lógico) ya que en la otra
+    # es posible filtrar la dst entera y aquí no según el flow de la función.
+
 
     return evol
 
