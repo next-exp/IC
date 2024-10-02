@@ -14,7 +14,7 @@ from .. reco.corrections      import maps_coefficient_getter
 from .. reco.corrections      import apply_all_correction
 from .. core.stat_functions   import poisson_sigma
 from .. database              import load_db  as  DB
-from .. reco.icaro_components import get_fit_function_lt # Won't work until previous PR are approved
+from .. reco.icaro_components import get_fit_function_lt, select_fit_variables, transform_parameters # Won't work until previous PR are approved
 
 
 def sigmoid(x          : np.array,
@@ -328,22 +328,39 @@ def computing_kr_parameters(data       : DataFrame,
 
     # Computing E0, LT
 
+    fit_func, seed = get_fit_function_lt(fittype)
+
     geo_correction_factor = e0_xy_correction(map        = emaps,
                                              norm_strat = NormStrategy.max)
 
-    fit_func, seed = get_fit_function_lt(fittype)
 
-    x           = data.DT,
-    y           = data.S2e.to_numpy()*geo_correction_factor(data.X.to_numpy(), data.Y.to_numpy())
+    x, y = select_fit_variables(fittype, data) # Importar de previo PR
+
+    corr = geo_correction_factor(data.X.to_numpy(), data.Y.to_numpy())
+
+    y_corr = y -np.log(corr) if fittype == KrFitFunction.log_lin else y*corr
+
+    # If we didn't care about using the specific fit function of the map computation,
+    # this would be reduced to just the following:
+    # y_corr = y*geo_correction_factor(data.X.to_numpy(), data.Y.to_numpy())
 
     fit_output, _, _, _ = fit(func        = fit_func, # Misma funcion que en el ajuste del mapa
                               x           = x,
-                              y           = y,
-                              seed        = seed(x, y),
+                              y           = y_corr,
+                              seed        = seed(x, y_corr),
                               full_output = False)
 
-    e0,  lt  = fit_output.values
-    e0u, ltu = fit_output.errors
+    if fittype == KrFitFunction.log_lin:
+
+        par, err, cov = transform_parameters(fit_output)
+
+        e0, lt = par
+        e0u, ltu = err
+
+    else:
+
+        e0,  lt  = fit_output.values
+        e0u, ltu = fit_output.errors
 
     # Computing Drift Velocity
 
