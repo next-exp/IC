@@ -293,9 +293,7 @@ def computing_kr_parameters(data       : DataFrame,
                             fittype    : KrFitFunction,
                             nbins_dv   : int,
                             zrange_dv  : List[float, float],
-                            detector   : str,
-                            norm_strat : NormStrategy,
-                            norm_value : float)->DataFrame: # REVISAR NORM_STRAT Y NORM_VALUE
+                            detector   : str)->DataFrame:
 
     '''
     Computes some average parameters (e0, lt, drift v, energy
@@ -321,10 +319,6 @@ def computing_kr_parameters(data       : DataFrame,
     detector: string
         Used to get the cathode position from DB for the drift velocity
         computation.
-    norm_strat: NormStrategy
-        Normalization strategy to follow.
-    norm_value: float
-        Energy value to normalize to.
 
     Returns
     -------
@@ -335,7 +329,7 @@ def computing_kr_parameters(data       : DataFrame,
     # Computing E0, LT
 
     geo_correction_factor = e0_xy_correction(map        = emaps,
-                                             norm_strat = norm_strat) # PREGUNTAR POR ESTRATEGIA
+                                             norm_strat = NormStrategy.max)
 
     fit_func, seed = get_fit_function_lt(fittype)
 
@@ -419,10 +413,7 @@ def kr_time_evolution(ts         : np.array[float],
                       fittype    : KrFitFunction,
                       nbins_dv   : int,
                       zrange_dv  : Tuple[float, float],
-                      detector   : str,
-                      norm_strat : NormStrategy,
-                      norm_value : float)->DataFrame:
-
+                      detector   : str) -> pd.DataFrame:
 
     '''
     Computes some average parameters (e0, lt, drift v,
