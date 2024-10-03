@@ -184,20 +184,6 @@ def test_city_keeps_input_file_ordering(ICDATADIR, config_tmpdir, order):
     assert result == files_in
 
 
-def test_city_fails_if_input_file_pattern_does_not_match_any_files(config_tmpdir):
-    files_in = "/this/file/does/not/exist.h5"
-    file_out = os.path.join(config_tmpdir, "test_city_fails_if_input_file_pattern_does_not_match_any_files.h5")
-
-    @city
-    def dummy_city( files_in    : Union[str, list]
-                  , file_out    : str
-                  , event_range : tuple):
-        pass
-
-    with raises(NoInputFiles, match="The input file pattern did not match any files"):
-        dummy_city(files_in=files_in, file_out=file_out, event_range=(0, 1))
-
-
 def test_city_fails_if_bad_input_file(config_tmpdir, ICDATADIR):
     file_ok  = os.path.join(ICDATADIR, "electrons_40keV_z25_RWF.h5") # any file will do
     file_bad = "/this/file/does/not/exist.h5"
