@@ -45,10 +45,6 @@ from os   .path  import expandvars
 from scipy.stats import multivariate_normal
 from numpy       import nan_to_num
 
-from typing import Tuple
-from typing import List
-from typing import Optional
-
 from .  components import city
 from .  components import collect
 from .  components import copy_mc_info
@@ -83,12 +79,18 @@ from .. io.         hits_io    import hits_writer
 from .. io. event_filter_io    import event_filter_writer
 from .. io.         kdst_io    import kdst_from_df_writer
 
+from .. types.ic_types         import NoneType
 from .. types.symbols          import HitEnergy
 from .. types.symbols          import InterpolationMethod
 from .. types.symbols          import CutType
 from .. types.symbols          import DeconvolutionMode
 
 from .. core                   import system_of_units as units
+
+from typing import Tuple
+from typing import List
+from typing import Optional
+from typing import Union
 
 
 # Temporary. The removal of the event model will fix this.
@@ -376,8 +378,8 @@ def beersheba( files_in         : OneOrManyFiles
              , threshold        : float
              , same_peak        : bool
              , deconv_params    : dict
-             , corrections_file : str
-             , apply_temp       : bool
+             , corrections_file : Union[ str, NoneType]
+             , apply_temp       : Union[bool, NoneType]
              ):
     """
     The city corrects Penthesilea hits energy and extracts topology information.
