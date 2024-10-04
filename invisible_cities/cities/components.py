@@ -221,7 +221,9 @@ def write_city_configuration( filename : str
 
 def copy_cities_configuration( file_in : str, file_out : str):
     with tb.open_file(file_in, "r") as fin:
-        if "config" not in fin.root: return
+        if "config" not in fin.root:
+            warnings.warn("Input file does not contain /config group", UserWarning)
+            return
 
         with tb.open_file(file_out, "a") as fout:
             if "config" not in fout.root:
