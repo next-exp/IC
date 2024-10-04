@@ -511,5 +511,5 @@ def test_copy_cities_configuration_warns_when_nothing_to_copy(ICDATADIR, config_
     filename1  = os.path.join(    ICDATADIR, "electrons_40keV_z25_RWF.h5")
     filename2  = os.path.join(config_tmpdir, "test_copy_cities_configuration_warns.h5")
 
-    with warns(UserWarning):
+    with warns(UserWarning, match="Input file does not contain /config group"):
         copy_cities_configuration(filename1, filename2)
