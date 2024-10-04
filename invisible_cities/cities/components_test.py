@@ -504,3 +504,12 @@ def test_copy_cities_configuration(config_tmpdir):
         assert var in df2.index
         assert str(value) == df1.value.loc[var]
         assert str(value) == df2.value.loc[var]
+
+
+def test_copy_cities_configuration_warns_when_nothing_to_copy(ICDATADIR, config_tmpdir):
+    # any file without config group will do
+    filename1  = os.path.join(    ICDATADIR, "electrons_40keV_z25_RWF.h5")
+    filename2  = os.path.join(config_tmpdir, "test_copy_cities_configuration_warns.h5")
+
+    with warns(UserWarning):
+        copy_cities_configuration(filename1, filename2)
