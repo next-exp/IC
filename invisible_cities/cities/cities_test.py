@@ -107,6 +107,36 @@ def test_city_output_contains_configuration(config_tmpdir, city):
         assert len(table[:]) > 0
 
 
+def test_cities_carry_on_configuration_from_previous_ones(ICDATADIR, config_tmpdir):
+    rwf_file   = os.path.join(    ICDATADIR, "electrons_40keV_ACTIVE_10evts_RWF.h5")
+    pmaps_file = os.path.join(config_tmpdir, f"test_cities_carry_on_configuration_pmaps.h5")
+    kdst_file  = os.path.join(config_tmpdir, f"test_cities_carry_on_configuration_kdst.h5")
+
+    conf_irene = configure("dummy invisible_cities/config/irene.conf".split())
+    conf_irene.update(dict( files_in    = rwf_file
+                          , file_out    = pmaps_file
+                          , event_range = 0))
+
+    conf_dorothea = configure("dummy invisible_cities/config/dorothea.conf".split())
+    conf_dorothea.update(dict( files_in = pmaps_file
+                             , file_out = kdst_file
+                             , event_range = 0))
+
+    for city, conf in (("irene", conf_irene), ("dorothea", conf_dorothea)):
+        module_name   = f'invisible_cities.cities.{city}'
+        city_function = getattr(import_module(module_name), city)
+        city_function(**conf)
+
+    # now check that the second output file contains the configuration from both cities
+    with tb.open_file(kdst_file) as file:
+        assert "config" in file.root
+
+        for city in "irene dorothea".split():
+            assert city in file.root.config
+            table = getattr(file.root.config, city)
+            assert len(table[:]) > 0
+
+
 @mark.filterwarnings("ignore::UserWarning")
 @mark.parametrize("city", all_cities)
 def test_city_missing_detector_db(city):
