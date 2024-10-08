@@ -1,3 +1,4 @@
+import os
 import random
 import numpy  as np
 import pandas as pd
@@ -31,6 +32,10 @@ from .. types   .symbols          import CutType
 from .. database.load_db          import DataSiPM
 
 from scipy.stats                  import multivariate_normal
+
+
+cut_types = [(CutType.rel), (CutType.abs)]
+satellite_test_data = [(0, np.load(str(os.environ['ICDIR']) + 'database/test_data/satellite_array.npy')), (999, np.zeros((5,5)))]
 
 
 @given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3)),
@@ -266,19 +271,25 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     assert(np.all(check_y % 9 == 0))
 
 
-def test_removing_satellites(sat_arr, sat_arr_removed):
-    hdst_rel           = np.load(sat_arr)
-    hdst_abs           = np.load(sat_arr)
+@mark.parametrize("cut_type", cut_types)
+def test_removing_satellites(sat_arr, sat_arr_removed, cut_type):
+    hdst               = np.load(sat_arr)
     hdst_nosat         = np.load(sat_arr_removed)
     e_cut              = 0.5
-    ctype_rel          = CutType.rel
-    ctype_abs          = CutType.abs
     satellite_max_size = 3
 
-    rel_mask = generate_satellite_mask(hdst_rel, satellite_max_size, e_cut, ctype_rel)
-    hdst_rel[rel_mask] = 0
-    assert(np.array_equal(hdst_rel, hdst_nosat))
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert(np.array_equal(hdst, hdst_nosat))
 
-    abs_mask = generate_satellite_mask(hdst_abs, satellite_max_size, e_cut, ctype_abs)
-    hdst_abs[abs_mask] = 0
-    assert(np.array_equal(hdst_abs, hdst_nosat))
+
+@mark.parametrize("satellite_max_size, output_array", satellite_test_data)
+def satellite_size(sat_arr, satellite_max_size, output_array):
+    hdst               = np.load(sat_arr)
+    e_cut              = 0.5
+    cut_type           = CutType.rel
+
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert(np.array_equal(hdst, output_array))
+
