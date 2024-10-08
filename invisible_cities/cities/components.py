@@ -602,6 +602,7 @@ def hits_and_kdst_from_files( paths : List[str]
                 if len(hits):
                     hits = hits[event_number]
                 else:
+                    warnings.warn(f"Event {event_number} does not contain hits", UserWarning)
                     hits = HitCollection(event_number, timestamp, [])
                 yield dict(hits = hits,
                            kdst = kdst_df.loc[kdst_df.event==event_number],
