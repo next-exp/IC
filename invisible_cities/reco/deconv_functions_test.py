@@ -1,3 +1,4 @@
+import os
 import random
 import numpy  as np
 import pandas as pd
@@ -17,6 +18,7 @@ from .. reco    .deconv_functions import interpolate_signal
 from .. reco    .deconv_functions import deconvolution_input
 from .. reco    .deconv_functions import deconvolve
 from .. reco    .deconv_functions import richardson_lucy
+from .. reco    .deconv_functions import generate_satellite_mask
 
 from .. core    .core_functions   import in_range
 from .. core    .core_functions   import shift_to_bin_centers
@@ -25,10 +27,15 @@ from .. core    .testing_utils    import assert_dataframes_close
 from .. io      .dst_io           import load_dst
 
 from .. types   .symbols          import InterpolationMethod
+from .. types   .symbols          import CutType
 
 from .. database.load_db          import DataSiPM
 
 from scipy.stats                  import multivariate_normal
+
+
+cut_types = [(CutType.rel), (CutType.abs)]
+satellite_test_data = [(0, np.load(str(os.environ['ICDIR']) + 'database/test_data/satellite_array.npy')), (999, np.zeros((5,5)))]
 
 
 @given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3)),
@@ -155,7 +162,9 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
+                                 satellite_iter = 9999, satellite_max_size = 10,
+                                 e_cut = 0.2, cut_type = CutType.rel)
 
     assert np.allclose(ref_interpolation['e_deco'], deco[0].flatten())
     assert np.allclose(ref_interpolation['x_deco'], deco[1][0])
@@ -190,7 +199,8 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T,
-                           iterations=15, iter_thr=0.0001)
+                           satellite_iter = 9999, satellite_max_size= 10, e_cut = 0.2, 
+                           cut_type = CutType.rel, iterations=15, iter_thr=0.0001)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
 
@@ -219,7 +229,9 @@ def test_grid_binning(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
+                                 satellite_iter = 9999, satellite_max_size = 10,
+                                 e_cut = 0.2, cut_type = CutType.rel)
 
     assert np.all((deco[1][0] - det_db['X'].min() + 9/2) % 9 == 0)
     assert np.all((deco[1][1] - det_db['Y'].min() + 9/2) % 9 == 0)
@@ -248,10 +260,36 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
+                                 satellite_iter = 9999, satellite_max_size = 10, 
+                                 e_cut = 0.2, cut_type = CutType.rel)
 
     check_x = np.diff(np.sort(np.unique(deco[1][0]), axis=None))
     check_y = np.diff(np.sort(np.unique(deco[1][1]), axis=None))
 
     assert(np.all(check_x % 9 == 0))
     assert(np.all(check_y % 9 == 0))
+
+
+@mark.parametrize("cut_type", cut_types)
+def test_removing_satellites(sat_arr, sat_arr_removed, cut_type):
+    hdst               = np.load(sat_arr)
+    hdst_nosat         = np.load(sat_arr_removed)
+    e_cut              = 0.5
+    satellite_max_size = 3
+
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert(np.array_equal(hdst, hdst_nosat))
+
+
+@mark.parametrize("satellite_max_size, output_array", satellite_test_data)
+def satellite_size(sat_arr, satellite_max_size, output_array):
+    hdst               = np.load(sat_arr)
+    e_cut              = 0.5
+    cut_type           = CutType.rel
+
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert(np.array_equal(hdst, output_array))
+
