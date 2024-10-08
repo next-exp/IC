@@ -14,6 +14,7 @@ from pytest import warns
 from .. core.configure     import configure
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.exceptions    import          SensorIDMismatch
+from .. core.exceptions    import              NoInputFiles
 from .. core.testing_utils import    assert_tables_equality
 from .. core               import system_of_units as units
 from .. types.symbols      import WfType
@@ -181,6 +182,22 @@ def test_city_keeps_input_file_ordering(ICDATADIR, config_tmpdir, order):
 
     # no sorting: ensure that the files keep their original ordering
     assert result == files_in
+
+
+def test_city_fails_if_bad_input_file(config_tmpdir, ICDATADIR):
+    file_ok  = os.path.join(ICDATADIR, "electrons_40keV_z25_RWF.h5") # any file will do
+    file_bad = "/this/file/does/not/exist.h5"
+    files_in = [file_ok, file_bad]
+    file_out = os.path.join(config_tmpdir, "test_city_fails_if_bad_input_file.h5")
+
+    @city
+    def dummy_city( files_in    : Union[str, list]
+                  , file_out    : str
+                  , event_range : tuple):
+        pass
+
+    with raises(FileNotFoundError):
+        dummy_city(files_in=files_in, file_out=file_out, event_range=(0, 1))
 
 
 def test_compute_xy_position_depends_on_actual_run_number():

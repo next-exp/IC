@@ -118,13 +118,18 @@ def city(city_function):
         if isinstance(conf.files_in, str):
             conf.files_in = [conf.files_in]
 
-        globbed_files = map(glob, map(expandvars, conf.files_in))
-        globbed_files = list(f for fs in globbed_files for f in fs)
-        if len(set(globbed_files)) != len(globbed_files):
-            warnings.warn("files_in contains repeated values. Ignoring duplicate files.", UserWarning)
-            globbed_files = [f for i, f in enumerate(globbed_files) if f not in globbed_files[:i]]
+        input_files = []
+        for pattern in map(expandvars, conf.files_in):
+            globbed_files = glob(pattern)
+            if len(globbed_files) == 0:
+                raise FileNotFoundError(f"Input pattern {pattern} did not match any files.")
+            input_files.extend(globbed_files)
 
-        conf.files_in = globbed_files
+        if len(set(input_files)) != len(input_files):
+            warnings.warn("files_in contains repeated values. Ignoring duplicate files.", UserWarning)
+            input_files = [f for i, f in enumerate(input_files) if f not in input_files[:i]]
+
+        conf.files_in = input_files
         conf.file_out = expandvars(conf.file_out)
 
         conf.event_range  = event_range(conf)

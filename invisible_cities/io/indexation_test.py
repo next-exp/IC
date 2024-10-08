@@ -41,10 +41,11 @@ def _df_writer(h5out):
                    (   pmap_writer, "PMAPS", "S2"      , "event", "s2"  ),
                    (   pmap_writer, "PMAPS", "S2Si"    , "event", "s2si"),
                    (    _df_writer, "DUMMY", "dummy"   , "event", 'df'  )])
-def test_table_is_indexed(tmpdir_factory, writer, group, node, column, thing):
-    tmpdir = tmpdir_factory.mktemp('indexation')
-    file_out = os.path.join(tmpdir, f"empty_table_containing_{thing}.h5")
-    writer_test_city(writer=writer, file_out=file_out, files_in='dummy', detector_db = 'new')
+def test_table_is_indexed(tmpdir_factory, ICDATADIR, writer, group, node, column, thing):
+    tmpdir      = tmpdir_factory.mktemp('indexation')
+    file_out    = os.path.join(tmpdir, f"empty_table_containing_{thing}.h5")
+    dummy_files = os.path.join(ICDATADIR, "*.h5")
+    writer_test_city(writer=writer, file_out=file_out, files_in=dummy_files, detector_db = 'new')
     with tb.open_file(file_out, 'r') as h5out:
         table = getattr(getattr(h5out.root, group), node)
         assert getattr(table.cols, column).is_indexed
