@@ -1,3 +1,4 @@
+import os
 import random
 import numpy  as np
 import pandas as pd
@@ -32,6 +33,8 @@ from .. database.load_db          import DataSiPM
 
 from scipy.stats                  import multivariate_normal
 
+
+cut_types = list(CutType)
 
 @given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3)),
                             column('B', dtype=float, elements=floats(1, 1e3)),
@@ -132,7 +135,7 @@ def test_deconvolution_input_interpolation_method(data_hdst, data_hdst_deconvolv
         deconvolution_input([10., 10.], [1., 1.], interp_method)
 
 
-def test_deconvolve(data_hdst, data_hdst_deconvolved):
+def test_deconvolve(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -158,15 +161,14 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_max_size = 10,
-                                 e_cut = 0.2, cut_type = CutType.rel)
+                                 **no_satellite_killer)
 
     assert np.allclose(ref_interpolation['e_deco'], deco[0].flatten())
     assert np.allclose(ref_interpolation['x_deco'], deco[1][0])
     assert np.allclose(ref_interpolation['y_deco'], deco[1][1])
 
 
-def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
+def test_richardson_lucy(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -194,13 +196,12 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T,
-                           satellite_iter = 9999, satellite_max_size= 10, e_cut = 0.2, 
-                           cut_type = CutType.rel, iterations=15, iter_thr=0.0001)
+                           iterations=15, iter_thr=0.0001, **no_satellite_killer)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
 
 
-def test_grid_binning(data_hdst, data_hdst_deconvolved):
+def test_grid_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
     h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z      = h.Z.mean()
@@ -225,14 +226,13 @@ def test_grid_binning(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_max_size = 10,
-                                 e_cut = 0.2, cut_type = CutType.rel)
+                                 **no_satellite_killer)
 
     assert np.all((deco[1][0] - det_db['X'].min() + 9/2) % 9 == 0)
     assert np.all((deco[1][1] - det_db['Y'].min() + 9/2) % 9 == 0)
 
 
-def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
+def test_nonexact_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
     h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z      = h.Z.mean()
@@ -256,8 +256,7 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_max_size = 10, 
-                                 e_cut = 0.2, cut_type = CutType.rel)
+                                 **no_satellite_killer)
 
     check_x = np.diff(np.sort(np.unique(deco[1][0]), axis=None))
     check_y = np.diff(np.sort(np.unique(deco[1][1]), axis=None))
@@ -266,19 +265,31 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     assert(np.all(check_y % 9 == 0))
 
 
-def test_removing_satellites(sat_arr, sat_arr_removed):
-    hdst_rel           = np.load(sat_arr)
-    hdst_abs           = np.load(sat_arr)
-    hdst_nosat         = np.load(sat_arr_removed)
+@mark.parametrize("cut_type", cut_types)
+def test_removing_satellites(sat_arr, sat_arr_removed, cut_type):
+    hdst         = sat_arr
+    hdst_nosat   = sat_arr_removed
     e_cut              = 0.5
-    ctype_rel          = CutType.rel
-    ctype_abs          = CutType.abs
     satellite_max_size = 3
 
-    rel_mask = generate_satellite_mask(hdst_rel, satellite_max_size, e_cut, ctype_rel)
-    hdst_rel[rel_mask] = 0
-    assert(np.array_equal(hdst_rel, hdst_nosat))
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert(np.array_equal(hdst, hdst_nosat))
 
-    abs_mask = generate_satellite_mask(hdst_abs, satellite_max_size, e_cut, ctype_abs)
-    hdst_abs[abs_mask] = 0
-    assert(np.array_equal(hdst_abs, hdst_nosat))
+
+@mark.parametrize("satellite_max_size, output_array", [(0, 'sat_arr'), (3, 'sat_arr_removed'), (999, 'sat_zero')])
+def test_satellite_size(sat_arr, satellite_max_size, output_array, request):
+    '''
+    Check what happens when you assign the satellite max size to differing values.
+    Set to 0   -> array is unchanged.
+    Set to 3   -> Small satellite is removed.
+    Set to 999 -> everything is considered a satellite and removed.
+    '''
+    hdst               = sat_arr
+    e_cut              = 0.5
+    cut_type           = CutType.rel
+
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert(np.array_equal(hdst, request.getfixturevalue(output_array)))
+
