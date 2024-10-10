@@ -10,10 +10,12 @@ from pytest import raises
 
 from .. core.configure      import configure
 
-online_cities = "irene dorothea sophronia esmeralda beersheba".split()
-all_cities    = """beersheba berenice buffy detsim diomira dorothea esmeralda
-                   eutropia hypathia irene isaura isidora phyllis sophronia
-                   trude""".split()
+online_cities  = "irene dorothea sophronia esmeralda beersheba isaura".split()
+mc_cities      = "buffy detsim diomira hypathia".split()
+other_cities   = "berenice isidora phyllis trude eutropia".split()
+all_cities     = sorted(online_cities + mc_cities + other_cities)
+all_cities_with_event_range = sorted(set(all_cities).difference(set(["eutropia"])))
+
 
 @mark.filterwarnings("ignore::UserWarning")
 @mark.parametrize("city", online_cities)
@@ -35,6 +37,23 @@ def test_city_empty_input_file(config_tmpdir, ICDATADIR, city):
     city_function(**conf)
 
 
+@mark.filterwarnings("ignore::UserWarning")
+@mark.parametrize("city", all_cities_with_event_range)
+def test_city_null_event_range(config_tmpdir, ICDATADIR, city):
+    # All cities must run with event_range = 0
+    PATH_OUT = os.path.join(config_tmpdir, 'empty_output.h5')
+
+    config_file = 'dummy invisible_cities/config/{}.conf'.format(city)
+    conf = configure(config_file.split())
+    conf.update(dict( file_out = PATH_OUT
+                     , event_range = 0))
+
+    module_name   = f'invisible_cities.cities.{city}'
+    city_function = getattr(import_module(module_name), city)
+
+    city_function(**conf)
+
+
 
 @mark.filterwarnings("ignore::UserWarning")
 @mark.parametrize("city", all_cities)
@@ -43,21 +62,27 @@ def test_city_output_file_is_compressed(config_tmpdir, ICDATADIR, city):
     config_file = 'dummy invisible_cities/config/{}.conf'.format(city)
 
     conf = configure(config_file.split())
-    conf.update(dict(file_out = file_out))
+    conf.update(dict( file_out    = file_out
+                    , event_range = 0))
 
     module_name   = f'invisible_cities.cities.{city}'
     city_function = getattr(import_module(module_name), city)
 
     city_function(**conf)
 
+    checked_nodes = 0
     with tb.open_file(file_out) as file:
         for node in chain([file], file.walk_nodes()):
             try:
                 assert (node.filters.complib   is not None and
                         node.filters.complevel > 0)
+                checked_nodes += 1
 
             except tb.NoSuchNodeError:
                 continue
+
+    # ensure that we didn't pass the test because there were no nodes checked
+    assert checked_nodes > 2
 
 
 @mark.filterwarnings("ignore::UserWarning")

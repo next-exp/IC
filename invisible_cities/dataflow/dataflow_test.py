@@ -465,20 +465,33 @@ slice_arg_nonzero  = one_of(none(), small_ints_nonzero)
               tuples(small_ints, small_ints),
               tuples(slice_arg,  slice_arg, slice_arg_nonzero)))
 def test_slice_downstream(spec):
-
     the_source = list('abcdefghij')
     result = []
     the_sink = df.sink(result.append)
 
     df.push(source = the_source,
-            pipe   = df.pipe(df.slice(*spec), the_sink))
+            pipe   = df.pipe(df.slice(*spec, close_all=False), the_sink))
+
 
     specslice = slice(*spec)
     assert result == the_source[specslice]
     assert result == the_source[specslice.start : specslice.stop : specslice.step]
 
 
-#TODO: Write test slice_close_all
+def test_slice_null_close_all():
+    spec       = (0,)
+
+    the_source = list('abcdefghij')
+    result     = []
+    the_sink   = df.sink(result.append)
+
+    df.push(source = the_source,
+            pipe   = df.pipe(df.slice(*spec, close_all=True), the_sink))
+
+    specslice = slice(*spec)
+    assert result == the_source[specslice]
+    assert result == the_source[specslice.start : specslice.stop : specslice.step]
+
 
 @parametrize('args',
              ((      -1,),
