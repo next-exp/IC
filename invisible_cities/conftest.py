@@ -728,8 +728,10 @@ def esmeralda_config(Th228_hits, next100_mc_krmap):
                       min_voxels       = 3                  ,
                       blob_radius      = 21 * units.mm      ,
           	      max_num_hits     = 30000              )
-                 , corrections_file   = next100_mc_krmap
-                 , apply_temp         = False
+                 , corrections = dict(
+                      filename   = next100_mc_krmap,
+                      apply_temp =            False,
+                      norm_strat =  NormStrategy.kr)
                  )
 
     return config
