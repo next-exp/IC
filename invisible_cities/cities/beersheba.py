@@ -468,6 +468,16 @@ def beersheba( files_in         : OneOrManyFiles
               `abs`: cut on the absolute value of the hits.
               `rel`: cut on the relative value (to the max) of the hits.
 
+    corrections : dict
+        filename : str
+            Path to the file holding the correction maps
+        apply_temp : bool
+            Whether to apply temporal corrections
+        norm_strat : NormStrategy
+            Normalization strategy
+        norm_value : float, optional
+            Normalization value in case of `norm_strat = NormStrategy.custom`
+
     ----------
     Input
     ----------
