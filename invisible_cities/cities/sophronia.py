@@ -93,7 +93,50 @@ def sophronia( files_in           : OneOrManyFiles
              , same_peak          : bool
              , corrections        : Optional[dict] = None
              ):
+    """
+    drift_v : float
+        Drift velocity
 
+    s1_params : dict
+        Selection criteria for S1 peaks
+
+    s2_params : dict
+        Selection criteria for S2 peaks
+
+    global_reco_algo : XYReco
+        Reconstruction algorithm to use
+
+    global_reco_params : dict
+        Configuration parameters of the given reconstruction algorithm
+
+    rebin : int, float
+        If `rebin_method` is `stride`, it is interpreted as the number
+        of consecutive slices to accumulate. Otherwise, if
+        `rebin_method` is `threshold`, it is interpreted as the amount
+        of accumulated charge necessary to stop the resampling.
+
+    rebin_method : RebinMethod
+        Resampling method to use: `stride` or `threshold`
+
+    q_thr : float
+        Threshold to be applied to each (resampled) slice of every SiPM.
+
+    sipm_charge_type : SiPMCharge
+        Interpretation of the SiPM charge: `raw` or `signal_to_noise`
+
+    same_peak : bool
+        Whether to reassign NN hits' energy only to the hits from the same peak
+
+    corrections : dict
+        filename : str
+            Path to the file holding the correction maps
+        apply_temp : bool
+            Whether to apply temporal corrections
+        norm_strat : NormStrategy
+            Normalization strategy
+        norm_value : float, optional
+            Normalization value in case of `norm_strat = NormStrategy.custom`
+    """
     global_reco = compute_xy_position( detector_db
                                      , run_number
                                      , global_reco_algo
