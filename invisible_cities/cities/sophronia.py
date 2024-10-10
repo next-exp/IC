@@ -47,7 +47,6 @@ from .. io  .  event_filter_io import  event_filter_writer
 
 from .. dataflow import dataflow as df
 
-
 from .. types.symbols  import RebinMethod
 from .. types.symbols  import  SiPMCharge
 from .. types.symbols  import      XYReco
@@ -92,8 +91,7 @@ def sophronia( files_in           : OneOrManyFiles
              , q_thr              : float
              , sipm_charge_type   : SiPMCharge
              , same_peak          : bool
-             , corrections_file   : Optional[str]  = None
-             , apply_temp         : Optional[bool] = None
+             , corrections        : Optional[dict] = None
              ):
 
     global_reco = compute_xy_position( detector_db
@@ -133,7 +131,7 @@ def sophronia( files_in           : OneOrManyFiles
     merge_nn_hits  = df.map( hits_merger(same_peak)
                            , item = "hits")
 
-    correct_hits   = df.map( hits_corrector(corrections_file, apply_temp) if corrections_file is not None else identity
+    correct_hits   = df.map( hits_corrector(**corrections) if corrections is not None else identity
                            , item = "hits")
 
     build_pointlike_event = df.map( pointlike_event_builder( detector_db

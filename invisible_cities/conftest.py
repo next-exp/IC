@@ -701,8 +701,10 @@ def sophronia_config(Th228_pmaps, next100_mc_krmap):
                    , global_reco_algo   = XYReco.barycenter
                    , global_reco_params = dict(Qthr = 20 * units.pes)
                    , same_peak          = True
-                   , corrections_file   = next100_mc_krmap
-                   , apply_temp         = False
+                   , corrections        = dict(
+                       filename   = next100_mc_krmap,
+                       apply_temp =            False,
+                       norm_strat =  NormStrategy.kr)
                    )
     return config
 
