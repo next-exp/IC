@@ -175,9 +175,9 @@ def get_time_series_df(ntimebins  : int,
     return shift_to_bin_centers(time_bins), masks
 
 
-def compute_drift_v(dtdata    : np.array,
+def compute_drift_v(dtdata   : np.array,
                     nbins    : int,
-                    dtrange   : Tuple[float, float],
+                    dtrange  : Tuple[float, float],
                     seed     : Tuple[float, float, float, float],
                     detector : str)->Tuple[float, float]:
 
@@ -263,7 +263,7 @@ def computing_kr_parameters(data       : DataFrame,
                             emaps      : pd.DataFrame,
                             fittype    : KrFitFunction,
                             nbins_dv   : int,
-                            dtrange_dv  : List[float],
+                            dtrange_dv : List[float],
                             detector   : str)->DataFrame:
 
     '''
@@ -325,7 +325,7 @@ def computing_kr_parameters(data       : DataFrame,
 
         par, err, cov = transform_parameters(fit_output)
 
-        e0, lt = par
+        e0, lt   = par
         e0u, ltu = err
 
     else:
@@ -407,7 +407,7 @@ def kr_time_evolution(ts         : np.array[float],
                       emaps      : pd.DataFrame,
                       fittype    : KrFitFunction,
                       nbins_dv   : int,
-                      dtrange_dv  : Tuple[float, float],
+                      dtrange_dv : Tuple[float, float],
                       detector   : str) -> pd.DataFrame:
 
     '''
@@ -458,13 +458,13 @@ def kr_time_evolution(ts         : np.array[float],
         sel_dst = dst[mask]
 
         # Compute the krypton parameters using the selected data
-        pars = computing_kr_parameters(data      = sel_dst,
-                                       ts        = time,
-                                       emaps     = emaps,
-                                       fittype   = fittype,
-                                       nbins_dv  = nbins_dv,
+        pars = computing_kr_parameters(data       = sel_dst,
+                                       ts         = time,
+                                       emaps      = emaps,
+                                       fittype    = fittype,
+                                       nbins_dv   = nbins_dv,
                                        dtrange_dv = dtrange_dv,
-                                       detector  = detector)
+                                       detector   = detector)
 
 
 
@@ -629,7 +629,7 @@ def add_krevol(r_fid         : float,   # Esto sería para meter en la ciudad de
                                            emaps               = map,
                                            fittype             = fittype,
                                            nbins_dv            = nbins_dv,
-                                           dtrange_dv           = dtrange_dv,
+                                           dtrange_dv          = dtrange_dv,
                                            detector            = detector)
 
         evol_table_eff = cut_effs_evolution(masks_time         = masks_time,
