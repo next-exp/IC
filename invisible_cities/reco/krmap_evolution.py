@@ -175,9 +175,9 @@ def get_time_series_df(ntimebins  : int,
     return shift_to_bin_centers(time_bins), masks
 
 
-def compute_drift_v(zdata    : np.array,
+def compute_drift_v(dtdata    : np.array,
                     nbins    : int,
-                    zrange   : Tuple[float, float],
+                    dtrange   : Tuple[float, float],
                     seed     : Tuple[float, float, float, float],
                     detector : str)->Tuple[float, float]:
 
@@ -187,12 +187,12 @@ def compute_drift_v(zdata    : np.array,
 
     Parameters
     ----------
-    zdata: array_like
-        Values of Z coordinate.
+    dtdata: array_like
+        Values of DT coordinate.
     nbins: int (optional)
         The number of bins in the z coordinate for the binned fit.
-    zrange: length-2 tuple (optional)
-        Fix the range in z.
+    dtrange: length-2 tuple (optional)
+        Fix the range in DT.
     seed: length-4 tuple (optional)
         Seed for the fit.
     detector: string (optional)
@@ -206,16 +206,16 @@ def compute_drift_v(zdata    : np.array,
         Drift velocity uncertainty.
     '''
 
-    y, x = np.histogram(zdata, nbins, zrange)
+    y, x = np.histogram(dtdata, nbins, dtrange)
     x    = shift_to_bin_centers(x)
 
-    if seed is None: seed = np.max(y), np.mean(zrange), 0.5, np.min(y)
+    if seed is None: seed = np.max(y), np.mean(dtrange), 0.5, np.min(y)
 
     # At the moment there is not NEXT-100 DB so this won't work for that geometry
     z_cathode = DB.DetectorGeo(detector).ZMAX[0]
 
     try:
-        f   = fit(sigmoid, x, y, seed, sigma = poisson_sigma(y), fit_range = zrange)
+        f   = fit(sigmoid, x, y, seed, sigma = poisson_sigma(y), fit_range = dtrange)
 
         par = f.values
         err = f.errors
@@ -263,7 +263,7 @@ def computing_kr_parameters(data       : DataFrame,
                             emaps      : pd.DataFrame,
                             fittype    : KrFitFunction,
                             nbins_dv   : int,
-                            zrange_dv  : List[float, float],
+                            dtrange_dv  : List[float],
                             detector   : str)->DataFrame:
 
     '''
@@ -284,7 +284,7 @@ def computing_kr_parameters(data       : DataFrame,
     nbins_dv: int
         Number of bins in Z-coordinate to use in the histogram for the
         drift velocity calculation.
-    zrange_dv: List
+    dtrange_dv: List
         Range in Z-coordinate to use in the histogram for the drift
         velocity calculation.
     detector: string
@@ -335,9 +335,9 @@ def computing_kr_parameters(data       : DataFrame,
 
     # Computing Drift Velocity
 
-    dv, dvu  = compute_drift_v(zdata    = data.DT.to_numpy(),
+    dv, dvu  = compute_drift_v(dtdata   = data.DT.to_numpy(),
                                nbins    = nbins_dv,
-                               zrange   = zrange_dv,
+                               dtrange  = dtrange_dv,
                                seed     = None,
                                detector = detector)
 
@@ -407,7 +407,7 @@ def kr_time_evolution(ts         : np.array[float],
                       emaps      : pd.DataFrame,
                       fittype    : KrFitFunction,
                       nbins_dv   : int,
-                      zrange_dv  : Tuple[float, float],
+                      dtrange_dv  : Tuple[float, float],
                       detector   : str) -> pd.DataFrame:
 
     '''
@@ -431,7 +431,7 @@ def kr_time_evolution(ts         : np.array[float],
     nbins_dv: int
         Number of bins in Z-coordinate for doing the histogram to compute
         the drift velocity.
-    zrange_dv: Tuple
+    dtrange_dv: Tuple
         Range in Z-coordinate for doing the histogram to compute the drift
         velocity.
     detector: string
@@ -449,7 +449,7 @@ def kr_time_evolution(ts         : np.array[float],
     # Create a DataFrame with the time slices (ts)
     mask_time_df = pd.DataFrame({'ts': ts})
 
-    def compute_parameters(row, masks_time, dst, emaps, fittype, nbins_dv, zrange_dv, detector):
+    def compute_parameters(row, masks_time, dst, emaps, fittype, nbins_dv, dtrange_dv, detector):
         idx  = row.name
         mask = masks_time[idx]
         time = row['ts']
@@ -463,7 +463,7 @@ def kr_time_evolution(ts         : np.array[float],
                                        emaps     = emaps,
                                        fittype   = fittype,
                                        nbins_dv  = nbins_dv,
-                                       zrange_dv = zrange_dv,
+                                       dtrange_dv = dtrange_dv,
                                        detector  = detector)
 
 
@@ -479,7 +479,7 @@ def kr_time_evolution(ts         : np.array[float],
 
     # Apply the function to the previous df and compute krypton parameters for each time slice
     evol_pars = mask_time_df.apply(lambda row: compute_parameters(row, masks_time, dst, emaps,
-                                                                  fittype, nbins_dv, zrange_dv, detector),
+                                                                  fittype, nbins_dv, dtrange_dv, detector),
                                    axis=1)
 
     return evol_pars
@@ -543,9 +543,48 @@ def cut_effs_evolution(masks_time : List[np.array],
     return evol_table_updated
 
 
+def all_krevol(map,      kdst,       r_fid,     nStimeprofile,
+               mask_s1,  mask_s2,    mask_band, fittype,
+               nbins_dv, dtrange_dv, detector):
+
+    ''' COMPLETAR
+
+    resumen: this function performs the whole proccess of evolution for all bins'''
+
+    fid_sel   = (kdst.R < r_fid) & mask_s1 & mask_s2 & mask_band
+    dstf      = kdst[fid_sel]
+    t_start   = dstf.time.min()
+    t_final   = dstf.time.max()
+    ntimebins = np.max([int(np.floor((t_final - t_start) / nStimeprofile)), 1])
+
+    ts, masks_time = get_time_series_df(ntimebins          = ntimebins,
+                                        time_range         = (t_start, t_final),
+                                        dst                = kdst)
+
+    masks_timef    = [mask[fid_sel] for mask in masks_time]
+
+    evol_table     = kr_time_evolution(ts                  = ts,
+                                       masks_time          = masks_timef,
+                                       dst                 = dstf,
+                                       emaps               = map,
+                                       fittype             = fittype,
+                                       nbins_dv            = nbins_dv,
+                                       dtrange_dv          = dtrange_dv,
+                                       detector            = detector)
+
+    evol_table_eff = cut_effs_evolution(masks_time         = masks_time,
+                                        dst                = kdst,
+                                        mask_s1            = mask_s1,
+                                        mask_s2            = mask_s2,
+                                        mask_band          = mask_band,
+                                        evol_table         = evol_table)
+
+    return evol_table_eff
+
+
 def add_krevol(r_fid         : float,   # Esto sería para meter en la ciudad de ICARO, flow.map(funcion, args, out) etc
                nStimeprofile : int,
-               **map_params):      # PREGUNTA: Pongo aquí explícitamente todos los argumentos? O se pueden meter con un diccionario?
+               **map_params):
 
     '''
     Adds the time evolution dataframe to the map.
@@ -565,9 +604,9 @@ def add_krevol(r_fid         : float,   # Esto sería para meter en la ciudad de
     and returns the time evolution.
     '''
 
-    def add_krevol(map,      kdst,      mask_s1, # Más de lo mismo con la pregunta anterior
+    def add_krevol(map,      kdst,      mask_s1,
                    mask_s2,  mask_band, fittype,
-                   nbins_dv, zrange_dv, detector):
+                   nbins_dv, dtrange_dv, detector):
 
         fid_sel   = (kdst.R < r_fid)  & mask_s1 & mask_s2 & mask_band
         dstf      = kdst[fid_sel]
@@ -590,7 +629,7 @@ def add_krevol(r_fid         : float,   # Esto sería para meter en la ciudad de
                                            emaps               = map,
                                            fittype             = fittype,
                                            nbins_dv            = nbins_dv,
-                                           zrange_dv           = zrange_dv,
+                                           dtrange_dv           = dtrange_dv,
                                            detector            = detector)
 
         evol_table_eff = cut_effs_evolution(masks_time         = masks_time,
