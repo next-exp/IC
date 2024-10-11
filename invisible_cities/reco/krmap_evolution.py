@@ -5,9 +5,8 @@ from   typing                 import List, Tuple, Optional, Callable
 from   pandas                 import DataFrame
 
 from .. types.symbols         import NormStrategy
-from .. evm.ic_containers     import FitFunction
-# from .. types.symbols         import KrFitFunction # Won't work until previous PR are approved
-from .. core.fit_functions    import fit, gauss, polynom, expo
+from .. types.symbols         import KrFitFunction # Won't work until previous PR are approved
+from .. core.fit_functions    import fit, gauss
 from .. core.core_functions   import in_range, shift_to_bin_centers
 from .. reco.corrections      import get_normalization_factor
 from .. reco.corrections      import correct_geometry_
@@ -15,186 +14,7 @@ from .. reco.corrections      import maps_coefficient_getter
 from .. reco.corrections      import apply_all_correction
 from .. core.stat_functions   import poisson_sigma
 from .. database              import load_db  as  DB
-# from .. reco.icaro_components import get_fit_function_lt, select_fit_variables, transform_parameters # Won't work until previous PR are approved
-
-
-from enum                                   import auto
-from invisible_cities.evm.ic_containers     import FitFunction
-from invisible_cities.types.symbols         import AutoNameEnumBase
-
-class KrFitFunction(AutoNameEnumBase):
-    expo    = auto()
-    linear  = auto()
-    log_lin = auto()
-
-def lin_seed(x : np.array,
-             y : np.array):
-
-    '''
-    Estimate the seed for a linear fit.
-
-    Parameters
-    ----------
-    x : np.array
-        Independent variable.
-    y : np.array
-        Dependent variable.
-
-    Returns
-    -------
-    seed : tuple
-        Seed parameters (intercept, slope) for the linear fit.
-    '''
-
-    x0, x1 = x.min(), x.max()
-    y0, y1 = y.min(), y.max()
-
-    if x1 == x0: # If same x value, set slope to 0 and use the mean value of y as interceipt
-        b = 0
-        a = y.mean()
-
-    else:
-        b = (y1 - y0) / (x1 - x0)
-        a = y0 - b * x0
-
-    seed = a, b
-
-    return seed
-
-
-def expo_seed(x   : np.array,
-              y   : np.array):
-
-    '''
-    Estimate the seed for an exponential fit.
-
-    Parameters
-    ----------
-    x : np.array
-        Independent variable.
-    y : np.array
-        Dependent variable.
-
-    Returns
-    -------
-    seed : tuple
-        Seed parameters (constant, mean) for the exponential fit.
-    '''
-
-    x, y = zip(*sorted(zip(x, y)))
-
-    const = y[0]
-
-    if const <= 0 or y[-1] <= 0:
-        raise ValueError("y data must be > 0")
-
-    lt = -x[-1] / np.log(y[-1] / const)
-
-    seed = const, lt
-    return seed
-
-
-def select_fit_variables(fittype : KrFitFunction,
-                         dst     : pd.DataFrame):
-
-    '''
-    Select the data for fitting based on the specified fit type.
-
-    NOTES: Since x axis (DT) is never altered, maybe we can just
-    return the y values. However, when we implement the binned fit,
-    the profile could be done here (?) so it would make sense to
-    always provide both x and y. We could rename parameters and have
-    fittype (binned / unbinned) and fitfunction (lin, expo, log-lin...)
-
-    Parameters
-    ----------
-    fittype : KrFitFunction
-        The type of fit function to prepare data for (e.g., linear, exponential, log-linear).
-    dst : pd.DataFrame
-        The DataFrame containing the data to be prepared for fitting.
-
-    Returns
-    -------
-    x_data : pd.Series
-        The independent variable data prepared for fitting.
-    y_data : pd.Series
-        The dependent variable data prepared for fitting.
-    '''
-
-    if   fittype is KrFitFunction.linear : return dst.DT, dst.S2e
-    elif fittype is KrFitFunction.expo   : return dst.DT, dst.S2e
-    elif fittype is KrFitFunction.log_lin: return dst.DT, -np.log(dst.S2e)
-
-
-def get_fit_function_lt(fittype : KrFitFunction):
-
-    '''
-    Retrieve the fitting function and seed function based on the
-    specified fittype.
-
-    Parameters
-    ----------
-    fittype : KrFitFunction
-        The type of fit function to retrieve (e.g., linear, exponential, log-linear).
-
-    Returns
-    -------
-    fit_function  : function
-        The fitting function corresponding to the specified fit type.
-    seed_function : function
-        The seed function corresponding to the specified fit type.
-    '''
-
-    linear_function  = lambda x, y0, slope: polynom(x, y0, slope)
-    expo_function    = lambda x, e0, lt:    expo   (x, e0, -lt)
-
-    if   fittype is KrFitFunction.linear:  return linear_function, lin_seed
-    elif fittype is KrFitFunction.log_lin: return linear_function, lin_seed
-    elif fittype is KrFitFunction.expo:    return expo_function,   expo_seed
-
-
-def transform_parameters(fit_output : FitFunction):
-
-    '''
-    Transform the parameters obtained from the fitting output into EO and LT.
-    When using log_lin fit, we need to convert the intermediate variables into
-    the actual physical magnitudes involved in the process.
-
-    Parameters
-    ----------
-    fit_output : FitFunction
-        Output from IC's fit containing the parameter values, errors, and
-        covariance matrix.
-
-    Returns
-    -------
-    par : list
-        Transformed parameter values.
-    err : list
-        Transformed parameter errors.
-    cov : float
-        Transformed covariance value.
-    '''
-
-    par = fit_output.values
-    err = fit_output.errors
-    cov = fit_output.cov[0, 1]
-
-    a, b     = par
-    u_a, u_b = err
-
-    E0   = np.exp(-a)
-    s_E0 = np.abs(E0 * u_a)
-
-    lt   = 1 / b
-    s_lt = np.abs(lt**2 * u_b)
-
-    cov  = E0 * lt**2 * cov # Not sure about this
-
-    par  = [  E0,   lt]
-    err  = [s_E0, s_lt]
-
-    return par, err, cov
+from .. reco.icaro_components import get_fit_function_lt, select_fit_variables, transform_parameters # Won't work until previous PR are approved
 
 
 def sigmoid(x          : np.array,
@@ -472,12 +292,12 @@ def computing_kr_parameters(data       : DataFrame,
                             emaps      : pd.DataFrame,
                             fittype    : KrFitFunction,
                             nbins_dv   : int,
-                            dt_range_dv  : Tuple[float, float],
+                            zrange_dv  : List[float, float],
                             detector   : str)->DataFrame:
 
     '''
     Computes some average parameters (e0, lt, drift v, energy
-    resolution, S1w, S1h, S1e, S2w, S2h, S2e, S2q, Nsipm, Xrms, Yrms)
+    resolution, S1w, S1h, S1e, S2w, S2h, S2e, S2q, Nsipm, 'Xrms, Yrms)
     for a given krypton distribution.
 
     Parameters
@@ -493,7 +313,7 @@ def computing_kr_parameters(data       : DataFrame,
     nbins_dv: int
         Number of bins in Z-coordinate to use in the histogram for the
         drift velocity calculation.
-    dt_range_dv: List
+    zrange_dv: List
         Range in Z-coordinate to use in the histogram for the drift
         velocity calculation.
     detector: string
@@ -508,32 +328,27 @@ def computing_kr_parameters(data       : DataFrame,
 
     # Computing E0, LT
 
-    fit_func, seed = get_fit_function_lt(fittype = fittype)
-    print('fit_func and seed ok')
+    fit_func, seed = get_fit_function_lt(fittype)
+
     geo_correction_factor = e0_xy_correction(map        = emaps,
                                              norm_strat = NormStrategy.max)
-    print('geo corr function ok')
+
 
     x, y = select_fit_variables(fittype, data) # Importar de previo PR
 
     corr = geo_correction_factor(data.X.to_numpy(), data.Y.to_numpy())
-    print('calculating corrections based on map ok')
-    y_corr = y - np.log(corr) if fittype == KrFitFunction.log_lin else y*corr
-    print('applying corrections ok')
+
+    y_corr = y -np.log(corr) if fittype == KrFitFunction.log_lin else y*corr
+
     # If we didn't care about using the specific fit function of the map computation,
     # this would be reduced to just the following:
     # y_corr = y*geo_correction_factor(data.X.to_numpy(), data.Y.to_numpy())
-    print(x)
-    print(y)
-    print(data.X)
-    print(data.Y)
-    print(corr)
-    print(y_corr)
+
     fit_output, _, _, _ = fit(func        = fit_func, # Misma funcion que en el ajuste del mapa
-                              x           = x.to_numpy(),
-                              y           = y_corr.to_numpy(),
+                              x           = x,
+                              y           = y_corr,
                               seed        = seed(x, y_corr),
-                              full_output = True)
+                              full_output = False)
 
     if fittype == KrFitFunction.log_lin:
 
@@ -551,7 +366,7 @@ def computing_kr_parameters(data       : DataFrame,
 
     dv, dvu  = compute_drift_v(zdata    = data.DT.to_numpy(),
                                nbins    = nbins_dv,
-                               zrange   = dt_range_dv,
+                               zrange   = zrange_dv,
                                seed     = None,
                                detector = detector)
 
@@ -572,17 +387,6 @@ def computing_kr_parameters(data       : DataFrame,
     res, err_res = resolution(values = par,
                               errors = err)
 
-    # Computing Efficiencies
-
-    # n0    = data.event.nunique()
-    # nS1   = data.query('nS1 == 1').event.nunique()
-    # nS2   = data.query('nS2 == 1').event.nunique()
-    # nband = nS2 # Best way to implement band?
-
-    # S1eff = nS1 / n0,
-    # S2eff = nS2 / nS1
-    # B_eff = nband / nS2
-
     # Averages of parameters
 
     parameters = ['S1w', 'S1h', 'S1e',
@@ -599,8 +403,7 @@ def computing_kr_parameters(data       : DataFrame,
 
     # Creating parameter evolution table
 
-    evol = DataFrame({'ts'   : [ts]             , # 'S1eff' : [S1eff]         ,
-                    #   'S2eff': [S2eff]          , 'B_eff' : [B_eff]         ,
+    evol = DataFrame({'ts'   : [ts]             ,
                       'e0'   : [e0]             , 'e0u'   : [e0u]           ,
                       'lt'   : [lt]             , 'ltu'   : [ltu]           ,
                       'dv'   : [dv]             , 'dvu'   : [dvu]           ,
@@ -627,13 +430,13 @@ def computing_kr_parameters(data       : DataFrame,
     return evol
 
 
-def kr_time_evolution(ts         : np.array,
+def kr_time_evolution(ts         : np.array[float],
                       masks_time : List[np.array],
                       dst        : pd.DataFrame,
                       emaps      : pd.DataFrame,
                       fittype    : KrFitFunction,
                       nbins_dv   : int,
-                      dt_range_dv  : Tuple[float, float],
+                      zrange_dv  : Tuple[float, float],
                       detector   : str) -> pd.DataFrame:
 
     '''
@@ -657,7 +460,7 @@ def kr_time_evolution(ts         : np.array,
     nbins_dv: int
         Number of bins in Z-coordinate for doing the histogram to compute
         the drift velocity.
-    dt_range_dv: Tuple
+    zrange_dv: Tuple
         Range in Z-coordinate for doing the histogram to compute the drift
         velocity.
     detector: string
@@ -675,21 +478,23 @@ def kr_time_evolution(ts         : np.array,
     # Create a DataFrame with the time slices (ts)
     mask_time_df = pd.DataFrame({'ts': ts})
 
-    def compute_parameters(row, masks_time, dst, emaps, fittype, nbins_dv, dt_range_dv, detector):
+    def compute_parameters(row, masks_time, dst, emaps, fittype, nbins_dv, zrange_dv, detector):
         idx  = row.name
         mask = masks_time[idx]
         time = row['ts']
-        print(idx)
+
+        # Select the data for the given mask
         sel_dst = dst[mask]
 
-        # Compute the krypton parameters using the time-binned data
-        pars = computing_kr_parameters(data        = sel_dst,
-                                       ts          = time,
-                                       emaps       = emaps,
-                                       fittype     = fittype,
-                                       nbins_dv    = nbins_dv,
-                                       dt_range_dv = dt_range_dv,
-                                       detector    = detector)
+        # Compute the krypton parameters using the selected data
+        pars = computing_kr_parameters(data      = sel_dst,
+                                       ts        = time,
+                                       emaps     = emaps,
+                                       fittype   = fittype,
+                                       nbins_dv  = nbins_dv,
+                                       zrange_dv = zrange_dv,
+                                       detector  = detector)
+
 
 
         if pars is None or pars.empty:
@@ -703,7 +508,7 @@ def kr_time_evolution(ts         : np.array,
 
     # Apply the function to the previous df and compute krypton parameters for each time slice
     evol_pars = mask_time_df.apply(lambda row: compute_parameters(row, masks_time, dst, emaps,
-                                                                  fittype, nbins_dv, dt_range_dv, detector),
+                                                                  fittype, nbins_dv, zrange_dv, detector),
                                    axis=1)
 
     return evol_pars
@@ -791,7 +596,7 @@ def add_krevol(r_fid         : float,   # Esto sería para meter en la ciudad de
 
     def add_krevol(map,      kdst,      mask_s1, # Más de lo mismo con la pregunta anterior
                    mask_s2,  mask_band, fittype,
-                   nbins_dv, dt_range_dv, detector):
+                   nbins_dv, zrange_dv, detector):
 
         fid_sel   = (kdst.R < r_fid)  & mask_s1 & mask_s2 & mask_band
         dstf      = kdst[fid_sel]
@@ -814,10 +619,16 @@ def add_krevol(r_fid         : float,   # Esto sería para meter en la ciudad de
                                            emaps               = map,
                                            fittype             = fittype,
                                            nbins_dv            = nbins_dv,
-                                           dt_range_dv         = dt_range_dv,
+                                           zrange_dv           = zrange_dv,
                                            detector            = detector)
 
+        evol_table_eff = cut_effs_evolution(masks_time         = masks_time,
+                                            data               = kdst,
+                                            mask_s1            = mask_s1,
+                                            mask_s2            = mask_s2,
+                                            mask_band          = mask_band,
+                                            evol_table         = evol_table)
 
-        return evol_table
+        return evol_table_eff
 
     return add_krevol
