@@ -144,35 +144,6 @@ def quick_gauss_fit(data : np.array,
     return fit_result
 
 
-def get_number_of_time_bins(nStimeprofile : int,
-                            tstart        : int,
-                            tfinal        : int)->int:
-
-    '''
-    Computes the number of time bins to use for a given time step
-    in seconds.
-
-    Parameters
-    ----------
-    nStimeprofile: int
-        Time step in seconds.
-    tstart: int
-        Initial timestamp for the dataset.
-    tfinal: int
-        Final timestamp for the dataset.
-
-    Returns
-    -------
-    ntimebins: int
-        Number of time bins.
-    '''
-
-    ntimebins = int(np.floor((tfinal - tstart) / nStimeprofile))
-    ntimebins = np.max([ntimebins, 1])
-
-    return ntimebins
-
-
 def get_time_series_df(ntimebins  : int,
                        time_range : Tuple[float, float],
                        dst        : DataFrame)->Tuple[np.array, List[np.array]]:
