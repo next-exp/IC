@@ -55,7 +55,9 @@ def gauss_seed(x         : np.array,
                sigma_rel : Optional[int] = 0.05):
 
     '''
-    This function estimates the seed for a gaussian fit.
+    This function estimates the seed for a gaussian fit. It looks for the
+    higher Y value and takes its corresponding X value as the center of the
+    Gaussian.
 
     Parameters
     ----------
@@ -71,11 +73,6 @@ def gauss_seed(x         : np.array,
     seed: Tuple
         Tuple with the seed estimation.
     '''
-
-    # Looks for the higher Y value and takes its corresponding X value
-    # as the center of the Gaussian. Based on the "sigma_rel" parameter,
-    # applies some error to that X value and provides the estimation for the
-    # amplitude, the center and the sigma.
 
     y_max  = np.argmax(y)
     x_max  = x[y_max]
@@ -305,7 +302,7 @@ def computing_kr_parameters(data       : DataFrame,
                                              norm_strat = NormStrategy.max)
 
 
-    x, y = select_fit_variables(fittype, data) # Importar de previo PR
+    x, y = select_fit_variables(fittype, data)
 
     corr = geo_correction_factor(data.X.to_numpy(), data.Y.to_numpy())
 
@@ -446,7 +443,6 @@ def kr_time_evolution(ts         : np.array[float],
         parameters for a given time slice.
     '''
 
-    # Create a DataFrame with the time slices (ts)
     mask_time_df = pd.DataFrame({'ts': ts})
 
     def compute_parameters(row, masks_time, dst, emaps, fittype, nbins_dv, dtrange_dv, detector):
@@ -454,10 +450,8 @@ def kr_time_evolution(ts         : np.array[float],
         mask = masks_time[idx]
         time = row['ts']
 
-        # Select the data for the given mask
         sel_dst = dst[mask]
 
-        # Compute the krypton parameters using the selected data
         pars = computing_kr_parameters(data       = sel_dst,
                                        ts         = time,
                                        emaps      = emaps,
@@ -466,16 +460,13 @@ def kr_time_evolution(ts         : np.array[float],
                                        dtrange_dv = dtrange_dv,
                                        detector   = detector)
 
-
-
         if pars is None or pars.empty:
-            return pd.Series(np.nan)  # Return nan Series if no parameters found
+            return pd.Series(np.nan)
 
         if isinstance(pars, pd.DataFrame) and len(pars) == 1:
-            pars = pars.iloc[0]  # Convert single-row DataFrame to Series
+            pars = pars.iloc[0]
 
         return pd.Series(pars)
-
 
     # Apply the function to the previous df and compute krypton parameters for each time slice
     evol_pars = mask_time_df.apply(lambda row: compute_parameters(row, masks_time, dst, emaps,
@@ -490,7 +481,7 @@ def cut_effs_evolution(masks_time : List[np.array],
                        mask_s1    : np.array,
                        mask_s2    : np.array,
                        mask_band  : np.array,
-                       evol_table : pd.DataFrame):
+                       evol_table : pd.DataFrame) -> pd.DataFrame:
 
     '''
     Computes the efficiencies in time evolution for different time slices.
@@ -543,102 +534,78 @@ def cut_effs_evolution(masks_time : List[np.array],
     return evol_table_updated
 
 
-def all_krevol(map,      kdst,       r_fid,     nStimeprofile,
-               mask_s1,  mask_s2,    mask_band, fittype,
-               nbins_dv, dtrange_dv, detector):
+def all_krevol(emap          : pd.DataFrame,
+               dst           : pd.DataFrame,
+               r_fid         : float,
+               nStimeprofile : int,
+               mask_s1       : np.array,
+               mask_s2       : np.array,
+               mask_band     : np.array,
+               fittype       : KrFitFunction,
+               nbins_dv      : int,
+               dtrange_dv    : Tuple[float, float],
+               detector      : str) -> pd.DataFrame:
 
-    ''' COMPLETAR
+    '''
+    Computes the whole krypton evolution parameters table. It applies some masks
 
-    resumen: this function performs the whole proccess of evolution for all bins'''
+    Parameters
+    ----------
+    emap: pd.DataFrame
+        Map of e0, lt, etc. corrections for which the evolution is being computed.
+    dst: pd.DataFrame
+        Krypton dst containing the data to be analyzed.
+    r_fid: float
+        Fiducial radius for the cuts to exclude data outside the detector's inner region.
+    nStimeprofile: np.array
+        Duration (in seconds) of the time bins in which the evolution is computed.
+    mask_s1: np.array
+        Mask of S1 cut used to filter data.
+    mask_s2: np.array
+        Mask of S2 cut used to filter data.
+    mask_band: np.array
+        Mask of band cut used to filter data.
+    fittype: KrFitFunction
+        Type of fit to be used.
+    nbins_dv: int
+        Number of DT bins considered for the Drift Velocity computation
+    dtrange_dv: tuple
+        Range of DT considered for the Drift Velocity computation.
+    detector: str
+        Detector name.
 
-    fid_sel   = (kdst.R < r_fid) & mask_s1 & mask_s2 & mask_band
-    dstf      = kdst[fid_sel]
+    Returns
+    -------
+    evol_table_updated: pd.DataFrame
+        Data frame containing Krypton evolution parameters including the efficiencies.
+    '''
+
+    fid_sel   = (dst.R < r_fid) & mask_s1 & mask_s2 & mask_band
+    dstf      = dst[fid_sel]
     t_start   = dstf.time.min()
     t_final   = dstf.time.max()
     ntimebins = np.max([int(np.floor((t_final - t_start) / nStimeprofile)), 1])
 
     ts, masks_time = get_time_series_df(ntimebins          = ntimebins,
                                         time_range         = (t_start, t_final),
-                                        dst                = kdst)
+                                        dst                = dst)
 
     masks_timef    = [mask[fid_sel] for mask in masks_time]
 
     evol_table     = kr_time_evolution(ts                  = ts,
                                        masks_time          = masks_timef,
                                        dst                 = dstf,
-                                       emaps               = map,
+                                       emaps               = emap,
                                        fittype             = fittype,
                                        nbins_dv            = nbins_dv,
                                        dtrange_dv          = dtrange_dv,
                                        detector            = detector)
 
     evol_table_eff = cut_effs_evolution(masks_time         = masks_time,
-                                        dst                = kdst,
+                                        dst                = dst,
                                         mask_s1            = mask_s1,
                                         mask_s2            = mask_s2,
                                         mask_band          = mask_band,
                                         evol_table         = evol_table)
 
     return evol_table_eff
-
-
-def add_krevol(r_fid         : float,   # Esto sería para meter en la ciudad de ICARO, flow.map(funcion, args, out) etc
-               nStimeprofile : int,
-               **map_params):
-
-    '''
-    Adds the time evolution dataframe to the map.
-
-    Parameters
-    ---------
-    r_fid: float
-        Maximum radius for fiducial sample.
-    nStimeprofile: int
-        Number of seconds for each time bin.
-    map_params: dict
-        Dictionary containing the config file variables.
-
-    Returns
-    ---------
-    Function which takes as input map, kr_data, and kr_mask
-    and returns the time evolution.
-    '''
-
-    def add_krevol(map,      kdst,      mask_s1,
-                   mask_s2,  mask_band, fittype,
-                   nbins_dv, dtrange_dv, detector):
-
-        fid_sel   = (kdst.R < r_fid)  & mask_s1 & mask_s2 & mask_band
-        dstf      = kdst[fid_sel]
-        min_time  = dstf.time.min()
-        max_time  = dstf.time.max()
-
-        ntimebins      = get_number_of_time_bins(nStimeprofile = nStimeprofile,
-                                                 tstart        = min_time,
-                                                 tfinal        = max_time)
-
-        ts, masks_time = get_time_series_df(ntimebins          = ntimebins,
-                                            time_range         = (min_time, max_time),
-                                            dst                = kdst)
-
-        masks_timef    = [mask[fid_sel] for mask in masks_time]
-
-        evol_table     = kr_time_evolution(ts                  = ts,
-                                           masks_time          = masks_timef,
-                                           dst                 = dstf,
-                                           emaps               = map,
-                                           fittype             = fittype,
-                                           nbins_dv            = nbins_dv,
-                                           dtrange_dv          = dtrange_dv,
-                                           detector            = detector)
-
-        evol_table_eff = cut_effs_evolution(masks_time         = masks_time,
-                                            data               = kdst,
-                                            mask_s1            = mask_s1,
-                                            mask_s2            = mask_s2,
-                                            mask_band          = mask_band,
-                                            evol_table         = evol_table)
-
-        return evol_table_eff
-
-    return add_krevol
