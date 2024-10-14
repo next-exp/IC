@@ -158,8 +158,8 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
     Returns
     -------
     fitted_fun : FitFunction
-    Extended function containing fit parameters (fitf, vals, errors, chi2, pval,
-    cov) and full_output from curve_fit and leastsq (infodict, mesg and ier).
+        Extended function containing fit parameters (fitf, vals, errors, chi2, pval,
+        cov) and full_output from curve_fit and leastsq (infodict, mesg and ier).
 
 
     Examples

@@ -3,7 +3,6 @@ import pytest
 import numpy          as np
 import numpy.testing  as npt
 import pandas         as pd
-import pandas.testing as pdt
 import scipy.optimize as so
 
 from hypothesis             import given, settings
@@ -15,14 +14,15 @@ from .. evm.ic_containers   import FitFunction
 from .. core.fit_functions  import expo
 
 
-@given(floats(min_value= 0, max_value= 10),
-       floats(min_value=10, max_value= 20),
-       floats(min_value= 1, max_value=100),
-       floats(min_value= 0, max_value= 10))
+@given(floats(min_value = 0,  max_value = 10),
+       floats(min_value = 10, max_value = 20),
+       floats(min_value = 1,  max_value = 100),
+       floats(min_value = 0,  max_value = 10))
 def test_lin_function_output_values(x_min, x_max, a, b):
     x = np.array([x_min, x_max])
     y = a + b * x
     a_test, b_test = icarcomp.lin_seed(x, y)
+
     assert np.isclose(a_test, a)
     assert np.isclose(b_test, b)
 
@@ -32,23 +32,22 @@ def test_lin_function_output_values(x_min, x_max, a, b):
        floats(min_value = 1e4,  max_value = 1e5),
        floats(min_value = 1e4,  max_value = 1e5))
 def test_expo_seed_output_values(zmin, zmax, elt, e0):
-    x = np.array( [ zmin, zmax ] )
-    y = e0 * np.exp( - x / elt )
+    x = np.array([zmin, zmax])
+    y = e0 * np.exp(-x / elt)
     e0_test, elt_test = icarcomp.expo_seed(x, y)
-    assert np.isclose(e0_test,    e0, rtol=0.1)
-    assert np.isclose(elt_test,  elt, rtol=0.1)
+
+    assert np.isclose( e0_test,  e0, rtol=0.1)
+    assert np.isclose(elt_test, elt, rtol=0.1)
 
 
 @pytest.fixture
 def sample_df():
-
-    data = {
-        'DT' : [10, 20, 30, 40, 50],
-        'S2e': [50, 45, 42, 41, 41]
-    }
+    data = {'DT' : [10, 20, 30, 40, 50],
+            'S2e': [50, 45, 42, 41, 41]}
     return pd.DataFrame(data)
-def test_select_fit_variables(sample_df):
 
+
+def test_select_fit_variables(sample_df):
     x_linear,  y_linear  = icarcomp.select_fit_variables(KrFitFunction.linear,  sample_df)
     x_expo,    y_expo    = icarcomp.select_fit_variables(KrFitFunction.expo,    sample_df)
     x_log_lin, y_log_lin = icarcomp.select_fit_variables(KrFitFunction.log_lin, sample_df)
@@ -69,7 +68,6 @@ def test_select_fit_variables(sample_df):
        floats  (min_value = 1e3,  max_value = 1e5),
        floats  (min_value = 5e3,  max_value = 1e5))
 def test_get_function_and_seed_lt_with_data(x_min, x_max, steps, e0, lt):
-
     x = np.linspace(x_min, x_max, steps)
     y = expo(x, e0, lt)
 
@@ -81,21 +79,17 @@ def test_get_function_and_seed_lt_with_data(x_min, x_max, steps, e0, lt):
     popt_expo, _    = so.curve_fit(fit_func_expo,    x, y, p0=seed_func_expo   (x, y))
     popt_log_lin, _ = so.curve_fit(fit_func_log_lin, x, y, p0=seed_func_log_lin(x, y))
 
+    assert     np.isclose(popt_lin[0], popt_expo[0],    rtol=1e-1) # The interceipt should be close between lin and expo
+    assert not np.isclose(popt_lin[1], popt_expo[1],    rtol=1e-1) # The "lifetime" should be different between lin and expo
 
-    assert     np.isclose(popt_lin[0],   popt_expo[0],    rtol=1e-1) # The interceipt should be close between lin and expo
-    assert not np.isclose(popt_lin[1],   popt_expo[1],    rtol=1e-1) # The "lifetime" should be different between lin and expo
-
-    assert     np.isclose(popt_lin[0],   popt_log_lin[0], rtol=1e-10) # The lin and log_lin are the same (the only difference is their
-    assert     np.isclose(popt_lin[1],   popt_log_lin[1], rtol=1e-10) # inputs: s2e or -log(s2e)) so both parameters should be the same
+    assert     np.isclose(popt_lin[0], popt_log_lin[0], rtol=1e-10) # The lin and log_lin are the same (the only difference is their
+    assert     np.isclose(popt_lin[1], popt_log_lin[1], rtol=1e-10) # inputs: s2e or -log(s2e)) so both parameters should be the same
                                                                       # for the purpose of testing this function
 
-
-@given(floats(min_value=1,  max_value=1e5),
-       floats(min_value=10, max_value=1e5))
+@given(floats(min_value = 1,  max_value = 1e5),
+       floats(min_value = 10, max_value = 1e5))
 def test_transform_parameters(a, b):
-
-    errors = 0.2*np.array([a, b])
-
+    errors     = 0.2*np.array([a, b])
     fit_output = FitFunction(values=[a, b], errors=errors, cov=np.array([[0.04, 0.02], [0.02, 0.04]]),
                              fn=None, chi2=None, pvalue=None, infodict=None, mesg=None, ier=None)
 

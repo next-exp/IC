@@ -1,17 +1,14 @@
-import numpy        as np
-import pandas       as pd
+import numpy  as np
+import pandas as pd
 
-from   typing              import Optional
-from ..types.symbols       import KrFitFunction
-from .. evm.ic_containers  import FitFunction
-from .. core.fit_functions import polynom, expo
+from .. types.symbols       import KrFitFunction
+from .. evm.ic_containers   import FitFunction
+from .. core.fit_functions  import polynom, expo
 
 
-def lin_seed(x : np.array,
-             y : np.array):
-
+def lin_seed(x : np.array, y : np.array):
     '''
-    Estimate the seed for a linear fit.
+    Estimate the seed for a linear fit of the form y = a + bx.
 
     Parameters
     ----------
@@ -25,28 +22,22 @@ def lin_seed(x : np.array,
     seed : tuple
         Seed parameters (intercept, slope) for the linear fit.
     '''
-
     x0, x1 = x.min(), x.max()
     y0, y1 = y.min(), y.max()
 
     if x1 == x0: # If same x value, set slope to 0 and use the mean value of y as interceipt
         b = 0
         a = y.mean()
-
     else:
         b = (y1 - y0) / (x1 - x0)
         a = y0 - b * x0
 
-    seed = a, b
-
-    return seed
+    return a, b
 
 
-def expo_seed(x   : np.array,
-              y   : np.array):
-
+def expo_seed(x : np.array, y : np.array):
     '''
-    Estimate the seed for an exponential fit.
+    Estimate the seed for an exponential fit of the form y = y0*exp(-x/lt).
 
     Parameters
     ----------
@@ -58,33 +49,22 @@ def expo_seed(x   : np.array,
     Returns
     -------
     seed : tuple
-        Seed parameters (constant, mean) for the exponential fit.
+        Seed parameters (y0, lt) for the exponential fit.
     '''
-
     x, y = zip(*sorted(zip(x, y)))
+    y0   = y[0]
 
-    const = y[0]
-
-    if const <= 0 or y[-1] <= 0:
+    if y0 <= 0 or y[-1] <= 0:
         raise ValueError("y data must be > 0")
 
-    lt = -x[-1] / np.log(y[-1] / const)
+    lt = -x[-1] / np.log(y[-1] / y0)
 
-    seed = const, lt
-    return seed
+    return y0, lt
 
 
-def select_fit_variables(fittype : KrFitFunction,
-                         dst     : pd.DataFrame):
-
+def select_fit_variables(fittype : KrFitFunction, dst : pd.DataFrame):
     '''
     Select the data for fitting based on the specified fit type.
-
-    NOTES: Since x axis (DT) is never altered, maybe we can just
-    return the y values. However, when we implement the binned fit,
-    the profile could be done here (?) so it would make sense to
-    always provide both x and y. We could rename parameters and have
-    fittype (binned / unbinned) and fitfunction (lin, expo, log-lin...)
 
     Parameters
     ----------
@@ -100,9 +80,8 @@ def select_fit_variables(fittype : KrFitFunction,
     y_data : pd.Series
         The dependent variable data prepared for fitting.
     '''
-
-    if   fittype is KrFitFunction.linear : return dst.DT, dst.S2e
-    elif fittype is KrFitFunction.expo   : return dst.DT, dst.S2e
+    if   fittype is KrFitFunction.linear : return dst.DT,         dst.S2e
+    elif fittype is KrFitFunction.expo   : return dst.DT,         dst.S2e
     elif fittype is KrFitFunction.log_lin: return dst.DT, -np.log(dst.S2e)
 
 
@@ -123,17 +102,15 @@ def get_function_and_seed_lt(fittype : KrFitFunction):
     seed_function : function
         The seed function corresponding to the specified fit type.
     '''
-
     linear_function  = lambda x, y0, slope: polynom(x, y0, slope)
     expo_function    = lambda x, e0, lt:    expo   (x, e0, -lt)
 
-    if   fittype is KrFitFunction.linear:  return linear_function, lin_seed
-    elif fittype is KrFitFunction.log_lin: return linear_function, lin_seed
-    elif fittype is KrFitFunction.expo:    return expo_function,   expo_seed
+    if   fittype is KrFitFunction.linear:  return linear_function,  lin_seed
+    elif fittype is KrFitFunction.log_lin: return linear_function,  lin_seed
+    elif fittype is KrFitFunction.expo:    return   expo_function, expo_seed
 
 
 def transform_parameters(fit_output : FitFunction):
-
     '''
     Transform the parameters obtained from the fitting output into EO and LT.
     When using log_lin fit, we need to convert the intermediate variables into
@@ -154,7 +131,6 @@ def transform_parameters(fit_output : FitFunction):
     cov : float
         Transformed covariance value.
     '''
-
     par = fit_output.values
     err = fit_output.errors
     cov = fit_output.cov[0, 1]
@@ -164,10 +140,8 @@ def transform_parameters(fit_output : FitFunction):
 
     E0   = np.exp(-a)
     s_E0 = np.abs(E0 * u_a)
-
     lt   = 1 / b
     s_lt = np.abs(lt**2 * u_b)
-
     cov  = E0 * lt**2 * cov # Not sure about this
 
     par  = [  E0,   lt]
