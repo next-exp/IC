@@ -106,8 +106,7 @@ def select_fit_variables(fittype : KrFitFunction,
     elif fittype is KrFitFunction.log_lin: return dst.DT, -np.log(dst.S2e)
 
 
-def get_fit_function_lt(fittype : KrFitFunction):
-
+def get_function_and_seed_lt(fittype : KrFitFunction):
     '''
     Retrieve the fitting function and seed function based on the
     specified fittype.

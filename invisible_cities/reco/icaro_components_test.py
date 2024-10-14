@@ -68,14 +68,14 @@ def test_select_fit_variables(sample_df):
        integers(min_value = 10,   max_value = 1e3),
        floats  (min_value = 1e3,  max_value = 1e5),
        floats  (min_value = 5e3,  max_value = 1e5))
-def test_get_fit_function_lt_with_data(x_min, x_max, steps, e0, lt):
+def test_get_function_and_seed_lt_with_data(x_min, x_max, steps, e0, lt):
 
     x = np.linspace(x_min, x_max, steps)
     y = expo(x, e0, lt)
 
-    fit_func_lin,         seed_func_lin = icarcomp.get_fit_function_lt(KrFitFunction.linear)
-    fit_func_expo,       seed_func_expo = icarcomp.get_fit_function_lt(KrFitFunction.expo)
-    fit_func_log_lin, seed_func_log_lin = icarcomp.get_fit_function_lt(KrFitFunction.log_lin)
+    fit_func_lin,         seed_func_lin = icarcomp.get_function_and_seed_lt(KrFitFunction.linear)
+    fit_func_expo,       seed_func_expo = icarcomp.get_function_and_seed_lt(KrFitFunction.expo)
+    fit_func_log_lin, seed_func_log_lin = icarcomp.get_function_and_seed_lt(KrFitFunction.log_lin)
 
     popt_lin, _     = so.curve_fit(fit_func_lin,     x, y, p0=seed_func_lin    (x, y))
     popt_expo, _    = so.curve_fit(fit_func_expo,    x, y, p0=seed_func_expo   (x, y))
