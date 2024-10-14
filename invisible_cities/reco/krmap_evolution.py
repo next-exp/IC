@@ -14,7 +14,7 @@ from .. reco.corrections      import maps_coefficient_getter
 from .. reco.corrections      import apply_all_correction
 from .. core.stat_functions   import poisson_sigma
 from .. database              import load_db  as  DB
-from .. reco.icaro_components import get_fit_function_lt, select_fit_variables, transform_parameters # Won't work until previous PR are approved
+from .. reco.icaro_components import get_function_and_seed_lt, select_fit_variables, transform_parameters # Won't work until previous PR are approved
 
 
 def sigmoid(x          : np.array,
@@ -296,7 +296,7 @@ def computing_kr_parameters(data       : DataFrame,
 
     # Computing E0, LT
 
-    fit_func, seed = get_fit_function_lt(fittype)
+    fit_func, seed = get_function_and_seed_lt(fittype)
 
     geo_correction_factor = e0_xy_correction(map        = emaps,
                                              norm_strat = NormStrategy.max)
