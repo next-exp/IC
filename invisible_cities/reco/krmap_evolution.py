@@ -50,10 +50,7 @@ def sigmoid(x          : np.array,
     return sigmoid
 
 
-def gauss_seed(x         : np.array,
-               y         : np.array,
-               sigma_rel : Optional[int] = 0.05):
-
+def gauss_seed(x : np.array, y : np.array, sigma_rel : Optional[int] = 0.05):
     '''
     This function estimates the seed for a gaussian fit. It looks for the
     higher Y value and takes its corresponding X value as the center of the
@@ -83,9 +80,7 @@ def gauss_seed(x         : np.array,
     return seed
 
 
-def resolution(values : np.array,
-               errors : np.array):
-
+def resolution(values : np.array, errors : np.array):
     '''
     Computes the resolution (% FWHM) from the Gaussian parameters.
 
@@ -113,9 +108,7 @@ def resolution(values : np.array,
     return res, ures
 
 
-def quick_gauss_fit(data : np.array,
-                    bins : int):
-
+def quick_gauss_fit(data : np.array, bins : int):
     '''
     This function histograms input data and then fits it to a Gaussian.
 
@@ -144,7 +137,6 @@ def quick_gauss_fit(data : np.array,
 def get_time_series_df(ntimebins  : int,
                        time_range : Tuple[float, float],
                        dst        : DataFrame)->Tuple[np.array, List[np.array]]:
-
     '''
     Given a dst this function returns a time series (ts) and a list of masks which are used to divide
     the dst in time intervals.
@@ -177,7 +169,6 @@ def compute_drift_v(dtdata   : np.array,
                     dtrange  : Tuple[float, float],
                     seed     : Tuple[float, float, float, float],
                     detector : str)->Tuple[float, float]:
-
     '''
     Computes the drift velocity for a given distribution
     using the sigmoid function to get the cathode edge.
@@ -227,9 +218,7 @@ def compute_drift_v(dtdata   : np.array,
     return dv, dvu
 
 
-def e0_xy_correction(map        : pd.DataFrame,
-                     norm_strat : NormStrategy)->Callable:
-
+def e0_xy_correction(map : pd.DataFrame, norm_strat : NormStrategy)->Callable:
     '''
     Provides the function to compute only the geometrical corrections.
 
@@ -262,7 +251,6 @@ def computing_kr_parameters(data       : DataFrame,
                             nbins_dv   : int,
                             dtrange_dv : List[float],
                             detector   : str)->DataFrame:
-
     '''
     Computes some average parameters (e0, lt, drift v, energy
     resolution, S1w, S1h, S1e, S2w, S2h, S2e, S2q, Nsipm, 'Xrms, Yrms)
@@ -406,7 +394,6 @@ def kr_time_evolution(ts         : np.array[float],
                       nbins_dv   : int,
                       dtrange_dv : Tuple[float, float],
                       detector   : str) -> pd.DataFrame:
-
     '''
     Computes some average parameters (e0, lt, drift v,
     S1w, S1h, S1e, S2w, S2h, S2e, S2q, Nsipm, Xrms, Yrms)
@@ -482,7 +469,6 @@ def cut_effs_evolution(masks_time : List[np.array],
                        mask_s2    : np.array,
                        mask_band  : np.array,
                        evol_table : pd.DataFrame) -> pd.DataFrame:
-
     '''
     Computes the efficiencies in time evolution for different time slices.
     Returns the input DataFrame updated with S1eff, S2eff, Bandeff.
@@ -545,7 +531,6 @@ def all_krevol(emap          : pd.DataFrame,
                nbins_dv      : int,
                dtrange_dv    : Tuple[float, float],
                detector      : str) -> pd.DataFrame:
-
     '''
     Computes the whole krypton evolution parameters table. It applies some masks
 
