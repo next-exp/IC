@@ -1547,12 +1547,9 @@ def hits_corrector( filename     : str
                                     , **norm_options)
     time_to_Z = get_df_to_z_converter(maps) if maps.t_evol is not None and apply_z else identity
 
-    def correct(hitc : HitCollection) -> HitCollection:
-        for hit in hitc.hits:
-            corr    = get_coef([hit.X], [hit.Y], [hit.Z], hitc.time)[0]
-            hit.Ec  = hit.E * corr
-            hit.xyz = (hit.X, hit.Y, time_to_Z(hit.Z)) # ugly, but temporary
-        return hitc
+    def correct(hits : pd.DataFrame) -> pd.DataFrame:
+        corr_factors = get_coef(hits.X, hits.Y, hits.Z, hits.time)
+        return hits.assign(Ec = hits.E * corr_factors)
 
     return correct
 
