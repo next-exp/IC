@@ -1,81 +1,87 @@
 import numpy  as np
+import pandas as pd
+
 from itertools   import compress
 from copy        import deepcopy
 from typing      import List
+
 from .. evm  import event_model as evm
 from .. types.ic_types      import NN
 from .. types.ic_types      import xy
 
-def split_energy(total_e, clusters):
-    if len(clusters) == 1:
-        return [total_e]
-    qs = np.array([c.Q for c in clusters])
-    return total_e * qs / np.sum(qs)
+EPSILON = np.finfo(np.float64).eps
 
-def merge_NN_hits(hits : List[evm.Hit], same_peak : bool = True) -> List[evm.Hit]:
+
+def merge_NN_hits(hits : pd.DataFrame, same_peak : bool = True) -> pd.DataFrame:
     """ Returns a list of the hits where the  energies of NN hits are distributed to the closest hits such that the added energy is proportional to
     the hit energy. If all the hits were NN the function returns empty list. """
-    nn_hits     = [h for h in hits if h.Q==NN]
-    non_nn_hits = [deepcopy(h) for h in hits if h.Q!=NN]
-    passed = len(non_nn_hits)>0
-    if not passed:
-        return []
-    hits_to_correct=[]
-    for nn_h in nn_hits:
-        peak_num = nn_h.npeak
-        if same_peak:
-            hits_to_merge = [h for h in non_nn_hits if h.npeak==peak_num]
-        else:
-            hits_to_merge = non_nn_hits
-        try:
-            z_closest  = min(abs(h.Z-nn_h.Z) for h in hits_to_merge)
-        except ValueError:
-            continue
-        h_closest = [h for h in hits_to_merge if np.isclose(abs(h.Z-nn_h.Z), z_closest)]
+    sel = hits.Q == NN
+    if not np.any(sel): return hits
 
-        total_raw_energy = sum(h.E  for h in h_closest)
-        total_cor_energy = sum(h.Ec for h in h_closest)
-        for h in h_closest:
-            hits_to_correct.append([h, nn_h.E * h.E / total_raw_energy, nn_h.Ec * h.Ec / total_cor_energy])
+    nn_hits = hits.loc[ sel]
+    hits    = hits.loc[~sel].copy()
 
-    for h, raw_e, cor_e in hits_to_correct:
-        h.E  += raw_e
-        h.Ec += cor_e
+    corrections = pd.DataFrame(dict(E=0, Ec=0), index=hits.index.values)
+    for _, nn_hit in nn_hits.iterrows():
+        candidates = hits.loc[hits.npeak == nn_hit.npeak] if same_peak else hits
+        if len(candidates) == 0: continue # drop hit !!! dangerous
 
-    return non_nn_hits
+        dz      = np.abs(candidates.Z - nn_hit.Z)
+        closest = candidates.loc[np.isclose(dz, dz.min())]
+        index   = closest.index
 
-def threshold_hits(hits : List[evm.Hit], th : float, on_corrected : bool=False) -> List[evm.Hit]:
+        corr_e  = nn_hit.E  * closest.E  / closest.E .sum()
+        corr_ec = nn_hit.Ec * closest.Ec / closest.Ec.sum()
+        corrections.loc[index, "E Ec".split()] += np.stack([corr_e, corr_ec], axis=1)
+
+    # correction factors based on original charge values, this is why
+    # we accumulate corrections, which is order insensitive
+    hits.loc[:, "E Ec".split()] += corrections.values
+    return hits
+
+
+def empty_hit(event, timestamp, peak_no, x_peak, y_peak, z, e, ec):
+    return pd.DataFrame(dict( event    = event
+                            , time     = timestamp
+                            , npeak    = peak_no
+                            , Xpeak    = x_peak
+                            , Ypeak    = y_peak
+                            , nsipm    = 1
+                            , X        = NN
+                            , Y        = NN
+                            , Xrms     = 0
+                            , Yrms     = 0
+                            , Z        = z
+                            , Q        = NN
+                            , E        = e
+                            , Qc       = -1
+                            , Ec       = ec
+                            , track_id = -1
+                            , Ep       = -1), index=[0])
+
+
+def apply_threshold(hits : pd.DataFrame, th : float, on_corrected : bool=False) -> pd.DataFrame:
+    raw_e_slice = hits.E.sum()
+    cor_e_slice = np.nansum(hits.Ec) + np.finfo(np.float64).eps
+
+    col         = "Qc" if on_corrected else "Q"
+    mask_thresh = hits[col] >= th
+
+    if not mask_thresh.any():
+        first = hits.iloc[0]
+        return empty_hit( first.event, first.time
+                        , first.npeak, first.Xpeak, first.Ypeak
+                        , first.Z, raw_e_slice, cor_e_slice)
+
+    hits = hits.loc[mask_thresh].copy()
+    qsum = np.nansum(hits.Q) + EPSILON
+    hits.loc[:, "E" ] = hits.Q / qsum * raw_e_slice
+    hits.loc[:, "Ec"] = hits.Q / qsum * cor_e_slice
+    return hits
+
+
+def threshold_hits(hits : pd.DataFrame, th : float, on_corrected : bool=False) -> pd.DataFrame:
     """Returns list of the hits which charge is above the threshold. The energy of the hits below the threshold is distributed among the hits in the same time slice. """
-    if th==0:
-        return hits
-    else:
-        new_hits=[]
-        for z_slice in np.unique([x.Z for x in hits]):
-            slice_hits  = [x for x in hits if x.Z == z_slice]
-            raw_es      = np.array([x.E  for x in slice_hits])
-            cor_es      = np.array([x.Ec for x in slice_hits])
-            raw_e_slice = np.   sum(raw_es)
-            cor_e_slice = np.nansum(cor_es) + np.finfo(np.float64).eps
-
-            if on_corrected:
-                mask_thresh = np.array([x.Qc >= th for x in slice_hits])
-            else:
-                mask_thresh = np.array([x.Q  >= th for x in slice_hits])
-            if sum(mask_thresh) < 1:
-                hit = evm.Hit( slice_hits[0].npeak
-                             , evm.Cluster(NN, xy(0,0), xy(0,0), 0)
-                             , z_slice
-                             , raw_e_slice
-                             , xy(slice_hits[0].Xpeak, slice_hits[0].Ypeak)
-                             , s2_energy_c = cor_e_slice)
-                new_hits.append(hit)
-                continue
-            hits_pass_th = list(compress(deepcopy(slice_hits), mask_thresh))
-
-            raw_es_new = split_energy(raw_e_slice, hits_pass_th)
-            cor_es_new = split_energy(cor_e_slice, hits_pass_th)
-            for hit, raw_e, cor_e in zip(hits_pass_th, raw_es_new, cor_es_new):
-                hit.E  = raw_e
-                hit.Ec = cor_e
-                new_hits.append(hit)
-        return new_hits
+    if th <= 0: return hits
+    return (hits.groupby("Z", as_index=False)
+                .apply(apply_threshold, th=th, on_corrected=on_corrected))
