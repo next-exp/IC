@@ -191,9 +191,10 @@ def sophronia( files_in           : OneOrManyFiles
     event_number_collector = collect()
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
+        write_hits            = hits_writer(h5out, "RECO", "Events", compression=compression)
+        write_hits            = df.sink( write_hits, args="hits")
         write_event_info      = df.sink( run_and_event_writer(h5out)
                                        , args = "run_number event_number timestamp".split())
-        write_hits            = df.sink(          hits_writer(h5out), args="hits")
         write_pointlike_event = df.sink(            kr_writer(h5out), args="pointlike_event")
         write_pmap_filter     = df.sink(  event_filter_writer(h5out, "s12_selector")
                                        , args = "event_number pmap_passed".split())
