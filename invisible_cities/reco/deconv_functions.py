@@ -19,6 +19,33 @@ from .. types.symbols       import InterpolationMethod
 from .. types.symbols       import CutType
 
 
+def collect_component_sizes(im_mask):
+    '''
+    A function that returns the sizes of different clusters of 1s and 0s within the data
+    for removal of satellites.
+
+    This function uses the scipy ndimage library to identify different 'clusters' of 1s within the slice, and 
+    checks if these clusters are below the size considered for satellite deposits (`satellite_max_size`).
+    The method is described in more detail here:
+    https://gist.github.com/jwaiton/fd14f43e8da28a49c9c49d43eb00f53f
+
+    Parameters
+    ----------
+    im_mask                   : 2D boolean array describing the regions of energy in deconvolution slice
+
+    Returns
+    ----------
+    ccs                       : 2D array equivalent to im_mask with each region labelled 0, 1, 2, etc
+    component_sizes           : Array of the length of each component size
+    '''
+    # label deposits within the array
+    # hardcoded to include diagonals in the grouping stage (2)
+    footprint = ndi.generate_binary_structure(im_mask.ndim, 2)
+    ccs, _ = ndi.label(im_mask, footprint)
+    # count the bins of each labelled deposit
+    component_sizes = np.bincount(ccs.ravel())
+    return ccs, component_sizes
+
 def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
     '''
     An adaptation to the scikit-image (v0.24.0) function [1], identifies 
@@ -64,12 +91,8 @@ def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
     
     im_mask = np.where(vis_mask < e_cut, 0, 1)
 
-    # label deposits within the array
-    # hardcoded to include diagonals in the grouping stage (2)
-    footprint = ndi.generate_binary_structure(im_mask.ndim, 2)
-    ccs, _ = ndi.label(im_mask, footprint)
-    # count the bins of each labelled deposit
-    component_sizes = np.bincount(ccs.ravel())
+    # separate different regions of 0s and 1s
+    ccs, component_sizes = collect_component_sizes(im_mask)
     # check if no satellites within deposit
     if len(component_sizes) == 2:
         # Return a fully False array, so that no objects get removed
@@ -393,7 +416,7 @@ def richardson_lucy(image, psf, satellite_iter, satellite_max_size, e_cut, cut_t
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
         # after every iteration, kill satellites
-        if i > satellite_iter:
+        if i >= satellite_iter:
             # generate satellite killing mask
             sat_mask = generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type)
             # remove satellites
