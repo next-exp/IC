@@ -34,7 +34,7 @@ from .. database.load_db          import DataSiPM
 from scipy.stats                  import multivariate_normal
 
 
-cut_types = [(CutType.rel), (CutType.abs)]
+cut_types = list(CutType)
 satellite_test_data = [(0, np.load(str(os.environ['ICDIR']) + 'database/test_data/satellite_array.npy')), (999, np.zeros((5,5)))]
 
 
@@ -137,7 +137,7 @@ def test_deconvolution_input_interpolation_method(data_hdst, data_hdst_deconvolv
         deconvolution_input([10., 10.], [1., 1.], interp_method)
 
 
-def test_deconvolve(data_hdst, data_hdst_deconvolved):
+def test_deconvolve(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -163,15 +163,14 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_max_size = 10,
-                                 e_cut = 0.2, cut_type = CutType.rel)
+                                 **no_satellite_killer)
 
     assert np.allclose(ref_interpolation['e_deco'], deco[0].flatten())
     assert np.allclose(ref_interpolation['x_deco'], deco[1][0])
     assert np.allclose(ref_interpolation['y_deco'], deco[1][1])
 
 
-def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
+def test_richardson_lucy(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -199,13 +198,12 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T,
-                           satellite_iter = 9999, satellite_max_size= 10, e_cut = 0.2, 
-                           cut_type = CutType.rel, iterations=15, iter_thr=0.0001)
+                           iterations=15, iter_thr=0.0001, **no_satellite_killer)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
 
 
-def test_grid_binning(data_hdst, data_hdst_deconvolved):
+def test_grid_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
     h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z      = h.Z.mean()
@@ -230,14 +228,13 @@ def test_grid_binning(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_max_size = 10,
-                                 e_cut = 0.2, cut_type = CutType.rel)
+                                 **no_satellite_killer)
 
     assert np.all((deco[1][0] - det_db['X'].min() + 9/2) % 9 == 0)
     assert np.all((deco[1][1] - det_db['Y'].min() + 9/2) % 9 == 0)
 
 
-def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
+def test_nonexact_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
     h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z      = h.Z.mean()
@@ -261,8 +258,7 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_max_size = 10, 
-                                 e_cut = 0.2, cut_type = CutType.rel)
+                                 **no_satellite_killer)
 
     check_x = np.diff(np.sort(np.unique(deco[1][0]), axis=None))
     check_y = np.diff(np.sort(np.unique(deco[1][1]), axis=None))

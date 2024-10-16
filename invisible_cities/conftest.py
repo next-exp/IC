@@ -197,6 +197,13 @@ def sat_arr_removed(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
+@pytest.fixture(scope='session')
+def no_satellite_killer(ICDATADIR):
+    satellite_params = dict(satellite_iter     = 9999, 
+                            satellite_max_size = 10,
+                            e_cut              = 0.2, 
+                            cut_type           = ALL_SYMBOLS["rel"])
+    return satellite_params
 
 @pytest.fixture(scope='session')
 def KrMC_kdst(ICDATADIR):
