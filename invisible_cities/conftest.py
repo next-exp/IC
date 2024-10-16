@@ -187,15 +187,26 @@ def data_hdst_deconvolved(ICDATADIR):
 
 @pytest.fixture(scope='session')
 def sat_arr(ICDATADIR):
-    test_file = "satellite_array.npy"
-    test_file = os.path.join(ICDATADIR, test_file)
-    return test_file
+    arr = np.array([[1.   , 1.   , 0.3  , 0.1  , 1.   ],
+                    [1.   , 1.   , 0.1  , 0.1  , 0.1  ],
+                    [0.1  , 0.1  , 0.1  , 0.1  , 0.1  ],
+                    [0.2  , 0.1  , 1.   , 1.   , 1.   ],
+                    [0.1  , 0.1  , 1.   , 1.   , 1.   ]])
+    return arr
 
 @pytest.fixture(scope='session')
 def sat_arr_removed(ICDATADIR):
-    test_file = "satelliteless_array.npy"
-    test_file = os.path.join(ICDATADIR, test_file)
-    return test_file
+    arr = np.array([[1.   , 1.   , 0.3  , 0.1  , 0.   ],
+                    [1.   , 1.   , 0.1  , 0.1  , 0.1  ],
+                    [0.1  , 0.1  , 0.1  , 0.1  , 0.1  ],
+                    [0.2  , 0.1  , 1.   , 1.   , 1.   ],
+                    [0.1  , 0.1  , 1.   , 1.   , 1.   ]])
+    return arr
+
+@pytest.fixture(scope='session')
+def sat_zero(ICDATADIR):
+    arr = np.zeros((5,5))
+    return arr
 
 @pytest.fixture(scope='session')
 def no_satellite_killer(ICDATADIR):

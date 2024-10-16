@@ -35,8 +35,6 @@ from scipy.stats                  import multivariate_normal
 
 
 cut_types = list(CutType)
-satellite_test_data = [(0, np.load(str(os.environ['ICDIR']) + 'database/test_data/satellite_array.npy')), (999, np.zeros((5,5)))]
-
 
 @given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3)),
                             column('B', dtype=float, elements=floats(1, 1e3)),
@@ -269,8 +267,8 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer)
 
 @mark.parametrize("cut_type", cut_types)
 def test_removing_satellites(sat_arr, sat_arr_removed, cut_type):
-    hdst               = np.load(sat_arr)
-    hdst_nosat         = np.load(sat_arr_removed)
+    hdst         = sat_arr
+    hdst_nosat   = sat_arr_removed
     e_cut              = 0.5
     satellite_max_size = 3
 
@@ -279,13 +277,19 @@ def test_removing_satellites(sat_arr, sat_arr_removed, cut_type):
     assert(np.array_equal(hdst, hdst_nosat))
 
 
-@mark.parametrize("satellite_max_size, output_array", satellite_test_data)
-def satellite_size(sat_arr, satellite_max_size, output_array):
-    hdst               = np.load(sat_arr)
+@mark.parametrize("satellite_max_size, output_array", [(0, 'sat_arr'), (3, 'sat_arr_removed'), (999, 'sat_zero')])
+def test_satellite_size(sat_arr, satellite_max_size, output_array, request):
+    '''
+    Check what happens when you assign the satellite max size to differing values.
+    Set to 0   -> array is unchanged.
+    Set to 3   -> Small satellite is removed.
+    Set to 999 -> everything is considered a satellite and removed.
+    '''
+    hdst               = sat_arr
     e_cut              = 0.5
     cut_type           = CutType.rel
 
     mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
     hdst[mask] = 0
-    assert(np.array_equal(hdst, output_array))
+    assert(np.array_equal(hdst, request.getfixturevalue(output_array)))
 
