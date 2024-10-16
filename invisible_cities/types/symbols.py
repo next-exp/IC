@@ -53,6 +53,12 @@ class InterpolationMethod(AutoNameEnumBase):
     nointerpolation = auto()
 
 
+class KrFitFunction(AutoNameEnumBase):
+    expo    = auto()
+    linear  = auto()
+    log_lin = auto()
+
+
 class MCTableType(AutoNameEnumBase):
     configuration    = auto()
     events           = auto()
