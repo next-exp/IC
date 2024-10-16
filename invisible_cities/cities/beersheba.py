@@ -93,32 +93,8 @@ from typing import Optional
 from typing import Union
 
 
-# Temporary. The removal of the event model will fix this.
-def hitc_to_df_(hitc):
-    columns = "event time npeak Xpeak Ypeak nsipm X Y Xrms Yrms Z Q E Qc Ec track_id Ep".split()
-    columns = {col:[] for col in columns}
-
-    for hit in hitc.hits:
-        columns["event"   ].append(hitc.event)
-        columns["time"    ].append(hitc.time)
-        columns["npeak"   ].append(hit .npeak)
-        columns["Xpeak"   ].append(hit .Xpeak)
-        columns["Ypeak"   ].append(hit .Ypeak)
-        columns["nsipm"   ].append(hit .nsipm)
-        columns["X"       ].append(hit .X)
-        columns["Y"       ].append(hit .Y)
-        columns["Xrms"    ].append(hit .Xrms)
-        columns["Yrms"    ].append(hit .Yrms)
-        columns["Z"       ].append(hit .Z)
-        columns["Q"       ].append(hit .Q)
-        columns["E"       ].append(hit .E)
-        columns["Qc"      ].append(hit .Qc)
-        columns["Ec"      ].append(hit .Ec)
-        columns["track_id"].append(hit .track_id)
-        columns["Ep"      ].append(hit .Ep)
-    return pd.DataFrame(columns)
-
 def event_info_adder(timestamp : float, dst : pd.DataFrame):
+    dst = dst.astype(dict(npeak=np.float64))
     return dst.assign(time=timestamp/1e3, nsipm=0, Xrms=0, Yrms=0)
 
 
@@ -490,7 +466,6 @@ def beersheba( files_in         : OneOrManyFiles
     """
     correct_hits   = fl.map(hits_corrector(**corrections), item="hits")
     threshold_hits = fl.map(hits_thresholder(threshold, same_peak), item="hits")
-    hitc_to_df     = fl.map(hitc_to_df_, item="hits")
 
     deconv_params['psf_fname'       ] = expandvars(deconv_params['psf_fname'])
     deconv_params['satellite_params'] = satellite_params
@@ -537,7 +512,6 @@ def beersheba( files_in         : OneOrManyFiles
                                     correct_hits                              ,
                                     threshold_hits                            ,
                                     fl.branch(write_thr_hits)                 ,
-                                    hitc_to_df                                ,
                                     cut_sensors                               ,
                                     drop_sensors                              ,
                                     filter_events_no_hits                     ,
