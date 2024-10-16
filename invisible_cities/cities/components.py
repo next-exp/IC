@@ -1498,21 +1498,10 @@ def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
     The energy of NN hits is redistributed among neighbors.
     """
 
-    def threshold_hits(hitc : HitCollection) -> HitCollection:
-        t = hitc.time
-        thr_hits = hif.threshold_hits(hitc.hits, threshold_charge     )
-        mrg_hits = hif.merge_NN_hits ( thr_hits, same_peak = same_peak)
-
-        cor_hits = []
-        for hit in mrg_hits:
-            cluster = Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm)
-            xypos   = xy(hit.Xpeak, hit.Ypeak)
-            hit     = Hit(hit.npeak, cluster, hit.Z, hit.E, xypos, hit.Ec)
-            cor_hits.append(hit)
-
-        new_hitc      = HitCollection(hitc.event, t)
-        new_hitc.hits = cor_hits
-        return new_hitc
+    def threshold_hits(hits: pd.DataFrame) -> pd.DataFrame:
+        thr_hits = hif.threshold_hits(    hits, threshold_charge     )
+        mrg_hits = hif.merge_NN_hits (thr_hits, same_peak = same_peak)
+        return mrg_hits
 
     return threshold_hits
 
