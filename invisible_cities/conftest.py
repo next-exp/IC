@@ -13,8 +13,13 @@ from . io   .  hits_io   import load_hits
 from . io   .  hits_io   import load_hits_skipping_NN
 from . io   .mcinfo_io   import load_mchits_df
 from . types.ic_types    import NN
-from . types.symbols     import ALL_SYMBOLS
-
+from . types.symbols     import XYReco
+from . types.symbols     import RebinMethod
+from . types.symbols     import HitEnergy
+from . types.symbols     import DeconvolutionMode
+from . types.symbols     import CutType
+from . types.symbols     import SiPMCharge
+from . types.symbols     import InterpolationMethod
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
 dst_data = namedtuple('dst_data', 'file_info config read true')
@@ -214,7 +219,7 @@ def KrMC_kdst(ICDATADIR):
                          s2_ethr       =      1 * units.pes,
                          s2_nsipmmin   =      2,
                          s2_nsipmmax   =   1000,
-                         global_reco_algo   = ALL_SYMBOLS["barycenter"],
+                         global_reco_algo   = XYReco.barycenter,
                          global_reco_params = dict(Qthr = 1 * units.pes))
 
     event    = [0, 1, 2, 3, 4, 5, 6, 7, 9]
@@ -354,9 +359,9 @@ def KrMC_hdst(ICDATADIR):
                          s2_ethr       =      1 * units.pes,
                          s2_nsipmmin   =      2,
                          s2_nsipmmax   =   1000,
-                         global_reco_algo   = ALL_SYMBOLS["barycenter"],
+                         global_reco_algo   = XYReco.barycenter,
                          global_reco_params = dict(Qthr = 1 * units.pes),
-                         slice_reco_algo    = ALL_SYMBOLS["corona"],
+                         slice_reco_algo    = XYReco.corona,
                          slice_reco_params  =   dict(
                              Qthr           =   2  * units.pes,
                              Qlm            =   5  * units.pes,
@@ -674,10 +679,10 @@ def sophronia_config(Th228_pmaps, next100_mc_krmap):
                         s2_ethr     =    0 * units.pes,
                    )
                    , rebin              = 1
-                   , rebin_method       = ALL_SYMBOLS["stride"]
-                   , sipm_charge_type   = ALL_SYMBOLS["raw"]
+                   , rebin_method       = RebinMethod.stride
+                   , sipm_charge_type   = SiPMCharge.raw
                    , q_thr              = 5 * units.pes
-                   , global_reco_algo   = ALL_SYMBOLS["barycenter"]
+                   , global_reco_algo   = XYReco.barycenter
                    , global_reco_params = dict(Qthr = 20 * units.pes)
                    , same_peak          = True
                    , corrections_file   = next100_mc_krmap
@@ -801,10 +806,10 @@ def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
                                        , bin_size      = [ 1.,  1.]
                                        , diffusion     = (1.0, 0.2)
                                        , n_dim         = 2
-                                       , energy_type   = ALL_SYMBOLS['Ec']
-                                       , deconv_mode   = ALL_SYMBOLS['joint']
-                                       , cut_type      = ALL_SYMBOLS[  'abs']
-                                       , inter_method  = ALL_SYMBOLS['cubic'])
+                                       , energy_type   = HitEnergy.Ec
+                                       , deconv_mode   = DeconvolutionMode.joint
+                                       , cut_type      = CutType.abs
+                                       , inter_method  = InterpolationMethod.cubic)
                  , corrections_file = next100_mc_krmap
                  , apply_temp       = False )
     return config
@@ -812,7 +817,7 @@ def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
 
 @pytest.fixture(scope='function')
 def beersheba_config_separate(beersheba_config):
-    beersheba_config["deconv_params"].update(dict( deconv_mode    = ALL_SYMBOLS["separate"]
+    beersheba_config["deconv_params"].update(dict( deconv_mode    = DeconvolutionMode.separate
                                                  , n_iterations   = 50
                                                  , n_iterations_g = 50))
 
