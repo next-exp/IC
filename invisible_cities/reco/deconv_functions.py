@@ -94,7 +94,7 @@ def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
     # separate different regions of 0s and 1s
     ccs, component_sizes = collect_component_sizes(im_mask)
     # check if no satellites within deposit
-    if len(component_sizes) == 2:
+    if len(component_sizes) <= 2:
         # Return a fully False array, so that no objects get removed
         return np.full(im_deconv.shape, False)
 
