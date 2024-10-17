@@ -1,3 +1,4 @@
+import os
 import random
 import numpy  as np
 import pandas as pd
@@ -17,6 +18,8 @@ from .. reco    .deconv_functions import interpolate_signal
 from .. reco    .deconv_functions import deconvolution_input
 from .. reco    .deconv_functions import deconvolve
 from .. reco    .deconv_functions import richardson_lucy
+from .. reco    .deconv_functions import generate_satellite_mask
+from .. reco    .deconv_functions import collect_component_sizes
 
 from .. core    .core_functions   import in_range
 from .. core    .core_functions   import shift_to_bin_centers
@@ -25,11 +28,14 @@ from .. core    .testing_utils    import assert_dataframes_close
 from .. io      .dst_io           import load_dst
 
 from .. types   .symbols          import InterpolationMethod
+from .. types   .symbols          import CutType
 
 from .. database.load_db          import DataSiPM
 
 from scipy.stats                  import multivariate_normal
 
+
+cut_types = list(CutType)
 
 @given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3)),
                             column('B', dtype=float, elements=floats(1, 1e3)),
@@ -130,7 +136,7 @@ def test_deconvolution_input_interpolation_method(data_hdst, data_hdst_deconvolv
         deconvolution_input([10., 10.], [1., 1.], interp_method)
 
 
-def test_deconvolve(data_hdst, data_hdst_deconvolved):
+def test_deconvolve(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -155,14 +161,15 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
+                                 **no_satellite_killer)
 
     assert np.allclose(ref_interpolation['e_deco'], deco[0].flatten())
     assert np.allclose(ref_interpolation['x_deco'], deco[1][0])
     assert np.allclose(ref_interpolation['y_deco'], deco[1][1])
 
 
-def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
+def test_richardson_lucy(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -190,12 +197,12 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T,
-                           iterations=15, iter_thr=0.0001)
+                           iterations=15, iter_thr=0.0001, **no_satellite_killer)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
 
 
-def test_grid_binning(data_hdst, data_hdst_deconvolved):
+def test_grid_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
     h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z      = h.Z.mean()
@@ -219,13 +226,14 @@ def test_grid_binning(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
+                                 **no_satellite_killer)
 
     assert np.all((deco[1][0] - det_db['X'].min() + 9/2) % 9 == 0)
     assert np.all((deco[1][1] - det_db['Y'].min() + 9/2) % 9 == 0)
 
 
-def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
+def test_nonexact_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
     h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z      = h.Z.mean()
@@ -248,10 +256,81 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
+                                 **no_satellite_killer)
 
     check_x = np.diff(np.sort(np.unique(deco[1][0]), axis=None))
     check_y = np.diff(np.sort(np.unique(deco[1][1]), axis=None))
 
     assert(np.all(check_x % 9 == 0))
     assert(np.all(check_y % 9 == 0))
+
+
+@mark.parametrize("cut_type", cut_types)
+def test_removing_satellites(sat_arr, sat_arr_removed, cut_type):
+    hdst         = sat_arr
+    hdst_nosat   = sat_arr_removed
+    e_cut              = 0.5
+    satellite_max_size = 3
+
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert(np.array_equal(hdst, hdst_nosat))
+
+
+@mark.parametrize("satellite_max_size, output_array", [(0, 'sat_arr'), (3, 'sat_arr_removed'), (999, 'sat_zero')])
+def test_satellite_size(sat_arr, satellite_max_size, output_array, request):
+    '''
+    Check what happens when you assign the satellite max size to differing values.
+    Set to 0   -> array is unchanged.
+    Set to 3   -> Small satellite is removed.
+    Set to 999 -> everything is considered a satellite and removed.
+    '''
+    hdst               = sat_arr
+    e_cut              = 0.5
+    cut_type           = CutType.rel
+
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert(np.array_equal(hdst, request.getfixturevalue(output_array)))
+
+def test_empty_satellite_array():
+    '''
+    Test when deconv_array is empty, should raise ValueError when applying boolean mask
+    '''
+    # initalise empty array
+    hdst = np.array([[],[],[]])
+    
+    e_cut = 0.5
+    cut_type = CutType.rel
+    satellite_max_size = 3
+
+    # expect value error in applying boolean mask
+    with raises(ValueError):
+        mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+
+@mark.parametrize("e_cut, expected_size", [(0, 2), (0.2, 3), (0.4, 2), (0.6, 1)])
+def test_component_sizes(compsize_array, e_cut, expected_size):
+    '''
+    array, with differing applied e_cuts will
+    provide expected component sizes.
+
+    array = ([[0.5, 0.3, 0.1, 0.3],
+              [0.3, 0.5, 0.1, 0.1],
+              [0.1, 0.3, 0.5, 0.1],
+              [0.1, 0.1, 0.1, 0.5])
+    
+    ecuts:
+    0     ->  array is all 1s, 2 components (zero 0s, sixteen 1s)
+    0.2   ->  array is no longer uniform, 3 components (seven 0s, eight 1s -> two clusters (seven 1s, one 2))
+    0.4   ->  array is identity matrix, 2 components (twelve 0s, four 1s)
+    0.6   ->  array is all 0s, 1 component (sixteen 0s)
+    '''
+
+    bool_mask = np.where(compsize_array < e_cut, 0, 1)
+
+    # check number of components in array match what is expected
+    ccs, no_components = collect_component_sizes(bool_mask)
+    assert(len(no_components) == expected_size)
+
+
