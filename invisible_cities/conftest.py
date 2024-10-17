@@ -209,6 +209,14 @@ def sat_zero(ICDATADIR):
     return arr
 
 @pytest.fixture(scope='session')
+def compsize_array(ICDATADIR):
+    arr = np.array([[0.5, 0.3, 0.1, 0.3],
+                    [0.3, 0.5, 0.1, 0.1],
+                    [0.1, 0.3, 0.5, 0.1],
+                    [0.1, 0.1, 0.1, 0.5]])
+    return arr
+
+@pytest.fixture(scope='session')
 def no_satellite_killer(ICDATADIR):
     satellite_params = dict(satellite_iter     = 9999, 
                             satellite_max_size = 10,
