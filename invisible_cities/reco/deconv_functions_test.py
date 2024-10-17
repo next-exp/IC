@@ -296,7 +296,7 @@ def test_satellite_size(sat_arr, satellite_max_size, output_array, request):
 
 def test_empty_satellite_array():
     '''
-    test when deconv array is empty
+    Test when deconv_array is empty, should raise ValueError when applying boolean mask
     '''
     # initalise empty array
     hdst = np.array([[],[],[]])
