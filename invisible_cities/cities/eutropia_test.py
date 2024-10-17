@@ -2,6 +2,7 @@ import os
 
 import numpy  as np
 import tables as tb
+import pandas as pd
 
 from pytest import fixture
 
@@ -42,6 +43,19 @@ def test_eutropia_contains_tables(fast_psf_config, output_tmpdir):
         assert "Run"     in file.root
         assert "runInfo" in file.root.Run
         assert "events"  in file.root.Run
+
+
+def test_eutropia_output_types(fast_psf_config, output_tmpdir):
+    output_filename = os.path.join(output_tmpdir, "psf_tables.h5")
+    conf = configure('eutropia $ICTDIR/invisible_cities/config/eutropia.conf'.split())
+    conf.update(fast_psf_config)
+    conf.update(dict(file_out=output_filename))
+
+    eutropia(**conf)
+
+    df = pd.read_hdf(output_filename, "/PSF/PSFs")
+    dtypes = [float]*7 + [np.uint]
+    assert np.all(df.dtypes.values == dtypes)
 
 
 def test_eutropia_run_info(fast_psf_config, output_tmpdir):
