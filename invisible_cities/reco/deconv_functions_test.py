@@ -19,6 +19,7 @@ from .. reco    .deconv_functions import deconvolution_input
 from .. reco    .deconv_functions import deconvolve
 from .. reco    .deconv_functions import richardson_lucy
 from .. reco    .deconv_functions import generate_satellite_mask
+from .. reco    .deconv_functions import collect_component_sizes
 
 from .. core    .core_functions   import in_range
 from .. core    .core_functions   import shift_to_bin_centers
@@ -292,4 +293,44 @@ def test_satellite_size(sat_arr, satellite_max_size, output_array, request):
     mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
     hdst[mask] = 0
     assert(np.array_equal(hdst, request.getfixturevalue(output_array)))
+
+def test_empty_satellite_array():
+    '''
+    test when deconv array is empty
+    '''
+    # initalise empty array
+    hdst = np.array([[],[],[]])
+    
+    e_cut = 0.5
+    cut_type = CutType.rel
+    satellite_max_size = 3
+
+    # expect value error in applying boolean mask
+    with raises(ValueError):
+        mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+
+@mark.parametrize("e_cut, expected_size", [(0, 2), (0.2, 3), (0.4, 2), (0.6, 1)])
+def test_component_sizes(compsize_array, e_cut, expected_size):
+    '''
+    array, with differing applied e_cuts will
+    provide expected component sizes.
+
+    array = ([[0.5, 0.3, 0.1, 0.3],
+              [0.3, 0.5, 0.1, 0.1],
+              [0.1, 0.3, 0.5, 0.1],
+              [0.1, 0.1, 0.1, 0.5])
+    
+    ecuts:
+    0     ->  array is all 1s, 2 components (zero 0s, sixteen 1s)
+    0.2   ->  array is no longer uniform, 3 components (seven 0s, eight 1s -> two clusters (seven 1s, one 2))
+    0.4   ->  array is identity matrix, 2 components (twelve 0s, four 1s)
+    0.6   ->  array is all 0s, 1 component (sixteen 0s)
+    '''
+
+    bool_mask = np.where(compsize_array < e_cut, 0, 1)
+
+    # check number of components in array match what is expected
+    ccs, no_components = collect_component_sizes(bool_mask)
+    assert(len(no_components) == expected_size)
+
 
