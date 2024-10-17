@@ -221,7 +221,7 @@ def no_satellite_killer(ICDATADIR):
     satellite_params = dict(satellite_iter     = 9999, 
                             satellite_max_size = 10,
                             e_cut              = 0.2, 
-                            cut_type           = ALL_SYMBOLS["rel"])
+                            cut_type           = ALL_SYMBOLS[ 'rel'])
     return satellite_params
 
 @pytest.fixture(scope='session')
