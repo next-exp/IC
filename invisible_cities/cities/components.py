@@ -1415,6 +1415,31 @@ def sort_hits(hitc):
     return HitCollection(hitc.event, hitc.time, sorted_hits)
 
 
+def hitc_to_df(hitc: HitCollection):
+    hits = []
+    for hit in hitc.hits:
+        hits.append(pd.DataFrame(dict( event    = hitc.event
+                                     , time     = hitc.time
+                                     , npeak    = hit .npeak
+                                     , Xpeak    = hit .Xpeak
+                                     , Ypeak    = hit .Ypeak
+                                     , nsipm    = hit .nsipm
+                                     , X        = hit .X
+                                     , Y        = hit .Y
+                                     , Xrms     = hit .Xrms
+                                     , Yrms     = hit .Yrms
+                                     , Z        = hit .Z
+                                     , Q        = hit .Q
+                                     , E        = hit .E
+                                     , Qc       = hit .Qc
+                                     , Ec       = hit .Ec
+                                     , track_id = hit .track_id
+                                     , Ep       = hit .Ep), index=[0]))
+    df = pd.concat(hits, ignore_index=True)
+    df = df.astype(dict(event=np.int64, npeak=np.uint16, nsipm=np.uint16, Qc=np.float64, Ec=np.float64, Ep=np.float64))
+    return df
+
+
 def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name='hits_select',
                                   write_paolina_hits=None):
@@ -1447,6 +1472,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                                             args = ('event_number', 'topology_info', 'paolina_hits', 'out_of_map'),
                                             out  = 'event_info')
 
+    to_hits_df = fl.map(hitc_to_df, item="paolina_hits")
 
     # Define writers and make them sinks
     write_tracks          = fl.sink(   track_writer     (h5out=h5out)             , args="topology_info"      )
@@ -1458,10 +1484,11 @@ def compute_and_write_tracks_info(paolina_params, h5out,
 
     make_and_write_summary  = make_final_summary, write_summary
     select_and_write_tracks = events_passed_topology.filter, write_tracks
+    write_hits              = (to_hits_df, write_paolina_hits) if write_paolina_hits else None
 
     fork_pipes = filter(None, ( make_and_write_summary
                               , write_topology_filter
-                              , write_paolina_hits
+                              , write_hits
                               , select_and_write_tracks))
 
     return pipe( filter_events_nohits
