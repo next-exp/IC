@@ -7,13 +7,13 @@ from subprocess import STDOUT
 
 from pytest import mark
 
-@mark.slow
-# @mark.parametrize('city',
-#                   'diomira isidora irene dorothea zaira penthesilea'.split())
-# TODO understand what's wrong with isidora (in Travis)
-@mark.parametrize('city',
-                  'diomira isidora irene dorothea penthesilea berenice phyllis trude esmeralda beersheba hypathia buffy'.split())
+all_cities = ( "buffy detsim hypathia diomira isidora irene dorothea penthesilea eutropia"
+             + " " # needed for .split(), added separately to prevent accidental omissions
+             + "sophronia esmeralda beersheba isaura berenice phyllis trude").split()
 
+
+@mark.slow
+@mark.parametrize('city', all_cities)
 def test_command_line_run(city, tmpdir_factory):
     ICTDIR = getenv('ICTDIR')
     # Use the example config file included in the repository
