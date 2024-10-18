@@ -33,6 +33,7 @@ The steps performed by Esmeralda are:
 #TODO: revisit summary. out_of_map field is outdated
 
 import tables as tb
+import pandas as pd
 
 from .. core.configure      import EventRangeType
 from .. core.configure      import OneOrManyFiles
@@ -57,12 +58,10 @@ from .. io.run_and_event_io import run_and_event_writer
 
 
 def hit_dropper(radius : float):
-    def in_fiducial(hit : evm.Hit) -> bool:
-        return hit.R < radius
-
-    def drop_hits(hitc : evm.HitCollection) -> evm.HitCollection:
-        hitc.hits = list(filter(in_fiducial, hitc.hits))
-        return hitc
+    max_r2 = radius**2
+    def drop_hits(hits : pd.DataFrame) -> pd.DataFrame:
+        r2 = hits.X**2 + hits.Y**2
+        return hits.loc[r2 < max_r2].reset_index(drop=True)
 
     return drop_hits
 
