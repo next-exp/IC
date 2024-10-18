@@ -101,6 +101,13 @@ def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
     
     # create boolean array for each label of satellite & non-satellite
     too_small = component_sizes < satellite_max_size
+
+    # set the first element to False in too_small, as this is always the 0 components.
+    # This protects against the edge case in which the 0s are less than the satellite_max_size,
+    #  meaning that you'd remove energy values in the deconvolution that are below the threshold.
+    too_small[0] = False 
+    
+
     # apply boolean array to labelled array to hold satellites as True
     too_small_mask = too_small[ccs]
     # return mask to remove satellites
