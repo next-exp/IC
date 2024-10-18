@@ -186,45 +186,6 @@ def data_hdst_deconvolved(ICDATADIR):
     return test_file
 
 @pytest.fixture(scope='session')
-def sat_arr(ICDATADIR):
-    arr = np.array([[1.   , 1.   , 0.3  , 0.1  , 1.   ],
-                    [1.   , 1.   , 0.1  , 0.1  , 0.1  ],
-                    [0.1  , 0.1  , 0.1  , 0.1  , 0.1  ],
-                    [0.2  , 0.1  , 1.   , 1.   , 1.   ],
-                    [0.1  , 0.1  , 1.   , 1.   , 1.   ]])
-    return arr
-
-@pytest.fixture(scope='session')
-def sat_arr_removed(ICDATADIR):
-    arr = np.array([[1.   , 1.   , 0.3  , 0.1  , 0.   ],
-                    [1.   , 1.   , 0.1  , 0.1  , 0.1  ],
-                    [0.1  , 0.1  , 0.1  , 0.1  , 0.1  ],
-                    [0.2  , 0.1  , 1.   , 1.   , 1.   ],
-                    [0.1  , 0.1  , 1.   , 1.   , 1.   ]])
-    return arr
-
-@pytest.fixture(scope='session')
-def sat_zero(ICDATADIR):
-    arr = np.zeros((5,5))
-    return arr
-
-@pytest.fixture(scope='session')
-def compsize_array(ICDATADIR):
-    arr = np.array([[0.5, 0.3, 0.1, 0.3],
-                    [0.3, 0.5, 0.1, 0.1],
-                    [0.1, 0.3, 0.5, 0.1],
-                    [0.1, 0.1, 0.1, 0.5]])
-    return arr
-
-@pytest.fixture(scope='session')
-def no_satellite_killer(ICDATADIR):
-    satellite_params = dict(satellite_iter     = 9999, 
-                            satellite_max_size = 10,
-                            e_cut              = 0.2, 
-                            cut_type           = CutType.rel)
-    return satellite_params
-
-@pytest.fixture(scope='session')
 def KrMC_kdst(ICDATADIR):
     test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_KDST.h5"
     test_file = os.path.join(ICDATADIR, test_file)

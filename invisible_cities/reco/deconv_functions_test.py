@@ -2,6 +2,7 @@ import os
 import random
 import numpy  as np
 import pandas as pd
+import pytest
 
 from pytest                       import mark
 from pytest                       import raises
@@ -36,6 +37,46 @@ from scipy.stats                  import multivariate_normal
 
 
 cut_types = list(CutType)
+
+@pytest.fixture(scope='session')
+def sat_arr(ICDATADIR):
+    '''
+    An array made to imitate a z-slice that would be passed through deconvolution
+    '''
+    arr = np.array([[1.   , 1.   , 0.3  , 0.1  , 1.   ],
+                    [1.   , 1.   , 0.1  , 0.1  , 0.1  ],
+                    [0.1  , 0.1  , 0.1  , 0.1  , 0.1  ],
+                    [0.2  , 0.1  , 1.   , 1.   , 1.   ],
+                    [0.1  , 0.1  , 1.   , 1.   , 1.   ]])
+    return arr
+
+@pytest.fixture(scope='session')
+def compsize_array(ICDATADIR):
+    '''
+    An array made to imitate a z-slice that would be passed through deconvolution
+    This array has specific values such that differing e_cut reveals boolean arrays
+    with differing components across the array.
+
+    Described in more detail in test_component_sizes()
+    '''
+    arr = np.array([[0.5, 0.3, 0.1, 0.3],
+                    [0.3, 0.5, 0.1, 0.1],
+                    [0.1, 0.3, 0.5, 0.1],
+                    [0.1, 0.1, 0.1, 0.5]])
+    return arr
+
+@pytest.fixture(scope='session')
+def no_satellite_killer(ICDATADIR):
+    '''
+    The default satellite_killer parameters provided if you don't want it to be run on
+    your sample. Used to avoid its usage in certain tests.
+    '''
+    satellite_params = dict(satellite_iter     = 9999, 
+                            satellite_max_size = 10,
+                            e_cut              = 0.2, 
+                            cut_type           = CutType.rel)
+    return satellite_params
+
 
 @given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3)),
                             column('B', dtype=float, elements=floats(1, 1e3)),
