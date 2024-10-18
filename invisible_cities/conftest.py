@@ -185,7 +185,6 @@ def data_hdst_deconvolved(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
-
 @pytest.fixture(scope='session')
 def KrMC_kdst(ICDATADIR):
     test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_KDST.h5"
