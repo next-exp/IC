@@ -51,6 +51,7 @@ from .  components import       pmap_from_files
 from .  components import           hit_builder
 from .  components import               collect
 from .  components import build_pointlike_event as build_pointlike_event_
+from .  components import            hitc_to_df
 
 
 @city
@@ -101,6 +102,8 @@ def penthesilea( files_in           : OneOrManyFiles
                                                sipm_charge_type),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
                                    out  = "hits"                                                 )
+
+    to_hits_df            = df.map(hitc_to_df, item="hits")
     build_pointlike_event = df.map(build_pointlike_event_( detector_db, run_number, drift_v
                                                          , global_reco, sipm_charge_type),
                                    args = ("pmap", "selector_output", "event_number", "timestamp"),
@@ -112,10 +115,10 @@ def penthesilea( files_in           : OneOrManyFiles
     evtnum_collect = collect()
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
-
         # Define writers...
+        write_hits            = hits_writer(h5out, "RECO", "Events", compression=compression)
+        write_hits            = df.sink(                 write_hits, args="hits")
         write_event_info      = df.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
-        write_hits            = df.sink(         hits_writer(h5out), args="hits")
         write_pointlike_event = df.sink(           kr_writer(h5out), args="pointlike_event")
         write_pmap_filter     = df.sink( event_filter_writer(h5out, "s12_selector"), args=("event_number", "pmap_passed"))
 
@@ -129,7 +132,7 @@ def penthesilea( files_in           : OneOrManyFiles
                                     pmap_select          .filter                          ,
                                     event_count_out      .spy                             ,
                                     df.branch("event_number", evtnum_collect.sink)        ,
-                                    df.fork((build_hits           , write_hits           ),
+                                    df.fork((build_hits, to_hits_df, write_hits           ),
                                             (build_pointlike_event, write_pointlike_event),
                                                                     write_event_info    )),
                       result = dict(events_in   = event_count_in .future,
