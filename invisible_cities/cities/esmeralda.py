@@ -51,9 +51,8 @@ from .  components import hits_and_kdst_from_files
 from .  components import hits_corrector
 from .  components import hits_thresholder
 from .  components import compute_and_write_tracks_info
-from .  components import hitc_to_df
 
-from .. io.         hits_io import hits_writer
+from .. io.         hits_io import hits_writer as hits_writer_
 from .. io.         hits_io import hits_from_df
 from .. io.         kdst_io import kdst_from_df_writer
 from .. io.run_and_event_io import run_and_event_writer
@@ -170,9 +169,7 @@ def esmeralda( files_in         : OneOrManyFiles
         write_event_info   = fl.sink( run_and_event_writer(h5out)
                                     , args = "run_number event_number timestamp".split())
 
-        to_hits_df         = fl.map(hitc_to_df)
-        write_paolina_hits = fl.sink(hits_writer(h5out, group_name="CHITS", table_name="highTh"))
-        write_hits         = ("paolina_hits", to_hits_df, write_paolina_hits)
+        hits_writer        = hits_writer_(h5out, group_name="CHITS", table_name="highTh")
 
         write_kdst         = fl.sink(kdst_from_df_writer(h5out), args="kdst")
 
@@ -180,7 +177,7 @@ def esmeralda( files_in         : OneOrManyFiles
                                                       , h5out
                                                       , evm.HitEnergy.Ec
                                                       , "high_th_select"
-                                                      , write_hits)
+                                                      , hits_writer)
 
         event_number_collector = collect()
 

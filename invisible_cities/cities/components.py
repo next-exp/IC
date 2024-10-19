@@ -1441,8 +1441,8 @@ def hitc_to_df(hitc: HitCollection):
 
 
 def compute_and_write_tracks_info(paolina_params, h5out,
-                                  hit_type, filter_hits_table_name='hits_select',
-                                  write_paolina_hits=None):
+                                  hit_type, filter_hits_table_name,
+                                  hits_writer):
 
     filter_events_nohits = fl.map(lambda x : len(x.hits) > 0,
                                       args = 'hits',
@@ -1472,8 +1472,6 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                                             args = ('event_number', 'topology_info', 'paolina_hits', 'out_of_map'),
                                             out  = 'event_info')
 
-    to_hits_df = fl.map(hitc_to_df, item="paolina_hits")
-
     # Define writers and make them sinks
     write_tracks          = fl.sink(   track_writer     (h5out=h5out)             , args="topology_info"      )
     write_summary         = fl.sink( summary_writer     (h5out=h5out)             , args="event_info"         )
@@ -1484,7 +1482,9 @@ def compute_and_write_tracks_info(paolina_params, h5out,
 
     make_and_write_summary  = make_final_summary, write_summary
     select_and_write_tracks = events_passed_topology.filter, write_tracks
-    write_hits              = (to_hits_df, write_paolina_hits) if write_paolina_hits else None
+
+    to_hits_df = fl.map(hitc_to_df)
+    write_hits = ("paolina_hits", to_hits_df, fl.sink(hits_writer))
 
     fork_pipes = filter(None, ( make_and_write_summary
                               , write_topology_filter
