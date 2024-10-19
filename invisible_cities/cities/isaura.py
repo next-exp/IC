@@ -24,6 +24,7 @@ from .  components import collect
 from .  components import copy_mc_info
 from .  components import dhits_from_files
 from .  components import compute_and_write_tracks_info
+from .  components import hitc_to_df
 
 from .. types.symbols import HitEnergy
 
@@ -96,11 +97,17 @@ def isaura( files_in       : OneOrManyFiles
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
         write_kdst_table = fl.sink( kdst_from_df_writer(h5out), args= "kdst")
 
-        write_hits = fl.sink(hits_writer(h5out, "DECO", "Events"), args="paolina_hits") # from within compute_tracks
+        to_hits_df         = fl.map(hitc_to_df)
+        write_paolina_hits = fl.sink(hits_writer(h5out, group_name="DECO", table_name="Events"))
+        write_hits         = ("paolina_hits", to_hits_df, write_paolina_hits)
 
         evtnum_collect = collect()
 
-        compute_tracks = compute_and_write_tracks_info(paolina_params, h5out, hit_type=HitEnergy.E)
+        compute_tracks = compute_and_write_tracks_info( paolina_params
+                                                      , h5out
+                                                      , HitEnergy.E
+                                                      , "hits_select"
+                                                      , write_hits)
 
         result = push(source = dhits_from_files(files_in),
                       pipe   = pipe(fl.slice(*event_range, close_all=True)        ,
@@ -110,7 +117,6 @@ def isaura( files_in       : OneOrManyFiles
                                     event_count_out       .spy                    ,
                                     fl.fork( compute_tracks
                                            , write_event_info
-                                           , write_hits
                                            , (filter_out_none, write_kdst_table)) ),
                       result = dict(events_in  =event_count_in .future,
                                     events_out =event_count_out.future,
