@@ -7,6 +7,7 @@ from .. core.testing_utils   import assert_tables_equality
 from .. core.system_of_units import pes
 from .  sophronia            import sophronia
 
+
 def test_sophronia_runs(sophronia_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, 'sophronia_runs.h5')
     nevt_req = 1
@@ -97,6 +98,9 @@ def test_sophronia_filters_events_with_only_nn_hits(config_tmpdir, sophronia_con
 
     sophronia(**config)
 
+    with tb.open_file(config["files_in"]) as input_file:
+        event_number = input_file.root.Run.events[0][0]
+
     with tb.open_file(path_out) as output_file:
         # Check that the event passes the s12_selector, which is
         # applied earlier. Then check it doesn't pass the valid_hit
@@ -105,3 +109,7 @@ def test_sophronia_filters_events_with_only_nn_hits(config_tmpdir, sophronia_con
         # (event_number, passed_flag)
         assert     output_file.root.Filters.s12_selector[0][1]
         assert not output_file.root.Filters.valid_hit   [0][1]
+
+        # Check that it's present in /Run/events, but not in /RECO/Events
+        assert event_number == output_file.root.Run.events[0][0]
+        assert event_number not in output_file.root.RECO.Events.col("event")
