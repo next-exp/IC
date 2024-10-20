@@ -5,6 +5,7 @@ import tables as tb
 
 from numpy.testing import assert_allclose
 from pytest        import mark
+from pytest        import warns
 
 from .. io.dst_io            import load_dst
 from .. core.testing_utils   import assert_dataframes_close
@@ -178,7 +179,8 @@ def test_dorothea_empty_input_file(config_tmpdir, ICDATADIR):
     conf.update(dict(files_in      = PATH_IN,
                      file_out      = PATH_OUT))
 
-    dorothea(**conf)
+    with warns(UserWarning, match="No PMAPs in input file"):
+        dorothea(**conf)
 
 
 def test_dorothea_high_threshold(config_tmpdir, KrMC_pmaps_filename, KrMC_kdst):
