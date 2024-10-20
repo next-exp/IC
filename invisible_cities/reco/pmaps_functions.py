@@ -1,13 +1,13 @@
 import numpy as np
 
-from typing import List, Union
-
 from ..evm.pmaps           import                     _Peak
 from ..evm.pmaps           import              PMTResponses
 from ..evm.pmaps           import             SiPMResponses
 from . peak_functions      import rebin_times_and_waveforms
 from ..core.core_functions import        dict_filter_by_key
 from ..types.symbols       import               RebinMethod
+
+from typing import List, Union
 
 
 def get_even_slices(bins : int, stride : int) -> List[slice]:
