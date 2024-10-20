@@ -559,14 +559,14 @@ def wf_from_files(paths, wf_type):
 
 def pmap_from_files(paths):
     for path in paths:
-        try:
-            pmaps = load_pmaps(path, lazy=True)
-        except tb.exceptions.NoSuchNodeError:
-            continue
-
         with tb.open_file(path, "r") as h5in:
-            run_number  = get_run_number(h5in)
-            event_info  = get_event_info(h5in)
+            try:
+                pmaps      = load_pmaps(path, lazy=True)
+                run_number = get_run_number(h5in)
+                event_info = get_event_info(h5in)
+            except tb.exceptions.NoSuchNodeError:
+                warnings.warn("No PMAPs in input file", UserWarning)
+                continue
 
             for evtinfo, (evt, pmap) in zip(event_info, pmaps):
                 event_number, timestamp = evtinfo.fetch_all_fields()
