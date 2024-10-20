@@ -618,12 +618,17 @@ def dst_from_files(paths: List[str], group: str, node:str) -> Iterator[Dict[str,
     for path in paths:
         try:
             df = load_dst(path, group, node)
-            with tb.open_file(path, "r") as h5in:
-                run_number  = get_run_number(h5in)
-                evt_numbers = get_event_info(h5in).col("evt_number")
-                timestamps  = get_event_info(h5in).col("timestamp")
         except (tb.exceptions.NoSuchNodeError, IndexError):
             continue
+
+        if not len(df):
+            warnings.warn(f"No data in node /{group}/{node} in input file")
+            continue
+
+        with tb.open_file(path, "r") as h5in:
+            run_number  = get_run_number(h5in)
+            evt_numbers = get_event_info(h5in).col("evt_number")
+            timestamps  = get_event_info(h5in).col("timestamp")
 
         yield dict( dst           = df
                   , run_number    = run_number
