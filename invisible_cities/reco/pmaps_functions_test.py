@@ -1,3 +1,5 @@
+from itertools import combinations
+
 import numpy as np
 
 from pytest import approx
@@ -109,13 +111,15 @@ def test_rebin_peak_threshold(threshold, pk):
         assert np.all(rebinned_pk.pmts.sum_over_sensors >= threshold)
 
 
-@given(dictionaries(keys     = integers(min_value=-1e5, max_value=1e5),
-                    values   = pmaps(),
-                    max_size = 5),
-       lists(integers(min_value=-1e5, max_value=1e5)))
+@given(pmaps(), pmaps(), pmaps(), pmaps())
 @settings(suppress_health_check=(HealthCheck.too_slow,))
-def test_pmap_event_id_selection(pmaps, events):
-    filtered_pmaps = pmf.pmap_event_id_selection(pmaps, events)
-    assert set(filtered_pmaps) == set(pmaps) & set(events)
-    for evt, pmap in filtered_pmaps.items():
-        assert pmap == pmaps[evt]
+def test_pmap_event_id_selection(pmap0, pmap1, pmap2, pmap3):
+    pmaps  = {0:pmap0, 12:pmap1, 345:pmap2, 6789:pmap3}
+    events = list(pmaps)
+    for chosen in combinations(events, 2):
+        pm0, pm1 = chosen
+        filtered_pmaps = pmf.pmap_event_id_selection(pmaps, chosen)
+        assert len(filtered_pmaps) == 2
+        assert pm0 in filtered_pmaps and pm1 in filtered_pmaps
+        assert filtered_pmaps[pm0] == pmaps[pm0]
+        assert filtered_pmaps[pm1] == pmaps[pm1]
