@@ -74,6 +74,7 @@ def test_load_hits_double_ratio_e_q_equals_one_skipping_NN(TlMC_hits_skipping_NN
     r = r1/r2
     np.isclose(r, 1, rtol=0.1)
 
+
 def test_hits_writer(config_tmpdir, hits_toy_data):
     output_file = os.path.join(config_tmpdir, "test_hits.h5")
 
@@ -102,6 +103,7 @@ def test_hits_writer(config_tmpdir, hits_toy_data):
     assert_allclose(e    , dst.E    .values)
 
 
+# TODO: this test does not test make any sense
 def test_hit_time_is_in_second(ICDATADIR):
     output_file = os.path.join(ICDATADIR, "hits_1hit_perSiPM_30pes_6817_trigger2_v0.9.9_20190111_krth1600.0.h5")
     the_hits = load_hits(output_file)
