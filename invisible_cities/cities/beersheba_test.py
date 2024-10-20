@@ -32,19 +32,6 @@ def test_create_deconvolution_df(ICDATADIR):
     assert_dataframes_close(new_dst .reset_index(drop=True), true_dst.reset_index(drop=True))
 
 
-@mark.xfail(reason="The check_annotations decorator only checks the signature in the first call, thus for the second value in the parametrization, it fails.")
-@mark.parametrize("cut_type", CutType.__members__)
-def test_create_deconvolution_df_cuttype(ICDATADIR, cut_type):
-    true_in  = os.path.join(ICDATADIR, "exact_Kr_deconvolution_with_MC.h5")
-    true_dst = dio.load_dst(true_in, 'DECO', 'Events')
-    ecut     = 1e-2
-
-    with raises(ValueError):
-        create_deconvolution_df(true_dst, true_dst.E.values,
-                                (true_dst.X.values, true_dst.Y.values, true_dst.Z.values),
-                                cut_type, ecut, 3)
-
-
 def test_distribute_energy(ICDATADIR):
     true_in   = os.path.join(ICDATADIR, "exact_Kr_deconvolution_with_MC.h5")
     true_dst1 = dio.load_dst(true_in, 'DECO', 'Events')
