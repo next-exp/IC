@@ -253,7 +253,7 @@ def deconvolve_signal(det_db           : pd.DataFrame,
 @check_annotations
 def create_deconvolution_df( hits     : pd.DataFrame
                            , deconv_e : np.ndarray
-                           , pos      : Tuple[np.ndarray, ...]
+                           , pos      : Tuple[np.ndarray, np.ndarray, np.ndarray]
                            , cut_type : CutType
                            , e_cut    : float
                            , n_dim    : int
