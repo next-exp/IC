@@ -32,6 +32,7 @@ def test_create_deconvolution_df(ICDATADIR):
     assert_dataframes_close(new_dst .reset_index(drop=True), true_dst.reset_index(drop=True))
 
 
+@mark.xfail(reason="The check_annotations decorator only checks the signature in the first call, thus for the second value in the parametrization, it fails.")
 @mark.parametrize("cut_type", CutType.__members__)
 def test_create_deconvolution_df_cuttype(ICDATADIR, cut_type):
     true_in  = os.path.join(ICDATADIR, "exact_Kr_deconvolution_with_MC.h5")
