@@ -560,6 +560,10 @@ def pmap_from_files(paths):
         except tb.exceptions.NoSuchNodeError:
             continue
 
+        if not len(pmaps):
+            warnings.warn("No PMAPs in input file", UserWarning)
+            continue
+
         with tb.open_file(path, "r") as h5in:
             run_number  = get_run_number(h5in)
             event_info  = get_event_info(h5in)
