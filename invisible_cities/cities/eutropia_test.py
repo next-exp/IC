@@ -5,6 +5,7 @@ import tables as tb
 import pandas as pd
 
 from pytest import fixture
+from pytest import warns
 
 from .. cities.eutropia        import eutropia
 from .. core  .configure       import configure
@@ -131,4 +132,5 @@ def test_eutropia_skips_bad_files(ICDATADIR, config_tmpdir):
                      file_out = PATH_OUT))
 
     # just check that it doesn't complain
-    eutropia(**conf)
+    with warns(UserWarning, match="No output file produced because no events were processed"):
+        eutropia(**conf)
