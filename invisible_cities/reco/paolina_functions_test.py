@@ -33,6 +33,7 @@ from .. evm.event_model import Cluster
 from .. evm.event_model import Voxel
 
 from . paolina_functions import bounding_box
+from . paolina_functions import voxels_within_radius
 from . paolina_functions import energy_of_voxels_within_radius
 from . paolina_functions import find_extrema
 from . paolina_functions import find_extrema_and_length
@@ -312,6 +313,29 @@ def test_find_extrema_single_voxel(voxel):
 def test_find_extrema_no_voxels():
     with raises(NoVoxels):
         find_extrema_and_length({})
+
+
+def test_voxels_within_radius():
+    dummy_voxel = lambda e: Voxel(0, 0, 0, e, 1)
+    r  = 3.5
+    es = np.arange(10, 20)
+    ds = np.arange( 0, 10)
+
+    vdist    = {dummy_voxel(e): d for e, d in zip(es, ds)}
+    selected = voxels_within_radius(vdist, r)
+    assert len(selected) == 4
+    assert all(v.E in es[:4] for v in selected)
+
+
+def test_energy_of_voxels_within_radius():
+    dummy_voxel = lambda e: Voxel(0, 0, 0, e, 1)
+    r  = 3.5
+    es = np.arange(10, 20)
+    ds = np.arange( 0, 10)
+
+    vdist      = {dummy_voxel(e): d for e, d in zip(es, ds)}
+    tot_energy = energy_of_voxels_within_radius(vdist, r)
+    assert np.isclose(tot_energy, sum(es[:4]))
 
 
 @fixture(scope='module')
