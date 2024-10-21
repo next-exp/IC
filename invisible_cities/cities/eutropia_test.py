@@ -15,11 +15,6 @@ from .. core  .testing_utils   import ignore_warning
 
 
 @fixture(scope="module")
-def kr_hits(ICDATADIR):
-    return os.path.join(ICDATADIR, "Kr_hits_for_psf_*.h5")
-
-
-@fixture(scope="module")
 def fast_psf_config(ICDATADIR):
     return dict( files_in    = os.path.join(ICDATADIR, "Kr_hits_for_psf_0.h5")
                , run_number  = -7000
