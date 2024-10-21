@@ -8,6 +8,7 @@ from .. core            import system_of_units as units
 from . buffer_functions import       bin_sensors
 from . buffer_functions import buffer_calculator
 from . buffer_functions import find_signal_start
+from . buffer_functions import          pad_safe
 
 
 def test_bin_sensors(mc_waveforms, pmt_ids, sipm_ids):
@@ -88,6 +89,26 @@ def test_find_signal_start_correct_index():
     pulses     = find_signal_start(simple_evt, thresh, 5)
     assert len(pulses) == 1
     assert pulses[0]   == thr_bin
+
+
+def test_pad_safe():
+    sensors    = np.arange(12).reshape(6,2)
+    pad_before = 3
+    pad_after  = 5
+    padded     = pad_safe(sensors, (pad_before, pad_after))
+
+    np.testing.assert_array_equal(padded[:, :pad_before ], 0)
+    np.testing.assert_array_equal(padded[:, -pad_after: ], 0)
+    np.testing.assert_array_equal(padded[:,  pad_before:-pad_after], sensors)
+
+
+def test_pad_safe_empty():
+    shape   = (0, 10)
+    sensors = np.empty(shape)
+    padding = 3, 5
+    padded  = pad_safe(sensors, padding)
+
+    assert padded.shape == (0, sum(padding) + 1)
 
 
 @mark.parametrize("pre_trigger signal_thresh".split(),
