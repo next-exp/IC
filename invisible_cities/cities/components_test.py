@@ -17,6 +17,7 @@ from .. core.configure     import configure
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.exceptions    import          SensorIDMismatch
 from .. core.exceptions    import              NoInputFiles
+from .. core.exceptions    import           MCEventNotFound
 from .. core.testing_utils import    assert_tables_equality
 from .. core.testing_utils import            ignore_warning
 from .. core               import system_of_units as units
@@ -393,6 +394,15 @@ def test_copy_mc_info_split_nexus_events(ICDATADIR, config_tmpdir):
             expected = getattr(h5in .root, table)
             assert_tables_equality(got, expected)
 
+
+def test_copy_mc_info_raises_missing_event(ICDATADIR, config_tmpdir):
+    file_in  = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.sim.h5")
+    file_out = os.path.join(config_tmpdir, "copy_mc_info_raises_missing_event.h5")
+
+    event_that_does_not_exist = 99999
+    with tb.open_file(file_out, 'w') as h5out:
+        with raises(MCEventNotFound, match="Some events not found in MC tables"):
+            copy_mc_info([file_in], h5out, [event_that_does_not_exist], 'new', 0)
 
 
 def test_mcsensors_from_file_fast_returns_empty(ICDATADIR):
