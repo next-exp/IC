@@ -29,8 +29,10 @@ from .. types.symbols      import WfType
 from .. types.symbols      import EventRange as ER
 from .. types.symbols      import NormStrategy
 from .. types.symbols      import XYReco
+from .. types.symbols      import SiPMThreshold
 
 from .  components import event_range
+from .  components import get_actual_sipm_thr
 from .  components import collect
 from .  components import copy_mc_info
 from .  components import wf_from_files
@@ -329,6 +331,21 @@ def test_hits_and_kdst_from_files_missing_hits(Th228_hits_missing, config_tmpdir
     generator = hits_and_kdst_from_files([Th228_hits_missing], "RECO", "Events")
     n_events  = sum(1 for _ in generator)
     assert n_events == n_events_true
+
+
+@mark.parametrize("thr", (0, 1.5, 3))
+def test_get_actual_sipm_threshold_common(thr):
+    got = get_actual_sipm_thr(SiPMThreshold.common, thr, "new", 0)
+    assert np.isclose(got, thr)
+
+
+def test_get_actual_sipm_threshold_individual():
+    """
+    99.9% of the noise pds should be above 1 pe
+    """
+    thr = 0.999
+    got = get_actual_sipm_thr(SiPMThreshold.individual, thr, "new", 8000)
+    assert np.all(got > 1)
 
 
 def test_collect():
