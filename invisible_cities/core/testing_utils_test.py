@@ -104,3 +104,36 @@ def test_assert_tables_equality_different_arrays(dtype):
     array2 = array1 + 1
     with raises(AssertionError):
         assert_tables_equality(array1, array2)
+
+
+@mark.parametrize(    "shape1  shape2".split()
+                 , ( ( (3, 4), (4, 4) )    # different lengths
+                   , ( (3, 3), (3, 4) )))  # different widths
+def test_assert_tables_equality_different_array_shapes(shape1, shape2):
+    array1 = np.ones(shape1)
+    array2 = np.ones(shape2)
+    with raises(AssertionError):
+        assert_tables_equality(array1, array2)
+
+
+def test_assert_tables_equality_different_table_shapes():
+    table1 = np.array([ (1, 1.0)
+                      , (2, 2.0)],
+                      dtype=[('integer', 'i4'), ('float', 'f4')])
+
+    table2 = np.array([ (1, 1.0)
+                      , (2, 2.0)
+                      , (3, 3.0)],
+                      dtype=[('integer', 'i4'), ('float', 'f4')])
+
+    table3 = np.array([ ('one', 1, 1.0)
+                      , ('two', 2, 2.0)],
+                      dtype=[('text', 'U10'), ('integer', 'i4'), ('float', 'f4')])
+
+    # different lengths
+    with raises(AssertionError):
+        assert_tables_equality(table1, table2)
+
+    # different widths
+    with raises(AssertionError):
+        assert_tables_equality(table1, table3)
