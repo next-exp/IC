@@ -394,7 +394,7 @@ def test_profile1D_full_range_x(func, xdata, ydata, xrange):
 #                   (fitf.profileY,
 #                    FLOAT_ARRAY(10000, -100, 100),
 #                    FLOAT_ARRAY(10000, -500,   0))))
-def test_profile1D_one_bin_missing_x(func, xdata, ydata):
+def test_profile1D_one_bin_missing_x(func, xdata, ydata): # pragma: no cover
     xdata[core.in_range(xdata, -2, 0)] += 5
     xp, yp, ye = func(xdata, ydata)
     assert xp.size == 99
