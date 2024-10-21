@@ -273,7 +273,11 @@ def print_every_alternative_implementation(N): # pragma: no cover
     return print_every_loop
 
 
-def get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number):
+@check_annotations
+def get_actual_sipm_thr( thr_sipm_type : SiPMThreshold
+                       , thr_sipm      : float
+                       , detector_db   : str
+                       , run_number    : int):
     if   thr_sipm_type is SiPMThreshold.common:
         # In this case, the threshold is a value in pes
         sipm_thr = thr_sipm
@@ -282,10 +286,6 @@ def get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number):
         # In this case, the threshold is a percentual value
         noise_sampler = NoiseSampler(detector_db, run_number)
         sipm_thr      = noise_sampler.compute_thresholds(thr_sipm)
-
-    else:
-        raise ValueError(f"Unrecognized thr type: {thr_sipm_type}. "
-                          "Only valid options are `common` and `individual`")
 
     return sipm_thr
 
