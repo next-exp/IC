@@ -89,3 +89,18 @@ def test_assert_tables_equality_fails_different_values():
 
     with raises(AssertionError):
         assert_tables_equality(table1, table2)
+
+
+@mark.parametrize("dtype", (int, float))
+def test_assert_tables_equality_equal_arrays(dtype):
+    array1 = np.arange(20, dtype=dtype)
+    array2 = array1.copy()
+    assert_tables_equality(array1, array2)
+
+
+@mark.parametrize("dtype", (int, float))
+def test_assert_tables_equality_different_arrays(dtype):
+    array1 = np.arange(20, dtype=dtype)
+    array2 = array1 + 1
+    with raises(AssertionError):
+        assert_tables_equality(array1, array2)
