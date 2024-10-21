@@ -84,23 +84,27 @@ def test_cut_and_redistribute_df(df):
 
 
 def test_drop_isolated_sensors():
-    size          = 20
-    dist          = [10.1, 10.1]
-    x             = random.choices(np.linspace(-200, 200, 41), k=size)
-    y             = random.choices(np.linspace(-200, 200, 41), k=size)
-    q             = np.random.uniform(0,  20, size)
-    e             = np.random.uniform(0, 200, size)
-    df            = pd.DataFrame({'X':x, 'Y':y, 'Q':q, 'E':e})
+    """
+    Generate a cluster of 9 adjacent sensors + 1 isolated sensor and
+    check that the function drops it.
+    """
+    p    = 10.1
+    x    = [-p, -p, -p,  0, 0, 0,  p, p, p, 3*p]
+    y    = [-p,  0,  p, -p, 0, p, -p, 0, p, 3*p]
+    q    = [100] * 10
+    e    = [100] * 10
+    dist = [p, p]
+    df   = pd.DataFrame({'X':x, 'Y':y, 'Q':q, 'E':e})
+
     drop_function = drop_isolated_sensors(dist, ['E'])
     df_cut        = drop_function(df)
 
-    if len(df_cut) > 0:
-        assert np.isclose(df_cut.E.sum(), df.E.sum())
-
-    for row in df_cut.itertuples(index=False):
-        n_neighbours = len(df_cut[in_range(df_cut.X, row.X - dist[0], row.X + dist[0]) &
-                                  in_range(df_cut.Y, row.Y - dist[1], row.Y + dist[1])])
-        assert n_neighbours > 1
+    assert len(df_cut) == 9
+    assert np.isclose(df_cut.E.sum(), df.E.sum())
+    assert np.all(df_cut.X >= -p)
+    assert np.all(df_cut.X <=  p)
+    assert np.all(df_cut.Y >= -p)
+    assert np.all(df_cut.Y <=  p)
 
 
 def test_interpolate_signal():
