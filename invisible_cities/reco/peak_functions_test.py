@@ -51,14 +51,14 @@ def times_and_waveforms(draw):
     waveforms = draw(multiple_waveforms())
     n_samples = waveforms.shape[1]
     times     = draw(arrays(float, n_samples, elements=floats(0, 10*n_samples), unique=True))
-    return times, waveforms
+    widths    = np.diff(np.append(times, times[-1] + 1))
+    return times, widths, waveforms
 
 
 @composite
 def rebinned_sliced_waveforms(draw):
-    times, wfs = draw(times_and_waveforms())
+    times, widths, wfs = draw(times_and_waveforms())
     assume(times.size >= 5)
-    widths = np.append(np.diff(times), max(np.diff(times)))
 
     indices      = np.arange(times.size)
     first        = draw(integers(        0, times.size - 2))
@@ -552,44 +552,32 @@ def test_get_pmap(s1_and_s2_with_indices):
     assert_PMap_equality(pmap, expected_pmap)
 
 
-@given(times_and_waveforms(), integers(2, 10))
+@given( times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_sum_axis_1_does_not_change(t_and_wf, stride):
-    times, wfs    = t_and_wf
-    widths        = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
-    _, _, rb_wfs  = pf.rebin_times_and_waveforms(times, widths, wfs, stride)
+    times, widths, wfs = t_and_wf
+    _, _, rb_wfs       = pf.rebin_times_and_waveforms(times, widths, wfs, stride)
     assert np.sum(wfs, axis=1) == approx(np.sum(rb_wfs, axis=1))
 
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_sum_axis_0_does_not_change(t_and_wf, stride):
-    times, wfs    = t_and_wf
-    widths        = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
-    sum_wf        = np.stack([np.sum(wfs, axis=0)])
-    _, _, rb_wfs  = pf.rebin_times_and_waveforms(times, widths,     wfs, stride)
-    _, _, rb_sum  = pf.rebin_times_and_waveforms(times, widths, sum_wf , stride)
+    times, widths, wfs = t_and_wf
+    sum_wf             = np.stack([np.sum(wfs, axis=0)])
+    _, _, rb_wfs       = pf.rebin_times_and_waveforms(times, widths,     wfs, stride)
+    _, _, rb_sum       = pf.rebin_times_and_waveforms(times, widths, sum_wf , stride)
     assert rb_sum[0] == approx(np.sum(rb_wfs, axis=0))
 
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_number_of_wfs_does_not_change(t_and_wf, stride):
-    times, wfs   = t_and_wf
-    widths       = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
-    _, _, rb_wfs = pf.rebin_times_and_waveforms(times, widths, wfs, stride)
+    times, widths, wfs = t_and_wf
+    _, _, rb_wfs       = pf.rebin_times_and_waveforms(times, widths, wfs, stride)
     assert len(wfs) == len(rb_wfs)
 
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_number_of_bins_is_correct(t_and_wf, stride):
-    times, wfs       = t_and_wf
-    widths           = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
+    times, widths, wfs  = t_and_wf
     rb_times, _, rb_wfs = pf.rebin_times_and_waveforms(times, widths,
                                                        wfs, stride)
     expected_n_bins  = times.size // stride
@@ -602,10 +590,7 @@ def test_rebin_times_and_waveforms_number_of_bins_is_correct(t_and_wf, stride):
 
 @given(times_and_waveforms())
 def test_rebin_times_and_waveforms_stride_1_does_not_rebin(t_and_wf):
-    times, wfs = t_and_wf
-    widths     = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
+    times, widths, wfs  = t_and_wf
     rb_times, _, rb_wfs = pf.rebin_times_and_waveforms(times, widths, wfs, 1)
 
     assert np.all(times == rb_times)
@@ -614,10 +599,7 @@ def test_rebin_times_and_waveforms_stride_1_does_not_rebin(t_and_wf):
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_times_are_consistent(t_and_wf, stride):
-    times, wfs  = t_and_wf
-    widths      = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
+    times, widths, wfs = t_and_wf
 
     # The samples falling in the last bin cannot be so easily
     # compared as the other ones so I remove them.
