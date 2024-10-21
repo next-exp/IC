@@ -137,8 +137,9 @@ def assert_tables_equality(got_table, expected_table, rtol=1e-7, atol=0):
     # we keep both names to be as generic as possible
     names          = _get_table_name(got_table), _get_table_name(expected_table)
 
-    assert len(table_got      ) == len(table_expected      ), f"Tables {names} have different lengths"
-    assert len(table_got.dtype) == len(table_expected.dtype), f"Tables {names} have different widths"
+    shape_got      = len(table_got     ), len(table_got     .dtype)
+    shape_expected = len(table_expected), len(table_expected.dtype)
+    assert shape_got == shape_expected, f"Tables {names} have different shapes: {shape_got} vs. {shape_expected}"
 
     if table_got.dtype.names is not None:
         for col_name in table_got.dtype.names:
