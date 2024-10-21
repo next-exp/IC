@@ -50,6 +50,18 @@ def test_distribute_energy(ICDATADIR):
     assert np.isclose (true_dst1.E.sum(), true_dst2.E.sum())
 
 
+def test_beersheba_ndim(beersheba_config, config_tmpdir):
+    path_out = os.path.join(config_tmpdir, "beersheba_ndim.h5")
+    beersheba_config.update(dict(file_out = path_out))
+    beersheba_config["deconv_params"].update(dict( n_dim        = 3
+                                                 , sample_width = [1]*3
+                                                 , bin_size     = [1]*3
+                                                 , diffusion    = [1]*3 ))
+
+    with raises(NotImplementedError):
+        beersheba(**beersheba_config)
+
+
 @ignore_warning.no_config_group
 @ignore_warning.str_length
 @ignore_warning.not_kdst
