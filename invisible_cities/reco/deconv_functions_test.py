@@ -366,8 +366,8 @@ def test_satellite_ecut_maximum(sat_arr, cut_type):
     Test uses relative and absolute cuts as both are equivalent here (normalised to 1)
     '''
     
-    # set e_cut to minimum (zero)
-    e_cut                    = 0
+    # set e_cut to large number (999)
+    e_cut                    = 999
     
     hdst                     = np.array(sat_arr)
     satellite_max_size       = 3
