@@ -20,16 +20,22 @@ from .. types.symbols      import DeconvolutionMode
 from .. types.symbols      import CutType
 
 
-def test_create_deconvolution_df(ICDATADIR):
+@mark.parametrize("cut_type", CutType)
+def test_create_deconvolution_df(ICDATADIR, cut_type):
     true_in  = os.path.join(ICDATADIR, "exact_Kr_deconvolution_with_MC.h5")
     true_dst = dio.load_dst(true_in, 'DECO', 'Events')
     ecut     = 1e-2
     new_dst  = pd.concat([create_deconvolution_df(t, t.E.values, (t.X.values, t.Y.values, t.Z.values),
-                                                  CutType.abs, ecut, 3) for _, t in true_dst.groupby('event')])
-    true_dst = true_dst.loc[true_dst.E > ecut, :].reset_index(drop=True)
-    # compare only existing columns
-    true_dst = true_dst.loc[:, new_dst.columns.values.tolist()]
-    assert_dataframes_close(new_dst .reset_index(drop=True), true_dst.reset_index(drop=True))
+                                                  cut_type, ecut, 3) for _, t in true_dst.groupby('event')])
+    for event, df in true_dst.groupby("event"):
+        sel = (df.E > ecut if cut_type is CutType.abs else
+               df.E > ecut * df.E.max())
+        df = df.loc[sel].reset_index(drop=True)
+        # compare only existing columns
+        df = df.loc[:, new_dst.columns.values.tolist()]
+
+        new_event = new_dst.loc[new_dst.event==event]
+        assert_dataframes_close(new_event.reset_index(drop=True), df.reset_index(drop=True))
 
 
 def test_distribute_energy(ICDATADIR):
