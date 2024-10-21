@@ -80,7 +80,7 @@ def test_sipm_noise_sampler(dbnew, electron_MCRD_file):
         n_sipm = 0
         for j in range(sipmzs.shape[0]):
             if np.sum(sipmzs[j] > 0):
-                n_sipm+=1
+                n_sipm+=1 # pragma: no cover
         assert n_sipm < max_sipm_with_signal
 
 def test_channel_id_to_IC_id():
