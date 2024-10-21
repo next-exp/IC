@@ -79,6 +79,20 @@ def test_merge_nn_hits_does_not_leave_nn_hits(hits):
         assert hit.Q != NN
 
 
+def test_merge_nn_hits_different_peaks():
+    zero = xy(0,0)
+    #             peakno     Q       X    Y              z  E
+    hits = [ Hit(0, Cluster(NN, xy(  0,   0), zero, 1),  0, 1, zero)
+           , Hit(0, Cluster( 1, xy(100, 100), zero, 1), -2, 2, zero)
+           , Hit(1, Cluster( 1, xy(  0,   0), zero, 1),  1, 3, zero)]
+    merged = merge_NN_hits(hits, same_peak=False)
+
+    assert len(merged) == 2
+    assert_hit_equality(merged[0], hits[1]) # second hit unchanged
+    assert merged[1].E == hits[0].E + hits[2].E
+    assert merged[1].Q ==             hits[2].Q
+
+
 @given(list_of_hits(), floats())
 def test_threshold_hits_does_not_modify_input(hits, th):
     hits_org    = deepcopy(hits)
