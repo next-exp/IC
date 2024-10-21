@@ -73,9 +73,6 @@ def trude( files_in         : OneOrManyFiles
          , integral_width   : float
          , integrals_period : float
          ):
-    if proc_mode not in SiPMCalibMode:
-        raise ValueError(f"Unrecognized processing mode: {proc_mode}")
-
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
     sd          = sensor_data(files_in[0], WfType.rwf)
