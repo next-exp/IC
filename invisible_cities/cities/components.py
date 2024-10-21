@@ -261,7 +261,7 @@ def print_every(N):
                      fl.sink (lambda data: print(f"events processed: {data['index']}, event number: {data['event_number']}")))
 
 
-def print_every_alternative_implementation(N):
+def print_every_alternative_implementation(N): # pragma: no cover
     @fl.coroutine
     def print_every_loop(target):
         with fl.closing(target):
