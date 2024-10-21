@@ -77,6 +77,7 @@ def rebinned_sliced_waveforms(draw):
     return times, widths, wfs, indices, times_slice, widths_slice, wfs_slice, rebin
 
 
+#TODO: rethink this composite
 @composite
 def peak_indices(draw):
     size    = draw(integers(10, 50))
@@ -298,24 +299,48 @@ def test_select_peaks_right_length_with_holes():
     assert selected_wrong      == ()
 
 
-@given(peak_indices(),
-       floats(0,  5), floats( 6, 10),
-       floats(0, 10), floats(11, 20))
-def test_select_peaks(peak_data, t0, t1, l0, l1):
+@given(peak_indices().filter(lambda data: len(data[1]) > 2))
+def test_select_peaks_tlimits(peak_data):
+    # peaks are time-ordered. Reject the first and the last one
     _, peaks , _ = peak_data
+    t0 = peaks[ 0][ 0] + 1
+    t1 = peaks[-1][-1] - 1
+
     i_limits = minmax(t0, t1)
+    t_limits = i_limits * 25 * units.ns
+    l_limits = minmax(0, 1000000)
+    selected = pf.select_peaks(peaks, t_limits, l_limits)
+
+    assert len(selected) == len(peaks) - 2
+    for got, expected in zip(selected, peaks[1:-1]):
+        assert got == exactly(expected)
+
+
+def _peak_length(i):
+    return i[-1] - i[0] + 1
+
+@given(peak_indices()
+       .filter(lambda data: np.unique(list(map(_peak_length, data[1]))).size > 2))
+def test_select_peaks_llimits(peak_data):
+    _, peaks , _ = peak_data
+    ls = np.array(list(map(_peak_length, peaks)))
+    l0 = ls.min() + 1
+    l1 = ls.max() - 1
+
+    i_limits = minmax(0, peaks[-1][-1] + 1)
     t_limits = i_limits * 25 * units.ns
     l_limits = minmax(l0, l1)
     selected = pf.select_peaks(peaks, t_limits, l_limits)
 
-    select = lambda ids: (i_limits.contains(ids[ 0]) and
-                          i_limits.contains(ids[-1]) and
-                          l_limits.contains(ids[-1] + 1 - ids[0]))
-    expected_peaks = tuple(filter(select, peaks))
+    selected_ls = np.array(list(map(_peak_length, selected)))
 
-    assert len(selected) == len(expected_peaks)
-    for got, expected in zip(selected, expected_peaks):
-        assert got == exactly(expected)
+    # at least one left, condition set in the input it should have
+    # filtered at least 2 peaks: the shortest and the longest peaks
+    assert len(selected) >= 1
+    assert len(peaks) - len(selected) >= 2
+
+    assert np.all(selected_ls >= l0)
+    assert np.all(selected_ls <= l1)
 
 
 @given(rebinned_sliced_waveforms())
