@@ -71,7 +71,7 @@ def test_get_chi2_and_pvalue_gauss_errors(mean, sigma):
 @mark.parametrize("ey", (0, -1, -100))
 def test_fit_raises_ValueError_when_negative_or_zero_value_in_sigma(ey):
     def dummy(x, m):
-        return m
+        pass # no need to do anything
 
     x  = np.array([0  , 1  ])
     y  = np.array([4.1, 4.2])
