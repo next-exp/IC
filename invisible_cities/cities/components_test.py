@@ -40,6 +40,7 @@ from .  components import wf_from_files
 from .  components import pmap_from_files
 from .  components import compute_xy_position
 from .  components import city
+from .  components import dst_from_files
 from .  components import hits_and_kdst_from_files
 from .  components import mcsensors_from_file
 from .  components import create_timestamp
@@ -296,6 +297,7 @@ def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
 
     dummy_city(**args)
 
+
 def test_pmap_from_files_event_number_mismatch_raises(KrMC_pmaps_filename, output_tmpdir):
     filename = os.path.join(output_tmpdir, "test_pmap_from_files_event_number_mismatch_raises.h5")
 
@@ -308,6 +310,12 @@ def test_pmap_from_files_event_number_mismatch_raises(KrMC_pmaps_filename, outpu
     generator = pmap_from_files([filename])
     with raises(InvalidInputFileStructure, match="Inconsistent data: event number mismatch"):
         next(generator)
+
+
+def test_dst_from_files_empty_input(ICDATADIR):
+    empty_file = os.path.join(ICDATADIR, "empty_kdst.h5")
+    with warns(UserWarning, match="No data in node /DST/Events in input file"):
+        tuple(dst_from_files([empty_file], "DST", "Events")) # consume iterator
 
 
 def test_hits_and_kdst_from_files(ICDATADIR):
@@ -526,12 +534,12 @@ def test_hits_Z_uncorrected( correction_map_filename
     '''
     Test to ensure that z is uncorrected when `apply_z` is False
     '''
-    
+
     hc = random_hits_toy_data
     hz = [h.Z for h in hc.hits]
-    
+
     correct = hits_corrector(correction_map_filename,
-                             apply_temp = False, 
+                             apply_temp = False,
                              norm_strat = NormStrategy.kr,
                              norm_value = None,
                              apply_z    = False)
@@ -546,12 +554,12 @@ def test_hits_Z_corrected_when_flagged( correction_map_filename
     '''
     Test to ensure that the correction is applied when `apply_z` is True
     '''
-    
+
     hc = random_hits_toy_data
     hz = [h.Z for h in hc.hits]
-    
+
     correct = hits_corrector(correction_map_filename,
-                             apply_temp = False, 
+                             apply_temp = False,
                              norm_strat = NormStrategy.kr,
                              norm_value = None,
                              apply_z    = True)
@@ -559,7 +567,7 @@ def test_hits_Z_corrected_when_flagged( correction_map_filename
 
     # raise assertion error as expected
     assert_raises(AssertionError, assert_equal, corrected_z, hz)
-    
+
 
 @mark.parametrize( "norm_strat norm_value".split(),
                   ( (NormStrategy.kr    , None) # None marks the default value
