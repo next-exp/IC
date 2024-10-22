@@ -204,15 +204,29 @@ def test_RadioactivityData_max_version():
             np.testing.assert_allclose(req[column], max_version[column])
 
 
-@mark.parametrize("version", (0, 1, 2))
-def test_RadioactivityData_get_version(version):
+@mark.parametrize( "version exists".split()
+                 , ( (   0, False) # these versions don't exist
+                   , (   1, False)
+                   , (   2, False)
+                   , (   3,  True) # these one exist
+                   , (   4,  True)
+                   , (   5,  True) # this one doesn't, but it picks up the highest one
+                   ))
+def test_RadioactivityData_get_version(version, exists):
     '''Check that RadioactivityData returns the desired version of data'''
 
     db_file = "next100"
     activity, efficiency = DB.RadioactivityData(db_file, version=version)
 
-    conn = sqlite3.connect(DB.get_db(db_file))
+    if not exists:
+        assert len(activity  ) == 0
+        assert len(efficiency) == 0
+        return
 
+    assert len(activity  ) > 0
+    assert len(efficiency) > 0
+
+    conn = sqlite3.connect(DB.get_db(db_file))
     for table, table_name, column in zip((      activity ,    efficiency ),
                                          (     "Activity",   "Efficiency"),
                                          ("TotalActivity", "MCEfficiency")):
