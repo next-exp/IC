@@ -669,6 +669,10 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
         except tb.exceptions.NoSuchNodeError:
             continue
 
+        if not len(dhits_df):
+            warnings.warn(f"No data in node /DECO/Events in input file", UserWarning)
+            continue
+
         kdst_df = load_dst(path, 'DST', 'Events', ignore_errors=True)
 
         with tb.open_file(path, "r") as h5in:
