@@ -36,9 +36,7 @@ from .. database.load_db          import DataSiPM
 from scipy.stats                  import multivariate_normal
 
 
-cut_types = list(CutType)
-
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def sat_arr(ICDATADIR):
     '''
     An array made to imitate a z-slice that would be passed through deconvolution
@@ -307,7 +305,7 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer)
     assert(np.all(check_y % 9 == 0))
 
 
-@mark.parametrize("cut_type", cut_types)
+@mark.parametrize("cut_type", CutType)
 def test_removing_satellites(sat_arr, cut_type):
     '''
     Test case for removing the satellite in the top-right of the given array
@@ -323,7 +321,6 @@ def test_removing_satellites(sat_arr, cut_type):
     
     Test uses relative and absolute cuts as both are equivalent here (normalised to 1)
     '''
-    hdst                    = np.array(sat_arr)
     # produce array with satellite removed
     hdst_nosat              = np.array(sat_arr)
     hdst_nosat[0][-1]       = 0
@@ -332,10 +329,10 @@ def test_removing_satellites(sat_arr, cut_type):
     satellite_max_size      = 3
 
     # create and check mask
-    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
-    hdst[mask] = 0
+    mask = generate_satellite_mask(sat_arr, satellite_max_size, e_cut, cut_type)
+    sat_arr[mask] = 0
 
-    assert(np.allclose(hdst, hdst_nosat))
+    assert(np.allclose(sat_arr, hdst_nosat))
 
 @mark.parametrize("cut_type", cut_types)
 def test_satellite_ecut_minimum(sat_arr, cut_type):
@@ -353,7 +350,7 @@ def test_satellite_ecut_minimum(sat_arr, cut_type):
     satellite_max_size       = 3
     # create and check mask
     mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
-
+    hdst[mask] = 0
     assert(np.allclose(hdst, sat_arr))
 
 @mark.parametrize("cut_type", cut_types)
@@ -374,7 +371,6 @@ def test_satellite_ecut_maximum(sat_arr, cut_type):
     # create and check mask
     mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
     hdst[mask] = 0
-
     assert(np.allclose(hdst, sat_arr))
 
 
@@ -388,7 +384,7 @@ def test_satellite_size_minimum(sat_arr):
     satellite_max_size      = 0
 
     hdst                    = np.array(sat_arr)
-    e_cut                   = 1.1
+    e_cut                   = 0.5
     cut_type                = CutType.abs
 
     # create and check mask
@@ -406,18 +402,17 @@ def test_satellite_size_maximum(sat_arr):
     # set maximum satellite size to maximum (999)
     satellite_max_size = 999
 
-    hdst                    = np.array(sat_arr)
     # produce modified array with 1s -> 0s (as expected)
-    hdst_novals              = np.array(hdst)
-    hdst_novals[np.where(hdst_novals == 1)] = 0
+    hdst_novals              = np.array(sat_arr)
+    hdst_novals[hdst_novals == 1] = 0
 
     e_cut                   = 0.5
     cut_type                = CutType.abs
 
     # create and check mask    
-    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
-    hdst[mask] = 0
-    assert(np.allclose(hdst, hdst_novals))
+    mask = generate_satellite_mask(sat_arr, satellite_max_size, e_cut, cut_type)
+    sat_arr[mask] = 0
+    assert(np.allclose(sat_arr, hdst_novals))
 
 
 @mark.parametrize("e_cut, expected_size", [(0, 2), (0.2, 3), (0.4, 2), (0.6, 1)])
@@ -499,12 +494,11 @@ def test_generate_satellite_mask_doesnt_modify_input(sat_arr):
     Test that ensures that the applied functions don't modify the provided
     z-slice array in any way.
     '''
-    hdst = np.array(sat_arr)
-    copy_hdst = np.array(hdst)
+    copy_hdst = np.array(sat_arr)
     satellite_max_size = 3
     e_cut = 0.5
     cut_type = CutType.abs
 
-    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    mask = generate_satellite_mask(copy_hdst, satellite_max_size, e_cut, cut_type)
 
-    assert(np.allclose(hdst, copy_hdst))
+    assert(np.allclose(sat_arr, copy_hdst))
