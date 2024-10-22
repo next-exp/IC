@@ -197,7 +197,9 @@ def test_incorrect_sensor_type_raises_ValueError(sensor_type, dbnew, run_number,
 
     with raises(ValueError):
         cf.       seeds_db(sensor_type, dbnew, run_number, n_chann)
+    with raises(ValueError):
         cf.poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals)
+    with raises(ValueError):
         cf.  sensor_values(sensor_type, scaler, bins, spec, ped_vals)
 
 
