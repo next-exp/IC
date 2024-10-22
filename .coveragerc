@@ -1,0 +1,7 @@
+# replace by exclude_also after bumping to >=7.2
+# with that, "pragma: no cover" can be removed
+[report]
+exclude_lines =
+    def __str__
+    def __repr__
+    pragma: no cover
