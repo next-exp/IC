@@ -42,6 +42,7 @@ from .  components import compute_xy_position
 from .  components import city
 from .  components import dst_from_files
 from .  components import hits_and_kdst_from_files
+from .  components import dhits_from_files
 from .  components import mcsensors_from_file
 from .  components import create_timestamp
 from .  components import check_max_time
@@ -340,6 +341,12 @@ def test_hits_and_kdst_from_files_missing_hits(Th228_hits_missing, config_tmpdir
     generator = hits_and_kdst_from_files([Th228_hits_missing], "RECO", "Events")
     n_events  = sum(1 for _ in generator)
     assert n_events == n_events_true
+
+
+def test_dhits_from_files_empty_input(ICDATADIR):
+    empty_file = os.path.join(ICDATADIR, "empty_ddst.h5")
+    with warns(UserWarning, match="No data in node /DECO/Events in input file"):
+        tuple(dhits_from_files([empty_file])) # consume iterator
 
 
 @mark.parametrize("thr", (0, 1.5, 3))
