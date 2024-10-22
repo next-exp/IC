@@ -129,11 +129,9 @@ def test_voxelize_hits_should_detect_no_hits():
         voxelize_hits([], None)
 
 
+# TODO: deal with no hits in the input
 @given(bunch_of_hits)
 def test_bounding_box(hits):
-    if not len(hits): # TODO: deal with empty sequences
-        return
-
     lo, hi = bounding_box(hits)
 
     mins = [float(' inf')] * 3
@@ -153,12 +151,10 @@ def test_bounding_box(hits):
         assert_almost_equal(maxs[d], hi[d])
 
 
+# TODO: deal with empty hits in the input
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
     voxels = voxelize_hits(hits, voxel_dimensions, strict_voxel_size=False)
-
-    if not hits:
-        assert voxels == []
 
     def sum_energy(seq):
         return sum(e.E for e in seq)
