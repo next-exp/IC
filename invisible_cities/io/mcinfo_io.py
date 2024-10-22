@@ -203,8 +203,6 @@ def read_mc_tables(file_in : str                        ,
         elif tbl is MCTableType.string_map           :
             str_map = load_mcstringmap(file_in)
             tbl_dict[tbl] = str_map
-        else                                         :
-            raise TypeError("MC table has no reader")
     return tbl_dict
 
 
