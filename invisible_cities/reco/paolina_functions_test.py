@@ -2,6 +2,7 @@ import os
 
 from math      import sqrt
 from functools import partial
+from copy      import deepcopy
 
 import numpy    as np
 import networkx as nx
@@ -508,16 +509,28 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimension
 
 
 @mark.parametrize("energy_type", HitEnergy)
-@given(hits                       = bunch_of_corrected_hits(),
-       requested_voxel_dimensions = box_sizes,
-       min_voxels                 = min_n_of_voxels,
-       fraction_zero_one          = fraction_zero_one)
-def test_dropped_voxels_have_nan_energy(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one, energy_type):
-    voxels            = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
-    energies          = [v.E for v in voxels]
-    e_thr             = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    _, dropped_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+@given(hits=bunch_of_hits)
+def test_dropped_voxels_have_nan_energy(hits, energy_type):
+    """
+    Generate 5 voxels in a straight line. The ones in each end and the
+    central one have lower energy. Check that only those in the end are
+    dropped. The hits in these voxels are meaningless, we just enforce
+    their energy to match the voxel energy.
+    """
+    def make_hits(e):
+        hs = deepcopy(hits)
+        for h in hs:
+            h.E = h.Ec = h.Ep = e/len(hs)
+        return hs
+
+    vox_size = np.ones(3)
+    es       = [1, 10, 1, 10, 1]
+    voxels   = [Voxel(i, 0, 0, e, vox_size, make_hits(e), energy_type) for i, e in enumerate(es)]
+    _, dropped_voxels = drop_end_point_voxels(voxels, energy_threshold=5, min_vxls=3)
+
+    assert len(dropped_voxels) == 2
     for voxel in dropped_voxels:
+        assert voxel.X in [voxels[0].X, voxels[-1].X]
         assert np.isnan(voxel.E)
         for hit in voxel.hits:
             assert np.isnan(getattr(hit, energy_type.value))
