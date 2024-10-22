@@ -71,6 +71,7 @@ from .. reco.deconv_functions  import cut_and_redistribute_df
 from .. reco.deconv_functions  import drop_isolated_sensors
 from .. reco.deconv_functions  import deconvolve
 from .. reco.deconv_functions  import richardson_lucy
+from .. reco.deconv_functions  import no_satellite_killer
 
 from .. io.run_and_event_io    import run_and_event_writer
 from .. io.          dst_io    import df_writer
@@ -129,8 +130,9 @@ def deconvolve_signal(det_db               : pd.DataFrame,
                       iteration_tol        : float,
                       sample_width         : List[float],
                       bin_size             : List[float],
-                      satellite_start_iter : Optional[int] = 9999,
-                      satellite_max_size   : Optional[int] = 15,
+                      satellite_params     : Union[dict, NoneType],
+                      #satellite_start_iter : Optional[int] = 9999,
+                      #satellite_max_size   : Optional[int] = 15,
                       diffusion            : Optional[Tuple[float, float, float]]=(1., 1., 0.3),
                       energy_type          : Optional[HitEnergy]=HitEnergy.Ec,
                       deconv_mode          : Optional[DeconvolutionMode]=DeconvolutionMode.joint,
@@ -152,8 +154,13 @@ def deconvolve_signal(det_db               : pd.DataFrame,
     iteration_tol        : Stopping threshold (difference between iterations).
     sample_width         : Sampling size of the sensors.
     bin_size             : Size of the interpolated bins.
-    satellite_start_iter : Iteration no. when satellite killer starts being used.
-    satellite_max_size   : Maximum size of satellite deposit, above which they are considered 'real'.
+    satellite_params     : Dictionary containing parameters for satellite killer
+        satellite_start_iter : Iteration no. when satellite killer starts being used.
+        satellite_max_size   : Maximum size of satellite deposit, above which they are considered 'real'.
+        e_cut                : Cut in relative value to the max voxel over the deconvolution output.
+        cut_type             : Cut mode to the deconvolution output (`abs` or `rel`) using e_cut
+                                `abs`: cut on the absolute value of the hits.
+                                `rel`: cut on the relative value (to the max) of the hits.
     energy_type          : Energy type (`E` or `Ec`, see Esmeralda) used for assignment.
     deconv_mode          : `joint` or `separate`, 1 or 2 step deconvolution, see description later.
     diffusion            : Diffusion coefficients in each dimension for 'separate' mode.
@@ -169,6 +176,9 @@ def deconvolve_signal(det_db               : pd.DataFrame,
     apply_deconvolution : Function that takes hits and returns the
     deconvolved data.
     """
+    if satellite_params is None:
+        satellite_params = no_satellite_killer
+
     dimensions    = np.array  (['X', 'Y', 'Z'][:n_dim])
     sample_width  = np.asarray(sample_width           )
     bin_size      = np.asarray(bin_size               )
@@ -176,9 +186,10 @@ def deconvolve_signal(det_db               : pd.DataFrame,
 
     psfs          = load_dst(psf_fname, 'PSF', 'PSFs')
     det_grid      = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
-                     for var, bs in zip(dimensions, bin_size)]
+                     for var, bs in zip(dimensions, bin_size)]    
     deconvolution = deconvolve(n_iterations, iteration_tol,
-                               sample_width, det_grid       , inter_method)
+                               sample_width, det_grid,
+                               **satellite_params, inter_method = inter_method)
 
     if not isinstance(energy_type , HitEnergy          ):
         raise ValueError(f'energy_type {energy_type} is not a valid energy type.')
@@ -208,8 +219,7 @@ def deconvolve_signal(det_db               : pd.DataFrame,
                        (psfs.x == find_nearest(psfs.x, xx)) &
                        (psfs.y == find_nearest(psfs.y, yy)) , :]
 
-        deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf, 
-                                          satellite_start_iter, satellite_max_size, e_cut, cut_type)
+        deconv_image, pos = deconvolution(tuple(df.loc[:, dimensions].values.T), df.NormQ.values, psf)
 
         if   deconv_mode is DeconvolutionMode.joint:
             pass
@@ -219,9 +229,10 @@ def deconvolve_signal(det_db               : pd.DataFrame,
             psf_cols     = psf.loc[:, cols]
             gaus         = dist.pdf(psf_cols.values)
             psf          = gaus.reshape(psf_cols.nunique())
-            deconv_image = nan_to_num(richardson_lucy(deconv_image, psf, 
-                                                      satellite_start_iter, satellite_max_size, 
-                                                      e_cut, cut_type, n_iterations_g, iteration_tol))
+            deconv_image = nan_to_num(richardson_lucy(deconv_image, psf,  
+                                                      iterations = n_iterations_g, 
+                                                      iter_thr = iteration_tol,
+                                                      **satellite_params))
 
         return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
 
@@ -386,6 +397,7 @@ def beersheba( files_in         : OneOrManyFiles
              , threshold        : float
              , same_peak        : bool
              , deconv_params    : dict
+             , satellite_params : Union[dict, NoneType]
              , corrections_file : Union[ str, NoneType]
              , apply_temp       : Union[bool, NoneType]
              ):
@@ -429,10 +441,6 @@ def beersheba( files_in         : OneOrManyFiles
             Sampling of the sensors in each dimension (usuallly the pitch).
         bin_size             : list[float]
             Bin size (mm) of the deconvolved image.
-        satellite_start_iter : int
-            Iteration no. when satellite killer starts being used.
-        satellite_max_size   : int
-            Maximum size of satellite deposit, above which they are considered 'real'.
         energy_type          : HitEnergy (`E` or `Ec`)
             Marks which energy from Esmeralda (E = uncorrected, Ec = corrected)
             should be assigned to the deconvolved track.
@@ -453,6 +461,17 @@ def beersheba( files_in         : OneOrManyFiles
             'cubic' not supported for 3D deconvolution.
         n_iterations_g       : int
             Number of Lucy-Richardson iterations for gaussian in 'separate mode'
+    satellite_params : dict
+        satellite_start_iter : int
+            Iteration no. when satellite killer starts being used.
+        satellite_max_size   : int
+            Maximum size of satellite deposit, above which they are considered 'real'.
+        e_cut                : float
+            Cut over the deconvolution input, for relevant satellite discrimination
+        cut_type             : CutType
+            Cut mode to the deconvolution output (`abs` or `rel`) using e_cut
+              `abs`: cut on the absolute value of the hits.
+              `rel`: cut on the relative value (to the max) of the hits.
 
     ----------
     Input
@@ -472,7 +491,8 @@ def beersheba( files_in         : OneOrManyFiles
     threshold_hits  = fl.map(hits_thresholder(threshold, same_peak), item="hits")
     hitc_to_df      = fl.map(hitc_to_df_, item="hits")
 
-    deconv_params['psf_fname'   ] = expandvars(deconv_params['psf_fname'])
+    deconv_params['psf_fname'       ] = expandvars(deconv_params['psf_fname'])
+    deconv_params['satellite_params'] = satellite_params
 
     for p in ['sample_width', 'bin_size', 'diffusion']:
         if len(deconv_params[p]) != deconv_params['n_dim']:
