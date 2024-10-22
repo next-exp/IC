@@ -347,7 +347,7 @@ event_range  = 14,
 
 @city
 def dummy(**kwds):
-    pass
+    pass # pragma: no cover
 
 def test_config_city_fails_without_config_file():
     argv = 'dummy'.split()
@@ -522,7 +522,7 @@ def test_compare_signature_to_values_positional_only():
         member = 0
 
     def f(a: int, b:float, c:str, d: D):
-        return
+        return # pragma: no cover
 
     pos_values = (1, 2.0, "a_str", D.member)
     compare_signature_to_values(f, pos_values, {})
@@ -533,7 +533,7 @@ def test_compare_signature_to_values_keyword_only():
         member = 0
 
     def f(a: int, b:float, c:str, d: D):
-        return
+        return # pragma: no cover
 
     kwd_values = dict(a = 1, b = 2.0, c = "a_str", d = D.member)
     compare_signature_to_values(f, (), kwd_values)
@@ -544,7 +544,7 @@ def test_compare_signature_to_values_combined():
         member = 0
 
     def f(a: int, b:float, c:str, d: D):
-        return
+        return # pragma: no cover
 
     pos_values = (1, 2.0)
     kwd_values = dict(c = "a_str", d = D.member)
@@ -553,7 +553,7 @@ def test_compare_signature_to_values_combined():
 
 def test_compare_signature_to_values_duck_match():
     def f(a: int, b:float):
-        return
+        return # pragma: no cover
 
     values = dict(a = int(1), b = int(2))
     compare_signature_to_values(f, (), values)
@@ -562,7 +562,7 @@ def test_compare_signature_to_values_duck_match():
 @mark.parametrize("seq", (list, tuple, np.array))
 def test_compare_signature_to_values_sequences(seq):
     def f(a: Sequence):
-        return
+        return # pragma: no cover
 
     values = (seq([0, 1, 2]),)
     compare_signature_to_values(f, values, {})
@@ -570,7 +570,7 @@ def test_compare_signature_to_values_sequences(seq):
 
 def test_compare_signature_to_values_missing_without_default():
     def f(a: int, b:int, c:int):
-        return
+        return # pragma: no cover
 
     pos_values = (1,)
     for arg_name in "bc":
@@ -583,7 +583,7 @@ def test_compare_signature_to_values_missing_without_default():
 @mark.parametrize("mode", "positional keyword".split())
 def test_compare_signature_to_values_missing_with_default(mode):
     def f(a: int = 1, b:int = 2):
-        return
+        return # pragma: no cover
 
     pos_values = (1,) if mode == "positional" else ()
     kwd_values = {}   if mode == "positional" else dict(b = 1)
@@ -592,7 +592,7 @@ def test_compare_signature_to_values_missing_with_default(mode):
 
 def test_compare_signature_to_values_unused_arguments():
     def f(a: int):
-        return
+        return # pragma: no cover
 
     values    = dict(a=1, b=2)
     match_str = "Argument .* is not being used by .*"
@@ -612,7 +612,7 @@ def test_compare_signature_to_values_raises(mode, type1, value, type2):
     if type1 is type2: return
 
     def f(a : type1):
-        pass
+        pass # pragma: no cover
 
     pos_values = (type2(),) if mode == "positional" else ()
     kwd_values = {}         if mode == "positional" else dict(a = type2())
