@@ -15,6 +15,7 @@ from .                       import calib_functions as cf
 from .. core                 import   tbl_functions as tbl
 from .. core                 import   fit_functions as fitf
 from .. core                 import system_of_units as units
+from .. core.core_functions  import        in_range
 from .. core.stat_functions  import   poisson_sigma
 from .. evm.nh5              import     SensorTable
 from .. types.symbols        import      SensorType
@@ -258,6 +259,51 @@ def test_compute_seeds_from_spectrum(ICDATADIR):
 
             assert gain_seed       != 0
             assert gain_sigma_seed != 0
+
+
+@mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
+def test_seeds_and_bounds_with_db(dbnew):
+    values        = np.array([1, 0.5, .1], dtype=float)
+    errors        = (values + 1) / 20
+    x             = np.arange(-50, 300)
+    y             = fitf.gauss(x, *values)
+    sel           = in_range(x, -5, 5, right_closed=True) # magic
+    scaler_func   = cf.dark_scaler(y[sel])
+    seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, 8000, 0,
+                                        scaler_func, x, y,
+                                        values, dbnew, errors,
+                                        use_db_gain_seeds=True)
+
+
+    # this test doesn't do much, to be improved
+    assert all(seeds)
+    assert len(seeds)     == 4
+    assert len(bounds)    == 2
+    assert len(bounds[0]) == 4
+    assert len(bounds[1]) == 4
+
+
+@mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
+def test_seeds_and_bounds_with_gau(dbnew):
+    values        = np.array([1, 0.5, .1], dtype=float)
+    errors        = (values + 1) / 20
+    x             = np.arange(-50, 300)
+    y             = fitf.gauss(x, *values)
+    sel           = in_range(x, -5, 5, right_closed=True) # magic
+    scaler_func   = cf.dark_scaler(y[sel])
+    seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, 8000, 0,
+                                        scaler_func, x, y,
+                                        values, dbnew, errors,
+                                        "gau",
+                                        use_db_gain_seeds=True)
+
+
+    # this test doesn't do much, to be improved
+    assert all(seeds)
+    assert len(seeds)     == 6
+    assert len(bounds)    == 2
+    assert len(bounds[0]) == 6
+    assert len(bounds[1]) == 6
 
 
 def test_seeds_without_using_db(ICDATADIR, dbnew):
