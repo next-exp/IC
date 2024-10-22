@@ -325,6 +325,9 @@ def test_Peak_raises_exception_when_shapes_dont_match(PK, sr1, sr2):
         PK(np.empty(n_samples + 1),
            np.empty(n_samples + 1), sr1, sr2)
 
+    with raises(ValueError):
+        PK([], [], sr1, sr2)
+
 
 @given(pmaps())
 def test_PMap_s1s(pmps):
