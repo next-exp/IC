@@ -334,41 +334,41 @@ def test_energy_of_voxels_within_radius():
     assert np.isclose(tot_energy, sum(es[:4]))
 
 
-@fixture(scope='module')
-def track_extrema():
-    voxel_spec = ((10,10,10,  1000),
-                  (10,10,11,     1),
-                  (10,10,12,     2),
-                  (10,10,13,     4),
-                  (10,10,14,     8),
-                  (10,10,15,    16),
-                  (10,11,15,    32),
-                  (10,12,15,    64),
-                  (10,13,15,   128),
-                  (10,14,15,   265),
-                  (10,15,15,   512),
-                  (11,15,15,   256),
-                  (12,15,15,   128),
-                  (13,15,15,    64),
-                  (14,15,15,    32),
-                  (15,15,15,    16),
-                  (16,16,16,     8),
-                  (17,17,17,     4),
-                  (18,18,18,     2),
-                  (19,19,19,     1),
-                  (20,20,20,  2000),
-    )
-    vox_size = np.array([1,1,1])
-    voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
-    tracks  = make_track_graphs(voxels)
+# @fixture(scope='module')
+# def track_extrema():
+#     voxel_spec = ((10,10,10,  1000),
+#                   (10,10,11,     1),
+#                   (10,10,12,     2),
+#                   (10,10,13,     4),
+#                   (10,10,14,     8),
+#                   (10,10,15,    16),
+#                   (10,11,15,    32),
+#                   (10,12,15,    64),
+#                   (10,13,15,   128),
+#                   (10,14,15,   265),
+#                   (10,15,15,   512),
+#                   (11,15,15,   256),
+#                   (12,15,15,   128),
+#                   (13,15,15,    64),
+#                   (14,15,15,    32),
+#                   (15,15,15,    16),
+#                   (16,16,16,     8),
+#                   (17,17,17,     4),
+#                   (18,18,18,     2),
+#                   (19,19,19,     1),
+#                   (20,20,20,  2000),
+#     )
+#     vox_size = np.array([1,1,1])
+#     voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
+#     tracks  = make_track_graphs(voxels)
 
-    assert len(tracks) == 1
-    extrema = find_extrema(tracks[0])
+#     assert len(tracks) == 1
+#     extrema = find_extrema(tracks[0])
 
-    assert voxels[ 0] in extrema
-    assert voxels[-1] in extrema
+#     assert voxels[ 0] in extrema
+#     assert voxels[-1] in extrema
 
-    return tracks[0], extrema
+#     return tracks[0], extrema
 
 
 def test_voxelize_single_hit():
