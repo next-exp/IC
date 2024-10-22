@@ -349,3 +349,18 @@ def test_seeds_without_using_db(ICDATADIR, dbnew):
                                                 use_db_gain_seeds=False)
             assert all(seeds)
             assert bounds == ((0, 0, 0, 0.001), (np.inf, 10000, 10000, 10000))
+
+
+@mark.parametrize( "f nargs".split()
+                 , ( (cf.       seeds_db, 3)
+                   , (cf.poisson_mu_seed, 4)
+                   , (cf.  sensor_values, 4)))
+def test_sensor_type_input(f, nargs):
+    """
+    Test that if the first argument (sensor_type) is not a symbol, the
+    functions complain. The rest of the arguments are irrelevant, so
+    they are just dummy values.
+    """
+    dummy = [None]*nargs
+    with raises(ValueError): f( "PMT", *dummy)
+    with raises(ValueError): f("SiPM", *dummy)
