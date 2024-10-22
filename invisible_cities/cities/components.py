@@ -622,7 +622,7 @@ def dst_from_files(paths: List[str], group: str, node:str) -> Iterator[Dict[str,
             continue
 
         if not len(df):
-            warnings.warn(f"No data in node /{group}/{node} in input file")
+            warnings.warn(f"No data in node /{group}/{node} in input file", UserWarning)
             continue
 
         with tb.open_file(path, "r") as h5in:

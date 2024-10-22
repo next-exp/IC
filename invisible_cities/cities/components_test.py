@@ -38,6 +38,7 @@ from .  components import wf_from_files
 from .  components import pmap_from_files
 from .  components import compute_xy_position
 from .  components import city
+from .  components import dst_from_files
 from .  components import hits_and_kdst_from_files
 from .  components import mcsensors_from_file
 from .  components import create_timestamp
@@ -293,6 +294,13 @@ def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
             pass
 
     dummy_city(**args)
+
+
+def test_dst_from_files_empty_input(ICDATADIR):
+    empty_file = os.path.join(ICDATADIR, "empty_kdst.h5")
+    with warns(UserWarning, match="No data in node /DST/Events in input file"):
+        tuple(dst_from_files([empty_file], "DST", "Events")) # consume iterator
+
 
 def test_hits_and_kdst_from_files(ICDATADIR):
     event_number = 1
