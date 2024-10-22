@@ -542,9 +542,6 @@ def test_dropped_voxels_have_nan_energy(hits, energy_type):
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
 def test_drop_end_point_voxels_doesnt_modify_other_energy_types(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one, energy_type):
-    def energy_from_hits(voxel, e_type):
-        return [getattr(hit, e_type) for hit in voxel.hits]
-
     voxels     = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
     voxels     = sorted(voxels, key=attrgetter("xyz"))
     energies   = [v.E for v in voxels]
