@@ -35,16 +35,16 @@ def collect_component_sizes(im_mask):
 
     Returns
     ----------
-    ccs                       : 2D array equivalent to im_mask with each region labelled 0, 1, 2, etc
+    labels                       : 2D array equivalent to im_mask with each region labelled 0, 1, 2, etc
     component_sizes           : Array of the length of each component size
     '''
     # label deposits within the array
     # hardcoded to include diagonals in the grouping stage (2)
     footprint = ndi.generate_binary_structure(im_mask.ndim, 2)
-    ccs, _ = ndi.label(im_mask, footprint)
+    labels, _ = ndi.label(im_mask, footprint)
     # count the bins of each labelled deposit
-    component_sizes = np.bincount(ccs.ravel())
-    return ccs, component_sizes
+    component_sizes = np.bincount(labels.ravel())
+    return labels, component_sizes
 
 def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
     '''
@@ -92,7 +92,7 @@ def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
     im_mask = np.where(vis_mask < e_cut, 0, 1)
 
     # separate different regions of 0s and 1s
-    ccs, component_sizes = collect_component_sizes(im_mask)
+    labels, component_sizes = collect_component_sizes(im_mask)
 
     # check if no satellites within deposit
     if len(component_sizes) <= 2:
@@ -111,7 +111,7 @@ def generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type):
     
 
     # apply boolean array to labelled array to hold satellites as True
-    too_small_mask = too_small[ccs]
+    too_small_mask = too_small[labels]
     # return mask to remove satellites
     return too_small_mask
     

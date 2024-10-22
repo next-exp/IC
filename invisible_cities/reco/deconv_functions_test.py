@@ -441,7 +441,7 @@ def test_component_sizes(compsize_array, e_cut, expected_size):
     bool_mask = np.where(compsize_array < e_cut, 0, 1)
 
     # check number of components in array match what is expected
-    ccs, no_components = collect_component_sizes(bool_mask)
+    labels, no_components = collect_component_sizes(bool_mask)
     assert(len(no_components) == expected_size)
 
 
@@ -457,7 +457,7 @@ def test_component_elements(compsize_array):
     
     # generate labelling
     bool_mask = np.where(compsize_array < e_cut, 0, 1)
-    ccs, no_components = collect_component_sizes(bool_mask)
+    labels, no_components = collect_component_sizes(bool_mask)
 
     # array to compare against
     expected_elements = np.array([8, 7, 1])
