@@ -47,11 +47,6 @@ def list_of_hits(draw):
     assume(sum((h.Q > 0 for h in list_of_hits if h.Q != NN)) >= 1)
     return list_of_hits
 
-@composite
-def thresholds(draw, min_value=1, max_value=1):
-    th1 = draw (integers(  10   ,  20))
-    th2 = draw (integers(  th1+1,  30))
-    return th1, th2
 
 @given(list_of_hits())
 def test_merge_NN_does_not_modify_input(hits):
