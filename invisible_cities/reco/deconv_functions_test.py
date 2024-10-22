@@ -48,6 +48,7 @@ def sat_arr(ICDATADIR):
                     [0.1  , 0.1  , 1.   , 1.   , 1.   ]])
     return arr
 
+
 @pytest.fixture(scope='session')
 def compsize_array(ICDATADIR):
     '''
@@ -63,16 +64,17 @@ def compsize_array(ICDATADIR):
                     [0.1, 0.1, 0.1, 0.5]])
     return arr
 
+
 @pytest.fixture(scope='session')
 def no_satellite_killer(ICDATADIR):
     '''
     The default satellite_killer parameters provided if you don't want it to be run on
     your sample. Used to avoid its usage in certain tests.
     '''
-    satellite_params = dict(satellite_iter     = 9999, 
-                            satellite_max_size = 10,
-                            e_cut              = 0.2, 
-                            cut_type           = CutType.rel)
+    satellite_params = dict(satellite_start_iter = np.inf, 
+                            satellite_max_size   = 10,
+                            e_cut                = 0.5, 
+                            cut_type             = CutType.abs)
     return satellite_params
 
 
@@ -80,6 +82,8 @@ def no_satellite_killer(ICDATADIR):
                             column('B', dtype=float, elements=floats(1, 1e3)),
                             column('C', dtype=float, elements=floats(1, 1e3))],
                      index=range_indexes(min_size=2, max_size=10)))
+
+
 def test_cut_and_redistribute_df(df):
     cut_var       = 'A'
     redist_var    = ['B', 'C']
@@ -332,9 +336,10 @@ def test_removing_satellites(sat_arr, cut_type):
     mask = generate_satellite_mask(sat_arr, satellite_max_size, e_cut, cut_type)
     sat_arr[mask] = 0
 
-    assert(np.allclose(sat_arr, hdst_nosat))
+    assert np.allclose(sat_arr, hdst_nosat)
 
-@mark.parametrize("cut_type", cut_types)
+
+@mark.parametrize("cut_type", CutType)
 def test_satellite_ecut_minimum(sat_arr, cut_type):
     '''
     Test case in which e_cut is set to zero, and so no modification to the
@@ -351,9 +356,10 @@ def test_satellite_ecut_minimum(sat_arr, cut_type):
     # create and check mask
     mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
     hdst[mask] = 0
-    assert(np.allclose(hdst, sat_arr))
+    assert np.allclose(hdst, sat_arr)
 
-@mark.parametrize("cut_type", cut_types)
+
+@mark.parametrize("cut_type", CutType)
 def test_satellite_ecut_maximum(sat_arr, cut_type):
     '''
     Test case in which e_cut is set above largest value (1), 
@@ -371,7 +377,7 @@ def test_satellite_ecut_maximum(sat_arr, cut_type):
     # create and check mask
     mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
     hdst[mask] = 0
-    assert(np.allclose(hdst, sat_arr))
+    assert np.allclose(hdst, sat_arr)
 
 
 def test_satellite_size_minimum(sat_arr):
@@ -390,7 +396,7 @@ def test_satellite_size_minimum(sat_arr):
     # create and check mask
     mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
     hdst[mask] = 0
-    assert(np.allclose(hdst, sat_arr))
+    assert np.allclose(hdst, sat_arr)
 
 
 def test_satellite_size_maximum(sat_arr):
@@ -412,7 +418,7 @@ def test_satellite_size_maximum(sat_arr):
     # create and check mask    
     mask = generate_satellite_mask(sat_arr, satellite_max_size, e_cut, cut_type)
     sat_arr[mask] = 0
-    assert(np.allclose(sat_arr, hdst_novals))
+    assert np.allclose(sat_arr, hdst_novals)
 
 
 @mark.parametrize("e_cut, expected_size", [(0, 2), (0.2, 3), (0.4, 2), (0.6, 1)])
@@ -437,7 +443,7 @@ def test_component_sizes(compsize_array, e_cut, expected_size):
 
     # check number of components in array match what is expected
     labels, no_components = collect_component_sizes(bool_mask)
-    assert(len(no_components) == expected_size)
+    assert len(no_components) == expected_size
 
 
 def test_component_elements(compsize_array):
@@ -456,10 +462,9 @@ def test_component_elements(compsize_array):
 
     # array to compare against
     expected_elements = np.array([8, 7, 1])
-    assert(np.allclose(no_components, expected_elements))
+    assert np.allclose(no_components, expected_elements)
 
     
-
 def test_satellite_zero_protection():
     '''
     This test checks that the protection in place to avoid cases in which
@@ -487,7 +492,8 @@ def test_satellite_zero_protection():
     mask = generate_satellite_mask(inverted_array, satellite_max_size, e_cut, cut_type)
 
     # ensure that no satellites are flagged (as there are none)
-    assert(np.allclose(no_satellite_mask, mask))
+    assert np.allclose(no_satellite_mask, mask)
+
 
 def test_generate_satellite_mask_doesnt_modify_input(sat_arr):
     '''
@@ -501,4 +507,4 @@ def test_generate_satellite_mask_doesnt_modify_input(sat_arr):
 
     mask = generate_satellite_mask(copy_hdst, satellite_max_size, e_cut, cut_type)
 
-    assert(np.allclose(sat_arr, copy_hdst))
+    assert np.allclose(sat_arr, copy_hdst)
