@@ -809,6 +809,7 @@ def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
                                        , deconv_mode   = DeconvolutionMode.joint
                                        , cut_type      = CutType.abs
                                        , inter_method  = InterpolationMethod.cubic)
+                 , satellite_params = None
                  , corrections_file = next100_mc_krmap
                  , apply_temp       = False )
     return config

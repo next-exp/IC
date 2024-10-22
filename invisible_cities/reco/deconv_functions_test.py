@@ -21,6 +21,7 @@ from .. reco    .deconv_functions import deconvolve
 from .. reco    .deconv_functions import richardson_lucy
 from .. reco    .deconv_functions import generate_satellite_mask
 from .. reco    .deconv_functions import collect_component_sizes
+from .. reco    .deconv_functions import no_satellite_killer
 
 from .. core    .core_functions   import in_range
 from .. core    .core_functions   import shift_to_bin_centers
@@ -64,18 +65,6 @@ def compsize_array(ICDATADIR):
                     [0.1, 0.1, 0.1, 0.5]])
     return arr
 
-
-@pytest.fixture(scope='session')
-def no_satellite_killer(ICDATADIR):
-    '''
-    The default satellite_killer parameters provided if you don't want it to be run on
-    your sample. Used to avoid its usage in certain tests.
-    '''
-    satellite_params = dict(satellite_start_iter = np.inf, 
-                            satellite_max_size   = 10,
-                            e_cut                = 0.5, 
-                            cut_type             = CutType.abs)
-    return satellite_params
 
 
 @given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3)),
@@ -179,7 +168,7 @@ def test_deconvolution_input_interpolation_method(data_hdst, data_hdst_deconvolv
         deconvolution_input([10., 10.], [1., 1.], interp_method)
 
 
-def test_deconvolve(data_hdst, data_hdst_deconvolved, no_satellite_killer):
+def test_deconvolve(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -191,7 +180,7 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     det_db   = DataSiPM('new', 0)
     det_grid = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
                for var, bs in zip(['X', 'Y'], [1., 1.])]
-    deconvolutor = deconvolve(15, 0.01, [10., 10.], det_grid, inter_method=InterpolationMethod.cubic)
+    deconvolutor = deconvolve(15, 0.01, [10., 10.], det_grid, **no_satellite_killer, inter_method=InterpolationMethod.cubic)
 
     x, y   = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
     xx, yy = np.meshgrid(x, y)
@@ -204,15 +193,14 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 **no_satellite_killer)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
 
     assert np.allclose(ref_interpolation['e_deco'], deco[0].flatten())
     assert np.allclose(ref_interpolation['x_deco'], deco[1][0])
     assert np.allclose(ref_interpolation['y_deco'], deco[1][1])
 
 
-def test_richardson_lucy(data_hdst, data_hdst_deconvolved, no_satellite_killer):
+def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -245,7 +233,7 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
 
 
-def test_grid_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
+def test_grid_binning(data_hdst, data_hdst_deconvolved):
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
     h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z      = h.Z.mean()
@@ -256,7 +244,8 @@ def test_grid_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     det_grid = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
                for var, bs in zip(['X', 'Y'], [9., 9.])]
 
-    deconvolutor = deconvolve(15, 0.01, [10., 10.], det_grid, inter_method=InterpolationMethod.cubic)
+    deconvolutor = deconvolve(15, 0.01, [10., 10.], det_grid, inter_method=InterpolationMethod.cubic,
+                              **no_satellite_killer)
 
     x, y   = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
     xx, yy = np.meshgrid(x, y)
@@ -269,14 +258,13 @@ def test_grid_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 **no_satellite_killer)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
 
     assert np.all((deco[1][0] - det_db['X'].min() + 9/2) % 9 == 0)
     assert np.all((deco[1][1] - det_db['Y'].min() + 9/2) % 9 == 0)
 
 
-def test_nonexact_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
+def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
     h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z      = h.Z.mean()
@@ -287,7 +275,8 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer)
     det_grid = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
                for var, bs in zip(['X', 'Y'], [9., 9.])]
 
-    deconvolutor = deconvolve(15, 0.01, [10., 10.], det_grid, inter_method=InterpolationMethod.cubic)
+    deconvolutor = deconvolve(15, 0.01, [10., 10.], det_grid, inter_method=InterpolationMethod.cubic,
+                              **no_satellite_killer)
     x, y   = np.linspace(-49.5, 49.5, 100), np.linspace(-49.5, 49.5, 100)
     xx, yy = np.meshgrid(x, y)
     xx, yy = xx.flatten(), yy.flatten()
@@ -299,8 +288,7 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer)
     psf['zr']     = [z] * len(xx)
     psf           = pd.DataFrame(psf)
 
-    deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 **no_satellite_killer)
+    deco          = deconvolutor((h.X, h.Y), h.Q, psf)
 
     check_x = np.diff(np.sort(np.unique(deco[1][0]), axis=None))
     check_y = np.diff(np.sort(np.unique(deco[1][1]), axis=None))

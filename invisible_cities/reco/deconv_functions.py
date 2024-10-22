@@ -5,6 +5,7 @@ from typing  import List
 from typing  import Tuple
 from typing  import Callable
 from typing  import Optional
+from typing  import Union
 
 from scipy                  import interpolate
 from scipy.signal           import fftconvolve
@@ -14,7 +15,9 @@ from scipy                  import ndimage as ndi
 
 from ..core .core_functions import shift_to_bin_centers
 from ..core .core_functions import in_range
+from ..core .configure      import check_annotations
 
+from .. types.ic_types      import NoneType
 from .. types.symbols       import InterpolationMethod
 from .. types.symbols       import CutType
 
@@ -293,12 +296,22 @@ def find_nearest(array : np.ndarray,
     idx   = (np.abs    (array - value)).argmin()
     return array[idx]
 
+no_satellite_killer = dict(satellite_start_iter = None, 
+                           satellite_max_size   = 0,
+                           e_cut                = 0, 
+                           cut_type             = CutType.abs)
 
-def deconvolve(n_iterations  : int,
-               iteration_tol : float,
-               sample_width  : List[float],
-               det_grid      : List[np.ndarray],
-               inter_method  : InterpolationMethod = InterpolationMethod.cubic
+
+@check_annotations
+def deconvolve(n_iterations         : int,
+               iteration_tol        : float,
+               sample_width         : np.ndarray,
+               det_grid             : List[np.ndarray],
+               satellite_start_iter : Union[int, NoneType],
+               satellite_max_size   : int,
+               e_cut                : float,
+               cut_type             : Optional[CutType]   = CutType.abs,
+               inter_method         : InterpolationMethod = InterpolationMethod.cubic
                ) -> Callable:
     """
     Deconvolves a given set of data (sensor position and its response)
@@ -331,11 +344,7 @@ def deconvolve(n_iterations  : int,
 
     def deconvolve(data                 : Tuple[np.ndarray, ...],
                    weight               : np.ndarray,
-                   psf                  : pd.DataFrame,
-                   satellite_start_iter : int,
-                   satellite_max_size   : int,
-                   e_cut                : float,
-                   cut_type             : Optional[CutType]=CutType.abs
+                   psf                  : pd.DataFrame
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
         inter_signal, inter_pos = deconv_input(data, weight)
@@ -425,7 +434,7 @@ def richardson_lucy(image, psf, satellite_start_iter, satellite_max_size, e_cut,
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
         # after every iteration, kill satellites
-        if i >= satellite_start_iter:
+        if satellite_start_iter is not None and i >= satellite_start_iter:
             # generate satellite killing mask
             sat_mask = generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type)
             # remove satellites
