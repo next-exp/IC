@@ -36,6 +36,7 @@ from .. types   .symbols          import CutType
 from .. database.load_db          import DataSiPM
 
 from scipy.stats                  import multivariate_normal
+from scipy.signal                 import fftconvolve
 
 
 @pytest.fixture(scope='function')
@@ -351,6 +352,20 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
 
     assert(np.all(check_x % 9 == 0))
     assert(np.all(check_y % 9 == 0))
+
+
+#TODO: implement timeout
+def test_richardson_lucy_convergence():
+    """
+    The test passes if it ends quickly, an indication that it was
+    terminated by threshold, not by number of iterations.
+    """
+    shape = 50, 50
+    obj   = np.ones (shape, dtype=float) * 0.5
+    psf   = np.ones (shape, dtype=float) / shape[0] / shape[1]
+    image = fftconvolve(obj, psf, "same")
+    out   = richardson_lucy(image, psf, iterations=1000000000, iter_thr=1e-8, **no_satellite_killer)
+    assert np.all(out>0)
 
 
 @mark.parametrize("cut_type", CutType)
