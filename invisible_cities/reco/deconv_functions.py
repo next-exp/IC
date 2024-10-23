@@ -22,7 +22,7 @@ from .. types.symbols       import InterpolationMethod
 from .. types.symbols       import CutType
 
 
-def collect_component_sizes(im_mask : np.ndarray):
+def collect_component_sizes(im_mask : np.ndarray) -> (np.ndarray, np.ndarray):
     '''
     A function that returns the sizes of different clusters of 1s and 0s within the data
     for removal of satellites.
@@ -34,25 +34,26 @@ def collect_component_sizes(im_mask : np.ndarray):
 
     Parameters
     ----------
-    im_mask         : 2D boolean array describing the regions of energy in deconvolution slice
+    im_mask : 2D boolean array describing the regions of energy in deconvolution slice
 
     Returns
-    ----------
+    -------
     labels          : 2D array equivalent to im_mask with each region labelled 0, 1, 2, etc
     component_sizes : Array of the length of each component size
     '''
     # label deposits within the array
     # hardcoded to include diagonals in the grouping stage (2)
-    footprint = ndi.generate_binary_structure(im_mask.ndim, 2)
-    labels, _ = ndi.label(im_mask, footprint)
     # count the bins of each labelled deposit
+    footprint       = ndi.generate_binary_structure(im_mask.ndim, 2)
+    labels, _       = ndi.label(im_mask, footprint)
     component_sizes = np.bincount(labels.ravel())
     return labels, component_sizes
 
 
-def generate_satellite_mask(im_deconv : np.ndarray, 
-                            satellite_max_size : int, e_cut : float, 
-                            cut_type : Optional[CutType]=CutType.abs):
+def generate_satellite_mask(im_deconv          : np.ndarray, 
+                            satellite_max_size : int, 
+                            e_cut              : float, 
+                            cut_type           : Optional[CutType]=CutType.abs) -> np.ndarray:
     '''
     An adaptation to the scikit-image (v0.24.0) function [1], identifies 
     satellite energy depositions within deconvolution image by size
@@ -78,44 +79,30 @@ def generate_satellite_mask(im_deconv : np.ndarray,
                         `rel`: cut on the relative value (to the max) of the hits.
 
     Returns
-    ----------
-    array              : boolean mask of all labelled satellite deposits
+    -------
+    array : Boolean mask of all labelled satellite deposits, True where satellites should be removed.
 
     References
     ----------
     .. [1] https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/misc.py#L59-L151
     '''
-    # apply mask to copy
-    im_mask = im_deconv.copy()
+    if cut_type is CutType.rel:
+        im_deconv = im_deconv / im_deconv.max()
 
-    if cut_type is CutType.abs:
-        vis_mask = im_mask
-    elif cut_type is CutType.rel:
-        vis_mask = im_mask / im_mask.max()
-    
-    im_mask = np.where(vis_mask < e_cut, 0, 1)
+    # separate different regions below and above e_cut
+    # then label regions (components) appropriately and determine their sizes.
+    labels, component_sizes = collect_component_sizes(im_deconv >= e_cut)
 
-    # separate different regions of 0s and 1s
-    labels, component_sizes = collect_component_sizes(im_mask)
-
-    # check if no satellites within deposit
+    # check if no satellites within deposit return False array
+    # (mask that removes no satellites).
     if len(component_sizes) <= 2:
-
-        # Return a fully False array, so that no objects get removed
         return np.full(im_deconv.shape, False)
 
-    # create boolean array for each label of satellite & non-satellite
-    too_small = component_sizes < satellite_max_size
-
-    # set the first element to False in too_small, as this is always the 0 components.
-    # This protects against the edge case in which the 0s are less than the satellite_max_size,
-    #  meaning that you'd remove energy values in the deconvolution that are below the threshold.
-    too_small[0] = False 
-    
-
-    # apply boolean array to labelled array to hold satellites as True
+    # Find regions smaller than `satellite_max_size` and mask them, 
+    # ignoring the first region (background). Read gist for full explanation.
+    too_small      = component_sizes < satellite_max_size
+    too_small[0]   = False 
     too_small_mask = too_small[labels]
-    # return mask to remove satellites
     return too_small_mask
     
 
@@ -165,7 +152,7 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
         variables : List with variables to be redistributed.
 
     Returns
-    ----------
+    -------
     pass_df : hits after removing isolated hits
     """
     dist = np.sqrt(distance[0] ** 2 + distance[1] ** 2)
@@ -212,7 +199,7 @@ def deconvolution_input(sample_width : List[float     ],
         inter_method : Interpolation method.
 
     Returns
-    ----------
+    -------
     Hs          : Charge input for deconvolution.
     inter_points : Coordinates of the deconvolution input.
     """
@@ -263,7 +250,7 @@ def interpolate_signal(Hs           : np.ndarray,
     inter_method : Interpolation method.
 
     Returns
-    ----------
+    -------
     H1         : Interpolated distribution weights.
     new_points : Interpolated coordinates.
     """
@@ -289,7 +276,7 @@ def find_nearest(array : np.ndarray,
     value : Value to be found.
 
     Returns
-    ----------
+    -------
     array[idx] : Input array value closest to the input value.
     """
     array =  np.asarray(array)
@@ -305,7 +292,7 @@ no_satellite_killer = dict(satellite_start_iter = None,
 @check_annotations
 def deconvolve(n_iterations         : int,
                iteration_tol        : float,
-               sample_width         : np.ndarray,
+               sample_width         : List[float],
                det_grid             : List[np.ndarray],
                satellite_start_iter : Union[int, NoneType],
                satellite_max_size   : int,
@@ -335,24 +322,25 @@ def deconvolve(n_iterations         : int,
         inter_method  : Interpolation method.
 
     Returns
-    ----------
-    deconv_image         : Deconvolved image.
-    inter_pos            : Coordinates of the deconvolved image.
+    -------
+    deconv_image : Deconvolved image.
+    inter_pos    : Coordinates of the deconvolved image.
     """
     var_name     = np.array(['xr', 'yr', 'zr'])
     deconv_input = deconvolution_input(sample_width, det_grid, inter_method)
 
-    def deconvolve(data                 : Tuple[np.ndarray, ...],
-                   weight               : np.ndarray,
-                   psf                  : pd.DataFrame
+    def deconvolve(data   : Tuple[np.ndarray, ...],
+                   weight : np.ndarray,
+                   psf    : pd.DataFrame
                   ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
         inter_signal, inter_pos = deconv_input(data, weight)
-        columns       = var_name[:len(data)]
-        psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
-        deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco, satellite_start_iter,
-                                                      satellite_max_size, e_cut, cut_type, 
-                                                      n_iterations, iteration_tol))
+
+        columns      = var_name[:len(data)]
+        psf_deco     = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
+        deconv_image = np.nan_to_num(richardson_lucy(inter_signal, psf_deco, satellite_start_iter,
+                                                     satellite_max_size, e_cut, cut_type, 
+                                                     n_iterations, iteration_tol))
 
         return deconv_image, inter_pos
 
@@ -433,11 +421,9 @@ def richardson_lucy(image, psf, satellite_start_iter, satellite_max_size, e_cut,
         relative_blur = image / x
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
-        # after every iteration, kill satellites
+        # if satellite parameters are provided kill satellites after each iteration.
         if satellite_start_iter is not None and i >= satellite_start_iter:
-            # generate satellite killing mask
             sat_mask = generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type)
-            # remove satellites
             im_deconv[sat_mask] = 0
         
         with np.errstate(divide='ignore', invalid='ignore'):

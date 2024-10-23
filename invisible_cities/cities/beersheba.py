@@ -123,53 +123,49 @@ def event_info_adder(timestamp : float, dst : pd.DataFrame):
 
 
 @check_annotations
-def deconvolve_signal(det_db               : pd.DataFrame,
-                      psf_fname            : str,
-                      e_cut                : float,
-                      n_iterations         : int,
-                      iteration_tol        : float,
-                      sample_width         : List[float],
-                      bin_size             : List[float],
-                      satellite_params     : Union[dict, NoneType],
-                      #satellite_start_iter : Optional[int] = 9999,
-                      #satellite_max_size   : Optional[int] = 15,
-                      diffusion            : Optional[Tuple[float, float, float]]=(1., 1., 0.3),
-                      energy_type          : Optional[HitEnergy]=HitEnergy.Ec,
-                      deconv_mode          : Optional[DeconvolutionMode]=DeconvolutionMode.joint,
-                      n_dim                : Optional[int]=2,
-                      cut_type             : Optional[CutType]=CutType.abs,
-                      inter_method         : Optional[InterpolationMethod]=InterpolationMethod.cubic,
-                      n_iterations_g       : Optional[int]=0):
-
+def deconvolve_signal(det_db           : pd.DataFrame,
+                      psf_fname        : str,
+                      e_cut            : float,
+                      n_iterations     : int,
+                      iteration_tol    : float,
+                      sample_width     : List[float],
+                      bin_size         : List[float],
+                      satellite_params : Union[dict, NoneType],
+                      diffusion        : Optional[Tuple[float, float, float]]=(1., 1., 0.3),
+                      energy_type      : Optional[HitEnergy]=HitEnergy.Ec,
+                      deconv_mode      : Optional[DeconvolutionMode]=DeconvolutionMode.joint,
+                      n_dim            : Optional[int]=2,
+                      cut_type         : Optional[CutType]=CutType.abs,
+                      inter_method     : Optional[InterpolationMethod]=InterpolationMethod.cubic,
+                      n_iterations_g   : Optional[int]=0):
     """
     Applies Lucy Richardson deconvolution to SiPM response with a
     given set of PSFs and parameters.
 
     Parameters
     ----------
-    det_db               : Detector database.
-    psf_fname            : Point-spread function.
-    e_cut                : Cut in relative value to the max voxel over the deconvolution output.
-    n_iterations         : Number of Lucy-Richardson iterations
-    iteration_tol        : Stopping threshold (difference between iterations).
-    sample_width         : Sampling size of the sensors.
-    bin_size             : Size of the interpolated bins.
-    satellite_params     : Dictionary containing parameters for satellite killer
+    det_db           : Detector database.
+    psf_fname        : Point-spread function.
+    e_cut            : Cut in absolute/relative value to the max voxel over the deconvolution output.
+    n_iterations     : Number of Lucy-Richardson iterations
+    iteration_tol    : Stopping threshold (difference between iterations).
+    sample_width     : Sampling size of the sensors.
+    bin_size         : Size of the interpolated bins.
+    satellite_params : Dictionary containing parameters for satellite killer
         satellite_start_iter : Iteration no. when satellite killer starts being used.
         satellite_max_size   : Maximum size of satellite deposit, above which they are considered 'real'.
-        e_cut                : Cut in relative value to the max voxel over the deconvolution output.
-        cut_type             : Cut mode to the deconvolution output (`abs` or `rel`) using e_cut
-                                `abs`: cut on the absolute value of the hits.
-                                `rel`: cut on the relative value (to the max) of the hits.
-    energy_type          : Energy type (`E` or `Ec`, see Esmeralda) used for assignment.
-    deconv_mode          : `joint` or `separate`, 1 or 2 step deconvolution, see description later.
-    diffusion            : Diffusion coefficients in each dimension for 'separate' mode.
-    n_dim                : Number of dimensions to apply the method (usually 2).
-    cut_type             : Cut mode to the deconvolution output (`abs` or `rel`) using e_cut
-                          `abs`: cut on the absolute value of the hits.
-                          `rel`: cut on the relative value (to the max) of the hits.
-    inter_method         : Interpolation method (`nointerpolation`, `nearest`, `linear` or `cubic`).
-    n_iterations_g       : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
+        e_cut                : Cut in absolute/relative value to the provided 
+                               deconvolution output for satellite discrimination.
+        cut_type             : Cut mode within satellite killer, see definition of `cut_type` below.
+    energy_type      : Energy type (`E` or `Ec`, see Esmeralda) used for assignment.
+    deconv_mode      : `joint` or `separate`, 1 or 2 step deconvolution, see description later.
+    diffusion        : Diffusion coefficients in each dimension for 'separate' mode.
+    n_dim            : Number of dimensions to apply the method (usually 2).
+    cut_type         : Cut mode to the deconvolution output (`abs` or `rel`) using e_cut
+                        `abs`: cut on the absolute value of the hits.
+                        `rel`: cut on the relative value (to the max) of the hits.
+    inter_method     : Interpolation method (`nointerpolation`, `nearest`, `linear` or `cubic`).
+    n_iterations_g   : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
 
     Returns
     ----------
@@ -180,16 +176,16 @@ def deconvolve_signal(det_db               : pd.DataFrame,
         satellite_params = no_satellite_killer
 
     dimensions    = np.array  (['X', 'Y', 'Z'][:n_dim])
-    sample_width  = np.asarray(sample_width           )
     bin_size      = np.asarray(bin_size               )
     diffusion     = np.asarray(diffusion              )
 
     psfs          = load_dst(psf_fname, 'PSF', 'PSFs')
     det_grid      = [np.arange(det_db[var].min() + bs/2, det_db[var].max() - bs/2 + np.finfo(np.float32).eps, bs)
-                     for var, bs in zip(dimensions, bin_size)]    
+                     for var, bs in zip(dimensions, bin_size)]
     deconvolution = deconvolve(n_iterations, iteration_tol,
                                sample_width, det_grid,
-                               **satellite_params, inter_method = inter_method)
+                               **satellite_params, 
+                               inter_method = inter_method)
 
     if not isinstance(energy_type , HitEnergy          ):
         raise ValueError(f'energy_type {energy_type} is not a valid energy type.')
@@ -461,7 +457,7 @@ def beersheba( files_in         : OneOrManyFiles
             'cubic' not supported for 3D deconvolution.
         n_iterations_g       : int
             Number of Lucy-Richardson iterations for gaussian in 'separate mode'
-    satellite_params : dict
+    satellite_params : dict, None
         satellite_start_iter : int
             Iteration no. when satellite killer starts being used.
         satellite_max_size   : int
