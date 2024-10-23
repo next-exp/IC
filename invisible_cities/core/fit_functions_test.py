@@ -313,12 +313,26 @@ def test_fixed_parameters():
 
 
 @mark.parametrize("pars",
-                  ({'amp' : 2, 'mu' : 0, 'sigma' : 2},
-                   {'fake1' : 2},
+                  ({'fake1' : 2},
                    {'fake1' : 1, 'mu' : 0}))
-def test_fix_wrong_parameters_raises_error(pars):
+def test_fixed_parameters_raises_wrong_parameters(pars):
     with raises(ValueError):
         fitf.fixed_parameters(fitf.gauss, **pars)
+
+
+def test_fixed_parameters_raises_fixed_all():
+    with raises(ValueError):
+        fitf.fixed_parameters(fitf.gauss, area=1, mu=2, sigma=3)
+
+
+def test_fixed_parameters_n_gaussians():
+    def f(x, arg1, arg2):
+        return x + arg1 + arg2
+    f.n_gaussians = 0
+    fixed_f = fitf.fixed_parameters(f, arg1=10)
+
+    assert fixed_f(-25, 5) == -10
+    assert hasattr(fixed_f, "n_gaussians")
 
 
 @mark.parametrize(["func"],
