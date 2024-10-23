@@ -488,7 +488,8 @@ def test_profile_data_in_edges(func, xdata, ydata, drop_nan):
 
 
 @mark.slow
-def test_profileXY_full_range():
+@mark.parametrize("zrange", (None, (.25, .75)))
+def test_profileXY(zrange):
     N    = 10000
     Nbin = 100
     rms  = 12**-0.5
@@ -501,7 +502,8 @@ def test_profileXY_full_range():
                                     ydata,
                                     zdata,
                                     Nbin,
-                                    Nbin)
+                                    Nbin,
+                                    zrange=zrange)
 
     assert np.all(abs(zp - 0.5) < 3.00*rms)
     assert np.all(abs(ze - rms*(Nbin**2/N)**0.5) < eps)
