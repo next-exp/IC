@@ -107,6 +107,20 @@ def test_drop_isolated_sensors():
     assert np.all(df_cut.Y <=  p)
 
 
+def test_drop_isolated_sensors_drop_all():
+    x    = [0] * 10
+    y    = [0] * 10
+    q    = [1] * 10
+    e    = [1] * 10
+    dist = [1, 1]
+    df   = pd.DataFrame({'X':x, 'Y':y, 'Q':q, 'E':e})
+
+    drop_function = drop_isolated_sensors(dist, ['E'])
+    df_cut        = drop_function(df)
+
+    assert df_cut.shape == (0, 4)
+
+
 def test_interpolate_signal():
     ref_interpolation = np.array([0.   , 0.   , 0.   , 0.   , 0.   , 0    , 0.   , 0.   , 0.   ,
                                   0.   , 0.   , 0.   , 0.   , 0.17 , 0.183, 0.188, 0.195, 0.202,
