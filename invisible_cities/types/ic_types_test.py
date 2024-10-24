@@ -81,6 +81,8 @@ def test_xy(xy, a, b):
     r   = np.sqrt(a ** 2 + b ** 2)
     phi = np.arctan2(b, a)
     pos = np.stack(([a], [b]), axis=1)
+    np.isclose (xy[0] ,   a, rtol=1e-4)
+    np.isclose (xy[1] ,   b, rtol=1e-4)
     np.isclose (xy.x  ,   a, rtol=1e-4)
     np.isclose (xy.y  ,   b, rtol=1e-4)
     np.isclose (xy.X  ,   a, rtol=1e-4)
@@ -89,6 +91,11 @@ def test_xy(xy, a, b):
     np.isclose (xy.R  ,   r, rtol=1e-4)
     np.isclose (xy.Phi, phi, rtol=1e-4)
     np.allclose(xy.pos, pos, rtol=1e-3, atol=1e-03)
+
+
+def test_xy_getitem_raises():
+    with raises(IndexError):
+        xy(0,0)[2]
 
 
 @given(text(min_size=1, max_size=10, alphabet=ascii_letters))
