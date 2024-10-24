@@ -676,12 +676,8 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
         kdst_df = load_dst(path, 'DST', 'Events', ignore_errors=True)
 
         with tb.open_file(path, "r") as h5in:
-            try:
-                run_number  = get_run_number(h5in)
-            except (tb.exceptions.NoSuchNodeError, IndexError):
-                continue
-
             event_info = load_dst(path, 'Run', 'events')
+            run_number = get_run_number(h5in)
             for evt in dhits_df.event.unique():
                 this_event = lambda df: df.event==evt
                 timestamp = event_info[event_info.evt_number==evt].timestamp.values[0]
