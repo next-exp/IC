@@ -808,10 +808,6 @@ def dbdemopp():
     return 'demopp'
 
 @pytest.fixture(scope='session')
-def dbnew():
-    return 'new'
-
-@pytest.fixture(scope='session')
 def dbnext100():
     return 'next100'
 

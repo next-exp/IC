@@ -49,9 +49,9 @@ def test_SiPMNoise(db):
     assert noise.shape[1] == energy.shape[0]
 
 
-def test_DetectorGeometry(dbnew):
+def test_DetectorGeometry():
     """Check Detector Geometry."""
-    geo = DB.DetectorGeo(dbnew)
+    geo = DB.DetectorGeo("new")
     assert geo['XMIN'][0] == -198
     assert geo['XMAX'][0] ==  198
     assert geo['YMIN'][0] == -198
