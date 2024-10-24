@@ -135,8 +135,11 @@ def city(city_function):
         conf.event_range  = event_range(conf)
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
 
-        result = check_annotations(city_function)(**vars(conf))
+        args   = vars(conf)
+        result = check_annotations(city_function)(**args)
         if os.path.exists(conf.file_out):
+            write_city_configuration(conf.file_out, city_function.__name__, args)
+            copy_cities_configuration(conf.files_in[0], conf.file_out)
             index_tables(conf.file_out)
         return result
     return proxy
@@ -201,6 +204,32 @@ def index_tables(file_out):
             if 'columns_to_index' not in table.attrs:  continue  # Check for columns to index
             for colname in table.attrs.columns_to_index:         # Index those columns
                 table.colinstances[colname].create_index()
+
+
+def write_city_configuration( filename : str
+                            , city_name: str
+                            , args     : dict):
+    args = {k: str(v) for k,v in args.items()}
+
+    with tb.open_file(filename, "a") as file:
+        df = (pd.Series(args)
+                .to_frame()
+                .reset_index()
+                .rename(columns={"index": "variable", 0: "value"}))
+        df_writer(file, df, "config", city_name, f"configuration for {city_name}", str_col_length=300)
+
+
+def copy_cities_configuration( file_in : str, file_out : str):
+    with tb.open_file(file_in, "r") as fin:
+        if "config" not in fin.root:
+            warnings.warn("Input file does not contain /config group", UserWarning)
+            return
+
+        with tb.open_file(file_out, "a") as fout:
+            if "config" not in fout.root:
+                fout.create_group(fout.root, "config")
+            for table in fin.root.config:
+                fin.copy_node(table, fout.root.config, recursive=True)
 
 
 def _check_invalid_event_range_spec(er):
