@@ -217,6 +217,7 @@ def test_pedestal_values():
     assert_approx_equal(ped_values.sigma_min,      0.001)
 
 
+@mark.slow
 def test_compute_seeds_from_spectrum(ICDATADIR):
     PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
     # Suppress warnings from division by zero in some bins.
@@ -306,6 +307,7 @@ def test_seeds_and_bounds_with_gau():
     assert len(bounds[1]) == 6
 
 
+@mark.slow
 def test_seeds_without_using_db(ICDATADIR):
     PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
     # Suppress warnings from division by zero in some bins.
