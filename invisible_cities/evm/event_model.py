@@ -321,8 +321,8 @@ class KrEvent(Event):
             for attribute in ["w", "h", "e", "t", "q"]:
                 setattr(self, "S2" + attribute, [np.nan])
 
-            self.Nsipm = 0
-            self.qmax  = 0
+            self.Nsipm = [0]
+            self.qmax  = [0]
             for attribute in ["X", "Y", "R", "Phi", "Xrms", "Yrms", "Zrms"]:
                 setattr(self, attribute, [np.nan])
 
