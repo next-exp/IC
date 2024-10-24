@@ -672,31 +672,58 @@ def test_write_city_configuration(config_tmpdir):
 
 
 def test_copy_cities_configuration(config_tmpdir):
-    filename1  = os.path.join(config_tmpdir, "test_copy_cities_configuration_1.h5")
-    filename2  = os.path.join(config_tmpdir, "test_copy_cities_configuration_2.h5")
+    filename12 = os.path.join(config_tmpdir, "test_copy_cities_configuration_12.h5")
+    filename3  = os.path.join(config_tmpdir, "test_copy_cities_configuration_3.h5")
     city_name1 = "acity"
     city_name2 = "bcity"
+    city_name3 = "ccity"
     args       = dict(
         a = 1,
         b = 2.3,
         c = "a_string",
     )
-    write_city_configuration(filename1, city_name1, args)
-    write_city_configuration(filename2, city_name2, args)
+    write_city_configuration(filename12, city_name1, args)
+    write_city_configuration(filename12, city_name2, args)
+    write_city_configuration(filename3 , city_name3, args)
 
-    copy_cities_configuration(filename1, filename2)
-    with tb.open_file(filename2, "r") as file:
+    copy_cities_configuration(filename12, filename3)
+    with tb.open_file(filename3, "r") as file:
         assert "config"   in file.root
         assert city_name1 in file.root.config
         assert city_name2 in file.root.config
+        assert city_name3 in file.root.config
 
-    df1 = pd.read_hdf(filename1, "/config/" + city_name1).set_index("variable")
-    df2 = pd.read_hdf(filename2, "/config/" + city_name2).set_index("variable")
+    df1 = pd.read_hdf(filename3, f"/config/{city_name1}").set_index("variable")
+    df2 = pd.read_hdf(filename3, f"/config/{city_name2}").set_index("variable")
+    df3 = pd.read_hdf(filename3, f"/config/{city_name3}").set_index("variable")
     for var, value in args.items():
         assert var in df1.index
         assert var in df2.index
+        assert var in df3.index
         assert str(value) == df1.value.loc[var]
         assert str(value) == df2.value.loc[var]
+        assert str(value) == df3.value.loc[var]
+
+
+def test_copy_cities_configuration_without_existing_node(config_tmpdir):
+    filename1 = os.path.join(config_tmpdir, "test_copy_cities_configuration_without_existing_node_in.h5")
+    filename2 = os.path.join(config_tmpdir, "test_copy_cities_configuration_without_existing_node_out.h5")
+    city_name = "acity"
+    args      = dict(
+        a = 1,
+        b = 2.3,
+        c = "a_string",
+    )
+    write_city_configuration(filename1, city_name, args)
+    copy_cities_configuration(filename1, filename2)
+    with tb.open_file(filename2, "r") as file:
+        assert "config"  in file.root
+        assert city_name in file.root.config
+
+    df = pd.read_hdf(filename1, f"/config/{city_name}").set_index("variable")
+    for var, value in args.items():
+        assert var in df.index
+        assert str(value) == df.value.loc[var]
 
 
 def test_copy_cities_configuration_warns_when_nothing_to_copy(ICDATADIR, config_tmpdir):
