@@ -183,7 +183,7 @@ def compare_signature_to_values( function   : Callable
     """
     def get_name(type_):
         try   : return type_.__name__
-        except: return str(type_)
+        except: return str(type_) # pragma: no cover
 
     signature     = inspect.signature(function)
     function_name = function.__name__
