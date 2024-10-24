@@ -11,8 +11,6 @@ from .. evm.event_model import Voxel
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
 from .. evm.event_model import BHit
-from .. evm.event_model import Track
-from .. evm.event_model import Blob
 from .. core            import system_of_units as units
 from .. types.symbols   import Contiguity
 from .. types.symbols   import HitEnergy

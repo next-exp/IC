@@ -185,62 +185,12 @@ class VoxelCollection:
         self.voxels = voxels
         self.E = sum(v.E for v in voxels)
 
-    @property
-    def number_of_voxels(self):
-        return len(self.voxels)
 
     def __str__(self):
         s =  "VoxelCollection: (number of voxels = {})\n".format(self.number_of_voxels)
         s2 = ['voxel number {} = {} \n'.format((i, voxel) for (i, voxel) in enumerate(self.voxels))]
 
         return  s + ''.join(s2)
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class Blob:
-    """A Blob is a collection of Hits with a seed and a radius. """
-    def __init__(self, seed: Tuple[float, float, float],
-                       hits : List[BHit],
-                       radius : float,
-                       e_type : HitEnergy = HitEnergy.E) ->None:
-        self.seed   = seed
-        self.hits   = hits
-        self.E      = sum(getattr(h, e_type.value) for h in hits)
-        self.radius = radius
-        self.e_type = e_type.value
-
-    @property
-    def Etype(self): return self.e_type
-
-    def __str__(self):
-        s =  """Blob: (hits = {} \n
-                seed   = {} \n
-                blob energy = {} \n
-                blob radius = {}
-        """.format(self.hits, self.seed, self.energy, self.radius)
-
-        return  s
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class Track(VoxelCollection):
-    """A track is a collection of linked voxels. """
-    def __init__(self, voxels : List[Voxel], blobs: Tuple[Blob, Blob]) ->None:
-        super().__init__(voxels)
-        self.blobs = blobs
-
-    def __str__(self):
-        s =  """Track: (number of voxels = {})\n,
-                voxels = {} \n
-                blob_a = {} \n
-                blob_b = {}
-        """.format(self.number_of_voxels, self.voxels, self.blobs[0], self.blobs[1])
-
-        return  s
 
     def __repr__(self):
         return self.__str__()
