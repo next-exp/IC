@@ -305,7 +305,7 @@ class Configuration(MutableMapping):
     def pop_file(self):
         self._file_stack.pop()
 
-    def display(self):
+    def display(self): # pragma: no cover
         conf = self.as_namespace
         longest = max(self._data, key=len)
         width = len(longest) + 3
