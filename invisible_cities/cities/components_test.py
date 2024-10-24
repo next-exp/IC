@@ -257,7 +257,7 @@ def test_compute_xy_position_depends_on_actual_run_number():
 
 
 @mark.skip(reason="there should not be a default detector db")
-def test_city_adds_default_detector_db(config_tmpdir):
+def test_city_adds_default_detector_db(config_tmpdir): # pragma: no cover
     default_detector_db = 'new'
     args = {'files_in'    : 'dummy_in',
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
@@ -272,7 +272,7 @@ def test_city_adds_default_detector_db(config_tmpdir):
 
 
 @mark.skip(reason="there should not be a default detector db")
-def test_city_does_not_overwrite_detector_db(config_tmpdir):
+def test_city_does_not_overwrite_detector_db(config_tmpdir): # pragma: no cover
     args = {'detector_db' : 'some_detector',
             'files_in'    : 'dummy_in',
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
@@ -287,7 +287,7 @@ def test_city_does_not_overwrite_detector_db(config_tmpdir):
 
 
 @mark.skip(reason="there should not be a default detector db")
-def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
+def test_city_only_pass_default_detector_db_when_expected(config_tmpdir): # pragma: no cover
     args = {'files_in'    : 'dummy_in',
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
     @city
@@ -381,7 +381,7 @@ def test_copy_mc_info_noMC(ICDATADIR, config_tmpdir):
 
 
 @mark.xfail
-def test_copy_mc_info_repeated_event_numbers(ICDATADIR, config_tmpdir):
+def test_copy_mc_info_repeated_event_numbers(ICDATADIR, config_tmpdir): # pragma: no cover
     file_in  = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.sim.h5")
     file_out = os.path.join(config_tmpdir, "dummy_out.h5")
 
