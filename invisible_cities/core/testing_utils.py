@@ -58,7 +58,7 @@ def previous_float(x):
     return np.nextafter(x, -np.inf)
 
 
-def next_float(x):
+def next_float(x): # pragma: no cover
     """
     Return the next float towards +inf.
     """
