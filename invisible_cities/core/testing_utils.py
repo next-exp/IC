@@ -151,7 +151,8 @@ def assert_tables_equality(got_table, expected_table, rtol=1e-7, atol=0):
                 is_float = got.dtype.kind == 'f'
                 if   is_float: assert_allclose(got, expected, rtol=rtol, atol=atol)
                 else         : assert_equal   (got, expected)
-            except:
+            except: # pragma: no cover
+                # I think this branch is unreachable
                 print(f"Mismatch in column {col_name} of tables {names}")
                 raise
     else:
