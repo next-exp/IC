@@ -13,7 +13,6 @@ from .. core.exceptions import NoVoxels
 from .. evm.event_model import BHit
 from .. evm.event_model import Track
 from .. evm.event_model import Blob
-from .. evm.event_model import TrackCollection
 from .. core            import system_of_units as units
 from .. types.symbols   import Contiguity
 from .. types.symbols   import HitEnergy
@@ -275,27 +274,6 @@ def blob_centres(track_graph : Graph, radius : float) -> Tuple[Tuple[float, floa
     _, _, _, _, c1, c2 = blob_energies_hits_and_centres(track_graph, radius)
 
     return (c1, c2)
-
-
-def make_tracks(evt_number       : float,
-                evt_time         : float,
-                voxels           : List[Voxel],
-                voxel_dimensions : np.ndarray,
-                contiguity       : Contiguity = Contiguity.CORNER,
-                blob_radius      : float = 30 * units.mm,
-                energy_type      : HitEnergy = HitEnergy.E) -> TrackCollection:
-    """Make a track collection."""
-    tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
-    track_graphs = make_track_graphs(voxels, contiguity) # type: Sequence[Graph]
-    for trk in track_graphs:
-        energy_a, energy_b, hits_a, hits_b = blob_energies_and_hits(trk, blob_radius)
-        a, b                               = blob_centres(trk, blob_radius)
-        blob_a = Blob(a, hits_a, blob_radius, energy_type) # type: Blob
-        blob_b = Blob(b, hits_b, blob_radius, energy_type)
-        blobs = (blob_a, blob_b)
-        track = Track(voxels_from_track_graph(trk), blobs)
-        tc.tracks.append(track)
-    return tc
 
 
 def drop_end_point_voxels(voxels           : Sequence[Voxel],
