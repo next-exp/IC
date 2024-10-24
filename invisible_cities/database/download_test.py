@@ -8,7 +8,8 @@ from pytest import mark
 
 from . import download as db
 
-@mark.skip(reason='server timeouts cause too many spurious test failures')
+
+@mark.xfail(raises=pymysql.err.OperationalError)
 @mark.parametrize('dbname', 'DEMOPPDB NEWDB NEXT100DB Flex100DB'.split())
 def test_create_table_sqlite(dbname, output_tmpdir):
     dbfile = os.path.join(output_tmpdir, 'db.sqlite3')
@@ -39,6 +40,7 @@ def test_table_assignment(dbname):
         assert name in db.table_dict[dbname]
 
 
+@mark.xfail(raises=pymysql.err.OperationalError)
 @mark.parametrize('dbname', db.dbnames)
 def test_tables_exist(dbname):
     connMySql  = pymysql.connect(host="next.ific.uv.es",
@@ -50,5 +52,3 @@ def test_tables_exist(dbname):
 
     for name in db.table_dict[dbname]:
         assert (name,) in available
-        
-
