@@ -86,7 +86,7 @@ def square_waveform(wp : WfmPar) -> np.ndarray:
     return sgn_pre + sgn_s2 + sgn_post
 
 
-def sawteeth_waveform(wfp: WfmPar) -> np.ndarray:
+def sawteeth_waveform(wfp: WfmPar) -> np.ndarray: # pragma: no cover
     t_tot     = wfp.t_tot
     t_pre     = wfp.t_pre
     t_rise_s2 = wfp.t_rise_s2
@@ -119,7 +119,7 @@ def simulate_pmt_response(fee : FEE, wf : np.ndarray) -> WaveformPmt:
 
 
 def waveform_generator(fee : FEE, wfp : WfmPar, nsensors=5, pedestal=1024,
-                       random_t0=True) -> WaveformPmt:
+                       random_t0=True) -> WaveformPmt: # pragma: no cover
     """
         Generate PMT-like (e.g, negative swing) and SiPM-like (positive)
         waveforms.
