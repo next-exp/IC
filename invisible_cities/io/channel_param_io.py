@@ -106,29 +106,26 @@ def generator_param_reader(h5in, table_name):
     loops over the table requested yielding
     sensor number, (parameter value dict, parameter error dict)
     """
-
     table_names, param_names, param_tables = basic_param_reader(h5in)
 
     try:
         indx = table_names.index(table_name)
-        for row in param_tables[indx].iterrows():
-            yield row['SensorID'], parameters_and_errors(row, param_names[indx][1:])
     except ValueError:
         print('Requested table not present')
         raise
 
+    return all_channel_value_reader(param_tables[indx], param_names[indx][1:])
 
 def subset_param_reader(h5in, table_name, param_names):
-
     table_names, _, param_tables = basic_param_reader(h5in)
 
     try:
         indx = table_names.index(table_name)
-        for row in param_tables[indx].iterrows():
-            yield row['SensorID'], parameters_and_errors(row, param_names)
     except ValueError:
         print('Requested table not present')
         raise
+
+    return all_channel_value_reader(param_tables[indx], param_names)
 
 
 def all_channel_value_reader(param_table, param_names):
