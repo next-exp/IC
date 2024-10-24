@@ -146,7 +146,7 @@ def single_channel_value_reader(channel, param_table, param_names):
     if channel_params.size == 0:
         raise ValueError('Sensor info not found')
 
-    elif channel_params.size > 1:
+    elif channel_params.size > 1: # pragma: no cover
         raise ValueError('Ambiguous call, more than one sensor entry found')
 
     return parameters_and_errors(channel_params[0], param_names)
