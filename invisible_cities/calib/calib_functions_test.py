@@ -149,9 +149,9 @@ def test_copy_sensor_table(config_tmpdir, sensor_type, sensors):
 @mark.parametrize('sensor_type     , n_channel, gain_seed, gain_sigma_seed',
                   ((SensorType.SIPM,         1,   16.5622,         2.5),
                    (SensorType.PMT ,         5,   24.9557,         9.55162)))
-def test_seeds_db(sensor_type, n_channel, gain_seed, gain_sigma_seed, dbnew):
+def test_seeds_db(sensor_type, n_channel, gain_seed, gain_sigma_seed):
     run_number = 6217
-    result = cf.seeds_db(sensor_type, dbnew, run_number, n_channel)
+    result = cf.seeds_db(sensor_type, "new", run_number, n_channel)
     assert result == (gain_seed, gain_sigma_seed)
 
 
@@ -191,13 +191,13 @@ def test_sensor_values(sensor_type, scaler, expected_range, min_b, max_b, half_w
 @mark.parametrize('sensor_type, run_number, n_chann,            scaler',
                   ((      None,       6217,    1023, _dark_scaler_sipm),
                    (      None,       6217,       0, _dark_scaler_pmt)))
-def test_incorrect_sensor_type_raises_ValueError(sensor_type, dbnew, run_number, n_chann, scaler):
+def test_incorrect_sensor_type_raises_ValueError(sensor_type, run_number, n_chann, scaler):
     bins     = np.array([ -6,  -5,   -4,   -3,   -2,   -1,    0,    1,    2,    3,    4,   5,   6,   7])
     spec     = np.array([ 28, 539, 1072, 1845, 2805, 3251, 3626, 3532, 3097, 2172, 1299, 665, 371, 174])
     ped_vals = np.array([2.65181178e+04, 1.23743445e-01, 2.63794236e+00])
 
     with raises(ValueError):
-        cf.       seeds_db(sensor_type, dbnew, run_number, n_chann)
+        cf.       seeds_db(sensor_type, "new", run_number, n_chann)
     with raises(ValueError):
         cf.poisson_mu_seed(sensor_type, scaler, bins, spec, ped_vals)
     with raises(ValueError):
@@ -262,7 +262,7 @@ def test_compute_seeds_from_spectrum(ICDATADIR):
 
 
 @mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
-def test_seeds_and_bounds_with_db(dbnew):
+def test_seeds_and_bounds_with_db():
     values        = np.array([1, 0.5, .1], dtype=float)
     errors        = (values + 1) / 20
     x             = np.arange(-50, 300)
@@ -271,7 +271,7 @@ def test_seeds_and_bounds_with_db(dbnew):
     scaler_func   = cf.dark_scaler(y[sel])
     seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, 8000, 0,
                                         scaler_func, x, y,
-                                        values, dbnew, errors,
+                                        values, "new", errors,
                                         use_db_gain_seeds=True)
 
 
@@ -284,7 +284,7 @@ def test_seeds_and_bounds_with_db(dbnew):
 
 
 @mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
-def test_seeds_and_bounds_with_gau(dbnew):
+def test_seeds_and_bounds_with_gau():
     values        = np.array([1, 0.5, .1], dtype=float)
     errors        = (values + 1) / 20
     x             = np.arange(-50, 300)
@@ -293,7 +293,7 @@ def test_seeds_and_bounds_with_gau(dbnew):
     scaler_func   = cf.dark_scaler(y[sel])
     seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, 8000, 0,
                                         scaler_func, x, y,
-                                        values, dbnew, errors,
+                                        values, "new", errors,
                                         "gau",
                                         use_db_gain_seeds=True)
 
@@ -306,7 +306,7 @@ def test_seeds_and_bounds_with_gau(dbnew):
     assert len(bounds[1]) == 6
 
 
-def test_seeds_without_using_db(ICDATADIR, dbnew):
+def test_seeds_without_using_db(ICDATADIR):
     PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
     # Suppress warnings from division by zero in some bins.
     with warnings.catch_warnings(), tb.open_file(PATH_IN) as h5in:
@@ -344,7 +344,7 @@ def test_seeds_without_using_db(ICDATADIR, dbnew):
             scaler_func   = cf.dark_scaler(dar[p_range][p_bins])
             seeds, bounds = cf.seeds_and_bounds(SensorType.SIPM, run_no, ich,
                                                 scaler_func, bins[p_range],
-                                                led[p_range], ped_vals, dbnew,
+                                                led[p_range], ped_vals, "new",
                                                 gfitRes.errors,
                                                 use_db_gain_seeds=False)
             assert all(seeds)

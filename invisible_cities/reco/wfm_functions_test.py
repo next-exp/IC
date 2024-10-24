@@ -15,7 +15,7 @@ from .. evm.ic_containers import DeconvParams
 
 
 @mark.slow
-def test_compare_cwf_blr(dbnew, ICDATADIR):
+def test_compare_cwf_blr(ICDATADIR):
     """Test functions cwf_from_rwf() and compare_cwf_blr().
     The test:
     1) Computes CWF from RWF (function cwf_from_rwf())
@@ -29,8 +29,8 @@ def test_compare_cwf_blr(dbnew, ICDATADIR):
                           thr_trigger =     5)
 
     run_number = 0
-    DataPMT    = load_db.DataPMT (dbnew, run_number)
-    DataSiPM   = load_db.DataSiPM(dbnew, run_number)
+    DataPMT    = load_db.DataPMT ("new", run_number)
+    DataSiPM   = load_db.DataSiPM("new", run_number)
 
     calib = CalibVectors(channel_id      =     DataPMT .ChannelID .values ,
                          coeff_blr       = abs(DataPMT .coeff_blr .values),
