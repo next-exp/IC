@@ -82,10 +82,6 @@ def float_arrays(size       =   100,
                   unique   =     unique)
 
 
-def FLOAT_ARRAY(*args, **kwargs):
-    return float_arrays(*args, **kwargs).example()
-
-
 def random_length_float_arrays(min_length =     0,
                                max_length =   100,
                                **kwargs          ):
