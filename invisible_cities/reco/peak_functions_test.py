@@ -268,17 +268,31 @@ def test_select_peaks_without_bounds(peak_data):
         assert got == exactly(expected)
 
 
-@given(peak_indices(),
-       floats(0,  5), floats( 6, 10),
-       floats(0, 10), floats(11, 20))
-def test_select_peaks_filtered_out(peak_data, i0, i1, l0, l1):
-    _, peaks , _ = peak_data
-    i_limits = minmax(i0, i1)
-    l_limits = minmax(l0, l1)
+def _peak_length(i):
+    return i[-1] - i[0] + 1
+
+@given(peak_indices())
+def test_select_peaks_filters_window(peak_data):
+    indices, peaks , _ = peak_data
+    i_limits = minmax(indices.min() + 1, indices.max() - 1)
+    l_limits = minmax(0, np.inf) # don't filter by length
     selected = pf.select_peaks(peaks, i_limits * 25 * units.ns, l_limits)
     for peak in selected:
-        assert i0 <=                peak[0] <= i1
-        assert l0 <= peak[-1] + 1 - peak[0] <= l1
+        assert i_limits.min <= peak[0] <= i_limits.max
+
+
+@given(peak_indices())
+def test_select_peaks_filters_length(peak_data):
+    indices, peaks , _ = peak_data
+    lengths  = sorted(map(_peak_length, peaks))
+    if max(lengths) - 2 <= min(lengths):
+        lengths.append(max(lengths)+2)
+
+    i_limits = minmax(0, indices.max() + 1) # don't filter by window
+    l_limits = minmax(lengths[0] + 1, lengths[-1] - 1)
+    selected = pf.select_peaks(peaks, i_limits * 25 * units.ns, l_limits)
+    for peak in selected:
+        assert l_limits.min <= _peak_length(peak) <= l_limits.max
 
 
 def test_select_peaks_right_length_with_holes():
@@ -315,9 +329,6 @@ def test_select_peaks_tlimits(peak_data):
     for got, expected in zip(selected, peaks[1:-1]):
         assert got == exactly(expected)
 
-
-def _peak_length(i):
-    return i[-1] - i[0] + 1
 
 @given(peak_indices()
        .filter(lambda data: np.unique(list(map(_peak_length, data[1]))).size > 2))
