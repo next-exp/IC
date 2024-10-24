@@ -75,7 +75,7 @@ def test_assert_tables_equality_fails_different_names():
         assert_tables_equality(table1, table2)
 
 
-def test_assert_tables_equality_fails_different_values():
+def test_assert_tables_equality_fails_different_types():
     # modify the type of a column and check that the function picks up
     # the difference
     dtypes1 = [('text', 'U10'), ('integer', 'i4'), ('float', 'f4')]
