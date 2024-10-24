@@ -91,7 +91,7 @@ class _Peak:
 
         if length_times == 0:
             raise ValueError("Attempt to initialize an empty"
-                            f"{self.__class__.__name} instance.")
+                            f"{self.__class__.__name__} instance.")
         if ((length_times != length_pmts ) or
             (length_times != length_sipms != 0)):
             msg  =  "Shapes don't match!\n"
