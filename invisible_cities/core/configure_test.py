@@ -623,7 +623,7 @@ def test_compare_signature_to_values_unused_arguments():
                                          , (tuple,    (3,))
                                          , (set  ,   {4,})))
 @mark.parametrize("type2", (int, str, list, dict, tuple, set))
-def test_compare_signature_to_values_raises(mode, type1, value, type2):
+def test_compare_signature_to_values_raises_wrong_type(mode, type1, value, type2):
     if type1 is type2: return
 
     def f(a : type1):
@@ -635,6 +635,15 @@ def test_compare_signature_to_values_raises(mode, type1, value, type2):
     match_str = "The function .* expects an argument .* of type .*"
     with raises(ValueError, match=match_str):
         compare_signature_to_values(f, pos_values, kwd_values)
+
+
+def test_compare_signature_to_values_raises_wrong_number_of_args():
+    def f(a: int, b: int):
+        return # pragma: no cover
+
+    values = 1, 2, 3
+    with raises(ValueError, match=f"The function `f` received {len(values)} positional arguments, but it only accepts 2"):
+        compare_signature_to_values(f, values, {})
 
 
 @mark.parametrize("do_check", (True, False))
