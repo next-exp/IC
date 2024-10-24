@@ -217,7 +217,7 @@ def test_diomira_can_fix_random_seed(output_tmpdir):
 
 ## to run the following test, use the --runslow option with pytest
 @mark.veryslow
-def test_diomira_reproduces_singlepe(ICDATADIR, output_tmpdir):
+def test_diomira_reproduces_singlepe(ICDATADIR, output_tmpdir): # pragma: no cover
     file_in  = os.path.join(ICDATADIR    ,     'single_pe_pmts.h5')
     file_out = os.path.join(output_tmpdir, 'single_pe_elec_sim.h5')
 
