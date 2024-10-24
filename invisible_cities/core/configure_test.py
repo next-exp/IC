@@ -8,6 +8,7 @@ from pytest import mark
 from pytest import raises
 from pytest import warns
 
+from . configure import event_range
 from . configure import configure
 from . configure import Configuration
 from . configure import make_config_file_reader
@@ -133,6 +134,20 @@ def default_conf(config_tmpdir):
     conf_file_name = config_tmpdir.join('test.conf')
     write_config_file(conf_file_name, config_file_contents)
     return conf_file_name
+
+
+@mark.parametrize( "input_s result".split()
+                 , ( ("0", 0)
+                   , ("1", 1)
+                   , ("all", EventRange.all)
+                   , ("last", EventRange.last)))
+def test_event_range(input_s, result):
+    assert event_range(input_s) is result
+
+
+def test_event_range_raises():
+    with raises(ValueError, match="`--event-range` must be an int, all or last"):
+        event_range("a_string_that_is_not_an_integer_or_an_EventRange")
 
 
 # This test is run repeatedly with different specs. Each spec is a
