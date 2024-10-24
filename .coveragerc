@@ -5,3 +5,7 @@ exclude_lines =
     def __str__
     def __repr__
     pragma: no cover
+
+[run]
+omit =
+  invisible_cities/database/*
