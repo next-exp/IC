@@ -3,6 +3,7 @@ import os
 import numpy  as np
 import tables as tb
 
+from pytest import fixture
 from numpy.testing import assert_allclose
 
 from .. core     import tbl_functions as tbl
@@ -15,39 +16,9 @@ from . channel_param_io import     basic_param_reader
 from . channel_param_io import generator_param_reader
 
 
-def test_generic_parameters(config_tmpdir):
-    filename = os.path.join(config_tmpdir, 'test_param.h5')
-
-    out_dict = {}
-    val_list = []
-    n_rows = 5
-    with tb.open_file(filename, 'w') as data_out:
-        pWrite = channel_param_writer(data_out, sensor_type="test",
-                                      func_name="generic",
-                                      param_names=generic_params)
-
-        for sens in range(n_rows):
-            for i, par in enumerate(generic_params):
-                out_dict[par] = [i, (i + sens) / 10]
-
-            pWrite(sens, out_dict)
-            val_list.append(list(out_dict.values()))
-
-    col_list = ['SensorID'] + list(out_dict.keys())
-    val_list = np.concatenate(val_list)
-    with tb.open_file(filename) as data_in:
-
-        tbl_names, param_names, tbls = basic_param_reader(data_in)
-        assert len(tbls) == 1
-        assert tbls[0].nrows == n_rows
-        assert len(param_names[0]) == len(col_list)
-        assert param_names[0] == col_list
-        all_values = [ list(x)[1:] for x in tbls[0][:] ]
-        assert_allclose(np.concatenate(all_values), val_list)
-
-
-def test_generator_param_reader(config_tmpdir):
-    filename = os.path.join(config_tmpdir, 'test_param.h5')
+@fixture(scope="session")
+def fake_channel_data(config_tmpdir):
+    filename = os.path.join(config_tmpdir, 'fake_channel_data.h5')
 
     out_dict = {}
     val_list = []
@@ -65,6 +36,24 @@ def test_generator_param_reader(config_tmpdir):
             val_list.append(list(out_dict.values()))
 
     val_list = np.array(val_list)
+    return filename, n_rows, out_dict, val_list
+
+
+def test_basic_param_reader(fake_channel_data):
+    filename, n_rows, out_dict, val_list = fake_channel_data
+    col_list = ['SensorID'] + list(out_dict.keys())
+    with tb.open_file(filename) as data_in:
+        tbl_names, param_names, tbls = basic_param_reader(data_in)
+        assert len(tbls) == 1
+        assert tbls[0].nrows == n_rows
+        assert len(param_names[0]) == len(col_list)
+        assert param_names[0] == col_list
+        all_values = [ list(x)[1:] for x in tbls[0][:] ]
+        assert_allclose(all_values, val_list)
+
+
+def test_generator_param_reader(fake_channel_data):
+    filename, n_rows, out_dict, val_list = fake_channel_data
     with tb.open_file(filename) as data_in:
         counter = 0
         for sens, (vals, errs) in generator_param_reader(data_in, 'FIT_test_generic'):
@@ -78,7 +67,7 @@ def test_generator_param_reader(config_tmpdir):
 
 
 def test_simple_parameters_with_covariance(config_tmpdir):
-    filename = os.path.join(config_tmpdir, 'test_param.h5')
+    filename = os.path.join(config_tmpdir, 'test_param_cov.h5')
 
     simple = ["par0", "par1", "par2"]
     cov = np.array([[0, 1, 2], [3, 4, 5]])
@@ -95,13 +84,11 @@ def test_simple_parameters_with_covariance(config_tmpdir):
         pWrite(0, out_dict)
 
     with tb.open_file(filename) as data_in:
-
         file_cov = data_in.root.FITPARAMS.FIT_test_simple[0]["covariance"]
         assert_allclose(file_cov, cov)
 
 
 def test_make_table_dictionary():
-
     param_names = ["par0", "par1", "par2"]
 
     par_dict = make_table_dictionary(param_names)
@@ -113,7 +100,7 @@ def test_make_table_dictionary():
 
 
 def test_store_fit_values(config_tmpdir):
-    filename = os.path.join(config_tmpdir, 'test_param.h5')
+    filename = os.path.join(config_tmpdir, 'test_param_fit_values.h5')
 
     dummy_dict = make_table_dictionary(['par0'])
 
@@ -134,4 +121,3 @@ def test_store_fit_values(config_tmpdir):
         assert tblRead.nrows == 1
         assert len(tblRead.colnames) == len(dummy_dict)
         assert tblRead.colnames == list(dummy_dict.keys())
-
