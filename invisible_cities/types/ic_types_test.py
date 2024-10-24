@@ -1,4 +1,5 @@
 from string import ascii_letters
+from copy   import deepcopy
 
 import numpy as np
 
@@ -73,6 +74,18 @@ def test_minmax_sub(mm, f):
     lowered = mm - f
     np.isclose (lowered.min , lo - f, rtol=1e-4)
     np.isclose (lowered.max , hi - f, rtol=1e-4)
+
+
+@given(minmaxes)
+def test_minmax_eq(mm):
+    mm2 = deepcopy(mm)
+    mm3 = deepcopy(mm)
+    mm2.min = mm.min + 1
+    mm3.max = mm.max + 1
+
+    assert mm == mm
+    assert mm != mm2
+    assert mm != mm3
 
 
 @given(xys, sensible_floats, sensible_floats)
