@@ -246,41 +246,6 @@ class Track(VoxelCollection):
         return self.__str__()
 
 
-class TrackCollection(Event):
-    """A Collection of tracks"""
-    def __init__(self, event_number, event_time):
-        Event.__init__(self, event_number, event_time)
-        self.tracks = []
-
-    @property
-    def number_of_tracks(self):
-        return len(self.tracks)
-
-    def store(self, table):
-        row = table.row
-        for i, t in enumerate(self.tracks):
-            row["event"]    = self.event
-            row["time" ]    = self.time
-            row["track_no"] = i
-
-            for j, voxel in enumerate(t.voxels):
-                row["voxel_no"] = j
-                row["X"    ] = voxel.X
-                row["Y"    ] = voxel.Y
-                row["Z"    ] = voxel.Z
-                row["E"    ] = voxel.E
-
-                row.append()
-
-    def __str__(self):
-        s =  "{}".format(self.__class__.__name__)
-        s+= "Track list:"
-        s2 = [str(trk) for trk in self.tracks]
-        return  s + ''.join(s2)
-
-    __repr__ =     __str__
-
-
 class HitCollection(Event):
     """A Collection of hits"""
     def __init__(self, event_number, event_time, hits=None):
