@@ -215,8 +215,7 @@ def test_city_fails_if_bad_input_file(config_tmpdir, ICDATADIR):
     @city
     def dummy_city( files_in    : Union[str, list]
                   , file_out    : str
-                  , event_range : tuple):
-        pass
+                  , event_range : tuple): pass
 
     with raises(FileNotFoundError):
         dummy_city(files_in=files_in, file_out=file_out, event_range=(0, 1))
