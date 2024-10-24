@@ -97,7 +97,7 @@ def basic_param_reader(h5in):
         return table_names, param_names, param_tables
     except tb.NoSuchNodeError:
         print('File does not contain FITPARAMS node')
-        exit()
+        raise
 
 
 def generator_param_reader(h5in, table_name):
@@ -115,7 +115,7 @@ def generator_param_reader(h5in, table_name):
             yield row['SensorID'], parameters_and_errors(row, param_names[indx][1:])
     except ValueError:
         print('Requested table not present')
-        exit()
+        raise
 
 
 def subset_param_reader(h5in, table_name, param_names):
@@ -128,7 +128,7 @@ def subset_param_reader(h5in, table_name, param_names):
             yield row['SensorID'], parameters_and_errors(row, param_names)
     except ValueError:
         print('Requested table not present')
-        exit()
+        raise
 
 
 def all_channel_value_reader(param_table, param_names):
@@ -147,11 +147,11 @@ def single_channel_value_reader(channel, param_table, param_names):
     """
     channel_params = param_table.read_where('SensorID=='+str(channel))
     if channel_params.size == 0:
-        print('Sensor info not found')
-        exit()
+        raise ValueError('Sensor info not found')
+
     elif channel_params.size > 1:
-        print('Ambiguous call, more than one sensor entry found')
-        exit()
+        raise ValueError('Ambiguous call, more than one sensor entry found')
+
     return parameters_and_errors(channel_params[0], param_names)
 
 
@@ -163,4 +163,3 @@ def parameters_and_errors(table_row, parameters):
         error_dict[pname] = table_row[pname][1]
 
     return param_dict, error_dict
-
