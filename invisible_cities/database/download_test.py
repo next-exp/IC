@@ -17,9 +17,6 @@ def test_create_table_sqlite(dbname, output_tmpdir):
     if os.path.isfile(dbfile):
         os.remove(dbfile)
 
-    dbname = 'NEXT100DB'
-    table = 'PmtBlr'
-
     connSqlite = sqlite3.connect(dbfile)
     connMySql  = pymysql.connect(host="next.ific.uv.es",
                                  user='nextreader',passwd='readonly', db=dbname)
@@ -27,7 +24,7 @@ def test_create_table_sqlite(dbname, output_tmpdir):
     cursorMySql  = connMySql .cursor()
     cursorSqlite = connSqlite.cursor()
 
-    for table in db.tables:
+    for table in db.common_tables:
         db.create_table_sqlite(cursorSqlite, cursorMySql, table)
 
 
