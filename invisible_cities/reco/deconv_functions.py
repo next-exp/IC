@@ -27,7 +27,7 @@ def collect_component_sizes(im_mask : np.ndarray) -> (np.ndarray, np.ndarray):
     A function that returns the sizes of different clusters of 1s and 0s within the data
     for removal of satellites.
 
-    This function uses the scipy ndimage library to identify different 'clusters' of 1s within the slice, and 
+    This function uses the scipy ndimage library to identify different 'clusters' of 1s within the slice, and
     checks if these clusters are below the size considered for satellite deposits (`satellite_max_size`).
     The method is described in more detail here:
     https://gist.github.com/jwaiton/fd14f43e8da28a49c9c49d43eb00f53f
@@ -50,25 +50,25 @@ def collect_component_sizes(im_mask : np.ndarray) -> (np.ndarray, np.ndarray):
     return labels, component_sizes
 
 
-def generate_satellite_mask(im_deconv          : np.ndarray, 
-                            satellite_max_size : int, 
-                            e_cut              : float, 
+def generate_satellite_mask(im_deconv          : np.ndarray,
+                            satellite_max_size : int,
+                            e_cut              : float,
                             cut_type           : Optional[CutType]=CutType.abs) -> np.ndarray:
     '''
-    An adaptation to the scikit-image (v0.24.0) function [1], identifies 
+    An adaptation to the scikit-image (v0.24.0) function [1], identifies
     satellite energy depositions within deconvolution image by size
     and proximity to other depositions.
 
     The function takes a deconvolution z-slice, applies a mask based on the `e_cut` and `cut_type` to only
-    allow 0s and 1s for values passing the energy cut. 
-    It then uses the scipy ndimage library to identify different 'clusters' of 1s within the slice, and 
+    allow 0s and 1s for values passing the energy cut.
+    It then uses the scipy ndimage library to identify different 'clusters' of 1s within the slice, and
     checks if these clusters are below the size considered for satellite deposits (`satellite_max_size`).
     These satellite deposits are highlighted in a new mask, that is returned and used to remove them.
     The method is described in more detail here:
     https://gist.github.com/jwaiton/fd14f43e8da28a49c9c49d43eb00f53f
 
     Returns the mask required to remove satellites as done in `richardson_lucy()`
-    
+
     Parameters
     ----------
     im_deconv          : Deconvoluted 2D array
@@ -98,13 +98,13 @@ def generate_satellite_mask(im_deconv          : np.ndarray,
     if len(component_sizes) <= 2:
         return np.full(im_deconv.shape, False)
 
-    # Find regions smaller than `satellite_max_size` and mask them, 
+    # Find regions smaller than `satellite_max_size` and mask them,
     # ignoring the first region (background). Read gist for full explanation.
     too_small      = component_sizes < satellite_max_size
-    too_small[0]   = False 
+    too_small[0]   = False
     too_small_mask = too_small[labels]
     return too_small_mask
-    
+
 
 def cut_and_redistribute_df(cut_condition : str,
                             variables     : List[str]=[]) -> Callable:
@@ -283,9 +283,9 @@ def find_nearest(array : np.ndarray,
     idx   = (np.abs    (array - value)).argmin()
     return array[idx]
 
-no_satellite_killer = dict(satellite_start_iter = None, 
+no_satellite_killer = dict(satellite_start_iter = None,
                            satellite_max_size   = 0,
-                           e_cut                = 0, 
+                           e_cut                = 0,
                            cut_type             = CutType.abs)
 
 
@@ -339,7 +339,7 @@ def deconvolve(n_iterations         : int,
         columns      = var_name[:len(data)]
         psf_deco     = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
         deconv_image = np.nan_to_num(richardson_lucy(inter_signal, psf_deco, satellite_start_iter,
-                                                     satellite_max_size, e_cut, cut_type, 
+                                                     satellite_max_size, e_cut, cut_type,
                                                      n_iterations, iteration_tol))
 
         return deconv_image, inter_pos
@@ -425,7 +425,7 @@ def richardson_lucy(image, psf, satellite_start_iter, satellite_max_size, e_cut,
         if satellite_start_iter is not None and i >= satellite_start_iter:
             sat_mask = generate_satellite_mask(im_deconv, satellite_max_size, e_cut, cut_type)
             im_deconv[sat_mask] = 0
-        
+
         with np.errstate(divide='ignore', invalid='ignore'):
             rel_diff = np.nansum(np.divide(((im_deconv/im_deconv.max() - ref_image)**2), ref_image))
         if rel_diff < iter_thr: ### Break if a given threshold is reached.

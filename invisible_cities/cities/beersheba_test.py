@@ -105,17 +105,17 @@ def test_beersheba_exact_result( deco
 @mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
 @mark.slow
 def test_beersheba_exact_result_with_satkill( ICDATADIR
-                                            , beersheba_config                                            
+                                            , beersheba_config
                                             , config_tmpdir):
 
     true_out = os.path.join(ICDATADIR, f"228Th_10evt_deco_satellite.h5")
     path_out = os.path.join(config_tmpdir, f"beersheba_exact_result_satellite.h5")
     beersheba_config['deconv_params'].update(dict(n_iterations = 50))
-    beersheba_config.update(dict(file_out         = path_out, 
-                                 event_range      = 2, 
-                                 satellite_params = dict(satellite_start_iter = 10, 
+    beersheba_config.update(dict(file_out         = path_out,
+                                 event_range      = 2,
+                                 satellite_params = dict(satellite_start_iter = 10,
                                                          satellite_max_size   = 3,
-                                                         e_cut                = 12e-3, 
+                                                         e_cut                = 12e-3,
                                                          cut_type             = CutType.abs)))
 
     beersheba(**beersheba_config)

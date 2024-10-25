@@ -154,7 +154,7 @@ def deconvolve_signal(det_db           : pd.DataFrame,
     satellite_params : Dictionary containing parameters for satellite killer
         satellite_start_iter : Iteration no. when satellite killer starts being used.
         satellite_max_size   : Maximum size of satellite deposit, above which they are considered 'real'.
-        e_cut                : Cut in absolute/relative value to the provided 
+        e_cut                : Cut in absolute/relative value to the provided
                                deconvolution output for satellite discrimination.
         cut_type             : Cut mode within satellite killer, see definition of `cut_type` below.
     energy_type      : Energy type (`E` or `Ec`, see Esmeralda) used for assignment.
@@ -184,7 +184,7 @@ def deconvolve_signal(det_db           : pd.DataFrame,
                      for var, bs in zip(dimensions, bin_size)]
     deconvolution = deconvolve(n_iterations, iteration_tol,
                                sample_width, det_grid,
-                               **satellite_params, 
+                               **satellite_params,
                                inter_method = inter_method)
 
     if not isinstance(energy_type , HitEnergy          ):
@@ -225,8 +225,8 @@ def deconvolve_signal(det_db           : pd.DataFrame,
             psf_cols     = psf.loc[:, cols]
             gaus         = dist.pdf(psf_cols.values)
             psf          = gaus.reshape(psf_cols.nunique())
-            deconv_image = nan_to_num(richardson_lucy(deconv_image, psf,  
-                                                      iterations = n_iterations_g, 
+            deconv_image = nan_to_num(richardson_lucy(deconv_image, psf,
+                                                      iterations = n_iterations_g,
                                                       iter_thr = iteration_tol,
                                                       **satellite_params))
 

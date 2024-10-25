@@ -307,7 +307,7 @@ def test_removing_satellites(sat_arr, cut_type):
                      [0.1  , 0.1  , 0.1  , 0.1  , 0.1  ],
                      [0.2  , 0.1  , 1.   , 1.   , 1.   ],
                      [0.1  , 0.1  , 1.   , 1.   , 1.   ]])
-    
+
     Test uses relative and absolute cuts as both are equivalent here (normalised to 1)
     '''
     # produce array with satellite removed
@@ -331,7 +331,7 @@ def test_satellite_ecut_minimum(sat_arr, cut_type):
     original array should occur (post-ecut array is all 1s).
 
     Test uses relative and absolute cuts as both are equivalent here (normalised to 1)
-    ''' 
+    '''
     mask = generate_satellite_mask(sat_arr, satellite_max_size = 3, e_cut = 0, cut_type = cut_type)
     assert not np.any(mask)
 
@@ -339,8 +339,8 @@ def test_satellite_ecut_minimum(sat_arr, cut_type):
 @mark.parametrize("cut_type", CutType)
 def test_satellite_ecut_maximum(sat_arr, cut_type):
     '''
-    Test case in which e_cut is set above largest value (1), 
-    and so no modification to the original array should occur 
+    Test case in which e_cut is set above largest value (1),
+    and so no modification to the original array should occur
     (post-ecut array is all 0s).
 
     Test uses relative and absolute cuts as both are equivalent here (normalised to 1)
@@ -362,8 +362,8 @@ def test_satellite_size_minimum(sat_arr, cut_type):
 @mark.parametrize("cut_type", CutType)
 def test_satellite_size_maximum(sat_arr, cut_type):
     '''
-    Test case in which satellite size is set to 999 (larger than feasible), 
-    and so all values that surpass the energy cut should be removed besides 
+    Test case in which satellite size is set to 999 (larger than feasible),
+    and so all values that surpass the energy cut should be removed besides
     background which is ignored.
     '''
     e_cut = 0.5
@@ -383,7 +383,7 @@ def test_component_sizes(compsize_array, e_cut, expected_size):
               [0.3, 0.5, 0.1, 0.1],
               [0.1, 0.3, 0.5, 0.1],
               [0.1, 0.1, 0.1, 0.5])
-    
+
     ecuts:
     0     ->  array is all 1s, 2 components (zero 0s, sixteen 1s)
     0.2   ->  array is no longer uniform, 3 components (eight 0s, eight 1s -> two clusters (seven 1s, one 2))
@@ -400,7 +400,7 @@ def test_component_elements(compsize_array):
     '''
     Given an array, with differing applied e_cuts will
     provide expected number of elements in each component.
-    
+
     The exact logic of the array is described above in test_component_sizes()
     '''
     # 0.2 cut, provides 3 components with lengths seven 0s, seven 1s, and one 2
@@ -418,16 +418,16 @@ def test_component_elements(compsize_array):
 def test_satellite_zero_protection(cut_type):
     '''
     This test checks that the protection in place to avoid cases in which
-    the number of 0s within the boolean mask from `generate_satellite_mask()` 
+    the number of 0s within the boolean mask from `generate_satellite_mask()`
     are less than the satellite_max_size, and so are flagged incorrectly as satellites.
-    ''' 
+    '''
     # provide array with very few 0s that would usually be mislabelled as satellites
     inverted_array = np.array([[0, 0, 1, 1, 0],
-                               [0, 0, 1, 1, 1],     
-                               [1, 1, 1, 1, 1],     
-                               [1, 1, 1, 0, 0],     
+                               [0, 0, 1, 1, 1],
+                               [1, 1, 1, 1, 1],
+                               [1, 1, 1, 0, 0],
                                [1, 1, 1, 0, 0]])
-    
+
     # set satellite_max_size to be just above total number of zeros in given array,
     # then ensure that no satellites are flagged (as there are none).
     mask = generate_satellite_mask(inverted_array, satellite_max_size = 10, e_cut = 0.5, cut_type = cut_type)
