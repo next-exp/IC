@@ -1,6 +1,8 @@
+import os
 import random
 import numpy  as np
 import pandas as pd
+import pytest
 
 from pytest                       import mark
 from pytest                       import raises
@@ -18,6 +20,7 @@ from .. reco    .deconv_functions import deconvolution_input
 from .. reco    .deconv_functions import deconvolve
 from .. reco    .deconv_functions import richardson_lucy
 from .. reco    .deconv_functions import generate_satellite_mask
+from .. reco    .deconv_functions import collect_component_sizes
 
 from .. core    .core_functions   import in_range
 from .. core    .core_functions   import shift_to_bin_centers
@@ -33,10 +36,54 @@ from .. database.load_db          import DataSiPM
 from scipy.stats                  import multivariate_normal
 
 
+@pytest.fixture(scope='function')
+def sat_arr(ICDATADIR):
+    '''
+    An array made to imitate a z-slice that would be passed through deconvolution
+    '''
+    arr = np.array([[1.   , 1.   , 0.3  , 0.1  , 1.   ],
+                    [1.   , 1.   , 0.1  , 0.1  , 0.1  ],
+                    [0.1  , 0.1  , 0.1  , 0.1  , 0.1  ],
+                    [0.2  , 0.1  , 1.   , 1.   , 1.   ],
+                    [0.1  , 0.1  , 1.   , 1.   , 1.   ]])
+    return arr
+
+
+@pytest.fixture(scope='session')
+def compsize_array(ICDATADIR):
+    '''
+    An array made to imitate a z-slice that would be passed through deconvolution
+    This array has specific values such that differing e_cut reveals boolean arrays
+    with differing components across the array.
+
+    Described in more detail in test_component_sizes()
+    '''
+    arr = np.array([[0.5, 0.3, 0.1, 0.3],
+                    [0.3, 0.5, 0.1, 0.1],
+                    [0.1, 0.3, 0.5, 0.1],
+                    [0.1, 0.1, 0.1, 0.5]])
+    return arr
+
+
+@pytest.fixture(scope='session')
+def no_satellite_killer(ICDATADIR):
+    '''
+    The default satellite_killer parameters provided if you don't want it to be run on
+    your sample. Used to avoid its usage in certain tests.
+    '''
+    satellite_params = dict(satellite_start_iter = np.inf, 
+                            satellite_max_size   = 10,
+                            e_cut                = 0.5, 
+                            cut_type             = CutType.abs)
+    return satellite_params
+
+
 @given(data_frames(columns=[column('A', dtype=float, elements=floats(1, 1e3)),
                             column('B', dtype=float, elements=floats(1, 1e3)),
                             column('C', dtype=float, elements=floats(1, 1e3))],
                      index=range_indexes(min_size=2, max_size=10)))
+
+
 def test_cut_and_redistribute_df(df):
     cut_var       = 'A'
     redist_var    = ['B', 'C']
@@ -132,7 +179,7 @@ def test_deconvolution_input_interpolation_method(data_hdst, data_hdst_deconvolv
         deconvolution_input([10., 10.], [1., 1.], interp_method)
 
 
-def test_deconvolve(data_hdst, data_hdst_deconvolved):
+def test_deconvolve(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -158,15 +205,14 @@ def test_deconvolve(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_max_size = 10,
-                                 e_cut = 0.2, cut_type = CutType.rel)
+                                 **no_satellite_killer)
 
     assert np.allclose(ref_interpolation['e_deco'], deco[0].flatten())
     assert np.allclose(ref_interpolation['x_deco'], deco[1][0])
     assert np.allclose(ref_interpolation['y_deco'], deco[1][1])
 
 
-def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
+def test_richardson_lucy(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -194,13 +240,12 @@ def test_richardson_lucy(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco = richardson_lucy(inter[0], psf.factor.values.reshape(psf.xr.nunique(), psf.yr.nunique()).T,
-                           satellite_iter = 9999, satellite_max_size= 10, e_cut = 0.2, 
-                           cut_type = CutType.rel, iterations=15, iter_thr=0.0001)
+                           iterations=15, iter_thr=0.0001, **no_satellite_killer)
 
     assert np.allclose(ref_interpolation['e_deco'], deco.flatten())
 
 
-def test_grid_binning(data_hdst, data_hdst_deconvolved):
+def test_grid_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
     h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z      = h.Z.mean()
@@ -225,14 +270,13 @@ def test_grid_binning(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_max_size = 10,
-                                 e_cut = 0.2, cut_type = CutType.rel)
+                                 **no_satellite_killer)
 
     assert np.all((deco[1][0] - det_db['X'].min() + 9/2) % 9 == 0)
     assert np.all((deco[1][1] - det_db['Y'].min() + 9/2) % 9 == 0)
 
 
-def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
+def test_nonexact_binning(data_hdst, data_hdst_deconvolved, no_satellite_killer):
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
     h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
     z      = h.Z.mean()
@@ -256,8 +300,7 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     psf           = pd.DataFrame(psf)
 
     deco          = deconvolutor((h.X, h.Y), h.Q, psf,
-                                 satellite_iter = 9999, satellite_max_size = 10, 
-                                 e_cut = 0.2, cut_type = CutType.rel)
+                                 **no_satellite_killer)
 
     check_x = np.diff(np.sort(np.unique(deco[1][0]), axis=None))
     check_y = np.diff(np.sort(np.unique(deco[1][1]), axis=None))
@@ -266,19 +309,202 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
     assert(np.all(check_y % 9 == 0))
 
 
-def test_removing_satellites(sat_arr, sat_arr_removed):
-    hdst_rel           = np.load(sat_arr)
-    hdst_abs           = np.load(sat_arr)
-    hdst_nosat         = np.load(sat_arr_removed)
-    e_cut              = 0.5
-    ctype_rel          = CutType.rel
-    ctype_abs          = CutType.abs
+@mark.parametrize("cut_type", CutType)
+def test_removing_satellites(sat_arr, cut_type):
+    '''
+    Test case for removing the satellite in the top-right of the given array
+
+                                  The satellite value to be removed
+                                                  |
+                                                  V
+    hdst = np.array([[1.   , 1.   , 0.3  , 0.1  , 1.   ],
+                     [1.   , 1.   , 0.1  , 0.1  , 0.1  ],
+                     [0.1  , 0.1  , 0.1  , 0.1  , 0.1  ],
+                     [0.2  , 0.1  , 1.   , 1.   , 1.   ],
+                     [0.1  , 0.1  , 1.   , 1.   , 1.   ]])
+    
+    Test uses relative and absolute cuts as both are equivalent here (normalised to 1)
+    '''
+    # produce array with satellite removed
+    hdst_nosat              = np.array(sat_arr)
+    hdst_nosat[0][-1]       = 0
+
+    e_cut                   = 0.5
+    satellite_max_size      = 3
+
+    # create and check mask
+    mask = generate_satellite_mask(sat_arr, satellite_max_size, e_cut, cut_type)
+    sat_arr[mask] = 0
+
+    assert np.allclose(sat_arr, hdst_nosat)
+
+
+@mark.parametrize("cut_type", CutType)
+def test_satellite_ecut_minimum(sat_arr, cut_type):
+    '''
+    Test case in which e_cut is set to zero, and so no modification to the
+    original array shoud occur (post-ecut array is all 1s).
+
+    Test uses relative and absolute cuts as both are equivalent here (normalised to 1)
+    '''
+    
+    # set e_cut to minimum (zero)
+    e_cut                    = 0
+    
+    hdst                     = np.array(sat_arr)
+    satellite_max_size       = 3
+    # create and check mask
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert np.allclose(hdst, sat_arr)
+
+
+@mark.parametrize("cut_type", CutType)
+def test_satellite_ecut_maximum(sat_arr, cut_type):
+    '''
+    Test case in which e_cut is set above largest value (1), 
+    and so no modification to the original array shoud occur 
+    (post-ecut array is all 0s).
+
+    Test uses relative and absolute cuts as both are equivalent here (normalised to 1)
+    '''
+    
+    # set e_cut to large number (999)
+    e_cut                    = 999
+    
+    hdst                     = np.array(sat_arr)
+    satellite_max_size       = 3
+    # create and check mask
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert np.allclose(hdst, sat_arr)
+
+
+def test_satellite_size_minimum(sat_arr):
+    '''
+    Test case in which satellite size is set to zero, and so no modification
+    to the original array should occur (every cluster of 1s is > 0).
+    '''
+
+    # set maximum satellite size to minimum (zero)
+    satellite_max_size      = 0
+
+    hdst                    = np.array(sat_arr)
+    e_cut                   = 0.5
+    cut_type                = CutType.abs
+
+    # create and check mask
+    mask = generate_satellite_mask(hdst, satellite_max_size, e_cut, cut_type)
+    hdst[mask] = 0
+    assert np.allclose(hdst, sat_arr)
+
+
+def test_satellite_size_maximum(sat_arr):
+    '''
+    Test case in which satellite size is set to 999 (larger than feasible), 
+    and so all values that surpass the energy cut should be removed.
+    '''
+
+    # set maximum satellite size to maximum (999)
+    satellite_max_size = 999
+
+    # produce modified array with 1s -> 0s (as expected)
+    hdst_novals              = np.array(sat_arr)
+    hdst_novals[hdst_novals == 1] = 0
+
+    e_cut                   = 0.5
+    cut_type                = CutType.abs
+
+    # create and check mask    
+    mask = generate_satellite_mask(sat_arr, satellite_max_size, e_cut, cut_type)
+    sat_arr[mask] = 0
+    assert np.allclose(sat_arr, hdst_novals)
+
+
+@mark.parametrize("e_cut, expected_size", [(0, 2), (0.2, 3), (0.4, 2), (0.6, 1)])
+def test_component_sizes(compsize_array, e_cut, expected_size):
+    '''
+    Given an array, with differing applied e_cuts will
+    provide expected component sizes.
+
+    array = ([[0.5, 0.3, 0.1, 0.3],
+              [0.3, 0.5, 0.1, 0.1],
+              [0.1, 0.3, 0.5, 0.1],
+              [0.1, 0.1, 0.1, 0.5])
+    
+    ecuts:
+    0     ->  array is all 1s, 2 components (zero 0s, sixteen 1s)
+    0.2   ->  array is no longer uniform, 3 components (eight 0s, eight 1s -> two clusters (seven 1s, one 2))
+    0.4   ->  array is identity matrix, 2 components (twelve 0s, four 1s)
+    0.6   ->  array is all 0s, 1 component (sixteen 0s)
+    '''
+
+    bool_mask = np.where(compsize_array < e_cut, 0, 1)
+
+    # check number of components in array match what is expected
+    labels, no_components = collect_component_sizes(bool_mask)
+    assert len(no_components) == expected_size
+
+
+def test_component_elements(compsize_array):
+    '''
+    Given an array, with differing applied e_cuts will
+    provide expected number of elements in each component.
+    
+    The exact logic of the array is described above in test_component_sizes()
+    '''
+    # 0.2 cut, provides 3 components with lengths seven 0s, seven 1s, and one 2
+    e_cut = 0.2
+    
+    # generate labelling
+    bool_mask = np.where(compsize_array < e_cut, 0, 1)
+    labels, no_components = collect_component_sizes(bool_mask)
+
+    # array to compare against
+    expected_elements = np.array([8, 7, 1])
+    assert np.allclose(no_components, expected_elements)
+
+    
+def test_satellite_zero_protection():
+    '''
+    This test checks that the protection in place to avoid cases in which
+    the number of 0s within the boolean mask from `generate_satellite_mask()` 
+    are less than the satellite_max_size, and so are flagged incorrectly as satellites.
+    '''
+
+    # set size to be just above total number of zeros in given array
+    satellite_max_size = 10
+    
+    e_cut = 0.5
+    cut_type = CutType.abs
+    
+    # provide array with very few 0s that would usually be mislabelled as satellites
+    inverted_array = np.array([[0, 0, 1, 1, 0],
+                               [0, 0, 1, 1, 1],     
+                               [1, 1, 1, 1, 1],     
+                               [1, 1, 1, 0, 0],     
+                               [1, 1, 1, 0, 0]])
+
+    # mask with no satellites, as we don't want zeros to be considered as satellites
+    no_satellite_mask = np.full(inverted_array.shape, False)
+    
+    # generate mask
+    mask = generate_satellite_mask(inverted_array, satellite_max_size, e_cut, cut_type)
+
+    # ensure that no satellites are flagged (as there are none)
+    assert np.allclose(no_satellite_mask, mask)
+
+
+def test_generate_satellite_mask_doesnt_modify_input(sat_arr):
+    '''
+    Test that ensures that the applied functions don't modify the provided
+    z-slice array in any way.
+    '''
+    copy_hdst = np.array(sat_arr)
     satellite_max_size = 3
+    e_cut = 0.5
+    cut_type = CutType.abs
 
-    rel_mask = generate_satellite_mask(hdst_rel, satellite_max_size, e_cut, ctype_rel)
-    hdst_rel[rel_mask] = 0
-    assert(np.array_equal(hdst_rel, hdst_nosat))
+    mask = generate_satellite_mask(copy_hdst, satellite_max_size, e_cut, cut_type)
 
-    abs_mask = generate_satellite_mask(hdst_abs, satellite_max_size, e_cut, ctype_abs)
-    hdst_abs[abs_mask] = 0
-    assert(np.array_equal(hdst_abs, hdst_nosat))
+    assert np.allclose(sat_arr, copy_hdst)
