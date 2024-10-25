@@ -30,7 +30,6 @@ jobs:
         source $CONDA/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
 
-
     - name: Run tests
       run: |
         set -o pipefail # necessary for test failure to propagate to `tee`
@@ -90,3 +89,21 @@ jobs:
         else
             echo "No warnings were raised."
         fi
+
+    - name: Check code coverage
+      run: |
+        source $CONDA/etc/profile.d/conda.sh
+        source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
+        coverage run -m pytest
+        coverage report -m > coverage_report
+        echo "Showing only files with coverage < 100%"
+        head -2 coverage_report
+        FAIL=0
+        incomplete_coverage=$(head -n -2 coverage_report | tail -n +3 | grep -v "100%")
+        while read line; do
+          FAIL=1
+          printf '\033[0;31m%s\033[0m\n' "$line" # red color ... reset color
+        done <<<${incomplete_coverage}
+
+        tail -2 coverage_report
+        exit $FAIL
