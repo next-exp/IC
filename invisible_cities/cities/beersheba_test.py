@@ -1,5 +1,4 @@
 import os
-import shutil
 
 import numpy  as np
 import tables as tb
@@ -189,20 +188,11 @@ def test_beersheba_filters_empty_dfs(beersheba_config, config_tmpdir):
     assert df.passed.tolist() == [False]
 
 
-def test_beersheba_does_not_crash_with_no_hits(beersheba_config, Th228_hits, config_tmpdir):
-    path_in   = os.path.join(config_tmpdir, "beersheba_does_not_crash_with_no_hits_input.h5")
-    path_out  = os.path.join(config_tmpdir, "beersheba_does_not_crash_with_no_hits_output.h5")
-    beersheba_config.update(dict( files_in    = path_in
+def test_beersheba_does_not_crash_with_no_hits(beersheba_config, Th228_hits_missing, config_tmpdir):
+    path_out  = os.path.join(config_tmpdir, "beersheba_does_not_crash_with_no_hits.h5")
+    beersheba_config.update(dict( files_in    = Th228_hits_missing
                                 , file_out    = path_out
                                 , event_range = 1))
-
-    # copy file and remove the hits from the first event
-    shutil.copy(Th228_hits, path_in)
-    with tb.open_file(path_in, "r+") as file:
-        first_evt = file.root.Run.events[0][0]
-        evt_rows  = [row[0] == first_evt for row in file.root.RECO.Events]
-        n_delete  = sum(evt_rows)
-        file.root.RECO.Events.remove_rows(0, n_delete)
 
     # just test that it doesn't crash
     beersheba(**beersheba_config)

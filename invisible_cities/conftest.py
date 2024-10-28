@@ -1,6 +1,9 @@
 import os
 import pytest
+import shutil
+
 import numpy  as np
+import tables as tb
 
 from pandas      import DataFrame
 from collections import namedtuple
@@ -635,6 +638,19 @@ def Th228_deco_separate(ICDATADIR):
     filename = "228Th_10evt_deco_separate.h5"
     filename = os.path.join(ICDATADIR, filename)
     return filename
+
+
+@pytest.fixture(scope="session")
+def Th228_hits_missing(Th228_hits):
+    """Copy input file and remove the hits from the first event"""
+    outpath = Th228_hits.replace(".h5", "_missing_hits.h5")
+    shutil.copy(Th228_hits, outpath)
+    with tb.open_file(outpath, "r+") as file:
+        first_evt = file.root.Run.events[0][0]
+        evt_rows  = [row[0] == first_evt for row in file.root.RECO.Events]
+        n_delete  = sum(evt_rows)
+        file.root.RECO.Events.remove_rows(0, n_delete)
+    return outpath
 
 
 @pytest.fixture(scope="session")
