@@ -185,7 +185,6 @@ def data_hdst_deconvolved(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
-
 @pytest.fixture(scope='session')
 def KrMC_kdst(ICDATADIR):
     test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_KDST.h5"
@@ -810,6 +809,7 @@ def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
                                        , deconv_mode   = DeconvolutionMode.joint
                                        , cut_type      = CutType.abs
                                        , inter_method  = InterpolationMethod.cubic)
+                 , satellite_params = None
                  , corrections_file = next100_mc_krmap
                  , apply_temp       = False )
     return config
