@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import numpy as np
 import tables as tb
@@ -291,6 +292,25 @@ def test_hits_and_kdst_from_files(ICDATADIR):
     assert output['timestamp']      == timestamp
     assert len(output['hits'].hits) == num_hits
     assert type(output['kdst'])     == pd.DataFrame
+
+
+@mark.filterwarnings("ignore:Event .* does not contain hits")
+def test_hits_and_kdst_from_files_missing_hits(Th228_hits, config_tmpdir):
+    path_in = os.path.join(config_tmpdir, "hits_and_kdst_from_files_missing_hits.h5")
+
+    # copy file and remove the hits from the first event
+    shutil.copy(Th228_hits, path_in)
+    with tb.open_file(path_in, "r+") as file:
+        n_events_true = file.root.Run.events.shape[0]
+
+        first_evt = file.root.Run.events[0][0]
+        evt_rows  = [row[0] == first_evt for row in file.root.RECO.Events]
+        n_delete  = sum(evt_rows)
+        file.root.RECO.Events.remove_rows(0, n_delete)
+
+    generator = hits_and_kdst_from_files([path_in], "RECO", "Events")
+    n_events  = sum(1 for _ in generator)
+    assert n_events == n_events_true
 
 
 def test_collect():
