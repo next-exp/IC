@@ -641,9 +641,10 @@ def Th228_deco_separate(ICDATADIR):
 
 
 @pytest.fixture(scope="session")
-def Th228_hits_missing(Th228_hits):
+def Th228_hits_missing(Th228_hits, config_tmpdir):
     """Copy input file and remove the hits from the first event"""
-    outpath = Th228_hits.replace(".h5", "_missing_hits.h5")
+    outpath = os.path.basename(Th228_hits).replace(".h5", "_missing_hits.h5")
+    outpath = os.path.join(config_tmpdir, outpath)
     shutil.copy(Th228_hits, outpath)
     with tb.open_file(outpath, "r+") as file:
         first_evt = file.root.Run.events[0][0]
