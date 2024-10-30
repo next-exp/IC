@@ -219,7 +219,7 @@ def compare_signature_to_values( function   : Callable
                 msg = (f"The function `{function_name}` is missing an argument "
                        f"`{name}` of type `{get_name(type_expected)}`")
                 raise ValueError(msg)
-            else:
+            else: # pragma: no cover
                 continue
 
         value = kw_values[name]
