@@ -1,9 +1,12 @@
 from typing                import Dict
 
+from functools             import partial
+
 import numpy               as     np
 import pandas              as     pd
 
 from . dst_io              import load_dst
+from . dst_io              import df_writer
 from ..evm.event_model     import Hit
 from ..evm.event_model     import Cluster
 from ..evm.event_model     import HitCollection
@@ -130,16 +133,10 @@ def load_hits_skipping_NN(DST_file_name : str, group_name : str = 'RECO', table_
 
 
 # writers
-def hits_writer(hdf5_file, group_name='RECO', table_name='Events', *, compression=None):
-    hits_table  = make_table(hdf5_file,
-                             group       = group_name,
-                             name        = table_name,
-                             fformat     = HitsTable,
-                             description = 'Hits',
-                             compression = compression)
-    # Mark column to index after populating table
-    hits_table.set_attr('columns_to_index', ['event'])
-
-    def write_hits(hits_event):
-        hits_event.store(hits_table)
-    return write_hits
+def hits_writer(hdf5_file, group_name, table_name, *, compression=None):
+    return partial( df_writer, hdf5_file
+                  , group_name         = group_name
+                  , table_name         = table_name
+                  , descriptive_string = "Hits"
+                  , columns_to_index   = ["event"]
+                  , compression        = compression)

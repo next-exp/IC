@@ -598,17 +598,17 @@ def hits_and_kdst_from_files( paths : List[str]
 
             for evtinfo in event_info:
                 event_number, timestamp = evtinfo.fetch_all_fields()
-                hits = hits_from_df(hits_df.loc[hits_df.event == event_number])
-                if len(hits):
-                    hits = hits[event_number]
-                else:
+                this_event = lambda df: df.event == event_number
+                hits = hits_df.loc[this_event]
+                kdst = kdst_df.loc[this_event]
+                if not len(hits):
                     warnings.warn(f"Event {event_number} does not contain hits", UserWarning)
-                    hits = HitCollection(event_number, timestamp, [])
-                yield dict(hits = hits,
-                           kdst = kdst_df.loc[kdst_df.event==event_number],
-                           run_number = run_number,
+
+                yield dict(hits         = hits,
+                           kdst         = kdst,
+                           run_number   = run_number,
                            event_number = event_number,
-                           timestamp = timestamp)
+                           timestamp    = timestamp)
 
 
 @check_annotations
@@ -929,6 +929,11 @@ def sipm_positions(dbfile, run_number):
     return sipm_xys
 
 
+def e_from_q(qs, e_slice):
+    epsilon = np.finfo(np.float64).eps
+    return qs * e_slice / (qs.sum() + epsilon)
+
+
 def hit_builder(dbfile, run_number, drift_v,
                 rebin_slices, rebin_method,
                 global_reco, slice_reco,
@@ -949,24 +954,24 @@ def hit_builder(dbfile, run_number, drift_v,
             if not passed: continue
 
             peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
-
             xys  = sipm_xys[peak.sipms.ids]
             qs   = peak.sipm_charge_array(sipm_noise, charge_type,
                                           single_point = True)
-            xy_peak = try_global_reco(global_reco, xys, qs)
 
+            xy_peak     = try_global_reco(global_reco, xys, qs)
             sipm_charge = peak.sipm_charge_array(sipm_noise        ,
                                                  charge_type       ,
                                                  single_point=False)
 
-            for slice_no, (t_slice, qs) in enumerate(zip(peak.times ,
-                                                         sipm_charge)):
-                z_slice = (t_slice - s1_t) * units.ns * drift_v
-                e_slice = peak.pmts.sum_over_sensors[slice_no]
+            slice_zs = (peak.times - s1_t) * units.ns * drift_v
+            slice_es = peak.pmts.sum_over_sensors
+            xys      = sipm_xys[peak.sipms.ids]
+
+            for (z_slice, e_slice, sipm_qs) in zip(slice_zs, slice_es, sipm_charge):
                 try:
-                    xys      = sipm_xys[peak.sipms.ids]
-                    clusters = slice_reco(xys, qs)
-                    es       = hif.split_energy(e_slice, clusters)
+                    clusters = slice_reco(xys, sipm_qs)
+                    qs       = np.array([c.Q for c in clusters])
+                    es       = e_from_q(qs, e_slice)
                     for c, e in zip(clusters, es):
                         hit  = Hit(peak_no, c, z_slice, e, xy_peak)
                         hitc.hits.append(hit)
@@ -986,21 +991,15 @@ def sipms_as_hits(dbfile, run_number, drift_v,
 
     sipm_xys   = sipm_positions(dbfile, run_number)
     sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
-    epsilon    = np.finfo(np.float64).eps
-
-    def make_cluster(q, x, y):
-        return Cluster(q, xy(x, y), xy(0,0), 1)
 
     def build_hits(pmap, selector_output, event_number, timestamp):
-        hitc = HitCollection(event_number, timestamp * 1e-3)
         s1_t = get_s1_time(pmap, selector_output)
-
+        hits = []
         for peak_no, (passed, peak) in enumerate(zip(selector_output.s2_peaks,
                                                      pmap.s2s)):
             if not passed: continue
 
             peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
-
             xys  = sipm_xys[peak.sipms.ids]
             qs   = peak.sipm_charge_array(sipm_noise, charge_type,
                                           single_point = True)
@@ -1017,26 +1016,35 @@ def sipms_as_hits(dbfile, run_number, drift_v,
 
             for (slice_z, slice_e, sipm_qs) in zip(slice_zs, slice_es, sipm_charge):
                 over_thr = sipm_qs >= q_thr
-                if np.any(over_thr):
-                    sipm_qs  = sipm_qs[over_thr]
-                    sipm_xy  = xys[over_thr]
-                    sipm_es  = sipm_qs * slice_e / (np.sum(sipm_qs) + epsilon)
+                nonempty = np.any(over_thr)
+                sipm_xy  =              xys[over_thr]
+                sipm_qs  =          sipm_qs[over_thr] if nonempty else [NN]
+                sipm_xs  =              sipm_xy[:, 0] if nonempty else [NN]
+                sipm_ys  =              sipm_xy[:, 1] if nonempty else [NN]
+                sipm_es  = e_from_q(sipm_qs, slice_e) if nonempty else [slice_e]
+                sipm_hs  = dict( event    = event_number
+                               , time     = timestamp * 1e-3
+                               , npeak    = peak_no
+                               , Xpeak    = xy_peak[0]
+                               , Ypeak    = xy_peak[1]
+                               , nsipm    = 1
+                               , X        = sipm_xs
+                               , Y        = sipm_ys
+                               , Xrms     = 0.
+                               , Yrms     = 0.
+                               , Z        = slice_z
+                               , Q        = sipm_qs
+                               , E        = sipm_es
+                               , Qc       = -1.
+                               , Ec       = -1.
+                               , track_id = -1
+                               , Ep       = -1.)
+                hits.append(pd.DataFrame(sipm_hs))
 
-                    for q, e, (x, y) in zip(sipm_qs, sipm_es, sipm_xy):
-                        hitc.hits.append( Hit( peak_no
-                                             , make_cluster(q, x, y)
-                                             , slice_z
-                                             , e
-                                             , xy_peak))
+        hits = pd.concat(hits, ignore_index=True)
+        hits = hits.astype(dict(npeak=np.uint16, nsipm=np.uint16))
+        return hits
 
-                else:
-                    hitc.hits.append( Hit( peak_no
-                                         , Cluster.empty()
-                                         , slice_z
-                                         , slice_e
-                                         , xy_peak))
-
-        return hitc
     return build_hits
 
 
@@ -1406,9 +1414,34 @@ def sort_hits(hitc):
     return HitCollection(hitc.event, hitc.time, sorted_hits)
 
 
+def hitc_to_df(hitc: HitCollection):
+    hits = []
+    for hit in hitc.hits:
+        hits.append(pd.DataFrame(dict( event    = hitc.event
+                                     , time     = hitc.time
+                                     , npeak    = hit .npeak
+                                     , Xpeak    = hit .Xpeak
+                                     , Ypeak    = hit .Ypeak
+                                     , nsipm    = hit .nsipm
+                                     , X        = hit .X
+                                     , Y        = hit .Y
+                                     , Xrms     = hit .Xrms
+                                     , Yrms     = hit .Yrms
+                                     , Z        = hit .Z
+                                     , Q        = hit .Q
+                                     , E        = hit .E
+                                     , Qc       = hit .Qc
+                                     , Ec       = hit .Ec
+                                     , track_id = hit .track_id
+                                     , Ep       = hit .Ep), index=[0]))
+    df = pd.concat(hits, ignore_index=True)
+    df = df.astype(dict(event=np.int64, npeak=np.uint16, nsipm=np.uint16, Qc=np.float64, Ec=np.float64, Ep=np.float64))
+    return df
+
+
 def compute_and_write_tracks_info(paolina_params, h5out,
-                                  hit_type, filter_hits_table_name='hits_select',
-                                  write_paolina_hits=None):
+                                  hit_type, filter_hits_table_name,
+                                  hits_writer):
 
     filter_events_nohits = fl.map(lambda x : len(x.hits) > 0,
                                       args = 'hits',
@@ -1438,7 +1471,6 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                                             args = ('event_number', 'topology_info', 'paolina_hits', 'out_of_map'),
                                             out  = 'event_info')
 
-
     # Define writers and make them sinks
     write_tracks          = fl.sink(   track_writer     (h5out=h5out)             , args="topology_info"      )
     write_summary         = fl.sink( summary_writer     (h5out=h5out)             , args="event_info"         )
@@ -1450,9 +1482,12 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     make_and_write_summary  = make_final_summary, write_summary
     select_and_write_tracks = events_passed_topology.filter, write_tracks
 
+    to_hits_df = fl.map(hitc_to_df)
+    write_hits = ("paolina_hits", to_hits_df, fl.sink(hits_writer))
+
     fork_pipes = filter(None, ( make_and_write_summary
                               , write_topology_filter
-                              , write_paolina_hits
+                              , write_hits
                               , select_and_write_tracks))
 
     return pipe( filter_events_nohits
@@ -1468,11 +1503,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
 
 @check_annotations
 def hits_merger(same_peak : bool) -> Callable:
-    def merge_hits(hc : HitCollection) -> HitCollection:
-        merged_hits = hif.merge_NN_hits(hc.hits, same_peak)
-        return HitCollection(hc.event, hc.time, merged_hits)
-
-    return merge_hits
+    return partial(hif.merge_NN_hits, same_peak=same_peak)
 
 
 @check_annotations
@@ -1494,21 +1525,10 @@ def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
     The energy of NN hits is redistributed among neighbors.
     """
 
-    def threshold_hits(hitc : HitCollection) -> HitCollection:
-        t = hitc.time
-        thr_hits = hif.threshold_hits(hitc.hits, threshold_charge     )
-        mrg_hits = hif.merge_NN_hits ( thr_hits, same_peak = same_peak)
-
-        cor_hits = []
-        for hit in mrg_hits:
-            cluster = Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm)
-            xypos   = xy(hit.Xpeak, hit.Ypeak)
-            hit     = Hit(hit.npeak, cluster, hit.Z, hit.E, xypos, hit.Ec)
-            cor_hits.append(hit)
-
-        new_hitc      = HitCollection(hitc.event, t)
-        new_hitc.hits = cor_hits
-        return new_hitc
+    def threshold_hits(hits: pd.DataFrame) -> pd.DataFrame:
+        thr_hits = hif.threshold_hits(    hits, threshold_charge     )
+        mrg_hits = hif.merge_NN_hits (thr_hits, same_peak = same_peak)
+        return mrg_hits
 
     return threshold_hits
 
@@ -1537,12 +1557,9 @@ def hits_corrector(map_fname : str, apply_temp : bool) -> Callable:
     time_to_Z = (get_df_to_z_converter(maps) if maps.t_evol is not None else
                  lambda x: x)
 
-    def correct(hitc : HitCollection) -> HitCollection:
-        for hit in hitc.hits:
-            corr    = get_coef([hit.X], [hit.Y], [hit.Z], hitc.time)[0]
-            hit.Ec  = hit.E * corr
-            hit.xyz = (hit.X, hit.Y, time_to_Z(hit.Z)) # ugly, but temporary
-        return hitc
+    def correct(hits : pd.DataFrame) -> pd.DataFrame:
+        corr_factors = get_coef(hits.X, hits.Y, hits.Z, hits.time)
+        return hits.assign(Ec = hits.E * corr_factors)
 
     return correct
 
