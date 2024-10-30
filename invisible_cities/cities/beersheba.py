@@ -95,9 +95,10 @@ from typing import Union
 
 
 # Temporary. The removal of the event model will fix this.
-from collections import defaultdict
 def hitc_to_df_(hitc):
-    columns = defaultdict(list)
+    columns = "event time npeak Xpeak Ypeak nsipm X Y Xrms Yrms Z Q E Qc Ec track_id Ep".split()
+    columns = {col:[] for col in columns}
+
     for hit in hitc.hits:
         columns["event"   ].append(hitc.event)
         columns["time"    ].append(hitc.time)

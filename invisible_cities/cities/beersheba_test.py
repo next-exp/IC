@@ -1,4 +1,5 @@
 import os
+
 import numpy  as np
 import tables as tb
 import pandas as pd
@@ -185,3 +186,16 @@ def test_beersheba_filters_empty_dfs(beersheba_config, config_tmpdir):
 
     df = dio.load_dst(path_out, "Filters", "nohits")
     assert df.passed.tolist() == [False]
+
+
+@mark.filterwarnings("ignore:Event .* does not contain hits")
+@mark.filterwarnings("ignore:dataframe contains strings longer than allowed")
+@mark.filterwarnings("ignore:Input file does not contain /config group")
+def test_beersheba_does_not_crash_with_no_hits(beersheba_config, Th228_hits_missing, config_tmpdir):
+    path_out  = os.path.join(config_tmpdir, "beersheba_does_not_crash_with_no_hits.h5")
+    beersheba_config.update(dict( files_in    = Th228_hits_missing
+                                , file_out    = path_out
+                                , event_range = 1))
+
+    # just test that it doesn't crash
+    beersheba(**beersheba_config)

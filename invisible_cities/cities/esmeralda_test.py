@@ -1,6 +1,9 @@
 import os
+import shutil
 import numpy  as np
 import tables as tb
+
+from pytest import mark
 
 from .. core                 import system_of_units as units
 from .. io                   import dst_io      as dio
@@ -199,3 +202,15 @@ def test_esmeralda_filters_events_with_too_many_hits(esmeralda_config, Th228_tra
     assert (summary.evt_ntrks > 0        ).tolist() == evt_pass
     assert (summary.evt_nhits < nhits_max).tolist() == evt_pass
     assert            filter_output.passed.tolist() == evt_pass
+
+
+@mark.filterwarnings("ignore:Event .* does not contain hits")
+@mark.filterwarnings("ignore:Input file does not contain /config group")
+def test_esmeralda_does_not_crash_with_no_hits(esmeralda_config, Th228_hits_missing, config_tmpdir):
+    path_out  = os.path.join(config_tmpdir, "esmeralda_does_not_crash_with_no_hits.h5")
+    esmeralda_config.update(dict( files_in    = Th228_hits_missing
+                                , file_out    = path_out
+                                , event_range = 1))
+
+    # just test that it doesn't crash
+    esmeralda(**esmeralda_config)

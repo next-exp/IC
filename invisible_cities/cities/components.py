@@ -594,12 +594,17 @@ def hits_and_kdst_from_files( paths : List[str]
             except (tb.exceptions.NoSuchNodeError, IndexError):
                 continue
 
-            check_lengths(event_info, hits_df.event.unique())
+            check_lengths(event_info, kdst_df.event.unique())
 
             for evtinfo in event_info:
                 event_number, timestamp = evtinfo.fetch_all_fields()
                 hits = hits_from_df(hits_df.loc[hits_df.event == event_number])
-                yield dict(hits = hits[event_number],
+                if len(hits):
+                    hits = hits[event_number]
+                else:
+                    warnings.warn(f"Event {event_number} does not contain hits", UserWarning)
+                    hits = HitCollection(event_number, timestamp, [])
+                yield dict(hits = hits,
                            kdst = kdst_df.loc[kdst_df.event==event_number],
                            run_number = run_number,
                            event_number = event_number,

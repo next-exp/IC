@@ -293,6 +293,15 @@ def test_hits_and_kdst_from_files(ICDATADIR):
     assert type(output['kdst'])     == pd.DataFrame
 
 
+@mark.filterwarnings("ignore:Event .* does not contain hits")
+def test_hits_and_kdst_from_files_missing_hits(Th228_hits_missing, config_tmpdir):
+    n_events_true = len(pd.read_hdf(Th228_hits_missing, "/Run/events"))
+
+    generator = hits_and_kdst_from_files([Th228_hits_missing], "RECO", "Events")
+    n_events  = sum(1 for _ in generator)
+    assert n_events == n_events_true
+
+
 def test_collect():
     the_source    = list(range(0,10))
     the_collector = collect()
