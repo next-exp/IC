@@ -93,22 +93,43 @@ def test_rebin_peak(pk, fraction):
     assert_Peak_equality(rebinned_pk, expected_pk)
 
 
-@mark.parametrize("threshold", (4000, 10000))
 @given(peaks(subtype=S2))
-def test_rebin_peak_threshold(threshold, pk):
+def test_rebin_peak_threshold_below(pk):
+    """With a threshold below the minimum slice energy, there should be no rebinning"""
+    _, pk = pk
+
+    threshold = pk.pmts.sum_over_sensors.min() - 1
+    rebinned  = pmf.rebin_peak(pk, threshold, pmf.RebinMethod.threshold)
+    assert_Peak_equality(pk, rebinned)
+
+
+@given(peaks(subtype=S2))
+def test_rebin_peak_threshold_above_sum(pk):
+    """With a threshold above the integrated signal, there should be only one slice"""
+    _, pk = pk
+
+    threshold = pk.pmts.sum_over_sensors.sum()
+    rebinned  = pmf.rebin_peak(pk, threshold, pmf.RebinMethod.threshold)
+
+    assert len(rebinned.times) == 1
+    assert rebinned.total_energy == approx(pk.total_energy)
+    assert rebinned.total_charge == approx(pk.total_charge)
+
+
+@given(peaks(subtype=S2).filter(lambda p: len(p[1].times)>2))
+def test_rebin_peak_threshold(pk):
     _, pk = pk
 
     pk_eng      = pk.total_energy
     pk_char     = pk.total_charge
 
+    threshold   = pk.pmts.sum_over_sensors.mean()
+    threshold   = np.round(threshold, 6) # avoid precision problems with floats
     rebinned_pk = pmf.rebin_peak(pk, threshold, pmf.RebinMethod.threshold)
 
     assert rebinned_pk.total_energy == approx(pk_eng)
     assert rebinned_pk.total_charge == approx(pk_char)
-    if pk_eng < threshold:
-        assert rebinned_pk.times.shape[0] == 1
-    else:
-        assert np.all(rebinned_pk.pmts.sum_over_sensors >= threshold)
+    assert np.all(rebinned_pk.pmts.sum_over_sensors >= threshold)
 
 
 @given(pmaps(), pmaps(), pmaps(), pmaps())
