@@ -151,20 +151,29 @@ def new_grid_1mm():
     return det_grid
 
 
-def test_deconvolution_input_exact_result(data_hdst, data_hdst_deconvolved, new_grid_1mm):
+@fixture(scope="session")
+def data_hdst_first_peak(data_hdst):
+    event = 3021916
+    peak  = 0
+    hdst = ( load_dst(data_hdst, 'RECO', 'Events')
+            .groupby("event npeak".split())
+            .get_group((event, peak))
+            .groupby(['X', 'Y']).Q.sum().reset_index()
+            .loc[lambda df: df.Q > 40]
+           )
+    return hdst
+
+
+def test_deconvolution_input_exact_result(data_hdst_first_peak, data_hdst_deconvolved, new_grid_1mm):
     """
     Compare the output of the deconvolution with a reference output
     stored in a file.
     """
+    hdst              = data_hdst_first_peak
     ref_interpolation = np.load(data_hdst_deconvolved)
 
-    hdst   = load_dst(data_hdst, 'RECO', 'Events')
-    h      = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
-    h      = h.groupby(['X', 'Y']).Q.sum().reset_index()
-    h      = h[h.Q > 40]
-
     interpolator = deconvolution_input([10., 10.], new_grid_1mm, InterpolationMethod.cubic)
-    inter        = interpolator((h.X, h.Y), h.Q)
+    inter        = interpolator((hdst.X, hdst.Y), hdst.Q)
 
     assert np.allclose(ref_interpolation['e_inter'], inter[0])
     assert np.allclose(ref_interpolation['x_inter'], inter[1][0])
@@ -172,16 +181,13 @@ def test_deconvolution_input_exact_result(data_hdst, data_hdst_deconvolved, new_
 
 
 @mark.parametrize("interp_method", InterpolationMethod)
-def test_deconvolution_input_interpolation_method(data_hdst, new_grid_1mm, interp_method):
+def test_deconvolution_input_interpolation_method(data_hdst_first_peak, new_grid_1mm, interp_method):
     """
     Check that it runs with all interpolation methods.
     Select one event/peak from input and apply a cut to obtain an
     input image that results in round numbers.
     """
-    hdst = load_dst(data_hdst, 'RECO', 'Events')
-    hdst = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
-    hdst = hdst.groupby(list("XY")).Q.sum().reset_index().loc[lambda df: df.Q>40]
-
+    hdst         = data_hdst_first_peak
     interpolator = deconvolution_input([10., 10.], new_grid_1mm, interp_method)
     output       = interpolator((hdst.X, hdst.Y), hdst.Q)
 
@@ -193,6 +199,7 @@ def test_deconvolution_input_interpolation_method(data_hdst, new_grid_1mm, inter
     assert output[1][1].shape == (nelements,)
 
 
+#TODO: use data_hdst_first_peak and new_grid_1mm here too, if possible
 def test_deconvolve(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load (data_hdst_deconvolved)
 
