@@ -151,7 +151,11 @@ def new_grid_1mm():
     return det_grid
 
 
-def test_deconvolution_input(data_hdst, data_hdst_deconvolved, new_grid_1mm):
+def test_deconvolution_input_exact_result(data_hdst, data_hdst_deconvolved, new_grid_1mm):
+    """
+    Compare the output of the deconvolution with a reference output
+    stored in a file.
+    """
     ref_interpolation = np.load(data_hdst_deconvolved)
 
     hdst   = load_dst(data_hdst, 'RECO', 'Events')
@@ -170,7 +174,9 @@ def test_deconvolution_input(data_hdst, data_hdst_deconvolved, new_grid_1mm):
 @mark.parametrize("interp_method", InterpolationMethod)
 def test_deconvolution_input_interpolation_method(data_hdst, new_grid_1mm, interp_method):
     """
-    Check that it runs with all interpolation methods
+    Check that it runs with all interpolation methods.
+    Select one event/peak from input and apply a cut to obtain an
+    input image that results in round numbers.
     """
     hdst = load_dst(data_hdst, 'RECO', 'Events')
     hdst = hdst[(hdst.event == 3021916) & (hdst.npeak == 0) & (hdst.Q>40)]
