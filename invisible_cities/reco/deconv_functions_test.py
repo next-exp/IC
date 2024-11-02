@@ -199,6 +199,12 @@ def test_deconvolution_input_interpolation_method(data_hdst_first_peak, new_grid
     assert output[1][1].shape == (nelements,)
 
 
+@mark.parametrize("interp_method", InterpolationMethod.__members__)
+def test_deconvolution_input_wrong_interpolation_method_raises(interp_method):
+    with raises(ValueError):
+        deconvolution_input([10., 10.], [1., 1.], interp_method)
+
+
 #TODO: use data_hdst_first_peak and new_grid_1mm here too, if possible
 def test_deconvolve(data_hdst, data_hdst_deconvolved):
     ref_interpolation = np.load (data_hdst_deconvolved)
