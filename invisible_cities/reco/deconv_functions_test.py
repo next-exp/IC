@@ -179,15 +179,18 @@ def test_deconvolution_input_interpolation_method(data_hdst, new_grid_1mm, inter
     input image that results in round numbers.
     """
     hdst = load_dst(data_hdst, 'RECO', 'Events')
-    hdst = hdst[(hdst.event == 3021916) & (hdst.npeak == 0) & (hdst.Q>40)]
+    hdst = hdst[(hdst.event == 3021916) & (hdst.npeak == 0)]
+    hdst = hdst.groupby(list("XY")).Q.sum().reset_index().loc[lambda df: df.Q>40]
 
-    deconvolve = deconvolution_input([10., 10.], new_grid_1mm, interp_method)
-    output     = deconvolve((hdst.X, hdst.Y), hdst.Q)
+    interpolator = deconvolution_input([10., 10.], new_grid_1mm, interp_method)
+    output       = interpolator((hdst.X, hdst.Y), hdst.Q)
 
-    assert output[0].shape == (70, 100)
-    assert len(output[1])  == 2
-    assert output[1][0].shape == (7000,)
-    assert output[1][1].shape == (7000,)
+    shape     = 120, 120
+    nelements = shape[0] * shape[1]
+    assert output[0].shape    == shape
+    assert len(output[1])     == 2
+    assert output[1][0].shape == (nelements,)
+    assert output[1][1].shape == (nelements,)
 
 
 def test_deconvolve(data_hdst, data_hdst_deconvolved):
