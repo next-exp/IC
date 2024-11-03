@@ -1518,7 +1518,7 @@ def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
 def hits_corrector( filename   : str
                   , apply_temp : bool
                   , norm_strat : NormStrategy
-                  , norm_value : Optional[float] = 0
+                  , norm_value : Optional[Union[float, NoneType]] = None
                   ) -> Callable:
     """
     Applies energy correction map and converts drift time to z.
@@ -1536,7 +1536,13 @@ def hits_corrector( filename   : str
     A function that takes a HitCollection as input and returns
     the same object with modified Ec and Z fields.
     """
-    assert (norm_strat is not NormStrategy.custom) or (norm_value > 0)
+
+    if ( ((norm_strat is not NormStrategy.custom)  ^  (norm_value is None)) or
+          (norm_strat is     NormStrategy.custom) and (norm_value<= 0)):
+        raise ValueError(
+            "`NormStrategy.custom` requires `norm_value` to be greater than 0. "
+            "For all other `NormStrategy` options, `norm_value` must not be provided."
+        )
 
     maps      = read_maps(os.path.expandvars(filename))
     get_coef  = apply_all_correction( maps
