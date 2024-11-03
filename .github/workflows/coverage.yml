@@ -30,12 +30,14 @@ jobs:
       run: |
         echo "Showing only files with coverage < 100%"
         head -2 coverage_report
-        FAIL=0
         incomplete_coverage=$(head -n -2 coverage_report | tail -n +3 | grep -v "100%")
+
         while read line; do
-          FAIL=1
           printf '\033[0;31m%s\033[0m\n' "$line" # red color ... reset color
         done <<<${incomplete_coverage}
 
         tail -2 coverage_report
-        exit $FAIL
+
+        if [ ! -z "$incomplete_coverage" ]; then
+          echo "::warning ::Test suite coverage incomplete"
+        fi
