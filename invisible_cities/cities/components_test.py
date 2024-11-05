@@ -482,6 +482,12 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
                                                    , norm_strat
                                                    , norm_value
                                                    , apply_temp ):
+    """
+    Test that all valid normalization options work to some
+    extent. Here we just check that the values make some sense: not
+    nan and greater than 0. The more exhaustive tests are performed
+    directly on the core functions.
+    """
     n  = 50
     xs = np.random.uniform(-10, 10, n)
     ys = np.random.uniform(-10, 10, n)
