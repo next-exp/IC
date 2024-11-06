@@ -52,14 +52,14 @@ from .  components import print_every
 from .  components import hits_corrector
 from .  components import hits_thresholder
 from .  components import hits_and_kdst_from_files
-from .  components import identity
 
 from .. core.configure         import EventRangeType
 from .. core.configure         import OneOrManyFiles
 from .. core.configure         import check_annotations
 
-from .. core                   import tbl_functions           as tbl
-from .. dataflow               import dataflow                as fl
+from .. core                   import system_of_units as units
+from .. core                   import tbl_functions   as tbl
+from .. dataflow               import dataflow        as fl
 
 from .. dataflow.dataflow      import push
 from .. dataflow.dataflow      import pipe
@@ -86,7 +86,6 @@ from .. types.symbols          import InterpolationMethod
 from .. types.symbols          import CutType
 from .. types.symbols          import DeconvolutionMode
 
-from .. core                   import system_of_units as units
 
 from typing import Tuple
 from typing import List
@@ -395,8 +394,7 @@ def beersheba( files_in         : OneOrManyFiles
              , same_peak        : bool
              , deconv_params    : dict
              , satellite_params : Union[dict, NoneType]
-             , corrections_file : Union[ str, NoneType]
-             , apply_temp       : Union[bool, NoneType]
+             , corrections      : dict
              ):
     """
     The city corrects Penthesilea hits energy and extracts topology information.
@@ -470,6 +468,16 @@ def beersheba( files_in         : OneOrManyFiles
               `abs`: cut on the absolute value of the hits.
               `rel`: cut on the relative value (to the max) of the hits.
 
+    corrections : dict
+        filename : str
+            Path to the file holding the correction maps
+        apply_temp : bool
+            Whether to apply temporal corrections
+        norm_strat : NormStrategy
+            Normalization strategy
+        norm_value : float, optional
+            Normalization value in case of `norm_strat = NormStrategy.custom`
+
     ----------
     Input
     ----------
@@ -480,13 +488,9 @@ def beersheba( files_in         : OneOrManyFiles
     DECO    : Deconvolved hits table
     MC info : (if run number <=0)
     """
-
-    if corrections_file is None: correct_hits = identity
-    else                       : correct_hits = hits_corrector(corrections_file, apply_temp)
-    correct_hits       = fl.map( correct_hits, item="hits")
-
-    threshold_hits  = fl.map(hits_thresholder(threshold, same_peak), item="hits")
-    hitc_to_df      = fl.map(hitc_to_df_, item="hits")
+    correct_hits   = fl.map(hits_corrector(**corrections), item="hits")
+    threshold_hits = fl.map(hits_thresholder(threshold, same_peak), item="hits")
+    hitc_to_df     = fl.map(hitc_to_df_, item="hits")
 
     deconv_params['psf_fname'       ] = expandvars(deconv_params['psf_fname'])
     deconv_params['satellite_params'] = satellite_params

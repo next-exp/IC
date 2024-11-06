@@ -15,6 +15,7 @@ from typing          import Dict
 from typing          import Tuple
 from typing          import Union
 from typing          import Any
+from typing          import Optional
 
 import tables as tb
 import numpy  as np
@@ -1514,7 +1515,11 @@ def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
 
 
 @check_annotations
-def hits_corrector(map_fname : str, apply_temp : bool) -> Callable:
+def hits_corrector( filename   : str
+                  , apply_temp : bool
+                  , norm_strat : NormStrategy
+                  , norm_value : Optional[Union[float, NoneType]] = None
+                  ) -> Callable:
     """
     Applies energy correction map and converts drift time to z.
 
@@ -1531,11 +1536,20 @@ def hits_corrector(map_fname : str, apply_temp : bool) -> Callable:
     A function that takes a HitCollection as input and returns
     the same object with modified Ec and Z fields.
     """
-    map_fname = os.path.expandvars(map_fname)
-    maps      = read_maps(map_fname)
-    get_coef  = apply_all_correction(maps, apply_temp = apply_temp, norm_strat = NormStrategy.kr)
-    time_to_Z = (get_df_to_z_converter(maps) if maps.t_evol is not None else
-                 lambda x: x)
+
+    if ( ((norm_strat is not NormStrategy.custom)  ^  (norm_value is None)) or
+          (norm_strat is     NormStrategy.custom) and (norm_value<= 0)):
+        raise ValueError(
+            "`NormStrategy.custom` requires `norm_value` to be greater than 0. "
+            "For all other `NormStrategy` options, `norm_value` must not be provided."
+        )
+
+    maps      = read_maps(os.path.expandvars(filename))
+    get_coef  = apply_all_correction( maps
+                                    , apply_temp = apply_temp
+                                    , norm_strat = norm_strat
+                                    , norm_value = norm_value)
+    time_to_Z = get_df_to_z_converter(maps) if maps.t_evol is not None else identity
 
     def correct(hitc : HitCollection) -> HitCollection:
         for hit in hitc.hits:

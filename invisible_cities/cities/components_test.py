@@ -17,8 +17,13 @@ from .. core.exceptions    import          SensorIDMismatch
 from .. core.exceptions    import              NoInputFiles
 from .. core.testing_utils import    assert_tables_equality
 from .. core               import system_of_units as units
+from .. evm.event_model    import Cluster
+from .. evm.event_model    import Hit
+from .. evm.event_model    import HitCollection
+from .. types.ic_types     import xy
 from .. types.symbols      import WfType
 from .. types.symbols      import EventRange as ER
+from .. types.symbols      import NormStrategy
 from .. types.symbols      import XYReco
 
 from .  components import event_range
@@ -32,6 +37,7 @@ from .  components import hits_and_kdst_from_files
 from .  components import mcsensors_from_file
 from .  components import create_timestamp
 from .  components import check_max_time
+from .  components import hits_corrector
 from .  components import write_city_configuration
 from .  components import copy_cities_configuration
 
@@ -463,6 +469,60 @@ def test_read_wrong_pmt_ids(ICDATADIR):
     sns_gen = mcsensors_from_file([file_in], 'next100', run_number, rate)
     with raises(SensorIDMismatch):
         next(sns_gen)
+
+
+@mark.parametrize( "norm_strat norm_value".split(),
+                  ( (NormStrategy.kr    , None) # None marks the default value
+                  , (NormStrategy.max   , None)
+                  , (NormStrategy.mean  , None)
+                  , (NormStrategy.custom,  1e3)
+                  ))
+@mark.parametrize("apply_temp", (False, True))
+def test_hits_corrector_valid_normalization_options( correction_map_filename
+                                                   , norm_strat
+                                                   , norm_value
+                                                   , apply_temp ):
+    """
+    Test that all valid normalization options work to some
+    extent. Here we just check that the values make some sense: not
+    nan and greater than 0. The more exhaustive tests are performed
+    directly on the core functions.
+    """
+    n  = 50
+    xs = np.random.uniform(-10, 10, n)
+    ys = np.random.uniform(-10, 10, n)
+    zs = np.random.uniform( 10, 50, n)
+
+    hits = []
+    for i, x, y, z in zip(range(n), xs, ys, zs):
+        c = Cluster(0, xy(x, y), xy.zero(), 1)
+        h = Hit(i, c, z, 1, xy.zero(), 0)
+        hits.append(h)
+
+    hc = HitCollection(0, 1, hits)
+
+    correct     = hits_corrector(correction_map_filename, apply_temp, norm_strat, norm_value)
+    corrected_e = np.array([h.Ec for h in correct(hc).hits])
+
+    assert not np.any(np.isnan(corrected_e) )
+    assert     np.all(         corrected_e>0)
+
+
+@mark.parametrize( "norm_strat norm_value".split(),
+                  ( (NormStrategy.kr    ,    0) # 0 doens't count as "not given"
+                  , (NormStrategy.max   ,    0)
+                  , (NormStrategy.mean  ,    0)
+                  , (NormStrategy.kr    ,    1) # any other value must not be given either
+                  , (NormStrategy.max   ,    1)
+                  , (NormStrategy.mean  ,    1)
+                  , (NormStrategy.custom, None) # with custom, `norm_value` must be given ...
+                  , (NormStrategy.custom,    0) # ... but not 0
+                  ))
+def test_hits_corrector_invalid_normalization_options_raises( correction_map_filename
+                                                            , norm_strat
+                                                            , norm_value):
+    with raises(ValueError):
+        hits_corrector(correction_map_filename, False, norm_strat, norm_value)
 
 
 def test_write_city_configuration(config_tmpdir):

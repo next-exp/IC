@@ -23,6 +23,7 @@ from . types.symbols     import DeconvolutionMode
 from . types.symbols     import CutType
 from . types.symbols     import SiPMCharge
 from . types.symbols     import InterpolationMethod
+from . types.symbols     import NormStrategy
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
 dst_data = namedtuple('dst_data', 'file_info config read true')
@@ -701,8 +702,10 @@ def sophronia_config(Th228_pmaps, next100_mc_krmap):
                    , global_reco_algo   = XYReco.barycenter
                    , global_reco_params = dict(Qthr = 20 * units.pes)
                    , same_peak          = True
-                   , corrections_file   = next100_mc_krmap
-                   , apply_temp         = False
+                   , corrections        = dict(
+                       filename   = next100_mc_krmap,
+                       apply_temp =            False,
+                       norm_strat =  NormStrategy.kr)
                    )
     return config
 
@@ -726,8 +729,10 @@ def esmeralda_config(Th228_hits, next100_mc_krmap):
                       min_voxels       = 3                  ,
                       blob_radius      = 21 * units.mm      ,
           	      max_num_hits     = 30000              )
-                 , corrections_file   = next100_mc_krmap
-                 , apply_temp         = False
+                 , corrections = dict(
+                      filename   = next100_mc_krmap,
+                      apply_temp =            False,
+                      norm_strat =  NormStrategy.kr)
                  )
 
     return config
@@ -827,8 +832,9 @@ def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
                                        , cut_type      = CutType.abs
                                        , inter_method  = InterpolationMethod.cubic)
                  , satellite_params = None
-                 , corrections_file = next100_mc_krmap
-                 , apply_temp       = False )
+                 , corrections   = dict( filename   = next100_mc_krmap
+                                       , apply_temp = False
+                                       , norm_strat = NormStrategy.kr))
     return config
 
 
