@@ -20,6 +20,7 @@ from ..evm .pmaps         import S2
 from ..evm .pmaps         import PMap
 from ..evm .pmaps_test    import pmaps    as pmap_gen
 from .                    import pmaps_io as pmpio
+from .                    import run_and_event_io as reio
 
 from typing import Generator
 from typing import Mapping
@@ -242,6 +243,10 @@ def test_load_pmaps_eager(output_tmpdir, data):
     with tb.open_file(pmap_filename, "w") as output_file:
         write = pmpio.pmap_writer(output_file)
         list(map(write, true_pmaps, event_numbers))
+
+        write = reio.run_and_event_writer(output_file)
+        for event_number in event_numbers:
+            write(0, event_number, 0)
 
     read_pmaps = pmpio.load_pmaps_eager(pmap_filename)
 
