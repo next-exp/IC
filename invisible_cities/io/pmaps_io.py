@@ -4,6 +4,8 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
+from .. core.exceptions    import InvalidInputFileStructure
+
 from .. evm .pmaps         import  PMTResponses
 from .. evm .pmaps         import SiPMResponses
 from .. evm .pmaps         import S1
@@ -78,6 +80,14 @@ def _make_tables(hdf5_file, compression):
     return pmp_tables
 
 
+def check_file_integrity(file):
+    events_run      = file.root.Run  .events.read(field="evt_number")
+    events_pmaps_s1 = file.root.PMAPS.S1    .read(field="event")
+    events_pmaps_s2 = file.root.PMAPS.S2    .read(field="event")
+    if set(events_run) != set(events_pmaps_s1.tolist() + events_pmaps_s2.tolist()):
+        raise InvalidInputFileStructure("Inconsistent data: event number mismatch")
+
+
 def load_pmaps_as_df(filename, lazy=False):
     loader = load_pmaps_as_df_lazy if lazy else load_pmaps_as_df_eager
     return loader(filename)
@@ -85,6 +95,8 @@ def load_pmaps_as_df(filename, lazy=False):
 
 def load_pmaps_as_df_eager(filename):
     with tb.open_file(filename, 'r') as h5f:
+        check_file_integrity(h5f)
+
         pmap  = h5f.root.PMAPS
         to_df = pd.DataFrame.from_records
         return (to_df(pmap.S1   .read()),
@@ -102,6 +114,8 @@ def load_pmaps_as_df_lazy(filename):
 
     tables = "S1 S2 S2Si S1Pmt S2Pmt".split()
     with tb.open_file(filename, 'r') as h5f:
+        check_file_integrity(h5f)
+
         events = h5f.root.Run.events.read(field="evt_number")
         tables = [getattr(h5f.root.PMAPS, table, None) for table in tables]
         for event in events:
