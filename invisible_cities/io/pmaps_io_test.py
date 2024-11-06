@@ -181,16 +181,16 @@ def test_store_pmap(output_tmpdir, KrMC_pmaps_dict):
         assert cols.ene  [:] == approx (s2_data.enes_sipm)
 
 
-def test_load_pmaps_as_df(KrMC_pmaps_filename, KrMC_pmaps_dfs):
+def test_load_pmaps_as_df_eager(KrMC_pmaps_filename, KrMC_pmaps_dfs):
     true_dfs = KrMC_pmaps_dfs
-    read_dfs = pmpio.load_pmaps_as_df(KrMC_pmaps_filename)
+    read_dfs = pmpio.load_pmaps_as_df_eager(KrMC_pmaps_filename)
     for read_df, true_df in zip(read_dfs, true_dfs):
         assert_dataframes_equal(read_df, true_df)
 
 
-def test_load_pmaps_as_df_without_ipmt(KrMC_pmaps_without_ipmt_filename, KrMC_pmaps_without_ipmt_dfs):
+def test_load_pmaps_as_df_eager_without_ipmt(KrMC_pmaps_without_ipmt_filename, KrMC_pmaps_without_ipmt_dfs):
     true_dfs = KrMC_pmaps_without_ipmt_dfs
-    read_dfs = pmpio.load_pmaps_as_df(KrMC_pmaps_without_ipmt_filename)
+    read_dfs = pmpio.load_pmaps_as_df_eager(KrMC_pmaps_without_ipmt_filename)
 
     # Indices 0, 1 and 2 correspond to the S1sum, S2sum and Si
     # dataframes. Indices 3 and 4 are the S1pmt and S2pmt dataframes
@@ -203,7 +203,7 @@ def test_load_pmaps_as_df_without_ipmt(KrMC_pmaps_without_ipmt_filename, KrMC_pm
 
 
 @given(stg.data())
-def test_load_pmaps(output_tmpdir, data):
+def test_load_pmaps_eager(output_tmpdir, data):
     pmap_filename  = os.path.join(output_tmpdir, "test_pmap_file.h5")
     event_numbers  = [2, 4, 6]
     pmt_ids        = [1, 6, 8]
@@ -214,7 +214,7 @@ def test_load_pmaps(output_tmpdir, data):
         write = pmpio.pmap_writer(output_file)
         list(map(write, true_pmaps, event_numbers))
 
-    read_pmaps = pmpio.load_pmaps(pmap_filename)
+    read_pmaps = pmpio.load_pmaps_eager(pmap_filename)
 
     assert len(read_pmaps) == len(true_pmaps)
     assert np.all(list(read_pmaps.keys()) == event_numbers)
