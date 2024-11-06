@@ -78,7 +78,7 @@ def _make_tables(hdf5_file, compression):
     return pmp_tables
 
 
-def load_pmaps_as_df(filename):
+def load_pmaps_as_df_eager(filename):
     with tb.open_file(filename, 'r') as h5f:
         pmap  = h5f.root.PMAPS
         to_df = pd.DataFrame.from_records
@@ -96,9 +96,9 @@ def _build_ipmtdf_from_sumdf(sumdf):
     ipmtdf['npmt'] = -1
     return ipmtdf
 
-def load_pmaps(filename):
+def load_pmaps_eager(filename):
     pmap_dict = {}
-    s1df, s2df, sidf, s1pmtdf, s2pmtdf = load_pmaps_as_df(filename)
+    s1df, s2df, sidf, s1pmtdf, s2pmtdf = load_pmaps_as_df_eager(filename)
     # Hack fix to allow loading pmaps without individual pmts
     if s1pmtdf is None: s1pmtdf = _build_ipmtdf_from_sumdf(s1df)
     if s2pmtdf is None: s2pmtdf = _build_ipmtdf_from_sumdf(s2df)
