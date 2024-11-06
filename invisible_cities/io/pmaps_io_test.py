@@ -188,6 +188,19 @@ def test_load_pmaps_as_df_eager(KrMC_pmaps_filename, KrMC_pmaps_dfs):
         assert_dataframes_equal(read_df, true_df)
 
 
+def test_load_pmaps_as_df_lazy(KrMC_pmaps_filename, KrMC_pmaps_dfs):
+    """Ensure the lazy and non-lazy versions provide the same result"""
+    dfs_eager = pmpio.load_pmaps_as_df_eager(KrMC_pmaps_filename)
+    dfs_lazy  = pmpio.load_pmaps_as_df_lazy (KrMC_pmaps_filename)
+
+    # concatenate all dfs from the same node
+    dfs_lazy = [pd.concat(node_dfs, ignore_index=True) for node_dfs in zip(*dfs_lazy)]
+
+    assert len(dfs_eager) == len(dfs_lazy)
+    for df_lazy, df_eager in zip(dfs_lazy, dfs_eager):
+        assert_dataframes_equal(df_lazy, df_eager)
+
+
 def test_load_pmaps_as_df_eager_without_ipmt(KrMC_pmaps_without_ipmt_filename, KrMC_pmaps_without_ipmt_dfs):
     true_dfs = KrMC_pmaps_without_ipmt_dfs
     read_dfs = pmpio.load_pmaps_as_df_eager(KrMC_pmaps_without_ipmt_filename)
@@ -220,6 +233,20 @@ def test_load_pmaps_eager(output_tmpdir, data):
     assert np.all(list(read_pmaps.keys()) == event_numbers)
     for true_pmap, read_pmap in zip(true_pmaps, read_pmaps.values()):
         assert_PMap_equality(read_pmap, true_pmap)
+
+
+def test_load_pmaps_lazy(KrMC_pmaps_filename):
+    """Ensure the lazy and non-lazy versions provide the same result"""
+    pmaps_eager = pmpio.load_pmaps_eager(KrMC_pmaps_filename)
+    pmaps_lazy  = pmpio.load_pmaps_lazy (KrMC_pmaps_filename)
+
+    # combine all events in the same dictionary
+    pmaps_lazy = dict(pmaps_lazy)
+
+    assert len(pmaps_lazy) == len(pmaps_eager)
+    for evt, pmap_lazy in pmaps_lazy.items():
+        assert evt in pmaps_eager
+        assert_PMap_equality(pmap_lazy, pmaps_eager[evt])
 
 
 @mark.parametrize("signal_type", (S1, S2))
