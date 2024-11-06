@@ -570,7 +570,7 @@ def pmap_from_files(paths):
             for evtinfo, (evt, pmap) in zip(event_info, pmaps):
                 event_number, timestamp = evtinfo.fetch_all_fields()
                 if event_number != evt:
-                    raise RuntimeError("Inconsistent data: event number mismatch")
+                    raise InvalidInputFileStructure("Inconsistent data: event number mismatch")
                 yield dict(pmap=pmap, run_number=run_number,
                            event_number=event_number, timestamp=timestamp)
 
