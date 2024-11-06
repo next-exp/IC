@@ -78,8 +78,9 @@ def _make_tables(hdf5_file, compression):
     return pmp_tables
 
 
-def load_pmaps_as_df(filename):
-    return load_pmaps_as_df_eager(filename)
+def load_pmaps_as_df(filename, lazy=False):
+    loader = load_pmaps_as_df_lazy if lazy else load_pmaps_as_df_eager
+    return loader(filename)
 
 
 def load_pmaps_as_df_eager(filename):
@@ -115,8 +116,9 @@ def _build_ipmtdf_from_sumdf(sumdf):
     return ipmtdf
 
 
-def load_pmaps(filename):
-    return load_pmaps_eager(filename)
+def load_pmaps(filename, lazy=False):
+    loader = load_pmaps_lazy if lazy else load_pmaps_eager
+    return loader(filename)
 
 
 def load_pmaps_eager(filename):
