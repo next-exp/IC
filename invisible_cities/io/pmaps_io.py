@@ -78,6 +78,10 @@ def _make_tables(hdf5_file, compression):
     return pmp_tables
 
 
+def load_pmaps_as_df(filename):
+    return load_pmaps_as_df_eager(filename)
+
+
 def load_pmaps_as_df_eager(filename):
     with tb.open_file(filename, 'r') as h5f:
         pmap  = h5f.root.PMAPS
@@ -95,6 +99,11 @@ def _build_ipmtdf_from_sumdf(sumdf):
     ipmtdf = ipmtdf.rename(index=str, columns={'time': 'npmt'})
     ipmtdf['npmt'] = -1
     return ipmtdf
+
+
+def load_pmaps(filename):
+    return load_pmaps_eager(filename)
+
 
 def load_pmaps_eager(filename):
     pmap_dict = {}
