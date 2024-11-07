@@ -217,7 +217,7 @@ function download_test_db {
 }
 
 function compile_cython_components {
-    python setup.py develop
+    pip3 install -e .
 }
 
 function compile_and_test {
