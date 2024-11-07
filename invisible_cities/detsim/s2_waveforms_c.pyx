@@ -1,8 +1,8 @@
 import numpy  as np
 cimport cython
 
-cimport light_tables_c
-from light_tables_c cimport LightTable as LT
+cimport invisible_cities.detsim.light_tables_c
+from invisible_cities.detsim.light_tables_c cimport LightTable as LT
 
 cimport numpy as np
 from libc.math cimport ceil
@@ -110,4 +110,3 @@ def create_wfs(double [:] xs           ,
             wfs[snsindx] = spread_histogram(wfs[snsindx], nsmear_l, nsmear_r)
 
     return np.asarray(wfs)
-
