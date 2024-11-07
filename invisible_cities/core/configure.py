@@ -121,6 +121,7 @@ def make_config_file_reader():
 def type_check(value : Any, type_expected : Any):
     type_got = type(value)
     # SPECIAL CASES
+    # Note: match/case cannot be used because `case bool` matches everything.
     if type_expected is Sequence and type_got is np.ndarray: return True
 
     if type_expected is bool : return  np.issubdtype(type_got, bool       )
@@ -128,30 +129,24 @@ def type_check(value : Any, type_expected : Any):
     if type_expected is float: return (np.issubdtype(type_got, np.floating) or
                                        np.issubdtype(type_got, np.integer ))
 
-
-    try:
+    outer          = get_origin(type_expected)
+    is_subscripted = outer is not None
+    if not is_subscripted:
         return isinstance(value, type_expected)
 
-    except TypeError as e:
-        # When using a subscripted type such as Tuple[int, int],
-        # `isinstance` doesn't do the job and raises a TypeError.
-        # We want to catch this specific case and treat it properly
-        # Any other exception will be raised.
-        expected_msg = "Subscripted generics cannot be used with class and instance checks"
-        if e.args[0] != expected_msg: raise
+    # Unfortunately these two methods don't always return typing objects.
+    # That's why the if clauses below use ABC types.
 
-        # Unfortunately these two methods don't always return typing objects.
-        # That's why the if clauses below use ABC types.
-        outer = get_origin(type_expected)
-        inner = get_args  (type_expected)
+    inner = get_args(type_expected)
+    if not inner: # no subscript provided, check only outer type
+        return issubclass(type_got, outer)
 
-        if   outer is Union      : return any(type_check(value, t       ) for t    in inner)
-        elif outer is Optional   : return     type_check(value, inner[0])
-        elif outer is ABCSequence: return all(type_check(v    , inner[0]) for v    in value)
-        elif outer is tuple      : return all(type_check(v    , t       ) for v, t in zip(value, inner))
-        elif outer is ABCMapping : return all(type_check(k    , inner[0]) and
-                                              type_check(v    , inner[1]) for k, v in value.items())
-        else                     : return isinstance(value, outer)
+    if   outer is Union      : return any(type_check(value, t       ) for t    in inner)
+    elif outer is ABCSequence: return all(type_check(v    , inner[0]) for v    in value)
+    elif outer is tuple      : return all(type_check(v    , t       ) for v, t in zip(value, inner))
+    elif outer is ABCMapping : return all(type_check(k    , inner[0]) and
+                                          type_check(v    , inner[1]) for k, v in value.items())
+    else                     : return isinstance(value, outer)
 
 
 def compare_signature_to_values( function   : Callable
