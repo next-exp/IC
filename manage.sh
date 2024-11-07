@@ -2,21 +2,13 @@
 
 COMMAND=$1
 ARGUMENT=$2
-
+PYTHON_VERSION=3.8
 ## Interpret meaning of command line argument depending on which
 ## function will receive it.
 
 case $COMMAND in
     run_tests_par | compile_and_test_par)     N_PROC=${ARGUMENT:-auto} ;;
-    *)                                PYTHON_VERSION=${ARGUMENT}       ;;
 esac
-
-# If PYTHON_VERSION was not specified as an argument, deduce it from
-# the conda environment
-
-if [[ $PYTHON_VERSION = "" ]]; then
-    PYTHON_VERSION=${CONDA_DEFAULT_ENV:3:3}
-fi
 
 function install_and_check {
     install
@@ -279,12 +271,12 @@ case $COMMAND in
        echo
        echo Usage:
        echo
-       echo "source $THIS install_and_check X.Y"
-       echo "source $THIS install X.Y"
-       echo "source $THIS work_in_python_version X.Y"
-       echo "source $THIS work_in_python_version_no_tests X.Y"
-       echo "source $THIS switch_to_conda_env X.Y"
-       echo "bash   $THIS make_environment X.Y"
+       echo "source $THIS install_and_check"
+       echo "source $THIS install"
+       echo "source $THIS work_in_python_version"
+       echo "source $THIS work_in_python_version_no_tests"
+       echo "source $THIS switch_to_conda_env"
+       echo "bash   $THIS make_environment"
        echo "bash   $THIS run_tests"
        echo "bash   $THIS run_tests_par"
        echo "bash   $THIS compile_and_test"
