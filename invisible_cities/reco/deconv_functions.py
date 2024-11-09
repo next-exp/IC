@@ -265,7 +265,6 @@ def deconvolution_input(sample_width : Tuple2Dor3D,
     def deconvolution_input(data        : Tuple[np.ndarray, ...],
                             weight      : np.ndarray
                            ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
-
         eps    = np.finfo(np.float32).eps
         ranges = [ [ coord.min() - 1.5 * sw
                    , coord.max() + 1.5 * sw + eps]
@@ -273,10 +272,10 @@ def deconvolution_input(sample_width : Tuple2Dor3D,
         if inter_method is InterpolationMethod.nointerpolation:
             allbins   = [grid[in_range(grid, *rang)] for rang, grid in zip(ranges, det_grid)]
             allbins   = [binedges_from_bincenters(bins) for bins in allbins]
-            Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
+            Hs, edges = np.histogramdd(data, bins=allbins, density=False, weights=weight)
         else:
             allbins   = [np.arange(*rang, sw) for rang, sw in zip(ranges, sample_width)]
-            Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
+            Hs, edges = np.histogramdd(data, bins=allbins, density=False, weights=weight)
 
         inter_points = np.meshgrid(*(shift_to_bin_centers(edge) for edge in edges), indexing='ij')
         inter_points = tuple      (inter_p.flatten() for inter_p in inter_points)
