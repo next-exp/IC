@@ -411,10 +411,12 @@ def load_mcsensor_positions(file_name : str,
             ## is present like in the new format
             pmt_ids   = DB.DataPMT(db_file, run_no).SensorID
             sns_names = get_sensor_binning(file_name).index
-            pmt_name  = sns_names.str.contains('Pmt')
+            is_pmt    = sns_names.str.contains('Pmt')
+            pmt_name  = sns_names[ is_pmt][0]
+            sipm_name = sns_names[~is_pmt][0]
             pmt_pos   = sns_pos.sensor_id.isin(pmt_ids)
-            sns_pos.loc[pmt_pos, 'sensor_name'] = sns_names[pmt_name][0]
-            sns_pos.sensor_name.fillna(sns_names[~pmt_name][0], inplace=True)
+            sns_pos.loc[pmt_pos, 'sensor_name'] = pmt_name
+            sns_pos.fillna(dict(sensor_name=sipm_name), inplace=True)
         else:
             ## So the column names and shape are the same as 2020 format
             new_cols = sns_pos.columns.tolist() + ['sensor_name']
@@ -543,8 +545,7 @@ def load_mchits_dfold(file_name : str) -> pd.DataFrame:
                           right_index =   True,
                           how         = 'left')
         hits.rename(columns={"evt_number": "event_id"}, inplace=True)
-        hits.event_id.fillna(method='bfill', inplace=True)
-        hits.event_id = hits.event_id.astype(int)
+        hits.event_id = hits.event_id.bfill().astype(int)
 
         # Setting the indexes
         hits.set_index(['event_id', 'particle_id', 'hit_id'], inplace=True)
@@ -815,8 +816,7 @@ def load_mcsensors_dfold(file_name : str) -> pd.DataFrame:
                          left_index  =   True,
                          right_index =   True,
                          how         = 'left')
-    sns.evt_number.fillna(method='bfill', inplace=True)
-    sns.evt_number = sns.evt_number.astype(int)
+    sns.evt_number = sns.evt_number.bfill().astype(int)
     sns.index      = sns.index.astype(int)
     sns.rename(columns = {'evt_number': 'event_id'}, inplace=True)
     return sns
