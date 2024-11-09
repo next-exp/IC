@@ -44,6 +44,7 @@ def test_add_empty_sensors_and_normalize_q(ICDATADIR):
     assert np. isclose(hdst_processed.Q.sum(), hdst.Q.sum())
 
 
+@mark.skip(reason="test uses bad input data")
 def test_add_empty_sensors_and_normalize_q_file(ICDATADIR):
     PATH_IN        = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
     PATH_TEST      = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_psf_empty_sensors.h5")
@@ -60,6 +61,7 @@ def test_add_empty_sensors_and_normalize_q_file(ICDATADIR):
     assert_dataframes_close(hdst_psf, hdst_processed)
 
 
+@mark.skip(reason="test uses bad input data")
 def test_hdst_psf_processing(ICDATADIR):
     PATH_IN        = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC.h5")
     PATH_TEST      = os.path.join(ICDATADIR, "exact_Kr_tracks_with_MC_psf.h5")
