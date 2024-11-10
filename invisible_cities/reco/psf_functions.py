@@ -81,32 +81,17 @@ def add_empty_sensors_and_normalize_q(df       : pd.DataFrame,
     delta_x = np.diff(ranges[0])[0]/2
     delta_y = np.diff(ranges[1])[0]/2
 
-    sel_x  = in_range(database.X, df.Xpeak.unique()[0] - delta_x,  df.Xpeak.unique()[0] + delta_x)
-    sel_y  = in_range(database.Y, df.Ypeak.unique()[0] - delta_y,  df.Ypeak.unique()[0] + delta_y)
-
+    sel_x   = in_range(database.X, df.Xpeak.unique()[0] - delta_x, df.Xpeak.unique()[0] + delta_x)
+    sel_y   = in_range(database.Y, df.Ypeak.unique()[0] - delta_y, df.Ypeak.unique()[0] + delta_y)
     sensors = database[sel_x & sel_y]
 
-    pd_dict    = {}
-
-    variables  = ['event', 'time', 'npeak']
-    variables.extend([f'{v}peak' for v in var])
-
-    pd_dict['X'] = sensors.X
-    pd_dict['Y'] = sensors.Y
-    pd_dict['Z'] = df.loc[:,'Z'].min()
-    for v in variables:
-        pd_dict[v] = df.loc[:,v].unique()[0]
-    for col in df.columns.values:
-        if col not in pd_dict.keys():
-            pd_dict[col]  = 0.
-
-    df2 = pd.DataFrame(pd_dict)
-    df_out = df.merge(df2, on=list(df), how='outer')
-    df_out.drop_duplicates(subset=var, inplace=True, keep='first')
-    df_out['NormQ'] = df_out.Q / df_out.Q.sum()
-    df_out['nsipm'] = len(df)
-
-    return df_out
+    all_sens_df = pd.DataFrame(dict(X=sensors.X, Y=sensors.Y, Z=df.Z.min(), Q=0, E=0, Ec=0))
+    combined    = pd.concat([df, all_sens_df]    , ignore_index=True)
+    combined    = combined.groupby("X Y Z".split(), as_index=False).agg("first")
+    combined    = combined.ffill().bfill()
+    combined['NormQ'] = combined.Q / combined.Q.sum()
+    combined['nsipm'] = 1
+    return combined
 
 
 def hdst_psf_processing(dsts     : pd.DataFrame,
