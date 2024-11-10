@@ -81,29 +81,29 @@ channels:
 dependencies:
 - python       = ${PYTHON_VERSION}
 # *REMEMBER TO CHANGE CONDA_ENV_TAG WHEN CHANGING VERSION NUMBERS*
-- cython
-- jupyter
-- jupyterlab
-- matplotlib
-- networkx
-- notebook
-- numpy
-- pandas
-- seaborn
-- pymysql
-- pytables
-- pytest
-- scipy
-- sphinx
-- tornado
-- flaky
-- hypothesis
-- pytest-xdist
-- coverage
-- pip
-- setuptools
+- cython       = 3.0.11
+- jupyter      = 1.1.1
+- jupyterlab   = 4.2.5
+- matplotlib   = 3.9.2
+- networkx     = 3.4.2
+- notebook     = 7.2.2
+- numpy        = 2.1.3
+- pandas       = 2.2.3
+- seaborn      = 0.13.2
+- pymysql      = 1.1.1
+- pytables     = 3.10.1
+- pytest       = 8.3.3
+- scipy        = 1.14.1
+- sphinx       = 8.1.3
+- tornado      = 6.4.1
+- flaky        = 3.8.1
+- hypothesis   = 6.116.0
+- pytest-xdist = 3.5.0
+- coverage     = 7.6.4
+- pip          = 24.3.1
+- setuptools   = 75.3.0
 - pip:
-  - pytest-instafail
+  - pytest-instafail==0.5.0
 EOF
 
     conda env create -f ${YML_FILENAME}
