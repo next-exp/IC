@@ -369,8 +369,8 @@ class KrEvent(Event):
             for j in s2_peaks:
                 row["event"  ] = self.event
                 row["time"   ] = self.time
-                row["s1_peak"] = i
-                row["s2_peak"] = j
+                row["s1_peak"] = i if i>=0 else np.iinfo(np.uint16).max + i + 1
+                row["s2_peak"] = j if j>=0 else np.iinfo(np.uint16).max + j + 1
                 row["nS1"    ] = self.nS1
                 row["nS2"    ] = self.nS2
 
