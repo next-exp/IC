@@ -219,3 +219,4 @@ class ignore_warning:
     unphysical_rate = mark.filterwarnings("ignore:(Zero|Negative) rate")
     max_time_short  = mark.filterwarnings("ignore:`max_time` shorter than `buffer_length`")
     no_mc_tables    = mark.filterwarnings("ignore:File does not contain MC tables.( *)Use positve run numbers for data")
+    fit_covariance  = mark.filterwarnings("ignore:Covariance of the parameters could not be estimated")
