@@ -30,4 +30,5 @@ def event_filter_reader(filename):
     with tb.open_file(filename) as file:
         tables  = map(read_as_df, file.root.Filters)
         full_df = pd.concat(list(tables), axis=1)
+        full_df = full_df.convert_dtypes()
         return full_df.fillna(False)
