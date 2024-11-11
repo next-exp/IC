@@ -86,20 +86,22 @@ def add_empty_sensors_and_normalize_q(df       : pd.DataFrame,
     sensors = database[sel_x & sel_y]
 
     all_sens_df = pd.DataFrame(dict(X=sensors.X, Y=sensors.Y, Z=df.Z.min(), Q=0, E=0, Ec=0))
-    combined    = pd.concat([df, all_sens_df]    , ignore_index=True)
+    combined    = pd.concat([df, all_sens_df], ignore_index=True)
     combined    = combined.groupby("X Y Z".split(), as_index=False).agg("first")
-    combined    = combined.ffill().bfill()
-    combined['NormQ'] = combined.Q / combined.Q.sum()
-    combined['nsipm'] = 1
+    combined    = combined.ffill().bfill() # fill in overall values
+
+    combined.loc[:, "NormQ"] = combined.Q / combined.Q.sum()
+    combined.loc[:, "nsipm"] = 1
     return combined
 
 
 def hdst_psf_processing(dsts     : pd.DataFrame,
                         ranges   : List[List[float]],
                         database : pd.DataFrame
-                        ) -> pd.DataFrame :
+                        ) -> pd.DataFrame:
     """
-    Adds the necessary info to a hits DST to create the PSF, namely the relative position and the normalized Q.
+    Adds the necessary info to a hits DST to create the PSF, namely
+    the relative position and the normalized Q.
 
     Parameters
     ----------
@@ -113,14 +115,16 @@ def hdst_psf_processing(dsts     : pd.DataFrame,
     """
     if len(ranges) > 2: raise NotImplementedError(f'{len(ranges)}-dimensional PSF not yet implemented')
 
-    groupedDST    = dsts.groupby(['event', 'npeak'], as_index=False)
-    hdst          = groupedDST.apply(add_empty_sensors_and_normalize_q,
-                                     ['X', 'Y']     , ranges, database)
-    hdst['Zpeak'] = hdst.Z.min()
-    hdst['RelX' ] = hdst.X - hdst.Xpeak
-    hdst['RelY' ] = hdst.Y - hdst.Ypeak
-    hdst['RelZ' ] = 0.
-
-    hdst.reset_index(inplace=True, drop=True)
-
+    hdst = ( dsts
+           .groupby('event time npeak'.split())
+           .apply( add_empty_sensors_and_normalize_q
+                 , list("XY"), ranges, database
+                 , include_groups=False)
+           .assign( Zpeak = lambda df: df.Z.min()
+                  , RelX  = lambda df: df.X - df.Xpeak
+                  , RelY  = lambda df: df.Y - df.Ypeak
+                  , RelZ  = 0.
+                  ))
+    hdst.reset_index(level=3, drop=True , inplace=True) # drop artifical index
+    hdst.reset_index(         drop=False, inplace=True) # restore real index
     return hdst
