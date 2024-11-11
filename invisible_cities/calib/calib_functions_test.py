@@ -15,6 +15,7 @@ from .                       import calib_functions as cf
 from .. core                 import   tbl_functions as tbl
 from .. core                 import   fit_functions as fitf
 from .. core                 import system_of_units as units
+from .. core.testing_utils   import  ignore_warning
 from .. core.stat_functions  import   poisson_sigma
 from .. evm.nh5              import     SensorTable
 from .. types.symbols        import      SensorType
@@ -214,6 +215,7 @@ def test_pedestal_values():
     assert_approx_equal(ped_values.sigma_min,      0.001)
 
 
+@ignore_warning.fit_covariance
 def test_compute_seeds_from_spectrum(ICDATADIR):
     PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
     # Suppress warnings from division by zero in some bins.
@@ -260,6 +262,7 @@ def test_compute_seeds_from_spectrum(ICDATADIR):
             assert gain_sigma_seed != 0
 
 
+@ignore_warning.fit_covariance
 def test_seeds_without_using_db(ICDATADIR, dbnew):
     PATH_IN = os.path.join(ICDATADIR, 'sipmcalspectra_R6358.h5')
     # Suppress warnings from division by zero in some bins.
