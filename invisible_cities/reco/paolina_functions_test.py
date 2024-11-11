@@ -178,7 +178,7 @@ def test_round_hits_positions_in_place(hits):
     round_hits_positions_in_place(hits)
 
     pos = np.asarray([h.pos for h in hits])
-    assert np.all(np.in1d(pos, [0, 1e-5, -1e-5]))
+    assert np.all(np.isin(pos, [0, 1e-5, -1e-5]))
 
 
 def test_round_hits_positions_in_place_empty_input():
