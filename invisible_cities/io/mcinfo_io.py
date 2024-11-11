@@ -63,7 +63,8 @@ def mc_writer(h5out : tb.file.File, *, compression=None) -> Callable:
                     orig_indx = tbl.file_index.unique()
                     new_indx  = np.arange(first_indx                 ,
                                           first_indx + len(orig_indx))
-                    tbl.file_index.replace(orig_indx, new_indx, inplace=True)
+                    for orig, new in zip(orig_indx, new_indx):
+                        tbl.replace(dict(file_index=orig), new, inplace=True)
                 except AttributeError:
                     tbl['file_index'] = first_indx
             col_indx = 'event' if hasattr(tbl, 'event') else None
@@ -667,8 +668,7 @@ def load_mcparticles_dfold(file_name: str) -> pd.DataFrame:
                             right_index =   True,
                             how         = 'left')
         parts.rename(columns={"evt_number": "event_id"}, inplace=True)
-        parts.event_id.fillna(method='bfill', inplace=True)
-        parts.event_id = parts.event_id.astype(int)
+        parts.event_id = parts.event_id.bfill().astype(int)
 
         ## Add columns present in new format
         missing_columns = ['final_momentum_x', 'final_momentum_y',
