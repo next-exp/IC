@@ -8,7 +8,9 @@ import tables as tb
 from pytest import mark
 from pytest import raises
 
-from .. core.configure      import configure
+from .. core.configure     import configure
+from .. core.testing_utils import ignore_warning
+
 
 online_cities  = "irene dorothea sophronia esmeralda beersheba isaura".split()
 mc_cities      = "buffy detsim diomira hypathia".split()
@@ -17,7 +19,10 @@ all_cities     = sorted(online_cities + mc_cities + other_cities)
 all_cities_with_event_range = sorted(set(all_cities).difference(set(["eutropia"])))
 
 
-@mark.filterwarnings("ignore::UserWarning")
+@ignore_warning.no_config_group
+@ignore_warning.no_mc_tables
+@ignore_warning.not_kdst
+@ignore_warning.str_length
 @mark.parametrize("city", online_cities)
 def test_city_empty_input_file(config_tmpdir, ICDATADIR, city):
     # All cities run in the online reconstruction chain must run on an
@@ -37,7 +42,9 @@ def test_city_empty_input_file(config_tmpdir, ICDATADIR, city):
     city_function(**conf)
 
 
-@mark.filterwarnings("ignore::UserWarning")
+@ignore_warning.no_config_group
+@ignore_warning.not_kdst
+@ignore_warning.str_length
 @mark.parametrize("city", all_cities_with_event_range)
 def test_city_null_event_range(config_tmpdir, ICDATADIR, city):
     # All cities must run with event_range = 0
@@ -54,8 +61,9 @@ def test_city_null_event_range(config_tmpdir, ICDATADIR, city):
     city_function(**conf)
 
 
-
-@mark.filterwarnings("ignore::UserWarning")
+@ignore_warning.no_config_group
+@ignore_warning.not_kdst
+@ignore_warning.str_length
 @mark.parametrize("city", all_cities)
 def test_city_output_file_is_compressed(config_tmpdir, ICDATADIR, city):
     file_out    = os.path.join(config_tmpdir, f"{city}_compression.h5")
@@ -85,7 +93,9 @@ def test_city_output_file_is_compressed(config_tmpdir, ICDATADIR, city):
     assert checked_nodes > 2
 
 
-@mark.filterwarnings("ignore::UserWarning")
+@ignore_warning.no_config_group
+@ignore_warning.not_kdst
+@ignore_warning.str_length
 @mark.parametrize("city", all_cities)
 def test_city_output_contains_configuration(config_tmpdir, city):
     file_out    = os.path.join(config_tmpdir, f"{city}_configuration.h5")
@@ -137,7 +147,6 @@ def test_cities_carry_on_configuration_from_previous_ones(ICDATADIR, config_tmpd
             assert len(table[:]) > 0
 
 
-@mark.filterwarnings("ignore::UserWarning")
 @mark.parametrize("city", all_cities)
 def test_city_missing_detector_db(city):
     # use default config file

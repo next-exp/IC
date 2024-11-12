@@ -16,6 +16,7 @@ from .. core.exceptions    import InvalidInputFileStructure
 from .. core.exceptions    import          SensorIDMismatch
 from .. core.exceptions    import              NoInputFiles
 from .. core.testing_utils import    assert_tables_equality
+from .. core.testing_utils import            ignore_warning
 from .. core               import system_of_units as units
 from .. evm.event_model    import Cluster
 from .. evm.event_model    import Hit
@@ -120,7 +121,7 @@ def write_config_file(filename, **kwargs):
                      , ["electrons_511keV_z250_RWF.h5" , "electrons_1250keV_z250_RWF.h5", "electrons_2500keV_z250_RWF.h5"] )
                    )
                  )
-@mark.filterwarnings("ignore:files_in contains repeated values")
+@ignore_warning.repeated_files
 def test_city_files_in(case_, files_in, expected, config_tmpdir, ICDATADIR):
     """
     Check that all possible files_in inputs are handled properly:
@@ -299,7 +300,7 @@ def test_hits_and_kdst_from_files(ICDATADIR):
     assert type(output['kdst'])     == pd.DataFrame
 
 
-@mark.filterwarnings("ignore:Event .* does not contain hits")
+@ignore_warning.no_hits
 def test_hits_and_kdst_from_files_missing_hits(Th228_hits_missing, config_tmpdir):
     n_events_true = len(pd.read_hdf(Th228_hits_missing, "/Run/events"))
 
@@ -407,8 +408,7 @@ def test_create_timestamp_greater_with_greater_eventnumber():
     assert     timestamp_1(evt_no_1)  <  timestamp_2(evt_no_2)
 
 
-@mark.filterwarnings("ignore:Zero rate"    )
-@mark.filterwarnings("ignore:Negative rate")
+@ignore_warning.unphysical_rate
 def test_create_timestamp_physical_rate():
     """
     Check the rate is always physical.
@@ -427,7 +427,7 @@ def test_create_timestamp_physical_rate():
 
 
 
-@mark.filterwarnings("ignore:`max_time` shorter than `buffer_length`")
+@ignore_warning.max_time_short
 def test_check_max_time_eg_buffer_length():
     """
     Check if `max_time` is always equal or greater

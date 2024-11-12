@@ -14,6 +14,7 @@ from .  beersheba          import create_deconvolution_df
 from .  beersheba          import distribute_energy
 from .. core.testing_utils import assert_dataframes_close
 from .. core.testing_utils import assert_tables_equality
+from .. core.testing_utils import ignore_warning
 from .. types.symbols      import HitEnergy
 from .. types.symbols      import DeconvolutionMode
 from .. types.symbols      import CutType
@@ -55,7 +56,7 @@ def test_distribute_energy(ICDATADIR):
     assert np.isclose (true_dst1.E.sum(), true_dst2.E.sum())
 
 
-@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
+@ignore_warning.not_kdst
 def test_beersheba_contains_all_tables(beersheba_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "beersheba_contains_all_tables.h5")
     beersheba_config.update(dict( file_out    = path_out
@@ -72,7 +73,7 @@ def test_beersheba_contains_all_tables(beersheba_config, config_tmpdir):
             assert node in h5out.root
 
 
-@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
+@ignore_warning.not_kdst
 @mark.parametrize("deco", DeconvolutionMode)
 @mark.slow
 def test_beersheba_exact_result( deco
@@ -103,7 +104,7 @@ def test_beersheba_exact_result( deco
                 assert_tables_equality(got, expected, rtol=1e-6)
 
 
-@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
+@ignore_warning.not_kdst
 @mark.slow
 def test_beersheba_exact_result_with_satkill( ICDATADIR
                                             , beersheba_config
@@ -188,9 +189,9 @@ def test_beersheba_filters_empty_dfs(beersheba_config, config_tmpdir):
     assert df.passed.tolist() == [False]
 
 
-@mark.filterwarnings("ignore:Event .* does not contain hits")
-@mark.filterwarnings("ignore:dataframe contains strings longer than allowed")
-@mark.filterwarnings("ignore:Input file does not contain /config group")
+@ignore_warning.no_config_group
+@ignore_warning.str_length
+@ignore_warning.no_hits
 def test_beersheba_does_not_crash_with_no_hits(beersheba_config, Th228_hits_missing, config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "beersheba_does_not_crash_with_no_hits.h5")
     beersheba_config.update(dict( files_in    = Th228_hits_missing
