@@ -5,10 +5,12 @@ import numpy  as np
 
 from .. core.configure import configure
 from .. core.testing_utils  import assert_tables_equality
+from .. core.testing_utils  import ignore_warning
 
 from . hypathia import hypathia
 
 
+@ignore_warning.no_config_group
 def test_hypathia_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    ,      "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5")
     file_out    = os.path.join(output_tmpdir,                          "exact_result_hypathia.h5")

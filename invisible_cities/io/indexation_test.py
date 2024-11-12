@@ -3,9 +3,10 @@ import tables as tb
 import pandas as pd
 from pytest import mark
 
-from .. cities.components import city
-from .. core.configure import OneOrManyFiles
-from .. core.configure import EventRangeType
+from .. cities.components  import city
+from .. core.configure     import OneOrManyFiles
+from .. core.configure     import EventRangeType
+from .. core.testing_utils import ignore_warning
 
 from . hits_io   import     hits_writer
 from . kdst_io   import       kr_writer
@@ -34,6 +35,8 @@ def _df_writer(h5out):
     return df_writer(h5out, df, 'DUMMY', 'dummy', columns_to_index=['event'])
 
 
+@ignore_warning.no_config_group
+@ignore_warning.str_length
 @mark.parametrize("         writer  group      node      column   thing".split(),
                   [(   hits_writer, "RECO" , "Events"  , "event", "hits"),
                    (     kr_writer, "DST"  , "Events"  , "event", "kr"  ),

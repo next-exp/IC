@@ -9,6 +9,7 @@ from pytest import raises
 from .. core.configure     import                 configure
 from .. core.testing_utils import   assert_dataframes_close
 from .. core.testing_utils import    assert_tables_equality
+from .. core.testing_utils import            ignore_warning
 from .. database           import                   load_db
 
 from .. io  .mcinfo_io     import get_event_numbers_in_file
@@ -46,6 +47,7 @@ def test_diomira_identify_bug(ICDATADIR):
             assert np.sum(pmtwf[i]) == 0
 
 
+@ignore_warning.no_config_group
 @mark.slow
 def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
     PATH_IN  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
@@ -82,6 +84,7 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
                                     hits_out                  )
 
 
+@ignore_warning.no_config_group
 @mark.slow
 def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
     file_in  = os.path.join(ICDATADIR    , 'electrons_40keV_z250_MCRD.h5')
@@ -125,6 +128,8 @@ def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdi
     with raises(ValueError):
         diomira(**conf)
 
+
+@ignore_warning.no_config_group
 def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR                                       ,
                                "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts*.MCRD.h5")
@@ -164,6 +169,7 @@ def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
     assert_dataframes_close(all_particle_in, particles_out)
 
 
+@ignore_warning.no_config_group
 def test_diomira_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR                                      ,
                                "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.MCRD.h5")
@@ -197,6 +203,7 @@ def test_diomira_exact_result(ICDATADIR, output_tmpdir):
                 assert_tables_equality(got, expected)
 
 
+@ignore_warning.no_config_group
 def test_diomira_can_fix_random_seed(output_tmpdir):
     file_out    = os.path.join(output_tmpdir, "exact_result_diomira.h5")
 
@@ -227,7 +234,7 @@ def test_diomira_reproduces_singlepe(ICDATADIR, output_tmpdir):
     pmt_gain = load_db.DataPMT('new', run_no).adc_to_pes.values
     with tb.open_file(file_out) as h5saved:
         pmt_sum_adc = np.sum(h5saved.root.RD.pmtblr, axis=2)
-        
+
         bins        = np.arange(-50, 50, 0.5)
         bin_centres = np.repeat(shift_to_bin_centers(bins)[np.newaxis, :],
                                 len(pmt_gain), 0)

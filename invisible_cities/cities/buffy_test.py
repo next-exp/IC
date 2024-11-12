@@ -12,12 +12,14 @@ from pytest import param
 from .. core                   import           system_of_units as units
 from .. core    .configure     import                 configure
 from .. core    .testing_utils import    assert_tables_equality
+from .. core    .testing_utils import            ignore_warning
 from .. database               import                   load_db
 from .. io      .mcinfo_io     import load_mcsensor_response_df
 
 from .  buffy import buffy
 
 
+@ignore_warning.no_config_group
 def test_buffy_kr(config_tmpdir, full_sim_file):
     file_in  = full_sim_file
     file_out = os.path.join(config_tmpdir, 'Kr_fullsim.buffers.h5')
@@ -156,6 +158,7 @@ def test_buffy_empty_file(config_tmpdir, ICDATADIR, fn_first, fn_second):
         buffy(**conf)
 
 
+@ignore_warning.no_config_group
 def test_buffy_exact_result(config_tmpdir, ICDATADIR):
     np.random.seed(27)
 
@@ -182,6 +185,7 @@ def test_buffy_exact_result(config_tmpdir, ICDATADIR):
                 assert_tables_equality(got, expected)
 
 
+@ignore_warning.no_config_group
 def test_buffy_splits_event(config_tmpdir, ICDATADIR):
     file_in  = os.path.join(ICDATADIR                              ,
                             'nexus_new_kr83m_full.newformat.sim.h5')

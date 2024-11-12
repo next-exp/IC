@@ -121,6 +121,7 @@ def write_config_file(filename, **kwargs):
                      , ["electrons_511keV_z250_RWF.h5" , "electrons_1250keV_z250_RWF.h5", "electrons_2500keV_z250_RWF.h5"] )
                    )
                  )
+@ignore_warning.no_config_group
 @ignore_warning.repeated_files
 def test_city_files_in(case_, files_in, expected, config_tmpdir, ICDATADIR):
     """
@@ -163,6 +164,7 @@ def test_city_files_in(case_, files_in, expected, config_tmpdir, ICDATADIR):
     assert sorted(result) == sorted(expected)
 
 
+@ignore_warning.no_config_group
 @mark.parametrize("order", ((0,1), (1,0)))
 def test_city_keeps_input_file_ordering(ICDATADIR, config_tmpdir, order):
     files_in = [ os.path.join(ICDATADIR, "electrons_511keV_z250_RWF.h5")

@@ -8,8 +8,10 @@ from pytest import mark
 from .  isidora            import isidora
 from .. core.configure     import configure
 from .. core.testing_utils import assert_tables_equality
+from .. core.testing_utils import ignore_warning
 from .. types.symbols      import all_events
 
+@ignore_warning.no_config_group
 @mark.slow
 def test_isidora_electrons_40keV(config_tmpdir, ICDATADIR):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
@@ -39,6 +41,7 @@ def test_isidora_electrons_40keV(config_tmpdir, ICDATADIR):
             np.testing.assert_array_equal(evts_in, evts_out)
 
 
+@ignore_warning.no_config_group
 def test_isidora_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR                                     ,
                                "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")

@@ -56,6 +56,8 @@ def test_distribute_energy(ICDATADIR):
     assert np.isclose (true_dst1.E.sum(), true_dst2.E.sum())
 
 
+@ignore_warning.no_config_group
+@ignore_warning.str_length
 @ignore_warning.not_kdst
 def test_beersheba_contains_all_tables(beersheba_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "beersheba_contains_all_tables.h5")
@@ -73,6 +75,8 @@ def test_beersheba_contains_all_tables(beersheba_config, config_tmpdir):
             assert node in h5out.root
 
 
+@ignore_warning.no_config_group
+@ignore_warning.str_length
 @ignore_warning.not_kdst
 @mark.parametrize("deco", DeconvolutionMode)
 @mark.slow
@@ -104,6 +108,8 @@ def test_beersheba_exact_result( deco
                 assert_tables_equality(got, expected, rtol=1e-6)
 
 
+@ignore_warning.no_config_group
+@ignore_warning.str_length
 @ignore_warning.not_kdst
 @mark.slow
 def test_beersheba_exact_result_with_satkill( ICDATADIR
@@ -146,6 +152,8 @@ def test_beersheba_only_ndim_2_is_valid(beersheba_config, ndim, config_tmpdir):
         beersheba(**beersheba_config)
 
 
+@ignore_warning.no_config_group
+@ignore_warning.str_length
 def test_beersheba_copies_kdst(beersheba_config, Th228_hits, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "beersheba_copies_kdst.h5")
     beersheba_config.update(dict( file_out    = path_out
@@ -158,6 +166,8 @@ def test_beersheba_copies_kdst(beersheba_config, Th228_hits, config_tmpdir):
     assert expected_events == got_events
 
 
+@ignore_warning.no_config_group
+@ignore_warning.str_length
 def test_beersheba_thresholds_hits(beersheba_config, config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "beersheba_thresholds_hits.h5")
     threshold = 15 * units.pes
@@ -171,6 +181,8 @@ def test_beersheba_thresholds_hits(beersheba_config, config_tmpdir):
     assert np.all(df.Q >= threshold)
 
 
+@ignore_warning.no_config_group
+@ignore_warning.str_length
 def test_beersheba_filters_empty_dfs(beersheba_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "beersheba_filters_empty_dfs.h5")
     q_cut    = 1e8 * units.pes
@@ -191,6 +203,7 @@ def test_beersheba_filters_empty_dfs(beersheba_config, config_tmpdir):
 
 @ignore_warning.no_config_group
 @ignore_warning.str_length
+@ignore_warning.not_kdst
 @ignore_warning.no_hits
 def test_beersheba_does_not_crash_with_no_hits(beersheba_config, Th228_hits_missing, config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "beersheba_does_not_crash_with_no_hits.h5")

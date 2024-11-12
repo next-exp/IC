@@ -8,9 +8,11 @@ from numpy.testing import assert_array_equal
 from .  berenice           import berenice
 from .. core.configure     import configure
 from .. core.testing_utils import assert_tables_equality
+from .. core.testing_utils import ignore_warning
 from .. types.symbols      import all_events
 
 
+@ignore_warning.no_config_group
 def test_berenice_sipmdarkcurrent(config_tmpdir, ICDATADIR):
     PATH_IN   = os.path.join(ICDATADIR    , 'sipmdarkcurrentdata.h5' )
     PATH_OUT  = os.path.join(config_tmpdir, 'sipmdarkcurrentdata_HIST.h5')
@@ -41,6 +43,7 @@ def test_berenice_sipmdarkcurrent(config_tmpdir, ICDATADIR):
         assert np.all(ch_in_sipm == ch_out_sipm)
 
 
+@ignore_warning.no_config_group
 def test_berenice_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    ,             "sipmdarkcurrentdata.h5")
     file_out    = os.path.join(output_tmpdir,            "exact_result_berenice.h5")

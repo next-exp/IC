@@ -13,6 +13,7 @@ from .. core.testing_utils   import assert_tables_equality
 from .. core.testing_utils   import ignore_warning
 
 
+@ignore_warning.no_config_group
 @ignore_warning.not_kdst
 def test_isaura_contains_all_tables(ICDATADIR, output_tmpdir):
 
@@ -36,6 +37,7 @@ def test_isaura_contains_all_tables(ICDATADIR, output_tmpdir):
 
 
 
+@ignore_warning.no_config_group
 def test_isaura_empty_input_file(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "empty_file.h5")
@@ -51,6 +53,7 @@ def test_isaura_empty_input_file(ICDATADIR, output_tmpdir):
     assert result.evtnum_list == []
 
 
+@ignore_warning.no_config_group
 @ignore_warning.not_kdst
 def test_isaura_exact(ICDATADIR, output_tmpdir):
 
@@ -81,6 +84,7 @@ def test_isaura_exact(ICDATADIR, output_tmpdir):
                 assert_tables_equality(obtained, expected)
 
 
+@ignore_warning.no_config_group
 @ignore_warning.not_kdst
 def test_isaura_conserves_energy(ICDATADIR, output_tmpdir):
 
@@ -107,6 +111,7 @@ def test_isaura_conserves_energy(ICDATADIR, output_tmpdir):
     np.testing.assert_allclose(dhits_energy, devents_energy)
 
 
+@ignore_warning.no_config_group
 def test_isaura_copy_kdst(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "test_deconv_NEW_v1.2.0_bg.h5")
