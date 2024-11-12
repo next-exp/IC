@@ -24,12 +24,25 @@ jobs:
     # - name: Fix Conda permissions on macOS
     #   run: sudo chown -R $UID $CONDA
     #   if: runner.os == 'macOS'
+
     - name: Install IC
       run: |
         source $CONDA/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
+
+
     - name: Run tests
       run: |
+        set -o pipefail # necessary for test failure to propagate to `tee`
         source $CONDA/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
-        PYTEST_ADDOPTS=--color=yes HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par
+        PYTEST_ADDOPTS=--color=yes HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par | tee pytest_output
+
+    - name: Warning summary
+      run: |
+        ./scripts/check_warnings pytest_output | tee warnings
+        if [ -s warnings ]; then
+            echo "::warning ::There are warnings raised in the test suite"
+        else
+            echo "No warnings were raised."
+        fi
