@@ -1,7 +1,9 @@
 import numpy  as np
 import pandas as pd
 
+from dataclasses            import dataclass
 from pytest                 import approx
+from pytest                 import mark
 from numpy.testing          import assert_equal
 from numpy.testing          import assert_allclose
 from hypothesis.strategies  import integers
@@ -204,3 +206,16 @@ def assert_hit_equality(a_hit, b_hit):
     assert a_hit.Xpeak        == approx (b_hit.Xpeak      )
     assert a_hit.Ypeak        == approx (b_hit.Ypeak      )
     assert a_hit.peak_number  == exactly(b_hit.peak_number)
+
+
+@dataclass(frozen=True)
+class ignore_warning:
+    str_length      = mark.filterwarnings("ignore:dataframe contains strings longer than allowed")
+    not_kdst        = mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
+    no_config_group = mark.filterwarnings("ignore:Input file does not contain /config group")
+    no_hits         = mark.filterwarnings("ignore:Event .* does not contain hits")
+    repeated_files  = mark.filterwarnings("ignore:files_in contains repeated values")
+    delayed_hits    = mark.filterwarnings("ignore:Delayed hits at event .*")
+    unphysical_rate = mark.filterwarnings("ignore:(Zero|Negative) rate")
+    max_time_short  = mark.filterwarnings("ignore:`max_time` shorter than `buffer_length`")
+    no_mc_tables    = mark.filterwarnings("ignore:File does not contain MC tables.( *)Use positve run numbers for data")
