@@ -44,12 +44,12 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
                 Xrms  = row.Xrms
                 Xrms2 = Xrms**2
             else:
-                Xrms = Xrms2 = -1
+                Xrms = Xrms2 = 0
             if hasattr(row, 'Yrms'):
                 Yrms  = row.Yrms
                 Yrms2 = Yrms**2
             else:
-                Yrms = Yrms2 = -1
+                Yrms = Yrms2 = 0
             nsipm   = getattr(row, 'nsipm'   , -1   )     # for backwards compatibility
             Qc      = getattr(row, 'Qc'      , -1   )     # for backwards compatibility
             Xpeak   = getattr(row, 'Xpeak'   , -1000)     # for backwards compatibility
