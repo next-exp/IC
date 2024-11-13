@@ -14,6 +14,7 @@ from scipy.spatial.distance import cdist
 from scipy                  import ndimage as ndi
 
 from ..core .core_functions import shift_to_bin_centers
+from .. core.core_functions import binedges_from_bincenters
 from ..core .core_functions import in_range
 from ..core .configure      import check_annotations
 
@@ -210,15 +211,17 @@ def deconvolution_input(sample_width : List[float     ],
                             weight      : np.ndarray
                            ) -> Tuple[np.ndarray, Tuple[np.ndarray, ...]]:
 
-        ranges = [[coord.min() - 1.5 * sw, coord.max() + 1.5 * sw] for coord, sw in zip(data, sample_width)]
-        if inter_method in (InterpolationMethod.linear, InterpolationMethod.cubic, InterpolationMethod.nearest):
-            allbins   = [np.arange(rang[0], rang[1] + np.finfo(np.float32).eps, sw) for rang, sw in zip(ranges, sample_width)]
-            Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
-        elif inter_method is InterpolationMethod.nointerpolation:
+        eps    = np.finfo(np.float32).eps
+        ranges = [ [ coord.min() - 1.5 * sw
+                   , coord.max() + 1.5 * sw + eps]
+                   for coord, sw in zip(data, sample_width) ]
+        if inter_method is InterpolationMethod.nointerpolation:
             allbins   = [grid[in_range(grid, *rang)] for rang, grid in zip(ranges, det_grid)]
+            allbins   = [binedges_from_bincenters(bins) for bins in allbins]
             Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
         else:
-            raise ValueError(f'inter_method {inter_method} is not a valid interpolatin mode.')
+            allbins   = [np.arange(*rang, sw) for rang, sw in zip(ranges, sample_width)]
+            Hs, edges = np.histogramdd(data, bins=allbins, normed=False, weights=weight)
 
         inter_points = np.meshgrid(*(shift_to_bin_centers(edge) for edge in edges), indexing='ij')
         inter_points = tuple      (inter_p.flatten() for inter_p in inter_points)
