@@ -18,7 +18,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Get LFS files
       run: git lfs pull
     # - name: Fix Conda permissions on macOS
