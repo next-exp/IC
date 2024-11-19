@@ -19,7 +19,7 @@ def scipy_mode(x, axis=0):
     Scipy implementation of the mode (runs very slow).
     Returns a column vector.
     """
-    m, c = stats.mode(x, axis=axis)
+    m, c = stats.mode(x, axis=axis, keepdims=True)
     return m
 
 

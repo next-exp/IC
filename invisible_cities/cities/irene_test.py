@@ -15,6 +15,7 @@ from .. core.configure      import configure
 from .. core.testing_utils  import exactly
 from .. core.testing_utils  import assert_dataframes_close
 from .. core.testing_utils  import assert_tables_equality
+from .. core.testing_utils  import ignore_warning
 from .. types.ic_types      import minmax
 from .. io.run_and_event_io import read_run_and_event
 from .. evm.ic_containers   import S12Params as S12P
@@ -61,6 +62,7 @@ def unpack_s12params(s12params):
                 s2_lmax         = s2par.length.max)
 
 
+@ignore_warning.no_config_group
 @mark.slow
 @mark.parametrize("thr_sipm_type thr_sipm_value".split(),
                   ((SiPMThreshold.common    , 3.5 ),
@@ -105,6 +107,7 @@ def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
             np.testing.assert_array_equal(evts_in, evts_out)
 
 
+@ignore_warning.no_config_group
 @mark.slow
 @mark.serial
 def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
@@ -130,6 +133,7 @@ def test_irene_run_2983(config_tmpdir, ICDIR, s12params):
     assert nrequired == cnt.events_in
 
 
+@ignore_warning.no_config_group
 @mark.slow # not slow itself, but depends on a slow test
 @mark.serial
 def test_irene_runinfo_run_2983(config_tmpdir, ICDATADIR):
@@ -179,6 +183,7 @@ def test_irene_output_file_structure(config_tmpdir):
         assert "runInfo"      in h5out.root.Run
 
 
+@ignore_warning.no_config_group
 def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
     # NB: explicit PATH_OUT
     PATH_IN  = os.path.join(ICDATADIR    , 'irene_bug_Kr_ACTIVE_7bar_RWF.h5')
@@ -200,6 +205,7 @@ def test_empty_events_issue_81(config_tmpdir, ICDATADIR, s12params):
     assert cnt.  over_thr.n_failed == 1
 
 
+@ignore_warning.no_config_group
 def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
     file_in  = os.path.join(ICDATADIR    , "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_krmc_diomira_3evt.h5")
     file_out = os.path.join(output_tmpdir, "kr_rwf_0_0_7bar_NEXT_v1_00_05_v0.9.2_20171011_pmaps_3evt.h5")
@@ -224,6 +230,7 @@ def test_irene_empty_pmap_output(ICDATADIR, output_tmpdir, s12params):
             assert got == exactly(expected)
 
 
+@ignore_warning.no_config_group
 def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
     file_in     = os.path.join(ICDATADIR                                       ,
                                "Tl_v1_00_05_nexus_v5_02_08_7bar_RWF_5evts_*.h5")
@@ -264,6 +271,7 @@ def test_irene_read_multiple_files(ICDATADIR, output_tmpdir, s12params):
     assert_dataframes_close(all_particle_in, particles_out)
 
 
+@ignore_warning.no_config_group
 def test_irene_trigger_type(config_tmpdir, ICDATADIR, s12params):
     PATH_IN  = os.path.join(ICDATADIR    ,       '6229_000_trg_type.h5')
     PATH_OUT = os.path.join(config_tmpdir, 'pmaps_6229_000_trg_type.h5')
@@ -289,6 +297,7 @@ def test_irene_trigger_type(config_tmpdir, ICDATADIR, s12params):
             np.testing.assert_array_equal(trigger_in, trigger_out)
 
 
+@ignore_warning.no_config_group
 def test_irene_trigger_channels(config_tmpdir, ICDATADIR, s12params):
     PATH_IN  = os.path.join(ICDATADIR    ,       '6229_000_trg_channels.h5')
     PATH_OUT = os.path.join(config_tmpdir, 'pmaps_6229_000_trg_channels.h5')
@@ -314,6 +323,7 @@ def test_irene_trigger_channels(config_tmpdir, ICDATADIR, s12params):
             np.testing.assert_array_equal(trigger_in, trigger_out)
 
 
+@ignore_warning.no_config_group
 def test_irene_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    , "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
     file_out    = os.path.join(output_tmpdir,                        "exact_result_irene.h5")
@@ -343,6 +353,7 @@ def test_irene_exact_result(ICDATADIR, output_tmpdir):
                 assert_tables_equality(got, expected)
 
 
+@ignore_warning.no_config_group
 def test_irene_filters_empty_pmaps(ICDATADIR, output_tmpdir):
     file_in  = os.path.join(ICDATADIR                                     ,
                             "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.RWF.h5")
@@ -395,6 +406,7 @@ def test_irene_empty_input_file(config_tmpdir, ICDATADIR):
 
 
 
+@ignore_warning.no_config_group
 def test_irene_sequential_times(config_tmpdir, ICDATADIR):
 
     PATH_IN  = os.path.join(ICDATADIR    , 'single_evt_nonseqtime_rwf.h5')
@@ -446,6 +458,7 @@ def test_error_when_different_sample_widths(ICDATADIR, config_tmpdir):
     assert str(error.value) == msg
 
 
+@ignore_warning.no_config_group
 def test_irene_other_sample_widths(ICDATADIR, config_tmpdir):
     ## Tests irene works when running with other sample frequencies
     file_in     = os.path.join(ICDATADIR,               'run_2983.h5')

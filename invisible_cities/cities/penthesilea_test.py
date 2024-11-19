@@ -10,6 +10,7 @@ from .. core                 import system_of_units as units
 from .. core.core_functions  import in_range
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
+from .. core.testing_utils   import ignore_warning
 from .. core.configure       import configure
 from .. io                   import dst_io as dio
 from .. io.mcinfo_io         import load_mchits_df
@@ -24,6 +25,7 @@ from .  penthesilea          import penthesilea
 #in order not to fail direct comparation tests when changing hit attribute we compare only the columns that penthesilea is using
 columns = ['event', 'time', 'npeak', 'Xpeak', 'Ypeak', 'nsipm', 'X', 'Y', 'Xrms', 'Yrms', 'Z', 'Q', 'E']
 
+@ignore_warning.no_config_group
 def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, KrMC_kdst, config_tmpdir):
     PATH_IN   = KrMC_pmaps_filename
     PATH_OUT  = os.path.join(config_tmpdir,'Kr_HDST.h5')
@@ -54,6 +56,7 @@ def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, KrMC_kdst, config_tmpd
                             check_dtype=False           , rtol=1e-4            )
 
 
+@ignore_warning.no_config_group
 def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     PATH_IN =  Kr_pmaps_run4628_filename
 
@@ -121,6 +124,7 @@ def test_penthesilea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     assert np.all(df_penthesilea_dst.s2_peak.values == s2_peak_pass_dst)
 
 
+@ignore_warning.no_config_group
 def test_penthesilea_threshold_rebin(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    ,            "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
     file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea_rebin4000.h5")
@@ -145,6 +149,7 @@ def test_penthesilea_threshold_rebin(ICDATADIR, output_tmpdir):
     assert_dataframes_close(output_dst[columns], expected_dst[columns], check_dtype=False)
 
 
+@ignore_warning.no_config_group
 def test_penthesilea_signal_to_noise(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR    ,     "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
     file_out    = os.path.join(output_tmpdir,                   "exact_result_penthesilea_SN.h5")
@@ -175,6 +180,7 @@ def test_penthesilea_signal_to_noise(ICDATADIR, output_tmpdir):
     assert_dataframes_close(output_dst[columns], expected_dst[columns], check_dtype=False)
 
 
+@ignore_warning.no_config_group
 @mark.serial
 def test_penthesilea_produces_mcinfo(KrMC_pmaps_filename, KrMC_hdst, config_tmpdir):
     PATH_IN   = KrMC_pmaps_filename
@@ -204,6 +210,7 @@ def test_penthesilea_true_hits_are_correct(KrMC_true_hits, config_tmpdir):
     assert_dataframes_close(penthesilea_evts, true_evts)
 
 
+@ignore_warning.no_config_group
 def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR                                       ,
                                "Tl_v1_00_05_nexus_v5_02_08_7bar_pmaps_5evts_*.h5")
@@ -246,6 +253,7 @@ def test_penthesilea_read_multiple_files(ICDATADIR, output_tmpdir):
                             particles_out                                )
 
 
+@ignore_warning.no_config_group
 def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR                                     ,
                                "Kr83_nexus_v5_03_00_ACTIVE_7bar_3evts.PMP.h5")
@@ -272,6 +280,7 @@ def test_penthesilea_exact_result(ICDATADIR, output_tmpdir):
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
 
+@ignore_warning.no_config_group
 def test_penthesilea_exact_result_noS1(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR                                      ,
                                "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_PMP.h5")
@@ -301,6 +310,7 @@ def test_penthesilea_exact_result_noS1(ICDATADIR, output_tmpdir):
                 assert_tables_equality(got, expected)
 
 # test for PR 628
+@ignore_warning.no_config_group
 def test_penthesilea_xyrecofail(config_tmpdir, Xe2nu_pmaps_mc_filename):
     PATH_IN =  Xe2nu_pmaps_mc_filename
 
@@ -345,6 +355,7 @@ def test_penthesilea_xyrecofail(config_tmpdir, Xe2nu_pmaps_mc_filename):
     penthesilea(**conf)
 
 
+@ignore_warning.no_config_group
 def test_penthesilea_empty_input_file(config_tmpdir, ICDATADIR):
     # Penthesilea must run on an empty file without raising any exception
     # The input file has the complete structure of a PMAP but no events.
@@ -363,7 +374,7 @@ def test_penthesilea_empty_input_file(config_tmpdir, ICDATADIR):
         penthesilea(**conf)
 
 
-
+@ignore_warning.no_config_group
 def test_penthesilea_global_xyreco_bias(config_tmpdir, ICDATADIR):
     # Make sure the global_reco_params are used for the columns Xpeak/Ypeak
     # This is done by running over an event that has many spurious sipm hits
@@ -389,3 +400,21 @@ def test_penthesilea_global_xyreco_bias(config_tmpdir, ICDATADIR):
     output_dst = dio.load_dst(PATH_OUT, 'RECO', 'Events')
     assert np.all(output_dst.Xpeak == -5)
     assert np.all(output_dst.Ypeak == -5)
+
+
+@ignore_warning.no_config_group
+@mark.parametrize('flags value counter'.split(),
+                  (('-e all'   , 10, 'events_in'), # 10 events in the file
+                   ('-e   9'   ,  9, 'events_in'), # [ 0,  9) -> 9
+                   ('-e 5 9'   ,  4, 'events_in'), # [ 5,  9) -> 4
+                   ('-e 2 last',  8, 'events_in'), # events [2, 10) -> 8
+                  ))
+def test_config_penthesilea_counters(config_tmpdir, KrMC_pmaps_filename, flags, value, counter):
+    input_filename  = KrMC_pmaps_filename
+    config_filename = 'invisible_cities/config/penthesilea.conf'
+    flags_wo_spaces = flags.replace(" ", "_")
+    output_filename = os.path.join(config_tmpdir, f'penthesilea_counters_{flags_wo_spaces}.h5')
+
+    argv = f'penthesilea {config_filename} -i {input_filename} -o {output_filename} {flags}'.split()
+    counters = penthesilea(**configure(argv))
+    assert getattr(counters, counter) == value

@@ -4,10 +4,12 @@ import tables as tb
 from pytest import mark
 
 from .. core.testing_utils   import assert_tables_equality
+from .. core.testing_utils   import ignore_warning
 from .. core.system_of_units import pes
 from .  sophronia            import sophronia
 
 
+@ignore_warning.no_config_group
 def test_sophronia_runs(sophronia_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, 'sophronia_runs.h5')
     nevt_req = 1
@@ -19,6 +21,7 @@ def test_sophronia_runs(sophronia_config, config_tmpdir):
     assert cnt.events_in   == nevt_req
 
 
+@ignore_warning.no_config_group
 def test_sophronia_contains_all_tables(sophronia_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "test_sophronia_contains_all_tables.h5")
     nevt_req = 1
@@ -46,6 +49,7 @@ def test_sophronia_contains_all_tables(sophronia_config, config_tmpdir):
         assert "Filters/valid_hit"    in h5out.root
 
 
+@ignore_warning.no_config_group
 @mark.slow
 def test_sophronia_exact_result(sophronia_config, Th228_hits, config_tmpdir):
     path_out = os.path.join(config_tmpdir, 'test_sophronia_exact_result.h5')
@@ -70,6 +74,7 @@ def test_sophronia_exact_result(sophronia_config, Th228_hits, config_tmpdir):
                 assert_tables_equality(got, expected)
 
 
+@ignore_warning.no_config_group
 def test_sophronia_filters_pmaps(sophronia_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, 'test_sophronia_filters_pmaps.h5')
     config   = dict(**sophronia_config)
@@ -85,6 +90,7 @@ def test_sophronia_filters_pmaps(sophronia_config, config_tmpdir):
     assert cnt.selection.n_failed == 2
 
 
+@ignore_warning.no_config_group
 def test_sophronia_filters_events_with_only_nn_hits(config_tmpdir, sophronia_config):
     """
     Run with a high q threshold so all hits are NN-hits.
@@ -111,6 +117,7 @@ def test_sophronia_filters_events_with_only_nn_hits(config_tmpdir, sophronia_con
         assert not output_file.root.Filters.valid_hit   [0][1]
 
 
+@ignore_warning.no_config_group
 def test_sophronia_keeps_hitless_events(config_tmpdir, sophronia_config):
     """
     Run with a high q threshold so all hits are discarded (turned into NN).

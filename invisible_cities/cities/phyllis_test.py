@@ -10,10 +10,12 @@ from pytest import mark
 from .  phyllis            import phyllis
 from .. core.configure     import configure
 from .. core.testing_utils import assert_tables_equality
+from .. core.testing_utils import ignore_warning
 from .. types.symbols      import all_events
 from .. types.symbols      import PMTCalibMode
 
 
+@ignore_warning.no_config_group
 @mark.parametrize("proc_opt", PMTCalibMode)
 def test_phyllis_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
     PATH_IN   = os.path.join(ICDATADIR    , 'pmtledpulsedata.h5')
@@ -46,6 +48,7 @@ def test_phyllis_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
         assert np.all(ch_in_sipm == ch_out_sipm)
 
 
+@ignore_warning.no_config_group
 @mark.parametrize("proc_opt", PMTCalibMode)
 def test_phyllis_exact_result(ICDATADIR, output_tmpdir, proc_opt):
     file_in     = os.path.join(ICDATADIR    ,                       "pmtledpulsedata.h5")

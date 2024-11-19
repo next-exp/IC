@@ -10,10 +10,12 @@ from pytest import mark
 from .  trude              import trude
 from .. core.configure     import configure
 from .. core.testing_utils import assert_tables_equality
+from .. core.testing_utils import ignore_warning
 from .. types.symbols      import all_events
 from .. types.symbols      import SiPMCalibMode
 
 
+@ignore_warning.no_config_group
 @mark.slow
 @mark.parametrize("proc_opt", ( SiPMCalibMode.subtract_mode
                               , SiPMCalibMode.subtract_median))
@@ -48,6 +50,7 @@ def test_trude_pulsedata(config_tmpdir, ICDATADIR, proc_opt):
         assert np.all(ch_in_sipm == ch_out_sipm)
 
 
+@ignore_warning.no_config_group
 @mark.parametrize("proc_opt", ( SiPMCalibMode.subtract_mode
                               , SiPMCalibMode.subtract_median))
 def test_trude_exact_result(ICDATADIR, output_tmpdir, proc_opt):

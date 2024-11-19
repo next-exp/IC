@@ -10,6 +10,7 @@ from .. cities.eutropia        import eutropia
 from .. core  .configure       import configure
 from .. core  .system_of_units import mm
 from .. core  .testing_utils   import assert_tables_equality
+from .. core  .testing_utils   import ignore_warning
 
 
 @fixture(scope="module")
@@ -28,6 +29,7 @@ def fast_psf_config(ICDATADIR):
                )
 
 
+@ignore_warning.no_config_group
 def test_eutropia_contains_tables(fast_psf_config, output_tmpdir):
     output_filename = os.path.join(output_tmpdir, "psf_tables.h5")
     conf = configure('eutropia $ICTDIR/invisible_cities/config/eutropia.conf'.split())
@@ -45,6 +47,7 @@ def test_eutropia_contains_tables(fast_psf_config, output_tmpdir):
         assert "events"  in file.root.Run
 
 
+@ignore_warning.no_config_group
 def test_eutropia_output_types(fast_psf_config, output_tmpdir):
     output_filename = os.path.join(output_tmpdir, "psf_tables.h5")
     conf = configure('eutropia $ICTDIR/invisible_cities/config/eutropia.conf'.split())
@@ -58,6 +61,7 @@ def test_eutropia_output_types(fast_psf_config, output_tmpdir):
     assert np.all(df.dtypes.values == dtypes)
 
 
+@ignore_warning.no_config_group
 def test_eutropia_run_info(fast_psf_config, output_tmpdir):
     output_filename = os.path.join(output_tmpdir, "psf_events.h5")
     conf = configure('eutropia $ICTDIR/invisible_cities/config/eutropia.conf'.split())
@@ -75,6 +79,7 @@ def test_eutropia_run_info(fast_psf_config, output_tmpdir):
                 assert all(got == expected)
 
 
+@ignore_warning.no_config_group
 def test_eutropia_centers(output_tmpdir):
     file_out    = os.path.join(output_tmpdir, "psf_centers.h5")
 
@@ -97,6 +102,7 @@ def test_eutropia_centers(output_tmpdir):
         assert np.in1d(table.col("z"), z_centers).all()
 
 
+@ignore_warning.no_config_group
 def test_eutropia_exact_result(ICDATADIR, output_tmpdir):
     file_out    = os.path.join(output_tmpdir, "exact_result_eutropia.h5")
     true_output = os.path.join(ICDATADIR    , "exact_result_eutropia.h5")
