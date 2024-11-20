@@ -183,6 +183,7 @@ def test_dorothea_empty_input_file(config_tmpdir, ICDATADIR):
         dorothea(**conf)
 
 
+@ignore_warning.no_config_group
 def test_dorothea_high_threshold(config_tmpdir, KrMC_pmaps_filename, KrMC_kdst):
     # set a ver high Qthr in reconstruction to verify proper behaviour
     config      = KrMC_kdst[0].config
