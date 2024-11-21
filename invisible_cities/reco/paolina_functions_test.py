@@ -819,12 +819,13 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
 
     assert np.isclose(tot_energy, tot_mod_energy)
 
-    tot_default_energy     = sum(h.E for v in voxels_c     for h in v.hits)
+    # We don't want to modify the default energy of hits, if the voxels are made with energy_c
+    tot_default_energy     = sum(h.E for v in     voxels_c for h in v.hits)
     tot_mod_default_energy = sum(h.E for v in mod_voxels_c for h in v.hits)
 
-    # We don't want to modify the default energy of hits, if the voxels are made with energy_c
-    if len(mod_voxels_c) < len(voxels_c):
-        assert tot_default_energy > tot_mod_default_energy
+    no_drop     = len(mod_voxels_c) == len(voxels_c)
+    lost_energy = tot_default_energy > tot_mod_default_energy
+    assert no_drop ^ lost_energy
 
 
 @given(bunch_of_hits, box_sizes)
