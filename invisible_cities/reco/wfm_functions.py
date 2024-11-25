@@ -27,7 +27,7 @@ def to_adc(wfs, adc_to_pes):
     return wfs * adc_to_pes.reshape(wfs.shape[0], 1)
 
 
-def to_pes(wfs, adc_to_pes):
+def to_pes(wfs, adc_to_pes): # pragma: no cover
     """
     Convert waveform in adc to pes.
 

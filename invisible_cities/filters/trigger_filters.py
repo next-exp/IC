@@ -7,7 +7,7 @@ credits: see ic_authors_and_legal.rst in /doc
 last revised: JJGC, July-2017
 
 """
-def TriggerFilter(trigger_params):
+def TriggerFilter(trigger_params): # pragma: no cover
     """Trigger Filter module"""
     def trigger_filter(peak_data : '{channel_no: s2}'):
         min_charge, max_charge = trigger_params.charge

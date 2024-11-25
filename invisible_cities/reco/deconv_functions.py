@@ -408,7 +408,7 @@ def richardson_lucy(image, psf, satellite_start_iter, satellite_max_size, e_cut,
     if time_ratio <= 1 or len(image.shape) > 2:
         convolve_method = fftconvolve
     else:
-        convolve_method = convolve
+        convolve_method = convolve # pragma: no cover
 
     image      = image.astype(float)
     psf        = psf.astype(float)

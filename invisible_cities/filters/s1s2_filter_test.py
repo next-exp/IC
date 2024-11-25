@@ -1,5 +1,7 @@
 import numpy as np
 
+from pytest                 import mark
+from pytest                 import raises
 from pytest                 import fixture
 from hypothesis             import given
 from hypothesis.strategies  import lists
@@ -202,6 +204,55 @@ def test_s12selector_select_s2(selector_conf,
     selector_output = selector.select_s2(peaks)
     truth           = (True, False, False, False, False)
     assert tuple(selector_output) == truth
+
+
+@mark.parametrize(   "left  right".split()
+                 , ( (False, False)
+                   , (False,  True)
+                   , ( True, False)
+                   , ( True,  True)))
+def test_s12selectoroutput_andor_overall(left, right):
+    output1 = S12SelectorOutput( left, [], [])
+    output2 = S12SelectorOutput(right, [], [])
+
+    assert (output1 & output2).passed == (left & right)
+    assert (output1 | output2).passed == (left | right)
+
+
+def test_s12selectoroutput_andor_peaks():
+    output1 = S12SelectorOutput( True
+                               , ( True, False, False, True)
+                               , ( True, True, False,  True))
+    output2 = S12SelectorOutput( True
+                               , (False,  True, False, True)
+                               , (False, True,  True, False))
+    out_and = S12SelectorOutput( True
+                               , (False, False, False,  True)
+                               , (False, True,  False, False))
+    out_or  = S12SelectorOutput( True
+                               , ( True, True, False, True)
+                               , ( True, True,  True, True))
+
+    anded = output1 & output2
+    ored  = output1 | output2
+    assert anded.s1_peaks == out_and.s1_peaks
+    assert anded.s2_peaks == out_and.s2_peaks
+    assert  ored.s1_peaks == out_or .s1_peaks
+    assert  ored.s2_peaks == out_or .s2_peaks
+
+
+@mark.parametrize( "s1 s2".split(),
+                  ( (2, 1) # same s2, different s1
+                  , (0, 1)
+                  , (1, 0) # same s1 different s2
+                  , (1, 2)))
+def test_s12selectoroutput_invalid_operations(s1, s2):
+    output1 = S12SelectorOutput(True, (True,)*1 , (False,)*1 )
+    output2 = S12SelectorOutput(True, (True,)*s1, (False,)*s2)
+
+    with raises(ValueError): output1 & output2
+    with raises(ValueError): output1 | output2
+
 
 def test_pmap_filter(selector_conf,
                       true_s1_peak,

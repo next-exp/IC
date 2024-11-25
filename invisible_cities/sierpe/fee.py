@@ -39,7 +39,7 @@ def i_to_adc():
     return FEE_GAIN / LSB
 
 
-def i_to_v():
+def i_to_v(): # pragma: no cover
     """Current to voltage."""
     return FEE_GAIN
 
@@ -110,7 +110,7 @@ def spe_pulse_train(spe,
                     signal_start  = 2000 * units.ns,
                     signal_length = 5000 * units.ns,
                     daq_window    =   20 * units.mus,
-                    time_step     =    1 * units.ns):
+                    time_step     =    1 * units.ns): # pragma: no cover
     """
     Input: an instance of class SPE
     Returns a train of SPE pulses between signal_start

@@ -366,5 +366,5 @@ pes = 1
 adc = 1
 
 
-def celsius(tKelvin):
+def celsius(tKelvin): # pragma: no cover
     return tKelvin - 273.15

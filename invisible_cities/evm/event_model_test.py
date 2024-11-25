@@ -175,3 +175,19 @@ def test_kr_event_attributes():
                  "X", "Y", "R", "Phi",
                  "Xrms", "Yrms"]:
         assert getattr(evt, attr) == []
+
+def test_kr_event_fill_defaults():
+    evt =  KrEvent(-1, -1)
+    evt.nS1 = 0
+    evt.nS2 = 0
+    evt.fill_defaults()
+
+    for attr in ["S1w", "S1h", "S1e", "S1t",
+                 "S2w", "S2h", "S2e", "S2t", "S2q",
+                 "X", "Y", "R", "Phi",
+                 "Xrms", "Yrms"]:
+        assert getattr(evt, attr) == [np.nan], attr
+
+    assert evt.Nsipm == [0]
+    assert evt.DT == [[np.nan]]
+    assert evt.Z  == [[np.nan]]

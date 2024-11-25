@@ -23,6 +23,8 @@ from .. core.core_functions import shift_to_bin_centers
 from .. types.symbols       import all_events
 
 from .  diomira import diomira
+from .  diomira import select_trigger_filter
+from .  diomira import emulate_trigger
 
 
 def test_diomira_identify_bug(ICDATADIR):
@@ -215,7 +217,7 @@ def test_diomira_can_fix_random_seed(output_tmpdir):
 
 ## to run the following test, use the --runslow option with pytest
 @mark.veryslow
-def test_diomira_reproduces_singlepe(ICDATADIR, output_tmpdir):
+def test_diomira_reproduces_singlepe(ICDATADIR, output_tmpdir): # pragma: no cover
     file_in  = os.path.join(ICDATADIR    ,     'single_pe_pmts.h5')
     file_out = os.path.join(output_tmpdir, 'single_pe_elec_sim.h5')
 
@@ -246,3 +248,15 @@ def test_diomira_reproduces_singlepe(ICDATADIR, output_tmpdir):
         ## show the mean is within error of reproducing 1 pe ADC
         for fit_res in fits:
             assert np.abs(fit_res.values[1]) < fit_res.errors[1]
+
+
+def test_select_trigger_filter_invalid_trigger_type():
+    ftype = "DOES_NOT_EXIST"
+    with raises(ValueError, match=f"Invalid trigger type: '{ftype}'"):
+        select_trigger_filter(ftype, dict(), dict())
+
+
+def test_emulate_trigger_invalid_trigger_type():
+    ftype = "DOES_NOT_EXIST"
+    with raises(ValueError, match=f"Invalid trigger type: '{ftype}'"):
+        emulate_trigger("new", 0, ftype, dict(), dict())

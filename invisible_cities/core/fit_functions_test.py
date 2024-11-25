@@ -68,10 +68,19 @@ def test_get_chi2_and_pvalue_gauss_errors(mean, sigma):
     assert chi2 == approx(1, rel=1e-2)
 
 
+def test_get_chi2_and_pvalue_auto_errors():
+    ndf        = 10
+    ydata      = np.linspace(1, 2, ndf+1)
+    yfit       = ydata + 1
+    chi2, pval = fitf.get_chi2_and_pvalue(ydata, yfit, ndf, sigma=None)
+
+    assert np.isclose(chi2, 0.7687714032)
+    assert np.isclose(pval, 0.6593105139)
+
+
 @mark.parametrize("ey", (0, -1, -100))
 def test_fit_raises_ValueError_when_negative_or_zero_value_in_sigma(ey):
-    def dummy(x, m):
-        return m
+    def dummy(x, m): pass # no need to do anything
 
     x  = np.array([0  , 1  ])
     y  = np.array([4.1, 4.2])
@@ -313,12 +322,26 @@ def test_fixed_parameters():
 
 
 @mark.parametrize("pars",
-                  ({'amp' : 2, 'mu' : 0, 'sigma' : 2},
-                   {'fake1' : 2},
+                  ({'fake1' : 2},
                    {'fake1' : 1, 'mu' : 0}))
-def test_fix_wrong_parameters_raises_error(pars):
+def test_fixed_parameters_raises_wrong_parameters(pars):
     with raises(ValueError):
         fitf.fixed_parameters(fitf.gauss, **pars)
+
+
+def test_fixed_parameters_raises_fixed_all():
+    with raises(ValueError):
+        fitf.fixed_parameters(fitf.gauss, area=1, mu=2, sigma=3)
+
+
+def test_fixed_parameters_n_gaussians():
+    def f(x, arg1, arg2):
+        return x + arg1 + arg2
+    f.n_gaussians = 0
+    fixed_f = fitf.fixed_parameters(f, arg1=10)
+
+    assert fixed_f(-25, 5) == -10
+    assert hasattr(fixed_f, "n_gaussians")
 
 
 @mark.parametrize(["func"],
@@ -394,7 +417,7 @@ def test_profile1D_full_range_x(func, xdata, ydata, xrange):
 #                   (fitf.profileY,
 #                    FLOAT_ARRAY(10000, -100, 100),
 #                    FLOAT_ARRAY(10000, -500,   0))))
-def test_profile1D_one_bin_missing_x(func, xdata, ydata):
+def test_profile1D_one_bin_missing_x(func, xdata, ydata): # pragma: no cover
     xdata[core.in_range(xdata, -2, 0)] += 5
     xp, yp, ye = func(xdata, ydata)
     assert xp.size == 99
@@ -464,7 +487,8 @@ def test_profile_data_in_edges(func, xdata, ydata, drop_nan):
 
 
 @mark.slow
-def test_profileXY_full_range():
+@mark.parametrize("zrange", (None, (.25, .75)))
+def test_profileXY(zrange):
     N    = 10000
     Nbin = 100
     rms  = 12**-0.5
@@ -477,7 +501,8 @@ def test_profileXY_full_range():
                                     ydata,
                                     zdata,
                                     Nbin,
-                                    Nbin)
+                                    Nbin,
+                                    zrange=zrange)
 
     assert np.all(abs(zp - 0.5) < 3.00*rms)
     assert np.all(abs(ze - rms*(Nbin**2/N)**0.5) < eps)

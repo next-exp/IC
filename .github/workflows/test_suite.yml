@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  build-and-test:
 
     strategy:
       fail-fast: false
@@ -29,7 +29,6 @@ jobs:
       run: |
         source $CONDA/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
-
 
     - name: Run tests
       run: |

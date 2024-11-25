@@ -118,6 +118,7 @@ def test_city_output_contains_configuration(config_tmpdir, city):
 
 
 @ignore_warning.no_config_group
+@ignore_warning.no_pmaps
 def test_cities_carry_on_configuration_from_previous_ones(ICDATADIR, config_tmpdir):
     rwf_file   = os.path.join(    ICDATADIR, "electrons_40keV_ACTIVE_10evts_RWF.h5")
     pmaps_file = os.path.join(config_tmpdir, f"test_cities_carry_on_configuration_pmaps.h5")
