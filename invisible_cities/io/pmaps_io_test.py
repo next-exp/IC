@@ -299,7 +299,8 @@ def test_load_pmaps_as_df_lazy(KrMC_pmaps_filename, KrMC_pmaps_dfs):
         assert_dataframes_equal(df_lazy, df_eager)
 
 
-def test_load_pmaps_as_df_eager_lazy(KrMC_pmaps_filename):
+def test_load_pmaps_as_df(KrMC_pmaps_filename):
+    """Ensure the output of the function is the expected one"""
     eager = pmpio.load_pmaps_as_df(KrMC_pmaps_filename, lazy=False)
     lazy  = pmpio.load_pmaps_as_df(KrMC_pmaps_filename, lazy=True )
     assert len(eager) == 5
@@ -348,7 +349,8 @@ def test_load_pmaps_lazy(KrMC_pmaps_filename):
         assert_PMap_equality(pmap_lazy, pmaps_eager[evt])
 
 
-def test_load_pmaps_eager_lazy(KrMC_pmaps_filename):
+def test_load_pmaps(KrMC_pmaps_filename):
+    """Ensure the output of the function is the expected one"""
     eager = pmpio.load_pmaps(KrMC_pmaps_filename, lazy=False)
     lazy  = pmpio.load_pmaps(KrMC_pmaps_filename, lazy=True )
 
