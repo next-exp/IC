@@ -312,6 +312,7 @@ def test_load_pmaps_as_df(KrMC_pmaps_filename):
     assert all(isinstance(item, pd.DataFrame) for item in element)
 
 
+@mark.skip(reason="Deprecated feature. Plus this test makes no sense. Compares the output with itself.")
 def test_load_pmaps_as_df_eager_without_ipmt(KrMC_pmaps_without_ipmt_filename, KrMC_pmaps_without_ipmt_dfs):
     true_dfs = KrMC_pmaps_without_ipmt_dfs
     read_dfs = pmpio.load_pmaps_as_df_eager(KrMC_pmaps_without_ipmt_filename)
