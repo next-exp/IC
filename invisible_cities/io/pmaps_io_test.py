@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from pytest import mark
 from pytest import approx
+from pytest import fixture
 
 from hypothesis import given
 from hypothesis import strategies as stg
@@ -17,6 +18,8 @@ from ..core.testing_utils import assert_dataframes_equal
 from ..core.testing_utils import exactly
 from ..evm .pmaps         import S1
 from ..evm .pmaps         import S2
+from ..evm .pmaps         import PMTResponses
+from ..evm .pmaps         import SiPMResponses
 from ..evm .pmaps         import PMap
 from ..evm .pmaps_test    import pmaps    as pmap_gen
 from .                    import pmaps_io as pmpio
@@ -29,8 +32,101 @@ from typing import Mapping
 pmaps_data = namedtuple("pmaps_data", """evt_numbers      peak_numbers
                                          evt_numbers_pmt  peak_numbers_pmt
                                          evt_numbers_sipm peak_numbers_sipm
-                                         times npmts nsipms
+                                         times bwidths npmts nsipms
                                          enes enes_pmt enes_sipm""")
+
+@fixture(scope="session")
+def two_pmaps_evm():
+    """
+    Generate two pmaps (two events) with random data. We fix the RNG
+    state for reproducibility. We make minimal changes to the sensor
+    ID and wfs between pmts and sipms to keep this fixture to a
+    minimum since the data values are irrelevant. We use different
+    number of S1s and S2s to cover more cases.
+    """
+    state = np.random.get_state()
+    np.random.seed(123456789)
+
+    pmaps = {}
+    for i in range(2):
+        n_sensors = 5
+        n_samples = 50
+        n_s1      = 1 + i
+        n_s2      = 2 - i
+
+        peaks = []
+        for with_sipms in [False]*n_s1 + [True]*n_s2:
+            times   = np.arange     (n_samples, dtype=np.float32)
+            bwidths = np.ones       (n_samples, dtype=np.float32)
+            ids     = np.arange     (n_sensors) * 3
+            wfs     = np.random.rand(n_sensors, n_samples).astype(np.float32)
+            pmts    =  PMTResponses(ids     , wfs  )
+            if with_sipms:
+                sipms = SiPMResponses(ids+1000, wfs*2)
+                peak  = S2
+            else:
+                sipms = SiPMResponses.build_empty_instance()
+                peak  = S1
+            peaks.append(peak(times, bwidths, pmts, sipms))
+
+        s1s, s2s = peaks[:n_s1], peaks[n_s1:]
+        pmaps[i*5] = PMap(s1s, s2s)
+
+    np.random.set_state(state)
+    return pmaps
+
+
+@fixture(scope="session")
+def two_pmaps_dfs(two_pmaps_evm):
+    """Same as `two_pmaps` but with DataFrames"""
+    s1_data = pmaps_to_arrays(two_pmaps_evm, list(two_pmaps_evm), "s1s")
+    s2_data = pmaps_to_arrays(two_pmaps_evm, list(two_pmaps_evm), "s2s")
+
+    s1 = pd.DataFrame(dict( event  = s1_data.evt_numbers
+                          , time   = s1_data.times
+                          , peak   = s1_data.peak_numbers.astype(np.uint8)
+                          , bwidth = s1_data.bwidths
+                          , ene    = s1_data.enes
+                          ))
+    s2 = pd.DataFrame(dict( event  = s2_data.evt_numbers
+                          , time   = s2_data.times
+                          , peak   = s2_data.peak_numbers.astype(np.uint8)
+                          , bwidth = s2_data.bwidths
+                          , ene    = s2_data.enes
+                          ))
+    si = pd.DataFrame(dict( event  = s2_data.evt_numbers_sipm
+                          , peak   = s2_data.peak_numbers_sipm.astype(np.uint8)
+                          , nsipm  = s2_data.nsipms.astype(np.int16)
+                          , ene    = s2_data.enes_sipm
+                          ))
+    s2pmt = pd.DataFrame(dict( event = s2_data.evt_numbers_pmt
+                             , peak  = s2_data.peak_numbers_pmt.astype(np.uint8)
+                             , npmt  = s2_data.npmts.astype(np.uint8)
+                             , ene   = s2_data.enes_pmt
+                             ))
+    s1pmt = pd.DataFrame(dict( event = s1_data.evt_numbers_pmt
+                             , peak  = s1_data.peak_numbers_pmt.astype(np.uint8)
+                             , npmt  = s1_data.npmts.astype(np.uint8)
+                             , ene   = s1_data.enes_pmt
+                             ))
+    return s1, s2, si, s1pmt, s2pmt
+
+
+@fixture(scope="session")
+def two_pmaps(two_pmaps_evm, two_pmaps_dfs, output_tmpdir):
+    pmap_filename = os.path.join(output_tmpdir, "two_pmaps.h5")
+    run_number    = 0 # irrelevant
+    timestamp     = 0 # irrelevant
+
+    with tb.open_file(pmap_filename, "w") as output_file:
+        write_pmap    = pmpio.pmap_writer(output_file)
+        write_evtinfo = reio.run_and_event_writer(output_file)
+        for event_number, pmap in two_pmaps_evm.items():
+            write_pmap   (pmap, event_number)
+            write_evtinfo(run_number, event_number, timestamp)
+
+    return pmap_filename, two_pmaps_evm, two_pmaps_dfs
+
 
 def pmaps_to_arrays(pmaps, evt_numbers, attr):
     data = defaultdict(list)
@@ -47,6 +143,7 @@ def pmaps_to_arrays(pmaps, evt_numbers, attr):
             data["evt_numbers_sipm"] .extend([ evt_number] * size * nsipm)
             data["peak_numbers_sipm"].extend([peak_number] * size * nsipm)
             data["times"]            .extend(peak.times)
+            data["bwidths"]          .extend(peak.bin_widths)
             data["npmts"]            .extend(np.repeat(peak. pmts.ids, size))
             data["nsipms"]           .extend(np.repeat(peak.sipms.ids, size))
             data["enes"]             .extend(peak.pmts.sum_over_sensors)
