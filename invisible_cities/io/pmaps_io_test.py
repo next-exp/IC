@@ -286,7 +286,7 @@ def test_load_pmaps_as_df_eager(two_pmaps):
         assert_dataframes_equal(read_df, true_df)
 
 
-def test_load_pmaps_as_df_lazy(KrMC_pmaps_filename, KrMC_pmaps_dfs):
+def test_load_pmaps_as_df_lazy(KrMC_pmaps_filename):
     """Ensure the lazy and non-lazy versions provide the same result"""
     dfs_eager = pmpio.load_pmaps_as_df_eager(KrMC_pmaps_filename)
     dfs_lazy  = pmpio.load_pmaps_as_df_lazy (KrMC_pmaps_filename)
