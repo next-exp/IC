@@ -17,8 +17,13 @@ from ..core.testing_utils import assert_dataframes_equal
 from ..core.testing_utils import exactly
 from ..evm .pmaps         import S1
 from ..evm .pmaps         import S2
+from ..evm .pmaps         import PMap
 from ..evm .pmaps_test    import pmaps    as pmap_gen
 from .                    import pmaps_io as pmpio
+from .                    import run_and_event_io as reio
+
+from typing import Generator
+from typing import Mapping
 
 
 pmaps_data = namedtuple("pmaps_data", """evt_numbers      peak_numbers
@@ -181,16 +186,41 @@ def test_store_pmap(output_tmpdir, KrMC_pmaps_dict):
         assert cols.ene  [:] == approx (s2_data.enes_sipm)
 
 
-def test_load_pmaps_as_df(KrMC_pmaps_filename, KrMC_pmaps_dfs):
+def test_load_pmaps_as_df_eager(KrMC_pmaps_filename, KrMC_pmaps_dfs):
     true_dfs = KrMC_pmaps_dfs
-    read_dfs = pmpio.load_pmaps_as_df(KrMC_pmaps_filename)
+    read_dfs = pmpio.load_pmaps_as_df_eager(KrMC_pmaps_filename)
     for read_df, true_df in zip(read_dfs, true_dfs):
         assert_dataframes_equal(read_df, true_df)
 
 
-def test_load_pmaps_as_df_without_ipmt(KrMC_pmaps_without_ipmt_filename, KrMC_pmaps_without_ipmt_dfs):
+def test_load_pmaps_as_df_lazy(KrMC_pmaps_filename, KrMC_pmaps_dfs):
+    """Ensure the lazy and non-lazy versions provide the same result"""
+    dfs_eager = pmpio.load_pmaps_as_df_eager(KrMC_pmaps_filename)
+    dfs_lazy  = pmpio.load_pmaps_as_df_lazy (KrMC_pmaps_filename)
+
+    # concatenate all dfs from the same node
+    dfs_lazy = [pd.concat(node_dfs, ignore_index=True) for node_dfs in zip(*dfs_lazy)]
+
+    assert len(dfs_eager) == len(dfs_lazy)
+    for df_lazy, df_eager in zip(dfs_lazy, dfs_eager):
+        assert_dataframes_equal(df_lazy, df_eager)
+
+
+def test_load_pmaps_as_df_eager_lazy(KrMC_pmaps_filename):
+    eager = pmpio.load_pmaps_as_df(KrMC_pmaps_filename, lazy=False)
+    lazy  = pmpio.load_pmaps_as_df(KrMC_pmaps_filename, lazy=True )
+    assert len(eager) == 5
+    assert all(isinstance(item, pd.DataFrame) for item in eager)
+
+    assert isinstance(lazy, Generator)
+    element = next(lazy)
+    assert len(element   ) == 5
+    assert all(isinstance(item, pd.DataFrame) for item in element)
+
+
+def test_load_pmaps_as_df_eager_without_ipmt(KrMC_pmaps_without_ipmt_filename, KrMC_pmaps_without_ipmt_dfs):
     true_dfs = KrMC_pmaps_without_ipmt_dfs
-    read_dfs = pmpio.load_pmaps_as_df(KrMC_pmaps_without_ipmt_filename)
+    read_dfs = pmpio.load_pmaps_as_df_eager(KrMC_pmaps_without_ipmt_filename)
 
     # Indices 0, 1 and 2 correspond to the S1sum, S2sum and Si
     # dataframes. Indices 3 and 4 are the S1pmt and S2pmt dataframes
@@ -203,7 +233,7 @@ def test_load_pmaps_as_df_without_ipmt(KrMC_pmaps_without_ipmt_filename, KrMC_pm
 
 
 @given(stg.data())
-def test_load_pmaps(output_tmpdir, data):
+def test_load_pmaps_eager(output_tmpdir, data):
     pmap_filename  = os.path.join(output_tmpdir, "test_pmap_file.h5")
     event_numbers  = [2, 4, 6]
     pmt_ids        = [1, 6, 8]
@@ -214,12 +244,44 @@ def test_load_pmaps(output_tmpdir, data):
         write = pmpio.pmap_writer(output_file)
         list(map(write, true_pmaps, event_numbers))
 
-    read_pmaps = pmpio.load_pmaps(pmap_filename)
+        write = reio.run_and_event_writer(output_file)
+        for event_number in event_numbers:
+            write(0, event_number, 0)
+
+    read_pmaps = pmpio.load_pmaps_eager(pmap_filename)
 
     assert len(read_pmaps) == len(true_pmaps)
     assert np.all(list(read_pmaps.keys()) == event_numbers)
     for true_pmap, read_pmap in zip(true_pmaps, read_pmaps.values()):
         assert_PMap_equality(read_pmap, true_pmap)
+
+
+def test_load_pmaps_lazy(KrMC_pmaps_filename):
+    """Ensure the lazy and non-lazy versions provide the same result"""
+    pmaps_eager = pmpio.load_pmaps_eager(KrMC_pmaps_filename)
+    pmaps_lazy  = pmpio.load_pmaps_lazy (KrMC_pmaps_filename)
+
+    # combine all events in the same dictionary
+    pmaps_lazy = dict(pmaps_lazy)
+
+    assert len(pmaps_lazy) == len(pmaps_eager)
+    for evt, pmap_lazy in pmaps_lazy.items():
+        assert evt in pmaps_eager
+        assert_PMap_equality(pmap_lazy, pmaps_eager[evt])
+
+
+def test_load_pmaps_eager_lazy(KrMC_pmaps_filename):
+    eager = pmpio.load_pmaps(KrMC_pmaps_filename, lazy=False)
+    lazy  = pmpio.load_pmaps(KrMC_pmaps_filename, lazy=True )
+
+    assert isinstance(eager, Mapping)
+    element = next(iter(eager.values()))
+    assert isinstance(element, PMap)
+
+    assert isinstance(lazy, Generator)
+    element = next(lazy)
+    assert len(element) == 2 # event, pmap
+    assert isinstance(element[1], PMap)
 
 
 @mark.parametrize("signal_type", (S1, S2))
