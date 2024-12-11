@@ -3,7 +3,9 @@ import os
 import numpy  as np
 import tables as tb
 
-from pytest                  import mark
+from numpy.testing import assert_allclose
+from pytest        import mark
+from pytest        import warns
 
 from .. io.dst_io            import load_dst
 from .. core.testing_utils   import assert_dataframes_close
@@ -12,6 +14,7 @@ from .. core.testing_utils   import ignore_warning
 from .. core.configure       import configure
 from .. core.system_of_units import pes, mm, mus, ns
 from .. types.symbols        import all_events
+from .. types.ic_types       import NN
 
 from .  dorothea import dorothea
 
@@ -176,4 +179,41 @@ def test_dorothea_empty_input_file(config_tmpdir, ICDATADIR):
     conf.update(dict(files_in      = PATH_IN,
                      file_out      = PATH_OUT))
 
-    dorothea(**conf)
+    with warns(UserWarning, match="No PMAPs in input file"):
+        dorothea(**conf)
+
+
+@ignore_warning.no_config_group
+def test_dorothea_high_threshold(config_tmpdir, KrMC_pmaps_filename, KrMC_kdst):
+    # set a ver high Qthr in reconstruction to verify proper behaviour
+    config      = KrMC_kdst[0].config
+    reco_config = config["global_reco_params"]
+    reco_config["Qthr"] = 1e6
+
+    PATH_IN   = KrMC_pmaps_filename
+    PATH_OUT  = os.path.join(config_tmpdir, 'test_dorothea_high_threshold.h5')
+    nrequired = 3
+
+    conf = configure('dummy invisible_cities/config/dorothea.conf'.split())
+    conf.update(dict(files_in    = PATH_IN,
+                     file_out    = PATH_OUT,
+                     event_range = (0, nrequired),
+                     **config))
+
+    cnt      = dorothea(**conf)
+    nevt_in  = cnt.events_in
+    nevt_out = cnt.events_out
+
+    if nrequired > 0:
+        assert nrequired == nevt_in
+
+    dst = load_dst(PATH_OUT,
+                   group = "DST",
+                   node  = "Events")
+    assert len(set(dst.event)) == nevt_out
+    print(nevt_out, dst.columns)
+    assert_allclose(dst.S2q, NN)
+    assert_allclose(dst.X  , NN)
+    assert_allclose(dst.Y  , NN)
+    assert_allclose(dst.Z  , NN)
+    assert_allclose(dst.DT , NN)

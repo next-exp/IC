@@ -26,7 +26,7 @@ def test_command_line_run(city, tmpdir_factory):
                .format(**locals()))
     try:
         check_output(command, shell = True, stderr=STDOUT)
-    except CalledProcessError as e:
+    except CalledProcessError as e: # pragma: no cover
         # Ensure that stdout and stderr are visible when test fails
         print(e.stdout.decode())
         raise

@@ -15,7 +15,7 @@ from .. evm.ic_containers import DeconvParams
 
 
 @mark.slow
-def test_compare_cwf_blr(dbnew, ICDATADIR):
+def test_compare_cwf_blr(ICDATADIR):
     """Test functions cwf_from_rwf() and compare_cwf_blr().
     The test:
     1) Computes CWF from RWF (function cwf_from_rwf())
@@ -29,8 +29,8 @@ def test_compare_cwf_blr(dbnew, ICDATADIR):
                           thr_trigger =     5)
 
     run_number = 0
-    DataPMT    = load_db.DataPMT (dbnew, run_number)
-    DataSiPM   = load_db.DataSiPM(dbnew, run_number)
+    DataPMT    = load_db.DataPMT ("new", run_number)
+    DataSiPM   = load_db.DataSiPM("new", run_number)
 
     calib = CalibVectors(channel_id      =     DataPMT .ChannelID .values ,
                          coeff_blr       = abs(DataPMT .coeff_blr .values),
@@ -49,3 +49,26 @@ def test_compare_cwf_blr(dbnew, ICDATADIR):
                                    event_list=range(NEVT), window_size=300)
 
     assert max(diff) < 0.15
+
+
+def test_noise_suppression_constant_threshold():
+    wfms       = np.array([ np.arange(0, 5)
+                          , np.arange(1, 6)
+                          , np.arange(2, 7) ])
+    threshold  = 3.5
+    suppressed = wfm.noise_suppression(wfms, threshold)
+    expected   = np.where(wfms<threshold, 0, wfms)
+
+    assert np.all(suppressed == expected)
+
+
+def test_noise_suppression_different_thresholds():
+    wfms       = np.array([ np.arange(0, 5)
+                          , np.arange(1, 6)
+                          , np.arange(2, 7) ])
+    thresholds = [3.5, 4.5, 5.5]
+    suppressed = wfm.noise_suppression(wfms, thresholds)
+    expected   = wfms.copy()
+    expected[:, :-1] = 0
+
+    assert np.all(suppressed == expected)

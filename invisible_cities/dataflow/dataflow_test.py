@@ -68,6 +68,21 @@ def test_map():
     assert result == list(map(the_operation, the_source))
 
 
+def test_flatmap_item():
+    the_source = [{"the_item": i} for i in range(10)]
+
+    def the_operation(n): return range(n)
+    square = df.flatmap(the_operation, item="the_item")
+
+    result = []
+    the_sink = df.sink(result.append, args="the_item")
+
+    df.push(source = the_source,
+            pipe   = square(the_sink))
+
+    assert result == [j for i in range(10) for j in range(i)]
+
+
 def test_pipe():
 
     # The basic syntax requires any element of a pipeline to be passed
@@ -194,6 +209,15 @@ def test_flatmap_args_out():
     assert result_b == expected_b
 
 
+@mark.parametrize("comp", (df.map, df.flatmap))
+def test_map_mutually_exclusive_arguments(comp):
+    with raises(ValueError):
+        comp(lambda x:x, item="something", args="something else")
+
+    with raises(ValueError):
+        comp(lambda x:x, item="something", out="something else")
+
+
 def test_count():
 
     # 'count' is an example of a sink which only produces a result
@@ -210,6 +234,20 @@ def test_count():
             pipe   = count.sink)
 
     assert count.future.result() == len(the_source)
+
+
+def test_count_filter():
+    count      = df.count_filter(lambda x: x>5)
+    the_source = list(range(10))
+    out        = []
+    the_sink   = df.sink(out.append)
+    df.push(source = the_source,
+            pipe   = df.pipe(count.filter, the_sink))
+
+    filter_out = count.future.result()
+    assert out == list(range(6,10))
+    assert filter_out.n_passed == 4
+    assert filter_out.n_failed == 6
 
 
 def test_push_futures():

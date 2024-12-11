@@ -14,11 +14,11 @@ from .. calib            import calib_sensors_functions as csf
 from .. reco             import wfm_functions as wfm
 
 
-def test_cwf_blr(dbnew, electron_MCRD_file):
+def test_cwf_blr(electron_MCRD_file):
     """Check that CWF -> (deconv) (RWF) == BLR within 1 %. """
 
     run_number    = 0
-    DataPMT       = load_db.DataPMT(dbnew, run_number)
+    DataPMT       = load_db.DataPMT("new", run_number)
     pmt_active    = np.nonzero(DataPMT.Active.values)[0].tolist()
     coeff_blr     = abs(DataPMT.coeff_blr.values)
     coeff_c       = abs(DataPMT.coeff_c .values)
@@ -42,14 +42,14 @@ def test_cwf_blr(dbnew, electron_MCRD_file):
         assert diff[0] < 1
 
 @mark.slow
-def test_sipm_noise_sampler(dbnew, electron_MCRD_file):
+def test_sipm_noise_sampler(electron_MCRD_file):
     """This test checks that the number of SiPMs surviving a hard energy
         cut (50 pes) is  small (<10). The test exercises the full
        construction of the SiPM vectors as well as the noise suppression.
     """
 
     run_number = 0
-    DataSiPM = load_db.DataSiPM(dbnew, run_number)
+    DataSiPM = load_db.DataSiPM("new", run_number)
     sipm_adc_to_pes = DataSiPM.adc_to_pes.values.astype(np.double)
 
     cal_min = 13
@@ -71,7 +71,7 @@ def test_sipm_noise_sampler(dbnew, electron_MCRD_file):
         assert np.mean(sipm_adc_to_pes[sipm_adc_to_pes>0]) < cal_max
 
         sipms_thresholds = sipm_noise_cut *  sipm_adc_to_pes
-        noise_sampler = SiPMsNoiseSampler(dbnew, run_number, SIPMWL, True)
+        noise_sampler = SiPMsNoiseSampler("new", run_number, SIPMWL, True)
 
         # signal in sipm with noise
         sipmrwf = e40rd.root.sipmrd[event] + noise_sampler.sample()
@@ -80,7 +80,7 @@ def test_sipm_noise_sampler(dbnew, electron_MCRD_file):
         n_sipm = 0
         for j in range(sipmzs.shape[0]):
             if np.sum(sipmzs[j] > 0):
-                n_sipm+=1
+                n_sipm+=1 # pragma: no cover
         assert n_sipm < max_sipm_with_signal
 
 def test_channel_id_to_IC_id():
@@ -92,8 +92,8 @@ def test_channel_id_to_IC_id():
         np.array                               ([0,4,2]))
 
 
-def test_channel_id_to_IC_id_with_real_data(dbnew):
-    pmt_df = load_db.DataPMT(dbnew, 0)
+def test_channel_id_to_IC_id_with_real_data():
+    pmt_df = load_db.DataPMT("new", 0)
     assert np.array_equal(
         convert_channel_id_to_IC_id(pmt_df, pmt_df.ChannelID.values),
                                             pmt_df.SensorID .values)

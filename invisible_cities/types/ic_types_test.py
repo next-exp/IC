@@ -1,4 +1,5 @@
 from string import ascii_letters
+from copy   import deepcopy
 
 import numpy as np
 
@@ -75,12 +76,26 @@ def test_minmax_sub(mm, f):
     np.isclose (lowered.max , hi - f, rtol=1e-4)
 
 
+@given(minmaxes)
+def test_minmax_eq(mm):
+    mm2 = deepcopy(mm)
+    mm3 = deepcopy(mm)
+    mm2.min = mm.min + 1
+    mm3.max = mm.max + 1
+
+    assert mm == mm
+    assert mm != mm2
+    assert mm != mm3
+
+
 @given(xys, sensible_floats, sensible_floats)
 def test_xy(xy, a, b):
     ab  = a, b
     r   = np.sqrt(a ** 2 + b ** 2)
     phi = np.arctan2(b, a)
     pos = np.stack(([a], [b]), axis=1)
+    np.isclose (xy[0] ,   a, rtol=1e-4)
+    np.isclose (xy[1] ,   b, rtol=1e-4)
     np.isclose (xy.x  ,   a, rtol=1e-4)
     np.isclose (xy.y  ,   b, rtol=1e-4)
     np.isclose (xy.X  ,   a, rtol=1e-4)
@@ -89,6 +104,11 @@ def test_xy(xy, a, b):
     np.isclose (xy.R  ,   r, rtol=1e-4)
     np.isclose (xy.Phi, phi, rtol=1e-4)
     np.allclose(xy.pos, pos, rtol=1e-3, atol=1e-03)
+
+
+def test_xy_getitem_raises():
+    with raises(IndexError):
+        xy(0,0)[2]
 
 
 @given(text(min_size=1, max_size=10, alphabet=ascii_letters))

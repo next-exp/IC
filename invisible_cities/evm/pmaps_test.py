@@ -277,16 +277,15 @@ def test_Peak_width_above_threshold_max_zero(pks):
     assert peak.width_above_threshold(peak.height) == 0
 
 
-@given(peaks(), floats(wf_min, wf_max))
-def test_Peak_width_above_threshold(pks, thr):
+@given(peaks(), floats(0.1, 0.9))
+def test_Peak_width_above_threshold_regular(pks, thr_fraction):
     _, peak = pks
-    i_above_thr     = _get_indices_above_thr(peak.pmts, thr)
-    if np.size(i_above_thr) > 0:
-        imin = i_above_thr[0]
-        imax = i_above_thr[-1]
-        expected = np.sum(peak.bin_widths[imin:imax+1])
-    else:
-        expected = 0
+    thr = thr_fraction * peak.pmts.sum_over_sensors.max()
+    i_above_thr = _get_indices_above_thr(peak.pmts, thr)
+
+    imin = i_above_thr[0]
+    imax = i_above_thr[-1]
+    expected = np.sum(peak.bin_widths[imin:imax+1])
     assert peak.width_above_threshold(thr) == approx(expected)
 
 
@@ -324,6 +323,9 @@ def test_Peak_raises_exception_when_shapes_dont_match(PK, sr1, sr2):
         n_samples       = wfs.shape[1]
         PK(np.empty(n_samples + 1),
            np.empty(n_samples + 1), sr1, sr2)
+
+    with raises(ValueError):
+        PK([], [], sr1, sr2)
 
 
 @given(pmaps())

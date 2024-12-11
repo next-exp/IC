@@ -2,6 +2,7 @@ import os
 
 from math      import sqrt
 from functools import partial
+from copy      import deepcopy
 
 import numpy    as np
 import networkx as nx
@@ -33,6 +34,7 @@ from .. evm.event_model import Cluster
 from .. evm.event_model import Voxel
 
 from . paolina_functions import bounding_box
+from . paolina_functions import voxels_within_radius
 from . paolina_functions import energy_of_voxels_within_radius
 from . paolina_functions import find_extrema
 from . paolina_functions import find_extrema_and_length
@@ -47,7 +49,6 @@ from . paolina_functions import make_track_graphs
 from . paolina_functions import voxels_from_track_graph
 from . paolina_functions import length
 from . paolina_functions import drop_end_point_voxels
-from . paolina_functions import make_tracks
 from . paolina_functions import get_track_energy
 
 from .. core               import system_of_units as units
@@ -128,11 +129,9 @@ def test_voxelize_hits_should_detect_no_hits():
         voxelize_hits([], None)
 
 
+# TODO: deal with no hits in the input
 @given(bunch_of_hits)
 def test_bounding_box(hits):
-    if not len(hits): # TODO: deal with empty sequences
-        return
-
     lo, hi = bounding_box(hits)
 
     mins = [float(' inf')] * 3
@@ -152,12 +151,10 @@ def test_bounding_box(hits):
         assert_almost_equal(maxs[d], hi[d])
 
 
+# TODO: deal with empty hits in the input
 @given(bunch_of_hits, box_sizes)
 def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
     voxels = voxelize_hits(hits, voxel_dimensions, strict_voxel_size=False)
-
-    if not hits:
-        assert voxels == []
 
     def sum_energy(seq):
         return sum(e.E for e in seq)
@@ -314,41 +311,64 @@ def test_find_extrema_no_voxels():
         find_extrema_and_length({})
 
 
-@fixture(scope='module')
-def track_extrema():
-    voxel_spec = ((10,10,10,  1000),
-                  (10,10,11,     1),
-                  (10,10,12,     2),
-                  (10,10,13,     4),
-                  (10,10,14,     8),
-                  (10,10,15,    16),
-                  (10,11,15,    32),
-                  (10,12,15,    64),
-                  (10,13,15,   128),
-                  (10,14,15,   265),
-                  (10,15,15,   512),
-                  (11,15,15,   256),
-                  (12,15,15,   128),
-                  (13,15,15,    64),
-                  (14,15,15,    32),
-                  (15,15,15,    16),
-                  (16,16,16,     8),
-                  (17,17,17,     4),
-                  (18,18,18,     2),
-                  (19,19,19,     1),
-                  (20,20,20,  2000),
-    )
-    vox_size = np.array([1,1,1])
-    voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
-    tracks  = make_track_graphs(voxels)
+def test_voxels_within_radius():
+    dummy_voxel = lambda e: Voxel(0, 0, 0, e, 1)
+    r  = 3.5
+    es = np.arange(10, 20)
+    ds = np.arange( 0, 10)
 
-    assert len(tracks) == 1
-    extrema = find_extrema(tracks[0])
+    vdist    = {dummy_voxel(e): d for e, d in zip(es, ds)}
+    selected = voxels_within_radius(vdist, r)
+    assert len(selected) == 4
+    assert all(v.E in es[:4] for v in selected)
 
-    assert voxels[ 0] in extrema
-    assert voxels[-1] in extrema
 
-    return tracks[0], extrema
+def test_energy_of_voxels_within_radius():
+    dummy_voxel = lambda e: Voxel(0, 0, 0, e, 1)
+    r  = 3.5
+    es = np.arange(10, 20)
+    ds = np.arange( 0, 10)
+
+    vdist      = {dummy_voxel(e): d for e, d in zip(es, ds)}
+    tot_energy = energy_of_voxels_within_radius(vdist, r)
+    assert np.isclose(tot_energy, sum(es[:4]))
+
+
+# @fixture(scope='module')
+# def track_extrema():
+#     voxel_spec = ((10,10,10,  1000),
+#                   (10,10,11,     1),
+#                   (10,10,12,     2),
+#                   (10,10,13,     4),
+#                   (10,10,14,     8),
+#                   (10,10,15,    16),
+#                   (10,11,15,    32),
+#                   (10,12,15,    64),
+#                   (10,13,15,   128),
+#                   (10,14,15,   265),
+#                   (10,15,15,   512),
+#                   (11,15,15,   256),
+#                   (12,15,15,   128),
+#                   (13,15,15,    64),
+#                   (14,15,15,    32),
+#                   (15,15,15,    16),
+#                   (16,16,16,     8),
+#                   (17,17,17,     4),
+#                   (18,18,18,     2),
+#                   (19,19,19,     1),
+#                   (20,20,20,  2000),
+#     )
+#     vox_size = np.array([1,1,1])
+#     voxels = [Voxel(x,y,z, E, vox_size) for (x,y,z,E) in voxel_spec]
+#     tracks  = make_track_graphs(voxels)
+
+#     assert len(tracks) == 1
+#     extrema = find_extrema(tracks[0])
+
+#     assert voxels[ 0] in extrema
+#     assert voxels[-1] in extrema
+
+#     return tracks[0], extrema
 
 
 def test_voxelize_single_hit():
@@ -488,16 +508,28 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimension
 
 
 @mark.parametrize("energy_type", HitEnergy)
-@given(hits                       = bunch_of_corrected_hits(),
-       requested_voxel_dimensions = box_sizes,
-       min_voxels                 = min_n_of_voxels,
-       fraction_zero_one          = fraction_zero_one)
-def test_dropped_voxels_have_nan_energy(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one, energy_type):
-    voxels            = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
-    energies          = [v.E for v in voxels]
-    e_thr             = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    _, dropped_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
+@given(hits=bunch_of_hits)
+def test_dropped_voxels_have_nan_energy(hits, energy_type):
+    """
+    Generate 5 voxels in a straight line. The ones in each end and the
+    central one have lower energy. Check that only those in the end are
+    dropped. The hits in these voxels are meaningless, we just enforce
+    their energy to match the voxel energy.
+    """
+    def make_hits(e):
+        hs = deepcopy(hits)
+        for h in hs:
+            h.E = h.Ec = h.Ep = e/len(hs)
+        return hs
+
+    vox_size = np.ones(3)
+    es       = [1, 10, 1, 10, 1]
+    voxels   = [Voxel(i, 0, 0, e, vox_size, make_hits(e), energy_type) for i, e in enumerate(es)]
+    _, dropped_voxels = drop_end_point_voxels(voxels, energy_threshold=5, min_vxls=3)
+
+    assert len(dropped_voxels) == 2
     for voxel in dropped_voxels:
+        assert voxel.X in [voxels[0].X, voxels[-1].X]
         assert np.isnan(voxel.E)
         for hit in voxel.hits:
             assert np.isnan(getattr(hit, energy_type.value))
@@ -509,9 +541,6 @@ def test_dropped_voxels_have_nan_energy(hits, requested_voxel_dimensions, min_vo
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
 def test_drop_end_point_voxels_doesnt_modify_other_energy_types(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one, energy_type):
-    def energy_from_hits(voxel, e_type):
-        return [getattr(hit, e_type) for hit in voxel.hits]
-
     voxels     = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
     voxels     = sorted(voxels, key=attrgetter("xyz"))
     energies   = [v.E for v in voxels]
@@ -790,56 +819,13 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
 
     assert np.isclose(tot_energy, tot_mod_energy)
 
-    tot_default_energy     = sum(h.E for v in voxels_c     for h in v.hits)
+    # We don't want to modify the default energy of hits, if the voxels are made with energy_c
+    tot_default_energy     = sum(h.E for v in     voxels_c for h in v.hits)
     tot_mod_default_energy = sum(h.E for v in mod_voxels_c for h in v.hits)
 
-    # We don't want to modify the default energy of hits, if the voxels are made with energy_c
-    if len(mod_voxels_c) < len(voxels_c):
-        assert tot_default_energy > tot_mod_default_energy
-
-
-def test_make_tracks_function(ICDATADIR):
-
-    # Get some test data
-    hit_file    = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
-    evt_number  = 19
-    size        = 15.
-    voxel_size  = np.array([size,size,size], dtype=np.float16)
-    blob_radius = 21*units.mm
-
-    # Read the hits and voxelize
-    all_hits = load_hits(hit_file)
-
-    for evt_number, hit_coll in all_hits.items():
-        evt_hits = hit_coll.hits
-        evt_time = hit_coll.time
-        voxels   = voxelize_hits(evt_hits, voxel_size, strict_voxel_size=False, energy_type=HitEnergy.E)
-
-        tracks   = list(make_track_graphs(voxels))
-
-        track_coll = make_tracks(evt_number, evt_time, voxels, voxel_size,
-                                 contiguity=Contiguity.CORNER,
-                                 blob_radius=blob_radius,
-                                 energy_type=HitEnergy.E)
-        tracks_from_coll = track_coll.tracks
-
-        tracks.sort          (key=lambda x : len(x.nodes()))
-        tracks_from_coll.sort(key=lambda x : x.number_of_voxels)
-
-        # Compare the two sets of tracks
-        assert len(tracks) == len(tracks_from_coll)
-        for i in range(len(tracks)):
-            t  = tracks[i]
-            tc = tracks_from_coll[i]
-
-            assert len(t.nodes())                   == tc.number_of_voxels
-            assert sum(v.E for v in t.nodes()) == tc.E
-
-            tc_blobs = list(tc.blobs)
-            tc_blobs.sort(key=lambda x : x.E)
-            tc_blob_energies = (tc.blobs[0].E, tc.blobs[1].E)
-
-            assert np.allclose(blob_energies(t, blob_radius), tc_blob_energies)
+    no_drop     = len(mod_voxels_c) == len(voxels_c)
+    lost_energy = tot_default_energy > tot_mod_default_energy
+    assert no_drop ^ lost_energy
 
 
 @given(bunch_of_hits, box_sizes)

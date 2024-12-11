@@ -79,18 +79,18 @@ def toy_sipm_signal_and_inds():
 
 
 @fixture(scope="session")
-def datasipm(dbnew):
-    return DataSiPM(dbnew, 0)
+def datasipm():
+    return DataSiPM("new", 0)
 
 
 @fixture(scope="session")
-def datasipm_all_active(dbnew):
-    return DataSiPM(dbnew, 1)
+def datasipm_all_active():
+    return DataSiPM("new", 1)
 
 
 @fixture(scope="session")
-def datasipm_5000(dbnew):
-    return DataSiPM(dbnew, 5000)
+def datasipm_5000():
+    return DataSiPM("new", 5000)
 
 
 @fixture(scope="session")

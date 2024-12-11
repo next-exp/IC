@@ -1,5 +1,6 @@
 import os
 import numpy  as np
+import tables as tb
 
 from . corrections import maps_coefficient_getter
 from . corrections import read_maps
@@ -155,6 +156,26 @@ def test_read_maps_maps_are_correct(map_filename):
     assert np.all(maps.e0u  == 2    )
     assert np.all(maps.lt   == 5000 )
     assert np.all(maps.ltu  == 3    )
+    assert maps.t_evol is not None
+
+
+def test_read_maps_data_without_time_evolution(map_filename, config_tmpdir):
+    tmp_filename = os.path.join(config_tmpdir, "map_without_tevol.h5")
+    with tb.open_file(map_filename) as inputf:
+        with tb.open_file(tmp_filename, "w") as outputf:
+            for group in "chi2 e0 e0u lt ltu mapinfo".split():
+                outputf.copy_node(getattr(inputf.root, group)
+                                 , outputf.root
+                                 , recursive = True)
+
+    maps = read_maps(tmp_filename)
+    assert np.all(maps.chi2 == 1    )
+    assert np.all(maps.e0   == 13000)
+    assert np.all(maps.e0u  == 2    )
+    assert np.all(maps.lt   == 5000 )
+    assert np.all(maps.ltu  == 3    )
+    assert maps.t_evol is None
+
 
 @given(random_length_float_arrays(min_value = 1e-4,
                                   max_value = 3e4 ))
