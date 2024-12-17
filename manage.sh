@@ -128,8 +128,8 @@ function python_version_env {
     ic_env
 }
 
-function work_in_python_version {
-    work_in_python_version_no_tests
+function activate {
+    activate_no_tests
     run_tests_par
 }
 
@@ -137,7 +137,7 @@ function export_city_command_completion {
     source $ICTDIR/bin/city-completion
 }
 
-function work_in_python_version_no_tests {
+function activate_no_tests {
     if ! which conda >> /dev/null
     then
        install_conda
@@ -254,18 +254,18 @@ THIS=manage.sh
 ## Main command dispatcher
 
 case $COMMAND in
-    install_and_check)               install_and_check ;;
-    install)                         install ;;
-    work_in_python_version)          work_in_python_version ;;
-    work_in_python_version_no_tests) work_in_python_version_no_tests ;;
-    make_environment)                make_environment ;;
-    run_tests)                       run_tests ;;
-    run_tests_par)                   run_tests_par ;;
-    compile_and_test)                compile_and_test ;;
-    compile_and_test_par)            compile_and_test_par ;;
-    download_test_db)                download_test_db ;;
-    clean)                           clean ;;
-    show_ic_env)                     show_ic_env ;;
+    install_and_check)    install_and_check ;;
+    install)              install ;;
+    activate)             activate ;;
+    activate_no_tests)    activate_no_tests ;;
+    make_environment)     make_environment ;;
+    run_tests)            run_tests ;;
+    run_tests_par)        run_tests_par ;;
+    compile_and_test)     compile_and_test ;;
+    compile_and_test_par) compile_and_test_par ;;
+    download_test_db)     download_test_db ;;
+    clean)                clean ;;
+    show_ic_env)          show_ic_env ;;
 
     *) echo Unrecognized command: ${COMMAND}
        echo
@@ -273,8 +273,8 @@ case $COMMAND in
        echo
        echo "source $THIS install_and_check"
        echo "source $THIS install"
-       echo "source $THIS work_in_python_version"
-       echo "source $THIS work_in_python_version_no_tests"
+       echo "source $THIS activate"
+       echo "source $THIS activate_no_tests"
        echo "source $THIS switch_to_conda_env"
        echo "bash   $THIS make_environment"
        echo "bash   $THIS run_tests"
