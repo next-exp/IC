@@ -4,6 +4,8 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
+from .. core.exceptions    import InvalidInputFileStructure
+
 from .. evm .pmaps         import  PMTResponses
 from .. evm .pmaps         import SiPMResponses
 from .. evm .pmaps         import S1
@@ -78,8 +80,23 @@ def _make_tables(hdf5_file, compression):
     return pmp_tables
 
 
-def load_pmaps_as_df(filename):
+def check_file_integrity(file):
+    events_run      = file.root.Run  .events.read(field="evt_number")
+    events_pmaps_s1 = file.root.PMAPS.S1    .read(field="event")
+    events_pmaps_s2 = file.root.PMAPS.S2    .read(field="event")
+    if set(events_run) != set(events_pmaps_s1.tolist() + events_pmaps_s2.tolist()):
+        raise InvalidInputFileStructure("Inconsistent data: event number mismatch")
+
+
+def load_pmaps_as_df(filename, lazy=False):
+    loader = load_pmaps_as_df_lazy if lazy else load_pmaps_as_df_eager
+    return loader(filename)
+
+
+def load_pmaps_as_df_eager(filename):
     with tb.open_file(filename, 'r') as h5f:
+        check_file_integrity(h5f)
+
         pmap  = h5f.root.PMAPS
         to_df = pd.DataFrame.from_records
         return (to_df(pmap.S1   .read()),
@@ -89,6 +106,22 @@ def load_pmaps_as_df(filename):
                 to_df(pmap.S2Pmt.read()) if 'S2Pmt' in pmap else None)
 
 
+def load_pmaps_as_df_lazy(filename):
+    def read_event(table, event):
+        if table is None: return None
+        records = table.read_where(f"event=={event}")
+        return pd.DataFrame.from_records(records)
+
+    tables = "S1 S2 S2Si S1Pmt S2Pmt".split()
+    with tb.open_file(filename, 'r') as h5f:
+        check_file_integrity(h5f)
+
+        events = h5f.root.Run.events.read(field="evt_number")
+        tables = [getattr(h5f.root.PMAPS, table, None) for table in tables]
+        for event in events:
+            yield tuple(read_event(table, event) for table in tables)
+
+
 # Hack fix to allow loading pmaps without individual pmts. Used in load_pmaps
 def _build_ipmtdf_from_sumdf(sumdf):
     ipmtdf = sumdf.copy()
@@ -96,9 +129,15 @@ def _build_ipmtdf_from_sumdf(sumdf):
     ipmtdf['npmt'] = -1
     return ipmtdf
 
-def load_pmaps(filename):
+
+def load_pmaps(filename, lazy=False):
+    loader = load_pmaps_lazy if lazy else load_pmaps_eager
+    return loader(filename)
+
+
+def load_pmaps_eager(filename):
     pmap_dict = {}
-    s1df, s2df, sidf, s1pmtdf, s2pmtdf = load_pmaps_as_df(filename)
+    s1df, s2df, sidf, s1pmtdf, s2pmtdf = load_pmaps_as_df_eager(filename)
     # Hack fix to allow loading pmaps without individual pmts
     if s1pmtdf is None: s1pmtdf = _build_ipmtdf_from_sumdf(s1df)
     if s2pmtdf is None: s2pmtdf = _build_ipmtdf_from_sumdf(s2df)
@@ -139,6 +178,19 @@ def load_pmaps(filename):
         pmap_dict[event_number] = PMap(s1s, s2s)
 
     return pmap_dict
+
+
+def load_pmaps_lazy(filename):
+    for (s1df, s2df, sidf, s1pmtdf, s2pmtdf) in load_pmaps_as_df_lazy(filename):
+        # Hack fix to allow loading pmaps without individual pmts
+        if s1pmtdf is None: s1pmtdf = _build_ipmtdf_from_sumdf(s1df)
+        if s2pmtdf is None: s2pmtdf = _build_ipmtdf_from_sumdf(s2df)
+
+        event_number = np.concatenate([s1df.event, s2df.event])[0]
+
+        s1s = s1s_from_df(s1df, s1pmtdf)
+        s2s = s2s_from_df(s2df, s2pmtdf, sidf)
+        yield event_number, PMap(s1s, s2s)
 
 
 def build_pmt_responses(pmtdf, ipmtdf):
