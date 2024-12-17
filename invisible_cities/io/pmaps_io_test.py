@@ -279,9 +279,9 @@ def test_store_pmap(output_tmpdir, KrMC_pmaps_dict):
         assert cols.ene  [:] == approx (s2_data.enes_sipm)
 
 
-def test_load_pmaps_as_df_eager(KrMC_pmaps_filename, KrMC_pmaps_dfs):
-    true_dfs = KrMC_pmaps_dfs
-    read_dfs = pmpio.load_pmaps_as_df_eager(KrMC_pmaps_filename)
+def test_load_pmaps_as_df_eager(two_pmaps):
+    filename, _, true_dfs = two_pmaps
+    read_dfs = pmpio.load_pmaps_as_df_eager(filename)
     for read_df, true_df in zip(read_dfs, true_dfs):
         assert_dataframes_equal(read_df, true_df)
 
