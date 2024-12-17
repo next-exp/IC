@@ -2,10 +2,10 @@
 
 COMMAND=$1
 ARGUMENT=$2
-PYTHON_VERSION=3.8
+PYTHON_VERSION=3.13
+
 ## Interpret meaning of command line argument depending on which
 ## function will receive it.
-
 case $COMMAND in
     run_tests_par | compile_and_test_par)     N_PROC=${ARGUMENT:-auto} ;;
 esac
@@ -65,7 +65,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2026-03-04
+CONDA_ENV_TAG=2026-05-20
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
@@ -81,31 +81,31 @@ channels:
 dependencies:
 - python       = ${PYTHON_VERSION}
 # *REMEMBER TO CHANGE CONDA_ENV_TAG WHEN CHANGING VERSION NUMBERS*
-- coverage     = 5.5
-- cython       = 0.29.24
-- flaky        = 3.7.0
-- hypothesis   = 6.14.1
-- jupyter      = 1.0.0
-- jupyterlab   = 3.2.1
-- matplotlib   = 3.4.3
-- networkx     = 2.6.3
-- notebook     = 6.4.5
-- numpy        = 1.23.1
-- pandas       = 1.3.4
-- pip          = 21.2.4
-- pyflakes     = 3.2.0
-- pymysql      = 1.0.2
-- pytables     = 3.7.0
-- pytest       = 6.2.4
-- pytest-xdist = 2.3.0
-- scipy        = 1.9.3
-- seaborn      = 0.11.2
-- setuptools   = 58.0.4
-- scikit-learn = 1.1.3
-- sphinx       = 4.2.0
-- tornado      = 6.1
+- coverage
+- cython
+- flaky
+- hypothesis
+- jupyter
+- jupyterlab
+- matplotlib
+- networkx
+- notebook
+- numpy
+- pandas
+- pip
+- pyflakes
+- pymysql
+- pytables
+- pytest
+- pytest-xdist
+- scikit-learn
+- scipy
+- seaborn
+- setuptools
+- sphinx
+- tornado
 - pip:
-  - pytest-instafail==0.4.2
+  - pytest-instafail
 EOF
 
     conda env create -f ${YML_FILENAME}
