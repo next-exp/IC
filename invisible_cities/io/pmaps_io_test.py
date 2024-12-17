@@ -6,9 +6,6 @@ from pytest import mark
 from pytest import approx
 from pytest import fixture
 
-from hypothesis import given
-from hypothesis import strategies as stg
-
 import tables as tb
 import numpy  as np
 import pandas as pd
@@ -21,7 +18,6 @@ from ..evm .pmaps         import S2
 from ..evm .pmaps         import PMTResponses
 from ..evm .pmaps         import SiPMResponses
 from ..evm .pmaps         import PMap
-from ..evm .pmaps_test    import pmaps    as pmap_gen
 from .                    import pmaps_io as pmpio
 from .                    import run_and_event_io as reio
 
@@ -329,28 +325,13 @@ def test_load_pmaps_as_df_eager_without_ipmt(KrMC_pmaps_without_ipmt_filename, K
     assert read_dfs[4] is None
 
 
-@given(stg.data())
-def test_load_pmaps_eager(output_tmpdir, data):
-    pmap_filename  = os.path.join(output_tmpdir, "test_pmap_file.h5")
-    event_numbers  = [2, 4, 6]
-    pmt_ids        = [1, 6, 8]
-    pmap_generator = pmap_gen(pmt_ids)
-    true_pmaps     = [data.draw(pmap_generator)[1] for _ in event_numbers]
-
-    with tb.open_file(pmap_filename, "w") as output_file:
-        write = pmpio.pmap_writer(output_file)
-        list(map(write, true_pmaps, event_numbers))
-
-        write = reio.run_and_event_writer(output_file)
-        for event_number in event_numbers:
-            write(0, event_number, 0)
-
-    read_pmaps = pmpio.load_pmaps_eager(pmap_filename)
-
-    assert len(read_pmaps) == len(true_pmaps)
-    assert np.all(list(read_pmaps.keys()) == event_numbers)
-    for true_pmap, read_pmap in zip(true_pmaps, read_pmaps.values()):
-        assert_PMap_equality(read_pmap, true_pmap)
+def test_load_pmaps_eager(two_pmaps, output_tmpdir):
+    filename, true_pmaps, _ = two_pmaps
+    read_pmaps = pmpio.load_pmaps_eager(filename)
+    assert    len(read_pmaps) ==    len(true_pmaps)
+    assert sorted(read_pmaps) == sorted(true_pmaps) # compare keys
+    for key, true_pmap in true_pmaps.items():
+        assert_PMap_equality(read_pmaps[key], true_pmap)
 
 
 def test_load_pmaps_lazy(KrMC_pmaps_filename):
