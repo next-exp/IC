@@ -1,15 +1,18 @@
 import os
+import shutil
 from collections import namedtuple
 from collections import defaultdict
 
 from pytest import mark
 from pytest import approx
 from pytest import fixture
+from pytest import raises
 
 import tables as tb
 import numpy  as np
 import pandas as pd
 
+from ..core.exceptions    import InvalidInputFileStructure
 from ..core.testing_utils import assert_PMap_equality
 from ..core.testing_utils import assert_dataframes_equal
 from ..core.testing_utils import exactly
@@ -277,6 +280,24 @@ def test_store_pmap(output_tmpdir, KrMC_pmaps_dict):
         assert cols.peak [:] == exactly(s2_data.peak_numbers_sipm)
         assert cols.nsipm[:] == exactly(s2_data.nsipms)
         assert cols.ene  [:] == approx (s2_data.enes_sipm)
+
+
+def test_check_file_integrity_ok(KrMC_pmaps_filename):
+    """For a file with no problems (like the input here), this test should pass."""
+    # just check that it doesn't raise an exception
+    with tb.open_file(KrMC_pmaps_filename) as file:
+        pmpio.check_file_integrity(file)
+
+
+def test_check_file_integrity_raises(KrMC_pmaps_filename, config_tmpdir):
+    """Check that a file with a mismatch in the event number raises an exception."""
+    filename = os.path.join(config_tmpdir, f"test_check_file_integrity_raises.h5")
+    shutil.copy(KrMC_pmaps_filename, filename)
+    with tb.open_file(filename, "r+") as file:
+        file.root.Run.events.remove_rows(0, 1) # remove first row/event
+
+        with raises(InvalidInputFileStructure, match="Inconsistent data: event number mismatch"):
+            pmpio.check_file_integrity(file)
 
 
 def test_load_pmaps_as_df_eager(two_pmaps):
