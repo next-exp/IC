@@ -12,7 +12,7 @@ Quickstart guide
 
 + :code:`cd` into the `IC` directory
 
-+ :code:`source manage.sh work_in_python_version 3.8`
++ :code:`source manage.sh activate`
 
 The last step will, if necessary, install conda and create an
 appropriate conda environment, as well as setting environment
@@ -42,7 +42,7 @@ appropriate environment, creating it on the fly if necessary.
 .. |travis| image:: https://img.shields.io/travis/nextic/IC.png
         :target: https://travis-ci.org/nextic/IC
 
-Documentation 
+Documentation
 -------------
 
 The documentation for IC, including the individual cities, can be found here: https://next-exp-sw.readthedocs.io/en/latest/IC.html
