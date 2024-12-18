@@ -8,11 +8,9 @@ on:
 
 jobs:
   build:
-
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.13]
         #platform: [ubuntu-18.04, macos-latest]
         platform: [ubuntu-24.04]
     runs-on: ${{ matrix.platform }}
@@ -30,19 +28,19 @@ jobs:
 
     - name: Install IC
       run: |
-        source manage.sh activate_no_tests ${{ matrix.python-version }}
+        source manage.sh activate_no_tests
 
     - name: Run tests
       run: |
         source scripts/setup_conda_gha.sh
         set -o pipefail # necessary for test failure to propagate to `tee`
-        source manage.sh activate_no_tests ${{ matrix.python-version }}
+        source manage.sh activate_no_tests
         PYTEST_ADDOPTS=--color=yes HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par | tee pytest_output
 
     - name: Test warning-catching script
       run: |
         source scripts/setup_conda_gha.sh
-        source manage.sh activate_no_tests ${{ matrix.python-version }}
+        source manage.sh activate_no_tests
 
         # write dummy tests
         cat > dummy.py <<EOF
