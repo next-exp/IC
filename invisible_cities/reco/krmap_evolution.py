@@ -102,6 +102,9 @@ def resolution(values : np.array, errors : np.array):
     amp  ,   mu,   sigma = values
     u_amp, u_mu, u_sigma = errors
 
+    if sigma < 0:
+        raise ValueError("Sigma cannot be negative")
+
     res  = 235.48 * sigma/mu
     ures = res * (u_mu**2/mu**2 + u_sigma**2/sigma**2)**0.5
 
@@ -197,7 +200,7 @@ def compute_drift_v(dtdata   : np.array,
     y, x = np.histogram(dtdata, nbins, dtrange)
     x    = shift_to_bin_centers(x)
 
-    if seed is None: seed = np.max(y), np.mean(dtrange), 0.5, np.min(y)
+    if seed is None: seed = np.max(y), np.mean(dtrange), 0.5, np.min(y) # CHANGE: dtrange should be established from db
 
     # At the moment there is not NEXT-100 DB so this won't work for that geometry
     z_cathode = DB.DetectorGeo(detector).ZMAX[0]
