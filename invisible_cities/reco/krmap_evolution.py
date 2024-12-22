@@ -389,7 +389,7 @@ def computing_kr_parameters(data       : DataFrame,
     return evol
 
 
-def kr_time_evolution(ts         : np.array[float],
+def kr_time_evolution(ts         : np.array,
                       masks_time : List[np.array],
                       dst        : pd.DataFrame,
                       emaps      : pd.DataFrame,
