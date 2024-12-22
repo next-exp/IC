@@ -14,7 +14,7 @@ from .. reco.corrections      import maps_coefficient_getter
 from .. reco.corrections      import apply_all_correction
 from .. core.stat_functions   import poisson_sigma
 from .. database              import load_db  as  DB
-from .. reco.icaro_components import get_function_and_seed_lt, select_fit_variables, transform_parameters # Won't work until previous PR are approved
+from .. reco.krmap_functions  import get_function_and_seed_lt, select_fit_variables, transform_parameters # Won't work until previous PR are approved
 
 
 def sigmoid(x          : np.array,
