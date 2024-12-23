@@ -118,10 +118,10 @@ def test_compute_drift_v_when_moving_edge():
 
 
 def test_compute_drift_v_failing_fit_return_nan():
-    dst     = np.random.rand(1000)*1200
+    '''Generating nonsense data to make sigmoid fit fail'''
+    dst = [500, 599]
     dv_vect = compute_drift_v(dtdata = dst, nbins = 50, dtrange = [500, 600],
                               seed = [1500, 550, 1, 0], detector ='new')
-
     assert np.all(np.isnan(dv_vect))
 
 
