@@ -138,14 +138,19 @@ def test_get_time_series_df_empty_data():
     for mask in masks:
         assert np.sum(mask) == 0
 
-
+@mark.parametrize('reverse', [False, True])
 @mark.parametrize('n', [2, 5, 10])
-def test_get_time_series_df_pandas(KrMC_kdst, n):
-    kdst = load_dst(KrMC_kdst, 'DST', 'Events')
-    time_indx = pd.cut(kdst.time, n, labels=np.arange(n))
+def test_get_time_series_df_pandas(n, reverse):
+
+    time = np.arange(n-1, -1, -1) if reverse else np.arange(n)
+    kdst = pd.DataFrame({'time': time})
     ts, masks = get_time_series_df(n, (kdst.time.min(), kdst.time.max()), kdst)
+    assert len(ts) == len(masks) == n, f'{len(ts)}, {len(masks)}, {n}'
     for i, mask in enumerate(masks):
-        assert_dataframes_equal(kdst[mask], kdst[time_indx==i])
+        assert np.count_nonzero(mask) == 1
+        index = n-1-i if reverse else i
+        assert mask[index] == True
+    assert np.all(ts[:-1] < ts[1:])
 
 
 def test_resolution_definition():
