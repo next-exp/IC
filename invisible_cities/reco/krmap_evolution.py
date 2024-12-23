@@ -59,9 +59,9 @@ def gauss_seed(x : np.array, y : np.array, sigma_rel : Optional[int] = 0.05):
     Parameters
     ----------
     x: np.array
-        Data to fit.
-    y: int
-        Number of bins for the histogram.
+        x data to fit.
+    y: np.array
+        y data to fit.
     sigma_rel (Optional): int
         Relative error, default 5%.
 
@@ -71,9 +71,9 @@ def gauss_seed(x : np.array, y : np.array, sigma_rel : Optional[int] = 0.05):
         Tuple with the seed estimation.
     '''
 
-    y_max  = np.argmax(y)
-    x_max  = x[y_max]
-    sigma  = sigma_rel * x_max
+    y_max  = max(y)
+    x_max  = x[np.argmax(y)]
+    sigma  = sigma_rel * (max(x)-min(x)) * 0.5
     amp    = y_max * (2 * np.pi)**0.5 * sigma * np.diff(x)[0]
     seed   = amp, x_max, sigma
 

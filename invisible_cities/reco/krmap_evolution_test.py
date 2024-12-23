@@ -6,7 +6,7 @@ from   flaky                                import flaky
 
 from   hypothesis                           import given
 from   hypothesis.strategies                import floats
-from .. reco.krmap_evolution                import sigmoid, compute_drift_v, resolution
+from .. reco.krmap_evolution                import sigmoid, gauss_seed, compute_drift_v, resolution
 
 from .. database                            import load_db  as DB
 
@@ -61,6 +61,22 @@ def test_sigmoid_values_at_0(scale, inflection, slope, offset):
     expected_output = scale / (1 + np.exp(slope*inflection)) + offset
     actual_output   = sigmoid(0, scale, inflection, slope, offset)
     assert expected_output == actual_output
+
+
+@given(floats(min_value = 1e-3, max_value = 1))
+def test_gauss_seed_all_sigmas(sigma_rel):
+
+    x = np.array(range(10))
+    y = np.array([1, 3, 7, 12, 18, 25, 18, 12, 7, 3])
+
+    max_y = np.max(y)
+    max_x = x[np.argmax(y)]
+
+    expected_amp  = max_y * (2 * np.pi)**0.5 * (sigma_rel * (max(x)-min(x))*0.5)
+    expected_seed = (expected_amp, max_x, sigma_rel * (max(x)-min(x))*0.5)
+
+    actual_seed = gauss_seed(x, y, sigma_rel=sigma_rel)
+    npt.assert_allclose(actual_seed, expected_seed, rtol=1e-5)
 
 
 @flaky(max_runs=10, min_passes=9)
