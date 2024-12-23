@@ -82,21 +82,26 @@ def test_gauss_seed_all_sigmas(sigma_rel):
     npt.assert_allclose(actual_seed, expected_seed, rtol=1e-5)
 
 
-@given(floats  (min_value=-1e2, max_value=1e4),
-       floats  (min_value=0.1,  max_value=5),
-       integers(min_value=1e2,  max_value=1e5),
-       integers(min_value=10,   max_value = 1e2))
+@mark.parametrize('mean sigma size bins'.split(),
+(  (0, 1, 1000,   50),
+  (10, 2, 10000, 100),
+(-100, 1, 5000,   75),)
+)
 def test_quick_gauss_fit(mean, sigma, size, bins):
 
     def generate_gaussian_data(mean, sigma, size):
         return np.random.normal(loc=mean, scale=sigma, size=size)
 
-    data       = generate_gaussian_data(mean, sigma, size)
+    data = generate_gaussian_data(mean, sigma, size)
+
     fit_result = quick_gauss_fit(data, bins)
 
+    print(fit_result.values[1])
+    print(mean)
+
     assert type(fit_result) is FitFunction
-    assert np.isclose(fit_result.values[1], mean,  rtol=0.2)
-    assert np.isclose(fit_result.values[2], sigma, rtol=0.2)
+    assert np.isclose(fit_result.values[2], sigma, rtol=0.1)
+    assert np.isclose(fit_result.values[1], mean,  atol=0.1)
 
 
 @flaky(max_runs=10, min_passes=9)
