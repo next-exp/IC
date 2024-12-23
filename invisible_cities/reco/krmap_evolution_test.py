@@ -154,11 +154,12 @@ def test_get_time_series_df_pandas(n, reverse):
 
 
 def test_resolution_definition():
-
-    values = np.array([10, 100, 2])
-    errors = np.array([0.1, 1, 0.05])
-    expected_res  = 235.48 * (values[2] / values[1])  # 235.48 * sigma/mu
-    expected_ures = expected_res * ((errors[1] / values[1])**2 + (errors[2] / values[2])**2)**0.5
+    expected_res  = 3 # % FWHM
+    mean   = 123
+    sigma  = mean*expected_res/235.48
+    values = np.array([np.nan, mean, sigma])
+    errors = np.array([np.nan, 0.33*mean, 0.33*sigma])
+    expected_ures = expected_res * 0.33 * np.sqrt(2)
 
     res, ures = resolution(values, errors)
 
