@@ -110,6 +110,7 @@ dependencies:
 - coverage     = 5.5
 - pip          = 21.2.4
 - setuptools   = 58.0.4
+- scikit-learn = 1.3.0
 - pip:
   - pytest-instafail==0.4.2
 EOF
