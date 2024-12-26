@@ -12,8 +12,6 @@ from .. reco.krmap_evolution                import quick_gauss_fit, get_time_ser
 
 from .. evm.ic_containers                   import FitFunction
 from .. database                            import load_db  as DB
-from .. io.dst_io                           import load_dst
-from .. core.testing_utils                  import assert_dataframes_equal
 
 
 def test_sigmoid_definition_fixed_values():
