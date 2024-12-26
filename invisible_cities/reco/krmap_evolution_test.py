@@ -81,9 +81,9 @@ def test_gauss_seed_all_sigmas(sigma_rel):
 
 
 @mark.parametrize('mean sigma size bins'.split(),
-(  (0, 1, 1000,   50),
-  (10, 2, 10000, 100),
-(-100, 1, 5000,   75),)
+(  (0, 1,  1000,   50),
+  (10, 2, 10000,  100),
+(-100, 1,  5000,   75),)
 )
 def test_quick_gauss_fit(mean, sigma, size, bins):
 

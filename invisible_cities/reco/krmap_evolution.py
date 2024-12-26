@@ -303,21 +303,19 @@ def computing_kr_parameters(data       : DataFrame,
     # this would be reduced to just the following:
     # y_corr = y*geo_correction_factor(data.X.to_numpy(), data.Y.to_numpy())
 
-    fit_output, _, _, _ = fit(func        = fit_func, # Misma funcion que en el ajuste del mapa
-                              x           = x,
-                              y           = y_corr,
-                              seed        = seed(x, y_corr),
-                              full_output = False)
+    fit_output = fit(func        = fit_func, # Misma funcion que en el ajuste del mapa
+                     x           = x,
+                     y           = y_corr,
+                     seed        = seed(x, y_corr),
+                     full_output = False)
 
     if fittype == KrFitFunction.log_lin:
-
         par, err, cov = transform_parameters(fit_output)
 
         e0, lt   = par
         e0u, ltu = err
 
     else:
-
         e0,  lt  = fit_output.values
         e0u, ltu = fit_output.errors
 
