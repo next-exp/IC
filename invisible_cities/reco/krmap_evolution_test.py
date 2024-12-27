@@ -2,15 +2,16 @@ import numpy                                as np
 import pandas                               as pd
 import numpy.testing                        as npt
 
-from   pytest                               import approx, mark
+from   pytest                               import approx, mark, fixture
 from   flaky                                import flaky
 
 from   hypothesis                           import given
 from   hypothesis.strategies                import floats, integers
 from .. reco.krmap_evolution                import sigmoid, gauss_seed, compute_drift_v, resolution
-from .. reco.krmap_evolution                import quick_gauss_fit, get_time_series_df
+from .. reco.krmap_evolution                import quick_gauss_fit, get_time_series_df, computing_kr_parameters
 
 from .. evm.ic_containers                   import FitFunction
+from .. types.symbols                       import KrFitFunction
 from .. database                            import load_db  as DB
 
 
@@ -163,3 +164,98 @@ def test_resolution_definition():
 
     assert res  == approx(expected_res,  rel=1e-5)
     assert ures == approx(expected_ures, rel=1e-5)
+
+@fixture
+def dummy_kr_map():
+    return pd.DataFrame(dict(bin = np.arange(10),
+                             counts = 1,
+                             e0 = 1,
+                             ue0 = 0,
+                             lt = 1,
+                             ult = 0,
+                             cov = 0,
+                             res_std = 0,
+                             pval = 1,
+                             in_fid         = True,
+                             has_min_counts = True,
+                             fit_success = True,
+                             valid = True,
+                             R = 1,
+                             x_index = 1,
+                             y_index = 1,
+                             Y = 1,
+                             X = 1))
+
+@fixture
+def dummy_kr_dst():
+    n = 10
+    res = 5.5 # % FWHM
+    lt = 1500
+    dv = 1
+    X  = np.linspace(-200, 200, n)
+    Y  = X
+    Z  = np.linspace(400, 500, n)
+
+    X, Y, Z = map(np.ravel, np.meshgrid(X, Y, Z, indexing='ij'))
+
+    DT     = Z/dv
+    time   = np.linspace(0, 1, n**3)
+    event  = np.arange(n**3)
+    mu     = 15000
+    sigma  = res*mu/235.48
+    energy = np.random.normal(mu, sigma, n**3)
+    energy = energy*np.exp(-DT/lt)
+    # FIJAR SEED
+    pars = dict(res = res, lt = lt, mu = mu, sigma = sigma, dv = dv)
+
+    dst = pd.DataFrame(dict(S1t = 0, S1w = 1, S1h = 2, S1e = 3, S2t = 0, S2w = 4, S2h=5, S2e = energy,
+                             S2q = 6, Nsipm = 7, Xrms = 0, Yrms = 0, X = X, Y = Y, DT = DT, time = time,
+                             event = event, Z = Z, Zrms = 0, R = 0, Phi = 0, nS1 = 1, nS2 = 1, s1_peak = 0,
+                             s2_peak = 0, qmax = 8))
+    return dst, pars
+
+
+def test_dummy_fixtures(dummy_kr_dst, dummy_kr_map):
+
+    dst, pars_true  = dummy_kr_dst
+    pars = computing_kr_parameters(data = dst, ts = 0.5,
+                                   emaps = dummy_kr_map,
+                                   fittype = KrFitFunction.log_lin,
+                                   nbins_dv = 10,
+                                   dtrange_dv = [470, 470+10*10],
+                                   detector = 'new')
+
+    expected  = dst.mean()
+    data_size = len(dst)
+
+    assert pars['ts']    [0] == 0.5
+    assert pars['s1w']   [0] == expected.S1w
+    assert pars['s1wu']  [0] == 0
+    assert pars['s1h']   [0] == expected.S1h
+    assert pars['s1hu']  [0] == 0
+    assert pars['s1e']   [0] == expected.S1e
+    assert pars['s1eu']  [0] == 0
+    assert pars['s2w']   [0] == expected.S2w
+    assert pars['s2wu']  [0] == 0
+    assert pars['s2h']   [0] == expected.S2h
+    assert pars['s2hu']  [0] == 0
+    assert pars['s2e']   [0] == expected.S2e
+    assert pars['s2q']   [0] == expected.S2q
+    assert pars['s2qu']  [0] == 0
+    assert pars['Nsipm'] [0] == expected.Nsipm
+    assert pars['Nsipmu'][0] == 0
+    assert pars['Xrms']  [0] == expected.Xrms
+    assert pars['Xrmsu'] [0] == 0
+    assert pars['Yrms']  [0] == expected.Yrms
+    assert pars['Yrmsu'] [0] == 0
+
+    assert np.isclose(pars['s2eu'][0],  dst.S2e.std()/data_size**0.5, rtol=1e-1)
+    assert np.isclose(pars['e0'][0],    pars_true['mu'], rtol=5e-2) # E0
+    assert np.isclose(pars['lt'][0],    pars_true['lt'], rtol=1e-1) # LT
+    assert np.isclose(pars['dv'][0],    pars_true['dv'], rtol=1e-1)
+    assert np.isclose(pars['resol'][0], pars_true['res'], rtol=5e-2)
+    assert pars['e0u'][0]/pars['e0'][0] <= 0.1
+    assert pars['ltu'][0]/pars['lt'][0] <= 0.1
+    assert pars['resolu'][0]/pars['resol'][0] <= 0.1
+    # assert pars['dvu'][0]/pars['dv'][0] <= 0.1 Uncertainty in dv for this dataset is too high
+    # but the validity of the drift velocity computation is tested elsewhere
