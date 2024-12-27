@@ -204,7 +204,7 @@ def compute_drift_v(dtdata   : np.array,
 
     # At the moment there is not NEXT-100 DB so this won't work for that geometry
     z_cathode = DB.DetectorGeo(detector).ZMAX[0]
-
+    print(seed)
     try:
         f   = fit(sigmoid, x, y, seed, sigma = poisson_sigma(y), fit_range = dtrange)
 
@@ -289,6 +289,12 @@ def computing_kr_parameters(data       : DataFrame,
 
     fit_func, seed = get_function_and_seed_lt(fittype)
 
+    # TEMPORARY: Remove after
+    def e0_xy_correction(map, norm_strat):
+        def function(x, y):
+            return np.ones_like(x)
+        return function
+
     geo_correction_factor = e0_xy_correction(map        = emaps,
                                              norm_strat = NormStrategy.max)
 
@@ -306,8 +312,7 @@ def computing_kr_parameters(data       : DataFrame,
     fit_output = fit(func        = fit_func, # Misma funcion que en el ajuste del mapa
                      x           = x,
                      y           = y_corr,
-                     seed        = seed(x, y_corr),
-                     full_output = False)
+                     seed        = seed(x, y_corr))
 
     if fittype == KrFitFunction.log_lin:
         par, err, cov = transform_parameters(fit_output)
@@ -329,6 +334,10 @@ def computing_kr_parameters(data       : DataFrame,
 
     # Computing Resolution
 
+    def apply_all_correction(maps, apply_temp):
+        def function(x, y, z, t):
+            return np.exp(z/1500)
+        return function
     tot_corr_factor = apply_all_correction(maps       = emaps,
                                            apply_temp = False)
 
