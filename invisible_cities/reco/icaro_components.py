@@ -50,7 +50,7 @@ def selection_nS_mask_and_checking(dst        : pd.DataFrame                    
     """
     input_mask = input_mask if input_mask is not None else [True] * len(dst)
     mask             = np.zeros_like(input_mask)
-    mask[input_mask] = getattr(dst[input_mask], column.value) == 1
+    mask[input_mask] = dst.loc[input_mask, column.value] == 1
 
     nevts_after      = dst[mask]      .event.nunique()
     nevts_before     = dst[input_mask].event.nunique()
