@@ -579,8 +579,10 @@ def all_krevol(emap          : pd.DataFrame,
     dstf      = dst[fid_sel]
     t_start   = dstf.time.min()
     t_final   = dstf.time.max()
-    ntimebins = np.max([int(np.floor((t_final - t_start) / nStimeprofile)), 1])
+    # ntimebins = np.max([int(np.floor((t_final - t_start) / nStimeprofile)), 1])
+    # np.floor yet to be decided
 
+    ntimebins = np.max([int((t_final - t_start) / nStimeprofile), 1])
     ts, masks_time = get_time_series_df(ntimebins          = ntimebins,
                                         time_range         = (t_start, t_final),
                                         dst                = dst)
