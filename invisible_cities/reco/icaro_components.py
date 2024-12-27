@@ -10,12 +10,9 @@ from .  corrections         import apply_geo_correction
 from .. types.symbols       import type_of_signal
 from .. types.symbols       import Strictness
 from .. types.symbols       import NormStrategy
-from .. types.symbols       import KrFitFunction
 from .. core.core_functions import check_if_values_in_interval
 from .. core.core_functions import in_range
-from .. core.fit_functions  import profileX
 from .. core.fit_functions  import fit
-from .  krmap_functions     import get_function_and_seed_lt
 
 
 def selection_nS_mask_and_checking(dst        : pd.DataFrame                         ,
@@ -71,8 +68,6 @@ def band_selector_and_check(dst         : pd.DataFrame,
                             input_mask  : np.array                  = None            ,
                             range_Z     : Tuple[np.array, np.array] = (10, 1300)      ,
                             range_E     : Tuple[np.array, np.array] = (10.0e+3,14e+3) ,
-                            nbins_z     : int                       = 50              ,
-                            nbins_e     : int                       = 50              ,
                             nsigma_sel  : float                     = 3.5             ,
                             eff_interval: Tuple[float, float]       = [0,1]           ,
                             strictness : Strictness = Strictness.stop_proccess
@@ -96,10 +91,6 @@ def band_selector_and_check(dst         : pd.DataFrame,
         Range in Z-axis
     range_E: Tuple[np.array, np.array]
         Range in Energy-axis
-    nbins_z: int
-        Number of bins in Z-axis
-    nbins_e: int
-        Number of bins in energy-axis
     nsigma_sel: float
         Number of sigmas to set the band width
     eff_interval
@@ -122,8 +113,6 @@ def band_selector_and_check(dst         : pd.DataFrame,
                                                E0,
                                                range_z = range_Z,
                                                range_e = range_E,
-                                               nbins_z = nbins_z,
-                                               nbins_e = nbins_e,
                                                nsigma  = nsigma_sel)
 
     effsel   = dst[sel_krband].event.nunique()/dst[input_mask].event.nunique()
