@@ -3,6 +3,7 @@ Core functions
 This module includes utility functions.
 """
 import time
+import warnings
 
 import numpy as np
 
@@ -108,13 +109,24 @@ def check_if_values_in_interval(data         : np.array,
         True if values are in the interval. False if not and strictness
         is set to 'warning'. Otherwise, it raises an exception.
     """
-    if in_range(data, minval, maxval, **kwargs).all():
-        return True;
+
+    values_in_interval = in_range(data, minval, maxval, **kwargs)
+    outsiders_mask     = np.logical_not(values_in_interval)
+    outsiders_list     = data[outsiders_mask]
+    n_outsiders        = np.sum(outsiders_mask)
+
+    if values_in_interval.all():
+        return True
 
     elif strictness is Strictness.warning:
+        warnings.warn(f' Variable {display_name} has {n_outsiders} values out of bounds ({minval}, {maxval})\n outsiders: {outsiders_list}')
         return False
+
+    elif strictness is Strictness.silent:
+        return False
+
     else:
-        raise ValueOutOfRange(f' Variable {display_name} is out of bounds ({minval}, {maxval})')
+        raise ValueOutOfRange(f' Variable {display_name} has {n_outsiders} values out of bounds ({minval}, {maxval})\n outsiders: {outsiders_list}')
 
     return
 
