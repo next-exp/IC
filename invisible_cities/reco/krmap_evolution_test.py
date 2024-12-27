@@ -9,6 +9,7 @@ from   hypothesis                           import given
 from   hypothesis.strategies                import floats, integers
 from .. reco.krmap_evolution                import sigmoid, gauss_seed, compute_drift_v, resolution
 from .. reco.krmap_evolution                import quick_gauss_fit, get_time_series_df, computing_kr_parameters
+from .. reco.krmap_evolution                import kr_time_evolution
 
 from .. evm.ic_containers                   import FitFunction
 from .. types.symbols                       import KrFitFunction
@@ -259,3 +260,27 @@ def test_computing_kr_parameters(dummy_kr_dst, dummy_kr_map):
     assert pars['resolu'][0]/pars['resol'][0] <= 0.1
     # assert pars['dvu'][0]/pars['dv'][0] <= 0.1 Uncertainty in dv for this dataset is too high
     # but the validity of the drift velocity computation is tested elsewhere
+
+def test_kr_time_evolution(dummy_kr_dst, dummy_kr_map):
+    dst_1  = dummy_kr_dst[0]
+    dst_2  = dst_1.copy()
+    deltat = np.diff(dst_1.time)[0]
+    dst_2.time += deltat + max(dst_1.time)
+    dst = pd.concat([dst_1, dst_2], ignore_index=True)
+    t0  = min(dst.time)
+    t1  = max(dst.time)
+
+    ts, masks_time = get_time_series_df(ntimebins  = 2,
+                                        time_range = (t0, t1),
+                                        dst        = dst)
+
+    evol_pars = kr_time_evolution(ts = ts, masks_time = masks_time, dst = dst,
+                                  emaps = dummy_kr_map, fittype = KrFitFunction.log_lin,
+                                  nbins_dv = 10, dtrange_dv = [470, 570], detector = 'new')
+
+    assert len(evol_pars) == 2
+    for col in evol_pars.columns:
+        if col == 'ts': assert (evol_pars.ts == ts).all()
+        else: assert np.all(np.diff(evol_pars[col].values, axis=0) == 0), col
+
+
