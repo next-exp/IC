@@ -256,7 +256,7 @@ def computing_kr_parameters(data       : DataFrame,
                             detector   : str)->DataFrame:
     '''
     Computes some average parameters (e0, lt, drift v, energy
-    resolution, S1w, S1h, S1e, S2w, S2h, S2e, S2q, Nsipm, 'Xrms, Yrms)
+    resolution, S1w, S1h, S1e, S2w, S2h, S2e, S2q, Nsipm, Xrms, Yrms)
     for a given krypton distribution.
 
     Parameters
@@ -264,7 +264,7 @@ def computing_kr_parameters(data       : DataFrame,
     data: DataFrame
         Kdst distribution to analyze.
     ts: float
-        Central time of the distribution.
+        Central time of the time bin.
     emaps: correction map
         Allows geometrical correction of the energy.
     fittype: KrFitFunction
