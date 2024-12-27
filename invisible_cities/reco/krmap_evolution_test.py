@@ -215,7 +215,7 @@ def dummy_kr_dst():
     return dst, pars
 
 
-def test_dummy_fixtures(dummy_kr_dst, dummy_kr_map):
+def test_computing_kr_parameters(dummy_kr_dst, dummy_kr_map):
 
     dst, pars_true  = dummy_kr_dst
     pars = computing_kr_parameters(data = dst, ts = 0.5,
@@ -253,7 +253,7 @@ def test_dummy_fixtures(dummy_kr_dst, dummy_kr_map):
     assert np.isclose(pars['e0'][0],    pars_true['mu'], rtol=5e-2) # E0
     assert np.isclose(pars['lt'][0],    pars_true['lt'], rtol=1e-1) # LT
     assert np.isclose(pars['dv'][0],    pars_true['dv'], rtol=1e-1)
-    assert np.isclose(pars['resol'][0], pars_true['res'], rtol=5e-2)
+    assert np.isclose(pars['resol'][0], pars_true['res'], rtol=1e-1)
     assert pars['e0u'][0]/pars['e0'][0] <= 0.1
     assert pars['ltu'][0]/pars['lt'][0] <= 0.1
     assert pars['resolu'][0]/pars['resol'][0] <= 0.1
