@@ -66,7 +66,7 @@ def band_selector_and_check(dst         : pd.DataFrame,
                             boot_map    : ASectorMap,
                             norm_strat  : NormStrategy              = NormStrategy.max,
                             input_mask  : np.array                  = None            ,
-                            range_Z     : Tuple[np.array, np.array] = (10, 1300)      ,
+                            range_DT     : Tuple[np.array, np.array] = (10, 1300)      ,
                             range_E     : Tuple[np.array, np.array] = (10.0e+3,14e+3) ,
                             nsigma_sel  : float                     = 3.5             ,
                             eff_interval: Tuple[float, float]       = [0,1]           ,
@@ -87,7 +87,7 @@ def band_selector_and_check(dst         : pd.DataFrame,
         Provides the desired normalization to be used.
     mask_input: np.array
         Mask of the previous selection cut.
-    range_Z: Tuple[np.array, np.array]
+    range_DT: Tuple[np.array, np.array]
         Range in Z-axis
     range_E: Tuple[np.array, np.array]
         Range in Energy-axis
@@ -109,9 +109,9 @@ def band_selector_and_check(dst         : pd.DataFrame,
                                                dst[input_mask].Y.values)
 
     sel_krband = np.zeros_like(input_mask)
-    sel_krband[input_mask] = selection_in_band(dst[input_mask].Z,
+    sel_krband[input_mask] = selection_in_band(dst[input_mask].DT,
                                                E0,
-                                               range_z = range_Z,
+                                               range_dt = range_DT,
                                                range_e = range_E,
                                                nsigma  = nsigma_sel)
 
@@ -120,16 +120,16 @@ def band_selector_and_check(dst         : pd.DataFrame,
     check_if_values_in_interval(data         = np.array(effsel)  ,
                                 minval       = eff_interval[0]   ,
                                 maxval       = eff_interval[1]   ,
-                                display_name = "Z-band selection",
+                                display_name = "DT-band selection",
                                 strictness   = strictness        ,
                                 right_closed = True)
 
     return sel_krband
 
 
-def selection_in_band(z         : np.array,
+def selection_in_band(dt        : np.array,
                       e         : np.array,
-                      range_z   : Tuple[float, float],
+                      range_dt  : Tuple[float, float],
                       range_e   : Tuple[float, float],
                       nsigma    : float   = 3.5) ->np.array:
     """
@@ -137,12 +137,12 @@ def selection_in_band(z         : np.array,
 
     Parameters
     ----------
-    z: np.array
-        axial (z) values
+    dt: np.array
+        axial (dt/z) values
     e: np.array
         energy values
-    range_z: Tuple[np.array, np.array]
-        Range in Z-axis
+    range_dt: Tuple[np.array, np.array]
+        Range in DT-axis
     range_e: Tuple[np.array, np.array]
         Range in Energy-axis
     nsigma: float
@@ -153,18 +153,18 @@ def selection_in_band(z         : np.array,
     """
     # Reshapes and flattens are needed for RANSAC function
 
-    z_sel = z[in_range(z, *range_z)]
+    dt_sel = dt[in_range(dt, *range_dt)]
     e_sel = e[in_range(e, *range_e)]
 
-    res_fit      = RANSACRegressor().fit(z_sel.reshape(-1,1),
+    res_fit      = RANSACRegressor().fit(dt_sel.reshape(-1,1),
                                          np.log(e_sel).reshape(-1, 1))
     sigma        = sigma_estimation(dt_sel, np.log(e_sel), res_fit)
 
-    prefict_fun  = lambda z: res_fit.predict(z.reshape(-1, 1)).flatten()
-    upper_band   = lambda z: prefict_fun(z) + nsigma * sigma
-    lower_band   = lambda z: prefict_fun(z) - nsigma * sigma
+    prefict_fun  = lambda dt: res_fit.predict(dt.reshape(-1, 1)).flatten()
+    upper_band   = lambda dt: prefict_fun(dt) + nsigma * sigma
+    lower_band   = lambda dt: prefict_fun(dt) - nsigma * sigma
 
-    sel_inband   = in_range(np.log(e), lower_band(z), upper_band(z))
+    sel_inband   = in_range(np.log(e), lower_band(dt), upper_band(dt))
 
     return  sel_inband
 
