@@ -385,3 +385,29 @@ def test_find_nearest(x, value):
 
     idx = np.argwhere(dmin==diff)[0]
     assert x[idx] == nearest
+
+
+@mark.parametrize( "seed expected".split()
+                 , ( (  1, 0.4170220047025740)
+                   , ( 11, 0.1802696888767692)
+                   , (111, 0.6121701756176187)))
+def test_fix_random_seed_expected(seed, expected):
+    with core.fix_random_seed(seed):
+        got = np.random.rand()
+        assert np.isclose(got, expected)
+
+
+def test_fix_random_seed_resets():
+    seed = 123456789
+
+    value0 = np.random.rand()
+    with core.fix_random_seed(seed): value1 = np.random.rand()
+    value2 = np.random.rand()
+    with core.fix_random_seed(seed): value3 = np.random.rand()
+
+    assert not np.isclose(value0, value1)
+    assert not np.isclose(value0, value2)
+    assert not np.isclose(value0, value3)
+    assert not np.isclose(value1, value2)
+    assert     np.isclose(value1, value3)
+    assert not np.isclose(value2, value3)
