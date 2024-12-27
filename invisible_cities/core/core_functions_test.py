@@ -131,9 +131,9 @@ def test_check_if_values_in_interval_when_some_fall_outside_warning(data):
                                   max_value  = 100))
 def test_check_if_values_in_interval_when_some_fall_outside_exception(data):
     minvalue =np.min(data)
-    npt.assert_raises(core.ValueOutOfRange,
-                      core.check_if_values_in_interval,
-                      data, minvalue+1, 100, strictness=core.Strictness.stop_proccess)
+    raises(core.ValueOutOfRange,
+           core.check_if_values_in_interval,
+           data, minvalue+1, 100, strictness=core.Strictness.stop_proccess)
 
 
 @mark.parametrize(" first  second       norm_mode        expected".split(),
