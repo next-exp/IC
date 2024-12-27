@@ -6,9 +6,13 @@ import pandas as pd
 import numpy  as np
 import numpy.testing as npt
 
+import warnings
+
 from pytest import approx
 from pytest import mark
 from pytest import raises
+from pytest import warns
+
 
 from flaky                  import flaky
 from hypothesis             import given
@@ -121,10 +125,17 @@ def test_check_if_values_in_interval_when_all_fall_inside(data):
 @given(random_length_float_arrays(min_length = 1,
                                   min_value  = 0,
                                   max_value  = 100))
-def test_check_if_values_in_interval_when_some_fall_outside_warning(data):
+def test_check_if_values_in_interval_when_some_fall_outside_silent(data):
     minvalue =np.min(data)
-    assert not core.check_if_values_in_interval(data, minvalue+1, 100, strictness=core.Strictness.warning)
+    assert not core.check_if_values_in_interval(data, minvalue+1, 100, strictness=core.Strictness.silent)
 
+@given(random_length_float_arrays(min_length = 1,
+                                  min_value  = 0,
+                                  max_value  = 100))
+def test_check_if_values_in_interval_when_some_fall_outside_warns(data):
+    minvalue =np.min(data)
+    with warns(UserWarning):
+        core.check_if_values_in_interval(data, minvalue+1, 100, strictness=core.Strictness.warning)
 
 @given(random_length_float_arrays(min_length = 1,
                                   min_value  = 0,
