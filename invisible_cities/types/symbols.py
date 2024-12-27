@@ -75,6 +75,7 @@ class MCTableType(AutoNameEnumBase):
 
 
 class Strictness(AutoNameEnumBase):
+    silent        = auto()
     warning       = auto()
     stop_proccess = auto()
 
