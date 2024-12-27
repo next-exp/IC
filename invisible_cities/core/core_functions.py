@@ -3,6 +3,7 @@ Core functions
 This module includes utility functions.
 """
 import time
+import warnings
 
 import numpy as np
 
@@ -10,7 +11,7 @@ from typing import Sequence
 from typing import Tuple
 
 from . exceptions import ValueOutOfRange
-
+from . configure  import check_annotations
 from ..types.symbols import NormMode
 from ..types.symbols import Strictness
 
@@ -81,7 +82,7 @@ def in_range(data, minval=-np.inf, maxval=np.inf, left_closed=True, right_closed
     return lower_bound & upper_bound
 
 
-def check_if_values_in_interval(data         : np.array,
+def check_if_values_in_interval(data         : np.ndarray,
                                 minval       : float   ,
                                 maxval       : float   ,
                                 display_name : str = '',
@@ -108,15 +109,26 @@ def check_if_values_in_interval(data         : np.array,
         True if values are in the interval. False if not and strictness
         is set to 'warning'. Otherwise, it raises an exception.
     """
-    if in_range(data, minval, maxval, **kwargs).all():
-        return True;
 
-    elif strictness is Strictness.warning:
+    values_in_interval = in_range(data, minval, maxval, **kwargs)
+    outsiders_mask     = np.logical_not(values_in_interval)
+    outsiders_list     = data[outsiders_mask]
+    n_outsiders        = np.sum(outsiders_mask)
+
+    if values_in_interval.all():
+        return True
+    elif strictness is Strictness.silent:
+        return False
+
+    text  = f'Variable {display_name} has {n_outsiders} values out of bounds ({minval}, {maxval}\n'
+    text += f'Outsiders: {outsiders_list}'
+
+    if strictness is Strictness.warning:
+        warnings.warn(text, UserWarning)
         return False
     else:
-        raise ValueOutOfRange(f' Variable {display_name} is out of bounds ({minval}, {maxval})')
+        raise ValueOutOfRange(text)
 
-    return
 
 def weighted_mean_and_var(data       : Sequence,
                           weights    : Sequence,
