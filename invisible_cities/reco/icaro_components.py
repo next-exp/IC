@@ -169,6 +169,6 @@ def selection_in_band(dt        : np.array,
     upper_band   = lambda dt: prefict_fun(dt) + nsigma * fitsigma
     lower_band   = lambda dt: prefict_fun(dt) - nsigma * fitsigma
 
-    sel_inband   = in_range(np.log(e_sel), lower_band(dt_sel), upper_band(dt_sel))
+    sel_inband   = in_range(np.log(e), lower_band(dt), upper_band(dt))
 
     return  sel_inband
