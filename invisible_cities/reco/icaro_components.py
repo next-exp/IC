@@ -12,6 +12,7 @@ from .. types.symbols       import Strictness
 from .. types.symbols       import NormStrategy
 from .. core.core_functions import check_if_values_in_interval
 from .. core.core_functions import in_range
+from .. core.core_functions import shift_to_bin_centers
 from .. core.fit_functions  import fit
 
 
@@ -161,7 +162,7 @@ def selection_in_band(dt        : np.array,
     in_mask      = res_fit.inlier_mask_
     residuals_ln = e_sel[in_mask] - np.exp(res_fit.predict(dt_sel[in_mask].reshape(-1, 1))).flatten()
     resy, resx   = np.histogram(residuals_ln, 100)
-    resx         = resx[:-1] + np.diff(resx)
+    resx         = shift_to_bin_centers(resx)
     fitres       = fit(gauss, resx, resy, seed=[4e3,0,10])
     fitsigma     = fitres.val[2]
 
