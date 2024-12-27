@@ -6,7 +6,7 @@ from   pytest                               import approx, mark, fixture
 from   flaky                                import flaky
 
 from   hypothesis                           import given
-from   hypothesis.strategies                import floats, integers
+from   hypothesis.strategies                import floats
 from .. reco.krmap_evolution                import sigmoid, gauss_seed, compute_drift_v, resolution
 from .. reco.krmap_evolution                import quick_gauss_fit, get_time_series_df, computing_kr_parameters
 from .. reco.krmap_evolution                import kr_time_evolution
@@ -168,24 +168,24 @@ def test_resolution_definition():
 
 @fixture
 def dummy_kr_map():
-    return pd.DataFrame(dict(bin = np.arange(10),
-                             counts = 1,
-                             e0 = 1,
-                             ue0 = 0,
-                             lt = 1,
-                             ult = 0,
-                             cov = 0,
-                             res_std = 0,
-                             pval = 1,
+    return pd.DataFrame(dict(bin            = np.arange(10),
+                             counts         = 1,
+                             e0             = 1,
+                             ue0            = 0,
+                             lt             = 1,
+                             ult            = 0,
+                             cov            = 0,
+                             res_std        = 0,
+                             pval           = 1,
                              in_fid         = True,
                              has_min_counts = True,
-                             fit_success = True,
-                             valid = True,
-                             R = 1,
-                             x_index = 1,
-                             y_index = 1,
-                             Y = 1,
-                             X = 1))
+                             fit_success    = True,
+                             valid          = True,
+                             R              = 1,
+                             x_index        = 1,
+                             y_index        = 1,
+                             Y              = 1,
+                             X              = 1))
 
 @fixture
 def dummy_kr_dst():
@@ -251,9 +251,9 @@ def test_computing_kr_parameters(dummy_kr_dst, dummy_kr_map):
     assert pars['Yrmsu'] [0] == 0
 
     assert np.isclose(pars['s2eu'][0],  dst.S2e.std()/data_size**0.5, rtol=1e-1)
-    assert np.isclose(pars['e0'][0],    pars_true['mu'], rtol=5e-2) # E0
-    assert np.isclose(pars['lt'][0],    pars_true['lt'], rtol=1e-1) # LT
-    assert np.isclose(pars['dv'][0],    pars_true['dv'], rtol=1e-1)
+    assert np.isclose(pars['e0'][0],    pars_true['mu'],  rtol=5e-2) # E0
+    assert np.isclose(pars['lt'][0],    pars_true['lt'],  rtol=1e-1) # LT
+    assert np.isclose(pars['dv'][0],    pars_true['dv'],  rtol=1e-1)
     assert np.isclose(pars['resol'][0], pars_true['res'], rtol=1e-1)
     assert pars['e0u'][0]/pars['e0'][0] <= 0.1
     assert pars['ltu'][0]/pars['lt'][0] <= 0.1
