@@ -12,8 +12,9 @@ from .. types.symbols       import Strictness
 from .. types.symbols       import NormStrategy
 from .. core.core_functions import check_if_values_in_interval
 from .. core.core_functions import in_range
+from .. core.core_functions import shift_to_bin_centers
 from .. core.fit_functions  import fit
-
+from .. core.fit_functions  import gauss
 
 def selection_nS_mask_and_checking(dst        : pd.DataFrame                         ,
                                    column     : type_of_signal                       ,
@@ -169,3 +170,34 @@ def selection_in_band(dt        : np.array,
 
     return  sel_inband
 
+def sigma_estimation(dt     : np.array       ,
+                     e      : np.array       ,
+                     res_fit: RANSACRegressor
+                    ) -> float:
+    """
+    This function estimates the sigma from the residuals to a line fit
+
+    Parameters
+    ----------
+    dt: np.array
+        axial (dt/z) values
+    e: np.array
+        energy values
+    res_fit: RANSACRegressor
+        RANSAC object fitted to the data
+
+    Returns
+    ----------
+        The sigma of the residuals as a float.
+    """
+    # Reshapes and flattens are needed for RANSAC function
+
+    in_mask      = res_fit.inlier_mask_
+    e_predict    = res_fit.predict(dt[in_mask].reshape(-1, 1)).flatten()
+    residuals_ln = e[in_mask] - e_predict
+    resy, resx   = np.histogram(residuals_ln, 100)
+    resx         = shift_to_bin_centers(resx)
+    fitres       = fit(gauss, resx, resy, seed=[4e3,0,10])
+    fitsigma     = fitres.values[2]
+
+    return fitsigma
