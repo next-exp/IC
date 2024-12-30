@@ -6,8 +6,6 @@ import pandas as pd
 import numpy  as np
 import numpy.testing as npt
 
-import warnings
-
 from pytest import approx
 from pytest import mark
 from pytest import raises
