@@ -104,12 +104,14 @@ def band_selector_and_check(dst         : pd.DataFrame,
         input_mask = [True] * len(dst)
     else: pass;
 
+    dst_sel = dst[input_mask]
+
     emaps = apply_geo_correction(boot_map, norm_strat  = norm_strat)
-    E0    = dst[input_mask].S2e.values * emaps(dst[input_mask].X.values,
-                                               dst[input_mask].Y.values)
+    E0    = dst_sel.S2e.values * emaps(dst_sel.X.values,
+                                       dst_sel.Y.values)
 
     sel_krband = np.zeros_like(input_mask)
-    sel_krband[input_mask] = selection_in_band(dst[input_mask].DT,
+    sel_krband[input_mask] = selection_in_band(dst_sel.DT,
                                                E0,
                                                range_dt = range_DT,
                                                range_e = range_E,
