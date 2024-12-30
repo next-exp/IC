@@ -27,6 +27,15 @@ def test_lin_function_output_values(x_min, x_max, a, b):
     assert np.isclose(b_test, b)
 
 
+def test_lin_seed_same_x_values():
+    x = np.ones(20)
+    y = np.ones(20) * 123
+    a_test, b_test = krf.lin_seed(x, y)
+
+    assert a_test == 123
+    assert b_test ==   0
+
+
 @given(floats(min_value = 1,    max_value = 10),
        floats(min_value = 1000, max_value = 1600),
        floats(min_value = 1e4,  max_value = 1e5),
