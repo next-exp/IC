@@ -20,7 +20,7 @@ from .. core.fit_functions  import expo
        floats(min_value = 10, max_value = 20),
        floats(min_value = 1,  max_value = 100),
        floats(min_value = 0,  max_value = 10))
-def test_lin_function_output_values(x_min, x_max, a, b):
+def test_lin_seed_output_values(x_min, x_max, a, b):
     x = np.array([x_min, x_max])
     y = a + b * x
     a_test, b_test = krf.lin_seed(x, y)
