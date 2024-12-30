@@ -140,9 +140,8 @@ def test_all_in_range_when_some_fall_outside_warns(data):
                                   max_value  = 100))
 def test_all_in_range_when_some_fall_outside_exception(data):
     minvalue =np.min(data)
-    raises(core.ValueOutOfRange,
-           core.all_in_range,
-           data, minvalue+1, 100, strictness=core.Strictness.stop_proccess)
+    with raises(core.ValueOutOfRange, match="values out of bounds"):
+        core.all_in_range(data, minvalue+1, 100, strictness=core.Strictness.stop_proccess)
 
 
 @mark.parametrize(" first  second       norm_mode        expected".split(),

@@ -81,10 +81,10 @@ def test_selection_nS_mask_and_checking_range_assertion():
 
     eff = ns1 / 1e4
 
-    raises(core.ValueOutOfRange,
-           icarcomp.selection_nS_mask_and_checking,
-           data,  icarcomp.type_of_signal.nS1, None,
-           [min_eff, max_eff], icarcomp.Strictness.stop_proccess)
+    with raises(core.ValueOutOfRange, match="values out of bounds"):
+           icarcomp.selection_nS_mask_and_checking(data,  icarcomp.type_of_signal.nS1,
+                                                   None,[min_eff, max_eff],
+                                                   icarcomp.Strictness.stop_proccess)
 
 @given(floats(min_value = 0.01,
               max_value = 20))
