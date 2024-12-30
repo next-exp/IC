@@ -5,31 +5,33 @@ import pandas        as pd
 from hypothesis.strategies import integers
 from hypothesis.strategies import floats
 from hypothesis            import given
-
+from pytest                import mark
 
 from .. core.testing_utils import assert_dataframes_equal
 from .. core               import core_functions   as core
 
 from .                     import icaro_components as icarcomp
 
-@given(integers(min_value = 1,
-                max_value = 1e4))
-def test_selection_nS_mask_and_checking_right_output(nsignals):
+
+@mark.parametrize("signal", (icarcomp.type_of_signal.nS1, icarcomp.type_of_signal.nS2))
+@given(nsignals= integers(min_value = 1,
+                          max_value = 1e4))
+def test_selection_nS_mask_and_checking_right_output(nsignals, signal):
     nevt = int(1e4)
     data = np.concatenate([np.zeros(nevt- nsignals),
                           np.ones  (nsignals)])
     np.random.shuffle(data)
 
-    data = pd.DataFrame({'nS1': data, 'event': range(nevt)})
+    data = pd.DataFrame({'nS1': data, 'nS2': data,'event': range(nevt)})
 
-    mask = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS1)
+    mask = icarcomp.selection_nS_mask_and_checking(data, signal)
 
     assert np.sum(mask) == nsignals
 
 
 @given(integers(min_value = 1,
                 max_value = 1e4))
-def test_selection_nS_mask_and_checking_self_concatenating(nsignals):
+def test_selection_nS_mask_and_checking_consistency(nsignals):
     nevt = int(1e4)
     data = np.concatenate([np.zeros(nevt- nsignals),
                           np.ones  (nsignals)])
