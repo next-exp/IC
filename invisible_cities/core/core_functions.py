@@ -82,12 +82,12 @@ def in_range(data, minval=-np.inf, maxval=np.inf, left_closed=True, right_closed
     return lower_bound & upper_bound
 
 
-def all_in_range(data         : np.ndarray,
-                 minval       : float   ,
-                 maxval       : float   ,
-                 display_name : str = '',
+def all_in_range(data         : np.ndarray                           ,
+                 minval       : float                                ,
+                 maxval       : float                                ,
+                 display_name : str = ''                             ,
                  strictness   : Strictness = Strictness.stop_proccess,
-                **kwargs)->bool:
+                 **kwargs)->bool:
     """
     Checks whether input values are all inside the interval (minval, maxval).
 
@@ -120,7 +120,7 @@ def all_in_range(data         : np.ndarray,
         return False
 
     text  = f'Variable {display_name} has {n_outliers} values out of bounds ({minval}, {maxval}\n'
-    text += f'Outsiders: {outliers}'
+    text += f'Outliers: {outliers}'
 
     if strictness is Strictness.warning:
         warnings.warn(text, UserWarning)

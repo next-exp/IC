@@ -243,9 +243,9 @@ def get_normalization_factor(map_e0    : ASectorMap,
 
     return norm_value
 
-def apply_geo_correction(map_e0         : ASectorMap,
-                         norm_strat     : NormStrategy         = NormStrategy.max,
-                         norm_value     : Optional[float]      = None
+def apply_geo_correction(map_e0     : ASectorMap,
+                         norm_strat : NormStrategy    = NormStrategy.max,
+                         norm_value : Optional[float] = None
                         ) -> Callable:
     """
     For a map for each correction, it returns a function
@@ -265,12 +265,11 @@ def apply_geo_correction(map_e0         : ASectorMap,
     -------
         A function that returns geometric correction factor without passing a map.
     """
-
     normalization   = get_normalization_factor(map_e0, norm_strat, norm_value)
     get_xy_corr_fun = maps_coefficient_getter(map_e0.mapinfo, map_e0.e0)
 
-    def geo_correction_factor(x : np.array,
-                                y : np.array)-> np.array:
+    def geo_correction_factor(x : np.ndarray,
+                              y : np.ndarray)-> np.ndarray:
         geo_factor = correct_geometry_(get_xy_corr_fun(x,y))
         factor     = geo_factor * normalization
         return factor

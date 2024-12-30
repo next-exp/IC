@@ -269,34 +269,34 @@ def test_apply_all_correction_single_maps_raises_exception_when_invalid_map(map_
 
 @few_examples
 @given(float_arrays(size      = 1,
-                   min_value = -198,
-                   max_value = +198),
+                    min_value = -198,
+                    max_value = +198),
        float_arrays(size      = 1,
-                   min_value = -198,
-                   max_value = +198))
+                    min_value = -198,
+                    max_value = +198))
 def test_apply_geo_correction_properly(map_filename, x, y):
     """
     Due the map taken as input, the geometric correction
     factor must be 1.
     """
     maps      = read_maps(map_filename)
-    load_corr = apply_geo_correction(map_e0     = maps, norm_strat = NormStrategy.max)
-    corr   = load_corr(x, y)
+    load_corr = apply_geo_correction(map_e0 = maps, norm_strat = NormStrategy.max)
+    corr      = load_corr(x, y)
     assert_allclose (corr, np.ones_like(corr))
 
 @few_examples
 @given(float_arrays(size      = 1,
-                   min_value = -198,
-                   max_value = +198),
+                    min_value = -198,
+                    max_value = +198),
        float_arrays(size      = 1,
-                   min_value = -198,
-                   max_value = +198),
+                    min_value = -198,
+                    max_value = +198),
        float_arrays(size      = 1,
-                   min_value = 0,
-                   max_value = 5e2),
+                    min_value = 0,
+                    max_value = 5e2),
        float_arrays(size      = 1,
-                   min_value = 0,
-                   max_value = 1e5))
+                    min_value = 0,
+                    max_value = 1e5))
 def test_apply_all_correction_single_maps_properly(map_filename, x, y, z, t):
     """
     Due the map taken as input, the geometric correction

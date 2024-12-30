@@ -63,15 +63,15 @@ def selection_nS_mask_and_checking(dst        : pd.DataFrame                    
     return mask
 
 
-def band_selector_and_check(dst         : pd.DataFrame,
-                            boot_map    : ASectorMap,
-                            norm_strat  : NormStrategy              = NormStrategy.max,
-                            input_mask  : np.array                  = None            ,
-                            range_DT     : Tuple[np.array, np.array] = (10, 1300)      ,
-                            range_E     : Tuple[np.array, np.array] = (10.0e+3,14e+3) ,
-                            nsigma_sel  : float                     = 3.5             ,
-                            eff_interval: Tuple[float, float]       = [0,1]           ,
-                            strictness : Strictness = Strictness.stop_proccess
+def band_selector_and_check(dst         : pd.DataFrame                                 ,
+                            boot_map    : ASectorMap                                   ,
+                            norm_strat  : NormStrategy               = NormStrategy.max,
+                            input_mask  : np.ndarray                 = None            ,
+                            range_DT    : Tuple[np.array, np.array]  = (10, 1300)      ,
+                            range_E     : Tuple[np.array, np.array]  = (10.0e+3,14e+3) ,
+                            nsigma_sel  : float                      = 3.5             ,
+                            eff_interval: Tuple[float, float]        = [0,1]           ,
+                            strictness  : Strictness = Strictness.stop_proccess
                             )->np.array:
     """
     This function returns a selection of the events that
@@ -111,26 +111,25 @@ def band_selector_and_check(dst         : pd.DataFrame,
                                        dst_sel.Y.values)
 
     sel_krband = np.zeros_like(input_mask)
-    sel_krband[input_mask] = selection_in_band(dst_sel.DT,
-                                               E0,
+    sel_krband[input_mask] = selection_in_band(dst_sel.DT, E0     ,
                                                range_dt = range_DT,
-                                               range_e = range_E,
-                                               nsigma  = nsigma_sel)
+                                               range_e  = range_E ,
+                                               nsigma   = nsigma_sel)
 
     effsel   = dst[sel_krband].event.nunique()/dst[input_mask].event.nunique()
 
-    all_in_range(data         = np.array(effsel)  ,
-                 minval       = eff_interval[0]   ,
-                 maxval       = eff_interval[1]   ,
+    all_in_range(data         = np.array(effsel)   ,
+                 minval       = eff_interval[0]    ,
+                 maxval       = eff_interval[1]    ,
                  display_name = "DT-band selection",
-                 strictness   = strictness        ,
+                 strictness   = strictness         ,
                  right_closed = True)
 
     return sel_krband
 
 
-def selection_in_band(dt        : np.array,
-                      e         : np.array,
+def selection_in_band(dt        : np.ndarray         ,
+                      e         : np.ndarray         ,
                       range_dt  : Tuple[float, float],
                       range_e   : Tuple[float, float],
                       nsigma    : float   = 3.5) ->np.array:
@@ -156,7 +155,7 @@ def selection_in_band(dt        : np.array,
     # Reshapes and flattens are needed for RANSAC function
 
     dt_sel = dt[in_range(dt, *range_dt)]
-    e_sel = e[in_range(e, *range_e)]
+    e_sel  = e [in_range( e, *range_e )]
 
     res_fit      = RANSACRegressor().fit(dt_sel.reshape(-1,1),
                                          np.log(e_sel).reshape(-1, 1))
@@ -165,13 +164,12 @@ def selection_in_band(dt        : np.array,
     prefict_fun  = lambda dt: res_fit.predict(dt.reshape(-1, 1)).flatten()
     upper_band   = lambda dt: prefict_fun(dt) + nsigma * sigma
     lower_band   = lambda dt: prefict_fun(dt) - nsigma * sigma
-
     sel_inband   = in_range(np.log(e), lower_band(dt), upper_band(dt))
 
     return  sel_inband
 
-def sigma_estimation(dt     : np.array       ,
-                     e      : np.array       ,
+def sigma_estimation(dt     : np.ndarray     ,
+                     e      : np.ndarray     ,
                      res_fit: RANSACRegressor
                     ) -> float:
     """
