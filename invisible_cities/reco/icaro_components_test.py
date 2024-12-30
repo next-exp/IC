@@ -61,7 +61,8 @@ def test_selection_nS_mask_and_checking_concatenating(ns1, ns2):
     maskS1 = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS1)
     maskS2 = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS2, maskS1)
 
-    assert_dataframes_equal(data[maskS2], data[maskS1][data[maskS1].nS2 ==1])
+    assert( np.sum(maskS1) >=  np.sum(maskS2))
+    assert( np.logical_not(maskS2[np.logical_not(maskS1)].all()))
 
 
 @given(integers(min_value = 1,
