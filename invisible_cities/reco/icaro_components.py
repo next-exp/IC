@@ -102,7 +102,6 @@ def band_selector_and_check(dst         : pd.DataFrame,
     """
     if input_mask is None:
         input_mask = [True] * len(dst)
-    else: pass;
 
     dst_sel = dst[input_mask]
 
