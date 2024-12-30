@@ -8,10 +8,12 @@ from hypothesis            import given
 from pytest                import mark
 from pytest                import raises
 
-from .. core.testing_utils import assert_dataframes_equal
-from .. core               import core_functions   as core
+from   sklearn.linear_model import RANSACRegressor
 
-from .                     import icaro_components as icarcomp
+from .. core.testing_utils  import assert_dataframes_equal
+from .. core                import core_functions   as core
+
+from .                      import icaro_components as icarcomp
 
 
 @mark.parametrize("signal", (icarcomp.type_of_signal.nS1, icarcomp.type_of_signal.nS2))
@@ -83,3 +85,17 @@ def test_selection_nS_mask_and_checking_range_assertion():
            icarcomp.selection_nS_mask_and_checking,
            data,  icarcomp.type_of_signal.nS1, None,
            [min_eff, max_eff], icarcomp.Strictness.stop_proccess)
+
+@given(floats(min_value = 0.01,
+              max_value = 20))
+def test_sigma_estimation(sigma):
+    nevt      = int(1e4)
+    xrange    = [0, 1000]
+    slope     = 100
+    n0        = 100
+    x         = np.random.uniform(*xrange, nevt)
+    y         = slope * x + n0
+    y         = np.random.normal(y, sigma)
+    res_fit   = RANSACRegressor().fit(x.reshape(-1,1), y.reshape(-1, 1))
+    sigma_est = icarcomp.sigma_estimation(x, y, res_fit)
+    np.testing.assert_allclose(sigma, sigma_est, rtol=0.1)
