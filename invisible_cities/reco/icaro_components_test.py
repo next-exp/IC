@@ -6,6 +6,7 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import floats
 from hypothesis            import given
 from pytest                import mark
+from pytest                import raises
 
 from .. core.testing_utils import assert_dataframes_equal
 from .. core               import core_functions   as core
@@ -65,14 +66,11 @@ def test_selection_nS_mask_and_checking_concatenating(ns1, ns2):
     assert( np.logical_not(maskS2[np.logical_not(maskS1)].all()))
 
 
-@given(integers(min_value = 1,
-                max_value = 1e4),
-       floats  (min_value = 0,
-                max_value = 0.9),
-       floats  (min_value = 0.1,
-                max_value = 1) )
-def test_selection_nS_mask_and_checking_range_assertion(ns1, lim1, lim2):
+def test_selection_nS_mask_and_checking_range_assertion():
     nevt = int(1e4)
+    ns1  = int(1e3)
+    min_eff = 0.5
+    max_eff = 1
     dataS1 = np.concatenate([np.zeros(nevt- ns1),
                              np.ones (ns1)])
     np.random.shuffle(dataS1)
@@ -80,10 +78,8 @@ def test_selection_nS_mask_and_checking_range_assertion(ns1, lim1, lim2):
     data   = pd.DataFrame({'nS1': dataS1, 'event': range(nevt)})
 
     eff = ns1 / 1e4
-    min_eff = min(lim1, lim2)
-    max_eff = max(lim1, lim2)
-    if (eff < min_eff) or (eff > max_eff):
-        npt.assert_raises(core.ValueOutOfRange,
-                          icarcomp.selection_nS_mask_and_checking,
-                          data,  icarcomp.type_of_signal.nS1, None,
-                          [min_eff, max_eff], icarcomp.Strictness.stop_proccess)
+
+    raises(core.ValueOutOfRange,
+           icarcomp.selection_nS_mask_and_checking,
+           data,  icarcomp.type_of_signal.nS1, None,
+           [min_eff, max_eff], icarcomp.Strictness.stop_proccess)
