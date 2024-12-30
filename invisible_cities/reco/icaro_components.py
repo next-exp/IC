@@ -18,10 +18,10 @@ from .. core.fit_functions  import gauss
 
 def selection_nS_mask_and_checking(dst        : pd.DataFrame                         ,
                                    column     : type_of_signal                       ,
-                                   input_mask : Optional[np.array]  = None           ,
+                                   input_mask : Optional[np.ndarray]  = None         ,
                                    interval   : Tuple[float, float] = [0,1]          ,
                                    strictness : Strictness = Strictness.stop_proccess
-                                   )->np.array:
+                                   )->np.ndarray:
     """
     Selects nS1(or nS2) == 1 for a given kr dst and
     returns the mask. It also computes selection efficiency,
@@ -132,7 +132,7 @@ def selection_in_band(dt        : np.ndarray         ,
                       e         : np.ndarray         ,
                       range_dt  : Tuple[float, float],
                       range_e   : Tuple[float, float],
-                      nsigma    : float   = 3.5) ->np.array:
+                      nsigma    : float   = 3.5) ->np.ndarray:
     """
     This function returns a mask for the selection of the events that are inside the Kr E vz Z
 

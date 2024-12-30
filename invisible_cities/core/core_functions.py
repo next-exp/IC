@@ -9,6 +9,8 @@ import numpy as np
 
 from typing import Sequence
 from typing import Tuple
+from typing import Optional
+
 
 from . exceptions import ValueOutOfRange
 from . configure  import check_annotations
@@ -82,18 +84,18 @@ def in_range(data, minval=-np.inf, maxval=np.inf, left_closed=True, right_closed
     return lower_bound & upper_bound
 
 
-def all_in_range(data         : np.ndarray                           ,
-                 minval       : float                                ,
-                 maxval       : float                                ,
-                 display_name : str = ''                             ,
-                 strictness   : Strictness = Strictness.stop_proccess,
+def all_in_range(data         : np.ndarray                                    ,
+                 minval       : float                                         ,
+                 maxval       : float                                         ,
+                 display_name : Optional[str] = ''                            ,
+                 strictness   :Optional[Strictness] = Strictness.stop_proccess,
                  **kwargs)->bool:
     """
     Checks whether input values are all inside the interval (minval, maxval).
 
     Parameters
     ----------
-    data : np.array
+    data : np.ndarray
         Input array to check.
     minval: float
         Lower limit of the interval.
