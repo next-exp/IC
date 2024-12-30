@@ -10,7 +10,7 @@ from .  corrections         import apply_geo_correction
 from .. types.symbols       import type_of_signal
 from .. types.symbols       import Strictness
 from .. types.symbols       import NormStrategy
-from .. core.core_functions import check_if_values_in_interval
+from .. core.core_functions import all_in_range
 from .. core.core_functions import in_range
 from .. core.core_functions import shift_to_bin_centers
 from .. core.fit_functions  import fit
@@ -53,12 +53,12 @@ def selection_nS_mask_and_checking(dst        : pd.DataFrame                    
     nevts_after      = dst[mask]      .event.nunique()
     nevts_before     = dst[input_mask].event.nunique()
     eff              = nevts_after / nevts_before
-    check_if_values_in_interval(data         = np.array(eff),
-                                minval       = interval[0]  ,
-                                maxval       = interval[1]  ,
-                                display_name = column.value ,
-                                strictness   = strictness   ,
-                                right_closed = True)
+    all_in_range(data         = np.array(eff),
+                 minval       = interval[0]  ,
+                 maxval       = interval[1]  ,
+                 display_name = column.value ,
+                 strictness   = strictness   ,
+                 right_closed = True)
 
     return mask
 
@@ -119,12 +119,12 @@ def band_selector_and_check(dst         : pd.DataFrame,
 
     effsel   = dst[sel_krband].event.nunique()/dst[input_mask].event.nunique()
 
-    check_if_values_in_interval(data         = np.array(effsel)  ,
-                                minval       = eff_interval[0]   ,
-                                maxval       = eff_interval[1]   ,
-                                display_name = "DT-band selection",
-                                strictness   = strictness        ,
-                                right_closed = True)
+    all_in_range(data         = np.array(effsel)  ,
+                 minval       = eff_interval[0]   ,
+                 maxval       = eff_interval[1]   ,
+                 display_name = "DT-band selection",
+                 strictness   = strictness        ,
+                 right_closed = True)
 
     return sel_krband
 

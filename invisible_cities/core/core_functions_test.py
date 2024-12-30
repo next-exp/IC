@@ -118,32 +118,32 @@ def test_in_range_right_close_interval(data):
 @given(random_length_float_arrays(min_length = 1,
                                   min_value  = 0,
                                   max_value  = 100))
-def test_check_if_values_in_interval_when_all_fall_inside(data):
-    assert core.check_if_values_in_interval(data, 0, 100, left_closed=True, right_closed=True)
+def test_all_in_range_when_all_fall_inside(data):
+    assert core.all_in_range(data, 0, 100, left_closed=True, right_closed=True)
 
 
 @given(random_length_float_arrays(min_length = 1,
                                   min_value  = 0,
                                   max_value  = 100))
-def test_check_if_values_in_interval_when_some_fall_outside_silent(data):
+def test_all_in_range_when_some_fall_outside_silent(data):
     minvalue =np.min(data)
-    assert not core.check_if_values_in_interval(data, minvalue+1, 100, strictness=core.Strictness.silent)
+    assert not core.all_in_range(data, minvalue+1, 100, strictness=core.Strictness.silent)
 
 @given(random_length_float_arrays(min_length = 1,
                                   min_value  = 0,
                                   max_value  = 100))
-def test_check_if_values_in_interval_when_some_fall_outside_warns(data):
+def test_all_in_range_when_some_fall_outside_warns(data):
     minvalue =np.min(data)
     with warns(UserWarning):
-        core.check_if_values_in_interval(data, minvalue+1, 100, strictness=core.Strictness.warning)
+        core.all_in_range(data, minvalue+1, 100, strictness=core.Strictness.warning)
 
 @given(random_length_float_arrays(min_length = 1,
                                   min_value  = 0,
                                   max_value  = 100))
-def test_check_if_values_in_interval_when_some_fall_outside_exception(data):
+def test_all_in_range_when_some_fall_outside_exception(data):
     minvalue =np.min(data)
     raises(core.ValueOutOfRange,
-           core.check_if_values_in_interval,
+           core.all_in_range,
            data, minvalue+1, 100, strictness=core.Strictness.stop_proccess)
 
 
