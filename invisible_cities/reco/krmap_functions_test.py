@@ -1,5 +1,3 @@
-import pytest
-
 import numpy          as np
 import numpy.testing  as npt
 import pandas         as pd
@@ -51,13 +49,14 @@ def test_expo_seed_output_values(zmin, zmax, elt, e0):
     assert np.isclose(elt_test, elt, rtol=0.1)
 
 
-@pytest.fixture
 @mark.parametrize('y', ([-1, 1, 1, 1, 1], [1, 1, 1, 1, -1]))
 def test_expo_seed_negative_y_values(y):
     x = np.ones(5)
     with raises(ValueError, match = 'y data must be > 0'):
         a_test, b_test = krf.expo_seed(x, y)
 
+
+@fixture
 def sample_df():
     data = {'DT' : [10, 20, 30, 40, 50],
             'S2e': [50, 45, 42, 41, 41]}
