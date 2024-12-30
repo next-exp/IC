@@ -111,17 +111,16 @@ def all_in_range(data         : np.ndarray,
     """
 
     values_in_interval = in_range(data, minval, maxval, **kwargs)
-    outsiders_mask     = np.logical_not(values_in_interval)
-    outsiders_list     = data[outsiders_mask]
-    n_outsiders        = np.sum(outsiders_mask)
+    outliers   = data[~values_in_interval]
+    n_outliers = len(outliers)
 
     if values_in_interval.all():
         return True
     elif strictness is Strictness.silent:
         return False
 
-    text  = f'Variable {display_name} has {n_outsiders} values out of bounds ({minval}, {maxval}\n'
-    text += f'Outsiders: {outsiders_list}'
+    text  = f'Variable {display_name} has {n_outliers} values out of bounds ({minval}, {maxval}\n'
+    text += f'Outsiders: {outliers}'
 
     if strictness is Strictness.warning:
         warnings.warn(text, UserWarning)
