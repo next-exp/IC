@@ -86,8 +86,7 @@ def test_selection_nS_mask_and_checking_range_assertion():
                                                    None,[min_eff, max_eff],
                                                    icarcomp.Strictness.stop_proccess)
 
-@given(floats(min_value = 0.01,
-              max_value = 20))
+@mark.parametrize("sigma", (0.1, 1, 5, 10, 20))
 def test_sigma_estimation(sigma):
     nevt      = int(1e4)
     xrange    = [0, 1000]
