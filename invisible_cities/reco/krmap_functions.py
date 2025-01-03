@@ -437,11 +437,9 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
     kr_map : pd.DataFrame
          DataFrame containing map parameters.
     '''
-    if not map_bin['in_active'] or not map_bin['has_min_counts']: return map_bin
+    if not map_bin.in_active or not map_bin.has_min_counts: return map_bin
 
-    k        = map_bin.bin
-
-    dst_bin  = dst.query(f'bin_index == {k}')
+    dst_bin  = dst.query(f'bin_index == {map_bin.bin}')
 
     fit_func, seed = get_function_and_seed_lt(fittype = fittype)
     x, y           = select_fit_variables    (fittype = fittype,
@@ -464,12 +462,12 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
     map_bin['ue0']         = err[0]
     map_bin['lt']          = par[1]
     map_bin['ult']         = err[1]
-    map_bin['covariance']  = cov
+    map_bin['cov']         = cov
     map_bin['res_std']     = std
     map_bin['chi2']        = chi2
     map_bin['pval']        = pval
-    map_bin['fit_success'] = True if ier in [1, 2, 3, 4] else False
-    map_bin['valid']       = map_bin['fit_success'] & map_bin['has_min_counts'] & map_bin['in_active']
+    map_bin['fit_success'] = ier in range(1, 5)
+    map_bin['valid']       = map_bin['fit_success'] and map_bin['has_min_counts'] and map_bin['in_active']
 
     return map_bin
 
