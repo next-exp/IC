@@ -398,17 +398,14 @@ def valid_bin_counter(map_df             : pd.DataFrame,
         Percentage of valid bins.
     '''
 
-    inside = len(map_df[map_df['in_active'] == True])
-    valid  = len(map_df[map_df['valid']     == True])
+    inside = np.count_nonzero(map_df.in_active)
+    valid  = np.count_nonzero(map_df.valid)
 
-    valid_per = valid / inside * 100
+    valid_per = valid / inside
 
     if valid_per <= validity_parameter:
-        # If the percentage of valid bins is below the threshold, issue a warning
-        warnings.warn(f"{inside-valid} inner bins are not valid. {valid_per:.1f}% are successful.", UserWarning)
-    else:
-        # If the percentage of valid bins meets the threshold, print a message
-        print(f"{inside-valid} inner bins are not valid. {valid_per:.1f}% are successful.")
+        warnings.warn(f"{inside-valid} inner bins are not valid. {100*valid_per:.1f}% are successful.", UserWarning)
+    else:       print(f"{inside-valid} inner bins are not valid. {100*valid_per:.1f}% are successful.")
 
     return valid_per
 
