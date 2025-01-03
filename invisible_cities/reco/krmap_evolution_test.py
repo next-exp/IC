@@ -7,9 +7,10 @@ from   flaky                                import flaky
 
 from   hypothesis                           import given
 from   hypothesis.strategies                import floats
+
 from .. reco.krmap_evolution                import sigmoid, gauss_seed, compute_drift_v, resolution
 from .. reco.krmap_evolution                import quick_gauss_fit, get_time_series_df, computing_kr_parameters
-from .. reco.krmap_evolution                import kr_time_evolution
+from .. reco.krmap_evolution                import kr_time_evolution, cut_effs_evolution
 
 from .. evm.ic_containers                   import FitFunction
 from .. types.symbols                       import KrFitFunction
@@ -284,3 +285,35 @@ def test_kr_time_evolution(dummy_kr_dst, dummy_kr_map):
         else: assert np.all(np.diff(evol_pars[col].values, axis=0) == 0), col
 
 
+def test_cut_effs_evolution(dummy_kr_dst):
+    dst_1  = dummy_kr_dst[0]
+    dst_2  = dst_1.copy()
+    deltat = np.diff(dst_1.time)[0]
+    dst_2.time += deltat + max(dst_1.time)
+    dst = pd.concat([dst_1, dst_2], ignore_index=True)
+    t0  = min(dst.time)
+    t1  = max(dst.time)
+    ts, masks_time = get_time_series_df(ntimebins=2, time_range=(t0, t1), dst=dst)
+
+    n = len(dst) // 2
+    mask = np.ones(2*n, dtype = bool)
+    mask_s1   = mask   .copy(); mask_s1  [:1*n//10] = False; mask_s1  [-1*n//10:] = False
+    mask_s2   = mask_s1.copy(); mask_s2  [:2*n//10] = False; mask_s2  [-2*n//10:] = False
+    mask_band = mask_s2.copy(); mask_band[:3*n//10] = False; mask_band[-3*n//10:] = False
+
+    evol_table = pd.DataFrame({'ts': ts})
+
+    evol_table_updated = cut_effs_evolution(masks_time = masks_time,
+                                            dst        = dst,
+                                            mask_s1    = mask_s1,
+                                            mask_s2    = mask_s2,
+                                            mask_band  = mask_band,
+                                            evol_table = evol_table)
+
+    assert all(col in evol_table_updated.columns for col in ['S1eff', 'S2eff', 'Bandeff'])
+
+    for _, row in evol_table_updated.iterrows():
+
+        assert np.isclose(row.S1eff,    1-0.1)
+        assert np.isclose(row.S2eff,   (1-2*0.1)/(1-1*0.1))
+        assert np.isclose(row.Bandeff, (1-3*0.1)/(1-2*0.1))
