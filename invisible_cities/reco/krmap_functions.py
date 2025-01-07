@@ -188,28 +188,34 @@ def create_df_kr_map(bins   : Tuple[np.array, np.array],
         events per bin, bin in/outside the active volume, bin position
         (X, Y, R), etc.
     '''
-
-    columns    = ['bin', 'counts', 'e0', 'ue0', 'lt', 'ult', 'covariance', 'res_std', 'chi2',
-                  'pval', 'in_active', 'has_min_counts', 'fit_success', 'valid', 'R', 'X', 'Y']
-
-    kr_map  = pd.DataFrame(columns = columns)
-
     n_xbins   = len(bins[0])-1
     n_ybins   = len(bins[1])-1
     b_center  = [shift_to_bin_centers(axis) for axis in bins]
 
     bin_index = range(n_xbins*n_ybins)
-    geom_comb = itertools.product(b_center[1], b_center[0])
-    r_values  = np.array([np.sqrt(x**2+y**2)for x, y in itertools.product(b_center[1], b_center[0])])
+    geom_comb = list(itertools.product(b_center[0], b_center[1]))
+    r_values  = np.array([np.sqrt(x**2+y**2)for x, y in geom_comb])
 
-    kr_map['bin']            = bin_index
-    kr_map['counts']         = counts
-    kr_map['R']              = r_values
-    kr_map[['Y', 'X']]       = pd.DataFrame(geom_comb)
-    kr_map['in_active']      = kr_map['R']      <= r_max
-    kr_map['has_min_counts'] = kr_map['counts'] >= n_min
-    kr_map['fit_success']    = False
-    kr_map['valid']          = False
+    kr_map    = pd.DataFrame(dict(bin            = bin_index,
+                                  counts         = counts,
+                                  X              = list(zip(*geom_comb))[0],
+                                  Y              = list(zip(*geom_comb))[1],
+                                  R              = r_values,
+                                  in_active      = False,
+                                  has_min_counts = False,
+                                  fit_success    = False,
+                                  valid          = False,
+                                  e0             = np.nan,
+                                  ue0            = np.nan,
+                                  lt             = np.nan,
+                                  ult            = np.nan,
+                                  cov            = np.nan,
+                                  res_std        = np.nan,
+                                  chi2           = np.nan,
+                                  pval           = np.nan))
+
+    kr_map.in_active      = kr_map.R      <= r_max
+    kr_map.has_min_counts = kr_map.counts >= n_min
 
     return kr_map
 
