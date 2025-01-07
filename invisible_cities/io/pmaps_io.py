@@ -106,7 +106,7 @@ def load_pmaps_as_df_eager(filename):
                 to_df(pmap.S2Pmt.read()) if 'S2Pmt' in pmap else None)
 
 
-def load_pmaps_as_df_lazy(filename):
+def load_pmaps_as_df_lazy(filename, skip=0, n=None):
     def read_event(table, event):
         if table is None: return None
         records = table.read_where(f"event=={event}")
@@ -118,6 +118,8 @@ def load_pmaps_as_df_lazy(filename):
 
         events = h5f.root.Run.events.read(field="evt_number")
         tables = [getattr(h5f.root.PMAPS, table, None) for table in tables]
+        n = events.size if n is None else n
+        events = events[skip : skip+n]
         for event in events:
             yield tuple(read_event(table, event) for table in tables)
 
@@ -130,9 +132,9 @@ def _build_ipmtdf_from_sumdf(sumdf):
     return ipmtdf
 
 
-def load_pmaps(filename, lazy=False):
+def load_pmaps(filename, lazy=False, **kwargs):
     loader = load_pmaps_lazy if lazy else load_pmaps_eager
-    return loader(filename)
+    return loader(filename, **kwargs)
 
 
 def load_pmaps_eager(filename):
@@ -180,8 +182,8 @@ def load_pmaps_eager(filename):
     return pmap_dict
 
 
-def load_pmaps_lazy(filename):
-    for (s1df, s2df, sidf, s1pmtdf, s2pmtdf) in load_pmaps_as_df_lazy(filename):
+def load_pmaps_lazy(filename, skip=0, n=None):
+    for (s1df, s2df, sidf, s1pmtdf, s2pmtdf) in load_pmaps_as_df_lazy(filename, skip, n):
         # Hack fix to allow loading pmaps without individual pmts
         if s1pmtdf is None: s1pmtdf = _build_ipmtdf_from_sumdf(s1df)
         if s2pmtdf is None: s2pmtdf = _build_ipmtdf_from_sumdf(s2df)
