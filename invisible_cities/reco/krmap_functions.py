@@ -332,18 +332,17 @@ def get_bin_counts_and_event_bin_id(dst  : pd.DataFrame,
     return counts, bin_labels
 
 
-def calculate_residuals(x          : pd.Series,
-                        y          : pd.Series,
+def calculate_residuals(x          : np.array,
+                        y          : np.array,
                         fit_output : FitFunction):
-
     '''
     Calculate residuals and their standard deviation for the fitted data.
 
     Parameters
     ----------
-    x : pd.Series
+    x : pd.array
         Independent variable
-    y : pd.Series
+    y : pd.array
         Dependent variable
     fit_output : FitFunction
         Container for IC's fit function result
@@ -356,10 +355,7 @@ def calculate_residuals(x          : pd.Series,
         Standard deviation of residuals.
     '''
 
-    function = fit_output.fn
-
-    res = y - function(x)
-    std = res.std()
+    res = y - fit_output.fn(x); std = res.std()
 
     return res, std
 
