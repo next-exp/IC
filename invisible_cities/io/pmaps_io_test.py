@@ -320,6 +320,18 @@ def test_load_pmaps_as_df_lazy(KrMC_pmaps_filename):
         assert_dataframes_equal(df_lazy, df_eager)
 
 
+@mark.parametrize("skip" , (0, 1, 2, 3))
+@mark.parametrize("nread", (0, 1, 2, 3))
+def test_load_pmaps_as_df_lazy_subset(KrMC_pmaps_filename, skip, nread):
+    """Ensure the lazy and non-lazy versions provide the same result"""
+    # concatenate all dfs from the same node
+    dfs_lazy  = pmpio.load_pmaps_as_df_lazy (KrMC_pmaps_filename, skip, nread)
+    dfs_lazy = [pd.concat(node_dfs, ignore_index=True) for node_dfs in zip(*dfs_lazy)]
+
+    for df in dfs_lazy:
+        assert df.event.nunique() == nread
+
+
 def test_load_pmaps_as_df(KrMC_pmaps_filename):
     """Ensure the output of the function is the expected one"""
     eager = pmpio.load_pmaps_as_df(KrMC_pmaps_filename, lazy=False)
@@ -369,6 +381,16 @@ def test_load_pmaps_lazy(KrMC_pmaps_filename):
     for evt, pmap_lazy in pmaps_lazy.items():
         assert evt in pmaps_eager
         assert_PMap_equality(pmap_lazy, pmaps_eager[evt])
+
+
+@mark.parametrize("skip" , (0, 1, 2, 3))
+@mark.parametrize("nread", (0, 1, 2, 3))
+def test_load_pmaps_lazy_subset(KrMC_pmaps_filename, skip, nread):
+    """Ensure the lazy and non-lazy versions provide the same result"""
+    # concatenate all dfs from the same node
+    pmaps_lazy  = pmpio.load_pmaps_lazy(KrMC_pmaps_filename, skip, nread)
+    pmaps_lazy = dict(pmaps_lazy)
+    assert len(pmaps_lazy) == nread
 
 
 def test_load_pmaps(KrMC_pmaps_filename):
