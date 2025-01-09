@@ -248,28 +248,6 @@ def get_number_of_bins(nevents : Optional[int] = None,
     else: return  np.array([100, 100]);
 
 
-def get_XY_bins(n_bins   : np.array,
-                XYrange  : Tuple[float, float]):
-    '''
-    Returns the bins that will be used to make the map.
-
-    Parameters
-    ---------
-    b_nins: np.array
-        array of len = 2 containing the number of bins in X and Y
-    XYrange: Tuple[float, float]
-        Limits (mm) of X and Y for the map computation
-
-    Returns
-    ---------
-    bins: Tuple[np.array, np.array]
-        Bins in each direction (X,Y) (square map).
-    '''
-    bins_x = np.linspace(*XYrange, n_bins[0]+1)
-    bins_y = np.linspace(*XYrange, n_bins[1]+1)
-    return bins_x, bins_y
-
-
 def get_bin_counts_and_event_bin_id(dst  : pd.DataFrame,
                                     bins : Tuple[np.array, np.array]):
     '''
@@ -361,7 +339,6 @@ def calculate_residuals(x          : np.array,
 
 
 def calculate_pval(residuals : np.array):
-
     '''
     Calculate the p-value for the Shapiro-Wilk normality test of residuals.
 
