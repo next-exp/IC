@@ -472,7 +472,7 @@ def regularize_map(maps    : pd.DataFrame,
 
     new_map   = copy.deepcopy(maps)
 
-    outliers  = maps.in_active & ~in_range(new_map.chi2, *x2range)
+    outliers  = new_map.in_active & ~in_range(new_map.chi2, *x2range)
 
     new_map['e0'] [outliers] = np.nanmean(maps['e0'])
     new_map['lt'] [outliers] = np.nanmean(maps['lt'])
