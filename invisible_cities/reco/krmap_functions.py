@@ -474,28 +474,6 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
     return map_bin
 
 
-def find_outliers(maps    : pd.DataFrame,
-                  x2range : Tuple[float, float] = (0, 2)):
-    '''
-    For a given maps and deserved range, it returns a mask where values are
-    within the interval.
-
-    Parameters
-    ---------
-    maps: pd.DataFrame
-        Map to check the outliers
-    x2range : Tuple[float, float]
-        Range for chi2
-
-    Returns
-    ---------
-    mask: pd.Series
-        Mask.
-    '''
-    mask = in_range(maps.chi2, *x2range)
-    return mask
-
-
 def regularize_map(maps    : pd.DataFrame,
                    x2range : Tuple[float, float]):
     '''
@@ -517,8 +495,7 @@ def regularize_map(maps    : pd.DataFrame,
 
     new_map   = copy.deepcopy(maps)
 
-    outliers  = maps.in_active
-    outliers &= np.logical_not(find_outliers(new_map, x2range))
+    outliers  = maps.in_active & ~in_range(new_map.chi2, *x2range)
 
     new_map['e0'] [outliers] = np.nanmean(maps['e0'])
     new_map['lt'] [outliers] = np.nanmean(maps['lt'])
