@@ -353,7 +353,7 @@ def calculate_pval(residuals : np.array):
         p-value for the Shapiro-Wilk normality test.
     '''
 
-    pval = stats.shapiro(residuals)[1] if (len(residuals) > 10) else 0.
+    pval = stats.shapiro(residuals)[1] if (len(residuals) > 3) else 0.
 
     return pval
 
