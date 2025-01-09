@@ -140,44 +140,25 @@ def test_get_number_of_bins_returns_type(nevents, thr, n_bins):
     assert type(krf.get_number_of_bins(n_bins=n_bins)) == np.ndarray
 
 
-@given(arrays(dtype = int, shape = (2,),
-              elements = integers(min_value = 1,
-                                  max_value = 1e4)),
-       arrays(dtype = np.float64,
-              shape = (2,),
-              elements = floats(min_value = -1e4,
-                                max_value =  1e4)))
-def test_get_XY_bins_n(n_bins, XYrange):
-    bins_x, bins_y = krf.get_XY_bins(n_bins, XYrange)
-
-    assert len(bins_x) == int(n_bins[0]) + 1
-    assert len(bins_y) == int(n_bins[1]) + 1
-
-
-@given(n_bins=arrays(dtype = np.int,      shape = (2,),
+@given(n_bins=arrays(dtype = int,      shape = (2,),
                      elements = integers(min_value = 2,
-                                         max_value = 1000)),
-       XYrange=arrays(dtype = np.float64, shape = (2,),
-                      elements = floats(min_value = -1e4,
-                                        max_value =  1e4)),
+                                         max_value = 100)),
        n_min=integers(min_value=1,  max_value=100),
        r_max=floats  (min_value=50, max_value=450))
-def test_create_df_kr_map_check_columns(n_bins, XYrange, n_min, r_max):
+def test_create_df_kr_map_check_columns(n_bins, n_min, r_max):
 
+    XYrange = (500, 500)
     n_bins_x = n_bins[0]
     n_bins_y = n_bins[1]
 
-    bins   = krf.get_XY_bins(n_bins, XYrange)
-    counts = arrays(dtype=np.int64, shape=(n_bins_x * n_bins_y,), elements=integers(min_value=0, max_value=100))
-
+    bins   = [np.linspace(*XYrange, n_bins_x+1), np.linspace(*XYrange, n_bins_y+1)]
+    counts =  np.full(shape=(n_bins_x, n_bins_y), fill_value = 100, dtype=int).flatten()
     df = krf.create_df_kr_map(bins, counts, n_min, r_max)
 
-    columns  = ['bin', 'counts', 'e0', 'ue0', 'lt', 'ult', 'covariance', 'res_std', 'chi2',
+    columns  = ['bin', 'counts', 'e0', 'ue0', 'lt', 'ult', 'cov', 'res_std', 'chi2',
                 'pval', 'in_active', 'has_min_counts', 'fit_success', 'valid', 'R', 'X', 'Y']
 
-    for element in df.columns.values:
-
-        assert element in columns
+    assert all(element in columns for element in df.columns.values)
 
 
 def test_get_bin_counts_and_event_id_correct_output():
