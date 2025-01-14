@@ -133,7 +133,7 @@ def test_all_in_range_when_some_fall_outside_silent(data):
                                   max_value  = 100))
 def test_all_in_range_when_some_fall_outside_warns(data):
     minvalue = np.min(data)
-    with warns(UserWarning):
+    with warns(UserWarning, match="values out of bounds"):
         core.all_in_range(data, minvalue+1, 100, strictness=core.Strictness.warning)
 
 @given(random_length_float_arrays(min_length = 1,
