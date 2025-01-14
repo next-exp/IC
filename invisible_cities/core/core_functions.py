@@ -102,14 +102,19 @@ def all_in_range(data         : np.ndarray                                  ,
     maxval: float
         Upper limit of the interval.
     display_name: string
-        Name for the message to print if exception raises.
+        Label to be displayed in case of warning or exception.
     strictness: Strictness
-        If 'warning', function returns a False if the criteria
-        is not match. If 'stop_proccess' it raises an exception.
+        It `silent`, it returns a False if the criteria
+        is not match.
+        If `warning`, it returns a False and raises a warning.
+        If `raise_error`, it raises an exception.
+
+    **kwargs:
+        Optional arguments being passed to `in_range`.
     Returns
-    ----------
+    -------
         True if values are in the interval. False if not and strictness
-        is set to 'warning'. Otherwise, it raises an exception.
+        is set to `warning` or `silent`. Otherwise, it raises an exception.
     """
 
     values_in_interval = in_range(data, minval, maxval, **kwargs)
