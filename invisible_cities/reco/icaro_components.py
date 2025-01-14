@@ -141,9 +141,9 @@ def select_band(dt        : np.ndarray         ,
         axial (dt/z) values
     e: np.array
         energy values
-    range_dt: Tuple[np.array, np.array]
+    range_dt: Tuple[float, float]
         Range in DT-axis
-    range_e: Tuple[np.array, np.array]
+    range_e: Tuple[float, float]
         Range in Energy-axis
     nsigma: float
         Number of sigmas to set the band width
