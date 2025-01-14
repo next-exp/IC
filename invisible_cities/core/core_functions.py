@@ -13,7 +13,6 @@ from typing import Optional
 
 
 from . exceptions import ValueOutOfRange
-from . configure  import check_annotations
 from ..types.symbols import NormMode
 from ..types.symbols import Strictness
 
