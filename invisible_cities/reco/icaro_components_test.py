@@ -24,7 +24,6 @@ def test_selection_nS_mask_and_checking_right_output(nsignals, signal):
     data = np.concatenate([np.zeros(nevt- nsignals), np.ones(nsignals)])
     np.random.shuffle(data)
     data = pd.DataFrame({'nS1': data, 'nS2': data, 'event': range(nevt)})
-
     mask = icarcomp.selection_nS_mask_and_checking(data, signal)
 
     assert np.sum(mask) == nsignals
@@ -34,12 +33,9 @@ def test_selection_nS_mask_and_checking_right_output(nsignals, signal):
                 max_value = 1e4))
 def test_selection_nS_mask_and_checking_consistency(nsignals):
     nevt = int(1e4)
-    data = np.concatenate([np.zeros(nevt- nsignals),
-                          np.ones  (nsignals)])
+    data = np.concatenate([np.zeros(nevt - nsignals), np.ones(nsignals)])
     np.random.shuffle(data)
-
-    data = pd.DataFrame({'nS1': data, 'event': range(nevt)})
-
+    data    = pd.DataFrame({'nS1': data, 'event': range(nevt)})
     mask    = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS1)
     mask_re = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS1, input_mask=mask)
     npt.assert_equal(mask, mask_re)
@@ -57,12 +53,11 @@ def test_selection_nS_mask_and_checking_concatenating(ns1, ns2):
                              np.ones (ns2)])
     np.random.shuffle(dataS1)
     np.random.shuffle(dataS2)
-
     data   = pd.DataFrame({'nS1': dataS1, 'nS2': dataS2, 'event': range(nevt)})
     maskS1 = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS1)
     maskS2 = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS2, maskS1)
 
-    assert np.sum(maskS1) >=  np.sum(maskS2)
+    assert np.sum(maskS1) >= np.sum(maskS2)
     assert np.logical_not(maskS2[np.logical_not(maskS1)].all())
 
 
@@ -74,13 +69,11 @@ def test_selection_nS_mask_and_checking_range_assertion():
     dataS1 = np.concatenate([np.zeros(nevt- ns1),
                              np.ones (ns1)])
     np.random.shuffle(dataS1)
-
     data   = pd.DataFrame({'nS1': dataS1, 'event': range(nevt)})
-
-    eff = ns1 / 1e4
+    eff    = ns1 / nevt
 
     with raises(core.ValueOutOfRange, match="values out of bounds"):
-           icarcomp.selection_nS_mask_and_checking(data,  icarcomp.type_of_signal.nS1,
+                icarcomp.selection_nS_mask_and_checking(data,  icarcomp.type_of_signal.nS1,
                                                    None,[min_eff, max_eff],
                                                    icarcomp.Strictness.raise_error)
 

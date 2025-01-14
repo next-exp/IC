@@ -84,7 +84,7 @@ def band_selector_and_check(dst         : pd.DataFrame                          
         Krypton dataframe.
     boot_map: str
         Name of bootstrap map file.
-    norm_strt: norm_strategy
+    norm_strat: norm_strategy
         Provides the desired normalization to be used.
     mask_input: np.array
         Mask of the previous selection cut.
@@ -98,7 +98,7 @@ def band_selector_and_check(dst         : pd.DataFrame                          
         Limits of the range where selection efficiency
         is considered correct.
     Returns
-    ----------
+    -------
         A  mask corresponding to the selection made.
     """
     if input_mask is None:
@@ -106,17 +106,16 @@ def band_selector_and_check(dst         : pd.DataFrame                          
 
     dst_sel = dst[input_mask]
 
-    emaps = apply_geo_correction(boot_map, norm_strat  = norm_strat)
-    E0    = dst_sel.S2e.values * emaps(dst_sel.X.values,
-                                       dst_sel.Y.values)
+    emaps = apply_geo_correction(boot_map, norm_strat=norm_strat)
+    E0    = dst_sel.S2e.values * emaps(dst_sel.X.values, dst_sel.Y.values)
 
-    sel_krband = np.zeros_like(input_mask)
+    sel_krband             = np.zeros_like(input_mask)
     sel_krband[input_mask] = selection_in_band(dst_sel.DT, E0     ,
                                                range_dt = range_DT,
                                                range_e  = range_E ,
                                                nsigma   = nsigma_sel)
 
-    effsel   = dst[sel_krband].event.nunique()/dst[input_mask].event.nunique()
+    effsel = dst[sel_krband].event.nunique()/dst[input_mask].event.nunique()
 
     all_in_range(data         = np.array(effsel)   ,
                  minval       = eff_interval[0]    ,
@@ -149,7 +148,7 @@ def selection_in_band(dt        : np.ndarray         ,
     nsigma: float
         Number of sigmas to set the band width
     Returns
-    ----------
+    -------
         A  mask corresponding to the selection made.
     """
     # Reshapes and flattens are needed for RANSAC function
@@ -185,7 +184,7 @@ def sigma_estimation(dt     : np.ndarray     ,
         RANSAC object fitted to the data
 
     Returns
-    ----------
+    -------
         The sigma of the residuals as a float.
     """
     # Reshapes and flattens are needed for RANSAC function

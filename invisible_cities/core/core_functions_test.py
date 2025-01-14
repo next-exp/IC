@@ -125,14 +125,14 @@ def test_all_in_range_when_all_fall_inside(data):
                                   min_value  = 0,
                                   max_value  = 100))
 def test_all_in_range_when_some_fall_outside_silent(data):
-    minvalue =np.min(data)
+    minvalue = np.min(data)
     assert not core.all_in_range(data, minvalue+1, 100, strictness=core.Strictness.silent)
 
 @given(random_length_float_arrays(min_length = 1,
                                   min_value  = 0,
                                   max_value  = 100))
 def test_all_in_range_when_some_fall_outside_warns(data):
-    minvalue =np.min(data)
+    minvalue = np.min(data)
     with warns(UserWarning):
         core.all_in_range(data, minvalue+1, 100, strictness=core.Strictness.warning)
 
@@ -140,7 +140,7 @@ def test_all_in_range_when_some_fall_outside_warns(data):
                                   min_value  = 0,
                                   max_value  = 100))
 def test_all_in_range_when_some_fall_outside_exception(data):
-    minvalue =np.min(data)
+    minvalue = np.min(data)
     with raises(core.ValueOutOfRange, match="values out of bounds"):
         core.all_in_range(data, minvalue+1, 100, strictness=core.Strictness.raise_error)
 

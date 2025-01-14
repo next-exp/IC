@@ -280,7 +280,7 @@ def test_apply_geo_correction_properly(map_filename, x, y):
     factor must be 1.
     """
     maps      = read_maps(map_filename)
-    load_corr = apply_geo_correction(map_e0 = maps, norm_strat = NormStrategy.max)
+    load_corr = apply_geo_correction(map_e0=maps, norm_strat=NormStrategy.max)
     corr      = load_corr(x, y)
     assert_allclose (corr, np.ones_like(corr))
 
