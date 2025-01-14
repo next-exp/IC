@@ -75,9 +75,9 @@ class MCTableType(AutoNameEnumBase):
 
 
 class Strictness(AutoNameEnumBase):
-    silent        = auto()
-    warning       = auto()
-    stop_proccess = auto()
+    silent      = auto()
+    warning     = auto()
+    raise_error = auto()
 
 class type_of_signal(AutoNameEnumBase):
     nS1 = auto()

@@ -82,7 +82,7 @@ def test_selection_nS_mask_and_checking_range_assertion():
     with raises(core.ValueOutOfRange, match="values out of bounds"):
            icarcomp.selection_nS_mask_and_checking(data,  icarcomp.type_of_signal.nS1,
                                                    None,[min_eff, max_eff],
-                                                   icarcomp.Strictness.stop_proccess)
+                                                   icarcomp.Strictness.raise_error)
 
 @mark.parametrize("sigma", (0.1, 1, 5, 10, 20))
 def test_sigma_estimation(sigma):

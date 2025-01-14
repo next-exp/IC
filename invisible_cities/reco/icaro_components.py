@@ -20,7 +20,7 @@ def selection_nS_mask_and_checking(dst        : pd.DataFrame                    
                                    column     : type_of_signal                       ,
                                    input_mask : Optional[np.ndarray]  = None         ,
                                    interval   : Tuple[float, float] = [0,1]          ,
-                                   strictness : Strictness = Strictness.stop_proccess
+                                   strictness : Strictness = Strictness.raise_error
                                    )->np.ndarray:
     """
     Selects nS1(or nS2) == 1 for a given kr dst and
@@ -63,15 +63,15 @@ def selection_nS_mask_and_checking(dst        : pd.DataFrame                    
     return mask
 
 
-def band_selector_and_check(dst         : pd.DataFrame                                 ,
-                            boot_map    : ASectorMap                                   ,
-                            norm_strat  : NormStrategy               = NormStrategy.max,
-                            input_mask  : np.ndarray                 = None            ,
-                            range_DT    : Tuple[np.array, np.array]  = (10, 1300)      ,
-                            range_E     : Tuple[np.array, np.array]  = (10.0e+3,14e+3) ,
-                            nsigma_sel  : float                      = 3.5             ,
-                            eff_interval: Tuple[float, float]        = [0,1]           ,
-                            strictness  : Strictness = Strictness.stop_proccess
+def band_selector_and_check(dst         : pd.DataFrame                                     ,
+                            boot_map    : ASectorMap                                       ,
+                            norm_strat  : NormStrategy                   = NormStrategy.max,
+                            input_mask  : np.ndarray                     = None            ,
+                            range_DT    : Tuple[np.ndarray, np.ndarray]  = (10, 1300)      ,
+                            range_E     : Tuple[np.ndarray, np.ndarray]  = (10.0e+3,14e+3) ,
+                            nsigma_sel  : float                          = 3.5             ,
+                            eff_interval: Tuple[float, float]            = [0,1]           ,
+                            strictness  : Strictness = Strictness.raise_error
                             )->np.array:
     """
     This function returns a selection of the events that
