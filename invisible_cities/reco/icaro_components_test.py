@@ -18,9 +18,9 @@ from .                      import icaro_components as icarcomp
 
 @mark.parametrize("signal", icarcomp.type_of_signal)
 @given(nsignals= integers(min_value = 1,
-                          max_value = 1e4))
+                          max_value = 10*1000))
 def test_select_nS_mask_and_check_right_output(nsignals, signal):
-    nevt = int(1e4)
+    nevt = 10*1000
     data = np.concatenate([np.zeros(nevt- nsignals), np.ones(nsignals)])
     np.random.shuffle(data)
     data = pd.DataFrame({'nS1': data, 'nS2': data, 'event': range(nevt)})
@@ -30,9 +30,9 @@ def test_select_nS_mask_and_check_right_output(nsignals, signal):
 
 
 @given(integers(min_value = 1,
-                max_value = 1e4))
+                max_value = 10*1000))
 def test_select_nS_mask_and_check_consistency(nsignals):
-    nevt = int(1e4)
+    nevt = 10*1000
     data = np.concatenate([np.zeros(nevt - nsignals), np.ones(nsignals)])
     np.random.shuffle(data)
     data    = pd.DataFrame({'nS1': data, 'event': range(nevt)})
@@ -42,11 +42,11 @@ def test_select_nS_mask_and_check_consistency(nsignals):
 
 
 @given(integers(min_value = 1,
-                max_value = 1e4),
+                max_value = 10*1000),
        integers(min_value = 1,
-                max_value = 1e4))
+                max_value = 10*1000))
 def test_select_nS_mask_and_check_concatenating(ns1, ns2):
-    nevt = int(1e4)
+    nevt   = 10*1000
     dataS1 = np.concatenate([np.zeros(nevt- ns1),
                              np.ones (ns1)])
     dataS2 = np.concatenate([np.zeros(nevt- ns2),
@@ -62,12 +62,12 @@ def test_select_nS_mask_and_check_concatenating(ns1, ns2):
 
 
 def test_select_nS_mask_and_check_range_assertion():
-    nevt = int(1e4)
-    ns1  = int(1e3)
+    nevt    = 10*1000
+    ns1     = 1000
     min_eff = 0.5
     max_eff = 1
-    dataS1 = np.concatenate([np.zeros(nevt- ns1),
-                             np.ones (ns1)])
+    dataS1  = np.concatenate([np.zeros(nevt- ns1),
+                              np.ones (ns1)])
     np.random.shuffle(dataS1)
     data   = pd.DataFrame({'nS1': dataS1, 'event': range(nevt)})
     eff    = ns1 / nevt
@@ -79,7 +79,7 @@ def test_select_nS_mask_and_check_range_assertion():
 
 @mark.parametrize("sigma", (0.1, 1, 5, 10, 20))
 def test_estimate_sigma(sigma):
-    nevt      = int(1e4)
+    nevt      = 10*1000
     xrange    = [0, 1000]
     slope     = 100
     n0        = 100
