@@ -276,8 +276,8 @@ def test_apply_all_correction_single_maps_raises_exception_when_invalid_map(map_
                     max_value = +198))
 def test_apply_geo_correction_properly(map_filename, x, y):
     """
-    Due the map taken as input, the geometric correction
-    factor must be 1.
+    The input map is homogeneous, therefore the geometric
+    correction factor must be 1.
     """
     maps      = read_maps(map_filename)
     load_corr = apply_geo_correction(map_e0=maps, norm_strat=NormStrategy.max)
@@ -299,8 +299,8 @@ def test_apply_geo_correction_properly(map_filename, x, y):
                     max_value = 1e5))
 def test_apply_all_correction_single_maps_properly(map_filename, x, y, z, t):
     """
-    Due the map taken as input, the geometric correction
-    factor must be 1, the temporal correction 1 and the
+The input map is homogeneous, therefore the geometric
+    correction factor must be 1, the temporal correction 1 and the
     lifetime one: exp(Z/5000).
     """
     maps      = read_maps(map_filename)
