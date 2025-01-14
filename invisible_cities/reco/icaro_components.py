@@ -16,12 +16,12 @@ from .. core.core_functions import shift_to_bin_centers
 from .. core.fit_functions  import fit
 from .. core.fit_functions  import gauss
 
-def selection_nS_mask_and_checking(dst        : pd.DataFrame                         ,
-                                   column     : type_of_signal                       ,
-                                   input_mask : Optional[np.ndarray]  = None         ,
-                                   interval   : Tuple[float, float] = [0,1]          ,
-                                   strictness : Strictness = Strictness.raise_error
-                                   )->np.ndarray:
+def select_nS_mask_and_check(dst        : pd.DataFrame                         ,
+                             column     : type_of_signal                       ,
+                             input_mask : Optional[np.ndarray]  = None         ,
+                             interval   : Tuple[float, float] = [0,1]          ,
+                             strictness : Strictness = Strictness.raise_error
+                             )->np.ndarray:
     """
     Selects nS1(or nS2) == 1 for a given kr dst and
     returns the mask. It also computes selection efficiency,
@@ -63,16 +63,16 @@ def selection_nS_mask_and_checking(dst        : pd.DataFrame                    
     return mask
 
 
-def band_selector_and_check(dst         : pd.DataFrame                                     ,
-                            boot_map    : ASectorMap                                       ,
-                            norm_strat  : NormStrategy                   = NormStrategy.max,
-                            input_mask  : np.ndarray                     = None            ,
-                            range_DT    : Tuple[np.ndarray, np.ndarray]  = (10, 1300)      ,
-                            range_E     : Tuple[np.ndarray, np.ndarray]  = (10.0e+3,14e+3) ,
-                            nsigma_sel  : float                          = 3.5             ,
-                            eff_interval: Tuple[float, float]            = [0,1]           ,
-                            strictness  : Strictness = Strictness.raise_error
-                            )->np.array:
+def select_band_and_check(dst         : pd.DataFrame                                     ,
+                          boot_map    : ASectorMap                                       ,
+                          norm_strat  : NormStrategy                   = NormStrategy.max,
+                          input_mask  : np.ndarray                     = None            ,
+                          range_DT    : Tuple[np.ndarray, np.ndarray]  = (10, 1300)      ,
+                          range_E     : Tuple[np.ndarray, np.ndarray]  = (10.0e+3,14e+3) ,
+                          nsigma_sel  : float                          = 3.5             ,
+                          eff_interval: Tuple[float, float]            = [0,1]           ,
+                          strictness  : Strictness = Strictness.raise_error
+                          )->np.array:
     """
     This function returns a selection of the events that
     are inside the Kr E vz Z band, and checks
@@ -109,7 +109,7 @@ def band_selector_and_check(dst         : pd.DataFrame                          
     emaps = apply_geo_correction(boot_map, norm_strat=norm_strat)
     E0    = dst_sel.S2e.values * emaps(dst_sel.X.values, dst_sel.Y.values)
 
-    sel_krband             = np.zeros_like(input_mask)
+    sel_krband = np.zeros_like(input_mask)
     sel_krband[input_mask] = selection_in_band(dst_sel.DT, E0     ,
                                                range_dt = range_DT,
                                                range_e  = range_E ,
@@ -127,11 +127,11 @@ def band_selector_and_check(dst         : pd.DataFrame                          
     return sel_krband
 
 
-def selection_in_band(dt        : np.ndarray         ,
-                      e         : np.ndarray         ,
-                      range_dt  : Tuple[float, float],
-                      range_e   : Tuple[float, float],
-                      nsigma    : float   = 3.5) ->np.ndarray:
+def select_band(dt        : np.ndarray         ,
+                e         : np.ndarray         ,
+                range_dt  : Tuple[float, float],
+                range_e   : Tuple[float, float],
+                nsigma    : float   = 3.5) ->np.ndarray:
     """
     This function returns a mask for the selection of the events that are inside the Kr E vz Z
 
@@ -158,7 +158,7 @@ def selection_in_band(dt        : np.ndarray         ,
 
     res_fit      = RANSACRegressor().fit(dt_sel.reshape(-1,1),
                                          np.log(e_sel).reshape(-1, 1))
-    sigma        = sigma_estimation(dt_sel, np.log(e_sel), res_fit)
+    sigma        = estimate_sigma(dt_sel, np.log(e_sel), res_fit)
 
     prefict_fun  = lambda dt: res_fit.predict(dt.reshape(-1, 1)).flatten()
     upper_band   = lambda dt: prefict_fun(dt) + nsigma * sigma
@@ -167,10 +167,10 @@ def selection_in_band(dt        : np.ndarray         ,
 
     return  sel_inband
 
-def sigma_estimation(dt     : np.ndarray     ,
-                     e      : np.ndarray     ,
-                     res_fit: RANSACRegressor
-                    ) -> float:
+def estimate_sigma(dt     : np.ndarray     ,
+                   e      : np.ndarray     ,
+                   res_fit: RANSACRegressor
+                   ) -> float:
     """
     This function estimates the sigma from the residuals to a line fit
 

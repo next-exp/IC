@@ -19,25 +19,25 @@ from .                      import icaro_components as icarcomp
 @mark.parametrize("signal", (icarcomp.type_of_signal.nS1, icarcomp.type_of_signal.nS2))
 @given(nsignals= integers(min_value = 1,
                           max_value = 1e4))
-def test_selection_nS_mask_and_checking_right_output(nsignals, signal):
+def test_select_nS_mask_and_check_right_output(nsignals, signal):
     nevt = int(1e4)
     data = np.concatenate([np.zeros(nevt- nsignals), np.ones(nsignals)])
     np.random.shuffle(data)
     data = pd.DataFrame({'nS1': data, 'nS2': data, 'event': range(nevt)})
-    mask = icarcomp.selection_nS_mask_and_checking(data, signal)
+    mask = icarcomp.select_nS_mask_and_check(data, signal)
 
     assert np.sum(mask) == nsignals
 
 
 @given(integers(min_value = 1,
                 max_value = 1e4))
-def test_selection_nS_mask_and_checking_consistency(nsignals):
+def test_select_nS_mask_and_check_consistency(nsignals):
     nevt = int(1e4)
     data = np.concatenate([np.zeros(nevt - nsignals), np.ones(nsignals)])
     np.random.shuffle(data)
     data    = pd.DataFrame({'nS1': data, 'event': range(nevt)})
-    mask    = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS1)
-    mask_re = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS1, input_mask=mask)
+    mask    = icarcomp.select_nS_mask_and_check(data, icarcomp.type_of_signal.nS1)
+    mask_re = icarcomp.select_nS_mask_and_check(data, icarcomp.type_of_signal.nS1, input_mask=mask)
     npt.assert_equal(mask, mask_re)
 
 
@@ -45,7 +45,7 @@ def test_selection_nS_mask_and_checking_consistency(nsignals):
                 max_value = 1e4),
        integers(min_value = 1,
                 max_value = 1e4))
-def test_selection_nS_mask_and_checking_concatenating(ns1, ns2):
+def test_select_nS_mask_and_check_concatenating(ns1, ns2):
     nevt = int(1e4)
     dataS1 = np.concatenate([np.zeros(nevt- ns1),
                              np.ones (ns1)])
@@ -54,14 +54,14 @@ def test_selection_nS_mask_and_checking_concatenating(ns1, ns2):
     np.random.shuffle(dataS1)
     np.random.shuffle(dataS2)
     data   = pd.DataFrame({'nS1': dataS1, 'nS2': dataS2, 'event': range(nevt)})
-    maskS1 = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS1)
-    maskS2 = icarcomp.selection_nS_mask_and_checking(data, icarcomp.type_of_signal.nS2, maskS1)
+    maskS1 = icarcomp.select_nS_mask_and_check(data, icarcomp.type_of_signal.nS1)
+    maskS2 = icarcomp.select_nS_mask_and_check(data, icarcomp.type_of_signal.nS2, maskS1)
 
     assert np.sum(maskS1) >= np.sum(maskS2)
     assert np.logical_not(maskS2[np.logical_not(maskS1)].all())
 
 
-def test_selection_nS_mask_and_checking_range_assertion():
+def test_select_nS_mask_and_check_range_assertion():
     nevt = int(1e4)
     ns1  = int(1e3)
     min_eff = 0.5
@@ -73,12 +73,12 @@ def test_selection_nS_mask_and_checking_range_assertion():
     eff    = ns1 / nevt
 
     with raises(core.ValueOutOfRange, match="values out of bounds"):
-                icarcomp.selection_nS_mask_and_checking(data,  icarcomp.type_of_signal.nS1,
-                                                   None,[min_eff, max_eff],
-                                                   icarcomp.Strictness.raise_error)
+                icarcomp.select_nS_mask_and_check(data,  icarcomp.type_of_signal.nS1,
+                                                  None,[min_eff, max_eff],
+                                                  icarcomp.Strictness.raise_error)
 
 @mark.parametrize("sigma", (0.1, 1, 5, 10, 20))
-def test_sigma_estimation(sigma):
+def test_estimate_sigma(sigma):
     nevt      = int(1e4)
     xrange    = [0, 1000]
     slope     = 100
@@ -87,5 +87,5 @@ def test_sigma_estimation(sigma):
     y         = slope * x + n0
     y         = np.random.normal(y, sigma)
     res_fit   = RANSACRegressor().fit(x.reshape(-1,1), y.reshape(-1, 1))
-    sigma_est = icarcomp.sigma_estimation(x, y, res_fit)
+    sigma_est = icarcomp.estimate_sigma(x, y, res_fit)
     np.testing.assert_allclose(sigma, sigma_est, rtol=0.1)
