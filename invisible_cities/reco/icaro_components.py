@@ -16,11 +16,11 @@ from .. core.core_functions import shift_to_bin_centers
 from .. core.fit_functions  import fit
 from .. core.fit_functions  import gauss
 
-def select_nS_mask_and_check(dst        : pd.DataFrame                         ,
-                             column     : type_of_signal                       ,
-                             input_mask : Optional[np.ndarray]  = None         ,
-                             interval   : Tuple[float, float] = [0,1]          ,
-                             strictness : Strictness = Strictness.raise_error
+def select_nS_mask_and_check(dst          : pd.DataFrame                       ,
+                             column       : type_of_signal                     ,
+                             input_mask   : Optional[np.ndarray]  = None       ,
+                             eff_interval : Tuple[float, float] = [0,1]        ,
+                             strictness   : Strictness = Strictness.raise_error
                              )->np.ndarray:
     """
     Selects nS1(or nS2) == 1 for a given kr dst and
@@ -53,11 +53,11 @@ def select_nS_mask_and_check(dst        : pd.DataFrame                         ,
     nevts_after      = dst[mask]      .event.nunique()
     nevts_before     = dst[input_mask].event.nunique()
     eff              = nevts_after / nevts_before
-    all_in_range(data         = np.array(eff),
-                 minval       = interval[0]  ,
-                 maxval       = interval[1]  ,
-                 display_name = column.value ,
-                 strictness   = strictness   ,
+    all_in_range(data         = np.array(eff)  ,
+                 minval       = eff_interval[0],
+                 maxval       = eff_interval[1],
+                 display_name = column.value   ,
+                 strictness   = strictness     ,
                  right_closed = True)
 
     return mask
