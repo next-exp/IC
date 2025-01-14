@@ -117,7 +117,8 @@ def test_in_range_right_close_interval(data):
                                   min_value  = 0,
                                   max_value  = 100))
 def test_all_in_range_when_all_fall_inside(data):
-    assert core.all_in_range(data, 0, 100, left_closed=True, right_closed=True)
+    assert core.all_in_range(data, 0, 100, left_closed=True,right_closed=True,
+                             strictness=core.Strictness.raise_error)
 
 
 @given(random_length_float_arrays(min_length = 1,
