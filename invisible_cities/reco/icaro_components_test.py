@@ -26,7 +26,7 @@ def test_select_nS_mask_and_check_right_output(nsignals, signal):
     data = pd.DataFrame({'nS1': data, 'nS2': data, 'event': range(nevt)})
     mask = icarcomp.select_nS_mask_and_check(data, signal)
 
-    assert np.sum(mask) == nsignals
+    assert np.count_nonzero(mask) == nsignals
 
 
 @given(integers(min_value = 1,
@@ -57,7 +57,7 @@ def test_select_nS_mask_and_check_concatenating(ns1, ns2):
     maskS1 = icarcomp.select_nS_mask_and_check(data, icarcomp.type_of_signal.nS1)
     maskS2 = icarcomp.select_nS_mask_and_check(data, icarcomp.type_of_signal.nS2, maskS1)
 
-    assert np.sum(maskS1) >= np.sum(maskS2)
+    assert np.count_nonzero(maskS1) >= np.count_nonzero(maskS2)
     assert np.logical_not(maskS2[np.logical_not(maskS1)].all())
 
 
