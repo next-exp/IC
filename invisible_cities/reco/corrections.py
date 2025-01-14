@@ -248,14 +248,14 @@ def apply_geo_correction(map_e0     : ASectorMap,
                          norm_value : Optional[float] = None
                         ) -> Callable:
     """
-    For a map for each correction, it returns a function
-    that provides a geometric only correction factor for a
-    given hit collection when (x,y,z,time) is provided.
+    Given a map and a correction strategy, it returns a
+    function that provides a geometric only correction factor
+    for a given hit collection when (x,y) is provided.
 
     Parameters
     ----------
     map_e0 : AsectorMap
-        Correction map for geometric corrections.
+        Correction map for geometric effects.
     norm_strat : NormStrategy
         Provides the desired normalization to be used.
     norm_value : Float(optional)
