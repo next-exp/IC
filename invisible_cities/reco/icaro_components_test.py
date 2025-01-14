@@ -16,7 +16,7 @@ from .. core                import core_functions   as core
 from .                      import icaro_components as icarcomp
 
 
-@mark.parametrize("signal", (icarcomp.type_of_signal.nS1, icarcomp.type_of_signal.nS2))
+@mark.parametrize("signal", icarcomp.type_of_signal)
 @given(nsignals= integers(min_value = 1,
                           max_value = 1e4))
 def test_select_nS_mask_and_check_right_output(nsignals, signal):
