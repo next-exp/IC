@@ -194,7 +194,12 @@ def estimate_sigma(dt     : np.ndarray     ,
     residuals_ln = e[in_mask] - e_predict
     resy, resx   = np.histogram(residuals_ln, 100)
     resx         = shift_to_bin_centers(resx)
-    fitres       = fit(gauss, resx, resy, seed=[4e3,0,10])
+    seed         = [np.max(resy) * (2 * np.pi) **.5 * np.std(residuals_ln),
+                    0., np.std(residuals_ln)]
+    # Ideally, a np.mean for the mean should be better that a plain 0 but the
+    # fit does not cope well with that input value, so 0 (fair guess anyway) is
+    # used instead
+    fitres       = fit(gauss, resx, resy, seed=seed)
     fitsigma     = fitres.values[2]
 
     return fitsigma
