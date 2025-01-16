@@ -15,7 +15,7 @@ from .. core                import core_functions   as core
 
 from .                      import icaro_components as icarcomp
 
-@mark.parametrize("nsignals", [1, 100, 9999])
+@mark.parametrize("nsignals", [0, 1, 100, 9999, 10*1000])
 @mark.parametrize("signal"  , icarcomp.type_of_signal)
 def test_select_nS_mask_and_check_right_output(nsignals, signal):
     nevt = 10*1000
@@ -26,7 +26,7 @@ def test_select_nS_mask_and_check_right_output(nsignals, signal):
     assert np.count_nonzero(mask) == nsignals
 
 
-@mark.parametrize("nsignals", [1, 100, 9999])
+@mark.parametrize("nsignals", [1, 100, 9999, 10*1000])
 def test_select_nS_mask_and_check_consistency(nsignals):
     nevt = 10*1000
     data = np.concatenate([np.zeros(nevt - nsignals), np.ones(nsignals)])
@@ -37,8 +37,8 @@ def test_select_nS_mask_and_check_consistency(nsignals):
     npt.assert_equal(mask, mask_re)
 
 
-@mark.parametrize("ns1", [1, 100, 9999])
-@mark.parametrize("ns2", [1, 100, 9999])
+@mark.parametrize("ns1", [   1, 100, 9999, 10*1000])
+@mark.parametrize("ns2", [0, 1, 100, 9999, 10*1000])
 def test_select_nS_mask_and_check_concatenating(ns1, ns2):
     nevt   = 10*1000
     dataS1 = np.concatenate([np.zeros(nevt- ns1),
