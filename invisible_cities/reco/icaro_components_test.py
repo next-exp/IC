@@ -52,7 +52,7 @@ def test_select_nS_mask_and_check_concatenating(ns1, ns2):
     maskS2 = icarcomp.select_nS_mask_and_check(data, icarcomp.type_of_signal.nS2, maskS1)
 
     assert np.count_nonzero(maskS1) >= np.count_nonzero(maskS2)
-    assert np.logical_not(maskS2[np.logical_not(maskS1)].all())
+    assert not maskS2[~maskS1].any()
 
 
 def test_select_nS_mask_and_check_range_assertion():
