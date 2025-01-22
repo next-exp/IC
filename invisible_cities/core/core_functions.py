@@ -83,11 +83,11 @@ def in_range(data, minval=-np.inf, maxval=np.inf, left_closed=True, right_closed
     return lower_bound & upper_bound
 
 
-def all_in_range(data         : np.ndarray                                  ,
-                 minval       : float                                       ,
-                 maxval       : float                                       ,
-                 display_name : Optional[str] = ''                          ,
-                 strictness   :Optional[Strictness] = Strictness.raise_error,
+def all_in_range(data         : np.ndarray                                   ,
+                 minval       : float                                        ,
+                 maxval       : float                                        ,
+                 display_name : Optional[str] = ''                           ,
+                 strictness   : Optional[Strictness] = Strictness.raise_error,
                  **kwargs)->bool:
     """
     Checks whether input values are all inside the interval (minval, maxval).
@@ -103,17 +103,20 @@ def all_in_range(data         : np.ndarray                                  ,
     display_name: string
         Label to be displayed in case of warning or exception.
     strictness: Strictness
-        It `silent`, it returns a False if the criteria
-        is not match.
-        If `warning`, it returns a False and raises a warning.
-        If `raise_error`, it raises an exception.
+        Describes the behaviour when the output is `False`. If `strictness` is:
+        - `Strictness.raise_error`: an exception is raised.
+        - `Strictness.warning`: a warning is raised before returning.
+        - `Strictness.silent`: the function returns quietly.
 
     **kwargs:
         Optional arguments being passed to `in_range`.
     Returns
     -------
-        True if values are in the interval. False if not and strictness
-        is set to `warning` or `silent`. Otherwise, it raises an exception.
+    True if values are in the interval. False otherwise.
+
+    Raises
+    ------
+    ValueOutOfRange: if the output is `False` and `strictness` is `Strictness.raise_error`
     """
 
     values_in_interval = in_range(data, minval, maxval, **kwargs)

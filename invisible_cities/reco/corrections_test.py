@@ -285,21 +285,13 @@ def test_apply_geo_correction_properly(map_filename, x, y):
     assert_allclose (corr, np.ones_like(corr))
 
 @few_examples
-@given(float_arrays(size      = 1,
-                    min_value = -198,
-                    max_value = +198),
-       float_arrays(size      = 1,
-                    min_value = -198,
-                    max_value = +198),
-       float_arrays(size      = 1,
-                    min_value = 0,
-                    max_value = 5e2),
-       float_arrays(size      = 1,
-                    min_value = 0,
-                    max_value = 1e5))
+@given(float_arrays(size      = 1, min_value = -198, max_value =      198),
+       float_arrays(size      = 1, min_value = -198, max_value =      198),
+       float_arrays(size      = 1, min_value =    0, max_value =      500),
+       float_arrays(size      = 1, min_value =    0, max_value = 100*1000))
 def test_apply_all_correction_single_maps_properly(map_filename, x, y, z, t):
     """
-The input map is homogeneous, therefore the geometric
+    The input map is homogeneous, therefore the geometric
     correction factor must be 1, the temporal correction 1 and the
     lifetime one: exp(Z/5000).
     """

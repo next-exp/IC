@@ -25,8 +25,7 @@ def select_nS_mask_and_check(dst          : pd.DataFrame                       ,
     """
     Selects nS1(or nS2) == 1 for a given kr dst and
     returns the mask. It also computes selection efficiency,
-    checking if the value is within a given interval, and
-    saves histogram parameters.
+    checking if the value is within a given interval.
     Parameters
     ----------
     dst: pd.Dataframe
@@ -133,7 +132,8 @@ def select_band(dt        : np.ndarray         ,
                 range_e   : Tuple[float, float],
                 nsigma    : float   = 3.5) ->np.ndarray:
     """
-    This function returns a mask for the selection of the events that are inside the Kr E vz Z
+    This function returns a mask for the selection of the events
+    that are inside the Kr E vz Z
 
     Parameters
     ----------
@@ -165,7 +165,7 @@ def select_band(dt        : np.ndarray         ,
     lower_band   = lambda dt: prefict_fun(dt) - nsigma * sigma
     sel_inband   = in_range(np.log(e), lower_band(dt), upper_band(dt))
 
-    return  sel_inband
+    return sel_inband
 
 def estimate_sigma(dt     : np.ndarray     ,
                    e      : np.ndarray     ,

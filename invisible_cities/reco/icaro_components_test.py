@@ -34,9 +34,10 @@ def test_select_nS_mask_and_check_consistency(nsignals):
     data    = pd.DataFrame({'nS1': data, 'event': range(nevt)})
     mask    = icarcomp.select_nS_mask_and_check(data, icarcomp.type_of_signal.nS1)
     mask_re = icarcomp.select_nS_mask_and_check(data, icarcomp.type_of_signal.nS1, input_mask=mask)
-    npt.assert_equal(mask, mask_re)
+    npt.assert_equal(mask_re, mask)
 
-
+# The zero option for ns1 not contemplated since the function expects at a non
+# zero number of input events to filter.
 @mark.parametrize("ns1", [   1, 100, 9999, 10*1000])
 @mark.parametrize("ns2", [0, 1, 100, 9999, 10*1000])
 def test_select_nS_mask_and_check_concatenating(ns1, ns2):
@@ -67,9 +68,9 @@ def test_select_nS_mask_and_check_range_assertion():
     eff    = ns1 / nevt
 
     with raises(core.ValueOutOfRange, match="values out of bounds"):
-                icarcomp.select_nS_mask_and_check(data,  icarcomp.type_of_signal.nS1,
-                                                  None,[min_eff, max_eff],
-                                                  icarcomp.Strictness.raise_error)
+        icarcomp.select_nS_mask_and_check(data,  icarcomp.type_of_signal.nS1,
+                                          None,[min_eff, max_eff],
+                                          icarcomp.Strictness.raise_error)
 
 @mark.parametrize("sigma", (0.5, 1, 5, 10, 20))
 def test_estimate_sigma(sigma):
@@ -82,4 +83,4 @@ def test_estimate_sigma(sigma):
     y         = np.random.normal(y, sigma)
     res_fit   = RANSACRegressor().fit(x.reshape(-1,1), y.reshape(-1, 1))
     sigma_est = icarcomp.estimate_sigma(x, y, res_fit)
-    np.testing.assert_allclose(sigma, sigma_est, rtol=0.1)
+    npt.assert_allclose(sigma_est, sigma, rtol=0.1)
