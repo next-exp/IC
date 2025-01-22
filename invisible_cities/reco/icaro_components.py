@@ -16,11 +16,11 @@ from .. core.core_functions import shift_to_bin_centers
 from .. core.fit_functions  import fit
 from .. core.fit_functions  import gauss
 
-def select_nS_mask_and_check(dst          : pd.DataFrame                       ,
-                             column       : type_of_signal                     ,
-                             input_mask   : Optional[np.ndarray]  = None       ,
-                             eff_interval : Tuple[float, float] = [0,1]        ,
-                             strictness   : Strictness = Strictness.raise_error
+def select_nS_mask_and_check(dst          : pd.DataFrame                                 ,
+                             column       : type_of_signal                               ,
+                             input_mask   : Optional[np.ndarray]  = None                 ,
+                             eff_interval : Optional[Tuple[float, float]] = [0,1]        ,
+                             strictness   : Optional[Strictness] = Strictness.raise_error
                              )->np.ndarray:
     """
     Selects nS1(or nS2) == 1 for a given kr dst and
@@ -35,12 +35,15 @@ def select_nS_mask_and_check(dst          : pd.DataFrame                       ,
     input_mask: np.array (Optional)
         Selection mask of the previous cut. If this is the first selection
         /no previous maks is input, input_mask is set to be an all True array.
-    interval: length-2 tuple
+        Defaults to None.
+    interval: length-2 tuple (Optional)
         If the selection efficiency is out of this interval
         the map production will abort/just warn, depending on "strictness".
-    sstrictness: Strictness
+        Defaults to [0, 1].
+    strictness: Strictness (Optional)
         If 'warning', function returns a False if the criteria
         is not matched. If 'stop_proccess' it raises an exception.
+        Defaults to `raise_error`.
     Returns
     ----------
         A mask corresponding to the selected events.
@@ -62,15 +65,15 @@ def select_nS_mask_and_check(dst          : pd.DataFrame                       ,
     return mask
 
 
-def select_band_and_check(dst         : pd.DataFrame                                     ,
-                          boot_map    : ASectorMap                                       ,
-                          norm_strat  : NormStrategy                   = NormStrategy.max,
-                          input_mask  : np.ndarray                     = None            ,
-                          range_DT    : Tuple[np.ndarray, np.ndarray]  = (10, 1300)      ,
-                          range_E     : Tuple[np.ndarray, np.ndarray]  = (10.0e+3,14e+3) ,
-                          nsigma_sel  : float                          = 3.5             ,
-                          eff_interval: Tuple[float, float]            = [0,1]           ,
-                          strictness  : Strictness = Strictness.raise_error
+def select_band_and_check(dst         : pd.DataFrame                                              ,
+                          boot_map    : ASectorMap                                                ,
+                          norm_strat  : Optional[NormStrategy]                  = NormStrategy.max,
+                          input_mask  : Optional[np.ndarray]                    = None            ,
+                          range_DT    : Optional[Tuple[np.ndarray, np.ndarray]] = (10, 1300)      ,
+                          range_E     : Optional[Tuple[np.ndarray, np.ndarray]] = (10.0e+3,14e+3) ,
+                          nsigma_sel  : Optional[float]                         = 3.5             ,
+                          eff_interval: Optional[Tuple[float, float]]           = [0,1]           ,
+                          strictness  : Optional[Strictness]                    = Strictness.raise_error
                           )->np.array:
     """
     This function returns a selection of the events that
@@ -85,17 +88,27 @@ def select_band_and_check(dst         : pd.DataFrame                            
         Name of bootstrap map file.
     norm_strat: norm_strategy
         Provides the desired normalization to be used.
-    mask_input: np.array
+        Defaults to `max`.
+    mask_input: np.array (Optional)
         Mask of the previous selection cut.
-    range_DT: Tuple[np.array, np.array]
-        Range in Z-axis
-    range_E: Tuple[np.array, np.array]
-        Range in Energy-axis
-    nsigma_sel: float
-        Number of sigmas to set the band width
-    eff_interval
-        Limits of the range where selection efficiency
-        is considered correct.
+        Defaults to None.
+    range_DT: Tuple[np.array, np.array] (Optional)
+        Range in DT-axis
+        Defaults to (10, 300).
+    range_E: Tuple[np.array, np.array] (Optional)
+        Range in Energy-axis.
+        Defaults to (10e3, 14e3).
+    nsigma_sel: float (Optional)
+        Number of sigmas to set the band width.
+        Defaults to 3.5.
+    eff_interval (Optional)
+        If the selection efficiency is out of this interval
+        the map production will abort/just warn, depending on "strictness".
+        Defaults to [0, 1].
+    strictness: Strictness (Optional)
+        If 'warning', function returns a False if the criteria
+        is not matched. If 'stop_proccess' it raises an exception.
+        Defaults to `raise_error`.
     Returns
     -------
         A  mask corresponding to the selection made.
@@ -130,7 +143,7 @@ def select_band(dt        : np.ndarray         ,
                 e         : np.ndarray         ,
                 range_dt  : Tuple[float, float],
                 range_e   : Tuple[float, float],
-                nsigma    : float   = 3.5) ->np.ndarray:
+                nsigma    : Optional[float] = 3.5) ->np.ndarray:
     """
     This function returns a mask for the selection of the events
     that are inside the Kr E vz Z
@@ -145,8 +158,9 @@ def select_band(dt        : np.ndarray         ,
         Range in DT-axis
     range_e: Tuple[float, float]
         Range in Energy-axis
-    nsigma: float
+    nsigma: float (Optional)
         Number of sigmas to set the band width
+        Defaults to 3.5
     Returns
     -------
         A  mask corresponding to the selection made.
