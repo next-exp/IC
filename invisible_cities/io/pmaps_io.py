@@ -88,12 +88,52 @@ def check_file_integrity(file):
         raise InvalidInputFileStructure("Inconsistent data: event number mismatch")
 
 
-def load_pmaps_as_df(filename, lazy=False):
+def load_pmaps_as_df(filename, lazy=False, **kwargs):
+    """
+    Read pmaps from file as dataframes.
+
+    Parameters
+    ----------
+    filename: str
+      Path to the file to be read.
+
+    lazy: bool, optional
+      Whether the data is read lazily or eagerly (default). See Returns.
+
+    kwargs:
+      Keyword arguments to the reader (`load_pmaps_as_df_lazy` or `load_pmaps_as_df_eager`).
+
+    Returns
+    -------
+    An iterator of tuples of dataframes or a tuple of dataframes. Each tuple contains:
+      - S1 PMT sum
+      - S2 PMT sum
+      - S2 per SiPM
+      - S1 per PMT
+      - S2 per PMT
+
+    """
     loader = load_pmaps_as_df_lazy if lazy else load_pmaps_as_df_eager
-    return loader(filename)
+    return loader(filename, **kwargs)
 
 
 def load_pmaps_as_df_eager(filename):
+    """
+    Read pmaps from file as dataframes eagerly.
+
+    Parameters
+    ----------
+    filename: str
+      Path to the file to be read.
+
+    Returns
+    -------
+      - S1 PMT sum
+      - S2 PMT sum
+      - S2 per SiPM
+      - S1 per PMT
+      - S2 per PMT
+    """
     with tb.open_file(filename, 'r') as h5f:
         check_file_integrity(h5f)
 
@@ -107,6 +147,30 @@ def load_pmaps_as_df_eager(filename):
 
 
 def load_pmaps_as_df_lazy(filename, skip=0, n=None):
+    """
+    Read pmaps from file as dataframes lazily.
+
+    Parameters
+    ----------
+    filename: str
+      Path to the file to be read.
+
+    skip: int, optional
+      How many events to skip (default 0).
+
+    n: int or None, optional
+      How many events to read (defaults to all).
+
+    Returns
+    -------
+    An iterator of tuples of dataframes.
+    Each item contains 5 dataframes:
+      - S1 PMT sum
+      - S2 PMT sum
+      - S2 per SiPM
+      - S1 per PMT
+      - S2 per PMT
+    """
     def read_event(table, event):
         if table is None: return None
         records = table.read_where(f"event=={event}")
@@ -133,11 +197,42 @@ def _build_ipmtdf_from_sumdf(sumdf):
 
 
 def load_pmaps(filename, lazy=False, **kwargs):
+    """
+    Read pmaps from file as a dictionary of PMaps.
+
+    Parameters
+    ----------
+    filename: str
+      Path to the file to be read.
+
+    lazy: bool, optional
+      Whether the data is read lazily or eagerly (default). See Returns.
+
+    kwargs:
+      Keyword arguments to the reader (`load_pmaps_lazy` or `load_pmaps_eager`).
+
+    Returns
+    -------
+    An iterator of dict[event_number, PMap] if `lazy` is True or a
+    dict[event_number, PMap] otherwise.
+    """
     loader = load_pmaps_lazy if lazy else load_pmaps_eager
     return loader(filename, **kwargs)
 
 
 def load_pmaps_eager(filename):
+    """
+    Read pmaps from file eagerly (all at once).
+
+    Parameters
+    ----------
+    filename: str
+      Path to the file to be read.
+
+    Returns
+    -------
+    A dictionary mapping event numbers to PMaps.
+    """
     pmap_dict = {}
     s1df, s2df, sidf, s1pmtdf, s2pmtdf = load_pmaps_as_df_eager(filename)
     # Hack fix to allow loading pmaps without individual pmts
@@ -183,6 +278,24 @@ def load_pmaps_eager(filename):
 
 
 def load_pmaps_lazy(filename, skip=0, n=None):
+    """
+    Read pmaps from file lazily.
+
+    Parameters
+    ----------
+    filename: str
+      Path to the file to be read.
+
+    skip: int, optional
+      How many events to skip (default 0).
+
+    n: int or None, optional
+      How many events to read (defaults to all).
+
+    Returns
+    -------
+    An iterator of dict[event_number, PMap].
+    """
     for (s1df, s2df, sidf, s1pmtdf, s2pmtdf) in load_pmaps_as_df_lazy(filename, skip, n):
         # Hack fix to allow loading pmaps without individual pmts
         if s1pmtdf is None: s1pmtdf = _build_ipmtdf_from_sumdf(s1df)
