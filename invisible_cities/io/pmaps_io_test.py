@@ -323,7 +323,7 @@ def test_load_pmaps_as_df_lazy(KrMC_pmaps_filename):
 @mark.parametrize("skip" , (0, 1, 2, 3))
 @mark.parametrize("nread", (0, 1, 2, 3))
 def test_load_pmaps_as_df_lazy_subset(KrMC_pmaps_filename, skip, nread):
-    """Ensure the lazy and non-lazy versions provide the same result"""
+    """Ensure the reader provides the expected number of events"""
     # concatenate all dfs from the same node
     dfs_lazy  = pmpio.load_pmaps_as_df_lazy (KrMC_pmaps_filename, skip, nread)
     dfs_lazy = [pd.concat(node_dfs, ignore_index=True) for node_dfs in zip(*dfs_lazy)]
@@ -386,7 +386,7 @@ def test_load_pmaps_lazy(KrMC_pmaps_filename):
 @mark.parametrize("skip" , (0, 1, 2, 3))
 @mark.parametrize("nread", (0, 1, 2, 3))
 def test_load_pmaps_lazy_subset(KrMC_pmaps_filename, skip, nread):
-    """Ensure the lazy and non-lazy versions provide the same result"""
+    """Ensure the reader provides the expected number of events"""
     # concatenate all dfs from the same node
     pmaps_lazy  = pmpio.load_pmaps_lazy(KrMC_pmaps_filename, skip, nread)
     pmaps_lazy = dict(pmaps_lazy)
