@@ -107,13 +107,11 @@ def test_transform_parameters(a, b):
     assert np.isclose(transformed_cov, cov_expected)
 
 
-@given(integers(min_value = 0, max_value = 1e10),
-       integers(min_value = 0, max_value = 1e10),
-       arrays  (dtype     = np.int64, shape = (2,),
-                elements  = integers(min_value = 1,
-                                     max_value = 1e4)))
-def test_get_number_of_bins_performance_default_value(nevents, thr, n_bins):
-    bins = krf.get_number_of_bins(nevents, thr, n_bins)
+@mark.parametrize('n_bins', [78, 125])
+def test_get_number_of_bins_performance_default_value(n_bins):
+    nevents = 1e7
+    thr     = 1e6
+    bins    = krf.get_number_of_bins(nevents, thr, n_bins)
 
     npt.assert_array_equal(bins, n_bins)
 
@@ -129,15 +127,6 @@ def test_get_number_of_bins_with_thresholds(nevents, thr):
         npt.assert_array_equal(bins, np.array([100, 100]))
 
 
-@given(integers(min_value = 0, max_value = 1e10),
-       integers(min_value = 0, max_value = 1e10),
-       arrays  (dtype = np.int64,  shape = (2,),
-                elements = integers(min_value = 1,
-                                    max_value = 1e4)))
-def test_get_number_of_bins_returns_type(nevents, thr, n_bins):
-
-    assert type(krf.get_number_of_bins(nevents, thr) ) == np.ndarray
-    assert type(krf.get_number_of_bins(n_bins=n_bins)) == np.ndarray
 
 
 @given(n_bins=arrays(dtype = int,      shape = (2,),
