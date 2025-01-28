@@ -244,8 +244,9 @@ def get_number_of_bins(nevents : Optional[int] = None,
     else: return  np.array([100, 100]);
 
 
-def get_bin_counts_and_event_bin_id(dst  : pd.DataFrame,
-                                    bins : Tuple[np.array, np.array]):
+def get_bin_counts_and_event_bin_id(dst    : pd.DataFrame,
+                                    bins_x : np.array,
+                                    bins_y : np.array):
     '''
     This function distributes all the events in the DST into the selected
     bins. Given a certain binning, it computes which events fall into each
@@ -255,22 +256,24 @@ def get_bin_counts_and_event_bin_id(dst  : pd.DataFrame,
     with the bin it belongs). Then counts is flattened into 1-D, bin_indexes
     is transformed into 1-D using the number of bins on each axis.
 
-      Parameters
-    --------------
-    dst  : pd.DataFrame
+    Parameters
+    ----------
+    dst    : pd.DataFrame
          Krypton dataframe.
-    bins : Tuple[np.array, np.array]
-         Bins used to compute the map.
+    bins_x : np.array
+         Binning in x axis
+    bins_y : np.array
+         Binning in y axis
 
-      Returns
-    -------------
+    Returns
+    -------
     counts     : np.array
          Total number of events falling into each bin
     bin_labels : np.array
          1D bin label for each event
 
-      Further info:
-    -----------------
+    Further info:
+    -------------
     Why set expand_binnumbers to True (2D binning) if then we transform it to 1D?
     Because even though expand_binnumbers = False returns 1-D labels, it also adds
     two additional bins (per axis), taking into account out-of-range events which
@@ -291,11 +294,11 @@ def get_bin_counts_and_event_bin_id(dst  : pd.DataFrame,
     || 8 | 9 |10 |11 ||  5, 6, 9, 10 which I believe is not convenient at all.
     ||12 |13 |14 |15 ||  This creates (nx+2)*(ny+2) bins.
     '''
-    n_xbins    = len(bins[0])-1
-    n_ybins    = len(bins[1])-1
+    n_xbins    = len(bins_x)-1
+    n_ybins    = len(bins_y)-1
 
     counts, _, _, bin_indexes = stats.binned_statistic_2d(x=dst.X, y=dst.Y, values=None,
-                                                          bins=bins, statistic='count',
+                                                          bins=[bins_x, bins_y], statistic='count',
                                                           expand_binnumbers=True)
 
     counts       = counts.flatten()
