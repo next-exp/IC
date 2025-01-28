@@ -221,6 +221,7 @@ def get_number_of_bins(nevents : Optional[int] = None,
     '''
     Computes the number of XY bins to be used in the creation
     of correction map regarding the number of selected events.
+
     Parameters
     ---------
     nevents: int (optional)
@@ -233,8 +234,9 @@ def get_number_of_bins(nevents : Optional[int] = None,
         However, if no number of bins is given in advance, this will
         automatically select a value depending on the amount of events
         contained in the dst and the threshold.
+
     Returns
-    ---------
+    -------
     n_bins: int
         Number of bins in each direction (X,Y) (square map).
     '''
