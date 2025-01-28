@@ -159,7 +159,8 @@ def transform_parameters(fit_output : FitFunction):
     return par, err, cov
 
 
-def create_df_kr_map(bins   : Tuple[np.array, np.array],
+def create_df_kr_map(bins_x : np.array,
+                     bins_y : np.array,
                      counts : np.array,
                      n_min  : int,
                      r_max  : float)->pd.DataFrame:
@@ -168,11 +169,10 @@ def create_df_kr_map(bins   : Tuple[np.array, np.array],
 
     Parameters
     ----------
-
-    fittype : KrFitFunction
-        Chosen fit function for map computation
-    bins : Tuple[np.array, np.array]
-        Tuple containing bins in both axis
+    bins_x : np.array
+        Bins in x axis
+    bins_y : np.array
+        Bins in y axis
     counts : np.array
         Number of events falling into each bin
     n_min : int
@@ -182,27 +182,26 @@ def create_df_kr_map(bins   : Tuple[np.array, np.array],
 
     Returns
     -------
-
     kr_map : pd.DataFrame
         Kr map dataframe with all the info prior to the fits: bin label,
         events per bin, bin in/outside the active volume, bin position
         (X, Y, R), etc.
     '''
-    n_xbins   = len(bins[0])-1
-    n_ybins   = len(bins[1])-1
-    b_center  = [shift_to_bin_centers(axis) for axis in bins]
+    n_xbins   = len(bins_x)-1
+    n_ybins   = len(bins_y)-1
+    b_center  = [shift_to_bin_centers(axis) for axis in [bins_x, bins_y]]
 
     bin_index = range(n_xbins*n_ybins)
-    geom_comb = list(itertools.product(b_center[0], b_center[1]))
-    r_values  = np.array([np.sqrt(x**2+y**2)for x, y in geom_comb])
+    geom_comb = np.array(list(itertools.product(*b_center)))
+    r_values  = np.sum(geom_comb**2, axis=1)**0.5
 
     kr_map    = pd.DataFrame(dict(bin            = bin_index,
                                   counts         = counts,
-                                  X              = list(zip(*geom_comb))[0],
-                                  Y              = list(zip(*geom_comb))[1],
+                                  X              = geom_comb.T[0],
+                                  Y              = geom_comb.T[1],
                                   R              = r_values,
-                                  in_active      = False,
-                                  has_min_counts = False,
+                                  in_active      = r_values <= r_max,
+                                  has_min_counts = counts   >= n_min,
                                   fit_success    = False,
                                   valid          = False,
                                   e0             = np.nan,
@@ -213,9 +212,6 @@ def create_df_kr_map(bins   : Tuple[np.array, np.array],
                                   res_std        = np.nan,
                                   chi2           = np.nan,
                                   pval           = np.nan))
-
-    kr_map.in_active      = kr_map.R      <= r_max
-    kr_map.has_min_counts = kr_map.counts >= n_min
 
     return kr_map
 
