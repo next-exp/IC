@@ -1,4 +1,3 @@
-import copy
 import warnings
 import itertools
 
@@ -457,7 +456,7 @@ def regularize_map(maps    : pd.DataFrame,
     the mean value of the whole map.
 
     Parameters
-    ---------
+    ----------
     maps: pd.DataFrame
         Map to check the outliers
     x2range : Tuple[float, float]
@@ -467,9 +466,7 @@ def regularize_map(maps    : pd.DataFrame,
     ---------
     new_map: pd.DataFrame
         Regularized map.'''
-
-    new_map   = copy.deepcopy(maps)
-
+    new_map   = maps.copy()
     outliers  = new_map.in_active & ~in_range(new_map.chi2, *x2range)
 
     new_map['e0'] [outliers] = np.nanmean(maps['e0'])
