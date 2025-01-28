@@ -5,6 +5,7 @@ import numpy.testing  as npt
 import pandas         as pd
 import scipy.optimize as so
 
+from pytest                 import mark
 from hypothesis             import given, settings
 from hypothesis.strategies  import floats, integers
 from hypothesis.extra.numpy import arrays
@@ -128,26 +129,28 @@ def test_get_number_of_bins_with_thresholds(nevents, thr):
 
 
 
+@mark.parametrize('n_bins n_min r_max'.split(),
+                  (((10, 10), 50,  200),
+                  ( (50, 50), 10,  350),
+                  ((100, 50),  1,  500),))
+def test_create_df_kr_map_shape(n_bins, n_min, r_max):
 
-@given(n_bins=arrays(dtype = int,      shape = (2,),
-                     elements = integers(min_value = 2,
-                                         max_value = 100)),
-       n_min=integers(min_value=1,  max_value=100),
-       r_max=floats  (min_value=50, max_value=450))
-def test_create_df_kr_map_check_columns(n_bins, n_min, r_max):
-
-    XYrange = (500, 500)
+    XYrange  = (500, 500)
     n_bins_x = n_bins[0]
     n_bins_y = n_bins[1]
 
-    bins   = [np.linspace(*XYrange, n_bins_x+1), np.linspace(*XYrange, n_bins_y+1)]
-    counts =  np.full(shape=(n_bins_x, n_bins_y), fill_value = 100, dtype=int).flatten()
-    df = krf.create_df_kr_map(bins, counts, n_min, r_max)
+    bins_x   = np.linspace(*XYrange, n_bins_x+1)
+    bins_y   = np.linspace(*XYrange, n_bins_y+1)
+    counts   = np.full(shape=(n_bins_x, n_bins_y), fill_value = 100, dtype=int).flatten()
+
+    df = krf.create_df_kr_map(bins_x, bins_y, counts, n_min, r_max)
 
     columns  = ['bin', 'counts', 'e0', 'ue0', 'lt', 'ult', 'cov', 'res_std', 'chi2',
                 'pval', 'in_active', 'has_min_counts', 'fit_success', 'valid', 'R', 'X', 'Y']
 
     assert all(element in columns for element in df.columns.values)
+    assert df.bin.nunique() == n_bins_x*n_bins_y
+
 
 
 def test_get_bin_counts_and_event_id_correct_output():
