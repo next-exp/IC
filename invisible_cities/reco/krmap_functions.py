@@ -401,8 +401,8 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
     function specified in the fittype parameter, calculate all the different map values
     and fill the dataframe with them.
 
-      Parameters
-    --------------
+    Parameters
+    ----------
     map_bin : pd.DataFrame
          KrMap dataframe
     dst     : pd.DataFrame
@@ -410,31 +410,30 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
     fittype : str
          Type of fit to perform.
 
-       Returns
-    -------------
+    Returns
+    -------
     kr_map : pd.DataFrame
          DataFrame containing map parameters.
     '''
     if not map_bin.in_active or not map_bin.has_min_counts: return map_bin
 
-    dst_bin  = dst.query(f'bin_index == {map_bin.bin}')
+    dst_bin  = dst.loc[dst.bin_index == map_bin.bin]
 
     fit_func, seed = get_function_and_seed_lt(fittype = fittype)
     x, y           = select_fit_variables    (fittype = fittype,
                                               dst     = dst_bin)
 
-    fit_output, _, _, ier = fit(func        = fit_func,
-                                x           = x,
-                                y           = y,
-                                seed        = seed(x, y),
-                                full_output = True)
+    fit_output = fit(func        = fit_func,
+                     x           = x,
+                     y           = y,
+                     seed        = seed(x, y))
 
-    par, err, cov = transform_parameters(fittype    = fittype,
-                                         fit_output = fit_output)
+    par, err, cov = transform_parameters(fit_output = fit_output)
 
-    res, std = calculate_residuals(x, y, fit_output) # Still considering this
-    chi2, _  = get_chi2_and_pvalue(y, fit_output.fn(x), len(x)-len(par), std)
-    pval     = calculate_pval(res)
+    res  = y - fit_output.fn(x)
+    std  = res.std()
+    chi2 = get_chi2_and_pvalue(y, fit_output.fn(x), len(x)-len(par), std)[0]
+    pval = stats.shapiro(res)[1] if (len(res) > 3) else 0.
 
     map_bin['e0']          = par[0]
     map_bin['ue0']         = err[0]
@@ -444,7 +443,7 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
     map_bin['res_std']     = std
     map_bin['chi2']        = chi2
     map_bin['pval']        = pval
-    map_bin['fit_success'] = ier in range(1, 5)
+    map_bin['fit_success'] = fit_output.ier in range(1, 5)
     map_bin['valid']       = map_bin['fit_success'] and map_bin['has_min_counts'] and map_bin['in_active']
 
     return map_bin
