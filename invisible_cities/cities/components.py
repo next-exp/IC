@@ -738,8 +738,8 @@ def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
 
 def calibrate_pmts(dbfile, run_number, n_maw, thr_maw):
     DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
+    DataPMT    = DataPMT.loc[lambda df: df.Active==1]
     adc_to_pes = np.abs(DataPMT.adc_to_pes.values)
-    adc_to_pes = adc_to_pes[adc_to_pes > 0]
 
     def calibrate_pmts(cwf):# -> CCwfs:
         return csf.calibrate_pmts(cwf,
@@ -751,6 +751,7 @@ def calibrate_pmts(dbfile, run_number, n_maw, thr_maw):
 
 def calibrate_sipms(dbfile, run_number, thr_sipm):
     DataSiPM   = load_db.DataSiPM(dbfile, run_number)
+    DataSiPM   = DataSiPM.loc[lambda df: df.Active==1]
     adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
 
     def calibrate_sipms(rwf):
