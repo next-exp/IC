@@ -351,11 +351,11 @@ def deconv_pmt(dbfile, run_number, n_baseline,
     coeff_c    = DataPMT.coeff_c  .values.astype(np.double)[pmt_active]
     coeff_blr  = DataPMT.coeff_blr.values.astype(np.double)[pmt_active]
 
-    def deconv_pmt(RWF):
-        assert len(RWF) == len(coeff_c)
-        CWF = pedestal_function(RWF[:, :n_baseline]) - RWF
-        CWF = map(blr.deconvolve_signal, CWF, coeff_c, coeff_blr)
-        return np.array(tuple(CWF))
+    def deconv_pmt(rwfs):
+        assert len(rwfs) == len(coeff_c)
+        cwfs = pedestal_function(rwfs[:, :n_baseline]) - rwfs
+        cwfs = map(blr.deconvolve_signal, cwfs, coeff_c, coeff_blr)
+        return np.array(tuple(cwfs))
 
     return deconv_pmt
 
