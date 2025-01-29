@@ -44,6 +44,7 @@ from .  components import wf_from_files
 from .  components import get_number_of_active_pmts
 from .  components import compute_and_write_pmaps
 from .  components import get_actual_sipm_thr
+from .  components import sensor_masker
 
 
 @city
@@ -73,6 +74,11 @@ def irene( files_in        : OneOrManyFiles
     sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
 
     #### Define data transformations
+
+    # Mask sensors
+    mask_sensors     = fl.map(sensor_masker(detector_db, run_number)
+                             , args = ("pmt", "sipm")
+                             , out =  ("pmt", "sipm"))
 
     # Raw WaveForm to Corrected WaveForm
     rwf_to_cwf       = fl.map(deconv_pmt(detector_db, run_number, n_baseline),
@@ -121,6 +127,7 @@ def irene( files_in        : OneOrManyFiles
                       pipe   = pipe(fl.slice(*event_range, close_all=True),
                                     print_every(print_mod),
                                     event_count_in.spy,
+                                    mask_sensors,
                                     rwf_to_cwf,
                                     cwf_to_ccwf,
                                     zero_suppress,

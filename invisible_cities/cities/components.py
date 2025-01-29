@@ -1564,3 +1564,14 @@ def hits_corrector( filename   : str
 
 def identity(x : Any) -> Any:
     return x
+
+
+def sensor_masker(detector_db, run_number):
+    active_pmts  = load_db.DataPMT (detector_db, run_number).Active.values.astype(bool)
+    active_sipms = load_db.DataSiPM(detector_db, run_number).Active.values.astype(bool)
+
+    def mask_sensors(rwf_pmt, rwf_sipm):
+        return ( rwf_pmt [active_pmts ]
+               , rwf_sipm[active_sipms])
+
+    return mask_sensors
