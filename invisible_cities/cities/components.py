@@ -389,9 +389,9 @@ def get_event_info(h5in):
     return h5in.root.Run.events
 
 
-def get_number_of_active_pmts(detector_db, run_number):
+def get_number_of_pmts(detector_db, run_number):
     datapmt = load_db.DataPMT(detector_db, run_number)
-    return np.count_nonzero(datapmt.Active.values.astype(bool))
+    return len(datapmt)
 
 
 def check_nonempty_indices(s1_indices, s2_indices):
