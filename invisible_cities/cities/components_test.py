@@ -287,6 +287,20 @@ def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
 
     dummy_city(**args)
 
+def test_pmap_from_files_event_number_mismatch_raises(KrMC_pmaps_filename, output_tmpdir):
+    filename = os.path.join(output_tmpdir, "test_pmap_from_files_event_number_mismatch_raises.h5")
+
+    # copy file and remove one row to produce a mismatch
+    with tb.open_file(KrMC_pmaps_filename) as file:
+        file.copy_file(filename)
+    with tb.open_file(filename, "r+") as file:
+        file.root.Run.events.remove_rows(2, 3) # remove 2nd event
+
+    generator = pmap_from_files([filename])
+    with raises(InvalidInputFileStructure, match="Inconsistent data: event number mismatch"):
+        next(generator)
+
+
 def test_hits_and_kdst_from_files(ICDATADIR):
     event_number = 1
     timestamp    = 0.

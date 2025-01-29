@@ -554,7 +554,7 @@ def wf_from_files(paths, wf_type):
 def pmap_from_files(paths):
     for path in paths:
         try:
-            pmaps = load_pmaps(path)
+            pmaps = load_pmaps(path, lazy=True)
         except tb.exceptions.NoSuchNodeError:
             continue
 
@@ -567,11 +567,11 @@ def pmap_from_files(paths):
             except IndexError:
                 continue
 
-            check_lengths(event_info, pmaps)
-
-            for evtinfo in event_info:
+            for evtinfo, (evt, pmap) in zip(event_info, pmaps):
                 event_number, timestamp = evtinfo.fetch_all_fields()
-                yield dict(pmap=pmaps[event_number], run_number=run_number,
+                if event_number != evt:
+                    raise InvalidInputFileStructure("Inconsistent data: event number mismatch")
+                yield dict(pmap=pmap, run_number=run_number,
                            event_number=event_number, timestamp=timestamp)
 
 
