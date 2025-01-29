@@ -41,7 +41,7 @@ from .  components import calibrate_pmts
 from .  components import calibrate_sipms
 from .  components import zero_suppress_wfs
 from .  components import wf_from_files
-from .  components import get_number_of_active_pmts
+from .  components import get_number_of_pmts
 from .  components import compute_and_write_pmaps
 from .  components import get_actual_sipm_thr
 from .  components import sensor_masker
@@ -108,7 +108,7 @@ def irene( files_in        : OneOrManyFiles
 
         # Define writers...
         write_event_info_   = run_and_event_writer(h5out)
-        write_trigger_info_ = trigger_writer      (h5out, get_number_of_active_pmts(detector_db, run_number))
+        write_trigger_info_ = trigger_writer      (h5out, get_number_of_pmts(detector_db, run_number))
 
         # ... and make them sinks
 
