@@ -49,6 +49,7 @@ from .  components import compute_and_write_pmaps
 from .  components import simulate_sipm_response
 from .  components import calibrate_sipms
 from .  components import get_actual_sipm_thr
+from .  components import sensor_masker
 
 
 @city
@@ -81,6 +82,10 @@ def hypathia( files_in        : OneOrManyFiles
 
     #### Define data transformations
     sd = sensor_data(files_in[0], WfType.mcrd)
+
+    mask_sensors     = fl.map(sensor_masker(detector_db, run_number)
+                             , args = ("pmt", "sipm")
+                             , out  = ("pmt", "sipm"))
 
     # Raw WaveForm to Corrected WaveForm
     mcrd_to_rwf      = fl.map(rebin_pmts(pmt_wfs_rebin),
@@ -142,10 +147,11 @@ def hypathia( files_in        : OneOrManyFiles
                                     event_count_in.spy,
                                     mcrd_to_rwf,
                                     simulate_pmt,
-                                    pmt_sum,
-                                    zero_suppress,
                                     simulate_sipm_response_,
                                     discretize_signal,
+                                    mask_sensors,
+                                    pmt_sum,
+                                    zero_suppress,
                                     compute_pmaps,
                                     event_count_out.spy,
                                     fl.branch("event_number", evtnum_collect.sink),
