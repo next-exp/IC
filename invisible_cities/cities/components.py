@@ -344,18 +344,19 @@ def signal_finder(buffer_len   : float,
     return find_signal
 
 
-# TODO: consider caching database
 def deconv_pmt(dbfile, run_number, n_baseline,
                selection=None, pedestal_function=csf.means):
     DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
     pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist() if selection is None else selection
-    coeff_c    = DataPMT.coeff_c  .values.astype(np.double)
-    coeff_blr  = DataPMT.coeff_blr.values.astype(np.double)
+    coeff_c    = DataPMT.coeff_c  .values.astype(np.double)[pmt_active]
+    coeff_blr  = DataPMT.coeff_blr.values.astype(np.double)[pmt_active]
 
     def deconv_pmt(RWF):
+        assert len(RWF) == len(coeff_c)
         CWF = pedestal_function(RWF[:, :n_baseline]) - RWF
-        return np.array(tuple(map(blr.deconvolve_signal, CWF[pmt_active],
-                                  coeff_c              , coeff_blr      )))
+        CWF = map(blr.deconvolve_signal, CWF, coeff_c, coeff_blr)
+        return np.array(tuple(CWF))
+
     return deconv_pmt
 
 
