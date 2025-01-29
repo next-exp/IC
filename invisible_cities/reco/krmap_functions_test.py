@@ -5,16 +5,16 @@ import numpy.testing  as npt
 import pandas         as pd
 import scipy.optimize as so
 
-from pytest                 import mark
+from pytest                 import mark, fixture
 from hypothesis             import given, settings
 from hypothesis.strategies  import floats, integers
-from hypothesis.extra.numpy import arrays
 
 from .. reco                import krmap_functions as krf
 from ..types.symbols        import KrFitFunction
 from .. evm.ic_containers   import FitFunction
 from .. core.fit_functions  import expo
-
+from .. core.core_functions import in_range
+from .. conftest            import KrMC_kdst
 
 @given(floats(min_value = 0,  max_value = 10),
        floats(min_value = 10, max_value = 20),
@@ -152,7 +152,17 @@ def test_create_df_kr_map_shape(n_bins, n_min, r_max):
     assert df.bin.nunique() == n_bins_x*n_bins_y
 
 
+@mark.parametrize('bins_x bins_y'.split(),
+                  ((np.linspace(-100, +100,  5), np.linspace(-100, +100, 10)),
+                  ( np.linspace(-400, +400, 10), np.linspace(-400, +400, 10)),
+                  ))
+def test_get_bin_counts_and_event_bin_id(KrMC_kdst, bins_x, bins_y):
 
-def test_get_bin_counts_and_event_id_correct_output():
+    kr_df  = KrMC_kdst[0].read
+    inside = in_range(kr_df.X, min(bins_x), max(bins_x)) & in_range(kr_df.Y, min(bins_y), max(bins_y))
 
-    return
+    counts, bin_labels = krf.get_bin_counts_and_event_bin_id(dst = kr_df, bins_x = bins_x, bins_y = bins_y)
+
+    assert counts.sum()    == kr_df[inside].event.nunique()
+    assert len(bin_labels) == kr_df.event.nunique()
+
