@@ -217,3 +217,22 @@ def test_valid_bin_counter_warning(n_bins, rmax, validity_parameter):
     if validity_parameter == 1:
         with warns(UserWarning, match = "inner bins are not valid."):
             krf.valid_bin_counter(map_df = krmap, validity_parameter = validity_parameter)
+
+
+def test_regularize_map_no_chi2range():
+
+    inside = np.ones(50, dtype = bool)
+    valid  = inside.copy()
+    valid[20:30] = False
+    maps = pd.DataFrame(dict(in_active = inside,
+                             valid     = valid,
+                             e0        = np.full(50, 10),
+                             lt        = np.full(50, 1000),
+                             ue0       = np.full(50, 2),
+                             ult       = np.full(50, 100)))
+
+    new_map = krf.regularize_map(maps = maps, x2range = None)
+
+    for col in ['e0', 'lt', 'ue0', 'ult']:
+        mean_value = np.nanmean(maps[col])
+        assert np.allclose(new_map[col][~valid], mean_value, rtol=0.01)
