@@ -450,7 +450,7 @@ def fit_and_fill_map(map_bin : pd.DataFrame,
 
 
 def regularize_map(maps    : pd.DataFrame,
-                   x2range : Tuple[float, float]):
+                   x2range : Tuple[float, float] = None):
     '''
     Given a certain chi2 range, this function checks which bins are outside that
     range and substitutes the (probably wrong) values of the map (e0, lt, etc) for
@@ -468,7 +468,11 @@ def regularize_map(maps    : pd.DataFrame,
     new_map: pd.DataFrame
         Regularized map.'''
     new_map   = maps.copy()
-    outliers  = new_map.in_active & ~in_range(new_map.chi2, *x2range)
+    outliers  = new_map.in_active & ~new_map.valid
+
+    if isinstance(x2range, Tuple):
+          outliers &= ~in_range(new_map.chi2, *x2range)
+    else: outliers = outliers
 
     new_map['e0'] [outliers] = np.nanmean(maps['e0'])
     new_map['lt'] [outliers] = np.nanmean(maps['lt'])
