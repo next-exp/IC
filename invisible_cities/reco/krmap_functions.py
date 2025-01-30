@@ -380,11 +380,10 @@ def valid_bin_counter(map_df             : pd.DataFrame,
     inside = np.count_nonzero(map_df.in_active)
     valid  = np.count_nonzero(map_df.valid)
 
-    valid_per = valid / inside
+    valid_per = valid / inside if valid <= inside else 0
 
     if valid_per <= validity_parameter:
         warnings.warn(f"{inside-valid} inner bins are not valid. {100*valid_per:.1f}% are successful.", UserWarning)
-    else:       print(f"{inside-valid} inner bins are not valid. {100*valid_per:.1f}% are successful.")
 
     return valid_per
 
