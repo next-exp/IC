@@ -7,6 +7,7 @@ from pytest                 import raises
 from pytest                 import fixture, mark
 from hypothesis             import given, settings
 from hypothesis.strategies  import floats, integers
+from hypothesis.extra.numpy import arrays
 
 from .. reco                import krmap_functions as krf
 from ..types.symbols        import KrFitFunction
@@ -120,3 +121,62 @@ def test_transform_parameters(a, b):
     npt.assert_allclose(transformed_par, [  E0_expected,   lt_expected])
     npt.assert_allclose(transformed_err, [s_E0_expected, s_lt_expected])
     assert np.isclose(transformed_cov, cov_expected)
+
+
+@given(integers(min_value = 0, max_value = 1e10),
+       integers(min_value = 0, max_value = 1e10),
+       arrays  (dtype     = np.int64, shape = (2,),
+                elements  = integers(min_value = 1,
+                                     max_value = 1e4)))
+def test_get_number_of_bins_performance_default_value(nevents, thr, n_bins):
+    bins = krf.get_number_of_bins(nevents, thr, n_bins)
+
+    npt.assert_array_equal(bins, n_bins)
+
+
+@given(integers(min_value = 0, max_value = 1e10),
+       integers(min_value = 0, max_value = 1e10))
+def test_get_number_of_bins_with_thresholds(nevents, thr):
+    bins = krf.get_number_of_bins(nevents, thr)
+
+    if nevents < thr:
+        npt.assert_array_equal(bins, np.array([50, 50]))
+    if nevents >= thr:
+        npt.assert_array_equal(bins, np.array([100, 100]))
+
+
+@given(integers(min_value = 0, max_value = 1e10),
+       integers(min_value = 0, max_value = 1e10),
+       arrays  (dtype = np.int64,  shape = (2,),
+                elements = integers(min_value = 1,
+                                    max_value = 1e4)))
+def test_get_number_of_bins_returns_type(nevents, thr, n_bins):
+
+    assert type(krf.get_number_of_bins(nevents, thr) ) == np.ndarray
+    assert type(krf.get_number_of_bins(n_bins=n_bins)) == np.ndarray
+
+
+@given(n_bins=arrays(dtype = int,      shape = (2,),
+                     elements = integers(min_value = 2,
+                                         max_value = 100)),
+       n_min=integers(min_value=1,  max_value=100),
+       r_max=floats  (min_value=50, max_value=450))
+def test_create_df_kr_map_check_columns(n_bins, n_min, r_max):
+
+    XYrange = (500, 500)
+    n_bins_x = n_bins[0]
+    n_bins_y = n_bins[1]
+
+    bins   = [np.linspace(*XYrange, n_bins_x+1), np.linspace(*XYrange, n_bins_y+1)]
+    counts =  np.full(shape=(n_bins_x, n_bins_y), fill_value = 100, dtype=int).flatten()
+    df = krf.create_df_kr_map(bins, counts, n_min, r_max)
+
+    columns  = ['bin', 'counts', 'e0', 'ue0', 'lt', 'ult', 'cov', 'res_std', 'chi2',
+                'pval', 'in_active', 'has_min_counts', 'fit_success', 'valid', 'R', 'X', 'Y']
+
+    assert all(element in columns for element in df.columns.values)
+
+
+def test_get_bin_counts_and_event_id_correct_output():
+
+    return
