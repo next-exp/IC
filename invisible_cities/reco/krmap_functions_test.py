@@ -5,7 +5,7 @@ import numpy.testing  as npt
 import pandas         as pd
 import scipy.optimize as so
 
-from pytest                 import mark, fixture
+from pytest                 import mark, warns
 from hypothesis             import given, settings
 from hypothesis.strategies  import floats, integers
 
@@ -166,3 +166,35 @@ def test_get_bin_counts_and_event_bin_id(KrMC_kdst, bins_x, bins_y):
     assert counts.sum()    == kr_df[inside].event.nunique()
     assert len(bin_labels) == kr_df.event.nunique()
 
+
+@mark.parametrize('n_bins rmax'.split(),
+                  ((( 5, 5), 200),
+                   (( 3, 3), 100),))
+def test_valid_bin_counter(n_bins, rmax):
+    counts = np.array(range(n_bins[0]*n_bins[1]))
+    krmap  = krf.create_df_kr_map(bins_x = np.linspace(-rmax, +rmax, n_bins[0]+1),
+                                  bins_y = np.linspace(-rmax, +rmax, n_bins[1]+1),
+                                  counts = counts,
+                                  n_min  = 0,
+                                  r_max  = np.nextafter(np.sqrt(2)*rmax, np.inf))
+
+    krmap.valid.iloc[0 : 9] = True
+
+    assert krf.valid_bin_counter(krmap) == 9 / (n_bins[0]*n_bins[1])
+
+@mark.parametrize('n_bins rmax validity_parameter'.split(),
+                  ((( 5, 5), 200,  1.0),
+                   (( 3, 3), 100,  0.2)))
+def test_valid_bin_counter_warning(n_bins, rmax, validity_parameter):
+    counts = np.array(range(n_bins[0]*n_bins[1]))
+    krmap  = krf.create_df_kr_map(bins_x = np.linspace(-rmax, +rmax, n_bins[0]+1),
+                                  bins_y = np.linspace(-rmax, +rmax, n_bins[1]+1),
+                                  counts = counts,
+                                  n_min  = 0,
+                                  r_max  = np.nextafter(np.sqrt(2)*rmax, np.inf))
+
+    krmap.valid.iloc[0 : 9] = True
+
+    if validity_parameter == 1:
+        with warns(UserWarning, match = "inner bins are not valid."):
+            krf.valid_bin_counter(map_df = krmap, validity_parameter = validity_parameter)
