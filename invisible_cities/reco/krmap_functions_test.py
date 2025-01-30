@@ -128,7 +128,6 @@ def test_get_number_of_bins_with_thresholds(nevents, thr):
         npt.assert_array_equal(bins, np.array([100, 100]))
 
 
-
 @mark.parametrize('n_bins n_min r_max'.split(),
                   (((10, 10), 50,  200),
                   ( (50, 50), 10,  350),
@@ -181,6 +180,7 @@ def test_valid_bin_counter(n_bins, rmax):
     krmap.valid.iloc[0 : 9] = True
 
     assert krf.valid_bin_counter(krmap) == 9 / (n_bins[0]*n_bins[1])
+
 
 @mark.parametrize('n_bins rmax validity_parameter'.split(),
                   ((( 5, 5), 200,  1.0),
