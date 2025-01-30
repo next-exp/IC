@@ -165,22 +165,41 @@ def test_get_bin_counts_and_event_bin_id(KrMC_kdst, bins_x, bins_y):
     assert counts.sum()    == kr_df[inside].event.nunique()
     assert len(bin_labels) == kr_df.event.nunique()
 
+@mark.parametrize('n', (0, 8, 50))
+def test_valid_bin_counter_all_in_active(n):
+    inside = np.ones(50, dtype = bool)
+    valid  = inside.copy()
+    valid[:n//2]  = False
+    valid[len(valid)-n//2:] = False
+    krmap = pd.DataFrame(dict(in_active = inside,
+                              valid     = valid))
 
-@mark.parametrize('n_bins rmax'.split(),
-                  ((( 5, 5), 200),
-                   (( 3, 3), 100),))
-def test_valid_bin_counter(n_bins, rmax):
-    counts = np.array(range(n_bins[0]*n_bins[1]))
-    krmap  = krf.create_df_kr_map(bins_x = np.linspace(-rmax, +rmax, n_bins[0]+1),
-                                  bins_y = np.linspace(-rmax, +rmax, n_bins[1]+1),
-                                  counts = counts,
-                                  n_min  = 0,
-                                  r_max  = np.nextafter(np.sqrt(2)*rmax, np.inf))
+    assert krf.valid_bin_counter(krmap) == ((50-n) / 50)
 
-    krmap.valid.iloc[0 : 9] = True
 
-    assert krf.valid_bin_counter(krmap) == 9 / (n_bins[0]*n_bins[1])
+def test_valid_bin_counter_valid_subset_of_active():
+    inside = np.ones(50, dtype = bool)
+    inside[:3]  = False
+    inside[-3:] = False
+    valid  = inside.copy()
+    valid[:4]  = False
+    valid[-4:] = False
+    krmap = pd.DataFrame(dict(in_active = inside,
+                              valid     = valid))
 
+    assert krf.valid_bin_counter(krmap) == ((50-6-2) / (50-6))
+
+@mark.parametrize('ni', (0, 4, 25))
+@mark.parametrize('nv', (0, 3, 25))
+def test_valid_bin_counter_valid_outside_active(ni, nv):
+    inside = np.ones(50, dtype = bool)
+    inside[len(inside)-ni:] = False
+    valid  = np.ones(50, dtype = bool)
+    valid[:nv]   = False
+    krmap = pd.DataFrame(dict(in_active = inside,
+                              valid     = valid))
+
+    assert krf.valid_bin_counter(krmap) == ((50-ni-nv) / (50-ni))
 
 @mark.parametrize('n_bins rmax validity_parameter'.split(),
                   ((( 5, 5), 200,  1.0),
