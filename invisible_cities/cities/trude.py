@@ -54,6 +54,7 @@ from .  components import sensor_data
 from .  components import wf_from_files
 from .  components import waveform_binner
 from .  components import waveform_integrator
+from .  components import sensor_masker
 
 
 @city
@@ -92,6 +93,10 @@ def trude( files_in         : OneOrManyFiles
                                               integrals_period,
                                               wf_length       )
 
+    mask_sensors     = fl.map(sensor_masker(detector_db, run_number)
+                             , args = ("pmt", "sipm")
+                             , out =  ("pmt", "sipm"))
+
     subtract_baseline = fl.map(csf.sipm_processing[proc_mode], args="sipm", out="bls")
     integrate_light   = fl.map(waveform_integrator(light_limits))
     integrate_dark    = fl.map(waveform_integrator( dark_limits))
@@ -115,6 +120,7 @@ def trude( files_in         : OneOrManyFiles
             pipe   = fl.pipe(fl.slice(*event_range, close_all=True),
                              event_count.spy,
                              print_every(print_mod),
+                             mask_sensors,
                              subtract_baseline,
                              fl.fork(("bls", integrate_light, bin_waveforms, accumulate_light   .sink),
                                      ("bls", integrate_dark , bin_waveforms, accumulate_dark    .sink),
