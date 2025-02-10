@@ -51,6 +51,7 @@ from .. core .configure        import          EventRangeType
 from .. core .configure        import          OneOrManyFiles
 from .. types.symbols          import                  WfType
 from .. types.symbols          import            PMTCalibMode
+from .. database.load_db       import                  DataPMT
 
 from .. dataflow import dataflow as fl
 
@@ -93,9 +94,9 @@ def phyllis( files_in         : OneOrManyFiles
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
     sd          = sensor_data(files_in[0], WfType.rwf)
-    npmt        = np.count_nonzero(load_db.DataPMT(detector_db, run_number).Active.values)
     wf_length   = sd.PMTWL
-    shape       = npmt, len(bin_centres)
+    nactive     = DataPMT(detector_db, run_number).Active.sum()
+    shape       = nactive, len(bin_centres)
     sampling    = fee.t_sample
 
     (light_limits,
@@ -125,7 +126,7 @@ def phyllis( files_in         : OneOrManyFiles
         write_hist          = partial(hist_writer,
                                       h5out,
                                       group_name  = 'HIST',
-                                      n_sensors   = npmt,
+                                      n_sensors   = nactive,
                                       bin_centres = bin_centres)
 
         out = fl.push(
