@@ -725,12 +725,13 @@ def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                     stride       = s2_stride,
                     rebin_stride = s2_rebin_stride)
 
-    datapmt = load_db.DataPMT(detector_db, run_number)
-    pmt_ids = datapmt.SensorID[datapmt.Active.astype(bool)].values
-
+    datapmt  = load_db.DataPMT (detector_db, run_number)
+    datasipm = load_db.DataSiPM(detector_db, run_number)
+    pmt_ids  = datapmt .SensorID[datapmt .Active.astype(bool)].values
+    sipm_ids = np.argwhere(datasipm.Active.values==1).flatten()
     def build_pmap(ccwf, s1_indx, s2_indx, sipmzs): # -> PMap
         return pkf.get_pmap(ccwf, s1_indx, s2_indx, sipmzs,
-                            s1_params, s2_params, thr_sipm_s2, pmt_ids,
+                            s1_params, s2_params, thr_sipm_s2, pmt_ids, sipm_ids,
                             pmt_samp_wid, sipm_samp_wid)
 
     return build_pmap
