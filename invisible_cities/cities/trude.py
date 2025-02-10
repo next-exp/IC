@@ -45,6 +45,7 @@ from .. reco                 import         calib_functions as cf
 from .. reco                 import calib_sensors_functions as csf
 from .. types.symbols        import                  WfType
 from .. types.symbols        import           SiPMCalibMode
+from .. database.load_db     import                DataSiPM
 
 from .. dataflow import dataflow as fl
 
@@ -80,9 +81,9 @@ def trude( files_in         : OneOrManyFiles
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
     sd          = sensor_data(files_in[0], WfType.rwf)
-    nsipm       = sd.NSIPM
     wf_length   = sd.SIPMWL
-    shape       = nsipm, len(bin_centres)
+    nactive     = DataSiPM(detector_db, run_number).Active.sum()
+    shape       = nactive, len(bin_centres)
     sampling    = 1 * units.mus
 
     (light_limits,
@@ -112,7 +113,7 @@ def trude( files_in         : OneOrManyFiles
         write_hist          = partial(hist_writer,
                                       h5out,
                                       group_name  = "HIST",
-                                      n_sensors   = nsipm,
+                                      n_sensors   = nactive,
                                       bin_centres = bin_centres)
 
         out = fl.push(
