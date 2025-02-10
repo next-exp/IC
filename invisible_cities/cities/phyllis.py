@@ -61,6 +61,7 @@ from .  components import wf_from_files
 from .  components import waveform_binner
 from .  components import deconv_pmt
 from .  components import waveform_integrator
+from .  components import sensor_masker
 
 from typing import Optional
 
@@ -105,6 +106,10 @@ def phyllis( files_in         : OneOrManyFiles
                                               integrals_period,
                                               wf_length       )
 
+    mask_sensors      = fl.map(sensor_masker(detector_db, run_number)
+                              , args = ("pmt", "sipm")
+                              , out =  ("pmt", "sipm"))
+
     processing        = fl.map(proc, args="pmt", out="cwf")
     integrate_light   = fl.map(waveform_integrator(light_limits))
     integrate_dark    = fl.map(waveform_integrator( dark_limits))
@@ -128,6 +133,7 @@ def phyllis( files_in         : OneOrManyFiles
             pipe   = fl.pipe(fl.slice(*event_range, close_all=True),
                              event_count.spy,
                              print_every(print_mod),
+                             mask_sensors,
                              processing,
                              fl.fork(("cwf", integrate_light, bin_waveforms, accumulate_light   .sink),
                                      ("cwf", integrate_dark , bin_waveforms, accumulate_dark    .sink),
