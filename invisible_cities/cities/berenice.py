@@ -46,6 +46,7 @@ from .  components import print_every
 from .  components import sensor_data
 from .  components import wf_from_files
 from .  components import waveform_binner
+from .  components import sensor_masker
 
 
 @city
@@ -64,6 +65,10 @@ def berenice( files_in    : OneOrManyFiles
     bin_centres = shift_to_bin_centers(bin_edges)
     nsipm       = sensor_data(files_in[0], WfType.rwf).NSIPM
     shape       = nsipm, len(bin_centres)
+
+    mask_sensors          = fl.map(sensor_masker(detector_db, run_number)
+                                  , args = ("pmt", "sipm")
+                                  , out =  ("pmt", "sipm"))
 
     subtract_mode         = fl.map(csf.subtract_mode            )
     calibrate_with_mode   = fl.map(mode_calibrator  (detector_db, run_number))
@@ -93,6 +98,7 @@ def berenice( files_in    : OneOrManyFiles
             pipe   = fl.pipe(fl.slice(*event_range, close_all=True),
                              event_count.spy,
                              print_every(print_mod),
+                             mask_sensors,
                              fl.fork(("sipm", subtract_mode        , bin_waveforms, accumulate_adc     .sink),
                                      ("sipm", calibrate_with_mode  , bin_waveforms, accumulate_mode    .sink),
                                      ("sipm", calibrate_with_median, bin_waveforms, accumulate_median  .sink),
