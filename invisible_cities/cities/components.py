@@ -392,9 +392,9 @@ def signal_finder(buffer_len   : float,
 
 
 def deconv_pmt(dbfile, run_number, n_baseline,
-               selection=None, pedestal_function=csf.means):
+               mask=True, pedestal_function=csf.means):
     DataPMT    = load_db.DataPMT(dbfile, run_number = run_number)
-    pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist() if selection is None else selection
+    pmt_active = np.nonzero(DataPMT.Active.values)[0].tolist() if mask else np.ones(len(DataPMT), dtype=bool)
     coeff_c    = DataPMT.coeff_c  .values.astype(np.double)[pmt_active]
     coeff_blr  = DataPMT.coeff_blr.values.astype(np.double)[pmt_active]
 
