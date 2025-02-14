@@ -146,7 +146,7 @@ def phyllis( files_in         : OneOrManyFiles
 
 
 def pmt_deconvolver(detector_db, run_number, n_baseline):
-    deconvolute = deconv_pmt(detector_db, run_number, n_baseline)
+    deconvolute = deconv_pmt(detector_db, run_number, n_baseline, mask=False)
     return deconvolute
 
 
