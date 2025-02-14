@@ -92,7 +92,7 @@ def phyllis( files_in         : OneOrManyFiles
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
     sd          = sensor_data(files_in[0], WfType.rwf)
-    npmt        = np.count_nonzero(load_db.DataPMT(detector_db, run_number).Active.values)
+    npmt        = len(load_db.DataPMT(detector_db, run_number))
     wf_length   = sd.PMTWL
     shape       = npmt, len(bin_centres)
     sampling    = fee.t_sample
