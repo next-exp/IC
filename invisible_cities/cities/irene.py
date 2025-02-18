@@ -24,8 +24,12 @@ from .. core.configure         import EventRangeType
 from .. core.configure         import OneOrManyFiles
 from .. io   .run_and_event_io import run_and_event_writer
 from .. io   .trigger_io       import       trigger_writer
+from .. io   .dst_io           import            df_writer
 from .. types.symbols          import WfType
 from .. types.symbols          import SiPMThreshold
+
+from .. database.load_db import DataPMT
+from .. database.load_db import DataSiPM
 
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
@@ -69,6 +73,7 @@ def irene( files_in        : OneOrManyFiles
          , s2_rebin_stride : int  , s2_stride    : int
          , thr_csum_s2     : float, thr_sipm_s2  : float
          , pmt_samp_wid    : float, sipm_samp_wid: float
+         , store_db        : bool = False
          ):
 
     sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
@@ -146,4 +151,13 @@ def irene( files_in        : OneOrManyFiles
             copy_mc_info(files_in, h5out, result.evtnum_list,
                          detector_db, run_number)
 
+        if store_db:
+            store_db_info(h5out, detector_db, run_number)
         return result
+
+
+def store_db_info(file, detector_db, run_number):
+    datapmt  = DataPMT (detector_db, run_number)
+    datasipm = DataSiPM(detector_db, run_number)
+    df_writer(file, datapmt , "DB", "DataPMT" , "DB constants for PMTs" , compression="ZLIB4")
+    df_writer(file, datasipm, "DB", "DataSiPM", "DB constants for SiPMs", compression="ZLIB4")
