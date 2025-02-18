@@ -1503,3 +1503,9 @@ def sensor_masker(detector_db, run_number):
                , rwf_sipm[active_sipms])
 
     return mask_sensors
+
+
+def copy_db_info(file_in, file_out):
+    with tb.open_file(file_in) as file:
+        if "DB" in file.root:
+            file.copy_node(file.root.DB, file_out.root, recursive=True)
