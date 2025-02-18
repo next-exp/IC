@@ -56,6 +56,24 @@ function install_conda {
             ;;
     esac
 
+
+    case "$(uname -m)" in
+
+        x86_64)
+            export ARCH=x86_64
+            ;;
+
+        arm64)
+            export ARCH=arm64
+            ;;
+
+        *)
+            echo "Installation only supported on x86_64 and arm architecture"
+            exit 1
+            ;;
+    esac 
+
+
     if conda --version ; then
         echo Conda already installed. Skipping conda installation.
     else
