@@ -73,7 +73,7 @@ def irene( files_in        : OneOrManyFiles
          , s2_rebin_stride : int  , s2_stride    : int
          , thr_csum_s2     : float, thr_sipm_s2  : float
          , pmt_samp_wid    : float, sipm_samp_wid: float
-         , store_db        : bool = False
+         , store_db        : bool = True
          ):
 
     sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
