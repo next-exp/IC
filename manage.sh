@@ -56,11 +56,29 @@ function install_conda {
             ;;
     esac
 
+
+    case "$(uname -m)" in
+
+        x86_64)
+            export ARCH=x86_64
+            ;;
+
+        arm64)
+            export ARCH=arm64
+            ;;
+
+        *)
+            echo "Installation only supported on x86_64 and arm architecture"
+            exit 1
+            ;;
+    esac 
+
+
     if conda --version ; then
         echo Conda already installed. Skipping conda installation.
     else
         echo Installing conda for $CONDA_OS
-        CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-py${PYTHON_VERSION//.}_4.9.2-${CONDA_OS}-x86_64.sh"
+        CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-py${PYTHON_VERSION//.}_4.12.0-${CONDA_OS}-${ARCH}.sh"
         if which wget; then
             wget ${CONDA_URL} -O miniconda.sh
         else
