@@ -1,0 +1,31 @@
+# This workflow will install IC on arm based system.
+
+name: Arm compatibility test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8]
+        #platform: [ubuntu-18.04, macos-latest]
+        platform: [macos-latest]
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Get LFS files
+      run: git lfs pull
+    # - name: Fix Conda permissions on macOS
+    #   run: sudo chown -R $UID $CONDA
+    #   if: runner.os == 'macOS'
+
+    - name: Install IC
+      run: |
+        source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
+
