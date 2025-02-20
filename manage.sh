@@ -56,19 +56,16 @@ function install_conda {
             ;;
     esac
 
+    # Setting architecture based on input
+    ARCH=$(uname - m)
+    
+    case $ARCH in
 
-    case "$(uname -m)" in
-
-        x86_64)
-            export ARCH=x86_64
-            ;;
-
-        arm64)
-            export ARCH=arm64
-            ;;
-
+        x86_64) : ;;
+        arm64)  : ;;
+        aarch64) : ;;
         *)
-            echo "Installation only supported on x86_64 and arm architecture"
+            echo "Installation only supported on x86_64 and arm architectures"
             exit 1
             ;;
     esac 
