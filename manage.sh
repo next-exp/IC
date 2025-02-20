@@ -57,7 +57,7 @@ function install_conda {
     esac
 
     # Setting architecture based on input
-    ARCH=$(uname - m)
+    ARCH=$(uname -m)
     
     case $ARCH in
 
