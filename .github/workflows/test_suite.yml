@@ -14,7 +14,7 @@ jobs:
       matrix:
         python-version: [3.8]
         #platform: [ubuntu-18.04, macos-latest]
-        platform: [ubuntu-20.04]
+        platform: [ubuntu-20.04, macos-latest, ubuntu-22.04-arm]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -27,6 +27,12 @@ jobs:
 
     - name: Install IC
       run: |
+
+        case "$(uname -m)" in
+          x86_64)                                                         ;;
+          aarch64)  echo "CONDA=/home/runner/miniconda" >> "$GITHUB_ENV"  ;;
+          arm)      echo "CONDA=/Users/runner/miniconda" >> "$GITHUB_ENV" ;;
+        esac
         source $CONDA/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
 
