@@ -28,17 +28,18 @@ jobs:
     - name: Install IC
       run: |
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
+        echo "CONDA=/home/runner/miniconda" >> "$GITHUB_ENV"
 
     - name: Run tests
       run: |
         set -o pipefail # necessary for test failure to propagate to `tee`
-        source /home/runner/miniconda/etc/profile.d/conda.sh
+        source $CONDA/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
         PYTEST_ADDOPTS=--color=yes HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par | tee pytest_output
 
     - name: Test warning-catching script
       run: |
-        source /home/runner/miniconda/etc/profile.d/conda.sh
+        source $CONDA/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
 
         # write dummy tests
