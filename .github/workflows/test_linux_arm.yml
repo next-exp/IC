@@ -1,6 +1,6 @@
 # This workflow will install IC on arm based system.
 
-name: Arm compatibility test - macOS
+name: Arm compatibility test - Linux
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
       matrix:
         python-version: [3.8]
         #platform: [ubuntu-18.04, macos-latest]
-        platform: [macos-latest]
+        platform: [ubuntu-22.04-arm]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -32,13 +32,13 @@ jobs:
     - name: Run tests
       run: |
         set -o pipefail # necessary for test failure to propagate to `tee`
-        source /Users/runner/miniconda/etc/profile.d/conda.sh
+        source /home/runner/miniconda/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
         PYTEST_ADDOPTS=--color=yes HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par | tee pytest_output
 
     - name: Test warning-catching script
       run: |
-        source /Users/runner/miniconda/etc/profile.d/conda.sh
+        source /home/runner/miniconda/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
 
         # write dummy tests
