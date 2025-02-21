@@ -1,6 +1,6 @@
-# This workflow will install IC and run all the tests with pytest
+# This workflow will install IC on arm based system.
 
-name: Test suite
+name: Arm compatibility test - macOS
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
       matrix:
         python-version: [3.8]
         #platform: [ubuntu-18.04, macos-latest]
-        platform: [ubuntu-20.04, macos-latest, ubuntu-22.04-arm]
+        platform: [macos-latest]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -27,14 +27,8 @@ jobs:
 
     - name: Install IC
       run: |
-
-        case "$(uname -m)" in
-          x86_64)   source $CONDA/etc/profile.d/conda.sh                  ;;
-          aarch64)  echo "CONDA=/home/runner/miniconda" >> "$GITHUB_ENV"  ;;
-          arm)      echo "CONDA=/Users/runner/miniconda" >> "$GITHUB_ENV" ;;
-        esac
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
-
+        echo "CONDA=/Users/runner/miniconda" >> "$GITHUB_ENV"
 
     - name: Run tests
       run: |
