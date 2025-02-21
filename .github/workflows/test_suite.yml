@@ -29,11 +29,10 @@ jobs:
       run: |
 
         case "$(uname -m)" in
-          x86_64)                                                         ;;
+          x86_64)   source $CONDA/etc/profile.d/conda.sh                  ;;
           aarch64)  echo "CONDA=/home/runner/miniconda" >> "$GITHUB_ENV"  ;;
-          arm)      echo "CONDA=/Users/runner/miniconda" >> "$GITHUB_ENV" ;;
+          arm64)      echo "CONDA=/Users/runner/miniconda" >> "$GITHUB_ENV" ;;
         esac
-        source $CONDA/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
 
 
