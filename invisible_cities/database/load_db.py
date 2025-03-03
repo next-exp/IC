@@ -46,7 +46,7 @@ where pos.SensorID < 100
 and pos.MinRun <= {0} and {0} <= pos.MaxRun
 and map.MinRun <= {0} and {0} <= map.MaxRun
 and pos.Label LIKE 'PMT%'
-order by Active desc, pos.SensorID
+order by pos.SensorID
 '''.format(abs(run_number))
     data = pd.read_sql_query(sql, conn)
     data.fillna(0, inplace=True)
