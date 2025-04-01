@@ -14,7 +14,7 @@ jobs:
       matrix:
         python-version: [3.8]
         #platform: [ubuntu-18.04, macos-latest]
-        platform: [ubuntu-20.04]
+        platform: [ubuntu-24.04]
     runs-on: ${{ matrix.platform }}
 
     steps:
