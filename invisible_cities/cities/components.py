@@ -1550,7 +1550,7 @@ def hits_corrector( filename   : str
                                     , apply_temp = apply_temp
                                     , norm_strat = norm_strat
                                     , norm_value = norm_value)
-    time_to_Z = get_df_to_z_converter(maps) if maps.t_evol is not None and apply_z == True else identity
+    time_to_Z = get_df_to_z_converter(maps) if maps.t_evol is not None and apply_z else identity
 
     def correct(hitc : HitCollection) -> HitCollection:
         for hit in hitc.hits:

@@ -493,11 +493,8 @@ def test_read_wrong_pmt_ids(ICDATADIR):
 def test_hits_corrector_z_uncorrected_when_flagged( correction_map_filename
                                                   , apply_z):
     '''
-    Test that checks to ensure that z is uncorrected when `apply_z` is True
+    Test to ensure that z is uncorrected when `apply_z` is True
     '''
-    apply_temp = False
-    norm_strat = NormStrategy.kr
-    norm_value = None
 
     # create some hits to correct
     n  = 50
@@ -514,9 +511,9 @@ def test_hits_corrector_z_uncorrected_when_flagged( correction_map_filename
     hc = HitCollection(0, 1, hits)
 
     correct = hits_corrector(correction_map_filename,
-                             apply_temp, 
-                             norm_strat,
-                             norm_value = norm_value,
+                             apply_temp = False, 
+                             norm_strat = NormStrategy.kr,
+                             norm_value = None,
                              apply_z = apply_z)
     corrected_z = np.array([h.Z for h in correct(hc).hits])
 
