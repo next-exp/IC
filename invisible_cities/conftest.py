@@ -25,6 +25,11 @@ from . types.symbols     import SiPMCharge
 from . types.symbols     import InterpolationMethod
 from . types.symbols     import NormStrategy
 
+from . evm.event_model    import Cluster
+from . evm.event_model    import Hit
+from . evm.event_model    import HitCollection
+from . types.ic_types     import xy
+
 tbl_data = namedtuple('tbl_data', 'filename group node')
 dst_data = namedtuple('dst_data', 'file_info config read true')
 pmp_dfs  = namedtuple('pmp_dfs' , 's1 s2 si, s1pmt, s2pmt')
@@ -754,6 +759,23 @@ def hits_toy_data(ICDATADIR):
 
     hits_filename = os.path.join(ICDATADIR, "toy_hits.h5")
     return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e, x_peak, y_peak)
+
+
+@pytest.fixture(scope='session')
+def random_hits_toy_data():
+
+    n = 50
+    xs = np.random.uniform(-10, 10, n)
+    ys = np.random.uniform(-10, 10, n)
+    zs = np.random.uniform( 10, 50, n)
+
+    hits = []
+    for i, x, y, z in zip(range(n), xs, ys, zs):
+        c = Cluster(0, xy(x, y), xy.zero(), 1)
+        h = Hit(i, c, z, 1, xy.zero(), 0)
+        hits.append(h)
+
+    return HitCollection(0, 1, hits)
 
 
 @pytest.fixture(scope='session')
