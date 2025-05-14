@@ -489,10 +489,10 @@ def test_read_wrong_pmt_ids(ICDATADIR):
         next(sns_gen)
 
 
-def test_hits_uncorrected_when_flagged( correction_map_filename
-                                      , random_hits_toy_data):
+def test_hits_Z_uncorrected( correction_map_filename
+                           , random_hits_toy_data):
     '''
-    Test to ensure that z is uncorrected when `apply_z` is True
+    Test to ensure that z is uncorrected when `apply_z` is False
     '''
     
     hc = random_hits_toy_data
@@ -502,17 +502,17 @@ def test_hits_uncorrected_when_flagged( correction_map_filename
                              apply_temp = False, 
                              norm_strat = NormStrategy.kr,
                              norm_value = None,
-                             apply_z = False)
+                             apply_z    = False)
     corrected_z = np.array([h.Z for h in correct(hc).hits])
 
     # no change to equal results
     assert_equal(corrected_z, hz)
 
 
-def test_hits_corrected_when_not_flagged( correction_map_filename
-                                        , random_hits_toy_data):
+def test_hits_Z_corrected_when_flagged( correction_map_filename
+                                      , random_hits_toy_data):
     '''
-    Test to ensure that the correction is applied when `apply_z` is False
+    Test to ensure that the correction is applied when `apply_z` is True
     '''
     
     hc = random_hits_toy_data
@@ -522,7 +522,7 @@ def test_hits_corrected_when_not_flagged( correction_map_filename
                              apply_temp = False, 
                              norm_strat = NormStrategy.kr,
                              norm_value = None,
-                             apply_z = True)
+                             apply_z    = True)
     corrected_z = np.array([h.Z for h in correct(hc).hits])
 
     # raise assertion error as expected
