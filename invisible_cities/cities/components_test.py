@@ -10,6 +10,8 @@ from functools import partial
 from pytest import mark
 from pytest import raises
 from pytest import warns
+from numpy.testing import assert_equal
+from numpy.testing import assert_raises
 
 from .. core.configure     import configure
 from .. core.exceptions    import InvalidInputFileStructure
@@ -487,6 +489,46 @@ def test_read_wrong_pmt_ids(ICDATADIR):
         next(sns_gen)
 
 
+def test_hits_Z_uncorrected( correction_map_filename
+                           , random_hits_toy_data):
+    '''
+    Test to ensure that z is uncorrected when `apply_z` is False
+    '''
+    
+    hc = random_hits_toy_data
+    hz = [h.Z for h in hc.hits]
+    
+    correct = hits_corrector(correction_map_filename,
+                             apply_temp = False, 
+                             norm_strat = NormStrategy.kr,
+                             norm_value = None,
+                             apply_z    = False)
+    corrected_z = np.array([h.Z for h in correct(hc).hits])
+
+    # no change to equal results
+    assert_equal(corrected_z, hz)
+
+
+def test_hits_Z_corrected_when_flagged( correction_map_filename
+                                      , random_hits_toy_data):
+    '''
+    Test to ensure that the correction is applied when `apply_z` is True
+    '''
+    
+    hc = random_hits_toy_data
+    hz = [h.Z for h in hc.hits]
+    
+    correct = hits_corrector(correction_map_filename,
+                             apply_temp = False, 
+                             norm_strat = NormStrategy.kr,
+                             norm_value = None,
+                             apply_z    = True)
+    corrected_z = np.array([h.Z for h in correct(hc).hits])
+
+    # raise assertion error as expected
+    assert_raises(AssertionError, assert_equal, corrected_z, hz)
+    
+
 @mark.parametrize( "norm_strat norm_value".split(),
                   ( (NormStrategy.kr    , None) # None marks the default value
                   , (NormStrategy.max   , None)
@@ -497,25 +539,16 @@ def test_read_wrong_pmt_ids(ICDATADIR):
 def test_hits_corrector_valid_normalization_options( correction_map_filename
                                                    , norm_strat
                                                    , norm_value
-                                                   , apply_temp ):
+                                                   , apply_temp
+                                                   , random_hits_toy_data ):
     """
     Test that all valid normalization options work to some
     extent. Here we just check that the values make some sense: not
     nan and greater than 0. The more exhaustive tests are performed
     directly on the core functions.
     """
-    n  = 50
-    xs = np.random.uniform(-10, 10, n)
-    ys = np.random.uniform(-10, 10, n)
-    zs = np.random.uniform( 10, 50, n)
 
-    hits = []
-    for i, x, y, z in zip(range(n), xs, ys, zs):
-        c = Cluster(0, xy(x, y), xy.zero(), 1)
-        h = Hit(i, c, z, 1, xy.zero(), 0)
-        hits.append(h)
-
-    hc = HitCollection(0, 1, hits)
+    hc = random_hits_toy_data
 
     correct     = hits_corrector(correction_map_filename, apply_temp, norm_strat, norm_value)
     corrected_e = np.array([h.Ec for h in correct(hc).hits])
