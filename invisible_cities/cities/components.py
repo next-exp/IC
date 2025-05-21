@@ -1548,12 +1548,14 @@ def hits_corrector( filename   : str
             "For all other `NormStrategy` options, `norm_value` must not be provided."
         )
 
-    maps      = read_maps(os.path.expandvars(filename))
+    map_fname = os.path.expandvars(map_fname)
+    maps      = read_maps(map_fname)
     get_coef  = apply_all_correction( maps
                                     , apply_temp = apply_temp
                                     , norm_strat = norm_strat
                                     , norm_value = norm_value)
-    time_to_Z = get_df_to_z_converter(maps) if maps.t_evol is not None and apply_z else identity
+    time_to_Z = (get_df_to_z_converter(maps) if maps.t_evol is not None and apply_z else
+                 identity)
 
     def correct(hitc : HitCollection) -> HitCollection:
         for hit in hitc.hits:
