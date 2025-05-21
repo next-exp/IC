@@ -80,6 +80,7 @@ def esmeralda( files_in         : OneOrManyFiles
              , fiducial_r       : float
              , paolina_params   : dict
              , corrections      : dict
+             , apply_z          : Optional[bool] = False
              ):
     """
     The city applies a threshold to sipm hits and extracts

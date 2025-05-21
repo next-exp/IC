@@ -393,8 +393,9 @@ def beersheba( files_in         : OneOrManyFiles
              , threshold        : float
              , same_peak        : bool
              , deconv_params    : dict
-             , satellite_params : Union[dict, NoneType]
              , corrections      : dict
+             , satellite_params : Union[dict, NoneType]
+             , apply_z          : Optional[bool] = False
              ):
     """
     The city corrects Penthesilea hits energy and extracts topology information.
@@ -492,8 +493,19 @@ def beersheba( files_in         : OneOrManyFiles
     threshold_hits = fl.map(hits_thresholder(threshold, same_peak), item="hits")
     hitc_to_df     = fl.map(hitc_to_df_, item="hits")
 
+<<<<<<< HEAD
     deconv_params['psf_fname'       ] = expandvars(deconv_params['psf_fname'])
     deconv_params['satellite_params'] = satellite_params
+=======
+    if corrections_file is None: correct_hits = identity
+    else                       : correct_hits = hits_corrector(corrections_file, apply_temp, apply_z)
+    correct_hits       = fl.map( correct_hits, item="hits")
+
+    threshold_hits  = fl.map(hits_thresholder(threshold, same_peak), item="hits")
+    hitc_to_df      = fl.map(hitc_to_df_, item="hits")
+
+    deconv_params['psf_fname'   ] = expandvars(deconv_params['psf_fname'])
+>>>>>>> 9744eaef (update cities to include z correction bool)
 
     for p in ['sample_width', 'bin_size', 'diffusion']:
         if len(deconv_params[p]) != deconv_params['n_dim']:
