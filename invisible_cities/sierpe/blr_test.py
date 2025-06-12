@@ -7,8 +7,8 @@ from pytest import fixture
 from pytest import mark
 from flaky  import flaky
 
-from .. reco import calib_sensors_functions as csf
-from .       import blr
+from .. calib import calib_sensors_functions as csf
+from .        import blr
 
 
 deconv_params = namedtuple("deconv_params",

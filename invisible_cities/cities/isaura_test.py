@@ -10,9 +10,11 @@ from .. io.dst_io      import load_dst
 from .. types.symbols  import all_events
 
 from .. core.testing_utils   import assert_tables_equality
+from .. core.testing_utils   import ignore_warning
 
 
-@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
+@ignore_warning.no_config_group
+@ignore_warning.not_kdst
 def test_isaura_contains_all_tables(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "test_Xe2nu_NEW_exact_deconvolution_joint.NEWMC.h5")
@@ -35,6 +37,7 @@ def test_isaura_contains_all_tables(ICDATADIR, output_tmpdir):
 
 
 
+@ignore_warning.no_config_group
 def test_isaura_empty_input_file(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "empty_file.h5")
@@ -50,7 +53,8 @@ def test_isaura_empty_input_file(ICDATADIR, output_tmpdir):
     assert result.evtnum_list == []
 
 
-@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
+@ignore_warning.no_config_group
+@ignore_warning.not_kdst
 def test_isaura_exact(ICDATADIR, output_tmpdir):
 
     PATH_IN   = os.path.join(ICDATADIR    , "exact_Kr_deconvolution_with_MC.h5")
@@ -80,7 +84,8 @@ def test_isaura_exact(ICDATADIR, output_tmpdir):
                 assert_tables_equality(obtained, expected)
 
 
-@mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
+@ignore_warning.no_config_group
+@ignore_warning.not_kdst
 def test_isaura_conserves_energy(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "exact_Kr_deconvolution_with_MC.h5")
@@ -106,6 +111,7 @@ def test_isaura_conserves_energy(ICDATADIR, output_tmpdir):
     np.testing.assert_allclose(dhits_energy, devents_energy)
 
 
+@ignore_warning.no_config_group
 def test_isaura_copy_kdst(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "test_deconv_NEW_v1.2.0_bg.h5")

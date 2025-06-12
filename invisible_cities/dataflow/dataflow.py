@@ -324,6 +324,7 @@ def string_to_pick(component):
 def slice(*args, close_all=False):
     spec = builtins.slice(*args)
     start, stop, step = spec.start, spec.stop, spec.step
+
     if start is not None and start <  0: raise ValueError('slice requires start >= 0')
     if stop  is not None and stop  <  0: raise ValueError('slice requires stop >= 0')
     if step  is not None and step  <= 0: raise ValueError('slice requires step > 0')
@@ -332,13 +333,19 @@ def slice(*args, close_all=False):
     if step  is None: step  = 1
     if stop  is None: stopper = it.count()
     else            : stopper = range((stop - start + step - 1) // step)
+
     @coroutine
     def slice_loop(target):
         with closing(target):
-            for _ in range(start)             : yield
+            # ensures that we yield at least once in case of
+            # stop<=start to avoid raising StopPipeline without
+            # yielding first
+            if stop is not None and start >= stop : yield
+
+            for _ in range(start)                 : yield
             for _ in stopper:
                 target.send((yield))
-                for _ in range(step - 1)      : yield
+                for _ in range(step - 1)          : yield
             if close_all: raise StopPipeline
             while True:
                 yield

@@ -1,5 +1,5 @@
 import tables as tb
-from .. reco     import tbl_functions as tbl
+from .. core     import tbl_functions as tbl
 
 
 ## Suggested parameter list

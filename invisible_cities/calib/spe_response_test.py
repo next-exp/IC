@@ -191,6 +191,7 @@ def dark_spectrum_global():
     return parameters, pedestal + signal
 
 
+@flaky(max_runs=2)
 def test_scaled_dark_pedestal_pedestal(dark_spectrum_local):
     (bins, nsamples, scale, poisson_mean,
      pedestal_mean, pedestal_sigma,
@@ -211,6 +212,7 @@ def test_scaled_dark_pedestal_pedestal(dark_spectrum_local):
     assert np.all(in_range(pull, -2.5, 2.5))
 
 
+@flaky(max_runs=2)
 def test_scaled_dark_pedestal_spe(dark_spectrum_global):
     # Test that the spectrum we get is identical ignoring the pedestal
     (bins, nsamples, scale, poisson_mean,

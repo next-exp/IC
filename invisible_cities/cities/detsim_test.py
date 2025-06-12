@@ -10,8 +10,9 @@ from .. core.configure import configure
 from .. io.dst_io      import load_dst
 from .. types.symbols  import all_events
 from .. core.testing_utils import assert_tables_equality
+from .. core.testing_utils import ignore_warning
 
-
+@ignore_warning.no_config_group
 def test_detsim_contains_all_tables(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "nexus_new_kr83m_fast.newformat.sim.h5")
@@ -40,6 +41,8 @@ def test_detsim_contains_all_tables(ICDATADIR, output_tmpdir):
         assert sipmrd.shape == (1, 1792, n_sipm)
 
 
+@ignore_warning.no_config_group
+@ignore_warning.delayed_hits
 def test_detsim_filter_active_hits(ICDATADIR, output_tmpdir):
     # the first event in test file labels are set to NO_ACTIVE
     PATH_IN  = os.path.join(ICDATADIR    , "nexus_new_kr83m_fast.newformat.sim.noactive.h5")
@@ -58,6 +61,8 @@ def test_detsim_filter_active_hits(ICDATADIR, output_tmpdir):
         np.testing.assert_array_equal(filters["passed"], [False, True])
 
 
+@ignore_warning.no_config_group
+@ignore_warning.delayed_hits
 def test_detsim_filter_dark_events(ICDATADIR, output_tmpdir):
     # this file contains delayed hits that are filtered out
     # leaving a very low energy hit that does not produce electrons
@@ -80,6 +85,7 @@ def test_detsim_filter_dark_events(ICDATADIR, output_tmpdir):
         np.testing.assert_array_equal(filters["passed"], [False])
 
 
+@ignore_warning.no_config_group
 def test_detsim_filter_empty_waveforms(ICDATADIR, output_tmpdir):
     # the first event radius is slighty above NEW active radius of 208.0 mm
     PATH_IN  = os.path.join(ICDATADIR, "nexus_new_kr83m_fast.newformat.sim.emptywfs.h5")
@@ -101,6 +107,7 @@ def test_detsim_filter_empty_waveforms(ICDATADIR, output_tmpdir):
         np.testing.assert_array_equal(filters["passed"], [False, True])
 
 
+@ignore_warning.no_config_group
 def test_detsim_empty_input_file(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "empty_mcfile.h5")
@@ -115,6 +122,7 @@ def test_detsim_empty_input_file(ICDATADIR, output_tmpdir):
     assert result.evtnum_list == []
 
 
+@ignore_warning.no_config_group
 def test_detsim_exact(ICDATADIR, output_tmpdir):
 
     PATH_IN   = os.path.join(ICDATADIR    , "nexus_new_kr83m_fast.newformat.sim.h5")
@@ -149,6 +157,7 @@ def test_detsim_exact(ICDATADIR, output_tmpdir):
                 assert_tables_equality(got, expected)
 
 
+@ignore_warning.no_config_group
 def test_detsim_exact_time_translation(ICDATADIR, output_tmpdir):
 
     PATH_IN   = os.path.join(ICDATADIR    , "nexus_new_kr83m_fast.newformat.sim.h5")
@@ -190,6 +199,7 @@ def test_detsim_exact_time_translation(ICDATADIR, output_tmpdir):
                 assert_tables_equality(got, expected)
 
 
+@ignore_warning.no_config_group
 def test_detsim_buffer_times(ICDATADIR, output_tmpdir):
     """This test checks that the signal is properly placed in the buffer.
     In particular:
@@ -263,6 +273,7 @@ def test_detsim_buffer_times(ICDATADIR, output_tmpdir):
     assert tend   == np.floor(s2_tmax / buffer_params["sipm_width"]) * buffer_params["sipm_width"]
 
 
+@ignore_warning.no_config_group
 def test_detsim_hits_without_strings(ICDATADIR, output_tmpdir):
     PATH_IN  = os.path.join(ICDATADIR    , "nexus_next100_nostrings.h5")
     PATH_OUT = os.path.join(output_tmpdir, "detsim_nostrings.h5")

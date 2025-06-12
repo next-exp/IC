@@ -8,6 +8,7 @@ from pytest                  import mark
 from .. io.dst_io            import load_dst
 from .. core.testing_utils   import assert_dataframes_close
 from .. core.testing_utils   import assert_tables_equality
+from .. core.testing_utils   import ignore_warning
 from .. core.configure       import configure
 from .. core.system_of_units import pes, mm, mus, ns
 from .. types.symbols        import all_events
@@ -15,6 +16,7 @@ from .. types.symbols        import all_events
 from .  dorothea import dorothea
 
 
+@ignore_warning.no_config_group
 def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps_filename, KrMC_kdst):
     # NB: avoid taking defaults for PATH_IN and PATH_OUT
     # since they are in general test-specific
@@ -48,6 +50,7 @@ def test_dorothea_KrMC(config_tmpdir, KrMC_pmaps_filename, KrMC_kdst):
     assert_dataframes_close(dst, df_true, check_dtype=False, rtol=1e-2)
 
 
+@ignore_warning.no_config_group
 def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     PATH_IN =  Kr_pmaps_run4628_filename
 
@@ -103,6 +106,7 @@ def test_dorothea_filter_events(config_tmpdir, Kr_pmaps_run4628_filename):
     assert np.all(dst.s2_peak.values == s2_peak_pass)
 
 
+@ignore_warning.no_config_group
 @mark.parametrize("include_mc", (False, True))
 def test_dorothea_contains_all_tables(ICDATADIR, output_tmpdir, include_mc):
 
@@ -132,6 +136,7 @@ def test_dorothea_contains_all_tables(ICDATADIR, output_tmpdir, include_mc):
         assert not ("MC/particles"    in h5out.root) ^ include_mc
 
 
+@ignore_warning.no_config_group
 @mark.parametrize("include_mc", (False, True))
 def test_dorothea_exact_result(ICDATADIR, output_tmpdir, include_mc):
     tables = ("DST/Events", "Filters/s12_selector", "Run/events", "Run/runInfo")
@@ -159,6 +164,7 @@ def test_dorothea_exact_result(ICDATADIR, output_tmpdir, include_mc):
                 assert_tables_equality(got, expected)
 
 
+@ignore_warning.no_config_group
 def test_dorothea_empty_input_file(config_tmpdir, ICDATADIR):
     # Dorothea must run on an empty file without raising any exception
     # The input file has the complete structure of a PMAP but no events.

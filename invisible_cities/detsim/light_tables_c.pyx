@@ -107,7 +107,9 @@ cdef class LT_SiPM(LightTable):
         double inv_bin
         double active_r2
 
-    def __init__(self, *, fname, sipm_database, el_gap_width=None, active_radius=None):
+    def __init__(self, *, fname, sipm_database, el_gap_width=None, active_radius=None, data_mc_ratio=1):
+        if data_mc_ratio <= 0: raise ValueError("LT_SiPM: data_mc_ratio must be greater than 0")
+
         lt_df, config_df, el_gap, active_r = read_lt(fname, 'PSF', el_gap_width, active_radius)
         lt_df.set_index('dist_xy', inplace=True)
         self.el_gap_width  = el_gap
@@ -116,7 +118,7 @@ cdef class LT_SiPM(LightTable):
 
         el_pitch  = float(config_df.loc["pitch_z"].value) * units.mm
         self.zbins_    = get_el_bins(el_pitch, el_gap)
-        self.values    = np.array(lt_df.values/len(self.zbins_), order='C', dtype=np.double)
+        self.values    = np.array(lt_df.values/len(self.zbins_) * data_mc_ratio, order='C', dtype=np.double)
         self.psf_bin   = float(lt_df.index[1]-lt_df.index[0]) * units.mm #index of psf is the distance to the sensor in mm
         self.inv_bin   = 1./self.psf_bin # compute this once to speed up the get_values_ calls
 
@@ -207,7 +209,9 @@ cdef class LT_PMT(LightTable):
         double ymin
         double active_r2
 
-    def __init__(self, *, fname, el_gap_width=None, active_radius=None):
+    def __init__(self, *, fname, el_gap_width=None, active_radius=None, data_mc_ratio=1):
+        if data_mc_ratio <= 0: raise ValueError("LT_PMT: data_mc_ratio must be greater than 0")
+
         lt_df, config_df, el_gap, active_r = read_lt(fname, 'LT', el_gap_width, active_radius)
         self.el_gap_width  = el_gap
         self.active_radius = active_r
@@ -224,7 +228,7 @@ cdef class LT_PMT(LightTable):
         values_aux, (xmin, xmax), (ymin, ymax)  = self.__extend_lt_bounds(lt_df, config_df, columns, bin_x, bin_y)
         lenz = len(self.zbins)
         # add dimension for z partitions (1 in case of this table)
-        self.values = np.asarray(np.repeat(values_aux, lenz, axis=-1), dtype=np.double, order='C')
+        self.values = np.asarray(np.repeat(values_aux, lenz, axis=-1) * data_mc_ratio, dtype=np.double, order='C')
         self.xmin = xmin
         self.ymin = ymin
         # calculate inverse to speed up calls of get_values_

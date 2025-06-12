@@ -2,7 +2,7 @@ import pandas as pd
 import tables as tb
 
 from .. evm  import nh5           as table_formats
-from .. reco import tbl_functions as tbl
+from .. core import tbl_functions as tbl
 
 
 def _make_run_event_tables(hdf5_file, compression):

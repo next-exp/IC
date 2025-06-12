@@ -1,13 +1,18 @@
 import os
+import shutil
 import numpy  as np
 import tables as tb
+
+from pytest import mark
 
 from .. core                 import system_of_units as units
 from .. io                   import dst_io      as dio
 from .  esmeralda            import esmeralda
 from .. core.testing_utils   import assert_tables_equality
+from .. core.testing_utils   import ignore_warning
 
 
+@ignore_warning.no_config_group
 def test_esmeralda_runs(esmeralda_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, 'esmeralda_runs.h5')
     nevt_req = 1
@@ -18,6 +23,7 @@ def test_esmeralda_runs(esmeralda_config, config_tmpdir):
     assert cnt.events_in == nevt_req
 
 
+@ignore_warning.no_config_group
 def test_esmeralda_contains_all_tables(esmeralda_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, 'esmeralda_contains_all_tables.h5')
     nevt_req = 1
@@ -39,6 +45,7 @@ def test_esmeralda_contains_all_tables(esmeralda_config, config_tmpdir):
             assert node in h5out.root
 
 
+@ignore_warning.no_config_group
 def test_esmeralda_thresholds_hits(esmeralda_config, config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "esmeralda_thresholds_hits.h5")
     threshold = 50 * units.pes
@@ -52,6 +59,7 @@ def test_esmeralda_thresholds_hits(esmeralda_config, config_tmpdir):
     assert np.all(df.Q >= threshold)
 
 
+@ignore_warning.no_config_group
 def test_esmeralda_drops_external_hits(esmeralda_config, config_tmpdir):
     path_out   = os.path.join(config_tmpdir, "esmeralda_drops_external_hits.h5")
     fiducial_r = 450 * units.mm;
@@ -65,6 +73,7 @@ def test_esmeralda_drops_external_hits(esmeralda_config, config_tmpdir):
     assert np.all(df.X**2 + df.Y**2 <= fiducial_r**2)
 
 
+@ignore_warning.no_config_group
 def test_esmeralda_filters_events_threshold(esmeralda_config, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "esmeralda_filters_events_threshold.h5")
     esmeralda_config.update(dict( file_out    = path_out
@@ -93,6 +102,7 @@ def test_esmeralda_filters_events_threshold(esmeralda_config, config_tmpdir):
     assert  df_events .evt_number.drop_duplicates().tolist() == evt_all
 
 
+@ignore_warning.no_config_group
 def test_esmeralda_exact_result(esmeralda_config, Th228_tracks, config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "esmeralda_exact_result.h5")
     esmeralda_config["file_out"] = path_out
@@ -117,6 +127,7 @@ def test_esmeralda_exact_result(esmeralda_config, Th228_tracks, config_tmpdir):
 
 
 #if the first analyzed events has no overlap in blob buggy esmeralda will cast all overlap energy to integers
+@ignore_warning.no_config_group
 def test_esmeralda_blob_overlap_float_dtype(esmeralda_config, Th228_tracks, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "esmeralda_blob_overlap_float_dtype.h5")
 
@@ -129,6 +140,7 @@ def test_esmeralda_blob_overlap_float_dtype(esmeralda_config, Th228_tracks, conf
     assert tracks.ovlp_blob_energy.dtype == float
 
 
+@ignore_warning.no_config_group
 def test_esmeralda_tracks_have_correct_number_of_hits(esmeralda_config, Th228_tracks, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "esmeralda_summary_gives_correct_number_of_hits.h5")
     nevt_req = 3
@@ -146,6 +158,7 @@ def test_esmeralda_tracks_have_correct_number_of_hits(esmeralda_config, Th228_tr
         assert sum(track.numb_of_hits) == len(ev_phits)
 
 
+@ignore_warning.no_config_group
 def test_esmeralda_all_hits_after_drop_voxels(esmeralda_config, Th228_hits, config_tmpdir):
     path_out   = os.path.join(config_tmpdir, "esmeralda_all_hits_after_drop_voxels.h5")
     nevt_req   = 2
@@ -173,6 +186,7 @@ def test_esmeralda_all_hits_after_drop_voxels(esmeralda_config, Th228_hits, conf
 
 
 #TODO: refactor paolina to include this as a filter
+@ignore_warning.no_config_group
 def test_esmeralda_filters_events_with_too_many_hits(esmeralda_config, Th228_tracks, config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "esmeralda_filters_events_with_too_many_hits.h5")
     nevt_req  = 2
@@ -199,3 +213,15 @@ def test_esmeralda_filters_events_with_too_many_hits(esmeralda_config, Th228_tra
     assert (summary.evt_ntrks > 0        ).tolist() == evt_pass
     assert (summary.evt_nhits < nhits_max).tolist() == evt_pass
     assert            filter_output.passed.tolist() == evt_pass
+
+
+@ignore_warning.no_hits
+@ignore_warning.no_config_group
+def test_esmeralda_does_not_crash_with_no_hits(esmeralda_config, Th228_hits_missing, config_tmpdir):
+    path_out  = os.path.join(config_tmpdir, "esmeralda_does_not_crash_with_no_hits.h5")
+    esmeralda_config.update(dict( files_in    = Th228_hits_missing
+                                , file_out    = path_out
+                                , event_range = 1))
+
+    # just test that it doesn't crash
+    esmeralda(**esmeralda_config)

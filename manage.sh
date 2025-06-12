@@ -73,7 +73,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2022-04-13
+CONDA_ENV_TAG=2024-06-08
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
@@ -83,6 +83,9 @@ function make_environment {
 
     cat <<EOF > ${YML_FILENAME}
 name: ${CONDA_ENV_NAME}
+channels:
+- conda-forge
+- defaults
 dependencies:
 - python       = ${PYTHON_VERSION}
 # *REMEMBER TO CHANGE CONDA_ENV_TAG WHEN CHANGING VERSION NUMBERS*
@@ -92,13 +95,13 @@ dependencies:
 - matplotlib   = 3.4.3
 - networkx     = 2.6.3
 - notebook     = 6.4.5
-- numpy        = 1.20.3
+- numpy        = 1.23.1
 - pandas       = 1.3.4
 - seaborn      = 0.11.2
 - pymysql      = 1.0.2
 - pytables     = 3.7.0
 - pytest       = 6.2.4
-- scipy        = 1.7.1
+- scipy        = 1.9.3
 - sphinx       = 4.2.0
 - tornado      = 6.1
 - flaky        = 3.7.0

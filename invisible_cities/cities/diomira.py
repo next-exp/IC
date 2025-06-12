@@ -32,8 +32,7 @@ import tables as tb
 
 from .. core.configure          import EventRangeType
 from .. core.configure          import OneOrManyFiles
-from .. reco                    import    tbl_functions as tbl
-from .. reco                    import sensor_functions as sf
+from .. core                    import    tbl_functions as tbl
 from .. reco                    import   peak_functions as pkf
 from .. sierpe                  import fee              as FE
 from .. io.rwf_io               import           rwf_writer
@@ -41,6 +40,7 @@ from .. io.run_and_event_io     import run_and_event_writer
 from .. io. event_filter_io     import  event_filter_writer
 from .. filters.trigger_filters import TriggerFilter
 from .. database                import load_db
+from .. detsim                  import sensor_functions as sf
 from .. evm.ic_containers       import TriggerParams
 from .. evm.pmaps               import S2
 from .. types.ic_types          import minmax

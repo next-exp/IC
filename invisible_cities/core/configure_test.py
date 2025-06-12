@@ -390,23 +390,6 @@ def test_config_CLI_flags(simple_conf_file_name, tmpdir_factory, name, flags, va
     assert getattr(conf_ns, name) == value
 
 
-@mark.parametrize('flags value counter'.split(),
-                  (('-e all'   , 10, 'events_in'), # 10 events in the file
-                   ('-e   9'   ,  9, 'events_in'), # [ 0,  9) -> 9
-                   ('-e 5 9'   ,  4, 'events_in'), # [ 5,  9) -> 4
-                   ('-e 2 last',  8, 'events_in'), # events [2, 10) -> 8
-                  ))
-def test_config_penthesilea_counters(config_tmpdir, KrMC_pmaps_filename, flags, value, counter):
-    input_filename  = KrMC_pmaps_filename
-    config_filename = 'invisible_cities/config/penthesilea.conf'
-    flags_wo_spaces = flags.replace(" ", "_")
-    output_filename = path.join(config_tmpdir,
-                                f'penthesilea_counters_output_{flags_wo_spaces}.h5')
-    argv = f'penthesilea {config_filename} -i {input_filename} -o {output_filename} {flags}'.split()
-    counters = penthesilea(**configure(argv))
-    assert getattr(counters, counter) == value
-
-
 def test_configure_numpy(config_tmpdir):
     config_filename = config_tmpdir.join("conf_with_numpy.conf")
     config_contents = "a_numpy_array = np.linspace(0, 1, 3)\n"

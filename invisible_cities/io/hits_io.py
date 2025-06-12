@@ -34,7 +34,7 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
     times = getattr(dst, 'time', [-1]*len(dst))
     for (event, time) , df in dst.groupby(['event', times]):
         #pandas is not consistent with numpy dtypes so we have to change it by hand
-        event = np.int32(event)
+        event = np.int64(event)
         hits  = []
         for i, row in df.iterrows():
             Q = getattr(row,'Q', row.E)
@@ -44,12 +44,12 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
                 Xrms  = row.Xrms
                 Xrms2 = Xrms**2
             else:
-                Xrms = Xrms2 = -1
+                Xrms = Xrms2 = 0
             if hasattr(row, 'Yrms'):
                 Yrms  = row.Yrms
                 Yrms2 = Yrms**2
             else:
-                Yrms = Yrms2 = -1
+                Yrms = Yrms2 = 0
             nsipm   = getattr(row, 'nsipm'   , -1   )     # for backwards compatibility
             Qc      = getattr(row, 'Qc'      , -1   )     # for backwards compatibility
             Xpeak   = getattr(row, 'Xpeak'   , -1000)     # for backwards compatibility

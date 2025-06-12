@@ -1,6 +1,9 @@
 import os
 import pytest
+import shutil
+
 import numpy  as np
+import tables as tb
 
 from pandas      import DataFrame
 from collections import namedtuple
@@ -13,8 +16,19 @@ from . io   .  hits_io   import load_hits
 from . io   .  hits_io   import load_hits_skipping_NN
 from . io   .mcinfo_io   import load_mchits_df
 from . types.ic_types    import NN
-from . types.symbols     import ALL_SYMBOLS
+from . types.symbols     import XYReco
+from . types.symbols     import RebinMethod
+from . types.symbols     import HitEnergy
+from . types.symbols     import DeconvolutionMode
+from . types.symbols     import CutType
+from . types.symbols     import SiPMCharge
+from . types.symbols     import InterpolationMethod
+from . types.symbols     import NormStrategy
 
+from . evm.event_model    import Cluster
+from . evm.event_model    import Hit
+from . evm.event_model    import HitCollection
+from . types.ic_types     import xy
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
 dst_data = namedtuple('dst_data', 'file_info config read true')
@@ -180,7 +194,6 @@ def data_hdst_deconvolved(ICDATADIR):
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
-
 @pytest.fixture(scope='session')
 def KrMC_kdst(ICDATADIR):
     test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_KDST.h5"
@@ -214,7 +227,7 @@ def KrMC_kdst(ICDATADIR):
                          s2_ethr       =      1 * units.pes,
                          s2_nsipmmin   =      2,
                          s2_nsipmmax   =   1000,
-                         global_reco_algo   = ALL_SYMBOLS["barycenter"],
+                         global_reco_algo   = XYReco.barycenter,
                          global_reco_params = dict(Qthr = 1 * units.pes))
 
     event    = [0, 1, 2, 3, 4, 5, 6, 7, 9]
@@ -354,9 +367,9 @@ def KrMC_hdst(ICDATADIR):
                          s2_ethr       =      1 * units.pes,
                          s2_nsipmmin   =      2,
                          s2_nsipmmax   =   1000,
-                         global_reco_algo   = ALL_SYMBOLS["barycenter"],
+                         global_reco_algo   = XYReco.barycenter,
                          global_reco_params = dict(Qthr = 1 * units.pes),
-                         slice_reco_algo    = ALL_SYMBOLS["corona"],
+                         slice_reco_algo    = XYReco.corona,
                          slice_reco_params  =   dict(
                              Qthr           =   2  * units.pes,
                              Qlm            =   5  * units.pes,
@@ -634,6 +647,20 @@ def Th228_deco_separate(ICDATADIR):
 
 
 @pytest.fixture(scope="session")
+def Th228_hits_missing(Th228_hits, config_tmpdir):
+    """Copy input file and remove the hits from the first event"""
+    outpath = os.path.basename(Th228_hits).replace(".h5", "_missing_hits.h5")
+    outpath = os.path.join(config_tmpdir, outpath)
+    shutil.copy(Th228_hits, outpath)
+    with tb.open_file(outpath, "r+") as file:
+        first_evt = file.root.Run.events[0][0]
+        evt_rows  = [row[0] == first_evt for row in file.root.RECO.Events]
+        n_delete  = sum(evt_rows)
+        file.root.RECO.Events.remove_rows(0, n_delete)
+    return outpath
+
+
+@pytest.fixture(scope="session")
 def next100_mc_krmap(ICDATADIR):
     filename = "map_NEXT100_MC.h5"
     filename = os.path.join(ICDATADIR, filename)
@@ -674,14 +701,16 @@ def sophronia_config(Th228_pmaps, next100_mc_krmap):
                         s2_ethr     =    0 * units.pes,
                    )
                    , rebin              = 1
-                   , rebin_method       = ALL_SYMBOLS["stride"]
-                   , sipm_charge_type   = ALL_SYMBOLS["raw"]
+                   , rebin_method       = RebinMethod.stride
+                   , sipm_charge_type   = SiPMCharge.raw
                    , q_thr              = 5 * units.pes
-                   , global_reco_algo   = ALL_SYMBOLS["barycenter"]
+                   , global_reco_algo   = XYReco.barycenter
                    , global_reco_params = dict(Qthr = 20 * units.pes)
                    , same_peak          = True
-                   , corrections_file   = next100_mc_krmap
-                   , apply_temp         = False
+                   , corrections        = dict(
+                       filename   = next100_mc_krmap,
+                       apply_temp =            False,
+                       norm_strat =  NormStrategy.kr)
                    )
     return config
 
@@ -705,8 +734,10 @@ def esmeralda_config(Th228_hits, next100_mc_krmap):
                       min_voxels       = 3                  ,
                       blob_radius      = 21 * units.mm      ,
           	      max_num_hits     = 30000              )
-                 , corrections_file   = next100_mc_krmap
-                 , apply_temp         = False
+                 , corrections = dict(
+                      filename   = next100_mc_krmap,
+                      apply_temp =            False,
+                      norm_strat =  NormStrategy.kr)
                  )
 
     return config
@@ -728,6 +759,23 @@ def hits_toy_data(ICDATADIR):
 
     hits_filename = os.path.join(ICDATADIR, "toy_hits.h5")
     return hits_filename, (npeak, nsipm, x, y, xrms, yrms, z, q, e, x_peak, y_peak)
+
+
+@pytest.fixture(scope='session')
+def random_hits_toy_data():
+
+    n = 50
+    xs = np.random.uniform(-10, 10, n)
+    ys = np.random.uniform(-10, 10, n)
+    zs = np.random.uniform( 10, 50, n)
+
+    hits = []
+    for i, x, y, z in zip(range(n), xs, ys, zs):
+        c = Cluster(0, xy(x, y), xy.zero(), 1)
+        h = Hit(i, c, z, 1, xy.zero(), 0)
+        hits.append(h)
+
+    return HitCollection(0, 1, hits)
 
 
 @pytest.fixture(scope='session')
@@ -801,18 +849,20 @@ def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
                                        , bin_size      = [ 1.,  1.]
                                        , diffusion     = (1.0, 0.2)
                                        , n_dim         = 2
-                                       , energy_type   = ALL_SYMBOLS['Ec']
-                                       , deconv_mode   = ALL_SYMBOLS['joint']
-                                       , cut_type      = ALL_SYMBOLS[  'abs']
-                                       , inter_method  = ALL_SYMBOLS['cubic'])
-                 , corrections_file = next100_mc_krmap
-                 , apply_temp       = False )
+                                       , energy_type   = HitEnergy.Ec
+                                       , deconv_mode   = DeconvolutionMode.joint
+                                       , cut_type      = CutType.abs
+                                       , inter_method  = InterpolationMethod.cubic)
+                 , satellite_params = None
+                 , corrections   = dict( filename   = next100_mc_krmap
+                                       , apply_temp = False
+                                       , norm_strat = NormStrategy.kr))
     return config
 
 
 @pytest.fixture(scope='function')
 def beersheba_config_separate(beersheba_config):
-    beersheba_config["deconv_params"].update(dict( deconv_mode    = ALL_SYMBOLS["separate"]
+    beersheba_config["deconv_params"].update(dict( deconv_mode    = DeconvolutionMode.separate
                                                  , n_iterations   = 50
                                                  , n_iterations_g = 50))
 

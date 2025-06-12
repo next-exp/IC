@@ -3,6 +3,7 @@ Core functions
 This module includes utility functions.
 """
 import time
+from contextlib import contextmanager
 
 import numpy as np
 
@@ -345,3 +346,13 @@ def find_nearest(array : np.ndarray,
     """
     idx = (np.abs(array - value)).argmin()
     return array[idx]
+
+
+@contextmanager
+def fix_random_seed(seed):
+    state = np.random.get_state()
+    np.random.seed(seed)
+    try:
+        yield
+    finally:
+        np.random.set_state(state)

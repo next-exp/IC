@@ -1,7 +1,9 @@
 import numpy  as np
 import pandas as pd
 
+from dataclasses            import dataclass
 from pytest                 import approx
+from pytest                 import mark
 from numpy.testing          import assert_equal
 from numpy.testing          import assert_allclose
 from hypothesis.strategies  import integers
@@ -87,22 +89,8 @@ def FLOAT_ARRAY(*args, **kwargs):
 def random_length_float_arrays(min_length =     0,
                                max_length =   100,
                                **kwargs          ):
-    lengths = integers(min_length,
-                       max_length)
-
-    return lengths.flatmap(lambda n: float_arrays(       n,
-                                                  **kwargs))
-
-
-def _compare_dataframes(assertion, df1, df2, check_types=True, **kwargs):
-    assert sorted(df1.columns) == sorted(df2.columns), "DataFrames with different structure cannot be compared"
-
-    for col in df1.columns:
-        col1 = df1[col]
-        col2 = df2[col]
-        if check_types:
-            assert col1.dtype == col2.dtype
-        assertion(col1.values, col2.values, **kwargs)
+    lengths = integers(min_length, max_length)
+    return lengths.flatmap(lambda n: float_arrays(n, **kwargs))
 
 
 def assert_dataframes_equal(df1, df2, **kwargs):
@@ -142,26 +130,47 @@ def assert_PMap_equality(pmp0, pmp1):
         assert_Peak_equality(s2_0, s2_1)
 
 
+def _get_table_name(t):
+    return t.name if hasattr(t, "name") else "unknown"
+
 def assert_tables_equality(got_table, expected_table, rtol=1e-7, atol=0):
     table_got      =      got_table[:]
     table_expected = expected_table[:]
-    assert len(table_got      ) == len(table_expected      )
-    assert len(table_got.dtype) == len(table_expected.dtype)
+    # we keep both names to be as generic as possible
+    names          = _get_table_name(got_table), _get_table_name(expected_table)
+
+    shape_got      = len(table_got     ), len(table_got     .dtype)
+    shape_expected = len(table_expected), len(table_expected.dtype)
+    assert shape_got == shape_expected, f"Tables {names} have different shapes: {shape_got} vs. {shape_expected}"
 
     if table_got.dtype.names is not None:
         for col_name in table_got.dtype.names:
+            assert col_name in table_expected.dtype.names, f"Column {col_name} missing in {names[1]}"
+
             got      = table_got     [col_name]
             expected = table_expected[col_name]
-            assert type(got) == type(expected)
+            assert got.dtype.kind == expected.dtype.kind, f"Tables {names} have different types ({got.dtype} {expected.dtype}) for column {col_name}"
+
             try:
-                assert_allclose(got, expected, rtol=rtol, atol=atol)
-            except TypeError:
-                assert_equal   (got, expected)
+                is_float = got.dtype.kind == 'f'
+                if   is_float: assert_allclose(got, expected, rtol=rtol, atol=atol)
+                else         : assert_equal   (got, expected)
+            except:
+                print(f"Mismatch in column {col_name} of tables {names}")
+                raise
     else:
+        got      = table_got
+        expected = table_expected
+        assert got.dtype == expected.dtype, f"Tables {names} have different types ({got.dtype} {expected.dtype})"
+
         try:
-            assert_allclose(got_table, expected_table, rtol=rtol, atol=atol)
-        except TypeError:
-            assert_equal   (got_table, expected_table)
+            is_float = got.dtype.kind == 'f'
+            if   is_float: assert_allclose(got, expected, rtol=rtol, atol=atol)
+            else         : assert_equal   (got, expected)
+        except:
+            print(f"Mismatch in tables {names}")
+            raise
+
 
 def assert_cluster_equality(a_cluster, b_cluster):
     assert np.allclose(a_cluster.posxy , b_cluster.posxy )
@@ -197,3 +206,16 @@ def assert_hit_equality(a_hit, b_hit):
     assert a_hit.Xpeak        == approx (b_hit.Xpeak      )
     assert a_hit.Ypeak        == approx (b_hit.Ypeak      )
     assert a_hit.peak_number  == exactly(b_hit.peak_number)
+
+
+@dataclass(frozen=True)
+class ignore_warning:
+    str_length      = mark.filterwarnings("ignore:dataframe contains strings longer than allowed")
+    not_kdst        = mark.filterwarnings("ignore:.*not of kdst type.*:UserWarning")
+    no_config_group = mark.filterwarnings("ignore:Input file does not contain /config group")
+    no_hits         = mark.filterwarnings("ignore:Event .* does not contain hits")
+    repeated_files  = mark.filterwarnings("ignore:files_in contains repeated values")
+    delayed_hits    = mark.filterwarnings("ignore:Delayed hits at event .*")
+    unphysical_rate = mark.filterwarnings("ignore:(Zero|Negative) rate")
+    max_time_short  = mark.filterwarnings("ignore:`max_time` shorter than `buffer_length`")
+    no_mc_tables    = mark.filterwarnings("ignore:File does not contain MC tables.( *)Use positve run numbers for data")

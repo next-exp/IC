@@ -157,8 +157,10 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
 
     Returns
     -------
-    fitted_fun : extended function (contains values and errors)
-        Fitted function.
+    fitted_fun : FitFunction
+        Extended function containing fit parameters (fitf, vals, errors, chi2, pval,
+        cov) and full_output from curve_fit and leastsq (infodict, mesg and ier).
+
 
     Examples
     --------
@@ -183,7 +185,7 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
 
     kwargs['absolute_sigma'] = "sigma" in kwargs
 
-    vals, cov = scipy.optimize.curve_fit(func, x, y, seed, **kwargs)
+    vals, cov, infodict, mesg, ier = scipy.optimize.curve_fit(func, x, y, seed, full_output=True, **kwargs)
 
     fitf       = lambda x: func(x, *vals)
     fitx       = fitf(x)
@@ -191,8 +193,7 @@ def fit(func, x, y, seed=(), fit_range=None, **kwargs):
     ndof       = len(y) - len(vals)
     chi2, pval = get_chi2_and_pvalue(y, fitx, ndof, sigma_r)
 
-
-    return FitFunction(fitf, vals, errors, chi2, pval, cov)
+    return FitFunction(fitf, vals, errors, chi2, pval, cov, infodict, mesg, ier)
 
 
 def profileX(xdata, ydata, nbins=100,

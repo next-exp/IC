@@ -5,7 +5,7 @@ import tables as tb
 
 from numpy.testing import assert_allclose
 
-from .. reco     import tbl_functions as tbl
+from .. core     import tbl_functions as tbl
 
 from . channel_param_io import         generic_params
 from . channel_param_io import       store_fit_values

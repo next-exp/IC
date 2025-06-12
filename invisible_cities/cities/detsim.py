@@ -30,7 +30,7 @@ from .. core.configure import check_annotations
 from .. core.configure import EventRangeType
 from .. core.configure import OneOrManyFiles
 
-from .. reco     import tbl_functions as tbl
+from .. core     import tbl_functions as tbl
 from .. database import load_db       as db
 from .. dataflow import dataflow      as fl
 
@@ -152,19 +152,21 @@ def bin_edges_getter(pmt_width, sipm_width):
 
 @city
 def detsim( *
-          , files_in       : OneOrManyFiles
-          , file_out       : str
-          , event_range    : EventRangeType
-          , print_mod      : int
-          , compression    : str
-          , detector_db    : str
-          , run_number     : int
-          , s1_lighttable  : str
-          , s2_lighttable  : str
-          , sipm_psf       : str
-          , buffer_params  : dict
-          , physics_params : dict
-          , rate           : float
+          , files_in           : OneOrManyFiles
+          , file_out           : str
+          , event_range        : EventRangeType
+          , print_mod          : int
+          , compression        : str
+          , detector_db        : str
+          , run_number         : int
+          , s1_lighttable      : str
+          , s2_lighttable      : str
+          , sipm_psf           : str
+          , buffer_params      : dict
+          , physics_params     : dict
+          , rate               : float
+          , data_mc_ratio_pmt  : float
+          , data_mc_ratio_sipm : float
           ):
 
     buffer_params_  = buffer_params .copy()
@@ -178,8 +180,8 @@ def detsim( *
     # derived parameters
     datapmt  = db.DataPMT (detector_db, run_number)
     datasipm = db.DataSiPM(detector_db, run_number)
-    lt_pmt   = LT_PMT (fname=os.path.expandvars(s2_lighttable))
-    lt_sipm  = LT_SiPM(fname=os.path.expandvars(sipm_psf), sipm_database=datasipm)
+    lt_pmt   = LT_PMT (fname=os.path.expandvars(s2_lighttable), data_mc_ratio=data_mc_ratio_pmt )
+    lt_sipm  = LT_SiPM(fname=os.path.expandvars(sipm_psf)     , data_mc_ratio=data_mc_ratio_sipm, sipm_database=datasipm)
     el_gap   = lt_sipm.el_gap_width
 
     filter_delayed_hits = fl.map(filter_hits_after_max_time(buffer_params_["max_time"]),

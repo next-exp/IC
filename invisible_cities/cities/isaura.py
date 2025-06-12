@@ -13,7 +13,7 @@ import tables as tb
 
 from .. core.configure      import EventRangeType
 from .. core.configure      import OneOrManyFiles
-from .. reco                import tbl_functions        as tbl
+from .. core                import tbl_functions        as tbl
 from .. dataflow            import dataflow             as fl
 from .. dataflow.dataflow   import push
 from .. dataflow.dataflow   import pipe

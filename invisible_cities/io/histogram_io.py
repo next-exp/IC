@@ -1,6 +1,6 @@
 import tables as tb
 
-from .. reco import tbl_functions as tbl
+from .. core import tbl_functions as tbl
 
 
 def hist_writer(file,

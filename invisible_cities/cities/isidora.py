@@ -27,7 +27,7 @@ from .. dataflow.dataflow import sink
 
 from .. core.configure      import EventRangeType
 from .. core.configure      import OneOrManyFiles
-from .. reco                import tbl_functions as tbl
+from .. core                import tbl_functions as tbl
 from .. io.          rwf_io import           rwf_writer
 from .. io.run_and_event_io import run_and_event_writer
 from .. types.symbols       import WfType

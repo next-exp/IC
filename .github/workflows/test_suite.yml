@@ -14,22 +14,79 @@ jobs:
       matrix:
         python-version: [3.8]
         #platform: [ubuntu-18.04, macos-latest]
-        platform: [ubuntu-20.04]
+        platform: [ubuntu-24.04]
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Get LFS files
       run: git lfs pull
     # - name: Fix Conda permissions on macOS
     #   run: sudo chown -R $UID $CONDA
     #   if: runner.os == 'macOS'
+
     - name: Install IC
       run: |
         source $CONDA/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
+
+
     - name: Run tests
+      run: |
+        set -o pipefail # necessary for test failure to propagate to `tee`
+        source $CONDA/etc/profile.d/conda.sh
+        source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
+        PYTEST_ADDOPTS=--color=yes HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par | tee pytest_output
+
+    - name: Test warning-catching script
       run: |
         source $CONDA/etc/profile.d/conda.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
-        PYTEST_ADDOPTS=--color=yes HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par
+
+        # write dummy tests
+        cat > dummy.py <<EOF
+        from warnings import warn
+        def test_warn():
+          warn("bla bla bla", UserWarning)
+        def test_pass():
+          pass
+        EOF
+
+        echo "###################################"
+        cat dummy.py
+        echo "###################################"
+
+        pytest dummy.py -k "warn" > warn
+        pytest dummy.py -k "pass" > pass
+
+        echo "-------- output with warn ---------"
+        ./scripts/check_warnings warn | tee output_warn
+        echo "-----------------------------------"
+        if [ ! -s output_warn ]; then
+            msg="The `check_warnings` script has not detected existing warnings."
+            echo $msg
+            echo "::warning ::$msg"
+        else
+            echo "The warning was found!"
+        fi
+
+        echo "------- output without warn -------"
+        ./scripts/check_warnings pass | tee output_pass
+        echo "-----------------------------------"
+        if [ -s output_pass ]; then
+            msg="The `check_warnings` script detected non-existing warnings."
+            echo $msg
+            echo "::warning ::$msg"
+        else
+            echo "No warnings found (as expected)!"
+        fi
+
+
+    - name: Warning summary
+      run: |
+        ./scripts/check_warnings pytest_output | tee warnings
+        if [ -s warnings ]; then
+            echo "::warning ::There are warnings raised in the test suite"
+        else
+            echo "No warnings were raised."
+        fi

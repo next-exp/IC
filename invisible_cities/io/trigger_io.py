@@ -3,7 +3,7 @@ from functools import partial
 import tables as tb
 
 from .. evm                import nh5     as table_formats
-from .. reco.tbl_functions import filters as tbl_filters
+from .. core.tbl_functions import filters as tbl_filters
 
 
 def store_trigger(tables, trg_type, trg_channels):
