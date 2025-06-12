@@ -187,7 +187,7 @@ def deconvolve_signal(det_db           : pd.DataFrame,
     deconvolution = deconvolve(n_iterations, iteration_tol,
                                sample_width, det_grid,
                                **satellite_params,
-                               inter_method = inter_method, use_gpu)
+                               inter_method=inter_method, use_gpu=use_gpu)
 
     if not isinstance(energy_type , HitEnergy          ):
         raise ValueError(f'energy_type {energy_type} is not a valid energy type.')
@@ -230,7 +230,7 @@ def deconvolve_signal(det_db           : pd.DataFrame,
             deconv_image = nan_to_num(richardson_lucy(deconv_image, psf,
                                                       iterations = n_iterations_g,
                                                       iter_thr = iteration_tol,
-                                                      **satellite_params, use_gpu))
+                                                      **satellite_params, use_gpu=use_gpu))
 
         return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
 
