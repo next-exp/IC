@@ -473,7 +473,7 @@ def richardson_lucy(image, psf, satellite_start_iter, satellite_max_size, e_cut,
     eps        = xp.finfo(image.dtype).eps ### Protection against 0 value
     ref_image  = image/image.max()
 
-    for _ in range(iterations):
+    for i in range(iterations):
         x = convolve_method(im_deconv, psf, 'same')
         xp.place(x, x==0, eps) ### Protection against 0 value
         relative_blur = image / x
