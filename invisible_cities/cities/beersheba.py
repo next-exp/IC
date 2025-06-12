@@ -138,7 +138,7 @@ def deconvolve_signal(det_db           : pd.DataFrame,
                       cut_type         : Optional[CutType]=CutType.abs,
                       inter_method     : Optional[InterpolationMethod]=InterpolationMethod.cubic,
                       n_iterations_g   : Optional[int]=0,
-                      use_gpu         : Optional[bool]=False):
+                      use_gpu          : Optional[bool]=False):
     """
     Applies Lucy Richardson deconvolution to SiPM response with a
     given set of PSFs and parameters.

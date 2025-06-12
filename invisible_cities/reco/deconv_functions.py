@@ -327,8 +327,8 @@ def deconvolve(n_iterations         : int,
                satellite_max_size   : int,
                e_cut                : float,
                cut_type             : Optional[CutType]   = CutType.abs,
-               inter_method         : InterpolationMethod = InterpolationMethod.cubic
-               use_gpu              : bool = False
+               inter_method         : InterpolationMethod = InterpolationMethod.cubic,
+               use_gpu              : Optional[bool] = False
                ) -> Callable:
     """
     Deconvolves a given set of data (sensor position and its response)
