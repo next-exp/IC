@@ -12,9 +12,14 @@ from scipy.signal           import convolve
 from scipy.spatial.distance import cdist
 
 # Check if there is a GPU available
-USING_GPU = False
-
-
+try:
+    import cupy  as cp
+    import cupyx as cpx
+    from cupyx.scipy.signal  import convolve
+    from cupyx.scipy.signal  import fftconvolve 
+    import cupyx.scipy.ndimage as cpx_ndi
+except ImportError:
+    warnings.warn("Impossible to import cupy. Computations will be done in CPU.")
 
 from ..core .core_functions import shift_to_bin_centers
 from ..core .core_functions import in_range
@@ -254,24 +259,20 @@ def deconvolve(n_iterations  : int,
 
 @lru_cache
 def is_gpu_available() -> bool:
-    '''
-    Check if GPUs are available, import the necessary libraries and 
-    return True if they are available, False otherwise.
-    '''
+    """Check if a GPU is available for computations.
+    Returns
+    -------
+    bool
+        True if a GPU is available, False otherwise.
+    """
     try:
-        import cupy  as cp
-        import cupyx as cpx
-        from cupyx.scipy.signal  import convolve
-        from cupyx.scipy.signal  import fftconvolve 
-
         if cp.cuda.runtime.getDeviceCount():
             print("GPUs available:", cp.cuda.runtime.getDeviceCount())
             return True
         else:
-            warnings.warn("use_gpu was set to True but no GPUs are available")
+            warnings.warn("Cupy is installed bu no GPUs are available. Computations will be done in CPU.")
             return False
-    except ImportError:
-        warnings.warn("use_gpu was set to True but cupy is not installed")
+    except NameError:
         return False
 
 
@@ -327,9 +328,9 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0., use_gpu=False):
         convolve_method = convolve
 
     xp = np
-    if use_gpu:
-        if is_gpu_available():
-            xp = cp
+    using_gpu = use_gpu and is_gpu_available()
+    if using_gpu:
+        xp = cp
 
     # Convert image and psf to the appropriate array type (float)
     image      = xp.asarray(image, dtype=float)
@@ -361,7 +362,7 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0., use_gpu=False):
 
         ref_image = im_deconv/im_deconv.max()
 
-    if USING_GPU:
+    if using_gpu:
         im_deconv = cp.asnumpy(im_deconv)
 
     return im_deconv
