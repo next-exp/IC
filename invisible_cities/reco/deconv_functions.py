@@ -1,5 +1,6 @@
 import numpy  as np
 import pandas as pd
+import warnings
 
 from typing  import List
 from typing  import Tuple
@@ -13,24 +14,15 @@ from scipy.spatial.distance import cdist
 # Check if there is a GPU available
 USING_GPU = False
 
-try:
-    import cupy  as cp
-    import cupyx as cpx
-    from cupyx.scipy.signal  import convolve
-    from cupyx.scipy.signal  import fftconvolve 
 
-    if cp.cuda.runtime.getDeviceCount():
-        USING_GPU = True
-        print("GPUs available:", cp.cuda.runtime.getDeviceCount())
-    else:
-        raise ImportError
-except ImportError:
-    print("GPUs not available")
 
 from ..core .core_functions import shift_to_bin_centers
 from ..core .core_functions import in_range
 
 from .. types.symbols       import InterpolationMethod
+
+from functools import lru_cache
+
 
 
 def cut_and_redistribute_df(cut_condition : str,
@@ -215,7 +207,8 @@ def deconvolve(n_iterations  : int,
                iteration_tol : float,
                sample_width  : List[float],
                det_grid      : List[np.ndarray],
-               inter_method  : InterpolationMethod = InterpolationMethod.cubic
+               inter_method  : InterpolationMethod = InterpolationMethod.cubic,
+               use_gpu       : bool = False
                ) -> Callable:
     """
     Deconvolves a given set of data (sensor position and its response)
@@ -232,7 +225,8 @@ def deconvolve(n_iterations  : int,
         iteration_tol : Stopping threshold (difference between iterations).
         sample_width  : Sampling size of the sensors.
         det_grid      : xy-coordinates of the detector grid, to interpolate on them
-        inter_method  : Interpolation method.
+        inter_method  : Interpolation method. Default is cubic.
+        use_gpu       : Use GPU for the deconvolution. Default is False.
 
     Returns
     ----------
@@ -251,13 +245,37 @@ def deconvolve(n_iterations  : int,
         columns       = var_name[:len(data)]
         psf_deco      = psf.factor.values.reshape(psf.loc[:, columns].nunique().values)
         deconv_image  = np.nan_to_num(richardson_lucy(inter_signal, psf_deco,
-                                                      n_iterations, iteration_tol))
+                                                      n_iterations, iteration_tol, use_gpu))
 
         return deconv_image, inter_pos
 
     return deconvolve
 
-def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
+
+@lru_cache
+def is_gpu_available() -> bool:
+    '''
+    Check if GPUs are available, import the necessary libraries and 
+    return True if they are available, False otherwise.
+    '''
+    try:
+        import cupy  as cp
+        import cupyx as cpx
+        from cupyx.scipy.signal  import convolve
+        from cupyx.scipy.signal  import fftconvolve 
+
+        if cp.cuda.runtime.getDeviceCount():
+            print("GPUs available:", cp.cuda.runtime.getDeviceCount())
+            return True
+        else:
+            warnings.warn("use_gpu was set to True but no GPUs are available")
+            return False
+    except ImportError:
+        warnings.warn("use_gpu was set to True but cupy is not installed")
+        return False
+
+
+def richardson_lucy(image, psf, iterations=50, iter_thr=0., use_gpu=False):
     """Richardson-Lucy deconvolution (modification from scikit-image package).
 
     The modification adds a value=0 protection, the possibility to stop iterating
@@ -308,10 +326,10 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
     else:
         convolve_method = convolve
 
-    if USING_GPU:
-        xp = cp
-    else:
-        xp = np
+    xp = np
+    if use_gpu:
+        if is_gpu_available():
+            xp = cp
 
     # Convert image and psf to the appropriate array type (float)
     image      = xp.asarray(image, dtype=float)
@@ -329,7 +347,7 @@ def richardson_lucy(image, psf, iterations=50, iter_thr=0.):
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
         # This is needed because Cupy does not have a full errstate implementation
-        if USING_GPU:
+        if use_gpu and is_gpu_available():
             rel_diff_array = (im_deconv/im_deconv.max() - ref_image) ** 2
             with cpx.errstate():
                 rel_diff_array = xp.where(ref_image != 0, xp.divide(rel_diff_array, ref_image), 0)
