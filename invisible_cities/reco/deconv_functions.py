@@ -391,7 +391,7 @@ def is_gpu_available() -> bool:
             print("GPUs available:", cp.cuda.runtime.getDeviceCount())
             return True
         else:
-            warnings.warn("Cupy is installed bu no GPUs are available. Computations will be done in CPU.")
+            warnings.warn("Cupy is installed but no GPUs are available. Computations will be done in CPU.")
             return False
     except NameError:
         return False
