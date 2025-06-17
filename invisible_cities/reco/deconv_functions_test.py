@@ -16,6 +16,7 @@ from hypothesis.extra.pandas      import range_indexes
 
 from .. reco    .deconv_functions import cut_and_redistribute_df
 from .. reco    .deconv_functions import drop_isolated_sensors
+from .. reco    .deconv_functions import drop_isolated_clusters
 from .. reco    .deconv_functions import interpolate_signal
 from .. reco    .deconv_functions import deconvolution_input
 from .. reco    .deconv_functions import deconvolve
@@ -101,6 +102,52 @@ def test_drop_isolated_sensors():
         n_neighbours = len(df_cut[in_range(df_cut.X, row.X - dist[0], row.X + dist[0]) &
                                   in_range(df_cut.Y, row.Y - dist[1], row.Y + dist[1])])
         assert n_neighbours > 1
+
+
+def test_drop_isolated_clusters_retains_energy():
+    '''
+    Check that the energy is retained post dropping and
+    that each 'hit' has the requisite number of nearest
+    neighbours.
+    '''
+    dist  = [10.1, 10.1, 4.1]
+    nhits = 3
+    x = np.array([10,  10,  10,  20,  30,  40,  70,  70,  70 ])
+    y = np.array([10,  10,  10,  10,  10,  60,  40,  60,  80 ])
+    z = np.array([4,   4,   4,   4,   8,   42,  84,  35,  92 ])
+    q = np.array([1,   4,   7,   10,  19,  13,  3,   5,   7  ])
+    e = np.array([0,   197, 152, 55,  23,  111, 16,  76,  187])
+
+    df = pd.DataFrame({'X':x, 'Y':y, 'Z':z, 'Q':q, 'E':e})
+
+    drop_function = drop_isolated_clusters(dist, nhits, ['E'])
+    df_cut        = drop_function(df)
+
+    assert np.isclose(df_cut.E.sum(), df.E.sum())
+
+
+def test_drop_isolated_clusters_retains_cluster():
+    '''
+    Check that each 'hit' has the requisite number of nearest
+    neighbours, retaining one cluster in this test case.
+    '''
+    dist  = [10.1, 10.1, 4.1]
+    nhits = 3
+    x = np.array([10,  10,  10,  20,  30,  40,  70,  70,  70 ])
+    y = np.array([10,  10,  10,  10,  10,  60,  40,  60,  80 ])
+    z = np.array([4,   4,   4,   4,   8,   42,  84,  35,  92 ])
+    q = np.array([1,   4,   7,   10,  19,  13,  3,   5,   7  ])
+    e = np.array([0,   197, 152, 55,  23,  111, 16,  76,  187])
+
+    df = pd.DataFrame({'X':x, 'Y':y, 'Z':z, 'Q':q, 'E':e})
+
+    drop_function = drop_isolated_clusters(dist, nhits, ['E'])
+    df_cut        = drop_function(df)
+
+    got           = df_cut[['X', 'Y', 'Z', 'Q']]
+    expected      = df.head(5)[['X', 'Y', 'Z', 'Q']]
+    assert got.equals(expected)
+
 
 
 def test_interpolate_signal():
