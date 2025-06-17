@@ -313,8 +313,8 @@ def cut_over_Q(q_cut, redist_var):
 
 
 def drop_isolated( distance   : List[float],
-                   nhits      : Optional[int] = 3,
-                   redist_var : Optional[List] = []):
+                   redist_var : List[str],
+                   nhits      : Optional[int] = None):
     """
     Drops rogue/isolated hits (SiPMs) from hits,
     can be configured to remove clusters 
@@ -333,7 +333,10 @@ def drop_isolated( distance   : List[float],
     if   len(distance) == 2:
         drop = drop_isolated_sensors(distance, redist_var)
     elif len(distance) == 3:
-        drop = drop_isolated_clusters(distance, nhits, redist_var)
+        if nhits is None:
+            raise TypeError(f"Applying 3-dimensional dropping of isolated hits requires parameter nhits which is missing.")    
+        else:
+            drop = drop_isolated_clusters(distance, nhits, redist_var)
     else:
         raise ValueError(f"Invalid drop_dist parameter: expected 2 or 3 entries, but got {len(distance)}.")
 
@@ -489,9 +492,7 @@ def beersheba( files_in         : OneOrManyFiles
 
     cut_sensors           = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
                                    item = 'hits')
-    #drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
-    #                               item = 'hits')
-    drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), deconv_params.pop("cluster_size"), ['E', 'Ec']),
+    drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec'], deconv_params.pop("cluster_size")),
                                    item = 'hits')
     filter_events_no_hits = fl.map(check_nonempty_dataframe,
                                    args = 'hits',
