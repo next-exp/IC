@@ -228,7 +228,7 @@ def get_normalization_factor(map_e0    : ASectorMap,
     if norm_strat is NormStrategy.max:
         norm_value =  map_e0.e0.max().max()
     elif norm_strat is NormStrategy.mean:
-        norm_value = np.mean(np.mean(map_e0.e0))
+        norm_value = np.nanmean(map_e0.e0.values.flatten())
     elif norm_strat is NormStrategy.kr:
         norm_value = 41.5575 * units.keV
     elif norm_strat is NormStrategy.custom:
