@@ -227,12 +227,12 @@ def test_get_normalization_factor_mean_norm(correction_map_filename):
 @few_examples
 @given(floats(min_value = 1,
               max_value = 1e4))
-def test_get_normalization_factor_custom_norm(correction_map_filename, custom_vaule):
+def test_get_normalization_factor_custom_norm(correction_map_filename, custom_value):
     map_e  = read_maps(correction_map_filename)
     factor = get_normalization_factor(map_e,
                                       NormStrategy.custom,
-                                      custom_vaule)
-    norm   = custom_vaule
+                                      value = custom_value)
+    norm   = custom_value
     assert factor == norm
 
 def test_get_normalization_factor_krscale(correction_map_filename):
@@ -326,6 +326,6 @@ def test_corrections_exact(toy_corrections, correction_map_filename):
     get_factor = apply_all_correction(maps       = maps,
                                       apply_temp = True,
                                       norm_strat = NormStrategy.custom,
-                                      norm_value = 1.)
+                                      value      = 1.)
     fac        = get_factor(xs, ys, zs, ts)
     assert_allclose (factor, fac, atol = 1e-13)
