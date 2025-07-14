@@ -91,9 +91,7 @@ def maps_coefficient_getter(mapinfo : Series,
         for a given (X,Y) position
     """
 
-    binsx   = np.linspace(mapinfo.xmin, mapinfo.xmax, mapinfo.nx + 1)
-    binsy   = np.linspace(mapinfo.ymin, mapinfo.ymax, mapinfo.ny + 1)
-
+    binsx, binsy = get_xy_bins(mapinfo)
     def get_maps_coefficient(x : np.array, y : np.array) -> np.array:
         ix = np.digitize(x, binsx) - 1
         iy = np.digitize(y, binsy) - 1
@@ -206,6 +204,12 @@ def get_df_to_z_converter(map_te: ASectorMap) -> Callable:
 def get_normalization_factor(map_e0    : ASectorMap,
                              norm_strat: NormStrategy    = NormStrategy.max,
                              norm_value: Optional[float] = None
+def get_xy_bins(mapinfo):
+    binsx   = np.linspace(mapinfo.xmin, mapinfo.xmax, mapinfo.nx + 1)
+    binsy   = np.linspace(mapinfo.ymin, mapinfo.ymax, mapinfo.ny + 1)
+    return binsx, binsy
+
+
                              ) -> float:
     """
     For given map, it returns a factor that provides the conversion
