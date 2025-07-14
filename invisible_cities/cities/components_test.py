@@ -494,12 +494,12 @@ def test_hits_Z_uncorrected( correction_map_filename
     '''
     Test to ensure that z is uncorrected when `apply_z` is False
     '''
-    
+
     hc = random_hits_toy_data
     hz = [h.Z for h in hc.hits]
-    
+
     correct = hits_corrector(correction_map_filename,
-                             apply_temp = False, 
+                             apply_temp = False,
                              norm_strat = NormStrategy.kr,
                              norm_value = None,
                              apply_z    = False)
@@ -514,12 +514,12 @@ def test_hits_Z_corrected_when_flagged( correction_map_filename
     '''
     Test to ensure that the correction is applied when `apply_z` is True
     '''
-    
+
     hc = random_hits_toy_data
     hz = [h.Z for h in hc.hits]
-    
+
     correct = hits_corrector(correction_map_filename,
-                             apply_temp = False, 
+                             apply_temp = False,
                              norm_strat = NormStrategy.kr,
                              norm_value = None,
                              apply_z    = True)
@@ -527,7 +527,7 @@ def test_hits_Z_corrected_when_flagged( correction_map_filename
 
     # raise assertion error as expected
     assert_raises(AssertionError, assert_equal, corrected_z, hz)
-    
+
 
 @mark.parametrize( "norm_strat norm_value".split(),
                   ( (NormStrategy.kr    , None) # None marks the default value
@@ -550,7 +550,7 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
 
     hc = random_hits_toy_data
 
-    correct     = hits_corrector(correction_map_filename, apply_temp, norm_strat, norm_value)
+    correct     = hits_corrector(correction_map_filename, apply_temp, norm_strat, value=norm_value)
     corrected_e = np.array([h.Ec for h in correct(hc).hits])
 
     assert not np.any(np.isnan(corrected_e) )
