@@ -226,6 +226,12 @@ def test_get_normalization_factor_mean_norm(correction_map_filename):
     norm   = np.mean(np.mean(map_e.e0))
     assert factor == norm
 
+def test_get_normalization_factor_median_norm(correction_map_filename):
+    map_e  = read_maps(correction_map_filename)
+    factor = get_normalization_factor(map_e, NormStrategy.median)
+    norm   = np.nanmedian(map_e.e0.values.flatten())
+    assert factor == norm
+
 @few_examples
 @given(floats(min_value = 1,
               max_value = 1e4))
