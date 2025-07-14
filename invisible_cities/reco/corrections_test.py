@@ -13,6 +13,8 @@ from . corrections import apply_all_correction_single_maps
 from . corrections import apply_all_correction
 
 from pytest                import fixture
+from pytest                import mark
+from pytest                import raises
 from numpy.testing         import assert_allclose
 from numpy.testing         import assert_array_equal
 from numpy.testing         import assert_raises
@@ -240,6 +242,34 @@ def test_get_normalization_factor_krscale(correction_map_filename):
     factor    = get_normalization_factor(map_e, NormStrategy.kr)
     kr_energy = 41.5575 * units.keV
     assert factor == kr_energy
+
+def test_get_normalization_factor_custom_norm_raises_exception_when_no_value(map_filename):
+    map_e = read_maps(map_filename)
+    assert_raises(ValueError,
+                  get_normalization_factor,
+                  map_e, NormStrategy.custom)
+
+def test_get_normalization_factor_region(correction_map_filename):
+    map_e  = read_maps(correction_map_filename)
+    factor = get_normalization_factor(map_e,
+                                      NormStrategy.region,
+                                      xrange=(-5, 5), yrange=(-10, 10))
+    norm   = 12653.831477479956
+    assert np.isclose(factor, norm)
+
+def test_get_normalization_factor_region_invalid_region_raises(correction_map_filename):
+    map_e  = read_maps(correction_map_filename)
+    with raises(ValueError):
+        get_normalization_factor(map_e,
+                                 NormStrategy.region,
+                                 xrange=(0.1, 0.11), yrange=(0.20, 0.22))
+
+@mark.parametrize("options", (dict(), dict(xrange=(1,2)), dict(yrange=(1,2))))
+def test_get_normalization_factor_region_norm_raises_exception_when_no_range(map_filename, options):
+    map_e = read_maps(map_filename)
+    assert_raises(ValueError,
+                  get_normalization_factor,
+                  map_e, NormStrategy.region, **options)
 
 def test_get_normalization_factor_custom_norm_raises_exception_when_no_value(map_filename):
     map_e = read_maps(map_filename)
