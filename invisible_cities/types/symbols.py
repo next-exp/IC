@@ -70,8 +70,10 @@ class MCTableType(AutoNameEnumBase):
 
 class NormStrategy(AutoNameEnumBase):
     mean   = auto()
+    median = auto()
     max    = auto()
     kr     = auto()
+    region = auto()
     custom = auto()
 
 
