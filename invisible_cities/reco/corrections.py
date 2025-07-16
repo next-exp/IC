@@ -238,24 +238,35 @@ def get_normalization_factor(map_e0      : ASectorMap,
         norm_value = np.nanmedian(map_e0.e0.values.flatten())
     elif norm_strat is NormStrategy.kr:
         norm_value = 41.5575 * units.keV
+
     elif norm_strat is NormStrategy.region:
-        if "xrange" not in norm_options or "yrange" not in norm_options:
-            s  = "If strategy `region` is selected for normalization"
-            s += " user must specify both x and y ranges like ``xrange = (lower, upper)``"
-            raise ValueError(s)
         binsx, binsy = map(shift_to_bin_centers, get_xy_bins(map_e0.mapinfo))
-        selx  = in_range(binsx, *norm_options["xrange"])
-        sely  = in_range(binsy, *norm_options["yrange"])
-        if not np.count_nonzero(selx) or not np.count_nonzero(sely):
-            raise ValueError("Selected region does not contain enough data points for normalization")
-        e0s   = map_e0.e0.loc[sely, selx]
+        if   "xrange" in norm_options and "yrange" in norm_options:
+            selx = in_range(binsx, *norm_options["xrange"])
+            sely = in_range(binsy, *norm_options["yrange"])
+            e0s  = map_e0.e0.loc[sely, selx]
+        elif "origin" in norm_options and "radius" in norm_options:
+            x0, y0 = norm_options["origin"]
+            x , y  = np.meshgrid(binsx, binsy)
+            sel    = in_range((x-x0)**2 + (y-y0)**2, 0, norm_options["radius"]**2)
+            e0s    = map_e0.e0.values[sel]
+        else:
+            s  = "Invalid options for normalization strategy `region`. Valid options:\n"
+            s += "`xrange` and `yrange` in the form (lower, upper)\n"
+            s += "`origin` in the form (x0, y0), and `radius`"
+            raise ValueError(s)
+
+        if not len(e0s):
+            raise ValueError("Selected region does not contain any data points for normalization")
         norm_value = np.median(e0s)
+
     elif norm_strat is NormStrategy.custom:
         if "value" not in norm_options:
             s  = "If custom strategy is selected for normalization"
             s += " user must specify a value like value = <some_value>"
             raise ValueError(s)
         norm_value = norm_options["value"]
+
     else:
         s  = "None of the current available normalization"
         s += " strategies was selected"
