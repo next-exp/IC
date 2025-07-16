@@ -268,8 +268,8 @@ def get_normalization_factor(map_e0      : ASectorMap,
         norm_value = norm_options["value"]
 
     else:
-        s  = "None of the current available normalization"
-        s += " strategies was selected"
+        s  = "None of the currently available normalization strategies was selected. Valid options:\n"
+        s += " ".join(map(str, NormStrategy))
         raise ValueError(s)
 
     return norm_value
