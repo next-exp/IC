@@ -533,6 +533,7 @@ def test_hits_Z_corrected_when_flagged( correction_map_filename
                   , (NormStrategy.mean  , dict())
                   , (NormStrategy.median, dict())
                   , (NormStrategy.region, dict(xrange=(-20, 20), yrange=(-20, 20)))
+                  , (NormStrategy.region, dict(origin=( -5,  5), radius=10))
                   , (NormStrategy.custom, dict(value=1e3))
                  ))
 @mark.parametrize("apply_temp", (False, True))

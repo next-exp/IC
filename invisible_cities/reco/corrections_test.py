@@ -255,22 +255,35 @@ def test_get_normalization_factor_custom_norm_raises_exception_when_no_value(map
                   get_normalization_factor,
                   map_e, NormStrategy.custom)
 
-def test_get_normalization_factor_region(correction_map_filename):
+@mark.parametrize("options expected_value".split(),
+                  ( (dict(xrange=(-5, 5), yrange=(-10, 10)), 12653.831477479956)
+                  , (dict(origin=(-5, 5), radius=5        ), 12610.06515076242)
+                  ))
+def test_get_normalization_factor_region(correction_map_filename, options, expected_value):
     map_e  = read_maps(correction_map_filename)
     factor = get_normalization_factor(map_e,
                                       NormStrategy.region,
-                                      xrange=(-5, 5), yrange=(-10, 10))
-    norm   = 12653.831477479956
-    assert np.isclose(factor, norm)
+                                      **options)
+    assert np.isclose(factor, expected_value)
 
-def test_get_normalization_factor_region_invalid_region_raises(correction_map_filename):
+@mark.parametrize("options",
+                  ( dict(xrange=(0.1, 0.11), yrange=(0.20, 0.22))
+                  , dict(origin=(0.1, 0.11), radius=1e-3        )
+                  ))
+def test_get_normalization_factor_region_invalid_region_raises(correction_map_filename, options):
     map_e  = read_maps(correction_map_filename)
     with raises(ValueError):
         get_normalization_factor(map_e,
                                  NormStrategy.region,
-                                 xrange=(0.1, 0.11), yrange=(0.20, 0.22))
+                                 **options)
 
-@mark.parametrize("options", (dict(), dict(xrange=(1,2)), dict(yrange=(1,2))))
+@mark.parametrize("options",
+                  ( dict()
+                  , dict(xrange=(1,2))
+                  , dict(yrange=(1,2))
+                  , dict(origin=(1,2))
+                  , dict(radius=123)
+                  ))
 def test_get_normalization_factor_region_norm_raises_exception_when_no_range(map_filename, options):
     map_e = read_maps(map_filename)
     assert_raises(ValueError,
