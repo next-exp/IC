@@ -19,6 +19,7 @@ from   .. io                   import hits_io          as hio
 from   .  hits_functions       import e_from_q
 from   .  hits_functions       import merge_NN_hits
 from   .  hits_functions       import threshold_hits
+from   .  hits_functions       import sipms_above_threshold
 from hypothesis                import given
 from hypothesis                import settings
 from hypothesis.strategies     import lists
@@ -106,6 +107,34 @@ def test_e_from_q_does_not_crash_with_zeros():
     zeros  = np.zeros(12)
     output = e_from_q(zeros, 1234)
     assert_almost_equal(output, zeros)
+
+def test_sipms_above_threshold_simple():
+    xys = np.arange(6*2).reshape(6, 2)
+    qs  = np.arange(6)
+    thr = 1.5 # only the last 4 elements should survive
+    e   = qs[2:].sum()
+    out = sipms_above_threshold(xys, qs, thr, e)
+    for i, item in enumerate(out):
+        assert len(item)==4, f"{i}th output failed: got {len(item)}, expected 4"
+
+    assert_almost_equal(out[0], xys[2:, 0])
+    assert_almost_equal(out[1], xys[2:, 1])
+    assert_almost_equal(out[2],  qs[2:])
+    assert_almost_equal(out[3],  qs[2:]) # same energy as q, no change
+
+def test_sipms_above_threshold_thr_too_high_produces_NN():
+    xys = np.arange(6*2).reshape(6, 2)
+    qs  = np.arange(6)
+    thr = qs.max() + 1
+    e   = 123
+    out = sipms_above_threshold(xys, qs, thr, e)
+    for i, item in enumerate(out):
+        assert len(item)==1, f"{i}th output failed: got {len(item)}, expected 1"
+
+    assert out[0][0] == NN
+    assert out[1][0] == NN
+    assert out[2][0] == NN
+    assert out[3][0] == e  # conserves energy
 
 @given(list_of_hits())
 def test_merge_NN_does_not_modify_input(hits):
