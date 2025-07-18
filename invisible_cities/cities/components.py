@@ -930,11 +930,6 @@ def sipm_positions(dbfile, run_number):
     return sipm_xys
 
 
-def e_from_q(qs, e_slice):
-    epsilon = np.finfo(np.float64).eps
-    return qs * e_slice / (qs.sum() + epsilon)
-
-
 def hit_builder(dbfile, run_number, drift_v,
                 rebin_slices, rebin_method,
                 global_reco, slice_reco,
@@ -972,7 +967,7 @@ def hit_builder(dbfile, run_number, drift_v,
                 try:
                     clusters = slice_reco(xys, sipm_qs)
                     qs       = np.array([c.Q for c in clusters])
-                    es       = e_from_q(qs, e_slice)
+                    es       = hif.e_from_q(qs, e_slice)
                     for c, e in zip(clusters, es):
                         hit  = Hit(peak_no, c, z_slice, e, xy_peak)
                         hitc.hits.append(hit)
@@ -1018,11 +1013,11 @@ def sipms_as_hits(dbfile, run_number, drift_v,
             for (slice_z, slice_e, sipm_qs) in zip(slice_zs, slice_es, sipm_charge):
                 over_thr = sipm_qs >= q_thr
                 nonempty = np.any(over_thr)
-                sipm_xy  =              xys[over_thr]
-                sipm_qs  =          sipm_qs[over_thr] if nonempty else [NN]
-                sipm_xs  =              sipm_xy[:, 0] if nonempty else [NN]
-                sipm_ys  =              sipm_xy[:, 1] if nonempty else [NN]
-                sipm_es  = e_from_q(sipm_qs, slice_e) if nonempty else [slice_e]
+                sipm_xy  =                  xys[over_thr]
+                sipm_qs  =              sipm_qs[over_thr] if nonempty else [NN]
+                sipm_xs  =                  sipm_xy[:, 0] if nonempty else [NN]
+                sipm_ys  =                  sipm_xy[:, 1] if nonempty else [NN]
+                sipm_es  = hif.e_from_q(sipm_qs, slice_e) if nonempty else [slice_e]
                 sipm_hs  = dict( event    = event_number
                                , time     = timestamp * 1e-3
                                , npeak    = peak_no

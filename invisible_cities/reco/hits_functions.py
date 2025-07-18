@@ -12,6 +12,26 @@ from .. types.ic_types      import xy
 EPSILON = np.finfo(np.float64).eps
 
 
+def e_from_q(qs: np.ndarray, e: float) -> np.ndarray:
+    """
+    Distribute some energy among the hits according to their charge.
+
+    Parameters
+    ----------
+    qs: np.ndarray, shape (n,)
+        The charge of each hit.
+
+    e_slice: float
+        The energy to be shared, typically of a given slice.
+
+    Returns
+    -------
+    es: np.ndarray, shape (n,)
+        The associated hit energy.
+    """
+    return qs * e_slice / (qs.sum() + EPSILON)
+
+
 def merge_NN_hits(hits : pd.DataFrame, same_peak : bool = True) -> pd.DataFrame:
     """ Returns a list of the hits where the  energies of NN hits are distributed to the closest hits such that the added energy is proportional to
     the hit energy. If all the hits were NN the function returns empty list. """
