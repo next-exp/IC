@@ -16,6 +16,7 @@ from   .. core.testing_utils   import assert_dataframes_close
 from   .. types.ic_types       import NN
 from   .. cities.penthesilea   import penthesilea
 from   .. io                   import hits_io          as hio
+from   .  hits_functions       import e_from_q
 from   .  hits_functions       import merge_NN_hits
 from   .  hits_functions       import threshold_hits
 from hypothesis                import given
@@ -74,6 +75,37 @@ def thresholds(draw, min_value=1, max_value=1):
     th1 = draw (integers(  10   ,  20))
     th2 = draw (integers(  th1+1,  30))
     return th1, th2
+
+
+def test_e_from_q_simple():
+    e  = 1
+    qs = np.linspace(12, 34, 56)
+    s  = qs.sum()
+    es = e_from_q(qs, e)
+    assert_almost_equal(es, qs/s)
+
+def test_e_from_q_uniform():
+    qs = np.ones(12)
+    e  = 345
+    es = e_from_q(qs, e)
+    assert_almost_equal(es[0], es)
+
+@given(lists(floats(1, 10), min_size=1, max_size=20))
+def test_e_from_q_conserves_energy(qs):
+    qs = np.asarray(qs)
+    e  = 5678
+    es = e_from_q(qs, e)
+    assert np.isclose(es.sum(), e)
+
+def test_e_from_q_does_not_crash_with_empty_input():
+    empty  = np.array([])
+    output = e_from_q(empty, 1234)
+    assert_almost_equal(output, empty)
+
+def test_e_from_q_does_not_crash_with_zeros():
+    zeros  = np.zeros(12)
+    output = e_from_q(zeros, 1234)
+    assert_almost_equal(output, zeros)
 
 @given(list_of_hits())
 def test_merge_NN_does_not_modify_input(hits):

@@ -29,7 +29,7 @@ def e_from_q(qs: np.ndarray, e: float) -> np.ndarray:
     es: np.ndarray, shape (n,)
         The associated hit energy.
     """
-    return qs * e_slice / (qs.sum() + EPSILON)
+    return qs * e / (qs.sum() + EPSILON)
 
 
 def merge_NN_hits(hits : pd.DataFrame, same_peak : bool = True) -> pd.DataFrame:
