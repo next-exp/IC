@@ -980,44 +980,6 @@ def hit_builder(dbfile, run_number, drift_v,
     return build_hits
 
 
-def sipms_above_threshold(xys: np.ndarray, qs: np.ndarray, thr:float, energy: float):
-    """
-    Finds SiPMs with charge above threshold and returns their position, charge
-    and associated energy.
-
-    Inputs
-    ------
-    xys: np.ndarray, shape (n,2)
-        SiPM positions
-    qs: np.ndarray, shape (n,)
-        Charge of each SiPM.
-    thr: float
-        Threshold on SiPM charge.
-    energy: float
-        Energy to be shared among the hits.
-
-    Returns
-    -------
-    xs: np.ndarray, shape (m,)
-        x positions of the SiPMs above threshold
-    ys: np.ndarray, shape (m,)
-        y positions of the SiPMs above threshold
-    qs: np.ndarray, shape (m,)
-        Charge of the SiPMs above threshold
-    es: np.ndarray, shape (m,)
-        Associated energy of each hit
-    """
-    over_thr = qs >= thr
-    nonempty = np.any(over_thr)
-
-    xy =            xys[over_thr]
-    qs =             qs[over_thr] if nonempty else [NN]
-    xs =                 xy[:, 0] if nonempty else [NN]
-    ys =                 xy[:, 1] if nonempty else [NN]
-    es = hif.e_from_q(qs, energy) if nonempty else [energy]
-    return xs, ys, qs, es
-
-
 def sipms_as_hits(dbfile, run_number, drift_v,
                   rebin_slices, rebin_method,
                   q_thr,
@@ -1049,7 +1011,7 @@ def sipms_as_hits(dbfile, run_number, drift_v,
             xys      = sipm_xys[peak.sipms.ids]
 
             for (slice_z, slice_e, sipm_qs) in zip(slice_zs, slice_es, sipm_charge):
-                sipm_xs, sipm_ys, sipm_qs, sipm_es = sipms_above_threshold(xys, sipm_qs, q_thr, slice_e)
+                sipm_xs, sipm_ys, sipm_qs, sipm_es = hif.sipms_above_threshold(xys, sipm_qs, q_thr, slice_e)
                 sipm_hs  = dict( event    = event_number
                                , time     = timestamp * 1e-3
                                , npeak    = peak_no

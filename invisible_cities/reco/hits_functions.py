@@ -32,6 +32,46 @@ def e_from_q(qs: np.ndarray, e: float) -> np.ndarray:
     return qs * e / (qs.sum() + EPSILON)
 
 
+def sipms_above_threshold(xys: np.ndarray, qs: np.ndarray, thr:float, energy: float):
+    """
+    Finds SiPMs with charge above threshold and returns their position, charge
+    and associated energy.
+
+    Parameters
+    ----------
+    xys: np.ndarray, shape (n,2)
+        SiPM positions
+    qs: np.ndarray, shape (n,)
+        Charge of each SiPM.
+    thr: float
+        Threshold on SiPM charge.
+    energy: float
+        Energy to be shared among the hits.
+
+    Returns
+    -------
+    xs: np.ndarray, shape (m,)
+        x positions of the SiPMs above threshold
+    ys: np.ndarray, shape (m,)
+        y positions of the SiPMs above threshold
+    qs: np.ndarray, shape (m,)
+        Charge of the SiPMs above threshold
+    es: np.ndarray, shape (m,)
+        Associated energy of each hit
+    """
+    over_thr = qs >= thr
+    nonempty = np.any(over_thr)
+
+    xy =        xys[over_thr]
+    qs =         qs[over_thr] if nonempty else [NN]
+    xs =             xy[:, 0] if nonempty else [NN]
+    ys =             xy[:, 1] if nonempty else [NN]
+    es = e_from_q(qs, energy) if nonempty else [energy]
+    return xs, ys, qs, es
+
+
+
+
 def merge_NN_hits(hits : pd.DataFrame, same_peak : bool = True) -> pd.DataFrame:
     """ Returns a list of the hits where the  energies of NN hits are distributed to the closest hits such that the added energy is proportional to
     the hit energy. If all the hits were NN the function returns empty list. """
