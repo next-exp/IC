@@ -1566,7 +1566,8 @@ def hits_corrector( filename     : str
 
     def correct(hits : pd.DataFrame) -> pd.DataFrame:
         corr_factors = get_coef(hits.X, hits.Y, hits.Z, hits.time)
-        return hits.assign(Ec = hits.E * corr_factors)
+        return hits.assign( Ec = hits.E * corr_factors
+                          , Z  = time_to_Z(hits.Z) )
 
     return correct
 
