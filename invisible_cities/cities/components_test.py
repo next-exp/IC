@@ -494,18 +494,15 @@ def test_hits_Z_uncorrected( correction_map_filename
     '''
     Test to ensure that z is uncorrected when `apply_z` is False
     '''
-
-    hc = random_hits_toy_data
-    hz = [h.Z for h in hc.hits]
-
-    correct = hits_corrector(correction_map_filename,
-                             apply_temp = False,
-                             norm_strat = NormStrategy.kr,
-                             apply_z    = False)
-    corrected_z = np.array([h.Z for h in correct(hc).hits])
+    z_original = random_hits_toy_data.Z.values.copy()
+    correct    = hits_corrector(correction_map_filename,
+                                apply_temp = False,
+                                norm_strat = NormStrategy.kr,
+                                apply_z    = False)
+    z_output   = correct(random_hits_toy_data).Z.values
 
     # no change to equal results
-    assert_equal(corrected_z, hz)
+    assert_equal(z_output, z_original)
 
 
 def test_hits_Z_corrected_when_flagged( correction_map_filename
@@ -513,18 +510,15 @@ def test_hits_Z_corrected_when_flagged( correction_map_filename
     '''
     Test to ensure that the correction is applied when `apply_z` is True
     '''
-
-    hc = random_hits_toy_data
-    hz = [h.Z for h in hc.hits]
-
-    correct = hits_corrector(correction_map_filename,
-                             apply_temp = False,
-                             norm_strat = NormStrategy.kr,
-                             apply_z    = True)
-    corrected_z = np.array([h.Z for h in correct(hc).hits])
+    z_original = random_hits_toy_data.Z.values.copy()
+    correct    = hits_corrector(correction_map_filename,
+                                apply_temp = False,
+                                norm_strat = NormStrategy.kr,
+                                apply_z    = True)
+    z_output   = correct(random_hits_toy_data).Z.values
 
     # raise assertion error as expected
-    assert_raises(AssertionError, assert_equal, corrected_z, hz)
+    assert_raises(AssertionError, assert_equal, z_output, z_original)
 
 
 @mark.parametrize( "norm_strat norm_options".split(),
@@ -549,11 +543,8 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
     nan and greater than 0. The more exhaustive tests are performed
     directly on the core functions.
     """
-
-    hc = random_hits_toy_data
-
     correct     = hits_corrector(correction_map_filename, apply_temp, norm_strat, norm_options=norm_options)
-    corrected_e = np.array([h.Ec for h in correct(hc).hits])
+    corrected_e = correct(random_hits_toy_data).Ec.values
 
     assert not np.any(np.isnan(corrected_e) )
     assert     np.all(         corrected_e>0)
