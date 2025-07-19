@@ -1515,12 +1515,12 @@ def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
     The energy of NN hits is redistributed among neighbors.
     """
 
-    def threshold_hits(hits: pd.DataFrame) -> pd.DataFrame:
+    def threshold_hits_and_merge_nn(hits: pd.DataFrame) -> pd.DataFrame:
         thr_hits = hif.threshold_hits(    hits, threshold_charge     )
         mrg_hits = hif.merge_NN_hits (thr_hits, same_peak = same_peak)
         return mrg_hits
 
-    return threshold_hits
+    return threshold_hits_and_merge_nn
 
 
 @check_annotations
