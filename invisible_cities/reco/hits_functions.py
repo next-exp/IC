@@ -196,8 +196,8 @@ def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -
     - If no hits survive the threshold, the returned DataFrame has a single "empty"
       hit corresponding to the first hit's event metadata.
     """
-    raw_e_slice = hits.E.sum()
-    cor_e_slice = np.nansum(hits.Ec) + np.finfo(np.float64).eps
+    raw_e_slice = np.   sum(hits.E ) # no   nan expected
+    cor_e_slice = np.nansum(hits.Ec) # some nan expected
 
     col         = "Qc" if on_corrected else "Q"
     mask_thresh = hits[col] >= th
@@ -210,8 +210,11 @@ def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -
 
     hits = hits.loc[mask_thresh].copy()
     qsum = np.nansum(hits.Q) + EPSILON
-    hits.loc[:, "E" ] = hits.Q / qsum * raw_e_slice
-    hits.loc[:, "Ec"] = hits.Q / qsum * cor_e_slice
+
+    # EPSILON added to avoid division by zero
+    # This should be only necessary for Ec, but we apply it to E to be safe
+    hits.loc[:, "E" ] = hits.Q / qsum * (raw_e_slice + EPSILON)
+    hits.loc[:, "Ec"] = hits.Q / qsum * (cor_e_slice + EPSILON)
     return hits
 
 
