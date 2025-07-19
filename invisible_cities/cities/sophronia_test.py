@@ -1,13 +1,26 @@
 import os
+import numpy  as np
 import tables as tb
+import pandas as pd
 
 from pytest import mark
 
 from .. core.testing_utils   import assert_tables_equality
 from .. core.testing_utils   import ignore_warning
 from .. core.system_of_units import pes
+from .. types.ic_types       import NN
+from .  sophronia            import count_valid_hits
 from .  sophronia            import sophronia
 
+
+@mark.parametrize("n_nn", (0, 1, 2, 5, 10))
+def test_count_valid_hits(n_nn):
+    # we only need the Q column, so we only create that one
+    n_tot     = 10
+    qs        = np.arange(n_tot)
+    qs[:n_nn] = NN
+    df        = pd.DataFrame(dict(Q = qs))
+    assert count_valid_hits(df) == n_tot - n_nn
 
 @ignore_warning.no_config_group
 def test_sophronia_runs(sophronia_config, config_tmpdir):
