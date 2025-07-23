@@ -408,8 +408,12 @@ def deconv_pmt(dbfile, run_number, n_baseline,
 
 def get_run_number(h5in):
     group = "Run" in h5in.root
-    if   group and "runInfo" in h5in.root.Run: return h5in.root.Run.runInfo[0]['run_number']
-    elif group and "RunInfo" in h5in.root.Run: return h5in.root.Run.RunInfo[0]['run_number']
+    table = None
+    if   group and "runInfo" in h5in.root.Run: table = h5in.root.Run.runInfo
+    elif group and "RunInfo" in h5in.root.Run: table = h5in.root.Run.RunInfo
+
+    if table is not None and len(table):
+        return table[0]['run_number']
 
     raise tb.exceptions.NoSuchNodeError(f"No node runInfo or RunInfo in file {h5in}")
 
