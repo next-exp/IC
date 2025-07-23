@@ -22,6 +22,7 @@ all_cities_with_event_range = sorted(set(all_cities).difference(set(["eutropia"]
 @ignore_warning.no_config_group
 @ignore_warning.no_mc_tables
 @ignore_warning.not_kdst
+@ignore_warning.no_pmaps
 @ignore_warning.str_length
 @mark.parametrize("city", online_cities)
 def test_city_empty_input_file(config_tmpdir, ICDATADIR, city):
