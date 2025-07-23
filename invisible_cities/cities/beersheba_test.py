@@ -20,28 +20,22 @@ from .. types.symbols      import DeconvolutionMode
 from .. types.symbols      import CutType
 
 
-def test_create_deconvolution_df(ICDATADIR):
+@mark.parametrize("cut_type", CutType)
+def test_create_deconvolution_df(ICDATADIR, cut_type):
     true_in  = os.path.join(ICDATADIR, "exact_Kr_deconvolution_with_MC.h5")
     true_dst = dio.load_dst(true_in, 'DECO', 'Events')
     ecut     = 1e-2
     new_dst  = pd.concat([create_deconvolution_df(t, t.E.values, (t.X.values, t.Y.values, t.Z.values),
-                                                  CutType.abs, ecut, 3) for _, t in true_dst.groupby('event')])
-    true_dst = true_dst.loc[true_dst.E > ecut, :].reset_index(drop=True)
-    # compare only existing columns
-    true_dst = true_dst.loc[:, new_dst.columns.values.tolist()]
-    assert_dataframes_close(new_dst .reset_index(drop=True), true_dst.reset_index(drop=True))
+                                                  cut_type, ecut, 3) for _, t in true_dst.groupby('event')])
+    for event, df in true_dst.groupby("event"):
+        sel = (df.E > ecut if cut_type is CutType.abs else
+               df.E > ecut * df.E.max())
+        df = df.loc[sel].reset_index(drop=True)
+        # compare only existing columns
+        df = df.loc[:, new_dst.columns.values.tolist()]
 
-
-@mark.parametrize("cut_type", CutType.__members__)
-def test_create_deconvolution_df_cuttype(ICDATADIR, cut_type):
-    true_in  = os.path.join(ICDATADIR, "exact_Kr_deconvolution_with_MC.h5")
-    true_dst = dio.load_dst(true_in, 'DECO', 'Events')
-    ecut     = 1e-2
-
-    with raises(ValueError):
-        create_deconvolution_df(true_dst, true_dst.E.values,
-                                (true_dst.X.values, true_dst.Y.values, true_dst.Z.values),
-                                cut_type, ecut, 3)
+        new_event = new_dst.loc[new_dst.event==event]
+        assert_dataframes_close(new_event.reset_index(drop=True), df.reset_index(drop=True))
 
 
 def test_distribute_energy(ICDATADIR):
@@ -54,6 +48,18 @@ def test_distribute_energy(ICDATADIR):
 
     assert np.allclose(true_dst2.E.values/true_dst2.E.sum(), true_dst3.E.values/true_dst3.E.sum())
     assert np.isclose (true_dst1.E.sum(), true_dst2.E.sum())
+
+
+def test_beersheba_ndim(beersheba_config, config_tmpdir):
+    path_out = os.path.join(config_tmpdir, "beersheba_ndim.h5")
+    beersheba_config.update(dict(file_out = path_out))
+    beersheba_config["deconv_params"].update(dict( n_dim        = 3
+                                                 , sample_width = [1]*3
+                                                 , bin_size     = [1]*3
+                                                 , diffusion    = [1]*3 ))
+
+    with raises(NotImplementedError):
+        beersheba(**beersheba_config)
 
 
 @ignore_warning.no_config_group
@@ -106,6 +112,23 @@ def test_beersheba_exact_result( deco
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected, rtol=1e-6)
+
+@mark.parametrize( "updates"
+                 , ( dict(sample_width = [1]), dict(sample_width = [1,1,1])
+                   , dict(bin_size     = [1]), dict(bin_size     = [1,1,1])
+                   , dict(diffusion    = [1]), dict(diffusion    = [1,1,1])
+                    ))
+def test_beersheba_checks_dimensions(config_tmpdir, beersheba_config, updates):
+    # check that if these quantities do not have the correct number of
+    # dimensions (2), the city raises an error
+    par = next(iter(updates))
+    n   = len(updates[par])
+    path_out = os.path.join(config_tmpdir, f"beersheba_only_check_dims_{par}_{n}.h5")
+    beersheba_config.update(dict(file_out = path_out))
+    beersheba_config['deconv_params'].update(updates)
+
+    with raises(ValueError, match="Parameter .* dimensions do not match n_dim parameter"):
+        beersheba(**beersheba_config)
 
 
 @ignore_warning.no_config_group

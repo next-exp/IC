@@ -58,7 +58,7 @@ def previous_float(x):
     return np.nextafter(x, -np.inf)
 
 
-def next_float(x):
+def next_float(x): # pragma: no cover
     """
     Return the next float towards +inf.
     """
@@ -80,10 +80,6 @@ def float_arrays(size       =   100,
                   shape    =       size,
                   elements =   elements,
                   unique   =     unique)
-
-
-def FLOAT_ARRAY(*args, **kwargs):
-    return float_arrays(*args, **kwargs).example()
 
 
 def random_length_float_arrays(min_length =     0,
@@ -155,7 +151,8 @@ def assert_tables_equality(got_table, expected_table, rtol=1e-7, atol=0):
                 is_float = got.dtype.kind == 'f'
                 if   is_float: assert_allclose(got, expected, rtol=rtol, atol=atol)
                 else         : assert_equal   (got, expected)
-            except:
+            except: # pragma: no cover
+                # I think this branch is unreachable
                 print(f"Mismatch in column {col_name} of tables {names}")
                 raise
     else:
@@ -219,3 +216,4 @@ class ignore_warning:
     unphysical_rate = mark.filterwarnings("ignore:(Zero|Negative) rate")
     max_time_short  = mark.filterwarnings("ignore:`max_time` shorter than `buffer_length`")
     no_mc_tables    = mark.filterwarnings("ignore:File does not contain MC tables.( *)Use positve run numbers for data")
+    no_pmaps        = mark.filterwarnings("ignore:No PMAPs in input file")

@@ -1,3 +1,5 @@
+from itertools import combinations
+
 import numpy as np
 
 from pytest import approx
@@ -91,31 +93,54 @@ def test_rebin_peak(pk, fraction):
     assert_Peak_equality(rebinned_pk, expected_pk)
 
 
-@mark.parametrize("threshold", (4000, 10000))
 @given(peaks(subtype=S2))
-def test_rebin_peak_threshold(threshold, pk):
+def test_rebin_peak_threshold_below(pk):
+    """With a threshold below the minimum slice energy, there should be no rebinning"""
+    _, pk = pk
+
+    threshold = pk.pmts.sum_over_sensors.min() - 1
+    rebinned  = pmf.rebin_peak(pk, threshold, pmf.RebinMethod.threshold)
+    assert_Peak_equality(pk, rebinned)
+
+
+@given(peaks(subtype=S2))
+def test_rebin_peak_threshold_above_sum(pk):
+    """With a threshold above the integrated signal, there should be only one slice"""
+    _, pk = pk
+
+    threshold = pk.pmts.sum_over_sensors.sum()
+    rebinned  = pmf.rebin_peak(pk, threshold, pmf.RebinMethod.threshold)
+
+    assert len(rebinned.times) == 1
+    assert rebinned.total_energy == approx(pk.total_energy)
+    assert rebinned.total_charge == approx(pk.total_charge)
+
+
+@given(peaks(subtype=S2).filter(lambda p: len(p[1].times)>2))
+def test_rebin_peak_threshold(pk):
     _, pk = pk
 
     pk_eng      = pk.total_energy
     pk_char     = pk.total_charge
 
+    threshold   = pk.pmts.sum_over_sensors.mean()
+    threshold   = np.round(threshold, 6) # avoid precision problems with floats
     rebinned_pk = pmf.rebin_peak(pk, threshold, pmf.RebinMethod.threshold)
 
     assert rebinned_pk.total_energy == approx(pk_eng)
     assert rebinned_pk.total_charge == approx(pk_char)
-    if pk_eng < threshold:
-        assert rebinned_pk.times.shape[0] == 1
-    else:
-        assert np.all(rebinned_pk.pmts.sum_over_sensors >= threshold)
+    assert np.all(rebinned_pk.pmts.sum_over_sensors >= threshold)
 
 
-@given(dictionaries(keys     = integers(min_value=-1e5, max_value=1e5),
-                    values   = pmaps(),
-                    max_size = 5),
-       lists(integers(min_value=-1e5, max_value=1e5)))
+@given(pmaps(), pmaps(), pmaps(), pmaps())
 @settings(suppress_health_check=(HealthCheck.too_slow,))
-def test_pmap_event_id_selection(pmaps, events):
-    filtered_pmaps = pmf.pmap_event_id_selection(pmaps, events)
-    assert set(filtered_pmaps) == set(pmaps) & set(events)
-    for evt, pmap in filtered_pmaps.items():
-        assert pmap == pmaps[evt]
+def test_pmap_event_id_selection(pmap0, pmap1, pmap2, pmap3):
+    pmaps  = {0:pmap0, 12:pmap1, 345:pmap2, 6789:pmap3}
+    events = list(pmaps)
+    for chosen in combinations(events, 2):
+        pm0, pm1 = chosen
+        filtered_pmaps = pmf.pmap_event_id_selection(pmaps, chosen)
+        assert len(filtered_pmaps) == 2
+        assert pm0 in filtered_pmaps and pm1 in filtered_pmaps
+        assert filtered_pmaps[pm0] == pmaps[pm0]
+        assert filtered_pmaps[pm1] == pmaps[pm1]

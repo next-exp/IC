@@ -17,32 +17,41 @@ from .. core.configure     import configure
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.exceptions    import          SensorIDMismatch
 from .. core.exceptions    import              NoInputFiles
+from .. core.exceptions    import           MCEventNotFound
 from .. core.testing_utils import    assert_tables_equality
 from .. core.testing_utils import            ignore_warning
 from .. core               import system_of_units as units
 from .. evm.event_model    import Cluster
 from .. evm.event_model    import Hit
 from .. evm.event_model    import HitCollection
+from .. reco.xy_algorithms import barycenter
 from .. types.ic_types     import xy
 from .. types.symbols      import WfType
 from .. types.symbols      import EventRange as ER
 from .. types.symbols      import NormStrategy
 from .. types.symbols      import XYReco
+from .. types.symbols      import SiPMThreshold
 
 from .  components import event_range
+from .  components import get_actual_sipm_thr
 from .  components import collect
 from .  components import copy_mc_info
 from .  components import wf_from_files
 from .  components import pmap_from_files
 from .  components import compute_xy_position
 from .  components import city
+from .  components import dst_from_files
 from .  components import hits_and_kdst_from_files
+from .  components import dhits_from_files
 from .  components import mcsensors_from_file
 from .  components import create_timestamp
 from .  components import check_max_time
 from .  components import hits_corrector
 from .  components import write_city_configuration
 from .  components import copy_cities_configuration
+from .  components import try_global_reco
+from .  components import length_of
+from .  components import get_run_number
 
 from .. dataflow   import dataflow as fl
 
@@ -206,8 +215,7 @@ def test_city_fails_if_bad_input_file(config_tmpdir, ICDATADIR):
     @city
     def dummy_city( files_in    : Union[str, list]
                   , file_out    : str
-                  , event_range : tuple):
-        pass
+                  , event_range : tuple): pass
 
     with raises(FileNotFoundError):
         dummy_city(files_in=files_in, file_out=file_out, event_range=(0, 1))
@@ -249,7 +257,7 @@ def test_compute_xy_position_depends_on_actual_run_number():
 
 
 @mark.skip(reason="there should not be a default detector db")
-def test_city_adds_default_detector_db(config_tmpdir):
+def test_city_adds_default_detector_db(config_tmpdir): # pragma: no cover
     default_detector_db = 'new'
     args = {'files_in'    : 'dummy_in',
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
@@ -264,7 +272,7 @@ def test_city_adds_default_detector_db(config_tmpdir):
 
 
 @mark.skip(reason="there should not be a default detector db")
-def test_city_does_not_overwrite_detector_db(config_tmpdir):
+def test_city_does_not_overwrite_detector_db(config_tmpdir): # pragma: no cover
     args = {'detector_db' : 'some_detector',
             'files_in'    : 'dummy_in',
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
@@ -279,7 +287,7 @@ def test_city_does_not_overwrite_detector_db(config_tmpdir):
 
 
 @mark.skip(reason="there should not be a default detector db")
-def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
+def test_city_only_pass_default_detector_db_when_expected(config_tmpdir): # pragma: no cover
     args = {'files_in'    : 'dummy_in',
             'file_out'    : os.path.join(config_tmpdir, 'dummy_out')}
     @city
@@ -288,6 +296,7 @@ def test_city_only_pass_default_detector_db_when_expected(config_tmpdir):
             pass
 
     dummy_city(**args)
+
 
 def test_pmap_from_files_event_number_mismatch_raises(KrMC_pmaps_filename, output_tmpdir):
     filename = os.path.join(output_tmpdir, "test_pmap_from_files_event_number_mismatch_raises.h5")
@@ -301,6 +310,12 @@ def test_pmap_from_files_event_number_mismatch_raises(KrMC_pmaps_filename, outpu
     generator = pmap_from_files([filename])
     with raises(InvalidInputFileStructure, match="Inconsistent data: event number mismatch"):
         next(generator)
+
+
+def test_dst_from_files_empty_input(ICDATADIR):
+    empty_file = os.path.join(ICDATADIR, "empty_kdst.h5")
+    with warns(UserWarning, match="No data in node /DST/Events in input file"):
+        tuple(dst_from_files([empty_file], "DST", "Events")) # consume iterator
 
 
 def test_hits_and_kdst_from_files(ICDATADIR):
@@ -327,6 +342,27 @@ def test_hits_and_kdst_from_files_missing_hits(Th228_hits_missing, config_tmpdir
     assert n_events == n_events_true
 
 
+def test_dhits_from_files_empty_input(ICDATADIR):
+    empty_file = os.path.join(ICDATADIR, "empty_ddst.h5")
+    with warns(UserWarning, match="No data in node /DECO/Events in input file"):
+        tuple(dhits_from_files([empty_file])) # consume iterator
+
+
+@mark.parametrize("thr", (0, 1.5, 3))
+def test_get_actual_sipm_threshold_common(thr):
+    got = get_actual_sipm_thr(SiPMThreshold.common, thr, "new", 0)
+    assert np.isclose(got, thr)
+
+
+def test_get_actual_sipm_threshold_individual():
+    """
+    99.9% of the noise pds should be above 1 pe
+    """
+    thr = 0.999
+    got = get_actual_sipm_thr(SiPMThreshold.individual, thr, "new", 8000)
+    assert np.all(got > 1)
+
+
 def test_collect():
     the_source    = list(range(0,10))
     the_collector = collect()
@@ -345,7 +381,7 @@ def test_copy_mc_info_noMC(ICDATADIR, config_tmpdir):
 
 
 @mark.xfail
-def test_copy_mc_info_repeated_event_numbers(ICDATADIR, config_tmpdir):
+def test_copy_mc_info_repeated_event_numbers(ICDATADIR, config_tmpdir): # pragma: no cover
     file_in  = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.sim.h5")
     file_out = os.path.join(config_tmpdir, "dummy_out.h5")
 
@@ -372,6 +408,15 @@ def test_copy_mc_info_split_nexus_events(ICDATADIR, config_tmpdir):
             expected = getattr(h5in .root, table)
             assert_tables_equality(got, expected)
 
+
+def test_copy_mc_info_raises_missing_event(ICDATADIR, config_tmpdir):
+    file_in  = os.path.join(ICDATADIR, "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts.sim.h5")
+    file_out = os.path.join(config_tmpdir, "copy_mc_info_raises_missing_event.h5")
+
+    event_that_does_not_exist = 99999
+    with tb.open_file(file_out, 'w') as h5out:
+        with raises(MCEventNotFound, match="Some events not found in MC tables"):
+            copy_mc_info([file_in], h5out, [event_that_does_not_exist], 'new', 0)
 
 
 def test_mcsensors_from_file_fast_returns_empty(ICDATADIR):
@@ -475,6 +520,7 @@ def test_check_max_time_units():
     with raises(ValueError):
         check_max_time(max_time, buffer_length)
 
+
 def test_read_wrong_pmt_ids(ICDATADIR):
     """
     The input file of this test contains sensor IDs that are not present in the database.
@@ -494,12 +540,12 @@ def test_hits_Z_uncorrected( correction_map_filename
     '''
     Test to ensure that z is uncorrected when `apply_z` is False
     '''
-    
+
     hc = random_hits_toy_data
     hz = [h.Z for h in hc.hits]
-    
+
     correct = hits_corrector(correction_map_filename,
-                             apply_temp = False, 
+                             apply_temp = False,
                              norm_strat = NormStrategy.kr,
                              norm_value = None,
                              apply_z    = False)
@@ -514,12 +560,12 @@ def test_hits_Z_corrected_when_flagged( correction_map_filename
     '''
     Test to ensure that the correction is applied when `apply_z` is True
     '''
-    
+
     hc = random_hits_toy_data
     hz = [h.Z for h in hc.hits]
-    
+
     correct = hits_corrector(correction_map_filename,
-                             apply_temp = False, 
+                             apply_temp = False,
                              norm_strat = NormStrategy.kr,
                              norm_value = None,
                              apply_z    = True)
@@ -527,7 +573,7 @@ def test_hits_Z_corrected_when_flagged( correction_map_filename
 
     # raise assertion error as expected
     assert_raises(AssertionError, assert_equal, corrected_z, hz)
-    
+
 
 @mark.parametrize( "norm_strat norm_value".split(),
                   ( (NormStrategy.kr    , None) # None marks the default value
@@ -574,6 +620,35 @@ def test_hits_corrector_invalid_normalization_options_raises( correction_map_fil
         hits_corrector(correction_map_filename, False, norm_strat, norm_value)
 
 
+@mark.parametrize( "pos qs thr".split()
+                 , ( ([     ], [ ], 0) # no hits
+                   , ([[1,1]], [1], 2) # no hits above threshold
+                   ))
+def test_try_global_reco_creates_empty_cluster(pos, qs, thr):
+    pos, qs = np.array(pos), np.array(qs)
+    reco = lambda *args: barycenter(*args, Qthr=thr)
+    out  = try_global_reco(reco, pos, qs)
+    assert out.x == xy.empty().x
+    assert out.y == xy.empty().y
+
+
+@mark.parametrize("t", (int, float, object))
+def test_length_of_incorrect_type(t):
+    with raises(TypeError, match="Cannot determine size of .*"):
+        length_of(t())
+
+
+def test_get_run_number_raises(ICDATADIR, config_tmpdir):
+    filename = os.path.join(config_tmpdir, "test_get_run_number_raises.h5")
+    with tb.open_file(filename, "a") as file:
+        with raises(tb.exceptions.NoSuchNodeError, match="No node runInfo or RunInfo .*"):
+            get_run_number(file)
+
+        file.create_group(file.root, "Run")
+        with raises(tb.exceptions.NoSuchNodeError, match="No node runInfo or RunInfo .*"):
+            get_run_number(file)
+
+
 def test_write_city_configuration(config_tmpdir):
     filename  = os.path.join(config_tmpdir, "test_write_configuration.h5")
     city_name = "acity"
@@ -597,31 +672,58 @@ def test_write_city_configuration(config_tmpdir):
 
 
 def test_copy_cities_configuration(config_tmpdir):
-    filename1  = os.path.join(config_tmpdir, "test_copy_cities_configuration_1.h5")
-    filename2  = os.path.join(config_tmpdir, "test_copy_cities_configuration_2.h5")
+    filename12 = os.path.join(config_tmpdir, "test_copy_cities_configuration_12.h5")
+    filename3  = os.path.join(config_tmpdir, "test_copy_cities_configuration_3.h5")
     city_name1 = "acity"
     city_name2 = "bcity"
+    city_name3 = "ccity"
     args       = dict(
         a = 1,
         b = 2.3,
         c = "a_string",
     )
-    write_city_configuration(filename1, city_name1, args)
-    write_city_configuration(filename2, city_name2, args)
+    write_city_configuration(filename12, city_name1, args)
+    write_city_configuration(filename12, city_name2, args)
+    write_city_configuration(filename3 , city_name3, args)
 
-    copy_cities_configuration(filename1, filename2)
-    with tb.open_file(filename2, "r") as file:
+    copy_cities_configuration(filename12, filename3)
+    with tb.open_file(filename3, "r") as file:
         assert "config"   in file.root
         assert city_name1 in file.root.config
         assert city_name2 in file.root.config
+        assert city_name3 in file.root.config
 
-    df1 = pd.read_hdf(filename1, "/config/" + city_name1).set_index("variable")
-    df2 = pd.read_hdf(filename2, "/config/" + city_name2).set_index("variable")
+    df1 = pd.read_hdf(filename3, f"/config/{city_name1}").set_index("variable")
+    df2 = pd.read_hdf(filename3, f"/config/{city_name2}").set_index("variable")
+    df3 = pd.read_hdf(filename3, f"/config/{city_name3}").set_index("variable")
     for var, value in args.items():
         assert var in df1.index
         assert var in df2.index
+        assert var in df3.index
         assert str(value) == df1.value.loc[var]
         assert str(value) == df2.value.loc[var]
+        assert str(value) == df3.value.loc[var]
+
+
+def test_copy_cities_configuration_without_existing_node(config_tmpdir):
+    filename1 = os.path.join(config_tmpdir, "test_copy_cities_configuration_without_existing_node_in.h5")
+    filename2 = os.path.join(config_tmpdir, "test_copy_cities_configuration_without_existing_node_out.h5")
+    city_name = "acity"
+    args      = dict(
+        a = 1,
+        b = 2.3,
+        c = "a_string",
+    )
+    write_city_configuration(filename1, city_name, args)
+    copy_cities_configuration(filename1, filename2)
+    with tb.open_file(filename2, "r") as file:
+        assert "config"  in file.root
+        assert city_name in file.root.config
+
+    df = pd.read_hdf(filename1, f"/config/{city_name}").set_index("variable")
+    for var, value in args.items():
+        assert var in df.index
+        assert str(value) == df.value.loc[var]
 
 
 def test_copy_cities_configuration_warns_when_nothing_to_copy(ICDATADIR, config_tmpdir):

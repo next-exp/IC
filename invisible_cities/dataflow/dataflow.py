@@ -371,7 +371,7 @@ def if_tuple_make_pipe(thing):
 
 ######################################################################
 
-if __name__ == '__main__':
+if __name__ == '__main__': # pragma: no cover
 
     show   = sink(print)
     count_2_fut, count2 = count(); every2 = filter(lambda n:not n%2)(count2)

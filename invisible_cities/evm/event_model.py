@@ -185,9 +185,6 @@ class VoxelCollection:
         self.voxels = voxels
         self.E = sum(v.E for v in voxels)
 
-    @property
-    def number_of_voxels(self):
-        return len(self.voxels)
 
     def __str__(self):
         s =  "VoxelCollection: (number of voxels = {})\n".format(self.number_of_voxels)
@@ -197,88 +194,6 @@ class VoxelCollection:
 
     def __repr__(self):
         return self.__str__()
-
-
-class Blob:
-    """A Blob is a collection of Hits with a seed and a radius. """
-    def __init__(self, seed: Tuple[float, float, float],
-                       hits : List[BHit],
-                       radius : float,
-                       e_type : HitEnergy = HitEnergy.E) ->None:
-        self.seed   = seed
-        self.hits   = hits
-        self.E      = sum(getattr(h, e_type.value) for h in hits)
-        self.radius = radius
-        self.e_type = e_type.value
-
-    @property
-    def Etype(self): return self.e_type
-
-    def __str__(self):
-        s =  """Blob: (hits = {} \n
-                seed   = {} \n
-                blob energy = {} \n
-                blob radius = {}
-        """.format(self.hits, self.seed, self.energy, self.radius)
-
-        return  s
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class Track(VoxelCollection):
-    """A track is a collection of linked voxels. """
-    def __init__(self, voxels : List[Voxel], blobs: Tuple[Blob, Blob]) ->None:
-        super().__init__(voxels)
-        self.blobs = blobs
-
-    def __str__(self):
-        s =  """Track: (number of voxels = {})\n,
-                voxels = {} \n
-                blob_a = {} \n
-                blob_b = {}
-        """.format(self.number_of_voxels, self.voxels, self.blobs[0], self.blobs[1])
-
-        return  s
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class TrackCollection(Event):
-    """A Collection of tracks"""
-    def __init__(self, event_number, event_time):
-        Event.__init__(self, event_number, event_time)
-        self.tracks = []
-
-    @property
-    def number_of_tracks(self):
-        return len(self.tracks)
-
-    def store(self, table):
-        row = table.row
-        for i, t in enumerate(self.tracks):
-            row["event"]    = self.event
-            row["time" ]    = self.time
-            row["track_no"] = i
-
-            for j, voxel in enumerate(t.voxels):
-                row["voxel_no"] = j
-                row["X"    ] = voxel.X
-                row["Y"    ] = voxel.Y
-                row["Z"    ] = voxel.Z
-                row["E"    ] = voxel.E
-
-                row.append()
-
-    def __str__(self):
-        s =  "{}".format(self.__class__.__name__)
-        s+= "Track list:"
-        s2 = [str(trk) for trk in self.tracks]
-        return  s + ''.join(s2)
-
-    __repr__ =     __str__
 
 
 class HitCollection(Event):
@@ -356,8 +271,8 @@ class KrEvent(Event):
             for attribute in ["w", "h", "e", "t", "q"]:
                 setattr(self, "S2" + attribute, [np.nan])
 
-            self.Nsipm = 0
-            self.qmax  = 0
+            self.Nsipm = [0]
+            self.qmax  = [0]
             for attribute in ["X", "Y", "R", "Phi", "Xrms", "Yrms", "Zrms"]:
                 setattr(self, attribute, [np.nan])
 

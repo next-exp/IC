@@ -5,17 +5,13 @@ import tables as tb
 import pandas as pd
 
 from pytest import fixture
+from pytest import warns
 
 from .. cities.eutropia        import eutropia
 from .. core  .configure       import configure
 from .. core  .system_of_units import mm
 from .. core  .testing_utils   import assert_tables_equality
 from .. core  .testing_utils   import ignore_warning
-
-
-@fixture(scope="module")
-def kr_hits(ICDATADIR):
-    return os.path.join(ICDATADIR, "Kr_hits_for_psf_*.h5")
 
 
 @fixture(scope="module")
@@ -119,3 +115,17 @@ def test_eutropia_exact_result(ICDATADIR, output_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
+
+
+def test_eutropia_skips_bad_files(ICDATADIR, config_tmpdir):
+    PATH_IN  = os.path.join(ICDATADIR    , 'empty_file.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'test_eutropia_skips_bad_files.h5')
+
+    config_file = 'dummy invisible_cities/config/eutropia.conf'
+    conf = configure(config_file.split())
+    conf.update(dict(files_in = PATH_IN,
+                     file_out = PATH_OUT))
+
+    # just check that it doesn't complain
+    with warns(UserWarning, match="No output file produced because no events were processed"):
+        eutropia(**conf)

@@ -183,7 +183,7 @@ def compare_signature_to_values( function   : Callable
     """
     def get_name(type_):
         try   : return type_.__name__
-        except: return str(type_)
+        except: return str(type_) # pragma: no cover
 
     signature     = inspect.signature(function)
     function_name = function.__name__
@@ -219,7 +219,7 @@ def compare_signature_to_values( function   : Callable
                 msg = (f"The function `{function_name}` is missing an argument "
                        f"`{name}` of type `{get_name(type_expected)}`")
                 raise ValueError(msg)
-            else:
+            else: # pragma: no cover
                 continue
 
         value = kw_values[name]
@@ -305,7 +305,7 @@ class Configuration(MutableMapping):
     def pop_file(self):
         self._file_stack.pop()
 
-    def display(self):
+    def display(self): # pragma: no cover
         conf = self.as_namespace
         longest = max(self._data, key=len)
         width = len(longest) + 3

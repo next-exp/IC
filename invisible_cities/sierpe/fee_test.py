@@ -99,7 +99,7 @@ def test_signal_maintained(electron_MCRD_file):
 
 
 @pytest.mark.skip('Skipped as uses outdated functions not used in code')
-def test_spe_to_adc():
+def test_spe_to_adc(): # pragma: no cover
     """Convert SPE to adc values with the current FEE Parameters must be."""
     ipmt = 0
     spe = FE.SPE()

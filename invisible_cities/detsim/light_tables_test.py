@@ -8,6 +8,7 @@ from .. io.dst_io  import load_dst
 from .light_tables import create_lighttable_function
 
 from pytest import fixture
+from pytest import raises
 
 from hypothesis import given, settings
 from hypothesis.strategies  import floats
@@ -80,3 +81,13 @@ def test_get_lt_values_s2(lighttable_filenames, xs, ys):
         expected = np.zeros((1, 12))
 
     np.testing.assert_allclose(S2_LT(np.array([xs]), np.array([ys])), expected)
+
+
+def test_get_lt_values_complains_if_input_mismatch(lighttable_filenames):
+    s2_lighttable = lighttable_filenames["s2"]
+    S2_LT = create_lighttable_function(s2_lighttable)
+
+    with raises(Exception, match="input arrays must be of same shape"):
+        xs = np.arange(5)
+        ys = np.arange(6)
+        S2_LT(xs, ys)

@@ -203,8 +203,6 @@ def read_mc_tables(file_in : str                        ,
         elif tbl is MCTableType.string_map           :
             str_map = load_mcstringmap(file_in)
             tbl_dict[tbl] = str_map
-        else                                         :
-            raise TypeError("MC table has no reader")
     return tbl_dict
 
 
@@ -736,7 +734,7 @@ def get_sensor_types(file_name : str) -> pd.DataFrame:
               Sensor position info for the MC sensors
               which saw light in this simulation.
     """
-    if is_oldformat_file(file_name):
+    if is_oldformat_file(file_name): # pragma: no cover
         raise TypeError('Old format files not valid for get_sensor_types')
     sns_pos = load_dst(file_name, 'MC', 'sns_positions')
     sns_pos.drop(['x', 'y', 'z'], axis=1, inplace=True)
@@ -822,7 +820,7 @@ def load_mcsensors_dfold(file_name : str) -> pd.DataFrame:
     return sns
 
 
-def get_mc_info(h5in):
+def get_mc_info(h5in): # pragma: no cover
     """Return MC info bank"""
 
     extents   = h5in.root.MC.extents
@@ -879,7 +877,7 @@ def convert_timebin_to_time(sns_resp : pd.DataFrame,
 
 
 def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_number: int, last_row=0,
-                     return_only_hits: bool=False) -> ([tb.Table], [tb.Table], [tb.Table]):
+                     return_only_hits: bool=False) -> ([tb.Table], [tb.Table], [tb.Table]):  # pragma: no cover
     h5extents    = mctables[0]
     h5hits       = mctables[1]
     h5particles  = mctables[2]
@@ -925,7 +923,7 @@ def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_n
     return hit_rows, particle_rows, generator_rows
 
 
-def _read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
+def _read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]: # pragma: no cover
     """Returns all hits in the event"""
     mc_info = get_mc_info(h5f)
     h5extents = mc_info.extents

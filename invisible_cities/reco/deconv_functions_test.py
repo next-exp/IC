@@ -36,6 +36,7 @@ from .. types   .symbols          import CutType
 from .. database.load_db          import DataSiPM
 
 from scipy.stats                  import multivariate_normal
+from scipy.signal                 import fftconvolve
 
 
 @pytest.fixture(scope='function')
@@ -84,23 +85,41 @@ def test_cut_and_redistribute_df(df):
 
 
 def test_drop_isolated_sensors():
-    size          = 20
-    dist          = [10.1, 10.1]
-    x             = random.choices(np.linspace(-200, 200, 41), k=size)
-    y             = random.choices(np.linspace(-200, 200, 41), k=size)
-    q             = np.random.uniform(0,  20, size)
-    e             = np.random.uniform(0, 200, size)
-    df            = pd.DataFrame({'X':x, 'Y':y, 'Q':q, 'E':e})
+    """
+    Generate a cluster of 9 adjacent sensors + 1 isolated sensor and
+    check that the function drops it.
+    """
+    p    = 10.1
+    x    = [-p, -p, -p,  0, 0, 0,  p, p, p, 3*p]
+    y    = [-p,  0,  p, -p, 0, p, -p, 0, p, 3*p]
+    q    = [100] * 10
+    e    = [100] * 10
+    dist = [p, p]
+    df   = pd.DataFrame({'X':x, 'Y':y, 'Q':q, 'E':e})
+
     drop_function = drop_isolated_sensors(dist, ['E'])
     df_cut        = drop_function(df)
 
-    if len(df_cut) > 0:
-        assert np.isclose(df_cut.E.sum(), df.E.sum())
+    assert len(df_cut) == 9
+    assert np.isclose(df_cut.E.sum(), df.E.sum())
+    assert np.all(df_cut.X >= -p)
+    assert np.all(df_cut.X <=  p)
+    assert np.all(df_cut.Y >= -p)
+    assert np.all(df_cut.Y <=  p)
 
-    for row in df_cut.itertuples(index=False):
-        n_neighbours = len(df_cut[in_range(df_cut.X, row.X - dist[0], row.X + dist[0]) &
-                                  in_range(df_cut.Y, row.Y - dist[1], row.Y + dist[1])])
-        assert n_neighbours > 1
+
+def test_drop_isolated_sensors_drop_all():
+    x    = [0] * 10
+    y    = [0] * 10
+    q    = [1] * 10
+    e    = [1] * 10
+    dist = [1, 1]
+    df   = pd.DataFrame({'X':x, 'Y':y, 'Q':q, 'E':e})
+
+    drop_function = drop_isolated_sensors(dist, ['E'])
+    df_cut        = drop_function(df)
+
+    assert df_cut.shape == (0, 4)
 
 
 def test_interpolate_signal():
@@ -333,6 +352,20 @@ def test_nonexact_binning(data_hdst, data_hdst_deconvolved):
 
     assert(np.all(check_x % 9 == 0))
     assert(np.all(check_y % 9 == 0))
+
+
+#TODO: implement timeout
+def test_richardson_lucy_convergence():
+    """
+    The test passes if it ends quickly, an indication that it was
+    terminated by threshold, not by number of iterations.
+    """
+    shape = 50, 50
+    obj   = np.ones (shape, dtype=float) * 0.5
+    psf   = np.ones (shape, dtype=float) / shape[0] / shape[1]
+    image = fftconvolve(obj, psf, "same")
+    out   = richardson_lucy(image, psf, iterations=1000000000, iter_thr=1e-8, **no_satellite_killer)
+    assert np.all(out>0)
 
 
 @mark.parametrize("cut_type", CutType)

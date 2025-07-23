@@ -1,0 +1,43 @@
+# This workflow will install IC and run all the tests with pytest
+
+name: Test suite
+
+on:
+  pull_request:
+
+jobs:
+  check-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Get LFS files
+      run: git lfs pull
+
+    - name: Install IC
+      run: |
+        source $CONDA/etc/profile.d/conda.sh
+        source manage.sh work_in_python_version_no_tests 3.8
+
+    - name: Produce coverage report
+      run: |
+        source $CONDA/etc/profile.d/conda.sh
+        source manage.sh work_in_python_version_no_tests 3.8
+        coverage run -m pytest
+        coverage report -m > coverage_report
+
+    - name: Check coverage report
+      run: |
+        echo "Showing only files with coverage < 100%"
+        head -2 coverage_report
+        incomplete_coverage=$(head -n -2 coverage_report | tail -n +3 | grep -v "100%")
+
+        while read line; do
+          printf '\033[0;31m%s\033[0m\n' "$line" # red color ... reset color
+        done <<<${incomplete_coverage}
+
+        tail -2 coverage_report
+
+        if [ ! -z "$incomplete_coverage" ]; then
+          echo "::warning ::Test suite coverage incomplete"
+        fi

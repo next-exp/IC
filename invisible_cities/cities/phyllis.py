@@ -87,7 +87,6 @@ def phyllis( files_in         : OneOrManyFiles
     if   proc_mode is PMTCalibMode.gain         : proc = pmt_deconvolver    (detector_db, run_number, n_baseline       )
     elif proc_mode is PMTCalibMode.gain_maw     : proc = pmt_deconvolver_maw(detector_db, run_number, n_baseline, n_maw)
     elif proc_mode is PMTCalibMode.gain_nodeconv: proc = mode_subtractor    (detector_db, run_number)
-    else                                        : raise ValueError(f"Unrecognized processing mode: {proc_mode}")
 
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)

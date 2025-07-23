@@ -32,6 +32,8 @@ Each triplet of values is a PSF on its own. A PSF is a table containing:
     - nevt      : number of entries at this bin
 """
 
+import warnings
+
 import numpy  as np
 import tables as tb
 import pandas as pd
@@ -135,10 +137,13 @@ def eutropia( files_in    : OneOrManyFiles
                         , result = accumulate_psf.future
                         )
 
-        df_writer(h5out, result
-                 , "PSF", "PSFs"
-                 , descriptive_string = f"PSF with {bin_size_xy} mm bin size"
-                 )
+        if result is None:
+            warnings.warn("No output file produced because no events were processed", UserWarning)
+        else:
+            df_writer(h5out, result
+                     , "PSF", "PSFs"
+                     , descriptive_string = f"PSF with {bin_size_xy} mm bin size"
+                     )
 
     return result
 

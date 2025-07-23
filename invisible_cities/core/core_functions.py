@@ -265,24 +265,6 @@ def farray_from_string(sfl):
     return np.array(list(map(float, sfl.split())))
 
 
-def _rebin_array(arr, stride, met=np.sum, remainder=False):
-    """
-    rebin arr by a factor stride, using method (ex: np.sum or np.mean), keep the remainder in the
-    last bin or not
-    """
-    lenb = int(len(arr) / int(stride))
-    if remainder and len(arr) % stride != 0:
-        rebinned     = np.empty(lenb + 1)
-        rebinned[-1] = met(arr[lenb*stride:])
-    else:
-        rebinned = np.empty(lenb)
-    for i in range(lenb):
-        s = i * stride
-        f = s + stride
-        rebinned[i] = met(arr[s:f])
-    return rebinned
-
-
 def define_window(wf, window_size):
     """Define a window based on a peak. Takes max plus/minus *window_size*."""
     peak = np.argmax(abs(wf - np.mean(wf)))

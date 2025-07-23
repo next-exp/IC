@@ -47,11 +47,6 @@ def list_of_hits(draw):
     assume(sum((h.Q > 0 for h in list_of_hits if h.Q != NN)) >= 1)
     return list_of_hits
 
-@composite
-def thresholds(draw, min_value=1, max_value=1):
-    th1 = draw (integers(  10   ,  20))
-    th2 = draw (integers(  th1+1,  30))
-    return th1, th2
 
 @given(list_of_hits())
 def test_merge_NN_does_not_modify_input(hits):
@@ -77,6 +72,20 @@ def test_merge_nn_hits_does_not_leave_nn_hits(hits):
     hits_merged = merge_NN_hits(hits)
     for hit in hits_merged:
         assert hit.Q != NN
+
+
+def test_merge_nn_hits_different_peaks():
+    zero = xy(0,0)
+    #             peakno     Q       X    Y              z  E
+    hits = [ Hit(0, Cluster(NN, xy(  0,   0), zero, 1),  0, 1, zero)
+           , Hit(0, Cluster( 1, xy(100, 100), zero, 1), -2, 2, zero)
+           , Hit(1, Cluster( 1, xy(  0,   0), zero, 1),  1, 3, zero)]
+    merged = merge_NN_hits(hits, same_peak=False)
+
+    assert len(merged) == 2
+    assert_hit_equality(merged[0], hits[1]) # second hit unchanged
+    assert merged[1].E == hits[0].E + hits[2].E
+    assert merged[1].Q ==             hits[2].Q
 
 
 @given(list_of_hits(), floats())

@@ -261,7 +261,7 @@ def print_every(N):
                      fl.sink (lambda data: print(f"events processed: {data['index']}, event number: {data['event_number']}")))
 
 
-def print_every_alternative_implementation(N):
+def print_every_alternative_implementation(N): # pragma: no cover
     @fl.coroutine
     def print_every_loop(target):
         with fl.closing(target):
@@ -273,7 +273,11 @@ def print_every_alternative_implementation(N):
     return print_every_loop
 
 
-def get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number):
+@check_annotations
+def get_actual_sipm_thr( thr_sipm_type : SiPMThreshold
+                       , thr_sipm      : float
+                       , detector_db   : str
+                       , run_number    : int):
     if   thr_sipm_type is SiPMThreshold.common:
         # In this case, the threshold is a value in pes
         sipm_thr = thr_sipm
@@ -282,10 +286,6 @@ def get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number):
         # In this case, the threshold is a percentual value
         noise_sampler = NoiseSampler(detector_db, run_number)
         sipm_thr      = noise_sampler.compute_thresholds(thr_sipm)
-
-    else:
-        raise ValueError(f"Unrecognized thr type: {thr_sipm_type}. "
-                          "Only valid options are `common` and `individual`")
 
     return sipm_thr
 
@@ -407,21 +407,27 @@ def deconv_pmt(dbfile, run_number, n_baseline,
 
 
 def get_run_number(h5in):
-    if   "runInfo" in h5in.root.Run: return h5in.root.Run.runInfo[0]['run_number']
-    elif "RunInfo" in h5in.root.Run: return h5in.root.Run.RunInfo[0]['run_number']
+    group = "Run" in h5in.root
+    table = None
+    if   group and "runInfo" in h5in.root.Run: table = h5in.root.Run.runInfo
+    elif group and "RunInfo" in h5in.root.Run: table = h5in.root.Run.RunInfo
+
+    if table is not None and len(table):
+        return table[0]['run_number']
 
     raise tb.exceptions.NoSuchNodeError(f"No node runInfo or RunInfo in file {h5in}")
 
 
-def get_pmt_wfs(h5in, wf_type):
-    if   wf_type is WfType.rwf : return h5in.root.RD.pmtrwf
-    elif wf_type is WfType.mcrd: return h5in.root.   pmtrd
-    else                       : raise  TypeError(f"Invalid WfType: {type(wf_type)}")
+@check_annotations
+def get_pmt_wfs(h5in : tb.File, wf_type : WfType):
+    if   wf_type is WfType.rwf: return h5in.root.RD.pmtrwf
+    else                      : return h5in.root.   pmtrd
 
-def get_sipm_wfs(h5in, wf_type):
-    if   wf_type is WfType.rwf : return h5in.root.RD.sipmrwf
-    elif wf_type is WfType.mcrd: return h5in.root.   sipmrd
-    else                       : raise  TypeError(f"Invalid WfType: {type(wf_type)}")
+
+@check_annotations
+def get_sipm_wfs(h5in : tb.File, wf_type : WfType):
+    if   wf_type is WfType.rwf: return h5in.root.RD.sipmrwf
+    else                      : return h5in.root.   sipmrd
 
 
 def get_trigger_info(h5in):
@@ -553,18 +559,13 @@ def wf_from_files(paths, wf_type):
 
 def pmap_from_files(paths):
     for path in paths:
-        try:
-            pmaps = load_pmaps(path, lazy=True)
-        except tb.exceptions.NoSuchNodeError:
-            continue
-
         with tb.open_file(path, "r") as h5in:
             try:
-                run_number  = get_run_number(h5in)
-                event_info  = get_event_info(h5in)
+                pmaps      = load_pmaps(path, lazy=True)
+                run_number = get_run_number(h5in)
+                event_info = get_event_info(h5in)
             except tb.exceptions.NoSuchNodeError:
-                continue
-            except IndexError:
+                warnings.warn("No PMAPs in input file", UserWarning)
                 continue
 
             for evtinfo, (evt, pmap) in zip(event_info, pmaps):
@@ -589,11 +590,8 @@ def hits_and_kdst_from_files( paths : List[str]
             continue
 
         with tb.open_file(path, "r") as h5in:
-            try:
-                run_number  = get_run_number(h5in)
-                event_info  = get_event_info(h5in)
-            except (tb.exceptions.NoSuchNodeError, IndexError):
-                continue
+            run_number  = get_run_number(h5in)
+            event_info  = get_event_info(h5in)
 
             check_lengths(event_info, kdst_df.event.unique())
 
@@ -620,12 +618,17 @@ def dst_from_files(paths: List[str], group: str, node:str) -> Iterator[Dict[str,
     for path in paths:
         try:
             df = load_dst(path, group, node)
-            with tb.open_file(path, "r") as h5in:
-                run_number  = get_run_number(h5in)
-                evt_numbers = get_event_info(h5in).col("evt_number")
-                timestamps  = get_event_info(h5in).col("timestamp")
         except (tb.exceptions.NoSuchNodeError, IndexError):
             continue
+
+        if not len(df):
+            warnings.warn(f"No data in node /{group}/{node} in input file", UserWarning)
+            continue
+
+        with tb.open_file(path, "r") as h5in:
+            run_number  = get_run_number(h5in)
+            evt_numbers = get_event_info(h5in).col("evt_number")
+            timestamps  = get_event_info(h5in).col("timestamp")
 
         yield dict( dst           = df
                   , run_number    = run_number
@@ -638,10 +641,7 @@ def dst_from_files(paths: List[str], group: str, node:str) -> Iterator[Dict[str,
 def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
     timestamp = create_timestamp(rate)
     for filename in files_in:
-        try:
-            hits_df = load_mchits_df(filename)
-        except tb.exceptions.NoSuchNodeError:
-            continue
+        hits_df = load_mchits_df(filename)
 
         l_type = hits_df.dtypes['label']
         map_df = load_mcstringmap(filename) if l_type == np.int32 else None
@@ -669,15 +669,15 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
         except tb.exceptions.NoSuchNodeError:
             continue
 
+        if not len(dhits_df):
+            warnings.warn(f"No data in node /DECO/Events in input file", UserWarning)
+            continue
+
         kdst_df = load_dst(path, 'DST', 'Events', ignore_errors=True)
 
         with tb.open_file(path, "r") as h5in:
-            try:
-                run_number  = get_run_number(h5in)
-            except (tb.exceptions.NoSuchNodeError, IndexError):
-                continue
-
             event_info = load_dst(path, 'Run', 'events')
+            run_number = get_run_number(h5in)
             for evt in dhits_df.event.unique():
                 this_event = lambda df: df.event==evt
                 timestamp = event_info[event_info.evt_number==evt].timestamp.values[0]
@@ -696,11 +696,11 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
                            timestamp    = timestamp )
 
 
-def sensor_data(path, wf_type):
+@check_annotations
+def sensor_data(path : str, wf_type : WfType):
     with tb.open_file(path, "r") as h5in:
-        if   wf_type is WfType.rwf :   (pmt_wfs, sipm_wfs) = (h5in.root.RD .pmtrwf,   h5in.root.RD .sipmrwf)
-        elif wf_type is WfType.mcrd:   (pmt_wfs, sipm_wfs) = (h5in.root.    pmtrd ,   h5in.root.    sipmrd )
-        else                       :   raise TypeError(f"Invalid WfType: {type(wf_type)}")
+        if   wf_type is WfType.rwf:   (pmt_wfs, sipm_wfs) = (h5in.root.RD .pmtrwf,   h5in.root.RD .sipmrwf)
+        else                      :   (pmt_wfs, sipm_wfs) = (h5in.root.    pmtrd ,   h5in.root.    sipmrd )
         _, NPMT ,  PMTWL =  pmt_wfs.shape
         _, NSIPM, SIPMWL = sipm_wfs.shape
         return SensorData(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
@@ -759,21 +759,6 @@ def calibrate_sipms(dbfile, run_number, thr_sipm):
                                    bls_mode   = BlsMode.mode)
 
     return calibrate_sipms
-
-
-def calibrate_with_mean(dbfile, run_number):
-    DataSiPM   = load_db.DataSiPM(dbfile, run_number)
-    adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
-    def calibrate_with_mean(wfs):
-        return csf.subtract_baseline_and_calibrate(wfs, adc_to_pes)
-    return calibrate_with_mean
-
-def calibrate_with_maw(dbfile, run_number, n_maw_sipm):
-    DataSiPM   = load_db.DataSiPM(dbfile, run_number)
-    adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
-    def calibrate_with_maw(wfs):
-        return csf.subtract_baseline_maw_and_calibrate(wfs, adc_to_pes, n_maw_sipm)
-    return calibrate_with_maw
 
 
 def zero_suppress_wfs(thr_csum_s1, thr_csum_s2):
@@ -1212,7 +1197,6 @@ def Efield_copier(energy_type: HitEnergy):
 def make_event_summary(event_number  : int          ,
                        topology_info : pd.DataFrame ,
                        paolina_hits  : HitCollection,
-                       out_of_map    : bool
                        ) -> pd.DataFrame:
     """
     For a given event number, timestamp, topology info dataframe, paolina hits and kdst information returns a
@@ -1256,7 +1240,7 @@ def make_event_summary(event_number  : int          ,
     list_of_vars  = [event_number, S2ec, S2qc, ntrks, nhits,
                      *ave_pos, ave_r,
                      min(x), min(y), min(z), min(r), max(x), max(y), max(z), max(r),
-                     out_of_map]
+                     False] # out_of_map
 
     es.loc[0] = list_of_vars
     #change dtype of columns to match type of variables
@@ -1328,17 +1312,9 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
         if len(hitc.hits) > max_num_hits:
             return df, hitc, True
         #track_hits is a new Hitcollection object that contains hits belonging to tracks, and hits that couldnt be corrected
-        track_hitc = HitCollection(hitc.event, hitc.time)
-        out_of_map = np.any(np.isnan([h.Ep for h in hitc.hits]))
-        if out_of_map:
-            #add nan hits to track_hits, the track_id will be -1
-            track_hitc.hits.extend  ([h for h in hitc.hits if np.isnan   (h.Ep)])
-            hits_without_nan       = [h for h in hitc.hits if np.isfinite(h.Ep)]
-            #create new Hitcollection object but keep the name hitc
-            hitc      = HitCollection(hitc.event, hitc.time)
-            hitc.hits = hits_without_nan
-
+        track_hitc   = HitCollection(hitc.event, hitc.time)
         hit_energies = np.array([getattr(h, HitEnergy.Ep.value) for h in hitc.hits])
+        assert not np.isnan(hit_energies).any()
 
         if len(hitc.hits) > 0 and (hit_energies>0).any():
             voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, HitEnergy.Ep)
@@ -1396,7 +1372,7 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
             #change dtype of columns to match type of variables
             df = df.apply(lambda x : x.astype(types_dict_tracks[x.name]))
             track_hitc.hits.extend(track_hits)
-        return df, track_hitc, out_of_map
+        return df, track_hitc
 
     return create_extract_track_blob_info
 
@@ -1424,7 +1400,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     # Create tracks and compute topology-related information
     create_extract_track_blob_info = fl.map(track_blob_info_creator_extractor(**paolina_params),
                                             args = 'Ep_hits',
-                                            out  = ('topology_info', 'paolina_hits', 'out_of_map'))
+                                            out  = ('topology_info', 'paolina_hits'))
 
     sort_hits_ = fl.map(sort_hits, item="paolina_hits")
 
@@ -1436,7 +1412,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
 
     # Create table with summary information
     make_final_summary             = fl.map(make_event_summary,
-                                            args = ('event_number', 'topology_info', 'paolina_hits', 'out_of_map'),
+                                            args = ('event_number', 'topology_info', 'paolina_hits'),
                                             out  = 'event_info')
 
 

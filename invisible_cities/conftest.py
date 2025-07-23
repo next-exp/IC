@@ -77,28 +77,11 @@ def electron_MCRD_file(request, ICDATADIR):
 def krypton_MCRD_file(request, ICDATADIR):
     return os.path.join(ICDATADIR, request.param)
 
-@pytest.fixture(scope  = 'session',
-                params = ['mcfile_nohits.sim.h5'])
-def nohits_sim_file(request, ICDATADIR):
-    return os.path.join(ICDATADIR, request.param)
-
-@pytest.fixture(scope  = 'session',
-                params = ['mcfile_sns_only.sim.h5'])
-def sns_only_sim_file(request, ICDATADIR):
-    return os.path.join(ICDATADIR, request.param)
 
 @pytest.fixture(scope  = 'session',
                 params = ['Kr83_full_nexus_v5_03_01_ACTIVE_7bar_1evt.sim.h5'])
 def full_sim_file(request, ICDATADIR):
     return os.path.join(ICDATADIR, request.param)
-
-
-@pytest.fixture(scope='session')
-def mc_all_hits_data(krypton_MCRD_file):
-    number_of_hits = 8
-    evt_number     = 2
-    efile          = krypton_MCRD_file
-    return efile, number_of_hits, evt_number
 
 
 def _get_pmaps_dict_and_event_numbers(filename):
@@ -151,33 +134,6 @@ def KrMC_pmaps_dict(KrMC_pmaps_filename):
 @pytest.fixture(scope='session')
 def correction_map_filename(ICDATADIR):
     test_file = "kr_emap_xy_100_100_r_6573_time.h5"
-    test_file = os.path.join(ICDATADIR, test_file)
-    return test_file
-
-@pytest.fixture(scope='session')
-def correction_map_MC_filename(ICDATADIR):
-    test_file = "kr_emap_xy_100_100_mc.h5"
-    test_file = os.path.join(ICDATADIR, test_file)
-    return test_file
-
-
-@pytest.fixture(scope='session')
-def KrMC_hdst_filename(ICDATADIR):
-    test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_HDST.h5"
-    test_file = os.path.join(ICDATADIR, test_file)
-    return test_file
-
-
-@pytest.fixture(scope='session')
-def KrMC_hdst_filename_toy(ICDATADIR):
-    test_file = "toy_MC_HDST.h5"
-    test_file = os.path.join(ICDATADIR, test_file)
-    return test_file
-
-
-@pytest.fixture(scope='session')
-def esmeralda_tracks(ICDATADIR):
-    test_file = "esmeralda_tracks.hdf5"
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
@@ -603,13 +559,6 @@ def TlMC_hits_skipping_NN(ICDATADIR):
     hits = load_hits_skipping_NN(hits_file_name)
     return hits
 
-@pytest.fixture(scope='session')
-def TlMC_hits_merged(ICDATADIR):
-    hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10_merged.h5"
-    hits_file_name = os.path.join(ICDATADIR, hits_file_name)
-    hits = load_hits(hits_file_name)
-    return hits
-
 
 @pytest.fixture(scope="session")
 def Th228_pmaps(ICDATADIR):
@@ -803,22 +752,6 @@ def voxels_toy_data(ICDATADIR):
     return voxels_filename, (event, X, Y, Z, E, size)
 
 
-@pytest.fixture(scope='session')
-def dbdemopp():
-    return 'demopp'
-
-@pytest.fixture(scope='session')
-def dbnew():
-    return 'new'
-
-@pytest.fixture(scope='session')
-def dbnext100():
-    return 'next100'
-
-@pytest.fixture(scope='session')
-def dbflex100():
-    return 'flex100'
-
 @pytest.fixture(scope='session',
                 params=[db_data('demopp' ,  3,  256, 3, 79),
                         db_data('new'    , 12, 1792, 3, 79),
@@ -881,7 +814,7 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    if config.getoption("--runslow"):
+    if config.getoption("--runslow"): # pragma: no cover
         # --runslow given in cli: do not skip slow tests
         return
     skip_slow = pytest.mark.skip(reason="need --runslow option to run")

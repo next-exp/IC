@@ -146,6 +146,7 @@ def PMTLowFrequencyNoise(db_file, run_number=1e5):
 
 @lru_cache(maxsize=10)
 def RadioactivityData(db_file, version=None):
+    if db_file != "next100": return
 
     conn = sqlite3.connect(get_db(db_file))
 

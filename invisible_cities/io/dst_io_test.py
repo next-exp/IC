@@ -134,6 +134,12 @@ def test_load_dst_converts_from_bytes(ICDATADIR, fixed_dataframe):
         assert all(config[col].apply(type) != bytes)
 
 
+def test_load_dst_warns_corrupted_file(ICDATADIR):
+    wrong_file = os.path.join(ICDATADIR, "corrupted_file.h5")
+    with pytest.warns(UserWarning, match='.* corrupted: file .*'):
+        load_dst(wrong_file, "DST", "Events", ignore_errors=True)
+
+
 @given(df=dataframe)
 def test_df_writer_exact(config_tmpdir, df):
     filename   = config_tmpdir + 'dataframe_to_table_exact.h5'

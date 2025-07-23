@@ -51,14 +51,14 @@ def times_and_waveforms(draw):
     waveforms = draw(multiple_waveforms())
     n_samples = waveforms.shape[1]
     times     = draw(arrays(float, n_samples, elements=floats(0, 10*n_samples), unique=True))
-    return times, waveforms
+    widths    = np.diff(np.append(times, times[-1] + 1))
+    return times, widths, waveforms
 
 
 @composite
 def rebinned_sliced_waveforms(draw):
-    times, wfs = draw(times_and_waveforms())
+    times, widths, wfs = draw(times_and_waveforms())
     assume(times.size >= 5)
-    widths = np.append(np.diff(times), max(np.diff(times)))
 
     indices      = np.arange(times.size)
     first        = draw(integers(        0, times.size - 2))
@@ -77,6 +77,7 @@ def rebinned_sliced_waveforms(draw):
     return times, widths, wfs, indices, times_slice, widths_slice, wfs_slice, rebin
 
 
+#TODO: rethink this composite
 @composite
 def peak_indices(draw):
     size    = draw(integers(10, 50))
@@ -267,17 +268,31 @@ def test_select_peaks_without_bounds(peak_data):
         assert got == exactly(expected)
 
 
-@given(peak_indices(),
-       floats(0,  5), floats( 6, 10),
-       floats(0, 10), floats(11, 20))
-def test_select_peaks_filtered_out(peak_data, i0, i1, l0, l1):
-    _, peaks , _ = peak_data
-    i_limits = minmax(i0, i1)
-    l_limits = minmax(l0, l1)
+def _peak_length(i):
+    return i[-1] - i[0] + 1
+
+@given(peak_indices())
+def test_select_peaks_filters_window(peak_data):
+    indices, peaks , _ = peak_data
+    i_limits = minmax(indices.min() + 1, indices.max() - 1)
+    l_limits = minmax(0, np.inf) # don't filter by length
     selected = pf.select_peaks(peaks, i_limits * 25 * units.ns, l_limits)
     for peak in selected:
-        assert i0 <=                peak[0] <= i1
-        assert l0 <= peak[-1] + 1 - peak[0] <= l1
+        assert i_limits.min <= peak[0] <= i_limits.max
+
+
+@given(peak_indices())
+def test_select_peaks_filters_length(peak_data):
+    indices, peaks , _ = peak_data
+    lengths  = sorted(map(_peak_length, peaks))
+    if max(lengths) - 2 <= min(lengths):
+        lengths.append(max(lengths)+2)
+
+    i_limits = minmax(0, indices.max() + 1) # don't filter by window
+    l_limits = minmax(lengths[0] + 1, lengths[-1] - 1)
+    selected = pf.select_peaks(peaks, i_limits * 25 * units.ns, l_limits)
+    for peak in selected:
+        assert l_limits.min <= _peak_length(peak) <= l_limits.max
 
 
 def test_select_peaks_right_length_with_holes():
@@ -298,24 +313,45 @@ def test_select_peaks_right_length_with_holes():
     assert selected_wrong      == ()
 
 
-@given(peak_indices(),
-       floats(0,  5), floats( 6, 10),
-       floats(0, 10), floats(11, 20))
-def test_select_peaks(peak_data, t0, t1, l0, l1):
+@given(peak_indices().filter(lambda data: len(data[1]) > 2))
+def test_select_peaks_tlimits(peak_data):
+    # peaks are time-ordered. Reject the first and the last one
     _, peaks , _ = peak_data
+    t0 = peaks[ 0][ 0] + 1
+    t1 = peaks[-1][-1] - 1
+
     i_limits = minmax(t0, t1)
+    t_limits = i_limits * 25 * units.ns
+    l_limits = minmax(0, 1000000)
+    selected = pf.select_peaks(peaks, t_limits, l_limits)
+
+    assert len(selected) == len(peaks) - 2
+    for got, expected in zip(selected, peaks[1:-1]):
+        assert got == exactly(expected)
+
+
+@given(peak_indices()
+       .filter(lambda data: np.unique(list(map(_peak_length, data[1]))).size > 2))
+def test_select_peaks_llimits(peak_data):
+    _, peaks , _ = peak_data
+    ls = np.array(list(map(_peak_length, peaks)))
+    l0 = ls.min() + 1
+    l1 = ls.max() - 1
+
+    i_limits = minmax(0, peaks[-1][-1] + 1)
     t_limits = i_limits * 25 * units.ns
     l_limits = minmax(l0, l1)
     selected = pf.select_peaks(peaks, t_limits, l_limits)
 
-    select = lambda ids: (i_limits.contains(ids[ 0]) and
-                          i_limits.contains(ids[-1]) and
-                          l_limits.contains(ids[-1] + 1 - ids[0]))
-    expected_peaks = tuple(filter(select, peaks))
+    selected_ls = np.array(list(map(_peak_length, selected)))
 
-    assert len(selected) == len(expected_peaks)
-    for got, expected in zip(selected, expected_peaks):
-        assert got == exactly(expected)
+    # at least one left, condition set in the input it should have
+    # filtered at least 2 peaks: the shortest and the longest peaks
+    assert len(selected) >= 1
+    assert len(peaks) - len(selected) >= 2
+
+    assert np.all(selected_ls >= l0)
+    assert np.all(selected_ls <= l1)
 
 
 @given(rebinned_sliced_waveforms())
@@ -527,44 +563,32 @@ def test_get_pmap(s1_and_s2_with_indices):
     assert_PMap_equality(pmap, expected_pmap)
 
 
-@given(times_and_waveforms(), integers(2, 10))
+@given( times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_sum_axis_1_does_not_change(t_and_wf, stride):
-    times, wfs    = t_and_wf
-    widths        = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
-    _, _, rb_wfs  = pf.rebin_times_and_waveforms(times, widths, wfs, stride)
+    times, widths, wfs = t_and_wf
+    _, _, rb_wfs       = pf.rebin_times_and_waveforms(times, widths, wfs, stride)
     assert np.sum(wfs, axis=1) == approx(np.sum(rb_wfs, axis=1))
 
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_sum_axis_0_does_not_change(t_and_wf, stride):
-    times, wfs    = t_and_wf
-    widths        = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
-    sum_wf        = np.stack([np.sum(wfs, axis=0)])
-    _, _, rb_wfs  = pf.rebin_times_and_waveforms(times, widths,     wfs, stride)
-    _, _, rb_sum  = pf.rebin_times_and_waveforms(times, widths, sum_wf , stride)
+    times, widths, wfs = t_and_wf
+    sum_wf             = np.stack([np.sum(wfs, axis=0)])
+    _, _, rb_wfs       = pf.rebin_times_and_waveforms(times, widths,     wfs, stride)
+    _, _, rb_sum       = pf.rebin_times_and_waveforms(times, widths, sum_wf , stride)
     assert rb_sum[0] == approx(np.sum(rb_wfs, axis=0))
 
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_number_of_wfs_does_not_change(t_and_wf, stride):
-    times, wfs   = t_and_wf
-    widths       = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
-    _, _, rb_wfs = pf.rebin_times_and_waveforms(times, widths, wfs, stride)
+    times, widths, wfs = t_and_wf
+    _, _, rb_wfs       = pf.rebin_times_and_waveforms(times, widths, wfs, stride)
     assert len(wfs) == len(rb_wfs)
 
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_number_of_bins_is_correct(t_and_wf, stride):
-    times, wfs       = t_and_wf
-    widths           = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
+    times, widths, wfs  = t_and_wf
     rb_times, _, rb_wfs = pf.rebin_times_and_waveforms(times, widths,
                                                        wfs, stride)
     expected_n_bins  = times.size // stride
@@ -577,10 +601,7 @@ def test_rebin_times_and_waveforms_number_of_bins_is_correct(t_and_wf, stride):
 
 @given(times_and_waveforms())
 def test_rebin_times_and_waveforms_stride_1_does_not_rebin(t_and_wf):
-    times, wfs = t_and_wf
-    widths     = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
+    times, widths, wfs  = t_and_wf
     rb_times, _, rb_wfs = pf.rebin_times_and_waveforms(times, widths, wfs, 1)
 
     assert np.all(times == rb_times)
@@ -589,10 +610,7 @@ def test_rebin_times_and_waveforms_stride_1_does_not_rebin(t_and_wf):
 
 @given(times_and_waveforms(), integers(2, 10))
 def test_rebin_times_and_waveforms_times_are_consistent(t_and_wf, stride):
-    times, wfs  = t_and_wf
-    widths      = [1]
-    if len(times) > 1:
-        widths = np.append(np.diff(times), max(np.diff(times)))
+    times, widths, wfs = t_and_wf
 
     # The samples falling in the last bin cannot be so easily
     # compared as the other ones so I remove them.

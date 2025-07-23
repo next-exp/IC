@@ -10,15 +10,24 @@ from .  sophronia            import sophronia
 
 
 @ignore_warning.no_config_group
-def test_sophronia_runs(sophronia_config, config_tmpdir):
-    path_out = os.path.join(config_tmpdir, 'sophronia_runs.h5')
+@mark.parametrize("corrections", (True, False))
+def test_sophronia_runs(sophronia_config, config_tmpdir, corrections):
+    path_out = os.path.join(config_tmpdir, f'sophronia_runs_{corrections}.h5')
     nevt_req = 1
     config   = dict(**sophronia_config)
     config.update(dict(file_out    = path_out,
                        event_range = nevt_req))
 
+    # ensure that `sophronia_config` uses corrections and that we
+    # remove them in the other case
+    if corrections:
+        assert "corrections" in config
+        assert config["corrections"] is not None
+    else:
+        del config["corrections"]
+
     cnt = sophronia(**config)
-    assert cnt.events_in   == nevt_req
+    assert cnt.events_in == nevt_req
 
 
 @ignore_warning.no_config_group

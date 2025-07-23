@@ -187,15 +187,6 @@ def deconvolve_signal(det_db           : pd.DataFrame,
                                **satellite_params,
                                inter_method = inter_method)
 
-    if not isinstance(energy_type , HitEnergy          ):
-        raise ValueError(f'energy_type {energy_type} is not a valid energy type.')
-    if not isinstance(inter_method, InterpolationMethod):
-        raise ValueError(f'inter_method {inter_method} is not a valid interpolation method.')
-    if not isinstance(cut_type    , CutType            ):
-        raise ValueError(f'cut_type {cut_type} is not a valid cut type.')
-    if not isinstance(deconv_mode , DeconvolutionMode  ):
-        raise ValueError(f'deconv_mode {deconv_mode} is not a valid deconvolution mode.')
-
     def deconvolve_hits(df, z):
         '''
         Given an slice, applies deconvolution using the PSF
@@ -259,7 +250,14 @@ def deconvolve_signal(det_db           : pd.DataFrame,
     return apply_deconvolution
 
 
-def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
+@check_annotations
+def create_deconvolution_df( hits     : pd.DataFrame
+                           , deconv_e : np.ndarray
+                           , pos      : Tuple[np.ndarray, np.ndarray, np.ndarray]
+                           , cut_type : CutType
+                           , e_cut    : float
+                           , n_dim    : int
+                           ) -> pd.DataFrame:
     '''
     Given the output of the deconvolution, it cuts the low energy voxels and
     creates a dataframe object with the resulting output.
@@ -280,12 +278,8 @@ def create_deconvolution_df(hits, deconv_e, pos, cut_type, e_cut, n_dim):
 
     df  = pd.DataFrame(columns=['event', 'npeak', 'X', 'Y', 'Z', 'E'])
 
-    if   cut_type is CutType.abs:
-        sel_deconv = deconv_e > e_cut
-    elif cut_type is CutType.rel:
-        sel_deconv = deconv_e / deconv_e.max() > e_cut
-    else:
-        raise ValueError(f'cut_type {cut_type} is not a valid cut type.')
+    if   cut_type is CutType.abs: sel_deconv = deconv_e                  > e_cut
+    else                        : sel_deconv = deconv_e / deconv_e.max() > e_cut
 
     df['E']     = deconv_e[sel_deconv]
     df['event'] = hits.event.unique()[0]
@@ -497,9 +491,10 @@ def beersheba( files_in         : OneOrManyFiles
 
     for p in ['sample_width', 'bin_size', 'diffusion']:
         if len(deconv_params[p]) != deconv_params['n_dim']:
-            raise ValueError         (f"Parameter {p} dimensions do not match n_dim parameter")
+            raise ValueError(f"Parameter {p} dimensions do not match n_dim parameter")
+
     if deconv_params['n_dim'] > 2:
-        raise     NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
+        raise NotImplementedError(f"{deconv_params['n_dim']}-dimensional PSF not yet implemented")
 
     cut_sensors           = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
                                    item = 'hits')
