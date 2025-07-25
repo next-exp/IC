@@ -213,8 +213,8 @@ def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -
 
     # EPSILON added to avoid division by zero
     # This should be only necessary for Ec, but we apply it to E to be safe
-    hits.loc[:, "E" ] = hits.Q / qsum * (raw_e_slice + EPSILON)
-    hits.loc[:, "Ec"] = hits.Q / qsum * (cor_e_slice + EPSILON)
+    hits.loc[:, "E" ] = (hits.Q / qsum) * (raw_e_slice + EPSILON)
+    hits.loc[:, "Ec"] = (hits.Q / qsum) * (cor_e_slice + EPSILON)
     return hits
 
 
