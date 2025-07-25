@@ -94,7 +94,6 @@ from typing import Union
 
 
 def event_info_adder(timestamp : float, dst : pd.DataFrame):
-    dst = dst.astype(dict(npeak=np.float64))
     return dst.assign(time=timestamp/1e3, nsipm=0, Xrms=0, Yrms=0)
 
 
