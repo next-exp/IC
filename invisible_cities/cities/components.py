@@ -46,6 +46,7 @@ from .. core   .random_sampling   import              NoiseSampler
 from .. detsim                    import          buffer_functions as  bf
 from .. detsim                    import          sensor_functions as  sf
 from .. detsim .sensor_utils      import             trigger_times
+from .. evm    .pmaps             import                      PMap
 from .. calib                     import           calib_functions as  cf
 from .. calib                     import   calib_sensors_functions as csf
 from .. reco                      import            peak_functions as pkf
@@ -59,6 +60,7 @@ from .. reco   .corrections       import     get_df_to_z_converter
 from .. reco   .xy_algorithms     import                    corona
 from .. reco   .xy_algorithms     import                barycenter
 from .. filters.s1s2_filter       import               S12Selector
+from .. filters.s1s2_filter       import         S12SelectorOutput
 from .. filters.s1s2_filter       import               pmap_filter
 from .. database                  import                   load_db
 from .. sierpe                    import                       blr
@@ -579,8 +581,14 @@ def pmap_from_files(paths):
 def hits_and_kdst_from_files( paths : List[str]
                             , group : str
                             , node  : str ) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
-    """Reader of the files, yields HitsCollection, pandas DataFrame with
-    kdst info, run_number, event_number and timestamp."""
+    """
+    Reader of hits files. For each event it produces a dictionary containing
+    - hits        : a DataFrame
+    - kdst        : a DataFrame
+    - run_number  : int
+    - event_number: int
+    - timestamp   : float with time in milliseconds
+    """
     for path in paths:
         try:
             hits_df = load_dst (path, group, node)
@@ -809,6 +817,11 @@ def simulate_sipm_response(detector, run_number, wf_length, noise_cut, filter_pa
 ####### Filters ########
 
 def peak_classifier(**params):
+    """
+    Applies S12Selector to PMaps, which labels each peak as valid or invalid
+    using 4 criteria:
+    width, height, energy (pmts integral) and number of SiPMs.
+    """
     selector = S12Selector(**params)
     return partial(pmap_filter, selector)
 
@@ -934,10 +947,30 @@ def hit_builder(dbfile, run_number, drift_v,
                 rebin_slices, rebin_method,
                 global_reco, slice_reco,
                 charge_type):
+    """
+    Builds hits from PMaps using a general clustering algorithm. For a given
+    PMap, and the output of the peak-selector output does the following:
+    - Filters out peaks rejected by the selector
+    - Picks up the S1 (always the first one, if there are more, they are ignored)
+    - Rebins each S2 according to `rebin_method` and `rebin_slices`
+    - For each S2:
+      - Compute the overall position of the signal according to `global_reco`
+        (typically barycenter in XYZ)
+      - For each (rebinned) slice of the S2:
+        - Clusterize the SiPM responses according to `slice_reco`
+          - Failing XY reconstructions (e.g. not enough SiPMs with signal)
+            generate "empty" (a.k.a. NN) clusters
+        - Assign each cluster the corresponding fraction of the energy in the
+          slice
+    """
     sipm_xys   = sipm_positions(dbfile, run_number)
     sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
 
-    def build_hits(pmap, selector_output, event_number, timestamp):
+    def build_hits( pmap           : PMap
+                  , selector_output: S12SelectorOutput
+                  , event_number   : int
+                  , timestamp      : float
+                  ) -> HitCollection:
         hitc = HitCollection(event_number, timestamp * 1e-3)
         s1_t = get_s1_time(pmap, selector_output)
 
@@ -984,11 +1017,30 @@ def sipms_as_hits(dbfile, run_number, drift_v,
                   rebin_slices, rebin_method,
                   q_thr,
                   global_reco, charge_type):
-
+    """
+    Builds hits from PMaps taking each SiPM as an individual hit. For a given
+    PMap, and the output of the peak-selector output does the following:
+    - Filters out peaks rejected by the selector
+    - Picks up the S1 (always the first one, if there are more, they are ignored)
+    - Rebins each S2 according to `rebin_method` and `rebin_slices`
+    - For each S2:
+      - Compute the overall position of the signal according to `global_reco`
+        (typically barycenter in XYZ)
+      - For each (rebinned) slice of the S2:
+        - Filters out SiPMs below `q_thr`
+        - If no hits survive, the entire slice is summarized in an "empty"
+          (a.k.a. NN) hit
+        - Assigns each SiPM (now hit) the corresponding fraction of the energy
+          in the slice. NN-hits carry the full slice energy.
+    """
     sipm_xys   = sipm_positions(dbfile, run_number)
     sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
 
-    def build_hits(pmap, selector_output, event_number, timestamp):
+    def build_hits( pmap           : PMap
+                  , selector_output: S12SelectorOutput
+                  , event_number   : int
+                  , timestamp      : float
+                  ) -> pd.DataFrame:
         s1_t = get_s1_time(pmap, selector_output)
         hits = []
         for peak_no, (passed, peak) in enumerate(zip(selector_output.s2_peaks,
