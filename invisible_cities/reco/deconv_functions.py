@@ -8,6 +8,8 @@ from typing  import Callable
 from typing  import Optional
 from typing  import Union
 
+from functools import reduce
+
 from scipy                  import interpolate
 from scipy.signal           import fftconvolve
 from scipy.signal           import convolve
@@ -201,18 +203,11 @@ def drop_isolated_clusters(distance   :  List[float],
 
    
     def drop_event(df):
-        # normalise distances and (x,y,z) array
-        x   = df.X.values / distance[0]
-        y   = df.Y.values / distance[1]
-        z   = df.Z.values / distance[2]
-        xyz = np.column_stack((x,y,z))
-        
-        # normalised, so define distance sqrt(3)
-        dist = np.sqrt(3)
+        # normalise (x,y,z) array
+        xyz = df[list("XYZ")].values / distance
 
-        # build KDTree of datapoints, collect pairs within distance
-        xyz_tree = cKDTree(xyz)
-        pairs    = xyz_tree.query_pairs(r=dist)
+        # build KDTree of datapoints, collect pairs within normalised distance (sqrt of 3)
+        pairs = cKDTree(xyz).query_pairs(r = np.sqrt(3))
         
         # create graph that connects all close pairs between hit positions based on df index
         cluster_graph = nx.Graph()
@@ -220,18 +215,13 @@ def drop_isolated_clusters(distance   :  List[float],
         cluster_graph.add_edges_from((df.index[i], df.index[j]) for i,j in pairs)
 
         # Find all clusters within the graph
-        clusters = list(nx.connected_components(cluster_graph))
+        clusters = nx.connected_components(cluster_graph)
 
         # collect indices of passing hits (cluster > nhit) within set
-        passing_hits = set()
-        clstrs = []
-        for cluster in clusters:
-            if len(cluster) > nhits:
-                passing_hits |= cluster
- 
-        # extract mask and apply it
-        mask    = df.index.isin(passing_hits)
-        pass_df = df.loc[mask, :].copy()
+        passing_hits = reduce(set.union, filter(lambda x: len(x)>nhits, clusters))
+
+        # apply mask to df to only include passing clusters      
+        pass_df = df.loc[passing_hits, :].copy()
 
         # reweighting
         with np.errstate(divide='ignore'):
