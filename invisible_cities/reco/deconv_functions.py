@@ -183,9 +183,9 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
     return drop_isolated_sensors
 
 
-def drop_isolated_clusters(distance   :  List[float]= [10., 10., 1.],
-                           nhits      :  int        = 3,
-                           variables  :  List[str  ]= [      ]) -> Callable:
+def drop_isolated_clusters(distance   :  List[float],
+                           nhits      :  int,
+                           variables  :  List[str  ]) -> Callable:
     '''
     Drops isolated clusters of hits (SiPMs).
 
