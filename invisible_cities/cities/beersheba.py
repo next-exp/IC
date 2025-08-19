@@ -492,7 +492,7 @@ def beersheba( files_in         : OneOrManyFiles
 
     cut_sensors           = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
                                    item = 'hits')
-    drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec'], deconv_params.pop("cluster_size")),
+    drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec'], deconv_params.pop("cluster_size", None)),
                                    item = 'hits')
     filter_events_no_hits = fl.map(check_nonempty_dataframe,
                                    args = 'hits',
