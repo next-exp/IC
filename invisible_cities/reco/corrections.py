@@ -8,6 +8,7 @@ from   typing      import Callable
 from   typing      import Optional
 
 from .. core.core_functions import in_range
+from .. core.core_functions import shift_to_bin_centers
 from .. core                import system_of_units      as units
 from .. core.exceptions     import TimeEvolutionTableMissing
 from .. types.symbols       import NormStrategy
@@ -91,9 +92,7 @@ def maps_coefficient_getter(mapinfo : Series,
         for a given (X,Y) position
     """
 
-    binsx   = np.linspace(mapinfo.xmin, mapinfo.xmax, mapinfo.nx + 1)
-    binsy   = np.linspace(mapinfo.ymin, mapinfo.ymax, mapinfo.ny + 1)
-
+    binsx, binsy = get_xy_bins(mapinfo)
     def get_maps_coefficient(x : np.array, y : np.array) -> np.array:
         ix = np.digitize(x, binsx) - 1
         iy = np.digitize(y, binsy) - 1
@@ -203,9 +202,15 @@ def get_df_to_z_converter(map_te: ASectorMap) -> Callable:
     return df_to_z_converter
 
 
-def get_normalization_factor(map_e0    : ASectorMap,
-                             norm_strat: NormStrategy    = NormStrategy.max,
-                             norm_value: Optional[float] = None
+def get_xy_bins(mapinfo):
+    binsx   = np.linspace(mapinfo.xmin, mapinfo.xmax, mapinfo.nx + 1)
+    binsy   = np.linspace(mapinfo.ymin, mapinfo.ymax, mapinfo.ny + 1)
+    return binsx, binsy
+
+
+def get_normalization_factor(map_e0      : ASectorMap,
+                             norm_strat  : NormStrategy = NormStrategy.max,
+                             **norm_options
                              ) -> float:
     """
     For given map, it returns a factor that provides the conversion
@@ -218,8 +223,8 @@ def get_normalization_factor(map_e0    : ASectorMap,
         Correction map for geometric corrections.
     norm_strat : NormStrategy
         Normalization strategy used when correcting the energy.
-    norm_value : float (Optional)
-        Normalization scale when custom strategy is selected.
+    norm_options : dict
+        Extra normalization options for some strategies
 
     Returns
     -------
@@ -228,17 +233,43 @@ def get_normalization_factor(map_e0    : ASectorMap,
     if norm_strat is NormStrategy.max:
         norm_value =  map_e0.e0.max().max()
     elif norm_strat is NormStrategy.mean:
-        norm_value = np.mean(np.mean(map_e0.e0))
+        norm_value = np.nanmean(map_e0.e0.values.flatten())
+    elif norm_strat is NormStrategy.median:
+        norm_value = np.nanmedian(map_e0.e0.values.flatten())
     elif norm_strat is NormStrategy.kr:
         norm_value = 41.5575 * units.keV
-    elif norm_strat is NormStrategy.custom:
-        if norm_value is None:
-            s  = "If custom strategy is selected for normalization"
-            s += " user must specify the norm_value"
+
+    elif norm_strat is NormStrategy.region:
+        binsx, binsy = map(shift_to_bin_centers, get_xy_bins(map_e0.mapinfo))
+        if   "xrange" in norm_options and "yrange" in norm_options:
+            selx = in_range(binsx, *norm_options["xrange"])
+            sely = in_range(binsy, *norm_options["yrange"])
+            e0s  = map_e0.e0.loc[sely, selx]
+        elif "origin" in norm_options and "radius" in norm_options:
+            x0, y0 = norm_options["origin"]
+            x , y  = np.meshgrid(binsx, binsy)
+            sel    = in_range((x-x0)**2 + (y-y0)**2, 0, norm_options["radius"]**2)
+            e0s    = map_e0.e0.values[sel]
+        else:
+            s  = "Invalid options for normalization strategy `region`. Valid options:\n"
+            s += "`xrange` and `yrange` in the form (lower, upper)\n"
+            s += "`origin` in the form (x0, y0), and `radius`"
             raise ValueError(s)
+
+        if not len(e0s):
+            raise ValueError("Selected region does not contain any data points for normalization")
+        norm_value = np.median(e0s)
+
+    elif norm_strat is NormStrategy.custom:
+        if "value" not in norm_options:
+            s  = "If custom strategy is selected for normalization"
+            s += " user must specify a value like value = <some_value>"
+            raise ValueError(s)
+        norm_value = norm_options["value"]
+
     else:
-        s  = "None of the current available normalization"
-        s += " strategies was selected"
+        s  = "None of the currently available normalization strategies was selected. Valid options:\n"
+        s += " ".join(map(str, NormStrategy))
         raise ValueError(s)
 
     return norm_value
@@ -249,7 +280,7 @@ def apply_all_correction_single_maps(map_e0         : ASectorMap,
                                      map_te         : Optional[ASectorMap] = None,
                                      apply_temp     : bool                 = True,
                                      norm_strat     : NormStrategy         = NormStrategy.max,
-                                     norm_value     : Optional[float]      = None
+                                     **norm_options
                                      ) -> Callable:
     """
     For a map for each correction, it returns a function
@@ -268,9 +299,8 @@ def apply_all_correction_single_maps(map_e0         : ASectorMap,
         If True, time evolution will be taken into account.
     norm_strat : NormStrategy
         Provides the desired normalization to be used.
-    norm_value : Float(optional)
-        If norm_strat is selected to be custom, user must provide the
-        desired scale.
+    norm_options : dict
+        Extra normalization options for some strategies.
     krscale_output : Bool
         If true, the returned factor will take into account the scaling
         from pes to the Kr energy scale.
@@ -279,7 +309,7 @@ def apply_all_correction_single_maps(map_e0         : ASectorMap,
         A function that returns time correction factor without passing a map.
     """
 
-    normalization   = get_normalization_factor(map_e0, norm_strat, norm_value)
+    normalization   = get_normalization_factor(map_e0, norm_strat, **norm_options)
 
     get_xy_corr_fun = maps_coefficient_getter(map_e0.mapinfo, map_e0.e0)
     get_lt_corr_fun = maps_coefficient_getter(map_lt.mapinfo, map_lt.lt)
@@ -317,10 +347,11 @@ def apply_all_correction_single_maps(map_e0         : ASectorMap,
 
     return total_correction_factor
 
+
 def apply_all_correction(maps           : ASectorMap                        ,
                          apply_temp     : bool            = True            ,
                          norm_strat     : NormStrategy    = NormStrategy.max,
-                         norm_value     : Optional[float] = None
+                         **norm_options
                          )->Callable:
     """
     Returns a function to get all correction factor for a
@@ -335,12 +366,8 @@ def apply_all_correction(maps           : ASectorMap                        ,
         If True, time evolution will be taken into account.
     norm_strat : NormStrategy
         Provides the desired normalization to be used.
-    norm_value : Float(optional)
-        If norm_strat is selected to be custom, user must provide the
-        desired scale.
-    krscale_output : Bool
-        If true, the returned factor will take into account the scaling
-        from pes to the Kr energy scale.
+    norm_options : dict
+        Extra normalization options for some strategies
 
     Returns
     -------
@@ -349,4 +376,4 @@ def apply_all_correction(maps           : ASectorMap                        ,
 
     return apply_all_correction_single_maps(maps, maps, maps,
                                             apply_temp, norm_strat,
-                                            norm_value)
+                                            **norm_options)

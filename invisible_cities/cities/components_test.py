@@ -494,14 +494,13 @@ def test_hits_Z_uncorrected( correction_map_filename
     '''
     Test to ensure that z is uncorrected when `apply_z` is False
     '''
-    
+
     hc = random_hits_toy_data
     hz = [h.Z for h in hc.hits]
-    
+
     correct = hits_corrector(correction_map_filename,
-                             apply_temp = False, 
+                             apply_temp = False,
                              norm_strat = NormStrategy.kr,
-                             norm_value = None,
                              apply_z    = False)
     corrected_z = np.array([h.Z for h in correct(hc).hits])
 
@@ -514,33 +513,36 @@ def test_hits_Z_corrected_when_flagged( correction_map_filename
     '''
     Test to ensure that the correction is applied when `apply_z` is True
     '''
-    
+
     hc = random_hits_toy_data
     hz = [h.Z for h in hc.hits]
-    
+
     correct = hits_corrector(correction_map_filename,
-                             apply_temp = False, 
+                             apply_temp = False,
                              norm_strat = NormStrategy.kr,
-                             norm_value = None,
                              apply_z    = True)
     corrected_z = np.array([h.Z for h in correct(hc).hits])
 
     # raise assertion error as expected
     assert_raises(AssertionError, assert_equal, corrected_z, hz)
-    
 
-@mark.parametrize( "norm_strat norm_value".split(),
-                  ( (NormStrategy.kr    , None) # None marks the default value
-                  , (NormStrategy.max   , None)
-                  , (NormStrategy.mean  , None)
-                  , (NormStrategy.custom,  1e3)
-                  ))
+
+@mark.parametrize( "norm_strat norm_options".split(),
+                  ( (NormStrategy.kr    , dict())
+                  , (NormStrategy.max   , dict())
+                  , (NormStrategy.mean  , dict())
+                  , (NormStrategy.median, dict())
+                  , (NormStrategy.region, dict(xrange=(-20, 20), yrange=(-20, 20)))
+                  , (NormStrategy.region, dict(origin=( -5,  5), radius=10))
+                  , (NormStrategy.custom, dict(value=1e3))
+                 ))
 @mark.parametrize("apply_temp", (False, True))
 def test_hits_corrector_valid_normalization_options( correction_map_filename
                                                    , norm_strat
-                                                   , norm_value
                                                    , apply_temp
-                                                   , random_hits_toy_data ):
+                                                   , norm_options
+                                                   , random_hits_toy_data
+                                                   ):
     """
     Test that all valid normalization options work to some
     extent. Here we just check that the values make some sense: not
@@ -550,28 +552,11 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
 
     hc = random_hits_toy_data
 
-    correct     = hits_corrector(correction_map_filename, apply_temp, norm_strat, norm_value)
+    correct     = hits_corrector(correction_map_filename, apply_temp, norm_strat, norm_options=norm_options)
     corrected_e = np.array([h.Ec for h in correct(hc).hits])
 
     assert not np.any(np.isnan(corrected_e) )
     assert     np.all(         corrected_e>0)
-
-
-@mark.parametrize( "norm_strat norm_value".split(),
-                  ( (NormStrategy.kr    ,    0) # 0 doens't count as "not given"
-                  , (NormStrategy.max   ,    0)
-                  , (NormStrategy.mean  ,    0)
-                  , (NormStrategy.kr    ,    1) # any other value must not be given either
-                  , (NormStrategy.max   ,    1)
-                  , (NormStrategy.mean  ,    1)
-                  , (NormStrategy.custom, None) # with custom, `norm_value` must be given ...
-                  , (NormStrategy.custom,    0) # ... but not 0
-                  ))
-def test_hits_corrector_invalid_normalization_options_raises( correction_map_filename
-                                                            , norm_strat
-                                                            , norm_value):
-    with raises(ValueError):
-        hits_corrector(correction_map_filename, False, norm_strat, norm_value)
 
 
 def test_write_city_configuration(config_tmpdir):
