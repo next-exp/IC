@@ -83,6 +83,8 @@ from .. types  .ic_types          import                    minmax
 from .. types  .ic_types          import        types_dict_summary
 from .. types  .ic_types          import         types_dict_tracks
 from .. types  .symbols           import                    WfType
+from .. types  .symbols           import               RebinMethod
+from .. types  .symbols           import                SiPMCharge
 from .. types  .symbols           import                   BlsMode
 from .. types  .symbols           import             SiPMThreshold
 from .. types  .symbols           import                EventRange
@@ -943,10 +945,15 @@ def sipm_positions(dbfile, run_number):
     return sipm_xys
 
 
-def hit_builder(dbfile, run_number, drift_v,
-                rebin_slices, rebin_method,
-                global_reco, slice_reco,
-                charge_type):
+def hit_builder( detector_db : str
+               , run_number  : int
+               , drift_v     : float
+               , rebin_method: RebinMethod
+               , rebin_slices: Union[int, float]
+               , global_reco : XYReco
+               , slice_reco  : XYReco
+               , charge_type : SiPMCharge
+               ) -> Callable:
     """
     Builds hits from PMaps using a general clustering algorithm. For a given
     PMap, and the output of the peak-selector output does the following:
@@ -962,9 +969,45 @@ def hit_builder(dbfile, run_number, drift_v,
             generate "empty" (a.k.a. NN) clusters
         - Assign each cluster the corresponding fraction of the energy in the
           slice
+
+    Parameters
+    ----------
+    detector_db: str
+      Detector database to use
+
+    run_number: int
+      Run number being processed
+
+    drift_v: float
+      Drift velocity in the data
+
+    rebin_method: RebinMethod
+      Which rebinning (resampling) algorithm to use
+
+    rebin_slices: int or float
+      Configuration option for `rebin_method`. It's interpretation depends on
+      the method:
+      If stride, `rebin_slices` represents the number of consecutive slices co
+      merge into one.
+      If threshold, `rebin_slices` represents the minimum charge a slice must
+      have for it not to be rebinned.
+
+    global_reco: Callable
+      Reconstruction function to use for the event as a whole
+
+    slice_reco: Callable
+      Reconstruction function to use on each slice
+
+    charge_type: SiPMCharge
+      Interpretation of the SiPM charge.
+
+    Returns
+    -------
+    build_hits: Callable
+      A function that computes hits.
     """
-    sipm_xys   = sipm_positions(dbfile, run_number)
-    sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
+    sipm_xys   = sipm_positions(detector_db, run_number)
+    sipm_noise =   NoiseSampler(detector_db, run_number).signal_to_noise
 
     def build_hits( pmap           : PMap
                   , selector_output: S12SelectorOutput
@@ -982,7 +1025,7 @@ def hit_builder(dbfile, run_number, drift_v,
                                                      pmap.s2s)):
             if not passed: continue
 
-            peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
+            peak = pmf.rebin_peak(peak, rebin_method, rebin_slices)
             xys  = sipm_xys[peak.sipms.ids]
             qs   = peak.sipm_charge_array(sipm_noise, charge_type,
                                           single_point = True)
@@ -1013,10 +1056,15 @@ def hit_builder(dbfile, run_number, drift_v,
     return build_hits
 
 
-def sipms_as_hits(dbfile, run_number, drift_v,
-                  rebin_slices, rebin_method,
-                  q_thr,
-                  global_reco, charge_type):
+def sipms_as_hits( detector_db : str
+                 , run_number  : int
+                 , drift_v     : float
+                 , rebin_method: RebinMethod
+                 , rebin_slices: Union[int, float]
+                 , q_thr       : float
+                 , global_reco : Callable
+                 , charge_type : SiPMCharge
+                 ) -> Callable:
     """
     Builds hits from PMaps taking each SiPM as an individual hit. For a given
     PMap, and the output of the peak-selector output does the following:
@@ -1032,9 +1080,48 @@ def sipms_as_hits(dbfile, run_number, drift_v,
           (a.k.a. NN) hit
         - Assigns each SiPM (now hit) the corresponding fraction of the energy
           in the slice. NN-hits carry the full slice energy.
+
+    Parameters
+    ----------
+    detector_db: str
+      Detector database to use
+
+    run_number: int
+      Run number being processed
+
+    drift_v: float
+      Drift velocity in the data
+
+    rebin_method: RebinMethod
+      Which rebinning (resampling) algorithm to use
+
+    rebin_slices: int or float
+      Configuration option for `rebin_method`. It's interpretation depends on
+      the method:
+      If stride, `rebin_slices` represents the number of consecutive slices co
+      merge into one.
+      If threshold, `rebin_slices` represents the minimum charge a slice must
+      have for it not to be rebinned.
+
+    q_thr: float
+      Charge threshold applied to each hit
+
+    global_reco: Callable
+      Reconstruction function to use for the event as a whole
+
+    slice_reco: Callable
+      Reconstruction function to use on each slice
+
+    charge_type: SiPMCharge
+      Interpretation of the SiPM charge.
+
+    Returns
+    -------
+    build_hits: Callable
+      A function that computes hits.
     """
-    sipm_xys   = sipm_positions(dbfile, run_number)
-    sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
+    sipm_xys   = sipm_positions(detector_db, run_number)
+    sipm_noise =   NoiseSampler(detector_db, run_number).signal_to_noise
 
     def build_hits( pmap           : PMap
                   , selector_output: S12SelectorOutput
@@ -1047,7 +1134,7 @@ def sipms_as_hits(dbfile, run_number, drift_v,
                                                      pmap.s2s)):
             if not passed: continue
 
-            peak = pmf.rebin_peak(peak, rebin_slices, rebin_method)
+            peak = pmf.rebin_peak(peak, rebin_method, rebin_slices)
             xys  = sipm_xys[peak.sipms.ids]
             qs   = peak.sipm_charge_array(sipm_noise, charge_type,
                                           single_point = True)
