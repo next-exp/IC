@@ -189,11 +189,14 @@ def drop_isolated_clusters(distance   :  List[float],
                            nhits      :  int,
                            variables  :  List[str  ]) -> Callable:
     '''
-    Drops isolated clusters of hits (SiPMs).
+    Drop isolated hits/clusters, where a cluster is defined by the proximity 
+    between hits defined by  distance. A cluster is considered isolated if 
+    the number of hits within the cluster is less than or equal to nhits.
+    The method uses networkx's graph system to identify clusters.
 
     Parameters
     ----------
-    df       : Groupby ('event' and 'npeak') dataframe
+    df : Groupby ('event' and 'npeak') dataframe
 
     Initialisation parameters:
         distance  : Distance to check for other sensors, equal to sensor pitch and z rebinning.
