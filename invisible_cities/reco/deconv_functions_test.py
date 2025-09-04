@@ -144,7 +144,7 @@ def test_drop_isolated_clusters_retains_cluster():
     drop_function = drop_isolated_clusters(dist, nhits, ['E'])
     df_cut        = drop_function(df)
 
-    got           = df_cut[['X', 'Y', 'Z', 'Q']]
+    got           = df_cut    [['X', 'Y', 'Z', 'Q']]
     expected      = df.head(5)[['X', 'Y', 'Z', 'Q']]
     assert got.equals(expected)
 

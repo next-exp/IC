@@ -316,14 +316,14 @@ def drop_isolated( distance   : List[float],
                    redist_var : List[str],
                    nhits      : Optional[int] = None):
     """
-    Drops rogue/isolated hits (SiPMs) from hits,
-    can be configured to remove clusters 
+    Drops rogue/isolated hits (SiPMs) from hits, can be configured to remove 
+    isolated clusters below a certain threshold number of hits. 
 
     Parameters
     ----------
-    distance   : Sensor pitch in 2 or 3 dimensions
+    distance   : Distance between hits.
     redist_var : List with variables to be redistributed.
-    nhits      : Number of hits 
+    nhits      : Minimum number of hits for a cluster to be considered non-isolated.
     Returns
     ----------
     drop_isolated_sensors : Function that will drop the isolated sensors.
