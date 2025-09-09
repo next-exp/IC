@@ -1,6 +1,7 @@
 import os
 import numpy  as np
 import tables as tb
+import pandas as pd
 import time   as tm
 
 from numpy.testing import assert_allclose
@@ -13,6 +14,9 @@ from .. evm.event_model    import HitCollection
 from .  hits_io            import hits_writer
 from .  hits_io            import load_hits
 from .. types.ic_types     import NN
+
+from .. core.testing_utils import assert_dataframes_close
+
 
 def test_load_hits_load_events(TlMC_hits):
     hits = TlMC_hits
@@ -74,34 +78,32 @@ def test_load_hits_double_ratio_e_q_equals_one_skipping_NN(TlMC_hits_skipping_NN
     r = r1/r2
     np.isclose(r, 1, rtol=0.1)
 
-def test_hits_writer(config_tmpdir, hits_toy_data):
-    output_file = os.path.join(config_tmpdir, "test_hits.h5")
 
-    _, (npeak, nsipm, x, y, xstd, ystd, z, q, e, x_peak, y_peak) = hits_toy_data
+def test_hits_writer_output_nodes(config_tmpdir, Th228_hits):
+    output_file   = os.path.join(config_tmpdir, "test_hits.h5")
+    original_hits = pd.read_hdf(Th228_hits, "/RECO/Events")
 
     with tb.open_file(output_file, 'w') as h5out:
-        write = hits_writer(h5out)
-        hits = HitCollection(-1, -1)
-        for i in range(len(x)):
-            c = Cluster(q[i], xy(x[i], y[i]), xy(xstd[i], ystd[i]), nsipm[i])
-            h = Hit(npeak[i], c, z[i], e[i], xy(x_peak[i], y_peak[i]))
-            hits.hits.append(h)
-        write(hits)
+        write = hits_writer(h5out, "THIS_GROUP", "THAT_NODE")
+        write(original_hits)
 
-    dst = load_dst(output_file, group = "RECO", node = "Events")
-    assert_allclose(npeak, dst.npeak.values)
-    assert_allclose(x_peak , dst.Xpeak .values)
-    assert_allclose(y_peak , dst.Ypeak .values)
-    assert_allclose(nsipm, dst.nsipm.values)
-    assert_allclose(x    , dst.X    .values)
-    assert_allclose(y    , dst.Y    .values)
-    assert_allclose(np.sqrt(xstd), dst.Xrms .values)
-    assert_allclose(np.sqrt(ystd), dst.Yrms .values)
-    assert_allclose(z    , dst.Z    .values)
-    assert_allclose(q    , dst.Q    .values)
-    assert_allclose(e    , dst.E    .values)
+        assert "THIS_GROUP" in h5out.root
+        assert "THAT_NODE"  in h5out.root.THIS_GROUP
 
 
+def test_hits_writer(config_tmpdir, Th228_hits):
+    output_file   = os.path.join(config_tmpdir, "test_hits.h5")
+    original_hits = pd.read_hdf(Th228_hits, "/RECO/Events")
+
+    with tb.open_file(output_file, 'w') as h5out:
+        write = hits_writer(h5out, "RECO", "Events")
+        write(original_hits)
+
+    read_hits = load_dst(output_file, group = "RECO", node = "Events")
+    assert_dataframes_close(read_hits, original_hits)
+
+
+# TODO: this test does not test make any sense
 def test_hit_time_is_in_second(ICDATADIR):
     output_file = os.path.join(ICDATADIR, "hits_1hit_perSiPM_30pes_6817_trigger2_v0.9.9_20190111_krth1600.0.h5")
     the_hits = load_hits(output_file)

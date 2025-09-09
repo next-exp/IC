@@ -64,6 +64,15 @@ class S12SelectorOutput:
 
 
 class S12Selector:
+    """
+    Peak classifier. It labels each peak in the input as valid or invalid based on 4 criteria:
+    width, height, energy and number of SiPMs.
+    Each magnitude must fall in a range that is constructed from the class
+    arguments. For a peak to be valid it must satisfy *all* the criteria at
+    once. For S1 peaks the criterion of number of SiPMs is not applied.
+    The output contains the overall result and a True/False label for each input
+    peak. This information is gathered in an instance of S12SelectorOutput.
+    """
     def __init__(self, **kwds):
         conf = Namespace(**kwds)
         self.s1n = minmax(conf.s1_nmin, conf.s1_nmax)

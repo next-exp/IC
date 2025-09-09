@@ -33,6 +33,7 @@ The steps performed by Esmeralda are:
 #TODO: revisit summary. out_of_map field is outdated
 
 import tables as tb
+import pandas as pd
 
 from .. core.configure      import EventRangeType
 from .. core.configure      import OneOrManyFiles
@@ -51,20 +52,28 @@ from .  components import hits_corrector
 from .  components import hits_thresholder
 from .  components import compute_and_write_tracks_info
 
-from .. io.         hits_io import hits_writer
+from .. io.         hits_io import hits_writer as hits_writer_
+from .. io.         hits_io import hits_from_df
 from .. io.         kdst_io import kdst_from_df_writer
 from .. io.run_and_event_io import run_and_event_writer
 
 
 def hit_dropper(radius : float):
-    def in_fiducial(hit : evm.Hit) -> bool:
-        return hit.R < radius
-
-    def drop_hits(hitc : evm.HitCollection) -> evm.HitCollection:
-        hitc.hits = list(filter(in_fiducial, hitc.hits))
-        return hitc
+    max_r2 = radius**2
+    def drop_hits(hits : pd.DataFrame) -> pd.DataFrame:
+        r2 = hits.X**2 + hits.Y**2
+        return hits.loc[r2 < max_r2].reset_index(drop=True)
 
     return drop_hits
+
+# Temporary
+def hitc_from_df(hits : pd.DataFrame) -> evm.HitCollection:
+    hitcs = hits_from_df(hits)
+    if len(hitcs) == 0:
+        return evm.HitCollection(0, 0, []) # dummy HitCollection
+    assert len(hitcs) == 1
+    for hitc in hitcs.values():
+        return hitc
 
 
 @city
@@ -151,6 +160,7 @@ def esmeralda( files_in         : OneOrManyFiles
     correct_hits       = fl.map(correct_hits, item="hits")
     drop_external_hits = fl.map(hit_dropper(fiducial_r), item="hits")
     threshold_hits     = fl.map(hits_thresholder(threshold, same_peak), item="hits")
+    to_hitc            = fl.map(hitc_from_df, item="hits")
     event_count_in     = fl.spy_count()
     event_count_out    = fl.count()
 
@@ -159,19 +169,15 @@ def esmeralda( files_in         : OneOrManyFiles
         write_event_info   = fl.sink( run_and_event_writer(h5out)
                                     , args = "run_number event_number timestamp".split())
 
-        write_paolina_hits = fl.sink( hits_writer( h5out
-                                                 , group_name = "CHITS"
-                                                 , table_name = "highTh")
-                                    , args = "paolina_hits") # from within compute_tracks
+        hits_writer        = hits_writer_(h5out, group_name="CHITS", table_name="highTh")
 
-        write_kdst         = fl.sink( kdst_from_df_writer(h5out)
-                                    , args = "kdst")
+        write_kdst         = fl.sink(kdst_from_df_writer(h5out), args="kdst")
 
         compute_tracks = compute_and_write_tracks_info( paolina_params
                                                       , h5out
                                                       , evm.HitEnergy.Ec
                                                       , "high_th_select"
-                                                      , write_paolina_hits)
+                                                      , hits_writer)
 
         event_number_collector = collect()
 
@@ -185,6 +191,7 @@ def esmeralda( files_in         : OneOrManyFiles
                                    , correct_hits
                                    , drop_external_hits
                                    , threshold_hits
+                                   , to_hitc
                                    , fl.fork( compute_tracks
                                             , write_kdst
                                             , write_event_info

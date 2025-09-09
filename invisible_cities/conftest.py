@@ -768,14 +768,12 @@ def random_hits_toy_data():
     xs = np.random.uniform(-10, 10, n)
     ys = np.random.uniform(-10, 10, n)
     zs = np.random.uniform( 10, 50, n)
+    es = np.random.uniform(  0, 90, n)
+    qs = np.random.uniform(  0, 20, n)
 
-    hits = []
-    for i, x, y, z in zip(range(n), xs, ys, zs):
-        c = Cluster(0, xy(x, y), xy.zero(), 1)
-        h = Hit(i, c, z, 1, xy.zero(), 0)
-        hits.append(h)
-
-    return HitCollection(0, 1, hits)
+    hits = DataFrame(dict( event=0, time=1e9, npeak=0, Xpeak=-1., Ypeak=-2.
+                         , nsipm=1, X=xs, Y=ys, Z=zs, Xrms=0, Yrms=0, E=es, Q=qs))
+    return hits
 
 
 @pytest.fixture(scope='session')

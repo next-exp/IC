@@ -1,13 +1,26 @@
 import os
+import numpy  as np
 import tables as tb
+import pandas as pd
 
 from pytest import mark
 
 from .. core.testing_utils   import assert_tables_equality
 from .. core.testing_utils   import ignore_warning
 from .. core.system_of_units import pes
+from .. types.ic_types       import NN
+from .  sophronia            import count_valid_hits
 from .  sophronia            import sophronia
 
+
+@mark.parametrize("n_nn", (0, 1, 2, 5, 10))
+def test_count_valid_hits(n_nn):
+    # we only need the Q column, so we only create that one
+    n_tot     = 10
+    qs        = np.arange(n_tot)
+    qs[:n_nn] = NN
+    df        = pd.DataFrame(dict(Q = qs))
+    assert count_valid_hits(df) == n_tot - n_nn
 
 @ignore_warning.no_config_group
 def test_sophronia_runs(sophronia_config, config_tmpdir):
@@ -120,9 +133,11 @@ def test_sophronia_filters_events_with_only_nn_hits(config_tmpdir, sophronia_con
 @ignore_warning.no_config_group
 def test_sophronia_keeps_hitless_events(config_tmpdir, sophronia_config):
     """
-    Run with a high q threshold so all hits are discarded (turned into NN).
-    Check that these events are still in the /Run/events output, but not in
-    the /RECO/events output.
+    Run with a high q threshold so all hits are discarded (turned into
+    NN).  Check that these events are still in the /Run/events output,
+    but not in the /RECO/events output. In this case, because the only
+    event processed is not stored, the table and group are not
+    created, so we checked that.
     """
     path_out = os.path.join(config_tmpdir, 'test_sophronia_keeps_hitless_events.h5')
     config   = dict(**sophronia_config)
@@ -137,5 +152,4 @@ def test_sophronia_keeps_hitless_events(config_tmpdir, sophronia_config):
 
     with tb.open_file(path_out) as output_file:
         assert len(output_file.root.Run.events) == 1
-        assert event_number == output_file.root.Run.events[0][0]
-        assert event_number not in output_file.root.RECO.Events.col("event")
+        assert "RECO" not in output_file.root

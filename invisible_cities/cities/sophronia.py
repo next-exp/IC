@@ -32,14 +32,15 @@ The tasks performed are:
 
 from operator import attrgetter
 
+import numpy  as np
 import tables as tb
+import pandas as pd
 
 from .. core.configure import    EventRangeType
 from .. core.configure import    OneOrManyFiles
 from .. core.configure import check_annotations
 from .. core           import     tbl_functions as tbl
 
-from .. evm .event_model       import        HitCollection
 from .. io  .          hits_io import          hits_writer
 from .. io  . run_and_event_io import run_and_event_writer
 from .. io  .          kdst_io import            kr_writer
@@ -69,8 +70,8 @@ from typing import Optional
 
 
 @check_annotations
-def count_valid_hits(hitc : HitCollection):
-    return sum(1 for hit in hitc.hits if hit.Q != NN)
+def count_valid_hits(hits: pd.DataFrame):
+    return np.count_nonzero(hits.Q.values != NN)
 
 
 @city
@@ -190,9 +191,10 @@ def sophronia( files_in           : OneOrManyFiles
     event_number_collector = collect()
 
     with tb.open_file(file_out, "w", filters = tbl.filters(compression)) as h5out:
+        write_hits            = hits_writer(h5out, "RECO", "Events", compression=compression)
+        write_hits            = df.sink( write_hits, args="hits")
         write_event_info      = df.sink( run_and_event_writer(h5out)
                                        , args = "run_number event_number timestamp".split())
-        write_hits            = df.sink(          hits_writer(h5out), args="hits")
         write_pointlike_event = df.sink(            kr_writer(h5out), args="pointlike_event")
         write_pmap_filter     = df.sink(  event_filter_writer(h5out, "s12_selector")
                                        , args = "event_number pmap_passed".split())

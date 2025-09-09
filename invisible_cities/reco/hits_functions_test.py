@@ -1,5 +1,8 @@
 import os
 
+import numpy  as np
+import pandas as pd
+
 from pytest        import mark
 from numpy.testing import assert_almost_equal
 
@@ -9,11 +12,14 @@ from   .. evm.event_model      import Cluster
 from   .. types.ic_types       import xy
 from   .. core                 import system_of_units as units
 from   .. core.testing_utils   import assert_hit_equality
+from   .. core.testing_utils   import assert_dataframes_close
 from   .. types.ic_types       import NN
 from   .. cities.penthesilea   import penthesilea
 from   .. io                   import hits_io          as hio
+from   .  hits_functions       import e_from_q
 from   .  hits_functions       import merge_NN_hits
 from   .  hits_functions       import threshold_hits
+from   .  hits_functions       import sipms_above_threshold
 from hypothesis                import given
 from hypothesis                import settings
 from hypothesis.strategies     import lists
@@ -23,29 +29,47 @@ from copy                      import deepcopy
 from hypothesis                import assume
 from hypothesis.strategies     import composite
 
+
+event_numbers = integers(0, np.iinfo(np.int32).max)
+
 @composite
-def hit(draw, min_value=1, max_value=100):
-    x      = draw(floats  (  1,   5))
-    y      = draw(floats  (-10,  10))
-    xvar   = draw(floats  (.01,  .5))
-    yvar   = draw(floats  (.10,  .9))
-    Q      = draw(floats  (-10, 100).map(lambda x: NN if x<=0 else x))
-    nsipm  = draw(integers(  1,  20))
-    npeak  = 0
-    z      = draw(floats  ( 50, 100))
-    E      = draw(floats  ( 50, 100))
-    Ec     = draw(floats  ( 50, 100))
-    x_peak = draw(floats  (  1,   5))
-    y_peak = draw(floats  (-10,  10))
-    Qc     = draw(floats  (  0, 100).map(lambda x: -1 if Q==NN else x))
+def hit(draw, event=None):
+    event = draw(event_numbers) if event is None else event
+    Q     = draw(floats  (-10, 100).map(lambda x: NN if x<=0  else x).filter(lambda x: abs(x)>.1))
+    Qc    = draw(floats  (  0, 100).map(lambda x: -1 if Q==NN else x).filter(lambda x: abs(x)>.1))
     assume(abs(Qc - Q) > 1e-3)
-    return Hit(npeak,Cluster(Q, xy(x, y), xy(xvar, yvar), nsipm,  Qc=Qc), z, E, xy(x_peak, y_peak), s2_energy_c=Ec)
+
+    hit = pd.DataFrame(dict( event    = event
+                           , time     = 0
+                           , npeak    = 0
+                           , Xpeak    = draw(floats  (  1,   5))
+                           , Ypeak    = draw(floats  (-10,  10))
+                           , nsipm    = draw(integers(  1,  20))
+                           , X        = draw(floats  (  1,   5))
+                           , Y        = draw(floats  (-10,  10))
+                           , Xrms     = draw(floats  (.01,  .5))
+                           , Yrms     = draw(floats  (.10,  .9))
+                           , Z        = draw(floats  ( 50, 100))
+                           , Q        = Q
+                           , E        = draw(floats  ( 50, 100))
+                           , Qc       = Qc
+                           , Ec       = draw(floats  ( 50, 100))
+                           , track_id = -1
+                           , Ep       = -1
+                            ), index=[0])
+    return hit
+
 
 @composite
 def list_of_hits(draw):
-    list_of_hits = draw(lists(hit(), min_size=2, max_size=10))
-    assume(sum((h.Q > 0 for h in list_of_hits if h.Q != NN)) >= 1)
-    return list_of_hits
+    event  = draw(event_numbers)
+    hits   = draw(lists(hit(event), min_size=2, max_size=10))
+    hits   = pd.concat(hits, ignore_index=True)
+    non_nn = hits.Q[hits.Q != NN]
+    assume(non_nn.sum() >  0)
+    assume(non_nn.size  >= 1)
+    return hits
+
 
 @composite
 def thresholds(draw, min_value=1, max_value=1):
@@ -53,56 +77,105 @@ def thresholds(draw, min_value=1, max_value=1):
     th2 = draw (integers(  th1+1,  30))
     return th1, th2
 
+
+def test_e_from_q_simple():
+    e  = 1
+    qs = np.linspace(12, 34, 56)
+    s  = qs.sum()
+    es = e_from_q(qs, e)
+    assert_almost_equal(es, qs/s)
+
+def test_e_from_q_uniform():
+    qs = np.ones(12)
+    e  = 345
+    es = e_from_q(qs, e)
+    assert_almost_equal(es[0], es)
+
+@given(lists(floats(1, 10), min_size=1, max_size=20))
+def test_e_from_q_conserves_energy(qs):
+    qs = np.asarray(qs)
+    e  = 5678
+    es = e_from_q(qs, e)
+    assert np.isclose(es.sum(), e)
+
+def test_e_from_q_does_not_crash_with_empty_input():
+    empty  = np.array([])
+    output = e_from_q(empty, 1234)
+    assert_almost_equal(output, empty)
+
+def test_e_from_q_does_not_crash_with_zeros():
+    zeros  = np.zeros(12)
+    output = e_from_q(zeros, 1234)
+    assert_almost_equal(output, zeros)
+
+def test_sipms_above_threshold_simple():
+    xys = np.arange(6*2).reshape(6, 2)
+    qs  = np.arange(6)
+    thr = 1.5 # only the last 4 elements should survive
+    e   = qs[2:].sum()
+    out = sipms_above_threshold(xys, qs, thr, e)
+    for i, item in enumerate(out):
+        assert len(item)==4, f"{i}th output failed: got {len(item)}, expected 4"
+
+    assert_almost_equal(out[0], xys[2:, 0])
+    assert_almost_equal(out[1], xys[2:, 1])
+    assert_almost_equal(out[2],  qs[2:])
+    assert_almost_equal(out[3],  qs[2:]) # same energy as q, no change
+
+def test_sipms_above_threshold_thr_too_high_produces_NN():
+    xys = np.arange(6*2).reshape(6, 2)
+    qs  = np.arange(6)
+    thr = qs.max() + 1
+    e   = 123
+    out = sipms_above_threshold(xys, qs, thr, e)
+    for i, item in enumerate(out):
+        assert len(item)==1, f"{i}th output failed: got {len(item)}, expected 1"
+
+    assert out[0][0] == NN
+    assert out[1][0] == NN
+    assert out[2][0] == NN
+    assert out[3][0] == e  # conserves energy
+
 @given(list_of_hits())
 def test_merge_NN_does_not_modify_input(hits):
-    hits_org    = deepcopy(hits)
-    before_len  = len(hits)
-
+    hits_org = deepcopy(hits)
     merge_NN_hits(hits)
+    assert_dataframes_close(hits_org, hits)
 
-    after_len   = len(hits)
-
-    assert before_len == after_len
-    for h1, h2 in zip(hits, hits_org):
-        assert_hit_equality(h1, h2)
 
 @given(list_of_hits())
 def test_merge_hits_energy_conserved(hits):
     hits_merged = merge_NN_hits(hits)
-    assert_almost_equal(sum((h.E  for h in hits)), sum((h.E  for h in hits_merged)))
-    assert_almost_equal(sum((h.Ec for h in hits)), sum((h.Ec for h in hits_merged)))
+    assert_almost_equal(hits.E .sum(), hits_merged.E .sum())
+    assert_almost_equal(hits.Ec.sum(), hits_merged.Ec.sum())
+
 
 @given(list_of_hits())
 def test_merge_nn_hits_does_not_leave_nn_hits(hits):
     hits_merged = merge_NN_hits(hits)
-    for hit in hits_merged:
-        assert hit.Q != NN
+    assert all(hits_merged.Q != NN)
 
 
 @given(list_of_hits(), floats())
 def test_threshold_hits_does_not_modify_input(hits, th):
-    hits_org    = deepcopy(hits)
-    before_len  = len(hits)
-
-    threshold_hits(hits,th)
-
-    after_len   = len(hits)
-    assert before_len == after_len
-    for h1, h2 in zip(hits, hits_org):
-        assert_hit_equality(h1, h2)
-
+    hits_org = deepcopy(hits)
+    threshold_hits(hits, th)
+    assert_dataframes_close(hits_org, hits)
 
 @mark.parametrize("on_corrected", (False, True))
 @given(hits=list_of_hits(), th=floats())
 def test_threshold_hits_energy_conserved(hits, th, on_corrected):
     hits_thresh = threshold_hits(hits, th, on_corrected=on_corrected)
-    assert_almost_equal(sum((h.E  for h in hits)), sum((h.E  for h in hits_thresh)))
-    assert_almost_equal(sum((h.Ec for h in hits)), sum((h.Ec for h in hits_thresh)))
+    assert_almost_equal(hits.E .sum(), hits_thresh.E .sum())
+    assert_almost_equal(hits.Ec.sum(), hits_thresh.Ec.sum())
 
 
-@mark.parametrize("on_corrected", (False, True))
+@mark.parametrize( "on_corrected  col".split()
+                 , ( (     False, "Q" )
+                   , (      True, "Qc")))
 @given(hits=list_of_hits(), th=floats())
-def test_threshold_hits_all_larger_than_th(hits, th, on_corrected):
-    hits_thresh  = threshold_hits(hits, th, on_corrected = on_corrected)
-    assert (h.Q  > th or h.Q  == NN for h in hits_thresh)
-    assert (h.Qc > th or h.Qc == NN for h in hits_thresh)
+def test_threshold_hits_all_larger_than_th(hits, th, col, on_corrected):
+    hits_thresh = threshold_hits(hits, th, on_corrected = on_corrected)
+    non_nn = hits_thresh.loc[hits_thresh.Q != NN]
+    q = non_nn[col]
+    assert np.all(q >= th)
