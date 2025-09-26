@@ -112,7 +112,8 @@ def deconvolve_signal(det_db           : pd.DataFrame,
                       n_dim            : Optional[int]=2,
                       cut_type         : Optional[CutType]=CutType.abs,
                       inter_method     : Optional[InterpolationMethod]=InterpolationMethod.cubic,
-                      n_iterations_g   : Optional[int]=0):
+                      n_iterations_g   : Optional[int]=0,
+                      use_gpu          : Optional[bool]=False):
     """
     Applies Lucy Richardson deconvolution to SiPM response with a
     given set of PSFs and parameters.
@@ -141,6 +142,7 @@ def deconvolve_signal(det_db           : pd.DataFrame,
                         `rel`: cut on the relative value (to the max) of the hits.
     inter_method     : Interpolation method (`nointerpolation`, `nearest`, `linear` or `cubic`).
     n_iterations_g   : Number of Lucy-Richardson iterations for gaussian in 'separate mode'
+    use_gpu          : If True, use GPU for the deconvolution. Default is False.
 
     Returns
     ----------
@@ -160,7 +162,7 @@ def deconvolve_signal(det_db           : pd.DataFrame,
     deconvolution = deconvolve(n_iterations, iteration_tol,
                                sample_width, det_grid,
                                **satellite_params,
-                               inter_method = inter_method)
+                               inter_method=inter_method, use_gpu=use_gpu)
 
     if not isinstance(energy_type , HitEnergy          ):
         raise ValueError(f'energy_type {energy_type} is not a valid energy type.')
@@ -203,7 +205,7 @@ def deconvolve_signal(det_db           : pd.DataFrame,
             deconv_image = nan_to_num(richardson_lucy(deconv_image, psf,
                                                       iterations = n_iterations_g,
                                                       iter_thr = iteration_tol,
-                                                      **satellite_params))
+                                                      **satellite_params, use_gpu=use_gpu))
 
         return create_deconvolution_df(df, deconv_image.flatten(), pos, cut_type, e_cut, n_dim)
 
@@ -431,6 +433,9 @@ def beersheba( files_in         : OneOrManyFiles
             'cubic' not supported for 3D deconvolution.
         n_iterations_g       : int
             Number of Lucy-Richardson iterations for gaussian in 'separate mode'
+        use_gpu       : bool
+            Whether to use the GPU for the deconvolution.
+
     satellite_params : dict, None
         satellite_start_iter : int
             Iteration no. when satellite killer starts being used.
