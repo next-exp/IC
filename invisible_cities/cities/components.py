@@ -214,7 +214,9 @@ def index_tables(file_out):
 def write_city_configuration( filename : str
                             , city_name: str
                             , args     : dict):
-    args = {k: str(v) for k,v in args.items()}
+    # checks two possible cases, if values are dict or not dict
+    args = {**{k: str(v) for k, v in args.items() if not isinstance(v, dict)}, 
+            **{f"{k}.{k1}": str(v1) for k, v in args.items() if isinstance(v, dict) for k1, v1 in v.items()}}
 
     with tb.open_file(filename, "a") as file:
         df = (pd.Series(args)
