@@ -1,5 +1,6 @@
 import numpy  as np
 import pandas as pd
+import networkx as nx
 
 from typing  import List
 from typing  import Tuple
@@ -7,10 +8,13 @@ from typing  import Callable
 from typing  import Optional
 from typing  import Union
 
+from functools import reduce
+
 from scipy                  import interpolate
 from scipy.signal           import fftconvolve
 from scipy.signal           import convolve
 from scipy.spatial.distance import cdist
+from scipy.spatial          import cKDTree
 from scipy                  import ndimage as ndi
 
 from ..core .core_functions import shift_to_bin_centers
@@ -180,6 +184,57 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
 
     return drop_isolated_sensors
 
+
+def drop_isolated_clusters(distance   :  List[float],
+                           nhits      :  int,
+                           variables  :  List[str  ]) -> Callable:
+    '''
+    Drop isolated hits/clusters, where a cluster is defined by the proximity 
+    between hits defined by  distance. A cluster is considered isolated if 
+    the number of hits within the cluster is less than or equal to nhits.
+    The method uses networkx's graph system to identify clusters.
+
+    Parameters
+    ----------
+    df : Groupby ('event' and 'npeak') dataframe
+
+    Initialisation parameters:
+        distance  : Distance to check for other sensors, equal to sensor pitch and z rebinning.
+        nhits     : Number of hits to classify a cluster.
+        variables : List of variables to be redistributed (generally the energies)
+    '''
+
+   
+    def drop_event(df):
+        # normalise (x,y,z) array
+        xyz = df[list("XYZ")].values / distance
+
+        # build KDTree of datapoints, collect pairs within normalised distance (sqrt of 3)
+        pairs = cKDTree(xyz).query_pairs(r = np.sqrt(3))
+        
+        # create graph that connects all close pairs between hit positions based on df index
+        cluster_graph = nx.Graph()
+        cluster_graph.add_nodes_from(range(len(df)))
+        cluster_graph.add_edges_from((df.index[i], df.index[j]) for i,j in pairs)
+
+        # Find all clusters within the graph
+        clusters = nx.connected_components(cluster_graph)
+
+        # collect indices of passing hits (cluster > nhit) within set
+        passing_hits = reduce(set.union, filter(lambda x: len(x)>nhits, clusters))
+
+        # apply mask to df to only include passing clusters      
+        pass_df = df.loc[passing_hits, :].copy()
+
+        # reweighting
+        with np.errstate(divide='ignore'):
+            columns = pass_df.loc[:, variables]
+            columns *= np.divide(df.loc[:, variables].sum().values, columns.sum())
+            pass_df.loc[:, variables] = columns
+
+        return pass_df
+
+    return drop_event
 
 def deconvolution_input(sample_width : List[float     ],
                         det_grid     : List[np.ndarray],
