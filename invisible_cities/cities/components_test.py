@@ -560,6 +560,7 @@ def test_write_city_configuration(config_tmpdir):
         d = "two strings".split(),
         e = [1,2,3],
         f = np.linspace(0, 1, 5),
+        g = {'a' : 2, 'b' : 3}
     )
     write_city_configuration(filename, city_name, args)
     with tb.open_file(filename, "r") as file:
@@ -568,8 +569,13 @@ def test_write_city_configuration(config_tmpdir):
 
     df = pd.read_hdf(filename, "/config/" + city_name).set_index("variable")
     for var, value in args.items():
-        assert var in df.index
-        assert str(value) == df.value.loc[var]
+        if not isinstance(value, dict):
+            assert var in df.index
+            assert str(value) == df.value.loc[var]
+        else:
+            for var1, value1 in value.items():
+                assert f"{var}.{var1}" in df.index        
+                assert  str(value1) == df.value.loc[f"{var}.{var1}"]
 
 
 def test_copy_cities_configuration(config_tmpdir):
