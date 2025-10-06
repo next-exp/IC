@@ -181,7 +181,7 @@ def drop_isolated_sensors(distance  : List[float]=[10., 10.],
     return drop_isolated_sensors
 
 
-def deconvolution_input(sample_width : List[float     ],
+def deconvolution_input(sample_width : Tuple[float     ],
                         det_grid     : List[np.ndarray],
                         inter_method : InterpolationMethod = InterpolationMethod.cubic
                        ) -> Callable:
@@ -295,7 +295,7 @@ no_satellite_killer = dict(satellite_start_iter = None,
 @check_annotations
 def deconvolve(n_iterations         : int,
                iteration_tol        : float,
-               sample_width         : List[float],
+               sample_width         : Tuple[float],
                det_grid             : List[np.ndarray],
                satellite_start_iter : Union[int, NoneType],
                satellite_max_size   : int,
