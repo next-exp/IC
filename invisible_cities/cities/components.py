@@ -211,12 +211,39 @@ def index_tables(file_out):
                 table.colinstances[colname].create_index()
 
 
+def flatten_dict(arg : dict,
+                parent_key : str= "",
+                dev : str= "."):
+    '''
+    A function that recusively flattens a nested dictionary. Also handles non dictionary entries.
+
+    Each nested key is combined with its parent keys and associated with its respective value 
+    (converted to a string).
+
+    Parameters
+    ----------
+    arg        : the dictionary to flatten which can contain nested dictionaries
+    parent_key : the string containing the prefix to use for keys in the flattened dictionary (default "").
+    dev        : the separator string to join parent and child keys (default ".")
+
+    Returns
+    -------
+    flat_dict : flattened dictionary containing no nested dictionaries and where all values are strings
+    '''
+    flat_dict = {}
+    for k, v in arg.items():
+        new_key = f"{parent_key}{dev}{k}" if parent_key else k
+        if isinstance(v, dict):
+            flat_dict.update(flatten_dict(v, new_key))
+        else:
+            flat_dict[new_key] = str(v)
+    return flat_dict
+
+
 def write_city_configuration( filename : str
                             , city_name: str
                             , args     : dict):
-    # checks two possible cases, if values are dict or not dict
-    args = {**{k: str(v) for k, v in args.items() if not isinstance(v, dict)}, 
-            **{f"{k}.{k1}": str(v1) for k, v in args.items() if isinstance(v, dict) for k1, v1 in v.items()}}
+    args = flatten_dict(args)
 
     with tb.open_file(filename, "a") as file:
         df = (pd.Series(args)
