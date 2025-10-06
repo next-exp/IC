@@ -86,13 +86,12 @@ from .. types.symbols          import HitEnergy
 from .. types.symbols          import InterpolationMethod
 from .. types.symbols          import CutType
 from .. types.symbols          import DeconvolutionMode
-
+from .. types.ic_types         import Tuple2Dor3D
 
 from typing import Tuple
 from typing import List
 from typing import Optional
 from typing import Union
-
 
 def event_info_adder(timestamp : float, dst : pd.DataFrame):
     return dst.assign(time=timestamp/1e3, nsipm=0, Xrms=0, Yrms=0)
@@ -104,8 +103,8 @@ def deconvolve_signal(det_db           : pd.DataFrame,
                       e_cut            : float,
                       n_iterations     : int,
                       iteration_tol    : float,
-                      sample_width     : List[float],
-                      bin_size         : List[float],
+                      sample_width     : Tuple2Dor3D,
+                      bin_size         : Tuple2Dor3D,
                       satellite_params : Union[dict, NoneType],
                       diffusion        : Optional[Tuple[float, float, float]]=(1., 1., 0.3),
                       energy_type      : Optional[HitEnergy]=HitEnergy.Ec,
