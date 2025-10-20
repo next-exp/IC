@@ -575,15 +575,10 @@ def test_write_city_configuration(config_tmpdir):
         assert str(value) == df.value.loc[var]
 
     # considering just the nested dictionary
-    var, value = list(args.items())[-1]
-    for var1, value1 in value.items():
-        if not isinstance(value1, dict):
-            assert f"{var}.{var1}" in df.index        
-            assert  str(value1) == df.value.loc[f"{var}.{var1}"]
-        else:
-            for var2, value2 in value1.items():
-                assert f"{var}.{var1}.{var2}" in df.index        
-                assert  str(value2) == df.value.loc[f"{var}.{var1}.{var2}"]
+    assert 'g.a'        in df.index  and str(args['g']['a'])           == df.value.loc['g.a']
+    assert 'g.b'        in df.index  and str(args['g']['b'])           == df.value.loc['g.b']
+    assert 'g.c.alpha'  in df.index  and str(args['g']['c']['alpha'])  == df.value.loc['g.c.alpha']
+    assert 'g.c.beta'   in df.index  and str(args['g']['c']['beta'])   == df.value.loc['g.c.beta']
 
 
 def test_copy_cities_configuration(config_tmpdir):
