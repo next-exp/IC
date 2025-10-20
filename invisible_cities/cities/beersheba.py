@@ -69,6 +69,7 @@ from .. database.load_db       import DataSiPM
 from .. reco.deconv_functions  import find_nearest
 from .. reco.deconv_functions  import cut_and_redistribute_df
 from .. reco.deconv_functions  import drop_isolated_sensors
+from .. reco.deconv_functions  import drop_isolated_clusters
 from .. reco.deconv_functions  import deconvolve
 from .. reco.deconv_functions  import richardson_lucy
 from .. reco.deconv_functions  import no_satellite_killer
@@ -311,20 +312,34 @@ def cut_over_Q(q_cut, redist_var):
     return cut_over_Q
 
 
-def drop_isolated(distance, redist_var):
+def drop_isolated( distance   : List[float],
+                   redist_var : List[str],
+                   nhits      : Optional[int] = None):
     """
-    Drops rogue/isolated hits (SiPMs) from hits.
+    Drops rogue/isolated hits (SiPMs) from hits, can be configured to remove 
+    isolated clusters below a certain threshold number of hits. 
 
     Parameters
     ----------
-    distance   : Sensor pitch.
+    distance   : Distance between hits.
     redist_var : List with variables to be redistributed.
-
+    nhits      : Minimum number of hits for a cluster to be considered non-isolated.
     Returns
     ----------
     drop_isolated_sensors : Function that will drop the isolated sensors.
     """
-    drop = drop_isolated_sensors(distance, redist_var)
+    
+    # distance is XY -> N
+    if   len(distance) == 2:
+        drop = drop_isolated_sensors(distance, redist_var)
+    elif len(distance) == 3:
+        if nhits is None:
+            raise TypeError(f"Applying 3-dimensional dropping of isolated hits requires parameter nhits which is missing.")    
+        else:
+            drop = drop_isolated_clusters(distance, nhits, redist_var)
+    else:
+        raise ValueError(f"Invalid drop_dist parameter: expected 2 or 3 entries, but got {len(distance)}.")
+
 
     def drop_isolated(df): # df shall be an event cdst
         df = df.groupby(['event', 'npeak']).apply(drop).reset_index(drop=True)
@@ -477,7 +492,7 @@ def beersheba( files_in         : OneOrManyFiles
 
     cut_sensors           = fl.map(cut_over_Q   (deconv_params.pop("q_cut")    , ['E', 'Ec']),
                                    item = 'hits')
-    drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec']),
+    drop_sensors          = fl.map(drop_isolated(deconv_params.pop("drop_dist"), ['E', 'Ec'], deconv_params.pop("cluster_size", None)),
                                    item = 'hits')
     filter_events_no_hits = fl.map(check_nonempty_dataframe,
                                    args = 'hits',
