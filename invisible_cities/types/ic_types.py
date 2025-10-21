@@ -1,11 +1,15 @@
 from enum        import Enum
 from collections import OrderedDict
+from typing  import Union
+from typing  import Tuple
 
 import numpy as np
 
 NN= -999999  # No Number, a trick to aovid nans in data structs
 
 NoneType = type(None)
+
+Tuple2Dor3D = Union[Tuple[float, float], Tuple[float, float, float]]
 
 class NNN:
 
