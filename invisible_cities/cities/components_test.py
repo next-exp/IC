@@ -560,6 +560,7 @@ def test_write_city_configuration(config_tmpdir):
         d = "two strings".split(),
         e = [1,2,3],
         f = np.linspace(0, 1, 5),
+        g = {'a' : 2, 'b' : 3, 'c' : {'alpha' : 5, 'beta' : 10}}
     )
     write_city_configuration(filename, city_name, args)
     with tb.open_file(filename, "r") as file:
@@ -567,9 +568,22 @@ def test_write_city_configuration(config_tmpdir):
         assert city_name in file.root.config
 
     df = pd.read_hdf(filename, "/config/" + city_name).set_index("variable")
-    for var, value in args.items():
+    
+    # ignoring the nested dictionary
+    for var, value in list(args.items())[:-1]:
         assert var in df.index
         assert str(value) == df.value.loc[var]
+
+    # considering just the nested dictionary
+    var, value = list(args.items())[-1]
+    for var1, value1 in value.items():
+        if not isinstance(value1, dict):
+            assert f"{var}.{var1}" in df.index        
+            assert  str(value1) == df.value.loc[f"{var}.{var1}"]
+        else:
+            for var2, value2 in value1.items():
+                assert f"{var}.{var1}.{var2}" in df.index        
+                assert  str(value2) == df.value.loc[f"{var}.{var1}.{var2}"]
 
 
 def test_copy_cities_configuration(config_tmpdir):
