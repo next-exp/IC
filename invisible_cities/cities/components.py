@@ -211,10 +211,37 @@ def index_tables(file_out):
                 table.colinstances[colname].create_index()
 
 
+def dict_to_string(arg : dict,
+                   parent_key : str= ""):
+    '''
+    A function that recusively flattens nested dictionaries and converts the values to strings.
+
+    Each nested key is combined with its parent keys and associated with its respective value 
+    as a string.
+
+    Parameters
+    ----------
+    arg        : the dictionary to flatten which can contain nested dictionaries
+    parent_key : the string containing the prefix to use for keys in the flattened dictionary (default "").
+
+    Returns
+    -------
+    flat_dict : flattened dictionary containing no nested dictionaries and where all values are strings
+    '''
+    flat_dict = {}
+    for k, v in arg.items():
+        new_key = f"{parent_key}.{k}" if parent_key else k
+        if isinstance(v, dict):
+            flat_dict.update(dict_to_string(v, new_key))
+        else:
+            flat_dict[new_key] = str(v)
+    return flat_dict
+
+
 def write_city_configuration( filename : str
                             , city_name: str
                             , args     : dict):
-    args = {k: str(v) for k,v in args.items()}
+    args = dict_to_string(args)
 
     with tb.open_file(filename, "a") as file:
         df = (pd.Series(args)
