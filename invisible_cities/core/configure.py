@@ -22,6 +22,7 @@ from . import system_of_units as     units
 from ..types.ic_types import NoneType
 from ..types.symbols  import ALL_SYMBOLS
 from ..types.symbols  import EventRange
+from ..types.symbols  import CutType
 
 from typing import get_origin
 from typing import get_args
@@ -103,7 +104,9 @@ def make_config_file_reader():
     builtins = __builtins__.copy()
     builtins.update(vars(units))
     builtins.update(ALL_SYMBOLS)
+    # include required 'builtins'
     builtins["np"] = np
+    builtins["CutType"] = CutType
 
     globals_ = {'__builtins__': builtins}
     config = Configuration()
