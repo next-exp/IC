@@ -27,6 +27,7 @@ import pandas as pd
 import warnings
 import math
 import os
+import subprocess
 
 from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
@@ -142,6 +143,8 @@ def city(city_function):
         conf.files_in = input_files
         conf.file_out = expandvars(conf.file_out)
 
+        conf = add_git_info(conf)
+
         conf.event_range  = event_range(conf)
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
 
@@ -201,6 +204,78 @@ def create_timestamp(rate: float) -> float:
         return timestamp
 
     return create_timestamp_
+
+
+def get_git_tag() -> str:
+    """Returns the current tag if on a tagged commit, or '-' if not."""
+    try:
+        tag = subprocess.check_output(
+            ['git', 'describe', '--tags', '--exact-match'],
+            stderr=subprocess.DEVNULL
+        ).decode('ascii').strip()
+        return tag
+    except subprocess.CalledProcessError:
+        print("Warning: No tag found for current commit.")
+        return "-"
+    except Exception as e:
+        print(traceback.format_exc())
+        return "-"
+
+
+def get_git_upstream_remote() -> str:
+    """Returns the upstream remote name, or '-' if not found."""
+    try:
+        upstream = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "@{upstream}"],
+            stderr=subprocess.DEVNULL
+        ).decode("ascii").strip()
+        remote_name = upstream.split('/')[0]  # take the part before '/'
+        return remote_name
+    except subprocess.CalledProcessError:
+        print("Warning: No upstream remote configured for this branch.")
+        return "-"
+    except Exception as e:
+        print(traceback.format_exc())
+        return "-"
+
+
+def get_git_branch() -> str:
+    """Returns the current branch name, or '-' if not found."""
+    try:
+        branch = subprocess.check_output(
+            ['git', 'branch', '--show-current'],
+            stderr=subprocess.DEVNULL
+        ).decode('ascii').strip()
+        return branch
+    except subprocess.CalledProcessError:
+        print("Warning: No branch found.")
+        return "-"
+    except Exception as e:
+        print(traceback.format_exc())
+        return "-"
+
+
+def get_git_commit_hash() -> str:
+    """Returns the current commit hash, or '-' if not found."""
+    try:
+        hash = subprocess.check_output(
+            ['git', 'rev-parse', 'HEAD'],
+            stderr=subprocess.DEVNULL
+        ).decode('ascii').strip()
+        return hash
+    except subprocess.CalledProcessError:
+        print("Warning: No commit hash found.")
+        return "-"
+    except Exception as e:
+        print(traceback.format_exc())
+
+
+def add_git_info(conf):
+    conf.tag = get_git_tag()
+    conf.upstream = get_git_upstream_remote()
+    conf.branch = get_git_branch()
+    conf.hash = get_git_commit_hash()
+    return conf
 
 
 def index_tables(file_out):
