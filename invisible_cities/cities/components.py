@@ -143,15 +143,14 @@ def city(city_function):
         conf.files_in = input_files
         conf.file_out = expandvars(conf.file_out)
 
-        conf = add_git_info(conf)
-
         conf.event_range  = event_range(conf)
         # TODO There were deamons! self.daemons = tuple(map(summon_daemon, kwds.get('daemons', [])))
 
         args   = vars(conf)
         result = check_annotations(city_function)(**args)
         if os.path.exists(conf.file_out):
-            write_city_configuration(conf.file_out, city_function.__name__, args)
+            git_info = add_git_info()
+            write_city_configuration(conf.file_out, city_function.__name__, {**args, **git_info})
             copy_cities_configuration(conf.files_in[0], conf.file_out)
             index_tables(conf.file_out)
         return result
@@ -270,12 +269,14 @@ def get_git_commit_hash() -> str:
         print(traceback.format_exc())
 
 
-def add_git_info(conf):
-    conf.tag = get_git_tag()
-    conf.upstream = get_git_upstream_remote()
-    conf.branch = get_git_branch()
-    conf.hash = get_git_commit_hash()
-    return conf
+def add_git_info():
+    git_info = dict(
+        IC_tag = get_git_tag(),
+        upstream_name = get_git_upstream_remote(),
+        branch_name = get_git_branch(),
+        commit_hash = get_git_commit_hash()
+    )
+    return git_info
 
 
 def index_tables(file_out):
