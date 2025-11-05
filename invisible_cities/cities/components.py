@@ -206,17 +206,27 @@ def create_timestamp(rate: float) -> float:
     return create_timestamp_
 
 
-def fetch_git_info(git_command : str, 
-                   git_parameter : str):
-    """Returns requested Git information, or None if not found."""
+def run_git_command(git_command   : str,
+                    git_parameter : str = ""):
+    """
+    Runs a git command and stores the output.
+    
+    Parameters
+    ----------
+    git_command              : the standard terminal git command the user would input
+    git_parameter (Optional) : a string input to specify what git parameter the user is fetching
+
+    Returns
+    -------
+    The standard git terminal output
+    """
     git_command = git_command.split() # turns the string input into a list of strings
     try:
-        var = subprocess.check_output(git_command, stderr=subprocess.DEVNULL).decode('ascii').strip()
-        if git_parameter == "upstream remote":
-            var = var.split('/')[0]
-        return var
-    except subprocess.CalledProcessError:
-        print(f"Warning: No {git_parameter} found.")
+        git_output = subprocess.run(git_command, text=True, capture_output=True, check=True).stdout.strip()
+        return git_output
+    except subprocess.CalledProcessError as e:
+        print(f"Following error encountered when running: " + ' '.join(git_command))
+        print(e.stderr)
         return None
     except Exception as e:
         print(traceback.format_exc())
@@ -224,10 +234,10 @@ def fetch_git_info(git_command : str,
 
 def add_git_info():
     git_info = dict(
-        IC_tag = fetch_git_info("git describe --tags --exact-match", "git tag"),
-        upstream_name = fetch_git_info("git rev-parse --abbrev-ref @{upstream}", "remote upstream"),
-        branch_name = fetch_git_info("git branch --show-current", "branch"),
-        commit_hash = fetch_git_info("git rev-parse HEAD", "commit hash")
+        IC_tag        = run_git_command("git describe --tags --exact-match", "git tag"),
+        upstream_name = run_git_command("git rev-parse --abbrev-ref @{upstream}", "remote upstream").split('/')[0],
+        branch_name   = run_git_command("git branch --show-current", "branch"),
+        commit_hash   = run_git_command("git rev-parse HEAD", "commit hash")
     )
     return git_info
 
