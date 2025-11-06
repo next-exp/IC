@@ -36,6 +36,8 @@ from .  components import mcsensors_from_file
 from .  components import create_timestamp
 from .  components import check_max_time
 from .  components import hits_corrector
+from .  components import run_git_command
+from .  components import add_git_info
 from .  components import write_city_configuration
 from .  components import copy_cities_configuration
 
@@ -545,6 +547,71 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
 
     assert not np.any(np.isnan(corrected_e) )
     assert     np.all(         corrected_e>0)
+
+
+def test_add_git_info():
+
+    try:
+        # keep a copy of the current branch
+        current_branch = run_git_command("git branch --show-current")
+
+        # create a testing branch
+        testing_branch = 'function-testing-branch'
+        run_git_command(f"git checkout -b {testing_branch}")
+
+        # create an empty testing commit
+        run_git_command("git commit --allow-empty -m 'create_dummy_commit'")
+        testing_commit_hash = run_git_command("git log --pretty=format:%H -n 1") # alternative way of extracting hash
+
+        # create a testing remote upstream
+        testing_upstream = 'function-testing-upstream'
+        run_git_command(f"git remote add {testing_upstream} .") # use current repo as remote
+        run_git_command(f"git push -u {testing_upstream} {testing_branch}") # add this otherwise remote = None
+
+        extracted_git_info = add_git_info()
+
+        # create a temporary tag for testing
+        testing_tag = 'v.function.testing.tag'
+        run_git_command(f"git tag {testing_tag}")
+        
+        #extracted_git_info = add_git_info()
+
+        assert extracted_git_info['branch_name']   == testing_branch
+        assert extracted_git_info['commit_hash']   == testing_commit_hash
+        assert extracted_git_info['upstream_name'] == testing_upstream
+        assert extracted_git_info['IC_tag']        == testing_tag
+
+    except Exception as e:
+        print(f"Something went wrong: {e}")
+        raise
+
+    finally:
+        # cleanup happens no matter what, each command is within a try/except so that if one fails the rest still run
+        # switch back to the original branch
+        try:
+            run_git_command(f"git checkout {current_branch}")
+        except Exception as e:
+            print(f"Failed to restore branch {current_branch}: {e}")
+        
+        try:
+            run_git_command(f"git tag -d {testing_tag}")
+        except Exception as e:
+            print(f"Failed to delete tag {testing_tag}: {e}")
+        # delete local testing branch
+        try:
+            run_git_command(f"git branch -D {testing_branch}")
+        except Exception as e:
+            print(f"Failed to delete branch {testing_branch}: {e}")
+        # delete remote testing branch
+        try:
+            run_git_command(f"git push {testing_upstream} --delete {testing_branch}")
+        except Exception as e:
+            print(f"Failed to delete remote branch {testing_branch} on {testing_upstream}: {e}")
+
+        try:
+            run_git_command(f"git remote remove {testing_upstream}")
+        except Exception as e:
+            print(f"Failed to remove remote {testing_upstream}: {e}")
 
 
 def test_write_city_configuration(config_tmpdir):
