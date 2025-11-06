@@ -206,28 +206,25 @@ def create_timestamp(rate: float) -> float:
     return create_timestamp_
 
 
-def run_git_command(git_command   : str,
-                    git_parameter : str = ""):
+def run_git_command(git_command: str):
     """
     Runs a git command and stores the output.
     
     Parameters
     ----------
-    git_command              : the standard terminal git command the user would input
-    git_parameter (Optional) : a string input to specify what git parameter the user is fetching
+    git_command : the standard terminal git command the user would input
 
     Returns
     -------
-    The standard git terminal output
+    git_output  : the standard git terminal output
     """
-    git_command = git_command.split() # turns the string input into a list of strings
     try:
-        git_output = subprocess.run(git_command, text=True, capture_output=True, check=True).stdout.strip()
+        git_output = subprocess.run(git_command.split(), text=True, capture_output=True, check=True).stdout.strip()
         return git_output
     except subprocess.CalledProcessError as e:
-        print(f"Following error encountered when running: " + ' '.join(git_command))
+        print(f"Following error encountered when running: {git_command}")
         print(e.stderr)
-        return None
+        return "None"
     except Exception as e:
         print(traceback.format_exc())
 
