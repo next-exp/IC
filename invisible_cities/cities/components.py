@@ -231,11 +231,10 @@ def run_git_command(git_command: str):
 
 def add_git_info():
     git_info = dict(
-        IC_tag        = run_git_command("git describe --tags --exact-match"),
+        IC_tag         = run_git_command("git describe --tags --exact-match"),
         closest_IC_tag = run_git_command("git describe --tags"),
-        upstream_name = run_git_command("git rev-parse --abbrev-ref @{upstream}").split('/')[0],
-        branch_name   = run_git_command("git branch --show-current"),
-        commit_hash   = run_git_command("git rev-parse HEAD")
+        branch_name    = run_git_command("git branch --show-current"),
+        commit_hash    = run_git_command("git rev-parse HEAD")
     )
     return git_info
 
