@@ -603,15 +603,15 @@ def test_add_git_info():
         except Exception as e:
             print(f"Failed to delete branch {testing_branch}: {e}")
         # delete remote testing branch
-        try:
-            run_git_command(f"git push {testing_upstream} --delete {testing_branch}")
-        except Exception as e:
-            print(f"Failed to delete remote branch {testing_branch} on {testing_upstream}: {e}")
+        #try:
+            #run_git_command(f"git push {testing_upstream} --delete {testing_branch}")
+        #except Exception as e:
+            #print(f"Failed to delete remote branch {testing_branch} on {testing_upstream}: {e}")
 
-        try:
-            run_git_command(f"git remote remove {testing_upstream}")
-        except Exception as e:
-            print(f"Failed to remove remote {testing_upstream}: {e}")
+        #try:
+            #run_git_command(f"git remote remove {testing_upstream}")
+        #except Exception as e:
+            #print(f"Failed to remove remote {testing_upstream}: {e}")
 
 
 def test_write_city_configuration(config_tmpdir):
