@@ -550,7 +550,6 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
 
 @mark.skipif("os.environ['IS_GHA'] == 1", reason="this messes with git history so we only run it on GHA")
 def test_add_git_info():
-    assert False
     try:
         # keep a copy of the current branch
         current_branch = run_git_command("git branch --show-current")
