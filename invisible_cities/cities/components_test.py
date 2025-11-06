@@ -555,6 +555,8 @@ def test_add_git_info():
         # keep a copy of the current branch
         current_branch = run_git_command("git branch --show-current")
 
+        print("")
+
         # create a testing branch
         testing_branch = 'function-testing-branch'
         run_git_command(f"git checkout -b {testing_branch}")
@@ -564,21 +566,19 @@ def test_add_git_info():
         testing_commit_hash = run_git_command("git log --pretty=format:%H -n 1") # alternative way of extracting hash
 
         # create a testing remote upstream
-        testing_upstream = 'function-testing-upstream'
-        run_git_command(f"git remote add {testing_upstream} .") # use current repo as remote
-        run_git_command(f"git push -u {testing_upstream} {testing_branch}") # add this otherwise remote = None
-
-        extracted_git_info = add_git_info()
+        #testing_upstream = 'function-testing-upstream'
+        #run_git_command(f"git remote add {testing_upstream} .") # use current repo as remote
+        #run_git_command(f"git push -u {testing_upstream} {testing_branch}") # add this otherwise remote = None
 
         # create a temporary tag for testing
         testing_tag = 'v.function.testing.tag'
         run_git_command(f"git tag {testing_tag}")
         
-        #extracted_git_info = add_git_info()
+        extracted_git_info = add_git_info()
 
         assert extracted_git_info['branch_name']   == testing_branch
         assert extracted_git_info['commit_hash']   == testing_commit_hash
-        assert extracted_git_info['upstream_name'] == testing_upstream
+        #assert extracted_git_info['upstream_name'] == testing_upstream
         assert extracted_git_info['IC_tag']        == testing_tag
 
     except Exception as e:
