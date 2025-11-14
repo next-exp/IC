@@ -184,7 +184,7 @@ def sophronia( files_in           : OneOrManyFiles
     correct_hits   = df.map( hits_corrector(**corrections) if corrections is not None else identity
                            , item = "hits")
     
-    cluster_hits   = df.map( hits_clusterizer(eps=2.3, min_samples=5)
+    cluster_hits   = df.map( hits_clusterizer(eps=2.3, npt=5)
                             , args="hits"
                             , out="hits")
 
