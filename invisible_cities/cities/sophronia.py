@@ -97,8 +97,8 @@ def sophronia( files_in           : OneOrManyFiles
 
             # ¿QUEREMOS ESTO?
             #  , apply_clustering   : bool  = False   # whether to apply clustering to hits
-            #  , cluster_eps        : float = 2.3     # eps for DBSCAN
-            #  , cluster_min_samples: int   = 5       # min_samples for DBSCAN
+             , cluster_eps        : float = 2.3     # eps for DBSCAN
+             , cluster_min_samples: int   = 5       # min_samples for DBSCAN
              ):
     """
     drift_v : float
@@ -184,9 +184,8 @@ def sophronia( files_in           : OneOrManyFiles
     correct_hits   = df.map( hits_corrector(**corrections) if corrections is not None else identity
                            , item = "hits")
     
-    cluster_hits   = df.map( hits_clusterizer(eps=2.3, npt=5)
-                            , args="hits"
-                            , out="hits")
+    cluster_hits   = df.map( hits_clusterizer(eps=cluster_eps, npt=cluster_min_samples)
+                           , item = "hits")
 
     build_pointlike_event = df.map( pointlike_event_builder( detector_db
                                                            , run_number
