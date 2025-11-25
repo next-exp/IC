@@ -26,12 +26,6 @@ import warnings
 import math
 import os
 
-
-
-from sklearn.cluster import DBSCAN
-
-
-
 from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
 from .. dataflow.dataflow         import                      pipe
@@ -67,6 +61,7 @@ from .. reco   .corrections       import      apply_all_correction
 from .. reco   .corrections       import     get_df_to_z_converter
 from .. reco   .xy_algorithms     import                    corona
 from .. reco   .xy_algorithms     import                barycenter
+from .. reco   .hits_functions    import            cluster_tagger
 from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import         S12SelectorOutput
 from .. filters.s1s2_filter       import               pmap_filter
@@ -1703,51 +1698,36 @@ def hits_corrector( filename     : str
 
     return correct
 
-def hits_clusterizer(df_pe_peak: pd.DataFrame, eps=2.3, npt=5)-> pd.DataFrame:
-    """
-    Cluster hits in 3D space for each event using DBSCAN.
-    
-    The coordinates are scaled to account for detector geometry differences 
-    in samplig 
-    
+def hits_clusterizer(clustering_params: dict) -> Callable:
+    """"
+    This function receives a configuration dictionary and returns a callable
+    that will perform DBSCAN clustering on a DataFrame of hits. 
+
     Parameters
     ----------
-    df_pe_peak : pd.DataFrame
-    DataFrame containing hit information with columns 'X', 'Y', 'Z', and 'event'.
-    
+    clustering_params : dict
+        A dictionary containing the configuration for the clustering algorithm.
+        Expected keys are:
+        - 'eps'        : float, Epsilon value for DBSCAN.
+        - 'min_samples': int,   Min Samples value for DBSCAN.
+        - 'scale_xy'   : float, optional, scale factor for XY coordinates.
+        - 'scale_z'    : float, optional, scale factor for Z coordinate.
+
     Returns
     -------
-    pd.DataFrame
-    Modified DataFrame with an added 'cluster' column indicating the cluster label 
-    for each hit (-1 for noise).
+    Callable
+        A function that takes a DataFrame of hits and returns the same DataFrame 
+        with an added 'cluster' column, which are the clusters labels assigned by DBSCAN
+        (-1 for noise).
     """
-    a = 14.55  # XY scale
-    b = 3.7  # Z scale
-
-    # Pre-allocate array for cluster labels
-    cluster_labels = np.full(len(df_pe_peak), -9999, dtype=int)
-
-    # Get values once (faster than repeatedly accessing DataFrame columns)
-    coords = df_pe_peak[['X', 'Y', 'Z']].to_numpy()
-    events = df_pe_peak['event'].to_numpy()
+    eps         = clustering_params['eps']
+    min_samples = clustering_params['min_samples']
+    scale_xy    = clustering_params['scale_xy']
+    scale_z     = clustering_params['scale_z']
     
-    # Use np.unique to get sorted event IDs
-    unique_events = np.unique(events)
-    
-    for event_id in unique_events:
-        mask = (events == event_id)
-        X = coords[mask].copy()
-        
-        # Scale
-        X[:, :2] /= a
-        X[:, 2] /= b
-        
-        labels = DBSCAN(eps=eps, min_samples=npt).fit_predict(X)
-        cluster_labels[mask] = labels
-
-    df_pe_peak['cluster'] = cluster_labels
-
-    return df_pe_peak
+    return partial(cluster_tagger,
+                   eps=eps, min_samples=min_samples,
+                   scale_xy=scale_xy, scale_z=scale_z)
 
 
 def identity(x : Any) -> Any:
