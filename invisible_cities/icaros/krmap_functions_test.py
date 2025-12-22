@@ -4,6 +4,7 @@ from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
 import itertools
 from krmap_functions import create_NaN_map, med_fun, fit_function, map_3D_fits, merge_maps, include_coordinates
 from pytest import raises
+from invisible_cities.core.core_functions import fix_random_seed
 
 
 def test_empty_medfun():
@@ -26,7 +27,7 @@ def test_empty_medfun_2():
 
 def test_fit_fun():
     empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
-    result = fit_function(empty_dst)
+    result = fit_function(empty_dst, 50)
 
     assert result == med_fun(empty_dst)
 
@@ -37,7 +38,7 @@ def test_Nevents():
     N = len(df_test)
     result_med = med_fun(df_test)
     assert result_med['nevents'].iloc[0] == N
-    assert fit_function(df_test, bins = 5)['nevents'].iloc[0] == N
+    assert fit_function(df_test, bins = 6)['nevents'].iloc[0] == N
 
 
 def test_merge_maps():

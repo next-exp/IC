@@ -61,6 +61,7 @@ def fit_function(df, bins, size =10):
     if len(df)<size:
         results = med_fun(df)
 
+    counts, bin_edges = np.histogram(df.S2e, bins)
     bin_centers = shift_to_bin_centers(bin_edges)
 
     try:
