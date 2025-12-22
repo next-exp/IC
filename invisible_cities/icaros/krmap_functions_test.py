@@ -27,9 +27,11 @@ def test_empty_medfun_2():
 
 def test_fit_fun():
     empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
-    result = fit_function(empty_dst, 50)
+    result_fit = fit_function(empty_dst, 1)
+    result_fun = med_fun(empty_dst)
 
-    assert result == med_fun(empty_dst)
+    assert np.allclose(result_fit.mu.values, result_fun['median'].values, equal_nan=True)
+
 
 
 def test_Nevents():
@@ -80,7 +82,7 @@ def test_fit_fun2():
 
     results = fit_function(S2e_df, bins = 50)
 
-    assert np.isclose(results['mu'[0], S2e_df.S2e.mean()], atol = 1)
+    assert np.isclose(results['mu'][0], S2e_df.S2e.mean(), atol = 1)
     assert np.isclose(results['sigma'][0], S2e_df.S2e.std(), atol = 0.5)
     assert np.isclose(results['mu_error'][0], S2e_df.S2e.std()/np.sqrt(len(S2e_df)), atol = 0.1)
     #error de sigma?

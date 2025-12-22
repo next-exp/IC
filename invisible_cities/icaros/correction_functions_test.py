@@ -36,8 +36,8 @@ def test_method_norm():
         (map_test.y <= 100) & (map_test.y >= -100)
     )
 
-    assert normalization(map_test, 'max', -100, 100, -100, 100) == 9889
-    assert normalization(map_test, 'mean chamber', -100, 100, -100, 100) == 4536.125
-    assert normalization(map_test, 'mean anode', -100, 100, -100, 100) == 4400
+    assert normalization(map_test, 'max', None, None, None, None) == 9889
+    assert normalization(map_test, 'mean chamber', None, None, None, None) == 4536.125
+    assert normalization(map_test, 'mean anode', None, None, None, None) == 4400
     assert normalization(map_test, 'mean region anode', -100, 100, -100, 100) == map_test.loc[(map_test.k == 0) & region_mask,'mu'].mean()
     assert normalization(map_test, 'mean region chamber', -100, 100, -100, 100) == map_test.loc[region_mask,'mu'].mean()

@@ -17,27 +17,27 @@ def normalization(krmap, method, x_low, x_high, y_low, y_high):
         return E_reference_chamber
 
     if method == 'mean anode':
-        mu_values_anode = map[map.k == 0].mu
+        mu_values_anode = krmap[krmap.k == 0].mu
         E_reference_anode = mu_values_anode.dropna().mean()
         return E_reference_anode
 
-    mask_region = (map['x'] <= x_high) & (map['x'] >= x_low) & (map['y'] <= y_high) & (map['y'] >= y_low)
+    mask_region = (krmap['x'] <= x_high) & (krmap['x'] >= x_low) & (krmap['y'] <= y_high) & (krmap['y'] >= y_low)
 
     if method == 'mean region anode':
-        region = map[map.k == 0][mask_region]
+        region = krmap[krmap.k == 0][mask_region]
         E_reference_slice_anode = region.mu.dropna().mean()
         return E_reference_slice_anode
 
     if method == 'mean region chamber':
-        region = map[mask_region]
+        region = krmap[mask_region]
         E_reference_region = region.mu.dropna().mean()
         return E_reference_region
 
 
-def apply_3Dmap(krmap, method, dt, x, y, E, keV = False):
+def apply_3Dmap(krmap, method,x_low, x_high, y_low, y_high, dt, x, y, E, keV = False):
 
     map_points = krmap['dt x y'.split()].values
-    norm = normalization(krmap, method)
+    norm = normalization(krmap, method, x_low, x_high, y_low, y_high)
 
     data_points = np.stack([dt, x, y], axis = 1)
     E_interpolated_data = griddata(map_points, krmap.mu.values, data_points, method = 'nearest')
