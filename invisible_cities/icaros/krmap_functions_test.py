@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
 import itertools
-from correction_functions import create_NaN_map, med_fun, fit_function, map_3D_fits, merge_maps, include_coordinates, is_even
+from krmap_functions import create_NaN_map, med_fun, fit_function, map_3D_fits, merge_maps, include_coordinates, is_even
 from pytest import raises
 
 
