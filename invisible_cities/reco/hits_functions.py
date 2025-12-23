@@ -147,18 +147,13 @@ def empty_hit( event : int  , timestamp: float, peak_no: int
                             , npeak    = peak_no
                             , Xpeak    = x_peak
                             , Ypeak    = y_peak
-                            , nsipm    = 1
                             , X        = NN
                             , Y        = NN
-                            , Xrms     = 0
-                            , Yrms     = 0
                             , Z        = z
                             , Q        = NN
                             , E        = e
-                            , Qc       = -1
                             , Ec       = ec
-                            , track_id = -1
-                            , Ep       = -1), index=[0])
+                            ), index=[0])
 
 
 def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -> pd.DataFrame:
