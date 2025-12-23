@@ -114,7 +114,10 @@ def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
     nn_hits = hits.loc[ sel]
     hits    = hits.loc[~sel].copy()
 
-    corrections = pd.DataFrame(dict(E=0, Ec=0), index=hits.index.values)
+    # hits may or may not have Ec, consider both cases
+    has_ec  = "Ec" in hits.columns
+    columns = "E Ec".split() if has_ec else ["E"]
+    corrections = pd.DataFrame(dict(zip(columns, (0,0))), index=hits.index.values)
     for _, nn_hit in nn_hits.iterrows():
         candidates = hits.loc[hits.npeak == nn_hit.npeak] if same_peak else hits
         if len(candidates) == 0: continue # drop hit !!! dangerous
@@ -126,12 +129,14 @@ def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
 
         # redistribute energy proportionally to the receiving hits' energy
         # corrections are accumulated to make this process order insentitive
-        corr_e  = nn_hit.E  * closest.E  / closest.E .sum()
-        corr_ec = nn_hit.Ec * closest.Ec / closest.Ec.sum()
-        corrections.loc[index, "E Ec".split()] += np.stack([corr_e, corr_ec], axis=1)
+        corr_e      = nn_hit.E  * closest.E  / closest.E .sum()
+        if has_ec:
+            corr_ec = nn_hit.Ec * closest.Ec / closest.Ec.sum()
+        corrs = [corr_e, corr_ec] if has_ec else [corr_e]
+        corrections.loc[index, columns] += np.stack(corrs, axis=1)
 
     # apply correction factors based on original charge values
-    hits.loc[:, "E Ec".split()] += corrections.values
+    hits.loc[:, columns] += corrections.values
     return hits
 
 
