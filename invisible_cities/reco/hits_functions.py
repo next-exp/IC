@@ -161,7 +161,7 @@ def empty_hit( event : int  , timestamp: float, peak_no: int
                             ), index=[0])
 
 
-def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -> pd.DataFrame:
+def apply_threshold(hits: pd.DataFrame, th: float) -> pd.DataFrame:
     """
     Apply a charge threshold to filter hits and renormalize their energies.
 
@@ -177,10 +177,6 @@ def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -
 
     th : float
         Charge threshold in pe.
-
-    on_corrected : bool, optional
-        Whether to use the regular charge `Q` or the corrected charge `Qc`.
-        Default is False.
 
     Returns
     -------
@@ -199,8 +195,7 @@ def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -
     raw_e_slice = np.   sum(hits.E ) # no   nan expected
     cor_e_slice = np.nansum(hits.Ec) # some nan expected
 
-    col         = "Qc" if on_corrected else "Q"
-    mask_thresh = hits[col] >= th
+    mask_thresh = hits.Q >= th
 
     if not mask_thresh.any():
         first = hits.iloc[0]
@@ -218,7 +213,7 @@ def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -
     return hits
 
 
-def threshold_hits(hits: pd.DataFrame, th: float, on_corrected: bool=False) -> pd.DataFrame:
+def threshold_hits(hits: pd.DataFrame, th: float) -> pd.DataFrame:
     """
     Apply a charge threshold (`th`)vto the hits for each Z slice separately. If
     the threshold is negative or zero, the function returns the input DataFrame
@@ -231,10 +226,6 @@ def threshold_hits(hits: pd.DataFrame, th: float, on_corrected: bool=False) -> p
 
     th : float
         Charge threshold in pe.
-
-    on_corrected : bool, optional
-        Whether to use the regular charge `Q` or the corrected charge `Qc`.
-        Default is False.
 
     Returns
     -------
@@ -252,4 +243,4 @@ def threshold_hits(hits: pd.DataFrame, th: float, on_corrected: bool=False) -> p
     """
     if th <= 0: return hits
     return (hits.groupby("Z", as_index=False)
-                .apply(apply_threshold, th=th, on_corrected=on_corrected))
+                .apply(apply_threshold, th=th))
