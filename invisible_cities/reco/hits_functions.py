@@ -1,6 +1,12 @@
 import numpy  as np
 import pandas as pd
 
+from itertools       import compress
+from copy            import deepcopy
+from typing          import List
+from sklearn.cluster import DBSCAN
+
+from .. evm  import event_model as evm
 from .. types.ic_types      import NN
 
 EPSILON = np.finfo(np.float64).eps
@@ -62,8 +68,6 @@ def sipms_above_threshold(xys: np.ndarray, qs: np.ndarray, thr:float, energy: fl
     ys =             xy[:, 1] if nonempty else [NN]
     es = e_from_q(qs, energy) if nonempty else [energy]
     return xs, ys, qs, es
-
-
 
 
 def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
@@ -237,4 +241,66 @@ def threshold_hits(hits: pd.DataFrame, th: float) -> pd.DataFrame:
     """
     if th <= 0: return hits
     return (hits.groupby("Z", as_index=False)
-                .apply(apply_threshold, th=th))
+                .apply(apply_threshold, th=th, on_corrected=on_corrected))
+
+
+def cluster_tagger(df_hits: pd.DataFrame, *, 
+                   eps:float, min_samples:int, 
+                   scale_xy:float, scale_z:float) -> pd.DataFrame:
+        """
+        Applies DBSCAN clustering to hits on an event-by-event basis.
+
+        This function processes a DataFrame of hits, groups them by event,
+        scales their coordinates, and applies DBSCAN to identify spatial clusters.
+        A 'cluster' column is added to the DataFrame with the resulting labels.
+
+        Parameters
+        ----------
+        df_hits     : pd.DataFrame
+            DataFrame containing hit information with columns 'X', 'Y', 'Z', and 'event'.
+        eps         : float
+            The maximum distance between two samples for one to be considered as in the
+            neighborhood of the other. This is the most important DBSCAN parameter.
+        min_samples : int
+            The number of samples (or total weight) in a neighborhood for a point
+            to be considered as a core point.
+        scale_xy    : float
+            Scale factor to apply to X and Y coordinates before clustering to account
+            for different detector resolutions.
+        scale_z     : float
+            Scale factor to apply to the Z coordinate.
+
+        Returns
+        -------
+        pd.DataFrame
+            The input DataFrame with an added 'cluster' column indicating the
+            cluster label for each hit (-1 for noise).
+        """
+        if df_hits.empty:
+            return df_hits.assign(cluster=pd.Series(dtype=int))  
+
+        # Pre-allocate array for cluster labels
+        cluster_labels = np.full(len(df_hits), -9999, dtype=int)
+
+        # Get values once (faster than repeatedly accessing DataFrame columns)
+        coords = df_hits[['X', 'Y', 'Z']].to_numpy()
+        events = df_hits['event'].to_numpy()
+
+        # Use np.unique to get sorted event IDs
+        unique_events = np.unique(events)
+        for event_id in unique_events:
+            
+            mask = (events == event_id)
+            X = coords[mask].copy()
+
+            # Scale
+            X[:, :2] /= scale_xy
+            X[:, 2]  /= scale_z
+
+            # DBSCAN clustering
+            labels = DBSCAN(eps=eps, min_samples=min_samples).fit_predict(X)
+            cluster_labels[mask] = labels
+
+        df_hits['cluster'] = cluster_labels
+
+        return df_hits

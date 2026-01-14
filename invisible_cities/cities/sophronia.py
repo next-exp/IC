@@ -94,11 +94,7 @@ def sophronia( files_in           : OneOrManyFiles
              , sipm_charge_type   : SiPMCharge
              , same_peak          : bool
              , corrections        : Optional[dict] = None
-
-            # ¿QUEREMOS ESTO?
-            #  , apply_clustering   : bool  = False   # whether to apply clustering to hits
-             , cluster_eps        : float = 2.3     # eps for DBSCAN
-             , cluster_min_samples: int   = 5       # min_samples for DBSCAN
+             , clustering_params  : Optional[dict] = None
              ):
     """
     drift_v : float
@@ -143,6 +139,19 @@ def sophronia( files_in           : OneOrManyFiles
             Normalization strategy
         norm_value : float, optional
             Normalization value in case of `norm_strat = NormStrategy.custom`
+
+    clustering_params : dict
+        eps : float
+            The maximum distance between two samples for one to be
+            considered as in the neighborhood of the other.
+        min_samples : int
+            The number of samples (or total weight) in a neighborhood
+            for a point to be considered as a core point. This includes the point
+            itself.
+        scale_xy : float
+            Scaling factor to apply to the (x, y) coordinates before clustering.
+        scale_z : float
+            Scaling factor to apply to the z coordinate before clustering.
     """
     global_reco = compute_xy_position( detector_db
                                      , run_number
@@ -184,7 +193,7 @@ def sophronia( files_in           : OneOrManyFiles
     correct_hits   = df.map( hits_corrector(**corrections) if corrections is not None else identity
                            , item = "hits")
     
-    cluster_hits   = df.map( hits_clusterizer(eps=cluster_eps, npt=cluster_min_samples)
+    cluster_hits   = df.map( hits_clusterizer(**clustering_params) if clustering_params is not None else identity
                            , item = "hits")
 
     build_pointlike_event = df.map( pointlike_event_builder( detector_db
