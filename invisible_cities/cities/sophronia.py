@@ -193,7 +193,7 @@ def sophronia( files_in           : OneOrManyFiles
     correct_hits   = df.map( hits_corrector(**corrections) if corrections is not None else identity
                            , item = "hits")
     
-    cluster_hits   = df.map( hits_clusterizer(**clustering_params) if clustering_params is not None else identity
+    cluster_hits   = df.map( hits_clusterizer(clustering_params) if clustering_params is not None else identity
                            , item = "hits")
 
     build_pointlike_event = df.map( pointlike_event_builder( detector_db
