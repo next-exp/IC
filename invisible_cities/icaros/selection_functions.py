@@ -26,7 +26,9 @@ def eff_of_selection(df_before, df_after, name = ""):
 
     eff = events_after/events_before
 
-    print(f"{name} efficiency {eff}, {events_after}/{events_before}.")
+    if name:
+
+        print(f"{name} efficiency {eff}, {events_after}/{events_before}.")
 
     return eff
 
