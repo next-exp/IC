@@ -105,6 +105,11 @@ def fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bins):
 
 def merge_maps(NaN_map, map_3D):
 
+    """
+    Merge empty and 3D (data) maps, for those "repeated rows" with NaNs and data,
+    we discard the NaN rows (doing .first()) to get a dataframe with "uniform" shape.
+    """
+
     full_map = pd.concat([map_3D, NaN_map], ignore_index = True)
     full_map = full_map.groupby(['k', 'i','j']).first().reset_index()
 
