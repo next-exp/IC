@@ -129,13 +129,13 @@ def apply_selections(kdst, run_number,  dtrms2_low, dtrms2_upp, low_xrays, high_
 
     df, eff_Xrays = select_Xrays(df, low_xrays, high_xrays)
 
-    df, eff_1S1_1S2 = select_1S1_1S2(df)
-
     df, eff_S2t = select_S2t(df, low_S2t, high_S2t)
+
+    df, eff_1S1_1S2 = select_1S1_1S2(df)
 
     df, eff_Rmax = select_Rmax(df, R_max)
 
-    df, eff_DTrange = select_Dtrange(df, low_DT, high_DT)
+    df, eff_DTrange = select_DTrange(df, low_DT, high_DT)
 
     df_final, eff_nsipm = select_nsipm(df, low_nsipm, high_nsipm)
 
