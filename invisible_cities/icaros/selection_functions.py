@@ -141,10 +141,13 @@ def apply_selections(kdst, run_number,  dtrms2_low, dtrms2_upp, low_xrays, high_
 
     total_efficiency = eff_of_selection(kdst, df_final, f'total events after all selections')
 
-    d = {'eff diffusion band': [eff_DT], 'eff X rays': [eff_Xrays], 'eff 1S1 & 1S2': [eff_1S1_1S2],
-         'eff S2 trigger time': [eff_S2t], 'eff Rmax': [eff_Rmax], 'eff range DT': [eff_DTrange],
-         'eff number of SiPMS': [eff_nsipm], 'total efficiency': [total_eff]}
+    d = {'eff_diffusion_band': eff_DTband, 'eff_Xrays': eff_Xrays, 'eff_1S1_1S2': eff_1S1_1S2,
+         'eff_S2_trigger_time': eff_S2t, 'eff_Rmax': eff_Rmax, 'eff_range_DT': eff_DTrange,
+         'eff_NSiPMS': eff_nsipm, 'total_efficiency': total_efficiency}
 
-    df_efficiencies = pd.DataFrame(data = d)
-
+    df_efficiencies = pd.DataFrame(data = d, index = [0])
+    
+    
     return df_final, df_efficiencies
+
+    
