@@ -99,7 +99,7 @@ def compute_drift_v(dtdata   : np.array,
     if seed is None: seed = np.max(y), np.mean(dtrange), 0.5, np.min(y) # CHANGE: dtrange should be established from db
     # At the moment there is not NEXT-100 DB so this won't work for that geometry
     z_cathode = 1187.37
-    print(seed)
+    #print(seed)
     try:
         f   = fit.fit(sigmoid, x, y, seed, sigma = poisson_sigma(y), fit_range = dtrange)
         par = f.values
