@@ -171,3 +171,35 @@ def compute_metadata(df, krmap, xy_range, dt_range,
 
     return pd.DataFrame.from_dict(metadata_str, orient='index', columns=['value'])
     
+
+
+def gauss_seed(x, y, sigma_rel=0.05):
+    """
+    Estimate the seed for a gaussian fit to the input data.
+    """
+    y_max  = np.argmax(y) # highest bin
+    x_max  = x[y_max]
+    sigma  = sigma_rel * x_max
+    amp    = y_max * (2 * np.pi)**0.5 * sigma * np.diff(x)[0]
+    seed   = amp, x_max, sigma
+    return seed
+
+
+def quick_gauss_fit(data, bins, sigma = False):
+    """
+    Histogram input data and fit it to a gaussian with the parameters
+    automatically estimated.
+    """
+    y, x  = np.histogram(data, bins)
+    x     = shift_to_bin_centers(x)
+    seed  = gauss_seed(x, y)
+    
+    if sigma:
+        sigma = poisson_sigma(y)
+        f     = fit(gauss, x, y, seed, sigma = sigma)
+    else:
+        f     = fit(gauss, x, y, seed)
+    assert np.all(f.values != seed)
+    return f  
+
+
