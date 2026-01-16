@@ -84,24 +84,21 @@ def fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bins):
 
     df = df[mask]
 
-    x = df.X
-    y = df.Y
-    dt = df.DT
+    x, y, dt, _ = df.values.T
 
     xy_bins = np.linspace(*xy_range, xy_nbins + 1)
     dt_bins = np.linspace(*dt_range, dt_nbins + 1)
 
-    map_df = df.assign( i = np.digitize(x.values, bins = xy_bins) - 1,
-                        j = np.digitize(y.values, bins = xy_bins) - 1,
-                        k = np.digitize(dt.values, bins = dt_bins) - 1)
+    map_df = df.assign( i = np.digitize(x, bins = xy_bins) - 1,
+                        j = np.digitize(y, bins = xy_bins) - 1,
+                        k = np.digitize(dt, bins = dt_bins) - 1)
 
+    #add -1 so the indices go from 0 to 49, not from 1 to 50.
 
-    result = map_df.groupby(['k', 'i', 'j']).apply(fit_function, bins = np.linspace(3000, 9000, 101))
+    result = map_df.groupby(['k', 'i', 'j']).apply(fit_function, bins)
 
     result = result.reset_index()
-
-    if 'level_3' in result.columns:
-        result = result.drop(columns = 'level_3')
+    result = result.drop(columns = 'level_3')
 
     return result
 
