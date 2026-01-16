@@ -5,22 +5,13 @@ from   scipy.optimize     import curve_fit
 import matplotlib.pyplot as plt
 from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
 from scipy import stats
-from apply_3Dmap import apply_3Dmap, normalization
+from correction_functions import apply_3Dmap, normalization
+from pathlib import Path
 import itertools
 
 
-
-def eff_of_sel(sel, name = "", do_print = True):
-    nsel, ntot = np.sum(sel), len(sel)
-    eff = nsel/float(ntot)
-    if do_print:
-        seff = "{:.4f}".format(eff)
-        print(f"{name} efficiency {seff}, {nsel}/{ntot}.")
-    return eff
-
-
 dtrms2_low = lambda dt: -0.7 + 0.030 * (dt-20) # Gonzalo's
-dtrms2_upp = lambda dt: 2.6 + 0.036 * (dt-20) # Gonzalo'2
+dtrms2_upp = lambda dt: 2.6 + 0.036 * (dt-20) # Gonzalo's2
 dtrms2_cen = lambda dt:  1.0 + 0.033 * (dt-20)
 def dist_to_bandcenter(df): return df.Zrms**2 - dtrms2_cen(df.DT)
 
