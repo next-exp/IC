@@ -85,9 +85,8 @@ def select_1S1_1S2(kdst):
 
 
 def select_S2t(kdst, low_S2t, high_S2t):
-    range_S2t = (low_S2t, high_S2t)
-    sel_S2t = in_range(kdst.S2t, *range_S2t)
 
+    sel_S2t = in_range(kdst.S2t, low_S2t, high_S2t)
     df_S2t = kdst[sel_S2t]
 
     eff_S2t = eff_of_selection(kdst, df_S2t, "S2 in trigger time")
