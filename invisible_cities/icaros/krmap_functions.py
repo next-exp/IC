@@ -302,3 +302,12 @@ def get_time_evol(df, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtrang
         
     return pd.concat(df_tevols, ignore_index = True)
                     
+
+def save_map(name, efficiencies, krmap, metadata, t_evol):
+
+    with tb.open_file(name, "w") as file:
+        df_writer(file, efficiencies, group_name = 'data', table_name = 'selection_efficiencies')
+        df_writer(file, krmap, group_name = 'krmap', table_name = 'krmap')
+        df_writer(file, metadata, group_name = 'krmap_info', table_name = 'metadata')
+        df_writer(file, t_evol, group_name = 't_evol', table_name = 't_evol')
+        
