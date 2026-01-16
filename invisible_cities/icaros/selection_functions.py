@@ -95,7 +95,9 @@ def select_S2t(kdst, low_S2t, high_S2t):
 
 
 def select_Rmax(kdst, R_max):
-    df_Rmax = kdst[kdst.R <= R_max]
+
+    sel_Rmax = in_range(kdst.R, 0, R_max)
+    df_Rmax = kdst[sel_Rmax]
 
     eff_Rmax = eff_of_selection(kdst, df_Rmax, f'events with R less than {R_max}')
 
@@ -103,7 +105,9 @@ def select_Rmax(kdst, R_max):
 
 
 def select_DTrange(kdst, low_DT, high_DT):
-    df_DTrange = kdst[(kdst.DT >= low_DT) & (kdst.DT <= high_DT)]
+
+    sel_DTrange = in_range(kdst.DT, low_DT, high_DT)
+    df_DTrange = kdst[sel_DTrange]
 
     eff_DTrange = eff_of_selection(kdst, df_DTrange, f'events in DT range [{low_DT}, {high_DT}]')
 
@@ -111,7 +115,7 @@ def select_DTrange(kdst, low_DT, high_DT):
 
 
 def select_nsipm(kdst, low_nsipm, high_nsipm):
-    sel_nsipm = (kdst.Nsipm >= low_nsipm) & (kdst.Nsipm <= high_nsipm)
+    sel_nsipm = in_range(kdst.Nsipm, low_nsipm, high_nsipm)
     df_nsipm = kdst[sel_nsipm]
 
     eff_nsipm = eff_of_selection(kdst, df_nsipm, f'events in NSipm range [{low_nsipm}, {high_nsipm}]')
