@@ -3,8 +3,7 @@ import numpy  as np
 from scipy.interpolate import griddata
 
 
-
-def normalization(krmap, method, x_low, x_high, y_low, y_high):
+def normalization(krmap, method, xy_params = None):
 
     mu_values = krmap.mu.dropna()
 
@@ -21,7 +20,7 @@ def normalization(krmap, method, x_low, x_high, y_low, y_high):
         E_reference_anode = mu_values_anode.mean()
         return E_reference_anode
 
-    mask_region = (krmap['x'] <= x_high) & (krmap['x'] >= x_low) & (krmap['y'] <= y_high) & (krmap['y'] >= y_low)
+    mask_region = (krmap['x'] <= xy_params['x_high']) & (krmap['x'] >= xy_params['x_low']) & (krmap['y'] <= xy_params['y_high']) & (krmap['y'] >= xy_params['y_low'])
 
     if method == 'mean region anode':
         region = krmap[krmap.k == 0][mask_region]
@@ -34,10 +33,10 @@ def normalization(krmap, method, x_low, x_high, y_low, y_high):
         return E_reference_region
 
 
-def apply_3Dmap(krmap, method,x_low, x_high, y_low, y_high, dt, x, y, E, keV = False):
+def apply_3Dmap(krmap, norm_method, dt, x, y, E, xy_params = None, keV = False):
 
     map_points = krmap['dt x y'.split()].values
-    norm = normalization(krmap, method, x_low, x_high, y_low, y_high)
+    norm = normalization(krmap, norm_method, xy_params)
 
     data_points = np.stack([dt, x, y], axis = 1)
     E_interpolated_data = griddata(map_points, krmap.mu.values, data_points, method = 'nearest')
@@ -49,3 +48,6 @@ def apply_3Dmap(krmap, method,x_low, x_high, y_low, y_high, dt, x, y, E, keV = F
         Ec = Ec * (41.55 / norm)
 
     return Ec
+        
+        
+    
