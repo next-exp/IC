@@ -34,13 +34,8 @@ def select_lifetime_region(df, bins, x0, y0, shape, shape_size):
 
 def LT_fit(DT, s2e, p0):
 
-    def exponential(t, e, tau):
-        return e*np.exp(-t/tau)
-
-    popt, pcov = curve_fit(exponential, DT, s2e, p0 = p0)
-    magnitudes = (popt[0], popt[1])
-    uncertainties = (np.sqrt(pcov[0,0]), np.sqrt(pcov[1,1]))
-    return magnitudes, uncertainties
+    f  = fit.fit(fit.expo, DT, s2e, p0)
+    return f.values, (f[2][0], f[2][1])
 
 
 
