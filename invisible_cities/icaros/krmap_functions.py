@@ -135,9 +135,9 @@ def include_coordinates(krmap, xy_range, dt_range, xy_nbins, dt_nbins):
     return krmap
 
 
-def compute_3D_map(df, xy_range, dt_range, xy_nbins, dt_nbins):
-    NaN_map = create_NaN_map(xy_range, dt_range, xy_nbins, dt_nbins)
-    map_3D_fit = map_3D_fits(df, xy_range = xy_range, dt_range = dt_range, xy_nbins = xy_nbins, dt_nbins = dt_nbins)
+def compute_3D_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bins):
+    NaN_map = create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins)
+    map_3D_fit = fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bins)
 
     map = merge_maps(NaN_map, map_3D_fit)
     full_map = include_coordinates(map, xy_range, dt_range, xy_nbins, dt_nbins)
