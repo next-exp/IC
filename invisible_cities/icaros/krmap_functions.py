@@ -203,3 +203,25 @@ def quick_gauss_fit(data, bins, sigma = False):
     return f  
 
 
+
+def create_time_slices(df, run_number, slice_hours):
+    slice_seconds = slice_hours * 3600
+    
+    t_min = df.time.min()
+    t_max = df.time.max()
+    
+    time_edges = np.arange(t_min, t_max + slice_seconds, slice_seconds)
+    
+    dataframes = []
+
+    for i in range(len(time_edges) - 1):
+        t_start = time_edges[i]
+        t_end   = time_edges[i + 1]
+        
+        mask = (df.time >= t_start) & (df.time < t_end)
+        df_slice = df[mask]
+        dataframes.append(df_slice)
+        
+    return dataframes
+  
+
