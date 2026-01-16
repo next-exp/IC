@@ -64,8 +64,19 @@ def select_Xrays(kdst, low_xrays, high_xrays):
 
 
 def select_1S1_1S2(kdst):
-    a = kdst.groupby('event')['time'].count()
-    events_1S1_1S2 = a[a == 1].index.values
+
+    """
+    We need to select those events that have 1S1 and 1S2
+    after the previous selections, so nS1 and nS2 are no longer valid.
+
+    Group kdst by event, select one variable (time for example)
+    and count how many times it is repeated. If it apears only one time
+    per event, that event has 1S1 and 1S2.
+    """
+
+    group_kdst = kdst.groupby('event')['time'].count()
+
+    events_1S1_1S2 = group_kdst[group_kdst == 1].index.values
     df_1S1_1S2 = kdst[kdst.event.isin(events_1S1_1S2)]
 
     eff_1S1_1S2 = eff_of_selection(kdst, df_1S1_1S2, '1S1 & 1S2')
