@@ -57,11 +57,11 @@ def get_median(df):
 
 
 
-def fit_function(df, bins, size =10):
-    if len(df)<size:
-        results = med_fun(df)
+def gaussian_fit(df, ebins, min_events = 10):
+    if len(df)< min_events:
+        results = get_median(df)
 
-    counts, bin_edges = np.histogram(df.S2e, bins)
+    counts, bin_edges = np.histogram(df.S2e, ebins)
     bin_centers = shift_to_bin_centers(bin_edges)
 
     try:
