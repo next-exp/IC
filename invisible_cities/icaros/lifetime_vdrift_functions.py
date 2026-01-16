@@ -5,50 +5,30 @@ from matplotlib.patches import Circle, Rectangle
 from typing import Tuple
 from invisible_cities.core.stat_functions import poisson_sigma
 import invisible_cities.core.fit_functions as fit
+from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
 
 
 
-def select_lifetime_region(df, bins, x0, y0, r, half_size, circle=True):
+def select_lifetime_region(df, bins, x0, y0, shape, shape_size):
 
     df = df.dropna(subset=['X','Y','S2e', 'DT'])
 
-    xmin, xmax = df.X.min(), df.X.max()
-    ymin, ymax = df.Y.min(), df.Y.max()
+    if shape == 'circle':
 
-    mean, ebins, _  = stats.binned_statistic_dd(
-        (df.X, df.Y), df.S2e,
-        bins=[np.linspace(xmin, xmax, bins),
-              np.linspace(ymin, ymax, bins)],
-        statistic="mean"
-    )
+        x1, y1 = x0-shape_size, y0-shape_size
 
-    x_centers = shift_to_bin_centers(ebins[0])
-    y_centers = shift_to_bin_centers(ebins[1])
-
-    Xc,Yc = np.meshgrid(x_centers, y_centers)
-
-
-    if circle == False:
-
-        x1, y1 = x0-half_size, y0-half_size
-        mask = ((Xc >= x1) & (Xc <= x1+2*half_size) & (Yc >= y1) & (Yc <= y1+2*half_size))
-        mean_values = mean.T[mask]
-
-
-        mask_df = ((df.X >= x1) & (df.X <= x1+2*half_size) & (df.Y >= y1) &
-                   (df.Y <= y1+2*half_size))
+        mask_df = ((df.X >= x1) & (df.X <= x1+2*shape_size) & (df.Y >= y1) &
+                   (df.Y <= y1+2*shape_size))
 
         df_region = df[mask_df]
 
-    else:
-        mask = (Xc - x0)**2 + (Yc - y0)**2 <= r**2
-        mean_values = mean.T[mask]
+    if shape == 'square':
 
-        mask_df = (df.X - x0)**2 + (df.Y - y0)**2 <= r**2
+        mask_df = (df.X - x0)**2 + (df.Y - y0)**2 <= shape_size**2
         df_region = df[mask_df]
 
 
-    return df_region, mean_values
+    return df_region
 
 
 
