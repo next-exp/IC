@@ -16,16 +16,8 @@ dtrms2_cen = lambda dt:  1.0 + 0.033 * (dt-20)
 def dist_to_bandcenter(df): return df.Zrms**2 - dtrms2_cen(df.DT)
 
 
-def load_files(path_data, n):
-    filenames = []
-    for i in range(len(n)):
-        path_run =  f"/trigger1/ldc{i}"
-        path = path_data + path_run
-        file = [os.path.join(path, f) for f in os.listdir(path) if f.endswith(".h5")]
-        filenames.append(file)
-    filenames = list(itertools.chain.from_iterable(filenames))
-    return filenames
-
+def load_files(path):
+    return [str(p) for p in Path(path).rglob("*.h5")]
 
 
 def eff_of_selection(df_before, df_after, name = ""):
