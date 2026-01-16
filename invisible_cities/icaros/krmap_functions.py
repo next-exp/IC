@@ -225,3 +225,80 @@ def create_time_slices(df, run_number, slice_hours):
     return dataframes
   
 
+
+def get_time_evol(df, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtrange, low_DT, high_DT, bins_Ec, sigma = False, seed = None): 
+    
+    df_tevols = []
+    
+    for i in range(len(df)):
+        
+        mean = df[i].S2e.mean()
+        std = df[i].S2e.std()/np.sqrt(len(df[i]))
+        
+        kdst_in_region = select_lifetime_region(df[i], bins_lt, x0, y0, shape, shape_size)
+        magnitudes, uncertainties = LT_fit(kdst_in_region.DT, kdst_in_region.S2e, p0)
+        lifetime = -magnitudes[1]
+        ulifetime = uncertainties[1]
+        
+        e0 = magnitudes[0]
+        e0u = uncertainties[0]
+    
+        dv, udv = compute_drift_v(df[i].DT.to_numpy(), df[i].DT.nunique(), dtrange, seed)
+        
+        f = quick_gauss_fit(df[i].Ec_2.values, bins_Ec, sigma = sigma)
+    
+        mu = f.values[1]
+        u_mu = f.errors[1]
+    
+        sigma = f.values[2]
+        u_sigma = f.errors[2]
+    
+        R = np.sqrt(8*np.log(2))*(sigma/mu) #FWHM (krypton paper)
+        u_R = R * (u_mu**2/mu**2 + u_sigma**2/sigma**2)**0.5
+    
+        mask = (df[i].DT.values > low_DT) & (df[i].DT.values < high_DT)
+        s1e_cath = df[i][mask].S1e.values.mean()
+        us1e_cath = df[i][mask].S1e.values.std()/np.sqrt(len(df[i]))
+    
+        t_evol = {'run_number' : run_number,
+              'ts' : int(df[i].time.values[0]),
+              's2e': mean,
+              's2eu' : std,
+              'ec' : mu,
+              'ecu': u_mu,
+              'chi2_ec': f.chi2,
+              'e0': e0,
+              'e0u': e0u,
+              'lt' : lifetime ,
+              'ltu' : ulifetime,
+              'dv' : dv,
+              'dvu' : udv,
+              'resol' : R*100,
+              'resolu' : u_R,
+              's1w' : df[i].S1w.mean(),
+              's1wu' : df[i].S1w.std()/np.sqrt(len(df[i])),
+              's1e' : s1e_cath,
+              's1eu' : us1e_cath,
+              's1h': df[i].S1h.mean(),
+              's1hu':df[i].S1h.std()/np.sqrt(len(df[i])),
+              's2w':df[i].S2w.mean(),
+              's2wu': df[i].S2w.std()/np.sqrt(len(df[i])),
+              's2q': df[i].S2q.mean(),
+              's2qu': df[i].S2q.std()/np.sqrt(len(df[i])),
+              'Nsipm': df[i].Nsipm.mean(),
+              'Nsipmu': df[i].Nsipm.std()/np.sqrt(len(df[i])),
+              'Xrms': df[i].Xrms.mean(),
+              'Xrmsu': df[i].Xrms.std()/np.sqrt(len(df[i])),
+              'Yrms': df[i].Yrms.mean(),
+              'Yrmsu': df[i].Yrms.std()/np.sqrt(len(df[i])),
+              'Zrms': df[i].Zrms.mean(),
+              'Zrmsu': df[i].Zrms.std()/np.sqrt(len(df[i])),
+               }
+        
+        df_tevol = pd.DataFrame(data = t_evol, index = [0])
+        
+        df_tevols.append(df_tevol)
+        
+        
+    return pd.concat(df_tevols, ignore_index = True)
+                    
