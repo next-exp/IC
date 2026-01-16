@@ -76,7 +76,7 @@ def gaussian_fit(df, ebins, min_events = 10):
     return results
 
 
-def map_3D_fits(df, xy_range, dt_range, xy_nbins, dt_nbins):
+def fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bins):
 
     df = df.loc[:,['X', 'Y', 'DT', 'S2e']]
 
