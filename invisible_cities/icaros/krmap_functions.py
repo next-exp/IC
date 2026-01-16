@@ -2,8 +2,11 @@ import pandas as pd
 import numpy  as np
 
 from invisible_cities.core.fit_functions import expo, gauss, fit
-from invisible_cities.io.dst_io import load_dst, load_dsts
+from invisible_cities.io.dst_io import load_dst, load_dsts, df_writer
 from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
+from invisible_cities.core.stat_functions import poisson_sigma
+
+from lifetime_vdrift_functions import LT_fit, select_lifetime_region, compute_drift_v
 
 import tables            as tb
 from   scipy             import stats
