@@ -55,7 +55,7 @@ def select_diffusion_band(kdst, dtrms2_low, dtrms2_upp):
 
 def select_Xrays(kdst, low_xrays, high_xrays):
 
-    sel_xrays = (kdst.Ec >= low_xrays) & (kdst.Ec <= high_xrays)
+    sel_xrays = in_range(kdst.Ec, low_xrays, high_xrays)
     df_Xrays = kdst[sel_xrays]
 
     eff_Xrays = eff_of_selection(kdst, df_Xrays, 'remove xrays')
