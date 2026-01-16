@@ -144,9 +144,30 @@ def compute_3D_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bin
 
     return full_map
 
-#def compute_metadata():
-#    ['rmax', 'zmax', 'bin_size_z', 'bin_size_x', 'bin_size_y', 'method',
-#       'zbins', 'xbins', 'ybins', 'nbins_z', 'nbins_x', 'nbins_y', 'map_shape',
-#       'map_extent']
 
-#def save_map(map, metadata)
+
+def compute_metadata(df, krmap, xy_range, dt_range,
+                     xy_nbins, dt_nbins, norm_method):
+
+    metadata = {
+        'rmax'        : df.R.max(),
+        'zmax'        : df.Z.max(),
+        'bin_size_dt' : (dt_range[1] - dt_range[0]) / dt_nbins,
+        'bin_size_x'  : (xy_range[1] - xy_range[0]) / xy_nbins,
+        'bin_size_y'  : (xy_range[1] - xy_range[0]) / xy_nbins,
+        'method'      : norm_method,
+        'dtbins'      : np.unique(krmap.k.values).tolist(),
+        'xbins'       : np.unique(krmap.i.values).tolist(),
+        'ybins'       : np.unique(krmap.j.values).tolist(),
+        'nbins_dt'    : dt_nbins,
+        'nbins_x'     : xy_nbins,
+        'nbins_y'     : xy_nbins,
+        'map_shape'   : df.shape,
+        'map_extent'  : len(df),
+    }
+
+    metadata_str = {k: str(v) for k, v in metadata.items()} 
+    #I had to add this line so df_writer doesnt rise an error
+
+    return pd.DataFrame.from_dict(metadata_str, orient='index', columns=['value'])
+    
