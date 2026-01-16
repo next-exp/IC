@@ -17,24 +17,20 @@ import itertools
 
 """
 
-This script contains functions to compute NaN_maps, 3D_maps from kdsts and to merge them to create an 'uniform' map.
+This script contains functions to compute empty maps, 3D maps from kdsts and merge them to create an 'uniform' map.
+It also contains functions to get and store map info (metadata) and time evolution.
 
 """
 
-def create_NaN_map(xy_range, dt_range, xy_nbins, dt_nbins):
+def create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins):
     """
     - Uses every possible indices combination
     - Creates a DataFrame filled with NaNs for each (i, j, k) combination
     """
 
-    xy_bins = np.linspace(xy_range[0], xy_range[1], xy_nbins + 1)
-    dt_bins = np.linspace(dt_range[0], dt_range[1], dt_nbins + 1)
-
-    #shift to bin centers invisible_cities.core.core_functions
-
-    i_range = np.arange(0, len(xy_bins)-1)
-    j_range = np.arange(0, len(xy_bins)-1)
-    k_range = np.arange(0, len(dt_bins)-1)
+    i_range = np.arange(0, xy_nbins)
+    j_range = np.arange(0, xy_nbins)
+    k_range = np.arange(0, dt_nbins)
 
     combinations = pd.DataFrame(itertools.product(k_range, i_range, j_range),
                                 columns=['k', 'i', 'j'])
