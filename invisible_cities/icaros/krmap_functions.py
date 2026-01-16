@@ -44,8 +44,9 @@ def create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins):
     return Nan_map
 
 
-def med_fun(df):
+def get_median(df):
     sigma = (0.04/2.35)*df.S2e.median()
+    #Kr energy resolution is ~4%, so the std for S2e median would be ~0.04/2.35
 
     return pd.DataFrame({
          'nevents': len(df),
