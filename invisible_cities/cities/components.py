@@ -1573,20 +1573,16 @@ def hitc_to_df(hitc: HitCollection):
                                      , npeak    = hit .npeak
                                      , Xpeak    = hit .Xpeak
                                      , Ypeak    = hit .Ypeak
-                                     , nsipm    = hit .nsipm
                                      , X        = hit .X
                                      , Y        = hit .Y
-                                     , Xrms     = hit .Xrms
-                                     , Yrms     = hit .Yrms
                                      , Z        = hit .Z
                                      , Q        = hit .Q
                                      , E        = hit .E
-                                     , Qc       = hit .Qc
                                      , Ec       = hit .Ec
                                      , track_id = hit .track_id
                                      , Ep       = hit .Ep), index=[0]))
     df = pd.concat(hits, ignore_index=True)
-    df = df.astype(dict(event=np.int64, npeak=np.uint16, nsipm=np.uint16, Qc=np.float64, Ec=np.float64, Ep=np.float64))
+    df = df.astype(dict(event=np.int64, npeak=np.uint16, Ec=np.float64, Ep=np.float64))
     return df
 
 
