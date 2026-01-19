@@ -2,30 +2,34 @@ import numpy as np
 import pandas as pd
 from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
 import itertools
-from krmap_functions import create_NaN_map, med_fun, fit_function, map_3D_fits, merge_maps, include_coordinates
+from krmap_functions import create_NaN_map, med_fun, fit_function, map_3D_fits, merge_maps, include coordinates
 from pytest import raises
 from invisible_cities.core.core_functions import fix_random_seed
 
+"""
+En principio si dentro de los bins los eventos se distribuyen gaussianamente, la media, mediana y gaussiana deben dar igual: hacer otro test que compruebe esto
+"""
 
-def test_empty_medfun():
+
+def test_medfun_empty_input():
     empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
     result = med_fun(empty_dst)
 
     assert result.shape == (1, 5)
     assert result['nevents'].sum() == 0
     for col in ['median', 'sigma', 'median_error', 'sigma_error']:
-        assert pd.isna(result[col].iloc[0])
+        assert pd.isna(result[col].iloc[0]), f"{col} is not a nan"
 
 
 
-def test_empty_medfun_2():
+def test_medfun_empty_input_does_not_raise():
     empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
 
     #with raises(ValueError):
     med_fun(empty_dst)
 
 
-def test_fit_fun():
+def test_fitfun_does_fit_right():
     empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
     result_fit = fit_function(empty_dst, 1)
     result_fun = med_fun(empty_dst)
