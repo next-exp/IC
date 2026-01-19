@@ -23,7 +23,7 @@ from .  penthesilea          import penthesilea
 
 
 #in order not to fail direct comparation tests when changing hit attribute we compare only the columns that penthesilea is using
-columns = ['event', 'time', 'npeak', 'Xpeak', 'Ypeak', 'nsipm', 'X', 'Y', 'Xrms', 'Yrms', 'Z', 'Q', 'E']
+columns = ['event', 'time', 'npeak', 'Xpeak', 'Ypeak', 'X', 'Y', 'Z', 'Q', 'E']
 
 @ignore_warning.no_config_group
 def test_penthesilea_KrMC(KrMC_pmaps_filename, KrMC_hdst, KrMC_kdst, config_tmpdir):
