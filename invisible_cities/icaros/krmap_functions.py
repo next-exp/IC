@@ -156,20 +156,20 @@ def compute_metadata(df, krmap, xy_range, dt_range,
         'bin_size_x'  : (xy_range[1] - xy_range[0]) / xy_nbins,
         'bin_size_y'  : (xy_range[1] - xy_range[0]) / xy_nbins,
         'method'      : norm_method,
-        'dtbins'      : np.unique(krmap.k.values).tolist(),
-        'xbins'       : np.unique(krmap.i.values).tolist(),
-        'ybins'       : np.unique(krmap.j.values).tolist(),
+        'dtbins'      : [np.unique(krmap.k.values).tolist()],
+        'xbins'       : [np.unique(krmap.i.values).tolist()],
+        'ybins'       : [np.unique(krmap.j.values).tolist()],
         'nbins_dt'    : dt_nbins,
         'nbins_x'     : xy_nbins,
         'nbins_y'     : xy_nbins,
-        'map_shape'   : df.shape,
+        'map_shape'   : [df.shape],
         'map_extent'  : len(df),
     }
 
-    metadata_str = {k: str(v) for k, v in metadata.items()} 
+    #metadata_str = {k: str(v) for k, v in metadata.items()} 
     #I had to add this line so df_writer doesnt rise an error
 
-    return pd.DataFrame.from_dict(metadata_str, orient='index', columns=['value'])
+    return pd.DataFrame(metadata, index = [0]).T
     
 
 
