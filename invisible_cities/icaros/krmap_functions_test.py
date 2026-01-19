@@ -6,9 +6,6 @@ from krmap_functions import create_NaN_map, med_fun, fit_function, map_3D_fits, 
 from pytest import raises
 from invisible_cities.core.core_functions import fix_random_seed
 
-"""
-En principio si dentro de los bins los eventos se distribuyen gaussianamente, la media, mediana y gaussiana deben dar igual: hacer otro test que compruebe esto
-"""
 
 
 def test_medfun_empty_input():
@@ -65,8 +62,8 @@ def test_medfun_works_with_even_data():
 
     assert (result_med_fun == result_med_data).all()
 
-def test_medfun_odd():
-    d = {'DT': np.empty(7, dtype=int), 'x' : np.empty(7), 'y' : np.empty(7),'S2e' : [8000, 7500, 8300, 7900, 9000, 8100, 9100]}
+def test_medfun_works_with_odd_data():
+    d = {'DT': np.empty(7), 'x' : np.empty(7), 'y' : np.empty(7),'S2e' : [8000, 7500, 8300, 7900, 9000, 8100, 9100]}
     df_test = pd.DataFrame(data = d, index = range(0,7))
     S2e = df_test['S2e']
     result_med_fun = med_fun(df_test)
@@ -76,7 +73,7 @@ def test_medfun_odd():
 
 
 
-def test_fit_fun2():
+def test_fitfun_computes_right_values():
 
     with fix_random_seed(42):
         S2e_df = pd.DataFrame({
@@ -88,4 +85,7 @@ def test_fit_fun2():
     assert np.isclose(results['mu'][0], S2e_df.S2e.mean(), atol = 1)
     assert np.isclose(results['sigma'][0], S2e_df.S2e.std(), atol = 0.5)
     assert np.isclose(results['mu_error'][0], S2e_df.S2e.std()/np.sqrt(len(S2e_df)), atol = 0.1)
-    #error de sigma?
+    #error sigma?
+    
+    
+ 
