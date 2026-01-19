@@ -216,7 +216,7 @@ def dict_to_string(arg : dict,
     '''
     A function that recusively flattens nested dictionaries and converts the values to strings.
 
-    Each nested key is combined with its parent keys and associated with its respective value 
+    Each nested key is combined with its parent keys and associated with its respective value
     as a string.
 
     Parameters
@@ -1183,22 +1183,16 @@ def sipms_as_hits( detector_db : str
                                , npeak    = peak_no
                                , Xpeak    = xy_peak[0]
                                , Ypeak    = xy_peak[1]
-                               , nsipm    = 1
                                , X        = sipm_xs
                                , Y        = sipm_ys
-                               , Xrms     = 0.
-                               , Yrms     = 0.
                                , Z        = slice_z
                                , Q        = sipm_qs
                                , E        = sipm_es
-                               , Qc       = -1.
-                               , Ec       = -1.
-                               , track_id = -1
-                               , Ep       = -1.)
+                               )
                 hits.append(pd.DataFrame(sipm_hs))
 
         hits = pd.concat(hits, ignore_index=True)
-        hits = hits.astype(dict(npeak=np.uint16, nsipm=np.uint16))
+        hits = hits.astype(dict(npeak=np.uint16))
         return hits
 
     return build_hits
