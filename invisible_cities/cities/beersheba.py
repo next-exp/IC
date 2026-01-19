@@ -94,7 +94,7 @@ from typing import Optional
 from typing import Union
 
 def event_info_adder(timestamp : float, dst : pd.DataFrame):
-    return dst.assign(time=timestamp/1e3, nsipm=0, Xrms=0, Yrms=0)
+    return dst.assign(time=timestamp/1e3)
 
 
 @check_annotations
@@ -318,8 +318,8 @@ def drop_isolated( distance   : List[float],
                    redist_var : List[str],
                    nhits      : Optional[int] = None):
     """
-    Drops rogue/isolated hits (SiPMs) from hits, can be configured to remove 
-    isolated clusters below a certain threshold number of hits. 
+    Drops rogue/isolated hits (SiPMs) from hits, can be configured to remove
+    isolated clusters below a certain threshold number of hits.
 
     Parameters
     ----------
@@ -330,13 +330,13 @@ def drop_isolated( distance   : List[float],
     ----------
     drop_isolated_sensors : Function that will drop the isolated sensors.
     """
-    
+
     # distance is XY -> N
     if   len(distance) == 2:
         drop = drop_isolated_sensors(distance, redist_var)
     elif len(distance) == 3:
         if nhits is None:
-            raise TypeError(f"Applying 3-dimensional dropping of isolated hits requires parameter nhits which is missing.")    
+            raise TypeError(f"Applying 3-dimensional dropping of isolated hits requires parameter nhits which is missing.")
         else:
             drop = drop_isolated_clusters(distance, nhits, redist_var)
     else:
