@@ -4,19 +4,21 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
     
     
-def plot_t_evol(df, labels, variables, errors, ranges):
+def plot_t_evol(df, labels, variables, errors):
                      
     x_dates = pd.to_datetime(df["ts"], unit='s')
                      
-    for var, err, label, rg in zip(variables, errors, labels, ranges):
+    for var, err, label in zip(variables, errors, labels):
         y = df[var].values
         yerr = df[err].values if err in df.columns else [0] * len(df)
+        
+        rg = [y.min() - 0.1*abs(y.min()), y.max() + 0.1*abs(y.max())]
 
-        fig, ax = plt.subplots(figsize=(10, 4))
+        fig, ax = plt.subplots(figsize=(10, 3))
 
         ax.errorbar(x_dates, y, yerr=yerr, fmt='o', color='black', capsize=0,
                     markersize=2.5, label='Monitoring')
-        # ax.legend(loc='upper right')
+        #ax.legend(loc='upper right')
         ax.set_ylabel(label)
         ax.set_ylim(rg)
         ax.grid(True)
