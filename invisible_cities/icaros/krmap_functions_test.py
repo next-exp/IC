@@ -38,8 +38,8 @@ def test_fitfun_does_fit_right():
 
 
 
-def test_Nevents():
-    d = {'DT': np.empty(6, dtype=int), 'x' : np.empty(6), 'y' : np.empty(6),'S2e' : np.ones(6)}
+def test_fitfun_medfun_Nevents():
+    d = {'DT': np.empty(6), 'x' : np.empty(6), 'y' : np.empty(6),'S2e' : np.ones(6)}
     df_test = pd.DataFrame(data = d, index = range(0, 6))
     N = len(df_test)
     result_med = med_fun(df_test)
@@ -48,16 +48,15 @@ def test_Nevents():
 
 
 def test_merge_maps():
-    Nan_map_test = create_NaN_map(xy_range = (-500, 500), dt_range = (0, 1400), xy_nbins = 100, dt_nbins = 10)
+    Nan_map_test = create_empty_map(xy_range = (-500, 500), dt_range = (0, 1400), xy_nbins = 100, dt_nbins = 10)
     d = {'nevents': np.empty(6, dtype = int), 'mu' : np.empty(6), 'sigma' : np.empty(6), 'mu_error' : np.empty(6), 'sigma_error' : np.empty(6)}
     map_3D_test = pd.DataFrame(data = d, index = range(0, 6))
     assert merge_maps(Nan_map_test, map_3D_test).shape == Nan_map_test.shape
 
-test_merge_maps()
 
 
-def test_medfun_even():
-    d = {'DT': np.empty(6, dtype=int), 'x' : np.empty(6), 'y' : np.empty(6),'S2e' : [8000, 7500, 8300, 7900, 9000, 8100]}
+def test_medfun_works_with_even_data():
+    d = {'DT': np.empty(6), 'x' : np.empty(6), 'y' : np.empty(6),'S2e' : [8000, 7500, 8300, 7900, 9000, 8100]}
     df_test = pd.DataFrame(data = d, index = range(0,6))
     S2e = df_test['S2e']
     result_med_fun = med_fun(df_test)
