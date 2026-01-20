@@ -182,6 +182,8 @@ def gauss_seed(x, y, sigma_rel=0.05):
     sigma  = sigma_rel * x_max
     amp    = y_max * (2 * np.pi)**0.5 * sigma * np.diff(x)[0]
     seed   = amp, x_max, sigma
+    
+    
     return seed
 
 
@@ -226,7 +228,7 @@ def create_time_slices(df, run_number, slice_hours):
   
 
 
-def get_time_evol(df, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtrange, low_DT, high_DT, bins_Ec, sigma = False, seed = None): 
+def get_time_evol(df, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtrange, low_DT, high_DT, bins_Ec, error = False, seed = None): 
     
     df_tevols = []
     
@@ -245,7 +247,7 @@ def get_time_evol(df, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtrang
     
         dv, udv = compute_drift_v(df[i].DT.to_numpy(), df[i].DT.nunique(), dtrange, seed)
         
-        f = quick_gauss_fit(df[i].Ec_2.values, bins_Ec, sigma = sigma)
+        f = quick_gauss_fit(df[i].Ec_2.values, bins_Ec, sigma = error)
     
         mu = f.values[1]
         u_mu = f.errors[1]
@@ -274,7 +276,7 @@ def get_time_evol(df, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtrang
               'dv' : dv,
               'dvu' : udv,
               'resol' : R*100,
-              'resolu' : u_R,
+              'resolu' : u_R*100,
               's1w' : df[i].S1w.mean(),
               's1wu' : df[i].S1w.std()/np.sqrt(len(df[i])),
               's1e' : s1e_cath,
@@ -301,7 +303,8 @@ def get_time_evol(df, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtrang
         
         
     return pd.concat(df_tevols, ignore_index = True)
-                    
+
+
 
 def save_map(name, efficiencies, krmap, metadata, t_evol):
     metadata.to_hdf(name, key = 'metadata', mode = 'w')
