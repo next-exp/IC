@@ -26,7 +26,7 @@ def normalization(krmap, method, xy_params = None):
         E_reference_anode = mu_values_anode.mean()
         return E_reference_anode
     
-    if median == 'median anode':
+    if method == 'median anode':
         mu_median_anode = anode.mu
         E_median_anode = mu_median_anode.median()
         return E_median_anode
