@@ -29,7 +29,7 @@ ebins      = np.linspace(0, 15e3, 101)
 freq = lambda : plt.ylabel("frequency")
 
 
-def monitor_S1S2(df):
+def monitor_S1S2(df, run_number):
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
     
     nevents = len(df['event'].unique())
@@ -39,6 +39,7 @@ def monitor_S1S2(df):
     
     axs[0, 0].hist(df2_.nS1, bins=10, range=(0, 20),
                    density=True, histtype='step', label=
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2_.nS1.mean():.2f}\n'
                    f'std: {df2_.nS1.std():.2f}')
@@ -53,6 +54,7 @@ def monitor_S1S2(df):
 
     axs[0, 1].hist(df1_.nS2, bins=20, range=(0, 20),
                    density=True, histtype='step', label=
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df1_.nS2.mean():.2f}\n'
                    f'std: {df1_.nS2.std():.2f}')
@@ -63,6 +65,7 @@ def monitor_S1S2(df):
 
 
     axs[1, 0].hist(df.S1t, bins=100, histtype = 'step', density=True, label = 
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df.S1t.mean():.2f}\n'
                    f'std: {df.S1t.std():.2f}')
@@ -73,6 +76,7 @@ def monitor_S1S2(df):
 
 
     axs[1, 1].hist(df.S2t, bins=100, histtype = 'step', density=True, label = 
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df.S2t.mean():.2f}\n'
                    f'std: {df.S2t.std():.2f}')
@@ -96,6 +100,7 @@ def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
     
     axs[0, 0].hist(df1_.nS1, ns1bins,
                    density=True, histtype='step', label=
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df1_.nS1.mean():.2f}\n'
                    f'std: {df1_.nS1.std():.2f}')
@@ -107,6 +112,7 @@ def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
     
     axs[0, 1].hist(df1__.S1e, ebins,
                    density=True, histtype='step', label=
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df1__.S1e.mean():.2f}\n'
                    f'std: {df1__.S1e.std():.2f}')
@@ -118,6 +124,7 @@ def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
 
     axs[1, 0].hist(df1__.S1h, s1hbins,
                    density=True, histtype='step', label=
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df1__.S1h.mean():.2f}\n'
                    f'std: {df1__.S1h.std():.2f}')
@@ -129,6 +136,7 @@ def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
     
     axs[1, 1].hist(df1__.S1w, s1wbins,
                    density=True, histtype='step', label=
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df1__.S1w.mean():.2f}\n'
                    f'std: {df1__.S1w.std():.2f}')
@@ -141,7 +149,7 @@ def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
 
 
 
-def monitor_S2(df, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
+def monitor_S2(df, run_number, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
     fig, axs = plt.subplots(3, 2, figsize=(15, 12))
     
     nevents = len(df['event'].unique())
@@ -151,6 +159,7 @@ def monitor_S2(df, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
     df2_ = df_.groupby('event').mean()
     
     axs[0, 0].hist(df2.nS2, ns2bins, histtype = 'step', density=True, label = 
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2.qmax.mean():.2f}\n'
                    f'std: {df2.qmax.std():.2f}')
@@ -161,6 +170,7 @@ def monitor_S2(df, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
     
     axs[0, 1].hist(df2_.S2e, ebins,
                    density=True, histtype='step', label=
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2_.S2e.mean():.2f}\n'
                    f'std: {df2_.S2e.std():.2f}')
@@ -172,6 +182,7 @@ def monitor_S2(df, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
 
     axs[1, 0].hist(df2_.S2h, s2hbins,
                    density=True, histtype='step', label=
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2_.S2h.mean():.2f}\n'
                    f'std: {df2_.S2h.std():.2f}')
@@ -182,6 +193,7 @@ def monitor_S2(df, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
 
 
     axs[1, 1].hist(df2_.S2q, s2qbins, histtype = 'step', density=True, label = 
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2_.S2q.mean():.2f}\n'
                    f'std: {df2_.S2q.std():.2f}')
@@ -192,6 +204,7 @@ def monitor_S2(df, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
 
 
     axs[2, 0].hist(df2_.qmax, qmaxbins, histtype = 'step', density=True, label = 
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2_.qmax.mean():.2f}\n'
                    f'std: {df2_.qmax.std():.2f}')
@@ -202,6 +215,7 @@ def monitor_S2(df, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
     
     
     axs[2, 1].hist(df2_.S2w, s2wbins , histtype = 'step', density=True, label = 
+                   f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2_.qmax.mean():.2f}\n'
                    f'std: {df2_.qmax.std():.2f}')
@@ -432,7 +446,7 @@ def plot_lifetime_fit(df): #df should be kdst_in_region or the fit won't work
     
     magnitudes, uncertainties = LT_fit(df.DT, df. S2e, p0 = [8000, -30000]);
     plt.xlabel(r"DT ($\mu$s)"); plt.ylabel("S2e (pe)");
-    plt.hist2d(df.DT, df.S2e,(50, 50), cmin = 1e-1);
+    plt.hist2d(df.DT, df.S2e,(50, 50), cmin = 1e-3);
 
     const = magnitudes[0]
     lifetime = - magnitudes[1]
@@ -440,7 +454,7 @@ def plot_lifetime_fit(df): #df should be kdst_in_region or the fit won't work
     
     plt.plot(dt, const*np.exp(-dt/lifetime), color = 'red');
     plt.errorbar(dt, e, yerr = se, fmt = '.');
-    #plt.ylim(6000, 8500);
+    plt.ylim(6000, 10000);
      
     return const, lifetime, (uncertainties)
 
