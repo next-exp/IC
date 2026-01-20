@@ -41,6 +41,10 @@ def test_method_norm():
     assert normalization(map_test, 'mean region anode', -100, 100, -100, 100) == map_test.loc[(map_test.k == 0) & region_mask,'mu'].mean()
     assert normalization(map_test, 'mean region chamber', -100, 100, -100, 100) == map_test.loc[region_mask,'mu'].mean()
     
+    assert normalization(map_test, 'median chamber', None, None, None, None) == 4647.5
+    assert normalization(map_test, 'median anode', None, None, None, None) == 4400.0
+    assert normalization(map_test, 'median region anode', -100, 100, -100, 100) == map_test.loc[(map_test.k == 0) & region_mask, 'mu'].median()
+    assert normalization(map_test, 'median region chamber', -100, 100, -100, 100) == map_test.loc[region_mask, 'mu'].median()
     
     
 def test_apply_3Dmap():
