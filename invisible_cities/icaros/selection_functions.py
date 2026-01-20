@@ -127,7 +127,7 @@ def select_nsipm(kdst, low_nsipm, high_nsipm):
     return df_nsipm, eff_nsipm
 
 
-def apply_selections(kdst, run_number,  dtrms2_low, dtrms2_upp, low_xrays, high_xrays, low_S2t, high_S2t, R_max, low_DT, high_DT, low_nsipm, high_nsipm):
+def apply_selections(kdst, dtrms2_low, dtrms2_upp, low_xrays, high_xrays, low_S2t, high_S2t, R_max, low_DT, high_DT, low_nsipm, high_nsipm):
 
     df, eff_DTband = select_diffusion_band(kdst, dtrms2_low, dtrms2_upp)
 
