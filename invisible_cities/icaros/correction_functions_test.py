@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from correction_functions import normalization
+from correction_functions import normalization, apply_3Dmap
 
 
 def test_method_norm():
@@ -10,10 +10,9 @@ def test_method_norm():
     i_vals = np.arange(12)
     j_vals = np.arange(12)
 
-    k, i, j = np.meshgrid(k_vals, i_vals, j_vals, indexing='ij')
-    k = k.ravel()
-    i = i.ravel()
-    j = j.ravel()
+
+    k, i, j = map(np.ravel,
+                  np.meshgrid(k_vals, i_vals, j_vals, indexing= 'ij'))
 
     x = i * 25
     y = j * 25
