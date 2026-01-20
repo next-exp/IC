@@ -6,6 +6,8 @@ from scipy.interpolate import griddata
 def normalization(krmap, method, xy_params = None):
 
     mu_values = krmap.mu.dropna()
+    
+    anode = krmap[krmap.k == 0]
 
     if method == 'max':
         E_reference_max = mu_values.max()
@@ -14,16 +16,25 @@ def normalization(krmap, method, xy_params = None):
     if method == 'mean chamber':
         E_reference_chamber = mu_values.mean()
         return E_reference_chamber
-
+    
+    if method == 'median chamber':
+        E_median_chamber = mu_values.median()
+        return E_median_chamber
+    
     if method == 'mean anode':
-        mu_values_anode = krmap[krmap.k == 0].mu
+        mu_values_anode = anode.mu
         E_reference_anode = mu_values_anode.mean()
         return E_reference_anode
-
+    
+    if median == 'median anode':
+        mu_median_anode = anode.mu
+        E_median_anode = mu_median_anode.median()
+        return E_median_anode
+        
     mask_region = (krmap['x'] <= xy_params['x_high']) & (krmap['x'] >= xy_params['x_low']) & (krmap['y'] <= xy_params['y_high']) & (krmap['y'] >= xy_params['y_low'])
 
     if method == 'mean region anode':
-        region = krmap[krmap.k == 0][mask_region]
+        region = anode[mask_region]
         E_reference_slice_anode = region.mu.mean()
         return E_reference_slice_anode
 
@@ -31,6 +42,16 @@ def normalization(krmap, method, xy_params = None):
         region = krmap[mask_region]
         E_reference_region = region.mu.mean()
         return E_reference_region
+    
+    if method == 'median region anode':
+        region = anode[mask_region]
+        E_median_region_anode = region.mu.median()
+        return E_median_region_anode
+    
+    if method == 'median region':
+        region = krmap[mask_region]
+        E_median_region = region.mu.median()
+        return E_median_region
 
 
 def apply_3Dmap(krmap, norm_method, dt, x, y, E, xy_params = None, keV = False):
