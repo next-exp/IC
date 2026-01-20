@@ -35,6 +35,10 @@ def eff_of_selection(df_before, df_after, name = ""):
 
 def apply_correctionmap(kdst, map3D, norm_method, xy_params, keV = True):
     
+    """
+    xy_params must be a dictionary: {'x_high': , 'x_low': , 'y_high': , 'y_low': }
+    """
+    
     corrected_energy = apply_3Dmap(map3D, norm_method, kdst.DT, kdst.X, kdst.Y, kdst.S2e, xy_params = xy_params, keV = keV)
     
     col_name = 'Ec' if 'Ec' not in kdst.columns else 'Ec_2'
