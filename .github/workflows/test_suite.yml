@@ -26,7 +26,10 @@ jobs:
     #   if: runner.os == 'macOS'
 
     - name: HACK! remove default conda
-      run: sudo unlink /usr/bin/conda
+      run: |
+        set +e  # allow this step to fail for differing architectures/missing condas 
+        sudo unlink /usr/bin/conda
+        set -e  # reset
 
     - name: Install IC
       run: |
