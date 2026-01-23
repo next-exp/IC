@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy  as np
 from scipy.interpolate import griddata
+from invisible_cities.core.core_functions import in_range
 
 
 def normalization(krmap, method, xy_params = None):
@@ -29,7 +30,8 @@ def normalization(krmap, method, xy_params = None):
         E_median_anode = anode.mu.median()
         return E_median_anode
 
-    mask_region = (krmap['x'] <= xy_params['x_high']) & (krmap['x'] >= xy_params['x_low']) & (krmap['y'] <= xy_params['y_high']) & (krmap['y'] >= xy_params['y_low'])
+    mask_region = ( in_range(krmap.x, xy_params['x_low'], xy_params['x_high']) &
+                    in_range(krmap.y, xy_params['y_low'], xy_params['y_high']) )
     krmap = krmap[mask_region]
 
     if method == 'mean region chamber':
@@ -48,7 +50,6 @@ def normalization(krmap, method, xy_params = None):
     if method == 'mean region anode':
         E_reference_slice_anode = anode.mu.mean()
         return E_reference_slice_anode
-
 
     if method == 'median region anode':
         E_median_region_anode = anode.mu.median()
