@@ -59,7 +59,7 @@ def get_median(df):
 
 def gaussian_fit(df, ebins, min_events = 10):
     if len(df)< min_events:
-        results = get_median(df)
+        return get_median(df)
 
     counts, bin_edges = np.histogram(df.S2e, ebins)
     bin_centers = shift_to_bin_centers(bin_edges)
@@ -166,11 +166,11 @@ def compute_metadata(df, krmap, xy_range, dt_range,
         'map_extent'  : len(df),
     }
 
-    #metadata_str = {k: str(v) for k, v in metadata.items()} 
+    #metadata_str = {k: str(v) for k, v in metadata.items()}
     #I had to add this line so df_writer doesnt rise an error
 
     return pd.DataFrame(metadata, index = [0]).T
-    
+
 
 
 def gauss_seed(x, y, sigma_rel=0.05):
@@ -182,8 +182,8 @@ def gauss_seed(x, y, sigma_rel=0.05):
     sigma  = sigma_rel * x_max
     amp    = y_max * (2 * np.pi)**0.5 * sigma * np.diff(x)[0]
     seed   = amp, x_max, sigma
-    
-    
+
+
     return seed
 
 
@@ -195,73 +195,73 @@ def quick_gauss_fit(data, bins, sigma = False):
     y, x  = np.histogram(data, bins)
     x     = shift_to_bin_centers(x)
     seed  = gauss_seed(x, y)
-    
+
     if sigma:
         sigma = poisson_sigma(y)
         f     = fit(gauss, x, y, seed, sigma = sigma)
     else:
         f     = fit(gauss, x, y, seed)
     assert np.all(f.values != seed)
-    return f  
+    return f
 
 
 
 def create_time_slices(df, run_number, slice_hours):
     slice_seconds = slice_hours * 3600
-    
+
     t_min = df.time.min()
     t_max = df.time.max()
-    
+
     time_edges = np.arange(t_min, t_max + slice_seconds, slice_seconds)
-    
+
     dataframes = []
 
     for i in range(len(time_edges) - 1):
         t_start = time_edges[i]
         t_end   = time_edges[i + 1]
-        
+
         mask = (df.time >= t_start) & (df.time < t_end)
         df_slice = df[mask]
         dataframes.append(df_slice)
-        
+
     return dataframes
-  
 
 
-def get_time_evol(df, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtrange, low_DT, high_DT, bins_Ec, error = False, seed = None): 
-    
+
+def get_time_evol(df, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtrange, low_DT, high_DT, bins_Ec, error = False, seed = None):
+
     df_tevols = []
-    
+
     for i in range(len(df)):
-        
+
         mean = df[i].S2e.mean()
         std = df[i].S2e.std()/np.sqrt(len(df[i]))
-        
+
         kdst_in_region = select_lifetime_region(df[i], bins_lt, x0, y0, shape, shape_size)
         magnitudes, uncertainties = LT_fit(kdst_in_region.DT, kdst_in_region.S2e, p0)
         lifetime = -magnitudes[1]
         ulifetime = uncertainties[1]
-        
+
         e0 = magnitudes[0]
         e0u = uncertainties[0]
-    
+
         dv, udv = compute_drift_v(df[i].DT.to_numpy(), df[i].DT.nunique(), dtrange, seed)
-        
+
         f = quick_gauss_fit(df[i].Ec_2.values, bins_Ec, sigma = error)
-    
+
         mu = f.values[1]
         u_mu = f.errors[1]
-    
+
         sigma = f.values[2]
         u_sigma = f.errors[2]
-    
+
         R = np.sqrt(8*np.log(2))*(sigma/mu) #FWHM (krypton paper)
         u_R = R * (u_mu**2/mu**2 + u_sigma**2/sigma**2)**0.5
-    
+
         mask = (df[i].DT.values > low_DT) & (df[i].DT.values < high_DT)
         s1e_cath = df[i][mask].S1e.values.mean()
         us1e_cath = df[i][mask].S1e.values.std()/np.sqrt(len(df[i]))
-    
+
         t_evol = {'run_number' : run_number,
               'ts' : int(df[i].time.values[0]),
               's2e': mean,
@@ -296,24 +296,21 @@ def get_time_evol(df, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtrang
               'Zrms': df[i].Zrms.mean(),
               'Zrmsu': df[i].Zrms.std()/np.sqrt(len(df[i])),
                }
-        
+
         df_tevol = pd.DataFrame(data = t_evol, index = [0])
-        
+
         df_tevols.append(df_tevol)
-        
-        
+
+
     return pd.concat(df_tevols, ignore_index = True)
 
 
 
 def save_map(name, efficiencies, krmap, metadata, t_evol):
     metadata.to_hdf(name, key = 'metadata', mode = 'w')
-    
+
     with tb.open_file(name, "a") as file:
         df_writer(file, efficiencies, group_name = 'data', table_name = 'selection_efficiencies')
         df_writer(file, krmap, group_name = 'krmap', table_name = 'krmap')
         #df_writer(file, metadata, group_name = 'krmap_info', table_name = 'metadata')
         df_writer(file, t_evol, group_name = 't_evol', table_name = 't_evol')
-        
-
-        
