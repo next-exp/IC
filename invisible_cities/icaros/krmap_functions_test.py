@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
+from invisible_cities.core.core_functions import in_range, shift_to_bin_centers, fix_random_seed
 import itertools
 from krmap_functions import create_empty_map, get_median, gaussian_fit, fit_map, merge_maps, include_coordinates, gauss_seed, quick_gauss_fit, create_time_slices, get_time_evol, save_map
 from pytest import raises
-from invisible_cities.core.core_functions import fix_random_seed
+from invisible_cities.corx1e.fit_functions import fit, gauss
 
 
 
