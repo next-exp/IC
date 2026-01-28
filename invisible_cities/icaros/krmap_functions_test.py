@@ -92,3 +92,20 @@ def test_gaussianfit_computes_right_values(): #If the events follow a gaussian d
     
     
  
+
+def test_gauss_seed():
+
+    x = np.linspace(1000, 1500, 100)
+
+    amp_true = 1000
+    mu_true = 1250
+    sigma_true = 50
+
+    y =gauss(x, amp_true, mu_true, sigma_true)
+    amp_seed, x_max_seed, sigma_seed = gauss_seed(x, y)
+
+
+    assert np.isclose(amp_seed, amp_true, atol = 5)
+    assert np.isclose(x_max_seed, mu_true, atol = 1)
+    assert np.isclose(sigma_seed, sigma_true, atol = 0.5)
+
