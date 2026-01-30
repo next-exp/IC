@@ -63,8 +63,7 @@ def sigmoid(x          : np.array,
 
 
 def compute_drift_v(dtdata   : np.array,
-                    nbins    : int,
-                    dtrange  : Tuple[float, float],
+                    dtbins   : np.array,
                     seed     : Tuple[float, float, float, float]):
     '''
     Computes the drift velocity for a given distribution
@@ -73,10 +72,8 @@ def compute_drift_v(dtdata   : np.array,
     ----------
     dtdata: array_like
         Values of DT coordinate.
-    nbins: int (optional)
-        The number of bins in the z coordinate for the binned fit
-    dtrange: length-2 tuple (optional)
-        Fix the range in DT.
+    dtbins: array_like
+        Binning for drift velocity computation
     seed: length-4 tuple (optional)
         Seed for the fit.
     detector: string (optional)
@@ -88,14 +85,15 @@ def compute_drift_v(dtdata   : np.array,
     dvu: float
         Drift velocity uncertainty.
     '''
-    y, x = np.histogram(dtdata, nbins, dtrange)
+    y, x = np.histogram(dtdata, dtbins)
+
     x    = shift_to_bin_centers(x)
-    if seed is None: seed = np.max(y), np.mean(dtrange), 0.5, np.min(y) # CHANGE: dtrange should be established from db
+    if seed is None: seed = np.max(y), np.mean(dtbins), 0.5, np.min(y) # CHANGE: dtbins should be established from db
     # At the moment there is not NEXT-100 DB so this won't work for that geometry
     z_cathode = 1187.37
     #print(seed)
     try:
-        f   = fit.fit(sigmoid, x, y, seed, sigma = poisson_sigma(y), fit_range = dtrange)
+        f   = fit.fit(sigmoid, x, y, seed, sigma = poisson_sigma(y))
         par = f.values
         err = f.errors
         dv  = (z_cathode + 10/2)/par[1]
