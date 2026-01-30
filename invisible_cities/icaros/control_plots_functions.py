@@ -85,18 +85,18 @@ def monitor_S1S2(df, run_number):
     axs[1, 1].legend()
 
     fig.tight_layout()
-    
-    
-    
+
+
+
 def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
-    
+
     nevents = len(df['event'].unique())
-    
+
     df1 = df.groupby("event s2_peak".split()).first()
     df1_ = df1.groupby('event').count()
     df1__ = df1.groupby('event').mean()
-    
+
     axs[0, 0].hist(df1_.nS1, ns1bins,
                    density=True, histtype='step', label=
                    f'run: {run_number}\n'
@@ -107,8 +107,8 @@ def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
     axs[0, 0].set_title('nS1 distribution')
     axs[0, 0].grid(True)
     axs[0, 0].legend()
-  
-    
+
+
     axs[0, 1].hist(df1__.S1e, ebins,
                    density=True, histtype='step', label=
                    f'run: {run_number}\n'
@@ -131,8 +131,8 @@ def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
     axs[1, 0].set_title('S1h distribution')
     axs[1, 0].grid(True)
     axs[1, 0].legend()
-    
-    
+
+
     axs[1, 1].hist(df1__.S1w, s1wbins,
                    density=True, histtype='step', label=
                    f'run: {run_number}\n'
@@ -143,21 +143,21 @@ def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
     axs[1, 1].set_title('S1w distribution')
     axs[1, 1].grid(True)
     axs[1, 1].legend()
-    
+
     fig.tight_layout();
 
 
 
 def monitor_S2(df, run_number, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
     fig, axs = plt.subplots(3, 2, figsize=(15, 12))
-    
+
     nevents = len(df['event'].unique())
-    
+
     df_ = df.groupby("event s1_peak".split()).first()
     df2 = df_.groupby('event').count()
     df2_ = df_.groupby('event').mean()
-    
-    axs[0, 0].hist(df2.nS2, ns2bins, histtype = 'step', density=True, label = 
+
+    axs[0, 0].hist(df2.nS2, ns2bins, histtype = 'step', density=True, label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2.qmax.mean():.2f}\n'
@@ -166,7 +166,7 @@ def monitor_S2(df, run_number, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbi
     axs[0, 0].set_title('nS2 distribution')
     axs[0, 0].grid(True)
     axs[0, 0].legend()
-    
+
     axs[0, 1].hist(df2_.S2e, ebins,
                    density=True, histtype='step', label=
                    f'run: {run_number}\n'
@@ -191,7 +191,7 @@ def monitor_S2(df, run_number, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbi
     axs[1, 0].legend()
 
 
-    axs[1, 1].hist(df2_.S2q, s2qbins, histtype = 'step', density=True, label = 
+    axs[1, 1].hist(df2_.S2q, s2qbins, histtype = 'step', density=True, label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2_.S2q.mean():.2f}\n'
@@ -202,7 +202,7 @@ def monitor_S2(df, run_number, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbi
     axs[1, 1].legend()
 
 
-    axs[2, 0].hist(df2_.qmax, qmaxbins, histtype = 'step', density=True, label = 
+    axs[2, 0].hist(df2_.qmax, qmaxbins, histtype = 'step', density=True, label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2_.qmax.mean():.2f}\n'
@@ -211,9 +211,9 @@ def monitor_S2(df, run_number, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbi
     axs[2, 0].set_title('Q max distribution')
     axs[2, 0].grid(True)
     axs[2, 0].legend()
-    
-    
-    axs[2, 1].hist(df2_.S2w, s2wbins , histtype = 'step', density=True, label = 
+
+
+    axs[2, 1].hist(df2_.S2w, s2wbins , histtype = 'step', density=True, label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df2_.qmax.mean():.2f}\n'
@@ -222,17 +222,17 @@ def monitor_S2(df, run_number, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbi
     axs[2, 1].set_title('S2w distribution')
     axs[2, 1].grid(True)
     axs[2, 1].legend()
-    
+
     fig.tight_layout();
-    
-    
-    
+
+
+
 
 def monitor_dtime(df, dtrms2_low, dtrms2_upp, dtrms2_cen):
-    
+
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
-    
-    axs[0,0].hist2d(df.DT, df.Zrms, (dtbins, dtrmsbins), cmin = 1); 
+
+    axs[0,0].hist2d(df.DT, df.Zrms, (dtbins, dtrmsbins), cmin = 1);
     axs[0,0].set_xlabel("Drift time ($\mu$s)"); axs[0,0].set_ylabel("DT$_{rms}$ ($\mu$s)"); axs[0,0].set_xlim(0, 1300)
 
     axs[0,1].hist2d(df.DT, df.Zrms**2, (dtbins, dtrms2bins));
@@ -240,158 +240,70 @@ def monitor_dtime(df, dtrms2_low, dtrms2_upp, dtrms2_cen):
     axs[0,1].plot(df.DT, dtrms2_upp(df.DT), ".r", ms=2);
     axs[0,1].plot(df.DT, dtrms2_cen(df.DT), '.g', ms = 2);
     axs[0,1].set_xlabel("Drift time ($\mu$s)"); axs[0,1].set_ylabel("DT$_{rms}^2$ ($\mu$s)"); axs[0,1].set_xlim(0, 1300)
- 
-    axs[1,0].hist(df.DT, dtbins, histtype = 'step'); 
+
+    axs[1,0].hist(df.DT, dtbins, histtype = 'step');
     axs[1,0].set_xlabel("Drift time ($\mu$s)");
     axs[1,0].grid(True)
 
     axs[1,1].hist(df.Zrms**2, 100, (0, 40), histtype = 'step');
-    axs[1,1].set_xlabel("DT$_{rms}^2$ ($\mu$s)"); 
+    axs[1,1].set_xlabel("DT$_{rms}^2$ ($\mu$s)");
     axs[1,1].grid(True)
 
     fig.tight_layout();
 
-    
+
 def monitor_lifetime(df, S2erange, dtbins, ebins):
-    
+
     fig, axs = plt.subplots(1, 2, figsize = (15, 5))
-    
-    axs[0].hist2d(df.DT, df.S2e, (dtbins, ebins)); 
+
+    axs[0].hist2d(df.DT, df.S2e, (dtbins, ebins));
     axs[0].set_xlabel(r"DT ($\mu$s)"); axs[0].set_ylabel("S2e (pe)"); axs[0].set_xlim(0, 1500)
-        
-        
+
+
     axs[1].scatter(df.DT, df.S2e, alpha = 0.01); axs[1].set_xlim(0, 1500);
     axs[1].set_ylim(*S2erange);
     axs[1].set_xlabel(r"DT ($\mu$s)");
     axs[1].set_ylabel("S2e (pe)");
 
     fig.tight_layout();
-    
-    
-    
+
+
+
 def monitor_kr_distribution(df, bins, dtr2_bins):
 
-    sel = in_range(df.S2e, 7.5e3, 9.5e3)
-    sel_DT = in_range(df.DT, 20, 1350)
+    sel = in_range(df.S2e, 7.5e3, 9.5e3) & in_range(df.DT, 20, 1350)
 
-    DT = df.DT[sel_DT]
-    R2 = df.X[sel_DT]**2 + df.Y[sel_DT]**2
-    
-    DT = DT[sel].dropna()
-    R2 = R2[sel].dropna()
-    
+
+    DT = (df.DT[sel]).dropna()
+    R2 = (df.X[sel]**2 + df.Y[sel]**2).dropna()
+
+
     fig, axs = plt.subplots(1, 2, figsize = (15, 5))
-    
-    axs[0].hist(R2, bins, histtype = 'step', density = True); 
+
+    axs[0].hist(R2, bins, histtype = 'step', density = True);
     axs[0].set_xlabel("R$^2$ (mm$^2$)"); freq();
     axs[0].grid(True)
 
 
     axs[1].hist2d(DT, R2, dtr2_bins);
-    axs[1].set_xlabel("DT ($\mu$s)"); 
+    axs[1].set_xlabel("DT ($\mu$s)");
     axs[1].set_ylabel("R$^2$ (mm$^2$)");
 
-    
-        
-    
-def monitor_S1_multipleruns(run_data, ebins, ns1bins, s1hbins, s1wbins):
-    fig, axs = plt.subplots(2, 2, figsize = (10, 8))
-    
-    for run, df in run_data.items():
-        try:
-            df_ = df.groupby("event s2_peak".split()).first()
-            df1 = df_.groupby("event").mean()
-            df1_ = df_.groupby("event").count()                 
-            
-            axs[0,0].hist(df1_.nS1, ns1bins, histtype = 'step', density = True, label = f'{run}') 
-            axs[0,0].set_xlabel('Number of S1');
-            axs[0,0].legend();
-            axs[0,0].grid(True); freq();
 
-            axs[0,1].hist(df1.S1e, ebins, histtype = 'step', density = True, label = f'{run}'); 
-            axs[0,1].set_xlabel('S1e (pe)'); freq();
-            axs[0,1].legend();
-            axs[0,1].grid(True);
 
-            axs[1,0].hist(df1.S1h, s1hbins, histtype = 'step', density = True, label = f'{run}'); 
-            axs[1,0].set_xlabel('S1h (pe)'); freq();
-            axs[1,0].legend();
-            axs[1,0].grid(True);
-        
-            axs[1,1].hist(df1.S1w, s1wbins, histtype = 'step',  density = True, label = f'{run}'); 
-            axs[1,1].set_xlabel('S1w (pe)'); freq();
-            axs[1,1].legend();
-            axs[1,1].grid(True);          
-                
-        except Exception as e:
-            print(f"Error run {run}: {e}")
-            continue
-
-    plt.tight_layout()   
-    
-    
-       
-    
-def monitor_S2_multipleruns(run_data, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
-    fig, axs = plt.subplots(3, 2, figsize = (10, 8))
-    
-    for run, df in run_data.items():
-        try:
-            
-            df_ = df.groupby("event s1_peak".split()).first()
-            df2 = df_.groupby("event").mean()
-            df2_ = df_.groupby("event").count()                 
-            
-            axs[0,0].hist(df2_.nS2, ns2bins, histtype = 'step', density = True, label = f'{run}') 
-            axs[0,0].set_xlabel('Number of S2');
-            axs[0,0].legend();
-            axs[0,0].grid(True); freq();
-
-            axs[0,1].hist(df2.S2e, ebins, histtype = 'step', density = True, label = f'{run}'); 
-            axs[0,1].set_xlabel('S2e (pe)'); freq();
-            axs[0,1].legend();
-            axs[0,1].grid(True);
-
-            axs[1,0].hist(df2.S2h, s2hbins, histtype = 'step', density = True, label = f'{run}'); 
-            axs[1,0].set_xlabel('S2h (pe)'); freq();
-            axs[1,0].legend();
-            axs[1,0].grid(True);
-        
-            axs[1,1].hist(df2.S2q, s2qbins, range = (0, 100), histtype = 'step',  density = True, label = f'{run}'); 
-            axs[1,1].set_xlabel('S2q (pe)'); freq();
-            axs[1,1].legend();
-            axs[1,1].grid(True);
-            
-            axs[2,0].hist(df2.qmax, qmaxbins, range = (0, 1e3), histtype = 'step',  density = True, label = f'{run}'); 
-            axs[2,0].set_xlabel('qmax (pe)'); freq();
-            axs[2,0].legend();
-            axs[2,0].grid(True);
-                             
-            axs[2,1].hist(df2.S2w, s2wbins, histtype = 'step',  density = True, label = f'{run}'); 
-            axs[2,1].set_xlabel('S2w (pe)'); freq();
-            axs[2,1].legend();
-            axs[2,1].grid(True);
-            
-                
-        except Exception as e:
-            print(f"Error run {run}: {e}")
-            continue
-
-    plt.tight_layout()
-    
 
 def hist2D(df, run, statistic):
 
-    df = df.dropna(subset=['X', 'Y'])  
-     
+    df = df.dropna(subset=['X', 'Y'])
+
     bins  = 100
-    
+
     xrange = (df.X.min(), df.X.max())
     yrange = (df.Y.min(), df.Y.max())
 
-    
+
     values, ebins, _  = stats.binned_statistic_dd((
-                      df.X, df.Y), df.S2e, 
+                      df.X, df.Y), df.S2e,
                       bins=[np.linspace(*xrange, bins), np.linspace(*yrange, bins)], statistic = statistic
                       )
 
@@ -400,15 +312,15 @@ def hist2D(df, run, statistic):
     x_grid = mesh[0].ravel()
     y_grid = mesh[1].ravel()
     weight = values.T.ravel()
-    
+
     plt.hist2d(x_grid, y_grid, bins = ebins, weights = weight, cmin = 0.01);
     c = plt.colorbar();
     if statistic == 'mean':
         c.ax.set_ylabel('Mean S2e (pe)');
-    
+
     if statistic == 'counts':
         c.ax.set_ylabel('Average number of events');
-        
+
     plt.xlim(-500, 500);
     plt.ylim(-500, 500);
     plt.xlabel("X (mm)"); plt.ylabel("Y (mm)"); plt.title(f'Run {run}')
