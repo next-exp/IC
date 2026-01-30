@@ -132,11 +132,53 @@ def test_apply_3Dmap_same_values():
         'mu': mu
     })
 
+
     map_points = map_test['dt x y'.split()].values
+    norm = normalization(map_test,  NormMethod.max, xy_params = None)
 
-    E_interpolated_data = griddata(map_points, map_test.mu.values, data_points_test, method = 'nearest')
+    data_points = np.stack([dt, x, y], axis = 1)
+    E_interpolated_data = griddata(map_points, map_test.mu.values, data_points, method = 'nearest')
+    correction_factor = norm/E_interpolated_data
 
-    Ec = apply_3Dmap(map_test, norm_method = 'max', dt, x, y, E, keV = True)
 
-    assert len(Ec) == len(dt)
-    assert len(E_interpolated_data) == len(data_points_test)
+    map_test.loc[0, 'mu'] = 1600
+    map_points2 = map_test['dt x y'.split()].values
+    norm2 = normalization(map_test, NormMethod.max, xy_params = None)
+
+    E_interpolated_data2 = griddata(map_points2, map_test.mu.values, data_points, method = 'nearest')
+
+    correction_factor2 = norm2/E_interpolated_data2
+
+    assert (correction_factor == 1).all()
+    assert (correction_factor2[1:] == 2).all()
+
+
+
+def test_apply_correctionmap_shape():
+    x = np.linspace(0, 10, 11)
+
+    kdst = pd.DataFrame({'X':x,
+                         'Y':-x,
+                         'DT': np.linspace(20, 1000, 11),
+                         'S2e': np.linspace(7500, 8500, 11)
+                         })
+
+    kdst_test = kdst.copy()
+
+    map_3D = pd.DataFrame({'k':np.array([0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2]),
+                           'i':np.array([0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1]),
+                           'j':np.array([0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1]),
+                           'nevents': np.linspace(10000, 12000, 11, dtype=int),
+                           'mu' : np.linspace(7900, 8100, 11),
+                           'sigma' : np.linspace(10, 50, 11),
+                           'mu_error' : np.linspace(0, 10, 11),
+                           'sigma_error' : np.linspace(0, 2, 11),
+                           'dt': np.linspace(20, 1000, 11),
+                           'x': x,
+                           'y': -x
+                           })
+
+    kdst_correct = apply_correctionmap(kdst, map_3D, norm_method = NormMethod.max, xy_params = None, col_name='Ec')
+
+    assert kdst_correct.shape[1] ==  kdst_test.shape[1] + 1
+    assert ((kdst_test == kdst_correct.drop(columns = 'Ec')).all()).all()
