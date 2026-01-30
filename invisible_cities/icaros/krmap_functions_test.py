@@ -91,25 +91,68 @@ def test_get_median_works_with_odd_data():
 
 
 
-def test_gaussianfit_computes_right_values(): #If the events follow a gaussian distribution, the median, mean and fit mean values should be the same
+
+def test_get_median_values():
+    S2e_test1 = pd.DataFrame([1, 2, 3],
+                             columns = ['S2e'])
+
+    S2e_test2 = pd.DataFrame([1, 1, 1, 1,
+                              2, 2, 2, 2,
+                              3, 3, 3, 3],
+                             columns = ['S2e'])
+
+    map_test1  = get_median(S2e_test1)
+    map_test2  = get_median(S2e_test2)
+
+    ratio_error_values  = map_test1['mu_error'].values / map_test2['mu_error'].values
+    ratio_errors = ((map_test1['sigma']/np.sqrt(len(S2e_test1)))/(map_test2['sigma']/np.sqrt(len(S2e_test2)))).values
+
+    assert map_test1['mu'].values == map_test2['mu'].values
+    assert map_test1['sigma'].values == map_test2['sigma'].values
+    assert ratio_error_values == ratio_errors
+
+
+
+
+def test_gaussian_fit_few_entries():
+    empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
+    result_fit = gaussian_fit(empty_dst, 1, min_events = 10)
+    result_fun = get_median(empty_dst)['mu']
+
+    assert np.allclose(result_fit.mu.values, result_fun.values, equal_nan=True)
+
+
+
+
+def test_gaussian_fit_get_median_Nevents():
+    d = {'DT': np.empty(6), 'x' : np.empty(6), 'y' : np.empty(6),'S2e' : np.ones(6)}
+    df_test = pd.DataFrame(data = d, index = range(0, 6))
+    N = len(df_test)
+    result_med = get_median(df_test)
+    result_fit = gaussian_fit(df_test, ebins = 6)
+    assert result_med['nevents'].iloc[0] == N
+    assert result_fit['nevents'].iloc[0] == N
+
+
+
+
+
+def test_gaussianfit_computes_right_values():
 
     with fix_random_seed(42):
         S2e_df = pd.DataFrame({
             'S2e': np.random.normal(loc = 8000, scale = 10.0, size = 10000)
         })
 
-    results = gaussian_fit(S2e_df, bins = 50)
-    results_median = get_median(S2e_df)
+    results = gaussian_fit(S2e_df, ebins = 50)
 
-    assert np.isclose(results['mu'][0], S2e_df.S2e.mean(), atol = 1)
-    assert np.isclose(results['mu'][0], results_median.median, atol = 1)
-    assert np.isclose(S2e_df.S2e.mean(), results_median.median, atol = 1)
-    assert np.isclose(results['sigma'][0], S2e_df.S2e.std(), atol = 0.5)
-    assert np.isclose(results['mu_error'][0], S2e_df.S2e.std()/np.sqrt(len(S2e_df)), atol = 0.1)
-    #error sigma?
-    
-    
- 
+    assert np.isclose(results.mu[0], S2e_df.S2e.mean(), atol = 1)
+    assert np.isclose(results.sigma[0], S2e_df.S2e.std(), atol = 0.5)
+    assert np.isclose(results.mu_error[0], S2e_df.S2e.std()/np.sqrt(len(S2e_df)), atol = 0.1)
+    assert np.isclose(results.sigma_error[0], 0.068, atol = 0.1)
+
+
+
 
 def test_gauss_seed():
 
