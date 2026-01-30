@@ -3,10 +3,10 @@ import numpy  as np
 
 from invisible_cities.core.fit_functions import expo, gauss, fit
 from invisible_cities.io.dst_io import load_dst, load_dsts, df_writer
-from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
+from invisible_cities.core.core_functions import in_range, shift_to_bin_centers, weighted_mean_and_std
 from invisible_cities.core.stat_functions import poisson_sigma
 
-from lifetime_vdrift_functions import LT_fit, select_lifetime_region, compute_drift_v
+from lifetime_vdrift_functions import  select_lifetime_region, compute_drift_v
 
 import tables            as tb
 from   scipy             import stats
@@ -50,9 +50,9 @@ def get_median(df):
 
     return pd.DataFrame({
          'nevents': len(df),
-         'median': df.S2e.median(),
+         'mu': df.S2e.median(),
          'sigma': sigma,
-         'median_error': sigma/np.sqrt(len(df)),
+         'mu_error': sigma/np.sqrt(len(df)),
          'sigma_error': np.nan}, index = [0]) #error de std?
 
 
