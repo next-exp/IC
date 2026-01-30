@@ -12,9 +12,8 @@ import matplotlib.pyplot as plt
 
 
 from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
-from invisible_cities.core.fit_functions import fit, profileX
+from invisible_cities.core.fit_functions import fit, profileX, expo
 from scipy import stats
-from lifetime_vdrift_functions import LT_fit
 
 
 #
@@ -31,13 +30,13 @@ freq = lambda : plt.ylabel("frequency")
 
 def monitor_S1S2(df, run_number):
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
-    
+
     nevents = len(df['event'].unique())
-    
+
     df2 = df.groupby('event s1_peak'.split()).first().reset_index()
-    df2_ = df2.groupby('event').count()
-    
-    axs[0, 0].hist(df2_.nS1, bins=10, range=(0, 20),
+    df2 = df2.groupby('event').count()
+
+    axs[0, 0].hist(df2.nS1, bins=10, range=(0, 20),
                    density=True, histtype='step', label=
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
@@ -47,12 +46,12 @@ def monitor_S1S2(df, run_number):
     axs[0, 0].set_title('nS1 distribution')
     axs[0, 0].grid(True)
     axs[0, 0].legend()
-    
+
     df1 = df.groupby('event s2_peak'.split()).first().reset_index()
-    df1_ = df1.groupby('event').count()
+    df1 = df1.groupby('event').count()
 
 
-    axs[0, 1].hist(df1_.nS2, bins=20, range=(0, 20),
+    axs[0, 1].hist(df1.nS2, bins=20, range=(0, 20),
                    density=True, histtype='step', label=
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
