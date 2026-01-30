@@ -59,40 +59,34 @@ def test_get_median_empty_input():
         assert pd.isna(result[col].iloc[0]), f"{col} is not a nan"
 
 
-def test_fitfun_medfun_Nevents():
-    d = {'DT': np.empty(6), 'x' : np.empty(6), 'y' : np.empty(6),'S2e' : np.ones(6)}
-    df_test = pd.DataFrame(data = d, index = range(0, 6))
-    N = len(df_test)
-    result_med = med_fun(df_test)
-    assert result_med['nevents'].iloc[0] == N
-    assert fit_function(df_test, bins = 6)['nevents'].iloc[0] == N
 
+def test_get_median_empty_input_does_not_raise():
+    empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
 
-def test_merge_maps():
-    Nan_map_test = create_empty_map(xy_range = (-500, 500), dt_range = (0, 1400), xy_nbins = 100, dt_nbins = 10)
-    d = {'nevents': np.empty(6, dtype = int), 'mu' : np.empty(6), 'sigma' : np.empty(6), 'mu_error' : np.empty(6), 'sigma_error' : np.empty(6)}
-    map_3D_test = pd.DataFrame(data = d, index = range(0, 6))
-    assert merge_maps(Nan_map_test, map_3D_test).shape == Nan_map_test.shape
+    get_median(empty_dst)
 
 
 
-def test_medfun_works_with_even_data():
+
+def test_get_median_works_with_even_data():
     d = {'DT': np.empty(6), 'x' : np.empty(6), 'y' : np.empty(6),'S2e' : [8000, 7500, 8300, 7900, 9000, 8100]}
     df_test = pd.DataFrame(data = d, index = range(0,6))
     S2e = df_test['S2e']
-    result_med_fun = med_fun(df_test)
-    result_med_fun = result_med_fun['median']
-    result_med_data = 8050
+    result = get_median(df_test)['mu']
+    median_data = 8050
 
-    assert (result_med_fun == result_med_data).all()
+    assert (result == median_data).all()
 
-def test_medfun_works_with_odd_data():
+
+
+def test_get_median_works_with_odd_data():
     d = {'DT': np.empty(7), 'x' : np.empty(7), 'y' : np.empty(7),'S2e' : [8000, 7500, 8300, 7900, 9000, 8100, 9100]}
     df_test = pd.DataFrame(data = d, index = range(0,7))
     S2e = df_test['S2e']
-    result_med_fun = med_fun(df_test)
-    result_med_fun = result_med_fun['median']
+    result_med_fun = get_median(df_test)
+    result_med_fun = result_med_fun['mu']
     result_med_data = 8100
+
     assert (result_med_fun == result_med_data).all()
 
 
