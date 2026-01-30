@@ -380,3 +380,33 @@ def test_quick_gauss_fit():
     assert np.isclose(x.std(), f.values[2], atol = 1)
 
 
+
+def test_create_time_slices():
+    x = np.linspace(-100, 100, 101)
+    df = pd.DataFrame({'time': np.linspace(1e6, 2e6, 101),
+                      'S2e':np.linspace(7500, 8500, 101),
+                      'X': x,
+                      'Y': x,
+                      'DT': np.linspace(20, 1350, 101),
+                      'S1e':np.linspace(7, 10, 101),
+                      'S1h': np.linspace(1,2,101),
+                      'S1w': np.linspace(210, 240, 101),
+                      'Nsipm':np.linspace(10, 30, 101),
+                      'Xrms':np.linspace(13, 15, 101),
+                      'Yrms':np.linspace(13, 15, 101),
+                      'Zrms':np.linspace(3, 5, 101),
+                      'S2q':np.linspace(540, 600, 101),
+                      'S2w':np.linspace(20, 24, 101),
+                      'Ec': np.linspace(35, 45, 101),
+                      'Ec_2':np.linspace(41, 42, 101)
+                     })
+
+    slice_hours = 100
+
+    dfs = create_time_slices(df, run_number = 1, slice_hours = 100)
+
+    hours_interval = ((df.time.max() - df.time.min())/slice_hours)/3600
+
+    assert len(dfs) == round(hours_interval)
+
+
