@@ -13,7 +13,6 @@ import itertools
 dtrms2_low = lambda dt: -0.7 + 0.030 * (dt-20) # Gonzalo's
 dtrms2_upp = lambda dt: 2.6 + 0.036 * (dt-20) # Gonzalo's2
 dtrms2_cen = lambda dt:  1.0 + 0.033 * (dt-20)
-def dist_to_bandcenter(df): return df.Zrms**2 - dtrms2_cen(df.DT)
 
 
 def load_files(path):
@@ -31,20 +30,6 @@ def eff_of_selection(df_before, df_after, name = ""):
         print(f"{name} efficiency {eff}, {events_after}/{events_before}.")
 
     return eff
-
-
-def apply_correctionmap(kdst, map3D, norm_method, xy_params, keV = True):
-    
-    """
-    xy_params must be a dictionary: {'x_high': , 'x_low': , 'y_high': , 'y_low': }
-    """
-    
-    corrected_energy = apply_3Dmap(map3D, norm_method, kdst.DT, kdst.X, kdst.Y, kdst.S2e, xy_params = xy_params, keV = keV)
-    
-    col_name = 'Ec' if 'Ec' not in kdst.columns else 'Ec_2'
-    kdst[col_name] = corrected_energy.values
-
-    return kdst
 
 
 def select_diffusion_band(kdst, dtrms2_low, dtrms2_upp):
@@ -150,8 +135,6 @@ def apply_selections(kdst, dtrms2_low, dtrms2_upp, low_xrays, high_xrays, low_S2
          'eff_NSiPMS': eff_nsipm, 'total_efficiency': total_efficiency}
 
     df_efficiencies = pd.DataFrame(data = d, index = [0])
-    
-    
-    return df_final, df_efficiencies
 
-    
+
+    return df_final, df_efficiencies
