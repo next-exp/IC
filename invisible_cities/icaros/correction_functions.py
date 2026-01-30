@@ -5,7 +5,6 @@ from invisible_cities.core.core_functions import in_range
 from invisible_cities.types.symbols import NormMethod
 
 
-
 def normalization(krmap, method, xy_params = None):
 
     krmap = krmap.dropna(subset=['mu'])
@@ -33,21 +32,20 @@ def normalization(krmap, method, xy_params = None):
         return E_median_anode
 
     mask_region = ( in_range(krmap.x, xy_params['x_low'], xy_params['x_high']) &
-                    in_range(krmap.y, xy_params['y_low'], xy_params['y_high']) )
+                    in_range(krmap.y, xy_params['y_low'], xy_params['y_high'])
+                   ).values
+
     krmap = krmap[mask_region]
 
     if method is NormMethod.mean_region_chamber:
-        region = krmap[mask_region]
-        E_reference_region = region.mu.mean()
+        E_reference_region = krmap.mu.mean()
         return E_reference_region
 
     if method is NormMethod.median_region_chamber:
-        region = krmap[mask_region]
-        E_median_region = region.mu.median()
+        E_median_region = krmap.mu.median()
         return E_median_region
 
-    mask_region_anode = mask_region & (krmap.k == 0)
-    anode = krmap[mask_region_anode]
+    anode = krmap[krmap.k == 0]
 
     if method is NormMethod.mean_region_anode:
         E_reference_slice_anode = anode.mu.mean()
