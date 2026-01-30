@@ -189,12 +189,16 @@ def quick_gauss_fit(data, bins, sigma = False):
     x     = shift_to_bin_centers(x)
     seed  = gauss_seed(x, y)
 
-    if sigma:
-        sigma = poisson_sigma(y)
-        f     = fit(gauss, x, y, seed, sigma = sigma)
+    sigma = poisson_sigma(y) if sigma else None
+
+    if sigma is None:
+        f = fit(gauss, x, y, seed)
     else:
-        f     = fit(gauss, x, y, seed)
-    assert np.all(f.values != seed)
+        f = fit(gauss, x, y, seed, sigma=sigma)
+
+    if not np.all(f.values != seed):
+        raise RuntimeError("all fit values should be different from seed")
+
     return f
 
 
