@@ -63,7 +63,7 @@ def monitor_S1S2(df, run_number):
     axs[0, 1].legend()
 
 
-    axs[1, 0].hist(df.S1t, bins=100, histtype = 'step', density=True, label = 
+    axs[1, 0].hist(df2.S1t, bins=100, histtype = 'step', density=True, label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df.S1t.mean():.2f}\n'
@@ -74,7 +74,7 @@ def monitor_S1S2(df, run_number):
     axs[1, 0].legend()
 
 
-    axs[1, 1].hist(df.S2t, bins=100, histtype = 'step', density=True, label = 
+    axs[1, 1].hist(df1.S2t, bins=100, histtype = 'step', density=True, label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df.S2t.mean():.2f}\n'
