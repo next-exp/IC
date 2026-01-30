@@ -1,41 +1,35 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy import stats
 from matplotlib.patches import Circle, Rectangle
 from typing import Tuple
 from invisible_cities.core.stat_functions import poisson_sigma
 import invisible_cities.core.fit_functions as fit
 from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
+from invisible_cities.types.symbols import SelRegionMethod
 
 
 
-def select_lifetime_region(df, bins, x0, y0, shape, shape_size):
+def select_lifetime_region(df, x0, y0, shape, shape_size):
 
-    df = df.dropna(subset=['X','Y','S2e', 'DT'])
+    """
+    shape_size is either the size of the radius or square side
+    """
 
-    if shape == 'circle':
+    df = df.dropna(subset=['X','Y'])
+
+    if shape is SelRegionMethod.square:
 
         x1, y1 = x0-shape_size, y0-shape_size
 
-        mask_df = ((df.X >= x1) & (df.X <= x1+2*shape_size) & (df.Y >= y1) &
-                   (df.Y <= y1+2*shape_size))
+        mask_df = in_range(df.X, x1, x1+2*shape_size) & in_range(df.Y, y1, y1+2*shape_size)
 
         df_region = df[mask_df]
+        return df_region
 
-    if shape == 'square':
+    if shape is SelRegionMethod.circle:
 
         mask_df = (df.X - x0)**2 + (df.Y - y0)**2 <= shape_size**2
         df_region = df[mask_df]
-
-
-    return df_region
-
-
-
-def LT_fit(DT, s2e, p0):
-
-    f  = fit.fit(fit.expo, DT, s2e, p0)
-    return f.values, (f[2][0], f[2][1])
+        return df_region
 
 
 
