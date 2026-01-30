@@ -202,6 +202,26 @@ def test_fit_map_S2e_values():
         assert row['nevents'] == reference['nevents']
 
 
+
+
+
+def test_merge_maps():
+    Nan_map_test = create_empty_map(xy_range = (-500, 500), dt_range = (0, 1400), xy_nbins = 100, dt_nbins = 10)
+
+    d = {'k':np.array([1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3]),
+         'i':np.array([1, 1, 2, 2, 1, 2, 2, 1, 1, 2, 2]),
+         'j':np.array([1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2]),
+         'nevents': np.empty(11, dtype = int),
+         'mu' : np.empty(11),
+         'sigma' : np.empty(11),
+         'mu_error' : np.empty(11),
+         'sigma_error' : np.empty(11)} #pon 2 is, 2js, 3ks por exemplo
+
+    map_3D_test = pd.DataFrame(data = d, index = range(0, 11))
+    assert merge_maps(Nan_map_test, map_3D_test).shape == Nan_map_test.shape
+
+
+
 def test_gauss_seed():
 
     x = np.linspace(1000, 1500, 100)
