@@ -310,6 +310,48 @@ def test_include_coordinates_bincenter():
     assert np.isclose(full_map.x.iloc[0], x_center)
     assert np.isclose(full_map.dt.iloc[0], dt_center)
 
+
+
+
+def test_metadata_column():
+
+    xy_range = (-100, 100)
+    dt_range = (40, 100)
+    xy_nbins = 1
+    dt_nbins = 1
+
+    data_df = {'R': np.array([0, 20, 40]),
+               'Z': np.array([40, 70, 100])}
+
+    df_test = pd.DataFrame(data = data_df, index = range(0, 3))
+
+    d = {'dt': np.array([40, 70, 100]),
+         'x': np.array([-100, 0, 100]),
+         'y': np.array([-100, 0, 100]),
+         'k':np.array([1, 2, 3]),
+         'i':np.array([1]),
+         'j':np.array([1]),
+         'nevents': np.empty(3, dtype = int),
+         'mu' : np.empty(3),
+         'sigma' : np.empty(3),
+         'mu_error' : np.empty(3),
+         'sigma_error' : np.empty(3)}
+
+    full_map_test = pd.DataFrame(data = d, index = range(0, 3))
+
+    metadata_test = compute_metadata(df_test,
+                                     full_map_test,
+                                     xy_range = xy_range,
+                                     dt_range = dt_range,
+                                     xy_nbins = xy_nbins,
+                                     dt_nbins = dt_nbins,
+                                     norm_method = 'max')
+
+    assert metadata_test.shape[1] == 1
+
+
+
+
 def test_gauss_seed():
 
     x = np.linspace(1000, 1500, 100)
