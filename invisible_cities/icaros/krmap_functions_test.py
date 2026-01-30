@@ -1,38 +1,62 @@
 import numpy as np
 import pandas as pd
-from invisible_cities.core.core_functions import in_range, shift_to_bin_centers, fix_random_seed
-import itertools
-from krmap_functions import create_empty_map, get_median, gaussian_fit, fit_map, merge_maps, include_coordinates, gauss_seed, quick_gauss_fit, create_time_slices, get_time_evol, save_map
+import tables
+
+from invisible_cities.core.core_functions import in_range, fix_random_seed
+from krmap_functions import create_empty_map, get_median, gaussian_fit, fit_map, merge_maps, include_coordinates, gauss_seed, quick_gauss_fit, create_time_slices, get_time_evol, save_map, compute_metadata, append_time_evol
 from pytest import raises
-from invisible_cities.corx1e.fit_functions import fit, gauss
+from invisible_cities.core.fit_functions import fit, gauss, expo
+from invisible_cities.types.symbols import SelRegionMethod
 
 
 
-def test_medfun_empty_input():
+def test_create_empty_map_shape():
+    xy_range = (-100, 100)
+    dt_range = (20, 100)
+    xy_nbins = 8
+    dt_nbins = 5
+
+    empty_map_test = create_empty_map(xy_range = xy_range,
+                                      dt_range = dt_range,
+                                      xy_nbins = xy_nbins,
+                                      dt_nbins = dt_nbins)
+
+    rows_test = dt_nbins * xy_nbins * xy_nbins
+    n_columns_test = 8
+
+    assert empty_map_test.shape == (rows_test, n_columns_test)
+
+
+
+def test_create_empty_map_values():
+    xy_range = (-100, 100)
+    dt_range = (20, 1000)
+    xy_nbins = 8
+    dt_nbins = 5
+
+    empty_map_test = create_empty_map(xy_range = xy_range,
+                                      dt_range = dt_range,
+                                      xy_nbins = xy_nbins,
+                                      dt_nbins = dt_nbins)
+
+    assert empty_map_test.k.nunique() == dt_nbins
+    assert empty_map_test.i.nunique() == xy_nbins
+    assert empty_map_test.j.nunique() == xy_nbins
+
+    data_columns = ['nevents', 'mu', 'sigma', 'mu_error', 'sigma_error']
+
+    assert empty_map_test[data_columns].isna().all().all()
+
+
+
+def test_get_median_empty_input():
     empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
-    result = med_fun(empty_dst)
+    result = get_median(empty_dst)
 
     assert result.shape == (1, 5)
     assert result['nevents'].sum() == 0
-    for col in ['median', 'sigma', 'median_error', 'sigma_error']:
+    for col in ['mu', 'sigma', 'mu_error', 'sigma_error']:
         assert pd.isna(result[col].iloc[0]), f"{col} is not a nan"
-
-
-
-def test_medfun_empty_input_does_not_raise():
-    empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
-
-    #with raises(ValueError):
-    med_fun(empty_dst)
-
-
-def test_gaussianfit_does_fit_right():
-    empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
-    result_fit = gaussian_fit(empty_dst, 1)
-    result_fun = med_fun(empty_dst)
-
-    assert np.allclose(result_fit.mu.values, result_fun['median'].values, equal_nan=True)
-    
 
 
 def test_fitfun_medfun_Nevents():
