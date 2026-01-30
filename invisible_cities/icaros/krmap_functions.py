@@ -169,12 +169,13 @@ def gauss_seed(x, y, sigma_rel=0.05):
     """
     Estimate the seed for a gaussian fit to the input data.
     """
-    y_max  = np.argmax(y) # highest bin
-    x_max  = x[y_max]
-    sigma  = sigma_rel * x_max
-    amp    = y_max * (2 * np.pi)**0.5 * sigma * np.diff(x)[0]
-    seed   = amp, x_max, sigma
+    x_max, sigma = weighted_mean_and_std(x, y)
 
+    #y_max  = np.argmax(y) # highest bin
+    #x_max  = x[np.argmax(y)] #x[highest bin y]
+    #sigma  = sigma_rel * x_max
+    amp    = y.max()  * (2 * np.pi)**0.5 * sigma
+    seed   = amp, x_max, sigma
 
     return seed
 
