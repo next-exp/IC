@@ -120,7 +120,7 @@ def test_apply_3Dmap_same_values():
     y = j * 25
     dt = k * 45
 
-    mu = (k*i + 800)*j
+    mu = 800
 
     map_test = pd.DataFrame({
         'k': k,
