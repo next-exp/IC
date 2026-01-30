@@ -57,7 +57,6 @@ def normalization(krmap, method, xy_params = None):
 
 
 
-
 def apply_3Dmap(krmap, norm_method, dt, x, y, E, xy_params = None, keV = False):
 
     map_points = krmap['dt x y'.split()].values
@@ -73,3 +72,18 @@ def apply_3Dmap(krmap, norm_method, dt, x, y, E, xy_params = None, keV = False):
         Ec = Ec * (41.55 / norm)
 
     return Ec
+
+
+def apply_correctionmap(kdst, map3D, norm_method, xy_params, col_name, keV = True):
+
+    """
+    xy_params must be a dictionary: {'x_high': , 'x_low': , 'y_high': , 'y_low': }
+
+    """
+
+    corrected_energy = apply_3Dmap(map3D, norm_method, kdst.DT, kdst.X, kdst.Y, kdst.S2e, xy_params = xy_params, keV = keV)
+
+    kdst[col_name] = corrected_energy.values
+
+
+    return kdst
