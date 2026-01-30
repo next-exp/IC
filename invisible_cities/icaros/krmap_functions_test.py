@@ -410,3 +410,70 @@ def test_create_time_slices():
     assert len(dfs) == round(hours_interval)
 
 
+
+
+def test_get_time_evol_shape():
+   x = np.linspace(-100, 100, 1001)
+
+   df = pd.DataFrame({'time': np.linspace(1e6, 2e6, 1001),
+                      'S2e':np.linspace(8500, 7500, 1001),
+                      'X': x,
+                      'Y': x,
+                      'DT': np.linspace(20, 1350, 1001),
+                      'S1e':np.linspace(7, 10, 1001),
+                      'S1h': np.linspace(1,2,1001),
+                      'S1w': np.linspace(210, 240, 1001),
+                      'Nsipm':np.linspace(10, 30, 1001),
+                      'Xrms':np.linspace(13, 15, 1001),
+                      'Yrms':np.linspace(13, 15, 1001),
+                      'Zrms':np.linspace(3, 5, 1001),
+                      'S2q':np.linspace(540, 600, 1001),
+                      'S2w':np.linspace(20, 24, 1001),
+                      'Ec': np.linspace(35, 45, 1001),
+                      'Ec_2':np.random.normal(loc = 41.5, scale = 2, size = 1001)
+                     })
+
+   t_evol = get_time_evol(df, 'Ec_2', 1, 50, 0, 0, SelRegionMethod.circle, 1000, [8000, -30000], np.linspace(1250, 1400, 50), 1000, 1350, np.linspace(30, 60, 101))
+
+   assert t_evol.shape[1] == df.shape[1] + 17
+
+
+
+def test_append_time_evol():
+
+    x = np.linspace(-100, 100, 1001)
+
+    df1 = pd.DataFrame({'time': np.linspace(0, 3599, 1001),
+                      'S2e':np.linspace(7500, 8500, 1001),
+                      'X': x,
+                      'Y': x,
+                      'DT': np.linspace(20, 1350, 1001),
+                      'S1e':np.linspace(7, 10, 1001),
+                      'S1h': np.linspace(1,2,1001),
+                      'S1w': np.linspace(210, 240, 1001),
+                      'Nsipm':np.linspace(10, 30, 1001),
+                      'Xrms':np.linspace(13, 15, 1001),
+                      'Yrms':np.linspace(13, 15, 1001),
+                      'Zrms':np.linspace(3, 5, 1001),
+                      'S2q':np.linspace(540, 600, 1001),
+                      'S2w':np.linspace(20, 24, 1001),
+                      'Ec': np.linspace(35, 45, 1001),
+                      'Ec_2':np.random.normal(loc = 41.5, scale = 10, size = 1001)
+                     })
+
+    df2 = pd.concat([df1,
+                     df1.assign(time = df1.time + 3600),
+                     df1.assign(time= df1.time + 7200)],
+                     ignore_index = True)
+
+
+    dfs = create_time_slices(df2, run_number = 1, slice_hours = 1)
+
+    t_evols = append_time_evol(dfs, 'Ec_2', 1, 50, 0, 0, SelRegionMethod.circle, 1000, [8000, -30000], np.linspace(1250, 1400, 50), 1000, 1350, np.linspace(30, 60, 101) , error = False)
+
+    assert len(dfs) == len(t_evols)
+    for col in t_evols.columns:
+        if col == 'ts':
+            continue
+        assert np.allclose(t_evols[col], t_evols[col][0])
+
