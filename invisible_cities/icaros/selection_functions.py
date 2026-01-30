@@ -28,7 +28,7 @@ def eff_of_selection(df_before, df_after, name = ""):
 
 def select_var_inrange(kdst, col_name, low, high, sel_name):
 
-    sel = in_range(kdst[col_name], *rng)
+    sel = in_range(kdst[col_name], low, high)
     df_sel = kdst[sel]
 
     eff_sel = eff_of_selection(kdst, df_sel, sel_name)
@@ -63,7 +63,7 @@ def apply_selections(kdst, dtrms2_low, dtrms2_upp, low_xrays, high_xrays, low_S2
 
     kdst['Zrms2'] = kdst.Zrms**2
 
-    df, eff_DTband = select_diffusion_band(kdst, 'Zrms2', dtrms2_low(kdst.DT), dtrms2_upp(kdst.DT), 'band selection')
+    df, eff_DTband = select_var_inrange(kdst, 'Zrms2', dtrms2_low(kdst.DT), dtrms2_upp(kdst.DT), 'band selection')
 
     df, eff_Xrays = select_var_inrange(df, 'Ec', low_xrays, high_xrays, 'remove xrays')
 
@@ -71,7 +71,7 @@ def apply_selections(kdst, dtrms2_low, dtrms2_upp, low_xrays, high_xrays, low_S2
 
     df, eff_1S1_1S2 = select_1S1_1S2(df)
 
-    df, eff_Rmax = select_var_inrage(df, 'R', 0, R_max,  f'events with R less than {R_max}')
+    df, eff_Rmax = select_var_inrange(df, 'R', 0, R_max,  f'events with R less than {R_max}')
 
     df, eff_DTrange = select_var_inrange(df, 'DT', low_DT, high_DT, f'events in DT range [{low_DT}, {high_DT}]')
 
