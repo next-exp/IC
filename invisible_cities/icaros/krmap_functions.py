@@ -118,21 +118,15 @@ def merge_maps(NaN_map, map_3D):
 
 def include_coordinates(krmap, xy_range, dt_range, xy_nbins, dt_nbins):
 
-    xy_bins = np.linspace(*xy_range, xy_nbins + 1)
-    dt_bins = np.linspace(*dt_range, dt_nbins + 1)
+    dt_binsize = (dt_range[1] - dt_range[0])/dt_nbins
+    xy_binsize = (xy_range[1] - xy_range[0])/xy_nbins
 
-    x = shift_to_bin_centers(xy_bins)
-    y = shift_to_bin_centers(xy_bins)
-    dt = shift_to_bin_centers(dt_bins)
-
-    bin_combinations = pd.DataFrame(
-    itertools.product(dt, x, y),
-    columns=['dt', 'x', 'y'])
-
-
-    krmap = pd.concat([bin_combinations, krmap], axis = 1)
+    krmap =  krmap.assign( dt = dt_range[0] + (0.5+krmap.k)*dt_binsize,
+                           x  = xy_range[0] + (0.5+krmap.i)*xy_binsize,
+                           y  = xy_range[0] + (0.5+krmap.j)*xy_binsize )
 
     return krmap
+
 
 
 def compute_3D_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bins):
