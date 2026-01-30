@@ -154,6 +154,54 @@ def test_gaussianfit_computes_right_values():
 
 
 
+def test_fit_map_S2e_values():
+    xy_nbins = 4
+    dt_nbins = 2
+    xy_range = (-10, 10)
+    dt_range = (20, 50)
+
+    df = []
+
+    with fix_random_seed(42):
+        S2e = np.random.normal(loc = 8000, scale = 10.0, size = 10000)
+
+    for i in range(xy_nbins):
+        for j in range(xy_nbins):
+            for k in range(dt_nbins):
+                x_val = (i + 0.5) * (xy_range[1] - xy_range[0]) / xy_nbins
+                y_val = (j + 0.5) * (xy_range[1] - xy_range[0]) / xy_nbins
+                dt_val = (k + 0.5) * (dt_range[1] - dt_range[0]) / dt_nbins
+
+
+                S2e_df = pd.DataFrame({
+                        'X': np.full(10000, x_val),
+                        'Y': np.full(10000, y_val),
+                        'DT': np.full(10000, dt_val),
+                        'S2e': S2e
+                         })
+
+                df.append(S2e_df)
+
+    df  = pd.concat(df, ignore_index = True)
+
+    result = fit_map(df = df,
+                          xy_range = xy_range,
+                          dt_range = dt_range,
+                          xy_nbins = xy_nbins,
+                          dt_nbins = dt_nbins,
+                          fit_function = gaussian_fit,
+                          bins = 25) #ebins in gaussian_fit()
+
+    reference = result.iloc[0]
+
+    for _, row in result.iterrows():
+        assert np.allclose(result.mu , reference.mu)
+        assert np.allclose(row['sigma'], reference['sigma'])
+        assert np.isclose(row['mu_error'], reference['mu_error'])
+        assert np.isclose(row['sigma_error'], reference['sigma_error'])
+        assert row['nevents'] == reference['nevents']
+
+
 def test_gauss_seed():
 
     x = np.linspace(1000, 1500, 100)
