@@ -330,52 +330,56 @@ def hist2D(df, run, statistic):
     return values, bin_centers
 
 
-def plot_Ec(df): 
+def plot_Ec(Ec_1, Ec_2):
+    """
+    This function is for comparing specifically the corrected energy from applying the preliminary map (Ec) vs the "final" corrected energy (from applying the self map and all the correction chain, Ec_2)
+    """
+    mean_Ec2 = Ec_2.mean()
+    stdEc2 = Ec_2.std()
+    umeanEc2 = Ec_2.std()/np.sqrt(len(Ec_2))
 
-    mean_Ec2 =df.Ec_2.mean()
-    stdEc2 = df.Ec_2.std()
-    umeanEc2 = df.Ec_2.std()/np.sqrt(len(df.Ec_2))
-    
-    mean_Ec =df.Ec.mean()
-    stdEc = df.Ec.std()
-    umeanEc = df.Ec.std()/np.sqrt(len(df.Ec))
-    
-    
-    plt.hist(df.Ec, 100, range = (20, 60), histtype = 'step', color = 'black', density = True, label = f'mean Ec: {mean_Ec:.2f}keV')
-    plt.hist(df.Ec_2, 100, range = (20, 60), histtype = 'step', color = 'red', density = True, label = f'mean Ec_2: {mean_Ec2:.2f}keV'); 
+    mean_Ec =Ec_1.mean()
+    stdEc = Ec_1.std()
+    umeanEc = Ec_1.std()/np.sqrt(len(Ec_2))
+
+
+    plt.hist(Ec_1, 100, range = (20, 60), histtype = 'step', color = 'black', density = True, label = f'mean Ec: {mean_Ec:.2f}keV')
+    plt.hist(Ec_2, 100, range = (20, 60), histtype = 'step', color = 'red', density = True, label = f'mean Ec_2: {mean_Ec2:.2f}keV');
     plt.xlabel('Ec (keV)'); freq();
     plt.grid();
     plt.legend();
-    
-    
+
+
     plt.tight_layout();
 
     return (mean_Ec2, stdEc2, umeanEc2), (mean_Ec, stdEc, umeanEc)
-    
 
-def plot_lifetime_fit(df): #df should be kdst_in_region or the fit won't work 
-    
-    magnitudes, uncertainties = LT_fit(df.DT, df. S2e, p0 = [8000, -30000]);
+
+def plot_lifetime_fit(df): #df should be kdst_in_region or the fit won't work
+
+    f  = fit(expo, df.DT, df. S2e, seed = [8000, -30000]);
+    magnitudes = f.values
+    uncertainties = (f[2][0], f[2][1])
     plt.xlabel(r"DT ($\mu$s)"); plt.ylabel("S2e (pe)");
     plt.hist2d(df.DT, df.S2e,(50, 50), cmin = 1e-3);
 
     const = magnitudes[0]
     lifetime = - magnitudes[1]
     dt, e, se = profileX(df.DT, df.S2e, std = False, nbins = 20)
-    
+
     plt.plot(dt, const*np.exp(-dt/lifetime), color = 'red');
     plt.errorbar(dt, e, yerr = se, fmt = '.');
     plt.ylim(6000, 10000);
-     
+
     return const, lifetime, (uncertainties)
 
 
-    
+
 def krmap_ratio_hist2D(df1, df2, run1_name, run2_name, bins, statistic):
 
     xrange = (-500, 500)
     yrange = (-500, 500)
-    
+
     n1 = len(df1.X)
     n2 = len(df2.X)
     df1 = df1.dropna(subset=['X', 'Y'])
@@ -386,20 +390,20 @@ def krmap_ratio_hist2D(df1, df2, run1_name, run2_name, bins, statistic):
         bins=[np.linspace(*xrange, bins), np.linspace(*yrange, bins)],
         statistic = statistic
     )
-    
+
     values2, bins, _ = stats.binned_statistic_dd(
         (df2.X, df2.Y), df2.S2e,
         bins=ebins,
         statistic= statistic
     )
-    
+
 
     # Calculates ratio avoiding dividing by 0
     with np.errstate(divide='ignore', invalid='ignore'):
         counts1_norm = counts1/n1
         counts2_norm = counts2/n2
         ratio = np.true_divide(counts1_norm, counts2_norm)
-        ratio[~np.isfinite(ratio)] = np.nan  # writes NaN instead of inf 
+        ratio[~np.isfinite(ratio)] = np.nan  # writes NaN instead of inf
 
     bin_centers = [0.5 * (b[1:] + b[:-1]) for b in ebins]
     mesh = np.meshgrid(*bin_centers)
@@ -417,8 +421,8 @@ def krmap_ratio_hist2D(df1, df2, run1_name, run2_name, bins, statistic):
     plt.xlim(*xrange)
     plt.ylim(*yrange)
     plt.tight_layout()
-    
-    
+
+
     ratio = ratio[~np.isnan(ratio)]
     return ratio
 
@@ -428,7 +432,7 @@ def plot_sigmoid(df): #use kdst_in_region
     counts, bins, _ = np.histogram(df.DT, bins = 20, range = (1200, 1500))
     bin_centers = shift_to_bin_centers(bins)
     f = fit(sigmoid, bin_centers, counts, seed = [1000, 1400, 0, 0.1])
-    
+
     plt.plot(bin_centers, counts, 'o', color = 'black', markersize = 5, label = 'DT mean')
     plt.plot(bin_centers, sigmoid(bin_centers, *f.values), color = 'red', label = f'Sigmoid_fit')
     plt.xlabel(r'DT($\mu$s)');
@@ -436,7 +440,3 @@ def plot_sigmoid(df): #use kdst_in_region
     plt.xlim(1200, 1500);
     plt.grid(True);
     plt.legend()
-    
-    
- 
-    
