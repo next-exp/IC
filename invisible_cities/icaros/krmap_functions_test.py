@@ -222,6 +222,94 @@ def test_merge_maps():
 
 
 
+
+
+def test_include_coordinates_shape():
+
+    xy_range = (-100, 100)
+    dt_range = (20, 100)
+    xy_nbins = 10
+    dt_nbins  = 5
+
+    d = {'k':np.array([1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3]),
+         'i':np.array([1, 1, 2, 2, 1, 2, 2, 1, 1, 2, 2]),
+         'j':np.array([1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2]),
+         'nevents': np.empty(11, dtype = int),
+         'mu' : np.empty(11),
+         'sigma' : np.empty(11),
+         'mu_error' : np.empty(11),
+         'sigma_error' : np.empty(11)}
+
+    map_3D_test = pd.DataFrame(data = d, index = range(0, 11))
+
+
+    full_map = include_coordinates(map_3D_test, xy_range = xy_range, dt_range = dt_range, xy_nbins = xy_nbins, dt_nbins = dt_nbins)
+
+    assert full_map.shape[0] == map_3D_test.shape[0]
+    assert full_map.shape[1] == map_3D_test.shape[1] + 3
+
+
+
+
+
+def test_include_coordinates_range():
+
+    xy_range = (-100, 100)
+    dt_range = (20, 100)
+    xy_nbins = 10
+    dt_nbins  = 5
+
+    Nan_map_test = create_empty_map(xy_range = xy_range, dt_range = dt_range, xy_nbins = xy_nbins, dt_nbins = dt_nbins)
+
+    d = {'k':np.array([1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3]),
+         'i':np.array([1, 1, 2, 2, 1, 2, 2, 1, 1, 2, 2]),
+         'j':np.array([1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2]),
+         'nevents': np.empty(11, dtype = int),
+         'mu' : np.empty(11),
+         'sigma' : np.empty(11),
+         'mu_error' : np.empty(11),
+         'sigma_error' : np.empty(11)}
+
+    map_3D_test = pd.DataFrame(data = d, index = range(0, 11))
+
+    krmap_test = merge_maps(Nan_map_test, map_3D_test)
+
+    full_map = include_coordinates(krmap_test, xy_range = xy_range, dt_range = dt_range, xy_nbins = xy_nbins, dt_nbins = dt_nbins)
+
+
+
+    assert np.all(in_range(full_map.x, *xy_range))
+    assert np.all(in_range(full_map.y, *xy_range))
+    assert np.all(in_range(full_map.dt, *dt_range))
+
+
+
+
+def test_include_coordinates_bincenter():
+
+    xy_range = (-100, 100)
+    dt_range = (20, 100)
+
+
+    d = {'k':np.array([0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2]),
+         'i':np.array([0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1]),
+         'j':np.array([0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1]),
+         'nevents': np.empty(11, dtype = int),
+         'mu' : np.empty(11),
+         'sigma' : np.empty(11),
+         'mu_error' : np.empty(11),
+         'sigma_error' : np.empty(11)}
+
+    map_3D_test = pd.DataFrame(data = d, index = range(0, 11))
+
+    full_map = include_coordinates(map_3D_test, xy_range = xy_range, dt_range = dt_range, xy_nbins = 1, dt_nbins = 1)
+
+    x_center = xy_range[0] + 0.5*(xy_range[1] - xy_range[0])
+    dt_center = dt_range[0] + 0.5*(dt_range[1] - dt_range[0])
+
+    assert np.isclose(full_map.x.iloc[0], x_center)
+    assert np.isclose(full_map.dt.iloc[0], dt_center)
+
 def test_gauss_seed():
 
     x = np.linspace(1000, 1500, 100)
