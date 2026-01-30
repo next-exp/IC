@@ -368,3 +368,15 @@ def test_gauss_seed():
     assert np.isclose(x_max_seed, mu_true, atol = 1)
     assert np.isclose(sigma_seed, sigma_true, atol = 0.5)
 
+
+
+
+def test_quick_gauss_fit():
+
+    x = np.random.normal(loc = 8000, scale = 10, size = 1000)
+    f = quick_gauss_fit(x, bins = 10, sigma = None)
+
+    assert np.isclose(x.mean(), f.values[1], atol = 1)
+    assert np.isclose(x.std(), f.values[2], atol = 1)
+
+
