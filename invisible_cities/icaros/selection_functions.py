@@ -46,8 +46,8 @@ def select_1S1_1S2(kdst):
     and count how many times it is repeated. If it apears only one time
     per event, that event has 1S1 and 1S2.
     """
-    #Choosing 'time' column because we had to choose one
 
+    #Choosing 'time' column because we had to choose one
     group_kdst = kdst.groupby('event').time.count()
 
     events_1S1_1S2 = group_kdst[group_kdst == 1].index.values
