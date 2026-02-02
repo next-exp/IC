@@ -142,8 +142,12 @@ def fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e,
 def merge_maps(NaN_map, map_3D):
 
     """
-    Merge empty and 3D (data) maps, for those "repeated rows" with NaNs and data,
-    we discard the NaN rows (doing .first()) to get a dataframe with "uniform" shape.
+    When we do the 3D (data) maps we get a dataframe where some rows might be missing due to
+    "lack of data". We combine this 3D data map with a "full map" filled with NaNs.
+    We combine these two maps to ensure that all bins are present.
+
+    For bins with data, we have "repeated rows" with NaNs and data,
+    we discard the NaN rows (doing .first()) to get a dataframe with full proper shape.
     """
 
     full_map = pd.concat([map_3D, NaN_map], ignore_index = True)
@@ -165,9 +169,9 @@ def include_coordinates(krmap, xy_range, dt_range, xy_nbins, dt_nbins):
 
 
 
-def compute_3D_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bins):
+def compute_3D_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e, S2e_range):
     NaN_map = create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins)
-    map_3D_fit = fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bins)
+    map_3D_fit = fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e, S2e_range)
 
     map = merge_maps(NaN_map, map_3D_fit)
     full_map = include_coordinates(map, xy_range, dt_range, xy_nbins, dt_nbins)
