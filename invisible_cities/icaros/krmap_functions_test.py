@@ -476,3 +476,90 @@ def test_append_time_evol():
             continue
         assert np.allclose(t_evols[col], t_evols[col][0])
 
+##save_map. Escribilo e leelo e ver que están todas as cousas que quero escribir, todos os grupos e tal e que dentro exista todo e non mirar nada dos datos. Outro no que comprobe os valores
+
+def test_save_map():
+    krmap = pd.DataFrame({'k':np.array([0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2]),
+                          'i':np.array([0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1]),
+                          'j':np.array([0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1]),
+                          'nevents': np.empty(11, dtype = int),
+                          'mu' : np.empty(11),
+                          'sigma' : np.empty(11),
+                          'mu_error' : np.empty(11),
+                          'sigma_error' : np.empty(11),
+                          'dt': np.linspace(20, 1350, 11),
+                          'x': np.linspace(-450, 450, 11),
+                          'y': np.linspace(-450, 450, 11),
+                         })
+
+    efficiencies = pd.DataFrame({'eff_diffusion_band': 0.8759,
+                                 'eff_Xrays': 0.8039,
+                                 'eff_1S1_1S2': 0.8377,
+                                 'eff_S2_trigger_time': 0.9970,
+                                 'eff_Rmax': 0.9859,
+                                 'eff_range_DT': 0.9951,
+                                 'eff_NSiPMS': 1.0,
+                                 'total_efficiency': 0.5770
+                                 }, index = [0])
+
+
+    metadata =               {'rmax'       : 100,
+                             'zmax'        : 1000,
+                             'bin_size_dt' : 5,
+                             'bin_size_x'  : 4,
+                             'bin_size_y'  : 4,
+                             'dtbins'      : [(0, 1, 2, 3, 4)],
+                             'xbins'       : [(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)],
+                             'ybins'       : [(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)],
+                             'nbins_dt'    : 5,
+                             'nbins_x'     : 10,
+                             'nbins_y'     : 10,
+                             'xy_range'    : [(-100, 100)],
+                             'dt_range'    : [(20, 1350)],
+                             'map_shape'   : [(11, 11)],
+                             'map_extent'  : 11}
+
+    metadata = pd.DataFrame(metadata, index = [0]).T
+
+    t_evol = pd.DataFrame({'run_number' : 1,
+              'ts' :1e6,
+              's2e': 8000,
+              's2eu' : 10,
+              'ec' : 41.5,
+              'ecu': 0.5,
+              'chi2_ec': 1,
+              'e0': 7900,
+              'e0u': 5,
+              'lt' : 30000 ,
+              'ltu' : 5,
+              'dv' : 0.91308,
+              'dvu' : 0.01,
+              'resol' :4.01,
+              'resolu' : 0.146,
+              's1w' : 225,
+              's1wu' : 0.87,
+              's1e' : 8,
+              's1eu' :0.3,
+              's1h': 100,
+              's1hu':1,
+              's2w': 8,
+              's2wu': 4,
+              's2q': 570.37,
+              's2qu': 0.37,
+              'Nsipm': 16.88,
+              'Nsipmu': 0.005,
+              'Xrms': 14.20,
+              'Xrmsu': 0.004,
+              'Yrms': 14.15,
+              'Yrmsu':0.004 ,
+              'Zrms': 4.15,
+              'Zrmsu': 0.003}, index = [0])
+
+    save_map('testmap.h5', efficiencies, krmap, metadata, t_evol)
+
+    krmap_3D = pd.read_hdf('testmap.h5', 'krmap/krmap')
+    efficiencies = pd.read_hdf('testmap.h5', 'data/selection_efficiencies')
+    metadata = pd.read_hdf('testmap.h5')
+    t_evol = pd.read_hdf('testmap.h5', 't_evol/t_evol')
+
+    testmap = tables.open_file('testmap.h5', mode = 'r')
