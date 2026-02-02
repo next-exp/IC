@@ -47,8 +47,6 @@ def compute_drift_v(dtdata   : np.array,
         Binning for drift velocity computation
     seed: length-4 tuple (optional)
         Seed for the fit.
-    detector: string (optional)
-        Used to get the cathode position from DB.
     Returns
     -------
     dv: float
@@ -57,14 +55,13 @@ def compute_drift_v(dtdata   : np.array,
         Drift velocity uncertainty.
     '''
     y, x = np.histogram(dtdata, dtbins)
-
     x    = shift_to_bin_centers(x)
-    if seed is None: seed = np.max(y), np.mean(dtbins), 0.5, np.min(y) # CHANGE: dtbins should be established from db
-    # At the moment there is not NEXT-100 DB so this won't work for that geometry
+
+    if seed is None: seed = np.max(y), np.mean(dtbins), 0.5, np.min(y)
     z_cathode = 1187.37
     #print(seed)
     try:
-        f   = fit.fit(sigmoid, x, y, seed, sigma = poisson_sigma(y))
+        f   = fit.fit(fit.sigmoid, x, y, seed, sigma = poisson_sigma(y))
         par = f.values
         err = f.errors
         dv  = (z_cathode + 10/2)/par[1]
