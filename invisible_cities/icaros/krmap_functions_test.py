@@ -323,32 +323,28 @@ def test_metadata_column():
     xy_nbins = 1
     dt_nbins = 1
 
-    data_df = {'R': np.array([0, 20, 40]),
-               'Z': np.array([40, 70, 100])}
+    df_test = pd.DataFrame({'R': np.linspace(0, 40, 3),
+                            'Z': np.linspace(40, 100, 3)
+                            })
 
-    df_test = pd.DataFrame(data = data_df, index = range(0, 3))
-
-    d = {'dt': np.array([40, 70, 100]),
-         'x': np.array([-100, 0, 100]),
-         'y': np.array([-100, 0, 100]),
-         'k':np.array([1, 2, 3]),
-         'i':np.array([1]),
-         'j':np.array([1]),
-         'nevents': np.empty(3, dtype = int),
-         'mu' : np.empty(3),
-         'sigma' : np.empty(3),
-         'mu_error' : np.empty(3),
-         'sigma_error' : np.empty(3)}
-
-    full_map_test = pd.DataFrame(data = d, index = range(0, 3))
+    full_map_test = pd.DataFrame({'dt': np.linspace(40, 100, 3),
+                                  'x': np.linspace(-100, 100, 3),
+                                  'y': np.linspace(-100, 100, 3),
+                                  'k':np.linspace(1, 3, 3),
+                                  'i':np.linspace(1, 3, 3),
+                                  'j':np.linspace(1, 3, 3),
+                                  'nevents': np.linspace(1, 3, 3),
+                                  'mu' : np.linspace(1, 3, 3),
+                                  'sigma' : np.linspace(1, 3, 3),
+                                  'mu_error' : np.linspace(1, 3, 3),
+                                  'sigma_error' : np.linspace(1, 3, 3)})
 
     metadata_test = compute_metadata(df_test,
                                      full_map_test,
                                      xy_range = xy_range,
                                      dt_range = dt_range,
                                      xy_nbins = xy_nbins,
-                                     dt_nbins = dt_nbins,
-                                     norm_method = 'max')
+                                     dt_nbins = dt_nbins)
 
     assert metadata_test.shape[1] == 1
 
