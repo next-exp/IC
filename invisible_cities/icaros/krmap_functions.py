@@ -6,7 +6,7 @@ from invisible_cities.io.dst_io import load_dst, load_dsts, df_writer
 from invisible_cities.core.core_functions import in_range, shift_to_bin_centers, weighted_mean_and_std
 from invisible_cities.core.stat_functions import poisson_sigma
 
-from lifetime_vdrift_functions import  select_lifetime_region, compute_drift_v
+from lifetime_vdrift_functions import select_lifetime_region, compute_drift_v
 
 import tables            as tb
 from   scipy             import stats
@@ -21,6 +21,19 @@ This script contains functions to compute empty maps, 3D maps from kdsts and mer
 It also contains functions to get and store map info (metadata) and time evolution.
 
 """
+
+
+def gauss_seed(x, y, sigma_rel=0.05):
+    """
+    Estimate the seed for a gaussian fit to the input data.
+    """
+    x_max, sigma = weighted_mean_and_std(x, y)
+    amp    = y.max()  * (2 * np.pi)**0.5 * sigma
+    seed   = amp, x_max, sigma
+
+    return seed
+
+
 
 def create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins):
     """
@@ -45,42 +58,64 @@ def create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins):
 
 
 def get_median(df):
-    sigma = (0.04/2.35)*df.S2e.median()
-    #Kr energy resolution is ~4%, so the std for S2e median would be ~0.04/2.35
+    '''
+    We consider that for len(df) < 5, it makes no sense to compute the std
+
+    Kr energy resolution is ~4%, so the std for S2e median would be ~0.04/2.35
+    '''
+
+    if len(df) < 5:
+        sigma = (0.04/2.35)*df.S2e.median()
+    else:
+        sigma = df.S2e.std()
 
     return pd.DataFrame({
          'nevents': len(df),
          'mu': df.S2e.median(),
          'sigma': sigma,
          'mu_error': sigma/np.sqrt(len(df)),
-         'sigma_error': np.nan}, index = [0]) #error de std?
+         'sigma_error': np.nan}, index = [0])
 
 
 
-def gaussian_fit(df, ebins, min_events = 10):
+def gaussian_fit(df, nbins_S2e, min_events = 10):
     if len(df)< min_events:
         return get_median(df)
 
-    counts, bin_edges = np.histogram(df.S2e, ebins)
+    counts, bin_edges = np.histogram(df.S2e, nbins_S2e)
     bin_centers = shift_to_bin_centers(bin_edges)
 
+    seed = gauss_seed(bin_centers, counts)
+
     try:
-        f = fit(gauss, bin_centers, counts, seed = (len(df), 8000, 400), maxfev = 2500)
+        f = fit(gauss, bin_centers, counts, seed = seed, maxfev = 2500)
     except:
 
-        results = pd.DataFrame({'nevents': len(df), 'mu': np.nan, 'sigma': np.nan, 'mu_error': np.nan, 'sigma_error': np.nan}, index = [0])
 
-        return results
-    results = pd.DataFrame({'nevents': len(df), 'mu': f.values[1], 'sigma': f.values[2], 'mu_error': f.errors[1], 'sigma_error': f.errors[2]}, index = [0])
+        return pd.DataFrame({'nevents': len(df),
+                                 'mu': np.nan,
+                                 'sigma': np.nan,
+                                 'mu_error': np.nan,
+                                 'sigma_error': np.nan}, index = [0])
 
-    return results
+
+    return  pd.DataFrame({'nevents': len(df),
+                            'mu': f.values[1],
+                            'sigma': f.values[2],
+                            'mu_error': f.errors[1],
+                            'sigma_error': f.errors[2]}, index = [0])
 
 
-def fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bins):
+
+
+def fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e, S2e_range):
 
     df = df.loc[:,['X', 'Y', 'DT', 'S2e']]
 
-    mask = in_range(df.X, *xy_range) & in_range(df.Y, *xy_range) & in_range(df.DT, *dt_range)
+    mask = (in_range(df.X, *xy_range) &
+            in_range(df.Y, *xy_range) &
+            in_range(df.DT, *dt_range)&
+            in_range(df.S2e, *S2e_range))
 
     df = df[mask]
 
@@ -89,13 +124,14 @@ def fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, bins):
     xy_bins = np.linspace(*xy_range, xy_nbins + 1)
     dt_bins = np.linspace(*dt_range, dt_nbins + 1)
 
+    #add -1 so the indices go from 0 to 49, not from 1 to 50.
     map_df = df.assign( i = np.digitize(x, bins = xy_bins) - 1,
                         j = np.digitize(y, bins = xy_bins) - 1,
                         k = np.digitize(dt, bins = dt_bins) - 1)
 
-    #add -1 so the indices go from 0 to 49, not from 1 to 50.
 
-    result = map_df.groupby(['k', 'i', 'j']).apply(fit_function, bins)
+
+    result = map_df.groupby(['k', 'i', 'j']).apply(fit_function, nbins_S2e)
 
     result = result.reset_index()
     result = result.drop(columns = 'level_3')
@@ -163,21 +199,6 @@ def compute_metadata(df, krmap, xy_range, dt_range,
 
     return pd.DataFrame(metadata, index = [0]).T
 
-
-
-def gauss_seed(x, y, sigma_rel=0.05):
-    """
-    Estimate the seed for a gaussian fit to the input data.
-    """
-    x_max, sigma = weighted_mean_and_std(x, y)
-
-    #y_max  = np.argmax(y) # highest bin
-    #x_max  = x[np.argmax(y)] #x[highest bin y]
-    #sigma  = sigma_rel * x_max
-    amp    = y.max()  * (2 * np.pi)**0.5 * sigma
-    seed   = amp, x_max, sigma
-
-    return seed
 
 
 def quick_gauss_fit(data, bins, sigma = False):
