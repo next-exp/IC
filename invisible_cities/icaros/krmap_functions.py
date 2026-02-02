@@ -247,12 +247,13 @@ def create_time_slices(df, run_number, slice_hours):
     return dataframes
 
 
-def get_time_evol(df, col_name, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtbins, low_DT, high_DT, bins_Ec, error = False, seed = None):
+def get_time_evol(df, col_name, run_number, x0, y0, shape, shape_size, dtbins_dv, s1_DTrange, bins_Ec, error = False):
 
     """
     col_name needs to be the final corrected energy, for example, col_name = 'Ec_2' or whatever the name is
 
-    dtbins should be a numpy.linspace to stablish dtrange and binning
+    dtbins_dv should be a numpy.linspace to stablish dtrange and binning
+
 
     """
 
@@ -260,6 +261,9 @@ def get_time_evol(df, col_name, run_number, bins_lt, x0, y0, shape, shape_size, 
     std = df.S2e.std()/np.sqrt(len(df))
 
     kdst_in_region = select_lifetime_region(df, x0, y0, shape, shape_size)
+
+    #rough aproximation, should work fine
+    p0 = (kdst_in_region.S2e.median(), -30000)
 
     f = fit(expo, kdst_in_region.DT, kdst_in_region.S2e, p0)
     magnitudes, uncertainties = f.values, (f[2][0], f[2][1])
@@ -270,7 +274,7 @@ def get_time_evol(df, col_name, run_number, bins_lt, x0, y0, shape, shape_size, 
     e0 = magnitudes[0]
     e0u = uncertainties[0]
 
-    dv, udv = compute_drift_v(kdst_in_region.DT.to_numpy(), dtbins, seed)
+    dv, udv = compute_drift_v(kdst_in_region.DT.to_numpy(), dtbins_dv, seed = None)
 
 
     f = quick_gauss_fit(df[col_name].values, bins_Ec, sigma = error)
@@ -282,7 +286,7 @@ def get_time_evol(df, col_name, run_number, bins_lt, x0, y0, shape, shape_size, 
     R = np.sqrt(8*np.log(2))*(sigma/mu) #FWHM (krypton paper)
     u_R = R * (u_mu**2/mu**2 + u_sigma**2/sigma**2)**0.5
 
-    mask = in_range(df.DT.values, low_DT, high_DT)
+    mask = in_range(df.DT.values, *s1_DTrange)
     s1e_cath = df[mask].S1e.values.mean()
     us1e_cath = df[mask].S1e.values.std()/np.sqrt(len(df))
 
@@ -328,13 +332,13 @@ def get_time_evol(df, col_name, run_number, bins_lt, x0, y0, shape, shape_size, 
 
 
 
-def append_time_evol(dfs, col_name, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtbins, low_DT, high_DT, bins_Ec, error = False, seed = None):
+def append_time_evol(dfs, col_name, run_number, x0, y0, shape, shape_size, dtbins_dv, s1_DTrange, bins_Ec, error = False):
 
     df_tevols = []
 
     for df in dfs:
 
-        t_evol = get_time_evol(df, col_name, run_number, bins_lt, x0, y0, shape, shape_size, p0, dtbins, low_DT, high_DT, bins_Ec, error = False, seed = None)
+        t_evol = get_time_evol(df, col_name, run_number, x0, y0, shape, shape_size, dtbins_dv, s1_DTrange, bins_Ec)
 
         df_tevols.append(t_evol)
 
