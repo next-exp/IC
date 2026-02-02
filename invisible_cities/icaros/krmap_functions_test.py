@@ -108,7 +108,8 @@ def test_get_median_values():
     ratio_errors = ((map_test1['sigma']/np.sqrt(len(S2e_test1)))/(map_test2['sigma']/np.sqrt(len(S2e_test2)))).values
 
     assert map_test1['mu'].values == map_test2['mu'].values
-    assert map_test1['sigma'].values == map_test2['sigma'].values
+    #sigma has to be different because len(map_test1) < 5
+    assert map_test1['sigma'].values != map_test2['sigma'].values
     assert ratio_error_values == ratio_errors
 
 
