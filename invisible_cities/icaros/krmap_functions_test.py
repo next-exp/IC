@@ -432,7 +432,7 @@ def test_get_time_evol_shape():
                       'Ec_2':np.random.normal(loc = 41.5, scale = 2, size = 1001)
                      })
 
-   t_evol = get_time_evol(df, 'Ec_2', 1, 50, 0, 0, SelRegionMethod.circle, 1000, [8000, -30000], np.linspace(1250, 1400, 50), 1000, 1350, np.linspace(30, 60, 101))
+   t_evol = get_time_evol(df, 'Ec_2', 1, 0, 0, SelRegionMethod.circle, 1000, np.linspace(1250, 1400, 50), (1000, 1350), np.linspace(30, 60, 101))
 
    assert t_evol.shape[1] == df.shape[1] + 17
 
@@ -468,7 +468,7 @@ def test_append_time_evol():
 
     dfs = create_time_slices(df2, run_number = 1, slice_hours = 1)
 
-    t_evols = append_time_evol(dfs, 'Ec_2', 1, 50, 0, 0, SelRegionMethod.circle, 1000, [8000, -30000], np.linspace(1250, 1400, 50), 1000, 1350, np.linspace(30, 60, 101) , error = False)
+    t_evols = append_time_evol(dfs, 'Ec_2', 1, 0, 0, SelRegionMethod.circle, 1000, np.linspace(1250, 1400, 50), (1000, 1350), np.linspace(30, 60, 101), error = False)
 
     assert len(dfs) == len(t_evols)
     for col in t_evols.columns:
