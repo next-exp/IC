@@ -130,7 +130,8 @@ def test_gaussian_fit_get_median_Nevents():
     df_test = pd.DataFrame(data = d, index = range(0, 6))
     N = len(df_test)
     result_med = get_median(df_test)
-    result_fit = gaussian_fit(df_test, ebins = 6)
+    result_fit = gaussian_fit(df_test, nbins_S2e = 6)
+
     assert result_med['nevents'].iloc[0] == N
     assert result_fit['nevents'].iloc[0] == N
 
@@ -138,14 +139,14 @@ def test_gaussian_fit_get_median_Nevents():
 
 
 
-def test_gaussianfit_computes_right_values():
+def test_gaussian_fit_computes_right_values():
 
     with fix_random_seed(42):
         S2e_df = pd.DataFrame({
             'S2e': np.random.normal(loc = 8000, scale = 10.0, size = 10000)
         })
 
-    results = gaussian_fit(S2e_df, ebins = 50)
+    results = gaussian_fit(S2e_df, nbins_S2e = 50)
 
     assert np.isclose(results.mu[0], S2e_df.S2e.mean(), atol = 1)
     assert np.isclose(results.sigma[0], S2e_df.S2e.std(), atol = 0.5)
@@ -191,7 +192,8 @@ def test_fit_map_S2e_values():
                           xy_nbins = xy_nbins,
                           dt_nbins = dt_nbins,
                           fit_function = gaussian_fit,
-                          bins = 25) #ebins in gaussian_fit()
+                          nbins_S2e = 25,
+                          S2e_range = (1000, 20000))
 
     reference = result.iloc[0]
 
@@ -216,7 +218,7 @@ def test_merge_maps():
          'mu' : np.empty(11),
          'sigma' : np.empty(11),
          'mu_error' : np.empty(11),
-         'sigma_error' : np.empty(11)} #pon 2 is, 2js, 3ks por exemplo
+         'sigma_error' : np.empty(11)}
 
     map_3D_test = pd.DataFrame(data = d, index = range(0, 11))
     assert merge_maps(Nan_map_test, map_3D_test).shape == Nan_map_test.shape
