@@ -180,25 +180,23 @@ def compute_3D_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbi
 
 
 
-def compute_metadata(df, krmap, xy_range, dt_range,
-                     xy_nbins, dt_nbins, norm_method):
+def compute_metadata(df, krmap, xy_range, dt_range, xy_nbins, dt_nbins):
 
-    metadata = {
-        'rmax'        : df.R.max(),
-        'zmax'        : df.Z.max(),
-        'bin_size_dt' : (dt_range[1] - dt_range[0]) / dt_nbins,
-        'bin_size_x'  : (xy_range[1] - xy_range[0]) / xy_nbins,
-        'bin_size_y'  : (xy_range[1] - xy_range[0]) / xy_nbins,
-        'method'      : norm_method,
-        'dtbins'      : [krmap.k.unique().tolist()],
-        'xbins'       : [krmap.i.unique().tolist()],
-        'ybins'       : [krmap.j.unique().tolist()],
-        'nbins_dt'    : dt_nbins,
-        'nbins_x'     : xy_nbins,
-        'nbins_y'     : xy_nbins,
-        'map_shape'   : [df.shape],
-        'map_extent'  : len(df)
-    }
+    metadata = {'rmax'        : df.R.max(),
+                'zmax'        : df.Z.max(),
+                'bin_size_dt' : (dt_range[1] - dt_range[0]) / dt_nbins,
+                'bin_size_x'  : (xy_range[1] - xy_range[0]) / xy_nbins,
+                'bin_size_y'  : (xy_range[1] - xy_range[0]) / xy_nbins,
+                'dtbins'      : [krmap.k.unique().tolist()],
+                'xbins'       : [krmap.i.unique().tolist()],
+                'ybins'       : [krmap.j.unique().tolist()],
+                'nbins_dt'    : dt_nbins,
+                'nbins_x'     : xy_nbins,
+                'nbins_y'     : xy_nbins,
+                'xy_range'    : [xy_range],
+                'dt_range'    : [dt_range],
+                'map_shape'   : [df.shape],
+                'map_extent'  : len(df)}
 
 
     return pd.DataFrame(metadata, index = [0]).T
