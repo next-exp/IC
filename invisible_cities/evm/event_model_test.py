@@ -63,11 +63,12 @@ def hit_input(draw):
 
 @composite
 def hits(draw):
-    Q, x, y, xvar, yvar, nsipm                            = draw(cluster_input())
-    peak_number, E, z, x_peak, y_peak, s2ec, track_id, ep = draw(    hit_input())
+    Q, x, y, *_                                          = draw(cluster_input())
+    peak_number, E, z, x_peak, y_peak, s2ec, track_id, _ = draw(    hit_input())
 
-    c = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
-    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, ep)
+    # np.nan to represent invalid data, since we don't use it anymore
+    c = Cluster(Q, xy(x, y), xy(np.nan, np.nan), np.nan)
+    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, np.nan)
     return h
 
 
@@ -115,12 +116,13 @@ def test_hitenergy_value(value):
 
 @given(cluster_input(), hit_input())
 def test_hit(ci, hi):
-    Q, x, y, xvar, yvar, nsipm                            = ci
-    peak_number, E, z, x_peak, y_peak, s2ec, track_id, ep = hi
+    Q, x, y, *_                                          = ci
+    peak_number, E, z, x_peak, y_peak, s2ec, track_id, _ = hi
     xyz = x, y, z
 
-    c = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
-    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, ep)
+    # np.nan to represent invalid data, since we don't use it anymore
+    c = Cluster(Q, xy(x,y), xy(np.nan, np.nan), np.nan)
+    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, np.nan)
 
     assert h.peak_number == peak_number
     assert h.npeak       == peak_number
@@ -135,7 +137,6 @@ def test_hit(ci, hi):
     np.allclose(h.pos     , xyz     , rtol=1e-4)
     np.allclose(h.Ec      , s2ec    , rtol=1e-4)
     np.allclose(h.track_id, track_id, rtol=1e-4)
-    np.allclose(h.Ep      , ep      , rtol=1e-4)
 
 
 @given(voxel_input())

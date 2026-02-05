@@ -25,8 +25,7 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
     dst : pd.DataFrame
         DataFrame with obligatory columns :
                 event, npeak, X, Y, Z,  Q, E
-        If time, nsipm, Xrms, Yrms, Qc, Ec, track_id are not
-        inside dst the default value is set to -1
+        If time, Ec, track_id are not inside dst the default value is set to -1
         If Xpeak, Ypeak not in dst the default value is -1000
     ------
     Returns
@@ -43,38 +42,25 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
             Q = getattr(row,'Q', row.E)
             if skip_NN and Q == NN:
                 continue
-            if hasattr(row, 'Xrms'):
-                Xrms  = row.Xrms
-                Xrms2 = Xrms**2
-            else:
-                Xrms = Xrms2 = 0
-            if hasattr(row, 'Yrms'):
-                Yrms  = row.Yrms
-                Yrms2 = Yrms**2
-            else:
-                Yrms = Yrms2 = 0
-            nsipm   = getattr(row, 'nsipm'   , -1   )     # for backwards compatibility
-            Qc      = getattr(row, 'Qc'      , -1   )     # for backwards compatibility
             Xpeak   = getattr(row, 'Xpeak'   , -1000)     # for backwards compatibility
             Ypeak   = getattr(row, 'Ypeak'   , -1000)     # for backwards compatibility
             Ec      = getattr(row, 'Ec'      , -1   )     # for backwards compatibility
             trackID = getattr(row, 'track_id', -1   )     # for backwards compatibility
-            Ep      = getattr(row, "Ep"      , -1   )     # for backwards compatibility
 
             hit = Hit(row.npeak            ,
                       Cluster(Q               ,
                               xy(row.X, row.Y),
-                              xy(Xrms2, Yrms2),
-                              nsipm = nsipm   ,
+                              xy(    0,     0),
+                              nsipm =      1  ,
                               z     = row.Z   ,
                               E     = row.E   ,
-                              Qc    = Qc      ),
+                              Qc    =  0      ),
                       row.Z                ,
                       row.E                ,
                       xy(Xpeak, Ypeak)     ,
                       s2_energy_c = Ec     ,
                       track_id    = trackID,
-                      Ep          = Ep     )
+                      )
 
             hits.append(hit)
 
