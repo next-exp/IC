@@ -55,14 +55,14 @@ def monitor_S1S2(df         : pd.DataFrame,
     df2 = df.groupby('event s1_peak'.split()).first().reset_index()
     df2 = df2.groupby('event').count()
 
-    axs[0, 0].hist(df2.nS1, bins=10, range=(0, 20),
+    axs[0, 0].hist(df2.nS2, bins=10, range=(0, 20),
                    density=True, histtype='step', label=
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df2_.nS1.mean():.2f}\n'
-                   f'std: {df2_.nS1.std():.2f}')
-    axs[0, 0].set_xlabel('Number of S1')
-    axs[0, 0].set_title('nS1 distribution')
+                   f'mean: {df2.nS2.mean():.2f}\n'
+                   f'std: {df2.nS2.std():.2f}')
+    axs[0, 0].set_xlabel('Number of S2')
+    axs[0, 0].set_title('nS2 distribution')
     axs[0, 0].grid(True)
     axs[0, 0].legend()
 
@@ -70,34 +70,34 @@ def monitor_S1S2(df         : pd.DataFrame,
     df1 = df1.groupby('event').count()
 
 
-    axs[0, 1].hist(df1.nS2, bins=20, range=(0, 20),
+    axs[0, 1].hist(df1.nS1, bins=20, range=(0, 20),
                    density=True, histtype='step', label=
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df1_.nS2.mean():.2f}\n'
-                   f'std: {df1_.nS2.std():.2f}')
-    axs[0, 1].set_xlabel('Number of S2')
-    axs[0, 1].set_title('nS2 distribution')
+                   f'mean: {df1.nS1.mean():.2f}\n'
+                   f'std: {df1.nS1.std():.2f}')
+    axs[0, 1].set_xlabel('Number of S1')
+    axs[0, 1].set_title('nS1 distribution')
     axs[0, 1].grid(True)
     axs[0, 1].legend()
 
 
-    axs[1, 0].hist(df2.S1t, bins=100, histtype = 'step', density=True, label =
+    axs[1, 0].hist(df1.S1t, bins=100, histtype = 'step', density=True, label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df.S1t.mean():.2f}\n'
-                   f'std: {df.S1t.std():.2f}')
+                   f'mean: {df1.S1t.mean():.2f}\n'
+                   f'std: {df1.S1t.std():.2f}')
     axs[1, 0].set_xlabel('S1 waveform time')
     axs[1, 0].set_title('S1 time distribution')
     axs[1, 0].grid(True)
     axs[1, 0].legend()
 
 
-    axs[1, 1].hist(df1.S2t, bins=100, histtype = 'step', density=True, label =
+    axs[1, 1].hist(df2.S2t, bins=100, histtype = 'step', density=True, label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df.S2t.mean():.2f}\n'
-                   f'std: {df.S2t.std():.2f}')
+                   f'mean: {df2.S2t.mean():.2f}\n'
+                   f'std: {df2.S2t.std():.2f}')
     axs[1, 1].set_xlabel('S2 waveform time')
     axs[1, 1].set_title('S2 time distribution')
     axs[1, 1].grid(True)
