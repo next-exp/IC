@@ -51,10 +51,10 @@ def test_method_norm():
     assert normalization(map_test, NormMethod.median_chamber) == 4647.5
     assert normalization(map_test, NormMethod.median_anode) == 4400.0
 
-    assert normalization(map_test, NormMethod.mean_region_anode, region) == map_test.loc[(map_test.k == 0) & region_mask,'mu'].mean()
-    assert normalization(map_test, NormMethod.mean_region_chamber, region) == map_test.loc[region_mask,'mu'].mean()
-    assert normalization(map_test, NormMethod.median_region_anode, region) == map_test.loc[(map_test.k == 0) & region_mask, 'mu'].median()
-    assert normalization(map_test, NormMethod.median_region_chamber, region) == map_test.loc[region_mask, 'mu'].median()
+    assert normalization(map_test, NormMethod.mean_region_anode, region) == 1200.0
+    assert normalization(map_test, NormMethod.mean_region_chamber, region) == 1210.125
+    assert normalization(map_test, NormMethod.median_region_anode, region) == 1200.0
+    assert normalization(map_test, NormMethod.median_region_chamber, region) == 1213.5
 
 
 
