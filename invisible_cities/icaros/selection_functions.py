@@ -1,6 +1,7 @@
 import numpy             as np
 import pandas            as pd
 from   scipy.optimize     import curve_fit
+from typing import Callable, Union
 
 import matplotlib.pyplot as plt
 from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
@@ -13,7 +14,25 @@ dtrms2_low = lambda dt: -0.7 + 0.030 * (dt-20) # Gonzalo's
 dtrms2_upp = lambda dt: 2.6 + 0.036 * (dt-20) # Gonzalo's2
 
 
-def eff_of_selection(df_before, df_after, name = ""):
+def eff_of_selection(df_before  : pd.DataFrame,
+                     df_after   : pd.DataFrame,
+                     name       : str = "") -> float:
+    """
+    Calculates the efficiency of a certain selection.
+    Parameters
+    ----------
+    df_before : pd.DataFrame
+        Dataframe (kdst sophronia output) before applying selections
+    df_after : pd.DataFrame
+        Dataframe after applying selections
+    name : string (optional)
+        Name of the selection
+    Returns
+    -------
+    eff : float
+        Efficiency of the selection
+    """
+
     events_before = df_before.event.nunique()
     events_after = df_after.event.nunique()
 
@@ -26,7 +45,32 @@ def eff_of_selection(df_before, df_after, name = ""):
     return eff
 
 
-def select_var_inrange(kdst, col_name, low, high, sel_name):
+def select_var_inrange(kdst      : pd.DataFrame,
+                       col_name  : str,
+                       low       : float,
+                       high      : float,
+                       sel_name  : str) -> [pd.DataFrame, float]:
+    """
+    Selects a certain variable from a dataframe in a certain range.
+    Parameters
+    ----------
+    kdst : pd.DataFrame
+       Dataframe (kdst sophronia output) where the selection is being applied
+    col_name : str
+       Name of the variable that is being selected
+    low : float
+       Low limit of the range inside the variable is being selected
+    high : float
+       Upper limit fo the range inside the variable is being selected
+    sel_name : str
+       Selection name for efficiency calculation
+    Returns
+    -------
+    df_sel : pd.DataFrame
+       Dataframe after applying selection
+    eff_sel : str
+       Efficiency of the performed selection
+    """
 
     sel = in_range(kdst[col_name], low, high)
     df_sel = kdst[sel]
@@ -36,7 +80,7 @@ def select_var_inrange(kdst, col_name, low, high, sel_name):
     return df_sel, eff_sel
 
 
-def select_1S1_1S2(kdst):
+def select_1S1_1S2(kdst : pd.DataFrame) -> [pd.DataFrame, float]:
 
     """
     We need to select those events that have 1S1 and 1S2
@@ -45,6 +89,17 @@ def select_1S1_1S2(kdst):
     Group kdst by event, select one variable (time for example)
     and count how many times it is repeated. If it apears only one time
     per event, that event has 1S1 and 1S2.
+
+    Parameters
+    ----------
+    kdst : pd.DataFrame
+      Dataframe (kdst sophronia output) where the 1S1&1S2 selection is being applied
+    Returns
+    -------
+    df_1S1_1S2 : pd.DataFrame
+      Dataframe after applying 1S1&1S2 selection
+    eff_1S1_1S2 : str
+      Efficiency of the 1S1&1S2 selection
     """
 
     #Choosing 'time' column because we had to choose one
@@ -59,7 +114,53 @@ def select_1S1_1S2(kdst):
 
 
 
-def apply_selections(kdst, dtrms2_low, dtrms2_upp, low_xrays, high_xrays, low_S2t, high_S2t, R_max, low_DT, high_DT, low_nsipm, high_nsipm):
+def apply_selections(kdst        : pd.DataFrame,
+                     dtrms2_low  : Callable,
+                     dtrms2_upp  : Callable,
+                     low_xrays   : float,
+                     high_xrays  : float,
+                     low_S2t     : float,
+                     high_S2t    : float,
+                     R_max       : float,
+                     low_DT      : float,
+                     high_DT     : float,
+                     low_nsipm   : float,
+                     high_nsipm  : float) -> [pd.DataFrame, pd.DataFrame]:
+    """
+    Applies all necessary selections to get a selected dataframe with its corresponding efficiencies.
+    Parameters
+    ----------
+    kdst : pd.DataFrame
+      Dataframe (kdst sophronia output) where the selections are being applied
+    dtrms2_low : function
+      Low limit for drift time (DT) when selecting diffusion band
+    dtrms2_upp : function
+      Upper limit for drift time (DT) when selecting diffusion band
+    low_xrays : float
+      Low limits for corrected energy (keV) to avoid Kr Xrays
+    high_xrays : float
+      Upper limit for corrected energy (keV) to avoid Kr Xrays
+    low_S2t : float
+      Low limit for S2 trigger time
+    high_S2t : float
+      Upper limit for S2 trigger time
+    R_max : float
+      Maximum radius
+    low_DT : float
+      Low drift time limit
+    high_DT : float
+      Upper drift time limit
+    low_nsipm : float
+g      Low number of triggered SiPMs
+    high_nsipm : floar
+      Upper number of triggered SiPMs
+    Returns
+    -------
+    df_final : pd.DataFrame
+      Dataframe after all selections
+    df_efficiencies : pd.DataFrame
+      Dataframe containing the efficiency of each selection and the total efficiency
+    """
 
     kdst['Zrms2'] = kdst.Zrms**2
 

@@ -7,6 +7,7 @@
 import numpy             as np
 import pandas            as pd
 from   scipy.optimize     import curve_fit
+from typing import Callable, Union, Tuple
 
 import matplotlib.pyplot as plt
 
@@ -28,7 +29,25 @@ ebins      = np.linspace(0, 15e3, 101)
 freq = lambda : plt.ylabel("frequency")
 
 
-def monitor_S1S2(df, run_number):
+def monitor_S1S2(df         : pd.DataFrame,
+                 run_number : int):
+    """
+    Plots distributions for nS1 and nS2 as well as the distributions for their trigger times.
+    To get the actual number of S1 or S2 and not the times that they are repeated, we use  the
+    first entry after doing groupby event s1_peak for S2 and event s2_peak for S1 to then groupby
+    event again and .count().
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Input dataframe (either the kdst before or after applying selections)
+    run_number : int
+      Number of the run being analyzed (just for the labels)
+    Returns
+    -------
+    Plots
+    """
+
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
 
     nevents = len(df['event'].unique())
@@ -88,7 +107,36 @@ def monitor_S1S2(df, run_number):
 
 
 
-def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
+def monitor_S1(df         : pd.DataFrame,
+               run_number : int,
+               ebins      : np.array,
+               ns1bins    : np.array,
+               s1hbins    : np.array,
+               s1wbins    : np.array):
+    """
+    Plots distributions for nS1, S1e, S1h, S1w.
+    -To get the actual number of S1 and not the times that it is repeated, we use the first
+    entry after doing groupby event s2_peak to then groupby event again and .count().
+    -Why are we plotting the mean values? I think its ok but think why
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Input dataframe (either the kdst before or after applying selections)
+    run_number : int
+      Number of the run being analyzed
+    ebins : np.array
+      To set energy limits and range
+    ns1bins : np.array
+      To set limits and range on nS1
+    s1hbins : np.array
+      To set limits and range on S1 height
+    s1wbins : np.array
+      To set limits and range on S1 width
+    Returns
+    -------
+    Histograms of the variables
+    """
+
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
 
     nevents = len(df['event'].unique())
@@ -148,7 +196,44 @@ def monitor_S1(df, ebins, ns1bins, s1hbins, s1wbins):
 
 
 
-def monitor_S2(df, run_number, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins):
+def monitor_S2(df          : pd.DataFrame,
+               run_number  : int,
+               ebins       : np.array,
+               ns2bins     : np.array,
+               s2hbins     : np.array,
+               s2qbins     : np.array,
+               qmaxbins    : np.array,
+               s2wbins     : np.array):
+    """
+    Plots distributions for nS2, S2e, S2h, S2q, qmax and S2w.
+    -To get the actual number of S2 and not the times that it is repeated, we use the first
+    entry after doing groupby event s1_peak to then groupby event again and .count().
+    -Why are we plotting the mean values? I think its ok but think why
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Input dataframe (either the kdst before or after applying selections).
+    run_number : int
+      Number of the run being analyzed.
+    ebins : np.array
+      To set energy limits and range.
+    ns2bins : np.array
+      To set limits and range on nS2.
+    s2hbins : np.array
+      To set limits and range on S2 height.
+    s2qbins : np.array
+      To set limits and range on S2 charge.
+    qmaxbins : np.array
+      To set limits and range on Qmax.
+    s2wbins : np.array
+      To set limits and range on S2 width.
+    Returns
+    -------
+    Histograms of the variables
+
+    """
+
+
     fig, axs = plt.subplots(3, 2, figsize=(15, 12))
 
     nevents = len(df['event'].unique())
@@ -228,7 +313,24 @@ def monitor_S2(df, run_number, ebins, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbi
 
 
 
-def monitor_dtime(df, dtrms2_low, dtrms2_upp, dtrms2_cen):
+def monitor_dtime(df          : pd.DataFrame,
+                  dtrms2_low  : Callable,
+                  dtrms2_upp  : Callable,
+                  dtrms2_cen  : Callable):
+    """
+    Plots 2D histograms of DTrms and square DTrms as a function of drift time
+    and the drift time and squared drift time distributions.
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Dataframe containing the drift time that we want to monitor.
+    dtrms2_low : Callable
+      Function of drift time that defines the lower limit of the diffusion band.
+    dtrms2_upp : Callable
+      Function of drift time that defines the upper limit of the diffusion band.
+    dtrms2_cen : Callabla
+      Function of drift time that define the center of the diffusion band.
+    """
 
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
 
@@ -252,24 +354,29 @@ def monitor_dtime(df, dtrms2_low, dtrms2_upp, dtrms2_cen):
     fig.tight_layout();
 
 
-def monitor_lifetime(df, S2erange, dtbins, ebins):
+def monitor_lifetime(df        : pd.DataFrame,
+                     S2erange  : np.array,
+                     dtbins    : np.array):
+    """
+    Plots a 2D histogram of S2e vs drift time.
+    """
 
-    fig, axs = plt.subplots(1, 2, figsize = (15, 5))
-
-    axs[0].hist2d(df.DT, df.S2e, (dtbins, ebins));
-    axs[0].set_xlabel(r"DT ($\mu$s)"); axs[0].set_ylabel("S2e (pe)"); axs[0].set_xlim(0, 1500)
-
-
-    axs[1].scatter(df.DT, df.S2e, alpha = 0.01); axs[1].set_xlim(0, 1500);
-    axs[1].set_ylim(*S2erange);
-    axs[1].set_xlabel(r"DT ($\mu$s)");
-    axs[1].set_ylabel("S2e (pe)");
+    plt.hist2d(df.DT, df.S2e, (dtbins, ebins));
+    plt.xlabel(r"DT ($\mu$s)");
+    plt.ylabel("S2e (pe)");
+    plt.xlim(0, 1500)
 
     fig.tight_layout();
 
 
 
-def monitor_kr_distribution(df, bins, dtr2_bins):
+def monitor_kr_distribution(df        : pd.DataFrame,
+                            bins      : int,
+                            dtr2_bins : tuple):
+    """
+    Plots the square radial distribution and a 2D distribution of the
+    square radius as a function of drift time.
+    """
 
     sel = in_range(df.S2e, 7.5e3, 9.5e3) & in_range(df.DT, 20, 1350)
 
@@ -292,7 +399,13 @@ def monitor_kr_distribution(df, bins, dtr2_bins):
 
 
 
-def hist2D(df, run, statistic):
+def hist2D(df        : pd.DataFrame,
+           run       : int,
+           statistic : str):
+    """
+    Plots a 2D histogram or "map" in X,Y where each bin contains the specified
+    statistic (mean, counts...) of the S2e (pe)
+    """
 
     df = df.dropna(subset=['X', 'Y'])
 
@@ -327,12 +440,14 @@ def hist2D(df, run, statistic):
 
 
     plt.tight_layout();
-    return values, bin_centers
 
 
-def plot_Ec(Ec_1, Ec_2):
+def plot_Ec(Ec_1  : pd.core.series.Series,
+            Ec_2  : pd.core.series.Series) -> [Tuple[float, float, float], Tuple[float, float, float]]:
     """
-    This function is for comparing specifically the corrected energy from applying the preliminary map (Ec) vs the "final" corrected energy (from applying the self map and all the correction chain, Ec_2)
+    This function is for comparing specifically the distributions of corrected energy
+    from applying the preliminary map (Ec) vs the "final" corrected energy
+    (from applying the self map and all the correction chain, Ec_2)
     """
     mean_Ec2 = Ec_2.mean()
     stdEc2 = Ec_2.std()
@@ -355,7 +470,14 @@ def plot_Ec(Ec_1, Ec_2):
     return (mean_Ec2, stdEc2, umeanEc2), (mean_Ec, stdEc, umeanEc)
 
 
-def plot_lifetime_fit(df): #df should be kdst_in_region or the fit won't work
+def plot_lifetime_fit(df : pd.DataFrame) -> [[float, float], Tuple[float, float]]:
+
+    """
+    Plots a 2D histogram of DT vs S2e.
+    Computes a fit to the lifetime and calculates and plots its profile.
+    -df should be kdst_in_region (from applying select_lifetime_region() function)
+    or the fit won't work.
+    """
 
     f  = fit(expo, df.DT, df. S2e, seed = [8000, -30000]);
     magnitudes = f.values
@@ -375,7 +497,16 @@ def plot_lifetime_fit(df): #df should be kdst_in_region or the fit won't work
 
 
 
-def krmap_ratio_hist2D(df1, df2, run1_name, run2_name, bins, statistic):
+def krmap_ratio_hist2D(df1        : pd.DataFrame,
+                       df2        : pd.DataFrame,
+                       run1_name  : Union[str, int],
+                       run2_name  : Union[str, int],
+                       bins       : int,
+                       statistic  : str):
+    """
+    Plots ratio of the specified statistic (mean, counts...) on a 2D histogram
+    for 2 different runs, ideally one run and the reference run used in the preliminary map.
+    """
 
     xrange = (-500, 500)
     yrange = (-500, 500)
@@ -424,11 +555,17 @@ def krmap_ratio_hist2D(df1, df2, run1_name, run2_name, bins, statistic):
 
 
     ratio = ratio[~np.isnan(ratio)]
-    return ratio
+    #return ratio
 
 
 
-def plot_sigmoid(df): #use kdst_in_region
+def plot_sigmoid(df : pd.DataFrame):
+
+    """
+    Plots sigmoid fit to drift time using kdst_in_region
+    (from applying select_lifetime_region() function to the kdst)
+    """
+
     counts, bins, _ = np.histogram(df.DT, bins = 20, range = (1200, 1500))
     bin_centers = shift_to_bin_centers(bins)
     f = fit(sigmoid, bin_centers, counts, seed = [1000, 1400, 0, 0.1])

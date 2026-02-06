@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from matplotlib.patches import Circle, Rectangle
 from typing import Tuple
 from invisible_cities.core.stat_functions import poisson_sigma
@@ -8,10 +9,31 @@ from invisible_cities.types.symbols import SelRegionMethod
 
 
 
-def select_lifetime_region(df, x0, y0, shape, shape_size):
+def select_lifetime_region(df         : pd.DataFrame,
+                           x0         : float,
+                           y0         : float,
+                           shape      : SelRegionMethod,
+                           shape_size : float) -> pd.DataFrame :
 
     """
-    shape_size is either the size of the radius or square side
+    Selects an specific region that can either a cirlce or a square
+    to calculate the lifetime inside.
+    Parameters
+    ----------
+    df: pd.DataFrame
+       Kdst sophronia output after previous corrections and selections.
+    x0: float
+       Point in x corresponding to the center of the circle or square.
+    y0: float
+       Point in y corresponding to the center of the circle or square.
+    shape: symbols/SelRegionMethod
+       Geometric shape of the region, according to SelRegionMethod class.
+    shape_size: float
+       Either the value of the circle's radius or square half side.
+    Returns
+    -------
+    df_region: pd.DataFrame
+        Kdst data inside the selected region.
     """
 
     df = df.dropna(subset=['X','Y'])
@@ -35,7 +57,7 @@ def select_lifetime_region(df, x0, y0, shape, shape_size):
 
 def compute_drift_v(dtdata   : np.array,
                     dtbins   : np.array,
-                    seed     : Tuple[float, float, float, float]):
+                    seed     : Tuple[float, float, float, float]) -> [float, float]:
     '''
     Computes the drift velocity for a given distribution
     using the sigmoid function to get the cathode edge.
@@ -44,7 +66,7 @@ def compute_drift_v(dtdata   : np.array,
     dtdata: array_like
         Values of DT coordinate.
     dtbins: array_like
-        Binning for drift velocity computation
+        Binning for drift velocity computation.
     seed: length-4 tuple (optional)
         Seed for the fit.
     Returns

@@ -5,7 +5,25 @@ from invisible_cities.core.core_functions import in_range
 from invisible_cities.types.symbols import NormMethod
 
 
-def normalization(krmap, method, xy_params = None):
+def normalization(krmap    : pd.DataFrame,
+                  method   : NormMethod,
+                  xy_params = None) -> float:
+    """
+    Given a input krypton map, normalizes the whole map to a certain value
+    as a function of the chosen method.
+    Parameters
+    ----------
+    krmap : pd.DataFrame
+      Input krypton map whose bins are going to be normalized.
+    method : NormMethod
+      Method for normalization, defined in class function NormMethod.
+    xy_params : dict
+      Limits in x and y that define the region inside of which the normalization
+      will be performed.
+    Returns
+    -------
+    Normalization value using the chosen method.
+    """
 
     krmap = krmap.dropna(subset=['mu'])
 
@@ -57,7 +75,51 @@ def normalization(krmap, method, xy_params = None):
 
 
 
-def apply_3Dmap(krmap, norm_method, dt, x, y, E, xy_params = None, keV = False):
+def apply_3Dmap(krmap        : pd.DataFrame,
+                norm_method  : NormMethod,
+                dt           : pd.core.series.Series,
+                x            : pd.core.series.Series,
+                y            : pd.core.series.Series,
+                E            : pd.core.series.Series,
+                xy_params    : dict = None,
+                keV          : bool = False) -> pd.core.series.Series:
+    """
+    Applies a given krypton map normalized using the chosen normalization method
+    to dt, x, y, E data from dataframes to get the corrected energy.
+
+    -The corrected energy is computed using the expression
+
+         E = S_2/S_0(x,y,z) E_0
+
+         where S2 is the uncorrected S2 signal in pe,
+         $E_0 = 41.55 keV$ is the known energy deposited by a 83mKr decay,
+         and $S_0(x,y,z)$ is the average energy of 83mKr events +
+         from the corresponding voxel of the reference energy map.
+    Parameters
+    ----------
+    krmap : pd.DataFrame
+      Input krypton map whose bins are going to be normalized.
+    method : NormMethod
+      Method for normalization, defined in class function NormMethod.
+    dt : pd.core.series.Series
+      Drift time column from dataframe
+    x : pd.core.series.Series
+      x coordinate column from dataframe
+    y : pd.core.series.Series
+      y coordinate column from dataframe
+    E : pd.core.series.Series
+      S2e column from dataframe
+    xy_params : dict
+      Limits in x and y that define the region inside of which the normalization
+      will be performed.
+    keV : bool
+      Boolean to decide whether the correction factor is applied in pes or keV (better if True)
+    Returns
+    -------
+    Ec : pd.core.series.Series
+      Corrected energy
+
+    """
 
     map_points = krmap['dt x y'.split()].values
     norm = normalization(krmap, norm_method, xy_params)
@@ -74,10 +136,37 @@ def apply_3Dmap(krmap, norm_method, dt, x, y, E, xy_params = None, keV = False):
     return Ec
 
 
-def apply_correctionmap(kdst, map3D, norm_method, xy_params, col_name, keV = True):
+def apply_correctionmap(kdst        : pd.DataFrame,
+                        map3D       : pd.DataFrame,
+                        norm_method : NormMethod,
+                        xy_params   : dict,
+                        col_name    : str,
+                        keV         : bool = True) -> pd.DataFrame:
 
     """
-    xy_params must be a dictionary: {'x_high': , 'x_low': , 'y_high': , 'y_low': }
+    Applies a given krypton map using apply_3Dmap to get as an output a kdst with
+    a column for the corrected energy.
+    Parameters
+    ----------
+    kdst : pd.DataFrame
+      Dataframe to which the map is being applied.
+    map3D : pd.DataFrame
+      Krypton map to apply to the dataframe.
+    norm_method : NormMethod
+      Method chosen to normalize the krypton map.
+    xy_params : dict
+      Limits in x and y that define the region inside of which the normalization
+      will be performed.
+      Must be a dictionary: {'x_high': , 'x_low': , 'y_high': , 'y_low': }
+    col_name : str
+      Name of the column where the corrected energy will be in the new dataframe.
+    keV : bool
+      Boolean to decide whether the correction factor is applied in keV or pe (better if True)
+    Returns
+    -------
+    kdst : pd.DataFrame
+      Dataframe containing the same data as the input dataframe with one more column named
+      col_name filled with the corrected energy.
 
     """
 

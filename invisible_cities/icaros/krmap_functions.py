@@ -1,10 +1,12 @@
 import pandas as pd
 import numpy  as np
+from typing import Callable, Union
 
 from invisible_cities.core.fit_functions import expo, gauss, fit
 from invisible_cities.io.dst_io import load_dst, load_dsts, df_writer
 from invisible_cities.core.core_functions import in_range, shift_to_bin_centers, weighted_mean_and_std
 from invisible_cities.core.stat_functions import poisson_sigma
+from invisible_cities.types.symbols import SelRegionMethod
 
 from lifetime_vdrift_functions import select_lifetime_region, compute_drift_v
 
@@ -35,10 +37,27 @@ def gauss_seed(x, y, sigma_rel=0.05):
 
 
 
-def create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins):
+def create_empty_map(xy_range : tuple,
+                     dt_range : tuple,
+                     xy_nbins : int,
+                     dt_nbins : int) -> pd.DataFrame:
     """
-    - Uses every possible indices combination
-    - Creates a DataFrame filled with NaNs for each (i, j, k) combination
+    - Uses every possible indices combination.
+    - Creates a DataFrame filled with NaNs for each (i, j, k) combination.
+    Parameters
+    ----------
+    xy_range : tuple
+      Range in x and y (mm) inside which the map is being computed.
+    dt_range : tuple
+      Range in drift time (micro seconds) (same as z) inside which the map is being computed.
+    xy_nbins : int
+      Number of map bins for x and y.
+    dt_nbins : int
+      Number of map bins for drift time.
+    Returns
+    -------
+    Nan_map : pd.DataFrame
+      Dataframe filled with NaNs for each (i,j,k) combination.
     """
 
     i_range = np.arange(0, xy_nbins)
@@ -77,8 +96,26 @@ def get_median(df):
          'sigma_error': np.nan}, index = [0])
 
 
+def gaussian_fit(df         : pd.DataFrame,
+                 nbins_S2e  : int,
+                 min_events : int = 10) -> pd.DataFrame:
+    """
+    Given a dataframe, computes a gaussian fit of S2e if len(df) is equal or
+    greater than min_events. If not, computes the median using get_median.
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Dataframe in which the gaussian fit of the S2e values is being performed.
+    nbins_S2e : int
+      Number of bins to histogram S2e.
+    Returns
+    -------
+    map : pd.DataFrame
+      Dataframe containing 'nevents', 'mu', 'sigma', 'mu_error', 'sigma_error'
+      of the input dataframe, where mu and mu_error are the mean and mean error
+      of the fit.
+    """
 
-def gaussian_fit(df, nbins_S2e, min_events = 10):
     if len(df)< min_events:
         return get_median(df)
 
@@ -108,7 +145,46 @@ def gaussian_fit(df, nbins_S2e, min_events = 10):
 
 
 
-def fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e, S2e_range):
+def fit_map(df            : pd.DataFrame,
+            xy_range      : tuple,
+            dt_range      : tuple,
+            xy_nbins      : int,
+            dt_nbins      : int,
+            fit_function  : Callable,
+            nbins_S2e     : int,
+            S2e_range     : tuple) -> pd.DataFrame:
+    """
+    For a given dataframe :
+    - takes its x, y, dt and S2e values with their respective ranges.
+    - calculates every possible indices combination to get i,j,k.
+    - creates a map applying fit_function to data.
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Input dataframe from which the map is being calculated.
+    xy_range : tuple
+      Range in x and y (mm) inside which the map is being computed.
+    dt_range : tuple
+      Range in drift time (micro seconds) (same as z) inside which the map is being computed.
+    xy_nbins : int
+      Number of map bins for x and y.
+    dt_nbins : int
+      Number of map bins for drift time.
+    fit_function : function
+      Function to fit S2e to.
+    nbins_S2e: int
+      Number of map bins for S2e.
+    S2e_range: tuple
+      Range in S2e (pe) inside which the map is being computed.
+    Returns
+    -------
+    result : pd.DataFrame
+      Map containing every possible indices combination (k, i, j) that have
+      data and 'nevents', 'mu', 'sigma', 'mu_error', 'sigma_error' of the input
+      dataframe after applying fit_function (note that it doesn't include spatial
+      coordinates and if there is an index combination that doesn't contain data
+      it won't appear in the output).
+    """
 
     df = df.loc[:,['X', 'Y', 'DT', 'S2e']]
 
@@ -139,15 +215,27 @@ def fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e,
     return result
 
 
-def merge_maps(NaN_map, map_3D):
+def merge_maps(NaN_map : pd.DataFrame,
+               map_3D  : pd.DataFrame) -> pd.DataFrame:
 
     """
-    When we do the 3D (data) maps we get a dataframe where some rows might be missing due to
+    -When we do the 3D (data) maps we get a dataframe where some rows might be missing due to
     "lack of data". We combine this 3D data map with a "full map" filled with NaNs.
     We combine these two maps to ensure that all bins are present.
-
-    For bins with data, we have "repeated rows" with NaNs and data,
+    -For bins with data, we have "repeated rows" with NaNs and data,
     we discard the NaN rows (doing .first()) to get a dataframe with full proper shape.
+    Parameters
+    ----------
+    NaN_map : pd.DataFrame
+      Map full of NaNs output of create_empty_map.
+    map_3D  : pd.DataFrame
+      3D data map output of fit_map.
+    Returns
+    -------
+    full_map : pd.DataFrame
+       Full map representing all bins (every possible indices combination), filled with
+       data from fit_map and with NaNs in those bins where there is no data (note that
+       spatial coordinates (dt, x, y) are still missing).
     """
 
     full_map = pd.concat([map_3D, NaN_map], ignore_index = True)
@@ -156,7 +244,33 @@ def merge_maps(NaN_map, map_3D):
     return full_map
 
 
-def include_coordinates(krmap, xy_range, dt_range, xy_nbins, dt_nbins):
+def include_coordinates(krmap     : pd.DataFrame,
+                        xy_range  : tuple,
+                        dt_range  : tuple,
+                        xy_nbins  : int,
+                        dt_nbins  : int) -> pd.DataFrame:
+    """
+    This function adds (dt, x, y) spatial coordinates to an input map
+    which would be the output of full_map as the center of x, y, dt bins
+    computed given their respective ranges and number of bins.
+    Parameters
+    ----------
+    krmap : pd.DataFrame
+      Input map where the spatial coordinates are being added.
+    xy_range : tuple
+      Range in x and y where the krmap was computed and (x,y) coordinate limits.
+    dt_range : tuple
+      Range in drift time where the krmap was computed and dt coordinate limit.
+    xy_nbins : int
+      Number of bins in x and y to get the x,y coordinates.
+    dt_nbins : int
+      Number of bins in dt to get the dt coordinate.
+    Returns
+    -------
+    krmap : pd.DataFrame
+      Output map containing the same values as the input map with three more columns
+      corresponding to dt, x and y spatial coordinates.
+    """
 
     dt_binsize = (dt_range[1] - dt_range[0])/dt_nbins
     xy_binsize = (xy_range[1] - xy_range[0])/xy_nbins
@@ -169,7 +283,47 @@ def include_coordinates(krmap, xy_range, dt_range, xy_nbins, dt_nbins):
 
 
 
-def compute_3D_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e, S2e_range):
+def compute_3D_map(df           : pd.DataFrame,
+                   xy_range     : tuple,
+                   dt_range     : tuple,
+                   xy_nbins     : int,
+                   dt_nbins     : int,
+                   fit_function : Callable,
+                   nbins_S2e    : int,
+                   S2e_range    : tuple) -> pd.DataFrame:
+    """
+    Computes a full 3D map merging (with merge_maps) a map full of nans from create_empty_map
+    with a 3D data map from fit_map and adding spatial coordinates using include_coordinates.
+    Parameters
+    ----------
+    df  : pd.DataFrame
+      Dataframe from which 3D (data) map is being calculated (input for fit_map).
+    xy_range : tuple
+      Range in x and y necessary to compute map full of nans, 3D map and to limit spatial
+      coordinates.
+    dt_range : tuple
+      Range in drift time necessary to compute map full of nans, 3D maps and to limit
+      spatial coordinates.
+    xy_nbins : int
+      Number of bins in x and y necessary to compute map full of nans, 3D maps and to set
+      bin size for spatial coordinates.
+    dt_nbins : int
+      Number of bins in drift time necessary to compute map full of nans, 3D maps and to
+      set bin size for dt spatial coordinate.
+    fit_function : function
+      Function to fit S2e to.
+    nbins_S2e: int
+      Number of map bins for S2e.
+    S2e_range: tuple
+      Range in S2e (pe) inside which the map is being computed.
+    Returns
+    -------
+    full_map : pd.DataFrame
+      Full map representing all bins (every possible indices combination), filled with
+      data from fit_map,  with NaNs in those bins where there is no data and spatial
+      dt, x, y coordinates.
+    """
+
     NaN_map = create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins)
     map_3D_fit = fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e, S2e_range)
 
@@ -180,7 +334,35 @@ def compute_3D_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbi
 
 
 
-def compute_metadata(df, krmap, xy_range, dt_range, xy_nbins, dt_nbins):
+def compute_metadata(df       : pd.DataFrame,
+                     krmap    : pd.DataFrame,
+                     xy_range : tuple,
+                     dt_range : tuple,
+                     xy_nbins : int,
+                     dt_nbins : int) -> pd.DataFrame:
+    """
+    Creates a dataframe including relevant map information (metadata).
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Dataframe from which the krypton map was created.
+    krmap : pd.Dataframe
+      Final krypton map, output from compute_3D_map.
+    xy_range : tuple
+      Range in x and y used to create the map.
+    dt_range : tuple
+      Range in drift time used to create the map.
+    xy_nbins : int
+      Number of x, y bins used to create the map.
+    dt_nbins : int
+      Number of drift time bins used to create the map.
+    Returns
+    -------
+    metadata : pd.DataFrame
+      DataFrame containing information of relevant variables for the
+      computation of the map.
+
+    """
 
     metadata = {'rmax'        : df.R.max(),
                 'zmax'        : df.Z.max(),
@@ -203,10 +385,24 @@ def compute_metadata(df, krmap, xy_range, dt_range, xy_nbins, dt_nbins):
 
 
 
-def quick_gauss_fit(data, bins, sigma = False):
+def quick_gauss_fit(data  : np.array,
+                    bins  : Union[int, np.array],
+                    sigma : bool = False) -> Callable:
     """
     Histogram input data and fit it to a gaussian with the parameters
     automatically estimated.
+    Parameters
+    ----------
+    data : np.array
+      Input data to fit to a gaussian distribution.
+    bins : int or np.array
+      Either number of bins or a linspace of the bin edges.
+    sigma: bool
+
+    Returns
+    -------
+    f : Callable
+      Gaussian fit output values from fit in invisible_cities/core/fit_functions.
     """
     y, x  = np.histogram(data, bins)
     x     = shift_to_bin_centers(x)
@@ -226,7 +422,26 @@ def quick_gauss_fit(data, bins, sigma = False):
 
 
 
-def create_time_slices(df, run_number, slice_hours):
+def create_time_slices(df          : pd.DataFrame,
+                       run_number  : int,
+                       slice_hours : float) -> list:
+    """
+    Splits input dataframe into time slices using 'time' column
+    to then get time evolution parameters.
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Input dataframe that is going to be split in time slices.
+    run_number : int
+      Number of the run that is being analyzed.
+    slice_hours : float
+      Time interval (hours) in which the dataframe is being split.
+    Returns
+    -------
+    dataframes : list
+      List containing pd.DataFrames. Each element of the list corresponds to
+      data in each time slice.
+    """
     slice_seconds = slice_hours * 3600
 
     t_min = df.time.min()
@@ -247,15 +462,52 @@ def create_time_slices(df, run_number, slice_hours):
     return dataframes
 
 
-def get_time_evol(df, col_name, run_number, x0, y0, shape, shape_size, dtbins_dv, s1_DTrange, bins_Ec, error = False):
+def get_time_evol(df          : pd.DataFrame,
+                  col_name    : str,
+                  run_number  : int,
+                  x0          : float,
+                  y0          : float,
+                  shape       : SelRegionMethod,
+                  shape_size  : float,
+                  dtbins_dv   : np.array,
+                  s1_DTrange  : tuple,
+                  bins_Ec     : np.array,
+                  error       : bool = False) -> pd.DataFrame:
 
     """
-    col_name needs to be the final corrected energy, for example, col_name = 'Ec_2' or whatever the name is
+    Creates a dataframe including all the time evolution relevant parameters.
 
-    dtbins_dv should be a numpy.linspace to stablish dtrange and binning
-
-
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Input dataframe from which the time evolution parameters are being calculated.
+    col_name : str
+      Needs to be the name of the final corrected energy in the dataframe.
+      For example, col_name = 'Ec_2' (or whatever the name is).
+    run_number : int
+      Number of the run that is being analyzed.
+    x0 : float
+      Point in x corresponding to the center of the circle or square.
+    y0 : float
+      Point in y corresponding to the center of the circle or square.
+    shape : symbols/SelRegionMethod
+      Geometric shape of the region, according to SelRegionMethod class.
+    shape_size: float
+      Either the value of the circle's radius or square half side.
+    dtbins_dv : np.array
+      Should be a numpy.linspace to stablish dtrange and binnnind.
+    s1_DTrange : tuple
+      Range in DT to get S1e values near cathode.
+    bins_Ec : np.array
+      Should be a numpy.linspace to stablish the corrected energy range.
+    error : bool
+      Error corresponding to sigma for quick_gauss_fit
+    Returns
+    -------
+    t_evol : pd.DataFrame
+      Dataframe including all the relevant time evolution parameters.
     """
+
 
     mean = df.S2e.mean()
     std = df.S2e.std()/np.sqrt(len(df))
@@ -332,7 +584,23 @@ def get_time_evol(df, col_name, run_number, x0, y0, shape, shape_size, dtbins_dv
 
 
 
-def append_time_evol(dfs, col_name, run_number, x0, y0, shape, shape_size, dtbins_dv, s1_DTrange, bins_Ec, error = False):
+def append_time_evol(dfs       : list,
+                     col_name  : str,
+                     run_number: int,
+                     x0        : float,
+                     y0        : float,
+                     shape     : SelRegionMethod,
+                     shape_size: float,
+                     dtbins_dv : np.array,
+                     s1_DTrange: tuple,
+                     bins_Ec   : np.array,
+                     error     : bool = False) -> pd.DataFrame:
+    """
+    -Takes a list of dataframes from the output of create_time_slices and applies
+    get_time_evol function to each one of the dataframes in the list.
+
+    -Returns a dataframe containing the time evolution of each time slice.
+    """
 
     df_tevols = []
 
@@ -346,7 +614,31 @@ def append_time_evol(dfs, col_name, run_number, x0, y0, shape, shape_size, dtbin
 
 
 
-def save_map(name, efficiencies, krmap, metadata, t_evol):
+def save_map(name          : str,
+             efficiencies  : pd.DataFrame,
+             krmap         : pd.DataFrame,
+             metadata      : pd.DataFrame,
+             t_evol        : pd.DataFrame):
+    """
+    Saves efficiencies, krypton map, metadata and time evolution in the same hdf file.
+    ...still have work to do
+    Parameters
+    ----------
+    name : str
+      Name of the hdf file.
+    efficiencies : pd.DataFrame
+      Efficiencies dataframe.
+    krmap : pd.DataFrame
+      3D krypton map, output of compute_3D_map.
+    metadata : pd.DataFrame
+      Metadata dataframe.
+    t_evol : pd.DataFrame
+      Time evolution dataframe.
+    Returns
+    -------
+    Hdf file containing in each node each one of the inputs.
+    """
+
     metadata.to_hdf(name, key = 'metadata', mode = 'w')
 
     with tb.open_file(name, "a") as file:
