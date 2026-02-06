@@ -136,16 +136,16 @@ def apply_3Dmap(krmap        : pd.DataFrame,
     return Ec
 
 
-def apply_correctionmap(kdst        : pd.DataFrame,
-                        map3D       : pd.DataFrame,
-                        norm_method : NormMethod,
-                        xy_params   : dict,
-                        col_name    : str,
-                        keV         : bool = True) -> pd.DataFrame:
+def apply_correctionmap_inplace(kdst        : pd.DataFrame,
+                                map3D       : pd.DataFrame,
+                                norm_method : NormMethod,
+                                xy_params   : dict,
+                                col_name    : str,
+                                keV         : bool = True ) -> pd.DataFrame:
 
     """
-    Applies a given krypton map using apply_3Dmap to get as an output a kdst with
-    a column for the corrected energy.
+    Applies a given krypton map using apply_3Dmap to get as an output the same input
+    kdst with a column for the corrected energy.
     Parameters
     ----------
     kdst : pd.DataFrame
@@ -161,7 +161,7 @@ def apply_correctionmap(kdst        : pd.DataFrame,
     col_name : str
       Name of the column where the corrected energy will be in the new dataframe.
     keV : bool
-      Boolean to decide whether the correction factor is applied in keV or pe (better if True)
+      Boolean to decide whether the correction factor is applied in keV or pe
     Returns
     -------
     kdst : pd.DataFrame
