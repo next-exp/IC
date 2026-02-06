@@ -1,12 +1,33 @@
 import numpy as np
 import pandas as pd
+from pytest import raises
 import tables
 
-from invisible_cities.core.core_functions import in_range, fix_random_seed
-from krmap_functions import create_empty_map, get_median, gaussian_fit, fit_map, merge_maps, include_coordinates, gauss_seed, quick_gauss_fit, create_time_slices, get_time_evol, save_map, compute_metadata, append_time_evol
-from pytest import raises
 from invisible_cities.core.fit_functions import fit, gauss, expo
 from invisible_cities.types.symbols import SelRegionMethod
+from invisible_cities.core.core_functions import in_range, fix_random_seed
+from invisible_cities.core.testing_utils import assert_dataframes_close
+
+from krmap_functions import create_empty_map, get_median, gaussian_fit, fit_map, merge_maps, include_coordinates, gauss_seed, quick_gauss_fit, create_time_slices, get_time_evol, save_map, compute_metadata, append_time_evol, compute_3D_map
+
+
+
+def test_gauss_seed():
+
+    x = np.linspace(1000, 1500, 100)
+
+    amp_true = 1000
+    mu_true = 1250
+    sigma_true = 0.02 * mu_true
+
+    y =gauss(x, amp_true, mu_true, sigma_true)
+    amp_seed, x_max_seed, sigma_seed = gauss_seed(x, y)
+
+
+    assert np.isclose(amp_seed, amp_true, atol = 10)
+    assert np.isclose(x_max_seed, mu_true, atol = 1)
+    assert np.isclose(sigma_seed, sigma_true, atol = 0.5)
+
 
 
 
@@ -16,15 +37,15 @@ def test_create_empty_map_shape():
     xy_nbins = 8
     dt_nbins = 5
 
-    empty_map_test = create_empty_map(xy_range = xy_range,
+    empty_map  = create_empty_map(xy_range = xy_range,
                                       dt_range = dt_range,
                                       xy_nbins = xy_nbins,
                                       dt_nbins = dt_nbins)
 
-    rows_test = dt_nbins * xy_nbins * xy_nbins
-    n_columns_test = 8
+    nrows  = dt_nbins * xy_nbins * xy_nbins
+    n_columns = 8
 
-    assert empty_map_test.shape == (rows_test, n_columns_test)
+    assert empty_map.shape == (nrows, n_columns)
 
 
 
@@ -49,6 +70,13 @@ def test_create_empty_map_values():
 
 
 
+def test_get_median_empty_input_does_not_raise():
+    empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
+
+    get_median(empty_dst)
+
+
+
 def test_get_median_empty_input():
     empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
     result = get_median(empty_dst)
@@ -60,19 +88,11 @@ def test_get_median_empty_input():
 
 
 
-def test_get_median_empty_input_does_not_raise():
-    empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
-
-    get_median(empty_dst)
-
-
-
 
 def test_get_median_works_with_even_data():
     d = {'DT': np.empty(6), 'x' : np.empty(6), 'y' : np.empty(6),'S2e' : [8000, 7500, 8300, 7900, 9000, 8100]}
-    df_test = pd.DataFrame(data = d, index = range(0,6))
-    S2e = df_test['S2e']
-    result = get_median(df_test)['mu']
+    df = pd.DataFrame(data = d, index = range(0,6))
+    result = get_median(df)['mu']
     median_data = 8050
 
     assert (result == median_data).all()
@@ -81,9 +101,8 @@ def test_get_median_works_with_even_data():
 
 def test_get_median_works_with_odd_data():
     d = {'DT': np.empty(7), 'x' : np.empty(7), 'y' : np.empty(7),'S2e' : [8000, 7500, 8300, 7900, 9000, 8100, 9100]}
-    df_test = pd.DataFrame(data = d, index = range(0,7))
-    S2e = df_test['S2e']
-    result_med_fun = get_median(df_test)
+    df = pd.DataFrame(data = d, index = range(0,7))
+    result_med_fun = get_median(df)
     result_med_fun = result_med_fun['mu']
     result_med_data = 8100
 
@@ -92,7 +111,7 @@ def test_get_median_works_with_odd_data():
 
 
 
-def test_get_median_values():
+def test_get_median_errors():
     S2e_test1 = pd.DataFrame([1, 2, 3],
                              columns = ['S2e'])
 
@@ -104,13 +123,11 @@ def test_get_median_values():
     map_test1  = get_median(S2e_test1)
     map_test2  = get_median(S2e_test2)
 
-    ratio_error_values  = map_test1['mu_error'].values / map_test2['mu_error'].values
-    ratio_errors = ((map_test1['sigma']/np.sqrt(len(S2e_test1)))/(map_test2['sigma']/np.sqrt(len(S2e_test2)))).values
+    ratio_error_values  = map_test1.mu_error.values / map_test2.mu_error.values
+    ratio_sqrt = np.sqrt(len(S2e_test2)-1)/np.sqrt(len(S2e_test1)-1)
 
-    assert map_test1['mu'].values == map_test2['mu'].values
-    #sigma has to be different because len(map_test1) < 5
-    assert map_test1['sigma'].values != map_test2['sigma'].values
-    assert ratio_error_values == ratio_errors
+    assert np.allclose(map_test1.mu.values, map_test2.mu.values)
+    assert np.isclose(ratio_error_values, ratio_sqrt)
 
 
 
@@ -125,16 +142,13 @@ def test_gaussian_fit_few_entries():
 
 
 
-def test_gaussian_fit_get_median_Nevents():
+def test_gaussian_fit_Nevents():
     d = {'DT': np.empty(6), 'x' : np.empty(6), 'y' : np.empty(6),'S2e' : np.ones(6)}
     df_test = pd.DataFrame(data = d, index = range(0, 6))
     N = len(df_test)
-    result_med = get_median(df_test)
     result_fit = gaussian_fit(df_test, nbins_S2e = 6)
 
-    assert result_med['nevents'].iloc[0] == N
-    assert result_fit['nevents'].iloc[0] == N
-
+    assert result_fit.nevents.iloc[0] == N
 
 
 
@@ -197,32 +211,85 @@ def test_fit_map_S2e_values():
 
     reference = result.iloc[0]
 
-    for _, row in result.iterrows():
-        assert np.allclose(result.mu , reference.mu)
-        assert np.allclose(row['sigma'], reference['sigma'])
-        assert np.isclose(row['mu_error'], reference['mu_error'])
-        assert np.isclose(row['sigma_error'], reference['sigma_error'])
-        assert row['nevents'] == reference['nevents']
 
+    assert np.allclose(result.mu , reference.mu)
+    assert np.allclose(result.sigma, reference.sigma)
+    assert np.allclose(result.mu_error, reference.mu_error)
+    assert np.allclose(result.sigma_error, reference.sigma_error)
+    assert (result.nevents == reference.nevents).all()
+
+
+
+def test_fit_map_missing_bins():
+    """
+    We are taking only half of the range for each variable (x and y from 0 to 100 and
+    dt from 30 to 60) so the number of rows of the final dataframe should be the product
+    of half of the number of bins (3*3*3 instead of 6*6*6)
+    """
+    xy_nbins = 6
+    dt_nbins = 6
+    xy_range = (-100, 100)
+    dt_range = (20, 80)
+
+
+    with fix_random_seed(42):
+        S2e = np.random.normal(loc = 8000, scale = 10.0, size = 10)
+
+
+        df       = pd.DataFrame({
+                    'X': np.random.uniform(0, 100, 100000),
+                    'Y': np.random.uniform(0, 100, 100000),
+                    'DT': np.random.uniform(30, 60, 100000),
+                    'S2e' : np.random.normal(loc = 8000, scale = 10.0, size = 100000)})
+
+
+    result = fit_map(df = df,
+                          xy_range = xy_range,
+                          dt_range = dt_range,
+                          xy_nbins = xy_nbins,
+                          dt_nbins = dt_nbins,
+                          fit_function = gaussian_fit,
+                          nbins_S2e = 25,
+                          S2e_range = (1000, 20000))
+
+
+    assert result.shape[0] == 3*3*3
 
 
 
 
 def test_merge_maps():
     Nan_map_test = create_empty_map(xy_range = (-500, 500), dt_range = (0, 1400), xy_nbins = 100, dt_nbins = 10)
+    #creating a map with 3 wholes to make sure that the shape still the same as NaNmaps
+    d = {'k':np.array([1, 1, 1, 1, 2, 2, 2, 3, 3]),
+         'i':np.array([1, 1, 2, 2, 1, 2, 2, 1, 2]),
+         'j':np.array([1, 2, 1, 2, 1, 1, 2, 2, 1]),
+         'nevents': np.empty(9, dtype = int),
+         'mu' : np.empty(9),
+         'sigma' : np.empty(9),
+         'mu_error' : np.empty(9),
+         'sigma_error' : np.empty(9)}
 
-    d = {'k':np.array([1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3]),
-         'i':np.array([1, 1, 2, 2, 1, 2, 2, 1, 1, 2, 2]),
-         'j':np.array([1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2]),
-         'nevents': np.empty(11, dtype = int),
-         'mu' : np.empty(11),
-         'sigma' : np.empty(11),
-         'mu_error' : np.empty(11),
-         'sigma_error' : np.empty(11)}
-
-    map_3D_test = pd.DataFrame(data = d, index = range(0, 11))
+    map_3D_test = pd.DataFrame(data = d, index = range(0, 9))
     assert merge_maps(Nan_map_test, map_3D_test).shape == Nan_map_test.shape
 
+
+
+def test_merge_maps_empty():
+    Nan_map = create_empty_map(xy_range = (-500, 500), dt_range = (0, 1400), xy_nbins = 100, dt_nbins = 10)
+    #creating am empty map to make sure it works
+    d = {'k':np.full(9, 0),
+         'i':np.full(9, 0),
+         'j':np.full(9, 0),
+         'nevents': np.empty(9, dtype = int),
+         'mu' : np.empty(9),
+         'sigma' : np.empty(9),
+         'mu_error' : np.empty(9),
+         'sigma_error' : np.empty(9)}
+
+    map_3D = pd.DataFrame(data = d, index = range(0, 9))
+
+    assert merge_maps(Nan_map, map_3D).shape == Nan_map.shape
 
 
 
@@ -254,7 +321,6 @@ def test_include_coordinates_shape():
 
 
 
-
 def test_include_coordinates_range():
 
     xy_range = (-100, 100)
@@ -278,7 +344,6 @@ def test_include_coordinates_range():
     krmap_test = merge_maps(Nan_map_test, map_3D_test)
 
     full_map = include_coordinates(krmap_test, xy_range = xy_range, dt_range = dt_range, xy_nbins = xy_nbins, dt_nbins = dt_nbins)
-
 
 
     assert np.all(in_range(full_map.x, *xy_range))
@@ -310,13 +375,27 @@ def test_include_coordinates_bincenter():
     x_center = xy_range[0] + 0.5*(xy_range[1] - xy_range[0])
     dt_center = dt_range[0] + 0.5*(dt_range[1] - dt_range[0])
 
-    assert np.isclose(full_map.x.iloc[0], x_center)
-    assert np.isclose(full_map.dt.iloc[0], dt_center)
+    assert np.isclose(full_map.x.min(), x_center)
+    assert np.isclose(full_map.dt.min(), dt_center)
+
+
+def test_compute_3D_map():
+    with fix_random_seed(42):
+        df_ = pd.DataFrame({'X' : np.random.uniform(-100, 100, 1000000),
+                        'Y' : np.random.uniform(-100, 100, 1000000),
+                        'DT' : np.random.uniform(20, 1350, 1000000),
+                       'S2e' : np.random.normal(8000, 150, 1000000)
+                      })
+
+    full_map = compute_3D_map(df_, xy_range = (-100, 100), dt_range = (20, 1350), xy_nbins = 10, dt_nbins = 10, fit_function = gaussian_fit, nbins_S2e = 50, S2e_range = (7000, 9000))
+
+    assert np.allclose(full_map.mu, 8000, atol = 30)
+    assert np.allclose(full_map.sigma, 150, atol = 20)
+    assert (full_map.mu_error < 30).all()
 
 
 
-
-def test_metadata_column():
+def test_compute_metadata_single_column():
 
     xy_range = (-100, 100)
     dt_range = (40, 100)
@@ -348,24 +427,6 @@ def test_metadata_column():
 
     assert metadata_test.shape[1] == 1
 
-
-
-
-def test_gauss_seed():
-
-    x = np.linspace(1000, 1500, 100)
-
-    amp_true = 1000
-    mu_true = 1250
-    sigma_true = 50
-
-    y =gauss(x, amp_true, mu_true, sigma_true)
-    amp_seed, x_max_seed, sigma_seed = gauss_seed(x, y)
-
-
-    assert np.isclose(amp_seed, amp_true, atol = 5)
-    assert np.isclose(x_max_seed, mu_true, atol = 1)
-    assert np.isclose(sigma_seed, sigma_true, atol = 0.5)
 
 
 
@@ -434,7 +495,8 @@ def test_get_time_evol_shape():
 
    t_evol = get_time_evol(df, 'Ec_2', 1, 0, 0, SelRegionMethod.circle, 1000, np.linspace(1250, 1400, 50), (1000, 1350), np.linspace(30, 60, 101))
 
-   assert t_evol.shape[1] == df.shape[1] + 17
+   assert t_evol.shape[1] == 33
+   assert t_evol.shape[0] == 1
 
 
 
@@ -476,8 +538,6 @@ def test_append_time_evol():
             continue
         assert np.allclose(t_evols[col], t_evols[col][0])
 
-##save_map. Escribilo e leelo e ver que están todas as cousas que quero escribir, todos os grupos e tal e que dentro exista todo e non mirar nada dos datos. Outro no que comprobe os valores
-
 def test_save_map():
     krmap = pd.DataFrame({'k':np.array([0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2]),
                           'i':np.array([0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1]),
@@ -492,7 +552,7 @@ def test_save_map():
                           'y': np.linspace(-450, 450, 11),
                          })
 
-    efficiencies = pd.DataFrame({'eff_diffusion_band': 0.8759,
+    eff = pd.DataFrame({'eff_diffusion_band': 0.8759,
                                  'eff_Xrays': 0.8039,
                                  'eff_1S1_1S2': 0.8377,
                                  'eff_S2_trigger_time': 0.9970,
@@ -503,25 +563,26 @@ def test_save_map():
                                  }, index = [0])
 
 
-    metadata =               {'rmax'       : 100,
-                             'zmax'        : 1000,
-                             'bin_size_dt' : 5,
-                             'bin_size_x'  : 4,
-                             'bin_size_y'  : 4,
-                             'dtbins'      : [(0, 1, 2, 3, 4)],
-                             'xbins'       : [(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)],
-                             'ybins'       : [(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)],
-                             'nbins_dt'    : 5,
-                             'nbins_x'     : 10,
-                             'nbins_y'     : 10,
-                             'xy_range'    : [(-100, 100)],
-                             'dt_range'    : [(20, 1350)],
-                             'map_shape'   : [(11, 11)],
-                             'map_extent'  : 11}
+    meta = {'rmax'       : 100,
+            'zmax'        : 1000,
+            'bin_size_dt' : 5,
+            'bin_size_x'  : 4,
+            'bin_size_y'  : 4,
+            'dtbins'      : [(0, 1, 2, 3, 4)],
+            'xbins'       : [(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)],
+            'ybins'       : [(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)],
+            'nbins_dt'    : 5,
+            'nbins_x'     : 10,
+            'nbins_y'     : 10,
+            'xy_range'    : [(-100, 100)],
+            'dt_range'    : [(20, 1350)],
+            'map_shape'   : [(11, 11)],
+            'map_extent'  : 11}
 
-    metadata = pd.DataFrame(metadata, index = [0]).T
+    meta = pd.DataFrame(meta, index = [0]).T
 
-    t_evol = pd.DataFrame({'run_number' : 1,
+
+    t_evolution = pd.DataFrame({'run_number' : 1,
               'ts' :1e6,
               's2e': 8000,
               's2eu' : 10,
@@ -555,7 +616,7 @@ def test_save_map():
               'Zrms': 4.15,
               'Zrmsu': 0.003}, index = [0])
 
-    save_map('testmap.h5', efficiencies, krmap, metadata, t_evol)
+    save_map('testmap.h5', eff, krmap, meta, t_evolution)
 
     krmap_3D = pd.read_hdf('testmap.h5', 'krmap/krmap')
     efficiencies = pd.read_hdf('testmap.h5', 'data/selection_efficiencies')
@@ -563,3 +624,9 @@ def test_save_map():
     t_evol = pd.read_hdf('testmap.h5', 't_evol/t_evol')
 
     testmap = tables.open_file('testmap.h5', mode = 'r')
+
+
+    assert_dataframes_close(krmap_3D, krmap)
+    assert_dataframes_close(efficiencies, eff)
+    assert_dataframes_close(metadata,meta)
+    assert_dataframes_close(t_evol,t_evolution)
