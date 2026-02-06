@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from pytest import raises
+from pytest import raises, fixture
 import tables
 
 from invisible_cities.core.fit_functions import fit, gauss, expo
@@ -8,7 +8,56 @@ from invisible_cities.types.symbols import SelRegionMethod
 from invisible_cities.core.core_functions import in_range, fix_random_seed
 from invisible_cities.core.testing_utils import assert_dataframes_close
 
-from krmap_functions import create_empty_map, get_median, gaussian_fit, fit_map, merge_maps, include_coordinates, gauss_seed, quick_gauss_fit, create_time_slices, get_time_evol, save_map, compute_metadata, append_time_evol, compute_3D_map
+from krmap_functions import create_empty_map, get_median, gaussian_fit, fit_map, merge_maps, include_coordinates, gauss_seed, quick_gauss_fit, save_map, compute_metadata, get_time_evol_single_slice, get_time_evol, compute_3D_map
+
+
+@fixture
+def dummy_empty_df():
+    return pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
+
+
+
+@fixture
+def dummy_get_median():
+    return  pd.DataFrame({'DT': np.empty(6),
+         'x' : np.empty(6),
+         'y' : np.empty(6),
+         'S2e' : [8000, 7500, 8300, 7900, 9000, 8100]}, index = range(0, 6))
+
+
+
+
+@fixture
+def dummy_include_coordinates():
+    return  pd.DataFrame({'k':np.array([0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2]),
+                         'i':np.array([0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1]),
+                         'j':np.array([0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1]),
+                         'nevents': np.empty(11, dtype = int),
+                         'mu':np.empty(11),
+                         'sigma' : np.empty(11),
+                         'mu_error' : np.empty(11),
+                         'sigma_error' : np.empty(11)}, index = range(0, 11))
+
+@fixture
+def dummy_get_time_evol():
+    return pd.DataFrame({'time': np.linspace(0, 3599, 1001),
+                      'S2e':np.linspace(7500, 8500, 1001),
+                      'X': np.linspace(-100, 100, 1001),
+                      'Y': np.linspace(-100, 100, 1001),
+                      'DT': np.linspace(20, 1350, 1001),
+                      'S1e':np.linspace(7, 10, 1001),
+                      'S1h': np.linspace(1,2,1001),
+                      'S1w': np.linspace(210, 240, 1001),
+                      'Nsipm':np.linspace(10, 30, 1001),
+                      'Xrms':np.linspace(13, 15, 1001),
+                      'Yrms':np.linspace(13, 15, 1001),
+                      'Zrms':np.linspace(3, 5, 1001),
+                      'S2q':np.linspace(540, 600, 1001),
+                      'S2w':np.linspace(20, 24, 1001),
+                      'Ec': np.linspace(35, 45, 1001),
+                      'Ec_2':np.random.normal(loc = 41.5, scale = 10, size = 1001)
+                     })
+
 
 
 
@@ -70,16 +119,14 @@ def test_create_empty_map_values():
 
 
 
-def test_get_median_empty_input_does_not_raise():
-    empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
+def test_get_median_empty_input_does_not_raise(dummy_empty_df):
 
-    get_median(empty_dst)
-
+    get_median(dummy_empty_df)
 
 
-def test_get_median_empty_input():
-    empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
-    result = get_median(empty_dst)
+
+def test_get_median_empty_input(dummy_empty_df):
+    result = get_median(dummy_empty_df)
 
     assert result.shape == (1, 5)
     assert result['nevents'].sum() == 0
@@ -89,20 +136,20 @@ def test_get_median_empty_input():
 
 
 
-def test_get_median_works_with_even_data():
-    d = {'DT': np.empty(6), 'x' : np.empty(6), 'y' : np.empty(6),'S2e' : [8000, 7500, 8300, 7900, 9000, 8100]}
-    df = pd.DataFrame(data = d, index = range(0,6))
-    result = get_median(df)['mu']
+def test_get_median_works_with_even_data(dummy_get_median):
+
+    result = get_median(dummy_get_median)['mu']
     median_data = 8050
 
     assert (result == median_data).all()
 
 
 
-def test_get_median_works_with_odd_data():
-    d = {'DT': np.empty(7), 'x' : np.empty(7), 'y' : np.empty(7),'S2e' : [8000, 7500, 8300, 7900, 9000, 8100, 9100]}
-    df = pd.DataFrame(data = d, index = range(0,7))
-    result_med_fun = get_median(df)
+def test_get_median_works_with_odd_data(dummy_get_median):
+
+    dummy_get_median.loc[len(dummy_get_median)] = [np.empty(1), np.empty(1), np.empty(1), 9100]
+
+    result_med_fun = get_median(dummy_get_median)
     result_med_fun = result_med_fun['mu']
     result_med_data = 8100
 
@@ -132,10 +179,10 @@ def test_get_median_errors():
 
 
 
-def test_gaussian_fit_few_entries():
-    empty_dst = pd.DataFrame(columns = ['DT', 'x', 'y', 'S2e'])
-    result_fit = gaussian_fit(empty_dst, 1, min_events = 10)
-    result_fun = get_median(empty_dst)['mu']
+def test_gaussian_fit_few_entries(dummy_empty_df):
+
+    result_fit = gaussian_fit(dummy_empty_df, 1, min_events = 10)
+    result_fun = get_median(dummy_empty_df)['mu']
 
     assert np.allclose(result_fit.mu.values, result_fun.values, equal_nan=True)
 
@@ -236,7 +283,7 @@ def test_fit_map_missing_bins():
         S2e = np.random.normal(loc = 8000, scale = 10.0, size = 10)
 
 
-        df       = pd.DataFrame({
+        df       =  pd.DataFrame({
                     'X': np.random.uniform(0, 100, 100000),
                     'Y': np.random.uniform(0, 100, 100000),
                     'DT': np.random.uniform(30, 60, 100000),
@@ -293,35 +340,21 @@ def test_merge_maps_empty():
 
 
 
-
-def test_include_coordinates_shape():
-
+def test_include_coordinates_shape(dummy_include_coordinates):
     xy_range = (-100, 100)
     dt_range = (20, 100)
     xy_nbins = 10
     dt_nbins  = 5
 
-    d = {'k':np.array([1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3]),
-         'i':np.array([1, 1, 2, 2, 1, 2, 2, 1, 1, 2, 2]),
-         'j':np.array([1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2]),
-         'nevents': np.empty(11, dtype = int),
-         'mu' : np.empty(11),
-         'sigma' : np.empty(11),
-         'mu_error' : np.empty(11),
-         'sigma_error' : np.empty(11)}
+    full_map = include_coordinates(dummy_include_coordinates, xy_range = xy_range, dt_range = dt_range, xy_nbins = xy_nbins, dt_nbins = dt_nbins)
 
-    map_3D_test = pd.DataFrame(data = d, index = range(0, 11))
-
-
-    full_map = include_coordinates(map_3D_test, xy_range = xy_range, dt_range = dt_range, xy_nbins = xy_nbins, dt_nbins = dt_nbins)
-
-    assert full_map.shape[0] == map_3D_test.shape[0]
-    assert full_map.shape[1] == map_3D_test.shape[1] + 3
+    assert full_map.shape[0] == dummy_include_coordinates.shape[0]
+    assert full_map.shape[1] == dummy_include_coordinates.shape[1] + 3
 
 
 
 
-def test_include_coordinates_range():
+def test_include_coordinates_range(dummy_include_coordinates):
 
     xy_range = (-100, 100)
     dt_range = (20, 100)
@@ -330,18 +363,7 @@ def test_include_coordinates_range():
 
     Nan_map_test = create_empty_map(xy_range = xy_range, dt_range = dt_range, xy_nbins = xy_nbins, dt_nbins = dt_nbins)
 
-    d = {'k':np.array([1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3]),
-         'i':np.array([1, 1, 2, 2, 1, 2, 2, 1, 1, 2, 2]),
-         'j':np.array([1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2]),
-         'nevents': np.empty(11, dtype = int),
-         'mu' : np.empty(11),
-         'sigma' : np.empty(11),
-         'mu_error' : np.empty(11),
-         'sigma_error' : np.empty(11)}
-
-    map_3D_test = pd.DataFrame(data = d, index = range(0, 11))
-
-    krmap_test = merge_maps(Nan_map_test, map_3D_test)
+    krmap_test = merge_maps(Nan_map_test, dummy_include_coordinates)
 
     full_map = include_coordinates(krmap_test, xy_range = xy_range, dt_range = dt_range, xy_nbins = xy_nbins, dt_nbins = dt_nbins)
 
@@ -353,24 +375,12 @@ def test_include_coordinates_range():
 
 
 
-def test_include_coordinates_bincenter():
+def test_include_coordinates_bincenter(dummy_include_coordinates):
 
     xy_range = (-100, 100)
     dt_range = (20, 100)
 
-
-    d = {'k':np.array([0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2]),
-         'i':np.array([0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1]),
-         'j':np.array([0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1]),
-         'nevents': np.empty(11, dtype = int),
-         'mu' : np.empty(11),
-         'sigma' : np.empty(11),
-         'mu_error' : np.empty(11),
-         'sigma_error' : np.empty(11)}
-
-    map_3D_test = pd.DataFrame(data = d, index = range(0, 11))
-
-    full_map = include_coordinates(map_3D_test, xy_range = xy_range, dt_range = dt_range, xy_nbins = 1, dt_nbins = 1)
+    full_map = include_coordinates(dummy_include_coordinates, xy_range = xy_range, dt_range = dt_range, xy_nbins = 1, dt_nbins = 1)
 
     x_center = xy_range[0] + 0.5*(xy_range[1] - xy_range[0])
     dt_center = dt_range[0] + 0.5*(dt_range[1] - dt_range[0])
@@ -432,8 +442,8 @@ def test_compute_metadata_single_column():
 
 
 def test_quick_gauss_fit():
-
-    x = np.random.normal(loc = 8000, scale = 10, size = 1000)
+    with fix_random_seed(42):
+        x = np.random.normal(loc = 8000, scale = 10, size = 1000)
     f = quick_gauss_fit(x, bins = 10, sigma = None)
 
     assert np.isclose(x.mean(), f.values[1], atol = 1)
