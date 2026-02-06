@@ -113,7 +113,7 @@ def apply_3Dmap(krmap        : pd.DataFrame,
       Limits in x and y that define the region inside of which the normalization
       will be performed.
     keV : bool
-      Boolean to decide whether the correction factor is applied in pes or keV (better if True)
+      Boolean to decide whether the correction factor is applied in pes or keV
     Returns
     -------
     Ec : pd.core.series.Series
