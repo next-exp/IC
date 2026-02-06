@@ -7,7 +7,7 @@ from invisible_cities.types.symbols import NormMethod
 from scipy.interpolate import griddata
 
 
-def test_method_norm():
+def test_normalization():
 
     k_vals = np.arange(10)
     i_vals = np.arange(12)
@@ -100,7 +100,7 @@ def test_apply_3Dmap():
 
 
 def test_apply_3Dmap_same_values():
-    n = 100
+    n = 10*12*12
     dt = np.linspace(20, 1350, n)
     x  = np.linspace(-450, 450, n)
     y  = x
@@ -120,7 +120,7 @@ def test_apply_3Dmap_same_values():
     y = j * 25
     dt = k * 45
 
-    mu = 800
+    mu = 8000
 
     map_test = pd.DataFrame({
         'k': k,
@@ -132,25 +132,13 @@ def test_apply_3Dmap_same_values():
         'mu': mu
     })
 
+    Ec = apply_3Dmap(map_test, norm_method = NormMethod.max, dt = dt, x = x, y = y, E = E, keV = False)
 
-    map_points = map_test['dt x y'.split()].values
-    norm = normalization(map_test,  NormMethod.max, xy_params = None)
+    map_test.loc[0, 'mu'] = 2*mu
 
-    data_points = np.stack([dt, x, y], axis = 1)
-    E_interpolated_data = griddata(map_points, map_test.mu.values, data_points, method = 'nearest')
-    correction_factor = norm/E_interpolated_data
-
-
-    map_test.loc[0, 'mu'] = 1600
-    map_points2 = map_test['dt x y'.split()].values
-    norm2 = normalization(map_test, NormMethod.max, xy_params = None)
-
-    E_interpolated_data2 = griddata(map_points2, map_test.mu.values, data_points, method = 'nearest')
-
-    correction_factor2 = norm2/E_interpolated_data2
-
-    assert (correction_factor == 1).all()
-    assert (correction_factor2[1:] == 2).all()
+    Ec2 = apply_3Dmap(map_test, norm_method = NormMethod.max, dt = dt, x = x, y = y, E = E, keV = False)
+    assert (Ec == E).all()
+    assert (Ec2[1:] == 2*E[1:]).all()
 
 
 
