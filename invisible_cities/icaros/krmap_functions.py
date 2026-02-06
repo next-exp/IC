@@ -446,60 +446,21 @@ def quick_gauss_fit(data  : np.array,
 
 
 
-def create_time_slices(df          : pd.DataFrame,
-                       run_number  : int,
-                       slice_hours : float) -> list:
-    """
-    Splits input dataframe into time slices using 'time' column
-    to then get time evolution parameters.
-    Parameters
-    ----------
-    df : pd.DataFrame
-      Input dataframe that is going to be split in time slices.
-    run_number : int
-      Number of the run that is being analyzed.
-    slice_hours : float
-      Time interval (hours) in which the dataframe is being split.
-    Returns
-    -------
-    dataframes : list
-      List containing pd.DataFrames. Each element of the list corresponds to
-      data in each time slice.
-    """
-    slice_seconds = slice_hours * 3600
-
-    t_min = df.time.min()
-    t_max = df.time.max()
-
-    time_edges = np.arange(t_min, t_max + slice_seconds, slice_seconds)
-
-    dataframes = []
-
-    for i in range(len(time_edges) - 1):
-        t_start = time_edges[i]
-        t_end   = time_edges[i + 1]
-
-        mask = in_range(df.time, t_start, t_end)
-        df_slice = df[mask]
-        dataframes.append(df_slice)
-
-    return dataframes
-
-
-def get_time_evol(df          : pd.DataFrame,
-                  col_name    : str,
-                  run_number  : int,
-                  x0          : float,
-                  y0          : float,
-                  shape       : SelRegionMethod,
-                  shape_size  : float,
-                  dtbins_dv   : np.array,
-                  s1_DTrange  : tuple,
-                  bins_Ec     : np.array,
-                  error       : bool = False) -> pd.DataFrame:
+def get_time_evol_single_slice(df          : pd.DataFrame,
+                               col_name    : str,
+                               run_number  : int,
+                               x0          : float,
+                               y0          : float,
+                               shape       : SelRegionMethod,
+                               shape_size  : float,
+                               dtbins_dv   : np.array,
+                               s1_DTrange  : tuple,
+                               bins_Ec     : np.array,
+                               error       : bool = False) -> pd.DataFrame:
 
     """
-    Creates a dataframe including all the time evolution relevant parameters.
+    Creates a dataframe including all the time evolution relevant parameters
+    for a single time slice.
 
     Parameters
     ----------
@@ -608,33 +569,59 @@ def get_time_evol(df          : pd.DataFrame,
 
 
 
-def append_time_evol(dfs       : list,
-                     col_name  : str,
-                     run_number: int,
-                     x0        : float,
-                     y0        : float,
-                     shape     : SelRegionMethod,
-                     shape_size: float,
-                     dtbins_dv : np.array,
-                     s1_DTrange: tuple,
-                     bins_Ec   : np.array,
-                     error     : bool = False) -> pd.DataFrame:
+def get_time_evol(df          : pd.DataFrame,
+                  slice_hours : float,
+                  col_name    : str,
+                  run_number  : int,
+                  x0          : float,
+                  y0          : float,
+                  shape       : SelRegionMethod,
+                  shape_size  : float,
+                  dtbins_dv   : np.array,
+                  s1_DTrange  : tuple,
+                  bins_Ec     : np.array,
+                  error       : bool = False) -> pd.DataFrame:
     """
-    -Takes a list of dataframes from the output of create_time_slices and applies
-    get_time_evol function to each one of the dataframes in the list.
-
-    -Returns a dataframe containing the time evolution of each time slice.
+    Splits input dataframe into time slices using 'time' column
+    and then gets time evolution parameters.
+    Creates a dataframe including all the time evolution relevant parameters.
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Input dataframe that is going to be split in time slices and from which the
+      time evolution parameters will be calculated.
+    slice_hours : float
+      Time interval (hours) in which the dataframe is being split
+    The rest of parameters are the same that those in get_time_evol_single_slice
+    Returns
+    -------
+    t_evols : pd.DataFrame
+      Dataframe containing time evolution parameters for each time slice.
     """
 
-    df_tevols = []
+    slice_seconds = slice_hours * 3600
 
-    for df in dfs:
+    t_min = df.time.min()
+    t_max = df.time.max()
 
-        t_evol = get_time_evol(df, col_name, run_number, x0, y0, shape, shape_size, dtbins_dv, s1_DTrange, bins_Ec)
+    time_bins = np.arange(t_min, t_max + slice_seconds, slice_seconds)
 
-        df_tevols.append(t_evol)
+    t_slice = np.digitize(df.time, time_bins)
 
-    return pd.concat(df_tevols, ignore_index = True)
+    t_evols  = df.groupby(t_slice).apply(get_time_evol_single_slice,
+                                         col_name,
+                                         run_number,
+                                         x0,
+                                         y0,
+                                         shape,
+                                         shape_size,
+                                         dtbins_dv,
+                                         s1_DTrange,
+                                         bins_Ec,
+                                         error)
+
+    return t_evols.reset_index(drop = True)
+
 
 
 
