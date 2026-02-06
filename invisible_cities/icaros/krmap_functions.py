@@ -25,11 +25,26 @@ It also contains functions to get and store map info (metadata) and time evoluti
 """
 
 
-def gauss_seed(x, y, sigma_rel=0.05):
+def gauss_seed(x         : np.array,
+               y         : np.array,
+               sigma_rel : float = 0.02) -> tuple:
     """
     Estimate the seed for a gaussian fit to the input data.
+    Parameters
+    ----------
+    x : np.array
+      Gaussian distributed variable (in our case bin_centers of the energy histogram).
+    y : np.array
+      Frequency of each x value (counts of the energy histogram).
+    sigma_rel : float
+      Estimation of the relative sigma for x_max
+    Returns
+    -------
+    seed : tuple
+      Gaussian seed: area, mean value and standard deviation of the gaussian distributed data.
     """
-    x_max, sigma = weighted_mean_and_std(x, y)
+    x_max = np.median(x)
+    sigma = sigma_rel * x_max
     amp    = y.max()  * (2 * np.pi)**0.5 * sigma
     seed   = amp, x_max, sigma
 
@@ -76,14 +91,23 @@ def create_empty_map(xy_range : tuple,
     return Nan_map
 
 
-def get_median(df):
-    '''
-    We consider that for len(df) < 5, it makes no sense to compute the std
+def get_median(df : pd.DataFrame) -> pd.DataFrame:
+    """
+    Computes the median value of the S2e for a given dataframe.
+    -We consider that for len(df) < 3, it makes no sense to compute the std.
+    -Kr energy resolution is ~4%, so the std for S2e median would be ~0.04/2.35.
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Dataframe in which the median of the S2e is being calculated.
+    Returns
+    -------
+    map : pd.DataFrame
+      Dataframe containing 'nevents', 'mu', 'sigma', 'mu_error', 'sigma_error'
+      of the input dataframe, where mu and mu_error are the median and the median error.
+    """
 
-    Kr energy resolution is ~4%, so the std for S2e median would be ~0.04/2.35
-    '''
-
-    if len(df) < 5:
+    if len(df) < 3:
         sigma = (0.04/2.35)*df.S2e.median()
     else:
         sigma = df.S2e.std()
@@ -125,9 +149,9 @@ def gaussian_fit(df         : pd.DataFrame,
     seed = gauss_seed(bin_centers, counts)
 
     try:
-        f = fit(gauss, bin_centers, counts, seed = seed, maxfev = 2500)
-    except:
+        f = fit(gauss, bin_centers, counts, seed = seed,  maxfev = 10000)
 
+    except:
 
         return pd.DataFrame({'nevents': len(df),
                                  'mu': np.nan,
