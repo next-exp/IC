@@ -3,7 +3,7 @@ import numpy  as np
 import warnings
 from pytest import fixture
 
-from lifetime_vdrift_functions import select_lifetime_region, compute_drift_v
+from invisible_cities.icaros.lifetime_vdrift_functions import select_lifetime_region, compute_drift_v
 from invisible_cities.types.symbols import SelRegionMethod
 from invisible_cities.core.core_functions import in_range, fix_random_seed
 

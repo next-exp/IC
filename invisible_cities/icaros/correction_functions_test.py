@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from correction_functions import normalization, apply_3Dmap, apply_correctionmap_inplace
+from invisible_cities.icaros.correction_functions import normalization, apply_3Dmap, apply_correctionmap_inplace
 from invisible_cities.core.core_functions import in_range
 from invisible_cities.types.symbols import NormMethod
 from scipy.interpolate import griddata

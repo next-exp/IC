@@ -2,13 +2,13 @@ import pandas as pd
 import numpy  as np
 from typing import Callable, Union
 
-from invisible_cities.core.fit_functions import expo, gauss, fit
-from invisible_cities.io.dst_io import load_dst, load_dsts, df_writer
-from invisible_cities.core.core_functions import in_range, shift_to_bin_centers, weighted_mean_and_std
-from invisible_cities.core.stat_functions import poisson_sigma
-from invisible_cities.types.symbols import SelRegionMethod
+from .. core          .fit_functions import expo, gauss, fit
+from .. io            .dst_io import load_dst, load_dsts, df_writer
+from .. core          .core_functions import in_range, shift_to_bin_centers, weighted_mean_and_std
+from .. core          .stat_functions import poisson_sigma
+from .. types         .symbols import SelRegionMethod
 
-from lifetime_vdrift_functions import select_lifetime_region, compute_drift_v
+from .. icaros        .lifetime_vdrift_functions import select_lifetime_region, compute_drift_v
 
 import tables            as tb
 from   scipy             import stats

@@ -8,7 +8,7 @@ from invisible_cities.types.symbols import SelRegionMethod
 from invisible_cities.core.core_functions import in_range, fix_random_seed
 from invisible_cities.core.testing_utils import assert_dataframes_close
 
-from krmap_functions import create_empty_map, get_median, gaussian_fit, fit_map, merge_maps, include_coordinates, gauss_seed, quick_gauss_fit, save_map, compute_metadata, get_time_evol_single_slice, get_time_evol, compute_3D_map
+from invisible_cities.icaros.krmap_functions import create_empty_map, get_median, gaussian_fit, fit_map, merge_maps, include_coordinates, gauss_seed, quick_gauss_fit, save_map, compute_metadata, get_time_evol_single_slice, get_time_evol, compute_3D_map
 
 
 @fixture

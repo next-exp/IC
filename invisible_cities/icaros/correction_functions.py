@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy  as np
 from scipy.interpolate import griddata
-from invisible_cities.core.core_functions import in_range
-from invisible_cities.types.symbols import NormMethod
+from .. core    .core_functions import in_range
+from .. types   .symbols import NormMethod
 
 
 def normalization(krmap    : pd.DataFrame,
                   method   : NormMethod,
-                  xy_params = None) -> float:
+                  xy_params : dict = None) -> float:
     """
     Given a input krypton map, normalizes the whole map to a certain value
     as a function of the chosen method.
