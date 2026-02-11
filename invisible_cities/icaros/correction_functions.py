@@ -93,7 +93,7 @@ def apply_3Dmap(krmap        : pd.DataFrame,
 
          where S2 is the uncorrected S2 signal in pe,
          $E_0 = 41.55 keV$ is the known energy deposited by a 83mKr decay,
-         and $S_0(x,y,z)$ is the average energy of 83mKr events +
+         and $S_0(x,y,z)$ is the average energy of 83mKr events
          from the corresponding voxel of the reference energy map.
     Parameters
     ----------
