@@ -53,7 +53,7 @@ def test_normalization(dummy_map):
     )
 
 
-    assert normalization(dummy_map, NormMethod.max) == 9889
+    assert normalization(dummy_map, NormMethod.maximum) == 9889
     assert normalization(dummy_map, NormMethod.mean_chamber) == 4536.125
     assert normalization(dummy_map, NormMethod.mean_anode) == 4400
     assert normalization(dummy_map, NormMethod.median_chamber) == 4647.5
@@ -69,7 +69,7 @@ def test_normalization(dummy_map):
 
 def test_apply_3Dmap(dummy_map):
 
-    Ec = apply_3Dmap(dummy_map, NormMethod.max, dummy_map.dt, dummy_map.x, dummy_map.y, dummy_map.mu, keV = True)
+    Ec = apply_3Dmap(dummy_map, NormMethod.maximum, dummy_map.dt, dummy_map.x, dummy_map.y, dummy_map.mu, keV = True)
 
     assert len(Ec) == len(dummy_map)
 
@@ -79,7 +79,7 @@ def test_apply_3Dmap_same_values(dummy_map):
 
     dummy_map['mu'] = 8000
 
-    Ec = apply_3Dmap(dummy_map, norm_method = NormMethod.max, dt = dummy_map.dt, x = dummy_map.x, y = dummy_map.y, E = dummy_map.mu, keV = False)
+    Ec = apply_3Dmap(dummy_map, norm_method = NormMethod.maximum, dt = dummy_map.dt, x = dummy_map.x, y = dummy_map.y, E = dummy_map.mu, keV = False)
 
     assert (Ec == dummy_map.mu).all()
 
@@ -88,7 +88,7 @@ def test_apply_3Dmap_one_different_value(dummy_map):
     dummy_map['mu'] = 8000
     dummy_map.loc[0, 'mu'] = 2*8000
 
-    Ec = apply_3Dmap(dummy_map, norm_method = NormMethod.max, dt =dummy_map.dt, x = dummy_map.x, y = dummy_map.y, E = dummy_map.mu, keV = False)
+    Ec = apply_3Dmap(dummy_map, norm_method = NormMethod.maximum, dt =dummy_map.dt, x = dummy_map.x, y = dummy_map.y, E = dummy_map.mu, keV = False)
 
     assert (Ec[1:] == 2*dummy_map.mu[1:]).all()
 
@@ -105,7 +105,7 @@ def test_apply_correctionmap_shape(dummy_map):
 
     kdst_test = kdst.copy()
 
-    kdst_correct = apply_correctionmap_inplace(kdst, dummy_map, norm_method = NormMethod.max, xy_params = None, col_name='Ec')
+    kdst_correct = apply_correctionmap_inplace(kdst, dummy_map, norm_method = NormMethod.maximum, xy_params = None, col_name='Ec')
 
     assert kdst_correct.shape[1] ==  kdst_test.shape[1] + 1
     assert ((kdst_test == kdst_correct.drop(columns = 'Ec')).all()).all()

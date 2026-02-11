@@ -29,7 +29,7 @@ def normalization(krmap    : pd.DataFrame,
 
     anode = krmap[krmap.k == 0]
 
-    if method is NormMethod.max:
+    if method is NormMethod.maximum:
         E_reference_max = krmap.mu.max()
         return E_reference_max
 
