@@ -449,9 +449,9 @@ def test_quick_gauss_fit():
 
 def test_get_time_evol_single_slice_shape(dummy_get_time_evol):
 
-   t_evol = get_time_evol_single_slice(dummy_get_time_evol, 'Ec_2', 1, 0, 0, SelRegionMethod.circle, 1000, np.linspace(1250, 1400, 50), (1000, 1350), np.linspace(30, 60, 101))
+   t_evol = get_time_evol_single_slice(dummy_get_time_evol, 'Ec', 'Ec_2', 1, 0, 0, SelRegionMethod.circle, 1000, np.linspace(1250, 1400, 50), (1000, 1350), np.linspace(30, 60, 101))
 
-   assert t_evol.shape[1] == 33
+   assert t_evol.shape[1] == 35
    assert t_evol.shape[0] == 1
 
 
@@ -463,7 +463,7 @@ def test_get_time_evol(dummy_get_time_evol):
                      dummy_get_time_evol.assign(time= dummy_get_time_evol.time + 7200)],
                      ignore_index = True)
 
-    t_evols = get_time_evol(df2, 1, 'Ec_2', 1, 0, 0, SelRegionMethod.circle, 1000, np.linspace(1250, 1400, 50), (1000, 1350), np.linspace(30, 60, 101), error = False)
+    t_evols = get_time_evol(df2, 1, 'Ec', 'Ec_2', 1, 0, 0, SelRegionMethod.circle, 1000, np.linspace(1250, 1400, 50), (1000, 1350), np.linspace(30, 60, 101), error = False)
 
     assert len(df2) == 3003
     for col in t_evols.columns:

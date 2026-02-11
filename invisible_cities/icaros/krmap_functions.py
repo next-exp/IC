@@ -446,17 +446,18 @@ def quick_gauss_fit(data  : np.array,
 
 
 
-def get_time_evol_single_slice(df          : pd.DataFrame,
-                               col_name    : str,
-                               run_number  : int,
-                               x0          : float,
-                               y0          : float,
-                               shape       : SelRegionMethod,
-                               shape_size  : float,
-                               dtbins_dv   : np.array,
-                               s1_DTrange  : tuple,
-                               bins_Ec     : np.array,
-                               error       : bool = False) -> pd.DataFrame:
+def get_time_evol_single_slice(df           : pd.DataFrame,
+                               col_name1    : str,
+                               col_name2    : str,
+                               run_number   : int,
+                               x0           : float,
+                               y0           : float,
+                               shape        : SelRegionMethod,
+                               shape_size   : float,
+                               dtbins_dv    : np.array,
+                               s1_DTrange   : tuple,
+                               bins_Ec      : np.array,
+                               error        : bool = False) -> pd.DataFrame:
 
     """
     Creates a dataframe including all the time evolution relevant parameters
@@ -466,9 +467,13 @@ def get_time_evol_single_slice(df          : pd.DataFrame,
     ----------
     df : pd.DataFrame
       Input dataframe from which the time evolution parameters are being calculated.
-    col_name : str
+    col_name1 : str
+      Needs to be the name of the corrected energy obtained from applying
+      the preliminary map.
+      For example, col_name1 = 'Ec' (or whatever the name is).
+    col_name2 : str
       Needs to be the name of the final corrected energy in the dataframe.
-      For example, col_name = 'Ec_2' (or whatever the name is).
+      For example, col_name2 = 'Ec_2' (or whatever the name is).
     run_number : int
       Number of the run that is being analyzed.
     x0 : float
@@ -513,12 +518,36 @@ def get_time_evol_single_slice(df          : pd.DataFrame,
 
     dv, udv = compute_drift_v(kdst_in_region.DT.to_numpy(), dtbins_dv, seed = None)
 
+    try:
+        f = quick_gauss_fit(df[col_name1].values, bins_Ec, sigma = error)
 
-    f = quick_gauss_fit(df[col_name].values, bins_Ec, sigma = error)
+        _, mu, sigma = f.values
 
-    _, mu, sigma = f.values
+        _, u_mu, u_sigma = f.errors
 
-    _, u_mu, u_sigma = f.errors
+    except:
+
+        median = get_median(df[col_name1])
+        mu = median.mu
+        sigma = median.sigma
+        u_mu = median.mu_error
+        u_sigma = median.sigma_error
+
+    try:
+        f2 = quick_gauss_fit(df[col_name2].values, bins_Ec, sigma = error)
+
+        _, mu2, sigma2 = f2.values
+
+        _, u_mu2, u_sigma2 = f2.errors
+
+    except:
+
+        median2 = get_median(df[col_name2])
+        mu2 = median2.mu
+        sigma2 = median2.sigma
+        u_mu2 = median2.mu_error
+        u_sigma2 = median2.sigma_error
+
 
     R = np.sqrt(8*np.log(2))*(sigma/mu) #FWHM (krypton paper)
     u_R = R * (u_mu**2/mu**2 + u_sigma**2/sigma**2)**0.5
@@ -533,8 +562,10 @@ def get_time_evol_single_slice(df          : pd.DataFrame,
               'ts' : int(df.time.values[0]),
               's2e': mean,
               's2eu' : std,
-              'ec' : mu,
-              'ecu': u_mu,
+              'ec1' : mu,
+              'ec1u': u_mu,
+              'ec2' : mu2,
+              'ec2u': u_mu2,
               'chi2_ec': f.chi2,
               'e0': e0,
               'e0u': e0u,
@@ -571,7 +602,8 @@ def get_time_evol_single_slice(df          : pd.DataFrame,
 
 def get_time_evol(df          : pd.DataFrame,
                   slice_hours : float,
-                  col_name    : str,
+                  col_name1    : str,
+                  col_name2   : str,
                   run_number  : int,
                   x0          : float,
                   y0          : float,
@@ -609,7 +641,8 @@ def get_time_evol(df          : pd.DataFrame,
     t_slice = np.digitize(df.time, time_bins)
 
     t_evols  = df.groupby(t_slice).apply(get_time_evol_single_slice,
-                                         col_name,
+                                         col_name1,
+                                         col_name2,
                                          run_number,
                                          x0,
                                          y0,
