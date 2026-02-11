@@ -91,15 +91,15 @@ def create_empty_map(xy_range : tuple,
     return Nan_map
 
 
-def get_median(df : pd.DataFrame) -> pd.DataFrame:
+def get_median(var : np.array) -> pd.DataFrame:
     """
-    Computes the median value of the S2e for a given dataframe.
+    Computes the median value of a given variable
     -We consider that for len(df) < 3, it makes no sense to compute the std.
     -Kr energy resolution is ~4%, so the std for S2e median would be ~0.04/2.35.
     Parameters
     ----------
-    df : pd.DataFrame
-      Dataframe in which the median of the S2e is being calculated.
+    var : np.array
+      Variable from which the median is being calculated.
     Returns
     -------
     map : pd.DataFrame
@@ -107,16 +107,16 @@ def get_median(df : pd.DataFrame) -> pd.DataFrame:
       of the input dataframe, where mu and mu_error are the median and the median error.
     """
 
-    if len(df) < 3:
-        sigma = (0.04/2.35)*df.S2e.median()
+    if len(var) < 3:
+        sigma = (0.04/2.35)*var.median()
     else:
-        sigma = df.S2e.std()
+        sigma = var.std()
 
     return pd.DataFrame({
-         'nevents': len(df),
-         'mu': df.S2e.median(),
+         'nevents': len(var),
+         'mu': var.median(),
          'sigma': sigma,
-         'mu_error': sigma/np.sqrt(len(df)),
+         'mu_error': sigma/np.sqrt(len(var)),
          'sigma_error': np.nan}, index = [0])
 
 
@@ -141,7 +141,7 @@ def gaussian_fit(df         : pd.DataFrame,
     """
 
     if len(df)< min_events:
-        return get_median(df)
+        return get_median(df.S2e)
 
     counts, bin_edges = np.histogram(df.S2e, nbins_S2e)
     bin_centers = shift_to_bin_centers(bin_edges)

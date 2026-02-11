@@ -19,10 +19,7 @@ def dummy_empty_df():
 
 @fixture
 def dummy_get_median():
-    return  pd.DataFrame({'DT': np.empty(6),
-         'x' : np.empty(6),
-         'y' : np.empty(6),
-         'S2e' : [8000, 7500, 8300, 7900, 9000, 8100]}, index = range(0, 6))
+    return pd.DataFrame({'S2e' : [8000, 7500, 8300, 7900, 9000, 8100]})
 
 
 
@@ -120,13 +117,12 @@ def test_create_empty_map_values():
 
 
 def test_get_median_empty_input_does_not_raise(dummy_empty_df):
-
-    get_median(dummy_empty_df)
+    get_median(dummy_empty_df.S2e)
 
 
 
 def test_get_median_empty_input(dummy_empty_df):
-    result = get_median(dummy_empty_df)
+    result = get_median(dummy_empty_df.S2e)
 
     assert result.shape == (1, 5)
     assert result['nevents'].sum() == 0
@@ -138,7 +134,7 @@ def test_get_median_empty_input(dummy_empty_df):
 
 def test_get_median_works_with_even_data(dummy_get_median):
 
-    result = get_median(dummy_get_median)['mu']
+    result = get_median(dummy_get_median.S2e)['mu']
     median_data = 8050
 
     assert (result == median_data).all()
@@ -147,9 +143,9 @@ def test_get_median_works_with_even_data(dummy_get_median):
 
 def test_get_median_works_with_odd_data(dummy_get_median):
 
-    dummy_get_median.loc[len(dummy_get_median)] = [np.empty(1), np.empty(1), np.empty(1), 9100]
+    dummy_get_median.loc[len(dummy_get_median.S2e)] = [9100]
 
-    result_med_fun = get_median(dummy_get_median)
+    result_med_fun = get_median(dummy_get_median.S2e)
     result_med_fun = result_med_fun['mu']
     result_med_data = 8100
 
@@ -167,8 +163,8 @@ def test_get_median_errors():
                               3, 3, 3, 3],
                              columns = ['S2e'])
 
-    map_test1  = get_median(S2e_test1)
-    map_test2  = get_median(S2e_test2)
+    map_test1  = get_median(S2e_test1.S2e)
+    map_test2  = get_median(S2e_test2.S2e)
 
     ratio_error_values  = map_test1.mu_error.values / map_test2.mu_error.values
     ratio_sqrt = np.sqrt(len(S2e_test2)-1)/np.sqrt(len(S2e_test1)-1)
@@ -182,7 +178,7 @@ def test_get_median_errors():
 def test_gaussian_fit_few_entries(dummy_empty_df):
 
     result_fit = gaussian_fit(dummy_empty_df, 1, min_events = 10)
-    result_fun = get_median(dummy_empty_df)['mu']
+    result_fun = get_median(dummy_empty_df.S2e)['mu']
 
     assert np.allclose(result_fit.mu.values, result_fun.values, equal_nan=True)
 
