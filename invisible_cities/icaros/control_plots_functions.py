@@ -31,6 +31,7 @@ freq = lambda : plt.ylabel("frequency")
 
 
 def monitor_S1(df         : pd.DataFrame,
+               df2        : pd.DataFrame,
                run_number : int,
                ebins      : np.array,
                ns1bins    : np.array,
@@ -64,52 +65,81 @@ def monitor_S1(df         : pd.DataFrame,
 
     nevents = len(df['event'].unique())
 
-    df1 = df.groupby("event s2_peak".split()).first()
+    df1 = df.groupby("event s1_peak".split()).first()
     df1_ = df1.groupby('event').count()
     df1__ = df1.groupby('event').mean()
 
+    df2 = df2.groupby("event s1_peak".split()).first()
+    df2_ = df2.groupby('event').count()
+    df2__ = df2.groupby('event').mean()
+
     axs[0, 0].hist(df1_.nS1, ns1bins,
-                   density=True, histtype='step', label=
+                   density=True, histtype='step', color = 'red', label=
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
                    f'mean: {df1_.nS1.mean():.2f}\n'
                    f'std: {df1_.nS1.std():.2f}')
+    axs[0, 0].hist(df2_.nS1, ns1bins,
+                   density=True, histtype='step', color = 'black', label=
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2_.nS1.mean():.2f}\n'
+                   f'std: {df2_.nS1.std():.2f}')
     axs[0, 0].set_xlabel('Number of S1')
+    axs[0, 0].set_yscale('log')
     axs[0, 0].set_title('nS1 distribution')
     axs[0, 0].grid(True)
     axs[0, 0].legend()
 
 
-    axs[0, 1].hist(df1__.S1e, ebins,
-                   density=True, histtype='step', label=
+    axs[0, 1].hist(df1.S1e, ebins,
+                   density=True, histtype='step',color = 'red', label=
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df1__.S1e.mean():.2f}\n'
-                   f'std: {df1__.S1e.std():.2f}')
+                   f'mean: {df1.S1e.mean():.2f}\n'
+                   f'std: {df1.S1e.std():.2f}')
+    axs[0, 1].hist(df2__.S1e, ebins,
+                   density=True, histtype='step',color = 'black', label=
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2__.S1e.mean():.2f}\n'
+                   f'std: {df2__.S1e.std():.2f}')
     axs[0, 1].set_xlabel('S1e (pe)')
     axs[0, 1].set_title('S1e distribution')
     axs[0, 1].grid(True)
     axs[0, 1].legend()
 
 
-    axs[1, 0].hist(df1__.S1h, s1hbins,
-                   density=True, histtype='step', label=
+    axs[1, 0].hist(df1.S1h, s1hbins,
+                   density=True, histtype='step', color = 'red', label=
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df1__.S1h.mean():.2f}\n'
-                   f'std: {df1__.S1h.std():.2f}')
+                   f'mean: {df1.S1h.mean():.2f}\n'
+                   f'std: {df1.S1h.std():.2f}')
+    axs[1, 0].hist(df2__.S1h, s1hbins,
+                   density=True, histtype='step',color = 'black', label=
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2__.S1h.mean():.2f}\n'
+                   f'std: {df2__.S1h.std():.2f}')
     axs[1, 0].set_xlabel('S1h (pe)')
     axs[1, 0].set_title('S1h distribution')
     axs[1, 0].grid(True)
     axs[1, 0].legend()
 
 
-    axs[1, 1].hist(df1__.S1w, s1wbins,
-                   density=True, histtype='step', label=
+    axs[1, 1].hist(df1.S1w, s1wbins,
+                   density=True, histtype='step',color = 'red', label=
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df1__.S1w.mean():.2f}\n'
-                   f'std: {df1__.S1w.std():.2f}')
+                   f'mean: {df1.S1w.mean():.2f}\n'
+                   f'std: {df1.S1w.std():.2f}')
+    axs[1, 1].hist(df2__.S1w, s1wbins,
+                   density=True, histtype='step', color = 'black',label=
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2__.S1w.mean():.2f}\n'
+                   f'std: {df2__.S1w.std():.2f}')
     axs[1, 1].set_xlabel('S1w (pe)')
     axs[1, 1].set_title('S1w distribution')
     axs[1, 1].grid(True)
@@ -120,6 +150,7 @@ def monitor_S1(df         : pd.DataFrame,
 
 
 def monitor_S2(df          : pd.DataFrame,
+               df2         : pd.DataFrame,
                run_number  : int,
                ebins       : np.array,
                ns2bins     : np.array,
@@ -161,71 +192,109 @@ def monitor_S2(df          : pd.DataFrame,
 
     nevents = len(df['event'].unique())
 
-    df_ = df.groupby("event s1_peak".split()).first()
-    df2 = df_.groupby('event').count()
-    df2_ = df_.groupby('event').mean()
+    df_ = df.groupby("event s2_peak".split()).first()
+    df1 = df_.groupby('event').count()
+    df1_ = df_.groupby('event').mean()
 
-    axs[0, 0].hist(df2.nS2, ns2bins, histtype = 'step', density=True, label =
+    df2 = df2.groupby("event s2_peak".split()).first()
+    df2_ = df2.groupby('event').count()
+    df2__ = df2_.groupby('event').mean()
+
+    axs[0, 0].hist(df1.nS2, ns2bins, histtype = 'step', color = 'red',  label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df2.qmax.mean():.2f}\n'
-                   f'std: {df2.qmax.std():.2f}')
+                   f'mean: {df1.qmax.mean():.2f}\n'
+                   f'std: {df1.qmax.std():.2f}')
+    axs[0, 0].hist(df2_.nS2, ns2bins, histtype = 'step', color = 'black', label =
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2_.qmax.mean():.2f}\n'
+                   f'std: {df2_.qmax.std():.2f}')
     axs[0, 0].set_xlabel('Number of S2')
+    axs[0, 0].set_yscale('log')
     axs[0, 0].set_title('nS2 distribution')
     axs[0, 0].grid(True)
     axs[0, 0].legend()
 
-    axs[0, 1].hist(df2_.S2e, ebins,
-                   density=True, histtype='step', label=
+    axs[0, 1].hist(df_.S2e, ebins,
+                   density=True, histtype='step', color = 'red', label=
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df2_.S2e.mean():.2f}\n'
-                   f'std: {df2_.S2e.std():.2f}')
+                   f'mean: {df_.S2e.mean():.2f}\n'
+                   f'std: {df_.S2e.std():.2f}')
+    axs[0, 1].hist(df2.S2e, ebins,
+                   density=True, histtype='step', color = 'black', label=
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2.S2e.mean():.2f}\n'
+                   f'std: {df2.S2e.std():.2f}')
     axs[0, 1].set_xlabel('S2e (pe)')
     axs[0, 1].set_title('S2e distribution')
     axs[0, 1].grid(True)
     axs[0, 1].legend()
 
 
-    axs[1, 0].hist(df2_.S2h, s2hbins,
-                   density=True, histtype='step', label=
+    axs[1, 0].hist(df_.S2h, s2hbins,
+                   density=True, histtype='step',color = 'red', label=
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df2_.S2h.mean():.2f}\n'
-                   f'std: {df2_.S2h.std():.2f}')
+                   f'mean: {df_.S2h.mean():.2f}\n'
+                   f'std: {df_.S2h.std():.2f}')
+
+    axs[1, 0].hist(df2.S2h, s2hbins,
+                   density=True, histtype='step', color = 'black',label=
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2.S2h.mean():.2f}\n'
+                   f'std: {df2.S2h.std():.2f}')
     axs[1, 0].set_xlabel('S2h (pe)')
     axs[1, 0].set_title('S2h distribution')
     axs[1, 0].grid(True)
     axs[1, 0].legend()
 
 
-    axs[1, 1].hist(df2_.S2q, s2qbins, histtype = 'step', density=True, label =
+    axs[1, 1].hist(df_.S2q, s2qbins, histtype = 'step', color = 'red',  label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df2_.S2q.mean():.2f}\n'
-                   f'std: {df2_.S2q.std():.2f}')
+                   f'mean: {df_.S2q.mean():.2f}\n'
+                   f'std: {df_.S2q.std():.2f}')
+    axs[1, 1].hist(df2.S2q, s2qbins, histtype = 'step', color = 'black', label =
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2.S2q.mean():.2f}\n'
+                   f'std: {df2.S2q.std():.2f}')
     axs[1, 1].set_xlabel('S2q (pe)')
     axs[1, 1].set_title('S2q distribution')
     axs[1, 1].grid(True)
     axs[1, 1].legend()
 
 
-    axs[2, 0].hist(df2_.qmax, qmaxbins, histtype = 'step', density=True, label =
+    axs[2, 0].hist(df_.qmax, qmaxbins, histtype = 'step', color = 'red', label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df2_.qmax.mean():.2f}\n'
-                   f'std: {df2_.qmax.std():.2f}')
+                   f'mean: {df_.qmax.mean():.2f}\n'
+                   f'std: {df_.qmax.std():.2f}')
+    axs[2, 0].hist(df2.qmax, qmaxbins, histtype = 'step', color = 'black', label =
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2.qmax.mean():.2f}\n'
+                   f'std: {df2.qmax.std():.2f}')
     axs[2, 0].set_xlabel('qmax (pe)')
     axs[2, 0].set_title('Q max distribution')
     axs[2, 0].grid(True)
     axs[2, 0].legend()
 
 
-    axs[2, 1].hist(df2_.S2w, s2wbins , histtype = 'step', density=True, label =
+    axs[2, 1].hist(df_.S2w, s2wbins , histtype = 'step', color = 'red', label =
                    f'run: {run_number}\n'
                    f'events: {nevents}\n'
-                   f'mean: {df2_.qmax.mean():.2f}\n'
-                   f'std: {df2_.qmax.std():.2f}')
+                   f'mean: {df_.qmax.mean():.2f}\n'
+                   f'std: {df_.qmax.std():.2f}')
+    axs[2, 1].hist(df2.S2w, s2wbins , histtype = 'step', color = 'black', label =
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2.qmax.mean():.2f}\n'
+                   f'std: {df2.qmax.std():.2f}')
     axs[2, 1].set_xlabel('S2w (pe)')
     axs[2, 1].set_title('S2w distribution')
     axs[2, 1].grid(True)
@@ -237,6 +306,7 @@ def monitor_S2(df          : pd.DataFrame,
 
 
 def monitor_dtime(df          : pd.DataFrame,
+                  df2         : pd.DataFrame,
                   dtrms2_low  : Callable,
                   dtrms2_upp  : Callable,
                   dtrms2_cen  : Callable):
@@ -256,21 +326,33 @@ def monitor_dtime(df          : pd.DataFrame,
     """
 
     fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+    df1 = df.groupby('event s2_peak'.split()).first().reset_index()
+    df1_ = df1.groupby('event').mean()
 
-    axs[0,0].hist2d(df.DT, df.Zrms, (dtbins, dtrmsbins), cmin = 1);
-    axs[0,0].set_xlabel("Drift time ($\mu$s)"); axs[0,0].set_ylabel("DT$_{rms}$ ($\mu$s)"); axs[0,0].set_xlim(0, 1300)
+    axs[0,0].hist2d(df1.DT, df1.Zrms**2, (dtbins, dtrms2bins));
+    axs[0,0].plot(df1.DT, dtrms2_low(df1.DT), ".r", ms=2);
+    axs[0,0].plot(df1.DT, dtrms2_upp(df1.DT), ".r", ms=2);
+    axs[0,0].plot(df1.DT, dtrms2_cen(df1.DT), '.g', ms = 2);
+    axs[0,0].set_xlabel("Drift time ($\mu$s)"); axs[0,0].set_ylabel("DT$_{rms}^2$ ($\mu$s)"); axs[0,0].set_xlim(0, 1300)
+    axs[0, 0].set_title('Before selection')
 
-    axs[0,1].hist2d(df.DT, df.Zrms**2, (dtbins, dtrms2bins));
-    axs[0,1].plot(df.DT, dtrms2_low(df.DT), ".r", ms=2);
-    axs[0,1].plot(df.DT, dtrms2_upp(df.DT), ".r", ms=2);
-    axs[0,1].plot(df.DT, dtrms2_cen(df.DT), '.g', ms = 2);
+
+    axs[0,1].hist2d(df2.DT, df2.Zrms**2, (dtbins, dtrms2bins));
+    axs[0,1].plot(df2.DT, dtrms2_low(df2.DT), ".r", ms=2);
+    axs[0,1].plot(df2.DT, dtrms2_upp(df2.DT), ".r", ms=2);
+    axs[0,1].plot(df2.DT, dtrms2_cen(df2.DT), '.g', ms = 2);
     axs[0,1].set_xlabel("Drift time ($\mu$s)"); axs[0,1].set_ylabel("DT$_{rms}^2$ ($\mu$s)"); axs[0,1].set_xlim(0, 1300)
+    axs[0,1].set_title('After selection')
 
-    axs[1,0].hist(df.DT, dtbins, histtype = 'step');
+    axs[1,0].hist(df1_.DT, dtbins, histtype = 'step', color = 'red', label = 'before selection');
+    axs[1,0].hist(df2.DT, dtbins, histtype = 'step', color = 'black', label = 'after selection');
+    axs[1,0].legend();
     axs[1,0].set_xlabel("Drift time ($\mu$s)");
     axs[1,0].grid(True)
 
-    axs[1,1].hist(df.Zrms**2, 100, (0, 40), histtype = 'step');
+    axs[1,1].hist(df1_.Zrms**2, 100, (0, 40), histtype = 'step',color = 'red',  label = 'before selection');
+    axs[1,1].hist(df2.Zrms**2, 100, (0, 40), histtype = 'step', color = 'black',  label = 'after selection');
+    axs[1,1].legend();
     axs[1,1].set_xlabel("DT$_{rms}^2$ ($\mu$s)");
     axs[1,1].grid(True)
 
@@ -289,7 +371,7 @@ def monitor_lifetime(df        : pd.DataFrame,
     plt.ylabel("S2e (pe)");
     plt.xlim(0, 1500)
 
-    fig.tight_layout();
+    plt.tight_layout();
 
 
 
@@ -375,22 +457,31 @@ def plot_Ec(Ec_1  : pd.core.series.Series,
     mean_Ec2 = Ec_2.mean()
     stdEc2 = Ec_2.std()
     umeanEc2 = Ec_2.std()/np.sqrt(len(Ec_2))
+    median_Ec2 = Ec_2.median()
 
     mean_Ec =Ec_1.mean()
     stdEc = Ec_1.std()
     umeanEc = Ec_1.std()/np.sqrt(len(Ec_2))
+    median_Ec = Ec_1.median()
 
 
-    plt.hist(Ec_1, 100, range = (20, 60), histtype = 'step', color = 'black', density = True, label = f'mean Ec: {mean_Ec:.2f}keV')
-    plt.hist(Ec_2, 100, range = (20, 60), histtype = 'step', color = 'red', density = True, label = f'mean Ec_2: {mean_Ec2:.2f}keV');
+    plt.hist(Ec_1, 100, range = (25, 60), histtype = 'step', color = 'black',
+      label = f'mean Ec: {mean_Ec:.2f}keV\n'
+      f'median Ec: {median_Ec:.2f}keV\n'
+      f'std Ec: {stdEc:.2f}keV\n'
+      f'umean Ec: {umeanEc:.2f}keV')
+
+    plt.hist(Ec_2, 100, range = (25, 60), histtype = 'step', color = 'red',
+      label = f'mean Ec_2: {mean_Ec2:.2f}keV\n'
+      f'median Ec_2: {median_Ec2:.2f}keV\n'
+      f'std Ec_2: {stdEc2:.2f}keV\n'
+      f'umean Ec_2: {umeanEc2:.2f}keV')
     plt.xlabel('Ec (keV)'); freq();
     plt.grid();
     plt.legend();
 
 
     plt.tight_layout();
-
-    return (mean_Ec2, stdEc2, umeanEc2), (mean_Ec, stdEc, umeanEc)
 
 
 def plot_lifetime_fit(df : pd.DataFrame) -> [[float, float], Tuple[float, float]]:
@@ -500,3 +591,43 @@ def plot_sigmoid(df : pd.DataFrame):
     plt.xlim(1200, 1500);
     plt.grid(True);
     plt.legend()
+
+
+def plot_XY_distributions(df         : pd.DataFrame,
+                          df2        : pd.DataFrame,
+                          xy_range   : np.array,
+                          run_number : int):
+    """
+    Plots histograms for X and Y before and after selections.
+    Parameters
+    ----------
+    df : pd.DataFrame.
+      Initial dataframe, Sophronia output.
+    df2 : pd.DataFrame.
+      Dataframe after performing selections.
+    xy_range : np.array.
+      Ideally a linspace withing the x,y limits (-500, 500) and specifying the number of bins
+    run_number : int.
+      Run number.
+    Returns
+    -------
+    Histograms for X and Y of both dataframes.
+    """
+
+    fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+    df_ = df.groupby('event s2_peak'.split()).first().reset_index()
+
+    axs[0].hist(df.X.values, xy_range, histtype = 'step', color = 'red', label = 'before selection');
+    axs[0].hist(df2.X.values, xy_range, histtype = 'step', color = 'black', label = 'after selection');
+    axs[0].set_xlabel('X (mm)');
+    axs[0].legend();
+    axs[0].grid();
+    axs[0].set_title(f'{run_number}')
+
+
+    axs[1].hist(df.Y.values, xy_range, histtype = 'step', color = 'red', label = 'before selection');
+    axs[1].hist(df2.Y.values, xy_range, histtype = 'step', color = 'black', label = 'after selection');
+    axs[1].set_xlabel('Y (mm)');
+    axs[1].legend();
+    axs[1].grid();
+    axs[1].set_title(f'{run_number}')
