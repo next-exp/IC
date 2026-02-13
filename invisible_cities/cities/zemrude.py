@@ -95,10 +95,10 @@ def save_krmap(name):
         return save_map(name, efficiencies, krmap, metadata, t_evol)
     return save
 
-def do_control_plots(plots_out,ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen, dtbins2, bins, dtrs2_bins, col_name1, col_name2,statistic, x0, y0, shape, shape_size, xy_range_plot):
+def do_control_plots(plots_out,ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen, dtbins2, bins, dtrs2_bins, col_name1, col_name2,statistic, x0, y0, shape, shape_size, xy_range_plot, names):
     #os.mkdir(plots_out)
-    def control_plots(df, df_sel, df_corr, run_number):
-        return make_control_plots(df, df_sel, df_corr, run_number, plots_out, ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen,dtbins2, bins, dtrs2_bins, col_name1, col_name2, statistic, x0, y0, shape, shape_size, xy_range_plot)
+    def control_plots(df, df_sel, df_corr, efficiencies, run_number):
+        return make_control_plots(df, df_sel, df_corr, efficiencies, run_number, plots_out, ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen,dtbins2, bins, dtrs2_bins, col_name1, col_name2, statistic, x0, y0, shape, shape_size, xy_range_plot, names)
     return control_plots
 
 
@@ -106,61 +106,62 @@ def do_control_plots(plots_out,ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bin
 
 
 @city
-def zemrude(files_in    : OneOrManyFiles
-            , file_out    : str
-            , plots_out   : str
-            , compression : str
-            , event_range : EventRangeType
-            , detector_db : str
-            , run_number  : int
-            , pre_map     : str
-            , norm_method : NormMethod
-            , dtrms2_low  : Callable
-            , dtrms2_upp  : Callable
-            , dtrms2_cen  : Callable
-            , low_xrays   : float
-            , high_xrays  : float
-            , low_S2t     : float
-            , high_S2t    : float
-            , R_max       : float
-            , low_DT      : float
-            , high_DT     : float
-            , low_nsipm   : int
-            , high_nsipm  : int
-            , xy_range    : tuple
-            , dt_range    : tuple
-            , xy_nbins    : int
-            , dt_nbins    : int
-            , fit_function: MapFitFunction
-            , nbins_S2e   : int
-            , S2e_range   : tuple
-            , slice_hours : float
-            , x0          : float
-            , y0          : float
-            , shape       : SelRegionMethod
-            , shape_size  : float
-            , dtbins_dv   : np.ndarray
-            , s1_DTrange  : tuple
-            , bins_Ec     : np.ndarray
-            , ebins1      : np.ndarray
-            , ns1bins     : np.ndarray
-            , s1hbins     : np.ndarray
-            , s1wbins     : np.ndarray
-            , ebins2      : np.ndarray
-            , ns2bins     : np.ndarray
-            , s2hbins     : np.ndarray
-            , s2qbins     : np.ndarray
-            , qmaxbins    : np.ndarray
-            , s2wbins     : np.ndarray
-            , dtbins2     : np.ndarray
-            , bins        : int
-            , dtr2_bins   : tuple
-            , col_name1   : str
-            , col_name2   : str
-            , statistic   : str
+def zemrude(files_in           : OneOrManyFiles
+            , file_out         : str
+            , plots_out        : str
+            , compression      : str
+            , event_range      : EventRangeType
+            , detector_db      : str
+            , run_number       : int
+            , pre_map          : str
+            , norm_method      : NormMethod
+            , dtrms2_low       : Callable
+            , dtrms2_upp       : Callable
+            , dtrms2_cen       : Callable
+            , low_xrays        : float
+            , high_xrays       : float
+            , low_S2t          : float
+            , high_S2t         : float
+            , R_max            : float
+            , low_DT           : float
+            , high_DT          : float
+            , low_nsipm        : int
+            , high_nsipm       : int
+            , xy_range         : tuple
+            , dt_range         : tuple
+            , xy_nbins         : int
+            , dt_nbins         : int
+            , fit_function     : MapFitFunction
+            , nbins_S2e        : int
+            , S2e_range        : tuple
+            , slice_hours      : float
+            , x0               : float
+            , y0               : float
+            , shape            : SelRegionMethod
+            , shape_size       : float
+            , dtbins_dv        : np.ndarray
+            , s1_DTrange       : tuple
+            , bins_Ec          : np.ndarray
+            , ebins1           : np.ndarray
+            , ns1bins          : np.ndarray
+            , s1hbins          : np.ndarray
+            , s1wbins          : np.ndarray
+            , ebins2           : np.ndarray
+            , ns2bins          : np.ndarray
+            , s2hbins          : np.ndarray
+            , s2qbins          : np.ndarray
+            , qmaxbins         : np.ndarray
+            , s2wbins          : np.ndarray
+            , dtbins2          : np.ndarray
+            , bins             : int
+            , dtr2_bins        : tuple
+            , col_name1        : str
+            , col_name2        : str
+            , statistic        : str
             , xy_range_plot    : np.ndarray
-            , error       : bool = False
-            , xy_params   : dict = None
+            , names            : Tuple[str, str, str, str, str, str, str, str]
+            , error            : bool = False
+            , xy_params        : dict = None
             ):
 
 
@@ -258,9 +259,11 @@ def zemrude(files_in    : OneOrManyFiles
                                                  y0,
                                                  shape,
                                                  shape_size,
-                                                 xy_range_plot
+                                                 xy_range_plot,
+                                                 names
                                                  )
-                                 , args = ('dst', 'selected_dst', 'corrected_dst', 'run_number')
+
+                                 , args = ('dst', 'selected_dst', 'corrected_dst','efficiencies', 'run_number')
                                  )
 
 

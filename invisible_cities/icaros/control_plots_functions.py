@@ -478,7 +478,7 @@ def hist2D(df        : pd.DataFrame,
 
 
 def plot_Ec(Ec_1  : pd.core.series.Series,
-            Ec_2  : pd.core.series.Series) -> [Tuple[float, float, float], Tuple[float, float, float]]:
+            Ec_2  : pd.core.series.Series):
     """
     This function is for comparing specifically the distributions of corrected energy
     from applying the preliminary map (Ec) vs the "final" corrected energy
@@ -623,37 +623,58 @@ def plot_XY_distributions(df         : pd.DataFrame,
     axs[1].set_title(f'{run_number}')
 
 
+def plot_efficiencies(efficiencies, names):
+    ncuts = len(names)
+    efficiencies_plot = efficiencies.values.reshape(ncuts)
+    cmap = plt.get_cmap('cool')
+    colors = [(cmap(i / (ncuts - 1))) for i in range(ncuts)]
+    for i in range(ncuts):
+        plt.scatter(names[i], efficiencies_plot[i],
+                    marker = 'x', color = colors[i], lw = 2,
+                    s = 100, label = f'{names[i]}: {efficiencies_plot[i]:.2f}')
+    plt.xticks(rotation=20, ha='right')
+    plt.grid()
+    plt.legend()
+    plt.title('Selection efficiencies')
+    plt.ylabel('Efficiency')
+    plt.xlabel('Selection')
+    plt.tight_layout()
 
 
-def make_control_plots(df          : pd.DataFrame,
-                       df_sel      : pd.DataFrame,
-                       df_corr     : pd.DataFrame,
-                       run_number  : int,
-                       plots_out   : str,
-                       ebins1      : np.array,
-                       ns1bins     : np.array,
-                       s1hbins     : np.array,
-                       s1wbins     : np.array,
-                       ebins2      : np.array,
-                       ns2bins     : np.array,
-                       s2hbins     : np.array,
-                       s2qbins     : np.array,
-                       qmaxbins    : np.array,
-                       s2wbins     : np.array,
-                       dtrms2_low  : Callable,
-                       dtrms2_upp  : Callable,
-                       dtrms2_cen  : Callable,
-                       dtbins2     : np.array,
-                       bins        : int,
-                       dtr2_bins   : tuple,
-                       col_name1   : str,
-                       col_name2   : str,
-                       statistic   : str,
-                       x0          : float,
-                       y0          : float,
-                       shape       : SelRegionMethod,
-                       shape_size  : float,
-                       xy_range_plot    : np.array):
+
+
+def make_control_plots(df               : pd.DataFrame,
+                       df_sel           : pd.DataFrame,
+                       df_corr          : pd.DataFrame,
+                       efficiencies     : pd.DataFrame,
+                       run_number       : int,
+                       plots_out        : str,
+                       ebins1           : np.array,
+                       ns1bins          : np.array,
+                       s1hbins          : np.array,
+                       s1wbins          : np.array,
+                       ebins2           : np.array,
+                       ns2bins          : np.array,
+                       s2hbins          : np.array,
+                       s2qbins          : np.array,
+                       qmaxbins         : np.array,
+                       s2wbins          : np.array,
+                       dtrms2_low       : Callable,
+                       dtrms2_upp       : Callable,
+                       dtrms2_cen       : Callable,
+                       dtbins2          : np.array,
+                       bins             : int,
+                       dtr2_bins        : tuple,
+                       col_name1        : str,
+                       col_name2        : str,
+                       statistic        : str,
+                       x0               : float,
+                       y0               : float,
+                       shape            : SelRegionMethod,
+                       shape_size       : float,
+                       xy_range_plot    : np.array,
+                       names            : Tuple[str, ...]
+                       ):
 
     os.makedirs(plots_out, exist_ok=True)
 
@@ -695,6 +716,10 @@ def make_control_plots(df          : pd.DataFrame,
 
     plot_XY_distributions(df, df_sel, run_number, xy_range_plot)
     plt.gcf().savefig(f"{plots_out}/plot_XY_distributions_run{run_number}.png")
+    plt.close()
+
+    plot_efficiencies(efficiencies, names)
+    plt.gcf().savefig(f'{plots_out}/plot_effiencies_run{run_number}.png')
     plt.close()
 
     print(f"All control plots saved in: {plots_out}")
