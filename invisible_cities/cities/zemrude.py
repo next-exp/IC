@@ -106,7 +106,7 @@ def do_control_plots(plots_out,ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bin
 
 
 @city
-def mycity(files_in    : OneOrManyFiles
+def zemrude(files_in    : OneOrManyFiles
             , file_out    : str
             , plots_out   : str
             , compression : str
