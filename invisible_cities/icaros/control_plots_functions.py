@@ -3,7 +3,7 @@
 # Functions for Kr analysis of NEXT100
 #
 #----------------------------------------
-
+import os
 import numpy             as np
 import pandas            as pd
 from   scipy.optimize     import curve_fit
@@ -18,6 +18,9 @@ from scipy import stats
 
 from invisible_cities.icaros.lifetime_vdrift_functions import select_lifetime_region
 
+
+import matplotlib
+matplotlib.set_loglevel("warning")
 
 #
 #---- plotting
@@ -583,7 +586,7 @@ def plot_sigmoid(df         : pd.DataFrame,
 def plot_XY_distributions(df         : pd.DataFrame,
                           df2        : pd.DataFrame,
                           run_number : int,
-                          xy_range   : np.array):
+                          xy_range_plot   : np.array):
     """
     Plots histograms for X and Y before and after selections.
     Parameters
@@ -604,16 +607,16 @@ def plot_XY_distributions(df         : pd.DataFrame,
     fig, axs = plt.subplots(1, 2, figsize=(21, 7))
     df_ = df.groupby('event s2_peak'.split()).first().reset_index()
 
-    axs[0].hist(df.X.values, xy_range, histtype = 'step', color = 'mediumpurple',lw = 2, label = 'before selection');
-    axs[0].hist(df2.X.values, xy_range, histtype = 'step', color = 'black',lw = 2, label = 'after selection');
+    axs[0].hist(df.X.values, xy_range_plot, histtype = 'step', color = 'mediumpurple',lw = 2, label = 'before selection');
+    axs[0].hist(df2.X.values, xy_range_plot, histtype = 'step', color = 'black',lw = 2, label = 'after selection');
     axs[0].set_xlabel('X (mm)');
     axs[0].legend();
     axs[0].grid();
     axs[0].set_title(f'{run_number}')
 
 
-    axs[1].hist(df.Y.values, xy_range, histtype = 'step', color = 'mediumpurple',lw = 2, label = 'before selection');
-    axs[1].hist(df2.Y.values, xy_range, histtype = 'step', color = 'black', lw = 2, label = 'after selection');
+    axs[1].hist(df.Y.values, xy_range_plot, histtype = 'step', color = 'mediumpurple',lw = 2, label = 'before selection');
+    axs[1].hist(df2.Y.values, xy_range_plot, histtype = 'step', color = 'black', lw = 2, label = 'after selection');
     axs[1].set_xlabel('Y (mm)');
     axs[1].legend();
     axs[1].grid();
@@ -626,6 +629,7 @@ def make_control_plots(df          : pd.DataFrame,
                        df_sel      : pd.DataFrame,
                        df_corr     : pd.DataFrame,
                        run_number  : int,
+                       plots_out   : str,
                        ebins1      : np.array,
                        ns1bins     : np.array,
                        s1hbins     : np.array,
@@ -649,24 +653,48 @@ def make_control_plots(df          : pd.DataFrame,
                        y0          : float,
                        shape       : SelRegionMethod,
                        shape_size  : float,
-                       xy_range    : np.array):
+                       xy_range_plot    : np.array):
+
+    os.makedirs(plots_out, exist_ok=True)
 
     monitor_S1(df, df_sel, run_number, ebins1, ns1bins, s1hbins, s1wbins)
+    plt.gcf().savefig(f"{plots_out}/monitor_S1_run{run_number}.png")
+    plt.close()
 
     monitor_S2(df, df_sel, run_number, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins)
+    plt.gcf().savefig(f"{plots_out}/monitor_S2_run{run_number}.png")
+    plt.close()
 
     monitor_dtime(df, df_sel, dtrms2_low, dtrms2_upp, dtrms2_cen)
+    plt.gcf().savefig(f"{plots_out}/monitor_dtime_run{run_number}.png")
+    plt.close()
 
     monitor_lifetime(df, ebins2, dtbins2)
+    plt.gcf().savefig(f"{plots_out}/monitor_lifetime_run{run_number}.png")
+    plt.close()
 
     monitor_kr_distribution(df, bins, dtr2_bins)
+    plt.gcf().savefig(f"{plots_out}/monitor_kr_distribution_run{run_number}.png")
+    plt.close()
 
     plot_Ec(df_corr[col_name1], df_corr[col_name2])
+    plt.gcf().savefig(f"{plots_out}/plot_Ec_run{run_number}.png")
+    plt.close()
 
     hist2D(df_sel, run_number, statistic)
+    plt.gcf().savefig(f"{plots_out}/hist2D_run{run_number}.png")
+    plt.close()
 
     plot_lifetime_fit(df_sel, x0, y0, shape, shape_size, dtbins2, ebins2)
+    plt.gcf().savefig(f"{plots_out}/plot_lifetime_fit_run{run_number}.png")
+    plt.close()
 
     plot_sigmoid(df_sel, x0, y0, shape, shape_size)
+    plt.gcf().savefig(f"{plots_out}/plot_sigmoid_run{run_number}.png")
+    plt.close()
 
-    plot_XY_distributions(df, df_sel, run_number, xy_range)
+    plot_XY_distributions(df, df_sel, run_number, xy_range_plot)
+    plt.gcf().savefig(f"{plots_out}/plot_XY_distributions_run{run_number}.png")
+    plt.close()
+
+    print(f"All control plots saved in: {plots_out}")
