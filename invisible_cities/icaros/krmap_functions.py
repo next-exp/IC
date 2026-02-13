@@ -683,7 +683,7 @@ def save_map(name          : str,
     Hdf file containing in each node each one of the inputs.
     """
 
-    metadata.to_hdf(name, key = 'metadata', mode = 'w')
+    metadata.to_hdf(name, key = 'metadata', mode = 'a')
 
     with tb.open_file(name, "a") as file:
         df_writer(file, efficiencies, group_name = 'data', table_name = 'selection_efficiencies')

@@ -265,8 +265,9 @@ def zemrude(files_in    : OneOrManyFiles
 
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
-        result = fl.push( source = concatenated_dsts_from_files(files_in, "DST", "Events")
-                        , pipe   = fl.pipe(apply_preliminary_map,
+        pass
+    result = fl.push( source = concatenated_dsts_from_files(files_in, "DST", "Events")
+                    , pipe   = fl.pipe(apply_preliminary_map,
                                            apply_selections,
                                            compute_3D_map,
                                            compute_metadata,
