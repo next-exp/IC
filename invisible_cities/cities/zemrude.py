@@ -142,7 +142,6 @@ def zemrude(files_in    : OneOrManyFiles
             , dtbins_dv   : np.ndarray
             , s1_DTrange  : tuple
             , bins_Ec     : np.ndarray
-            , name        : str
             , ebins1      : np.ndarray
             , ns1bins     : np.ndarray
             , s1hbins     : np.ndarray
@@ -231,7 +230,7 @@ def zemrude(files_in    : OneOrManyFiles
                          , args = ('corrected_dst', 'run_number')
                          , out = 'time_evol')
 
-    save_everything = fl.sink( save_krmap(name)
+    save_everything = fl.sink( save_krmap(file_out)
                              , args = ('efficiencies', '3D_krmap', 'metadata', 'time_evol'))
 
 
