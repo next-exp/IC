@@ -5,6 +5,8 @@ import pandas as pd
 
 from pytest import mark
 
+from .. io                   import dst_io as dio
+from .. core.testing_utils   import assert_dataframes_equal
 from .. core.testing_utils   import assert_tables_equality
 from .. core.testing_utils   import ignore_warning
 from .. core.system_of_units import pes
@@ -64,28 +66,27 @@ def test_sophronia_contains_all_tables(sophronia_config, config_tmpdir):
 
 @ignore_warning.no_config_group
 @mark.slow
-# RE-ACTIVAR
-# def test_sophronia_exact_result(sophronia_config, Th228_hits, config_tmpdir):
-#     path_out = os.path.join(config_tmpdir, 'test_sophronia_exact_result.h5')
-#     config   = dict(**sophronia_config)
-#     config.update(dict(file_out = path_out))
+def test_sophronia_exact_result(sophronia_config, Th228_hits, config_tmpdir):
+    path_out = os.path.join(config_tmpdir, 'test_sophronia_exact_result.h5')
+    config   = dict(**sophronia_config)
+    config.update(dict(file_out = path_out))
 
-#     sophronia(**config)
+    sophronia(**config)
 
-#     tables = ( "MC/hits", "MC/particles"
-#              , "DST/Events"
-#              , "RECO/Events"
-#              , "Run/events", "Run/runInfo"
-#              , "Filters/s12_selector", "Filters/valid_hit"
-#              )
+    tables = ( "MC/hits", "MC/particles"
+             , "DST/Events"
+             , "RECO/Events"
+             , "Run/events", "Run/runInfo"
+             , "Filters/s12_selector", "Filters/valid_hit"
+             )
 
-#     with tb.open_file(Th228_hits)   as true_output_file:
-#         with tb.open_file(path_out) as      output_file:
-#             for table in tables:
-#                 assert hasattr(output_file.root, table), table
-#                 got      = getattr(     output_file.root, table)
-#                 expected = getattr(true_output_file.root, table)
-#                 assert_tables_equality(got, expected)
+    with tb.open_file(Th228_hits)   as true_output_file:
+        with tb.open_file(path_out) as      output_file:
+            for table in tables:
+                assert hasattr(output_file.root, table), table
+                got      = getattr(     output_file.root, table)
+                expected = getattr(true_output_file.root, table)
+                assert_tables_equality(got, expected)
 
 
 @ignore_warning.no_config_group
@@ -148,3 +149,49 @@ def test_sophronia_keeps_hitless_events(config_tmpdir, sophronia_config):
     with tb.open_file(path_out) as output_file:
         assert len(output_file.root.Run.events) == 1
         assert "RECO" not in output_file.root
+
+
+@ignore_warning.no_config_group
+def test_sophronia_clustering_integration(config_tmpdir, sophronia_config):
+    """
+    Runs Sophronia twice (once disabled, once enabled) to verify:
+    1. Backward compatibility: No 'cluster' column when disabled.
+    2. Feature activation: 'cluster' column exists when enabled.
+    3. Data consistency: Enabling clustering does NOT change any other data.
+    """
+    path_out_no_cluster   = os.path.join(config_tmpdir, 'test_sophronia_no_cluster.h5')
+    path_out_with_cluster = os.path.join(config_tmpdir, 'test_sophronia_with_cluster.h5')
+
+    # Clustering disabled
+    config_no_cluster = dict(**sophronia_config)
+    config_no_cluster.update(dict( file_out          = path_out_no_cluster
+                                 , event_range       = 1
+                                 , clustering_params = None))
+    sophronia(**config_no_cluster)
+
+    # Clustering enabled
+    clustering_params = dict(
+                                eps         = 3,
+                                min_samples = 5,
+                                scale_xy    = 14.55,
+                                scale_z     = 3.7
+                            )
+    config_with_cluster = dict(**sophronia_config)
+    config_with_cluster.update(dict( file_out          = path_out_with_cluster
+                                   , event_range       = 1
+                                   , clustering_params = clustering_params))
+    sophronia(**config_with_cluster)
+
+    # Load both outputs
+    df_no_cluster   = dio.load_dst(path_out_no_cluster,   "RECO", "Events")
+    df_with_cluster = dio.load_dst(path_out_with_cluster, "RECO", "Events")
+
+    # ----- Assertions
+    assert not df_no_cluster.empty
+    assert not df_with_cluster.empty
+    assert 'cluster' not in df_no_cluster.columns, "'cluster' column should not exist when clustering is disabled."
+    assert 'cluster' in df_with_cluster.columns, "'cluster' column should exist when clustering is enabled."
+
+    # Compare all columns except 'cluster' for equality
+    df_with_cluster_compare = df_with_cluster.drop(columns=['cluster'])
+    assert_dataframes_equal(df_no_cluster, df_with_cluster_compare)
