@@ -438,6 +438,11 @@ def sophronia_config(Th228_pmaps, next100_mc_krmap):
                        filename   = next100_mc_krmap,
                        apply_temp =            False,
                        norm_strat =  NormStrategy.kr)
+                   , clustering_params = dict(
+                        eps         =     3,
+                        min_samples =     5,
+                        scale_xy    = 14.55,
+                        scale_z     =   3.7)
                    )
     return config
 
