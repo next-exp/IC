@@ -241,7 +241,7 @@ def threshold_hits(hits: pd.DataFrame, th: float) -> pd.DataFrame:
     """
     if th <= 0: return hits
     return (hits.groupby("Z", as_index=False)
-                .apply(apply_threshold, th=th, on_corrected=on_corrected))
+                .apply(apply_threshold, th=th))
 
 
 def cluster_tagger(df_hits: pd.DataFrame, *, 
