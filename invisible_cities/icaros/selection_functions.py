@@ -3,7 +3,6 @@ import pandas            as pd
 from   scipy.optimize     import curve_fit
 from typing import Callable, Union
 
-import matplotlib.pyplot as plt
 from .. core           .core_functions import in_range, shift_to_bin_centers
 from scipy import stats
 from .. icaros         .correction_functions import apply_3Dmap, normalization

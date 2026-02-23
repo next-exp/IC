@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from matplotlib.patches import Circle, Rectangle
 from typing import Tuple
 from invisible_cities.core.stat_functions import poisson_sigma
 import invisible_cities.core.fit_functions as fit
