@@ -1,7 +1,10 @@
+import os
+import tables
+
 import numpy as np
 import pandas as pd
 from pytest import raises, fixture
-import tables
+
 
 from invisible_cities.core.fit_functions import fit, gauss, expo
 from invisible_cities.types.symbols import SelRegionMethod
@@ -44,6 +47,7 @@ def dummy_get_time_evol():
                       'DT': np.linspace(20, 1350, 1001),
                       'S1e':np.linspace(7, 10, 1001),
                       'S1h': np.linspace(1,2,1001),
+                      'S2h': np.linspace(1,20, 1001),
                       'S1w': np.linspace(210, 240, 1001),
                       'Nsipm':np.linspace(10, 30, 1001),
                       'Xrms':np.linspace(13, 15, 1001),
@@ -54,7 +58,6 @@ def dummy_get_time_evol():
                       'Ec': np.linspace(35, 45, 1001),
                       'Ec_2':np.random.normal(loc = 41.5, scale = 10, size = 1001)
                      })
-
 
 
 
@@ -451,7 +454,7 @@ def test_get_time_evol_single_slice_shape(dummy_get_time_evol):
 
    t_evol = get_time_evol_single_slice(dummy_get_time_evol, 'Ec', 'Ec_2', 1, 0, 0, SelRegionMethod.circle, 1000, np.linspace(1250, 1400, 50), (1000, 1350), np.linspace(30, 60, 101))
 
-   assert t_evol.shape[1] == 35
+   assert t_evol.shape[1] == 37
    assert t_evol.shape[0] == 1
 
 
@@ -473,7 +476,9 @@ def test_get_time_evol(dummy_get_time_evol):
 
 
 
-def test_save_map():
+def test_save_map(config_tmpdir):
+    filename = os.path.join(config_tmpdir, 'testmap.h5')
+
     krmap = pd.DataFrame({'k':np.array([0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2]),
                           'i':np.array([0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1]),
                           'j':np.array([0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1]),
@@ -538,6 +543,8 @@ def test_save_map():
               's1eu' :0.3,
               's1h': 100,
               's1hu':1,
+              's2h': 1000,
+              's2hu': 2,
               's2w': 8,
               's2wu': 4,
               's2q': 570.37,
@@ -551,14 +558,12 @@ def test_save_map():
               'Zrms': 4.15,
               'Zrmsu': 0.003}, index = [0])
 
-    save_map('testmap.h5', eff, krmap, meta, t_evolution)
+    save_map(filename, eff, krmap, meta, t_evolution)
 
-    krmap_3D = pd.read_hdf('testmap.h5', 'krmap/krmap')
-    efficiencies = pd.read_hdf('testmap.h5', 'data/selection_efficiencies')
-    metadata = pd.read_hdf('testmap.h5')
-    t_evol = pd.read_hdf('testmap.h5', 't_evol/t_evol')
-
-    testmap = tables.open_file('testmap.h5', mode = 'r')
+    krmap_3D = pd.read_hdf(filename, 'krmap/krmap')
+    efficiencies = pd.read_hdf(filename, 'data/selection_efficiencies')
+    metadata = pd.read_hdf(filename)
+    t_evol = pd.read_hdf(filename, 't_evol/t_evol')
 
 
     assert_dataframes_close(krmap_3D, krmap)
