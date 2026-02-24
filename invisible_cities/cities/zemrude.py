@@ -23,7 +23,7 @@ from .. icaros  .correction_functions import apply_correctionmap_inplace
 from .. icaros  .selection_functions import apply_selections
 from .. icaros  .krmap_functions   import compute_3D_map, gaussian_fit, get_median, compute_metadata, get_time_evol, save_map
 from .. types   .symbols          import NormMethod, SelRegionMethod, MapFitFunction
-from .. icaros  .control_plots_functions import make_control_plots
+from .. icaros  .control_plots_functions import make_control_plots, plot_time_evolution_with_errors_and_dates
 
 
 from pathlib import Path
@@ -100,6 +100,11 @@ def do_control_plots(plots_out,ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bin
     def control_plots(df, df_sel, df_corr, efficiencies, run_number):
         return make_control_plots(df, df_sel, df_corr, efficiencies, run_number, plots_out, ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen,dtbins2, bins, dtrs2_bins, col_name1, col_name2, statistic, x0, y0, shape, shape_size, xy_range_plot, names)
     return control_plots
+
+def time_evol_plots():
+    def t_evol_plots(t_evol):
+        return plot_time_evolution_with_errors_and_dates(t_evol)
+    return t_evol_plots
 
 
 
@@ -266,6 +271,9 @@ def zemrude(files_in           : OneOrManyFiles
                                  , args = ('dst', 'selected_dst', 'corrected_dst','efficiencies', 'run_number')
                                  )
 
+    plot_t_evol = fl.sink(time_evol_plots()
+                          , args = ('time_evol'))
+
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
         pass
@@ -278,6 +286,7 @@ def zemrude(files_in           : OneOrManyFiles
                                            get_t_evol,
 
                                            fl.fork(save_everything,
-                                                   make_control_plots))
+                                                   make_control_plots,
+                                                   plot_t_evol))
 #                        , result = None
                         )

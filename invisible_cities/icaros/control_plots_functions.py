@@ -8,6 +8,10 @@ import numpy             as np
 import pandas            as pd
 from   scipy.optimize     import curve_fit
 from typing import Callable, Union, Tuple
+import tables as tb
+import sys
+from datetime import datetime
+import pytz
 
 import matplotlib.pyplot as plt
 
@@ -623,7 +627,8 @@ def plot_XY_distributions(df         : pd.DataFrame,
     axs[1].set_title(f'{run_number}')
 
 
-def plot_efficiencies(efficiencies, names):
+def plot_efficiencies(efficiencies : pd.DataFrame,
+                      names        : str):
     ncuts = len(names)
     efficiencies_plot = efficiencies.values.reshape(ncuts)
     cmap = plt.get_cmap('cool')
@@ -639,6 +644,114 @@ def plot_efficiencies(efficiencies, names):
     plt.ylabel('Efficiency')
     plt.xlabel('Selection')
     plt.tight_layout()
+
+
+
+
+def plot_time_evolution_with_errors_and_dates(df_time_evolution : pd.DataFrame,
+                                              output_dir   : str = None):
+    """
+    Plots 'lt' and 'e0' as a function of local date and time,
+    including error bars from 'ltu' and 'e0u'.
+    Reads 'ts' data from a specified column within the /time_evolution DataFrame.
+
+    Args:
+        h5_file_path (str): Path to the HDF5 file.
+        ts_col_name (str): The column name within the /time_evolution DataFrame
+                           that contains the timestamp data in seconds since epoch.
+        output_dir (str, optional): Directory to save plots. If None, plots are displayed.
+    """
+    print(f"\n--- Processing /time_evolution data ---")
+
+    ts_col_name = 'ts'
+
+    try:
+        # Load the main time_evolution DataFrame.
+        # This will contain 'lt', 'e0', 'ltu', 'e0u', and now, 'ts' as columns.
+
+        print(df_time_evolution)
+
+
+        print("Columns in /t_evol DataFrame:")
+        print(df_time_evolution.columns.tolist()) # Print all columns to help identify 'ts'
+
+        # 1. Read the 'ts' data from the DataFrame column
+        if ts_col_name not in df_time_evolution.columns:
+            raise KeyError(f"The 'ts' column '{ts_col_name}' was not found in the /t_evol DataFrame.")
+
+        time_points_epoch_seconds = df_time_evolution[ts_col_name].values
+
+        # Convert epoch seconds to datetime objects in local time (Madrid)
+        time_points_utc = pd.to_datetime(time_points_epoch_seconds, unit='s', utc=True)
+        madrid_tz = pytz.timezone('Europe/Madrid')
+        time_points_local = time_points_utc.tz_convert(madrid_tz)
+
+        print(f"Original 'ts' (epoch seconds) sample: {time_points_epoch_seconds[:5]}...")
+        print(f"Converted local dates and times sample: {time_points_local.tolist()[:5]}...")
+
+        # Data for plotting (make sure these column names exist in your DataFrame)
+        data_to_plot = {
+            'dv':   {'value_col': 'dv', 'error_col': 'dvu','units': 'mm/microsecond'},
+            'lt':   {'value_col': 'lt', 'error_col': 'ltu','units': 'mus'},
+            'e0':   {'value_col': 'e0', 'error_col': 'e0u','units': 'p.e.'},
+            'ec2':   {'value_col': 'ec2', 'error_col': 'ec2u','units': 'keV'},
+            's2w':  {'value_col': 's2w', 'error_col': 's2wu','units': 'microsecond'},
+            's2h':  {'value_col': 's2h', 'error_col': 's2hu','units': 'p.e.'},
+            's1e':  {'value_col': 's1e', 'error_col': 's1eu','units': 'p.e.'},
+            's1w':  {'value_col': 's1w', 'error_col': 's1wu','units': 'ns'},
+            's1h':  {'value_col': 's1h', 'error_col': 's1hu','units': 'p.e.'},
+            'Eres': {'value_col': 'resol', 'error_col': 'resolu','units': '% FWHM'},
+        }
+
+        # Check if the required value/error columns exist in the time_evolution DataFrame
+        missing_columns = []
+        for key, cols in data_to_plot.items():
+            if cols['value_col'] not in df_time_evolution.columns:
+                missing_columns.append(cols['value_col'])
+            if cols['error_col'] not in df_time_evolution.columns:
+                missing_columns.append(cols['error_col'])
+
+        if missing_columns:
+            print(f"Error: The following value/error columns were not found in /time_evolution DataFrame: {missing_columns}")
+            print(f"Available columns are: {list(df_time_evolution.columns)}")
+            return # Exit function if columns are missing
+
+        for plot_name, cols in data_to_plot.items():
+            value_data = df_time_evolution[cols['value_col']]
+            error_data = df_time_evolution[cols['error_col']]
+            units_data = cols['units']
+
+            plt.figure(figsize=(14, 8)) # Wider figure for date labels
+            plt.errorbar(time_points_local, value_data, yerr=error_data, fmt='o-', capsize=4,
+                         label=f'{plot_name} Data with Errors', color='blue', ecolor='gray', elinewidth=1, capthick=1)
+
+            plt.title(f'{plot_name} as a Function of Date')
+            plt.xlabel('Date and Time (Local)')
+            plt.ylabel(f'{plot_name} ({units_data})')
+            plt.grid(True, linestyle='--', alpha=0.6)
+            plt.legend()
+
+            # Improve date formatting on x-axis
+            plt.gcf().autofmt_xdate() # Auto-formats date labels to prevent overlap
+
+            plt.tight_layout()
+
+            if output_dir:
+                plot_filename = os.path.join(output_dir, f"time_evolution_{plot_name}_with_errors_dates.png")
+                plt.savefig(plot_filename)
+                print(f"Saved plot for {plot_name} to {plot_filename}")
+                plt.close() # Close the plot to free memory
+            else:
+                plt.show()
+
+    except FileNotFoundError:
+        print(f"Error: The HDF5 file '{h5_file_path}' was not found. Please check the path.")
+    except KeyError as ke:
+        print(f"Error accessing HDF5 group or column: {ke}. Please ensure the '/time_evolution' group and the 'ts' column name are correct.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
 
 
 
@@ -721,5 +834,7 @@ def make_control_plots(df               : pd.DataFrame,
     plot_efficiencies(efficiencies, names)
     plt.gcf().savefig(f'{plots_out}/plot_effiencies_run{run_number}.png')
     plt.close()
+
+
 
     print(f"All control plots saved in: {plots_out}")
