@@ -114,7 +114,10 @@ def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
     nn_hits = hits.loc[ sel]
     hits    = hits.loc[~sel].copy()
 
-    corrections = pd.DataFrame(dict(E=0, Ec=0), index=hits.index.values)
+    # hits may or may not have Ec, consider both cases
+    has_ec  = "Ec" in hits.columns
+    columns = "E Ec".split() if has_ec else ["E"]
+    corrections = pd.DataFrame(dict(zip(columns, (0,0))), index=hits.index.values)
     for _, nn_hit in nn_hits.iterrows():
         candidates = hits.loc[hits.npeak == nn_hit.npeak] if same_peak else hits
         if len(candidates) == 0: continue # drop hit !!! dangerous
@@ -126,12 +129,14 @@ def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
 
         # redistribute energy proportionally to the receiving hits' energy
         # corrections are accumulated to make this process order insentitive
-        corr_e  = nn_hit.E  * closest.E  / closest.E .sum()
-        corr_ec = nn_hit.Ec * closest.Ec / closest.Ec.sum()
-        corrections.loc[index, "E Ec".split()] += np.stack([corr_e, corr_ec], axis=1)
+        corr_e      = nn_hit.E  * closest.E  / closest.E .sum()
+        if has_ec:
+            corr_ec = nn_hit.Ec * closest.Ec / closest.Ec.sum()
+        corrs = [corr_e, corr_ec] if has_ec else [corr_e]
+        corrections.loc[index, columns] += np.stack(corrs, axis=1)
 
     # apply correction factors based on original charge values
-    hits.loc[:, "E Ec".split()] += corrections.values
+    hits.loc[:, columns] += corrections.values
     return hits
 
 
@@ -147,21 +152,16 @@ def empty_hit( event : int  , timestamp: float, peak_no: int
                             , npeak    = peak_no
                             , Xpeak    = x_peak
                             , Ypeak    = y_peak
-                            , nsipm    = 1
                             , X        = NN
                             , Y        = NN
-                            , Xrms     = 0
-                            , Yrms     = 0
                             , Z        = z
                             , Q        = NN
                             , E        = e
-                            , Qc       = -1
                             , Ec       = ec
-                            , track_id = -1
-                            , Ep       = -1), index=[0])
+                            ), index=[0])
 
 
-def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -> pd.DataFrame:
+def apply_threshold(hits: pd.DataFrame, th: float) -> pd.DataFrame:
     """
     Apply a charge threshold to filter hits and renormalize their energies.
 
@@ -177,10 +177,6 @@ def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -
 
     th : float
         Charge threshold in pe.
-
-    on_corrected : bool, optional
-        Whether to use the regular charge `Q` or the corrected charge `Qc`.
-        Default is False.
 
     Returns
     -------
@@ -199,8 +195,7 @@ def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -
     raw_e_slice = np.   sum(hits.E ) # no   nan expected
     cor_e_slice = np.nansum(hits.Ec) # some nan expected
 
-    col         = "Qc" if on_corrected else "Q"
-    mask_thresh = hits[col] >= th
+    mask_thresh = hits.Q >= th
 
     if not mask_thresh.any():
         first = hits.iloc[0]
@@ -218,7 +213,7 @@ def apply_threshold(hits: pd.DataFrame, th: float, on_corrected: bool = False) -
     return hits
 
 
-def threshold_hits(hits: pd.DataFrame, th: float, on_corrected: bool=False) -> pd.DataFrame:
+def threshold_hits(hits: pd.DataFrame, th: float) -> pd.DataFrame:
     """
     Apply a charge threshold (`th`)vto the hits for each Z slice separately. If
     the threshold is negative or zero, the function returns the input DataFrame
@@ -231,10 +226,6 @@ def threshold_hits(hits: pd.DataFrame, th: float, on_corrected: bool=False) -> p
 
     th : float
         Charge threshold in pe.
-
-    on_corrected : bool, optional
-        Whether to use the regular charge `Q` or the corrected charge `Qc`.
-        Default is False.
 
     Returns
     -------
@@ -252,4 +243,4 @@ def threshold_hits(hits: pd.DataFrame, th: float, on_corrected: bool=False) -> p
     """
     if th <= 0: return hits
     return (hits.groupby("Z", as_index=False)
-                .apply(apply_threshold, th=th, on_corrected=on_corrected))
+                .apply(apply_threshold, th=th))

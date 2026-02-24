@@ -36,7 +36,7 @@ def _df_writer(h5out):
 
 
 def _hits_writer(h5out):
-    cols   = "event time npeak Xpeak Ypeak nsipm X Y Xrms Yrms Z Q E Qc Ec track_id Ep".split()
+    cols   = "event time npeak Xpeak Ypeak X Y Z Q E Ec track_id".split()
     df     = pd.DataFrame(columns=cols)
     writer = hits_writer(h5out, "RECO", "Events")
     return writer(df)
