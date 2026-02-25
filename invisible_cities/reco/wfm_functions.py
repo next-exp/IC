@@ -191,3 +191,38 @@ def top_n_method(wfs : np.ndarray,
     selected_ids = np.zeros_like(charges, dtype=bool)
     selected_ids[idx] = True
     return selected_ids
+
+
+def kill_isolated_sipms(selected_ids        : np.ndarray,
+                        sipm_x              : np.ndarray, 
+                        sipm_y              : np.ndarray, 
+                        proximity_threshold : float) -> np.ndarray:
+    """
+    For the SiPMs that have passed the previous selection, scans through the SiPMs to check if they 
+    have neighbouring SiPMs - i.e., within the proximity_threshold - that have also passed the selection. 
+    If no neighbours are found, the SiPMs are classed as isolated, and are removed.
+
+    Parameters
+    ----------
+    selected_ids        : Boolean array of shape (n_sipms,) indicating which SiPMs passed the previous selection.
+    sipm_x              : 1D array of shape (n_sipms,) containing the x positions of the SiPMs.
+    sipm_y              : 1D array of shape (n_sipms,) containing the y positions of the SiPMs.
+    proximity_threshold : Distance threshold in mm used to identify isolated SiPMs.
+
+    Returns
+    -------
+    selected_ids_no_isolated : Boolean array of shape (n_sipms,) where True indicates that the SiPM is selected.
+    """
+    selected_ids_no_isolated = selected_ids.copy()
+
+    for i in np.where(selected_ids)[0]:
+        x, y = sipm_x[i], sipm_y[i]
+
+        distances = np.sqrt((sipm_x - x)**2 + (sipm_y - y)**2)
+
+        n_neighbors = np.sum((distances < proximity_threshold) & selected_ids)
+
+        if n_neighbors <= 1:
+            selected_ids_no_isolated[i] = False
+            
+    return selected_ids_no_isolated
