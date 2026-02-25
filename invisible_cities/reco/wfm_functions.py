@@ -6,10 +6,11 @@ import numpy as np
 from typing  import Optional
 from typing  import Callable
 
-from .. core.core_functions import define_window
+from .. core.core_functions import define_window, to_col_vector
 from .. calib               import calib_sensors_functions as csf
 from .. sierpe              import blr
 from .. database            import load_db
+
 
 def to_adc(wfs, adc_to_pes):
     """
@@ -166,10 +167,12 @@ def charge_threshold_method(wfs       : np.ndarray,
     
     Returns
     -------
-    Boolean numpy array of shape (n_sipms,) where True indicates that the SiPM is selected.
+    2D array of shape (n_sipms, n_time_bins) containing the waveforms of
+    each SiPM with all values below threshold set to zero.
     """
-    charges = np.sum(wfs, axis=1)
-    return charges >= threshold
+
+    thr = to_col_vector(np.full(wfs.shape[0], threshold))
+    return np.where(wfs > thr, wfs, 0)
 
 
 def top_n_method(wfs : np.ndarray, 
