@@ -802,7 +802,7 @@ def calibrate_pmts(dbfile, run_number, n_maw, thr_maw):
     return calibrate_pmts
 
 
-def calibrate_sipms(dbfile, run_number, thr_sipm):
+def calibrate_sipms(dbfile, run_number):
     DataSiPM   = load_db.DataSiPM(dbfile, run_number)
     DataSiPM   = DataSiPM.loc[lambda df: df.Active==1]
     adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
@@ -810,7 +810,6 @@ def calibrate_sipms(dbfile, run_number, thr_sipm):
     def calibrate_sipms(rwf):
         return csf.calibrate_sipms(rwf,
                                    adc_to_pes = adc_to_pes,
-                                   thr        = thr_sipm,
                                    bls_mode   = BlsMode.mode)
 
     return calibrate_sipms
