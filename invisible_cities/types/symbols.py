@@ -130,6 +130,8 @@ class XYReco(AutoNameEnumBase):
     barycenter = auto()
     corona     = auto()
 
+class CutAlgo(AutoNameEnumBase):
+    threshold  = auto()
 
 class WfType(AutoNameEnumBase):
     rwf  = auto()
