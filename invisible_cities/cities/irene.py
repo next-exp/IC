@@ -110,8 +110,8 @@ def irene( files_in         : OneOrManyFiles
     sipm_rwf_to_cal  = fl.map(calibrate_sipms(detector_db, run_number),
                               item = "sipm")
     # apply function depending on user input, from provided list of functions
-    apply_cut        = fl.map(apply_cutting_function(cutting_function, **cutting_params),
-                              item = "sipm")
+    apply_cut        = apply_cutting_function(cutting_function, **cutting_params)
+
 
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
