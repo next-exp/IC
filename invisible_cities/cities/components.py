@@ -1349,19 +1349,9 @@ def calculate_and_save_buffers(buffer_length    : float        ,
 
 @check_annotations
 def Efield_copier(energy_type: HitEnergy):
-    def copy_Efield(hitc : HitCollection) -> HitCollection:
-        mod_hits = []
-        for hit in hitc.hits:
-            hit = Hit(hit.npeak,
-                      Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm),
-                      hit.Z,
-                      hit.E,
-                      xy(hit.Xpeak, hit.Ypeak),
-                      s2_energy_c=getattr(hit, energy_type.value),
-                      Ep=getattr(hit, energy_type.value))
-            mod_hits.append(hit)
-        mod_hitc = HitCollection(hitc.event, hitc.time, hits=mod_hits)
-        return mod_hitc
+    def copy_Efield(df: pd.DataFrame) -> pd.DataFrame:
+        return df.assign( Ec = df[energy_type.value]
+                        , Ep = df[energy_type.value])
     return copy_Efield
 
 
@@ -1582,7 +1572,7 @@ def hitc_to_df(hitc: HitCollection):
                                      , track_id = hit .track_id
                                      , Ep       = hit .Ep), index=[0]))
     df = pd.concat(hits, ignore_index=True)
-    df = df.astype(dict(event=np.int64, npeak=np.uint16, Ec=np.float64, Ep=np.float64))
+    df = df.astype(dict(event=np.int64, npeak=np.uint16, Ec=np.float64, track_id=np.int64, Ep=np.float64))
     return df
 
 
@@ -1600,7 +1590,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name,
                                   hits_writer):
 
-    to_hitc            = fl.map(hitc_from_df, item="hits")
+    to_hitc            = fl.map(hitc_from_df, item="Ep_hits")
 
     filter_events_nohits = fl.map(lambda x : len(x) > 0,
                                       args = 'hits',
@@ -1652,8 +1642,8 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     return pipe( filter_events_nohits
                , fl.branch(write_no_hits_filter)
                , hits_passed.filter
-               , to_hitc
                , copy_Efield
+               , to_hitc
                , create_extract_track_blob_info
                , sort_hits_
                , filter_events_topology
