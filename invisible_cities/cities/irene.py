@@ -90,7 +90,7 @@ def irene( files_in        : OneOrManyFiles
                               out  = ("s1_indices", "s2_indices", "s2_energies"))
 
     # Remove baseline and calibrate SiPMs
-    sipm_rwf_to_cal  = fl.map(calibrate_sipms(detector_db, run_number, sipm_thr),
+    sipm_rwf_to_cal  = fl.map(calibrate_sipms(detector_db, run_number),
                               item = "sipm")
 
     event_count_in  = fl.spy_count()
