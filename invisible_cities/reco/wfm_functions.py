@@ -3,6 +3,8 @@ This module includes functions to manipulate waveforms.
 authors: J.J. Gomez-Cadenas, G. Martinez
 """
 import numpy as np
+from typing import Optional
+from typing  import Callable
 
 from .. core.core_functions import define_window
 from .. calib               import calib_sensors_functions as csf
@@ -129,3 +131,23 @@ def compare_cwf_blr(cwf, pmtblr, event_list, window_size=500):
             DIFF.append(diff)
 
     return np.array(DIFF)
+
+
+def median_std_method(wfs    : np.ndarray,  
+                      nsigma : Optional[float] = 3.) -> np.ndarray:
+    """
+    Computes the median and standard deviation of the time summed SiPM 
+    waveforms and selects the SiPMs that are nsigma over the median.
+
+    Parameters
+    ----------
+    wfs    : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
+    nsigma : Number of standard deviations above the median, default 3.
+    
+    Returns
+    -------
+    Boolean numpy array of shape (n_sipms,) where True indicates that the SiPM is selected.
+    """
+    charges = np.sum(wfs, axis=1)
+    threshold = np.median(charges) + nsigma * np.std(charges)
+    return charges >= threshold
