@@ -797,6 +797,23 @@ def calibrate_sipms(dbfile, run_number):
     return calibrate_sipms
 
 
+
+
+def threshold_sipm_selection(thr_sipm_type, thr_sipm, detector_db, run_number):
+    '''
+    Function that applies thresholding to the sipms in standard irene manner
+    '''
+
+    # extract sipm threshold
+    sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
+
+    def threshold_sipm_selection(wfs):
+        return wfm.charge_threshold_method(wfs, threshold = sipm_thr)
+
+    return threshold_sipm_selection
+
+
+
 def calibrate_with_mean(dbfile, run_number):
     DataSiPM   = load_db.DataSiPM(dbfile, run_number)
     adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
