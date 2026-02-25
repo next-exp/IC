@@ -169,3 +169,25 @@ def charge_threshold_method(wfs       : np.ndarray,
     """
     charges = np.sum(wfs, axis=1)
     return charges >= threshold
+
+
+def top_n_method(wfs : np.ndarray, 
+                 n   : Optional[int] = 10) -> np.ndarray:
+    """
+    Selects the SiPMs with the top n highest time summed waveforms.
+        
+    Parameters
+    ----------
+    wfs       : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
+    n         : Number of most energeticSiPMs to select, default 10.
+    
+    Returns
+    -------
+    Boolean numpy array of shape (n_sipms,) where True indicates that the SiPM is selected.
+    """
+    charges = np.sum(wfs, axis=1)
+    idx = np.argsort(charges)[-n:]
+
+    selected_ids = np.zeros_like(charges, dtype=bool)
+    selected_ids[idx] = True
+    return selected_ids
