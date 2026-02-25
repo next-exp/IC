@@ -3,12 +3,13 @@ This module includes functions to manipulate waveforms.
 authors: J.J. Gomez-Cadenas, G. Martinez
 """
 import numpy as np
-from typing import Optional
+from typing  import Optional
 from typing  import Callable
 
 from .. core.core_functions import define_window
 from .. calib               import calib_sensors_functions as csf
 from .. sierpe              import blr
+from .. database            import load_db
 
 def to_adc(wfs, adc_to_pes):
     """
@@ -279,7 +280,7 @@ def make_sipm_selection(wfs                 : np.ndarray,
     -------
     sipm_ids_with_signal : Array of shape (n_sipms,) with boolean values indicating which SiPMs are selected.
     """
-
+    detector_info = load_db.DataSiPM('next100', 0)
     sipm_x = np.array(detector_info.X)
     sipm_y = np.array(detector_info.Y)
 
