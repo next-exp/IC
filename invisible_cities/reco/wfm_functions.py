@@ -135,17 +135,17 @@ def compare_cwf_blr(cwf, pmtblr, event_list, window_size=500):
     return np.array(DIFF)
 
 
-def median_std_method(wfs    : np.ndarray,  
+def median_std_method(wfs    : np.ndarray,
                       nsigma : Optional[float] = 3.) -> np.ndarray:
     """
-    Computes the median and standard deviation of the time summed SiPM 
+    Computes the median and standard deviation of the time summed SiPM
     waveforms and selects the SiPMs that are nsigma over the median.
 
     Parameters
     ----------
     wfs    : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
     nsigma : Number of standard deviations above the median, default 3.
-    
+
     Returns
     -------
     Boolean numpy array of shape (n_sipms,) where True indicates that the SiPM is selected.
@@ -159,12 +159,12 @@ def charge_threshold_method(wfs       : np.ndarray,
                             threshold : Optional[float] = 5.) -> np.ndarray:
     """
     Selects the SiPMs whose time summed waveforms are above a threshold.
-    
+
     Parameters
     ----------
     wfs       : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
     threshold : Charge threshold in PE, default 5.
-    
+
     Returns
     -------
     2D array of shape (n_sipms, n_time_bins) containing the waveforms of
@@ -175,16 +175,16 @@ def charge_threshold_method(wfs       : np.ndarray,
     return np.where(wfs > thr, wfs, 0)
 
 
-def top_n_method(wfs : np.ndarray, 
+def top_n_method(wfs : np.ndarray,
                  n   : Optional[int] = 10) -> np.ndarray:
     """
     Selects the SiPMs with the top n highest time summed waveforms.
-        
+
     Parameters
     ----------
     wfs       : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
     n         : Number of most energeticSiPMs to select, default 10.
-    
+
     Returns
     -------
     Boolean numpy array of shape (n_sipms,) where True indicates that the SiPM is selected.
@@ -198,12 +198,12 @@ def top_n_method(wfs : np.ndarray,
 
 
 def kill_isolated_sipms(selected_ids        : np.ndarray,
-                        sipm_x              : np.ndarray, 
-                        sipm_y              : np.ndarray, 
+                        sipm_x              : np.ndarray,
+                        sipm_y              : np.ndarray,
                         proximity_threshold : float) -> np.ndarray:
     """
-    For the SiPMs that have passed the previous selection, scans through the SiPMs to check if they 
-    have neighbouring SiPMs - i.e., within the proximity_threshold - that have also passed the selection. 
+    For the SiPMs that have passed the previous selection, scans through the SiPMs to check if they
+    have neighbouring SiPMs - i.e., within the proximity_threshold - that have also passed the selection.
     If no neighbours are found, the SiPMs are classed as isolated, and are removed.
 
     Parameters
@@ -228,16 +228,16 @@ def kill_isolated_sipms(selected_ids        : np.ndarray,
 
         if n_neighbors <= 1:
             selected_ids_no_isolated[i] = False
-            
+
     return selected_ids_no_isolated
 
 
 def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
-                           sipm_x                   : np.ndarray, 
-                           sipm_y                   : np.ndarray, 
+                           sipm_x                   : np.ndarray,
+                           sipm_y                   : np.ndarray,
                            padding_radius           : float) -> np.ndarray:
     """
-    For the SiPMs that pass the previous selection, creates circular padding of radius padding_radius, 
+    For the SiPMs that pass the previous selection, creates circular padding of radius padding_radius,
     selecting all SiPMs within that radius. Stores the union of all selected SiPMs.
 
     Parameters
@@ -261,11 +261,11 @@ def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
     return sipm_ids_with_signal
 
 
-def make_sipm_selection(wfs                 : np.ndarray, 
-                        selection_func      : Callable, 
-                        selection_kwargs    : dict, 
-                        proximity_threshold : float, 
-                        padding_radius      : float) -> np.ndarray: 
+def make_sipm_selection(wfs                 : np.ndarray,
+                        selection_func      : Callable,
+                        selection_kwargs    : dict,
+                        proximity_threshold : float,
+                        padding_radius      : float) -> np.ndarray:
     """
     SiPM selection pipeline, applies SiPM cuts based on user input.
     A first selection of SiPMs is made, isolated SiPMs are removed
@@ -303,3 +303,4 @@ def make_sipm_selection(wfs                 : np.ndarray,
         padding_radius
     )
     return sipm_ids_with_signal
+
