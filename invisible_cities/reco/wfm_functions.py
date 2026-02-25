@@ -226,3 +226,32 @@ def kill_isolated_sipms(selected_ids        : np.ndarray,
             selected_ids_no_isolated[i] = False
             
     return selected_ids_no_isolated
+
+
+def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
+                           sipm_x                   : np.ndarray, 
+                           sipm_y                   : np.ndarray, 
+                           padding_radius           : float) -> np.ndarray:
+    """
+    For the SiPMs that pass the previous selection, creates circular padding of radius padding_radius, 
+    selecting all SiPMs within that radius. Stores the union of all selected SiPMs.
+
+    Parameters
+    ----------
+    selected_ids_no_isolated : Boolean array of shape (n_sipms,) indicating which SiPMs passed the previous selection.
+    sipm_x                   : 1D array of shape (n_sipms,) containing the x positions of the SiPMs.
+    sipm_y                   : 1D array of shape (n_sipms,) containing the y positions of the SiPMs.
+    padding_radius           : Distance threshold in mm used to create circular padding around selected SiPMs.
+
+    Returns
+    -------
+    sipm_ids_with_signal : Boolean array of shape (n_sipms,) where True indicates that the SiPM is selected.
+    """
+    sipm_ids_with_signal = np.zeros_like(selected_ids_no_isolated, dtype=bool)
+
+    for i in np.where(selected_ids_no_isolated)[0]:
+        x, y = sipm_x[i], sipm_y[i]
+        distances = np.sqrt((sipm_x - x)**2 + (sipm_y - y)**2)
+        sipm_ids_with_signal |= distances < padding_radius
+
+    return sipm_ids_with_signal
