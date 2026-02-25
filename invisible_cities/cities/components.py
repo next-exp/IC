@@ -1602,7 +1602,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
 
     to_hitc            = fl.map(hitc_from_df, item="hits")
 
-    filter_events_nohits = fl.map(lambda x : len(x.hits) > 0,
+    filter_events_nohits = fl.map(lambda x : len(x) > 0,
                                       args = 'hits',
                                       out  = 'hits_passed')
     hits_passed          = fl.count_filter(bool, args="hits_passed")
@@ -1649,10 +1649,10 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                               , write_hits
                               , select_and_write_tracks))
 
-    return pipe( to_hitc
-               , filter_events_nohits
+    return pipe( filter_events_nohits
                , fl.branch(write_no_hits_filter)
                , hits_passed.filter
+               , to_hitc
                , copy_Efield
                , create_extract_track_blob_info
                , sort_hits_
