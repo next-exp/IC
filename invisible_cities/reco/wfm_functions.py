@@ -255,3 +255,47 @@ def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
         sipm_ids_with_signal |= distances < padding_radius
 
     return sipm_ids_with_signal
+
+
+def make_sipm_selection(wfs                 : np.ndarray, 
+                        selection_func      : Callable, 
+                        selection_kwargs    : dict, 
+                        proximity_threshold : float, 
+                        padding_radius      : float) -> np.ndarray: 
+    """
+    SiPM selection pipeline, applies SiPM cuts based on user input.
+    A first selection of SiPMs is made, isolated SiPMs are removed
+    and padding is added around the SiPMs that are left.
+
+    Parameters
+    ----------
+    wfs                 : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
+    selection_func      : Function returning a boolean mask of energetic SiPMs.
+    selection_kwargs    : Dictionary of arguments passed to selection_func.
+    proximity_threshold : Threshold used to identify isolated SiPMs.
+    padding_radius      : Radial padding added to each SiPM that passes the selections.
+
+    Returns
+    -------
+    sipm_ids_with_signal : Array of shape (n_sipms,) with boolean values indicating which SiPMs are selected.
+    """
+
+    sipm_x = np.array(detector_info.X)
+    sipm_y = np.array(detector_info.Y)
+
+    selected_ids = selection_func(wfs, **selection_kwargs)
+
+    selected_ids_no_isolated = kill_isolated_sipms(
+        selected_ids,
+        sipm_x,
+        sipm_y,
+        proximity_threshold
+    )
+
+    sipm_ids_with_signal = apply_circular_padding(
+        selected_ids_no_isolated,
+        sipm_x,
+        sipm_y,
+        padding_radius
+    )
+    return sipm_ids_with_signal
