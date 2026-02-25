@@ -718,15 +718,15 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
             for evt in dhits_df.event.unique():
                 this_event = lambda df: df.event==evt
                 timestamp = event_info[event_info.evt_number==evt].timestamp.values[0]
-                dhits = hits_from_df(dhits_df.loc[this_event])
-                kdst  =               kdst_df.loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
+                dhits = dhits_df.loc[this_event]
+                kdst  =  kdst_df.loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
                                                               else None
                 ### It makes no sense to use the 'io.hits_io.hits_from_df' function here
                 ### (as well as in 'hits_and_kdst_from_files') since the majority of the
                 ### 'evm.Hit' parameters don't appear in the dst (particularly running
                 ### Isaura) and must be set to -1. This proceure should be revisited and
                 ### rethought in the near future, with the aim of changing the event model.
-                yield dict(hits         = dhits[evt],
+                yield dict(hits         = dhits,
                            kdst         = kdst      ,
                            run_number   = run_number,
                            event_number = evt       ,
@@ -1586,9 +1586,21 @@ def hitc_to_df(hitc: HitCollection):
     return df
 
 
+# Temporary
+def hitc_from_df(hits : pd.DataFrame) -> HitCollection:
+    hitcs = hits_from_df(hits)
+    if len(hitcs) == 0:
+        return HitCollection(0, 0, []) # dummy HitCollection
+    assert len(hitcs) == 1
+    for hitc in hitcs.values():
+        return hitc
+
+
 def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name,
                                   hits_writer):
+
+    to_hitc            = fl.map(hitc_from_df, item="hits")
 
     filter_events_nohits = fl.map(lambda x : len(x.hits) > 0,
                                       args = 'hits',
@@ -1637,7 +1649,8 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                               , write_hits
                               , select_and_write_tracks))
 
-    return pipe( filter_events_nohits
+    return pipe( to_hitc
+               , filter_events_nohits
                , fl.branch(write_no_hits_filter)
                , hits_passed.filter
                , copy_Efield
