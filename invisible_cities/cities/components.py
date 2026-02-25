@@ -83,6 +83,7 @@ from .. types  .ic_types          import                    minmax
 from .. types  .ic_types          import        types_dict_summary
 from .. types  .ic_types          import         types_dict_tracks
 from .. types  .symbols           import                    WfType
+from .. types  .symbols           import                   CutAlgo
 from .. types  .symbols           import               RebinMethod
 from .. types  .symbols           import                SiPMCharge
 from .. types  .symbols           import                   BlsMode
@@ -797,6 +798,18 @@ def calibrate_sipms(dbfile, run_number):
     return calibrate_sipms
 
 
+def apply_cutting_function(algo, **cutting_params):
+
+    if algo is CutAlgo.threshold:
+        func = threshold_sipm_selection(**cutting_params)
+    else:
+        # temporary solution, think of a nicer method
+        func = threshold_sipm_selection(**cutting_params)
+
+    def apply_cutting_function(wfs):
+        return func(wfs)
+
+    return apply_cutting_function
 
 
 def threshold_sipm_selection(thr_sipm_type, thr_sipm, detector_db, run_number):
