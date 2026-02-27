@@ -58,6 +58,7 @@ from .. core.core_functions import in_range
 from .. core.exceptions     import NoHits
 from .. core.exceptions     import NoVoxels
 from .. core.testing_utils  import assert_dataframes_close
+from .. core.testing_utils  import an_instance_of
 
 from .. io.mcinfo_io    import cast_mchits_to_dict
 from .. io.mcinfo_io    import load_mchits_df
@@ -123,8 +124,9 @@ min_n_of_voxels = integers(min_value = 3,
                            max_value = 10)
 
 
-def test_voxelize_hits_should_detect_no_hits():
-    empty = single_hits().example().iloc[:0]
+@an_instance_of(single_hits())
+def test_voxelize_hits_should_detect_no_hits_demoo(hits):
+    empty = hits.iloc[:0]
     with raises(NoHits):
         voxelize_hits(empty, None)
 
@@ -167,20 +169,21 @@ def test_round_hits_positions_in_place(hits):
     assert np.all(np.in1d(hits["X Y Z".split()], [0, 1e-5, -1e-5]))
 
 
-def test_round_hits_positions_in_place_empty_input():
+@an_instance_of(single_hits())
+def test_round_hits_positions_in_place_empty_input(hits):
     """
     It simply should not crash.
     """
-    hits = single_hits().example().iloc[:0]
+    hits = hits.iloc[:0]
     round_hits_positions_in_place(hits)
     assert len(hits) == 0
 
 
-def test_round_hits_positions_in_place_non_finite_values():
+@an_instance_of(single_hits())
+def test_round_hits_positions_in_place_non_finite_values(hit):
     """
     Override xyz with np.nan and np.inf, ensure values are not changed.
     """
-    hit = single_hits().example()
     hit.loc[:, "X"] =  np.nan
     hit.loc[:, "Y"] =  np.inf
     hit.loc[:, "Z"] = -np.inf
@@ -366,8 +369,7 @@ def track_extrema():
     return tracks[0], extrema
 
 
-@settings(max_examples=10)
-@given(single_hits())
+@an_instance_of(single_hits())
 def test_voxelize_single_hit(hit):
     vox_size = np.array([10,10,10], dtype=np.int16)
     assert len(voxelize_hits(hit, vox_size)) == 1
