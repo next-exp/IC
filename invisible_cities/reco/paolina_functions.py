@@ -4,6 +4,7 @@ from itertools   import combinations
 import copy
 
 import numpy    as np
+import pandas   as pd
 import networkx as nx
 
 from networkx           import Graph
@@ -23,14 +24,10 @@ from typing import List
 from typing import Tuple
 from typing import Dict
 
-MAX3D = np.array([float(' inf')] * 3)
-MIN3D = np.array([float('-inf')] * 3)
-
-def bounding_box(seq : BHit) -> Sequence[np.ndarray]:
+def bounding_box(hits: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     """Returns two arrays defining the coordinates of a box that bounds the voxels"""
-    posns = [x.pos for x in seq]
-    return (reduce(np.minimum, posns, MAX3D),
-            reduce(np.maximum, posns, MIN3D))
+    xyz = hits["X Y Z".split()].values
+    return xyz.min(axis=0), xyz.max(axis=0)
 
 def round_hits_positions_in_place(hits, decimals=5):
     """
@@ -38,25 +35,28 @@ def round_hits_positions_in_place(hits, decimals=5):
     comparison issues. The operation is performed inplace to avoid an
     unnecessary copy.
     """
-    for hit in hits:
-        hit.xyz = np.round(hit.xyz, decimals)
+    hits.loc[:, "X Y Z".split()] = np.round(hits.loc[:, "X Y Z".split()], decimals)
 
-def voxelize_hits(hits             : Sequence[BHit],
+def voxelize_hits(hits             : pd.DataFrame,
                   voxel_dimensions : np.ndarray,
                   strict_voxel_size: bool = False,
                   energy_type      : HitEnergy = HitEnergy.E) -> List[Voxel]:
     # 1. Find bounding box of all hits.
     # 2. Allocate hits to regular sub-boxes within bounding box, using histogramdd.
     # 3. Calculate voxel energies by summing energies of hits within each sub-box.
-    if not hits:
+    if hits.empty:
         raise NoHits
+
     hlo, hhi = bounding_box(hits)
     bounding_box_centre = (hhi + hlo) / 2
     bounding_box_size   =  hhi - hlo
+
     number_of_voxels = np.ceil(bounding_box_size / voxel_dimensions).astype(int)
     number_of_voxels = np.clip(number_of_voxels, a_min=1, a_max=None)
+
     if strict_voxel_size: half_range = number_of_voxels * voxel_dimensions / 2
     else                : half_range =          bounding_box_size          / 2
+
     voxel_edges_lo = bounding_box_centre - half_range
     voxel_edges_hi = bounding_box_centre + half_range
 
@@ -66,12 +66,11 @@ def voxelize_hits(hits             : Sequence[BHit],
     voxel_edges_lo -= eps
     voxel_edges_hi += eps
 
-    hit_positions = np.array([h.pos                   for h in hits]).astype('float64')
-    hit_energies  =          [getattr(h, energy_type.value) for h in hits]
-    E, edges = np.histogramdd(hit_positions,
+    xyz = hits.loc[:, "X Y Z".split()].values
+    E, edges = np.histogramdd(xyz,
                               bins    = number_of_voxels,
                               range   = tuple(zip(voxel_edges_lo, voxel_edges_hi)),
-                              weights = hit_energies)
+                              weights = hits[energy_type.value])
 
     def centres(a : np.ndarray) -> np.ndarray:
         return (a[1:] + a[:-1]) / 2
@@ -81,31 +80,22 @@ def voxelize_hits(hits             : Sequence[BHit],
     (   cx,     cy,     cz) = map(centres, edges)
     size_x, size_y, size_z  = map(sizes  , edges)
 
-    nz = np.nonzero(E)
-    true_dimensions = np.array([size_x[0], size_y[0], size_z[0]])
-
-    hit_x = np.array([h.X for h in hits])
-    hit_y = np.array([h.Y for h in hits])
-    hit_z = np.array([h.Z for h in hits])
-    hit_coordinates = [hit_x, hit_y, hit_z]
-
-    indx_coordinates = []
-    for i in range(3):
-        # find the bins where hits fall into
-        # numpy.histogramdd() uses [,) intervals...
-        index = np.digitize(hit_coordinates[i], edges[i], right=False) - 1
-        # ...except for the last one, which is [,]: hits on the last edge,
-        # if any, must fall into the last bin
-        index[index == number_of_voxels[i]] = number_of_voxels[i] - 1
-        indx_coordinates.append(index)
-
-    h_indices = np.array([(i, j, k) for i, j, k in zip(indx_coordinates[0], indx_coordinates[1], indx_coordinates[2])])
+    # find the bins where hits fall into
+    # numpy.histogramdd() uses [,) intervals...
+    # ...except for the last one, which is [,]: hits on the last edge,
+    # if any, must fall into the last bin
+    # @gonzaponte: This should not happen, as we are increasing the voxel
+    # dimensions a few lines above
+    hits_indices = np.array([ np.clip(np.digitize(coords, bins, right=False) - 1, 0, n-1)
+                              for coords, bins, n in zip(xyz.T, edges, number_of_voxels)
+                            ]).T
 
     voxels = []
-    for (x,y,z) in np.stack(nz).T:
-
-        indx_comp = (h_indices == (x, y, z))
-        hits_in_bin = list(h for i, h in zip(indx_comp, hits) if all(i))
+    true_dimensions = np.array([size_x[0], size_y[0], size_z[0]])
+    for indices_voxel in np.stack(np.nonzero(E)).T:
+        x, y, z     = indices_voxel
+        indices     = np.where(np.all(hits_indices == indices_voxel, axis=1))[0]
+        hits_in_bin = hits.iloc[indices]
 
         voxels.append(Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions, hits_in_bin, energy_type))
 
@@ -198,8 +188,8 @@ def voxels_within_radius(distances : Dict[Voxel, float],
 
 def blob_centre(voxel: Voxel) -> Tuple[float, float, float]:
     """Calculate the blob position, starting from the end-point voxel."""
-    positions = [h.pos              for h in voxel.hits]
-    energies  = [getattr(h, voxel.Etype) for h in voxel.hits]
+    positions = voxel.hits["X Y Z".split()]
+    energies  = voxel.hits[voxel.Etype]
     if sum(energies):
         bary_pos = np.average(positions, weights=energies, axis=0)
     # Consider the case where voxels are built without associated hits
@@ -226,12 +216,10 @@ def hits_in_blob(track_graph : Graph,
     for v in track_graph.nodes():
         voxel_distance = dist_from_extreme[v]
         if voxel_distance < radius + diag:
-            for h in v.hits:
-                hit_distance = np.linalg.norm(blob_pos - h.pos)
-                if hit_distance < radius:
-                    blob_hits.append(h)
+            hit_distances = np.linalg.norm(v.hits["X Y Z".split()] - blob_pos, axis=1)
+            blob_hits.append(v.hits.loc[hit_distances < radius])
 
-    return blob_hits
+    return pd.concat(blob_hits, ignore_index=True)
 
 
 def blob_energies_hits_and_centres(track_graph : Graph, radius : float) -> Tuple[float, float, Sequence[BHit], Sequence[BHit], Tuple[float, float, float], Tuple[float, float, float]]:
@@ -244,13 +232,11 @@ def blob_energies_hits_and_centres(track_graph : Graph, radius : float) -> Tuple
 
     voxels = list(track_graph.nodes())
     e_type = voxels[0].Etype
-    Ea = sum(getattr(h, e_type) for h in ha)
-    Eb = sum(getattr(h, e_type) for h in hb)
 
     # Consider the case where voxels are built without associated hits
-    if len(ha) == 0 and len(hb) == 0 :
-        Ea = energy_of_voxels_within_radius(distances[a], radius)
-        Eb = energy_of_voxels_within_radius(distances[b], radius)
+    some_hits = len(ha) or len(hb)
+    Ea = ha[e_type].sum() if some_hits else energy_of_voxels_within_radius(distances[a], radius)
+    Eb = hb[e_type].sum() if some_hits else energy_of_voxels_within_radius(distances[b], radius)
 
     ca = blob_centre(a)
     cb = blob_centre(b)
@@ -314,21 +300,20 @@ def drop_end_point_voxels(voxels           : Sequence[Voxel],
        if their energy is lower than a threshold. Returns 1 if the voxel
        has been deleted succesfully and 0 otherwise."""
 
+    xyz    = "X Y Z".split()
     e_type = voxels[0].Etype
 
-    def drop_voxel(voxels: Sequence[Voxel], the_vox: Voxel, contiguity: Contiguity = Contiguity.CORNER) -> int:
+    def drop_voxel(voxels: Sequence[Voxel], the_vox: Voxel, contiguity: Contiguity = Contiguity.CORNER):
         """Eliminate an individual voxel from a set of voxels and give its energy to the hit
            that is closest to the barycenter of the eliminated voxel hits, provided that it
            belongs to a neighbour voxel."""
         the_neighbour_voxels = [v for v in voxels if neighbours(the_vox, v, contiguity)]
 
-        pos = [h.pos              for h in the_vox.hits]
-        qs  = [getattr(h, e_type) for h in the_vox.hits]
-
         #if there are no hits associated to voxels the pos will be an empty list
-        if len(pos) == 0:
+        if len(the_vox.hits) == 0:
             min_dist  = min(np.linalg.norm(the_vox.pos-v.pos) for v in the_neighbour_voxels)
-            min_v     = [v for v in the_neighbour_voxels if  np.isclose(np.linalg.norm(the_vox.pos-v.pos), min_dist)]
+            min_v     = [v for v in the_neighbour_voxels
+                           if np.isclose(np.linalg.norm(the_vox.pos-v.pos), min_dist)]
 
             ### add dropped voxel energy to closest voxels, proportional to the  voxels energy
             sum_en_v = sum(v.E for v in min_v)
@@ -336,26 +321,31 @@ def drop_end_point_voxels(voxels           : Sequence[Voxel],
                 v.E += the_vox.E/sum_en_v * v.E
             return
 
-        bary_pos = np.average(pos, weights=qs, axis=0)
+        bary_pos = np.average(           the_vox.hits[xyz]
+                             , weights = the_vox.hits[e_type]
+                             , axis    =  0)
 
-        ### find hit with minimum distance, only among neighbours
-        min_dist = min(np.linalg.norm(bary_pos-hh.pos) for v in the_neighbour_voxels for hh in v.hits)
-        min_h_v  = [(h, v) for v in the_neighbour_voxels for h in v.hits if np.isclose(np.linalg.norm(bary_pos-h.pos), min_dist)]
-        min_hs   = set(h for (h,v) in min_h_v)
-        min_vs   = set(v for (h,v) in min_h_v)
+        distance_to_bary = lambda hs: np.linalg.norm(hs[xyz] - bary_pos, axis=1)
+        distances        = [(v, distance_to_bary(v.hits)) for v in the_neighbour_voxels]
+        min_dist         = min(ds.min() for (_, ds) in distances)
 
-        ### add dropped voxel energy to closest hits/voxels, proportional to the hits/voxels energy
-        sum_en_h = sum(getattr(h, e_type) for h in min_hs)
-        sum_en_v = sum(v.E                for v in min_vs)
-        for h in min_hs:
-            setattr(h, e_type, getattr(h, e_type) + getattr(h, e_type) * the_vox.E/sum_en_h)
-        for v in min_vs:
-            v.E = sum(getattr(h, e_type) for h in v.hits)
+        hits_at_min_dist = lambda ds: np.argwhere(np.isclose(ds, min_dist)).flatten()
+        min_hits         = [(v, hits_at_min_dist(ds)) for (v, ds) in distances]
+        min_hits         = [pair for pair in min_hits if pair[1].size]
 
-    def nan_energy(voxel):
+        total_closest_e = sum(v.hits.iloc[idx][e_type].sum() for (v, idx) in min_hits)
+        for (v, row_idx) in min_hits:
+            col_idx        = v.hits.columns.get_loc(e_type)
+            current_energy = v.hits.iloc[row_idx, col_idx].values
+            v.hits.iloc[row_idx, col_idx] = current_energy * (1 + the_vox.E/total_closest_e)
+
+        # recopmute voxel energy
+        for v in voxels:
+            v.E = v.hits[e_type].sum()
+
+    def set_nan_energies(voxel):
         voxel.E = np.nan
-        for hit in voxel.hits:
-            setattr(hit, e_type, np.nan)
+        voxel.hits.loc[:, e_type] = np.nan
 
     mod_voxels     = copy.deepcopy(voxels)
     dropped_voxels = []
@@ -378,7 +368,7 @@ def drop_end_point_voxels(voxels           : Sequence[Voxel],
                         mod_voxels    .remove(extreme)
                         dropped_voxels.append(extreme)
                         drop_voxel(mod_voxels, extreme)
-                        nan_energy(extreme)
+                        set_nan_energies(extreme)
                         modified = True
 
     return mod_voxels, dropped_voxels

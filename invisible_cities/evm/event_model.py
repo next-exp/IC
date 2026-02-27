@@ -2,6 +2,7 @@
 
 import tables as tb
 import numpy  as np
+import pandas as pd
 
 from .. types.ic_types import NN
 from .. types.ic_types import xy
@@ -101,7 +102,7 @@ class Voxel(BHit):
     def size(self): return self._size
 
     @property
-    def Ehits(self): return sum(getattr(h, self.e_type) for h in self.hits)
+    def Ehits(self): return self.hits[self.e_type].sum()
 
     @property
     def Etype(self): return self.e_type
@@ -202,12 +203,12 @@ class VoxelCollection:
 class Blob:
     """A Blob is a collection of Hits with a seed and a radius. """
     def __init__(self, seed: Tuple[float, float, float],
-                       hits : List[BHit],
+                       hits : pd.DataFrame,
                        radius : float,
                        e_type : HitEnergy = HitEnergy.E) ->None:
         self.seed   = seed
         self.hits   = hits
-        self.E      = sum(getattr(h, e_type.value) for h in hits)
+        self.E      = hits[e_type.value].sum()
         self.radius = radius
         self.e_type = e_type.value
 
