@@ -155,10 +155,12 @@ def median_std_method(wfs    : np.ndarray,
     return charges >= threshold
 
 
-def charge_threshold_method(wfs       : np.ndarray,
-                            threshold : Optional[float] = 5.) -> np.ndarray:
+def charge_threshold_method(wfs             : np.ndarray,
+                            indices         : np.ndarray,
+                            zeroing_thr     : Optional[float] = 2.,
+                            integration_thr : Optional[float] = 5.) -> np.ndarray:
     """
-    Selects the SiPMs whose time summed waveforms are above a threshold.
+    Selects the SiPMs whose time summed waveforms within the s2 windows are above a threshold.
 
     Parameters
     ----------
@@ -168,8 +170,13 @@ def charge_threshold_method(wfs       : np.ndarray,
     Returns
     -------
     2D array of shape (n_sipms, n_time_bins) containing the waveforms of
-    each SiPM with all values below threshold set to zero.
+    each SiPM with all values below threshold set to zero, with a mask applied depending
+    on summed waveforms over certain indices.
     """
+    thr = to_col_vector(np.full(wfs.shape[0], zeroing_thr))
+
+    # zero entries below threshold
+    zwfs = np.where(wfs > thr, wfs, 0)
 
     thr = to_col_vector(np.full(wfs.shape[0], threshold))
     return np.where(wfs > thr, wfs, 0)
