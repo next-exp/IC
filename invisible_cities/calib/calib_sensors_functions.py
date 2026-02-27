@@ -136,15 +136,18 @@ def pmt_subtract_maw(cwfs, n_maw=100):
     return cwfs - maw
 
 
-def calibrate_sipms(sipm_wfs, adc_to_pes, *, bls_mode=BlsMode.mode):
+def calibrate_sipms(sipm_wfs, adc_to_pes, *, thr = None, bls_mode=BlsMode.mode):
     """
     Subtract baseline, and calibrates waveforms to pes.
     """
-    #thr  = to_col_vector(np.full(sipm_wfs.shape[0], thr))
     bls  = subtract_baseline(sipm_wfs, bls_mode=bls_mode)
     cwfs = calibrate_wfs(bls, adc_to_pes)
-    return cwfs
-    #return np.where(cwfs > thr, cwfs, 0)
+    if thr is None:
+        return cwfs
+    else:
+        # if you apply a threshold here, apply as usual
+        thr  = to_col_vector(np.full(sipm_wfs.shape[0], thr))
+        return np.where(cwfs > thr, cwfs, 0)
 
 
 def subtract_mean  (wfs): return subtract_baseline(wfs, bls_mode=BlsMode.mean  )
