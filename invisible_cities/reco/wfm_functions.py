@@ -5,6 +5,7 @@ authors: J.J. Gomez-Cadenas, G. Martinez
 import numpy as np
 from typing  import Optional
 from typing  import Callable
+from typing  import Tuple
 
 from .. core.core_functions import define_window, to_col_vector
 from .. calib               import calib_sensors_functions as csf
@@ -158,9 +159,11 @@ def median_std_method(wfs    : np.ndarray,
 def charge_threshold_method(wfs             : np.ndarray,
                             indices         : np.ndarray,
                             zeroing_thr     : Optional[float] = 2.,
-                            integration_thr : Optional[float] = 5.) -> np.ndarray:
+                            integration_thr : Optional[float] = 5.) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Selects the SiPMs whose time summed waveforms within the s2 windows are above a threshold.
+    Selects the SiPMs whose time summed waveforms within the s2 windows are above two thresholds:
+        - initial zero suprresion threshold (setting values in each waveform below a value to 0)
+        - threshold over each selected integrated slice of the waveforms
 
     Parameters
     ----------
@@ -169,9 +172,7 @@ def charge_threshold_method(wfs             : np.ndarray,
 
     Returns
     -------
-    2D array of shape (n_sipms, n_time_bins) containing the waveforms of
-    each SiPM with all values below threshold set to zero, with a mask applied depending
-    on summed waveforms over certain indices.
+    Tuple of np arrays including all passing sipm ids and the corresponding waveforms
     """
     thr = to_col_vector(np.full(wfs.shape[0], zeroing_thr))
 
