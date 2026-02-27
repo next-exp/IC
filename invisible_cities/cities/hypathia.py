@@ -30,6 +30,7 @@ from .. detsim                 import sensor_functions     as sf
 from .. io   .run_and_event_io import run_and_event_writer
 from .. io   .      trigger_io import       trigger_writer
 from .. types.symbols          import WfType
+from .. types.symbols          import CutAlgo
 from .. types.symbols          import SiPMThreshold
 
 from .. dataflow            import dataflow as fl
@@ -49,32 +50,38 @@ from .  components import compute_and_write_pmaps
 from .  components import simulate_sipm_response
 from .  components import calibrate_sipms
 from .  components import get_actual_sipm_thr
+from .  components import apply_cutting_function
+
+from typing import Dict
+from typing import Any
 
 
 @city
-def hypathia( files_in        : OneOrManyFiles
-            , file_out        : str
-            , compression     : str
-            , event_range     : EventRangeType
-            , print_mod       : int
-            , detector_db     : str
-            , run_number      : int
-            , sipm_noise_cut  : float
-            , filter_padding  : int
-            , thr_sipm        : float
-            , thr_sipm_type   : SiPMThreshold
-            , pmt_wfs_rebin   : int
-            , pmt_pe_rms      : float
-            , s1_lmin         : int  , s1_lmax     : int
-            , s1_tmin         : float, s1_tmax     : float
-            , s1_rebin_stride : int  , s1_stride   : int
-            , thr_csum_s1     : float
-            , s2_lmin         : int  , s2_lmax     : int
-            , s2_tmin         : float, s2_tmax     : float
-            , s2_rebin_stride : int  , s2_stride   : int
-            , thr_csum_s2     : float, thr_sipm_s2 : float
-            , pmt_samp_wid    : float
-            , sipm_samp_wid   : float
+def hypathia( files_in         : OneOrManyFiles
+            , file_out         : str
+            , compression      : str
+            , event_range      : EventRangeType
+            , print_mod        : int
+            , detector_db      : str
+            , run_number       : int
+            , sipm_noise_cut   : float
+            , filter_padding   : int
+            , thr_sipm         : float
+            , thr_sipm_type    : SiPMThreshold
+            , pmt_wfs_rebin    : int
+            , pmt_pe_rms       : float
+            , s1_lmin          : int  , s1_lmax     : int
+            , s1_tmin          : float, s1_tmax     : float
+            , s1_rebin_stride  : int  , s1_stride   : int
+            , thr_csum_s1      : float
+            , s2_lmin          : int  , s2_lmax     : int
+            , s2_tmin          : float, s2_tmax     : float
+            , s2_rebin_stride  : int  , s2_stride   : int
+            , thr_csum_s2      : float, thr_sipm_s2 : float
+            , pmt_samp_wid     : float
+            , sipm_samp_wid    : float
+            , cutting_function : CutAlgo
+            , cutting_params   : Dict[str, Any]
             ):
 
     sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
@@ -112,8 +119,12 @@ def hypathia( files_in        : OneOrManyFiles
                               item="sipm")
 
     # SiPMs calibration
-    sipm_rwf_to_cal  = fl.map(calibrate_sipms(detector_db, run_number, sipm_thr),
+    sipm_rwf_to_cal  = fl.map(calibrate_sipms(detector_db, run_number),
                               item = "sipm")
+
+    # apply function depending on user input, from provided list of functions
+    apply_cut        = apply_cutting_function(cutting_function, **cutting_params)
+
 
     event_count_in  = fl.spy_count()
     event_count_out = fl.spy_count()
@@ -134,7 +145,7 @@ def hypathia( files_in        : OneOrManyFiles
                                              detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                                              s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
                                              s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2,
-                                             h5out, sipm_rwf_to_cal)
+                                             h5out, apply_cut, sipm_rwf_to_cal)
 
         result = push(source = wf_from_files(files_in, WfType.mcrd),
                       pipe   = pipe(fl.slice(*event_range, close_all=True),
