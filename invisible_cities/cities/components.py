@@ -812,16 +812,24 @@ def apply_cutting_function(algo, **cutting_params):
     return apply_cutting_function
 
 
-def threshold_sipm_selection(thr_sipm_type, thr_sipm, detector_db, run_number):
+def threshold_sipm_selection(thr_sipm_type
+                            , thr_sipm
+                            , thr_sipm_s2
+                            , run_number
+                            , detector_db = None):
     '''
-    Function that applies thresholding to the sipms in standard irene manner
+    Function that applies thresholding to the sipms in standard irene manner,
+    by zeroing all waveform values below a threshold.
     '''
+    # assume that if the detector_db is None, you return sipm threshold as the number provided
+    if detector_db is None:
+        sipm_thr = thr_sipm
+    else:
+        # extract sipm threshold
+        sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
 
-    # extract sipm threshold
-    sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
-
-    def threshold_sipm_selection(wfs):
-        return wfm.charge_threshold_method(wfs, threshold = sipm_thr)
+    def threshold_sipm_selection(wfs, indices):
+        return wfm.charge_threshold_method(wfs, indices, zeroing_thr = sipm_thr, integration_thr=thr_sipm_s2)
 
     return threshold_sipm_selection
 
