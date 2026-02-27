@@ -10,7 +10,7 @@ from .. core.core_functions import define_window, to_col_vector
 from .. calib               import calib_sensors_functions as csf
 from .. sierpe              import blr
 from .. database            import load_db
-
+from .. reco.peak_functions import select_wf_slices_above_time_integrated_thr
 
 def to_adc(wfs, adc_to_pes):
     """
@@ -178,8 +178,8 @@ def charge_threshold_method(wfs             : np.ndarray,
     # zero entries below threshold
     zwfs = np.where(wfs > thr, wfs, 0)
 
-    thr = to_col_vector(np.full(wfs.shape[0], threshold))
-    return np.where(wfs > thr, wfs, 0)
+    # returns selected ids and waveforms above integral
+    return select_wf_slices_above_time_integrated_thr(zwfs, indices, integration_thr)
 
 
 def top_n_method(wfs : np.ndarray,

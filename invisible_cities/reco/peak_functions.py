@@ -25,9 +25,24 @@ def indices_and_wf_above_threshold(wf, thr):
     return ZsWf(indices_above_thr, wf_above_thr)
 
 
+def select_wf_slices_above_time_integrated_thr(wfs, indices, thr):
+    '''
+    function that integrates over certain time slices, and passes the waveform
+    based on the aforementioned slices passing the threshold
+    '''
+    slice_ = slice(indices[0], indices[-1] + 1)
+    wfs_   = wfs[:, slice_]
+
+    selected_ids = np.where(np.sum(wfs_, axis = 1) >= thr)[0]
+    selected_wfs = wfs[selected_ids]
+
+    return selected_ids, selected_wfs
+
+
 def select_wfs_above_time_integrated_thr(wfs, thr):
     selected_ids = np.where(np.sum(wfs, axis=1) >= thr)[0]
     selected_wfs = wfs[selected_ids]
+
     return selected_ids, selected_wfs
 
 
@@ -81,7 +96,7 @@ def build_sipm_responses(indices, times, widths,
     if apply_cut is not None:
         # apply cut before slicing and rebinning
         (sipm_ids,
-         sipm_wfs)   = apply_cut(sipm_wfs)
+         sipm_wfs)   = apply_cut(sipm_wfs, indices)
     else:
         # give all sipm ids as index if no cut is applied
         sipm_ids     = np.arange(sipm_wfs.shape[0])

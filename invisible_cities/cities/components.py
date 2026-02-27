@@ -806,8 +806,8 @@ def apply_cutting_function(algo, **cutting_params):
         # temporary solution, think of a nicer method
         func = threshold_sipm_selection(**cutting_params)
 
-    def apply_cutting_function(wfs):
-        return func(wfs)
+    def apply_cutting_function(wfs, indices):
+        return func(wfs, indices)
 
     return apply_cutting_function
 
