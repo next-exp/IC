@@ -207,7 +207,7 @@ def test_calibrate_sipms_stat(oscillating_waveform_with_baseline,
      baseline )              = oscillating_waveform_with_baseline
     #n_maw                    = n_samples // 500
 
-    ccwfs = csf.calibrate_sipms(wfs, adc_to_pes, nsigma * noise_sigma, bls_mode=BlsMode.mode)
+    ccwfs = csf.calibrate_sipms(wfs, adc_to_pes, thr=nsigma * noise_sigma, bls_mode=BlsMode.mode)
 
     number_of_zeros = np.count_nonzero(ccwfs == 0)
     assert number_of_zeros > fraction * ccwfs.size
@@ -219,7 +219,7 @@ def test_calibrate_sipms_common_threshold(toy_sipm_signal):
      common_threshold, _) = toy_sipm_signal
 
     zs_wf = csf.calibrate_sipms(signal_adc, adc_to_pes,
-                                common_threshold, bls_mode=BlsMode.mode)
+                                thr=common_threshold, bls_mode=BlsMode.mode)
 
     for actual, expected in zip(zs_wf, signal_zs_common_threshold):
         assert actual == approx(expected)
@@ -232,7 +232,7 @@ def test_calibrate_sipms_individual_thresholds(toy_sipm_signal):
 
 
     zs_wf = csf.calibrate_sipms(signal_adc, adc_to_pes,
-                                individual_thresholds,
+                                thr=individual_thresholds,
                                 bls_mode=BlsMode.mode)
     for actual, expected in zip(zs_wf, signal_zs_individual_thresholds):
         assert actual == approx(expected)
