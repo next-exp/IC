@@ -721,11 +721,10 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
                 dhits = dhits_df.loc[this_event]
                 kdst  =  kdst_df.loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
                                                               else None
-                ### It makes no sense to use the 'io.hits_io.hits_from_df' function here
-                ### (as well as in 'hits_and_kdst_from_files') since the majority of the
-                ### 'evm.Hit' parameters don't appear in the dst (particularly running
-                ### Isaura) and must be set to -1. This proceure should be revisited and
-                ### rethought in the near future, with the aim of changing the event model.
+
+                # this are just patches, the hit architecture should be reviseted
+                dhits = dhits.assign(Q=dhits.E)
+                dhits = dhits.loc[:, "event time npeak Xpeak Ypeak X Y Z Q E Ec track_id Ep".split()]
                 yield dict(hits         = dhits,
                            kdst         = kdst      ,
                            run_number   = run_number,
@@ -1619,7 +1618,10 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     make_and_write_summary  = make_final_summary, write_summary
     select_and_write_tracks = events_passed_topology.filter, write_tracks
 
-    write_hits = ("paolina_hits", fl.sink(hits_writer))
+    def change_type(df):
+        return df.astype(dict(Xpeak=float, Ypeak=float))
+
+    write_hits = ("paolina_hits", fl.map(change_type), fl.sink(hits_writer))
 
     fork_pipes = filter(None, ( make_and_write_summary
                               , write_topology_filter
