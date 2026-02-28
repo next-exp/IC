@@ -724,7 +724,10 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
 
                 # this are just patches, the hit architecture should be reviseted
                 dhits = dhits.assign(Q=dhits.E)
-                dhits = dhits.loc[:, "event time npeak Xpeak Ypeak X Y Z Q E Ec track_id Ep".split()]
+                if "Xpeak" in dhits:
+                    dhits = dhits.loc[:, "event time npeak Xpeak Ypeak X Y Z Q E Ec track_id Ep".split()]
+                else:
+                    dhits = dhits.loc[:, "event npeak X Y Z Q E".split()]
                 yield dict(hits         = dhits,
                            kdst         = kdst      ,
                            run_number   = run_number,
@@ -1607,7 +1610,9 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     select_and_write_tracks = events_passed_topology.filter, write_tracks
 
     def change_type(df):
-        return df.astype(dict(Xpeak=float, Ypeak=float))
+        if "Xpeak" in df:
+            return df.astype(dict(Xpeak=float, Ypeak=float))
+        return df
 
     write_hits = ("paolina_hits", fl.map(change_type), fl.sink(hits_writer))
 
