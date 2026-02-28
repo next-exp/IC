@@ -1563,21 +1563,9 @@ def hitc_to_df(hitc: HitCollection):
     return df
 
 
-# Temporary
-def hitc_from_df(hits : pd.DataFrame) -> HitCollection:
-    hitcs = hits_from_df(hits)
-    if len(hitcs) == 0:
-        return HitCollection(0, 0, []) # dummy HitCollection
-    assert len(hitcs) == 1
-    for hitc in hitcs.values():
-        return hitc
-
-
 def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name,
                                   hits_writer):
-
-    to_hitc            = fl.map(hitc_from_df, item="Ep_hits")
 
     filter_events_nohits = fl.map(lambda x : len(x) > 0,
                                       args = 'hits',
