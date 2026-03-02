@@ -14,7 +14,6 @@ from   .. core                 import system_of_units as units
 from   .. core.testing_utils   import assert_hit_equality
 from   .. core.testing_utils   import assert_dataframes_close
 from   .. types.ic_types       import NN
-from   .. cities.penthesilea   import penthesilea
 from   .. io                   import hits_io          as hio
 from   .  hits_functions       import e_from_q
 from   .  hits_functions       import merge_NN_hits

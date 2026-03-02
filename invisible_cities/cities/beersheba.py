@@ -389,7 +389,7 @@ def beersheba( files_in         : OneOrManyFiles
              , corrections      : dict
              ):
     """
-    The city corrects Penthesilea hits energy and extracts topology information.
+    The city corrects Sophronia hits energy and extracts topology information.
     ----------
     Parameters
     ----------
