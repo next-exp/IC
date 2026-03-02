@@ -25,11 +25,6 @@ from . types.symbols     import SiPMCharge
 from . types.symbols     import InterpolationMethod
 from . types.symbols     import NormStrategy
 
-from . evm.event_model    import Cluster
-from . evm.event_model    import Hit
-from . evm.event_model    import HitCollection
-from . types.ic_types     import xy
-
 tbl_data = namedtuple('tbl_data', 'filename group node')
 dst_data = namedtuple('dst_data', 'file_info config read true')
 pmp_dfs  = namedtuple('pmp_dfs' , 's1 s2 si, s1pmt, s2pmt')
@@ -339,7 +334,7 @@ def KrMC_hdst(ICDATADIR):
     test_file = "Kr83_nexus_v5_03_00_ACTIVE_7bar_10evts_HDST.h5"
     test_file = os.path.join(ICDATADIR, test_file)
 
-    ZANODE = -9.425 * units.mm
+    # ZANODE = -9.425 * units.mm # unsure if this is somehow useful
 
     group = "RECO"
     node  = "Events"

@@ -15,7 +15,6 @@ from . pmaps_io  import     pmap_writer
 from . dst_io    import  df_writer
 
 from typing import Callable
-from typing import Any
 
 
 # type annotations needed

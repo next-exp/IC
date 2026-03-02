@@ -1,5 +1,4 @@
 import os
-import shutil
 import numpy  as np
 import pandas as pd
 import tables as tb
@@ -22,7 +21,7 @@ def test_detsim_contains_all_tables(ICDATADIR, output_tmpdir):
                      file_out      = PATH_OUT,
                      run_number    = 0,
                      event_range   = (0, 1)))
-    result = detsim(**conf)
+    detsim(**conf)
     buffer_params = conf["buffer_params"]
 
     with tb.open_file(PATH_OUT, mode="r") as h5out:
@@ -140,7 +139,7 @@ def test_detsim_exact(ICDATADIR, output_tmpdir):
                                           pre_trigger = 100 * units.mus,
                                           trigger_thr = 0)))
     np.random.seed(1234)
-    result = detsim(**conf)
+    detsim(**conf)
 
     tables = ["pmtrd", "sipmrd",
               "Run/eventMap", "Run/events", "Run/runInfo",
@@ -172,7 +171,7 @@ def test_detsim_exact_time_translation(ICDATADIR, output_tmpdir):
                      run_number    = 0,
                      event_range   = all_events))
     np.random.seed(1234)
-    result = detsim(**conf)
+    detsim(**conf)
 
     # run over modified file
     modified_file_out = os.path.join(output_tmpdir, "detsim_test_modified.h5")
@@ -182,7 +181,7 @@ def test_detsim_exact_time_translation(ICDATADIR, output_tmpdir):
                      run_number    = 0,
                      event_range   = all_events))
     np.random.seed(1234)
-    result = detsim(**conf)
+    detsim(**conf)
 
     tables = ["pmtrd", "sipmrd",
               "Run/eventMap", "Run/events", "Run/runInfo",
@@ -225,7 +224,7 @@ def test_detsim_buffer_times(ICDATADIR, output_tmpdir):
                      run_number    = 0,
                      event_range   = (1, 2),
                      physics_params= physics_params))
-    result = detsim(**conf)
+    detsim(**conf)
 
     buffer_params = conf["buffer_params"]
     # compute max signal time

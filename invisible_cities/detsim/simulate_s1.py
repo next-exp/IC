@@ -18,12 +18,9 @@ are computed using the s1-distribution plus the hit emission time.
 - finally, the s1-times are bufferized in a waveform.
 """
 
-import os
 import numpy as np
 
 from typing import Callable
-
-from scipy.optimize import brentq
 
 from .. core import system_of_units as units
 

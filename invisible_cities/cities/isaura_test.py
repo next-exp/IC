@@ -2,8 +2,6 @@ import os
 import numpy  as np
 import tables as tb
 
-from pytest import mark
-
 from .  isaura         import isaura
 from .. core.configure import configure
 from .. io.dst_io      import load_dst

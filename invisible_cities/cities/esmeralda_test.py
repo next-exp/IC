@@ -1,9 +1,6 @@
 import os
-import shutil
 import numpy  as np
 import tables as tb
-
-from pytest import mark
 
 from .. core                 import system_of_units as units
 from .. io                   import dst_io      as dio

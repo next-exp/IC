@@ -11,8 +11,6 @@ from ..evm.event_model     import Hit
 from ..evm.event_model     import Cluster
 from ..evm.event_model     import HitCollection
 from .. types.ic_types     import xy
-from .  table_io           import make_table
-from .. evm .nh5           import HitsTable
 from .. types.ic_types     import NN
 
 

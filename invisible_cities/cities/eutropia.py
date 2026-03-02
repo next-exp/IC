@@ -40,7 +40,6 @@ from .. dataflow                  import dataflow        as fl
 
 from .. cities  .components       import city
 from .. cities  .components       import dst_from_files
-from .. core                      import system_of_units as units
 from .. core    .core_functions   import in_range
 from .. core    .configure        import EventRangeType
 from .. core    .configure        import OneOrManyFiles
@@ -53,7 +52,6 @@ from .. reco    .psf_functions    import create_psf
 from .. reco    .psf_functions    import hdst_psf_processing
 
 from typing import Sequence
-from typing import Optional
 from typing import Tuple
 
 

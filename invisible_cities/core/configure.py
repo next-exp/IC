@@ -21,7 +21,6 @@ from . import system_of_units as     units
 
 from ..types.ic_types import NoneType
 from ..types.symbols  import ALL_SYMBOLS
-from ..types.symbols  import EventRange
 
 from typing import get_origin
 from typing import get_args

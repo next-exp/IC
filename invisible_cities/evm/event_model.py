@@ -191,7 +191,7 @@ class VoxelCollection:
 
     def __str__(self):
         s =  "VoxelCollection: (number of voxels = {})\n".format(self.number_of_voxels)
-        s2 = ['voxel number {} = {} \n'.format((i, voxel) for (i, voxel) in enumerate(self.voxels))]
+        s2 = ['voxel number {} = {} \n'.format(i, voxel) for (i, voxel) in enumerate(self.voxels)]
 
         return  s + ''.join(s2)
 

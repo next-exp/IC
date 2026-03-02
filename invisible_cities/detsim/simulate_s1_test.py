@@ -1,19 +1,12 @@
 import os
 import numpy as np
 
-from .. io.dst_io  import load_dst
-
 from . simulate_s1 import compute_scintillation_photons
 from . simulate_s1 import compute_s1_pes_at_pmts
 
 from . light_tables import create_lighttable_function
 
 from pytest import fixture
-from pytest import raises
-
-from hypothesis import given, settings
-from hypothesis.strategies  import floats
-from hypothesis.extra.numpy import arrays
 
 
 @fixture(scope='session')
@@ -40,4 +33,3 @@ def test_compute_s1_pes_at_pmts(lighttable_filenames):
     s1_pes_at_pmts = compute_s1_pes_at_pmts(xs, ys, zs, photons, s1_lt)
 
     assert s1_pes_at_pmts.shape == (12, len(xs))
-    
