@@ -202,10 +202,12 @@ def test_voxels_from_track_return_node_voxels(graph):
     assert voxels_from_track_graph(graph) == graph.nodes()
 
 
-@mark.skip(reason="bounding box no longer works on voxels")
 @given(bunch_of_hits(), box_sizes)
 def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
     voxels = voxelize_hits(hits, voxel_dimensions)
+    # hack to reuse bounding_box
+    voxels = np.array([v.pos for v in voxels])
+    voxels = pd.DataFrame(voxels, columns="X Y Z".split())
 
     hlo, hhi = bounding_box(hits)
     vlo, vhi = bounding_box(voxels)
