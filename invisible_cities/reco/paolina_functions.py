@@ -1,4 +1,3 @@
-from functools   import reduce
 from itertools   import combinations
 
 import copy

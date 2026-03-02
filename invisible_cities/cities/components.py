@@ -66,7 +66,6 @@ from .. database                  import                   load_db
 from .. sierpe                    import                       blr
 from .. io                        import                 mcinfo_io
 from .. io     .pmaps_io          import                load_pmaps
-from .. io     .hits_io           import              hits_from_df
 from .. io     .dst_io            import                  load_dst
 from .. io     .event_filter_io   import       event_filter_writer
 from .. io     .pmaps_io          import               pmap_writer

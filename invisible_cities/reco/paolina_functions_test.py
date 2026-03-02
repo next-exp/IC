@@ -29,9 +29,6 @@ from hypothesis.strategies import builds
 
 from networkx.generators.random_graphs import fast_gnp_random_graph
 
-from .. evm.event_model import BHit
-from .. evm.event_model import Hit
-from .. evm.event_model import Cluster
 from .. evm.event_model import Voxel
 
 from . paolina_functions import bounding_box
@@ -60,11 +57,8 @@ from .. core.exceptions     import NoVoxels
 from .. core.testing_utils  import assert_dataframes_close
 from .. core.testing_utils  import an_instance_of
 
-from .. io.mcinfo_io    import cast_mchits_to_dict
-from .. io.mcinfo_io    import load_mchits_df
-from .. io.hits_io      import load_hits
+from .. io.mcinfo_io import load_mchits_df
 
-from .. types.ic_types import xy
 from .. types.symbols  import Contiguity
 from .. types.symbols  import HitEnergy
 
