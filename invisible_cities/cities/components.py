@@ -608,7 +608,8 @@ def pmap_from_files(paths):
 @check_annotations
 def hits_and_kdst_from_files( paths : List[str]
                             , group : str
-                            , node  : str ) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
+                            , node  : str
+                            ) -> Iterator[Dict[str,Union[ pd.DataFrame , pd.DataFrame , MCInfo, int, float]]]:
     """
     Reader of hits files. For each event it produces a dictionary containing
     - hits        : a DataFrame
@@ -696,9 +697,8 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
 
 
 @check_annotations
-def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
-    """Reader of the files, yields HitsCollection, pandas DataFrame with
-    run_number, event_number and timestamp."""
+def dhits_from_files(paths: List[str]) -> Iterator[Dict[str, Union[pd.DataFrame, pd.DataFrame, MCInfo, int, float]]]:
+    """Reader of the files, yields a hits dataframe, a kdst, run_number, event_number and timestamp."""
     for path in paths:
         try:
             dhits_df = load_dst (path, 'DECO', 'Events')
@@ -1372,8 +1372,8 @@ def make_event_summary(event_number  : int         ,
     topology_info : DataFrame
         Dataframe containing track information,
         output of track_blob_info_creator_extractor
-    paolina_hits  : HitCollection
-        Hits table passed through paolina functions,
+    paolina_hits  : pd.DataFrame
+        Hits passed through paolina functions,
         output of track_blob_info_creator_extractor
     kdst          : DataFrame
         Kdst information read from sophronia output
@@ -1446,7 +1446,8 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
                                       max_num_hits     : int
                                      ) -> Callable:
     """
-    For a given paolina parameters returns a function that extract tracks / blob information from a HitCollection.
+    For a given set of paolina parameters returns a function that extract tracks / blob
+    information from a set of hits.
 
     Parameters
     ----------
@@ -1465,9 +1466,12 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
 
     Returns
     ----------
-    A function that from a given HitCollection returns a pandas DataFrame with per track information.
+    A function that from a given set of hits returns
+      - general track information dataframe
+      - hits with associated track ids
+      - flag to indicate whether there are hits outside of the correction-map domain
     """
-    def create_extract_track_blob_info(hits):
+    def create_extract_track_blob_info(hits: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, bool]:
         df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
         hits = hits.assign(track_id=-1)
         if len(hits) > max_num_hits:
@@ -1650,7 +1654,7 @@ def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
 
     Returns
     ----------
-    A function that takes HitCollection as input and returns another object with
+    A function that takes a set of hits as input and returns another object with
     only non NN hits of charge above threshold_charge.
     The energy of NN hits is redistributed among neighbors.
     """
@@ -1683,8 +1687,8 @@ def hits_corrector( filename     : str
 
     Returns
     ----------
-    A function that takes a HitCollection as input and returns
-    the same object with modified Ec and Z fields.
+    A function that takes a set of hits as input and returns another one with Ec
+    and Z fields assigned. Input data is not modified.
     """
     maps      = read_maps(os.path.expandvars(filename))
     get_coef  = apply_all_correction( maps
