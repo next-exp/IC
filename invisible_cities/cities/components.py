@@ -836,6 +836,28 @@ def threshold_sipm_selection(thr_sipm_type
     return threshold_sipm_selection
 
 
+def pyrrha_sipm_selection(selection_function : Callable
+                         , selection_kwargs    : dict
+                         , proximity_threshold : float
+                         , padding_radius      : float
+                         , run_number : int
+                         , detector_db : str):
+    '''
+    Function that applies a generic selection function to the sipms, which can be used to 
+    implement a spatial SiPM selection method (called Pyrrha).
+    '''
+    def pyrrha_sipm_selection(wfs, indices):
+        return wfm.spatial_selection_method(wfs, 
+                                            selection_function, 
+                                            selection_kwargs, 
+                                            proximity_threshold,
+                                            padding_radius,
+                                            run_number,
+                                            detector_db)
+
+    return pyrrha_sipm_selection
+
+
 def calibrate_with_mean(dbfile, run_number):
     DataSiPM   = load_db.DataSiPM(dbfile, run_number)
     adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
