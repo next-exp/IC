@@ -273,7 +273,9 @@ def make_sipm_selection(wfs                 : np.ndarray,
                         selection_func      : Callable,
                         selection_kwargs    : dict,
                         proximity_threshold : float,
-                        padding_radius      : float) -> np.ndarray:
+                        padding_radius      : float,
+                        run_number          : int,
+                        detector_db         : str) -> np.ndarray:
     """
     SiPM selection pipeline, applies SiPM cuts based on user input.
     A first selection of SiPMs is made, isolated SiPMs are removed
@@ -291,7 +293,7 @@ def make_sipm_selection(wfs                 : np.ndarray,
     -------
     sipm_ids_with_signal : Array of shape (n_sipms,) with boolean values indicating which SiPMs are selected.
     """
-    detector_info = load_db.DataSiPM('next100', 0)
+    detector_info = load_db.DataSiPM(detector_db, run_number)
     sipm_x = np.array(detector_info.X)
     sipm_y = np.array(detector_info.Y)
 
