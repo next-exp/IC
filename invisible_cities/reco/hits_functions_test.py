@@ -160,8 +160,7 @@ def test_threshold_hits_energy_conserved(hits, th):
 def test_threshold_hits_all_larger_than_th(hits, th):
     hits_thresh = threshold_hits(hits, th)
     non_nn = hits_thresh.loc[hits_thresh.Q != NN]
-    q = non_nn[col]
-    assert np.all(q >= th)
+    assert np.all(non_nn.Q >= th)
 
 # ----- CLUSTER TAGGER TESTS ----- #
 
