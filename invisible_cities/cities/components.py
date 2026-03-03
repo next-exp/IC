@@ -802,6 +802,8 @@ def apply_cutting_function(algo, **cutting_params):
 
     if algo is CutAlgo.threshold:
         func = threshold_sipm_selection(**cutting_params)
+    elif algo is CutAlgo.pyrrha:
+        func = pyrrha_sipm_selection(**cutting_params)
     else:
         # temporary solution, think of a nicer method
         func = threshold_sipm_selection(**cutting_params)
@@ -832,7 +834,6 @@ def threshold_sipm_selection(thr_sipm_type
         return wfm.charge_threshold_method(wfs, indices, zeroing_thr = sipm_thr, integration_thr=thr_sipm_s2)
 
     return threshold_sipm_selection
-
 
 
 def calibrate_with_mean(dbfile, run_number):

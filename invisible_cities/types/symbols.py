@@ -132,6 +132,7 @@ class XYReco(AutoNameEnumBase):
 
 class CutAlgo(AutoNameEnumBase):
     threshold  = auto()
+    pyrrha     = auto()
 
 class WfType(AutoNameEnumBase):
     rwf  = auto()
