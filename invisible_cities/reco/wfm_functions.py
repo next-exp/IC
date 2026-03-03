@@ -288,6 +288,8 @@ def make_sipm_selection(wfs                 : np.ndarray,
     selection_kwargs    : Dictionary of arguments passed to selection_func.
     proximity_threshold : Threshold used to identify isolated SiPMs.
     padding_radius      : Radial padding added to each SiPM that passes the selections.
+    run_number          : Run number used to load the detector database.
+    detector_db         : Database used to load the detector geometry.
 
     Returns
     -------
