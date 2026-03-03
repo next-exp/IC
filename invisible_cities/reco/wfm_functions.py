@@ -269,15 +269,15 @@ def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
     return sipm_ids_with_signal
 
 
-def make_sipm_selection(wfs                 : np.ndarray,
-                        selection_func      : Callable,
-                        selection_kwargs    : dict,
-                        proximity_threshold : float,
-                        padding_radius      : float,
-                        run_number          : int,
-                        detector_db         : str) -> np.ndarray:
+def spatial_selection_method(wfs                 : np.ndarray,
+                             selection_func      : Callable,
+                             selection_kwargs    : dict,
+                             proximity_threshold : float,
+                             padding_radius      : float,
+                             run_number          : int,
+                             detector_db         : str) -> np.ndarray:
     """
-    SiPM selection pipeline, applies SiPM cuts based on user input.
+    SiPM selection function, applies SiPM cuts based on user input.
     A first selection of SiPMs is made, isolated SiPMs are removed
     and padding is added around the SiPMs that are left.
 
