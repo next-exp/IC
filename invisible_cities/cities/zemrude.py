@@ -101,9 +101,9 @@ def do_control_plots(plots_out,ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bin
         return make_control_plots(df, df_sel, df_corr, efficiencies, run_number, plots_out, ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen,dtbins2, bins, dtrs2_bins, col_name1, col_name2, statistic, x0, y0, shape, shape_size, xy_range_plot, names)
     return control_plots
 
-def time_evol_plots():
+def time_evol_plots(plots_out):
     def t_evol_plots(t_evol):
-        return plot_time_evolution_with_errors_and_dates(t_evol)
+        return plot_time_evolution_with_errors_and_dates(t_evol, plots_out)
     return t_evol_plots
 
 
@@ -271,7 +271,7 @@ def zemrude(files_in           : OneOrManyFiles
                                  , args = ('dst', 'selected_dst', 'corrected_dst','efficiencies', 'run_number')
                                  )
 
-    plot_t_evol = fl.sink(time_evol_plots()
+    plot_t_evol = fl.sink(time_evol_plots(plots_out)
                           , args = ('time_evol'))
 
 
