@@ -136,59 +136,6 @@ def apply_3Dmap(krmap        : pd.DataFrame,
     return Ec
 
 
-def apply_3Dmap_hits(krmap        : pd.DataFrame,
-                     norm_method  : NormMethod,
-                     z            : pd.core.series.Series,
-                     x            : pd.core.series.Series,
-                     y            : pd.core.series.Series,
-                     E            : pd.core.series.Series,
-                     xy_params    : dict = None,
-                     keV          : bool = False) -> pd.core.series.Series:
-    """
-    Applies a given krypton map normalized using the chosen normalization method
-    to z, x, y, E (hit by hit) to get the corrected energy.
-
-    Parameters
-    ----------
-    krmap : pd.DataFrame
-      Input krypton map whose bins are going to be normalized.
-    method : NormMethod
-      Method for normalization, defined in class function NormMethod.
-    dt : pd.core.series.Series
-      Drift time column from dataframe
-    x : pd.core.series.Series
-      x coordinate column from dataframe
-    y : pd.core.series.Series
-      y coordinate column from dataframe
-    E : pd.core.series.Series
-      Hit energy column from dataframe before applying preliminary map (E, not Ec)
-    xy_params : dict
-      Limits in x and y that define the region inside of which the normalization
-      will be performed.
-    keV : bool
-      Boolean to decide whether the correction factor is applied in pes or keV
-    Returns
-    -------
-    Ec : pd.core.series.Series
-      Corrected energy
-
-    """
-
-    map_points = krmap['z x y'.split()].values
-    norm = normalization(krmap, norm_method, xy_params)
-
-    data_points = np.stack([z, x, y], axis = 1)
-    E_interpolated_data = griddata(map_points, krmap.mu.values, data_points, method = 'nearest')
-
-    correction_factor = norm/E_interpolated_data
-    Ec = E * correction_factor
-
-    if keV:
-        Ec = Ec * (41.55 / norm)
-
-    return Ec
-
-
 
 def apply_correctionmap_inplace(kdst        : pd.DataFrame,
                                 map3D       : pd.DataFrame,
