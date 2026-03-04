@@ -848,6 +848,7 @@ def pyrrha_sipm_selection(selection_function : Callable
     '''
     def pyrrha_sipm_selection(wfs, indices):
         return wfm.spatial_selection_method(wfs, 
+                                            indices,
                                             selection_function, 
                                             selection_kwargs, 
                                             proximity_threshold,

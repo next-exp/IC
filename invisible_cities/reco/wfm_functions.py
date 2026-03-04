@@ -270,6 +270,7 @@ def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
 
 
 def spatial_selection_method(wfs                 : np.ndarray,
+                             indices         : np.ndarray,
                              selection_func      : Callable,
                              selection_kwargs    : dict,
                              proximity_threshold : float,
@@ -300,24 +301,27 @@ def spatial_selection_method(wfs                 : np.ndarray,
     sipm_x = np.array(detector_info.X)
     sipm_y = np.array(detector_info.Y)
 
-    selected_ids = selection_func(wfs, **selection_kwargs)
+    slice_ = slice(indices[0], indices[-1] + 1)
+    wfs_   = wfs[:, slice_]
 
-    selected_ids_no_isolated = kill_isolated_sipms(
-        selected_ids,
+    starting_ids_ = selection_func(wfs_, **selection_kwargs)
+
+    selected_ids_no_isolated_ = kill_isolated_sipms(
+        starting_ids_,
         sipm_x,
         sipm_y,
         proximity_threshold
     )
 
-    sipm_ids_with_signal = apply_circular_padding(
-        selected_ids_no_isolated,
+    sipm_ids_with_signal_ = apply_circular_padding(
+        selected_ids_no_isolated_,
         sipm_x,
         sipm_y,
         padding_radius
     )
 
-    selected_ids = np.where(sipm_ids_with_signal)[0]
-    selected_wfs = wfs[selected_ids]
+    selected_ids = np.where(sipm_ids_with_signal_)[0]
+    selected_wfs = wfs_[selected_ids]
 
     return selected_ids, selected_wfs
 
