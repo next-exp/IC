@@ -507,14 +507,22 @@ def get_time_evol_single_slice(df           : pd.DataFrame,
     #rough aproximation, should work fine
     p0 = (kdst_in_region.S2e.median(), -30000)
 
-    f = fit(expo, kdst_in_region.DT, kdst_in_region.S2e, p0)
-    magnitudes, uncertainties = f.values, (f[2][0], f[2][1])
+    try:
+        f = fit(expo, kdst_in_region.DT, kdst_in_region.S2e, p0)
+        magnitudes, uncertainties = f.values, (f[2][0], f[2][1])
 
-    lifetime = -magnitudes[1]
-    ulifetime = uncertainties[1]
+        lifetime = -magnitudes[1]
+        ulifetime = uncertainties[1]
 
-    e0 = magnitudes[0]
-    e0u = uncertainties[0]
+        e0 = magnitudes[0]
+        e0u = uncertainties[0]
+
+    except:
+        lifetime = np.nan
+        ulifetime = np.nan
+
+        e0 = np.nan
+        e0u = np.nan
 
     dv, udv = compute_drift_v(kdst_in_region.DT.to_numpy(), dtbins_dv, seed = None)
 
