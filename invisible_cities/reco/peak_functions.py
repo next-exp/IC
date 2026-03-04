@@ -34,7 +34,7 @@ def select_wf_slices_above_time_integrated_thr(wfs, indices, thr):
     wfs_   = wfs[:, slice_]
 
     selected_ids = np.where(np.sum(wfs_, axis = 1) >= thr)[0]
-    selected_wfs = wfs_[selected_ids]
+    selected_wfs = wfs[selected_ids]
 
     return selected_ids, selected_wfs
 

@@ -321,7 +321,7 @@ def spatial_selection_method(wfs                 : np.ndarray,
     )
 
     selected_ids = np.where(sipm_ids_with_signal_)[0]
-    selected_wfs = wfs_[selected_ids]
+    selected_wfs = wfs[selected_ids]
 
     return selected_ids, selected_wfs
 
