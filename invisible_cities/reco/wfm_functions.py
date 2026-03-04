@@ -293,7 +293,8 @@ def spatial_selection_method(wfs                 : np.ndarray,
 
     Returns
     -------
-    sipm_ids_with_signal : Array of shape (n_sipms,) with boolean values indicating which SiPMs are selected.
+    selected_ids : Array of shape (n_sipms,) containing the indices of the selected SiPMs.
+    selected_wfs : 2D array of shape (n_selected_sipms, n_time_bins) with the waveforms of the selected SiPMs.
     """
     detector_info = load_db.DataSiPM(detector_db, run_number)
     sipm_x = np.array(detector_info.X)
@@ -314,5 +315,9 @@ def spatial_selection_method(wfs                 : np.ndarray,
         sipm_y,
         padding_radius
     )
-    return sipm_ids_with_signal
+
+    selected_ids = np.where(sipm_ids_with_signal)[0]
+    selected_wfs = wfs[selected_ids]
+
+    return selected_ids, selected_wfs
 
