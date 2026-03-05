@@ -308,9 +308,10 @@ def spatial_selection_method(wfs                 : np.ndarray,
 
     if selection_method is SiPMSelectionMethod.median_std_method:
         starting_ids_ = median_std_method(wfs_, **selection_kwargs)
+    elif selection_method is SiPMSelectionMethod.top_n_method:
+        starting_ids_ = top_n_method(wfs_, **selection_kwargs)
     else:
-        # temporary solution, think of a nicer method
-        starting_ids_ = median_std_method(wfs_, **selection_kwargs)
+        raise ValueError(f"Selection method {selection_method} not recognized.")
 
     selected_ids_no_isolated_ = kill_isolated_sipms(
         starting_ids_,
