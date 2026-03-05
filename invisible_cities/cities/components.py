@@ -84,6 +84,7 @@ from .. types  .ic_types          import        types_dict_summary
 from .. types  .ic_types          import         types_dict_tracks
 from .. types  .symbols           import                    WfType
 from .. types  .symbols           import                   CutAlgo
+from .. types  .symbols           import       SiPMSelectionMethod
 from .. types  .symbols           import               RebinMethod
 from .. types  .symbols           import                SiPMCharge
 from .. types  .symbols           import                   BlsMode
@@ -836,12 +837,12 @@ def threshold_sipm_selection(thr_sipm_type
     return threshold_sipm_selection
 
 
-def pyrrha_sipm_selection(selection_function : Callable
+def pyrrha_sipm_selection(selection_method     : SiPMSelectionMethod
                          , selection_kwargs    : dict
                          , proximity_threshold : float
                          , padding_radius      : float
-                         , run_number : int
-                         , detector_db : str):
+                         , run_number          : int
+                         , detector_db         : str):
     '''
     Function that applies a generic selection function to the sipms, which can be used to 
     implement a spatial SiPM selection method (called Pyrrha).
@@ -849,7 +850,7 @@ def pyrrha_sipm_selection(selection_function : Callable
     def pyrrha_sipm_selection(wfs, indices):
         return wfm.spatial_selection_method(wfs, 
                                             indices,
-                                            selection_function, 
+                                            selection_method, 
                                             selection_kwargs, 
                                             proximity_threshold,
                                             padding_radius,

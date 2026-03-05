@@ -13,6 +13,8 @@ from .. sierpe              import blr
 from .. database            import load_db
 from .. reco.peak_functions import select_wf_slices_above_time_integrated_thr
 
+from .. types  .symbols     import SiPMSelectionMethod
+
 def to_adc(wfs, adc_to_pes):
     """
     Convert waveform in pes to adc.
@@ -270,8 +272,8 @@ def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
 
 
 def spatial_selection_method(wfs                 : np.ndarray,
-                             indices         : np.ndarray,
-                             selection_func      : Callable,
+                             indices             : np.ndarray,
+                             selection_method    : SiPMSelectionMethod,
                              selection_kwargs    : dict,
                              proximity_threshold : float,
                              padding_radius      : float,
@@ -285,8 +287,8 @@ def spatial_selection_method(wfs                 : np.ndarray,
     Parameters
     ----------
     wfs                 : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
-    selection_func      : Function returning a boolean mask of energetic SiPMs.
-    selection_kwargs    : Dictionary of arguments passed to selection_func.
+    selection_method    : Method used to select SiPMs.
+    selection_kwargs    : Dictionary of arguments passed to the selection function.
     proximity_threshold : Threshold used to identify isolated SiPMs.
     padding_radius      : Radial padding added to each SiPM that passes the selections.
     run_number          : Run number used to load the detector database.
@@ -304,7 +306,11 @@ def spatial_selection_method(wfs                 : np.ndarray,
     slice_ = slice(indices[0], indices[-1] + 1)
     wfs_   = wfs[:, slice_]
 
-    starting_ids_ = selection_func(wfs_, **selection_kwargs)
+    if selection_method is SiPMSelectionMethod.median_std_method:
+        starting_ids_ = median_std_method(wfs_, **selection_kwargs)
+    else:
+        # temporary solution, think of a nicer method
+        starting_ids_ = median_std_method(wfs_, **selection_kwargs)
 
     selected_ids_no_isolated_ = kill_isolated_sipms(
         starting_ids_,
