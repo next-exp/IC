@@ -91,3 +91,14 @@ jobs:
         else
             echo "No warnings were raised."
         fi
+
+    - name: Pyflakes
+      run: |
+        source scripts/setup_conda_gha.sh
+        source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
+
+        # the excluded file contains stuff for which pyflakes gives a false
+        # positive
+        echo ================= Pyflakes output =====================
+        pyflakes invisible_cities/**/*.py | grep -v "ic_containers.py" | tee pyflakes_output
+        echo =======================================================
