@@ -134,6 +134,9 @@ class CutAlgo(AutoNameEnumBase):
     threshold  = auto()
     pyrrha     = auto()
 
+class SiPMSelectionMethod(AutoNameEnumBase):
+    median_std_method = auto()
+
 class WfType(AutoNameEnumBase):
     rwf  = auto()
     mcrd = auto()
