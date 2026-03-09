@@ -117,7 +117,7 @@ def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
     # hits may or may not have Ec, consider both cases
     has_ec  = "Ec" in hits.columns
     columns = "E Ec".split() if has_ec else ["E"]
-    corrections = pd.DataFrame(dict(zip(columns, (0,0))), index=hits.index.values)
+    corrections = pd.DataFrame(dict(zip(columns, (0,0))), dtype=float, index=hits.index.values)
     for _, nn_hit in nn_hits.iterrows():
         candidates = hits.loc[hits.npeak == nn_hit.npeak] if same_peak else hits
         if len(candidates) == 0: continue # drop hit !!! dangerous
