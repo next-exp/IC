@@ -103,4 +103,4 @@ def pmt_and_sipm_bin_width(file_name: str) -> Tuple[float, float]:
         raise tb.NoSuchNodeError('No useful binning info found')
     pmt_wid  = sns_bins.bin_width[sns_bins.index.str.contains( 'Pmt')].iloc[0]
     sipm_wid = sns_bins.bin_width[sns_bins.index.str.contains('SiPM')].iloc[0]
-    return pmt_wid, sipm_wid
+    return float(pmt_wid), float(sipm_wid)
