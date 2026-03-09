@@ -65,7 +65,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2024-11-07
+CONDA_ENV_TAG=2026-03-09
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
@@ -102,6 +102,7 @@ dependencies:
 - coverage     = 7.6.4
 - pip          = 24.3.1
 - setuptools   = 75.3.0
+- pyflakes     = 3.4.0
 - pip:
   - pytest-instafail==0.5.0
 EOF
