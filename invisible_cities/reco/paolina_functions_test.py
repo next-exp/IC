@@ -649,7 +649,7 @@ def test_drop_voxels_deterministic(ICDATADIR):
 
 
 def test_voxel_drop_in_short_tracks():
-    hits = pd.DataFrame(dict(X=[10, 26], Y=[10,10], Z=[10,10], E=[1,1]))
+    hits = pd.DataFrame(dict(X=[10, 26], Y=[10,10], Z=[10,10], E=[1,1]), dtype=float)
     voxels = voxelize_hits(hits, [15,15,15], strict_voxel_size=True)
     e_thr = sum(v.E for v in voxels) + 1.
     min_voxels = 0
