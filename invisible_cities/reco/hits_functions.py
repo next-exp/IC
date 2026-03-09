@@ -138,7 +138,7 @@ def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
 
 
 def empty_hit( event : int  , timestamp: float, peak_no: int
-             , x_peak: float, y_peak   : float, z      : float
+             , x_peak: float, y_peak   : float
              , e     : float, ec       : float):
     """
     Produces an empty hit with NN x and y coordinates and NN charge.
@@ -151,7 +151,6 @@ def empty_hit( event : int  , timestamp: float, peak_no: int
                             , Ypeak    = y_peak
                             , X        = NN
                             , Y        = NN
-                            , Z        = z
                             , Q        = NN
                             , E        = e
                             , Ec       = ec
@@ -198,7 +197,7 @@ def apply_threshold(hits: pd.DataFrame, th: float) -> pd.DataFrame:
         first = hits.iloc[0]
         return empty_hit( first.event, first.time
                         , first.npeak, first.Xpeak, first.Ypeak
-                        , first.Z, raw_e_slice, cor_e_slice)
+                        , raw_e_slice, cor_e_slice)
 
     hits = hits.loc[mask_thresh].copy()
     qsum = np.nansum(hits.Q) + EPSILON
@@ -239,8 +238,11 @@ def threshold_hits(hits: pd.DataFrame, th: float) -> pd.DataFrame:
     - See `apply_threshold` for further details.
     """
     if th <= 0: return hits
-    return (hits.groupby("Z", as_index=False)
-                .apply(apply_threshold, th=th))
+    return (hits.groupby("Z")
+                .apply(apply_threshold, th=th, include_groups=False)
+                .reset_index(level=0, names="Z")
+           )
+
 
 def tag_hits_in_event(event_hits   : pd.DataFrame
                      , *
@@ -309,11 +311,12 @@ def cluster_tagger(df_hits      : pd.DataFrame
     if df_hits.empty:
         return df_hits.assign(cluster=pd.Series(dtype=int))
 
-    df_clustered = df_hits.groupby('event', as_index=False, group_keys=False) \
-                          .apply( tag_hits_in_event
-                                , min_samples = min_samples
-                                , scale_xy    = scale_xy
-                                , scale_z     = scale_z )
-    
+    df_clustered = (df_hits.groupby('event')
+                           .apply( tag_hits_in_event
+                                 , min_samples = min_samples
+                                 , scale_xy    = scale_xy
+                                 , scale_z     = scale_z )
+                           .reset_index(level=1, drop=True)
+                           .reset_index())
+
     return df_clustered.set_index(df_hits.index)
-    
