@@ -168,8 +168,9 @@ def charge_threshold_method(wfs             : np.ndarray,
 
     Parameters
     ----------
-    wfs       : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
-    threshold : Charge threshold in PE, default 5.
+    wfs             : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
+    zeroing_thr     : Charge threshold for zero suppression in PE, default 2.
+    integration_thr : Charge threshold for total SiPM waveform in PE, default 5.
 
     Returns
     -------
