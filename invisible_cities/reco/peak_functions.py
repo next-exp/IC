@@ -92,18 +92,16 @@ def build_pmt_responses(indices, times, widths, ccwf,
 
 def build_sipm_responses(indices, times, widths,
                          sipm_wfs, rebin_stride, apply_cut):
-
-    if apply_cut is not None:
-        # apply cut before slicing and rebinning
-        (sipm_ids,
-         sipm_wfs)   = apply_cut(sipm_wfs, indices)
-    else:
-        # give all sipm ids as index if no cut is applied
-        sipm_ids     = np.arange(sipm_wfs.shape[0])
-    # rebin
     _, _, sipm_wfs = pick_slice_and_rebin(indices , times, widths,
                                            sipm_wfs, rebin_stride,
                                            pad_zeros = False)
+    if apply_cut is not None:
+        # apply cut before slicing and rebinning
+        (sipm_ids,
+         sipm_wfs)   = apply_cut(sipm_wfs)
+    else:
+        # give all sipm ids as index if no cut is applied
+        sipm_ids     = np.arange(sipm_wfs.shape[0])
 
     return SiPMResponses(sipm_ids, sipm_wfs)
 

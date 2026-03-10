@@ -11,7 +11,7 @@ from .. core.core_functions import define_window, to_col_vector
 from .. calib               import calib_sensors_functions as csf
 from .. sierpe              import blr
 from .. database            import load_db
-from .. reco.peak_functions import select_wf_slices_above_time_integrated_thr
+from .. reco.peak_functions import select_wfs_above_time_integrated_thr
 
 from .. types  .symbols     import SiPMSelectionMethod
 
@@ -159,7 +159,6 @@ def median_std_method(wfs    : np.ndarray,
 
 
 def charge_threshold_method(wfs             : np.ndarray,
-                            indices         : np.ndarray,
                             zeroing_thr     : Optional[float] = 2.,
                             integration_thr : Optional[float] = 5.) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -182,7 +181,7 @@ def charge_threshold_method(wfs             : np.ndarray,
     zwfs = np.where(wfs > thr, wfs, 0)
 
     # returns selected ids and waveforms above integral
-    return select_wf_slices_above_time_integrated_thr(zwfs, indices, integration_thr)
+    return select_wfs_above_time_integrated_thr(zwfs, integration_thr)
 
 
 def top_n_method(wfs : np.ndarray,
@@ -272,7 +271,6 @@ def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
 
 
 def spatial_selection_method(wfs                 : np.ndarray,
-                             indices             : np.ndarray,
                              selection_method    : SiPMSelectionMethod,
                              selection_kwargs    : dict,
                              proximity_threshold : float,
@@ -303,13 +301,10 @@ def spatial_selection_method(wfs                 : np.ndarray,
     sipm_x = np.array(detector_info.X)
     sipm_y = np.array(detector_info.Y)
 
-    slice_ = slice(indices[0], indices[-1] + 1)
-    wfs_   = wfs[:, slice_]
-
     if selection_method is SiPMSelectionMethod.median_std_method:
-        starting_ids_ = median_std_method(wfs_, **selection_kwargs)
+        starting_ids_ = median_std_method(wfs, **selection_kwargs)
     elif selection_method is SiPMSelectionMethod.top_n_method:
-        starting_ids_ = top_n_method(wfs_, **selection_kwargs)
+        starting_ids_ = top_n_method(wfs, **selection_kwargs)
     else:
         raise ValueError(f"Selection method {selection_method} not recognized.")
 

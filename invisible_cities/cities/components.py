@@ -809,8 +809,8 @@ def apply_cutting_function(algo, **cutting_params):
         # temporary solution, think of a nicer method
         func = threshold_sipm_selection(**cutting_params)
 
-    def apply_cutting_function(wfs, indices):
-        return func(wfs, indices)
+    def apply_cutting_function(wfs):
+        return func(wfs)
 
     return apply_cutting_function
 
@@ -831,8 +831,8 @@ def threshold_sipm_selection(thr_sipm_type
         # extract sipm threshold
         sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
 
-    def threshold_sipm_selection(wfs, indices):
-        return wfm.charge_threshold_method(wfs, indices, zeroing_thr = sipm_thr, integration_thr=thr_sipm_s2)
+    def threshold_sipm_selection(wfs):
+        return wfm.charge_threshold_method(wfs, zeroing_thr = sipm_thr, integration_thr=thr_sipm_s2)
 
     return threshold_sipm_selection
 
@@ -847,9 +847,8 @@ def pyrrha_sipm_selection(selection_method     : SiPMSelectionMethod
     Function that applies a generic selection function to the sipms, which can be used to 
     implement a spatial SiPM selection method (called Pyrrha).
     '''
-    def pyrrha_sipm_selection(wfs, indices):
+    def pyrrha_sipm_selection(wfs):
         return wfm.spatial_selection_method(wfs, 
-                                            indices,
                                             selection_method, 
                                             selection_kwargs, 
                                             proximity_threshold,
