@@ -1192,7 +1192,7 @@ def sipms_as_hits( detector_db : str
                 hits.append(pd.DataFrame(sipm_hs))
 
         hits = pd.concat(hits, ignore_index=True)
-        hits = hits.astype(dict(npeak=np.uint16))
+        hits = hits.astype(dict(npeak=np.uint16, Z=float))
         return hits
 
     return build_hits
