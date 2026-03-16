@@ -163,3 +163,13 @@ def RadioactivityData(db_file, version=None):
 
     return ( activity  .drop(columns="MAX(Version)")
            , efficiency.drop(columns="MAX(Version)"))
+
+def read_db_version(db_file):
+    conn = sqlite3.connect(get_db(db_file))
+    sql = 'select * from db_version'
+    try:
+        data = pd.read_sql_query(sql, conn)
+        return data
+    except pd.io.sql.DatabaseError:
+        # Deal with this...
+        print("Database does not have db_version table")
