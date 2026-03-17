@@ -77,7 +77,6 @@ def test_add_empty_sensors_and_normalize_q_conserves_qe(ICDATADIR):
     hdst           = load_dst(PATH_IN, 'RECO', 'Events')
     group          = hdst.groupby('event time npeak'.split())
     hdst_processed = group.apply(add_empty_sensors_and_normalize_q    ,
-                                 var      = ['X', 'Y']                ,
                                  ranges   = [[-50, 50], [-50, 50]]    ,
                                  database = load_db.DataSiPM('new', 0),
                                  include_groups=False)

@@ -60,7 +60,6 @@ def add_variable_weighted_mean(df         : pd.DataFrame,
 
 
 def add_empty_sensors_and_normalize_q(df       : pd.DataFrame,
-                                      var      : List[str],
                                       ranges   : List[List[float]],
                                       database : pd.DataFrame
                                       ) -> pd.DataFrame :
@@ -70,7 +69,6 @@ def add_empty_sensors_and_normalize_q(df       : pd.DataFrame,
     Parameters
     ----------
     df       : dataframe (Containing a single event and npeak)
-    var      : dimensions to be considered.
     ranges   : list with the ranges, in each dim, to which empty sensors will be added.
     database : dataframe containing the SiPM database of the detector.
 
@@ -118,7 +116,7 @@ def hdst_psf_processing(dsts     : pd.DataFrame,
     hdst = ( dsts
            .groupby('event time npeak'.split())
            .apply( add_empty_sensors_and_normalize_q
-                 , list("XY"), ranges, database
+                 , ranges, database
                  , include_groups=False)
            .assign( Zpeak = lambda df: df.Z.min()
                   , RelX  = lambda df: df.X - df.Xpeak
