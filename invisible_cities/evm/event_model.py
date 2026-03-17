@@ -361,16 +361,17 @@ class KrEvent(Event):
     def store(self, table):
         row = table.row
 
-        s1_peaks = range(int(self.nS1)) if self.nS1 else [-1]
-        s2_peaks = range(int(self.nS2)) if self.nS2 else [-1]
+        dummy    = np.iinfo(np.uint16).max
+        s1_peaks = range(int(self.nS1)) if self.nS1 else [0]
+        s2_peaks = range(int(self.nS2)) if self.nS2 else [0]
         self.fill_defaults()
 
         for i in s1_peaks:
             for j in s2_peaks:
                 row["event"  ] = self.event
                 row["time"   ] = self.time
-                row["s1_peak"] = i if i>=0 else np.iinfo(np.uint16).max + i + 1
-                row["s2_peak"] = j if j>=0 else np.iinfo(np.uint16).max + j + 1
+                row["s1_peak"] = i if self.nS1 else dummy
+                row["s2_peak"] = j if self.nS2 else dummy
                 row["nS1"    ] = self.nS1
                 row["nS2"    ] = self.nS2
 
