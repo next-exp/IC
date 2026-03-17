@@ -1,3 +1,5 @@
+from math import factorial
+
 import warnings
 
 import numpy as np
@@ -84,7 +86,7 @@ def test_poisson_scaled_gaussians_n_gaussians(n_gaussians):
     sum_of_gaussians = spe.poisson_scaled_gaussians(n_gaussians=n_gaussians)
     expected = fitf.gauss(xs, scale / np.exp(poisson_mean), pedestal_mean, pedestal_sigma)
     for i in range(1, n_gaussians):
-        norm      = scale / np.exp(poisson_mean) / np.math.factorial(i)
+        norm      = scale / np.exp(poisson_mean) / factorial(i)
         mean      =  pedestal_mean     + i * gain
         sigma     = (pedestal_sigma**2 + i * gain_sigma**2)**0.5
         gaussian  = fitf.gauss(xs, norm, mean, sigma)
@@ -111,7 +113,7 @@ def test_poisson_scaled_gaussians_min_integral():
     sum_of_gaussians = spe.poisson_scaled_gaussians(min_integral=min_integral)
     expected = fitf.gauss(xs, scale / np.exp(poisson_mean), pedestal_mean, pedestal_sigma)
     for i in range(1, 6):
-        norm      = scale / np.exp(poisson_mean) / np.math.factorial(i)
+        norm      = scale / np.exp(poisson_mean) / factorial(i)
         mean      =  pedestal_mean     + i * gain
         sigma     = (pedestal_sigma**2 + i * gain_sigma**2)**0.5
         gaussian  = fitf.gauss(xs, norm, mean, sigma)

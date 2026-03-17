@@ -307,9 +307,12 @@ def cut_over_Q(q_cut, redist_var):
     cut = cut_and_redistribute_df(f"Q > {q_cut}", redist_var)
 
     def cut_over_Q(df):  # df shall be an event cdst
-        cdst = df.groupby(['event', 'npeak']).apply(cut).reset_index(drop=True)
-
-        return cdst
+        if not len(df): return df
+        df = (df.groupby("event time npeak".split())
+                .apply(cut, include_groups=False)
+                .reset_index(level=3, drop=True) # drop this artifical index level
+                .reset_index())                  # and restore the "real" index
+        return df
 
     return cut_over_Q
 
@@ -344,8 +347,11 @@ def drop_isolated( distance   : List[float],
 
 
     def drop_isolated(df): # df shall be an event cdst
-        df = df.groupby(['event', 'npeak']).apply(drop).reset_index(drop=True)
-
+        if not len(df): return df
+        df = (df.groupby("event time npeak".split())
+                .apply(drop, include_groups=False)
+                .reset_index(level=3, drop=True) # drop this artifical index level
+                .reset_index())                  # and restore the "real" index
         return df
 
     return drop_isolated

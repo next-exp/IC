@@ -63,7 +63,8 @@ def mc_writer(h5out : tb.file.File, *, compression=None) -> Callable:
                     orig_indx = tbl.file_index.unique()
                     new_indx  = np.arange(first_indx                 ,
                                           first_indx + len(orig_indx))
-                    tbl.file_index.replace(orig_indx, new_indx, inplace=True)
+                    for orig, new in zip(orig_indx, new_indx):
+                        tbl.replace(dict(file_index=orig), new, inplace=True)
                 except AttributeError:
                     tbl['file_index'] = first_indx
             col_indx = 'event' if hasattr(tbl, 'event') else None
@@ -411,10 +412,12 @@ def load_mcsensor_positions(file_name : str,
             ## is present like in the new format
             pmt_ids   = DB.DataPMT(db_file, run_no).SensorID
             sns_names = get_sensor_binning(file_name).index
-            pmt_name  = sns_names.str.contains('Pmt')
+            is_pmt    = sns_names.str.contains('Pmt')
+            pmt_name  = sns_names[ is_pmt][0]
+            sipm_name = sns_names[~is_pmt][0]
             pmt_pos   = sns_pos.sensor_id.isin(pmt_ids)
-            sns_pos.loc[pmt_pos, 'sensor_name'] = sns_names[pmt_name][0]
-            sns_pos.sensor_name.fillna(sns_names[~pmt_name][0], inplace=True)
+            sns_pos.loc[pmt_pos, 'sensor_name'] = pmt_name
+            sns_pos.fillna(dict(sensor_name=sipm_name), inplace=True)
         else:
             ## So the column names and shape are the same as 2020 format
             new_cols = sns_pos.columns.tolist() + ['sensor_name']
@@ -543,8 +546,7 @@ def load_mchits_dfold(file_name : str) -> pd.DataFrame:
                           right_index =   True,
                           how         = 'left')
         hits.rename(columns={"evt_number": "event_id"}, inplace=True)
-        hits.event_id.fillna(method='bfill', inplace=True)
-        hits.event_id = hits.event_id.astype(int)
+        hits.event_id = hits.event_id.bfill().astype(int)
 
         # Setting the indexes
         hits.set_index(['event_id', 'particle_id', 'hit_id'], inplace=True)
@@ -666,8 +668,7 @@ def load_mcparticles_dfold(file_name: str) -> pd.DataFrame:
                             right_index =   True,
                             how         = 'left')
         parts.rename(columns={"evt_number": "event_id"}, inplace=True)
-        parts.event_id.fillna(method='bfill', inplace=True)
-        parts.event_id = parts.event_id.astype(int)
+        parts.event_id = parts.event_id.bfill().astype(int)
 
         ## Add columns present in new format
         missing_columns = ['final_momentum_x', 'final_momentum_y',
@@ -815,8 +816,7 @@ def load_mcsensors_dfold(file_name : str) -> pd.DataFrame:
                          left_index  =   True,
                          right_index =   True,
                          how         = 'left')
-    sns.evt_number.fillna(method='bfill', inplace=True)
-    sns.evt_number = sns.evt_number.astype(int)
+    sns.evt_number = sns.evt_number.bfill().astype(int)
     sns.index      = sns.index.astype(int)
     sns.rename(columns = {'evt_number': 'event_id'}, inplace=True)
     return sns

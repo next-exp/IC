@@ -118,7 +118,7 @@ def test_drop_isolated_clusters_retains_energy():
     q = np.array([1,   4,   7,   10,  19,  13,  3,   5,   7  ])
     e = np.array([0,   197, 152, 55,  23,  111, 16,  76,  187])
 
-    df = pd.DataFrame({'X':x, 'Y':y, 'Z':z, 'Q':q, 'E':e})
+    df = pd.DataFrame({'X':x, 'Y':y, 'Z':z, 'Q':q, 'E':e}, dtype=float)
 
     drop_function = drop_isolated_clusters(dist, nhits, ['E'])
     df_cut        = drop_function(df)
@@ -139,7 +139,7 @@ def test_drop_isolated_clusters_retains_cluster():
     q = np.array([1,   4,   7,   10,  19,  13,  3,   5,   7  ])
     e = np.array([0,   197, 152, 55,  23,  111, 16,  76,  187])
 
-    df = pd.DataFrame({'X':x, 'Y':y, 'Z':z, 'Q':q, 'E':e})
+    df = pd.DataFrame({'X':x, 'Y':y, 'Z':z, 'Q':q, 'E':e}, dtype=float)
 
     drop_function = drop_isolated_clusters(dist, nhits, ['E'])
     df_cut        = drop_function(df)

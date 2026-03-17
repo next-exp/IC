@@ -52,7 +52,9 @@ def find_signal_start(wfs          : Union[pd.Series, np.ndarray],
     if isinstance(wfs, np.ndarray):
         eng_sum = wfs.sum(axis=0)
     else:
-        eng_sum = wfs.sum()
+        # needs to be np.sum and not .sum() due to some obscure pandas behaviour
+        # that modifies values in place
+        eng_sum = np.sum(wfs.values)
     indices = indices_and_wf_above_threshold(eng_sum,
                                              bin_threshold).indices
     if len(indices) == 0: return []

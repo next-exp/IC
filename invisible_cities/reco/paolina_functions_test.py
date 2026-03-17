@@ -178,7 +178,7 @@ def test_round_hits_positions_in_place(hits):
     round_hits_positions_in_place(hits)
 
     pos = np.asarray([h.pos for h in hits])
-    assert np.all(np.in1d(pos, [0, 1e-5, -1e-5]))
+    assert np.all(np.isin(pos, [0, 1e-5, -1e-5]))
 
 
 def test_round_hits_positions_in_place_empty_input():
@@ -272,7 +272,7 @@ def test_voxelize_hits_flexible_gives_correct_voxels_size(hits, requested_voxel_
 def test_hits_energy_in_voxel_is_equal_to_voxel_energy(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     for v in voxels:
-        assert sum(h.E for h in v.hits) == v.E
+        assert sum(h.E for h in v.hits) == approx(v.E)
 
 def test_voxels_with_no_hits(ICDATADIR):
     hit_file = os.path.join(ICDATADIR, 'test_voxels_with_no_hits.h5')
@@ -287,7 +287,7 @@ def test_voxels_with_no_hits(ICDATADIR):
                               vox_size                 ,
                               strict_voxel_size = False)
     for v in voxels:
-        assert sum(h.E for h in v.hits) == v.E
+        assert sum(h.E for h in v.hits) == approx(v.E)
 
 
 @given(bunch_of_hits, box_sizes)

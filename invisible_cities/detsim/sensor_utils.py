@@ -66,8 +66,8 @@ def sensor_order(detector_db: str, run_number : int,
     n_pmt, n_sipm = get_n_sensors(detector_db, run_number)
     pmt_shape     = (n_pmt , length_pmt )
     sipm_shape    = (n_sipm, length_sipm)
-    def ordering(sensor_order : pd.Int64Index  ,
-                 sensor_resp  : np.ndarray     ,
+    def ordering(sensor_order : pd.Index  ,
+                 sensor_resp  : np.ndarray,
                  sensor_shape : Tuple[int, int]) -> np.ndarray:
         sensors = np.zeros(sensor_shape, int)
         sensors[sensor_order] = sensor_resp

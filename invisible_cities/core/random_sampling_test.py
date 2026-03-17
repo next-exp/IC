@@ -75,7 +75,7 @@ def test_sample_discrete_distribution_valid_input(distribution, nsamples):
     domain, frequencies = distribution
     frequencies = normalize_distribution(frequencies)
     samples = sample_discrete_distribution(domain, frequencies, nsamples)
-    assert np.all(np.in1d(samples, domain))
+    assert np.all(np.isin(samples, domain))
 
 
 @given(invalid_distributions(),
@@ -248,7 +248,7 @@ def test_noise_sampler_take_sample(datasipm, noise_sampler):
                 closest    = np.min(np.abs(diffs), axis=1)
                 assert np.all(closest <= bin_width_adc)
             else:
-                assert np.all(np.in1d(sample, bins_adc + baseline))
+                assert np.all(np.isin(sample, bins_adc + baseline))
         else:
             assert not np.any(sample)
 
