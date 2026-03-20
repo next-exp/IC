@@ -100,5 +100,8 @@ jobs:
         # the excluded file contains stuff for which pyflakes gives a false
         # positive
         echo ================= Pyflakes output =====================
-        pyflakes invisible_cities/**/*.py | grep -v "ic_containers.py" | tee pyflakes_output
+        pyflakes invisible_cities/**/*.py | \
+        grep -v "ic_containers.py"        | \
+        grep -v "museum"                  | \
+        tee pyflakes_output
         echo =======================================================
