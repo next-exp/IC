@@ -97,6 +97,9 @@ jobs:
         source scripts/setup_conda_gha.sh
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
 
+        # tee is used to ignore the exit status of pyflakes
+        # we don't want the GHA check to fail because of this
+
         # the excluded file contains stuff for which pyflakes gives a false
         # positive
         echo ================= Pyflakes output =====================
