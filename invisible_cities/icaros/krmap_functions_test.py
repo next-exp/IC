@@ -40,7 +40,8 @@ def dummy_include_coordinates():
 
 @fixture
 def dummy_get_time_evol():
-    return pd.DataFrame({'time': np.linspace(0, 3599, 1001),
+    return pd.DataFrame({'event': np.linspace(6000, 7000, 1001),
+                      'time': np.linspace(0, 3599, 1001),
                       'S2e':np.linspace(7500, 8500, 1001),
                       'X': np.linspace(-100, 100, 1001),
                       'Y': np.linspace(-100, 100, 1001),
@@ -126,6 +127,7 @@ def test_get_median_empty_input_does_not_raise(dummy_empty_df):
 
 def test_get_median_empty_input(dummy_empty_df):
     result = get_median(dummy_empty_df.S2e)
+
 
     assert result.shape == (1, 5)
     assert result['nevents'].sum() == 0
@@ -390,7 +392,8 @@ def test_include_coordinates_bincenter(dummy_include_coordinates):
 
 def test_compute_3D_map():
     with fix_random_seed(42):
-        df_ = pd.DataFrame({'X' : np.random.uniform(-100, 100, 1000000),
+        df_ = pd.DataFrame({'time' : np.random.uniform(100000, 30000000, 1000000),
+                        'X' : np.random.uniform(-100, 100, 1000000),
                         'Y' : np.random.uniform(-100, 100, 1000000),
                         'DT' : np.random.uniform(20, 1350, 1000000),
                        'S2e' : np.random.normal(8000, 150, 1000000)
@@ -454,7 +457,7 @@ def test_get_time_evol_single_slice_shape(dummy_get_time_evol):
 
    t_evol = get_time_evol_single_slice(dummy_get_time_evol, 'Ec', 'Ec_2', 1, 0, 0, SelRegionMethod.circle, 1000, np.linspace(1250, 1400, 50), (1000, 1350), np.linspace(30, 60, 101))
 
-   assert t_evol.shape[1] == 37
+   assert t_evol.shape[1] == 41
    assert t_evol.shape[0] == 1
 
 
@@ -523,40 +526,44 @@ def test_save_map(config_tmpdir):
 
 
     t_evolution = pd.DataFrame({'run_number' : 1,
-              'ts' :1e6,
-              's2e': 8000,
-              's2eu' : 10,
-              'ec' : 41.5,
-              'ecu': 0.5,
-              'chi2_ec': 1,
-              'e0': 7900,
-              'e0u': 5,
-              'lt' : 30000 ,
-              'ltu' : 5,
-              'dv' : 0.91308,
-              'dvu' : 0.01,
-              'resol' :4.01,
-              'resolu' : 0.146,
-              's1w' : 225,
-              's1wu' : 0.87,
-              's1e' : 8,
-              's1eu' :0.3,
-              's1h': 100,
-              's1hu':1,
-              's2h': 1000,
-              's2hu': 2,
-              's2w': 8,
-              's2wu': 4,
-              's2q': 570.37,
-              's2qu': 0.37,
-              'Nsipm': 16.88,
-              'Nsipmu': 0.005,
-              'Xrms': 14.20,
-              'Xrmsu': 0.004,
-              'Yrms': 14.15,
-              'Yrmsu':0.004 ,
-              'Zrms': 4.15,
-              'Zrmsu': 0.003}, index = [0])
+                                'ts' :1e6,
+                                'nevents': 1000,
+                                'neventsu': 10,
+                                'rate': 400,
+                                'urate': 10,
+                                's2e': 8000,
+                                's2eu' : 10,
+                                'ec' : 41.5,
+                                'ecu': 0.5,
+                                'chi2_ec': 1,
+                                'e0': 7900,
+                                'e0u': 5,
+                                'lt' : 30000 ,
+                                'ltu' : 5,
+                            'dv' : 0.91308,
+                                'dvu' : 0.01,
+                                'resol' :4.01,
+                                'resolu' : 0.146,
+                                's1w' : 225,
+                                's1wu' : 0.87,
+                                's1e' : 8,
+                                's1eu' :0.3,
+                                's1h': 100,
+                                's1hu':1,
+                                's2h': 1000,
+                                's2hu': 2,
+                                's2w': 8,
+                                's2wu': 4,
+                                's2q': 570.37,
+                                's2qu': 0.37,
+                                'Nsipm': 16.88,
+                                'Nsipmu': 0.005,
+                                'Xrms': 14.20,
+                                'Xrmsu': 0.004,
+                                'Yrms': 14.15,
+                                'Yrmsu':0.004 ,
+                                'Zrms': 4.15,
+                                'Zrmsu': 0.003}, index = [0])
 
     save_map(filename, eff, krmap, meta, t_evolution)
 

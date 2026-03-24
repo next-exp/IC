@@ -120,9 +120,10 @@ def get_median(var : np.array) -> pd.DataFrame:
          'sigma_error': np.nan}, index = [0])
 
 
+
 def gaussian_fit(df         : pd.DataFrame,
                  nbins_S2e  : int,
-                 min_events : int = 10) -> pd.DataFrame:
+                 min_events : int = 40) -> pd.DataFrame:
     """
     Given a dataframe, computes a gaussian fit of S2e if len(df) is equal or
     greater than min_events. If not, computes the median using get_median.
@@ -150,6 +151,8 @@ def gaussian_fit(df         : pd.DataFrame,
 
     try:
         f = fit(gauss, bin_centers, counts, seed = seed,  maxfev = 10000)
+
+
 
     except:
 
@@ -268,6 +271,8 @@ def merge_maps(NaN_map : pd.DataFrame,
     return full_map
 
 
+
+
 def include_coordinates(krmap     : pd.DataFrame,
                         xy_range  : tuple,
                         dt_range  : tuple,
@@ -295,15 +300,44 @@ def include_coordinates(krmap     : pd.DataFrame,
       Output map containing the same values as the input map with three more columns
       corresponding to dt, x and y spatial coordinates.
     """
-
     dt_binsize = (dt_range[1] - dt_range[0])/dt_nbins
     xy_binsize = (xy_range[1] - xy_range[0])/xy_nbins
 
     krmap =  krmap.assign( dt = dt_range[0] + (0.5+krmap.k)*dt_binsize,
                            x  = xy_range[0] + (0.5+krmap.i)*xy_binsize,
-                           y  = xy_range[0] + (0.5+krmap.j)*xy_binsize )
+                           y  = xy_range[0] + (0.5+krmap.j)*xy_binsize,
+                           )
 
     return krmap
+
+
+def regularize_map(krmap, mapshape):
+    """
+    -Function to regularize map in case there is any whole (NaN) inside the chamber volume.
+    -It takes each bin in the map and, if there is a whole, searchs for non NaN and non zero
+     neighbours and sets the mu value in the whole as the mean mu value of the neighbours.
+    Parameters
+    ----------
+    krmap : pd.DataFrame
+     Krypton map. Ideally the final "full" map after the whole process but it could be done
+     at any step.
+    mapshape : tuple
+     Number of (k, i, j) bins in the map. Most common should be (10, 100, 100).
+    Returns
+    -------
+    regularized_map : pd.DataFrame
+     Full regularized map.
+
+    """
+    mu = krmap.mu.values.reshape(mapshape)
+    for k in range(mu.shape[0]):
+        for i in range(1, mu.shape[1] -1):
+            for j in range(1, mu.shape[2] -1):
+                if np.isnan(mu[k,i,j]):
+                    vals = [mu[k,i+ii,j+jj] for ii in (-1, 0, 1) for jj in (-1, 0, 1) if not (ii==jj==0)]
+                    if np.count_nonzero(np.isnan(vals))>3: continue
+                    mu[k,i,j] = np.nanmean(vals)
+    return krmap.assign(mu = mu.flatten())
 
 
 
@@ -347,14 +381,32 @@ def compute_3D_map(df           : pd.DataFrame,
       data from fit_map,  with NaNs in those bins where there is no data and spatial
       dt, x, y coordinates.
     """
+    ts = int(df.time.values.min())
+    tf_slice = int(df.time.values.max())
+
+    t_interval = tf_slice - ts
+
+    t_hours = t_interval/3600 #from seconds to hours
+
+
+    dt_binsize = (dt_range[1] - dt_range[0])/dt_nbins
+    xy_binsize = (xy_range[1] - xy_range[0])/xy_nbins
+
+    volume = (dt_binsize*xy_binsize*xy_binsize)*0.001 #from mm^3 to cm^3
 
     NaN_map = create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins)
     map_3D_fit = fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e, S2e_range)
 
     map = merge_maps(NaN_map, map_3D_fit)
-    full_map = include_coordinates(map, xy_range, dt_range, xy_nbins, dt_nbins)
+    coor_map = include_coordinates(map, xy_range, dt_range, xy_nbins, dt_nbins)
 
-    return full_map
+    full_map = coor_map.assign(density = coor_map['nevents']/volume/t_hours)
+    #density in events*hour/cm^3
+
+    full_map_regularized = regularize_map(full_map, (dt_nbins, xy_nbins, xy_nbins))
+
+    return full_map_regularized
+
 
 
 
@@ -497,10 +549,11 @@ def get_time_evol_single_slice(df           : pd.DataFrame,
     t_evol : pd.DataFrame
       Dataframe including all the relevant time evolution parameters.
     """
-
+    nevents = len(df.event.unique())
+    sqrtn = np.sqrt(nevents)
 
     mean = df.S2e.mean()
-    std = df.S2e.std()/np.sqrt(len(df))
+    std = df.S2e.std()/sqrtn
 
     kdst_in_region = select_lifetime_region(df, x0, y0, shape, shape_size)
 
@@ -564,10 +617,19 @@ def get_time_evol_single_slice(df           : pd.DataFrame,
     s1e_cath = df[mask].S1e.values.mean()
     us1e_cath = df[mask].S1e.values.std()/np.sqrt(len(df))
 
-    sqrtn = np.sqrt(len(df))
+    ts = int(df.time.values.min())
+    tf_slice = int(df.time.values.max())
+
+    t_interval = tf_slice - ts
+
+
 
     t_evol = {'run_number' : run_number,
-              'ts' : int(df.time.values[0]),
+              'ts' : ts,
+              'nevents' : nevents,
+              'neventsu': sqrtn,
+              'rate' : nevents/t_interval,
+              'rateu': sqrtn/t_interval,
               's2e': mean,
               's2eu' : std,
               'ec1' : mu,
@@ -612,7 +674,7 @@ def get_time_evol_single_slice(df           : pd.DataFrame,
 
 def get_time_evol(df          : pd.DataFrame,
                   slice_hours : float,
-                  col_name1    : str,
+                  col_name1   : str,
                   col_name2   : str,
                   run_number  : int,
                   x0          : float,
