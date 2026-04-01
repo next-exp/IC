@@ -61,13 +61,13 @@ def select_dst(dtrms2_low, dtrms2_upp, low_xrays, high_xrays, low_S2t, high_S2t,
 
 
 
-def create_selfmap(xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e, S2e_range):
+def create_selfmap(xy_range, dt_range, xy_nbins, dt_nbins, S2e_range, fit_function,min_events, nbins_S2e ):
     if fit_function == MapFitFunction.gaussian_fit:
         fit_function = gaussian_fit
     else:
         fit_function = get_median
     def create_map(df):
-        return compute_3D_map(df,xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e, S2e_range)
+        return compute_3D_map(df,xy_range, dt_range, xy_nbins, dt_nbins, S2e_range, fit_function, min_events,nbins_S2e)
     return create_map
 
 
@@ -76,7 +76,6 @@ def get_metadata(xy_range, dt_range, xy_nbins, dt_nbins):
     def metadata(df, krmap):
         return compute_metadata(df, krmap, xy_range, dt_range, xy_nbins, dt_nbins)
     return metadata
-
 
 
 def apply_selfmap(norm_method, xy_params, col_name, keV):
@@ -136,9 +135,10 @@ def zemrude(files_in           : OneOrManyFiles
             , dt_range         : tuple
             , xy_nbins         : int
             , dt_nbins         : int
-            , fit_function     : MapFitFunction
-            , nbins_S2e        : int
             , S2e_range        : tuple
+            , fit_function     : MapFitFunction
+            , min_events       : int
+            , nbins_S2e        : int
             , slice_hours      : float
             , x0               : float
             , y0               : float
@@ -199,9 +199,10 @@ def zemrude(files_in           : OneOrManyFiles
                                             dt_range,
                                             xy_nbins,
                                             dt_nbins,
+                                            S2e_range,
                                             fit_function,
-                                            nbins_S2e,
-                                            S2e_range)
+                                            min_events,
+                                            nbins_S2e)
                              , args = 'selected_dst'
                              , out = '3D_krmap')
 

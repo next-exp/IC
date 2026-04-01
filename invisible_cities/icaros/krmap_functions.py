@@ -91,15 +91,18 @@ def create_empty_map(xy_range : tuple,
     return Nan_map
 
 
-def get_median(var : np.array) -> pd.DataFrame:
+def get_median(df        : pd.DataFrame,
+               nbins_S2e : int = None) -> pd.DataFrame:
     """
     Computes the median value of a given variable
     -We consider that for len(df) < 3, it makes no sense to compute the std.
     -Kr energy resolution is ~4%, so the std for S2e median would be ~0.04/2.35.
     Parameters
     ----------
-    var : np.array
-      Variable from which the median is being calculated.
+    df : pd.DataFrame
+      Dataframe in which the median of the S2e values is being calculated.
+    nbins_S2e : int
+      Parameter that had to be added so it has the same structure as gaussian_fit
     Returns
     -------
     map : pd.DataFrame
@@ -107,23 +110,25 @@ def get_median(var : np.array) -> pd.DataFrame:
       of the input dataframe, where mu and mu_error are the median and the median error.
     """
 
-    if len(var) < 3:
-        sigma = (0.04/2.35)*var.median()
+    if len(df.S2e) < 5:
+        sigma = (0.04/2.35)*df.S2e.median()
+        mu = np.nan
     else:
-        sigma = var.std()
+        sigma = df.S2e.std()
+        mu = df.S2e.median()
 
     return pd.DataFrame({
-         'nevents': len(var),
-         'mu': var.median(),
+         'nevents': len(df.S2e),
+         'mu': mu,
          'sigma': sigma,
-         'mu_error': sigma/np.sqrt(len(var)),
+         'mu_error': sigma/np.sqrt(len(df.S2e)),
          'sigma_error': np.nan}, index = [0])
 
 
 
 def gaussian_fit(df         : pd.DataFrame,
                  nbins_S2e  : int,
-                 min_events : int = 40) -> pd.DataFrame:
+                 min_events : int = 50) -> pd.DataFrame:
     """
     Given a dataframe, computes a gaussian fit of S2e if len(df) is equal or
     greater than min_events. If not, computes the median using get_median.
@@ -142,7 +147,7 @@ def gaussian_fit(df         : pd.DataFrame,
     """
 
     if len(df)< min_events:
-        return get_median(df.S2e)
+        return get_median(df)
 
     counts, bin_edges = np.histogram(df.S2e, nbins_S2e)
     bin_centers = shift_to_bin_centers(bin_edges)
@@ -153,7 +158,6 @@ def gaussian_fit(df         : pd.DataFrame,
         f = fit(gauss, bin_centers, counts, seed = seed,  maxfev = 10000)
 
 
-
     except:
 
         return pd.DataFrame({'nevents': len(df),
@@ -161,6 +165,9 @@ def gaussian_fit(df         : pd.DataFrame,
                                  'sigma': np.nan,
                                  'mu_error': np.nan,
                                  'sigma_error': np.nan}, index = [0])
+
+    if not in_range(f.values[1], 0.5*df.S2e.median(), 1.5*df.S2e.median()):
+        return get_median(df)
 
 
     return  pd.DataFrame({'nevents': len(df),
@@ -177,9 +184,10 @@ def fit_map(df            : pd.DataFrame,
             dt_range      : tuple,
             xy_nbins      : int,
             dt_nbins      : int,
+            S2e_range     : tuple,
             fit_function  : Callable,
-            nbins_S2e     : int,
-            S2e_range     : tuple) -> pd.DataFrame:
+            min_events    : int = 50,
+            nbins_S2e     : int = None) -> pd.DataFrame:
     """
     For a given dataframe :
     - takes its x, y, dt and S2e values with their respective ranges.
@@ -305,7 +313,7 @@ def include_coordinates(krmap     : pd.DataFrame,
 
     krmap =  krmap.assign( dt = dt_range[0] + (0.5+krmap.k)*dt_binsize,
                            x  = xy_range[0] + (0.5+krmap.i)*xy_binsize,
-                           y  = xy_range[0] + (0.5+krmap.j)*xy_binsize,
+                           y  = xy_range[0] + (0.5+krmap.j)*xy_binsize
                            )
 
     return krmap
@@ -319,14 +327,14 @@ def regularize_map(krmap, mapshape):
     Parameters
     ----------
     krmap : pd.DataFrame
-     Krypton map. Ideally the final "full" map after the whole process but it could be done
-     at any step.
+      Krypton map. Ideally the final "full" map after the whole process but it could be done
+      at any step.
     mapshape : tuple
-     Number of (k, i, j) bins in the map. Most common should be (10, 100, 100).
+      Number of (k, i, j) bins in the map. Most common should be (10, 100, 100).
     Returns
     -------
     regularized_map : pd.DataFrame
-     Full regularized map.
+      Full regularized map.
 
     """
     mu = krmap.mu.values.reshape(mapshape)
@@ -346,9 +354,10 @@ def compute_3D_map(df           : pd.DataFrame,
                    dt_range     : tuple,
                    xy_nbins     : int,
                    dt_nbins     : int,
+                   S2e_range    : tuple,
                    fit_function : Callable,
-                   nbins_S2e    : int,
-                   S2e_range    : tuple) -> pd.DataFrame:
+                   min_events   : int = 50,
+                   nbins_S2e    : int = None) -> pd.DataFrame:
     """
     Computes a full 3D map merging (with merge_maps) a map full of nans from create_empty_map
     with a 3D data map from fit_map and adding spatial coordinates using include_coordinates.
@@ -395,7 +404,7 @@ def compute_3D_map(df           : pd.DataFrame,
     volume = (dt_binsize*xy_binsize*xy_binsize)*0.001 #from mm^3 to cm^3
 
     NaN_map = create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins)
-    map_3D_fit = fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, fit_function, nbins_S2e, S2e_range)
+    map_3D_fit = fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, S2e_range, fit_function, min_events, nbins_S2e)
 
     map = merge_maps(NaN_map, map_3D_fit)
     coor_map = include_coordinates(map, xy_range, dt_range, xy_nbins, dt_nbins)
