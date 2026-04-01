@@ -215,7 +215,7 @@ def monitor_S2(df          : pd.DataFrame,
                    f'mean: {df1.qmax.mean():.2f}\n'
                    f'std: {df1.qmax.std():.2f}')
     axs[0, 0].hist(df2_.nS2, ns2bins, histtype = 'step', color = 'black', lw = 2, label =
-                   f'run: {run_number} after selection\n'
+                   f'run: {run_number} after\n'
                    f'events: {nevents}\n'
                    f'mean: {df2_.qmax.mean():.2f}\n'
                    f'std: {df2_.qmax.std():.2f}')
@@ -233,7 +233,7 @@ def monitor_S2(df          : pd.DataFrame,
                    f'std: {df_.S2e.std():.2f}')
     axs[0, 1].hist(df2.S2e, ebins,
                    histtype='step', color = 'black', lw = 2, label=
-                   f'run: {run_number} after selection\n'
+                   f'run: {run_number} after\n'
                    f'events: {nevents}\n'
                    f'mean: {df2.S2e.mean():.2f}\n'
                    f'std: {df2.S2e.std():.2f}')
@@ -252,7 +252,7 @@ def monitor_S2(df          : pd.DataFrame,
 
     axs[1, 0].hist(df2.S2h, s2hbins,
                    histtype='step', color = 'black', lw = 2, label=
-                   f'run: {run_number} after selection\n'
+                   f'run: {run_number} after\n'
                    f'events: {nevents}\n'
                    f'mean: {df2.S2h.mean():.2f}\n'
                    f'std: {df2.S2h.std():.2f}')
@@ -270,7 +270,7 @@ def monitor_S2(df          : pd.DataFrame,
                    f'std: {df_.S2q.std():.2f}')
     axs[1, 1].hist(df2.S2q, s2qbins, histtype = 'step', color = 'black', lw = 2,
                    label =
-                   f'run: {run_number} after selection\n'
+                   f'run: {run_number} after\n'
                    f'events: {nevents}\n'
                    f'mean: {df2.S2q.mean():.2f}\n'
                    f'std: {df2.S2q.std():.2f}')
@@ -288,7 +288,7 @@ def monitor_S2(df          : pd.DataFrame,
                    f'std: {df_.qmax.std():.2f}')
     axs[2, 0].hist(df2.qmax, qmaxbins, histtype = 'step', color = 'black', lw = 2,
                    label =
-                   f'run: {run_number} after selection\n'
+                   f'run: {run_number} after\n'
                    f'events: {nevents}\n'
                    f'mean: {df2.qmax.mean():.2f}\n'
                    f'std: {df2.qmax.std():.2f}')
@@ -306,7 +306,7 @@ def monitor_S2(df          : pd.DataFrame,
                    f'std: {df_.qmax.std():.2f}')
     axs[2, 1].hist(df2.S2w, s2wbins , histtype = 'step', color = 'black', lw = 2,
                    label =
-                   f'run: {run_number} after selection\n'
+                   f'run: {run_number} after\n'
                    f'events: {nevents}\n'
                    f'mean: {df2.qmax.mean():.2f}\n'
                    f'std: {df2.qmax.std():.2f}')
@@ -433,17 +433,15 @@ def hist2D(df        : pd.DataFrame,
 
     df = df.dropna(subset=['X', 'Y'])
 
-    bins  = 100
+    bins  = 20
 
     xrange = (df.X.min(), df.X.max())
     yrange = (df.Y.min(), df.Y.max())
 
 
     values, ebins, _  = stats.binned_statistic_dd((
-                      df.X, df.Y), df.S2e,
-                      bins=[np.linspace(*xrange, bins), np.linspace(*yrange, bins)], statistic = statistic
-                      )
-
+                      df.X, df.Y), df.Ec_2,
+                      bins=[np.linspace(*xrange, bins), np.linspace(*yrange, bins)], statistic = statistic)
     bin_centers = [0.5 * (b[1:] + b[:-1]) for b in ebins]
     mesh = np.meshgrid(*bin_centers)
     x_grid = mesh[0].ravel()
@@ -458,15 +456,15 @@ def hist2D(df        : pd.DataFrame,
         y_grid,
         bins=ebins,
         weights=weight,
-        cmin=6000,
-        cmax = 10000
+        cmin=25,
+        cmax = 50
     )
 
 
     c = fig.colorbar(im, ax=axs)
 
     if statistic == 'mean':
-        c.ax.set_ylabel('Mean S2e (pe)')
+        c.ax.set_ylabel('Mean Ec (keV)')
 
     if statistic == 'counts':
         c.ax.set_ylabel('Average number of events')
@@ -694,13 +692,14 @@ def plot_time_evolution_with_errors_and_dates(df_time_evolution : pd.DataFrame,
             'dv':   {'value_col': 'dv', 'error_col': 'dvu','units': 'mm/microsecond'},
             'lt':   {'value_col': 'lt', 'error_col': 'ltu','units': 'mus'},
             'e0':   {'value_col': 'e0', 'error_col': 'e0u','units': 'p.e.'},
-            'ec2':   {'value_col': 'ec2', 'error_col': 'ec2u','units': 'keV'},
+            'ec2':  {'value_col': 'ec2', 'error_col': 'ec2u','units': 'keV'},
             's2w':  {'value_col': 's2w', 'error_col': 's2wu','units': 'microsecond'},
             's2h':  {'value_col': 's2h', 'error_col': 's2hu','units': 'p.e.'},
             's1e':  {'value_col': 's1e', 'error_col': 's1eu','units': 'p.e.'},
             's1w':  {'value_col': 's1w', 'error_col': 's1wu','units': 'ns'},
             's1h':  {'value_col': 's1h', 'error_col': 's1hu','units': 'p.e.'},
             'Eres': {'value_col': 'resol', 'error_col': 'resolu','units': '% FWHM'},
+            'rate' : {'value_col': 'rate', 'error_col': 'rateu', 'units': 'event/microsecond'}
         }
 
         # Check if the required value/error columns exist in the time_evolution DataFrame

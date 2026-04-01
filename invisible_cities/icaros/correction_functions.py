@@ -120,11 +120,13 @@ def apply_3Dmap(krmap        : pd.DataFrame,
       Corrected energy
 
     """
-
+    mask = krmap.mu.isna()
+    krmap = krmap[~mask]
     map_points = krmap['dt x y'.split()].values
     norm = normalization(krmap, norm_method, xy_params)
 
     data_points = np.stack([dt, x, y], axis = 1)
+
     E_interpolated_data = griddata(map_points, krmap.mu.values, data_points, method = 'nearest')
 
     correction_factor = norm/E_interpolated_data
