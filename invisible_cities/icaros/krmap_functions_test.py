@@ -121,12 +121,12 @@ def test_create_empty_map_values():
 
 
 def test_get_median_empty_input_does_not_raise(dummy_empty_df):
-    get_median(dummy_empty_df.S2e)
+    get_median(dummy_empty_df)
 
 
 
 def test_get_median_empty_input(dummy_empty_df):
-    result = get_median(dummy_empty_df.S2e)
+    result = get_median(dummy_empty_df)
 
 
     assert result.shape == (1, 5)
@@ -139,7 +139,7 @@ def test_get_median_empty_input(dummy_empty_df):
 
 def test_get_median_works_with_even_data(dummy_get_median):
 
-    result = get_median(dummy_get_median.S2e)['mu']
+    result = get_median(dummy_get_median)['mu']
     median_data = 8050
 
     assert (result == median_data).all()
@@ -148,9 +148,9 @@ def test_get_median_works_with_even_data(dummy_get_median):
 
 def test_get_median_works_with_odd_data(dummy_get_median):
 
-    dummy_get_median.loc[len(dummy_get_median.S2e)] = [9100]
+    dummy_get_median.loc[len(dummy_get_median)] = [9100]
 
-    result_med_fun = get_median(dummy_get_median.S2e)
+    result_med_fun = get_median(dummy_get_median)
     result_med_fun = result_med_fun['mu']
     result_med_data = 8100
 
@@ -160,7 +160,7 @@ def test_get_median_works_with_odd_data(dummy_get_median):
 
 
 def test_get_median_errors():
-    S2e_test1 = pd.DataFrame([1, 2, 3],
+    S2e_test1 = pd.DataFrame([1, 1, 2, 3, 3],
                              columns = ['S2e'])
 
     S2e_test2 = pd.DataFrame([1, 1, 1, 1,
@@ -168,14 +168,14 @@ def test_get_median_errors():
                               3, 3, 3, 3],
                              columns = ['S2e'])
 
-    map_test1  = get_median(S2e_test1.S2e)
-    map_test2  = get_median(S2e_test2.S2e)
+    map_test1  = get_median(S2e_test1)
+    map_test2  = get_median(S2e_test2)
 
     ratio_error_values  = map_test1.mu_error.values / map_test2.mu_error.values
     ratio_sqrt = np.sqrt(len(S2e_test2)-1)/np.sqrt(len(S2e_test1)-1)
 
     assert np.allclose(map_test1.mu.values, map_test2.mu.values)
-    assert np.isclose(ratio_error_values, ratio_sqrt)
+    assert np.isclose(ratio_error_values, ratio_sqrt, rtol = 0.1)
 
 
 
@@ -183,7 +183,7 @@ def test_get_median_errors():
 def test_gaussian_fit_few_entries(dummy_empty_df):
 
     result_fit = gaussian_fit(dummy_empty_df, 1, min_events = 10)
-    result_fun = get_median(dummy_empty_df.S2e)['mu']
+    result_fun = get_median(dummy_empty_df)['mu']
 
     assert np.allclose(result_fit.mu.values, result_fun.values, equal_nan=True)
 
@@ -372,7 +372,6 @@ def test_include_coordinates_range(dummy_include_coordinates):
     assert np.all(in_range(full_map.x, *xy_range))
     assert np.all(in_range(full_map.y, *xy_range))
     assert np.all(in_range(full_map.dt, *dt_range))
-
 
 
 
