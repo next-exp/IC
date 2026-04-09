@@ -40,17 +40,15 @@ def select_lifetime_region(df         : pd.DataFrame,
     if shape is SelRegionMethod.square:
 
         x1, y1 = x0-shape_size, y0-shape_size
-
         mask_df = in_range(df.X, x1, x1+2*shape_size) & in_range(df.Y, y1, y1+2*shape_size)
 
-        df_region = df[mask_df]
-        return df_region
 
     if shape is SelRegionMethod.circle:
 
         mask_df = (df.X - x0)**2 + (df.Y - y0)**2 <= shape_size**2
-        df_region = df[mask_df]
-        return df_region
+
+    df_region = df[mask_df]
+    return df_region
 
 
 
