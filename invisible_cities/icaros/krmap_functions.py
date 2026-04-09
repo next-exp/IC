@@ -62,9 +62,9 @@ def create_empty_map(xy_range : tuple,
     Parameters
     ----------
     xy_range : tuple
-      Range in x and y (mm) inside which the map is being computed.
+      Range in x and y inside which the map is being computed.
     dt_range : tuple
-      Range in drift time (micro seconds) (same as z) inside which the map is being computed.
+      Range in drift time inside which the map is being computed.
     xy_nbins : int
       Number of map bins for x and y.
     dt_nbins : int
@@ -72,7 +72,7 @@ def create_empty_map(xy_range : tuple,
     Returns
     -------
     Nan_map : pd.DataFrame
-      Dataframe filled with NaNs for each (i,j,k) combination.
+      Dataframe filled with NaNs for each combination of z,x,y bins.
     """
 
     i_range = np.arange(0, xy_nbins)
@@ -95,7 +95,7 @@ def get_median(df        : pd.DataFrame,
                nbins_S2e : int = None) -> pd.DataFrame:
     """
     Computes the median value of a given variable
-    -We consider that for len(df) < 3, it makes no sense to compute the std.
+    -We consider that for len(df) < 5, it makes no sense to compute the median or the std.
     -Kr energy resolution is ~4%, so the std for S2e median would be ~0.04/2.35.
     Parameters
     ----------
@@ -132,6 +132,9 @@ def gaussian_fit(df         : pd.DataFrame,
     """
     Given a dataframe, computes a gaussian fit of S2e if len(df) is equal or
     greater than min_events. If not, computes the median using get_median.
+
+    If the mean value from the gaussian fit value is not between [0.5*median, 1.5*median], the median is computed using get_median.
+
     Parameters
     ----------
     df : pd.DataFrame
@@ -337,13 +340,14 @@ def regularize_map(krmap, mapshape):
       Full regularized map.
 
     """
+    max_nan_neighbours = 3
     mu = krmap.mu.values.reshape(mapshape)
     for k in range(mu.shape[0]):
         for i in range(1, mu.shape[1] -1):
             for j in range(1, mu.shape[2] -1):
                 if np.isnan(mu[k,i,j]):
                     vals = [mu[k,i+ii,j+jj] for ii in (-1, 0, 1) for jj in (-1, 0, 1) if not (ii==jj==0)]
-                    if np.count_nonzero(np.isnan(vals))>3: continue
+                    if np.count_nonzero(np.isnan(vals)) > max_nan_neighbours: continue
                     mu[k,i,j] = np.nanmean(vals)
     return krmap.assign(mu = mu.flatten())
 
@@ -359,8 +363,10 @@ def compute_3D_map(df           : pd.DataFrame,
                    min_events   : int = 50,
                    nbins_S2e    : int = None) -> pd.DataFrame:
     """
-    Computes a full 3D map merging (with merge_maps) a map full of nans from create_empty_map
-    with a 3D data map from fit_map and adding spatial coordinates using include_coordinates.
+    Computes a 3D map from the data in df given a range in xy and dt and the number of bins for each coordinate.
+    The map values in each voxel are computed using fit_function.
+    A data quality filter is applied requiring S2e to be in a given range S2e_range.
+
     Parameters
     ----------
     df  : pd.DataFrame
@@ -390,18 +396,10 @@ def compute_3D_map(df           : pd.DataFrame,
       data from fit_map,  with NaNs in those bins where there is no data and spatial
       dt, x, y coordinates.
     """
-    ts = int(df.time.values.min())
-    tf_slice = int(df.time.values.max())
-
-    t_interval = tf_slice - ts
-
-    t_hours = t_interval/3600 #from seconds to hours
-
 
     dt_binsize = (dt_range[1] - dt_range[0])/dt_nbins
     xy_binsize = (xy_range[1] - xy_range[0])/xy_nbins
 
-    volume = (dt_binsize*xy_binsize*xy_binsize)*0.001 #from mm^3 to cm^3
 
     NaN_map = create_empty_map(xy_range, dt_range, xy_nbins, dt_nbins)
     map_3D_fit = fit_map(df, xy_range, dt_range, xy_nbins, dt_nbins, S2e_range, fit_function, min_events, nbins_S2e)
@@ -409,8 +407,11 @@ def compute_3D_map(df           : pd.DataFrame,
     map = merge_maps(NaN_map, map_3D_fit)
     coor_map = include_coordinates(map, xy_range, dt_range, xy_nbins, dt_nbins)
 
+    volume = (dt_binsize*xy_binsize*xy_binsize)*0.001 #from mm^3 to cm^3
+    t_hours = (df.time.values.max() - df.time.values.min())/3600 #from seconds to hours
+
+    #density in events/hour/cm^3
     full_map = coor_map.assign(density = coor_map['nevents']/volume/t_hours)
-    #density in events*hour/cm^3
 
     full_map_regularized = regularize_map(full_map, (dt_nbins, xy_nbins, xy_nbins))
 
@@ -626,10 +627,7 @@ def get_time_evol_single_slice(df           : pd.DataFrame,
     s1e_cath = df[mask].S1e.values.mean()
     us1e_cath = df[mask].S1e.values.std()/np.sqrt(len(df))
 
-    ts = int(df.time.values.min())
-    tf_slice = int(df.time.values.max())
-
-    t_interval = tf_slice - ts
+    t_interval = df.time.values.max() - df.time.values.min()
 
 
 
@@ -714,10 +712,7 @@ def get_time_evol(df          : pd.DataFrame,
 
     slice_seconds = slice_hours * 3600
 
-    t_min = df.time.min()
-    t_max = df.time.max()
-
-    time_bins = np.arange(t_min, t_max + slice_seconds, slice_seconds)
+    time_bins = np.arange(df.time.min(), df.time.max() + slice_seconds, slice_seconds)
 
     t_slice = np.digitize(df.time, time_bins)
 
