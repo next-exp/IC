@@ -19,7 +19,7 @@ from .. io      .run_and_event_io import run_and_event_writer
 
 from .. reco    .psf_functions    import create_psf
 from .. reco    .psf_functions    import hdst_psf_processing
-from .. icaros  .correction_functions import apply_correctionmap_inplace
+from .. icaros  .correction_functions import apply_correctionmap_inplace_kdst
 from .. icaros  .selection_functions import apply_selections
 from .. icaros  .krmap_functions   import compute_3D_map, gaussian_fit, get_median, compute_metadata, get_time_evol, save_map
 from .. types   .symbols          import NormMethod, SelRegionMethod, MapFitFunction
@@ -31,7 +31,14 @@ from typing import Sequence
 from typing import Optional
 from typing import Tuple
 from typing import Union
-from .components import *
+from typing import Callable
+from typing import List
+from typing import Iterator
+from typing import Dict
+
+from .components import city
+from .components import get_run_number
+
 
 
 
@@ -49,7 +56,7 @@ def concatenated_dsts_from_files(path: List[str], group: str, node:str)-> Iterat
 def apply_map(pre_map, norm_method, xy_params, col_name, keV):
     pre_map = pd.read_hdf(pre_map)
     def apply_3Dmap(df):
-        return apply_correctionmap_inplace(df, pre_map, norm_method, xy_params, col_name, keV)
+        return apply_correctionmap_inplace_kdst(df, pre_map, norm_method, xy_params, col_name, keV)
     return apply_3Dmap
 
 
@@ -80,7 +87,7 @@ def get_metadata(xy_range, dt_range, xy_nbins, dt_nbins):
 
 def apply_selfmap(norm_method, xy_params, col_name, keV):
     def apply_3Dselfmap(df, map3D):
-        return apply_correctionmap_inplace(df, map3D, norm_method, xy_params, col_name, keV)
+        return apply_correctionmap_inplace_kdst(df, map3D, norm_method, xy_params, col_name, keV)
     return apply_3Dselfmap
 
 
