@@ -9,10 +9,6 @@ from .. icaros         .correction_functions import apply_3Dmap, normalization
 import itertools
 
 
-dtrms2_low = lambda dt: -0.7 + 0.030 * (dt-20) # Gonzalo's
-dtrms2_upp = lambda dt: 2.6 + 0.036 * (dt-20) # Gonzalo's2
-
-
 def eff_of_selection(df_before  : pd.DataFrame,
                      df_after   : pd.DataFrame,
                      name       : str = "") -> float:
