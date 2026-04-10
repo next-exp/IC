@@ -139,12 +139,12 @@ def apply_3Dmap(krmap        : pd.DataFrame,
 
 
 
-def apply_correctionmap_inplace(kdst        : pd.DataFrame,
-                                map3D       : pd.DataFrame,
-                                norm_method : NormMethod,
-                                xy_params   : dict,
-                                col_name    : str,
-                                keV         : bool = True ) -> pd.DataFrame:
+def apply_correctionmap_inplace_kdst(kdst        : pd.DataFrame,
+                                     map3D       : pd.DataFrame,
+                                     norm_method : NormMethod,
+                                     xy_params   : dict,
+                                     col_name    : str,
+                                     keV         : bool = True ) -> pd.DataFrame:
 
     """
     Applies a given krypton map using apply_3Dmap to get as an output the same input
