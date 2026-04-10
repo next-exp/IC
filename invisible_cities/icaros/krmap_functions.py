@@ -627,12 +627,13 @@ def get_time_evol_single_slice(df           : pd.DataFrame,
     s1e_cath = df[mask].S1e.values.mean()
     us1e_cath = df[mask].S1e.values.std()/np.sqrt(len(df))
 
+
     t_interval = df.time.values.max() - df.time.values.min()
 
 
 
     t_evol = {'run_number' : run_number,
-              'ts' : ts,
+              'ts' : df.time.values.min(),
               'nevents' : nevents,
               'neventsu': sqrtn,
               'rate' : nevents/t_interval,
