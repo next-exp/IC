@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from invisible_cities.icaros.correction_functions import normalization, apply_3Dmap, apply_correctionmap_inplace
+from invisible_cities.icaros.correction_functions import normalization, apply_3Dmap, apply_correctionmap_inplace_kdst
 from invisible_cities.core.core_functions import in_range
 from invisible_cities.types.symbols import NormMethod
 from scipy.interpolate import griddata
@@ -104,7 +104,7 @@ def test_apply_correctionmap_shape(dummy_map):
 
     kdst_test = kdst.copy()
 
-    kdst_correct = apply_correctionmap_inplace(kdst, dummy_map, norm_method = NormMethod.maximum, xy_params = None, col_name='Ec')
+    kdst_correct = apply_correctionmap_inplace_kdst(kdst, dummy_map, norm_method = NormMethod.maximum, xy_params = None, col_name='Ec')
 
     assert kdst_correct.shape[1] ==  kdst_test.shape[1] + 1
     assert ((kdst_test == kdst_correct.drop(columns = 'Ec')).all()).all()
