@@ -1,0 +1,839 @@
+#----------------------------------------
+#
+# Functions for Kr analysis of NEXT100
+#
+#----------------------------------------
+import os
+import numpy             as np
+import pandas            as pd
+from   scipy.optimize     import curve_fit
+from typing import Callable, Union, Tuple
+import tables as tb
+import sys
+from datetime import datetime
+import pytz
+
+import matplotlib.pyplot as plt
+
+from invisible_cities.types.symbols import SelRegionMethod, NormMethod
+from invisible_cities.core.core_functions import in_range, shift_to_bin_centers
+from invisible_cities.core.fit_functions import fit, profileX, expo, sigmoid
+from scipy import stats
+
+from invisible_cities.icaros.lifetime_vdrift_functions import select_lifetime_region
+
+
+import matplotlib
+matplotlib.set_loglevel("warning")
+
+#
+#---- plotting
+#
+
+dtbins     = np.linspace(0, 1800, 101)
+dtrmsbins  = np.linspace(0, 10, 101)
+dtrms2bins = np.linspace(0, 55, 101)
+ebins      = np.linspace(0, 15e3, 101)
+
+freq = lambda : plt.ylabel("frequency")
+
+
+
+def monitor_S1(df         : pd.DataFrame,
+               df2        : pd.DataFrame,
+               run_number : int,
+               ebins      : np.array,
+               ns1bins    : np.array,
+               s1hbins    : np.array,
+               s1wbins    : np.array):
+    """
+    Plots distributions for nS1, S1e, S1h, S1w.
+    -To get the actual number of S1 and not the times that it is repeated, we use the first
+    entry after doing groupby event s2_peak to then groupby event again and .count().
+    -Why are we plotting the mean values? I think its ok but think why
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Input dataframe (either the kdst before or after applying selections)
+    run_number : int
+      Number of the run being analyzed
+    ebins : np.array
+      To set energy limits and range
+    ns1bins : np.array
+      To set limits and range on nS1
+    s1hbins : np.array
+      To set limits and range on S1 height
+    s1wbins : np.array
+      To set limits and range on S1 width
+    Returns
+    -------
+    Histograms of the variables
+    """
+
+    fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+
+    nevents = len(df['event'].unique())
+
+    df1 = df.groupby("event s1_peak".split()).first()
+    df1_ = df1.groupby('event').count()
+    df1__ = df1.groupby('event').mean()
+
+    df2 = df2.groupby("event s1_peak".split()).first()
+    df2_ = df2.groupby('event').count()
+    df2__ = df2.groupby('event').mean()
+
+    axs[0, 0].hist(df1_.nS1, ns1bins,
+                   histtype='step', color = 'mediumpurple', lw = 2, label=
+                   f'run: {run_number}\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df1_.nS1.mean():.2f}\n'
+                   f'std: {df1_.nS1.std():.2f}')
+    axs[0, 0].hist(df2_.nS1, ns1bins,
+                    histtype='step', color = 'black', lw = 2, label=
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2_.nS1.mean():.2f}\n'
+                   f'std: {df2_.nS1.std():.2f}')
+    axs[0, 0].set_xlabel('Number of S1')
+    axs[0, 0].set_yscale('log')
+    axs[0, 0].set_title('nS1 distribution')
+    axs[0, 0].grid(True)
+    axs[0, 0].legend()
+
+
+    axs[0, 1].hist(df1.S1e, ebins,
+                   histtype='step',color = 'mediumpurple', lw = 2, label=
+                   f'run: {run_number}\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df1.S1e.mean():.2f}\n'
+                   f'std: {df1.S1e.std():.2f}')
+    axs[0, 1].hist(df2__.S1e, ebins,
+                   histtype='step',color = 'black',lw = 2, label=
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2__.S1e.mean():.2f}\n'
+                   f'std: {df2__.S1e.std():.2f}')
+    axs[0, 1].set_xlabel('S1e (pe)')
+    axs[0, 1].set_title('S1e distribution')
+    axs[0, 1].grid(True)
+    axs[0, 1].legend()
+
+
+    axs[1, 0].hist(df1.S1h, s1hbins,
+                    histtype='step', color = 'mediumpurple',lw = 2, label=
+                   f'run: {run_number}\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df1.S1h.mean():.2f}\n'
+                   f'std: {df1.S1h.std():.2f}')
+    axs[1, 0].hist(df2__.S1h, s1hbins,
+                   histtype='step',color = 'black', lw = 2, label=
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2__.S1h.mean():.2f}\n'
+                   f'std: {df2__.S1h.std():.2f}')
+    axs[1, 0].set_xlabel('S1h (pe)')
+    axs[1, 0].set_title('S1h distribution')
+    axs[1, 0].grid(True)
+    axs[1, 0].legend()
+
+
+    axs[1, 1].hist(df1.S1w, s1wbins,
+                   histtype='step',color = 'mediumpurple', lw = 2, label=
+                   f'run: {run_number}\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df1.S1w.mean():.2f}\n'
+                   f'std: {df1.S1w.std():.2f}')
+    axs[1, 1].hist(df2__.S1w, s1wbins,
+                   histtype='step', color = 'black', lw = 2, label=
+                   f'run: {run_number} after selection\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2__.S1w.mean():.2f}\n'
+                   f'std: {df2__.S1w.std():.2f}')
+    axs[1, 1].set_xlabel('S1w (pe)')
+    axs[1, 1].set_title('S1w distribution')
+    axs[1, 1].grid(True)
+    axs[1, 1].legend()
+
+    fig.tight_layout();
+
+
+
+def monitor_S2(df          : pd.DataFrame,
+               df2         : pd.DataFrame,
+               run_number  : int,
+               ebins       : np.array,
+               ns2bins     : np.array,
+               s2hbins     : np.array,
+               s2qbins     : np.array,
+               qmaxbins    : np.array,
+               s2wbins     : np.array):
+    """
+    Plots distributions for nS2, S2e, S2h, S2q, qmax and S2w.
+    -To get the actual number of S2 and not the times that it is repeated, we use the first
+    entry after doing groupby event s1_peak to then groupby event again and .count().
+    -Why are we plotting the mean values? I think its ok but think why
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Input dataframe (either the kdst before or after applying selections).
+    run_number : int
+      Number of the run being analyzed.
+    ebins : np.array
+      To set energy limits and range.
+    ns2bins : np.array
+      To set limits and range on nS2.
+    s2hbins : np.array
+      To set limits and range on S2 height.
+    s2qbins : np.array
+      To set limits and range on S2 charge.
+    qmaxbins : np.array
+      To set limits and range on Qmax.
+    s2wbins : np.array
+      To set limits and range on S2 width.
+    Returns
+    -------
+    Histograms of the variables
+
+    """
+
+
+    fig, axs = plt.subplots(3, 2, figsize=(15, 12))
+
+    nevents = len(df['event'].unique())
+
+    df_ = df.groupby("event s2_peak".split()).first()
+    df1 = df_.groupby('event').count()
+    df1_ = df_.groupby('event').mean()
+
+    df2 = df2.groupby("event s2_peak".split()).first()
+    df2_ = df2.groupby('event').count()
+    df2__ = df2_.groupby('event').mean()
+
+    axs[0, 0].hist(df1.nS2, ns2bins, histtype = 'step', color = 'mediumpurple',lw = 2, label =
+                   f'run: {run_number}\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df1.qmax.mean():.2f}\n'
+                   f'std: {df1.qmax.std():.2f}')
+    axs[0, 0].hist(df2_.nS2, ns2bins, histtype = 'step', color = 'black', lw = 2, label =
+                   f'run: {run_number} after\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2_.qmax.mean():.2f}\n'
+                   f'std: {df2_.qmax.std():.2f}')
+    axs[0, 0].set_xlabel('Number of S2')
+    axs[0, 0].set_yscale('log')
+    axs[0, 0].set_title('nS2 distribution')
+    axs[0, 0].grid(True)
+    axs[0, 0].legend()
+
+    axs[0, 1].hist(df_.S2e, ebins,
+                   histtype='step', color = 'mediumpurple', lw = 2, label=
+                   f'run: {run_number}\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df_.S2e.mean():.2f}\n'
+                   f'std: {df_.S2e.std():.2f}')
+    axs[0, 1].hist(df2.S2e, ebins,
+                   histtype='step', color = 'black', lw = 2, label=
+                   f'run: {run_number} after\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2.S2e.mean():.2f}\n'
+                   f'std: {df2.S2e.std():.2f}')
+    axs[0, 1].set_xlabel('S2e (pe)')
+    axs[0, 1].set_title('S2e distribution')
+    axs[0, 1].grid(True)
+    axs[0, 1].legend()
+
+
+    axs[1, 0].hist(df_.S2h, s2hbins,
+                   histtype='step',color = 'mediumpurple', lw = 2, label=
+                   f'run: {run_number}\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df_.S2h.mean():.2f}\n'
+                   f'std: {df_.S2h.std():.2f}')
+
+    axs[1, 0].hist(df2.S2h, s2hbins,
+                   histtype='step', color = 'black', lw = 2, label=
+                   f'run: {run_number} after\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2.S2h.mean():.2f}\n'
+                   f'std: {df2.S2h.std():.2f}')
+    axs[1, 0].set_xlabel('S2h (pe)')
+    axs[1, 0].set_title('S2h distribution')
+    axs[1, 0].grid(True)
+    axs[1, 0].legend()
+
+
+    axs[1, 1].hist(df_.S2q, s2qbins, histtype = 'step', color = 'mediumpurple', lw = 2,
+                   label =
+                   f'run: {run_number}\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df_.S2q.mean():.2f}\n'
+                   f'std: {df_.S2q.std():.2f}')
+    axs[1, 1].hist(df2.S2q, s2qbins, histtype = 'step', color = 'black', lw = 2,
+                   label =
+                   f'run: {run_number} after\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2.S2q.mean():.2f}\n'
+                   f'std: {df2.S2q.std():.2f}')
+    axs[1, 1].set_xlabel('S2q (pe)')
+    axs[1, 1].set_title('S2q distribution')
+    axs[1, 1].grid(True)
+    axs[1, 1].legend()
+
+
+    axs[2, 0].hist(df_.qmax, qmaxbins, histtype = 'step', color = 'mediumpurple', lw = 2,
+                   label =
+                   f'run: {run_number}\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df_.qmax.mean():.2f}\n'
+                   f'std: {df_.qmax.std():.2f}')
+    axs[2, 0].hist(df2.qmax, qmaxbins, histtype = 'step', color = 'black', lw = 2,
+                   label =
+                   f'run: {run_number} after\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2.qmax.mean():.2f}\n'
+                   f'std: {df2.qmax.std():.2f}')
+    axs[2, 0].set_xlabel('qmax (pe)')
+    axs[2, 0].set_title('Q max distribution')
+    axs[2, 0].grid(True)
+    axs[2, 0].legend()
+
+
+    axs[2, 1].hist(df_.S2w, s2wbins , histtype = 'step', color = 'mediumpurple', lw = 2,
+                   label =
+                   f'run: {run_number}\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df_.qmax.mean():.2f}\n'
+                   f'std: {df_.qmax.std():.2f}')
+    axs[2, 1].hist(df2.S2w, s2wbins , histtype = 'step', color = 'black', lw = 2,
+                   label =
+                   f'run: {run_number} after\n'
+                   f'events: {nevents}\n'
+                   f'mean: {df2.qmax.mean():.2f}\n'
+                   f'std: {df2.qmax.std():.2f}')
+    axs[2, 1].set_xlabel('S2w (pe)')
+    axs[2, 1].set_title('S2w distribution')
+    axs[2, 1].grid(True)
+    axs[2, 1].legend()
+
+    fig.tight_layout();
+
+
+
+
+def monitor_dtime(df          : pd.DataFrame,
+                  df2         : pd.DataFrame,
+                  dtrms2_low  : Callable,
+                  dtrms2_upp  : Callable,
+                  dtrms2_cen  : Callable):
+    """
+    Plots 2D histograms of DTrms and square DTrms as a function of drift time
+    and the drift time and squared drift time distributions.
+    Parameters
+    ----------
+    df : pd.DataFrame
+      Dataframe containing the drift time that we want to monitor.
+    dtrms2_low : Callable
+      Function of drift time that defines the lower limit of the diffusion band.
+    dtrms2_upp : Callable
+      Function of drift time that defines the upper limit of the diffusion band.
+    dtrms2_cen : Callabla
+      Function of drift time that define the center of the diffusion band.
+    """
+
+    fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+    df1 = df.groupby('event s2_peak'.split()).first().reset_index()
+    df1_ = df1.groupby('event').mean()
+
+    axs[0,0].hist2d(df1.DT, df1.Zrms**2, (dtbins, dtrms2bins));
+    axs[0,0].plot(df1.DT, dtrms2_low(df1.DT), ".r", ms=2);
+    axs[0,0].plot(df1.DT, dtrms2_upp(df1.DT), ".r", ms=2);
+    axs[0,0].plot(df1.DT, dtrms2_cen(df1.DT), '.g', ms = 2);
+    axs[0,0].set_xlabel("Drift time ($\mu$s)"); axs[0,0].set_ylabel("DT$_{rms}^2$ ($\mu$s)"); axs[0,0].set_xlim(0, 1300)
+    axs[0, 0].set_title('Before selection')
+
+
+    axs[0,1].hist2d(df2.DT, df2.Zrms**2, (dtbins, dtrms2bins));
+    axs[0,1].plot(df2.DT, dtrms2_low(df2.DT), ".r", ms=2);
+    axs[0,1].plot(df2.DT, dtrms2_upp(df2.DT), ".r", ms=2);
+    axs[0,1].plot(df2.DT, dtrms2_cen(df2.DT), '.g', ms = 2);
+    axs[0,1].set_xlabel("Drift time ($\mu$s)"); axs[0,1].set_ylabel("DT$_{rms}^2$ ($\mu$s)"); axs[0,1].set_xlim(0, 1300)
+    axs[0,1].set_title('After selection')
+
+    axs[1,0].hist(df1_.DT, dtbins, histtype = 'step', color = 'mediumpurple',lw = 2,
+                  label = 'before selection');
+    axs[1,0].hist(df2.DT, dtbins, histtype = 'step', color = 'black', lw = 2,
+                  label = 'after selection');
+    axs[1,0].legend();
+    axs[1,0].set_xlabel("Drift time ($\mu$s)");
+    axs[1,0].grid(True)
+
+    axs[1,1].hist(df1_.Zrms**2, 100, (0, 40), histtype = 'step',color = 'mediumpurple',lw = 2,
+                  label = 'before selection');
+    axs[1,1].hist(df2.Zrms**2, 100, (0, 40), histtype = 'step', color = 'black',lw = 2,
+                  label = 'after selection');
+    axs[1,1].legend();
+    axs[1,1].set_xlabel("DT$_{rms}^2$ ($\mu$s)");
+    axs[1,1].grid(True)
+
+    fig.tight_layout();
+
+
+def monitor_lifetime(df        : pd.DataFrame,
+                     ebins    : np.array,
+                     dtbins     : np.array):
+    """
+    Plots a 2D histogram of S2e vs drift time.
+    """
+    fig, axs = plt.subplots(1, 1)
+    axs.hist2d(df.DT, df.S2e, (dtbins, ebins));
+    axs.set_xlabel(r"DT ($\mu$s)");
+    axs.set_ylabel("S2e (pe)");
+    #axs.set_xlim(0, 1500)
+
+    fig.tight_layout();
+
+
+
+def monitor_kr_distribution(df        : pd.DataFrame,
+                            bins      : int,
+                            dtr2_bins : tuple):
+    """
+    Plots the square radial distribution and a 2D distribution of the
+    square radius as a function of drift time.
+    """
+
+    sel = in_range(df.S2e, 7.5e3, 9.5e3) & in_range(df.DT, 20, 1350)
+
+
+    DT = (df.DT[sel]).dropna()
+    R2 = (df.X[sel]**2 + df.Y[sel]**2).dropna()
+
+
+    fig, axs = plt.subplots(1, 2, figsize = (21, 7))
+
+    axs[0].hist(R2, bins, histtype = 'step', color = 'mediumpurple', lw = 2);
+    axs[0].set_xlabel("R$^2$ (mm$^2$)"); freq();
+    axs[0].grid(True)
+
+
+    axs[1].hist2d(DT, R2, dtr2_bins);
+    axs[1].set_xlabel("DT ($\mu$s)");
+    axs[1].set_ylabel("R$^2$ (mm$^2$)");
+
+
+
+
+def hist2D(df        : pd.DataFrame,
+           run       : int,
+           statistic : str):
+    """
+    Plots a 2D histogram or "map" in X,Y where each bin contains the specified
+    statistic (mean, counts...) of the S2e (pe)
+    """
+
+    df = df.dropna(subset=['X', 'Y'])
+
+    bins  = 20
+
+    xrange = (df.X.min(), df.X.max())
+    yrange = (df.Y.min(), df.Y.max())
+
+
+    values, ebins, _  = stats.binned_statistic_dd((
+                      df.X, df.Y), df.Ec_2,
+                      bins=[np.linspace(*xrange, bins), np.linspace(*yrange, bins)], statistic = statistic)
+    bin_centers = [0.5 * (b[1:] + b[:-1]) for b in ebins]
+    mesh = np.meshgrid(*bin_centers)
+    x_grid = mesh[0].ravel()
+    y_grid = mesh[1].ravel()
+    weight = values.T.ravel()
+
+    fig, axs = plt.subplots(1, 1)
+
+
+    h, xedges, yedges, im = axs.hist2d(
+        x_grid,
+        y_grid,
+        bins=ebins,
+        weights=weight,
+        cmin=25,
+        cmax = 50
+    )
+
+
+    c = fig.colorbar(im, ax=axs)
+
+    if statistic == 'mean':
+        c.ax.set_ylabel('Mean Ec (keV)')
+
+    if statistic == 'counts':
+        c.ax.set_ylabel('Average number of events')
+
+    axs.set_xlim(-500, 500)
+    axs.set_ylim(-500, 500)
+    axs.set_xlabel("X (mm)")
+    axs.set_ylabel("Y (mm)")
+    axs.set_title(f'Run {run}')
+
+    fig.tight_layout()
+
+
+
+def plot_Ec(Ec_1  : pd.core.series.Series,
+            Ec_2  : pd.core.series.Series):
+    """
+    This function is for comparing specifically the distributions of corrected energy
+    from applying the preliminary map (Ec) vs the "final" corrected energy
+    (from applying the self map and all the correction chain, Ec_2)
+    """
+    mean_Ec2 = Ec_2.mean()
+    stdEc2 = Ec_2.std()
+    umeanEc2 = Ec_2.std()/np.sqrt(len(Ec_2))
+    median_Ec2 = Ec_2.median()
+
+    mean_Ec =Ec_1.mean()
+    stdEc = Ec_1.std()
+    umeanEc = Ec_1.std()/np.sqrt(len(Ec_2))
+    median_Ec = Ec_1.median()
+
+    fig, axs = plt.subplots(1, 1)
+    axs.hist(Ec_1, 100, range = (25, 60), histtype = 'step', color = 'black', lw = 2,
+      label = f'mean Ec: {mean_Ec:.2f}keV\n'
+      f'median Ec: {median_Ec:.2f}keV\n'
+      f'std Ec: {stdEc:.2f}keV\n'
+      f'umean Ec: {umeanEc:.2f}keV')
+
+    axs.hist(Ec_2, 100, range = (25, 60), histtype = 'step', color = 'mediumpurple',lw = 2,
+      label = f'mean Ec_2: {mean_Ec2:.2f}keV\n'
+      f'median Ec_2: {median_Ec2:.2f}keV\n'
+      f'std Ec_2: {stdEc2:.2f}keV\n'
+      f'umean Ec_2: {umeanEc2:.2f}keV')
+    axs.set_xlabel('Ec (keV)'); freq();
+    axs.grid();
+    axs.legend();
+
+
+    fig.tight_layout();
+
+
+def plot_lifetime_fit(df         : pd.DataFrame,
+                      x0         : float,
+                      y0         : float,
+                      shape      : SelRegionMethod.circle,
+                      shape_size : float,
+                      dtbins     : np.array,
+                      ebins      : np.array):
+
+    """
+    Plots a 2D histogram of DT vs S2e.
+    Computes a fit to the lifetime and calculates and plots its profile.
+    -df should be df after selections, to then apply select_lifetime_region
+     so the fit works properly.
+    """
+
+    df_in_region = select_lifetime_region(df, x0, y0, shape, shape_size)
+
+    f  = fit(expo, df_in_region.DT, df_in_region.S2e, seed = [8000, -30000]);
+    magnitudes = f.values
+    uncertainties = (f[2][0], f[2][1])
+
+    fig, axs = plt.subplots(1, 1)
+    axs.hist2d(df_in_region.DT, df_in_region.S2e, (dtbins, ebins), cmin = 0.01);
+    axs.set_xlabel(r"DT ($\mu$s)");
+    axs.set_ylabel("S2e (pe)");
+    axs.set_xlim(0, 1400)
+
+    const = magnitudes[0]
+    lifetime = - magnitudes[1]
+    dt, e, se = profileX(df_in_region.DT, df_in_region.S2e, std = False, nbins = 20)
+
+    axs.plot(dt, const*np.exp(-dt/lifetime), color = 'red',
+             label =f'{const:.2f}'r'$ \cdot e^{(-dt/'f'{lifetime:.2f}''})$\n'
+                    f'u_const : {uncertainties[0]:.2f}\n'
+                    f'u_lifetime : {uncertainties[1]:.2f}');
+    axs.errorbar(dt, e, yerr = se, fmt = '.');
+    axs.set_ylim(6000, 10000);
+    axs.legend();
+
+
+
+def plot_sigmoid(df         : pd.DataFrame,
+                 x0         : float,
+                 y0         : float,
+                 shape      : SelRegionMethod.circle,
+                 shape_size : float):
+
+    """
+    Plots sigmoid fit to drift time using selected dataframe
+    (we apply select_lifetime_region() function to selected dataframe)
+    """
+
+    df_in_region = select_lifetime_region(df, x0, y0, shape, shape_size)
+
+    counts, bins = np.histogram(df_in_region.DT, bins = 20, range = (1200, 1500))
+    bin_centers = shift_to_bin_centers(bins)
+    f = fit(sigmoid, bin_centers, counts, seed = [1000, 1400, 0, 0.1])
+
+    fig, axs = plt.subplots(1, 1)
+
+    axs.plot(bin_centers, counts, 'o', color = 'black', markersize = 5, label = 'DT mean')
+    axs.plot(bin_centers, sigmoid(bin_centers, *f.values), color = 'red', label = f'Sigmoid_fit')
+    axs.set_xlabel(r'DT($\mu$s)');
+    axs.set_ylabel('Event distribution');
+    axs.set_xlim(1200, 1500);
+    axs.grid(True);
+    axs.legend()
+
+
+def plot_XY_distributions(df         : pd.DataFrame,
+                          df2        : pd.DataFrame,
+                          run_number : int,
+                          xy_range_plot   : np.array):
+    """
+    Plots histograms for X and Y before and after selections.
+    Parameters
+    ----------
+    df : pd.DataFrame.
+      Initial dataframe, Sophronia output.
+    df2 : pd.DataFrame.
+      Dataframe after performing selections.
+    xy_range : np.array.
+      Ideally a linspace withing the x,y limits (-500, 500) and specifying the number of bins
+    run_number : int.
+      Run number.
+    Returns
+    -------
+    Histograms for X and Y of both dataframes.
+    """
+
+    fig, axs = plt.subplots(1, 2, figsize=(21, 7))
+    df_ = df.groupby('event s2_peak'.split()).first().reset_index()
+
+    axs[0].hist(df.X.values, xy_range_plot, histtype = 'step', color = 'mediumpurple',lw = 2, label = 'before selection');
+    axs[0].hist(df2.X.values, xy_range_plot, histtype = 'step', color = 'black',lw = 2, label = 'after selection');
+    axs[0].set_xlabel('X (mm)');
+    axs[0].legend();
+    axs[0].grid();
+    axs[0].set_title(f'{run_number}')
+
+
+    axs[1].hist(df.Y.values, xy_range_plot, histtype = 'step', color = 'mediumpurple',lw = 2, label = 'before selection');
+    axs[1].hist(df2.Y.values, xy_range_plot, histtype = 'step', color = 'black', lw = 2, label = 'after selection');
+    axs[1].set_xlabel('Y (mm)');
+    axs[1].legend();
+    axs[1].grid();
+    axs[1].set_title(f'{run_number}')
+
+
+def plot_efficiencies(efficiencies : pd.DataFrame,
+                      names        : str):
+    ncuts = len(names)
+    efficiencies_plot = efficiencies.values.reshape(ncuts)
+    cmap = plt.get_cmap('cool')
+    colors = [(cmap(i / (ncuts - 1))) for i in range(ncuts)]
+    for i in range(ncuts):
+        plt.scatter(names[i], efficiencies_plot[i],
+                    marker = 'x', color = colors[i], lw = 2,
+                    s = 100, label = f'{names[i]}: {efficiencies_plot[i]:.2f}')
+    plt.xticks(rotation=20, ha='right')
+    plt.grid()
+    plt.legend()
+    plt.title('Selection efficiencies')
+    plt.ylabel('Efficiency')
+    plt.xlabel('Selection')
+    plt.tight_layout()
+
+
+
+
+def plot_time_evolution_with_errors_and_dates(df_time_evolution : pd.DataFrame,
+                                              output_dir   : str = None):
+    """
+    Plots 'lt' and 'e0' as a function of local date and time,
+    including error bars from 'ltu' and 'e0u'.
+    Reads 'ts' data from a specified column within the /time_evolution DataFrame.
+
+    Args:
+        h5_file_path (str): Path to the HDF5 file.
+        ts_col_name (str): The column name within the /time_evolution DataFrame
+                           that contains the timestamp data in seconds since epoch.
+        output_dir (str, optional): Directory to save plots. If None, plots are displayed.
+    """
+    print(f"\n--- Processing /time_evolution data ---")
+
+    ts_col_name = 'ts'
+
+    try:
+        # Load the main time_evolution DataFrame.
+        # This will contain 'lt', 'e0', 'ltu', 'e0u', and now, 'ts' as columns.
+
+        print(df_time_evolution)
+
+
+        print("Columns in /t_evol DataFrame:")
+        print(df_time_evolution.columns.tolist()) # Print all columns to help identify 'ts'
+
+        # 1. Read the 'ts' data from the DataFrame column
+        if ts_col_name not in df_time_evolution.columns:
+            raise KeyError(f"The 'ts' column '{ts_col_name}' was not found in the /t_evol DataFrame.")
+
+        time_points_epoch_seconds = df_time_evolution[ts_col_name].values
+
+        # Convert epoch seconds to datetime objects in local time (Madrid)
+        time_points_utc = pd.to_datetime(time_points_epoch_seconds, unit='s', utc=True)
+        madrid_tz = pytz.timezone('Europe/Madrid')
+        time_points_local = time_points_utc.tz_convert(madrid_tz)
+
+        print(f"Original 'ts' (epoch seconds) sample: {time_points_epoch_seconds[:5]}...")
+        print(f"Converted local dates and times sample: {time_points_local.tolist()[:5]}...")
+
+        # Data for plotting (make sure these column names exist in your DataFrame)
+        data_to_plot = {
+            'dv':   {'value_col': 'dv', 'error_col': 'dvu','units': 'mm/microsecond'},
+            'lt':   {'value_col': 'lt', 'error_col': 'ltu','units': 'mus'},
+            'e0':   {'value_col': 'e0', 'error_col': 'e0u','units': 'p.e.'},
+            'ec2':  {'value_col': 'ec2', 'error_col': 'ec2u','units': 'keV'},
+            's2w':  {'value_col': 's2w', 'error_col': 's2wu','units': 'microsecond'},
+            's2h':  {'value_col': 's2h', 'error_col': 's2hu','units': 'p.e.'},
+            's1e':  {'value_col': 's1e', 'error_col': 's1eu','units': 'p.e.'},
+            's1w':  {'value_col': 's1w', 'error_col': 's1wu','units': 'ns'},
+            's1h':  {'value_col': 's1h', 'error_col': 's1hu','units': 'p.e.'},
+            'Eres': {'value_col': 'resol', 'error_col': 'resolu','units': '% FWHM'},
+            'rate' : {'value_col': 'rate', 'error_col': 'rateu', 'units': 'event/microsecond'}
+        }
+
+        # Check if the required value/error columns exist in the time_evolution DataFrame
+        missing_columns = []
+        for key, cols in data_to_plot.items():
+            if cols['value_col'] not in df_time_evolution.columns:
+                missing_columns.append(cols['value_col'])
+            if cols['error_col'] not in df_time_evolution.columns:
+                missing_columns.append(cols['error_col'])
+
+        if missing_columns:
+            print(f"Error: The following value/error columns were not found in /time_evolution DataFrame: {missing_columns}")
+            print(f"Available columns are: {list(df_time_evolution.columns)}")
+            return # Exit function if columns are missing
+
+        for plot_name, cols in data_to_plot.items():
+            value_data = df_time_evolution[cols['value_col']]
+            error_data = df_time_evolution[cols['error_col']]
+            units_data = cols['units']
+
+            plt.figure(figsize=(14, 8)) # Wider figure for date labels
+            plt.errorbar(time_points_local, value_data, yerr=error_data, fmt='o-', capsize=4,
+                         label=f'{plot_name} Data with Errors', color='blue', ecolor='gray', elinewidth=1, capthick=1)
+
+            plt.title(f'{plot_name} as a Function of Date')
+            plt.xlabel('Date and Time (Local)')
+            plt.ylabel(f'{plot_name} ({units_data})')
+            plt.grid(True, linestyle='--', alpha=0.6)
+            plt.legend()
+
+            # Improve date formatting on x-axis
+            plt.gcf().autofmt_xdate() # Auto-formats date labels to prevent overlap
+
+            plt.tight_layout()
+
+            if output_dir:
+                plot_filename = os.path.join(output_dir, f"time_evolution_{plot_name}_with_errors_dates.png")
+                plt.savefig(plot_filename)
+                print(f"Saved plot for {plot_name} to {plot_filename}")
+                plt.close() # Close the plot to free memory
+            else:
+                plt.show()
+
+    except FileNotFoundError:
+        print(f"Error: The HDF5 file '{h5_file_path}' was not found. Please check the path.")
+    except KeyError as ke:
+        print(f"Error accessing HDF5 group or column: {ke}. Please ensure the '/time_evolution' group and the 'ts' column name are correct.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
+
+
+
+
+def make_control_plots(df               : pd.DataFrame,
+                       df_sel           : pd.DataFrame,
+                       df_corr          : pd.DataFrame,
+                       efficiencies     : pd.DataFrame,
+                       run_number       : int,
+                       plots_out        : str,
+                       ebins1           : np.array,
+                       ns1bins          : np.array,
+                       s1hbins          : np.array,
+                       s1wbins          : np.array,
+                       ebins2           : np.array,
+                       ns2bins          : np.array,
+                       s2hbins          : np.array,
+                       s2qbins          : np.array,
+                       qmaxbins         : np.array,
+                       s2wbins          : np.array,
+                       dtrms2_low       : Callable,
+                       dtrms2_upp       : Callable,
+                       dtrms2_cen       : Callable,
+                       dtbins2          : np.array,
+                       bins             : int,
+                       dtr2_bins        : tuple,
+                       col_name1        : str,
+                       col_name2        : str,
+                       statistic        : str,
+                       x0               : float,
+                       y0               : float,
+                       shape            : SelRegionMethod,
+                       shape_size       : float,
+                       xy_range_plot    : np.array,
+                       names            : Tuple[str, ...]
+                       ):
+
+    os.makedirs(plots_out, exist_ok=True)
+
+    monitor_S1(df, df_sel, run_number, ebins1, ns1bins, s1hbins, s1wbins)
+    plt.gcf().savefig(f"{plots_out}/monitor_S1_run{run_number}.png")
+    plt.close()
+
+    monitor_S2(df, df_sel, run_number, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins)
+    plt.gcf().savefig(f"{plots_out}/monitor_S2_run{run_number}.png")
+    plt.close()
+
+    monitor_dtime(df, df_sel, dtrms2_low, dtrms2_upp, dtrms2_cen)
+    plt.gcf().savefig(f"{plots_out}/monitor_dtime_run{run_number}.png")
+    plt.close()
+
+    monitor_lifetime(df, ebins2, dtbins2)
+    plt.gcf().savefig(f"{plots_out}/monitor_lifetime_run{run_number}.png")
+    plt.close()
+
+    monitor_kr_distribution(df, bins, dtr2_bins)
+    plt.gcf().savefig(f"{plots_out}/monitor_kr_distribution_run{run_number}.png")
+    plt.close()
+
+    plot_Ec(df_corr[col_name1], df_corr[col_name2])
+    plt.gcf().savefig(f"{plots_out}/plot_Ec_run{run_number}.png")
+    plt.close()
+
+    hist2D(df_sel, run_number, statistic)
+    plt.gcf().savefig(f"{plots_out}/hist2D_run{run_number}.png")
+    plt.close()
+
+    plot_lifetime_fit(df_sel, x0, y0, shape, shape_size, dtbins2, ebins2)
+    plt.gcf().savefig(f"{plots_out}/plot_lifetime_fit_run{run_number}.png")
+    plt.close()
+
+    plot_sigmoid(df_sel, x0, y0, shape, shape_size)
+    plt.gcf().savefig(f"{plots_out}/plot_sigmoid_run{run_number}.png")
+    plt.close()
+
+    plot_XY_distributions(df, df_sel, run_number, xy_range_plot)
+    plt.gcf().savefig(f"{plots_out}/plot_XY_distributions_run{run_number}.png")
+    plt.close()
+
+    plot_efficiencies(efficiencies, names)
+    plt.gcf().savefig(f'{plots_out}/plot_effiencies_run{run_number}.png')
+    plt.close()
+
+
+
+    print(f"All control plots saved in: {plots_out}")

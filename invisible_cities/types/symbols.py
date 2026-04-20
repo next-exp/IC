@@ -74,6 +74,31 @@ class MCTableType(AutoNameEnumBase):
     string_map       = auto()
 
 
+class SelRegionMethod(AutoNameEnumBase):
+    circle = auto()
+    square = auto()
+
+
+
+class MapFitFunction(AutoNameEnumBase):
+    gaussian_fit = auto()
+    get_median = auto()
+
+
+
+class NormMethod(AutoNameEnumBase):
+    maximum = auto()
+    mean_chamber = auto()
+    median_chamber = auto()
+    mean_anode = auto()
+    median_anode = auto()
+    mean_region_chamber = auto()
+    median_region_chamber = auto()
+    mean_region_anode = auto()
+    median_region_anode = auto()
+
+
+
 class NormStrategy(AutoNameEnumBase):
     mean   = auto()
     median = auto()
@@ -81,6 +106,7 @@ class NormStrategy(AutoNameEnumBase):
     kr     = auto()
     region = auto()
     custom = auto()
+
 
 
 class NormMode(AutoNameEnumBase):

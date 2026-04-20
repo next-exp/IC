@@ -252,6 +252,34 @@ def test_power_at_zero(a, b):
                     0.)
 
 
+def test_sigmoid_inflection_point(): #en x = inflection, sigm(x) = scale/2 + offset
+    x = np.array(10)
+    scale = 2
+    inflection = 10
+    slope = 2
+    offset = 1.5
+
+    y = fitf.sigmoid(x, scale, inflection, slope, offset)
+
+    expected_sigm = 0.5*scale + offset
+
+    assert np.isclose(y, expected_sigm)
+
+
+def test_sigmoid_monotonically_increasing(): #todos los incrementos en y > 0
+    x = np.linspace(-10, 10, 100)
+    y = fitf.sigmoid(x, scale = 1, inflection = 0, slope = 1, offset = 0)
+
+    assert np.all(np.diff(y) >= 0)
+
+
+def test_sigmoid_shape(): ##input shape = output shape
+    x = np.linspace(-10, 10, 100)
+    y = fitf.sigmoid(x, scale = 1, inflection = 0, slope = 1, offset = 0)
+
+    assert y.shape == x.shape
+
+
 @mark.parametrize("        fn                 pars        ".split(),
                   ((fitf.gauss         , (3.0,  2.0, 0.50)),
                    (fitf.expo          , (6.0,  1.5)),
