@@ -23,6 +23,8 @@ import pandas as pd
 import warnings
 import math
 import os
+import subprocess
+import traceback
 
 from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
@@ -143,7 +145,8 @@ def city(city_function):
         args   = vars(conf)
         result = check_annotations(city_function)(**args)
         if os.path.exists(conf.file_out):
-            write_city_configuration(conf.file_out, city_function.__name__, args)
+            git_info = add_git_info()
+            write_city_configuration(conf.file_out, city_function.__name__, {**args, **git_info})
             copy_cities_configuration(conf.files_in[0], conf.file_out)
             index_tables(conf.file_out)
         return result
@@ -196,6 +199,39 @@ def create_timestamp(rate: float) -> float:
         return timestamp
 
     return create_timestamp_
+
+
+def run_git_command(git_command: str):
+    """
+    Runs a git command and stores the output.
+    
+    Parameters
+    ----------
+    git_command : the standard terminal git command the user would input
+
+    Returns
+    -------
+    git_output  : the standard git terminal output
+    """
+    try:
+        git_output = subprocess.run(git_command.split(), text=True, capture_output=True, check=True).stdout.strip()
+        return git_output
+    except subprocess.CalledProcessError as e:
+        print(f"Following error encountered when running: {git_command}")
+        print(e.stderr)
+        return "None"
+    except Exception as e:
+        print(traceback.format_exc())
+
+
+def add_git_info():
+    git_info = dict(
+        IC_tag        = run_git_command("git describe --tags --exact-match"),
+        upstream_name = run_git_command("git rev-parse --abbrev-ref @{upstream}").split('/')[0],
+        branch_name   = run_git_command("git branch --show-current"),
+        commit_hash   = run_git_command("git rev-parse HEAD")
+    )
+    return git_info
 
 
 def index_tables(file_out):
