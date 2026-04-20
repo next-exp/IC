@@ -1,5 +1,4 @@
-import os
-from   os import path
+from os import path
 
 import numpy  as np
 import tables as tb

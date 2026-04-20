@@ -1,27 +1,15 @@
-import os
-
 import numpy  as np
 import pandas as pd
 
-from pytest        import mark
 from numpy.testing import assert_almost_equal
 
-from   .. core.configure       import configure
-from   .. evm.event_model      import Hit
-from   .. evm.event_model      import Cluster
-from   .. types.ic_types       import xy
-from   .. core                 import system_of_units as units
-from   .. core.testing_utils   import assert_hit_equality
 from   .. core.testing_utils   import assert_dataframes_close
 from   .. types.ic_types       import NN
-from   .. cities.penthesilea   import penthesilea
-from   .. io                   import hits_io          as hio
 from   .  hits_functions       import e_from_q
 from   .  hits_functions       import merge_NN_hits
 from   .  hits_functions       import threshold_hits
 from   .  hits_functions       import sipms_above_threshold
 from hypothesis                import given
-from hypothesis                import settings
 from hypothesis.strategies     import lists
 from hypothesis.strategies     import floats
 from hypothesis.strategies     import integers

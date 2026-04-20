@@ -1385,7 +1385,7 @@ def make_event_summary(event_number  : int          ,
         Hits table passed through paolina functions,
         output of track_blob_info_creator_extractor
     kdst          : DataFrame
-        Kdst information read from penthesilea output
+        Kdst information read from sophronia output
 
 
     Returns

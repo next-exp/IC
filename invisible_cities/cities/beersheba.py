@@ -336,7 +336,7 @@ def drop_isolated( distance   : List[float],
         drop = drop_isolated_sensors(distance, redist_var)
     elif len(distance) == 3:
         if nhits is None:
-            raise TypeError(f"Applying 3-dimensional dropping of isolated hits requires parameter nhits which is missing.")
+            raise TypeError("Applying 3-dimensional dropping of isolated hits requires parameter nhits which is missing.")
         else:
             drop = drop_isolated_clusters(distance, nhits, redist_var)
     else:
@@ -389,7 +389,7 @@ def beersheba( files_in         : OneOrManyFiles
              , corrections      : dict
              ):
     """
-    The city corrects Penthesilea hits energy and extracts topology information.
+    The city corrects Sophronia hits energy and extracts topology information.
     ----------
     Parameters
     ----------

@@ -4,13 +4,7 @@ import tables as tb
 import pandas as pd
 import time   as tm
 
-from numpy.testing import assert_allclose
-
 from . dst_io              import load_dst
-from .. types.ic_types     import xy
-from .. evm.event_model    import Cluster
-from .. evm.event_model    import Hit
-from .. evm.event_model    import HitCollection
 from .  hits_io            import hits_writer
 from .  hits_io            import load_hits
 from .. types.ic_types     import NN

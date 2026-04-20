@@ -1,13 +1,7 @@
 import numpy  as np
 import pandas as pd
 
-from itertools   import compress
-from copy        import deepcopy
-from typing      import List
-
-from .. evm  import event_model as evm
 from .. types.ic_types      import NN
-from .. types.ic_types      import xy
 
 EPSILON = np.finfo(np.float64).eps
 

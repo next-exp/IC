@@ -290,12 +290,6 @@ def test_get_normalization_factor_region_norm_raises_exception_when_no_range(map
                   get_normalization_factor,
                   map_e, NormStrategy.region, **options)
 
-def test_get_normalization_factor_custom_norm_raises_exception_when_no_value(map_filename):
-    map_e = read_maps(map_filename)
-    assert_raises(ValueError,
-                  get_normalization_factor,
-                  map_e, NormStrategy.custom)
-
 def test_get_normalization_factor_raises_exception_when_no_valid_norm(map_filename):
     map_e = read_maps(map_filename)
     assert_raises(ValueError,

@@ -116,8 +116,8 @@ def test_beersheba_exact_result_with_satkill( ICDATADIR
                                             , beersheba_config
                                             , config_tmpdir):
 
-    true_out = os.path.join(ICDATADIR, f"228Th_10evt_deco_satellite.h5")
-    path_out = os.path.join(config_tmpdir, f"beersheba_exact_result_satellite.h5")
+    true_out = os.path.join(ICDATADIR, "228Th_10evt_deco_satellite.h5")
+    path_out = os.path.join(config_tmpdir, "beersheba_exact_result_satellite.h5")
     beersheba_config['deconv_params'].update(dict(n_iterations = 50))
     beersheba_config.update(dict(file_out         = path_out,
                                  event_range      = 2,

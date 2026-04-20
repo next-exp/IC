@@ -22,7 +22,6 @@ from . exceptions import NoOutputFile
 
 from .. types .symbols     import EventRange
 from .. cities.components  import city
-from .. cities.penthesilea import penthesilea
 
 from typing import Sequence
 from typing import Mapping

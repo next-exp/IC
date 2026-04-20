@@ -291,7 +291,7 @@ def test_check_file_integrity_ok(KrMC_pmaps_filename):
 
 def test_check_file_integrity_raises(KrMC_pmaps_filename, config_tmpdir):
     """Check that a file with a mismatch in the event number raises an exception."""
-    filename = os.path.join(config_tmpdir, f"test_check_file_integrity_raises.h5")
+    filename = os.path.join(config_tmpdir, "test_check_file_integrity_raises.h5")
     shutil.copy(KrMC_pmaps_filename, filename)
     with tb.open_file(filename, "r+") as file:
         file.root.Run.events.remove_rows(0, 1) # remove first row/event

@@ -16,14 +16,9 @@ from numpy.testing import assert_raises
 from .. core.configure     import configure
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.exceptions    import          SensorIDMismatch
-from .. core.exceptions    import              NoInputFiles
 from .. core.testing_utils import    assert_tables_equality
 from .. core.testing_utils import            ignore_warning
 from .. core               import system_of_units as units
-from .. evm.event_model    import Cluster
-from .. evm.event_model    import Hit
-from .. evm.event_model    import HitCollection
-from .. types.ic_types     import xy
 from .. types.symbols      import WfType
 from .. types.symbols      import EventRange as ER
 from .. types.symbols      import NormStrategy
@@ -180,8 +175,8 @@ def test_city_keeps_input_file_ordering(ICDATADIR, config_tmpdir, order):
         with tb.open_file(file_out, "w"): pass
         return files_in
 
-    config_file = os.path.join(config_tmpdir, f"test_city_keeps_input_file_ordering.conf")
-    file_out    = os.path.join(config_tmpdir, f"test_city_keeps_input_file_ordering.h5"  )
+    config_file = os.path.join(config_tmpdir, "test_city_keeps_input_file_ordering.conf")
+    file_out    = os.path.join(config_tmpdir, "test_city_keeps_input_file_ordering.h5"  )
 
     write_config_file( config_file
                      , files_in    = files_in
@@ -568,7 +563,7 @@ def test_write_city_configuration(config_tmpdir):
         assert city_name in file.root.config
 
     df = pd.read_hdf(filename, "/config/" + city_name).set_index("variable")
-    
+
     # ignoring the nested dictionary
     for var, value in list(args.items())[:-1]:
         assert var in df.index

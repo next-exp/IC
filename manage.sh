@@ -73,7 +73,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2024-06-08
+CONDA_ENV_TAG=2026-03-05
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
@@ -89,7 +89,10 @@ channels:
 dependencies:
 - python       = ${PYTHON_VERSION}
 # *REMEMBER TO CHANGE CONDA_ENV_TAG WHEN CHANGING VERSION NUMBERS*
+- coverage     = 5.5
 - cython       = 0.29.24
+- flaky        = 3.7.0
+- hypothesis   = 6.14.1
 - jupyter      = 1.0.0
 - jupyterlab   = 3.2.1
 - matplotlib   = 3.4.3
@@ -97,19 +100,17 @@ dependencies:
 - notebook     = 6.4.5
 - numpy        = 1.23.1
 - pandas       = 1.3.4
-- seaborn      = 0.11.2
+- pip          = 21.2.4
+- pyflakes     = 3.2.0
 - pymysql      = 1.0.2
 - pytables     = 3.7.0
 - pytest       = 6.2.4
+- pytest-xdist = 2.3.0
 - scipy        = 1.9.3
+- seaborn      = 0.11.2
+- setuptools   = 58.0.4
 - sphinx       = 4.2.0
 - tornado      = 6.1
-- flaky        = 3.7.0
-- hypothesis   = 6.14.1
-- pytest-xdist = 2.3.0
-- coverage     = 5.5
-- pip          = 21.2.4
-- setuptools   = 58.0.4
 - pip:
   - pytest-instafail==0.4.2
 EOF

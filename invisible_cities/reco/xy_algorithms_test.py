@@ -323,7 +323,6 @@ def test_get_nearby_sipm_inds():
 
 def test_count_masked_all_active(datasipm_all_active):
     xy0 = np.array([0, 0], dtype=float)
-    is_masked = datasipm_all_active.Active.values
 
     # All sipms are active in run number 1
     assert count_masked(xy0, np.inf, datasipm_all_active) == 0

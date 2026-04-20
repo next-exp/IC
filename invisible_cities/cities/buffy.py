@@ -25,7 +25,6 @@ from typing import     List
 
 from argparse import Namespace
 
-from .. core                   import        system_of_units as units
 from .. core                   import          tbl_functions as tbl
 from .. core  .configure       import         EventRangeType
 from .. core  .configure       import         OneOrManyFiles

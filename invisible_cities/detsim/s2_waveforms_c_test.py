@@ -1,13 +1,8 @@
-import os
-import pytest
-
 import numpy as np
-
-from pytest import warns
 
 from .. database.load_db import DataSiPM
 
-from .. core.system_of_units import *
+from .. core.system_of_units import mm, mus, ns
 
 from . light_tables_c  import LT_SiPM
 from . light_tables_c  import LT_PMT
@@ -69,7 +64,6 @@ def test_create_wfs_tmin(get_dfs, xs, ys, ts, ps):
     sensor_time_bin   = 1   * mus
     buffer_length     = 100 * mus
     lt = LT_SiPM(fname=fname, sipm_database=datasipm)
-    n_sensors = lt.num_sensors
     tmin = 100*mus
     ts_shift = ts - tmin
     waveform_sh = create_wfs(xs, ys, ts_shift, ps, lt, el_drift_velocity, sensor_time_bin, buffer_length)
@@ -88,7 +82,6 @@ def test_integrated_signal_pmts(get_dfs, xs, ys, ts, ps):
     sensor_time_bin   = 100 * ns
     buffer_length     = 200 * mus
     lt = LT_PMT(fname=fname)
-    n_sensors = lt.num_sensors
     waveform = create_wfs(xs, ys, ts, ps, lt, el_drift_velocity, sensor_time_bin, buffer_length)
     #calculate integrated signal from light tables per pmt
     for i in range(12): #12 pmts
@@ -108,7 +101,6 @@ def test_integrated_signal_sipms(get_dfs, xs, ys, ts, ps):
     sensor_time_bin   = 1   * mus
     buffer_length     = 200 * mus
     lt = LT_SiPM(fname=fname, sipm_database=datasipm)
-    n_sensors = lt.num_sensors
     waveform = create_wfs(xs, ys, ts, ps, lt, el_drift_velocity, sensor_time_bin, buffer_length)
     #calculate integrated signal from light tables per pmt
     for i in range(len(datasipm)):
@@ -132,7 +124,6 @@ def test_time_distribution_pmts(get_dfs, xs, ys, ts, ps):
     tindx_min = np.digitize(ts, time_bins)-1
     tindx_max = np.digitize(ts+el_time, time_bins)-1
     nbins_el_gap = tindx_max-tindx_min
-    n_sensors = lt.num_sensors
     waveform = create_wfs(np.array([xs]), np.array([ys]), np.array([ts]), np.array([ps]).astype(np.intc), lt, el_drift_velocity, sensor_time_bin, buffer_length)
     for i in range(12): #12 pmts
         total = lt.get_values(xs, ys, i)*ps
@@ -156,11 +147,6 @@ def test_time_distribution_sipms(get_dfs, xs, ys, ts, ps):
     buffer_length     = 20  * mus
     time_bins = np.arange(0, buffer_length+sensor_time_bin, sensor_time_bin)
     lt = LT_SiPM(fname=fname, sipm_database=datasipm)
-    el_time   = lt.el_gap_width/el_drift_velocity
-    tindx_min = np.digitize(ts, time_bins)-1
-    tindx_max = np.digitize(ts+el_time, time_bins)-1
-    nbins_el_gap = tindx_max-tindx_min
-    n_sensors = lt.num_sensors
     waveform = create_wfs(np.array([xs]), np.array([ys]), np.array([ts]), np.array([ps]).astype(np.intc), lt, el_drift_velocity, sensor_time_bin, buffer_length)
     z_bins = lt.zbins
     z_bins_time = ts + z_bins/el_drift_velocity
