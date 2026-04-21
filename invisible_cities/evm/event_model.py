@@ -14,9 +14,6 @@ from typing import List
 from typing import Tuple
 from typing import NamedTuple
 
-ZANODE = -9.425 * units.mm
-
-
 class MCInfo(NamedTuple):
     """Transient class storing the tables of MC true info"""
     extents   : tb.Table
@@ -111,7 +108,7 @@ class Voxel(BHit):
 
 class Cluster(BHit):
     """Represents a reconstructed cluster in the tracking plane"""
-    def __init__(self, Q, xy, xy_var, nsipm, z=ZANODE, E=NN, Qc=-1):
+    def __init__(self, Q, xy, xy_var, nsipm, z, E=NN, Qc=-1):
         if E == NN:
             super().__init__(xy.x, xy.y, z, Q)
         else:

@@ -67,7 +67,7 @@ def hits(draw):
     peak_number, E, z, x_peak, y_peak, s2ec, track_id, _ = draw(    hit_input())
 
     # np.nan to represent invalid data, since we don't use it anymore
-    c = Cluster(Q, xy(x, y), xy(np.nan, np.nan), np.nan)
+    c = Cluster(Q, xy(x, y), xy(np.nan, np.nan), np.nan, z=np.nan)
     h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, np.nan)
     return h
 
@@ -94,7 +94,7 @@ def test_cluster(ci):
     xyar   = (x, y)
     varar  = (xvar, yvar)
     pos    = np.stack(([x], [y]), axis=1)
-    c      = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
+    c      = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm, z=None)
 
     assert c.nsipm == nsipm
     np.isclose (c.Q     , Q    , rtol=1e-4)
@@ -121,7 +121,7 @@ def test_hit(ci, hi):
     xyz = x, y, z
 
     # np.nan to represent invalid data, since we don't use it anymore
-    c = Cluster(Q, xy(x,y), xy(np.nan, np.nan), np.nan)
+    c = Cluster(Q, xy(x,y), xy(np.nan, np.nan), np.nan, z=np.nan)
     h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, np.nan)
 
     assert h.peak_number == peak_number
