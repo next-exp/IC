@@ -8,7 +8,6 @@ import warnings
 
 from .. core            import      system_of_units as units
 
-from .. evm.event_model import                MCHit
 from .. database        import              load_db as    DB
 from .  dst_io          import             load_dst
 from .  dst_io          import            df_writer
@@ -550,30 +549,6 @@ def load_mchits_dfold(file_name : str) -> pd.DataFrame:
         hits.set_index(['event_id', 'particle_id', 'hit_id'], inplace=True)
 
         return hits
-
-
-def cast_mchits_to_dict(hits_df: pd.DataFrame) -> Mapping[int, List[MCHit]]:
-    """
-    Casts the mchits dataframe to an
-    old style mapping.
-
-    paramerters
-    -----------
-    hits_df : pd.DataFrame
-              DataFrame containing event deposit information
-
-    returns
-    -------
-    hit_dict : Mapping
-               The same hit information cast into a dictionary
-               using MCHit objects.
-    """
-    hit_dict = {}
-    for evt, evt_hits in hits_df.groupby(level=0):
-        hit_dict[evt] = [MCHit( hit.iloc[0, :3].values,
-                               *hit.iloc[0, 3:].values)
-                         for _, hit in evt_hits.groupby(level=2)]
-    return hit_dict
 
 
 def load_mcparticles_df(file_name: str) -> pd.DataFrame:

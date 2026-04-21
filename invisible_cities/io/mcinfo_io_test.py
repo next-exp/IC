@@ -7,7 +7,6 @@ from numpy.testing import assert_allclose
 
 from .  dst_io    import load_dst
 from .  mcinfo_io import load_mchits_df
-from .  mcinfo_io import cast_mchits_to_dict
 from .  mcinfo_io import load_mcparticles_df
 from .  mcinfo_io import load_eventnumbermap
 from .  mcinfo_io import get_event_numbers_in_file
@@ -469,18 +468,6 @@ def assert_load_hits_good(efile, X, Y, Z, E, t):
     assert np.allclose(Z, hit_df.loc[evt].z     .values)
     assert np.allclose(E, hit_df.loc[evt].energy.values)
     assert np.allclose(t, hit_df.loc[evt].time  .values)
-
-
-def test_cast_mchits_to_dict(mc_particle_and_hits_nexus_data):
-    efile, *_ = mc_particle_and_hits_nexus_data
-    hit_df    = load_mchits_df(efile)
-
-    hit_dict  = cast_mchits_to_dict(hit_df)
-    for evt, evt_hits in hit_df.groupby(level=0):
-        hits_evt  = [[h.X, h.Y, h.Z, h.time, h.E]
-                     for h in hit_dict[evt]]
-        evt_xyztE = evt_hits[['x', 'y', 'z', 'time', 'energy']]
-        assert_allclose(evt_xyztE.values, hits_evt)
 
 
 def test_load_mcparticles_df_oldformat(mc_particle_and_hits_nexus_data):

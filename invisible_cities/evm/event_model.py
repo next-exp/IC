@@ -66,21 +66,6 @@ class BHit:
     __repr__ =     __str__
 
 
-class MCHit(BHit):
-    """Represents a MCHit"""
-    def __init__(self, pos, t, E, l):
-        super().__init__(pos[0],pos[1],pos[2], E)
-        self.time          = t
-        self.label         = l
-
-
-    def __str__(self):
-        return '<label = {}, pos = {}, E = {}, time = {}>'.format(self.label,
-                self.pos.tolist(), self.E, self.time)
-
-    __repr__ =     __str__
-
-
 class Voxel(BHit):
     """Represents a Voxel"""
     def __init__(self, x,y,z, E, size, hits=None, e_type : HitEnergy = HitEnergy.E):
