@@ -15,13 +15,6 @@ from typing import Tuple
 from typing import NamedTuple
 
 
-class Waveform(NamedTuple):
-    """Transient class storing times and charges for a sensor"""
-    times     : np.ndarray
-    charges   : np.ndarray
-    bin_width : float
-
-
 class Event:
     """Transient class storing event and time info."""
     def __init__(self, event_number, event_time):
