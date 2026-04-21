@@ -7,10 +7,8 @@ from functools import partial
 import warnings
 
 from .. core            import      system_of_units as units
-from .. core.exceptions import NoParticleInfoInFile
 
 from .. evm.event_model import                MCHit
-from .. evm.event_model import               MCInfo
 from .. database        import              load_db as    DB
 from .  dst_io          import             load_dst
 from .  dst_io          import            df_writer
@@ -822,31 +820,6 @@ def load_mcsensors_dfold(file_name : str) -> pd.DataFrame:
     return sns
 
 
-def get_mc_info(h5in):
-    """Return MC info bank"""
-
-    extents   = h5in.root.MC.extents
-    hits      = h5in.root.MC.hits
-    particles = h5in.root.MC.particles
-
-    try:
-        h5in.root.MC.particles[0]
-    except:
-        raise NoParticleInfoInFile('Trying to access particle information: this file could have sensor response only.')
-
-    if len(h5in.root.MC.hits) == 0:
-        hits = np.zeros((0,), dtype=('3<f4, <f4, <f4, S20, <i4, <i4'))
-        hits.dtype.names = ('hit_position', 'hit_time', 'hit_energy', 'label', 'particle_indx', 'hit_indx')
-
-    if 'generators' in h5in.root.MC:
-        generator_table = h5in.root.MC.generators
-    else:
-        generator_table = np.zeros((0,), dtype=('<i4,<i4,<i4,S20'))
-        generator_table.dtype.names = ('evt_number', 'atomic_number', 'mass_number', 'region')
-
-    return MCInfo(extents, hits, particles, generator_table)
-
-
 def convert_timebin_to_time(sns_resp : pd.DataFrame,
                             sns_bins : pd.DataFrame,
                             sns_pos  : pd.DataFrame) -> pd.DataFrame:
@@ -876,81 +849,6 @@ def convert_timebin_to_time(sns_resp : pd.DataFrame,
                    axis=1, inplace=True)
     sns_merge.set_index(['event_id', 'sensor_id'], inplace=True)
     return sns_merge
-
-
-def read_mcinfo_evt (mctables: (tb.Table, tb.Table, tb.Table, tb.Table), event_number: int, last_row=0,
-                     return_only_hits: bool=False) -> ([tb.Table], [tb.Table], [tb.Table]):
-    h5extents    = mctables[0]
-    h5hits       = mctables[1]
-    h5particles  = mctables[2]
-    h5generators = mctables[3]
-
-    particle_rows  = []
-    hit_rows       = []
-    generator_rows = []
-
-    event_range = (last_row, int(1e9))
-    for iext in range(*event_range):
-        this_row = h5extents[iext]
-        if this_row['evt_number'] == event_number:
-            # the indices of the first hit and particle are 0 unless the first event
-            #  written is to be skipped: in this case they must be read from the extents
-            ihit = ipart = 0
-            if iext > 0:
-                previous_row = h5extents[iext-1]
-
-                ihit         = int(previous_row['last_hit']) + 1
-                if not return_only_hits:
-                    ipart        = int(previous_row['last_particle']) + 1
-
-            ihit_end  = this_row['last_hit']
-            if len(h5hits) != 0:
-                while ihit <= ihit_end:
-                    hit_rows.append(h5hits[ihit])
-                    ihit += 1
-
-            if return_only_hits: break
-
-            ipart_end = this_row['last_particle']
-            while ipart <= ipart_end:
-                particle_rows.append(h5particles[ipart])
-                ipart += 1
-
-            # It is possible for the 'generators' dataset to be empty. In this case, do not add any rows to 'generators'.
-            if len(h5generators) != 0:
-                generator_rows.append(h5generators[iext])
-
-            break
-
-    return hit_rows, particle_rows, generator_rows
-
-
-def _read_mchit_info(h5f, event_range=(0, int(1e9))) -> Mapping[int, Sequence[MCHit]]:
-    """Returns all hits in the event"""
-    mc_info = get_mc_info(h5f)
-    h5extents = mc_info.extents
-    events_in_file = len(h5extents)
-
-    all_events = {}
-
-    for iext in range(*event_range):
-        if iext >= events_in_file:
-            break
-
-        evt_number     = h5extents[iext]['evt_number']
-        hit_rows, _, _ = read_mcinfo_evt(mc_info, evt_number, iext, True)
-
-        hits = []
-        for h5hit in hit_rows:
-            hit = MCHit(h5hit['hit_position'],
-                        h5hit['hit_time'],
-                        h5hit['hit_energy'],
-                        h5hit['label'].decode('utf-8','ignore'))
-            hits.append(hit)
-
-        all_events[evt_number] = hits
-
-    return all_events
 
 
 def load_mcstringmap(file_name : str) -> pd.DataFrame:

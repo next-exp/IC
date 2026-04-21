@@ -14,13 +14,6 @@ from typing import List
 from typing import Tuple
 from typing import NamedTuple
 
-class MCInfo(NamedTuple):
-    """Transient class storing the tables of MC true info"""
-    extents   : tb.Table
-    hits      : tb.Table
-    particles : tb.Table
-    generators: tb.Table
-
 
 class Waveform(NamedTuple):
     """Transient class storing times and charges for a sensor"""

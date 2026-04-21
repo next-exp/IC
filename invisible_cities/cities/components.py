@@ -38,7 +38,6 @@ from .. evm    .event_model       import                   KrEvent
 from .. evm    .event_model       import                       Hit
 from .. evm    .event_model       import                   Cluster
 from .. evm    .event_model       import             HitCollection
-from .. evm    .event_model       import                    MCInfo
 from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail
 from .. core   .exceptions        import           MCEventNotFound
@@ -652,7 +651,7 @@ def pmap_from_files(paths):
 def hits_and_kdst_from_files( paths : List[str]
                             , group : str
                             , node  : str
-                            ) -> Iterator[Dict[str,Union[ pd.DataFrame , pd.DataFrame , MCInfo, int, float]]]:
+                            ) -> Iterator[Dict[str,Union[ pd.DataFrame , pd.DataFrame , int, int, float]]]:
     """
     Reader of hits files. For each event it produces a dictionary containing
     - hits        : a DataFrame
