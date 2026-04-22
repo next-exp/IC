@@ -441,8 +441,8 @@ def sophronia_config(Th228_pmaps, next100_mc_krmap):
                    , clustering_params = dict(
                         eps         =     3,
                         min_samples =     5,
-                        scale_xy    = 14.55,
-                        scale_z     =   3.7)
+                        scale_xy    = 15.55,
+                        scale_z     =   4.0)
                    )
     return config
 

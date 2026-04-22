@@ -142,12 +142,9 @@ def sophronia( files_in           : OneOrManyFiles
 
     clustering_params : dict
         eps : float
-            The maximum distance between two samples for one to be
-            considered as in the neighborhood of the other.
+            Epsilon value for DBSCAN, defining the maximum distance between two samples for them to be considered neighbors.
         min_samples : int
-            The number of samples (or total weight) in a neighborhood
-            for a point to be considered as a core point. This includes the point
-            itself.
+            Minimum number of samples required to form a dense region (cluster). This includes the point itself.
         scale_xy : float
             Scaling factor to apply to the (x, y) coordinates before clustering.
         scale_z : float
@@ -193,7 +190,7 @@ def sophronia( files_in           : OneOrManyFiles
     correct_hits   = df.map( hits_corrector(**corrections) if corrections is not None else identity
                            , item = "hits")
     
-    cluster_hits   = df.map( hits_clusterizer(clustering_params) if clustering_params is not None else identity
+    cluster_hits   = df.map( hits_clusterizer(**clustering_params) if clustering_params is not None else identity
                            , item = "hits")
 
     build_pointlike_event = df.map( pointlike_event_builder( detector_db
