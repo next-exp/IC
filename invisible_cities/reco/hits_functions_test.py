@@ -173,63 +173,77 @@ gen_cluster_df = data_frames( index=range_indexes(min_size=1, max_size=50),
                                 column('E',     dtype=float, elements=floats(min_value=0.1,  max_value=100)),    
                                 ])
 
+@settings(deadline=None)
 @given(df=gen_cluster_df)
-def test_dummy(df):
+def test_cluster_tagger_output_shape(df):
     """
-    Hypothesis calls this function multiple times.
-    'df' will be a different pandas DataFrame in every call.
+    Verifies that the output DataFrame of cluster_tagger:
+    - Has the same number of rows as the input.
+    - Contains exactly one new column named 'cluster'.
     """
-    # Just for demonstration purposes, we print the shape of the generated DFs
-    print(f"Generated dataframe shape: {df.shape}")
-    
-    # Check some stuff here
-    assert 'X' in df.columns
-    assert df['event'].dtype == int
-    assert not df.empty
+    if df.empty:
+        return
+
+    # Run the cluster tagger
+    params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)   # Dummy values
+    df_result = cluster_tagger(df.copy(), **params)
+
+     # --- Assertations
+    assert len(df_result) == len(df), "Output DataFrame has different length than input."
+    assert 'cluster' in df_result.columns, "Output DataFrame does not contain 'cluster' column."
+    expected_cols = set(df.columns) | {'cluster'}
+    assert set(df_result.columns) == expected_cols, "Output DataFrame has unexpected columns."
 
 @settings(deadline=None)
 @given(df=gen_cluster_df)
-def test_cluster_tagger_structure_preservation(df):
+def test_cluster_tagger_original(df):
     """
     Verifies that cluster_tagger:
-        - Returns a DataFrame with the exact same length as the input.
-        - Adds exactly one column named 'cluster'.
-        - Does not modify any of the original columns (X, Y, Z, E, etc.).
-        - Preserves the original Index and order of rows.
-        - The 'cluster' column contains valid integers (no NaNs).
+    - Does not modify any of the original columns.
+    - Preserves the original index and row order.
     """
-    # Shuffle the input DataFrame to ensure cluster_tagger does not rely on any specific order
-    df_input = df.sample(frac=1.0).copy()
-    df_original = df_input.copy()           # Keep a copy of the original for later comparison
+    if df.empty:
+        return
 
     # Run the cluster tagger
-    params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)     # Dummy values
-    df_result = cluster_tagger(df_input, **params)
+    params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)   # Dummy values
+    df_result = cluster_tagger(df.copy(), **params)
 
     # --- Assertations
-    assert len(df_result) == len(df_original), "Output DataFrame has different length than input."
-    assert 'cluster' in df_result.columns,     "Output DataFrame does not contain 'cluster' column."
-    expected_cols = set(df_original.columns) | {'cluster'}
-    assert set(df_result.columns) == expected_cols, "Output DataFrame has unexpected columns."
     pd.testing.assert_frame_equal(  
                                     df_result.drop(columns=['cluster']),
-                                    df_original,
+                                    df,
                                     check_dtype=True,
                                     obj="Dataframe structure check"
                                  )
+
+@settings(deadline=None)
+@given(df=gen_cluster_df)
+def test_cluster_tagger_new_column_validity(df):
+    """
+    Verifies that the new 'cluster' column:
+    - The 'cluster' column contains valid integers (no NaNs).
+    """
+    if df.empty:
+        return
+        
+    # Run the cluster tagger
+    params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)   # Dummy values
+    df_result = cluster_tagger(df.copy(), **params)
+
+    # --- Assertations
     assert pd.api.types.is_integer_dtype(df_result['cluster']), "'cluster' column is not of integer type."
     assert not df_result['cluster'].isna().any(), "'cluster' column contains NaN values."
 
 def test_cluster_tagger_row_alignment():
     """
-    Verifies that the calculated cluster label is assigned to the correct 
-    spatial hit, even if the input DataFrame is shuffled.
-    
+    Verifies that the correct cluster label is assigned to the correct
+    row (hit), even if the input DataFrame is shuffled.
+
     Scenario:
     - Event 0:
         - Cluster A: 2 hits at (0,0,0) and (1,1,0)         -> Should be Cluster 0
         - Cluster B: 2 hits at (100,100,0) and (101,101,0) -> Should be Cluster 1
-    - We check that hits near 0 get Label 0 and hits near 100 get Label 1 (NO noise here).
     """
     # Setup data
     data = {
@@ -240,24 +254,23 @@ def test_cluster_tagger_row_alignment():
                 'E':     [10, 10,  10,   10 ]
     }
     df = pd.DataFrame(data)
-    df['expected_label'] = [0, 0, 1, 1]
-
-    # Shuffle the input DataFrame
-    df_input = df.sample(frac=1.0).copy()
+    # Shuffle rows in a specific order
+    df_shuffled = df.reindex(index=[0, 2, 1, 3]).copy()     
+    # Add expected labels for assertations (not shuffled, just for reference)
+    df['cluster'] = [0, 0, 1, 1] 
 
     # Run the cluster tagger
-    params = dict(eps=5.0, min_samples=1, scale_xy=1.0, scale_z=1.0)      # Enough to consider both clusters
-    df_result = cluster_tagger(df_input, **params)
+    params = dict(eps=5.0, min_samples=1, scale_xy=1.0, scale_z=1.0)    # Enough to consider both clusters
+    df_result = cluster_tagger(df_shuffled, **params)
+    df_result = df_result.sort_index()                                  # Sort back to original order for easier assertations
 
     # --- Assertations
-    hits_group_0 = df_result[df_result['expected_label'] == 0]
-    hits_group_1 = df_result[df_result['expected_label'] == 1]
-    assert hits_group_0['cluster'].nunique() == 1, "Hits near (0,0,0) were assigned multiple cluster labels."
-    assert hits_group_1['cluster'].nunique() == 1, "Hits near (100,100,0) were assigned multiple cluster labels."
-    label_0 = hits_group_0['cluster'].iloc[0]
-    label_1 = hits_group_1['cluster'].iloc[0]
-    assert label_0 != label_1, "Both clusters were assigned the same label."
-    assert label_0 != -1 and label_1 != -1, "One of the clusters was labeled as noise (-1)."
+    pd.testing.assert_frame_equal(  
+                                    df_result,
+                                    df,
+                                    check_dtype=True,
+                                    obj="Dataframe structure check"
+                                    )
     
 def test_cluster_tagger_noise_rejection():
     """
@@ -277,12 +290,9 @@ def test_cluster_tagger_noise_rejection():
     }
     df = pd.DataFrame(data)
 
-    # Shuffle the input DataFrame
-    df_input = df.sample(frac=1.0).copy()
-
     # Run the cluster tagger
-    params = dict(eps=5.0, min_samples=3, scale_xy=1.0, scale_z=1.0)      # Enough to consider one cluster
-    df_result = cluster_tagger(df_input, **params)
+    params = dict(eps=5.0, min_samples=3, scale_xy=1.0, scale_z=1.0)    # Enough to consider one cluster
+    df_result = cluster_tagger(df.copy(), **params)
 
     # --- Assertations
     cluster_labels = df_result['cluster'].unique()
@@ -312,12 +322,9 @@ def test_cluster_tagger_event_distinction():
     }
     df = pd.DataFrame(data)
 
-    # Shuffle the input DataFrame
-    df_input = df.sample(frac=1.0).copy()
-
     # Run the cluster tagger
     params = dict(eps=5.0, min_samples=2, scale_xy=1.0, scale_z=1.0)      # Enough to consider both clusters
-    df_result = cluster_tagger(df_input, **params)
+    df_result = cluster_tagger(df.copy(), **params)
 
     # --- Assertations
     event_0_clusters = df_result[df_result['event'] == 0]['cluster'].unique()

@@ -1718,33 +1718,33 @@ def hits_corrector( filename     : str
 
     return correct
 
-def hits_clusterizer(clustering_params: dict) -> Callable:
-    """"
-    This function receives a configuration dictionary and returns a callable
-    that will perform DBSCAN clustering on a DataFrame of hits. 
+@check_annotations
+def hits_clusterizer( eps         : float
+                    , min_samples : int
+                    , scale_xy    : float
+                    , scale_z     : float
+                    ) -> Callable:
+    """
+    Creates a callable for performing DBSCAN clustering on a dataFrame of hits.
 
     Parameters
     ----------
-    clustering_params : dict
-        A dictionary containing the configuration for the clustering algorithm.
-        Expected keys are:
-        - 'eps'        : float, Epsilon value for DBSCAN.
-        - 'min_samples': int,   Min Samples value for DBSCAN.
-        - 'scale_xy'   : float, optional, scale factor for XY coordinates.
-        - 'scale_z'    : float, optional, scale factor for Z coordinate.
+    eps : float
+        Epsilon value for DBSCAN, defining the maximum distance between two samples for them to be considered neighbors.
+    min_samples : int
+        Minimum number of samples required to form a dense region (cluster). This includes the point itself.
+    scale_xy : float
+        Scaling factor to apply to the (x, y) coordinates before clustering.
+    scale_z : float
+         Scaling factor to apply to the z coordinate before clustering.
 
     Returns
     -------
     Callable
         A function that takes a DataFrame of hits and returns the same DataFrame 
-        with an added 'cluster' column, which are the clusters labels assigned by DBSCAN
+        with an added 'cluster' column, which contains the cluster labels assigned by DBSCAN
         (-1 for noise).
     """
-    eps         = clustering_params['eps']
-    min_samples = clustering_params['min_samples']
-    scale_xy    = clustering_params['scale_xy']
-    scale_z     = clustering_params['scale_z']
-    
     return partial(cluster_tagger,
                    eps=eps, min_samples=min_samples,
                    scale_xy=scale_xy, scale_z=scale_z)
