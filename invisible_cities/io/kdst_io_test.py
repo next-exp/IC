@@ -6,8 +6,6 @@ from ..core.testing_utils import assert_dataframes_equal
 from ..io.dst_io          import load_dst
 from . kdst_io            import kr_writer
 
-from ..evm.event_model    import KrEvent
-
 
 def test_Kr_writer(config_tmpdir, KrMC_kdst):
     filename = os.path.join(config_tmpdir, 'test_dst.h5')

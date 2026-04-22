@@ -7,6 +7,7 @@ from os.path         import expandvars
 from itertools       import count
 from itertools       import repeat
 from warnings        import warn
+from itertools       import compress
 
 from typing          import Callable
 from typing          import Iterator
@@ -34,7 +35,6 @@ from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
 from .. dataflow.dataflow         import                      pipe
 from .. evm    .ic_containers     import                SensorData
-from .. evm    .event_model       import                   KrEvent
 from .. evm    .event_model       import                       Hit
 from .. evm    .event_model       import                   Cluster
 from .. evm    .event_model       import             HitCollection
@@ -52,6 +52,7 @@ from .. detsim                    import          buffer_functions as  bf
 from .. detsim                    import          sensor_functions as  sf
 from .. detsim .sensor_utils      import             trigger_times
 from .. evm    .pmaps             import                      PMap
+from .. evm    .pmaps             import                     _Peak
 from .. calib                     import           calib_functions as  cf
 from .. calib                     import   calib_sensors_functions as csf
 from .. reco                      import            peak_functions as pkf
@@ -208,7 +209,7 @@ def create_timestamp(rate: float) -> float:
 def run_git_command(git_command: str):
     """
     Runs a git command and stores the output.
-    
+
     Parameters
     ----------
     git_command : the standard terminal git command the user would input
@@ -798,7 +799,7 @@ def sensor_data(path, wf_type):
 
 def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, 
+               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
                sipm_selection_algo):
     s1_params = dict(time        = minmax(min = s1_tmin,
                                           max = s1_tmax),
@@ -870,8 +871,8 @@ def threshold_sipm_selection( thr_sipm_type
                             , detector_db = None):
     '''
     Applies energy thresholds to SiPM S2 waveforms:
-    - thr_sipm:    applied per time bin. Waveform samples below this 
-                   threshold are set to zero.  
+    - thr_sipm:    applied per time bin. Waveform samples below this
+                   threshold are set to zero.
     - thr_sipm_s2: applied to the integrated waveform charge. If the total
                    charge is below this threshold, it is set to zero.
     '''
@@ -893,13 +894,13 @@ def pyrrha_sipm_selection( selection_method     : SiPMSelectionMethod
                          , run_number          : int
                          , detector_db         : str):
     '''
-    Applies a generic selection function to the sipms, which can be used to 
+    Applies a generic selection function to the sipms, which can be used to
     implement a spatial SiPM selection method (called Pyrrha).
     '''
     def pyrrha_sipm_selection(wfs):
-        return wfm.spatial_selection_method(wfs, 
-                                            selection_method, 
-                                            selection_kwargs, 
+        return wfm.spatial_selection_method(wfs,
+                                            selection_method,
+                                            selection_kwargs,
                                             proximity_threshold,
                                             padding_radius,
                                             run_number,
@@ -910,7 +911,7 @@ def pyrrha_sipm_selection( selection_method     : SiPMSelectionMethod
 
 def no_cut_sipm_selection():
     """"
-    Function that applies no cuts to the SiPM waveforms. 
+    Function that applies no cuts to the SiPM waveforms.
     """
     def no_cut_sipm_selection(wfs):
         sipm_ids = np.arange(wfs.shape[0])
@@ -1005,59 +1006,49 @@ def build_pointlike_event(dbfile, run_number, drift_v,
 
     sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
 
+    empty_peak = _Peak(np.empty(1), np.empty(1), np.empty((1,1)), np.empty((1,1)))
+
+    def filter_peaks(ok, pks):
+        n   = np.count_nonzero(ok)
+        pks = list(compress(ok, pks)) if n else [empty_peak]
+        return (pks, n)
+
     def build_pointlike_event(pmap, selector_output, event_number, timestamp):
-        evt = KrEvent(event_number, timestamp * 1e-3)
+        timestamp *= 1e-3 # ms to s
 
-        evt.nS1 = 0
-        for passed, peak in zip(selector_output.s1_peaks, pmap.s1s):
-            if not passed: continue
+        s1s, nS1 = filter_peaks(selector_output.s1_peaks, pmap.s1s)
+        s2s, nS2 = filter_peaks(selector_output.s2_peaks, pmap.s2s)
 
-            evt.nS1 += 1
-            evt.S1w.append(peak.width)
-            evt.S1h.append(peak.height)
-            evt.S1e.append(peak.total_energy)
-            evt.S1t.append(peak.time_at_max_energy)
+        data = []
+        for i, s1 in enumerate(s1s):
+            for j, s2 in enumerate(s2s):
+                xys = sipm_xys[s2.sipms.ids           ]
+                qs  = s2.sipm_charge_array(sipm_noise, charge_type,
+                                           single_point = True)
+                try:
+                    clusters = reco(xys, qs)
+                except XYRecoFail:
+                    c    = Cluster.empty()
+                    Z    = NN
+                    DT   = NN
+                    Zrms = NN
+                else:
+                    c     = clusters[0]
+                    Z, DT = compute_z_and_dt(s2.time_at_max_energy, s1.time_at_max_energy, drift_v)
+                    Zrms  = s2.rms / units.mus
 
-        evt.nS2 = 0
+                row = [ event_number, timestamp
+                      , i, j, nS1, nS2
+                      , s1.width            , s1.height, s1.total_energy, s1.time_at_max_energy
+                      , s2.width / units.mus, s2.height, s2.total_energy, s2.time_at_max_energy
+                      , c.nsipm, c.Q, c.X, c.R, c.Phi, DT, Z, Zrms, max(qs)
+                      ]
+                data.append(row)
 
-        for passed, peak in zip(selector_output.s2_peaks, pmap.s2s):
-            if not passed: continue
-
-            evt.nS2 += 1
-            evt.S2w.append(peak.width / units.mus)
-            evt.S2h.append(peak.height)
-            evt.S2e.append(peak.total_energy)
-            evt.S2t.append(peak.time_at_max_energy)
-
-            xys = sipm_xys[peak.sipms.ids           ]
-            qs  = peak.sipm_charge_array(sipm_noise, charge_type,
-                                         single_point = True)
-            try:
-                clusters = reco(xys, qs)
-            except XYRecoFail:
-                c    = Cluster.empty()
-                Z    = tuple(NN for _ in range(0, evt.nS1))
-                DT   = tuple(NN for _ in range(0, evt.nS1))
-                Zrms = NN
-            else:
-                c = clusters[0]
-                Z, DT = compute_z_and_dt(evt.S2t[-1], evt.S1t, drift_v)
-                Zrms  = peak.rms / units.mus
-
-            evt.Nsipm.append(c.nsipm)
-            evt.S2q  .append(c.Q)
-            evt.X    .append(c.X)
-            evt.Y    .append(c.Y)
-            evt.Xrms .append(c.Xrms)
-            evt.Yrms .append(c.Yrms)
-            evt.R    .append(c.R)
-            evt.Phi  .append(c.Phi)
-            evt.DT   .append(DT)
-            evt.Z    .append(Z)
-            evt.Zrms .append(Zrms)
-            evt.qmax .append(max(qs))
-
-        return evt
+        columns = ("event time s1_peak s2_peak nS1 nS2"
+                   "S1w S1h S1e S1t S2w S2h S2e S2t Nsipm S2q"
+                   "X Y Xrms Yrms R Phi DT Z Zrms qmax").split()
+        return pd.DataFrame(np.array(data), columns=columns)
 
     return build_pointlike_event
 
@@ -1345,7 +1336,7 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     # Build the PMap
     compute_pmap     = fl.map(build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                                          s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, 
+                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
                                          sipm_selection_algo),
                               args = ("ccwfs", "s1_indices", "s2_indices", "sipm"),
                               out  = "pmap")

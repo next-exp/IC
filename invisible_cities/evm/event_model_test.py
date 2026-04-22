@@ -18,7 +18,6 @@ from .       event_model import Cluster
 from .       event_model import Hit
 from .       event_model import Voxel
 from .       event_model import HitCollection
-from .       event_model import KrEvent
 
 
 @composite
@@ -74,8 +73,7 @@ def hits(draw):
 
 @mark.parametrize("test_class",
                   (Event,
-                   HitCollection,
-                   KrEvent))
+                   HitCollection))
 @given(event_input())
 def test_event(test_class, event_pars):
     evt_no, time = event_pars
@@ -162,17 +160,3 @@ def test_hit_collection_empty():
 def test_hit_collection_nonempty(hits):
     hc = HitCollection(-1, -1, hits=hits)
     assert hc.hits == hits
-
-
-def test_kr_event_attributes():
-    evt =  KrEvent(-1, -1)
-
-    for attr in ["nS1", "nS2"]:
-        assert getattr(evt, attr) == -1
-
-    for attr in ["S1w", "S1h", "S1e", "S1t",
-                 "S2w", "S2h", "S2e", "S2t", "S2q",
-                 "Nsipm", "DT", "Z",
-                 "X", "Y", "R", "Phi",
-                 "Xrms", "Yrms"]:
-        assert getattr(evt, attr) == []
