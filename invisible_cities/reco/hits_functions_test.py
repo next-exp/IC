@@ -173,7 +173,6 @@ gen_cluster_df = data_frames( index=range_indexes(min_size=1, max_size=50),
                                 column('E',     dtype=float, elements=floats(min_value=0.1,  max_value=100)),    
                                 ])
 
-@settings(deadline=None)
 @given(df=gen_cluster_df)
 def test_cluster_tagger_output_shape(df):
     """
@@ -194,7 +193,6 @@ def test_cluster_tagger_output_shape(df):
     expected_cols = set(df.columns) | {'cluster'}
     assert set(df_result.columns) == expected_cols, "Output DataFrame has unexpected columns."
 
-@settings(deadline=None)
 @given(df=gen_cluster_df)
 def test_cluster_tagger_original(df):
     """
@@ -217,7 +215,6 @@ def test_cluster_tagger_original(df):
                                     obj="Dataframe structure check"
                                  )
 
-@settings(deadline=None)
 @given(df=gen_cluster_df)
 def test_cluster_tagger_new_column_validity(df):
     """
