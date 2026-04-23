@@ -14,7 +14,7 @@ jobs:
       matrix:
         python-version: [3.8]
         #platform: [ubuntu-18.04, macos-latest]
-        platform: [ubuntu-24.04]
+        platform: [ubuntu-24.04, macos-latest, ubuntu-24.04-arm]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -26,10 +26,19 @@ jobs:
     #   if: runner.os == 'macOS'
 
     - name: HACK! remove default conda
-      run: sudo unlink /usr/bin/conda
+      run: |
+        set +e  # allow this step to fail for differing architectures/missing condas 
+        sudo unlink /usr/bin/conda
+        set -e  # reset
 
     - name: Install IC
       run: |
+
+        case "$(uname -m)" in
+          x86_64)   source $CONDA/etc/profile.d/conda.sh                  ;;
+          aarch64)  echo "CONDA=/home/runner/miniconda" >> "$GITHUB_ENV"  ;;
+          arm64)      echo "CONDA=/Users/runner/miniconda" >> "$GITHUB_ENV" ;;
+        esac
         source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
 
     - name: Run tests
