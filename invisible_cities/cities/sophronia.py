@@ -43,7 +43,7 @@ from .. core           import     tbl_functions as tbl
 
 from .. io  .          hits_io import          hits_writer
 from .. io  . run_and_event_io import run_and_event_writer
-from .. io  .          kdst_io import            kr_writer
+from .. io  .          kdst_io import          kdst_writer
 from .. io  .  event_filter_io import  event_filter_writer
 
 from .. dataflow import dataflow as df
@@ -210,7 +210,7 @@ def sophronia( files_in           : OneOrManyFiles
         write_hits            = df.sink( write_hits, args="hits")
         write_event_info      = df.sink( run_and_event_writer(h5out)
                                        , args = "run_number event_number timestamp".split())
-        write_pointlike_event = df.sink(            kr_writer(h5out), args="pointlike_event")
+        write_pointlike_event = df.sink(          kdst_writer(h5out), args="pointlike_event")
         write_pmap_filter     = df.sink(  event_filter_writer(h5out, "s12_selector")
                                        , args = "event_number pmap_passed".split())
         write_hits_filter     = df.sink(  event_filter_writer(h5out, "valid_hit")

@@ -79,7 +79,7 @@ from .. io.          dst_io    import df_writer
 from .. io.          dst_io    import load_dst
 from .. io.         hits_io    import hits_writer
 from .. io. event_filter_io    import event_filter_writer
-from .. io.         kdst_io    import kdst_from_df_writer
+from .. io.         kdst_io    import kdst_writer
 
 from .. types.ic_types         import NoneType
 from .. types.symbols          import HitEnergy
@@ -523,7 +523,7 @@ def beersheba( files_in         : OneOrManyFiles
         # Define writers
         write_event_info    = fl.sink(run_and_event_writer(h5out), args = ("run_number", "event_number", "timestamp"))
         write_deconv        = fl.sink(       deconv_writer(h5out), args =  "deconv_dst")
-        write_kdst_table    = fl.sink( kdst_from_df_writer(h5out), args =  "kdst"      )
+        write_kdst_table    = fl.sink(         kdst_writer(h5out), args =  "kdst"      )
         write_thr_hits      = fl.sink(         hits_writer(h5out, "CHITS", "lowTh"), args = "hits")
         write_nohits_filter = fl.sink( event_filter_writer(h5out, "nohits"), args=("event_number", "hits_passed_no_hits"))
 

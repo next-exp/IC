@@ -1006,11 +1006,9 @@ def build_pointlike_event(dbfile, run_number, drift_v,
 
     sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
 
-    empty_peak = _Peak(np.empty(1), np.empty(1), np.empty((1,1)), np.empty((1,1)))
-
     def filter_peaks(ok, pks):
         n   = np.count_nonzero(ok)
-        pks = list(compress(ok, pks)) if n else [empty_peak]
+        pks = list(compress(pks, ok)) if n else [_Peak.empty_instance()]
         return (pks, n)
 
     def build_pointlike_event(pmap, selector_output, event_number, timestamp):
@@ -1022,7 +1020,7 @@ def build_pointlike_event(dbfile, run_number, drift_v,
         data = []
         for i, s1 in enumerate(s1s):
             for j, s2 in enumerate(s2s):
-                xys = sipm_xys[s2.sipms.ids           ]
+                xys = sipm_xys[s2.sipms.ids]
                 qs  = s2.sipm_charge_array(sipm_noise, charge_type,
                                            single_point = True)
                 try:
@@ -1041,13 +1039,14 @@ def build_pointlike_event(dbfile, run_number, drift_v,
                       , i, j, nS1, nS2
                       , s1.width            , s1.height, s1.total_energy, s1.time_at_max_energy
                       , s2.width / units.mus, s2.height, s2.total_energy, s2.time_at_max_energy
-                      , c.nsipm, c.Q, c.X, c.R, c.Phi, DT, Z, Zrms, max(qs)
+                      , c.nsipm, c.Q, c.X, c.Y, c.Xrms, c.Yrms, c.R, c.Phi, DT, Z, Zrms, max(qs)
                       ]
                 data.append(row)
 
-        columns = ("event time s1_peak s2_peak nS1 nS2"
-                   "S1w S1h S1e S1t S2w S2h S2e S2t Nsipm S2q"
+        columns = ("event time s1_peak s2_peak nS1 nS2 "
+                   "S1w S1h S1e S1t S2w S2h S2e S2t Nsipm S2q "
                    "X Y Xrms Yrms R Phi DT Z Zrms qmax").split()
+        print(np.array(data).shape, len(columns))
         return pd.DataFrame(np.array(data), columns=columns)
 
     return build_pointlike_event

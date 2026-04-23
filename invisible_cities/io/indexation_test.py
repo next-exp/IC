@@ -8,11 +8,12 @@ from .. core.configure     import OneOrManyFiles
 from .. core.configure     import EventRangeType
 from .. core.testing_utils import ignore_warning
 
-from . hits_io   import     hits_writer
-from . kdst_io   import       kr_writer
-from . pmaps_io  import     pmap_writer
+from . hits_io   import hits_writer
+from . kdst_io   import kdst_writer
+from . pmaps_io  import pmap_writer
+from . dst_io    import   df_writer
 
-from . dst_io    import  df_writer
+from .. evm.event_model import kr_events_type
 
 from typing import Callable
 
@@ -40,12 +41,17 @@ def _hits_writer(h5out):
     writer = hits_writer(h5out, "RECO", "Events")
     return writer(df)
 
+def _kdst_writer(h5out):
+    cols   = list(kr_events_type)
+    df     = pd.DataFrame(columns=cols)
+    writer = kdst_writer(h5out)
+    return writer(df)
 
 @ignore_warning.no_config_group
 @ignore_warning.str_length
 @mark.parametrize("         writer  group      node      column   thing".split(),
                   [(  _hits_writer, "RECO" , "Events"  , "event", "hits"),
-                   (     kr_writer, "DST"  , "Events"  , "event", "kr"  ),
+                   (  _kdst_writer, "DST"  , "Events"  , "event", "kr"  ),
                    (   pmap_writer, "PMAPS", "S1"      , "event", "s1"  ),
                    (   pmap_writer, "PMAPS", "S2"      , "event", "s2"  ),
                    (   pmap_writer, "PMAPS", "S2Si"    , "event", "s2si"),

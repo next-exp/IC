@@ -53,7 +53,7 @@ from .  components import hits_thresholder
 from .  components import compute_and_write_tracks_info
 
 from .. io.         hits_io import hits_writer as hits_writer_
-from .. io.         kdst_io import kdst_from_df_writer
+from .. io.         kdst_io import kdst_writer
 from .. io.run_and_event_io import run_and_event_writer
 
 
@@ -159,7 +159,7 @@ def esmeralda( files_in         : OneOrManyFiles
 
         hits_writer        = hits_writer_(h5out, group_name="CHITS", table_name="highTh")
 
-        write_kdst         = fl.sink(kdst_from_df_writer(h5out), args="kdst")
+        write_kdst         = fl.sink(kdst_writer(h5out), args="kdst")
 
         compute_tracks = compute_and_write_tracks_info( paolina_params
                                                       , h5out
