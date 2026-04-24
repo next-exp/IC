@@ -162,32 +162,25 @@ def test_threshold_hits_all_larger_than_th(hits, th):
     non_nn = hits_thresh.loc[hits_thresh.Q != NN]
     assert np.all(non_nn.Q >= th)
 
-# ----- CLUSTER TAGGER TESTS ----- #
-
-gen_cluster_df = data_frames( index=range_indexes(min_size=1, max_size=50),
-                              columns=[
-                                column('event', dtype=int,   elements=integers(min_value=0, max_value=10)),
-                                column('X',     dtype=float, elements=floats(min_value=-500, max_value=500)),
-                                column('Y',     dtype=float, elements=floats(min_value=-500, max_value=500)),
-                                column('Z',     dtype=float, elements=floats(min_value=0,    max_value=1200)),
-                                column('E',     dtype=float, elements=floats(min_value=0.1,  max_value=100)),    
-                                ])
+gen_cluster_df = data_frames(index   = range_indexes(min_size=1, max_size=50),
+                             columns = [
+                                column('event', dtype=int  , elements=integers(min_value=0, max_value=10)),
+                                column(    'X', dtype=float, elements=floats(min_value=-500, max_value=500)),
+                                column(    'Y', dtype=float, elements=floats(min_value=-500, max_value=500)),
+                                column(    'Z', dtype=float, elements=floats(min_value=0,    max_value=1200)),
+                                column(    'E', dtype=float, elements=floats(min_value=0.1,  max_value=100)),    
+                                       ])
 
 @given(df=gen_cluster_df)
 def test_cluster_tagger_output_shape(df):
     """
-    Verifies that the output DataFrame of cluster_tagger:
+    Verifies that the output of cluster_tagger:
     - Has the same number of rows as the input.
     - Contains exactly one new column named 'cluster'.
     """
-    if df.empty:
-        return
+    dummy_params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)
+    df_result    = cluster_tagger(df.copy(), **dummy_params)
 
-    # Run the cluster tagger
-    params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)   # Dummy values
-    df_result = cluster_tagger(df.copy(), **params)
-
-     # --- Assertations
     assert len(df_result) == len(df), "Output DataFrame has different length than input."
     assert 'cluster' in df_result.columns, "Output DataFrame does not contain 'cluster' column."
     expected_cols = set(df.columns) | {'cluster'}
@@ -197,17 +190,12 @@ def test_cluster_tagger_output_shape(df):
 def test_cluster_tagger_original(df):
     """
     Verifies that cluster_tagger:
-    - Does not modify any of the original columns.
-    - Preserves the original index and row order.
+    - Does not modify any of the input information.
+    - Preserves the input index and row order.
     """
-    if df.empty:
-        return
+    dummy_params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)
+    df_result    = cluster_tagger(df.copy(), **dummy_params)
 
-    # Run the cluster tagger
-    params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)   # Dummy values
-    df_result = cluster_tagger(df.copy(), **params)
-
-    # --- Assertations
     pd.testing.assert_frame_equal(  
                                     df_result.drop(columns=['cluster']),
                                     df,
@@ -217,51 +205,39 @@ def test_cluster_tagger_original(df):
 
 @given(df=gen_cluster_df)
 def test_cluster_tagger_new_column_validity(df):
-    """
-    Verifies that the new 'cluster' column:
-    - The 'cluster' column contains valid integers (no NaNs).
-    """
-    if df.empty:
-        return
-        
-    # Run the cluster tagger
-    params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)   # Dummy values
-    df_result = cluster_tagger(df.copy(), **params)
+    dummy_params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)
+    df_result    = cluster_tagger(df.copy(), **dummy_params)
 
-    # --- Assertations
-    assert pd.api.types.is_integer_dtype(df_result['cluster']), "'cluster' column is not of integer type."
-    assert not df_result['cluster'].isna().any(), "'cluster' column contains NaN values."
+    assert pd.api.types.is_integer_dtype(df_result.cluster), "'cluster' column is not of integer type."
+    assert not df_result.cluster.isna().any(), "'cluster' column contains NaN values."
 
 def test_cluster_tagger_row_alignment():
     """
-    Verifies that the correct cluster label is assigned to the correct
-    row (hit), even if the input DataFrame is shuffled.
+    Verifies that the correct cluster label is assigned to the correct hit,
+    even if the input DataFrame is shuffled.
 
     Scenario:
     - Event 0:
         - Cluster A: 2 hits at (0,0,0) and (1,1,0)         -> Should be Cluster 0
         - Cluster B: 2 hits at (100,100,0) and (101,101,0) -> Should be Cluster 1
     """
-    # Setup data
     data = {
-                'event': [0, 0, 0, 0],
-                'X':     [0., 1., 100., 101.],
-                'Y':     [0., 1., 100., 101.],
-                'Z':     [0., 0.,   0.,   0.],
-                'E':     [10, 10,  10,   10 ]
+                'event'  : [ 0,  0,    0,    0],
+                'X'      : [0., 1., 100., 101.],
+                'Y'      : [0., 1., 100., 101.],
+                'Z'      : [0., 0.,   0.,   0.],
+                'cluster': [ 0,  0,    1,    1]
     }
     df = pd.DataFrame(data)
-    # Shuffle rows in a specific order
-    df_shuffled = df.reindex(index=[0, 2, 1, 3]).copy()     
-    # Add expected labels for assertations (not shuffled, just for reference)
-    df['cluster'] = [0, 0, 1, 1] 
+    # Shuffled dataframe must start with the same hit as the original
+    # to ensure that both hits close to (0,0,0) have same cluster label (0)
+    df_shuffled = df.reindex(index=[0, 2, 1, 3]).copy().drop(columns=['cluster'])
 
-    # Run the cluster tagger
-    params = dict(eps=5.0, min_samples=1, scale_xy=1.0, scale_z=1.0)    # Enough to consider both clusters
-    df_result = cluster_tagger(df_shuffled, **params)
-    df_result = df_result.sort_index()                                  # Sort back to original order for easier assertations
+    test_params = dict(eps=5.0, min_samples=1, scale_xy=1.0, scale_z=1.0)
+    df_result   = cluster_tagger(df_shuffled, **test_params)
+    # Sorted final result must match original dataframe 
+    df_result   = df_result.sort_index()
 
-    # --- Assertations
     pd.testing.assert_frame_equal(  
                                     df_result,
                                     df,
@@ -269,66 +245,55 @@ def test_cluster_tagger_row_alignment():
                                     obj="Dataframe structure check"
                                     )
     
-def test_cluster_tagger_noise_rejection():
+def test_cluster_tagger_noise_identification():
     """
-    Verifies that isolated hits (outliers) are correctly identified as noise (-1).
-    
     Scenario:
     - 3 points very close together (0,0), (1,0), (0,1). They should form a cluster.
     - 1 point very far away (100, 100). It has 0 neighbors. Should be noise.
     """
-    # Setup data
     data = {
-                'event': [0, 0, 0, 0],
-                'X':     [0., 1., 0., 100.],
-                'Y':     [0., 0., 1., 100.],
-                'Z':     [0., 0., 0.,   0.],
-                'E':     [10, 10, 10,  10 ]
+                'event': [ 0,  0,  0,    0],
+                'X'    : [0., 1., 0., 100.],
+                'Y'    : [0., 0., 1., 100.],
+                'Z'    : [0., 0., 0.,   0.]
     }
     df = pd.DataFrame(data)
 
-    # Run the cluster tagger
-    params = dict(eps=5.0, min_samples=3, scale_xy=1.0, scale_z=1.0)    # Enough to consider one cluster
-    df_result = cluster_tagger(df.copy(), **params)
+    test_params = dict(eps=5.0, min_samples=3, scale_xy=1.0, scale_z=1.0)
+    df_result   = cluster_tagger(df.copy(), **test_params)
 
-    # --- Assertations
-    cluster_labels = df_result['cluster'].unique()
-    assert cluster_labels.size == 2, "Expected exactly 2 unique cluster labels (one cluster + one noise)."
-    cluster_hits = df_result[df_result['cluster'] != -1]
-    assert cluster_hits.shape[0] == 3, "Expected exactly 3 hits to be clustered together."
-    noise_hit = df_result[df_result['cluster'] == -1]
-    assert noise_hit.shape[0] == 1, "Expected exactly 1 noise hit."
+    cluster_labels = df_result.cluster.unique()
+    assert len(cluster_labels) == 2, "Expected exactly 2 unique cluster labels (one cluster + one noise)."
+    cluster_hits = df_result[df_result.cluster != -1]
+    assert len(cluster_hits) == 3, "Expected exactly 3 hits to be clustered together."
+    noise_hit = df_result[df_result.cluster == -1]
+    assert len(noise_hit) == 1, "Expected exactly 1 noise hit."
     assert noise_hit['X'].iloc[0] == 100 and noise_hit['Y'].iloc[0] == 100, "The noise hit identified is NOT the distant one."
 
 def test_cluster_tagger_event_distinction():
     """
-    Verifies that hits from different events are not clustered together.
-    
     Scenario:
-    - Event 0: 2 hits at (0,0,0) and (1,1,0) -> Should be Cluster 0
-    - Event 1: 2 hits at (100,100,0) and (101,101,0) and 1 hit at (0.5,0.5,0) -> Should be marked as noise (-1)
+    - Event 0: 2 hits at (0,0,0) and (1,1,0)         -> Should be Cluster 0
+    - Event 1: 2 hits at (100,100,0) and (101,101,0) -> Should be Cluster 1
+               and 1 hit at (0.5,0.5,0)              -> Should be marked as noise (-1)
     - We check that noise hit from Event 1 get a different cluster label than hits from Event 0, even if they are spatially close.
     """
-    # Setup data
     data = {
-                'event': [0, 0, 1, 1, 1],
-                'X':     [0., 1., 100., 101., 0.5],
-                'Y':     [0., 1., 100., 101., 0.5],
-                'Z':     [0., 0.,   0.,   0.,  0.],
-                'E':     [10, 10,   10,   10,  10]
+                'event': [ 0,  0,    1,    1,   1],
+                'X'    : [0., 1., 100., 101., 0.5],
+                'Y'    : [0., 1., 100., 101., 0.5],
+                'Z'    : [0., 0.,   0.,   0.,  0.],
     }
     df = pd.DataFrame(data)
 
-    # Run the cluster tagger
-    params = dict(eps=5.0, min_samples=2, scale_xy=1.0, scale_z=1.0)      # Enough to consider both clusters
-    df_result = cluster_tagger(df.copy(), **params)
+    test_params = dict(eps=5.0, min_samples=2, scale_xy=1.0, scale_z=1.0)
+    df_result   = cluster_tagger(df.copy(), **test_params)
 
-    # --- Assertations
-    event_0_clusters = df_result[df_result['event'] == 0]['cluster'].unique()
-    event_1_clusters = df_result[df_result['event'] == 1]['cluster'].unique()
+    event_0_clusters = df_result[df_result.event == 0].cluster.unique()
+    event_1_clusters = df_result[df_result.event == 1].cluster.unique()
     assert len(event_0_clusters) == 1, "For event 0: expected exactly 1 unique cluster label (one cluster)."
     assert len(event_1_clusters) == 2, "For event 1: expected exactly 2 unique cluster labels (one cluster + one noise)."
-    event_0_hits = df_result[df_result['event'] == 0]
-    noise_1_hit  = df_result[(df_result['X'] == 0.5)]
-    assert noise_1_hit['cluster'].iloc[0] == -1, "The hit at (0.5,0.5,0) in event 1 should be marked as noise (-1)."
-    assert event_0_hits['cluster'].iloc[0] != noise_1_hit['cluster'].iloc[0], "Hits from event 0 and the noise hit from event 1 were assigned the same cluster label."
+    event_0_hits = df_result[df_result.event == 0]
+    noise_1_hit  = df_result[(df_result.X == 0.5)]
+    assert noise_1_hit.cluster.iloc[0] == -1, "The hit at (0.5,0.5,0) in event 1 should be marked as noise (-1)."
+    assert event_0_hits.cluster.iloc[0] != noise_1_hit.cluster.iloc[0], "Hits from event 0 and the noise hit from event 1 were assigned the same cluster label."
