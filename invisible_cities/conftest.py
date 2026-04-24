@@ -30,7 +30,7 @@ dst_data = namedtuple('dst_data', 'file_info config read true')
 pmp_dfs  = namedtuple('pmp_dfs' , 's1 s2 si, s1pmt, s2pmt')
 pmp_data = namedtuple('pmp_data', 's1 s2 si')
 mcs_data = namedtuple('mcs_data', 'pmap hdst')
-db_data  = namedtuple('db_data', 'detector npmts nsipms feboxes nfreqs')
+db_data  = namedtuple('db_data', 'detector npmts nsipms feboxes nfreqs nfibers', defaults=(0,))
 
 
 @pytest.fixture(scope = 'session')
@@ -540,9 +540,10 @@ def dbflex100():
 @pytest.fixture(scope='session',
                 params=[db_data('demopp' ,  3,  256, 3, 79),
                         db_data('new'    , 12, 1792, 3, 79),
-                        db_data('next100', 60, 3584, 0, 0),
-                        db_data('flex100', 60, 3093, 0, 0)],
-               ids=["demo", "new", "next100", "flex100"])
+                        db_data('next100', 60, 3584, 0,  0),
+                        db_data('flex100', 60, 3093, 0,  0),
+                        db_data('hddemo' ,  7,  828, 0,  0, 36)],
+               ids=["demo", "new", "next100", "flex100", "hddemo"])
 def db(request):
     return request.param
 

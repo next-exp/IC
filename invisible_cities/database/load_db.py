@@ -11,6 +11,7 @@ class DetDB:
     demopp  = os.environ['ICTDIR'] + '/invisible_cities/database/localdb.DEMOPPDB.sqlite3'
     next100 = os.environ['ICTDIR'] + '/invisible_cities/database/localdb.NEXT100DB.sqlite3'
     flex100 = os.environ['ICTDIR'] + '/invisible_cities/database/localdb.Flex100DB.sqlite3'
+    hddemo  = os.environ['ICTDIR'] + '/invisible_cities/database/localdb.HDDEMODB.sqlite3'
 
 def tmap(*args):
     return tuple(map(*args))
@@ -68,7 +69,7 @@ ON pos.SensorID = gain.SensorID INNER JOIN ChannelMapping as map
 ON pos.SensorID = map.SensorID LEFT JOIN
 (select * from ChannelMask where MinRun <= {0} and {0} <= MaxRun) as msk
 ON pos.SensorID = msk.SensorID
-where pos.SensorID > 100
+where pos.SensorID >= 1000
 and pos.MinRun <= {0} and {0} <= pos.MaxRun
 and gain.MinRun <= {0} and {0} <= gain.MaxRun
 and map.MinRun <= {0} and {0} <= map.MaxRun
@@ -80,6 +81,34 @@ order by pos.SensorID'''.format(abs(run_number))
     if not data.Sigma.values.any():
         data.Sigma = 2.24
 
+    return data
+
+@lru_cache(maxsize=10)
+def DataFiber(db_file, run_number=1e5):
+    if run_number == 0:
+        run_number = runNumberForMC
+
+    conn = sqlite3.connect(get_db(db_file))
+
+    sql='''select pos.SensorID, map.ElecID "ChannelID",
+case when msk.SensorID is NULL then 1 else 0 end "Active",
+X, Y,
+gain.Centroid "adc_to_pes", gain.ErrorCentroid "adc_to_pes_err", gain.Sigma, gain.ErrorSigma,
+amp.Centroid "amplification", amp.ErrorCentroid "amplification_err", amp.Sigma "amp_Sigma", amp.ErrorSigma "amp_ErrorSigma"
+from ChannelPosition as pos
+INNER JOIN ChannelGain as gain ON pos.SensorID = gain.SensorID
+INNER JOIN ChannelAmplification as amp ON pos.SensorID = amp.SensorID
+INNER JOIN ChannelMapping as map ON pos.SensorID = map.SensorID LEFT JOIN
+(select * from ChannelMask where MinRun <= {0} and {0} <= MaxRun) as msk
+ON pos.SensorID = msk.SensorID
+where pos.Label = 'Fiber'
+and pos.MinRun <= {0} and {0} <= pos.MaxRun
+and gain.MinRun <= {0} and {0} <= gain.MaxRun
+and amp.MinRun <= {0} and {0} <= amp.MaxRun
+and map.MinRun <= {0} and {0} <= map.MaxRun
+order by pos.SensorID'''.format(abs(run_number))
+    data = pd.read_sql_query(sql, conn)
+    conn.close()
     return data
 
 @lru_cache(maxsize=10)
