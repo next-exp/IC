@@ -59,6 +59,7 @@ from .. reco   .corrections       import      apply_all_correction
 from .. reco   .corrections       import     get_df_to_z_converter
 from .. reco   .xy_algorithms     import                    corona
 from .. reco   .xy_algorithms     import                barycenter
+from .. reco   .hits_functions    import            cluster_tagger
 from .. filters.s1s2_filter       import               S12Selector
 from .. filters.s1s2_filter       import         S12SelectorOutput
 from .. filters.s1s2_filter       import               pmap_filter
@@ -1716,6 +1717,37 @@ def hits_corrector( filename     : str
                           , Z  = time_to_Z(hits.Z) )
 
     return correct
+
+@check_annotations
+def hits_clusterizer( eps         : float
+                    , min_samples : int
+                    , scale_xy    : float
+                    , scale_z     : float
+                    ) -> Callable:
+    """
+    Creates a callable for performing DBSCAN clustering on a dataFrame of hits.
+
+    Parameters
+    ----------
+    eps : float
+        Epsilon value for DBSCAN, defining the maximum distance between two samples for them to be considered neighbors.
+    min_samples : int
+        Minimum number of samples required to form a dense region (cluster). This includes the point itself.
+    scale_xy : float
+        Scaling factor to apply to the (x, y) coordinates before clustering.
+    scale_z : float
+         Scaling factor to apply to the z coordinate before clustering.
+
+    Returns
+    -------
+    Callable
+        A function that takes a DataFrame of hits and returns the same DataFrame 
+        with an added 'cluster' column, which contains the cluster labels assigned by DBSCAN
+        (-1 for noise).
+    """
+    return partial(cluster_tagger,
+                   eps=eps, min_samples=min_samples,
+                   scale_xy=scale_xy, scale_z=scale_z)
 
 
 def identity(x : Any) -> Any:

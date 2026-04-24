@@ -1,6 +1,12 @@
 import numpy  as np
 import pandas as pd
 
+from itertools       import compress
+from copy            import deepcopy
+from typing          import List
+from sklearn.cluster import DBSCAN
+
+from .. evm  import event_model as evm
 from .. types.ic_types      import NN
 
 EPSILON = np.finfo(np.float64).eps
@@ -62,8 +68,6 @@ def sipms_above_threshold(xys: np.ndarray, qs: np.ndarray, thr:float, energy: fl
     ys =             xy[:, 1] if nonempty else [NN]
     es = e_from_q(qs, energy) if nonempty else [energy]
     return xs, ys, qs, es
-
-
 
 
 def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
@@ -238,3 +242,80 @@ def threshold_hits(hits: pd.DataFrame, th: float) -> pd.DataFrame:
     if th <= 0: return hits
     return (hits.groupby("Z", as_index=False)
                 .apply(apply_threshold, th=th))
+
+def tag_hits_in_event(event_hits   : pd.DataFrame
+                     , *
+                     , eps         : float
+                     , min_samples : int
+                     , scale_xy    : float
+                     , scale_z     : float
+                     ) -> pd.DataFrame:
+    """
+    Applies DBSCAN clustering to a DataFrame containing hits from a single event.
+    Hits coordinates are scaled to account for the anisotropy of the detector geometry.
+    A 'cluster' column is added to the group with the resulting labels.
+
+    Parameters
+    ----------
+    event_hits : pd.DataFrame
+        DataFrame with hits from a single event. Must contain 'X', 'Y', 'Z' columns.
+    eps, min_samples, scale_xy, scale_z :
+        Configuration parameters for DBSCAN and scaling. See `cluster_tagger` for details.
+
+    Returns
+    -------
+    pd.DataFrame
+        The input DataFrame with a 'cluster' column added.
+    """
+    coords = event_hits[['X', 'Y', 'Z']].to_numpy()
+    coords[:, :2] /= scale_xy
+    coords[:, 2]  /= scale_z
+
+    labels = DBSCAN(eps=eps, min_samples=min_samples).fit_predict(coords)
+    event_hits['cluster'] = labels
+
+    return event_hits
+
+def cluster_tagger(df_hits      : pd.DataFrame
+                  , *
+                  , eps         : float
+                  , min_samples : int
+                  , scale_xy    : float
+                  , scale_z     : float
+                  ) -> pd.DataFrame:
+    """
+    Applies DBSCAN clustering to hits on an event-by-event basis using groupby.apply.
+    This function groups the input DataFrame by 'event' and applies the
+    `tag_hits_in_event` function to each event's group of hits.
+
+    Parameters
+    ----------
+    df_hits     : pd.DataFrame
+        DataFrame with hit information. Must contain 'X', 'Y', 'Z', and 'event'.
+    eps         : float
+        Maximum distance between two samples for them to be considered neighbors.
+    min_samples : int
+        Minimum number of samples required to form a dense region (cluster).
+        This includes the point itself.
+    scale_xy    : float
+        Scaling factor to apply to the XY coordinates before clustering.
+    scale_z     : float
+        Scaling factor to apply to the Z coordinate before clustering.
+
+    Returns
+    -------
+    pd.DataFrame
+        The input DataFrame with an added 'cluster' column indicating the
+        cluster label for each hit (-1 for noise).
+    """
+    if df_hits.empty:
+        return df_hits.assign(cluster=pd.Series(dtype=int))
+
+    df_clustered = df_hits.groupby('event', as_index=False, group_keys=False) \
+                          .apply(tag_hits_in_event,
+                                 eps         = eps,
+                                 min_samples = min_samples,
+                                 scale_xy    = scale_xy,
+                                 scale_z     = scale_z)
+    
+    return df_clustered.set_index(df_hits.index)
