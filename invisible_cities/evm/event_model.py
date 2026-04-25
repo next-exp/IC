@@ -251,6 +251,18 @@ class TrackCollection(Event):
     __repr__ =     __str__
 
 
+hit_type = dict( event = int
+               , time  = float
+               , npeak = np.uint16
+               , Xpeak = float
+               , Ypeak = float
+               , X     = float
+               , Y     = float
+               , Z     = float
+               , Q     = float
+               , E     = float
+               , Ec    = float
+               )
 
 kr_events_type = dict( event   = int
                      , time    = float
