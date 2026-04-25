@@ -26,6 +26,7 @@ from typing import Tuple
 from typing import Dict
 from typing import Union
 
+
 def bounding_box(hits: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the (min, max) coordinates of the axis-aligned bounding box
@@ -34,6 +35,7 @@ def bounding_box(hits: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     xyz = hits["X Y Z".split()].values
     return xyz.min(axis=0), xyz.max(axis=0)
 
+
 def round_hits_positions_in_place(hits, decimals):
     """
     Rounds the hits positions to `decimals` decimals to avoid floating point
@@ -41,6 +43,7 @@ def round_hits_positions_in_place(hits, decimals):
     unnecessary copy.
     """
     hits.loc[:, "X Y Z".split()] = np.round(hits.loc[:, "X Y Z".split()], decimals)
+
 
 def voxelize_hits(hits             : pd.DataFrame,
                   voxel_dimensions : np.ndarray,
@@ -148,7 +151,6 @@ def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
     distances = { v1 : {v2:d for v2, d in sorted(dmap.items(), key=voxel_pos)}
                   for v1, dmap in sorted(distances.items(), key=voxel_pos)}
     return distances
-
 
 
 def find_extrema_and_length(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Voxel, float]:
