@@ -35,7 +35,6 @@ from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
 from .. dataflow.dataflow         import                      pipe
 from .. evm    .ic_containers     import                SensorData
-from .. evm    .event_model       import                       Hit
 from .. evm    .event_model       import                   Cluster
 from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail

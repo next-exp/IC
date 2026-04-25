@@ -15,7 +15,6 @@ from .. types.symbols    import HitEnergy
 
 from .       event_model import Event
 from .       event_model import Cluster
-from .       event_model import Hit
 from .       event_model import Voxel
 
 
@@ -59,17 +58,6 @@ def hit_input(draw):
     return peak_number, s2_energy, z, x_peak, y_peak, s2_energy_c, track_id, Ep
 
 
-@composite
-def hits(draw):
-    Q, x, y, *_                                          = draw(cluster_input())
-    peak_number, E, z, x_peak, y_peak, s2ec, track_id, _ = draw(    hit_input())
-
-    # np.nan to represent invalid data, since we don't use it anymore
-    c = Cluster(Q, xy(x, y), xy(np.nan, np.nan), np.nan, z=np.nan)
-    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, np.nan)
-    return h
-
-
 @given(event_input())
 def test_event(event_pars):
     evt_no, time = event_pars
@@ -106,31 +94,6 @@ def test_cluster(ci):
 @mark.parametrize("value", "E Ec Ep".split())
 def test_hitenergy_value(value):
     assert getattr(HitEnergy, value).value == value
-
-
-@given(cluster_input(), hit_input())
-def test_hit(ci, hi):
-    Q, x, y, *_                                          = ci
-    peak_number, E, z, x_peak, y_peak, s2ec, track_id, _ = hi
-    xyz = x, y, z
-
-    # np.nan to represent invalid data, since we don't use it anymore
-    c = Cluster(Q, xy(x,y), xy(np.nan, np.nan), np.nan, z=np.nan)
-    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, np.nan)
-
-    assert h.peak_number == peak_number
-    assert h.npeak       == peak_number
-
-    np.isclose (h.X       , x       , rtol=1e-4)
-    np.isclose (h.Y       , y       , rtol=1e-4)
-    np.isclose (h.Z       , z       , rtol=1e-4)
-    np.isclose (h.E       , E       , rtol=1e-4)
-    np.isclose (h.Xpeak   , x_peak  , rtol=1e-4)
-    np.isclose (h.Ypeak   , y_peak  , rtol=1e-4)
-    np.allclose(h.XYZ     , xyz     , rtol=1e-4)
-    np.allclose(h.pos     , xyz     , rtol=1e-4)
-    np.allclose(h.Ec      , s2ec    , rtol=1e-4)
-    np.allclose(h.track_id, track_id, rtol=1e-4)
 
 
 @given(voxel_input())
