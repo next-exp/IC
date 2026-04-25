@@ -122,26 +122,6 @@ class Cluster(BHit):
     __repr__ =     __str__
 
 
-class VoxelCollection:
-    """A collection of voxels. """
-    def __init__(self, voxels : List[Voxel]):
-        self.voxels = voxels
-        self.E = sum(v.E for v in voxels)
-
-    @property
-    def number_of_voxels(self):
-        return len(self.voxels)
-
-    def __str__(self):
-        s =  "VoxelCollection: (number of voxels = {})\n".format(self.number_of_voxels)
-        s2 = ['voxel number {} = {} \n'.format(i, voxel) for (i, voxel) in enumerate(self.voxels)]
-
-        return  s + ''.join(s2)
-
-    def __repr__(self):
-        return self.__str__()
-
-
 class Blob:
     """A Blob is a collection of Hits with a seed and a radius. """
     def __init__(self, seed: Tuple[float, float, float],
