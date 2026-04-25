@@ -251,38 +251,6 @@ class TrackCollection(Event):
     __repr__ =     __str__
 
 
-class HitCollection(Event):
-    """A Collection of hits"""
-    def __init__(self, event_number, event_time, hits=None):
-        Event.__init__(self, event_number, event_time)
-        self.hits = [] if hits is None else hits
-
-    def store(self, table):
-        row = table.row
-
-        u16max = np.iinfo(np.uint16).max
-        for hit in self.hits:
-            row["event"   ] = self.event
-            row["time"    ] = self.time
-            row["npeak"   ] = overflow_protection(hit.npeak, u16max, "HitCollection::store (npeak)")
-            row["Xpeak"   ] = hit .Xpeak
-            row["Ypeak"   ] = hit .Ypeak
-            row["X"       ] = hit .X
-            row["Y"       ] = hit .Y
-            row["Z"       ] = hit .Z
-            row["Q"       ] = hit .Q
-            row["E"       ] = hit .E
-            row["Ec"      ] = hit .Ec
-            row.append()
-
-    def __str__(self):
-        s =  "{}".format(self.__class__.__name__)
-        s+= "Hit list:"
-        s2 = [str(hit) for hit in self.hits]
-        return  s + ''.join(s2)
-
-    __repr__ =     __str__
-
 
 kr_events_type = dict( event   = int
                      , time    = float

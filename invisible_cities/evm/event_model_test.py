@@ -17,7 +17,6 @@ from .       event_model import Event
 from .       event_model import Cluster
 from .       event_model import Hit
 from .       event_model import Voxel
-from .       event_model import HitCollection
 
 
 @composite
@@ -71,13 +70,10 @@ def hits(draw):
     return h
 
 
-@mark.parametrize("test_class",
-                  (Event,
-                   HitCollection))
 @given(event_input())
-def test_event(test_class, event_pars):
+def test_event(event_pars):
     evt_no, time = event_pars
-    evt =  test_class(*event_pars)
+    evt =  Event(*event_pars)
 
     assert evt.event == evt_no
     assert evt.time  == time
@@ -149,14 +145,3 @@ def test_voxel(vi):
     np.isclose (v.X  , x  , rtol=1e-4)
     np.isclose (v.Y  , y  , rtol=1e-4)
     np.isclose (v.Z  , z  , rtol=1e-4)
-
-
-def test_hit_collection_empty():
-    hc = HitCollection(-1, -1)
-    assert hc.hits == []
-
-
-@given(lists(hits()))
-def test_hit_collection_nonempty(hits):
-    hc = HitCollection(-1, -1, hits=hits)
-    assert hc.hits == hits

@@ -37,7 +37,6 @@ from .. dataflow.dataflow         import                      pipe
 from .. evm    .ic_containers     import                SensorData
 from .. evm    .event_model       import                       Hit
 from .. evm    .event_model       import                   Cluster
-from .. evm    .event_model       import             HitCollection
 from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail
 from .. core   .exceptions        import           MCEventNotFound
