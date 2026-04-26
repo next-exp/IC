@@ -15,7 +15,6 @@ from . pmaps_io  import     pmap_writer
 from . dst_io    import  df_writer
 
 from typing import Callable
-from typing import Any
 
 
 # type annotations needed
@@ -35,10 +34,17 @@ def _df_writer(h5out):
     return df_writer(h5out, df, 'DUMMY', 'dummy', columns_to_index=['event'])
 
 
+def _hits_writer(h5out):
+    cols   = "event time npeak Xpeak Ypeak X Y Z Q E Ec track_id".split()
+    df     = pd.DataFrame(columns=cols)
+    writer = hits_writer(h5out, "RECO", "Events")
+    return writer(df)
+
+
 @ignore_warning.no_config_group
 @ignore_warning.str_length
 @mark.parametrize("         writer  group      node      column   thing".split(),
-                  [(   hits_writer, "RECO" , "Events"  , "event", "hits"),
+                  [(  _hits_writer, "RECO" , "Events"  , "event", "hits"),
                    (     kr_writer, "DST"  , "Events"  , "event", "kr"  ),
                    (   pmap_writer, "PMAPS", "S1"      , "event", "s1"  ),
                    (   pmap_writer, "PMAPS", "S2"      , "event", "s2"  ),

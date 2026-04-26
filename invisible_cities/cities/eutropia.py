@@ -40,7 +40,6 @@ from .. dataflow                  import dataflow        as fl
 
 from .. cities  .components       import city
 from .. cities  .components       import dst_from_files
-from .. core                      import system_of_units as units
 from .. core    .core_functions   import in_range
 from .. core    .configure        import EventRangeType
 from .. core    .configure        import OneOrManyFiles
@@ -53,7 +52,6 @@ from .. reco    .psf_functions    import create_psf
 from .. reco    .psf_functions    import hdst_psf_processing
 
 from typing import Sequence
-from typing import Optional
 from typing import Tuple
 
 
@@ -78,10 +76,6 @@ def eutropia( files_in    : OneOrManyFiles
     nbin      = (np.diff(ranges, axis=1) / bin_size_xy).astype(int).flatten()
     bin_edges = [np.linspace(*limits, n+1) for limits, n in zip(ranges, nbin)]
 
-    columns_to_drop     = "Xrms Yrms Qc Ec".split()
-    drop_unused_columns = fl.map( column_dropper(columns_to_drop)
-                                , item = "dst"
-                                )
 
     create_slices_z   = fl.flatmap( z_splitter(zbins)
                                   , args = "dst"
@@ -120,8 +114,7 @@ def eutropia( files_in    : OneOrManyFiles
                                   )
 
         result = fl.push( source = dst_from_files(files_in, "RECO", "Events")
-                        , pipe   = fl.pipe( drop_unused_columns
-                                          , fl.branch( flatten_event_info
+                        , pipe   = fl.pipe( fl.branch( flatten_event_info
                                                      ,   write_event_info
                                                      )
                                           , create_slices_z
@@ -141,12 +134,6 @@ def eutropia( files_in    : OneOrManyFiles
                  )
 
     return result
-
-
-def column_dropper(columns : Sequence[str]):
-    def dropper(df):
-        return df.drop(columns=columns)
-    return dropper
 
 
 def z_splitter(zbins : Sequence[float]):

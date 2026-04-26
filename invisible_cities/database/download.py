@@ -1,4 +1,3 @@
-import sqlite3
 import sys
 import pymysql
 pymysql.install_as_MySQLdb()

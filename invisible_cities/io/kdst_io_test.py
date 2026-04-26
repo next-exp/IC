@@ -1,9 +1,6 @@
 import os
 
-import numpy  as np
 import tables as tb
-
-from numpy.testing import assert_allclose
 
 from ..core.testing_utils import assert_dataframes_equal
 from ..io.dst_io          import load_dst

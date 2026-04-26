@@ -191,7 +191,7 @@ class VoxelCollection:
 
     def __str__(self):
         s =  "VoxelCollection: (number of voxels = {})\n".format(self.number_of_voxels)
-        s2 = ['voxel number {} = {} \n'.format((i, voxel) for (i, voxel) in enumerate(self.voxels))]
+        s2 = ['voxel number {} = {} \n'.format(i, voxel) for (i, voxel) in enumerate(self.voxels)]
 
         return  s + ''.join(s2)
 
@@ -295,18 +295,12 @@ class HitCollection(Event):
             row["npeak"   ] = hit .npeak
             row["Xpeak"   ] = hit .Xpeak
             row["Ypeak"   ] = hit .Ypeak
-            row["nsipm"   ] = hit .nsipm
             row["X"       ] = hit .X
             row["Y"       ] = hit .Y
-            row["Xrms"    ] = hit .Xrms
-            row["Yrms"    ] = hit .Yrms
             row["Z"       ] = hit .Z
             row["Q"       ] = hit .Q
             row["E"       ] = hit .E
-            row["Qc"      ] = hit .Qc
             row["Ec"      ] = hit .Ec
-            row["track_id"] = hit .track_id
-            row["Ep"      ] = hit .Ep
             row.append()
 
     def __str__(self):
@@ -356,9 +350,8 @@ class KrEvent(Event):
             for attribute in ["w", "h", "e", "t", "q"]:
                 setattr(self, "S2" + attribute, [np.nan])
 
-            self.Nsipm = 0
             self.qmax  = 0
-            for attribute in ["X", "Y", "R", "Phi", "Xrms", "Yrms", "Zrms"]:
+            for attribute in ["X", "Y", "R", "Phi", "Zrms"]:
                 setattr(self, attribute, [np.nan])
 
         if not self.nS1 or not self.nS2:

@@ -58,6 +58,22 @@ def test_assert_tables_equality_fails_different_values(index, value):
         assert_tables_equality(table1, table2)
 
 
+def test_assert_tables_equality_fails_different_values_2():
+    # modify the type of a column and check that the function picks up
+    # the difference
+    dtypes1 = [('text', 'U10'), ('integer', 'i4'), ('float', 'f4')]
+    table1  = np.array([ ('one', 1, 1.0)
+                       , ('two', 2, 2.0)],
+                       dtype=dtypes1)
+
+    dtypes2    = list(dtypes1)
+    dtypes2[1] = ("integer", "f4")
+    table2     = table1.copy().astype(dtypes2)
+
+    with raises(AssertionError):
+        assert_tables_equality(table1, table2)
+
+
 def test_assert_tables_equality_fails_different_names():
     # modify the type of a column and check that the function picks up
     # the difference
@@ -70,22 +86,6 @@ def test_assert_tables_equality_fails_different_names():
     table2  = np.array([ ('one', 1, 1.0)
                        , ('two', 2, 2.0)],
                        dtype=dtypes2)
-
-    with raises(AssertionError):
-        assert_tables_equality(table1, table2)
-
-
-def test_assert_tables_equality_fails_different_values():
-    # modify the type of a column and check that the function picks up
-    # the difference
-    dtypes1 = [('text', 'U10'), ('integer', 'i4'), ('float', 'f4')]
-    table1  = np.array([ ('one', 1, 1.0)
-                       , ('two', 2, 2.0)],
-                       dtype=dtypes1)
-
-    dtypes2    = list(dtypes1)
-    dtypes2[1] = ("integer", "f4")
-    table2     = table1.copy().astype(dtypes2)
 
     with raises(AssertionError):
         assert_tables_equality(table1, table2)

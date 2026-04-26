@@ -19,7 +19,6 @@ This includes a number of tasks:
 import tables as tb
 
 from .. core                   import tbl_functions        as tbl
-from .. core                   import system_of_units      as units
 from .. core.configure         import EventRangeType
 from .. core.configure         import OneOrManyFiles
 from .. io   .run_and_event_io import run_and_event_writer

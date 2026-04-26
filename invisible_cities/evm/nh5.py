@@ -160,18 +160,14 @@ class HitsTable(tb.IsDescription):
     npeak    = tb. UInt16Col(pos=2)
     Xpeak    = tb.Float64Col(pos=3)
     Ypeak    = tb.Float64Col(pos=4)
-    nsipm    = tb. UInt16Col(pos=5)
     X        = tb.Float64Col(pos=6)
     Y        = tb.Float64Col(pos=7)
-    Xrms     = tb.Float64Col(pos=8)
-    Yrms     = tb.Float64Col(pos=9)
     Z        = tb.Float64Col(pos=10)
     Q        = tb.Float64Col(pos=11)
     E        = tb.Float64Col(pos=12)
     Qc       = tb.Float64Col(pos=13)
     Ec       = tb.Float64Col(pos=14)
     track_id = tb.  Int32Col(pos=15)
-    Ep       = tb.Float64Col(pos=16)
 
 
 class VoxelsTable(tb.IsDescription):

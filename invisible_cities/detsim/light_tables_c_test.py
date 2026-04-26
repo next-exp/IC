@@ -1,12 +1,8 @@
-import os
-import pytest
-
 import numpy as np
 
 from pytest import warns
 
 from .. database.load_db    import DataSiPM
-from .. io      .dst_io     import load_dst
 from .. core.core_functions import find_nearest
 
 from . light_tables_c import LT_SiPM

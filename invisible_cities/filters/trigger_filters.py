@@ -9,7 +9,7 @@ last revised: JJGC, July-2017
 """
 def TriggerFilter(trigger_params):
     """Trigger Filter module"""
-    def trigger_filter(peak_data : '{channel_no: s2}'):
+    def trigger_filter(peak_data : dict): # '{channel_no: s2}'
         min_charge, max_charge = trigger_params.charge
         min_height, max_height = trigger_params.height
         min_width , max_width  = trigger_params. width

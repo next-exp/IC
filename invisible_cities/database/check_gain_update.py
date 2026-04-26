@@ -1,5 +1,4 @@
 import sys
-import sqlite3
 import pymysql
 pymysql.install_as_MySQLdb()
 import numpy as np

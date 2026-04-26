@@ -5,7 +5,6 @@ import warnings
 import numpy  as np
 import tables as tb
 
-from pytest import raises
 from pytest import mark
 from pytest import param
 

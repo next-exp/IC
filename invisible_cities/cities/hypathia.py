@@ -24,8 +24,6 @@ from .. core.configure         import EventRangeType
 from .. core.configure         import OneOrManyFiles
 from .. core                   import tbl_functions        as tbl
 from .. reco                   import peak_functions       as pkf
-from .. core . random_sampling import NoiseSampler         as SiPMsNoiseSampler
-from .. core                   import system_of_units      as units
 from .. detsim                 import sensor_functions     as sf
 from .. io   .run_and_event_io import run_and_event_writer
 from .. io   .      trigger_io import       trigger_writer

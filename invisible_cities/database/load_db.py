@@ -31,7 +31,7 @@ def DataPMT(db_file, run_number=1e5):
 
     sql = '''select pos.SensorID, map.ElecID "ChannelID", Label "PmtID",
 case when msk.SensorID is NULL then 1 else 0 end "Active",
-X, Y, coeff_blr, coeff_c, abs(Centroid) "adc_to_pes", noise_rms, Sigma
+X, Y, coeff_blr, coeff_c, abs(Centroid) "adc_to_pes", ErrorCentroid "adc_to_pes_err", noise_rms, Sigma, ErrorSigma
 from ChannelPosition as pos INNER JOIN ChannelMapping
 as map ON pos.SensorID = map.SensorID LEFT JOIN
 (select * from PmtNoiseRms where MinRun <= {0} and (MaxRun >= {0} or MaxRun is NULL))
@@ -62,7 +62,7 @@ def DataSiPM(db_file, run_number=1e5):
 
     sql='''select pos.SensorID, map.ElecID "ChannelID",
 case when msk.SensorID is NULL then 1 else 0 end "Active",
-X, Y, Centroid "adc_to_pes", Sigma
+X, Y, Centroid "adc_to_pes", ErrorCentroid "adc_to_pes_err", Sigma, ErrorSigma
 from ChannelPosition as pos INNER JOIN ChannelGain as gain
 ON pos.SensorID = gain.SensorID INNER JOIN ChannelMapping as map
 ON pos.SensorID = map.SensorID LEFT JOIN

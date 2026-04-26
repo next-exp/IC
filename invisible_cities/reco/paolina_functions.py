@@ -32,6 +32,14 @@ def bounding_box(seq : BHit) -> Sequence[np.ndarray]:
     return (reduce(np.minimum, posns, MAX3D),
             reduce(np.maximum, posns, MIN3D))
 
+def round_hits_positions_in_place(hits, decimals=5):
+    """
+    Rounds the hits positions to `decimals` decimals to avoid floating point
+    comparison issues. The operation is performed inplace to avoid an
+    unnecessary copy.
+    """
+    for hit in hits:
+        hit.xyz = np.round(hit.xyz, decimals)
 
 def voxelize_hits(hits             : Sequence[BHit],
                   voxel_dimensions : np.ndarray,

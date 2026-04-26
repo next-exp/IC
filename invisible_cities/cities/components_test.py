@@ -10,18 +10,15 @@ from functools import partial
 from pytest import mark
 from pytest import raises
 from pytest import warns
+from numpy.testing import assert_equal
+from numpy.testing import assert_raises
 
 from .. core.configure     import configure
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.exceptions    import          SensorIDMismatch
-from .. core.exceptions    import              NoInputFiles
 from .. core.testing_utils import    assert_tables_equality
 from .. core.testing_utils import            ignore_warning
 from .. core               import system_of_units as units
-from .. evm.event_model    import Cluster
-from .. evm.event_model    import Hit
-from .. evm.event_model    import HitCollection
-from .. types.ic_types     import xy
 from .. types.symbols      import WfType
 from .. types.symbols      import EventRange as ER
 from .. types.symbols      import NormStrategy
@@ -178,8 +175,8 @@ def test_city_keeps_input_file_ordering(ICDATADIR, config_tmpdir, order):
         with tb.open_file(file_out, "w"): pass
         return files_in
 
-    config_file = os.path.join(config_tmpdir, f"test_city_keeps_input_file_ordering.conf")
-    file_out    = os.path.join(config_tmpdir, f"test_city_keeps_input_file_ordering.h5"  )
+    config_file = os.path.join(config_tmpdir, "test_city_keeps_input_file_ordering.conf")
+    file_out    = os.path.join(config_tmpdir, "test_city_keeps_input_file_ordering.h5"  )
 
     write_config_file( config_file
                      , files_in    = files_in
@@ -310,10 +307,10 @@ def test_hits_and_kdst_from_files(ICDATADIR):
     generator = hits_and_kdst_from_files([file_in], "RECO", "Events")
     output = next(generator)
     assert set(keys) == set(output.keys())
-    assert output['event_number']   == event_number
-    assert output['timestamp']      == timestamp
-    assert len(output['hits'].hits) == num_hits
-    assert type(output['kdst'])     == pd.DataFrame
+    assert output['event_number'] == event_number
+    assert output['timestamp']    == timestamp
+    assert len(output['hits'])    == num_hits
+    assert type(output['kdst'])   == pd.DataFrame
 
 
 @ignore_warning.no_hits
@@ -487,58 +484,65 @@ def test_read_wrong_pmt_ids(ICDATADIR):
         next(sns_gen)
 
 
-@mark.parametrize( "norm_strat norm_value".split(),
-                  ( (NormStrategy.kr    , None) # None marks the default value
-                  , (NormStrategy.max   , None)
-                  , (NormStrategy.mean  , None)
-                  , (NormStrategy.custom,  1e3)
-                  ))
+def test_hits_Z_uncorrected( correction_map_filename
+                           , random_hits_toy_data):
+    '''
+    Test to ensure that z is uncorrected when `apply_z` is False
+    '''
+    z_original = random_hits_toy_data.Z.values.copy()
+    correct    = hits_corrector(correction_map_filename,
+                                apply_temp = False,
+                                norm_strat = NormStrategy.kr,
+                                apply_z    = False)
+    z_output   = correct(random_hits_toy_data).Z.values
+
+    # no change to equal results
+    assert_equal(z_output, z_original)
+
+
+def test_hits_Z_corrected_when_flagged( correction_map_filename
+                                      , random_hits_toy_data):
+    '''
+    Test to ensure that the correction is applied when `apply_z` is True
+    '''
+    z_original = random_hits_toy_data.Z.values.copy()
+    correct    = hits_corrector(correction_map_filename,
+                                apply_temp = False,
+                                norm_strat = NormStrategy.kr,
+                                apply_z    = True)
+    z_output   = correct(random_hits_toy_data).Z.values
+
+    # raise assertion error as expected
+    assert_raises(AssertionError, assert_equal, z_output, z_original)
+
+
+@mark.parametrize( "norm_strat norm_options".split(),
+                  ( (NormStrategy.kr    , dict())
+                  , (NormStrategy.max   , dict())
+                  , (NormStrategy.mean  , dict())
+                  , (NormStrategy.median, dict())
+                  , (NormStrategy.region, dict(xrange=(-20, 20), yrange=(-20, 20)))
+                  , (NormStrategy.region, dict(origin=( -5,  5), radius=10))
+                  , (NormStrategy.custom, dict(value=1e3))
+                 ))
 @mark.parametrize("apply_temp", (False, True))
 def test_hits_corrector_valid_normalization_options( correction_map_filename
                                                    , norm_strat
-                                                   , norm_value
-                                                   , apply_temp ):
+                                                   , apply_temp
+                                                   , norm_options
+                                                   , random_hits_toy_data
+                                                   ):
     """
     Test that all valid normalization options work to some
     extent. Here we just check that the values make some sense: not
     nan and greater than 0. The more exhaustive tests are performed
     directly on the core functions.
     """
-    n  = 50
-    xs = np.random.uniform(-10, 10, n)
-    ys = np.random.uniform(-10, 10, n)
-    zs = np.random.uniform( 10, 50, n)
-
-    hits = []
-    for i, x, y, z in zip(range(n), xs, ys, zs):
-        c = Cluster(0, xy(x, y), xy.zero(), 1)
-        h = Hit(i, c, z, 1, xy.zero(), 0)
-        hits.append(h)
-
-    hc = HitCollection(0, 1, hits)
-
-    correct     = hits_corrector(correction_map_filename, apply_temp, norm_strat, norm_value)
-    corrected_e = np.array([h.Ec for h in correct(hc).hits])
+    correct     = hits_corrector(correction_map_filename, apply_temp, norm_strat, norm_options=norm_options)
+    corrected_e = correct(random_hits_toy_data).Ec.values
 
     assert not np.any(np.isnan(corrected_e) )
     assert     np.all(         corrected_e>0)
-
-
-@mark.parametrize( "norm_strat norm_value".split(),
-                  ( (NormStrategy.kr    ,    0) # 0 doens't count as "not given"
-                  , (NormStrategy.max   ,    0)
-                  , (NormStrategy.mean  ,    0)
-                  , (NormStrategy.kr    ,    1) # any other value must not be given either
-                  , (NormStrategy.max   ,    1)
-                  , (NormStrategy.mean  ,    1)
-                  , (NormStrategy.custom, None) # with custom, `norm_value` must be given ...
-                  , (NormStrategy.custom,    0) # ... but not 0
-                  ))
-def test_hits_corrector_invalid_normalization_options_raises( correction_map_filename
-                                                            , norm_strat
-                                                            , norm_value):
-    with raises(ValueError):
-        hits_corrector(correction_map_filename, False, norm_strat, norm_value)
 
 
 def test_write_city_configuration(config_tmpdir):
@@ -551,6 +555,7 @@ def test_write_city_configuration(config_tmpdir):
         d = "two strings".split(),
         e = [1,2,3],
         f = np.linspace(0, 1, 5),
+        g = {'a' : 2, 'b' : 3, 'c' : {'alpha' : 5, 'beta' : 10}}
     )
     write_city_configuration(filename, city_name, args)
     with tb.open_file(filename, "r") as file:
@@ -558,9 +563,17 @@ def test_write_city_configuration(config_tmpdir):
         assert city_name in file.root.config
 
     df = pd.read_hdf(filename, "/config/" + city_name).set_index("variable")
-    for var, value in args.items():
+
+    # ignoring the nested dictionary
+    for var, value in list(args.items())[:-1]:
         assert var in df.index
         assert str(value) == df.value.loc[var]
+
+    # considering just the nested dictionary
+    assert 'g.a'        in df.index  and str(args['g']['a'])           == df.value.loc['g.a']
+    assert 'g.b'        in df.index  and str(args['g']['b'])           == df.value.loc['g.b']
+    assert 'g.c.alpha'  in df.index  and str(args['g']['c']['alpha'])  == df.value.loc['g.c.alpha']
+    assert 'g.c.beta'   in df.index  and str(args['g']['c']['beta'])   == df.value.loc['g.c.beta']
 
 
 def test_copy_cities_configuration(config_tmpdir):

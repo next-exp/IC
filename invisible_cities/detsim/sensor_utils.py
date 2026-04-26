@@ -1,14 +1,10 @@
 import numpy  as np
 import tables as tb
 import pandas as pd
-import warnings
 
 from typing import Callable
 from typing import     List
 from typing import    Tuple
-from typing import    Union
-
-from .. core import system_of_units as units
 
 from .. database.load_db   import            DataPMT
 from .. database.load_db   import           DataSiPM

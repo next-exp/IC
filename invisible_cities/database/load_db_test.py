@@ -16,7 +16,7 @@ def test_pmts_pd(db):
     """Check that we retrieve the correct number of PMTs."""
     pmts = DB.DataPMT(db.detector)
     columns =['SensorID', 'ChannelID', 'PmtID', 'Active', 'X', 'Y',
-              'coeff_blr', 'coeff_c', 'adc_to_pes', 'noise_rms', 'Sigma']
+              'coeff_blr', 'coeff_c', 'adc_to_pes', 'adc_to_pes_err', 'noise_rms', 'Sigma', 'ErrorSigma']
     assert columns == list(pmts)
     assert pmts['PmtID'].str.startswith('PMT').all()
     assert pmts.shape[0] == db.npmts
@@ -27,7 +27,7 @@ def test_pmts_MC_pd(db):
     mc_run = 0
     pmts = DB.DataPMT(db.detector, mc_run)
     columns =['SensorID', 'ChannelID', 'PmtID', 'Active', 'X', 'Y',
-              'coeff_blr', 'coeff_c', 'adc_to_pes', 'noise_rms', 'Sigma']
+              'coeff_blr', 'coeff_c', 'adc_to_pes', 'adc_to_pes_err', 'noise_rms', 'Sigma', 'ErrorSigma']
     assert columns == list(pmts)
     assert pmts['PmtID'].str.startswith('PMT').all()
     assert pmts.shape[0] == db.npmts
@@ -36,7 +36,7 @@ def test_pmts_MC_pd(db):
 def test_sipm_pd(db):
     """Check that we retrieve the correct number of SiPMs."""
     sipms = DB.DataSiPM(db.detector)
-    columns = ['SensorID', 'ChannelID', 'Active', 'X', 'Y', 'adc_to_pes', 'Sigma']
+    columns = ['SensorID', 'ChannelID', 'Active', 'X', 'Y', 'adc_to_pes', 'adc_to_pes_err', 'Sigma', 'ErrorSigma']
     assert columns == list(sipms)
     assert sipms.shape[0] == db.nsipms
 

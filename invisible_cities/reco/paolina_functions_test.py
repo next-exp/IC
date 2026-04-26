@@ -33,6 +33,7 @@ from .. evm.event_model import Cluster
 from .. evm.event_model import Voxel
 
 from . paolina_functions import bounding_box
+from . paolina_functions import round_hits_positions_in_place
 from . paolina_functions import energy_of_voxels_within_radius
 from . paolina_functions import find_extrema
 from . paolina_functions import find_extrema_and_length
@@ -130,9 +131,6 @@ def test_voxelize_hits_should_detect_no_hits():
 
 @given(bunch_of_hits)
 def test_bounding_box(hits):
-    if not len(hits): # TODO: deal with empty sequences
-        return
-
     lo, hi = bounding_box(hits)
 
     mins = [float(' inf')] * 3
@@ -163,6 +161,48 @@ def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
         return sum(e.E for e in seq)
 
     assert sum_energy(voxels) == approx(sum_energy(hits))
+
+
+@given(bunch_of_hits)
+def test_round_hits_positions_in_place(hits):
+    """
+    Override xyz such that all values fall below the rounding decimal place. We
+    also multiply some values by -1 to include negative numbers. The maximum
+    absolute value xyz can have is 100. After multiplying by 1e-7, the maximum
+    absolute value is 1e-5. After rounding, the only possible values are 0, 1e-5
+    or -1e-5.
+    """
+    for hit in hits:
+        hit.xyz = np.array(hit.xyz) * 0.999e-7 * [-1, 1, -1]
+
+    round_hits_positions_in_place(hits)
+
+    pos = np.asarray([h.pos for h in hits])
+    assert np.all(np.in1d(pos, [0, 1e-5, -1e-5]))
+
+
+def test_round_hits_positions_in_place_empty_input():
+    """
+    It simply should not crash.
+    """
+    hits = []
+    round_hits_positions_in_place(hits)
+    assert hits == []
+
+
+@settings(max_examples=1) # simple way of producing a single hit
+@given(hit())
+def test_round_hits_positions_in_place_non_finite_values(hit):
+    """
+    Override xyz with np.nan and np.inf, ensure values are not changed.
+    """
+    values = np.nan, np.inf, -np.inf
+    hit.xyz = tuple(values) # ensure copy
+
+    round_hits_positions_in_place([hit])
+
+    assert np.all(np.isclose(hit.pos, values, equal_nan=True))
+
 
 
 random_graph = builds(partial(fast_gnp_random_graph, p=0.5),

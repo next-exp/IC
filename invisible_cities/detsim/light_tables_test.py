@@ -11,7 +11,6 @@ from pytest import fixture
 
 from hypothesis import given, settings
 from hypothesis.strategies  import floats
-from hypothesis.extra.numpy import arrays
 
 
 few_examples = settings(deadline=None, max_examples=100)

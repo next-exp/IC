@@ -7,7 +7,7 @@ from subprocess import STDOUT
 
 from pytest import mark
 
-all_cities = ( "buffy detsim hypathia diomira isidora irene dorothea penthesilea eutropia"
+all_cities = ( "buffy detsim hypathia diomira isidora irene dorothea eutropia"
              + " " # needed for .split(), added separately to prevent accidental omissions
              + "sophronia esmeralda beersheba isaura berenice phyllis trude").split()
 

@@ -1,3 +1,4 @@
+import numpy  as np
 import tables as tb
 
 from .. core import tbl_functions as tbl
@@ -5,10 +6,10 @@ from .. core import tbl_functions as tbl
 
 def hist_writer(file,
                 *,
-                group_name  : 'options: HIST, HIST2D',
-                table_name  : 'options: pmt, pmtMAW, sipm, sipmMAW',
-                n_sensors   : 'number of pmts or sipms',
-                bin_centres : 'np.array of bin centres',
+                group_name  : str, # 'options: HIST, HIST2D',
+                table_name  : str, #'options: pmt, pmtMAW, sipm, sipmMAW',
+                n_sensors   : int, #'number of pmts or sipms',
+                bin_centres : np.ndarray, # 'np.array of bin centres',
                 compression = None):
     try:                       hist_group = getattr          (file.root, group_name)
     except tb.NoSuchNodeError: hist_group = file.create_group(file.root, group_name)
@@ -29,7 +30,7 @@ def hist_writer(file,
                       , obj     = bin_centres)
 
 
-    def write_hist(histo : 'np.array of histograms, one for each sensor'):
+    def write_hist(histo : np.ndarray): # 'np.array of histograms, one for each sensor'
         hist_table.append(histo.reshape(1, n_sensors, n_bins))
 
     return write_hist
