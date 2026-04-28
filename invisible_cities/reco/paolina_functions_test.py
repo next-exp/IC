@@ -158,7 +158,7 @@ def test_round_hits_positions_in_place(hits):
     """
     hits.loc[:, "X Y Z".split()] = hits["X Y Z".split()].values * 0.999e-7 * [-1, 1, -1]
 
-    round_hits_positions_in_place(hits)
+    round_hits_positions_in_place(hits, 5)
 
     assert np.all(np.in1d(hits["X Y Z".split()], [0, 1e-5, -1e-5]))
 
@@ -169,7 +169,7 @@ def test_round_hits_positions_in_place_empty_input(hits):
     It simply should not crash.
     """
     hits = hits.iloc[:0]
-    round_hits_positions_in_place(hits)
+    round_hits_positions_in_place(hits, 5)
     assert len(hits) == 0
 
 
@@ -182,7 +182,7 @@ def test_round_hits_positions_in_place_non_finite_values(hit):
     hit.loc[:, "Y"] =  np.inf
     hit.loc[:, "Z"] = -np.inf
 
-    round_hits_positions_in_place(hit)
+    round_hits_positions_in_place(hit, 5)
     assert np.all(np.isclose(hit["X Y Z".split()].values[0], np.array([np.nan, np.inf, -np.inf]), equal_nan=True))
 
 

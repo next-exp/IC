@@ -31,7 +31,7 @@ def bounding_box(hits: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     xyz = hits["X Y Z".split()].values
     return xyz.min(axis=0), xyz.max(axis=0)
 
-def round_hits_positions_in_place(hits, decimals=5):
+def round_hits_positions_in_place(hits, decimals):
     """
     Rounds the hits positions to `decimals` decimals to avoid floating point
     comparison issues. The operation is performed inplace to avoid an
