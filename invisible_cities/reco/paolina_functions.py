@@ -327,6 +327,12 @@ def drop_end_point_voxels(voxels           : Sequence[Voxel],
                              , weights = the_vox.hits[e_type]
                              , axis    =  0)
 
+        # the energy of the dropped voxel is assigned to the closest hit.
+        # However, several hits be at exactly the same distance (this happens
+        # when hits are distributed in a regular pattern). We generalize this
+        # behaviour by determining all hits in neighbouring voxels within a
+        # minimum distance from the main voxels barycentre position and share
+        # the voxel energy among them, proportionally to each hit's energy
         distance_to_bary = lambda hs: np.linalg.norm(hs[xyz] - bary_pos, axis=1)
         distances        = [(v, distance_to_bary(v.hits)) for v in the_neighbour_voxels]
         min_dist         = min(ds.min() for (_, ds) in distances)
@@ -341,7 +347,7 @@ def drop_end_point_voxels(voxels           : Sequence[Voxel],
             current_energy = v.hits.iloc[row_idx, col_idx].values
             v.hits.iloc[row_idx, col_idx] = current_energy * (1 + the_vox.E/total_closest_e)
 
-        # recopmute voxel energy
+        # recompute voxel energy because we have modified the hits it contains
         for v in voxels:
             v.E = v.hits[e_type].sum()
 
