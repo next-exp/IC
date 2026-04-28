@@ -1,39 +1,19 @@
 from itertools   import combinations
 
-import copy
-
 import numpy    as np
 import pandas   as pd
 import networkx as nx
 
-from networkx           import Graph
-from .. evm.event_model import Voxel
+from networkx import Graph
+
 from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
-from .. evm.event_model import BHit
-from .. evm.event_model import Track
-from .. evm.event_model import Blob
-from .. evm.event_model import TrackCollection
-from .. core            import system_of_units as units
 from .. types.symbols   import Contiguity
 from .. types.symbols   import HitEnergy
 
 from .. types.ic_types  import NoneType
 
 from typing import Sequence
-from typing import List
-from typing import Tuple
-from typing import Dict
-from typing import Union
-
-
-def bounding_box(hits: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Compute the (min, max) coordinates of the axis-aligned bounding box
-    enclosing the hits in X, Y, Z.
-    """
-    xyz = hits["X Y Z".split()].values
-    return xyz.min(axis=0), xyz.max(axis=0)
 
 
 def round_hits_positions_in_place(hits, decimals):
@@ -42,382 +22,301 @@ def round_hits_positions_in_place(hits, decimals):
     comparison issues. The operation is performed inplace to avoid an
     unnecessary copy.
     """
-    hits.loc[:, "X Y Z".split()] = np.round(hits.loc[:, "X Y Z".split()], decimals)
+    xyz = "X Y Z".split()
+    hits.loc[:, xyz] = np.round(hits.loc[:, xyz], decimals)
 
 
-def voxelize_hits(hits             : pd.DataFrame,
-                  voxel_dimensions : np.ndarray,
-                  strict_voxel_size: bool = False,
-                  energy_type      : HitEnergy = HitEnergy.E) -> List[Voxel]:
-    # 1. Find bounding box of all hits.
-    # 2. Allocate hits to regular sub-boxes within bounding box, using histogramdd.
-    # 3. Calculate voxel energies by summing energies of hits within each sub-box.
+def voxelize_hits( hits       : pd.DataFrame
+                 , voxel_size : np.ndarray
+                 , energy_type: HitEnergy = HitEnergy.E
+                 ) -> (pd.DataFrame, pd.DataFrame): # hits, voxels
+    """
+    Assign each hit a voxel by discretizing the 3D space.
+    """
     if hits.empty:
         raise NoHits
 
-    hlo, hhi = bounding_box(hits)
-    bounding_box_centre = (hhi + hlo) / 2
-    bounding_box_size   =  hhi - hlo
+    energy_type = energy_type.value
 
-    number_of_voxels = np.ceil(bounding_box_size / voxel_dimensions).astype(int)
-    number_of_voxels = np.clip(number_of_voxels, a_min=1, a_max=None)
+    hits  = hits.copy()
+    xyz   = hits["X Y Z".split()].values
+    lower = xyz.min(axis=0)
 
-    if strict_voxel_size: half_range = number_of_voxels * voxel_dimensions / 2
-    else                : half_range =          bounding_box_size          / 2
+    voxel_indices = (xyz - lower) // voxel_size
+    voxel_ids     = [hash(tuple(idx)) for idx in voxel_indices]
+    hits.insert(hits.shape[1], "voxel_i" , voxel_indices.T[0])
+    hits.insert(hits.shape[1], "voxel_j" , voxel_indices.T[1])
+    hits.insert(hits.shape[1], "voxel_k" , voxel_indices.T[2])
+    hits.insert(hits.shape[1], "voxel_id", voxel_ids)
 
-    voxel_edges_lo = bounding_box_centre - half_range
-    voxel_edges_hi = bounding_box_centre + half_range
+    # We need to keep only one entry per voxel to compute its position in a
+    # simple fashion. We take the chance to compute the total energy as well.
+    # +0.5 shifts the voxel position to its center rather than the lower edge
+    single = hits.groupby("voxel_id").agg({ "voxel_i"  : "first"
+                                          , "voxel_j"  : "first"
+                                          , "voxel_k"  : "first"
+                                          , energy_type: "sum"
+                                          })
+    voxels = pd.DataFrame(dict( x = lower[0] + (single.voxel_i + 0.5) * voxel_size[0]
+                              , y = lower[1] + (single.voxel_j + 0.5) * voxel_size[1]
+                              , z = lower[2] + (single.voxel_k + 0.5) * voxel_size[2]
+                              , e = single[energy_type]
+                              ), index=single.index)
 
-    # Expand the voxels a tiny bit, in order to include hits which
-    # fall within the margin of error of the voxel bounding box.
-    eps = 3e-12 # geometric mean of range that seems to work
-    voxel_edges_lo -= eps
-    voxel_edges_hi += eps
-
-    xyz = hits.loc[:, "X Y Z".split()].values
-    E, edges = np.histogramdd(xyz,
-                              bins    = number_of_voxels,
-                              range   = tuple(zip(voxel_edges_lo, voxel_edges_hi)),
-                              weights = hits[energy_type.value])
-
-    def centres(a : np.ndarray) -> np.ndarray:
-        return (a[1:] + a[:-1]) / 2
-    def   sizes(a : np.ndarray) -> np.ndarray:
-        return  a[1:] - a[:-1]
-
-    (   cx,     cy,     cz) = map(centres, edges)
-    size_x, size_y, size_z  = map(sizes  , edges)
-
-    # find the bins where hits fall into
-    # numpy.histogramdd() uses [,) intervals...
-    # ...except for the last one, which is [,]: hits on the last edge,
-    # if any, must fall into the last bin
-    # @gonzaponte: This should not happen, as we are increasing the voxel
-    # dimensions a few lines above
-    hits_indices = np.array([ np.clip(np.digitize(coords, bins, right=False) - 1, 0, n-1)
-                              for coords, bins, n in zip(xyz.T, edges, number_of_voxels)
-                            ]).T
-
-    voxels = []
-    true_dimensions = np.array([size_x[0], size_y[0], size_z[0]])
-    for indices_voxel in np.stack(np.nonzero(E)).T:
-        x, y, z     = indices_voxel
-        indices     = np.where(np.all(hits_indices == indices_voxel, axis=1))[0]
-        hits_in_bin = hits.iloc[indices]
-
-        voxels.append(Voxel(cx[x], cy[y], cz[z], E[x,y,z], true_dimensions, hits_in_bin, energy_type))
-
-    return voxels
+    # voxel_* are no longer needed, so save some space
+    hits.drop(columns="voxel_i voxel_j voxel_k".split(), inplace=True)
+    return hits, voxels
 
 
-def neighbours(va : Voxel, vb : Voxel, contiguity : Contiguity = Contiguity.CORNER) -> bool:
-    return np.linalg.norm((va.pos - vb.pos) / va.size) < contiguity.value
+def neighbours( va        : pd.Series
+              , vb        : pd.Series
+              , size      : np.ndarray
+              , contiguity: Contiguity = Contiguity.CORNER
+              ) -> bool:
+    xyz = list("xyz")
+    return np.linalg.norm((va.loc[xyz].values - vb.loc[xyz].values) / size) < contiguity.value
 
 
-def make_track_graphs(voxels           : Sequence[Voxel],
-                      contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Graph]:
-    """Create a graph where the voxels are the nodes and the edges are any
-    pair of neighbour voxel. Two voxels are considered to be
-    neighbours if their distance normalized to their size is smaller
-    than a contiguity factor.
+def make_track_graphs( voxels    : pd.DataFrame
+                     , voxel_size: np.ndarray
+                     , contiguity: Contiguity = Contiguity.CORNER
+                     ) -> Sequence[Graph]:
     """
+    Create a graph where the voxels are the nodes and the edges are any pair of
+    neighbour voxel. Two voxels are considered to be neighbours if their
+    distance normalized to their size is smaller than a contiguity factor.
+    """
+    xyz = list("xyz")
 
     voxel_graph = nx.Graph()
-    voxel_graph.add_nodes_from(voxels)
-    for va, vb in combinations(voxels, 2):
-        if neighbours(va, vb, contiguity):
-            voxel_graph.add_edge(va, vb, distance = np.linalg.norm(va.pos - vb.pos))
+    voxel_graph.add_nodes_from(voxels.index)
+    for i, j in combinations(voxels.index, 2):
+        vi = voxels.loc[i]
+        vj = voxels.loc[j]
+        if neighbours(vi, vj, voxel_size, contiguity):
+            voxel_graph.add_edge(i, j, distance = np.linalg.norm(vi[xyz] - vj[xyz]))
 
-    return tuple(connected_component_subgraphs(voxel_graph))
-
-
-def connected_component_subgraphs(G):
-    return (G.subgraph(c).copy() for c in nx.connected_components(G))
-
-
-def voxels_from_track_graph(track: Graph) -> List[Voxel]:
-    """Create and return a list of voxels from a track graph."""
-    return track.nodes()
+    return tuple( voxel_graph.subgraph(c).copy()
+                  for c in nx.connected_components(voxel_graph)
+                )
 
 
-def shortest_paths(track_graph : Graph) -> Dict[Voxel, Dict[Voxel, float]]:
-    """Compute shortest path lengths between all nodes in a weighted graph."""
-    def voxel_pos(x):
-        return x[0].pos.tolist()
-
+def shortest_paths(track_graph: Graph) -> pd.DataFrame:
+    """
+    Compute shortest path lengths between all nodes in a weighted graph.
+    """
     distances = dict(nx.all_pairs_dijkstra_path_length(track_graph, weight='distance'))
-
-    # sort the output so the result is reproducible
-    distances = { v1 : {v2:d for v2, d in sorted(dmap.items(), key=voxel_pos)}
-                  for v1, dmap in sorted(distances.items(), key=voxel_pos)}
+    distances = ((v1, v2, d) for v1, dmap in distances.items() for v2, d in dmap.items())
+    distances = pd.DataFrame(distances, columns="initial final distance".split())
     return distances
 
 
-def find_extrema_and_length(distance : Dict[Voxel, Dict[Voxel, float]]) -> Tuple[Voxel, Voxel, float]:
-    """Find the extrema and the length of a track, given its dictionary of distances."""
-    if not distance:
-        raise NoVoxels
-    if len(distance) == 1:
-        only_voxel = next(iter(distance))
-        return (only_voxel, only_voxel, 0.)
-    first, last, max_distance = None, None, 0
-    for (voxel1, dist_from_voxel_1_to), (voxel2, _) in combinations(distance.items(), 2):
-        d = dist_from_voxel_1_to[voxel2]
-        if d > max_distance:
-            first, last, max_distance = voxel1, voxel2, d
-    return first, last, max_distance
-
-
-def find_extrema(track: Graph) -> Tuple[Voxel, Voxel]:
-    """Find the pair of voxels separated by the greatest geometric
-      distance along the track.
+def find_extrema_and_length( track_graph: Graph
+                           , voxels     : pd.DataFrame
+                           ) -> (int, int, float): # extreme1, extreme2, length
     """
-    distances = shortest_paths(track)
-    extremum_a, extremum_b, _ = find_extrema_and_length(distances)
-    return extremum_a, extremum_b
-
-
-def length(track: Graph) -> float:
-    """Calculate the length of a track."""
-    distances = shortest_paths(track)
-    _, _, length = find_extrema_and_length(distances)
-    return length
-
-
-def energy_of_voxels_within_radius(distances : Dict[Voxel, float], radius : float) -> float:
-    return sum(v.E for (v, d) in distances.items() if d < radius)
-
-
-def voxels_within_radius(distances : Dict[Voxel, float],
-                         radius : float) -> List[Voxel]:
-    return [v for (v, d) in distances.items() if d < radius]
-
-
-def blob_centre(voxel: Voxel) -> Tuple[float, float, float]:
-    """Calculate the blob position, starting from the end-point voxel."""
-    positions = voxel.hits["X Y Z".split()]
-    energies  = voxel.hits[voxel.Etype]
-    if sum(energies):
-        bary_pos = np.average(positions, weights=energies, axis=0)
-    # Consider the case where voxels are built without associated hits
-    else:
-        bary_pos = voxel.pos
-
-    return bary_pos
-
-
-def hits_in_blob(track_graph : Graph,
-                 radius      : float,
-                 extreme     : Voxel) -> Sequence[BHit]:
-    """Returns the hits that belong to a blob."""
-    distances         = shortest_paths(track_graph)
-    dist_from_extreme = distances[extreme]
-    blob_pos          = blob_centre(extreme)
-    diag              = np.linalg.norm(extreme.size)
-
-    blob_hits = []
-    # First, consider only voxels at a certain distance from the end-point, along the track.
-    # We allow for 1 extra contiguity, because this distance is calculated between
-    # the centres of the voxels, and not the hits. In the second step we will refine the
-    # selection, using the euclidean distance between the blob position and the hits.
-    for v in track_graph.nodes():
-        voxel_distance = dist_from_extreme[v]
-        if voxel_distance < radius + diag:
-            hit_distances = np.linalg.norm(v.hits["X Y Z".split()] - blob_pos, axis=1)
-            blob_hits.append(v.hits.loc[hit_distances < radius])
-
-    return pd.concat(blob_hits, ignore_index=True)
-
-
-def find_highest_encapsulating_node( track         : Graph
-                                   , extreme       : Voxel
-                                   , distances     : Dict[Voxel, Dict[Voxel, float]]
-                                   , big_radius    : float
-                                   , small_radius  : float) -> Tuple[Voxel, dict]:
+    Find the extrema and the length of a track. The extrema are sorted by energy
     """
-    Find the voxel within a big radius for which the most energy
-    is captured within an equivalent smaller radius.
-    """
-    nodes_within_radius = [node for node in track.nodes if distances[extreme][node] <= big_radius]
-
-    def energy_within_radius(node):
-        return energy_of_voxels_within_radius(distances[node], small_radius)
-
-    highest_encapsulating_node = max(nodes_within_radius, key=energy_within_radius)
-    return highest_encapsulating_node
-
-
-def blob_energies_hits_and_centres(track_graph  : Graph,
-                                   small_radius : float,
-                                   big_radius   : Union[float, NoneType]
-                                   ) -> Tuple[float,
-                                              float,
-                                              Sequence[BHit],
-                                              Sequence[BHit],
-                                              Tuple[float, float, float],
-                                              Tuple[float, float, float]]:
-    """Return the energies, the hits and the positions of the blobs.
-       For each pair of observables, the one of the blob of largest energy is returned first.
-
-       If a big_radius is provided, the blob centre is chosen to be the voxel within the big
-       radius of the extrema that contains the most energy around it within the small_radius."""
     distances = shortest_paths(track_graph)
-    a, b, _   = find_extrema_and_length(distances)
+    if distances.empty:
+        raise NoVoxels
 
-    if big_radius is not None:
-        a = find_highest_encapsulating_node(track_graph, a, distances, big_radius, small_radius)
-        b = find_highest_encapsulating_node(track_graph, b, distances, big_radius, small_radius)
+    # pandas' indexing methods return series, which are homogeneous in the type
+    # of their elements. If we pick up the three at the same time it casts both
+    # integers to floats, so we pick them one by one instead
+    idxmax = distances.distance.idxmax()
+    v1     = distances.iloc[idxmax, 0]
+    v2     = distances.iloc[idxmax, 1]
+    length = distances.iloc[idxmax, 2]
 
-    ha = hits_in_blob(track_graph, small_radius, a)
-    hb = hits_in_blob(track_graph, small_radius, b)
-    ca = blob_centre(a)
-    cb = blob_centre(b)
-
-    voxels = list(track_graph.nodes())
-    e_type = voxels[0].Etype
-    # Consider the case where voxels are built without associated hits
-    some_hits = len(ha) or len(hb)
-    Ea = ha[e_type].sum() if some_hits else energy_of_voxels_within_radius(distances[a], small_radius)
-    Eb = hb[e_type].sum() if some_hits else energy_of_voxels_within_radius(distances[b], small_radius)
-
-    if Eb > Ea:
-        return (Eb, Ea, hb, ha, cb, ca)
-    else:
-        return (Ea, Eb, ha, hb, ca, cb)
+    return v1, v2, length
 
 
-def blob_energies(track_graph : Graph, small_radius : float, big_radius : Union[float, NoneType]) -> Tuple[float, float]:
-    """Return the energies around the extrema of the track.
-       The largest energy is returned first."""
-    E1, E2, _, _, _, _ = blob_energies_hits_and_centres(track_graph, small_radius, big_radius)
-
-    return E1, E2
-
-
-def blob_energies_and_hits(track_graph : Graph, small_radius: float, big_radius : Union[float, NoneType]) -> Tuple[float, float, Sequence[BHit], Sequence[BHit]]:
-    """Return the energies and the hits around the extrema of the track.
-       The largest energy is returned first, as well as its hits."""
-    E1, E2, h1, h2, _, _ = blob_energies_hits_and_centres(track_graph, small_radius, big_radius)
-
-    return (E1, E2, h1, h2)
+def hits_ave_pos(hits: pd.DataFrame) -> np.ndarray:
+    """
+    Calculate the energy-weighted average position of a set of hits
+    """
+    return np.average( hits[list("XYZ")].values
+                     , weights=hits.E.values
+                     , axis=0)
 
 
-def blob_centres(track_graph : Graph, small_radius : float, big_radius : Union[float, NoneType]) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
-    """Return the positions of the blobs.
-       The blob of largest energy is returned first."""
-    _, _, _, _, c1, c2 = blob_energies_hits_and_centres(track_graph, small_radius, big_radius)
+def assign_blobs_inplace(track_graph : Graph,
+                         hits        : pd.DataFrame,
+                         voxels      : pd.DataFrame,
+                         radius      : float,
+                         extreme_id_1: int,
+                         extreme_id_2: int,
+                         voxel_size  : np.ndarray,
+                        ):
+    """
+    Assigns each hit and voxel a label that links them to a blob. The code is:
+    - "low"  for the lower energy blob
+    - "high" for the higher energy blob
+    - "lowhigh" if a hit belongs to both blobs
+    - "none" otherwise (not set within this function)
+    """
+    distances = shortest_paths(track_graph).set_index("initial")
+    if len(distances) == 1: # special case
+        hits  .loc[:, "blob"] = "lowhigh"
+        voxels.loc[:, "blob"] = "lowhigh"
+        return
+    diag      = np.linalg.norm(voxel_size)
 
-    return (c1, c2)
+    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1])
+    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2])
+
+    # voxels that might have within within the required radius
+    within_radius = lambda df: df.distance < radius + diag
+    candidate_voxels_1 = distances.loc[extreme_id_1].loc[within_radius].final.values
+    candidate_voxels_2 = distances.loc[extreme_id_2].loc[within_radius].final.values
+
+    within_r_1 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_1, axis=1) < radius
+    within_r_2 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_2, axis=1) < radius
+
+    # some hits might fall within the radius, but their distance **along the
+    # track** (established by the voxel they belong to) might be longer. We want
+    # hits from voxels that are connected to the extreme
+    sel_1 = hits.voxel_id.isin(candidate_voxels_1).values & within_r_1
+    sel_2 = hits.voxel_id.isin(candidate_voxels_2).values & within_r_2
+    sel_both = sel_1 & sel_2
+    e_1 = hits.loc[sel_1, "E"].sum()
+    e_2 = hits.loc[sel_2, "E"].sum()
+
+    label_1 = "low"  if e_1 <= e_2 else "high"
+    label_2 = "high" if e_1 <= e_2 else "low"
+    hits.loc[sel_1   , "blob"] = label_1
+    hits.loc[sel_2   , "blob"] = label_2
+    hits.loc[sel_both, "blob"] = "lowhigh"
+
+    # not all of the original voxel selection have hits within the radius. We
+    # want to keep only those that do.
+    voxel_ids_1    = hits.voxel_id.loc[sel_1].unique()
+    voxel_ids_2    = hits.voxel_id.loc[sel_2].unique()
+    voxel_ids_both = list(set(voxel_ids_1).intersection(set(voxel_ids_2)))
+    voxels.loc[voxel_ids_1   , "blob"] = label_1
+    voxels.loc[voxel_ids_2   , "blob"] = label_2
+    voxels.loc[voxel_ids_both, "blob"] = "lowhigh"
 
 
-def make_tracks(evt_number       : float,
-                evt_time         : float,
-                voxels           : List[Voxel],
-                voxel_dimensions : np.ndarray,
-                contiguity       : Contiguity = Contiguity.CORNER,
-                blob_radius      : float = 30 * units.mm,
-                energy_type      : HitEnergy = HitEnergy.E) -> TrackCollection:
-    """Make a track collection."""
-    tc = TrackCollection(evt_number, evt_time) # type: TrackCollection
-    track_graphs = make_track_graphs(voxels, contiguity) # type: Sequence[Graph]
-    for trk in track_graphs:
-        energy_a, energy_b, hits_a, hits_b = blob_energies_and_hits(trk, blob_radius, None)
-        a, b                               = blob_centres(trk, blob_radius, None)
-        blob_a = Blob(a, hits_a, blob_radius, energy_type) # type: Blob
-        blob_b = Blob(b, hits_b, blob_radius, energy_type)
-        blobs = (blob_a, blob_b)
-        track = Track(voxels_from_track_graph(trk), blobs)
-        tc.tracks.append(track)
-    return tc
+def make_tracks(hits       : pd.DataFrame,
+                voxels     : pd.DataFrame,
+                voxel_size : np.ndarray,
+                blob_radius: float,
+                contiguity : Contiguity = Contiguity.CORNER,
+                energy_type: HitEnergy  = HitEnergy.E
+               ) -> (pd.DataFrame, pd.DataFrame): # hits, voxels
+    """
+    Assign each hit and voxel a track and a blob. Tracks are simply enumerated
+    according to the graph algorithm. The code for blob association is
+    - "low"  for the lower energy blob
+    - "high" for the higher energy blob
+    - "none" otherwise
+    """
+    track_graphs = make_track_graphs(voxels, voxel_size, contiguity)
+    hits   = hits.copy()
+    voxels = voxels.copy()
+    hits  .insert(hits  .shape[1], "track",  9999)
+    voxels.insert(voxels.shape[1], "track",  9999)
+    hits  .insert(hits  .shape[1], "blob", "none")
+    voxels.insert(voxels.shape[1], "blob", "none")
+
+    for track_no, track in enumerate(track_graphs):
+        extreme_low, extreme_high, _ = find_extrema_and_length(track, voxels)
+        assign_blobs_inplace(track, hits, voxels, blob_radius, extreme_low, extreme_high, voxel_size)
+
+        voxels_in_this_track = list(track.nodes())
+        hits_in_this_track   = hits.voxel_id.isin(voxels_in_this_track)
+
+        hits  .loc[  hits_in_this_track, "track"] = track_no
+        voxels.loc[voxels_in_this_track, "track"] = track_no
+    return hits, voxels
 
 
-def drop_end_point_voxels(voxels           : Sequence[Voxel],
-                          energy_threshold : float,
-                          min_vxls         : int = 3,
-                          contiguity       : Contiguity = Contiguity.CORNER) -> Sequence[Voxel]:
-    """Eliminate voxels at the end-points of a track, recursively,
-       if their energy is lower than a threshold. Returns 1 if the voxel
-       has been deleted succesfully and 0 otherwise."""
+def pop_voxel_inplace(voxels: pd.DataFrame, vox_id: int) -> pd.Series:
+    popped = voxels.loc[vox_id]
+    voxels.drop(vox_id, inplace=True)
+    return popped
 
-    xyz    = "X Y Z".split()
-    e_type = voxels[0].Etype
 
-    def drop_voxel(voxels: Sequence[Voxel], the_vox: Voxel, contiguity: Contiguity = Contiguity.CORNER):
-        """Eliminate an individual voxel from a set of voxels and give its energy to the hit
-           that is closest to the barycenter of the eliminated voxel hits, provided that it
-           belongs to a neighbour voxel."""
-        the_neighbour_voxels = [v for v in voxels if neighbours(the_vox, v, contiguity)]
+def drop_voxel_inplace( hits      : pd.DataFrame
+                      , voxels    : pd.DataFrame
+                      , vox_id    : int
+                      , e_type    : HitEnergy
+                      , contiguity: Contiguity = Contiguity.CORNER
+                      ) -> pd.Series:
+    """
+    Eliminate an individual voxel from a set of voxels and give its energy to
+    the hits closest to the barycenter of the eliminated voxel's hits, provided
+    that it belongs to a neighbour voxel. The dropped voxel is returned.
+    """
+    popped           = pop_voxel_inplace(voxels)
+    is_neighbour     = [neighbours(popped, voxel, contiguity) for _, voxel in voxels.iterrows()]
+    neighbour_voxels = voxels.loc[is_neighbour]
 
-        #if there are no hits associated to voxels the pos will be an empty list
-        if len(the_vox.hits) == 0:
-            min_dist  = min(np.linalg.norm(the_vox.pos-v.pos) for v in the_neighbour_voxels)
-            min_v     = [v for v in the_neighbour_voxels
-                           if np.isclose(np.linalg.norm(the_vox.pos-v.pos), min_dist)]
+    bary_pos = np.average( popped[list("XYZ")]
+                         , weights = hits.loc[hits.voxel_id == vox_id, e_type]
+                         , axis    =  0)
 
-            ### add dropped voxel energy to closest voxels, proportional to the  voxels energy
-            sum_en_v = sum(v.E for v in min_v)
-            for v in min_v:
-                v.E += the_vox.E/sum_en_v * v.E
-            return
+    neighbour_hits = hits.loc[hits.voxel_id.isin(neighbour_voxels.index)]
+    distances      = np.linalg.norm(neighbour_hits[list("xyz")] - bary_pos, axis=1)
+    closest_hits   = neighbour_hits.loc[np.isclose(distances, distances.min())]
 
-        bary_pos = np.average(           the_vox.hits[xyz]
-                             , weights = the_vox.hits[e_type]
-                             , axis    =  0)
 
-        # the energy of the dropped voxel is assigned to the closest hit.
-        # However, several hits be at exactly the same distance (this happens
-        # when hits are distributed in a regular pattern). We generalize this
-        # behaviour by determining all hits in neighbouring voxels within a
-        # minimum distance from the main voxels barycentre position and share
-        # the voxel energy among them, proportionally to each hit's energy
-        distance_to_bary = lambda hs: np.linalg.norm(hs[xyz] - bary_pos, axis=1)
-        distances        = [(v, distance_to_bary(v.hits)) for v in the_neighbour_voxels]
-        min_dist         = min(ds.min() for (_, ds) in distances)
+    # the energy of the dropped voxel is assigned to the closest hit.
+    # However, several hits can be at exactly the same distance (this
+    # happens when hits are distributed in a regular pattern). We generalize
+    # this behaviour by determining all hits in neighbouring voxels within a
+    # minimum distance from the main voxels barycentre position and share
+    # the voxel energy among them, proportionally to each hit's energy
+    e_type          = e_type.value
+    total_closest_e = closest_hits[e_type].sum()
+    new_hit_energy  = closest_hits[e_type] * (1 + popped.e/total_closest_e)
+    hits.loc[closest_hits.index, e_type] = new_hit_energy
+    hits.loc[hits.voxel_id == vox_id, e_type] = np.nan
+    hits.loc[hits.voxel_id == vox_id, vox_id] = 0
 
-        hits_at_min_dist = lambda ds: np.argwhere(np.isclose(ds, min_dist)).flatten()
-        min_hits         = [(v, hits_at_min_dist(ds)) for (v, ds) in distances]
-        min_hits         = [pair for pair in min_hits if pair[1].size]
+    new_vox_energy = hits.groupby("voxel_id")[e_type].sum()
+    voxels.loc[new_vox_energy.index, "e"] = new_vox_energy.values
 
-        total_closest_e = sum(v.hits.iloc[idx][e_type].sum() for (v, idx) in min_hits)
-        for (v, row_idx) in min_hits:
-            col_idx        = v.hits.columns.get_loc(e_type)
-            current_energy = v.hits.iloc[row_idx, col_idx].values
-            v.hits.iloc[row_idx, col_idx] = current_energy * (1 + the_vox.E/total_closest_e)
+    return popped
 
-        # recompute voxel energy because we have modified the hits it contains
-        for v in voxels:
-            v.E = v.hits[e_type].sum()
 
-    def set_nan_energies(voxel):
-        voxel.E = np.nan
-        voxel.hits.loc[:, e_type] = np.nan
+def drop_voxels(hits            : pd.DataFrame,
+                voxels          : pd.DataFrame,
+                energy_threshold: float,
+                voxel_size      : np.ndarray,
+                e_type          : HitEnergy,
+                min_vxls        : int = 3,
+                contiguity      : Contiguity = Contiguity.CORNER
+               ) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame): # hits, voxels, dropped voxels
+    """
+    Find voxels at the end-points of a track and tag them, recursively, if their
+    energy is lower than a threshold.
+    """
 
-    mod_voxels     = copy.deepcopy(voxels)
-    dropped_voxels = []
-
+    dropped  = []
+    hits     =   hits.copy()
+    voxels   = voxels.copy()
     modified = True
     while modified:
         modified = False
-        trks = make_track_graphs(mod_voxels, contiguity)
+        trks = make_track_graphs(voxels, voxel_size, contiguity)
 
         for t in trks:
             if len(t.nodes()) < min_vxls:
                 continue
 
-            for extreme in find_extrema(t):
-                if extreme.E < energy_threshold:
-                    ### be sure that the voxel to be eliminated has at least one neighbour
-                    ### beyond itself
-                    n_neighbours = sum(neighbours(extreme, v, contiguity) for v in mod_voxels)
+            for voxel_id in find_extrema_and_length(t, voxels)[:2]: # skip length
+                extreme = voxels.loc[voxel_id]
+                if extreme.e < energy_threshold:
+                    # be sure that the voxel to be eliminated has at least one neighbour
+                    # beyond itself
+                    n_neighbours = sum(neighbours(extreme, v, contiguity) for _, v in voxels.iterrows())
                     if n_neighbours > 1:
-                        mod_voxels    .remove(extreme)
-                        dropped_voxels.append(extreme)
-                        drop_voxel(mod_voxels, extreme)
-                        set_nan_energies(extreme)
+                        dropped_voxel = drop_voxel_inplace(hits, voxels, voxel_id, contiguity)
+                        dropped.append(dropped_voxel)
                         modified = True
 
-    return mod_voxels, dropped_voxels
-
-
-def get_track_energy(track):
-    return sum([vox.Ehits for vox in track.nodes()])
+    dropped = pd.concat(dropped)
+    return hits, voxels, dropped
