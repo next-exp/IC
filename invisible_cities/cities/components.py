@@ -6,6 +6,8 @@ from glob            import glob
 from os.path         import expandvars
 from itertools       import count
 from itertools       import repeat
+from warnings        import warn
+
 from typing          import Callable
 from typing          import Iterator
 from typing          import Mapping
@@ -1484,6 +1486,9 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
         df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
         hits = hits.assign(track_id=-1)
         if len(hits) > max_num_hits:
+            event = hits.event.iloc[0]
+            warn("Event {event} has too many hits ({len(hits)})."
+                 " This event will not be processed.")
             return df, hits, True
         plf.round_hits_positions_in_place(hits, 5)
 
