@@ -697,8 +697,17 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
 
 
 @check_annotations
-def dhits_from_files(paths: List[str]) -> Iterator[Dict[str, Union[pd.DataFrame, pd.DataFrame, MCInfo, int, float]]]:
-    """Reader of the files, yields a hits dataframe, a kdst, run_number, event_number and timestamp."""
+def dhits_from_files(paths: List[str]) -> Iterator[Dict[str, Union[ pd.DataFrame # hits
+                                                                  , pd.DataFrame # kdst
+                                                                  , int          # run number
+                                                                  , int          # event number
+                                                                  , float        # timestamp
+                                                                  ]]]:
+    """
+    Reader for the output of beersheba (a.k.a. deconvolved hits).
+    For each event, it produces a dictionary with hits, a kdst, run_number,
+    event_number and timestamp.
+    """
     for path in paths:
         try:
             dhits_df = load_dst (path, 'DECO', 'Events')
