@@ -24,7 +24,10 @@ from typing import Tuple
 from typing import Dict
 
 def bounding_box(hits: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-    """Returns two arrays defining the coordinates of a box that bounds the voxels"""
+    """
+    Compute the (min, max) coordinates of the axis-aligned bounding box
+    enclosing the hits in X, Y, Z.
+    """
     xyz = hits["X Y Z".split()].values
     return xyz.min(axis=0), xyz.max(axis=0)
 
