@@ -806,8 +806,7 @@ def apply_cutting_function(algo, **cutting_params):
     elif algo is CutAlgo.pyrrha:
         func = pyrrha_sipm_selection(**cutting_params)
     else:
-        # temporary solution, think of a nicer method
-        func = threshold_sipm_selection(**cutting_params)
+        raise ValueError(f"Unsupported cutting algorithm: {algo!r}. Expected one of {list(CutAlgo)}")
 
     def apply_cutting_function(wfs):
         return func(wfs)
