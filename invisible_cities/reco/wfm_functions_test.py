@@ -82,3 +82,17 @@ def test_median_std_method(sipm_wfs_for_sipm_energy_selection_testing):
 
     assert passing_sipms_1sigma == expected_outliers_1sigma
     assert passing_sipms_3sigma == expected_outliers_3sigma
+
+
+def test_threshold_method(sipm_wfs_for_sipm_energy_selection_testing):
+    """
+    Test function threshold_method(). The test asserts that the function correctly
+    kills the SiPMs below a certain charge threshold. 
+    """
+    wfs, expected_outliers_110pes, expected_outliers_130pes = sipm_wfs_for_sipm_energy_selection_testing
+
+    passing_sipms_110pes, _ = wfm.charge_threshold_method(wfs, zeroing_thr=0, integration_thr=110)
+    passing_sipms_130pes, _ = wfm.charge_threshold_method(wfs, zeroing_thr=0, integration_thr=130)
+
+    assert passing_sipms_110pes.tolist() == expected_outliers_110pes
+    assert passing_sipms_130pes.tolist() == expected_outliers_130pes
