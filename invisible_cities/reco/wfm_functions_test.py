@@ -5,6 +5,7 @@ import numpy  as np
 import tables as tb
 
 from pytest import mark
+from pytest import fixture
 
 from .. database import load_db
 
@@ -49,3 +50,35 @@ def test_compare_cwf_blr(dbnew, ICDATADIR):
                                    event_list=range(NEVT), window_size=300)
 
     assert max(diff) < 0.15
+
+@fixture
+def sipm_wfs_for_sipm_energy_selection_testing():
+    """
+    2D array of SiPM waveforms. All but two SiPMs have 100 PEs integrated charge.
+    Two outliers:
+    - SiPM 2: 150 PEs, more than 3 sigma above the median
+    - SiPM 7: 120 PEs, between 1-2 sigma above the median
+    """
+    n_sipms     = 10
+    n_time_bins = 100
+
+    wfs = np.ones((n_sipms, n_time_bins), dtype=np.float32)
+
+    wfs[2, :] = 1.5
+    wfs[7, :] = 1.2
+    # median ~ 100, std ~ 15.5
+    return wfs, [2, 7], [2]
+
+
+def test_median_std_method(sipm_wfs_for_sipm_energy_selection_testing):
+    """
+    Test function median_std_method(). The test asserts that the function correctly 
+    identifies the outliers based on different standard deviation thresholds. 
+    """
+    wfs, expected_outliers_1sigma, expected_outliers_3sigma = sipm_wfs_for_sipm_energy_selection_testing
+
+    passing_sipms_1sigma = np.where(wfm.median_std_method(wfs, nsigma=1))[0].tolist()
+    passing_sipms_3sigma = np.where(wfm.median_std_method(wfs, nsigma=3))[0].tolist()
+
+    assert passing_sipms_1sigma == expected_outliers_1sigma
+    assert passing_sipms_3sigma == expected_outliers_3sigma
