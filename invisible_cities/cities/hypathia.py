@@ -84,8 +84,6 @@ def hypathia( files_in         : OneOrManyFiles
             , cutting_params   : Dict[str, Any]
             ):
 
-    sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
-
     #### Define data transformations
     sd = sensor_data(files_in[0], WfType.mcrd)
 
