@@ -52,7 +52,7 @@ def test_compare_cwf_blr(dbnew, ICDATADIR):
     assert max(diff) < 0.15
 
 @fixture
-def sipm_wfs_for_sipm_energy_selection_testing():
+def sipm_wfs_for_sipm_selection_testing():
     """
     2D array of SiPM waveforms. All but two SiPMs have 100 PEs integrated charge.
     Two outliers:
@@ -70,12 +70,12 @@ def sipm_wfs_for_sipm_energy_selection_testing():
     return wfs, [2, 7], [2]
 
 
-def test_median_std_method(sipm_wfs_for_sipm_energy_selection_testing):
+def test_median_std_method(sipm_wfs_for_sipm_selection_testing):
     """
     Test function median_std_method(). The test asserts that the function correctly 
     identifies the outliers based on different standard deviation thresholds. 
     """
-    wfs, expected_outliers_1sigma, expected_outliers_3sigma = sipm_wfs_for_sipm_energy_selection_testing
+    wfs, expected_outliers_1sigma, expected_outliers_3sigma = sipm_wfs_for_sipm_selection_testing
 
     passing_sipms_1sigma = np.where(wfm.median_std_method(wfs, nsigma=1))[0].tolist()
     passing_sipms_3sigma = np.where(wfm.median_std_method(wfs, nsigma=3))[0].tolist()
@@ -84,12 +84,12 @@ def test_median_std_method(sipm_wfs_for_sipm_energy_selection_testing):
     assert passing_sipms_3sigma == expected_outliers_3sigma
 
 
-def test_threshold_method(sipm_wfs_for_sipm_energy_selection_testing):
+def test_threshold_method(sipm_wfs_for_sipm_selection_testing):
     """
     Test function threshold_method(). The test asserts that the function correctly
     kills the SiPMs below a certain charge threshold. 
     """
-    wfs, expected_outliers_110pes, expected_outliers_130pes = sipm_wfs_for_sipm_energy_selection_testing
+    wfs, expected_outliers_110pes, expected_outliers_130pes = sipm_wfs_for_sipm_selection_testing
 
     passing_sipms_110pes, _ = wfm.charge_threshold_method(wfs, zeroing_thr=0, integration_thr=110)
     passing_sipms_130pes, _ = wfm.charge_threshold_method(wfs, zeroing_thr=0, integration_thr=130)
