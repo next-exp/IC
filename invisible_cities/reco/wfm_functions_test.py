@@ -96,3 +96,20 @@ def test_threshold_method(sipm_wfs_for_sipm_selection_testing):
 
     assert passing_sipms_110pes.tolist() == expected_outliers_110pes
     assert passing_sipms_130pes.tolist() == expected_outliers_130pes
+
+
+def test_top_n_method(sipm_wfs_for_sipm_selection_testing):
+    """
+    Test function top_n_method(). The test asserts that the function  selects the correct
+    number of SiPMs andcorrectly identifies the top N SiPMs based on their integrated charge. 
+    """
+    wfs, expected_outliers_top2, expected_outliers_top1 = sipm_wfs_for_sipm_selection_testing
+
+    passing_sipms_top2 = np.where(wfm.top_n_method(wfs, n=2))[0].tolist()
+    passing_sipms_top1 = np.where(wfm.top_n_method(wfs, n=1))[0].tolist()
+
+    assert len(passing_sipms_top2) == 2
+    assert len(passing_sipms_top1) == 1
+
+    assert passing_sipms_top2 == expected_outliers_top2
+    assert passing_sipms_top1 == expected_outliers_top1
