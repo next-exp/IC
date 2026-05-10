@@ -113,3 +113,61 @@ def test_top_n_method(sipm_wfs_for_sipm_selection_testing):
 
     assert passing_sipms_top2 == expected_outliers_top2
     assert passing_sipms_top1 == expected_outliers_top1
+
+
+@fixture
+def sipm_grid_for_isolation_testing():
+    """
+    5x5 grid of with 10mm spacing containing 4 SiPMs:
+    - SiPM  7 (x=20, y=10) has nearest neighbours 12 and 13
+    - SiPM 12 (x=20, y=20) has nearest neighbours 7 and 13
+    - SiPM 13 (x=30, y=20) has nearestneighbours 12 and 7
+    - SiPM 24 (x=40, y=40) has no nearest neighbours
+    With proximity_threshold=15mm SiPMs 7, 12, 13 survive and SiPM 24 is killed.
+    With proximity_threshold=5mm, all SiPMs are killed.
+    """
+    spacing = 10
+    xs = np.arange(5) * spacing  # [0, 10, 20, 30, 40]
+    ys = np.arange(5) * spacing
+
+    grid_x, grid_y = np.meshgrid(xs, ys)
+    sipm_x = grid_x.flatten().astype(np.float32)  # shape (25,)
+    sipm_y = grid_y.flatten().astype(np.float32)
+
+    # visual representation of the grid with SiPMs plotted as their IDs:
+    # X  X  X  X  24
+    # X  X  X  X  X
+    # X  X  12 13 X
+    # X  X  7  X  X
+    # X  X  X  X  X
+    selected_ids = np.zeros(25, dtype=bool)
+    cluster_ids  = [7, 12, 13]
+    isolated_id  = [24]
+    for idx in cluster_ids + isolated_id:
+        selected_ids[idx] = True
+
+    # diagonal SiPM distance ~ 14mm
+    # only SiPMs with a nearest neighbour pass assuming proximity_threshold=15mm
+    # SiPM 24 should be killed
+    expected_survivors_15mm = np.zeros(25, dtype=bool)
+    for idx in cluster_ids:
+        expected_survivors_15mm[idx] = True
+
+    # given a SiPM distance of 10mm, there should be no survivors with proximity_threshold=5mm
+    expected_survivors_5mm = np.zeros(25, dtype=bool)
+
+    return sipm_x, sipm_y, selected_ids, expected_survivors_15mm, expected_survivors_5mm
+
+
+def test_kill_isolated_sipms(sipm_grid_for_isolation_testing):
+    """"
+    Test function kill_isolated_sipms(). The test asserts that the function correctly
+    identifies and removes isolated SiPMs based on their proximity to other SiPMs.
+    """
+    sipm_x, sipm_y, selected_ids, expected_survivors_15mm, expected_survivors_5mm = sipm_grid_for_isolation_testing
+    
+    surviving_sipms_15mm = wfm.kill_isolated_sipms(selected_ids, sipm_x, sipm_y, proximity_threshold=15.0)
+    surviving_sipms_5mm = wfm.kill_isolated_sipms(selected_ids, sipm_x, sipm_y, proximity_threshold=5.0)
+
+    assert surviving_sipms_15mm.tolist() == expected_survivors_15mm.tolist()
+    assert surviving_sipms_5mm.tolist() == expected_survivors_5mm.tolist()
