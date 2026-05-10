@@ -116,7 +116,7 @@ def test_top_n_method(sipm_wfs_for_sipm_selection_testing):
 
 
 @fixture
-def sipm_grid_for_isolation_testing():
+def sipm_grid_for_isolation_and_padding_testing():
     """
     5x5 grid of with 10mm spacing containing 4 SiPMs:
     - SiPM  7 (x=20, y=10) has nearest neighbours 12 and 13
@@ -125,6 +125,9 @@ def sipm_grid_for_isolation_testing():
     - SiPM 24 (x=40, y=40) has no nearest neighbours
     With proximity_threshold=15mm SiPMs 7, 12, 13 survive and SiPM 24 is killed.
     With proximity_threshold=5mm, all SiPMs are killed.
+
+    With a padding of 12mm around the cluster of SiPMs 7, 12, 13 you also
+    include SiPMs 2, 6, 8, 11, 14, 17, 18.
     """
     spacing = 10
     xs = np.arange(5) * spacing  # [0, 10, 20, 30, 40]
@@ -156,18 +159,50 @@ def sipm_grid_for_isolation_testing():
     # given a SiPM distance of 10mm, there should be no survivors with proximity_threshold=5mm
     expected_survivors_5mm = np.zeros(25, dtype=bool)
 
-    return sipm_x, sipm_y, selected_ids, expected_survivors_15mm, expected_survivors_5mm
+    # adding a padding of 12mm around the cluster of SiPMs 7, 12, 13 would include 
+    # SiPMs 2, 6, 8, 11, 14, 17, 18
+    # X  X  X  X  X
+    # X  X  17 18 X
+    # X  11 12 13 14
+    # X  6  7  8  X
+    # X  X  2  X  X
+    padded_cluster_ids = cluster_ids + [2, 6, 8, 11, 14, 17, 18]
+    expected_survivors_padding12 = np.zeros(25, dtype=bool)
+    for idx in padded_cluster_ids:
+        expected_survivors_padding12[idx] = True
+
+    # adding a padding of 0mm around the cluster of SiPMs 7, 12, 13 would include only the cluster itself
+    expected_survivors_padding0 = np.zeros(25, dtype=bool)
+    for idx in cluster_ids:
+        expected_survivors_padding0[idx] = True
+
+    return (sipm_x, sipm_y, selected_ids, expected_survivors_15mm, expected_survivors_5mm, 
+            expected_survivors_padding12, expected_survivors_padding0)
 
 
-def test_kill_isolated_sipms(sipm_grid_for_isolation_testing):
+def test_kill_isolated_sipms(sipm_grid_for_isolation_and_padding_testing):
     """"
     Test function kill_isolated_sipms(). The test asserts that the function correctly
     identifies and removes isolated SiPMs based on their proximity to other SiPMs.
     """
-    sipm_x, sipm_y, selected_ids, expected_survivors_15mm, expected_survivors_5mm = sipm_grid_for_isolation_testing
+    sipm_x, sipm_y, selected_ids, expected_survivors_15mm, expected_survivors_5mm, _, _ = sipm_grid_for_isolation_and_padding_testing
     
     surviving_sipms_15mm = wfm.kill_isolated_sipms(selected_ids, sipm_x, sipm_y, proximity_threshold=15.0)
     surviving_sipms_5mm = wfm.kill_isolated_sipms(selected_ids, sipm_x, sipm_y, proximity_threshold=5.0)
 
     assert surviving_sipms_15mm.tolist() == expected_survivors_15mm.tolist()
     assert surviving_sipms_5mm.tolist() == expected_survivors_5mm.tolist()
+
+
+def test_apply_circular_padding(sipm_grid_for_isolation_and_padding_testing):
+    """
+    Test function apply_circular_padding(). The test asserts that the function correctly applies 
+    a circular padding around selected SiPMs to include neighboring SiPMs within the specified radius.
+    """
+    sipm_x, sipm_y, _, selected_ids, _, expected_survivors_padding12, expected_survivors_padding0 = sipm_grid_for_isolation_and_padding_testing
+
+    padded_sipms_12mm = wfm.apply_circular_padding(selected_ids, sipm_x, sipm_y, padding_radius=12.0)
+    padded_sipms_0mm = wfm.apply_circular_padding(selected_ids, sipm_x, sipm_y, padding_radius=0.0)
+
+    assert padded_sipms_12mm.tolist() == expected_survivors_padding12.tolist()
+    assert padded_sipms_0mm.tolist() == expected_survivors_padding0.tolist()
