@@ -266,7 +266,7 @@ def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
     for i in np.where(selected_ids_no_isolated)[0]:
         x, y = sipm_x[i], sipm_y[i]
         distances = np.sqrt((sipm_x - x)**2 + (sipm_y - y)**2)
-        sipm_ids_with_signal |= distances < padding_radius
+        sipm_ids_with_signal |= distances <= padding_radius
 
     return sipm_ids_with_signal
 
