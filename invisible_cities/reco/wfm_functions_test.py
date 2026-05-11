@@ -67,7 +67,20 @@ def sipm_wfs_for_sipm_selection_testing():
     wfs[2, :] = 1.5
     wfs[7, :] = 1.2
     # median ~ 100, std ~ 15.5
-    return wfs, [2, 7], [2]
+    return wfs, [2, 7], [2], [0, 1, 3, 4, 5, 6, 8, 9]
+
+
+def test_zero_wfs_below_threshold(sipm_wfs_for_sipm_selection_testing):
+    """
+    Test function zero_wfs_below_threshold(). The test asserts that the function correctly
+    sets to zero the entries of the waveforms that are below a specified threshold.
+    """
+    wfs, passing_wfs_11_ids, _, zeroed_wfs_11_ids  = sipm_wfs_for_sipm_selection_testing
+
+    zeroed_wfs_11 = wfm.zero_wfs_below_threshold(wfs, zeroing_thr=1.1)
+
+    assert np.all(zeroed_wfs_11[zeroed_wfs_11_ids] == 0)
+    assert np.all(zeroed_wfs_11[passing_wfs_11_ids] == wfs[passing_wfs_11_ids])
 
 
 def test_median_std_method(sipm_wfs_for_sipm_selection_testing):
@@ -75,7 +88,7 @@ def test_median_std_method(sipm_wfs_for_sipm_selection_testing):
     Test function median_std_method(). The test asserts that the function correctly 
     identifies the outliers based on different standard deviation thresholds. 
     """
-    wfs, expected_outliers_1sigma, expected_outliers_3sigma = sipm_wfs_for_sipm_selection_testing
+    wfs, expected_outliers_1sigma, expected_outliers_3sigma, _ = sipm_wfs_for_sipm_selection_testing
 
     passing_sipms_1sigma = np.where(wfm.median_std_method(wfs, nsigma=1))[0].tolist()
     passing_sipms_3sigma = np.where(wfm.median_std_method(wfs, nsigma=3))[0].tolist()
@@ -89,7 +102,7 @@ def test_threshold_method(sipm_wfs_for_sipm_selection_testing):
     Test function threshold_method(). The test asserts that the function correctly
     kills the SiPMs below a certain charge threshold. 
     """
-    wfs, expected_outliers_110pes, expected_outliers_130pes = sipm_wfs_for_sipm_selection_testing
+    wfs, expected_outliers_110pes, expected_outliers_130pes, _ = sipm_wfs_for_sipm_selection_testing
 
     passing_sipms_110pes, _ = wfm.charge_threshold_method(wfs, zeroing_thr=0, integration_thr=110)
     passing_sipms_130pes, _ = wfm.charge_threshold_method(wfs, zeroing_thr=0, integration_thr=130)
@@ -103,7 +116,7 @@ def test_top_n_method(sipm_wfs_for_sipm_selection_testing):
     Test function top_n_method(). The test asserts that the function  selects the correct
     number of SiPMs andcorrectly identifies the top N SiPMs based on their integrated charge. 
     """
-    wfs, expected_outliers_top2, expected_outliers_top1 = sipm_wfs_for_sipm_selection_testing
+    wfs, expected_outliers_top2, expected_outliers_top1, _ = sipm_wfs_for_sipm_selection_testing
 
     passing_sipms_top2 = np.where(wfm.top_n_method(wfs, n=2))[0].tolist()
     passing_sipms_top1 = np.where(wfm.top_n_method(wfs, n=1))[0].tolist()
