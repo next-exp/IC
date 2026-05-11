@@ -138,6 +138,24 @@ def compare_cwf_blr(cwf, pmtblr, event_list, window_size=500):
     return np.array(DIFF)
 
 
+def zero_wfs_below_threshold(wfs         : np.ndarray,
+                             zeroing_thr : Optional[float] = 2.) -> np.ndarray:
+    """
+    Zeroes the entries of the input waveforms that are below a given threshold.
+
+    Parameters
+    ----------
+    wfs         : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
+    zeroing_thr : Charge threshold for zero suppression in PE, default 2.
+
+    Returns
+    -------
+    2D array of shape (n_sipms, n_time_bins) containing the input waveforms with entries below threshold set to zero.
+    """
+    thr = to_col_vector(np.full(wfs.shape[0], zeroing_thr))
+    return np.where(wfs > thr, wfs, 0)
+
+
 def median_std_method(wfs    : np.ndarray,
                       nsigma : Optional[float] = 3.) -> np.ndarray:
     """
@@ -176,10 +194,8 @@ def charge_threshold_method(wfs             : np.ndarray,
     -------
     Tuple of np arrays including all passing sipm ids and the corresponding waveforms
     """
-    thr = to_col_vector(np.full(wfs.shape[0], zeroing_thr))
-
     # zero entries below threshold
-    zwfs = np.where(wfs > thr, wfs, 0)
+    zwfs = zero_wfs_below_threshold(wfs, zeroing_thr)
 
     # returns selected ids and waveforms above integral
     return select_wfs_above_time_integrated_thr(zwfs, integration_thr)
