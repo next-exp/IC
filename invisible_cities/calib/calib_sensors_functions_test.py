@@ -13,6 +13,7 @@ from .. core.testing_utils import all_elements_close
 
 from .          import calib_sensors_functions as csf
 from .. core    import core_functions          as cf
+from .. reco    import wfm_functions           as wfm
 from .. sierpe  import fee                     as FE
 from .. sierpe  import waveform_generator      as wfg
 
@@ -207,10 +208,11 @@ def test_calibrate_sipms_stat(oscillating_waveform_with_baseline,
      baseline )              = oscillating_waveform_with_baseline
     #n_maw                    = n_samples // 500
 
-    ccwfs = csf.calibrate_sipms(wfs, adc_to_pes, thr=nsigma * noise_sigma, bls_mode=BlsMode.mode)
+    ccwfs = csf.calibrate_sipms(wfs, adc_to_pes, bls_mode=BlsMode.mode)
+    zeroed_ccwfs = wfm.zero_wfs_below_threshold(ccwfs, zeroing_thr=nsigma * noise_sigma)
 
-    number_of_zeros = np.count_nonzero(ccwfs == 0)
-    assert number_of_zeros > fraction * ccwfs.size
+    number_of_zeros = np.count_nonzero(zeroed_ccwfs == 0)
+    assert number_of_zeros > fraction * zeroed_ccwfs.size
 
 
 def test_calibrate_sipms_common_threshold(toy_sipm_signal):
@@ -218,8 +220,8 @@ def test_calibrate_sipms_common_threshold(toy_sipm_signal):
      signal_zs_common_threshold, _,
      common_threshold, _) = toy_sipm_signal
 
-    zs_wf = csf.calibrate_sipms(signal_adc, adc_to_pes,
-                                thr=common_threshold, bls_mode=BlsMode.mode)
+    ccwf = csf.calibrate_sipms(signal_adc, adc_to_pes, bls_mode=BlsMode.mode)
+    zs_wf = wfm.zero_wfs_below_threshold(ccwf, zeroing_thr=common_threshold)
 
     for actual, expected in zip(zs_wf, signal_zs_common_threshold):
         assert actual == approx(expected)
@@ -230,10 +232,9 @@ def test_calibrate_sipms_individual_thresholds(toy_sipm_signal):
      _, signal_zs_individual_thresholds,
      _, individual_thresholds) = toy_sipm_signal
 
+    ccwf = csf.calibrate_sipms(signal_adc, adc_to_pes, bls_mode=BlsMode.mode)
+    zs_wf = wfm.zero_wfs_below_threshold(ccwf, zeroing_thr=individual_thresholds)
 
-    zs_wf = csf.calibrate_sipms(signal_adc, adc_to_pes,
-                                thr=individual_thresholds,
-                                bls_mode=BlsMode.mode)
     for actual, expected in zip(zs_wf, signal_zs_individual_thresholds):
         assert actual == approx(expected)
 
@@ -309,11 +310,12 @@ def test_area_of_sum_equals_sum_of_areas_pmts(square_pmt_and_sipm_waveforms):
 
 def test_area_of_sum_equals_sum_of_areas_sipms(square_pmt_and_sipm_waveforms):
     _, nsensors, _, _, _, sipms_wfm, _ = square_pmt_and_sipm_waveforms
-    adc_to_pes = np.full(nsensors, 100, dtype=float)
-    cwfs       = csf.calibrate_sipms(sipms_wfm, adc_to_pes, thr=10, bls_mode=BlsMode.mode)
-    stot       = np.sum(cwfs[0]) * nsensors
-    sums       = np.sum(cwfs, axis=1)
-    stot2      = reduce(add, sums)
+    adc_to_pes  = np.full(nsensors, 100, dtype=float)
+    cwfs        = csf.calibrate_sipms(sipms_wfm, adc_to_pes, bls_mode=BlsMode.mode)
+    zeroed_cwfs = wfm.zero_wfs_below_threshold(cwfs, zeroing_thr=10)
+    stot        = np.sum(zeroed_cwfs[0]) * nsensors
+    sums        = np.sum(zeroed_cwfs, axis=1)
+    stot2       = reduce(add, sums)
     assert stot == approx(stot2, rel=1e-3)
 
 
