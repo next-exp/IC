@@ -4,6 +4,7 @@ from math      import sqrt
 from functools import partial
 
 import numpy    as np
+import pandas   as pd
 import networkx as nx
 
 from itertools import combinations
@@ -19,6 +20,7 @@ parametrize = mark.parametrize
 
 from hypothesis            import given
 from hypothesis            import settings
+from hypothesis            import assume
 from hypothesis.strategies import composite
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
@@ -27,9 +29,6 @@ from hypothesis.strategies import builds
 
 from networkx.generators.random_graphs import fast_gnp_random_graph
 
-from .. evm.event_model import BHit
-from .. evm.event_model import Hit
-from .. evm.event_model import Cluster
 from .. evm.event_model import Voxel
 
 from . paolina_functions import bounding_box
@@ -51,16 +50,15 @@ from . paolina_functions import drop_end_point_voxels
 from . paolina_functions import make_tracks
 from . paolina_functions import get_track_energy
 
-from .. core               import system_of_units as units
-from .. core.exceptions    import NoHits
-from .. core.exceptions    import NoVoxels
-from .. core.testing_utils import assert_bhit_equality
+from .. core                import system_of_units as units
+from .. core.core_functions import in_range
+from .. core.exceptions     import NoHits
+from .. core.exceptions     import NoVoxels
+from .. core.testing_utils  import assert_dataframes_close
+from .. core.testing_utils  import an_instance_of
 
-from .. io.mcinfo_io    import cast_mchits_to_dict
-from .. io.mcinfo_io    import load_mchits_df
-from .. io.hits_io      import load_hits
+from .. io.mcinfo_io import load_mchits_df
 
-from .. types.ic_types import xy
 from .. types.symbols  import Contiguity
 from .. types.symbols  import HitEnergy
 
@@ -70,44 +68,40 @@ def big_enough(hits):
     bbsize = abs(hi-lo)
     return (bbsize > 0.1).all()
 
-posn = floats(min_value=10, max_value=100)
-ener = posn
-bunch_of_hits = lists(builds(BHit, posn, posn, posn, ener),
-                      min_size =  1,
-                      max_size = 30).filter(big_enough)
+@composite
+def single_hits(draw):
+    return pd.DataFrame(dict( event    = 0
+                            , time     = 0
+                            , npeak    = 0
+                            , x_peak   = draw(floats  (-10,  10))
+                            , y_peak   = draw(floats  (-10,  10))
+                            , X        = draw(floats  (-10,  10))
+                            , Y        = draw(floats  (-10,  10))
+                            , Z        = draw(floats  ( 50, 100))
+                            , Q        = draw(floats  (  1, 100))
+                            , E        = draw(floats  ( 50, 100))
+                            , Ec       = draw(floats  ( 50, 100))
+                            , track_id = draw(integers(  0,  10))
+                            , Ep       = draw(floats  ( 50, 100))
+                            ), index=[0])
 
 @composite
-def hit(draw, min_value=1, max_value=100):
-    x      = draw(floats  (-10,  10))
-    y      = draw(floats  (-10,  10))
-    xvar   = draw(floats  (.01,  .5))
-    yvar   = draw(floats  (.01,  .5))
-    Q      = draw(floats  (  1, 100))
-    nsipm  = draw(integers(  1,  20))
-    npeak  = 0
-    z      = draw(floats  ( 50, 100))
-    E      = draw(floats  ( 50, 100))
-    E_c    = draw(floats  ( 50, 100))
-    x_peak = draw(floats  (-10,  10))
-    y_peak = draw(floats  (-10,  10))
-    track  = draw(integers(  0,  10))
-    E_p    = draw(floats  ( 50, 100))
-
-    return Hit(npeak,
-               Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm),
-               z,
-               E,
-               xy(x_peak, y_peak),
-               s2_energy_c = E_c,
-               track_id    = track,
-               Ep          = E_p)
-
+def bunch_of_hits(draw):
+    strat = lists(single_hits(), min_size=1, max_size=30)
+    hits  = draw(strat)
+    hits  = pd.concat(hits, ignore_index=True)
+    assume(big_enough(hits))
+    return hits
 
 @composite
-def bunch_of_corrected_hits(draw):
-    list_of_hits = draw(lists(hit(), min_size=2, max_size=10))
-    return list_of_hits
-
+def single_voxels(draw):
+    return Voxel( x = draw(integers(-5, 5)) * 15.55
+                , y = draw(integers(-5, 5)) * 15.55
+                , z = draw(integers(-5, 5)) *  4.00
+                , E = draw(floats(1.0, 234.0))
+                , size = [15.55, 15.55, 4.00]
+                , hits = []
+                )
 
 box_dimension = floats(min_value = 1,
                        max_value = 5)
@@ -124,46 +118,36 @@ min_n_of_voxels = integers(min_value = 3,
                            max_value = 10)
 
 
-def test_voxelize_hits_should_detect_no_hits():
+@an_instance_of(single_hits())
+def test_voxelize_hits_should_detect_no_hits_demoo(hits):
+    empty = hits.iloc[:0]
     with raises(NoHits):
-        voxelize_hits([], None)
+        voxelize_hits(empty, None)
 
 
-@given(bunch_of_hits)
+@given(bunch_of_hits())
 def test_bounding_box(hits):
     lo, hi = bounding_box(hits)
 
-    mins = [float(' inf')] * 3
-    maxs = [float('-inf')] * 3
+    assert np.all(in_range(hits.X, lo[0], hi[0], right_closed=True))
+    assert np.all(in_range(hits.Y, lo[1], hi[1], right_closed=True))
+    assert np.all(in_range(hits.Z, lo[2], hi[2], right_closed=True))
 
-    for hit in hits:
-        assert lo[0] <= hit.pos[0] <= hi[0]
-        assert lo[1] <= hit.pos[1] <= hi[1]
-        assert lo[2] <= hit.pos[2] <= hi[2]
-
-        for d in range(3):
-            mins[d] = min(mins[d], hit.pos[d])
-            maxs[d] = max(maxs[d], hit.pos[d])
-
-    for d in range(3):
-        assert_almost_equal(mins[d], lo[d])
-        assert_almost_equal(maxs[d], hi[d])
+    for col, l, h in zip("X Y Z".split(), lo, hi):
+        assert_almost_equal(hits[col].min(), l)
+        assert_almost_equal(hits[col].max(), h)
 
 
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits(), box_sizes)
 def test_voxelize_hits_does_not_lose_energy(hits, voxel_dimensions):
     voxels = voxelize_hits(hits, voxel_dimensions, strict_voxel_size=False)
+    total_voxel_e = sum(v.E for v in voxels)
+    total_hits_e  = sum(hits.E)
 
-    if not hits:
-        assert voxels == []
-
-    def sum_energy(seq):
-        return sum(e.E for e in seq)
-
-    assert sum_energy(voxels) == approx(sum_energy(hits))
+    assert total_voxel_e == approx(total_hits_e)
 
 
-@given(bunch_of_hits)
+@given(bunch_of_hits())
 def test_round_hits_positions_in_place(hits):
     """
     Override xyz such that all values fall below the rounding decimal place. We
@@ -172,36 +156,34 @@ def test_round_hits_positions_in_place(hits):
     absolute value is 1e-5. After rounding, the only possible values are 0, 1e-5
     or -1e-5.
     """
-    for hit in hits:
-        hit.xyz = np.array(hit.xyz) * 0.999e-7 * [-1, 1, -1]
+    hits.loc[:, "X Y Z".split()] = hits["X Y Z".split()].values * 0.999e-7 * [-1, 1, -1]
 
-    round_hits_positions_in_place(hits)
+    round_hits_positions_in_place(hits, 5)
 
-    pos = np.asarray([h.pos for h in hits])
-    assert np.all(np.in1d(pos, [0, 1e-5, -1e-5]))
+    assert np.all(np.in1d(hits["X Y Z".split()], [0, 1e-5, -1e-5]))
 
 
-def test_round_hits_positions_in_place_empty_input():
+@an_instance_of(single_hits())
+def test_round_hits_positions_in_place_empty_input(hits):
     """
     It simply should not crash.
     """
-    hits = []
-    round_hits_positions_in_place(hits)
-    assert hits == []
+    hits = hits.iloc[:0]
+    round_hits_positions_in_place(hits, 5)
+    assert len(hits) == 0
 
 
-@settings(max_examples=1) # simple way of producing a single hit
-@given(hit())
+@an_instance_of(single_hits())
 def test_round_hits_positions_in_place_non_finite_values(hit):
     """
     Override xyz with np.nan and np.inf, ensure values are not changed.
     """
-    values = np.nan, np.inf, -np.inf
-    hit.xyz = tuple(values) # ensure copy
+    hit.loc[:, "X"] =  np.nan
+    hit.loc[:, "Y"] =  np.inf
+    hit.loc[:, "Z"] = -np.inf
 
-    round_hits_positions_in_place([hit])
-
-    assert np.all(np.isclose(hit.pos, values, equal_nan=True))
+    round_hits_positions_in_place(hit, 5)
+    assert np.all(np.isclose(hit["X Y Z".split()].values[0], np.array([np.nan, np.inf, -np.inf]), equal_nan=True))
 
 
 
@@ -214,9 +196,12 @@ def test_voxels_from_track_return_node_voxels(graph):
     assert voxels_from_track_graph(graph) == graph.nodes()
 
 
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits(), box_sizes)
 def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
     voxels = voxelize_hits(hits, voxel_dimensions)
+    # hack to reuse bounding_box
+    voxels = np.array([v.pos for v in voxels])
+    voxels = pd.DataFrame(voxels, columns="X Y Z".split())
 
     hlo, hhi = bounding_box(hits)
     vlo, vhi = bounding_box(voxels)
@@ -229,7 +214,7 @@ def test_voxelize_hits_keeps_bounding_box(hits, voxel_dimensions):
 
 
 @settings(deadline=None)
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits(), box_sizes)
 def test_voxelize_hits_respects_voxel_dimensions(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=True)
     unit   =                     requested_voxel_dimensions
@@ -240,21 +225,21 @@ def test_voxelize_hits_respects_voxel_dimensions(hits, requested_voxel_dimension
                 np.isclose(off_by, unit)).all()
 
 
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits(), box_sizes)
 def test_voxelize_hits_gives_maximum_voxels_size(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     for v in voxels:
         assert (v.size <= requested_voxel_dimensions + 4 * eps).all()
 
 
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits(), box_sizes)
 def test_voxelize_hits_strict_gives_required_voxels_size(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=True)
     for v in voxels:
         assert v.size == approx(requested_voxel_dimensions)
 
 
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits(), box_sizes)
 def test_voxelize_hits_flexible_gives_correct_voxels_size(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     positions = [v.pos for v in voxels]
@@ -268,11 +253,11 @@ def test_voxelize_hits_flexible_gives_correct_voxels_size(hits, requested_voxel_
         assert is_close_to_integer(separation_over_size).all()
 
 
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits(), box_sizes)
 def test_hits_energy_in_voxel_is_equal_to_voxel_energy(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     for v in voxels:
-        assert sum(h.E for h in v.hits) == v.E
+        assert v.hits.E.sum() == approx(v.E)
 
 def test_voxels_with_no_hits(ICDATADIR):
     hit_file = os.path.join(ICDATADIR, 'test_voxels_with_no_hits.h5')
@@ -280,61 +265,50 @@ def test_voxels_with_no_hits(ICDATADIR):
     size = 15.
     vox_size = np.array([size,size,size],dtype=np.float16)
 
-    hits_df   = load_mchits_df(hit_file)
-    hits_dict = cast_mchits_to_dict(hits_df)
-    hit_seq   = hits_dict[evt_number]
-    voxels    = voxelize_hits(hit_seq                  ,
-                              vox_size                 ,
-                              strict_voxel_size = False)
+    hits_df = load_mchits_df(hit_file)
+    hits_df = hits_df.loc[evt_number].rename(columns=dict(x="X", y="Y", z="Z", energy="E"))
+    voxels  = voxelize_hits(hits_df, vox_size, strict_voxel_size=True)
+
     for v in voxels:
-        assert sum(h.E for h in v.hits) == v.E
+        assert v.hits.E.sum() == approx(v.E)
 
 
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits(), box_sizes)
 def test_voxel_hits_are_same_as_original_ones(hits, requested_voxel_dimensions):
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
-    hits_read_from_voxels = []
+    hits_from_voxels = []
     for v in voxels:
-        hits_read_from_voxels += v.hits
+        hits_from_voxels.append(v.hits)
 
-    hits_s_x   = sorted(hits,       key=lambda h: h.X)
-    hits_s_xy  = sorted(hits_s_x,   key=lambda h: h.Y)
-    hits_s_xyz = sorted(hits_s_xy,  key=lambda h: h.Z)
-    hits_s_all = sorted(hits_s_xyz, key=lambda h: h.E)
+    hits_from_voxels = pd.concat(hits_from_voxels, ignore_index=True)
 
-    hits_read_from_voxels_s_x   = sorted(hits_read_from_voxels,       key=lambda h: h.X)
-    hits_read_from_voxels_s_xy  = sorted(hits_read_from_voxels_s_x,   key=lambda h: h.Y)
-    hits_read_from_voxels_s_xyz = sorted(hits_read_from_voxels_s_xy,  key=lambda h: h.Z)
-    hits_read_from_voxels_s_all = sorted(hits_read_from_voxels_s_xyz, key=lambda h: h.E)
+    # need to sort and reset index for a reliable comparison
+    hits             = hits            .sort_values("X Y Z E".split()).reset_index(drop=True)
+    hits_from_voxels = hits_from_voxels.sort_values("X Y Z E".split()).reset_index(drop=True)
 
-    assert  hits_read_from_voxels_s_all == hits_s_all
+    assert_dataframes_close(hits, hits_from_voxels)
 
 
 def test_hits_on_border_are_assigned_to_correct_voxel():
     z = 10.
     energy = 1.
-    hits = [BHit( 5., 15., z, energy),
-            BHit(15.,  5., z, energy),
-            BHit(15., 15., z, energy),
-            BHit(15., 25., z, energy),
-            BHit(25., 15., z, energy)]
+    hits = pd.DataFrame(dict( X = [ 5, 15, 15, 15, 25]
+                            , Y = [15,  5, 15, 25, 15]
+                            , Z = z
+                            , E = energy
+                            ), dtype=float)
 
     vox_size = np.array([15,15,15], dtype=np.int16)
     voxels = voxelize_hits(hits, vox_size)
 
     assert len(voxels) == 3
 
-    expected_hits = [[BHit( 5., 15., z, energy)],
-                     [BHit(15.,  5., z, energy)],
-                     [BHit(15., 15., z, energy),
-                      BHit(15., 25., z, energy),
-                      BHit(25., 15., z, energy)]]
-    for v, hits in zip(voxels, expected_hits):
-        for v_hit, e_hit in zip(v.hits, hits):
-            assert_bhit_equality(v_hit, e_hit)
+    expected_hits = [ hits.iloc[0:1], hits.iloc[1:2], hits.loc[2:] ]
+    for v, exp_hits in zip(voxels, expected_hits):
+        assert_dataframes_close(v.hits, exp_hits)
 
 
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits(), box_sizes)
 def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
     tracks = make_track_graphs(voxels)
@@ -342,7 +316,7 @@ def test_make_voxel_graph_keeps_all_voxels(hits, voxel_dimensions):
     assert set(voxels) == voxels_in_tracks
 
 
-@given(builds(Voxel, posn, posn, posn, ener, box_sizes))
+@given(single_voxels())
 def test_find_extrema_single_voxel(voxel):
     g = nx.Graph()
     g.add_node(voxel)
@@ -391,10 +365,10 @@ def track_extrema():
     return tracks[0], extrema
 
 
-def test_voxelize_single_hit():
-    hits = [BHit(1, 1, 1, 100)]
+@an_instance_of(single_hits())
+def test_voxelize_single_hit(hit):
     vox_size = np.array([10,10,10], dtype=np.int16)
-    assert len(voxelize_hits(hits, vox_size)) == 1
+    assert len(voxelize_hits(hit, vox_size)) == 1
 
 
 @fixture(scope='module')
@@ -409,9 +383,10 @@ def voxels_without_hits():
                   (10,12,15,2),
                   (10,13,15,2),
                   (10,14,15,2),
-                  (10,15,15,2)
-    )
-    voxels = [Voxel(x,y,z, E, np.array([1,1,1])) for (x,y,z,E) in voxel_spec]
+                  (10,15,15,2))
+
+    hits   = pd.DataFrame(columns="X Y Z E Ep".split())
+    voxels = [Voxel(x,y,z, E, np.array([1,1,1]), hits=hits) for (x,y,z,E) in voxel_spec]
 
     return voxels
 
@@ -507,9 +482,9 @@ def test_contiguity(proximity, contiguity, are_neighbours):
     assert len(tracks) == expected_number_of_tracks
 
 
-@given(bunch_of_hits, box_sizes, min_n_of_voxels, fraction_zero_one)
+@given(bunch_of_hits(), box_sizes, min_n_of_voxels, fraction_zero_one)
 def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one):
-    tot_initial_energy = sum(h.E for h in hits)
+    tot_initial_energy = hits.E.sum()
     voxels = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False)
     ini_trks = make_track_graphs(voxels)
     ini_trk_energies = [sum(vox.E for vox in t.nodes()) for t in ini_trks]
@@ -528,7 +503,7 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_dimension
 
 
 @mark.parametrize("energy_type", HitEnergy)
-@given(hits                       = bunch_of_corrected_hits(),
+@given(hits                       = bunch_of_hits(),
        requested_voxel_dimensions = box_sizes,
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
@@ -539,19 +514,15 @@ def test_dropped_voxels_have_nan_energy(hits, requested_voxel_dimensions, min_vo
     _, dropped_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
     for voxel in dropped_voxels:
         assert np.isnan(voxel.E)
-        for hit in voxel.hits:
-            assert np.isnan(getattr(hit, energy_type.value))
+        assert voxel.hits[energy_type.value].isna().all()
 
 
 @mark.parametrize("energy_type", HitEnergy)
-@given(hits                       = bunch_of_corrected_hits(),
+@given(hits                       = bunch_of_hits(),
        requested_voxel_dimensions = box_sizes,
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
 def test_drop_end_point_voxels_doesnt_modify_other_energy_types(hits, requested_voxel_dimensions, min_voxels, fraction_zero_one, energy_type):
-    def energy_from_hits(voxel, e_type):
-        return [getattr(hit, e_type) for hit in voxel.hits]
-
     voxels     = voxelize_hits(hits, requested_voxel_dimensions, strict_voxel_size=False, energy_type=energy_type)
     voxels     = sorted(voxels, key=attrgetter("xyz"))
     energies   = [v.E for v in voxels]
@@ -563,13 +534,13 @@ def test_drop_end_point_voxels_doesnt_modify_other_energy_types(hits, requested_
         if e_type is energy_type: continue
 
         for v_before, v_after in zip(voxels, new_voxels):
-            for h_before, h_after in zip(v_before.hits, v_after.hits):
-                #assert sum(energy_from_hits(v_before, e_type.value)) == sum(energy_from_hits(v_after, e_type.value))
-                assert np.isclose(getattr(h_before, e_type.value), getattr(h_after, e_type.value))
+            e_before = v_before.hits[e_type.value]
+            e_after  = v_after .hits[e_type.value]
+            assert np.allclose(e_before, e_after)
 
 
 @mark.parametrize("energy_type", HitEnergy)
-@given(hits                       = bunch_of_corrected_hits(),
+@given(hits                       = bunch_of_hits(),
        requested_voxel_dimensions = box_sizes,
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
@@ -579,12 +550,11 @@ def test_drop_voxels_voxel_energy_is_sum_of_hits_general(hits, requested_voxel_d
     e_thr         = min(energies) + fraction_zero_one * (max(energies) - min(energies))
     mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
     for v in mod_voxels:
-        assert np.isclose(v.E, sum(getattr(h, energy_type.value) for h in v.hits))
-
+        assert np.isclose(v.E, v.hits[energy_type.value].sum())
 
 
 @mark.parametrize("energy_type", HitEnergy)
-@given(hits                       = bunch_of_corrected_hits(),
+@given(hits                       = bunch_of_hits(),
        requested_voxel_dimensions = box_sizes,
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
@@ -596,7 +566,7 @@ def test_drop_end_point_voxels_constant_number_of_voxels_and_hits(hits, requeste
     (mod_voxels,
      dropped_voxels) = new_voxels
     assert len(mod_voxels) + len(dropped_voxels) == len(voxels)
-    assert sum(1 for vs in new_voxels for v in vs for h in v.hits) == len(hits)
+    assert sum(len(v.hits) for v in mod_voxels + dropped_voxels) == len(hits)
 
 
 def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
@@ -608,8 +578,7 @@ def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
     min_voxels = 3
     size = 15.
     vox_size = np.array([size,size,size], dtype=np.float16)
-    all_hits = load_hits(hit_file)
-    hits = all_hits[evt_number].hits
+    hits = pd.read_hdf(hit_file, "/RECO/Events").set_index("event").loc[evt_number]
     voxels = voxelize_hits(hits, vox_size, strict_voxel_size=False)
 
     # This is the core of the test: collect data before/after ...
@@ -639,8 +608,7 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     size = 15.
     vox_size = np.array([size,size,size],dtype=np.float16)
 
-    all_hits = load_hits(hit_file)
-    hits = all_hits[evt_number].hits
+    hits = pd.read_hdf(hit_file, "/RECO/Events").set_index("event").loc[evt_number]
     voxels = voxelize_hits(hits, vox_size, strict_voxel_size=False)
     ini_trks = make_track_graphs(voxels)
     initial_n_of_tracks = len(ini_trks)
@@ -671,8 +639,7 @@ def test_drop_voxels_deterministic(ICDATADIR):
     min_voxels = 3
     vox_size   = [15.] * 3
 
-    all_hits        = load_hits(hit_file)
-    hits            = all_hits[evt_number].hits
+    hits            = pd.read_hdf(hit_file, "/RECO/Events").set_index("event").loc[evt_number]
     voxels          = voxelize_hits(hits, vox_size, strict_voxel_size=False)
     mod_voxels  , _ = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = False), e_thr, min_voxels)
     mod_voxels_r, _ = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = True ), e_thr, min_voxels)
@@ -682,7 +649,7 @@ def test_drop_voxels_deterministic(ICDATADIR):
 
 
 def test_voxel_drop_in_short_tracks():
-    hits = [BHit(10, 10, 10, 1), BHit(26, 10, 10, 1)]
+    hits = pd.DataFrame(dict(X=[10, 26], Y=[10,10], Z=[10,10], E=[1,1]))
     voxels = voxelize_hits(hits, [15,15,15], strict_voxel_size=True)
     e_thr = sum(v.E for v in voxels) + 1.
     min_voxels = 0
@@ -694,26 +661,23 @@ def test_voxel_drop_in_short_tracks():
 
 def test_drop_voxels_voxel_energy_is_sum_of_hits():
     def make_hit(x, y, z, e):
-        return Hit(peak_number = 0,
-                   cluster     = Cluster(0, xy(x, y), xy(0, 0), 1),
-                   z           = z,
-                   s2_energy   = e,
-                   peak_xy     = xy(0, 0),
-                   Ep          = e)
+        return pd.DataFrame(dict(X=x, Y=y, Z=z, E=e, Ep=e), index=[0])
 
+    def make_voxel(x, y, z, e, hits):
+        return Voxel(x, y, z, e, size=5, e_type=HitEnergy.Ep, hits=pd.concat(hits, ignore_index=True))
     # Create a track with an extreme to be dropped and two hits at the same
     # distance from the barycenter of the the voxel to be dropped with
     # different energies in the hits *and* in the voxels
-    voxels = [Voxel( 0,  0, 0, 0.1, size=5, e_type=HitEnergy.Ep, hits = [make_hit( 0,  0, 0, 0.1)                          ]),
-              Voxel( 5, -5, 0, 1.0, size=5, e_type=HitEnergy.Ep, hits = [make_hit( 5, -5, 0, 0.7), make_hit( 5, -8, 0, 0.3)]),
-              Voxel( 5,  5, 0, 1.5, size=5, e_type=HitEnergy.Ep, hits = [make_hit( 5,  5, 0, 0.9), make_hit( 5,  8, 0, 0.6)]),
-              Voxel(10,  0, 0, 2.0, size=5, e_type=HitEnergy.Ep, hits = [make_hit(10,  5, 0, 1.2), make_hit(11,  5, 0, 0.8)]),
-              Voxel(15,  0, 0, 2.5, size=5, e_type=HitEnergy.Ep, hits = [make_hit(15,  0, 0, 1.8), make_hit(11,  0, 0, 0.7)]),
-              Voxel(20,  0, 0, 3.0, size=5, e_type=HitEnergy.Ep, hits = [make_hit(20,  0, 0, 1.5), make_hit(11,  0, 0, 1.5)])]
+    voxels = [make_voxel( 0,  0, 0, 0.1, [make_hit( 0,  0, 0, 0.1)                          ]),
+              make_voxel( 5, -5, 0, 1.0, [make_hit( 5, -5, 0, 0.7), make_hit( 5, -8, 0, 0.3)]),
+              make_voxel( 5,  5, 0, 1.5, [make_hit( 5,  5, 0, 0.9), make_hit( 5,  8, 0, 0.6)]),
+              make_voxel(10,  0, 0, 2.0, [make_hit(10,  5, 0, 1.2), make_hit(11,  5, 0, 0.8)]),
+              make_voxel(15,  0, 0, 2.5, [make_hit(15,  0, 0, 1.8), make_hit(11,  0, 0, 0.7)]),
+              make_voxel(20,  0, 0, 3.0, [make_hit(20,  0, 0, 1.5), make_hit(11,  0, 0, 1.5)])]
 
     modified_voxels, _ = drop_end_point_voxels(voxels, energy_threshold = 0.5, min_vxls = 1)
     for v in modified_voxels:
-        assert np.isclose(v.E, sum(h.Ep for h in v.hits))
+        assert np.isclose(v.E, v.hits.Ep.sum())
 
 
 @parametrize('radius, expected',
@@ -726,20 +690,22 @@ def test_drop_voxels_voxel_energy_is_sum_of_hits():
               (22., (140, 100))
  ))
 def test_blobs(radius, expected):
-    hits = [BHit(105.0, 125.0, 77.7, 10),
-            BHit( 95.0, 125.0, 77.7, 10),
-            BHit( 95.0, 135.0, 77.7, 10),
-            BHit(105.0, 135.0, 77.7, 10),
-            BHit(105.0, 115.0, 77.7, 10),
-            BHit( 95.0, 115.0, 77.7, 10),
-            BHit( 95.0, 125.0, 79.5, 10),
-            BHit(105.0, 125.0, 79.5, 10),
-            BHit(105.0, 135.0, 79.5, 10),
-            BHit( 95.0, 135.0, 79.5, 10),
-            BHit( 95.0, 115.0, 79.5, 10),
-            BHit(105.0, 115.0, 79.5, 10),
-            BHit(115.0, 125.0, 79.5, 10),
-            BHit(115.0, 125.0, 85.2, 10)]
+    #           x       y     z   e
+    hits = [[105.0, 125.0, 77.7, 10],
+            [ 95.0, 125.0, 77.7, 10],
+            [ 95.0, 135.0, 77.7, 10],
+            [105.0, 135.0, 77.7, 10],
+            [105.0, 115.0, 77.7, 10],
+            [ 95.0, 115.0, 77.7, 10],
+            [ 95.0, 125.0, 79.5, 10],
+            [105.0, 125.0, 79.5, 10],
+            [105.0, 135.0, 79.5, 10],
+            [ 95.0, 135.0, 79.5, 10],
+            [ 95.0, 115.0, 79.5, 10],
+            [105.0, 115.0, 79.5, 10],
+            [115.0, 125.0, 79.5, 10],
+            [115.0, 125.0, 85.2, 10]]
+    hits = pd.DataFrame(hits, columns="X Y Z E".split())
     vox_size = np.array([15.,15.,15.],dtype=np.float16)
     voxels = voxelize_hits(hits, vox_size)
     tracks = make_track_graphs(voxels)
@@ -748,7 +714,7 @@ def test_blobs(radius, expected):
     assert blob_energies(tracks[0], radius) == expected
 
 
-@given(bunch_of_hits, box_sizes, radius)
+@given(bunch_of_hits(), box_sizes, radius)
 def test_blob_hits_are_inside_radius(hits, voxel_dimensions, blob_radius):
     voxels = voxelize_hits(hits, voxel_dimensions)
     tracks = make_track_graphs(voxels)
@@ -756,10 +722,8 @@ def test_blob_hits_are_inside_radius(hits, voxel_dimensions, blob_radius):
         Ea, Eb, hits_a, hits_b   = blob_energies_and_hits(t, blob_radius)
         centre_a, centre_b       = blob_centres(t, blob_radius)
 
-        for h in hits_a:
-            assert np.linalg.norm(h.XYZ - centre_a) < blob_radius
-        for h in hits_b:
-            assert np.linalg.norm(h.XYZ - centre_b) < blob_radius
+        assert all(np.linalg.norm(hits_a["X Y Z".split()] - centre_a, axis=1) < blob_radius)
+        assert all(np.linalg.norm(hits_b["X Y Z".split()] - centre_b, axis=1) < blob_radius)
 
 
 @given(blob_radius=radius, min_voxels=min_n_of_voxels, fraction_zero_one=fraction_zero_one)
@@ -804,7 +768,7 @@ def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_
 
 
 @mark.parametrize("energy_type", (HitEnergy.Ec, HitEnergy.Ep))
-@given(hits                       = bunch_of_corrected_hits(),
+@given(hits                       = bunch_of_hits(),
        requested_voxel_dimensions = box_sizes,
        blob_radius                = radius,
        fraction_zero_one          = fraction_zero_one)
@@ -818,20 +782,20 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
     assert voxels_c[0].Etype == energy_type.value
 
     for voxel in voxels_c:
-        assert np.isclose(voxel.E, sum(getattr(h, energy_type.value) for h in voxel.hits))
+        assert np.isclose(voxel.E, voxel.hits[energy_type.value].sum())
 
     energies_c = [v.E for v in voxels_c]
     e_thr = min(energies_c) + fraction_zero_one * (max(energies_c) - min(energies_c))
     # Test that this function doesn't fail
     mod_voxels_c, _ = drop_end_point_voxels(voxels_c, e_thr, min_vxls=0)
 
-    tot_energy     = sum(getattr(h, energy_type.value) for v in voxels_c     for h in v.hits)
-    tot_mod_energy = sum(getattr(h, energy_type.value) for v in mod_voxels_c for h in v.hits)
+    tot_energy     = sum(v.hits[energy_type.value].sum() for v in     voxels_c)
+    tot_mod_energy = sum(v.hits[energy_type.value].sum() for v in mod_voxels_c)
 
     assert np.isclose(tot_energy, tot_mod_energy)
 
-    tot_default_energy     = sum(h.E for v in voxels_c     for h in v.hits)
-    tot_mod_default_energy = sum(h.E for v in mod_voxels_c for h in v.hits)
+    tot_default_energy     = sum(v.hits.E.sum() for v in     voxels_c)
+    tot_mod_default_energy = sum(v.hits.E.sum() for v in mod_voxels_c)
 
     # We don't want to modify the default energy of hits, if the voxels are made with energy_c
     if len(mod_voxels_c) < len(voxels_c):
@@ -848,11 +812,10 @@ def test_make_tracks_function(ICDATADIR):
     blob_radius = 21*units.mm
 
     # Read the hits and voxelize
-    all_hits = load_hits(hit_file)
+    all_hits = pd.read_hdf(hit_file, "/RECO/Events")
 
-    for evt_number, hit_coll in all_hits.items():
-        evt_hits = hit_coll.hits
-        evt_time = hit_coll.time
+    for evt_number, evt_hits in all_hits.groupby("event"):
+        evt_time = evt_hits.time.iloc[0]
         voxels   = voxelize_hits(evt_hits, voxel_size, strict_voxel_size=False, energy_type=HitEnergy.E)
 
         tracks   = list(make_track_graphs(voxels))
@@ -872,7 +835,7 @@ def test_make_tracks_function(ICDATADIR):
             t  = tracks[i]
             tc = tracks_from_coll[i]
 
-            assert len(t.nodes())                   == tc.number_of_voxels
+            assert len(t.nodes())              == tc.number_of_voxels
             assert sum(v.E for v in t.nodes()) == tc.E
 
             tc_blobs = list(tc.blobs)
@@ -882,9 +845,9 @@ def test_make_tracks_function(ICDATADIR):
             assert np.allclose(blob_energies(t, blob_radius), tc_blob_energies)
 
 
-@given(bunch_of_hits, box_sizes)
+@given(bunch_of_hits(), box_sizes)
 def test_make_voxel_graph_keeps_energy_consistence(hits, voxel_dimensions):
     voxels = voxelize_hits    (hits  , voxel_dimensions)
     tracks = make_track_graphs(voxels)
     # assert sum of track energy equal to sum of hits energies
-    assert_almost_equal(sum(get_track_energy(track) for track in tracks), sum(h.E for h in hits))
+    assert_almost_equal(sum(get_track_energy(track) for track in tracks), hits.E.sum())

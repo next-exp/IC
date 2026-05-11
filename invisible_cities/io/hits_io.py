@@ -44,6 +44,7 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
             Ypeak   = getattr(row, 'Ypeak'   , -1000)     # for backwards compatibility
             Ec      = getattr(row, 'Ec'      , -1   )     # for backwards compatibility
             trackID = getattr(row, 'track_id', -1   )     # for backwards compatibility
+            Ep      = getattr(row, 'Ep'      , -1.  )     # for backwards compatibility
 
             hit = Hit(row.npeak            ,
                       Cluster(Q               ,
@@ -58,6 +59,7 @@ def hits_from_df (dst : pd.DataFrame, skip_NN : bool = False) -> Dict[int, HitCo
                       xy(Xpeak, Ypeak)     ,
                       s2_energy_c = Ec     ,
                       track_id    = trackID,
+                      Ep          = Ep
                       )
 
             hits.append(hit)

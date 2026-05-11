@@ -6,10 +6,11 @@ from pytest                 import approx
 from pytest                 import mark
 from numpy.testing          import assert_equal
 from numpy.testing          import assert_allclose
+from hypothesis             import given
+from hypothesis             import settings
 from hypothesis.strategies  import integers
 from hypothesis.strategies  import floats
 from hypothesis.extra.numpy import arrays
-
 from . core_functions import relative_difference
 
 
@@ -207,6 +208,13 @@ def assert_hit_equality(a_hit, b_hit):
     assert a_hit.Ypeak        == approx (b_hit.Ypeak      )
     assert a_hit.peak_number  == exactly(b_hit.peak_number)
 
+
+def an_instance_of(*given_args, **given_kwargs):
+    def the_test(f):
+        f = given(*given_args, **given_kwargs)(f)
+        f = settings(max_examples=1)(f)
+        return f
+    return the_test
 
 @dataclass(frozen=True)
 class ignore_warning:

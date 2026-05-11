@@ -53,7 +53,6 @@ from .  components import hits_thresholder
 from .  components import compute_and_write_tracks_info
 
 from .. io.         hits_io import hits_writer as hits_writer_
-from .. io.         hits_io import hits_from_df
 from .. io.         kdst_io import kdst_from_df_writer
 from .. io.run_and_event_io import run_and_event_writer
 
@@ -65,16 +64,6 @@ def hit_dropper(radius : float):
         return hits.loc[r2 < max_r2].reset_index(drop=True)
 
     return drop_hits
-
-# Temporary
-def hitc_from_df(hits : pd.DataFrame) -> evm.HitCollection:
-    hitcs = hits_from_df(hits)
-    if len(hitcs) == 0:
-        return evm.HitCollection(0, 0, []) # dummy HitCollection
-    assert len(hitcs) == 1
-    for hitc in hitcs.values():
-        return hitc
-
 
 @city
 def esmeralda( files_in         : OneOrManyFiles
@@ -160,7 +149,6 @@ def esmeralda( files_in         : OneOrManyFiles
     correct_hits       = fl.map(correct_hits, item="hits")
     drop_external_hits = fl.map(hit_dropper(fiducial_r), item="hits")
     threshold_hits     = fl.map(hits_thresholder(threshold, same_peak), item="hits")
-    to_hitc            = fl.map(hitc_from_df, item="hits")
     event_count_in     = fl.spy_count()
     event_count_out    = fl.count()
 
@@ -191,7 +179,6 @@ def esmeralda( files_in         : OneOrManyFiles
                                    , correct_hits
                                    , drop_external_hits
                                    , threshold_hits
-                                   , to_hitc
                                    , fl.fork( compute_tracks
                                             , write_kdst
                                             , write_event_info

@@ -6,6 +6,8 @@ from glob            import glob
 from os.path         import expandvars
 from itertools       import count
 from itertools       import repeat
+from warnings        import warn
+
 from typing          import Callable
 from typing          import Iterator
 from typing          import Mapping
@@ -66,7 +68,6 @@ from .. database                  import                   load_db
 from .. sierpe                    import                       blr
 from .. io                        import                 mcinfo_io
 from .. io     .pmaps_io          import                load_pmaps
-from .. io     .hits_io           import              hits_from_df
 from .. io     .dst_io            import                  load_dst
 from .. io     .event_filter_io   import       event_filter_writer
 from .. io     .pmaps_io          import               pmap_writer
@@ -609,7 +610,8 @@ def pmap_from_files(paths):
 @check_annotations
 def hits_and_kdst_from_files( paths : List[str]
                             , group : str
-                            , node  : str ) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
+                            , node  : str
+                            ) -> Iterator[Dict[str,Union[ pd.DataFrame , pd.DataFrame , MCInfo, int, float]]]:
     """
     Reader of hits files. For each event it produces a dictionary containing
     - hits        : a DataFrame
@@ -697,9 +699,17 @@ def MC_hits_from_files(files_in : List[str], rate: float) -> Generator:
 
 
 @check_annotations
-def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection, pd.DataFrame, MCInfo, int, float]]]:
-    """Reader of the files, yields HitsCollection, pandas DataFrame with
-    run_number, event_number and timestamp."""
+def dhits_from_files(paths: List[str]) -> Iterator[Dict[str, Union[ pd.DataFrame # hits
+                                                                  , pd.DataFrame # kdst
+                                                                  , int          # run number
+                                                                  , int          # event number
+                                                                  , float        # timestamp
+                                                                  ]]]:
+    """
+    Reader for the output of beersheba (a.k.a. deconvolved hits).
+    For each event, it produces a dictionary with hits, a kdst, run_number,
+    event_number and timestamp.
+    """
     for path in paths:
         try:
             dhits_df = load_dst (path, 'DECO', 'Events')
@@ -718,15 +728,17 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str,Union[HitCollection,
             for evt in dhits_df.event.unique():
                 this_event = lambda df: df.event==evt
                 timestamp = event_info[event_info.evt_number==evt].timestamp.values[0]
-                dhits = hits_from_df(dhits_df.loc[this_event])
-                kdst  =               kdst_df.loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
+                dhits = dhits_df.loc[this_event]
+                kdst  =  kdst_df.loc[this_event] if isinstance(kdst_df, pd.DataFrame) \
                                                               else None
-                ### It makes no sense to use the 'io.hits_io.hits_from_df' function here
-                ### (as well as in 'hits_and_kdst_from_files') since the majority of the
-                ### 'evm.Hit' parameters don't appear in the dst (particularly running
-                ### Isaura) and must be set to -1. This proceure should be revisited and
-                ### rethought in the near future, with the aim of changing the event model.
-                yield dict(hits         = dhits[evt],
+
+                # this are just patches, the hit architecture should be reviseted
+                dhits = dhits.assign(Q=dhits.E)
+                if "Xpeak" in dhits:
+                    dhits = dhits.loc[:, "event time npeak Xpeak Ypeak X Y Z Q E Ec track_id Ep".split()]
+                else:
+                    dhits = dhits.loc[:, "event npeak X Y Z Q E".split()]
+                yield dict(hits         = dhits,
                            kdst         = kdst      ,
                            run_number   = run_number,
                            event_number = evt       ,
@@ -1349,26 +1361,16 @@ def calculate_and_save_buffers(buffer_length    : float        ,
 
 @check_annotations
 def Efield_copier(energy_type: HitEnergy):
-    def copy_Efield(hitc : HitCollection) -> HitCollection:
-        mod_hits = []
-        for hit in hitc.hits:
-            hit = Hit(hit.npeak,
-                      Cluster(hit.Q, xy(hit.X, hit.Y), hit.var, hit.nsipm),
-                      hit.Z,
-                      hit.E,
-                      xy(hit.Xpeak, hit.Ypeak),
-                      s2_energy_c=getattr(hit, energy_type.value),
-                      Ep=getattr(hit, energy_type.value))
-            mod_hits.append(hit)
-        mod_hitc = HitCollection(hitc.event, hitc.time, hits=mod_hits)
-        return mod_hitc
+    def copy_Efield(df: pd.DataFrame) -> pd.DataFrame:
+        return df.assign( Ec = df[energy_type.value]
+                        , Ep = df[energy_type.value])
     return copy_Efield
 
 
 @check_annotations
-def make_event_summary(event_number  : int          ,
-                       topology_info : pd.DataFrame ,
-                       paolina_hits  : HitCollection,
+def make_event_summary(event_number  : int         ,
+                       topology_info : pd.DataFrame,
+                       hits          : pd.DataFrame,
                        out_of_map    : bool
                        ) -> pd.DataFrame:
     """
@@ -1381,8 +1383,8 @@ def make_event_summary(event_number  : int          ,
     topology_info : DataFrame
         Dataframe containing track information,
         output of track_blob_info_creator_extractor
-    paolina_hits  : HitCollection
-        Hits table passed through paolina functions,
+    paolina_hits  : pd.DataFrame
+        Hits passed through paolina functions,
         output of track_blob_info_creator_extractor
     kdst          : DataFrame
         Kdst information read from sophronia output
@@ -1393,26 +1395,22 @@ def make_event_summary(event_number  : int          ,
     DataFrame containing relevant per event information.
     """
     es = pd.DataFrame(columns=list(types_dict_summary.keys()))
-    if len(paolina_hits.hits) == 0: return es
+    if hits.empty: return es
 
     ntrks = len(topology_info.index)
-    nhits = len(paolina_hits.hits)
+    nhits = len(hits)
 
-    S2ec = sum(h.Ec for h in paolina_hits.hits)
+    S2ec = hits.Ec.sum()
     S2qc = -1 #not implemented yet
 
-    pos   = [h.pos for h in paolina_hits.hits]
-    x, y, z = map(np.array, zip(*pos))
-    r = np.sqrt(x**2 + y**2)
-
-    e     = [h.Ec  for h in paolina_hits.hits]
-    ave_pos = np.average(pos, weights=e, axis=0)
-    ave_r   = np.average(r  , weights=e, axis=0)
-
+    r       = np.sqrt(hits.X**2 + hits.Y**2)
+    ave_pos = np.average(hits["X Y Z".split()], weights=hits.Ec, axis=0)
+    ave_r   = np.average(r                    , weights=hits.Ec, axis=0)
 
     list_of_vars  = [event_number, S2ec, S2qc, ntrks, nhits,
                      *ave_pos, ave_r,
-                     min(x), min(y), min(z), min(r), max(x), max(y), max(z), max(r),
+                     hits.X.min(), hits.Y.min(), hits.Z.min(), r.min(),
+                     hits.X.max(), hits.Y.max(), hits.Z.max(), r.max(),
                      out_of_map]
 
     es.loc[0] = list_of_vars
@@ -1459,7 +1457,8 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
                                       max_num_hits     : int
                                      ) -> Callable:
     """
-    For a given paolina parameters returns a function that extract tracks / blob information from a HitCollection.
+    For a given set of paolina parameters returns a function that extract tracks / blob
+    information from a set of hits.
 
     Parameters
     ----------
@@ -1478,119 +1477,96 @@ def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, flo
 
     Returns
     ----------
-    A function that from a given HitCollection returns a pandas DataFrame with per track information.
+    A function that from a given set of hits returns
+      - general track information dataframe
+      - hits with associated track ids
+      - flag to indicate whether there are hits outside of the correction-map domain
     """
-    def create_extract_track_blob_info(hitc):
+    def create_extract_track_blob_info(hits: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, bool]:
         df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
-        if len(hitc.hits) > max_num_hits:
-            return df, hitc, True
-        plf.round_hits_positions_in_place(hitc.hits)
-        #track_hits is a new Hitcollection object that contains hits belonging to tracks, and hits that couldnt be corrected
-        track_hitc = HitCollection(hitc.event, hitc.time)
-        out_of_map = np.any(np.isnan([h.Ep for h in hitc.hits]))
-        if out_of_map:
-            #add nan hits to track_hits, the track_id will be -1
-            track_hitc.hits.extend  ([h for h in hitc.hits if np.isnan   (h.Ep)])
-            hits_without_nan       = [h for h in hitc.hits if np.isfinite(h.Ep)]
-            #create new Hitcollection object but keep the name hitc
-            hitc      = HitCollection(hitc.event, hitc.time)
-            hitc.hits = hits_without_nan
+        hits = hits.assign(track_id=-1)
+        if len(hits) > max_num_hits:
+            event = hits.event.iloc[0]
+            warn("Event {event} has too many hits ({len(hits)})."
+                 " This event will not be processed.")
+            return df, hits, True
+        plf.round_hits_positions_in_place(hits, 5)
 
-        hit_energies = np.array([getattr(h, HitEnergy.Ep.value) for h in hitc.hits])
+        event      = int(hits.event.iloc[0])
+        out_of_map = hits.Ep.isna().values
+        hits_out   = hits.loc[ out_of_map]
+        hits       = hits.loc[~out_of_map]
+        if not len(hits) or not (hits.Ep>0).any():
+            return df, hits, out_of_map.any()
 
-        if len(hitc.hits) > 0 and (hit_energies>0).any():
-            voxels           = plf.voxelize_hits(hitc.hits, vox_size, strict_vox_size, HitEnergy.Ep)
-            (    mod_voxels,
-             dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
+        voxels            = plf.voxelize_hits(hits, vox_size, strict_vox_size, HitEnergy.Ep)
+        ( mod_voxels,
+          dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
 
-            for v in dropped_voxels:
-                track_hitc.hits.extend(v.hits)
+        tracks = plf.make_track_graphs(mod_voxels)
+        tracks = sorted(tracks, key=plf.get_track_energy, reverse=True)
 
-            tracks = plf.make_track_graphs(mod_voxels)
-            tracks = sorted(tracks, key=plf.get_track_energy, reverse=True)
+        vox_size_x = voxels[0].size[0]
+        vox_size_y = voxels[0].size[1]
+        vox_size_z = voxels[0].size[2]
+        del(voxels)
 
-            vox_size_x = voxels[0].size[0]
-            vox_size_y = voxels[0].size[1]
-            vox_size_z = voxels[0].size[2]
-            del(voxels)
+        track_hits = [v.hits for v in dropped_voxels]
+        for c, t in enumerate(tracks, 0):
+            tID = c
+            energy = plf.get_track_energy(t)
+            numb_of_hits   = sum(len(v.hits) for v in t.nodes())
+            numb_of_voxels = len(t.nodes())
+            numb_of_tracks = len(tracks   )
+            hits_from_track = ( pd.concat([v.hits for v in t.nodes()], ignore_index=True)
+                                  .assign(R = lambda df: np.sqrt(df.X**2 + df.Y**2))
+                              )
 
-            track_hits = []
-            for c, t in enumerate(tracks, 0):
-                tID = c
-                energy = plf.get_track_energy(t)
-                numb_of_hits   = len([h for vox in t.nodes() for h in vox.hits])
-                numb_of_voxels = len(t.nodes())
-                numb_of_tracks = len(tracks   )
-                pos   = [h.pos for v in t.nodes() for h in v.hits]
-                x, y, z = map(np.array, zip(*pos))
-                r = np.sqrt(x**2 + y**2)
+            ave_pos = np.average(hits_from_track["X Y Z".split()], weights=hits_from_track.Ep, axis=0)
+            ave_r   = np.average(hits_from_track.R               , weights=hits_from_track.Ep, axis=0)
+            distances = plf.shortest_paths(t)
+            extr1, extr2, length = plf.find_extrema_and_length(distances)
+            extr1_pos = extr1.XYZ
+            extr2_pos = extr2.XYZ
 
-                e     = [h.Ep for v in t.nodes() for h in v.hits]
-                ave_pos = np.average(pos, weights=e, axis=0)
-                ave_r   = np.average(r  , weights=e, axis=0)
-                distances = plf.shortest_paths(t)
-                extr1, extr2, length = plf.find_extrema_and_length(distances)
-                extr1_pos = extr1.XYZ
-                extr2_pos = extr2.XYZ
+            e_blob1, e_blob2, hits_blob1, hits_blob2, blob_pos1, blob_pos2 = plf.blob_energies_hits_and_centres(t, blob_radius)
 
-                e_blob1, e_blob2, hits_blob1, hits_blob2, blob_pos1, blob_pos2 = plf.blob_energies_hits_and_centres(t, blob_radius)
+            common_hits = hits_blob1.merge(hits_blob2, how="inner")
+            overlap     = common_hits.Ep.sum()
+            list_of_vars = [event, tID, energy, length, numb_of_voxels,
+                            numb_of_hits, numb_of_tracks,
+                            hits_from_track.X.min(), hits_from_track.Y.min(), hits_from_track.Z.min(), hits_from_track.R.min(),
+                            hits_from_track.X.max(), hits_from_track.Y.max(), hits_from_track.Z.max(), hits_from_track.R.max(),
+                            *ave_pos, ave_r, *extr1_pos,
+                            *extr2_pos, *blob_pos1, *blob_pos2,
+                            e_blob1, e_blob2, overlap,
+                            vox_size_x, vox_size_y, vox_size_z]
 
-                overlap = float(sum(h.Ep for h in set(hits_blob1).intersection(set(hits_blob2))))
-                list_of_vars = [hitc.event, tID, energy, length, numb_of_voxels,
-                                numb_of_hits, numb_of_tracks,
-                                min(x), min(y), min(z), min(r), max(x), max(y), max(z), max(r),
-                                *ave_pos, ave_r, *extr1_pos,
-                                *extr2_pos, *blob_pos1, *blob_pos2,
-                                e_blob1, e_blob2, overlap,
-                                vox_size_x, vox_size_y, vox_size_z]
+            df.loc[c] = list_of_vars
 
-                df.loc[c] = list_of_vars
+            for vox in t.nodes():
+                vox.hits.loc[:, "track_id"] = tID
+                track_hits.append(vox.hits)
 
-                for vox in t.nodes():
-                    for hit in vox.hits:
-                        hit.track_id = tID
-                        track_hits.append(hit)
-
-            #change dtype of columns to match type of variables
-            df = df.apply(lambda x : x.astype(types_dict_tracks[x.name]))
-            track_hitc.hits.extend(track_hits)
-        return df, track_hitc, out_of_map
+        #change dtype of columns to match type of variables
+        df = df.apply(lambda x : x.astype(types_dict_tracks[x.name]))
+        track_hits = ( pd.concat([hits_out] + track_hits, ignore_index=True)
+                         .astype(dict(event=int, npeak=np.uint16, track_id=int))
+                     )
+        return df, track_hits, out_of_map.any()
 
     return create_extract_track_blob_info
 
 
-def sort_hits(hitc):
-    # sort hits in z, then in x, then in y
-    sorted_hits = sorted(hitc.hits, key=lambda h: (h.Z, h.X, h.Y))
-    return HitCollection(hitc.event, hitc.time, sorted_hits)
-
-
-def hitc_to_df(hitc: HitCollection):
-    hits = []
-    for hit in hitc.hits:
-        hits.append(pd.DataFrame(dict( event    = hitc.event
-                                     , time     = hitc.time
-                                     , npeak    = hit .npeak
-                                     , Xpeak    = hit .Xpeak
-                                     , Ypeak    = hit .Ypeak
-                                     , X        = hit .X
-                                     , Y        = hit .Y
-                                     , Z        = hit .Z
-                                     , Q        = hit .Q
-                                     , E        = hit .E
-                                     , Ec       = hit .Ec
-                                     , track_id = hit .track_id
-                                     , Ep       = hit .Ep), index=[0]))
-    df = pd.concat(hits, ignore_index=True)
-    df = df.astype(dict(event=np.int64, npeak=np.uint16, Ec=np.float64, Ep=np.float64))
-    return df
+def sort_hits(hits):
+    return hits.sort_values("Z X Y".split())
 
 
 def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name,
                                   hits_writer):
 
-    filter_events_nohits = fl.map(lambda x : len(x.hits) > 0,
+    filter_events_nohits = fl.map(lambda x : len(x) > 0,
                                       args = 'hits',
                                       out  = 'hits_passed')
     hits_passed          = fl.count_filter(bool, args="hits_passed")
@@ -1629,8 +1605,12 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     make_and_write_summary  = make_final_summary, write_summary
     select_and_write_tracks = events_passed_topology.filter, write_tracks
 
-    to_hits_df = fl.map(hitc_to_df)
-    write_hits = ("paolina_hits", to_hits_df, fl.sink(hits_writer))
+    def change_type(df):
+        if "Xpeak" in df:
+            return df.astype(dict(Xpeak=float, Ypeak=float))
+        return df
+
+    write_hits = ("paolina_hits", fl.map(change_type), fl.sink(hits_writer))
 
     fork_pipes = filter(None, ( make_and_write_summary
                               , write_topology_filter
@@ -1667,7 +1647,7 @@ def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
 
     Returns
     ----------
-    A function that takes HitCollection as input and returns another object with
+    A function that takes a set of hits as input and returns another object with
     only non NN hits of charge above threshold_charge.
     The energy of NN hits is redistributed among neighbors.
     """
@@ -1700,8 +1680,8 @@ def hits_corrector( filename     : str
 
     Returns
     ----------
-    A function that takes a HitCollection as input and returns
-    the same object with modified Ec and Z fields.
+    A function that takes a set of hits as input and returns another one with Ec
+    and Z fields assigned. Input data is not modified.
     """
     maps      = read_maps(os.path.expandvars(filename))
     get_coef  = apply_all_correction( maps

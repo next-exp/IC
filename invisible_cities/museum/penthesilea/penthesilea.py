@@ -51,7 +51,27 @@ from .  components import       pmap_from_files
 from .  components import           hit_builder
 from .  components import               collect
 from .  components import build_pointlike_event as build_pointlike_event_
-from .  components import            hitc_to_df
+
+
+def hitc_to_df(hitc: HitCollection):
+    hits = []
+    for hit in hitc.hits:
+        hits.append(pd.DataFrame(dict( event    = hitc.event
+                                     , time     = hitc.time
+                                     , npeak    = hit .npeak
+                                     , Xpeak    = hit .Xpeak
+                                     , Ypeak    = hit .Ypeak
+                                     , X        = hit .X
+                                     , Y        = hit .Y
+                                     , Z        = hit .Z
+                                     , Q        = hit .Q
+                                     , E        = hit .E
+                                     , Ec       = hit .Ec
+                                     , track_id = hit .track_id
+                                     , Ep       = hit .Ep), index=[0]))
+    df = pd.concat(hits, ignore_index=True)
+    df = df.astype(dict(event=np.int64, npeak=np.uint16, Ec=np.float64, track_id=np.int64, Ep=np.float64))
+    return df
 
 
 @city
