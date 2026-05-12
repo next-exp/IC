@@ -86,6 +86,19 @@ class MapFitFunction(AutoNameEnumBase):
 
 
 
+class NormMethod(AutoNameEnumBase):
+    maximum = auto()
+    mean_chamber = auto()
+    median_chamber = auto()
+    mean_anode = auto()
+    median_anode = auto()
+    mean_region_chamber = auto()
+    median_region_chamber = auto()
+    mean_region_anode = auto()
+    median_region_anode = auto()
+
+
+
 class NormStrategy(AutoNameEnumBase):
     mean   = auto()
     median = auto()
