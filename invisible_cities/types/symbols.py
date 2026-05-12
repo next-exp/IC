@@ -80,6 +80,12 @@ class SelRegionMethod(AutoNameEnumBase):
 
 
 
+class MapFitFunction(AutoNameEnumBase):
+    gaussian = auto()
+    median = auto()
+
+
+
 class NormStrategy(AutoNameEnumBase):
     mean   = auto()
     median = auto()
