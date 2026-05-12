@@ -180,7 +180,7 @@ def test_cluster_tagger_output_shape(df):
     - Has the same number of rows as the input.
     - Contains exactly one new column named 'cluster'.
     """
-    dummy_params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)
+    dummy_params = dict(min_samples=1, scale_xy=1.0, scale_z=1.0)
     df_result    = cluster_tagger(df.copy(), **dummy_params)
 
     assert len(df_result) == len(df), "Output DataFrame has different length than input."
@@ -195,7 +195,7 @@ def test_cluster_tagger_original(df):
     - Does not modify any of the input information.
     - Preserves the input index and row order.
     """
-    dummy_params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)
+    dummy_params = dict(min_samples=1, scale_xy=1.0, scale_z=1.0)
     df_result    = cluster_tagger(df.copy(), **dummy_params)
 
     pd.testing.assert_frame_equal(  
@@ -207,7 +207,7 @@ def test_cluster_tagger_original(df):
 
 @given(df=gen_cluster_df)
 def test_cluster_tagger_new_column_validity(df):
-    dummy_params = dict(eps=10.0, min_samples=1, scale_xy=1.0, scale_z=1.0)
+    dummy_params = dict(min_samples=1, scale_xy=1.0, scale_z=1.0)
     df_result    = cluster_tagger(df.copy(), **dummy_params)
 
     assert pd.api.types.is_integer_dtype(df_result.cluster), "'cluster' column is not of integer type."
@@ -235,7 +235,7 @@ def test_cluster_tagger_row_alignment():
     # to ensure that both hits close to (0,0,0) have same cluster label (0)
     df_shuffled = df.reindex(index=[0, 2, 1, 3]).copy().drop(columns=['cluster'])
 
-    test_params = dict(eps=5.0, min_samples=1, scale_xy=1.0, scale_z=1.0)
+    test_params = dict(min_samples=1, scale_xy=1.0, scale_z=1.0)
     df_result   = cluster_tagger(df_shuffled, **test_params)
     # Sorted final result must match original dataframe 
     df_result   = df_result.sort_index()
@@ -261,7 +261,7 @@ def test_cluster_tagger_noise_identification():
     }
     df = pd.DataFrame(data)
 
-    test_params = dict(eps=5.0, min_samples=3, scale_xy=1.0, scale_z=1.0)
+    test_params = dict(min_samples=3, scale_xy=1.0, scale_z=1.0)
     df_result   = cluster_tagger(df.copy(), **test_params)
 
     cluster_labels = df_result.cluster.unique()
@@ -288,7 +288,7 @@ def test_cluster_tagger_event_distinction():
     }
     df = pd.DataFrame(data)
 
-    test_params = dict(eps=5.0, min_samples=2, scale_xy=1.0, scale_z=1.0)
+    test_params = dict(min_samples=2, scale_xy=1.0, scale_z=1.0)
     df_result   = cluster_tagger(df.copy(), **test_params)
 
     event_0_clusters = df_result[df_result.event == 0].cluster.unique()

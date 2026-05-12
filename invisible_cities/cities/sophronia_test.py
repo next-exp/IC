@@ -171,10 +171,9 @@ def test_sophronia_clustering_integration(config_tmpdir, sophronia_config):
 
     # Clustering enabled
     clustering_params = dict(
-                                eps         = 3,
                                 min_samples = 5,
-                                scale_xy    = 14.55,
-                                scale_z     = 3.7
+                                scale_xy    = 15.55,
+                                scale_z     = 4.0
                             )
     config_with_cluster = dict(**sophronia_config)
     config_with_cluster.update(dict( file_out          = path_out_with_cluster

@@ -141,13 +141,12 @@ def sophronia( files_in           : OneOrManyFiles
             Normalization value in case of `norm_strat = NormStrategy.custom`
 
     clustering_params : dict
-        eps : float
-            Epsilon value for DBSCAN, defining the maximum distance between two samples for them to be considered neighbors.
         min_samples : int
-            Minimum number of samples required to form a dense region (cluster). This includes the point itself.
+            Minimum number of samples required to form a dense region (cluster).
+            This includes the point itself.
         scale_xy : float
             Scaling factor to apply to the (x, y) coordinates before clustering.
-        scale_z : float
+        scale_z  : float
             Scaling factor to apply to the z coordinate before clustering.
     """
     global_reco = compute_xy_position( detector_db

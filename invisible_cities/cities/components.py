@@ -1699,8 +1699,7 @@ def hits_corrector( filename     : str
     return correct
 
 @check_annotations
-def hits_clusterizer( eps         : float
-                    , min_samples : int
+def hits_clusterizer( min_samples : int
                     , scale_xy    : float
                     , scale_z     : float
                     ) -> Callable:
@@ -1709,10 +1708,9 @@ def hits_clusterizer( eps         : float
 
     Parameters
     ----------
-    eps : float
-        Epsilon value for DBSCAN, defining the maximum distance between two samples for them to be considered neighbors.
     min_samples : int
-        Minimum number of samples required to form a dense region (cluster). This includes the point itself.
+        Minimum number of samples required to form a dense region (cluster).
+        This includes the point itself.
     scale_xy : float
         Scaling factor to apply to the (x, y) coordinates before clustering.
     scale_z : float
@@ -1725,9 +1723,10 @@ def hits_clusterizer( eps         : float
         with an added 'cluster' column, which contains the cluster labels assigned by DBSCAN
         (-1 for noise).
     """
-    return partial(cluster_tagger,
-                   eps=eps, min_samples=min_samples,
-                   scale_xy=scale_xy, scale_z=scale_z)
+    return partial( cluster_tagger
+                  , min_samples = min_samples
+                  , scale_xy    = scale_xy
+                  , scale_z     = scale_z )
 
 
 def identity(x : Any) -> Any:

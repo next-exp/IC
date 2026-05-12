@@ -244,7 +244,6 @@ def threshold_hits(hits: pd.DataFrame, th: float) -> pd.DataFrame:
 
 def tag_hits_in_event(event_hits   : pd.DataFrame
                      , *
-                     , eps         : float
                      , min_samples : int
                      , scale_xy    : float
                      , scale_z     : float
@@ -256,43 +255,8 @@ def tag_hits_in_event(event_hits   : pd.DataFrame
 
     Parameters
     ----------
-    event_hits : pd.DataFrame
+    event_hits  : pd.DataFrame
         DataFrame with hits from a single event. Must contain 'X', 'Y', 'Z' columns.
-    eps, min_samples, scale_xy, scale_z :
-        Configuration parameters for DBSCAN and scaling. See `cluster_tagger` for details.
-
-    Returns
-    -------
-    pd.DataFrame
-        The input DataFrame with a 'cluster' column added.
-    """
-    coords = event_hits[['X', 'Y', 'Z']].to_numpy()
-    coords[:, :2] /= scale_xy
-    coords[:, 2]  /= scale_z
-
-    labels = DBSCAN(eps=eps, min_samples=min_samples).fit_predict(coords)
-    event_hits['cluster'] = labels
-
-    return event_hits
-
-def cluster_tagger(df_hits      : pd.DataFrame
-                  , *
-                  , eps         : float
-                  , min_samples : int
-                  , scale_xy    : float
-                  , scale_z     : float
-                  ) -> pd.DataFrame:
-    """
-    Applies DBSCAN clustering to hits on an event-by-event basis using groupby.apply.
-    This function groups the input DataFrame by 'event' and applies the
-    `tag_hits_in_event` function to each event's group of hits.
-
-    Parameters
-    ----------
-    df_hits     : pd.DataFrame
-        DataFrame with hit information. Must contain 'X', 'Y', 'Z', and 'event'.
-    eps         : float
-        Maximum distance between two samples for them to be considered neighbors.
     min_samples : int
         Minimum number of samples required to form a dense region (cluster).
         This includes the point itself.
@@ -304,6 +268,41 @@ def cluster_tagger(df_hits      : pd.DataFrame
     Returns
     -------
     pd.DataFrame
+        The input DataFrame with a 'cluster' column added.
+    """
+    coords = event_hits[['X', 'Y', 'Z']].to_numpy()
+    # A proper scaling leads to hits being separeted 
+    # by a distance of 1 in the DBSCAN metric space
+    coords[:, :2] /= scale_xy
+    coords[:, 2]  /= scale_z
+
+    # eps parameter is fixed to a value a bit higher of √3
+    # to retain diagonal neighbours in the same cluster
+    labels = DBSCAN(eps=1.8, min_samples=min_samples).fit_predict(coords)
+    event_hits['cluster'] = labels
+
+    return event_hits
+
+def cluster_tagger(df_hits      : pd.DataFrame
+                  , *
+                  , min_samples : int
+                  , scale_xy    : float
+                  , scale_z     : float
+                  ) -> pd.DataFrame:
+    """
+    This function groups the input DataFrame by 'event' and applies the
+    `tag_hits_in_event` function to each event's group of hits.
+
+    Parameters
+    ----------
+    df_hits : pd.DataFrame
+        DataFrame with hit information. Must contain 'X', 'Y', 'Z', and 'event'.
+    min_samples, scale_xy, scale_z : 
+        See `tag_hits_in_event`
+    
+    Returns
+    -------
+    pd.DataFrame
         The input DataFrame with an added 'cluster' column indicating the
         cluster label for each hit (-1 for noise).
     """
@@ -311,10 +310,10 @@ def cluster_tagger(df_hits      : pd.DataFrame
         return df_hits.assign(cluster=pd.Series(dtype=int))
 
     df_clustered = df_hits.groupby('event', as_index=False, group_keys=False) \
-                          .apply(tag_hits_in_event,
-                                 eps         = eps,
-                                 min_samples = min_samples,
-                                 scale_xy    = scale_xy,
-                                 scale_z     = scale_z)
+                          .apply( tag_hits_in_event
+                                , min_samples = min_samples
+                                , scale_xy    = scale_xy
+                                , scale_z     = scale_z )
     
     return df_clustered.set_index(df_hits.index)
+    
