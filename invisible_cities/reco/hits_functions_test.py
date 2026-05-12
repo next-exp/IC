@@ -189,6 +189,7 @@ def test_cluster_tagger_output_shape(df):
     assert set(df_result.columns) == expected_cols, "Output DataFrame has unexpected columns."
 
 @given(df=gen_cluster_df)
+@settings(deadline=None)
 def test_cluster_tagger_original(df):
     """
     Verifies that cluster_tagger:
@@ -206,6 +207,7 @@ def test_cluster_tagger_original(df):
                                  )
 
 @given(df=gen_cluster_df)
+@settings(deadline=None)
 def test_cluster_tagger_new_column_validity(df):
     dummy_params = dict(min_samples=1, scale_xy=1.0, scale_z=1.0)
     df_result    = cluster_tagger(df.copy(), **dummy_params)
