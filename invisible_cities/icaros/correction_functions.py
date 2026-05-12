@@ -7,6 +7,7 @@ from .. core    .system_of_units import keV
 from .. core    .core_functions  import in_range
 from .. types   .symbols         import NormMethod
 from .. types   .ic_types        import NoneType
+from .. evm     .ic_containers   import KryptonMap
 
 from typing import Union
 
@@ -217,3 +218,11 @@ def apply_correctionmap_inplace_hits(hdst        : pd.DataFrame,
     hdst[col_name]   = corrected_energy.values
 
     return hdst
+
+def load_map(name : str) -> KryptonMap:
+    krmap      = pd.read_hdf(name, 'krmap/krmap')
+    t_evol     = pd.read_hdf(name, 't_evol/t_evol')
+    efficiencies = pd.read_hdf(name, 'data/selection_efficiencies')
+    metadata   = pd.read_hdf(name, 'metadata')
+
+    return KryptonMap(krmap, t_evol, efficiencies, metadata)
