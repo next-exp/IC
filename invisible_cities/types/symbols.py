@@ -74,6 +74,12 @@ class MCTableType(AutoNameEnumBase):
     string_map       = auto()
 
 
+class SelRegionMethod(AutoNameEnumBase):
+    circle = auto()
+    square = auto()
+
+
+
 class NormStrategy(AutoNameEnumBase):
     mean   = auto()
     median = auto()
