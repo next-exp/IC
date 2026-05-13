@@ -23,7 +23,7 @@ from . types.symbols     import DeconvolutionMode
 from . types.symbols     import CutType
 from . types.symbols     import SiPMCharge
 from . types.symbols     import InterpolationMethod
-from . types.symbols     import NormStrategy
+from . types.symbols     import NormMethod
 
 tbl_data = namedtuple('tbl_data', 'filename group node')
 dst_data = namedtuple('dst_data', 'file_info config read true')
@@ -145,13 +145,13 @@ def KrMC_pmaps_dict(KrMC_pmaps_filename):
 
 @pytest.fixture(scope='session')
 def correction_map_filename(ICDATADIR):
-    test_file = "kr_emap_xy_100_100_r_6573_time.h5"
+    test_file = "MC_3Dmap_fullsim_0705.h5"
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
 @pytest.fixture(scope='session')
 def correction_map_MC_filename(ICDATADIR):
-    test_file = "kr_emap_xy_100_100_mc.h5"
+    test_file = "MC_3Dmap_fullsim_0705.h5"
     test_file = os.path.join(ICDATADIR, test_file)
     return test_file
 
@@ -389,7 +389,7 @@ def Th228_hits_missing(Th228_hits, config_tmpdir):
 
 @pytest.fixture(scope="session")
 def next100_mc_krmap(ICDATADIR):
-    filename = "map_NEXT100_MC.h5"
+    filename = "MC_3Dmap_fullsim_0705.h5"
     filename = os.path.join(ICDATADIR, filename)
     return filename
 
@@ -435,9 +435,9 @@ def sophronia_config(Th228_pmaps, next100_mc_krmap):
                    , global_reco_params = dict(Qthr = 20 * units.pes)
                    , same_peak          = True
                    , corrections        = dict(
-                       filename   = next100_mc_krmap,
-                       apply_temp =            False,
-                       norm_strat =  NormStrategy.kr)
+                       filename    = next100_mc_krmap,
+                       apply_temp  =            False,
+                       norm_method =  NormMethod.maximum)
                    , clustering_params = dict(
                         min_samples =     5,
                         scale_xy    = 15.55,
@@ -468,7 +468,7 @@ def esmeralda_config(Th228_hits, next100_mc_krmap):
                  , corrections = dict(
                       filename   = next100_mc_krmap,
                       apply_temp =            False,
-                      norm_strat =  NormStrategy.kr)
+                      norm_method  =  NormMethod.maximum)
                  )
 
     return config
@@ -578,7 +578,7 @@ def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
                  , satellite_params = None
                  , corrections   = dict( filename   = next100_mc_krmap
                                        , apply_temp = False
-                                       , norm_strat = NormStrategy.kr))
+                                         , norm_method = NormMethod.maximum))
     return config
 
 
