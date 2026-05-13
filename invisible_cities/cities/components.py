@@ -56,9 +56,6 @@ from .. reco                      import           pmaps_functions as pmf
 from .. reco                      import            hits_functions as hif
 from .. reco                      import             wfm_functions as wfm
 from .. reco                      import         paolina_functions as plf
-from .. reco   .corrections       import                 read_maps
-from .. reco   .corrections       import      apply_all_correction
-from .. reco   .corrections       import     get_df_to_z_converter
 from .. reco   .xy_algorithms     import                    corona
 from .. reco   .xy_algorithms     import                barycenter
 from .. reco   .hits_functions    import            cluster_tagger
@@ -92,7 +89,10 @@ from .. types  .symbols           import             SiPMThreshold
 from .. types  .symbols           import                EventRange
 from .. types  .symbols           import                 HitEnergy
 from .. types  .symbols           import                    XYReco
-from .. types  .symbols           import              NormStrategy
+from .. types  .symbols           import                NormMethod
+
+from .. icaros .correction_functions   import    load_map
+from .. icaros .correction_functions   import    apply_correctionmap_inplace_hits
 
 
 
@@ -1664,8 +1664,8 @@ def hits_thresholder(threshold_charge : float, same_peak : bool ) -> Callable:
 @check_annotations
 def hits_corrector( filename     : str
                   , apply_temp   : bool
-                  , norm_strat   : NormStrategy
-                  , norm_options : Optional[dict] = dict()
+                  , norm_method  : NormMethod
+                  , norm_options : Optional[dict] = None
                   , apply_z      : Optional[bool] = False
                   ) -> Callable:
     """
@@ -1684,17 +1684,14 @@ def hits_corrector( filename     : str
     A function that takes a set of hits as input and returns another one with Ec
     and Z fields assigned. Input data is not modified.
     """
-    maps      = read_maps(os.path.expandvars(filename))
-    get_coef  = apply_all_correction( maps
-                                    , apply_temp = apply_temp
-                                    , norm_strat = norm_strat
-                                    , **norm_options)
-    time_to_Z = get_df_to_z_converter(maps) if maps.t_evol is not None and apply_z else identity
+    if apply_temp:
+        raise NotImplementedError('Temporal corrections not implemented yet')
+    if apply_z:
+        raise NotImplementedError('DT to Z conversion not implemented yet')
 
+    maps  = load_map(os.path.expandvars(filename))
     def correct(hits : pd.DataFrame) -> pd.DataFrame:
-        corr_factors = get_coef(hits.X, hits.Y, hits.Z, hits.time)
-        return hits.assign( Ec = hits.E * corr_factors
-                          , Z  = time_to_Z(hits.Z) )
+        return apply_correctionmap_inplace_hits(hits, maps.krmap, norm_method, norm_options, 'Ec', units.MeV)
 
     return correct
 
