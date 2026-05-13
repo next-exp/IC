@@ -82,20 +82,20 @@ class SelRegionMethod(AutoNameEnumBase):
 
 class MapFitFunction(AutoNameEnumBase):
     gaussian = auto()
-    median = auto()
+    median   = auto()
 
 
 
 class NormMethod(AutoNameEnumBase):
-    maximum = auto()
-    mean_chamber = auto()
-    median_chamber = auto()
-    mean_anode = auto()
-    median_anode = auto()
-    mean_region_chamber = auto()
+    maximum               = auto()
+    mean_chamber          = auto()
+    median_chamber        = auto()
+    mean_anode            = auto()
+    median_anode          = auto()
+    mean_region_chamber   = auto()
     median_region_chamber = auto()
-    mean_region_anode = auto()
-    median_region_anode = auto()
+    mean_region_anode     = auto()
+    median_region_anode   = auto()
 
 
 
