@@ -1686,19 +1686,20 @@ def hits_corrector( filename     : str
     A function that takes a set of hits as input and returns another one with Ec
     and Z fields assigned. Input data is not modified.
     """
-    if apply_temp:
-        raise NotImplementedError('Temporal corrections not implemented yet')
-
     maps = load_map(os.path.expandvars(filename))
 
     def correct(hits : pd.DataFrame) -> pd.DataFrame:
         if apply_z:
             median_dv  = maps.t_evol.dv.median()
-            hits.Z = hits.Z * median_dv
+            hits.Z     = hits.Z * median_dv
 
         hits = apply_correctionmap_inplace_hits(hits, maps.krmap, norm_method, norm_options, 'Ec', units.MeV)
-        return hits
 
+        if apply_temp:
+            median_s2e = maps.t_evol.s2e.median()
+            fcorr   = interp1d(maps.ts, median_s2e, kind = "linear")
+            hits.Ec = hits.Ec / fcorr(hits.time)
+        return hits
     return correct
 
 
