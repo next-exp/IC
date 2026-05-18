@@ -19,6 +19,8 @@ from typing          import Union
 from typing          import Any
 from typing          import Optional
 
+from scipy.interpolate import interp1d
+
 import tables as tb
 import numpy  as np
 import pandas as pd
@@ -1686,14 +1688,19 @@ def hits_corrector( filename     : str
     """
     if apply_temp:
         raise NotImplementedError('Temporal corrections not implemented yet')
-    if apply_z:
-        raise NotImplementedError('DT to Z conversion not implemented yet')
 
-    maps  = load_map(os.path.expandvars(filename))
+    maps = load_map(os.path.expandvars(filename))
+
     def correct(hits : pd.DataFrame) -> pd.DataFrame:
-        return apply_correctionmap_inplace_hits(hits, maps.krmap, norm_method, norm_options, 'Ec', units.MeV)
+        if apply_z:
+            median_dv  = maps.t_evol.dv.median()
+            hits.Z = hits.Z * median_dv
+
+        hits = apply_correctionmap_inplace_hits(hits, maps.krmap, norm_method, norm_options, 'Ec', units.MeV)
+        return hits
 
     return correct
+
 
 @check_annotations
 def hits_clusterizer( min_samples : int
@@ -1716,7 +1723,7 @@ def hits_clusterizer( min_samples : int
     Returns
     -------
     Callable
-        A function that takes a DataFrame of hits and returns the same DataFrame 
+        A function that takes a DataFrame of hits and returns the same DataFrame
         with an added 'cluster' column, which contains the cluster labels assigned by DBSCAN
         (-1 for noise).
     """
