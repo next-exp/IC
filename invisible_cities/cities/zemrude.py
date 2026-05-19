@@ -2,6 +2,8 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
+from .  components                       import city
+from .  components                       import get_run_number
 from .. dataflow                         import dataflow        as fl
 from .. io      .dst_io                  import load_dsts
 
@@ -270,7 +272,7 @@ def zemrude(files_in           : OneOrManyFiles
             ,pipe   = fl.pipe(apply_preliminary_map,
                                apply_selections,
                                compute_3D_map,
-                               compute_metadata
+                               compute_metadata,
                                apply_3Dmap_to_data,
                                get_t_evol,
 
