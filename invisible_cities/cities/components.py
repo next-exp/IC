@@ -1689,11 +1689,11 @@ def hits_corrector( filename     : str
     maps = load_map(os.path.expandvars(filename))
 
     def correct(hits : pd.DataFrame) -> pd.DataFrame:
+        hits = apply_correctionmap_inplace_hits(hits, maps.krmap, norm_method, norm_options, 'Ec', units.MeV)
+
         if apply_z:
             median_dv  = maps.t_evol.dv.median()
             hits.Z     = hits.Z * median_dv
-
-        hits = apply_correctionmap_inplace_hits(hits, maps.krmap, norm_method, norm_options, 'Ec', units.MeV)
 
         if apply_temp:
             median_s2e = maps.t_evol.s2e.median()
