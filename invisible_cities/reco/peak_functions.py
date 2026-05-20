@@ -28,6 +28,7 @@ def indices_and_wf_above_threshold(wf, thr):
 def select_wfs_above_time_integrated_thr(wfs, thr):
     selected_ids = np.where(np.sum(wfs, axis=1) >= thr)[0]
     selected_wfs = wfs[selected_ids]
+
     return selected_ids, selected_wfs
 
 
@@ -76,13 +77,18 @@ def build_pmt_responses(indices, times, widths, ccwf,
 
 
 def build_sipm_responses(indices, times, widths,
-                         sipm_wfs, rebin_stride, thr_sipm_s2):
-    _, _, sipm_wfs_ = pick_slice_and_rebin(indices , times, widths,
+                         sipm_wfs, rebin_stride, apply_cut):
+    _, _, sipm_wfs = pick_slice_and_rebin(indices , times, widths,
                                            sipm_wfs, rebin_stride,
                                            pad_zeros = False)
-    (sipm_ids,
-     sipm_wfs)   = select_wfs_above_time_integrated_thr(sipm_wfs_,
-                                                        thr_sipm_s2)
+    if apply_cut is not None:
+        # apply cut before slicing and rebinning
+        (sipm_ids,
+         sipm_wfs)   = apply_cut(sipm_wfs)
+    else:
+        # give all sipm ids as index if no cut is applied
+        sipm_ids     = np.arange(sipm_wfs.shape[0])
+
     return SiPMResponses(sipm_ids, sipm_wfs)
 
 
@@ -93,7 +99,7 @@ def build_peak(indices, times,
                pmt_samp_wid  = 25 * units.ns,
                sipm_samp_wid =  1 * units.mus,
                sipm_wfs      = None,
-               thr_sipm_s2   = 0):
+               apply_cut     = None):
     sipm_pmt_bin_ratio = int(sipm_samp_wid/pmt_samp_wid)
     (pk_times ,
      pk_widths,
@@ -107,7 +113,7 @@ def build_peak(indices, times,
                                       widths * sipm_pmt_bin_ratio,
                                       sipm_wfs,
                                       rebin_stride // sipm_pmt_bin_ratio,
-                                      thr_sipm_s2)
+                                      apply_cut)
     else:
         sipm_r = SiPMResponses.build_empty_instance()
 
@@ -120,7 +126,8 @@ def find_peaks(ccwfs, index,
                Pk, pmt_ids,
                pmt_samp_wid = 25*units.ns,
                sipm_samp_wid = 1*units.mus,
-               sipm_wfs=None, thr_sipm_s2=0):
+               sipm_wfs=None, apply_cut = None):
+
     ccwfs = np.array(ccwfs, ndmin=2)
 
     peaks           = []
@@ -136,20 +143,20 @@ def find_peaks(ccwfs, index,
                         rebin_stride,
                         with_sipms, Pk,
                         pmt_samp_wid, sipm_samp_wid,
-                        sipm_wfs, thr_sipm_s2)
+                        sipm_wfs, apply_cut)
         peaks.append(pk)
     return peaks
 
 
 def get_pmap(ccwf, s1_indx, s2_indx, sipm_zs_wf,
-             s1_params, s2_params, thr_sipm_s2, pmt_ids,
-             pmt_samp_wid, sipm_samp_wid):
+             s1_params, s2_params, pmt_ids,
+             pmt_samp_wid, sipm_samp_wid, apply_cut = None):
     return PMap(find_peaks(ccwf, s1_indx, Pk=S1, pmt_ids=pmt_ids,
                            pmt_samp_wid=pmt_samp_wid,
                            **s1_params),
                 find_peaks(ccwf, s2_indx, Pk=S2, pmt_ids=pmt_ids,
                            sipm_wfs      = sipm_zs_wf,
-                           thr_sipm_s2   = thr_sipm_s2,
+                           apply_cut     = apply_cut,
                            pmt_samp_wid  = pmt_samp_wid,
                            sipm_samp_wid = sipm_samp_wid,
                            **s2_params))

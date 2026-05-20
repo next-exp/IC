@@ -13,6 +13,7 @@ from hypothesis.strategies    import floats
 from hypothesis.strategies    import integers
 from hypothesis.extra.numpy   import arrays
 
+from ..cities.components      import apply_cutting_function
 from ..core.testing_utils   import exactly
 from ..core.testing_utils   import previous_float
 from ..core.testing_utils   import assert_Peak_equality
@@ -26,6 +27,8 @@ from ..evm .pmaps           import S2
 from ..evm .pmaps           import PMap
 from ..io  .pmaps_io        import load_pmaps
 from ..types.ic_types       import minmax
+from ..types.symbols        import SiPMThreshold
+from ..types.symbols        import CutAlgo
 from .                      import peak_functions as pf
 
 
@@ -350,10 +353,18 @@ def test_build_sipm_responses(wf_with_indices):
     wfs_slice       = wfs[:, indices]
     peak_integrals  = wfs_slice.sum(axis=1)
     below_thr_index = np.argmin (peak_integrals)
-    # next_float doesn't work here
     thr             = peak_integrals[below_thr_index] * 1.000001
+
+    # next_float doesn't work here
+    cut_params = dict(detector_db   = 'None',
+                  thr_sipm_s2   = thr,
+                  thr_sipm      = 0,
+                  thr_sipm_type = SiPMThreshold.common,
+                  run_number    = 0)
+    apply_cut  = apply_cutting_function(CutAlgo.threshold, **cut_params)
+
     sipm_r          = pf.build_sipm_responses(indices, times, widths,
-                                              wfs, 1, thr)
+                                              wfs, 1, apply_cut)
 
     expected_ids = np.delete(      ids, below_thr_index)
     expected_wfs = np.delete(wfs_slice, below_thr_index, axis=0)
@@ -396,7 +407,7 @@ def test_build_peak_development(pmt_and_sipm_wfs_with_indices,
                          with_sipms   = with_sipms,
                          Pk           = Pk,
                          sipm_wfs     = sipm_wfs,
-                         thr_sipm_s2  = -1)
+                         )
 
     assert_Peak_equality(peak, expected_peak)
 
@@ -473,8 +484,7 @@ def test_find_peaks_s2_style(pmt_and_sipm_wfs_with_indices):
                           time_range, length_range,
                           stride, rebin_stride,
                           S2, pmt_ids,
-                          sipm_wfs    = sipm_wfs,
-                          thr_sipm_s2 = -1)
+                          sipm_wfs    = sipm_wfs)
 
     (rebinned_times,
      rebinned_widths,
@@ -502,7 +512,6 @@ def test_get_pmap(s1_and_s2_with_indices):
     sipm_samp_wid = 1  * units.mus
     pmap = pf.get_pmap(pmt_wfs, s1_indx, s2_indx, sipm_wfs,
                        s1_params, s2_params,
-                       thr_sipm_s2 = -1,
                        pmt_ids     = pmt_ids,
                        pmt_samp_wid  = pmt_samp_wid ,
                        sipm_samp_wid = sipm_samp_wid)
