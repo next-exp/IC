@@ -273,7 +273,7 @@ def tag_hits_in_event(event_hits   : pd.DataFrame
         The input DataFrame with a 'cluster' column added.
     """
     coords = event_hits[['X', 'Y', 'Z']].to_numpy()
-    # A proper scaling leads to hits being separeted 
+    # A proper scaling leads to hits being separeted
     # by a distance of 1 in the DBSCAN metric space
     coords[:, :2] /= scale_xy
     coords[:, 2]  /= scale_z
@@ -284,6 +284,7 @@ def tag_hits_in_event(event_hits   : pd.DataFrame
     event_hits['cluster'] = labels
 
     return event_hits
+
 
 def cluster_tagger(df_hits      : pd.DataFrame
                   , *
@@ -299,9 +300,9 @@ def cluster_tagger(df_hits      : pd.DataFrame
     ----------
     df_hits : pd.DataFrame
         DataFrame with hit information. Must contain 'X', 'Y', 'Z', and 'event'.
-    min_samples, scale_xy, scale_z : 
+    min_samples, scale_xy, scale_z :
         See `tag_hits_in_event`
-    
+
     Returns
     -------
     pd.DataFrame
