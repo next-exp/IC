@@ -242,6 +242,8 @@ def fit_map(df            : pd.DataFrame,
 
     result = map_df.groupby(['k', 'i', 'j']).S2e.apply(fit_function)
     result = result.reset_index()
+    if 'level_3' in result.columns:
+        result = result.drop(columns = 'level_3')
 
     return result
 
