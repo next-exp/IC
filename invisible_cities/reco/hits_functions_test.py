@@ -197,6 +197,7 @@ def test_cluster_tagger_original(df):
     - Preserves the input index and row order.
     """
     dummy_params = dict(min_samples=1, scale_xy=1.0, scale_z=1.0)
+    df           = df.sort_values("event")
     df_result    = cluster_tagger(df.copy(), **dummy_params)
 
     pd.testing.assert_frame_equal(  
