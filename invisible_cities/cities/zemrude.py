@@ -98,8 +98,8 @@ def save_krmap(name):
 
 
 def do_control_plots(plots_out,ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen, dtbins2, bins, dtrs2_bins, statistic, x0, y0, shape, shape_size, xy_range_plot):
-    def control_plots(df, df_sel, df_corr, efficiencies, run_number):
-        return make_control_plots(df, df_sel, df_corr, efficiencies, run_number, plots_out, ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen,dtbins2, bins, dtrs2_bins, statistic, x0, y0, shape, shape_size, xy_range_plot)
+    def control_plots(df, df_corr, efficiencies, run_number):
+        return make_control_plots(df, df_corr, efficiencies, run_number, plots_out, ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen,dtbins2, bins, dtrs2_bins, statistic, x0, y0, shape, shape_size, xy_range_plot)
     return control_plots
 
 
@@ -166,7 +166,7 @@ def zemrude(files_in           : OneOrManyFiles
             , xy_params        : dict = None
             ):
 
-    apply_preliminary_map = fl.map( apply_map(pre_map,
+    apply_preliminary_map  = fl.map( apply_map(pre_map,
                                               norm_method,
                                               xy_params,
                                               'Ec',
@@ -258,7 +258,7 @@ def zemrude(files_in           : OneOrManyFiles
                                                   xy_range_plot
                                                   )
 
-                                 , args = ('dst', 'selected_dst', 'corrected_dst','efficiencies', 'run_number')
+                                 , args = ('dst', 'corrected_dst','efficiencies', 'run_number')
                                  )
 
     plot_t_evol = fl.sink(time_evol_plots(plots_out)

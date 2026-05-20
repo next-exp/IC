@@ -704,7 +704,6 @@ def plot_time_evolution_with_errors_and_dates(df_time_evolution : pd.DataFrame,
 
 
 def make_control_plots(df               : pd.DataFrame,
-                       df_sel           : pd.DataFrame,
                        df_corr          : pd.DataFrame,
                        efficiencies     : pd.DataFrame,
                        run_number       : int,
@@ -734,15 +733,15 @@ def make_control_plots(df               : pd.DataFrame,
                        ):
     os.makedirs(plots_out, exist_ok=True)
 
-    monitor_S1(df, df_sel, run_number, ebins1, ns1bins, s1hbins, s1wbins)
+    monitor_S1(df, df_corr, run_number, ebins1, ns1bins, s1hbins, s1wbins)
     plt.gcf().savefig(f"{plots_out}/monitor_S1_run{run_number}.png")
     plt.close()
 
-    monitor_S2(df, df_sel, run_number, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins)
+    monitor_S2(df, df_corr, run_number, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins)
     plt.gcf().savefig(f"{plots_out}/monitor_S2_run{run_number}.png")
     plt.close()
 
-    monitor_dtime(df, df_sel, dtrms2_low, dtrms2_upp, dtrms2_cen)
+    monitor_dtime(df, df_corr, dtrms2_low, dtrms2_upp, dtrms2_cen)
     plt.gcf().savefig(f"{plots_out}/monitor_dtime_run{run_number}.png")
     plt.close()
 
@@ -758,19 +757,19 @@ def make_control_plots(df               : pd.DataFrame,
     plt.gcf().savefig(f"{plots_out}/plot_Ec_run{run_number}.png")
     plt.close()
 
-    hist2D(df_sel, run_number, statistic)
+    hist2D(df_corr, run_number, statistic)
     plt.gcf().savefig(f"{plots_out}/hist2D_run{run_number}.png")
     plt.close()
 
-    plot_lifetime_fit(df_sel, x0, y0, shape, shape_size, dtbins2, ebins2)
+    plot_lifetime_fit(df_corr, x0, y0, shape, shape_size, dtbins2, ebins2)
     plt.gcf().savefig(f"{plots_out}/plot_lifetime_fit_run{run_number}.png")
     plt.close()
 
-    plot_sigmoid(df_sel, x0, y0, shape, shape_size)
+    plot_sigmoid(df_corr, x0, y0, shape, shape_size)
     plt.gcf().savefig(f"{plots_out}/plot_sigmoid_run{run_number}.png")
     plt.close()
 
-    plot_XY_distributions(df, df_sel, run_number, xy_range_plot)
+    plot_XY_distributions(df, df_corr, run_number, xy_range_plot)
     plt.gcf().savefig(f"{plots_out}/plot_XY_distributions_run{run_number}.png")
     plt.close()
 
