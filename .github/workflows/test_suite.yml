@@ -4,7 +4,14 @@ name: Test suite
 
 on:
   push:
+    branches-ignore:
+      - 'doc-*'
+      - 'docs-*'
+
   pull_request:
+    branches-ignore:
+      - 'doc-*'
+      - 'docs-*'
 
 jobs:
   build:
