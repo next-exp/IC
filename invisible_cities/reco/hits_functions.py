@@ -272,7 +272,7 @@ def tag_hits_in_event(event_hits   : pd.DataFrame
     pd.DataFrame
         The input DataFrame with a 'cluster' column added.
     """
-    coords = event_hits[['X', 'Y', 'Z']].to_numpy()
+    coords = event_hits[['X', 'Y', 'Z']].to_numpy().copy()
     # A proper scaling leads to hits being separeted
     # by a distance of 1 in the DBSCAN metric space
     coords[:, :2] /= scale_xy
