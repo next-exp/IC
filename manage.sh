@@ -141,7 +141,7 @@ function export_city_command_completion {
 }
 
 function activate {
-    if ! which conda >> /dev/null
+    if ! command -v conda 2&>1 > /dev/null
     then
        install_conda
     fi
