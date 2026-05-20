@@ -131,8 +131,8 @@ function python_version_env {
     ic_env
 }
 
-function activate {
-    activate_no_tests
+function activate_and_test {
+    activate
     run_tests_par
 }
 
@@ -140,7 +140,7 @@ function export_city_command_completion {
     source $ICTDIR/bin/city-completion
 }
 
-function activate_no_tests {
+function activate {
     if ! which conda >> /dev/null
     then
        install_conda
@@ -260,7 +260,7 @@ case $COMMAND in
     install_and_check)    install_and_check ;;
     install)              install ;;
     activate)             activate ;;
-    activate_no_tests)    activate_no_tests ;;
+    activate_and_test)    activate_and_test ;;
     make_environment)     make_environment ;;
     run_tests)            run_tests ;;
     run_tests_par)        run_tests_par ;;
@@ -277,7 +277,7 @@ case $COMMAND in
        echo "source $THIS install_and_check"
        echo "source $THIS install"
        echo "source $THIS activate"
-       echo "source $THIS activate_no_tests"
+       echo "source $THIS activate_and_test"
        echo "source $THIS switch_to_conda_env"
        echo "bash   $THIS make_environment"
        echo "bash   $THIS run_tests"

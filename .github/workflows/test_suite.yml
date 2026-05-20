@@ -35,19 +35,19 @@ jobs:
 
     - name: Install IC
       run: |
-        source manage.sh activate_no_tests
+        source manage.sh activate
 
     - name: Run tests
       run: |
         source scripts/setup_conda_gha.sh
         set -o pipefail # necessary for test failure to propagate to `tee`
-        source manage.sh activate_no_tests
+        source manage.sh activate
         PYTEST_ADDOPTS=--color=yes HYPOTHESIS_PROFILE=travis-ci bash manage.sh run_tests_par | tee pytest_output
 
     - name: Test warning-catching script
       run: |
         source scripts/setup_conda_gha.sh
-        source manage.sh activate_no_tests
+        source manage.sh activate
 
         # write dummy tests
         cat > dummy.py <<EOF
