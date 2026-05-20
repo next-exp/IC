@@ -465,10 +465,10 @@ def beersheba( files_in         : OneOrManyFiles
             Path to the file holding the correction maps
         apply_temp : bool
             Whether to apply temporal corrections
-        norm_strat : NormStrategy
-            Normalization strategy
-        norm_value : float, optional
-            Normalization value in case of `norm_strat = NormStrategy.custom`
+        norm_method : NormMethod
+            Normalization method
+        norm_options : dict, optional
+            Normalization parameters.
 
     ----------
     Input

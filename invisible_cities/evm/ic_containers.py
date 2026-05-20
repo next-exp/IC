@@ -28,7 +28,8 @@ for name, attrs in (
         ('FitFunction'    , 'fn values errors chi2 pvalue cov infodict mesg ier'),
         ('TriggerParams'  , 'trigger_channels min_number_channels charge height width'),
         ('SensorParams'   , 'spectra peak_range min_bin_peak max_bin_peak half_peak_width p1pe_seed lim_ped'),
-        ('PedestalParams' , 'gain gain_min gain_max sigma sigma_min sigma_max')):
+        ('PedestalParams' , 'gain gain_min gain_max sigma sigma_min sigma_max'),
+        ('KryptonMap'     , 'krmap t_evol efficiencies metadata')):
     _add_namedtuple_in_this_module(name, attrs)
 
 # Leave nothing but the namedtuple types in the namespace of this module

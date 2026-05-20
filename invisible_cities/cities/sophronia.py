@@ -135,10 +135,10 @@ def sophronia( files_in           : OneOrManyFiles
             Path to the file holding the correction maps
         apply_temp : bool
             Whether to apply temporal corrections
-        norm_strat : NormStrategy
-            Normalization strategy
-        norm_value : float, optional
-            Normalization value in case of `norm_strat = NormStrategy.custom`
+        norm_method : NormMethod
+            Normalization method
+        norm_options : dict, optional
+            Normalization parameters
 
     clustering_params : dict
         min_samples : int
@@ -188,7 +188,7 @@ def sophronia( files_in           : OneOrManyFiles
 
     correct_hits   = df.map( hits_corrector(**corrections) if corrections is not None else identity
                            , item = "hits")
-    
+
     cluster_hits   = df.map( hits_clusterizer(**clustering_params) if clustering_params is not None else identity
                            , item = "hits")
 
