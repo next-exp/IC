@@ -41,6 +41,18 @@ def test_sipm_pd(db):
     assert sipms.shape[0] == db.nsipms
 
 
+def test_fiber_pd(db):
+    """Check that we retrieve the correct number of Fibers."""
+    if db.nfibers == 0:
+        pytest.skip("No fibers in this detector")
+    fibers = DB.DataFiber(db.detector)
+    columns = ['SensorID', 'ChannelID', 'Active', 'X', 'Y',
+               'adc_to_pes', 'adc_to_pes_err', 'Sigma', 'ErrorSigma',
+               'amplification', 'amplification_err', 'amp_Sigma', 'amp_ErrorSigma']
+    assert columns == list(fibers)
+    assert fibers.shape[0] == db.nfibers
+
+
 def test_SiPMNoise(db):
     """Check we have noise for all SiPMs and energy of each bin."""
     noise, energy, baseline = DB.SiPMNoise(db.detector)
@@ -64,6 +76,8 @@ def test_DetectorGeometry(dbnew):
 def test_mc_runs_equal_data_runs(db):
     assert (DB.DataPMT (db.detector, -3550).values == DB.DataPMT (db.detector, 3550).values).all()
     assert (DB.DataSiPM(db.detector, -3550).values == DB.DataSiPM(db.detector, 3550).values).all()
+    if db.nfibers > 0:
+        assert (DB.DataFiber(db.detector, -3550).values == DB.DataFiber(db.detector, 3550).values).all()
 
 
 @fixture(scope='module')
@@ -151,6 +165,8 @@ def test_frontend_mapping(db):
         pytest.skip("NEXT100 not implemented yet")
     if db.detector == "flex100":
         pytest.skip("Flex100 not implemented yet")
+    if db.detector == "hddemo":
+        pytest.skip("hddemo PMT FE tables not populated")
 
     run_number = 6000
     fe_mapping, _ = DB.PMTLowFrequencyNoise(db.detector, run_number)
@@ -169,6 +185,8 @@ def test_pmt_noise_frequencies(db):
         pytest.skip("NEXT100 not implemented yet")
     if db.detector == "flex100":
         pytest.skip("Flex100 not implemented yet")
+    if db.detector == "hddemo":
+        pytest.skip("hddemo PMT FE tables not populated")
 
     run_number = 5000
     _, frequencies = DB.PMTLowFrequencyNoise(db.detector, run_number)
