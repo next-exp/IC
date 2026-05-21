@@ -2,21 +2,13 @@
 
 COMMAND=$1
 ARGUMENT=$2
+PYTHON_VERSION=3.13
 
 ## Interpret meaning of command line argument depending on which
 ## function will receive it.
-
 case $COMMAND in
     run_tests_par | compile_and_test_par)     N_PROC=${ARGUMENT:-auto} ;;
-    *)                                PYTHON_VERSION=${ARGUMENT}       ;;
 esac
-
-# If PYTHON_VERSION was not specified as an argument, deduce it from
-# the conda environment
-
-if [[ $PYTHON_VERSION = "" ]]; then
-    PYTHON_VERSION=${CONDA_DEFAULT_ENV:3:3}
-fi
 
 function install_and_check {
     install
@@ -59,8 +51,8 @@ function install_conda {
     if conda --version ; then
         echo Conda already installed. Skipping conda installation.
     else
-        echo Installing conda for $CONDA_OS
-        CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-py${PYTHON_VERSION//.}_23.11.0-2-${CONDA_OS}-x86_64.sh"
+        echo Installing conda for $CONDA_OS with python version ${PYTHON_VERSION//.}
+        CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-py${PYTHON_VERSION//.}_26.1.1-1-${CONDA_OS}-x86_64.sh"
         if which wget; then
             wget ${CONDA_URL} -O miniconda.sh
         else
@@ -73,7 +65,7 @@ function install_conda {
     fi
 }
 
-CONDA_ENV_TAG=2026-03-04
+CONDA_ENV_TAG=2026-05-21
 CONDA_ENV_NAME=IC-${PYTHON_VERSION}-${CONDA_ENV_TAG}
 
 function make_environment {
@@ -89,31 +81,32 @@ channels:
 dependencies:
 - python       = ${PYTHON_VERSION}
 # *REMEMBER TO CHANGE CONDA_ENV_TAG WHEN CHANGING VERSION NUMBERS*
-- coverage     = 5.5
-- cython       = 0.29.24
-- flaky        = 3.7.0
-- hypothesis   = 6.14.1
-- jupyter      = 1.0.0
-- jupyterlab   = 3.2.1
-- matplotlib   = 3.4.3
-- networkx     = 2.6.3
-- notebook     = 6.4.5
-- numpy        = 1.23.1
-- pandas       = 1.3.4
-- pip          = 21.2.4
-- pyflakes     = 3.2.0
-- pymysql      = 1.0.2
-- pytables     = 3.7.0
-- pytest       = 6.2.4
-- pytest-xdist = 2.3.0
-- scipy        = 1.9.3
-- seaborn      = 0.11.2
-- setuptools   = 58.0.4
-- scikit-learn = 1.1.3
-- sphinx       = 4.2.0
-- tornado      = 6.1
+- coverage     = 7.14.0
+- cython       = 3.2.4
+- flaky        = 3.8.1
+- hypothesis   = 6.152.9
+- jupyter      = 1.1.1
+- jupyterlab   = 4.5.7
+- matplotlib   = 3.10.9
+- networkx     = 3.6.1
+- notebook     = 7.5.6
+- numpy        = 2.4.6
+- pandas       = 3.0.3
+- pip          = 26.1.1
+- pyflakes     = 3.4.0
+- pymysql      = 1.2.0
+- pytables     = 3.11.1
+- pytest       = 9.0.3
+- pytest-xdist = 3.8.0
+- pytz         = 2026.1.post1
+- scikit-learn = 1.8.0
+- scipy        = 1.17.1
+- seaborn      = 0.13.2
+- setuptools   = 82.0.1
+- sphinx       = 9.1.0
+- tornado      = 6.5.5
 - pip:
-  - pytest-instafail==0.4.2
+  - pytest-instafail==0.5.0
 EOF
 
     conda env create -f ${YML_FILENAME}
@@ -138,8 +131,8 @@ function python_version_env {
     ic_env
 }
 
-function work_in_python_version {
-    work_in_python_version_no_tests
+function activate_and_test {
+    activate
     run_tests_par
 }
 
@@ -147,8 +140,8 @@ function export_city_command_completion {
     source $ICTDIR/bin/city-completion
 }
 
-function work_in_python_version_no_tests {
-    if ! which conda >> /dev/null
+function activate {
+    if ! command -v conda 2&>1 > /dev/null
     then
        install_conda
     fi
@@ -226,7 +219,7 @@ function download_test_db {
 }
 
 function compile_cython_components {
-    python setup.py develop
+    pip3 install -e .
 }
 
 function compile_and_test {
@@ -264,29 +257,29 @@ THIS=manage.sh
 ## Main command dispatcher
 
 case $COMMAND in
-    install_and_check)               install_and_check ;;
-    install)                         install ;;
-    work_in_python_version)          work_in_python_version ;;
-    work_in_python_version_no_tests) work_in_python_version_no_tests ;;
-    make_environment)                make_environment ;;
-    run_tests)                       run_tests ;;
-    run_tests_par)                   run_tests_par ;;
-    compile_and_test)                compile_and_test ;;
-    compile_and_test_par)            compile_and_test_par ;;
-    download_test_db)                download_test_db ;;
-    clean)                           clean ;;
-    show_ic_env)                     show_ic_env ;;
+    install_and_check)    install_and_check ;;
+    install)              install ;;
+    activate)             activate ;;
+    activate_and_test)    activate_and_test ;;
+    make_environment)     make_environment ;;
+    run_tests)            run_tests ;;
+    run_tests_par)        run_tests_par ;;
+    compile_and_test)     compile_and_test ;;
+    compile_and_test_par) compile_and_test_par ;;
+    download_test_db)     download_test_db ;;
+    clean)                clean ;;
+    show_ic_env)          show_ic_env ;;
 
     *) echo Unrecognized command: ${COMMAND}
        echo
        echo Usage:
        echo
-       echo "source $THIS install_and_check X.Y"
-       echo "source $THIS install X.Y"
-       echo "source $THIS work_in_python_version X.Y"
-       echo "source $THIS work_in_python_version_no_tests X.Y"
-       echo "source $THIS switch_to_conda_env X.Y"
-       echo "bash   $THIS make_environment X.Y"
+       echo "source $THIS install_and_check"
+       echo "source $THIS install"
+       echo "source $THIS activate"
+       echo "source $THIS activate_and_test"
+       echo "source $THIS switch_to_conda_env"
+       echo "bash   $THIS make_environment"
        echo "bash   $THIS run_tests"
        echo "bash   $THIS run_tests_par"
        echo "bash   $THIS compile_and_test"

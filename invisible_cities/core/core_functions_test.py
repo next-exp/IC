@@ -65,10 +65,11 @@ def test_in_range_infinite(data):
     assert core.in_range(data).all()
 
 
-@given(random_length_float_arrays(mask = lambda x: ((x<-10) or
-                                               (x>+10) )))
+@given(random_length_float_arrays( min_value = -10
+                                 , max_value =  10
+                                 , mask = lambda x: abs(x-3)>2))
 def test_in_range_with_hole(data):
-    assert not core.in_range(data, -10, 10).any()
+    assert not core.in_range(data, 1, 5).any()
 
 
 def test_in_range_positives():

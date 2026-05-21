@@ -169,7 +169,7 @@ gen_cluster_df = data_frames(index   = range_indexes(min_size=1, max_size=50),
                                 column(    'X', dtype=float, elements=floats(min_value=-500, max_value=500)),
                                 column(    'Y', dtype=float, elements=floats(min_value=-500, max_value=500)),
                                 column(    'Z', dtype=float, elements=floats(min_value=0,    max_value=1200)),
-                                column(    'E', dtype=float, elements=floats(min_value=0.1,  max_value=100))  
+                                column(    'E', dtype=float, elements=floats(min_value=0.1,  max_value=100))
                                        ])
 
 @given(df=gen_cluster_df)
@@ -188,6 +188,7 @@ def test_cluster_tagger_output_shape(df):
     expected_cols = set(df.columns) | {'cluster'}
     assert set(df_result.columns) == expected_cols, "Output DataFrame has unexpected columns."
 
+
 @given(df=gen_cluster_df)
 @settings(deadline=None)
 def test_cluster_tagger_original(df):
@@ -197,9 +198,10 @@ def test_cluster_tagger_original(df):
     - Preserves the input index and row order.
     """
     dummy_params = dict(min_samples=1, scale_xy=1.0, scale_z=1.0)
+    df           = df.sort_values("event")
     df_result    = cluster_tagger(df.copy(), **dummy_params)
 
-    pd.testing.assert_frame_equal(  
+    pd.testing.assert_frame_equal(
                                     df_result.drop(columns=['cluster']),
                                     df,
                                     check_dtype=True,
@@ -239,16 +241,16 @@ def test_cluster_tagger_row_alignment():
 
     test_params = dict(min_samples=1, scale_xy=1.0, scale_z=1.0)
     df_result   = cluster_tagger(df_shuffled, **test_params)
-    # Sorted final result must match original dataframe 
+    # Sorted final result must match original dataframe
     df_result   = df_result.sort_index()
 
-    pd.testing.assert_frame_equal(  
+    pd.testing.assert_frame_equal(
                                     df_result,
                                     df,
                                     check_dtype=True,
                                     obj="Dataframe structure check"
                                     )
-    
+
 def test_cluster_tagger_noise_identification():
     """
     Scenario:

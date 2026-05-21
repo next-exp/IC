@@ -49,7 +49,7 @@ and pos.Label LIKE 'PMT%'
 order by Active desc, pos.SensorID
 '''.format(abs(run_number))
     data = pd.read_sql_query(sql, conn)
-    data.fillna(0, inplace=True)
+    data.fillna(dict(adc_to_pes=0, gain=0, sigma=0), inplace=True)
     conn.close()
     return data
 

@@ -310,7 +310,7 @@ def test_fit_with_errors(reduced):
     pars = np.array([1e3, 1e2, 1e1])
     x = np.linspace(100, 300, 100)
     y = fitf.gauss(x, *pars)
-    e = 0.1 * y
+    e = np.clip(0.1 * y, 1e-12, None)
 
     fit_range = (50, 150) if reduced else None
     f = fitf.fit(fitf.gauss, x, y, pars * 1.2, fit_range=fit_range, sigma=e, maxfev=10000)

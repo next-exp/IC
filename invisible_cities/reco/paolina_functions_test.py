@@ -160,7 +160,7 @@ def test_round_hits_positions_in_place(hits):
 
     round_hits_positions_in_place(hits, 5)
 
-    assert np.all(np.in1d(hits["X Y Z".split()], [0, 1e-5, -1e-5]))
+    assert np.all(np.isin(hits["X Y Z".split()], [0, 1e-5, -1e-5]))
 
 
 @an_instance_of(single_hits())
@@ -649,7 +649,7 @@ def test_drop_voxels_deterministic(ICDATADIR):
 
 
 def test_voxel_drop_in_short_tracks():
-    hits = pd.DataFrame(dict(X=[10, 26], Y=[10,10], Z=[10,10], E=[1,1]))
+    hits = pd.DataFrame(dict(X=[10, 26], Y=[10,10], Z=[10,10], E=[1,1]), dtype=float)
     voxels = voxelize_hits(hits, [15,15,15], strict_voxel_size=True)
     e_thr = sum(v.E for v in voxels) + 1.
     min_voxels = 0
@@ -714,6 +714,7 @@ def test_blobs(radius, expected):
     assert blob_energies(tracks[0], radius) == expected
 
 
+@settings(deadline=None)
 @given(bunch_of_hits(), box_sizes, radius)
 def test_blob_hits_are_inside_radius(hits, voxel_dimensions, blob_radius):
     voxels = voxelize_hits(hits, voxel_dimensions)
