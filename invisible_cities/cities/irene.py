@@ -157,6 +157,7 @@ def irene( files_in        : OneOrManyFiles
 
 def store_db_info(file, detector_db, run_number):
     datapmt  = DataPMT (detector_db, run_number)
+    datapmt  = datapmt.drop(columns="noise_rms")
     datasipm = DataSiPM(detector_db, run_number)
     df_writer(file, datapmt , "DB", "DataPMT" , "DB constants for PMTs" , compression="ZLIB4")
     df_writer(file, datasipm, "DB", "DataSiPM", "DB constants for SiPMs", compression="ZLIB4")
