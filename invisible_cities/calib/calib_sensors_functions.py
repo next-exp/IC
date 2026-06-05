@@ -157,10 +157,10 @@ def sipm_subtract_median_and_calibrate(sipm_wfs, adc_to_pes): return calibrate_w
 
 # Dict of functions for SiPM processing
 sipm_processing = {
-    SiPMCalibMode.subtract_mode            :      subtract_mode                ,# For gain extraction
-    SiPMCalibMode.subtract_median          :      subtract_median              ,# For gain extraction
-    SiPMCalibMode.subtract_mode_calibrate  : sipm_subtract_mode_and_calibrate  ,# For PDF calculation
-    SiPMCalibMode.subtract_mean_calibrate  : sipm_subtract_mean_and_calibrate  ,# For PDF calculation
-    SiPMCalibMode.subtract_median_calibrate: sipm_subtract_median_and_calibrate,# For PDF calculation
-    SiPMCalibMode.subtract_mode_zs         : calibrate_sipms                    # For data processing
+    SiPMCalibMode.subtract_mode              :      subtract_mode                ,# For gain extraction
+    SiPMCalibMode.subtract_median            :      subtract_median              ,# For gain extraction
+    SiPMCalibMode.subtract_mode_calibrate    : sipm_subtract_mode_and_calibrate  ,# For PDF calculation
+    SiPMCalibMode.subtract_mean_calibrate    : sipm_subtract_mean_and_calibrate  ,# For PDF calculation
+    SiPMCalibMode.subtract_median_calibrate  : sipm_subtract_median_and_calibrate,# For PDF calculation
+    SiPMCalibMode.subtract_baseline_calibrate: calibrate_sipms                    # For data processing
 }
