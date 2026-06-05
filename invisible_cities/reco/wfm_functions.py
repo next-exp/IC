@@ -146,7 +146,7 @@ def zero_wfs_below_threshold(wfs         : np.ndarray,
     Parameters
     ----------
     wfs         : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
-    zeroing_thr : Charge threshold for zero suppression in PE, default 2.
+    zeroing_thr : Charge threshold for zero suppression in PE.
 
     Returns
     -------
@@ -187,8 +187,8 @@ def charge_threshold_method(wfs             : np.ndarray,
     Parameters
     ----------
     wfs             : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
-    zeroing_thr     : Charge threshold for zero suppression in PE, default 2.
-    integration_thr : Charge threshold for total SiPM waveform in PE, default 5.
+    zeroing_thr     : Charge threshold for zero suppression in PE.
+    integration_thr : Charge threshold for total SiPM waveform in PE.
 
     Returns
     -------
@@ -209,7 +209,7 @@ def top_n_method(wfs : np.ndarray,
     Parameters
     ----------
     wfs       : 2D array of shape (n_sipms, n_time_bins) containing the waveforms of each SiPM.
-    n         : Number of most energeticSiPMs to select, default 10.
+    n         : Number of most energeticSiPMs to select.
 
     Returns
     -------
@@ -228,13 +228,17 @@ def kill_isolated_sipms(selected_ids        : np.ndarray,
                         sipm_y              : np.ndarray,
                         proximity_threshold : float) -> np.ndarray:
     """
-    For the SiPMs that have passed the previous selection, scans through the SiPMs to check if they
-    have neighbouring SiPMs - i.e., within the proximity_threshold - that have also passed the selection.
-    If no neighbours are found, the SiPMs are classed as isolated, and are removed.
+    Receives a list of SiPM IDs corresponding to the SiPMs with the most signficant 
+    energy depositions. Scans through these SiPMs to check if they have neighbouring 
+    SiPMs - i.e., within the proximity_threshold - that are also in the initial list
+    of energetic SiPMs. If no neighbours are found, the SiPMs are classed as isolated, 
+    and are removed. Outputs a list of SiPM IDs representing the most energetic SiPMs 
+    belonging to a cluster, which generally occurs in the region where the event took 
+    place.
 
     Parameters
     ----------
-    selected_ids        : Boolean array of shape (n_sipms,) indicating which SiPMs passed the previous selection.
+    selected_ids        : Boolean array of shape (n_sipms,) corresponding to the most energetic SiPMs.
     sipm_x              : 1D array of shape (n_sipms,) containing the x positions of the SiPMs.
     sipm_y              : 1D array of shape (n_sipms,) containing the y positions of the SiPMs.
     proximity_threshold : Distance threshold in mm used to identify isolated SiPMs.
@@ -263,12 +267,14 @@ def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
                            sipm_y                   : np.ndarray,
                            padding_radius           : float) -> np.ndarray:
     """
-    For the SiPMs that pass the previous selection, creates circular padding of radius padding_radius,
-    selecting all SiPMs within that radius. Stores the union of all selected SiPMs.
+    Receives a list of SiPM IDs corresponding to the most energetic SiPMs clustered 
+    near the event. For these SiPMs, creates circular padding of radius padding_radius, 
+    selecting all SiPMs within that radius. Stores the union of all selected SiPMs. 
+    Outputs the SiPM IDs which are relevant for a given event.
 
     Parameters
     ----------
-    selected_ids_no_isolated : Boolean array of shape (n_sipms,) indicating which SiPMs passed the previous selection.
+    selected_ids_no_isolated : Boolean array of shape (n_sipms,) corresponding to the "relevant" SiPMs.
     sipm_x                   : 1D array of shape (n_sipms,) containing the x positions of the SiPMs.
     sipm_y                   : 1D array of shape (n_sipms,) containing the y positions of the SiPMs.
     padding_radius           : Distance threshold in mm used to create circular padding around selected SiPMs.
