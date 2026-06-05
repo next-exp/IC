@@ -353,10 +353,10 @@ def test_build_sipm_responses(wf_with_indices):
     wfs_slice       = wfs[:, indices]
     peak_integrals  = wfs_slice.sum(axis=1)
     below_thr_index = np.argmin (peak_integrals)
+    # next_float doesn't work here
     thr             = peak_integrals[below_thr_index] * 1.000001
     sipm_ids        = np.arange(len(wfs))
 
-    # next_float doesn't work here
     cut_params = dict(detector_db   = 'None',
                   thr_sipm_s2   = thr,
                   thr_sipm      = 0,
