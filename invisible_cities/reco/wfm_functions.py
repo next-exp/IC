@@ -139,7 +139,7 @@ def compare_cwf_blr(cwf, pmtblr, event_list, window_size=500):
 
 
 def zero_wfs_below_threshold(wfs         : np.ndarray,
-                             zeroing_thr : Optional[float] = 2.) -> np.ndarray:
+                             zeroing_thr : float) -> np.ndarray:
     """
     Zeroes the entries of the input waveforms that are below a given threshold.
 
@@ -177,8 +177,8 @@ def median_std_method(wfs    : np.ndarray,
 
 
 def charge_threshold_method(wfs             : np.ndarray,
-                            zeroing_thr     : Optional[float] = 2.,
-                            integration_thr : Optional[float] = 5.) -> Tuple[np.ndarray, np.ndarray]:
+                            zeroing_thr     : float,
+                            integration_thr : float) -> Tuple[np.ndarray, np.ndarray]:
     """
     Selects the SiPMs whose time summed waveforms within the s2 windows are above two thresholds:
         - initial zero suprresion threshold (setting values in each waveform below a value to 0)
@@ -202,7 +202,7 @@ def charge_threshold_method(wfs             : np.ndarray,
 
 
 def top_n_method(wfs : np.ndarray,
-                 n   : Optional[int] = 10) -> np.ndarray:
+                 n   : int) -> np.ndarray:
     """
     Selects the SiPMs with the top n highest time summed waveforms.
 
