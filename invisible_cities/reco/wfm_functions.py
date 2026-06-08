@@ -325,27 +325,27 @@ def spatial_selection_method(wfs                 : np.ndarray,
     sipm_y = np.array(detector_info.Y)
 
     if selection_method is SiPMSelectionMethod.median_std_method:
-        starting_ids_ = median_std_method(wfs, **selection_kwargs)
+        starting_ids = median_std_method(wfs, **selection_kwargs)
     elif selection_method is SiPMSelectionMethod.top_n_method:
-        starting_ids_ = top_n_method(wfs, **selection_kwargs)
+        starting_ids = top_n_method(wfs, **selection_kwargs)
     else:
         raise ValueError(f"Selection method {selection_method} not recognized.")
 
-    selected_ids_no_isolated_ = kill_isolated_sipms(
-        starting_ids_,
+    selected_ids_no_isolated = kill_isolated_sipms(
+        starting_ids,
         sipm_x,
         sipm_y,
         proximity_threshold
     )
 
-    sipm_ids_with_signal_ = apply_circular_padding(
-        selected_ids_no_isolated_,
+    sipm_ids_with_signal = apply_circular_padding(
+        selected_ids_no_isolated,
         sipm_x,
         sipm_y,
         padding_radius
     )
 
-    selected_ids = np.where(sipm_ids_with_signal_)[0]
+    selected_ids = np.where(sipm_ids_with_signal)[0]
     selected_wfs = wfs[selected_ids]
 
     return selected_ids, selected_wfs
