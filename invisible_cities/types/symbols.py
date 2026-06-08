@@ -158,6 +158,7 @@ class XYReco(AutoNameEnumBase):
 class CutAlgo(AutoNameEnumBase):
     threshold  = auto()
     pyrrha     = auto()
+    no_cut     = auto()
 
 class SiPMSelectionMethod(AutoNameEnumBase):
     median_std_method = auto()

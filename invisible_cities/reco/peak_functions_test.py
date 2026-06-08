@@ -408,6 +408,7 @@ def test_build_peak_development(pmt_and_sipm_wfs_with_indices,
                          with_sipms   = with_sipms,
                          Pk           = Pk,
                          sipm_wfs     = sipm_wfs,
+                         apply_cut    = apply_cutting_function(CutAlgo.no_cut)
                          )
 
     assert_Peak_equality(peak, expected_peak)
@@ -485,7 +486,9 @@ def test_find_peaks_s2_style(pmt_and_sipm_wfs_with_indices):
                           time_range, length_range,
                           stride, rebin_stride,
                           S2, pmt_ids, sipm_ids,
-                          sipm_wfs    = sipm_wfs)
+                          sipm_wfs    = sipm_wfs,
+                          apply_cut    = apply_cutting_function(CutAlgo.no_cut)
+                          )
 
     (rebinned_times,
      rebinned_widths,
@@ -515,7 +518,9 @@ def test_get_pmap(s1_and_s2_with_indices):
                        s1_params, s2_params,
                        pmt_ids     = pmt_ids, sipm_ids = sipm_ids,
                        pmt_samp_wid  = pmt_samp_wid ,
-                       sipm_samp_wid = sipm_samp_wid)
+                       sipm_samp_wid = sipm_samp_wid,
+                       apply_cut    = apply_cutting_function(CutAlgo.no_cut)
+                       )
 
     (rebinned_times ,
      rebinned_widths,

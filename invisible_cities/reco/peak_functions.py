@@ -81,13 +81,8 @@ def build_sipm_responses(indices, times, widths,
     _, _, sipm_wfs = pick_slice_and_rebin(indices , times, widths,
                                            sipm_wfs, rebin_stride,
                                            pad_zeros = False)
-    if apply_cut is not None:
-        # apply cut before slicing and rebinning
-        (sipm_idx,
-         sipm_wfs)   = apply_cut(sipm_wfs)
-    else:
-        # give all sipm ids as index if no cut is applied
-        sipm_idx     = np.arange(sipm_wfs.shape[0])
+    (sipm_idx,
+     sipm_wfs)   = apply_cut(sipm_wfs)
 
     return SiPMResponses(sipm_ids[sipm_idx], sipm_wfs)
 

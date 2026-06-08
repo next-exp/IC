@@ -823,6 +823,8 @@ def apply_cutting_function(algo, **cutting_params):
         func = threshold_sipm_selection(**cutting_params)
     elif algo is CutAlgo.pyrrha:
         func = pyrrha_sipm_selection(**cutting_params)
+    elif algo is CutAlgo.no_cut:
+        func = no_cut_sipm_selection()
     else:
         raise ValueError(f"Unsupported cutting algorithm: {algo!r}. Expected one of {list(CutAlgo)}")
 
@@ -874,6 +876,16 @@ def pyrrha_sipm_selection(selection_method     : SiPMSelectionMethod
                                             detector_db)
 
     return pyrrha_sipm_selection
+
+
+def no_cut_sipm_selection():
+    """"
+    Function that applies no cuts to the SiPM waveforms. 
+    """
+    def no_cut_sipm_selection(wfs):
+        sipm_ids = np.arange(wfs.shape[0])
+        return sipm_ids, wfs
+    return no_cut_sipm_selection
 
 
 def calibrate_with_mean(dbfile, run_number):
