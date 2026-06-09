@@ -150,25 +150,6 @@ class Blob:
         return self.__str__()
 
 
-class Track(VoxelCollection):
-    """A track is a collection of linked voxels. """
-    def __init__(self, voxels : List[Voxel], blobs: Tuple[Blob, Blob]) ->None:
-        super().__init__(voxels)
-        self.blobs = blobs
-
-    def __str__(self):
-        s =  """Track: (number of voxels = {})\n,
-                voxels = {} \n
-                blob_a = {} \n
-                blob_b = {}
-        """.format(self.number_of_voxels, self.voxels, self.blobs[0], self.blobs[1])
-
-        return  s
-
-    def __repr__(self):
-        return self.__str__()
-
-
 class TrackCollection(Event):
     """A Collection of tracks"""
     def __init__(self, event_number, event_time):
