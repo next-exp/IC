@@ -600,6 +600,8 @@ def test_assign_blobs_inplace_ushaped(ushaped_track):
               (20.,  80, 100),
               (22., 100, 140)
  ))
+
+@mark.skip # this test works with the blob method I've removed
 def test_blobs(radius, low_e, high_e):
     #           x       y     z   e
     hits = [[105.0, 125.0, 77.7, 10],
