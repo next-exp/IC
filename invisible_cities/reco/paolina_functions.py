@@ -1,4 +1,5 @@
 from itertools   import combinations
+from functools   import partial
 
 import numpy    as np
 import pandas   as pd
@@ -10,6 +11,7 @@ from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
 from .. types.symbols   import Contiguity
 from .. types.symbols   import HitEnergy
+from .. types.ic_types  import types_dict_tracks
 
 from .. types.ic_types  import NoneType
 
@@ -132,13 +134,63 @@ def find_extrema_and_length( track_graph: Graph
     return v1, v2, length
 
 
-def hits_ave_pos(hits: pd.DataFrame) -> np.ndarray:
+def hits_ave_pos(hits  : pd.DataFrame,
+                 etype : HitEnergy = HitEnergy.E) -> np.ndarray:
     """
     Calculate the energy-weighted average position of a set of hits
     """
     return np.average( hits[list("XYZ")].values
-                     , weights=hits.E.values
+                     , weights=hits[etype.value].values
                      , axis=0)
+
+
+def blob_energies_hits_and_centres(track_graph : Graph,
+                         hits        : pd.DataFrame,
+                         voxels      : pd.DataFrame,
+                         radius      : float,
+                         extreme_id_1: int,
+                         extreme_id_2: int,
+                         voxel_size  : np.ndarray,):
+    '''
+    Extract relevant blob information
+    '''
+
+    distances = shortest_paths(track_graph).set_index("initial")
+    if len(distances) == 1: # special case, single voxel
+
+        hits_oi = hits[hits.voxel_id == distances.index[0]]
+
+        e_1 = e_2 = hits_oi.E.sum()
+        blob_pos_1 = blob_pos_2 =  hits_ave_pos(hits_oi)
+        return e_1, e_2, hits_oi, hits_oi, blob_pos_1, blob_pos_2
+
+    diag = np.linalg.norm(voxel_size)
+
+    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1])
+    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2])
+
+    # voxels that might have within within the required radius
+    within_radius = lambda df: df.distance < radius + diag
+    candidate_voxels_1 = distances.loc[extreme_id_1].loc[within_radius].final.values
+    candidate_voxels_2 = distances.loc[extreme_id_2].loc[within_radius].final.values
+
+    within_r_1 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_1, axis=1) < radius
+    within_r_2 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_2, axis=1) < radius
+
+    # some hits might fall within the radius, but their distance **along the
+    # track** (established by the voxel they belong to) might be longer. We want
+    # hits from voxels that are connected to the extreme
+    sel_1 = hits.voxel_id.isin(candidate_voxels_1).values & within_r_1
+    sel_2 = hits.voxel_id.isin(candidate_voxels_2).values & within_r_2
+    sel_both = sel_1 & sel_2
+    e_1 = hits.loc[sel_1, "E"].sum()
+    e_2 = hits.loc[sel_2, "E"].sum()
+
+    if e_1 > e_2:
+        return e_1, e_2, hits.loc[sel_1], hits.loc[sel_2], blob_pos_1, blob_pos_2
+    else:
+        return e_2, e_1, hits.loc[sel_2], hits.loc[sel_1], blob_pos_2, blob_pos_1
+
 
 
 def assign_blobs_inplace(track_graph : Graph,
