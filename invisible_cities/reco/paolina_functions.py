@@ -28,6 +28,27 @@ def round_hits_positions_in_place(hits, decimals):
     hits.loc[:, xyz] = np.round(hits.loc[:, xyz], decimals)
 
 
+def get_track_energy(track, voxels):
+    return sum([voxels.loc[vox].e for vox in track.nodes()])
+
+
+def extract_track_voxels(track  : Graph,
+                         voxels : pd.DataFrame):
+    '''
+    Extract all voxels from track nodes for tracking table
+
+    Parameters
+    ----------
+    track       :  track graph
+    voxels      :  voxels
+
+    Returns
+    -------
+    dataframe of voxels in the track
+    '''
+    return voxels.loc[list(track.nodes())]
+
+
 def voxelize_hits( hits       : pd.DataFrame
                  , voxel_size : np.ndarray
                  , energy_type: HitEnergy = HitEnergy.E
@@ -291,27 +312,27 @@ def pop_voxel_inplace(voxels: pd.DataFrame, vox_id: int) -> pd.Series:
     return popped
 
 
-def drop_voxel_inplace( hits      : pd.DataFrame
-                      , voxels    : pd.DataFrame
-                      , vox_id    : int
-                      , e_type    : HitEnergy
-                      , contiguity: Contiguity = Contiguity.CORNER
+def drop_voxel_inplace( hits       : pd.DataFrame
+                      , voxels     : pd.DataFrame
+                      , voxel_size : np.ndarray
+                      , vox_id     : int
+                      , e_type     : HitEnergy
+                      , contiguity : Contiguity = Contiguity.CORNER
                       ) -> pd.Series:
     """
     Eliminate an individual voxel from a set of voxels and give its energy to
     the hits closest to the barycenter of the eliminated voxel's hits, provided
     that it belongs to a neighbour voxel. The dropped voxel is returned.
     """
-    popped           = pop_voxel_inplace(voxels)
-    is_neighbour     = [neighbours(popped, voxel, contiguity) for _, voxel in voxels.iterrows()]
+    popped           = pop_voxel_inplace(voxels, vox_id)
+    is_neighbour     = [neighbours(popped, voxel, voxel_size, contiguity) for _, voxel in voxels.iterrows()]
     neighbour_voxels = voxels.loc[is_neighbour]
-
-    bary_pos = np.average( popped[list("XYZ")]
-                         , weights = hits.loc[hits.voxel_id == vox_id, e_type]
+    bary_pos = np.average( hits.loc[hits.voxel_id == vox_id][list("XYZ")]
+                         , weights = hits.loc[hits.voxel_id == vox_id, e_type.value]
                          , axis    =  0)
 
     neighbour_hits = hits.loc[hits.voxel_id.isin(neighbour_voxels.index)]
-    distances      = np.linalg.norm(neighbour_hits[list("xyz")] - bary_pos, axis=1)
+    distances      = np.linalg.norm(neighbour_hits[list("XYZ")] - bary_pos, axis=1)
     closest_hits   = neighbour_hits.loc[np.isclose(distances, distances.min())]
 
 
@@ -326,9 +347,11 @@ def drop_voxel_inplace( hits      : pd.DataFrame
     new_hit_energy  = closest_hits[e_type] * (1 + popped.e/total_closest_e)
     hits.loc[closest_hits.index, e_type] = new_hit_energy
     hits.loc[hits.voxel_id == vox_id, e_type] = np.nan
-    hits.loc[hits.voxel_id == vox_id, vox_id] = 0
+    hits.loc[hits.voxel_id == vox_id, 'voxel_id'] = 0
 
     new_vox_energy = hits.groupby("voxel_id")[e_type].sum()
+    # remove the hit energy from the popped voxel's hits
+    new_vox_energy = new_vox_energy.drop(0)
     voxels.loc[new_vox_energy.index, "e"] = new_vox_energy.values
 
     return popped
@@ -348,7 +371,7 @@ def drop_voxels(hits            : pd.DataFrame,
     """
 
     dropped  = []
-    hits     =   hits.copy()
+    #hits     =   hits.copy() # this isn't modified anywhere, so no need to copy
     voxels   = voxels.copy()
     modified = True
     while modified:
@@ -364,11 +387,11 @@ def drop_voxels(hits            : pd.DataFrame,
                 if extreme.e < energy_threshold:
                     # be sure that the voxel to be eliminated has at least one neighbour
                     # beyond itself
-                    n_neighbours = sum(neighbours(extreme, v, contiguity) for _, v in voxels.iterrows())
+                    n_neighbours = sum(neighbours(extreme, v, voxel_size, contiguity) for _, v in voxels.iterrows())
                     if n_neighbours > 1:
-                        dropped_voxel = drop_voxel_inplace(hits, voxels, voxel_id, contiguity)
+                        dropped_voxel = drop_voxel_inplace(hits, voxels, voxel_size, voxel_id, e_type, contiguity)
                         dropped.append(dropped_voxel)
                         modified = True
 
-    dropped = pd.concat(dropped)
+    dropped = pd.concat(dropped) if dropped else pd.DataFrame()
     return hits, voxels, dropped
