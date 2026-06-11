@@ -36,6 +36,7 @@ from . paolina_functions import shortest_paths
 from . paolina_functions import assign_blobs_inplace
 from . paolina_functions import pop_voxel_inplace
 from . paolina_functions import make_track_graphs
+from . paolina_functions import drop_voxels
 from . paolina_functions import make_tracks
 
 from .. core                import system_of_units as units
@@ -678,25 +679,33 @@ def test_pop_voxel_inplace_raises_if_missing(dummy_voxels):
         pop_voxel_inplace(voxels, k)
 
 
-@mark.skip
+@settings(deadline=None)
 @given(bunch_of_hits(), voxel_sizes, min_n_of_voxels, fraction_zero_one)
 def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_size, min_voxels, fraction_zero_one):
     tot_initial_energy = hits.E.sum()
-    voxels = voxelize_hits(hits, requested_voxel_size, strict_voxel_size=False)
-    ini_trks = make_track_graphs(voxels)
-    ini_trk_energies = [sum(vox.E for vox in t.nodes()) for t in ini_trks]
-    ini_trk_energies.sort()
+    hits, voxels               = voxelize_hits(hits, requested_voxel_size)
 
-    energies = [v.E for v in voxels]
+    # tracks before dropping (we don't care about blob radius)
+    i_hits, i_voxels, i_tracks = make_tracks(hits, voxels, requested_voxel_size, 1)
+    i_Es                       = np.sort(i_tracks.energy.values)
+
+    # set a threshold
+    energies = voxels.e.values
     e_thr = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
-    tot_final_energy = sum(v.E for v in mod_voxels)
-    final_trks = make_track_graphs(mod_voxels)
-    final_trk_energies = [sum(vox.E for vox in t.nodes()) for t in final_trks]
-    final_trk_energies.sort()
+
+    # drop voxels and reconstruct tracks
+    d_hits, d_voxels, d_dropped = drop_voxels(hits, voxels, e_thr, requested_voxel_size, HitEnergy.E)
+    f_hits, f_voxels, f_tracks  = make_tracks(hits, voxels, requested_voxel_size, 1)
+    f_Es                        = np.sort(f_tracks.energy.values)
+    tot_final_energy            = f_hits.E.sum()
 
     assert tot_initial_energy == approx(tot_final_energy)
-    assert np.allclose(ini_trk_energies, final_trk_energies)
+    assert np.allclose(i_Es, f_Es)
+
+
+
+
+
 
 
 @mark.skip
