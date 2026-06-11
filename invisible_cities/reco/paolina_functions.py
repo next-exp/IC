@@ -177,13 +177,10 @@ def blob_energies_hits_and_centres(track_graph : Graph,
     '''
 
     distances = shortest_paths(track_graph).set_index("initial")
-    if len(distances) == 1: # special case, single voxel
-
-        hits_oi = hits[hits.voxel_id == distances.index[0]]
-
-        e_1 = e_2 = hits_oi.E.sum()
-        blob_pos_1 = blob_pos_2 =  hits_ave_pos(hits_oi)
-        return e_1, e_2, hits_oi, hits_oi, blob_pos_1, blob_pos_2
+    if len(distances) == 1: # special case, one voxel
+        e_1 = e_2 = hits.E.sum()
+        blob_pos_1 = blob_pos_2 =  hits_ave_pos(hits)
+        return e_1, e_2, hits, hits, blob_pos_1, blob_pos_2
 
     diag = np.linalg.norm(voxel_size)
 
@@ -323,7 +320,16 @@ def make_tracks(hits       : pd.DataFrame,
 
         eblob1, eblob2, hits_blob1, hits_blob2, blob_pos1, blob_pos2 = blob_energies_hits_and_centres(track, hits, voxels, blob_radius, extreme_low, extreme_high, voxel_size)
 
-        # calculate overlap
+        # mark hits as being in low or high blob
+        in_b1 = hits.index.isin(hits_blob1.index)
+        in_b2 = hits.index.isin(hits_blob2.index)
+
+        hits['blob']                    = 'none'
+        hits.loc[in_b1, 'blob']         = 'high'
+        hits.loc[in_b2, 'blob']         = 'low'
+        hits.loc[in_b1 & in_b2, 'blob'] = 'highlow'
+
+        # calculate overlap of hits in each blob
         common_hits = hits_blob1.merge(hits_blob2, how="inner")
         overlap     = common_hits.Ep.sum()
 
