@@ -160,6 +160,10 @@ def hits_ave_pos(hits  : pd.DataFrame,
     """
     Calculate the energy-weighted average position of a set of hits
     """
+    # catch cases with no weight
+    if hits[etype.value].sum() == 0:
+        return np.average(  hits[list("XYZ")].values
+                          , axis = 0)
     return np.average( hits[list("XYZ")].values
                      , weights=hits[etype.value].values
                      , axis=0)
