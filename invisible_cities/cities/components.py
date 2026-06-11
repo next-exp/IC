@@ -1471,14 +1471,14 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
 
         # generate fake empty voxel and hits tables
         empty_vox_tbl = pd.DataFrame(columns = ['x', 'y', 'z', 'e', 'track'])
-        empty_hit_tbl = pd.DataFrame(columns = np.append(hits.columns, ['track_id', 'voxel_id', 'track']))
+        empty_hit_tbl = pd.DataFrame(columns = np.append(hits.columns, ['track_id', 'voxel_id', 'track', 'blob']))
 
         hits = hits.assign(track_id=-1)
         if len(hits) > max_num_hits:
             event = hits.event.iloc[0]
             warn("Event {event} has too many hits ({len(hits)})."
                  " This event will not be processed.")
-            return hits.assign(track_id = -1, voxel_id = -1, track = -1), empty_vox_tbl, track_df, True
+            return hits.assign(track_id = -1, voxel_id = -1, track = -1, blob = 'none'), empty_vox_tbl, track_df, True
 
         plf.round_hits_positions_in_place(hits, 5)
 
