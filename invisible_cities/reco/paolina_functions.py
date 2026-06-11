@@ -278,7 +278,7 @@ def make_tracks(hits       : pd.DataFrame,
                 blob_radius: float,
                 contiguity : Contiguity = Contiguity.CORNER,
                 energy_type: HitEnergy  = HitEnergy.E
-               ) -> (pd.DataFrame, pd.DataFrame): # hits, voxels
+               ) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame): # hits, voxels
     """
     Assign each hit and voxel a track and a blob. Tracks are simply enumerated
     according to the graph algorithm. The code for blob association is
@@ -286,24 +286,64 @@ def make_tracks(hits       : pd.DataFrame,
     - "high" for the higher energy blob
     - "none" otherwise
     """
+
+    # generate empty dataframe
+    track_df = pd.DataFrame(columns = list(types_dict_tracks.keys()))
+
+    # generate tracks and sort by energy
     track_graphs = make_track_graphs(voxels, voxel_size, contiguity)
+    track_graphs = sorted(track_graphs,
+                          key=partial(get_track_energy, voxels = voxels),
+                          reverse=True)
+
+    event  = int(hits.event.iloc[0])
     hits   = hits.copy()
     voxels = voxels.copy()
     hits  .insert(hits  .shape[1], "track",  9999)
     voxels.insert(voxels.shape[1], "track",  9999)
-    hits  .insert(hits  .shape[1], "blob", "none")
-    voxels.insert(voxels.shape[1], "blob", "none")
 
     for track_no, track in enumerate(track_graphs):
-        extreme_low, extreme_high, _ = find_extrema_and_length(track, voxels)
-        assign_blobs_inplace(track, hits, voxels, blob_radius, extreme_low, extreme_high, voxel_size)
 
-        voxels_in_this_track = list(track.nodes())
-        hits_in_this_track   = hits.voxel_id.isin(voxels_in_this_track)
+        # collect relevant information
+        track_voxels                      = extract_track_voxels(track, voxels)
+        # create hits with radial information
+        track_hits                        = hits[hits.voxel_id.isin(track_voxels.index)].assign(R = lambda df: np.sqrt(df.X**2 + df.Y**2))
+        numb_of_voxels                    = len(track_voxels)
+        numb_of_hits                      = len(track_hits)
+        numb_of_tracks                    = len(track_graphs)
+        energy                            = track_voxels.e.sum()
+        extreme_low, extreme_high, length = find_extrema_and_length(track, voxels)
+        extreme_pos1                      = voxels.loc[extreme_low]
+        extreme_pos2                      = voxels.loc[extreme_high]
+        ave_pos                           = hits_ave_pos(track_hits, energy_type)
+        ave_r                             = np.average(track_hits.R,             weights = track_hits.Ep, axis = 0)
 
-        hits  .loc[  hits_in_this_track, "track"] = track_no
-        voxels.loc[voxels_in_this_track, "track"] = track_no
-    return hits, voxels
+
+        # blob information
+
+        eblob1, eblob2, hits_blob1, hits_blob2, blob_pos1, blob_pos2 = blob_energies_hits_and_centres(track, hits, voxels, blob_radius, extreme_low, extreme_high, voxel_size)
+
+        # calculate overlap
+        common_hits = hits_blob1.merge(hits_blob2, how="inner")
+        overlap     = common_hits.Ep.sum()
+
+
+        # generate general tracking table
+        list_of_vars = [event, track_no, energy, length,
+                        numb_of_voxels, numb_of_hits, numb_of_tracks,
+                        track_hits.X.min(), track_hits.Y.min(), track_hits.Z.min(), track_hits.R.min(),
+                        track_hits.X.max(), track_hits.Y.max(), track_hits.Z.max(), track_hits.R.max(),
+                        *ave_pos, ave_r, *extreme_pos1[['x', 'y', 'z']].tolist(), *extreme_pos2[['x', 'y', 'z']].tolist(),
+                        *blob_pos1, *blob_pos2, eblob1, eblob2, overlap,
+                        *voxel_size]
+        track_df.loc[track_no] = list_of_vars
+
+        hits  .loc[hits.index.isin(track_hits.index),     "track"] = track_no
+        voxels.loc[voxels.index.isin(track_voxels.index), "track"] = track_no
+
+    # modify column dtype to match variable type
+    track_df = track_df.apply(lambda x: x.astype(types_dict_tracks[x.name]))
+    return hits, voxels, track_df
 
 
 def pop_voxel_inplace(voxels: pd.DataFrame, vox_id: int) -> pd.Series:
