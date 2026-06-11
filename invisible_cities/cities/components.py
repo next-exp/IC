@@ -682,7 +682,6 @@ def hits_and_kdst_from_files( paths : List[str]
                 kdst = kdst_df.loc[this_event]
                 if not len(hits):
                     warnings.warn(f"Event {event_number} does not contain hits", UserWarning)
-
                 yield dict(hits         = hits,
                            kdst         = kdst,
                            run_number   = run_number,
@@ -1436,112 +1435,80 @@ def summary_writer(h5out):
 
 
 @check_annotations
-def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, float],
-                                      strict_vox_size  : bool                      ,
-                                      energy_threshold : float                     ,
-                                      min_voxels       : int                       ,
-                                      blob_radius      : float                     ,
-                                      scan_radius      : Union[float, NoneType]    ,
-                                      max_num_hits     : int
-                                     ) -> Callable:
-    """
-    For a given set of paolina parameters returns a function that extract tracks / blob
-    information from a set of hits.
+def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, float]
+                                      , energy_threshold : float
+                                      , min_voxels       : int
+                                      , blob_radius      : float
+                                      , max_num_hits     : int
+                                      ) -> Callable:
+    '''
+    Overarching function that returns:
+    - track table
+    - voxels table
+    - hits table
 
-    Parameters
-    ----------
-    vox_size         : [float, float, float]
-        (maximum) size of voxels for track reconstruction
-    strict_vox_size  : bool
-        if False allows per event adaptive voxel size,
-        smaller of equal thatn vox_size
-    energy_threshold : float
-        if energy of end-point voxel is smaller
-        the voxel will be dropped and energy redistributed to the neighbours
-    min_voxels       : int
-        after min_voxel number of voxels is reached no dropping will happen.
-    blob_radius      : float
-        radius of blob
+    '''
 
-    Returns
-    ----------
-    A function that from a given set of hits returns
-      - general track information dataframe
-      - hits with associated track ids
-      - flag to indicate whether there are hits outside of the correction-map domain
-    """
-    def create_extract_track_blob_info(hits: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, bool]:
-        df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
+    # force vox_size into np.ndarray
+    vox_size = np.array(vox_size)
+
+    def create_extract_track_blob_info(hits: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, bool]:
+        '''
+        Parameters
+        ----------
+        hits  :  Input hits for track extraction
+
+        Returns
+        -------
+        - general track information dataframe
+        - tagged voxels table
+        - tagged hits table
+        - flag to indicate that one of the filters failed (too many hits, hits outside of domain)
+        '''
+
+        # generate empty dataframe
+        track_df      = pd.DataFrame(columns=list(types_dict_tracks.keys()))
+
+        # generate fake empty voxel and hits tables
+        empty_vox_tbl = pd.DataFrame(columns = ['x', 'y', 'z', 'e', 'track'])
+        empty_hit_tbl = pd.DataFrame(columns = np.append(hits.columns, ['track_id', 'voxel_id', 'track']))
+
         hits = hits.assign(track_id=-1)
         if len(hits) > max_num_hits:
             event = hits.event.iloc[0]
             warn("Event {event} has too many hits ({len(hits)})."
                  " This event will not be processed.")
-            return df, hits, True
+            return hits.assign(track_id = -1, voxel_id = -1, track = -1), empty_vox_tbl, track_df, True
+
         plf.round_hits_positions_in_place(hits, 5)
 
-        event      = int(hits.event.iloc[0])
+        # check if hits exist within the map
         out_of_map = hits.Ep.isna().values
         hits_out   = hits.loc[ out_of_map]
         hits       = hits.loc[~out_of_map]
         if not len(hits) or not (hits.Ep>0).any():
-            return df, hits, out_of_map.any()
+            return empty_hit_tbl, empty_vox_tbl, track_df, True
 
-        voxels            = plf.voxelize_hits(hits, vox_size, strict_vox_size, HitEnergy.Ep)
-        ( mod_voxels,
-          dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
+        # voxelise
+        hits, voxels = plf.voxelize_hits(hits, vox_size, HitEnergy.Ep)
 
-        tracks = plf.make_track_graphs(mod_voxels)
-        tracks = sorted(tracks, key=plf.get_track_energy, reverse=True)
+        ( hits,
+          mod_voxels,
+          dropped_voxels) = plf.drop_voxels(hits,
+                                            voxels,
+                                            energy_threshold,
+                                            vox_size,
+                                            HitEnergy.Ep,
+                                            min_vxls = min_voxels)
 
-        vox_size_x = voxels[0].size[0]
-        vox_size_y = voxels[0].size[1]
-        vox_size_z = voxels[0].size[2]
-        del(voxels)
 
-        track_hits = [v.hits for v in dropped_voxels]
-        for c, t in enumerate(tracks, 0):
-            tID = c
-            energy = plf.get_track_energy(t)
-            numb_of_hits   = sum(len(v.hits) for v in t.nodes())
-            numb_of_voxels = len(t.nodes())
-            numb_of_tracks = len(tracks   )
-            hits_from_track = ( pd.concat([v.hits for v in t.nodes()], ignore_index=True)
-                                  .assign(R = lambda df: np.sqrt(df.X**2 + df.Y**2))
-                              )
+        hits, mod_voxels, tracks = plf.make_tracks(hits,
+                                                   mod_voxels,
+                                                   vox_size,
+                                                   blob_radius,
+                                                   energy_type = HitEnergy.Ep) # not sure about this energy
 
-            ave_pos = np.average(hits_from_track["X Y Z".split()], weights=hits_from_track.Ep, axis=0)
-            ave_r   = np.average(hits_from_track.R               , weights=hits_from_track.Ep, axis=0)
-            distances = plf.shortest_paths(t)
-            extr1, extr2, length = plf.find_extrema_and_length(distances)
-            extr1_pos = extr1.XYZ
-            extr2_pos = extr2.XYZ
-
-            e_blob1, e_blob2, hits_blob1, hits_blob2, blob_pos1, blob_pos2 = plf.blob_energies_hits_and_centres(t, blob_radius, scan_radius)
-
-            common_hits = hits_blob1.merge(hits_blob2, how="inner")
-            overlap     = common_hits.Ep.sum()
-            list_of_vars = [event, tID, energy, length, numb_of_voxels,
-                            numb_of_hits, numb_of_tracks,
-                            hits_from_track.X.min(), hits_from_track.Y.min(), hits_from_track.Z.min(), hits_from_track.R.min(),
-                            hits_from_track.X.max(), hits_from_track.Y.max(), hits_from_track.Z.max(), hits_from_track.R.max(),
-                            *ave_pos, ave_r, *extr1_pos,
-                            *extr2_pos, *blob_pos1, *blob_pos2,
-                            e_blob1, e_blob2, overlap,
-                            vox_size_x, vox_size_y, vox_size_z]
-
-            df.loc[c] = list_of_vars
-
-            for vox in t.nodes():
-                vox.hits.loc[:, "track_id"] = tID
-                track_hits.append(vox.hits)
-
-        #change dtype of columns to match type of variables
-        df = df.apply(lambda x : x.astype(types_dict_tracks[x.name]))
-        track_hits = ( pd.concat([hits_out] + track_hits, ignore_index=True)
-                         .astype(dict(event=int, npeak=np.uint16, track_id=int))
-                     )
-        return df, track_hits, out_of_map.any()
+        return hits, mod_voxels, tracks, False
 
     return create_extract_track_blob_info
 
@@ -1553,6 +1520,9 @@ def sort_hits(hits):
 def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name,
                                   hits_writer):
+
+    # pop strict_vox_size for testing purposes
+    paolina_params.pop('strict_vox_size')
 
     filter_events_nohits = fl.map(lambda x : len(x) > 0,
                                       args = 'hits',
@@ -1567,7 +1537,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     # Create tracks and compute topology-related information
     create_extract_track_blob_info = fl.map(track_blob_info_creator_extractor(**paolina_params),
                                             args = 'Ep_hits',
-                                            out  = ('topology_info', 'paolina_hits', 'out_of_map'))
+                                            out  = ('paolina_hits', 'paolina_voxels', 'topology_info', 'out_of_map'))
 
     sort_hits_ = fl.map(sort_hits, item="paolina_hits")
 
