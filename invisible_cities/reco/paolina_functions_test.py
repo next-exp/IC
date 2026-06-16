@@ -747,19 +747,20 @@ def test_drop_end_point_voxels_doesnt_modify_other_energy_types(hits, requested_
         assert np.allclose(e_before.values, e_after.values)
 
 
-@mark.skip
 @mark.parametrize("energy_type", HitEnergy)
 @given(hits                       = bunch_of_hits(),
        requested_voxel_size = voxel_sizes,
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
 def test_drop_voxels_voxel_energy_is_sum_of_hits_general(hits, requested_voxel_size, min_voxels, fraction_zero_one, energy_type):
-    voxels        = voxelize_hits(hits, requested_voxel_size, strict_voxel_size=False, energy_type=energy_type)
-    energies      = [v.E for v in voxels]
-    e_thr         = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
-    for v in mod_voxels:
-        assert np.isclose(v.E, v.hits[energy_type.value].sum())
+    hits, voxels                  = voxelize_hits(hits, requested_voxel_size, energy_type)
+    energies                      = voxels.e.values
+    e_thr                         = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    d_hits, d_voxels, d_dropped   = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type, min_voxels)
+
+    for idx, row in voxels.iterrows():
+        # collect relevant hits
+        assert row.e == (hits[hits.voxel_id == idx])[energy_type.value].sum()
 
 
 @mark.skip
