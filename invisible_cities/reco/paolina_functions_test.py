@@ -21,6 +21,7 @@ parametrize = mark.parametrize
 from hypothesis            import given
 from hypothesis            import settings
 from hypothesis            import assume
+from hypothesis            import HealthCheck
 from hypothesis.strategies import composite
 from hypothesis.strategies import lists
 from hypothesis.strategies import floats
@@ -759,25 +760,28 @@ def test_drop_voxels_voxel_energy_is_sum_of_hits_general(hits, requested_voxel_s
     d_hits, d_voxels, d_dropped   = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type, min_voxels)
 
     for idx, row in voxels.iterrows():
-        # collect relevant hits
         assert row.e == (hits[hits.voxel_id == idx])[energy_type.value].sum()
 
 
-@mark.skip
+@settings(suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow], deadline=None)
 @mark.parametrize("energy_type", HitEnergy)
 @given(hits                       = bunch_of_hits(),
        requested_voxel_size = voxel_sizes,
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
 def test_drop_end_point_voxels_constant_number_of_voxels_and_hits(hits, requested_voxel_size, min_voxels, fraction_zero_one, energy_type):
-    voxels           = voxelize_hits(hits, requested_voxel_size, strict_voxel_size=False, energy_type=energy_type)
-    energies         = [v.E for v in voxels]
-    e_thr            = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    new_voxels       = drop_end_point_voxels(voxels, e_thr, min_voxels)
-    (mod_voxels,
-     dropped_voxels) = new_voxels
-    assert len(mod_voxels) + len(dropped_voxels) == len(voxels)
-    assert sum(len(v.hits) for v in mod_voxels + dropped_voxels) == len(hits)
+    hits, voxels                  = voxelize_hits(hits, requested_voxel_size, energy_type)
+    assume(len(voxels) >= min_voxels)
+    i_hit_len = len(hits)
+    i_vox_len = len(voxels)
+    energies                      = voxels.e.values
+    e_thr                         = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    d_hits, d_voxels, d_dropped   = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type, min_voxels)
+
+    assume(not d_dropped.empty)
+    assert (len(d_voxels) + len(d_dropped)) == i_vox_len
+    # hits aren't dropped
+    assert len(hits)   == i_hit_len
 
 
 @mark.skip
