@@ -402,7 +402,10 @@ def drop_voxel_inplace( hits       : pd.DataFrame
     new_vox_energy = hits.groupby("voxel_id")[e_type].sum()
     # remove the hit energy from the popped voxel's hits
     new_vox_energy = new_vox_energy.drop(0)
-    voxels.loc[new_vox_energy.index, "e"] = new_vox_energy.values
+    voxels.loc[new_vox_energy.index, e_type] = new_vox_energy.values
+
+    # set popped voxel energy to nan
+    popped['e'] = np.nan
 
     return popped
 
@@ -443,5 +446,10 @@ def drop_voxels(hits            : pd.DataFrame,
                         dropped.append(dropped_voxel)
                         modified = True
 
-    dropped = pd.concat(dropped) if dropped else pd.DataFrame()
-    return hits, voxels, dropped
+    dropped = pd.DataFrame(dropped) if dropped else pd.DataFrame()
+    if not dropped.empty:
+        dropped_hits = hits[hits.voxel_id.isin(dropped.index)]
+    else:
+        dropped_hits = pd.DataFrame([])
+
+    return dropped_hits, voxels, dropped
