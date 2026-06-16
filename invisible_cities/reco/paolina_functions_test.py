@@ -703,25 +703,25 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_size, min
     assert np.allclose(i_Es, f_Es)
 
 
-
-
-
-
-
-@mark.skip
 @mark.parametrize("energy_type", HitEnergy)
 @given(hits                       = bunch_of_hits(),
        requested_voxel_size = voxel_sizes,
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
 def test_dropped_voxels_have_nan_energy(hits, requested_voxel_size, min_voxels, fraction_zero_one, energy_type):
-    voxels            = voxelize_hits(hits, requested_voxel_size, strict_voxel_size=False, energy_type=energy_type)
-    energies          = [v.E for v in voxels]
-    e_thr             = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    _, dropped_voxels = drop_end_point_voxels(voxels, e_thr, min_voxels)
-    for voxel in dropped_voxels:
-        assert np.isnan(voxel.E)
-        assert voxel.hits[energy_type.value].isna().all()
+
+    hits, voxels = voxelize_hits(hits, requested_voxel_size)
+    # if the tracks are too short, there are no dropped voxels
+    assume(len(voxels) >= min_voxels)
+    energies     = voxels.e.values
+    e_thr        = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+
+    d_hits, d_voxels, d_dropped = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type)
+
+    if not d_dropped.empty:
+        assert np.all(np.isnan(d_dropped.e))
+        assert np.all(np.isnan(d_hits[energy_type.value]))
+
 
 
 @mark.skip
