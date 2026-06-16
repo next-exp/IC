@@ -716,35 +716,35 @@ def test_dropped_voxels_have_nan_energy(hits, requested_voxel_size, min_voxels, 
     energies     = voxels.e.values
     e_thr        = min(energies) + fraction_zero_one * (max(energies) - min(energies))
 
-    d_hits, d_voxels, d_dropped = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type)
+    d_hits, d_voxels, d_dropped = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type, min_voxels)
 
     if not d_dropped.empty:
         assert np.all(np.isnan(d_dropped.e))
         assert np.all(np.isnan(d_hits[energy_type.value]))
 
 
-
-@mark.skip
+@settings(deadline=None)
 @mark.parametrize("energy_type", HitEnergy)
 @given(hits                       = bunch_of_hits(),
        requested_voxel_size = voxel_sizes,
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
 def test_drop_end_point_voxels_doesnt_modify_other_energy_types(hits, requested_voxel_size, min_voxels, fraction_zero_one, energy_type):
-    voxels     = voxelize_hits(hits, requested_voxel_size, strict_voxel_size=False, energy_type=energy_type)
-    voxels     = sorted(voxels, key=attrgetter("xyz"))
-    energies   = [v.E for v in voxels]
-    e_thr      = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    mod, drop  = drop_end_point_voxels(voxels, e_thr, min_voxels)
-    new_voxels = sorted(mod + drop, key=attrgetter("xyz"))
+    hits, voxels                  = voxelize_hits(hits, requested_voxel_size)
+    energies                      = voxels.e.values
+    e_thr                         = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    d_hits, d_voxels, d_dropped   = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type, min_voxels)
+    # collect all hits from dropped voxels that you want to check
+    i_hits = hits.loc[hits.index.isin(d_hits.index)]
 
     for e_type in HitEnergy:
         if e_type is energy_type: continue
+        if d_hits.empty:
+            return
 
-        for v_before, v_after in zip(voxels, new_voxels):
-            e_before = v_before.hits[e_type.value]
-            e_after  = v_after .hits[e_type.value]
-            assert np.allclose(e_before, e_after)
+        e_before = i_hits[e_type.value]
+        e_after  = d_hits[e_type.value]
+        assert np.allclose(e_before.values, e_after.values)
 
 
 @mark.skip
