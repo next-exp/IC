@@ -784,36 +784,32 @@ def test_drop_end_point_voxels_constant_number_of_voxels_and_hits(hits, requeste
     assert len(hits)   == i_hit_len
 
 
-@mark.skip
 def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
-
     # Get some test data: nothing interesting to see here
     hit_file = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
     evt_number = 19
     e_thr = 5867.92
     min_voxels = 3
     size = 15.
+    energy_type = HitEnergy.E
     vox_size = np.array([size,size,size], dtype=np.float16)
-    hits = pd.read_hdf(hit_file, "/RECO/Events").set_index("event").loc[evt_number]
-    voxels = voxelize_hits(hits, vox_size, strict_voxel_size=False)
+    hits = pd.read_hdf(hit_file, "/RECO/Events")
+    hits = hits[hits.event == evt_number]
 
-    # This is the core of the test: collect data before/after ...
-    ante_energies  = [v.E   for v in voxels]
-    ante_positions = [v.XYZ for v in voxels]
-    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
-    post_energies  = [v.E   for v in voxels]
-    post_positions = [v.XYZ for v in voxels]
+    hits, voxels                  = voxelize_hits(hits, vox_size, energy_type)
 
-    ante_energies.sort()
-    post_energies.sort()
-    ante_positions.sort()
-    post_positions.sort()
+    i_energies  = np.sort(voxels.e.values)
+    i_positions = np.sort([voxels.x, voxels.y, voxels.z])
 
-    # ... and make sure that nothing has changed
-    assert len(ante_energies)  == len(post_energies)
-    assert len(ante_positions) == len(post_positions)
-    assert np.allclose(ante_energies,  post_energies)
-    assert np.allclose(ante_positions, post_positions)
+    d_hits, d_voxels, d_dropped   = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
+
+    f_energies  = np.sort(voxels.e.values)
+    f_positions = np.sort([voxels.x, voxels.y, voxels.z])
+
+    assert len(f_energies)  == len(i_energies)
+    assert len(f_positions) == len(i_positions)
+    assert np.allclose(f_energies,  i_energies)
+    assert np.allclose(f_positions, i_positions)
 
 
 @mark.skip
