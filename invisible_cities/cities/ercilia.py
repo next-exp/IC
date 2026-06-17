@@ -81,6 +81,7 @@ def ercilia( files_in         : OneOrManyFiles
     nsipm       = sd.NSIPM
     wf_length   = sd.SIPMWL
     shape       = nsipm, len(bin_centres)
+    
     sampling    = 1 * units.mus
 
     (light_limits,
