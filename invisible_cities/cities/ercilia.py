@@ -77,12 +77,12 @@ def ercilia( files_in         : OneOrManyFiles
 
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
-    sd          = sensor_data(files_in[0], WfType.rwf)
-    nsipm       = sd.NSIPM
-    wf_length   = sd.SIPMWL
-    shape       = nsipm, len(bin_centres)
+    sd          = sensor_data(files_in[0], WfType.rwf, detector_db)
+    nfiber       = sd.NPMT  # Use PMT since SensorData tuple is only configured for SiPMs and PMTs
+    wf_length   = sd.PMTWL  # Use PMT since SensorData tuple is only configured for SiPMs and PMTs
+    shape       = nfiber, len(bin_centres)
     
-    sampling    = 1 * units.mus
+    sampling    = 25 * units.ns  # Maybe not hard code this?
 
     (light_limits,
       dark_limits) = cf.valid_integral_limits(sampling        ,
@@ -92,7 +92,7 @@ def ercilia( files_in         : OneOrManyFiles
                                               integrals_period,
                                               wf_length       )
 
-    subtract_baseline = fl.map(csf.sipm_processing[proc_mode], args="sipm", out="bls")
+    subtract_baseline = fl.map(csf.sipm_processing[proc_mode], args="pmt", out="bls")
     integrate_light   = fl.map(waveform_integrator(light_limits))
     integrate_dark    = fl.map(waveform_integrator( dark_limits))
     bin_waveforms     = fl.map(waveform_binner    (  bin_edges ))
@@ -107,11 +107,11 @@ def ercilia( files_in         : OneOrManyFiles
         write_hist          = partial(hist_writer,
                                       h5out,
                                       group_name  = "HIST",
-                                      n_sensors   = nsipm,
+                                      n_sensors   = nfiber,
                                       bin_centres = bin_centres)
 
         out = fl.push(
-            source = wf_from_files(files_in, WfType.rwf),
+            source = wf_from_files(files_in, WfType.rwf, detector_db),
             pipe   = fl.pipe(fl.slice(*event_range, close_all=True),
                              event_count.spy,
                              print_every(print_mod),
@@ -125,8 +125,8 @@ def ercilia( files_in         : OneOrManyFiles
                           dark        = accumulate_dark .future)
         )
 
-        write_hist(table_name = "sipm_spe" )(out.spe )
-        write_hist(table_name = "sipm_dark")(out.dark)
+        write_hist(table_name = "fiber_spe" )(out.spe )
+        write_hist(table_name = "fiber_dark")(out.dark)
         cf.copy_sensor_table(files_in[0], h5out)
 
     return out
