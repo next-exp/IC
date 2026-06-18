@@ -317,7 +317,7 @@ def make_tracks(hits       : pd.DataFrame,
         extreme_pos1                      = voxels.loc[extreme_low]
         extreme_pos2                      = voxels.loc[extreme_high]
         ave_pos                           = hits_ave_pos(track_hits, energy_type)
-        ave_r                             = np.average(track_hits.R,             weights = track_hits.Ep, axis = 0)
+        ave_r                             = np.average(track_hits.R,             weights = track_hits[energy_type.value], axis = 0)
 
 
         # blob information
@@ -335,7 +335,7 @@ def make_tracks(hits       : pd.DataFrame,
 
         # calculate overlap of hits in each blob
         common_hits = hits_blob1.merge(hits_blob2, how="inner")
-        overlap     = common_hits.Ep.sum()
+        overlap     = common_hits[energy_type.value].sum()
 
 
         # generate general tracking table
@@ -402,7 +402,7 @@ def drop_voxel_inplace( hits       : pd.DataFrame
     new_vox_energy = hits.groupby("voxel_id")[e_type].sum()
     # remove the hit energy from the popped voxel's hits
     new_vox_energy = new_vox_energy.drop(0)
-    voxels.loc[new_vox_energy.index, e_type] = new_vox_energy.values
+    voxels.loc[new_vox_energy.index, 'e'] = new_vox_energy
 
     # set popped voxel energy to nan
     popped['e'] = np.nan
@@ -425,7 +425,6 @@ def drop_voxels(hits            : pd.DataFrame,
 
     dropped  = []
     #hits     =   hits.copy() # this isn't modified anywhere, so no need to copy
-    voxels   = voxels.copy()
     modified = True
     while modified:
         modified = False
@@ -448,7 +447,7 @@ def drop_voxels(hits            : pd.DataFrame,
 
     dropped = pd.DataFrame(dropped) if dropped else pd.DataFrame()
     if not dropped.empty:
-        dropped_hits = hits[hits.voxel_id.isin(dropped.index)]
+        dropped_hits = hits[hits.voxel_id == 0]
     else:
         dropped_hits = pd.DataFrame([])
 
