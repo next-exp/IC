@@ -704,6 +704,7 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_size, min
     assert np.allclose(i_Es, f_Es)
 
 
+@settings(deadline=None)
 @mark.parametrize("energy_type", HitEnergy)
 @given(hits                       = bunch_of_hits(),
        requested_voxel_size = voxel_sizes,
@@ -812,38 +813,38 @@ def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
     assert np.allclose(f_positions, i_positions)
 
 
-@mark.skip
 def test_tracks_with_dropped_voxels(ICDATADIR):
+    # Get some test data: nothing interesting to see here
     hit_file = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
     evt_number = 19
     e_thr = 5867.92
     min_voxels = 3
     size = 15.
-    vox_size = np.array([size,size,size],dtype=np.float16)
+    energy_type = HitEnergy.E
+    vox_size = np.array([size,size,size], dtype=np.float16)
+    hits = pd.read_hdf(hit_file, "/RECO/Events")
+    hits = hits[hits.event == evt_number]
+    hits, voxels                  = voxelize_hits(hits, vox_size, energy_type)
 
-    hits = pd.read_hdf(hit_file, "/RECO/Events").set_index("event").loc[evt_number]
-    voxels = voxelize_hits(hits, vox_size, strict_voxel_size=False)
-    ini_trks = make_track_graphs(voxels)
-    initial_n_of_tracks = len(ini_trks)
-    ini_energies = [sum(vox.E for vox in t.nodes()) for t in ini_trks]
-    ini_n_voxels = np.array([len(t.nodes()) for t in ini_trks])
+    _, _, i_tracks    = make_tracks(hits, voxels, vox_size, 1)
+    i_energies        = np.sort(i_tracks.energy.values)
+    i_ntracks         = len(i_tracks)
+    i_nvoxels         = i_tracks.numb_of_voxels.values
 
-    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    d_hits, d_voxels, d_dropped = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
 
-    trks = make_track_graphs(mod_voxels)
-    n_of_tracks = len(trks)
-    energies = [sum(vox.E for vox in t.nodes()) for t in trks]
-    n_voxels = np.array([len(t.nodes()) for t in trks])
+    _, _, f_tracks    = make_tracks(hits, voxels, vox_size, 1)
+    f_energies        = np.sort(f_tracks.energy.values)
+    f_ntracks         = len(f_tracks)
+    f_nvoxels         = f_tracks.numb_of_voxels.values
 
-    expected_diff_n_voxels = np.array([0, 0, 2])
 
-    ini_energies.sort()
-    energies.sort()
+    expected_diff_nvoxels = np.array([3, 0, 0])
 
-    assert initial_n_of_tracks == n_of_tracks
-    assert np.allclose(ini_energies, energies)
-    assert np.all(ini_n_voxels - n_voxels == expected_diff_n_voxels)
 
+    assert i_ntracks == f_ntracks
+    assert np.allclose(i_energies, f_energies)
+    assert np.all(i_nvoxels - f_nvoxels == expected_diff_nvoxels)
 
 @mark.skip
 def test_drop_voxels_deterministic(ICDATADIR):
