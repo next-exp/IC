@@ -6,6 +6,7 @@ import numpy  as np
 import tables as tb
 
 from scipy.signal import find_peaks_cwt
+from scipy.signal import find_peaks
 
 from .. core                 import  system_of_units as units
 from .. core.core_functions  import         in_range
@@ -15,6 +16,7 @@ from .. database             import          load_db as DB
 from .. types.symbols        import       SensorType
 from .. evm.ic_containers    import     SensorParams
 from .. evm.ic_containers    import   PedestalParams
+
 
 
 def bin_waveforms(waveforms, bins):
@@ -122,6 +124,59 @@ def valid_integral_limits(sample_width, n_integrals, integral_start, integral_wi
     corr, anti = integral_limits(sample_width, n_integrals, integral_start, integral_width, period)
     return (filter_limits(corr, buffer_length),
             filter_limits(anti, buffer_length))
+    
+
+
+
+def integrate_peaks_ercilia(bls,
+                    n_sigma=5.0,
+                    min_distance=10,
+                    min_prominence_sigma=2.0,
+                    pre_samples=5,
+                    post_samples=10):
+    """
+    Parameters
+    ----------
+    bls : np.ndarray
+        Baseline-subtracted waveforms for one event.
+        Shape (nfiber, nsamples)
+
+    Returns
+    -------
+    charges : list[np.ndarray]
+        charges[fiber] contains the integrated charge of every
+        peak found in that fiber waveform.
+    """
+
+    charges = []
+
+    for wf in bls:
+
+        noise = np.median(np.abs(wf)) / 0.6745
+
+        threshold = n_sigma * noise
+
+        peaks, props = find_peaks(
+            wf,
+            height     = threshold,
+            distance   = min_distance,
+            prominence = min_prominence_sigma * noise,
+        )
+
+        fiber_charges = []
+
+        for peak in peaks:
+
+            start = max(0, peak - pre_samples)
+            end   = min(len(wf), peak + post_samples)
+
+            charge = np.sum(wf[start:end])
+
+            fiber_charges.append(charge)
+
+        charges.append(np.asarray(fiber_charges))
+
+    return charges
 
 
 def copy_sensor_table(h5in_name : str,

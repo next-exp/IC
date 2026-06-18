@@ -1237,6 +1237,28 @@ def waveform_binner(bins):
     return bin_waveforms
 
 
+def peak_charge_binner(bin_edges):
+
+    def bin_charges(charges):
+
+        hist = np.zeros((len(charges), len(bin_edges)-1),
+                        dtype=int)
+
+        for i, fiber_charges in enumerate(charges):
+
+            if len(fiber_charges) == 0:
+                continue
+
+            hist[i], _ = np.histogram(
+                fiber_charges,
+                bins=bin_edges
+            )
+
+        return hist
+
+    return bin_charges
+
+
 def waveform_integrator(limits):
     def integrate_wfs(wfs):
         return cf.spaced_integrals(wfs, limits)[:, ::2]
