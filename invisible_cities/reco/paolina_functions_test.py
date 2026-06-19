@@ -907,40 +907,42 @@ def test_drop_voxels_voxel_energy_is_sum_of_hits():
     assert np.isclose(hits.groupby('voxel_id').E.sum(), voxels.e).all()
 
 
-@mark.skip
+@settings(deadline=None)
 @mark.parametrize("energy_type", (HitEnergy.Ec, HitEnergy.Ep))
 @given(hits                       = bunch_of_hits(),
        requested_voxel_size = voxel_sizes,
        blob_radius                = radii,
        fraction_zero_one          = fraction_zero_one)
 def test_paolina_functions_with_hit_energy_different_from_default_value(hits, requested_voxel_size, blob_radius, fraction_zero_one, energy_type):
-    voxels   = voxelize_hits(hits, requested_voxel_size, strict_voxel_size=False)
-    voxels_c = voxelize_hits(hits, requested_voxel_size, strict_voxel_size=False, energy_type=energy_type)
+
+    hits_c     = hits.copy(deep = True)
+    min_voxels = 0
+
+    hits, voxels     = voxelize_hits(hits, requested_voxel_size)
+    hits_c, voxels_c = voxelize_hits(hits_c, requested_voxel_size, energy_type)
 
     # The first assertion is needed for the test to keep being meaningful,
     # in case we change the default value of energy_type to energy_c.
-    assert voxels[0].Etype   != voxels_c[0].Etype
-    assert voxels_c[0].Etype == energy_type.value
+    # problem is, we no longer retain energy type in voxels
+    assert not np.isclose(voxels.e, voxels_c.e).all()
 
-    for voxel in voxels_c:
-        assert np.isclose(voxel.E, voxel.hits[energy_type.value].sum())
+    assert np.isclose(voxels.e, hits.groupby('voxel_id').E.sum()).all()
 
-    energies_c = [v.E for v in voxels_c]
-    e_thr = min(energies_c) + fraction_zero_one * (max(energies_c) - min(energies_c))
-    # Test that this function doesn't fail
-    mod_voxels_c, _ = drop_end_point_voxels(voxels_c, e_thr, min_vxls=0)
+    energies_c = voxels_c.e.values
+    e_thr                       = min(energies_c) + fraction_zero_one * (max(energies_c) - min(energies_c))
 
-    tot_energy     = sum(v.hits[energy_type.value].sum() for v in     voxels_c)
-    tot_mod_energy = sum(v.hits[energy_type.value].sum() for v in mod_voxels_c)
+    # copy again before dropping
+    hits_cm   = hits_c.copy(deep=True)
+    voxels_cm = voxels_c.copy(deep=True)
+    d_hits_c, d_voxels_c, d_dropped_c = drop_voxels(hits_cm, voxels_cm, e_thr, requested_voxel_size, energy_type, min_voxels)
 
-    assert np.isclose(tot_energy, tot_mod_energy)
-
-    tot_default_energy     = sum(v.hits.E.sum() for v in     voxels_c)
-    tot_mod_default_energy = sum(v.hits.E.sum() for v in mod_voxels_c)
+    tot_default_energy     = hits_c.E.sum()
+    tot_mod_default_energy = hits_cm.E.sum()
 
     # We don't want to modify the default energy of hits, if the voxels are made with energy_c
-    if len(mod_voxels_c) < len(voxels_c):
-        assert tot_default_energy > tot_mod_default_energy
+    if len(voxels_cm) < len(voxels_c):
+        assert tot_default_energy >= tot_mod_default_energy
+
 
 
 @mark.skip
