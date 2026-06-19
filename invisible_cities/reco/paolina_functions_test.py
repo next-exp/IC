@@ -892,26 +892,19 @@ def test_voxel_drop_in_short_tracks():
 
     assert len(voxels) >= 1
 
-@mark.skip
+
 def test_drop_voxels_voxel_energy_is_sum_of_hits():
-    def make_hit(x, y, z, e):
-        return pd.DataFrame(dict(X=x, Y=y, Z=z, E=e, Ep=e), index=[0])
 
-    def make_voxel(x, y, z, e, hits):
-        return Voxel(x, y, z, e, size=5, e_type=HitEnergy.Ep, hits=pd.concat(hits, ignore_index=True))
-    # Create a track with an extreme to be dropped and two hits at the same
-    # distance from the barycenter of the the voxel to be dropped with
-    # different energies in the hits *and* in the voxels
-    voxels = [make_voxel( 0,  0, 0, 0.1, [make_hit( 0,  0, 0, 0.1)                          ]),
-              make_voxel( 5, -5, 0, 1.0, [make_hit( 5, -5, 0, 0.7), make_hit( 5, -8, 0, 0.3)]),
-              make_voxel( 5,  5, 0, 1.5, [make_hit( 5,  5, 0, 0.9), make_hit( 5,  8, 0, 0.6)]),
-              make_voxel(10,  0, 0, 2.0, [make_hit(10,  5, 0, 1.2), make_hit(11,  5, 0, 0.8)]),
-              make_voxel(15,  0, 0, 2.5, [make_hit(15,  0, 0, 1.8), make_hit(11,  0, 0, 0.7)]),
-              make_voxel(20,  0, 0, 3.0, [make_hit(20,  0, 0, 1.5), make_hit(11,  0, 0, 1.5)])]
+    x = [0,     5,   5,  10,  15,  20,   5,   5,  11,  11,  11]
+    y = [0,    -5,   5,   5,   0,   0,  -8,   8,   5,   0,   0]
+    z = [0,     0,   0,   0,   0,   0,   0,   0,   0,   0,   0]
+    e = [0.1, 0.7, 0.9, 1.2, 1.8, 1.5, 0.3, 0.6, 0.8, 0.7, 1.5]
+    hits = pd.DataFrame(dict(X=x, Y=y, Z=z, E=e))
 
-    modified_voxels, _ = drop_end_point_voxels(voxels, energy_threshold = 0.5, min_vxls = 1)
-    for v in modified_voxels:
-        assert np.isclose(v.E, v.hits.Ep.sum())
+    vox_size = [5.]*3
+    hits, voxels = voxelize_hits(hits, vox_size, HitEnergy.E)
+
+    assert np.isclose(hits.groupby('voxel_id').E.sum(), voxels.e).all()
 
 
 @mark.skip
