@@ -28,7 +28,7 @@ from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from hypothesis.strategies import builds
 
-from . paolina_functions import round_hits_positions_in_place
+from . paolina_functions import blob_energies_hits_and_centres, round_hits_positions_in_place
 from . paolina_functions import voxelize_hits
 from . paolina_functions import neighbours
 from . paolina_functions import find_extrema_and_length
@@ -944,8 +944,6 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
         assert tot_default_energy >= tot_mod_default_energy
 
 
-
-@mark.skip
 def test_make_tracks_function(ICDATADIR):
 
     # Get some test data
@@ -958,32 +956,34 @@ def test_make_tracks_function(ICDATADIR):
     # Read the hits and voxelize
     all_hits = pd.read_hdf(hit_file, "/RECO/Events")
 
-    for evt_number, evt_hits in all_hits.groupby("event"):
+    for evt_number, evt_hits in all_hits.groupby("event", as_index=False):
         evt_time = evt_hits.time.iloc[0]
-        voxels   = voxelize_hits(evt_hits, voxel_size, strict_voxel_size=False, energy_type=HitEnergy.E)
+        hits, voxels   = voxelize_hits(evt_hits, voxel_size, energy_type=HitEnergy.E)
 
-        tracks   = list(make_track_graphs(voxels))
+        tracks                   = list(make_track_graphs(voxels, voxel_size))
 
-        track_coll = make_tracks(evt_number, evt_time, voxels, voxel_size,
-                                 contiguity=Contiguity.CORNER,
-                                 blob_radius=blob_radius,
-                                 energy_type=HitEnergy.E)
-        tracks_from_coll = track_coll.tracks
+        hits, voxels, track_coll = make_tracks(hits, voxels, voxel_size,
+                                               blob_radius=blob_radius,
+                                               energy_type=HitEnergy.E)
 
         tracks.sort          (key=lambda x : len(x.nodes()))
-        tracks_from_coll.sort(key=lambda x : x.number_of_voxels)
+        tracks_from_coll = track_coll.sort_values('numb_of_voxels')
 
         # Compare the two sets of tracks
         assert len(tracks) == len(tracks_from_coll)
         for i in range(len(tracks)):
             t  = tracks[i]
-            tc = tracks_from_coll[i]
+            tc = tracks_from_coll.iloc[i]
 
-            assert len(t.nodes())              == tc.number_of_voxels
-            assert sum(v.E for v in t.nodes()) == tc.E
+            assert len(t.nodes()) == tc.numb_of_voxels
+            assert np.isclose(sum(voxels[voxels.index.isin(t.nodes())].e), tc.energy).all()
 
-            tc_blobs = list(tc.blobs)
-            tc_blobs.sort(key=lambda x : x.E)
-            tc_blob_energies = (tc.blobs[0].E, tc.blobs[1].E)
+            tc_eblob1 = tc.eblob1
+            tc_eblob2 = tc.eblob2
 
-            assert np.allclose(blob_energies(t, blob_radius), tc_blob_energies)
+            # calculate blob energies
+            extreme_low, extreme_high, length = find_extrema_and_length(t, voxels)
+            e_1, e_2, _, _, _, _ = blob_energies_hits_and_centres(t, hits, voxels, blob_radius, extreme_low, extreme_high, voxel_size)
+
+            assert np.allclose(e_1, tc_eblob1)
+            assert np.allclose(e_2, tc_eblob2)
