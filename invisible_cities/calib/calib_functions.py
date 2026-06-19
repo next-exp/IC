@@ -151,7 +151,7 @@ def integrate_peaks_ercilia(bls,
     charges = []
 
     for wf in bls:
-
+        # Plot the wf
         noise = np.median(np.abs(wf)) / 0.6745
 
         threshold = n_sigma * noise
@@ -175,7 +175,6 @@ def integrate_peaks_ercilia(bls,
             fiber_charges.append(charge)
 
         charges.append(np.asarray(fiber_charges))
-
     return charges
 
 

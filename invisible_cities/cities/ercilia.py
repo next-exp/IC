@@ -94,6 +94,7 @@ def ercilia( files_in         : OneOrManyFiles
     #                                           wf_length       )
 
     subtract_baseline = fl.map(csf.sipm_processing[proc_mode], args="pmt", out="bls")
+    flip_waveforms = fl.map(lambda bls: -bls, args="bls", out="bls")
     # Add a peak finder here, Define limits via peak finder, not via valid_integral_limits
     extract_charges = fl.map(
         cf.integrate_peaks_ercilia,
@@ -145,17 +146,12 @@ def ercilia( files_in         : OneOrManyFiles
 
             pipe = fl.pipe(
                 fl.slice(*event_range, close_all=True),
-
                 event_count.spy,
-
                 print_every(print_mod),
-
                 subtract_baseline,
-
+                flip_waveforms,
                 extract_charges,
-
                 bin_charges,
-
                 fl.fork(
                     ("hist", accumulate_light.sink),
                     write_run_and_event

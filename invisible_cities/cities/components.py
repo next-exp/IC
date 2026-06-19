@@ -1238,9 +1238,7 @@ def waveform_binner(bins):
 
 
 def peak_charge_binner(bin_edges):
-
     def bin_charges(charges):
-
         hist = np.zeros((len(charges), len(bin_edges)-1),
                         dtype=int)
 
@@ -1253,7 +1251,6 @@ def peak_charge_binner(bin_edges):
                 fiber_charges,
                 bins=bin_edges
             )
-
         return hist
 
     return bin_charges
