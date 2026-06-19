@@ -878,17 +878,19 @@ def test_drop_voxels_deterministic(ICDATADIR):
     assert np.allclose(np.sort(r_voxels.e.values), np.sort(voxels.e.values))
 
 
-@mark.skip
 def test_voxel_drop_in_short_tracks():
-    hits = pd.DataFrame(dict(X=[10, 26], Y=[10,10], Z=[10,10], E=[1,1]), dtype=float)
-    voxels = voxelize_hits(hits, [15,15,15], strict_voxel_size=True)
-    e_thr = sum(v.E for v in voxels) + 1.
+    hits         = pd.DataFrame(dict(X=[10, 26], Y=[10,10], Z=[10,10], E=[1,1]))
+    energy_type  = HitEnergy.E
+    vox_size     = [15.] * 3
     min_voxels = 0
 
-    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
+    hits, voxels = voxelize_hits(hits, vox_size, energy_type)
+    hits = hits.copy()
+    e_thr        = sum(voxels.e) + 1.
 
-    assert len(mod_voxels) >= 1
+    d_hits, d_voxels, d_dropped = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
 
+    assert len(voxels) >= 1
 
 @mark.skip
 def test_drop_voxels_voxel_energy_is_sum_of_hits():
