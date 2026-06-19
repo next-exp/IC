@@ -908,48 +908,6 @@ def test_drop_voxels_voxel_energy_is_sum_of_hits():
 
 
 @mark.skip
-@given(blob_radius=radii, min_voxels=min_n_of_voxels, fraction_zero_one=fraction_zero_one)
-def test_paolina_functions_with_voxels_without_associated_hits(blob_radius, min_voxels, fraction_zero_one, voxels_without_hits):
-    voxels = voxels_without_hits
-    tracks = make_track_graphs(voxels)
-    for t in tracks:
-        a, b = find_extrema(t)
-        hits_a = hits_in_blob(t, blob_radius, a)
-        hits_b = hits_in_blob(t, blob_radius, b)
-
-        assert len(hits_a) == len(hits_b) == 0
-
-        assert np.allclose(blob_centre(a), a.pos)
-        assert np.allclose(blob_centre(b), b.pos)
-
-        distances = shortest_paths(t)
-        Ea = energy_of_voxels_within_radius(distances[a], blob_radius)
-        Eb = energy_of_voxels_within_radius(distances[b], blob_radius)
-
-        if Ea < Eb:
-            assert np.allclose(blob_centres(t, blob_radius, None)[0], b.pos)
-            assert np.allclose(blob_centres(t, blob_radius, None)[1], a.pos)
-        else:
-            assert np.allclose(blob_centres(t, blob_radius, None)[0], a.pos)
-            assert np.allclose(blob_centres(t, blob_radius, None)[1], b.pos)
-
-        assert blob_energies(t, blob_radius, None) != (0, 0)
-
-        assert blob_energies_and_hits(t, blob_radius, None) != (0, 0, [], [])
-
-    energies = [v.E for v in voxels]
-    e_thr = min(energies) + fraction_zero_one * (max(energies) - min(energies))
-    mod_voxels, _ = drop_end_point_voxels(voxels, e_thr, min_voxels)
-
-    trks = make_track_graphs(mod_voxels)
-    for t in trks:
-        a, b = find_extrema(t)
-
-        assert np.allclose(blob_centre(a), a.pos)
-        assert np.allclose(blob_centre(b), b.pos)
-
-
-@mark.skip
 @mark.parametrize("energy_type", (HitEnergy.Ec, HitEnergy.Ep))
 @given(hits                       = bunch_of_hits(),
        requested_voxel_size = voxel_sizes,
