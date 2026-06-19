@@ -785,7 +785,10 @@ def test_drop_end_point_voxels_constant_number_of_voxels_and_hits(hits, requeste
     assert len(hits)   == i_hit_len
 
 
-def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
+def test_initial_voxels_are_modified_inplace_after_dropping_voxels(ICDATADIR):
+    # prior test ensured voxels are the same (not edited in-place)
+    # we're changing that, so this test has been reworked
+
     # Get some test data: nothing interesting to see here
     hit_file = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
     evt_number = 19
@@ -804,12 +807,16 @@ def test_initial_voxels_are_the_same_after_dropping_voxels(ICDATADIR):
 
     d_hits, d_voxels, d_dropped   = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
 
+    # energies will be retained (in principle)
     f_energies  = np.sort(voxels.e.values)
-    f_positions = np.sort([voxels.x, voxels.y, voxels.z])
+    f_positions = np.sort(np.concatenate([[voxels.x, voxels.y, voxels.z], [d_dropped.x, d_dropped.y, d_dropped.z]], axis = 1))
 
-    assert len(f_energies)  == len(i_energies)
+    # energies match
+    assert sum(f_energies) == sum(i_energies)
+    # but lengths do not
+    assert len(f_energies) != len(i_energies)
+    # voxels haven't disappeared, just reindexed
     assert len(f_positions) == len(i_positions)
-    assert np.allclose(f_energies,  i_energies)
     assert np.allclose(f_positions, i_positions)
 
 
