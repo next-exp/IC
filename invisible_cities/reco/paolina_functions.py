@@ -395,16 +395,22 @@ def drop_voxel_inplace( hits       : pd.DataFrame
     e_type          = e_type.value
     total_closest_e = closest_hits[e_type].sum()
     new_hit_energy  = closest_hits[e_type] * (1 + popped.e/total_closest_e)
-    hits.loc[closest_hits.index, e_type] = new_hit_energy
-    hits.loc[hits.voxel_id == vox_id, e_type] = np.nan
-    hits.loc[hits.voxel_id == vox_id, 'voxel_id'] = 0
+
+    # avoid warnings by creating explicit mask and using iloc
+    mask = hits.index.isin(closest_hits.index)
+    hits.iloc[mask, hits.columns.get_loc(e_type)] = new_hit_energy.values
+
+    mask = hits.voxel_id == vox_id
+    hits.iloc[mask.values, hits.columns.get_loc(e_type)]     = np.nan
+    hits.iloc[mask.values, hits.columns.get_loc('voxel_id')] = 0
 
     new_vox_energy = hits.groupby("voxel_id")[e_type].sum()
     # remove the hit energy from the popped voxel's hits
     new_vox_energy = new_vox_energy.drop(0)
     voxels.loc[new_vox_energy.index, 'e'] = new_vox_energy
 
-    # set popped voxel energy to nan
+    # set popped voxel energy to nan (we can copy here as there is no in-place requirements)
+    popped = popped.copy()
     popped['e'] = np.nan
 
     return popped
