@@ -846,21 +846,29 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     assert np.allclose(i_energies, f_energies)
     assert np.all(i_nvoxels - f_nvoxels == expected_diff_nvoxels)
 
-@mark.skip
+
 def test_drop_voxels_deterministic(ICDATADIR):
     hit_file   = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
     evt_number = 19
     e_thr      = 5867.92
     min_voxels = 3
     vox_size   = [15.] * 3
+    energy_type = HitEnergy.E
 
-    hits            = pd.read_hdf(hit_file, "/RECO/Events").set_index("event").loc[evt_number]
-    voxels          = voxelize_hits(hits, vox_size, strict_voxel_size=False)
-    mod_voxels  , _ = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = False), e_thr, min_voxels)
-    mod_voxels_r, _ = drop_end_point_voxels(sorted(voxels, key = lambda v:v.E, reverse = True ), e_thr, min_voxels)
+    hits = pd.read_hdf(hit_file, "/RECO/Events")
+    hits = hits[hits.event == evt_number]
 
-    for v1, v2 in zip(sorted(mod_voxels, key = lambda v:v.E), sorted(mod_voxels_r, key = lambda v:v.E)):
-        assert np.isclose(v1.E, v2.E)
+    hits, voxels                  = voxelize_hits(hits, vox_size, energy_type)
+    # to avoid in place issues
+    c_hits   = hits.copy(deep=True)
+    c_voxels = voxels.copy(deep=True)
+    d_hits, d_voxels, d_dropped = drop_voxels(c_hits, c_voxels, e_thr, vox_size, energy_type, min_voxels)
+    # shuffle hits and voxels
+    hits   = hits.sample(frac=1).reset_index(drop=True)
+    voxels = voxels.sample(frac=1)
+    r_hits, r_voxels, r_dropped = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
+
+    assert np.allclose(np.sort(r_voxels.e.values), np.sort(voxels.e.values))
 
 
 @mark.skip
