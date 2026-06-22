@@ -39,6 +39,8 @@ from . paolina_functions import pop_voxel_inplace
 from . paolina_functions import make_track_graphs
 from . paolina_functions import drop_voxels
 from . paolina_functions import make_tracks
+from . paolina_functions import get_track_energy
+from . paolina_functions import find_highest_encapsulating_node
 
 from .. core                import system_of_units as units
 from .. core.core_functions import in_range
@@ -987,3 +989,57 @@ def test_make_tracks_function(ICDATADIR):
 
             assert np.allclose(e_1, tc_eblob1)
             assert np.allclose(e_2, tc_eblob2)
+
+
+def test_encapsulation_works_as_intended():
+    '''
+    test to ensure that setting a big/small radius
+    has the desired effect (capturing the most favourable
+    voxel for energy capture).
+    '''
+
+    # define general parameters
+    vox_size        = [1., 1., 1.]
+    scan_radius     = 2.83  # sqrt of 8    --> next to nearest neighbours in 2D
+    blob_radius     = 1.8 # sqrt of 3    --> nearest neighbours in 3D
+
+    # generate hits to make a track
+    x = [-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, -4.5, -3.5, 3.5, 4.5, 5.5, 4.5, 5.5, -3.5, -2.5,  4.5]
+    y = [0.5,  0.5,   0.5,  0.5,  0.5, 0.5, 0.5, 0.5, 0.5, 0.5,  1.5,  1.5, 1.5, 1.5, 1.5, 2.5, 2.5, -0.5, -0.5, -0.5]
+    z = np.zeros(shape = len(x))
+    E = np.ones( shape = len(x))
+
+    # reshape
+    hits_df            = pd.DataFrame(dict(event=0, npeak=1, X=x, Y=y, Z=z, Q=1, E=E, Ep=E))
+
+    hits_df, voxels    = voxelize_hits(hits_df, vox_size, HitEnergy.Ep)
+
+    sorted_key         = partial(get_track_energy, voxels = voxels)
+    tracks             = sorted(make_track_graphs(voxels, vox_size), key = sorted_key, reverse = True)
+
+    distances = shortest_paths(tracks[0])
+    # extract blob energies & positions in both cases
+    a, b, _ = find_extrema_and_length(tracks[0], voxels)
+    # blob centres
+    ca = hits_ave_pos(hits_df.loc[hits_df.voxel_id==a])
+    cb = hits_ave_pos(hits_df.loc[hits_df.voxel_id==b])
+    a_recalced = find_highest_encapsulating_node(tracks[0], voxels, a, distances, blob_radius, scan_radius)
+    b_recalced = find_highest_encapsulating_node(tracks[0], voxels, b, distances, blob_radius, scan_radius)
+    ca_recalced = hits_ave_pos(hits_df.loc[hits_df.voxel_id==a_recalced])
+    cb_recalced = hits_ave_pos(hits_df.loc[hits_df.voxel_id==b_recalced])
+
+    # ensure the old method doesn't match the new method
+    # voxels have changed
+    assert a     != a_recalced
+    assert b     != b_recalced
+
+    # centres are different
+    assert np.any(ca != ca_recalced)
+    assert np.any(cb != cb_recalced)
+
+    # find the central voxels
+    assert voxels.loc[b_recalced][['x','y','z']].values == approx((-3, 1, 0.5), abs=1e-9)
+    assert voxels.loc[a_recalced][['x','y','z']].values == approx(( 5, 2, 0.5), abs=1e-9)
+    # and the recalculated centres based on hit position
+    assert cb_recalced    == approx((-3.5, 0.5, 0), abs=1e-9)
+    assert ca_recalced    == approx(( 4.5, 1.5, 0), abs=1e-9)
