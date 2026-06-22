@@ -689,7 +689,7 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_size, min
     hits, voxels               = voxelize_hits(hits, requested_voxel_size)
 
     # tracks before dropping (we don't care about blob radius)
-    i_hits, i_voxels, i_tracks = make_tracks(hits, voxels, requested_voxel_size, 1)
+    i_hits, i_voxels, i_tracks = make_tracks(hits, voxels, requested_voxel_size, 1, None)
     i_Es                       = np.sort(i_tracks.energy.values)
 
     # set a threshold
@@ -698,7 +698,7 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_size, min
 
     # drop voxels and reconstruct tracks
     d_hits, d_voxels, d_dropped = drop_voxels(hits, voxels, e_thr, requested_voxel_size, HitEnergy.E)
-    f_hits, f_voxels, f_tracks  = make_tracks(hits, voxels, requested_voxel_size, 1)
+    f_hits, f_voxels, f_tracks  = make_tracks(hits, voxels, requested_voxel_size, 1, None)
     f_Es                        = np.sort(f_tracks.energy.values)
     tot_final_energy            = f_hits.E.sum()
 
@@ -835,14 +835,14 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     hits = hits[hits.event == evt_number]
     hits, voxels                  = voxelize_hits(hits, vox_size, energy_type)
 
-    _, _, i_tracks    = make_tracks(hits, voxels, vox_size, 1)
+    _, _, i_tracks    = make_tracks(hits, voxels, vox_size, 1, None)
     i_energies        = np.sort(i_tracks.energy.values)
     i_ntracks         = len(i_tracks)
     i_nvoxels         = i_tracks.numb_of_voxels.values
 
     d_hits, d_voxels, d_dropped = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
 
-    _, _, f_tracks    = make_tracks(hits, voxels, vox_size, 1)
+    _, _, f_tracks    = make_tracks(hits, voxels, vox_size, 1, None)
     f_energies        = np.sort(f_tracks.energy.values)
     f_ntracks         = len(f_tracks)
     f_nvoxels         = f_tracks.numb_of_voxels.values
@@ -954,6 +954,7 @@ def test_make_tracks_function(ICDATADIR):
     size        = 15.
     voxel_size  = np.array([size,size,size], dtype=np.float16)
     blob_radius = 21*units.mm
+    scan_radius = None
 
     # Read the hits and voxelize
     all_hits = pd.read_hdf(hit_file, "/RECO/Events")
@@ -966,6 +967,7 @@ def test_make_tracks_function(ICDATADIR):
 
         hits, voxels, track_coll = make_tracks(hits, voxels, voxel_size,
                                                blob_radius=blob_radius,
+                                               scan_radius=None,
                                                energy_type=HitEnergy.E)
 
         tracks.sort          (key=lambda x : len(x.nodes()))
@@ -985,7 +987,7 @@ def test_make_tracks_function(ICDATADIR):
 
             # calculate blob energies
             extreme_low, extreme_high, length = find_extrema_and_length(t, voxels)
-            e_1, e_2, _, _, _, _ = blob_energies_hits_and_centres(t, hits, voxels, blob_radius, extreme_low, extreme_high, voxel_size)
+            e_1, e_2, _, _, _, _ = blob_energies_hits_and_centres(t, hits, voxels, blob_radius, scan_radius, extreme_low, extreme_high, voxel_size)
 
             assert np.allclose(e_1, tc_eblob1)
             assert np.allclose(e_2, tc_eblob2)
