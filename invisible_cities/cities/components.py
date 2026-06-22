@@ -1439,7 +1439,7 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
                                       , energy_threshold : float
                                       , min_voxels       : int
                                       , blob_radius      : float
-                                      , scan_radius      : float | None
+                                      , scan_radius      : Union[float, NoneType]
                                       , max_num_hits     : int
                                       ) -> Callable:
     '''
