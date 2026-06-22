@@ -32,6 +32,13 @@ def get_track_energy(track, voxels):
     return sum([voxels.loc[vox].e for vox in track.nodes()])
 
 
+def energy_of_voxels_within_radius(voxels    : pd.DataFrame,
+                                   distances : pd.DataFrame,
+                                   radius    : float) -> float:
+    within_radius = distances[distances.distance < radius].final.values
+    return sum([voxels.loc[vox].e for vox in within_radius])
+
+
 def extract_track_voxels(track  : Graph,
                          voxels : pd.DataFrame):
     '''
@@ -213,6 +220,25 @@ def blob_energies_hits_and_centres(track_graph : Graph,
     else:
         return e_2, e_1, hits.loc[sel_2], hits.loc[sel_1], blob_pos_2, blob_pos_1
 
+
+def find_highest_encapsulating_node(track        : Graph,
+                                    voxels       : pd.DataFrame,
+                                    extrema_id   : int,
+                                    distances    : pd.DataFrame,
+                                    blob_radius  : float,
+                                    scan_radius  : float) -> int:
+    """
+    Find the voxel within a big radius for which the most energy
+    is captured within an equivalent smaller radius.
+    """
+    nodes_within_radius = [node for node in track.nodes() if distances[(distances.initial == extrema_id) & (distances.final == node)]['distance'].values < scan_radius]
+
+
+    def energy_within_radius(node):
+        return energy_of_voxels_within_radius(voxels, distances[distances.initial == node], blob_radius)
+
+    highest_encapsulating_node = max(nodes_within_radius, key = energy_within_radius)
+    return highest_encapsulating_node
 
 
 def assign_blobs_inplace(track_graph : Graph,
