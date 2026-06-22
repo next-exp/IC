@@ -85,16 +85,12 @@ def ercilia( files_in         : OneOrManyFiles
     
     sampling    = 25 * units.ns  # Maybe not hard code this?
 
-    # (light_limits,
-    #   dark_limits) = cf.valid_integral_limits(sampling        ,
-    #                                           number_integrals,
-    #                                           integral_start  ,
-    #                                           integral_width  ,
-    #                                           integrals_period,
-    #                                           wf_length       )
 
-    subtract_baseline = fl.map(csf.sipm_processing[proc_mode], args="pmt", out="bls")
-    flip_waveforms = fl.map(lambda bls: -bls, args="bls", out="bls")
+    subtract_baseline = fl.map(
+        partial(csf.subtract_and_flip, proc_mode=proc_mode),
+        args="pmt",
+        out="bls"
+    )
     # Add a peak finder here, Define limits via peak finder, not via valid_integral_limits
     extract_charges = fl.map(
         cf.integrate_peaks_ercilia,
@@ -110,13 +106,6 @@ def ercilia( files_in         : OneOrManyFiles
     sum_histograms   = fl.reduce(add, np.zeros(shape, dtype=int))
     accumulate_light = sum_histograms()
     event_count      = fl.spy_count()
-    # integrate_light   = fl.map(waveform_integrator(light_limits))
-    # integrate_dark    = fl.map(waveform_integrator( dark_limits))
-    # bin_waveforms     = fl.map(waveform_binner    (  bin_edges ))
-    # sum_histograms    = fl.reduce(add, np.zeros(shape, dtype=int))
-    # accumulate_light  = sum_histograms()
-    # accumulate_dark   = sum_histograms()
-    event_count       = fl.spy_count()
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
         write_event_info    = run_and_event_writer(h5out)
@@ -127,20 +116,7 @@ def ercilia( files_in         : OneOrManyFiles
                                       n_sensors   = nfiber,
                                       bin_centres = bin_centres)
 
-        # out = fl.push(
-        #     source = wf_from_files(files_in, WfType.rwf, detector_db),
-        #     pipe   = fl.pipe(fl.slice(*event_range, close_all=True),
-        #                      event_count.spy,
-        #                      print_every(print_mod),
-        #                      subtract_baseline,
-        #                      fl.fork(("bls", integrate_light, bin_waveforms, accumulate_light   .sink),
-        #                              ("bls", integrate_dark , bin_waveforms, accumulate_dark    .sink),
-        #                                                                      write_run_and_event      )),
 
-        #     result = dict(events_in   = event_count     .future,
-        #                   spe         = accumulate_light.future,
-        #                   dark        = accumulate_dark .future)
-        # )
         out = fl.push(
             source = wf_from_files(files_in, WfType.rwf, detector_db),
 
@@ -149,7 +125,6 @@ def ercilia( files_in         : OneOrManyFiles
                 event_count.spy,
                 print_every(print_mod),
                 subtract_baseline,
-                flip_waveforms,
                 extract_charges,
                 bin_charges,
                 fl.fork(
@@ -165,7 +140,6 @@ def ercilia( files_in         : OneOrManyFiles
         )
 
         write_hist(table_name = "fiber_spe" )(out.spe )
-        # write_hist(table_name = "fiber_dark")(out.dark)
         cf.copy_sensor_table(files_in[0], h5out)
 
     return out

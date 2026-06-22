@@ -129,71 +129,105 @@ def valid_integral_limits(sample_width, n_integrals, integral_start, integral_wi
 
 
 def integrate_peaks_ercilia(bls,
-                            n_sigma=5.0,
-                            min_distance=10,
-                            min_prominence_sigma=2.0,
-                            pre_samples=5,
-                            post_samples=10,
-                            top_fraction=0.8,
-                            max_top_width=4):
+                             n_sigma=5.0,
+                             min_distance=10,
+                             min_prominence_sigma=2.0,
+                             pre_samples=5,
+                             post_samples=10,
+                             top_fraction=0.8,
+                             max_top_width=4,
+                             merge_distance=8,
+                             integrate_noise=True,
+                             noise_window_gap=0):
     """
-    Parameters
-    ----------
-    bls : np.ndarray
-        Baseline-subtracted waveforms for one event.
-        Shape (nfiber, nsamples)
+    Peak finding function for fiber barrel calibration
+    Basic peak finder with threshold/prominence
+    Removes saturated peaks with flat top
+    Merges peaks that are close together and integrates them as one
+    Also integrates "noise" windows: fixed-width windows (width =
+    pre_samples + post_samples, matching the peak window width) placed
+    in peak-free regions of the waveform. These get appended to the
+    same charges array as a zero-charge reference population.
+    """
+    bls_arr = np.asarray(bls)
+    noises = np.median(np.abs(bls_arr), axis=1) / 0.6745  # Maybe don't hard code this, John would be disappointed
+    thresholds = n_sigma * noises
+    prominences = min_prominence_sigma * noises
 
-    Returns
-    -------
-    charges : list[np.ndarray]
-        charges[fiber] contains the integrated charge of every
-        accepted peak found in that fiber waveform.
-    """
+    noise_window_width = pre_samples + post_samples
 
     charges = []
-
-    for wf in bls:
-
-        noise = np.median(np.abs(wf)) / 0.6745
-        threshold = n_sigma * noise
-
-        peaks, props = find_peaks(
+    for wf, threshold, prominence in zip(bls_arr, thresholds, prominences):
+        n = len(wf)
+        peaks, _ = find_peaks(
             wf,
             height=threshold,
             distance=min_distance,
-            prominence=min_prominence_sigma * noise,
+            prominence=prominence,
         )
 
+        merged_groups = []
+        if len(peaks) > 0:
+            current_group = [peaks[0]]
+            for p in peaks[1:]:
+                if p - current_group[-1] <= merge_distance:
+                    current_group.append(p)
+                else:
+                    merged_groups.append(current_group)
+                    current_group = [p]
+            merged_groups.append(current_group)
+
         fiber_charges = []
+        occupied_windows = []  # every peak region, incl. ones later rejected as saturated
 
-        for peak in peaks:
+        for group in merged_groups:
+            p_center = int(np.mean(group))
+            start = max(0, min(group) - pre_samples)
+            end = min(n, max(group) + post_samples)
+            occupied_windows.append((start, end))
 
-            start = max(0, peak - pre_samples)
-            end   = min(len(wf), peak + post_samples)
-
-            # Measure width of peak top
-            thr = top_fraction * wf[peak]
-
-            left = peak
-            while left > 0 and wf[left - 1] > thr:
-                left -= 1
-
-            right = peak
-            while right < len(wf) - 1 and wf[right + 1] > thr:
-                right += 1
-
-            top_width = right - left + 1
-
-            # Reject broad / saturated peaks
-            if top_width > max_top_width:
+            peak_val = wf[p_center]
+            thr = top_fraction * peak_val
+            left = right = p_center
+            while True:
+                grew = False
+                if left > 0 and wf[left - 1] > thr:
+                    left -= 1
+                    grew = True
+                if right < n - 1 and wf[right + 1] > thr:
+                    right += 1
+                    grew = True
+                if (right - left + 1) > max_top_width:
+                    break
+                if not grew:
+                    break
+            if (right - left + 1) > max_top_width:
                 continue
+            fiber_charges.append(np.sum(wf[start:end]))
 
-            charge = np.sum(wf[start:end])
-            fiber_charges.append(charge)
+        # --- Noise window integration, appended into the same charges array ---
+        if integrate_noise and noise_window_width > 0:
+            occupied_windows.sort()
+            free_regions = []
+            cursor = 0
+            for start, end in occupied_windows:
+                if start > cursor:
+                    free_regions.append((cursor, start))
+                cursor = max(cursor, end)
+            if cursor < n:
+                free_regions.append((cursor, n))
+
+            for region_start, region_end in free_regions:
+                pos = region_start
+                while pos + noise_window_width <= region_end:
+                    fiber_charges.append(np.sum(wf[pos:pos + noise_window_width]))
+                    pos += noise_window_width + noise_window_gap
 
         charges.append(np.asarray(fiber_charges))
 
     return charges
+
+
 
 
 def copy_sensor_table(h5in_name : str,
