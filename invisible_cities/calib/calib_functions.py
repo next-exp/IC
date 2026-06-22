@@ -129,11 +129,13 @@ def valid_integral_limits(sample_width, n_integrals, integral_start, integral_wi
 
 
 def integrate_peaks_ercilia(bls,
-                    n_sigma=5.0,
-                    min_distance=10,
-                    min_prominence_sigma=2.0,
-                    pre_samples=5,
-                    post_samples=10):
+                            n_sigma=5.0,
+                            min_distance=10,
+                            min_prominence_sigma=2.0,
+                            pre_samples=5,
+                            post_samples=10,
+                            top_fraction=0.8,
+                            max_top_width=4):
     """
     Parameters
     ----------
@@ -145,22 +147,21 @@ def integrate_peaks_ercilia(bls,
     -------
     charges : list[np.ndarray]
         charges[fiber] contains the integrated charge of every
-        peak found in that fiber waveform.
+        accepted peak found in that fiber waveform.
     """
 
     charges = []
 
     for wf in bls:
-        # Plot the wf
-        noise = np.median(np.abs(wf)) / 0.6745
 
+        noise = np.median(np.abs(wf)) / 0.6745
         threshold = n_sigma * noise
 
         peaks, props = find_peaks(
             wf,
-            height     = threshold,
-            distance   = min_distance,
-            prominence = min_prominence_sigma * noise,
+            height=threshold,
+            distance=min_distance,
+            prominence=min_prominence_sigma * noise,
         )
 
         fiber_charges = []
@@ -170,11 +171,28 @@ def integrate_peaks_ercilia(bls,
             start = max(0, peak - pre_samples)
             end   = min(len(wf), peak + post_samples)
 
-            charge = np.sum(wf[start:end])
+            # Measure width of peak top
+            thr = top_fraction * wf[peak]
 
+            left = peak
+            while left > 0 and wf[left - 1] > thr:
+                left -= 1
+
+            right = peak
+            while right < len(wf) - 1 and wf[right + 1] > thr:
+                right += 1
+
+            top_width = right - left + 1
+
+            # Reject broad / saturated peaks
+            if top_width > max_top_width:
+                continue
+
+            charge = np.sum(wf[start:end])
             fiber_charges.append(charge)
 
         charges.append(np.asarray(fiber_charges))
+
     return charges
 
 
