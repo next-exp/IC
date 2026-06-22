@@ -179,7 +179,8 @@ def hits_ave_pos(hits  : pd.DataFrame,
 def blob_energies_hits_and_centres(track_graph : Graph,
                          hits        : pd.DataFrame,
                          voxels      : pd.DataFrame,
-                         radius      : float,
+                         blob_radius : float,
+                         scan_radius : float | None,
                          extreme_id_1: int,
                          extreme_id_2: int,
                          voxel_size  : np.ndarray,):
@@ -195,16 +196,33 @@ def blob_energies_hits_and_centres(track_graph : Graph,
 
     diag = np.linalg.norm(voxel_size)
 
-    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1])
-    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2])
+    if scan_radius is not None:
+        # find new blob centre
+        blob_pos_1 = find_highest_encapsulating_node(track_graph,
+                                                     extreme_id_1,
+                                                     voxels,
+                                                     distances,
+                                                     blob_radius,
+                                                     scan_radius)
 
-    # voxels that might have within within the required radius
-    within_radius = lambda df: df.distance < radius + diag
+        blob_pos_2 = find_highest_encapsulating_node(track_graph,
+                                                     voxels,
+                                                     extreme_id_2,
+                                                     distances,
+                                                     blob_radius,
+                                                     scan_radius)
+
+    else:
+        blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1])
+        blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2])
+
+    # voxels that might have been within the required radius
+    within_radius = lambda df: df.distance < blob_radius + diag
     candidate_voxels_1 = distances.loc[extreme_id_1].loc[within_radius].final.values
     candidate_voxels_2 = distances.loc[extreme_id_2].loc[within_radius].final.values
 
-    within_r_1 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_1, axis=1) < radius
-    within_r_2 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_2, axis=1) < radius
+    within_r_1 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_1, axis=1) < blob_radius
+    within_r_2 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_2, axis=1) < blob_radius
 
     # some hits might fall within the radius, but their distance **along the
     # track** (established by the voxel they belong to) might be longer. We want
@@ -299,12 +317,13 @@ def assign_blobs_inplace(track_graph : Graph,
     voxels.loc[voxel_ids_both, "blob"] = "lowhigh"
 
 
-def make_tracks(hits       : pd.DataFrame,
-                voxels     : pd.DataFrame,
-                voxel_size : np.ndarray,
-                blob_radius: float,
-                contiguity : Contiguity = Contiguity.CORNER,
-                energy_type: HitEnergy  = HitEnergy.E
+def make_tracks(hits        : pd.DataFrame,
+                voxels      : pd.DataFrame,
+                voxel_size  : np.ndarray,
+                blob_radius : float,
+                scan_radius : float | None,
+                contiguity  : Contiguity = Contiguity.CORNER,
+                energy_type : HitEnergy  = HitEnergy.E
                ) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame): # hits, voxels
     """
     Assign each hit and voxel a track and a blob. Tracks are simply enumerated
@@ -348,7 +367,7 @@ def make_tracks(hits       : pd.DataFrame,
 
         # blob information
 
-        eblob1, eblob2, hits_blob1, hits_blob2, blob_pos1, blob_pos2 = blob_energies_hits_and_centres(track, hits, voxels, blob_radius, extreme_low, extreme_high, voxel_size)
+        eblob1, eblob2, hits_blob1, hits_blob2, blob_pos1, blob_pos2 = blob_energies_hits_and_centres(track, hits, voxels, blob_radius, scan_radius, extreme_low, extreme_high, voxel_size)
 
         # mark hits as being in low or high blob
         in_b1 = hits.index.isin(hits_blob1.index)

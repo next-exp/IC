@@ -626,7 +626,7 @@ def test_blobs(radius, low_e, high_e):
 
     voxel_size           = np.array([15.,15.,15.],dtype=float)
     hits, voxels         = voxelize_hits(hits, voxel_size, HitEnergy.E)
-    hits, voxels, tracks = make_tracks(hits, voxels, voxel_size, radius, Contiguity.CORNER, HitEnergy.E)
+    hits, voxels, tracks = make_tracks(hits, voxels, voxel_size, radius, None, Contiguity.CORNER, HitEnergy.E)
 
     assert   hits.track.nunique() == 1
     assert voxels.track.nunique() == 1
@@ -639,7 +639,7 @@ def test_blobs(radius, low_e, high_e):
 @given(bunch_of_hits(), voxel_sizes, radii)
 def test_make_tracks_blob_hits_are_inside_radius(hits, voxel_size, blob_radius):
     hits, voxels         = voxelize_hits(hits, voxel_size, HitEnergy.E)
-    hits, voxels, tracks = make_tracks(hits, voxels, voxel_size, blob_radius, Contiguity.CORNER, HitEnergy.E)
+    hits, voxels, tracks = make_tracks(hits, voxels, voxel_size, blob_radius, None, Contiguity.CORNER, HitEnergy.E)
 
     diag = np.linalg.norm(voxel_size)
     for t in voxels.track.unique():

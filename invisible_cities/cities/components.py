@@ -1439,6 +1439,7 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
                                       , energy_threshold : float
                                       , min_voxels       : int
                                       , blob_radius      : float
+                                      , scan_radius      : float | None
                                       , max_num_hits     : int
                                       ) -> Callable:
     '''
@@ -1506,6 +1507,7 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
                                                    mod_voxels,
                                                    vox_size,
                                                    blob_radius,
+                                                   scan_radius,
                                                    energy_type = HitEnergy.Ep) # not sure about this energy
 
         return hits, mod_voxels, tracks, False
