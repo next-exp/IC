@@ -143,7 +143,7 @@ def test_round_hits_positions_in_place(hits):
 
     round_hits_positions_in_place(hits, 5)
 
-    assert np.all(np.in1d(hits[xyz], [0, 1e-5, -1e-5]))
+    assert np.all(np.isin(hits[xyz], [0, 1e-5, -1e-5]))
 
 
 @an_instance_of(single_hits())
