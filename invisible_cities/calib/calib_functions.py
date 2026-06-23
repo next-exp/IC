@@ -134,31 +134,56 @@ def integrate_peaks_ercilia(bls,
                              min_prominence_sigma=2.0,
                              pre_samples=5,
                              post_samples=10,
-                             top_fraction=0.8,
-                             max_top_width=4,
-                             merge_distance=8,
+                             top_fraction=0.95,
+                             max_top_width=3,
+                             merge_distance=30,
                              integrate_noise=True,
-                             noise_window_gap=0):
+                             noise_window_gap=0,
+                             mad_to_sigma=0.6745):
     """
-    Peak finding function for fiber barrel calibration
-    Basic peak finder with threshold/prominence
-    Removes saturated peaks with flat top
-    Merges peaks that are close together and integrates them as one
-    Also integrates "noise" windows: fixed-width windows (width =
-    pre_samples + post_samples, matching the peak window width) placed
-    in peak-free regions of the waveform. These get appended to the
-    same charges array as a zero-charge reference population.
+    Peak finding function for fiber barrel calibration.
+
+    - Basic peak finder with threshold/prominence (scipy.find_peaks)
+    - Merges peaks that are close together and integrates them as one
+    - Removes merged groups whose true maximum sample has a saturated
+      (flat) top
+    - Optionally integrates fixed-width "noise" windows (width =
+      pre_samples + post_samples) placed in peak-free regions, appended
+      to the same charges array as a zero-charge reference population
+
+    Parameters
+    ----------
+    mad_to_sigma : float
+        Conversion factor from median absolute deviation to an
+        equivalent Gaussian sigma (0.6745 for a normal distribution).
     """
+    noise_window_width = pre_samples + post_samples
+    noise_step = noise_window_width + noise_window_gap
+    if integrate_noise and noise_window_width > 0 and noise_step <= 0:
+        raise ValueError(
+            "noise_window_gap is too negative: "
+            "pre_samples + post_samples + noise_window_gap must be > 0"
+        )
+
     bls_arr = np.asarray(bls)
-    noises = np.median(np.abs(bls_arr), axis=1) / 0.6745  # Maybe don't hard code this, John would be disappointed
-    thresholds = n_sigma * noises
+    if not np.issubdtype(bls_arr.dtype, np.floating):
+        bls_arr = bls_arr.astype(np.float64)
+
+    noises = np.median(np.abs(bls_arr), axis=1) / mad_to_sigma
+    thresholds  = n_sigma * noises
     prominences = min_prominence_sigma * noises
 
-    noise_window_width = pre_samples + post_samples
-
     charges = []
+
     for wf, threshold, prominence in zip(bls_arr, thresholds, prominences):
         n = len(wf)
+
+        # cumulative sum -> O(1) window-sum lookups for both peak and
+        # noise integration below (built once per waveform)
+        csum = np.empty(n + 1, dtype=np.float64)
+        csum[0] = 0.0
+        csum[1:] = np.cumsum(wf)
+
         peaks, _ = find_peaks(
             wf,
             height=threshold,
@@ -181,14 +206,19 @@ def integrate_peaks_ercilia(bls,
         occupied_windows = []  # every peak region, incl. ones later rejected as saturated
 
         for group in merged_groups:
-            p_center = int(np.mean(group))
-            start = max(0, min(group) - pre_samples)
-            end = min(n, max(group) + post_samples)
+            group_arr = np.asarray(group)
+            start = max(0, int(group_arr.min()) - pre_samples)
+            end   = min(n, int(group_arr.max()) + post_samples)
             occupied_windows.append((start, end))
 
-            peak_val = wf[p_center]
+            # true highest sample in the group, not the mean position
+            # (mean can land in a valley between two merged peaks and
+            # understate the saturation reference value)
+            peak_idx = group_arr[np.argmax(wf[group_arr])]
+            peak_val = wf[peak_idx]
             thr = top_fraction * peak_val
-            left = right = p_center
+
+            left = right = peak_idx
             while True:
                 grew = False
                 if left > 0 and wf[left - 1] > thr:
@@ -201,9 +231,11 @@ def integrate_peaks_ercilia(bls,
                     break
                 if not grew:
                     break
+
             if (right - left + 1) > max_top_width:
                 continue
-            fiber_charges.append(np.sum(wf[start:end]))
+
+            fiber_charges.append(csum[end] - csum[start])
 
         # --- Noise window integration, appended into the same charges array ---
         if integrate_noise and noise_window_width > 0:
@@ -218,10 +250,12 @@ def integrate_peaks_ercilia(bls,
                 free_regions.append((cursor, n))
 
             for region_start, region_end in free_regions:
-                pos = region_start
-                while pos + noise_window_width <= region_end:
-                    fiber_charges.append(np.sum(wf[pos:pos + noise_window_width]))
-                    pos += noise_window_width + noise_window_gap
+                length = region_end - region_start
+                if length < noise_window_width:
+                    continue
+                n_windows = (length - noise_window_width) // noise_step + 1
+                starts = region_start + noise_step * np.arange(n_windows)
+                fiber_charges.extend(csum[starts + noise_window_width] - csum[starts])
 
         charges.append(np.asarray(fiber_charges))
 
