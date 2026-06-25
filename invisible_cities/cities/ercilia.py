@@ -38,6 +38,7 @@ from .. core.configure       import          EventRangeType
 from .. core.configure       import          OneOrManyFiles
 from .. io.    histogram_io  import             hist_writer
 from .. io.run_and_event_io  import    run_and_event_writer
+from .. io.amplification_io  import amplification_writer
 from .. core.core_functions  import    shift_to_bin_centers
 from .. core                 import           tbl_functions as tbl
 from .. calib                import         calib_functions as cf
@@ -72,26 +73,26 @@ def ercilia( files_in         : OneOrManyFiles
          , integral_start   : float
          , integral_width   : float
          , integrals_period : float
+         , amplification    : bool = False
          ):
     if proc_mode not in SiPMCalibMode:
         raise ValueError(f"Unrecognized processing mode: {proc_mode}")
 
+
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
     sd          = sensor_data(files_in[0], WfType.rwf, detector_db)
-    nfiber       = sd.NPMT  # Use PMT since SensorData tuple is only configured for SiPMs and PMTs
-    wf_length   = sd.PMTWL  # Use PMT since SensorData tuple is only configured for SiPMs and PMTs
+    nfiber      = sd.NPMT
+    wf_length   = sd.PMTWL
     shape       = nfiber, len(bin_centres)
-    
-    sampling    = 25 * units.ns  # Maybe not hard code this?
 
+    sampling    = 25 * units.ns
 
     subtract_baseline = fl.map(
         partial(csf.subtract_and_flip, proc_mode=proc_mode),
         args="pmt",
         out="bls"
     )
-    # Add a peak finder here, Define limits via peak finder, not via valid_integral_limits
     extract_charges = fl.map(
         cf.integrate_peaks_ercilia,
         args="bls",
@@ -102,7 +103,19 @@ def ercilia( files_in         : OneOrManyFiles
         args="charges",
         out="hist"
     )
-    
+
+    if amplification:
+        subtract_baseline_lg = fl.map(
+            partial(csf.subtract_and_flip, proc_mode=proc_mode),
+            args="pmt_lg",
+            out="bls_lg"
+        )
+        extract_pairs = fl.map(
+            cf.integrate_hg_lg_pairs_ercilia,
+            args=("bls", "bls_lg"),
+            out=("channels", "areas_hg", "areas_lg")
+        )
+
     sum_histograms   = fl.reduce(add, np.zeros(shape, dtype=int))
     accumulate_light = sum_histograms()
     event_count      = fl.spy_count()
@@ -116,30 +129,35 @@ def ercilia( files_in         : OneOrManyFiles
                                       n_sensors   = nfiber,
                                       bin_centres = bin_centres)
 
+        pipe_steps = [
+            fl.slice(*event_range, close_all=True),
+            event_count.spy,
+            print_every(print_mod),
+            subtract_baseline,
+            extract_charges,
+            bin_charges,
+        ]
+        fork_branches = [("hist", accumulate_light.sink), write_run_and_event]
+
+        if amplification:
+            write_amp_row       = amplification_writer(h5out)
+            write_amplification = fl.sink(write_amp_row,
+                                           args=("event_number", "channels", "areas_hg", "areas_lg"))
+            pipe_steps   += [subtract_baseline_lg, extract_pairs]
+            fork_branches.append(write_amplification)
+
+        pipe_steps.append(fl.fork(*fork_branches))
 
         out = fl.push(
-            source = wf_from_files(files_in, WfType.rwf, detector_db),
-
-            pipe = fl.pipe(
-                fl.slice(*event_range, close_all=True),
-                event_count.spy,
-                print_every(print_mod),
-                subtract_baseline,
-                extract_charges,
-                bin_charges,
-                fl.fork(
-                    ("hist", accumulate_light.sink),
-                    write_run_and_event
-                )
-            ),
-
+            source = wf_from_files(files_in, WfType.rwf, detector_db, amplification=amplification),
+            pipe   = fl.pipe(*pipe_steps),
             result = dict(
                 events_in = event_count.future,
                 spe       = accumulate_light.future
             )
         )
 
-        write_hist(table_name = "fiber_spe" )(out.spe )
+        write_hist(table_name = "fiber_spe")(out.spe)
         cf.copy_sensor_table(files_in[0], h5out)
 
     return out

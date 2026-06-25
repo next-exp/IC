@@ -264,6 +264,83 @@ def integrate_peaks_ercilia(bls,
 
 
 
+def integrate_hg_lg_pairs_ercilia(bls_hg, bls_lg,
+                                   n_sigma=5.0,
+                                   min_distance=10,
+                                   min_prominence_sigma=2.0,
+                                   pre_samples=5,
+                                   post_samples=10,
+                                   cluster_dist=30,
+                                   mad_to_sigma=0.6745):
+    """
+    Per-event isolated-peak finder for HG/LG amplification comparison.
+
+    Peaks are found on the HG channel only (LG is too small/noisy to find
+    peaks on reliably given the ~300x gain difference). Unlike
+    integrate_peaks_ercilia, peaks are NEVER merged here: if a peak has
+    another peak within `cluster_dist` samples on either side, both are
+    dropped entirely. This guarantees every kept peak sits on an
+    unambiguous, identical sample window on both channels. Saturation is
+    not checked here -- every isolated peak is integrated as-is.
+
+    Parameters
+    ----------
+    bls_hg, bls_lg : array_like, shape (n_fiber, wf_length)
+        Baseline-subtracted waveforms for one event, same fiber ordering
+        and sample length, HG and LG respectively.
+
+    Returns
+    -------
+    channels : ndarray[int]
+    areas_hg, areas_lg : ndarray[float]
+        One entry per isolated peak kept, across all fibers in this
+        event. channels[i]/areas_hg[i]/areas_lg[i] refer to the same peak.
+    """
+    hg = np.asarray(bls_hg, dtype=np.float64)
+    lg = np.asarray(bls_lg, dtype=np.float64)
+    if hg.shape != lg.shape:
+        raise ValueError(f"bls_hg/bls_lg shape mismatch: {hg.shape} vs {lg.shape}")
+
+    n_fiber, n  = hg.shape
+    noises      = np.median(np.abs(hg), axis=1) / mad_to_sigma
+    thresholds  = n_sigma * noises
+    prominences = min_prominence_sigma * noises
+
+    out_channel, out_hg, out_lg = [], [], []
+
+    for ch in range(n_fiber):
+        wf_hg, wf_lg = hg[ch], lg[ch]
+
+        peaks, _ = find_peaks(
+            wf_hg,
+            height=thresholds[ch],
+            distance=min_distance,
+            prominence=prominences[ch],
+        )
+        if len(peaks) == 0:
+            continue
+
+        if len(peaks) == 1:
+            isolated = np.array([True])
+        else:
+            gaps            = np.diff(peaks)
+            too_close_left  = np.concatenate([[False], gaps <= cluster_dist])
+            too_close_right = np.concatenate([gaps <= cluster_dist, [False]])
+            isolated        = ~(too_close_left | too_close_right)
+
+        for pos in peaks[isolated]:
+            lo = max(0, pos - pre_samples)
+            hi = min(n, pos + post_samples)
+            out_channel.append(ch)
+            out_hg.append(float(np.sum(wf_hg[lo:hi])))
+            out_lg.append(float(np.sum(wf_lg[lo:hi])))
+
+    return (np.asarray(out_channel, dtype=int),
+            np.asarray(out_hg,      dtype=np.float64),
+            np.asarray(out_lg,      dtype=np.float64))
+
+
+
 def copy_sensor_table(h5in_name : str,
                       h5out     : tb.file.File):
 
