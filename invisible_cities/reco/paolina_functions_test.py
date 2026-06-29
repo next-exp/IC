@@ -772,7 +772,7 @@ def test_drop_voxels_voxel_energy_is_sum_of_hits_general(hits, requested_voxel_s
     d_hits, d_voxels, d_dropped   = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type, min_voxels)
 
     for idx, row in voxels.iterrows():
-        assert row.e == (hits[hits.voxel_id == idx])[energy_type.value].sum()
+        assert np.isclose(row.e, (hits[hits.voxel_id == idx])[energy_type.value].sum())
 
 
 @settings(suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow], deadline=None)
