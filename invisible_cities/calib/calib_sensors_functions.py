@@ -22,8 +22,10 @@ def scipy_mode(x, axis=0):
     m, c = stats.mode(x, axis=axis, keepdims=True)
     return m
 
-def subtract_and_flip(pmt, proc_mode):
-    return -sipm_processing[proc_mode](pmt)
+
+def subtract_and_flip(pmt, proc_mode, flip=True):
+    result = sipm_processing[proc_mode](pmt)
+    return -result if flip else result
 
 
 def mode(wfs, axis=0):

@@ -126,6 +126,20 @@ def valid_integral_limits(sample_width, n_integrals, integral_start, integral_wi
             filter_limits(anti, buffer_length))
     
 
+def scale_to_samples(value, sampling, reference_sampling=25 * units.ns):
+    """
+    Convert a sample-count parameter that was tuned at `reference_sampling`
+    into the equivalent number of samples at a different `sampling` period,
+    assuming the underlying physical timescale (e.g. peak width) is constant.
+
+    Always returns a whole number of samples, with a floor of 1 so that
+    windows never collapse to zero width.
+    """
+    ratio  = reference_sampling / sampling
+    scaled = round(value * ratio)
+    return max(1, int(scaled))
+
+
 
 
 def integrate_peaks_ercilia(bls,

@@ -92,6 +92,7 @@ from .. types  .symbols           import                EventRange
 from .. types  .symbols           import                 HitEnergy
 from .. types  .symbols           import                    XYReco
 from .. types  .symbols           import                NormMethod
+from .. types.symbols        import              SensorType   # NEW
 
 from .. icaros .correction_functions   import    load_map
 from .. icaros .correction_functions   import    apply_correctionmap_inplace_hits
@@ -580,12 +581,17 @@ def mcsensors_from_file(paths     : List[str],
                        sipm_resp    = sipm_resp)
 
 
-def wf_from_files(paths, wf_type, detector_db=None, amplification=False):
+def wf_from_files(paths, wf_type, detector_db=None, amplification=False, sensor_type=SensorType.PMT):
     use_lg = amplification and str(detector_db) == 'hddemo'
     if amplification and not use_lg:
         raise ValueError(
             "amplification=True requires detector_db='hddemo' "
             "(no LG fiber channel exists for other detectors)"
+        )
+    if amplification and sensor_type is SensorType.SIPM:
+        raise ValueError(
+            "amplification=True is not supported with sensor_type=SensorType.SIPM "
+            "(tracking plane); no LG channel exists for the sipm plane"
         )
 
     for path in paths:
@@ -594,20 +600,19 @@ def wf_from_files(paths, wf_type, detector_db=None, amplification=False):
                 event_info = get_event_info(h5in)
                 run_number = get_run_number(h5in)
                 if str(detector_db) == 'hddemo':
-                    pmt_wfs = get_fiber_wfs_hg(h5in, wf_type)
+                    sipm_wfs = get_sipm_wfs(h5in, wf_type)
+                    pmt_wfs  = sipm_wfs if sensor_type is SensorType.SIPM \
+                               else get_fiber_wfs_hg(h5in, wf_type)
                 else:
-                    pmt_wfs = get_pmt_wfs(h5in, wf_type)
-                lg_wfs   = get_fiber_wfs_lg(h5in, wf_type) if use_lg else None
-                sipm_wfs = get_sipm_wfs(h5in, wf_type)
-                (trg_type ,
+                    pmt_wfs  = get_pmt_wfs (h5in, wf_type)
+                    sipm_wfs = get_sipm_wfs(h5in, wf_type)
+                lg_wfs = get_fiber_wfs_lg(h5in, wf_type) if use_lg else None
+                (trg_type,
                  trg_chann) = get_trigger_info(h5in)
             except tb.exceptions.NoSuchNodeError:
                 continue
-
             check_lengths(pmt_wfs, sipm_wfs, event_info, trg_type, trg_chann, lg_wfs)
-
             lg_iter = lg_wfs if lg_wfs is not None else repeat(None)
-
             for pmt, lg, sipm, evtinfo, trtype, trchann in zip(
                     pmt_wfs, lg_iter, sipm_wfs, event_info, trg_type, trg_chann):
                 event_number, timestamp = evtinfo.fetch_all_fields()
@@ -615,7 +620,6 @@ def wf_from_files(paths, wf_type, detector_db=None, amplification=False):
                 yield dict(pmt=pmt, pmt_lg=lg, sipm=sipm, run_number=run_number,
                            event_number=event_number, timestamp=timestamp,
                            trigger_type=trtype, trigger_channels=trchann)
-
 
 
 def pmap_from_files(paths):
@@ -780,19 +784,23 @@ def dhits_from_files(paths: List[str]) -> Iterator[Dict[str, Union[ pd.DataFrame
                            timestamp    = timestamp )
 
 
-def sensor_data(path, wf_type, detector_db=None):
+def sensor_data(path, wf_type, detector_db=None, sensor_type=SensorType.PMT):
     with tb.open_file(path, "r") as h5in:
-        if   wf_type is WfType.rwf :
+        if wf_type is WfType.rwf:
             if str(detector_db) == "hddemo":
-                (fiber_wfs, sipm_wfs) = (h5in.root.RD .fiberrwf_hg,   h5in.root.RD .sipmrwf)
-                _, NPMT ,  PMTWL =  fiber_wfs.shape
+                sipm_wfs  = h5in.root.RD.sipmrwf
+                fiber_wfs = sipm_wfs if sensor_type is SensorType.SIPM \
+                            else h5in.root.RD.fiberrwf_hg
+                _, NPMT ,  PMTWL = fiber_wfs.shape
                 _, NSIPM, SIPMWL = sipm_wfs.shape
                 return SensorData(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
             else:
-                (pmt_wfs, sipm_wfs) = (h5in.root.RD .pmtrwf,   h5in.root.RD .sipmrwf)
-        elif wf_type is WfType.mcrd:   (pmt_wfs, sipm_wfs) = (h5in.root.    pmtrd ,   h5in.root.    sipmrd )
-        else                       :   raise TypeError(f"Invalid WfType: {type(wf_type)}")
-        _, NPMT ,  PMTWL =  pmt_wfs.shape
+                (pmt_wfs, sipm_wfs) = (h5in.root.RD.pmtrwf, h5in.root.RD.sipmrwf)
+        elif wf_type is WfType.mcrd:
+            (pmt_wfs, sipm_wfs) = (h5in.root.pmtrd, h5in.root.sipmrd)
+        else:
+            raise TypeError(f"Invalid WfType: {type(wf_type)}")
+        _, NPMT ,  PMTWL = pmt_wfs .shape
         _, NSIPM, SIPMWL = sipm_wfs.shape
         return SensorData(NPMT=NPMT, PMTWL=PMTWL, NSIPM=NSIPM, SIPMWL=SIPMWL)
 

@@ -45,6 +45,7 @@ from .. calib                import         calib_functions as cf
 from .. calib                import calib_sensors_functions as csf
 from .. types.symbols        import                  WfType
 from .. types.symbols        import           SiPMCalibMode
+from .. types.symbols        import              SensorType
 
 from .. dataflow import dataflow as fl
 
@@ -59,42 +60,63 @@ from .  components import peak_charge_binner
 
 @city
 def ercilia( files_in         : OneOrManyFiles
-         , file_out         : str
-         , compression      : str
-         , event_range      : EventRangeType
-         , print_mod        : int
-         , detector_db      : str
-         , run_number       : int
-         , proc_mode        : SiPMCalibMode
-         , min_bin          : float
-         , max_bin          : float
-         , bin_width        : float
-         , number_integrals : int
-         , integral_start   : float
-         , integral_width   : float
-         , integrals_period : float
-         , amplification    : bool = False
-         ):
+           , file_out         : str
+           , compression      : str
+           , event_range      : EventRangeType
+           , print_mod        : int
+           , detector_db      : str
+           , run_number       : int
+           , proc_mode        : SiPMCalibMode
+           , min_bin          : float
+           , max_bin          : float
+           , bin_width        : float
+           , number_integrals : int
+           , integral_start   : float
+           , integral_width   : float
+           , integrals_period : float
+           , amplification    : bool       = False
+           , sensor_type      : SensorType = SensorType.PMT
+           ):
     if proc_mode not in SiPMCalibMode:
         raise ValueError(f"Unrecognized processing mode: {proc_mode}")
 
+    if amplification and sensor_type is SensorType.SIPM:
+        raise ValueError(
+            "amplification=True is not supported with sensor_type=SensorType.SIPM "
+            "(tracking plane); no LG channel exists for the sipm plane"
+        )
 
     bin_edges   = np.arange(min_bin, max_bin, bin_width)
     bin_centres = shift_to_bin_centers(bin_edges)
-    sd          = sensor_data(files_in[0], WfType.rwf, detector_db)
+    sd          = sensor_data(files_in[0], WfType.rwf, detector_db, sensor_type=sensor_type)
     nfiber      = sd.NPMT
     wf_length   = sd.PMTWL
     shape       = nfiber, len(bin_centres)
 
-    sampling    = 25 * units.ns
+    # Peak-finder parameters are sample-count based, so they differ
+    # between the fiber barrel (25 ns sampling) and tracking plane (1 µs sampling).
+    if sensor_type is SensorType.SIPM:
+        peak_finder_kwargs = dict(
+            pre_samples    = 1,
+            post_samples   = 2,
+            min_distance   = 4,
+            merge_distance = 2,
+        )
+    else:
+        peak_finder_kwargs = dict(
+            pre_samples    = 5,
+            post_samples   = 10,
+            min_distance   = 10,
+            merge_distance = 30,
+        )
 
     subtract_baseline = fl.map(
-        partial(csf.subtract_and_flip, proc_mode=proc_mode),
+        partial(csf.subtract_and_flip, proc_mode=proc_mode, flip=sensor_type is not SensorType.SIPM),
         args="pmt",
         out="bls"
     )
     extract_charges = fl.map(
-        cf.integrate_peaks_ercilia,
+        partial(cf.integrate_peaks_ercilia, **peak_finder_kwargs),
         args="bls",
         out="charges"
     )
@@ -149,7 +171,8 @@ def ercilia( files_in         : OneOrManyFiles
         pipe_steps.append(fl.fork(*fork_branches))
 
         out = fl.push(
-            source = wf_from_files(files_in, WfType.rwf, detector_db, amplification=amplification),
+            source = wf_from_files(files_in, WfType.rwf, detector_db,
+                                    amplification=amplification, sensor_type=sensor_type),
             pipe   = fl.pipe(*pipe_steps),
             result = dict(
                 events_in = event_count.future,
