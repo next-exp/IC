@@ -47,8 +47,9 @@ from .  components import zero_suppress_wfs
 from .  components import wf_from_files
 from .  components import get_number_of_pmts
 from .  components import compute_and_write_pmaps
-from .  components import apply_cutting_function
 from .  components import sensor_masker
+from .  components import select_cutting_algorithm
+
 
 from typing import Dict
 from typing import Any
@@ -120,7 +121,7 @@ def irene( files_in         : OneOrManyFiles
     sipm_rwf_to_cal  = fl.map(calibrate_sipms(detector_db, run_number),
                               item = "sipm")
     # apply function depending on user input, from provided list of functions
-    apply_cut        = apply_cutting_function(cutting_function, **cutting_params)
+    apply_cut        = select_cutting_algorithm(cutting_function, **cutting_params)
 
 
     event_count_in  = fl.spy_count()

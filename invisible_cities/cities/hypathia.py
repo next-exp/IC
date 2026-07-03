@@ -49,7 +49,7 @@ from .  components import simulate_sipm_response
 from .  components import calibrate_sipms
 from .  components import get_actual_sipm_thr
 from .  components import sensor_masker
-from .  components import apply_cutting_function
+from .  components import select_cutting_algorithm
 
 from typing import Dict
 from typing import Any
@@ -124,7 +124,7 @@ def hypathia( files_in         : OneOrManyFiles
                               item = "sipm")
 
     # apply function depending on user input, from provided list of functions
-    apply_cut        = apply_cutting_function(cutting_function, **cutting_params)
+    apply_cut        = select_cutting_algorithm(cutting_function, **cutting_params)
 
 
     event_count_in  = fl.spy_count()

@@ -13,7 +13,7 @@ from hypothesis.strategies    import floats
 from hypothesis.strategies    import integers
 from hypothesis.extra.numpy   import arrays
 
-from ..cities.components      import apply_cutting_function
+from ..cities.components      import select_cutting_algorithm
 from ..core.testing_utils   import exactly
 from ..core.testing_utils   import previous_float
 from ..core.testing_utils   import assert_Peak_equality
@@ -362,7 +362,7 @@ def test_build_sipm_responses(wf_with_indices):
                   thr_sipm      = 0,
                   thr_sipm_type = SiPMThreshold.common,
                   run_number    = 0)
-    apply_cut  = apply_cutting_function(CutAlgo.threshold, **cut_params)
+    apply_cut  = select_cutting_algorithm(CutAlgo.threshold, **cut_params)
 
     sipm_r          = pf.build_sipm_responses(indices, times, widths,
                                               wfs, sipm_ids, 1, apply_cut)
@@ -408,7 +408,7 @@ def test_build_peak_development(pmt_and_sipm_wfs_with_indices,
                          with_sipms   = with_sipms,
                          Pk           = Pk,
                          sipm_wfs     = sipm_wfs,
-                         apply_cut    = apply_cutting_function(CutAlgo.no_cut)
+                         apply_cut    = select_cutting_algorithm(CutAlgo.no_cut)
                          )
 
     assert_Peak_equality(peak, expected_peak)
@@ -487,7 +487,7 @@ def test_find_peaks_s2_style(pmt_and_sipm_wfs_with_indices):
                           stride, rebin_stride,
                           S2, pmt_ids, sipm_ids,
                           sipm_wfs    = sipm_wfs,
-                          apply_cut    = apply_cutting_function(CutAlgo.no_cut)
+                          apply_cut    = select_cutting_algorithm(CutAlgo.no_cut)
                           )
 
     (rebinned_times,
@@ -519,7 +519,7 @@ def test_get_pmap(s1_and_s2_with_indices):
                        pmt_ids     = pmt_ids, sipm_ids = sipm_ids,
                        pmt_samp_wid  = pmt_samp_wid ,
                        sipm_samp_wid = sipm_samp_wid,
-                       apply_cut    = apply_cutting_function(CutAlgo.no_cut)
+                       apply_cut    = select_cutting_algorithm(CutAlgo.no_cut)
                        )
 
     (rebinned_times ,
