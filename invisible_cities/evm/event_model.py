@@ -2,11 +2,13 @@
 
 import tables as tb
 import numpy  as np
+import pandas as pd
 
 from .. types.ic_types import NN
 from .. types.ic_types import xy
 from .. types.symbols  import HitEnergy
 from .. core           import system_of_units as units
+from .. core.core_functions import overflow_protection
 
 from typing import List
 from typing import Tuple
@@ -101,7 +103,7 @@ class Voxel(BHit):
     def size(self): return self._size
 
     @property
-    def Ehits(self): return sum(getattr(h, self.e_type) for h in self.hits)
+    def Ehits(self): return self.hits[self.e_type].sum()
 
     @property
     def Etype(self): return self.e_type
@@ -202,12 +204,12 @@ class VoxelCollection:
 class Blob:
     """A Blob is a collection of Hits with a seed and a radius. """
     def __init__(self, seed: Tuple[float, float, float],
-                       hits : List[BHit],
+                       hits : pd.DataFrame,
                        radius : float,
                        e_type : HitEnergy = HitEnergy.E) ->None:
         self.seed   = seed
         self.hits   = hits
-        self.E      = sum(getattr(h, e_type.value) for h in hits)
+        self.E      = hits[e_type.value].sum()
         self.radius = radius
         self.e_type = e_type.value
 
@@ -289,10 +291,12 @@ class HitCollection(Event):
 
     def store(self, table):
         row = table.row
+
+        u16max = np.iinfo(np.uint16).max
         for hit in self.hits:
             row["event"   ] = self.event
             row["time"    ] = self.time
-            row["npeak"   ] = hit .npeak
+            row["npeak"   ] = overflow_protection(hit.npeak, u16max, "HitCollection::store (npeak)")
             row["Xpeak"   ] = hit .Xpeak
             row["Ypeak"   ] = hit .Ypeak
             row["X"       ] = hit .X
@@ -361,16 +365,17 @@ class KrEvent(Event):
     def store(self, table):
         row = table.row
 
-        s1_peaks = range(int(self.nS1)) if self.nS1 else [-1]
-        s2_peaks = range(int(self.nS2)) if self.nS2 else [-1]
+        u16max = np.iinfo(np.uint16).max
+        s1_peaks = range(int(self.nS1)) if self.nS1 else [0]
+        s2_peaks = range(int(self.nS2)) if self.nS2 else [0]
         self.fill_defaults()
 
         for i in s1_peaks:
             for j in s2_peaks:
                 row["event"  ] = self.event
                 row["time"   ] = self.time
-                row["s1_peak"] = i
-                row["s2_peak"] = j
+                row["s1_peak"] = overflow_protection(i, u16max, "KrEvent::store (s1_peak)") if self.nS1 else u16max
+                row["s2_peak"] = overflow_protection(j, u16max, "KrEvent::store (s2_peak)") if self.nS2 else u16max
                 row["nS1"    ] = self.nS1
                 row["nS2"    ] = self.nS2
 

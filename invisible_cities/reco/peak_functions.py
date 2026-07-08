@@ -76,18 +76,18 @@ def build_pmt_responses(indices, times, widths, ccwf,
 
 
 def build_sipm_responses(indices, times, widths,
-                         sipm_wfs, rebin_stride, thr_sipm_s2):
+                         sipm_wfs, sipm_ids, rebin_stride, thr_sipm_s2):
     _, _, sipm_wfs_ = pick_slice_and_rebin(indices , times, widths,
                                            sipm_wfs, rebin_stride,
                                            pad_zeros = False)
-    (sipm_ids,
+    (sipm_idx,
      sipm_wfs)   = select_wfs_above_time_integrated_thr(sipm_wfs_,
                                                         thr_sipm_s2)
-    return SiPMResponses(sipm_ids, sipm_wfs)
+    return SiPMResponses(sipm_ids[sipm_idx], sipm_wfs)
 
 
 def build_peak(indices, times,
-               widths, ccwf, pmt_ids,
+               widths, ccwf, pmt_ids, sipm_ids,
                rebin_stride,
                with_sipms, Pk,
                pmt_samp_wid  = 25 * units.ns,
@@ -105,7 +105,7 @@ def build_peak(indices, times,
         sipm_r = build_sipm_responses(indices // sipm_pmt_bin_ratio,
                                       times // sipm_pmt_bin_ratio,
                                       widths * sipm_pmt_bin_ratio,
-                                      sipm_wfs,
+                                      sipm_wfs, sipm_ids,
                                       rebin_stride // sipm_pmt_bin_ratio,
                                       thr_sipm_s2)
     else:
@@ -117,7 +117,7 @@ def build_peak(indices, times,
 def find_peaks(ccwfs, index,
                time, length,
                stride, rebin_stride,
-               Pk, pmt_ids,
+               Pk, pmt_ids, sipm_ids=None,
                pmt_samp_wid = 25*units.ns,
                sipm_samp_wid = 1*units.mus,
                sipm_wfs=None, thr_sipm_s2=0):
@@ -132,7 +132,7 @@ def find_peaks(ccwfs, index,
 
     for indices in selected_splits:
         pk = build_peak(indices, times,
-                        widths, ccwfs, pmt_ids,
+                        widths, ccwfs, pmt_ids, sipm_ids,
                         rebin_stride,
                         with_sipms, Pk,
                         pmt_samp_wid, sipm_samp_wid,
@@ -142,12 +142,12 @@ def find_peaks(ccwfs, index,
 
 
 def get_pmap(ccwf, s1_indx, s2_indx, sipm_zs_wf,
-             s1_params, s2_params, thr_sipm_s2, pmt_ids,
+             s1_params, s2_params, thr_sipm_s2, pmt_ids, sipm_ids,
              pmt_samp_wid, sipm_samp_wid):
     return PMap(find_peaks(ccwf, s1_indx, Pk=S1, pmt_ids=pmt_ids,
                            pmt_samp_wid=pmt_samp_wid,
                            **s1_params),
-                find_peaks(ccwf, s2_indx, Pk=S2, pmt_ids=pmt_ids,
+                find_peaks(ccwf, s2_indx, Pk=S2, pmt_ids=pmt_ids, sipm_ids=sipm_ids,
                            sipm_wfs      = sipm_zs_wf,
                            thr_sipm_s2   = thr_sipm_s2,
                            pmt_samp_wid  = pmt_samp_wid,

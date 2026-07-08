@@ -23,8 +23,12 @@ from .. core.configure         import EventRangeType
 from .. core.configure         import OneOrManyFiles
 from .. io   .run_and_event_io import run_and_event_writer
 from .. io   .trigger_io       import       trigger_writer
+from .. io   .dst_io           import            df_writer
 from .. types.symbols          import WfType
 from .. types.symbols          import SiPMThreshold
+
+from .. database.load_db import DataPMT
+from .. database.load_db import DataSiPM
 
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
@@ -40,9 +44,10 @@ from .  components import calibrate_pmts
 from .  components import calibrate_sipms
 from .  components import zero_suppress_wfs
 from .  components import wf_from_files
-from .  components import get_number_of_active_pmts
+from .  components import get_number_of_pmts
 from .  components import compute_and_write_pmaps
 from .  components import get_actual_sipm_thr
+from .  components import sensor_masker
 
 
 @city
@@ -67,11 +72,17 @@ def irene( files_in        : OneOrManyFiles
          , s2_rebin_stride : int  , s2_stride    : int
          , thr_csum_s2     : float, thr_sipm_s2  : float
          , pmt_samp_wid    : float, sipm_samp_wid: float
+         , store_db        : bool = True
          ):
 
     sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
 
     #### Define data transformations
+
+    # Mask sensors
+    mask_sensors     = fl.map(sensor_masker(detector_db, run_number)
+                             , args = ("pmt", "sipm")
+                             , out =  ("pmt", "sipm"))
 
     # Raw WaveForm to Corrected WaveForm
     rwf_to_cwf       = fl.map(deconv_pmt(detector_db, run_number, n_baseline),
@@ -101,7 +112,7 @@ def irene( files_in        : OneOrManyFiles
 
         # Define writers...
         write_event_info_   = run_and_event_writer(h5out)
-        write_trigger_info_ = trigger_writer      (h5out, get_number_of_active_pmts(detector_db, run_number))
+        write_trigger_info_ = trigger_writer      (h5out, get_number_of_pmts(detector_db, run_number))
 
         # ... and make them sinks
 
@@ -120,6 +131,7 @@ def irene( files_in        : OneOrManyFiles
                       pipe   = pipe(fl.slice(*event_range, close_all=True),
                                     print_every(print_mod),
                                     event_count_in.spy,
+                                    mask_sensors,
                                     rwf_to_cwf,
                                     cwf_to_ccwf,
                                     zero_suppress,
@@ -138,4 +150,13 @@ def irene( files_in        : OneOrManyFiles
             copy_mc_info(files_in, h5out, result.evtnum_list,
                          detector_db, run_number)
 
+        if store_db:
+            store_db_info(h5out, detector_db, run_number)
         return result
+
+
+def store_db_info(file, detector_db, run_number):
+    datapmt  = DataPMT (detector_db, run_number)
+    datasipm = DataSiPM(detector_db, run_number)
+    df_writer(file, datapmt , "DB", "DataPMT" , "DB constants for PMTs" , compression="ZLIB4")
+    df_writer(file, datasipm, "DB", "DataSiPM", "DB constants for SiPMs", compression="ZLIB4")

@@ -12,6 +12,7 @@ from .. evm .pmaps         import S1
 from .. evm .pmaps         import S2
 from .. evm .pmaps         import PMap
 from .. evm                import nh5     as table_formats
+from .. core.core_functions import overflow_protection
 from .. core.tbl_functions import filters as tbl_filters
 
 
@@ -20,9 +21,10 @@ def store_peak(pmt_table, pmti_table, si_table,
     pmt_row  =  pmt_table.row
     pmti_row = pmti_table.row
 
+    u16max = np.iinfo(np.uint16).max
     for i, t in enumerate(peak.times):
         pmt_row['event' ] = event_number
-        pmt_row['peak'  ] = peak_number
+        pmt_row['peak'  ] = overflow_protection(peak_number, u16max, "store_peak (peak)")
         pmt_row['time'  ] = t
         pmt_row['bwidth'] = peak.bin_widths[i]
         pmt_row['ene'   ] = peak.pmts.sum_over_sensors[i]
@@ -31,7 +33,7 @@ def store_peak(pmt_table, pmti_table, si_table,
     for pmt_id in peak.pmts.ids:
         for e in peak.pmts.waveform(pmt_id):
             pmti_row['event'] = event_number
-            pmti_row['peak' ] =  peak_number
+            pmti_row['peak' ] = overflow_protection(peak_number, u16max, "store_peak (peak)")
             pmti_row['npmt' ] = pmt_id
             pmti_row['ene'  ] = e
             pmti_row.append()
@@ -42,7 +44,7 @@ def store_peak(pmt_table, pmti_table, si_table,
     for sipm_id in peak.sipms.ids:
         for q in peak.sipms.waveform(sipm_id):
             si_row['event'] = event_number
-            si_row['peak' ] =  peak_number
+            si_row['peak' ] = overflow_protection(peak_number, u16max, "store_peak (peak)")
             si_row['nsipm'] = sipm_id
             si_row['ene'  ] = q
             si_row.append()

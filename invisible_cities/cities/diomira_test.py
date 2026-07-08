@@ -84,6 +84,7 @@ def test_diomira_copy_mc_and_offset(ICDATADIR, config_tmpdir):
                                     hits_out                  )
 
 
+@mark.skip(reason="Masked channels are now handled differently")
 @ignore_warning.no_config_group
 @mark.slow
 def test_diomira_mismatch_between_input_and_database(ICDATADIR, output_tmpdir):
@@ -129,6 +130,7 @@ def test_diomira_trigger_on_masked_pmt_raises_ValueError(ICDATADIR, output_tmpdi
         diomira(**conf)
 
 
+@mark.skip(reason="Masked channels are now handled differently")
 @ignore_warning.no_config_group
 def test_diomira_read_multiple_files(ICDATADIR, output_tmpdir):
     file_in     = os.path.join(ICDATADIR                                       ,

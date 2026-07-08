@@ -9,6 +9,7 @@ import numpy.testing as npt
 from pytest import approx
 from pytest import mark
 from pytest import raises
+from pytest import warns
 
 from flaky                  import flaky
 from hypothesis             import given
@@ -65,10 +66,11 @@ def test_in_range_infinite(data):
     assert core.in_range(data).all()
 
 
-@given(random_length_float_arrays(mask = lambda x: ((x<-10) or
-                                               (x>+10) )))
+@given(random_length_float_arrays( min_value = -10
+                                 , max_value =  10
+                                 , mask = lambda x: abs(x-3)>2))
 def test_in_range_with_hole(data):
-    assert not core.in_range(data, -10, 10).any()
+    assert not core.in_range(data, 1, 5).any()
 
 
 def test_in_range_positives():
@@ -411,3 +413,22 @@ def test_fix_random_seed_resets():
     assert not np.isclose(value1, value2)
     assert     np.isclose(value1, value3)
     assert not np.isclose(value2, value3)
+
+
+@mark.parametrize(" value upper".split(),
+                  ((  5,  10),
+                   ( 10,  10),
+                   (2.5, 3.0)))
+def test_overflow_protection_keeps_values_not_above_limit(value, upper):
+    assert core.overflow_protection(value, upper, "test") == value
+
+
+def test_overflow_protection_clips_and_warns():
+    upper  = 10
+    origin = "test table"
+    match  = f"Overflow detected at {origin}, clipping the value to {upper}"
+
+    with warns(UserWarning, match=match):
+        got = core.overflow_protection(11, upper, origin)
+
+    assert got == upper

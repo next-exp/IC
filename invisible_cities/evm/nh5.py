@@ -90,7 +90,7 @@ class S12(tb.IsDescription):
     time and energy of the peak.
     """
     event  = tb.  Int64Col(pos=0)
-    peak   = tb.  UInt8Col(pos=2) # peak number
+    peak   = tb. UInt16Col(pos=2) # peak number
     time   = tb.Float32Col(pos=3) # time in ns
     bwidth = tb.Float32Col(pos=4) # bin width in ns
     ene    = tb.Float32Col(pos=5) # energy in pes
@@ -104,7 +104,7 @@ class S12Pmt(tb.IsDescription):
     time and energy of the peak.
     """
     event  = tb.  Int64Col(pos=0)
-    peak   = tb.  UInt8Col(pos=2) # peak number
+    peak   = tb. UInt16Col(pos=2) # peak number
     npmt   = tb.  UInt8Col(pos=3) # pmt number (in order of IC db 26/8/2017: equal to SensorID)
     ene    = tb.Float32Col(pos=5) # energy in pes
 
@@ -117,8 +117,8 @@ class S2Si(tb.IsDescription):
     only energies are stored (times are defined in S2)
     """
     event = tb.  Int64Col(pos=0)
-    peak  = tb.  UInt8Col(pos=2) # peak number
-    nsipm = tb.  Int16Col(pos=3) # sipm number
+    peak  = tb. UInt16Col(pos=2) # peak number
+    nsipm = tb. UInt16Col(pos=3) # sipm number
     ene   = tb.Float32Col(pos=5) # energy in pes
 
 

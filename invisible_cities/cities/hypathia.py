@@ -42,11 +42,12 @@ from .  components import copy_mc_info
 from .  components import zero_suppress_wfs
 from .  components import sensor_data
 from .  components import wf_from_files
-from .  components import get_number_of_active_pmts
+from .  components import get_number_of_pmts
 from .  components import compute_and_write_pmaps
 from .  components import simulate_sipm_response
 from .  components import calibrate_sipms
 from .  components import get_actual_sipm_thr
+from .  components import sensor_masker
 
 
 @city
@@ -79,6 +80,10 @@ def hypathia( files_in        : OneOrManyFiles
 
     #### Define data transformations
     sd = sensor_data(files_in[0], WfType.mcrd)
+
+    mask_sensors     = fl.map(sensor_masker(detector_db, run_number)
+                             , args = ("pmt", "sipm")
+                             , out  = ("pmt", "sipm"))
 
     # Raw WaveForm to Corrected WaveForm
     mcrd_to_rwf      = fl.map(rebin_pmts(pmt_wfs_rebin),
@@ -122,7 +127,7 @@ def hypathia( files_in        : OneOrManyFiles
 
         # Define writers...
         write_event_info_   = run_and_event_writer(h5out)
-        write_trigger_info_ = trigger_writer      (h5out, get_number_of_active_pmts(detector_db, run_number))
+        write_trigger_info_ = trigger_writer      (h5out, get_number_of_pmts(detector_db, run_number))
 
         # ... and make them sinks
         write_event_info   = sink(write_event_info_  , args=(   "run_number",     "event_number", "timestamp"   ))
@@ -140,10 +145,11 @@ def hypathia( files_in        : OneOrManyFiles
                                     event_count_in.spy,
                                     mcrd_to_rwf,
                                     simulate_pmt,
-                                    pmt_sum,
-                                    zero_suppress,
                                     simulate_sipm_response_,
                                     discretize_signal,
+                                    mask_sensors,
+                                    pmt_sum,
+                                    zero_suppress,
                                     compute_pmaps,
                                     event_count_out.spy,
                                     fl.branch("event_number", evtnum_collect.sink),

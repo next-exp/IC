@@ -1,7 +1,12 @@
 import numpy  as np
 import pandas as pd
 
-from .. types.ic_types      import NN
+from itertools       import compress
+from copy            import deepcopy
+from typing          import List
+from sklearn.cluster import DBSCAN
+
+from .. types.ic_types import NN
 
 EPSILON = np.finfo(np.float64).eps
 
@@ -64,8 +69,6 @@ def sipms_above_threshold(xys: np.ndarray, qs: np.ndarray, thr:float, energy: fl
     return xs, ys, qs, es
 
 
-
-
 def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
     """
     Finds NN hits (defined as hits with Q=NN) and removes them without energy
@@ -111,7 +114,7 @@ def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
     # hits may or may not have Ec, consider both cases
     has_ec  = "Ec" in hits.columns
     columns = "E Ec".split() if has_ec else ["E"]
-    corrections = pd.DataFrame(dict(zip(columns, (0,0))), index=hits.index.values)
+    corrections = pd.DataFrame(dict(zip(columns, (0,0))), dtype=float, index=hits.index.values)
     for _, nn_hit in nn_hits.iterrows():
         candidates = hits.loc[hits.npeak == nn_hit.npeak] if same_peak else hits
         if len(candidates) == 0: continue # drop hit !!! dangerous
@@ -135,7 +138,7 @@ def merge_NN_hits(hits: pd.DataFrame, same_peak: bool = True) -> pd.DataFrame:
 
 
 def empty_hit( event : int  , timestamp: float, peak_no: int
-             , x_peak: float, y_peak   : float, z      : float
+             , x_peak: float, y_peak   : float
              , e     : float, ec       : float):
     """
     Produces an empty hit with NN x and y coordinates and NN charge.
@@ -148,7 +151,6 @@ def empty_hit( event : int  , timestamp: float, peak_no: int
                             , Ypeak    = y_peak
                             , X        = NN
                             , Y        = NN
-                            , Z        = z
                             , Q        = NN
                             , E        = e
                             , Ec       = ec
@@ -195,7 +197,7 @@ def apply_threshold(hits: pd.DataFrame, th: float) -> pd.DataFrame:
         first = hits.iloc[0]
         return empty_hit( first.event, first.time
                         , first.npeak, first.Xpeak, first.Ypeak
-                        , first.Z, raw_e_slice, cor_e_slice)
+                        , raw_e_slice, cor_e_slice)
 
     hits = hits.loc[mask_thresh].copy()
     qsum = np.nansum(hits.Q) + EPSILON
@@ -236,5 +238,86 @@ def threshold_hits(hits: pd.DataFrame, th: float) -> pd.DataFrame:
     - See `apply_threshold` for further details.
     """
     if th <= 0: return hits
-    return (hits.groupby("Z", as_index=False)
-                .apply(apply_threshold, th=th))
+    return (hits.groupby("Z")
+                .apply(apply_threshold, th=th, include_groups=False)
+                .reset_index(level=0, names="Z")
+           )
+
+
+def tag_hits_in_event(event_hits   : pd.DataFrame
+                     , *
+                     , min_samples : int
+                     , scale_xy    : float
+                     , scale_z     : float
+                     ) -> pd.DataFrame:
+    """
+    Applies DBSCAN clustering to a DataFrame containing hits from a single event.
+    Hits coordinates are scaled to account for the anisotropy of the detector geometry.
+    A 'cluster' column is added to the group with the resulting labels.
+
+    Parameters
+    ----------
+    event_hits  : pd.DataFrame
+        DataFrame with hits from a single event. Must contain 'X', 'Y', 'Z' columns.
+    min_samples : int
+        Minimum number of samples required to form a dense region (cluster).
+        This includes the point itself.
+    scale_xy    : float
+        Scaling factor to apply to the XY coordinates before clustering.
+    scale_z     : float
+        Scaling factor to apply to the Z coordinate before clustering.
+
+    Returns
+    -------
+    pd.DataFrame
+        The input DataFrame with a 'cluster' column added.
+    """
+    coords = event_hits[['X', 'Y', 'Z']].to_numpy().copy()
+    # A proper scaling leads to hits being separeted
+    # by a distance of 1 in the DBSCAN metric space
+    coords[:, :2] /= scale_xy
+    coords[:, 2]  /= scale_z
+
+    # eps parameter is fixed to a value a bit higher of √3
+    # to retain diagonal neighbours in the same cluster
+    labels = DBSCAN(eps=1.8, min_samples=min_samples).fit_predict(coords)
+    event_hits['cluster'] = labels
+
+    return event_hits
+
+
+def cluster_tagger(df_hits      : pd.DataFrame
+                  , *
+                  , min_samples : int
+                  , scale_xy    : float
+                  , scale_z     : float
+                  ) -> pd.DataFrame:
+    """
+    This function groups the input DataFrame by 'event' and applies the
+    `tag_hits_in_event` function to each event's group of hits.
+
+    Parameters
+    ----------
+    df_hits : pd.DataFrame
+        DataFrame with hit information. Must contain 'X', 'Y', 'Z', and 'event'.
+    min_samples, scale_xy, scale_z :
+        See `tag_hits_in_event`
+
+    Returns
+    -------
+    pd.DataFrame
+        The input DataFrame with an added 'cluster' column indicating the
+        cluster label for each hit (-1 for noise).
+    """
+    if df_hits.empty:
+        return df_hits.assign(cluster=pd.Series(dtype=int))
+
+    df_clustered = (df_hits.groupby('event')
+                           .apply( tag_hits_in_event
+                                 , min_samples = min_samples
+                                 , scale_xy    = scale_xy
+                                 , scale_z     = scale_z )
+                           .reset_index(level=1, drop=True)
+                           .reset_index())
+
+    return df_clustered.set_index(df_hits.index)

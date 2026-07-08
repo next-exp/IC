@@ -55,6 +55,7 @@ from .. dataflow.dataflow import pipe
 from .  components import city
 from .  components import collect
 from .  components import copy_mc_info
+from .  components import copy_db_info
 from .  components import print_every
 from .  components import pmap_from_files
 from .  components import peak_classifier
@@ -143,4 +144,5 @@ def dorothea( files_in         :  OneOrManyFiles
             copy_mc_info(files_in, h5out, result.evtnum_list,
                          detector_db, run_number)
 
+        copy_db_info(files_in[0], h5out)
         return result

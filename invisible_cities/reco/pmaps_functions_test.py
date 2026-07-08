@@ -30,7 +30,9 @@ def test_rebin_peak_rebin_factor_1(pk):
     assert_Peak_equality(rebinned_pk, expected_pk)
 
 
-@given(peaks())
+# Prevent waveforms that add up to nearly zero.
+# Floating point error is magnified in this case
+@given(peaks().filter(lambda pk: pk[1].pmts.sum_over_sensors.sum()>1e-20))
 def test_rebin_peak_collapse(pk):
     _, pk        = pk
     rebin_factor = pk.times.size

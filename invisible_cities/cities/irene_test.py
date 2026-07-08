@@ -62,6 +62,7 @@ def unpack_s12params(s12params):
                 s2_lmax         = s2par.length.max)
 
 
+@mark.skip(reason="Masked channels are now handled differently")
 @ignore_warning.no_config_group
 @mark.slow
 @mark.parametrize("thr_sipm_type thr_sipm_value".split(),

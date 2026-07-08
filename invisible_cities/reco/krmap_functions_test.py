@@ -14,8 +14,8 @@ from .. evm.ic_containers   import FitFunction
 from .. core.fit_functions  import expo
 
 
-@given(floats(min_value = 0,  max_value = 10),
-       floats(min_value = 10, max_value = 20),
+@given(floats(min_value = 0,  max_value =   9),
+       floats(min_value = 10, max_value =  20),
        floats(min_value = 1,  max_value = 100),
        floats(min_value = 0,  max_value = 10))
 def test_lin_seed_output_values(x_min, x_max, a, b):

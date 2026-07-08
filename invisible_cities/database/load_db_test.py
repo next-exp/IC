@@ -11,6 +11,8 @@ from pytest  import fixture
 from pytest  import mark
 
 from . import load_db as DB
+from ..core.testing_utils import assert_dataframes_close
+
 
 def test_pmts_pd(db):
     """Check that we retrieve the correct number of PMTs."""
@@ -62,8 +64,8 @@ def test_DetectorGeometry(dbnew):
 
 
 def test_mc_runs_equal_data_runs(db):
-    assert (DB.DataPMT (db.detector, -3550).values == DB.DataPMT (db.detector, 3550).values).all()
-    assert (DB.DataSiPM(db.detector, -3550).values == DB.DataSiPM(db.detector, 3550).values).all()
+    assert_dataframes_close(DB.DataPMT (db.detector, -3550), DB.DataPMT (db.detector, 3550))
+    assert_dataframes_close(DB.DataSiPM(db.detector, -3550), DB.DataSiPM(db.detector, 3550))
 
 
 @fixture(scope='module')
@@ -141,7 +143,7 @@ def test_database_is_being_cached(db_fun, db):
         for item_first, item_second in zip(first_call, second_call):
             assert np.allclose(item_first, item_second)
     else:
-        assert np.all(first_call.values == second_call.values)
+        assert_dataframes_close(first_call, second_call)
     assert time_second_call < 1e6 * time_first_call
 
 

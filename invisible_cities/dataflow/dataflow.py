@@ -9,13 +9,15 @@ import builtins
 import functools
 import itertools as it
 import copy
+import asyncio
 
 from collections import namedtuple
 from functools   import wraps
-from asyncio     import Future
 from contextlib  import contextmanager
 from argparse    import Namespace
 from operator    import itemgetter
+
+asyncio.set_event_loop(asyncio.new_event_loop())
 
 
 @contextmanager
@@ -145,7 +147,7 @@ FutureFilter = namedtuple('FutureFilter', 'future filter')
 PassedFailed = namedtuple('PassedFailed', 'n_passed n_failed')
 
 def count_filter(predicate, *, args=None):
-    future = Future()
+    future = asyncio.get_event_loop().create_future()
     n_passed = 0
     n_failed = 0
     if args is None:
@@ -226,7 +228,7 @@ FutureSink = namedtuple('FutureSink', 'future sink')
 def RESULT(generator_function):
     @wraps(generator_function)
     def proxy(*args, **kwds):
-        future = Future()
+        future = asyncio.get_event_loop().create_future()
         coroutine = generator_function(future, *args, **kwds)
         next(coroutine)
         return FutureSink(future, coroutine)
@@ -295,7 +297,7 @@ def push(source, pipe, result=()):
     pipe.close()
     if isinstance(result, dict):
         return Namespace(**{k: v.result() for k, v in result.items()})
-    if isinstance(result, Future):
+    if isinstance(result, asyncio.Future):
         return result.result()
     return tuple(f.result() for f in result)
 

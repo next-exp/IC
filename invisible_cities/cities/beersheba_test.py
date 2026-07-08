@@ -90,6 +90,7 @@ def test_beersheba_exact_result( deco
     true_out = Th228_deco       if deco is DeconvolutionMode.joint else Th228_deco_separate
 
     path_out = os.path.join(config_tmpdir, f"beersheba_exact_result_{deco.name}.h5")
+
     config.update(dict(file_out = path_out))
 
     beersheba(**config)

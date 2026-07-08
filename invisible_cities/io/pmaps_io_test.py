@@ -83,28 +83,28 @@ def two_pmaps_dfs(two_pmaps_evm):
 
     s1 = pd.DataFrame(dict( event  = s1_data.evt_numbers
                           , time   = s1_data.times
-                          , peak   = s1_data.peak_numbers.astype(np.uint8)
+                          , peak   = s1_data.peak_numbers.astype(np.uint16)
                           , bwidth = s1_data.bwidths
                           , ene    = s1_data.enes
                           ))
     s2 = pd.DataFrame(dict( event  = s2_data.evt_numbers
                           , time   = s2_data.times
-                          , peak   = s2_data.peak_numbers.astype(np.uint8)
+                          , peak   = s2_data.peak_numbers.astype(np.uint16)
                           , bwidth = s2_data.bwidths
                           , ene    = s2_data.enes
                           ))
     si = pd.DataFrame(dict( event  = s2_data.evt_numbers_sipm
-                          , peak   = s2_data.peak_numbers_sipm.astype(np.uint8)
-                          , nsipm  = s2_data.nsipms.astype(np.int16)
+                          , peak   = s2_data.peak_numbers_sipm.astype(np.uint16)
+                          , nsipm  = s2_data.nsipms.astype(np.uint16)
                           , ene    = s2_data.enes_sipm
                           ))
     s2pmt = pd.DataFrame(dict( event = s2_data.evt_numbers_pmt
-                             , peak  = s2_data.peak_numbers_pmt.astype(np.uint8)
+                             , peak  = s2_data.peak_numbers_pmt.astype(np.uint16)
                              , npmt  = s2_data.npmts.astype(np.uint8)
                              , ene   = s2_data.enes_pmt
                              ))
     s1pmt = pd.DataFrame(dict( event = s1_data.evt_numbers_pmt
-                             , peak  = s1_data.peak_numbers_pmt.astype(np.uint8)
+                             , peak  = s1_data.peak_numbers_pmt.astype(np.uint16)
                              , npmt  = s1_data.npmts.astype(np.uint8)
                              , ene   = s1_data.enes_pmt
                              ))

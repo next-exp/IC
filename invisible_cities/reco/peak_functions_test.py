@@ -352,8 +352,9 @@ def test_build_sipm_responses(wf_with_indices):
     below_thr_index = np.argmin (peak_integrals)
     # next_float doesn't work here
     thr             = peak_integrals[below_thr_index] * 1.000001
+    sipm_ids        = np.arange(len(wfs))
     sipm_r          = pf.build_sipm_responses(indices, times, widths,
-                                              wfs, 1, thr)
+                                              wfs, sipm_ids, 1, thr)
 
     expected_ids = np.delete(      ids, below_thr_index)
     expected_wfs = np.delete(wfs_slice, below_thr_index, axis=0)
@@ -370,9 +371,9 @@ def test_build_peak_development(pmt_and_sipm_wfs_with_indices,
     (times, widths, pmt_wfs, sipm_wfs,
      pmt_indices, sipm_indices) = pmt_and_sipm_wfs_with_indices
     pmt_ids  = np.arange( pmt_wfs.shape[0])
+    sipm_ids = np.arange(sipm_wfs.shape[0])
 
     if with_sipms:
-        sipm_ids = np.arange(sipm_wfs.shape[0])
         rebin    = 40
         indices  = sipm_indices
         sipm_r = SiPMResponses(sipm_ids, sipm_wfs[:, indices])
@@ -391,7 +392,7 @@ def test_build_peak_development(pmt_and_sipm_wfs_with_indices,
                            pmt_r, sipm_r)
 
     peak = pf.build_peak(pmt_indices, times,
-                         widths, pmt_wfs, pmt_ids,
+                         widths, pmt_wfs, pmt_ids, sipm_ids,
                          rebin_stride = rebin,
                          with_sipms   = with_sipms,
                          Pk           = Pk,
@@ -472,7 +473,7 @@ def test_find_peaks_s2_style(pmt_and_sipm_wfs_with_indices):
     peaks = pf.find_peaks(pmt_wfs, pmt_indices,
                           time_range, length_range,
                           stride, rebin_stride,
-                          S2, pmt_ids,
+                          S2, pmt_ids, sipm_ids,
                           sipm_wfs    = sipm_wfs,
                           thr_sipm_s2 = -1)
 
@@ -503,7 +504,7 @@ def test_get_pmap(s1_and_s2_with_indices):
     pmap = pf.get_pmap(pmt_wfs, s1_indx, s2_indx, sipm_wfs,
                        s1_params, s2_params,
                        thr_sipm_s2 = -1,
-                       pmt_ids     = pmt_ids,
+                       pmt_ids     = pmt_ids, sipm_ids = sipm_ids,
                        pmt_samp_wid  = pmt_samp_wid ,
                        sipm_samp_wid = sipm_samp_wid)
 

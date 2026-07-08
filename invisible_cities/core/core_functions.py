@@ -4,11 +4,13 @@ This module includes utility functions.
 """
 import time
 from contextlib import contextmanager
+from warnings    import warn
 
 import numpy as np
 
 from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 from ..types.symbols import NormMode
 
@@ -356,3 +358,13 @@ def fix_random_seed(seed):
         yield
     finally:
         np.random.set_state(state)
+
+
+def overflow_protection( value: Union[int, float]
+                       , upper: Union[int, float]
+                       , origin: str
+                       ):
+    if value > upper:
+        warn(f"Overflow detected at {origin}, clipping the value to {upper}", UserWarning)
+        return upper
+    return value

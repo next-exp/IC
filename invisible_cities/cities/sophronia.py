@@ -55,6 +55,7 @@ from .. types.ic_types import          NN
 
 from .  components import                  city
 from .  components import          copy_mc_info
+from .  components import          copy_db_info
 from .  components import           print_every
 from .  components import       peak_classifier
 from .  components import   compute_xy_position
@@ -64,6 +65,7 @@ from .  components import           hits_merger
 from .  components import               collect
 from .  components import build_pointlike_event as pointlike_event_builder
 from .  components import        hits_corrector
+from .  components import      hits_clusterizer
 from .  components import              identity
 
 from typing import Optional
@@ -93,6 +95,7 @@ def sophronia( files_in           : OneOrManyFiles
              , sipm_charge_type   : SiPMCharge
              , same_peak          : bool
              , corrections        : Optional[dict] = None
+             , clustering_params  : Optional[dict] = None
              ):
     """
     drift_v : float
@@ -133,10 +136,19 @@ def sophronia( files_in           : OneOrManyFiles
             Path to the file holding the correction maps
         apply_temp : bool
             Whether to apply temporal corrections
-        norm_strat : NormStrategy
-            Normalization strategy
-        norm_value : float, optional
-            Normalization value in case of `norm_strat = NormStrategy.custom`
+        norm_method : NormMethod
+            Normalization method
+        norm_options : dict, optional
+            Normalization parameters
+
+    clustering_params : dict
+        min_samples : int
+            Minimum number of samples required to form a dense region (cluster).
+            This includes the point itself.
+        scale_xy : float
+            Scaling factor to apply to the (x, y) coordinates before clustering.
+        scale_z  : float
+            Scaling factor to apply to the z coordinate before clustering.
     """
     global_reco = compute_xy_position( detector_db
                                      , run_number
@@ -178,6 +190,9 @@ def sophronia( files_in           : OneOrManyFiles
     correct_hits   = df.map( hits_corrector(**corrections) if corrections is not None else identity
                            , item = "hits")
 
+    cluster_hits   = df.map( hits_clusterizer(**clustering_params) if clustering_params is not None else identity
+                           , item = "hits")
+
     build_pointlike_event = df.map( pointlike_event_builder( detector_db
                                                            , run_number
                                                            , drift_v
@@ -202,7 +217,7 @@ def sophronia( files_in           : OneOrManyFiles
                                        , args = "event_number enough_valid_hits".split())
 
         hits_branch         = ( make_hits, enough_valid_hits, df.branch(write_hits_filter)
-                              , hits_select.filter, merge_nn_hits, correct_hits, write_hits)
+                              , hits_select.filter, merge_nn_hits, correct_hits, cluster_hits, write_hits)
         kdst_branch         = build_pointlike_event, write_pointlike_event
         collect_evt_numbers = "event_number", event_number_collector.sink
 
@@ -230,4 +245,5 @@ def sophronia( files_in           : OneOrManyFiles
             copy_mc_info(files_in, h5out, result.evtnum_list,
                          detector_db, run_number)
 
+        copy_db_info(files_in[0], h5out)
         return result

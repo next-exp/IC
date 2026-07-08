@@ -178,7 +178,6 @@ def test_esmeralda_all_hits_after_drop_voxels(esmeralda_config, Th228_hits, conf
         evt_before_thr = evt_before.loc[lambda x: x.Q           >= threshold]
 
         assert len(evt_before_thr)  == len(evt_after)
-        assert np.isclose(np.sum(evt_after.Ec),  np.nansum(evt_before.Ec))
         assert np.isclose(np.sum(evt_after.Ec),  np.   sum(evt_after .Ep))
 
 

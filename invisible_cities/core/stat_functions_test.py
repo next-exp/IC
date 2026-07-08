@@ -1,3 +1,5 @@
+from math import factorial
+
 import numpy as np
 
 from pytest import mark
@@ -36,7 +38,7 @@ def test_poisson_factor_k(k):
     mean  = 1
     first = poisson_factor(0, mean)
     nth   = poisson_factor(k, mean)
-    assert first / nth == approx(np.math.factorial(k))
+    assert first / nth == approx(factorial(k))
 
 
 @mark.parametrize("default", (0, 1, 2))

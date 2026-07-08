@@ -543,9 +543,9 @@ def new_format_mcsensor_data(ICDATADIR):
                                                    'TP_SiPM'     ],
                                                   name='sns_name'))
     evt_no         = 1280
-    sns_list       = [20005  , 20016  , 57  , 51  ]
+    sns_list       = [20016  , 20005  , 57  , 51  ]
     charge_list    = [    1  ,     1  ,  1  ,  1  ]
-    time_list      = [   48.0,    27.0, 90.0, 50.0]
+    time_list      = [   27.0,    48.0, 90.0, 50.0]
     efile = os.path.join(ICDATADIR, 'NextFlex_mc_sensors.h5')
     return efile, sensor_binning, evt_no, sns_list, charge_list, time_list
 
@@ -645,12 +645,11 @@ def test_load_mcsensor_response_df_old(mc_sensors_nexus_data):
 def test_load_mcsensor_response_df_new(new_format_mcsensor_data):
     efile, _, evt_no, sns_list, charge_list, time_list = new_format_mcsensor_data
 
-    wfs = load_mcsensor_response_df(efile)
-
-    assert len(wfs.loc[evt_no]) == len(sns_list)
-    assert np.all(wfs.loc[evt_no].index == sns_list)
-    assert np.all(wfs.loc[evt_no].charge == charge_list)
-    assert np.all(wfs.loc[evt_no].time == time_list)
+    wfs = load_mcsensor_response_df(efile).loc[evt_no]
+    assert    len(wfs)       == len(sns_list)
+    assert np.all(wfs.index  ==     sns_list)
+    assert np.all(wfs.charge ==  charge_list)
+    assert np.all(wfs.time   ==    time_list)
 
 
 def test_get_sensor_types(new_format_mcsensor_data):

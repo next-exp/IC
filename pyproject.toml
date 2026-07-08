@@ -1,0 +1,17 @@
+[project]
+name         = "invisible_cities"
+version      = "0.1.0"
+description  = "NEXT reconstruction software"
+license      = "MIT"
+
+[build-system]
+requires = [ "setuptools>=75"
+           , "cython>=3.0"
+           , "numpy>=2.1"
+           , "wheel"
+           ]
+
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["invisible_cities"]

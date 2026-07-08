@@ -97,9 +97,9 @@ def test_eutropia_centers(output_tmpdir):
 
     with tb.open_file(file_out) as output_file:
         table = output_file.root.PSF.PSFs
-        assert np.in1d(table.col("x"), x_centers).all()
-        assert np.in1d(table.col("y"), y_centers).all()
-        assert np.in1d(table.col("z"), z_centers).all()
+        assert np.isin(table.col("x"), x_centers).all()
+        assert np.isin(table.col("y"), y_centers).all()
+        assert np.isin(table.col("z"), z_centers).all()
 
 
 @ignore_warning.no_config_group
