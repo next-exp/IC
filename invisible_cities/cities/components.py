@@ -818,20 +818,14 @@ def calibrate_sipms(dbfile, run_number):
 
 
 def select_cutting_algorithm(algo, **cutting_params):
-
     if algo is CutAlgo.threshold:
-        func = threshold_sipm_selection(**cutting_params)
+        return threshold_sipm_selection(**cutting_params)
     elif algo is CutAlgo.pyrrha:
-        func = pyrrha_sipm_selection(**cutting_params)
+        return pyrrha_sipm_selection(**cutting_params)
     elif algo is CutAlgo.no_cut:
-        func = no_cut_sipm_selection()
+        return no_cut_sipm_selection()
     else:
         raise ValueError(f"Unsupported cutting algorithm: {algo!r}. Expected one of {list(CutAlgo)}")
-
-    def select_cutting_algorithm(wfs):
-        return func(wfs)
-
-    return select_cutting_algorithm
 
 
 def threshold_sipm_selection(thr_sipm_type
