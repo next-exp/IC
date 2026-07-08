@@ -194,10 +194,8 @@ def charge_threshold_method(wfs             : np.ndarray,
     -------
     Tuple of np arrays including all passing sipm ids and the corresponding waveforms
     """
-    # zero entries below threshold
     zwfs = zero_wfs_below_threshold(wfs, zeroing_thr)
 
-    # returns selected ids and waveforms above integral
     return select_wfs_above_time_integrated_thr(zwfs, integration_thr)
 
 
