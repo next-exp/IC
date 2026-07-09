@@ -65,8 +65,6 @@ def hypathia( files_in         : OneOrManyFiles
             , run_number       : int
             , sipm_noise_cut   : float
             , filter_padding   : int
-            , thr_sipm         : float
-            , thr_sipm_type    : SiPMThreshold
             , pmt_wfs_rebin    : int
             , pmt_pe_rms       : float
             , s1_lmin          : int  , s1_lmax     : int
@@ -76,7 +74,7 @@ def hypathia( files_in         : OneOrManyFiles
             , s2_lmin          : int  , s2_lmax     : int
             , s2_tmin          : float, s2_tmax     : float
             , s2_rebin_stride  : int  , s2_stride   : int
-            , thr_csum_s2      : float, thr_sipm_s2 : float
+            , thr_csum_s2      : float
             , pmt_samp_wid     : float
             , sipm_samp_wid    : float
             , cutting_function : CutAlgo
@@ -145,7 +143,7 @@ def hypathia( files_in         : OneOrManyFiles
         compute_pmaps, empty_indices, empty_pmaps = compute_and_write_pmaps(
                                              detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                                              s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-                                             s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2,
+                                             s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
                                              h5out, apply_cut, sipm_rwf_to_cal)
 
         result = push(source = wf_from_files(files_in, WfType.mcrd),
