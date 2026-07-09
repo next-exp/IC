@@ -226,20 +226,17 @@ def kill_isolated_sipms(selected_ids        : np.ndarray,
                         sipm_y              : np.ndarray,
                         proximity_threshold : float) -> np.ndarray:
     """
-    Receives a list of SiPM IDs corresponding to the SiPMs with the most signficant 
-    energy depositions. Scans through these SiPMs to check if they have neighbouring 
-    SiPMs - i.e., within the proximity_threshold - that are also in the initial list
-    of energetic SiPMs. If no neighbours are found, the SiPMs are classed as isolated, 
-    and are removed. Outputs a list of SiPM IDs representing the most energetic SiPMs 
-    belonging to a cluster, which generally occurs in the region where the event took 
-    place.
+    Removes isolated SiPMs from a boolean selection mask of SiPMs. A selected SiPM is considered 
+    isolated if none of the other selected SiPMs lie within the proximity_threshold of it. Isolated 
+    SiPMs are removed from the selection. The output keeps only SiPMs that belong to a cluster 
+    of two or more mutually nearby selected SiPMs.
 
     Parameters
     ----------
-    selected_ids        : Boolean array of shape (n_sipms,) corresponding to the most energetic SiPMs.
-    sipm_x              : 1D array of shape (n_sipms,) containing the x positions of the SiPMs.
-    sipm_y              : 1D array of shape (n_sipms,) containing the y positions of the SiPMs.
-    proximity_threshold : Distance threshold in mm used to identify isolated SiPMs.
+    selected_ids             : Boolean array of shape (n_sipms,) corresponding to the initial selection of SiPMs.
+    sipm_x                   : 1D array of shape (n_sipms,) containing the x positions of the SiPMs.
+    sipm_y                   : 1D array of shape (n_sipms,) containing the y positions of the SiPMs.
+    proximity_threshold      : Distance threshold in mm used to identify isolated SiPMs.
 
     Returns
     -------
@@ -265,21 +262,22 @@ def apply_circular_padding(selected_ids_no_isolated : np.ndarray,
                            sipm_y                   : np.ndarray,
                            padding_radius           : float) -> np.ndarray:
     """
-    Receives a list of SiPM IDs corresponding to the most energetic SiPMs clustered 
-    near the event. For these SiPMs, creates circular padding of radius padding_radius, 
-    selecting all SiPMs within that radius. Stores the union of all selected SiPMs. 
-    Outputs the SiPM IDs which are relevant for a given event.
+    Expands a boolean selection mask of SiPMs to include all SiPMs within a given region determined
+    by the padding_radius. For each selected SiPM, all SiPM within the padding_radius are added to
+    the selection; the result is the union of all such neighborhoods together with the original selection.
 
     Parameters
     ----------
-    selected_ids_no_isolated : Boolean array of shape (n_sipms,) corresponding to the "relevant" SiPMs.
+    selected_ids_no_isolated : Boolean array of shape (n_sipms,). True marks the SiPMs to pad around.
     sipm_x                   : 1D array of shape (n_sipms,) containing the x positions of the SiPMs.
     sipm_y                   : 1D array of shape (n_sipms,) containing the y positions of the SiPMs.
-    padding_radius           : Distance threshold in mm used to create circular padding around selected SiPMs.
+    padding_radius           : Distance threshold in mm used to include neighboring SiPMs around each 
+                               selected SiPM.
 
     Returns
     -------
-    sipm_ids_with_signal : Boolean array of shape (n_sipms,) where True indicates that the SiPM is selected.
+    sipm_ids_with_signal     : Boolean array of shape (n_sipms,). True for SiPMs that are either in the
+                               original selection or within the "padding_radius" of a selected SiPM.
     """
     sipm_ids_with_signal = np.zeros_like(selected_ids_no_isolated, dtype=bool)
 
@@ -299,9 +297,8 @@ def spatial_selection_method(wfs                 : np.ndarray,
                              run_number          : int,
                              detector_db         : str) -> np.ndarray:
     """
-    SiPM selection function, applies SiPM cuts based on user input.
-    A first selection of SiPMs is made, isolated SiPMs are removed
-    and padding is added around the SiPMs that are left.
+    SiPM selection function, applies SiPM cuts based on user input. A first selection of SiPMs is made, 
+    isolated SiPMs are removed and padding is added around the SiPMs that are left.
 
     Parameters
     ----------
