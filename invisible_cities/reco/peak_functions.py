@@ -10,13 +10,14 @@ last revised: @abotas & @gonzaponte. Dec 1st 2017
 
 import numpy        as np
 
-from .. core               import system_of_units as units
-from .. evm .ic_containers import ZsWf
-from .. evm .pmaps         import S1
-from .. evm .pmaps         import S2
-from .. evm .pmaps         import PMap
-from .. evm .pmaps         import PMTResponses
-from .. evm .pmaps         import SiPMResponses
+from .. core                 import system_of_units as units
+from .. evm   .ic_containers import ZsWf
+from .. evm   .pmaps         import S1
+from .. evm   .pmaps         import S2
+from .. evm   .pmaps         import PMap
+from .. evm   .pmaps         import PMTResponses
+from .. evm   .pmaps         import SiPMResponses
+from .. types .symbols       import CutAlgo
 
 
 def indices_and_wf_above_threshold(wf, thr):
@@ -94,7 +95,7 @@ def build_peak(indices, times,
                pmt_samp_wid  = 25 * units.ns,
                sipm_samp_wid =  1 * units.mus,
                sipm_wfs      = None,
-               apply_cut     = None):
+               apply_cut     = CutAlgo.no_cut):
     sipm_pmt_bin_ratio = int(sipm_samp_wid/pmt_samp_wid)
     (pk_times ,
      pk_widths,
@@ -121,7 +122,7 @@ def find_peaks(ccwfs, index,
                Pk, pmt_ids, sipm_ids=None,
                pmt_samp_wid = 25*units.ns,
                sipm_samp_wid = 1*units.mus,
-               sipm_wfs=None, apply_cut = None):
+               sipm_wfs=None, apply_cut = CutAlgo.no_cut):
 
     ccwfs = np.array(ccwfs, ndmin=2)
 
@@ -145,7 +146,7 @@ def find_peaks(ccwfs, index,
 
 def get_pmap(ccwf, s1_indx, s2_indx, sipm_zs_wf,
              s1_params, s2_params, pmt_ids, sipm_ids,
-             pmt_samp_wid, sipm_samp_wid, apply_cut = None):
+             pmt_samp_wid, sipm_samp_wid, apply_cut = CutAlgo.no_cut):
     return PMap(find_peaks(ccwf, s1_indx, Pk=S1, pmt_ids=pmt_ids,
                            pmt_samp_wid=pmt_samp_wid,
                            **s1_params),
