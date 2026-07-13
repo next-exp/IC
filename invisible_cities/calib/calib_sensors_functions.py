@@ -59,8 +59,9 @@ def modes  (wfs): return to_col_vector(mode  (wfs, axis=1))
 
 def subtract_baseline(wfs, *, bls_mode=BlsMode.mean):
     """
-    Subtract the baseline to all waveforms in the input
-    with a specific algorithm.
+    Subtract the baseline from all waveforms in the input
+    with a specific algorithm, leaving individual samples
+    that are already 0 untouched.
 
     Parameters
     ----------
@@ -75,15 +76,18 @@ def subtract_baseline(wfs, *, bls_mode=BlsMode.mean):
     Returns
     -------
     bls: np.ndarray with shape (n, m)
-        Baseline-subtracted waveforms.
+        Baseline-subtracted waveforms, with originally-zero
+        samples left as 0.
     """
 
-    if   bls_mode is BlsMode.mean     : return wfs - means     (wfs)
-    elif bls_mode is BlsMode.median   : return wfs - medians   (wfs)
-    elif bls_mode is BlsMode.mode     : return wfs - modes     (wfs)
-    elif bls_mode is BlsMode.scipymode: return wfs - scipy_mode(wfs, axis=1)
+    if   bls_mode is BlsMode.mean     : baseline = means     (wfs)
+    elif bls_mode is BlsMode.median   : baseline = medians   (wfs)
+    elif bls_mode is BlsMode.mode     : baseline = modes     (wfs)
+    elif bls_mode is BlsMode.scipymode: baseline = scipy_mode(wfs, axis=1)
     else:
         raise TypeError(f"Unrecognized baseline subtraction option: {bls_mode}")
+
+    return np.where(wfs == 0, 0, wfs - baseline) # subtracts the baseline to non-zero samples only
 
 
 def calibrate_wfs(wfs, adc_to_pes):
