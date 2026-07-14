@@ -152,7 +152,11 @@ def zero_wfs_below_threshold(wfs         : np.ndarray,
     -------
     2D array of shape (n_sipms, n_time_bins) containing the input waveforms with entries below threshold set to zero.
     """
-    thr = to_col_vector(np.full(wfs.shape[0], zeroing_thr))
+    if isinstance(zeroing_thr, (int, float)):
+        thr = np.full((wfs.shape[0], 1), zeroing_thr)
+    else:
+        thr = np.reshape(zeroing_thr, (wfs.shape[0], 1))
+
     return np.where(wfs > thr, wfs, 0)
 
 
