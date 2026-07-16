@@ -74,9 +74,9 @@ def irene( files_in         : OneOrManyFiles
          , s2_rebin_stride  : int  , s2_stride    : int
          , thr_csum_s2      : float
          , pmt_samp_wid     : float, sipm_samp_wid: float
-         , store_db         : bool = True
          , cutting_function : CutAlgo
          , cutting_params   : Dict[str, Any]
+         , store_db         : bool = True
          ):
     '''
     `cutting_function` is defined within components.py, and can vary, resulting
