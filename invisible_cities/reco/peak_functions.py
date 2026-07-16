@@ -77,13 +77,13 @@ def build_pmt_responses(indices, times, widths, ccwf,
     return pk_times, pk_widths, PMTResponses(pmt_ids, pmt_wfs)
 
 
-def build_sipm_responses(indices, times, widths,
-                         sipm_wfs, sipm_ids, rebin_stride, apply_cut):
+def build_sipm_responses(indices, times, widths, sipm_wfs, 
+                         sipm_ids, rebin_stride, sipm_selection_algo):
     _, _, sipm_wfs = pick_slice_and_rebin(indices , times, widths,
                                            sipm_wfs, rebin_stride,
                                            pad_zeros = False)
     (sipm_idx,
-     sipm_wfs)   = apply_cut(sipm_wfs)
+     sipm_wfs)   = sipm_selection_algo(sipm_wfs)
 
     return SiPMResponses(sipm_ids[sipm_idx], sipm_wfs)
 
@@ -95,7 +95,7 @@ def build_peak(indices, times,
                pmt_samp_wid  = 25 * units.ns,
                sipm_samp_wid =  1 * units.mus,
                sipm_wfs      = None,
-               apply_cut     = CutAlgo.no_cut):
+               sipm_selection_algo = CutAlgo.no_cut):
     sipm_pmt_bin_ratio = int(sipm_samp_wid/pmt_samp_wid)
     (pk_times ,
      pk_widths,
@@ -109,7 +109,7 @@ def build_peak(indices, times,
                                       widths * sipm_pmt_bin_ratio,
                                       sipm_wfs, sipm_ids,
                                       rebin_stride // sipm_pmt_bin_ratio,
-                                      apply_cut)
+                                      sipm_selection_algo)
     else:
         sipm_r = SiPMResponses.build_empty_instance()
 
@@ -122,7 +122,8 @@ def find_peaks(ccwfs, index,
                Pk, pmt_ids, sipm_ids=None,
                pmt_samp_wid = 25*units.ns,
                sipm_samp_wid = 1*units.mus,
-               sipm_wfs=None, apply_cut = CutAlgo.no_cut):
+               sipm_wfs=None, 
+               sipm_selection_algo = CutAlgo.no_cut):
 
     ccwfs = np.array(ccwfs, ndmin=2)
 
@@ -139,20 +140,20 @@ def find_peaks(ccwfs, index,
                         rebin_stride,
                         with_sipms, Pk,
                         pmt_samp_wid, sipm_samp_wid,
-                        sipm_wfs, apply_cut)
+                        sipm_wfs, sipm_selection_algo)
         peaks.append(pk)
     return peaks
 
 
 def get_pmap(ccwf, s1_indx, s2_indx, sipm_zs_wf,
              s1_params, s2_params, pmt_ids, sipm_ids,
-             pmt_samp_wid, sipm_samp_wid, apply_cut = CutAlgo.no_cut):
+             pmt_samp_wid, sipm_samp_wid, sipm_selection_algo = CutAlgo.no_cut):
     return PMap(find_peaks(ccwf, s1_indx, Pk=S1, pmt_ids=pmt_ids,
                            pmt_samp_wid=pmt_samp_wid,
                            **s1_params),
                 find_peaks(ccwf, s2_indx, Pk=S2, pmt_ids=pmt_ids, sipm_ids=sipm_ids,
                            sipm_wfs      = sipm_zs_wf,
-                           apply_cut     = apply_cut,
+                           sipm_selection_algo = sipm_selection_algo,
                            pmt_samp_wid  = pmt_samp_wid,
                            sipm_samp_wid = sipm_samp_wid,
                            **s2_params))

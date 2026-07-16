@@ -350,22 +350,22 @@ def test_build_pmt_responses(wf_with_indices):
 def test_build_sipm_responses(wf_with_indices):
     times, widths, wfs, indices = wf_with_indices
     ids = np.arange(wfs.shape[0])
-    wfs_slice       = wfs[:, indices]
-    peak_integrals  = wfs_slice.sum(axis=1)
-    below_thr_index = np.argmin (peak_integrals)
+    wfs_slice           = wfs[:, indices]
+    peak_integrals      = wfs_slice.sum(axis=1)
+    below_thr_index     = np.argmin (peak_integrals)
     # next_float doesn't work here
-    thr             = peak_integrals[below_thr_index] * 1.000001
-    sipm_ids        = np.arange(len(wfs))
+    thr                 = peak_integrals[below_thr_index] * 1.000001
+    sipm_ids            = np.arange(len(wfs))
 
-    cut_params = dict(detector_db   = 'None',
-                  thr_sipm_s2   = thr,
-                  thr_sipm      = 0,
-                  thr_sipm_type = SiPMThreshold.common,
-                  run_number    = 0)
-    apply_cut  = select_cutting_algorithm(CutAlgo.threshold, **cut_params)
+    cut_params          = dict(detector_db   = 'None',
+                               thr_sipm_s2   = thr,
+                               thr_sipm      = 0,
+                               thr_sipm_type = SiPMThreshold.common,
+                               run_number    = 0)
+    sipm_selection_algo  = select_cutting_algorithm(CutAlgo.threshold, **cut_params)
 
-    sipm_r          = pf.build_sipm_responses(indices, times, widths,
-                                              wfs, sipm_ids, 1, apply_cut)
+    sipm_r               = pf.build_sipm_responses(indices, times, widths,
+                                                   wfs, sipm_ids, 1, sipm_selection_algo)
 
     expected_ids = np.delete(      ids, below_thr_index)
     expected_wfs = np.delete(wfs_slice, below_thr_index, axis=0)
@@ -404,11 +404,11 @@ def test_build_peak_development(pmt_and_sipm_wfs_with_indices,
 
     peak = pf.build_peak(pmt_indices, times,
                          widths, pmt_wfs, pmt_ids, sipm_ids,
-                         rebin_stride = rebin,
-                         with_sipms   = with_sipms,
-                         Pk           = Pk,
-                         sipm_wfs     = sipm_wfs,
-                         apply_cut    = select_cutting_algorithm(CutAlgo.no_cut)
+                         rebin_stride        = rebin,
+                         with_sipms          = with_sipms,
+                         Pk                  = Pk,
+                         sipm_wfs            = sipm_wfs,
+                         sipm_selection_algo = select_cutting_algorithm(CutAlgo.no_cut)
                          )
 
     assert_Peak_equality(peak, expected_peak)
@@ -486,8 +486,8 @@ def test_find_peaks_s2_style(pmt_and_sipm_wfs_with_indices):
                           time_range, length_range,
                           stride, rebin_stride,
                           S2, pmt_ids, sipm_ids,
-                          sipm_wfs    = sipm_wfs,
-                          apply_cut    = select_cutting_algorithm(CutAlgo.no_cut)
+                          sipm_wfs = sipm_wfs,
+                          sipm_selection_algo = select_cutting_algorithm(CutAlgo.no_cut)
                           )
 
     (rebinned_times,
@@ -519,7 +519,7 @@ def test_get_pmap(s1_and_s2_with_indices):
                        pmt_ids     = pmt_ids, sipm_ids = sipm_ids,
                        pmt_samp_wid  = pmt_samp_wid ,
                        sipm_samp_wid = sipm_samp_wid,
-                       apply_cut    = select_cutting_algorithm(CutAlgo.no_cut)
+                       sipm_selection_algo = select_cutting_algorithm(CutAlgo.no_cut)
                        )
 
     (rebinned_times ,

@@ -764,7 +764,8 @@ def sensor_data(path, wf_type):
 
 def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, apply_cut):
+               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, 
+               sipm_selection_algo):
     s1_params = dict(time        = minmax(min = s1_tmin,
                                           max = s1_tmax),
                     length       = minmax(min = s1_lmin,
@@ -786,7 +787,7 @@ def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
     def build_pmap(ccwf, s1_indx, s2_indx, sipmzs): # -> PMap
         return pkf.get_pmap(ccwf, s1_indx, s2_indx, sipmzs,
                             s1_params, s2_params, pmt_ids, sipm_ids,
-                            pmt_samp_wid, sipm_samp_wid, apply_cut)
+                            pmt_samp_wid, sipm_samp_wid, sipm_selection_algo)
 
     return build_pmap
 
@@ -1296,7 +1297,7 @@ def waveform_integrator(limits):
 def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                   s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
                   s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
-                  h5out, apply_cut, sipm_rwf_to_cal=None):
+                  h5out, sipm_selection_algo, sipm_rwf_to_cal=None):
 
     # Filter events without signal over threshold
     indices_pass    = fl.map(check_nonempty_indices,
@@ -1307,7 +1308,8 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     # Build the PMap
     compute_pmap     = fl.map(build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                                          s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, apply_cut),
+                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, 
+                                         sipm_selection_algo),
                               args = ("ccwfs", "s1_indices", "s2_indices", "sipm"),
                               out  = "pmap")
 

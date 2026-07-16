@@ -122,7 +122,7 @@ def hypathia( files_in         : OneOrManyFiles
                               item = "sipm")
 
     # apply function depending on user input, from provided list of functions
-    apply_cut        = select_cutting_algorithm(cutting_function, **cutting_params)
+    sipm_selection_algo = select_cutting_algorithm(cutting_function, **cutting_params)
 
 
     event_count_in  = fl.spy_count()
@@ -144,7 +144,7 @@ def hypathia( files_in         : OneOrManyFiles
                                              detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                                              s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
                                              s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
-                                             h5out, apply_cut, sipm_rwf_to_cal)
+                                             h5out, sipm_selection_algo, sipm_rwf_to_cal)
 
         result = push(source = wf_from_files(files_in, WfType.mcrd),
                       pipe   = pipe(fl.slice(*event_range, close_all=True),
