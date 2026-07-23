@@ -4,10 +4,9 @@ authors: J.J. Gomez-Cadenas, G. Martinez
 """
 import numpy as np
 from typing  import Optional
-from typing  import Callable
 from typing  import Tuple
 
-from .. core.core_functions import define_window, to_col_vector
+from .. core.core_functions import define_window
 from .. calib               import calib_sensors_functions as csf
 from .. sierpe              import blr
 from .. database            import load_db
