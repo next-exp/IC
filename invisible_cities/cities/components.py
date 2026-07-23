@@ -835,8 +835,11 @@ def threshold_sipm_selection( thr_sipm_type
                             , run_number
                             , detector_db = None):
     '''
-    Function that applies thresholding to the sipms in standard irene manner,
-    by zeroing all waveform values below a threshold.
+    Applies energy thresholds to SiPM S2 waveforms:
+    - thr_sipm:    applied per time bin. Waveform samples below this 
+                   threshold are set to zero.  
+    - thr_sipm_s2: applied to the integrated waveform charge. If the total
+                   charge is below this threshold, it is set to zero.
     '''
     if detector_db is None:
         sipm_thr = thr_sipm
@@ -856,7 +859,7 @@ def pyrrha_sipm_selection( selection_method     : SiPMSelectionMethod
                          , run_number          : int
                          , detector_db         : str):
     '''
-    Function that applies a generic selection function to the sipms, which can be used to 
+    Applies a generic selection function to the sipms, which can be used to 
     implement a spatial SiPM selection method (called Pyrrha).
     '''
     def pyrrha_sipm_selection(wfs):
