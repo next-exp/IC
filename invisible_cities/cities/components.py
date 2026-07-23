@@ -829,7 +829,7 @@ def select_cutting_algorithm(algo, **cutting_params):
         raise ValueError(f"Unsupported cutting algorithm: {algo!r}. Expected one of {list(CutAlgo)}")
 
 
-def threshold_sipm_selection(thr_sipm_type
+def threshold_sipm_selection( thr_sipm_type
                             , thr_sipm
                             , thr_sipm_s2
                             , run_number
@@ -849,7 +849,7 @@ def threshold_sipm_selection(thr_sipm_type
     return threshold_sipm_selection
 
 
-def pyrrha_sipm_selection(selection_method     : SiPMSelectionMethod
+def pyrrha_sipm_selection( selection_method     : SiPMSelectionMethod
                          , selection_kwargs    : dict
                          , proximity_threshold : float
                          , padding_radius      : float
