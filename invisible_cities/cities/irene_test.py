@@ -82,13 +82,15 @@ def test_irene_electrons_40keV(config_tmpdir, ICDATADIR, s12params,
     nrequired  = 2
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(detector_db = DetDB.new,
-                     run_number    = 0,
+    cutting_params = conf['cutting_params'].copy()
+    cutting_params.update(thr_sipm_type = thr_sipm_type,
+                          thr_sipm      = thr_sipm_value)
+    conf.update(dict(detector_db    = DetDB.new,
+                     run_number     = 0,
                      files_in      = PATH_IN,
                      file_out      = PATH_OUT,
                      event_range   = (0, nrequired),
-                     thr_sipm_type = thr_sipm_type,
-                     thr_sipm      = thr_sipm_value,
+                     cutting_params = cutting_params,
                      **unpack_s12params(s12params)))
 
     cnt = irene(**conf)
@@ -414,20 +416,23 @@ def test_irene_sequential_times(config_tmpdir, ICDATADIR):
     PATH_OUT = os.path.join(config_tmpdir, 'test_pmaps.h5')
 
     conf = configure('dummy invisible_cities/config/irene.conf'.split())
-    conf.update(dict(files_in    = PATH_IN           ,
-                     file_out    = PATH_OUT          ,
-                     run_number  =   6351            ,
-                     n_baseline  =  48000            ,
-                     thr_sipm    =      1 * units.pes,
-                     s1_tmin     =      0 * units.mus,
-                     s1_tmax     =    640 * units.mus,
-                     s1_lmin     =      5            ,
-                     s1_lmax     =     30            ,
-                     s2_tmin     =    645 * units.mus,
-                     s2_tmax     =   1300 * units.mus,
-                     s2_lmin     =     80            ,
-                     s2_lmax     = 200000            ,
-                     thr_sipm_s2 =      5 * units.pes))
+    cutting_params = conf['cutting_params'].copy()
+    cutting_params.update(run_number    = 6351,
+                          thr_sipm_s2   = 5 * units.pes,
+                          thr_sipm      = 1 * units.pes)
+    conf.update(dict(files_in       = PATH_IN           ,
+                     file_out       = PATH_OUT          ,
+                     run_number     =   6351            ,
+                     n_baseline     =  48000            ,
+                     s1_tmin        =      0 * units.mus,
+                     s1_tmax        =    640 * units.mus,
+                     s1_lmin        =      5            ,
+                     s1_lmax        =     30            ,
+                     s2_tmin        =    645 * units.mus,
+                     s2_tmax        =   1300 * units.mus,
+                     s2_lmin        =     80            ,
+                     s2_lmax        = 200000            ,
+                     cutting_params = cutting_params))
 
     irene(**conf)
 

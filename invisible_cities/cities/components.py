@@ -84,6 +84,8 @@ from .. types  .ic_types          import                    minmax
 from .. types  .ic_types          import        types_dict_summary
 from .. types  .ic_types          import         types_dict_tracks
 from .. types  .symbols           import                    WfType
+from .. types  .symbols           import                   CutAlgo
+from .. types  .symbols           import       SiPMSelectionMethod
 from .. types  .symbols           import               RebinMethod
 from .. types  .symbols           import                SiPMCharge
 from .. types  .symbols           import                   BlsMode
@@ -762,7 +764,8 @@ def sensor_data(path, wf_type):
 
 def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2):
+               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, 
+               sipm_selection_algo):
     s1_params = dict(time        = minmax(min = s1_tmin,
                                           max = s1_tmax),
                     length       = minmax(min = s1_lmin,
@@ -783,8 +786,8 @@ def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
     sipm_ids = np.argwhere(datasipm.Active.values==1).flatten()
     def build_pmap(ccwf, s1_indx, s2_indx, sipmzs): # -> PMap
         return pkf.get_pmap(ccwf, s1_indx, s2_indx, sipmzs,
-                            s1_params, s2_params, thr_sipm_s2, pmt_ids, sipm_ids,
-                            pmt_samp_wid, sipm_samp_wid)
+                            s1_params, s2_params, pmt_ids, sipm_ids,
+                            pmt_samp_wid, sipm_samp_wid, sipm_selection_algo)
 
     return build_pmap
 
@@ -802,7 +805,7 @@ def calibrate_pmts(dbfile, run_number, n_maw, thr_maw):
     return calibrate_pmts
 
 
-def calibrate_sipms(dbfile, run_number, thr_sipm):
+def calibrate_sipms(dbfile, run_number):
     DataSiPM   = load_db.DataSiPM(dbfile, run_number)
     DataSiPM   = DataSiPM.loc[lambda df: df.Active==1]
     adc_to_pes = np.abs(DataSiPM.adc_to_pes.values)
@@ -810,10 +813,75 @@ def calibrate_sipms(dbfile, run_number, thr_sipm):
     def calibrate_sipms(rwf):
         return csf.calibrate_sipms(rwf,
                                    adc_to_pes = adc_to_pes,
-                                   thr        = thr_sipm,
                                    bls_mode   = BlsMode.mode)
 
     return calibrate_sipms
+
+
+def select_cutting_algorithm(algo, **cutting_params):
+    if algo is CutAlgo.threshold:
+        return threshold_sipm_selection(**cutting_params)
+    elif algo is CutAlgo.pyrrha:
+        return pyrrha_sipm_selection(**cutting_params)
+    elif algo is CutAlgo.no_cut:
+        return no_cut_sipm_selection()
+    else:
+        raise ValueError(f"Unsupported cutting algorithm: {algo!r}. Expected one of {list(CutAlgo)}")
+
+
+def threshold_sipm_selection( thr_sipm_type
+                            , thr_sipm
+                            , thr_sipm_s2
+                            , run_number
+                            , detector_db = None):
+    '''
+    Applies energy thresholds to SiPM S2 waveforms:
+    - thr_sipm:    applied per time bin. Waveform samples below this 
+                   threshold are set to zero.  
+    - thr_sipm_s2: applied to the integrated waveform charge. If the total
+                   charge is below this threshold, it is set to zero.
+    '''
+    if detector_db is None:
+        sipm_thr = thr_sipm
+    else:
+        sipm_thr = get_actual_sipm_thr(thr_sipm_type, thr_sipm, detector_db, run_number)
+
+    def threshold_sipm_selection(wfs):
+        return wfm.charge_threshold_method(wfs, zeroing_thr = sipm_thr, integration_thr=thr_sipm_s2)
+
+    return threshold_sipm_selection
+
+
+def pyrrha_sipm_selection( selection_method     : SiPMSelectionMethod
+                         , selection_kwargs    : dict
+                         , proximity_threshold : float
+                         , padding_radius      : float
+                         , run_number          : int
+                         , detector_db         : str):
+    '''
+    Applies a generic selection function to the sipms, which can be used to 
+    implement a spatial SiPM selection method (called Pyrrha).
+    '''
+    def pyrrha_sipm_selection(wfs):
+        return wfm.spatial_selection_method(wfs, 
+                                            selection_method, 
+                                            selection_kwargs, 
+                                            proximity_threshold,
+                                            padding_radius,
+                                            run_number,
+                                            detector_db)
+
+    return pyrrha_sipm_selection
+
+
+def no_cut_sipm_selection():
+    """"
+    Function that applies no cuts to the SiPM waveforms. 
+    """
+    def no_cut_sipm_selection(wfs):
+        sipm_ids = np.arange(wfs.shape[0])
+        return sipm_ids, wfs
+    return no_cut_sipm_selection
 
 
 def calibrate_with_mean(dbfile, run_number):
@@ -1231,8 +1299,8 @@ def waveform_integrator(limits):
 # Compound components
 def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                   s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-                  s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2,
-                  h5out, sipm_rwf_to_cal=None):
+                  s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
+                  h5out, sipm_selection_algo, sipm_rwf_to_cal=None):
 
     # Filter events without signal over threshold
     indices_pass    = fl.map(check_nonempty_indices,
@@ -1243,7 +1311,8 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     # Build the PMap
     compute_pmap     = fl.map(build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                                          s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, thr_sipm_s2),
+                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, 
+                                         sipm_selection_algo),
                               args = ("ccwfs", "s1_indices", "s2_indices", "sipm"),
                               out  = "pmap")
 

@@ -10,13 +10,14 @@ last revised: @abotas & @gonzaponte. Dec 1st 2017
 
 import numpy        as np
 
-from .. core               import system_of_units as units
-from .. evm .ic_containers import ZsWf
-from .. evm .pmaps         import S1
-from .. evm .pmaps         import S2
-from .. evm .pmaps         import PMap
-from .. evm .pmaps         import PMTResponses
-from .. evm .pmaps         import SiPMResponses
+from .. core                 import system_of_units as units
+from .. evm   .ic_containers import ZsWf
+from .. evm   .pmaps         import S1
+from .. evm   .pmaps         import S2
+from .. evm   .pmaps         import PMap
+from .. evm   .pmaps         import PMTResponses
+from .. evm   .pmaps         import SiPMResponses
+from .. types .symbols       import CutAlgo
 
 
 def indices_and_wf_above_threshold(wf, thr):
@@ -28,6 +29,7 @@ def indices_and_wf_above_threshold(wf, thr):
 def select_wfs_above_time_integrated_thr(wfs, thr):
     selected_ids = np.where(np.sum(wfs, axis=1) >= thr)[0]
     selected_wfs = wfs[selected_ids]
+
     return selected_ids, selected_wfs
 
 
@@ -75,14 +77,14 @@ def build_pmt_responses(indices, times, widths, ccwf,
     return pk_times, pk_widths, PMTResponses(pmt_ids, pmt_wfs)
 
 
-def build_sipm_responses(indices, times, widths,
-                         sipm_wfs, sipm_ids, rebin_stride, thr_sipm_s2):
-    _, _, sipm_wfs_ = pick_slice_and_rebin(indices , times, widths,
+def build_sipm_responses(indices, times, widths, sipm_wfs, 
+                         sipm_ids, rebin_stride, sipm_selection_algo):
+    _, _, sipm_wfs = pick_slice_and_rebin(indices , times, widths,
                                            sipm_wfs, rebin_stride,
                                            pad_zeros = False)
     (sipm_idx,
-     sipm_wfs)   = select_wfs_above_time_integrated_thr(sipm_wfs_,
-                                                        thr_sipm_s2)
+     sipm_wfs)   = sipm_selection_algo(sipm_wfs)
+
     return SiPMResponses(sipm_ids[sipm_idx], sipm_wfs)
 
 
@@ -93,7 +95,7 @@ def build_peak(indices, times,
                pmt_samp_wid  = 25 * units.ns,
                sipm_samp_wid =  1 * units.mus,
                sipm_wfs      = None,
-               thr_sipm_s2   = 0):
+               sipm_selection_algo = CutAlgo.no_cut):
     sipm_pmt_bin_ratio = int(sipm_samp_wid/pmt_samp_wid)
     (pk_times ,
      pk_widths,
@@ -107,7 +109,7 @@ def build_peak(indices, times,
                                       widths * sipm_pmt_bin_ratio,
                                       sipm_wfs, sipm_ids,
                                       rebin_stride // sipm_pmt_bin_ratio,
-                                      thr_sipm_s2)
+                                      sipm_selection_algo)
     else:
         sipm_r = SiPMResponses.build_empty_instance()
 
@@ -120,7 +122,9 @@ def find_peaks(ccwfs, index,
                Pk, pmt_ids, sipm_ids=None,
                pmt_samp_wid = 25*units.ns,
                sipm_samp_wid = 1*units.mus,
-               sipm_wfs=None, thr_sipm_s2=0):
+               sipm_wfs=None, 
+               sipm_selection_algo = CutAlgo.no_cut):
+
     ccwfs = np.array(ccwfs, ndmin=2)
 
     peaks           = []
@@ -136,20 +140,20 @@ def find_peaks(ccwfs, index,
                         rebin_stride,
                         with_sipms, Pk,
                         pmt_samp_wid, sipm_samp_wid,
-                        sipm_wfs, thr_sipm_s2)
+                        sipm_wfs, sipm_selection_algo)
         peaks.append(pk)
     return peaks
 
 
 def get_pmap(ccwf, s1_indx, s2_indx, sipm_zs_wf,
-             s1_params, s2_params, thr_sipm_s2, pmt_ids, sipm_ids,
-             pmt_samp_wid, sipm_samp_wid):
+             s1_params, s2_params, pmt_ids, sipm_ids,
+             pmt_samp_wid, sipm_samp_wid, sipm_selection_algo = CutAlgo.no_cut):
     return PMap(find_peaks(ccwf, s1_indx, Pk=S1, pmt_ids=pmt_ids,
                            pmt_samp_wid=pmt_samp_wid,
                            **s1_params),
                 find_peaks(ccwf, s2_indx, Pk=S2, pmt_ids=pmt_ids, sipm_ids=sipm_ids,
                            sipm_wfs      = sipm_zs_wf,
-                           thr_sipm_s2   = thr_sipm_s2,
+                           sipm_selection_algo = sipm_selection_algo,
                            pmt_samp_wid  = pmt_samp_wid,
                            sipm_samp_wid = sipm_samp_wid,
                            **s2_params))
