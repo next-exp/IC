@@ -132,12 +132,12 @@ class SensorType(AutoNameEnumBase):
 
 
 class SiPMCalibMode(AutoNameEnumBase):
-    subtract_mode             = auto()
-    subtract_median           = auto()
-    subtract_mode_calibrate   = auto()
-    subtract_mean_calibrate   = auto()
-    subtract_median_calibrate = auto()
-    subtract_mode_zs          = auto()
+    subtract_mode               = auto()
+    subtract_median             = auto()
+    subtract_mode_calibrate     = auto()
+    subtract_mean_calibrate     = auto()
+    subtract_median_calibrate   = auto()
+    subtract_baseline_calibrate = auto()
 
 
 class SiPMCharge(AutoNameEnumBase):
@@ -155,6 +155,13 @@ class XYReco(AutoNameEnumBase):
     barycenter = auto()
     corona     = auto()
 
+class CutAlgo(AutoNameEnumBase):
+    threshold  = auto()
+    pyrrha     = auto()
+    no_cut     = auto()
+
+class SiPMSelectionMethod(AutoNameEnumBase):
+    median_std_method = auto()
 
 class WfType(AutoNameEnumBase):
     rwf  = auto()

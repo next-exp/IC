@@ -59,8 +59,9 @@ def modes  (wfs): return to_col_vector(mode  (wfs, axis=1))
 
 def subtract_baseline(wfs, *, bls_mode=BlsMode.mean):
     """
-    Subtract the baseline to all waveforms in the input
-    with a specific algorithm.
+    Subtract the baseline from all waveforms in the input
+    with a specific algorithm, leaving individual samples
+    that are already 0 untouched.
 
     Parameters
     ----------
@@ -75,15 +76,18 @@ def subtract_baseline(wfs, *, bls_mode=BlsMode.mean):
     Returns
     -------
     bls: np.ndarray with shape (n, m)
-        Baseline-subtracted waveforms.
+        Baseline-subtracted waveforms, with originally-zero
+        samples left as 0.
     """
 
-    if   bls_mode is BlsMode.mean     : return wfs - means     (wfs)
-    elif bls_mode is BlsMode.median   : return wfs - medians   (wfs)
-    elif bls_mode is BlsMode.mode     : return wfs - modes     (wfs)
-    elif bls_mode is BlsMode.scipymode: return wfs - scipy_mode(wfs, axis=1)
+    if   bls_mode is BlsMode.mean     : baseline = means     (wfs)
+    elif bls_mode is BlsMode.median   : baseline = medians   (wfs)
+    elif bls_mode is BlsMode.mode     : baseline = modes     (wfs)
+    elif bls_mode is BlsMode.scipymode: baseline = scipy_mode(wfs, axis=1)
     else:
         raise TypeError(f"Unrecognized baseline subtraction option: {bls_mode}")
+
+    return np.where(wfs == 0, 0, wfs - baseline) # subtracts the baseline to non-zero samples only
 
 
 def calibrate_wfs(wfs, adc_to_pes):
@@ -136,15 +140,13 @@ def pmt_subtract_maw(cwfs, n_maw=100):
     return cwfs - maw
 
 
-def calibrate_sipms(sipm_wfs, adc_to_pes, thr, *, bls_mode=BlsMode.mode):
+def calibrate_sipms(sipm_wfs, adc_to_pes, *, bls_mode=BlsMode.mode):
     """
-    Subtracts the baseline, calibrates waveforms to pes
-    and suppresses values below `thr` (in pes).
+    Subtract baseline, and calibrates waveforms to pes.
     """
-    thr  = to_col_vector(np.full(sipm_wfs.shape[0], thr))
     bls  = subtract_baseline(sipm_wfs, bls_mode=bls_mode)
     cwfs = calibrate_wfs(bls, adc_to_pes)
-    return np.where(cwfs > thr, cwfs, 0)
+    return cwfs
 
 
 def subtract_mean  (wfs): return subtract_baseline(wfs, bls_mode=BlsMode.mean  )
@@ -159,10 +161,10 @@ def sipm_subtract_median_and_calibrate(sipm_wfs, adc_to_pes): return calibrate_w
 
 # Dict of functions for SiPM processing
 sipm_processing = {
-    SiPMCalibMode.subtract_mode            :      subtract_mode                ,# For gain extraction
-    SiPMCalibMode.subtract_median          :      subtract_median              ,# For gain extraction
-    SiPMCalibMode.subtract_mode_calibrate  : sipm_subtract_mode_and_calibrate  ,# For PDF calculation
-    SiPMCalibMode.subtract_mean_calibrate  : sipm_subtract_mean_and_calibrate  ,# For PDF calculation
-    SiPMCalibMode.subtract_median_calibrate: sipm_subtract_median_and_calibrate,# For PDF calculation
-    SiPMCalibMode.subtract_mode_zs         : calibrate_sipms                    # For data processing
+    SiPMCalibMode.subtract_mode              :      subtract_mode                ,# For gain extraction
+    SiPMCalibMode.subtract_median            :      subtract_median              ,# For gain extraction
+    SiPMCalibMode.subtract_mode_calibrate    : sipm_subtract_mode_and_calibrate  ,# For PDF calculation
+    SiPMCalibMode.subtract_mean_calibrate    : sipm_subtract_mean_and_calibrate  ,# For PDF calculation
+    SiPMCalibMode.subtract_median_calibrate  : sipm_subtract_median_and_calibrate,# For PDF calculation
+    SiPMCalibMode.subtract_baseline_calibrate: calibrate_sipms                    # For data processing
 }
