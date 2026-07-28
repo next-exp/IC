@@ -12,8 +12,6 @@ from . core              import system_of_units as units
 from . io   . pmaps_io   import load_pmaps_as_df
 from . io   . pmaps_io   import load_pmaps
 from . io   .   dst_io   import load_dst
-from . io   .  hits_io   import load_hits
-from . io   .  hits_io   import load_hits_skipping_NN
 from . io   .mcinfo_io   import load_mchits_df
 from . types.ic_types    import NN
 from . types.symbols     import XYReco
@@ -319,22 +317,15 @@ def KrMC_kdst(ICDATADIR):
 def TlMC_hits(ICDATADIR):
     hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
     hits_file_name = os.path.join(ICDATADIR, hits_file_name)
-    hits = load_hits(hits_file_name)
+    hits = pd.read_hdf(hits_file_name, "/RECO/Events")
     return hits
 
-
-@pytest.fixture(scope='session')
-def TlMC_hits_skipping_NN(ICDATADIR):
-    hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10.h5"
-    hits_file_name = os.path.join(ICDATADIR, hits_file_name)
-    hits = load_hits_skipping_NN(hits_file_name)
-    return hits
 
 @pytest.fixture(scope='session')
 def TlMC_hits_merged(ICDATADIR):
     hits_file_name = "dst_NEXT_v1_00_05_Tl_ACTIVE_100_0_7bar_DST_10_merged.h5"
     hits_file_name = os.path.join(ICDATADIR, hits_file_name)
-    hits = load_hits(hits_file_name)
+    hits = pd.read_hdf(hits_file_name, "/RECO/Events")
     return hits
 
 

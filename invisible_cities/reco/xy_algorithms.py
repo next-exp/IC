@@ -81,7 +81,7 @@ def barycenter( pos : np.ndarray # (n, 2)
     """
     pos, qs = threshold_check(pos, qs, Qthr)
     mu, var = weighted_mean_and_var(pos, qs, axis=0)
-    return [Cluster(np.sum(qs), xy(*mu), xy(*var), len(qs))]
+    return [Cluster(np.sum(qs), xy(*mu), xy(*var), len(qs), z=None)]
 
 
 def discard_sipms( indices : np.ndarray   # shape (n,)

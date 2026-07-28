@@ -42,7 +42,7 @@ import tables as tb
 from .. core.configure      import       EventRangeType
 from .. core.configure      import       OneOrManyFiles
 from .. core                import       tbl_functions as tbl
-from .. io.         kdst_io import            kr_writer
+from .. io.         kdst_io import          kdst_writer
 from .. io.run_and_event_io import run_and_event_writer
 from .. io. event_filter_io import  event_filter_writer
 from .. types.symbols       import           SiPMCharge
@@ -119,7 +119,7 @@ def dorothea( files_in         :  OneOrManyFiles
 
         # Define writers...
         write_event_info      = fl.sink(run_and_event_writer(h5out                ), args=("run_number", "event_number", "timestamp"))
-        write_pointlike_event = fl.sink(           kr_writer(h5out                ), args="pointlike_event")
+        write_pointlike_event = fl.sink(         kdst_writer(h5out                ), args="pointlike_event")
         write_pmap_filter     = fl.sink( event_filter_writer(h5out, "s12_selector"), args=("event_number", "pmap_passed"))
 
         result = push(source = pmap_from_files(files_in),

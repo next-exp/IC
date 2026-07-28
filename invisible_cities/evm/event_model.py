@@ -14,23 +14,6 @@ from typing import List
 from typing import Tuple
 from typing import NamedTuple
 
-ZANODE = -9.425 * units.mm
-
-
-class MCInfo(NamedTuple):
-    """Transient class storing the tables of MC true info"""
-    extents   : tb.Table
-    hits      : tb.Table
-    particles : tb.Table
-    generators: tb.Table
-
-
-class Waveform(NamedTuple):
-    """Transient class storing times and charges for a sensor"""
-    times     : np.ndarray
-    charges   : np.ndarray
-    bin_width : float
-
 
 class Event:
     """Transient class storing event and time info."""
@@ -76,21 +59,6 @@ class BHit:
     __repr__ =     __str__
 
 
-class MCHit(BHit):
-    """Represents a MCHit"""
-    def __init__(self, pos, t, E, l):
-        super().__init__(pos[0],pos[1],pos[2], E)
-        self.time          = t
-        self.label         = l
-
-
-    def __str__(self):
-        return '<label = {}, pos = {}, E = {}, time = {}>'.format(self.label,
-                self.pos.tolist(), self.E, self.time)
-
-    __repr__ =     __str__
-
-
 class Voxel(BHit):
     """Represents a Voxel"""
     def __init__(self, x,y,z, E, size, hits=None, e_type : HitEnergy = HitEnergy.E):
@@ -111,7 +79,7 @@ class Voxel(BHit):
 
 class Cluster(BHit):
     """Represents a reconstructed cluster in the tracking plane"""
-    def __init__(self, Q, xy, xy_var, nsipm, z=ZANODE, E=NN, Qc=-1):
+    def __init__(self, Q, xy, xy_var, nsipm, z, E=NN, Qc=-1):
         if E == NN:
             super().__init__(xy.x, xy.y, z, Q)
         else:
@@ -154,53 +122,6 @@ class Cluster(BHit):
     __repr__ =     __str__
 
 
-class Hit(Cluster):
-    """Represents a reconstructed hit (cluster + z + energy)"""
-    def __init__(self, peak_number, cluster, z, s2_energy, peak_xy,
-                 s2_energy_c=-1, track_id=-1, Ep=-1):
-
-
-        super().__init__(cluster.Q,
-                         cluster._xy, cluster._xy_var,
-                         cluster.nsipm, z, s2_energy, cluster.Qc)
-
-        self.peak_number = peak_number
-        self.Xpeak       = peak_xy.x
-        self.Ypeak       = peak_xy.y
-        self.Ec          = s2_energy_c
-        self.track_id    = track_id
-        self.Ep          = Ep
-
-    @property
-    def npeak(self): return self.peak_number
-
-    def __str__(self):
-        return """<{} : npeak = {} z = {} XYpeak = {}, {} E = {} Ec = {} Ep = {} trackid = {} cluster ={} >""".format(self.__class__.__name__,
-                    self.npeak, self.Z, self.Xpeak, self.Ypeak, self.E, self.Ec, self.Ep, self.track_id, super().__str__())
-
-    __repr__ =     __str__
-
-
-class VoxelCollection:
-    """A collection of voxels. """
-    def __init__(self, voxels : List[Voxel]):
-        self.voxels = voxels
-        self.E = sum(v.E for v in voxels)
-
-    @property
-    def number_of_voxels(self):
-        return len(self.voxels)
-
-    def __str__(self):
-        s =  "VoxelCollection: (number of voxels = {})\n".format(self.number_of_voxels)
-        s2 = ['voxel number {} = {} \n'.format(i, voxel) for (i, voxel) in enumerate(self.voxels)]
-
-        return  s + ''.join(s2)
-
-    def __repr__(self):
-        return self.__str__()
-
-
 class Blob:
     """A Blob is a collection of Hits with a seed and a radius. """
     def __init__(self, seed: Tuple[float, float, float],
@@ -222,25 +143,6 @@ class Blob:
                 blob energy = {} \n
                 blob radius = {}
         """.format(self.hits, self.seed, self.energy, self.radius)
-
-        return  s
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class Track(VoxelCollection):
-    """A track is a collection of linked voxels. """
-    def __init__(self, voxels : List[Voxel], blobs: Tuple[Blob, Blob]) ->None:
-        super().__init__(voxels)
-        self.blobs = blobs
-
-    def __str__(self):
-        s =  """Track: (number of voxels = {})\n,
-                voxels = {} \n
-                blob_a = {} \n
-                blob_b = {}
-        """.format(self.number_of_voxels, self.voxels, self.blobs[0], self.blobs[1])
 
         return  s
 
@@ -283,130 +185,42 @@ class TrackCollection(Event):
     __repr__ =     __str__
 
 
-class HitCollection(Event):
-    """A Collection of hits"""
-    def __init__(self, event_number, event_time, hits=None):
-        Event.__init__(self, event_number, event_time)
-        self.hits = [] if hits is None else hits
+hit_type = dict( event = int
+               , time  = float
+               , npeak = np.uint16
+               , Xpeak = float
+               , Ypeak = float
+               , X     = float
+               , Y     = float
+               , Z     = float
+               , Q     = float
+               , E     = float
+               , Ec    = float
+               )
 
-    def store(self, table):
-        row = table.row
-
-        u16max = np.iinfo(np.uint16).max
-        for hit in self.hits:
-            row["event"   ] = self.event
-            row["time"    ] = self.time
-            row["npeak"   ] = overflow_protection(hit.npeak, u16max, "HitCollection::store (npeak)")
-            row["Xpeak"   ] = hit .Xpeak
-            row["Ypeak"   ] = hit .Ypeak
-            row["X"       ] = hit .X
-            row["Y"       ] = hit .Y
-            row["Z"       ] = hit .Z
-            row["Q"       ] = hit .Q
-            row["E"       ] = hit .E
-            row["Ec"      ] = hit .Ec
-            row.append()
-
-    def __str__(self):
-        s =  "{}".format(self.__class__.__name__)
-        s+= "Hit list:"
-        s2 = [str(hit) for hit in self.hits]
-        return  s + ''.join(s2)
-
-    __repr__ =     __str__
-
-
-class KrEvent(Event):
-    """Represents a point-like (Krypton) event."""
-    def __init__(self, event_number, event_time):
-        Event.__init__(self, event_number, event_time)
-        self.nS1   = -1 # number of S1 in the event
-        self.S1w   = [] # widht
-        self.S1h   = [] # heigth
-        self.S1e   = [] # energy
-        self.S1t   = [] # time
-
-        self.nS2   = -1 # number of S2s in the event
-        self.S2w   = []
-        self.S2h   = []
-        self.S2e   = []
-        self.S2q   = [] # Charge in the S2Si
-        self.S2t   = [] # time
-        self.qmax  = []
-
-        self.Nsipm = [] # number of SiPMs in S2Si
-        self.DT    = [] # drift time
-        self.Z     = [] # Position (x,y,z,R,phi)
-        self.X     = []
-        self.Y     = []
-        self.R     = []
-        self.Phi   = []
-        self.Xrms  = [] # error in position
-        self.Yrms  = []
-        self.Zrms  = []
-
-    def fill_defaults(self):
-        if self.nS1 == 0:
-            for attribute in ["w", "h", "e", "t"]:
-                setattr(self, "S1" + attribute, [np.nan])
-
-        if self.nS2 == 0:
-            for attribute in ["w", "h", "e", "t", "q"]:
-                setattr(self, "S2" + attribute, [np.nan])
-
-            self.qmax  = 0
-            for attribute in ["X", "Y", "R", "Phi", "Zrms"]:
-                setattr(self, attribute, [np.nan])
-
-        if not self.nS1 or not self.nS2:
-            for attribute in ["Z", "DT"]:
-                setattr(self, attribute, [[np.nan] * max(self.nS1, 1)] * max(self.nS2, 1))
-
-    def store(self, table):
-        row = table.row
-
-        u16max = np.iinfo(np.uint16).max
-        s1_peaks = range(int(self.nS1)) if self.nS1 else [0]
-        s2_peaks = range(int(self.nS2)) if self.nS2 else [0]
-        self.fill_defaults()
-
-        for i in s1_peaks:
-            for j in s2_peaks:
-                row["event"  ] = self.event
-                row["time"   ] = self.time
-                row["s1_peak"] = overflow_protection(i, u16max, "KrEvent::store (s1_peak)") if self.nS1 else u16max
-                row["s2_peak"] = overflow_protection(j, u16max, "KrEvent::store (s2_peak)") if self.nS2 else u16max
-                row["nS1"    ] = self.nS1
-                row["nS2"    ] = self.nS2
-
-                row["S1w"    ] = self.S1w  [i]
-                row["S1h"    ] = self.S1h  [i]
-                row["S1e"    ] = self.S1e  [i]
-                row["S1t"    ] = self.S1t  [i]
-
-                row["S2w"    ] = self.S2w  [j]
-                row["S2h"    ] = self.S2h  [j]
-                row["S2e"    ] = self.S2e  [j]
-                row["S2q"    ] = self.S2q  [j]
-                row["S2t"    ] = self.S2t  [j]
-                row["qmax"   ] = self.qmax [j]
-
-                row["Nsipm"  ] = self.Nsipm[j]
-                row["DT"     ] = self.DT   [j][i]
-                row["Z"      ] = self.Z    [j][i]
-                row["Zrms"   ] = self.Zrms [j]
-                row["X"      ] = self.X    [j]
-                row["Y"      ] = self.Y    [j]
-                row["R"      ] = self.R    [j]
-                row["Phi"    ] = self.Phi  [j]
-                row["Xrms"   ] = self.Xrms [j]
-                row["Yrms"   ] = self.Yrms [j]
-                row.append()
-
-    def __str__(self):
-        s = "{0}Event\n{0}".format("#"*20 + "\n")
-        for attr in self.__dict__:
-            s += "{}: {}\n".format(attr, getattr(self, attr))
-        return s
-
-    __repr__ =     __str__
+kr_events_type = dict( event   = int
+                     , time    = float
+                     , s1_peak = np.uint16
+                     , s2_peak = np.uint16
+                     , nS1     = np.uint16
+                     , nS2     = np.uint16
+                     , S1w     = float
+                     , S1h     = float
+                     , S1e     = float
+                     , S1t     = float
+                     , S2w     = float
+                     , S2h     = float
+                     , S2e     = float
+                     , S2q     = float
+                     , S2t     = float
+                     , qmax    = float
+                     , Nsipm   = np.uint16
+                     , DT      = float
+                     , Z       = float
+                     , X       = float
+                     , Y       = float
+                     , R       = float
+                     , Phi     = float
+                     , Xrms    = float
+                     , Yrms    = float
+                     )

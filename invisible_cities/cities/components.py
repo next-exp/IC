@@ -7,6 +7,7 @@ from os.path         import expandvars
 from itertools       import count
 from itertools       import repeat
 from warnings        import warn
+from itertools       import compress
 
 from typing          import Callable
 from typing          import Iterator
@@ -32,11 +33,7 @@ from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
 from .. dataflow.dataflow         import                      pipe
 from .. evm    .ic_containers     import                SensorData
-from .. evm    .event_model       import                   KrEvent
-from .. evm    .event_model       import                       Hit
 from .. evm    .event_model       import                   Cluster
-from .. evm    .event_model       import             HitCollection
-from .. evm    .event_model       import                    MCInfo
 from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail
 from .. core   .exceptions        import           MCEventNotFound
@@ -51,6 +48,7 @@ from .. detsim                    import          buffer_functions as  bf
 from .. detsim                    import          sensor_functions as  sf
 from .. detsim .sensor_utils      import             trigger_times
 from .. evm    .pmaps             import                      PMap
+from .. evm    .pmaps             import                     _Peak
 from .. calib                     import           calib_functions as  cf
 from .. calib                     import   calib_sensors_functions as csf
 from .. reco                      import            peak_functions as pkf
@@ -617,7 +615,7 @@ def pmap_from_files(paths):
 def hits_and_kdst_from_files( paths : List[str]
                             , group : str
                             , node  : str
-                            ) -> Iterator[Dict[str,Union[ pd.DataFrame , pd.DataFrame , MCInfo, int, float]]]:
+                            ) -> Iterator[Dict[str,Union[ pd.DataFrame , pd.DataFrame , int, int, float]]]:
     """
     Reader of hits files. For each event it produces a dictionary containing
     - hits        : a DataFrame
@@ -649,7 +647,6 @@ def hits_and_kdst_from_files( paths : List[str]
                 kdst = kdst_df.loc[this_event]
                 if not len(hits):
                     warnings.warn(f"Event {event_number} does not contain hits", UserWarning)
-
                 yield dict(hits         = hits,
                            kdst         = kdst,
                            run_number   = run_number,
@@ -971,59 +968,48 @@ def build_pointlike_event(dbfile, run_number, drift_v,
 
     sipm_noise = NoiseSampler(dbfile, run_number).signal_to_noise
 
+    def filter_peaks(ok, pks):
+        n   = np.count_nonzero(ok)
+        pks = list(compress(pks, ok)) if n else [_Peak.empty_instance()]
+        return (pks, n)
+
     def build_pointlike_event(pmap, selector_output, event_number, timestamp):
-        evt = KrEvent(event_number, timestamp * 1e-3)
+        timestamp *= 1e-3 # ms to s
 
-        evt.nS1 = 0
-        for passed, peak in zip(selector_output.s1_peaks, pmap.s1s):
-            if not passed: continue
+        s1s, nS1 = filter_peaks(selector_output.s1_peaks, pmap.s1s)
+        s2s, nS2 = filter_peaks(selector_output.s2_peaks, pmap.s2s)
 
-            evt.nS1 += 1
-            evt.S1w.append(peak.width)
-            evt.S1h.append(peak.height)
-            evt.S1e.append(peak.total_energy)
-            evt.S1t.append(peak.time_at_max_energy)
+        data = []
+        for i, s1 in enumerate(s1s):
+            for j, s2 in enumerate(s2s):
+                xys = sipm_xys[s2.sipms.ids]
+                qs  = s2.sipm_charge_array(sipm_noise, charge_type,
+                                           single_point = True)
+                try:
+                    clusters = reco(xys, qs)
+                except XYRecoFail:
+                    c    = NNN()
+                    Z    = NN
+                    DT   = NN
+                    Zrms = NN
+                else:
+                    c     = clusters[0]
+                    Z, DT = compute_z_and_dt(s2.time_at_max_energy, s1.time_at_max_energy, drift_v)
+                    Zrms  = s2.rms / units.mus
 
-        evt.nS2 = 0
+                row = [ event_number, timestamp
+                      , i, j, nS1, nS2
+                      , s1.width            , s1.height, s1.total_energy, s1.time_at_max_energy
+                      , s2.width / units.mus, s2.height, s2.total_energy, s2.time_at_max_energy
+                      , c.nsipm, c.Q, c.X, c.Y, c.Xrms, c.Yrms, c.R, c.Phi, DT, Z, Zrms, max(qs)
+                      ]
+                data.append(row)
 
-        for passed, peak in zip(selector_output.s2_peaks, pmap.s2s):
-            if not passed: continue
-
-            evt.nS2 += 1
-            evt.S2w.append(peak.width / units.mus)
-            evt.S2h.append(peak.height)
-            evt.S2e.append(peak.total_energy)
-            evt.S2t.append(peak.time_at_max_energy)
-
-            xys = sipm_xys[peak.sipms.ids           ]
-            qs  = peak.sipm_charge_array(sipm_noise, charge_type,
-                                         single_point = True)
-            try:
-                clusters = reco(xys, qs)
-            except XYRecoFail:
-                c    = NNN()
-                Z    = tuple(NN for _ in range(0, evt.nS1))
-                DT   = tuple(NN for _ in range(0, evt.nS1))
-                Zrms = NN
-            else:
-                c = clusters[0]
-                Z, DT = compute_z_and_dt(evt.S2t[-1], evt.S1t, drift_v)
-                Zrms  = peak.rms / units.mus
-
-            evt.Nsipm.append(c.nsipm)
-            evt.S2q  .append(c.Q)
-            evt.X    .append(c.X)
-            evt.Y    .append(c.Y)
-            evt.Xrms .append(c.Xrms)
-            evt.Yrms .append(c.Yrms)
-            evt.R    .append(c.R)
-            evt.Phi  .append(c.Phi)
-            evt.DT   .append(DT)
-            evt.Z    .append(Z)
-            evt.Zrms .append(Zrms)
-            evt.qmax .append(max(qs))
-
-        return evt
+        columns = ("event time s1_peak s2_peak nS1 nS2 "
+                   "S1w S1h S1e S1t S2w S2h S2e S2t Nsipm S2q "
+                   "X Y Xrms Yrms R Phi DT Z Zrms qmax").split()
+        print(np.array(data).shape, len(columns))
+        return pd.DataFrame(np.array(data), columns=columns)
 
     return build_pointlike_event
 
@@ -1057,116 +1043,6 @@ def sipm_positions(dbfile, run_number):
     sipm_xys = np.stack((sipm_xs, sipm_ys), axis=1)
     return sipm_xys
 
-
-def hit_builder( detector_db : str
-               , run_number  : int
-               , drift_v     : float
-               , rebin_method: RebinMethod
-               , rebin_slices: Union[int, float]
-               , global_reco : XYReco
-               , slice_reco  : XYReco
-               , charge_type : SiPMCharge
-               ) -> Callable:
-    """
-    Builds hits from PMaps using a general clustering algorithm. For a given
-    PMap, and the output of the peak-selector output does the following:
-    - Filters out peaks rejected by the selector
-    - Picks up the S1 (always the first one, if there are more, they are ignored)
-    - Rebins each S2 according to `rebin_method` and `rebin_slices`
-    - For each S2:
-      - Compute the overall position of the signal according to `global_reco`
-        (typically barycenter in XYZ)
-      - For each (rebinned) slice of the S2:
-        - Clusterize the SiPM responses according to `slice_reco`
-          - Failing XY reconstructions (e.g. not enough SiPMs with signal)
-            generate "empty" (a.k.a. NN) clusters
-        - Assign each cluster the corresponding fraction of the energy in the
-          slice
-
-    Parameters
-    ----------
-    detector_db: str
-      Detector database to use
-
-    run_number: int
-      Run number being processed
-
-    drift_v: float
-      Drift velocity in the data
-
-    rebin_method: RebinMethod
-      Which rebinning (resampling) algorithm to use
-
-    rebin_slices: int or float
-      Configuration option for `rebin_method`. It's interpretation depends on
-      the method:
-      If stride, `rebin_slices` represents the number of consecutive slices co
-      merge into one.
-      If threshold, `rebin_slices` represents the minimum charge a slice must
-      have for it not to be rebinned.
-
-    global_reco: Callable
-      Reconstruction function to use for the event as a whole
-
-    slice_reco: Callable
-      Reconstruction function to use on each slice
-
-    charge_type: SiPMCharge
-      Interpretation of the SiPM charge.
-
-    Returns
-    -------
-    build_hits: Callable
-      A function that computes hits.
-    """
-    sipm_xys   = sipm_positions(detector_db, run_number)
-    sipm_noise =   NoiseSampler(detector_db, run_number).signal_to_noise
-
-    def build_hits( pmap           : PMap
-                  , selector_output: S12SelectorOutput
-                  , event_number   : int
-                  , timestamp      : float
-                  ) -> HitCollection:
-        hitc = HitCollection(event_number, timestamp * 1e-3)
-        s1_t = get_s1_time(pmap, selector_output)
-
-        # here hits are computed for each peak and each slice.
-        # In case of an exception, a hit is still created with a NN cluster.
-        # (NN cluster is a cluster where the energy is an IC not number NN)
-        # this allows to keep track of the energy associated to non reonstructed hits.
-        for peak_no, (passed, peak) in enumerate(zip(selector_output.s2_peaks,
-                                                     pmap.s2s)):
-            if not passed: continue
-
-            peak = pmf.rebin_peak(peak, rebin_method, rebin_slices)
-            xys  = sipm_xys[peak.sipms.ids]
-            qs   = peak.sipm_charge_array(sipm_noise, charge_type,
-                                          single_point = True)
-
-            xy_peak     = try_global_reco(global_reco, xys, qs)
-            sipm_charge = peak.sipm_charge_array(sipm_noise        ,
-                                                 charge_type       ,
-                                                 single_point=False)
-
-            slice_zs = (peak.times - s1_t) * units.ns * drift_v
-            slice_es = peak.pmts.sum_over_sensors
-            xys      = sipm_xys[peak.sipms.ids]
-
-            for (z_slice, e_slice, sipm_qs) in zip(slice_zs, slice_es, sipm_charge):
-                try:
-                    clusters = slice_reco(xys, sipm_qs)
-                    qs       = np.array([c.Q for c in clusters])
-                    es       = hif.e_from_q(qs, e_slice)
-                    for c, e in zip(clusters, es):
-                        hit  = Hit(peak_no, c, z_slice, e, xy_peak)
-                        hitc.hits.append(hit)
-                except XYRecoFail:
-                    hit = Hit(peak_no, Cluster.empty(), z_slice,
-                              e_slice, xy_peak)
-                    hitc.hits.append(hit)
-
-        return hitc
-    return build_hits
 
 
 def sipms_as_hits( detector_db : str
@@ -1524,112 +1400,82 @@ def summary_writer(h5out):
 
 
 @check_annotations
-def track_blob_info_creator_extractor(vox_size         : Tuple[float, float, float],
-                                      strict_vox_size  : bool                      ,
-                                      energy_threshold : float                     ,
-                                      min_voxels       : int                       ,
-                                      blob_radius      : float                     ,
-                                      scan_radius      : Union[float, NoneType]    ,
-                                      max_num_hits     : int
-                                     ) -> Callable:
-    """
-    For a given set of paolina parameters returns a function that extract tracks / blob
-    information from a set of hits.
+def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, float]
+                                      , energy_threshold : float
+                                      , min_voxels       : int
+                                      , blob_radius      : float
+                                      , scan_radius      : Union[float, NoneType]
+                                      , max_num_hits     : int
+                                      ) -> Callable:
+    '''
+    Overarching function that returns:
+    - track table
+    - voxels table
+    - hits table
 
-    Parameters
-    ----------
-    vox_size         : [float, float, float]
-        (maximum) size of voxels for track reconstruction
-    strict_vox_size  : bool
-        if False allows per event adaptive voxel size,
-        smaller of equal thatn vox_size
-    energy_threshold : float
-        if energy of end-point voxel is smaller
-        the voxel will be dropped and energy redistributed to the neighbours
-    min_voxels       : int
-        after min_voxel number of voxels is reached no dropping will happen.
-    blob_radius      : float
-        radius of blob
+    '''
 
-    Returns
-    ----------
-    A function that from a given set of hits returns
-      - general track information dataframe
-      - hits with associated track ids
-      - flag to indicate whether there are hits outside of the correction-map domain
-    """
-    def create_extract_track_blob_info(hits: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, bool]:
-        df = pd.DataFrame(columns=list(types_dict_tracks.keys()))
+    # force vox_size into np.ndarray
+    vox_size = np.array(vox_size)
+
+    def create_extract_track_blob_info(hits: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, bool]:
+        '''
+        Parameters
+        ----------
+        hits  :  Input hits for track extraction
+
+        Returns
+        -------
+        - general track information dataframe
+        - tagged voxels table
+        - tagged hits table
+        - flag to indicate that one of the filters failed (too many hits, hits outside of domain)
+        '''
+
+        # generate empty dataframe
+        track_df      = pd.DataFrame(columns=list(types_dict_tracks.keys()))
+
+        # generate fake empty voxel and hits tables
+        empty_vox_tbl = pd.DataFrame(columns = ['x', 'y', 'z', 'e', 'track'])
+        empty_hit_tbl = pd.DataFrame(columns = np.append(hits.columns, ['track_id', 'voxel_id', 'track', 'blob']))
+
         hits = hits.assign(track_id=-1)
         if len(hits) > max_num_hits:
             event = hits.event.iloc[0]
             warn("Event {event} has too many hits ({len(hits)})."
                  " This event will not be processed.")
-            return df, hits, True
+            return hits.assign(track_id = -1, voxel_id = -1, track = -1, blob = 'none'), empty_vox_tbl, track_df, True
+
         plf.round_hits_positions_in_place(hits, 5)
 
-        event      = int(hits.event.iloc[0])
+        # check if hits exist within the map
         out_of_map = hits.Ep.isna().values
         hits_out   = hits.loc[ out_of_map]
         hits       = hits.loc[~out_of_map]
         if not len(hits) or not (hits.Ep>0).any():
-            return df, hits, out_of_map.any()
+            return empty_hit_tbl, empty_vox_tbl, track_df, True
 
-        voxels            = plf.voxelize_hits(hits, vox_size, strict_vox_size, HitEnergy.Ep)
-        ( mod_voxels,
-          dropped_voxels) = plf.drop_end_point_voxels(voxels, energy_threshold, min_voxels)
+        # voxelise
+        hits, voxels = plf.voxelize_hits(hits, vox_size, HitEnergy.Ep)
 
-        tracks = plf.make_track_graphs(mod_voxels)
-        tracks = sorted(tracks, key=plf.get_track_energy, reverse=True)
+        ( _,
+          mod_voxels,
+          dropped_voxels) = plf.drop_voxels(hits,
+                                            voxels,
+                                            energy_threshold,
+                                            vox_size,
+                                            HitEnergy.Ep,
+                                            min_vxls = min_voxels)
 
-        vox_size_x = voxels[0].size[0]
-        vox_size_y = voxels[0].size[1]
-        vox_size_z = voxels[0].size[2]
-        del(voxels)
 
-        track_hits = [v.hits for v in dropped_voxels]
-        for c, t in enumerate(tracks, 0):
-            tID = c
-            energy = plf.get_track_energy(t)
-            numb_of_hits   = sum(len(v.hits) for v in t.nodes())
-            numb_of_voxels = len(t.nodes())
-            numb_of_tracks = len(tracks   )
-            hits_from_track = ( pd.concat([v.hits for v in t.nodes()], ignore_index=True)
-                                  .assign(R = lambda df: np.sqrt(df.X**2 + df.Y**2))
-                              )
+        hits, mod_voxels, tracks = plf.make_tracks(hits,
+                                                   mod_voxels,
+                                                   vox_size,
+                                                   blob_radius,
+                                                   scan_radius,
+                                                   energy_type = HitEnergy.Ep) # not sure about this energy
 
-            ave_pos = np.average(hits_from_track["X Y Z".split()], weights=hits_from_track.Ep, axis=0)
-            ave_r   = np.average(hits_from_track.R               , weights=hits_from_track.Ep, axis=0)
-            distances = plf.shortest_paths(t)
-            extr1, extr2, length = plf.find_extrema_and_length(distances)
-            extr1_pos = extr1.XYZ
-            extr2_pos = extr2.XYZ
-
-            e_blob1, e_blob2, hits_blob1, hits_blob2, blob_pos1, blob_pos2 = plf.blob_energies_hits_and_centres(t, blob_radius, scan_radius)
-
-            common_hits = hits_blob1.merge(hits_blob2, how="inner")
-            overlap     = common_hits.Ep.sum()
-            list_of_vars = [event, tID, energy, length, numb_of_voxels,
-                            numb_of_hits, numb_of_tracks,
-                            hits_from_track.X.min(), hits_from_track.Y.min(), hits_from_track.Z.min(), hits_from_track.R.min(),
-                            hits_from_track.X.max(), hits_from_track.Y.max(), hits_from_track.Z.max(), hits_from_track.R.max(),
-                            *ave_pos, ave_r, *extr1_pos,
-                            *extr2_pos, *blob_pos1, *blob_pos2,
-                            e_blob1, e_blob2, overlap,
-                            vox_size_x, vox_size_y, vox_size_z]
-
-            df.loc[c] = list_of_vars
-
-            for vox in t.nodes():
-                vox.hits.loc[:, "track_id"] = tID
-                track_hits.append(vox.hits)
-
-        #change dtype of columns to match type of variables
-        df = df.apply(lambda x : x.astype(types_dict_tracks[x.name]))
-        track_hits = ( pd.concat([hits_out] + track_hits, ignore_index=True)
-                         .astype(dict(event=int, npeak=np.uint16, track_id=int))
-                     )
-        return df, track_hits, out_of_map.any()
+        return hits, mod_voxels, tracks, False
 
     return create_extract_track_blob_info
 
@@ -1641,6 +1487,9 @@ def sort_hits(hits):
 def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name,
                                   hits_writer):
+
+    # pop strict_vox_size for testing purposes
+    paolina_params.pop('strict_vox_size')
 
     filter_events_nohits = fl.map(lambda x : len(x) > 0,
                                       args = 'hits',
@@ -1655,7 +1504,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     # Create tracks and compute topology-related information
     create_extract_track_blob_info = fl.map(track_blob_info_creator_extractor(**paolina_params),
                                             args = 'Ep_hits',
-                                            out  = ('topology_info', 'paolina_hits', 'out_of_map'))
+                                            out  = ('paolina_hits', 'paolina_voxels', 'topology_info', 'out_of_map'))
 
     sort_hits_ = fl.map(sort_hits, item="paolina_hits")
 

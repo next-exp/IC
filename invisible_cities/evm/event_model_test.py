@@ -15,10 +15,7 @@ from .. types.symbols    import HitEnergy
 
 from .       event_model import Event
 from .       event_model import Cluster
-from .       event_model import Hit
 from .       event_model import Voxel
-from .       event_model import HitCollection
-from .       event_model import KrEvent
 
 
 @composite
@@ -61,25 +58,10 @@ def hit_input(draw):
     return peak_number, s2_energy, z, x_peak, y_peak, s2_energy_c, track_id, Ep
 
 
-@composite
-def hits(draw):
-    Q, x, y, *_                                          = draw(cluster_input())
-    peak_number, E, z, x_peak, y_peak, s2ec, track_id, _ = draw(    hit_input())
-
-    # np.nan to represent invalid data, since we don't use it anymore
-    c = Cluster(Q, xy(x, y), xy(np.nan, np.nan), np.nan)
-    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, np.nan)
-    return h
-
-
-@mark.parametrize("test_class",
-                  (Event,
-                   HitCollection,
-                   KrEvent))
 @given(event_input())
-def test_event(test_class, event_pars):
+def test_event(event_pars):
     evt_no, time = event_pars
-    evt =  test_class(*event_pars)
+    evt =  Event(*event_pars)
 
     assert evt.event == evt_no
     assert evt.time  == time
@@ -94,7 +76,7 @@ def test_cluster(ci):
     xyar   = (x, y)
     varar  = (xvar, yvar)
     pos    = np.stack(([x], [y]), axis=1)
-    c      = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm)
+    c      = Cluster(Q, xy(x,y), xy(xvar,yvar), nsipm, z=None)
 
     assert c.nsipm == nsipm
     np.isclose (c.Q     , Q    , rtol=1e-4)
@@ -114,31 +96,6 @@ def test_hitenergy_value(value):
     assert getattr(HitEnergy, value).value == value
 
 
-@given(cluster_input(), hit_input())
-def test_hit(ci, hi):
-    Q, x, y, *_                                          = ci
-    peak_number, E, z, x_peak, y_peak, s2ec, track_id, _ = hi
-    xyz = x, y, z
-
-    # np.nan to represent invalid data, since we don't use it anymore
-    c = Cluster(Q, xy(x,y), xy(np.nan, np.nan), np.nan)
-    h = Hit(peak_number, c, z, E, xy(x_peak, y_peak), s2ec, track_id, np.nan)
-
-    assert h.peak_number == peak_number
-    assert h.npeak       == peak_number
-
-    np.isclose (h.X       , x       , rtol=1e-4)
-    np.isclose (h.Y       , y       , rtol=1e-4)
-    np.isclose (h.Z       , z       , rtol=1e-4)
-    np.isclose (h.E       , E       , rtol=1e-4)
-    np.isclose (h.Xpeak   , x_peak  , rtol=1e-4)
-    np.isclose (h.Ypeak   , y_peak  , rtol=1e-4)
-    np.allclose(h.XYZ     , xyz     , rtol=1e-4)
-    np.allclose(h.pos     , xyz     , rtol=1e-4)
-    np.allclose(h.Ec      , s2ec    , rtol=1e-4)
-    np.allclose(h.track_id, track_id, rtol=1e-4)
-
-
 @given(voxel_input())
 def test_voxel(vi):
     x, y, z, E, size = vi
@@ -151,28 +108,3 @@ def test_voxel(vi):
     np.isclose (v.X  , x  , rtol=1e-4)
     np.isclose (v.Y  , y  , rtol=1e-4)
     np.isclose (v.Z  , z  , rtol=1e-4)
-
-
-def test_hit_collection_empty():
-    hc = HitCollection(-1, -1)
-    assert hc.hits == []
-
-
-@given(lists(hits()))
-def test_hit_collection_nonempty(hits):
-    hc = HitCollection(-1, -1, hits=hits)
-    assert hc.hits == hits
-
-
-def test_kr_event_attributes():
-    evt =  KrEvent(-1, -1)
-
-    for attr in ["nS1", "nS2"]:
-        assert getattr(evt, attr) == -1
-
-    for attr in ["S1w", "S1h", "S1e", "S1t",
-                 "S2w", "S2h", "S2e", "S2t", "S2q",
-                 "Nsipm", "DT", "Z",
-                 "X", "Y", "R", "Phi",
-                 "Xrms", "Yrms"]:
-        assert getattr(evt, attr) == []

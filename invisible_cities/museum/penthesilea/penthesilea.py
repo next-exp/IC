@@ -165,3 +165,115 @@ def penthesilea( files_in           : OneOrManyFiles
                          detector_db, run_number)
 
         return result
+
+
+
+def hit_builder( detector_db : str
+               , run_number  : int
+               , drift_v     : float
+               , rebin_method: RebinMethod
+               , rebin_slices: Union[int, float]
+               , global_reco : XYReco
+               , slice_reco  : XYReco
+               , charge_type : SiPMCharge
+               ) -> Callable:
+    """
+    Builds hits from PMaps using a general clustering algorithm. For a given
+    PMap, and the output of the peak-selector output does the following:
+    - Filters out peaks rejected by the selector
+    - Picks up the S1 (always the first one, if there are more, they are ignored)
+    - Rebins each S2 according to `rebin_method` and `rebin_slices`
+    - For each S2:
+      - Compute the overall position of the signal according to `global_reco`
+        (typically barycenter in XYZ)
+      - For each (rebinned) slice of the S2:
+        - Clusterize the SiPM responses according to `slice_reco`
+          - Failing XY reconstructions (e.g. not enough SiPMs with signal)
+            generate "empty" (a.k.a. NN) clusters
+        - Assign each cluster the corresponding fraction of the energy in the
+          slice
+
+    Parameters
+    ----------
+    detector_db: str
+      Detector database to use
+
+    run_number: int
+      Run number being processed
+
+    drift_v: float
+      Drift velocity in the data
+
+    rebin_method: RebinMethod
+      Which rebinning (resampling) algorithm to use
+
+    rebin_slices: int or float
+      Configuration option for `rebin_method`. It's interpretation depends on
+      the method:
+      If stride, `rebin_slices` represents the number of consecutive slices co
+      merge into one.
+      If threshold, `rebin_slices` represents the minimum charge a slice must
+      have for it not to be rebinned.
+
+    global_reco: Callable
+      Reconstruction function to use for the event as a whole
+
+    slice_reco: Callable
+      Reconstruction function to use on each slice
+
+    charge_type: SiPMCharge
+      Interpretation of the SiPM charge.
+
+    Returns
+    -------
+    build_hits: Callable
+      A function that computes hits.
+    """
+    sipm_xys   = sipm_positions(detector_db, run_number)
+    sipm_noise =   NoiseSampler(detector_db, run_number).signal_to_noise
+
+    def build_hits( pmap           : PMap
+                  , selector_output: S12SelectorOutput
+                  , event_number   : int
+                  , timestamp      : float
+                  ) -> HitCollection:
+        hitc = HitCollection(event_number, timestamp * 1e-3)
+        s1_t = get_s1_time(pmap, selector_output)
+
+        # here hits are computed for each peak and each slice.
+        # In case of an exception, a hit is still created with a NN cluster.
+        # (NN cluster is a cluster where the energy is an IC not number NN)
+        # this allows to keep track of the energy associated to non reonstructed hits.
+        for peak_no, (passed, peak) in enumerate(zip(selector_output.s2_peaks,
+                                                     pmap.s2s)):
+            if not passed: continue
+
+            peak = pmf.rebin_peak(peak, rebin_method, rebin_slices)
+            xys  = sipm_xys[peak.sipms.ids]
+            qs   = peak.sipm_charge_array(sipm_noise, charge_type,
+                                          single_point = True)
+
+            xy_peak     = try_global_reco(global_reco, xys, qs)
+            sipm_charge = peak.sipm_charge_array(sipm_noise        ,
+                                                 charge_type       ,
+                                                 single_point=False)
+
+            slice_zs = (peak.times - s1_t) * units.ns * drift_v
+            slice_es = peak.pmts.sum_over_sensors
+            xys      = sipm_xys[peak.sipms.ids]
+
+            for (z_slice, e_slice, sipm_qs) in zip(slice_zs, slice_es, sipm_charge):
+                try:
+                    clusters = slice_reco(xys, sipm_qs)
+                    qs       = np.array([c.Q for c in clusters])
+                    es       = hif.e_from_q(qs, e_slice)
+                    for c, e in zip(clusters, es):
+                        hit  = Hit(peak_no, c, z_slice, e, xy_peak)
+                        hitc.hits.append(hit)
+                except XYRecoFail:
+                    hit = Hit(peak_no, Cluster.empty(), z_slice,
+                              e_slice, xy_peak)
+                    hitc.hits.append(hit)
+
+        return hitc
+    return build_hits
