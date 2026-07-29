@@ -79,7 +79,6 @@ from .. io     .dst_io            import                 df_writer
 from .. types  .ic_types          import                  NoneType
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
-from .. types  .ic_types          import                       NNN
 from .. types  .ic_types          import                    minmax
 from .. types  .ic_types          import        types_dict_summary
 from .. types  .ic_types          import         types_dict_tracks
@@ -1001,7 +1000,7 @@ def build_pointlike_event(dbfile, run_number, drift_v,
             try:
                 clusters = reco(xys, qs)
             except XYRecoFail:
-                c    = NNN()
+                c    = Cluster.empty()
                 Z    = tuple(NN for _ in range(0, evt.nS1))
                 DT   = tuple(NN for _ in range(0, evt.nS1))
                 Zrms = NN

@@ -11,11 +11,6 @@ NoneType = type(None)
 
 Tuple2Dor3D = Union[Tuple[float, float], Tuple[float, float, float]]
 
-class NNN:
-
-    def __getattr__(self, _):
-        return NN
-
 
 class xy:
     def __init__(self, x, y):

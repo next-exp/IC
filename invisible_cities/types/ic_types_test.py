@@ -5,7 +5,6 @@ import numpy as np
 from . ic_types          import minmax
 from . ic_types          import xy
 from . ic_types          import NN
-from . ic_types          import NNN
 
 from pytest import raises
 
@@ -89,9 +88,3 @@ def test_xy(xy, a, b):
     np.isclose (xy.R  ,   r, rtol=1e-4)
     np.isclose (xy.Phi, phi, rtol=1e-4)
     np.allclose(xy.pos, pos, rtol=1e-3, atol=1e-03)
-
-
-@given(text(min_size=1, max_size=10, alphabet=ascii_letters))
-def test_NNN_generates_NN_for_every_attribute_name(name):
-    nnn = NNN()
-    assert getattr(nnn, name) == NN
