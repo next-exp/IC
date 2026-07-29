@@ -143,16 +143,23 @@ function export_city_command_completion {
 function activate {
     if ! command -v conda 2&>1 > /dev/null
     then
-       install_conda
+        echo "ERROR: Conda not found."
+        echo "Set it up before running this command or run"
+        echo "\nbash manage.sh install_and_check\n"
+        echo "for an automatic conda and IC installation"
+        return
     fi
 
     if ! (conda env list | grep ${CONDA_ENV_NAME}) >> /dev/null
     then
-        make_environment
+        echo "ERROR:IC environment not found"
+        echo "Run"
+        echo "\nbash manage.sh install_and_check\n"
+        echo "to install IC"
+        return
     fi
 
     python_version_env
-    compile_cython_components
     export_city_command_completion
 }
 

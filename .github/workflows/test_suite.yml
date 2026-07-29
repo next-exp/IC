@@ -35,7 +35,7 @@ jobs:
 
     - name: Install IC
       run: |
-        source manage.sh activate
+        bash manage.sh install
 
     - name: Run tests
       run: |
@@ -100,7 +100,7 @@ jobs:
     - name: Pyflakes
       run: |
         source scripts/setup_conda_gha.sh
-        source manage.sh work_in_python_version_no_tests ${{ matrix.python-version }}
+        source manage.sh activate
 
         # tee is used to ignore the exit status of pyflakes
         # we don't want the GHA check to fail because of this
