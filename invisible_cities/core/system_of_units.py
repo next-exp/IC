@@ -204,11 +204,13 @@ gram = 1.e-3 * kilogram
 milligram = 1.e-3 * gram
 ton = 1.e+3 * kilogram
 kiloton = 1.e+3 * ton
+dalton = 1.660539e-27 * kilogram
 
 # symbols
 kg = kilogram
 g = gram
 mg = milligram
+Da = dalton
 
 #
 # Power [E][T^-1]
