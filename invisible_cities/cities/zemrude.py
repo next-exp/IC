@@ -18,6 +18,7 @@ from .. types   .symbols                 import MapFitFunction
 
 from .. icaros  .correction_functions    import apply_correctionmap_inplace_kdst
 from .. icaros  .selection_functions     import apply_selections
+from .. icaros  .selection_functions     import discard_nan_values
 from .. icaros  .krmap_functions         import compute_3D_map
 from .. icaros  .krmap_functions         import gaussian_fit_ready
 from .. icaros  .krmap_functions         import get_median
@@ -36,7 +37,7 @@ from typing import Dict
 
 
 def concatenated_dsts_from_files(path: List[str], group: str, node:str)-> Iterator[Dict[str,Union[pd.DataFrame, int, np.ndarray]]]:
-    df = load_dsts(path, group, node)
+    df = load_dsts(path, group, node, ignore_errors = True)
     with tb.open_file(path[0], 'r') as h5in:
         run_number = get_run_number(h5in)
 
@@ -44,6 +45,10 @@ def concatenated_dsts_from_files(path: List[str], group: str, node:str)-> Iterat
                run_number = run_number
                )
 
+def select_no_nan():
+    def discard_nans(df):
+        return discard_nan_values(df)
+    return discard_nans
 
 def apply_map(pre_map, norm_method, xy_params, col_name, unit):
     pre_map = pd.read_hdf(pre_map)
@@ -168,12 +173,16 @@ def zemrude(files_in           : OneOrManyFiles
             , xy_params        : dict = None
             ):
 
+    apply_nan_cut          = fl.map( select_no_nan()
+                                     ,item  = 'dst'
+                                     )
+
     apply_preliminary_map  = fl.map( apply_map(pre_map,
                                               norm_method,
                                               xy_params,
                                               'Ec',
                                               unit = keV)
-                                  , item = 'dst')
+                                  , item  = 'dst')
 
 
     apply_selections = fl.map( select_dst(dtrms2_low,
@@ -275,7 +284,8 @@ def zemrude(files_in           : OneOrManyFiles
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)):
         pass
     fl.push( source = concatenated_dsts_from_files(files_in, "DST", "Events")
-            ,pipe   = fl.pipe(apply_preliminary_map,
+            ,pipe   = fl.pipe( apply_nan_cut,
+                               apply_preliminary_map,
                                apply_selections,
                                compute_3D_map,
                                compute_metadata,
