@@ -332,7 +332,7 @@ def regularize_map(krmap    : pd.DataFrame,
 
     """
     max_nan_neighbours = 3
-    mu = krmap.mu.values.reshape(mapshape)
+    mu = krmap.mu.values.reshape(mapshape).copy()
 
     for k in range(mu.shape[0]):
         for i in range(1, mu.shape[1] -1):
@@ -725,3 +725,16 @@ def save_map(name          : str,
         df_writer(file, efficiencies, group_name = 'data', table_name = 'selection_efficiencies')
         df_writer(file, krmap, group_name = 'krmap', table_name = 'krmap')
         df_writer(file, t_evol, group_name = 't_evol', table_name = 't_evol')
+
+def merge_multiple_maps(maps : pd.DataFrame) -> pd.DataFrame:
+    """
+    Merge multiple maps into a single map.
+    Group maps by their (k i j) indices. The output 'mu' (new_mu) is computed as the weighted mean of the input 'mu' values using 'nevents' as weights.
+    """
+    def merge_bins(df):
+        EPSILON = np.finfo(np.float64).eps
+        new_mu  = np.sum(df.mu * df.nevents) / (df.nevents.sum() + EPSILON)
+        return pd.DataFrame( dict( mu = new_mu
+                             , nevents  = df.nevents.sum())
+                       , index=[0])
+    return maps.groupby('k i j'.split()).apply(merge_bins).reset_index()
