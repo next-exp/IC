@@ -332,7 +332,7 @@ def regularize_map(krmap    : pd.DataFrame,
 
     """
     max_nan_neighbours = 3
-    mu = krmap.mu.values.reshape(mapshape).copy()
+    mu = krmap.mu.values.reshape(mapshape)
 
     for k in range(mu.shape[0]):
         for i in range(1, mu.shape[1] -1):
