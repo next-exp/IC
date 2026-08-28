@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+import os
+import argparse
+import numpy  as np
+import pandas as pd
+
+from invisible_cities.core.system_of_units import kg, dalton, year
+from invisible_cities.core.configure       import read_config_file
+from invisible_cities.evm.mixer            import Event_Mixer, _check_enough_nevents
+from invisible_cities.evm.mixer            import get_mixer_nevents, get_reco_and_sim_nevents
+
+# parse the config filename
+parser = argparse.ArgumentParser(description="Run the event mixer by parsing the configuration file")
+parser.add_argument("config", type=str, help="config file")
+args = parser.parse_args()
+config_filename = os.path.expandvars(args.config)
+
+# 2nubb half-life taken from EXO-200 Phys. Rev. C 89, 015502
+T12_2nubb = 2.165e+21 * year
+
+if __name__ == "__main__":
+
+    conf = read_config_file(config_filename)
+
+    detector_db = conf.get("detector_db")
+    inpath      = conf.get("inpath")
+    outpath     = conf.get("outpath")
+    isotopes    = conf.get("isotopes")
+    xenon_mass  = conf.get("xenon_mass")
+    enrichment  = conf.get("enrichment")
+    exposure    = conf.get("exposure")
+    T12_0nubb   = conf.get("T12_0nubb")
+    verbosity   = conf.get("verbosity", default=0)
+    ic_efficiencies  = conf.get("ic_efficiencies")
+    nevents_per_file = conf.get("nevents_per_file")
+
+    # compute initial number of 136Xe isotopes
+    assert (0. <= enrichment) & (enrichment <= 1.)
+    N0 = enrichment*(xenon_mass/(136. * dalton))
+
+    # get event df with (g4volume, isotope, nevts)
+    nevent_df = get_mixer_nevents(exposure, detector_db, isotopes)
+
+    # get number of decays of signal-like events
+    if "0nubb" in isotopes:
+        if not T12_0nubb:
+            raise Exception("0nubb half-life (T12_0nubb) is not provided")
+        nevts = N0 * (np.log(2)/T12_0nubb) * exposure
+        nevent_df.loc[len(nevent_df)] = ("ACTIVE", "0nubb", nevts)
+
+    if "2nubb" in isotopes:
+        nevts = N0 * (np.log(2)/T12_2nubb) * exposure
+        nevent_df.loc[len(nevent_df)] = ("ACTIVE", "2nubb", nevts)
+
+    # load processing efficiencies
+    eff_df = pd.read_csv(os.path.expandvars(ic_efficiencies))
+
+    # add reconstruction efficiency and poissonize
+    nevent_df.nevts = nevent_df.nevts * (eff_df.nreco/eff_df.nsim)
+    nevent_df.nevts = np.random.poisson(nevent_df.nevts)
+
+    # check input events are enough to run the mixer
+    _check_enough_nevents(nevent_df, eff_df)
+
+    # run mixer
+    mixer = Event_Mixer(inpath, outpath, nevent_df, nevents_per_file, verbosity)
+    mixer.run()
