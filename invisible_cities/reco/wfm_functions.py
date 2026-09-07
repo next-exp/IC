@@ -319,8 +319,10 @@ def spatial_selection_method(wfs                 : np.ndarray,
     selected_wfs : 2D array of shape (n_selected_sipms, n_time_bins) with the waveforms of the selected SiPMs.
     """
     detector_info = load_db.DataSiPM(detector_db, run_number)
-    sipm_x = np.array(detector_info.X)
-    sipm_y = np.array(detector_info.Y)
+    active_sipms  = np.array(detector_info.Active).astype(bool)
+    active_ids    = np.where(active_sipms)[0]
+    sipm_x = np.array(detector_info.X)[active_ids]
+    sipm_y = np.array(detector_info.Y)[active_ids]
 
     if selection_method is SiPMSelectionMethod.median_std_method:
         starting_ids = median_std_method(wfs, **selection_kwargs)
