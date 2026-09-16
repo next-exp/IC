@@ -350,6 +350,66 @@ def threshold_plot(
     return fig
 
 
+def baseline_diagnostic_plot(t_us, waveform, n_baseline, title):
+    baseline_n = min(max(int(n_baseline), 1), len(waveform))
+    baseline_samples = np.asarray(waveform[:baseline_n])
+    baseline_times = np.asarray(t_us[:baseline_n])
+    baseline_mean = float(np.mean(baseline_samples))
+
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        vertical_spacing=0.16,
+        subplot_titles=(f"Waveform and baseline window (first {baseline_n} samples)", "Baseline sample distribution"),
+    )
+    fig.add_trace(go.Scatter(x=t_us, y=waveform, mode="lines", name="waveform", line=dict(width=1.1)), row=1, col=1)
+    fig.add_trace(
+        go.Scatter(
+            x=baseline_times,
+            y=baseline_samples,
+            mode="markers",
+            name="baseline samples",
+            marker=dict(size=4, color="#f08c46"),
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_vrect(
+        x0=float(baseline_times[0]),
+        x1=float(baseline_times[-1]),
+        fillcolor="#f08c46",
+        opacity=0.14,
+        line_width=0,
+        row=1,
+        col=1,
+    )
+    values, counts = np.unique(baseline_samples, return_counts=True)
+    fig.add_trace(go.Bar(x=values, y=counts, name="sample count", marker_color="#17324d"), row=2, col=1)
+    fig.add_vline(
+        x=baseline_mean,
+        line_dash="dash",
+        line_color="#d94841",
+        annotation_text=f"mean = {baseline_mean:g}",
+        annotation_position="top right",
+        row=2,
+        col=1,
+    )
+    fig.update_layout(
+        title=title,
+        height=650,
+        template="plotly_white",
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        font=dict(color="black"),
+        legend=dict(orientation="h"),
+    )
+    fig.update_xaxes(title_text="Time (us)", row=1, col=1)
+    fig.update_yaxes(title_text="ADC", row=1, col=1)
+    fig.update_xaxes(title_text="ADC value", row=2, col=1)
+    fig.update_yaxes(title_text="Count", row=2, col=1)
+    return fig
+
+
 def split_with_stride(indices: np.ndarray, stride: int):
     if len(indices) == 0:
         return []
@@ -652,10 +712,8 @@ def main():
 
         pmt_df, sipm_df = load_sensor_tables(str(detector_db), int(run_number))
         pmt_labels, pmt_lookup = option_labels(pmt_df, "PMT")
-        sipm_labels, sipm_lookup = option_labels(sipm_df, "SiPM")
 
         selected_pmt_label = st.selectbox("Detailed PMT channel", options=pmt_labels, index=0 if pmt_labels else 0)
-        selected_sipm_label = st.selectbox("Selected SiPM channel", options=sipm_labels, index=0 if sipm_labels else 0)
 
         st.markdown('<hr style="margin: 0.2rem 0;">', unsafe_allow_html=True)
         st.header("Parameters")
@@ -749,12 +807,13 @@ def main():
     if not pmt_labels:
         st.error("No PMT channels found in the selected file.")
         st.stop()
-    if not sipm_labels:
+    if sipm_df.empty:
         st.error("No SiPM channels found in the selected file.")
         st.stop()
 
     selected_pmt_idx = pmt_lookup[selected_pmt_label]
-    selected_sipm_idx = sipm_lookup[selected_sipm_label]
+    active_sipm_indices = sipm_df.index[sipm_df.Active.astype(bool)]
+    selected_sipm_idx = int(active_sipm_indices[0]) if len(active_sipm_indices) else 0
 
     st.info(
         f"Run {int(run_number)} | LDC {int(ldc)} | {Path(file_path).name} | Event {event_idx}/{n_events - 1} | "
@@ -855,9 +914,8 @@ def main():
     st.subheader(f"Event number: {event_number}")
 
     pmt_sensor_id, pmt_elecid = pmt_id_from_index(pmt_df, selected_pmt_idx)
-    sipm_sensor_id, sipm_elecid = sipm_id_from_index(sipm_df, selected_sipm_idx)
     st.caption(
-        f"Selected PMT SensorID {pmt_sensor_id} / ElecID {pmt_elecid} | Selected SiPM SensorID {sipm_sensor_id} / ElecID {sipm_elecid}"
+        f"Selected PMT SensorID {pmt_sensor_id} / ElecID {pmt_elecid}"
     )
 
     col1, col2 = st.columns(2)
@@ -887,6 +945,16 @@ def main():
             ),
             use_container_width=True,
         )
+
+    st.plotly_chart(
+        baseline_diagnostic_plot(
+            t_us,
+            pmt_rwf[selected_pmt_idx],
+            int(n_baseline),
+            f"PMT baseline diagnostic (mean): channel {selected_pmt_idx}",
+        ),
+        use_container_width=True,
+    )
 
     col3, col4 = st.columns(2)
     with col3:
@@ -958,6 +1026,7 @@ def main():
         if selected_sipm_idx_from_plot is not None:
             selected_sipm_idx = int(selected_sipm_idx_from_plot)
         if 0 <= int(selected_sipm_idx) < len(sipm_df):
+            _, sipm_elecid = sipm_id_from_index(sipm_df, selected_sipm_idx)
             st.plotly_chart(
                 sipm_waveform_figure(
                     sipm_rwf,
