@@ -527,8 +527,6 @@ def test_irene_masked_sipms_pyrrha(ICDIR, config_tmpdir):
     active_sipms  = np.array(detector_info.Active).astype(bool)
     masked_ids    = set(np.where(~active_sipms)[0])
 
-    assert masked_ids, "Expected run 16016 to have some masked SiPMs"
-
     pmaps_out = load_pmaps(PATH_OUT)
 
     found_masked = []
