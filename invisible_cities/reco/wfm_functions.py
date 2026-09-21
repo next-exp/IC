@@ -2,6 +2,7 @@
 This module includes functions to manipulate waveforms.
 authors: J.J. Gomez-Cadenas, G. Martinez
 """
+from invisible_cities.core.random_sampling_test import run_number
 import numpy as np
 from typing  import Optional
 from typing  import Tuple
@@ -318,16 +319,16 @@ def spatial_selection_method(wfs                 : np.ndarray,
     selected_ids : Array of shape (n_sipms,) containing the indices of the selected SiPMs.
     selected_wfs : 2D array of shape (n_selected_sipms, n_time_bins) with the waveforms of the selected SiPMs.
     """
-    detector_info = load_db.DataSiPM(detector_db, run_number)
-    active_sipms  = np.array(detector_info.Active).astype(bool)
-    active_ids    = np.where(active_sipms)[0]
-    sipm_x = np.array(detector_info.X)[active_ids]
-    sipm_y = np.array(detector_info.Y)[active_ids]
+    detector_info   = load_db.DataSiPM(detector_db, run_number)
+    active_sipms    = detector_info.Active.values.astype(bool)
+    active_sipm_ids = np.where(active_sipms)[0]
+    sipm_x          = detector_info.X.values[active_sipms]
+    sipm_y          = detector_info.Y.values[active_sipms]
 
     if selection_method is SiPMSelectionMethod.median_std_method:
-        starting_ids = median_std_method(wfs, **selection_kwargs)
+        starting_ids = median_std_method(wfs[active_sipms], **selection_kwargs)
     elif selection_method is SiPMSelectionMethod.top_n_method:
-        starting_ids = top_n_method(wfs, **selection_kwargs)
+        starting_ids = top_n_method(wfs[active_sipms], **selection_kwargs)
     else:
         raise ValueError(f"Selection method {selection_method} not recognized.")
 
@@ -345,7 +346,7 @@ def spatial_selection_method(wfs                 : np.ndarray,
         padding_radius
     )
 
-    selected_ids = np.where(sipm_ids_with_signal)[0]
+    selected_ids = active_sipm_ids[np.where(sipm_ids_with_signal)[0]]
     selected_wfs = wfs[selected_ids]
 
     return selected_ids, selected_wfs
