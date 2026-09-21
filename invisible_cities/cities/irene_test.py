@@ -25,6 +25,7 @@ from .. types.symbols       import all_events
 from .. types.symbols       import SiPMThreshold
 
 from .. database.load_db    import DetDB
+from .. database.load_db    import DataSiPM
 from .. io      .pmaps_io   import load_pmaps
 
 from .  irene import irene
@@ -495,3 +496,46 @@ def test_irene_other_sample_widths(ICDATADIR, config_tmpdir):
                 got      = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)
                 assert_tables_equality(got, expected)
+
+
+@ignore_warning.no_config_group
+def test_irene_masked_sipms_pyrrha(ICDIR, config_tmpdir):
+    # Test that masked SiPMs are handled in Pyrrha
+    run_number = 16016
+
+    PATH_IN  = os.path.join(ICDIR, 'database/test_data/', 'run_16016_0000_ldc1_trg0.waveforms_1evt.h5')
+    PATH_OUT = os.path.join(config_tmpdir, 'run_16016_0000_ldc1_trg0.waveforms_1evt_pmaps.h5')
+
+    nrequired = 1
+
+    conf = configure('dummy invisible_cities/config/irene_pyrrha.conf'.split())
+    cutting_params = conf['cutting_params'].copy()
+    cutting_params.update(run_number  = run_number,
+                          detector_db = DetDB.next100)
+    conf.update(dict(run_number     = run_number,
+                     detector_db     = DetDB.next100,
+                     files_in        = PATH_IN,
+                     file_out        = PATH_OUT,
+                     event_range     = (0, nrequired),
+                     cutting_params  = cutting_params))
+
+    cnt = irene(**conf)
+    assert cnt.events_in > 0
+
+    # Find masked SiPMs in DB and compare to the PMAP output
+    detector_info = DataSiPM(DetDB.next100, run_number)
+    active_sipms  = np.array(detector_info.Active).astype(bool)
+    masked_ids    = set(np.where(~active_sipms)[0])
+
+    assert masked_ids, "Expected run 16016 to have some masked SiPMs"
+
+    pmaps_out = load_pmaps(PATH_OUT)
+
+    found_masked = []
+    for evt, pmap in pmaps_out.items():
+        for s2si in pmap.s2s:
+            for sipm_id in s2si.sipms.ids:
+                if sipm_id in masked_ids:
+                    found_masked.append((evt, sipm_id))
+
+    assert not found_masked, (f"Masked SiPMs leaked through pyrrha: {found_masked}")
