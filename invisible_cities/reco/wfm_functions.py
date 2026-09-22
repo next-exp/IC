@@ -349,4 +349,3 @@ def spatial_selection_method(wfs                 : np.ndarray,
     selected_wfs = wfs[selected_ids]
 
     return selected_ids, selected_wfs
-
