@@ -2,7 +2,6 @@
 This module includes functions to manipulate waveforms.
 authors: J.J. Gomez-Cadenas, G. Martinez
 """
-from invisible_cities.core.random_sampling_test import run_number
 import numpy as np
 from typing  import Optional
 from typing  import Tuple
