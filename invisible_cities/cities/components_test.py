@@ -322,6 +322,16 @@ def test_hits_and_kdst_from_files_missing_hits(Th228_hits_missing, config_tmpdir
     assert n_events == n_events_true
 
 
+def test_hits_and_kdst_from_files_missing_nodes_warns(config_tmpdir):
+    file_in = os.path.join(config_tmpdir, "missing_nodes.h5")
+    with tb.open_file(file_in, "w"):
+        pass
+
+    generator = hits_and_kdst_from_files([file_in], "RECO", "Events")
+    with warns(UserWarning, match="does not contain the required tables"):
+        assert list(generator) == []
+
+
 def test_collect():
     the_source    = list(range(0,10))
     the_collector = collect()

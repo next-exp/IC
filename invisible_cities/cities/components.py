@@ -630,6 +630,8 @@ def hits_and_kdst_from_files( paths : List[str]
             hits_df = load_dst (path, group, node)
             kdst_df = load_dst (path, 'DST' , 'Events')
         except tb.exceptions.NoSuchNodeError:
+            warnings.warn(f"{path} does not contain the required tables",
+                          UserWarning)
             continue
 
         with tb.open_file(path, "r") as h5in:
