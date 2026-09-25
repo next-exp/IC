@@ -57,6 +57,8 @@ def mc_writer(h5out : tb.file.File, *, compression=None) -> Callable:
         """
         first_indx = check_last_merge_index(h5out) + 1
         for key, tbl in table_dict.items():
+            if tbl.empty and not len(tbl.columns):
+                continue
             if (key is MCTableType.configuration or
                 key is MCTableType.event_mapping   ):
                 try:

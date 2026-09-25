@@ -6,7 +6,6 @@ import numpy  as np
 import tables as tb
 
 from pytest import mark
-from pytest import param
 
 from .. core                   import           system_of_units as units
 from .. core    .configure     import                 configure
@@ -133,10 +132,10 @@ def test_buffy_filters_empty(config_tmpdir, ICDATADIR):
 
 
 @mark.parametrize("fn_first fn_second".split(),
-                  (param("nexus_new_kr83m_fast.oldformat.sim.h5",
-                         "nexus_new_kr83m_full.oldformat.sim.h5", marks=mark.xfail),
-                  ("nexus_new_kr83m_full.oldformat.sim.h5",
-                   "nexus_new_kr83m_fast.oldformat.sim.h5")))
+                  (("nexus_new_kr83m_fast.oldformat.sim.h5",
+                    "nexus_new_kr83m_full.oldformat.sim.h5"),
+                   ("nexus_new_kr83m_full.oldformat.sim.h5",
+                    "nexus_new_kr83m_fast.oldformat.sim.h5")))
 def test_buffy_empty_file(config_tmpdir, ICDATADIR, fn_first, fn_second):
     """
     Check that the code works even if the first file to be read has
