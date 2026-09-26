@@ -18,6 +18,7 @@ from .. types   .symbols                 import MapFitFunction
 
 from .. icaros  .correction_functions    import apply_correctionmap_inplace_kdst
 from .. icaros  .selection_functions     import apply_selections
+from .. icaros  .selection_functions     import discard_nan_values
 from .. icaros  .krmap_functions         import compute_3D_map
 from .. icaros  .krmap_functions         import gaussian_fit_ready
 from .. icaros  .krmap_functions         import get_median
@@ -36,7 +37,7 @@ from typing import Dict
 
 
 def concatenated_dsts_from_files(path: List[str], group: str, node:str)-> Iterator[Dict[str,Union[pd.DataFrame, int, np.ndarray]]]:
-    df = load_dsts(path, group, node)
+    df = load_dsts(path, group, node, ignore_errors = True)
     with tb.open_file(path[0], 'r') as h5in:
         run_number = get_run_number(h5in)
 
@@ -44,6 +45,10 @@ def concatenated_dsts_from_files(path: List[str], group: str, node:str)-> Iterat
                run_number = run_number
                )
 
+def select_no_nan():
+    def discard_nans(df):
+        return discard_nan_values(df)
+    return discard_nans
 
 def apply_map(pre_map, norm_method, xy_params, col_name, unit):
     pre_map = pd.read_hdf(pre_map)
@@ -97,9 +102,9 @@ def save_krmap(name):
     return save
 
 
-def do_control_plots(plots_out,ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen, dtbins2, bins, dtrs2_bins, statistic, x0, y0, shape, shape_size, xy_range_plot):
+def do_control_plots(plots_out,ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen, dtbins2, high_S2e, low_S2e, high_DT, low_DT, bins, dtrs2_bins, statistic, x0, y0, shape, shape_size, xy_range_plot):
     def control_plots(df, df_corr, efficiencies, run_number):
-        return make_control_plots(df, df_corr, efficiencies, run_number, plots_out, ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen,dtbins2, bins, dtrs2_bins, statistic, x0, y0, shape, shape_size, xy_range_plot)
+        return make_control_plots(df, df_corr, efficiencies, run_number, plots_out, ebins1, ns1bins, s1hbins, s1wbins, ebins2, ns2bins, s2hbins, s2qbins, qmaxbins, s2wbins, dtrms2_low, dtrms2_upp, drms2_cen,dtbins2,high_S2e, low_S2e, high_DT, low_DT, bins, dtrs2_bins, statistic, x0, y0, shape, shape_size, xy_range_plot)
     return control_plots
 
 
@@ -158,6 +163,8 @@ def zemrude(files_in           : OneOrManyFiles
             , qmaxbins         : np.ndarray
             , s2wbins          : np.ndarray
             , dtbins2          : np.ndarray
+            , high_S2e         : float
+            , low_S2e          : float
             , bins             : int
             , dtr2_bins        : tuple
             , statistic        : str
@@ -166,12 +173,16 @@ def zemrude(files_in           : OneOrManyFiles
             , xy_params        : dict = None
             ):
 
+    apply_nan_cut          = fl.map( select_no_nan()
+                                     ,item  = 'dst'
+                                     )
+
     apply_preliminary_map  = fl.map( apply_map(pre_map,
                                               norm_method,
                                               xy_params,
                                               'Ec',
                                               unit = keV)
-                                  , item = 'dst')
+                                  , item  = 'dst')
 
 
     apply_selections = fl.map( select_dst(dtrms2_low,
@@ -248,6 +259,10 @@ def zemrude(files_in           : OneOrManyFiles
                                                   dtrms2_upp,
                                                   dtrms2_cen,
                                                   dtbins2,
+                                                  high_S2e,
+                                                  low_S2e,
+                                                  high_DT,
+                                                  low_DT,
                                                   bins,
                                                   dtr2_bins,
                                                   statistic,
@@ -269,7 +284,8 @@ def zemrude(files_in           : OneOrManyFiles
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)):
         pass
     fl.push( source = concatenated_dsts_from_files(files_in, "DST", "Events")
-            ,pipe   = fl.pipe(apply_preliminary_map,
+            ,pipe   = fl.pipe( apply_nan_cut,
+                               apply_preliminary_map,
                                apply_selections,
                                compute_3D_map,
                                compute_metadata,

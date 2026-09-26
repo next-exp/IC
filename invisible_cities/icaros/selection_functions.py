@@ -32,6 +32,26 @@ def eff_of_selection(df_before  : pd.DataFrame,
 
     return eff
 
+def discard_nan_values(kdst : pd.DataFrame) -> pd.DataFrame :
+
+    """
+    Discard every kdst row that has any NaN value in DT, X or Y.
+    Parameters
+    ----------
+    kdst : pd.DataFrame
+       Dataframe (kdst sophronia output) to clean from NaN values.
+    Returns
+    -------
+    kdst_nan : pd.DataFrame
+       Dataframe with no NaNs
+    """
+
+    kdst     = kdst[~(kdst.DT.isna())]
+    kdst     = kdst[~(kdst.X.isna())]
+    kdst_nan = kdst[~(kdst.Y.isna())]
+
+    return kdst_nan
+
 
 def select_var_inrange(kdst      : pd.DataFrame,
                        col_name  : str,
