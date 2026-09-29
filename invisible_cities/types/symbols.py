@@ -101,7 +101,7 @@ class NormMethod(AutoNameEnumBase):
 
 class NormStrategy(AutoNameEnumBase):
     mean   = auto()
-    median = auto()
+    #median = auto()
     max    = auto()
     kr     = auto()
     region = auto()
