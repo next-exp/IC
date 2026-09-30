@@ -548,13 +548,12 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
     assert not np.any(np.isnan(corrected_e) )
     assert     np.all(         corrected_e>0)
 
+
 @mark.skipif("os.environ['IS_GHA'] == 1", reason="this messes with git history so we only run it on GHA")
 def test_add_git_info():
     try:
         # keep a copy of the current branch
         current_branch = run_git_command("git branch --show-current")
-
-        print("")
 
         # create a testing branch
         testing_branch = 'function-testing-branch'
@@ -564,20 +563,14 @@ def test_add_git_info():
         run_git_command("git commit --allow-empty -m 'create_dummy_commit'")
         testing_commit_hash = run_git_command("git log --pretty=format:%H -n 1") # alternative way of extracting hash
 
-        # create a testing remote upstream
-        #testing_upstream = 'function-testing-upstream'
-        #run_git_command(f"git remote add {testing_upstream} .") # use current repo as remote
-        #run_git_command(f"git push -u {testing_upstream} {testing_branch}") # add this otherwise remote = None
-
         # create a temporary tag for testing
         testing_tag = 'v.function.testing.tag'
         run_git_command(f"git tag {testing_tag}")
-        
+
         extracted_git_info = add_git_info()
 
         assert extracted_git_info['branch_name']   == testing_branch
         assert extracted_git_info['commit_hash']   == testing_commit_hash
-        #assert extracted_git_info['upstream_name'] == testing_upstream
         assert extracted_git_info['IC_tag']        == testing_tag
 
     except Exception as e:
@@ -591,26 +584,16 @@ def test_add_git_info():
             run_git_command(f"git checkout {current_branch}")
         except Exception as e:
             print(f"Failed to restore branch {current_branch}: {e}")
-        
+        # delete temporary testing tag
         try:
             run_git_command(f"git tag -d {testing_tag}")
         except Exception as e:
             print(f"Failed to delete tag {testing_tag}: {e}")
-        # delete local testing branch
+        # delete temporary local testing branch
         try:
             run_git_command(f"git branch -D {testing_branch}")
         except Exception as e:
             print(f"Failed to delete branch {testing_branch}: {e}")
-        # delete remote testing branch
-        #try:
-            #run_git_command(f"git push {testing_upstream} --delete {testing_branch}")
-        #except Exception as e:
-            #print(f"Failed to delete remote branch {testing_branch} on {testing_upstream}: {e}")
-
-        #try:
-            #run_git_command(f"git remote remove {testing_upstream}")
-        #except Exception as e:
-            #print(f"Failed to remove remote {testing_upstream}: {e}")
 
 
 def test_write_city_configuration(config_tmpdir):
