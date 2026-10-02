@@ -48,3 +48,26 @@ Documentation
 The documentation for IC, including the individual cities, can be found here: https://next-exp-sw.readthedocs.io/en/latest/IC.html
 
 The above link is continuously updated in intervals. If however, there is no/little documentation for a particular city you need in the above link, check:  https://github.com/next-exp/sw-docs/pulls for the documentation on more recent updates.
+
+
+Contributing
+------------
+
+Contributions are welcome. If you are unsure whether a change belongs in IC,
+open an issue or ask before doing substantial work.
+
+See `How to contribute to IC <doc/contributing.rst>`_ for the detailed
+workflow, including how to prepare your repositories, create a topic branch,
+run tests, rebase, and submit a pull request.
+
+At a high level:
+
+- Keep each contribution focused and easy to review.
+- Add or update tests and documentation when appropriate.
+- Check your changes before committing, and do not include local or generated
+  files accidentally.
+- Explain the motivation, test results, and known limitations in your pull
+  request.
+
+For commit messages and history, see `How to create a good commit history
+<doc/commits.rst>`_.
