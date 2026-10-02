@@ -735,6 +735,6 @@ def merge_multiple_maps(maps : pd.DataFrame) -> pd.DataFrame:
         EPSILON = np.finfo(np.float64).eps
         new_mu  = np.sum(df.mu * df.nevents) / (df.nevents.sum() + EPSILON)
         return pd.DataFrame( dict( mu = new_mu
-                             , nevents  = df.nevents.sum())
-                       , index=[0])
+                                 , nevents  = df.nevents.sum())
+                                 , index=[0])
     return maps.groupby('k i j'.split()).apply(merge_bins).reset_index()
