@@ -83,35 +83,19 @@ Commit structure
   to the process of developing a new feature on your own and while applying the
   reviewer feedback during a PR review.
 
+  As much as possible, every commit should build, pass tests, and make sense on
+  its own. This makes debugging, bisecting, reverting, and reviewing easier.
+
   Before merging, however, clean up the history so that the final commits are
   meaningful, focused, and easy to review. Small independent commits can be
   reordered, edited, squashed, or split more easily than large mixed commits.
 
-- Each commit should leave the project in a reasonable state.
-
-  As much as possible, every commit should build, pass tests, and make sense on
-  its own. This makes debugging, bisecting, reverting, and reviewing easier.
-
-
 Commit messages
 ---------------
 
-We follow `this <https://chris.beams.io/posts/git-commit/>`__ guideline. In short,
-this is a summary of a good commit message. But, please at least take a look to
-the details in the link above.
-
-     | The seven rules of a great Git commit message
-     |
-     | 1. Separate subject from body with a blank line
-     | 2. Limit the subject line to 50 characters
-     | 3. Capitalize the subject line
-     | 4. Do not end the subject line with a period
-     | 5. Use the imperative mood in the subject line
-     | 6. Wrap the body at 72 characters
-     | 7. Use the body to explain what and why vs. how
-
-
-Or in a bit more detail...
+We follow `Chris Beams' Git commit message guidelines
+<https://chris.beams.io/posts/git-commit/>`__. The main rules are explained
+below. Write commit messages that explain the change clearly.
 
 Commit message format
 ~~~~~~~~~~~~~~~~~~~~~
