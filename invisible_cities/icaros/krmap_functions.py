@@ -4,6 +4,7 @@ kdsts and merge them to create an 'uniform' map.  It also contains
 functions to get and store map info (metadata) and time evolution.
 """
 import itertools
+import warnings
 
 import pandas as pd
 import numpy  as np
@@ -717,9 +718,15 @@ def save_map(name          : str,
     -------
     Hdf file containing in each node each one of the inputs.
     """
-    #special case, mode = 'w' because if you process the same data twice and mode = 'a'
-    #the map would be duplicated.
-    metadata.to_hdf(name, key = 'metadata', mode = 'w')
+    # Special case, mode = 'w' because if you process the same data twice and mode = 'a'
+    # the map would be duplicated.
+    #
+    # Metadata intentionally mixes scalar and list-valued entries. Pandas must
+    # pickle this small heterogeneous object column in the fixed-format HDF5
+    # store, so silence the corresponding performance warning here.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category = pd.errors.PerformanceWarning)
+        metadata.to_hdf(name, key = 'metadata', mode = 'w')
 
     with tb.open_file(name, "a") as file:
         df_writer(file, efficiencies, group_name = 'data', table_name = 'selection_efficiencies')
