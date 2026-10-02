@@ -161,8 +161,8 @@ Example::
 
     Fix bug in hit-voxel association
 
-    In the paolina algorithm, some hits were being assigned to the wrong voxel.
-    as reported in (issue) #1234.
+    In the paolina algorithm, some hits were being assigned to the wrong voxel,
+    as reported in issue #1234.
     This is fixed by increasing the voxel size by a tiny amount, which is enough
     to avoid floating-point discrepancies.
 
