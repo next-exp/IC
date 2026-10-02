@@ -150,7 +150,7 @@ def city(city_function):
         args   = vars(conf)
         result = check_annotations(city_function)(**args)
         if os.path.exists(conf.file_out):
-            git_info = add_git_info()
+            git_info = fetch_git_info()
             write_city_configuration(conf.file_out, city_function.__name__, {**args, **git_info})
             copy_cities_configuration(conf.files_in[0], conf.file_out)
             index_tables(conf.file_out)
@@ -229,7 +229,7 @@ def run_git_command(git_command: str):
         print(traceback.format_exc())
 
 
-def add_git_info():
+def fetch_git_info():
     git_info = dict(
         IC_tag         = run_git_command("git describe --tags --exact-match"),
         closest_IC_tag = run_git_command("git describe --tags"),

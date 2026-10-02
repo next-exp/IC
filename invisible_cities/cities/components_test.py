@@ -37,7 +37,7 @@ from .  components import create_timestamp
 from .  components import check_max_time
 from .  components import hits_corrector
 from .  components import run_git_command
-from .  components import add_git_info
+from .  components import fetch_git_info
 from .  components import write_city_configuration
 from .  components import copy_cities_configuration
 
@@ -550,7 +550,7 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
 
 
 @mark.skipif("os.environ['IS_GHA'] == 1", reason="this messes with git history so we only run it on GHA")
-def test_add_git_info():
+def test_fetch_git_info():
     try:
         # keep a copy of the current branch
         current_branch = run_git_command("git branch --show-current")
@@ -567,7 +567,7 @@ def test_add_git_info():
         testing_tag = 'v.function.testing.tag'
         run_git_command(f"git tag {testing_tag}")
 
-        extracted_git_info = add_git_info()
+        extracted_git_info = fetch_git_info()
 
         assert extracted_git_info['branch_name']   == testing_branch
         assert extracted_git_info['commit_hash']   == testing_commit_hash
