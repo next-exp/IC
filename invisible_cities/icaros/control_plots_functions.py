@@ -346,8 +346,8 @@ def monitor_dtime(df          : pd.DataFrame,
     axs[1,0].set_xlabel(r"Drift time ($\mu$s)");
     axs[1,0].grid(True)
 
-    axs[1,1].hist(df1_.Zrms**2, 100, (0, 40), histtype = 'step',color = 'mediumpurple',lw = 2, label = 'before selection');
-    axs[1,1].hist(df2.Zrms**2, 100, (0, 40), histtype = 'step', color = 'black',lw = 2, label = 'after selection');
+    axs[1,1].hist(df1_.Zrms**2, bins = 100, range = (0, 40), histtype = 'step',color = 'mediumpurple',lw = 2, label = 'before selection');
+    axs[1,1].hist(df2.Zrms**2, bins = 100, range = (0, 40), histtype = 'step', color = 'black',lw = 2, label = 'after selection');
     axs[1,1].legend();
     axs[1,1].set_xlabel(r"DT$_{rms}^2$ ($\mu$s)");
     axs[1,1].grid(True)
