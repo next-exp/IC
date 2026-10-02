@@ -13,6 +13,7 @@ from .. core.testing_utils   import ignore_warning
 
 @ignore_warning.no_config_group
 @ignore_warning.not_kdst
+@ignore_warning.too_many_hits
 def test_isaura_contains_all_tables(ICDATADIR, output_tmpdir):
 
     PATH_IN  = os.path.join(ICDATADIR    , "test_Xe2nu_NEW_exact_deconvolution_joint.NEWMC.h5")
@@ -20,6 +21,7 @@ def test_isaura_contains_all_tables(ICDATADIR, output_tmpdir):
     conf = configure('isaura $ICTDIR/invisible_cities/config/isaura.conf'.split())
     conf.update(dict(files_in      = PATH_IN ,
                      file_out      = PATH_OUT))
+
     isaura(**conf)
 
     tables = ["Tracking/Tracks"    ,
