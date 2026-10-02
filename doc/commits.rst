@@ -4,6 +4,14 @@ How to create a good commit history
 A good commit history should make it easy to understand how and why a change was
 introduced. Each commit should tell a clear, reviewable story.
 
+Before learning how to create a good commit history, make sure you understand
+the basics of Git and how to work with it effectively. In particular, it is
+useful to know how to manage history with tools such as rebasing and
+cherry-picking. Excellent resources include:
+
+- `What is Git? <https://git-scm.com/book/en/v2/Getting-Started-What-is-Git%3F>`__
+- `The Git tutorial <https://git-scm.com/docs/gittutorial>`__
+
 
 Commit structure
 ----------------
