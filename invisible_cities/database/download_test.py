@@ -21,7 +21,7 @@ def test_create_table_sqlite(dbname, output_tmpdir):
 
     connSqlite = sqlite3.connect(dbfile)
     connMySql  = pymysql.connect(host="next.ific.uv.es",
-                                 user='nextreader',passwd='readonly', db=dbname)
+                                 user='nextreader', password='readonly', database=dbname)
 
     cursorMySql  = connMySql .cursor()
     cursorSqlite = connSqlite.cursor()
@@ -42,7 +42,7 @@ def test_table_assignment(dbname):
 @mark.parametrize('dbname', db.dbnames)
 def test_tables_exist(dbname):
     connMySql  = pymysql.connect(host="next.ific.uv.es",
-                                 user='nextreader',passwd='readonly', db=dbname)
+                                 user='nextreader', password='readonly', database=dbname)
 
     cursor    = connMySql.cursor()
     cursor.execute("Show tables;")
@@ -51,4 +51,3 @@ def test_tables_exist(dbname):
     for name in db.table_dict[dbname]:
         assert (name,) in available
         
-

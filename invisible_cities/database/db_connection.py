@@ -14,6 +14,6 @@ def connect_sqlite(dbfile):
 @mark.skip(reason='server timeouts cause too many spurious test failures')
 def connect_mysql(dbname):
     conn_mysql  = pymysql.connect(host="next.ific.uv.es",
-                                  user='nextreader',passwd='readonly', db=dbname)
+                                  user='nextreader', password='readonly', database=dbname)
     cursor_mysql  = conn_mysql .cursor()
     return connect_mysql, cursor_mysql
