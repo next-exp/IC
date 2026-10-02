@@ -48,9 +48,9 @@ def discard_nan_values(kdst : pd.DataFrame) -> pd.DataFrame :
 
     kdst     = kdst[~(kdst.DT.isna())]
     kdst     = kdst[~(kdst.X.isna())]
-    kdst_nan = kdst[~(kdst.Y.isna())]
+    kdst     = kdst[~(kdst.Y.isna())]
 
-    return kdst_nan
+    return kdst
 
 
 def select_var_inrange(kdst      : pd.DataFrame,
