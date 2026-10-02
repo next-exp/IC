@@ -45,11 +45,6 @@ def concatenated_dsts_from_files(path: List[str], group: str, node:str)-> Iterat
                run_number = run_number
                )
 
-def select_no_nan():
-    def discard_nans(df):
-        return discard_nan_values(df)
-    return discard_nans
-
 def apply_map(pre_map, norm_method, xy_params, col_name, unit):
     pre_map = pd.read_hdf(pre_map)
     def apply_3Dmap(df):
@@ -173,7 +168,7 @@ def zemrude(files_in           : OneOrManyFiles
             , xy_params        : dict = None
             ):
 
-    apply_nan_cut          = fl.map( select_no_nan()
+    apply_nan_cut          = fl.map( discard_nan_values
                                      ,item  = 'dst'
                                      )
 
