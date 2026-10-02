@@ -16,12 +16,12 @@ cherry-picking. Excellent resources include:
 Commit structure
 ----------------
 
-- Make each commit focused.
+- **Make each commit focused.**
 
   A commit should contain one logical change. Avoid grouping unrelated changes
   together just because they were made around the same time.
 
-  Good examples:
+  **Good examples:**
 
   ::
 
@@ -35,7 +35,7 @@ Commit structure
 
       Fix bug in hit-voxel association
 
-  Bad examples:
+  **Bad examples:**
 
   ::
 
@@ -49,13 +49,13 @@ Commit structure
 
       Refactor code and add new feature
 
-- Do not mix unrelated types of changes.
+- **Do not mix unrelated types of changes.**
 
   For example, avoid combining formatting changes, renames, refactors, bug
   fixes, and feature work in the same commit unless they are part of the same
   logical change.
 
-  Prefer this:
+  **Prefer this:**
 
   ::
 
@@ -69,13 +69,14 @@ Commit structure
 
      Add fallback for missing data
 
-  Instead of this:
+  **Instead of this:**
 
   ::
 
      Clean up correction application and add default fallback
 
-- Commit incrementally while working.
+- **Commit incrementally while working.** Make sure that each commit leaves the
+  project in a reasonable state.
 
   It is fine to create small work-in-progress commits locally. They help you
   save progress and make changes easier to reorganize later. This applies both
@@ -112,7 +113,8 @@ the details in the link above.
 
 Or in a bit more detail...
 
-Write commit messages that explain the change clearly.
+Commit message format
+~~~~~~~~~~~~~~~~~~~~~
 
 Use this format::
 
@@ -121,9 +123,10 @@ Use this format::
     Optional longer explanation of what changed and why.
     Include context that is not obvious from the diff.
 
-Guidelines for the subject line:
+Subject line
+~~~~~~~~~~~~
 
-- Use the imperative mood.
+- **Use the imperative mood.**
 
   Good::
 
@@ -137,15 +140,16 @@ Guidelines for the subject line:
 
       Adds validation for PSF arguments
 
-- Keep it short and specific.
+- **Keep it short and specific.**
 
   Aim for about 50 characters when possible.
 
-- Capitalize the subject line.
+- **Capitalize the subject line.**
 
-- Do not end the subject line with a period.
+- **Do not end the subject line with a period.**
 
-Guidelines for the body:
+Body
+~~~~
 
 - Separate the subject from the body with a blank line.
 - Wrap the body at about 72 characters.
@@ -168,7 +172,7 @@ Commits after PR review
 
 These guidelines also apply to changes made during review.
 
-Avoid commits like:
+**Avoid commits like:**
 
   ::
 
@@ -182,7 +186,7 @@ Avoid commits like:
 
      Changes requested by reviewer
 
-Instead, describe the actual change:
+**Instead, describe the actual change:**
 
   ::
 
