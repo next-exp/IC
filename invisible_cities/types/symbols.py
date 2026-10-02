@@ -53,12 +53,6 @@ class InterpolationMethod(AutoNameEnumBase):
     nointerpolation = auto()
 
 
-class KrFitFunction(AutoNameEnumBase):
-    expo    = auto()
-    linear  = auto()
-    log_lin = auto()
-
-
 class MCTableType(AutoNameEnumBase):
     configuration    = auto()
     events           = auto()
@@ -85,7 +79,6 @@ class MapFitFunction(AutoNameEnumBase):
     median   = auto()
 
 
-
 class NormMethod(AutoNameEnumBase):
     maximum               = auto()
     mean_chamber          = auto()
@@ -96,16 +89,6 @@ class NormMethod(AutoNameEnumBase):
     median_region_chamber = auto()
     mean_region_anode     = auto()
     median_region_anode   = auto()
-
-
-
-class NormStrategy(AutoNameEnumBase):
-    mean   = auto()
-    median = auto()
-    max    = auto()
-    kr     = auto()
-    region = auto()
-    custom = auto()
 
 
 class NormMode(AutoNameEnumBase):
