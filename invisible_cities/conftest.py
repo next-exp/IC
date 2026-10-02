@@ -2,6 +2,8 @@ import os
 import pytest
 import shutil
 
+from copy import deepcopy
+
 import numpy  as np
 import tables as tb
 
@@ -585,6 +587,7 @@ def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
 
 @pytest.fixture(scope='function')
 def beersheba_config_separate(beersheba_config):
+    beersheba_config = deepcopy(beersheba_config)
     beersheba_config["deconv_params"].update(dict( deconv_mode    = DeconvolutionMode.separate
                                                  , n_iterations   = 50
                                                  , n_iterations_g = 50))
