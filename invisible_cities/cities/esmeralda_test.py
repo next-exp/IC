@@ -183,6 +183,7 @@ def test_esmeralda_all_hits_after_drop_voxels(esmeralda_config, Th228_hits, conf
 
 #TODO: refactor paolina to include this as a filter
 @ignore_warning.no_config_group
+@ignore_warning.too_many_hits
 def test_esmeralda_filters_events_with_too_many_hits(esmeralda_config, Th228_tracks, config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "esmeralda_filters_events_with_too_many_hits.h5")
     nevt_req  = 2
