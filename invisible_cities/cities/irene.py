@@ -26,7 +26,6 @@ from .. io   .trigger_io       import       trigger_writer
 from .. io   .dst_io           import            df_writer
 from .. types.symbols          import WfType
 from .. types.symbols          import CutAlgo
-from .. types.symbols          import SiPMThreshold
 
 from .. database.load_db import DataPMT
 from .. database.load_db import DataSiPM

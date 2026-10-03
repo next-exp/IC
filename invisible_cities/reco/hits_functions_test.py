@@ -1,8 +1,6 @@
 import numpy  as np
 import pandas as pd
 
-from pytest        import mark
-from pytest        import fixture
 from numpy.testing import assert_almost_equal
 
 from   .. core.testing_utils   import assert_dataframes_close
