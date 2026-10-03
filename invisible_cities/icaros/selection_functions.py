@@ -153,7 +153,7 @@ g      Low number of triggered SiPMs
     df, eff_DTrange     = select_var_inrange(df, 'DT', low_DT, high_DT, f'events in DT range [{low_DT}, {high_DT}]')
     df_final, eff_nsipm = select_var_inrange(df,'Nsipm', low_nsipm, high_nsipm, f'events in NSipm range [{low_nsipm}, {high_nsipm}]')
 
-    total_efficiency = eff_of_selection(kdst, df_final, f'total events after all selections')
+    total_efficiency = eff_of_selection(kdst, df_final, 'total events after all selections')
 
     d = {'Diffusion_band': eff_DTband,
          'Xrays': eff_Xrays,
