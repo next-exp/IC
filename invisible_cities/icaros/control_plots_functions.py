@@ -688,14 +688,17 @@ def plot_time_evolution_with_errors_and_dates(df_time_evolution : pd.DataFrame,
 
             if output_dir:
                 plot_filename = os.path.join(output_dir, f"time_evolution_{plot_name}_with_errors_dates.png")
-                plt.savefig(plot_filename)
-                print(f"Saved plot for {plot_name} to {plot_filename}")
-                plt.close() # Close the plot to free memory
+                try:
+                    plt.savefig(plot_filename)
+                except Exception as e:
+                    print(f"Error trying to write {plot_filename}: {error}")
+                else:
+                    print(f"Saved plot for {plot_name} to {plot_filename}")
+                finally:
+                    plt.close() # Close the plot to free memory
             else:
                 plt.show()
 
-    except FileNotFoundError:
-        print(f"Error: The HDF5 file '{h5_file_path}' was not found. Please check the path.")
     except KeyError as ke:
         print(f"Error accessing HDF5 group or column: {ke}. Please ensure the '/time_evolution' group and the 'ts' column name are correct.")
     except Exception as e:
