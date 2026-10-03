@@ -561,19 +561,15 @@ def get_time_evol_single_slice(df           : pd.DataFrame,
     dv, udv = compute_drift_v(kdst_in_region.DT.to_numpy(), dtbins_dv, seed = None)
 
     try:
-        f                = quick_gauss_fit(df['Ec'].values, bins_Ec, sigma = error)
-        _, mu, sigma     = f.values
-        _, u_mu, u_sigma = f.errors
-
-        chi2_ec_prelim   = f.chi2
+        f              = quick_gauss_fit(df['Ec'].values, bins_Ec, sigma = error)
+        mu             = f.values[1]
+        u_mu           = f.errors[1]
+        chi2_ec_prelim = f.chi2
 
     except:
         median         = get_median(df['Ec'])
         mu             = median.mu
-        sigma          = median.sigma
         u_mu           = median.mu_error
-        u_sigma        = median.sigma_error
-
         chi2_ec_prelim = np.nan
 
     try:
