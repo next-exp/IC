@@ -1,17 +1,13 @@
-from string import ascii_letters
-
 import numpy as np
 
 from . ic_types          import minmax
 from . ic_types          import xy
-from . ic_types          import NN
 
 from pytest import raises
 
 from hypothesis            import given
 from hypothesis.strategies import floats
 from hypothesis.strategies import builds
-from hypothesis.strategies import text
 
 
 def make_minmax(a,b):

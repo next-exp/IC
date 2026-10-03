@@ -20,7 +20,6 @@ from .. types  .symbols                   import SelRegionMethod
 from .. icaros .lifetime_vdrift_functions import select_lifetime_region
 
 from typing import Callable
-from typing import Tuple
 
 matplotlib.set_loglevel("warning")
 

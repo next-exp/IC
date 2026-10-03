@@ -29,7 +29,6 @@ from .. io   .run_and_event_io import run_and_event_writer
 from .. io   .      trigger_io import       trigger_writer
 from .. types.symbols          import WfType
 from .. types.symbols          import CutAlgo
-from .. types.symbols          import SiPMThreshold
 
 from .. dataflow            import dataflow as fl
 from .. dataflow.dataflow   import push
@@ -47,7 +46,6 @@ from .  components import get_number_of_pmts
 from .  components import compute_and_write_pmaps
 from .  components import simulate_sipm_response
 from .  components import calibrate_sipms
-from .  components import get_actual_sipm_thr
 from .  components import sensor_masker
 from .  components import select_cutting_algorithm
 

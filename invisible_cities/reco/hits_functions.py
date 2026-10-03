@@ -1,9 +1,6 @@
 import numpy  as np
 import pandas as pd
 
-from itertools       import compress
-from copy            import deepcopy
-from typing          import List
 from sklearn.cluster import DBSCAN
 
 from .. types.ic_types import NN
