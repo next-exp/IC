@@ -193,9 +193,8 @@ def test_city_output_contains_git_information(config_tmpdir, city):
     config_values     = table["value"].astype(str)
     config_parameters = dict(zip(config_variables, config_values))
 
-    git_parameters = ["IC_tag", "closest_IC_tag", "branch_name", "commit_hash"]
-    git_info       = fetch_git_info()
+    git_info = fetch_git_info()
 
-    for key in git_parameters:
+    for key, value in git_info.items():        
         assert key in config_parameters
-        assert config_parameters[key] == git_info[key]
+        assert value == config_parameters[key]
