@@ -8,6 +8,8 @@ import tables as tb
 from pytest import mark
 from pytest import raises
 
+from . components  import fetch_git_info
+
 from .. core.configure     import configure
 from .. core.testing_utils import ignore_warning
 
@@ -165,3 +167,34 @@ def test_city_missing_detector_db(city):
     # required value error for missing detector_db
     with raises(ValueError, match=r"The function `(\w+)` is missing an argument `detector_db`"):
     	city_function(**conf)
+
+
+@ignore_warning.no_config_group
+@ignore_warning.not_kdst
+@ignore_warning.str_length
+@mark.parametrize("city", all_cities)
+def test_city_output_contains_git_information(config_tmpdir, city):
+    file_out    = os.path.join(config_tmpdir, f"{city}_configuration.h5")
+    config_file = 'dummy invisible_cities/config/{}.conf'.format(city)
+
+    conf = configure(config_file.split())
+    conf.update(dict( file_out    = file_out
+                    , event_range = 0))
+
+    module_name   = f'invisible_cities.cities.{city}'
+    city_function = getattr(import_module(module_name), city)
+
+    city_function(**conf)
+
+    with tb.open_file(file_out) as file:
+        table = getattr(file.root.config, city).read()
+
+    config_variables  = table["variable"].astype(str)
+    config_values     = table["value"].astype(str)
+    config_parameters = dict(zip(config_variables, config_values))
+
+    git_info = fetch_git_info()
+
+    for key, value in git_info.items():        
+        assert key in config_parameters
+        assert value == config_parameters[key]

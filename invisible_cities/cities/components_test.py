@@ -36,6 +36,8 @@ from .  components import mcsensors_from_file
 from .  components import create_timestamp
 from .  components import check_max_time
 from .  components import hits_corrector
+from .  components import run_git_command
+from .  components import fetch_git_info
 from .  components import write_city_configuration
 from .  components import copy_cities_configuration
 
@@ -545,6 +547,56 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
 
     assert not np.any(np.isnan(corrected_e) )
     assert     np.all(         corrected_e>0)
+
+
+# There is a risk that this test could mess up the user's git history if it is run outside 
+# of Github Actions. Therefore, we skip it unless the IS_GHA environment variable is set to 1.
+@mark.skipif("os.environ['IS_GHA'] == 1", reason="this messes with git history so we only run it on GHA")
+def test_fetch_git_info():
+    """
+    Test that fetch_git_info() correctly extracts the current branch name, commit hash, and 
+    tag from the git repository. This test creates a temporary branch, makes a dummy commit 
+    within it, and creates a tag to verify that the function returns the expected values. 
+    It also ensures that the original branch is restored and the temporary branch and tag 
+    are deleted after the test.
+    """
+    try:
+        current_branch = run_git_command("git branch --show-current")
+
+        testing_branch = 'function-testing-branch'
+        run_git_command(f"git checkout -b {testing_branch}")
+
+        run_git_command("git commit --allow-empty -m 'create_dummy_commit'")
+        testing_commit_hash = run_git_command("git log --pretty=format:%H -n 1")
+
+        testing_tag = 'v.function.testing.tag'
+        run_git_command(f"git tag {testing_tag}")
+
+        extracted_git_info = fetch_git_info()
+
+        assert extracted_git_info['branch_name']   == testing_branch
+        assert extracted_git_info['commit_hash']   == testing_commit_hash
+        assert extracted_git_info['IC_tag']        == testing_tag
+
+    except Exception as e:
+        print(f"Something went wrong: {e}")
+        raise
+
+    finally:
+        # cleanup happens no matter what, each command is within a try/except so that if one fails 
+        # the rest still run switch back to the original branch
+        try:
+            run_git_command(f"git checkout {current_branch}")
+        except Exception as e:
+            print(f"Failed to restore branch {current_branch}: {e}")
+        try:
+            run_git_command(f"git tag -d {testing_tag}")
+        except Exception as e:
+            print(f"Failed to delete tag {testing_tag}: {e}")
+        try:
+            run_git_command(f"git branch -D {testing_branch}")
+        except Exception as e:
+            print(f"Failed to delete branch {testing_branch}: {e}")
 
 
 def test_write_city_configuration(config_tmpdir):
