@@ -376,6 +376,13 @@ def Th228_deco_separate(ICDATADIR):
 
 
 @pytest.fixture(scope="session")
+def Th228_deco_satellite(ICDATADIR):
+    filename = "228Th_10evt_deco_satellite.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
 def Th228_hits_missing(Th228_hits, config_tmpdir):
     """Copy input file and remove the hits from the first event"""
     outpath = os.path.basename(Th228_hits).replace(".h5", "_missing_hits.h5")
@@ -607,6 +614,7 @@ def beersheba_config_separate(beersheba_config_generic):
 @pytest.fixture(scope='function')
 def beersheba_config_satellite(beersheba_config_generic):
     config = deepcopy(beersheba_config_generic)
+    config["event_range"  ] = 2
     config["deconv_params"].update(dict( deconv_mode  = DeconvolutionMode.joint
                                        , n_iterations = 50))
     config["satellite_params"] = dict(satellite_start_iter = 10,
