@@ -177,13 +177,13 @@ def hits_ave_pos(hits  : pd.DataFrame,
 
 
 def blob_energies_hits_and_centres(track_graph : Graph,
-                         hits        : pd.DataFrame,
-                         voxels      : pd.DataFrame,
-                         blob_radius : float,
-                         scan_radius : float | None,
-                         extreme_id_1: int,
-                         extreme_id_2: int,
-                         voxel_size  : np.ndarray,):
+                                   hits        : pd.DataFrame,
+                                   voxels      : pd.DataFrame,
+                                   blob_radius : float,
+                                   scan_radius : float | None,
+                                   extreme_id_1: int,
+                                   extreme_id_2: int,
+                                   voxel_size  : np.ndarray):
     '''
     Extract relevant blob information
     '''
@@ -197,7 +197,6 @@ def blob_energies_hits_and_centres(track_graph : Graph,
     diag = np.linalg.norm(voxel_size)
 
     if scan_radius is not None:
-        # find new blob centre
         blob_pos_1 = find_highest_encapsulating_node(track_graph,
                                                      extreme_id_1,
                                                      voxels,
@@ -249,11 +248,13 @@ def find_highest_encapsulating_node(track        : Graph,
     Find the voxel within a big radius for which the most energy
     is captured within an equivalent smaller radius.
     """
-    nodes_within_radius = [node for node in track.nodes() if distances[(distances.initial == extrema_id) & (distances.final == node)]['distance'].values < scan_radius]
+    distances = distances.set_index("initial final".split())
+    nodes_within_radius = [node for node in track.nodes()
+                           if distances[(extrema_id, node)].distance < scan_radius]
 
-
+    distances.reset_index(level=1, inplace=True)
     def energy_within_radius(node):
-        return energy_of_voxels_within_radius(voxels, distances[distances.initial == node], blob_radius)
+        return energy_of_voxels_within_radius(voxels, distances[node], blob_radius)
 
     highest_encapsulating_node = max(nodes_within_radius, key = energy_within_radius)
     return highest_encapsulating_node
