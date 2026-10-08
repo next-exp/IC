@@ -178,15 +178,13 @@ def blob_energies_hits_and_centres(track_graph : Graph,
         return blob, blob
 
     if scan_radius is not None:
-        blob_pos_1 = find_highest_encapsulating_node(track_graph,
-                                                     extreme_id_1,
+        blob_pos_1 = find_highest_encapsulating_node(extreme_id_1,
                                                      voxels,
                                                      distances,
                                                      blob_radius,
                                                      scan_radius)
 
-        blob_pos_2 = find_highest_encapsulating_node(track_graph,
-                                                     voxels,
+        blob_pos_2 = find_highest_encapsulating_node(voxels,
                                                      extreme_id_2,
                                                      distances,
                                                      blob_radius,
@@ -222,8 +220,7 @@ def blob_energies_hits_and_centres(track_graph : Graph,
         return blob2, blob1
 
 
-def find_highest_encapsulating_node(track        : Graph,
-                                    voxels       : pd.DataFrame,
+def find_highest_encapsulating_node(voxels       : pd.DataFrame,
                                     extrema_id   : int,
                                     distances    : pd.DataFrame,
                                     blob_radius  : float,
@@ -232,11 +229,10 @@ def find_highest_encapsulating_node(track        : Graph,
     Find the voxel within a big radius for which the most energy
     is captured within an equivalent smaller radius.
     """
-    distances = distances.set_index("initial final".split())
-    nodes_within_radius = [node for node in track.nodes()
-                           if distances.loc[(extrema_id, node)].distance < scan_radius]
+    distances = distances.set_index("initial")
+    d_extrema = distances.loc[extrema_id]
+    nodes_within_radius = d_extrema.final.loc[d_extrema.distance < scan_radius].values
 
-    distances.reset_index(level=1, inplace=True)
     def energy_within_radius(node):
         return energy_of_voxels_within_radius(voxels, distances.loc[node], blob_radius)
 

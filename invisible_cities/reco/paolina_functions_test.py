@@ -1035,8 +1035,8 @@ def test_encapsulation_works_as_intended():
     # blob centres
     ca = hits_ave_pos(hits_df.loc[hits_df.voxel_id==a])
     cb = hits_ave_pos(hits_df.loc[hits_df.voxel_id==b])
-    a_recalced = find_highest_encapsulating_node(tracks[0], voxels, a, distances, blob_radius, scan_radius)
-    b_recalced = find_highest_encapsulating_node(tracks[0], voxels, b, distances, blob_radius, scan_radius)
+    a_recalced = find_highest_encapsulating_node(voxels, a, distances, blob_radius, scan_radius)
+    b_recalced = find_highest_encapsulating_node(voxels, b, distances, blob_radius, scan_radius)
     ca_recalced = hits_ave_pos(hits_df.loc[hits_df.voxel_id==a_recalced])
     cb_recalced = hits_ave_pos(hits_df.loc[hits_df.voxel_id==b_recalced])
 
