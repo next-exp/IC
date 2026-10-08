@@ -313,7 +313,6 @@ def make_tracks(hits        : pd.DataFrame,
     - "high" for the higher energy blob
     - "none" otherwise
     """
-
     # generate empty dataframe
     track_df = pd.DataFrame(columns = list(types_dict_tracks.keys()))
 
@@ -340,8 +339,8 @@ def make_tracks(hits        : pd.DataFrame,
         numb_of_tracks                    = len(track_graphs)
         energy                            = track_voxels.e.sum()
         extreme_low, extreme_high, length = find_extrema_and_length(track, voxels)
-        extreme_pos1                      = voxels.loc[extreme_low]
-        extreme_pos2                      = voxels.loc[extreme_high]
+        pos_high                          = voxels.loc[extreme_low]
+        pos_low                           = voxels.loc[extreme_high]
         ave_pos                           = hits_ave_pos(track_hits, energy_type)
         ave_r                             = np.average(track_hits.R,             weights = track_hits[energy_type.value], axis = 0)
 
@@ -370,7 +369,7 @@ def make_tracks(hits        : pd.DataFrame,
                         numb_of_voxels, numb_of_hits, numb_of_tracks,
                         track_hits.X.min(), track_hits.Y.min(), track_hits.Z.min(), track_hits.R.min(),
                         track_hits.X.max(), track_hits.Y.max(), track_hits.Z.max(), track_hits.R.max(),
-                        *ave_pos, ave_r, *extreme_pos1[_xyz].tolist(), *extreme_pos2[_xyz].tolist(),
+                        *ave_pos, ave_r, *pos_high[_xyz].tolist(), *pos_low[_xyz].tolist(),
                         *blob_high.position, *blob_low.position, blob_high.energy, blob_low.energy, overlap,
                         *voxel_size]
         track_df.loc[track_no] = list_of_vars
