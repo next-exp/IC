@@ -42,23 +42,6 @@ def energy_of_voxels_within_radius(voxels    : pd.DataFrame,
     return sum([voxels.loc[vox].e for vox in within_radius])
 
 
-def extract_track_voxels(track  : Graph,
-                         voxels : pd.DataFrame):
-    '''
-    Extract all voxels from track nodes for tracking table
-
-    Parameters
-    ----------
-    track       :  track graph
-    voxels      :  voxels
-
-    Returns
-    -------
-    dataframe of voxels in the track
-    '''
-    return voxels.loc[list(track.nodes())]
-
-
 def voxelize_hits( hits       : pd.DataFrame
                  , voxel_size : np.ndarray
                  , energy_type: HitEnergy = HitEnergy.E
@@ -353,7 +336,7 @@ def make_tracks(hits        : pd.DataFrame,
     for track_no, track in enumerate(track_graphs):
 
         # collect relevant information
-        track_voxels                      = extract_track_voxels(track, voxels)
+        track_voxels                      = voxels.loc[list(track.nodes())]
         # create hits with radial information
         track_hits                        = hits[hits.voxel_id.isin(track_voxels.index)].assign(R = lambda df: np.sqrt(df.X**2 + df.Y**2))
         numb_of_voxels                    = len(track_voxels)
