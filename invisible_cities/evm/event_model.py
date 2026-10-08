@@ -1,33 +1,9 @@
 # Classes defining the event model
 
-import tables as tb
 import numpy  as np
-import pandas as pd
 
 from .. types.ic_types import NN
 from .. types.ic_types import xy
-from .. types.symbols  import HitEnergy
-from .. core           import system_of_units as units
-from .. core.core_functions import overflow_protection
-
-from typing import List
-from typing import Tuple
-from typing import NamedTuple
-
-
-class Event:
-    """Transient class storing event and time info."""
-    def __init__(self, event_number, event_time):
-       self.event = event_number
-       self.time  = event_time
-
-    def __str__(self):
-       s = "{0}Event\n{0}".format("#"*20 + "\n")
-       for attr in self.__dict__:
-           s += "{}: {}\n".format(attr, getattr(self, attr))
-       return s
-
-    __repr__ = __str__
 
 
 class BHit:
@@ -57,24 +33,6 @@ class BHit:
             self.__class__.__name__, self, self, self, self)
 
     __repr__ =     __str__
-
-
-class Voxel(BHit):
-    """Represents a Voxel"""
-    def __init__(self, x,y,z, E, size, hits=None, e_type : HitEnergy = HitEnergy.E):
-        super().__init__(x,y,z, E)
-        self._size  = size
-        self.hits   = hits if hits is not None else []
-        self.e_type = e_type.value
-
-    @property
-    def size(self): return self._size
-
-    @property
-    def Ehits(self): return self.hits[self.e_type].sum()
-
-    @property
-    def Etype(self): return self.e_type
 
 
 class Cluster(BHit):
@@ -119,41 +77,6 @@ class Cluster(BHit):
         return """< nsipm = {} Q = {}
                     xy = {} 3dHit = {}  >""".format(self.nsipm, self.Q, self._xy,
                                                      super().__str__())
-    __repr__ =     __str__
-
-
-class TrackCollection(Event):
-    """A Collection of tracks"""
-    def __init__(self, event_number, event_time):
-        Event.__init__(self, event_number, event_time)
-        self.tracks = []
-
-    @property
-    def number_of_tracks(self):
-        return len(self.tracks)
-
-    def store(self, table):
-        row = table.row
-        for i, t in enumerate(self.tracks):
-            row["event"]    = self.event
-            row["time" ]    = self.time
-            row["track_no"] = i
-
-            for j, voxel in enumerate(t.voxels):
-                row["voxel_no"] = j
-                row["X"    ] = voxel.X
-                row["Y"    ] = voxel.Y
-                row["Z"    ] = voxel.Z
-                row["E"    ] = voxel.E
-
-                row.append()
-
-    def __str__(self):
-        s =  "{}".format(self.__class__.__name__)
-        s+= "Track list:"
-        s2 = [str(trk) for trk in self.tracks]
-        return  s + ''.join(s2)
-
     __repr__ =     __str__
 
 

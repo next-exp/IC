@@ -4,7 +4,6 @@ from pytest import mark
 
 from hypothesis             import given
 from hypothesis.strategies  import just
-from hypothesis.strategies  import lists
 from hypothesis.strategies  import one_of
 from hypothesis.strategies  import floats
 from hypothesis.strategies  import integers
@@ -13,26 +12,7 @@ from hypothesis.strategies  import composite
 from .. types.ic_types   import xy
 from .. types.symbols    import HitEnergy
 
-from .       event_model import Event
 from .       event_model import Cluster
-from .       event_model import Voxel
-
-
-@composite
-def event_input(draw):
-    evt_no = draw(integers())
-    time   = draw(floats  (allow_nan=False))
-    return evt_no, time
-
-
-@composite
-def voxel_input(draw):
-    x     = draw(floats(  1,   5))
-    y     = draw(floats(-10,  10))
-    z     = draw(floats(.01,  .5))
-    E     = draw(floats( 50, 100))
-    size  = np.array([draw(floats(1,2)), draw(floats(1,2)), draw(floats(1,2))])
-    return x, y, z, E, size
 
 @composite
 def cluster_input(draw):
@@ -56,15 +36,6 @@ def hit_input(draw):
     track_id    = draw(one_of(just(-1), integers( 0,  10)))
     Ep          = draw(one_of(just(-1), floats  (50, 100)))
     return peak_number, s2_energy, z, x_peak, y_peak, s2_energy_c, track_id, Ep
-
-
-@given(event_input())
-def test_event(event_pars):
-    evt_no, time = event_pars
-    evt =  Event(*event_pars)
-
-    assert evt.event == evt_no
-    assert evt.time  == time
 
 
 @given(cluster_input())
@@ -94,17 +65,3 @@ def test_cluster(ci):
 @mark.parametrize("value", "E Ec Ep".split())
 def test_hitenergy_value(value):
     assert getattr(HitEnergy, value).value == value
-
-
-@given(voxel_input())
-def test_voxel(vi):
-    x, y, z, E, size = vi
-    xyz = x, y, z
-    v = Voxel(x, y, z, E, size)
-
-    np.allclose(v.XYZ, xyz, rtol=1e-4)
-    np.allclose(v.pos, xyz, rtol=1e-4)
-    np.isclose (v.E  , E  , rtol=1e-4)
-    np.isclose (v.X  , x  , rtol=1e-4)
-    np.isclose (v.Y  , y  , rtol=1e-4)
-    np.isclose (v.Z  , z  , rtol=1e-4)
