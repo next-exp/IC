@@ -22,32 +22,104 @@ _XYZ = list("XYZ")
 _xyz = list("xyz")
 
 
-def round_hits_positions_in_place(hits, decimals):
+def round_hits_positions_in_place(hits: pd.DataFrame, decimals: int) -> None:
     """
-    Rounds the hits positions to `decimals` decimals to avoid floating point
-    comparison issues. The operation is performed inplace to avoid an
+    Rounds the hits positions to `decimals` decimal places to avoid floating
+    point comparison issues. The operation is performed inplace to avoid an
     unnecessary copy.
+
+    Parameters
+    ----------
+    hits : pd.DataFrame
+        Hit table containing the ``X``, ``Y``, and ``Z`` columns.
+    decimals : int
+        Number of decimal places to retain.
+
+    Returns
+    -------
+    None
     """
     hits.loc[:, _XYZ] = np.round(hits.loc[:, _XYZ], decimals)
 
 
-def get_track_energy(track, voxels):
+def get_track_energy(track: Graph, voxels: pd.DataFrame) -> float:
+    """Return the summed voxel energy in a track.
+
+    Parameters
+    ----------
+    track : networkx.Graph
+        Graph whose nodes identify rows in ``voxels``.
+    voxels : pd.DataFrame
+        Voxel table with an ``e`` energy column.
+
+    Returns
+    -------
+    float
+        Sum of ``e`` over the track's nodes.
+    """
     return sum([voxels.loc[vox].e for vox in track.nodes()])
 
 
 def energy_of_voxels_within_radius(voxels    : pd.DataFrame,
                                    distances : pd.DataFrame,
                                    radius    : float) -> float:
+    """
+    Sum voxel energy for nodes within a path-distance radius.
+
+    Parameters
+    ----------
+    voxels : pd.DataFrame
+        Voxel table indexed by voxel ID, with an ``e`` energy column.
+    distances : pd.DataFrame
+        Pairwise path distances from one starting voxel. Must contain
+        ``final`` and ``distance`` columns.
+    radius : float
+        Strict upper bound on path distance, in the same units as the graph
+        edge weights.
+
+    Returns
+    -------
+    float
+        Sum of the energies of voxels with path distance less than ``radius``.
+    """
     within_radius = distances[distances.distance < radius].final.values
     return sum([voxels.loc[vox].e for vox in within_radius])
 
 
-def voxelize_hits( hits       : pd.DataFrame
-                 , voxel_size : np.ndarray
+def voxelize_hits( hits: pd.DataFrame
+                 , voxel_size: np.ndarray
                  , energy_type: HitEnergy = HitEnergy.E
-                 ) -> (pd.DataFrame, pd.DataFrame): # hits, voxels
+                 ) -> Tuple[pd.DataFrame, pd.DataFrame]: # hits, voxels
     """
-    Assign each hit a voxel by discretizing the 3D space.
+    Assign hits to voxels by discretizing their three-dimensional positions.
+
+    Voxel IDs are hashes of integer voxel coordinates relative to the minimum
+    hit position. The returned hit table is a copy of the input with a
+    ``voxel_id`` column; the voxel table is indexed by voxel ID and stores the
+    voxel-centre coordinates and summed energy in its ``e`` column.
+
+    Parameters
+    ----------
+    hits : pd.DataFrame
+        Non-empty hit table containing ``X``, ``Y``, ``Z``, and the selected
+        energy column.
+    voxel_size : numpy.ndarray, shape (3,)
+        Voxel dimensions along the x, y, and z axes.
+    energy_type : HitEnergy, optional
+        Hit-energy column to sum into each voxel. Defaults to ``HitEnergy.E``.
+
+    Returns
+    -------
+    hits_with_voxel_ids : pd.DataFrame
+        Copy of ``hits`` with a ``voxel_id`` column.
+    voxels : pd.DataFrame
+        One row per voxel, indexed by voxel ID, with lowercase ``x``, ``y``,
+        ``z``, and ``e`` columns.
+
+    Raises
+    ------
+    NoHits
+        If ``hits`` is empty.
     """
     if hits.empty:
         raise NoHits
@@ -89,17 +161,56 @@ def neighbours( va        : pd.Series
               , size      : np.ndarray
               , contiguity: Contiguity = Contiguity.CORNER
               ) -> bool:
+    """
+    Return whether two voxel centres satisfy the contiguity criterion.
+
+    The Euclidean distance between the centres is normalized by voxel size
+    along each axis and compared with ``contiguity.value``.
+
+    Parameters
+    ----------
+    va, vb : pandas.Series
+        Voxel rows containing lowercase ``x``, ``y``, and ``z`` coordinates.
+    size : numpy.ndarray, shape (3,)
+        Voxel dimensions along the x, y, and z axes.
+    contiguity : Contiguity, optional
+        Maximum normalized centre-to-centre distance. Defaults to
+        ``Contiguity.CORNER``.
+
+    Returns
+    -------
+    bool
+        ``True`` if the normalized distance is less than the contiguity value.
+    """
     return np.linalg.norm((va.loc[_xyz].values - vb.loc[_xyz].values) / size) < contiguity.value
 
 
-def make_track_graphs( voxels    : pd.DataFrame
-                     , voxel_size: np.ndarray
-                     , contiguity: Contiguity = Contiguity.CORNER
-                     ) -> Sequence[Graph]:
+def make_track_graphs( voxels     : pd.DataFrame
+                     ,  voxel_size: np.ndarray
+                     , contiguity : Contiguity = Contiguity.CORNER
+                     ) -> Tuple[Graph, ...]:
     """
-    Create a graph where the voxels are the nodes and the edges are any pair of
-    neighbour voxel. Two voxels are considered to be neighbours if their
-    distance normalized to their size is smaller than a contiguity factor.
+    Build one weighted graph for each connected component of neighboring voxels.
+
+    Graph nodes are voxel IDs. An edge joins two voxels when their normalized
+    centre-to-centre distance is below the selected contiguity value; its
+    ``distance`` weight is their Euclidean separation.
+
+    Parameters
+    ----------
+    voxels : pd.DataFrame
+        Voxel table indexed by voxel ID, with lowercase ``x``, ``y``, and
+        ``z`` coordinate columns.
+    voxel_size : numpy.ndarray, shape (3,)
+        Voxel dimensions along the x, y, and z axes.
+    contiguity : Contiguity, optional
+        Neighbor criterion. Defaults to ``Contiguity.CORNER``.
+
+    Returns
+    -------
+    tuple of networkx.Graph
+        Connected components of the voxel-neighbor graph, each copied into an
+        independent graph.
     """
     voxel_graph = nx.Graph()
     voxel_graph.add_nodes_from(voxels.index)
@@ -116,7 +227,19 @@ def make_track_graphs( voxels    : pd.DataFrame
 
 def shortest_paths(track_graph: Graph) -> pd.DataFrame:
     """
-    Compute shortest path lengths between all nodes in a weighted graph.
+    Compute pairwise shortest-path distances in a weighted track graph.
+
+    Parameters
+    ----------
+    track_graph : networkx.Graph
+        Track graph whose edges have a ``distance`` weight.
+
+    Returns
+    -------
+    pd.DataFrame
+        Long-form table with ``initial``, ``final``, and ``distance`` columns.
+        Each reachable ordered pair of nodes has one row, including zero-length
+        paths from each node to itself.
     """
     distances = dict(nx.all_pairs_dijkstra_path_length(track_graph, weight='distance'))
     distances = ((v1, v2, d) for v1, dmap in distances.items() for v2, d in dmap.items())
@@ -126,8 +249,27 @@ def shortest_paths(track_graph: Graph) -> pd.DataFrame:
 
 def find_extrema_and_length(distances: pd.DataFrame) -> Tuple[int, int, float]:
     """
-    Find the furthest-apart voxels in a track and their shortest-path distance.
-    The voxel IDs are not ordered by energy.
+    Find the most widely separated voxel pair in a track.
+
+    Parameters
+    ----------
+    distances : pd.DataFrame
+        Pairwise path-distance table with ``initial``, ``final``, and
+        ``distance`` columns, as returned by :func:`shortest_paths`.
+
+    Returns
+    -------
+    extreme_id_1 : int
+        Starting voxel ID of a pair with maximum shortest-path distance.
+    extreme_id_2 : int
+        Ending voxel ID of that pair. The IDs are not ordered by energy.
+    length : float
+        Maximum shortest-path distance between the returned voxels.
+
+    Raises
+    ------
+    NoVoxels
+        If ``distances`` is empty.
     """
     if distances.empty:
         raise NoVoxels
@@ -146,7 +288,22 @@ def find_extrema_and_length(distances: pd.DataFrame) -> Tuple[int, int, float]:
 def hits_ave_pos(hits  : pd.DataFrame,
                  etype : HitEnergy = HitEnergy.E) -> np.ndarray:
     """
-    Calculate the energy-weighted average position of a set of hits
+    Calculate the energy-weighted average hit position.
+
+    If the selected energy sums to zero, use the unweighted mean position.
+
+    Parameters
+    ----------
+    hits : pd.DataFrame
+        Hit table containing ``X``, ``Y``, ``Z``, and the selected energy
+        column.
+    etype : HitEnergy, optional
+        Energy column used as the weights. Defaults to ``HitEnergy.E``.
+
+    Returns
+    -------
+    numpy.ndarray, shape (3,)
+        Weighted mean position in x, y, and z order.
     """
     # catch cases with no weight
     if hits[etype.value].sum() == 0:
@@ -167,9 +324,52 @@ def find_blobs(hits        : pd.DataFrame,
                voxel_size  : np.ndarray,
                energy_type : HitEnergy = HitEnergy.E
               ) -> Tuple[Blob, Blob]:
-    '''
-    Extract relevant blob information
-    '''
+    """
+    Identify the high- and low-energy blobs at the ends of a track.
+
+    Blob centres are the energy-weighted hit positions at the endpoint voxels,
+    or at the highest-encapsulating voxels when ``scan_radius`` is provided.
+    Candidate hits must be within ``blob_radius`` of a centre and connected to
+    its voxel by a sufficiently short path through the track.
+
+    Parameters
+    ----------
+    hits : pd.DataFrame
+        Hits belonging to this track.
+    voxels : pd.DataFrame
+        Voxel table indexed by voxel ID, with coordinates and summed ``e`` in
+        the selected energy definition.
+    distances : pd.DataFrame
+        Pairwise path distances for this track, as returned by
+        :func:`shortest_paths`.
+    blob_radius : float
+        Spatial radius used to select hits around each blob centre.
+    scan_radius : float or None
+        If provided, search this path-distance radius from each endpoint for
+        the voxel that captures the most energy within ``blob_radius``. If
+        ``None``, use the endpoint voxels directly.
+    extreme_id_1, extreme_id_2 : int
+        Endpoint voxel IDs, typically returned by
+        :func:`find_extrema_and_length`.
+    voxel_size : numpy.ndarray, shape (3,)
+        Voxel dimensions along the x, y, and z axes. The voxel diagonal is used
+        to conservatively select candidate voxels by path distance.
+    energy_type : HitEnergy, optional
+        Energy column used for blob weighting and energy totals. Defaults to
+        ``HitEnergy.E``.
+
+    Returns
+    -------
+    high_energy_blob : Blob
+        Blob with the larger selected-energy sum.
+    low_energy_blob : Blob
+        Blob with the smaller selected-energy sum.
+
+    Notes
+    -----
+    For a one-voxel track, both return values refer to the same blob and
+    include all hits in that voxel.
+    """
     if len(distances) == 1: # special case, one voxel
         blob = Blob(hits[energy_type.value].sum(),
                     hits_ave_pos(hits, energy_type),
@@ -228,14 +428,42 @@ def find_highest_encapsulating_node(voxels       : pd.DataFrame,
                                     blob_radius  : float,
                                     scan_radius  : float) -> int:
     """
-    Find the voxel within a big radius for which the most energy
-    is captured within an equivalent smaller radius.
+    Find the voxel that captures the most energy within a blob radius.
+
+    Candidate voxels are limited to those within ``scan_radius`` of the
+    endpoint, using shortest-path distance. The energy captured by each
+    candidate is summed over voxels within ``blob_radius`` of that candidate,
+    also using shortest-path distance.
+
+    Parameters
+    ----------
+    voxels : pd.DataFrame
+        Voxel table indexed by voxel ID, with an ``e`` energy column.
+    extrema_id : int
+        Endpoint voxel ID from which the candidate search begins.
+    distances : pd.DataFrame
+        Pairwise path distances for the track, as returned by
+        :func:`shortest_paths`.
+    blob_radius : float
+        Path-distance radius used to sum captured voxel energy.
+    scan_radius : float
+        Path-distance radius around ``extrema_id`` in which to search.
+
+    Returns
+    -------
+    int
+        ID of the candidate voxel with the largest captured energy.
+
+    Raises
+    ------
+    ValueError
+        If no voxel lies within ``scan_radius`` of ``extrema_id``.
     """
     distances = distances.set_index("initial")
     d_extrema = distances.loc[extrema_id]
     nodes_within_radius = d_extrema.final.loc[d_extrema.distance < scan_radius].values
 
-    def energy_within_radius(node):
+    def energy_within_radius(node: int) -> float:
         return energy_of_voxels_within_radius(voxels, distances.loc[node], blob_radius)
 
     highest_encapsulating_node = max(nodes_within_radius, key = energy_within_radius)
@@ -249,15 +477,41 @@ def assign_blobs_inplace(track_graph : Graph,
                          extreme_id_1: int,
                          extreme_id_2: int,
                          voxel_size  : np.ndarray,
-                        ):
+                        ) -> None:
     """
-    Assigns each hit and voxel a label that links them to a blob. The code is:
-    - "low"  for the lower energy blob
-    - "high" for the higher energy blob
-    - "highlow" if a hit belongs to both blobs
-    - "none" otherwise (not set within this function)
+    Label hits and voxels according to their membership in the two blobs.
+
+    The ``blob`` columns of ``hits`` and ``voxels`` are modified in place.
+    Existing labels are left unchanged for rows outside either blob.
+
+    Parameters
+    ----------
+    track_graph : networkx.Graph
+        Track graph whose nodes are voxel IDs and whose edges have a
+        ``distance`` weight.
+    hits : pd.DataFrame
+        Hits belonging to the track, including a ``voxel_id`` column.
+    voxels : pd.DataFrame
+        Voxel table indexed by voxel ID.
+    radius : float
+        Spatial radius used to select hits around each endpoint.
+    extreme_id_1, extreme_id_2 : int
+        Endpoint voxel IDs.
+    voxel_size : numpy.ndarray, shape (3,)
+        Voxel dimensions along the x, y, and z axes.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    Blob labels are ``"low"`` and ``"high"`` for the lower- and higher-energy
+    blobs, ``"highlow"`` for shared membership, and ``"none"`` for hits not
+    assigned by this function. The caller is responsible for initializing
+    labels to ``"none"`` if that is the desired default.
     """
-    distances = shortest_paths(track_graph).set_index("initial")
+    distances = distances.set_index("initial")
     if len(distances) == 1: # special case
         hits  .loc[:, "blob"] = "highlow"
         voxels.loc[:, "blob"] = "highlow"
@@ -307,14 +561,47 @@ def make_tracks(hits        : pd.DataFrame,
                 scan_radius : float | None,
                 contiguity  : Contiguity = Contiguity.CORNER,
                 energy_type : HitEnergy  = HitEnergy.E
-               ) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame): # hits, voxels
+               ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Assign each hit and voxel a track and a blob. Tracks are simply enumerated
-    according to the graph algorithm. The code for blob association is
-    - "low"  for the lower energy blob
-    - "high" for the higher energy blob
-    - "highlow" if a hit belongs to both blobs
-    - "none" otherwise
+    Assign track IDs to hits and voxels, blob labels to hits, and summarize
+    each track.
+
+    Disconnected voxel components are ordered by decreasing ``e`` energy and
+    numbered from zero. Blob membership is assigned to hits; the returned
+    voxel table is tagged with track IDs.
+
+    Parameters
+    ----------
+    hits : pd.DataFrame
+        Non-empty hit table containing an ``event`` column, coordinates,
+        ``voxel_id``, and the selected energy column.
+    voxels : pd.DataFrame
+        Voxel table indexed by voxel ID, with coordinates and summed ``e`` for
+        ``energy_type``.
+    voxel_size : numpy.ndarray, shape (3,)
+        Voxel dimensions along the x, y, and z axes.
+    blob_radius : float
+        Spatial radius used to select hits belonging to each blob.
+    scan_radius : float or None
+        Optional path-distance search radius for choosing blob centres.
+        ``None`` uses the track endpoints.
+    contiguity : Contiguity, optional
+        Neighbor criterion used to build tracks. Defaults to
+        ``Contiguity.CORNER``.
+    energy_type : HitEnergy, optional
+        Hit-energy column used for track and blob energy calculations and
+        weighted positions. Defaults to ``HitEnergy.E``.
+
+    Returns
+    -------
+    hits : pd.DataFrame
+        Copy of the hit table with ``track`` and ``blob`` columns. Blob labels
+        are ``"low"``, ``"high"``, ``"highlow"``, or ``"none"``.
+    voxels : pd.DataFrame
+        Copy of the voxel table with a ``track`` column.
+    tracks : pd.DataFrame
+        One summary row per track, with columns defined by
+        ``types_dict_tracks``.
     """
     # generate empty dataframe
     track_df = pd.DataFrame(columns = list(types_dict_tracks.keys()))
@@ -387,6 +674,25 @@ def make_tracks(hits        : pd.DataFrame,
 
 
 def pop_voxel_inplace(voxels: pd.DataFrame, vox_id: int) -> pd.Series:
+    """Remove and return one voxel row, modifying ``voxels`` in place.
+
+    Parameters
+    ----------
+    voxels : pd.DataFrame
+        Voxel table indexed by voxel ID.
+    vox_id : int
+        ID of the voxel to remove.
+
+    Returns
+    -------
+    pandas.Series
+        Removed voxel row, with its index label set as the Series name.
+
+    Raises
+    ------
+    KeyError
+        If ``vox_id`` is not present in ``voxels``.
+    """
     popped = voxels.loc[vox_id]
     voxels.drop(vox_id, inplace=True)
     return popped
@@ -400,9 +706,33 @@ def drop_voxel_inplace( hits       : pd.DataFrame
                       , contiguity : Contiguity = Contiguity.CORNER
                       ) -> pd.Series:
     """
-    Eliminate an individual voxel from a set of voxels and give its energy to
-    the hits closest to the barycenter of the eliminated voxel's hits, provided
-    that it belongs to a neighbour voxel. The dropped voxel is returned.
+    Drop one voxel and redistribute its energy among the closest neighbor hits.
+
+    The voxel's energy is shared among all neighboring hits at the minimum
+    distance from the energy-weighted barycenter of the voxel's hits, in
+    proportion to those hits' selected energies. The input hit and voxel tables
+    are modified in place.
+
+    Parameters
+    ----------
+    hits : pd.DataFrame
+        Hit table containing coordinates, ``voxel_id``, and the selected energy
+        column.
+    voxels : pd.DataFrame
+        Voxel table indexed by voxel ID, with coordinates and summed ``e``.
+    voxel_size : numpy.ndarray, shape (3,)
+        Voxel dimensions along the x, y, and z axes.
+    vox_id : int
+        ID of the voxel to drop.
+    e_type : HitEnergy
+        Hit-energy column to redistribute.
+    contiguity : Contiguity, optional
+        Neighbor criterion. Defaults to ``Contiguity.CORNER``.
+
+    Returns
+    -------
+    pandas.Series
+        Removed voxel row with its ``e`` value set to NaN.
     """
     popped           = pop_voxel_inplace(voxels, vox_id)
     is_neighbour     = [neighbours(popped, voxel, voxel_size, contiguity) for _, voxel in voxels.iterrows()]
@@ -453,10 +783,43 @@ def drop_voxels(hits            : pd.DataFrame,
                 e_type          : HitEnergy,
                 min_vxls        : int = 3,
                 contiguity      : Contiguity = Contiguity.CORNER
-               ) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame): # hits, voxels, dropped voxels
+               ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Find voxels at the end-points of a track and tag them, recursively, if their
-    energy is lower than a threshold.
+    Recursively drop low-energy endpoint voxels from each track.
+
+    Tracks with fewer than ``min_vxls`` voxels are left unchanged. A candidate
+    endpoint is dropped only when its energy is below ``energy_threshold`` and
+    it has at least one other neighbor. The input hit and voxel tables are
+    modified in place.
+
+    Parameters
+    ----------
+    hits : pd.DataFrame
+        Hit table containing coordinates, ``voxel_id``, and the selected energy
+        column.
+    voxels : pd.DataFrame
+        Voxel table indexed by voxel ID, with coordinates and summed ``e``.
+    energy_threshold : float
+        Endpoint energy below which a voxel is eligible to be dropped.
+    voxel_size : numpy.ndarray, shape (3,)
+        Voxel dimensions along the x, y, and z axes.
+    e_type : HitEnergy
+        Hit-energy column used to identify and redistribute energy.
+    min_vxls : int, optional
+        Minimum track size for endpoint removal. Defaults to 3.
+    contiguity : Contiguity, optional
+        Neighbor criterion. Defaults to ``Contiguity.CORNER``.
+
+    Returns
+    -------
+    dropped_hits : pd.DataFrame
+        Hits belonging to dropped voxels, marked with ``voxel_id == 0`` and
+        NaN selected energy. Empty if no voxels were dropped.
+    voxels : pd.DataFrame
+        Remaining voxel table.
+    dropped_voxels : pd.DataFrame
+        Removed voxel rows, with their ``e`` values set to NaN. Empty if no
+        voxels were dropped.
     """
 
     dropped  = []
