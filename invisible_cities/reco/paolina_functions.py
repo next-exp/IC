@@ -189,12 +189,11 @@ def blob_energies_hits_and_centres(track_graph : Graph,
     Extract relevant blob information
     '''
 
-    distances = shortest_paths(track_graph).set_index("initial")
+    # TODO: do not recalculate shortest paths all the time
+    distances     = shortest_paths(track_graph).set_index("initial")
     if len(distances) == 1: # special case, one voxel
         blob = Blob(hits.E.sum(), hits_ave_pos(hits), hits.index.values)
         return blob, blob
-
-    diag = np.linalg.norm(voxel_size)
 
     if scan_radius is not None:
         blob_pos_1 = find_highest_encapsulating_node(track_graph,
@@ -216,6 +215,7 @@ def blob_energies_hits_and_centres(track_graph : Graph,
         blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2])
 
     # voxels that might have been within the required radius
+    diag          = np.linalg.norm(voxel_size)
     within_radius = lambda df: df.distance < blob_radius + diag
     candidate_voxels_1 = distances.loc[extreme_id_1].loc[within_radius].final.values
     candidate_voxels_2 = distances.loc[extreme_id_2].loc[within_radius].final.values
