@@ -1209,9 +1209,9 @@ def waveform_integrator(limits):
 
 # Compound components
 def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
-                  s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-                  s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
-                  h5out, sipm_selection_algo, sipm_rwf_to_cal=None):
+                            s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
+                            s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
+                            h5out, sipm_selection_algo, sipm_rwf_to_cal=None):
 
     # Filter events without signal over threshold
     indices_pass    = fl.map(check_nonempty_indices,
@@ -1449,9 +1449,8 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
     - hits table
 
     '''
-
     # force vox_size into np.ndarray
-    vox_size = np.array(vox_size)
+    vox_size = np.asarray(vox_size)
 
     def create_extract_track_blob_info(hits: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, bool]:
         '''
@@ -1485,7 +1484,6 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
 
         # check if hits exist within the map
         out_of_map = hits.Ep.isna().values
-        hits_out   = hits.loc[ out_of_map]
         hits       = hits.loc[~out_of_map]
         if not len(hits) or not (hits.Ep>0).any():
             return empty_hit_tbl, empty_vox_tbl, track_df, True
@@ -1533,7 +1531,6 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                                       out  = 'hits_passed')
     hits_passed          = fl.count_filter(bool, args="hits_passed")
 
-
     copy_Efield          = fl.map(Efield_copier(hit_type),
                                             args = 'hits',
                                             out  = 'Ep_hits')
@@ -1560,9 +1557,7 @@ def compute_and_write_tracks_info(paolina_params, h5out,
     write_tracks          = fl.sink(   track_writer     (h5out=h5out)             , args="topology_info"      )
     write_summary         = fl.sink( summary_writer     (h5out=h5out)             , args="event_info"         )
     write_topology_filter = fl.sink( event_filter_writer(h5out, "topology_select"), args=("event_number", "topology_passed"    ))
-
     write_no_hits_filter  = fl.sink( event_filter_writer(h5out, filter_hits_table_name), args=("event_number", "hits_passed"))
-
 
     make_and_write_summary  = make_final_summary, write_summary
     select_and_write_tracks = events_passed_topology.filter, write_tracks
