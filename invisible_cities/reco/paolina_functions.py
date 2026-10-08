@@ -124,13 +124,11 @@ def shortest_paths(track_graph: Graph) -> pd.DataFrame:
     return distances
 
 
-def find_extrema_and_length( track_graph: Graph
-                           , voxels     : pd.DataFrame
-                           ) -> (int, int, float): # extreme1, extreme2, length
+def find_extrema_and_length(distances: pd.DataFrame) -> Tuple[int, int, float]:
     """
-    Find the extrema and the length of a track. The extrema are sorted by energy
+    Find the furthest-apart voxels in a track and their shortest-path distance.
+    The voxel IDs are not ordered by energy.
     """
-    distances = shortest_paths(track_graph)
     if distances.empty:
         raise NoVoxels
 
@@ -159,9 +157,9 @@ def hits_ave_pos(hits  : pd.DataFrame,
                      , axis=0)
 
 
-def blob_energies_hits_and_centres(track_graph : Graph,
-                                   hits        : pd.DataFrame,
+def blob_energies_hits_and_centres(hits        : pd.DataFrame,
                                    voxels      : pd.DataFrame,
+                                   distances   : pd.DataFrame,
                                    blob_radius : float,
                                    scan_radius : float | None,
                                    extreme_id_1: int,
@@ -170,16 +168,13 @@ def blob_energies_hits_and_centres(track_graph : Graph,
     '''
     Extract relevant blob information
     '''
-
-    # TODO: do not recalculate shortest paths all the time
-    distances = shortest_paths(track_graph).set_index("initial")
     if len(distances) == 1: # special case, one voxel
         blob = Blob(hits.E.sum(), hits_ave_pos(hits), hits.index.values)
         return blob, blob
 
     if scan_radius is not None:
-        blob_pos_1 = find_highest_encapsulating_node(extreme_id_1,
-                                                     voxels,
+        blob_pos_1 = find_highest_encapsulating_node(voxels,
+                                                     extreme_id_1,
                                                      distances,
                                                      blob_radius,
                                                      scan_radius)
@@ -195,6 +190,7 @@ def blob_energies_hits_and_centres(track_graph : Graph,
         blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2])
 
     # voxels that might have been within the required radius
+    distances     = distances.set_index("initial")
     diag          = np.linalg.norm(voxel_size)
     within_radius = lambda df: df.distance < blob_radius + diag
     candidate_voxels_1 = distances.loc[extreme_id_1].loc[within_radius].final.values
@@ -327,8 +323,10 @@ def make_tracks(hits        : pd.DataFrame,
     voxels = voxels.copy()
     hits  .insert(hits  .shape[1], "track",  9999)
     voxels.insert(voxels.shape[1], "track",  9999)
+    hits  .insert(hits  .shape[1],  "blob", "none")
 
     for track_no, track in enumerate(track_graphs):
+        distances = shortest_paths(track)
 
         # collect relevant information
         track_voxels                      = voxels.loc[list(track.nodes())]
@@ -338,16 +336,16 @@ def make_tracks(hits        : pd.DataFrame,
         numb_of_hits                      = len(track_hits)
         numb_of_tracks                    = len(track_graphs)
         energy                            = track_voxels.e.sum()
-        extreme_low, extreme_high, length = find_extrema_and_length(track, voxels)
+        extreme_low, extreme_high, length = find_extrema_and_length(distances, voxels)
         pos_high                          = voxels.loc[extreme_low]
         pos_low                           = voxels.loc[extreme_high]
         ave_pos                           = hits_ave_pos(track_hits, energy_type)
-        ave_r                             = np.average(track_hits.R,             weights = track_hits[energy_type.value], axis = 0)
-
+        ave_r                             = np.average(track_hits.R,
+                                                       weights = track_hits[energy_type.value],
+                                                       axis = 0)
 
         # blob information
-
-        blob_high, blob_low = blob_energies_hits_and_centres(track, hits, voxels,
+        blob_high, blob_low = blob_energies_hits_and_centres(track_hits, voxels, distances,
                                                              blob_radius, scan_radius,
                                                              extreme_low, extreme_high,
                                                              voxel_size)
@@ -356,7 +354,6 @@ def make_tracks(hits        : pd.DataFrame,
         in_high = hits.index.isin(blob_high.hit_ids)
         in_low  = hits.index.isin(blob_low .hit_ids)
 
-        hits['blob']                       = 'none'
         hits.loc[in_high, 'blob']          = 'high'
         hits.loc[in_low , 'blob']          = 'low'
         hits.loc[in_high & in_low, 'blob'] = 'highlow'
@@ -466,7 +463,8 @@ def drop_voxels(hits            : pd.DataFrame,
             if len(t.nodes()) < min_vxls:
                 continue
 
-            for voxel_id in find_extrema_and_length(t, voxels)[:2]: # skip length
+            distances = shortest_paths(t)
+            for voxel_id in find_extrema_and_length(distances)[:2]: # skip length
                 extreme = voxels.loc[voxel_id]
                 if extreme.e < energy_threshold:
                     # be sure that the voxel to be eliminated has at least one neighbour
