@@ -543,7 +543,7 @@ def test_assign_blobs_inplace_linear(linear_tracks):
     voxels  = voxels.assign(blob="none")
 
     # very small, blob radius, so only one voxel is in the blob
-    assign_blobs_inplace(graph, hits, voxels, 0.1, 0, n-1, voxel_size)
+    assign_blobs_inplace(hits, voxels, shortest_paths(graph), 0.1, 0, n-1, voxel_size)
 
     assert len(hits  ) == n
     assert len(voxels) == n
@@ -562,7 +562,7 @@ def test_assign_blobs_inplace_multivoxel(linear_track_face):
     voxels  = voxels.assign(blob="none")
 
     # a larger blob radius, so more than one voxel is in the blob
-    assign_blobs_inplace(graph, hits, voxels, 1.1, 0, n-1, voxel_size)
+    assign_blobs_inplace(hits, voxels, shortest_paths(graph), 1.1, 0, n-1, voxel_size)
 
     assert len(hits  ) == n
     assert len(voxels) == n
@@ -584,7 +584,7 @@ def test_assign_blobs_inplace_ushaped(ushaped_track):
     # so that we ensure it doesn't incorrectly pick up the other extreme despite
     # being close. Extremes are at a distance of sqrt(8) = 2.83, so we choose
     # 2.9<3 which should include exactly three voxels from each end
-    assign_blobs_inplace(graph, hits, voxels, 2.9, 0, n-1, voxel_size)
+    assign_blobs_inplace(hits, voxels, shortest_paths(graph), 2.9, 0, n-1, voxel_size)
 
     assert len(hits  ) == n
     assert len(voxels) == n

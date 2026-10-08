@@ -470,9 +470,9 @@ def find_highest_encapsulating_node(voxels       : pd.DataFrame,
     return highest_encapsulating_node
 
 
-def assign_blobs_inplace(track_graph : Graph,
-                         hits        : pd.DataFrame,
+def assign_blobs_inplace(hits        : pd.DataFrame,
                          voxels      : pd.DataFrame,
+                         distances   : pd.DataFrame,
                          radius      : float,
                          extreme_id_1: int,
                          extreme_id_2: int,
@@ -486,13 +486,13 @@ def assign_blobs_inplace(track_graph : Graph,
 
     Parameters
     ----------
-    track_graph : networkx.Graph
-        Track graph whose nodes are voxel IDs and whose edges have a
-        ``distance`` weight.
     hits : pd.DataFrame
         Hits belonging to the track, including a ``voxel_id`` column.
     voxels : pd.DataFrame
         Voxel table indexed by voxel ID.
+    distances : pd.DataFrame
+        Pairwise path-distance table for the track, as returned by
+        :func:`shortest_paths`.
     radius : float
         Spatial radius used to select hits around each endpoint.
     extreme_id_1, extreme_id_2 : int
