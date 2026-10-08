@@ -164,51 +164,57 @@ def blob_energies_hits_and_centres(hits        : pd.DataFrame,
                                    scan_radius : float | None,
                                    extreme_id_1: int,
                                    extreme_id_2: int,
-                                   voxel_size  : np.ndarray) -> Tuple[Blob, Blob]:
+                                   voxel_size  : np.ndarray,
+                                   energy_type : HitEnergy = HitEnergy.E
+                                  ) -> Tuple[Blob, Blob]:
     '''
     Extract relevant blob information
     '''
     if len(distances) == 1: # special case, one voxel
-        blob = Blob(hits.E.sum(), hits_ave_pos(hits), hits.index.values)
+        blob = Blob(hits[energy_type.value].sum(),
+                    hits_ave_pos(hits, energy_type),
+                    hits.index.values)
         return blob, blob
 
-    if scan_radius is not None:
-        blob_pos_1 = find_highest_encapsulating_node(voxels,
-                                                     extreme_id_1,
-                                                     distances,
-                                                     blob_radius,
-                                                     scan_radius)
 
-        blob_pos_2 = find_highest_encapsulating_node(voxels,
-                                                     extreme_id_2,
-                                                     distances,
-                                                     blob_radius,
-                                                     scan_radius)
-
+    if scan_radius is None:
+        blob_node_1 = extreme_id_1
+        blob_node_2 = extreme_id_2
     else:
-        blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1])
-        blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2])
+        blob_node_1 = find_highest_encapsulating_node(voxels,
+                                                      extreme_id_1,
+                                                      distances,
+                                                      blob_radius,
+                                                      scan_radius)
+
+        blob_node_2 = find_highest_encapsulating_node(voxels,
+                                                      extreme_id_2,
+                                                      distances,
+                                                      blob_radius,
+                                                      scan_radius)
+
+    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id == blob_node_1], energy_type)
+    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id == blob_node_2], energy_type)
 
     # voxels that might have been within the required radius
     distances     = distances.set_index("initial")
     diag          = np.linalg.norm(voxel_size)
     within_radius = lambda df: df.distance < blob_radius + diag
-    candidate_voxels_1 = distances.loc[extreme_id_1].loc[within_radius].final.values
-    candidate_voxels_2 = distances.loc[extreme_id_2].loc[within_radius].final.values
+    candidate_voxels_1 = distances.loc[blob_node_1].loc[within_radius].final.values
+    candidate_voxels_2 = distances.loc[blob_node_2].loc[within_radius].final.values
 
     within_r_1 = np.linalg.norm(hits[_XYZ].values - blob_pos_1, axis=1) < blob_radius
     within_r_2 = np.linalg.norm(hits[_XYZ].values - blob_pos_2, axis=1) < blob_radius
 
-    # some hits might fall within the radius, but their distance **along the
-    # track** (established by the voxel they belong to) might be longer. We want
-    # hits from voxels that are connected to the extreme
+    # Some hits might be geometrically close to the blob centre but far from it
+    # **along the track**. Keep only hits from voxels near the centre node.
     sel_1 = hits.voxel_id.isin(candidate_voxels_1).values & within_r_1
     sel_2 = hits.voxel_id.isin(candidate_voxels_2).values & within_r_2
 
     hits1 = hits.loc[sel_1]
     hits2 = hits.loc[sel_2]
-    blob1 = Blob(hits1.E.sum(), blob_pos_1, hits1.index.values)
-    blob2 = Blob(hits2.E.sum(), blob_pos_2, hits2.index.values)
+    blob1 = Blob(hits1[energy_type.value].sum(), blob_pos_1, hits1.index.values)
+    blob2 = Blob(hits2[energy_type.value].sum(), blob_pos_2, hits2.index.values)
 
     if blob1.energy > blob2.energy:
         return blob1, blob2
