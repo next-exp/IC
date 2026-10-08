@@ -156,9 +156,9 @@ def find_extrema_and_length( track_graph: Graph
     # of their elements. If we pick up the three at the same time it casts both
     # integers to floats, so we pick them one by one instead
     idxmax = distances.distance.idxmax()
-    v1     = distances.iloc[idxmax, 0]
-    v2     = distances.iloc[idxmax, 1]
-    length = distances.iloc[idxmax, 2]
+    v1     = distances.initial .loc[idxmax]
+    v2     = distances.final   .loc[idxmax]
+    length = distances.distance.loc[idxmax]
 
     return v1, v2, length
 
@@ -252,11 +252,11 @@ def find_highest_encapsulating_node(track        : Graph,
     """
     distances = distances.set_index("initial final".split())
     nodes_within_radius = [node for node in track.nodes()
-                           if distances[(extrema_id, node)].distance < scan_radius]
+                           if distances.loc[(extrema_id, node)].distance < scan_radius]
 
     distances.reset_index(level=1, inplace=True)
     def energy_within_radius(node):
-        return energy_of_voxels_within_radius(voxels, distances[node], blob_radius)
+        return energy_of_voxels_within_radius(voxels, distances.loc[node], blob_radius)
 
     highest_encapsulating_node = max(nodes_within_radius, key = energy_within_radius)
     return highest_encapsulating_node
