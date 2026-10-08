@@ -21,6 +21,7 @@ from typing import Tuple
 _XYZ = list("XYZ")
 _xyz = list("xyz")
 
+
 def round_hits_positions_in_place(hits, decimals):
     """
     Rounds the hits positions to `decimals` decimals to avoid floating point

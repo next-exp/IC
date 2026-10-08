@@ -122,34 +122,6 @@ class Cluster(BHit):
     __repr__ =     __str__
 
 
-class Blob:
-    """A Blob is a collection of Hits with a seed and a radius. """
-    def __init__(self, seed: Tuple[float, float, float],
-                       hits : pd.DataFrame,
-                       radius : float,
-                       e_type : HitEnergy = HitEnergy.E) ->None:
-        self.seed   = seed
-        self.hits   = hits
-        self.E      = hits[e_type.value].sum()
-        self.radius = radius
-        self.e_type = e_type.value
-
-    @property
-    def Etype(self): return self.e_type
-
-    def __str__(self):
-        s =  """Blob: (hits = {} \n
-                seed   = {} \n
-                blob energy = {} \n
-                blob radius = {}
-        """.format(self.hits, self.seed, self.energy, self.radius)
-
-        return  s
-
-    def __repr__(self):
-        return self.__str__()
-
-
 class TrackCollection(Event):
     """A Collection of tracks"""
     def __init__(self, event_number, event_time):
