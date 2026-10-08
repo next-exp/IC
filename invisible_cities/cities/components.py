@@ -35,7 +35,6 @@ from .. dataflow                  import                  dataflow as  fl
 from .. dataflow.dataflow         import                      sink
 from .. dataflow.dataflow         import                      pipe
 from .. evm    .ic_containers     import                SensorData
-from .. evm    .event_model       import                   Cluster
 from .. core                      import           system_of_units as units
 from .. core   .exceptions        import                XYRecoFail
 from .. core   .exceptions        import           MCEventNotFound
@@ -1023,12 +1022,19 @@ def build_pointlike_event(dbfile, run_number, drift_v,
                 try:
                     clusters = reco(xys, qs)
                 except XYRecoFail:
-                    c    = Cluster.empty()
+                    c = pd.Series(dict(nsipm = 0,
+                                       Q     = NN,
+                                       X     = NN,
+                                       Y     = NN,
+                                       Xrms  = 0,
+                                       Yrms  = 0,
+                                       R     = np.sqrt(2 * NN**2),
+                                       Phi   = np.arctan2(NN, NN)))
                     Z    = NN
                     DT   = NN
                     Zrms = NN
                 else:
-                    c     = clusters[0]
+                    c     = clusters.iloc[0]
                     Z, DT = compute_z_and_dt(s2.time_at_max_energy, s1.time_at_max_energy, drift_v)
                     Zrms  = s2.rms / units.mus
 
@@ -1066,7 +1072,7 @@ def get_s1_time(pmap, selector_output):
 
 
 def try_global_reco(reco, xys, qs):
-    try              : cluster = reco(xys, qs)[0]
+    try              : cluster = reco(xys, qs).iloc[0]
     except XYRecoFail: return xy.empty()
     else             : return xy(cluster.X, cluster.Y)
 
