@@ -18,6 +18,8 @@ from .. types.ic_types  import NoneType
 from typing import Sequence
 from typing import Tuple
 
+_XYZ = list("XYZ")
+_xyz = list("xyz")
 
 def round_hits_positions_in_place(hits, decimals):
     """
@@ -25,8 +27,7 @@ def round_hits_positions_in_place(hits, decimals):
     comparison issues. The operation is performed inplace to avoid an
     unnecessary copy.
     """
-    xyz = "X Y Z".split()
-    hits.loc[:, xyz] = np.round(hits.loc[:, xyz], decimals)
+    hits.loc[:, _XYZ] = np.round(hits.loc[:, _XYZ], decimals)
 
 
 def get_track_energy(track, voxels):
@@ -70,7 +71,7 @@ def voxelize_hits( hits       : pd.DataFrame
     energy_type = energy_type.value
 
     hits  = hits.copy()
-    xyz   = hits["X Y Z".split()].values
+    xyz   = hits[_XYZ].values
     lower = xyz.min(axis=0)
 
     voxel_indices = (xyz - lower) // voxel_size
@@ -104,8 +105,7 @@ def neighbours( va        : pd.Series
               , size      : np.ndarray
               , contiguity: Contiguity = Contiguity.CORNER
               ) -> bool:
-    xyz = list("xyz")
-    return np.linalg.norm((va.loc[xyz].values - vb.loc[xyz].values) / size) < contiguity.value
+    return np.linalg.norm((va.loc[_xyz].values - vb.loc[_xyz].values) / size) < contiguity.value
 
 
 def make_track_graphs( voxels    : pd.DataFrame
@@ -117,15 +117,13 @@ def make_track_graphs( voxels    : pd.DataFrame
     neighbour voxel. Two voxels are considered to be neighbours if their
     distance normalized to their size is smaller than a contiguity factor.
     """
-    xyz = list("xyz")
-
     voxel_graph = nx.Graph()
     voxel_graph.add_nodes_from(voxels.index)
     for i, j in combinations(voxels.index, 2):
         vi = voxels.loc[i]
         vj = voxels.loc[j]
         if neighbours(vi, vj, voxel_size, contiguity):
-            voxel_graph.add_edge(i, j, distance = np.linalg.norm(vi[xyz] - vj[xyz]))
+            voxel_graph.add_edge(i, j, distance = np.linalg.norm(vi[_xyz] - vj[_xyz]))
 
     return tuple( voxel_graph.subgraph(c).copy()
                   for c in nx.connected_components(voxel_graph)
@@ -170,9 +168,9 @@ def hits_ave_pos(hits  : pd.DataFrame,
     """
     # catch cases with no weight
     if hits[etype.value].sum() == 0:
-        return np.average(  hits[list("XYZ")].values
-                          , axis = 0)
-    return np.average( hits[list("XYZ")].values
+        return np.average(hits[_XYZ].values , axis = 0)
+
+    return np.average( hits[_XYZ].values
                      , weights=hits[etype.value].values
                      , axis=0)
 
@@ -190,7 +188,7 @@ def blob_energies_hits_and_centres(track_graph : Graph,
     '''
 
     # TODO: do not recalculate shortest paths all the time
-    distances     = shortest_paths(track_graph).set_index("initial")
+    distances = shortest_paths(track_graph).set_index("initial")
     if len(distances) == 1: # special case, one voxel
         blob = Blob(hits.E.sum(), hits_ave_pos(hits), hits.index.values)
         return blob, blob
@@ -220,8 +218,8 @@ def blob_energies_hits_and_centres(track_graph : Graph,
     candidate_voxels_1 = distances.loc[extreme_id_1].loc[within_radius].final.values
     candidate_voxels_2 = distances.loc[extreme_id_2].loc[within_radius].final.values
 
-    within_r_1 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_1, axis=1) < blob_radius
-    within_r_2 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_2, axis=1) < blob_radius
+    within_r_1 = np.linalg.norm(hits[_XYZ].values - blob_pos_1, axis=1) < blob_radius
+    within_r_2 = np.linalg.norm(hits[_XYZ].values - blob_pos_2, axis=1) < blob_radius
 
     # some hits might fall within the radius, but their distance **along the
     # track** (established by the voxel they belong to) might be longer. We want
@@ -292,8 +290,8 @@ def assign_blobs_inplace(track_graph : Graph,
     candidate_voxels_1 = distances.loc[extreme_id_1].loc[within_radius].final.values
     candidate_voxels_2 = distances.loc[extreme_id_2].loc[within_radius].final.values
 
-    within_r_1 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_1, axis=1) < radius
-    within_r_2 = np.linalg.norm(hits[list("XYZ")].values - blob_pos_2, axis=1) < radius
+    within_r_1 = np.linalg.norm(hits[_XYZ].values - blob_pos_1, axis=1) < radius
+    within_r_2 = np.linalg.norm(hits[_XYZ].values - blob_pos_2, axis=1) < radius
 
     # some hits might fall within the radius, but their distance **along the
     # track** (established by the voxel they belong to) might be longer. We want
@@ -392,7 +390,7 @@ def make_tracks(hits        : pd.DataFrame,
                         numb_of_voxels, numb_of_hits, numb_of_tracks,
                         track_hits.X.min(), track_hits.Y.min(), track_hits.Z.min(), track_hits.R.min(),
                         track_hits.X.max(), track_hits.Y.max(), track_hits.Z.max(), track_hits.R.max(),
-                        *ave_pos, ave_r, *extreme_pos1[['x', 'y', 'z']].tolist(), *extreme_pos2[['x', 'y', 'z']].tolist(),
+                        *ave_pos, ave_r, *extreme_pos1[_xyz].tolist(), *extreme_pos2[_xyz].tolist(),
                         *blob_high.position, *blob_low.position, blob_high.energy, blob_low.energy, overlap,
                         *voxel_size]
         track_df.loc[track_no] = list_of_vars
@@ -426,12 +424,12 @@ def drop_voxel_inplace( hits       : pd.DataFrame
     popped           = pop_voxel_inplace(voxels, vox_id)
     is_neighbour     = [neighbours(popped, voxel, voxel_size, contiguity) for _, voxel in voxels.iterrows()]
     neighbour_voxels = voxels.loc[is_neighbour]
-    bary_pos = np.average( hits.loc[hits.voxel_id == vox_id][list("XYZ")]
+    bary_pos = np.average( hits.loc[hits.voxel_id == vox_id, _XYZ]
                          , weights = hits.loc[hits.voxel_id == vox_id, e_type.value]
                          , axis    =  0)
 
     neighbour_hits = hits.loc[hits.voxel_id.isin(neighbour_voxels.index)]
-    distances      = np.linalg.norm(neighbour_hits[list("XYZ")] - bary_pos, axis=1)
+    distances      = np.linalg.norm(neighbour_hits[_XYZ] - bary_pos, axis=1)
     closest_hits   = neighbour_hits.loc[np.isclose(distances, distances.min())]
 
 
