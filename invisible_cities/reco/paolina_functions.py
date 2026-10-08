@@ -157,16 +157,16 @@ def hits_ave_pos(hits  : pd.DataFrame,
                      , axis=0)
 
 
-def blob_energies_hits_and_centres(hits        : pd.DataFrame,
-                                   voxels      : pd.DataFrame,
-                                   distances   : pd.DataFrame,
-                                   blob_radius : float,
-                                   scan_radius : float | None,
-                                   extreme_id_1: int,
-                                   extreme_id_2: int,
-                                   voxel_size  : np.ndarray,
-                                   energy_type : HitEnergy = HitEnergy.E
-                                  ) -> Tuple[Blob, Blob]:
+def find_blobs(hits        : pd.DataFrame,
+               voxels      : pd.DataFrame,
+               distances   : pd.DataFrame,
+               blob_radius : float,
+               scan_radius : float | None,
+               extreme_id_1: int,
+               extreme_id_2: int,
+               voxel_size  : np.ndarray,
+               energy_type : HitEnergy = HitEnergy.E
+              ) -> Tuple[Blob, Blob]:
     '''
     Extract relevant blob information
     '''
@@ -352,10 +352,10 @@ def make_tracks(hits        : pd.DataFrame,
                                                   axis = 0)
 
         # blob information
-        blob_high, blob_low = blob_energies_hits_and_centres(track_hits, voxels, distances,
-                                                             blob_radius, scan_radius,
-                                                             extreme_1, extreme_2,
-                                                             voxel_size, energy_type)
+        blob_high, blob_low = find_blobs(track_hits, voxels, distances,
+                                         blob_radius, scan_radius,
+                                         extreme_1, extreme_2,
+                                         voxel_size, energy_type)
 
         # mark hits as being in low or high blob
         in_high = hits.index.isin(blob_high.hit_ids)
