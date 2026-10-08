@@ -2,6 +2,8 @@ import os
 import pytest
 import shutil
 
+from copy import deepcopy
+
 import numpy  as np
 import tables as tb
 
@@ -374,6 +376,13 @@ def Th228_deco_separate(ICDATADIR):
 
 
 @pytest.fixture(scope="session")
+def Th228_deco_satellite(ICDATADIR):
+    filename = "228Th_10evt_deco_satellite.h5"
+    filename = os.path.join(ICDATADIR, filename)
+    return filename
+
+
+@pytest.fixture(scope="session")
 def Th228_hits_missing(Th228_hits, config_tmpdir):
     """Copy input file and remove the hits from the first event"""
     outpath = os.path.basename(Th228_hits).replace(".h5", "_missing_hits.h5")
@@ -553,7 +562,7 @@ def db(request):
 
 
 @pytest.fixture(scope='function')
-def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
+def beersheba_config_generic(Th228_hits, PSFDIR, next100_mc_krmap):
     config = dict( files_in      = Th228_hits
                  , event_range   = 80
                  , compression   = 'ZLIB4'
@@ -566,7 +575,7 @@ def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
                                        , drop_dist     = [16.0] * 2
                                        , psf_fname     = PSFDIR
                                        , e_cut         = 12e-3
-                                       , n_iterations  = 100
+                                       , n_iterations  = 0                 # NOTICE THIS
                                        , iteration_tol = 1e-10
                                        , sample_width  = [15.55] * 2
                                        , bin_size      = [ 1.,  1.]
@@ -584,12 +593,36 @@ def beersheba_config(Th228_hits, PSFDIR, next100_mc_krmap):
 
 
 @pytest.fixture(scope='function')
-def beersheba_config_separate(beersheba_config):
-    beersheba_config["deconv_params"].update(dict( deconv_mode    = DeconvolutionMode.separate
-                                                 , n_iterations   = 50
-                                                 , n_iterations_g = 50))
+def beersheba_config_joint(beersheba_config_generic):
+    config = deepcopy(beersheba_config_generic)
+    config["deconv_params"].update(dict( deconv_mode  = DeconvolutionMode.joint
+                                       , n_iterations = 100))
 
-    return beersheba_config
+    return config
+
+
+@pytest.fixture(scope='function')
+def beersheba_config_separate(beersheba_config_generic):
+    config = deepcopy(beersheba_config_generic)
+    config["deconv_params"].update(dict( deconv_mode    = DeconvolutionMode.separate
+                                       , n_iterations   = 50
+                                       , n_iterations_g = 50))
+
+    return config
+
+
+@pytest.fixture(scope='function')
+def beersheba_config_satellite(beersheba_config_generic):
+    config = deepcopy(beersheba_config_generic)
+    config["event_range"  ] = 2
+    config["deconv_params"].update(dict( deconv_mode  = DeconvolutionMode.joint
+                                       , n_iterations = 50))
+    config["satellite_params"] = dict(satellite_start_iter = 10,
+                                      satellite_max_size   = 3,
+                                      e_cut                = 12e-3,
+                                      cut_type             = CutType.abs)
+
+    return config
 
 
 ## To make very slow tests only run with specific option

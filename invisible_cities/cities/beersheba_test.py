@@ -4,8 +4,9 @@ import numpy  as np
 import tables as tb
 import pandas as pd
 
-from pytest                import mark
-from pytest                import raises
+from pytest import mark
+from pytest import raises
+from pytest import fixture
 
 from .. core               import system_of_units as units
 from .. io                 import dst_io      as dio
@@ -59,12 +60,12 @@ def test_distribute_energy(ICDATADIR):
 @ignore_warning.no_config_group
 @ignore_warning.str_length
 @ignore_warning.not_kdst
-def test_beersheba_contains_all_tables(beersheba_config, config_tmpdir):
+def test_beersheba_contains_all_tables(beersheba_config_generic, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "beersheba_contains_all_tables.h5")
-    beersheba_config.update(dict( file_out    = path_out
-                                , event_range = 1))
+    beersheba_config_generic.update(dict( file_out    = path_out
+                                        , event_range = 1))
 
-    beersheba(**beersheba_config)
+    beersheba(**beersheba_config_generic)
 
     nodes = ( "MC", "MC/hits", "MC/particles"
             , "CHITS", "CHITS/lowTh"
@@ -75,67 +76,38 @@ def test_beersheba_contains_all_tables(beersheba_config, config_tmpdir):
             assert node in h5out.root
 
 
+@fixture
+def b7_config(request):
+    return request.getfixturevalue(request.param)
+
+@fixture
+def b7_true_out(request):
+    return request.getfixturevalue(request.param)
+
 @ignore_warning.no_config_group
 @ignore_warning.str_length
 @ignore_warning.not_kdst
-@mark.parametrize("deco", DeconvolutionMode)
+@mark.parametrize("name b7_config b7_true_out deco".split(),
+    [
+        ("joint"    , "beersheba_config_joint"    , "Th228_deco"          , DeconvolutionMode.joint   ),
+        ("separate" , "beersheba_config_separate" , "Th228_deco_separate" , DeconvolutionMode.separate),
+        ("satelline", "beersheba_config_satellite", "Th228_deco_satellite", DeconvolutionMode.joint   ),
+    ],
+    indirect="b7_config b7_true_out".split())
 @mark.slow
-def test_beersheba_exact_result( deco
-                               , beersheba_config
-                               , beersheba_config_separate
-                               , Th228_deco
-                               , Th228_deco_separate
-                               , config_tmpdir):
-    config   = beersheba_config if deco is DeconvolutionMode.joint else beersheba_config_separate
-    true_out = Th228_deco       if deco is DeconvolutionMode.joint else Th228_deco_separate
+def test_beersheba_exact_result(name, b7_config, b7_true_out, deco, config_tmpdir):
+    path_out = os.path.join(config_tmpdir, f"beersheba_exact_result_{name}.h5")
+    b7_config.update(dict(file_out = path_out))
 
-    path_out = os.path.join(config_tmpdir, f"beersheba_exact_result_{deco.name}.h5")
-
-    config.update(dict(file_out = path_out))
-
-    beersheba(**config)
+    beersheba(**b7_config)
 
     tables = ( "DECO/Events"
              , "CHITS/lowTh"
              , "Run/events", "Run/runInfo"
              , "MC/event_mapping", "MC/configuration", "MC/hits", "MC/particles")
 
-    with     tb.open_file(true_out) as true_output_file:
-        with tb.open_file(path_out) as      output_file:
-            for table in tables:
-                assert hasattr(output_file.root, table), table
-                got      = getattr(     output_file.root, table)
-                expected = getattr(true_output_file.root, table)
-                assert_tables_equality(got, expected, rtol=1e-6)
-
-
-@ignore_warning.no_config_group
-@ignore_warning.str_length
-@ignore_warning.not_kdst
-@mark.slow
-def test_beersheba_exact_result_with_satkill( ICDATADIR
-                                            , beersheba_config
-                                            , config_tmpdir):
-
-    true_out = os.path.join(ICDATADIR, "228Th_10evt_deco_satellite.h5")
-    path_out = os.path.join(config_tmpdir, "beersheba_exact_result_satellite.h5")
-    beersheba_config['deconv_params'].update(dict(n_iterations = 50))
-    beersheba_config.update(dict(file_out         = path_out,
-                                 event_range      = 2,
-                                 satellite_params = dict(satellite_start_iter = 10,
-                                                         satellite_max_size   = 3,
-                                                         e_cut                = 12e-3,
-                                                         cut_type             = CutType.abs)))
-
-    beersheba(**beersheba_config)
-
-    tables = ( "DECO/Events"
-             , "CHITS/lowTh"
-             , "Run/events", "Run/runInfo"
-             , "MC/event_mapping", "MC/configuration", "MC/hits", "MC/particles")
-
-    with     tb.open_file(true_out) as true_output_file:
-        with tb.open_file(path_out) as      output_file:
+    with     tb.open_file(b7_true_out) as true_output_file:
+        with tb.open_file(   path_out) as      output_file:
             for table in tables:
                 assert hasattr(output_file.root, table), table
                 got      = getattr(     output_file.root, table)
@@ -144,24 +116,24 @@ def test_beersheba_exact_result_with_satkill( ICDATADIR
 
 
 @mark.parametrize("ndim", (1, 3))
-def test_beersheba_only_ndim_2_is_valid(beersheba_config, ndim, config_tmpdir):
+def test_beersheba_only_ndim_2_is_valid(beersheba_config_generic, ndim, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "beersheba_only_ndim_2_is_valid.h5")
-    beersheba_config.update(dict(file_out = path_out))
-    beersheba_config['deconv_params'].update(dict(n_dim = ndim))
+    beersheba_config_generic.update(dict(file_out = path_out))
+    beersheba_config_generic['deconv_params'].update(dict(n_dim = ndim))
 
     with raises(ValueError):
-        beersheba(**beersheba_config)
+        beersheba(**beersheba_config_generic)
 
 
 @ignore_warning.no_config_group
 @ignore_warning.str_length
-def test_beersheba_copies_kdst(beersheba_config, Th228_hits, config_tmpdir):
+def test_beersheba_copies_kdst(beersheba_config_generic, Th228_hits, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "beersheba_copies_kdst.h5")
-    beersheba_config.update(dict( file_out    = path_out
-                                , event_range =        2))
+    beersheba_config_generic.update(dict( file_out    = path_out
+                                        , event_range =        2))
     expected_events = [400062, 400064]
 
-    beersheba(**beersheba_config)
+    beersheba(**beersheba_config_generic)
 
     got_events = dio.load_dst(path_out, "DST", "Events").event.drop_duplicates().tolist()
     assert expected_events == got_events
@@ -169,14 +141,14 @@ def test_beersheba_copies_kdst(beersheba_config, Th228_hits, config_tmpdir):
 
 @ignore_warning.no_config_group
 @ignore_warning.str_length
-def test_beersheba_thresholds_hits(beersheba_config, config_tmpdir):
+def test_beersheba_thresholds_hits(beersheba_config_generic, config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "beersheba_thresholds_hits.h5")
     threshold = 15 * units.pes
-    beersheba_config.update(dict( file_out    = path_out
-                                , event_range = 1
-                                , threshold   = threshold))
+    beersheba_config_generic.update(dict( file_out    = path_out
+                                        , event_range = 1
+                                        , threshold   = threshold))
 
-    beersheba(**beersheba_config)
+    beersheba(**beersheba_config_generic)
 
     df = dio.load_dst(path_out, "CHITS", "lowTh")
     assert np.all(df.Q >= threshold)
@@ -184,14 +156,14 @@ def test_beersheba_thresholds_hits(beersheba_config, config_tmpdir):
 
 @ignore_warning.no_config_group
 @ignore_warning.str_length
-def test_beersheba_filters_empty_dfs(beersheba_config, config_tmpdir):
+def test_beersheba_filters_empty_dfs(beersheba_config_generic, config_tmpdir):
     path_out = os.path.join(config_tmpdir, "beersheba_filters_empty_dfs.h5")
     q_cut    = 1e8 * units.pes
-    beersheba_config.update(dict( file_out    = path_out
-                                , event_range = 1))
-    beersheba_config["deconv_params"].update(dict(q_cut = q_cut))
+    beersheba_config_generic.update(dict( file_out    = path_out
+                                        , event_range = 1))
+    beersheba_config_generic["deconv_params"].update(dict(q_cut = q_cut))
 
-    cnt = beersheba(**beersheba_config)
+    cnt = beersheba(**beersheba_config_generic)
 
     assert cnt.events_in            == 1
     assert cnt.events_out           == 0
@@ -206,11 +178,13 @@ def test_beersheba_filters_empty_dfs(beersheba_config, config_tmpdir):
 @ignore_warning.str_length
 @ignore_warning.not_kdst
 @ignore_warning.no_hits
-def test_beersheba_does_not_crash_with_no_hits(beersheba_config, Th228_hits_missing, config_tmpdir):
+def test_beersheba_does_not_crash_with_no_hits(beersheba_config_generic,
+                                               Th228_hits_missing,
+                                               config_tmpdir):
     path_out  = os.path.join(config_tmpdir, "beersheba_does_not_crash_with_no_hits.h5")
-    beersheba_config.update(dict( files_in    = Th228_hits_missing
-                                , file_out    = path_out
-                                , event_range = 1))
+    beersheba_config_generic.update(dict( files_in    = Th228_hits_missing
+                                        , file_out    = path_out
+                                        , event_range = 1))
 
     # just test that it doesn't crash
-    beersheba(**beersheba_config)
+    beersheba(**beersheba_config_generic)

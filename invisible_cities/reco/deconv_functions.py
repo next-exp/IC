@@ -474,7 +474,11 @@ def richardson_lucy(image, psf, satellite_start_iter, satellite_max_size, e_cut,
 
     for i in range(iterations):
         x = convolve_method(im_deconv, psf, 'same')
-        np.place(x, x==0, eps) ### Protection against 0 value
+
+        # Floor zero, negative, and tiny positive convolution values:
+        # FFT round-off must not become a near-zero divisor.
+        np.maximum(x, eps, out=x)
+
         relative_blur = image / x
         im_deconv *= convolve_method(relative_blur, psf_mirror, 'same')
 
