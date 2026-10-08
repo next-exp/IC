@@ -28,7 +28,7 @@ from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from hypothesis.strategies import builds
 
-from . paolina_functions import blob_energies_hits_and_centres, round_hits_positions_in_place
+from . paolina_functions import find_blobs, round_hits_positions_in_place
 from . paolina_functions import voxelize_hits
 from . paolina_functions import neighbours
 from . paolina_functions import find_extrema_and_length
@@ -335,17 +335,18 @@ def test_shortest_paths_all_linear():
 @an_instance_of(bunch_of_voxels())
 def test_find_extrema_and_length_single_voxel(voxels_and_size):
     voxels, _ = voxels_and_size
-    voxels = voxels.iloc[:1]
-    index  = voxels.index[0]
-    g = nx.Graph()
-    g.add_node(index)
-    assert find_extrema_and_length(g, voxels) == (index, index, 0.)
+    voxels    = voxels.iloc[:1]
+    index     = voxels.index[0]
+    graph     = nx.Graph()
+    graph.add_node(index)
+    distances = shortest_paths(graph)
+    assert find_extrema_and_length(distances) == (index, index, 0.)
 
 
 def test_find_extrema_and_length_no_voxels():
-    dummy = pd.DataFrame()
+    distances = pd.DataFrame(columns="initial final distance".split())
     with raises(NoVoxels):
-        find_extrema_and_length({}, dummy)
+        find_extrema_and_length(distances)
 
 
 @fixture(scope='module')
@@ -447,7 +448,7 @@ def ushaped_track():
 def test_find_extrema_and_length_linear(linear_tracks):
     _, voxels, _, distance, graph = linear_tracks
 
-    v1, v2, length = find_extrema_and_length(graph, voxels)
+    v1, v2, length = find_extrema_and_length(shortest_paths(graph))
 
     assert v1 == 0
     assert v2 == len(voxels) - 1
@@ -457,7 +458,7 @@ def test_find_extrema_and_length_linear(linear_tracks):
 def test_find_extrema_and_length_pseudo_nonlinear(pseudo_nonlinear_track):
     _, voxels, _, graph = pseudo_nonlinear_track
 
-    v1, v2, length = find_extrema_and_length(graph, voxels)
+    v1, v2, length = find_extrema_and_length(shortest_paths(graph))
 
     assert v1 == 0
     assert v2 == len(voxels) - 1
@@ -467,7 +468,7 @@ def test_find_extrema_and_length_pseudo_nonlinear(pseudo_nonlinear_track):
 def test_find_extrema_and_length_ushaped(ushaped_track):
     _, voxels, _, graph = ushaped_track
 
-    v1, v2, length = find_extrema_and_length(graph, voxels)
+    v1, v2, length = find_extrema_and_length(shortest_paths(graph))
 
     assert v1 == 0
     assert v2 == len(voxels) - 1
@@ -492,7 +493,7 @@ def test_find_extrema_and_length_around_bend(contiguity, expected_length):
     assert len(tracks) == 1
 
     graph = tracks[0]
-    v1, v2, length = find_extrema_and_length(graph, voxels)
+    v1, v2, length = find_extrema_and_length(shortest_paths(graph))
 
     assert v1 == 0
     assert v2 == 4
@@ -518,7 +519,7 @@ def test_find_extrema_and_length_cuts_corners(contiguity, expected_length):
     assert len(tracks) == 1
 
     graph = tracks[0]
-    v1, v2, length = find_extrema_and_length(graph, voxels)
+    v1, v2, length = find_extrema_and_length(shortest_paths(graph))
 
     assert v1 == 0
     assert v2 == 3
@@ -995,8 +996,13 @@ def test_make_tracks_function(ICDATADIR):
             tc_eblob2 = tc.eblob2
 
             # calculate blob energies
-            extreme_low, extreme_high, length = find_extrema_and_length(t, voxels)
-            blob_high, blob_low = blob_energies_hits_and_centres(t, hits, voxels, blob_radius, scan_radius, extreme_low, extreme_high, voxel_size)
+            distances = shortest_paths(t)
+            extreme_1, extreme_2, _ = find_extrema_and_length(distances)
+            track_hits = hits.loc[hits.voxel_id.isin(t.nodes())]
+            blob_high, blob_low = find_blobs(track_hits, voxels, distances,
+                                             blob_radius, scan_radius,
+                                             extreme_1, extreme_2,
+                                             voxel_size)
 
             assert np.allclose(blob_high.energy, tc_eblob1)
             assert np.allclose(blob_low .energy, tc_eblob2)
@@ -1031,7 +1037,7 @@ def test_encapsulation_works_as_intended():
     distances = shortest_paths(tracks[0])
 
     # extract blob energies & positions in both cases
-    a, b, _ = find_extrema_and_length(tracks[0], voxels)
+    a, b, _ = find_extrema_and_length(distances)
     # blob centres
     ca = hits_ave_pos(hits_df.loc[hits_df.voxel_id==a])
     cb = hits_ave_pos(hits_df.loc[hits_df.voxel_id==b])
