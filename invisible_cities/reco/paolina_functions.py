@@ -254,13 +254,13 @@ def assign_blobs_inplace(track_graph : Graph,
     Assigns each hit and voxel a label that links them to a blob. The code is:
     - "low"  for the lower energy blob
     - "high" for the higher energy blob
-    - "lowhigh" if a hit belongs to both blobs
+    - "highlow" if a hit belongs to both blobs
     - "none" otherwise (not set within this function)
     """
     distances = shortest_paths(track_graph).set_index("initial")
     if len(distances) == 1: # special case
-        hits  .loc[:, "blob"] = "lowhigh"
-        voxels.loc[:, "blob"] = "lowhigh"
+        hits  .loc[:, "blob"] = "highlow"
+        voxels.loc[:, "blob"] = "highlow"
         return
     diag      = np.linalg.norm(voxel_size)
 
@@ -288,7 +288,7 @@ def assign_blobs_inplace(track_graph : Graph,
     label_2 = "high" if e_1 <= e_2 else "low"
     hits.loc[sel_1   , "blob"] = label_1
     hits.loc[sel_2   , "blob"] = label_2
-    hits.loc[sel_both, "blob"] = "lowhigh"
+    hits.loc[sel_both, "blob"] = "highlow"
 
     # not all of the original voxel selection have hits within the radius. We
     # want to keep only those that do.
@@ -297,7 +297,7 @@ def assign_blobs_inplace(track_graph : Graph,
     voxel_ids_both = list(set(voxel_ids_1).intersection(set(voxel_ids_2)))
     voxels.loc[voxel_ids_1   , "blob"] = label_1
     voxels.loc[voxel_ids_2   , "blob"] = label_2
-    voxels.loc[voxel_ids_both, "blob"] = "lowhigh"
+    voxels.loc[voxel_ids_both, "blob"] = "highlow"
 
 
 def make_tracks(hits        : pd.DataFrame,
@@ -313,6 +313,7 @@ def make_tracks(hits        : pd.DataFrame,
     according to the graph algorithm. The code for blob association is
     - "low"  for the lower energy blob
     - "high" for the higher energy blob
+    - "highlow" if a hit belongs to both blobs
     - "none" otherwise
     """
     # generate empty dataframe
