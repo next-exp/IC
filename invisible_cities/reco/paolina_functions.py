@@ -1,5 +1,5 @@
-from itertools   import combinations
-from functools   import partial
+from functools import partial
+from itertools import combinations
 
 import numpy    as np
 import pandas   as pd
@@ -13,9 +13,7 @@ from .. types.symbols   import Contiguity
 from .. types.symbols   import HitEnergy
 from .. types.ic_types  import Blob
 from .. types.ic_types  import types_dict_tracks
-from .. types.ic_types  import NoneType
 
-from typing import Sequence
 from typing import Tuple
 
 _XYZ = list("XYZ")
@@ -422,11 +420,11 @@ def find_blobs(hits        : pd.DataFrame,
         return blob2, blob1
 
 
-def find_highest_encapsulating_node(voxels       : pd.DataFrame,
-                                    extrema_id   : int,
-                                    distances    : pd.DataFrame,
-                                    blob_radius  : float,
-                                    scan_radius  : float) -> int:
+def find_highest_encapsulating_node(voxels     : pd.DataFrame,
+                                    extrema_id : int,
+                                    distances  : pd.DataFrame,
+                                    blob_radius: float,
+                                    scan_radius: float) -> int:
     """
     Find the voxel that captures the most energy within a blob radius.
 
