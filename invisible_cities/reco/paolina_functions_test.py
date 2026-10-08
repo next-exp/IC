@@ -996,10 +996,10 @@ def test_make_tracks_function(ICDATADIR):
 
             # calculate blob energies
             extreme_low, extreme_high, length = find_extrema_and_length(t, voxels)
-            e_1, e_2, _, _, _, _ = blob_energies_hits_and_centres(t, hits, voxels, blob_radius, scan_radius, extreme_low, extreme_high, voxel_size)
+            blob_high, blob_low = blob_energies_hits_and_centres(t, hits, voxels, blob_radius, scan_radius, extreme_low, extreme_high, voxel_size)
 
-            assert np.allclose(e_1, tc_eblob1)
-            assert np.allclose(e_2, tc_eblob2)
+            assert np.allclose(blob_high.energy, tc_eblob1)
+            assert np.allclose(blob_low .energy, tc_eblob2)
 
 
 def test_encapsulation_works_as_intended():
@@ -1029,6 +1029,7 @@ def test_encapsulation_works_as_intended():
     tracks             = sorted(make_track_graphs(voxels, vox_size), key = sorted_key, reverse = True)
 
     distances = shortest_paths(tracks[0])
+
     # extract blob energies & positions in both cases
     a, b, _ = find_extrema_and_length(tracks[0], voxels)
     # blob centres

@@ -11,11 +11,12 @@ from .. core.exceptions import NoHits
 from .. core.exceptions import NoVoxels
 from .. types.symbols   import Contiguity
 from .. types.symbols   import HitEnergy
+from .. types.ic_types  import Blob
 from .. types.ic_types  import types_dict_tracks
-
 from .. types.ic_types  import NoneType
 
 from typing import Sequence
+from typing import Tuple
 
 
 def round_hits_positions_in_place(hits, decimals):
@@ -183,16 +184,15 @@ def blob_energies_hits_and_centres(track_graph : Graph,
                                    scan_radius : float | None,
                                    extreme_id_1: int,
                                    extreme_id_2: int,
-                                   voxel_size  : np.ndarray):
+                                   voxel_size  : np.ndarray) -> Tuple[Blob, Blob]:
     '''
     Extract relevant blob information
     '''
 
     distances = shortest_paths(track_graph).set_index("initial")
     if len(distances) == 1: # special case, one voxel
-        e_1 = e_2 = hits.E.sum()
-        blob_pos_1 = blob_pos_2 =  hits_ave_pos(hits)
-        return e_1, e_2, hits, hits, blob_pos_1, blob_pos_2
+        blob = Blob(hits.E.sum(), hits_ave_pos(hits), hits.index.values)
+        return blob, blob
 
     diag = np.linalg.norm(voxel_size)
 
@@ -228,14 +228,16 @@ def blob_energies_hits_and_centres(track_graph : Graph,
     # hits from voxels that are connected to the extreme
     sel_1 = hits.voxel_id.isin(candidate_voxels_1).values & within_r_1
     sel_2 = hits.voxel_id.isin(candidate_voxels_2).values & within_r_2
-    sel_both = sel_1 & sel_2
-    e_1 = hits.loc[sel_1, "E"].sum()
-    e_2 = hits.loc[sel_2, "E"].sum()
 
-    if e_1 > e_2:
-        return e_1, e_2, hits.loc[sel_1], hits.loc[sel_2], blob_pos_1, blob_pos_2
+    hits1 = hits.loc[sel_1]
+    hits2 = hits.loc[sel_2]
+    blob1 = Blob(hits1.E.sum(), blob_pos_1, hits1.index.values)
+    blob2 = Blob(hits2.E.sum(), blob_pos_2, hits2.index.values)
+
+    if blob1.energy > blob2.energy:
+        return blob1, blob2
     else:
-        return e_2, e_1, hits.loc[sel_2], hits.loc[sel_1], blob_pos_2, blob_pos_1
+        return blob2, blob1
 
 
 def find_highest_encapsulating_node(track        : Graph,
@@ -368,21 +370,22 @@ def make_tracks(hits        : pd.DataFrame,
 
         # blob information
 
-        eblob1, eblob2, hits_blob1, hits_blob2, blob_pos1, blob_pos2 = blob_energies_hits_and_centres(track, hits, voxels, blob_radius, scan_radius, extreme_low, extreme_high, voxel_size)
+        blob_high, blob_low = blob_energies_hits_and_centres(track, hits, voxels,
+                                                             blob_radius, scan_radius,
+                                                             extreme_low, extreme_high,
+                                                             voxel_size)
 
         # mark hits as being in low or high blob
-        in_b1 = hits.index.isin(hits_blob1.index)
-        in_b2 = hits.index.isin(hits_blob2.index)
+        in_high = hits.index.isin(blob_high.hit_ids)
+        in_low  = hits.index.isin(blob_low .hit_ids)
 
-        hits['blob']                    = 'none'
-        hits.loc[in_b1, 'blob']         = 'high'
-        hits.loc[in_b2, 'blob']         = 'low'
-        hits.loc[in_b1 & in_b2, 'blob'] = 'highlow'
+        hits['blob']                       = 'none'
+        hits.loc[in_high, 'blob']          = 'high'
+        hits.loc[in_low , 'blob']          = 'low'
+        hits.loc[in_high & in_low, 'blob'] = 'highlow'
 
-        # calculate overlap of hits in each blob
-        common_hits = hits_blob1.merge(hits_blob2, how="inner")
-        overlap     = common_hits[energy_type.value].sum()
-
+        # energy shared among blobs
+        overlap = hits.loc[hits.blob == "highlow", energy_type.value].sum()
 
         # generate general tracking table
         list_of_vars = [event, track_no, energy, length,
@@ -390,11 +393,11 @@ def make_tracks(hits        : pd.DataFrame,
                         track_hits.X.min(), track_hits.Y.min(), track_hits.Z.min(), track_hits.R.min(),
                         track_hits.X.max(), track_hits.Y.max(), track_hits.Z.max(), track_hits.R.max(),
                         *ave_pos, ave_r, *extreme_pos1[['x', 'y', 'z']].tolist(), *extreme_pos2[['x', 'y', 'z']].tolist(),
-                        *blob_pos1, *blob_pos2, eblob1, eblob2, overlap,
+                        *blob_high.position, *blob_low.position, blob_high.energy, blob_low.energy, overlap,
                         *voxel_size]
         track_df.loc[track_no] = list_of_vars
 
-        hits  .loc[hits.index.isin(track_hits.index),     "track"] = track_no
+        hits  .loc[hits  .index.isin(track_hits  .index), "track"] = track_no
         voxels.loc[voxels.index.isin(track_voxels.index), "track"] = track_no
 
     # modify column dtype to match variable type

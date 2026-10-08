@@ -1,5 +1,7 @@
 from enum        import Enum
 from collections import OrderedDict
+from dataclasses import dataclass
+
 from typing  import Union
 from typing  import Tuple
 
@@ -10,6 +12,13 @@ NN= -999999  # No Number, a trick to aovid nans in data structs
 NoneType = type(None)
 
 Tuple2Dor3D = Union[Tuple[float, float], Tuple[float, float, float]]
+
+
+@dataclass(frozen=True)
+class Blob:
+    energy  : float
+    position: np.ndarray
+    hit_ids : np.ndarray
 
 
 class xy:
