@@ -158,6 +158,7 @@ def esmeralda( files_in         : OneOrManyFiles
                                     , args = "run_number event_number timestamp".split())
 
         hits_writer        = hits_writer_(h5out, group_name="CHITS", table_name="highTh")
+        voxels_writer      = hits_writer_(h5out, group_name="CHITS", table_name="voxels")
 
         write_kdst         = fl.sink(kdst_writer(h5out), args="kdst")
 
@@ -165,7 +166,8 @@ def esmeralda( files_in         : OneOrManyFiles
                                                       , h5out
                                                       , evm.HitEnergy.Ec
                                                       , "high_th_select"
-                                                      , hits_writer)
+                                                      , hits_writer
+                                                      , voxels_writer )
 
         event_number_collector = collect()
 

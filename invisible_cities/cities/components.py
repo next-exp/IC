@@ -1471,12 +1471,12 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
         track_df      = pd.DataFrame(columns=list(types_dict_tracks.keys()))
 
         # generate fake empty voxel and hits tables
-        empty_vox_tbl = pd.DataFrame(columns = ['x', 'y', 'z', 'e', 'track'])
+        empty_vox_tbl = pd.DataFrame(columns = ['event', 'x', 'y', 'z', 'e', 'track'])
         empty_hit_tbl = pd.DataFrame(columns = np.append(hits.columns, ['track_id', 'voxel_id', 'track', 'blob']))
 
         hits = hits.assign(track_id=-1)
+        event = hits.event.iloc[0]
         if len(hits) > max_num_hits:
-            event = hits.event.iloc[0]
             warn("Event {event} has too many hits ({len(hits)})."
                  " This event will not be processed.")
             return hits.assign(track_id = -1, voxel_id = -1, track = -1, blob = 'none'), empty_vox_tbl, track_df, True
@@ -1510,6 +1510,7 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
                                                    scan_radius,
                                                    energy_type = HitEnergy.Ep) # not sure about this energy
 
+        mod_voxels.insert(0, "event", event)
         return hits, mod_voxels, tracks, False
 
     return create_extract_track_blob_info
@@ -1521,7 +1522,8 @@ def sort_hits(hits):
 
 def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name,
-                                  hits_writer):
+                                  hits_writer,
+                                  voxels_writer):
 
     # pop strict_vox_size for testing purposes
     paolina_params.pop('strict_vox_size')
@@ -1570,11 +1572,13 @@ def compute_and_write_tracks_info(paolina_params, h5out,
             return df.astype(dict(Xpeak=float, Ypeak=float))
         return df
 
-    write_hits = ("paolina_hits", fl.map(change_type), fl.sink(hits_writer))
+    write_hits   = ("paolina_hits"  , fl.map(change_type), fl.sink(hits_writer))
+    write_voxels = ("paolina_voxels",                      fl.sink(voxels_writer))
 
     fork_pipes = filter(None, ( make_and_write_summary
                               , write_topology_filter
                               , write_hits
+                              , write_voxels
                               , select_and_write_tracks))
 
     return pipe( filter_events_nohits
