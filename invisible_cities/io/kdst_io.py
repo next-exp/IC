@@ -1,5 +1,5 @@
 from .. io.dst_io import df_writer
-from .. evm.event_model import kr_events_type
+from .. types.df_types import kr_events_type
 
 def kdst_writer(h5out, compression=None):
     """

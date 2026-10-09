@@ -1,4 +1,4 @@
-# Event model table schemas
+
 
 import numpy  as np
 

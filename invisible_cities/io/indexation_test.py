@@ -13,7 +13,7 @@ from . kdst_io   import kdst_writer
 from . pmaps_io  import pmap_writer
 from . dst_io    import   df_writer
 
-from .. evm.event_model import kr_events_type
+from .. types.df_types import kr_events_type
 
 from typing import Callable
 
