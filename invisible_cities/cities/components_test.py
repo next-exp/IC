@@ -599,6 +599,20 @@ def test_fetch_git_info():
             print(f"Failed to delete branch {testing_branch}: {e}")
 
 
+def test_fetch_git_info_independent_of_cwd(tmp_path, monkeypatch):
+    """
+    Test that fetch_git_info() returns the same git information regardless
+    of the current working directory. Explicityly sets the environment
+    to the ICDIR and compares the output of fetch_git_info() when called
+    from a directory outside the git repository.
+    """
+    monkeypatch.setenv("environment", os.getenv("ICDIR"))
+    expected = fetch_git_info()
+
+    monkeypatch.chdir(tmp_path) # a directory outside any repo
+    assert fetch_git_info() == expected
+
+
 def test_write_city_configuration(config_tmpdir):
     filename  = os.path.join(config_tmpdir, "test_write_configuration.h5")
     city_name = "acity"
