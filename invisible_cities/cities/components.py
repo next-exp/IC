@@ -79,8 +79,8 @@ from .. types  .ic_types          import                  NoneType
 from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
 from .. types  .ic_types          import                    minmax
-from .. types  .df_types          import        types_dict_summary
-from .. types  .df_types          import         types_dict_tracks
+from .. types  .df_types          import              summary_type
+from .. types  .df_types          import               tracks_type
 from .. types  .symbols           import                    WfType
 from .. types  .symbols           import                   CutAlgo
 from .. types  .symbols           import       SiPMSelectionMethod
@@ -1386,7 +1386,7 @@ def make_event_summary(event_number  : int         ,
     ----------
     DataFrame containing relevant per event information.
     """
-    es = pd.DataFrame(columns=list(types_dict_summary.keys()))
+    es = pd.DataFrame(columns=list(summary_type.keys()))
     if hits.empty: return es
 
     ntrks = len(topology_info.index)
@@ -1407,7 +1407,7 @@ def make_event_summary(event_number  : int         ,
 
     es.loc[0] = list_of_vars
     #change dtype of columns to match type of variables
-    es = es.apply(lambda x : x.astype(types_dict_summary[x.name]))
+    es = es.apply(lambda x : x.astype(summary_type[x.name]))
     return es
 
 
@@ -1473,7 +1473,7 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
         '''
 
         # generate empty dataframe
-        track_df      = pd.DataFrame(columns=list(types_dict_tracks.keys()))
+        track_df      = pd.DataFrame(columns=list(tracks_type.keys()))
 
         # generate fake empty voxel and hits tables
         empty_vox_tbl = pd.DataFrame(columns = ['event', 'x', 'y', 'z', 'e', 'track'])

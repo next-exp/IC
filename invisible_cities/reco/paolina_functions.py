@@ -12,7 +12,7 @@ from .. core.exceptions import NoVoxels
 from .. types.symbols   import Contiguity
 from .. types.symbols   import HitEnergy
 from .. types.ic_types  import Blob
-from .. types.df_types  import types_dict_tracks
+from .. types.df_types  import tracks_type
 
 from typing import Tuple
 
@@ -599,10 +599,10 @@ def make_tracks(hits        : pd.DataFrame,
         Copy of the voxel table with a ``track`` column.
     tracks : pd.DataFrame
         One summary row per track, with columns defined by
-        ``types_dict_tracks``.
+        ``tracks_type``.
     """
     # generate empty dataframe
-    track_df = pd.DataFrame(columns = list(types_dict_tracks.keys()))
+    track_df = pd.DataFrame(columns = list(tracks_type.keys()))
 
     # generate tracks and sort by energy
     track_graphs = make_track_graphs(voxels, voxel_size, contiguity)
@@ -667,7 +667,7 @@ def make_tracks(hits        : pd.DataFrame,
         voxels.loc[voxels.index.isin(track_voxels.index), "track"] = track_no
 
     # modify column dtype to match variable type
-    track_df = track_df.apply(lambda x: x.astype(types_dict_tracks[x.name]))
+    track_df = track_df.apply(lambda x: x.astype(tracks_type[x.name]))
     return hits, voxels, track_df
 
 
