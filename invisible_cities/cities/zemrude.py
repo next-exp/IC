@@ -27,7 +27,6 @@ from .. icaros  .krmap_functions         import save_map
 from .. icaros  .control_plots_functions import make_control_plots
 from .. icaros  .control_plots_functions import plot_time_evolution_with_errors_and_dates
 
-from typing import Tuple
 from typing import Union
 from typing import Callable
 from typing import List

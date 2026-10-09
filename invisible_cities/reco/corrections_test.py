@@ -8,13 +8,11 @@ from . corrections import correct_geometry_
 from . corrections import correct_lifetime_
 from . corrections import time_coefs_corr
 from . corrections import get_df_to_z_converter
-from . corrections import get_normalization_factor
 from . corrections import apply_all_correction_single_maps
 from . corrections import apply_all_correction
 
 from pytest                import fixture
 from pytest                import mark
-from pytest                import raises
 from numpy.testing         import assert_allclose
 from numpy.testing         import assert_array_equal
 from numpy.testing         import assert_raises
@@ -31,7 +29,6 @@ from ..types.symbols import NormStrategy
 from invisible_cities.core.testing_utils import random_length_float_arrays
 from invisible_cities.core.testing_utils import float_arrays
 from invisible_cities.core.exceptions    import TimeEvolutionTableMissing
-from invisible_cities.core               import system_of_units            as units
 
 
 @fixture(scope='session')

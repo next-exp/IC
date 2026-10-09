@@ -20,7 +20,6 @@ from .. types  .symbols                   import SelRegionMethod
 from .. icaros .lifetime_vdrift_functions import select_lifetime_region
 
 from typing import Callable
-from typing import Tuple
 
 matplotlib.set_loglevel("warning")
 
@@ -538,7 +537,7 @@ def plot_sigmoid(df         : pd.DataFrame,
 
     fig, axs = plt.subplots(1, 1)
     axs.plot(bin_centers, counts, 'o', color = 'black', markersize = 5, label = 'DT mean')
-    axs.plot(bin_centers, sigmoid(bin_centers, *f.values), color = 'red', label = f'Sigmoid_fit')
+    axs.plot(bin_centers, sigmoid(bin_centers, *f.values), color = 'red', label = 'Sigmoid_fit')
     axs.set_xlabel(r'DT($\mu$s)');
     axs.set_ylabel('Event distribution');
     axs.set_xlim(1200, 1500);
@@ -615,7 +614,7 @@ def plot_time_evolution_with_errors_and_dates(df_time_evolution : pd.DataFrame,
                            that contains the timestamp data in seconds since epoch.
         output_dir (str, optional): Directory to save plots. If None, plots are displayed.
     """
-    print(f"\n--- Processing /time_evolution data ---")
+    print("\n--- Processing /time_evolution data ---")
     ts_col_name = 'ts'
 
     try:
@@ -689,14 +688,17 @@ def plot_time_evolution_with_errors_and_dates(df_time_evolution : pd.DataFrame,
 
             if output_dir:
                 plot_filename = os.path.join(output_dir, f"time_evolution_{plot_name}_with_errors_dates.png")
-                plt.savefig(plot_filename)
-                print(f"Saved plot for {plot_name} to {plot_filename}")
-                plt.close() # Close the plot to free memory
+                try:
+                    plt.savefig(plot_filename)
+                except Exception as e:
+                    print(f"Error trying to write {plot_filename}: {error}")
+                else:
+                    print(f"Saved plot for {plot_name} to {plot_filename}")
+                finally:
+                    plt.close() # Close the plot to free memory
             else:
                 plt.show()
 
-    except FileNotFoundError:
-        print(f"Error: The HDF5 file '{h5_file_path}' was not found. Please check the path.")
     except KeyError as ke:
         print(f"Error accessing HDF5 group or column: {ke}. Please ensure the '/time_evolution' group and the 'ts' column name are correct.")
     except Exception as e:
