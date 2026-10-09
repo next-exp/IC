@@ -206,8 +206,8 @@ def test_voxelize_hits_within_hits_limits(hits, voxel_size):
 
     xyz = list("xyz")
     XYZ = list("XYZ")
-    assert np.all(hits[XYZ].min().values <= voxels[xyz].min().values + voxel_size/2 + np.finfo(float).eps)
-    assert np.all(hits[XYZ].max().values >= voxels[xyz].max().values - voxel_size/2 - np.finfo(float).eps)
+    assert np.all(hits[XYZ].min().values <= np.nextafter(voxels[xyz].min().values + voxel_size/2,  np.inf))
+    assert np.all(hits[XYZ].max().values >= np.nextafter(voxels[xyz].max().values - voxel_size/2, -np.inf))
 
 
 @given(bunch_of_hits(), voxel_sizes)
