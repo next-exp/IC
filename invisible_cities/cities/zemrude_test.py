@@ -74,6 +74,8 @@ def zemrude_config():
                 qmaxbins      = np.linspace(0, 300, 100),
                 s2wbins       = np.linspace(0, 60, 100),
                 dtbins2       = np.linspace(0, 1400, 51),
+                high_S2e      = 1e4,
+                low_S2e       = 4e3,
                 bins          = 100,
                 dtr2_bins     = (20, 20),
                 statistic     = 'mean',
