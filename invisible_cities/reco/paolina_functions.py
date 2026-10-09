@@ -514,7 +514,8 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
         hits  .loc[:, "blob"] = "highlow"
         voxels.loc[:, "blob"] = "highlow"
         return
-    diag      = np.linalg.norm(voxel_size)
+
+    diag = np.linalg.norm(voxel_size)
 
     blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1])
     blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2])
@@ -621,20 +622,21 @@ def make_tracks(hits        : pd.DataFrame,
         distances = shortest_paths(track)
 
         # collect relevant information
-        track_voxels                 = voxels.loc[list(track.nodes())]
-        # create hits with radial information
-        track_hits                   = hits[hits.voxel_id.isin(track_voxels.index)].assign(R = lambda df: np.sqrt(df.X**2 + df.Y**2))
-        numb_of_voxels               = len(track_voxels)
-        numb_of_hits                 = len(track_hits)
-        numb_of_tracks               = len(track_graphs)
-        energy                       = track_voxels.e.sum()
-        extreme_1, extreme_2, length = find_extrema_and_length(distances)
-        pos_1                        = voxels.loc[extreme_1]
-        pos_2                        = voxels.loc[extreme_2]
-        ave_pos                      = hits_ave_pos(track_hits, energy_type)
-        ave_r                        = np.average(track_hits.R,
-                                                  weights = track_hits[energy_type.value],
-                                                  axis = 0)
+        track_voxels   = voxels.loc[list(track.nodes())]
+        track_hits     = hits[hits.voxel_id.isin(track_voxels.index)].assign(R = lambda df: np.sqrt(df.X**2 + df.Y**2))
+        numb_of_voxels = len(track_voxels)
+        numb_of_hits   = len(track_hits)
+        numb_of_tracks = len(track_graphs)
+        energy         = track_voxels.e.sum()
+        ( extreme_1
+        , extreme_2
+        , length   )   = find_extrema_and_length(distances)
+        pos_1          = voxels.loc[extreme_1]
+        pos_2          = voxels.loc[extreme_2]
+        ave_pos        = hits_ave_pos(track_hits, energy_type)
+        ave_r          = np.average(track_hits.R,
+                                    weights = track_hits[energy_type.value],
+                                    axis = 0)
 
         # blob information
         blob_high, blob_low = find_blobs(track_hits, voxels, distances,
@@ -656,10 +658,13 @@ def make_tracks(hits        : pd.DataFrame,
         # generate general tracking table
         list_of_vars = [event, track_no, energy, length,
                         numb_of_voxels, numb_of_hits, numb_of_tracks,
-                        track_hits.X.min(), track_hits.Y.min(), track_hits.Z.min(), track_hits.R.min(),
-                        track_hits.X.max(), track_hits.Y.max(), track_hits.Z.max(), track_hits.R.max(),
-                        *ave_pos, ave_r, *pos_1[_xyz].tolist(), *pos_2[_xyz].tolist(),
-                        *blob_high.position, *blob_low.position, blob_high.energy, blob_low.energy, overlap,
+                        *track_hits[_XYZ + ["R"]].min(),
+                        *track_hits[_XYZ + ["R"]].max(),
+                        *ave_pos, ave_r,
+                        *pos_1[_xyz],
+                        *pos_2[_xyz],
+                        *blob_high.position, *blob_low.position,
+                        blob_high.energy, blob_low.energy, overlap,
                         *voxel_size]
         track_df.loc[track_no] = list_of_vars
 
