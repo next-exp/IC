@@ -1,4 +1,15 @@
+"""
+Column dtype schemas for detector dataframes.
 
+Attributes
+----------
+hit_type : dict
+    Dtype schema for hit rows. It covers event and peak identifiers, peak
+    positions, hit coordinates, charge, and energy columns.
+kr_events_type : dict
+    Dtype schema for KDST event rows, including S1/S2 peak summaries, drift
+    information, and reconstructed position quantities.
+"""
 
 import numpy  as np
 
