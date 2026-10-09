@@ -602,7 +602,7 @@ def test_fetch_git_info():
 def test_fetch_git_info_independent_of_cwd(tmp_path, monkeypatch):
     """
     Test that fetch_git_info() returns the same git information regardless
-    of the current working directory. Explicityly sets the environment
+    of the current working directory. Explicitly sets the environment
     to the ICTDIR and compares the output of fetch_git_info() when called
     from a directory outside the git repository.
     """
