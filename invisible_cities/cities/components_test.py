@@ -16,9 +16,11 @@ from numpy.testing import assert_raises
 from .. core.configure     import configure
 from .. core.exceptions    import InvalidInputFileStructure
 from .. core.exceptions    import          SensorIDMismatch
+from .. core.exceptions    import                XYRecoFail
 from .. core.testing_utils import    assert_tables_equality
 from .. core.testing_utils import            ignore_warning
 from .. core               import system_of_units as units
+from .. types.ic_types     import NN
 from .. types.symbols      import WfType
 from .. types.symbols      import EventRange as ER
 from .. types.symbols      import NormMethod
@@ -36,6 +38,7 @@ from .  components import mcsensors_from_file
 from .  components import create_timestamp
 from .  components import check_max_time
 from .  components import hits_corrector
+from .  components import try_global_reco
 from .  components import run_git_command
 from .  components import fetch_git_info
 from .  components import write_city_configuration
@@ -44,6 +47,21 @@ from .  components import copy_cities_configuration
 from .. dataflow   import dataflow as fl
 
 from typing import Union
+
+
+def test_try_global_reco_returns_xy_coordinates():
+    def reco(xys, qs):
+        return pd.DataFrame(dict(X=[1.5], Y=[2.5]))
+
+    assert try_global_reco(reco, None, None) == (1.5, 2.5)
+
+
+def test_try_global_reco_returns_sentinels_on_failure():
+    def reco(xys, qs):
+        raise XYRecoFail
+
+    assert try_global_reco(reco, None, None) == (NN, NN)
+
 
 def _create_dummy_conf_with_event_range(value):
     return Namespace(event_range = value)
@@ -549,15 +567,15 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
     assert     np.all(         corrected_e>0)
 
 
-# There is a risk that this test could mess up the user's git history if it is run outside 
+# There is a risk that this test could mess up the user's git history if it is run outside
 # of Github Actions. Therefore, we skip it unless the IS_GHA environment variable is set to 1.
 @mark.skipif("os.environ.get('IS_GHA') == 1", reason="this messes with git history so we only run it on GHA")
 def test_fetch_git_info():
     """
-    Test that fetch_git_info() correctly extracts the current branch name, commit hash, and 
-    tag from the git repository. This test creates a temporary branch, makes a dummy commit 
-    within it, and creates a tag to verify that the function returns the expected values. 
-    It also ensures that the original branch is restored and the temporary branch and tag 
+    Test that fetch_git_info() correctly extracts the current branch name, commit hash, and
+    tag from the git repository. This test creates a temporary branch, makes a dummy commit
+    within it, and creates a tag to verify that the function returns the expected values.
+    It also ensures that the original branch is restored and the temporary branch and tag
     are deleted after the test.
     """
     try:
@@ -583,7 +601,7 @@ def test_fetch_git_info():
         raise
 
     finally:
-        # cleanup happens no matter what, each command is within a try/except so that if one fails 
+        # cleanup happens no matter what, each command is within a try/except so that if one fails
         # the rest still run switch back to the original branch
         try:
             run_git_command(f"git checkout {current_branch}")

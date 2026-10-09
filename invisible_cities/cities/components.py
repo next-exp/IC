@@ -76,7 +76,6 @@ from .. io     .mcinfo_io         import          load_mcstringmap
 from .. io     .mcinfo_io         import         is_oldformat_file
 from .. io     .dst_io            import                 df_writer
 from .. types  .ic_types          import                  NoneType
-from .. types  .ic_types          import                        xy
 from .. types  .ic_types          import                        NN
 from .. types  .ic_types          import                    minmax
 from .. types  .df_types          import              summary_type
@@ -1073,8 +1072,8 @@ def get_s1_time(pmap, selector_output):
 
 def try_global_reco(reco, xys, qs):
     try              : cluster = reco(xys, qs).iloc[0]
-    except XYRecoFail: return xy.empty()
-    else             : return xy(cluster.X, cluster.Y)
+    except XYRecoFail: return NN, NN
+    else             : return cluster.X, cluster.Y
 
 
 def sipm_positions(dbfile, run_number):

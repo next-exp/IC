@@ -20,45 +20,6 @@ class Blob:
     hit_ids : np.ndarray
 
 
-class xy:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def empty():
-        return xy(NN, NN)
-
-    def zero():
-        return xy(0, 0)
-
-    @property
-    def pos(self): return np.stack(([self.x], [self.y]), axis=1)
-
-    @property
-    def XY(self): return (self.x, self.y)
-
-    @property
-    def X(self): return self.x
-
-    @property
-    def Y(self): return self.y
-
-    @property
-    def R(self): return np.sqrt(self.x ** 2 + self.y ** 2)
-
-    @property
-    def Phi(self): return np.arctan2(self.y, self.x)
-
-    def __str__(self):
-        return 'xy(x={.x}, y={.y})'.format(self, self)
-    __repr__ = __str__
-
-    def __getitem__(self, n):
-        if n == 0: return self.x
-        if n == 1: return self.y
-        raise IndexError
-
-
 class minmax:
 
     def __init__(self, min, max):
