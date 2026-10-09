@@ -603,10 +603,10 @@ def test_fetch_git_info_independent_of_cwd(tmp_path, monkeypatch):
     """
     Test that fetch_git_info() returns the same git information regardless
     of the current working directory. Explicityly sets the environment
-    to the ICDIR and compares the output of fetch_git_info() when called
+    to the ICTDIR and compares the output of fetch_git_info() when called
     from a directory outside the git repository.
     """
-    monkeypatch.setenv("environment", os.getenv("ICDIR"))
+    monkeypatch.setenv("environment", os.getenv("ICTDIR"))
     expected = fetch_git_info()
 
     monkeypatch.chdir(tmp_path) # a directory outside any repo

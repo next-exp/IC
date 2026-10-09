@@ -223,7 +223,7 @@ def run_git_command(git_command: str):
                                     text=True,
                                     capture_output=True,
                                     check=True,
-                                    cwd=os.getenv("ICDIR")).stdout.strip()
+                                    cwd=os.getenv("ICTDIR")).stdout.strip()
         return git_output
     except subprocess.CalledProcessError as e:
         print(f"Following error encountered when running: {git_command}")
