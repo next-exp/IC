@@ -11,7 +11,9 @@ kr_events_type : dict
     information, and reconstructed position quantities.
 """
 
-import numpy  as np
+from collections import OrderedDict
+
+import numpy as np
 
 hit_type = dict( event = int
                , time  = float
@@ -52,3 +54,25 @@ kr_events_type = dict( event   = int
                      , Xrms    = float
                      , Yrms    = float
                      )
+
+types_dict_summary = OrderedDict({'event'     : np.int64  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
+                                  'evt_ntrks' : int       , 'evt_nhits'  : int       , 'evt_x_avg'     : np.float64,
+                                  'evt_y_avg' : np.float64, 'evt_z_avg'  : np.float64, 'evt_r_avg'     : np.float64,
+                                  'evt_x_min' : np.float64, 'evt_y_min'  : np.float64, 'evt_z_min'     : np.float64,
+                                  'evt_r_min' : np.float64, 'evt_x_max'  : np.float64, 'evt_y_max'     : np.float64,
+                                  'evt_z_max' : np.float64, 'evt_r_max'  : np.float64, 'evt_out_of_map': bool      })
+
+
+types_dict_tracks = OrderedDict({'event'           : np.int64  , 'trackID'       : int       , 'energy'      : np.float64,
+                                 'length'          : np.float64, 'numb_of_voxels': int       , 'numb_of_hits': int       ,
+                                 'numb_of_tracks'  : int       , 'x_min'         : np.float64, 'y_min'       : np.float64,
+                                 'z_min'           : np.float64, 'r_min'         : np.float64, 'x_max'       : np.float64,
+                                 'y_max'           : np.float64, 'z_max'         : np.float64, 'r_max'       : np.float64,
+                                 'x_ave'           : np.float64, 'y_ave'         : np.float64, 'z_ave'       : np.float64,
+                                 'r_ave'           : np.float64, 'extreme1_x'    : np.float64, 'extreme1_y'  : np.float64,
+                                 'extreme1_z'      : np.float64, 'extreme2_x'    : np.float64, 'extreme2_y'  : np.float64,
+                                 'extreme2_z'      : np.float64, 'blob1_x'       : np.float64, 'blob1_y'     : np.float64,
+                                 'blob1_z'         : np.float64, 'blob2_x'       : np.float64, 'blob2_y'     : np.float64,
+                                 'blob2_z'         : np.float64, 'eblob1'        : np.float64, 'eblob2'      : np.float64,
+                                 'ovlp_blob_energy': np.float64,
+                                 'vox_size_x'      : np.float64, 'vox_size_y'    : np.float64, 'vox_size_z'  : np.float64})

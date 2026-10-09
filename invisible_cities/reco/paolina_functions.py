@@ -12,7 +12,7 @@ from .. core.exceptions import NoVoxels
 from .. types.symbols   import Contiguity
 from .. types.symbols   import HitEnergy
 from .. types.ic_types  import Blob
-from .. types.ic_types  import types_dict_tracks
+from .. types.df_types  import types_dict_tracks
 
 from typing import Tuple
 
