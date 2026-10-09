@@ -330,26 +330,26 @@ def monitor_dtime(df          : pd.DataFrame,
     axs[0,0].plot(df1.DT, dtrms2_low(df1.DT), ".r", ms=2);
     axs[0,0].plot(df1.DT, dtrms2_upp(df1.DT), ".r", ms=2);
     axs[0,0].plot(df1.DT, dtrms2_cen(df1.DT), '.g', ms = 2);
-    axs[0,0].set_xlabel("Drift time ($\mu$s)"); axs[0,0].set_ylabel("DT$_{rms}^2$ ($\mu$s)"); axs[0,0].set_xlim(0, 1300)
+    axs[0,0].set_xlabel(r"Drift time ($\mu$s)"); axs[0,0].set_ylabel(r"DT$_{rms}^2$ ($\mu$s)"); axs[0,0].set_xlim(0, 1300)
     axs[0, 0].set_title('Before selection')
 
     axs[0,1].hist2d(df2.DT, df2.Zrms**2, (dtbins, dtrms2bins));
     axs[0,1].plot(df2.DT, dtrms2_low(df2.DT), ".r", ms=2);
     axs[0,1].plot(df2.DT, dtrms2_upp(df2.DT), ".r", ms=2);
     axs[0,1].plot(df2.DT, dtrms2_cen(df2.DT), '.g', ms = 2);
-    axs[0,1].set_xlabel("Drift time ($\mu$s)"); axs[0,1].set_ylabel("DT$_{rms}^2$ ($\mu$s)"); axs[0,1].set_xlim(0, 1300)
+    axs[0,1].set_xlabel(r"Drift time ($\mu$s)"); axs[0,1].set_ylabel(r"DT$_{rms}^2$ ($\mu$s)"); axs[0,1].set_xlim(0, 1300)
     axs[0,1].set_title('After selection')
 
     axs[1,0].hist(df1_.DT, dtbins, histtype = 'step', color = 'mediumpurple',lw = 2, label = 'before selection');
     axs[1,0].hist(df2.DT, dtbins, histtype = 'step', color = 'black', lw = 2, label = 'after selection');
     axs[1,0].legend();
-    axs[1,0].set_xlabel("Drift time ($\mu$s)");
+    axs[1,0].set_xlabel(r"Drift time ($\mu$s)");
     axs[1,0].grid(True)
 
-    axs[1,1].hist(df1_.Zrms**2, 100, (0, 40), histtype = 'step',color = 'mediumpurple',lw = 2, label = 'before selection');
-    axs[1,1].hist(df2.Zrms**2, 100, (0, 40), histtype = 'step', color = 'black',lw = 2, label = 'after selection');
+    axs[1,1].hist(df1_.Zrms**2, bins = 100, range = (0, 40), histtype = 'step',color = 'mediumpurple',lw = 2, label = 'before selection');
+    axs[1,1].hist(df2.Zrms**2, bins = 100, range = (0, 40), histtype = 'step', color = 'black',lw = 2, label = 'after selection');
     axs[1,1].legend();
-    axs[1,1].set_xlabel("DT$_{rms}^2$ ($\mu$s)");
+    axs[1,1].set_xlabel(r"DT$_{rms}^2$ ($\mu$s)");
     axs[1,1].grid(True)
 
     fig.tight_layout();
@@ -388,7 +388,7 @@ def monitor_kr_distribution(df        : pd.DataFrame,
     axs[0].grid(True)
 
     axs[1].hist2d(DT, R2, dtr2_bins);
-    axs[1].set_xlabel("DT ($\mu$s)");
+    axs[1].set_xlabel(r"DT ($\mu$s)");
     axs[1].set_ylabel("R$^2$ (mm$^2$)");
 
 
