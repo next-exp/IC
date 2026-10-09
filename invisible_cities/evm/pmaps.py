@@ -68,6 +68,12 @@ class _Peak:
 
         return weighted_mean_and_std(times_above_thr, wf_above_thr)[1]
 
+    @classmethod
+    def build_empty_instance(cls):
+        sr = _SensorResponses(np.empty(1), np.empty((1,1)))
+        return cls(np.empty(1), np.empty(1), sr, sr)
+
+
     def __repr__(self):
         s  = f"""
         ---------------------

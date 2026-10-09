@@ -15,7 +15,6 @@ from hypothesis.strategies  import integers
 from hypothesis.strategies  import composite
 from hypothesis.extra.numpy import arrays
 
-from .. core.testing_utils   import assert_cluster_equality
 from .. core.testing_utils   import float_arrays
 from .. database.load_db     import DataSiPM
 from .. core                 import system_of_units as units
@@ -133,10 +132,25 @@ def datasipm5x5():
 @settings(max_examples=100)
 def test_barycenter_generic(p_q):
     pos, qs = p_q
-    B  = barycenter(pos, qs)[0]
-    assert np.allclose(B.posxy, np.average(pos, weights=qs, axis=0))
-    assert np. isclose(B.Q  , qs.sum())
-    assert B.nsipm == len(qs)
+    clusters = barycenter(pos, qs)
+    assert isinstance(clusters, pd.DataFrame)
+    assert clusters.columns.tolist() == ("Q Qc E X Y Z Xvar Yvar "
+                                         "Xrms Yrms R Phi nsipm").split()
+
+    cluster = clusters.iloc[0]
+    mu  = np.average(pos, weights=qs, axis=0)
+    var = np.average((pos - mu)**2, weights=qs, axis=0)
+
+    assert np.allclose(cluster[["X", "Y"]].to_numpy(dtype=float), mu)
+    assert np. isclose(cluster.Q, qs.sum())
+    assert cluster.Qc == -1
+    assert cluster.E  == cluster.Q
+    assert pd.isna(cluster.Z)
+    assert cluster.nsipm == len(qs)
+    assert np.allclose(cluster[["Xvar", "Yvar"]].to_numpy(dtype=float), var)
+    assert np.allclose(cluster[["Xrms", "Yrms"]].to_numpy(dtype=float), np.sqrt(var))
+    assert np.isclose(cluster.R, np.linalg.norm(mu))
+    assert np.isclose(cluster.Phi, np.arctan2(mu[1], mu[0]))
 
 
 @parametrize("     x         y        q     expected_xy".split(),
@@ -147,8 +161,8 @@ def test_barycenter_generic(p_q):
 def test_barycenter_simple_cases(x, y, q, expected_xy):
     xy = np.stack((x, y), axis=1)
     qs = np.array(q)
-    b  = barycenter(xy, qs)[0]
-    assert np.allclose(b.posxy, expected_xy)
+    b  = barycenter(xy, qs).iloc[0]
+    assert np.allclose(b[["X", "Y"]].to_numpy(dtype=float), expected_xy)
 
 
 @given(float_arrays(size=8, min_value=0, max_value=100, mask=np.sum))
@@ -206,14 +220,11 @@ def test_corona_converges_to_barycenter(toy_sipm_signal, datasipm):
     b_clusters = barycenter(pos, qs)
 
     assert len(c_clusters) == len(b_clusters) == 1
-    assert_cluster_equality(c_clusters[0], b_clusters[0])
+    pd.testing.assert_frame_equal(c_clusters, b_clusters)
 
 
 def test_corona_multiple_clusters(toy_sipm_signal, datasipm):
-    """notice: cluster.XY    = (x,y)
-               cluster.posxy = ([x],
-                                [y])
-    """
+    """Cluster coordinates are stored in the ``X`` and ``Y`` columns."""
     pos, qs = toy_sipm_signal
     clusters = corona(pos, qs, datasipm,
                       Qthr = 0, Qlm=4.9*units.pes,
@@ -221,15 +232,13 @@ def test_corona_multiple_clusters(toy_sipm_signal, datasipm):
                       msipm = 1)
     assert len(clusters) == 2
     for i in range(len(pos)):
-        assert np.array_equal(clusters[i].XY, pos[i])
-        assert clusters[i].Q == qs[i]
+        cluster = clusters.iloc[i]
+        assert np.array_equal(cluster[["X", "Y"]].to_numpy(dtype=float), pos[i])
+        assert cluster.Q == qs[i]
 
 
 def test_corona_min_threshold_Qthr(datasipm):
-    """notice: cluster.XY =(x,y)
-               cluster.posxy = ([x],
-                              [y])
-    """
+    """The output rows contain the cluster's reconstructed coordinates."""
     xs = np.arange(100) * 10
     ys = np.zeros (100)
     qs = np.arange(100)
@@ -243,8 +252,9 @@ def test_corona_min_threshold_Qthr(datasipm):
                       msipm          =  1)
 
     assert len(clusters) ==   1
-    assert clusters[0].Q ==  99
-    assert clusters[0].XY == (990, 0)
+    cluster = clusters.iloc[0]
+    assert cluster.Q == 99
+    assert tuple(cluster[["X", "Y"]]) == (990, 0)
 
 
 def test_corona_msipm(toy_sipm_signal, datasipm):
@@ -422,5 +432,5 @@ def test_corona_finds_masked_sipms_correctly(datasipm5x5):
                msipm           =     25, # request all sipms
                consider_masked =   True)
 
-    assert len(c)     ==  1
-    assert c[0].nsipm == 17
+    assert len(c)            ==  1
+    assert c.iloc[0].nsipm    == 17
