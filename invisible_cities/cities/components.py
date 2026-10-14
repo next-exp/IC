@@ -206,13 +206,14 @@ def create_timestamp(rate: float) -> float:
     return create_timestamp_
 
 
-def run_git_command(git_command: str):
+def run_git_command(git_command: str, quiet: bool = False):
     """
     Runs a git command and stores the output.
     
     Parameters
     ----------
     git_command : the standard terminal git command the user would input
+    quiet       : if True, suppress error messages on failure
 
     Returns
     -------
@@ -226,8 +227,9 @@ def run_git_command(git_command: str):
                                     cwd=os.getenv("ICTDIR")).stdout.strip()
         return git_output
     except subprocess.CalledProcessError as e:
-        print(f"Following error encountered when running: {git_command}")
-        print(e.stderr)
+        if not quiet:
+            print(f"Following error encountered when running: {git_command}")
+            print(e.stderr)
         return "None"
     except Exception as e:
         print(traceback.format_exc())
@@ -235,7 +237,7 @@ def run_git_command(git_command: str):
 
 def fetch_git_info():
     git_info = dict(
-        IC_tag         = run_git_command("git describe --tags --exact-match"),
+        IC_tag         = run_git_command("git describe --tags --exact-match", quiet=True),
         closest_IC_tag = run_git_command("git describe --tags"),
         branch_name    = run_git_command("git branch --show-current"),
         commit_hash    = run_git_command("git rev-parse HEAD")
