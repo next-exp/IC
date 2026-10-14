@@ -47,9 +47,6 @@ class NoParticleInfoInFile(ICException):
 class TableMismatch(ICException):
     pass
 
-class TimeEvolutionTableMissing(ICException):
-    pass
-
 class MCEventNotFound(ICException):
     """ Requested event missing from input file """
 
