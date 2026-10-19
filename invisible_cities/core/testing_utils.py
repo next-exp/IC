@@ -173,20 +173,6 @@ def assert_tables_equality(got_table, expected_table, rtol=1e-7, atol=0):
             raise
 
 
-def assert_cluster_equality(a_cluster, b_cluster):
-    assert np.allclose(a_cluster.posxy , b_cluster.posxy )
-    assert np.allclose(a_cluster.var.XY, b_cluster.var.XY)
-    assert np.allclose(a_cluster.XY    , b_cluster.XY    )
-
-    assert             a_cluster.nsipm == exactly(b_cluster.nsipm)
-    assert             a_cluster.Q     == approx (b_cluster.Q    )
-    assert             a_cluster.X     == approx (b_cluster.X    )
-    assert             a_cluster.Y     == approx (b_cluster.Y    )
-    assert             a_cluster.Xrms  == approx (b_cluster.Xrms )
-    assert             a_cluster.Yrms  == approx (b_cluster.Yrms )
-    assert             a_cluster.R     == approx (b_cluster.R    )
-    assert             a_cluster.Phi   == approx (b_cluster.Phi  )
-
 def assert_bhit_equality(a_hit, b_hit):
     assert np.allclose(a_hit.pos , b_hit.pos)
     assert np.allclose(a_hit.XYZ , b_hit.XYZ)
@@ -199,15 +185,6 @@ def assert_bhit_equality(a_hit, b_hit):
 def assert_MChit_equality(a_hit, b_hit):
     assert_bhit_equality   (a_hit, b_hit)
     assert  a_hit.time  == approx (b_hit.time)
-
-def assert_hit_equality(a_hit, b_hit):
-    assert_bhit_equality   (a_hit, b_hit)
-    assert_cluster_equality(a_hit, b_hit)
-    assert a_hit.Ec           == approx (b_hit.Ec         )
-    assert a_hit.Xpeak        == approx (b_hit.Xpeak      )
-    assert a_hit.Ypeak        == approx (b_hit.Ypeak      )
-    assert a_hit.peak_number  == exactly(b_hit.peak_number)
-
 
 def an_instance_of(*given_args, **given_kwargs):
     def the_test(f):

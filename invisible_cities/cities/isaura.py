@@ -29,7 +29,7 @@ from .. types.symbols import HitEnergy
 
 from ..  io.run_and_event_io import run_and_event_writer
 from ..  io.         hits_io import          hits_writer as hits_writer_
-from ..  io.         kdst_io import  kdst_from_df_writer
+from ..  io.         kdst_io import          kdst_writer
 
 
 
@@ -94,9 +94,10 @@ def isaura( files_in       : OneOrManyFiles
 
     with tb.open_file(file_out, "w", filters=tbl.filters(compression)) as h5out:
         write_event_info = fl.sink(run_and_event_writer(h5out), args=("run_number", "event_number", "timestamp"))
-        write_kdst_table = fl.sink( kdst_from_df_writer(h5out), args= "kdst")
+        write_kdst_table = fl.sink(         kdst_writer(h5out), args= "kdst")
 
-        hits_writer = hits_writer_(h5out, group_name="DECO", table_name="Events")
+        hits_writer   = hits_writer_(h5out, group_name="DECO", table_name="Events")
+        voxels_writer = hits_writer_(h5out, group_name="DECO", table_name="voxels")
 
         evtnum_collect = collect()
 
@@ -104,7 +105,8 @@ def isaura( files_in       : OneOrManyFiles
                                                       , h5out
                                                       , HitEnergy.E
                                                       , "hits_select"
-                                                      , hits_writer)
+                                                      , hits_writer
+                                                      , voxels_writer)
 
         result = push(source = dhits_from_files(files_in),
                       pipe   = pipe(fl.slice(*event_range, close_all=True)        ,

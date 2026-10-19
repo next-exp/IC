@@ -38,10 +38,10 @@ import pandas as pd
 from .. core.configure      import EventRangeType
 from .. core.configure      import OneOrManyFiles
 from .. core                import tbl_functions        as tbl
-from .. evm                 import event_model          as evm
 from .. dataflow            import dataflow             as fl
 from .. dataflow.dataflow   import push
 from .. dataflow.dataflow   import pipe
+from .. types.symbols       import HitEnergy
 
 from .  components import city
 from .  components import print_every
@@ -53,7 +53,7 @@ from .  components import hits_thresholder
 from .  components import compute_and_write_tracks_info
 
 from .. io.         hits_io import hits_writer as hits_writer_
-from .. io.         kdst_io import kdst_from_df_writer
+from .. io.         kdst_io import kdst_writer
 from .. io.run_and_event_io import run_and_event_writer
 
 
@@ -158,14 +158,16 @@ def esmeralda( files_in         : OneOrManyFiles
                                     , args = "run_number event_number timestamp".split())
 
         hits_writer        = hits_writer_(h5out, group_name="CHITS", table_name="highTh")
+        voxels_writer      = hits_writer_(h5out, group_name="CHITS", table_name="voxels")
 
-        write_kdst         = fl.sink(kdst_from_df_writer(h5out), args="kdst")
+        write_kdst         = fl.sink(kdst_writer(h5out), args="kdst")
 
         compute_tracks = compute_and_write_tracks_info( paolina_params
                                                       , h5out
-                                                      , evm.HitEnergy.Ec
+                                                      , HitEnergy.Ec
                                                       , "high_th_select"
-                                                      , hits_writer)
+                                                      , hits_writer
+                                                      , voxels_writer )
 
         event_number_collector = collect()
 
