@@ -740,8 +740,9 @@ def drop_voxel_inplace( hits       : pd.DataFrame
     popped           = pop_voxel_inplace(voxels, vox_id)
     is_neighbour     = [neighbours(popped, voxel, voxel_size, contiguity) for _, voxel in voxels.iterrows()]
     neighbour_voxels = voxels.loc[is_neighbour]
-    bary_pos = np.average( hits.loc[hits.voxel_id == vox_id, _XYZ]
-                         , weights = hits.loc[hits.voxel_id == vox_id, e_type.value]
+    hits_in_voxel    = hits.loc[hits.voxel_id == vox_id]
+    bary_pos = np.average(           hits_in_voxel[_XYZ]
+                         , weights = hits_in_voxel[e_type.value]
                          , axis    =  0)
 
     neighbour_hits = hits.loc[hits.voxel_id.isin(neighbour_voxels.index)]
