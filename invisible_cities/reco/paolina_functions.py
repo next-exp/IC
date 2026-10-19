@@ -849,10 +849,12 @@ def drop_voxels(hits            : pd.DataFrame,
                         dropped.append(dropped_voxel)
                         modified = True
 
-    dropped = pd.DataFrame(dropped) if dropped else pd.DataFrame()
-    if not dropped.empty:
+    if dropped:
+        dropped      = pd.DataFrame(dropped)
         dropped_hits = hits[hits.voxel_id == 0]
     else:
-        dropped_hits = pd.DataFrame([])
+        # preserve dataframes' structure using a null-slice
+        dropped      = voxels.iloc[:0]
+        dropped_hits =   hits.iloc[:0]
 
     return dropped_hits, voxels, dropped
