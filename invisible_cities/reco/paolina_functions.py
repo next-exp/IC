@@ -631,8 +631,8 @@ def make_tracks(hits        : pd.DataFrame,
         ( extreme_1
         , extreme_2
         , length   )   = find_extrema_and_length(distances)
-        pos_1          = voxels.loc[extreme_1]
-        pos_2          = voxels.loc[extreme_2]
+        vox_pos_1      = voxels.loc[extreme_1, _xyz]
+        vox_pos_2      = voxels.loc[extreme_2, _xyz]
         ave_pos        = hits_ave_pos(track_hits, energy_type)
         ave_r          = np.average(track_hits.R,
                                     weights = track_hits[energy_type.value],
@@ -661,8 +661,7 @@ def make_tracks(hits        : pd.DataFrame,
                         *track_hits[_XYZ + ["R"]].min(),
                         *track_hits[_XYZ + ["R"]].max(),
                         *ave_pos, ave_r,
-                        *pos_1[_xyz],
-                        *pos_2[_xyz],
+                        *vox_pos_1, *vox_pos_2,
                         *blob_high.position, *blob_low.position,
                         blob_high.energy, blob_low.energy, overlap,
                         *voxel_size]
@@ -672,7 +671,7 @@ def make_tracks(hits        : pd.DataFrame,
         voxels.loc[voxels.index.isin(track_voxels.index), "track"] = track_no
 
     # modify column dtype to match variable type
-    track_df = track_df.apply(lambda x: x.astype(tracks_type[x.name]))
+    track_df = track_df.astype(tracks_type)
     return hits, voxels, track_df
 
 
