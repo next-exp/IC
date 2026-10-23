@@ -169,7 +169,7 @@ def zemrude(files_in           : OneOrManyFiles
             ):
 
     apply_nan_cut          = fl.map( discard_nan_values
-                                     ,item  = 'dst'
+                                   , item  = 'dst'
                                      )
 
     apply_preliminary_map  = fl.map( apply_map(pre_map,
@@ -177,7 +177,7 @@ def zemrude(files_in           : OneOrManyFiles
                                               xy_params,
                                               'Ec',
                                               unit = keV)
-                                  , item  = 'dst')
+                                   , item  = 'dst')
 
 
     apply_selections = fl.map( select_dst(dtrms2_low,
