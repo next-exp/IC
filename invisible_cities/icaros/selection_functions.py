@@ -46,9 +46,9 @@ def discard_nan_values(kdst : pd.DataFrame) -> pd.DataFrame :
        Dataframe with no NaNs
     """
 
-    kdst     = kdst[~(kdst.DT.isna())]
-    kdst     = kdst[~(kdst.X.isna())]
-    kdst     = kdst[~(kdst.Y.isna())]
+    kdst = kdst[~(kdst.DT.isna())]
+    kdst = kdst[~(kdst.X.isna())]
+    kdst = kdst[~(kdst.Y.isna())]
 
     return kdst
 
