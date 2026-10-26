@@ -214,7 +214,7 @@ def create_timestamp(rate: float) -> float:
 def run_git_command(git_command: str, quiet: bool = False):
     """
     Runs a git command and stores the output.
-    
+
     Parameters
     ----------
     git_command : the standard terminal git command the user would input
@@ -811,7 +811,7 @@ def sensor_data(path, wf_type):
 
 def build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, 
+               s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
                sipm_selection_algo):
     s1_params = dict(time        = minmax(min = s1_tmin,
                                           max = s1_tmax),
@@ -883,8 +883,8 @@ def threshold_sipm_selection( thr_sipm_type
                             , detector_db = None):
     '''
     Applies energy thresholds to SiPM S2 waveforms:
-    - thr_sipm:    applied per time bin. Waveform samples below this 
-                   threshold are set to zero.  
+    - thr_sipm:    applied per time bin. Waveform samples below this
+                   threshold are set to zero.
     - thr_sipm_s2: applied to the integrated waveform charge. If the total
                    charge is below this threshold, it is set to zero.
     '''
@@ -906,13 +906,13 @@ def pyrrha_sipm_selection( selection_method     : SiPMSelectionMethod
                          , run_number          : int
                          , detector_db         : str):
     '''
-    Applies a generic selection function to the sipms, which can be used to 
+    Applies a generic selection function to the sipms, which can be used to
     implement a spatial SiPM selection method (called Pyrrha).
     '''
     def pyrrha_sipm_selection(wfs):
-        return wfm.spatial_selection_method(wfs, 
-                                            selection_method, 
-                                            selection_kwargs, 
+        return wfm.spatial_selection_method(wfs,
+                                            selection_method,
+                                            selection_kwargs,
                                             proximity_threshold,
                                             padding_radius,
                                             run_number,
@@ -923,7 +923,7 @@ def pyrrha_sipm_selection( selection_method     : SiPMSelectionMethod
 
 def no_cut_sipm_selection():
     """"
-    Function that applies no cuts to the SiPM waveforms. 
+    Function that applies no cuts to the SiPM waveforms.
     """
     def no_cut_sipm_selection(wfs):
         sipm_ids = np.arange(wfs.shape[0])
@@ -1358,7 +1358,7 @@ def compute_and_write_pmaps(detector_db, run_number, pmt_samp_wid, sipm_samp_wid
     # Build the PMap
     compute_pmap     = fl.map(build_pmap(detector_db, run_number, pmt_samp_wid, sipm_samp_wid,
                                          s1_lmax, s1_lmin, s1_rebin_stride, s1_stride, s1_tmax, s1_tmin,
-                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin, 
+                                         s2_lmax, s2_lmin, s2_rebin_stride, s2_stride, s2_tmax, s2_tmin,
                                          sipm_selection_algo),
                               args = ("ccwfs", "s1_indices", "s2_indices", "sipm"),
                               out  = "pmap")
