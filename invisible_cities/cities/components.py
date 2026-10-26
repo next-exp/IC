@@ -152,7 +152,12 @@ def city(city_function):
         if os.path.exists(conf.file_out):
             git_info = fetch_git_info()
             write_city_configuration(conf.file_out, city_function.__name__, {**args, **git_info})
-            copy_cities_configuration(conf.files_in[0], conf.file_out)
+
+            # Irene on data runs over the decoder output, which does not produce
+            # a config node. In that case, the warning is noise rather than
+            # useful information.
+            warn = city_function.__name__ != "irene" or conf.run_number <= 0
+            copy_cities_configuration(conf.files_in[0], conf.file_out, warn)
             index_tables(conf.file_out)
         return result
     return proxy
@@ -298,10 +303,11 @@ def write_city_configuration( filename : str
         df_writer(file, df, "config", city_name, f"configuration for {city_name}", str_col_length=300)
 
 
-def copy_cities_configuration( file_in : str, file_out : str):
+def copy_cities_configuration(file_in : str, file_out : str, warn: bool = True):
     with tb.open_file(file_in, "r") as fin:
         if "config" not in fin.root:
-            warnings.warn("Input file does not contain /config group", UserWarning)
+            if warn:
+                warnings.warn("Input file does not contain /config group", UserWarning)
             return
 
         with tb.open_file(file_out, "a") as fout:
