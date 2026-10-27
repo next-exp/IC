@@ -926,6 +926,8 @@ def test_drop_voxels_voxel_energy_is_sum_of_hits():
        blob_radius                = radii,
        fraction_zero_one          = fraction_zero_one)
 def test_paolina_functions_with_hit_energy_different_from_default_value(hits, requested_voxel_size, blob_radius, fraction_zero_one, energy_type):
+    # make sure the alternative energy column differs from the default one
+    hits[energy_type.value] = hits.E.values + 1.0
 
     hits_c     = hits.copy(deep = True)
     min_voxels = 0
@@ -933,9 +935,6 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
     hits, voxels     = voxelize_hits(hits, requested_voxel_size)
     hits_c, voxels_c = voxelize_hits(hits_c, requested_voxel_size, energy_type)
 
-    # The first assertion is needed for the test to keep being meaningful,
-    # in case we change the default value of energy_type to energy_c.
-    # problem is, we no longer retain energy type in voxels
     assert not np.isclose(voxels.e, voxels_c.e).all()
 
     assert np.isclose(voxels.e, hits.groupby('voxel_id').E.sum()).all()
