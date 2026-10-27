@@ -105,16 +105,10 @@ def get_median(var : np.ndarray) -> pd.DataFrame:
       Dataframe containing 'nevents', 'mu', 'sigma', 'mu_error', 'sigma_error'
       of the input dataframe, where mu and mu_error are the median and the median error.
     """
-    if len(var) < 5:
-        sigma = (0.04/2.35)*var.median()
-        mu = np.nan
-    else:
-        sigma = var.std()
-        mu = var.median()
 
     return pd.DataFrame({'nevents'    : len(var),
-                         'mu'         : mu,
-                         'sigma'      : sigma,
+                         'mu'         : var.median(),
+                         'sigma'      : (0.04/2.35)*var.median(),
                          'mu_error'   : sigma/np.sqrt(len(var)),
                          'sigma_error': np.nan},
                          index = [0]
