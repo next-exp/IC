@@ -792,8 +792,7 @@ def drop_voxels(hits            : pd.DataFrame,
 
     Tracks with fewer than ``min_vxls`` voxels are left unchanged. A candidate
     endpoint is dropped only when its energy is below ``energy_threshold`` and
-    it has at least one other neighbor. The input hit and voxel tables are
-    modified in place.
+    it has at least one other neighbor.
 
     Parameters
     ----------
@@ -818,19 +817,20 @@ def drop_voxels(hits            : pd.DataFrame,
     modified_hits : pd.DataFrame
         A copy of the original hits where dropped hits are marked as voxel_id=0
         and have NaN selected energy. Empty if no voxels were dropped.
-    voxels : pd.DataFrame
+    modified_voxels : pd.DataFrame
         Remaining voxel table.
     dropped_voxels : pd.DataFrame
         Removed voxel rows, with their ``e`` values set to NaN. Empty if no
         voxels were dropped.
     """
 
-    dropped       = []
-    modified_hits = hits.copy()
-    modified      = True
+    dropped         = []
+    modified_hits   =   hits.copy()
+    modified_voxels = voxels.copy()
+    modified        = True
     while modified:
         modified = False
-        trks = make_track_graphs(voxels, voxel_size, contiguity)
+        trks = make_track_graphs(modified_voxels, voxel_size, contiguity)
 
         for t in trks:
             if len(t.nodes()) < min_vxls:
@@ -838,17 +838,17 @@ def drop_voxels(hits            : pd.DataFrame,
 
             distances = shortest_paths(t)
             for voxel_id in find_extrema_and_length(distances)[:2]: # skip length
-                extreme = voxels.loc[voxel_id]
+                extreme = modified_voxels.loc[voxel_id]
                 if extreme.e < energy_threshold:
                     # be sure that the voxel to be eliminated has at least one neighbour
                     # beyond itself
-                    n_neighbours = sum(neighbours(extreme, v, voxel_size, contiguity) for _, v in voxels.iterrows())
+                    n_neighbours = sum(neighbours(extreme, v, voxel_size, contiguity) for _, v in modified_voxels.iterrows())
                     if n_neighbours > 1:
-                        dropped_voxel = drop_voxel_inplace(modified_hits, voxels, voxel_size, voxel_id, e_type, contiguity)
+                        dropped_voxel = drop_voxel_inplace(modified_hits, modified_voxels, voxel_size, voxel_id, e_type, contiguity)
                         dropped.append(dropped_voxel)
                         modified = True
 
     # preserve dataframes' column and type structure using a null slice
-    dropped = pd.DataFrame(dropped) if dropped else voxels.iloc[:0]
+    dropped = pd.DataFrame(dropped) if dropped else modified_voxels.iloc[:0]
 
-    return modified_hits, voxels, dropped
+    return modified_hits, modified_voxels, dropped
