@@ -903,7 +903,7 @@ def test_voxel_drop_in_short_tracks():
     assert len(voxels) >= 1
 
 
-def test_drop_voxels_voxel_energy_is_sum_of_hits():
+def test_voxelize_hits_voxel_energy_is_sum_of_hits():
 
     x = [0,     5,   5,  10,  15,  20,   5,   5,  11,  11,  11]
     y = [0,    -5,   5,   5,   0,   0,  -8,   8,   5,   0,   0]
