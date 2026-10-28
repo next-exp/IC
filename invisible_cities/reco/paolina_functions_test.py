@@ -692,6 +692,19 @@ def test_pop_voxel_inplace_raises_if_missing(dummy_voxels):
         pop_voxel_inplace(voxels, k)
 
 
+@given(bunch_of_hits(), voxel_sizes)
+def test_drop_voxels_does_not_change_number_of_hits(hits, vox_size):
+    hits, voxels = voxelize_hits(hits, vox_size)
+
+    energies = voxels.e.values
+    e_thr    = min(energies) + 0.5 * (max(energies) - min(energies))
+
+    m_hits, d_voxels, d_dropped = drop_voxels(hits, voxels, e_thr, vox_size, HitEnergy.E, 0)
+
+    assert len(m_hits) == len(hits)
+    assert np.all(m_hits.index.values == hits.index.values)
+
+
 @settings(deadline=None)
 @given(bunch_of_hits(), voxel_sizes, min_n_of_voxels, fraction_zero_one)
 def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_size, min_voxels, fraction_zero_one):
