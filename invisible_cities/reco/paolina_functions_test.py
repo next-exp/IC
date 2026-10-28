@@ -808,7 +808,7 @@ def test_drop_end_point_voxels_constant_number_of_voxels_and_hits(hits, requeste
     assert len(hits)   == i_hit_len
 
 
-def test_initial_voxels_are_modified_inplace_after_dropping_voxels(ICDATADIR):
+def test_initial_voxels_are_not_modified_inplace_after_dropping_voxels(ICDATADIR):
     # prior test ensured voxels are the same (not edited in-place)
     # we're changing that, so this test has been reworked
 
@@ -823,24 +823,19 @@ def test_initial_voxels_are_modified_inplace_after_dropping_voxels(ICDATADIR):
     hits = pd.read_hdf(hit_file, "/RECO/Events")
     hits = hits[hits.event == evt_number]
 
-    hits, voxels                  = voxelize_hits(hits, vox_size, energy_type)
+    hits, voxels = voxelize_hits(hits, vox_size, energy_type)
+    m_hits, m_voxels, dropped = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
 
-    i_energies  = np.sort(voxels.e.values)
-    i_positions = np.sort([voxels.x, voxels.y, voxels.z])
+    # energies match but lengths do not. All voxels are still there
+    assert np.isclose(voxels.e.sum(), m_voxels.e.sum())
+    assert len(voxels) != len(m_voxels)
+    assert len(voxels) == len(m_voxels) + len(dropped)
 
-    m_hits, d_voxels, d_dropped   = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
-
-    # energies will be retained (in principle)
-    f_energies  = np.sort(voxels.e.values)
-    f_positions = np.sort(np.concatenate([[voxels.x, voxels.y, voxels.z], [d_dropped.x, d_dropped.y, d_dropped.z]], axis = 1))
-
-    # energies match
-    assert sum(f_energies) == sum(i_energies)
-    # but lengths do not
-    assert len(f_energies) != len(i_energies)
-    # voxels haven't disappeared, just reindexed
-    assert len(f_positions) == len(i_positions)
-    assert np.allclose(f_positions, i_positions)
+    voxels   = voxels.sort_values("x y z".split())
+    combined = pd.concat([m_voxels, dropped], ignore_index=True).sort_values("x y z".split())
+    assert np.allclose(voxels.x, combined.x)
+    assert np.allclose(voxels.y, combined.y)
+    assert np.allclose(voxels.z, combined.z)
 
 
 def test_tracks_with_dropped_voxels(ICDATADIR):
