@@ -1447,30 +1447,75 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
                                       , scan_radius      : Union[float, NoneType]
                                       , max_num_hits     : int
                                       ) -> Callable:
-    '''
-    Overarching function that returns:
-    - track table
-    - voxels table
-    - hits table
+    """
+    Reconstruct track and blob information per event.
 
-    '''
+    The returned callable filters unusable hits, voxelizes the remaining hits,
+    removes eligible low-energy endpoint voxels, and reconstructs tracks and
+    blobs.
+
+    Parameters
+    ----------
+    vox_size : tuple of float, length 3
+        Voxel dimensions along x, y, and z, in the same units as the hit
+        positions.
+    energy_threshold : float
+        Energy threshold for removing endpoint voxels.
+    min_voxels : int
+        Minimum track voxel count below which endpoint voxels are not removed.
+    blob_radius : float
+        Spatial radius used to identify hits belonging to a blob.
+    scan_radius : float or None
+        Optional path-distance radius used to select blob centres. If None,
+        track endpoint voxels are used as blob centres.
+    max_num_hits : int
+        Events with more hits than this limit are skipped.
+
+    process_event : callable
+        Function accepting one event's non-empty hit table and returning the
+        processed hits, voxels, track summary, and a flag indicating whether
+        topology reconstruction was skipped. See the returned callable's
+        docstring for details.
+    """
     # force vox_size into np.ndarray
     vox_size = np.asarray(vox_size)
 
     def create_extract_track_blob_info(hits: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, bool]:
-        '''
+        """
+        Build track and blob information for the hits in one event.
+
         Parameters
         ----------
-        hits  :  Input hits for track extraction
+        hits : pandas.DataFrame
+            Non-empty hit table for a single event, with ``event``, ``X``,
+            ``Y``, ``Z``, and ``Ep`` columns. ``Ep`` may be NaN for hits
+            outside the energy-map domain.
 
         Returns
         -------
-        - general track information dataframe
-        - tagged voxels table
-        - tagged hits table
-        - flag to indicate that one of the filters failed (too many hits, hits outside of domain)
-        '''
+        processed_hits : pandas.DataFrame
+            Hits annotated with track and blob information. Hits outside the
+            energy-map domain are excluded. If the event is skipped because
+            it exceeds ``max_num_hits``, all input hits are returned with
+            sentinel track and voxel identifiers.
+        voxels : pandas.DataFrame
+            Remaining voxels for the event, annotated with their track IDs.
+            Empty when reconstruction is skipped.
+        tracks : pandas.DataFrame
+            Summary information for the reconstructed tracks. Empty when
+            reconstruction is skipped.
+        skipped : bool
+            True if the event exceeds ``max_num_hits`` or no in-domain hits
+            with positive ``Ep`` remain; False if track reconstruction runs.
 
+        Notes
+        -----
+        Hit positions are rounded to five decimal places before voxelization.
+        The caller currently uses ``skipped`` as its ``out_of_map`` flag; the
+        flag also covers the other skip conditions described above, and is
+        False when reconstruction succeeds even if some input hits were
+        outside the energy-map domain.
+        """
         # generate empty dataframe
         track_df      = pd.DataFrame(columns=list(tracks_type.keys()))
 
