@@ -815,9 +815,9 @@ def drop_voxels(hits            : pd.DataFrame,
 
     Returns
     -------
-    dropped_hits : pd.DataFrame
-        Hits belonging to dropped voxels, marked with ``voxel_id == 0`` and
-        NaN selected energy. Empty if no voxels were dropped.
+    modified_hits : pd.DataFrame
+        A copy of the original hits where dropped hits are marked as voxel_id=0
+        and have NaN selected energy. Empty if no voxels were dropped.
     voxels : pd.DataFrame
         Remaining voxel table.
     dropped_voxels : pd.DataFrame
@@ -825,9 +825,9 @@ def drop_voxels(hits            : pd.DataFrame,
         voxels were dropped.
     """
 
-    dropped  = []
-    #hits     =   hits.copy() # this isn't modified anywhere, so no need to copy
-    modified = True
+    dropped       = []
+    modified_hits = hits.copy()
+    modified      = True
     while modified:
         modified = False
         trks = make_track_graphs(voxels, voxel_size, contiguity)
@@ -844,16 +844,11 @@ def drop_voxels(hits            : pd.DataFrame,
                     # beyond itself
                     n_neighbours = sum(neighbours(extreme, v, voxel_size, contiguity) for _, v in voxels.iterrows())
                     if n_neighbours > 1:
-                        dropped_voxel = drop_voxel_inplace(hits, voxels, voxel_size, voxel_id, e_type, contiguity)
+                        dropped_voxel = drop_voxel_inplace(modified_hits, voxels, voxel_size, voxel_id, e_type, contiguity)
                         dropped.append(dropped_voxel)
                         modified = True
 
-    if dropped:
-        dropped      = pd.DataFrame(dropped)
-        dropped_hits = hits[hits.voxel_id == 0]
-    else:
-        # preserve dataframes' structure using a null-slice
-        dropped      = voxels.iloc[:0]
-        dropped_hits =   hits.iloc[:0]
+    # preserve dataframes' column and type structure using a null slice
+    dropped = pd.DataFrame(dropped) if dropped else voxels.iloc[:0]
 
-    return dropped_hits, voxels, dropped
+    return modified_hits, voxels, dropped

@@ -1496,7 +1496,7 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
         # voxelise
         hits, voxels = plf.voxelize_hits(hits, vox_size, HitEnergy.Ep)
 
-        ( _,
+        ( hits, # these hits are modified, overwrite the original ones
           mod_voxels,
           dropped_voxels) = plf.drop_voxels(hits,
                                             voxels,
