@@ -460,7 +460,6 @@ def esmeralda_config(Th228_hits, next100_mc_krmap):
                  , fiducial_r  = 474 * units.mm
                  , paolina_params  = dict(
                       vox_size         = [15 * units.mm] * 3,
-                      strict_vox_size  = True               ,
                       energy_threshold = 20 * units.keV     ,
                       min_voxels       = 3                  ,
                       blob_radius      = 21 * units.mm      ,

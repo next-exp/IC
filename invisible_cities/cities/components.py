@@ -1527,10 +1527,6 @@ def compute_and_write_tracks_info(paolina_params, h5out,
                                   hit_type, filter_hits_table_name,
                                   hits_writer,
                                   voxels_writer):
-
-    # pop strict_vox_size for testing purposes
-    paolina_params.pop('strict_vox_size')
-
     filter_events_nohits = fl.map(lambda x : len(x) > 0,
                                       args = 'hits',
                                       out  = 'hits_passed')

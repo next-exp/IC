@@ -105,9 +105,6 @@ def esmeralda( files_in         : OneOrManyFiles
     paolina_params              :dict
         vox_size                : [float, detfloat, float]
             (maximum) size of voxels for track reconstruction
-        strict_vox_size         : bool
-            if False allows per event adaptive voxel size,
-            smaller of equal thatn vox_size from sophronia
         energy_threshold        : float
             if energy of end-point voxel is smaller
             the voxel will be dropped and energy redistributed to the neighbours
