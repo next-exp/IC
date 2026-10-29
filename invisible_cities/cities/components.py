@@ -1556,7 +1556,7 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
                                                    vox_size,
                                                    blob_radius,
                                                    scan_radius,
-                                                   energy_type = HitEnergy.Ep) # not sure about this energy
+                                                   energy_type = HitEnergy.Ep)
 
         mod_voxels.insert(0, "event", event)
         return hits, mod_voxels, tracks, False
