@@ -209,10 +209,16 @@ def make_track_graphs( voxels     : pd.DataFrame
     tuple of networkx.Graph
         Connected components of the voxel-neighbor graph, each copied into an
         independent graph.
+
+    Notes
+    -----
+    Voxels are added in index order so graph traversal does not depend on the
+    input DataFrame's row order.
     """
     voxel_graph = nx.Graph()
-    voxel_graph.add_nodes_from(voxels.index)
-    for i, j in combinations(voxels.index, 2):
+    voxel_ids = sorted(voxels.index)
+    voxel_graph.add_nodes_from(voxel_ids)
+    for i, j in combinations(voxel_ids, 2):
         vi = voxels.loc[i]
         vj = voxels.loc[j]
         if neighbours(vi, vj, voxel_size, contiguity):
