@@ -731,17 +731,17 @@ def test_energy_is_conserved_with_dropped_voxels(hits, requested_voxel_size, min
 
 @settings(deadline=None)
 @mark.parametrize("energy_type", HitEnergy)
-@given(hits                       = bunch_of_hits(),
+@given(hits                 = bunch_of_hits(),
        requested_voxel_size = voxel_sizes,
-       min_voxels                 = min_n_of_voxels,
-       fraction_zero_one          = fraction_zero_one)
+       min_voxels           = min_n_of_voxels,
+       fraction_zero_one    = fraction_zero_one)
 def test_dropped_voxels_have_nan_energy(hits, requested_voxel_size, min_voxels, fraction_zero_one, energy_type):
 
     hits, voxels = voxelize_hits(hits, requested_voxel_size)
     # if the tracks are too short, there are no dropped voxels
     assume(len(voxels) >= min_voxels)
-    energies     = voxels.e.values
-    e_thr        = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    energies = voxels.e.values
+    e_thr    = min(energies) + fraction_zero_one * (max(energies) - min(energies))
 
     m_hits, m_voxels, dropped = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type, min_voxels)
 
@@ -757,9 +757,9 @@ def test_dropped_voxels_have_nan_energy(hits, requested_voxel_size, min_voxels, 
        min_voxels                 = min_n_of_voxels,
        fraction_zero_one          = fraction_zero_one)
 def test_drop_end_point_voxels_doesnt_modify_other_energy_types(hits, requested_voxel_size, min_voxels, fraction_zero_one, energy_type):
-    hits, voxels                  = voxelize_hits(hits, requested_voxel_size)
-    energies                      = voxels.e.values
-    e_thr                         = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    hits, voxels              = voxelize_hits(hits, requested_voxel_size)
+    energies                  = voxels.e.values
+    e_thr                     = min(energies) + fraction_zero_one * (max(energies) - min(energies))
     m_hits, m_voxels, dropped = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type, min_voxels)
     if m_hits.empty:
         return
@@ -773,14 +773,14 @@ def test_drop_end_point_voxels_doesnt_modify_other_energy_types(hits, requested_
 
 
 @mark.parametrize("energy_type", HitEnergy)
-@given(hits                       = bunch_of_hits(),
+@given(hits                 = bunch_of_hits(),
        requested_voxel_size = voxel_sizes,
-       min_voxels                 = min_n_of_voxels,
-       fraction_zero_one          = fraction_zero_one)
+       min_voxels           = min_n_of_voxels,
+       fraction_zero_one    = fraction_zero_one)
 def test_drop_voxels_voxel_energy_is_sum_of_hits_general(hits, requested_voxel_size, min_voxels, fraction_zero_one, energy_type):
-    hits, voxels                  = voxelize_hits(hits, requested_voxel_size, energy_type)
-    energies                      = voxels.e.values
-    e_thr                         = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    hits, voxels              = voxelize_hits(hits, requested_voxel_size, energy_type)
+    energies                  = voxels.e.values
+    e_thr                     = min(energies) + fraction_zero_one * (max(energies) - min(energies))
     m_hits, m_voxels, dropped = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type, min_voxels)
 
     for idx, row in m_voxels.iterrows():
@@ -789,17 +789,17 @@ def test_drop_voxels_voxel_energy_is_sum_of_hits_general(hits, requested_voxel_s
 
 @settings(suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow], deadline=None)
 @mark.parametrize("energy_type", HitEnergy)
-@given(hits                       = bunch_of_hits(),
+@given(hits                 = bunch_of_hits(),
        requested_voxel_size = voxel_sizes,
-       min_voxels                 = min_n_of_voxels,
-       fraction_zero_one          = fraction_zero_one)
+       min_voxels           = min_n_of_voxels,
+       fraction_zero_one    = fraction_zero_one)
 def test_drop_end_point_voxels_constant_number_of_voxels_and_hits(hits, requested_voxel_size, min_voxels, fraction_zero_one, energy_type):
-    hits, voxels                  = voxelize_hits(hits, requested_voxel_size, energy_type)
+    hits, voxels = voxelize_hits(hits, requested_voxel_size, energy_type)
     assume(len(voxels) >= min_voxels)
     i_hit_len = len(hits)
     i_vox_len = len(voxels)
-    energies                      = voxels.e.values
-    e_thr                         = min(energies) + fraction_zero_one * (max(energies) - min(energies))
+    energies                  = voxels.e.values
+    e_thr                     = min(energies) + fraction_zero_one * (max(energies) - min(energies))
     m_hits, m_voxels, dropped = drop_voxels(hits, voxels, e_thr, requested_voxel_size, energy_type, min_voxels)
 
     assume(not dropped.empty)
@@ -849,25 +849,22 @@ def test_tracks_with_dropped_voxels(ICDATADIR):
     vox_size = np.array([size,size,size], dtype=np.float16)
     hits = pd.read_hdf(hit_file, "/RECO/Events")
     hits = hits[hits.event == evt_number]
-    hits, voxels                  = voxelize_hits(hits, vox_size, energy_type)
+
+    hits, voxels = voxelize_hits(hits, vox_size, energy_type)
 
     _, _, i_tracks    = make_tracks(hits, voxels, vox_size, 1, None)
     i_energies        = np.sort(i_tracks.energy.values)
-    i_ntracks         = len(i_tracks)
     i_nvoxels         = i_tracks.numb_of_voxels.values
 
     m_hits, m_voxels, dropped = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
 
     _, _, f_tracks    = make_tracks(m_hits, m_voxels, vox_size, 1, None)
     f_energies        = np.sort(f_tracks.energy.values)
-    f_ntracks         = len(f_tracks)
     f_nvoxels         = f_tracks.numb_of_voxels.values
-
 
     expected_diff_nvoxels = np.array([3, 0, 0])
 
-
-    assert i_ntracks == f_ntracks
+    assert len(i_tracks) == len(f_tracks)
     assert np.allclose(i_energies, f_energies)
     assert np.all(i_nvoxels - f_nvoxels == expected_diff_nvoxels)
 
@@ -944,11 +941,10 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
     hits_c, voxels_c = voxelize_hits(hits_c, requested_voxel_size, energy_type)
 
     assert not np.isclose(voxels.e, voxels_c.e).all()
-
     assert np.isclose(voxels.e, hits.groupby('voxel_id').E.sum()).all()
 
     energies_c = voxels_c.e.values
-    e_thr                       = min(energies_c) + fraction_zero_one * (max(energies_c) - min(energies_c))
+    e_thr      = min(energies_c) + fraction_zero_one * (max(energies_c) - min(energies_c))
 
     m_hits_c, m_voxels_c, dropped_c = drop_voxels(hits_c, voxels_c, e_thr, requested_voxel_size, energy_type, min_voxels)
 

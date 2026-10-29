@@ -823,7 +823,6 @@ def drop_voxels(hits            : pd.DataFrame,
         Removed voxel rows, with their ``e`` values set to NaN. Empty if no
         voxels were dropped.
     """
-
     dropped         = []
     modified_hits   =   hits.copy()
     modified_voxels = voxels.copy()
