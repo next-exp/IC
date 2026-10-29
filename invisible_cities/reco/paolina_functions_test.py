@@ -349,6 +349,24 @@ def test_find_extrema_and_length_no_voxels():
         find_extrema_and_length(distances)
 
 
+def test_track_extrema_are_independent_of_voxel_row_order():
+    voxels = pd.DataFrame([[0, 0, 0, 1],
+                           [1, 0, 0, 1],
+                           [0, 1, 0, 1],
+                           [0, 0, 1, 1]],
+                          columns=list("xyze"),
+                          index=[0, 1, 2, 3])
+    extrema = []
+
+    for node_order in ((0, 1, 2, 3), (3, 2, 1, 0)):
+        shuffled_voxels = voxels.loc[list(node_order)]
+        graph, = make_track_graphs(shuffled_voxels, np.ones(3), Contiguity.FACE)
+        extrema.append(find_extrema_and_length(shortest_paths(graph)))
+
+    assert extrema[0] == extrema[1]
+    assert extrema[0][2] == 2
+
+
 @fixture(scope='module')
 def voxels_without_hits():
     voxels = pd.DataFrame([[10,10,10, 1],
