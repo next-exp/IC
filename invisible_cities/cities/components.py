@@ -1499,8 +1499,8 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
             it exceeds ``max_num_hits``, all input hits are returned with
             sentinel track and voxel identifiers.
         voxels : pandas.DataFrame
-            Remaining voxels for the event, annotated with their track IDs.
-            Empty when reconstruction is skipped.
+            Remaining voxels for the event, annotated with track IDs and blob
+            labels. Empty when reconstruction is skipped.
         tracks : pandas.DataFrame
             Summary information for the reconstructed tracks. Empty when
             reconstruction is skipped.
@@ -1520,7 +1520,7 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
         track_df      = pd.DataFrame(columns=list(tracks_type.keys()))
 
         # generate fake empty voxel and hits tables
-        empty_vox_tbl = pd.DataFrame(columns = ['event', 'x', 'y', 'z', 'e', 'track'])
+        empty_vox_tbl = pd.DataFrame(columns = ['event', 'x', 'y', 'z', 'e', 'track', 'blob'])
         empty_hit_tbl = pd.DataFrame(columns = np.append(hits.columns, ['track_id', 'voxel_id', 'track', 'blob']))
 
         hits = hits.assign(track_id=-1)
