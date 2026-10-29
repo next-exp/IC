@@ -48,7 +48,7 @@ from .  components import           print_every
 from .  components import       peak_classifier
 from .  components import   compute_xy_position
 from .  components import       pmap_from_files
-from .  components import           hit_builder
+#from .  components import           hit_builder # now in this file
 from .  components import               collect
 from .  components import build_pointlike_event as build_pointlike_event_
 
