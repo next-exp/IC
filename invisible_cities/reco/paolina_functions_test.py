@@ -903,8 +903,8 @@ def test_drop_voxels_deterministic(ICDATADIR):
     # verify that the result is the same
     m_hits, m_voxels, dropped = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
 
-    hits   = hits.sample(frac=1).reset_index(drop=True)
-    voxels = voxels.sample(frac=1)
+    hits   =   hits.sample(frac=1, random_state=123456).reset_index(drop=True)
+    voxels = voxels.sample(frac=1, random_state=123456)
     m_hits2, m_voxels2, dropped2 = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
 
     assert len(m_hits  ) == len(m_hits2  )
