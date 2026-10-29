@@ -907,10 +907,15 @@ def test_drop_voxels_deterministic(ICDATADIR):
     voxels = voxels.sample(frac=1, random_state=123456)
     m_hits2, m_voxels2, dropped2 = drop_voxels(hits, voxels, e_thr, vox_size, energy_type, min_voxels)
 
-    assert len(m_hits  ) == len(m_hits2  )
-    assert len(m_voxels) == len(m_voxels2)
-    assert np.allclose(np.sort(m_hits2  .e.values), np.sort(m_hits  .e.values))
-    assert np.allclose(np.sort(m_voxels2.e.values), np.sort(m_voxels.e.values))
+    assert len(m_hits) == len(m_hits2)
+    assert np.allclose(np.sort(m_hits2[energy_type.value].values),
+                       np.sort(m_hits [energy_type.value].values),
+                       equal_nan=True)
+
+    m_voxels  = m_voxels .sort_index()
+    m_voxels2 = m_voxels2.sort_index()
+    assert m_voxels.index.equals(m_voxels2.index)
+    assert np.allclose(m_voxels, m_voxels2)
 
 
 def test_voxel_drop_in_short_tracks():
