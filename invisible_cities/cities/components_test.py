@@ -549,15 +549,15 @@ def test_hits_corrector_valid_normalization_options( correction_map_filename
     assert     np.all(         corrected_e>0)
 
 
-# There is a risk that this test could mess up the user's git history if it is run outside 
+# There is a risk that this test could mess up the user's git history if it is run outside
 # of Github Actions. Therefore, we skip it unless the IS_GHA environment variable is set to 1.
 @mark.skipif("os.environ.get('IS_GHA') == 1", reason="this messes with git history so we only run it on GHA")
 def test_fetch_git_info():
     """
-    Test that fetch_git_info() correctly extracts the current branch name, commit hash, and 
-    tag from the git repository. This test creates a temporary branch, makes a dummy commit 
-    within it, and creates a tag to verify that the function returns the expected values. 
-    It also ensures that the original branch is restored and the temporary branch and tag 
+    Test that fetch_git_info() correctly extracts the current branch name, commit hash, and
+    tag from the git repository. This test creates a temporary branch, makes a dummy commit
+    within it, and creates a tag to verify that the function returns the expected values.
+    It also ensures that the original branch is restored and the temporary branch and tag
     are deleted after the test.
     """
     try:
@@ -583,7 +583,7 @@ def test_fetch_git_info():
         raise
 
     finally:
-        # cleanup happens no matter what, each command is within a try/except so that if one fails 
+        # cleanup happens no matter what, each command is within a try/except so that if one fails
         # the rest still run switch back to the original branch
         try:
             run_git_command(f"git checkout {current_branch}")
@@ -678,4 +678,4 @@ def test_copy_cities_configuration_warns_when_nothing_to_copy(ICDATADIR, config_
     filename2  = os.path.join(config_tmpdir, "test_copy_cities_configuration_warns.h5")
 
     with warns(UserWarning, match="Input file does not contain /config group"):
-        copy_cities_configuration(filename1, filename2)
+        copy_cities_configuration(filename1, filename2, warn=True)
