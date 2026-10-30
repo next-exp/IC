@@ -184,10 +184,12 @@ def test_voxelize_hits_raises_if_no_hits(hits, voxel_size):
 
 @given(bunch_of_hits(), voxel_sizes)
 def test_voxelize_hits_does_not_lose_energy(hits, voxel_size):
+    original_hits_e = hits.E.sum()
     hits, voxels  = voxelize_hits(hits, voxel_size, energy_type=HitEnergy.E)
     total_voxel_e = voxels.e.sum()
     total_hits_e  = hits.E.sum()
 
+    assert np.isclose(original_hits_e, total_hits_e)
     assert np.isclose(total_voxel_e, total_hits_e)
 
 
