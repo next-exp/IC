@@ -331,6 +331,7 @@ def define_blobs_inplace(hits        : pd.DataFrame,
     """
     Identify the high- and low-energy blobs at the ends of a track.
 
+    The ``blob`` columns of ``hits`` and ``voxels`` are modified in place.
     Blob centres are the energy-weighted hit positions at the endpoint voxels,
     or at the highest-encapsulating voxels when ``scan_radius`` is provided.
     Candidate hits must be within ``blob_radius`` of a centre and connected to
@@ -476,6 +477,9 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
         Endpoint voxel IDs.
     voxel_size : numpy.ndarray, shape (3,)
         Voxel dimensions along the x, y, and z axes.
+    energy_type : HitEnergy
+        Hit-energy column used to calculate blob centres and order the blobs by
+        energy.
 
     Returns
     -------
@@ -543,12 +547,12 @@ def make_tracks(hits        : pd.DataFrame,
                 energy_type : HitEnergy  = HitEnergy.E
                ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Assign track IDs to hits and voxels, blob labels to hits, and summarize
-    each track.
+    Assign track IDs to hits and voxels, blob labels to hits and voxels, and
+    summarize each track.
 
     Disconnected voxel components are ordered by decreasing ``e`` energy and
-    numbered from zero. Blob membership is assigned to hits; the returned
-    voxel table is tagged with track IDs.
+    numbered from zero. Blob membership is assigned to hits and voxels; the
+    returned voxel table is tagged with track IDs and blob labels.
 
     Parameters
     ----------
@@ -578,7 +582,9 @@ def make_tracks(hits        : pd.DataFrame,
         Copy of the hit table with ``track`` and ``blob`` columns. Blob labels
         are ``"low"``, ``"high"``, ``"highlow"``, or ``"none"``.
     voxels : pd.DataFrame
-        Copy of the voxel table with a ``track`` column.
+        Copy of the voxel table with a ``track`` column and blob labels for
+        voxels belonging to either blob (``"low"``, ``"high"``, or
+        ``"highlow"``).
     tracks : pd.DataFrame
         One summary row per track, with columns defined by
         ``tracks_type``.
@@ -797,7 +803,8 @@ def drop_voxels(hits            : pd.DataFrame,
     -------
     modified_hits : pd.DataFrame
         A copy of the original hits where dropped hits are marked as voxel_id=0
-        and have NaN selected energy. Empty if no voxels were dropped.
+        and have NaN selected energy. If no voxels are dropped, this is an
+        unchanged copy of the input hits.
     modified_voxels : pd.DataFrame
         Remaining voxel table.
     dropped_voxels : pd.DataFrame
