@@ -481,6 +481,7 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
                          extreme_id_1: int,
                          extreme_id_2: int,
                          voxel_size  : np.ndarray,
+                         energy_type : HitEnergy,
                         ) -> None:
     """
     Label hits and voxels according to their membership in the two blobs.
@@ -523,8 +524,8 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
 
     diag = np.linalg.norm(voxel_size)
 
-    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1])
-    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2])
+    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1], energy_type)
+    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2], energy_type)
 
     # voxels that might have within within the required radius
     within_radius = lambda df: df.distance < radius + diag
@@ -540,8 +541,8 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
     sel_1 = hits.voxel_id.isin(candidate_voxels_1).values & within_r_1
     sel_2 = hits.voxel_id.isin(candidate_voxels_2).values & within_r_2
     sel_both = sel_1 & sel_2
-    e_1 = hits.loc[sel_1, "E"].sum()
-    e_2 = hits.loc[sel_2, "E"].sum()
+    e_1 = hits.loc[sel_1, energy_type.value].sum()
+    e_2 = hits.loc[sel_2, energy_type.value].sum()
 
     label_1 = "low"  if e_1 <= e_2 else "high"
     label_2 = "high" if e_1 <= e_2 else "low"
