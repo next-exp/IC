@@ -745,8 +745,8 @@ def drop_voxel_inplace( hits       : pd.DataFrame
     hits.iloc[mask, hits.columns.get_loc(e_type)] = new_hit_energy.values
 
     mask = hits.voxel_id == vox_id
-    hits.iloc[mask.values, hits.columns.get_loc(e_type)]     = np.nan
-    hits.iloc[mask.values, hits.columns.get_loc('voxel_id')] = 0
+    hits.loc[mask.values,     e_type]     = np.nan
+    hits.loc[mask.values, 'voxel_id'] = 0
 
     new_vox_energy = hits.groupby("voxel_id")[e_type].sum()
     # remove the hit energy from the popped voxel's hits
