@@ -368,19 +368,7 @@ def define_blobs_inplace(hits        : pd.DataFrame,
         Blob with the larger selected-energy sum.
     low_energy_blob : Blob
         Blob with the smaller selected-energy sum.
-
-    Notes
-    -----
-    For a one-voxel track, both return values refer to the same blob and
-    include all hits in that voxel.
     """
-    if len(distances) == 1: # special case, one voxel
-        blob = Blob(hits[energy_type.value].sum(),
-                    hits_ave_pos(hits, energy_type),
-                    hits.index.values)
-        return blob, blob
-
-
     if scan_radius is None:
         blob_node_1 = extreme_id_1
         blob_node_2 = extreme_id_2
@@ -397,33 +385,17 @@ def define_blobs_inplace(hits        : pd.DataFrame,
                                                       blob_radius,
                                                       scan_radius)
 
-    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id == blob_node_1], energy_type)
-    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id == blob_node_2], energy_type)
+    ( blob_pos_low
+    , blob_pos_high) = assign_blobs_inplace(hits, voxels,
+                                            distances, blob_radius,
+                                            blob_node_1, blob_node_2,
+                                            voxel_size, energy_type)
 
-    # voxels that might have been within the required radius
-    distances     = distances.set_index("initial")
-    diag          = np.linalg.norm(voxel_size)
-    within_radius = lambda df: df.distance < blob_radius + diag
-    candidate_voxels_1 = distances.loc[blob_node_1].loc[within_radius].final.values
-    candidate_voxels_2 = distances.loc[blob_node_2].loc[within_radius].final.values
-
-    within_r_1 = np.linalg.norm(hits[_XYZ].values - blob_pos_1, axis=1) < blob_radius
-    within_r_2 = np.linalg.norm(hits[_XYZ].values - blob_pos_2, axis=1) < blob_radius
-
-    # Some hits might be geometrically close to the blob centre but far from it
-    # **along the track**. Keep only hits from voxels near the centre node.
-    sel_1 = hits.voxel_id.isin(candidate_voxels_1).values & within_r_1
-    sel_2 = hits.voxel_id.isin(candidate_voxels_2).values & within_r_2
-
-    hits1 = hits.loc[sel_1]
-    hits2 = hits.loc[sel_2]
-    blob1 = Blob(hits1[energy_type.value].sum(), blob_pos_1, hits1.index.values)
-    blob2 = Blob(hits2[energy_type.value].sum(), blob_pos_2, hits2.index.values)
-
-    if blob1.energy > blob2.energy:
-        return blob1, blob2
-    else:
-        return blob2, blob1
+    hits_low  = hits.loc[hits.blob.str.contains( "low")]
+    hits_high = hits.loc[hits.blob.str.contains("high")]
+    blob_low  = Blob(hits_low [energy_type.value].sum(), blob_pos_low , hits_low .index.values)
+    blob_high = Blob(hits_high[energy_type.value].sum(), blob_pos_high, hits_high.index.values)
+    return blob_high, blob_low
 
 
 def find_highest_encapsulating_node(voxels     : pd.DataFrame,
@@ -482,7 +454,7 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
                          extreme_id_2: int,
                          voxel_size  : np.ndarray,
                          energy_type : HitEnergy,
-                        ) -> None:
+                         ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Label hits and voxels according to their membership in the two blobs.
 
@@ -507,7 +479,10 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
 
     Returns
     -------
-    None
+    blob_pos_low: np.ndarray
+        Position of the lower-energy blob
+    blob_pos_high: np.ndarray
+        Position of the higher-energy blob
 
     Notes
     -----
@@ -517,12 +492,7 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
     labels to ``"none"`` if that is the desired default.
     """
     distances = distances.set_index("initial")
-    if len(distances) == 1: # special case
-        hits  .loc[:, "blob"] = "highlow"
-        voxels.loc[:, "blob"] = "highlow"
-        return
-
-    diag = np.linalg.norm(voxel_size)
+    diag      = np.linalg.norm(voxel_size)
 
     blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1], energy_type)
     blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2], energy_type)
@@ -544,8 +514,9 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
     e_1 = hits.loc[sel_1, energy_type.value].sum()
     e_2 = hits.loc[sel_2, energy_type.value].sum()
 
-    label_1 = "low"  if e_1 <= e_2 else "high"
-    label_2 = "high" if e_1 <= e_2 else "low"
+    ascending = e_1 <= e_2
+    label_1 = "low"  if ascending else "high"
+    label_2 = "high" if ascending else "low"
     hits.loc[sel_1   , "blob"] = label_1
     hits.loc[sel_2   , "blob"] = label_2
     hits.loc[sel_both, "blob"] = "highlow"
@@ -558,6 +529,7 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
     voxels.loc[voxel_ids_1   , "blob"] = label_1
     voxels.loc[voxel_ids_2   , "blob"] = label_2
     voxels.loc[voxel_ids_both, "blob"] = "highlow"
+    return (blob_pos_1, blob_pos_2) if ascending else (blob_pos_2, blob_pos_1)
 
 
 def make_tracks(hits        : pd.DataFrame,
