@@ -498,9 +498,11 @@ def assign_blobs_inplace(hits        : pd.DataFrame,
     blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2], energy_type)
 
     # voxels that might have within within the required radius
+    # Note that loc uses a bracketed number. This is to force pandas to return a
+    # DataFrame and not a Series.
     within_radius = lambda df: df.distance < radius + diag
-    candidate_voxels_1 = distances.loc[extreme_id_1].loc[within_radius].final.values
-    candidate_voxels_2 = distances.loc[extreme_id_2].loc[within_radius].final.values
+    candidate_voxels_1 = distances.loc[[extreme_id_1]].loc[within_radius].final.values
+    candidate_voxels_2 = distances.loc[[extreme_id_2]].loc[within_radius].final.values
 
     within_r_1 = np.linalg.norm(hits[_XYZ].values - blob_pos_1, axis=1) < radius
     within_r_2 = np.linalg.norm(hits[_XYZ].values - blob_pos_2, axis=1) < radius
