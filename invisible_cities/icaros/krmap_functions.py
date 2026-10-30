@@ -93,8 +93,6 @@ def create_empty_map(xy_range : tuple,
 def get_median(var : np.ndarray) -> pd.DataFrame:
     """
     Computes the median value of a given variable
-    -We consider that for len(df) < 5, it makes no sense to compute the median or the std.
-    -Kr energy resolution is ~4%, so the std for S2e median would be ~0.04/2.35.
     Parameters
     ----------
     df : pd.DataFrame
@@ -105,12 +103,8 @@ def get_median(var : np.ndarray) -> pd.DataFrame:
       Dataframe containing 'nevents', 'mu', 'sigma', 'mu_error', 'sigma_error'
       of the input dataframe, where mu and mu_error are the median and the median error.
     """
-    if len(var) < 5:
-        sigma = (0.04/2.35)*var.median()
-        mu = np.nan
-    else:
-        sigma = var.std()
-        mu = var.median()
+    mu    = var.median()
+    sigma = var.std()
 
     return pd.DataFrame({'nevents'    : len(var),
                          'mu'         : mu,
@@ -332,7 +326,7 @@ def regularize_map(krmap    : pd.DataFrame,
 
     """
     max_nan_neighbours = 3
-    mu = krmap.mu.values.reshape(mapshape)
+    mu = krmap.mu.values.reshape(mapshape).copy()
 
     for k in range(mu.shape[0]):
         for i in range(1, mu.shape[1] -1):
@@ -725,3 +719,15 @@ def save_map(name          : str,
         df_writer(file, efficiencies, group_name = 'data', table_name = 'selection_efficiencies')
         df_writer(file, krmap, group_name = 'krmap', table_name = 'krmap')
         df_writer(file, t_evol, group_name = 't_evol', table_name = 't_evol')
+
+def merge_multiple_maps(maps : pd.DataFrame) -> pd.DataFrame:
+    """
+    Merge multiple maps into a single map.
+    Group maps by their (k i j) indices. The output 'mu' (new_mu) is computed as the weighted mean of the input 'mu' values using 'nevents' as weights.
+    """
+    def merge_bins(df):
+        new_mu  = np.sum(df.mu * df.nevents) / np.clip(df.nevents.sum(), 1, None)
+        return pd.DataFrame( dict( mu = new_mu
+                                 , nevents  = df.nevents.sum())
+                                 , index=[0])
+    return maps.groupby('k i j'.split()).apply(merge_bins).reset_index()
