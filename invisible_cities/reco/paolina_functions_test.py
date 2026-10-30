@@ -982,7 +982,6 @@ def test_paolina_functions_with_hit_energy_different_from_default_value(hits, re
 
 
 def test_make_tracks_function(ICDATADIR):
-
     # Get some test data
     hit_file    = os.path.join(ICDATADIR, 'tracks_0000_6803_trigger2_v0.9.9_20190111_krth1600.h5')
     evt_number  = 19
@@ -995,10 +994,9 @@ def test_make_tracks_function(ICDATADIR):
     all_hits = pd.read_hdf(hit_file, "/RECO/Events")
 
     for evt_number, evt_hits in all_hits.groupby("event", as_index=False):
-        evt_time = evt_hits.time.iloc[0]
-        hits, voxels   = voxelize_hits(evt_hits, voxel_size, energy_type=HitEnergy.E)
-
-        tracks                   = list(make_track_graphs(voxels, voxel_size))
+        evt_time     = evt_hits.time.iloc[0]
+        hits, voxels = voxelize_hits(evt_hits, voxel_size, energy_type=HitEnergy.E)
+        tracks       = list(make_track_graphs(voxels, voxel_size))
 
         hits, voxels, track_coll = make_tracks(hits, voxels, voxel_size,
                                                blob_radius=blob_radius,
@@ -1014,8 +1012,10 @@ def test_make_tracks_function(ICDATADIR):
             t  = tracks[i]
             tc = tracks_from_coll.iloc[i]
 
+            # same length, energy is sum of voxels' energy
+            voxels_in_track = voxels.loc[list(t.nodes())]
             assert len(t.nodes()) == tc.numb_of_voxels
-            assert np.isclose(sum(voxels[voxels.index.isin(t.nodes())].e), tc.energy).all()
+            assert np.isclose(voxels_in_track.e.sum(), tc.energy).all()
 
             tc_eblob1 = tc.eblob1
             tc_eblob2 = tc.eblob2
@@ -1029,6 +1029,7 @@ def test_make_tracks_function(ICDATADIR):
                                                        extreme_1, extreme_2,
                                                        voxel_size)
 
+            # blob energy matches
             assert np.allclose(blob_high.energy, tc_eblob1)
             assert np.allclose(blob_low .energy, tc_eblob2)
 
