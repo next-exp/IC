@@ -1,5 +1,6 @@
 from enum        import Enum
-from collections import OrderedDict
+from dataclasses import dataclass
+
 from typing  import Union
 from typing  import Tuple
 
@@ -12,43 +13,11 @@ NoneType = type(None)
 Tuple2Dor3D = Union[Tuple[float, float], Tuple[float, float, float]]
 
 
-class xy:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def empty():
-        return xy(NN, NN)
-
-    def zero():
-        return xy(0, 0)
-
-    @property
-    def pos(self): return np.stack(([self.x], [self.y]), axis=1)
-
-    @property
-    def XY(self): return (self.x, self.y)
-
-    @property
-    def X(self): return self.x
-
-    @property
-    def Y(self): return self.y
-
-    @property
-    def R(self): return np.sqrt(self.x ** 2 + self.y ** 2)
-
-    @property
-    def Phi(self): return np.arctan2(self.y, self.x)
-
-    def __str__(self):
-        return 'xy(x={.x}, y={.y})'.format(self, self)
-    __repr__ = __str__
-
-    def __getitem__(self, n):
-        if n == 0: return self.x
-        if n == 1: return self.y
-        raise IndexError
+@dataclass(frozen=True)
+class Blob:
+    energy  : float
+    position: np.ndarray
+    hit_ids : np.ndarray
 
 
 class minmax:
@@ -114,29 +83,3 @@ class AutoNameEnumBase(Enum):
     """
     def _generate_next_value_(name, start, count, last_values):
         return name
-
-
-
-types_dict_summary = OrderedDict({'event'     : np.int64  , 'evt_energy' : np.float64, 'evt_charge'    : np.float64,
-                                  'evt_ntrks' : int       , 'evt_nhits'  : int       , 'evt_x_avg'     : np.float64,
-                                  'evt_y_avg' : np.float64, 'evt_z_avg'  : np.float64, 'evt_r_avg'     : np.float64,
-                                  'evt_x_min' : np.float64, 'evt_y_min'  : np.float64, 'evt_z_min'     : np.float64,
-                                  'evt_r_min' : np.float64, 'evt_x_max'  : np.float64, 'evt_y_max'     : np.float64,
-                                  'evt_z_max' : np.float64, 'evt_r_max'  : np.float64, 'evt_out_of_map': bool      })
-
-
-
-
-types_dict_tracks = OrderedDict({'event'           : np.int64  , 'trackID'       : int       , 'energy'      : np.float64,
-                                 'length'          : np.float64, 'numb_of_voxels': int       , 'numb_of_hits': int       ,
-                                 'numb_of_tracks'  : int       , 'x_min'         : np.float64, 'y_min'       : np.float64,
-                                 'z_min'           : np.float64, 'r_min'         : np.float64, 'x_max'       : np.float64,
-                                 'y_max'           : np.float64, 'z_max'         : np.float64, 'r_max'       : np.float64,
-                                 'x_ave'           : np.float64, 'y_ave'         : np.float64, 'z_ave'       : np.float64,
-                                 'r_ave'           : np.float64, 'extreme1_x'    : np.float64, 'extreme1_y'  : np.float64,
-                                 'extreme1_z'      : np.float64, 'extreme2_x'    : np.float64, 'extreme2_y'  : np.float64,
-                                 'extreme2_z'      : np.float64, 'blob1_x'       : np.float64, 'blob1_y'     : np.float64,
-                                 'blob1_z'         : np.float64, 'blob2_x'       : np.float64, 'blob2_y'     : np.float64,
-                                 'blob2_z'         : np.float64, 'eblob1'        : np.float64, 'eblob2'      : np.float64,
-                                 'ovlp_blob_energy': np.float64,
-                                 'vox_size_x'      : np.float64, 'vox_size_y'    : np.float64, 'vox_size_z'  : np.float64})

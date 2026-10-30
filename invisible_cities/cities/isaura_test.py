@@ -22,7 +22,8 @@ def test_isaura_contains_all_tables(ICDATADIR, output_tmpdir):
                      file_out      = PATH_OUT))
     isaura(**conf)
 
-    tables = ["Tracking/Tracks"    ,
+    tables = ["DECO/voxels"       ,
+              "Tracking/Tracks"    ,
               "Summary/Events"     ,
               "Run/events"         , "Run/runInfo"            ,
               "MC/event_mapping"   , "MC/generators"          ,
@@ -68,7 +69,7 @@ def test_isaura_exact(ICDATADIR, output_tmpdir):
 
     tables = ["Tracking/Tracks"    ,
               "Summary/Events"     ,
-              "DECO/Events"        ,
+              "DECO/Events"        , "DECO/voxels",
               "Run/events"         , "Run/runInfo"            ,
               "MC/event_mapping"   , "MC/generators"          ,
               "MC/hits"            ,  "MC/particles"          ,
@@ -76,6 +77,7 @@ def test_isaura_exact(ICDATADIR, output_tmpdir):
 
     with tb.open_file(PATH_TRUE) as true_output_file:
         with tb.open_file(PATH_OUT) as output_file:
+
             for table in tables:
                 obtained = getattr(     output_file.root, table)
                 expected = getattr(true_output_file.root, table)

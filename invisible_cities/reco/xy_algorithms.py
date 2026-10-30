@@ -10,11 +10,7 @@ from .. core.exceptions      import SipmZeroChargeAboveQthr
 from .. core.exceptions      import ClusterEmptyList
 from .. core.configure       import check_annotations
 
-from .. types.ic_types       import xy
-from .. evm.event_model      import Cluster
-
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 
 
@@ -55,7 +51,8 @@ def threshold_check( pos : np.ndarray # (n, 2)
 @check_annotations
 def barycenter( pos : np.ndarray # (n, 2)
               , qs  : np.ndarray # (n,)
-              , Qthr: Optional[float] = 0 * units.pes):
+              , Qthr: Optional[float] = 0 * units.pes
+              ) -> pd.DataFrame:
     """
     Computes the center of gravity (weighted average) of an array of
     SiPMs.
@@ -73,15 +70,30 @@ def barycenter( pos : np.ndarray # (n, 2)
         Threshold to apply to the SiPM charges. SiPMs with lower
         charge are ignored
 
-    Notes
-    -----
-    In order to maintain a uniform interface, all xy algorithms return
-    a list of clusters. This function returns a single cluster, but we
-    wrap in a list to maintain the same interface.
+    Returns
+    -------
+    clusters : pd.DataFrame
+        A one-row dataframe describing the reconstructed cluster.
     """
-    pos, qs = threshold_check(pos, qs, Qthr)
-    mu, var = weighted_mean_and_var(pos, qs, axis=0)
-    return [Cluster(np.sum(qs), xy(*mu), xy(*var), len(qs))]
+    pos, qs    = threshold_check(pos, qs, Qthr)
+    mu, var    = weighted_mean_and_var(pos, qs, axis=0)
+    Q          = np.sum(qs)
+    x, y       = mu
+    xvar, yvar = var
+
+    return pd.DataFrame(dict(Q       = Q,
+                             Qc      = -1,
+                             E       = Q,
+                             X       = x,
+                             Y       = y,
+                             Z       = None,
+                             Xvar    = xvar,
+                             Yvar    = yvar,
+                             Xrms    = np.sqrt(xvar),
+                             Yrms    = np.sqrt(yvar),
+                             R       = np.sqrt(x**2 + y**2),
+                             Phi     = np.arctan2(y, x),
+                             nsipm   = len(qs)), index=[0])
 
 
 def discard_sipms( indices : np.ndarray   # shape (n,)
@@ -125,9 +137,10 @@ def corona( pos             : np.ndarray # (n, 2)
           , lm_radius       : float
           , new_lm_radius   : float
           , msipm           : int
-          , consider_masked : Optional[bool] = False) -> Sequence[Cluster]:
+          , consider_masked : Optional[bool] = False
+          ) -> pd.DataFrame:
     """
-    Creates a list of clusters with the following steps:
+    Creates a dataframe of reconstructed clusters with the following steps:
     - identifying the SiPM with highest charge (which must be > `Qlm`)
     - obtaining the barycenter from the SiPMs within `lm_radius` of
       the SiPM with highest charge to locate the local maximum of the
@@ -178,8 +191,8 @@ def corona( pos             : np.ndarray # (n, 2)
 
     Returns
     -------
-    clusters : List[Cluster]
-        The list of clusters based on the SiPM pattern
+    clusters : pd.DataFrame
+        One row per reconstructed cluster, based on the SiPM pattern.
 
     Notes
     -----
@@ -229,7 +242,7 @@ def corona( pos             : np.ndarray # (n, 2)
 
     pos, qs = threshold_check(pos, qs, Qthr)
 
-    c  = []
+    clusters = []
     # While there are more local maxima
     while len(qs) > 0:
 
@@ -238,7 +251,7 @@ def corona( pos             : np.ndarray # (n, 2)
 
         # find new local maximum of charge considering all SiPMs within lm_radius of hottest_sipm
         within_lm_radius  = get_nearby_sipm_inds(pos[hottest_sipm], lm_radius, pos)
-        new_local_maximum = barycenter(pos[within_lm_radius], qs[within_lm_radius])[0].posxy
+        new_local_maximum = barycenter(pos[within_lm_radius], qs[within_lm_radius]).loc[0, list("XY")].values
 
         # find the SiPMs within new_lm_radius of the new local maximum of charge
         within_new_lm_radius = get_nearby_sipm_inds(new_local_maximum, new_lm_radius, pos      )
@@ -247,11 +260,11 @@ def corona( pos             : np.ndarray # (n, 2)
         # if there are at least msipms within_new_lm_radius, taking
         # into account any masked channel, get the barycenter
         if len(within_new_lm_radius) >= msipm - n_masked_neighbours:
-            c.extend(barycenter(pos[within_new_lm_radius], qs[within_new_lm_radius]))
+            clusters.append(barycenter(pos[within_new_lm_radius], qs[within_new_lm_radius]))
             # delete the SiPMs contributing to this cluster
 
         pos, qs = discard_sipms(within_new_lm_radius, pos, qs)
 
-    if not len(c): raise ClusterEmptyList
+    if not clusters: raise ClusterEmptyList
 
-    return c
+    return pd.concat(clusters, ignore_index=True)
