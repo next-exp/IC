@@ -42,3 +42,15 @@ def test_Kr_writer(config_tmpdir, KrMC_kdst):
 
     dst = load_dst(filename, group = tbl.group, node = tbl.node)
     assert_dataframes_equal(dst, df, check_dtype=False)
+
+
+def test_store_0peaks(config_tmpdir):
+    filename = os.path.join(config_tmpdir, 'test_store_0peaks.h5')
+
+    evt = KrEvent(0, 0.)
+    evt.nS1 = 0
+    evt.nS2 = 0
+
+    with tb.open_file(filename, "w") as h5out:
+        write = kr_writer(h5out)
+        write(evt)
