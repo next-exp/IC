@@ -93,8 +93,6 @@ def create_empty_map(xy_range : tuple,
 def get_median(var : np.ndarray) -> pd.DataFrame:
     """
     Computes the median value of a given variable
-    -We consider that for len(df) < 5, it makes no sense to compute the median or the std.
-    -Kr energy resolution is ~4%, so the std for S2e median would be ~0.04/2.35.
     Parameters
     ----------
     df : pd.DataFrame
@@ -106,7 +104,7 @@ def get_median(var : np.ndarray) -> pd.DataFrame:
       of the input dataframe, where mu and mu_error are the median and the median error.
     """
     mu    = var.median()
-    sigma = (0.04/2.35)*var.median()
+    sigma = var.std()
 
     return pd.DataFrame({'nevents'    : len(var),
                          'mu'         : mu,
