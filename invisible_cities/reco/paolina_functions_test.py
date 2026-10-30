@@ -28,7 +28,7 @@ from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from hypothesis.strategies import builds
 
-from . paolina_functions import find_blobs, round_hits_positions_in_place
+from . paolina_functions import define_blobs_inplace, round_hits_positions_in_place
 from . paolina_functions import voxelize_hits
 from . paolina_functions import neighbours
 from . paolina_functions import find_extrema_and_length
@@ -1022,10 +1022,10 @@ def test_make_tracks_function(ICDATADIR):
             distances = shortest_paths(t)
             extreme_1, extreme_2, _ = find_extrema_and_length(distances)
             track_hits = hits.loc[hits.voxel_id.isin(t.nodes())]
-            blob_high, blob_low = find_blobs(track_hits, voxels, distances,
-                                             blob_radius, scan_radius,
-                                             extreme_1, extreme_2,
-                                             voxel_size)
+            blob_high, blob_low = define_blobs_inplace(track_hits, voxels, distances,
+                                                       blob_radius, scan_radius,
+                                                       extreme_1, extreme_2,
+                                                       voxel_size)
 
             assert np.allclose(blob_high.energy, tc_eblob1)
             assert np.allclose(blob_low .energy, tc_eblob2)
