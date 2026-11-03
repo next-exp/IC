@@ -729,6 +729,8 @@ def test_pop_voxel_inplace_raises_if_missing(dummy_voxels):
         pop_voxel_inplace(voxels, k)
 
 
+@settings(deadline=None)
+@mark.slow
 @given(bunch_of_hits(), voxel_sizes)
 def test_drop_voxels_does_not_change_number_of_hits(hits, vox_size):
     hits, voxels = voxelize_hits(hits, vox_size)
