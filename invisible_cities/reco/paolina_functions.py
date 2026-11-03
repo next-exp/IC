@@ -580,8 +580,13 @@ def make_tracks(hits        : pd.DataFrame,
     summarize each track.
 
     Disconnected voxel components are ordered by decreasing ``e`` energy and
-    numbered from zero. Blob membership is assigned to hits and voxels; the
-    returned voxel table is tagged with track IDs and blob labels.
+    numbered from zero. Blob membership is assigned to hits and voxels. Each
+    track summary's length is the path distance between its most distant
+    voxels. The ``extreme1_*`` and ``extreme2_*`` fields contain the seed
+    positions of the higher- and lower-energy blobs, respectively. The
+    ``blob1_*`` and ``blob2_*`` fields contain the corresponding blob centres
+    in the same order. The ``r_ave`` field is the radius of the average x-y
+    position, not the average of the hits' radii.
 
     Parameters
     ----------
@@ -611,9 +616,8 @@ def make_tracks(hits        : pd.DataFrame,
         Copy of the hit table with ``track`` and ``blob`` columns. Blob labels
         are ``"low"``, ``"high"``, ``"highlow"``, or ``"none"``.
     voxels : pd.DataFrame
-        Copy of the voxel table with a ``track`` column and blob labels for
-        voxels belonging to either blob (``"low"``, ``"high"``, or
-        ``"highlow"``).
+        Copy of the voxel table with ``track`` and ``blob`` columns. Blob
+        labels are ``"low"``, ``"high"``, ``"highlow"``, or ``"none"``.
     tracks : pd.DataFrame
         One summary row per track, with columns defined by
         ``tracks_type``.
@@ -628,63 +632,52 @@ def make_tracks(hits        : pd.DataFrame,
                           reverse=True)
 
     event  = int(hits.event.iloc[0])
-    hits   = hits.copy()
-    voxels = voxels.copy()
-    hits  .insert(hits  .shape[1], "track",  9999)
-    voxels.insert(voxels.shape[1], "track",  9999)
-    hits  .insert(hits  .shape[1],  "blob", "none")
+    hits   =   hits.assign(track=-1, blob="none") # IMPORTANT: this is a copy
+    voxels = voxels.assign(track=-1, blob="none") # IMPORTANT: this is a copy
 
     for track_no, track in enumerate(track_graphs):
-        distances = shortest_paths(track)
+        track_voxels = voxels.loc[list(track.nodes())]
+        track_hits   =   hits.loc[hits.voxel_id.isin(track_voxels.index)]
+        track_hits_r = np.sqrt(track_hits.X**2 + track_hits.Y**2)
 
-        # collect relevant information
-        track_voxels   = voxels.loc[list(track.nodes())]
-        track_hits     = hits[hits.voxel_id.isin(track_voxels.index)].assign(R = lambda df: np.sqrt(df.X**2 + df.Y**2))
+        voxels.loc[track_voxels.index, "track"] = track_no
+        hits  .loc[track_hits  .index, "track"] = track_no
+
+        distances            = shortest_paths(track)
+        extreme_1, extreme_2 = find_extrema(distances)
+        blob_1, blob_2       = define_blobs(track_hits, track_voxels, distances,
+                                            blob_radius, scan_radius,
+                                            extreme_1, extreme_2,
+                                            voxel_size, energy_type)
+        blob_low, blob_high  = sort_blobs(blob_1, blob_2)
+        assign_blob_labels_inplace(hits, voxels, blob_low, blob_high)
+
+        # Track summary
         numb_of_voxels = len(track_voxels)
         numb_of_hits   = len(track_hits)
         numb_of_tracks = len(track_graphs)
-        energy         = track_voxels.e.sum()
-        ( extreme_1
-        , extreme_2
-        , length   )   = find_extrema_and_length(distances)
-        vox_pos_1      = voxels.loc[extreme_1, _xyz]
-        vox_pos_2      = voxels.loc[extreme_2, _xyz]
-        ave_pos        = hits_ave_pos(track_hits, energy_type)
-        ave_r          = np.average(track_hits.R,
-                                    weights = track_hits[energy_type.value],
-                                    axis = 0)
+        track_energy   = track_voxels.e.sum()
+        track_length   = get_track_length(distances, extreme_1, extreme_2)
 
-        # blob information
-        blob_high, blob_low = define_blobs_inplace(track_hits, voxels, distances,
-                                                   blob_radius, scan_radius,
-                                                   extreme_1, extreme_2,
-                                                   voxel_size, energy_type)
-
-        # mark hits as being in low or high blob
-        in_high = hits.index.isin(blob_high.hit_ids)
-        in_low  = hits.index.isin(blob_low .hit_ids)
-
-        hits.loc[in_high, 'blob']          = 'high'
-        hits.loc[in_low , 'blob']          = 'low'
-        hits.loc[in_high & in_low, 'blob'] = 'highlow'
+        vox_pos_low  = voxels.loc[blob_low .seed, _xyz]
+        vox_pos_high = voxels.loc[blob_high.seed, _xyz]
+        ave_pos      = hits_ave_pos(track_hits, energy_type)
+        ave_r        = np.sum(ave_pos[:2]**2)**0.5
 
         # energy shared among blobs
-        overlap = hits.loc[in_high & in_low, energy_type.value].sum()
+        overlap = hits.loc[hits.index.isin(track_hits.index) & (hits.blob == "highlow"), energy_type.value].sum()
 
         # generate general tracking table
-        list_of_vars = [event, track_no, energy, length,
+        list_of_vars = [event, track_no, track_energy, track_length,
                         numb_of_voxels, numb_of_hits, numb_of_tracks,
-                        *track_hits[_XYZ + ["R"]].min(),
-                        *track_hits[_XYZ + ["R"]].max(),
+                        *track_hits[_XYZ].min(), track_hits_r.min(),
+                        *track_hits[_XYZ].max(), track_hits_r.max(),
                         *ave_pos, ave_r,
-                        *vox_pos_1, *vox_pos_2,
+                        *vox_pos_high, *vox_pos_low,
                         *blob_high.position, *blob_low.position,
                         blob_high.energy, blob_low.energy, overlap,
                         *voxel_size]
         track_df.loc[track_no] = list_of_vars
-
-        hits  .loc[hits  .index.isin(track_hits  .index), "track"] = track_no
-        voxels.loc[voxels.index.isin(track_voxels.index), "track"] = track_no
 
     # modify column dtype to match variable type
     track_df = track_df.astype(tracks_type)
@@ -724,12 +717,14 @@ def drop_voxel_inplace( hits       : pd.DataFrame
                       , contiguity : Contiguity = Contiguity.CORNER
                       ) -> pd.Series:
     """
-    Drop one voxel and redistribute its energy among the closest neighbor hits.
+    Drop one voxel and redistribute its energy among the closest neighboring
+    hits.
 
-    The voxel's energy is shared among all neighboring hits at the minimum
-    distance from the energy-weighted barycenter of the voxel's hits, in
-    proportion to those hits' selected energies. The input hit and voxel tables
-    are modified in place.
+    The voxel's selected energy is added to the selected energies of the
+    neighboring hits at the minimum distance from the energy-weighted
+    barycenter of the voxel's hits. The added energy is divided among those
+    hits in proportion to their selected energies. The input hit and voxel
+    tables are modified in place.
 
     Parameters
     ----------
@@ -750,7 +745,8 @@ def drop_voxel_inplace( hits       : pd.DataFrame
     Returns
     -------
     pandas.Series
-        Removed voxel row with its ``e`` value set to NaN.
+        Removed voxel row with its ``e`` value set to NaN. Its hits have their
+        selected energy set to NaN and ``voxel_id`` set to zero.
     """
     popped           = pop_voxel_inplace(voxels, vox_id)
     is_neighbour     = [neighbours(popped, voxel, voxel_size, contiguity) for _, voxel in voxels.iterrows()]
