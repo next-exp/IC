@@ -251,7 +251,7 @@ def shortest_paths(track_graph: Graph) -> pd.DataFrame:
     return distances
 
 
-def find_extrema_and_length(distances: pd.DataFrame) -> Tuple[int, int, float]:
+def find_extrema(distances: pd.DataFrame) -> Tuple[int, int]:
     """
     Find the most widely separated voxel pair in a track.
 
@@ -267,8 +267,6 @@ def find_extrema_and_length(distances: pd.DataFrame) -> Tuple[int, int, float]:
         Starting voxel ID of a pair with maximum shortest-path distance.
     extreme_id_2 : int
         Ending voxel ID of that pair. The IDs are not ordered by energy.
-    length : float
-        Maximum shortest-path distance between the returned voxels.
 
     Raises
     ------
@@ -278,15 +276,29 @@ def find_extrema_and_length(distances: pd.DataFrame) -> Tuple[int, int, float]:
     if distances.empty:
         raise NoVoxels
 
-    # pandas' indexing methods return series, which are homogeneous in the type
-    # of their elements. If we pick up the three at the same time it casts both
-    # integers to floats, so we pick them one by one instead
     idxmax = distances.distance.idxmax()
-    v1     = distances.initial .loc[idxmax]
-    v2     = distances.final   .loc[idxmax]
-    length = distances.distance.loc[idxmax]
+    v1, v2 = distances.loc[idxmax, "initial final".split()]
+    return v1, v2
 
-    return v1, v2, length
+
+def get_track_length(distances: pd.DataFrame, v1: int, v2: int) -> float:
+    """Return the shortest-path distance between two voxel IDs.
+
+    Parameters
+    ----------
+    distances : pd.DataFrame
+        Pairwise path-distance table with ``initial``, ``final``, and
+        ``distance`` columns, as returned by :func:`shortest_paths`.
+    v1, v2 : int
+        Starting and ending voxel IDs.
+
+    Returns
+    -------
+    float
+        Distance from ``v1`` to ``v2`` along the track graph.
+    """
+    distances = distances.set_index("initial final".split())
+    return distances.loc[(v1, v2), "distance"]
 
 
 def hits_ave_pos(hits  : pd.DataFrame,
@@ -306,8 +318,8 @@ def hits_ave_pos(hits  : pd.DataFrame,
 
     Returns
     -------
-    numpy.ndarray, shape (3,)
-        Weighted mean position in x, y, and z order.
+    numpy.ndarray, shape (4)
+        Weighted mean position in x, y, z, and r.
     """
     # catch cases with no weight
     if hits[etype.value].sum() == 0:
@@ -824,7 +836,7 @@ def drop_voxels(hits            : pd.DataFrame,
                 continue
 
             distances = shortest_paths(t)
-            for voxel_id in find_extrema_and_length(distances)[:2]: # skip length
+            for voxel_id in find_extrema(distances):
                 extreme = modified_voxels.loc[voxel_id]
                 if extreme.e < energy_threshold:
                     # be sure that the voxel to be eliminated has at least one neighbour
