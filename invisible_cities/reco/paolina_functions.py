@@ -318,8 +318,9 @@ def hits_ave_pos(hits  : pd.DataFrame,
 
     Returns
     -------
-    numpy.ndarray, shape (4)
-        Weighted mean position in x, y, z, and r.
+    numpy.ndarray, shape (3,)
+        Weighted mean position in x, y, and z. If the selected energies sum
+        to zero, this is the unweighted mean position.
     """
     # catch cases with no weight
     if hits[etype.value].sum() == 0:
