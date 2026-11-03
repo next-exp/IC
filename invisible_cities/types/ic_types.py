@@ -15,9 +15,11 @@ Tuple2Dor3D = Union[Tuple[float, float], Tuple[float, float, float]]
 
 @dataclass(frozen=True)
 class Blob:
-    energy  : float
-    position: np.ndarray
-    hit_ids : np.ndarray
+    energy   : float
+    position : np.ndarray
+    hit_ids  : np.ndarray
+    voxel_ids: np.ndarray
+    seed     : int
 
 
 class minmax:
