@@ -330,24 +330,25 @@ def hits_ave_pos(hits  : pd.DataFrame,
                      , axis=0)
 
 
-def define_blobs_inplace(hits        : pd.DataFrame,
-                         voxels      : pd.DataFrame,
-                         distances   : pd.DataFrame,
-                         blob_radius : float,
-                         scan_radius : float | None,
-                         extreme_id_1: int,
-                         extreme_id_2: int,
-                         voxel_size  : np.ndarray,
-                         energy_type : HitEnergy = HitEnergy.E
-                        ) -> Tuple[Blob, Blob]:
+def define_blobs(hits        : pd.DataFrame,
+                 voxels      : pd.DataFrame,
+                 distances   : pd.DataFrame,
+                 blob_radius : float,
+                 scan_radius : float | None,
+                 extreme_id_1: int,
+                 extreme_id_2: int,
+                 voxel_size  : np.ndarray,
+                 energy_type : HitEnergy = HitEnergy.E,
+                ) -> Tuple[Blob, Blob]:
     """
-    Identify the high- and low-energy blobs at the ends of a track.
+    Identify blobs at the two ends of a track.
 
-    The ``blob`` columns of ``hits`` and ``voxels`` are modified in place.
-    Blob centres are the energy-weighted hit positions at the endpoint voxels,
-    or at the highest-encapsulating voxels when ``scan_radius`` is provided.
-    Candidate hits must be within ``blob_radius`` of a centre and connected to
-    its voxel by a sufficiently short path through the track.
+    Blob centres are the selected-energy-weighted hit positions in the
+    endpoint voxels, or in the highest-encapsulating voxels when
+    ``scan_radius`` is provided. If the selected energies in a seed voxel sum
+    to zero, its unweighted mean hit position is used. Candidate hits must be
+    within ``blob_radius`` of a centre and belong to a voxel close enough to
+    the seed along the track graph.
 
     Parameters
     ----------
@@ -366,8 +367,7 @@ def define_blobs_inplace(hits        : pd.DataFrame,
         the voxel that captures the most energy within ``blob_radius``. If
         ``None``, use the endpoint voxels directly.
     extreme_id_1, extreme_id_2 : int
-        Endpoint voxel IDs, typically returned by
-        :func:`find_extrema_and_length`.
+        Endpoint voxel IDs, typically returned by :func:`find_extrema`.
     voxel_size : numpy.ndarray, shape (3,)
         Voxel dimensions along the x, y, and z axes. The voxel diagonal is used
         to conservatively select candidate voxels by path distance.
@@ -377,10 +377,11 @@ def define_blobs_inplace(hits        : pd.DataFrame,
 
     Returns
     -------
-    high_energy_blob : Blob
-        Blob with the larger selected-energy sum.
-    low_energy_blob : Blob
-        Blob with the smaller selected-energy sum.
+    blob_1, blob_2 : Blob
+        Blobs associated with ``extreme_id_1`` and ``extreme_id_2``,
+        respectively. They are returned in endpoint order, not sorted by
+        energy; use :func:`sort_blobs` to order them from lower to higher
+        energy.
     """
     if scan_radius is None:
         blob_node_1 = extreme_id_1
@@ -398,17 +399,38 @@ def define_blobs_inplace(hits        : pd.DataFrame,
                                                       blob_radius,
                                                       scan_radius)
 
-    ( blob_pos_low
-    , blob_pos_high) = assign_blobs_inplace(hits, voxels,
-                                            distances, blob_radius,
-                                            blob_node_1, blob_node_2,
-                                            voxel_size, energy_type)
 
-    hits_low  = hits.loc[hits.blob.str.contains( "low")]
-    hits_high = hits.loc[hits.blob.str.contains("high")]
-    blob_low  = Blob(hits_low [energy_type.value].sum(), blob_pos_low , hits_low .index.values)
-    blob_high = Blob(hits_high[energy_type.value].sum(), blob_pos_high, hits_high.index.values)
-    return blob_high, blob_low
+    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==blob_node_1], energy_type)
+    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==blob_node_2], energy_type)
+
+    blob_hits_1 = blob_hits(hits, distances, blob_pos_1, blob_radius, blob_node_1, voxel_size)
+    blob_hits_2 = blob_hits(hits, distances, blob_pos_2, blob_radius, blob_node_2, voxel_size)
+
+    blob_voxels_1 = blob_hits_1.voxel_id.unique()
+    blob_voxels_2 = blob_hits_2.voxel_id.unique()
+
+    blob_1 = Blob(blob_hits_1[energy_type.value].sum(), blob_pos_1, blob_hits_1.index.values, blob_voxels_1, blob_node_1)
+    blob_2 = Blob(blob_hits_2[energy_type.value].sum(), blob_pos_2, blob_hits_2.index.values, blob_voxels_2, blob_node_2)
+    return blob_1, blob_2
+
+
+def sort_blobs(blob_1: Blob, blob_2: Blob) -> Tuple[Blob, Blob]:
+    """Return the two blobs in ascending energy order.
+
+    If their energies are equal, preserve the input order.
+
+    Parameters
+    ----------
+    blob_1, blob_2 : Blob
+        Blobs to order.
+
+    Returns
+    -------
+    low_energy_blob, high_energy_blob : Blob
+        The lower- and higher-energy blobs, respectively.
+    """
+    ascending = blob_1.energy <= blob_2.energy
+    return (blob_1, blob_2) if ascending else (blob_2, blob_1)
 
 
 def find_highest_encapsulating_node(voxels     : pd.DataFrame,
@@ -459,95 +481,90 @@ def find_highest_encapsulating_node(voxels     : pd.DataFrame,
     return highest_encapsulating_node
 
 
-def assign_blobs_inplace(hits        : pd.DataFrame,
-                         voxels      : pd.DataFrame,
-                         distances   : pd.DataFrame,
-                         radius      : float,
-                         extreme_id_1: int,
-                         extreme_id_2: int,
-                         voxel_size  : np.ndarray,
-                         energy_type : HitEnergy,
-                         ) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Label hits and voxels according to their membership in the two blobs.
+def blob_hits(hits       : pd.DataFrame,
+              distances  : pd.DataFrame,
+              center     : np.ndarray,
+              radius     : float,
+              extreme_id : int,
+              voxel_size : np.ndarray
+             ) -> pd.DataFrame:
+    """Select hits belonging to a blob around a seed voxel.
 
-    The ``blob`` columns of ``hits`` and ``voxels`` are modified in place.
-    Existing labels are left unchanged for rows outside either blob.
+    Candidate voxels must be less than ``radius`` plus the voxel diagonal from
+    the seed by path distance. Selected hits must also be less than ``radius``
+    from ``center`` by Euclidean distance.
 
     Parameters
     ----------
     hits : pd.DataFrame
-        Hits belonging to the track, including a ``voxel_id`` column.
-    voxels : pd.DataFrame
-        Voxel table indexed by voxel ID.
+        Hit table containing ``X``, ``Y``, ``Z``, and ``voxel_id`` columns.
     distances : pd.DataFrame
-        Pairwise path-distance table for the track, as returned by
-        :func:`shortest_paths`.
+        Pairwise path-distance table with ``initial``, ``final``, and
+        ``distance`` columns, as returned by :func:`shortest_paths`.
+    center : numpy.ndarray, shape (3,)
+        Blob centre in x, y, and z coordinates.
     radius : float
-        Spatial radius used to select hits around each endpoint.
-    extreme_id_1, extreme_id_2 : int
-        Endpoint voxel IDs.
+        Spatial hit-selection radius, in the same units as the coordinates.
+    extreme_id : int
+        Seed voxel ID for the blob.
     voxel_size : numpy.ndarray, shape (3,)
-        Voxel dimensions along the x, y, and z axes.
-    energy_type : HitEnergy
-        Hit-energy column used to calculate blob centres and order the blobs by
-        energy.
+        Voxel dimensions; the voxel diagonal expands the path-distance
+        candidate threshold.
 
     Returns
     -------
-    blob_pos_low: np.ndarray
-        Position of the lower-energy blob
-    blob_pos_high: np.ndarray
-        Position of the higher-energy blob
-
-    Notes
-    -----
-    Blob labels are ``"low"`` and ``"high"`` for the lower- and higher-energy
-    blobs, ``"highlow"`` for shared membership, and ``"none"`` for hits not
-    assigned by this function. The caller is responsible for initializing
-    labels to ``"none"`` if that is the desired default.
+    pd.DataFrame
+        Rows from ``hits`` selected for this blob.
     """
     distances = distances.set_index("initial")
     diag      = np.linalg.norm(voxel_size)
 
-    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1], energy_type)
-    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2], energy_type)
-
-    # voxels that might have within within the required radius
+    # voxels that might have hits within the required radius
     # Note that loc uses a bracketed number. This is to force pandas to return a
     # DataFrame and not a Series.
-    within_radius = lambda df: df.distance < radius + diag
-    candidate_voxels_1 = distances.loc[[extreme_id_1]].loc[within_radius].final.values
-    candidate_voxels_2 = distances.loc[[extreme_id_2]].loc[within_radius].final.values
-
-    within_r_1 = np.linalg.norm(hits[_XYZ].values - blob_pos_1, axis=1) < radius
-    within_r_2 = np.linalg.norm(hits[_XYZ].values - blob_pos_2, axis=1) < radius
+    within_radius    = lambda df: df.distance < radius + diag
+    candidate_voxels = distances.loc[[extreme_id]].loc[within_radius].final.values
+    within_r         = np.linalg.norm(hits[_XYZ].values - center, axis=1) < radius
 
     # some hits might fall within the radius, but their distance **along the
     # track** (established by the voxel they belong to) might be longer. We want
     # hits from voxels that are connected to the extreme
-    sel_1 = hits.voxel_id.isin(candidate_voxels_1).values & within_r_1
-    sel_2 = hits.voxel_id.isin(candidate_voxels_2).values & within_r_2
-    sel_both = sel_1 & sel_2
-    e_1 = hits.loc[sel_1, energy_type.value].sum()
-    e_2 = hits.loc[sel_2, energy_type.value].sum()
+    sel = hits.voxel_id.isin(candidate_voxels).values & within_r
+    return hits.loc[sel]
 
-    ascending = e_1 <= e_2
-    label_1 = "low"  if ascending else "high"
-    label_2 = "high" if ascending else "low"
-    hits.loc[sel_1   , "blob"] = label_1
-    hits.loc[sel_2   , "blob"] = label_2
-    hits.loc[sel_both, "blob"] = "highlow"
 
-    # not all of the original voxel selection have hits within the radius. We
-    # want to keep only those that do.
-    voxel_ids_1    = hits.voxel_id.loc[sel_1].unique()
-    voxel_ids_2    = hits.voxel_id.loc[sel_2].unique()
-    voxel_ids_both = list(set(voxel_ids_1).intersection(set(voxel_ids_2)))
-    voxels.loc[voxel_ids_1   , "blob"] = label_1
-    voxels.loc[voxel_ids_2   , "blob"] = label_2
-    voxels.loc[voxel_ids_both, "blob"] = "highlow"
-    return (blob_pos_1, blob_pos_2) if ascending else (blob_pos_2, blob_pos_1)
+def assign_blob_labels_inplace(hits     : pd.DataFrame,
+                               voxels   : pd.DataFrame,
+                               blob_low : Blob,
+                               blob_high: Blob
+                              ) -> None:
+    """Label hit and voxel rows according to blob membership.
+
+    Rows belonging to both blobs receive the ``"highlow"`` label. The input
+    tables are modified in place; rows outside the blobs are left unchanged.
+
+    Parameters
+    ----------
+    hits : pd.DataFrame
+        Hit table indexed by hit ID, with a ``blob`` column.
+    voxels : pd.DataFrame
+        Voxel table indexed by voxel ID, with a ``blob`` column.
+    blob_low, blob_high : Blob
+        Lower- and higher-energy blobs whose hit and voxel IDs are assigned.
+
+    Returns
+    -------
+    None
+    """
+    shared = list(set(blob_low.hit_ids).intersection(set(blob_high.hit_ids)))
+    hits.loc[blob_low .hit_ids, "blob"] = "low"
+    hits.loc[blob_high.hit_ids, "blob"] = "high"
+    hits.loc[           shared, "blob"] = "highlow"
+
+    shared = list(set(blob_low.voxel_ids).intersection(set(blob_high.voxel_ids)))
+    voxels.loc[blob_low .voxel_ids, "blob"] = "low"
+    voxels.loc[blob_high.voxel_ids, "blob"] = "high"
+    voxels.loc[             shared, "blob"] = "highlow"
 
 
 def make_tracks(hits        : pd.DataFrame,
