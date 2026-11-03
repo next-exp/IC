@@ -6,6 +6,7 @@ import numpy  as np
 import tables as tb
 
 from scipy.signal import find_peaks_cwt
+from scipy.signal import find_peaks
 
 from .. core                 import  system_of_units as units
 from .. core.core_functions  import         in_range
@@ -15,6 +16,7 @@ from .. database             import          load_db as DB
 from .. types.symbols        import       SensorType
 from .. evm.ic_containers    import     SensorParams
 from .. evm.ic_containers    import   PedestalParams
+
 
 
 def bin_waveforms(waveforms, bins):
@@ -122,6 +124,235 @@ def valid_integral_limits(sample_width, n_integrals, integral_start, integral_wi
     corr, anti = integral_limits(sample_width, n_integrals, integral_start, integral_width, period)
     return (filter_limits(corr, buffer_length),
             filter_limits(anti, buffer_length))
+    
+
+def scale_to_samples(value, sampling, reference_sampling=25 * units.ns):
+    """
+    Convert a sample-count parameter that was tuned at `reference_sampling`
+    into the equivalent number of samples at a different `sampling` period,
+    assuming the underlying physical timescale (e.g. peak width) is constant.
+
+    Always returns a whole number of samples, with a floor of 1 so that
+    windows never collapse to zero width.
+    """
+    ratio  = reference_sampling / sampling
+    scaled = round(value * ratio)
+    return max(1, int(scaled))
+
+
+
+
+def integrate_peaks_ercilia(bls,
+                             n_sigma=5.0,
+                             min_distance=10,
+                             min_prominence_sigma=2.0,
+                             pre_samples=5,
+                             post_samples=10,
+                             top_fraction=0.95,
+                             max_top_width=3,
+                             merge_distance=30,
+                             integrate_noise=True,
+                             noise_window_gap=0,
+                             mad_to_sigma=0.6745):
+    """
+    Peak finding function for fiber barrel calibration.
+
+    - Basic peak finder with threshold/prominence (scipy.find_peaks)
+    - Merges peaks that are close together and integrates them as one
+    - Removes merged groups whose true maximum sample has a saturated
+      (flat) top
+    - Optionally integrates fixed-width "noise" windows (width =
+      pre_samples + post_samples) placed in peak-free regions, appended
+      to the same charges array as a zero-charge reference population
+
+    Parameters
+    ----------
+    mad_to_sigma : float
+        Conversion factor from median absolute deviation to an
+        equivalent Gaussian sigma (0.6745 for a normal distribution).
+    """
+    noise_window_width = pre_samples + post_samples
+    noise_step = noise_window_width + noise_window_gap
+    if integrate_noise and noise_window_width > 0 and noise_step <= 0:
+        raise ValueError(
+            "noise_window_gap is too negative: "
+            "pre_samples + post_samples + noise_window_gap must be > 0"
+        )
+
+    bls_arr = np.asarray(bls)
+    if not np.issubdtype(bls_arr.dtype, np.floating):
+        bls_arr = bls_arr.astype(np.float64)
+
+    noises = np.median(np.abs(bls_arr), axis=1) / mad_to_sigma
+    thresholds  = n_sigma * noises
+    prominences = min_prominence_sigma * noises
+
+    charges = []
+
+    for wf, threshold, prominence in zip(bls_arr, thresholds, prominences):
+        n = len(wf)
+
+        # cumulative sum -> O(1) window-sum lookups for both peak and
+        # noise integration below (built once per waveform)
+        csum = np.empty(n + 1, dtype=np.float64)
+        csum[0] = 0.0
+        csum[1:] = np.cumsum(wf)
+
+        peaks, _ = find_peaks(
+            wf,
+            height=threshold,
+            distance=min_distance,
+            prominence=prominence,
+        )
+
+        merged_groups = []
+        if len(peaks) > 0:
+            current_group = [peaks[0]]
+            for p in peaks[1:]:
+                if p - current_group[-1] <= merge_distance:
+                    current_group.append(p)
+                else:
+                    merged_groups.append(current_group)
+                    current_group = [p]
+            merged_groups.append(current_group)
+
+        fiber_charges = []
+        occupied_windows = []  # every peak region, incl. ones later rejected as saturated
+
+        for group in merged_groups:
+            group_arr = np.asarray(group)
+            start = max(0, int(group_arr.min()) - pre_samples)
+            end   = min(n, int(group_arr.max()) + post_samples)
+            occupied_windows.append((start, end))
+
+            # true highest sample in the group, not the mean position
+            # (mean can land in a valley between two merged peaks and
+            # understate the saturation reference value)
+            peak_idx = group_arr[np.argmax(wf[group_arr])]
+            peak_val = wf[peak_idx]
+            thr = top_fraction * peak_val
+
+            left = right = peak_idx
+            while True:
+                grew = False
+                if left > 0 and wf[left - 1] > thr:
+                    left -= 1
+                    grew = True
+                if right < n - 1 and wf[right + 1] > thr:
+                    right += 1
+                    grew = True
+                if (right - left + 1) > max_top_width:
+                    break
+                if not grew:
+                    break
+
+            if (right - left + 1) > max_top_width:
+                continue
+
+            fiber_charges.append(csum[end] - csum[start])
+
+        # --- Noise window integration, appended into the same charges array ---
+        if integrate_noise and noise_window_width > 0:
+            occupied_windows.sort()
+            free_regions = []
+            cursor = 0
+            for start, end in occupied_windows:
+                if start > cursor:
+                    free_regions.append((cursor, start))
+                cursor = max(cursor, end)
+            if cursor < n:
+                free_regions.append((cursor, n))
+
+            for region_start, region_end in free_regions:
+                length = region_end - region_start
+                if length < noise_window_width:
+                    continue
+                n_windows = (length - noise_window_width) // noise_step + 1
+                starts = region_start + noise_step * np.arange(n_windows)
+                fiber_charges.extend(csum[starts + noise_window_width] - csum[starts])
+
+        charges.append(np.asarray(fiber_charges))
+
+    return charges
+
+
+
+
+def integrate_hg_lg_pairs_ercilia(bls_hg, bls_lg,
+                                   n_sigma=5.0,
+                                   min_distance=10,
+                                   min_prominence_sigma=2.0,
+                                   pre_samples=5,
+                                   post_samples=10,
+                                   cluster_dist=30,
+                                   mad_to_sigma=0.6745):
+    """
+    Per-event isolated-peak finder for HG/LG amplification comparison.
+
+    Peaks are found on the HG channel only (LG is too small/noisy to find
+    peaks on reliably given the ~300x gain difference). Unlike
+    integrate_peaks_ercilia, peaks are NEVER merged here: if a peak has
+    another peak within `cluster_dist` samples on either side, both are
+    dropped entirely. This guarantees every kept peak sits on an
+    unambiguous, identical sample window on both channels. Saturation is
+    not checked here -- every isolated peak is integrated as-is.
+
+    Parameters
+    ----------
+    bls_hg, bls_lg : array_like, shape (n_fiber, wf_length)
+        Baseline-subtracted waveforms for one event, same fiber ordering
+        and sample length, HG and LG respectively.
+
+    Returns
+    -------
+    channels : ndarray[int]
+    areas_hg, areas_lg : ndarray[float]
+        One entry per isolated peak kept, across all fibers in this
+        event. channels[i]/areas_hg[i]/areas_lg[i] refer to the same peak.
+    """
+    hg = np.asarray(bls_hg, dtype=np.float64)
+    lg = np.asarray(bls_lg, dtype=np.float64)
+    if hg.shape != lg.shape:
+        raise ValueError(f"bls_hg/bls_lg shape mismatch: {hg.shape} vs {lg.shape}")
+
+    n_fiber, n  = hg.shape
+    noises      = np.median(np.abs(hg), axis=1) / mad_to_sigma
+    thresholds  = n_sigma * noises
+    prominences = min_prominence_sigma * noises
+
+    out_channel, out_hg, out_lg = [], [], []
+
+    for ch in range(n_fiber):
+        wf_hg, wf_lg = hg[ch], lg[ch]
+
+        peaks, _ = find_peaks(
+            wf_hg,
+            height=thresholds[ch],
+            distance=min_distance,
+            prominence=prominences[ch],
+        )
+        if len(peaks) == 0:
+            continue
+
+        if len(peaks) == 1:
+            isolated = np.array([True])
+        else:
+            gaps            = np.diff(peaks)
+            too_close_left  = np.concatenate([[False], gaps <= cluster_dist])
+            too_close_right = np.concatenate([gaps <= cluster_dist, [False]])
+            isolated        = ~(too_close_left | too_close_right)
+
+        for pos in peaks[isolated]:
+            lo = max(0, pos - pre_samples)
+            hi = min(n, pos + post_samples)
+            out_channel.append(ch)
+            out_hg.append(float(np.sum(wf_hg[lo:hi])))
+            out_lg.append(float(np.sum(wf_lg[lo:hi])))
+
+    return (np.asarray(out_channel, dtype=int),
+            np.asarray(out_hg,      dtype=np.float64),
+            np.asarray(out_lg,      dtype=np.float64))
+
 
 
 def copy_sensor_table(h5in_name : str,
