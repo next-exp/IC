@@ -384,34 +384,31 @@ def define_blobs(hits        : pd.DataFrame,
         energy; use :func:`sort_blobs` to order them from lower to higher
         energy.
     """
-    if scan_radius is None:
-        blob_node_1 = extreme_id_1
-        blob_node_2 = extreme_id_2
-    else:
-        blob_node_1 = find_highest_encapsulating_node(voxels,
-                                                      extreme_id_1,
-                                                      distances,
-                                                      blob_radius,
-                                                      scan_radius)
+    if scan_radius is not None:
+        extreme_id_1 = find_highest_encapsulating_node(voxels,
+                                                       extreme_id_1,
+                                                       distances,
+                                                       blob_radius,
+                                                       scan_radius)
 
-        blob_node_2 = find_highest_encapsulating_node(voxels,
-                                                      extreme_id_2,
-                                                      distances,
-                                                      blob_radius,
-                                                      scan_radius)
+        extreme_id_2 = find_highest_encapsulating_node(voxels,
+                                                       extreme_id_2,
+                                                       distances,
+                                                       blob_radius,
+                                                       scan_radius)
 
 
-    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==blob_node_1], energy_type)
-    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==blob_node_2], energy_type)
+    blob_pos_1 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_1], energy_type)
+    blob_pos_2 = hits_ave_pos(hits.loc[hits.voxel_id==extreme_id_2], energy_type)
 
-    blob_hits_1 = blob_hits(hits, distances, blob_pos_1, blob_radius, blob_node_1, voxel_size)
-    blob_hits_2 = blob_hits(hits, distances, blob_pos_2, blob_radius, blob_node_2, voxel_size)
+    blob_hits_1 = blob_hits(hits, distances, blob_pos_1, blob_radius, extreme_id_1, voxel_size)
+    blob_hits_2 = blob_hits(hits, distances, blob_pos_2, blob_radius, extreme_id_2, voxel_size)
 
     blob_voxels_1 = blob_hits_1.voxel_id.unique()
     blob_voxels_2 = blob_hits_2.voxel_id.unique()
 
-    blob_1 = Blob(blob_hits_1[energy_type.value].sum(), blob_pos_1, blob_hits_1.index.values, blob_voxels_1, blob_node_1)
-    blob_2 = Blob(blob_hits_2[energy_type.value].sum(), blob_pos_2, blob_hits_2.index.values, blob_voxels_2, blob_node_2)
+    blob_1 = Blob(blob_hits_1[energy_type.value].sum(), blob_pos_1, blob_hits_1.index.values, blob_voxels_1, extreme_id_1)
+    blob_2 = Blob(blob_hits_2[energy_type.value].sum(), blob_pos_2, blob_hits_2.index.values, blob_voxels_2, extreme_id_2)
     return blob_1, blob_2
 
 
