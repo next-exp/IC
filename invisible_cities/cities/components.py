@@ -1526,8 +1526,7 @@ def track_blob_info_creator_extractor(  vox_size         : Tuple[float, float, f
         hits = hits.assign(track_id=-1)
         event = hits.event.iloc[0]
         if len(hits) > max_num_hits:
-            warn("Event {event} has too many hits ({len(hits)})."
-                 " This event will not be processed.")
+            warn(f"Event {event} has too many hits ({len(hits)}). This event will not be processed.")
             return hits.assign(track_id = -1, voxel_id = -1, track = -1, blob = 'none'), empty_vox_tbl, track_df, True
 
         plf.round_hits_positions_in_place(hits, 5)
