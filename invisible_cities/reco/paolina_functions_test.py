@@ -679,8 +679,7 @@ def test_make_tracks_blob_hits_are_inside_radius(hits, voxel_size, blob_radius):
     hits, voxels         = voxelize_hits(hits, voxel_size, HitEnergy.E)
     hits, voxels, tracks = make_tracks(hits, voxels, voxel_size, blob_radius, None, Contiguity.CORNER, HitEnergy.E)
 
-    diag = np.linalg.norm(voxel_size)
-    xyz  = list("XYZ")
+    xyz = list("XYZ")
     for t, track in tracks.groupby("trackID"):
         hits_track = hits.loc[hits.track_id == t]
         hits_low   = hits_track.loc[hits_track.blob.isin(["low", "highlow"])]
@@ -690,8 +689,8 @@ def test_make_tracks_blob_hits_are_inside_radius(hits, voxel_size, blob_radius):
         centre_high = track[["blob1_x", "blob1_y", "blob1_z"]].values
         centre_low  = track[["blob2_x", "blob2_y", "blob2_z"]].values
 
-        assert np.all(np.linalg.norm(hits_low [xyz].values - centre_low , axis=1) < blob_radius + diag)
-        assert np.all(np.linalg.norm(hits_high[xyz].values - centre_high, axis=1) < blob_radius + diag)
+        assert np.all(np.linalg.norm(hits_low [xyz].values - centre_low , axis=1) < blob_radius)
+        assert np.all(np.linalg.norm(hits_high[xyz].values - centre_high, axis=1) < blob_radius)
 
 
 @fixture
