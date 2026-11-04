@@ -51,7 +51,7 @@ from .  components import hits_and_kdst_from_files
 from .  components import hits_corrector
 from .  components import hits_thresholder
 from .  components import compute_and_write_tracks_info
-from .  components import              identity
+from .  components import identity
 
 from .. io.         hits_io import hits_writer as hits_writer_
 from .. io.         kdst_io import kdst_from_df_writer
