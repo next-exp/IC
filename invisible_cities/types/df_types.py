@@ -79,7 +79,7 @@ summary_type = dict( event         = np.int64
 
 
 tracks_type = dict( event            = np.int64
-                  , trackID          = int
+                  , track_id         = int
                   , energy           = np.float64
                   , length           = np.float64
                   , numb_of_voxels   = int

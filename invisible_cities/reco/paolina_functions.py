@@ -630,16 +630,16 @@ def make_tracks(hits        : pd.DataFrame,
                           reverse=True)
 
     event  = int(hits.event.iloc[0])
-    hits   =   hits.assign(track=-1, blob="none") # IMPORTANT: this is a copy
-    voxels = voxels.assign(track=-1, blob="none") # IMPORTANT: this is a copy
+    hits   =   hits.assign(track_id=-1, blob="none") # IMPORTANT: this is a copy
+    voxels = voxels.assign(track_id=-1, blob="none") # IMPORTANT: this is a copy
 
     for track_no, track in enumerate(track_graphs):
         track_voxels = voxels.loc[list(track.nodes())]
         track_hits   =   hits.loc[hits.voxel_id.isin(track_voxels.index)]
         track_hits_r = np.sqrt(track_hits.X**2 + track_hits.Y**2)
 
-        voxels.loc[track_voxels.index, "track"] = track_no
-        hits  .loc[track_hits  .index, "track"] = track_no
+        voxels.loc[track_voxels.index, "track_id"] = track_no
+        hits  .loc[track_hits  .index, "track_id"] = track_no
 
         distances            = shortest_paths(track)
         extreme_1, extreme_2 = find_extrema(distances)

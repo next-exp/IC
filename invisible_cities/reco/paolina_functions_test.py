@@ -666,8 +666,8 @@ def test_blobs(radius, low_e, high_e):
     hits, voxels         = voxelize_hits(hits, voxel_size, HitEnergy.E)
     hits, voxels, tracks = make_tracks(hits, voxels, voxel_size, radius, None, Contiguity.CORNER, HitEnergy.E)
 
-    assert   hits.track.nunique() == 1
-    assert voxels.track.nunique() == 1
+    assert   hits.track_id.nunique() == 1
+    assert voxels.track_id.nunique() == 1
 
     assert np.isclose(hits.loc[hits.blob.str.contains("low" )].E.sum(),  low_e)
     assert np.isclose(hits.loc[hits.blob.str.contains("high")].E.sum(), high_e)
@@ -680,7 +680,7 @@ def test_make_tracks_blob_hits_are_inside_radius(hits, voxel_size, blob_radius):
     hits, voxels, tracks = make_tracks(hits, voxels, voxel_size, blob_radius, None, Contiguity.CORNER, HitEnergy.E)
 
     xyz = list("XYZ")
-    for t, track in tracks.groupby("trackID"):
+    for t, track in tracks.groupby("track_id"):
         hits_track = hits.loc[hits.track_id == t]
         hits_low   = hits_track.loc[hits_track.blob.isin(["low", "highlow"])]
         hits_high  = hits_track.loc[hits_track.blob.isin(["high", "highlow"])]
@@ -1014,11 +1014,11 @@ def test_make_tracks_function(ICDATADIR):
         # Compare the two sets of tracks
         assert len(tracks) == len(track_coll)
         for track_no, t in enumerate(tracks):
-            tc = track_coll.loc[track_coll.trackID == track_no].iloc[0]
+            tc = track_coll.loc[track_coll.track_id == track_no].iloc[0]
 
             # same length, energy is sum of voxels' energy
-            voxels_in_track = voxels.loc[voxels.track == track_no]
-            hits_in_track   = hits.loc[hits.track == track_no]
+            voxels_in_track = voxels.loc[voxels.track_id == track_no]
+            hits_in_track   = hits.loc[hits.track_id == track_no]
             assert set(t.nodes()) == set(voxels_in_track.index)
             assert len(t.nodes()) == tc.numb_of_voxels
             assert np.isclose(voxels_in_track.e.sum(), tc.energy).all()
