@@ -7,7 +7,6 @@ from numpy.testing import assert_allclose
 
 from .  dst_io    import load_dst
 from .  mcinfo_io import load_mchits_df
-from .  mcinfo_io import cast_mchits_to_dict
 from .  mcinfo_io import load_mcparticles_df
 from .  mcinfo_io import load_eventnumbermap
 from .  mcinfo_io import get_event_numbers_in_file
@@ -21,7 +20,6 @@ from .  mcinfo_io import copy_mc_info
 from .  mcinfo_io import safe_copy_nexus_eventmap
 from .  mcinfo_io import read_mc_tables
 from .  mcinfo_io import mc_writer
-from .  mcinfo_io import _read_mchit_info
 
 from .. core               import system_of_units as units
 from .. core.testing_utils import assert_dataframes_equal
@@ -470,33 +468,6 @@ def assert_load_hits_good(efile, X, Y, Z, E, t):
     assert np.allclose(Z, hit_df.loc[evt].z     .values)
     assert np.allclose(E, hit_df.loc[evt].energy.values)
     assert np.allclose(t, hit_df.loc[evt].time  .values)
-
-
-def test_cast_mchits_to_dict(mc_particle_and_hits_nexus_data):
-    efile, *_ = mc_particle_and_hits_nexus_data
-    hit_df    = load_mchits_df(efile)
-
-    hit_dict  = cast_mchits_to_dict(hit_df)
-    for evt, evt_hits in hit_df.groupby(level=0):
-        hits_evt  = [[h.X, h.Y, h.Z, h.time, h.E]
-                     for h in hit_dict[evt]]
-        evt_xyztE = evt_hits[['x', 'y', 'z', 'time', 'energy']]
-        assert_allclose(evt_xyztE.values, hits_evt)
-
-
-def test_cast_mchits_to_dict_same_as_old(mc_particle_and_hits_nexus_data):
-    efile, _, _, _, _, _, _, X, Y, Z, E, t = mc_particle_and_hits_nexus_data
-
-    mchits_df   = load_mchits_df(efile)
-    mchits_dict = cast_mchits_to_dict(mchits_df)
-
-    with tb.open_file(efile) as h5in:
-        old_mchit_dict = _read_mchit_info(h5in)
-
-    assert np.all(mchits_dict.keys() == old_mchit_dict.keys())
-    for old_hts, new_hts in zip(old_mchit_dict.values(), mchits_dict.values()):
-        for old_hit, new_hit in zip(old_hts, new_hts):
-            assert_MChit_equality(old_hit, new_hit)
 
 
 def test_load_mcparticles_df_oldformat(mc_particle_and_hits_nexus_data):

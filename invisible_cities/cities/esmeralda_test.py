@@ -32,7 +32,7 @@ def test_esmeralda_contains_all_tables(esmeralda_config, config_tmpdir):
     nodes = ( "MC", "MC/hits", "MC/particles"
             , "Tracking", "Tracking/Tracks"
             , "Summary", "Summary/Events"
-            , "CHITS", "CHITS/highTh"
+            , "CHITS", "CHITS/highTh", "CHITS/voxels"
             , "Run", "Run/events", "Run/runInfo"
             , "Filters", "Filters/high_th_select", "Filters/topology_select"
             , "DST", "DST/Events")
@@ -106,7 +106,7 @@ def test_esmeralda_exact_result(esmeralda_config, Th228_tracks, config_tmpdir):
 
     esmeralda(**esmeralda_config)
 
-    tables = ( "CHITS/highTh"
+    tables = ( "CHITS/highTh", "CHITS/voxels"
              , "Tracking/Tracks"
              , "Run/events", "Run/runInfo"
              , "DST/Events"
@@ -116,6 +116,7 @@ def test_esmeralda_exact_result(esmeralda_config, Th228_tracks, config_tmpdir):
 
     with tb.open_file(Th228_tracks) as true_output_file:
         with tb.open_file(path_out) as      output_file:
+
             for table in tables:
                 assert hasattr(output_file.root, table), table
                 got      = getattr(     output_file.root, table)

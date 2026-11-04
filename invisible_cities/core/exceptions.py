@@ -41,9 +41,6 @@ class NoVoxels(ICException):
 class SensorBinningNotFound(ICException):
     pass
 
-class NoParticleInfoInFile(ICException):
-    pass
-
 class TableMismatch(ICException):
     pass
 
