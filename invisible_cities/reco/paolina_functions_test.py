@@ -680,27 +680,18 @@ def test_make_tracks_blob_hits_are_inside_radius(hits, voxel_size, blob_radius):
     hits, voxels, tracks = make_tracks(hits, voxels, voxel_size, blob_radius, None, Contiguity.CORNER, HitEnergy.E)
 
     diag = np.linalg.norm(voxel_size)
-    for t in voxels.track.unique():
-        hits_track   =   hits.loc[  hits.track == t]
-        voxels_track = voxels.loc[voxels.track == t]
-        hits_low  = hits_track.loc[hits_track.blob == ("low" )]
-        hits_high = hits_track.loc[hits_track.blob == ("high")]
+    xyz  = list("XYZ")
+    for t, track in tracks.groupby("trackID"):
+        hits_track = hits.loc[hits.track_id == t]
+        hits_low   = hits_track.loc[hits_track.blob.isin(["low", "highlow"])]
+        hits_high  = hits_track.loc[hits_track.blob.isin(["high", "highlow"])]
 
-        # if all are 'highlow' (overlapping), continue
-        if bool((hits_track.blob == ("highlow")).all()):
-            continue
+        track = track.iloc[0]
+        centre_high = track[["blob1_x", "blob1_y", "blob1_z"]].values
+        centre_low  = track[["blob2_x", "blob2_y", "blob2_z"]].values
 
-        centre_high = (tracks
-                      .loc[tracks.trackID == t, ['blob1_x', 'blob1_y', 'blob1_z']]
-                      .rename(columns=lambda c: c.replace('blob1_', '').upper()))
-
-        centre_low = (tracks
-                      .loc[tracks.trackID == t, ['blob2_x', 'blob2_y', 'blob2_z']]
-                      .rename(columns=lambda c: c.replace('blob2_', '').upper()))
-
-        xyz = list("XYZ")
-        assert all(np.linalg.norm(hits_low [xyz] - centre_low.values, axis=1) < blob_radius + diag)
-        assert all(np.linalg.norm(hits_high[xyz] - centre_high.values, axis=1) < blob_radius + diag)
+        assert np.all(np.linalg.norm(hits_low [xyz].values - centre_low , axis=1) < blob_radius + diag)
+        assert np.all(np.linalg.norm(hits_high[xyz].values - centre_high, axis=1) < blob_radius + diag)
 
 
 @fixture
