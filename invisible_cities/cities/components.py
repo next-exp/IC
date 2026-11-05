@@ -236,7 +236,7 @@ def run_git_command(git_command: str, quiet: bool = False):
             print(f"Following error encountered when running: {git_command}")
             print(e.stderr)
         return "None"
-    except Exception as e:
+    except Exception:
         print(traceback.format_exc())
 
 
