@@ -694,7 +694,7 @@ def plot_time_evolution_with_errors_and_dates(df_time_evolution : pd.DataFrame,
                 plot_filename = os.path.join(output_dir, f"time_evolution_{plot_name}_with_errors_dates.png")
                 try:
                     plt.savefig(plot_filename)
-                except Exception as e:
+                except Exception as error:
                     print(f"Error trying to write {plot_filename}: {error}")
                 else:
                     print(f"Saved plot for {plot_name} to {plot_filename}")
