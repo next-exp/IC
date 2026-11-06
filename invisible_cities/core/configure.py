@@ -26,7 +26,6 @@ from typing import get_origin
 from typing import get_args
 from typing import Sequence
 from typing import Callable
-from typing import Optional
 from typing import Mapping
 from typing import Union
 from typing import Tuple
