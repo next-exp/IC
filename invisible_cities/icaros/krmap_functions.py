@@ -540,11 +540,10 @@ def get_time_evol_single_slice(df           : pd.DataFrame,
         f = fit(expo, kdst_in_region.DT, kdst_in_region.S2e, p0)
         magnitudes, uncertainties = f.values, (f[2][0], f[2][1])
 
-        lifetime  = - magnitudes[1]
-        ulifetime = uncertainties[1]
+        e0 ,  lifetime = magnitudes
+        e0u, ulifetime = uncertainties
 
-        e0  = magnitudes[0]
-        e0u = uncertainties[0]
+        lifetime = -lifetime
 
     except:
         lifetime  = np.nan
@@ -557,8 +556,8 @@ def get_time_evol_single_slice(df           : pd.DataFrame,
 
     try:
         f              = quick_gauss_fit(df['Ec'].values, bins_Ec, sigma = error)
-        mu             = f.values[1]
-        u_mu           = f.errors[1]
+        _,   mu, _     = f.values
+        _, u_mu, _     = f.errors
         chi2_ec_prelim = f.chi2
 
     except:
