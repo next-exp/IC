@@ -17,7 +17,7 @@ function install_and_check {
 
 function install {
     install_conda
-    make_environment
+    make_environment_if_missing
     python_version_env
     compile_cython_components
 }
