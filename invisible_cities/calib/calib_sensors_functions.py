@@ -23,6 +23,11 @@ def scipy_mode(x, axis=0):
     return m
 
 
+def subtract_and_flip(pmt, proc_mode, flip=True):
+    result = sipm_processing[proc_mode](pmt)
+    return -result if flip else result
+
+
 def mode(wfs, axis=0):
     """
     A fast calculation of the mode: it runs 10 times
